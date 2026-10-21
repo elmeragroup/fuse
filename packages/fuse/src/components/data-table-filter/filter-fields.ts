@@ -103,13 +103,31 @@ export type DateFilterField = FieldBase & {
   readonly operators?: readonly FilterOperator<"date">[];
 };
 
+/** A field whose cell holds `true` or `false`. A missing cell is neither. */
+export type BooleanFilterField = FieldBase & {
+  readonly kind: "boolean";
+  /** `true`'s name in its list and on the chip. Defaults to the dictionary's "Yes". */
+  readonly trueLabel?: string;
+  /** `false`'s name. Defaults to "No". */
+  readonly falseLabel?: string;
+  /**
+   * A scope that is on or off, such as "My orders". Its add-menu row ticks the filter on and off,
+   * its chip is its name and Remove, and it admits only `is` `true`. Off means no filter. In server
+   * mode its id need not be a column: the server gives it meaning.
+   */
+  readonly toggle?: boolean;
+  /** `is`, the default, and `isNot`, which a missing cell passes. A toggle allows `is` only. */
+  readonly operators?: readonly FilterOperator<"boolean">[];
+};
+
 /** Any field. */
 export type FilterField =
   | OptionFilterField
   | MultiOptionFilterField
   | TextFilterField
   | NumberFilterField
-  | DateFilterField;
+  | DateFilterField
+  | BooleanFilterField;
 
 /**
  * The field of one kind.
@@ -119,17 +137,19 @@ export type FilterField =
 export type FilterFieldOfKind<K extends FilterKind> = Extract<FilterField, { readonly kind: K }>;
 
 /** The fields a cell type admits. An ISO date string may be a date field. */
-type FieldFor<V> = [NonNullable<V>] extends [Date]
-  ? DateFilterField
-  : [NonNullable<V>] extends [number]
-    ? NumberFilterField
-    : [NonNullable<V>] extends [readonly (infer E extends string)[]]
-      ? MultiOptionFilterField<E>
-      : [NonNullable<V>] extends [string]
-        ? string extends NonNullable<V>
-          ? TextFilterField | OptionFilterField | DateFilterField
-          : OptionFilterField<NonNullable<V>> | TextFilterField
-        : FilterField;
+type FieldFor<V> = [NonNullable<V>] extends [boolean]
+  ? BooleanFilterField
+  : [NonNullable<V>] extends [Date]
+    ? DateFilterField
+    : [NonNullable<V>] extends [number]
+      ? NumberFilterField
+      : [NonNullable<V>] extends [readonly (infer E extends string)[]]
+        ? MultiOptionFilterField<E>
+        : [NonNullable<V>] extends [string]
+          ? string extends NonNullable<V>
+            ? TextFilterField | OptionFilterField | DateFilterField
+            : OptionFilterField<NonNullable<V>> | TextFilterField
+          : FilterField;
 
 /**
  * A fields map for a row type. A key that is a row key takes only the fields its cell type
@@ -162,15 +182,16 @@ export function defineFilterFields<TRow>(): <const TFields extends FilterFields<
  * The facet a field takes. It distributes over a union, so a map typed as `FilterFieldMap`, whose
  * every entry is any field, takes the facet of any kind.
  */
-type FacetFor<TField> = TField extends { readonly kind: "option" | "multiOption" }
+type FacetFor<TField> = TField extends { readonly kind: "option" | "multiOption" | "boolean" }
   ? { readonly counts: Readonly<Record<string, number>> }
   : TField extends { readonly kind: "number" }
     ? { readonly range: readonly [number, number] }
     : never;
 
 /**
- * Server truth per field: counts for option fields and a range for number fields. An absent entry
- * means unknown, and a list then shows no counts and the number editor no slider.
+ * Server truth per field: counts for option and boolean fields, keyed `"true"` and `"false"` for a
+ * boolean, and a range for number fields. An absent entry means unknown, and a list then shows no
+ * counts and the number editor no slider.
  *
  * @template TFields - The fields map.
  */
@@ -191,12 +212,17 @@ export type AnyFilterFacets = {
  * @returns The operator.
  */
 export function firstOperator(field: FilterField): FilterOperator {
+  // A toggle allows only `is`, whatever it lists.
+  if (field.kind === "boolean" && field.toggle === true) {
+    return "is";
+  }
   const [first] = field.operators ?? [];
   if (first !== undefined) {
     return first;
   }
   switch (field.kind) {
     case "option":
+    case "boolean":
       return "is";
     case "multiOption":
       return "includes";

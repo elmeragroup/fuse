@@ -21,6 +21,8 @@ Import from `@elmeragroup/fuse/data-table-filter` and install `@tanstack/react-t
 
 The filter reads and writes the table's `columnFilters` state, and every filter value is a plain object, `{ kind, operator, values }`. Describe each filterable column once with `defineFilterFields<Row>()`, keyed by column id. The map checks each field's kind against the column's type and each option's value against the column's values. It holds no functions, so a server module can define it and pass it to the client. A text field matches `contains` by default. List `startsWith` in its `operators` for a prefix match, such as an ID typed from its start.
 
+A boolean field filters a column of `true` and `false` through a Yes and No list with counts. Name the two values with `trueLabel` and `falseLabel`. Give it `toggle: true` for a scope such as "My orders" that is on or off: its add-menu row ticks the filter on and off, and its chip is its name and Remove. In server mode a toggle's id need not be a column, because the server decides what it means.
+
 Register one filter function for every column. `createDataTableFilterFn({ timeZone })` returns it. Add it to `filterFns` in the table's features and name it in `defaultColumn.filterFn`. Use the same time zone in the filter function and on the Root, so date presets and date matches agree on the calendar day.
 
 Render `Bar`, `Content` and `ValueContent` as siblings inside `Root`, never one inside another. `Bar` is one toolbar with the Trigger, a chip per filter and Clear. `Content` is the add menu the Trigger opens. `ValueContent` is the popover a chip's value opens. A part outside its Root or chip throws a `DataTableFilterCompositionError` that names the fix.

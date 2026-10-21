@@ -15,11 +15,13 @@ import {
   fieldAdmits,
   filterValuesEqual,
   isIsoDate,
+  isToggleOn,
   OPERATORS,
   operatorChoices,
   setFilterOperator,
   setFilterValues,
   toFilterValue,
+  toggleBoolean,
   toggleOption,
 } from "./filter-model";
 import type { DataTableFilterState, FilterKind, FilterOperator, FilterValue } from "./filter-model";
@@ -57,6 +59,8 @@ describe("OPERATORS negations", () => {
     ["date", "isOnOrBefore", "isAfter"],
     ["date", "isBetween", "isNotBetween"],
     ["date", "isNotBetween", "isBetween"],
+    ["boolean", "is", "isNot"],
+    ["boolean", "isNot", "is"],
   ];
 
   it("negates every operator as the handwritten pair table says, and lists no other operator", () => {
@@ -68,6 +72,7 @@ describe("OPERATORS negations", () => {
       ...rows("text", OPERATORS.text),
       ...rows("number", OPERATORS.number),
       ...rows("date", OPERATORS.date),
+      ...rows("boolean", OPERATORS.boolean),
     ];
     expect(actual).toEqual(NEGATIONS);
   });
@@ -140,6 +145,92 @@ describe("toFilterValue", () => {
       operator: "isBetween",
       values: ["2026-10-02", "2026-10-12"],
     });
+  });
+});
+
+describe("boolean fields", () => {
+  const PLAIN = { kind: "boolean" } as const;
+  const TOGGLE = { kind: "boolean", toggle: true } as const;
+  const RUSH_TRUE = { kind: "boolean", operator: "is", values: [true] } as const;
+  const RUSH_FALSE = { kind: "boolean", operator: "is", values: [false] } as const;
+  const NOT_TRUE = { kind: "boolean", operator: "isNot", values: [true] } as const;
+  const PAID = { kind: "option", operator: "is", values: ["paid"] } as const;
+
+  it("builds a value from one real boolean only", () => {
+    expect(toFilterValue("boolean", "is", [true])).toEqual(RUSH_TRUE);
+    expect(toFilterValue("boolean", "is", ["true"])).toBeNull();
+    expect(toFilterValue("boolean", "is", [1])).toBeNull();
+    expect(toFilterValue("boolean", "is", [true, false])).toBeNull();
+    expect(toFilterValue("boolean", "is", [])).toBeNull();
+  });
+
+  it("allows is by default, isNot when listed, and only is on a toggle", () => {
+    expect(allowedOperators(PLAIN)).toEqual(["is"]);
+    expect(allowedOperators({ kind: "boolean", operators: ["is", "isNot"] })).toEqual(["is", "isNot"]);
+    expect(allowedOperators({ kind: "boolean", toggle: true, operators: ["isNot", "is"] })).toEqual(["is"]);
+  });
+
+  it.each([
+    ["is true", RUSH_TRUE, true],
+    ["is false", RUSH_FALSE, false],
+    ["isNot true", NOT_TRUE, false],
+  ] as const)("lets a toggle admit %s: %s, and reads it on the same way", (_name, value, expected) => {
+    expect(fieldAdmits(TOGGLE, value)).toBe(expected);
+    expect(isToggleOn(TOGGLE, value)).toBe(expected);
+  });
+
+  it("reads a plain boolean field, or no filter, as no toggle that is on", () => {
+    expect(isToggleOn(PLAIN, RUSH_TRUE)).toBe(false);
+    expect(isToggleOn(TOGGLE, undefined)).toBe(false);
+  });
+
+  it.each([
+    ["a plain field with no filter picks true", PLAIN, [], true, [{ id: "rush", value: RUSH_TRUE }]],
+    ["a plain field picks its applied true again", PLAIN, [{ id: "rush", value: RUSH_TRUE }], true, []],
+    [
+      "a plain field picks false over true in the same place",
+      PLAIN,
+      [
+        { id: "rush", value: RUSH_TRUE },
+        { id: "status", value: PAID },
+      ],
+      false,
+      [
+        { id: "rush", value: RUSH_FALSE },
+        { id: "status", value: PAID },
+      ],
+    ],
+    ["a toggle with no filter turns on", TOGGLE, [], true, [{ id: "rush", value: RUSH_TRUE }]],
+    ["a toggle that is on turns off", TOGGLE, [{ id: "rush", value: RUSH_TRUE }], true, []],
+    [
+      "a stale is false turns on",
+      TOGGLE,
+      [{ id: "rush", value: RUSH_FALSE }],
+      true,
+      [{ id: "rush", value: RUSH_TRUE }],
+    ],
+    [
+      "a stale isNot true turns on",
+      TOGGLE,
+      [{ id: "rush", value: NOT_TRUE }],
+      true,
+      [{ id: "rush", value: RUSH_TRUE }],
+    ],
+    ["a toggle ignores a pick of false", TOGGLE, [], false, []],
+  ] as const)("toggles where %s", (_name, field, state, picked, expected) => {
+    expect(toggleBoolean(state, "rush", field, picked, "is")).toEqual(expected);
+  });
+
+  it.each([
+    [true, RUSH_TRUE, true],
+    [false, RUSH_TRUE, false],
+    [false, RUSH_FALSE, true],
+    [null, RUSH_FALSE, false],
+    [null, NOT_TRUE, true],
+    ["true", RUSH_TRUE, false],
+    [1, RUSH_TRUE, false],
+  ] as const)("matches the cell %j against %j: %s", (cell, value, expected) => {
+    expect(matchesFilter(value, cell)).toBe(expected);
   });
 });
 

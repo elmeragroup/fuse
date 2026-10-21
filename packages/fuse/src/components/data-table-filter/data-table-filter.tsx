@@ -41,7 +41,15 @@ import type {
   FilterOperator,
   FilterValue,
 } from "./filter-model";
-import { findFilter, removeFilter, setFilterOperator, setFilterValues, toggleOption } from "./filter-model";
+import {
+  findFilter,
+  isToggleOn,
+  removeFilter,
+  setFilterOperator,
+  setFilterValues,
+  toggleBoolean,
+  toggleOption,
+} from "./filter-model";
 import { viewColumnFilters } from "./filter-parse";
 import { dataTableFilterStrings } from "./intl";
 import type { DataTableFilterStringKey } from "./intl";
@@ -84,13 +92,17 @@ export type DataTableFilterContextValue = {
     readonly drilled: string | null;
   };
   readonly actions: {
-    /** Ticks or unticks an option value. The operator follows the value count. */
+    /**
+     * Ticks or unticks an option value, and the operator follows the value count. On a boolean
+     * field the values are `"true"` and `"false"`, and a pick replaces the other. On a toggle,
+     * `"true"` turns it on or off.
+     */
     readonly toggle: (fieldId: string, optionValue: string) => void;
     /** Sets a filter's operator and values. An empty list removes the filter. */
     readonly setValues: (
       fieldId: string,
       operator: FilterOperator,
-      values: readonly (string | number)[]
+      values: readonly (string | number | boolean)[]
     ) => void;
     /** Sets a filter's operator and converts its values to the operator's shape. */
     readonly setOperator: (fieldId: string, operator: FilterOperator) => void;
@@ -101,8 +113,9 @@ export type DataTableFilterContextValue = {
     /**
      * Opens a field's editor. A field with a chip opens in the value popover, after the add menu
      * has closed if it is open. A text, number or date field with no chip opens in place in the
-     * add menu, which opens if it is closed. An option field with no chip does nothing, since its
-     * values open from the menu's own row.
+     * add menu, which opens if it is closed. An option or boolean field with no chip does nothing,
+     * since its values open from the menu's own row, and so does a toggle that is on, which has no
+     * editor.
      */
     readonly edit: (fieldId: string) => void;
     /** Closes the add menu and the value popover. */
@@ -199,6 +212,8 @@ export type DataTableFilterInternals = {
     readonly hasValueContent: () => boolean;
     /** Focuses the neighbour of the chip at `index`, which goes away, and returns what took focus. */
     readonly neighbourOf: (chips: readonly ChipFilter[], index: number) => HTMLElement | null;
+    /** Focuses a chip's first or last segment, else the Trigger, and returns what took focus. */
+    readonly focusChipEdge: (fieldId: string, edge: "first" | "last") => HTMLElement | null;
     /** Whether focus left this Root's closing overlay of `kind` for somewhere else. */
     readonly focusLeft: (kind: OverlayKind, popup: HTMLElement | null) => boolean;
   };
@@ -765,6 +780,13 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
     actions: {
       toggle: (fieldId, optionValue) => {
         const field = fields[fieldId];
+        if (field?.kind === "boolean") {
+          if (optionValue === "true" || optionValue === "false") {
+            const picked = optionValue === "true";
+            commit((state) => toggleBoolean(state, fieldId, field, picked, firstOperator(field)));
+          }
+          return;
+        }
         if (field?.kind !== "option" && field?.kind !== "multiOption") {
           return;
         }
@@ -783,14 +805,16 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
           return;
         }
         const upper = field.kind === "number" ? facetReader.range(fieldId)?.[1] : undefined;
+        const after = findFilter(setFilterOperator(filters, fieldId, field, operator, upper), fieldId);
         // A pick that removes the filter, since none of its values is still an option, is a
         // removal, and focus goes where a removal sends it.
-        if (
-          findFilter(filters, fieldId) !== undefined &&
-          findFilter(setFilterOperator(filters, fieldId, field, operator, upper), fieldId) === undefined
-        ) {
+        if (findFilter(filters, fieldId) !== undefined && after === undefined) {
           value.actions.remove(fieldId);
           return;
+        }
+        // A pick that turns a stale toggle on unmounts the chip's Operator, so focus goes to Remove.
+        if (isToggleOn(field, after)) {
+          pendingFocus.current = { chip: fieldId, edge: "last" };
         }
         commit((state) => setFilterOperator(state, fieldId, field, operator, upper));
       },
@@ -817,7 +841,8 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
       },
       edit: (fieldId) => {
         const field = fields[fieldId];
-        if (field === undefined) {
+        // A toggle that is on has no editor.
+        if (field === undefined || isToggleOn(field, findFilter(filters, fieldId))) {
           return;
         }
         // A move to another field is an exit for the editor it leaves.
@@ -832,7 +857,7 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
           enterEditor(fieldId, "code");
           return;
         }
-        if (field.kind === "option" || field.kind === "multiOption") {
+        if (field.kind === "option" || field.kind === "multiOption" || field.kind === "boolean") {
           return;
         }
         drill(fieldId, "edit");
@@ -936,6 +961,7 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
       hasContent: () => contentRegistered.current,
       hasValueContent: () => valueContentRegistered.current,
       neighbourOf,
+      focusChipEdge: (chip, edge) => focusTarget({ chip, edge }),
       focusLeft: (kind, popup) =>
         focusMovedElsewhere(popup, [
           ...overlays.current[kind],

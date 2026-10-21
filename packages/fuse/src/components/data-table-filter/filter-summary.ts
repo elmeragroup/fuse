@@ -3,7 +3,7 @@
 // `formatRange`.
 
 import { dateTimeFormat, listFormat, numberFormat } from "../../internal/intl-cache";
-import type { FilterField } from "./filter-fields";
+import type { BooleanFilterField, FilterField } from "./filter-fields";
 import { optionsOf } from "./filter-fields";
 import type { FilterValue } from "./filter-model";
 
@@ -21,6 +21,10 @@ export type SummaryStrings = {
   readonly moreValues: (count: string) => string;
   /** A text value in the locale's quotation marks. */
   readonly quoted: (text: string) => string;
+  /** A boolean's `true` when its field names none. */
+  readonly yes: string;
+  /** A boolean's `false` when its field names none. */
+  readonly no: string;
 };
 
 /** Option labels a summary shows before "+N". */
@@ -34,9 +38,9 @@ function utcDay(iso: string): Date {
  * Summarizes a filter value for its chip.
  *
  * @param value - The filter.
- * @param field - Its field, for option labels and the number format.
+ * @param field - Its field, for option labels, boolean labels and the number format.
  * @param locale - The locale to format in.
- * @param strings - The locale's `moreValues` and `quoted` rows.
+ * @param strings - The locale's `moreValues`, `quoted`, `yes` and `no` rows.
  * @returns The summary.
  */
 export function summarize(
@@ -80,6 +84,12 @@ export function summarize(
         value.values.length === 2
           ? dates.formatRange(utcDay(value.values[0]), utcDay(value.values[1]))
           : dates.format(utcDay(value.values[0]));
+      return { text, full: text };
+    }
+    case "boolean": {
+      const labels: Pick<BooleanFilterField, "trueLabel" | "falseLabel"> =
+        field.kind === "boolean" ? field : {};
+      const text = value.values[0] ? (labels.trueLabel ?? strings.yes) : (labels.falseLabel ?? strings.no);
       return { text, full: text };
     }
   }

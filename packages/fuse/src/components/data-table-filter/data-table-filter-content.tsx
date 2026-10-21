@@ -1,10 +1,11 @@
 "use client";
 
 // The add menu: a Base UI 1.9 filterable Menu, opened by the Trigger through a detached handle.
-// Option and multi-option fields are filterable submenus of checkbox items, ticked live. Text,
-// number and date fields drill in place: the field list gives way to that field's editor in the
-// same popup, which is a `dialog` under Menu.FilterProvider (`MenuFilterPopup.tsx`), so form
-// controls may live in it outside the `menu` list. Content is the Bar's sibling, not its child,
+// Option, multi-option and boolean fields are filterable submenus of checkbox items, ticked live,
+// and a boolean toggle is one checkbox row of the field list. Text, number and date fields drill
+// in place: the field list gives way to that field's editor in the same popup, which is a
+// `dialog` under Menu.FilterProvider (`MenuFilterPopup.tsx`), so form controls may live in it
+// outside the `menu` list. Content is the Bar's sibling, not its child,
 // because popup key events bubble through the React tree and the toolbar's roving handler must
 // never see them.
 
@@ -37,9 +38,10 @@ import type { EditorTarget } from "./data-table-filter";
 import { OptionCount } from "./data-table-filter-editors";
 import { DefaultEditor } from "./data-table-filter-value-content";
 import { dataTableFilterSlots as slots } from "./data-table-filter-variants";
-import type { FilterField, FilterFieldOfKind, FilterOption } from "./filter-fields";
-import { findFilter } from "./filter-model";
-import { matchOptions, OPTION_LIMIT, snapshotOrder } from "./option-list";
+import type { BooleanFilterField, FilterField, FilterFieldOfKind, FilterOption } from "./filter-fields";
+import { findFilter, isToggleOn } from "./filter-model";
+import { listSource, matchOptions, OPTION_LIMIT, pickedValues, snapshotOrder } from "./option-list";
+import type { ListField } from "./option-list";
 import { closeSubmenuOnBackspace, keepKeysFromToolbar, SearchableMenu } from "./searchable-menu";
 import { useContains } from "./use-contains";
 
@@ -161,10 +163,11 @@ export type DataTableFilterContentProps = Omit<
 
 /**
  * The add menu the Trigger opens, named "Add filter". Its field list filters by the search and
- * caps every value list at 50 rows. An option field opens a submenu of its values, ticked live. A
- * text, number or date field drills in place: its editor replaces the search and the list, values
- * apply live, and Back, Escape or a fresh Backspace in an empty text input return to the list with
- * the search kept and the field highlighted. The table stays scrollable while it is open.
+ * caps every value list at 50 rows. An option or boolean field opens a submenu of its values,
+ * ticked live, and a boolean toggle's row ticks it on and off. A text, number or date field drills
+ * in place: its editor replaces the search and the list, values apply live, and Back, Escape or a
+ * fresh Backspace in an empty text input return to the list with the search kept and the field
+ * highlighted. The table stays scrollable while it is open.
  */
 export function DataTableFilterContent({
   className,
@@ -385,7 +388,10 @@ export function DataTableFilterFieldList(_props: DataTableFilterFieldListProps):
                 return null;
               }
               const active = findFilter(state.filters, fieldId) !== undefined;
-              return field.kind === "option" || field.kind === "multiOption" ? (
+              if (field.kind === "boolean" && field.toggle === true) {
+                return <ToggleItem key={fieldId} fieldId={fieldId} field={field} />;
+              }
+              return field.kind === "option" || field.kind === "multiOption" || field.kind === "boolean" ? (
                 <FieldSubmenu key={fieldId} fieldId={fieldId} field={field} active={active} />
               ) : (
                 <FieldItem key={fieldId} fieldId={fieldId} field={field} active={active} />
@@ -473,8 +479,46 @@ function FieldItem({
 }
 
 /**
- * An option or multi-option field: a filterable submenu of its values with its own query and
- * the shared cap. On a narrow viewport neither inline side fits, so it falls back below its row
+ * A boolean toggle: one checkbox row that ticks the filter on and off, and keeps the menu open, as
+ * Menu.CheckboxItem does. Its check trails in the column where the other rows have their caret, so
+ * the labels line up. The count is the rows the toggle keeps, hidden from assistive technology so
+ * the row's name stays the field's.
+ */
+function ToggleItem({
+  fieldId,
+  field,
+}: {
+  readonly fieldId: string;
+  readonly field: BooleanFilterField;
+}): ReactElement {
+  const { state, actions, meta } = useFilterInternals("DataTableFilter.FieldList");
+  const counts = meta.facets.counts(fieldId);
+  const count = counts === undefined ? undefined : (counts.get("true") ?? 0);
+  return (
+    <MenuPrimitive.CheckboxItem
+      data-slot="data-table-filter-field"
+      data-field={fieldId}
+      data-toggle=""
+      label={field.label}
+      checked={isToggleOn(field, findFilter(state.filters, fieldId))}
+      onCheckedChange={() => {
+        actions.toggle(fieldId, "true");
+      }}
+      className={cn(menuItemClass, menuItemIndicatorRoomClass, slots.row())}>
+      <FieldRowContent field={field} active={false} />
+      {count === undefined ? null : <OptionCount count={count} />}
+      <span className={menuItemIndicatorClass}>
+        <MenuPrimitive.CheckboxItemIndicator>
+          <Check aria-hidden />
+        </MenuPrimitive.CheckboxItemIndicator>
+      </span>
+    </MenuPrimitive.CheckboxItem>
+  );
+}
+
+/**
+ * An option, multi-option or boolean field: a filterable submenu of its values with its own query
+ * and the shared cap. On a narrow viewport neither inline side fits, so it falls back below its row
  * through `fallbackAxisSide: "end"`, level with the menu's edge and as wide, covering only the
  * rows after its own.
  */
@@ -484,7 +528,7 @@ function FieldSubmenu({
   active,
 }: {
   readonly fieldId: string;
-  readonly field: OptionField;
+  readonly field: ListField;
   readonly active: boolean;
 }): ReactElement {
   const { actions, meta } = useFilterInternals("DataTableFilter.FieldList");
@@ -546,14 +590,15 @@ function OptionMenuBody({
   query,
 }: {
   readonly fieldId: string;
-  readonly field: OptionField;
+  readonly field: ListField;
   readonly query: string;
 }): ReactElement {
   const { state, meta } = useFilterInternals("DataTableFilter.FieldList");
-  const filter = findFilter(state.filters, fieldId);
-  const picked: readonly string[] = filter?.kind === field.kind ? filter.values : [];
+  const picked = pickedValues(field, findFilter(state.filters, fieldId));
   const counts = meta.facets.counts(fieldId);
-  const [order] = useState(() => snapshotOrder(field, picked, counts));
+  const [order] = useState(() =>
+    snapshotOrder(listSource(field, { yes: meta.format("yes"), no: meta.format("no") }), picked, counts)
+  );
   const contains = useContains(meta.locale);
   const matches = matchOptions(order, query, contains, OPTION_LIMIT);
   const searchLabel = meta.format("searchValues", { field: field.label });
@@ -595,15 +640,14 @@ function ValueItem({
   path = false,
 }: {
   readonly fieldId: string;
-  readonly field: OptionField;
+  readonly field: ListField;
   readonly option: FilterOption;
   readonly pinned?: boolean;
   /** A quick-search row, "Status › Pending", named "Status Pending". */
   readonly path?: boolean;
 }): ReactElement {
   const { state, actions, meta } = useFilterInternals("DataTableFilter.FieldList");
-  const filter = findFilter(state.filters, fieldId);
-  const picked: readonly string[] = filter?.kind === field.kind ? filter.values : [];
+  const picked = pickedValues(field, findFilter(state.filters, fieldId));
   const counts = meta.facets.counts(fieldId);
   const count = counts === undefined ? undefined : (counts.get(option.value) ?? 0);
   return (

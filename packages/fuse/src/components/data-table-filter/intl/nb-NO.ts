@@ -33,6 +33,8 @@ export const nbNO = {
   last30Days: "Siste 30 dager",
   thisMonth: "Denne måneden",
   thisYear: "I år",
+  yes: "Ja",
+  no: "Nei",
   "option.is": "er",
   "option.isNot": "er ikke",
   "option.isAnyOf": "er en av",
@@ -63,4 +65,6 @@ export const nbNO = {
   "date.isOnOrBefore": "er til og med",
   "date.isBetween": "er mellom",
   "date.isNotBetween": "er ikke mellom",
+  "boolean.is": "er",
+  "boolean.isNot": "er ikke",
 };

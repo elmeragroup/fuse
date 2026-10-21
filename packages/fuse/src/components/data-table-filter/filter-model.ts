@@ -3,14 +3,17 @@
 // only each entry's value, `{ kind, operator, values }`, and the operator fixes how many values it
 // holds.
 
-/** The five filter kinds. A field's kind decides its editor, its operators and its predicate. */
-export type FilterKind = "option" | "multiOption" | "text" | "number" | "date";
+/** The six filter kinds. A field's kind decides its editor, its operators and its predicate. */
+export type FilterKind = "option" | "multiOption" | "text" | "number" | "date" | "boolean";
 
 /** A calendar date written `YYYY-MM-DD`, with no time of day. `parseColumnFilters` checks the shape. */
 export type IsoDate = string;
 
 type One<T> = readonly [T];
 type Many<T> = readonly [T, T, ...T[]];
+
+/** One value a filter holds: an option value, a text, a number, an ISO date or a boolean. */
+type Scalar = string | number | boolean;
 
 /**
  * One column's filter, the `value` of a TanStack `columnFilters` entry. It names its kind, so a
@@ -56,7 +59,8 @@ export type FilterValue =
       readonly kind: "date";
       readonly operator: "isBetween" | "isNotBetween";
       readonly values: readonly [IsoDate, IsoDate];
-    };
+    }
+  | { readonly kind: "boolean"; readonly operator: "is" | "isNot"; readonly values: One<boolean> };
 
 /**
  * The operators of a kind, or of every kind when `K` is left out.
@@ -143,6 +147,10 @@ export const OPERATORS = {
     isBetween: { target: "range", negation: "isNotBetween", negated: false },
     isNotBetween: { target: "range", negation: "isBetween", negated: true },
   },
+  boolean: {
+    is: { target: "single", negation: "isNot", negated: false },
+    isNot: { target: "single", negation: "is", negated: true, optIn: true },
+  },
 } as const satisfies OperatorTable;
 
 /** The operator table as a lookup by an unparsed operator string. */
@@ -152,7 +160,7 @@ type OperatorLookup = { readonly [K in FilterKind]: Readonly<Record<string, Oper
 const OPERATOR_SPECS: OperatorLookup = OPERATORS;
 
 // The parse boundary. `columnFilters` values arrive untyped, since TanStack types each entry's
-// `value` as unknown and a URL or a request body carries anything. These two guards are the only
+// `value` as unknown and a URL or a request body carries anything. These guards are the only
 // runtime type checks, and every predicate below builds on them.
 
 /**
@@ -193,7 +201,19 @@ export function isFiniteNumber(value: unknown): value is number {
 }
 
 /**
- * Whether a value names one of the five kinds.
+ * Whether an untyped value is a boolean.
+ *
+ * @param value - The value to check.
+ * @returns Whether it is `true` or `false`.
+ */
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- the parse boundary over untyped filter state
+export function isBoolean(value: unknown): value is boolean {
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- the parse boundary over untyped filter state
+  return typeof value === "boolean";
+}
+
+/**
+ * Whether a value names one of the six kinds.
  *
  * @param kind - The value to check.
  * @returns Whether it is a filter kind.
@@ -264,17 +284,22 @@ export function isNegated(kind: FilterKind, operator: FilterOperator): boolean {
   return OPERATOR_SPECS[kind][operator]?.negated ?? false;
 }
 
-/** The part of a field the policy reads: its kind, its own operator list and, for option kinds, its options. */
+/**
+ * The part of a field the policy reads: its kind, its own operator list, for option kinds its
+ * options, and for a boolean whether it is a toggle.
+ */
 export type OperatorPolicy = {
   readonly kind: FilterKind;
   readonly operators?: readonly FilterOperator[] | undefined;
   readonly options?: readonly { readonly value: string }[] | undefined;
+  /** A boolean toggle allows only `is` and admits only `true`. */
+  readonly toggle?: boolean | undefined;
 };
 
 /**
- * Whether a field admits a filter value: the kinds match, the field allows the operator, and an
- * option value is one of the field's options. The parse and every reducer read this one rule, so
- * a value an action writes is one the Root shows as a chip.
+ * Whether a field admits a filter value: the kinds match, the field allows the operator, an
+ * option value is one of the field's options, and a toggle's value is `true`. The parse and every
+ * reducer read this one rule, so a value an action writes is one the Root shows as a chip.
  *
  * @param field - The field.
  * @param value - The filter value.
@@ -284,11 +309,27 @@ export function fieldAdmits(field: OperatorPolicy, value: FilterValue): boolean 
   if (value.kind !== field.kind || !allowedOperators(field).includes(value.operator)) {
     return false;
   }
+  if (value.kind === "boolean") {
+    return field.toggle !== true || value.values[0];
+  }
   if (value.kind !== "option" && value.kind !== "multiOption") {
     return true;
   }
   const known = new Set((field.options ?? []).map((option) => option.value));
   return value.values.every((item) => known.has(item));
+}
+
+/**
+ * Whether a boolean toggle is on: the field is a toggle, and it admits its filter, which is then
+ * `is` `true`. A toggle's filter from before the config changed, such as `is` `false`, is not on,
+ * so its chip still states it in full.
+ *
+ * @param field - The field.
+ * @param value - The field's filter, if any.
+ * @returns Whether the toggle is on.
+ */
+export function isToggleOn(field: OperatorPolicy, value: FilterValue | undefined): boolean {
+  return field.toggle === true && value !== undefined && fieldAdmits(field, value);
 }
 
 /** Upserts a value only when the field admits it, and otherwise leaves the state as it was. */
@@ -305,13 +346,17 @@ function upsertAdmitted(
  * The operators a field allows, in menu order: its own list, else its kind's defaults, without the
  * opt-in operators. A listed multi-value option operator also allows its one-value sibling,
  * because a filter starts from one tick and `isAnyOf` cannot hold one value. So `["isAnyOf"]`
- * allows `is` too, while `["is", "isNot"]` stays single-select. The parse, every reducer and every
- * editor read this one list, so every filter an action writes survives the parse.
+ * allows `is` too, while `["is", "isNot"]` stays single-select. A boolean toggle allows `is` alone,
+ * whatever it lists. The parse, every reducer and every editor read this one list, so every filter
+ * an action writes survives the parse.
  *
  * @param field - The field.
  * @returns The allowed operators.
  */
 export function allowedOperators(field: OperatorPolicy): readonly FilterOperator[] {
+  if (field.kind === "boolean" && field.toggle === true) {
+    return ["is"];
+  }
   const listed = field.operators ?? defaultOperatorsFor(field.kind);
   const allowed = [...listed];
   for (const operator of listed) {
@@ -430,6 +475,8 @@ function valuesFit(kind: FilterKind, values: readonly unknown[]): boolean {
     case "option":
     case "multiOption":
       return values.every(isString) && new Set(values).size === values.length;
+    case "boolean":
+      return values.every(isBoolean);
   }
 }
 
@@ -618,6 +665,43 @@ export function toggleOption(
 }
 
 /**
+ * Picks `true` or `false` on a boolean field. On a toggle, a pick of `true` turns it off when it
+ * is on, and otherwise writes `is` `true`, which also replaces a value the toggle no longer
+ * admits. A toggle ignores `false`, since off means no filter. On any other boolean field, a pick
+ * of the applied value removes the filter, and a pick of the other value replaces it in place,
+ * keeping the operator.
+ *
+ * @param state - The filter state.
+ * @param id - The column id.
+ * @param field - The boolean field's operators and whether it is a toggle.
+ * @param picked - The value picked.
+ * @param start - The operator a new filter starts from, the field's first.
+ * @returns The next state.
+ */
+export function toggleBoolean(
+  state: DataTableFilterState,
+  id: string,
+  field: OperatorPolicy & { readonly kind: "boolean" },
+  picked: boolean,
+  start: FilterOperator
+): DataTableFilterEntry[] {
+  const current = findFilter(state, id);
+  if (field.toggle === true) {
+    if (!picked) {
+      return [...state];
+    }
+    return isToggleOn(field, current)
+      ? removeFilter(state, id)
+      : upsertAdmitted(state, id, field, toFilterValue("boolean", "is", [true]));
+  }
+  const admitted = admittedPart(field, current);
+  if (admitted?.values[0] === picked) {
+    return removeFilter(state, id);
+  }
+  return upsertAdmitted(state, id, field, toFilterValue("boolean", admitted?.operator ?? start, [picked]));
+}
+
+/**
  * Sets a filter's operator and values. An empty list removes the filter, and an operator the
  * field does not allow or an invalid combination leaves the state as it was.
  *
@@ -633,7 +717,7 @@ export function setFilterValues(
   id: string,
   field: OperatorPolicy,
   operator: FilterOperator,
-  values: readonly (string | number)[]
+  values: readonly Scalar[]
 ): DataTableFilterEntry[] {
   if (values.length === 0) {
     return removeFilter(state, id);
@@ -653,6 +737,7 @@ export function setFilterValues(
  * `upper` the known maximum when it is above `v`, else `[v, v]`. A range becomes its first value.
  * The same target keeps the values.
  *
+ * @template T - The values' type.
  * @param kind - The field's kind.
  * @param from - The current operator.
  * @param to - The new operator.
@@ -660,13 +745,13 @@ export function setFilterValues(
  * @param upper - The known maximum, for a range.
  * @returns The converted values.
  */
-export function convertValues(
+export function convertValues<T extends Scalar>(
   kind: FilterKind,
   from: FilterOperator,
   to: FilterOperator,
-  values: readonly (string | number)[],
-  upper?: string | number
-): readonly (string | number)[] {
+  values: readonly T[],
+  upper?: T
+): readonly T[] {
   const fromTarget = targetOf(kind, from);
   const toTarget = targetOf(kind, to);
   const first = values[0];
@@ -721,7 +806,7 @@ export function setFilterOperator(
 type AdmittedPart = {
   readonly operator: FilterOperator | undefined;
   readonly applied: FilterOperator;
-  readonly values: readonly (string | number)[];
+  readonly values: readonly Scalar[];
 };
 
 /**
@@ -763,8 +848,8 @@ function admittedPart(field: OperatorPolicy, current: FilterValue | undefined): 
 function reconcileOperator(
   field: OperatorPolicy,
   operator: FilterOperator,
-  values: readonly (string | number)[]
-): { readonly operator: FilterOperator; readonly values: readonly (string | number)[] } | undefined {
+  values: readonly Scalar[]
+): { readonly operator: FilterOperator; readonly values: readonly Scalar[] } | undefined {
   const allowed = allowedOperators(field);
   const fitting = allowed.find((candidate) =>
     countFits(OPERATOR_SPECS[field.kind][candidate]?.target ?? "single", values.length)

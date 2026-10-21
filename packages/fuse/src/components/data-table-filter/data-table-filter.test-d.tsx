@@ -24,6 +24,7 @@ type Order = {
   readonly customer: string;
   readonly amount: number;
   readonly created: Date;
+  readonly rush: boolean;
 };
 
 const STATUS_OPTIONS = [
@@ -64,6 +65,11 @@ test("a field must fit its column's type", () => {
     customer: { kind: "text", label: "Customer", operators: ["isBetween"] },
   });
   defineOrderFields({ customer: { kind: "text", label: "Customer", operators: ["startsWith"] } });
+  defineOrderFields({ rush: { kind: "boolean", label: "Rush", toggle: true } });
+  defineOrderFields({
+    // @ts-expect-error -- a boolean column takes a boolean field
+    rush: { kind: "text", label: "Rush" },
+  });
 });
 
 test("an operator fixes its value's kind and arity", () => {
@@ -81,19 +87,35 @@ test("an operator fixes its value's kind and arity", () => {
   expectTypeOf([text, short, single]).toBeArray();
 });
 
+test("a boolean value holds one real boolean", () => {
+  expectTypeOf<FilterOperator<"boolean">>().toEqualTypeOf<"is" | "isNot">();
+  const rush: FilterValue = { kind: "boolean", operator: "is", values: [true] };
+  expectTypeOf(rush.values).toEqualTypeOf<readonly [boolean]>();
+  // @ts-expect-error -- a boolean value is true or false, not text
+  const text: FilterValue = { kind: "boolean", operator: "is", values: ["true"] };
+  expectTypeOf(text).toEqualTypeOf<FilterValue>();
+});
+
 test("facets fit each field's kind", () => {
   const fields = defineOrderFields({
     status: { kind: "option", label: "Status", options: STATUS_OPTIONS },
     amount: { kind: "number", label: "Amount" },
+    rush: { kind: "boolean", label: "Rush" },
   });
   type Facets = NonNullable<DataTableFilterRootProps<typeof fields>["facets"]>;
-  const facets: Facets = { status: { counts: { paid: 3 } }, amount: { range: [0, 10] } };
+  const facets: Facets = {
+    status: { counts: { paid: 3 } },
+    amount: { range: [0, 10] },
+    rush: { counts: { true: 3 } },
+  };
   expectTypeOf(facets).toEqualTypeOf<Facets>();
   // @ts-expect-error -- an option field takes counts, not a range
   const wrongStatus: Facets = { status: { range: [0, 1] } };
   // @ts-expect-error -- a number field takes a range, not counts
   const wrongAmount: Facets = { amount: { counts: {} } };
-  expectTypeOf([wrongStatus, wrongAmount]).toBeArray();
+  // @ts-expect-error -- a boolean field takes counts, not a range
+  const wrongRush: Facets = { rush: { range: [0, 1] } };
+  expectTypeOf([wrongStatus, wrongAmount, wrongRush]).toBeArray();
 });
 
 test("a map typed as FilterFieldMap takes facets of any kind", () => {

@@ -1,7 +1,53 @@
-// The order and the cap every option list shares: a value submenu, quick search and the chip's
+// The rows, order and cap every value list shares: a value submenu, quick search and the chip's
 // option editor. Pure functions the parts call while rendering.
 
-import type { FilterOption, MultiOptionFilterField, OptionFilterField } from "./filter-fields";
+import type { FilterFieldOfKind, FilterOption } from "./filter-fields";
+import type { FilterValue } from "./filter-model";
+
+/** A field whose values a list offers: an option, multi-option or boolean field. */
+export type ListField = FilterFieldOfKind<"option" | "multiOption" | "boolean">;
+
+/** The dictionary's names for a boolean's values, for a field that names none. */
+export type BooleanLabels = { readonly yes: string; readonly no: string };
+
+/** What a list's order reads: its options and, for an option field, its `order`. */
+export type ListSource = {
+  readonly options: readonly FilterOption[];
+  readonly order?: "options" | "count" | undefined;
+};
+
+/**
+ * The values a list field offers, and their order. A boolean field offers `"true"` and `"false"`
+ * in that order, named by its own labels or the dictionary's. A toggle offers only `"true"`, since
+ * off is no filter.
+ *
+ * @param field - The list field.
+ * @param labels - The dictionary's yes and no.
+ * @returns The list's options and order.
+ */
+export function listSource(field: ListField, labels: BooleanLabels): ListSource {
+  if (field.kind !== "boolean") {
+    return field;
+  }
+  const yes = { value: "true", label: field.trueLabel ?? labels.yes };
+  return {
+    options: field.toggle === true ? [yes] : [yes, { value: "false", label: field.falseLabel ?? labels.no }],
+  };
+}
+
+/**
+ * The option values a list field's filter picks. A boolean's value reads as `"true"` or `"false"`.
+ *
+ * @param field - The list field.
+ * @param filter - The field's filter, if any.
+ * @returns The picked values, none for a filter of another kind.
+ */
+export function pickedValues(field: ListField, filter: FilterValue | undefined): readonly string[] {
+  if (filter?.kind !== field.kind) {
+    return [];
+  }
+  return filter.kind === "boolean" ? [String(filter.values[0])] : filter.values;
+}
 
 /**
  * The most option rows a list renders. An option field may hold thousands of options, and Base
@@ -23,19 +69,19 @@ export type OptionOrder = {
  * `order: "count"`. Equal counts keep config order. A tick never moves a row while the list is
  * open.
  *
- * @param field - The option field.
+ * @param source - The list's options and order, such as an option field.
  * @param picked - The values picked as the list opens.
  * @param counts - The option counts, when known.
  * @returns The order.
  */
 export function snapshotOrder(
-  field: OptionFilterField | MultiOptionFilterField,
+  source: ListSource,
   picked: readonly string[],
   counts: ReadonlyMap<string, number> | undefined
 ): OptionOrder {
-  const pinned = field.options.filter((option) => picked.includes(option.value));
-  const rest = field.options.filter((option) => !picked.includes(option.value));
-  if (field.order !== "count" || counts === undefined) {
+  const pinned = source.options.filter((option) => picked.includes(option.value));
+  const rest = source.options.filter((option) => !picked.includes(option.value));
+  if (source.order !== "count" || counts === undefined) {
     return { pinned, rest };
   }
   // `toSorted` is stable, so equal counts keep their config order.
