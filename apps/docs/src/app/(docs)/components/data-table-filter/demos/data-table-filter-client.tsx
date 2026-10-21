@@ -129,7 +129,7 @@ export function DataTableFilterClient() {
   return (
     <table.AppTable>
       <DataTableFilter.Root table={table} fields={ORDER_FILTERS} timeZone="Europe/Oslo">
-        <div className="flex flex-col gap-4">
+        <div className="flex w-full min-w-0 flex-col gap-4">
           <DataTableFilter.Bar aria-label="Order filters" />
           {/* Siblings of the Bar, never its children. */}
           <DataTableFilter.Content />

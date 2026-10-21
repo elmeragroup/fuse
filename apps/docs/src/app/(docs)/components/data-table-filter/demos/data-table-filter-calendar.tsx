@@ -127,7 +127,7 @@ export function DataTableFilterCalendar() {
   return (
     <table.AppTable>
       <DataTableFilter.Root table={table} fields={ORDER_FILTERS} timeZone="Europe/Oslo">
-        <div className="flex flex-col gap-4">
+        <div className="flex w-full min-w-0 flex-col gap-4">
           {/* The default Bar, written out. */}
           <DataTableFilter.Bar aria-label="Order filters">
             <DataTableFilter.Trigger />

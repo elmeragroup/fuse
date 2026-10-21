@@ -165,7 +165,7 @@ export function DataTableFilterServer() {
   return (
     <table.AppTable>
       <DataTableFilter.Root table={table} fields={ORDER_FILTERS} facets={fetched?.page.facets}>
-        <div className="flex flex-col gap-4">
+        <div className="flex w-full min-w-0 flex-col gap-4">
           <DataTableFilter.Bar aria-label="Order filters" />
           <DataTableFilter.Content />
           <DataTableFilter.ValueContent />

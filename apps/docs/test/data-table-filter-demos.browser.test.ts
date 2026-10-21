@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DESKTOP_VIEWPORT, launchSuiteBrowser, openDemo } from "./demo-page";
+import { DESKTOP_VIEWPORT, expectInside, launchSuiteBrowser, openDemo } from "./demo-page";
 
 const browser = launchSuiteBrowser();
 
@@ -65,4 +65,27 @@ describe("DataTableFilter demos", () => {
       .toBe(1);
     await page.close();
   });
+
+  // A centred stage spills a too-wide demo past its left edge, where nothing scrolls to it. Each
+  // demo fills its stage instead: the bar wraps or scrolls its own strip, and the table scrolls in
+  // its own container.
+  const DEMOS = [
+    "Client filtering",
+    "Server filtering with facets",
+    "3,000 options",
+    "Full composition with a calendar",
+  ];
+  for (const width of [390, 1280]) {
+    for (const name of DEMOS) {
+      it(`keeps the ${name} demo's bar and table inside its stage at ${width}px`, async () => {
+        const page = await browser().newPage({ viewport: { width, height: 844 } });
+        const demo = await openDemo(page, "data-table-filter", name);
+        // DOM audit: the stage and the table's scroll container have no landmark role of their own.
+        const stage = demo.locator("[data-demo-stage]");
+        await expectInside(demo.getByRole("toolbar", { name: "Order filters", exact: true }), stage);
+        await expectInside(demo.locator('[data-slot="table-container"]'), stage);
+        await page.close();
+      });
+    }
+  }
 });
