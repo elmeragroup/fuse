@@ -350,6 +350,12 @@ export const EditorTargetContext = createContext<EditorTarget | null>(null);
  * The request stays until the next edit or close, because Base UI's Viewport mounts the new
  * editor once more as it swaps the previous one out, and the editor it focused first unmounts.
  *
+ * The focus waits for the render after mount, which React runs synchronously in the same task, so
+ * it still lands before Base UI's focus manager looks for focus lost with the previous editor. A
+ * Base UI composite, such as the date presets' toggle group, numbers its items in that render, and
+ * an item focused in the mount commit would report no index: the group would highlight none, and
+ * the first arrow key would only land on the first item.
+ *
  * @template T - The element type the ref attaches to.
  * @param key - The editor's focus request key.
  * @returns A ref for the control or a wrapper around it.
@@ -357,12 +363,17 @@ export const EditorTargetContext = createContext<EditorTarget | null>(null);
 export function useFocusRequest<T extends HTMLElement>(key: string) {
   const { state } = useFilterInternals("useFocusRequest");
   const ref = useRef<T>(null);
+  const [mounted, setMounted] = useState(false);
   const { focusRequest } = state;
   useLayoutEffect(() => {
-    if (focusRequest === key && ref.current !== null) {
+    // oxlint-disable-next-line react/set-state-in-effect -- the render after mount is the point: Base UI composites number their items in it, and the focus below waits for it
+    setMounted(true);
+  }, []);
+  useLayoutEffect(() => {
+    if (mounted && focusRequest === key && ref.current !== null) {
       resolveFocusTarget(ref.current)?.focus({ preventScroll: true });
     }
-  }, [focusRequest, key]);
+  }, [mounted, focusRequest, key]);
   return ref;
 }
 

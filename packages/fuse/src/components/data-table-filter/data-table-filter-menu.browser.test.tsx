@@ -915,6 +915,17 @@ describe("DataTableFilter add menu motion and placement", () => {
     expect(getComputedStyle(popup).transitionProperty).not.toContain("height");
     expect(popup.style.height).toBe("");
   });
+
+  it("moves between the date presets with the arrow keys as soon as a drill opens them", async () => {
+    renderOrders({ initial: [] });
+    await openMenu();
+    await userEvent.click(roleNamed("menuitem", "Created"));
+    await expect.poll(() => focusIs("button", "Today")).toBe(true);
+    // The focused preset holds the group's one tab stop.
+    expect(roleNamed("button", "Today").tabIndex).toBe(0);
+    await userEvent.keyboard("{ArrowRight}");
+    await expect.poll(() => focusIs("button", "Last 7 days")).toBe(true);
+  });
 });
 
 describe("DataTableFilter in-place editor overflow", () => {
