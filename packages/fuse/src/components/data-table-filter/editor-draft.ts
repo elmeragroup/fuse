@@ -6,6 +6,7 @@ import type { FilterField } from "./filter-fields";
 import { firstOperator } from "./filter-fields";
 import type { FilterKind, FilterOperator, FilterValue } from "./filter-model";
 import { isFiniteNumber, isIsoDate, targetOf } from "./filter-model";
+import { isListField, isListKind } from "./option-list";
 
 /** An operator and its values, one per position. */
 export type DraftValues = {
@@ -48,12 +49,8 @@ export function draftFor(
   range: readonly [number, number] | undefined
 ): EditorDraft {
   if (filter !== undefined) {
-    // A boolean writes on each pick, as an option does, so its draft holds no values.
-    return {
-      operator: filter.operator,
-      values: filter.kind === "boolean" ? [] : filter.values,
-      edited: false,
-    };
+    // A list writes on each pick, so its draft holds no values.
+    return { operator: filter.operator, values: isListField(filter) ? [] : filter.values, edited: false };
   }
   const operator = firstOperator(field);
   if (field.kind === "number" && range !== undefined && targetOf("number", operator) === "range") {
@@ -134,12 +131,7 @@ export function draftWrite(
   applied: FilterValue | undefined,
   range: readonly [number, number] | undefined
 ): DraftValues | undefined {
-  if (
-    kind === "option" ||
-    kind === "multiOption" ||
-    kind === "boolean" ||
-    (applied === undefined && !draft.edited)
-  ) {
+  if (isListKind(kind) || (applied === undefined && !draft.edited)) {
     return undefined;
   }
   if (kind === "text" && String(draft.values[0] ?? "").trim() === "") {

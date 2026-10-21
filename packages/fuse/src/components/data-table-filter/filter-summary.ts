@@ -3,9 +3,10 @@
 // `formatRange`.
 
 import { dateTimeFormat, listFormat, numberFormat } from "../../internal/intl-cache";
-import type { BooleanFilterField, FilterField } from "./filter-fields";
+import type { FilterField } from "./filter-fields";
 import { optionsOf } from "./filter-fields";
 import type { FilterValue } from "./filter-model";
+import { booleanLabel } from "./option-list";
 
 /** A summary and the whole value it may shorten. */
 export type FilterSummary = {
@@ -87,9 +88,7 @@ export function summarize(
       return { text, full: text };
     }
     case "boolean": {
-      const labels: Pick<BooleanFilterField, "trueLabel" | "falseLabel"> =
-        field.kind === "boolean" ? field : {};
-      const text = value.values[0] ? (labels.trueLabel ?? strings.yes) : (labels.falseLabel ?? strings.no);
+      const text = booleanLabel(field.kind === "boolean" ? field : {}, value.values[0], strings);
       return { text, full: text };
     }
   }

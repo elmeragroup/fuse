@@ -1,14 +1,62 @@
 // The rows, order and cap every value list shares: a value submenu, quick search and the chip's
 // option editor. Pure functions the parts call while rendering.
 
-import type { FilterFieldOfKind, FilterOption } from "./filter-fields";
-import type { FilterValue } from "./filter-model";
+import type { BooleanFilterField, FilterFieldOfKind, FilterOption } from "./filter-fields";
+import type { FilterKind, FilterValue } from "./filter-model";
+
+/**
+ * The kinds whose values a list offers. A list commits on each pick, while every other kind edits
+ * a draft that settles into one write.
+ */
+export const LIST_KINDS = ["option", "multiOption", "boolean"] as const;
+
+/** A kind whose values a list offers. */
+export type ListKind = (typeof LIST_KINDS)[number];
 
 /** A field whose values a list offers: an option, multi-option or boolean field. */
-export type ListField = FilterFieldOfKind<"option" | "multiOption" | "boolean">;
+export type ListField = FilterFieldOfKind<ListKind>;
+
+/**
+ * Whether a kind's values come from a list.
+ *
+ * @param kind - The kind.
+ * @returns Whether it is an option, multi-option or boolean kind.
+ */
+export function isListKind(kind: FilterKind): kind is ListKind {
+  const kinds: readonly FilterKind[] = LIST_KINDS;
+  return kinds.includes(kind);
+}
+
+/**
+ * Whether a field's values come from a list. A filter narrows the same way, by its kind.
+ *
+ * @param field - The field, or its filter.
+ * @returns Whether it is an option, multi-option or boolean field.
+ */
+export function isListField<T extends { readonly kind: FilterKind }>(
+  field: T
+): field is Extract<T, { readonly kind: ListKind }> {
+  return isListKind(field.kind);
+}
 
 /** The dictionary's names for a boolean's values, for a field that names none. */
 export type BooleanLabels = { readonly yes: string; readonly no: string };
+
+/**
+ * A boolean value's name: the field's own label for it, else the dictionary's.
+ *
+ * @param field - The field's labels, empty for a field that names none.
+ * @param value - The value.
+ * @param labels - The dictionary's yes and no.
+ * @returns The name.
+ */
+export function booleanLabel(
+  field: Pick<BooleanFilterField, "trueLabel" | "falseLabel">,
+  value: boolean,
+  labels: BooleanLabels
+): string {
+  return value ? (field.trueLabel ?? labels.yes) : (field.falseLabel ?? labels.no);
+}
 
 /** What a list's order reads: its options and, for an option field, its `order`. */
 export type ListSource = {
@@ -29,9 +77,10 @@ export function listSource(field: ListField, labels: BooleanLabels): ListSource 
   if (field.kind !== "boolean") {
     return field;
   }
-  const yes = { value: "true", label: field.trueLabel ?? labels.yes };
+  const yes = { value: "true", label: booleanLabel(field, true, labels) };
   return {
-    options: field.toggle === true ? [yes] : [yes, { value: "false", label: field.falseLabel ?? labels.no }],
+    options:
+      field.toggle === true ? [yes] : [yes, { value: "false", label: booleanLabel(field, false, labels) }],
   };
 }
 

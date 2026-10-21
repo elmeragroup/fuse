@@ -41,7 +41,14 @@ import { DefaultEditor } from "./data-table-filter-value-content";
 import { dataTableFilterSlots as slots } from "./data-table-filter-variants";
 import type { BooleanFilterField, FilterField, FilterFieldOfKind, FilterOption } from "./filter-fields";
 import { findFilter, isToggleOn } from "./filter-model";
-import { listSource, matchOptions, OPTION_LIMIT, pickedValues, snapshotOrder } from "./option-list";
+import {
+  isListField,
+  listSource,
+  matchOptions,
+  OPTION_LIMIT,
+  pickedValues,
+  snapshotOrder,
+} from "./option-list";
 import type { ListField } from "./option-list";
 import { closeSubmenuOnBackspace, keepKeysFromToolbar, SearchableMenu } from "./searchable-menu";
 import { useContains } from "./use-contains";
@@ -394,7 +401,7 @@ export function DataTableFilterFieldList(_props: DataTableFilterFieldListProps):
               if (field.kind === "boolean" && field.toggle === true) {
                 return <ToggleItem key={fieldId} fieldId={fieldId} field={field} />;
               }
-              return field.kind === "option" || field.kind === "multiOption" || field.kind === "boolean" ? (
+              return isListField(field) ? (
                 <FieldSubmenu key={fieldId} fieldId={fieldId} field={field} active={active} />
               ) : (
                 <FieldItem key={fieldId} fieldId={fieldId} field={field} active={active} />

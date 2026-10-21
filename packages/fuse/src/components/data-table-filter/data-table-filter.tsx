@@ -53,6 +53,7 @@ import {
 import { viewColumnFilters } from "./filter-parse";
 import { dataTableFilterStrings } from "./intl";
 import type { DataTableFilterStringKey } from "./intl";
+import { isListField } from "./option-list";
 
 export type { FacetReader } from "./filter-facets";
 
@@ -857,7 +858,7 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
           enterEditor(fieldId, "code");
           return;
         }
-        if (field.kind === "option" || field.kind === "multiOption" || field.kind === "boolean") {
+        if (isListField(field)) {
           return;
         }
         drill(fieldId, "edit");

@@ -40,7 +40,14 @@ import type { DateFilterField, FilterOption, NumberFilterField, TextFilterField 
 import { calendarDateIn } from "./filter-match";
 import type { FilterOperator, IsoDate } from "./filter-model";
 import { addDays, allowedOperators, isFiniteNumber, isIsoDate, isOperatorOf, targetOf } from "./filter-model";
-import { listSource, matchOptions, OPTION_LIMIT, pickedValues, snapshotOrder } from "./option-list";
+import {
+  LIST_KINDS,
+  listSource,
+  matchOptions,
+  OPTION_LIMIT,
+  pickedValues,
+  snapshotOrder,
+} from "./option-list";
 import type { ListField } from "./option-list";
 import { useContains } from "./use-contains";
 
@@ -65,7 +72,7 @@ export function OptionCount({ count }: { readonly count: number }): ReactElement
 
 /** Edits an option, multi-option or boolean filter. Renders nothing for other kinds. */
 export function DataTableFilterOptionEditor(props: DataTableFilterKindEditorProps): ReactElement | null {
-  const editor = useKindEditor("DataTableFilter.OptionEditor", ["option", "multiOption", "boolean"]);
+  const editor = useKindEditor("DataTableFilter.OptionEditor", LIST_KINDS);
   return editor === null ? null : <OptionEditorBody editor={editor} {...props} />;
 }
 

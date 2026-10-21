@@ -49,6 +49,7 @@ import { resolveFocusTarget } from "./filter-focus";
 import type { FilterOperator } from "./filter-model";
 import { convertValues, filterValuesEqual, findFilter, isToggleOn } from "./filter-model";
 import { OperatorOptions, useOperatorItems } from "./operator-options";
+import { isListField } from "./option-list";
 
 /**
  * The props of `DataTableFilter.ValueContent`: Base UI Popover Popup's, except `initialFocus` and
@@ -361,7 +362,7 @@ function EditorFrame({
     back,
     isComposing: composition.isComposing,
   };
-  const operatorInHeader = field.kind === "text" || field.kind === "number" || field.kind === "date";
+  const operatorInHeader = !isListField(field);
   const title = (
     <>
       {field.icon === undefined ? null : (

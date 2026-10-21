@@ -5,6 +5,7 @@
 import type { ReactNode } from "react";
 
 import type { FilterKind, FilterOperator } from "./filter-model";
+import { allowedOperators } from "./filter-model";
 
 type FieldBase = {
   /** The field's name: the chip's subject, the menu row and the editor's title. */
@@ -212,11 +213,7 @@ export type AnyFilterFacets = {
  * @returns The operator.
  */
 export function firstOperator(field: FilterField): FilterOperator {
-  // A toggle allows only `is`, whatever it lists.
-  if (field.kind === "boolean" && field.toggle === true) {
-    return "is";
-  }
-  const [first] = field.operators ?? [];
+  const [first] = field.operators === undefined ? [] : allowedOperators(field);
   if (first !== undefined) {
     return first;
   }
