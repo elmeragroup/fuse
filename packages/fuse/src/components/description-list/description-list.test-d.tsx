@@ -14,7 +14,9 @@ import { DescriptionList } from "@elmeragroup/fuse/description-list";
 
 test("public API exports only the namespace and part prop types, with native attributes, Heading render, and no as prop", () => {
   expectTypeOf<DescriptionListRootProps>().toEqualTypeOf<ComponentProps<"div">>();
-  expectTypeOf<DescriptionListContentProps>().toEqualTypeOf<ComponentProps<"dl">>();
+  expectTypeOf<DescriptionListContentProps>().toEqualTypeOf<
+    ComponentProps<"dl"> & { layout?: "responsive" | "inline" }
+  >();
   expectTypeOf<DescriptionListTermProps>().toEqualTypeOf<ComponentProps<"dt">>();
   expectTypeOf<DescriptionListDetailsProps>().toEqualTypeOf<ComponentProps<"dd">>();
   expectTypeOf<DescriptionListRootProps["ref"]>().toEqualTypeOf<ComponentProps<"div">["ref"]>();
@@ -38,6 +40,11 @@ test("public API exports only the namespace and part prop types, with native att
   );
   const _ref = <DescriptionList.Root ref={null} />;
 
+  const _inline = <DescriptionList.Content layout="inline" />;
+  // @ts-expect-error layout is responsive or inline
+  const _badLayout = <DescriptionList.Content layout="stacked" />;
+  // @ts-expect-error only the content takes a layout
+  const _termLayout = <DescriptionList.Term layout="inline" />;
   // @ts-expect-error polymorphism is never an as prop
   const _noAs = <DescriptionList.Root as="section" />;
 });

@@ -40,7 +40,17 @@
         "@types/react"
       ],
       "forwardedCount": 280,
-      "props": []
+      "props": [
+        {
+          "name": "layout",
+          "origin": "declared",
+          "type": "\"inline\" | \"responsive\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"responsive\"",
+          "description": "How terms and details sit. `responsive` stacks each details under its term on phones and sets them in two columns, with a rule between rows, from `sm` up. `inline` keeps each term and its details on one row at every width, for label/value rows in cards and summaries: the details align to the end, a short one never wraps and a long one wraps within 60% of the row. Inline rows take the label type, have no rules and space with the small surface gap, and the term is not muted. A colour class on a cell wins in both layouts. The inline cells' padding, rules, column and alignment come from the list, so override them with a `[:where([data-layout=inline])>&]:` class or a CSS rule. Defaults to `responsive`.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "DescriptionList.Term",
