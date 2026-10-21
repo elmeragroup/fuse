@@ -179,6 +179,10 @@ describe("the shared child selectors", () => {
     expect(selected("[&_svg:not([class*='size-'])]")).toEqual(["start", "end", "bare", "spinner"]);
   });
 
+  it("reach every direct icon with [&>svg], and not the spinner inside its span", () => {
+    expect(selected("[&>svg]")).toEqual(["start", "end", "bare"]);
+  });
+
   it("reach only a direct icon that is not an end icon with [&>svg:not([data-icon=inline-end])]", () => {
     expect(selected("[&>svg:not([data-icon=inline-end])]")).toEqual(["start", "bare"]);
   });
@@ -219,6 +223,11 @@ describe("one meaning per variant", () => {
       "both a fact and an omission",
       { facts: new Map([["aria-pressed", always]]), omittedStates: new Set(["aria-pressed"]) },
       "aria-pressed",
+    ],
+    [
+      "both a fact and an omitted pseudo-element",
+      { facts: new Map([["after", always]]), omittedPseudoElements: new Map([["after", "a hit area"]]) },
+      "after",
     ],
   ])("refuses %s", (_case, overrides: Partial<Definition>, variant) => {
     expect(() => makeStateTable(definition({ axes: [CONTROL_STATES], ...overrides }))).toThrow(

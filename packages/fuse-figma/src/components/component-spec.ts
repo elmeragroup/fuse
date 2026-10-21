@@ -154,6 +154,11 @@ export type ComponentDefinition = BoxDefinition & {
    * the recipe fails the gate.
    */
   readonly omittedStates: ReadonlySet<string>;
+  /**
+   * The pseudo-elements the kit draws no layer for, such as `after` for a hit area, each with the
+   * reason a designer reads in the coverage table. A class on one of them lands there as dropped.
+   */
+  readonly omittedPseudoElements?: ReadonlyMap<string, string>;
   /** The INSTANCE_SWAP properties, each with the export name of the icon it starts with. */
   readonly swapProperties: readonly SwapPropertySpec[];
 };
@@ -353,6 +358,40 @@ function readAlign(reader: LayerStyle, property: string, axis: string): AlignSpe
   )?.align;
 }
 
+/**
+ * Read how a box lays out its layers. A flex box is a horizontal auto layout that places them by
+ * `align-items` and `justify-content`. A grid with no template stacks each layer in a row of its
+ * own, so a grid with `place-content: center` is an auto layout centered on both axes only
+ * around one layer. Any other grid stays unmapped.
+ *
+ * @param layers - How many layers the box holds in the cell.
+ * @returns The alignment on each axis.
+ */
+function readLayout(reader: LayerStyle, layers: number): Pick<BoxSpec, "primaryAlign" | "counterAlign"> {
+  if (normalizeCss(reader.raw("display") ?? "") === "grid") {
+    const centered =
+      layers === 1 &&
+      reader.read(
+        "place-content",
+        (value) => (normalizeCss(value) === "center" ? true : undefined),
+        () => ({ outcome: "literal", detail: "centered on both axes" })
+      ) === true;
+    reader.read(
+      "display",
+      (value) => (centered ? value : undefined),
+      () => ({ outcome: "literal", detail: "an auto layout around its one layer" })
+    );
+    return { primaryAlign: "CENTER", counterAlign: "CENTER" };
+  }
+  const display = literalLayout(["inline-flex", "flex"], "a horizontal auto layout");
+  reader.read("display", display.map, display.describe);
+  // An unset alignment stays centered, as every root drew before parts. CSS packs it at the start
+  // and stretches it, which shows only where a box has room to spare or children of unequal height.
+  const counterAlign = readAlign(reader, "align-items", "counter") ?? "CENTER";
+  const primaryAlign = readAlign(reader, "justify-content", "primary") ?? "CENTER";
+  return { primaryAlign, counterAlign };
+}
+
 /** What the mapping of every layer of one cell reads besides the layer's own style. */
 type MapScope = {
   readonly definition: ComponentDefinition;
@@ -375,12 +414,6 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
   const color = (property: string): ColorSpec | undefined =>
     reader.read(property, (value) => readColor(value, context.variables), describeColor);
 
-  const display = literalLayout(["inline-flex", "flex"], "a horizontal auto layout");
-  reader.read("display", display.map, display.describe);
-  // An unset alignment stays centered, as every root drew before parts. CSS packs it at the start
-  // and stretches it, which shows only where a box has room to spare or children of unequal height.
-  const counterAlign = readAlign(reader, "align-items", "counter") ?? "CENTER";
-  const primaryAlign = readAlign(reader, "justify-content", "primary") ?? "CENTER";
   for (const [property, layout] of [
     ["box-sizing", literalLayout(["border-box"], "strokes count in the auto layout")],
     ["white-space", literalLayout(["nowrap"], "the label hugs its width")],
@@ -424,9 +457,30 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
     children.push(mapLabel(definition, label, cell, reader, context, textColor));
   }
   children.push(...end);
+  // The layout reads once the children are known, since a grid maps only around one layer.
+  const { primaryAlign, counterAlign } = readLayout(reader, children.length);
+  const width = number("width");
+  reader.read(
+    "position",
+    (value) => (normalizeCss(value) === "relative" ? value : undefined),
+    () => ({
+      outcome: "dropped",
+      detail: "it only anchors positioned descendants, which auto layout does not need",
+    })
+  );
+  reader.read(
+    "max-width",
+    (value) => {
+      const max = readNumber(value, context.variables);
+      return max?.kind === "literal" && width?.kind === "literal" && max.value >= width.value
+        ? max
+        : undefined;
+    },
+    () => ({ outcome: "dropped", detail: "it is no less than the fixed width, so it never narrows the box" })
+  );
 
   return {
-    width: number("width"),
+    width,
     height: number("height"),
     minWidth: number("min-width"),
     paddingTop: number("padding-top") ?? ZERO,

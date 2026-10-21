@@ -10,6 +10,7 @@
  */
 import { BADGE } from "./badge-kit";
 import { BUTTON, ICON_BUTTON } from "./button-kit";
+import { CHECKBOX } from "./checkbox-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
 import { KBD } from "./kbd-kit";
@@ -40,6 +41,9 @@ const KBD_PAGE: KitPage = { slug: "kbd", name: "Kbd" };
 
 /** The page of the radio controls, Radio icon button first. */
 const RADIO_PAGE: KitPage = { slug: "radio", name: "Radio" };
+
+/** The page Checkbox sits on alone. */
+const CHECKBOX_PAGE: KitPage = { slug: "checkbox", name: "Checkbox" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -121,4 +125,5 @@ export const KIT: readonly KitEntry[] = [
   { definition: BADGE, page: BADGE_PAGE, previewCells: matrixCells(BADGE.axes) },
   { definition: KBD, page: KBD_PAGE, previewCells: matrixCells(KBD.axes) },
   { definition: RADIO_ICON_BUTTON, page: RADIO_PAGE, previewCells: matrixCells(RADIO_ICON_BUTTON.axes) },
+  { definition: CHECKBOX, page: CHECKBOX_PAGE, previewCells: matrixCells(CHECKBOX.axes) },
 ];

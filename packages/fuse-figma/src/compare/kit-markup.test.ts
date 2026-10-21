@@ -5,11 +5,12 @@
  * compare the wrong box. A radio renders inside its `RadioGroup`, so its root is not at the top.
  *
  * Unit under test: each kit definition's attribute conditions, the cells where its state table
- * holds each variant of `ATTRIBUTE_VARIANTS`, and its icon slots from `iconsFor`. Oracle: the
- * static markup the real Fuse component renders for every preview cell, through the definition's
- * compare renderer. A condition must hold in a cell exactly when the measured element carries the
- * attribute its variant selects, and the slots must match the measured element's `<svg>`
- * descendants in order, each as direct or nested and with its `data-icon`. The pseudo-class
+ * holds each variant of `ATTRIBUTE_VARIANTS`, and the icon slots the root and each part the cell
+ * renders list in `iconsFor`. Oracle: the static markup the real Fuse component renders for every
+ * preview cell, through the definition's compare renderer. A condition must hold in a cell exactly
+ * when the measured element carries the attribute its variant selects, and the slots must match
+ * the measured element's `<svg>` descendants in order, each under the part that lists it, as a
+ * child of that part or nested deeper, and with its `data-icon`. The pseudo-class
  * variants, `enabled-hover:` and `focus-visible:`, stay out, since static markup cannot show
  * them, and so does the icon edge, which the slots check.
  */
@@ -19,7 +20,7 @@ import { elementsOf } from "../../test/static-markup";
 import type { MarkupElement } from "../../test/static-markup";
 import { splitClassName } from "../components/class-name";
 import { matrixCells, variantKey } from "../components/component-spec";
-import type { IconSlot } from "../components/component-spec";
+import type { BoxDefinition, Cell, IconSlot } from "../components/component-spec";
 import { KIT } from "../components/kit-registry";
 import { makeStateTable } from "../components/state-table";
 import { loadRenderers, renderCellHtml } from "./cell-renderers";
@@ -36,6 +37,10 @@ const ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => boolean>(
   ["aria-pressed", (element) => element.attributes.get("aria-pressed") === "true"],
   ["data-pressed", (element) => element.attributes.has("data-pressed")],
   ["data-checked", (element) => element.attributes.has("data-checked")],
+  ["data-indeterminate", (element) => element.attributes.has("data-indeterminate")],
+  // `aria-checked:` compiles to `[aria-checked="true"]`, which a mixed checkbox's
+  // `aria-checked="mixed"` does not match.
+  ["aria-checked", (element) => element.attributes.get("aria-checked") === "true"],
   ["aria-invalid", (element) => element.attributes.get("aria-invalid") === "true"],
   ["data-invalid", (element) => element.attributes.has("data-invalid")],
   ["data-[pending-indicator]", (element) => element.attributes.has("data-pending-indicator")],
@@ -52,26 +57,76 @@ const NOT_ATTRIBUTES = new Set([
   "has-data-[icon=inline-end]",
 ]);
 
-/** An icon as the markup holds it, in the terms of an icon slot. */
-type MarkupIcon = Pick<IconSlot, "direct" | "dataIcon">;
+/**
+ * An icon as the markup holds it, in the terms of an icon slot, with the part that lists it:
+ * its nearest ancestor whose `data-slot` names the root or one of its parts. `direct` means a
+ * child of that part.
+ */
+type MarkupIcon = Pick<IconSlot, "direct" | "dataIcon"> & { readonly owner: string };
 
 function isDescendant(elements: readonly MarkupElement[], index: number, ancestor: number): boolean {
   const parent = elements[index]?.parent;
   return parent !== undefined && (parent === ancestor || isDescendant(elements, parent, ancestor));
 }
 
-/** The `<svg>` elements inside the measured element, with the `data-icon` they or their parent carry. */
-function markupIcons(elements: readonly MarkupElement[], measured: number): readonly MarkupIcon[] {
+/** The nearest ancestor of an element whose `data-slot` is one of `slots`. */
+function ownerOf(
+  elements: readonly MarkupElement[],
+  index: number,
+  slots: ReadonlySet<string>
+): { readonly index: number; readonly slot: string } | undefined {
+  const parent = elements[index]?.parent;
+  if (parent === undefined) {
+    return undefined;
+  }
+  const slot = elements[parent]?.attributes.get("data-slot");
+  return slot !== undefined && slots.has(slot) ? { index: parent, slot } : ownerOf(elements, parent, slots);
+}
+
+/**
+ * The `<svg>` elements inside the measured element, each with its owning part and the
+ * `data-icon` it or its parent carries.
+ */
+function markupIcons(
+  elements: readonly MarkupElement[],
+  measured: number,
+  slots: ReadonlySet<string>
+): readonly MarkupIcon[] {
   return elements.flatMap((element, index): MarkupIcon[] => {
-    if (element.name !== "svg" || !isDescendant(elements, index, measured)) {
+    const owner = ownerOf(elements, index, slots);
+    if (element.name !== "svg" || owner === undefined || !isDescendant(elements, index, measured)) {
       return [];
     }
-    const direct = element.parent === measured;
+    const direct = element.parent === owner.index;
     const parent = element.parent === undefined ? undefined : elements[element.parent];
     const marker =
       element.attributes.get("data-icon") ?? (direct ? undefined : parent?.attributes.get("data-icon"));
-    return [{ direct, dataIcon: marker === "inline-start" || marker === "inline-end" ? marker : undefined }];
+    return [
+      {
+        owner: owner.slot,
+        direct,
+        dataIcon: marker === "inline-start" || marker === "inline-end" ? marker : undefined,
+      },
+    ];
   });
+}
+
+/** Every box of a definition, the root or a part, by the name its layer takes. */
+function boxNames(box: BoxDefinition, name: string): readonly string[] {
+  return [name, ...(box.parts ?? []).flatMap((part) => boxNames(part, part.slot ?? part.key))];
+}
+
+/**
+ * The icons a cell places in a box and the parts it renders below it, in DOM order: a part's
+ * icons sit inside it, before the box's own.
+ */
+function slotIcons(box: BoxDefinition, name: string, cell: Cell): readonly MarkupIcon[] {
+  return [
+    ...(box.parts ?? [])
+      .filter((part) => part.shownIn(cell))
+      .flatMap((part) => slotIcons(part, part.slot ?? part.key, cell)),
+    ...box.iconsFor(cell).map(({ direct, dataIcon }) => ({ owner: name, direct, dataIcon })),
+  ];
 }
 
 describe("each kit definition against the markup of its component", () => {
@@ -124,10 +179,9 @@ describe("each kit definition against the markup of its component", () => {
             const holds = meaning.kind === "condition" && meaning.holds(cell);
             expect(holds, `${key}: ${variant}`).toBe(carries(root));
           }
-          expect(
-            definition.iconsFor(cell).map(({ direct, dataIcon }) => ({ direct, dataIcon })),
-            key
-          ).toEqual(markupIcons(elements, measured));
+          expect(slotIcons(definition, definition.slot, cell), key).toEqual(
+            markupIcons(elements, measured, new Set(boxNames(definition, definition.slot)))
+          );
         }
       }
     }

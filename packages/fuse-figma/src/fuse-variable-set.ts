@@ -185,6 +185,8 @@ type DimensionTokenName = Extract<TokenEntry, { readonly kind: "dimension" }>["n
  * - The compact corner is `compactCornerClass` in `corner-radius.ts`, which the xs Toggle
  *   rounds with. Internal themes step 0px, which gives `--radius`, and external themes step
  *   2px, which gives `radius-md` capped at 10px.
+ * - The checkbox corner is `checkboxCornerClass` in `corner-radius.ts`, which the Checkbox box
+ *   rounds with: `radius-md` capped at 4px.
  */
 const FORMULA_VARIABLES = [
   {
@@ -217,6 +219,14 @@ const FORMULA_VARIABLES = [
     scopes: ["CORNER_RADIUS"],
     description:
       "The corner of a compact button in a toolbar, such as the xs Toggle: radius in internal themes, and radius-md capped at 10px in external ones. Figma variables cannot compute, so the sync writes the result for each theme.",
+  },
+  {
+    name: "radius-checkbox",
+    formula: "min(calc(var(--radius) - var(--radius-step, 0px)), 4px)",
+    length: (scheme: ResolvedScheme) => Math.min(scheme.rungs["radius-md"].value, 4),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner of the Checkbox box: radius-md capped at 4px. Figma variables cannot compute, so the sync writes the result for each theme.",
   },
 ] as const satisfies readonly {
   readonly name: string;

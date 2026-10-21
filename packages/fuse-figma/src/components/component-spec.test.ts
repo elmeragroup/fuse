@@ -294,6 +294,26 @@ describe("a part below the root", () => {
     ]);
   });
 
+  // Oracle: CSS Color 4, where `color: currentcolor` computes to the color the element inherits,
+  // so `text-current` keeps the parent's red, and its row names what it resolved to.
+  it("reads color: currentcolor as the color it inherits", async () => {
+    const { variant, coverage } = await buildNested(
+      "text-[#ff0000]",
+      dot("text-current [&_svg]:size-[16px]", [ICON])
+    );
+    expect(frameOf(variant?.root)?.children).toEqual([
+      expect.objectContaining({ color: { kind: "literal", color: { r: 1, g: 0, b: 0, a: 1 } } }),
+    ]);
+    expect(coverage.filter((row) => row.className === "text-current")).toEqual([
+      expect.objectContaining({
+        part: "chip-dot",
+        property: "color",
+        outcome: "literal",
+        detail: "rgba(255, 0, 0, 1)",
+      }),
+    ]);
+  });
+
   it("reads a custom property its parent sets, which the parent's class reaches Figma through", async () => {
     const { variant, coverage } = await buildNested(
       "[--chip-corner:6px]",
@@ -449,4 +469,124 @@ describe("a root that holds a part", () => {
       ["chip", "justify-content"],
     ]);
   });
+});
+
+// Unit under test: `buildComponentSet` on a part with `grid place-content-center`. Oracle: CSS Grid,
+// where a grid with no template puts each child in a row of its own, and `place-content: center`
+// centers the rows on both axes. With one child that is a box centered both ways, as an auto
+// layout with CENTER on both axes draws it. Two children stack in two rows, which a horizontal
+// auto layout does not draw.
+describe("a grid that centers its content", () => {
+  async function build(icons: readonly IconSlot[]) {
+    const { variant, coverage } = await buildNested(
+      "text-[#000000]",
+      dot("grid place-content-center size-[16px] [&_svg]:size-[12px]", icons)
+    );
+    const rows = coverage
+      .filter((row) => row.className === "grid" || row.className === "place-content-center")
+      .map((row) => `${row.className}: ${row.outcome}`)
+      .toSorted();
+    return { frame: frameOf(variant?.root), rows };
+  }
+
+  it("centers its one layer on both axes", async () => {
+    const { frame, rows } = await build([ICON]);
+    expect(frame).toEqual(expect.objectContaining({ primaryAlign: "CENTER", counterAlign: "CENTER" }));
+    expect(rows).toEqual(["grid: literal", "place-content-center: literal"]);
+  });
+
+  it("is unmapped when it holds more than one layer", async () => {
+    const { rows } = await build([ICON, { ...ICON, key: "second" }]);
+    expect(rows).toEqual(["grid: unmapped", "place-content-center: unmapped"]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a root's `position` and `max-width`. Oracle: CSS. A
+// `relative` box stays where the flow puts it and only becomes the containing block of its
+// positioned descendants, which an auto layout has none of. CSS Sizing clamps a width by its
+// `max-width` only when the width is larger, so a fixed 16px width under a max of 16px or more
+// keeps its size, and under 12px shrinks, which the fixed Figma width does not draw.
+describe("a box's position and max width", () => {
+  async function rowsOf(classes: string) {
+    const { coverage } = buildComponentSet(
+      { ...CHIP, classesFor: () => classes },
+      { ...context, compiled: await compileUtilities(classes.split(" ")) }
+    );
+    return coverage
+      .filter((row) => row.property === "position" || row.property === "max-width")
+      .map((row) => [row.className, row.outcome, row.detail]);
+  }
+
+  it("drops relative, which anchors no layer in auto layout", async () => {
+    expect(await rowsOf("relative")).toEqual([
+      ["relative", "dropped", "it only anchors positioned descendants, which auto layout does not need"],
+    ]);
+  });
+
+  it("leaves absolute unmapped", async () => {
+    expect(await rowsOf("absolute")).toEqual([["absolute", "unmapped", expect.any(String)]]);
+  });
+
+  it.each(["max-w-[16px]", "max-w-[24px]"])("drops %s at or above a 16px fixed width", async (max) => {
+    expect(await rowsOf(`size-[16px] ${max}`)).toEqual([
+      [max, "dropped", "it is no less than the fixed width, so it never narrows the box"],
+    ]);
+  });
+
+  it.each(["size-[16px] max-w-[12px]", "max-w-[16px]"])(
+    "leaves the max width of %s unmapped",
+    async (classes) => {
+      expect(await rowsOf(classes)).toEqual([
+        [expect.stringMatching(/^max-w-/), "unmapped", expect.any(String)],
+      ]);
+    }
+  );
+});
+
+// Unit under test: `buildComponentSet` on a root whose `after:` classes draw a hit area. Oracle:
+// CSS, where `after:` styles the `::after` pseudo-element, a box of its own that the kit draws no
+// layer for, so its declarations reach no Figma field. The definition that omits the pseudo-element
+// names why, and one that does not leaves the classes to fail the gate.
+describe("a class on a pseudo-element", () => {
+  const HIT_AREA = ["after:absolute", "after:-inset-x-3", "after:content-['']"];
+
+  async function build(omitted: ReadonlyMap<string, string>) {
+    const { coverage } = buildComponentSet(
+      { ...CHIP, classesFor: () => HIT_AREA.join(" "), omittedPseudoElements: omitted },
+      { ...context, compiled: await compileUtilities(HIT_AREA) }
+    );
+    return coverage.map((row) => [row.className, row.property, row.outcome, row.detail]);
+  }
+
+  it("is dropped with the reason the definition omits it for", async () => {
+    const reason = "a hit area, which paints nothing";
+    expect(await build(new Map([["after", reason]]))).toEqual([
+      ["after:absolute", "position", "dropped", reason],
+      ["after:-inset-x-3", "inset-inline", "dropped", reason],
+      ["after:content-['']", "--tw-content", "dropped", reason],
+      ["after:content-['']", "content", "dropped", reason],
+    ]);
+  });
+
+  it("is unmapped when the definition does not omit it", async () => {
+    expect(new Set((await build(new Map())).map(([, , outcome]) => outcome))).toEqual(new Set(["unmapped"]));
+  });
+});
+
+// Unit under test: `buildComponentSet` on a root with Tailwind's marker classes. Oracle: Tailwind
+// emits no CSS for `group`, `group/<name>`, `peer` or `peer/<name>`. Each only names an element
+// that a descendant's `group-*` or a sibling's `peer-*` variant reads, so it has nothing to draw.
+describe("a marker class", () => {
+  it.each(["group", "group/chip", "peer", "peer/chip"])(
+    "drops %s as a marker with no CSS",
+    async (className) => {
+      const { coverage } = buildComponentSet(
+        { ...CHIP, classesFor: () => className },
+        { ...context, compiled: await compileUtilities([className]) }
+      );
+      expect(coverage).toEqual([
+        expect.objectContaining({ className, outcome: "dropped", detail: "a marker class with no CSS" }),
+      ]);
+    }
+  );
 });
