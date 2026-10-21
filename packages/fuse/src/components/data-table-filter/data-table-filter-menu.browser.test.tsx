@@ -22,10 +22,13 @@ import {
   PRODUCTS,
   FIELDS,
   FIELDS_WITH_PRODUCT,
+  FIELDS_WITH_RUSH,
+  FIELDS_WITH_RUSH_TOGGLE,
   columnFilters,
   CUSTOMER_NORD,
   STATUS_THREE,
   freezeToday,
+  renderCounted,
   renderOrders,
   settled,
   visibleOrders,
@@ -38,6 +41,7 @@ import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { SupportedLocale } from "../../intl/locale-context";
 import { useDataTableFilter } from "./data-table-filter";
 import type { FilterFieldMap } from "./filter-fields";
+import { parseColumnFilters } from "./filter-parse";
 import { DataTableFilter } from "./index";
 
 afterEach(async () => {
@@ -1176,5 +1180,202 @@ describe("DataTableFilter add menu locales", () => {
     await expect.poll(() => lit("menuitem", "Customer")).toBe(true);
     await userEvent.keyboard("{Enter}");
     await expect.poll(() => page.getByRole("button", { name: back, exact: true }).query()).not.toBeNull();
+  });
+});
+
+// Rush over the six rows: orders 1, 3 and 6 are rush, 2 and 4 are not, and 5 has no value.
+const RUSH_TRUE = [{ id: "rush", value: { kind: "boolean", operator: "is", values: [true] } }];
+const RUSH_FALSE = [{ id: "rush", value: { kind: "boolean", operator: "is", values: [false] } }];
+
+describe("DataTableFilter boolean fields", () => {
+  it("lists Yes and No with their counts, where a missing cell counts as neither", async () => {
+    renderOrders({ initial: [], fields: FIELDS_WITH_RUSH });
+    await openMenu();
+    await userEvent.click(roleNamed("menuitem", "Rush"));
+    await expect.poll(() => submenuOpen("Rush")).toBe(true);
+    expect(
+      page
+        .elementLocator(roleNamed("dialog", "Rush"))
+        .getByRole("menuitemcheckbox")
+        .elements()
+        .map((row) => row.textContent)
+    ).toEqual(["Yes3", "No2"]);
+  });
+
+  it("writes No, then Yes in its place, one write each", async () => {
+    const { writes } = renderCounted((onColumnFiltersChange) => (
+      <Orders initial={[]} fields={FIELDS_WITH_RUSH} onColumnFiltersChange={onColumnFiltersChange} />
+    ));
+    await openMenu();
+    await userEvent.click(roleNamed("menuitem", "Rush"));
+    await expect.poll(() => submenuOpen("Rush")).toBe(true);
+    await userEvent.click(roleNamed("menuitemcheckbox", "No"));
+    await expect.poll(columnFilters).toEqual(RUSH_FALSE);
+    expect(parseColumnFilters(columnFilters(), FIELDS_WITH_RUSH)).toEqual(RUSH_FALSE);
+    expect(visibleOrders()).toBe("2 4");
+    await userEvent.click(roleNamed("menuitemcheckbox", "Yes"));
+    await expect.poll(columnFilters).toEqual(RUSH_TRUE);
+    expect(visibleOrders()).toBe("1 3 6");
+    expect(writes()).toBe(2);
+    expect(roleNamed("combobox", "Rush operator").textContent).toBe("is");
+    expect(
+      page.elementLocator(roleNamed("group", "Rush filter")).getByRole("button", { name: "Yes" }).query()
+    ).not.toBeNull();
+  });
+
+  it("lists Yes and No in the chip's value popover, where a pick of the applied value removes the filter", async () => {
+    renderOrders({ initial: RUSH_TRUE, fields: FIELDS_WITH_RUSH });
+    await userEvent.click(roleNamed("button", "Yes"));
+    await expect.poll(() => page.getByRole("dialog", { name: "Rush" }).query()).not.toBeNull();
+    const dialog = page.elementLocator(roleNamed("dialog", "Rush"));
+    expect(
+      dialog
+        .getByRole("option")
+        .elements()
+        .map((option) => option.textContent)
+    ).toEqual(["Yes3", "No2"]);
+    await userEvent.click(dialog.getByRole("option", { name: "Yes" }).element());
+    await expect.poll(columnFilters).toEqual([]);
+    expect(visibleOrders()).toBe("1 2 3 4 5 6");
+  });
+});
+
+describe("DataTableFilter toggles", () => {
+  /** The toggle's chip, a group named after the field. */
+  function chip(): HTMLElement {
+    return roleNamed("group", "Rush only filter");
+  }
+
+  /** The switch at the end of the toggle's row. */
+  function rowSwitch(): Element | null {
+    // DOM audit: the switch is a picture of the row's state, hidden from assistive technology, so
+    // no role or name reaches it.
+    return roleNamed("menuitemcheckbox", "Rush only").querySelector(
+      "[data-slot=data-table-filter-toggle-switch]"
+    );
+  }
+
+  /** An element's checked face: `on` for `data-checked`, `off` for `data-unchecked`. */
+  function face(element: Element | null | undefined): string {
+    if (element === null || element === undefined) {
+      return "missing";
+    }
+    if (element.hasAttribute("data-checked")) {
+      return "on";
+    }
+    return element.hasAttribute("data-unchecked") ? "off" : "neither";
+  }
+
+  /** The switch's track and thumb faces. */
+  function switchFaces(): readonly [track: string, thumb: string] {
+    const track = rowSwitch();
+    return [face(track), face(track?.firstElementChild)];
+  }
+
+  it("is one checkbox row in the field list, with the count of the rows it keeps", async () => {
+    renderOrders({ initial: [], fields: FIELDS_WITH_RUSH_TOGGLE });
+    await openMenu();
+    const row = roleNamed("menuitemcheckbox", "Rush only");
+    expect(row.getAttribute("aria-checked")).toBe("false");
+    expect(row.textContent).toBe("Rush only3");
+    // The row ends with a switch drawn off, after the count, with no role or focus of its own.
+    expect(switchFaces()).toEqual(["off", "off"]);
+    const track = rowSwitch();
+    expect(row.lastElementChild).toBe(track);
+    expect(track?.previousElementSibling?.getAttribute("data-slot")).toBe("data-table-filter-count");
+    expect(
+      [track, track?.firstElementChild].map((part) => [
+        part?.getAttribute("aria-hidden") ?? null,
+        part?.getAttribute("role") ?? null,
+        part?.getAttribute("tabindex") ?? null,
+      ])
+    ).toEqual([
+      ["true", null, null],
+      ["true", null, null],
+    ]);
+  });
+
+  it("ticks on with the menu still open, as a chip that is its name and Remove, and ticks off again", async () => {
+    renderOrders({ initial: [], fields: FIELDS_WITH_RUSH_TOGGLE });
+    await openMenu();
+    await userEvent.click(roleNamed("menuitemcheckbox", "Rush only"));
+    await expect.poll(columnFilters).toEqual(RUSH_TRUE);
+    expect(visibleOrders()).toBe("1 3 6");
+    expect(menuOpen()).toBe(true);
+    await expect
+      .poll(() => roleNamed("menuitemcheckbox", "Rush only").getAttribute("aria-checked"))
+      .toBe("true");
+    expect(switchFaces()).toEqual(["on", "on"]);
+    expect(page.elementLocator(chip()).getByRole("combobox").query()).toBeNull();
+    expect(
+      page
+        .elementLocator(chip())
+        .getByRole("button")
+        .elements()
+        .map((button) => button.getAttribute("aria-label"))
+    ).toEqual(["Remove Rush only filter"]);
+    await userEvent.click(roleNamed("menuitemcheckbox", "Rush only"));
+    await expect.poll(columnFilters).toEqual([]);
+    expect(visibleOrders()).toBe("1 2 3 4 5 6");
+    await expect.poll(switchFaces).toEqual(["off", "off"]);
+  });
+
+  it("removes the chip on Delete and moves focus to the Trigger", async () => {
+    renderOrders({ initial: RUSH_TRUE, fields: FIELDS_WITH_RUSH_TOGGLE });
+    roleNamed("button", "Remove Rush only filter").focus();
+    await userEvent.keyboard("{Delete}");
+    await expect.poll(columnFilters).toEqual([]);
+    await expect.poll(() => focusIs("button", "Filter")).toBe(true);
+  });
+
+  it("states a value it no longer admits in full, and a tick replaces it with on", async () => {
+    renderOrders({ initial: RUSH_FALSE, fields: FIELDS_WITH_RUSH_TOGGLE });
+    expect(roleNamed("combobox", "Rush only operator").textContent).toBe("is");
+    expect(page.elementLocator(chip()).getByRole("button", { name: "No" }).query()).not.toBeNull();
+    await openMenu();
+    expect(roleNamed("menuitemcheckbox", "Rush only").getAttribute("aria-checked")).toBe("false");
+    expect(switchFaces()).toEqual(["off", "off"]);
+    await userEvent.click(roleNamed("menuitemcheckbox", "Rush only"));
+    await expect.poll(columnFilters).toEqual(RUSH_TRUE);
+    await expect.poll(switchFaces).toEqual(["on", "on"]);
+  });
+
+  it("moves focus to Remove when an operator pick turns a stale toggle on", async () => {
+    renderOrders({
+      initial: [{ id: "rush", value: { kind: "boolean", operator: "isNot", values: [true] } }],
+      fields: FIELDS_WITH_RUSH_TOGGLE,
+    });
+    await userEvent.click(roleNamed("combobox", "Rush only operator"));
+    await expect.poll(() => page.getByRole("option", { name: "is", exact: true }).query()).not.toBeNull();
+    await userEvent.click(roleNamed("option", "is"));
+    await expect.poll(columnFilters).toEqual(RUSH_TRUE);
+    await expect.poll(() => focusIs("button", "Remove Rush only filter")).toBe(true);
+    expect(page.elementLocator(chip()).getByRole("combobox").query()).toBeNull();
+  });
+
+  it("keeps a stale toggle's sentence while its value popover turns it on, then moves focus to Remove", async () => {
+    renderOrders({ initial: RUSH_FALSE, fields: FIELDS_WITH_RUSH_TOGGLE });
+    await userEvent.click(page.elementLocator(chip()).getByRole("button", { name: "No" }).element());
+    await expect.poll(() => page.getByRole("dialog", { name: "Rush only" }).query()).not.toBeNull();
+    await userEvent.click(
+      page.elementLocator(roleNamed("dialog", "Rush only")).getByRole("option", { name: "Yes" }).element()
+    );
+    await expect.poll(columnFilters).toEqual(RUSH_TRUE);
+    expect(page.elementLocator(chip()).getByRole("button", { name: "Yes" }).query()).not.toBeNull();
+    await userEvent.keyboard("{Escape}");
+    await expect.poll(() => page.getByRole("dialog", { name: "Rush only" }).query()).toBeNull();
+    await expect.poll(() => focusIs("button", "Remove Rush only filter")).toBe(true);
+    expect(page.elementLocator(chip()).getByRole("combobox").query()).toBeNull();
+  });
+
+  it("shows a server's count of the rows it keeps", async () => {
+    renderOrders({
+      initial: [],
+      manual: true,
+      fields: FIELDS_WITH_RUSH_TOGGLE,
+      facets: { rush: { counts: { true: 7, false: 1 } } },
+    });
+    await openMenu();
+    expect(roleNamed("menuitemcheckbox", "Rush only").textContent).toBe("Rush only7");
   });
 });

@@ -33,6 +33,8 @@ export const fiFI = {
   last30Days: "Viimeiset 30 päivää",
   thisMonth: "Tämä kuukausi",
   thisYear: "Tämä vuosi",
+  yes: "Kyllä",
+  no: "Ei",
   "option.is": "on",
   "option.isNot": "ei ole",
   "option.isAnyOf": "on jokin seuraavista",
@@ -63,4 +65,6 @@ export const fiFI = {
   "date.isOnOrBefore": "on asti",
   "date.isBetween": "on välillä",
   "date.isNotBetween": "ei ole välillä",
+  "boolean.is": "on",
+  "boolean.isNot": "ei ole",
 };

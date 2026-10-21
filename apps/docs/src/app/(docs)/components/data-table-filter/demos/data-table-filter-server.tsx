@@ -13,7 +13,7 @@ import {
   parseColumnFilters,
 } from "@elmeragroup/fuse/data-table-filter";
 import type { FilterFacets } from "@elmeragroup/fuse/data-table-filter";
-import { Circle, Money, User } from "@elmeragroup/fuse/icons";
+import { Circle, CurrencyCircleDollar, Money, User } from "@elmeragroup/fuse/icons";
 
 type Status = "draft" | "pending" | "paid" | "overdue";
 
@@ -42,6 +42,8 @@ const ORDER_FILTERS = defineFilterFields<Order>()({
     format: { style: "currency", currency: "NOK", maximumFractionDigits: 0 },
     step: 100,
   },
+  // A toggle's id need not be a column, because the server gives it meaning: see cellOf.
+  large: { kind: "boolean", label: "Large orders only", icon: <CurrencyCircleDollar />, toggle: true },
 });
 
 const STATUS_LABELS = new Map<string, string>(STATUS_OPTIONS.map((option) => [option.value, option.label]));
@@ -62,7 +64,7 @@ const SERVER_ORDERS: Order[] = Array.from({ length: 120 }, (_, index) => ({
   amount: 250 + ((index * 3779) % 24_000),
 }));
 
-function cellOf(order: Order, columnId: string): string | number | undefined {
+function cellOf(order: Order, columnId: string): string | number | boolean | undefined {
   switch (columnId) {
     case "customer":
       return order.customer;
@@ -70,6 +72,8 @@ function cellOf(order: Order, columnId: string): string | number | undefined {
       return order.status;
     case "amount":
       return order.amount;
+    case "large":
+      return order.amount >= 10_000;
     default:
       return undefined;
   }
@@ -89,11 +93,17 @@ function fetchOrders(filtersJson: string, { pageIndex, pageSize }: PaginationSta
     counts[order.status] = (counts[order.status] ?? 0) + 1;
   }
   const amounts = SERVER_ORDERS.filter((order) => passes(order, "amount")).map((order) => order.amount);
+  // The toggle's count: the large orders among those every other filter keeps.
+  const large = {
+    counts: {
+      true: SERVER_ORDERS.filter((order) => passes(order, "large") && cellOf(order, "large") === true).length,
+    },
+  };
   // An absent entry means unknown: with no amounts left, the number editor shows no slider.
   const facets: FilterFacets<typeof ORDER_FILTERS> =
     amounts.length === 0
-      ? { status: { counts } }
-      : { status: { counts }, amount: { range: [Math.min(...amounts), Math.max(...amounts)] } };
+      ? { status: { counts }, large }
+      : { status: { counts }, large, amount: { range: [Math.min(...amounts), Math.max(...amounts)] } };
   const page: OrderPage = {
     rows: matching.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize),
     pageCount: Math.max(1, Math.ceil(matching.length / pageSize)),

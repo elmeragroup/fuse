@@ -47,8 +47,9 @@ import type { DraftValues, EditorDraft } from "./editor-draft";
 import type { FilterField } from "./filter-fields";
 import { resolveFocusTarget } from "./filter-focus";
 import type { FilterOperator } from "./filter-model";
-import { convertValues, filterValuesEqual, findFilter } from "./filter-model";
+import { convertValues, filterValuesEqual, findFilter, isToggleOn } from "./filter-model";
 import { OperatorOptions, useOperatorItems } from "./operator-options";
+import { isListField } from "./option-list";
 
 /**
  * The props of `DataTableFilter.ValueContent`: Base UI Popover Popup's, except `initialFocus` and
@@ -136,7 +137,14 @@ export function DataTableFilterValueContent({
               }
               // A ghost chip unmounts once this closes, so its focus goes to a neighbour.
               const index = state.chips.findIndex((chip) => chip.ghost);
-              return index === -1 ? true : (meta.neighbourOf(state.chips, index) ?? true);
+              if (index !== -1) {
+                return meta.neighbourOf(state.chips, index) ?? true;
+              }
+              // A toggle a pick turned on loses its Value once this closes, so focus goes to Remove.
+              const edited = state.chips.find((chip) => chip.id === state.editing);
+              return edited !== undefined && isToggleOn(edited.field, edited.value)
+                ? (meta.focusChipEdge(edited.id, "last") ?? true)
+                : true;
             }}
             className={mergeClassName(
               className,
@@ -354,7 +362,7 @@ function EditorFrame({
     back,
     isComposing: composition.isComposing,
   };
-  const operatorInHeader = field.kind === "text" || field.kind === "number" || field.kind === "date";
+  const operatorInHeader = !isListField(field);
   const title = (
     <>
       {field.icon === undefined ? null : (

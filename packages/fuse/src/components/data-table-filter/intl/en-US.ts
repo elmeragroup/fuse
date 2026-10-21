@@ -44,6 +44,10 @@ export const enUS = {
   last30Days: "Last 30 days",
   thisMonth: "This month",
   thisYear: "This year",
+  /** A boolean field's `true`, when the field names none. */
+  yes: "Yes",
+  /** A boolean field's `false`, when the field names none. */
+  no: "No",
   "option.is": "is",
   "option.isNot": "is not",
   "option.isAnyOf": "is any of",
@@ -74,4 +78,6 @@ export const enUS = {
   "date.isOnOrBefore": "is on or before",
   "date.isBetween": "is between",
   "date.isNotBetween": "is not between",
+  "boolean.is": "is",
+  "boolean.isNot": "is not",
 };

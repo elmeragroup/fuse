@@ -2,7 +2,7 @@
 // memory. Pure, with no directive.
 
 import type { FilterValue, IsoDate } from "./filter-model";
-import { isFiniteNumber, isIsoDate, isNegated, isString } from "./filter-model";
+import { isBoolean, isFiniteNumber, isIsoDate, isNegated, isString } from "./filter-model";
 
 /** Options every predicate takes. */
 export type MatchOptions = {
@@ -142,8 +142,9 @@ function compareOrdered<T extends number | string>(
 /**
  * Whether one cell passes a filter. Option values compare exactly. Text compares case- and
  * accent-insensitively, anywhere in the cell or, for `startsWith`, at its start. A `Date` cell
- * compares as its calendar day in `timeZone`, and an ISO date string compares as it is. A missing
- * cell passes only the negated operators.
+ * compares as its calendar day in `timeZone`, and an ISO date string compares as it is. A boolean
+ * compares `true` and `false` exactly, and any other cell counts as missing. A missing cell passes
+ * only the negated operators.
  *
  * @param value - The filter.
  * @param cell - The row's value in the filtered column.
@@ -188,5 +189,7 @@ function cellHolds(value: FilterValue, cell: unknown, options: MatchOptions): bo
             : null;
       return day !== null && compareOrdered(value.operator, day, value.values);
     }
+    case "boolean":
+      return isBoolean(cell) && cell === value.values[0];
   }
 }

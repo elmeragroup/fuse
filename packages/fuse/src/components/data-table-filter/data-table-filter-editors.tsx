@@ -36,23 +36,25 @@ import type { DraftValues, EditorContextValue } from "./data-table-filter-editor
 import { useKindEditor } from "./data-table-filter-editor-context";
 import { dataTableFilterSlots as slots } from "./data-table-filter-variants";
 import { completeValues, draftSays, stepBounds } from "./editor-draft";
-import type {
-  DateFilterField,
-  FilterFieldOfKind,
-  FilterOption,
-  NumberFilterField,
-  TextFilterField,
-} from "./filter-fields";
+import type { DateFilterField, FilterOption, NumberFilterField, TextFilterField } from "./filter-fields";
 import { calendarDateIn } from "./filter-match";
 import type { FilterOperator, IsoDate } from "./filter-model";
 import { addDays, allowedOperators, isFiniteNumber, isIsoDate, isOperatorOf, targetOf } from "./filter-model";
-import { matchOptions, OPTION_LIMIT, snapshotOrder } from "./option-list";
+import {
+  LIST_KINDS,
+  listSource,
+  matchOptions,
+  OPTION_LIMIT,
+  pickedValues,
+  snapshotOrder,
+} from "./option-list";
+import type { ListField } from "./option-list";
 import { useContains } from "./use-contains";
 
 /** The props every kind editor takes: its body's element. */
 export type DataTableFilterKindEditorProps = ComponentProps<"div">;
 
-// Option and multi-option: an inline Base UI Combobox with `multiple`, so the list is
+// Option, multi-option and boolean: an inline Base UI Combobox with `multiple`, so the list is
 // aria-multiselectable and each row states its selection. Each toggle applies at once.
 
 /**
@@ -68,9 +70,9 @@ export function OptionCount({ count }: { readonly count: number }): ReactElement
   );
 }
 
-/** Edits an option or multi-option filter. Renders nothing for other kinds. */
+/** Edits an option, multi-option or boolean filter. Renders nothing for other kinds. */
 export function DataTableFilterOptionEditor(props: DataTableFilterKindEditorProps): ReactElement | null {
-  const editor = useKindEditor("DataTableFilter.OptionEditor", ["option", "multiOption"]);
+  const editor = useKindEditor("DataTableFilter.OptionEditor", LIST_KINDS);
   return editor === null ? null : <OptionEditorBody editor={editor} {...props} />;
 }
 
@@ -81,15 +83,16 @@ function OptionEditorBody({
   className,
   ...props
 }: DataTableFilterKindEditorProps & {
-  readonly editor: EditorContextValue & { readonly field: FilterFieldOfKind<"option" | "multiOption"> };
+  readonly editor: EditorContextValue & { readonly field: ListField };
 }): ReactElement {
   const { actions, meta } = useFilterInternals("DataTableFilter.OptionEditor");
   const { field, fieldId, filter } = editor;
   const counts = meta.facets.counts(fieldId);
-  const picked: readonly string[] = filter?.kind === field.kind ? filter.values : [];
+  const picked = pickedValues(field, filter);
+  const source = listSource(field, { yes: meta.format("yes"), no: meta.format("no") });
   // The order is taken once, as the editor mounts, so a toggle never moves a row. Counts that
   // arrive later update in place.
-  const [order] = useState(() => snapshotOrder(field, picked, counts));
+  const [order] = useState(() => snapshotOrder(source, picked, counts));
   const [query, setQuery] = useState("");
   const contains = useContains(meta.locale);
   const matches = matchOptions(order, query, contains, OPTION_LIMIT);
@@ -103,7 +106,7 @@ function OptionEditorBody({
     ...(matches.pinned.length > 0 ? [{ value: "pinned" as const, items: matches.pinned }] : []),
     ...(matches.rest.length > 0 ? [{ value: "rest" as const, items: matches.rest }] : []),
   ];
-  const selected = field.options.filter((option) => picked.includes(option.value));
+  const selected = source.options.filter((option) => picked.includes(option.value));
   const searchLabel = meta.format("searchValues", { field: field.label });
   return (
     <div

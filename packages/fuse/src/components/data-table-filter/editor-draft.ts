@@ -6,6 +6,7 @@ import type { FilterField } from "./filter-fields";
 import { firstOperator } from "./filter-fields";
 import type { FilterKind, FilterOperator, FilterValue } from "./filter-model";
 import { isFiniteNumber, isIsoDate, targetOf } from "./filter-model";
+import { isListField, isListKind } from "./option-list";
 
 /** An operator and its values, one per position. */
 export type DraftValues = {
@@ -48,7 +49,8 @@ export function draftFor(
   range: readonly [number, number] | undefined
 ): EditorDraft {
   if (filter !== undefined) {
-    return { operator: filter.operator, values: filter.values, edited: false };
+    // A list writes on each pick, so its draft holds no values.
+    return { operator: filter.operator, values: isListField(filter) ? [] : filter.values, edited: false };
   }
   const operator = firstOperator(field);
   if (field.kind === "number" && range !== undefined && targetOf("number", operator) === "range") {
@@ -104,6 +106,7 @@ export function completeValues(
     }
     case "option":
     case "multiOption":
+    case "boolean":
       return undefined;
   }
 }
@@ -115,7 +118,8 @@ export function completeValues(
  * the last valid filter stays. A new number range across the whole known range filters nothing,
  * so it makes no filter. A draft that already says what is applied writes nothing.
  *
- * @param kind - The field's kind. Option kinds commit on each toggle and never settle a draft.
+ * @param kind - The field's kind. Option and boolean kinds commit on each pick and never settle a
+ *   draft.
  * @param draft - The draft.
  * @param applied - The applied filter, if any.
  * @param range - The field's known number range, if any.
@@ -127,7 +131,7 @@ export function draftWrite(
   applied: FilterValue | undefined,
   range: readonly [number, number] | undefined
 ): DraftValues | undefined {
-  if (kind === "option" || kind === "multiOption" || (applied === undefined && !draft.edited)) {
+  if (isListKind(kind) || (applied === undefined && !draft.edited)) {
     return undefined;
   }
   if (kind === "text" && String(draft.values[0] ?? "").trim() === "") {

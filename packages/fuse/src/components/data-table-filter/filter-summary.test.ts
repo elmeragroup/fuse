@@ -25,7 +25,12 @@ const STATUS: OptionFilterField = {
   ],
 };
 
-const plain = { moreValues: (count: string) => `+${count}`, quoted: (text: string) => `“${text}”` };
+const plain = {
+  moreValues: (count: string) => `+${count}`,
+  quoted: (text: string) => `“${text}”`,
+  yes: "Yes",
+  no: "No",
+};
 
 describe("summarize", () => {
   it("lists up to two option labels, then a bare count of the rest", () => {
@@ -69,6 +74,25 @@ describe("summarize", () => {
     ).toBe("Oct 2, 2026");
   });
 
+  it("names a boolean by the dictionary's yes and no, or by the field's own labels", () => {
+    expect(
+      summarize(
+        { kind: "boolean", operator: "is", values: [true] },
+        { kind: "boolean", label: "Rush" },
+        "en-US",
+        plain
+      ).text
+    ).toBe("Yes");
+    expect(
+      summarize(
+        { kind: "boolean", operator: "is", values: [false] },
+        { kind: "boolean", label: "Rush", falseLabel: "Standard" },
+        "en-US",
+        plain
+      ).text
+    ).toBe("Standard");
+  });
+
   it("formats the more count and the list in the locale", () => {
     const norwegian: OptionFilterField = {
       ...STATUS,
@@ -78,7 +102,7 @@ describe("summarize", () => {
         { value: "overdue", label: "Forfalt" },
       ],
     };
-    const quoted = { moreValues: (count: string) => `+${count}`, quoted: (text: string) => `«${text}»` };
+    const quoted = { ...plain, quoted: (text: string) => `«${text}»` };
     expect(
       summarize(
         { kind: "option", operator: "isAnyOf", values: ["paid", "pending", "overdue"] },

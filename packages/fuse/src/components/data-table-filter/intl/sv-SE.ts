@@ -33,6 +33,8 @@ export const svSE = {
   last30Days: "Senaste 30 dagarna",
   thisMonth: "Denna månad",
   thisYear: "I år",
+  yes: "Ja",
+  no: "Nej",
   "option.is": "är",
   "option.isNot": "är inte",
   "option.isAnyOf": "är någon av",
@@ -63,4 +65,6 @@ export const svSE = {
   "date.isOnOrBefore": "är till och med",
   "date.isBetween": "är mellan",
   "date.isNotBetween": "är inte mellan",
+  "boolean.is": "är",
+  "boolean.isNot": "är inte",
 };

@@ -19,7 +19,7 @@ import {
   defineFilterFields,
 } from "@elmeragroup/fuse/data-table-filter";
 import { Empty } from "@elmeragroup/fuse/empty";
-import { CalendarBlank, Circle, ListChecks, Money, User } from "@elmeragroup/fuse/icons";
+import { CalendarBlank, Circle, ListChecks, Money, Receipt, User } from "@elmeragroup/fuse/icons";
 
 type Status = "draft" | "pending" | "paid" | "overdue";
 type Tag = "priority" | "recurring" | "export";
@@ -31,6 +31,7 @@ type Order = {
   readonly tags: readonly Tag[];
   readonly amount: number;
   readonly created: Date;
+  readonly invoiced: boolean;
 };
 
 const STATUS_OPTIONS = [
@@ -59,6 +60,7 @@ const ORDER_FILTERS = defineFilterFields<Order>()({
     step: 100,
   },
   created: { kind: "date", label: "Created", icon: <CalendarBlank /> },
+  invoiced: { kind: "boolean", label: "Invoiced", icon: <Receipt /> },
 });
 
 // One time zone for every date comparison, the same one a server would use.
@@ -102,6 +104,8 @@ const COLUMNS = columns.columns([
     header: "Created",
     cell: ({ cell }) => <cell.DateCell timeZone="Europe/Oslo" />,
   }),
+  // In client mode TanStack filters only the ids that are columns, so a boolean field needs one too.
+  columns.accessor("invoiced", { header: "Invoiced", cell: ({ cell }) => (cell.getValue() ? "Yes" : "No") }),
 ]);
 
 const CUSTOMERS = ["Aurora Bakeri", "Fjellstue AS", "Havbris Sjømat", "Nordlys Kafé", "Bryggen Bokhandel"];
@@ -116,6 +120,7 @@ const ORDERS: Order[] = Array.from({ length: 40 }, (_, index) => ({
   tags: TAGS.filter((_, tag) => (index + tag) % (tag + 3) === 0),
   amount: 250 + ((index * 3779) % 24_000),
   created: new Date(Date.UTC(2026, 6 + (index % 4), 1 + ((index * 7) % 28), 12)),
+  invoiced: index % 3 !== 1,
 }));
 
 export function DataTableFilterClient() {

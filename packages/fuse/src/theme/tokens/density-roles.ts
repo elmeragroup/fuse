@@ -475,6 +475,7 @@ export const PART_DENSITY = {
   "data-table-filter-search": "layout",
   "data-table-filter-fields": "surface",
   "data-table-filter-field": "row",
+  "data-table-filter-toggle-switch": "fixed",
   "data-table-filter-quick": "layout",
   "data-table-filter-submenu-positioner": "layout",
   "data-table-filter-options-menu": "surface",

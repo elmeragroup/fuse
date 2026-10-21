@@ -36,6 +36,7 @@ import { assertOverlay, BarContext, ChipContext, useChip, useFilterInternals } f
 import type { ChipFilter } from "./data-table-filter";
 import { dataTableFilterSlots as slots } from "./data-table-filter-variants";
 import { optionsOf } from "./filter-fields";
+import { isToggleOn } from "./filter-model";
 import type { FilterOperator } from "./filter-model";
 import { summarize } from "./filter-summary";
 import { OperatorOptions, useOperatorItems } from "./operator-options";
@@ -319,10 +320,23 @@ export type DataTableFilterOperatorProps = Omit<ComponentProps<typeof ToolbarPri
  * The chip's operator, a Select whose trigger announces "Status operator, is any of". Option
  * fields list only the operators for the current value count, so the operator never disagrees
  * with it. A pick closes it and returns focus to the segment. A ghost chip's operator is disabled.
+ * A toggle that is on has no operator. Its name says it.
  */
-export function DataTableFilterOperator(props: DataTableFilterOperatorProps): ReactElement {
+export function DataTableFilterOperator(props: DataTableFilterOperatorProps): ReactElement | null {
   const chip = useChip("DataTableFilter.Operator");
+  const { state } = useFilterInternals("DataTableFilter.Operator");
+  if (showsNameOnly(chip, state.editing)) {
+    return null;
+  }
   return <OperatorSelect {...props} chip={chip} />;
+}
+
+/**
+ * Whether a chip shows its name and Remove only: a toggle that is on, unless its value popover is
+ * open, where it keeps its whole sentence until the popover closes.
+ */
+function showsNameOnly(chip: ChipFilter, editing: string | null): boolean {
+  return isToggleOn(chip.field, chip.value) && editing !== chip.id;
 }
 
 function OperatorSelect({
@@ -375,7 +389,7 @@ export type DataTableFilterValueProps = Omit<
 /**
  * The value summary, which opens the shared value popover at this chip's editor. Its name is the
  * visible summary, and a shortened summary states the whole value as its description. Children
- * replace the summary.
+ * replace the summary. A toggle that is on has no value.
  */
 export function DataTableFilterValue({
   className,
@@ -384,18 +398,23 @@ export function DataTableFilterValue({
   onClick,
   ref,
   ...props
-}: DataTableFilterValueProps): ReactElement {
+}: DataTableFilterValueProps): ReactElement | null {
   const chip = useChip("DataTableFilter.Value");
-  const { actions, meta } = useFilterInternals("DataTableFilter.Value");
+  const { state, actions, meta } = useFilterInternals("DataTableFilter.Value");
   const segmentRef = useSegmentRef(chip.id, ref);
   // One payload object per chip. Base UI measures the popover again whenever the payload's
   // identity changes (`usePopupViewport.tsx`), so a new object per render would remeasure on
   // every render and lose the height morph between chips.
   const payload = useMemo(() => ({ fieldId: chip.id }), [chip.id]);
+  if (showsNameOnly(chip, state.editing)) {
+    return null;
+  }
   const value = chip.value;
   const summary = summarize(value, chip.field, meta.locale, {
     moreValues: (count) => meta.format("moreValues", { count }),
     quoted: (text) => meta.format("quoted", { text }),
+    yes: meta.format("yes"),
+    no: meta.format("no"),
   });
   const options = optionsOf(chip.field);
   const icons =

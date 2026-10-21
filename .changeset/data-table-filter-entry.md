@@ -7,7 +7,8 @@ New `@elmeragroup/fuse/data-table-filter` entry, a filter bar for TanStack Table
 root barrel.
 
 - `DataTableFilter.Root` reads and writes the table's `columnFilters`. Each filter value is a plain
-  `{ kind, operator, values }` object for an option, multi-option, text, number or date field.
+  `{ kind, operator, values }` object for an option, multi-option, text, number, date or boolean
+  field.
 - `defineFilterFields<Row>()` describes the filterable columns, keyed by column id and checked against
   the row type. `createDataTableFilterFn({ timeZone })` returns the one filter function every column
   uses.
@@ -15,6 +16,8 @@ root barrel.
   search, value submenus, quick search across option values, and text, number and date editors that
   open in place. `ValueContent` is the popover a chip's value opens.
 - A list of values shows its first 50 matches and asks for more typing.
+- A `boolean` field kind filters `true` and `false`. `toggle: true` makes it an on/off scope with a
+  checkbox row in the add menu and a chip that is its name and Remove.
 - Text fields can opt in to `startsWith` and `doesNotStartWith`. `formatOperator` receives the
   field id, so one field can relabel an operator.
 - A field's `operators` bound every filter the bar writes. An option field without a multi-value

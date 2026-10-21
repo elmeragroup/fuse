@@ -356,6 +356,8 @@
   `searchable-menu.ts`, the one module that reads them.
 - Add `endsWith` and an exact-match text `is` when a consumer needs them. Make both opt-in like
   `startsWith` (`filter-model.ts`).
+- Hide a value list's search below some option count, for every list kind at once. A boolean's Yes
+  and No list shows it for two rows (`data-table-filter-content.tsx`).
 
 ## Command
 

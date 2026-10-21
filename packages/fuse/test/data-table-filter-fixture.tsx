@@ -33,7 +33,7 @@ import type {
   DataTableFilterRootProps,
 } from "../src/components/data-table-filter/data-table-filter";
 import { defineFilterFields } from "../src/components/data-table-filter/filter-fields";
-import type { FilterFieldMap } from "../src/components/data-table-filter/filter-fields";
+import type { FilterFacets, FilterFieldMap } from "../src/components/data-table-filter/filter-fields";
 import { createDataTableFilterFn } from "../src/components/data-table-filter/filter-fn";
 import { definedProps } from "../src/internal/defined-props";
 import type { SupportedLocale } from "../src/intl/locale-context";
@@ -53,6 +53,8 @@ export type Order = {
   readonly product: string;
   readonly amount: number;
   readonly created: Date;
+  /** Missing on order 5, which is then neither rush nor standard. */
+  readonly rush: boolean | null;
 };
 
 /** Noon UTC, so the calendar day is the same in every zone the suites use. */
@@ -124,6 +126,7 @@ export const ORDERS: readonly Order[] = [
     product: "stone-box-200",
     amount: 120,
     created: day("2026-10-02"),
+    rush: true,
   },
   {
     id: "2",
@@ -133,6 +136,7 @@ export const ORDERS: readonly Order[] = [
     product: "glass-vase-30",
     amount: 480,
     created: day("2026-10-05"),
+    rush: false,
   },
   {
     id: "3",
@@ -142,6 +146,7 @@ export const ORDERS: readonly Order[] = [
     product: "stone-box-200",
     amount: 950,
     created: day("2026-10-12"),
+    rush: true,
   },
   {
     id: "4",
@@ -151,6 +156,7 @@ export const ORDERS: readonly Order[] = [
     product: "glass-vase-30",
     amount: 60,
     created: day("2026-09-28"),
+    rush: false,
   },
   {
     id: "5",
@@ -160,6 +166,7 @@ export const ORDERS: readonly Order[] = [
     product: "stone-box-200",
     amount: 300,
     created: day("2026-10-19"),
+    rush: null,
   },
   {
     id: "6",
@@ -169,6 +176,7 @@ export const ORDERS: readonly Order[] = [
     product: "oak-shelf-20",
     amount: 780,
     created: day("2026-10-20"),
+    rush: true,
   },
 ];
 
@@ -207,6 +215,15 @@ export const FIELDS_WITH_PRODUCT = defineOrderFields({
   product: { kind: "option", label: "Product", options: PRODUCTS, order: "count" },
 });
 
+/** The same fields plus Rush, a boolean field with a Yes and No list. */
+export const FIELDS_WITH_RUSH = defineOrderFields({ ...FIELDS, rush: { kind: "boolean", label: "Rush" } });
+
+/** The same fields plus Rush only, a toggle. */
+export const FIELDS_WITH_RUSH_TOGGLE = defineOrderFields({
+  ...FIELDS,
+  rush: { kind: "boolean", label: "Rush only", toggle: true },
+});
+
 const dataTableFilter = createDataTableFilterFn({ timeZone: "UTC" });
 
 const features = tableFeatures({
@@ -227,6 +244,7 @@ const COLUMNS = columns.columns([
   columns.accessor("product", { header: "Product" }),
   columns.accessor("amount", { header: "Amount" }),
   columns.accessor("created", { header: "Created" }),
+  columns.accessor("rush", { header: "Rush" }),
 ]);
 
 /** Status is paid, pending or overdue. */
@@ -262,8 +280,8 @@ export function CalendarStandIn(): ReactElement {
 export type OrdersProps = {
   readonly initial: ColumnFiltersState;
   readonly manual?: boolean;
-  readonly facets?: DataTableFilterRootProps<typeof FIELDS>["facets"];
-  /** Replaces the fields, for a field config one test needs. Renders without facets. */
+  readonly facets?: FilterFacets<FilterFieldMap>;
+  /** Replaces the fields, for a field config one test needs. */
   readonly fields?: FilterFieldMap;
   /**
    * Controls `columnFilters` and hears every `onColumnFiltersChange` call TanStack makes, one per
@@ -349,21 +367,12 @@ export function Orders({
       <button type="button">After the bar</button>
     </>
   );
-  return fields === undefined ? (
+  return (
     <DataTableFilter.Root
       table={table}
-      fields={FIELDS}
+      fields={fields ?? FIELDS}
       timeZone="UTC"
       facets={facets}
-      onActiveFieldChange={onActiveFieldChange}
-      formatOperator={formatOperator}>
-      {body}
-    </DataTableFilter.Root>
-  ) : (
-    <DataTableFilter.Root
-      table={table}
-      fields={fields}
-      timeZone="UTC"
       onActiveFieldChange={onActiveFieldChange}
       formatOperator={formatOperator}>
       {body}
