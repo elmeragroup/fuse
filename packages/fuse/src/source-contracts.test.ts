@@ -66,6 +66,20 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
       "components/data-table/create-fuse-table-hook.ts",
     ],
   ],
+  [
+    "data-table-filter",
+    [
+      "components/data-table-filter/data-table-filter.tsx",
+      "components/data-table-filter/data-table-filter-bar.tsx",
+      "components/data-table-filter/data-table-filter-content.tsx",
+      "components/data-table-filter/searchable-menu.ts",
+      "components/data-table-filter/data-table-filter-value-content.tsx",
+      "components/data-table-filter/data-table-filter-editors.tsx",
+      "components/data-table-filter/data-table-filter-editor-context.ts",
+      "components/data-table-filter/use-contains.ts",
+      "components/data-table-filter/operator-options.tsx",
+    ],
+  ],
   ["date-field", ["react-aria/date-field/date-field.tsx"]],
   ["date-picker", ["react-aria/date-picker/date-picker.tsx"]],
   ["date-range-picker", ["react-aria/date-range-picker/date-range-picker.tsx"]],
@@ -317,6 +331,16 @@ describe("RSC classification", () => {
     // renders them inside the client palette. The presets that read the dictionary stay in
     // client modules.
     ["components/command/command-markup.tsx", "server"],
+    // The data table filter's model holds no state and imports no React or TanStack runtime, so
+    // a server parses request input and filters rows with the same predicates the client runs.
+    ["components/data-table-filter/filter-model.ts", "server"],
+    ["components/data-table-filter/filter-match.ts", "server"],
+    ["components/data-table-filter/filter-fields.ts", "server"],
+    ["components/data-table-filter/filter-parse.ts", "server"],
+    ["components/data-table-filter/filter-fn.ts", "server"],
+    ["components/data-table-filter/filter-summary.ts", "server"],
+    ["components/data-table-filter/option-list.ts", "server"],
+    ["components/data-table-filter/data-table-filter-error.ts", "server"],
   ] as const)("keeps the shared module %s %s", (file, rsc) => {
     expectRsc(file, rsc);
   });
@@ -337,6 +361,7 @@ describe("RSC classification", () => {
     ["command", "Command"],
     ["command-virtual", "CommandVirtual"],
     ["data-table", "DataTable"],
+    ["data-table-filter", "DataTableFilter"],
     ["dialog", "Dialog"],
     ["dropdown-menu", "DropdownMenu"],
     ["field", "Field"],
@@ -526,6 +551,10 @@ describe("runtime listeners and layout motion", () => {
       .filter((record) => layoutTransition.test(record.code))
       .map((record) => record.relative);
     expect(owners.toSorted()).toEqual([
+      // The data table filter's value popover follows Base UI's --popup-height and glides its
+      // positioner from chip to chip, and its add menu morphs its height between the field list
+      // and an editor drilled into in place.
+      "components/data-table-filter/data-table-filter-variants.ts",
       // Item.Footer, and so every SelectionItem.SubSection, tweens its grid row and top padding
       // between `hidden` and `visible`.
       "components/item/item-markup.tsx",
@@ -535,6 +564,92 @@ describe("runtime listeners and layout motion", () => {
       "components/sidebar/sidebar.tsx",
       "styles/panel-height.ts",
     ]);
+  });
+});
+
+describe("Base UI preview APIs", () => {
+  // Why not a lint rule: the preview members hang off the `Menu` namespace, and a restricted-import
+  // rule sees the import of `Menu`, not which of its members a module reads. Base UI renames
+  // preview APIs on their way out of preview, so one module owns them and a rename is one edit.
+  const PREVIEW_MENU_MEMBERS: ReadonlySet<string> = new Set([
+    "FilterProvider",
+    "Input",
+    "List",
+    "Clear",
+    "Empty",
+    "useFilter",
+  ]);
+  /** The entries that export Base UI's `Menu`: its own subpath and the root package. */
+  const MENU_SOURCES: ReadonlySet<string> = new Set(["@base-ui/react/menu", "@base-ui/react"]);
+
+  /**
+   * Each `Name.Member` read of a preview member through a binding of Base UI's `Menu` export, in
+   * code, JSX and types alike.
+   */
+  function previewMenuReads(fileName: string, source: string): string[] {
+    const parsed = parseSync(fileName, source);
+    expect(parsed.errors, fileName).toEqual([]);
+    const aliases = new Set<string>();
+    for (const statement of parsed.program.body) {
+      if (statement.type !== "ImportDeclaration" || !MENU_SOURCES.has(statement.source.value)) continue;
+      for (const specifier of statement.specifiers) {
+        if (specifier.type !== "ImportSpecifier") continue;
+        const imported =
+          specifier.imported.type === "Identifier" ? specifier.imported.name : specifier.imported.value;
+        if (imported === "Menu") aliases.add(specifier.local.name);
+      }
+    }
+    const reads: string[] = [];
+    const note = (object: string, member: string): void => {
+      if (aliases.has(object) && PREVIEW_MENU_MEMBERS.has(member)) reads.push(`${object}.${member}`);
+    };
+    new Visitor({
+      MemberExpression: (node) => {
+        if (node.object.type === "Identifier" && !node.computed && node.property.type === "Identifier") {
+          note(node.object.name, node.property.name);
+        }
+      },
+      JSXMemberExpression: (node) => {
+        if (node.object.type === "JSXIdentifier") note(node.object.name, node.property.name);
+      },
+      TSQualifiedName: (node) => {
+        if (node.left.type === "Identifier") note(node.left.name, node.right.name);
+      },
+    }).visit(parsed.program);
+    return reads;
+  }
+
+  it("recognizes a preview member read through any alias of Menu, from either entry, and not other members", () => {
+    expect(
+      previewMenuReads(
+        "alias.ts",
+        'import { Menu as M } from "@base-ui/react/menu";\nM.FilterProvider; M.Item; M.useFilter;'
+      )
+    ).toEqual(["M.FilterProvider", "M.useFilter"]);
+    expect(
+      previewMenuReads("subpath.ts", 'import { Menu } from "@base-ui/react/menu";\nMenu.Input;')
+    ).toEqual(["Menu.Input"]);
+    expect(
+      previewMenuReads("root.ts", 'import { Menu } from "@base-ui/react";\nMenu.FilterProvider;')
+    ).toEqual(["Menu.FilterProvider"]);
+    expect(previewMenuReads("clear.ts", 'import { Menu } from "@base-ui/react";\nMenu.Clear;')).toEqual([
+      "Menu.Clear",
+    ]);
+    expect(
+      previewMenuReads(
+        "jsx-and-types.tsx",
+        'import { Menu as M } from "@base-ui/react/menu";\ntype P = M.Empty.Props;\n<M.List />;'
+      )
+    ).toEqual(["M.Empty", "M.List"]);
+    expect(previewMenuReads("other.ts", 'import { Menu } from "./menu";\nMenu.Input;')).toEqual([]);
+  });
+
+  it("reads Menu's preview filtering parts only in the data table filter's searchable-menu.ts", () => {
+    const readers = [...SOURCE_TREE.values()]
+      .filter((record) => record.source.includes("@base-ui/react"))
+      .filter((record) => previewMenuReads(record.relative, record.source).length > 0)
+      .map((record) => record.relative);
+    expect(readers).toEqual(["components/data-table-filter/searchable-menu.ts"]);
   });
 });
 

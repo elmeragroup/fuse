@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 
+import { hasFocus } from "../internal/active-element";
 import { useFormReset } from "./use-form-reset";
 
 export type ResetRemount = {
@@ -39,10 +40,7 @@ export function useResetRemount(
     enabled
       ? () => {
           const node = element.current;
-          const root = node?.getRootNode();
-          const activeElement =
-            root instanceof Document || root instanceof ShadowRoot ? root.activeElement : null;
-          restoreFocusRef.current = activeElement === node;
+          restoreFocusRef.current = node !== null && hasFocus(node);
           setResetEpoch((epoch) => epoch + 1);
         }
       : null

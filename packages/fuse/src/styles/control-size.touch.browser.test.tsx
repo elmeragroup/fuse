@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { cdp } from "vitest/browser";
 
 import "../../dist/styles.css";
 import { withLocale } from "../../test/locale-matrix";
@@ -12,6 +11,7 @@ import {
   roleNamed,
   stampDensity,
 } from "../../test/themed-browser-render";
+import { emulatePointer } from "../../test/touch-emulation";
 import { Combobox } from "../components/combobox";
 import { InputGroup } from "../components/input-group";
 import { Input } from "../components/input/input";
@@ -43,24 +43,6 @@ afterEach(() => {
 
 /** iOS Safari zooms into a focused editable field whose text is under 16px. */
 const IOS_NO_ZOOM_FONT = 16;
-
-type TouchEmulationCdp = {
-  send: (
-    method: "Emulation.setTouchEmulationEnabled",
-    params: { enabled: boolean; maxTouchPoints?: number }
-  ) => Promise<void>;
-};
-
-/** Chromium's touch emulation, which also switches `(pointer: coarse)` on and off. */
-async function emulatePointer(pointer: "fine" | "coarse"): Promise<void> {
-  // SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
-  const session = cdp() as TouchEmulationCdp;
-  await session.send(
-    "Emulation.setTouchEmulationEnabled",
-    pointer === "coarse" ? { enabled: true, maxTouchPoints: 1 } : { enabled: false }
-  );
-  expect(matchMedia("(pointer: coarse)").matches, `${pointer} pointer emulated`).toBe(pointer === "coarse");
-}
 
 function firstSegmentOf(groupName: string): HTMLElement {
   const segment = roleNamed("group", groupName).querySelector<HTMLElement>("[role='spinbutton']");

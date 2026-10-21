@@ -107,6 +107,10 @@
       "types": "./src/data-table.ts",
       "import": "./src/data-table.ts"
     },
+    "./data-table-filter": {
+      "types": "./src/data-table-filter.ts",
+      "import": "./src/data-table-filter.ts"
+    },
     "./demo-stage-density.css": "./dist/demo-stage-density.css",
     "./description-list": {
       "types": "./src/description-list.ts",

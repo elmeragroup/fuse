@@ -6,7 +6,6 @@ import type {
   ComponentPropsWithRef,
   ComponentType,
   CSSProperties,
-  KeyboardEvent,
   ReactElement,
   ReactNode,
 } from "react";
@@ -23,6 +22,7 @@ import { ArrowLeft } from "../../icons/generated/arrow-left";
 import { CaretRight } from "../../icons/generated/caret-right";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
 import { definedProps } from "../../internal/defined-props";
+import { isBackspaceOnEmpty } from "../../internal/is-backspace-on-empty";
 import { cn } from "../../styles/cn";
 import { commandContentShellClass, commandListShellClass } from "../../styles/inner-corner/command";
 import { mergeClassName } from "../../styles/merge-class-name";
@@ -405,20 +405,6 @@ export function CommandContent({
         />
       </OverlayPortal>
     </DialogPrimitive.Root>
-  );
-}
-
-/**
- * Whether a key press is a Backspace that edits nothing, because the input is empty and no input
- * method is composing text.
- */
-function isBackspaceOnEmpty(event: KeyboardEvent<HTMLInputElement>): boolean {
-  // keyCode 229 marks an input method's key event, which some browsers send without `isComposing`.
-  return (
-    event.key === "Backspace" &&
-    event.currentTarget.value === "" &&
-    !event.nativeEvent.isComposing &&
-    event.keyCode !== 229
   );
 }
 

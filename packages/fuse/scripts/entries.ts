@@ -66,6 +66,7 @@ export const BARE_COMPONENT_ENTRIES = [
   "toggle-group",
   "tooltip",
   // plop:component-entry
+  "data-table-filter",
   "toolbar",
   "command",
   "command-virtual",
@@ -145,6 +146,7 @@ export const runtimeDependencies = [
  */
 export const OPTIONAL_PEER_ENTRIES = {
   "data-table": "@tanstack/react-table",
+  "data-table-filter": "@tanstack/react-table",
   "command-virtual": "@tanstack/react-virtual",
 } as const;
 

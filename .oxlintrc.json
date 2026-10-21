@@ -467,7 +467,8 @@
       "files": [
         "packages/fuse/src/components/data-table/data-table-contexts.ts",
         "packages/fuse/src/components/data-table/create-fuse-table-hook.ts",
-        "packages/fuse/src/components/data-table/*.test*.{ts,tsx}"
+        "packages/fuse/src/components/data-table/*.test*.{ts,tsx}",
+        "packages/fuse/src/components/data-table-filter/*.test*.{ts,tsx}"
       ],
       "rules": {
         "no-restricted-imports": [

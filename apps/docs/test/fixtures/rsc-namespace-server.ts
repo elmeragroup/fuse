@@ -31,6 +31,7 @@ import { Combobox } from "@elmeragroup/fuse/combobox";
 import { Command } from "@elmeragroup/fuse/command";
 import { CommandVirtual } from "@elmeragroup/fuse/command-virtual";
 import { DataTable } from "@elmeragroup/fuse/data-table";
+import { DataTableFilter } from "@elmeragroup/fuse/data-table-filter";
 import { Dialog } from "@elmeragroup/fuse/dialog";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import { Field } from "@elmeragroup/fuse/field";
@@ -214,6 +215,26 @@ function namespaceElements(): ReactElement[] {
       "Date",
       "DateTime",
       "Currency",
+    ]),
+    ...renderNamespace("DataTableFilter", DataTableFilter, [
+      "Root",
+      "Bar",
+      "Trigger",
+      "Chips",
+      "Chip",
+      "Subject",
+      "Operator",
+      "Value",
+      "Remove",
+      "Clear",
+      "Content",
+      "FieldList",
+      "ValueContent",
+      "Editor",
+      "OptionEditor",
+      "TextEditor",
+      "NumberEditor",
+      "DateEditor",
     ]),
     ...renderNamespace("Dialog", Dialog, [
       "Root",
