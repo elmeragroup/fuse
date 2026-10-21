@@ -156,18 +156,22 @@ export function defineFilterFields<TRow>(): <const TFields extends FilterFields<
 }
 
 /**
+ * The facet a field takes. It distributes over a union, so a map typed as `FilterFieldMap`, whose
+ * every entry is any field, takes the facet of any kind.
+ */
+type FacetFor<TField> = TField extends { readonly kind: "option" | "multiOption" }
+  ? { readonly counts: Readonly<Record<string, number>> }
+  : TField extends { readonly kind: "number" }
+    ? { readonly range: readonly [number, number] }
+    : never;
+
+/**
  * Server truth per field: counts for option fields and a range for number fields. An absent entry
  * means unknown, and a list then shows no counts and the number editor no slider.
  *
  * @template TFields - The fields map.
  */
-export type FilterFacets<TFields> = {
-  readonly [K in keyof TFields]?: TFields[K] extends { readonly kind: "option" | "multiOption" }
-    ? { readonly counts: Readonly<Record<string, number>> }
-    : TFields[K] extends { readonly kind: "number" }
-      ? { readonly range: readonly [number, number] }
-      : never;
-};
+export type FilterFacets<TFields> = { readonly [K in keyof TFields]?: FacetFor<TFields[K]> };
 
 /** The facets shape the Root reads at runtime. */
 export type AnyFilterFacets = {

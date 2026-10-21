@@ -12,6 +12,7 @@ import { DataTableFilter, defineFilterFields } from "@elmeragroup/fuse/data-tabl
 import type {
   DataTableFilterRootProps,
   DateEditorState,
+  FilterFieldMap,
   FilterOperator,
   FilterValue,
 } from "@elmeragroup/fuse/data-table-filter";
@@ -89,6 +90,15 @@ test("facets fit each field's kind", () => {
   // @ts-expect-error -- a number field takes a range, not counts
   const wrongAmount: Facets = { amount: { counts: {} } };
   expectTypeOf([wrongStatus, wrongAmount]).toBeArray();
+});
+
+test("a map typed as FilterFieldMap takes facets of any kind", () => {
+  type Facets = NonNullable<DataTableFilterRootProps<FilterFieldMap>["facets"]>;
+  const facets: Facets = { status: { counts: { paid: 3 } }, amount: { range: [0, 10] } };
+  expectTypeOf(facets).toEqualTypeOf<Facets>();
+  // @ts-expect-error -- a facet is counts or a range
+  const wrong: Facets = { status: { total: 3 } };
+  expectTypeOf(wrong).toEqualTypeOf<Facets>();
 });
 
 test("the Root takes a table with column filtering and rejects one without it", () => {
