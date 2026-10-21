@@ -79,10 +79,13 @@
  * `mainComponent` cannot be read. `insertChild` refuses an index past the end. `layoutWrap` needs
  * an auto layout frame, and `minWidth` an auto layout frame or a child of one. A layer links
  * only a property of the component or set it sits in, of the type the link needs. A component
- * set holds only components. A removed node throws on every read but its id.
+ * set holds only components. A removed node throws on every read but its id. A page's `remove`
+ * refuses the current page and the file's last page, as the Figma editor does. The typings say
+ * nothing about either, so the plugin shows another page before it removes one.
  *
  * The fake does not lay out: an auto layout frame keeps the size it was given, so a hugging
- * frame does not grow with its content.
+ * frame does not grow with its content. It draws nothing either: a layer's render bounds are
+ * its box, and a PNG export holds bytes that name the layer and the scale.
  */
 
 import * as Hex from "@elmeragroup/color/hex";
@@ -1450,6 +1453,19 @@ class FakePage extends FakeBaseNode {
     live(this).loaded = true;
     return Promise.resolve();
   }
+
+  remove(): void {
+    const state = live(this);
+    if (state.file.current === state) {
+      throw new Error(`Cannot remove ${state.id}, the current page.`);
+    }
+    if (state.parent?.children.length === 1) {
+      throw new Error(`Cannot remove ${state.id}, the file's last page.`);
+    }
+    write(state, "remove");
+    detach(state);
+    markRemoved(state);
+  }
 }
 
 /**
@@ -1508,6 +1524,27 @@ class FakeSceneNode extends FakeBaseNode {
 
   get height(): number {
     return live(this).height;
+  }
+
+  get absoluteBoundingBox(): Rect | null {
+    return absoluteBox(live(this));
+  }
+
+  /** The fake draws no effects or strokes, so a layer's render bounds are its box. */
+  get absoluteRenderBounds(): Rect | null {
+    return absoluteBox(live(this));
+  }
+
+  /** A PNG export: bytes that name the layer and the scale, since the fake draws no pixels. */
+  exportAsync(settings: ExportSettingsImage): Promise<Uint8Array> {
+    const state = live(this);
+    if (settings.format !== "PNG") {
+      throw new Error(`The fake Figma file exports only PNG, not ${settings.format}.`);
+    }
+    const scale = settings.constraint?.type === "SCALE" ? settings.constraint.value : 1;
+    return Promise.resolve(
+      Uint8Array.from(Array.from(`${state.id}@${scale}x`), (char) => char.charCodeAt(0))
+    );
   }
 
   resize(width: number, height: number): void {
@@ -1582,6 +1619,44 @@ class FakeSceneNode extends FakeBaseNode {
   setExplicitVariableModeForCollection(collection: VariableCollection, modeId: string): void {
     pinMode(live(this), collection, modeId);
   }
+
+  /** The mode the layer reads each collection in, pinned or inherited or the default (rule 8). */
+  get resolvedVariableModes(): { [collectionId: string]: string } {
+    const state = live(this);
+    return Object.fromEntries(
+      state.file.collections.map((collection) => [collection.id, modeFor(state, collection)])
+    );
+  }
+}
+
+const BASE64_DIGITS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/** Standard base64 with padding, as `figma.base64Encode` returns it. */
+function base64Encode(data: Uint8Array): string {
+  let encoded = "";
+  for (let index = 0; index < data.length; index += 3) {
+    const bits = ((data[index] ?? 0) << 16) | ((data[index + 1] ?? 0) << 8) | (data[index + 2] ?? 0);
+    const digit = (shift: number) => BASE64_DIGITS.charAt((bits >> shift) & 63);
+    encoded += digit(18) + digit(12);
+    encoded += index + 1 < data.length ? digit(6) : "=";
+    encoded += index + 2 < data.length ? digit(0) : "=";
+  }
+  return encoded;
+}
+
+/** A layer's box on its page: its position plus each ancestor's, up to the page. */
+function absoluteBox(state: NodeState): Rect {
+  let x = 0;
+  let y = 0;
+  for (
+    let current: NodeState | undefined = state;
+    current !== undefined && current.type !== "PAGE";
+    current = current.parent
+  ) {
+    x += current.x;
+    y += current.y;
+  }
+  return { x, y, width: state.width, height: state.height };
 }
 
 /** The members of frames, components, component sets and instances. */
@@ -2741,6 +2816,7 @@ export function createFakeFigma(options: FakeFigmaOptions): FakeFigma {
     | "createNodeFromSvg"
     | "combineAsVariants"
     | "flatten"
+    | "base64Encode"
     | "variables"
   > = {
     get root(): DocumentNode {
@@ -2828,6 +2904,7 @@ export function createFakeFigma(options: FakeFigmaOptions): FakeFigma {
       }
       return vector;
     },
+    base64Encode,
     // SAFETY: the object models the variable calls the plugin makes, and the guard throws for
     // every other member.
     variables: guard(variables, "figma.variables") as VariablesAPI,

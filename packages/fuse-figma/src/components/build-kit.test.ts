@@ -410,6 +410,7 @@ describe("the icon reference check", () => {
   const library = {
     key: "icons",
     name: "Icons",
+    page: "page/icons",
     size: 16,
     color: transparent,
     icons: [{ key: iconKey("Plus"), name: "Plus", svg: "<svg></svg>" }],
@@ -453,29 +454,48 @@ describe("the icon library", () => {
 });
 
 describe("the preview frames", () => {
-  it("pin three themes at both densities for each set, each on all five axes", () => {
-    expect(spec.previews.map((preview) => preview.key)).toEqual(
-      [
-        "internal-fkas-private-light/dense",
-        "internal-fkas-private-light/comfortable",
-        "internal-elma-company-dark/dense",
-        "internal-elma-company-dark/comfortable",
-        "external-fkas-private-light/dense",
-        "external-fkas-private-light/comfortable",
-      ].flatMap((theme) => [`preview/button/${theme}`, `preview/icon-button/${theme}`])
-    );
-    expect(spec.previews[4]?.modes).toEqual([
-      { collection: "Fuse tokens", mode: "Dark" },
-      { collection: "Fuse variant", mode: "Internal" },
-      { collection: "Fuse segment", mode: "Company" },
-      { collection: "Fuse brand", mode: "Elmera" },
-      { collection: "Fuse density", mode: "Dense" },
+  it("put Button and Icon button on the Button page, and the icons on a page of their own", () => {
+    expect(spec.pages).toEqual([
+      { key: "page/button", name: "Button" },
+      { key: "page/icons", name: "Icons" },
     ]);
+    expect(spec.componentSets.map((set) => [set.key, set.page])).toEqual([
+      ["button", "page/button"],
+      ["icon-button", "page/button"],
+    ]);
+    expect(spec.icons.page).toBe("page/icons");
+  });
+
+  it("pin four Fjordkraft private themes at Auto density on the Button page, each on all five axes", () => {
+    expect(spec.previews.map((preview) => [preview.key, preview.page])).toEqual(
+      [
+        "internal-fkas-private-light",
+        "internal-fkas-private-dark",
+        "external-fkas-private-light",
+        "external-fkas-private-dark",
+      ].map((theme) => [`preview/button/${theme}`, "page/button"])
+    );
+    expect(spec.previews[3]?.modes).toEqual([
+      { collection: "Fuse tokens", mode: "Dark" },
+      { collection: "Fuse variant", mode: "External" },
+      { collection: "Fuse segment", mode: "Private" },
+      { collection: "Fuse brand", mode: "Fjordkraft" },
+      { collection: "Fuse density", mode: "Auto" },
+    ]);
+  });
+
+  it("give each preview a group per set on its page, each placing variants of its set", () => {
     for (const preview of spec.previews) {
-      const set = spec.componentSets.find((candidate) => candidate.key === preview.componentSet);
-      const keys = new Set(set?.variants.map((cell) => cell.key));
-      expect(preview.variants.length).toBeGreaterThan(0);
-      expect(preview.variants.every((key) => keys.has(key))).toBe(true);
+      expect(preview.groups.map((group) => [group.key, group.name])).toEqual([
+        [`${preview.key}/button`, "Button"],
+        [`${preview.key}/icon-button`, "Icon button"],
+      ]);
+      for (const group of preview.groups) {
+        const set = spec.componentSets.find((candidate) => candidate.key === group.componentSet);
+        const keys = new Set(set?.variants.map((cell) => cell.key));
+        expect(group.variants.length).toBeGreaterThan(0);
+        expect(group.variants.every((key) => keys.has(key))).toBe(true);
+      }
     }
   });
 

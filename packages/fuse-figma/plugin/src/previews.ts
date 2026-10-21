@@ -1,14 +1,16 @@
 /**
- * Preview frames. Each pins one theme and density through explicit variable modes and holds
- * instances of the kit's variants, so a designer can check that every bound value renders
- * the theme's value.
+ * Preview frames. Each pins one theme through explicit variable modes and holds a group of
+ * instances for each component set on its page, so a designer can check that every bound value
+ * renders the theme's value.
  */
 
-import type { NumberSpec, PreviewSpec } from "../../src/components/kit-spec.ts";
+import type { NumberSpec, PreviewGroupSpec, PreviewSpec } from "../../src/components/kit-spec.ts";
 import type { PlannedSet } from "./component-set.ts";
 import { near, planNumber, planPaints, planScalar, planSizing } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
+import type { Siblings } from "./identity.ts";
+import type { PlannedPage } from "./pages.ts";
 import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
 
@@ -19,8 +21,18 @@ export type WrapGrid = {
   readonly padding: number;
 };
 
-/** Previews wrap their instances at 960px. */
+/** Previews wrap their groups at 960px. */
 const PREVIEW_GRID: WrapGrid = { width: 960, gap: 16, padding: 24 };
+
+/**
+ * A group fills a preview's row, so each set's instances start on a row of their own, and wraps
+ * its instances inside it.
+ */
+const GROUP_GRID: WrapGrid = {
+  width: PREVIEW_GRID.width - 2 * PREVIEW_GRID.padding,
+  gap: PREVIEW_GRID.gap,
+  padding: 0,
+};
 
 /** The space between component sets, between the sets and the first preview, and between previews. */
 const SET_SPACING = 64;
@@ -136,105 +148,171 @@ function planModes(run: Run, frame: FrameNode, label: string, spec: PreviewSpec)
   }
 }
 
+/**
+ * Plan a group's instances. Each instance's key is the preview's key, `/` and the variant's key,
+ * which starts with the set's key, so it nests under the group's key too.
+ */
 async function planInstances(
   run: Run,
-  frame: FrameNode,
+  group: FrameNode,
   label: string,
-  spec: PreviewSpec,
+  previewKey: string,
+  spec: PreviewGroupSpec,
   set: PlannedSet
 ): Promise<void> {
-  const children = spec.variants.map((variant) => ({ key: `${spec.key}/${variant}`, variant }));
-  await planOwnedChildren(run.plan, frame, label, "instance", children, async ({ key, variant }) => {
-    const component = set.variants.get(variant);
-    if (component === undefined) {
-      throw new Error(`${spec.name} places ${variant}, which ${set.spec.name} does not define.`);
+  const children = spec.variants.map((variant) => ({ key: `${previewKey}/${variant}`, variant }));
+  await planOwnedChildren(
+    run.plan,
+    group,
+    label,
+    "instance",
+    children,
+    async ({ key, variant }, siblings) => {
+      const component = set.variants.get(variant);
+      if (component === undefined) {
+        throw new Error(`${label} places ${variant}, which ${set.spec.name} does not define.`);
+      }
+      const found = findOwned(run.plan, siblings, label, key, key, isInstance);
+      if (found === undefined) {
+        return create(run.plan, label, `add an instance of ${variant}`, () =>
+          placeOwned(group, component.get().createInstance(), key)
+        );
+      }
+      const main = await found.getMainComponentAsync();
+      if (component.existing === undefined || main?.id !== component.existing.id) {
+        change(run.plan, label, `point the instance ${key} at ${variant}`, () =>
+          found.swapComponent(component.get())
+        );
+      }
+      return existing(found);
     }
-    const found = findOwned(run.plan, frame.children, label, key, key, isInstance);
-    if (found === undefined) {
-      return create(run.plan, label, `add an instance of ${variant}`, () =>
-        placeOwned(frame, component.get().createInstance(), key)
-      );
-    }
-    const main = await found.getMainComponentAsync();
-    if (component.existing === undefined || main?.id !== component.existing.id) {
-      change(run.plan, label, `point the instance ${key} at ${variant}`, () =>
-        found.swapComponent(component.get())
-      );
-    }
-    return existing(found);
-  });
+  );
 }
 
-async function planFrame(run: Run, frame: FrameNode, spec: PreviewSpec, set: PlannedSet): Promise<void> {
+async function planGroupFields(
+  run: Run,
+  group: FrameNode,
+  label: string,
+  previewKey: string,
+  spec: PreviewGroupSpec,
+  set: PlannedSet
+): Promise<void> {
+  planScalar(run, label, "name", group.name, spec.name, () => {
+    group.name = spec.name;
+  });
+  planWrapFrame(run, group, label, GROUP_GRID);
+  // A new frame clips, and a group has no padding, so a clipping group would cut the focus ring
+  // off an instance at its edge.
+  planScalar(run, label, "clipsContent", group.clipsContent, false, () => {
+    group.clipsContent = false;
+  });
+  await planInstances(run, group, label, previewKey, spec, set);
+}
+
+async function planGroup(
+  run: Run,
+  frame: FrameNode,
+  siblings: Siblings,
+  preview: PreviewSpec,
+  spec: PreviewGroupSpec,
+  sets: ReadonlyMap<string, PlannedSet>
+): Promise<Target<FrameNode>> {
+  const set = sets.get(spec.componentSet);
+  if (set === undefined) {
+    throw new Error(
+      `${preview.name} places variants of ${spec.componentSet}, which the kit does not define.`
+    );
+  }
+  const label = `${preview.name} / ${spec.name}`;
+  const found = findOwned(run.plan, siblings, preview.name, spec.key, spec.name, isFrame);
+  if (found !== undefined) {
+    await planGroupFields(run, found, label, preview.key, spec, set);
+    return existing(found);
+  }
+  return create(
+    run.plan,
+    preview.name,
+    `create the group ${spec.name}`,
+    () => placeOwned(frame, run.figma.createFrame(), spec.key, spec.name),
+    (made, plan) => planGroupFields({ ...run, plan }, made, label, preview.key, spec, set)
+  );
+}
+
+async function planFrame(
+  run: Run,
+  frame: FrameNode,
+  spec: PreviewSpec,
+  sets: ReadonlyMap<string, PlannedSet>
+): Promise<void> {
   planScalar(run, spec.name, "name", frame.name, spec.name, () => {
     frame.name = spec.name;
   });
   planWrapFrame(run, frame, spec.name, PREVIEW_GRID);
   planModes(run, frame, spec.name, spec);
-  await planInstances(run, frame, spec.name, spec, set);
+  await planOwnedChildren(run.plan, frame, spec.name, "group", spec.groups, (group, siblings) =>
+    planGroup(run, frame, siblings, spec, group, sets)
+  );
 }
 
 /**
- * Plan the preview frames against the spec.
+ * Plan a page's preview frames against the spec.
  *
  * @param run - The run.
- * @param page - The kit's page.
- * @param specs - The previews.
+ * @param page - The page the previews sit on.
+ * @param specs - The page's previews.
  * @param sets - The component sets as the plan leaves them, by key.
  * @returns The preview frames, in spec order, as later operations find them.
  */
 export async function planPreviews(
   run: Run,
-  page: PageNode,
+  page: PlannedPage,
   specs: readonly PreviewSpec[],
   sets: ReadonlyMap<string, PlannedSet>
 ): Promise<Target<FrameNode>[]> {
   const frames: Target<FrameNode>[] = [];
   for (const spec of specs) {
-    const set = sets.get(spec.componentSet);
-    if (set === undefined) {
-      throw new Error(`${spec.name} places variants of ${spec.componentSet}, which the kit does not define.`);
-    }
-    const found = findOwned(run.plan, page.children, page.name, spec.key, spec.name, isFrame);
+    const found = page.find(spec.key, spec.name, isFrame);
     if (found !== undefined) {
-      await planFrame(run, found, spec, set);
+      await planFrame(run, found, spec, sets);
       frames.push(existing(found));
       continue;
     }
     frames.push(
       create(
         run.plan,
-        page.name,
+        page.spec.name,
         `create the preview ${spec.name}`,
-        () => placeOwned(page, run.figma.createFrame(), spec.key, spec.name),
-        (made, plan) => planFrame({ ...run, plan }, made, spec, set)
+        () => placeOwned(page.node.get(), run.figma.createFrame(), spec.key, spec.name),
+        (made, plan) => planFrame({ ...run, plan }, made, spec, sets)
       )
     );
   }
   return frames;
 }
 
+/** A node of a page's row, such as a component set, and its name for the change line. */
+export type RowNode = {
+  readonly name: string;
+  readonly node: Target<ComponentSetNode | FrameNode>;
+};
+
 /**
- * The page layout: the component sets in a row from where the first set sits, then the icon
- * library, then the previews stacked below the tallest of them, left-aligned with the first set.
+ * The page layout: the row's nodes from where the first one sits, then the previews stacked below
+ * the tallest of them, left-aligned with the first node.
  */
-function pageLayout(
-  sets: readonly PlannedSet[],
-  library: Target<FrameNode>,
-  frames: readonly Target<FrameNode>[]
-): Placed[] {
-  const row = [...sets.map((set) => set.node.get()), library.get()];
-  const [first] = row;
+function pageLayout(row: readonly RowNode[], frames: readonly Target<FrameNode>[]): Placed[] {
+  const nodes = row.map((entry) => entry.node.get());
+  const [first] = nodes;
   if (first === undefined) {
     return [];
   }
   const placed: Placed[] = [];
   let x = first.x;
-  for (const node of row) {
+  for (const node of nodes) {
     placed.push({ node, x, y: first.y });
     x += node.width + SET_SPACING;
   }
-  let y = first.y + Math.max(...row.map((node) => node.height)) + PREVIEW_MARGIN;
+  let y = first.y + Math.max(...nodes.map((node) => node.height)) + PREVIEW_MARGIN;
   for (const target of frames) {
     const frame = target.get();
     placed.push({ node: frame, x: first.x, y });
@@ -243,53 +321,50 @@ function pageLayout(
   return placed;
 }
 
+/** `A`, `A and B`, or `A, B and C`. */
+function listed(names: readonly string[]): string {
+  const last = names.at(-1) ?? "";
+  return names.length < 2 ? last : `${names.slice(0, -1).join(", ")} and ${last}`;
+}
+
 /**
- * Plan the page layout: the component sets and the icon library in a row, and the previews
+ * Plan a page's layout: its component sets, or its icon library, in a row, and its previews
  * stacked below them. The layout reads the sizes of what it places when its operation runs,
  * after the writes that change them.
  *
  * @param run - The run.
- * @param page - The kit's page.
- * @param sets - The component sets.
- * @param library - The icon library frame.
+ * @param page - The page.
+ * @param row - The nodes of the row, in order.
  * @param frames - The preview frames, in spec order.
  * @param changed - Whether the plan changes anything on the page, which may move or resize
  *   what the layout reads.
  */
 export function placePageContents(
   run: Run,
-  page: PageNode,
-  sets: readonly PlannedSet[],
-  library: Target<FrameNode>,
+  page: PlannedPage,
+  row: readonly RowNode[],
   frames: readonly Target<FrameNode>[],
   changed: boolean
 ): void {
-  // The first set stays where it is and leads the row.
-  if (sets.length === 0) {
+  // The first node stays where it is and leads the row, so a lone node needs no layout.
+  if (row.length === 0 || row.length + frames.length === 1) {
     return;
   }
   const settled =
     !changed &&
-    library.existing !== undefined &&
-    sets.every((set) => set.node.existing !== undefined) &&
+    row.every((entry) => entry.node.existing !== undefined) &&
     frames.every((frame) => frame.existing !== undefined);
   if (
     settled &&
-    pageLayout(sets, library, frames).every(
-      (placed) => near(placed.node.x, placed.x) && near(placed.node.y, placed.y)
-    )
+    pageLayout(row, frames).every((placed) => near(placed.node.x, placed.x) && near(placed.node.y, placed.y))
   ) {
     return;
   }
-  change(
-    run.plan,
-    page.name,
-    `place ${sets.length} component sets and the icons in a row and stack ${frames.length} previews below them`,
-    () => {
-      for (const placed of pageLayout(sets, library, frames)) {
-        placed.node.x = placed.x;
-        placed.node.y = placed.y;
-      }
+  const stack = frames.length === 0 ? "" : ` and stack ${frames.length} previews below them`;
+  change(run.plan, page.spec.name, `place ${listed(row.map((entry) => entry.name))} in a row${stack}`, () => {
+    for (const placed of pageLayout(row, frames)) {
+      placed.node.x = placed.x;
+      placed.node.y = placed.y;
     }
-  );
+  });
 }

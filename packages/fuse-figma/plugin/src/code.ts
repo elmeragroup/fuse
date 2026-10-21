@@ -53,9 +53,13 @@ async function respond(request: string): Promise<void> {
       return;
     }
     if (request === "snapshots") {
-      const snapshot = await exportSnapshots(figma, kit.page.key, (done, total) => {
-        post({ kind: "progress", done, total });
-      });
+      const snapshot = await exportSnapshots(
+        figma,
+        kit.pages.map((page) => page.key),
+        (done, total) => {
+          post({ kind: "progress", done, total });
+        }
+      );
       post({ kind: "snapshots", snapshot });
       return;
     }

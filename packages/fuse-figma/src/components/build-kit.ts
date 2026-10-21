@@ -1,7 +1,7 @@
 /**
- * Build the component kit the Fuse plugin applies: an icon component for every Fuse icon, a
- * component set for each entry of `kit-registry.ts`, preview frames that pin three themes at both
- * densities, and the coverage table of every recipe class.
+ * Build the component kit the Fuse plugin applies: a page for each component, holding the
+ * component sets of `kit-registry.ts` and four preview frames, and an `Icons` page holding an
+ * icon component for every Fuse icon. It also builds the coverage table of every recipe class.
  */
 import { Result } from "effect";
 
@@ -16,44 +16,46 @@ import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { makeVariableIndex, readColor } from "./css-values";
 import { fuseIcons, ICON_SIZE } from "./icon-library";
 import { KIT } from "./kit-registry";
-import type { ComponentSetSpec, IconLibrarySpec, KitSpec, ModeRef, PreviewSpec } from "./kit-spec";
+import type { KitPage } from "./kit-registry";
+import type { ComponentSetSpec, IconLibrarySpec, KitSpec, ModeRef, PageSpec, PreviewSpec } from "./kit-spec";
 import { compileUtilities } from "./utility-css";
 
-/** The three themes the preview frames pin, as the mode of each theme axis. */
-const PREVIEW_THEMES = [
-  {
-    key: "internal-fkas-private-light",
-    name: "Fjordkraft internal private, light",
+/**
+ * A theme the previews pin: Fjordkraft private in one variant and color scheme. Density `Auto`
+ * follows the variant, so an internal theme renders dense and an external one comfortable, as a
+ * Fuse host renders them.
+ */
+function previewTheme(variant: "Internal" | "External", scheme: "Light" | "Dark") {
+  return {
+    key: `${variant.toLowerCase()}-fkas-private-${scheme.toLowerCase()}`,
+    name: `Fjordkraft ${variant.toLowerCase()} private, ${scheme.toLowerCase()}`,
     modes: {
-      "Fuse tokens": "Light",
-      "Fuse variant": "Internal",
+      "Fuse tokens": scheme,
+      "Fuse variant": variant,
       "Fuse segment": "Private",
       "Fuse brand": "Fjordkraft",
+      "Fuse density": "Auto",
     },
-  },
-  {
-    key: "internal-elma-company-dark",
-    name: "Elmera internal company, dark",
-    modes: {
-      "Fuse tokens": "Dark",
-      "Fuse variant": "Internal",
-      "Fuse segment": "Company",
-      "Fuse brand": "Elmera",
-    },
-  },
-  {
-    key: "external-fkas-private-light",
-    name: "Fjordkraft external private, light",
-    modes: {
-      "Fuse tokens": "Light",
-      "Fuse variant": "External",
-      "Fuse segment": "Private",
-      "Fuse brand": "Fjordkraft",
-    },
-  },
-] as const;
+  };
+}
 
-const PREVIEW_DENSITIES = ["Dense", "Comfortable"] as const;
+/**
+ * The four themes each component page previews. A designer switches a preview's modes to see
+ * the others.
+ */
+const PREVIEW_THEMES = [
+  previewTheme("Internal", "Light"),
+  previewTheme("Internal", "Dark"),
+  previewTheme("External", "Light"),
+  previewTheme("External", "Dark"),
+];
+
+/** The page that holds the icon library alone. */
+const ICONS_PAGE: PageSpec = { key: "page/icons", name: "Icons" };
+
+function pageSpec(page: KitPage): PageSpec {
+  return { key: `page/${page.slug}`, name: page.name };
+}
 
 /**
  * The page a Fuse host renders into. The docs layout sets `font-sans text-foreground` on
@@ -109,9 +111,10 @@ export async function buildKit(): Promise<{
     )
   );
   const compiled = await compileUtilities([...utilities]);
-  const built = KIT.map(({ definition }) =>
-    buildComponentSet(definition, { compiled, variables, page: PAGE })
-  );
+  const built = KIT.map(({ definition, page }) => {
+    const set = buildComponentSet(definition, { compiled, variables, page: PAGE });
+    return { ...set, componentSet: { ...set.componentSet, page: pageSpec(page).key } };
+  });
   const glyphColor = readColor("var(--foreground)", variables);
   if (glyphColor === undefined) {
     throw new Error("the variable set has no foreground for the icon glyphs");
@@ -119,6 +122,7 @@ export async function buildKit(): Promise<{
   const icons: IconLibrarySpec = {
     key: "icons",
     name: "Icons",
+    page: ICONS_PAGE.key,
     size: ICON_SIZE,
     color: glyphColor,
     icons: await fuseIcons(),
@@ -128,32 +132,39 @@ export async function buildKit(): Promise<{
   }
 
   const modeNames = new Map(collections.map((collection) => [collection.name, new Set(collection.modes)]));
-  const previews = PREVIEW_THEMES.flatMap((theme) =>
-    PREVIEW_DENSITIES.flatMap((density) => {
-      const modes: ModeRef[] = [
-        ...Object.entries(theme.modes).map(([collection, mode]) => ({ collection, mode })),
-        { collection: "Fuse density", mode: density },
-      ];
-      for (const { collection, mode } of modes) {
-        if (modeNames.get(collection)?.has(mode) !== true) {
-          throw new Error(
-            `the preview ${theme.key} pins ${collection} / ${mode}, which the variable set lacks`
-          );
-        }
+  const themes = PREVIEW_THEMES.map((theme) => {
+    const modes: ModeRef[] = Object.entries(theme.modes).map(([collection, mode]) => ({ collection, mode }));
+    for (const { collection, mode } of modes) {
+      if (modeNames.get(collection)?.has(mode) !== true) {
+        throw new Error(
+          `the preview ${theme.key} pins ${collection} / ${mode}, which the variable set lacks`
+        );
       }
-      return KIT.map(({ definition, previewCells: cells }): PreviewSpec => ({
-        key: `preview/${definition.key}/${theme.key}/${density.toLowerCase()}`,
-        name: `${definition.name} / ${theme.name} / ${density}`,
-        modes,
-        componentSet: definition.key,
-        variants: cells.map((cell) => variantKey(definition, cell)),
-      }));
+    }
+    return { ...theme, modes };
+  });
+  const componentPages = [...new Map(KIT.map(({ page }) => [page.slug, page])).values()];
+  const previews = componentPages.flatMap((page) =>
+    themes.map((theme): PreviewSpec => {
+      const key = `preview/${page.slug}/${theme.key}`;
+      return {
+        key,
+        name: `${page.name} / ${theme.name}`,
+        page: pageSpec(page).key,
+        modes: theme.modes,
+        groups: KIT.filter((entry) => entry.page.slug === page.slug).map(({ definition, previewCells }) => ({
+          key: `${key}/${definition.key}`,
+          name: definition.name,
+          componentSet: definition.key,
+          variants: previewCells.map((cell) => variantKey(definition, cell)),
+        })),
+      };
     })
   );
 
   return {
     spec: {
-      page: { key: "page/components", name: "Fuse components" },
+      pages: [...componentPages.map(pageSpec), ICONS_PAGE],
       fonts: [...new Set(built.flatMap((set) => set.fontStyles))].map((style) => ({
         family: defaultFontFamily(),
         style,
@@ -174,7 +185,7 @@ export async function buildKit(): Promise<{
  * @param library - The icon library the kit ships.
  * @throws When the set names an icon the library lacks, or links a property it does not define.
  */
-export function checkIconReferences(set: ComponentSetSpec, library: IconLibrarySpec): void {
+export function checkIconReferences(set: Omit<ComponentSetSpec, "page">, library: IconLibrarySpec): void {
   const icons = new Set(library.icons.map((icon) => icon.key));
   const properties = new Set(set.swapProperties.map((property) => property.name));
   for (const property of set.swapProperties) {

@@ -5,6 +5,7 @@
  * runs, so those plans can then look up nothing that fails.
  */
 
+import { topLevelSpecs } from "../../src/components/kit-spec.ts";
 import type {
   ColorSpec,
   ComponentRootSpec,
@@ -95,22 +96,41 @@ export function kitCollections(kit: KitSpec): ReadonlySet<string> {
  * @param variables - The file's variables.
  * @param kit - The kit.
  * @throws When the file lacks a variable or mode the kit names, a variable has the wrong type,
- *   or the spec contradicts itself.
+ *   or the spec contradicts itself, such as a page key listed twice, a node on a page the kit
+ *   does not list, or a preview that places a set from another page.
  */
 export function checkKit(variables: KitVariables, kit: KitSpec): void {
+  const pages = new Set<string>();
+  for (const page of kit.pages) {
+    if (pages.has(page.key)) {
+      throw new Error(`The kit lists the page key ${page.key} twice.`);
+    }
+    pages.add(page.key);
+  }
+  for (const { name, page } of topLevelSpecs(kit)) {
+    if (!pages.has(page)) {
+      throw new Error(`${name} sits on the page ${page}, which the kit does not list.`);
+    }
+  }
   for (const set of kit.componentSets) {
     checkComponentSet(set);
   }
   for (const preview of kit.previews) {
-    const set = kit.componentSets.find((candidate) => candidate.key === preview.componentSet);
-    if (set === undefined) {
-      throw new Error(
-        `${preview.name} places variants of ${preview.componentSet}, which the kit does not define.`
-      );
-    }
-    for (const variant of preview.variants) {
-      if (!set.variants.some((candidate) => candidate.key === variant)) {
-        throw new Error(`${preview.name} places ${variant}, which ${set.name} does not define.`);
+    for (const group of preview.groups) {
+      const set = kit.componentSets.find((candidate) => candidate.key === group.componentSet);
+      if (set === undefined) {
+        throw new Error(
+          `${preview.name} places variants of ${group.componentSet}, which the kit does not define.`
+        );
+      }
+      if (set.page !== preview.page) {
+        throw new Error(`${preview.name} places ${set.name}, which sits on another page.`);
+      }
+      const variants = new Set(set.variants.map((variant) => variant.key));
+      for (const variant of group.variants) {
+        if (!variants.has(variant)) {
+          throw new Error(`${preview.name} places ${variant}, which ${set.name} does not define.`);
+        }
       }
     }
     for (const ref of preview.modes) {

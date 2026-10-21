@@ -128,7 +128,7 @@ export type BuildContext = {
 
 /** A component set and the coverage of the recipe classes it read. */
 export type BuiltComponent = {
-  readonly componentSet: ComponentSetSpec;
+  readonly componentSet: Omit<ComponentSetSpec, "page">;
   readonly coverage: readonly CoverageRow[];
   /** Each font style the text layers use. */
   readonly fontStyles: readonly string[];

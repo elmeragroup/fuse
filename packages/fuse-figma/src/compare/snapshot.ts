@@ -53,7 +53,7 @@ export type InstanceSnapshot = {
 
 /** One preview frame and the modes it renders its instances in. */
 export type PreviewSnapshot = {
-  /** The frame's key, such as `preview/button/internal-fkas-private-light/dense`. */
+  /** The frame's key, such as `preview/button/internal-fkas-private-light`. */
   readonly key: string;
   /** The frame's layer name. */
   readonly name: string;
