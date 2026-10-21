@@ -33,6 +33,7 @@ import {
 } from "../overlay/menu-row-classes";
 import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
+import { switchVariants } from "../switch/switch-variants";
 import { EditorTargetContext, useFilterInternals, useOverlayRef } from "./data-table-filter";
 import type { EditorTarget } from "./data-table-filter";
 import { OptionCount } from "./data-table-filter-editors";
@@ -46,6 +47,8 @@ import { closeSubmenuOnBackspace, keepKeysFromToolbar, SearchableMenu } from "./
 import { useContains } from "./use-contains";
 
 type OptionField = FilterFieldOfKind<"option" | "multiOption">;
+
+const switchSlots = switchVariants();
 
 /** The menu's query, which `Content` owns beside its filter provider and `FieldList` reads. */
 const MenuQueryContext = createContext("");
@@ -480,9 +483,13 @@ function FieldItem({
 
 /**
  * A boolean toggle: one checkbox row that ticks the filter on and off, and keeps the menu open, as
- * Menu.CheckboxItem does. Its check trails in the column where the other rows have their caret, so
- * the labels line up. The count is the rows the toggle keeps, hidden from assistive technology so
- * the row's name stays the field's.
+ * Menu.CheckboxItem does. A small switch in Switch's look ends the row, in the column where the
+ * other rows end with their caret, and the count sits just before it. The switch is a picture of
+ * the row's own checked state: two kept-mounted checkbox indicators, the track and the thumb,
+ * which carry the item's `data-checked` or `data-unchecked` and are hidden from assistive
+ * technology. The row stays the one `menuitemcheckbox`, so the switch has no role, focus or
+ * handler. The count is the rows the toggle keeps, also hidden, so the row's name stays the
+ * field's.
  */
 function ToggleItem({
   fieldId,
@@ -504,14 +511,17 @@ function ToggleItem({
       onCheckedChange={() => {
         actions.toggle(fieldId, "true");
       }}
-      className={cn(menuItemClass, menuItemIndicatorRoomClass, slots.row())}>
+      className={cn(menuItemClass, slots.row())}>
       <FieldRowContent field={field} active={false} />
       {count === undefined ? null : <OptionCount count={count} />}
-      <span className={menuItemIndicatorClass}>
-        <MenuPrimitive.CheckboxItemIndicator>
-          <Check aria-hidden />
-        </MenuPrimitive.CheckboxItemIndicator>
-      </span>
+      <MenuPrimitive.CheckboxItemIndicator
+        keepMounted
+        data-slot="data-table-filter-toggle-switch"
+        data-size="sm"
+        // The count takes the free space when it shows. Without it the switch does.
+        className={cn(switchSlots.root(), count === undefined ? "ms-auto" : undefined)}>
+        <MenuPrimitive.CheckboxItemIndicator keepMounted className={switchSlots.thumb()} />
+      </MenuPrimitive.CheckboxItemIndicator>
     </MenuPrimitive.CheckboxItem>
   );
 }

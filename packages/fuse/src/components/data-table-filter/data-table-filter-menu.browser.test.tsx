@@ -1246,12 +1246,53 @@ describe("DataTableFilter toggles", () => {
     return roleNamed("group", "Rush only filter");
   }
 
+  /** The switch at the end of the toggle's row. */
+  function rowSwitch(): Element | null {
+    // DOM audit: the switch is a picture of the row's state, hidden from assistive technology, so
+    // no role or name reaches it.
+    return roleNamed("menuitemcheckbox", "Rush only").querySelector(
+      "[data-slot=data-table-filter-toggle-switch]"
+    );
+  }
+
+  /** An element's checked face: `on` for `data-checked`, `off` for `data-unchecked`. */
+  function face(element: Element | null | undefined): string {
+    if (element === null || element === undefined) {
+      return "missing";
+    }
+    if (element.hasAttribute("data-checked")) {
+      return "on";
+    }
+    return element.hasAttribute("data-unchecked") ? "off" : "neither";
+  }
+
+  /** The switch's track and thumb faces. */
+  function switchFaces(): readonly [track: string, thumb: string] {
+    const track = rowSwitch();
+    return [face(track), face(track?.firstElementChild)];
+  }
+
   it("is one checkbox row in the field list, with the count of the rows it keeps", async () => {
     renderOrders({ initial: [], fields: FIELDS_WITH_RUSH_TOGGLE });
     await openMenu();
     const row = roleNamed("menuitemcheckbox", "Rush only");
     expect(row.getAttribute("aria-checked")).toBe("false");
     expect(row.textContent).toBe("Rush only3");
+    // The row ends with a switch drawn off, after the count, with no role or focus of its own.
+    expect(switchFaces()).toEqual(["off", "off"]);
+    const track = rowSwitch();
+    expect(row.lastElementChild).toBe(track);
+    expect(track?.previousElementSibling?.getAttribute("data-slot")).toBe("data-table-filter-count");
+    expect(
+      [track, track?.firstElementChild].map((part) => [
+        part?.getAttribute("aria-hidden") ?? null,
+        part?.getAttribute("role") ?? null,
+        part?.getAttribute("tabindex") ?? null,
+      ])
+    ).toEqual([
+      ["true", null, null],
+      ["true", null, null],
+    ]);
   });
 
   it("ticks on with the menu still open, as a chip that is its name and Remove, and ticks off again", async () => {
@@ -1264,6 +1305,7 @@ describe("DataTableFilter toggles", () => {
     await expect
       .poll(() => roleNamed("menuitemcheckbox", "Rush only").getAttribute("aria-checked"))
       .toBe("true");
+    expect(switchFaces()).toEqual(["on", "on"]);
     expect(page.elementLocator(chip()).getByRole("combobox").query()).toBeNull();
     expect(
       page
@@ -1275,6 +1317,7 @@ describe("DataTableFilter toggles", () => {
     await userEvent.click(roleNamed("menuitemcheckbox", "Rush only"));
     await expect.poll(columnFilters).toEqual([]);
     expect(visibleOrders()).toBe("1 2 3 4 5 6");
+    await expect.poll(switchFaces).toEqual(["off", "off"]);
   });
 
   it("removes the chip on Delete and moves focus to the Trigger", async () => {
@@ -1291,8 +1334,10 @@ describe("DataTableFilter toggles", () => {
     expect(page.elementLocator(chip()).getByRole("button", { name: "No" }).query()).not.toBeNull();
     await openMenu();
     expect(roleNamed("menuitemcheckbox", "Rush only").getAttribute("aria-checked")).toBe("false");
+    expect(switchFaces()).toEqual(["off", "off"]);
     await userEvent.click(roleNamed("menuitemcheckbox", "Rush only"));
     await expect.poll(columnFilters).toEqual(RUSH_TRUE);
+    await expect.poll(switchFaces).toEqual(["on", "on"]);
   });
 
   it("moves focus to Remove when an operator pick turns a stale toggle on", async () => {
