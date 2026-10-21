@@ -3,7 +3,7 @@
 
 import type { FilterFieldMap } from "./filter-fields";
 import type { DataTableFilterEntry, FilterValue } from "./filter-model";
-import { fieldAdmits, isFilterValue, isString } from "./filter-model";
+import { fieldAdmits, isFilterValue, isObject, isString } from "./filter-model";
 
 /**
  * Parses `columnFilters` from untrusted input. An entry stays only when its id is a field, its
@@ -48,7 +48,7 @@ function parseEntries(
   const entries: DataTableFilterEntry[] = [];
   const list: readonly unknown[] = input;
   for (const entry of list) {
-    if (!(entry instanceof Object) || !("id" in entry && "value" in entry)) {
+    if (!isObject(entry) || !("id" in entry && "value" in entry)) {
       continue;
     }
     const { id, value } = entry;

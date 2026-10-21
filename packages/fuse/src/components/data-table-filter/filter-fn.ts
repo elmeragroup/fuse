@@ -4,7 +4,7 @@
 
 import { matchesFilter } from "./filter-match";
 import type { MatchOptions } from "./filter-match";
-import { isFilterValue } from "./filter-model";
+import { isFilterValue, isObject } from "./filter-model";
 import type { FilterValue } from "./filter-model";
 
 /** The row members the filter function reads. */
@@ -43,9 +43,7 @@ export function createDataTableFilterFn(options: MatchOptions = {}): DataTableFi
   const parsed = new WeakMap<object, boolean>();
   // oxlint-disable-next-line anti-slop/no-unknown-parameters -- TanStack's FilterFn contract passes the raw state value
   const isParsed = (filterValue: unknown): filterValue is FilterValue => {
-    // An object from another realm, such as an iframe, fails `instanceof Object`.
-    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- the parse boundary over TanStack's untyped filter value
-    if (typeof filterValue !== "object" || filterValue === null) {
+    if (!isObject(filterValue)) {
       return false;
     }
     let valid = parsed.get(filterValue);

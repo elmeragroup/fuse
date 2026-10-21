@@ -2,6 +2,7 @@
  * Unit project. Every expectation below is a handwritten table, never a value recomputed through
  * the model under test.
  */
+import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 
 import { defineFilterFields } from "./filter-fields";
@@ -501,6 +502,13 @@ describe("parseColumnFilters", () => {
     expect(parseColumnFilters([status, second], FIELDS)).toEqual([status]);
   });
 
+  it("keeps an entry created in another realm, such as an iframe", () => {
+    const foreign: unknown = runInNewContext(
+      '[{ id: "status", value: { kind: "option", operator: "is", values: ["paid"] } }]'
+    );
+    expect(parseColumnFilters(foreign, FIELDS)).toEqual([status]);
+  });
+
   it("gives no filters for input that is not an array", () => {
     expect(parseColumnFilters({ status: "paid" }, FIELDS)).toEqual([]);
     expect(parseColumnFilters(null, FIELDS)).toEqual([]);
@@ -520,5 +528,12 @@ describe("createDataTableFilterFn", () => {
     const row = { getValue: (columnId: string) => (columnId === "status" ? "paid" : "other") };
     expect(filterFn(row, "status", { kind: "option", operator: "is", values: ["paid"] })).toBe(true);
     expect(filterFn(row, "kind", { kind: "option", operator: "is", values: ["paid"] })).toBe(false);
+  });
+
+  it("applies and keeps a value created in another realm, such as an iframe", () => {
+    const foreign: unknown = runInNewContext('({ kind: "option", operator: "is", values: ["paid"] })');
+    const row = { getValue: () => "pending" };
+    expect(filterFn.autoRemove(foreign)).toBe(false);
+    expect(filterFn(row, "status", foreign)).toBe(false);
   });
 });

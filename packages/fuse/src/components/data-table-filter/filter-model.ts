@@ -144,6 +144,19 @@ const OPERATOR_SPECS: OperatorLookup = OPERATORS;
 // runtime type checks, and every predicate below builds on them.
 
 /**
+ * Whether an untyped value is a non-null object. Unlike `instanceof Object`, it holds for an
+ * object from another realm, such as an iframe.
+ *
+ * @param value - The value to check.
+ * @returns Whether it is an object.
+ */
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- the parse boundary over untyped filter state
+export function isObject(value: unknown): value is object {
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- the parse boundary over untyped filter state
+  return typeof value === "object" && value !== null;
+}
+
+/**
  * Whether an untyped value is a string.
  *
  * @param value - The value to check.
@@ -453,7 +466,7 @@ export function toFilterValue(
  */
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- the parse boundary over untyped filter state
 export function isFilterValue(value: unknown): value is FilterValue {
-  if (!(value instanceof Object) || !("kind" in value && "operator" in value && "values" in value)) {
+  if (!isObject(value) || !("kind" in value && "operator" in value && "values" in value)) {
     return false;
   }
   const { kind, operator, values } = value;
