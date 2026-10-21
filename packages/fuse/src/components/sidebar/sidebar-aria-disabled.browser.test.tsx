@@ -1,10 +1,11 @@
 // Rows announced `aria-disabled="true"`: they keep pointer events so a Tooltip opens, and cancel
 // their own activation. Toggling, layout, cookies, tooltips and the slot roster stay in
 // sidebar.browser.test.tsx.
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { expectActivationCancelled, resetHashAroundEach } from "../../../test/aria-disabled-activation";
 import { Frame, OrdersLink, setupSidebarBrowser } from "../../../test/sidebar-browser-fixtures";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Tooltip } from "../tooltip";
@@ -14,28 +15,8 @@ setupSidebarBrowser();
 
 describe("aria-disabled Sidebar rows", () => {
   // The rows keep pointer events so a Tooltip still opens, so the row itself cancels
-  // activation. A hash link is the navigation probe: following it changes `location.hash`
-  // without unloading the test page.
-  beforeEach(() => {
-    history.replaceState(null, "", `${location.pathname}${location.search}`);
-  });
-  afterEach(() => {
-    history.replaceState(null, "", `${location.pathname}${location.search}`);
-  });
-
-  /** Click the row, then press Enter on it, and check that neither navigates or runs `onClick`. */
-  async function expectActivationCancelled(row: HTMLElement, clicks: readonly string[]): Promise<void> {
-    // Playwright refuses to click an `aria-disabled` element; `force` skips that check so the
-    // click reaches the row the way a user's pointer does.
-    await userEvent.click(row, { force: true });
-    expect(location.hash, "after a click").toBe("");
-    expect(clicks, "after a click").toEqual([]);
-
-    row.focus();
-    await userEvent.keyboard("{Enter}");
-    expect(location.hash, "after Enter").toBe("");
-    expect(clicks, "after Enter").toEqual([]);
-  }
+  // activation.
+  resetHashAroundEach();
 
   it("neither follows a MenuButton link nor runs its onClick, and still opens its Tooltip", async () => {
     const clicks: string[] = [];

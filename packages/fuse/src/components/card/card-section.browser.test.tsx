@@ -3,6 +3,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { expectActivationCancelled, resetHashAroundEach } from "../../../test/aria-disabled-activation";
 import { ringLayers, settleTransitions } from "../../../test/assert-invalid-ring";
 import { RADIUS_LG } from "../../../test/inner-corner-specimens";
 import { cssVarColor, fkasExternal, px, renderThemed, roleNamed } from "../../../test/themed-browser-render";
@@ -341,6 +342,61 @@ describe("Card.Section", () => {
     expect(getComputedStyle(link).cursor).toBe("pointer");
     expect(getComputedStyle(link).display).toBe("block");
     expect(getComputedStyle(link).textDecorationLine).toBe("none");
+  });
+
+  describe("an aria-disabled link section", () => {
+    // A link takes no native `disabled`, so a link section announced unavailable cancels its
+    // own activation.
+    resetHashAroundEach();
+
+    it("neither follows the link nor runs its onClick", async () => {
+      const clicks: string[] = [];
+      renderThemed(
+        <Card.Root>
+          <Card.SectionButton
+            render={<a href="#terms" aria-disabled="true" />}
+            onClick={() => clicks.push("terms")}>
+            Read the terms
+          </Card.SectionButton>
+        </Card.Root>
+      );
+
+      await expectActivationCancelled(roleNamed("link", "Read the terms"), clicks);
+    });
+
+    it("dims with the not-allowed cursor and stays unfilled on hover", async () => {
+      renderThemed(
+        <Card.Root>
+          <Card.SectionButton render={<a href="#terms" aria-disabled="true" />}>
+            Read the terms
+          </Card.SectionButton>
+        </Card.Root>
+      );
+      const link = roleNamed("link", "Read the terms");
+      await userEvent.hover(link);
+      settleTransitions(link);
+      const style = getComputedStyle(link);
+      expect(style.opacity).toBe("0.5");
+      expect(style.cursor).toBe("not-allowed");
+      expect(style.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    });
+
+    it("follows the link and runs its onClick once aria-disabled is false", async () => {
+      const clicks: string[] = [];
+      renderThemed(
+        <Card.Root>
+          <Card.SectionButton
+            render={<a href="#terms" aria-disabled="false" />}
+            onClick={() => clicks.push("terms")}>
+            Read the terms
+          </Card.SectionButton>
+        </Card.Root>
+      );
+
+      await userEvent.click(roleNamed("link", "Read the terms"));
+      expect(location.hash).toBe("#terms");
+      expect(clicks).toEqual(["terms"]);
+    });
   });
 
   it("composes into a trigger as Button does, and still rounds as the card's last section", async () => {

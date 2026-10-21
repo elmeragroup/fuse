@@ -7,6 +7,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import type { VariantProps } from "tailwind-variants";
 
+import { ariaDisabledGuard } from "../../internal/aria-disabled-guard";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
@@ -86,6 +87,11 @@ function renderedVisibility(element: ReactElement): Visibility {
  * `hidden` and `aria-hidden` the rendered element ends up with, whether they come from the
  * root or the render element. An explicit `role` replaces both and skips the wrapper.
  *
+ * Given `aria-disabled="true"`, as a link row must be since a link takes no `disabled`, the row
+ * dims, drops its hover fill and cancels its own activation: a click or a keyboard Enter neither
+ * follows a link nor runs `onClick`, and a middle-click neither opens a new tab nor runs
+ * `onAuxClick`.
+ *
  * It publishes `--inner-corner`, its corner less its border and padding, for parts that round with
  * `rounded-inner`.
  */
@@ -105,7 +111,8 @@ export function ItemRoot({
     props: mergeProps<"div">(
       itemRootProps({ variant, size, className: cn(groupClassName, className) }),
       inGroup && render === undefined ? { role: "listitem" } : undefined,
-      props
+      props,
+      ariaDisabledGuard
     ),
     render,
   });

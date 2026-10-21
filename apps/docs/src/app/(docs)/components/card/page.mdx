@@ -68,7 +68,7 @@ Sections are the whole body, so put no `Card.Content` or `Card.Footer` beside th
   <CardSections />
 </Demo>
 
-`Card.SectionButton` makes a whole section one button. It stacks, divides and rounds like a `Card.Section`, renders `<button type="button">`, takes a hover fill and a pointer cursor, and draws its focus ring inside its own edges, so the sections around it cannot cover it. `render={<a href="/terms" />}` makes it a link, and a trigger composes it as it composes `Button`: `<Dialog.Trigger render={<Card.SectionButton />}>`. Hold text, an icon or a `Card.SectionMedia` in it, and no other control. `Card.Section` itself stays a static, server-rendered part.
+`Card.SectionButton` makes a whole section one button. It stacks, divides and rounds like a `Card.Section`, renders `<button type="button">`, takes a hover fill and a pointer cursor, and draws its focus ring inside its own edges, so the sections around it cannot cover it. `render={<a href="/terms" />}` makes it a link; mark an unavailable link `aria-disabled="true"`, and it dims and does not navigate. A trigger composes it as it composes `Button`: `<Dialog.Trigger render={<Card.SectionButton />}>`. Hold text, an icon or a `Card.SectionMedia` in it, and no other control. `Card.Section` itself stays a static, server-rendered part.
 
 <Demo slug="card" id="section-button" title="Section button" file="card-section-button.tsx">
   <CardSectionButton />

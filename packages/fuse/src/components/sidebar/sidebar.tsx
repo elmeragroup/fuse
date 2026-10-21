@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentProps, Dispatch, MouseEvent, ReactElement, SetStateAction } from "react";
+import type { ComponentProps, Dispatch, ReactElement, SetStateAction } from "react";
 import {
   createContext,
   use,
@@ -13,13 +13,13 @@ import {
 } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
-import type { BaseUIEvent } from "@base-ui/react/types";
 import { useRender } from "@base-ui/react/use-render";
 import type { VariantProps } from "tailwind-variants";
 
 import { useIsMobile } from "../../hooks/use-is-mobile";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { SidebarSimple } from "../../icons/generated/sidebar-simple";
+import { ariaDisabledGuard } from "../../internal/aria-disabled-guard";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import {
@@ -691,26 +691,6 @@ export function SidebarMenuItem({ className, ...props }: SidebarMenuItemProps): 
 }
 
 /**
- * Cancels activation of a row announced `aria-disabled="true"`. The row keeps pointer events
- * so its Tooltip still opens, and a keyboard Enter on a link or button fires a click too, so
- * the click is the one place to stop it. A middle-click fires `auxclick` rather than `click`,
- * and opening a link in a new tab is that event's default action, so the same handler guards
- * both events: `preventDefault` keeps a link from navigating or opening a new tab, and
- * `preventBaseUIHandler` skips the handlers merged before this one, the consumer's `onClick`
- * and `onAuxClick` among them. It reads the rendered attribute, so it catches `aria-disabled`
- * from props and from the `render` element alike. A handler on the `render` element itself
- * runs before it, because Base UI merges that element's props last.
- */
-function cancelWhenAriaDisabled(event: BaseUIEvent<MouseEvent<HTMLElement>>): void {
-  if (event.currentTarget.getAttribute("aria-disabled") === "true") {
-    event.preventDefault();
-    event.preventBaseUIHandler();
-  }
-}
-
-const ariaDisabledRowGuard = { onClick: cancelWhenAriaDisabled, onAuxClick: cancelWhenAriaDisabled };
-
-/**
  * A menu row. Given `aria-disabled="true"`, the row looks disabled but keeps pointer events,
  * so its Tooltip still opens, and it cancels its own activation: a click or a keyboard Enter
  * neither follows a link nor runs `onClick`, and a middle-click neither opens a new tab nor
@@ -770,7 +750,7 @@ export function SidebarMenuButton({
     props: mergeProps<"button">(
       { className: cn(sidebarMenuButtonVariants({ variant, size }), className) },
       props,
-      ariaDisabledRowGuard
+      ariaDisabledGuard
     ),
     render: tooltip === undefined ? render : <TooltipTrigger render={render} />,
     state: { slot: "sidebar-menu-button", size, active: isActive },
@@ -933,7 +913,7 @@ export function SidebarMenuSubButton({
         className: cn(sidebarMenuSubButtonVariants({ size }), className),
       },
       props,
-      ariaDisabledRowGuard
+      ariaDisabledGuard
     ),
     render,
     state: { slot: "sidebar-menu-sub-button", size, active: isActive },

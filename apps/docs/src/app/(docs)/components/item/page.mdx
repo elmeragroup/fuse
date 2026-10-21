@@ -39,6 +39,8 @@ export const metadata = componentMetadata("item");
   <ItemFooterReveal />
 </Demo>
 
+`render={<a href="…" />}` makes a row a link. A link takes no `disabled`, so mark an unavailable row `aria-disabled="true"`: it dims, drops its hover fill and does not navigate on a click or Enter.
+
 <Demo slug="item" id="as-link" title="As a link" file="item-as-link.tsx">
   <ItemAsLink />
 </Demo>
