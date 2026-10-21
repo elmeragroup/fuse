@@ -87,10 +87,10 @@ function renderedVisibility(element: ReactElement): Visibility {
  * `hidden` and `aria-hidden` the rendered element ends up with, whether they come from the
  * root or the render element. An explicit `role` replaces both and skips the wrapper.
  *
- * Given `aria-disabled="true"`, as a link row must be since a link takes no `disabled`, the row
- * dims, drops its hover fill and cancels its own activation: a click or a keyboard Enter neither
- * follows a link nor runs `onClick`, and a middle-click neither opens a new tab nor runs
- * `onAuxClick`.
+ * Given `aria-disabled="true"`, as a link row must be since a link takes no `disabled`, a
+ * `render` row dims, drops its hover fill and cancels its own activation: a click or a keyboard
+ * Enter neither follows a link nor runs `onClick`, and a middle-click neither opens a new tab nor
+ * runs `onAuxClick`. A `render={<button disabled />}` row dims too.
  *
  * It publishes `--inner-corner`, its corner less its border and padding, for parts that round with
  * `rounded-inner`.
@@ -112,7 +112,9 @@ export function ItemRoot({
       itemRootProps({ variant, size, className: cn(groupClassName, className) }),
       inGroup && render === undefined ? { role: "listitem" } : undefined,
       props,
-      ariaDisabledGuard
+      // Only a `render` row (a link or button) activates; a plain row may hold its own controls,
+      // whose bubbled clicks the guard would cancel.
+      render === undefined ? undefined : ariaDisabledGuard
     ),
     render,
   });

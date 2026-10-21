@@ -837,6 +837,33 @@ describe("aria-disabled Item rows", () => {
     expect(style.backgroundColor).toBe("rgba(0, 0, 0, 0)");
   });
 
+  it("dims a disabled button row with the not-allowed cursor", () => {
+    renderThemed(
+      <Item.Root render={<button type="button" disabled />}>
+        <Item.Title>Profile</Item.Title>
+      </Item.Root>
+    );
+    const style = getComputedStyle(roleNamed("button", "Profile"));
+    expect(style.opacity).toBe("0.5");
+    expect(style.cursor).toBe("not-allowed");
+  });
+
+  it("lets a link inside a plain aria-disabled row navigate", async () => {
+    renderThemed(
+      <Item.Root aria-disabled="true">
+        <Item.Title>Profile</Item.Title>
+        <Item.Actions>
+          <a href="#help">Help</a>
+        </Item.Actions>
+      </Item.Root>
+    );
+
+    // Playwright counts an element under an `aria-disabled` ancestor as disabled; `force` skips
+    // that check so the click reaches the link the way a user's pointer does.
+    await userEvent.click(roleNamed("link", "Help"), { force: true });
+    expect(location.hash).toBe("#help");
+  });
+
   it("fills an enabled link row on hover", async () => {
     renderThemed(
       <Item.Root render={<a href="#profile" aria-disabled="false" />}>
