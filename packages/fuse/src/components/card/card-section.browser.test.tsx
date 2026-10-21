@@ -258,7 +258,10 @@ describe("Card.Section", () => {
     expect(getComputedStyle(button).backgroundColor).toBe(cssVarColor(button, "--muted"));
   });
 
-  it("does not submit the form it sits in", async () => {
+  it.each([
+    ["with no type", {}],
+    ["with a forwarded undefined type", { type: undefined }],
+  ] as const)("does not submit the form it sits in %s", async (_label, typeProps) => {
     let submits = 0;
     renderThemed(
       <form
@@ -267,7 +270,7 @@ describe("Card.Section", () => {
           submits += 1;
         }}>
         <Card.Root>
-          <Card.SectionButton>Change plan</Card.SectionButton>
+          <Card.SectionButton {...typeProps}>Change plan</Card.SectionButton>
         </Card.Root>
       </form>
     );

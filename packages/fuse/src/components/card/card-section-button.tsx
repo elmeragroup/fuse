@@ -5,6 +5,7 @@ import type { ReactElement } from "react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { cardSectionVariants } from "./card-variants";
 
@@ -28,7 +29,12 @@ export function CardSectionButton({ className, render, ...props }: CardSectionBu
     defaultTagName: "button",
     props: {
       "data-slot": "card-section-button",
-      ...mergeProps<"button">({ className: cn(cardSectionVariants().button(), className) }, props),
+      // Filtered, as Button filters, so a forwarded `type={undefined}` cannot erase the default
+      // button's `type="button"`.
+      ...mergeProps<"button">(
+        { className: cn(cardSectionVariants().button(), className) },
+        definedProps(props)
+      ),
     },
     render,
   });
