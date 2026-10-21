@@ -395,8 +395,15 @@ function literalOf(spec: NumberSpec): number | undefined {
   return spec.kind === "literal" ? spec.value : undefined;
 }
 
-/** Split at a separator that sits outside parentheses, dropping empty parts. */
-function splitTopLevel(value: string, separator: string): string[] {
+/**
+ * Split at a separator that sits outside parentheses, dropping empty parts, so a `calc()` with
+ * spaces stays one part.
+ *
+ * @param value - A CSS value.
+ * @param separator - The one character to split at, such as a space or a comma.
+ * @returns The trimmed parts.
+ */
+export function splitTopLevel(value: string, separator: string): string[] {
   const parts: string[] = [];
   let depth = 0;
   let start = 0;

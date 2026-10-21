@@ -166,6 +166,8 @@ const ROLE_TINTS = [
   ["error", 20],
   ["success", 10],
   ["success", 20],
+  ["warning", 20],
+  ["info", 20],
 ] as const satisfies readonly (readonly [ColorTokenName, number])[];
 
 /** The tokens of the dimension kind. */

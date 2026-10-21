@@ -7,8 +7,9 @@
  * definition declares, so a new axis in a snapshot shows up as an unsupported cell, not as a
  * cell rendered without it.
  *
- * Every definition names its interactive axis `state`, with `rest` among its values. The page
+ * A definition with an interactive axis names it `state`, with `rest` among its values. The page
  * forces the pointer and keyboard states from that axis and compares them with the cell at rest.
+ * A cell of a set with no `state` axis, such as Badge, gets nothing forced.
  */
 
 import { Result } from "effect";

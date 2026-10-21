@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { compileUtilities } from "./components/utility-css.ts";
 import { fuseVariableSet } from "./fuse-variable-set.ts";
 import type { CollectionSpec, VariableSet, VariableSpec, VariableValue } from "./variable-set.ts";
 
@@ -122,6 +123,36 @@ describe("fuseVariableSet", () => {
       _tag: "Color",
       color: { ...role.color, a: 0.1 },
     });
+  });
+
+  // A cross-check: the unit under test is each tint's code syntax and values. The oracles are
+  // Tailwind, whose compiled `border-<role>/20` the code syntax must equal, and the role's own
+  // color in every theme at 20% of its alpha. The compiled rule's last `border-color` is the
+  // `color-mix()` in its `@supports` block, which wins over the fallback before it.
+  it("syncs warning/20 and info/20, which the soft Badges stroke with", async () => {
+    const compiled = await compileUtilities(["border-warning/20", "border-info/20"]);
+    const brand = collection("Fuse brand");
+    for (const role of ["warning", "info"]) {
+      const borderColor = compiled.rules
+        .get(`border-${role}/20`)
+        ?.declarations.findLast((declaration) => declaration.property === "border-color")?.value;
+      expect(borderColor).toBeDefined();
+      expect(spec("Fuse tokens", `${role}/20`)?.webSyntax).toBe(borderColor);
+      const tints = brand.variables.filter((variable) => variable.name.endsWith(`/${role}/20`));
+      // Two schemes, two variants and two segments.
+      expect(tints).toHaveLength(8);
+      for (const tint of tints) {
+        for (const mode of brand.modes) {
+          const solid = value("Fuse brand", tint.name.replace(/\/20$/, ""), mode);
+          if (solid?._tag !== "Color")
+            throw new Error(`${tint.name} in ${mode}: the role is no literal color`);
+          expect(tint.values.get(mode), `${tint.name} in ${mode}`).toEqual({
+            _tag: "Color",
+            color: { ...solid.color, a: solid.color.a * 0.2 },
+          });
+        }
+      }
+    }
   });
 
   it("syncs the outline shadow lengths as their formulas give them for each outline width", () => {

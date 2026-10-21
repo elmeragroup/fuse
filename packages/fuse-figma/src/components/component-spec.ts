@@ -12,6 +12,7 @@ import {
   readColor,
   readNumber,
   readShadows,
+  splitTopLevel,
   substituteVars,
 } from "./css-values";
 import type { VariableIndex } from "./css-values";
@@ -120,11 +121,12 @@ export type ComponentDefinition = {
 };
 
 /**
- * A declaration the host page sets on an ancestor, which a part inherits where its recipe
- * sets nothing, such as the text color of an outline Button.
+ * A declaration a part gets from outside its recipe, where its recipe sets nothing: one the
+ * host page sets on an ancestor and the part inherits, such as the text color of an outline
+ * Button, or one a base-layer rule sets on the part itself.
  */
-export type PageDeclaration = {
-  /** The host class that sets it, for the coverage table. */
+export type OuterDeclaration = {
+  /** The host class or the stylesheet rule that sets it, for the coverage table. */
   readonly className: string;
   readonly property: string;
   readonly value: string;
@@ -134,8 +136,13 @@ export type PageDeclaration = {
 export type BuildContext = {
   readonly compiled: CompiledUtilities;
   readonly variables: VariableIndex;
-  /** The inherited declarations of the host page, applied before every recipe class. */
-  readonly page: readonly PageDeclaration[];
+  /** The inherited declarations of the host page, applied before every other declaration. */
+  readonly page: readonly OuterDeclaration[];
+  /**
+   * The base-layer declarations every root gets, applied after the page's and before every
+   * recipe class, since any utility beats the base layer. A root that does not read one drops it.
+   */
+  readonly base: readonly OuterDeclaration[];
 };
 
 /** A component set and the coverage of the recipe classes it read. */
@@ -338,14 +345,15 @@ function cascade(
       }
     }
   }
-  const page: Applied[] = context.page.map(({ className, property, value }) => ({
-    className,
-    rank: -1,
-    order: 0,
-    declarations: [{ property, value }],
-  }));
+  const outer = (declarations: readonly OuterDeclaration[], rank: number): Applied[] =>
+    declarations.map(({ className, property, value }) => ({
+      className,
+      rank,
+      order: 0,
+      declarations: [{ property, value }],
+    }));
   return {
-    root: computeStyle([...page, ...rootClasses]),
+    root: computeStyle([...outer(context.page, -2), ...outer(context.base, -1), ...rootClasses]),
     iconStyle: (slot) =>
       computeStyle(childRules.filter((rule) => rule.selects(slot)).map((rule) => rule.applied)),
   };
@@ -364,9 +372,12 @@ function computeStyle(applied: readonly Applied[]): ReadonlyMap<string, StyleEnt
   return style;
 }
 
-/** Split the padding shorthands into the sides Figma pads, keeping every other property. */
+/**
+ * Split the padding shorthands into the sides Figma pads, keeping every other property. A side
+ * may be a `calc()` with spaces, as `px-2.5` compiles to `calc(var(--spacing) * 2.5)`.
+ */
 function expandShorthand(property: string, value: string): readonly (readonly [string, string])[] {
-  const parts = normalizeCss(value).split(" ");
+  const parts = splitTopLevel(normalizeCss(value), " ");
   switch (property) {
     case "padding": {
       const [top = value, right = top, bottom = top, left = right] = parts;
@@ -431,6 +442,17 @@ class StyleReader {
   }
 
   /**
+   * Record a property the layer needs and its cascade leaves unset, as unmapped, under the
+   * class that set the property needing it.
+   */
+  missing(property: string, neededBy: string, detail: string): void {
+    const entry = this.#style.get(neededBy);
+    if (entry !== undefined && !this.#style.has(property)) {
+      this.#record({ className: entry.className, property, value: "", outcome: "unmapped", detail });
+    }
+  }
+
+  /**
    * Read a property through a mapping.
    *
    * @returns The mapped value, or undefined when the property is unset or does not map.
@@ -478,7 +500,15 @@ class StyleReader {
         continue;
       }
       const reason = NO_FIGMA_FORM.get(property);
-      if (reason !== undefined) {
+      if (this.#context.base.some((declaration) => declaration.className === entry.className)) {
+        this.#record({
+          className: entry.className,
+          property,
+          value: entry.value,
+          outcome: "dropped",
+          detail: "the base layer sets it on every part, and this part does not read it",
+        });
+      } else if (reason !== undefined) {
         this.#record({
           className: entry.className,
           property,
@@ -710,11 +740,20 @@ function readShadowStack(root: StyleReader, context: BuildContext): readonly Sha
   );
 }
 
-/** A CSS border becomes an inside stroke. A border with no style or a style other than solid stays unmapped. */
+/**
+ * A CSS border becomes an inside stroke. A border with no style or a style other than solid
+ * stays unmapped, and so does one with no color, which would otherwise draw no stroke and leave
+ * no row.
+ */
 function readStroke(root: StyleReader, context: BuildContext): StrokeSpec | undefined {
   if (!root.has("border-width")) {
     return undefined;
   }
+  root.missing(
+    "border-color",
+    "border-width",
+    "no class or base rule colors the border, so the stroke is left out"
+  );
   const style = root.read(
     "border-style",
     (value) => (normalizeCss(value) === "solid" ? value : undefined),

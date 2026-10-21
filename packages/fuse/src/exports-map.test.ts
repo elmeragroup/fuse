@@ -297,6 +297,7 @@ describe("exports map", () => {
       readFileSync(join(packageRoot, "src/components/recipe-catalog.ts"), "utf8")
     );
     expect(catalog).toEqual([
+      "badgeVariants",
       "buttonVariants",
       "toggleVariants",
       "BESPOKE_ICON_NAMES",

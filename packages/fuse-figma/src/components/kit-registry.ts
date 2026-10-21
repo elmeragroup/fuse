@@ -8,6 +8,7 @@
  * parse keys and check markup, load it without them. A comparison run loads the compiler anyway,
  * through `buildComponentSets()`.
  */
+import { BADGE } from "./badge-kit";
 import { BUTTON, ICON_BUTTON } from "./button-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
@@ -28,6 +29,9 @@ const BUTTON_PAGE: KitPage = { slug: "button", name: "Button" };
 
 /** The page Toggle and Icon toggle share. */
 const TOGGLE_PAGE: KitPage = { slug: "toggle", name: "Toggle" };
+
+/** The page Badge sits on alone. */
+const BADGE_PAGE: KitPage = { slug: "badge", name: "Badge" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -105,4 +109,6 @@ export const KIT: readonly KitEntry[] = [
     page: TOGGLE_PAGE,
     previewCells: previewCells(ICON_TOGGLE, "default", {}, ["pressed"]),
   },
+  // A Badge has no state, so its previews place every cell of its matrix.
+  { definition: BADGE, page: BADGE_PAGE, previewCells: matrixCells(BADGE.axes) },
 ];
