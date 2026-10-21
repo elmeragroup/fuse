@@ -30,7 +30,12 @@ const CHIP: ComponentDefinition = {
 let context: BuildContext;
 
 beforeAll(async () => {
-  context = { compiled: await compileUtilities(["bg-muted"]), variables: makeVariableIndex([]), page: [] };
+  context = {
+    compiled: await compileUtilities(["bg-muted"]),
+    variables: makeVariableIndex([]),
+    page: [],
+    base: [],
+  };
 });
 
 function outcomes(className: string): ReadonlySet<string> {
@@ -49,6 +54,79 @@ describe("a class whose variant no cell models", () => {
 
   it("is unmapped when the state axis lacks the value that renders a shared state", () => {
     expect(outcomes("focus-visible:bg-muted")).toEqual(new Set(["unmapped"]));
+  });
+});
+
+// Unit under test: `buildComponentSet` on a root whose class sets a border width and style and
+// nothing sets a color. Oracle: the coverage contract, under which a declaration that does not
+// reach Figma lands as unmapped. The stroke cannot draw without a color, so the missing color
+// must fail the gate rather than vanish.
+describe("a border with no color", () => {
+  it("records the missing color as unmapped, under the class that drew the border", async () => {
+    const bordered: ComponentDefinition = { ...CHIP, classesFor: () => "border" };
+    const { componentSet, coverage } = buildComponentSet(bordered, {
+      ...context,
+      compiled: await compileUtilities(["border"]),
+    });
+    expect(componentSet.variants[0]?.root.stroke).toBeUndefined();
+    expect(coverage).toContainEqual(
+      expect.objectContaining({ className: "border", property: "border-color", outcome: "unmapped" })
+    );
+  });
+});
+
+// Unit under test: `buildComponentSet`, which applies the base-layer declarations of its context
+// to the root below every recipe class. Oracle: fuse.css's base rule
+// `border-color: var(--border, currentcolor)`, and CSS cascade layers, under which any utility
+// beats a base-layer declaration.
+describe("the base-layer border color", () => {
+  const variables = makeVariableIndex(
+    ["border", "error"].map((name) => ({
+      ref: { collection: "Fuse tokens", name },
+      webSyntax: `var(--${name})`,
+    }))
+  );
+  const base = [
+    { className: "fuse.css base layer", property: "border-color", value: "var(--border, currentcolor)" },
+  ];
+
+  async function build(classes: string) {
+    return buildComponentSet(
+      { ...CHIP, classesFor: () => classes },
+      {
+        ...context,
+        compiled: await compileUtilities(classes.split(" ")),
+        variables,
+        base,
+      }
+    );
+  }
+
+  it("colors a border no class colors with the border role", async () => {
+    const { componentSet, coverage } = await build("border");
+    expect(componentSet.variants[0]?.root.stroke).toEqual({
+      color: { kind: "variable", variable: { collection: "Fuse tokens", name: "border" } },
+      weight: { kind: "literal", value: 1 },
+    });
+    expect(coverage).toContainEqual(
+      expect.objectContaining({
+        className: "fuse.css base layer",
+        property: "border-color",
+        outcome: "bound",
+      })
+    );
+  });
+
+  it("loses to a class that colors the border", async () => {
+    const strokeOf = async (classes: string) => (await build(classes)).componentSet.variants[0]?.root.stroke;
+    expect((await strokeOf("border border-transparent"))?.color).toEqual({
+      kind: "literal",
+      color: { r: 0, g: 0, b: 0, a: 0 },
+    });
+    expect((await strokeOf("border border-error"))?.color).toEqual({
+      kind: "variable",
+      variable: { collection: "Fuse tokens", name: "error" },
+    });
   });
 });
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { compileUtilities } from "./utility-css";
+import { baseBorderColor, compileUtilities } from "./utility-css";
 
 describe("compileUtilities", () => {
   it("reads each utility's declarations from Tailwind's build of fuse.css", async () => {
@@ -43,5 +43,41 @@ describe("compileUtilities", () => {
     expect(compiled.themeValues.get("--font-weight-medium")).toBe("500");
     expect(compiled.propertyInitials.get("--tw-ring-offset-width")).toBe("0px");
     expect(compiled.propertyInitials.get("--tw-shadow")).toBe("0 0 #0000");
+  });
+});
+
+// Unit under test: `baseBorderColor`, which reads the base-layer border color every Fuse part gets
+// from a compile against `fuse.css`. Oracle: the base layer of `packages/fuse/src/styles/fuse.css`,
+// whose rule for every element but a native form widget without a `data-slot` sets
+// `border-color: var(--border, currentcolor)`.
+describe("baseBorderColor", () => {
+  const PART_ARM = ":where(:not(:is(button, input, select, textarea, meter, progress):not([data-slot])))";
+
+  it("reads the border color fuse.css's base layer gives every part", async () => {
+    expect(baseBorderColor(await compileUtilities([]))).toEqual({
+      property: "border-color",
+      value: "var(--border, currentcolor)",
+    });
+  });
+
+  it("follows the rule's value, and fails when the rule or its border color is gone", async () => {
+    const compiled = await compileUtilities([]);
+    const withBase = (baseRules: typeof compiled.baseRules) => ({ ...compiled, baseRules });
+    expect(
+      baseBorderColor(
+        withBase([
+          {
+            selector: `${PART_ARM}, ::after`,
+            declarations: [{ property: "border-color", value: "var(--input)" }],
+          },
+        ])
+      )
+    ).toEqual({ property: "border-color", value: "var(--input)" });
+    expect(() => baseBorderColor(withBase([]))).toThrow(/base layer/);
+    expect(() =>
+      baseBorderColor(
+        withBase([{ selector: PART_ARM, declarations: [{ property: "outline-color", value: "red" }] }])
+      )
+    ).toThrow(/border-color/);
   });
 });

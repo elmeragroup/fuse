@@ -1,7 +1,10 @@
 /**
- * The page that renders one preview's cells. It loads the CSS a docs-like host loads: Fuse's
- * standalone `styles.css`, Tailwind's preflight in the `base` layer, `themes.css` and the brand
- * font. The docs layout sets `font-sans text-foreground` on `<body>`, and the kit's labels
+ * The page that renders one preview's cells. It loads the CSS a docs-like host loads: Tailwind's
+ * preflight in the `base` layer, Fuse's standalone `styles.css`, `themes.css` and the brand
+ * font. Preflight comes first, as in a Tailwind-source host, because its `border: 0 solid` and
+ * Fuse's base rule, which gives every border the `border` role, share the `base` layer and the
+ * later one wins. The page names the layers first, in the order `styles.css` declares them, so
+ * preflight's import does not reorder them. The docs layout sets `font-sans text-foreground` on `<body>`, and the kit's labels
  * inherit both, so the page body does the same. Preflight matters too: without it a native form
  * control keeps the browser's own font.
  *
@@ -24,6 +27,9 @@ export const ASSET_PATHS = {
   /** Font files, by file name under this prefix. */
   fontFiles: "/fonts/files/",
 } as const;
+
+/** The layers Fuse's built `styles.css` declares, in its order. */
+const STYLES_LAYERS = ["properties", "theme", "base", "components", "utilities"] as const;
 
 /** How the page lays out its cells, in CSS pixels. */
 export type PageLayout = {
@@ -116,8 +122,9 @@ export function previewDocument(stamps: ThemeStamps, cells: readonly PageCell[],
 <head>
 <meta charset="utf-8">
 <style>
-@import url("${ASSET_PATHS.styles}");
+@layer ${STYLES_LAYERS.join(", ")};
 @import url("${ASSET_PATHS.preflight}") layer(base);
+@import url("${ASSET_PATHS.styles}");
 @import url("${ASSET_PATHS.themes}");
 @import url("${ASSET_PATHS.fonts}");
 *,*::before,*::after{animation:none!important;transition:none!important}

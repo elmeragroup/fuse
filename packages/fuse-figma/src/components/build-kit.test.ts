@@ -1,7 +1,8 @@
 /**
- * The Button and Toggle kits against hand-written expectations: which Fuse variable or literal
- * each Figma field of a cell must carry, read from `button-variants.ts`, `toggle-variants.ts`,
- * `control-size.ts` and `state-face.ts`. The spec builder is the unit under test.
+ * The Button, Toggle and Badge kits against hand-written expectations: which Fuse variable or
+ * literal each Figma field of a cell must carry, read from `button-variants.ts`,
+ * `toggle-variants.ts`, `badge-variants.ts`, `control-size.ts`, `state-face.ts` and the base
+ * layer of `fuse.css`. The spec builder is the unit under test.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -429,6 +430,142 @@ describe("the Toggle component sets", () => {
   });
 });
 
+function badge(variant: string, size: string): ComponentRootSpec {
+  return find(`badge/variant=${variant},size=${size}`);
+}
+
+/** Tailwind's shadow-xs, 0 1px 2px at 5% black. */
+const SHADOW_XS = {
+  color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.05 } },
+  offsetX: 0,
+  offsetY: 1,
+  radius: literal(2),
+  spread: literal(0),
+} as const;
+
+describe("the Badge component set", () => {
+  it("holds every variant at the three sizes, 57 variants with a label and no state", () => {
+    const set = spec.componentSets.find((candidate) => candidate.key === "badge");
+    expect(set?.axes).toEqual([
+      {
+        name: "variant",
+        values: [
+          "default",
+          "secondary",
+          "destructive",
+          "success",
+          "warning",
+          "info",
+          "soft-destructive",
+          "soft-success",
+          "soft-warning",
+          "soft-info",
+          "outline",
+          "outline-secondary",
+          "outline-destructive",
+          "outline-success",
+          "outline-warning",
+          "outline-info",
+          "muted",
+          "accent",
+          "card",
+        ],
+      },
+      { name: "size", values: ["default", "sm", "lg"] },
+    ]);
+    expect(set?.columnAxis).toBe("size");
+    expect(new Set(set?.variants.map((cell) => cell.key)).size).toBe(57);
+    expect(set?.textProperties).toEqual([{ name: "Label", defaultValue: "Badge" }]);
+    expect(set?.swapProperties).toEqual([]);
+  });
+
+  it("hugs the default badge's label in a primary pill with a transparent hairline and shadow-xs", () => {
+    expect(badge("default", "default")).toEqual({
+      name: "badge",
+      width: undefined,
+      height: undefined,
+      minWidth: undefined,
+      paddingTop: literal(2),
+      paddingRight: literal(10),
+      paddingBottom: literal(2),
+      paddingLeft: literal(10),
+      itemSpacing: literal(0),
+      cornerRadius: token("radius-lg"),
+      fill: paint("primary"),
+      stroke: { color: transparent, weight: literal(1) },
+      shadows: [SHADOW_XS],
+      opacity: 1,
+      children: [
+        {
+          kind: "text",
+          key: "label",
+          name: "label",
+          characters: "Badge",
+          textProperty: "Label",
+          fontFamily: token("font-sans"),
+          fontStyle: "Medium",
+          fontSize: literal(12),
+          lineHeight: literal(16),
+          color: paint("primary-foreground"),
+        },
+      ],
+    });
+  });
+
+  it("strokes the outline badge with the border role, which fuse.css's base layer gives every border", () => {
+    const outline = badge("outline", "default");
+    expect(outline.stroke).toEqual({ color: paint("border"), weight: literal(1) });
+    expect([outline.fill, outline.shadows]).toEqual([undefined, []]);
+    expect(outline.children[0]?.color).toEqual(paint("foreground"));
+  });
+
+  it("strokes each soft badge with its role at 20% over the soft surface", () => {
+    for (const [variant, role] of [
+      ["soft-destructive", "error"],
+      ["soft-success", "success"],
+      ["soft-warning", "warning"],
+      ["soft-info", "info"],
+    ]) {
+      const soft = badge(variant ?? "", "default");
+      expect(soft.stroke, variant).toEqual({ color: paint(`${role}/20`), weight: literal(1) });
+      expect(soft.fill, variant).toEqual(paint(`${role}-soft`));
+      expect(soft.children[0]?.color, variant).toEqual(paint(`${role}-soft-foreground`));
+    }
+  });
+
+  it("strokes the outline status badges with their role, and outline-secondary with secondary", () => {
+    expect(badge("outline-secondary", "default").stroke?.color).toEqual(paint("secondary"));
+    expect(badge("outline-secondary", "default").children[0]?.color).toEqual(paint("foreground"));
+    const warning = badge("outline-warning", "default");
+    expect([warning.stroke?.color, warning.children[0]?.color]).toEqual([paint("warning"), paint("warning")]);
+    expect(badge("outline-destructive", "default").stroke?.color).toEqual(paint("error"));
+  });
+
+  it("places every variant at every size in each preview", () => {
+    const keys = new Set(
+      spec.componentSets.find((set) => set.key === "badge")?.variants.map((cell) => cell.key)
+    );
+    const previews = spec.previews.filter((preview) => preview.page === "page/badge");
+    expect(previews).toHaveLength(4);
+    for (const preview of previews) {
+      expect(new Set(preview.groups.flatMap((group) => group.variants))).toEqual(keys);
+    }
+  });
+
+  it("pads sm tighter and lg wider, with lg's label at 14px", () => {
+    const small = badge("default", "sm");
+    expect([small.paddingTop, small.paddingLeft]).toEqual([literal(1), literal(8)]);
+    const large = badge("secondary", "lg");
+    expect([large.paddingTop, large.paddingLeft, large.fill]).toEqual([
+      literal(4),
+      literal(12),
+      paint("secondary"),
+    ]);
+    const label = large.children[0];
+    expect(label?.kind === "text" && [label.fontSize, label.lineHeight]).toEqual([literal(14), literal(20)]);
+  });
+});
+
 describe("the kit coverage", () => {
   it("leaves no declaration unmapped", () => {
     expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
@@ -464,6 +601,8 @@ describe("the kit coverage", () => {
     expect(omitted("Toggle")).toEqual(
       new Set(["aria-invalid", "data-invalid", "enabled-active", "aria-disabled"])
     );
+    // A Badge's label is its own text, so no cell has the span `[&>span]` styles.
+    expect(omitted("Badge")).toEqual(new Set(["[&>span]"]));
   });
 });
 
@@ -505,6 +644,7 @@ describe("the icon reference check", () => {
       compiled: await compileUtilities(["text-[#000000]", "size-[16px]"]),
       variables: makeVariableIndex([]),
       page: [],
+      base: [],
     });
     expect(() => checkIconReferences(componentSet, library)).toThrow(
       "chip/state=rest: the Badge icon links Badge icon, which Chip does not define"
@@ -542,6 +682,7 @@ describe("the preview frames", () => {
     expect(spec.pages).toEqual([
       { key: "page/button", name: "Button" },
       { key: "page/toggle", name: "Toggle" },
+      { key: "page/badge", name: "Badge" },
       { key: "page/icons", name: "Icons" },
     ]);
     expect(spec.componentSets.map((set) => [set.key, set.page])).toEqual([
@@ -549,13 +690,14 @@ describe("the preview frames", () => {
       ["icon-button", "page/button"],
       ["toggle", "page/toggle"],
       ["icon-toggle", "page/toggle"],
+      ["badge", "page/badge"],
     ]);
     expect(spec.icons.page).toBe("page/icons");
   });
 
   it("pin four Fjordkraft private themes at Auto density on each component page, each on all five axes", () => {
     expect(spec.previews.map((preview) => [preview.key, preview.page])).toEqual(
-      ["button", "toggle"].flatMap((page) =>
+      ["button", "toggle", "badge"].flatMap((page) =>
         [
           "internal-fkas-private-light",
           "internal-fkas-private-dark",
@@ -589,6 +731,7 @@ describe("the preview frames", () => {
           ["icon-toggle", "Icon toggle"],
         ],
       ],
+      ["page/badge", [["badge", "Badge"]]],
     ]);
     for (const preview of spec.previews) {
       expect(preview.groups.map((group) => [group.key, group.name])).toEqual(

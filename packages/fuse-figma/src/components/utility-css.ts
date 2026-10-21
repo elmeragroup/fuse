@@ -9,6 +9,8 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { compileAst } from "tailwindcss";
 
+import { splitTopLevel } from "./css-values";
+
 /**
  * A node of Tailwind's syntax tree. Tailwind exports `compileAst` but not its node types, so
  * the reader takes them from that function's signature.
@@ -38,6 +40,14 @@ export type CompiledUtilities = {
   readonly themeValues: ReadonlyMap<string, string>;
   /** The `initial-value` of each `@property` Tailwind registered, such as `--tw-ring-offset-width`. */
   readonly propertyInitials: ReadonlyMap<string, string>;
+  /** The rules of the `base` layer, such as the one in `fuse.css` that colors every border. */
+  readonly baseRules: readonly BaseRule[];
+};
+
+/** A rule of the `base` layer: its whole selector list and its declarations. */
+export type BaseRule = {
+  readonly selector: string;
+  readonly declarations: readonly UtilityDeclaration[];
 };
 
 /**
@@ -87,10 +97,40 @@ export async function compileUtilities(utilities: readonly string[]): Promise<Co
 }
 
 /**
+ * The arm of `fuse.css`'s base-layer border rule that matches every element except a native form
+ * widget without a `data-slot`. Every Fuse part carries a `data-slot`, so it matches each one.
+ */
+const PART_ARM = ":where(:not(:is(button, input, select, textarea, meter, progress):not([data-slot])))";
+
+/**
+ * The border color `fuse.css`'s base layer gives every Fuse part, which makes every border the
+ * `border` role where no utility colors it.
+ *
+ * @param compiled - A compile against `fuse.css`.
+ * @returns The `border-color` declaration of the base rule whose selector list holds the arm
+ *   every part matches.
+ * @throws When the base layer has no rule with that arm, or the rule sets no border color.
+ */
+export function baseBorderColor(compiled: CompiledUtilities): UtilityDeclaration {
+  const rule = compiled.baseRules.find((candidate) =>
+    splitTopLevel(candidate.selector, ",").includes(PART_ARM)
+  );
+  if (rule === undefined) {
+    throw new Error(`fuse.css's base layer has no rule for ${PART_ARM}`);
+  }
+  const borderColor = rule.declarations.findLast((declaration) => declaration.property === "border-color");
+  if (borderColor === undefined) {
+    throw new Error(`fuse.css's base-layer rule for ${PART_ARM} sets no border-color`);
+  }
+  return borderColor;
+}
+
+/**
  * Read Tailwind's build output. A rule whose whole selector is one class is that utility's
  * rule. A `@supports` block that tests `color-mix()` overrides the declarations before it,
  * because every browser Fuse supports passes that test. Any other nested block, such as
- * `@media (forced-colors: active)`, describes a mode Figma does not show and is skipped.
+ * `@media (forced-colors: active)`, describes a mode Figma does not show and is skipped. The
+ * rules of the `base` layer are kept apart, since no class selects them.
  *
  * @param nodes - The syntax tree `build` returns.
  * @returns The utility rules, theme values and registered property defaults.
@@ -99,6 +139,7 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
   const rules = new Map<string, UtilityRule>();
   const themeValues = new Map<string, string>();
   const propertyInitials = new Map<string, string>();
+  const baseRules: BaseRule[] = [];
   let order = 0;
   const visit = (node: AstNode): void => {
     if (node.kind === "at-rule") {
@@ -111,7 +152,13 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
         }
         return;
       }
-      if (node.name === "@layer") {
+      if (node.name === "@layer" && node.params === "base") {
+        for (const child of node.nodes) {
+          if (child.kind === "rule") {
+            baseRules.push({ selector: child.selector, declarations: declarationsOf(child.nodes) });
+          }
+        }
+      } else if (node.name === "@layer") {
         node.nodes.forEach(visit);
       }
       return;
@@ -132,7 +179,7 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
     }
   };
   nodes.forEach(visit);
-  return { rules, themeValues, propertyInitials };
+  return { rules, themeValues, propertyInitials, baseRules };
 }
 
 /**

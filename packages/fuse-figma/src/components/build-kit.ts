@@ -11,7 +11,7 @@ import { fuseVariableSet } from "../fuse-variable-set";
 import type { CollectionSpec, VariableSpec } from "../variable-set";
 import { splitClassName } from "./class-name";
 import { buildComponentSet, matrixCells, variantKey } from "./component-spec";
-import type { BuiltComponent, PageDeclaration } from "./component-spec";
+import type { BuiltComponent, OuterDeclaration } from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { makeVariableIndex, readColor } from "./css-values";
 import type { VariableIndex } from "./css-values";
@@ -19,7 +19,7 @@ import { fuseIcons, ICON_SIZE } from "./icon-library";
 import { KIT } from "./kit-registry";
 import type { KitPage } from "./kit-registry";
 import type { ComponentSetSpec, IconLibrarySpec, KitSpec, ModeRef, PageSpec, PreviewSpec } from "./kit-spec";
-import { compileUtilities } from "./utility-css";
+import { baseBorderColor, compileUtilities } from "./utility-css";
 
 /**
  * A theme the previews pin: Fjordkraft private in one variant and color scheme. Density `Auto`
@@ -63,7 +63,7 @@ function pageSpec(page: KitPage): PageSpec {
  * `<body>` (`apps/docs/src/app/(docs)/layout.tsx`), so a part whose recipe sets no text color
  * or family inherits these.
  */
-const PAGE: readonly PageDeclaration[] = [
+const PAGE: readonly OuterDeclaration[] = [
   { className: "body text-foreground", property: "color", value: "var(--foreground)" },
   { className: "body font-sans", property: "font-family", value: "var(--font-sans)" },
 ];
@@ -114,8 +114,14 @@ async function buildSets(variables: VariableIndex): Promise<readonly KitComponen
     )
   );
   const compiled = await compileUtilities([...utilities]);
+  // The base layer's border color sets the color on each element, so a part does not inherit it
+  // the way it inherits `PAGE`, and any utility that colors the border wins over it. The outline
+  // Badge sets no border color, so its stroke binds `border`.
+  const base: readonly OuterDeclaration[] = [
+    { className: "fuse.css base layer", ...baseBorderColor(compiled) },
+  ];
   return KIT.map(({ definition, page }) => {
-    const set = buildComponentSet(definition, { compiled, variables, page: PAGE });
+    const set = buildComponentSet(definition, { compiled, variables, page: PAGE, base });
     return { ...set, componentSet: { ...set.componentSet, page: pageSpec(page).key } };
   });
 }

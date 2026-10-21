@@ -60,6 +60,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/toggle.js",
     load: async () => (await import("./toggle-cell.ts")).iconToggle,
   },
+  {
+    set: "badge",
+    entry: "dist/badge.js",
+    load: async () => (await import("./badge-cell.ts")).badge,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */
