@@ -70,7 +70,10 @@ export type TextFilterField = FieldBase & {
   readonly kind: "text";
   /** The text editor's placeholder. Defaults to the dictionary's. */
   readonly placeholder?: string;
-  /** A subset of the text operators, in menu order. Defaults to both. */
+  /**
+   * A subset of the text operators, in menu order. Defaults to `contains` and `doesNotContain`.
+   * List `startsWith` or `doesNotStartWith` to offer them.
+   */
   readonly operators?: readonly FilterOperator<"text">[];
 };
 

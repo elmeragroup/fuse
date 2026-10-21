@@ -141,8 +141,9 @@ function compareOrdered<T extends number | string>(
 
 /**
  * Whether one cell passes a filter. Option values compare exactly. Text compares case- and
- * accent-insensitively. A `Date` cell compares as its calendar day in `timeZone`, and an ISO date
- * string compares as it is. A missing cell passes only the negated operators.
+ * accent-insensitively, anywhere in the cell or, for `startsWith`, at its start. A `Date` cell
+ * compares as its calendar day in `timeZone`, and an ISO date string compares as it is. A missing
+ * cell passes only the negated operators.
  *
  * @param value - The filter.
  * @param cell - The row's value in the filtered column.
@@ -170,8 +171,11 @@ function cellHolds(value: FilterValue, cell: unknown, options: MatchOptions): bo
       if (text === null) {
         return false;
       }
+      const haystack = normalizeText(text);
       const needle = prepared(needles, value, () => normalizeText(value.values[0]));
-      return normalizeText(text).includes(needle);
+      return value.operator === "startsWith" || value.operator === "doesNotStartWith"
+        ? haystack.startsWith(needle)
+        : haystack.includes(needle);
     }
     case "number":
       return isFiniteNumber(cell) && compareOrdered(value.operator, cell, value.values);

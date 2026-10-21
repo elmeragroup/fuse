@@ -45,6 +45,8 @@ export const fiFI = {
   "multiOption.excludesAllOf": "ei sisällä kaikkia",
   "text.contains": "sisältää",
   "text.doesNotContain": "ei sisällä",
+  "text.startsWith": "alkaa",
+  "text.doesNotStartWith": "ei ala",
   "number.is": "on",
   "number.isNot": "ei ole",
   "number.isGreaterThan": "on suurempi kuin",

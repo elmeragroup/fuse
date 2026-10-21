@@ -63,10 +63,13 @@ test("a field must fit its column's type", () => {
     // @ts-expect-error -- a text field takes text operators only
     customer: { kind: "text", label: "Customer", operators: ["isBetween"] },
   });
+  defineOrderFields({ customer: { kind: "text", label: "Customer", operators: ["startsWith"] } });
 });
 
 test("an operator fixes its value's kind and arity", () => {
-  expectTypeOf<FilterOperator<"text">>().toEqualTypeOf<"contains" | "doesNotContain">();
+  expectTypeOf<FilterOperator<"text">>().toEqualTypeOf<
+    "contains" | "doesNotContain" | "startsWith" | "doesNotStartWith"
+  >();
   const range: FilterValue = { kind: "number", operator: "isBetween", values: [1, 2] };
   expectTypeOf(range.values).toEqualTypeOf<readonly [number, number]>();
   // @ts-expect-error -- isAnyOf is not a text operator

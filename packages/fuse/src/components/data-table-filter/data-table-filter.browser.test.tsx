@@ -739,6 +739,19 @@ describe("DataTableFilter composition", () => {
     }
   );
 
+  it("relabels an operator on one field through the field id formatOperator receives", async () => {
+    renderOrders({
+      initial: [...STATUS_THREE, ...CUSTOMER_NORD],
+      formatOperator: (_operator, _kind, fieldId) => (fieldId === "customer" ? "has" : undefined),
+    });
+    expect(roleNamed("combobox", "Customer operator").textContent).toBe("has");
+    expect(roleNamed("combobox", "Status operator").textContent).toBe("is any of");
+    await userEvent.click(roleNamed("button", "“nord”"));
+    await expect.poll(() => page.getByRole("dialog", { name: "Customer" }).query()).not.toBeNull();
+    const dialog = page.elementLocator(roleNamed("dialog", "Customer"));
+    expect(dialog.getByRole("combobox", { name: "Customer operator" }).element().textContent).toBe("has");
+  });
+
   /** Renders Status as any of three under a write counter, then restricts it to single-select. */
   function renderStaleMulti() {
     const single = withField("status", { ...FIELDS.status, operators: ["is", "isNot"] });

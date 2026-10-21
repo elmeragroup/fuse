@@ -45,6 +45,8 @@ export const svSE = {
   "multiOption.excludesAllOf": "innehåller inte alla",
   "text.contains": "innehåller",
   "text.doesNotContain": "innehåller inte",
+  "text.startsWith": "börjar med",
+  "text.doesNotStartWith": "börjar inte med",
   "number.is": "är",
   "number.isNot": "är inte",
   "number.isGreaterThan": "är större än",

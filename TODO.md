@@ -354,6 +354,8 @@
   scrolls, or keep the old anchor in view until it does.
 - Base UI's menu filtering parts are a preview API. When they leave preview, rename them in
   `searchable-menu.ts`, the one module that reads them.
+- Add `endsWith` and an exact-match text `is` when a consumer needs them. Make both opt-in like
+  `startsWith` (`filter-model.ts`).
 
 ## Command
 
