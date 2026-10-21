@@ -63,6 +63,7 @@ export const PART_DENSITY = {
   "card-action": "layout",
   "card-content": "surface",
   "card-content[data-direction=horizontal]": "layout",
+  "card-content:where([data-slot=card-section] > *)": "layout",
   "card-footer": "surface",
   "card-footer[data-direction=horizontal]": "layout",
   "card-tag": "fixed",
