@@ -53,6 +53,37 @@ export function placeOwned<Node extends SceneNode>(
 }
 
 /**
+ * Children indexed once for a walk that looks up many specs among them: the keyed ones by key,
+ * and the ones without a key by name, each list in layer order.
+ */
+export type Siblings = {
+  readonly byKey: ReadonlyMap<string, readonly BaseNode[]>;
+  readonly unkeyedByName: ReadonlyMap<string, readonly BaseNode[]>;
+};
+
+/**
+ * Index children by key and, for the ones without a key, by name.
+ *
+ * @param children - The children, in layer order.
+ * @returns The index.
+ */
+export function indexSiblings(children: ReadonlyArray<BaseNode>): Siblings {
+  const byKey = new Map<string, BaseNode[]>();
+  const unkeyedByName = new Map<string, BaseNode[]>();
+  for (const node of children) {
+    const key = keyOf(node);
+    const [index, entry] = key === "" ? [unkeyedByName, node.name] : [byKey, key];
+    const list = index.get(entry);
+    if (list === undefined) {
+      index.set(entry, [node]);
+    } else {
+      list.push(node);
+    }
+  }
+  return { byKey, unkeyedByName };
+}
+
+/**
  * Find the child that the spec calls `key`, by its key and then by its name.
  *
  * A name match only counts for a child that carries no key, and the plan writes the key onto
@@ -60,7 +91,7 @@ export function placeOwned<Node extends SceneNode>(
  * because the plugin cannot tell which one a designer meant to keep.
  *
  * @param plan - The run's plan, which records the key it writes onto a name match.
- * @param siblings - The children to search.
+ * @param siblings - The children to search, indexed.
  * @param where - The parent's label, for messages.
  * @param key - The key from the spec.
  * @param name - The name to fall back on.
@@ -69,13 +100,13 @@ export function placeOwned<Node extends SceneNode>(
  */
 export function findOwned<Node extends BaseNode>(
   plan: Plan,
-  siblings: ReadonlyArray<BaseNode>,
+  siblings: Siblings,
   where: string,
   key: string,
   name: string,
   accept: (node: BaseNode) => node is Node
 ): Node | undefined {
-  const keyed = siblings.filter((node) => keyOf(node) === key);
+  const keyed = siblings.byKey.get(key) ?? [];
   if (keyed.length > 1) {
     throw new Error(
       `${where} holds ${keyed.length} layers with the key ${key}. Delete the copies, then run the plugin again.`
@@ -90,9 +121,7 @@ export function findOwned<Node extends BaseNode>(
     }
     return match;
   }
-  const named = siblings.find(
-    (node): node is Node => keyOf(node) === "" && node.name === name && accept(node)
-  );
+  const named = siblings.unkeyedByName.get(name)?.find((node): node is Node => accept(node));
   if (named !== undefined) {
     change(plan, where, `adopt the layer named ${name} as ${key}`, () => setKey(named, key));
   }
@@ -122,7 +151,8 @@ export function staleOwned(siblings: ReadonlyArray<SceneNode>, keep: ReadonlySet
  * @returns The children with no key that no spec matched.
  */
 function unowned(siblings: ReadonlyArray<SceneNode>, owned: ReadonlyArray<Target<BaseNode>>): SceneNode[] {
-  return siblings.filter((node) => keyOf(node) === "" && !owned.some((target) => target.existing === node));
+  const matched = new Set(owned.map((target) => target.existing));
+  return siblings.filter((node) => keyOf(node) === "" && !matched.has(node));
 }
 
 /**
@@ -135,7 +165,8 @@ function unowned(siblings: ReadonlyArray<SceneNode>, owned: ReadonlyArray<Target
  * @param label - The parent's label, for change lines.
  * @param noun - What a child is, such as `variant`, for change lines.
  * @param specs - The children's specs, in order.
- * @param planOne - Plans one spec's child and returns it.
+ * @param planOne - Plans one spec's child and returns it. It finds the child among the
+ *   parent's children, which the walk indexes once.
  */
 export async function planOwnedChildren<Spec extends { readonly key: string }, Node extends SceneNode>(
   plan: Plan,
@@ -143,15 +174,16 @@ export async function planOwnedChildren<Spec extends { readonly key: string }, N
   label: string,
   noun: string,
   specs: readonly Spec[],
-  planOne: (spec: Spec) => Target<Node> | Promise<Target<Node>>
+  planOne: (spec: Spec, siblings: Siblings) => Target<Node> | Promise<Target<Node>>
 ): Promise<void> {
   const keep = new Set(specs.map((spec) => spec.key));
   for (const stale of staleOwned(parent.children, keep)) {
     change(plan, label, `delete the ${noun} ${stale.name}`, () => stale.remove());
   }
+  const siblings = indexSiblings(parent.children);
   const owned: Target<Node>[] = [];
   for (const spec of specs) {
-    owned.push(await planOne(spec));
+    owned.push(await planOne(spec, siblings));
   }
   for (const child of unowned(parent.children, owned)) {
     warn(plan, label, `keeps the layer ${child.name}, which the kit does not own`);

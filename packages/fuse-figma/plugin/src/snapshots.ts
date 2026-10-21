@@ -100,34 +100,48 @@ async function snapshotInstance(
 }
 
 /**
- * Export every instance of every preview frame on the kit's page.
+ * The kit's instances under a preview frame, at any depth, in layer order. The walk enters
+ * frames, such as a set's group, and stops at an instance.
+ */
+function instancesOf(frame: FrameNode, previewKey: string): InstanceNode[] {
+  return frame.children.flatMap((node) => {
+    if (isInstance(node)) {
+      return keyOf(node).startsWith(`${previewKey}/`) ? [node] : [];
+    }
+    return isFrame(node) ? instancesOf(node, previewKey) : [];
+  });
+}
+
+/**
+ * Export every instance of every preview frame on the kit's pages.
  *
  * @param figma - The plugin API.
- * @param pageKey - The kit page's key, `KitSpec.page.key`.
+ * @param pageKeys - The kit's page keys, from `KitSpec.pages`, in the order to export them.
  * @param progress - Called after each instance with the count so far and the total.
  * @returns The snapshot, ready for `JSON.stringify`.
- * @throws When the file has no kit page, or more than one.
+ * @throws When the file lacks a kit page, or holds more than one with a key.
  */
 export async function exportSnapshots(
   figma: PluginAPI,
-  pageKey: string,
+  pageKeys: readonly string[],
   progress: SnapshotProgress
 ): Promise<KitSnapshot> {
-  const page = await kitPage(figma, pageKey);
-  const frames = page.children.filter(
-    (node): node is FrameNode => isFrame(node) && keyOf(node).startsWith(PREVIEW_PREFIX)
-  );
-  const instancesOf = (frame: FrameNode) =>
-    frame.children.filter(
-      (node): node is InstanceNode => isInstance(node) && keyOf(node).startsWith(`${keyOf(frame)}/`)
-    );
-  const total = frames.reduce((sum, frame) => sum + instancesOf(frame).length, 0);
+  const frames: { readonly frame: FrameNode; readonly instances: InstanceNode[] }[] = [];
+  for (const pageKey of pageKeys) {
+    const page = await kitPage(figma, pageKey);
+    for (const node of page.children) {
+      if (isFrame(node) && keyOf(node).startsWith(PREVIEW_PREFIX)) {
+        frames.push({ frame: node, instances: instancesOf(node, keyOf(node)) });
+      }
+    }
+  }
+  const total = frames.reduce((sum, { instances }) => sum + instances.length, 0);
   let done = 0;
   const previews: PreviewSnapshot[] = [];
-  for (const frame of frames) {
+  for (const { frame, instances: found } of frames) {
     const key = keyOf(frame);
     const instances: InstanceSnapshot[] = [];
-    for (const instance of instancesOf(frame)) {
+    for (const instance of found) {
       const snapshot = await snapshotInstance(figma, instance, key);
       if (snapshot !== undefined) {
         instances.push(snapshot);

@@ -11,7 +11,9 @@ import type { LayerLinks } from "./child-layers.ts";
 import { near, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import type { PlannedIcon } from "./icons.ts";
-import { findOwned, keyOf, placeOwned, planOwnedChildren, setKey } from "./identity.ts";
+import { findOwned, indexSiblings, placeOwned, planOwnedChildren, setKey } from "./identity.ts";
+import type { Siblings } from "./identity.ts";
+import type { PlannedPage } from "./pages.ts";
 import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { planRoot } from "./root-layer.ts";
@@ -324,13 +326,14 @@ async function planVariantFields(
 async function planVariant(
   run: Run,
   set: ComponentSetNode,
+  siblings: Siblings,
   spec: ComponentSetSpec,
   variant: VariantSpec,
   links: LayerLinks
 ): Promise<Target<ComponentNode>> {
   const name = variantName(spec, variant);
   const label = `${spec.name} / ${name}`;
-  const found = findOwned(run.plan, set.children, spec.name, variant.key, name, isComponent);
+  const found = findOwned(run.plan, siblings, spec.name, variant.key, name, isComponent);
   if (found !== undefined) {
     await planVariantFields(run, found, name, label, variant, links);
     return existing(found);
@@ -365,8 +368,8 @@ async function planSetContents(
   // value leaves it where it is, as a real file showed on 2026-10-20. A set the plugin creates
   // lists its values in spec order, but a set that gained values later keeps them last.
   const variants = new Map<string, Target<ComponentNode>>();
-  await planOwnedChildren(run.plan, set, spec.name, "variant", spec.variants, async (variant) => {
-    const target = await planVariant(run, set, spec, variant, links);
+  await planOwnedChildren(run.plan, set, spec.name, "variant", spec.variants, async (variant, siblings) => {
+    const target = await planVariant(run, set, siblings, spec, variant, links);
     variants.set(variant.key, target);
     return target;
   });
@@ -381,19 +384,20 @@ async function planSetContents(
  */
 function createSet(
   run: Run,
-  page: PageNode,
+  page: PlannedPage,
   spec: ComponentSetSpec,
   icons: ReadonlyMap<string, PlannedIcon>
 ): PlannedSet {
   const node = create(
     run.plan,
-    page.name,
+    page.spec.name,
     `create the component set ${spec.name} with ${spec.variants.length} variants`,
     () => {
+      const parent = page.node.get();
       const components = spec.variants.map((variant) =>
-        placeOwned(page, run.figma.createComponent(), variant.key, variantName(spec, variant))
+        placeOwned(parent, run.figma.createComponent(), variant.key, variantName(spec, variant))
       );
-      const set = run.figma.combineAsVariants(components, page);
+      const set = run.figma.combineAsVariants(components, parent);
       setKey(set, spec.key);
       set.name = spec.name;
       return set;
@@ -402,17 +406,16 @@ function createSet(
       await planSetContents({ ...run, plan }, set, spec, icons);
     }
   );
+  // The set's children, indexed by key the first time a later operation reads a variant.
+  let made: Siblings | undefined;
   const variants = new Map(
     spec.variants.map((variant): readonly [string, Target<ComponentNode>] => [
       variant.key,
       {
         existing: undefined,
         get: () => {
-          const component = node
-            .get()
-            .children.find(
-              (child): child is ComponentNode => isComponent(child) && keyOf(child) === variant.key
-            );
+          made ??= indexSiblings(node.get().children);
+          const component = made.byKey.get(variant.key)?.find(isComponent);
           if (component === undefined) {
             throw new Error(`${spec.name} has no variant ${variant.key} after its creation.`);
           }
@@ -428,20 +431,20 @@ function createSet(
  * Plan one component set against the spec.
  *
  * @param run - The run.
- * @param page - The kit's page.
+ * @param page - The page the set sits on.
  * @param spec - The component set.
  * @param icons - The kit's icons, by key, which the set's icon layers and swap properties use.
  * @returns The set and its variants, as later operations find them.
  */
 export async function planComponentSet(
   run: Run,
-  page: PageNode,
+  page: PlannedPage,
   spec: ComponentSetSpec,
   icons: ReadonlyMap<string, PlannedIcon>
 ): Promise<PlannedSet> {
-  const found = findOwned(run.plan, page.children, page.name, spec.key, spec.name, isComponentSet);
+  const found = page.find(spec.key, spec.name, isComponentSet);
   if (found === undefined) {
-    await requireNewSetFonts(run, page.explicitVariableModes, spec);
+    await requireNewSetFonts(run, page.modes, spec);
     return createSet(run, page, spec, icons);
   }
   return { spec, node: existing(found), variants: await planSetContents(run, found, spec, icons) };

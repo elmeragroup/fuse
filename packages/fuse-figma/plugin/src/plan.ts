@@ -211,13 +211,14 @@ export function create<Node>(
  * @returns True when the owned children need no reorder.
  */
 export function keepsOrder<Node>(children: readonly Node[], owned: readonly Target<Node>[]): boolean {
+  const indexOf = new Map(children.map((child, index) => [child, index]));
   let created = 0;
   const positions = owned.map((target) => {
     if (target.existing === undefined) {
       created += 1;
       return children.length + created;
     }
-    return children.indexOf(target.existing);
+    return indexOf.get(target.existing) ?? -1;
   });
   return positions.every((position, index) => index === 0 || position > (positions[index - 1] ?? -1));
 }

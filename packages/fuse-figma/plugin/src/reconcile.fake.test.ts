@@ -12,7 +12,9 @@ import type { KitSpec } from "../../src/components/kit-spec.ts";
 import type { AliasCycle, CollectionSpec, InvalidVariableSet, VariableSet } from "../../src/variable-set.ts";
 import { createFakeFigma, drawsShadowSpread } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
+import { keyOf } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
+import { exportSnapshots } from "./snapshots.ts";
 
 /**
  * The spec builder and the token sync import Node and Fuse modules that the plugin's type check
@@ -43,15 +45,26 @@ beforeAll(async () => {
   ({ spec: kit } = await builder.buildKit());
 }, 60_000);
 
-const PAGE = "Fuse components";
+const BUTTON_PAGE = "page/button";
+const ICONS_PAGE = "page/icons";
 const DEFAULT_BUTTON = "variant=default, size=default, state=rest, icon=none";
 const LAY_OUT_BUTTONS = "Button: lay out 420 variants in 5 columns and 84 rows";
-const PLACE = `${PAGE}: place 2 component sets and the icons in a row and stack 12 previews below them`;
+const PLACE = "Button: place Button and Icon button in a row and stack 4 previews below them";
+const PREVIEWS = [
+  "Button / Fjordkraft internal private, light",
+  "Button / Fjordkraft internal private, dark",
+  "Button / Fjordkraft external private, light",
+  "Button / Fjordkraft external private, dark",
+];
+const CREATE_PREVIEWS = PREVIEWS.map((name) => `Button: create the preview ${name}`);
+
+/** The page the plugin put the whole kit on before each component got a page of its own. */
+const LEGACY_PAGE = { key: "page/components", name: "Fuse components" };
 
 /** The gray `ring` holds in Fjordkraft's internal private light theme, the file's default modes. */
 const RING_GRAY = 0.502;
 
-/** A synced file without the kit page. */
+/** A synced file without the kit pages. */
 function syncedFile(unavailableFonts: readonly FontName[] = []): FakeFigma {
   return createFakeFigma({ collections, unavailableFonts });
 }
@@ -64,27 +77,87 @@ async function appliedFile(): Promise<FakeFigma> {
   return file;
 }
 
+/**
+ * The kit in the layout the plugin wrote before each component got a page: the sets, the icons
+ * and the previews on the legacy page, with each preview keyed by its theme and density.
+ */
+function singlePageKit(): KitSpec {
+  const page = LEGACY_PAGE.key;
+  return {
+    ...kit,
+    pages: [LEGACY_PAGE],
+    icons: { ...kit.icons, page },
+    componentSets: kit.componentSets.map((set) => ({ ...set, page })),
+    previews: kit.previews.map((preview) => {
+      const key = `${preview.key}/dense`;
+      const groups = preview.groups.map((group) => ({ ...group, key: `${key}/${group.componentSet}` }));
+      return { ...preview, key, page, groups };
+    }),
+  };
+}
+
+/** A synced file the plugin applied the single-page kit to, opened again for the next run. */
+async function singlePageFile(): Promise<FakeFigma> {
+  const file = syncedFile();
+  await reconcileKit(file.figma, singlePageKit(), true);
+  file.reopen();
+  return file;
+}
+
 async function changes(file: FakeFigma): Promise<readonly string[]> {
   return (await reconcileKit(file.figma, kit, false)).changes;
 }
 
-async function kitPage(file: FakeFigma): Promise<PageNode> {
-  const page = file.figma.root.children.find((candidate) => candidate.name === PAGE);
+/** The page that carries a kit page key, loaded for reading. */
+async function kitPage(file: FakeFigma, key = BUTTON_PAGE): Promise<PageNode> {
+  const page = file.figma.root.children.find((candidate) => keyOf(candidate) === key);
   if (page === undefined) {
-    throw new Error(`the file has no page ${PAGE}`);
+    throw new Error(`the file has no page with the key ${key}`);
   }
   await page.loadAsync();
   return page;
 }
 
-async function componentSet(file: FakeFigma, name: string): Promise<ComponentSetNode> {
-  const set = (await kitPage(file)).children.find(
+async function iconLibrary(file: FakeFigma): Promise<FrameNode> {
+  return childNamed(await kitPage(file, ICONS_PAGE), "FRAME", "Icons");
+}
+
+/** Each child's id, by its name. */
+function idsByName(parent: ChildrenMixin): ReadonlyMap<string, string> {
+  return new Map(parent.children.map((node) => [node.name, node.id]));
+}
+
+/** The modes a frame pins, as collection and mode names. */
+async function pinnedModes(file: FakeFigma, frame: FrameNode): Promise<Record<string, string | undefined>> {
+  const collectionsById = new Map(
+    (await file.figma.variables.getLocalVariableCollectionsAsync()).map((collection) => [
+      collection.id,
+      collection,
+    ])
+  );
+  return Object.fromEntries(
+    Object.entries(frame.explicitVariableModes).map(([id, modeId]) => {
+      const collection = collectionsById.get(id);
+      return [
+        collection?.name ?? id,
+        collection?.modes.find((mode) => mode.modeId === modeId)?.name,
+      ] as const;
+    })
+  );
+}
+
+function setOn(page: PageNode, name: string): ComponentSetNode {
+  const set = page.children.find(
     (node): node is ComponentSetNode => node.type === "COMPONENT_SET" && node.name === name
   );
   if (set === undefined) {
-    throw new Error(`the kit page has no component set ${name}`);
+    throw new Error(`${page.name} has no component set ${name}`);
   }
   return set;
+}
+
+async function componentSet(file: FakeFigma, name: string): Promise<ComponentSetNode> {
+  return setOn(await kitPage(file), name);
 }
 
 function variantNamed(set: ComponentSetNode, name: string): ComponentNode {
@@ -140,7 +213,7 @@ function property(set: ComponentSetNode, name: string): ComponentPropertyDefinit
   return found[1];
 }
 
-describe("Apply on a synced file without the kit page", () => {
+describe("Apply on a synced file without the kit pages", () => {
   let file: FakeFigma;
   let applied: Awaited<ReturnType<typeof reconcileKit>>;
 
@@ -150,24 +223,118 @@ describe("Apply on a synced file without the kit page", () => {
     file.reopen();
   }, 60_000);
 
-  it("creates the page as one change, and a second Plan lists nothing", async () => {
+  it("creates each page and each node on it once, and a second Plan lists nothing", async () => {
     expect(applied).toEqual({
-      changes: [`Document: create the page ${PAGE} with Button, Icon button and 12 previews`],
+      changes: [
+        "Document: create the page Button",
+        "Document: create the page Icons",
+        "Icons: create the Icons frame with 135 icons",
+        "Button: create the component set Button with 420 variants",
+        "Button: create the component set Icon button with 140 variants",
+        ...CREATE_PREVIEWS,
+        PLACE,
+      ],
       warnings: [],
     });
     expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
   });
 
-  it("shows the kit page and leaves nothing behind on the page that was current", async () => {
-    const [first, second] = file.figma.root.children;
+  it("shows the Button page and leaves nothing behind on the page that was current", async () => {
+    const [first, button, icons] = file.figma.root.children;
     expect(first?.name).toBe("Page 1");
     await first?.loadAsync();
     expect(first?.children).toEqual([]);
-    expect(second?.name).toBe(PAGE);
-    expect(file.figma.currentPage).toBe(second);
+    expect([button?.name, icons?.name]).toEqual(["Button", "Icons"]);
+    expect(file.figma.currentPage).toBe(button);
+    expect((await kitPage(file)).children.map((node) => node.name)).toEqual([
+      "Button",
+      "Icon button",
+      ...PREVIEWS,
+    ]);
+    expect((await kitPage(file, ICONS_PAGE)).children.map((node) => node.name)).toEqual(["Icons"]);
+  });
+
+  it("pins each preview's theme at Auto density, with a row of instances per set on the page", async () => {
     const page = await kitPage(file);
-    expect(page.children.map((node) => node.name).slice(0, 3)).toEqual(["Icons", "Button", "Icon button"]);
-    expect(page.children).toHaveLength(15);
+    const sets = new Map(
+      page.children.flatMap((node) =>
+        node.type === "COMPONENT_SET" ? [[node.name, new Set(node.children.map((child) => child.id))]] : []
+      )
+    );
+    const previews = page.children.filter((node): node is FrameNode => node.type === "FRAME");
+    const internal = { "Fuse variant": "Internal", "Fuse segment": "Private", "Fuse brand": "Fjordkraft" };
+    const external = { ...internal, "Fuse variant": "External" };
+    expect(await Promise.all(previews.map((preview) => pinnedModes(file, preview)))).toEqual([
+      { "Fuse tokens": "Light", ...internal, "Fuse density": "Auto" },
+      { "Fuse tokens": "Dark", ...internal, "Fuse density": "Auto" },
+      { "Fuse tokens": "Light", ...external, "Fuse density": "Auto" },
+      { "Fuse tokens": "Dark", ...external, "Fuse density": "Auto" },
+    ]);
+    for (const preview of previews) {
+      const groups = preview.children.filter((node): node is FrameNode => node.type === "FRAME");
+      // Button: 7 variants in 5 states, 7 at each of 3 other sizes, and 7 with each of 2 icons.
+      // Icon button: 7 variants in 5 states, and 7 at each of 3 other sizes.
+      expect(groups.map((group) => [group.name, group.children.length])).toEqual([
+        ["Button", 70],
+        ["Icon button", 56],
+      ]);
+      // A group has no padding, so it must not clip a focus ring at its edge.
+      expect(groups.map((group) => group.clipsContent)).toEqual([false, false]);
+      for (const group of groups) {
+        const variants = sets.get(group.name);
+        for (const instance of group.children) {
+          if (instance.type !== "INSTANCE") {
+            throw new Error(`${group.name} holds a ${instance.type}`);
+          }
+          expect(variants?.has((await instance.getMainComponentAsync())?.id ?? "")).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("exports every instance of the four previews, with the snapshot's fields", async () => {
+    let progress: readonly [number, number] | undefined;
+    const snapshot = await exportSnapshots(
+      file.figma,
+      kit.pages.map((page) => page.key),
+      (done, total) => {
+        progress = [done, total];
+      }
+    );
+    expect(new Set(Object.keys(snapshot))).toEqual(
+      new Set(["format", "version", "exportedAt", "file", "scale", "previews"])
+    );
+    // The format `figma:compare` reads, at version 1, with every PNG at 2x.
+    expect([snapshot.format, snapshot.version, snapshot.scale]).toEqual(["fuse-kit-snapshots", 1, 2]);
+    expect(snapshot.previews.map((preview) => [preview.key, preview.name, preview.instances.length])).toEqual(
+      [
+        ["preview/button/internal-fkas-private-light", PREVIEWS[0], 126],
+        ["preview/button/internal-fkas-private-dark", PREVIEWS[1], 126],
+        ["preview/button/external-fkas-private-light", PREVIEWS[2], 126],
+        ["preview/button/external-fkas-private-dark", PREVIEWS[3], 126],
+      ]
+    );
+    expect(progress).toEqual([504, 504]);
+    const [first] = snapshot.previews;
+    expect(new Set(Object.keys(first ?? {}))).toEqual(new Set(["key", "name", "modes", "instances"]));
+    expect(first?.modes).toEqual(
+      expect.arrayContaining([
+        { collection: "Fuse tokens", mode: "Light" },
+        { collection: "Fuse density", mode: "Auto" },
+      ])
+    );
+    const [instance] = first?.instances ?? [];
+    expect(new Set(Object.keys(instance ?? {}))).toEqual(new Set(["key", "variant", "box", "image"]));
+    expect(instance?.key).toBe(
+      "preview/button/internal-fkas-private-light/button/variant=default,size=default,state=rest,icon=none"
+    );
+    expect(instance?.variant).toBe("button/variant=default,size=default,state=rest,icon=none");
+    expect(new Set(Object.keys(instance?.box ?? {}))).toEqual(new Set(["x", "y", "width", "height"]));
+    expect(new Set(Object.keys(instance?.image ?? {}))).toEqual(new Set(["renderBounds", "png"]));
+    // The fake draws no effects, so the render bounds are the box.
+    expect(instance?.image?.renderBounds).toEqual(instance?.box);
+    expect(instance?.image?.png).toMatch(/^[A-Za-z0-9+/]+=*$/);
+    expect(first?.instances[70]?.variant).toBe("icon-button/variant=default,size=icon,state=rest");
   });
 
   it("writes nothing on a second Apply but showing the page", async () => {
@@ -235,7 +402,7 @@ describe("Apply on a synced file without the kit page", () => {
   });
 
   it("starts each swap property with its icon and offers all 135 library icons", async () => {
-    const icons = childNamed(await kitPage(file), "FRAME", "Icons");
+    const icons = await iconLibrary(file);
     const plus = childNamed(icons, "COMPONENT", "Plus");
     const arrow = childNamed(icons, "COMPONENT", "ArrowRight");
     const button = await componentSet(file, "Button");
@@ -265,7 +432,7 @@ describe("Apply on a synced file without the kit page", () => {
   });
 
   it("draws each icon as one glyph in the library's foreground, and leaves the artwork out", async () => {
-    const icons = childNamed(await kitPage(file), "FRAME", "Icons");
+    const icons = await iconLibrary(file);
     const plus = childNamed(icons, "COMPONENT", "Plus");
     expect(plus.children.map((node) => [node.type, node.name])).toEqual([["VECTOR", "glyph"]]);
     expect(onlySolid(childNamed(plus, "VECTOR", "glyph").fills, file.figma).boundVariables?.color?.id).toBe(
@@ -346,13 +513,12 @@ describe("a later run on an applied file", () => {
 
   it("swaps an icon layer a designer swapped back to its icon, and colors the new glyph", async () => {
     const file = await appliedFile();
-    const page = await kitPage(file);
     const variant = variantNamed(
       await componentSet(file, "Button"),
       "variant=default, size=default, state=rest, icon=start"
     );
     const icon = childNamed(variant, "INSTANCE", "Start icon");
-    icon.swapComponent(childNamed(childNamed(page, "FRAME", "Icons"), "COMPONENT", "ArrowLeft"));
+    icon.swapComponent(childNamed(await iconLibrary(file), "COMPONENT", "ArrowLeft"));
 
     const label = "Button / variant=default, size=default, state=rest, icon=start / Start icon";
     expect(await changes(file)).toEqual([
@@ -368,17 +534,17 @@ describe("a later run on an applied file", () => {
 
   it("rebuilds a deleted icon library and points every icon layer at the new icons", async () => {
     const file = await appliedFile();
-    childNamed(await kitPage(file), "FRAME", "Icons").remove();
+    (await iconLibrary(file)).remove();
 
     const plan = await changes(file);
     expect(plan.slice(0, 3)).toEqual([
-      `${PAGE}: create the Icons frame with 135 icons`,
+      "Icons: create the Icons frame with 135 icons",
       "Button: Start icon → Plus and the 135 library icons",
       "Button: End icon → ArrowRight and the 135 library icons",
     ]);
     await reconcileKit(file.figma, kit, true);
     expect(await changes(file)).toEqual([]);
-    const plus = childNamed(childNamed(await kitPage(file), "FRAME", "Icons"), "COMPONENT", "Plus");
+    const plus = childNamed(await iconLibrary(file), "COMPONENT", "Plus");
     const variant = variantNamed(
       await componentSet(file, "Icon button"),
       "variant=default, size=icon, state=rest"
@@ -414,13 +580,24 @@ describe("a later run on an applied file", () => {
     );
   });
 
+  it("unclips a preview group a designer set to clip, in one Apply", async () => {
+    const file = await appliedFile();
+    const preview = childNamed(await kitPage(file), "FRAME", "Button / Fjordkraft internal private, light");
+    const group = childNamed(preview, "FRAME", "Button");
+    group.clipsContent = true;
+
+    expect(await changes(file)).toEqual([
+      "Button / Fjordkraft internal private, light / Button: clipsContent → false",
+      PLACE,
+    ]);
+    await reconcileKit(file.figma, kit, true);
+    expect(group.clipsContent).toBe(false);
+    expect(await changes(file)).toEqual([]);
+  });
+
   it("warns about a layer a designer dropped into a preview, and keeps it", async () => {
     const file = await appliedFile();
-    const preview = childNamed(
-      await kitPage(file),
-      "FRAME",
-      "Button / Fjordkraft internal private, light / Dense"
-    );
+    const preview = childNamed(await kitPage(file), "FRAME", "Button / Fjordkraft internal private, light");
     const note = file.figma.createFrame();
     note.name = "Note";
     preview.appendChild(note);
@@ -428,7 +605,7 @@ describe("a later run on an applied file", () => {
     const { changes: planned, warnings } = await reconcileKit(file.figma, kit, false);
     expect(planned).toEqual([]);
     expect(warnings).toEqual([
-      "Button / Fjordkraft internal private, light / Dense: keeps the layer Note, which the kit does not own",
+      "Button / Fjordkraft internal private, light: keeps the layer Note, which the kit does not own",
     ]);
     await reconcileKit(file.figma, kit, true);
     expect(preview.children).toContain(note);
@@ -436,7 +613,7 @@ describe("a later run on an applied file", () => {
 
   it("brings an icon a designer scaled back to 16px with its glyph, in one Apply", async () => {
     const file = await appliedFile();
-    const plus = childNamed(childNamed(await kitPage(file), "FRAME", "Icons"), "COMPONENT", "Plus");
+    const plus = childNamed(await iconLibrary(file), "COMPONENT", "Plus");
     const glyph = childNamed(plus, "VECTOR", "glyph");
     plus.resize(32, 32);
     expect([glyph.width, glyph.height]).toEqual([32, 32]);
@@ -451,7 +628,7 @@ describe("a later run on an applied file", () => {
     ["scaled", (glyph: VectorNode) => glyph.resize(glyph.width * 2, glyph.height * 2)],
   ])("redraws an icon whose glyph a designer %s inside it, in one Apply", async (_, edit) => {
     const file = await appliedFile();
-    const plus = childNamed(childNamed(await kitPage(file), "FRAME", "Icons"), "COMPONENT", "Plus");
+    const plus = childNamed(await iconLibrary(file), "COMPONENT", "Plus");
     const drawn = childNamed(plus, "VECTOR", "glyph");
     const box = [drawn.x, drawn.y, drawn.width, drawn.height];
     edit(drawn);
@@ -484,9 +661,98 @@ describe("a later run on an applied file", () => {
 describe("a file whose label font the machine cannot load", () => {
   it("fails Plan, and stops Apply before any write", async () => {
     const file = syncedFile([{ family: "Roboto", style: "Medium" }]);
-    const message = `${PAGE} needs the font Roboto Medium, which Figma cannot load.`;
+    const message = "The kit needs the font Roboto Medium, which Figma cannot load.";
     await expect(reconcileKit(file.figma, kit, false)).rejects.toThrow(message);
     await expect(reconcileKit(file.figma, kit, true)).rejects.toThrow(message);
     expect(file.writes).toEqual([]);
+  });
+});
+
+describe("a file the plugin laid out on one page", () => {
+  it("moves the sets and the icons onto their pages with their ids, then deletes the old page", async () => {
+    const file = await singlePageFile();
+    const legacy = await kitPage(file, LEGACY_PAGE.key);
+    const before = idsByName(legacy);
+    const variantsBefore = [setOn(legacy, "Button"), setOn(legacy, "Icon button")].map(idsByName);
+    const pagePhase = [
+      "Document: create the page Button",
+      "Document: create the page Icons",
+      ...PREVIEWS.map((name) => `Fuse components: delete ${name}`),
+      "Fuse components: move Icons to the Icons page",
+      "Fuse components: move Button to the Button page",
+      "Fuse components: move Icon button to the Button page",
+    ];
+
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({
+      changes: [...pagePhase, "Document: plan the rest of the kit again once the 3 moves land"],
+      warnings: [],
+    });
+    const applied = await reconcileKit(file.figma, kit, true);
+    expect(applied).toEqual({
+      changes: [...pagePhase, ...CREATE_PREVIEWS, PLACE, "Document: delete the page Fuse components"],
+      warnings: [],
+    });
+    file.reopen();
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+
+    expect(legacy.removed).toBe(true);
+    expect(file.figma.root.children.map((page) => page.name)).toEqual(["Page 1", "Button", "Icons"]);
+    const button = await componentSet(file, "Button");
+    const iconButton = await componentSet(file, "Icon button");
+    expect([button.id, iconButton.id, (await iconLibrary(file)).id]).toEqual([
+      before.get("Button"),
+      before.get("Icon button"),
+      before.get("Icons"),
+    ]);
+    expect([button, iconButton].map(idsByName)).toEqual(variantsBefore);
+  });
+
+  it("keeps the old page and warns while it holds a layer the kit does not own", async () => {
+    const file = await singlePageFile();
+    const legacy = await kitPage(file, LEGACY_PAGE.key);
+    const notes = file.figma.createFrame();
+    legacy.appendChild(notes);
+    notes.name = "Notes";
+    const warning =
+      "Fuse components: the kit no longer uses this page, and keeps it for Notes, which the kit does not own";
+
+    const applied = await reconcileKit(file.figma, kit, true);
+    expect(applied.warnings).toEqual([warning]);
+    expect(applied.changes).not.toContain("Document: delete the page Fuse components");
+    file.reopen();
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [warning] });
+    await legacy.loadAsync();
+    expect(legacy.children).toEqual([notes]);
+  });
+
+  it("leaves pages named Button and Icons that it does not own alone, and creates its own", async () => {
+    const file = syncedFile();
+    const imported = ["Button", "Icons"].map((name) => {
+      const page = file.figma.createPage();
+      page.name = name;
+      const frame = file.figma.createFrame();
+      page.appendChild(frame);
+      frame.name = name;
+      return { page, frame };
+    });
+    file.reopen();
+
+    const applied = await reconcileKit(file.figma, kit, true);
+    expect(applied.changes.slice(0, 2)).toEqual([
+      "Document: create the page Button",
+      "Document: create the page Icons",
+    ]);
+    expect(file.figma.root.children.map((page) => page.name)).toEqual([
+      "Page 1",
+      "Button",
+      "Icons",
+      "Button",
+      "Icons",
+    ]);
+    for (const { page, frame } of imported) {
+      await page.loadAsync();
+      expect(page.children).toEqual([frame]);
+      expect([keyOf(page), keyOf(frame)]).toEqual(["", ""]);
+    }
   });
 });

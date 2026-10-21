@@ -1,7 +1,8 @@
 /**
  * Plan or apply the whole kit. Plan and Apply run the same planning pass, which reads the
  * file and records every write as an operation without making it. Apply then performs the
- * operations in order, so the change list a plan returns is what an apply does.
+ * operations in order, so the change list a plan returns is what an apply does. A run that
+ * moves nodes between pages is the exception: Apply moves them first and plans the rest again.
  *
  * The run takes the plugin API as an argument rather than reading the `figma` global, so a
  * test can hand it a fake file.
@@ -9,15 +10,15 @@
 
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import { checkKit, kitCollections } from "./check-kit.ts";
-import { requireNewSetFonts } from "./child-layers.ts";
 import { planComponentSet } from "./component-set.ts";
 import type { PlannedSet } from "./component-set.ts";
 import { requireFont } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { planIconLibrary } from "./icons.ts";
-import { findOwned, setKey, staleOwned } from "./identity.ts";
-import { change, changeLines, create, existing, runPlan } from "./plan.ts";
-import type { Target } from "./plan.ts";
+import { planPages, planRetiredPages } from "./pages.ts";
+import type { PlannedPage } from "./pages.ts";
+import { changeLines, performPlan, runPlan } from "./plan.ts";
+import type { Plan, Target } from "./plan.ts";
 import { placePageContents, planPreviews } from "./previews.ts";
 import { loadKitVariables } from "./variables.ts";
 
@@ -27,57 +28,58 @@ export type ReconcileReport = {
   readonly warnings: readonly string[];
 };
 
-const isPage = (node: BaseNode): node is PageNode => node.type === "PAGE";
+/**
+ * Plan every page of the kit.
+ *
+ * @returns The page to show after an apply: the first page that holds a component set.
+ */
+async function planKit(run: Run, kit: KitSpec): Promise<Target<PageNode>> {
+  const pages = await planPages(run, kit);
+  const changed = new Set<string>();
+  // Plans the nodes of one page, and records whether that recorded any operation, which may
+  // move or resize what the page layout reads.
+  const onPage = async <Result>(
+    key: string,
+    plan: (page: PlannedPage) => Promise<Result>
+  ): Promise<Result> => {
+    const page = pages.listed.find((candidate) => candidate.spec.key === key);
+    if (page === undefined) {
+      throw new Error(`The kit places a node on the page ${key}, which it does not list.`);
+    }
+    const start = run.plan.operations.length;
+    const result = await plan(page);
+    if (run.plan.operations.length > start) {
+      changed.add(key);
+    }
+    return result;
+  };
 
-async function planPage(run: Run, kit: KitSpec, page: PageNode): Promise<void> {
-  const start = run.plan.operations.length;
-  const keep = new Set([
-    kit.icons.key,
-    ...kit.componentSets.map((set) => set.key),
-    ...kit.previews.map((preview) => preview.key),
-  ]);
-  for (const stale of staleOwned(page.children, keep)) {
-    change(run.plan, page.name, `delete ${stale.name}`, () => stale.remove());
-  }
   // The icons come first, because the sets' icon layers and swap properties use them.
-  const library = await planIconLibrary(run, page, kit.icons);
+  const library = await onPage(kit.icons.page, (page) => planIconLibrary(run, page, kit.icons));
   const sets: PlannedSet[] = [];
   for (const spec of kit.componentSets) {
-    sets.push(await planComponentSet(run, page, spec, library.icons));
+    sets.push(await onPage(spec.page, (page) => planComponentSet(run, page, spec, library.icons)));
   }
-  const frames = await planPreviews(run, page, kit.previews, new Map(sets.map((set) => [set.spec.key, set])));
-  placePageContents(run, page, sets, library.frame, frames, run.plan.operations.length > start);
-}
+  const setsByKey = new Map(sets.map((set) => [set.spec.key, set]));
+  for (const page of pages.listed) {
+    const key = page.spec.key;
+    const previews = kit.previews.filter((preview) => preview.page === key);
+    const frames = await onPage(key, (planned) => planPreviews(run, planned, previews, setsByKey));
+    const row = [
+      ...sets.filter((set) => set.spec.page === key).map((set) => ({ name: set.spec.name, node: set.node })),
+      ...(kit.icons.page === key ? [{ name: kit.icons.name, node: library.frame }] : []),
+    ];
+    placePageContents(run, page, row, frames, changed.has(key));
+  }
 
-async function planDocument(run: Run, kit: KitSpec): Promise<Target<PageNode>> {
-  const document = "Document";
-  const found = findOwned(run.plan, run.figma.root.children, document, kit.page.key, kit.page.name, isPage);
-  if (found !== undefined) {
-    await found.loadAsync();
-    await planPage(run, kit, found);
-    return existing(found);
+  const first =
+    pages.listed.find((page) => kit.componentSets.some((set) => set.page === page.spec.key)) ??
+    pages.listed[0];
+  if (first === undefined) {
+    throw new Error("The kit lists no page.");
   }
-  // The new page pins no modes, and its sets plan their contents only when the page's
-  // operation runs, so the pass requires their label fonts here.
-  for (const set of kit.componentSets) {
-    await requireNewSetFonts(run, {}, set);
-  }
-  const sets = kit.componentSets.map((set) => set.name).join(", ");
-  return create(
-    run.plan,
-    document,
-    `create the page ${kit.page.name} with ${sets} and ${kit.previews.length} previews`,
-    () => {
-      const made = run.figma.createPage();
-      made.name = kit.page.name;
-      setKey(made, kit.page.key);
-      return made;
-    },
-    async (made, plan) => {
-      await made.loadAsync();
-      await planPage({ ...run, plan }, kit, made);
-    }
-  );
+  planRetiredPages(run, pages.retired, first.node);
+  return first.node;
 }
 
 /**
@@ -90,14 +92,38 @@ async function planDocument(run: Run, kit: KitSpec): Promise<Target<PageNode>> {
  */
 export async function reconcileKit(figma: PluginAPI, kit: KitSpec, apply: boolean): Promise<ReconcileReport> {
   const variables = await loadKitVariables(figma, kitCollections(kit));
-  const { plan, result: page } = await runPlan(apply, (plan) => {
+  const startRun = (plan: Plan): Run => {
     const run: Run = { figma, variables, plan };
     checkKit(variables, kit);
     for (const font of kit.fonts) {
-      requireFont(run, kit.page.name, font);
+      requireFont(run, "The kit", font);
     }
-    return planDocument(run, kit);
-  });
+    return run;
+  };
+
+  // A node's values resolve through the page it sits on, so a run that moves nodes to another
+  // page plans them only once they sit there. Apply makes the page changes first and then plans
+  // the rest against the file as moved. Plan lists the page changes alone.
+  const pagePhase = await runPlan(false, (plan) => planPages(startRun(plan), kit));
+  const { moves } = pagePhase.result;
+  if (moves > 0) {
+    if (!apply) {
+      const land = moves === 1 ? "the move lands" : `the ${moves} moves land`;
+      return {
+        changes: [...changeLines(pagePhase.plan), `Document: plan the rest of the kit again once ${land}`],
+        warnings: pagePhase.plan.warnings,
+      };
+    }
+    await performPlan(pagePhase.plan);
+    const rest = await runPlan(true, (plan) => planKit(startRun(plan), kit));
+    await figma.setCurrentPageAsync(rest.result.get());
+    return {
+      changes: [...changeLines(pagePhase.plan), ...changeLines(rest.plan)],
+      warnings: [...pagePhase.plan.warnings, ...rest.plan.warnings],
+    };
+  }
+
+  const { plan, result: page } = await runPlan(apply, (plan) => planKit(startRun(plan), kit));
   if (apply) {
     await figma.setCurrentPageAsync(page.get());
   }

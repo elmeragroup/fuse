@@ -317,6 +317,10 @@
   run Apply, and check that the next Plan lists nothing.
 - Publish the library, edit it in place and check that instances in a second file follow with
   their ids intact. Then delete and recreate the set and record what those instances show.
+- Make `plugin/src/fake-figma.ts` resolve a bound number again when its node moves under an
+  ancestor that pins other modes, as Figma does. The fake resolves the value once, when the field
+  binds, so no fake test shows a moved set's density-bound sizes changing. The two-phase Apply
+  covers that case by construction only.
 
 ## Data table
 

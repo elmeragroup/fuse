@@ -22,6 +22,7 @@ import type { Run } from "./fields.ts";
 import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
 import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
+import type { Siblings } from "./identity.ts";
 import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
 
@@ -464,6 +465,7 @@ const isInstance = (node: BaseNode): node is InstanceNode => node.type === "INST
 async function planChild(
   run: Run,
   component: ComponentNode,
+  siblings: Siblings,
   label: string,
   spec: ChildLayerSpec,
   links: LayerLinks
@@ -471,7 +473,7 @@ async function planChild(
   const layerLabel = `${label} / ${spec.name}`;
   const description = `create the ${spec.kind} layer ${spec.name}`;
   if (spec.kind === "text") {
-    const found = findOwned(run.plan, component.children, label, spec.key, spec.name, isText);
+    const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isText);
     if (found !== undefined) {
       planText(run, found, layerLabel, spec, links.properties, heldFonts(run, found));
       return existing(found);
@@ -485,7 +487,7 @@ async function planChild(
       (made, plan) => planText({ ...run, plan }, made, layerLabel, spec, links.properties, [])
     );
   }
-  const found = findOwned(run.plan, component.children, label, spec.key, spec.name, isInstance);
+  const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isInstance);
   if (found !== undefined) {
     await planIcon(run, found, layerLabel, spec, links);
     return existing(found);
@@ -520,7 +522,7 @@ export async function planChildren(
   specs: readonly ChildLayerSpec[],
   links: LayerLinks
 ): Promise<void> {
-  await planOwnedChildren(run.plan, component, label, "layer", specs, (spec) =>
-    planChild(run, component, label, spec, links)
+  await planOwnedChildren(run.plan, component, label, "layer", specs, (spec, siblings) =>
+    planChild(run, component, siblings, label, spec, links)
   );
 }

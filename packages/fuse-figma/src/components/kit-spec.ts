@@ -179,6 +179,8 @@ export type SwapPropertySpec = {
 export type ComponentSetSpec = {
   readonly key: string;
   readonly name: string;
+  /** The key of the page the set sits on. */
+  readonly page: string;
   readonly axes: readonly AxisSpec[];
   /** The axis the plugin lays out as columns. The other axes form the rows, in axis order. */
   readonly columnAxis: string;
@@ -208,6 +210,8 @@ export type IconSpec = {
 export type IconLibrarySpec = {
   readonly key: string;
   readonly name: string;
+  /** The key of the page the library sits on. */
+  readonly page: string;
   /** Each component's width and height in pixels. */
   readonly size: number;
   /** The color a glyph takes in the component itself. */
@@ -221,14 +225,28 @@ export type ModeRef = {
   readonly mode: string;
 };
 
-/** A frame of instances that pins one theme and density, to check bound values render. */
+/** The instances of one component set in a preview frame, which start on a row of their own. */
+export type PreviewGroupSpec = {
+  /** The preview's key, `/` and the set's key. */
+  readonly key: string;
+  /** The set's name. */
+  readonly name: string;
+  readonly componentSet: string;
+  /** The variant keys the group places, in order. */
+  readonly variants: readonly string[];
+};
+
+/**
+ * A frame of instances that pins one theme, to check bound values render. It holds a group for
+ * each component set on its page.
+ */
 export type PreviewSpec = {
   readonly key: string;
   readonly name: string;
+  /** The key of the page the preview sits on, which holds every set the preview places. */
+  readonly page: string;
   readonly modes: readonly ModeRef[];
-  /** The component set and the variant keys it places, in order. */
-  readonly componentSet: string;
-  readonly variants: readonly string[];
+  readonly groups: readonly PreviewGroupSpec[];
 };
 
 /** A font the plugin loads before it writes text. */
@@ -237,11 +255,31 @@ export type FontSpec = {
   readonly style: string;
 };
 
-/** Everything the plugin reconciles, on one page of the file. */
+/**
+ * A page of the kit. The plugin finds it by its key alone, so a page a designer gave the same
+ * name stays theirs.
+ */
+export type PageSpec = {
+  readonly key: string;
+  readonly name: string;
+};
+
+/** Everything the plugin reconciles, on the pages it lists. */
 export type KitSpec = {
-  readonly page: { readonly key: string; readonly name: string };
+  /** The kit's pages, in the order the plugin creates them. */
+  readonly pages: readonly PageSpec[];
   readonly fonts: readonly FontSpec[];
   readonly icons: IconLibrarySpec;
   readonly componentSets: readonly ComponentSetSpec[];
   readonly previews: readonly PreviewSpec[];
 };
+
+/**
+ * The kit's top-level nodes, each of which sits on one of the kit's pages.
+ *
+ * @param kit - The kit.
+ * @returns The icon library, then the component sets, then the previews.
+ */
+export function topLevelSpecs(kit: KitSpec): readonly (IconLibrarySpec | ComponentSetSpec | PreviewSpec)[] {
+  return [kit.icons, ...kit.componentSets, ...kit.previews];
+}

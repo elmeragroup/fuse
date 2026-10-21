@@ -16,7 +16,9 @@ import { ICON_GLYPH, PLUGIN_DATA_NAMESPACE } from "../../src/components/kit-spec
 import type { IconLibrarySpec, IconSpec } from "../../src/components/kit-spec.ts";
 import { near, planNumber, planPaints, planScalar, solidPaint } from "./fields.ts";
 import type { Run } from "./fields.ts";
-import { findOwned, keyOf, placeOwned, planOwnedChildren } from "./identity.ts";
+import { findOwned, indexSiblings, placeOwned, planOwnedChildren } from "./identity.ts";
+import type { Siblings } from "./identity.ts";
+import type { PlannedPage } from "./pages.ts";
 import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { planWrapFrame } from "./previews.ts";
@@ -190,9 +192,15 @@ function planIconComponent(
   });
 }
 
-function planIcon(run: Run, frame: FrameNode, library: IconLibrarySpec, spec: IconSpec): PlannedIcon {
+function planIcon(
+  run: Run,
+  frame: FrameNode,
+  siblings: Siblings,
+  library: IconLibrarySpec,
+  spec: IconSpec
+): PlannedIcon {
   const label = `${library.name} / ${spec.name}`;
-  const found = findOwned(run.plan, frame.children, library.name, spec.key, spec.name, isComponent);
+  const found = findOwned(run.plan, siblings, library.name, spec.key, spec.name, isComponent);
   if (found !== undefined) {
     const redrawn = !holdsDrawing(found, spec);
     planIconComponent(run, found, label, library, spec);
@@ -218,8 +226,8 @@ async function planLibraryContents(
   });
   planWrapFrame(run, frame, library.name, ICON_GRID);
   const icons = new Map<string, PlannedIcon>();
-  await planOwnedChildren(run.plan, frame, library.name, "icon", library.icons, (spec) => {
-    const icon = planIcon(run, frame, library, spec);
+  await planOwnedChildren(run.plan, frame, library.name, "icon", library.icons, (spec, siblings) => {
+    const icon = planIcon(run, frame, siblings, library, spec);
     icons.set(spec.key, icon);
     return icon.node;
   });
@@ -230,28 +238,30 @@ async function planLibraryContents(
  * Plan the icon library against the spec.
  *
  * @param run - The run.
- * @param page - The kit's page.
+ * @param page - The page the library sits on.
  * @param library - The icon library.
  * @returns The frame and its icons, as later operations find them.
  */
 export async function planIconLibrary(
   run: Run,
-  page: PageNode,
+  page: PlannedPage,
   library: IconLibrarySpec
 ): Promise<PlannedIcons> {
-  const found = findOwned(run.plan, page.children, page.name, library.key, library.name, isFrame);
+  const found = page.find(library.key, library.name, isFrame);
   if (found !== undefined) {
     return { frame: existing(found), icons: await planLibraryContents(run, found, library) };
   }
   const frame = create(
     run.plan,
-    page.name,
+    page.spec.name,
     `create the ${library.name} frame with ${library.icons.length} icons`,
-    () => placeOwned(page, run.figma.createFrame(), library.key, library.name),
+    () => placeOwned(page.node.get(), run.figma.createFrame(), library.key, library.name),
     async (made, plan) => {
       await planLibraryContents({ ...run, plan }, made, library);
     }
   );
+  // The frame's children, indexed by key the first time a later operation reads an icon.
+  let made: Siblings | undefined;
   const icons = new Map(
     library.icons.map((spec): readonly [string, PlannedIcon] => [
       spec.key,
@@ -261,11 +271,8 @@ export async function planIconLibrary(
         node: {
           existing: undefined,
           get: () => {
-            const component = frame
-              .get()
-              .children.find(
-                (child): child is ComponentNode => isComponent(child) && keyOf(child) === spec.key
-              );
+            made ??= indexSiblings(frame.get().children);
+            const component = made.byKey.get(spec.key)?.find(isComponent);
             if (component === undefined) {
               throw new Error(`${library.name} has no icon ${spec.name} after its creation.`);
             }
