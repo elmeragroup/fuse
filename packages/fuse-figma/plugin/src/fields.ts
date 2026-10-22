@@ -13,6 +13,7 @@ import type {
   NumberSpec,
   RgbaSpec,
   ShadowSpec,
+  SizeSpec,
   VariableRef,
 } from "../../src/components/kit-spec.ts";
 import { change, changeTogether, requirement } from "./plan.ts";
@@ -452,6 +453,19 @@ export type LayoutSizing = {
   readonly vertical: FrameNode["layoutSizingVertical"];
 };
 
+/** The `layoutSizing*` value each kind of axis sizing writes. */
+export const LAYOUT_SIZING = {
+  fixed: "FIXED",
+  hug: "HUG",
+  fill: "FILL",
+} as const satisfies Record<SizeSpec["kind"], LayoutSizing["horizontal"]>;
+
+/** Each axis and the member that sizes it. */
+export const SIZING_MEMBERS = [
+  ["horizontal", "layoutSizingHorizontal"],
+  ["vertical", "layoutSizingVertical"],
+] as const;
+
 /**
  * The sizing an auto layout frame reads once its direction is `direction`. A direction change
  * keeps both sizing modes, each in its role along or across the direction, so a hug moves to the
@@ -501,7 +515,9 @@ export function planLayoutSizing(
   planLengths: (group: Run, lengths: Held) => void
 ): void {
   const { sizing } = spec;
-  const reads = held === "read" ? sizingAlong(node, spec.direction) : undefined;
+  // No probe has shown what a box stores in its modes, or how it sizes, when it first gets an auto
+  // layout, as every new box does, so a box without one writes its sizing whatever it predicts.
+  const reads = held === "read" && node.layoutMode !== "NONE" ? sizingAlong(node, spec.direction) : undefined;
   const lengths: Held = held === "read" && node.layoutMode === spec.direction ? "read" : "unknown";
   const writeSizing = (): void => {
     node.layoutSizingHorizontal = sizing.horizontal;
@@ -521,8 +537,3 @@ export function planLayoutSizing(
     writeSizing
   );
 }
-
-const SIZING_MEMBERS = [
-  ["horizontal", "layoutSizingHorizontal"],
-  ["vertical", "layoutSizingVertical"],
-] as const;

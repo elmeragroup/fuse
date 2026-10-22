@@ -30,6 +30,7 @@ import { splitClassName } from "../components/class-name";
 import { definitionClasses, variantKey } from "../components/component-spec";
 import type { BoxDefinition, Cell, IconSlot, PartDefinition } from "../components/component-spec";
 import { KIT } from "../components/kit-registry";
+import { labelCharacters } from "../components/label-layout";
 import { makeStateTable } from "../components/state-table";
 import { loadRenderers, renderCellHtml } from "./cell-renderers";
 
@@ -240,7 +241,7 @@ function slotIcons(box: BoxDefinition, name: string, cell: Cell): readonly Marku
 
 /** The text a box draws in a cell, its label's characters where the cell shows the label, or none. */
 function labelText(box: BoxDefinition, cell: Cell): string {
-  return box.label?.shownIn(cell) === true ? box.label.characters : "";
+  return box.label?.shownIn(cell) === true ? labelCharacters(box.label, cell) : "";
 }
 
 /**

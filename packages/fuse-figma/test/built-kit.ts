@@ -78,6 +78,15 @@ export const FILL = { kind: "fill" } as const;
 export const fixedSize = <Width, Height>(width: Width, height: Height) =>
   ({ horizontal: fixed(width), vertical: fixed(height) }) as const;
 
+/**
+ * The layout of a label that hugs its characters on both axes, with its lines set from the top
+ * left as a new Figma text sets them, and no truncation.
+ */
+export const HUGGING_LABEL = {
+  sizing: { horizontal: HUG, vertical: HUG },
+  align: { horizontal: "LEFT", vertical: "TOP" },
+} as const;
+
 /** No limit on either axis. */
 export const UNLIMITED = {
   minWidth: undefined,

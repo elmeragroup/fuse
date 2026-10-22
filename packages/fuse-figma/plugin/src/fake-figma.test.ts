@@ -247,3 +247,78 @@ describe("rule 18: space between survives the item spacing", () => {
     expect([row.primaryAxisAlignItems, row.itemSpacing]).toEqual(["SPACE_BETWEEN", 24]);
   });
 });
+
+describe("rule 19: a text's layout sizing and its auto resize move together as the real file's did", () => {
+  it("switches a hugging text to a fixed width and auto height when it fills a row, and keeps it filling when its auto resize asks to hug (P3)", async () => {
+    const text = await textIn(autoLayout("HORIZONTAL"), "WIDTH_AND_HEIGHT");
+    text.layoutSizingHorizontal = "FILL";
+    expect([text.textAutoResize, ...sizing(text)]).toEqual(["HEIGHT", "FILL", "HUG"]);
+    text.textAutoResize = "WIDTH_AND_HEIGHT";
+    expect([text.textAutoResize, ...sizing(text)]).toEqual(["HEIGHT", "FILL", "HUG"]);
+  });
+
+  it("fixes a filling text's width on resize, and keeps its height on its lines (P3)", async () => {
+    const text = await textIn(autoLayout("HORIZONTAL"), "WIDTH_AND_HEIGHT");
+    text.layoutSizingHorizontal = "FILL";
+    text.resize(80, 14);
+    expect([text.textAutoResize, text.width, ...sizing(text)]).toEqual(["HEIGHT", 80, "FIXED", "HUG"]);
+  });
+
+  // No probe wrote a hug or a fixed size on a text, or a fill down one, so the fake refuses each
+  // write that would change the text's auto resize, rather than guess what Figma does.
+  it("lets a hug or fixed size stop a fill only where the auto resize already reads it", async () => {
+    const text = await textIn(autoLayout("HORIZONTAL"), "WIDTH_AND_HEIGHT");
+    text.layoutSizingHorizontal = "FILL";
+    text.layoutSizingHorizontal = "FIXED";
+    expect([text.textAutoResize, ...sizing(text)]).toEqual(["HEIGHT", "FIXED", "HUG"]);
+    expect(() => {
+      text.layoutSizingHorizontal = "HUG";
+    }).toThrow("does not model layoutSizingHorizontal HUG on a text whose auto resize is HEIGHT");
+    expect(() => {
+      text.layoutSizingVertical = "FILL";
+    }).toThrow("does not model layoutSizingVertical FILL on a text");
+    const loose = figma.createText();
+    expect(() => {
+      loose.layoutSizingHorizontal = "FILL";
+    }).toThrow(
+      "in set_layoutSizingHorizontal: node must be an auto-layout frame or a child of an auto-layout frame"
+    );
+  });
+});
+
+describe("rule 20: a text ends in an ellipsis after its maximum lines only while it truncates", () => {
+  it("ignores maxLines while truncation is off, reads one line once it truncates, and takes null back (P4)", async () => {
+    const text = await textIn(autoLayout("HORIZONTAL"), "WIDTH_AND_HEIGHT");
+    text.maxLines = 2;
+    expect([text.textTruncation, text.maxLines]).toEqual(["DISABLED", null]);
+    text.textTruncation = "ENDING";
+    expect(text.maxLines).toBe(1);
+    text.maxLines = 3;
+    expect(text.maxLines).toBe(3);
+    text.maxLines = null;
+    expect(text.maxLines).toBeNull();
+    expect(() => {
+      text.maxLines = 0;
+    }).toThrow("maxLines must be at least 1");
+  });
+});
+
+describe("rules 19 to 21: the text writes need the text's fonts loaded", () => {
+  it("refuses a sizing, truncation or alignment write while the text's font is not loaded", async () => {
+    const text = await textIn(autoLayout("HORIZONTAL"), "WIDTH_AND_HEIGHT");
+    expect([text.textAlignHorizontal, text.textAlignVertical]).toEqual(["LEFT", "TOP"]);
+    file.reopen();
+    const writes: readonly (readonly [string, () => void])[] = [
+      ["layoutSizingHorizontal", () => (text.layoutSizingHorizontal = "FILL")],
+      ["textTruncation", () => (text.textTruncation = "ENDING")],
+      ["maxLines", () => (text.maxLines = 2)],
+      ["textAlignHorizontal", () => (text.textAlignHorizontal = "CENTER")],
+      ["textAlignVertical", () => (text.textAlignVertical = "CENTER")],
+    ];
+    for (const [member, write] of writes) {
+      expect(write, member).toThrow(
+        `Cannot write ${member} of ${text.id} with unloaded font "Inter Regular"`
+      );
+    }
+  });
+});

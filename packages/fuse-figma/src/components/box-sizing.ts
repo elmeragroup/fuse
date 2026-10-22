@@ -3,12 +3,12 @@
  * a `width` or `height` sets, a `100%` that fills its parent, the stretch a column gives an unset
  * width, the `min-*` and `max-*` limits, and whether `overflow: hidden` clips the box.
  * `component-spec.ts` reads a box's sizing before it maps the box's parts, then asks this module
- * for the room each part gets.
+ * for the room each part gets. `label-layout.ts` reads the box's own text against the same holder.
  */
 import type { CoverageNote, LayerStyle } from "./cascade";
 import { describeNumber, evaluatePercentage, normalizeCss, readNumber, readSize } from "./css-values";
 import type { PercentBasis, VariableIndex } from "./css-values";
-import type { BoxSpec, DirectionSpec, NumberSpec, SizeSpec, SizingSpec } from "./kit-spec";
+import type { BoxSpec, DirectionSpec, LimitsSpec, NumberSpec, SizeSpec, SizingSpec } from "./kit-spec";
 import type { Layout } from "./placement";
 
 /** What a box's parent gives it on one axis. */
@@ -58,6 +58,7 @@ export type Holder = {
   readonly style: LayerStyle;
   readonly layout: Layout;
   readonly sizing: SizingSpec;
+  readonly limits: LimitsSpec;
   /** The names of the box's layers in the cell, in layer order, its parts first. */
   readonly layers: readonly string[];
 };
@@ -404,8 +405,13 @@ function readLength(
   return read === undefined || read.kind === "shared" ? undefined : read;
 }
 
-/** Layer names as prose: `a`, `a and b`, or `a, b and c`. */
-function listNames(names: readonly string[]): string {
+/**
+ * Layer names as prose.
+ *
+ * @param names - The names, in layer order.
+ * @returns `a`, `a and b`, or `a, b and c`.
+ */
+export function listNames(names: readonly string[]): string {
   const last = names.at(-1) ?? "";
   return names.length < 2 ? last : `${names.slice(0, -1).join(", ")} and ${last}`;
 }

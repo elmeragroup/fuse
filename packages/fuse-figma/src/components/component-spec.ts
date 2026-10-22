@@ -35,11 +35,12 @@ import type {
   PrimaryAlignSpec,
   ShadowSpec,
   SizingSpec,
-  StringSpec,
   StrokeSpec,
   SwapPropertySpec,
+  TextPropertySpec,
   VariantSpec,
 } from "./kit-spec";
+import { mapLabel, readLineClamp, readWithoutLabel } from "./label-layout";
 import { partsThatScale, placeParts, placeRoot, slotAroundDot } from "./placement";
 import type { Layout } from "./placement";
 import { makeStateTable } from "./state-table";
@@ -120,15 +121,42 @@ export const BASE_UI_CHECKED_FACTS: ReadonlyMap<string, (cell: Cell) => boolean>
  */
 export type RootKind = "native-control" | "base-ui-span" | "base-ui-field-label";
 
-/** A text layer a part shows, and the set's text property that sets its characters. */
+/**
+ * Where a native control sets its text within the text's box, which no class says, as an `<input>`
+ * centers its value down its box and a `<textarea>` starts its text at the top.
+ */
+export type TextPlacement = {
+  readonly horizontal: "start" | "center" | "end";
+  readonly vertical: "top" | "center" | "bottom";
+};
+
+/**
+ * A text layer a part shows, and where its characters come from: one text in every cell, which a
+ * TEXT property of the set can set, or a text per cell, which no property sets, since one property
+ * holds one default.
+ */
 export type LabelDefinition = {
   readonly key: string;
   readonly name: string;
-  readonly characters: string;
-  readonly textProperty: string;
   /** Whether a cell shows the label. A Kbd shows it in its text cell and not its icon cell. */
   readonly shownIn: (cell: Cell) => boolean;
-};
+  /** Where the text sits in its box, or undefined for the top left, where CSS sets a box's text. */
+  readonly placement?: TextPlacement;
+} & (
+  | {
+      /** The text every cell shows, and the default of its property. */
+      readonly characters: string;
+      /** The set's TEXT property that sets the characters, or undefined for none. */
+      readonly textProperty: string | undefined;
+      readonly charactersFor?: never;
+    }
+  | {
+      /** The text a cell shows. */
+      readonly charactersFor: (cell: Cell) => string;
+      readonly characters?: never;
+      readonly textProperty?: never;
+    }
+);
 
 /**
  * What the root, or a part below it, renders in a cell: its classes and its children. The
@@ -243,14 +271,6 @@ export type BuiltComponent = {
   readonly fontStyles: readonly string[];
 };
 
-/** The Figma style of each Roboto weight a recipe reaches. */
-const FONT_STYLES = new Map([
-  [400, "Regular"],
-  [500, "Medium"],
-  [600, "SemiBold"],
-  [700, "Bold"],
-]);
-
 /**
  * Build the component set for every cell of the definition's matrix.
  *
@@ -300,9 +320,7 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
       name: definition.name,
       axes: definition.axes,
       columnAxis: definition.columnAxis,
-      textProperties: boxesOf(definition).flatMap(({ label }) =>
-        label === undefined ? [] : [{ name: label.textProperty, defaultValue: label.characters }]
-      ),
+      textProperties: textProperties(definition),
       swapProperties: definition.swapProperties.map((property) => ({
         name: property.name,
         defaultIcon: iconKey(property.defaultIcon),
@@ -339,6 +357,42 @@ export function definitionClasses(definition: ComponentDefinition): readonly str
       ...box.iconsFor(cell).flatMap((slot) => splitClasses(slot.classes ?? "")),
     ])
   );
+}
+
+/**
+ * The TEXT properties a set's labels name, each once, in the order the boxes first name them. One
+ * property holds one default, so two labels that name it must start with the same characters.
+ *
+ * @throws When two labels name one property with different characters, naming both labels.
+ */
+function textProperties(definition: ComponentDefinition): readonly TextPropertySpec[] {
+  const named = new Map<string, { readonly defaultValue: string; readonly label: string }>();
+  for (const { box, label } of labelsOf(definition, definition.slot)) {
+    if (label.textProperty === undefined) {
+      continue;
+    }
+    const where = `${box} / ${label.name}`;
+    const first = named.get(label.textProperty);
+    if (first === undefined) {
+      named.set(label.textProperty, { defaultValue: label.characters, label: where });
+    } else if (first.defaultValue !== label.characters) {
+      throw new Error(
+        `${definition.name}: the labels ${first.label} and ${where} both set the ${label.textProperty} property, one starting as "${first.defaultValue}" and one as "${label.characters}". A TEXT property holds one default, so give them one text or a property each.`
+      );
+    }
+  }
+  return [...named].map(([name, { defaultValue }]) => ({ name, defaultValue }));
+}
+
+/** The label of a box and of every part below it, depth first, with the layer name of its box. */
+function labelsOf(
+  box: BoxDefinition,
+  name: string
+): readonly { readonly box: string; readonly label: LabelDefinition }[] {
+  return [
+    ...(box.label === undefined ? [] : [{ box: name, label: box.label }]),
+    ...(box.parts ?? []).flatMap((part) => labelsOf(part, partName(part))),
+  ];
 }
 
 /** Every part below a box, depth first. */
@@ -446,17 +500,19 @@ const DIRECTIONS = new Map<string, { readonly direction: DirectionSpec; readonly
  * to spare or layers of unequal height. A column takes CSS's start on both axes, and its unset
  * `align-items` stretches its layers across it, which {@link roomInside} gives them. A grid places
  * its layers by `place-content`, which {@link readDisplay} reads, so its alignments stay unread.
+ * `line-clamp-*` makes a `-webkit-box` column, which sets its text from the top left.
  *
  * @returns The box's layout.
  */
 function readFlow(reader: LayerStyle): Layout {
   const display = normalizeCss(reader.raw("display") ?? "");
-  if (display === "grid") {
+  if (display === "grid" || display === "-webkit-box") {
+    const column = display === "-webkit-box";
     return {
       flex: false,
-      direction: "HORIZONTAL",
-      primaryAlign: "CENTER",
-      counterAlign: "CENTER",
+      direction: column ? "VERTICAL" : "HORIZONTAL",
+      primaryAlign: column ? "MIN" : "CENTER",
+      counterAlign: column ? "MIN" : "CENTER",
       justify: "unset",
     };
   }
@@ -485,13 +541,25 @@ function readFlow(reader: LayerStyle): Layout {
  * A grid with no template stacks each layer in a row of its own, so a grid with
  * `place-content: center` is an auto layout centered on both axes only around one layer. Any other
  * grid stays unmapped. A block box with no layers lays nothing out, so it is a frame like any
- * other, and one with layers stays unmapped.
+ * other, and one with layers stays unmapped. A `-webkit-box` maps only where it clamps its label,
+ * as {@link readLineClamp} decides for the label too, as a column around the label.
  *
  * @param layers - How many layers the box holds in the cell.
  * @param layout - The box's layout, as {@link readFlow} read it.
+ * @param clamp - The lines the box clamps its label to, or undefined for none.
  */
-function readDisplay(reader: LayerStyle, layers: number, layout: Layout): void {
+function readDisplay(reader: LayerStyle, layers: number, layout: Layout, clamp: number | undefined): void {
   const display = normalizeCss(reader.raw("display") ?? "");
+  if (display === "-webkit-box") {
+    for (const property of ["display", "-webkit-box-orient"]) {
+      reader.read(
+        property,
+        (value) => (clamp === undefined ? undefined : value),
+        () => ({ outcome: "literal", detail: "a column around its clamped label" })
+      );
+    }
+    return;
+  }
   if (display === "grid") {
     const center = literalLayout(["center"], "centered on both axes");
     const centered = layers === 1 && reader.read("place-content", center.map, center.describe) !== undefined;
@@ -537,12 +605,8 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope, room: 
   const color = (property: string): ColorSpec | undefined =>
     reader.read(property, (value) => readColor(value, context.variables), describeColor);
 
-  for (const [property, layout] of [
-    ["box-sizing", literalLayout(["border-box"], "strokes count in the auto layout")],
-    ["white-space", literalLayout(["nowrap"], "the label hugs its width")],
-  ] as const) {
-    reader.read(property, layout.map, layout.describe);
-  }
+  const boxSizing = literalLayout(["border-box"], "strokes count in the auto layout");
+  reader.read("box-sizing", boxSizing.map, boxSizing.describe);
 
   const stroke = readStroke(reader, context);
   const shadows = readShadowStack(reader, context);
@@ -570,6 +634,7 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope, room: 
     style: reader,
     layout,
     sizing,
+    limits,
     layers: [
       ...shown.map(partName),
       ...start.map(({ name }) => name),
@@ -597,16 +662,25 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope, room: 
     reader.missing(missing.property, missing.neededBy, missing.detail);
   }
   const children: ChildLayerSpec[] = [...parts.map(({ layer }) => layer), ...start];
-  if (label === undefined) {
-    for (const property of TEXT_PROPERTIES) {
-      reader.mark(property, "dropped", "the cell shows no text");
-    }
+  const clamp = readLineClamp(holder, label);
+  const placed =
+    label === undefined
+      ? undefined
+      : mapLabel(holder, label, {
+          cell,
+          variables: context.variables,
+          color: textColor,
+          clamp,
+          variant: variantKey(definition, cell),
+        });
+  if (placed === undefined) {
+    readWithoutLabel(reader);
   } else {
-    children.push(mapLabel(definition, label, cell, reader, context, textColor));
+    children.push(placed.layer);
   }
   children.push(...end);
   // The display reads once the children are known, since a grid maps only around one layer.
-  readDisplay(reader, children.length, layout);
+  readDisplay(reader, children.length, layout, clamp);
   const width = fixedLength(sizing.horizontal);
   const height = fixedLength(sizing.vertical);
   const paddingLeft = number("padding-left") ?? ZERO;
@@ -635,8 +709,9 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope, room: 
     paddingBottom: number("padding-bottom") ?? ZERO,
     paddingLeft,
     itemSpacing: number("gap") ?? ZERO,
-    primaryAlign,
-    counterAlign: layout.counterAlign,
+    // A native control's placement of its label wins over the box's own alignment.
+    primaryAlign: placed?.primaryAlign ?? primaryAlign,
+    counterAlign: placed?.counterAlign ?? layout.counterAlign,
     cornerRadius: readCorner(reader, sizing, context) ?? ZERO,
     fill: fill === NO_FILL ? undefined : fill,
     stroke,
@@ -798,102 +873,4 @@ function readStroke(root: LayerStyle, context: BuildContext): StrokeSpec | undef
   const weight = root.read("border-width", (value) => readNumber(value, context.variables), describeNumber);
   const color = root.read("border-color", (value) => readColor(value, context.variables), describeColor);
   return style === undefined || weight === undefined || color === undefined ? undefined : { color, weight };
-}
-
-/** The text properties a label reads, which a part without a label drops. */
-const TEXT_PROPERTIES = [
-  "font-family",
-  "font-size",
-  "font-weight",
-  "line-height",
-  "text-decoration-line",
-  "text-underline-offset",
-] as const;
-
-function mapLabel(
-  definition: ComponentDefinition,
-  label: LabelDefinition,
-  cell: Cell,
-  root: LayerStyle,
-  context: BuildContext,
-  color: ColorSpec | undefined
-): ChildLayerSpec {
-  const fontSize = root.read("font-size", (value) => readNumber(value, context.variables), describeNumber);
-  const lineHeight = root.read(
-    "line-height",
-    (value) => {
-      const bound = context.variables.lookup(value);
-      if (bound !== undefined) {
-        return { kind: "variable" as const, variable: bound };
-      }
-      const number = evaluateNumber(value);
-      if (number === undefined) {
-        return undefined;
-      }
-      // A unitless line height multiplies the font size, which must then be a literal.
-      if (/px|rem|%/.test(value)) {
-        return { kind: "literal" as const, value: number };
-      }
-      return fontSize?.kind === "literal"
-        ? { kind: "literal" as const, value: number * fontSize.value }
-        : undefined;
-    },
-    describeNumber
-  );
-  const fontFamily = root.read(
-    "font-family",
-    (value): StringSpec | undefined => {
-      const bound = context.variables.lookup(value);
-      return bound === undefined ? undefined : { kind: "variable", variable: bound };
-    },
-    (spec) => ({
-      outcome: "bound",
-      detail: spec.kind === "variable" ? `${spec.variable.collection} / ${spec.variable.name}` : spec.value,
-    })
-  );
-  const weight = root.read(
-    "font-weight",
-    (value) => {
-      const number = evaluateNumber(value);
-      return number === undefined ? undefined : FONT_STYLES.get(number);
-    },
-    (style) => ({ outcome: "literal", detail: `font style ${style}` })
-  );
-  const underlined = root.read(
-    "text-decoration-line",
-    (value) => {
-      const line = normalizeCss(value);
-      return line === "underline" ? true : line === "none" ? false : undefined;
-    },
-    (drawn) => ({ outcome: "literal", detail: drawn ? "an underline" : "no decoration" })
-  );
-  let underline: { readonly offset: number | undefined } | undefined;
-  if (underlined === true) {
-    underline = {
-      offset: root.read("text-underline-offset", evaluateNumber, (offset) => ({
-        outcome: "literal",
-        detail: `an underline offset of ${offset}px`,
-      })),
-    };
-  } else {
-    root.mark("text-underline-offset", "dropped", "the cell draws no underline");
-  }
-  if (fontFamily === undefined || fontSize === undefined || lineHeight === undefined || color === undefined) {
-    throw new Error(
-      `${variantKey(definition, cell)}: the label needs a font family, size, line height and color`
-    );
-  }
-  return {
-    kind: "text",
-    key: label.key,
-    name: label.name,
-    characters: label.characters,
-    textProperty: label.textProperty,
-    fontFamily,
-    fontStyle: weight ?? "Regular",
-    fontSize,
-    lineHeight,
-    color,
-    underline,
-  };
 }

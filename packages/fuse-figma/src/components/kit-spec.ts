@@ -67,6 +67,38 @@ export type StrokeSpec = {
   readonly weight: NumberSpec;
 };
 
+/**
+ * How a text layer sizes each axis. Its height follows its lines unless both sides are fixed: it
+ * hugs its characters on both axes, or its width fills its box's room or is fixed and its lines
+ * wrap there, or both sides are fixed. Figma's auto resize has these three forms,
+ * `WIDTH_AND_HEIGHT`, `HEIGHT` and `NONE`, which the plugin derives from the sizing.
+ */
+export type TextSizingSpec =
+  | { readonly horizontal: HugSize; readonly vertical: HugSize }
+  | { readonly horizontal: FillSize | FixedSize; readonly vertical: HugSize }
+  | { readonly horizontal: FixedSize; readonly vertical: FixedSize };
+
+type HugSize = Extract<SizeSpec, { readonly kind: "hug" }>;
+type FillSize = Extract<SizeSpec, { readonly kind: "fill" }>;
+type FixedSize = Extract<SizeSpec, { readonly kind: "fixed" }>;
+
+/** A text that hugs its characters on both axes, as every label drew before text sizing. */
+export const HUGGING_TEXT: TextSizingSpec = { horizontal: { kind: "hug" }, vertical: { kind: "hug" } };
+
+/** Where a text layer sets its lines within its own box, as Figma's text alignment names it. */
+export type TextAlignSpec = {
+  readonly horizontal: "LEFT" | "CENTER" | "RIGHT";
+  readonly vertical: "TOP" | "CENTER" | "BOTTOM";
+};
+
+/** Lines set from the top left, Figma's alignment for a new text layer. */
+export const TOP_LEFT: TextAlignSpec = { horizontal: "LEFT", vertical: "TOP" };
+
+/** A text that ends in an ellipsis after `maxLines` lines, a whole number of at least 1. */
+export type TruncationSpec = {
+  readonly maxLines: number;
+};
+
 /** A text layer. `textProperty` names the component's TEXT property that sets its characters. */
 export type TextLayerSpec = {
   readonly kind: "text";
@@ -85,6 +117,10 @@ export type TextLayerSpec = {
    * the `text-underline-offset` in pixels, and an unset offset keeps Figma's automatic one.
    */
   readonly underline: { readonly offset: number | undefined } | undefined;
+  readonly sizing: TextSizingSpec;
+  readonly align: TextAlignSpec;
+  /** Where the text cuts its characters off, or undefined where it shows them all. */
+  readonly truncation: TruncationSpec | undefined;
 };
 
 /**

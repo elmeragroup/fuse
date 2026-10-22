@@ -5,8 +5,16 @@
  */
 
 import type { BoxSpec, ColorSpec, LimitsSpec, NumberSpec, SizeSpec } from "../../src/components/kit-spec.ts";
-import { near, planLayoutSizing, planNumber, planPaints, planScalar, planShadows } from "./fields.ts";
-import type { Held, LayoutSizing, NumberField, Run } from "./fields.ts";
+import {
+  LAYOUT_SIZING,
+  near,
+  planLayoutSizing,
+  planNumber,
+  planPaints,
+  planScalar,
+  planShadows,
+} from "./fields.ts";
+import type { Held, NumberField, Run } from "./fields.ts";
 import { change } from "./plan.ts";
 
 /** A node that holds a box's layers: a variant component, or a frame layer below it. */
@@ -72,10 +80,20 @@ export function rootFill(spec: Pick<BoxSpec, "fill" | "shadows">): ColorSpec | u
   return spec.fill ?? (spreads ? CLEAR : undefined);
 }
 
-/** Plan a fixed width or height, or unbind one the spec lets the box hug or fill. */
-function planLength(
+/**
+ * Plan a fixed width or height, or unbind one the spec lets the box or text hug or fill.
+ *
+ * @param run - The run.
+ * @param node - The box, or a text layer.
+ * @param label - The node's label, for change lines.
+ * @param name - The axis's length.
+ * @param spec - The axis's sizing.
+ * @param held - Whether to compare a fixed length with what the node holds, or write it whatever it holds.
+ * @param write - Writes the fixed length.
+ */
+export function planLength(
   run: Run,
-  node: LayerParent,
+  node: LayerParent | TextNode,
   label: string,
   name: "width" | "height",
   spec: SizeSpec,
@@ -97,13 +115,6 @@ function planLength(
     held
   );
 }
-
-/** The `layoutSizing*` value each kind of axis sizing writes. */
-const SIZING = {
-  fixed: "FIXED",
-  hug: "HUG",
-  fill: "FILL",
-} as const satisfies Record<SizeSpec["kind"], LayoutSizing["horizontal"]>;
 
 /** Plan one limit, or remove one the spec drops. */
 function planLimit(
@@ -180,7 +191,10 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
     label,
     {
       direction,
-      sizing: { horizontal: SIZING[sizing.horizontal.kind], vertical: SIZING[sizing.vertical.kind] },
+      sizing: {
+        horizontal: LAYOUT_SIZING[sizing.horizontal.kind],
+        vertical: LAYOUT_SIZING[sizing.vertical.kind],
+      },
     },
     place.kind === "frame" ? place.parent : "read",
     (group, lengths) => {

@@ -11,13 +11,14 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { NO_LIMITS } from "../../src/components/kit-spec.ts";
+import { NO_LIMITS, TOP_LEFT } from "../../src/components/kit-spec.ts";
 import type {
   BoxSpec,
   FrameLayerSpec,
   NumberSpec,
   ShadowSpec,
   SizingSpec,
+  TextLayerSpec,
 } from "../../src/components/kit-spec.ts";
 import { planChildren } from "./child-layers.ts";
 import { childNamed, color, fixtureFile, fixtureRun, float } from "./fake-fixtures.ts";
@@ -107,7 +108,7 @@ describe("planBox", () => {
     `${label}: layoutMode → HORIZONTAL`,
     `${label}: primaryAxisAlignItems → MAX`,
     `${label}: counterAxisAlignItems → CENTER`,
-    `${label}: width → 16, height → size-4`,
+    `${label}: width → 16, height → size-4, layoutSizingHorizontal → FIXED, layoutSizingVertical → FIXED`,
     `${label}: paddingLeft → 2`,
     `${label}: itemSpacing → 4`,
     `${label}: cornerRadius → radius-sm`,
@@ -249,7 +250,7 @@ describe("planBox sizing, direction, limits and clipping", () => {
     const plan = await planTree(root, column, ROOT);
     expect(changeLines(plan)).toEqual([
       "Box: layoutMode → VERTICAL",
-      "Box: width → 200, layoutSizingVertical → HUG",
+      "Box: width → 200, layoutSizingHorizontal → FIXED, layoutSizingVertical → HUG",
       "Box: fill → none",
       "Box: create the frame layer bar",
       "Box: create the frame layer caption",
@@ -261,6 +262,28 @@ describe("planBox sizing, direction, limits and clipping", () => {
     expect([bar.height, ...sizingOf(bar)]).toEqual([6, "FILL", "FIXED"]);
     expect(sizingOf(childNamed(root, "FRAME", "caption"))).toEqual(["HUG", "HUG"]);
     expect(changeLines(await planTree(root, column, ROOT))).toEqual([]);
+  });
+
+  // No probe has shown what Figma stores in the sizing modes, or how it sizes a box, when the box
+  // first gets an auto layout, as every new box does. So a box without one writes its sizing even
+  // where the modes it stores would read as the spec once it turns.
+  it("writes the sizing of a box that has no auto layout yet, whatever its stored modes predict", async () => {
+    const root = figma.createComponent();
+    root.layoutMode = "HORIZONTAL";
+    root.primaryAxisSizingMode = "AUTO";
+    root.counterAxisSizingMode = "AUTO";
+    root.layoutMode = "NONE";
+    root.fills = [];
+    const hugging = plainBox("HORIZONTAL", { horizontal: HUG, vertical: HUG });
+    const plan = await planTree(root, hugging, ROOT);
+    expect(changeLines(plan)).toEqual([
+      "Box: layoutMode → HORIZONTAL",
+      "Box: layoutSizingHorizontal → HUG, layoutSizingVertical → HUG",
+    ]);
+
+    await performPlan(plan);
+    expect(sizingOf(root)).toEqual(["HUG", "HUG"]);
+    expect(changeLines(await planTree(root, hugging, ROOT))).toEqual([]);
   });
 
   it("turns a row that hugs its width into a column that keeps hugging it, in one Apply (P6)", async () => {
@@ -313,6 +336,50 @@ describe("planBox sizing, direction, limits and clipping", () => {
 
     await performPlan(plan);
     expect([bar.height, ...sizingOf(bar)]).toEqual([6, "FILL", "FIXED"]);
+    expect(changeLines(await planTree(row, column, ROOT))).toEqual([]);
+  });
+
+  it("writes a label's sizing again when its box turns, which moves its fill across, in one Apply", async () => {
+    const row = figma.createComponent();
+    row.layoutMode = "HORIZONTAL";
+    row.resize(200, 40);
+    row.fills = [];
+    const text = figma.createText();
+    row.appendChild(text);
+    setKey(text, "label");
+    await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+    text.characters = "label";
+    text.lineHeight = { unit: "PIXELS", value: 16 };
+    text.layoutSizingHorizontal = "FILL";
+    const label: TextLayerSpec = {
+      kind: "text",
+      key: "label",
+      name: "label",
+      characters: "label",
+      textProperty: undefined,
+      fontFamily: { kind: "literal", value: "Inter" },
+      fontStyle: "Regular",
+      fontSize: px(12),
+      lineHeight: px(16),
+      color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } },
+      underline: undefined,
+      sizing: { horizontal: FILL, vertical: HUG },
+      align: TOP_LEFT,
+      truncation: undefined,
+    };
+    const column: BoxSpec = {
+      ...plainBox("VERTICAL", { horizontal: fixed(px(200)), vertical: fixed(px(40)) }),
+      children: [label],
+    };
+    // The label fills the row by growing along it, which runs down the column once the row turns.
+    expect(sizingOf(text)).toEqual(["FILL", "HUG"]);
+    const plan = await planTree(row, column, ROOT);
+    expect(changeLines(plan).filter((line) => line.startsWith("Box / label:"))).toEqual([
+      "Box / label: layoutSizingHorizontal → FILL, layoutSizingVertical → HUG",
+    ]);
+
+    await performPlan(plan);
+    expect(sizingOf(text)).toEqual(["FILL", "HUG"]);
     expect(changeLines(await planTree(row, column, ROOT))).toEqual([]);
   });
 

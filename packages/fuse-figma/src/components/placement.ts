@@ -33,7 +33,10 @@ import type { CompiledUtilities } from "./utility-css";
 export type Layout = {
   /** Whether the box is a flex box, which lays out its layers along its direction. */
   readonly flex: boolean;
-  /** The flex box's direction, a row or a column. Every other box is horizontal. */
+  /**
+   * The flex box's direction, a row or a column. A `-webkit-box` that clamps its text is a column,
+   * and every other box is horizontal.
+   */
   readonly direction: DirectionSpec;
   readonly primaryAlign: PrimaryAlignSpec;
   readonly counterAlign: CounterAlignSpec;

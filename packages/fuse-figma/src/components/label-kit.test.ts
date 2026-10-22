@@ -8,7 +8,17 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { builtKit, density, HUG, literal, paint, token, UNLIMITED, variantRoot } from "../../test/built-kit";
+import {
+  builtKit,
+  density,
+  HUG,
+  HUGGING_LABEL,
+  literal,
+  paint,
+  token,
+  UNLIMITED,
+  variantRoot,
+} from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
 
 let spec: BuiltSets["spec"];
@@ -46,6 +56,7 @@ const label = (opacity: number) => ({
       fontSize: density("label-text"),
       lineHeight: density("label-leading"),
       color: paint("foreground"),
+      ...HUGGING_LABEL,
     },
   ],
 });

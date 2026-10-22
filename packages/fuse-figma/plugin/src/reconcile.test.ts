@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { NO_LIMITS } from "../../src/components/kit-spec.ts";
+import { HUGGING_TEXT, NO_LIMITS, TOP_LEFT } from "../../src/components/kit-spec.ts";
 import type {
   ChildLayerSpec,
   ComponentRootSpec,
@@ -38,6 +38,9 @@ const LABEL: TextLayerSpec = {
   lineHeight: literal(20),
   color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } },
   underline: undefined,
+  sizing: HUGGING_TEXT,
+  align: TOP_LEFT,
+  truncation: undefined,
 };
 
 /** A kit with one Button variant, no icons and no previews, which bundles Roboto Medium. */
@@ -307,6 +310,34 @@ describe("the kit check", () => {
       "Button: Control in the variant button/size=md fills the width of a parent that hugs it, so Figma would shrink it to its smallest width.",
     ],
     [
+      "a text that fills the width of a frame that hugs it",
+      nestedKit([
+        frame("button/control", "Control", [
+          { ...LABEL, sizing: { horizontal: FILL, vertical: { kind: "hug" } } },
+        ]),
+      ]),
+      "Button: Label in the variant button/size=md fills the width of a parent that hugs it, so Figma would shrink it to its smallest width.",
+    ],
+    [
+      "a text whose fixed width binds a string variable",
+      kitWithRoot((root) => ({
+        ...root,
+        children: [
+          {
+            ...LABEL,
+            sizing: {
+              horizontal: {
+                kind: "fixed",
+                length: { kind: "variable", variable: { collection: "Fuse tokens", name: "font-sans" } },
+              },
+              vertical: { kind: "hug" },
+            },
+          },
+        ],
+      })),
+      "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a FLOAT.",
+    ],
+    [
       "a limit that binds a string variable",
       kitWithRoot((root) => ({
         ...root,
@@ -420,6 +451,88 @@ describe("a set that moves to a page pinning other modes", () => {
     file.reopen();
     expect(await reconcileKit(file.figma, kitOn(BUTTON), false)).toEqual({ changes: [], warnings: [] });
     expect(ring()).toMatchObject({ type: "DROP_SHADOW", color: GRAY });
+  });
+});
+
+// Unit under test: `reconcileKit` on a file without the set. Oracle: the fake's rules 19 and 20,
+// which follow what a real file read on 2026-10-22 (P3, P4), and an empty second Plan. The value
+// fills a fixed row and ends in an ellipsis after one line, as Input's value does. The hint fills a
+// column that fills the root, and wraps from the top, as a field description does.
+describe("a variant whose two parts each hold a label that fills its part", () => {
+  const FILL_WIDTH = { horizontal: FILL, vertical: { kind: "hug" } } as const;
+  const VALUE: TextLayerSpec = {
+    ...LABEL,
+    key: "field/value",
+    name: "Value",
+    characters: "name@example.com",
+    textProperty: "Value",
+    sizing: FILL_WIDTH,
+    align: { horizontal: "LEFT", vertical: "CENTER" },
+    truncation: { maxLines: 1 },
+  };
+  const HINT: TextLayerSpec = {
+    ...LABEL,
+    key: "field/hint",
+    name: "Hint",
+    characters: "We never share it.",
+    textProperty: "Hint",
+    sizing: FILL_WIDTH,
+  };
+  const ROW: FrameLayerSpec = {
+    ...frame("field/control", "Control", [VALUE]),
+    sizing: {
+      horizontal: { kind: "fixed", length: literal(200) },
+      vertical: { kind: "fixed", length: literal(36) },
+    },
+    paddingLeft: literal(10),
+    paddingRight: literal(10),
+  };
+  const COLUMN: FrameLayerSpec = {
+    ...frame("field/description", "Description", [HINT]),
+    direction: "VERTICAL",
+    sizing: FILL_WIDTH,
+    primaryAlign: "MIN",
+    counterAlign: "MIN",
+  };
+  const withRoot = kitWithRoot((root) => ({
+    ...root,
+    direction: "VERTICAL",
+    sizing: { horizontal: { kind: "fixed", length: literal(240) }, vertical: { kind: "hug" } },
+    primaryAlign: "MIN",
+    counterAlign: "MIN",
+    children: [ROW, COLUMN],
+  }));
+  const fieldKit: KitSpec = {
+    ...withRoot,
+    componentSets: withRoot.componentSets.map((set) => ({
+      ...set,
+      textProperties: [
+        { name: "Value", defaultValue: "name@example.com" },
+        { name: "Hint", defaultValue: "We never share it." },
+      ],
+    })),
+  };
+
+  it("draws both labels in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, fieldKit, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, fieldKit, false)).toEqual({ changes: [], warnings: [] });
+
+    const variant = await buttonVariant(file);
+    const value = childNamed(childNamed(variant, "FRAME", "Control"), "TEXT", "Value");
+    const hint = childNamed(childNamed(variant, "FRAME", "Description"), "TEXT", "Hint");
+    const layout = (text: TextNode) => [
+      text.textAutoResize,
+      text.layoutSizingHorizontal,
+      text.layoutSizingVertical,
+      text.textTruncation,
+      text.maxLines,
+      text.textAlignVertical,
+      text.characters,
+    ];
+    expect(layout(value)).toEqual(["HEIGHT", "FILL", "HUG", "ENDING", 1, "CENTER", "name@example.com"]);
+    expect(layout(hint)).toEqual(["HEIGHT", "FILL", "HUG", "DISABLED", null, "TOP", "We never share it."]);
   });
 });
 

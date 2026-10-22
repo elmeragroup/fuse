@@ -70,8 +70,12 @@ function layerRefs(layer: ChildLayerSpec): BoundRef[] {
     case "text":
       return [
         ...boundString(layer.fontFamily),
-        ...boundNumber(layer.fontSize),
-        ...boundNumber(layer.lineHeight),
+        ...[
+          layer.fontSize,
+          layer.lineHeight,
+          fixedLength(layer.sizing.horizontal),
+          fixedLength(layer.sizing.vertical),
+        ].flatMap(boundNumber),
         ...boundColor(layer.color),
       ];
     case "icon":
@@ -91,7 +95,8 @@ const AXES = [
 ] as const;
 
 /**
- * Refuse a box that limits an axis it fixes, or that holds a frame filling an axis the box hugs.
+ * Refuse a box that limits an axis it fixes, or that holds a frame or text filling an axis the box
+ * hugs.
  * Figma clamps a fixed length to a limit, so the plan would resize the box on every run. CSS
  * resolves a `width` against its own `min-width` and `max-width`, so the build folds such a limit
  * into the length. A hugging box takes its size from its layers, so a layer that fills it
@@ -107,9 +112,7 @@ function checkBox(set: ComponentSetSpec, variant: VariantSpec, box: BoxSpec, nam
         `${set.name}: ${name} in the variant ${variant.key} sets ${limit} on its fixed ${length}. Fold the limit into the ${length}, as CSS resolves a ${length} against its own limits.`
       );
     }
-    const filling = box.children.find(
-      (child) => child.kind === "frame" && child.sizing[axis].kind === "fill"
-    );
+    const filling = box.children.find((child) => child.kind !== "icon" && child.sizing[axis].kind === "fill");
     if (filling !== undefined && box.sizing[axis].kind === "hug") {
       throw new Error(
         `${set.name}: ${filling.name} in the variant ${variant.key} fills the ${length} of a parent that hugs it, so Figma would shrink it to its smallest ${length}.`

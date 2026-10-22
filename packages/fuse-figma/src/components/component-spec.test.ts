@@ -10,10 +10,10 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { CENTERED_BOX, FILL, fixed, fixedSize, HUG, literal, UNLIMITED } from "../../test/built-kit";
 import { buildFixture, chip, dot, frameOf, ICON } from "../../test/fixture-sets";
 import type { FixtureContext } from "../../test/fixture-sets";
-import type { IconSlot, PartDefinition } from "./component-spec";
+import type { IconSlot, LabelDefinition, PartDefinition, TextPlacement } from "./component-spec";
 import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
-import type { BoxSpec, FrameLayerSpec } from "./kit-spec";
+import type { BoxSpec, FrameLayerSpec, TextLayerSpec } from "./kit-spec";
 
 describe("a class whose variant no cell models", () => {
   let coverage: readonly CoverageRow[];
@@ -1170,5 +1170,365 @@ describe("an icon with classes of its own", () => {
   it("keeps its own size where the box's child selector skips an icon with a size class", async () => {
     const { size } = await build("text-[#000000] [&_svg:not([class*='size-'])]:size-4", "size-6");
     expect(size).toEqual({ kind: "literal", value: 24 });
+  });
+});
+
+/** A label that a `Label` text property sets, starting as `Label`. */
+const LABEL: LabelDefinition = {
+  key: "label",
+  name: "label",
+  characters: "Label",
+  textProperty: "Label",
+  shownIn: () => true,
+};
+
+/** The text classes a label needs, which the chip's root carries and its parts inherit. */
+const TEXT_STYLE = "font-sans text-[14px] leading-[20px] text-[#000000]";
+
+/** A build context whose `font-sans` binds the synced family, as every kit label's does. */
+const FONT_SANS: FixtureContext = {
+  variables: makeVariableIndex([
+    { ref: { collection: "Fuse tokens", name: "font-sans" }, webSyntax: "var(--font-sans)" },
+  ]),
+};
+
+/** Build a chip whose root carries the text style and the given classes. */
+function buildLabelled(classes: string, fields: Parameters<typeof chip>[1] = {}) {
+  return buildFixture(chip(`${TEXT_STYLE} ${classes}`, fields), FONT_SANS);
+}
+
+/** The first text layer a box holds, at any depth. */
+function textOf(box: BoxSpec | undefined): TextLayerSpec | undefined {
+  for (const child of box?.children ?? []) {
+    const found = child.kind === "text" ? child : child.kind === "frame" ? textOf(child) : undefined;
+    if (found !== undefined) {
+      return found;
+    }
+  }
+  return undefined;
+}
+
+/** The property, outcome and detail of each row a class has in the coverage table, by property. */
+function notesOf(coverage: readonly CoverageRow[], className: string) {
+  return coverage
+    .filter((row) => row.className === className)
+    .map((row) => [row.property, row.outcome, row.detail])
+    .toSorted(([left = ""], [right = ""]) => (left < right ? -1 : left > right ? 1 : 0));
+}
+
+const FILL_WIDTH = { horizontal: FILL, vertical: HUG };
+
+// Unit under test: `buildComponentSet` on a box whose own text is its label. Oracle: CSS Text 3 and
+// CSS Sizing 3. A label is the box's own text, laid out in the box's content width. Where that width
+// is definite, fixed or filling, text that wraps (`white-space: normal`) breaks its lines there, as a
+// Figma text that fills the width and hugs its height does. A box that hugs its width is as wide as
+// its text on one line, since a kit frame always has room to spare, so the text hugs. A column with
+// an unset `align-items` stretches its text, an anonymous flex item, across its width (Flexbox 1
+// §9.4 step 11), which is the same fill. `white-space: nowrap` keeps the text on one line at its own
+// width, which a hugging text draws.
+describe("a label's sizing", () => {
+  it("fills a fixed width and wraps, hugging its height", async () => {
+    const { variant } = await buildLabelled("flex w-[100px]", { label: LABEL });
+    expect(textOf(variant?.root)?.sizing).toEqual(FILL_WIDTH);
+  });
+
+  it("fills a part that fills its parent", async () => {
+    const { variant } = await buildLabelled("flex w-[100px]", {
+      parts: [{ ...dot("w-full"), label: LABEL }],
+    });
+    expect(textOf(variant?.root)?.sizing).toEqual(FILL_WIDTH);
+  });
+
+  it("reads an explicit whitespace-normal as wrapping", async () => {
+    const { variant, coverage } = await buildLabelled("w-[100px] whitespace-normal", { label: LABEL });
+    expect(textOf(variant?.root)?.sizing).toEqual(FILL_WIDTH);
+    expect(notesOf(coverage, "whitespace-normal")).toEqual([
+      ["white-space", "literal", "the label wraps at the box's width"],
+    ]);
+  });
+
+  it("hugs its one line with nowrap, whatever the box's width", async () => {
+    const { variant, coverage } = await buildLabelled("flex w-[100px] whitespace-nowrap", { label: LABEL });
+    expect(textOf(variant?.root)?.sizing).toEqual({ horizontal: HUG, vertical: HUG });
+    expect(notesOf(coverage, "whitespace-nowrap")).toEqual([
+      ["white-space", "literal", "the label hugs its width"],
+    ]);
+  });
+
+  it("stretches across a column with a definite width, and hugs in a column that hugs its width", async () => {
+    const stretched = await buildLabelled("flex flex-col w-[100px]", { label: LABEL });
+    expect(textOf(stretched.variant?.root)?.sizing).toEqual(FILL_WIDTH);
+    const hugging = await buildLabelled("flex flex-col", { label: LABEL });
+    expect(textOf(hugging.variant?.root)?.sizing).toEqual({ horizontal: HUG, vertical: HUG });
+    expect(hugging.coverage.filter((row) => row.property === "align-items")).toEqual([]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a flex box whose own text wraps. Oracle: CSS Flexbox 1. The
+// text is an anonymous flex item, which does not grow (`flex: 0 1 auto`, §7.1), so a short label
+// sits at its own width where `justify-content` places it in a row, or `align-items` in a column. A
+// Figma text that fills the row sets its lines by its own alignment instead, so it draws what CSS
+// draws only where the two put the line in the same place: at the start, or both centered. A column
+// with an unset `align-items` stretches the item, which a fill draws whatever the alignment. Beside
+// other layers in a row the label keeps its own width, where a fill takes the room they leave.
+describe("a wrapping label in a flex box", () => {
+  it("fills a row that places it at the start", async () => {
+    const { variant } = await buildLabelled("flex w-[200px] justify-start", { label: LABEL });
+    expect(textOf(variant?.root)?.sizing).toEqual(FILL_WIDTH);
+  });
+
+  it("stays unmapped in a row that centers it, where a fill sets its lines at the left", async () => {
+    const { variant, coverage } = await buildLabelled("flex w-[200px] justify-center", { label: LABEL });
+    expect(textOf(variant?.root)?.sizing).toEqual({ horizontal: HUG, vertical: HUG });
+    expect(notesOf(coverage, "justify-center")).toContainEqual([
+      "justify-content",
+      "unmapped",
+      "the row places the label at its own width in the center, where a text that fills it sets its lines at the left",
+    ]);
+  });
+
+  it("fills a row that centers it when its lines are centered too", async () => {
+    const { variant, coverage } = await buildLabelled("flex w-[200px] justify-center text-center", {
+      label: LABEL,
+    });
+    const text = textOf(variant?.root);
+    expect([text?.sizing, text?.align.horizontal]).toEqual([FILL_WIDTH, "CENTER"]);
+    expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
+
+  it("stays unmapped beside an icon in a row, where a fill takes the room the icon leaves", async () => {
+    const { coverage } = await buildLabelled("flex w-[200px] [&_svg]:size-[16px]", {
+      label: LABEL,
+      iconsFor: () => [ICON],
+    });
+    expect(notesOf(coverage, "flex")).toContainEqual([
+      "display",
+      "unmapped",
+      "the label shares the row with Icon, so it keeps its own width, where a text that fills takes the room left",
+    ]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on boxes with `truncate` and `line-clamp-*`. Oracle: CSS
+// Overflow 3 and 4. `truncate` sets `overflow: hidden`, `text-overflow: ellipsis` and `white-space:
+// nowrap`, so the text keeps to one line and ends in an ellipsis where it overflows the box's content
+// width. `line-clamp-2` sets `overflow: hidden`, `display: -webkit-box`, `-webkit-box-orient:
+// vertical` and `-webkit-line-clamp: 2`, so the wrapping text ends in an ellipsis after two lines.
+// Figma draws both as a text that fills the width and truncates at its ending after that many
+// lines. A box that hugs its width never overflows, so the ellipsis has nothing to cut.
+// `text-overflow` applies to block containers only (CSS Overflow 3 §4.2). A flex box sets its own
+// text as an anonymous flex item, which it clips with no ellipsis, as WPT
+// `css-flexbox/text-overflow-on-flexbox-001` checks.
+describe("a label that ends in an ellipsis", () => {
+  it("reads truncate in a fixed block box as a fill that keeps to one line", async () => {
+    const { variant, coverage } = await buildLabelled("w-[100px] truncate", { label: LABEL });
+    const text = textOf(variant?.root);
+    expect([text?.sizing, text?.truncation]).toEqual([FILL_WIDTH, { maxLines: 1 }]);
+    expect(variant?.root.clips).toBe(true);
+    expect(notesOf(coverage, "truncate")).toEqual([
+      ["overflow", "literal", "the box clips its content"],
+      ["text-overflow", "literal", "the label ends in an ellipsis after 1 line"],
+      ["white-space", "literal", "the label keeps to one line"],
+    ]);
+  });
+
+  it("clips a flex box's label with no ellipsis, hugging its one line", async () => {
+    const { variant, coverage } = await buildLabelled("flex w-[100px] truncate", { label: LABEL });
+    const text = textOf(variant?.root);
+    expect([text?.sizing, text?.truncation]).toEqual([{ horizontal: HUG, vertical: HUG }, undefined]);
+    expect(variant?.root.clips).toBe(true);
+    expect(notesOf(coverage, "truncate")).toEqual([
+      ["overflow", "literal", "the box clips its content"],
+      ["text-overflow", "dropped", "a flex box sets its text as a flex item, which takes no ellipsis"],
+      ["white-space", "literal", "the label hugs its width"],
+    ]);
+  });
+
+  it("drops the ellipsis in a box that hugs its width, where the label never overflows", async () => {
+    const { variant, coverage } = await buildLabelled("truncate", { label: LABEL });
+    const text = textOf(variant?.root);
+    expect([text?.sizing, text?.truncation]).toEqual([{ horizontal: HUG, vertical: HUG }, undefined]);
+    expect(notesOf(coverage, "truncate")).toEqual([
+      ["overflow", "literal", "the box clips its content"],
+      ["text-overflow", "dropped", "the box hugs the label, so it never overflows"],
+      ["white-space", "literal", "the label hugs its width"],
+    ]);
+  });
+
+  it("reads line-clamp-2 in a fixed box as a fill that ends after two lines", async () => {
+    const { variant, coverage } = await buildLabelled("w-[100px] line-clamp-2", { label: LABEL });
+    const text = textOf(variant?.root);
+    expect([text?.sizing, text?.truncation]).toEqual([FILL_WIDTH, { maxLines: 2 }]);
+    expect(notesOf(coverage, "line-clamp-2")).toEqual([
+      ["-webkit-box-orient", "literal", "a column around its clamped label"],
+      ["-webkit-line-clamp", "literal", "the label ends in an ellipsis after 2 lines"],
+      ["display", "literal", "a column around its clamped label"],
+      ["overflow", "literal", "the box clips its content"],
+    ]);
+  });
+
+  // A box that hugs its width grows to its `max-width` and no further, so CSS wraps and clamps the
+  // label there. A Figma text in a hugging frame keeps its own width past the frame's limit (P7), so
+  // the clamp and the limit stay unmapped and the gate fails, rather than reading "never overflows".
+  it("leaves a clamp in a box that hugs up to a max-width unmapped", async () => {
+    const detail =
+      "the box hugs its width up to its max-width, where CSS wraps or cuts off the label, and a text in a hugging frame keeps its own width";
+    const { variant, coverage } = await buildLabelled("w-fit max-w-[100px] line-clamp-2", { label: LABEL });
+    expect(textOf(variant?.root)?.truncation).toBeUndefined();
+    expect(notesOf(coverage, "line-clamp-2")).toContainEqual(["-webkit-line-clamp", "unmapped", detail]);
+    expect(notesOf(coverage, "max-w-[100px]")).toContainEqual(["max-width", "unmapped", detail]);
+  });
+
+  it("leaves a wrapping label in a box that hugs up to a max-width unmapped", async () => {
+    const { coverage } = await buildLabelled("w-fit max-w-[100px]", { label: LABEL });
+    expect(notesOf(coverage, "max-w-[100px]").map(([, outcome]) => outcome)).toContain("unmapped");
+  });
+
+  // `-webkit-line-clamp` clamps lines that wrap, so `nowrap` leaves it nothing to clamp, and the
+  // column it needs stays unmapped with it rather than drawing a clamp the label does not have.
+  it("leaves the clamp and its column unmapped together when the text does not wrap", async () => {
+    const { coverage } = await buildLabelled("w-[100px] line-clamp-2 whitespace-nowrap", { label: LABEL });
+    expect(
+      notesOf(coverage, "line-clamp-2")
+        .filter(([property]) => property !== "overflow")
+        .map(([property, outcome]) => [property, outcome])
+    ).toEqual([
+      ["-webkit-box-orient", "unmapped"],
+      ["-webkit-line-clamp", "unmapped"],
+      ["display", "unmapped"],
+    ]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on parts that hold the label below a root that sets the text
+// layout. Oracle: CSS Text 3, where `white-space` and `text-align` inherit, so a `truncate` on the
+// root keeps a part's text on one line, while its ellipsis and clip stay on the root, and a
+// `text-center` on the root centers a part's lines.
+describe("a label below a root that sets its text layout", () => {
+  it("keeps to one line at its own width under a root's truncate", async () => {
+    const { variant, coverage } = await buildLabelled("flex w-[100px] truncate", {
+      parts: [{ ...dot("w-[80px]"), label: LABEL }],
+    });
+    const text = textOf(variant?.root);
+    expect([text?.sizing, text?.truncation]).toEqual([{ horizontal: HUG, vertical: HUG }, undefined]);
+    expect(notesOf(coverage, "truncate")).toEqual([
+      ["overflow", "literal", "the box clips its content"],
+      ["text-overflow", "dropped", "the box holds no text of its own"],
+      ["white-space", "literal", "the label hugs its width"],
+    ]);
+  });
+
+  it("centers its lines under a root's text-center", async () => {
+    const { variant, coverage } = await buildLabelled("text-center", {
+      parts: [{ ...dot(""), label: LABEL }],
+    });
+    expect(textOf(variant?.root)?.align).toEqual({ horizontal: "CENTER", vertical: "TOP" });
+    expect(notesOf(coverage, "text-center")).toEqual([
+      ["text-align", "literal", "the label sets its lines in the center"],
+    ]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a label whose definition places its text in a 100 × 80
+// control. Oracle: where the browser sets the line, which the definition states, as an `<input>`
+// centers its value down its box and a `<textarea>` starts its text at the top of its content box.
+// The label hugs its height, so the box's alignment moves the layer down, and across where the label
+// hugs its width. A label that fills the width sets its lines across by its own alignment, and a
+// `text-align` class still sets them, as it does in CSS.
+describe("a label that a native control places", () => {
+  const placed = (horizontal: TextPlacement["horizontal"], vertical: TextPlacement["vertical"]) => ({
+    ...LABEL,
+    placement: { horizontal, vertical },
+  });
+  const CONTROL = "w-[100px] h-[80px]";
+
+  it.each([
+    ["top", "MIN"],
+    ["center", "CENTER"],
+    ["bottom", "MAX"],
+  ] as const)(
+    "puts its line at the %s of the control through the box's alignment",
+    async (vertical, align) => {
+      const { variant } = await buildLabelled(CONTROL, { label: placed("start", vertical) });
+      expect(variant?.root.counterAlign).toBe(align);
+      expect(textOf(variant?.root)?.align).toEqual({ horizontal: "LEFT", vertical: "TOP" });
+    }
+  );
+
+  it("places a label that hugs its one line across through the box's alignment", async () => {
+    const { variant } = await buildLabelled(`${CONTROL} whitespace-nowrap`, {
+      label: placed("start", "top"),
+    });
+    expect([variant?.root.primaryAlign, textOf(variant?.root)?.sizing.horizontal]).toEqual(["MIN", HUG]);
+  });
+
+  it("sets a filling label's lines across where it places them, unless a text-align class does", async () => {
+    const centered = await buildLabelled(CONTROL, { label: placed("center", "top") });
+    expect(textOf(centered.variant?.root)?.align.horizontal).toBe("CENTER");
+    const right = await buildLabelled(`${CONTROL} text-right`, { label: placed("center", "top") });
+    expect(textOf(right.variant?.root)?.align.horizontal).toBe("RIGHT");
+  });
+});
+
+// Unit under test: `buildComponentSet` on labels and the TEXT properties the set lists. Oracle: the
+// Figma property model, where one TEXT property holds one default for every layer it sets, so two
+// labels that name it must start with the same text, and a label whose text differs per cell sets
+// none and writes its characters in each variant.
+describe("a set's text properties", () => {
+  const part = (key: string, label: LabelDefinition): PartDefinition => ({
+    ...dot(""),
+    key,
+    slot: `chip-${key}`,
+    label,
+  });
+
+  it("lists one property per name, in order, for labels on several parts", async () => {
+    const { componentSet } = await buildLabelled("flex", {
+      parts: [
+        part("title", { ...LABEL, textProperty: "Title", characters: "Storage" }),
+        part("hint", { ...LABEL, textProperty: "Hint", characters: "Used" }),
+        part("caption", { ...LABEL, textProperty: "Title", characters: "Storage" }),
+      ],
+    });
+    expect(componentSet.textProperties).toEqual([
+      { name: "Title", defaultValue: "Storage" },
+      { name: "Hint", defaultValue: "Used" },
+    ]);
+  });
+
+  it("stops the build when two labels give one property two defaults, naming both", async () => {
+    await expect(
+      buildLabelled("flex", {
+        parts: [
+          part("title", { ...LABEL, characters: "Storage" }),
+          part("hint", { ...LABEL, characters: "Used" }),
+        ],
+      })
+    ).rejects.toThrow(
+      'Chip: the labels chip-title / label and chip-hint / label both set the Label property, one starting as "Storage" and one as "Used".'
+    );
+  });
+
+  it("writes a label's own characters in each cell, with no property", async () => {
+    const { componentSet } = await buildLabelled("flex", {
+      axes: [{ name: "level", values: ["50", "85"] }],
+      columnAxis: "level",
+      label: {
+        key: "value",
+        name: "value",
+        charactersFor: (cell) => `${cell.level ?? ""}%`,
+        shownIn: () => true,
+      },
+    });
+    expect(componentSet.textProperties).toEqual([]);
+    expect(
+      componentSet.variants.map((variant) => {
+        const text = textOf(variant.root);
+        return [text?.characters, text?.textProperty];
+      })
+    ).toEqual([
+      ["50%", undefined],
+      ["85%", undefined],
+    ]);
   });
 });

@@ -11,7 +11,7 @@
  * run stopped before its first write.
  *
  * The fake models the Figma rules below. Each rule a real file showed in 2026-10 names that run.
- * Rules 12 to 18 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
+ * Rules 12 to 21 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
  * Import test` on 2026-10-22: P0 read the kit's nodes, and P1 to P7 built nodes on a scratch page.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
@@ -86,8 +86,7 @@
  *    down while it is that or HEIGHT. Every other axis reads FIXED. Writing FILL sets the grow or
  *    the stretch, as a real file showed (P1), and fixes the layer's own mode on that axis. Writing
  *    HUG or FIXED clears the fill and sets the mode. The fake hides `layoutGrow` and
- *    `layoutAlign`, so the plugin writes only the shorthand, and it does not model the shorthand's
- *    write on a text layer.
+ *    `layoutAlign`, so the plugin writes only the shorthand. Rule 19 covers the write on a text.
  * 13. A sizing write Figma cannot apply throws the message a real file threw on 2026-10-22 (P1).
  *    FILL on a frame that has no auto layout and sits in none threw `node must be an
  *    auto-layout frame or a child of an auto-layout frame`, and the fake throws it for HUG there
@@ -116,6 +115,22 @@
  *    horizontal auto layout, as the typings say. No probe ran.
  * 18. `primaryAxisAlignItems` keeps SPACE_BETWEEN through an `itemSpacing` write or binding, as a
  *    real file did on 2026-10-22 (P5).
+ * 19. A text's sizing and its `textAutoResize` move together, as a real file showed on 2026-10-22
+ *    (P3). FILL across a WIDTH_AND_HEIGHT text in a row switches it to HEIGHT and fills the row.
+ *    Writing WIDTH_AND_HEIGHT on a text that fills keeps it HEIGHT and filling. A resize of a
+ *    HEIGHT text fixes its width and keeps its height on its lines, and stops a fill as rule 14
+ *    says. No probe wrote HUG or FIXED on a text, or FILL down one. The fake takes HUG or FIXED
+ *    only where the auto resize already reads it, so the write only stops a fill, and throws for
+ *    the rest. A sizing write needs the text's fonts, as an auto resize write does.
+ * 20. `textTruncation` and `maxLines`, as a real file showed on 2026-10-22 (P4). A `maxLines`
+ *    write while truncation is DISABLED changes nothing, and the maximum reads null. ENDING on a
+ *    text with no maximum reads `maxLines` 1, and null under ENDING is accepted. `maxLines` takes
+ *    null or at least 1, as the typings say. Turning truncation DISABLED drops the maximum, since a
+ *    text that does not truncate read null in P0 and P4. P4 ran with every font loaded, so it did
+ *    not settle whether either write needs the text's fonts. The fake requires them, as for
+ *    `textAutoResize`, so Plan fails where Apply might.
+ * 21. `textAlignHorizontal` and `textAlignVertical` need the text's fonts, as the typings say. A
+ *    new text sets its lines from the top left, LEFT and TOP. No probe read a new text's alignment.
  *
  * An instance's sublayers show the layers of its main component. An override, such as the
  * color an icon layer gives its glyph, belongs to the main layer it was made on. It moves to
@@ -135,8 +150,10 @@
  * `Removing this node is not allowed`, and removed the page once another page showed.
  *
  * The fake does not lay out: an auto layout frame keeps the size it was given, so a hugging
- * frame does not grow with its content. It draws nothing either: a layer's render bounds are
- * its box, and a PNG export holds bytes that name the layer and the scale.
+ * frame does not grow with its content. Nor does it set text: a text keeps the size it was given,
+ * so a wrapped, filling or truncated text's height is not modelled. It draws nothing either: a
+ * layer's render bounds are its box, and a PNG export holds bytes that name the layer and the
+ * scale.
  */
 
 import * as Hex from "@elmeragroup/color/hex";
@@ -323,6 +340,12 @@ type NodeState = {
   textDecoration: TextDecoration;
   textDecorationOffset: TextDecorationOffset | null;
   textAutoResize: TextNode["textAutoResize"];
+  textAlignHorizontal: TextNode["textAlignHorizontal"];
+  textAlignVertical: TextNode["textAlignVertical"];
+  /** Whether a text ends in an ellipsis where it overflows (rule 20). */
+  textTruncation: TextNode["textTruncation"];
+  /** The lines a truncating text keeps, or null for all of them (rule 20). */
+  maxLines: number | null;
   autoRename: boolean;
 };
 
@@ -714,14 +737,17 @@ function storeEffect(state: NodeState, effect: Effect, held: ReadonlySet<string>
 
 /**
  * Resize a node, turn an auto layout frame's sizing modes to FIXED (rule 5), and stop it filling
- * its auto layout parent (rule 14).
+ * its auto layout parent (rule 14). A text whose height follows its lines keeps it (rule 19).
  */
 function resize(state: NodeState, width: number, height: number): void {
-  if (width < 0.01 || height < 0.01) {
+  const followsLines = state.type === "TEXT" && state.textAutoResize === "HEIGHT";
+  if (width < 0.01 || (!followsLines && height < 0.01)) {
     throw new Error(`Cannot resize ${state.id} to ${width} × ${height}: both must be at least 0.01.`);
   }
   state.width = f32(width);
-  state.height = f32(height);
+  if (!followsLines) {
+    state.height = f32(height);
+  }
   if (isAutoLayout(state)) {
     state.primaryAxisSizingMode = "FIXED";
     state.counterAxisSizingMode = "FIXED";
@@ -820,12 +846,16 @@ function sizingOn(state: NodeState, axis: Axis): Sizing {
     return "FILL";
   }
   if (state.type === "TEXT") {
-    const hugs =
-      state.textAutoResize === "WIDTH_AND_HEIGHT" ||
-      (axis === "VERTICAL" && state.textAutoResize === "HEIGHT");
-    return hugs ? "HUG" : "FIXED";
+    return textHugs(state, axis) ? "HUG" : "FIXED";
   }
   return isAutoLayout(state) && state[modeOn(state, axis)] === "AUTO" ? "HUG" : "FIXED";
+}
+
+/** Whether a text's auto resize follows its characters on an axis: across only for WIDTH_AND_HEIGHT. */
+function textHugs(state: NodeState, axis: Axis): boolean {
+  return (
+    state.textAutoResize === "WIDTH_AND_HEIGHT" || (axis === "VERTICAL" && state.textAutoResize === "HEIGHT")
+  );
 }
 
 /** Stop filling an axis of the parent, as a hug or fixed size does. */
@@ -843,21 +873,22 @@ function stopFilling(state: NodeState, axis: Axis): void {
  */
 function setSizing(state: NodeState, axis: Axis, value: Sizing): void {
   const member = `set_layoutSizing${axis === "HORIZONTAL" ? "Horizontal" : "Vertical"}`;
-  if (state.type === "TEXT") {
-    throw new Error(`The fake Figma file does not model writing ${member.slice(4)} on text.`);
-  }
   const ownLayout = isAutoLayout(state);
   const inLayout = isAutoLayout(state.parent);
   if (value !== "FIXED" && !ownLayout && !inLayout) {
     throw new Error(`in ${member}: node must be an auto-layout frame or a child of an auto-layout frame`);
   }
-  if (value === "HUG" && !ownLayout) {
+  if (value === "HUG" && !ownLayout && state.type !== "TEXT") {
     throw new Error(
       `in ${member}: HUG can only be set on auto-layout frames or text children of auto-layout frames`
     );
   }
   if (value === "FILL" && !inLayout) {
     throw new Error(`in ${member}: FILL can only be set on children of auto-layout frames`);
+  }
+  if (state.type === "TEXT") {
+    setTextSizing(state, axis, value, member.slice(4));
+    return;
   }
   write(state, member.slice(4));
   if (value === "FILL") {
@@ -871,6 +902,40 @@ function setSizing(state: NodeState, axis: Axis, value: Sizing): void {
   }
   if (ownLayout) {
     state[modeOn(state, axis)] = value === "HUG" ? "AUTO" : "FIXED";
+  }
+}
+
+/**
+ * Write a text's `layoutSizingHorizontal` or `layoutSizingVertical` (rule 19). A fill across a
+ * text that hugs its characters fixes its width and lets its height follow its lines, as a real
+ * file showed (P3). A hug or fixed size stops a fill, and the fake takes it only where the text's
+ * auto resize already reads it, since no probe showed how such a write moves the auto resize.
+ */
+function setTextSizing(state: NodeState, axis: Axis, value: Sizing, member: string): void {
+  requireHeldFonts(state, member);
+  if (value === "FILL") {
+    if (axis === "VERTICAL") {
+      throw new Error(`The fake Figma file does not model ${member} FILL on a text.`);
+    }
+    write(state, member);
+    if (state.parent?.layoutMode === axis) {
+      state.layoutGrow = 1;
+    } else {
+      state.layoutAlign = "STRETCH";
+    }
+    if (state.textAutoResize === "WIDTH_AND_HEIGHT") {
+      state.textAutoResize = "HEIGHT";
+    }
+    return;
+  }
+  if ((value === "HUG") !== textHugs(state, axis)) {
+    throw new Error(
+      `The fake Figma file does not model ${member} ${value} on a text whose auto resize is ${state.textAutoResize}.`
+    );
+  }
+  write(state, member);
+  if (isAutoLayout(state.parent)) {
+    stopFilling(state, axis);
   }
 }
 
@@ -1549,6 +1614,10 @@ function copiedFields(source: NodeState): Omit<NodeState, UncopiedField> {
     textDecoration: source.textDecoration,
     textDecorationOffset: source.textDecorationOffset === null ? null : { ...source.textDecorationOffset },
     textAutoResize: source.textAutoResize,
+    textAlignHorizontal: source.textAlignHorizontal,
+    textAlignVertical: source.textAlignVertical,
+    textTruncation: source.textTruncation,
+    maxLines: source.maxLines,
     autoRename: source.autoRename,
   };
 }
@@ -2444,11 +2513,66 @@ class FakeText extends FakeSceneNode {
     return live(this).textAutoResize;
   }
 
+  /** A filling text keeps a fixed width and an auto height when asked to hug its characters (rule 19). */
   set textAutoResize(value: TextNode["textAutoResize"]) {
     const state = live(this);
     requireHeldFonts(state, "textAutoResize");
     write(state, "textAutoResize");
-    state.textAutoResize = value;
+    if (value !== "WIDTH_AND_HEIGHT" || !fills(state, "HORIZONTAL")) {
+      state.textAutoResize = value;
+    }
+  }
+
+  get textAlignHorizontal(): TextNode["textAlignHorizontal"] {
+    return live(this).textAlignHorizontal;
+  }
+
+  set textAlignHorizontal(value: TextNode["textAlignHorizontal"]) {
+    const state = live(this);
+    requireHeldFonts(state, "textAlignHorizontal");
+    write(state, "textAlignHorizontal");
+    state.textAlignHorizontal = value;
+  }
+
+  get textAlignVertical(): TextNode["textAlignVertical"] {
+    return live(this).textAlignVertical;
+  }
+
+  set textAlignVertical(value: TextNode["textAlignVertical"]) {
+    const state = live(this);
+    requireHeldFonts(state, "textAlignVertical");
+    write(state, "textAlignVertical");
+    state.textAlignVertical = value;
+  }
+
+  get textTruncation(): TextNode["textTruncation"] {
+    return live(this).textTruncation;
+  }
+
+  /** Truncating starts at one line where no maximum is set, and stopping drops the maximum (rule 20). */
+  set textTruncation(value: TextNode["textTruncation"]) {
+    const state = live(this);
+    requireHeldFonts(state, "textTruncation");
+    write(state, "textTruncation");
+    state.textTruncation = value;
+    state.maxLines = value === "DISABLED" ? null : (state.maxLines ?? 1);
+  }
+
+  get maxLines(): number | null {
+    return live(this).maxLines;
+  }
+
+  /** A maximum written while the text does not truncate changes nothing (rule 20). */
+  set maxLines(value: number | null) {
+    const state = live(this);
+    requireHeldFonts(state, "maxLines");
+    if (value !== null && !(value >= 1)) {
+      throw new Error(`maxLines must be at least 1, and ${value} is not.`);
+    }
+    write(state, "maxLines");
+    if (state.textTruncation === "ENDING") {
+      state.maxLines = value;
+    }
   }
 
   getRangeAllFontNames(start: number, end: number): FontName[] {
@@ -2664,6 +2788,10 @@ function createNode(file: FileState, type: NodeType, name: string, id?: string):
     textDecoration: "NONE",
     textDecorationOffset: null,
     textAutoResize: "WIDTH_AND_HEIGHT",
+    textAlignHorizontal: "LEFT",
+    textAlignVertical: "TOP",
+    textTruncation: "DISABLED",
+    maxLines: null,
     autoRename: type === "TEXT",
   };
   // The guard reads a getter on the object itself, so the object and the guarded node both

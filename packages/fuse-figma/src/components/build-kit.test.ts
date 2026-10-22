@@ -18,6 +18,7 @@ import {
   fixedSize,
   FOCUS_RING,
   HUG,
+  HUGGING_LABEL,
   literal,
   paint,
   SHADOW_XS,
@@ -152,6 +153,7 @@ describe("the Button component set", () => {
           fontSize: density("control-text"),
           lineHeight: density("control-leading"),
           color: paint("primary-foreground"),
+          ...HUGGING_LABEL,
         },
       ],
     });
@@ -515,6 +517,7 @@ describe("the Badge component set", () => {
           fontSize: literal(12),
           lineHeight: literal(16),
           color: paint("primary-foreground"),
+          ...HUGGING_LABEL,
         },
       ],
     });
@@ -619,6 +622,7 @@ describe("the Kbd component set", () => {
           fontSize: literal(12),
           lineHeight: literal(16),
           color: paint("muted-foreground"),
+          ...HUGGING_LABEL,
         },
       ],
     });

@@ -12,14 +12,17 @@ import type {
   IconLayerSpec,
   NumberSpec,
   TextLayerSpec,
+  TextSizingSpec,
 } from "../../src/components/kit-spec.ts";
 import {
   describeNumber,
+  LAYOUT_SIZING,
   near,
   planNumber,
   planPaints,
   planScalar,
   requireFont,
+  SIZING_MEMBERS,
   solidPaint,
 } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
@@ -27,9 +30,9 @@ import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
 import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
 import type { Siblings } from "./identity.ts";
-import { change, create, existing } from "./plan.ts";
+import { change, changeTogether, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
-import { planBox } from "./root-layer.ts";
+import { planBox, planLength } from "./root-layer.ts";
 import type { LayerParent } from "./root-layer.ts";
 
 /**
@@ -273,6 +276,7 @@ function planFont(run: Run, text: TextNode, label: string, spec: TextLayerSpec, 
  * @param held - The fonts the layer holds now. A layer the run creates passes none, because
  *   its first font is unknown until it exists, and the font write that a new layer gets
  *   needs only the new font.
+ * @param parent - `unknown` when the box that holds the layer turns in this run.
  */
 function planText(
   run: Run,
@@ -280,7 +284,8 @@ function planText(
   label: string,
   spec: TextLayerSpec,
   propertyIds: PropertyIds,
-  held: readonly FontName[]
+  held: readonly FontName[],
+  parent: Held
 ): void {
   const fontName = fontFor(run, text, spec);
   const replaced = planFont(run, text, label, spec, fontName);
@@ -292,7 +297,7 @@ function planText(
   });
 
   const start = run.plan.operations.length;
-  planTypography(run, text, label, spec, propertyIds);
+  planTypography(run, text, label, spec, propertyIds, parent);
   if (!replaced && run.plan.operations.length > start) {
     for (const font of [...held, fontName]) {
       requireFont(run, label, font);
@@ -335,12 +340,82 @@ function planUnderline(run: Run, text: TextNode, label: string, spec: TextLayerS
   });
 }
 
+/**
+ * The auto resize a text's sizing takes: both sides hug its characters, its width is set and its
+ * height follows its lines, or both sides are fixed.
+ */
+function autoResizeOf(sizing: TextSizingSpec): "WIDTH_AND_HEIGHT" | "HEIGHT" | "NONE" {
+  if (sizing.vertical.kind === "fixed") {
+    return "NONE";
+  }
+  return sizing.horizontal.kind === "hug" ? "WIDTH_AND_HEIGHT" : "HEIGHT";
+}
+
+/**
+ * Plan how a text sizes and truncates as one operation, in the order its writes depend on each
+ * other. The auto resize comes first, since it moves the text's hug: on a real file on 2026-10-22
+ * a fill across a hugging text turned it to a fixed width with an auto height (P3). The sizing on
+ * each axis follows, then a fixed width or height, which the auto resize must already keep, then
+ * the truncation, and last the maximum lines, which a text keeps only while it truncates (P4).
+ *
+ * @param held - `unknown` when the text's box turns in this run, which moves its fill to the other
+ *   axis, so the operation writes its sizing and lengths whatever it reads now, as it does after a
+ *   new auto resize.
+ */
+function planTextLayout(run: Run, text: TextNode, label: string, spec: TextLayerSpec, held: Held): void {
+  const autoResize = autoResizeOf(spec.sizing);
+  const sizing = {
+    horizontal: LAYOUT_SIZING[spec.sizing.horizontal.kind],
+    vertical: LAYOUT_SIZING[spec.sizing.vertical.kind],
+  };
+  const truncation = spec.truncation === undefined ? "DISABLED" : "ENDING";
+  changeTogether(
+    run.plan,
+    label,
+    (plan) => {
+      const group = { ...run, plan };
+      // A new auto resize moves the text's hug, and a hugging text's size follows its characters and
+      // its font, which the run can change first, so the sizing and the lengths after a new auto
+      // resize are written whatever the text reads now.
+      const lengths: Held = held === "read" && text.textAutoResize === autoResize ? "read" : "unknown";
+      const reads = lengths === "read" ? text : undefined;
+      planScalar(group, label, "textAutoResize", text.textAutoResize, autoResize, () => {
+        text.textAutoResize = autoResize;
+      });
+      for (const [axis, member] of SIZING_MEMBERS) {
+        if (reads?.[member] !== sizing[axis]) {
+          change(plan, label, `${member} → ${sizing[axis]}`, () => {
+            text[member] = sizing[axis];
+          });
+        }
+      }
+      planLength(group, text, label, "width", spec.sizing.horizontal, lengths, (value) =>
+        text.resize(value, text.height)
+      );
+      planLength(group, text, label, "height", spec.sizing.vertical, lengths, (value) =>
+        text.resize(text.width, value)
+      );
+      planScalar(group, label, "textTruncation", text.textTruncation, truncation, () => {
+        text.textTruncation = truncation;
+      });
+      const maxLines = spec.truncation?.maxLines;
+      if (maxLines !== undefined && (text.textTruncation !== truncation || text.maxLines !== maxLines)) {
+        change(plan, label, `maxLines → ${maxLines}`, () => {
+          text.maxLines = maxLines;
+        });
+      }
+    },
+    () => undefined
+  );
+}
+
 function planTypography(
   run: Run,
   text: TextNode,
   label: string,
   spec: TextLayerSpec,
-  propertyIds: PropertyIds
+  propertyIds: PropertyIds,
+  parent: Held
 ): void {
   if (spec.fontFamily.kind === "variable") {
     const variable = run.variables.variable(spec.fontFamily.variable);
@@ -377,8 +452,13 @@ function planTypography(
     }
   );
   planUnderline(run, text, label, spec);
-  planScalar(run, label, "textAutoResize", text.textAutoResize, "WIDTH_AND_HEIGHT", () => {
-    text.textAutoResize = "WIDTH_AND_HEIGHT";
+  planTextLayout(run, text, label, spec, parent);
+  const { horizontal, vertical } = spec.align;
+  planScalar(run, label, "textAlignHorizontal", text.textAlignHorizontal, horizontal, () => {
+    text.textAlignHorizontal = horizontal;
+  });
+  planScalar(run, label, "textAlignVertical", text.textAlignVertical, vertical, () => {
+    text.textAlignVertical = vertical;
   });
 
   const property = spec.textProperty;
@@ -526,7 +606,7 @@ async function planChild(
   if (spec.kind === "text") {
     const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isText);
     if (found !== undefined) {
-      planText(run, found, layerLabel, spec, links.properties, heldFonts(run, found));
+      planText(run, found, layerLabel, spec, links.properties, heldFonts(run, found), holder.held);
       return existing(found);
     }
     requireNewTextFonts(run, parent, label, [spec]);
@@ -535,7 +615,7 @@ async function planChild(
       label,
       description,
       () => placeOwned(parent, run.figma.createText(), spec.key, spec.name),
-      (made, plan) => planText({ ...run, plan }, made, layerLabel, spec, links.properties, [])
+      (made, plan) => planText({ ...run, plan }, made, layerLabel, spec, links.properties, [], holder.held)
     );
   }
   const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isInstance);

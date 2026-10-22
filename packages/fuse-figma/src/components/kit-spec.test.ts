@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { NO_LIMITS, walkLayers } from "./kit-spec";
+import { HUGGING_TEXT, NO_LIMITS, TOP_LEFT, walkLayers } from "./kit-spec";
 import type { BoxSpec, ChildLayerSpec, FrameLayerSpec, IconLayerSpec, TextLayerSpec } from "./kit-spec";
 
 const zero = { kind: "literal", value: 0 } as const;
@@ -50,6 +50,9 @@ function text(key: string): TextLayerSpec {
     lineHeight: zero,
     color: black,
     underline: undefined,
+    sizing: HUGGING_TEXT,
+    align: TOP_LEFT,
+    truncation: undefined,
   };
 }
 

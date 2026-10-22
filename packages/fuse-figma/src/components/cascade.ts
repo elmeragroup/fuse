@@ -47,7 +47,9 @@ const NO_FIGMA_FORM = new Map([
 
 /**
  * The properties a child inherits from its parent, as CSS passes them down. Custom properties
- * inherit too, unless their `@property` says `inherits: false`.
+ * inherit too, unless their `@property` says `inherits: false`. `white-space` and `text-align`
+ * inherit, so a `truncate` on a box keeps the label of a part below it on one line, while the
+ * `overflow` and `text-overflow` it also sets stay on the box.
  */
 const INHERITED_PROPERTIES = new Set([
   "color",
@@ -57,6 +59,8 @@ const INHERITED_PROPERTIES = new Set([
   "font-style",
   "line-height",
   "letter-spacing",
+  "white-space",
+  "text-align",
 ]);
 
 /**
