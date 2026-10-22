@@ -46,6 +46,14 @@
       "types": "./src/alert-dialog.ts",
       "import": "./src/alert-dialog.ts"
     },
+    "./aspect-ratio": {
+      "types": "./src/aspect-ratio.ts",
+      "import": "./src/aspect-ratio.ts"
+    },
+    "./attachment": {
+      "types": "./src/attachment.ts",
+      "import": "./src/attachment.ts"
+    },
     "./avatar": {
       "types": "./src/avatar.ts",
       "import": "./src/avatar.ts"

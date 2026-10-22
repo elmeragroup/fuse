@@ -1,6 +1,6 @@
 /**
  * Server module. Renders every public namespace part of the compound components whose
- * implementation is `"use client"`, plus Alert and SelectField.
+ * implementation is `"use client"`, plus Alert, SelectField and AspectRatio.
  *
  * The part lists are the public namespace shape. They are not read from the
  * implementation: a missing or renamed part fails here even if the source still parses.
@@ -21,6 +21,8 @@ import { PassThrough } from "node:stream";
 import { Accordion } from "@elmeragroup/fuse/accordion";
 import { Alert } from "@elmeragroup/fuse/alert";
 import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
+import { AspectRatio } from "@elmeragroup/fuse/aspect-ratio";
+import { Attachment } from "@elmeragroup/fuse/attachment";
 import { Avatar } from "@elmeragroup/fuse/avatar";
 import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
 import { ButtonGroup } from "@elmeragroup/fuse/button-group";
@@ -129,6 +131,9 @@ function namespaceElements(): ReactElement[] {
   return [
     ...renderNamespace("Accordion", Accordion, ["Root", "Item", "Header", "Trigger", "Content"]),
     ...renderNamespace("AlertDialog", AlertDialog, ["Root", "Trigger", "Content"]),
+    ...renderNamespace("Attachment", Attachment, ["Root", "Group", "Action", "Trigger"], {
+      server: ["Media", "AspectRatio", "Content", "Title", "Description", "Actions"],
+    }),
     ...renderNamespace("Avatar", Avatar, ["Root", "Group", "Image", "Fallback"]),
     ...renderNamespace("Breadcrumb", Breadcrumb, [
       "Root",
@@ -429,6 +434,36 @@ function selectionItemTrees(): ReactElement {
   );
 }
 
+/**
+ * AspectRatio and Attachment's markup parts hold no state, so the server runs them, here inside
+ * the client Attachment.Root.
+ */
+function attachmentTree(): ReactElement {
+  if (isClientReference(AspectRatio)) {
+    throw new Error("AspectRatio is a client reference; the server must run it");
+  }
+  return createElement(
+    "section",
+    { "data-fixture": "attachment" },
+    createElement(AspectRatio, { ratio: "16:9" }, "Site photo"),
+    createElement(
+      Attachment.Root,
+      { orientation: "vertical" },
+      createElement(
+        Attachment.Media,
+        { variant: "image" },
+        createElement(Attachment.AspectRatio, { ratio: "3:4" }, "Meter photo")
+      ),
+      createElement(
+        Attachment.Content,
+        null,
+        createElement(Attachment.Title, null, "meter.jpg"),
+        createElement(Attachment.Description, null, "JPEG · 1.2 MB")
+      )
+    )
+  );
+}
+
 const SELECT_FIELD_PLACEHOLDER = "Choose a plan";
 
 /**
@@ -486,7 +521,8 @@ function Fixture(): ReactElement {
     ...namespaceElements(),
     alertTree(),
     selectionItemTrees(),
-    selectFieldTree()
+    selectFieldTree(),
+    attachmentTree()
   );
 }
 

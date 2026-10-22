@@ -83,6 +83,10 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  // 2026-10-22: new entries. Attachment renders Button and Base UI's ScrollArea, useRender and
+  // mergeProps. AspectRatio renders one div through `cn`.
+  { name: "attachment", entryFile: "attachment.js", measuredGzip: 35347 },
+  { name: "aspect-ratio", entryFile: "aspect-ratio.js", measuredGzip: 21363 },
   // 2026-10-20: new entry, measured at 154062 with the add menu. It renders Toolbar, Menu,
   // Popover, Select, Combobox, ToggleGroup, NumberField and Slider, so the ceiling follows what
   // those cost.

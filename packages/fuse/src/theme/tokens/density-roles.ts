@@ -31,6 +31,24 @@ export const PART_DENSITY = {
   "alert-icon": "fixed",
   "alert-dialog-trigger": "control",
 
+  "aspect-ratio": "layout",
+
+  attachment: "surface",
+  "attachment-group": "layout",
+  "attachment-group-viewport": "layout",
+  "attachment-group-list": "surface",
+  "attachment-media": "fixed",
+  "attachment-aspect-ratio": "layout",
+  "attachment-content": "layout",
+  "attachment-title": "fixed",
+  "attachment-description": "fixed",
+  "attachment-actions": "layout",
+  "attachment-action": "control",
+  "attachment-trigger": "layout",
+  // `Dialog.Trigger render={<Attachment.Trigger />}` writes the dialog's slot onto the trigger,
+  // which covers the attachment and reads no control metric.
+  "dialog-trigger:where([data-slot=attachment] > *)": "layout",
+
   avatar: "fixed",
   "avatar-image": "fixed",
   "avatar-fallback": "fixed",

@@ -1,0 +1,26 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "aspect-ratio",
+  "parts": [
+    {
+      "name": "AspectRatio",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/aspect-ratio/aspect-ratio.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "ratio",
+          "origin": "declared",
+          "type": "AspectRatioValue",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The frame's width to height, one of `\"1:1\"`, `\"4:3\"`, `\"3:4\"`, `\"3:2\"`, `\"2:3\"`, `\"16:9\"` and `\"9:16\"`. It has no default. A consumer `aspect-*` class, such as `aspect-[7/5]`, replaces it.",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

@@ -528,6 +528,47 @@
   scrollbar-width: none;
 }
 
+/* A highlight that sweeps across text in progress, such as an uploading Attachment.Title. The
+   text keeps its own colour and the sweep reads the muted foreground role, or the text colour
+   where no theme declares the role. The text paints through the background, so the gradient
+   needs both stops to be valid colours. The sweep runs from the inline start in either
+   direction. Under reduced motion the central block below zeroes --animate-shimmer, and the
+   utility drops the gradient so the text paints solid again. */
+@theme {
+  --animate-shimmer: shimmer 2s linear infinite;
+  @keyframes shimmer {
+    from {
+      background-position: 100% 0;
+    }
+    to {
+      background-position: 0 0;
+    }
+  }
+}
+@utility shimmer {
+  --shimmer-spread: calc(3ch + 40px);
+  background-image: linear-gradient(
+    110deg,
+    currentColor calc(50% - var(--shimmer-spread)),
+    var(--muted-foreground, currentColor) 50%,
+    currentColor calc(50% + var(--shimmer-spread))
+  );
+  background-repeat: no-repeat;
+  background-size: calc(200% + var(--shimmer-spread) * 2) 100%;
+  background-position: 0 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: var(--animate-shimmer);
+  @variant rtl {
+    animation-direction: reverse;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
+  }
+}
+
 /* Transform/layout motion off; opacity fades and color transitions stay. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -546,5 +587,6 @@
     --tw-exit-rotate: 0 !important;
     --animate-spin: none !important;
     --animate-bounce: none !important;
+    --animate-shimmer: none !important;
   }
 }
