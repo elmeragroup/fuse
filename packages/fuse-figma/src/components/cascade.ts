@@ -36,6 +36,7 @@ const NO_FIGMA_FORM = new Map([
   ["transition-property", "Figma components do not animate"],
   ["transition-timing-function", "Figma components do not animate"],
   ["transition-duration", "Figma components do not animate"],
+  ["animation", "Figma components do not animate"],
   // `shrink-0` keeps an element at its size, as Figma keeps every fixed or hugging child.
   ["flex-shrink", "Figma's auto layout does not shrink a fixed or hugging child"],
   ["outline-style", "Figma has no outline, and focus draws the ring"],

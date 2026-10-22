@@ -863,6 +863,7 @@ describe("the preview frames", () => {
       { key: "page/checkbox", name: "Checkbox" },
       { key: "page/switch", name: "Switch" },
       { key: "page/separator", name: "Separator" },
+      { key: "page/skeleton", name: "Skeleton" },
       { key: "page/icons", name: "Icons" },
     ]);
     expect(spec.componentSets.map((set) => [set.key, set.page])).toEqual([
@@ -877,19 +878,21 @@ describe("the preview frames", () => {
       ["checkbox", "page/checkbox"],
       ["switch", "page/switch"],
       ["separator", "page/separator"],
+      ["skeleton", "page/skeleton"],
     ]);
     expect(spec.icons.page).toBe("page/icons");
   });
 
   it("pin four Fjordkraft private themes at Auto density on each component page, each on all five axes", () => {
     expect(spec.previews.map((preview) => [preview.key, preview.page])).toEqual(
-      ["button", "toggle", "badge", "kbd", "radio", "checkbox", "switch", "separator"].flatMap((page) =>
-        [
-          "internal-fkas-private-light",
-          "internal-fkas-private-dark",
-          "external-fkas-private-light",
-          "external-fkas-private-dark",
-        ].map((theme) => [`preview/${page}/${theme}`, `page/${page}`])
+      ["button", "toggle", "badge", "kbd", "radio", "checkbox", "switch", "separator", "skeleton"].flatMap(
+        (page) =>
+          [
+            "internal-fkas-private-light",
+            "internal-fkas-private-dark",
+            "external-fkas-private-light",
+            "external-fkas-private-dark",
+          ].map((theme) => [`preview/${page}/${theme}`, `page/${page}`])
       )
     );
     expect(spec.previews[3]?.modes).toEqual([
@@ -929,6 +932,7 @@ describe("the preview frames", () => {
       ["page/checkbox", [["checkbox", "Checkbox"]]],
       ["page/switch", [["switch", "Switch"]]],
       ["page/separator", [["separator", "Separator"]]],
+      ["page/skeleton", [["skeleton", "Skeleton"]]],
     ]);
     for (const preview of spec.previews) {
       expect(preview.groups.map((group) => [group.key, group.name])).toEqual(

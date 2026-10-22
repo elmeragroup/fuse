@@ -1,52 +1,28 @@
 /**
  * `reconcileKit` end to end against the in-memory file in `fake-figma.ts`, with the kit
  * `buildKit()` writes from the Button, Toggle, Badge, Kbd, Radio icon button, Radio, Checkbox,
- * Switch and Separator recipes and the variables `fuseVariableSet()` syncs. The fake models the Figma rules the real runs in 2026-10 confirmed, and throws for any Plugin API
+ * Switch, Separator and Skeleton recipes and the variables `fuseVariableSet()` syncs. The fake models the Figma rules the real runs in 2026-10 confirmed, and throws for any Plugin API
  * member it does not model. The oracles are hand-written: the change lines Plan must list, the
  * values the Button recipe and the theme catalog give, and the order the kit's axes declare.
  */
-import { Result } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import type { KitSpec } from "../../src/components/kit-spec.ts";
-import type { AliasCycle, CollectionSpec, InvalidVariableSet, VariableSet } from "../../src/variable-set.ts";
-import { createFakeFigma, drawsShadowSpread } from "./fake-figma.ts";
+import type { CollectionSpec } from "../../src/variable-set.ts";
+import { drawsShadowSpread } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed } from "./fake-fixtures.ts";
 import { keyOf } from "./identity.ts";
+import { appliedFile, kitFixture, kitPage, PREVIEWS, previewsOf, syncedFile } from "./kit-fixture.ts";
 import { reconcileKit } from "./reconcile.ts";
-import { exportSnapshots } from "./snapshots.ts";
-
-/**
- * The spec builder and the token sync import Node and Fuse modules that the plugin's type check
- * cannot follow, so the test loads them by paths the check does not read.
- */
-const SPEC_BUILDER = "../../src/components/build-kit.ts";
-const TOKEN_SYNC = "../../src/fuse-variable-set.ts";
-
-type SpecBuilder = { readonly buildKit: () => Promise<{ readonly spec: KitSpec }> };
-type TokenSync = {
-  readonly fuseVariableSet: () => Result.Result<VariableSet, InvalidVariableSet | AliasCycle>;
-};
 
 let kit: KitSpec;
 let collections: readonly CollectionSpec[];
 
 beforeAll(async () => {
-  // SAFETY: the path names build-kit.ts, whose `buildKit` resolves to the kit and its coverage.
-  const builder = (await import(SPEC_BUILDER)) as SpecBuilder;
-  // SAFETY: the path names fuse-variable-set.ts, whose `fuseVariableSet` returns the set or why
-  // it does not build.
-  const sync = (await import(TOKEN_SYNC)) as TokenSync;
-  const variableSet = sync.fuseVariableSet();
-  if (Result.isFailure(variableSet)) {
-    throw new Error(`the Fuse variable set does not build: ${String(variableSet.failure)}`);
-  }
-  collections = variableSet.success.collections;
-  ({ spec: kit } = await builder.buildKit());
+  ({ kit, collections } = await kitFixture());
 }, 60_000);
 
-const BUTTON_PAGE = "page/button";
 const TOGGLE_PAGE = "page/toggle";
 const BADGE_PAGE = "page/badge";
 const KBD_PAGE = "page/kbd";
@@ -54,57 +30,42 @@ const RADIO_PAGE = "page/radio";
 const CHECKBOX_PAGE = "page/checkbox";
 const SWITCH_PAGE = "page/switch";
 const SEPARATOR_PAGE = "page/separator";
+const SKELETON_PAGE = "page/skeleton";
 const ICONS_PAGE = "page/icons";
 const DEFAULT_BUTTON = "variant=default, size=default, state=rest, icon=none";
 const LAY_OUT_BUTTONS = "Button: lay out 420 variants in 5 columns and 84 rows";
 const PLACE = "Button: place Button and Icon button in a row and stack 4 previews below them";
-const PREVIEWS = [
-  "Button / Fjordkraft internal private, light",
-  "Button / Fjordkraft internal private, dark",
-  "Button / Fjordkraft external private, light",
-  "Button / Fjordkraft external private, dark",
-];
 const CREATE_PREVIEWS = PREVIEWS.map((name) => `Button: create the preview ${name}`);
 const PLACE_TOGGLES = "Toggle: place Toggle and Icon toggle in a row and stack 4 previews below them";
-const TOGGLE_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Toggle"));
+const TOGGLE_PREVIEWS = previewsOf("Toggle");
 const CREATE_TOGGLE_PREVIEWS = TOGGLE_PREVIEWS.map((name) => `Toggle: create the preview ${name}`);
 const PLACE_BADGES = "Badge: place Badge in a row and stack 4 previews below them";
-const BADGE_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Badge"));
+const BADGE_PREVIEWS = previewsOf("Badge");
 const CREATE_BADGE_PREVIEWS = BADGE_PREVIEWS.map((name) => `Badge: create the preview ${name}`);
 const PLACE_KBDS = "Kbd: place Kbd in a row and stack 4 previews below them";
-const KBD_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Kbd"));
+const KBD_PREVIEWS = previewsOf("Kbd");
 const CREATE_KBD_PREVIEWS = KBD_PREVIEWS.map((name) => `Kbd: create the preview ${name}`);
 const PLACE_RADIOS = "Radio: place Radio icon button and Radio in a row and stack 4 previews below them";
-const RADIO_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Radio"));
+const RADIO_PREVIEWS = previewsOf("Radio");
 const CREATE_RADIO_PREVIEWS = RADIO_PREVIEWS.map((name) => `Radio: create the preview ${name}`);
 const PLACE_CHECKBOXES = "Checkbox: place Checkbox in a row and stack 4 previews below them";
-const CHECKBOX_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Checkbox"));
+const CHECKBOX_PREVIEWS = previewsOf("Checkbox");
 const CREATE_CHECKBOX_PREVIEWS = CHECKBOX_PREVIEWS.map((name) => `Checkbox: create the preview ${name}`);
 const PLACE_SWITCHES = "Switch: place Switch in a row and stack 4 previews below them";
-const SWITCH_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Switch"));
+const SWITCH_PREVIEWS = previewsOf("Switch");
 const CREATE_SWITCH_PREVIEWS = SWITCH_PREVIEWS.map((name) => `Switch: create the preview ${name}`);
 const PLACE_SEPARATORS = "Separator: place Separator in a row and stack 4 previews below them";
-const SEPARATOR_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Separator"));
+const SEPARATOR_PREVIEWS = previewsOf("Separator");
 const CREATE_SEPARATOR_PREVIEWS = SEPARATOR_PREVIEWS.map((name) => `Separator: create the preview ${name}`);
+const PLACE_SKELETONS = "Skeleton: place Skeleton in a row and stack 4 previews below them";
+const SKELETON_PREVIEWS = previewsOf("Skeleton");
+const CREATE_SKELETON_PREVIEWS = SKELETON_PREVIEWS.map((name) => `Skeleton: create the preview ${name}`);
 
 /** The page the plugin put the whole kit on before each component got a page of its own. */
 const LEGACY_PAGE = { key: "page/components", name: "Fuse components" };
 
 /** The gray `ring` holds in Fjordkraft's internal private light theme, the file's default modes. */
 const RING_GRAY = 0.502;
-
-/** A synced file without the kit pages. */
-function syncedFile(unavailableFonts: readonly FontName[] = []): FakeFigma {
-  return createFakeFigma({ collections, unavailableFonts });
-}
-
-/** A synced file the plugin applied the kit to, opened again for the next run. */
-async function appliedFile(): Promise<FakeFigma> {
-  const file = syncedFile();
-  await reconcileKit(file.figma, kit, true);
-  file.reopen();
-  return file;
-}
 
 /**
  * The kit in the layout the plugin wrote before each component got a page: the sets, the icons
@@ -127,7 +88,7 @@ function singlePageKit(): KitSpec {
 
 /** A synced file the plugin applied the single-page kit to, opened again for the next run. */
 async function singlePageFile(): Promise<FakeFigma> {
-  const file = syncedFile();
+  const file = syncedFile(collections);
   await reconcileKit(file.figma, singlePageKit(), true);
   file.reopen();
   return file;
@@ -135,16 +96,6 @@ async function singlePageFile(): Promise<FakeFigma> {
 
 async function changes(file: FakeFigma): Promise<readonly string[]> {
   return (await reconcileKit(file.figma, kit, false)).changes;
-}
-
-/** The page that carries a kit page key, loaded for reading. */
-async function kitPage(file: FakeFigma, key = BUTTON_PAGE): Promise<PageNode> {
-  const page = file.figma.root.children.find((candidate) => keyOf(candidate) === key);
-  if (page === undefined) {
-    throw new Error(`the file has no page with the key ${key}`);
-  }
-  await page.loadAsync();
-  return page;
 }
 
 async function iconLibrary(file: FakeFigma): Promise<FrameNode> {
@@ -233,7 +184,7 @@ describe("Apply on a synced file without the kit pages", () => {
   let applied: Awaited<ReturnType<typeof reconcileKit>>;
 
   beforeAll(async () => {
-    file = syncedFile();
+    file = syncedFile(collections);
     applied = await reconcileKit(file.figma, kit, true);
     file.reopen();
   }, 60_000);
@@ -249,6 +200,7 @@ describe("Apply on a synced file without the kit pages", () => {
         "Document: create the page Checkbox",
         "Document: create the page Switch",
         "Document: create the page Separator",
+        "Document: create the page Skeleton",
         "Document: create the page Icons",
         "Icons: create the Icons frame with 135 icons",
         "Button: create the component set Button with 420 variants",
@@ -262,6 +214,7 @@ describe("Apply on a synced file without the kit pages", () => {
         "Checkbox: create the component set Checkbox with 12 variants",
         "Switch: create the component set Switch with 16 variants",
         "Separator: create the component set Separator with 2 variants",
+        "Skeleton: create the component set Skeleton with 2 variants",
         ...CREATE_PREVIEWS,
         PLACE,
         ...CREATE_TOGGLE_PREVIEWS,
@@ -278,6 +231,8 @@ describe("Apply on a synced file without the kit pages", () => {
         PLACE_SWITCHES,
         ...CREATE_SEPARATOR_PREVIEWS,
         PLACE_SEPARATORS,
+        ...CREATE_SKELETON_PREVIEWS,
+        PLACE_SKELETONS,
       ],
       warnings: [],
     });
@@ -285,14 +240,27 @@ describe("Apply on a synced file without the kit pages", () => {
   });
 
   it("shows the Button page and leaves nothing behind on the page that was current", async () => {
-    const [first, button, toggle, badge, kbd, radio, checkbox, switchPage, separator, icons] =
+    const [first, button, toggle, badge, kbd, radio, checkbox, switchPage, separator, skeleton, icons] =
       file.figma.root.children;
     expect(first?.name).toBe("Page 1");
     await first?.loadAsync();
     expect(first?.children).toEqual([]);
     expect(
-      [button, toggle, badge, kbd, radio, checkbox, switchPage, separator, icons].map((page) => page?.name)
-    ).toEqual(["Button", "Toggle", "Badge", "Kbd", "Radio", "Checkbox", "Switch", "Separator", "Icons"]);
+      [button, toggle, badge, kbd, radio, checkbox, switchPage, separator, skeleton, icons].map(
+        (page) => page?.name
+      )
+    ).toEqual([
+      "Button",
+      "Toggle",
+      "Badge",
+      "Kbd",
+      "Radio",
+      "Checkbox",
+      "Switch",
+      "Separator",
+      "Skeleton",
+      "Icons",
+    ]);
     expect(file.figma.currentPage).toBe(button);
     expect((await kitPage(file)).children.map((node) => node.name)).toEqual([
       "Button",
@@ -328,6 +296,10 @@ describe("Apply on a synced file without the kit pages", () => {
     expect((await kitPage(file, SEPARATOR_PAGE)).children.map((node) => node.name)).toEqual([
       "Separator",
       ...SEPARATOR_PREVIEWS,
+    ]);
+    expect((await kitPage(file, SKELETON_PAGE)).children.map((node) => node.name)).toEqual([
+      "Skeleton",
+      ...SKELETON_PREVIEWS,
     ]);
     expect((await kitPage(file, ICONS_PAGE)).children.map((node) => node.name)).toEqual(["Icons"]);
   });
@@ -368,122 +340,6 @@ describe("Apply on a synced file without the kit pages", () => {
         }
       }
     }
-  });
-
-  it("exports every instance of the four previews, with the snapshot's fields", async () => {
-    let progress: readonly [number, number] | undefined;
-    const snapshot = await exportSnapshots(
-      file.figma,
-      kit.pages.map((page) => page.key),
-      (done, total) => {
-        progress = [done, total];
-      }
-    );
-    expect(new Set(Object.keys(snapshot))).toEqual(
-      new Set(["format", "version", "exportedAt", "file", "scale", "previews"])
-    );
-    // The format `figma:compare` reads, at version 1, with every PNG at 2x.
-    expect([snapshot.format, snapshot.version, snapshot.scale]).toEqual(["fuse-kit-snapshots", 1, 2]);
-    expect(snapshot.previews.map((preview) => [preview.key, preview.name, preview.instances.length])).toEqual(
-      [
-        ["preview/button/internal-fkas-private-light", PREVIEWS[0], 126],
-        ["preview/button/internal-fkas-private-dark", PREVIEWS[1], 126],
-        ["preview/button/external-fkas-private-light", PREVIEWS[2], 126],
-        ["preview/button/external-fkas-private-dark", PREVIEWS[3], 126],
-        // Toggle: 2 variants in 4 states off and on, 2 at each of 3 other sizes, and 2 with
-        // each of 2 icons. Icon toggle: the same without the icons.
-        ["preview/toggle/internal-fkas-private-light", TOGGLE_PREVIEWS[0], 48],
-        ["preview/toggle/internal-fkas-private-dark", TOGGLE_PREVIEWS[1], 48],
-        ["preview/toggle/external-fkas-private-light", TOGGLE_PREVIEWS[2], 48],
-        ["preview/toggle/external-fkas-private-dark", TOGGLE_PREVIEWS[3], 48],
-        // Badge: 19 variants at 3 sizes.
-        ["preview/badge/internal-fkas-private-light", BADGE_PREVIEWS[0], 57],
-        ["preview/badge/internal-fkas-private-dark", BADGE_PREVIEWS[1], 57],
-        ["preview/badge/external-fkas-private-light", BADGE_PREVIEWS[2], 57],
-        ["preview/badge/external-fkas-private-dark", BADGE_PREVIEWS[3], 57],
-        // Kbd: the text cap and the icon cap.
-        ["preview/kbd/internal-fkas-private-light", KBD_PREVIEWS[0], 2],
-        ["preview/kbd/internal-fkas-private-dark", KBD_PREVIEWS[1], 2],
-        ["preview/kbd/external-fkas-private-light", KBD_PREVIEWS[2], 2],
-        ["preview/kbd/external-fkas-private-dark", KBD_PREVIEWS[3], 2],
-        // Radio icon button: 5 sizes, off and on, in 5 states. Radio: off and on, in 4 states.
-        ["preview/radio/internal-fkas-private-light", RADIO_PREVIEWS[0], 58],
-        ["preview/radio/internal-fkas-private-dark", RADIO_PREVIEWS[1], 58],
-        ["preview/radio/external-fkas-private-light", RADIO_PREVIEWS[2], 58],
-        ["preview/radio/external-fkas-private-dark", RADIO_PREVIEWS[3], 58],
-        // Checkbox: off, on and mixed, in 4 states.
-        ["preview/checkbox/internal-fkas-private-light", CHECKBOX_PREVIEWS[0], 12],
-        ["preview/checkbox/internal-fkas-private-dark", CHECKBOX_PREVIEWS[1], 12],
-        ["preview/checkbox/external-fkas-private-light", CHECKBOX_PREVIEWS[2], 12],
-        ["preview/checkbox/external-fkas-private-dark", CHECKBOX_PREVIEWS[3], 12],
-        // Switch: 2 sizes, off and on, in 4 states.
-        ["preview/switch/internal-fkas-private-light", SWITCH_PREVIEWS[0], 16],
-        ["preview/switch/internal-fkas-private-dark", SWITCH_PREVIEWS[1], 16],
-        ["preview/switch/external-fkas-private-light", SWITCH_PREVIEWS[2], 16],
-        ["preview/switch/external-fkas-private-dark", SWITCH_PREVIEWS[3], 16],
-        // Separator: horizontal and vertical.
-        ["preview/separator/internal-fkas-private-light", SEPARATOR_PREVIEWS[0], 2],
-        ["preview/separator/internal-fkas-private-dark", SEPARATOR_PREVIEWS[1], 2],
-        ["preview/separator/external-fkas-private-light", SEPARATOR_PREVIEWS[2], 2],
-        ["preview/separator/external-fkas-private-dark", SEPARATOR_PREVIEWS[3], 2],
-      ]
-    );
-    expect(progress).toEqual([1284, 1284]);
-    const [first] = snapshot.previews;
-    expect(new Set(Object.keys(first ?? {}))).toEqual(new Set(["key", "name", "modes", "instances"]));
-    expect(first?.modes).toEqual(
-      expect.arrayContaining([
-        { collection: "Fuse tokens", mode: "Light" },
-        { collection: "Fuse density", mode: "Auto" },
-      ])
-    );
-    const [instance] = first?.instances ?? [];
-    expect(new Set(Object.keys(instance ?? {}))).toEqual(new Set(["key", "variant", "box", "image"]));
-    expect(instance?.key).toBe(
-      "preview/button/internal-fkas-private-light/button/variant=default,size=default,state=rest,icon=none"
-    );
-    expect(instance?.variant).toBe("button/variant=default,size=default,state=rest,icon=none");
-    expect(new Set(Object.keys(instance?.box ?? {}))).toEqual(new Set(["x", "y", "width", "height"]));
-    expect(new Set(Object.keys(instance?.image ?? {}))).toEqual(new Set(["renderBounds", "png"]));
-    // The fake draws no effects, so the render bounds are the box.
-    expect(instance?.image?.renderBounds).toEqual(instance?.box);
-    expect(instance?.image?.png).toMatch(/^[A-Za-z0-9+/]+=*$/);
-    expect(first?.instances[70]?.variant).toBe("icon-button/variant=default,size=icon,state=rest");
-  });
-
-  it("exports the density a Badge or Kbd preview pins, though none of their layers binds density", async () => {
-    const snapshot = await exportSnapshots(file.figma, [BADGE_PAGE, KBD_PAGE], () => undefined);
-    // The collections the real file's first Badge preview resolved on 2026-10-21 (rule 11): no
-    // density, which the preview pins and no Badge layer binds.
-    const names = new Map(
-      (await file.figma.variables.getLocalVariableCollectionsAsync()).map((collection) => [
-        collection.id,
-        collection.name,
-      ])
-    );
-    const [badgePreview] = (await kitPage(file, BADGE_PAGE)).children.filter(
-      (node): node is FrameNode => node.type === "FRAME"
-    );
-    expect(
-      new Set(Object.keys(badgePreview?.resolvedVariableModes ?? {}).map((id) => names.get(id)))
-    ).toEqual(new Set(["Fuse brand", "Fuse segment", "Fuse variant", "Fuse tokens"]));
-    const pins = (tokens: string, variant: string) => [
-      { collection: "Fuse brand", mode: "Fjordkraft" },
-      { collection: "Fuse density", mode: "Auto" },
-      { collection: "Fuse segment", mode: "Private" },
-      { collection: "Fuse tokens", mode: tokens },
-      { collection: "Fuse variant", mode: variant },
-    ];
-    const themes = [
-      pins("Light", "Internal"),
-      pins("Dark", "Internal"),
-      pins("Light", "External"),
-      pins("Dark", "External"),
-    ];
-    expect(snapshot.previews.map((preview) => [preview.name, preview.modes])).toEqual([
-      ...BADGE_PREVIEWS.map((name, index) => [name, themes[index]]),
-      ...KBD_PREVIEWS.map((name, index) => [name, themes[index]]),
-    ]);
   });
 
   it("writes nothing on a second Apply but showing the page", async () => {
@@ -809,7 +665,7 @@ describe("a later run on an applied file", () => {
 
 describe("a file whose label font the machine cannot load", () => {
   it("fails Plan, and stops Apply before any write", async () => {
-    const file = syncedFile([{ family: "Roboto", style: "Medium" }]);
+    const file = syncedFile(collections, [{ family: "Roboto", style: "Medium" }]);
     const message = "The kit needs the font Roboto Medium, which Figma cannot load.";
     await expect(reconcileKit(file.figma, kit, false)).rejects.toThrow(message);
     await expect(reconcileKit(file.figma, kit, true)).rejects.toThrow(message);
@@ -832,6 +688,7 @@ describe("a file the plugin laid out on one page", () => {
       "Document: create the page Checkbox",
       "Document: create the page Switch",
       "Document: create the page Separator",
+      "Document: create the page Skeleton",
       "Document: create the page Icons",
       ...[
         ...PREVIEWS,
@@ -842,6 +699,7 @@ describe("a file the plugin laid out on one page", () => {
         ...CHECKBOX_PREVIEWS,
         ...SWITCH_PREVIEWS,
         ...SEPARATOR_PREVIEWS,
+        ...SKELETON_PREVIEWS,
       ].map((name) => `Fuse components: delete ${name}`),
       "Fuse components: move Icons to the Icons page",
       "Fuse components: move Button to the Button page",
@@ -855,10 +713,11 @@ describe("a file the plugin laid out on one page", () => {
       "Fuse components: move Checkbox to the Checkbox page",
       "Fuse components: move Switch to the Switch page",
       "Fuse components: move Separator to the Separator page",
+      "Fuse components: move Skeleton to the Skeleton page",
     ];
 
     expect(await reconcileKit(file.figma, kit, false)).toEqual({
-      changes: [...pagePhase, "Document: plan the rest of the kit again once the 12 moves land"],
+      changes: [...pagePhase, "Document: plan the rest of the kit again once the 13 moves land"],
       warnings: [],
     });
     const applied = await reconcileKit(file.figma, kit, true);
@@ -881,6 +740,8 @@ describe("a file the plugin laid out on one page", () => {
         PLACE_SWITCHES,
         ...CREATE_SEPARATOR_PREVIEWS,
         PLACE_SEPARATORS,
+        ...CREATE_SKELETON_PREVIEWS,
+        PLACE_SKELETONS,
         "Document: delete the page Fuse components",
       ],
       warnings: [],
@@ -899,6 +760,7 @@ describe("a file the plugin laid out on one page", () => {
       "Checkbox",
       "Switch",
       "Separator",
+      "Skeleton",
       "Icons",
     ]);
     const button = await componentSet(file, "Button");
@@ -930,7 +792,7 @@ describe("a file the plugin laid out on one page", () => {
   });
 
   it("leaves pages named Button and Icons that it does not own alone, and creates its own", async () => {
-    const file = syncedFile();
+    const file = syncedFile(collections);
     const imported = ["Button", "Icons"].map((name) => {
       const page = file.figma.createPage();
       page.name = name;
@@ -942,7 +804,7 @@ describe("a file the plugin laid out on one page", () => {
     file.reopen();
 
     const applied = await reconcileKit(file.figma, kit, true);
-    expect(applied.changes.slice(0, 9)).toEqual([
+    expect(applied.changes.slice(0, 10)).toEqual([
       "Document: create the page Button",
       "Document: create the page Toggle",
       "Document: create the page Badge",
@@ -951,6 +813,7 @@ describe("a file the plugin laid out on one page", () => {
       "Document: create the page Checkbox",
       "Document: create the page Switch",
       "Document: create the page Separator",
+      "Document: create the page Skeleton",
       "Document: create the page Icons",
     ]);
     expect(file.figma.root.children.map((page) => page.name)).toEqual([
@@ -965,6 +828,7 @@ describe("a file the plugin laid out on one page", () => {
       "Checkbox",
       "Switch",
       "Separator",
+      "Skeleton",
       "Icons",
     ]);
     for (const { page, frame } of imported) {

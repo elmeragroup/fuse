@@ -14,6 +14,7 @@ export { checkboxVariants } from "./checkbox/checkbox-variants";
 export { kbdVariants } from "./kbd/kbd-variants";
 export { radioIconButtonVariants, radioVariants } from "./radio-group/radio-group-variants";
 export { separatorClass } from "./separator/separator-class";
+export { skeletonClass } from "./skeleton/skeleton-class";
 export { switchVariants } from "./switch/switch-variants";
 export { toggleVariants } from "./toggle/toggle-variants";
 export { cn } from "../styles/cn";
