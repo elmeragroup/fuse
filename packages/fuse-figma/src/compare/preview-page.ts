@@ -1,7 +1,8 @@
 /**
  * The page that renders one preview's cells. It loads the CSS a docs-like host loads: Tailwind's
  * preflight in the `base` layer, Fuse's standalone `styles.css`, `themes.css` and the brand
- * font. Preflight comes first, as in a Tailwind-source host, because its `border: 0 solid` and
+ * font, and then, in the `utilities` layer, the classes the host compiles in its own build, such
+ * as the lengths a docs demo gives a Separator. Preflight comes first, as in a Tailwind-source host, because its `border: 0 solid` and
  * Fuse's base rule, which gives every border the `border` role, share the `base` layer and the
  * later one wins. The page names the layers first, in the order `styles.css` declares them, so
  * preflight's import does not reorder them. The docs layout sets `font-sans text-foreground` on `<body>`, and the kit's labels
@@ -110,9 +111,16 @@ function attributes(entries: Readonly<Record<string, string>>): string {
  * @param stamps - The theme attributes for `<html>` and `<body>`.
  * @param cells - The cells, in page order.
  * @param layout - The page layout.
+ * @param hostCss - The rules of the classes the host compiles itself, which the page puts in the
+ *   `utilities` layer after Fuse's stylesheets.
  * @returns A complete HTML document.
  */
-export function previewDocument(stamps: ThemeStamps, cells: readonly PageCell[], layout: PageLayout): string {
+export function previewDocument(
+  stamps: ThemeStamps,
+  cells: readonly PageCell[],
+  layout: PageLayout,
+  hostCss: string
+): string {
   const slots = cells.map((cell, index) => {
     const { x, y } = slotOrigin(layout, index);
     return `<div data-compare-cell="${cell.id}" style="left:${x}px;top:${y}px">${cell.html}</div>`;
@@ -127,6 +135,9 @@ export function previewDocument(stamps: ThemeStamps, cells: readonly PageCell[],
 @import url("${ASSET_PATHS.styles}");
 @import url("${ASSET_PATHS.themes}");
 @import url("${ASSET_PATHS.fonts}");
+@layer utilities {
+${hostCss}
+}
 *,*::before,*::after{animation:none!important;transition:none!important}
 html,body{background:transparent!important}
 body{margin:0;font-family:var(--font-sans);color:var(--foreground);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}

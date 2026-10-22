@@ -5,7 +5,8 @@
  * the bare utility. It orders the classes that hold as the browser does, by the full class's
  * selector specificity and then its place in the output. Tailwind's own compiler resolves the
  * classes, which keeps the spec on the exact CSS a consumer ships, and the reader walks the
- * compiler's own syntax tree.
+ * compiler's own syntax tree. The same compile gives the comparison page the CSS of the classes a
+ * host app compiles itself.
  */
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -97,6 +98,66 @@ function consumerEntry(): AstNode[] {
  */
 export async function compileUtilities(classes: readonly string[]): Promise<CompiledUtilities> {
   const candidates = new Set(classes.flatMap((className) => [className, splitClassName(className).utility]));
+  return readCompiledUtilities(await buildConsumerCss([...candidates]));
+}
+
+/**
+ * Compile a host app's own classes with `fuse.css`, as a standalone-CSS host's own Tailwind build
+ * does for the classes it passes to Fuse components.
+ *
+ * @param classes - The host's classes, with or without variants.
+ * @returns The rules that select the classes, one per line, each inside the at-rules that wrap it,
+ *   such as `@media (hover: hover)`. The rest of the compile, which Fuse's own `styles.css`
+ *   already holds, stays out.
+ */
+export async function compileHostUtilities(classes: readonly string[]): Promise<string> {
+  const wanted = new Set(classes);
+  const select = (node: AstNode): AstNode[] => {
+    if (node.kind === "rule") {
+      return wanted.has(leadingClass(node.selector)?.name ?? "") ? [node] : [];
+    }
+    if (
+      node.kind === "context" ||
+      node.kind === "at-root" ||
+      (node.kind === "at-rule" && node.name === "@layer")
+    ) {
+      return node.nodes.flatMap(select);
+    }
+    if (node.kind !== "at-rule" || node.name === "@property" || node.name === "@keyframes") {
+      return [];
+    }
+    const nodes = node.nodes.flatMap(select);
+    return nodes.length === 0 ? [] : [{ ...node, nodes }];
+  };
+  return (await buildConsumerCss(classes)).flatMap(select).map(toCss).join("\n");
+}
+
+/**
+ * Serialize a node of Tailwind's syntax tree. Tailwind's own printer is not exported. Comments
+ * print nothing, and the compiler's context and at-root wrappers print their children.
+ */
+function toCss(node: AstNode): string {
+  switch (node.kind) {
+    case "rule":
+      return `${node.selector}{${node.nodes.map(toCss).join("")}}`;
+    case "at-rule":
+      return node.nodes.length === 0
+        ? `${node.name} ${node.params};`
+        : `${node.name} ${node.params}{${node.nodes.map(toCss).join("")}}`;
+    case "declaration":
+      return node.value === undefined
+        ? ""
+        : `${node.property}:${node.value}${node.important ? " !important" : ""};`;
+    case "comment":
+      return "";
+    case "context":
+    case "at-root":
+      return node.nodes.map(toCss).join("");
+  }
+}
+
+/** Build the candidates against the standalone consumer entry and `fuse.css`. */
+async function buildConsumerCss(candidates: readonly string[]): Promise<AstNode[]> {
   const stylesheets = new Map<string, string>([
     ["tailwindcss/theme.css", fileURLToPath(import.meta.resolve("tailwindcss/theme.css"))],
     ["tailwindcss/utilities.css", fileURLToPath(import.meta.resolve("tailwindcss/utilities.css"))],
@@ -122,7 +183,7 @@ export async function compileUtilities(classes: readonly string[]): Promise<Comp
       return { path: id, base, module: (await import("tailwindcss-react-aria-components")).default };
     },
   });
-  return readCompiledUtilities(compiler.build([...candidates]));
+  return compiler.build([...candidates]);
 }
 
 /**

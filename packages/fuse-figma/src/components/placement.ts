@@ -76,12 +76,21 @@ export function placeParts(parent: ParentBox, parts: readonly PlacedPart[]): Ali
 
 /**
  * Read where the root sits. The root has no parent to center it, so `relative` drops and any
- * other position stays unmapped.
+ * other position stays unmapped. It sits in no flex line either, so `align-self: auto`, the
+ * initial value, drops, and any other alignment, such as `stretch`, stays unmapped.
  *
  * @param style - The root's style.
  */
 export function placeRoot(style: LayerStyle): void {
   readPosition(style, "other");
+  style.read(
+    "align-self",
+    (value) => (normalizeCss(value) === "auto" ? value : undefined),
+    () => ({
+      outcome: "dropped",
+      detail: "the component's root sits in no row, and auto asks for no alignment",
+    })
+  );
 }
 
 /**
