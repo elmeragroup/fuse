@@ -39,6 +39,14 @@ type SourceRecord = {
 const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["accordion", ["components/accordion/accordion.tsx"]],
   ["alert-dialog", ["components/alert-dialog/alert-dialog.tsx"]],
+  [
+    "attachment",
+    [
+      "components/attachment/attachment.tsx",
+      "components/attachment/attachment-action.tsx",
+      "components/attachment/attachment-trigger.tsx",
+    ],
+  ],
   ["avatar", ["components/avatar/avatar.tsx"]],
   ["breadcrumb", ["components/breadcrumb/breadcrumb.tsx"]],
   ["button", ["components/button/button.tsx"]],
@@ -141,6 +149,7 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
 
 const SERVER_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["alert", ["components/alert/alert.tsx"]],
+  ["aspect-ratio", ["components/aspect-ratio/aspect-ratio.tsx"]],
   ["badge", ["components/badge/badge.tsx"]],
   ["card", ["components/card/card.tsx"]],
   ["code", ["components/code/code.tsx"]],
@@ -318,6 +327,9 @@ describe("RSC classification", () => {
     // Alert's documented server render uses the Item markup. Item.Root stays in the client
     // module because it calls useRender.
     ["components/item/item-markup.tsx", "server"],
+    // Attachment's media, content, text, actions and aspect ratio hold no state and read no
+    // context, so a server tree renders them inside the client root.
+    ["components/attachment/attachment-markup.tsx", "server"],
     // A directive on these files makes `CheckboxItem.Title` throw on the server and moves
     // SubSection partitioning back to the client, where it cannot work.
     ["components/checkbox/checkbox-item.tsx", "server"],
@@ -354,6 +366,7 @@ describe("RSC classification", () => {
   it.each([
     ["accordion", "Accordion"],
     ["alert-dialog", "AlertDialog"],
+    ["attachment", "Attachment"],
     ["avatar", "Avatar"],
     ["breadcrumb", "Breadcrumb"],
     ["button-group", "ButtonGroup"],

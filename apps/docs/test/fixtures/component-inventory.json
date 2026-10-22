@@ -32,6 +32,24 @@
       "alert-dialog-custom-icon.tsx"
     ]
   },
+  "aspect-ratio": {
+    "title": "Aspect Ratio",
+    "rsc": "server",
+    "demos": ["aspect-ratio-basic.tsx", "aspect-ratio-ratios.tsx", "aspect-ratio-portrait.tsx"]
+  },
+  "attachment": {
+    "title": "Attachment",
+    "rsc": "client",
+    "demos": [
+      "attachment-basic.tsx",
+      "attachment-image.tsx",
+      "attachment-states.tsx",
+      "attachment-sizes.tsx",
+      "attachment-group.tsx",
+      "attachment-trigger.tsx",
+      "attachment-upload.tsx"
+    ]
+  },
   "avatar": {
     "title": "Avatar",
     "rsc": "client",

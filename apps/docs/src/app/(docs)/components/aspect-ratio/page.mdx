@@ -1,0 +1,40 @@
+---
+lede: >
+  A frame that keeps its content at one of seven fixed width-to-height ratios.
+---
+
+import { AspectRatioBasic } from "./demos/aspect-ratio-basic";
+import { AspectRatioRatios } from "./demos/aspect-ratio-ratios";
+import { AspectRatioPortrait } from "./demos/aspect-ratio-portrait";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("aspect-ratio");
+
+<ComponentIntro slug="aspect-ratio" />
+
+<Prose>
+
+`AspectRatio` is a `div` whose height follows its width at the ratio you pass in `ratio`, written width first. Give it a width, such as `w-full max-w-md`, and its child fills the frame. An `img` or `video` with `size-full object-cover` crops to the frame instead of stretching. Round and fill the child, not the frame: the frame owns only its ratio.
+
+`ratio` is required and takes one of seven strings, `"1:1"`, `"4:3"`, `"3:4"`, `"3:2"`, `"2:3"`, `"16:9"` and `"9:16"`. Each shape comes in both orientations, since a photo taken upright on a phone arrives as 3:4. The frame writes the string to `data-ratio`. For a ratio outside the set, pass an `aspect-*` class, such as `aspect-[7/5]`, and it replaces the ratio.
+
+It is a server component and takes no `render` prop.
+
+</Prose>
+
+<Demo slug="aspect-ratio" id="basic" title="Basic" file="aspect-ratio-basic.tsx">
+  <AspectRatioBasic />
+</Demo>
+
+<Demo slug="aspect-ratio" id="ratios" title="Every ratio" file="aspect-ratio-ratios.tsx">
+  <AspectRatioRatios />
+</Demo>
+
+<Demo slug="aspect-ratio" id="portrait" title="Portrait" file="aspect-ratio-portrait.tsx">
+  <AspectRatioPortrait />
+</Demo>
+
+<ApiReference slug="aspect-ratio" />
+
+<ComponentTokens slug="aspect-ratio" />

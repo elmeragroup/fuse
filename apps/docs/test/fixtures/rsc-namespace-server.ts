@@ -1,6 +1,6 @@
 /**
  * Server module. Renders every public namespace part of the compound components whose
- * implementation is `"use client"`, plus Alert and SelectField.
+ * implementation is `"use client"`, plus Alert, SelectField and AspectRatio.
  *
  * The part lists are the public namespace shape. They are not read from the
  * implementation: a missing or renamed part fails here even if the source still parses.
@@ -21,6 +21,8 @@ import { PassThrough } from "node:stream";
 import { Accordion } from "@elmeragroup/fuse/accordion";
 import { Alert } from "@elmeragroup/fuse/alert";
 import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
+import { AspectRatio } from "@elmeragroup/fuse/aspect-ratio";
+import { Attachment } from "@elmeragroup/fuse/attachment";
 import { Avatar } from "@elmeragroup/fuse/avatar";
 import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
 import { ButtonGroup } from "@elmeragroup/fuse/button-group";
@@ -129,6 +131,9 @@ function namespaceElements(): ReactElement[] {
   return [
     ...renderNamespace("Accordion", Accordion, ["Root", "Item", "Header", "Trigger", "Content"]),
     ...renderNamespace("AlertDialog", AlertDialog, ["Root", "Trigger", "Content"]),
+    ...renderNamespace("Attachment", Attachment, ["Root", "Group", "Action", "Trigger"], {
+      server: ["Media", "AspectRatio", "Content", "Title", "Description", "Actions"],
+    }),
     ...renderNamespace("Avatar", Avatar, ["Root", "Group", "Image", "Fallback"]),
     ...renderNamespace("Breadcrumb", Breadcrumb, [
       "Root",
@@ -429,6 +434,36 @@ function selectionItemTrees(): ReactElement {
   );
 }
 
+/**
+ * AspectRatio and Attachment's markup parts hold no state, so the server runs them, here inside
+ * the client Attachment.Root.
+ */
+function attachmentTree(): ReactElement {
+  if (isClientReference(AspectRatio)) {
+    throw new Error("AspectRatio is a client reference; the server must run it");
+  }
+  return createElement(
+    "section",
+    { "data-fixture": "attachment" },
+    createElement(AspectRatio, { ratio: "16:9" }, "Site photo"),
+    createElement(
+      Attachment.Root,
+      { orientation: "vertical" },
+      createElement(
+        Attachment.Media,
+        { variant: "image" },
+        createElement(Attachment.AspectRatio, { ratio: "3:4" }, "Meter photo")
+      ),
+      createElement(
+        Attachment.Content,
+        null,
+        createElement(Attachment.Title, null, "meter.jpg"),
+        createElement(Attachment.Description, null, "JPEG · 1.2 MB")
+      )
+    )
+  );
+}
+
 const SELECT_FIELD_PLACEHOLDER = "Choose a plan";
 
 /**
@@ -479,6 +514,32 @@ function pathsTo(value: FlightJson, text: string, path: readonly string[] = []):
   return Object.entries(value).flatMap(([key, item]) => pathsTo(item, text, [...path, key]));
 }
 
+function isFlightArray(value: FlightJson): value is readonly FlightJson[] {
+  return Array.isArray(value);
+}
+
+function isFlightObject(value: FlightJson | undefined): value is FlightObject {
+  return value instanceof Object && !isFlightArray(value);
+}
+
+/**
+ * Every Flight element at any depth of `value`. An element is `["$", type, key, props, …]`;
+ * dev builds add fields after the props.
+ */
+function flightElements(value: FlightJson): { type: FlightJson | undefined; props: FlightObject }[] {
+  if (!(value instanceof Object)) {
+    return [];
+  }
+  const nested = Object.values(value).flatMap(flightElements);
+  if (isFlightArray(value) && value[0] === "$") {
+    const props = value[3];
+    if (isFlightObject(props)) {
+      return [{ type: value[1], props }, ...nested];
+    }
+  }
+  return nested;
+}
+
 function Fixture(): ReactElement {
   return createElement(
     "div",
@@ -486,7 +547,8 @@ function Fixture(): ReactElement {
     ...namespaceElements(),
     alertTree(),
     selectionItemTrees(),
-    selectFieldTree()
+    selectFieldTree(),
+    attachmentTree()
   );
 }
 
@@ -573,6 +635,23 @@ for (const text of ["Fixed price", "Locked for 12 months.", "Spot price"]) {
 
 if (!payload.includes(SELECT_FIELD_PLACEHOLDER)) {
   throw new Error(`SelectField's placeholder is missing from the server payload:\n${payload.slice(0, 1500)}`);
+}
+
+if (!payload.includes("meter.jpg")) {
+  throw new Error(`Attachment's title is missing from the server payload:\n${payload.slice(0, 1500)}`);
+}
+// The `"div"` type tells a server-rendered Attachment.AspectRatio from a client one, which
+// Flight would write as a module reference carrying the same props.
+const attachmentFrame = models.flatMap(flightElements).some(
+  ({ type, props }) =>
+    type === "div" &&
+    props["data-slot"] === "attachment-aspect-ratio" &&
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Flight props are parsed JSON, so the JSON type is the only tag a class string has
+    typeof props.className === "string" &&
+    props.className.split(/\s+/u).includes("aspect-3/4")
+);
+if (!attachmentFrame) {
+  throw new Error(`Attachment.AspectRatio was not rendered on the server:\n${payload.slice(0, 1500)}`);
 }
 
 process.stdout.write("RSC_OK\n");

@@ -325,6 +325,9 @@
   the coverage table. The build records only the declaration that wins each property, so
   `aria-pressed:bg-muted` gets no row: `data-pressed:bg-muted` sets the same property later in
   Tailwind's order.
+- Add Attachment and AspectRatio to the kit. Attachment needs its five states, three sizes and
+  both orientations, with Button instances for its actions. AspectRatio needs one frame per
+  ratio in its seven-ratio set.
 - Add Kbd group to the kit once a kit component can hold instances of another set. The group is
   the `group` slot of `kbdVariants`, a row of Kbd caps that inherit its corner through
   `*:data-[slot=kbd]:rounded-[inherit]`.

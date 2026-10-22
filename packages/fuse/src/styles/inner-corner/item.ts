@@ -26,12 +26,24 @@ export const itemSmShellClass = cn(
   publishShellBoundary
 );
 
+/** The row metrics `--row-px` and `--row-py` and the corner they leave. */
+const rowInsetClass = cn(
+  "px-(--row-px) py-(--row-py) [--shell-inner:max(0px,--theme(--radius-md)-1px-var(--row-px))]"
+);
+
 /**
- * An extra-small Item: a list row, padded with the row metrics `--row-px` and `--row-py`, so a
- * one-line Item matches a menu row. It pads none inside a DropdownMenu.
+ * A list row shell for a `rounded-md` part with a 1px border, padded with the row metrics
+ * `--row-px` and `--row-py`, so a one-line row matches a menu row. It pads the same inside a
+ * DropdownMenu. Attachment's `xs` size uses it.
+ */
+export const rowShellClass = cn(rowInsetClass, publishShellBoundary);
+
+/**
+ * An extra-small Item: the list row shell, except that it pads none inside a DropdownMenu.
  */
 export const itemXsShellClass = cn(
-  "px-(--row-px) py-(--row-py) [--shell-inner:max(0px,--theme(--radius-md)-1px-var(--row-px))] in-data-[slot=dropdown-menu-content]:p-0 in-data-[slot=dropdown-menu-content]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]",
+  rowInsetClass,
+  "in-data-[slot=dropdown-menu-content]:p-0 in-data-[slot=dropdown-menu-content]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]",
   publishShellBoundary
 );
 
