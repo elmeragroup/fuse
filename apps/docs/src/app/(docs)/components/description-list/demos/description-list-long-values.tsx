@@ -4,10 +4,10 @@ import { Card } from "@elmeragroup/fuse/card";
 import { DescriptionList } from "@elmeragroup/fuse/description-list";
 
 /**
- * The longest rows of a customer-facing order summary on a phone: a creation time with seconds, an
- * 18-digit metering point ID, a street address, an email address too wide to sit beside its term,
- * which moves under it whole, and an invoice line whose email address is wider than the whole row,
- * which moves under its term and breaks there instead of overflowing.
+ * The longest rows of a customer-facing order summary: a creation time with seconds, an 18-digit
+ * metering point ID, an invoice line that ends in an email address, a street address and a long
+ * email address. On a narrow phone at comfortable density, the email address moves under its term
+ * whole, and the invoice line's address, wider than the row, moves under its term and breaks there.
  */
 export function DescriptionListLongValues() {
   return (

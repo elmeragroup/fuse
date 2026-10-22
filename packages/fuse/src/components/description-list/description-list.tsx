@@ -88,11 +88,12 @@ function DescriptionListContent({
 // list's shared columns, and draws the rule above itself unless it is the first. Only Items draw
 // rules, so the terms or details of one group are never split by one. An inline Item is a wrapping
 // flex row. Its term and details start at their longest word and grow alike up to their full width,
-// so a short one gives the rest to the other, and the row wraps only when the two longest words
-// can't share it: then the details moves under its term instead of breaking a word, and breaks one
-// only when it is wider than the row. The term never breaks a word, so a single term word wider than
-// the whole row would overflow it. An Item's earlier terms and later details take lines of their
-// own, so its last term pairs with its first details, as in the responsive layout.
+// so a short one gives the rest to the other, and a term and its details wrap apart only when their
+// two longest words can't share the row: then the details moves under its term instead of breaking
+// a word, and breaks one only when it is wider than the row. The last term never breaks a word, so a
+// single word wider than the whole row would overflow it. An Item's earlier terms and later details
+// take lines of their own, capped at the row, so an earlier term does break a word that wide; its
+// last term pairs with its first details, as in the responsive layout.
 function DescriptionListItem({ className, ...props }: DescriptionListItemProps): ReactElement {
   return (
     <div

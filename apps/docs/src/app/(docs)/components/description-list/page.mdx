@@ -22,7 +22,7 @@ Wrap each term and its details in an `Item`, the `<div>` HTML allows around one 
   <DescriptionListBasic />
 </Demo>
 
-An Item can hold several terms of one details, or several details of one term. Its last term shares a row with its first details; earlier terms and later details take rows of their own. Rules fall between Items only.
+An Item can hold several terms of one details, or several details of one term. Its last term pairs with its first details; earlier terms and later details take rows of their own. Rules fall between Items only.
 
 <Demo
   slug="description-list"
@@ -48,7 +48,7 @@ Each inline Item shares its own row between its term and details, whatever the o
   <DescriptionListInlineRows />
 </Demo>
 
-Values in a real order summary are often longer than their labels: a time with seconds, an 18-digit ID, an invoice line that ends in an email address. A value wraps between its words beside its term. An email address too wide to sit beside its term moves under it whole, and one wider than the whole row breaks inside it there rather than overflow the card; a `<wbr>` before the `@` chooses where.
+Values in a real order summary are often longer than their labels: a time with seconds, an 18-digit ID, an invoice line that ends in an email address. A value wraps between its words beside its term. An email address too wide to sit beside its term moves under it whole, and one wider than the whole row breaks inside it there rather than overflow the card. A `<wbr>` before the `@` lets it break at the `@` instead, which often keeps it beside its term.
 
 <Demo slug="description-list" id="long-values" title="Long values" file="description-list-long-values.tsx">
   <DescriptionListLongValues />

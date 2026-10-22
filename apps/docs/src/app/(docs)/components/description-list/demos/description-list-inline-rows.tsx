@@ -5,9 +5,8 @@ import { DescriptionList } from "@elmeragroup/fuse/description-list";
 
 /**
  * A phone-width order card whose rows differ in width. Each Item shares its own row between its
- * term and details: a long term wraps beside a short value, a long value wraps beside a short term,
- * and an email address stays whole beside a term that wraps. An Item carries attributes such as a
- * test id.
+ * term and details, so a long term or a long value takes the room the other leaves, whatever the
+ * other rows hold. An Item carries attributes such as a test id.
  */
 export function DescriptionListInlineRows() {
   return (
