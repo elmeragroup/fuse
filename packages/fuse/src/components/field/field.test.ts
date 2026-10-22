@@ -16,11 +16,16 @@ describe("fieldVariants orientation", () => {
     const verticalOnly = vertical.filter((token) => !horizontal.includes(token));
     const horizontalOnly = horizontal.filter((token) => !vertical.includes(token));
     const shared = vertical.filter((token) => horizontal.includes(token));
+    // The md row resets vertical's child stretch through the stretch's own selector, so Tailwind
+    // emits the reset after the stretch.
+    const mdResets = vertical
+      .filter((token) => token.endsWith(":w-full"))
+      .map((token) => `@md/field-group:${token.replace(/:w-full$/, ":w-auto")}`);
     const expected = [
       ...shared,
       ...verticalOnly,
       ...horizontalOnly.map((token) => `@md/field-group:${token}`),
-      "@md/field-group:*:w-auto",
+      ...mdResets,
     ];
     expect(rootTokens("responsive").toSorted()).toEqual(expected.toSorted());
   });

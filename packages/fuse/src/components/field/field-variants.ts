@@ -26,14 +26,21 @@ export const fieldVariants = tv({
   },
   variants: {
     orientation: {
+      // A vertical root stretches its children to its width, except a Checkbox or Switch, which keep
+      // their own size. Stretched in a root that sized to its content, they shrank to their border
+      // or thumb. `:where()` keeps the selector at the specificity of one class.
       vertical: {
-        root: "flex-col *:w-full [&>.sr-only]:w-auto",
+        root: "flex-col [&>.sr-only]:w-auto [&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full",
       },
       horizontal: {
         root: "flex-row items-center has-[>[data-slot=field-content]]:items-start *:data-field-heading:flex-auto has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
       },
+      // The md row resets the stretch through the stretch's own child selector, so it leaves a
+      // Checkbox or Switch at its size, as the horizontal orientation does. Tailwind emits that
+      // reset after the stretch, since it adds a variant to the same selector, and it wins at equal
+      // specificity. A `*:` reset sorts before the stretch and loses.
       responsive: {
-        root: "@md/field-group:flex-row @md/field-group:items-center @md/field-group:*:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-field-heading:flex-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px flex-col *:w-full [&>.sr-only]:w-auto",
+        root: "@md/field-group:flex-row @md/field-group:items-center @md/field-group:[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-field-heading:flex-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px flex-col [&>.sr-only]:w-auto [&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full",
       },
     },
   },

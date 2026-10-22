@@ -9,8 +9,7 @@ import { selfFocusRingClass } from "../../styles/utils";
  * the Figma component sync.
  *
  * - `root` is the track, 32px by 18.4px at `default` and 24px by 14px at `sm`. Its `max-w-*`
- *   keeps it at that width as a direct child of a vertical `Field.Root`, whose `*:w-full` would
- *   otherwise stretch it, as Checkbox's `max-w-4` does.
+ *   caps a wider `className` width at the size's, as Checkbox's `max-w-4` does.
  * - `thumb` is the 16px or 12px dot. It sits at the track's start while unchecked, drawn at 75%,
  *   and at its end while checked.
  * - `control` is what the Switch control adds to the track: the `peer` marker for a sibling's
