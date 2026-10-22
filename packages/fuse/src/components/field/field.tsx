@@ -11,7 +11,6 @@ import type { VariantProps } from "tailwind-variants";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
-import { fieldLabelCardShellClass } from "../../styles/inner-corner/field-label";
 import { labelTypeClass } from "../../styles/label-type";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
@@ -163,6 +162,8 @@ export function FieldContent({ className, ...props }: ComponentProps<"div">): Re
 
 const fieldHeadingClassName = fieldVariants().heading();
 
+const fieldLabelClassName = fieldVariants().label();
+
 /**
  * A label whose direct child is a `Checkbox` renders as a choice row: centered with a pointer
  * cursor. The heading weight is the same as any other label; a consumer `font-*` class wins through
@@ -176,14 +177,7 @@ export function FieldLabel({
     <FieldPrimitive.Label
       data-slot="field-label"
       data-field-heading=""
-      className={mergeClassName(
-        className,
-        fieldLabelCardShellClass,
-        "group/field-label peer/field-label has-data-checked:border-primary/30",
-        "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col",
-        "has-[>[data-slot=checkbox]]:items-center has-[>[data-slot=checkbox]]:cursor-pointer",
-        fieldHeadingClassName
-      )}
+      className={mergeClassName(className, fieldLabelClassName)}
       {...definedProps(props)}
     />
   );

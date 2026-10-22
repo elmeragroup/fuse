@@ -865,6 +865,7 @@ describe("the preview frames", () => {
       { key: "page/separator", name: "Separator" },
       { key: "page/skeleton", name: "Skeleton" },
       { key: "page/loader", name: "Loader" },
+      { key: "page/label", name: "Label" },
       { key: "page/icons", name: "Icons" },
     ]);
     expect(spec.componentSets.map((set) => [set.key, set.page])).toEqual([
@@ -881,6 +882,7 @@ describe("the preview frames", () => {
       ["separator", "page/separator"],
       ["skeleton", "page/skeleton"],
       ["loader", "page/loader"],
+      ["label", "page/label"],
     ]);
     expect(spec.icons.page).toBe("page/icons");
   });
@@ -898,6 +900,7 @@ describe("the preview frames", () => {
         "separator",
         "skeleton",
         "loader",
+        "label",
       ].flatMap((page) =>
         [
           "internal-fkas-private-light",
@@ -946,6 +949,7 @@ describe("the preview frames", () => {
       ["page/separator", [["separator", "Separator"]]],
       ["page/skeleton", [["skeleton", "Skeleton"]]],
       ["page/loader", [["loader", "Loader"]]],
+      ["page/label", [["label", "Label"]]],
     ]);
     for (const preview of spec.previews) {
       expect(preview.groups.map((group) => [group.key, group.name])).toEqual(

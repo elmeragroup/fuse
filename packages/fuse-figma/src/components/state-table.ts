@@ -14,15 +14,15 @@ import { axisValues } from "./kit-spec";
  * - `condition`: the class applies in the cells where the variant holds.
  * - `child`: the class styles the icons the selector reaches.
  * - `omitted`: no cell shows the state, so the class is dropped.
- * - `omitted-element`: the class styles a pseudo-element the kit draws no layer for, so it is
- *   dropped with the definition's reason.
+ * - `omitted-for`: the class styles a pseudo-element the kit draws no layer for, or the component
+ *   inside a composition the kit does not draw, so it is dropped with the definition's reason.
  * - `unmodelled`: the definition neither models nor omits the variant, so the class is unmapped.
  */
 export type VariantMeaning =
   | { readonly kind: "condition"; readonly holds: (cell: Cell) => boolean }
   | { readonly kind: "child"; readonly selects: (slot: IconSlot) => boolean }
   | { readonly kind: "omitted" }
-  | { readonly kind: "omitted-element"; readonly reason: string }
+  | { readonly kind: "omitted-for"; readonly reason: string }
   | { readonly kind: "unmodelled" };
 
 /** The meaning of each variant for one definition. */
@@ -46,6 +46,8 @@ const DISABLED_BY_ROOT = {
   // A span never matches `:disabled`. Base UI keeps a disabled span focusable and stamps
   // `aria-disabled="true"` and `data-disabled` on it.
   "base-ui-span": ["aria-disabled", "data-disabled"],
+  // Base UI maps the Field's state onto its label as data attributes, `data-disabled` among them.
+  "base-ui-field-label": ["data-disabled"],
 } as const satisfies Record<RootKind, readonly string[]>;
 
 /** `has-data-[icon=…]:` holds while some icon of the cell, or the span around it, carries the `data-icon`. */
@@ -92,7 +94,15 @@ const FIXED_VARIANTS = new Set([...ICON_EDGES.keys(), ...CHILD_SELECTORS.keys(),
 export function makeStateTable(
   definition: Pick<
     ComponentDefinition,
-    "name" | "rootKind" | "axes" | "states" | "facts" | "omittedStates" | "omittedPseudoElements" | "iconsFor"
+    | "name"
+    | "rootKind"
+    | "axes"
+    | "states"
+    | "facts"
+    | "omittedStates"
+    | "omittedPseudoElements"
+    | "omittedCompositions"
+    | "iconsFor"
   >
 ): StateTable {
   const stateValues = axisValues(definition, "state");
@@ -103,6 +113,7 @@ export function makeStateTable(
     throw new Error(`${definition.name} has a disabled state and names no root kind`);
   }
   const omittedElements = definition.omittedPseudoElements ?? new Map<string, string>();
+  const omittedCompositions = definition.omittedCompositions ?? new Map<string, string>();
   // Every variant this table gives the definition a meaning.
   const sharedVariants = new Set([...FIXED_VARIANTS, ...[...sharedStates.values()].flat()]);
 
@@ -112,6 +123,7 @@ export function makeStateTable(
     { variants: new Set(definition.facts.keys()), shared: sharedVariants },
     { variants: definition.omittedStates, shared: sharedVariants },
     { variants: new Set(omittedElements.keys()), shared: sharedVariants },
+    { variants: new Set(omittedCompositions.keys()), shared: sharedVariants },
   ];
   for (const source of sources) {
     for (const variant of source.variants) {
@@ -151,9 +163,9 @@ export function makeStateTable(
     if (fact !== undefined) {
       return { kind: "condition", holds: fact };
     }
-    const reason = omittedElements.get(variant);
+    const reason = omittedElements.get(variant) ?? omittedCompositions.get(variant);
     if (reason !== undefined) {
-      return { kind: "omitted-element", reason };
+      return { kind: "omitted-for", reason };
     }
     return SHARED_OMISSIONS.has(variant) || definition.omittedStates.has(variant)
       ? { kind: "omitted" }

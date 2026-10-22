@@ -21,6 +21,7 @@ const SWITCH_PREVIEWS = previewsOf("Switch");
 const SEPARATOR_PREVIEWS = previewsOf("Separator");
 const SKELETON_PREVIEWS = previewsOf("Skeleton");
 const LOADER_PREVIEWS = previewsOf("Loader");
+const LABEL_PREVIEWS = previewsOf("Label");
 
 describe("Export snapshots from an applied file", () => {
   let kit: KitSpec;
@@ -97,9 +98,14 @@ describe("Export snapshots from an applied file", () => {
         ["preview/loader/internal-fkas-private-dark", LOADER_PREVIEWS[1], 5],
         ["preview/loader/external-fkas-private-light", LOADER_PREVIEWS[2], 5],
         ["preview/loader/external-fkas-private-dark", LOADER_PREVIEWS[3], 5],
+        // Label: rest and disabled.
+        ["preview/label/internal-fkas-private-light", LABEL_PREVIEWS[0], 2],
+        ["preview/label/internal-fkas-private-dark", LABEL_PREVIEWS[1], 2],
+        ["preview/label/external-fkas-private-light", LABEL_PREVIEWS[2], 2],
+        ["preview/label/external-fkas-private-dark", LABEL_PREVIEWS[3], 2],
       ]
     );
-    expect(progress).toEqual([1312, 1312]);
+    expect(progress).toEqual([1320, 1320]);
     const [first] = snapshot.previews;
     expect(new Set(Object.keys(first ?? {}))).toEqual(new Set(["key", "name", "modes", "instances"]));
     expect(first?.modes).toEqual(

@@ -57,6 +57,28 @@ const ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => boolean>(
 ]);
 
 /**
+ * Whether an ancestor matches each group variant, which selects the measured element below it:
+ * `group-data-disabled/field:` compiles to `:where(.group\/field)[data-disabled] *`, so it holds
+ * below an element that carries the `group/field` marker and `data-disabled`, as a disabled
+ * `Field.Root` does.
+ */
+const GROUP_VARIANTS = new Map<string, (ancestor: MarkupElement) => boolean>([
+  [
+    "group-data-disabled/field",
+    (ancestor) =>
+      (ancestor.attributes.get("class") ?? "").split(/\s+/).includes("group/field") &&
+      ancestor.attributes.has("data-disabled"),
+  ],
+]);
+
+/** The ancestors of an element, its parent first. */
+function ancestorsOf(elements: readonly MarkupElement[], index: number): readonly MarkupElement[] {
+  const parent = elements[index]?.parent;
+  const element = parent === undefined ? undefined : elements[parent];
+  return parent === undefined || element === undefined ? [] : [element, ...ancestorsOf(elements, parent)];
+}
+
+/**
  * The condition variants static markup cannot check against the measured element's attributes:
  * the pseudo classes the page forces, and the icon edge, which holds on a descendant.
  */
@@ -238,7 +260,8 @@ describe("each kit definition against the markup of its component", () => {
         ...recipeConditions,
       ]);
       const unlisted = [...named].filter(
-        (variant) => !NOT_ATTRIBUTES.has(variant) && !ATTRIBUTE_VARIANTS.has(variant)
+        (variant) =>
+          !NOT_ATTRIBUTES.has(variant) && !ATTRIBUTE_VARIANTS.has(variant) && !GROUP_VARIANTS.has(variant)
       );
       expect(unlisted).toEqual([]);
     }
@@ -271,6 +294,11 @@ describe("each kit definition against the markup of its component", () => {
         for (const { root, measured } of roots) {
           for (const [variant, carries] of ATTRIBUTE_VARIANTS) {
             expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(carries(root));
+          }
+          for (const [variant, matches] of GROUP_VARIANTS) {
+            expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(
+              ancestorsOf(elements, measured).some(matches)
+            );
           }
           const names = new Set(boxNames(definition, definition.slot));
           const slots = slotIcons(definition, definition.slot, cell);
