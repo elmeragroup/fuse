@@ -62,6 +62,12 @@ export type IconSlot = {
   readonly icon: string;
   /** The INSTANCE_SWAP property that picks the icon, or undefined for a fixed icon. */
   readonly swapProperty: string | undefined;
+  /**
+   * The classes the `<svg>` carries itself, such as Loader's `animate-spin size-4`. They cascade
+   * with the child selectors that reach the icon, each by its specificity, over what the icon
+   * inherits. An icon without them takes its style from its boxes alone.
+   */
+  readonly classes?: string;
 };
 
 /**
@@ -291,14 +297,18 @@ export function variantKey(definition: Pick<ComponentDefinition, "key" | "axes">
 }
 
 /**
- * Every class the root and its parts use in any cell of the matrix, which the build compiles.
+ * Every class the root, its parts and their icons use in any cell of the matrix, which the build
+ * compiles.
  *
  * @param definition - The component.
- * @returns The classes, in the order the boxes first use them.
+ * @returns The classes, in the order the boxes first use them, each box's before its icons'.
  */
 export function definitionClasses(definition: ComponentDefinition): readonly string[] {
   return matrixCells(definition.axes).flatMap((cell) =>
-    boxesOf(definition).flatMap((box) => splitClasses(box.classesFor(cell)))
+    boxesOf(definition).flatMap((box) => [
+      ...splitClasses(box.classesFor(cell)),
+      ...box.iconsFor(cell).flatMap((slot) => splitClasses(slot.classes ?? "")),
+    ])
   );
 }
 

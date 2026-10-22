@@ -876,3 +876,47 @@ describe("a part drawn at a scale", () => {
     expect(rows).toEqual([["data-unchecked:scale-x-75", "unmapped"]]);
   });
 });
+
+// Unit under test: the cascade `buildComponentSet` runs for an icon that carries classes of its
+// own, as Loader's `<SpinnerGap className="animate-spin size-4" />` does. Oracle: CSS Selectors
+// specificity. The icon's own `.size-6` is (0,1,0), and its box's `[&_svg]:size-4` compiles to
+// `.\[\&_svg\]\:size-4 svg`, (0,1,1). So the box's child selector wins where it reaches the icon,
+// whatever order Tailwind emits the two in, and the icon's own class sizes it, 24px, where nothing
+// else does.
+describe("an icon with classes of its own", () => {
+  async function build(rootClasses: string, iconClasses: string) {
+    const definition: ComponentDefinition = {
+      ...CHIP,
+      classesFor: () => rootClasses,
+      iconsFor: () => [{ ...ICON, classes: iconClasses }],
+    };
+    const { componentSet, coverage } = buildComponentSet(definition, {
+      ...context,
+      compiled: await compileUtilities(definitionClasses(definition)),
+    });
+    const [icon] = componentSet.variants[0]?.root.children ?? [];
+    return { size: icon?.kind === "icon" ? icon.size : undefined, coverage };
+  }
+
+  it("takes its size from its own class where no child selector reaches it", async () => {
+    const { size, coverage } = await build("text-[#000000]", "size-6");
+    expect(size).toEqual({ kind: "literal", value: 24 });
+    expect(
+      coverage
+        .filter((row) => row.className === "size-6")
+        .map((row) => `${row.part} ${row.property}: ${row.outcome}`)
+        .toSorted()
+    ).toEqual(["Icon height: literal", "Icon width: literal"]);
+  });
+
+  it("loses to its box's child selector, which is more specific", async () => {
+    const { size } = await build("text-[#000000] [&_svg]:size-4", "size-6");
+    expect(size).toEqual({ kind: "literal", value: 16 });
+  });
+
+  // Oracle: `[class*='size-']` matches a class attribute holding `size-`, so `:not()` skips the icon.
+  it("keeps its own size where the box's child selector skips an icon with a size class", async () => {
+    const { size } = await build("text-[#000000] [&_svg:not([class*='size-'])]:size-4", "size-6");
+    expect(size).toEqual({ kind: "literal", value: 24 });
+  });
+});

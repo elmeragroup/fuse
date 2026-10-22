@@ -1,7 +1,8 @@
 /**
  * The CSS cascade of a component set, cell by cell, as a browser runs it in one cascade layer.
  * Each box of a cell, the root or a part, cascades its own classes over what it inherits, and
- * each icon cascades the child-selector classes that reach it over what its box passes down.
+ * each icon cascades its own classes and the child-selector classes that reach it over what its
+ * box passes down.
  * The Figma mapping reads each layer's computed style through a {@link LayerStyle}.
  *
  * Every declaration in a computed style names its provenance: the layer it applies to, and the
@@ -387,19 +388,27 @@ export class BoxCascade {
   /**
    * Cascade an icon this box lists, over what this box passes down. A child selector on this
    * box reaches the icon as the selector says. One on a box above reaches it as a descendant,
-   * never as a direct child.
+   * never as a direct child. The icon's own classes cascade with them by specificity, so a box's
+   * `[&_svg]:size-4` (0,1,1) beats the icon's own `size-6` (0,1,0), as in CSS.
    *
    * @param slot - The icon.
    * @returns The icon's computed style.
+   * @throws When one of the icon's own classes has a child selector, which the builder does not
+   *   model inside an icon.
    */
   icon(slot: IconSlot): LayerStyle {
     const selected = [
       ...this.#ancestorRules.filter((rule) => rule.selects({ ...slot, direct: false })),
       ...this.#ownRules.filter((rule) => rule.selects(slot)),
     ];
+    const own = boxClasses(slot.classes ?? "", slot.name, this.#ledger.scope);
+    const [nested] = own.childRules;
+    if (nested !== undefined) {
+      throw new Error(`the ${slot.name}'s own class ${nested.applied.className} selects inside the icon`);
+    }
     const layer = this.#ledger.add(
       inheritance(this.#layer, this.#ledger.scope.context),
-      selected.map((rule) => rule.applied),
+      [...selected.map((rule) => rule.applied), ...own.applied],
       this.#layer
     );
     return new LayerStyle(this.#ledger, layer);

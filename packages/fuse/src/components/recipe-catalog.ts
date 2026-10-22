@@ -12,6 +12,7 @@ export { badgeVariants } from "./badge/badge-variants";
 export { buttonVariants } from "./button/button-variants";
 export { checkboxVariants } from "./checkbox/checkbox-variants";
 export { kbdVariants } from "./kbd/kbd-variants";
+export { loaderVariants } from "./loader/loader-variants";
 export { radioIconButtonVariants, radioVariants } from "./radio-group/radio-group-variants";
 export { separatorClass } from "./separator/separator-class";
 export { skeletonClass } from "./skeleton/skeleton-class";
