@@ -7,8 +7,8 @@ Tailwind's own `shadow-xs` colour, black at 5%, so they look as before. External
 shadow: `--card-shadow` is a zero-alpha colour, `oklch(0 0 0 / 0)`, in light and dark, as the
 external order flows draw their cards. Before, every external `Card` cast the 5% black shadow. The
 shadow keeps its geometry, so a brand or host can tint it back by setting `--card-shadow`.
-`CheckboxCard` and the TextField `card` box keep the plain `shadow-xs`. A `shadow-*` class on a
-`Card` still replaces the shadow, in that class's own colour. A box you build from
+`CheckboxCard` and the TextField `card` box keep the plain `shadow-xs`. A shadow size class on a
+`Card`, such as `shadow-md`, still replaces the shadow, and a shadow colour class tints it. A box you build from
 `cardVariants().base()` takes `--card-shadow` too, so add `shadow-xs` where it must keep its
 elevation, as `CheckboxCard` and the TextField `card` box do. A host that maps its own tokens onto
 Fuse roles can set the role directly; without it cards fall back to the 5% black shadow.

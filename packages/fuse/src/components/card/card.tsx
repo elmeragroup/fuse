@@ -59,7 +59,7 @@ type CardDescriptionProps = HTMLAttributes<HTMLParagraphElement> &
  * Its 1px edge is the theme's `--card-border`: `--border` in internal themes and a zero-alpha
  * colour in external ones. A border colour class still wins. It casts Tailwind's `shadow-xs` in
  * the theme's `--card-shadow`: 5% black in internal themes and zero alpha in external ones. A
- * `shadow-*` class replaces it.
+ * shadow size class replaces it, and a shadow colour class tints it.
  */
 function CardRoot({ className, direction, size = "default", ...props }: CardRootProps): ReactElement {
   const { base } = cardVariants({ direction, size });

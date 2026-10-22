@@ -17,7 +17,7 @@ import { selfFocusRingClass } from "../../styles/utils";
  * The base draws its edge in `--card-border` and casts a `shadow-xs` in `--card-shadow`, both of
  * which external themes make transparent; both composers pin `border-border` and `shadow-xs` over
  * them, since a field box and a control keep a visible edge and elevation. The shadow is one
- * utility, so a consumer `shadow-*` replaces it whole and casts in its own colour.
+ * utility, so a consumer shadow size class replaces it whole, and a shadow colour class tints it.
  * Horizontal cards keep their header text in a grid and wrap whole sections when
  * the container cannot fit them side by side.
  * The external ref's surface/padding axes are decomposed away into `direction` and `size`.
