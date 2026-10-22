@@ -49,6 +49,7 @@ describe("TOKEN_TABLE", () => {
     expect(sectionTokens("variant")).toEqual([
       "card-border",
       "card-section-divider",
+      "card-shadow",
       "button-outline",
       "selection-border",
       "selection-checked-border",
@@ -67,6 +68,7 @@ describe("LIGHT_ONLY_TOKENS", () => {
       [
         "card-border",
         "card-section-divider",
+        "card-shadow",
         "button-outline",
         "selection-border",
         "selection-checked-border",

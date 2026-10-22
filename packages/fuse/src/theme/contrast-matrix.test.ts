@@ -172,8 +172,9 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     // carries the row's state at 3:1, external themes make the row edge transparent, and the
     // divider between stacked rows is decorative. Card and the `card` Accordion item draw
     // `--card-border`, which has no floor either: a card is a container, and external themes
-    // make its edge transparent. The line between a Card's stacked sections, `--card-section-divider`,
-    // has none: it separates segments of one container, and external themes draw it in the page tint.
+    // make its edge, and Card's `--card-shadow`, transparent. The line between a Card's stacked
+    // sections, `--card-section-divider`, has none: it separates segments of one container, and
+    // external themes draw it in the page tint.
     schemes: ["light", "dark"],
     matches: () => true,
     pairs: [["border", "background"]],

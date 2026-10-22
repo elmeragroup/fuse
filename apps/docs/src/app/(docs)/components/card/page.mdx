@@ -54,7 +54,7 @@ A card pads its sections, and spaces them, with a surface tier. The default size
   <CardSizes />
 </Demo>
 
-A card draws its 1px edge in the theme's `--card-border`. Internal themes draw it in `--border`. External themes draw no edge, so a white card stands on the page tint by its fill and shadow, and a card on a card-coloured surface, such as a nested card, has no outline. A border colour class on the card still wins. To change the edge, override `--card-border` on the `ThemeScope` or on any element around the cards.
+A card draws its 1px edge in the theme's `--card-border` and casts a small shadow in `--card-shadow`. Internal themes draw the edge in `--border` and the shadow in black at 5%. External themes draw neither, so a white card stands on the page tint by its fill alone, and a card on a card-coloured surface, such as a nested card, has no outline. A border colour class or a shadow size class such as `shadow-md` on the card still wins, and a shadow colour class tints the card's own shadow. To change the edge or shadow colour, override `--card-border` or `--card-shadow` on the `ThemeScope` or on any element around the cards.
 
 <Demo slug="card" id="nested" title="Nested" file="card-nested.tsx">
   <CardNested />

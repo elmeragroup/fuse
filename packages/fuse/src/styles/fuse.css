@@ -147,6 +147,7 @@
   --color-ring: var(--ring);
   --color-card-border: var(--card-border, var(--border));
   --color-card-section-divider: var(--card-section-divider, var(--border));
+  --color-card-shadow: var(--card-shadow, oklch(0 0 0 / 0.05));
   --color-button-outline: var(--button-outline, var(--border));
   --color-selection-border: var(--selection-border, var(--border));
   --color-selection-checked-border: var(--selection-checked-border, var(--primary));

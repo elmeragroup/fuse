@@ -81,6 +81,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: var(--border);
   --card-section-divider: var(--border);
+  --card-shadow: oklch(0 0 0 / 0.05);
   --button-outline: var(--border);
   --selection-border: var(--border);
   --selection-checked-border: var(--primary);
@@ -203,6 +204,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: var(--border);
   --card-section-divider: var(--border);
+  --card-shadow: oklch(0 0 0 / 0.05);
   --button-outline: var(--border);
   --selection-border: var(--border);
   --selection-checked-border: var(--primary);
@@ -250,6 +252,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: oklch(0 0 0 / 0);
   --card-section-divider: var(--background);
+  --card-shadow: oklch(0 0 0 / 0);
   --button-outline: var(--foreground);
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
@@ -317,6 +320,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: oklch(0 0 0 / 0);
   --card-section-divider: var(--background);
+  --card-shadow: oklch(0 0 0 / 0);
   --button-outline: var(--foreground);
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
@@ -364,6 +368,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: oklch(0 0 0 / 0);
   --card-section-divider: var(--background);
+  --card-shadow: oklch(0 0 0 / 0);
   --button-outline: var(--foreground);
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
@@ -411,6 +416,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: oklch(0 0 0 / 0);
   --card-section-divider: var(--background);
+  --card-shadow: oklch(0 0 0 / 0);
   --button-outline: var(--foreground);
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
@@ -458,6 +464,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: oklch(0 0 0 / 0);
   --card-section-divider: var(--background);
+  --card-shadow: oklch(0 0 0 / 0);
   --button-outline: var(--foreground);
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
@@ -505,6 +512,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: oklch(0 0 0 / 0);
   --card-section-divider: var(--background);
+  --card-shadow: oklch(0 0 0 / 0);
   --button-outline: var(--foreground);
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
@@ -552,6 +560,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: oklch(0 0 0 / 0);
   --card-section-divider: var(--background);
+  --card-shadow: oklch(0 0 0 / 0);
   --button-outline: var(--foreground);
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
@@ -622,6 +631,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: var(--border);
   --card-section-divider: var(--border);
+  --card-shadow: oklch(0 0 0 / 0.05);
   --button-outline: var(--border);
   --selection-border: var(--border);
   --selection-checked-border: var(--primary);
@@ -758,6 +768,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: oklch(0 0 0 / 0);
   --card-section-divider: var(--background);
+  --card-shadow: oklch(0 0 0 / 0);
   --button-outline: var(--foreground);
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
@@ -858,6 +869,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: oklch(0 0 0 / 0);
   --card-section-divider: var(--background);
+  --card-shadow: oklch(0 0 0 / 0);
   --button-outline: var(--foreground);
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
@@ -958,6 +970,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: oklch(0 0 0 / 0);
   --card-section-divider: var(--background);
+  --card-shadow: oklch(0 0 0 / 0);
   --button-outline: var(--foreground);
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
@@ -1058,6 +1071,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: oklch(0 0 0 / 0);
   --card-section-divider: var(--background);
+  --card-shadow: oklch(0 0 0 / 0);
   --button-outline: var(--foreground);
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
@@ -1158,6 +1172,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: oklch(0 0 0 / 0);
   --card-section-divider: var(--background);
+  --card-shadow: oklch(0 0 0 / 0);
   --button-outline: var(--foreground);
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
@@ -1258,6 +1273,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: oklch(0 0 0 / 0);
   --card-section-divider: var(--background);
+  --card-shadow: oklch(0 0 0 / 0);
   --button-outline: var(--foreground);
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
@@ -1358,6 +1374,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: oklch(0 0 0 / 0);
   --card-section-divider: var(--background);
+  --card-shadow: oklch(0 0 0 / 0);
   --button-outline: var(--foreground);
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
@@ -1458,6 +1475,7 @@
   --ring: oklch(0.6 0 0);
   --card-border: oklch(0 0 0 / 0);
   --card-section-divider: var(--background);
+  --card-shadow: oklch(0 0 0 / 0);
   --button-outline: var(--foreground);
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
