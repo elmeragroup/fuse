@@ -4,10 +4,13 @@
  * onto Figma fields. Every declaration it reads lands in the coverage table with what became
  * of it.
  */
+import { readSizing, roomInside, rootRoom, unstretched } from "./box-sizing";
+import type { Holder, Room } from "./box-sizing";
 import { SetCascade, splitClasses } from "./cascade";
 import type { BoxCascade, CoverageNote, LayerStyle } from "./cascade";
 import type { CoverageRow } from "./coverage";
 import {
+  describeNumber,
   evaluateNumber,
   isInfiniteLength,
   normalizeCss,
@@ -16,7 +19,7 @@ import {
   readShadows,
 } from "./css-values";
 import type { VariableIndex } from "./css-values";
-import { NO_LIMITS, walkLayers, ZERO } from "./kit-spec";
+import { fixedLength, walkLayers, ZERO } from "./kit-spec";
 import type {
   AxisSpec,
   BoxSpec,
@@ -25,11 +28,13 @@ import type {
   ComponentRootSpec,
   ComponentSetSpec,
   CounterAlignSpec,
+  DirectionSpec,
   FrameLayerSpec,
   NumberSpec,
   IconLayerSpec,
+  PrimaryAlignSpec,
   ShadowSpec,
-  SizeSpec,
+  SizingSpec,
   StringSpec,
   StrokeSpec,
   SwapPropertySpec,
@@ -167,6 +172,12 @@ export type ComponentDefinition = BoxDefinition & {
    * `state-table.ts` refuses one that does not.
    */
   readonly rootKind?: RootKind;
+  /**
+   * The width in pixels the root's container gives it, which a root's `width: 100%` takes, as the
+   * Figma preview and the compare host draw it. A variant root sits in its component set, which has
+   * no auto layout, so the width is fixed. Without it, a root's `100%` stays unmapped.
+   */
+  readonly previewWidth?: number;
   readonly axes: readonly AxisSpec[];
   readonly columnAxis: string;
   /**
@@ -270,7 +281,7 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
     // every child sits inside its padding.
     const root: ComponentRootSpec = {
       name: definition.slot,
-      ...mapBox(definition, rootCascade, scope),
+      ...mapBox(definition, rootCascade, scope, rootRoom(definition.previewWidth)),
       clips: true,
     };
     placeRoot(rootCascade.style);
@@ -353,12 +364,6 @@ export function matrixCells(axes: readonly AxisSpec[]): readonly Cell[] {
   );
 }
 
-function describeNumber(spec: NumberSpec): CoverageNote {
-  return spec.kind === "variable"
-    ? { outcome: "bound", detail: `${spec.variable.collection} / ${spec.variable.name}` }
-    : { outcome: "literal", detail: `${spec.value}px` };
-}
-
 function describeColor(spec: ColorSpec): CoverageNote {
   if (spec.kind === "variable") {
     return { outcome: "bound", detail: `${spec.variable.collection} / ${spec.variable.name}` };
@@ -397,32 +402,95 @@ function literalLayout(expected: readonly string[], detail: string) {
   };
 }
 
-/** Where `align-items` and `justify-content` place a box's children, by the value Tailwind compiles. */
+/** Where `align-items` places a box's children across its direction, by the value Tailwind compiles. */
 const ALIGNMENTS = new Map<string, { readonly align: CounterAlignSpec; readonly where: string }>([
   ["flex-start", { align: "MIN", where: "at the start of" }],
   ["center", { align: "CENTER", where: "centered on" }],
   ["flex-end", { align: "MAX", where: "at the end of" }],
 ]);
 
-function readAlign(reader: LayerStyle, property: string, axis: string): CounterAlignSpec | undefined {
+/**
+ * Where `justify-content` places a box's children along its direction. `space-between` puts the
+ * first and last child flush with the ends and the spare room between the children.
+ */
+const PRIMARY_ALIGNMENTS = new Map<string, { readonly align: PrimaryAlignSpec; readonly where: string }>([
+  ...ALIGNMENTS,
+  ["space-between", { align: "SPACE_BETWEEN", where: "spaced out between the ends of" }],
+]);
+
+function readAlign<Align extends PrimaryAlignSpec>(
+  reader: LayerStyle,
+  property: string,
+  axis: string,
+  alignments: ReadonlyMap<string, { readonly align: Align; readonly where: string }>
+): Align | undefined {
   return reader.read(
     property,
-    (value) => ALIGNMENTS.get(normalizeCss(value)),
+    (value) => alignments.get(normalizeCss(value)),
     ({ where }) => ({ outcome: "literal", detail: `${where} the ${axis} axis` })
   )?.align;
 }
 
+/** The direction `flex-direction` gives a flex box, by the value Tailwind compiles. */
+const DIRECTIONS = new Map<string, { readonly direction: DirectionSpec; readonly detail: string }>([
+  ["row", { direction: "HORIZONTAL", detail: "a row, its layers left to right" }],
+  ["column", { direction: "VERTICAL", detail: "a column, its layers top to bottom" }],
+]);
+
 /**
- * Read how a box lays out its layers. A flex box is a horizontal auto layout that places them by
- * `align-items` and `justify-content`. A grid with no template stacks each layer in a row of its
- * own, so a grid with `place-content: center` is an auto layout centered on both axes only
- * around one layer. Any other grid stays unmapped. A block box with no layers lays nothing out, so
- * it is a frame like any other, and one with layers stays unmapped.
+ * Read the direction and alignments a box lays out its layers by, before its layers map, since
+ * they decide how much room each layer has. A flex box is an auto layout along its
+ * `flex-direction`, a row unless a column is set, that places its layers by `align-items` and
+ * `justify-content`. In a row an unset alignment stays centered, as every published row was drawn.
+ * CSS packs a row's layers at the start and stretches them, which shows only where a row has room
+ * to spare or layers of unequal height. A column takes CSS's start on both axes, and its unset
+ * `align-items` stretches its layers across it, which {@link roomInside} gives them. A grid places
+ * its layers by `place-content`, which {@link readDisplay} reads, so its alignments stay unread.
+ *
+ * @returns The box's layout.
+ */
+function readFlow(reader: LayerStyle): Layout {
+  const display = normalizeCss(reader.raw("display") ?? "");
+  if (display === "grid") {
+    return {
+      flex: false,
+      direction: "HORIZONTAL",
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
+      justify: "unset",
+    };
+  }
+  const flex = display === "flex" || display === "inline-flex";
+  const direction = flex
+    ? (reader.read(
+        "flex-direction",
+        (value) => DIRECTIONS.get(normalizeCss(value)),
+        ({ detail }) => ({ outcome: "literal", detail })
+      )?.direction ?? "HORIZONTAL")
+    : "HORIZONTAL";
+  const unset = direction === "VERTICAL" ? "MIN" : "CENTER";
+  const counterAlign = readAlign(reader, "align-items", "counter", ALIGNMENTS) ?? unset;
+  const primaryAlign = readAlign(reader, "justify-content", "primary", PRIMARY_ALIGNMENTS) ?? unset;
+  return {
+    flex,
+    direction,
+    primaryAlign,
+    counterAlign,
+    justify: reader.has("justify-content") ? primaryAlign : "unset",
+  };
+}
+
+/**
+ * Read `display` once the box's layers are known. A flex box is an auto layout along its direction.
+ * A grid with no template stacks each layer in a row of its own, so a grid with
+ * `place-content: center` is an auto layout centered on both axes only around one layer. Any other
+ * grid stays unmapped. A block box with no layers lays nothing out, so it is a frame like any
+ * other, and one with layers stays unmapped.
  *
  * @param layers - How many layers the box holds in the cell.
- * @returns Whether the layout is a flex row, and the alignment on each axis.
+ * @param layout - The box's layout, as {@link readFlow} read it.
  */
-function readLayout(reader: LayerStyle, layers: number): Layout {
+function readDisplay(reader: LayerStyle, layers: number, layout: Layout): void {
   const display = normalizeCss(reader.raw("display") ?? "");
   if (display === "grid") {
     const center = literalLayout(["center"], "centered on both axes");
@@ -432,24 +500,16 @@ function readLayout(reader: LayerStyle, layers: number): Layout {
       (value) => (centered ? value : undefined),
       () => ({ outcome: "literal", detail: "an auto layout around its one layer" })
     );
-    return { flexRow: false, primaryAlign: "CENTER", counterAlign: "CENTER", justify: "unset" };
+    return;
   }
-  const empty = layers === 0 && display === "block";
-  const layout = empty
-    ? literalLayout(["block"], "a frame with no layers to lay out")
-    : literalLayout(["inline-flex", "flex"], "a horizontal auto layout");
-  reader.read("display", layout.map, layout.describe);
-  const direction = normalizeCss(reader.raw("flex-direction") ?? "row");
-  // An unset alignment stays centered, as every root drew before parts. CSS packs it at the start
-  // and stretches it, which shows only where a box has room to spare or children of unequal height.
-  const counterAlign = readAlign(reader, "align-items", "counter") ?? "CENTER";
-  const primaryAlign = readAlign(reader, "justify-content", "primary") ?? "CENTER";
-  return {
-    flexRow: !empty && (display === "flex" || display === "inline-flex") && direction === "row",
-    primaryAlign,
-    counterAlign,
-    justify: reader.has("justify-content") ? primaryAlign : "unset",
-  };
+  const flow =
+    layers === 0 && display === "block"
+      ? literalLayout(["block"], "a frame with no layers to lay out")
+      : literalLayout(
+          ["inline-flex", "flex"],
+          layout.direction === "VERTICAL" ? "a vertical auto layout" : "a horizontal auto layout"
+        );
+  reader.read("display", flow.map, flow.describe);
 }
 
 /** What the mapping of every layer of one cell reads besides the layer's own style. */
@@ -466,9 +526,10 @@ type MapScope = {
  *
  * @param box - The root's or the part's definition.
  * @param cascade - The box's cascade.
+ * @param room - What the box's parent gives it on each axis.
  * @returns The box, without the root's name or a frame's key.
  */
-function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSpec {
+function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope, room: Room): BoxSpec {
   const { definition, cell, context } = scope;
   const reader = cascade.style;
   const number = (property: string): NumberSpec | undefined =>
@@ -491,6 +552,9 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
   }));
   const textColor = color("color");
   const fill = reader.read("background-color", (value) => readFill(value, context.variables), describeFill);
+  // The box's lengths and layout read before its parts, since they decide what a part can fill.
+  const { sizing, limits, clips } = readSizing(reader, room, context.variables);
+  const layout = readFlow(reader);
 
   const start: ChildLayerSpec[] = [];
   const end: ChildLayerSpec[] = [];
@@ -500,22 +564,39 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
       (slot.side === "start" ? start : end).push(icon);
     }
   }
-  const parts = (box.parts ?? [])
-    .filter((child) => child.shownIn(cell))
-    .map((child) => {
-      const name = partName(child);
-      const childCascade = cascade.part(child.classesFor(cell), name);
-      const box = mapBox(child, childCascade, scope);
-      const layer: FrameLayerSpec = {
-        kind: "frame",
-        key: child.key,
-        name,
-        ...(scope.scaling.has(child) ? slotAroundDot(childCascade.style, box) : box),
-      };
-      return { layer, style: childCascade.style };
-    });
-  const children: ChildLayerSpec[] = [...parts.map(({ layer }) => layer), ...start];
+  const shown = (box.parts ?? []).filter((child) => child.shownIn(cell));
   const label = box.label?.shownIn(cell) === true ? box.label : undefined;
+  const holder: Holder = {
+    style: reader,
+    layout,
+    sizing,
+    layers: [
+      ...shown.map(partName),
+      ...start.map(({ name }) => name),
+      ...(label === undefined ? [] : [label.name]),
+      ...end.map(({ name }) => name),
+    ],
+  };
+  const parts = shown.map((child, index) => {
+    const name = partName(child);
+    const childCascade = cascade.part(child.classesFor(cell), name);
+    const box = mapBox(child, childCascade, scope, roomInside(holder, index));
+    const layer: FrameLayerSpec = {
+      kind: "frame",
+      key: child.key,
+      name,
+      ...(scope.scaling.has(child) ? slotAroundDot(childCascade.style, box) : box),
+    };
+    return { layer, style: childCascade.style };
+  });
+  const missing = unstretched(
+    holder,
+    parts.map(({ style }) => style)
+  );
+  if (missing !== undefined) {
+    reader.missing(missing.property, missing.neededBy, missing.detail);
+  }
+  const children: ChildLayerSpec[] = [...parts.map(({ layer }) => layer), ...start];
   if (label === undefined) {
     for (const property of TEXT_PROPERTIES) {
       reader.mark(property, "dropped", "the cell shows no text");
@@ -524,9 +605,10 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
     children.push(mapLabel(definition, label, cell, reader, context, textColor));
   }
   children.push(...end);
-  // The layout reads once the children are known, since a grid maps only around one layer.
-  const layout = readLayout(reader, children.length);
-  const width = readWidth(reader, context);
+  // The display reads once the children are known, since a grid maps only around one layer.
+  readDisplay(reader, children.length, layout);
+  const width = fixedLength(sizing.horizontal);
+  const height = fixedLength(sizing.vertical);
   const paddingLeft = number("padding-left") ?? ZERO;
   const paddingRight = number("padding-right") ?? ZERO;
   const primaryAlign = placeParts(
@@ -538,39 +620,24 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
     },
     parts
   );
-  const { counterAlign } = layout;
-  reader.read(
-    "max-width",
-    (value) => {
-      const max = readNumber(value, context.variables);
-      return max?.kind === "literal" && width?.kind === "literal" && max.value >= width.value
-        ? max
-        : undefined;
-    },
-    () => ({ outcome: "dropped", detail: "it is no less than the fixed width, so it never narrows the box" })
-  );
-
-  const height = number("height");
   reader.read(
     "aspect-ratio",
     (value) => (width !== undefined && height !== undefined ? value : undefined),
     () => ({ outcome: "dropped", detail: "both sides are fixed, so the ratio sizes neither" })
   );
   return {
-    direction: "HORIZONTAL",
-    sizing: { horizontal: hugUnlessFixed(width), vertical: hugUnlessFixed(height) },
-    limits: { ...NO_LIMITS, minWidth: number("min-width") },
-    // A part shows what overflows it, as a CSS box with `overflow: visible` does. The root
-    // overrides this.
-    clips: false,
+    direction: layout.direction,
+    sizing,
+    limits,
+    clips,
     paddingTop: number("padding-top") ?? ZERO,
     paddingRight,
     paddingBottom: number("padding-bottom") ?? ZERO,
     paddingLeft,
     itemSpacing: number("gap") ?? ZERO,
     primaryAlign,
-    counterAlign,
-    cornerRadius: readCorner(reader, { width, height }, context) ?? ZERO,
+    counterAlign: layout.counterAlign,
+    cornerRadius: readCorner(reader, sizing, context) ?? ZERO,
     fill: fill === NO_FILL ? undefined : fill,
     stroke,
     shadows,
@@ -579,66 +646,54 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
   };
 }
 
-/** A width that hugs the box's content, which the box writes as no width. */
-const HUG = "hug";
-
-/** The sizing of an axis whose length the box read: fixed at that length, or hugging without one. */
-function hugUnlessFixed(length: NumberSpec | undefined): SizeSpec {
-  return length === undefined ? { kind: "hug" } : { kind: "fixed", length };
-}
-
-/**
- * Read `width`. `fit-content` is the width of what the box holds in a container with room to
- * spare, which the kit's frames are, so it hugs, as an unset width does.
- *
- * @returns The fixed width, or undefined when the box hugs or the width does not map.
- */
-function readWidth(reader: LayerStyle, context: BuildContext): NumberSpec | undefined {
-  const width = reader.read(
-    "width",
-    (value) => (normalizeCss(value) === "fit-content" ? HUG : readNumber(value, context.variables)),
-    (read) =>
-      read === HUG ? { outcome: "literal", detail: "the box hugs its content" } : describeNumber(read)
-  );
-  return width === HUG ? undefined : width;
-}
-
 /**
  * Read `border-radius` as the corner. An infinite radius, which `rounded-full` compiles to, reads
- * as half the box's shorter side. CSS scales down radii whose sum exceeds a side, so it draws any
- * larger radius as that half. The plugin writes the half itself rather than rely on Figma
- * clamping a larger radius the same way. A box that hugs a side has no length to halve, so its
- * pill corner stays unmapped.
+ * as half a side. CSS scales down radii whose sum exceeds a side, so it draws any radius above half
+ * the shorter side as that half. With both sides fixed, the build writes that half. With one side
+ * fixed, it writes half that side: on 2026-10-22 a real file drew a radius above half the shorter
+ * side as that half and kept the written value (probe P10), so Figma draws it as CSS does whichever
+ * side ends up shorter. A box with no fixed side has no length to halve, so its pill corner stays
+ * unmapped.
  *
- * @param size - The box's width and height, each undefined when the box hugs that side.
+ * @param sizing - The box's sizing.
  * @returns The corner, or undefined when the box sets none or it does not map.
  */
-function readCorner(
-  reader: LayerStyle,
-  size: { readonly width: NumberSpec | undefined; readonly height: NumberSpec | undefined },
-  context: BuildContext
-): NumberSpec | undefined {
-  const { width, height } = size;
+function readCorner(reader: LayerStyle, sizing: SizingSpec, context: BuildContext): NumberSpec | undefined {
+  const width = fixedLength(sizing.horizontal);
+  const height = fixedLength(sizing.vertical);
   const corner = reader.read(
     "border-radius",
-    (value): { readonly radius: NumberSpec; readonly half: number | undefined } | undefined => {
+    (value): { readonly radius: NumberSpec; readonly detail: string | undefined } | undefined => {
       const radius = readNumber(value, context.variables);
       if (radius !== undefined) {
-        return { radius, half: undefined };
+        return { radius, detail: undefined };
       }
-      if (!isInfiniteLength(value) || width?.kind !== "literal" || height?.kind !== "literal") {
+      if (!isInfiniteLength(value)) {
         return undefined;
       }
-      const half = Math.min(width.value, height.value) / 2;
-      return { radius: { kind: "literal", value: half }, half };
+      if (width?.kind === "literal" && height?.kind === "literal") {
+        const half = Math.min(width.value, height.value) / 2;
+        return {
+          radius: { kind: "literal", value: half },
+          detail: `${half}px, half the shorter side, which CSS draws for any larger radius`,
+        };
+      }
+      const fixedSide =
+        width === undefined
+          ? { side: "height", length: height }
+          : height === undefined
+            ? { side: "width", length: width }
+            : undefined;
+      if (fixedSide?.length?.kind !== "literal") {
+        return undefined;
+      }
+      const half = fixedSide.length.value / 2;
+      return {
+        radius: { kind: "literal", value: half },
+        detail: `${half}px, half the fixed ${fixedSide.side}, which Figma and CSS cap at half the shorter side`,
+      };
     },
-    ({ radius, half }) =>
-      half === undefined
-        ? describeNumber(radius)
-        : {
-            outcome: "literal",
-            detail: `${half}px, half the shorter side, which CSS draws for any larger radius`,
-          }
+    ({ radius, detail }) => (detail === undefined ? describeNumber(radius) : { outcome: "literal", detail })
   );
   return corner?.radius;
 }

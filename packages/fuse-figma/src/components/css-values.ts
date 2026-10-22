@@ -5,7 +5,8 @@
  */
 import * as CssColor from "@elmeragroup/color/css-color";
 
-import type { ColorSpec, NumberSpec, ShadowSpec, VariableRef } from "./kit-spec";
+import type { CoverageRow } from "./coverage";
+import type { ColorSpec, NumberSpec, ShadowSpec, SizeSpec, VariableRef } from "./kit-spec";
 
 /** The root font size the catalog assumes when it turns `rem` into pixels. */
 const ROOT_FONT_SIZE_PX = 16;
@@ -364,6 +365,64 @@ export function readNumber(value: string, index: VariableIndex): NumberSpec | un
   }
   const length = evaluateLength(value);
   return length === undefined ? undefined : { kind: "literal", value: length };
+}
+
+/**
+ * What a number field read from CSS became, for the coverage table.
+ *
+ * @param spec - The number field, as {@link readNumber} read it.
+ * @returns Bound with the variable's collection and name, or literal with the pixels.
+ */
+export function describeNumber(spec: NumberSpec): Pick<CoverageRow, "outcome" | "detail"> {
+  return spec.kind === "variable"
+    ? { outcome: "bound", detail: `${spec.variable.collection} / ${spec.variable.name}` }
+    : { outcome: "literal", detail: `${spec.value}px` };
+}
+
+/**
+ * What a box's `100%` stands for on one axis.
+ *
+ * - `parent`: the box sits in an auto layout whose length on the axis is definite, fixed or itself
+ *   filling a definite length, so `100%` fills that length.
+ * - `length`: a length in pixels, such as the preview width a variant root takes.
+ * - `none`: the parent's length depends on its content, so a percentage is cyclic, as CSS Sizing 3
+ *   calls it. Figma shrinks a layer that fills a hugging frame, so it does not read.
+ */
+export type PercentBasis =
+  | { readonly kind: "parent" }
+  | { readonly kind: "length"; readonly value: number }
+  | { readonly kind: "none" };
+
+/**
+ * Read a `width` or `height` as the sizing of its axis. A length is fixed. `fit-content` is the size
+ * of what the box holds where its container has room to spare, which a kit frame always has, so it
+ * hugs. Exactly `100%` takes the basis. Any other percentage stays unread, as {@link readNumber}
+ * leaves it.
+ *
+ * @param value - A compiled value with Tailwind's variables already substituted.
+ * @param index - The synced variables.
+ * @param basis - What `100%` stands for on the axis.
+ * @returns The sizing, or undefined for a value no sizing holds.
+ */
+export function readSize(value: string, index: VariableIndex, basis: PercentBasis): SizeSpec | undefined {
+  if (normalizeCss(value) === "fit-content") {
+    return { kind: "hug" };
+  }
+  const length = readNumber(value, index);
+  if (length !== undefined) {
+    return { kind: "fixed", length };
+  }
+  if (evaluatePercentage(value) !== 1) {
+    return undefined;
+  }
+  switch (basis.kind) {
+    case "parent":
+      return { kind: "fill" };
+    case "length":
+      return { kind: "fixed", length: { kind: "literal", value: basis.value } };
+    case "none":
+      return undefined;
+  }
 }
 
 /**

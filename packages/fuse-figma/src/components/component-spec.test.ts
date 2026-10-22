@@ -7,13 +7,13 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { CENTERED_BOX, fixedSize, HUG, literal, UNLIMITED } from "../../test/built-kit";
+import { CENTERED_BOX, FILL, fixed, fixedSize, HUG, literal, UNLIMITED } from "../../test/built-kit";
 import { buildFixture, chip, dot, frameOf, ICON } from "../../test/fixture-sets";
 import type { FixtureContext } from "../../test/fixture-sets";
-import type { IconSlot } from "./component-spec";
+import type { IconSlot, PartDefinition } from "./component-spec";
 import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
-import type { FrameLayerSpec } from "./kit-spec";
+import type { BoxSpec, FrameLayerSpec } from "./kit-spec";
 
 describe("a class whose variant no cell models", () => {
   let coverage: readonly CoverageRow[];
@@ -34,8 +34,15 @@ describe("a class whose variant no cell models", () => {
     expect(outcomes("in-data-[slot=group]:bg-muted")).toEqual(new Set(["dropped"]));
   });
 
+  // The detail tells this row from the unmapped row of a class whose variant holds and whose value
+  // binds no variable, so the case fails if the state table gives the variant a meaning.
   it("is unmapped when the definition does not know the state", () => {
-    expect(outcomes("data-pressed:bg-muted")).toEqual(new Set(["unmapped"]));
+    expect(coverage.filter((row) => row.className === "data-pressed:bg-muted")).toEqual([
+      expect.objectContaining({
+        outcome: "unmapped",
+        detail: "the definition neither models nor omits `data-pressed`",
+      }),
+    ]);
   });
 
   it("is unmapped when the state axis lacks the value that renders a shared state", () => {
@@ -398,10 +405,10 @@ describe("a root that holds a part", () => {
     expect(off?.root.children).toEqual([]);
   });
 
-  it("leaves an alignment other than start, center or end unmapped", async () => {
+  it("leaves an alignment other than start, center, end or space-between unmapped", async () => {
     const { coverage } = await buildFixture({
       ...definition,
-      classesFor: () => "inline-flex justify-between items-baseline text-[#ffffff]",
+      classesFor: () => "inline-flex justify-around items-baseline text-[#ffffff]",
     });
     expect(
       coverage.filter((row) => row.outcome === "unmapped").map((row) => [row.part, row.property])
@@ -409,6 +416,172 @@ describe("a root that holds a part", () => {
       ["chip", "align-items"],
       ["chip", "justify-content"],
     ]);
+  });
+
+  // Oracle: CSS Box Alignment 3, where `justify-content: space-between` puts the first and last
+  // item flush with the ends of the main axis and shares the free space between the items, as
+  // Figma's SPACE_BETWEEN does along the primary axis.
+  it("reads justify-between as SPACE_BETWEEN along the primary axis", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex justify-between w-[100px]", {
+        parts: [dot("size-[4px]"), { ...dot("size-[4px]"), key: "end", slot: "chip-end" }],
+      })
+    );
+    expect(variant?.root.primaryAlign).toBe("SPACE_BETWEEN");
+    expect(
+      coverage.filter((row) => row.className === "justify-between").map((row) => [row.outcome, row.detail])
+    ).toEqual([["literal", "spaced out between the ends of the primary axis"]]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a flex column. Oracle: CSS Flexbox 1 and Box Alignment 3.
+// `flex-direction: column` lays the items out top to bottom, a vertical auto layout. An unset
+// `align-items` is `normal`, which behaves as `stretch` on a flex item, so an item with an auto
+// width takes the column's content width (Flexbox 1 §9.4 step 11). Figma draws that as FILL across
+// a column whose counter alignment is MIN. An item whose width is set, to a length or to
+// `fit-content`, keeps it, since stretch only fills an auto size. An unset `justify-content` packs
+// the items at the start of the column, MIN. A row keeps the CENTER default every published set
+// was drawn with, and its items keep their own width.
+describe("a flex column", () => {
+  const PARTS = [
+    dot("h-[4px]"),
+    { ...dot("w-[20px] h-[4px]"), key: "fixed", slot: "chip-fixed" },
+    { ...dot("w-fit h-[4px]"), key: "fit", slot: "chip-fit" },
+  ];
+  const widths = (root: BoxSpec | undefined) =>
+    root?.children.map((child) => (child.kind === "frame" ? child.sizing.horizontal : undefined));
+
+  it("is a vertical auto layout that stretches each part with no width across it", async () => {
+    const { variant, coverage } = await buildFixture(chip("flex flex-col w-[100px]", { parts: PARTS }));
+    expect(variant?.root).toEqual(
+      expect.objectContaining({ direction: "VERTICAL", primaryAlign: "MIN", counterAlign: "MIN" })
+    );
+    expect(widths(variant?.root)).toEqual([FILL, fixed(literal(20)), HUG]);
+    const rowsOf = (className: string) =>
+      coverage
+        .filter((row) => row.className === className)
+        .map((row) => [row.property, row.outcome, row.detail]);
+    expect(rowsOf("flex-col")).toEqual([["flex-direction", "literal", "a column, its layers top to bottom"]]);
+    expect(rowsOf("flex")).toEqual([["display", "literal", "a vertical auto layout"]]);
+  });
+
+  it("keeps a row horizontal and centered, with each part at its own width", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex flex-row w-[100px] h-[20px]", { parts: PARTS })
+    );
+    expect(variant?.root).toEqual(
+      expect.objectContaining({ direction: "HORIZONTAL", primaryAlign: "CENTER", counterAlign: "CENTER" })
+    );
+    expect(widths(variant?.root)).toEqual([HUG, fixed(literal(20)), HUG]);
+    expect(coverage.filter((row) => row.className === "flex-row").map((row) => row.outcome)).toEqual([
+      "literal",
+    ]);
+  });
+
+  // A column that hugs its width is as wide as its widest layer, and stretches the others to it.
+  // Figma shrinks a layer that fills a hugging frame to its smallest size, so the stretch has no
+  // Figma form, and the missing alignment fails the gate under the class that made the column.
+  it("records the alignment a column that hugs its width is missing", async () => {
+    const { variant, coverage } = await buildFixture(chip("flex flex-col", { parts: [dot("h-[4px]")] }));
+    expect(widths(variant?.root)).toEqual([HUG]);
+    expect(coverage).toContainEqual(
+      expect.objectContaining({ className: "flex-col", property: "align-items", outcome: "unmapped" })
+    );
+  });
+});
+
+// Unit under test: `buildComponentSet` on parts whose width or height is a percentage. Oracle: CSS
+// Sizing 3. A percentage takes the parent's content box. Where the parent's length is definite,
+// fixed or itself filling a definite box, `100%` is that whole length. Across the parent's
+// direction, and along it for the parent's only layer, that is what Figma's FILL draws. Along the
+// direction beside other layers, CSS sizes the item at 100% of the row and then shrinks or
+// overflows it with them (Flexbox 1 §9.7): in a 100px row, `w-full shrink-0` beside a 20px part
+// stays 100px wide, where a fill takes the 80px the part leaves. Where the parent's length depends
+// on its content, the percentage is cyclic and behaves as auto, and Figma shrinks a layer that
+// fills a hugging frame, so it stays unmapped. A share other than the whole has no Figma field.
+describe("a part with a percentage length", () => {
+  const END = { ...dot("w-[20px] h-[4px]"), key: "end", slot: "chip-end" };
+
+  async function build(rootClasses: string, part: PartDefinition, ...siblings: PartDefinition[]) {
+    const { variant, coverage } = await buildFixture(chip(rootClasses, { parts: [part, ...siblings] }));
+    return {
+      frame: frameOf(variant?.root),
+      rows: coverage
+        .filter((row) => row.part === "chip-dot" && (row.property === "width" || row.property === "height"))
+        .map((row) => [row.className, row.property, row.outcome]),
+      coverage,
+    };
+  }
+
+  it("fills a fixed row it holds alone", async () => {
+    const { frame, rows } = await build("flex w-[100px]", dot("w-full h-[4px]"));
+    expect(frame?.sizing).toEqual({ horizontal: FILL, vertical: fixed(literal(4)) });
+    expect(rows).toContainEqual(["w-full", "width", "literal"]);
+  });
+
+  it("stays unmapped along a fixed row it shares, naming the other layers", async () => {
+    const { frame, coverage } = await build("flex w-[100px]", dot("w-full shrink-0 h-[4px]"), END);
+    expect(frame?.sizing.horizontal).toEqual(HUG);
+    expect(
+      coverage.filter((row) => row.className === "w-full").map((row) => [row.outcome, row.detail])
+    ).toEqual([
+      [
+        "unmapped",
+        "chip-end shares the row, and a fill takes only the room it leaves, where CSS sizes 100% of the row",
+      ],
+    ]);
+  });
+
+  it("fills across a fixed column it shares", async () => {
+    const { frame } = await build("flex flex-col w-[100px]", dot("w-full h-[4px]"), END);
+    expect(frame?.sizing.horizontal).toEqual(FILL);
+  });
+
+  it("fills the height of a parent with a fixed height", async () => {
+    const { frame } = await build("flex h-[20px]", dot("h-full w-[4px]"));
+    expect(frame?.sizing).toEqual({ horizontal: fixed(literal(4)), vertical: FILL });
+  });
+
+  it("fills a parent that fills a parent with a fixed width", async () => {
+    const { variant } = await buildFixture(
+      chip("flex w-[100px]", {
+        parts: [
+          { ...dot("flex w-full"), parts: [{ ...dot("w-full h-[4px]"), key: "bar", slot: "chip-bar" }] },
+        ],
+      })
+    );
+    expect(frameOf(frameOf(variant?.root))?.sizing.horizontal).toEqual(FILL);
+  });
+
+  it("stays unmapped in a parent that hugs its width", async () => {
+    const { frame, rows } = await build("flex", dot("w-full h-[4px]"));
+    expect(frame?.sizing.horizontal).toEqual(HUG);
+    expect(rows).toContainEqual(["w-full", "width", "unmapped"]);
+  });
+
+  it("leaves a share other than the whole unmapped", async () => {
+    const { frame, rows } = await build("flex w-[100px]", dot("w-[50%] h-[4px]"));
+    expect(frame?.sizing.horizontal).toEqual(HUG);
+    expect(rows).toContainEqual(["w-[50%]", "width", "unmapped"]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a root whose width is `100%`, with a preview width in the
+// definition. Oracle: CSS Sizing 3, where a root's percentage width takes its container's width,
+// which the definition names as the width the Figma preview and the compare host give it. A
+// variant root sits in its component set, which has no auto layout, so the width is fixed.
+describe("a root's percentage width against the preview width", () => {
+  it("resolves 100% to the preview width", async () => {
+    const { variant, coverage } = await buildFixture(chip("w-full", { previewWidth: 384 }));
+    expect(variant?.root.sizing.horizontal).toEqual(fixed(literal(384)));
+    expect(coverage.map((row) => [row.className, row.outcome, row.detail])).toEqual([
+      ["w-full", "literal", "384px, the preview width that 100% takes"],
+    ]);
+  });
+
+  it("leaves a share other than the whole unmapped", async () => {
+    const { coverage } = await buildFixture(chip("w-[calc(100%-4px)]", { previewWidth: 384 }));
+    expect(coverage.map((row) => row.outcome)).toEqual(["unmapped"]);
   });
 });
 
@@ -443,18 +616,16 @@ describe("a grid that centers its content", () => {
   });
 });
 
-// Unit under test: `buildComponentSet` on a root's `position`, `align-self` and `max-width`.
-// Oracle: CSS. A `relative` box stays where the flow puts it and only becomes the containing block
-// of its positioned descendants, which an auto layout has none of. `align-self` places a flex item
-// across its parent's line, and a component's root sits in no line: `auto`, the initial value,
-// asks for nothing, while `stretch` asks for a length the root does not have. CSS Sizing clamps a
-// width by its `max-width` only when the width is larger, so a fixed 16px width under a max of 16px
-// or more keeps its size, and under 12px shrinks, which the fixed Figma width does not draw.
-describe("a box's position, alignment and max width", () => {
+// Unit under test: `buildComponentSet` on a root's `position` and `align-self`. Oracle: CSS. A
+// `relative` box stays where the flow puts it and only becomes the containing block of its
+// positioned descendants, which an auto layout has none of. `align-self` places a flex item across
+// its parent's line, and a component's root sits in no line: `auto`, the initial value, asks for
+// nothing, while `stretch` asks for a length the root does not have.
+describe("a box's position and alignment", () => {
   async function rowsOf(classes: string) {
     const { coverage } = await buildFixture(chip(classes));
     return coverage
-      .filter((row) => ["position", "align-self", "max-width"].includes(row.property))
+      .filter((row) => ["position", "align-self"].includes(row.property))
       .map((row) => [row.className, row.outcome, row.detail]);
   }
 
@@ -477,21 +648,168 @@ describe("a box's position, alignment and max width", () => {
   it("leaves self-stretch unmapped", async () => {
     expect(await rowsOf("self-stretch")).toEqual([["self-stretch", "unmapped", expect.any(String)]]);
   });
+});
+
+// Unit under test: `buildComponentSet` on a box's `min-*` and `max-*` lengths. Oracle: CSS 2.1
+// §10.4 and §10.7. The used width is the width lowered to `max-width` and then raised to
+// `min-width`, so the min wins a conflict, and the used height follows the same rule. Beside a fixed
+// length a limit therefore resolves into the length, or changes nothing. Beside a length that hugs
+// or fills, it bounds the length as Figma's limits do. The plugin typings require a positive limit,
+// and Figma's auto layout never shrinks a layer, so a zero minimum has nothing to keep.
+describe("a box's limits", () => {
+  async function build(classes: string, context: FixtureContext = {}) {
+    const { variant, coverage } = await buildFixture(chip(classes), context);
+    return {
+      root: variant?.root,
+      rows: coverage
+        .filter((row) => /^(?:min|max)-(?:width|height)$/.test(row.property))
+        .map((row) => [row.className, row.outcome, row.detail]),
+    };
+  }
+
+  it.each([
+    ["w-[20px] max-w-[12px]", "horizontal", 12],
+    ["w-[20px] min-w-[24px]", "horizontal", 24],
+    ["h-[20px] max-h-[12px]", "vertical", 12],
+    ["h-[20px] min-h-[24px]", "vertical", 24],
+    ["w-[20px] max-w-[10px] min-w-[15px]", "horizontal", 15],
+  ] as const)("resolves %s into a fixed %s length of %ipx", async (classes, axis, length) => {
+    const { root, rows } = await build(classes);
+    expect(root?.sizing[axis]).toEqual(fixed(literal(length)));
+    expect(root?.limits).toEqual(UNLIMITED);
+    expect(new Set(rows.map(([, outcome]) => outcome))).toEqual(new Set(["literal"]));
+  });
 
   it.each(["max-w-[16px]", "max-w-[24px]"])("drops %s at or above a 16px fixed width", async (max) => {
-    expect(await rowsOf(`size-[16px] ${max}`)).toEqual([
+    expect((await build(`size-[16px] ${max}`)).rows).toEqual([
       [max, "dropped", "it is no less than the fixed width, so it never narrows the box"],
     ]);
   });
 
-  it.each(["size-[16px] max-w-[12px]", "max-w-[16px]"])(
-    "leaves the max width of %s unmapped",
-    async (classes) => {
-      expect(await rowsOf(classes)).toEqual([
-        [expect.stringMatching(/^max-w-/), "unmapped", expect.any(String)],
-      ]);
-    }
-  );
+  it("drops a min-width at or below the fixed width", async () => {
+    expect((await build("size-[16px] min-w-[12px]")).rows).toEqual([
+      ["min-w-[12px]", "dropped", "it is no more than the fixed width, so it never widens the box"],
+    ]);
+  });
+
+  it("leaves a limit it cannot compare with the fixed length unmapped", async () => {
+    const variables = makeVariableIndex([
+      { ref: { collection: "Fuse tokens", name: "chip-max" }, webSyntax: "var(--chip-max)" },
+    ]);
+    const { root, rows } = await build("w-[20px] max-w-(--chip-max)", { variables });
+    expect(root?.sizing.horizontal).toEqual(fixed(literal(20)));
+    expect(root?.limits).toEqual(UNLIMITED);
+    expect(rows).toEqual([["max-w-(--chip-max)", "unmapped", expect.any(String)]]);
+  });
+
+  // A 5px `--chip-max` would lower the width to 5px and the 10px minimum would raise it to 10px, so
+  // whether the minimum moves the width depends on a value the build cannot compare.
+  it("leaves a literal limit unmapped where the other limit cannot be compared", async () => {
+    const variables = makeVariableIndex([
+      { ref: { collection: "Fuse tokens", name: "chip-max" }, webSyntax: "var(--chip-max)" },
+    ]);
+    const { root, rows } = await build("w-[20px] min-w-[10px] max-w-(--chip-max)", { variables });
+    expect(root?.sizing.horizontal).toEqual(fixed(literal(20)));
+    expect(rows).toEqual([
+      ["min-w-[10px]", "unmapped", expect.any(String)],
+      ["max-w-(--chip-max)", "unmapped", expect.any(String)],
+    ]);
+  });
+
+  it("keeps a limit beside a width or height that hugs", async () => {
+    const { root, rows } = await build("max-w-[16px] min-h-[64px]");
+    expect(root?.sizing).toEqual({ horizontal: HUG, vertical: HUG });
+    expect(root?.limits).toEqual({ ...UNLIMITED, maxWidth: literal(16), minHeight: literal(64) });
+    expect(rows).toEqual([
+      ["max-w-[16px]", "literal", "16px"],
+      ["min-h-[64px]", "literal", "64px"],
+    ]);
+  });
+
+  it("keeps a limit beside a width that fills", async () => {
+    const { variant } = await buildFixture(chip("flex w-[100px]", { parts: [dot("w-full max-w-[40px]")] }));
+    expect(frameOf(variant?.root)).toEqual(
+      expect.objectContaining({
+        sizing: { horizontal: FILL, vertical: HUG },
+        limits: { ...UNLIMITED, maxWidth: literal(40) },
+      })
+    );
+  });
+
+  // The plugin typings require a positive limit, so a zero maximum has no Figma form.
+  it.each(["max-w-[0px]", "max-h-[0px]"])("leaves %s unmapped beside a length that hugs", async (max) => {
+    const { root, rows } = await build(max);
+    expect(root?.limits).toEqual(UNLIMITED);
+    expect(rows).toEqual([[max, "unmapped", expect.any(String)]]);
+  });
+
+  it("leaves a zero maximum unmapped beside a width that fills", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex w-[100px]", { parts: [dot("w-full max-w-[0px]")] })
+    );
+    expect(frameOf(variant?.root)).toEqual(
+      expect.objectContaining({ sizing: { horizontal: FILL, vertical: HUG }, limits: UNLIMITED })
+    );
+    expect(coverage.filter((row) => row.className === "max-w-[0px]").map((row) => row.outcome)).toEqual([
+      "unmapped",
+    ]);
+  });
+
+  it("leaves a zero maximum that would fold a fixed width to nothing unmapped", async () => {
+    const { root, rows } = await build("w-[20px] max-w-[0px]");
+    expect(root?.sizing.horizontal).toEqual(fixed(literal(20)));
+    expect(rows).toEqual([["max-w-[0px]", "unmapped", expect.any(String)]]);
+  });
+
+  it("drops min-w-0, which keeps nothing in Figma", async () => {
+    const { root, rows } = await build("min-w-0");
+    expect(root?.limits).toEqual(UNLIMITED);
+    expect(rows).toEqual([
+      ["min-w-0", "dropped", "Figma takes no zero minimum, and its auto layout never shrinks a layer"],
+    ]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a root with `field-sizing-content`. Oracle: CSS Basic UI 4,
+// where `field-sizing: content` sizes a form control to its content on a side no length sets, so
+// an unset height follows the text, as a Figma height that hugs does, above its `min-height`.
+describe("a box sized to its content", () => {
+  it("reads field-sizing-content as a height that hugs", async () => {
+    const { variant, coverage } = await buildFixture(chip("field-sizing-content min-h-[64px]"));
+    expect(variant?.root.sizing.vertical).toEqual(HUG);
+    expect(variant?.root.limits).toEqual({ ...UNLIMITED, minHeight: literal(64) });
+    expect(
+      coverage
+        .filter((row) => row.className === "field-sizing-content")
+        .map((row) => [row.outcome, row.detail])
+    ).toEqual([["literal", "the height hugs its content"]]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on boxes with `overflow-hidden`. Oracle: CSS Overflow 3, where
+// `overflow: hidden` clips a box's content at its padding box, as a Figma frame's `clipsContent`
+// does. A part that sets nothing shows its overflow.
+describe("a box that hides its overflow", () => {
+  it("clips a part with overflow-hidden", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex", {
+        parts: [dot("overflow-hidden size-[8px]"), { ...dot("size-[8px]"), key: "open", slot: "chip-open" }],
+      })
+    );
+    expect(variant?.root.children.map((child) => child.kind === "frame" && child.clips)).toEqual([
+      true,
+      false,
+    ]);
+    expect(
+      coverage.filter((row) => row.className === "overflow-hidden").map((row) => [row.part, row.outcome])
+    ).toEqual([["chip-dot", "literal"]]);
+  });
+
+  it("reads overflow-hidden on the root, which clips anyway", async () => {
+    const { variant, coverage } = await buildFixture(chip("overflow-hidden"));
+    expect(variant?.root.clips).toBe(true);
+    expect(coverage.map((row) => [row.className, row.outcome])).toEqual([["overflow-hidden", "literal"]]);
+  });
 });
 
 // Unit under test: `buildComponentSet` on a root whose `after:` classes draw a hit area. Oracle:
@@ -572,7 +890,9 @@ describe("a marker class", () => {
 // Unit under test: `buildComponentSet` on a root with `rounded-full`, which Tailwind compiles to
 // `border-radius: calc(infinity * 1px)`. Oracle: CSS Backgrounds 3, which scales down corner radii
 // whose sum exceeds a side, so any radius above half the shorter side draws as that half: 8px on
-// a 16px circle, 4px on an 8px one. A box that hugs a side has no length to halve before layout.
+// a 16px circle, 4px on an 8px one. Probe P10 (2026-10-22) showed Figma draws a radius the same way
+// and keeps the written value, so half of the one fixed side draws as CSS does whichever side ends
+// up shorter. A box that hugs both sides has no length to halve before layout.
 describe("a pill corner", () => {
   async function build(classes: string) {
     const { componentSet, coverage } = await buildFixture(chip(classes));
@@ -595,8 +915,22 @@ describe("a pill corner", () => {
     });
   });
 
-  it("is unmapped on a box that hugs a side", async () => {
-    const { rows } = await build("h-[16px] rounded-full");
+  it("reads as half the fixed side of a box that hugs the other side", async () => {
+    expect(await build("h-[16px] rounded-full")).toEqual({
+      corner: literal(8),
+      rows: [["literal", "8px, half the fixed height, which Figma and CSS cap at half the shorter side"]],
+    });
+  });
+
+  it("reads as half the fixed side of a part that fills the other side", async () => {
+    const { variant } = await buildFixture(
+      chip("flex w-[100px]", { parts: [dot("w-full h-[6px] rounded-full")] })
+    );
+    expect(frameOf(variant?.root)?.cornerRadius).toEqual(literal(3));
+  });
+
+  it("is unmapped on a box that hugs both sides", async () => {
+    const { rows } = await build("rounded-full");
     expect(rows).toEqual([["unmapped", expect.any(String)]]);
   });
 });

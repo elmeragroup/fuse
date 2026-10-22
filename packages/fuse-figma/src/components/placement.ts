@@ -20,6 +20,7 @@ import { fixedLength, NO_LIMITS, ZERO } from "./kit-spec";
 import type {
   BoxSpec,
   CounterAlignSpec,
+  DirectionSpec,
   FrameLayerSpec,
   NumberSpec,
   PrimaryAlignSpec,
@@ -30,8 +31,10 @@ import type { CompiledUtilities } from "./utility-css";
 
 /** How a box lays out its layers, as the box mapping read it. */
 export type Layout = {
-  /** Whether the box is a flex box whose `flex-direction` is unset or `row`, a horizontal auto layout. */
-  readonly flexRow: boolean;
+  /** Whether the box is a flex box, which lays out its layers along its direction. */
+  readonly flex: boolean;
+  /** The flex box's direction, a row or a column. Every other box is horizontal. */
+  readonly direction: DirectionSpec;
   readonly primaryAlign: PrimaryAlignSpec;
   readonly counterAlign: CounterAlignSpec;
   /** Where `justify-content` packs the layers, or `unset` where nothing sets it. */
@@ -80,7 +83,7 @@ export function placeParts(parent: ParentBox, parts: readonly PlacedPart[]): Pri
     readPosition(part.style, centering);
   }
   const [only] = parts;
-  if (only === undefined || layers !== 1 || !layout.flexRow) {
+  if (only === undefined || layers !== 1 || !layout.flex || layout.direction !== "HORIZONTAL") {
     return layout.primaryAlign;
   }
   const size = {

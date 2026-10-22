@@ -71,6 +71,9 @@ export const fixed = <Length>(length: Length) => ({ kind: "fixed", length }) as 
 /** An axis that hugs the box's content. */
 export const HUG = { kind: "hug" } as const;
 
+/** An axis that fills the room its parent's auto layout gives the box. */
+export const FILL = { kind: "fill" } as const;
+
 /** A box fixed at a width and a height. */
 export const fixedSize = <Width, Height>(width: Width, height: Height) =>
   ({ horizontal: fixed(width), vertical: fixed(height) }) as const;
