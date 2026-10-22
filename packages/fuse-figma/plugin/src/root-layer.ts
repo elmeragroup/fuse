@@ -1,14 +1,18 @@
 /**
- * A variant's component root: a horizontal auto layout box that centers its content on both
- * axes, and hugs it along the row unless the spec fixes a width, as an icon square does.
+ * A box: a variant's component root, or a frame layer below it. Each is a horizontal auto
+ * layout frame that places its content as the spec's alignment says, and hugs it along each
+ * axis unless the spec fixes a size, as an icon square does.
  */
 
-import type { ColorSpec, ComponentRootSpec, NumberSpec } from "../../src/components/kit-spec.ts";
+import type { BoxSpec, ColorSpec, NumberSpec } from "../../src/components/kit-spec.ts";
 import { near, planNumber, planPaints, planScalar, planShadows, planSizing } from "./fields.ts";
 import type { NumberField, Run } from "./fields.ts";
 import { change } from "./plan.ts";
 
-function paddingField(node: ComponentNode, side: "Top" | "Right" | "Bottom" | "Left"): NumberField {
+/** A node that holds a box's layers: a variant component, or a frame layer below it. */
+export type LayerParent = ComponentNode | FrameNode;
+
+function paddingField(node: LayerParent, side: "Top" | "Right" | "Bottom" | "Left"): NumberField {
   const name = `padding${side}` as const;
   return {
     name,
@@ -20,7 +24,7 @@ function paddingField(node: ComponentNode, side: "Top" | "Right" | "Bottom" | "L
   };
 }
 
-function cornerField(node: ComponentNode): NumberField {
+function cornerField(node: LayerParent): NumberField {
   const corners = ["topLeftRadius", "topRightRadius", "bottomRightRadius", "bottomLeftRadius"] as const;
   return {
     name: "cornerRadius",
@@ -32,7 +36,7 @@ function cornerField(node: ComponentNode): NumberField {
   };
 }
 
-function strokeWeightField(node: ComponentNode): NumberField {
+function strokeWeightField(node: LayerParent): NumberField {
   const sides = ["strokeTopWeight", "strokeRightWeight", "strokeBottomWeight", "strokeLeftWeight"] as const;
   return {
     name: "strokeWeight",
@@ -61,17 +65,17 @@ const CLEAR: ColorSpec = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.0015
  * @param spec - The root the spec asks for.
  * @returns The fill to plan, or undefined for none.
  */
-export function rootFill(spec: Pick<ComponentRootSpec, "fill" | "shadows">): ColorSpec | undefined {
+export function rootFill(spec: Pick<BoxSpec, "fill" | "shadows">): ColorSpec | undefined {
   const spreads = spec.shadows.some(
     (shadow) => shadow.spread.kind === "variable" || shadow.spread.value !== 0
   );
   return spec.fill ?? (spreads ? CLEAR : undefined);
 }
 
-/** Plan a fixed width or height, or unbind one the spec lets the root hug. */
+/** Plan a fixed width or height, or unbind one the spec lets the box hug. */
 function planSize(
   run: Run,
-  node: ComponentNode,
+  node: LayerParent,
   label: string,
   name: "width" | "height",
   spec: NumberSpec | undefined,
@@ -93,23 +97,32 @@ function planSize(
 }
 
 /**
- * Plan a variant's root against the spec. The root centers its content on both axes, as an
- * `inline-flex items-center justify-center` box does, and hugs it where the spec fixes no size.
+ * Which box a plan draws. A variant's `root` clips and gets the fill a spread shadow needs. A
+ * `frame` below the root does neither: CSS draws a part's overflow, and no part below a root
+ * casts a spread yet.
+ */
+export type BoxRole = "root" | "frame";
+
+/**
+ * Plan a box against the spec: a variant's root, or a frame layer below it. The box places its
+ * content on each axis as the spec's alignment says, as `justify-*` and `items-*` place it, and
+ * hugs it where the spec fixes no size.
  *
  * @param run - The run.
- * @param node - The variant component.
- * @param label - The variant's label, for change lines.
- * @param spec - The root the spec asks for.
+ * @param node - The variant component, or the frame layer.
+ * @param label - The box's label, for change lines.
+ * @param spec - The box the spec asks for.
+ * @param role - Whether the box is a variant's root or a frame below it.
  */
-export function planRoot(run: Run, node: ComponentNode, label: string, spec: ComponentRootSpec): void {
+export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpec, role: BoxRole): void {
   planScalar(run, label, "layoutMode", node.layoutMode, "HORIZONTAL", () => {
     node.layoutMode = "HORIZONTAL";
   });
-  planScalar(run, label, "primaryAxisAlignItems", node.primaryAxisAlignItems, "CENTER", () => {
-    node.primaryAxisAlignItems = "CENTER";
+  planScalar(run, label, "primaryAxisAlignItems", node.primaryAxisAlignItems, spec.primaryAlign, () => {
+    node.primaryAxisAlignItems = spec.primaryAlign;
   });
-  planScalar(run, label, "counterAxisAlignItems", node.counterAxisAlignItems, "CENTER", () => {
-    node.counterAxisAlignItems = "CENTER";
+  planScalar(run, label, "counterAxisAlignItems", node.counterAxisAlignItems, spec.counterAlign, () => {
+    node.counterAxisAlignItems = spec.counterAlign;
   });
 
   const { width, height } = spec;
@@ -169,11 +182,13 @@ export function planRoot(run: Run, node: ComponentNode, label: string, spec: Com
   planNumber(run, node, label, cornerField(node), spec.cornerRadius);
 
   // The first run on a real file stored the focus ring's 2px spread as 0 on a root that did
-  // not clip. Clipping costs nothing here, since every child sits inside the padding.
-  planScalar(run, label, "clipsContent", node.clipsContent, true, () => {
-    node.clipsContent = true;
+  // not clip. Clipping costs a root nothing, since every child sits inside its padding. A frame
+  // below the root shows what overflows it, as a CSS box with `overflow: visible` does.
+  const clips = role === "root";
+  planScalar(run, label, "clipsContent", node.clipsContent, clips, () => {
+    node.clipsContent = clips;
   });
-  planPaints(run, label, "fill", node.fills, rootFill(spec), (paints) => {
+  planPaints(run, label, "fill", node.fills, role === "root" ? rootFill(spec) : spec.fill, (paints) => {
     node.fills = paints;
   });
   // A CSS border sits inside the box and takes room from the content, so the stroke is drawn

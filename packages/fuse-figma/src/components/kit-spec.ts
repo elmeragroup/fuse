@@ -103,16 +103,30 @@ export type IconLayerSpec = {
   readonly color: ColorSpec;
 };
 
-/** A layer inside a component root. */
-export type ChildLayerSpec = TextLayerSpec | IconLayerSpec;
+/**
+ * A frame layer below a component root, such as a checkbox's indicator around its icon. It
+ * draws its box as a root does, and holds text, icon and frame layers of its own.
+ */
+export type FrameLayerSpec = BoxSpec & {
+  readonly kind: "frame";
+  readonly key: string;
+  readonly name: string;
+};
+
+/** A layer inside a component root or a frame layer. */
+export type ChildLayerSpec = TextLayerSpec | IconLayerSpec | FrameLayerSpec;
 
 /**
- * A component root: a horizontal auto layout frame that hugs its content along the row and
- * centers it on both axes, as an `inline-flex items-center justify-center` box does.
+ * Where an auto layout box places its children along one axis: at the start, centered or at
+ * the end, as `items-*` and `justify-*` place them in CSS.
  */
-export type ComponentRootSpec = {
-  /** The layer name, the part's `data-slot`. */
-  readonly name: string;
+export type AlignSpec = "MIN" | "CENTER" | "MAX";
+
+/**
+ * A box: a horizontal auto layout frame that hugs its content where it fixes no size, and
+ * places its children on each axis as its alignment says.
+ */
+export type BoxSpec = {
   /** The fixed width. An unset width hugs the content, as a label button does. */
   readonly width: NumberSpec | undefined;
   /** The fixed height. An unset height hugs the content. */
@@ -123,6 +137,10 @@ export type ComponentRootSpec = {
   readonly paddingBottom: NumberSpec;
   readonly paddingLeft: NumberSpec;
   readonly itemSpacing: NumberSpec;
+  /** Where the children sit along the row, as `justify-content` places them. */
+  readonly primaryAlign: AlignSpec;
+  /** Where the children sit across the row, as `align-items` places them. */
+  readonly counterAlign: AlignSpec;
   readonly cornerRadius: NumberSpec;
   readonly fill: ColorSpec | undefined;
   readonly stroke: StrokeSpec | undefined;
@@ -131,6 +149,26 @@ export type ComponentRootSpec = {
   readonly opacity: number;
   readonly children: readonly ChildLayerSpec[];
 };
+
+/**
+ * A component root: the box a variant component draws, such as an `inline-flex items-center
+ * justify-center` Button.
+ */
+export type ComponentRootSpec = BoxSpec & {
+  /** The layer name, the part's `data-slot`. */
+  readonly name: string;
+};
+
+/**
+ * Every layer below a box, depth first: each layer, then the layers a frame among them holds,
+ * before the next sibling.
+ *
+ * @param box - A component root or a frame layer.
+ * @returns The layers in layer order, the box itself left out.
+ */
+export function walkLayers(box: BoxSpec): readonly ChildLayerSpec[] {
+  return box.children.flatMap((child) => (child.kind === "frame" ? [child, ...walkLayers(child)] : [child]));
+}
 
 /** One variant of a component set, one cell of its matrix. */
 export type VariantSpec = {

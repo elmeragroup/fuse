@@ -7,10 +7,18 @@
  */
 import { describe, expect, it } from "vitest";
 
-import type { KitSpec, NumberSpec, TextLayerSpec } from "../../src/components/kit-spec.ts";
+import type {
+  ChildLayerSpec,
+  FrameLayerSpec,
+  IconLayerSpec,
+  KitSpec,
+  NumberSpec,
+  TextLayerSpec,
+} from "../../src/components/kit-spec.ts";
 import { createFakeFigma } from "./fake-figma.ts";
-import { aliasOf, color, fixtureFile, string } from "./fake-fixtures.ts";
-import { setKey } from "./identity.ts";
+import type { FakeFigma } from "./fake-figma.ts";
+import { aliasOf, childNamed, color, fixtureFile, string } from "./fake-fixtures.ts";
+import { keyOf, setKey } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
 
 const literal = (value: number): NumberSpec => ({ kind: "literal", value });
@@ -65,6 +73,8 @@ const KIT: KitSpec = {
             paddingBottom: literal(0),
             paddingLeft: literal(16),
             itemSpacing: literal(8),
+            primaryAlign: "CENTER",
+            counterAlign: "CENTER",
             cornerRadius: literal(6),
             fill: undefined,
             stroke: undefined,
@@ -78,6 +88,74 @@ const KIT: KitSpec = {
   ],
   previews: [],
 };
+
+const BLACK = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
+
+/** A frame layer with no padding, gap, corner, paint or ring, centered on both axes. */
+function frame(key: string, name: string, children: readonly ChildLayerSpec[]): FrameLayerSpec {
+  return {
+    kind: "frame",
+    key,
+    name,
+    width: undefined,
+    height: undefined,
+    minWidth: undefined,
+    paddingTop: literal(0),
+    paddingRight: literal(0),
+    paddingBottom: literal(0),
+    paddingLeft: literal(0),
+    itemSpacing: literal(0),
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    cornerRadius: literal(0),
+    fill: undefined,
+    stroke: undefined,
+    shadows: [],
+    opacity: 1,
+    children,
+  };
+}
+
+/** A fixed Check icon, as a checkbox's indicator shows one. */
+const CHECK: IconLayerSpec = {
+  kind: "icon",
+  key: "button/check",
+  name: "Check",
+  icon: "icon/Check",
+  swapProperty: undefined,
+  size: literal(12),
+  color: BLACK,
+};
+
+/** The Button variant's layers moved two frames down: Control holds Indicator, which holds both. */
+const NESTED_LAYERS = [
+  frame("button/control", "Control", [frame("button/indicator", "Indicator", [CHECK, LABEL])]),
+];
+
+/**
+ * `KIT` with the variant's root holding the given layers and a library holding Check. It
+ * bundles no font, so only the walks over the variant's layers require the label's font.
+ */
+function nestedKit(children: readonly ChildLayerSpec[] = NESTED_LAYERS): KitSpec {
+  return {
+    ...KIT,
+    fonts: [],
+    icons: {
+      ...KIT.icons,
+      icons: [
+        {
+          key: "icon/Check",
+          name: "Check",
+          svg: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M2 8l4 4 8-8"/></svg>',
+        },
+      ],
+    },
+    componentSets: KIT.componentSets.map((set) => ({
+      ...set,
+      variants: set.variants.map((variant) => ({ ...variant, root: { ...variant.root, children } })),
+    })),
+  };
+}
 
 /**
  * A file whose `font-sans` aliases a brand variable that holds `family` in its default mode.
@@ -173,6 +251,29 @@ describe("the kit check", () => {
       PREVIEW_ELSEWHERE,
       "Other / Light places Button, which sits on another page.",
     ],
+    [
+      "a text two frames down that links a property the set lacks",
+      nestedKit([
+        frame("button/control", "Control", [
+          frame("button/indicator", "Indicator", [{ ...LABEL, textProperty: "Label" }]),
+        ]),
+      ]),
+      "Button: the variant button/size=md links Label, which the set does not define.",
+    ],
+    [
+      "an icon two frames down whose color binds a string variable",
+      nestedKit([
+        frame("button/control", "Control", [
+          frame("button/indicator", "Indicator", [
+            {
+              ...CHECK,
+              color: { kind: "variable", variable: { collection: "Fuse tokens", name: "font-sans" } },
+            },
+          ]),
+        ]),
+      ]),
+      "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a COLOR.",
+    ],
   ])("stops Plan before any write for %s", async (_, kit, message) => {
     const { file, setup } = fixture("Roboto");
     await expect(reconcileKit(file.figma, kit, false)).rejects.toThrow(message);
@@ -260,5 +361,149 @@ describe("a set that moves to a page pinning other modes", () => {
     file.reopen();
     expect(await reconcileKit(file.figma, kitOn(BUTTON), false)).toEqual({ changes: [], warnings: [] });
     expect(ring()).toMatchObject({ type: "DROP_SHADOW", color: GRAY });
+  });
+});
+
+/** A layer the plugin keyed, and the layers a frame among them holds. */
+type LayerTree = {
+  readonly type: SceneNode["type"];
+  readonly name: string;
+  readonly key: string;
+  readonly children?: readonly LayerTree[];
+};
+
+/** The layers below a node, each frame with the layers it holds. */
+function layerTree(parent: ChildrenMixin): LayerTree[] {
+  return parent.children.map((node): LayerTree => {
+    const layer = { type: node.type, name: node.name, key: keyOf(node) };
+    return node.type === "FRAME" ? { ...layer, children: layerTree(node) } : layer;
+  });
+}
+
+/** The Button variant the kit page holds. */
+async function buttonVariant(file: FakeFigma): Promise<ComponentNode> {
+  const page = file.figma.root.children.find((node) => keyOf(node) === "page");
+  await page?.loadAsync();
+  const set = page?.children.find((node) => node.type === "COMPONENT_SET");
+  const variant = set?.type === "COMPONENT_SET" ? set.children[0] : undefined;
+  if (variant?.type !== "COMPONENT") {
+    throw new Error("the kit page holds no Button variant");
+  }
+  return variant;
+}
+
+/** A file the nested kit was applied to, opened for the next run, and its two frames. */
+async function nestedFile(): Promise<{
+  readonly file: FakeFigma;
+  readonly control: FrameNode;
+  readonly indicator: FrameNode;
+}> {
+  const { file } = fixture("Roboto");
+  await reconcileKit(file.figma, nestedKit(), true);
+  file.reopen();
+  const control = childNamed(await buttonVariant(file), "FRAME", "Control");
+  return { file, control, indicator: childNamed(control, "FRAME", "Indicator") };
+}
+
+/**
+ * The lines a plan that changes anything in the Button set ends with: it lays out the set's grid
+ * and the page again.
+ */
+const RELAYOUT = [
+  "Button: lay out 1 variants in 1 columns and 1 rows",
+  "Fuse components: place Button and Icons in a row",
+];
+
+describe("a variant whose layers sit in a frame inside a frame", () => {
+  it("creates both frames, the icon and the label in one Apply, and the next Plan lists nothing", async () => {
+    const { file, control } = await nestedFile();
+    expect(await reconcileKit(file.figma, nestedKit(), false)).toEqual({ changes: [], warnings: [] });
+    expect(layerTree(await buttonVariant(file))).toEqual([
+      {
+        type: "FRAME",
+        name: "Control",
+        key: "button/control",
+        children: [
+          {
+            type: "FRAME",
+            name: "Indicator",
+            key: "button/indicator",
+            children: [
+              { type: "INSTANCE", name: "Check", key: "button/check" },
+              { type: "TEXT", name: "Label", key: "button/label" },
+            ],
+          },
+        ],
+      },
+    ]);
+    // A part below the root shows its overflow and paints nothing its spec does not ask for.
+    expect([control.clipsContent, control.fills]).toEqual([false, []]);
+  });
+
+  it("fails Plan, and stops Apply before any write, when the label's family cannot load", async () => {
+    const { file, setup } = fixture("Comic Sans");
+    const message = "Button / Label needs the font Comic Sans Medium, which Figma cannot load.";
+    await expect(reconcileKit(file.figma, nestedKit(), false)).rejects.toThrow(message);
+    await expect(reconcileKit(file.figma, nestedKit(), true)).rejects.toThrow(message);
+    expect(file.writes.slice(setup)).toEqual([]);
+  });
+
+  it("requires the label's font for a frame it creates again, and for a variant it creates again", async () => {
+    const message = "Button / size=md / Label needs the font Roboto Medium, which Figma cannot load.";
+    const deletedFrame = await nestedFile();
+    deletedFrame.control.remove();
+    deletedFrame.file.reopen({ unavailableFonts: [{ family: "Roboto" }] });
+    await expect(reconcileKit(deletedFrame.file.figma, nestedKit(), false)).rejects.toThrow(message);
+
+    const deletedVariant = await nestedFile();
+    (await buttonVariant(deletedVariant.file)).remove();
+    deletedVariant.file.reopen({ unavailableFonts: [{ family: "Roboto" }] });
+    await expect(reconcileKit(deletedVariant.file.figma, nestedKit(), false)).rejects.toThrow(message);
+  });
+
+  it("keeps the keys of a renamed frame and a renamed label inside it, and plans only their names back", async () => {
+    const { file, indicator } = await nestedFile();
+    const label = childNamed(indicator, "TEXT", "Label");
+    indicator.name = "Dot";
+    label.name = "Caption";
+    expect((await reconcileKit(file.figma, nestedKit(), false)).changes).toEqual([
+      "Button / size=md / Control / Indicator: name → Indicator",
+      "Button / size=md / Control / Indicator / Label: name → Label",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, nestedKit(), true);
+    expect([indicator.name, label.name]).toEqual(["Indicator", "Label"]);
+    const control = childNamed(await buttonVariant(file), "FRAME", "Control");
+    expect([childNamed(control, "FRAME", "Indicator"), childNamed(indicator, "TEXT", "Label")]).toEqual([
+      indicator,
+      label,
+    ]);
+  });
+
+  it("deletes a label the spec moves to another frame and creates it there, then converges", async () => {
+    const { file } = await nestedFile();
+    const moved = [
+      frame("button/control", "Control", [frame("button/indicator", "Indicator", [CHECK]), LABEL]),
+    ];
+    expect((await reconcileKit(file.figma, nestedKit(moved), false)).changes).toEqual([
+      "Button / size=md / Control / Indicator: delete the layer Label",
+      "Button / size=md / Control: create the text layer Label",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, nestedKit(moved), true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, nestedKit(moved), false)).toEqual({ changes: [], warnings: [] });
+  });
+
+  it("stops Plan and Apply before any write when a designer duplicates the label inside a frame", async () => {
+    const { file, indicator } = await nestedFile();
+    const copy = file.figma.createText();
+    indicator.appendChild(copy);
+    setKey(copy, LABEL.key);
+    const before = file.writes.length;
+    const message = "Button / size=md / Control / Indicator holds 2 layers with the key button/label.";
+    await expect(reconcileKit(file.figma, nestedKit(), false)).rejects.toThrow(message);
+    await expect(reconcileKit(file.figma, nestedKit(), true)).rejects.toThrow(message);
+    expect(file.writes.slice(before)).toEqual([]);
   });
 });

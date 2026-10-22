@@ -5,8 +5,10 @@
  * runs, so those plans can then look up nothing that fails.
  */
 
-import { topLevelSpecs } from "../../src/components/kit-spec.ts";
+import { topLevelSpecs, walkLayers } from "../../src/components/kit-spec.ts";
 import type {
+  BoxSpec,
+  ChildLayerSpec,
   ColorSpec,
   ComponentRootSpec,
   KitSpec,
@@ -37,33 +39,45 @@ function boundString(spec: StringSpec): BoundRef[] {
   return spec.kind === "variable" ? [{ ref: spec.variable, type: "STRING" }] : [];
 }
 
-function rootRefs(root: ComponentRootSpec): BoundRef[] {
+/** The variables a box's own fields bind, its layers left out. */
+function boxRefs(box: BoxSpec): BoundRef[] {
   return [
     ...[
-      root.width,
-      root.height,
-      root.minWidth,
-      root.paddingTop,
-      root.paddingRight,
-      root.paddingBottom,
-      root.paddingLeft,
-      root.itemSpacing,
-      root.cornerRadius,
-      root.stroke?.weight,
-      ...root.shadows.flatMap((shadow) => [shadow.radius, shadow.spread]),
+      box.width,
+      box.height,
+      box.minWidth,
+      box.paddingTop,
+      box.paddingRight,
+      box.paddingBottom,
+      box.paddingLeft,
+      box.itemSpacing,
+      box.cornerRadius,
+      box.stroke?.weight,
+      ...box.shadows.flatMap((shadow) => [shadow.radius, shadow.spread]),
     ].flatMap(boundNumber),
-    ...[root.fill, root.stroke?.color, ...root.shadows.map((shadow) => shadow.color)].flatMap(boundColor),
-    ...root.children.flatMap((child) =>
-      child.kind === "text"
-        ? [
-            ...boundString(child.fontFamily),
-            ...boundNumber(child.fontSize),
-            ...boundNumber(child.lineHeight),
-            ...boundColor(child.color),
-          ]
-        : [...boundNumber(child.size), ...boundColor(child.color)]
-    ),
+    ...[box.fill, box.stroke?.color, ...box.shadows.map((shadow) => shadow.color)].flatMap(boundColor),
   ];
+}
+
+/** The variables one layer's own fields bind. A frame's layers come from the walk. */
+function layerRefs(layer: ChildLayerSpec): BoundRef[] {
+  switch (layer.kind) {
+    case "text":
+      return [
+        ...boundString(layer.fontFamily),
+        ...boundNumber(layer.fontSize),
+        ...boundNumber(layer.lineHeight),
+        ...boundColor(layer.color),
+      ];
+    case "icon":
+      return [...boundNumber(layer.size), ...boundColor(layer.color)];
+    case "frame":
+      return boxRefs(layer);
+  }
+}
+
+function rootRefs(root: ComponentRootSpec): BoundRef[] {
+  return [...boxRefs(root), ...walkLayers(root).flatMap(layerRefs)];
 }
 
 /**

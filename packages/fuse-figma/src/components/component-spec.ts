@@ -16,6 +16,7 @@ import {
   substituteVars,
 } from "./css-values";
 import type { VariableIndex } from "./css-values";
+import { walkLayers } from "./kit-spec";
 import type {
   AxisSpec,
   ChildLayerSpec,
@@ -222,9 +223,9 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
   const variants = matrixCells(definition.axes).map((cell): VariantSpec => {
     const styles = cascade(definition, meaningOf, cell, context, record, conditions);
     const root = mapRoot(definition, cell, styles, context, record);
-    for (const child of root.children) {
-      if (child.kind === "text") {
-        fontStyles.add(child.fontStyle);
+    for (const layer of walkLayers(root)) {
+      if (layer.kind === "text") {
+        fontStyles.add(layer.fontStyle);
       }
     }
     return { key: variantKey(definition, cell), properties: cell, root };
@@ -728,6 +729,9 @@ function mapRoot(
     paddingBottom: number("padding-bottom") ?? ZERO,
     paddingLeft: number("padding-left") ?? ZERO,
     itemSpacing: number("gap") ?? ZERO,
+    // The layout reads above accept only centered content, so the root says so.
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
     cornerRadius: number("border-radius") ?? ZERO,
     fill: fill === NO_FILL ? undefined : fill,
     stroke,
