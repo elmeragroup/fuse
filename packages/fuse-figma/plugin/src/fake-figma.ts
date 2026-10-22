@@ -11,6 +11,8 @@
  * run stopped before its first write.
  *
  * The fake models the Figma rules below. Each rule a real file showed in 2026-10 names that run.
+ * Rules 12 to 18 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
+ * Import test` on 2026-10-22: P0 read the kit's nodes, and P1 to P7 built nodes on a scratch page.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
  *    COLOR variable in the collections' default modes, whatever opacity it was given. Two runs
@@ -32,8 +34,9 @@
  *    later run that moved the variants into spec order left that list as it was, and a test set
  *    kept a renamed value in its slot.
  * 5. `resize` and `resizeWithoutConstraints` on an auto layout frame set both sizing modes to
- *    FIXED. `planSizing` in `fields.ts` writes the modes again after a size for this reason,
- *    since 4734b75e on 2026-10-19. Binding `width` or `height` resizes the same way.
+ *    FIXED. `planLayoutSizing` in `fields.ts` writes the sizing again after a length for this
+ *    reason, as the plugin has since 4734b75e on 2026-10-19. Binding `width` or `height` resizes
+ *    the same way.
  * 6. `createNodeFromSvg` returns a frame the size of the markup's `width` and `height`, painted
  *    white and clipping, on the current page. Its children are the drawn elements, each a
  *    vector named after its `id`, or `Vector`, as a real run showed on 2026-10-20. The fake
@@ -74,6 +77,45 @@
  *    bind, and the brand, segment and variant collections those tokens alias through, but
  *    neither `Fuse density`, which no Badge layer binds, nor `Fuse primitives`. The Button and
  *    Toggle previews, whose sets bind density, resolved Auto.
+ * 12. `layoutSizingHorizontal` and `layoutSizingVertical` read as a projection of other fields,
+ *    as the real kit's nodes did on 2026-10-22 (P0). A layer reads FILL on an axis where its auto
+ *    layout parent gives it the room, by growing along the parent's direction (`layoutGrow` 1) or
+ *    stretching across it (`layoutAlign` STRETCH). Otherwise an auto layout frame reads HUG where
+ *    the sizing mode of that axis is AUTO, the primary mode along its direction and the counter
+ *    mode across it. A text reads HUG across while its `textAutoResize` is WIDTH_AND_HEIGHT, and
+ *    down while it is that or HEIGHT. Every other axis reads FIXED. Writing FILL sets the grow or
+ *    the stretch, as a real file showed (P1), and fixes the layer's own mode on that axis. Writing
+ *    HUG or FIXED clears the fill and sets the mode. The fake hides `layoutGrow` and
+ *    `layoutAlign`, so the plugin writes only the shorthand, and it does not model the shorthand's
+ *    write on a text layer.
+ * 13. A sizing write Figma cannot apply throws the message a real file threw on 2026-10-22 (P1).
+ *    FILL on a frame that has no auto layout and sits in none threw `node must be an
+ *    auto-layout frame or a child of an auto-layout frame`, and the fake throws it for HUG there
+ *    too. HUG on a layer without auto layout inside one threw `HUG can only be set on auto-layout
+ *    frames or text children of auto-layout frames`. FILL on a layer whose parent has no auto
+ *    layout, such as a variant root in its set, threw `FILL can only be set on children of
+ *    auto-layout frames`. Each starts with `in set_layoutSizingHorizontal: ` or the vertical
+ *    member's name.
+ * 14. `resize` and a `width` or `height` binding also turn a filling layer fixed. On 2026-10-22 a
+ *    real file read a FILL child as FIXED after a resize, and as FIXED at the variable's value
+ *    after its width bound a FLOAT variable (P2). As rule 5 sets both modes, the fake clears the
+ *    fill on both axes.
+ * 15. Writing `layoutMode` keeps both sizing modes, each in its role along or across the
+ *    direction. On 2026-10-22 a row that hugged its width read as hugging its height once it
+ *    became a column, and went from 40 to 14 tall (P6). The plugin therefore writes the
+ *    direction first, and after a turn it writes the box's fixed lengths and sizing, and its
+ *    layers' sizing, again. The fake does not lay out, so a turn keeps the box's size. A parent
+ *    that turns keeps its layers' grow and stretch in the fake, so their fill moves to the other
+ *    axis. No probe has shown what Figma does with them.
+ * 16. `minWidth`, `maxWidth`, `minHeight` and `maxHeight` hold a positive number or null, on an
+ *    auto layout frame or a child of one, text included, and each binds a FLOAT variable, as the
+ *    typings say. On 2026-10-22 a real file kept `maxWidth` on a hugging frame and on a text,
+ *    kept `minHeight` on a column root, and read a bound `maxWidth` as the variable's value (P7).
+ *    The fake does not lay out, so it does not clamp a size to its limits.
+ * 17. `counterAxisAlignItems` refuses STRETCH, which its type leaves out, and BASELINE outside a
+ *    horizontal auto layout, as the typings say. No probe ran.
+ * 18. `primaryAxisAlignItems` keeps SPACE_BETWEEN through an `itemSpacing` write or binding, as a
+ *    real file did on 2026-10-22 (P5).
  *
  * An instance's sublayers show the layers of its main component. An override, such as the
  * color an icon layer gives its glyph, belongs to the main layer it was made on. It moves to
@@ -85,13 +127,12 @@
  * `"documentAccess": "dynamic-page"`, as the components plugin declares: a page other than the
  * current one needs `loadAsync` before its children are read or changed, and an instance's
  * `mainComponent` cannot be read. `insertChild` refuses an index past the end. `layoutWrap` needs
- * an auto layout frame, and `minWidth` an auto layout frame or a child of one. A layer links
- * only a property of the component or set it sits in, of the type the link needs. A component
- * set holds only components. A removed node throws on every read but its id. A page's `remove`
- * refuses the current page and the file's last page, as the Figma editor does. The typings say
- * nothing about either, so the plugin shows another page before it removes one. On a real file
- * on 2026-10-22, `remove` on the current page threw `Removing this node is not allowed`, and
- * removed the page once another page showed.
+ * an auto layout frame. A layer links only a property of the component or set it sits in, of the
+ * type the link needs. A component set holds only components. A removed node throws on every
+ * read but its id. A page's `remove` refuses the current page and the file's last page, as the
+ * Figma editor does. The typings say nothing about either, so the plugin shows another page
+ * before it removes one. On a real file on 2026-10-22, `remove` on the current page threw
+ * `Removing this node is not allowed`, and removed the page once another page showed.
  *
  * The fake does not lay out: an auto layout frame keeps the size it was given, so a hugging
  * frame does not grow with its content. It draws nothing either: a layer's render bounds are
@@ -150,6 +191,9 @@ type Sides = { top: number; right: number; bottom: number; left: number };
 
 /** The four corner radii. */
 type Corners = { topLeft: number; topRight: number; bottomRight: number; bottomLeft: number };
+
+/** The lengths an auto layout frame or child keeps its size within. */
+type LimitField = "minWidth" | "maxWidth" | "minHeight" | "maxHeight";
 
 /**
  * The font, size and line height of one character of a text layer, and the variables its text
@@ -249,7 +293,15 @@ type NodeState = {
   padding: Sides;
   itemSpacing: number;
   counterAxisSpacing: number | null;
-  minWidth: number | null;
+  /** The node's limits, each null where none applies (rule 16). */
+  limits: Record<LimitField, number | null>;
+  /**
+   * Whether the node grows along its auto layout parent's direction, 0 or 1. The fake hides it
+   * and `layoutAlign` behind the `layoutSizing*` shorthand (rule 12).
+   */
+  layoutGrow: number;
+  /** Whether the node stretches across its auto layout parent's direction. */
+  layoutAlign: "INHERIT" | "STRETCH";
   /** The variable each bound field that is not a text field follows, by id. */
   readonly bindings: Map<VariableBindableNodeField, string>;
   /** The mode the node pins for each collection, by collection id. */
@@ -660,7 +712,10 @@ function storeEffect(state: NodeState, effect: Effect, held: ReadonlySet<string>
   };
 }
 
-/** Resize a node, and turn an auto layout frame's sizing modes to FIXED (rule 5). */
+/**
+ * Resize a node, turn an auto layout frame's sizing modes to FIXED (rule 5), and stop it filling
+ * its auto layout parent (rule 14).
+ */
 function resize(state: NodeState, width: number, height: number): void {
   if (width < 0.01 || height < 0.01) {
     throw new Error(`Cannot resize ${state.id} to ${width} × ${height}: both must be at least 0.01.`);
@@ -671,6 +726,8 @@ function resize(state: NodeState, width: number, height: number): void {
     state.primaryAxisSizingMode = "FIXED";
     state.counterAxisSizingMode = "FIXED";
   }
+  state.layoutGrow = 0;
+  state.layoutAlign = "INHERIT";
 }
 
 /** Where a child's start and size land on one axis when its parent grows from `before` to `after`. */
@@ -734,12 +791,111 @@ function rescale(state: NodeState, scale: number): void {
   }
 }
 
+/** An axis of a layer, named as `layoutMode` names the direction along it. */
+type Axis = "HORIZONTAL" | "VERTICAL";
+
+type Sizing = FrameNode["layoutSizingHorizontal"];
+
+/** The sizing mode of an auto layout frame that covers an axis: the primary one along its direction. */
+function modeOn(state: NodeState, axis: Axis): "primaryAxisSizingMode" | "counterAxisSizingMode" {
+  return state.layoutMode === axis ? "primaryAxisSizingMode" : "counterAxisSizingMode";
+}
+
+/** Whether a node fills an axis of its auto layout parent: it grows along its direction, or stretches across it. */
+function fills(state: NodeState, axis: Axis): boolean {
+  const parent = state.parent;
+  if (parent === undefined || !isAutoLayout(parent)) {
+    return false;
+  }
+  return parent.layoutMode === axis ? state.layoutGrow === 1 : state.layoutAlign === "STRETCH";
+}
+
+/**
+ * What `layoutSizingHorizontal` or `layoutSizingVertical` reads (rule 12): FILL where the parent's
+ * auto layout gives the node its room, HUG where the node's own sizing mode or text auto resize
+ * follows its content, and FIXED otherwise.
+ */
+function sizingOn(state: NodeState, axis: Axis): Sizing {
+  if (fills(state, axis)) {
+    return "FILL";
+  }
+  if (state.type === "TEXT") {
+    const hugs =
+      state.textAutoResize === "WIDTH_AND_HEIGHT" ||
+      (axis === "VERTICAL" && state.textAutoResize === "HEIGHT");
+    return hugs ? "HUG" : "FIXED";
+  }
+  return isAutoLayout(state) && state[modeOn(state, axis)] === "AUTO" ? "HUG" : "FIXED";
+}
+
+/** Stop filling an axis of the parent, as a hug or fixed size does. */
+function stopFilling(state: NodeState, axis: Axis): void {
+  if (state.parent?.layoutMode === axis) {
+    state.layoutGrow = 0;
+  } else {
+    state.layoutAlign = "INHERIT";
+  }
+}
+
+/**
+ * Write `layoutSizingHorizontal` or `layoutSizingVertical` through the fields the shorthand covers
+ * (rule 12), with the errors a real file threw for a sizing it cannot apply (rule 13).
+ */
+function setSizing(state: NodeState, axis: Axis, value: Sizing): void {
+  const member = `set_layoutSizing${axis === "HORIZONTAL" ? "Horizontal" : "Vertical"}`;
+  if (state.type === "TEXT") {
+    throw new Error(`The fake Figma file does not model writing ${member.slice(4)} on text.`);
+  }
+  const ownLayout = isAutoLayout(state);
+  const inLayout = isAutoLayout(state.parent);
+  if (value !== "FIXED" && !ownLayout && !inLayout) {
+    throw new Error(`in ${member}: node must be an auto-layout frame or a child of an auto-layout frame`);
+  }
+  if (value === "HUG" && !ownLayout) {
+    throw new Error(
+      `in ${member}: HUG can only be set on auto-layout frames or text children of auto-layout frames`
+    );
+  }
+  if (value === "FILL" && !inLayout) {
+    throw new Error(`in ${member}: FILL can only be set on children of auto-layout frames`);
+  }
+  write(state, member.slice(4));
+  if (value === "FILL") {
+    if (state.parent?.layoutMode === axis) {
+      state.layoutGrow = 1;
+    } else {
+      state.layoutAlign = "STRETCH";
+    }
+  } else if (inLayout) {
+    stopFilling(state, axis);
+  }
+  if (ownLayout) {
+    state[modeOn(state, axis)] = value === "HUG" ? "AUTO" : "FIXED";
+  }
+}
+
 function requireAutoLayoutOrChild(state: NodeState, field: string): void {
   if (!isAutoLayout(state) && !isAutoLayout(state.parent)) {
     throw new Error(
       `${field} applies only to auto layout frames and their children, and ${state.id} is neither.`
     );
   }
+}
+
+/** Store a limit, or clear it with null, as the typings allow: positive, on auto layout (rule 16). */
+function storeLimit(state: NodeState, field: LimitField, value: number | null): void {
+  if (value !== null) {
+    requireAutoLayoutOrChild(state, field);
+    if (!(value > 0)) {
+      throw new Error(`${field} must be positive, and ${value} is not.`);
+    }
+  }
+  state.limits[field] = value === null ? null : f32(value);
+}
+
+function setLimit(state: NodeState, field: LimitField, value: number | null): void {
+  storeLimit(state, field, value);
+  write(state, field);
 }
 
 /** Write the number a node field takes, as a binding or a literal write does. */
@@ -752,8 +908,10 @@ function setNumberField(state: NodeState, field: VariableBindableNodeField, valu
       resize(state, state.width, value);
       return;
     case "minWidth":
-      requireAutoLayoutOrChild(state, "minWidth");
-      state.minWidth = f32(value);
+    case "maxWidth":
+    case "minHeight":
+    case "maxHeight":
+      storeLimit(state, field, value);
       return;
     case "itemSpacing":
       state.itemSpacing = f32(value);
@@ -1379,7 +1537,9 @@ function copiedFields(source: NodeState): Omit<NodeState, UncopiedField> {
     padding: { ...source.padding },
     itemSpacing: source.itemSpacing,
     counterAxisSpacing: source.counterAxisSpacing,
-    minWidth: source.minWidth,
+    limits: { ...source.limits },
+    layoutGrow: source.layoutGrow,
+    layoutAlign: source.layoutAlign,
     bindings: new Map(source.bindings),
     explicitModes: new Map(source.explicitModes),
     propertyReferences: source.propertyReferences === null ? null : { ...source.propertyReferences },
@@ -1640,6 +1800,54 @@ class FakeSceneNode extends FakeBaseNode {
     const state = live(this);
     write(state, "constraints");
     state.constraints = { ...value };
+  }
+
+  get layoutSizingHorizontal(): Sizing {
+    return sizingOn(live(this), "HORIZONTAL");
+  }
+
+  set layoutSizingHorizontal(value: Sizing) {
+    setSizing(live(this), "HORIZONTAL", value);
+  }
+
+  get layoutSizingVertical(): Sizing {
+    return sizingOn(live(this), "VERTICAL");
+  }
+
+  set layoutSizingVertical(value: Sizing) {
+    setSizing(live(this), "VERTICAL", value);
+  }
+
+  get minWidth(): number | null {
+    return live(this).limits.minWidth;
+  }
+
+  set minWidth(value: number | null) {
+    setLimit(live(this), "minWidth", value);
+  }
+
+  get maxWidth(): number | null {
+    return live(this).limits.maxWidth;
+  }
+
+  set maxWidth(value: number | null) {
+    setLimit(live(this), "maxWidth", value);
+  }
+
+  get minHeight(): number | null {
+    return live(this).limits.minHeight;
+  }
+
+  set minHeight(value: number | null) {
+    setLimit(live(this), "minHeight", value);
+  }
+
+  get maxHeight(): number | null {
+    return live(this).limits.maxHeight;
+  }
+
+  set maxHeight(value: number | null) {
+    setLimit(live(this), "maxHeight", value);
   }
 
   get boundVariables(): FrameNode["boundVariables"] {
@@ -1919,8 +2127,20 @@ class FakeFrameLikeNode extends FakeSceneNode {
     return live(this).counterAxisAlignItems;
   }
 
+  /** Rule 17: no STRETCH, and BASELINE only in a row. */
   set counterAxisAlignItems(value: FrameNode["counterAxisAlignItems"]) {
     const state = live(this);
+    // The typings leave STRETCH out of the type, so only a cast reaches this check.
+    if (!["MIN", "CENTER", "MAX", "BASELINE"].includes(value)) {
+      throw new Error(
+        `counterAxisAlignItems takes no ${value}. Stretch a child with layoutSizing* FILL instead.`
+      );
+    }
+    if (value === "BASELINE" && state.layoutMode !== "HORIZONTAL") {
+      throw new Error(
+        `BASELINE can only be set on horizontal auto-layout frames, and ${state.id} has ${state.layoutMode}.`
+      );
+    }
     write(state, "counterAxisAlignItems");
     state.counterAxisAlignItems = value;
   }
@@ -1983,19 +2203,6 @@ class FakeFrameLikeNode extends FakeSceneNode {
     const state = live(this);
     write(state, "counterAxisSpacing");
     state.counterAxisSpacing = value === null ? null : f32(value);
-  }
-
-  get minWidth(): number | null {
-    return live(this).minWidth;
-  }
-
-  set minWidth(value: number | null) {
-    const state = live(this);
-    if (value !== null) {
-      requireAutoLayoutOrChild(state, "minWidth");
-    }
-    write(state, "minWidth");
-    state.minWidth = value === null ? null : f32(value);
   }
 }
 
@@ -2434,7 +2641,9 @@ function createNode(file: FileState, type: NodeType, name: string, id?: string):
     padding: { top: 0, right: 0, bottom: 0, left: 0 },
     itemSpacing: 0,
     counterAxisSpacing: 0,
-    minWidth: null,
+    limits: { minWidth: null, maxWidth: null, minHeight: null, maxHeight: null },
+    layoutGrow: 0,
+    layoutAlign: "INHERIT",
     bindings: new Map(),
     explicitModes: new Map(),
     propertyReferences: null,

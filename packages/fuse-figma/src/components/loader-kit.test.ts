@@ -7,7 +7,7 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { builtKit, literal, paint, variantRoot } from "../../test/built-kit";
+import { builtKit, HUG, literal, paint, UNLIMITED, variantRoot } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
 
 let spec: BuiltSets["spec"];
@@ -19,6 +19,10 @@ beforeAll(async () => {
 /** A loader box around a spinner of `size` px. */
 const loader = (size: number) => ({
   name: "loader",
+  direction: "HORIZONTAL",
+  sizing: { horizontal: HUG, vertical: HUG },
+  limits: UNLIMITED,
+  clips: true,
   paddingTop: literal(16),
   paddingRight: literal(16),
   paddingBottom: literal(16),

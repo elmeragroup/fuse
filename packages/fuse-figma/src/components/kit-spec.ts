@@ -120,30 +120,81 @@ export type FrameLayerSpec = BoxSpec & {
 export type ChildLayerSpec = TextLayerSpec | IconLayerSpec | FrameLayerSpec;
 
 /**
- * Where an auto layout box places its children along one axis: at the start, centered or at
- * the end, as `items-*` and `justify-*` place them in CSS.
+ * Where an auto layout box places its children across its direction: at the start, centered or
+ * at the end, as `items-*` places them in CSS.
  */
-export type AlignSpec = "MIN" | "CENTER" | "MAX";
+export type CounterAlignSpec = "MIN" | "CENTER" | "MAX";
 
 /**
- * A box: a horizontal auto layout frame that hugs its content where it fixes no size, and
- * places its children on each axis as its alignment says.
+ * Where an auto layout box places its children along its direction, as `justify-*` places them
+ * in CSS. `SPACE_BETWEEN` puts the first and last child flush with the edges and the room left
+ * between the children, as `justify-between` does.
+ */
+export type PrimaryAlignSpec = CounterAlignSpec | "SPACE_BETWEEN";
+
+/** The axis along which an auto layout box places its children: a row or a column. */
+export type DirectionSpec = "HORIZONTAL" | "VERTICAL";
+
+/**
+ * How a box sizes along one axis: a fixed length, the size of its content, or the room its
+ * parent's auto layout gives it, as Figma's fixed, hug and fill sizing do.
+ */
+export type SizeSpec =
+  | { readonly kind: "fixed"; readonly length: NumberSpec }
+  | { readonly kind: "hug" }
+  | { readonly kind: "fill" };
+
+/** The sizing of a box along each axis. */
+export type SizingSpec = {
+  readonly horizontal: SizeSpec;
+  readonly vertical: SizeSpec;
+};
+
+/** The lengths a box keeps its size within, each undefined where nothing limits it. */
+export type LimitsSpec = {
+  readonly minWidth: NumberSpec | undefined;
+  readonly maxWidth: NumberSpec | undefined;
+  readonly minHeight: NumberSpec | undefined;
+  readonly maxHeight: NumberSpec | undefined;
+};
+
+/** No limit on either axis. */
+export const NO_LIMITS: LimitsSpec = {
+  minWidth: undefined,
+  maxWidth: undefined,
+  minHeight: undefined,
+  maxHeight: undefined,
+};
+
+/**
+ * The fixed length of one axis.
+ *
+ * @param size - The axis's sizing.
+ * @returns The length, or undefined where the box hugs or fills the axis.
+ */
+export function fixedLength(size: SizeSpec): NumberSpec | undefined {
+  return size.kind === "fixed" ? size.length : undefined;
+}
+
+/**
+ * A box: an auto layout frame that sizes each axis as its sizing says, keeps within its limits,
+ * and places its children on each axis as its alignment says.
  */
 export type BoxSpec = {
-  /** The fixed width. An unset width hugs the content, as a label button does. */
-  readonly width: NumberSpec | undefined;
-  /** The fixed height. An unset height hugs the content. */
-  readonly height: NumberSpec | undefined;
-  readonly minWidth: NumberSpec | undefined;
+  readonly direction: DirectionSpec;
+  readonly sizing: SizingSpec;
+  readonly limits: LimitsSpec;
+  /** Whether the box hides what overflows it, as `overflow: hidden` does. */
+  readonly clips: boolean;
   readonly paddingTop: NumberSpec;
   readonly paddingRight: NumberSpec;
   readonly paddingBottom: NumberSpec;
   readonly paddingLeft: NumberSpec;
   readonly itemSpacing: NumberSpec;
-  /** Where the children sit along the row, as `justify-content` places them. */
-  readonly primaryAlign: AlignSpec;
-  /** Where the children sit across the row, as `align-items` places them. */
-  readonly counterAlign: AlignSpec;
+  /** Where the children sit along the direction, as `justify-content` places them. */
+  readonly primaryAlign: PrimaryAlignSpec;
+  /** Where the children sit across the direction, as `align-items` places them. */
+  readonly counterAlign: CounterAlignSpec;
   readonly cornerRadius: NumberSpec;
   readonly fill: ColorSpec | undefined;
   readonly stroke: StrokeSpec | undefined;
@@ -155,7 +206,8 @@ export type BoxSpec = {
 
 /**
  * A component root: the box a variant component draws, such as an `inline-flex items-center
- * justify-center` Button.
+ * justify-center` Button. A root sits in its component set, which has no auto layout, so it
+ * cannot fill an axis.
  */
 export type ComponentRootSpec = BoxSpec & {
   /** The layer name, the part's `data-slot`. */

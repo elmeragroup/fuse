@@ -711,6 +711,86 @@ describe("a later run on an applied file", () => {
     expect(await changes(file)).toEqual([]);
     expect(onlyShadow(focus).color.r).toBeCloseTo(RING_GRAY, 2);
   });
+
+  it("plans nothing for the Button, Separator and Switch boxes as a real file held them on 2026-10-22", async () => {
+    const file = await appliedFile();
+    const button = variantNamed(await componentSet(file, "Button"), DEFAULT_BUTTON);
+    const label = childNamed(button, "TEXT", "label");
+    const separators = setOn(await kitPage(file, SEPARATOR_PAGE), "Separator");
+    const across = variantNamed(separators, "orientation=horizontal");
+    const down = variantNamed(separators, "orientation=vertical");
+    const track = variantNamed(
+      setOn(await kitPage(file, SWITCH_PAGE), "Switch"),
+      "size=default, checked=off, state=rest"
+    );
+    const thumb = childNamed(track, "FRAME", "switch-thumb");
+    const dot = childNamed(thumb, "FRAME", "dot");
+
+    // Write each box's layout through the members the plugin wrote before sizing became a
+    // projection, into the state the real file held: a resize, then both sizing modes.
+    const writeAsBefore = (box: FrameNode | ComponentNode, primary: "AUTO" | "FIXED"): void => {
+      box.layoutMode = "HORIZONTAL";
+      box.resize(box.width, box.height);
+      box.primaryAxisSizingMode = primary;
+      box.counterAxisSizingMode = "FIXED";
+      box.minWidth = null;
+      box.maxWidth = null;
+      box.minHeight = null;
+      box.maxHeight = null;
+    };
+    writeAsBefore(button, "AUTO");
+    for (const box of [across, down, track, thumb, dot]) {
+      writeAsBefore(box, "FIXED");
+    }
+    const font = label.fontName;
+    if (font !== file.figma.mixed) {
+      await file.figma.loadFontAsync(font);
+    }
+    label.textAutoResize = "WIDTH_AND_HEIGHT";
+
+    // What the real file read on each, probe P0 of the batch run.
+    const layout = (box: FrameNode | ComponentNode) => [
+      box.layoutMode,
+      box.layoutSizingHorizontal,
+      box.layoutSizingVertical,
+      box.primaryAxisSizingMode,
+      box.counterAxisSizingMode,
+      box.clipsContent,
+    ];
+    expect(layout(button)).toEqual(["HORIZONTAL", "HUG", "FIXED", "AUTO", "FIXED", true]);
+    expect([button.minWidth, button.maxWidth, button.minHeight, button.maxHeight]).toEqual([
+      null,
+      null,
+      null,
+      null,
+    ]);
+    expect([label.layoutSizingHorizontal, label.layoutSizingVertical]).toEqual(["HUG", "HUG"]);
+    expect([...layout(across), across.width, across.height]).toEqual([
+      "HORIZONTAL",
+      "FIXED",
+      "FIXED",
+      "FIXED",
+      "FIXED",
+      true,
+      256,
+      1,
+    ]);
+    expect([down.width, down.height]).toEqual([1, 16]);
+    expect([...layout(track), track.primaryAxisAlignItems, track.counterAxisAlignItems]).toEqual([
+      "HORIZONTAL",
+      "FIXED",
+      "FIXED",
+      "FIXED",
+      "FIXED",
+      true,
+      "MIN",
+      "CENTER",
+    ]);
+    for (const box of [thumb, dot]) {
+      expect(layout(box)).toEqual(["HORIZONTAL", "FIXED", "FIXED", "FIXED", "FIXED", false]);
+    }
+    expect(await changes(file)).toEqual([]);
+  });
 });
 
 describe("a file whose label font the machine cannot load", () => {

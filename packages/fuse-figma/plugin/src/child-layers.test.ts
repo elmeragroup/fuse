@@ -94,10 +94,13 @@ async function planButton(
   plan: Plan,
   spec: TextLayerSpec = LABEL
 ): Promise<void> {
-  await planChildren(await fixtureRun(file, plan), component, "Button", [spec], {
-    properties: new Map(),
-    icons: new Map(),
-  });
+  await planChildren(
+    await fixtureRun(file, plan),
+    component,
+    "Button",
+    { direction: "HORIZONTAL", children: [spec] },
+    { properties: new Map(), icons: new Map() }
+  );
 }
 
 async function changesFor(button: ButtonFile, spec: TextLayerSpec = LABEL): Promise<string[]> {

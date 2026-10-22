@@ -9,6 +9,7 @@
 
 import type {
   ColorSpec,
+  DirectionSpec,
   NumberSpec,
   RgbaSpec,
   ShadowSpec,
@@ -151,6 +152,14 @@ export function variableLabel(ref: VariableRef): string {
 }
 
 /**
+ * What a planner compares the spec with. `read` compares it with the node as the planning pass
+ * reads it. `unknown` records the write whatever the node reads, for a field that an earlier
+ * operation of the run changes in a way the pass cannot read ahead, as a direction change moves a
+ * hug or a fill to the other axis and resizes the box.
+ */
+export type Held = "read" | "unknown";
+
+/**
  * Plan one number field against its spec.
  *
  * @param run - The run.
@@ -158,18 +167,20 @@ export function variableLabel(ref: VariableRef): string {
  * @param label - The node's label, for change lines.
  * @param field - The field.
  * @param spec - The value the field should hold.
+ * @param held - Whether to compare with what the node holds, or write the field whatever it holds.
  */
 export function planNumber(
   run: Run,
   node: SceneNode,
   label: string,
   field: NumberField,
-  spec: NumberSpec
+  spec: NumberSpec,
+  held: Held = "read"
 ): void {
   const bound = node.boundVariables;
   if (spec.kind === "variable") {
     const variable = run.variables.variable(spec.variable);
-    if (field.bindings.every((binding) => bound?.[binding]?.id === variable.id)) {
+    if (held === "read" && field.bindings.every((binding) => bound?.[binding]?.id === variable.id)) {
       return;
     }
     change(run.plan, label, `${field.name} → ${spec.variable.name}`, () => {
@@ -179,7 +190,11 @@ export function planNumber(
     });
     return;
   }
-  if (field.bindings.every((binding) => bound?.[binding] === undefined) && field.matches(spec.value)) {
+  if (
+    held === "read" &&
+    field.bindings.every((binding) => bound?.[binding] === undefined) &&
+    field.matches(spec.value)
+  ) {
     return;
   }
   change(run.plan, label, `${field.name} → ${describeNumber(spec)}`, () => {
@@ -431,56 +446,83 @@ export function planShadows(
   });
 }
 
-/** The sizing modes of an auto layout frame. */
-export type SizingModes = {
-  readonly primary: "FIXED" | "AUTO";
-  readonly counter: "FIXED" | "AUTO";
+/** How a node sizes along each axis, as `layoutSizingHorizontal` and `layoutSizingVertical` name it. */
+export type LayoutSizing = {
+  readonly horizontal: FrameNode["layoutSizingHorizontal"];
+  readonly vertical: FrameNode["layoutSizingVertical"];
 };
 
 /**
- * Plan a size and the sizing modes as one operation. `resize` turns both sizing modes to
- * FIXED, so the operation writes both sizing modes again after the size.
+ * The sizing an auto layout frame reads once its direction is `direction`. A direction change
+ * keeps both sizing modes, each in its role along or across the direction, so a hug moves to the
+ * other axis with it, as a real file showed on 2026-10-22. A fill stays, since it comes from the
+ * parent's layout.
+ */
+function sizingAlong(node: FrameNode | ComponentNode, direction: DirectionSpec): LayoutSizing {
+  const held: LayoutSizing = { horizontal: node.layoutSizingHorizontal, vertical: node.layoutSizingVertical };
+  if (node.layoutMode === direction) {
+    return held;
+  }
+  const after = (current: LayoutSizing["horizontal"], axis: DirectionSpec): LayoutSizing["horizontal"] => {
+    if (current === "FILL") {
+      return current;
+    }
+    const mode = axis === direction ? node.primaryAxisSizingMode : node.counterAxisSizingMode;
+    return mode === "AUTO" ? "HUG" : "FIXED";
+  };
+  return { horizontal: after(held.horizontal, "HORIZONTAL"), vertical: after(held.vertical, "VERTICAL") };
+}
+
+/**
+ * Plan a node's fixed lengths and its layout sizing as one operation. A resize, or a width or
+ * height binding, turns a hugging or filling axis fixed, so the operation writes both axes' sizing
+ * again after the lengths. The operation runs after the one that sets the node's direction, so
+ * the plan compares the spec with the sizing the node reads in that direction. A turn also
+ * resizes the node, as a hug moves to the other axis. On a real file on 2026-10-22 a row 40 tall
+ * became 14 tall as a column. So when the node turns, the operation writes its fixed lengths
+ * whatever the node reads now.
  *
  * @param run - The run.
- * @param node - The auto layout frame.
+ * @param node - The auto layout frame, which may also sit in one.
  * @param label - The node's label, for change lines.
- * @param planSize - Plans the size into the run it receives.
- * @param modes - The sizing modes the spec asks for.
+ * @param spec - The direction and the sizing the spec asks for.
+ * @param held - `unknown` when the node's parent turns in this run, which moves a fill to the
+ *   other axis, so the operation writes both axes' sizing and the fixed lengths whatever the node
+ *   reads now.
+ * @param planLengths - Plans the fixed lengths into the run it receives, compared with what the
+ *   node holds, or written whatever it holds when the lengths are `unknown`.
  */
-export function planSizing(
+export function planLayoutSizing(
   run: Run,
   node: FrameNode | ComponentNode,
   label: string,
-  planSize: (group: Run) => void,
-  modes: SizingModes
+  spec: { readonly direction: DirectionSpec; readonly sizing: LayoutSizing },
+  held: Held,
+  planLengths: (group: Run, lengths: Held) => void
 ): void {
-  const writeModes = (): void => {
-    node.primaryAxisSizingMode = modes.primary;
-    node.counterAxisSizingMode = modes.counter;
+  const { sizing } = spec;
+  const reads = held === "read" ? sizingAlong(node, spec.direction) : undefined;
+  const lengths: Held = held === "read" && node.layoutMode === spec.direction ? "read" : "unknown";
+  const writeSizing = (): void => {
+    node.layoutSizingHorizontal = sizing.horizontal;
+    node.layoutSizingVertical = sizing.vertical;
   };
   changeTogether(
     run.plan,
     label,
     (plan) => {
-      const group: Run = { ...run, plan };
-      planSize(group);
-      planScalar(
-        group,
-        label,
-        "primaryAxisSizingMode",
-        node.primaryAxisSizingMode,
-        modes.primary,
-        writeModes
-      );
-      planScalar(
-        group,
-        label,
-        "counterAxisSizingMode",
-        node.counterAxisSizingMode,
-        modes.counter,
-        writeModes
-      );
+      planLengths({ ...run, plan }, lengths);
+      for (const [axis, member] of SIZING_MEMBERS) {
+        if (reads?.[axis] !== sizing[axis]) {
+          change(plan, label, `${member} → ${sizing[axis]}`, writeSizing);
+        }
+      }
     },
-    writeModes
+    writeSizing
   );
 }
+
+const SIZING_MEMBERS = [
+  ["horizontal", "layoutSizingHorizontal"],
+  ["vertical", "layoutSizingVertical"],
+] as const;

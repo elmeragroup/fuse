@@ -10,10 +10,13 @@ import {
   builtKit,
   ERROR_RING,
   FOCUS_RING,
+  fixedSize,
+  HUG,
   literal,
   paint,
   SHADOW_XS,
   token,
+  UNLIMITED,
   variantRoot,
 } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
@@ -36,6 +39,10 @@ const indicator = (icon: string) => ({
   kind: "frame",
   key: "indicator",
   name: "checkbox-indicator",
+  direction: "HORIZONTAL",
+  sizing: { horizontal: HUG, vertical: HUG },
+  limits: UNLIMITED,
+  clips: false,
   paddingTop: literal(0),
   paddingRight: literal(0),
   paddingBottom: literal(0),
@@ -74,8 +81,10 @@ describe("the Checkbox component set", () => {
   it("draws an empty 16px card box with a muted-foreground border and the 4px-capped corner when off", () => {
     expect(checkbox("off", "rest")).toEqual({
       name: "checkbox",
-      width: literal(16),
-      height: literal(16),
+      direction: "HORIZONTAL",
+      sizing: fixedSize(literal(16), literal(16)),
+      limits: UNLIMITED,
+      clips: true,
       paddingTop: literal(0),
       paddingRight: literal(0),
       paddingBottom: literal(0),

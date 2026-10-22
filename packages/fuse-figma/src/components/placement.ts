@@ -16,18 +16,34 @@ import {
   normalizeCss,
   splitTopLevel,
 } from "./css-values";
-import { ZERO } from "./kit-spec";
-import type { AlignSpec, BoxSpec, FrameLayerSpec, NumberSpec } from "./kit-spec";
+import { fixedLength, NO_LIMITS, ZERO } from "./kit-spec";
+import type {
+  BoxSpec,
+  CounterAlignSpec,
+  FrameLayerSpec,
+  NumberSpec,
+  PrimaryAlignSpec,
+  SizeSpec,
+  StrokeSpec,
+} from "./kit-spec";
 import type { CompiledUtilities } from "./utility-css";
 
 /** How a box lays out its layers, as the box mapping read it. */
 export type Layout = {
   /** Whether the box is a flex box whose `flex-direction` is unset or `row`, a horizontal auto layout. */
   readonly flexRow: boolean;
-  readonly primaryAlign: AlignSpec;
-  readonly counterAlign: AlignSpec;
+  readonly primaryAlign: PrimaryAlignSpec;
+  readonly counterAlign: CounterAlignSpec;
   /** Where `justify-content` packs the layers, or `unset` where nothing sets it. */
-  readonly justify: AlignSpec | "unset";
+  readonly justify: PrimaryAlignSpec | "unset";
+};
+
+/** The lengths of a row that place a part along it. The width is undefined where the row hugs it. */
+type RowSize = {
+  readonly width: NumberSpec | undefined;
+  readonly stroke: StrokeSpec | undefined;
+  readonly paddingLeft: NumberSpec;
+  readonly paddingRight: NumberSpec;
 };
 
 /** A part a box holds: its computed style and the layer the mapping drew for it. */
@@ -42,7 +58,7 @@ export type ParentBox = {
   readonly layout: Layout;
   /** How many layers the box holds in the cell, its parts among them. */
   readonly layers: number;
-  readonly size: Pick<BoxSpec, "width" | "stroke" | "paddingLeft" | "paddingRight">;
+  readonly size: RowSize;
 };
 
 /**
@@ -54,7 +70,7 @@ export type ParentBox = {
  * @param parts - The parts the cell renders in it, as mapped.
  * @returns The box's primary alignment: the translate's where one maps, else the layout's.
  */
-export function placeParts(parent: ParentBox, parts: readonly PlacedPart[]): AlignSpec {
+export function placeParts(parent: ParentBox, parts: readonly PlacedPart[]): PrimaryAlignSpec {
   const { layout, layers } = parent;
   const centering =
     layout.primaryAlign === "CENTER" && layout.counterAlign === "CENTER" && layers === 1
@@ -67,7 +83,11 @@ export function placeParts(parent: ParentBox, parts: readonly PlacedPart[]): Ali
   if (only === undefined || layers !== 1 || !layout.flexRow) {
     return layout.primaryAlign;
   }
-  const moved = readTranslate(only.style, only.layer, {
+  const size = {
+    width: fixedLength(only.layer.sizing.horizontal),
+    height: fixedLength(only.layer.sizing.vertical),
+  };
+  const moved = readTranslate(only.style, size, {
     contentWidth: contentWidth(parent.style, parent.size),
     justify: layout.justify,
   });
@@ -127,22 +147,25 @@ export function partsThatScale(
  */
 export function slotAroundDot(style: LayerStyle, box: BoxSpec): BoxSpec {
   const share = readScale(style, box);
-  const { width, height, minWidth, cornerRadius, stroke } = box;
+  const { sizing, limits, cornerRadius, stroke } = box;
   const dot: FrameLayerSpec = {
     kind: "frame",
     key: "dot",
     name: "dot",
     ...box,
-    width: width === undefined ? undefined : scaled(width, share),
-    height: height === undefined ? undefined : scaled(height, share),
-    minWidth: undefined,
+    sizing: {
+      horizontal: scaledSize(sizing.horizontal, share),
+      vertical: scaledSize(sizing.vertical, share),
+    },
+    limits: NO_LIMITS,
     cornerRadius: scaled(cornerRadius, share),
     stroke: stroke === undefined ? undefined : { ...stroke, weight: scaled(stroke.weight, share) },
   };
   return {
-    width,
-    height,
-    minWidth,
+    direction: "HORIZONTAL",
+    sizing,
+    limits,
+    clips: false,
     paddingTop: ZERO,
     paddingRight: ZERO,
     paddingBottom: ZERO,
@@ -215,10 +238,7 @@ function readPosition(reader: LayerStyle, parent: ParentLayout): void {
  * @returns The width in pixels, or undefined when the width, the border or a side's padding is
  *   not a literal.
  */
-function contentWidth(
-  reader: LayerStyle,
-  box: Pick<BoxSpec, "width" | "stroke" | "paddingLeft" | "paddingRight">
-): number | undefined {
+function contentWidth(reader: LayerStyle, box: RowSize): number | undefined {
   const { width, stroke, paddingLeft, paddingRight } = box;
   const border = reader.has("border-width") ? stroke?.weight : ZERO;
   return width?.kind === "literal" &&
@@ -234,7 +254,7 @@ type Row = {
   /** The width of the row's content box, or undefined where it is not fixed. */
   readonly contentWidth: number | undefined;
   /** Where `justify-content` packs the row's children, or `unset` where nothing sets it. */
-  readonly justify: AlignSpec | "unset";
+  readonly justify: PrimaryAlignSpec | "unset";
 };
 
 /** How far apart two lengths in pixels may be and still count as one. */
@@ -256,9 +276,9 @@ const SAME_LENGTH = 1e-6;
  */
 function readTranslate(
   reader: LayerStyle,
-  size: Pick<BoxSpec, "width" | "height">,
+  size: { readonly width: NumberSpec | undefined; readonly height: NumberSpec | undefined },
   row: Row
-): AlignSpec | undefined {
+): PrimaryAlignSpec | undefined {
   const { width, height } = size;
   const position = normalizeCss(reader.raw("position") ?? "static");
   if (position !== "static" && position !== "relative") {
@@ -266,7 +286,7 @@ function readTranslate(
   }
   return reader.read(
     "translate",
-    (value): AlignSpec | undefined => {
+    (value): PrimaryAlignSpec | undefined => {
       // A translate with one length moves along x only.
       const [x = "", y = "0", ...z] = splitTopLevel(normalizeCss(value), " ");
       if (row.contentWidth === undefined || width?.kind !== "literal" || height?.kind !== "literal") {
@@ -314,8 +334,8 @@ function readScale(reader: LayerStyle, box: BoxSpec): number {
       (value) => {
         const [x, y = x, ...z] = splitTopLevel(normalizeCss(value), " ").map(evaluateNumber);
         const scalable =
-          literal(box.width) &&
-          literal(box.height) &&
+          literal(fixedLength(box.sizing.horizontal)) &&
+          literal(fixedLength(box.sizing.vertical)) &&
           literal(box.cornerRadius) &&
           (box.stroke === undefined || literal(box.stroke.weight)) &&
           box.shadows.length === 0 &&
@@ -333,4 +353,9 @@ function readScale(reader: LayerStyle, box: BoxSpec): number {
 /** A length at a share of its size. A bound length keeps its variable, which only a share of 1 reaches. */
 function scaled(spec: NumberSpec, share: number): NumberSpec {
   return spec.kind === "literal" ? { kind: "literal", value: spec.value * share } : spec;
+}
+
+/** An axis's sizing at a share of its size: a fixed length scales, and hug or fill stays. */
+function scaledSize(size: SizeSpec, share: number): SizeSpec {
+  return size.kind === "fixed" ? { kind: "fixed", length: scaled(size.length, share) } : size;
 }

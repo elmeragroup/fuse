@@ -6,7 +6,7 @@
 
 import type { NumberSpec, PreviewGroupSpec, PreviewSpec } from "../../src/components/kit-spec.ts";
 import type { PlannedSet } from "./component-set.ts";
-import { near, planNumber, planPaints, planScalar, planSizing } from "./fields.ts";
+import { near, planLayoutSizing, planNumber, planPaints, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
 import type { Siblings } from "./identity.ts";
@@ -71,11 +71,14 @@ export function planWrapFrame(run: Run, frame: FrameNode, label: string, grid: W
   planScalar(run, label, "layoutWrap", frame.layoutWrap, "WRAP", () => {
     frame.layoutWrap = "WRAP";
   });
-  planSizing(
+  planLayoutSizing(
     run,
     frame,
     label,
-    (group) =>
+    { direction: "HORIZONTAL", sizing: { horizontal: "FIXED", vertical: "HUG" } },
+    // A preview sits on its page, and a group in a preview that lays it out in rows.
+    "read",
+    (group, lengths) =>
       planNumber(
         group,
         frame,
@@ -86,9 +89,9 @@ export function planWrapFrame(run: Run, frame: FrameNode, label: string, grid: W
           matches: (value) => near(frame.width, value),
           write: (value) => frame.resize(value, frame.height),
         },
-        literal(grid.width)
-      ),
-    { primary: "FIXED", counter: "AUTO" }
+        literal(grid.width),
+        lengths
+      )
   );
   planScalar(run, label, "counterAxisAlignItems", frame.counterAxisAlignItems, "CENTER", () => {
     frame.counterAxisAlignItems = "CENTER";

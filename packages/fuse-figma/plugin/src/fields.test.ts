@@ -1,6 +1,6 @@
 /**
  * Field planners on the in-memory file in `fake-figma.ts`, each against the Figma rule it
- * exists for: `resize` turns both sizing modes of an auto layout frame to FIXED (rule 5), and a
+ * exists for: `resize` turns a hugging axis of an auto layout frame fixed (rules 5 and 14), and a
  * paint bound to a color variable takes the variable's alpha as its opacity (rule 1). The
  * oracle is the end state the spec asks for, and a second plan over that state must list
  * nothing.
@@ -8,35 +8,37 @@
 import { describe, expect, it } from "vitest";
 
 import { color, fixtureFile, fixtureRun } from "./fake-fixtures.ts";
-import { near, planNumber, planPaints, planSizing } from "./fields.ts";
-import type { SizingModes } from "./fields.ts";
+import { near, planLayoutSizing, planNumber, planPaints } from "./fields.ts";
+import type { LayoutSizing } from "./fields.ts";
 import { changeLines, newPlan, performPlan } from "./plan.ts";
 import type { Plan } from "./plan.ts";
 
 /** A root that hugs the row and keeps a fixed height, as a Button does. */
-const BUTTON_MODES: SizingModes = { primary: "AUTO", counter: "FIXED" };
+const BUTTON_SIZING: LayoutSizing = { horizontal: "HUG", vertical: "FIXED" };
 
-/** An auto layout frame 80 wide, with the height and sizing modes given. */
-function autoLayoutFrame(figma: PluginAPI, height: number, modes: SizingModes): FrameNode {
+/** A row 80 wide, with the height and sizing given. */
+function row(figma: PluginAPI, height: number, sizing: LayoutSizing): FrameNode {
   const frame = figma.createFrame();
   frame.layoutMode = "HORIZONTAL";
   frame.resize(80, height);
-  frame.primaryAxisSizingMode = modes.primary;
-  frame.counterAxisSizingMode = modes.counter;
+  frame.layoutSizingHorizontal = sizing.horizontal;
+  frame.layoutSizingVertical = sizing.vertical;
   return frame;
 }
 
-describe("planSizing", () => {
+describe("planLayoutSizing", () => {
   const file = fixtureFile([]);
 
-  /** Plan a 32px literal height on the frame. */
+  /** Plan a 32px literal height on the frame, hugging its width. */
   async function planButtonHeight(frame: FrameNode): Promise<Plan> {
     const plan = newPlan();
     const run = await fixtureRun(file, plan);
-    planSizing(
+    planLayoutSizing(
       run,
       frame,
       "Button",
+      { direction: "HORIZONTAL", sizing: BUTTON_SIZING },
+      "read",
       (group) =>
         planNumber(
           group,
@@ -49,35 +51,36 @@ describe("planSizing", () => {
             write: (value) => frame.resize(frame.width, value),
           },
           { kind: "literal", value: 32 }
-        ),
-      BUTTON_MODES
+        )
     );
     return plan;
   }
 
-  it("writes the sizing modes again after a height write resets them", async () => {
-    const frame = autoLayoutFrame(file.figma, 24, BUTTON_MODES);
+  it("writes the sizing again after a height write turns the hug fixed", async () => {
+    const frame = row(file.figma, 24, BUTTON_SIZING);
     const plan = await planButtonHeight(frame);
     expect(changeLines(plan)).toEqual(["Button: height → 32"]);
 
     await performPlan(plan);
-    expect(frame.height).toBe(32);
-    expect(frame.primaryAxisSizingMode).toBe("AUTO");
-    expect(frame.counterAxisSizingMode).toBe("FIXED");
+    expect([frame.height, frame.layoutSizingHorizontal, frame.layoutSizingVertical]).toEqual([
+      32,
+      "HUG",
+      "FIXED",
+    ]);
     expect(changeLines(await planButtonHeight(frame))).toEqual([]);
   });
 
-  it("lists a sizing mode that differs already on the same line as the height", async () => {
-    const frame = autoLayoutFrame(file.figma, 24, { primary: "FIXED", counter: "FIXED" });
+  it("lists a sizing that differs already on the same line as the height", async () => {
+    const frame = row(file.figma, 24, { horizontal: "FIXED", vertical: "FIXED" });
     const plan = await planButtonHeight(frame);
-    expect(changeLines(plan)).toEqual(["Button: height → 32, primaryAxisSizingMode → AUTO"]);
+    expect(changeLines(plan)).toEqual(["Button: height → 32, layoutSizingHorizontal → HUG"]);
 
     await performPlan(plan);
     expect(changeLines(await planButtonHeight(frame))).toEqual([]);
   });
 
   it("plans nothing for a frame that already matches", async () => {
-    expect(changeLines(await planButtonHeight(autoLayoutFrame(file.figma, 32, BUTTON_MODES)))).toEqual([]);
+    expect(changeLines(await planButtonHeight(row(file.figma, 32, BUTTON_SIZING)))).toEqual([]);
   });
 });
 

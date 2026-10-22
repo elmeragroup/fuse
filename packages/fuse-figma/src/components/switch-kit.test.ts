@@ -14,9 +14,11 @@ import {
   CENTERED_BOX,
   ERROR_RING,
   FOCUS_RING,
+  fixedSize,
   literal,
   paint,
   SHADOW_XS,
+  UNLIMITED,
   variantRoot,
 } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
@@ -49,8 +51,8 @@ function thumb(slot: number, dot: number, fill: string) {
     kind: "frame",
     key: "thumb",
     name: "switch-thumb",
-    width: literal(slot),
-    height: literal(slot),
+    sizing: fixedSize(literal(slot), literal(slot)),
+    clips: false,
     ...CENTERED_BOX,
     cornerRadius: literal(0),
     children: [
@@ -58,8 +60,8 @@ function thumb(slot: number, dot: number, fill: string) {
         kind: "frame",
         key: "dot",
         name: "dot",
-        width: literal(dot),
-        height: literal(dot),
+        sizing: fixedSize(literal(dot), literal(dot)),
+        clips: false,
         ...CENTERED_BOX,
         cornerRadius: literal(dot / 2),
         fill: paint(fill),
@@ -85,8 +87,10 @@ describe("the Switch component set", () => {
   it("draws the default track off as a muted-foreground outline, its 12px dot at the start", () => {
     expect(track("default", "off", "rest")).toEqual({
       name: "switch",
-      width: literal(32),
-      height: literal(18.4),
+      direction: "HORIZONTAL",
+      sizing: fixedSize(literal(32), literal(18.4)),
+      limits: UNLIMITED,
+      clips: true,
       ...BARE,
       primaryAlign: "MIN",
       counterAlign: "CENTER",
@@ -110,9 +114,8 @@ describe("the Switch component set", () => {
 
   it("draws the small track at 24px by 14px, with a 9px dot off and a 12px thumb on", () => {
     const off = track("sm", "off", "rest");
-    expect([off.width, off.height, off.cornerRadius, off.primaryAlign, off.children]).toEqual([
-      literal(24),
-      literal(14),
+    expect([off.sizing, off.cornerRadius, off.primaryAlign, off.children]).toEqual([
+      fixedSize(literal(24), literal(14)),
       literal(7),
       "MIN",
       [thumb(12, 9, "muted-foreground")],

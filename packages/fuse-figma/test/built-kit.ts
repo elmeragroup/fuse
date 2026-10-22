@@ -65,8 +65,31 @@ export const density = (name: string) =>
 /** A literal number field. */
 export const literal = (value: number) => ({ kind: "literal", value }) as const;
 
-/** A box with no padding or gap that centers its layers, with no shadow and full opacity. */
+/** An axis fixed at a length. */
+export const fixed = <Length>(length: Length) => ({ kind: "fixed", length }) as const;
+
+/** An axis that hugs the box's content. */
+export const HUG = { kind: "hug" } as const;
+
+/** A box fixed at a width and a height. */
+export const fixedSize = <Width, Height>(width: Width, height: Height) =>
+  ({ horizontal: fixed(width), vertical: fixed(height) }) as const;
+
+/** No limit on either axis. */
+export const UNLIMITED = {
+  minWidth: undefined,
+  maxWidth: undefined,
+  minHeight: undefined,
+  maxHeight: undefined,
+} as const;
+
+/**
+ * A horizontal box with no limits, padding or gap that centers its layers, with no shadow and
+ * full opacity.
+ */
 export const CENTERED_BOX = {
+  direction: "HORIZONTAL",
+  limits: UNLIMITED,
   paddingTop: literal(0),
   paddingRight: literal(0),
   paddingBottom: literal(0),

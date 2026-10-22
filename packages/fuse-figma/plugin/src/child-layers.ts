@@ -4,8 +4,10 @@
 
 import { walkLayers } from "../../src/components/kit-spec.ts";
 import type {
+  BoxSpec,
   ChildLayerSpec,
   ComponentSetSpec,
+  DirectionSpec,
   FrameLayerSpec,
   IconLayerSpec,
   NumberSpec,
@@ -20,7 +22,7 @@ import {
   requireFont,
   solidPaint,
 } from "./fields.ts";
-import type { Run } from "./fields.ts";
+import type { Held, Run } from "./fields.ts";
 import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
 import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
@@ -41,6 +43,18 @@ export type PropertyIds = ReadonlyMap<string, string>;
 export type LayerLinks = {
   readonly properties: PropertyIds;
   readonly icons: ReadonlyMap<string, PlannedIcon>;
+};
+
+/**
+ * The box a layer sits in, as the layer's planners need it: the node, the direction the spec lays
+ * it out along, which a fill follows, and `held`, which is `unknown` when the box turns in this run.
+ * A turn moves a layer's fill to the other axis and can change its size, so the layer's planners
+ * write its lengths and sizing whatever it reads now.
+ */
+type Holder = {
+  readonly node: LayerParent;
+  readonly direction: DirectionSpec;
+  readonly held: Held;
 };
 
 /** The text fields that pick a font's style, which the spec sets as a literal. */
@@ -473,29 +487,31 @@ async function planFrame(
   frame: FrameNode,
   label: string,
   spec: FrameLayerSpec,
-  links: LayerLinks
+  links: LayerLinks,
+  holder: Holder
 ): Promise<void> {
   planScalar(run, label, "name", frame.name, spec.name, () => {
     frame.name = spec.name;
   });
-  planBox(run, frame, label, spec, "frame");
-  await planChildren(run, frame, label, spec.children, links);
+  planBox(run, frame, label, spec, { kind: "frame", parent: holder.held });
+  await planChildren(run, frame, label, spec, links);
 }
 
 async function planChild(
   run: Run,
-  parent: LayerParent,
+  holder: Holder,
   siblings: Siblings,
   label: string,
   spec: ChildLayerSpec,
   links: LayerLinks
 ): Promise<Target<SceneNode>> {
+  const parent = holder.node;
   const layerLabel = `${label} / ${spec.name}`;
   const description = `create the ${spec.kind} layer ${spec.name}`;
   if (spec.kind === "frame") {
     const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isFrame);
     if (found !== undefined) {
-      await planFrame(run, found, layerLabel, spec, links);
+      await planFrame(run, found, layerLabel, spec, links, holder);
       return existing(found);
     }
     requireNewTextFonts(run, parent, label, walkLayers(spec));
@@ -504,7 +520,7 @@ async function planChild(
       label,
       description,
       () => placeOwned(parent, run.figma.createFrame(), spec.key, spec.name),
-      (made, plan) => planFrame({ ...run, plan }, made, layerLabel, spec, links)
+      (made, plan) => planFrame({ ...run, plan }, made, layerLabel, spec, links, holder)
     );
   }
   if (spec.kind === "text") {
@@ -548,17 +564,24 @@ async function planChild(
  * @param run - The run.
  * @param parent - The variant component, or a frame layer below it.
  * @param label - The parent's label, for change lines.
- * @param specs - The parent's layers, in order.
+ * @param box - The parent's spec: its layers, in order, and the direction it lays them out along.
+ *   A parent whose direction differs from it turns in this run, so its layers' sizing is planned
+ *   to be written again after the turn.
  * @param links - The set's properties and the kit's icons.
  */
 export async function planChildren(
   run: Run,
   parent: LayerParent,
   label: string,
-  specs: readonly ChildLayerSpec[],
+  box: Pick<BoxSpec, "direction" | "children">,
   links: LayerLinks
 ): Promise<void> {
-  await planOwnedChildren(run.plan, parent, label, "layer", specs, (spec, siblings) =>
-    planChild(run, parent, siblings, label, spec, links)
+  const holder: Holder = {
+    node: parent,
+    direction: box.direction,
+    held: parent.layoutMode === box.direction ? "read" : "unknown",
+  };
+  await planOwnedChildren(run.plan, parent, label, "layer", box.children, (spec, siblings) =>
+    planChild(run, holder, siblings, label, spec, links)
   );
 }

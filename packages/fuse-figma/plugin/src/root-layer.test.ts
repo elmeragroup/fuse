@@ -2,18 +2,30 @@
  * The box planner on the in-memory file in `fake-figma.ts`. `rootFill` is checked against what a
  * real file showed on 2026-10-20: Figma drew a focus ring's spread over a fill at alpha 0.001 and
  * not over a fill at alpha 0. The fill must also change no pixel, so it moves no 8-bit channel by
- * half a step. `planBox` is checked against one hand-written box, planned as a variant's root and
- * as a frame below it: the oracles are the change lines each needs from the node Figma creates,
- * the fields the file holds after Apply, and an empty second plan.
+ * half a step. `planBox` is checked against hand-written boxes, planned as a variant's root and
+ * as frames below it: the oracles are the change lines each needs from the node Figma creates,
+ * the fields the file holds after Apply, and an empty second plan. The sizing cases rest on the
+ * fake's rules 12 to 16, which follow what a real file read on 2026-10-22: a resize or a width
+ * binding turns a filling axis fixed (P2), and a direction change keeps each sizing mode's role,
+ * so the hug moves with it (P6).
  */
 import { describe, expect, it } from "vitest";
 
-import type { BoxSpec, ShadowSpec } from "../../src/components/kit-spec.ts";
-import { color, fixtureFile, fixtureRun, float } from "./fake-fixtures.ts";
+import { NO_LIMITS } from "../../src/components/kit-spec.ts";
+import type {
+  BoxSpec,
+  FrameLayerSpec,
+  NumberSpec,
+  ShadowSpec,
+  SizingSpec,
+} from "../../src/components/kit-spec.ts";
+import { planChildren } from "./child-layers.ts";
+import { childNamed, color, fixtureFile, fixtureRun, float } from "./fake-fixtures.ts";
+import { setKey } from "./identity.ts";
 import { changeLines, newPlan, performPlan } from "./plan.ts";
 import type { Plan } from "./plan.ts";
 import { planBox, rootFill } from "./root-layer.ts";
-import type { BoxRole } from "./root-layer.ts";
+import type { BoxPlace } from "./root-layer.ts";
 
 const RING: ShadowSpec = {
   color: { kind: "variable", variable: { collection: "Fuse tokens", name: "ring" } },
@@ -35,13 +47,20 @@ describe("rootFill", () => {
 });
 
 /**
- * A 16px box that puts its content at the end of the row, centered across it, with a stroke, a
- * ring and no fill of its own.
+ * A 16px root that puts its content at the end of the row, centered across it, with a stroke, a
+ * ring and no fill of its own. It clips, as the build makes every root clip.
  */
 const BOX: BoxSpec = {
-  width: { kind: "literal", value: 16 },
-  height: { kind: "variable", variable: { collection: "Fuse density", name: "size-4" } },
-  minWidth: undefined,
+  direction: "HORIZONTAL",
+  sizing: {
+    horizontal: { kind: "fixed", length: { kind: "literal", value: 16 } },
+    vertical: {
+      kind: "fixed",
+      length: { kind: "variable", variable: { collection: "Fuse density", name: "size-4" } },
+    },
+  },
+  limits: NO_LIMITS,
+  clips: true,
   paddingTop: { kind: "literal", value: 0 },
   paddingRight: { kind: "literal", value: 0 },
   paddingBottom: { kind: "literal", value: 0 },
@@ -60,6 +79,10 @@ const BOX: BoxSpec = {
   children: [],
 };
 
+/** A variant's root, and a frame below a box that keeps its direction in the run. */
+const ROOT: BoxPlace = { kind: "root" };
+const PART: BoxPlace = { kind: "frame", parent: "read" };
+
 describe("planBox", () => {
   const file = fixtureFile([
     float("Fuse density", "size-4", 16),
@@ -68,9 +91,14 @@ describe("planBox", () => {
     color("Fuse tokens", "ring", { r: 0.5, g: 0.5, b: 0.5, a: 1 }),
   ]);
 
-  async function planOn(node: FrameNode | ComponentNode, label: string, role: BoxRole): Promise<Plan> {
+  async function planOn(
+    node: FrameNode | ComponentNode,
+    label: string,
+    place: BoxPlace,
+    spec: BoxSpec = BOX
+  ): Promise<Plan> {
     const plan = newPlan();
-    planBox(await fixtureRun(file, plan), node, label, BOX, role);
+    planBox(await fixtureRun(file, plan), node, label, spec, place);
     return plan;
   }
 
@@ -108,7 +136,7 @@ describe("planBox", () => {
 
   it("draws a variant's root, which clips and takes a clear fill under its ring", async () => {
     const root = file.figma.createComponent();
-    const plan = await planOn(root, "Radio", "root");
+    const plan = await planOn(root, "Radio", ROOT);
     expect(changeLines(plan)).toEqual(
       shared("Radio", [
         "Radio: clipsContent → true",
@@ -122,7 +150,7 @@ describe("planBox", () => {
     expect(root.fills).toMatchObject([{ type: "SOLID", color: { r: 0, g: 0, b: 0 } }]);
     // Figma stores the opacity as a 32-bit float.
     expect(root.fills !== file.figma.mixed && root.fills[0]?.opacity).toBeCloseTo(0.0015, 6);
-    expect(changeLines(await planOn(root, "Radio", "root"))).toEqual([]);
+    expect(changeLines(await planOn(root, "Radio", ROOT))).toEqual([]);
   });
 
   it("draws a frame below the root, which shows its overflow and takes no fill the spec lacks", async () => {
@@ -130,7 +158,9 @@ describe("planBox", () => {
     root.layoutMode = "HORIZONTAL";
     const frame = file.figma.createFrame();
     root.appendChild(frame);
-    const plan = await planOn(frame, "Radio / Indicator", "frame");
+    // A part shows what overflows it, as the build draws every part.
+    const part = { ...BOX, clips: false };
+    const plan = await planOn(frame, "Radio / Indicator", PART, part);
     expect(changeLines(plan)).toEqual(
       shared("Radio / Indicator", [
         "Radio / Indicator: clipsContent → false",
@@ -141,6 +171,220 @@ describe("planBox", () => {
     await performPlan(plan);
     expectBoxFields(frame);
     expect([frame.clipsContent, frame.fills]).toEqual([false, []]);
-    expect(changeLines(await planOn(frame, "Radio / Indicator", "frame"))).toEqual([]);
+    expect(changeLines(await planOn(frame, "Radio / Indicator", PART, part))).toEqual([]);
+  });
+});
+
+const px = (value: number): NumberSpec => ({ kind: "literal", value });
+const HUG = { kind: "hug" } as const;
+const FILL = { kind: "fill" } as const;
+const fixed = (length: NumberSpec) => ({ kind: "fixed", length }) as const;
+
+/** A box with no limits, padding, gap, corner, paint, ring or layers, at the start of both axes, not clipping. */
+function plainBox(direction: BoxSpec["direction"], sizing: SizingSpec): BoxSpec {
+  return {
+    direction,
+    sizing,
+    limits: NO_LIMITS,
+    clips: false,
+    paddingTop: px(0),
+    paddingRight: px(0),
+    paddingBottom: px(0),
+    paddingLeft: px(0),
+    itemSpacing: px(0),
+    primaryAlign: "MIN",
+    counterAlign: "MIN",
+    cornerRadius: px(0),
+    fill: undefined,
+    stroke: undefined,
+    shadows: [],
+    opacity: 1,
+    children: [],
+  };
+}
+
+function frameLayer(key: string, sizing: SizingSpec): FrameLayerSpec {
+  return { kind: "frame", key, name: key, ...plainBox("HORIZONTAL", sizing) };
+}
+
+const sizingOf = (node: LayoutMixin): readonly string[] => [
+  node.layoutSizingHorizontal,
+  node.layoutSizingVertical,
+];
+
+describe("planBox sizing, direction, limits and clipping", () => {
+  const file = fixtureFile([float("Fuse density", "size-4", 16), float("Fuse density", "control-h-xs", 24)]);
+  const { figma } = file;
+
+  /** Plan a box and the layers it holds, as a variant's root or as a frame below one. */
+  async function planTree(node: ComponentNode | FrameNode, spec: BoxSpec, place: BoxPlace): Promise<Plan> {
+    const plan = newPlan();
+    const run = await fixtureRun(file, plan);
+    planBox(run, node, "Box", spec, place);
+    await planChildren(run, node, "Box", spec, { properties: new Map(), icons: new Map() });
+    return plan;
+  }
+
+  /** An existing row with no fill or clip, inside a column, as a part sits in its root. */
+  function partInColumn(): FrameNode {
+    const column = figma.createComponent();
+    column.layoutMode = "VERTICAL";
+    const part = figma.createFrame();
+    column.appendChild(part);
+    part.layoutMode = "HORIZONTAL";
+    part.fills = [];
+    part.clipsContent = false;
+    return part;
+  }
+
+  it("builds a column that fills one layer across and lets another hug, in one Apply", async () => {
+    const column: BoxSpec = {
+      ...plainBox("VERTICAL", { horizontal: fixed(px(200)), vertical: HUG }),
+      children: [
+        frameLayer("bar", { horizontal: FILL, vertical: fixed(px(6)) }),
+        frameLayer("caption", { horizontal: HUG, vertical: HUG }),
+      ],
+    };
+    const root = figma.createComponent();
+    const plan = await planTree(root, column, ROOT);
+    expect(changeLines(plan)).toEqual([
+      "Box: layoutMode → VERTICAL",
+      "Box: width → 200, layoutSizingVertical → HUG",
+      "Box: fill → none",
+      "Box: create the frame layer bar",
+      "Box: create the frame layer caption",
+    ]);
+
+    await performPlan(plan);
+    const bar = childNamed(root, "FRAME", "bar");
+    expect([root.layoutMode, root.width, ...sizingOf(root)]).toEqual(["VERTICAL", 200, "FIXED", "HUG"]);
+    expect([bar.height, ...sizingOf(bar)]).toEqual([6, "FILL", "FIXED"]);
+    expect(sizingOf(childNamed(root, "FRAME", "caption"))).toEqual(["HUG", "HUG"]);
+    expect(changeLines(await planTree(root, column, ROOT))).toEqual([]);
+  });
+
+  it("turns a row that hugs its width into a column that keeps hugging it, in one Apply (P6)", async () => {
+    const row = figma.createComponent();
+    row.layoutMode = "HORIZONTAL";
+    row.resize(100, 40);
+    row.primaryAxisSizingMode = "AUTO";
+    row.fills = [];
+    const column = plainBox("VERTICAL", { horizontal: HUG, vertical: fixed(px(40)) });
+    // The row reads as hugging its width already, and would read as hugging its height once it
+    // turns. On a real file the turn took such a row from 40 to 14 tall, so the plan writes the
+    // height and the sizing again after the turn, though the height matches before it.
+    expect(sizingOf(row)).toEqual(["HUG", "FIXED"]);
+    const plan = await planTree(row, column, ROOT);
+    expect(changeLines(plan)).toEqual([
+      "Box: layoutMode → VERTICAL",
+      "Box: height → 40, layoutSizingHorizontal → HUG, layoutSizingVertical → FIXED",
+    ]);
+
+    await performPlan(plan);
+    expect([row.height, ...sizingOf(row)]).toEqual([40, "HUG", "FIXED"]);
+    expect(changeLines(await planTree(row, column, ROOT))).toEqual([]);
+  });
+
+  it("writes a layer's sizing again when its parent turns, which moves its fill across, in one Apply", async () => {
+    const row = figma.createComponent();
+    row.layoutMode = "HORIZONTAL";
+    row.resize(200, 40);
+    row.fills = [];
+    const bar = figma.createFrame();
+    row.appendChild(bar);
+    setKey(bar, "bar");
+    bar.name = "bar";
+    bar.layoutMode = "HORIZONTAL";
+    bar.resize(100, 6);
+    bar.fills = [];
+    bar.clipsContent = false;
+    bar.layoutSizingHorizontal = "FILL";
+    const column: BoxSpec = {
+      ...plainBox("VERTICAL", { horizontal: fixed(px(200)), vertical: fixed(px(40)) }),
+      children: [frameLayer("bar", { horizontal: FILL, vertical: fixed(px(6)) })],
+    };
+    // The bar fills the row's width by growing along it, so it reads as the spec asks until the
+    // row turns, when the grow runs down the column instead.
+    expect(sizingOf(bar)).toEqual(["FILL", "FIXED"]);
+    const plan = await planTree(row, column, ROOT);
+    expect(changeLines(plan).filter((line) => line.startsWith("Box / bar:"))).toEqual([
+      "Box / bar: height → 6, layoutSizingHorizontal → FILL, layoutSizingVertical → FIXED",
+    ]);
+
+    await performPlan(plan);
+    expect([bar.height, ...sizingOf(bar)]).toEqual([6, "FILL", "FIXED"]);
+    expect(changeLines(await planTree(row, column, ROOT))).toEqual([]);
+  });
+
+  it("keeps a width bound to a variable fixed, where the part filled its column before (P2)", async () => {
+    const part = partInColumn();
+    part.layoutSizingHorizontal = "FILL";
+    const bound = plainBox("HORIZONTAL", {
+      horizontal: fixed({ kind: "variable", variable: { collection: "Fuse density", name: "size-4" } }),
+      vertical: HUG,
+    });
+    const plan = await planTree(part, bound, PART);
+    expect(changeLines(plan)).toEqual([
+      "Box: width → size-4, layoutSizingHorizontal → FIXED, layoutSizingVertical → HUG",
+    ]);
+
+    await performPlan(plan);
+    expect([part.width, part.boundVariables?.width?.id, ...sizingOf(part)]).toEqual([
+      16,
+      file.variable("Fuse density", "size-4").id,
+      "FIXED",
+      "HUG",
+    ]);
+    expect(changeLines(await planTree(part, bound, PART))).toEqual([]);
+  });
+
+  it("fills a part again after the resize its height needs, which turns a fill fixed (P2)", async () => {
+    const part = partInColumn();
+    part.layoutSizingHorizontal = "FILL";
+    const filling = plainBox("HORIZONTAL", { horizontal: FILL, vertical: fixed(px(6)) });
+    const plan = await planTree(part, filling, PART);
+    expect(changeLines(plan)).toEqual(["Box: height → 6"]);
+
+    await performPlan(plan);
+    expect([part.height, ...sizingOf(part)]).toEqual([6, "FILL", "FIXED"]);
+    expect(changeLines(await planTree(part, filling, PART))).toEqual([]);
+  });
+
+  it("binds a limit on a hugging width, writes one on a filling height, clears a third, then converges (P7)", async () => {
+    const part = partInColumn();
+    part.maxHeight = 300;
+    const limited: BoxSpec = {
+      ...plainBox("HORIZONTAL", { horizontal: HUG, vertical: FILL }),
+      limits: {
+        ...NO_LIMITS,
+        maxWidth: { kind: "variable", variable: { collection: "Fuse density", name: "control-h-xs" } },
+        minHeight: px(64),
+      },
+    };
+    const plan = await planTree(part, limited, PART);
+    expect(changeLines(plan)).toEqual([
+      "Box: layoutSizingHorizontal → HUG, layoutSizingVertical → FILL",
+      "Box: maxWidth → control-h-xs",
+      "Box: minHeight → 64",
+      "Box: maxHeight → none",
+    ]);
+
+    await performPlan(plan);
+    expect(sizingOf(part)).toEqual(["HUG", "FILL"]);
+    expect([part.minWidth, part.maxWidth, part.minHeight, part.maxHeight]).toEqual([null, 24, 64, null]);
+    expect(part.boundVariables?.maxWidth?.id).toBe(file.variable("Fuse density", "control-h-xs").id);
+    expect(changeLines(await planTree(part, limited, PART))).toEqual([]);
+  });
+
+  it("clips a part whose spec clips, as a CSS box with hidden overflow does", async () => {
+    const part = partInColumn();
+    const clipping = {
+      ...plainBox("HORIZONTAL", { horizontal: fixed(px(100)), vertical: fixed(px(100)) }),
+      clips: true,
+    };
+    const plan = await planTree(part, clipping, PART);
+    expect(changeLines(plan)).toEqual(["Box: clipsContent → true"]);
+    await performPlan(plan);
+    expect(part.clipsContent).toBe(true);
   });
 });

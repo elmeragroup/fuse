@@ -5,16 +5,18 @@
  * runs, so those plans can then look up nothing that fails.
  */
 
-import { topLevelSpecs, walkLayers } from "../../src/components/kit-spec.ts";
+import { fixedLength, topLevelSpecs, walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   BoxSpec,
   ChildLayerSpec,
   ColorSpec,
   ComponentRootSpec,
+  ComponentSetSpec,
   KitSpec,
   NumberSpec,
   StringSpec,
   VariableRef,
+  VariantSpec,
 } from "../../src/components/kit-spec.ts";
 import { checkComponentSet } from "./component-set.ts";
 import { variableLabel } from "./fields.ts";
@@ -43,9 +45,12 @@ function boundString(spec: StringSpec): BoundRef[] {
 function boxRefs(box: BoxSpec): BoundRef[] {
   return [
     ...[
-      box.width,
-      box.height,
-      box.minWidth,
+      fixedLength(box.sizing.horizontal),
+      fixedLength(box.sizing.vertical),
+      box.limits.minWidth,
+      box.limits.maxWidth,
+      box.limits.minHeight,
+      box.limits.maxHeight,
       box.paddingTop,
       box.paddingRight,
       box.paddingBottom,
@@ -80,6 +85,63 @@ function rootRefs(root: ComponentRootSpec): BoundRef[] {
   return [...boxRefs(root), ...walkLayers(root).flatMap(layerRefs)];
 }
 
+const AXES = [
+  { axis: "horizontal", length: "width", limits: ["minWidth", "maxWidth"] },
+  { axis: "vertical", length: "height", limits: ["minHeight", "maxHeight"] },
+] as const;
+
+/**
+ * Refuse a box that limits an axis it fixes, or that holds a frame filling an axis the box hugs.
+ * Figma clamps a fixed length to a limit, so the plan would resize the box on every run. CSS
+ * resolves a `width` against its own `min-width` and `max-width`, so the build folds such a limit
+ * into the length. A hugging box takes its size from its layers, so a layer that fills it
+ * collapses to its smallest size, where CSS resolves the percentage against an auto size the same
+ * circular way.
+ */
+function checkBox(set: ComponentSetSpec, variant: VariantSpec, box: BoxSpec, name: string): void {
+  for (const { axis, length, limits } of AXES) {
+    const limit =
+      box.sizing[axis].kind === "fixed" ? limits.find((field) => box.limits[field] !== undefined) : undefined;
+    if (limit !== undefined) {
+      throw new Error(
+        `${set.name}: ${name} in the variant ${variant.key} sets ${limit} on its fixed ${length}. Fold the limit into the ${length}, as CSS resolves a ${length} against its own limits.`
+      );
+    }
+    const filling = box.children.find(
+      (child) => child.kind === "frame" && child.sizing[axis].kind === "fill"
+    );
+    if (filling !== undefined && box.sizing[axis].kind === "hug") {
+      throw new Error(
+        `${set.name}: ${filling.name} in the variant ${variant.key} fills the ${length} of a parent that hugs it, so Figma would shrink it to its smallest ${length}.`
+      );
+    }
+  }
+}
+
+/**
+ * Refuse a sizing Figma cannot draw as CSS does. A variant sits in its component set, which has no
+ * auto layout, so Figma refuses FILL on its root, as a real file did on 2026-10-22. Each box, the
+ * root and every frame below it, passes `checkBox`.
+ */
+function checkSizing(set: ComponentSetSpec): void {
+  for (const variant of set.variants) {
+    const { root } = variant;
+    for (const { axis, length } of AXES) {
+      if (root.sizing[axis].kind === "fill") {
+        throw new Error(
+          `${set.name}: the variant ${variant.key} fills its ${length}, and a variant sits in its component set, which has no auto layout. Give it a fixed ${length}.`
+        );
+      }
+    }
+    checkBox(set, variant, root, root.name);
+    for (const layer of walkLayers(root)) {
+      if (layer.kind === "frame") {
+        checkBox(set, variant, layer, layer.name);
+      }
+    }
+  }
+}
+
 /**
  * Every variable the run binds: the sets', the icon library's glyph color, and the background
  * the previews and the library paint.
@@ -111,7 +173,8 @@ export function kitCollections(kit: KitSpec): ReadonlySet<string> {
  * @param kit - The kit.
  * @throws When the file lacks a variable or mode the kit names, a variable has the wrong type,
  *   or the spec contradicts itself, such as a page key listed twice, a node on a page the kit
- *   does not list, or a preview that places a set from another page.
+ *   does not list, a preview that places a set from another page, or a fill or limit Figma
+ *   cannot draw.
  */
 export function checkKit(variables: KitVariables, kit: KitSpec): void {
   const pages = new Set<string>();
@@ -128,6 +191,7 @@ export function checkKit(variables: KitVariables, kit: KitSpec): void {
   }
   for (const set of kit.componentSets) {
     checkComponentSet(set);
+    checkSizing(set);
   }
   for (const preview of kit.previews) {
     for (const group of preview.groups) {

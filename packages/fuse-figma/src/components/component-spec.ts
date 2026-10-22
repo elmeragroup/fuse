@@ -16,19 +16,20 @@ import {
   readShadows,
 } from "./css-values";
 import type { VariableIndex } from "./css-values";
-import { walkLayers, ZERO } from "./kit-spec";
+import { NO_LIMITS, walkLayers, ZERO } from "./kit-spec";
 import type {
-  AlignSpec,
   AxisSpec,
   BoxSpec,
   ChildLayerSpec,
   ColorSpec,
   ComponentRootSpec,
   ComponentSetSpec,
+  CounterAlignSpec,
   FrameLayerSpec,
   NumberSpec,
   IconLayerSpec,
   ShadowSpec,
+  SizeSpec,
   StringSpec,
   StrokeSpec,
   SwapPropertySpec,
@@ -263,7 +264,15 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
     const cellCascade = cascade.cell(cell);
     const scope: MapScope = { definition, cell, context, scaling };
     const rootCascade = cellCascade.root(definition.classesFor(cell), definition.slot);
-    const root: ComponentRootSpec = { name: definition.slot, ...mapBox(definition, rootCascade, scope) };
+    // A root clips its content, because Figma draws a drop shadow's spread only from a frame
+    // that clips, and a focus ring is a spread shadow. The first run on a real file stored the
+    // ring's 2px spread as 0 on a root that did not clip. Clipping costs a root nothing, since
+    // every child sits inside its padding.
+    const root: ComponentRootSpec = {
+      name: definition.slot,
+      ...mapBox(definition, rootCascade, scope),
+      clips: true,
+    };
     placeRoot(rootCascade.style);
     cellCascade.settle();
     for (const layer of walkLayers(root)) {
@@ -389,13 +398,13 @@ function literalLayout(expected: readonly string[], detail: string) {
 }
 
 /** Where `align-items` and `justify-content` place a box's children, by the value Tailwind compiles. */
-const ALIGNMENTS = new Map<string, { readonly align: AlignSpec; readonly where: string }>([
+const ALIGNMENTS = new Map<string, { readonly align: CounterAlignSpec; readonly where: string }>([
   ["flex-start", { align: "MIN", where: "at the start of" }],
   ["center", { align: "CENTER", where: "centered on" }],
   ["flex-end", { align: "MAX", where: "at the end of" }],
 ]);
 
-function readAlign(reader: LayerStyle, property: string, axis: string): AlignSpec | undefined {
+function readAlign(reader: LayerStyle, property: string, axis: string): CounterAlignSpec | undefined {
   return reader.read(
     property,
     (value) => ALIGNMENTS.get(normalizeCss(value)),
@@ -548,9 +557,12 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
     () => ({ outcome: "dropped", detail: "both sides are fixed, so the ratio sizes neither" })
   );
   return {
-    width,
-    height,
-    minWidth: number("min-width"),
+    direction: "HORIZONTAL",
+    sizing: { horizontal: hugUnlessFixed(width), vertical: hugUnlessFixed(height) },
+    limits: { ...NO_LIMITS, minWidth: number("min-width") },
+    // A part shows what overflows it, as a CSS box with `overflow: visible` does. The root
+    // overrides this.
+    clips: false,
     paddingTop: number("padding-top") ?? ZERO,
     paddingRight,
     paddingBottom: number("padding-bottom") ?? ZERO,
@@ -569,6 +581,11 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
 
 /** A width that hugs the box's content, which the box writes as no width. */
 const HUG = "hug";
+
+/** The sizing of an axis whose length the box read: fixed at that length, or hugging without one. */
+function hugUnlessFixed(length: NumberSpec | undefined): SizeSpec {
+  return length === undefined ? { kind: "hug" } : { kind: "fixed", length };
+}
 
 /**
  * Read `width`. `fit-content` is the width of what the box holds in a container with room to

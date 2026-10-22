@@ -7,7 +7,7 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { CENTERED_BOX, literal } from "../../test/built-kit";
+import { CENTERED_BOX, fixedSize, HUG, literal, UNLIMITED } from "../../test/built-kit";
 import { buildFixture, chip, dot, frameOf, ICON } from "../../test/fixture-sets";
 import type { FixtureContext } from "../../test/fixture-sets";
 import type { IconSlot } from "./component-spec";
@@ -197,7 +197,7 @@ describe("an animation", () => {
 describe("a percentage width", () => {
   it.each(["w-full", "w-[calc(100%-4px)]"])("leaves %s unmapped", async (className) => {
     const { componentSet, coverage } = await buildFixture(chip(className));
-    expect(componentSet.variants[0]?.root.width).toBeUndefined();
+    expect(componentSet.variants[0]?.root.sizing.horizontal).toEqual(HUG);
     expect(coverage).toEqual([
       expect.objectContaining({ className, property: "width", outcome: "unmapped" }),
     ]);
@@ -210,7 +210,7 @@ describe("a percentage width", () => {
 describe("a fit-content width", () => {
   it("hugs the content", async () => {
     const { componentSet, coverage } = await buildFixture(chip("w-fit"));
-    expect(componentSet.variants[0]?.root.width).toBeUndefined();
+    expect(componentSet.variants[0]?.root.sizing.horizontal).toEqual(HUG);
     expect(coverage.map((row) => [row.className, row.property, row.outcome, row.detail])).toEqual([
       ["w-fit", "width", "literal", "the box hugs its content"],
     ]);
@@ -353,6 +353,10 @@ describe("a root that holds a part", () => {
     const [off, on] = componentSet.variants;
     expect(on?.root).toEqual({
       name: "chip",
+      direction: "HORIZONTAL",
+      sizing: { horizontal: HUG, vertical: HUG },
+      limits: UNLIMITED,
+      clips: true,
       ...box,
       itemSpacing: zero,
       primaryAlign: "MAX",
@@ -365,8 +369,10 @@ describe("a root that holds a part", () => {
           kind: "frame",
           key: "dot",
           name: "chip-dot",
-          width: { kind: "literal", value: 16 },
-          height: { kind: "literal", value: 16 },
+          direction: "HORIZONTAL",
+          sizing: fixedSize(literal(16), literal(16)),
+          limits: UNLIMITED,
+          clips: false,
           ...box,
           itemSpacing: zero,
           primaryAlign: "CENTER",
@@ -634,9 +640,7 @@ describe("a part centered by absolute position", () => {
 
   it("is a layer its parent's auto layout centers", async () => {
     const { frame, rows } = await build("relative flex items-center justify-center size-[16px]", CENTERED);
-    expect(frame).toEqual(
-      expect.objectContaining({ width: { kind: "literal", value: 8 }, height: { kind: "literal", value: 8 } })
-    );
+    expect(frame).toEqual(expect.objectContaining({ sizing: fixedSize(literal(8), literal(8)) }));
     expect(rows).toEqual(["left: literal", "position: literal", "top: literal", "translate: literal"]);
   });
 
@@ -757,11 +761,11 @@ describe("a part drawn at a scale", () => {
     };
   }
 
-  /** A frame with no padding, gap, stroke or shadow, centering what it holds. */
+  /** A frame with no limits, padding, gap, stroke or shadow, centering what it holds and not clipping it. */
   function frame(
-    fields: Omit<FrameLayerSpec, "kind" | "minWidth" | "stroke" | keyof typeof CENTERED_BOX>
+    fields: Omit<FrameLayerSpec, "kind" | "clips" | "stroke" | keyof typeof CENTERED_BOX>
   ): FrameLayerSpec {
-    return { kind: "frame", minWidth: undefined, stroke: undefined, ...CENTERED_BOX, ...fields };
+    return { kind: "frame", clips: false, stroke: undefined, ...CENTERED_BOX, ...fields };
   }
   const BLACK = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
 
@@ -769,16 +773,14 @@ describe("a part drawn at a scale", () => {
     return frame({
       key: "thumb",
       name: "chip-thumb",
-      width: { kind: "literal", value: 16 },
-      height: { kind: "literal", value: 16 },
+      sizing: fixedSize(literal(16), literal(16)),
       cornerRadius: literal(0),
       fill: undefined,
       children: [
         frame({
           key: "dot",
           name: "dot",
-          width: { kind: "literal", value: dotSize },
-          height: { kind: "literal", value: dotSize },
+          sizing: fixedSize(literal(dotSize), literal(dotSize)),
           cornerRadius: { kind: "literal", value: dotSize / 2 },
           fill: BLACK,
           children: [],

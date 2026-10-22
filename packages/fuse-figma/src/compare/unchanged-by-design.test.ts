@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { NO_LIMITS } from "../components/kit-spec";
 import type { ComponentRootSpec, VariantSpec } from "../components/kit-spec";
 import { unchangedByDesign } from "./unchanged-by-design";
 
@@ -13,9 +14,10 @@ const zero = { kind: "literal", value: 0 } as const;
 
 const ROOT: ComponentRootSpec = {
   name: "chip",
-  width: undefined,
-  height: undefined,
-  minWidth: undefined,
+  direction: "HORIZONTAL",
+  sizing: { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
+  limits: NO_LIMITS,
+  clips: true,
   paddingTop: zero,
   paddingRight: zero,
   paddingBottom: zero,

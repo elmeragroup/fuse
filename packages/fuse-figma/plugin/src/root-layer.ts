@@ -1,12 +1,12 @@
 /**
- * A box: a variant's component root, or a frame layer below it. Each is a horizontal auto
- * layout frame that places its content as the spec's alignment says, and hugs it along each
- * axis unless the spec fixes a size, as an icon square does.
+ * A box: a variant's component root, or a frame layer below it. Each is an auto layout frame
+ * along the spec's direction that places its content as the spec's alignment says, sizes each
+ * axis as fixed, hugging or filling its parent, and keeps within the spec's limits.
  */
 
-import type { BoxSpec, ColorSpec, NumberSpec } from "../../src/components/kit-spec.ts";
-import { near, planNumber, planPaints, planScalar, planShadows, planSizing } from "./fields.ts";
-import type { NumberField, Run } from "./fields.ts";
+import type { BoxSpec, ColorSpec, LimitsSpec, NumberSpec, SizeSpec } from "../../src/components/kit-spec.ts";
+import { near, planLayoutSizing, planNumber, planPaints, planScalar, planShadows } from "./fields.ts";
+import type { Held, LayoutSizing, NumberField, Run } from "./fields.ts";
 import { change } from "./plan.ts";
 
 /** A node that holds a box's layers: a variant component, or a frame layer below it. */
@@ -72,18 +72,19 @@ export function rootFill(spec: Pick<BoxSpec, "fill" | "shadows">): ColorSpec | u
   return spec.fill ?? (spreads ? CLEAR : undefined);
 }
 
-/** Plan a fixed width or height, or unbind one the spec lets the box hug. */
-function planSize(
+/** Plan a fixed width or height, or unbind one the spec lets the box hug or fill. */
+function planLength(
   run: Run,
   node: LayerParent,
   label: string,
   name: "width" | "height",
-  spec: NumberSpec | undefined,
+  spec: SizeSpec,
+  held: Held,
   write: (value: number) => void
 ): void {
-  if (spec === undefined) {
+  if (spec.kind !== "fixed") {
     if (node.boundVariables?.[name] !== undefined) {
-      change(run.plan, label, `${name} → hug`, () => node.setBoundVariable(name, null));
+      change(run.plan, label, `${name} → ${spec.kind}`, () => node.setBoundVariable(name, null));
     }
     return;
   }
@@ -92,31 +93,79 @@ function planSize(
     node,
     label,
     { name, bindings: [name], matches: (value) => near(node[name], value), write },
-    spec
+    spec.length,
+    held
   );
 }
 
-/**
- * Which box a plan draws. A variant's `root` clips and gets the fill a spread shadow needs. A
- * `frame` below the root does neither: CSS draws a part's overflow, and no part below a root
- * casts a spread yet.
- */
-export type BoxRole = "root" | "frame";
+/** The `layoutSizing*` value each kind of axis sizing writes. */
+const SIZING = {
+  fixed: "FIXED",
+  hug: "HUG",
+  fill: "FILL",
+} as const satisfies Record<SizeSpec["kind"], LayoutSizing["horizontal"]>;
+
+/** Plan one limit, or remove one the spec drops. */
+function planLimit(
+  run: Run,
+  node: LayerParent,
+  label: string,
+  name: keyof LimitsSpec,
+  spec: NumberSpec | undefined
+): void {
+  if (spec === undefined) {
+    if (node[name] !== null || node.boundVariables?.[name] !== undefined) {
+      change(run.plan, label, `${name} → none`, () => {
+        node.setBoundVariable(name, null);
+        node[name] = null;
+      });
+    }
+    return;
+  }
+  const field: NumberField = {
+    name,
+    bindings: [name],
+    matches: (value) => {
+      const held = node[name];
+      return held !== null && near(held, value);
+    },
+    write: (value) => {
+      node[name] = value;
+    },
+  };
+  planNumber(run, node, label, field, spec);
+}
+
+const LIMITS: readonly (keyof LimitsSpec)[] = ["minWidth", "maxWidth", "minHeight", "maxHeight"];
 
 /**
- * Plan a box against the spec: a variant's root, or a frame layer below it. The box places its
- * content on each axis as the spec's alignment says, as `justify-*` and `items-*` place it, and
- * hugs it where the spec fixes no size.
+ * Where the box a plan draws sits. A variant's `root` sits in its component set, which never turns,
+ * and gets the fill a spread shadow needs. A `frame` below the root gets no such fill, since no
+ * part below a root casts a spread yet. Its `parent` is `unknown` when the box that holds it turns
+ * in this run, which moves the frame's fill to the other axis and can change its size.
+ */
+export type BoxPlace = { readonly kind: "root" } | { readonly kind: "frame"; readonly parent: Held };
+
+/**
+ * Plan a box against the spec: a variant's root, or a frame layer below it. The box lays out its
+ * content along the spec's direction and places it on each axis as the spec's alignment says, as
+ * `justify-*` and `items-*` place it. It sizes each axis as the spec says and keeps within the
+ * spec's limits. The direction comes first, because a direction change moves a hug to the other
+ * axis, and the sizing comes after the lengths, because a resize or a length binding turns a hug
+ * or a fill fixed. When the box or its parent turns in this run, the plan writes the box's
+ * lengths and sizing whatever the box reads now.
  *
  * @param run - The run.
  * @param node - The variant component, or the frame layer.
  * @param label - The box's label, for change lines.
  * @param spec - The box the spec asks for.
- * @param role - Whether the box is a variant's root or a frame below it.
+ * @param place - Whether the box is a variant's root or a frame below it, and whether its parent
+ *   turns in this run.
  */
-export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpec, role: BoxRole): void {
-  planScalar(run, label, "layoutMode", node.layoutMode, "HORIZONTAL", () => {
-    node.layoutMode = "HORIZONTAL";
+export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpec, place: BoxPlace): void {
+  const { direction, sizing } = spec;
+  planScalar(run, label, "layoutMode", node.layoutMode, direction, () => {
+    node.layoutMode = direction;
   });
   planScalar(run, label, "primaryAxisAlignItems", node.primaryAxisAlignItems, spec.primaryAlign, () => {
     node.primaryAxisAlignItems = spec.primaryAlign;
@@ -125,40 +174,26 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
     node.counterAxisAlignItems = spec.counterAlign;
   });
 
-  const { width, height } = spec;
-  planSizing(
+  planLayoutSizing(
     run,
     node,
     label,
-    (group) => {
-      planSize(group, node, label, "width", width, (value) => node.resize(value, node.height));
-      planSize(group, node, label, "height", height, (value) => node.resize(node.width, value));
+    {
+      direction,
+      sizing: { horizontal: SIZING[sizing.horizontal.kind], vertical: SIZING[sizing.vertical.kind] },
     },
-    { primary: width === undefined ? "AUTO" : "FIXED", counter: height === undefined ? "AUTO" : "FIXED" }
-  );
-
-  if (spec.minWidth === undefined) {
-    if (node.minWidth !== null || node.boundVariables?.minWidth !== undefined) {
-      change(run.plan, label, "minWidth → none", () => {
-        node.setBoundVariable("minWidth", null);
-        node.minWidth = null;
-      });
+    place.kind === "frame" ? place.parent : "read",
+    (group, lengths) => {
+      planLength(group, node, label, "width", sizing.horizontal, lengths, (value) =>
+        node.resize(value, node.height)
+      );
+      planLength(group, node, label, "height", sizing.vertical, lengths, (value) =>
+        node.resize(node.width, value)
+      );
     }
-  } else {
-    planNumber(
-      run,
-      node,
-      label,
-      {
-        name: "minWidth",
-        bindings: ["minWidth"],
-        matches: (value) => node.minWidth !== null && near(node.minWidth, value),
-        write: (value) => {
-          node.minWidth = value;
-        },
-      },
-      spec.minWidth
-    );
+  );
+  for (const name of LIMITS) {
+    planLimit(run, node, label, name, spec.limits[name]);
   }
 
   planNumber(run, node, label, paddingField(node, "Top"), spec.paddingTop);
@@ -181,14 +216,12 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
   );
   planNumber(run, node, label, cornerField(node), spec.cornerRadius);
 
-  // The first run on a real file stored the focus ring's 2px spread as 0 on a root that did
-  // not clip. Clipping costs a root nothing, since every child sits inside its padding. A frame
-  // below the root shows what overflows it, as a CSS box with `overflow: visible` does.
-  const clips = role === "root";
+  // The build makes every root clip, for its focus ring's spread (`component-spec.ts`).
+  const { clips } = spec;
   planScalar(run, label, "clipsContent", node.clipsContent, clips, () => {
     node.clipsContent = clips;
   });
-  planPaints(run, label, "fill", node.fills, role === "root" ? rootFill(spec) : spec.fill, (paints) => {
+  planPaints(run, label, "fill", node.fills, place.kind === "root" ? rootFill(spec) : spec.fill, (paints) => {
     node.fills = paints;
   });
   // A CSS border sits inside the box and takes room from the content, so the stroke is drawn

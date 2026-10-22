@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { walkLayers } from "./kit-spec";
+import { NO_LIMITS, walkLayers } from "./kit-spec";
 import type { BoxSpec, ChildLayerSpec, FrameLayerSpec, IconLayerSpec, TextLayerSpec } from "./kit-spec";
 
 const zero = { kind: "literal", value: 0 } as const;
@@ -13,9 +13,10 @@ const black = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
 
 function box(children: readonly ChildLayerSpec[]): BoxSpec {
   return {
-    width: undefined,
-    height: undefined,
-    minWidth: undefined,
+    direction: "HORIZONTAL",
+    sizing: { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
+    limits: NO_LIMITS,
+    clips: false,
     paddingTop: zero,
     paddingRight: zero,
     paddingBottom: zero,

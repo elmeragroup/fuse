@@ -320,8 +320,8 @@ async function planVariantFields(
   planScalar(run, label, "name", component.name, name, () => {
     component.name = name;
   });
-  planBox(run, component, label, variant.root, "root");
-  await planChildren(run, component, label, variant.root.children, links);
+  planBox(run, component, label, variant.root, { kind: "root" });
+  await planChildren(run, component, label, variant.root, links);
 }
 
 async function planVariant(

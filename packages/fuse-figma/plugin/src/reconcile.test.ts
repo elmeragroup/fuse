@@ -7,8 +7,10 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { NO_LIMITS } from "../../src/components/kit-spec.ts";
 import type {
   ChildLayerSpec,
+  ComponentRootSpec,
   FrameLayerSpec,
   IconLayerSpec,
   KitSpec,
@@ -65,9 +67,10 @@ const KIT: KitSpec = {
           properties: { size: "md" },
           root: {
             name: "button",
-            width: undefined,
-            height: literal(36),
-            minWidth: undefined,
+            direction: "HORIZONTAL",
+            sizing: { horizontal: { kind: "hug" }, vertical: { kind: "fixed", length: literal(36) } },
+            limits: NO_LIMITS,
+            clips: true,
             paddingTop: literal(0),
             paddingRight: literal(16),
             paddingBottom: literal(0),
@@ -97,9 +100,10 @@ function frame(key: string, name: string, children: readonly ChildLayerSpec[]): 
     kind: "frame",
     key,
     name,
-    width: undefined,
-    height: undefined,
-    minWidth: undefined,
+    direction: "HORIZONTAL",
+    sizing: { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
+    limits: NO_LIMITS,
+    clips: false,
     paddingTop: literal(0),
     paddingRight: literal(0),
     paddingBottom: literal(0),
@@ -156,6 +160,19 @@ function nestedKit(children: readonly ChildLayerSpec[] = NESTED_LAYERS): KitSpec
     })),
   };
 }
+
+/** `KIT` with its one variant's root changed as `edit` says. */
+function kitWithRoot(edit: (root: ComponentRootSpec) => ComponentRootSpec): KitSpec {
+  return {
+    ...KIT,
+    componentSets: KIT.componentSets.map((set) => ({
+      ...set,
+      variants: set.variants.map((variant) => ({ ...variant, root: edit(variant.root) })),
+    })),
+  };
+}
+
+const FILL = { kind: "fill" } as const;
 
 /**
  * A file whose `font-sans` aliases a brand variable that holds `family` in its default mode.
@@ -273,6 +290,48 @@ describe("the kit check", () => {
         ]),
       ]),
       "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a COLOR.",
+    ],
+    [
+      "a root that fills its width, which its component set cannot give it",
+      kitWithRoot((root) => ({ ...root, sizing: { ...root.sizing, horizontal: FILL } })),
+      "Button: the variant button/size=md fills its width, and a variant sits in its component set, which has no auto layout. Give it a fixed width.",
+    ],
+    [
+      "a frame that fills the width of a root that hugs it",
+      nestedKit([
+        {
+          ...frame("button/control", "Control", [LABEL]),
+          sizing: { horizontal: FILL, vertical: { kind: "hug" } },
+        },
+      ]),
+      "Button: Control in the variant button/size=md fills the width of a parent that hugs it, so Figma would shrink it to its smallest width.",
+    ],
+    [
+      "a limit that binds a string variable",
+      kitWithRoot((root) => ({
+        ...root,
+        limits: {
+          ...root.limits,
+          maxWidth: { kind: "variable", variable: { collection: "Fuse tokens", name: "font-sans" } },
+        },
+      })),
+      "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a FLOAT.",
+    ],
+    [
+      "a root that limits its fixed height",
+      kitWithRoot((root) => ({ ...root, limits: { ...root.limits, minHeight: literal(40) } })),
+      "Button: button in the variant button/size=md sets minHeight on its fixed height. Fold the limit into the height, as CSS resolves a height against its own limits.",
+    ],
+    [
+      "a frame that limits its fixed width",
+      nestedKit([
+        {
+          ...frame("button/control", "Control", [LABEL]),
+          sizing: { horizontal: { kind: "fixed", length: literal(100) }, vertical: { kind: "hug" } },
+          limits: { ...NO_LIMITS, maxWidth: literal(24) },
+        },
+      ]),
+      "Button: Control in the variant button/size=md sets maxWidth on its fixed width. Fold the limit into the width, as CSS resolves a width against its own limits.",
     ],
   ])("stops Plan before any write for %s", async (_, kit, message) => {
     const { file, setup } = fixture("Roboto");
