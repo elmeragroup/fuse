@@ -224,7 +224,7 @@ describe("fuse-figma sync", () => {
         mismatched.map(([collection, entry]) => `${collection}/${entry.name}`),
         []
       );
-      assert.strictEqual(described.length, 99 + 25 + 39);
+      assert.strictEqual(described.length, 100 + 25 + 39);
       assert.include(figma.metadata("Fuse tokens", "feature-foreground").description, "not text-grade");
       for (const collection of ["Fuse variant", "Fuse segment", "Fuse brand"]) {
         const blank = figma
