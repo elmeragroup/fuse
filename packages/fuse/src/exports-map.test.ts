@@ -301,6 +301,7 @@ describe("exports map", () => {
       "buttonVariants",
       "checkboxVariants",
       "kbdVariants",
+      "loaderVariants",
       "radioIconButtonVariants",
       "radioVariants",
       "separatorClass",

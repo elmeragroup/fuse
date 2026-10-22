@@ -57,8 +57,8 @@ const ICON_EDGES = new Map<string, NonNullable<IconSlot["dataIcon"]>>([
 /** The icons each child selector reaches. */
 const CHILD_SELECTORS = new Map<string, (slot: IconSlot) => boolean>([
   ["[&_svg]", () => true],
-  // No kit icon carries a `size-*` class, so the recipe's size reaches every one.
-  ["[&_svg:not([class*='size-'])]", () => true],
+  // `[class*='size-']` matches a class attribute that holds `size-` anywhere in it.
+  ["[&_svg:not([class*='size-'])]", (slot) => !(slot.classes ?? "").includes("size-")],
   ["[&>svg]", (slot) => slot.direct],
   ["[&>svg:not([data-icon=inline-end])]", (slot) => slot.direct && slot.dataIcon !== "inline-end"],
 ]);

@@ -106,6 +106,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/skeleton.js",
     load: async () => (await import("./skeleton-cell.ts")).skeleton,
   },
+  {
+    set: "loader",
+    entry: "dist/loader.js",
+    load: async () => (await import("./loader-cell.ts")).loader,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

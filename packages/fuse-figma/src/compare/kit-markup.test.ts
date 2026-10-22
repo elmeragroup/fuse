@@ -14,7 +14,8 @@
  * `data-slot`, each below its parent part, and a part with no `data-slot` must be the one child
  * element of its parent part. The slots must match
  * the measured element's `<svg>` descendants in order, each under the part that lists it, as a
- * child of that part or nested deeper, and with its `data-icon`. The pseudo-class
+ * child of that part or nested deeper, and with its `data-icon`. A slot that names classes of its
+ * own must name the `<svg>`'s `class` attribute exactly. The pseudo-class
  * variants, `enabled-hover:` and `focus-visible:`, stay out, since static markup cannot show
  * them, and so does the icon edge, which the slots check.
  */
@@ -71,7 +72,11 @@ const NOT_ATTRIBUTES = new Set([
  * its nearest ancestor whose `data-slot` names the root or one of its parts. `direct` means a
  * child of that part.
  */
-type MarkupIcon = Pick<IconSlot, "direct" | "dataIcon"> & { readonly owner: string };
+type MarkupIcon = Pick<IconSlot, "direct" | "dataIcon"> & {
+  readonly owner: string;
+  /** A slot's own `classes`, or an `<svg>`'s `class` attribute. */
+  readonly classes: string | undefined;
+};
 
 function isDescendant(elements: readonly MarkupElement[], index: number, ancestor: number): boolean {
   const parent = elements[index]?.parent;
@@ -115,6 +120,7 @@ function markupIcons(
         owner: owner.slot,
         direct,
         dataIcon: marker === "inline-start" || marker === "inline-end" ? marker : undefined,
+        classes: element.attributes.get("class"),
       },
     ];
   });
@@ -202,8 +208,20 @@ function slotIcons(box: BoxDefinition, name: string, cell: Cell): readonly Marku
     ...(box.parts ?? [])
       .filter((part) => part.shownIn(cell))
       .flatMap((part) => slotIcons(part, part.slot ?? part.key, cell)),
-    ...box.iconsFor(cell).map(({ direct, dataIcon }) => ({ owner: name, direct, dataIcon })),
+    ...box
+      .iconsFor(cell)
+      .map(({ direct, dataIcon, classes }) => ({ owner: name, direct, dataIcon, classes })),
   ];
+}
+
+/**
+ * The markup's icons as the slots must list them: a slot that names no classes of its own makes
+ * no claim about the `<svg>`'s, as Button's spinner leaves out its `animate-spin`.
+ */
+function claimedIcons(slots: readonly MarkupIcon[], markup: readonly MarkupIcon[]): readonly MarkupIcon[] {
+  return markup.map((icon, index) =>
+    slots[index]?.classes === undefined ? { ...icon, classes: undefined } : icon
+  );
 }
 
 describe("each kit definition against the markup of its component", () => {
@@ -254,10 +272,9 @@ describe("each kit definition against the markup of its component", () => {
           for (const [variant, carries] of ATTRIBUTE_VARIANTS) {
             expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(carries(root));
           }
-          expect(slotIcons(definition, definition.slot, cell), key).toEqual(
-            markupIcons(elements, measured, new Set(boxNames(definition, definition.slot)))
-          );
           const names = new Set(boxNames(definition, definition.slot));
+          const slots = slotIcons(definition, definition.slot, cell);
+          expect(slots, key).toEqual(claimedIcons(slots, markupIcons(elements, measured, names)));
           const shown = slotParts(definition, "", cell);
           const rendered = markupParts(elements, measured, names);
           const renderedPaths = rendered.map(([path]) => path);
