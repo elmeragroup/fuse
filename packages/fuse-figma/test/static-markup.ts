@@ -1,9 +1,9 @@
 /**
  * Read the HTML `renderToStaticMarkup` writes, shared by the compare renderers' tests. React
  * writes every element with a closing tag except the void ones, quotes every attribute value
- * and escapes `"` and `>` inside them, so a tag scan finds each element and its parent. The
- * module also finds the element a cell renders for its component's root, and reads the state
- * attributes the checked-control cells vary.
+ * and escapes `"` and `>` inside them, so a tag scan finds each element, its parent and its own
+ * text. The module also finds the element a cell renders for its component's root, and reads the
+ * state attributes the checked-control cells vary.
  */
 
 /** Elements HTML never closes. */
@@ -30,20 +30,46 @@ export type MarkupElement = {
   readonly attributes: ReadonlyMap<string, string>;
   /** The index of the parent element, or undefined at the fragment's top level. */
   readonly parent: number | undefined;
+  /**
+   * The text the element holds outside its child elements. The entities React writes in text,
+   * `&amp;`, `&lt;`, `&gt;`, `&quot;` and `&#x27;`, read as the characters they stand for.
+   */
+  readonly text: string;
 };
+
+/** The entities React's static renderer writes in text, by the character each stands for. */
+const TEXT_ENTITIES = new Map([
+  ["&amp;", "&"],
+  ["&lt;", "<"],
+  ["&gt;", ">"],
+  ["&quot;", '"'],
+  ["&#x27;", "'"],
+]);
+
+/** Text as React wrote it, decoded in one pass, so `&amp;lt;` reads as `&lt;`. */
+function decodeText(text: string): string {
+  return text.replace(/&(?:amp|lt|gt|quot|#x27);/g, (entity) => TEXT_ENTITIES.get(entity) ?? entity);
+}
 
 /**
  * Every element of an HTML fragment, in document order.
  *
  * @param html - Markup from `renderToStaticMarkup`.
- * @returns The elements, each with its attributes and its parent's index.
+ * @returns The elements, each with its attributes, its parent's index and its own text.
  */
 export function elementsOf(html: string): readonly MarkupElement[] {
-  const elements: MarkupElement[] = [];
+  const elements: Omit<MarkupElement, "text">[] = [];
+  const texts: string[] = [];
   const open: number[] = [];
-  for (const [, closing, name = "", attributes = "", selfClosing] of html.matchAll(
-    /<(\/?)([a-zA-Z][\w-]*)\b([^>]*?)(\/?)>/g
-  )) {
+  let textStart = 0;
+  for (const match of html.matchAll(/<(\/?)([a-zA-Z][\w-]*)\b([^>]*?)(\/?)>/g)) {
+    const [tag, closing, name = "", attributes = "", selfClosing] = match;
+    // The text since the last tag belongs to the innermost element still open.
+    const holder = open.at(-1);
+    if (holder !== undefined) {
+      texts[holder] = (texts[holder] ?? "") + html.slice(textStart, match.index);
+    }
+    textStart = match.index + tag.length;
     if (closing === "/") {
       open.pop();
       continue;
@@ -62,7 +88,7 @@ export function elementsOf(html: string): readonly MarkupElement[] {
       open.push(elements.length - 1);
     }
   }
-  return elements;
+  return elements.map((element, index) => ({ ...element, text: decodeText(texts[index] ?? "") }));
 }
 
 /** An element with the elements it holds, in document order. */

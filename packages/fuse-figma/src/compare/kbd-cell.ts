@@ -12,17 +12,15 @@ import { createElement } from "react";
 import { Backspace } from "../../../fuse/dist/icons.js";
 import { Kbd } from "../../../fuse/dist/kbd.js";
 import type { Cell } from "../components/component-spec.ts";
+import { KBD_LABEL } from "../components/kbd-kit.ts";
 import type { CellRendering } from "./cell-renderers.ts";
-
-/** The label of the text cell, the kit's `Label` default. */
-const CELL_LABEL = "K";
 
 /** A `kbd` cell: a key cap that holds the label or one icon. */
 export const kbd: CellRendering = {
   element: (cell: Cell) => {
     switch (cell.content) {
       case "text":
-        return createElement(Kbd, null, CELL_LABEL);
+        return createElement(Kbd, null, KBD_LABEL);
       case "icon":
         return createElement(Kbd, null, createElement(Backspace));
       default:

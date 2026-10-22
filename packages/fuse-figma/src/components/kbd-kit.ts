@@ -30,6 +30,12 @@ const ICON: IconSlot = {
 
 const holdsIcon = (cell: Cell): boolean => cell.content === "icon";
 
+/**
+ * The label of the text cap, the default of the `Label` text property. The compare renderer
+ * renders the same text.
+ */
+export const KBD_LABEL = "K";
+
 /** A key cap, as `<Kbd>K</Kbd>`, or around one icon, as `<Kbd><Backspace /></Kbd>`. */
 export const KBD: ComponentDefinition = {
   key: "kbd",
@@ -44,7 +50,7 @@ export const KBD: ComponentDefinition = {
   label: {
     key: "label",
     name: "label",
-    characters: "K",
+    characters: KBD_LABEL,
     textProperty: "Label",
     shownIn: (cell) => !holdsIcon(cell),
   },

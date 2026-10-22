@@ -9,15 +9,13 @@
 import { createElement } from "react";
 
 import { Badge, badgeVariants } from "../../../fuse/dist/badge.js";
+import { BADGE_LABEL } from "../components/badge-kit.ts";
 import type { Cell } from "../components/component-spec.ts";
 import { ownKey } from "../components/own-key.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
 type BadgeVariant = keyof typeof badgeVariants.variants.variant;
 type BadgeSize = keyof typeof badgeVariants.variants.size;
-
-/** The label every cell shows, the kit's `Label` default. */
-const CELL_LABEL = "Badge";
 
 function isVariant(value: string | undefined): value is BadgeVariant {
   return ownKey(badgeVariants.variants.variant, value);
@@ -34,6 +32,6 @@ export const badge: CellRendering = {
     if (!isVariant(variant) || !isSize(size)) {
       throw new Error(`Badge has no variant ${variant ?? ""} or size ${size ?? ""}`);
     }
-    return createElement(Badge, { variant, size }, CELL_LABEL);
+    return createElement(Badge, { variant, size }, BADGE_LABEL);
   },
 };

@@ -5,19 +5,21 @@
  * compare the wrong box. A radio renders inside its `RadioGroup`, so its root is not at the top.
  *
  * Unit under test: each kit definition's attribute conditions, the cells where its state table
- * holds each variant of `ATTRIBUTE_VARIANTS`, the parts each cell shows, and the icon slots the
- * root and each part the cell renders list in `iconsFor`. Oracle: the static markup the real Fuse
- * component renders for every preview cell, through the definition's compare renderer. A
- * condition must hold in a cell exactly when the measured element carries the attribute its
- * variant selects, and a condition a part's own classes name must hold exactly when that part's
- * element carries it. The parts must match the measured element's descendants that carry a part's
- * `data-slot`, each below its parent part, and a part with no `data-slot` must be the one child
- * element of its parent part. The slots must match
+ * holds each variant of `ATTRIBUTE_VARIANTS`, the parts each cell shows, the icon slots the
+ * root and each part the cell renders list in `iconsFor`, and the label text each box draws.
+ * Oracle: the static markup the real Fuse component renders for every preview cell, through the
+ * definition's compare renderer. A condition must hold in a cell exactly when the measured
+ * element carries the attribute its variant selects, and a condition a part's own classes name
+ * must hold exactly when that part's element carries it. The parts must match the measured
+ * element's descendants that carry a part's `data-slot`, each below its parent part, and a part
+ * with no `data-slot` must be the one child element of its parent part. The slots must match
  * the measured element's `<svg>` descendants in order, each under the part that lists it, as a
  * child of that part or nested deeper, and with its `data-icon`. A slot that names classes of its
- * own must name the `<svg>`'s `class` attribute exactly. The pseudo-class
- * variants, `enabled-hover:` and `focus-visible:`, stay out, since static markup cannot show
- * them, and so does the icon edge, which the slots check.
+ * own must name the `<svg>`'s `class` attribute exactly. The root and each part must hold their
+ * label's characters as their own text where the cell shows the label, and no text where it does
+ * not, so the compare page renders the text Figma draws. The pseudo-class variants,
+ * `enabled-hover:` and `focus-visible:`, stay out, since static markup cannot show them, and so
+ * does the icon edge, which the slots check.
  */
 import { describe, expect, it } from "vitest";
 
@@ -236,6 +238,11 @@ function slotIcons(box: BoxDefinition, name: string, cell: Cell): readonly Marku
   ];
 }
 
+/** The text a box draws in a cell, its label's characters where the cell shows the label, or none. */
+function labelText(box: BoxDefinition, cell: Cell): string {
+  return box.label?.shownIn(cell) === true ? box.label.characters : "";
+}
+
 /**
  * The markup's icons as the slots must list them: a slot that names no classes of its own makes
  * no claim about the `<svg>`'s, as Button's spinner leaves out its `animate-spin`.
@@ -267,7 +274,7 @@ describe("each kit definition against the markup of its component", () => {
     }
   );
 
-  it("renders one measured element per cell, holds each attribute condition exactly where it carries it, and places its parts and icons", async () => {
+  it("renders one measured element per cell, holds each attribute condition exactly where it carries it, and places its parts, icons and label", async () => {
     const renderers = await loadRenderers();
     const checked = KIT.flatMap((entry) => {
       const renderer = renderers.get(entry.definition.key);
@@ -300,6 +307,7 @@ describe("each kit definition against the markup of its component", () => {
               ancestorsOf(elements, measured).some(matches)
             );
           }
+          expect(root.text, `${key}: the label`).toBe(labelText(definition, cell));
           const names = new Set(boxNames(definition, definition.slot));
           const slots = slotIcons(definition, definition.slot, cell);
           expect(slots, key).toEqual(claimedIcons(slots, markupIcons(elements, measured, names)));
@@ -312,6 +320,7 @@ describe("each kit definition against the markup of its component", () => {
           const elementAt = new Map(rendered);
           for (const { path, part } of shown) {
             const element = elements[elementAt.get(path) ?? -1];
+            expect(element?.text, `${key}: the label on ${path}`).toBe(labelText(part, cell));
             for (const variant of attributeConditions(part, cell)) {
               expect(holdsIn(variant, cell), `${key}: ${variant} on ${path}`).toBe(
                 element !== undefined && ATTRIBUTE_VARIANTS.get(variant)?.(element) === true

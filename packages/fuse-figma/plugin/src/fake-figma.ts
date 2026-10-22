@@ -89,7 +89,9 @@
  * only a property of the component or set it sits in, of the type the link needs. A component
  * set holds only components. A removed node throws on every read but its id. A page's `remove`
  * refuses the current page and the file's last page, as the Figma editor does. The typings say
- * nothing about either, so the plugin shows another page before it removes one.
+ * nothing about either, so the plugin shows another page before it removes one. On a real file
+ * on 2026-10-22, `remove` on the current page threw `Removing this node is not allowed`, and
+ * removed the page once another page showed.
  *
  * The fake does not lay out: an auto layout frame keeps the size it was given, so a hugging
  * frame does not grow with its content. It draws nothing either: a layer's render bounds are

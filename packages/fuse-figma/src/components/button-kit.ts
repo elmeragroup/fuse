@@ -122,6 +122,12 @@ function buttonIcons(cell: Cell): readonly IconSlot[] {
   }
 }
 
+/**
+ * The label every `Button` cell shows, the default of the `Label` text property. The compare
+ * renderer renders the same text, and names each icon button with it.
+ */
+export const BUTTON_LABEL = "Button";
+
 export const BUTTON: ComponentDefinition = {
   key: "button",
   name: "Button",
@@ -138,7 +144,13 @@ export const BUTTON: ComponentDefinition = {
   states: STATES,
   facts: new Map(),
   omittedStates: OMITTED_STATES,
-  label: { key: "label", name: "label", characters: "Button", textProperty: "Label", shownIn: () => true },
+  label: {
+    key: "label",
+    name: "label",
+    characters: BUTTON_LABEL,
+    textProperty: "Label",
+    shownIn: () => true,
+  },
   iconsFor: buttonIcons,
   swapProperties: swapProperties([START_ICON, END_ICON]),
 };
