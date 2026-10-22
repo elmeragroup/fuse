@@ -426,14 +426,20 @@ export function AdminTableScreen(): ReactElement {
             </Dialog.Header>
             <DescriptionList.Root>
               <DescriptionList.Content>
-                <DescriptionList.Term>Region</DescriptionList.Term>
-                <DescriptionList.Details>{profile.region}</DescriptionList.Details>
-                <DescriptionList.Term>Status</DescriptionList.Term>
-                <DescriptionList.Details>{STATUSES[profile.status]}</DescriptionList.Details>
-                <DescriptionList.Term>Balance</DescriptionList.Term>
-                <DescriptionList.Details className={styles.number()}>
-                  {profile.balance}
-                </DescriptionList.Details>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Region</DescriptionList.Term>
+                  <DescriptionList.Details>{profile.region}</DescriptionList.Details>
+                </DescriptionList.Item>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Status</DescriptionList.Term>
+                  <DescriptionList.Details>{STATUSES[profile.status]}</DescriptionList.Details>
+                </DescriptionList.Item>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Balance</DescriptionList.Term>
+                  <DescriptionList.Details className={styles.number()}>
+                    {profile.balance}
+                  </DescriptionList.Details>
+                </DescriptionList.Item>
               </DescriptionList.Content>
             </DescriptionList.Root>
             <Dialog.Footer>

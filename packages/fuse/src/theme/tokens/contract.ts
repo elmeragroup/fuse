@@ -50,6 +50,7 @@ export const TOKEN_NAMES = [
   "ring",
   "card-border",
   "card-section-divider",
+  "card-shadow",
   "button-outline",
   "selection-border",
   "selection-checked-border",
@@ -252,6 +253,7 @@ export const TOKEN_KINDS = {
   ring: "color",
   "card-border": "color",
   "card-section-divider": "color",
+  "card-shadow": "color",
   "button-outline": "color",
   "selection-border": "color",
   "selection-checked-border": "color",
@@ -373,6 +375,9 @@ export const TOKEN_PAINTS = {
   ring: ["line"],
   "card-border": ["line"],
   "card-section-divider": ["line"],
+  // Card casts it in a shadow, and no paint names an effect, so the Figma sync offers it in no
+  // picker.
+  "card-shadow": [],
   "button-outline": ["line"],
   "selection-border": ["line"],
   "selection-checked-border": ["line"],
@@ -514,6 +519,8 @@ export const TOKEN_DESCRIPTIONS = {
     "The edge of a Card and a card Accordion item. Internal themes draw it in border, and external themes make it transparent.",
   "card-section-divider":
     "The 1px line between stacked Card.Section parts, edge to edge. Internal themes draw it in border, and external themes in the page background, so a white card reads as segments.",
+  "card-shadow":
+    "The color of the small shadow under a Card. Internal themes cast it in black at 5%, and external themes make it transparent.",
   "button-outline":
     "The border of the outline Button, at button-outline-width. Internal themes draw it in border, and external themes in foreground.",
   "selection-border":
@@ -610,6 +617,7 @@ export const EXTERNAL_RESET_KEYS = [
   "ring",
   "card-border",
   "card-section-divider",
+  "card-shadow",
   "button-outline",
   "selection-border",
   "selection-checked-border",
@@ -661,16 +669,18 @@ export const MUST_OVERRIDE_EXTERNAL = [
 export const MUST_OVERRIDE_INTERNAL = ["brand", "brand-foreground"] as const;
 
 /**
- * What a dark palette keeps from the light composition: geometry, typography, a Card's edge
- * and section divider colors, the outline Button's border color, a selection row's resting and checked border and
+ * What a dark palette keeps from the light composition: geometry, typography, a Card's edge,
+ * section divider and shadow colors, the outline Button's border color, a selection row's resting and checked border and
  * divider colors and a disabled selection row's fill, stripe and label text colors. Each color is
  * either an alias, such as `var(--border)`, `var(--muted)` or `var(--foreground)`, so it follows
  * the dark role it names, or a value that does not depend on the scheme, such as the external
- * card and row edges' zero alpha or the disabled row's black stripe at 2% alpha.
+ * card and row edges' zero alpha, the card shadow's black at 5% or the disabled row's black
+ * stripe at 2% alpha.
  */
 const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
   "card-border",
   "card-section-divider",
+  "card-shadow",
   "button-outline",
   "selection-border",
   "selection-checked-border",

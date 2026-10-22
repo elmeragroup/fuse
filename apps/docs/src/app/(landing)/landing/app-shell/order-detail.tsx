@@ -68,7 +68,7 @@ const orderDetail = tv({
     // the list's gap and its rows' direction both answer to this one width.
     propertySection: "@container",
     properties: "@2xs:gap-0 flex flex-col gap-2",
-    property: "@2xs:min-h-7 @2xs:flex-row @2xs:items-start @2xs:gap-3 flex flex-col",
+    property: "@2xs:min-h-7 @2xs:flex-row @2xs:items-start @2xs:gap-3 flex flex-col border-0",
     term: "sm:border-0 @2xs:sm:w-28 @2xs:w-32 @2xs:shrink-0 border-0 py-0.5 text-muted-foreground",
     details: "sm:border-0 min-w-0 flex-1 border-0 py-0.5 text-pretty",
     mono: "text-xs font-mono tabular-nums",
@@ -549,9 +549,9 @@ function Phrases({ value }: { value: string }): ReactElement {
 
 function PropertyRow({ property }: { property: Property }): ReactElement {
   return (
-    <div className={styles.property()}>
+    <DescriptionList.Item className={styles.property()}>
       <DescriptionList.Term className={styles.term()}>{property.term}</DescriptionList.Term>
       <DescriptionList.Details className={styles.details()}>{property.value}</DescriptionList.Details>
-    </div>
+    </DescriptionList.Item>
   );
 }

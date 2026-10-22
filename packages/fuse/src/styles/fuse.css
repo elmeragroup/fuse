@@ -147,6 +147,7 @@
   --color-ring: var(--ring);
   --color-card-border: var(--card-border, var(--border));
   --color-card-section-divider: var(--card-section-divider, var(--border));
+  --color-card-shadow: var(--card-shadow, oklch(0 0 0 / 0.05));
   --color-button-outline: var(--button-outline, var(--border));
   --color-selection-border: var(--selection-border, var(--border));
   --color-selection-checked-border: var(--selection-checked-border, var(--primary));
@@ -423,6 +424,10 @@
    that way it sorts with the `not-*` variants, ahead of `focus-visible:`, and `:not(:where())`
    adds no specificity. The state face in styles/state-face.ts owns the matching disabled look. */
 @custom-variant disabled-state (&:where([data-disabled]:not([data-disabled="false"]), :disabled, [aria-disabled="true"]));
+/* A part whose direct `a` or `button` child is enabled, the trigger that makes the part
+   interactive. A variant cannot reach inside `:has()`, so the trigger arm repeats the
+   `disabled-state` predicate above. Keep it in step with that predicate. */
+@custom-variant has-enabled-trigger (&:has(> :is(a, button):not(:where([data-disabled]:not([data-disabled="false"]), :disabled, [aria-disabled="true"]))));
 /* A disabled selection row. A shell is disabled when its own `isDisabled` or a disabled group's
    Field root marks it `data-disabled`, or when its own control is disabled: an element in the
    row's control slot that matches `disabled-state` above. Keep the control arm in step with that
@@ -527,6 +532,47 @@
   scrollbar-width: none;
 }
 
+/* A highlight that sweeps across text in progress, such as an uploading Attachment.Title. The
+   text keeps its own colour and the sweep reads the muted foreground role, or the text colour
+   where no theme declares the role. The text paints through the background, so the gradient
+   needs both stops to be valid colours. The sweep runs from the inline start in either
+   direction. Under reduced motion the central block below zeroes --animate-shimmer, and the
+   utility drops the gradient so the text paints solid again. */
+@theme {
+  --animate-shimmer: shimmer 2s linear infinite;
+  @keyframes shimmer {
+    from {
+      background-position: 100% 0;
+    }
+    to {
+      background-position: 0 0;
+    }
+  }
+}
+@utility shimmer {
+  --shimmer-spread: calc(3ch + 40px);
+  background-image: linear-gradient(
+    110deg,
+    currentColor calc(50% - var(--shimmer-spread)),
+    var(--muted-foreground, currentColor) 50%,
+    currentColor calc(50% + var(--shimmer-spread))
+  );
+  background-repeat: no-repeat;
+  background-size: calc(200% + var(--shimmer-spread) * 2) 100%;
+  background-position: 0 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: var(--animate-shimmer);
+  @variant rtl {
+    animation-direction: reverse;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
+  }
+}
+
 /* Transform/layout motion off; opacity fades and color transitions stay. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -545,5 +591,6 @@
     --tw-exit-rotate: 0 !important;
     --animate-spin: none !important;
     --animate-bounce: none !important;
+    --animate-shimmer: none !important;
   }
 }

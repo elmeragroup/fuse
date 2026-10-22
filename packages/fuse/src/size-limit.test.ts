@@ -55,6 +55,8 @@ describe("size-limit harness", () => {
       "input-group",
       "textarea",
       "flags",
+      "attachment",
+      "aspect-ratio",
       "data-table-filter",
       "toolbar",
       "command",

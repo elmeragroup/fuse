@@ -39,15 +39,21 @@ describe("textFieldVariants", () => {
     const card = textFieldVariants({ variant: "card" });
     // Oracle: cardVariants, the upstream recipe every base token must survive twMerge with,
     // except the inner corner the card publishes, which the field's own padding replaces, and
-    // the card edge role, which the field box replaces with its `--border` boundary.
+    // the card edge and shadow roles, which the field box replaces with its `--border` boundary
+    // and the plain `shadow-xs` of every field box.
     const cardBase = cardVariants().base();
-    const replaced = (token: string) => token.startsWith("[--shell-inner:") || token === "border-card-border";
+    const cardShadow = "shadow-[0_1px_2px_0_--theme(--color-card-shadow)]";
+    const replaced = (token: string) =>
+      token.startsWith("[--shell-inner:") || token === "border-card-border" || token === cardShadow;
     for (const token of cardBase.split(/\s+/).filter((token) => !replaced(token))) {
       expect(card.base(), token).toContain(token);
     }
     expect(cardBase, "precondition: the card draws the card edge role").toContain("border-card-border");
+    expect(cardBase, "precondition: the card casts the card shadow role").toContain(cardShadow);
     expect(card.base()).not.toContain("border-card-border");
+    expect(card.base()).not.toContain(cardShadow);
     expect(card.base()).toContain("border-border");
+    expect(card.base().split(/\s+/)).toContain("shadow-xs");
     expect(card.base()).toContain("gap-0");
     expect(card.base()).toContain("px-[var(--card-pad,var(--surface-pad-md))]");
     expect(card.base()).toContain("py-4");

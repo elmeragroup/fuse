@@ -7,6 +7,7 @@ export type {
   DescriptionListContentProps,
   DescriptionListDetailsProps,
   DescriptionListHeadingProps,
+  DescriptionListItemProps,
   DescriptionListRootProps,
   DescriptionListTermProps,
 } from "./components/description-list/description-list";

@@ -40,12 +40,17 @@ type BareBorder = {
 
 /**
  * The parts with a bare `border*` width. Card and the `card` Accordion item read `--card-border`
- * instead, which the card edge suite below covers. The first Term and Details drop their border,
- * so the second pair is read; the last body row drops its own, so the first is.
+ * instead, which the card edge suite below covers. The first DescriptionList Item drops its
+ * border, so the second is read; the last body row drops its own, so the first is.
  */
 const PARTS: readonly BareBorder[] = [
-  { name: "DescriptionList Term", find: () => textNamed("Meter point"), side: "Top", token: "--border" },
-  { name: "DescriptionList Details", find: () => textNamed("7070575000"), side: "Top", token: "--border" },
+  {
+    name: "DescriptionList Item",
+    // DOM audit: an Item is a bare div around its term and details, with no role or text of its own.
+    find: () => parentOf(textNamed("Meter point")),
+    side: "Top",
+    token: "--border",
+  },
   { name: "outline Badge", find: () => textNamed("Outline"), side: "Top", token: "--border" },
   { name: "Table row", find: () => roleNamed("row", "Row one"), side: "Bottom", token: "--border" },
   { name: "ButtonGroupText", find: () => textNamed("https://"), side: "Top", token: "--border" },
@@ -60,16 +65,29 @@ const PARTS: readonly BareBorder[] = [
   },
 ];
 
+/** The element around `element`. */
+function parentOf(element: HTMLElement): HTMLElement {
+  const parent = element.parentElement;
+  if (parent === null) {
+    throw new Error(`expected a parent around ${element.textContent}`);
+  }
+  return parent;
+}
+
 function BareBorderParts() {
   return withLocale(
     "en-US",
     <>
       <DescriptionList.Root>
         <DescriptionList.Content>
-          <DescriptionList.Term>Name</DescriptionList.Term>
-          <DescriptionList.Details>Kari Nordmann</DescriptionList.Details>
-          <DescriptionList.Term>Meter point</DescriptionList.Term>
-          <DescriptionList.Details>7070575000</DescriptionList.Details>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Name</DescriptionList.Term>
+            <DescriptionList.Details>Kari Nordmann</DescriptionList.Details>
+          </DescriptionList.Item>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Meter point</DescriptionList.Term>
+            <DescriptionList.Details>7070575000</DescriptionList.Details>
+          </DescriptionList.Item>
         </DescriptionList.Content>
       </DescriptionList.Root>
       <div role="group" aria-label="Probe" />

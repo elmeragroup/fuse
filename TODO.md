@@ -35,11 +35,11 @@
   keep `--dialog` on the popover, which every dark palette sets equal to `card`, the row fill, and
   external rows draw no outer edge, so a `RadioItem` or `CheckboxItem` group in a dark modal has
   no row outlines.
-- Ask design whether dark external cards keep an edge. `--card-border` is a light-only key, so
-  the zero-alpha external edge carries into dark, where `Card` and the `card` Accordion item stand
-  off the page only by the dark `card` step: about 1.25:1 in fkas, tkas and fkab, but 1.09:1 in
-  fkse and 1.13:1 in ngfi. Keeping an edge there means dropping `card-border` from
-  `LIGHT_ONLY_KEYS` and naming it in each dark sheet.
+- Ask design whether dark external cards keep an edge. `--card-border` and `--card-shadow` are
+  light-only keys, so the zero-alpha external edge and shadow carry into dark, where `Card` and the
+  `card` Accordion item stand off the page only by the dark `card` step: about 1.25:1 in fkas, tkas
+  and fkab, but 1.09:1 in fkse and 1.13:1 in ngfi. Keeping an edge or shadow there means
+  dropping `card-border` or `card-shadow` from `LIGHT_ONLY_KEYS` and naming it in each dark sheet.
 - Ask design whether `Popover` follows `Dialog` onto the page tint in external light. A Popover can
   hold a form, as the basic demo does, but the anchored popups share the `accent`-on-`popover`
   1.1:1 floor in `contrast-matrix.test.ts`, which the external light accent, 1.00–1.07:1 on the
@@ -325,6 +325,9 @@
   the coverage table. The build records only the declaration that wins each property, so
   `aria-pressed:bg-muted` gets no row: `data-pressed:bg-muted` sets the same property later in
   Tailwind's order.
+- Add Attachment and AspectRatio to the kit. Attachment needs its five states, three sizes and
+  both orientations, with Button instances for its actions. AspectRatio needs one frame per
+  ratio in its seven-ratio set.
 - Add Kbd group to the kit once a kit component can hold instances of another set. The group is
   the `group` slot of `kbdVariants`, a row of Kbd caps that inherit its corner through
   `*:data-[slot=kbd]:rounded-[inherit]`.

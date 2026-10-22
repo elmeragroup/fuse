@@ -42,9 +42,9 @@ export function ReadoutRow({
   children: ReactNode;
 }): ReactElement {
   return (
-    <>
+    <DescriptionList.Item>
       <DescriptionList.Term>{term}</DescriptionList.Term>
       <DescriptionList.Details className={styles.detail({ code })}>{children}</DescriptionList.Details>
-    </>
+    </DescriptionList.Item>
   );
 }
