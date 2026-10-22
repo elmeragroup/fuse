@@ -32,8 +32,8 @@ export type CellRenderer = {
   readonly element: (cell: Cell) => ReactElement;
   /**
    * The classes the cells pass that a host app compiles in its own Tailwind build, because Fuse's
-   * standalone `styles.css` holds only the classes Fuse's own source uses. Separator names the
-   * docs demos' lengths. Most renderers name none.
+   * standalone `styles.css` holds only the classes Fuse's own source uses. Separator and Skeleton
+   * name the docs demos' sizes. Most renderers name none.
    */
   readonly hostClasses?: readonly string[];
 };
@@ -100,6 +100,11 @@ const SOURCES: readonly RendererSource[] = [
     set: "separator",
     entry: "dist/separator.js",
     load: async () => (await import("./separator-cell.ts")).separator,
+  },
+  {
+    set: "skeleton",
+    entry: "dist/skeleton.js",
+    load: async () => (await import("./skeleton-cell.ts")).skeleton,
   },
 ];
 

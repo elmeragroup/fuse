@@ -220,6 +220,23 @@ describe("tabular numerals", () => {
   });
 });
 
+// Unit under test: `buildComponentSet` on a root with `animate-pulse`. Oracle: the Figma component
+// model, where a component is one static frame per variant with no keyframes, so the `animation`
+// Tailwind compiles the class to has no Figma form, as a transition has none.
+describe("an animation", () => {
+  it("drops animate-pulse because Figma components do not animate", async () => {
+    const { coverage } = buildComponentSet(
+      { ...CHIP, classesFor: () => "animate-pulse" },
+      { ...context, compiled: await compileUtilities(["animate-pulse"]) }
+    );
+    expect(
+      coverage
+        .filter((row) => row.className === "animate-pulse")
+        .map((row) => [row.property, row.outcome, row.detail])
+    ).toEqual([["animation", "dropped", "Figma components do not animate"]]);
+  });
+});
+
 const zero = { kind: "literal", value: 0 } as const;
 
 // Unit under test: `buildComponentSet` on a root whose width is a percentage. Oracle: CSS, where a

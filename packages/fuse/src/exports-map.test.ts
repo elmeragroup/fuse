@@ -304,6 +304,7 @@ describe("exports map", () => {
       "radioIconButtonVariants",
       "radioVariants",
       "separatorClass",
+      "skeletonClass",
       "switchVariants",
       "toggleVariants",
       "cn",
