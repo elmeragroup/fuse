@@ -12,15 +12,19 @@
  * element carries the attribute its variant selects, and a condition a part's own classes name
  * must hold exactly when that part's element carries it. The parts must match the measured
  * element's descendants that carry a part's `data-slot`, each below its parent part, and a part
- * with no `data-slot` must be the one child element of its parent part. The slots must match
+ * with no `data-slot` must be the one child element of its parent part beside the named parts and
+ * Base UI's hidden span. The slots must match
  * the measured element's `<svg>` descendants in order, each under the part that lists it, as a
  * child of that part or nested deeper, and with its `data-icon`. A slot that names classes of its
  * own must name the `<svg>`'s `class` attribute exactly. The root and each part must hold their
- * label's characters where the cell shows the label, as their own text or in the attribute the label
+ * label's characters where the cell shows the label, as their own text, after a space where the
+ * label says the markup holds one, or in the attribute the label
  * names, as an `<input>` holds its placeholder, and no text where it does not, so the compare page
  * renders the text Figma draws. A box that shows an image must be an `<img>` whose `src` is a data
  * URI of the image's bytes, and a box that shows none carries no `src`, so the page draws the
- * picture Figma draws. The pseudo-class variants,
+ * picture Figma draws. A part's `style` attribute must hold exactly the declarations its
+ * definition cascades above its classes, so a meter's fill is as wide in Figma as Base UI makes
+ * it. The pseudo-class variants,
  * `enabled-hover:` and `focus-visible:`, stay out, since static markup cannot show them, and so
  * does the icon edge, which the slots check.
  */
@@ -196,12 +200,58 @@ function slotParts(
 }
 
 /**
+ * Whether an element is the visually hidden `<span role="presentation">` Base UI's `MeterRoot`
+ * appends to the root, which the kit draws no layer for.
+ */
+function isHiddenPresentation(element: MarkupElement): boolean {
+  return (
+    element.name === "span" &&
+    element.attributes.get("role") === "presentation" &&
+    element.attributes.get("data-slot") === undefined &&
+    (element.attributes.get("style") ?? "").includes("clip-path:inset(50%)")
+  );
+}
+
+/**
+ * The child element of a part that is a part with no `data-slot`: the one child left beside the
+ * parts the definition names by `data-slot` and Base UI's hidden span, where it is no `<svg>`,
+ * which an icon slot checks, and carries no `data-slot`.
+ */
+function unnamedChild(
+  elements: readonly MarkupElement[],
+  parent: number,
+  slots: ReadonlySet<string>
+): number | undefined {
+  const children = elements.flatMap((element, child) => {
+    const slot = element.attributes.get("data-slot");
+    const named = slot !== undefined && slots.has(slot);
+    return element.parent === parent && !named && !isHiddenPresentation(element) ? [child] : [];
+  });
+  const [only] = children;
+  const element = only === undefined ? undefined : elements[only];
+  return children.length === 1 &&
+    element?.name !== "svg" &&
+    element?.attributes.get("data-slot") === undefined
+    ? only
+    : undefined;
+}
+
+/** The nearest ancestor of an element that is the measured element or a part found so far. */
+function partOwner(
+  elements: readonly MarkupElement[],
+  index: number,
+  paths: ReadonlyMap<number, string>
+): number | undefined {
+  const parent = elements[index]?.parent;
+  return parent === undefined || paths.has(parent) ? parent : partOwner(elements, parent, paths);
+}
+
+/**
  * Each part the markup renders inside the measured element: its path and its element, once per
  * element, so two elements at one path stay two entries.
- * An element whose `data-slot` names a box of the definition is a part, below its nearest such
- * ancestor. An element with no `data-slot` is a part when it is the one child element of a part
- * and not an `<svg>`, which an icon slot checks. That is where Radio's dot sits, alone in the
- * indicator.
+ * An element whose `data-slot` names a box of the definition is a part, below its nearest part. An
+ * element with no `data-slot` is a part when it is the {@link unnamedChild} of a part. That is where
+ * Radio's dot sits, alone in the indicator, and Meter's header, beside the bar and the hidden span.
  */
 function markupParts(
   elements: readonly MarkupElement[],
@@ -209,29 +259,21 @@ function markupParts(
   slots: ReadonlySet<string>
 ): readonly (readonly [string, number])[] {
   const paths = new Map<number, string>([[measured, ""]]);
+  // Elements come in document order, so a part's path is set before its descendants are visited.
   for (const [index, element] of elements.entries()) {
+    const owner = partOwner(elements, index, paths);
+    const ownerPath = owner === undefined ? undefined : paths.get(owner);
     const slot = element.attributes.get("data-slot");
-    const owner = ownerOf(elements, index, slots);
-    const ownerPath = owner === undefined ? undefined : paths.get(owner.index);
-    if (slot !== undefined && slots.has(slot) && ownerPath !== undefined) {
+    if (owner === undefined || ownerPath === undefined || index === measured) {
+      continue;
+    }
+    if (slot !== undefined && slots.has(slot)) {
       paths.set(index, `${ownerPath}/${slot}`);
+    } else if (element.parent === owner && unnamedChild(elements, owner, slots) === index) {
+      paths.set(index, `${ownerPath}/${UNNAMED}`);
     }
   }
-  const unnamed = [...paths].flatMap(([index, path]): [string, number][] => {
-    const children = elements.flatMap((element, child) => (element.parent === index ? [child] : []));
-    const [only] = children;
-    const element = only === undefined ? undefined : elements[only];
-    return children.length === 1 &&
-      only !== undefined &&
-      element?.name !== "svg" &&
-      element?.attributes.get("data-slot") === undefined
-      ? [[`${path}/${UNNAMED}`, only]]
-      : [];
-  });
-  const named = [...paths].flatMap(([index, path]): [string, number][] =>
-    path === "" ? [] : [[path, index]]
-  );
-  return [...named, ...unnamed];
+  return [...paths].flatMap(([index, path]): [string, number][] => (path === "" ? [] : [[path, index]]));
 }
 
 /** The condition variants of `ATTRIBUTE_VARIANTS` that a box's own classes name in a cell. */
@@ -268,9 +310,10 @@ type MarkupLabel = {
 };
 
 /**
- * Where a box draws its label in a cell: the label's characters as the box's own text, or in the
- * attribute the label names, with no text of its own, as an `<input>` holds its placeholder. A box
- * that shows no label in the cell holds no text.
+ * Where a box draws its label in a cell: the label's characters as the box's own text, after a space
+ * where the label's `leadingSpace` says the markup holds one, or in the attribute the label names,
+ * with no text of its own, as an `<input>` holds its placeholder. A box that shows no label in the
+ * cell holds no text.
  */
 function expectedLabel(box: BoxDefinition, cell: Cell): MarkupLabel {
   if (box.label?.shownIn(cell) !== true) {
@@ -278,9 +321,22 @@ function expectedLabel(box: BoxDefinition, cell: Cell): MarkupLabel {
   }
   const characters = labelCharacters(box.label, cell);
   const attribute = box.label.textAttribute?.(cell);
+  const text = box.label.leadingSpace === true ? ` ${characters}` : characters;
   return attribute === undefined
-    ? { text: characters, attribute: undefined }
+    ? { text, attribute: undefined }
     : { text: "", attribute: [attribute, characters] };
+}
+
+/**
+ * The `style` attribute a part's markup carries in a cell, as React writes it from a `style` prop:
+ * each declaration as `property:value`, in order, joined by `;`. A part without `styleFor` carries
+ * none.
+ */
+function expectedStyle(part: PartDefinition, cell: Cell): string | undefined {
+  return part
+    .styleFor?.(cell)
+    .map(({ property, value }) => `${property}:${value}`)
+    .join(";");
 }
 
 /** The label an element holds, read where `expected` says it sits. */
@@ -395,6 +451,9 @@ describe("each kit definition against the markup of its component", () => {
             const partLabel = expectedLabel(part, cell);
             expect(markupLabel(element, partLabel), `${key}: the label on ${path}`).toEqual(partLabel);
             expect(markupImage(element), `${key}: the image on ${path}`).toEqual(expectedImage(part));
+            expect(element?.attributes.get("style"), `${key}: the style on ${path}`).toEqual(
+              expectedStyle(part, cell)
+            );
             for (const variant of attributeConditions(part, cell)) {
               expect(holdsIn(variant, cell), `${key}: ${variant} on ${path}`).toBe(
                 element !== undefined && ATTRIBUTE_VARIANTS.get(variant)?.(element) === true

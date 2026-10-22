@@ -14,8 +14,9 @@ import { axisValues } from "./kit-spec";
  * - `condition`: the class applies in the cells where the variant holds.
  * - `child`: the class styles the icons the selector reaches.
  * - `omitted`: no cell shows the state, so the class is dropped.
- * - `omitted-for`: the class styles a pseudo-element the kit draws no layer for, or the component
- *   inside a composition the kit does not draw, so it is dropped with the definition's reason.
+ * - `omitted-for`: the class styles a pseudo-element the kit draws no layer for, the component
+ *   inside a composition the kit does not draw, or the component under a media condition the kit
+ *   does not draw, so it is dropped with the definition's reason.
  * - `unmodelled`: the definition neither models nor omits the variant, so the class is unmapped.
  */
 export type VariantMeaning =
@@ -102,6 +103,7 @@ export function makeStateTable(
     | "omittedStates"
     | "omittedPseudoElements"
     | "omittedCompositions"
+    | "omittedMedia"
     | "iconsFor"
   >
 ): StateTable {
@@ -114,6 +116,7 @@ export function makeStateTable(
   }
   const omittedElements = definition.omittedPseudoElements ?? new Map<string, string>();
   const omittedCompositions = definition.omittedCompositions ?? new Map<string, string>();
+  const omittedMedia = definition.omittedMedia ?? new Map<string, string>();
   // Every variant this table gives the definition a meaning.
   const sharedVariants = new Set([...FIXED_VARIANTS, ...[...sharedStates.values()].flat()]);
 
@@ -124,6 +127,7 @@ export function makeStateTable(
     { variants: definition.omittedStates, shared: sharedVariants },
     { variants: new Set(omittedElements.keys()), shared: sharedVariants },
     { variants: new Set(omittedCompositions.keys()), shared: sharedVariants },
+    { variants: new Set(omittedMedia.keys()), shared: sharedVariants },
   ];
   for (const source of sources) {
     for (const variant of source.variants) {
@@ -163,7 +167,8 @@ export function makeStateTable(
     if (fact !== undefined) {
       return { kind: "condition", holds: fact };
     }
-    const reason = omittedElements.get(variant) ?? omittedCompositions.get(variant);
+    const reason =
+      omittedElements.get(variant) ?? omittedCompositions.get(variant) ?? omittedMedia.get(variant);
     if (reason !== undefined) {
       return { kind: "omitted-for", reason };
     }

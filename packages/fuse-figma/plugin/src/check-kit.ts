@@ -97,16 +97,24 @@ const AXES = [
 ] as const;
 
 /**
- * Refuse a box that limits an axis it fixes, or that holds a frame or text filling an axis the box
- * hugs.
+ * Refuse a box that limits an axis it fixes, that holds a frame or text filling an axis the box
+ * hugs, or that holds an absolute frame filling an axis.
  * Figma clamps a fixed length to a limit, so the plan would resize the box on every run. CSS
  * resolves a `width` against its own `min-width` and `max-width`, so the build folds such a limit
  * into the length. A hugging box takes its size from its layers, so a layer that fills it
  * collapses to its smallest size, where CSS resolves the percentage against an auto size the same
- * circular way.
+ * circular way. Figma refuses FILL on an absolute layer, as a real file did on 2026-10-22 (P8).
  */
 function checkBox(set: ComponentSetSpec, variant: VariantSpec, box: BoxSpec, name: string): void {
   for (const { axis, length, limits } of AXES) {
+    const absolute = box.children.find(
+      (child) => child.kind === "frame" && child.absolute !== undefined && child.sizing[axis].kind === "fill"
+    );
+    if (absolute !== undefined) {
+      throw new Error(
+        `${set.name}: ${absolute.name} in the variant ${variant.key} is absolute and fills its ${length}, and Figma refuses FILL on an absolute layer. Give it a fixed ${length}.`
+      );
+    }
     const limit =
       box.sizing[axis].kind === "fixed" ? limits.find((field) => box.limits[field] !== undefined) : undefined;
     if (limit !== undefined) {

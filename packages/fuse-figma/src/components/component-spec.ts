@@ -4,12 +4,11 @@
  * onto Figma fields. Every declaration it reads lands in the coverage table with what became
  * of it.
  */
-import { createHash } from "node:crypto";
-
-import { readSizing, roomInside, rootRoom, unstretched } from "./box-sizing";
+import { describeColor, readPaint } from "./box-paint";
+import { absoluteRoom, outOfFlow, readSizing, roomInside, rootRoom, unstretched } from "./box-sizing";
 import type { Holder, Room } from "./box-sizing";
 import { SetCascade, splitClasses } from "./cascade";
-import type { BoxCascade, CoverageNote, LayerStyle } from "./cascade";
+import type { BoxCascade, LayerStyle } from "./cascade";
 import type { CoverageRow } from "./coverage";
 import {
   describeNumber,
@@ -18,7 +17,6 @@ import {
   normalizeCss,
   readColor,
   readNumber,
-  readShadows,
 } from "./css-values";
 import type { VariableIndex } from "./css-values";
 import { fixedLength, walkLayers, ZERO } from "./kit-spec";
@@ -32,18 +30,15 @@ import type {
   CounterAlignSpec,
   DirectionSpec,
   FrameLayerSpec,
-  ImagePaintSpec,
   NumberSpec,
   IconLayerSpec,
   PrimaryAlignSpec,
-  ShadowSpec,
   SizingSpec,
-  StrokeSpec,
   SwapPropertySpec,
   TextPropertySpec,
   VariantSpec,
 } from "./kit-spec";
-import { mapLabel, readLineClamp, readWithoutLabel } from "./label-layout";
+import { mapLabel, readLineClamp, readWithoutLabel, spaceBeforeLabel } from "./label-layout";
 import { partsThatScale, placeParts, placeRoot, slotAroundDot } from "./placement";
 import type { Layout } from "./placement";
 import { makeStateTable } from "./state-table";
@@ -161,6 +156,12 @@ export type LabelDefinition = {
    * holds them as its own text in every cell. `figma:compare`'s markup check reads the text there.
    */
   readonly textAttribute?: (cell: Cell) => string | undefined;
+  /**
+   * Set where the markup holds a space before the characters, as Meter's value holds one after its
+   * icon. A box that sets its text in lines draws it as one space advance after a start icon, and
+   * collapses it at the start of a line.
+   */
+  readonly leadingSpace?: true;
 } & (
   | {
       /** The text every cell shows, and the default of its property. */
@@ -198,6 +199,12 @@ export type BoxDefinition = {
   readonly image?: () => Uint8Array;
 };
 
+/** One declaration of an element's `style` attribute, such as Base UI's `width: 85%` on a meter's fill. */
+export type InlineDeclaration = {
+  readonly property: string;
+  readonly value: string;
+};
+
 /**
  * A part below the root, such as a checkbox's indicator. It cascades its own classes, and
  * inherits its parent's text color, font and custom properties as the DOM does.
@@ -212,6 +219,12 @@ export type PartDefinition = BoxDefinition & {
   readonly slot: string | undefined;
   /** Whether a cell renders the part. Base UI mounts a checkbox's indicator only while checked. */
   readonly shownIn: (cell: Cell) => boolean;
+  /**
+   * The declarations of the part's `style` attribute in a cell, in the attribute's order, which
+   * cascade above every class, as a style attribute beats every rule of a style sheet. Undefined for
+   * a part whose markup carries no `style`.
+   */
+  readonly styleFor?: (cell: Cell) => readonly InlineDeclaration[];
 };
 
 /** A component the builder can turn into a component set. Its own box is the root. */
@@ -226,9 +239,10 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly rootKind?: RootKind;
   /**
-   * The width in pixels the root's container gives it, which a root's `width: 100%` takes, as the
-   * Figma preview and the compare host draw it. A variant root sits in its component set, which has
-   * no auto layout, so the width is fixed. Without it, a root's `100%` stays unmapped.
+   * The width in pixels the root's container gives it, which a root's percentage width takes and a
+   * block-level root with no width fills, as the Figma preview and the compare host draw it. A
+   * variant root sits in its component set, which has no auto layout, so the width is fixed. Without
+   * it, a root's percentage stays unmapped and its unset width hugs.
    */
   readonly previewWidth?: number;
   /**
@@ -265,6 +279,12 @@ export type ComponentDefinition = BoxDefinition & {
    * there as dropped.
    */
   readonly omittedCompositions?: ReadonlyMap<string, string>;
+  /**
+   * The media variants that style the component under a condition of the user's device the kit does
+   * not draw, such as `forced-colors:`, each with the reason a designer reads in the coverage table.
+   * A class with one of them lands there as dropped.
+   */
+  readonly omittedMedia?: ReadonlyMap<string, string>;
   /** The INSTANCE_SWAP properties, each with the export name of the icon it starts with. */
   readonly swapProperties: readonly SwapPropertySpec[];
 };
@@ -336,7 +356,7 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
     // every child sits inside its padding.
     const root: ComponentRootSpec = {
       name: definition.slot,
-      ...mapBox(definition, rootCascade, scope, rootRoom(definition.previewWidth)),
+      ...mapBox(definition, rootCascade, scope, rootRoom(definition.previewWidth, rootCascade.style)),
       clips: true,
     };
     placeRoot(rootCascade.style);
@@ -451,77 +471,6 @@ export function matrixCells(axes: readonly AxisSpec[]): readonly Cell[] {
     (cells, axis) => cells.flatMap((cell) => axis.values.map((value) => ({ ...cell, [axis.name]: value }))),
     [{}]
   );
-}
-
-function describeColor(spec: ColorSpec): CoverageNote {
-  if (spec.kind === "variable") {
-    return { outcome: "bound", detail: `${spec.variable.collection} / ${spec.variable.name}` };
-  }
-  const { r, g, b, a } = spec.color;
-  return {
-    outcome: "literal",
-    detail: `rgba(${[r, g, b].map((channel) => Math.round(channel * 255)).join(", ")}, ${a})`,
-  };
-}
-
-/** A background that paints nothing, which the root writes as no fill. */
-const NO_FILL = "no fill";
-
-/**
- * Read a background as the root's fill. A literal color at alpha 0, such as `transparent`,
- * paints nothing in CSS, so it becomes no fill, as an unset background does. The plugin then
- * gives a root that casts a spread shadow its clear fill, which Figma counts and an alpha-0
- * fill it does not.
- */
-function readFill(value: string, index: VariableIndex): ColorSpec | typeof NO_FILL | undefined {
-  const color = readColor(value, index);
-  return color?.kind === "literal" && color.color.a === 0 ? NO_FILL : color;
-}
-
-/**
- * Read an image box's fill: the picture it shows, scaled as its `object-fit` says. `cover` scales
- * the picture to cover the box and crops what overflows, which an image paint at FILL draws, and
- * any other fit stays unmapped and leaves the box without a fill. The picture covers the box, so
- * the build reads no `background-color` under it, and one the box sets stays unmapped.
- *
- * @param image - The picture's bytes.
- * @param variant - The cell's variant key, for the error.
- * @returns The image paint, or undefined where the fit does not map.
- * @throws When the box sets no `object-fit`, whose initial `fill` stretches the picture to the box,
- *   which no image paint draws.
- */
-function readImage(reader: LayerStyle, image: () => Uint8Array, variant: string): ImagePaintSpec | undefined {
-  if (!reader.has("object-fit")) {
-    throw new Error(
-      `${variant}: a box that shows an image needs object-fit: cover, which an image paint at FILL draws`
-    );
-  }
-  const scaleMode = reader.read(
-    "object-fit",
-    (value) => (normalizeCss(value) === "cover" ? ("FILL" as const) : undefined),
-    () => ({
-      outcome: "literal",
-      detail: "the image covers the box and crops what overflows, an image paint at FILL",
-    })
-  );
-  if (scaleMode === undefined) {
-    return undefined;
-  }
-  const bytes = image();
-  // Figma names a stored image by the SHA-1 of its bytes (P9b), so the plugin compares a held paint
-  // with this hash and stores no image to learn it.
-  return {
-    kind: "image",
-    bytes: Buffer.from(bytes).toString("base64"),
-    hash: createHash("sha1").update(bytes).digest("hex"),
-    scaleMode,
-  };
-}
-
-function describeFill(fill: ColorSpec | typeof NO_FILL): CoverageNote {
-  return fill === NO_FILL
-    ? { outcome: "literal", detail: "no fill, since a transparent background paints nothing" }
-    : describeColor(fill);
 }
 
 function literalLayout(expected: readonly string[], detail: string) {
@@ -683,19 +632,14 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope, room: 
   const boxSizing = literalLayout(["border-box"], "strokes count in the auto layout");
   reader.read("box-sizing", boxSizing.map, boxSizing.describe);
 
-  const stroke = readStroke(reader, context);
-  const shadows = readShadowStack(reader, context);
+  const paint = readPaint(reader, box.image, context.variables, variantKey(definition, cell));
   const opacity = reader.read("opacity", evaluateNumber, (value) => ({
     outcome: "literal",
     detail: `opacity ${value}`,
   }));
   const textColor = color("color");
-  const fill =
-    box.image === undefined
-      ? reader.read("background-color", (value) => readFill(value, context.variables), describeFill)
-      : readImage(reader, box.image, variantKey(definition, cell));
   // The box's lengths and layout read before its parts, since they decide what a part can fill.
-  const { sizing, limits, clips } = readSizing(reader, room, context.variables);
+  const { sizing, limits, clips, extent } = readSizing(reader, room, context.variables);
   const layout = readFlow(reader);
 
   const start: ChildLayerSpec[] = [];
@@ -706,40 +650,53 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope, room: 
       (slot.side === "start" ? start : end).push(icon);
     }
   }
-  const shown = (box.parts ?? []).filter((child) => child.shownIn(cell));
+  // Every part cascades before any maps, since an absolute part sits out of the box's flow. The box's
+  // flow, `holder.layers`, is the one membership every layout reader below reads: the rooms, the
+  // stretch, the label, the display and the placement.
+  const shown = (box.parts ?? [])
+    .filter((child) => child.shownIn(cell))
+    .map((child) => {
+      const name = partName(child);
+      return {
+        child,
+        name,
+        cascade: cascade.part(child.classesFor(cell), name, child.styleFor?.(cell) ?? []),
+      };
+    });
+  const flowing = shown.filter((part) => !outOfFlow(part.cascade.style));
   const label = box.label?.shownIn(cell) === true ? box.label : undefined;
   const holder: Holder = {
     style: reader,
     layout,
     sizing,
     limits,
+    extent,
     layers: [
-      ...shown.map(partName),
+      ...flowing.map(({ name }) => name),
       ...start.map(({ name }) => name),
       ...(label === undefined ? [] : [label.name]),
       ...end.map(({ name }) => name),
     ],
   };
-  const parts = shown.map((child, index) => {
-    const name = partName(child);
-    const childCascade = cascade.part(child.classesFor(cell), name);
-    const box = mapBox(child, childCascade, scope, roomInside(holder, index));
+  const parts = shown.map((part) => {
+    const index = flowing.indexOf(part);
+    const room = index === -1 ? absoluteRoom(holder) : roomInside(holder, index);
+    const box = mapBox(part.child, part.cascade, scope, room);
     const layer: FrameLayerSpec = {
       kind: "frame",
-      key: child.key,
-      name,
-      ...(scope.scaling.has(child) ? slotAroundDot(childCascade.style, box) : box),
+      key: part.child.key,
+      name: part.name,
+      ...(scope.scaling.has(part.child) ? slotAroundDot(part.cascade.style, box) : box),
     };
-    return { layer, style: childCascade.style };
+    return { layer, style: part.cascade.style };
   });
   const missing = unstretched(
     holder,
-    parts.map(({ style }) => style)
+    flowing.map((part) => part.cascade.style)
   );
   if (missing !== undefined) {
     reader.missing(missing.property, missing.neededBy, missing.detail);
   }
-  const children: ChildLayerSpec[] = [...parts.map(({ layer }) => layer), ...start];
   const clamp = readLineClamp(holder, label);
   const placed =
     label === undefined
@@ -753,25 +710,32 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope, room: 
         });
   if (placed === undefined) {
     readWithoutLabel(reader);
-  } else {
-    children.push(placed.layer);
   }
-  children.push(...end);
-  // The display reads once the children are known, since a grid maps only around one layer.
-  readDisplay(reader, children.length, layout, clamp);
+  const space =
+    label === undefined || placed === undefined
+      ? undefined
+      : spaceBeforeLabel(holder, label, placed.layer, start.length, variantKey(definition, cell));
+  const after: readonly ChildLayerSpec[] = [
+    ...start,
+    ...(placed === undefined ? [] : [placed.layer]),
+    ...end,
+  ];
+  // The display reads once the layers are known, since a grid maps only around one item.
+  readDisplay(reader, holder.layers.length, layout, clamp);
   const width = fixedLength(sizing.horizontal);
   const height = fixedLength(sizing.vertical);
   const paddingLeft = number("padding-left") ?? ZERO;
   const paddingRight = number("padding-right") ?? ZERO;
-  const primaryAlign = placeParts(
+  const placement = placeParts(
     {
       style: reader,
       layout,
-      layers: children.length,
-      size: { width, stroke, paddingLeft, paddingRight },
+      layers: holder.layers.length,
+      size: { width, stroke: paint.stroke, paddingLeft, paddingRight },
     },
     parts
   );
+  const children: readonly ChildLayerSpec[] = [...placement.layers, ...after];
   reader.read(
     "aspect-ratio",
     (value) => (width !== undefined && height !== undefined ? value : undefined),
@@ -786,14 +750,12 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope, room: 
     paddingRight,
     paddingBottom: number("padding-bottom") ?? ZERO,
     paddingLeft,
-    itemSpacing: number("gap") ?? ZERO,
+    itemSpacing: space ?? number("gap") ?? ZERO,
     // A native control's placement of its label wins over the box's own alignment.
-    primaryAlign: placed?.primaryAlign ?? primaryAlign,
+    primaryAlign: placed?.primaryAlign ?? placement.primaryAlign,
     counterAlign: placed?.counterAlign ?? layout.counterAlign,
     cornerRadius: readCorner(reader, sizing, context) ?? ZERO,
-    fill: fill === NO_FILL ? undefined : fill,
-    stroke,
-    shadows,
+    ...paint,
     opacity: opacity ?? 1,
     children,
   };
@@ -851,10 +813,18 @@ function readCorner(reader: LayerStyle, sizing: SizingSpec, context: BuildContex
   return corner?.radius;
 }
 
+/** What an icon's `display` makes of it, by the value Tailwind compiles. */
+const ICON_DISPLAYS = new Map([
+  ["none", { shown: false, detail: "the icon is left out" }],
+  ["inline-block", { shown: true, detail: "the icon shows where its box's auto layout places it" }],
+]);
+
 /**
  * Map one icon. A slot whose computed style is `display: none` is left out, as the pending
- * Button leaves out its own leading icon while its spinner takes the place. The icon's glyph
- * takes the text color it inherits, as a Fuse icon paints with `currentColor`.
+ * Button leaves out its own leading icon while its spinner takes the place, and `inline-block`
+ * shows it. The icon's glyph takes the text color it inherits, as a Fuse icon paints with
+ * `currentColor`. Its `vertical-align` drops, since Figma has no line of text, and the box's auto
+ * layout places the icon across its row instead.
  *
  * @returns The icon layer, or undefined for an icon the cell hides.
  */
@@ -863,12 +833,20 @@ function mapIcon(
   style: LayerStyle,
   { definition, cell, context }: MapScope
 ): IconLayerSpec | undefined {
-  const hidden = style.read(
+  const display = style.read(
     "display",
-    (value) => (normalizeCss(value) === "none" ? true : undefined),
-    () => ({ outcome: "literal", detail: "the icon is left out" })
+    (value) => ICON_DISPLAYS.get(normalizeCss(value)),
+    ({ detail }) => ({ outcome: "literal", detail })
   );
-  if (hidden === true) {
+  style.read(
+    "vertical-align",
+    (value) => value,
+    () => ({
+      outcome: "dropped",
+      detail: "Figma has no line of text, so the box's auto layout places the icon",
+    })
+  );
+  if (display?.shown === false) {
     for (const property of ["width", "height"]) {
       style.mark(property, "dropped", "the icon is left out");
     }
@@ -889,66 +867,4 @@ function mapIcon(
     size: width,
     color,
   };
-}
-
-/** The `box-shadow` every Tailwind shadow and ring utility writes, one layer per custom property. */
-const TAILWIND_SHADOW_LAYERS = [
-  "--tw-inset-shadow",
-  "--tw-inset-ring-shadow",
-  "--tw-ring-offset-shadow",
-  "--tw-ring-shadow",
-  "--tw-shadow",
-] as const;
-
-const TAILWIND_SHADOW_STACK = TAILWIND_SHADOW_LAYERS.map((layer) => `var(${layer})`).join(",");
-
-/**
- * Read the drop shadows. Tailwind composes `box-shadow` from one custom property per layer,
- * so the builder reads each layer a class set on its own. A layer that does not map, such
- * as a shadow whose blur is a formula over a variable, leaves the other layers in place.
- */
-function readShadowStack(root: LayerStyle, context: BuildContext): readonly ShadowSpec[] {
-  const raw = root.raw("box-shadow");
-  if (raw === undefined) {
-    return [];
-  }
-  const describe = (mapped: readonly ShadowSpec[]) => ({
-    outcome: mapped.some((shadow) => shadow.color.kind === "variable")
-      ? ("bound" as const)
-      : ("literal" as const),
-    detail: mapped.length === 0 ? "no visible shadow" : `${mapped.length} drop shadow(s)`,
-  });
-  if (normalizeCss(raw) !== TAILWIND_SHADOW_STACK) {
-    return root.read("box-shadow", (value) => readShadows(value, context.variables), describe) ?? [];
-  }
-  root.mark("box-shadow", "literal", "Tailwind's shadow stack, read layer by layer");
-  return TAILWIND_SHADOW_LAYERS.flatMap((layer) =>
-    root.has(layer)
-      ? (root.read(layer, (value) => readShadows(value, context.variables), describe) ?? [])
-      : []
-  );
-}
-
-/**
- * A CSS border becomes an inside stroke. A border with no style or a style other than solid
- * stays unmapped, and so does one with no color, which would otherwise draw no stroke and leave
- * no row.
- */
-function readStroke(root: LayerStyle, context: BuildContext): StrokeSpec | undefined {
-  if (!root.has("border-width")) {
-    return undefined;
-  }
-  root.missing(
-    "border-color",
-    "border-width",
-    "no class or base rule colors the border, so the stroke is left out"
-  );
-  const style = root.read(
-    "border-style",
-    (value) => (normalizeCss(value) === "solid" ? value : undefined),
-    () => ({ outcome: "literal", detail: "a solid stroke" })
-  );
-  const weight = root.read("border-width", (value) => readNumber(value, context.variables), describeNumber);
-  const color = root.read("border-color", (value) => readColor(value, context.variables), describeColor);
-  return style === undefined || weight === undefined || color === undefined ? undefined : { color, weight };
 }

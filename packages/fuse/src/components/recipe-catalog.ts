@@ -5,7 +5,9 @@
  * client TSX. The sync calls each recipe for every cell of a Figma variant matrix and compiles the
  * class string it returns. It also re-exports `cn`, with which the sync adds a docs demo's
  * consumer classes to a recipe as a component merges its `className`, and the icon roster, from
- * which the sync builds one Figma component per icon `/icons` publishes.
+ * which the sync builds one Figma component per icon `/icons` publishes. Meter's constants and its
+ * `meterToneCell` lookup come along, so the sync picks each Meter cell's tone and icon from the
+ * table the component reads.
  */
 
 export { avatarVariants } from "./avatar/avatar-variants";
@@ -16,6 +18,9 @@ export { fieldVariants } from "./field/field-variants";
 export { inputClass } from "./input/input-class";
 export { kbdVariants } from "./kbd/kbd-variants";
 export { loaderVariants } from "./loader/loader-variants";
+export { METER_CONSTANTS } from "./meter/meter-constants";
+export { meterToneCell } from "./meter/meter-tone";
+export { meterVariants } from "./meter/meter-variants";
 export { radioIconButtonVariants, radioVariants } from "./radio-group/radio-group-variants";
 export { separatorClass } from "./separator/separator-class";
 export { skeletonClass } from "./skeleton/skeleton-class";

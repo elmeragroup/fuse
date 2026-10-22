@@ -1,9 +1,9 @@
 /**
  * A box's label: the box's own text, mapped from the box's style. This module owns the label's
- * typography, how it sizes and truncates in the box, where it sets its lines, and where a native
- * control places it. `component-spec.ts` assembles a box's layers, and asks this module for the
- * label, for the line clamp the box's display reads, and to settle the text declarations of a box
- * that shows no label.
+ * typography, how it sizes and truncates in the box, where it sets its lines, where a native
+ * control places it, and the gap a space before it draws. `component-spec.ts` assembles a box's
+ * layers, and asks this module for the label, for the line clamp the box's display reads, for that
+ * gap, and to settle the text declarations of a box that shows no label.
  */
 import { listNames } from "./box-sizing";
 import type { Holder } from "./box-sizing";
@@ -15,6 +15,7 @@ import { HUGGING_TEXT, TOP_LEFT } from "./kit-spec";
 import type {
   ColorSpec,
   CounterAlignSpec,
+  NumberSpec,
   StringSpec,
   TextAlignSpec,
   TextLayerSpec,
@@ -517,6 +518,54 @@ function readLabelLayout(
     () => cut(ending(lines ?? 0))
   );
   return { sizing: fills ? FILLING : HUGGING_TEXT, truncation };
+}
+
+/**
+ * The advance width of Roboto's space, U+0020, in font units by Figma style, of 2048 units per em, as
+ * the `hmtx` tables of `@fontsource/roboto` 5.3.0, which serves Google's Roboto, hold it. Roboto is
+ * the family `font-sans` holds in every theme, so it is the one family a kit label sets.
+ */
+const ROBOTO_SPACE = new Map([
+  ["Regular", 508],
+  ["Medium", 509],
+]);
+
+/** Roboto's units per em. */
+const ROBOTO_UNITS_PER_EM = 2048;
+
+/**
+ * The gap the space the markup holds before a label draws after the box's one start icon. A box that
+ * sets its text in lines puts the space between the icon and the characters, one space advance of
+ * the label's font wide, which the box's auto layout gap draws. With no icon before it the space
+ * starts the line, and in a flex or grid box it starts the text's anonymous item, and either way it
+ * collapses, so it draws no gap.
+ *
+ * @param holder - The label's box.
+ * @param label - The label.
+ * @param layer - The label's text layer.
+ * @param startIcons - How many icons the box shows before the label.
+ * @param variant - The variant's key, for the error.
+ * @returns The gap, or undefined where the space draws none.
+ * @throws When the space would sit beside more than one icon and the label, which one gap cannot draw,
+ *   or the label's size is no literal or its style has no measured space.
+ */
+export function spaceBeforeLabel(
+  holder: Holder,
+  label: LabelDefinition,
+  layer: TextLayerSpec,
+  startIcons: number,
+  variant: string
+): NumberSpec | undefined {
+  if (label.leadingSpace !== true || startIcons === 0 || textItem(holder) !== undefined) {
+    return undefined;
+  }
+  const advance = ROBOTO_SPACE.get(layer.fontStyle);
+  if (holder.layers.length !== 2 || layer.fontSize.kind !== "literal" || advance === undefined) {
+    throw new Error(
+      `${variant}: the space before ${label.name} draws as its box's gap only between one start icon and the label, at a literal size in Roboto ${[...ROBOTO_SPACE.keys()].join(" or ")}`
+    );
+  }
+  return { kind: "literal", value: (advance / ROBOTO_UNITS_PER_EM) * layer.fontSize.value };
 }
 
 /**

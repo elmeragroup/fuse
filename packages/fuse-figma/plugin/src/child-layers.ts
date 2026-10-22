@@ -4,6 +4,7 @@
 
 import { walkLayers } from "../../src/components/kit-spec.ts";
 import type {
+  AbsoluteSpec,
   BoxSpec,
   ChildLayerSpec,
   ComponentSetSpec,
@@ -58,6 +59,12 @@ type Holder = {
   readonly node: LayerParent;
   readonly direction: DirectionSpec;
   readonly held: Held;
+  /**
+   * `unknown` when the run writes a field that can resize the box or a box above it, which moves an
+   * absolute layer inside it by its constraints once the write runs, so the layer's place and size
+   * are written whatever they read now.
+   */
+  readonly size: Held;
 };
 
 /** The text fields that pick a font's style, which the spec sets as a literal. */
@@ -561,7 +568,57 @@ const isText = (node: BaseNode): node is TextNode => node.type === "TEXT";
 const isInstance = (node: BaseNode): node is InstanceNode => node.type === "INSTANCE";
 const isFrame = (node: BaseNode): node is FrameNode => node.type === "FRAME";
 
-/** Plan a frame layer: its name, its box, then the layers it holds. */
+/**
+ * Plan where a frame layer sits as one operation: in its parent's auto layout, or absolute at the
+ * spec's place, following the parent's resize as its constraints say. Turning a layer absolute or
+ * back moves it, as the typings say of `layoutPositioning`, and a resize of the parent moves an
+ * absolute layer by its constraints (P8), so a turn or a parent's resize in this run writes its
+ * constraints and place whatever they read now. The positioning comes before the layer's size, since
+ * Figma refuses FILL on an absolute layer (P8).
+ *
+ * @param size - `unknown` when the run writes a field that can resize the parent or a box above it.
+ */
+function planPositioning(
+  run: Run,
+  frame: FrameNode,
+  label: string,
+  absolute: AbsoluteSpec | undefined,
+  size: Held
+): void {
+  const positioning = absolute === undefined ? "AUTO" : "ABSOLUTE";
+  changeTogether(
+    run.plan,
+    label,
+    (plan) => {
+      const rewrite = frame.layoutPositioning !== positioning || size === "unknown";
+      planScalar({ ...run, plan }, label, "layoutPositioning", frame.layoutPositioning, positioning, () => {
+        frame.layoutPositioning = positioning;
+      });
+      if (absolute === undefined) {
+        return;
+      }
+      const { horizontal, vertical } = absolute.constraints;
+      if (rewrite || frame.constraints.horizontal !== horizontal || frame.constraints.vertical !== vertical) {
+        change(plan, label, `constraints → ${horizontal} ${vertical}`, () => {
+          frame.constraints = { horizontal, vertical };
+        });
+      }
+      if (rewrite || !near(frame.x, absolute.x)) {
+        change(plan, label, `x → ${absolute.x}`, () => {
+          frame.x = absolute.x;
+        });
+      }
+      if (rewrite || !near(frame.y, absolute.y)) {
+        change(plan, label, `y → ${absolute.y}`, () => {
+          frame.y = absolute.y;
+        });
+      }
+    },
+    () => undefined
+  );
+}
+
+/** Plan a frame layer: its name, where it sits, its box, then the layers it holds. */
 async function planFrame(
   run: Run,
   frame: FrameNode,
@@ -573,8 +630,12 @@ async function planFrame(
   planScalar(run, label, "name", frame.name, spec.name, () => {
     frame.name = spec.name;
   });
-  planBox(run, frame, label, spec, { kind: "frame", parent: holder.held });
-  await planChildren(run, frame, label, spec, links);
+  planPositioning(run, frame, label, spec.absolute, holder.size);
+  // A resize of the parent moves an absolute layer's size by its constraints after the plan read it,
+  // as a turn of the parent moves a fill, so the layer's lengths are written whatever they read.
+  const moved = spec.absolute !== undefined && holder.size === "unknown" ? "unknown" : holder.held;
+  const size = planBox(run, frame, label, spec, { kind: "frame", parent: moved });
+  await planChildren(run, frame, label, spec, links, holder.size === "unknown" ? "unknown" : size);
 }
 
 async function planChild(
@@ -648,18 +709,23 @@ async function planChild(
  *   A parent whose direction differs from it turns in this run, so its layers' sizing is planned
  *   to be written again after the turn.
  * @param links - The set's properties and the kit's icons.
+ * @param size - `unknown` when the run writes a field that can resize the parent or a box above it,
+ *   as {@link planBox} returns for the parent, so the parent's absolute layers are planned to be
+ *   written again after the resize.
  */
 export async function planChildren(
   run: Run,
   parent: LayerParent,
   label: string,
   box: Pick<BoxSpec, "direction" | "children">,
-  links: LayerLinks
+  links: LayerLinks,
+  size: Held
 ): Promise<void> {
   const holder: Holder = {
     node: parent,
     direction: box.direction,
     held: parent.layoutMode === box.direction ? "read" : "unknown",
+    size,
   };
   await planOwnedChildren(run.plan, parent, label, "layer", box.children, (spec, siblings) =>
     planChild(run, holder, siblings, label, spec, links)

@@ -400,3 +400,67 @@ describe("rule 23: an image paint reads back with the defaults the real file fil
     }).toThrow("holds no image no such image");
   });
 });
+
+describe("rule 24: an absolute layer sits outside its parent's auto layout and follows its constraints", () => {
+  /**
+   * The child P8 built: absolute in a 200 × 6 row at the row's top left, 170 wide, scaling across
+   * and stretching down.
+   */
+  function absoluteChild() {
+    const row = autoLayout("HORIZONTAL");
+    row.resize(200, 6);
+    const child = autoLayout("HORIZONTAL");
+    row.appendChild(child);
+    child.layoutPositioning = "ABSOLUTE";
+    child.x = 0;
+    child.y = 0;
+    child.resize(170, 6);
+    child.constraints = { horizontal: "SCALE", vertical: "STRETCH" };
+    return { row, child };
+  }
+
+  it("keeps the place, size and constraints written on an absolute child, where an auto child ignores its place (P8)", () => {
+    const { row, child } = absoluteChild();
+    expect([child.layoutPositioning, child.width, child.height, child.constraints]).toEqual([
+      "ABSOLUTE",
+      170,
+      6,
+      { horizontal: "SCALE", vertical: "STRETCH" },
+    ]);
+    child.x = 12;
+    child.y = 3;
+    expect([child.x, child.y]).toEqual([12, 3]);
+    const flowing = childOf(row);
+    flowing.x = 12;
+    expect([flowing.layoutPositioning, flowing.x]).toEqual(["AUTO", 0]);
+  });
+
+  it("scales the child's width and stretches its height with the row, keeping it at the top left (P8)", () => {
+    const { row, child } = absoluteChild();
+    row.resize(400, 6);
+    expect([child.x, child.width]).toEqual([0, 340]);
+    row.resize(400, 12);
+    expect([child.y, child.height]).toEqual([0, 12]);
+  });
+
+  it("refuses FILL on an absolute child with the real file's error (P8)", () => {
+    const { child } = absoluteChild();
+    expect(() => {
+      child.layoutSizingHorizontal = "FILL";
+    }).toThrow(
+      "in set_layoutSizingHorizontal: FILL cannot be set on absolute positioned auto-layout children"
+    );
+  });
+
+  it("refuses to turn a layer absolute where no probe showed what Figma does", () => {
+    const loose = childOf(figma.createFrame());
+    expect(() => {
+      loose.layoutPositioning = "ABSOLUTE";
+    }).toThrow("does not model layoutPositioning ABSOLUTE");
+    const filling = childOf(autoLayout("HORIZONTAL"));
+    filling.layoutSizingHorizontal = "FILL";
+    expect(() => {
+      filling.layoutPositioning = "ABSOLUTE";
+    }).toThrow("does not model layoutPositioning ABSOLUTE");
+  });
+});

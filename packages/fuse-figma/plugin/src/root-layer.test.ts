@@ -221,8 +221,8 @@ describe("planBox sizing, direction, limits and clipping", () => {
   async function planTree(node: ComponentNode | FrameNode, spec: BoxSpec, place: BoxPlace): Promise<Plan> {
     const plan = newPlan();
     const run = await fixtureRun(file, plan);
-    planBox(run, node, "Box", spec, place);
-    await planChildren(run, node, "Box", spec, { properties: new Map(), icons: new Map() });
+    const size = planBox(run, node, "Box", spec, place);
+    await planChildren(run, node, "Box", spec, { properties: new Map(), icons: new Map() }, size);
     return plan;
   }
 

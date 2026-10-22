@@ -384,20 +384,23 @@ export function describeNumber(spec: NumberSpec): Pick<CoverageRow, "outcome" | 
  *
  * - `parent`: the box sits in an auto layout whose length on the axis is definite, fixed or itself
  *   filling a definite length, so `100%` fills that length.
- * - `length`: a length in pixels, such as the preview width a variant root takes.
+ * - `length`: a length in pixels, such as the preview width a variant root takes, or the parent an
+ *   absolute box takes as its containing block. `of` names it for the coverage table, such as
+ *   `the preview`, which the axis's length follows.
  * - `none`: the parent's length depends on its content, so a percentage is cyclic, as CSS Sizing 3
  *   calls it. Figma shrinks a layer that fills a hugging frame, so it does not read.
  */
 export type PercentBasis =
   | { readonly kind: "parent" }
-  | { readonly kind: "length"; readonly value: number }
+  | { readonly kind: "length"; readonly value: number; readonly of: string }
   | { readonly kind: "none" };
 
 /**
  * Read a `width` or `height` as the sizing of its axis. A length is fixed. `fit-content` is the size
  * of what the box holds where its container has room to spare, which a kit frame always has, so it
- * hugs. Exactly `100%` takes the basis. Any other percentage stays unread, as {@link readNumber}
- * leaves it.
+ * hugs. A percentage takes the basis: against a length in pixels any share is that share of it, and
+ * against a parent's auto layout only the whole fills, since a fill takes no share. Any other
+ * percentage stays unread, as {@link readNumber} leaves it.
  *
  * @param value - A compiled value with Tailwind's variables already substituted.
  * @param index - The synced variables.
@@ -412,24 +415,27 @@ export function readSize(value: string, index: VariableIndex, basis: PercentBasi
   if (length !== undefined) {
     return { kind: "fixed", length };
   }
-  if (evaluatePercentage(value) !== 1) {
+  const share = evaluatePercentage(value);
+  if (share === undefined) {
     return undefined;
   }
   switch (basis.kind) {
     case "parent":
-      return { kind: "fill" };
+      return share === 1 ? { kind: "fill" } : undefined;
     case "length":
-      return { kind: "fixed", length: { kind: "literal", value: basis.value } };
+      return { kind: "fixed", length: { kind: "literal", value: share * basis.value } };
     case "none":
       return undefined;
   }
 }
 
 /**
- * A length or number in pixels, or undefined for anything that depends on a percentage or is
- * infinite.
+ * Evaluate a length or number in pixels.
+ *
+ * @param value - A CSS value with no `var()` left in it.
+ * @returns The pixels, or undefined for anything that depends on a percentage or is infinite.
  */
-function evaluateLength(value: string): number | undefined {
+export function evaluateLength(value: string): number | undefined {
   const evaluated = finiteQuantity(value);
   return evaluated === undefined || evaluated.unit === "%" || evaluated.unit === "mixed"
     ? undefined

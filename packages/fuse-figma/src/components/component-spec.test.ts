@@ -12,6 +12,7 @@ import { buildFixture, chip, dot, frameOf, ICON } from "../../test/fixture-sets"
 import type { FixtureContext } from "../../test/fixture-sets";
 import type {
   IconSlot,
+  InlineDeclaration,
   LabelDefinition,
   OuterDeclaration,
   PartDefinition,
@@ -585,9 +586,27 @@ describe("a root's percentage width against the preview width", () => {
     ]);
   });
 
-  it("leaves a share other than the whole unmapped", async () => {
+  it("resolves a share to that share of the preview width", async () => {
+    const { variant, coverage } = await buildFixture(chip("w-1/2", { previewWidth: 384 }));
+    expect(variant?.root.sizing.horizontal).toEqual(fixed(literal(192)));
+    expect(coverage.map((row) => [row.className, row.outcome, row.detail])).toEqual([
+      ["w-1/2", "literal", "192px, 50% of the preview width"],
+    ]);
+  });
+
+  it("leaves a length that depends on a percentage unmapped", async () => {
     const { coverage } = await buildFixture(chip("w-[calc(100%-4px)]", { previewWidth: 384 }));
     expect(coverage.map((row) => row.outcome)).toEqual(["unmapped"]);
+  });
+
+  // CSS 2.1 §10.3.3: a block-level box with no width fills its containing block, as a `flex` column
+  // does, while an `inline-flex` box shrinks to fit what it holds.
+  it.each([
+    ["flex flex-col", fixed(literal(256))],
+    ["inline-flex", HUG],
+  ])("gives a %s root with no width %o", async (classes, horizontal) => {
+    const { variant } = await buildFixture(chip(classes, { previewWidth: 256 }));
+    expect(variant?.root.sizing.horizontal).toEqual(horizontal);
   });
 });
 
@@ -1034,6 +1053,208 @@ describe("a part centered by absolute position", () => {
       "top-1/2 size-[8px]"
     );
     expect(rows).toEqual(["top: unmapped"]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a part with `absolute top-0 left-0`. Oracle: CSS 2.1
+// §10.1 and §10.3.7 to §10.6.4. An absolute box sits out of its parent's flow, at the offsets from
+// its containing block, the padding box of its nearest positioned ancestor, and its percentages take
+// that block. In a `relative` 256 × 6 parent with no padding or border, `w-[85%]` is 217.6px and
+// `h-full` 6px, at the parent's top left, as a meter's fill sits in its bar. A percentage width keeps
+// its share when the parent grows, which Figma's SCALE draws, and a full height keeps both edges,
+// which STRETCH draws (P8). Out of flow, it shares its parent's row with no other layer.
+describe("a part at its positioned parent's top left", () => {
+  const AT_START = "absolute top-0 left-0 w-[85%] h-full";
+  const CONSTRAINED = { x: 0, y: 0, constraints: { horizontal: "SCALE", vertical: "STRETCH" } };
+  const PLACEMENT = new Set(["position", "top", "left"]);
+
+  async function build(parentClasses: string, partClasses: string) {
+    const { variant, coverage } = await buildFixture(chip(parentClasses, { parts: [dot(partClasses)] }));
+    return {
+      frame: frameOf(variant?.root),
+      rows: coverage
+        .filter((row) => row.part === "chip-dot" && PLACEMENT.has(row.property))
+        .map((row) => `${row.property}: ${row.outcome}`)
+        .toSorted(),
+      coverage,
+    };
+  }
+
+  it("is an absolute layer at its parent's top left, its width a share and its height the parent's", async () => {
+    const { frame, rows, coverage } = await build("relative w-[256px] h-[6px]", AT_START);
+    expect(frame).toEqual(
+      expect.objectContaining({ sizing: fixedSize(literal(217.6), literal(6)), absolute: CONSTRAINED })
+    );
+    expect(rows).toEqual(["left: literal", "position: literal", "top: literal"]);
+    expect(
+      coverage
+        .filter((row) => row.part === "chip-dot" && ["width", "height"].includes(row.property))
+        .map((row) => [row.className, row.detail])
+    ).toEqual([
+      ["w-[85%]", "217.6px, 85% of the parent's width"],
+      ["h-full", "6px, the parent's height that 100% takes"],
+    ]);
+  });
+
+  it("takes its share of a parent that fills a column's fixed width", async () => {
+    const { variant } = await buildFixture(
+      chip("flex flex-col w-[256px]", {
+        parts: [
+          {
+            ...dot("relative w-full h-[6px]"),
+            parts: [{ ...dot(AT_START), key: "fill", slot: "chip-fill" }],
+          },
+        ],
+      })
+    );
+    const bar = frameOf(variant?.root);
+    expect(bar?.sizing.horizontal).toEqual(FILL);
+    expect(frameOf(bar)).toEqual(
+      expect.objectContaining({ sizing: fixedSize(literal(217.6), literal(6)), absolute: CONSTRAINED })
+    );
+  });
+
+  it.each([
+    ["a parent that is not positioned", "w-[256px] h-[6px]", AT_START],
+    ["a parent with padding", "relative w-[256px] h-[6px] p-[1px]", AT_START],
+    ["a parent with a border", "relative w-[256px] h-[6px] border border-[#000000]", AT_START],
+    ["an offset from the top", "relative w-[256px] h-[6px]", "absolute top-[2px] left-0 w-[85%] h-full"],
+    ["a width in pixels", "relative w-[256px] h-[6px]", "absolute top-0 left-0 w-[100px] h-full"],
+    ["a height of its own", "relative w-[256px] h-[6px]", "absolute top-0 left-0 w-[85%] h-[4px]"],
+  ])("stays unmapped in %s", async (_case, parentClasses, partClasses) => {
+    const { frame, rows } = await build(parentClasses, partClasses);
+    expect(frame?.absolute).toBeUndefined();
+    expect(rows).toContain("position: unmapped");
+  });
+
+  it("leaves a sibling in its parent's row alone, so the sibling's 100% fills the row", async () => {
+    const { variant } = await buildFixture(
+      chip("relative flex w-[100px] h-[6px]", {
+        parts: [dot("w-full h-[4px]"), { ...dot(AT_START), key: "fill", slot: "chip-fill" }],
+      })
+    );
+    const [sibling, fill] = variant?.root.children ?? [];
+    expect([
+      sibling?.kind === "frame" && sibling.sizing.horizontal,
+      fill?.kind === "frame" && fill.absolute,
+    ]).toEqual([FILL, CONSTRAINED]);
+  });
+
+  /** A column 256px wide holding a positioned bar with the given classes, which holds the part. */
+  async function inBar(barClasses: string, partClasses = AT_START) {
+    const { variant, coverage } = await buildFixture(
+      chip("flex flex-col w-[256px]", {
+        parts: [{ ...dot(barClasses), parts: [{ ...dot(partClasses), key: "fill", slot: "chip-fill" }] }],
+      })
+    );
+    return { fill: frameOf(frameOf(variant?.root)), coverage };
+  }
+
+  // CSS sizes the containing block after its own limits (CSS 2.1 §10.4), so a bar that fills the
+  // column up to `max-w-[128px]` is 128px wide, and 85% of it is 108.8px.
+  it("takes its share of a filling parent after the parent's maximum", async () => {
+    const { fill } = await inBar("relative w-full max-w-[128px] h-[6px]");
+    expect(fill).toEqual(
+      expect.objectContaining({ sizing: fixedSize(literal(108.8), literal(6)), absolute: CONSTRAINED })
+    );
+  });
+
+  // In the 256px column `max-w-[calc(100%-64px)]` is 192px, which lowers a 200px bar to 192px, so an
+  // 85% fill would be 163.2px, not the 170px of the bar's own width. The build reads no such limit.
+  it.each([
+    ["fills", "relative w-full max-w-[calc(100%-4px)] h-[6px]"],
+    ["is fixed", "relative w-[200px] max-w-[calc(100%-64px)] h-[6px]"],
+  ])(
+    "leaves its share unmapped where a parent that %s has a maximum the build cannot read",
+    async (_case, bar) => {
+      const { fill, coverage } = await inBar(bar);
+      expect(fill?.absolute).toBeUndefined();
+      expect(
+        coverage
+          .filter((row) => row.part === "chip-fill" && row.property === "width")
+          .map((row) => row.outcome)
+      ).toEqual(["unmapped"]);
+    }
+  );
+
+  // A maximum caps the share: CSS keeps `w-[85%] max-w-[100px]` at 100px however wide the parent
+  // grows, where Figma's SCALE would scale the layer past it.
+  it("stays unmapped where a maximum bounds its share, and says so", async () => {
+    const { frame, coverage } = await build(
+      "relative w-[256px] h-[6px]",
+      "absolute top-0 left-0 w-[85%] max-w-[100px] h-full"
+    );
+    expect(frame?.absolute).toBeUndefined();
+    expect(
+      coverage
+        .filter((row) => row.part === "chip-dot" && row.property === "position")
+        .map((row) => [row.outcome, row.detail])
+    ).toEqual([
+      [
+        "unmapped",
+        "max-width bounds the layer's share of its parent, which Figma's constraints would carry past the bound as the parent resizes",
+      ],
+    ]);
+  });
+
+  // CSS Grid 1 §9: an absolute child is no grid item, so a grid holding one child in its flow and an
+  // absolute one places its one item, as a grid with one child does.
+  it("leaves a grid's one item alone, so the grid centers it", async () => {
+    const { coverage } = await buildFixture(
+      chip("relative grid place-content-center w-[256px] h-[6px]", {
+        parts: [dot("size-[4px]"), { ...dot(AT_START), key: "fill", slot: "chip-fill" }],
+      })
+    );
+    expect(
+      coverage
+        .filter((row) => row.className === "grid" || row.className === "place-content-center")
+        .map((row) => `${row.className}: ${row.outcome}`)
+        .toSorted()
+    ).toEqual(["grid: literal", "place-content-center: literal"]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a part whose markup carries a `style` attribute. Oracle:
+// CSS Cascade 4, where a style attribute's declarations beat every rule of an author style sheet
+// (§6.2) and `inherit` takes the parent's computed value (§7.3), and CSS Logical Properties 1, where
+// `inset-inline-start` is `left` in a left-to-right page and cascades with it. Base UI's meter fill
+// carries `inset-inline-start: 0; height: inherit; width: 85%` over its classes. Here the classes
+// set another left, width and height, which the style attribute overrides, so they leave no row.
+describe("a part with an inline style", () => {
+  const STYLE: readonly InlineDeclaration[] = [
+    { property: "inset-inline-start", value: "0" },
+    { property: "height", value: "inherit" },
+    { property: "width", value: "85%" },
+  ];
+
+  it("lands its width and inherited height over the classes, and sets left through inset-inline-start", async () => {
+    const fill: PartDefinition = {
+      ...dot("absolute top-0 left-[4px] w-[10%] h-full"),
+      styleFor: () => STYLE,
+    };
+    const { variant, coverage } = await buildFixture(chip("relative w-[256px] h-[6px]", { parts: [fill] }));
+    expect(frameOf(variant?.root)).toEqual(
+      expect.objectContaining({
+        sizing: fixedSize(literal(217.6), literal(6)),
+        absolute: { x: 0, y: 0, constraints: { horizontal: "SCALE", vertical: "STRETCH" } },
+      })
+    );
+    expect(
+      coverage
+        .filter((row) => row.part === "chip-dot" && ["left", "width", "height"].includes(row.property))
+        .map((row) => [row.className, row.property, row.value, row.outcome, row.detail])
+        .toSorted(([, left = ""], [, right = ""]) => left.localeCompare(right))
+    ).toEqual([
+      ["inline style", "height", "inherit", "literal", "6px"],
+      [
+        "inline style",
+        "left",
+        "0",
+        "literal",
+        "an absolute layer at its parent's top left, which keeps its share of the parent's width and stretches with its height",
+      ],
+      ["inline style", "width", "85%", "literal", "217.6px, 85% of the parent's width"],
+    ]);
   });
 });
 
@@ -1756,5 +1977,42 @@ describe("a declaration an ancestor passes down in some cells", () => {
 
   it("gives the root's currentcolor the color it inherits", async () => {
     expect(colors(await build("text-current", RED, ["invalid"]))).toEqual([rgb(1, 0, 0)]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a label whose markup holds a space before it, after an
+// icon, as Meter's value does. Oracle: CSS Text 3 §4.1, where a block box sets an inline icon, a
+// space and text on one line, the space one advance of the text's font wide, and Roboto Regular's
+// space, 508 of 2048 units per em in `@fontsource/roboto` 5.3.0, 3.47265625px at 14px. A space that
+// starts a line collapses. A flex box sets its text as an anonymous item, which the space starts.
+describe("a label after a space the markup holds", () => {
+  const VALUE: LabelDefinition = {
+    key: "value",
+    name: "value",
+    characters: "85%",
+    textProperty: undefined,
+    shownIn: () => true,
+    leadingSpace: true,
+  };
+
+  async function gapOf(classes: string, icons: readonly IconSlot[]) {
+    const { variant } = await buildLabelled(`${classes} [&_svg]:size-[16px]`, {
+      label: VALUE,
+      iconsFor: () => icons,
+    });
+    return variant?.root.itemSpacing;
+  }
+
+  it.each([
+    ["sits one Roboto space after an icon in a block box", "", [ICON], literal(3.47265625)],
+    [
+      "takes the box's own gap in a flex box, where it starts the text's item",
+      "flex gap-[2px]",
+      [ICON],
+      literal(2),
+    ],
+    ["draws no gap with no icon before it, where it starts the line", "", [], literal(0)],
+  ])("%s", async (_case, classes, icons, gap) => {
+    expect(await gapOf(classes, icons)).toEqual(gap);
   });
 });

@@ -179,9 +179,13 @@ export type BoxPlace = { readonly kind: "root" } | { readonly kind: "frame"; rea
  * @param spec - The box the spec asks for.
  * @param place - Whether the box is a variant's root or a frame below it, and whether its parent
  *   turns in this run.
+ * @returns `unknown` where the plan writes a field that can change the box's size: its direction,
+ *   sizing, lengths, limits, padding, spacing or stroke. An absolute layer inside the box moves by
+ *   its constraints when that write runs, after the plan compared the layer. `read` otherwise.
  */
-export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpec, place: BoxPlace): void {
+export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpec, place: BoxPlace): Held {
   const { direction, sizing } = spec;
+  const before = run.plan.operations.length;
   planScalar(run, label, "layoutMode", node.layoutMode, direction, () => {
     node.layoutMode = direction;
   });
@@ -235,6 +239,7 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
     },
     spec.itemSpacing
   );
+  const laidOut = run.plan.operations.length > before;
   planNumber(run, node, label, cornerField(node), spec.cornerRadius);
 
   // The build makes every root clip, for its focus ring's spread (`component-spec.ts`).
@@ -249,6 +254,7 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
   // inside and counts in the auto layout. A transparent CSS border arrives as a paint with
   // alpha 0, which keeps its weight in the layout: on a real file on 2026-10-20 a default
   // Button hugged to 64px, a 42px label, 10px of padding a side and two 1px sides.
+  const stroked = run.plan.operations.length;
   planPaints(run, label, "stroke", node.strokes, spec.stroke?.color, (paints) => {
     node.strokes = paints;
   });
@@ -261,6 +267,7 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
       node.strokesIncludedInLayout = true;
     });
   }
+  const resizes = laidOut || run.plan.operations.length > stroked;
   planShadows(run, node, label, spec.shadows);
   planNumber(
     run,
@@ -276,4 +283,5 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
     },
     { kind: "literal", value: spec.opacity }
   );
+  return resizes ? "unknown" : "read";
 }

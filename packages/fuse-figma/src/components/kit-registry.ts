@@ -19,6 +19,7 @@ import { KBD } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
 import { LABEL } from "./label-kit";
 import { LOADER } from "./loader-kit";
+import { METER } from "./meter-kit";
 import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
 import { RADIO } from "./radio-kit";
 import { SEPARATOR } from "./separator-kit";
@@ -77,6 +78,9 @@ const TEXTAREA_PAGE: KitPage = { slug: "textarea", name: "Textarea" };
 
 /** The page Avatar sits on alone. */
 const AVATAR_PAGE: KitPage = { slug: "avatar", name: "Avatar" };
+
+/** The page Meter sits on alone. */
+const METER_PAGE: KitPage = { slug: "meter", name: "Meter" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -168,4 +172,5 @@ export const KIT: readonly KitEntry[] = [
   { definition: INPUT, page: INPUT_PAGE, previewCells: matrixCells(INPUT.axes) },
   { definition: TEXTAREA, page: TEXTAREA_PAGE, previewCells: matrixCells(TEXTAREA.axes) },
   { definition: AVATAR, page: AVATAR_PAGE, previewCells: matrixCells(AVATAR.axes) },
+  { definition: METER, page: METER_PAGE, previewCells: matrixCells(METER.axes) },
 ];

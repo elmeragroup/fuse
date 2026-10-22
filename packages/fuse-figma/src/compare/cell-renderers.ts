@@ -131,6 +131,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/avatar.js",
     load: async () => (await import("./avatar-cell.ts")).avatar,
   },
+  {
+    set: "meter",
+    entry: "dist/meter.js",
+    load: async () => (await import("./meter-cell.ts")).meter,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

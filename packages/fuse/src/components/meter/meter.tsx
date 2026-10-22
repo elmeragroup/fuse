@@ -100,7 +100,7 @@ export function Meter({
   const successName = successLabel ?? strings.format("success");
 
   const { tone, icon: iconName } = meterToneCell(mode, level);
-  const { root, labelContainer, labelValue, icon, bar, barFill } = meterVariants({ tone });
+  const slots = meterVariants({ tone });
 
   return (
     <MeterPrimitive.Root
@@ -109,19 +109,24 @@ export function Meter({
       min={min}
       max={max}
       locale={locale}
-      className={cn(root(), className)}
+      className={cn(slots.root(), className)}
       {...props}>
-      <div className={labelContainer()}>
-        <MeterPrimitive.Label data-slot="meter-label" className="text-sm font-medium w-fit">
+      <div className={slots.labelContainer()}>
+        <MeterPrimitive.Label data-slot="meter-label" className={slots.label()}>
           {label}
         </MeterPrimitive.Label>
-        <span data-slot="meter-value" className={cn(labelValue(), "tabular-nums")}>
-          <MeterIcon icon={iconName} className={icon()} warningName={warningName} successName={successName} />{" "}
+        <span data-slot="meter-value" className={cn(slots.labelValue(), slots.value())}>
+          <MeterIcon
+            icon={iconName}
+            className={slots.icon()}
+            warningName={warningName}
+            successName={successName}
+          />{" "}
           {valueLabel ?? <MeterPrimitive.Value />}
         </span>
       </div>
-      <MeterPrimitive.Track data-slot="meter-bar" className={bar()}>
-        <MeterPrimitive.Indicator data-slot="meter-bar-fill" className={barFill()} />
+      <MeterPrimitive.Track data-slot="meter-bar" className={slots.bar()}>
+        <MeterPrimitive.Indicator data-slot="meter-bar-fill" className={slots.barFill()} />
       </MeterPrimitive.Track>
     </MeterPrimitive.Root>
   );

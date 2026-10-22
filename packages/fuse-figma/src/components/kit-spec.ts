@@ -163,6 +163,24 @@ export type IconLayerSpec = {
 };
 
 /**
+ * How an absolute layer follows its parent's resize on one axis, as Figma's constraints name it:
+ * `STRETCH` keeps its distance to both of the parent's edges, so it grows with the parent, and
+ * `SCALE` keeps its position and length as shares of the parent's.
+ */
+export type ConstraintSpec = "STRETCH" | "SCALE";
+
+/**
+ * A layer outside its parent's auto layout, as `position: absolute` takes a box out of its parent's
+ * flow: at `x` and `y` in pixels from the parent's top left, following the parent's resize as its
+ * constraints say.
+ */
+export type AbsoluteSpec = {
+  readonly x: number;
+  readonly y: number;
+  readonly constraints: { readonly horizontal: ConstraintSpec; readonly vertical: ConstraintSpec };
+};
+
+/**
  * A frame layer below a component root, such as a checkbox's indicator around its icon. It
  * draws its box as a root does, and holds text, icon and frame layers of its own.
  */
@@ -170,6 +188,8 @@ export type FrameLayerSpec = BoxSpec & {
   readonly kind: "frame";
   readonly key: string;
   readonly name: string;
+  /** Where the layer sits outside its parent's auto layout, absent for a layer the auto layout places. */
+  readonly absolute?: AbsoluteSpec;
 };
 
 /** A layer inside a component root or a frame layer. */

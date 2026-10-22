@@ -1,12 +1,21 @@
 /**
  * How a box sizes each axis, read from its CSS and from the room its parent gives it: the length
- * a `width` or `height` sets, a `100%` that fills its parent, the stretch a column gives an unset
- * width, the `min-*` and `max-*` limits, and whether `overflow: hidden` clips the box.
- * `component-spec.ts` reads a box's sizing before it maps the box's parts, then asks this module
- * for the room each part gets. `label-layout.ts` reads the box's own text against the same holder.
+ * a `width` or `height` sets, a `100%` that fills its parent, a share of a length in pixels, the
+ * stretch a column gives an unset width, the `min-*` and `max-*` limits, and whether
+ * `overflow: hidden` clips the box. `component-spec.ts` reads a box's sizing before it maps the
+ * box's parts, then asks this module for the room each part gets, in the box's flow or, for an
+ * absolute part, against its containing block. `label-layout.ts` reads the box's own text against
+ * the same holder.
  */
 import type { CoverageNote, LayerStyle } from "./cascade";
-import { describeNumber, evaluatePercentage, normalizeCss, readNumber, readSize } from "./css-values";
+import {
+  describeNumber,
+  evaluateLength,
+  evaluatePercentage,
+  normalizeCss,
+  readNumber,
+  readSize,
+} from "./css-values";
 import type { PercentBasis, VariableIndex } from "./css-values";
 import type { BoxSpec, DirectionSpec, LimitsSpec, NumberSpec, SizeSpec, SizingSpec } from "./kit-spec";
 import type { Layout } from "./placement";
@@ -22,6 +31,11 @@ type AxisRoom = {
    * share the room with. Empty across the direction, and for the parent's only layer.
    */
   readonly siblings: readonly string[];
+  /**
+   * The length in pixels a fill takes on the axis before the box's own limits, the parent's content
+   * length, or undefined where a length the parent's sizing or padding reads is no literal.
+   */
+  readonly length: number | undefined;
 };
 
 /** What a box's parent gives it on each axis. */
@@ -34,24 +48,39 @@ const HUG: SizeSpec = { kind: "hug" };
 const FILL: SizeSpec = { kind: "fill" };
 const NO_BASIS: PercentBasis = { kind: "none" };
 
+/** The `display` values that make a box block-level, whose unset width fills its container (CSS 2.1 §10.3.3). */
+const BLOCK_LEVEL = new Set(["block", "flex", "grid", "flow-root"]);
+
 /**
  * The room a variant root has. Its component set has no auto layout, so it fills nothing and an
- * unset length hugs.
+ * unset length hugs, except where the definition names the width the root's container gives it: a
+ * block-level root, such as a `flex` column, then takes that width, as a block box with no width
+ * fills its container.
  *
- * @param previewWidth - The width the root's container gives it, which its `100%` width takes, or
- *   undefined where the definition names none.
+ * @param previewWidth - The width the root's container gives it, which its percentage width takes,
+ *   or undefined where the definition names none.
+ * @param style - The root's style, whose `display` says whether the root is block-level.
  * @returns The root's room.
  */
-export function rootRoom(previewWidth: number | undefined): Room {
+export function rootRoom(previewWidth: number | undefined, style: LayerStyle): Room {
+  const fills = previewWidth !== undefined && BLOCK_LEVEL.has(normalizeCss(style.raw("display") ?? ""));
   return {
     horizontal: {
-      percent: previewWidth === undefined ? NO_BASIS : { kind: "length", value: previewWidth },
-      auto: HUG,
+      percent:
+        previewWidth === undefined ? NO_BASIS : { kind: "length", value: previewWidth, of: "the preview" },
+      auto: fills ? { kind: "fixed", length: { kind: "literal", value: previewWidth } } : HUG,
       siblings: [],
+      length: undefined,
     },
-    vertical: { percent: NO_BASIS, auto: HUG, siblings: [] },
+    vertical: { percent: NO_BASIS, auto: HUG, siblings: [], length: undefined },
   };
 }
+
+/** A box's border-box length in pixels on each axis, undefined where the build cannot tell it. */
+export type Extent = {
+  readonly horizontal: number | undefined;
+  readonly vertical: number | undefined;
+};
 
 /** A box as the parts it holds see it. */
 export type Holder = {
@@ -59,9 +88,77 @@ export type Holder = {
   readonly layout: Layout;
   readonly sizing: SizingSpec;
   readonly limits: LimitsSpec;
-  /** The names of the box's layers in the cell, in layer order, its parts first. */
+  readonly extent: Extent;
+  /**
+   * The names of the box's layers in the cell that sit in its flow, in layer order, its parts first.
+   * An absolute part sits outside it.
+   */
   readonly layers: readonly string[];
 };
+
+/**
+ * Whether a box sits out of its parent's flow, as `position: absolute` and `fixed` take it, so it
+ * shares no line with the parent's other layers.
+ *
+ * @param style - The box's style.
+ * @returns True for an absolute or fixed box.
+ */
+export function outOfFlow(style: LayerStyle): boolean {
+  return ["absolute", "fixed"].includes(normalizeCss(style.raw("position") ?? ""));
+}
+
+/** The padding sides of each axis. */
+const SIDES = {
+  horizontal: ["padding-left", "padding-right"],
+  vertical: ["padding-top", "padding-bottom"],
+} as const;
+
+/**
+ * A box's literal length in pixels, 0 where the box does not set it, or undefined where its value is
+ * no literal length, such as a bound padding or a percentage.
+ */
+function literalPixels(style: LayerStyle, property: string): number | undefined {
+  const value = style.resolved(property);
+  return value === undefined ? 0 : evaluateLength(value);
+}
+
+/**
+ * The length in pixels of a box's content box or padding box on one axis: its length less its
+ * borders, and less its padding for the content box.
+ */
+function innerLength(holder: Holder, axis: keyof Extent, box: "content" | "padding"): number | undefined {
+  const outer = holder.extent[axis];
+  const border = literalPixels(holder.style, "border-width");
+  const sides = box === "content" ? SIDES[axis].map((side) => literalPixels(holder.style, side)) : [];
+  if (outer === undefined || border === undefined || sides.some((side) => side === undefined)) {
+    return undefined;
+  }
+  return sides.reduce<number>((rest, side) => rest - (side ?? 0), outer - 2 * border);
+}
+
+/**
+ * The room an absolute part has. It sits out of its parent's flow, so it shares no line with the
+ * parent's other layers, and an unset length hugs, as CSS shrinks an absolute box to fit what it
+ * holds. Its percentages take its containing block, the padding box of its nearest positioned
+ * ancestor (CSS 2.1 §10.1). Where the parent is positioned and its lengths are literals, that is the
+ * parent's padding box. Elsewhere the block lies further up, so a percentage stays unread.
+ *
+ * @param holder - The part's parent.
+ * @returns The part's room.
+ */
+export function absoluteRoom(holder: Holder): Room {
+  const positioned = !["", "static"].includes(normalizeCss(holder.style.raw("position") ?? ""));
+  const axisRoom = (axis: keyof Extent): AxisRoom => {
+    const block = positioned ? innerLength(holder, axis, "padding") : undefined;
+    return {
+      percent: block === undefined ? NO_BASIS : { kind: "length", value: block, of: "the parent's" },
+      auto: HUG,
+      siblings: [],
+      length: undefined,
+    };
+  };
+  return { horizontal: axisRoom("horizontal"), vertical: axisRoom("vertical") };
+}
 
 /**
  * Whether a box is a column whose unset `align-items` stretches its layers across it, as CSS's
@@ -97,8 +194,14 @@ export function roomInside(holder: Holder, index: number): Room {
       percent: percent(sizing.horizontal),
       auto: stretches(holder) && definite(holder, sizing.horizontal) ? FILL : HUG,
       siblings: along("HORIZONTAL"),
+      length: innerLength(holder, "horizontal", "content"),
     },
-    vertical: { percent: percent(sizing.vertical), auto: HUG, siblings: along("VERTICAL") },
+    vertical: {
+      percent: percent(sizing.vertical),
+      auto: HUG,
+      siblings: along("VERTICAL"),
+      length: innerLength(holder, "vertical", "content"),
+    },
   };
 }
 
@@ -162,8 +265,11 @@ const HEIGHT: AxisProperties = {
   flow: "column",
 };
 
-/** A box's sizing on each axis, the limits Figma keeps it within, and whether it clips. */
-type BoxSizing = Pick<BoxSpec, "sizing" | "limits" | "clips">;
+/**
+ * A box's sizing on each axis, the limits Figma keeps it within, whether it clips, and its length in
+ * pixels where the build can tell it.
+ */
+type BoxSizing = Pick<BoxSpec, "sizing" | "limits" | "clips"> & { readonly extent: Extent };
 
 /**
  * Read a box's sizing and limits on both axes, `field-sizing: content`, and `overflow: hidden`.
@@ -175,7 +281,7 @@ type BoxSizing = Pick<BoxSpec, "sizing" | "limits" | "clips">;
  * @param reader - The box's style.
  * @param room - What the box's parent gives it.
  * @param variables - The synced variables a length can bind.
- * @returns The box's sizing, limits and clipping.
+ * @returns The box's sizing, limits, clipping and extent.
  */
 export function readSizing(reader: LayerStyle, room: Room, variables: VariableIndex): BoxSizing {
   const horizontal = readAxis(reader, WIDTH, room.horizontal, variables);
@@ -199,7 +305,41 @@ export function readSizing(reader: LayerStyle, room: Room, variables: VariableIn
       maxHeight: vertical.max,
     },
     clips: clips ?? false,
+    extent: {
+      horizontal: usedPixels(horizontal, room.horizontal.length),
+      vertical: usedPixels(vertical, room.vertical.length),
+    },
   };
+}
+
+/**
+ * An axis's used length in pixels, as CSS lays the box out: a literal fixed length, which holds its
+ * limits already, or the room a fill takes, lowered to its maximum and raised to its minimum (CSS 2.1
+ * §10.4), as Figma keeps a fill within its limits. Undefined where the axis hugs, the fill's room is
+ * unknown, or a limit is no literal or stays unmapped, since CSS applies a limit whatever the build
+ * makes of it.
+ *
+ * @param read - The axis as {@link readAxis} read it.
+ * @param room - The length in pixels a fill takes before its limits, or undefined where unknown.
+ */
+function usedPixels(read: AxisRead, room: number | undefined): number | undefined {
+  if ([...read.notes.values()].includes(undefined)) {
+    return undefined;
+  }
+  switch (read.size.kind) {
+    case "fixed":
+      return read.size.length.kind === "literal" ? read.size.length.value : undefined;
+    case "hug":
+      return undefined;
+    case "fill": {
+      const bounds = [...read.notes.keys()];
+      const min = comparable(bounds, "min");
+      const max = comparable(bounds, "max");
+      return room === undefined || min.kind === "incomparable" || max.kind === "incomparable"
+        ? undefined
+        : usedLength(room, pixelsOf(min), pixelsOf(max));
+    }
+  }
 }
 
 /** A `min-*` or `max-*` the box sets, and its value as a number field where it reads as one. */
@@ -304,16 +444,15 @@ function resolveLimits(size: SizeSpec, bounds: readonly Bound[], axis: AxisPrope
   if (length.kind !== "literal" || min.kind === "incomparable" || max.kind === "incomparable") {
     return unmapped;
   }
-  const px = (limit: Comparable): number | undefined => (limit.kind === "literal" ? limit.px : undefined);
-  const used = usedLength(length.value, px(min), px(max));
+  const used = usedLength(length.value, pixelsOf(min), pixelsOf(max));
   if (used <= 0) {
     return unmapped;
   }
   const foldNote = (bound: Bound): CoverageNote => {
     const without = usedLength(
       length.value,
-      bound.side === "min" ? undefined : px(min),
-      bound.side === "max" ? undefined : px(max)
+      bound.side === "min" ? undefined : pixelsOf(min),
+      bound.side === "max" ? undefined : pixelsOf(max)
     );
     if (without !== used) {
       return { outcome: "literal", detail: `the fixed ${axis.length} resolves to ${used}px against it` };
@@ -348,7 +487,12 @@ function comparable(bounds: readonly Bound[], side: Bound["side"]): Comparable {
     : { kind: "incomparable" };
 }
 
-/** The used length CSS gives a fixed length within its limits (CSS 2.1 §10.4). */
+/** A comparable limit's pixels, or undefined where it is unset. */
+function pixelsOf(limit: Comparable): number | undefined {
+  return limit.kind === "literal" ? limit.px : undefined;
+}
+
+/** The used length CSS gives a length within its limits (CSS 2.1 §10.4). */
 function usedLength(length: number, min: number | undefined, max: number | undefined): number {
   const capped = max === undefined ? length : Math.min(length, max);
   return min === undefined ? capped : Math.max(capped, min);
@@ -368,18 +512,18 @@ function readLength(
   room: AxisRoom,
   variables: VariableIndex
 ): SizeSpec | undefined {
-  const { siblings } = room;
+  const { siblings, percent } = room;
   const read = reader.read(
     axis.length,
     (value) => {
-      const whole = evaluatePercentage(value) === 1;
-      if (whole && siblings.length > 0) {
-        return { size: { kind: "shared" } as const, whole };
+      const share = evaluatePercentage(value);
+      if (share === 1 && siblings.length > 0) {
+        return { size: { kind: "shared" } as const, share };
       }
-      const size = readSize(value, variables, room.percent);
-      return size === undefined ? undefined : { size, whole };
+      const size = readSize(value, variables, percent);
+      return size === undefined ? undefined : { size, share };
     },
-    ({ size, whole }): CoverageNote => {
+    ({ size, share }): CoverageNote => {
       switch (size.kind) {
         case "shared": {
           const [shares, leaves] = siblings.length === 1 ? ["shares", "it leaves"] : ["share", "they leave"];
@@ -392,13 +536,17 @@ function readLength(
           return { outcome: "literal", detail: "the box hugs its content" };
         case "fill":
           return { outcome: "literal", detail: `the box fills its parent's ${axis.length}` };
-        case "fixed":
-          return whole && size.length.kind === "literal"
-            ? {
-                outcome: "literal",
-                detail: `${size.length.value}px, the preview ${axis.length} that 100% takes`,
-              }
-            : describeNumber(size.length);
+        case "fixed": {
+          if (share === undefined || percent.kind !== "length" || size.length.kind !== "literal") {
+            return describeNumber(size.length);
+          }
+          const of = `${percent.of} ${axis.length}`;
+          const detail =
+            share === 1
+              ? `${size.length.value}px, ${of} that 100% takes`
+              : `${size.length.value}px, ${Math.round(share * 10_000) / 100}% of ${of}`;
+          return { outcome: "literal", detail };
+        }
       }
     }
   )?.size;

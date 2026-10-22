@@ -1,8 +1,8 @@
 /**
  * The CSS cascade of a component set, cell by cell, as a browser runs it in one cascade layer.
- * Each box of a cell, the root or a part, cascades its own classes over what it inherits, and
- * each icon cascades its own classes and the child-selector classes that reach it over what its
- * box passes down.
+ * Each box of a cell, the root or a part, cascades its own classes over what it inherits, and a
+ * part's style attribute over its classes. Each icon cascades its own classes and the
+ * child-selector classes that reach it over what its box passes down.
  * The Figma mapping reads each layer's computed style through a {@link LayerStyle}.
  *
  * Every declaration in a computed style names its provenance: the layer it applies to, and the
@@ -12,7 +12,7 @@
  * visits the layers in.
  */
 import { splitClassName } from "./class-name";
-import type { BuildContext, Cell, IconSlot, OuterDeclaration } from "./component-spec";
+import type { BuildContext, Cell, IconSlot, InlineDeclaration, OuterDeclaration } from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { normalizeCss, splitTopLevel, substituteVars } from "./css-values";
 import { compareSpecificity } from "./specificity";
@@ -98,11 +98,20 @@ type StyleEntry = {
 
 type ComputedStyle = ReadonlyMap<string, StyleEntry>;
 
+/** How the coverage table names a declaration of an element's `style` attribute, in place of a class. */
+const INLINE_STYLE = "inline style";
+
+/** The rank of a style attribute's declarations, above every class (CSS Cascade 4 §6.2). */
+const INLINE_RANK = 1;
+
 /** One class or rule a layer applies, with what orders it in the cascade. */
 type Applied = {
   readonly part: string;
   readonly className: string;
-  /** -2 for the host page and the root's ancestors, -1 for the base layer, 0 for every recipe class. */
+  /**
+   * -2 for the host page and the root's ancestors, -1 for the base layer, 0 for every recipe class,
+   * and 1 for the element's `style` attribute.
+   */
   readonly rank: number;
   readonly specificity: Specificity;
   /** The class's place in Tailwind's output, which breaks a specificity tie. */
@@ -240,9 +249,10 @@ class CellLedger {
     kind: "drawn" | "around" = "drawn"
   ): Layer {
     const id = this.#layers.length;
+    const { context } = this.scope;
     const layer: Layer = {
       id,
-      style: computeStyle(id, inherited, applied),
+      style: computeStyle(id, inherited, applied, (property) => parentValue(parent, context, property)),
       read: new Set(),
       marks: new Map(),
       children: [],
@@ -441,16 +451,21 @@ export class BoxCascade {
    *
    * @param classes - The part's class string for the cell.
    * @param part - The part's layer name.
+   * @param inline - The declarations of the part's `style` attribute, which beat every class.
    * @returns The part's cascade.
    */
-  part(classes: string, part: string): BoxCascade {
+  part(classes: string, part: string, inline: readonly InlineDeclaration[] = []): BoxCascade {
     return cascadeBox(
       this.#ledger,
       {
         classes,
         part,
         inherited: inheritance(this.#layer, this.#ledger.scope.context),
-        outer: [],
+        outer: outerApplied(
+          inline.map((declaration) => ({ className: INLINE_STYLE, ...declaration })),
+          part,
+          INLINE_RANK
+        ),
         ancestorRules: [...this.#ancestorRules, ...this.#ownRules],
       },
       this.#layer
@@ -509,6 +524,19 @@ export class LayerStyle {
   /** The computed value before substitution. */
   raw(property: string): string | undefined {
     return this.#layer.style.get(property)?.value;
+  }
+
+  /**
+   * Whether the layer itself sets the property to `inherit`, which computes to its parent's value,
+   * so the value follows the parent's.
+   */
+  inherits(property: string): boolean {
+    const entry = this.#layer.style.get(property);
+    return (
+      entry !== undefined &&
+      entry.source.layer === this.#layer.id &&
+      normalizeCss(entry.source.value) === "inherit"
+    );
   }
 
   /**
@@ -598,6 +626,30 @@ function inheritance(layer: Layer, context: BuildContext): ComputedStyle {
     }
   }
   return passed;
+}
+
+/**
+ * A parent's computed value of a property, inherited or not, with the parent's custom properties
+ * substituted, as a child's `inherit` takes it.
+ *
+ * @returns The value under the parent's declaration, or undefined where the parent sets none.
+ */
+function parentValue(
+  parent: Layer | undefined,
+  context: BuildContext,
+  property: string
+): StyleEntry | undefined {
+  const entry = parent?.style.get(property);
+  if (parent === undefined || entry === undefined) {
+    return undefined;
+  }
+  const read = new Set<string>();
+  const value = substitute(parent, context, entry.value, read);
+  if (value === undefined) {
+    return undefined;
+  }
+  const [, ...consumed] = sourcesOf(parent, entry, read);
+  return { value, source: entry.source, consumed };
 }
 
 /** The provenance of a declaration, then of every declaration its value read. */
@@ -754,12 +806,19 @@ function outerApplied(declarations: readonly OuterDeclaration[], part: string, r
 /**
  * Apply declarations over what a layer inherits, in cascade order: the host page's first, the
  * base layer's next, then the recipe classes that hold in the cell by the specificity of each
- * full class's compiled selector, with Tailwind's output order breaking a tie. A variant does not
- * always add specificity: `aria-invalid:` adds an attribute, while fuse.css's `data-checked:`
- * wraps its attribute in `:where()` and adds nothing, so `aria-invalid:border-error` beats
- * `data-checked:border-primary` though Tailwind emits it first.
+ * full class's compiled selector, with Tailwind's output order breaking a tie, and the element's
+ * `style` attribute last. A variant does not always add specificity: `aria-invalid:` adds an
+ * attribute, while fuse.css's `data-checked:` wraps its attribute in `:where()` and adds nothing, so
+ * `aria-invalid:border-error` beats `data-checked:border-primary` though Tailwind emits it first.
+ *
+ * @param parentOf - The parent's computed value of a property, which an `inherit` takes.
  */
-function computeStyle(layer: number, inherited: ComputedStyle, applied: readonly Applied[]): ComputedStyle {
+function computeStyle(
+  layer: number,
+  inherited: ComputedStyle,
+  applied: readonly Applied[],
+  parentOf: (property: string) => StyleEntry | undefined
+): ComputedStyle {
   const style = new Map(inherited);
   const sorted = applied.toSorted(
     (left, right) =>
@@ -773,12 +832,32 @@ function computeStyle(layer: number, inherited: ComputedStyle, applied: readonly
         const source = { layer, part, className, property: longhand, value: longValue };
         style.set(
           longhand,
-          inheritedCurrentColor(source, inherited) ?? { value: longValue, source, consumed: [] }
+          inheritedKeyword(source, parentOf) ??
+            inheritedCurrentColor(source, inherited) ?? { value: longValue, source, consumed: [] }
         );
       }
     }
   }
   return style;
+}
+
+/**
+ * `inherit` computes to the parent's value of the property, inherited or not (CSS Cascade 4 §7.3),
+ * as a meter fill's `height: inherit` takes its bar's height. The entry keeps the declaration as its
+ * source and reads the parent's declaration, so the declaration lands in the coverage table with
+ * what it resolved to.
+ *
+ * @returns The parent's value under the declaration, or undefined for any other value or where the
+ *   parent sets no value of the property.
+ */
+function inheritedKeyword(
+  source: Provenance,
+  parentOf: (property: string) => StyleEntry | undefined
+): StyleEntry | undefined {
+  const parent = normalizeCss(source.value) === "inherit" ? parentOf(source.property) : undefined;
+  return parent === undefined
+    ? undefined
+    : { value: parent.value, source, consumed: [parent.source, ...parent.consumed] };
 }
 
 /**
@@ -798,8 +877,9 @@ function inheritedCurrentColor(source: Provenance, inherited: ComputedStyle): St
 }
 
 /**
- * Split the padding shorthands into the sides Figma pads, keeping every other property. A side
- * may be a `calc()` with spaces, as `px-2.5` compiles to `calc(var(--spacing) * 2.5)`.
+ * Split the padding shorthands into the sides Figma pads, and name a logical inset by its physical
+ * side, keeping every other property. A side may be a `calc()` with spaces, as `px-2.5` compiles to
+ * `calc(var(--spacing) * 2.5)`.
  */
 function expandShorthand(property: string, value: string): readonly (readonly [string, string])[] {
   const parts = splitTopLevel(normalizeCss(value), " ");
@@ -827,6 +907,12 @@ function expandShorthand(property: string, value: string): readonly (readonly [s
         ["padding-bottom", bottom],
       ];
     }
+    // A left-to-right page puts the inline start on the left and its end on the right, where each
+    // cascades with the physical side (CSS Logical Properties 1 §4).
+    case "inset-inline-start":
+      return [["left", value]];
+    case "inset-inline-end":
+      return [["right", value]];
     default:
       return [[property, value]];
   }

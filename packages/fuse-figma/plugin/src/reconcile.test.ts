@@ -782,3 +782,87 @@ describe("a variant whose frame fills with an image", () => {
     expect(await reconcileKit(file.figma, blue, false)).toEqual({ changes: [], warnings: [] });
   });
 });
+
+// Unit under test: `reconcileKit` on a variant whose bar holds an absolute fill, as a meter's bar
+// holds its fill. Oracle: the fake's rules 9 and 24, which follow what a real file read on
+// 2026-10-22 (P8), and an empty second Plan. A fill at 85% of a 256px bar is 217.6 wide at the bar's
+// top left, scales across and stretches down, so it keeps 85% of the bar and the bar's height when
+// the bar resizes.
+describe("a variant whose bar holds an absolute fill", () => {
+  const fixedSides = (width: number, height: number) =>
+    ({
+      horizontal: { kind: "fixed", length: literal(width) },
+      vertical: { kind: "fixed", length: literal(height) },
+    }) as const;
+  const FLOWING: FrameLayerSpec = { ...frame("button/fill", "Fill", []), sizing: fixedSides(217.6, 6) };
+  const ABSOLUTE: FrameLayerSpec = {
+    ...FLOWING,
+    absolute: { x: 0, y: 0, constraints: { horizontal: "SCALE", vertical: "STRETCH" } },
+  };
+  const barKit = (fill: FrameLayerSpec, width = 256) =>
+    nestedKit([{ ...frame("button/bar", "Bar", [fill]), sizing: fixedSides(width, 6) }]);
+
+  async function appliedBar(fill: FrameLayerSpec, width = 256) {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, barKit(fill, width), true);
+    file.reopen();
+    const bar = childNamed(await buttonVariant(file), "FRAME", "Bar");
+    return { file, bar, fill: childNamed(bar, "FRAME", "Fill") };
+  }
+
+  // The fake stores numbers as 32-bit floats, as Figma does, so 217.6 reads back a few millionths off.
+  const placement = (node: FrameNode) => [
+    node.layoutPositioning,
+    ...[node.x, node.y, node.width, node.height].map((value) => Math.round(value * 1000) / 1000),
+  ];
+
+  it("places the fill at the bar's top left in one Apply, and the next Plan lists nothing", async () => {
+    const { file, fill } = await appliedBar(ABSOLUTE);
+    expect(await reconcileKit(file.figma, barKit(ABSOLUTE), false)).toEqual({ changes: [], warnings: [] });
+    expect([...placement(fill), fill.constraints]).toEqual([
+      "ABSOLUTE",
+      0,
+      0,
+      217.6,
+      6,
+      { horizontal: "SCALE", vertical: "STRETCH" },
+    ]);
+  });
+
+  it("keeps the fill at 85% of the bar's width and at its height when the bar resizes", async () => {
+    const { bar, fill } = await appliedBar(ABSOLUTE);
+    bar.resize(512, 12);
+    expect(placement(fill)).toEqual(["ABSOLUTE", 0, 0, 435.2, 12]);
+  });
+
+  it("turns a fill the auto layout placed absolute, writing its place whatever it reads, and converges", async () => {
+    const { file } = await appliedBar(FLOWING);
+    expect((await reconcileKit(file.figma, barKit(ABSOLUTE), false)).changes).toEqual([
+      "Button / size=md / Bar / Fill: layoutPositioning → ABSOLUTE, constraints → SCALE STRETCH, x → 0, y → 0",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, barKit(ABSOLUTE), true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, barKit(ABSOLUTE), false)).toEqual({ changes: [], warnings: [] });
+  });
+
+  // The bar's resize runs first and scales the fill it holds to 278.528px (rule 9), so the fill's own
+  // writes must follow whatever the fill read before the run.
+  it("writes the fill's place and size after the run resizes its bar, so one Apply converges", async () => {
+    const { file, fill } = await appliedBar(ABSOLUTE, 200);
+    expect(placement(fill)).toEqual(["ABSOLUTE", 0, 0, 217.6, 6]);
+    await reconcileKit(file.figma, barKit(ABSOLUTE), true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, barKit(ABSOLUTE), false)).toEqual({ changes: [], warnings: [] });
+    expect(placement(fill)).toEqual(["ABSOLUTE", 0, 0, 217.6, 6]);
+  });
+
+  it("stops Plan and Apply before any write when the absolute fill fills the bar's width", async () => {
+    const { file, setup } = fixture("Roboto");
+    const filling = barKit({ ...ABSOLUTE, sizing: { ...ABSOLUTE.sizing, horizontal: FILL } });
+    const message = "Fill in the variant button/size=md is absolute and fills its width";
+    await expect(reconcileKit(file.figma, filling, false)).rejects.toThrow(message);
+    await expect(reconcileKit(file.figma, filling, true)).rejects.toThrow(message);
+    expect(file.writes.slice(setup)).toEqual([]);
+  });
+});

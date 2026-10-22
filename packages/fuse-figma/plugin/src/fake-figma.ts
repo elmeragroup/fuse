@@ -11,9 +11,9 @@
  * run stopped before its first write.
  *
  * The fake models the Figma rules below. Each rule a real file showed in 2026-10 names that run.
- * Rules 12 to 23 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
- * Import test` on 2026-10-22: P0 and P0b read the kit's nodes, P1 to P7 and P9 built nodes on a
- * scratch page, and P9b stored images and built no node.
+ * Rules 12 to 24 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
+ * Import test` on 2026-10-22: P0 and P0b read the kit's nodes, P1 to P9 built nodes on a scratch
+ * page, and P9b stored images and built no node.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
  *    COLOR variable in the collections' default modes, whatever opacity it was given. Two runs
@@ -52,13 +52,14 @@
  *    in the mode the node reads for the alias target's collection. `fuse-variable-set.ts`
  *    builds its theme axes on this rule.
  * 9. `resize` moves and resizes each child as its constraints say: `MIN` keeps the child where
- *    it is, and `SCALE` scales its position and size by the parent's ratio. A child that
- *    changes size resizes its own children the same way, and an auto layout frame places its
- *    children by its layout instead, which the fake leaves as they are. The fake throws for
- *    `MAX`, `CENTER` and `STRETCH`, which it does not model. `resizeWithoutConstraints` leaves
- *    the children as they are. Figma's reference pages for `resize` and
- *    `resizeWithoutConstraints` say so, and the icon components rely on it to bring a glyph
- *    back with its component.
+ *    it is, `SCALE` scales its position and size by the parent's ratio, and `STRETCH` keeps its
+ *    distance to both edges, so its size grows by what the parent's grows. A child that changes
+ *    size resizes its own children the same way. An auto layout frame places the children in its
+ *    flow by its layout instead, which the fake leaves as they are, and constrains only its
+ *    absolute children (rule 24). The fake throws for `MAX` and `CENTER`, which it does not
+ *    model. `resizeWithoutConstraints` leaves the children as they are. Figma's reference pages
+ *    for `resize` and `resizeWithoutConstraints` say so, and the icon components rely on it to
+ *    bring a glyph back with its component.
  * 10. A text layer keeps a font, size, line height and text field bindings per character, as
  *    the typings' range methods and Figma's guide to mixed styles describe. `fontName`,
  *    `fontSize` and `lineHeight` are `figma.mixed` when the characters differ, and
@@ -149,6 +150,18 @@
  *    1, `blendMode` NORMAL, `scalingFactor` 1, `rotation` 0, every filter at 0, the identity
  *    `imageTransform` and the same hash, and read the same after that readback was written again
  *    (P9). No probe wrote a hash the file holds no image for, so the fake throws for one.
+ * 24. `layoutPositioning` ABSOLUTE takes a child of an auto layout frame out of the frame's flow,
+ *    as a real file showed on 2026-10-22 (P8). A new node reads AUTO. An absolute child keeps the
+ *    `x`, `y`, size and constraints written on it, where a write to an auto child's place is a
+ *    no-op. When its parent resizes, it moves and resizes as its constraints say (rule 9): on the
+ *    real file a 170 × 6 child at the top left of a 200 × 6 row, `SCALE` across and `STRETCH`
+ *    down, was 340 wide once the row was 400 wide and 12 tall once the row was 12 tall, and stayed
+ *    at 0, 0. FILL on it throws `in set_layoutSizingHorizontal: FILL cannot be set on absolute
+ *    positioned auto-layout children`, or the vertical member's name. It does not count toward a
+ *    hugging parent's size: on the real file a hugging frame holding a text and a 300 × 50 absolute
+ *    child hugged the text alone. The fake does not lay out, so it never counts one. The typings
+ *    take ABSOLUTE only on a child of an auto layout frame, and no probe turned a filling layer
+ *    absolute, so the fake throws for both.
  *
  * An instance's sublayers show the layers of its main component. An override, such as the
  * color an icon layer gives its glyph, belongs to the main layer it was made on. It moves to
@@ -340,6 +353,8 @@ type NodeState = {
   layoutGrow: number;
   /** Whether the node stretches across its auto layout parent's direction. */
   layoutAlign: "INHERIT" | "STRETCH";
+  /** Whether the node sits in its auto layout parent's flow, or outside it at its own place (rule 24). */
+  layoutPositioning: FrameNode["layoutPositioning"];
   /** The variable each bound field that is not a text field follows, by id. */
   readonly bindings: Map<VariableBindableNodeField, string>;
   /** The mode the node pins for each collection, by collection id. */
@@ -824,6 +839,8 @@ function constrainAxis(
       return [start, size];
     case "SCALE":
       return [(start * after) / before, (size * after) / before];
+    case "STRETCH":
+      return [start, size + after - before];
     default:
       throw new Error(`The fake Figma file does not model ${constraint} constraints.`);
   }
@@ -831,15 +848,16 @@ function constrainAxis(
 
 /**
  * Resize a node and move and resize each child as its constraints say (rule 9). An auto layout
- * frame places its children by its layout instead, which the fake does not model.
+ * frame places its children in its flow by its layout instead, which the fake does not model, and
+ * moves and resizes only its absolute children by their constraints (rule 24).
  */
 function resizeWithConstraints(state: NodeState, width: number, height: number): void {
   const before = { width: state.width, height: state.height };
   resize(state, width, height);
-  if (isAutoLayout(state)) {
-    return;
-  }
-  for (const child of childrenOf(state)) {
+  const constrained = isAutoLayout(state)
+    ? childrenOf(state).filter((child) => child.layoutPositioning === "ABSOLUTE")
+    : childrenOf(state);
+  for (const child of constrained) {
     const [x, childWidth] = constrainAxis(
       child.constraints.horizontal,
       child.x,
@@ -880,6 +898,11 @@ type Sizing = FrameNode["layoutSizingHorizontal"];
 /** The sizing mode of an auto layout frame that covers an axis: the primary one along its direction. */
 function modeOn(state: NodeState, axis: Axis): "primaryAxisSizingMode" | "counterAxisSizingMode" {
   return state.layoutMode === axis ? "primaryAxisSizingMode" : "counterAxisSizingMode";
+}
+
+/** Whether a node sets its own place: it sits outside any auto layout's flow, or absolute in one (rule 24). */
+function placesItself(state: NodeState): boolean {
+  return !isAutoLayout(state.parent) || state.layoutPositioning === "ABSOLUTE";
 }
 
 /** Whether a node fills an axis of its auto layout parent: it grows along its direction, or stretches across it. */
@@ -940,6 +963,9 @@ function setSizing(state: NodeState, axis: Axis, value: Sizing): void {
   }
   if (value === "FILL" && !inLayout) {
     throw new Error(`in ${member}: FILL can only be set on children of auto-layout frames`);
+  }
+  if (value === "FILL" && state.layoutPositioning === "ABSOLUTE") {
+    throw new Error(`in ${member}: FILL cannot be set on absolute positioned auto-layout children`);
   }
   if (state.type === "TEXT") {
     setTextSizing(state, axis, value, member.slice(4));
@@ -1660,6 +1686,7 @@ function copiedFields(source: NodeState): Omit<NodeState, UncopiedField> {
     limits: { ...source.limits },
     layoutGrow: source.layoutGrow,
     layoutAlign: source.layoutAlign,
+    layoutPositioning: source.layoutPositioning,
     bindings: new Map(source.bindings),
     explicitModes: new Map(source.explicitModes),
     propertyReferences: source.propertyReferences === null ? null : { ...source.propertyReferences },
@@ -1837,8 +1864,9 @@ class FakeSceneNode extends FakeBaseNode {
 
   set x(value: number) {
     const state = live(this);
-    // The typings: an auto layout frame places its children, and a write to their x is a no-op.
-    if (!isAutoLayout(state.parent)) {
+    // The typings: an auto layout frame places its children, and a write to their x is a no-op,
+    // apart from an absolute child's (rule 24).
+    if (placesItself(state)) {
       write(state, "x");
       state.x = f32(value);
     }
@@ -1850,10 +1878,32 @@ class FakeSceneNode extends FakeBaseNode {
 
   set y(value: number) {
     const state = live(this);
-    if (!isAutoLayout(state.parent)) {
+    if (placesItself(state)) {
       write(state, "y");
       state.y = f32(value);
     }
+  }
+
+  get layoutPositioning(): FrameNode["layoutPositioning"] {
+    return live(this).layoutPositioning;
+  }
+
+  /**
+   * Rule 24. The typings take ABSOLUTE only on a child of an auto layout frame, and no probe turned
+   * a filling layer absolute, so the fake throws for both.
+   */
+  set layoutPositioning(value: FrameNode["layoutPositioning"]) {
+    const state = live(this);
+    if (
+      value === "ABSOLUTE" &&
+      (!isAutoLayout(state.parent) || fills(state, "HORIZONTAL") || fills(state, "VERTICAL"))
+    ) {
+      throw new Error(
+        `The fake Figma file does not model layoutPositioning ABSOLUTE on ${state.id}, which is no auto layout child or fills its parent.`
+      );
+    }
+    write(state, "layoutPositioning");
+    state.layoutPositioning = value;
   }
 
   get width(): number {
@@ -2875,6 +2925,7 @@ function createNode(file: FileState, type: NodeType, name: string, id?: string):
     limits: { minWidth: null, maxWidth: null, minHeight: null, maxHeight: null },
     layoutGrow: 0,
     layoutAlign: "INHERIT",
+    layoutPositioning: "AUTO",
     bindings: new Map(),
     explicitModes: new Map(),
     propertyReferences: null,
