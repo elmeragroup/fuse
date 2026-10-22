@@ -14,10 +14,16 @@ const IMPORT = `import { Check, MagnifyingGlass } from "@elmeragroup/fuse/icons"
 <Check weight="regular" />      // lighter stroke than the bold default
 <Check weight="fill" />         // selected or active state`;
 
-const BRAND_LOGO = `import { BrandLogo } from "@elmeragroup/fuse/icons";
+const BRAND_LOGO = `import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
+import { BrandLogo } from "@elmeragroup/fuse/icons";
 
 <BrandLogo brand="fkas" />              // Fjordkraft wordmark
-<BrandLogo brand="tkas" variant="mark" />`;
+<BrandLogo brand="tkas" variant="mark" />
+
+<DropdownMenu.Item>
+  <BrandLogo brand="fkas" variant="mark" className="size-3" />
+  Fjordkraft
+</DropdownMenu.Item>`;
 
 export default function IconsPage(): ReactElement {
   return (
@@ -118,6 +124,11 @@ export default function IconsPage(): ReactElement {
         <code>BrandLogo</code> is exhaustive over every brand code and reads no context: pass the brand
         explicitly. Its accessible name defaults to the brand&apos;s display name, and <code>elma</code>{" "}
         renders that name as text rather than inventing a mark.
+      </p>
+      <p>
+        Size a mark through <code>className</code> on <code>BrandLogo</code>, as in the menu item above. An
+        unsized mark takes the icon size of the menu row or button it sits in, and its artwork size elsewhere.
+        A full logo sizes through its svg.
       </p>
 
       <h2 id="flags">Flags</h2>
