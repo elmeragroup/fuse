@@ -27,6 +27,7 @@ export { loaderVariants } from "./loader/loader-variants";
 export { METER_CONSTANTS } from "./meter/meter-constants";
 export { meterToneCell } from "./meter/meter-tone";
 export { meterVariants } from "./meter/meter-variants";
+export { paginationVariants } from "./pagination/pagination-variants";
 export { radioIconButtonVariants, radioVariants } from "./radio-group/radio-group-variants";
 export { separatorClass } from "./separator/separator-class";
 export { skeletonClass } from "./skeleton/skeleton-class";

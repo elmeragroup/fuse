@@ -314,6 +314,7 @@ describe("exports map", () => {
       "METER_CONSTANTS",
       "meterToneCell",
       "meterVariants",
+      "paginationVariants",
       "radioIconButtonVariants",
       "radioVariants",
       "separatorClass",

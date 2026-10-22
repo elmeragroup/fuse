@@ -160,6 +160,15 @@ export type LabelDefinition = {
    */
   readonly textAttribute?: (cell: Cell) => string | undefined;
   /**
+   * The child element in which the component's markup holds the characters as its own text, for a
+   * box that wraps them in an element with no `class` or `style`, as Pagination's edge link wraps
+   * its copy in a bare `<span>`. A flex row lays such an element out as it would the text alone, so
+   * the kit draws the characters as the box's own text layer, between the icons on either side.
+   * `figma:compare`'s markup check reads the text there, and fails an element that carries a `class`
+   * or `style`. Undefined for a label the box holds as its own text or in `textAttribute`.
+   */
+  readonly textElement?: ElementSelector;
+  /**
    * Set where the markup holds a space before the characters, as Meter's value holds one after its
    * icon. A box that sets its text in lines draws it as one space advance after a start icon, and
    * collapses it at the start of a line.
@@ -272,8 +281,10 @@ export type ComponentDefinition = BoxDefinition & {
   readonly slot: string;
   /**
    * The root element, for a root whose markup carries no `data-slot`, as React Aria's Link renders
-   * an `<a>` with none. `figma:compare` measures the one element of a cell this selector matches, and
-   * its markup check places the root there. Undefined for a root its `data-slot` names.
+   * an `<a>` with none, or one whose `data-slot` changes with the cell, as Pagination's edge link
+   * carries `pagination-previous` or `pagination-next`. `figma:compare` measures the one element of
+   * a cell this selector matches, and its markup check places the root there. Undefined for a root
+   * its `data-slot` names.
    */
   readonly element?: ElementSelector;
   /**
@@ -291,7 +302,9 @@ export type ComponentDefinition = BoxDefinition & {
   /**
    * The declarations an element between the page and the root sets in a cell, which the root
    * inherits over the page's, such as the text color an invalid Field root passes to its input.
-   * Undefined for a root that sits on the page itself.
+   * It can also name a property `<html>` sets and the page does not, such as the type a Pagination
+   * link takes from the browser and preflight, since its classes set none. Undefined for a root that
+   * sits on the page itself and inherits nothing more.
    */
   readonly inheritedFor?: (cell: Cell) => readonly OuterDeclaration[];
   readonly axes: readonly AxisSpec[];

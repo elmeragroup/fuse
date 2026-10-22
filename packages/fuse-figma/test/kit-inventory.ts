@@ -101,6 +101,18 @@ export const KIT_PAGES: readonly InventoryPage[] = [
   { slug: "avatar", name: "Avatar", sets: [{ key: "avatar", name: "Avatar", variants: 8, previewed: 8 }] },
   // 4 modes at 4 levels.
   { slug: "meter", name: "Meter", sets: [{ key: "meter", name: "Meter", variants: 16, previewed: 16 }] },
+  {
+    slug: "pagination",
+    name: "Pagination",
+    sets: [
+      // Current off and on, in 3 states.
+      { key: "pagination-link", name: "Pagination link", variants: 6, previewed: 6 },
+      // Previous and next, in 3 states.
+      { key: "pagination-edge", name: "Pagination edge", variants: 6, previewed: 6 },
+      // The md square alone.
+      { key: "pagination-ellipsis", name: "Pagination ellipsis", variants: 1, previewed: 1 },
+    ],
+  },
 ];
 
 /** The page that holds the icon library alone, after the component pages. */

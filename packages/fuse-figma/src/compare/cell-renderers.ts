@@ -142,6 +142,21 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/meter.js",
     load: async () => (await import("./meter-cell.ts")).meter,
   },
+  {
+    set: "pagination-link",
+    entry: "dist/pagination.js",
+    load: async () => (await import("./pagination-cell.ts")).paginationLink,
+  },
+  {
+    set: "pagination-edge",
+    entry: "dist/pagination.js",
+    load: async () => (await import("./pagination-cell.ts")).paginationEdge,
+  },
+  {
+    set: "pagination-ellipsis",
+    entry: "dist/pagination.js",
+    load: async () => (await import("./pagination-cell.ts")).paginationEllipsis,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

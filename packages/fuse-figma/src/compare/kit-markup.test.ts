@@ -18,11 +18,11 @@
  * element's `<svg>` descendants in order, each under the part that lists it, its nearest ancestor
  * among the root and the parts, as a child of that part or nested deeper, and with its `data-icon`.
  * A slot that names classes of its own must name the `<svg>`'s `class` attribute exactly. The root
- * and each part must hold their
- * label's characters where the cell shows the label, as their own text, after a space where the
- * label says the markup holds one, or in the attribute the label
- * names, as an `<input>` holds its placeholder, and no text where it does not, so the compare page
- * renders the text Figma draws. A box that shows an image must be an `<img>` whose `src` is a data
+ * and each part must hold their label's characters where the cell shows the label, as their own
+ * text, after a space where the label says the markup holds one, or in the attribute the label
+ * names, as an `<input>` holds its placeholder, or as the own text of the one bare child element
+ * its `textElement` names, as Pagination's edge holds its copy, and no text where it does not, so
+ * the compare page renders the text Figma draws. A box that shows an image must be an `<img>` whose `src` is a data
  * URI of the image's bytes, and a box that shows none carries no `src`, so the page draws the
  * picture Figma draws. A part's `style` attribute must hold exactly the declarations its
  * definition cascades above its classes, so a meter's fill is as wide in Figma as Base UI makes
@@ -372,6 +372,28 @@ function expectedStyle(part: PartDefinition, cell: Cell): string | undefined {
     .join(";");
 }
 
+/**
+ * The element whose own text holds a box's label: the box's element, or, where the label names a
+ * `textElement`, the one child of it that the selector matches, while that child carries no `class`
+ * or `style` and the box holds no text of its own beside it. Undefined where the markup breaks
+ * that, so the label check fails.
+ */
+function labelHolder(
+  elements: readonly MarkupElement[],
+  index: number | undefined,
+  box: BoxDefinition
+): MarkupElement | undefined {
+  const element = index === undefined ? undefined : elements[index];
+  const selector = box.label?.textElement;
+  if (selector === undefined || element === undefined) {
+    return element;
+  }
+  const children = elements.filter((child) => child.parent === index && selects(selector, child));
+  const [only] = children;
+  const bare = only !== undefined && !only.attributes.has("class") && !only.attributes.has("style");
+  return children.length === 1 && bare && element.text === "" ? only : undefined;
+}
+
 /** The label an element holds, read where `expected` says it sits. */
 function markupLabel(element: MarkupElement | undefined, expected: MarkupLabel): MarkupLabel {
   const name = expected.attribute?.[0];
@@ -478,7 +500,10 @@ function checkMarkup(definition: ComponentDefinition, cells: readonly Cell[], re
         );
       }
       const rootLabel = expectedLabel(definition, cell);
-      expect(markupLabel(root, rootLabel), `${key}: the label`).toEqual(rootLabel);
+      expect(
+        markupLabel(labelHolder(elements, measured, definition), rootLabel),
+        `${key}: the label`
+      ).toEqual(rootLabel);
       expect(markupImage(root), `${key}: the image`).toEqual(expectedImage(definition));
       const names = new Set(boxNames(definition, definition.slot));
       const shown = slotParts(definition, "", cell);
@@ -495,9 +520,13 @@ function checkMarkup(definition: ComponentDefinition, cells: readonly Cell[], re
       const slots = slotIcons(definition, "", cell);
       expect(slots, `${key}: icons`).toEqual(claimedIcons(slots, markupIcons(elements, owners)));
       for (const { path, part } of shown) {
-        const element = elements[elementAt.get(path) ?? -1];
+        const index = elementAt.get(path);
+        const element = index === undefined ? undefined : elements[index];
         const partLabel = expectedLabel(part, cell);
-        expect(markupLabel(element, partLabel), `${key}: the label on ${path}`).toEqual(partLabel);
+        expect(
+          markupLabel(labelHolder(elements, index, part), partLabel),
+          `${key}: the label on ${path}`
+        ).toEqual(partLabel);
         expect(markupImage(element), `${key}: the image on ${path}`).toEqual(expectedImage(part));
         expect(element?.attributes.get("style"), `${key}: the style on ${path}`).toEqual(
           expectedStyle(part, cell)
@@ -680,5 +709,37 @@ describe("the label check of a box that holds its text in an attribute in some c
 
   it("fails a value cell whose markup holds the text as a placeholder", () => {
     expect(markupLabel(markup({ placeholder: TEXT }), value)).not.toEqual(value);
+  });
+});
+
+// Unit under test: `checkMarkup` on a label its `textElement` places in a child element. Oracle: the
+// rule on `LabelDefinition.textElement`, that the child holds the characters as its own text and
+// carries no `class` or `style`, so it lays out as the text alone. The hand-written markup holds the
+// icon and one bare `<span>` around `Chip` where it passes, and the same span with a class where it
+// fails.
+describe("the label check of a label held in a bare child element", () => {
+  const WRAPPED = chip("", {
+    label: {
+      key: "label",
+      name: "label",
+      characters: "Chip",
+      textProperty: undefined,
+      shownIn: () => true,
+      textElement: { tag: "span", attributes: {} },
+    },
+    iconsFor: () => [ICON],
+  });
+  const CELLS = [{ state: "rest" }];
+  const wrapped = (props: Readonly<Record<string, string>>) =>
+    chipMarkup(createElement("svg"), createElement("span", props, "Chip"));
+
+  it("reads the label as the own text of the child it names", () => {
+    expect(() => checkMarkup(WRAPPED, CELLS, wrapped({}))).not.toThrow();
+  });
+
+  it("fails a child that carries a class, which would lay it out by its own rules", () => {
+    expect(() => checkMarkup(WRAPPED, CELLS, wrapped({ className: "font-bold" }))).toThrow(
+      "chip/state=rest: the label"
+    );
   });
 });
