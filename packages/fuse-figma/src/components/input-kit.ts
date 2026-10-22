@@ -13,7 +13,7 @@
 import { inputClass } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { ComponentDefinition } from "./component-spec";
-import { FIELD_BOX_SET, showsPlaceholder } from "./field-box-kit";
+import { FIELD_BOX_SET, FIELD_ROOT, showsPlaceholder } from "./field-box-kit";
 
 /** The text every cell shows, the default of the `Text` property: the docs' basic placeholder. */
 export const INPUT_TEXT = "name@example.com";
@@ -28,6 +28,9 @@ export const INPUT: ComponentDefinition = {
   name: "Input",
   slot: "input",
   classesFor: () => inputClass,
+  // Only an invalid cell wraps the input in a Field root, the one source Base UI reads the input's
+  // validity from.
+  ancestorsFor: (cell) => (cell.state === "invalid" ? [FIELD_ROOT] : []),
   omittedPseudoElements: new Map([["file", "the button of a file input, which the kit does not draw"]]),
   label: {
     key: "text",

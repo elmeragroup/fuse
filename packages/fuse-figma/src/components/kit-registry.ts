@@ -10,6 +10,12 @@
  */
 import { AVATAR } from "./avatar-kit";
 import { BADGE } from "./badge-kit";
+import {
+  BREADCRUMB_ELLIPSIS,
+  BREADCRUMB_LINK,
+  BREADCRUMB_PAGE,
+  BREADCRUMB_SEPARATOR,
+} from "./breadcrumb-kit";
 import { BUTTON, ICON_BUTTON } from "./button-kit";
 import { CHECKBOX } from "./checkbox-kit";
 import { matrixCells } from "./component-spec";
@@ -86,6 +92,12 @@ const METER_PAGE: KitPage = { slug: "meter", name: "Meter" };
 
 /** The page of Pagination's parts: the link, the edge links and the ellipsis. */
 const PAGINATION_PAGE: KitPage = { slug: "pagination", name: "Pagination" };
+
+/**
+ * The page of Breadcrumb's parts: the link, the current page, the ellipsis and the separator. Its
+ * name keeps it apart from `BREADCRUMB_PAGE`, the current page's set.
+ */
+const BREADCRUMB_PARTS_PAGE: KitPage = { slug: "breadcrumb", name: "Breadcrumb" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -189,5 +201,25 @@ export const KIT: readonly KitEntry[] = [
     definition: PAGINATION_ELLIPSIS,
     page: PAGINATION_PAGE,
     previewCells: matrixCells(PAGINATION_ELLIPSIS.axes),
+  },
+  {
+    definition: BREADCRUMB_LINK,
+    page: BREADCRUMB_PARTS_PAGE,
+    previewCells: matrixCells(BREADCRUMB_LINK.axes),
+  },
+  {
+    definition: BREADCRUMB_PAGE,
+    page: BREADCRUMB_PARTS_PAGE,
+    previewCells: matrixCells(BREADCRUMB_PAGE.axes),
+  },
+  {
+    definition: BREADCRUMB_ELLIPSIS,
+    page: BREADCRUMB_PARTS_PAGE,
+    previewCells: matrixCells(BREADCRUMB_ELLIPSIS.axes),
+  },
+  {
+    definition: BREADCRUMB_SEPARATOR,
+    page: BREADCRUMB_PARTS_PAGE,
+    previewCells: matrixCells(BREADCRUMB_SEPARATOR.axes),
   },
 ];

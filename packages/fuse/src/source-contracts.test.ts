@@ -931,7 +931,7 @@ describe("state faces", () => {
         "hover:bg-warning/90",
       ],
       // Links, which have no disabled state.
-      "components/breadcrumb/breadcrumb.tsx": ["hover:text-foreground"],
+      "components/breadcrumb/breadcrumb-variants.ts": ["hover:text-foreground"],
       "components/dialog/dialog.tsx": ["*:[a]:hover:text-foreground"],
       "components/navigation-menu/navigation-menu-variants.ts": [
         "hover:**:text-accent-foreground",

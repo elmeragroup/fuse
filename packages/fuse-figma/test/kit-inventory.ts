@@ -113,6 +113,20 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "pagination-ellipsis", name: "Pagination ellipsis", variants: 1, previewed: 1 },
     ],
   },
+  {
+    slug: "breadcrumb",
+    name: "Breadcrumb",
+    sets: [
+      // Rest, hover and focus.
+      { key: "breadcrumb-link", name: "Breadcrumb link", variants: 3, previewed: 3 },
+      // The current page alone.
+      { key: "breadcrumb-page", name: "Breadcrumb page", variants: 1, previewed: 1 },
+      // The 20px box alone.
+      { key: "breadcrumb-ellipsis", name: "Breadcrumb ellipsis", variants: 1, previewed: 1 },
+      // The 14px chevron alone.
+      { key: "breadcrumb-separator", name: "Breadcrumb separator", variants: 1, previewed: 1 },
+    ],
+  },
 ];
 
 /** The page that holds the icon library alone, after the component pages. */

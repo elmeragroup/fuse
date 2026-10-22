@@ -11,8 +11,6 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { fieldVariants } from "@elmeragroup/fuse/recipe-catalog";
-
 import {
   builtKit,
   density,
@@ -29,7 +27,6 @@ import {
   variantRoot,
 } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
-import { splitClasses } from "./cascade";
 import type { CoverageRow } from "./coverage";
 import type { ComponentRootSpec, TextLayerSpec } from "./kit-spec";
 
@@ -104,12 +101,6 @@ describe("the Input component set", () => {
         },
       ],
     });
-  });
-
-  // `input-kit.ts` hand-writes the `color: var(--error)` an invalid Field root passes down, so a
-  // change to the Field recipe's invalid text class must fail here before the kit draws a stale color.
-  it("inherits the text color of the class an invalid Field root carries", () => {
-    expect(splitClasses(fieldVariants().root())).toContain("data-invalid:text-error");
   });
 
   it("paints the placeholder muted-foreground, a value foreground, and an invalid value error", () => {

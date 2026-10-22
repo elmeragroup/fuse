@@ -17,6 +17,7 @@ export {
   avatarRootClass,
 } from "./avatar/avatar-class";
 export { badgeVariants } from "./badge/badge-variants";
+export { breadcrumbVariants } from "./breadcrumb/breadcrumb-variants";
 export { buttonVariants } from "./button/button-variants";
 export { checkboxVariants } from "./checkbox/checkbox-variants";
 export { confirmButtonVariants } from "./confirm-button/confirm-button-variants";

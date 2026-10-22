@@ -9,8 +9,10 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { CaretRight } from "../../icons/generated/caret-right";
 import { DotsThree } from "../../icons/generated/dots-three";
 import { cn } from "../../styles/cn";
-import { selfFocusRingClass } from "../../styles/utils";
+import { breadcrumbVariants } from "./breadcrumb-variants";
 import { breadcrumbStrings } from "./intl";
+
+const styles = breadcrumbVariants();
 
 export type BreadcrumbRootProps = ComponentProps<"nav"> & {
   /**
@@ -57,26 +59,11 @@ export function BreadcrumbRoot({
 }
 
 export function BreadcrumbList({ className, ...props }: BreadcrumbListProps): ReactElement {
-  return (
-    <ol
-      data-slot="breadcrumb-list"
-      className={cn(
-        "text-sm sm:gap-2.5 flex flex-wrap items-center gap-1.5 wrap-break-word text-muted-foreground",
-        className
-      )}
-      {...props}
-    />
-  );
+  return <ol data-slot="breadcrumb-list" className={cn(styles.list(), className)} {...props} />;
 }
 
 export function BreadcrumbItem({ className, ...props }: BreadcrumbItemProps): ReactElement {
-  return (
-    <li
-      data-slot="breadcrumb-item"
-      className={cn("inline-flex items-center gap-1.5", className)}
-      {...props}
-    />
-  );
+  return <li data-slot="breadcrumb-item" className={cn(styles.item(), className)} {...props} />;
 }
 
 export function BreadcrumbLink({ className, render, ...props }: BreadcrumbLinkProps): ReactElement {
@@ -84,7 +71,7 @@ export function BreadcrumbLink({ className, render, ...props }: BreadcrumbLinkPr
     defaultTagName: "a",
     props: mergeProps<"a">(
       {
-        className: cn("transition-colors hover:text-foreground", selfFocusRingClass, className),
+        className: cn(styles.link(), className),
       },
       props
     ),
@@ -102,7 +89,7 @@ export function BreadcrumbPage({ className, ...props }: BreadcrumbPageProps): Re
       role="link"
       aria-disabled="true"
       aria-current="page"
-      className={cn("font-normal text-foreground", className)}
+      className={cn(styles.page(), className)}
       {...props}
     />
   );
@@ -118,7 +105,7 @@ export function BreadcrumbSeparator({
       data-slot="breadcrumb-separator"
       role="presentation"
       aria-hidden="true"
-      className={cn("[&>svg]:size-3.5", className)}
+      className={cn(styles.separator(), className)}
       {...props}>
       {children ?? <CaretRight />}
     </li>
@@ -129,10 +116,7 @@ export function BreadcrumbEllipsis({ className, label, ...props }: BreadcrumbEll
   const strings = useLocalizedStrings(breadcrumbStrings);
 
   return (
-    <span
-      data-slot="breadcrumb-ellipsis"
-      className={cn("flex size-5 items-center justify-center [&>svg]:size-4", className)}
-      {...props}>
+    <span data-slot="breadcrumb-ellipsis" className={cn(styles.ellipsis(), className)} {...props}>
       <DotsThree aria-hidden="true" />
       <span className="sr-only">{label ?? strings.format("more")}</span>
     </span>

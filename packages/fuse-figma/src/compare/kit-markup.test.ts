@@ -119,7 +119,8 @@ function ancestorsOf(elements: readonly MarkupElement[], index: number): readonl
 
 /**
  * The condition variants static markup cannot check against the measured element's attributes:
- * the pseudo classes the page forces, and the icon edge, which holds on a descendant.
+ * the pseudo classes the page forces, the icon edge, which holds on a descendant, and the
+ * breakpoints, which the page's viewport decides.
  */
 const NOT_ATTRIBUTES = new Set([
   "enabled-hover",
@@ -127,6 +128,8 @@ const NOT_ATTRIBUTES = new Set([
   "focus-visible",
   "has-data-[icon=inline-start]",
   "has-data-[icon=inline-end]",
+  "sm",
+  "md",
 ]);
 
 /**

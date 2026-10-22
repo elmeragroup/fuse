@@ -12,7 +12,14 @@
  * visits the layers in.
  */
 import { splitClassName } from "./class-name";
-import type { BuildContext, Cell, IconSlot, InlineDeclaration, OuterDeclaration } from "./component-spec";
+import type {
+  AncestorDefinition,
+  BuildContext,
+  Cell,
+  IconSlot,
+  InlineDeclaration,
+  OuterDeclaration,
+} from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { normalizeCss, splitTopLevel, substituteVars } from "./css-values";
 import { compareSpecificity } from "./specificity";
@@ -223,11 +230,19 @@ type Layer = {
   readonly marks: Map<string, CoverageNote>;
   readonly children: number[];
   /**
-   * Whether the layer stands for the elements around the root, the page and its nearer ancestors,
-   * which the kit draws no layer for and whose computed values the root inherits.
+   * Whether the layer stands for an element around the root, the page or a nearer ancestor, which
+   * the kit draws no layer for and whose computed values the root inherits.
    */
   readonly around: boolean;
+  /**
+   * For an ancestor named by its classes, why the kit draws none of its own declarations that do
+   * not inherit. Undefined for a drawn layer and for the page.
+   */
+  readonly undrawn: string | undefined;
 };
+
+/** What a layer around the root stands for: the page, or an ancestor and its reason. */
+type AroundLayer = { readonly undrawn: string | undefined };
 
 /** The layers of one cell and what read their declarations. */
 class CellLedger {
@@ -239,14 +254,14 @@ class CellLedger {
   }
 
   /**
-   * Add a layer whose computed style is `applied` over `inherited`, below `parent`. `kind` says
-   * whether the kit draws the layer, or it stands for the elements around the root.
+   * Add a layer whose computed style is `applied` over `inherited`, below `parent`. `around` says
+   * the layer stands for an element around the root, which the kit does not draw.
    */
   add(
     inherited: ComputedStyle,
     applied: readonly Applied[],
     parent: Layer | undefined,
-    kind: "drawn" | "around" = "drawn"
+    around?: AroundLayer
   ): Layer {
     const id = this.#layers.length;
     const { context } = this.scope;
@@ -256,11 +271,23 @@ class CellLedger {
       read: new Set(),
       marks: new Map(),
       children: [],
-      around: kind === "around",
+      around: around !== undefined,
+      undrawn: around?.undrawn,
     };
     this.#layers.push(layer);
     parent?.children.push(id);
     return layer;
+  }
+
+  /**
+   * The layer that stands for the elements around the root, by its id.
+   *
+   * @param id - A layer's id.
+   * @returns The layer, or undefined where the id names a drawn layer.
+   */
+  around(id: number): Layer | undefined {
+    const layer = this.#layers[id];
+    return layer?.around === true ? layer : undefined;
   }
 
   /** Record a read of a declaration, under the part and class that set it. */
@@ -304,8 +331,19 @@ class CellLedger {
 
   /** What became of a declaration no layer read, on the layer that sets it. */
   #unread(property: string, entry: StyleEntry, layer: Layer): CoverageNote {
-    if (layer.around && this.#overriddenBelow(layer, property)) {
-      return { outcome: "dropped", detail: "the root sets its own, so it does not inherit this" };
+    const inherits = inheritsProperty(property, this.scope.context);
+    const overrider = layer.around && inherits ? this.#overrider(layer, property) : undefined;
+    if (overrider !== undefined) {
+      return {
+        outcome: "dropped",
+        detail:
+          overrider === "root"
+            ? "the root sets its own, so it does not inherit this"
+            : `the ${overrider} around the root sets its own, so the root does not inherit this`,
+      };
+    }
+    if (layer.undrawn !== undefined && !inherits) {
+      return { outcome: "dropped", detail: layer.undrawn };
     }
     if (this.scope.context.base.some((declaration) => declaration.className === entry.source.className)) {
       return {
@@ -337,12 +375,27 @@ class CellLedger {
     return { outcome: "unmapped", detail: "the builder maps no Figma field from it" };
   }
 
-  /** Whether the root below the layer around it sets the property itself, over what it inherits. */
-  #overriddenBelow(around: Layer, property: string): boolean {
-    return around.children.some((id) => {
-      const source = this.#layers[id]?.style.get(property)?.source.layer;
-      return source !== undefined && source !== around.id;
-    });
+  /**
+   * The element below a layer around the root that sets the property itself over what it
+   * inherits: `root` for the root, the slot of a nearer ancestor, or undefined where the value
+   * reaches the root unchanged or no element below takes it.
+   */
+  #overrider(around: Layer, property: string): string | undefined {
+    for (const id of around.children) {
+      const child = this.#layers[id];
+      const source = child?.style.get(property)?.source;
+      if (child === undefined || source === undefined) {
+        continue;
+      }
+      if (source.layer !== around.id) {
+        return child.around ? source.part : "root";
+      }
+      const deeper = child.around ? this.#overrider(child, property) : undefined;
+      if (deeper !== undefined) {
+        return deeper;
+      }
+    }
+    return undefined;
   }
 }
 
@@ -355,23 +408,34 @@ export class CellCascade {
   }
 
   /**
-   * Cascade the root over the host page's declarations and its ancestors'. Without ancestors, the
-   * page's declarations apply on the root below its own classes. With them, the page and the
-   * ancestors compute a style of their own, the ancestors' declarations after the page's, since
-   * they sit nearer the root, and the root inherits its computed values as a part inherits its
-   * parent's. So an ancestor's `var()` resolves against the ancestor's custom properties, the
-   * root's `currentcolor` takes the inherited color, and every declaration of the root's own beats
-   * them.
+   * Cascade the root over the host page's declarations and the elements around it. Without any, the
+   * page's declarations apply on the root below its own classes. With them, the page and the host's
+   * declarations compute a style of their own, the host's after the page's, since they sit nearer
+   * the root. Each ancestor named by its classes then computes its own style over what it inherits
+   * from the element outside it, outermost first, its classes cascading with the cell's states and
+   * facts as the root's do. The root inherits the innermost computed values as a part inherits its
+   * parent's. So an ancestor's `var()` resolves against the ancestor's custom properties, a nearer
+   * ancestor's own declaration beats what it inherits from a farther one, the root's `currentcolor`
+   * takes the inherited color, and every declaration of the root's own beats them. A child selector
+   * of an ancestor reaches the root's icons as a descendant.
    *
    * @param classes - The root's class string for the cell.
    * @param part - The root's layer name, which the coverage table names.
-   * @param ancestors - The declarations the elements between the page and the root set in the cell.
+   * @param around - The declarations the host sets around the root in the cell, and the ancestors
+   *   named by their classes, outermost first.
    * @returns The root's cascade.
    */
-  root(classes: string, part: string, ancestors: readonly OuterDeclaration[]): BoxCascade {
+  root(
+    classes: string,
+    part: string,
+    around: {
+      readonly declarations: readonly OuterDeclaration[];
+      readonly ancestors: readonly AncestorDefinition[];
+    }
+  ): BoxCascade {
     const { context } = this.#ledger.scope;
     const page = outerApplied(context.page, part, -2);
-    if (ancestors.length === 0) {
+    if (around.declarations.length === 0 && around.ancestors.length === 0) {
       return cascadeBox(this.#ledger, {
         classes,
         part,
@@ -380,17 +444,25 @@ export class CellCascade {
         ancestorRules: [],
       });
     }
-    // The sort in `computeStyle` is stable, so at one rank the ancestors' declarations apply last.
-    const around = this.#ledger.add(
+    // The sort in `computeStyle` is stable, so at one rank the host's declarations apply last.
+    let outside = this.#ledger.add(
       new Map(),
-      [...page, ...outerApplied(ancestors, part, -2)],
+      [...page, ...outerApplied(around.declarations, part, -2)],
       undefined,
-      "around"
+      { undrawn: undefined }
     );
+    const ancestorRules: ChildRule[] = [];
+    for (const ancestor of around.ancestors) {
+      const own = boxClasses(ancestor.classes, ancestor.slot, this.#ledger.scope);
+      outside = this.#ledger.add(inheritance(outside, context), own.applied, outside, {
+        undrawn: ancestor.undrawn,
+      });
+      ancestorRules.push(...own.childRules);
+    }
     return cascadeBox(
       this.#ledger,
-      { classes, part, inherited: inheritance(around, context), outer: [], ancestorRules: [] },
-      around
+      { classes, part, inherited: inheritance(outside, context), outer: [], ancestorRules },
+      outside
     );
   }
 
@@ -551,14 +623,19 @@ export class LayerStyle {
   }
 
   /**
-   * Note what became of a declaration the layer sets itself, used without reading through it.
-   * A read of the declaration anywhere in the cell takes precedence.
+   * Note what became of a declaration the layer sets itself, or inherits from the elements around
+   * the root, used without reading through it. The kit draws no layer for those elements, so the
+   * layers below them note what they pass down, as a root that shows no text drops the type its
+   * list sets. A drawn parent notes its own. A read of the declaration anywhere in the cell takes
+   * precedence.
    */
   mark(property: string, outcome: CoverageOutcome, detail: string): void {
-    const entry = this.#layer.style.get(property);
-    if (entry !== undefined && entry.source.layer === this.#layer.id) {
-      this.#layer.marks.set(property, { outcome, detail });
+    const source = this.#layer.style.get(property)?.source.layer;
+    if (source === undefined) {
+      return;
     }
+    const owner = source === this.#layer.id ? this.#layer : this.#ledger.around(source);
+    owner?.marks.set(property, { outcome, detail });
   }
 
   /**
@@ -608,6 +685,16 @@ export class LayerStyle {
 }
 
 /**
+ * Whether a child inherits a property: one of the inherited properties the build reads, or a custom
+ * property whose `@property` does not say `inherits: false`.
+ */
+function inheritsProperty(property: string, context: BuildContext): boolean {
+  return property.startsWith("--")
+    ? context.compiled.registeredProperties.get(property)?.inherits !== false
+    : INHERITED_PROPERTIES.has(property);
+}
+
+/**
  * The declarations a child of a layer inherits, as CSS passes them down: the computed value of
  * each inherited property, with the layer's custom properties substituted, so a child that sets
  * one of them anew does not change what it inherited.
@@ -615,11 +702,10 @@ export class LayerStyle {
 function inheritance(layer: Layer, context: BuildContext): ComputedStyle {
   const passed = new Map<string, StyleEntry>();
   for (const [property, entry] of layer.style) {
-    const inherits = property.startsWith("--")
-      ? context.compiled.registeredProperties.get(property)?.inherits !== false
-      : INHERITED_PROPERTIES.has(property);
     const read = new Set<string>();
-    const value = inherits ? substitute(layer, context, entry.value, read) : undefined;
+    const value = inheritsProperty(property, context)
+      ? substitute(layer, context, entry.value, read)
+      : undefined;
     if (value !== undefined) {
       const [, ...consumed] = sourcesOf(layer, entry, read);
       passed.set(property, { value, source: entry.source, consumed });

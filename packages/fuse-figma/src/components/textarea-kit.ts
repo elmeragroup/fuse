@@ -15,14 +15,14 @@
 import { textareaClass } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { ComponentDefinition } from "./component-spec";
-import { FIELD_BOX_SET, showsPlaceholder } from "./field-box-kit";
+import { FIELD_BOX_SET, FIELD_ROOT, showsPlaceholder } from "./field-box-kit";
 
 /** The text every cell shows, the default of the `Text` property: the docs' basic placeholder. */
 export const TEXTAREA_TEXT = "Tell us more…";
 
 /**
- * A textarea, as `<Textarea placeholder>` or `<Textarea defaultValue>`, with `readOnly` or
- * `disabled`, or through `Field.Control` inside an invalid `Field.Root`.
+ * A textarea, as `<Textarea placeholder>` or `<Textarea defaultValue>` through `Field.Control`
+ * inside a `Field.Root`, with `readOnly` or `disabled`, or inside an invalid root.
  */
 export const TEXTAREA: ComponentDefinition = {
   ...FIELD_BOX_SET,
@@ -30,6 +30,9 @@ export const TEXTAREA: ComponentDefinition = {
   name: "Textarea",
   slot: "textarea",
   classesFor: () => textareaClass,
+  // Every cell renders the textarea through `Field.Control` inside a Field root, as the docs' Field
+  // demo does, and only an invalid cell's root is invalid.
+  ancestorsFor: () => [FIELD_ROOT],
   label: {
     key: "text",
     name: "text",

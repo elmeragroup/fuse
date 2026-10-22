@@ -157,6 +157,26 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/pagination.js",
     load: async () => (await import("./pagination-cell.ts")).paginationEllipsis,
   },
+  {
+    set: "breadcrumb-link",
+    entry: "dist/breadcrumb.js",
+    load: async () => (await import("./breadcrumb-cell.ts")).breadcrumbLink,
+  },
+  {
+    set: "breadcrumb-page",
+    entry: "dist/breadcrumb.js",
+    load: async () => (await import("./breadcrumb-cell.ts")).breadcrumbPage,
+  },
+  {
+    set: "breadcrumb-ellipsis",
+    entry: "dist/breadcrumb.js",
+    load: async () => (await import("./breadcrumb-cell.ts")).breadcrumbEllipsis,
+  },
+  {
+    set: "breadcrumb-separator",
+    entry: "dist/breadcrumb.js",
+    load: async () => (await import("./breadcrumb-cell.ts")).breadcrumbSeparator,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

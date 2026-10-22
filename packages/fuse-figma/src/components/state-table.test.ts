@@ -8,7 +8,8 @@
  * `aria-invalid:` and `data-invalid:` on a control inside an invalid Field, `has-data-[icon=…]:`
  * while a descendant carries that `data-icon`, and each child selector picks the `<svg>` elements
  * its CSS selector matches. `[&>a]:` and `[&>a:hover]:` compile to `> a` and `> a:hover`, a link
- * child of the box, which no kit box holds.
+ * child of the box, which no kit box holds. `sm:` and `md:` compile to `@media (width >= 40rem)` and
+ * `(width >= 48rem)`, which a desktop window matches.
  */
 import { describe, expect, it } from "vitest";
 
@@ -198,6 +199,20 @@ describe("the shared child selectors", () => {
   });
 });
 
+describe("the desktop breakpoints", () => {
+  it.each(["sm", "md"])("hold %s in every cell, whatever its axes", (variant) => {
+    const sized = definition({ axes: [CONTROL_STATES, { name: "size", values: ["sm", "lg"] }] });
+    expect(holdsAt(sized, "state", variant)).toEqual(CONTROL_STATES.values);
+    expect(holdsAt(sized, "size", variant)).toEqual(["sm", "lg"]);
+  });
+
+  it("leave the wider breakpoints and the ranges below a breakpoint unmodelled", () => {
+    for (const variant of ["lg", "xl", "max-sm", "max-md"]) {
+      expect(holdsAt(definition({ axes: [CONTROL_STATES] }), "state", variant)).toBe("unmodelled");
+    }
+  });
+});
+
 describe("a definition's own facts", () => {
   it("hold where the fact says", () => {
     const toggle = definition({
@@ -213,6 +228,7 @@ describe("one meaning per variant", () => {
   it.each([
     ["a fact for a shared state entry", { facts: new Map([["enabled-hover", always]]) }, "enabled-hover"],
     ["a fact for a child selector", { facts: new Map([["[&_svg]", always]]) }, "[&_svg]"],
+    ["an omission of a desktop breakpoint", { omittedStates: new Set(["md"]) }, "md"],
     [
       "an omission of the icon edge",
       { omittedStates: new Set(["has-data-[icon=inline-start]"]) },

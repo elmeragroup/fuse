@@ -11,6 +11,7 @@ import { CENTERED_BOX, FILL, fixed, fixedSize, HUG, literal, UNLIMITED } from ".
 import { buildFixture, chip, dot, frameOf, ICON } from "../../test/fixture-sets";
 import type { FixtureContext } from "../../test/fixture-sets";
 import type {
+  AncestorDefinition,
   IconSlot,
   InlineDeclaration,
   LabelDefinition,
@@ -1977,6 +1978,90 @@ describe("a declaration an ancestor passes down in some cells", () => {
 
   it("gives the root's currentcolor the color it inherits", async () => {
     expect(colors(await build("text-current", RED, ["invalid"]))).toEqual([rgb(1, 0, 0)]);
+  });
+
+  // An icon takes the text color and no type. A root that shows no text therefore draws nothing of
+  // the type that the page and an ancestor pass down, as a breadcrumb separator's chevron draws
+  // nothing of its list's 14px type.
+  it("drops the type it passes to a root that shows no text, and colors the root's icon", async () => {
+    const list: readonly OuterDeclaration[] = [
+      { className: "list text-[12px]", property: "font-size", value: "12px" },
+      ...RED,
+    ];
+    const built = await buildFixture(
+      chip("[&_svg]:size-[16px]", { iconsFor: () => [ICON], inheritedFor: () => list }),
+      {
+        ...FONT_SANS,
+        page: [{ className: "body font-sans", property: "font-family", value: "var(--font-sans)" }],
+      }
+    );
+    const [icon] = built.variant?.root.children ?? [];
+    expect(icon?.kind === "icon" ? icon.color : undefined).toEqual(rgb(1, 0, 0));
+    expect(notesOf(built.coverage, "list text-[12px]")).toEqual([
+      ["font-size", "dropped", "the cell shows no text"],
+    ]);
+    expect(notesOf(built.coverage, "body font-sans")).toEqual([
+      ["font-family", "dropped", "the cell shows no text"],
+    ]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a root inside elements the definition names by their recipe
+// classes, as a breadcrumb link sits in its list and item. Oracle: CSS inheritance and the cascade.
+// Each element cascades its own classes, so a variant holds where the cell's state says, as a
+// Field root's `data-invalid:` holds while the cell is invalid. Each element inherits its parent's
+// computed values, and its own declaration beats what it inherits whatever the specificity of the
+// rule a farther element took it from. The root inherits only the inherited properties, so the
+// elements' flex rows and gaps reach no drawn layer.
+describe("an ancestor named by its recipe classes", () => {
+  const LAYOUT = "the list lays out its items, which the set does not draw";
+  const list = (classes: string): AncestorDefinition => ({ slot: "list", classes, undrawn: LAYOUT });
+  const item = (classes: string): AncestorDefinition => ({
+    slot: "item",
+    classes,
+    undrawn: "the item lays out its entry, which the set does not draw",
+  });
+  const build = (ancestors: readonly AncestorDefinition[]) =>
+    buildFixture(
+      chip("font-sans", {
+        axes: [{ name: "state", values: ["rest", "invalid"] }],
+        label: LABEL,
+        ancestorsFor: () => ancestors,
+      }),
+      FONT_SANS
+    );
+  const rgb = (r: number, g: number, b: number) => ({ kind: "literal", color: { r, g, b, a: 1 } });
+  const texts = (built: Awaited<ReturnType<typeof build>>) =>
+    built.componentSet.variants.map((variant) => {
+      const text = textOf(variant.root);
+      return [text?.fontSize, text?.lineHeight, text?.color];
+    });
+  const LIST = "text-[12px] leading-[16px] text-[#00ff00] data-invalid:text-[#ff0000] flex gap-[8px]";
+
+  it("gives the root's label the type and color its classes compute, a variant where the cell holds it", async () => {
+    expect(texts(await build([list(LIST)]))).toEqual([
+      [literal(12), literal(16), rgb(0, 1, 0)],
+      [literal(12), literal(16), rgb(1, 0, 0)],
+    ]);
+  });
+
+  it("drops its own declarations that do not inherit, under its slot, with its reason", async () => {
+    const { coverage } = await build([list(LIST)]);
+    const rows = (className: string) =>
+      coverage
+        .filter((row) => row.className === className)
+        .map((row) => [row.part, row.property, row.outcome, row.detail]);
+    expect(rows("flex")).toEqual([["list", "display", "dropped", LAYOUT]]);
+    expect(rows("gap-[8px]")).toEqual([["list", "gap", "dropped", LAYOUT]]);
+    expect(rows("text-[12px]")).toEqual([["list", "font-size", "literal", "12px"]]);
+  });
+
+  it("lets a nearer ancestor's own color beat the one it inherits, whatever the rule's specificity", async () => {
+    const built = await build([list(LIST), item("text-[#0000ff]")]);
+    expect(texts(built).map(([, , color]) => color)).toEqual([rgb(0, 0, 1), rgb(0, 0, 1)]);
+    expect(notesOf(built.coverage, "data-invalid:text-[#ff0000]")).toEqual([
+      ["color", "dropped", "the item around the root sets its own, so the root does not inherit this"],
+    ]);
   });
 });
 

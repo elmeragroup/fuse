@@ -300,13 +300,21 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly previewWidth?: number;
   /**
-   * The declarations an element between the page and the root sets in a cell, which the root
-   * inherits over the page's, such as the text color an invalid Field root passes to its input.
-   * It can also name a property `<html>` sets and the page does not, such as the type a Pagination
-   * link takes from the browser and preflight, since its classes set none. Undefined for a root that
-   * sits on the page itself and inherits nothing more.
+   * The declarations the host sets around the root in a cell with no class to name them, which the
+   * root inherits over the page's, such as the type a Pagination link takes from the browser's
+   * medium font size and preflight on `<html>`, since its classes set none. Undefined for a root
+   * that inherits nothing more from the host. An element a Fuse recipe styles is named in
+   * `ancestorsFor` instead.
    */
   readonly inheritedFor?: (cell: Cell) => readonly OuterDeclaration[];
+  /**
+   * The elements between the page and the root in a cell, outermost first, each named by the
+   * recipe classes it carries, as a Breadcrumb link sits in `Breadcrumb.List` and `Breadcrumb.Item`.
+   * Each cascades its classes with the cell's states and facts, and the root inherits their
+   * computed values, as an invalid Field root passes its `data-invalid:text-error` to its input.
+   * Undefined, or none in a cell, for a root with no such element around it.
+   */
+  readonly ancestorsFor?: (cell: Cell) => readonly AncestorDefinition[];
   readonly axes: readonly AxisSpec[];
   readonly columnAxis: string;
   /**
@@ -343,6 +351,25 @@ export type ComponentDefinition = BoxDefinition & {
   readonly omittedMedia?: ReadonlyMap<string, string>;
   /** The INSTANCE_SWAP properties, each with the export name of the icon it starts with. */
   readonly swapProperties: readonly SwapPropertySpec[];
+};
+
+/**
+ * An element between the page and the root, named by its recipe classes. The kit draws no layer
+ * for it. Its classes cascade in each cell as the root's do, and the root inherits its computed
+ * values, so it takes the element's type and text color. Its own declarations that do not inherit,
+ * such as a list's flex row, reach no drawn layer.
+ */
+export type AncestorDefinition = {
+  /** The element's `data-slot`, which names it in the coverage table, such as `breadcrumb-list`. */
+  readonly slot: string;
+  /** The classes the element carries, as its recipe gives them. */
+  readonly classes: string;
+  /**
+   * Why the kit draws none of the element's own declarations that do not inherit, which the
+   * coverage table gives for each of them, such as `the list lays out and wraps the trail, which the
+   * set does not draw`.
+   */
+  readonly undrawn: string;
 };
 
 /**
@@ -411,11 +438,10 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
   const variants = cells.map((cell): VariantSpec => {
     const cellCascade = cascade.cell(cell);
     const scope: MapScope = { definition, cell, context, scaling };
-    const rootCascade = cellCascade.root(
-      definition.classesFor(cell),
-      definition.slot,
-      definition.inheritedFor?.(cell) ?? []
-    );
+    const rootCascade = cellCascade.root(definition.classesFor(cell), definition.slot, {
+      declarations: definition.inheritedFor?.(cell) ?? [],
+      ancestors: definition.ancestorsFor?.(cell) ?? [],
+    });
     // A root clips its content, because Figma draws a drop shadow's spread only from a frame
     // that clips, and a focus ring is a spread shadow. The first run on a real file stored the
     // ring's 2px spread as 0 on a root that did not clip. Clipping costs a root nothing, since
@@ -467,19 +493,21 @@ export function variantKey(definition: Pick<ComponentDefinition, "key" | "axes">
 }
 
 /**
- * Every class the root, its parts and their icons use in any cell of the matrix, which the build
- * compiles.
+ * Every class the elements around the root, the root, its parts and their icons use in any cell of
+ * the matrix, which the build compiles.
  *
  * @param definition - The component.
- * @returns The classes, in the order the boxes first use them, each box's before its icons'.
+ * @returns The classes, in the order the elements first use them, the ancestors' before the boxes',
+ *   and each box's before its icons'.
  */
 export function definitionClasses(definition: ComponentDefinition): readonly string[] {
-  return matrixCells(definition.axes).flatMap((cell) =>
-    boxesOf(definition).flatMap((box) => [
+  return matrixCells(definition.axes).flatMap((cell) => [
+    ...(definition.ancestorsFor?.(cell) ?? []).flatMap((ancestor) => splitClasses(ancestor.classes)),
+    ...boxesOf(definition).flatMap((box) => [
       ...splitClasses(box.classesFor(cell)),
       ...box.iconsFor(cell).flatMap((slot) => splitClasses(slot.classes ?? "")),
-    ])
-  );
+    ]),
+  ]);
 }
 
 /**

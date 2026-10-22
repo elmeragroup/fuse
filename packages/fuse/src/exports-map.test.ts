@@ -304,6 +304,7 @@ describe("exports map", () => {
       "avatarImageClass",
       "avatarRootClass",
       "badgeVariants",
+      "breadcrumbVariants",
       "buttonVariants",
       "checkboxVariants",
       "confirmButtonVariants",

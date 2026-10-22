@@ -2,9 +2,9 @@
  * What each Tailwind variant in a recipe means for a cell of the matrix. Most of that meaning is
  * fixed by `fuse.css` and Tailwind, not by the component, so this table holds it once: the state
  * variants each value of a `state` axis renders, the icon edge, the child selectors that reach
- * the icons, and the states and children no standalone component shows. A definition adds only
- * what is its own: the attributes its own states render, facts for its own variants, and its own
- * omissions.
+ * the icons, the breakpoints the kit draws at, and the states and children no standalone component
+ * shows. A definition adds only what is its own: the attributes its own states render, facts for
+ * its own variants, and its own omissions.
  */
 import type { Cell, ComponentDefinition, IconSlot, RootKind } from "./component-spec";
 import { axisValues } from "./kit-spec";
@@ -84,8 +84,21 @@ const SHARED_OMISSIONS = new Set([
   "[&>a:hover]",
 ]);
 
+/**
+ * The breakpoints the kit draws at. Tailwind's `sm:` and `md:` hold from 40rem and 48rem, 640px and
+ * 768px, which a desktop window reaches, so every cell draws a class's desktop arm. The compare
+ * page's viewport is 2400px wide, so the browser draws the same arm. A wider breakpoint and a
+ * `max-*` range stay unmodelled until a set needs one.
+ */
+const DESKTOP_BREAKPOINTS = new Set(["sm", "md"]);
+
 /** The variants whose meaning is fixed here, which a definition's own states cannot render. */
-const FIXED_VARIANTS = new Set([...ICON_EDGES.keys(), ...CHILD_SELECTORS.keys(), ...SHARED_OMISSIONS]);
+const FIXED_VARIANTS = new Set([
+  ...ICON_EDGES.keys(),
+  ...CHILD_SELECTORS.keys(),
+  ...SHARED_OMISSIONS,
+  ...DESKTOP_BREAKPOINTS,
+]);
 
 /**
  * Build the state table of one definition. A shared state entry is modelled only when the
@@ -161,6 +174,9 @@ export function makeStateTable(
     const states = statesRendering.get(variant);
     if (states !== undefined) {
       return { kind: "condition", holds: (cell) => states.has(cell.state ?? "") };
+    }
+    if (DESKTOP_BREAKPOINTS.has(variant)) {
+      return { kind: "condition", holds: () => true };
     }
     const dataIcon = ICON_EDGES.get(variant);
     if (dataIcon !== undefined) {
