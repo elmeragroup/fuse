@@ -10,19 +10,16 @@ export type DescriptionListContentProps = ComponentProps<"dl"> & {
    * How each Item's terms and details sit. `responsive` stacks the details under the term on
    * phones and sets them in two columns from `sm` up, with a rule between Items at every width.
    * `inline` is for label/value rows in cards and summaries: each Item shares its own row between
-   * its term and details, whatever the other Items hold. The details always sits beside its term,
-   * at the end of the row. When the two don't fit on one line, both wrap within the row: each keeps
-   * its longest word and they share the rest, so a short one leaves the other room. In an Item with
-   * several terms or details, the first details takes the row first, so a long term beside it
-   * wraps down to its longest word. A word breaks only when the two longest words can't share the
-   * row, and then in the details. Inline rows take the label type, have no rules and space with the
-   * small surface gap, and the term is not muted. A colour class on a cell wins in both layouts.
-   * The inline cells' padding, sizing and alignment come from the list, so override them with a
-   * `[:where([data-layout=inline]>*)>&]:` class or a CSS rule; the first details of an Item with
-   * several terms or details takes its sizing from a
-   * `[:where([data-layout=inline]>:has(>:nth-child(3)))>&]:first-of-type:` class. Override an
-   * inline Item's row, wrap and gap with a `[:where([data-layout=inline])>&]:` class. Defaults to
-   * `responsive`.
+   * its term and details, whatever the other Items hold. The details sits beside its term, at the
+   * end of the row. When the two don't fit on one line, both wrap within the row: each keeps its
+   * longest word and they share the rest, so a short one leaves the other room. Only when the term's
+   * longest word and the details' longest word can't share the row does the details move under its
+   * term, still at the end, rather than break a word; a word wider than the whole row then breaks in
+   * the details. Inline rows take the label type, have no rules and space with the small surface
+   * gap, and the term is not muted. A colour class on a cell wins in both layouts. The inline cells'
+   * padding, sizing and alignment come from the list, so override them with a
+   * `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. Override an inline Item's row, wrap
+   * and gap with a `[:where([data-layout=inline])>&]:` class. Defaults to `responsive`.
    */
   layout?: "responsive" | "inline";
 };
@@ -89,22 +86,20 @@ function DescriptionListContent({
 
 // A responsive Item spans the list's columns as a subgrid, so its term and details sit in the
 // list's shared columns, and draws the rule above itself unless it is the first. Only Items draw
-// rules, so the terms or details of one group are never split by one. An inline Item is a flex row
-// that keeps the details beside its term. Both start at their longest word and grow alike up to
-// their full width, so a short one gives the rest to the other. A word breaks only when the two
-// longest words can't share the row, and then in the details; the term never breaks a word, so a
-// single term word wider than the whole row would overflow it. An Item with several terms or
-// details wraps: its earlier terms and later details take lines of their own, so its last term
-// pairs with its first details, as in the responsive layout. That details grows from zero there,
-// so the wrap never moves it off its term's line, and far faster than its term, so it still reaches
-// its own width before the term takes more than its longest word.
+// rules, so the terms or details of one group are never split by one. An inline Item is a wrapping
+// flex row. Its term and details start at their longest word and grow alike up to their full width,
+// so a short one gives the rest to the other, and the row wraps only when the two longest words
+// can't share it: then the details moves under its term instead of breaking a word, and breaks one
+// only when it is wider than the row. The term never breaks a word, so a single term word wider than
+// the whole row would overflow it. An Item's earlier terms and later details take lines of their
+// own, so its last term pairs with its first details, as in the responsive layout.
 function DescriptionListItem({ className, ...props }: DescriptionListItemProps): ReactElement {
   return (
     <div
       data-slot="description-list-item"
       className={cn(
         "col-span-full grid grid-cols-subgrid border-t first-of-type:border-none",
-        "[:where([data-layout=inline])>&]:flex [:where([data-layout=inline])>&]:gap-x-(--surface-gap-md) [:where([data-layout=inline])>&]:border-none [:where([data-layout=inline])>&]:has-[>:nth-child(3)]:flex-wrap",
+        "[:where([data-layout=inline])>&]:flex [:where([data-layout=inline])>&]:flex-wrap [:where([data-layout=inline])>&]:gap-x-(--surface-gap-md) [:where([data-layout=inline])>&]:border-none",
         className
       )}
       {...props}
@@ -132,7 +127,7 @@ function DescriptionListDetails({ className, ...props }: DescriptionListDetailsP
       data-slot="description-list-details"
       className={cn(
         "sm:col-start-2 ms-0 py-(--row-py) text-[color:var(--description-list-details,var(--foreground))]",
-        "[:where([data-layout=inline]>*)>&]:ms-auto [:where([data-layout=inline]>*)>&]:max-w-max [:where([data-layout=inline]>*)>&]:min-w-0 [:where([data-layout=inline]>*)>&]:grow [:where([data-layout=inline]>*)>&]:basis-[min-content] [:where([data-layout=inline]>*)>&]:py-0 [:where([data-layout=inline]>*)>&]:text-end [:where([data-layout=inline]>*)>&]:wrap-break-word [:where([data-layout=inline]>*)>&]:not-first-of-type:max-w-full [:where([data-layout=inline]>*)>&]:not-first-of-type:basis-full [:where([data-layout=inline]>:has(>:nth-child(3)))>&]:first-of-type:grow-999 [:where([data-layout=inline]>:has(>:nth-child(3)))>&]:first-of-type:basis-0",
+        "[:where([data-layout=inline]>*)>&]:ms-auto [:where([data-layout=inline]>*)>&]:max-w-max [:where([data-layout=inline]>*)>&]:min-w-0 [:where([data-layout=inline]>*)>&]:grow [:where([data-layout=inline]>*)>&]:basis-[min-content] [:where([data-layout=inline]>*)>&]:py-0 [:where([data-layout=inline]>*)>&]:text-end [:where([data-layout=inline]>*)>&]:wrap-break-word [:where([data-layout=inline]>*)>&]:not-first-of-type:max-w-full [:where([data-layout=inline]>*)>&]:not-first-of-type:basis-full",
         className
       )}
       {...props}

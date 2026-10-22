@@ -5,8 +5,9 @@ import { DescriptionList } from "@elmeragroup/fuse/description-list";
 
 /**
  * The longest rows of a customer-facing order summary on a phone: a creation time with seconds, an
- * 18-digit metering point ID, an invoice line that ends in an email address, a street address,
- * and an email address wider than the row, which breaks beside its term instead of overflowing.
+ * 18-digit metering point ID, a street address, an email address too wide to sit beside its term,
+ * which moves under it whole, and an invoice line whose email address is wider than the whole row,
+ * which moves under its term and breaks there instead of overflowing.
  */
 export function DescriptionListLongValues() {
   return (
@@ -52,7 +53,7 @@ export function DescriptionListLongValues() {
           </DescriptionList.Item>
           <DescriptionList.Item>
             <DescriptionList.Term>Email</DescriptionList.Term>
-            <DescriptionList.Details>kari.nordmann.hansen@nordmannholding.no</DescriptionList.Details>
+            <DescriptionList.Details>kari.nordmann.hansen@example.no</DescriptionList.Details>
           </DescriptionList.Item>
           <DescriptionList.Item>
             <DescriptionList.Term>Mobile number</DescriptionList.Term>

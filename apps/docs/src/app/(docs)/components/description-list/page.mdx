@@ -22,7 +22,7 @@ Wrap each term and its details in an `Item`, the `<div>` HTML allows around one 
   <DescriptionListBasic />
 </Demo>
 
-An Item can hold several terms of one details, or several details of one term. Its last term shares a row with its first details; earlier terms and later details take rows of their own. In an inline list, that first details takes the row first, so a long term beside it wraps down to its longest word. Rules fall between Items only.
+An Item can hold several terms of one details, or several details of one term. Its last term shares a row with its first details; earlier terms and later details take rows of their own. Rules fall between Items only.
 
 <Demo
   slug="description-list"
@@ -36,19 +36,19 @@ An Item can hold several terms of one details, or several details of one term. I
   <DescriptionListResponsive />
 </Demo>
 
-`layout="inline"` is for label/value rows in receipts, order summaries and price boxes. Inline rows take the label type, so they follow density like field labels, are spaced by the small surface gap and have no rules. The term is not muted; add `text-muted-foreground` to a term to mute it, or `font-medium` to a details to emphasise it. To group rows, use one inline list per group: consecutive inline lists are spaced by the large surface gap. A colour class on a term or details wins in both layouts. The inline cells' padding, sizing and alignment come from the list, so override them with a `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. The first details of an Item with several terms or details takes its sizing from a `[:where([data-layout=inline]>:has(>:nth-child(3)))>&]:first-of-type:` class. Override an inline Item's row, wrap and gap with a `[:where([data-layout=inline])>&]:` class.
+`layout="inline"` is for label/value rows in receipts, order summaries and price boxes. Inline rows take the label type, so they follow density like field labels, are spaced by the small surface gap and have no rules. The term is not muted; add `text-muted-foreground` to a term to mute it, or `font-medium` to a details to emphasise it. To group rows, use one inline list per group: consecutive inline lists are spaced by the large surface gap. A colour class on a term or details wins in both layouts. The inline cells' padding, sizing and alignment come from the list, so override them with a `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. Override an inline Item's row, wrap and gap with a `[:where([data-layout=inline])>&]:` class.
 
 <Demo slug="description-list" id="inline" title="Inline" file="description-list-inline.tsx">
   <DescriptionListInline />
 </Demo>
 
-Each inline Item shares its own row between its term and details, whatever the other rows hold. The details always sits beside its term, at the end of the row. When the two don't fit on one line, both wrap within the row: each keeps its longest word and they share the rest, so a long term wraps beside a short details, and a long details wraps beside a short term. A word breaks only when the two longest words can't share the row, and then in the details.
+Each inline Item shares its own row between its term and details, whatever the other rows hold. The details sits beside its term, at the end of the row. When the two don't fit on one line, both wrap within the row: each keeps its longest word and they share the rest, so a long term wraps beside a short details, and a long details wraps beside a short term. Only when the term's longest word and the details' longest word can't share the row does the details move under its term, still at the end of the row, rather than break a word. A term wraps at its spaces and hyphens, so a hyphenated label such as "Målepunkt-ID" can split at the hyphen beside a long value; write it with a non-breaking hyphen (U+2011) to keep it whole.
 
 <Demo slug="description-list" id="inline-rows" title="Inline rows" file="description-list-inline-rows.tsx">
   <DescriptionListInlineRows />
 </Demo>
 
-Values in a real order summary are often longer than their labels: a time with seconds, an 18-digit ID, an invoice line that ends in an email address. A value wraps between its words beside its term, and an email address wider than the row breaks inside it rather than overflow the card.
+Values in a real order summary are often longer than their labels: a time with seconds, an 18-digit ID, an invoice line that ends in an email address. A value wraps between its words beside its term. An email address too wide to sit beside its term moves under it whole, and one wider than the whole row breaks inside it there rather than overflow the card; a `<wbr>` before the `@` chooses where.
 
 <Demo slug="description-list" id="long-values" title="Long values" file="description-list-long-values.tsx">
   <DescriptionListLongValues />

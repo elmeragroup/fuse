@@ -504,7 +504,35 @@ describe("DescriptionList", () => {
     );
 
     it.each(DENSITIES)(
-      "breaks an unbroken details wider than the row beside its term without overflow (%s)",
+      "moves a details whose longest word can't share the row under its term, whole and at the end (%s)",
+      (density) => {
+        stampDensity(density);
+        const term = "Correspondence email";
+        const details = "kari.nordmann.hansen@nordmannmail.no";
+        renderInlineRows([[term, details]]);
+        const termCell = textNamed(term);
+        const detailsCell = textNamed(details);
+        expect(
+          widestWord(term, termCell) + INLINE[density].columnGap + naturalWidth(details, detailsCell),
+          "precondition: the details can't sit beside the term's widest word"
+        ).toBeGreaterThan(ROW_WIDTH);
+        expect(
+          naturalWidth(details, detailsCell),
+          "precondition: the details fits the row"
+        ).toBeLessThanOrEqual(ROW_WIDTH);
+
+        const termLines = textLines(termCell);
+        const detailsLines = textLines(detailsCell);
+        expect(termLines, "the term on one line").toHaveLength(1);
+        expect(detailsLines, "the details whole on one line").toHaveLength(1);
+        expect(detailsLines[0]?.top ?? 0).toBeGreaterThanOrEqual((termLines[0]?.bottom ?? Infinity) - 1);
+        expect(detailsLines[0]?.right).toBeCloseTo(listOf(termCell).getBoundingClientRect().right, 0);
+        expectNoOverflow(listOf(termCell));
+      }
+    );
+
+    it.each(DENSITIES)(
+      "moves an unbroken details wider than the row under its term and breaks it there without overflow (%s)",
       (density) => {
         stampDensity(density);
         const details = "707057500012345678901234567890123456789012345678901234567890";
@@ -518,7 +546,7 @@ describe("DescriptionList", () => {
         const detailsLines = textLines(detailsCell);
         expect(termLines).toHaveLength(1);
         expect(detailsLines.length).toBeGreaterThan(1);
-        expect(Math.abs((termLines[0]?.top ?? 0) - (detailsLines[0]?.top ?? Infinity))).toBeLessThan(1);
+        expect(detailsLines[0]?.top ?? 0).toBeGreaterThanOrEqual((termLines[0]?.bottom ?? Infinity) - 1);
         expect(detailsCell.scrollWidth).toBeLessThanOrEqual(detailsCell.clientWidth);
         expectNoOverflow(listOf(detailsCell));
       }
@@ -556,7 +584,7 @@ describe("DescriptionList", () => {
     });
 
     it.each(DENSITIES)(
-      "keeps the first details beside its term in an Item with several details, even when it must break (%s)",
+      "moves an Item's first details under its term, above its later details, when it can't share the term's row (%s)",
       (density) => {
         stampDensity(density);
         const details = "707057500012345678901234567890123456789012345678901234567890";
@@ -576,7 +604,7 @@ describe("DescriptionList", () => {
         ).toBeGreaterThan(ROW_WIDTH);
         const termLines = textLines(textNamed("Meter"));
         const detailsLines = textLines(detailsCell);
-        expect(Math.abs((termLines[0]?.top ?? 0) - (detailsLines[0]?.top ?? Infinity))).toBeLessThan(1);
+        expect(detailsLines[0]?.top ?? 0).toBeGreaterThanOrEqual((termLines[0]?.bottom ?? Infinity) - 1);
         expect(detailsCell.scrollWidth).toBeLessThanOrEqual(detailsCell.clientWidth);
         const later = textLines(textNamed("Smart meter"));
         expect(later).toHaveLength(1);
