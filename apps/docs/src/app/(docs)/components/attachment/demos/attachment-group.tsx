@@ -37,7 +37,7 @@ export function AttachmentGroupDemo() {
               </Attachment.Media>
             ) : (
               <Attachment.Media variant="image">
-                <img src={file.image.src} alt={file.image.alt} />
+                <img src={file.image.src} alt={file.image.alt} loading="lazy" decoding="async" />
               </Attachment.Media>
             )}
             <Attachment.Content>

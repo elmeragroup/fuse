@@ -611,4 +611,15 @@ if (!payload.includes(SELECT_FIELD_PLACEHOLDER)) {
   throw new Error(`SelectField's placeholder is missing from the server payload:\n${payload.slice(0, 1500)}`);
 }
 
+if (!payload.includes("meter.jpg")) {
+  throw new Error(`Attachment's title is missing from the server payload:\n${payload.slice(0, 1500)}`);
+}
+// A server-rendered Attachment.AspectRatio is a div with its ratio class. A client one would
+// be a module reference with only its props.
+const attachmentFrame =
+  /\["\$","div",null,\{"data-slot":"attachment-aspect-ratio",[^}]*"className":"[^"]*\baspect-3\/4\b/u;
+if (!attachmentFrame.test(payload)) {
+  throw new Error(`Attachment.AspectRatio was not rendered on the server:\n${payload.slice(0, 1500)}`);
+}
+
 process.stdout.write("RSC_OK\n");

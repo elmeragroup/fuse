@@ -23,6 +23,7 @@ import { DENSITIES } from "../../theme/density";
 import { Button } from "../button/button";
 import { Dialog } from "../dialog";
 import { DropdownMenu } from "../dropdown-menu";
+import type { AttachmentRootProps } from "./attachment";
 import { Attachment } from "./index";
 
 /** A 4×3 picture, so a square or ratio frame shows it was the frame, not the image, that sized it. */
@@ -49,12 +50,14 @@ function viewportOf(list: HTMLElement): HTMLElement {
   return viewport;
 }
 
-function FileRow({ name }: { name: string }): ReactElement {
+/** A root titled `name`, with `children` after its content. */
+function FileRow({ name, children, ...props }: AttachmentRootProps & { name: string }): ReactElement {
   return (
-    <Attachment.Root>
+    <Attachment.Root {...props}>
       <Attachment.Content>
         <Attachment.Title>{name}</Attachment.Title>
       </Attachment.Content>
+      {children}
     </Attachment.Root>
   );
 }
@@ -115,12 +118,9 @@ describe("Attachment.Group", () => {
       <>
         <button type="button">Before</button>
         <Attachment.Group aria-label="Attached files">
-          <Attachment.Root>
-            <Attachment.Content>
-              <Attachment.Title>plan.pdf</Attachment.Title>
-            </Attachment.Content>
+          <FileRow name="plan.pdf">
             <Attachment.Trigger aria-label="Open plan.pdf" render={<a href="#plan" />} />
-          </Attachment.Root>
+          </FileRow>
         </Attachment.Group>
       </>
     );
@@ -168,24 +168,15 @@ describe("Attachment.Trigger and Attachment.Actions", () => {
   it("fills on hover only while its trigger is enabled, and shows a disabled trigger's cursor", async () => {
     renderThemed(
       <>
-        <Attachment.Root>
-          <Attachment.Content>
-            <Attachment.Title>open.pdf</Attachment.Title>
-          </Attachment.Content>
+        <FileRow name="open.pdf">
           <Attachment.Trigger aria-label="Open open.pdf" />
-        </Attachment.Root>
-        <Attachment.Root>
-          <Attachment.Content>
-            <Attachment.Title>locked.pdf</Attachment.Title>
-          </Attachment.Content>
+        </FileRow>
+        <FileRow name="locked.pdf">
           <Attachment.Trigger aria-label="Open locked.pdf" disabled />
-        </Attachment.Root>
-        <Attachment.Root>
-          <Attachment.Content>
-            <Attachment.Title>gone.pdf</Attachment.Title>
-          </Attachment.Content>
+        </FileRow>
+        <FileRow name="gone.pdf">
           <Attachment.Trigger aria-label="Open gone.pdf" aria-disabled="true" render={<a href="#gone" />} />
-        </Attachment.Root>
+        </FileRow>
       </>
     );
     const card = cssVarColor(rootOf("open.pdf"), "--card");
@@ -246,17 +237,14 @@ describe("Attachment.Action", () => {
             </Attachment.Action>
           </Attachment.Actions>
         </Attachment.Root>
-        <Attachment.Root>
-          <Attachment.Content>
-            <Attachment.Title>row.pdf</Attachment.Title>
-          </Attachment.Content>
+        <FileRow name="row.pdf">
           <Attachment.Actions>
             <Attachment.Action aria-label="Remove row">×</Attachment.Action>
             <Attachment.Action aria-label="Secondary in row" variant="secondary">
               ×
             </Attachment.Action>
           </Attachment.Actions>
-        </Attachment.Root>
+        </FileRow>
       </>
     );
     // Park the pointer on a row without a trigger and let any hover fill fade, so no button
@@ -342,11 +330,7 @@ describe("Attachment.Action", () => {
       stampDensity(density);
       const { unmount } = renderThemed(
         <div style={{ width: "300px" }}>
-          <Attachment.Root className="w-full">
-            <Attachment.Content>
-              <Attachment.Title>wide.pdf</Attachment.Title>
-            </Attachment.Content>
-          </Attachment.Root>
+          <FileRow name="wide.pdf" className="w-full" />
         </div>
       );
       expect(rootOf("wide.pdf").getBoundingClientRect().width, density).toBe(300);
@@ -358,14 +342,11 @@ describe("Attachment.Action", () => {
     for (const density of DENSITIES) {
       stampDensity(density);
       const { unmount } = renderThemed(
-        <Attachment.Root size="xs">
-          <Attachment.Content>
-            <Attachment.Title>small.pdf</Attachment.Title>
-          </Attachment.Content>
+        <FileRow name="small.pdf" size="xs">
           <Attachment.Actions>
             <Attachment.Action aria-label="Remove small.pdf">×</Attachment.Action>
           </Attachment.Actions>
-        </Attachment.Root>
+        </FileRow>
       );
       const box = roleNamed("button", "Remove small.pdf").getBoundingClientRect();
       expect(box.width, `${density} width`).toBeGreaterThanOrEqual(24);
@@ -428,11 +409,7 @@ describe("Attachment.Root in a menu", () => {
       <DropdownMenu.Root defaultOpen>
         <DropdownMenu.Trigger>Files</DropdownMenu.Trigger>
         <DropdownMenu.Content>
-          <Attachment.Root size="xs">
-            <Attachment.Content>
-              <Attachment.Title>menu.pdf</Attachment.Title>
-            </Attachment.Content>
-          </Attachment.Root>
+          <FileRow name="menu.pdf" size="xs" />
         </DropdownMenu.Content>
       </DropdownMenu.Root>
     );
@@ -454,13 +431,7 @@ describe("Attachment state", () => {
     const { rerender } = renderThemed(<FileRow name="file.pdf" />);
     expect(rootOf("file.pdf").getAttribute("data-state")).toBe("done");
     for (const state of states) {
-      rerender(
-        <Attachment.Root state={state}>
-          <Attachment.Content>
-            <Attachment.Title>file.pdf</Attachment.Title>
-          </Attachment.Content>
-        </Attachment.Root>
-      );
+      rerender(<FileRow name="file.pdf" state={state} />);
       expect(rootOf("file.pdf").getAttribute("data-state")).toBe(state);
     }
   });
@@ -469,11 +440,7 @@ describe("Attachment state", () => {
     renderThemed(
       <>
         <FileRow name="draft.pdf" />
-        <Attachment.Root state="idle">
-          <Attachment.Content>
-            <Attachment.Title>empty.pdf</Attachment.Title>
-          </Attachment.Content>
-        </Attachment.Root>
+        <FileRow name="empty.pdf" state="idle" />
         <Attachment.Root state="error">
           <Attachment.Content>
             <Attachment.Title>broken.pdf</Attachment.Title>
@@ -489,13 +456,7 @@ describe("Attachment state", () => {
   });
 
   it.each(["uploading", "processing"] as const)("sweeps the title while %s", (state) => {
-    renderThemed(
-      <Attachment.Root state={state}>
-        <Attachment.Content>
-          <Attachment.Title>busy.pdf</Attachment.Title>
-        </Attachment.Content>
-      </Attachment.Root>
-    );
+    renderThemed(<FileRow name="busy.pdf" state={state} />);
     const title = textNamed("busy.pdf");
     expect(title.getAnimations()).toHaveLength(1);
     expect(getComputedStyle(title).webkitTextFillColor).toBe(TRANSPARENT);
@@ -510,13 +471,7 @@ describe("Attachment state", () => {
 
   it("renders an uploading title as solid, still text under reduced motion", async () => {
     await emulateReducedMotion("reduce");
-    renderThemed(
-      <Attachment.Root state="uploading">
-        <Attachment.Content>
-          <Attachment.Title>still.pdf</Attachment.Title>
-        </Attachment.Content>
-      </Attachment.Root>
-    );
+    renderThemed(<FileRow name="still.pdf" state="uploading" />);
     const title = textNamed("still.pdf");
     expect(title.getAnimations()).toEqual([]);
     expect(getComputedStyle(title).animationName).toBe("none");

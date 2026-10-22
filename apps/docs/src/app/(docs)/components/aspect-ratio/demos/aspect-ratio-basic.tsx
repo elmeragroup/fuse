@@ -9,6 +9,8 @@ export function AspectRatioBasic() {
         className="size-full rounded-lg object-cover"
         src="/landing/sites/fkas/renovated.webp"
         alt="Two people looking up at the beams of an attic under renovation"
+        loading="lazy"
+        decoding="async"
       />
     </AspectRatio>
   );

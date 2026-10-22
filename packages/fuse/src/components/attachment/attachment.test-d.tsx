@@ -1,23 +1,11 @@
 import { expectTypeOf, test } from "vitest";
 
+import type { AspectRatioProps } from "@elmeragroup/fuse/aspect-ratio";
 import { Attachment } from "@elmeragroup/fuse/attachment";
-import type { AttachmentRootProps } from "@elmeragroup/fuse/attachment";
+import type { AttachmentAspectRatioProps, AttachmentRootProps } from "@elmeragroup/fuse/attachment";
 
-test("Attachment.AspectRatio takes the AspectRatio set and nothing else", () => {
-  const _square = <Attachment.AspectRatio ratio="1:1" />;
-  const _landscape = <Attachment.AspectRatio ratio="4:3" />;
-  const _portrait = <Attachment.AspectRatio ratio="3:4" />;
-  const _photo = <Attachment.AspectRatio ratio="3:2" />;
-  const _portraitPhoto = <Attachment.AspectRatio ratio="2:3" />;
-  const _video = <Attachment.AspectRatio ratio="16:9" />;
-  const _story = <Attachment.AspectRatio ratio="9:16" />;
-
-  // @ts-expect-error a number is not a ratio string
-  const _number = <Attachment.AspectRatio ratio={16 / 9} />;
-  // @ts-expect-error ratio has no default
-  const _missing = <Attachment.AspectRatio />;
-  // @ts-expect-error 21:9 is outside the set
-  const _wide = <Attachment.AspectRatio ratio="21:9" />;
+test("Attachment.AspectRatio takes AspectRatio's props", () => {
+  expectTypeOf<AttachmentAspectRatioProps>().toEqualTypeOf<AspectRatioProps>();
 });
 
 test("Root, Media and Action take only their documented values", () => {

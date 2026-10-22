@@ -424,6 +424,10 @@
    that way it sorts with the `not-*` variants, ahead of `focus-visible:`, and `:not(:where())`
    adds no specificity. The state face in styles/state-face.ts owns the matching disabled look. */
 @custom-variant disabled-state (&:where([data-disabled]:not([data-disabled="false"]), :disabled, [aria-disabled="true"]));
+/* A part whose direct `a` or `button` child is enabled, the trigger that makes the part
+   interactive. A variant cannot reach inside `:has()`, so the trigger arm repeats the
+   `disabled-state` predicate above. Keep it in step with that predicate. */
+@custom-variant has-enabled-trigger (&:has(> :is(a, button):not(:where([data-disabled]:not([data-disabled="false"]), :disabled, [aria-disabled="true"]))));
 /* A disabled selection row. A shell is disabled when its own `isDisabled` or a disabled group's
    Field root marks it `data-disabled`, or when its own control is disabled: an element in the
    row's control slot that matches `disabled-state` above. Keep the control arm in step with that

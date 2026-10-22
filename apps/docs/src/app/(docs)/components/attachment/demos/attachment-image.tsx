@@ -8,7 +8,12 @@ export function AttachmentImage() {
     <div className="flex flex-wrap items-start gap-4">
       <Attachment.Root orientation="vertical">
         <Attachment.Media variant="image">
-          <img src="/landing/sites/tkas/usage.webp" alt="An open-plan kitchen and living room" />
+          <img
+            src="/landing/sites/tkas/usage.webp"
+            alt="An open-plan kitchen and living room"
+            loading="lazy"
+            decoding="async"
+          />
         </Attachment.Media>
         <Attachment.Content>
           <Attachment.Title>living-room.webp</Attachment.Title>
@@ -30,6 +35,8 @@ export function AttachmentImage() {
               className="size-full object-cover"
               src="/landing/sites/fkse/market.webp"
               alt="A woman smelling a branch of cherry blossom"
+              loading="lazy"
+              decoding="async"
             />
           </Attachment.AspectRatio>
         </Attachment.Media>
@@ -48,6 +55,8 @@ export function AttachmentImage() {
           <img
             src="/landing/sites/fkas/renovated.webp"
             alt="Two people looking up at the beams of an attic"
+            loading="lazy"
+            decoding="async"
           />
         </Attachment.Media>
         <Attachment.Content>

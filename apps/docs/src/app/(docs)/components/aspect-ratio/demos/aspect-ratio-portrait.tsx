@@ -9,6 +9,8 @@ export function AspectRatioPortrait() {
         className="size-full rounded-lg object-cover"
         src="/landing/sites/fkse/market.webp"
         alt="A woman smelling a branch of cherry blossom"
+        loading="lazy"
+        decoding="async"
       />
     </AspectRatio>
   );

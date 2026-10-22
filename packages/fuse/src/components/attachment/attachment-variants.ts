@@ -33,10 +33,8 @@ export const attachmentVariants = tv({
       // border in a host without Tailwind's preflight too.
       "group/attachment relative box-border flex max-w-full min-w-0 shrink-0 border-border bg-card text-card-foreground transition-colors duration-100",
       "data-[state=error]:border-error/30 data-[state=idle]:border-dashed",
-      // Only a root holding an enabled trigger, a direct `a` or `button`, fills on hover. The
-      // trigger's `:not(:where(…))` is the `disabled-state` predicate from `fuse.css`, which a
-      // variant cannot reach inside `:has()`.
-      "has-[>:is(a,button):not(:where([data-disabled]:not([data-disabled=false]),:disabled,[aria-disabled=true]))]:enabled-hover:bg-muted",
+      // Only a root holding an enabled trigger fills on hover.
+      "has-enabled-trigger:enabled-hover:bg-muted",
       hiddenGuardClass
     ),
     media: cn(
@@ -79,13 +77,14 @@ export const attachmentVariants = tv({
       nativeStateFaceClass
     ),
     group: cn("relative flex min-w-0 flex-col rounded-md", withinFocusRingClass, hiddenGuardClass),
-    // The viewport fades an edge only while content lies past it: Base UI writes each edge's
-    // overflow distance to the viewport, so a fade grows to 2.5rem as that edge's content does.
-    // A linear gradient has no logical direction, so right-to-left text runs it from the right.
+    // The viewport fades an edge only while content lies past it: Base UI marks a viewport whose
+    // content overflows and writes each edge's overflow distance to it, so a fade grows to 2.5rem
+    // as that edge's content does. A linear gradient has no logical direction, so right-to-left
+    // text runs it from the right.
     groupViewport: cn(
       "min-w-0 snap-x snap-mandatory scroll-px-1 overscroll-x-contain rounded-[inherit]",
-      "[mask-image:linear-gradient(to_right,transparent_0,black_min(2.5rem,var(--scroll-area-overflow-x-start,0px)),black_calc(100%_-_min(2.5rem,var(--scroll-area-overflow-x-end,0px))),transparent_100%)]",
-      "rtl:[mask-image:linear-gradient(to_left,transparent_0,black_min(2.5rem,var(--scroll-area-overflow-x-start,0px)),black_calc(100%_-_min(2.5rem,var(--scroll-area-overflow-x-end,0px))),transparent_100%)]",
+      "[--attachment-fade:to_right] rtl:[--attachment-fade:to_left]",
+      "data-has-overflow-x:[mask-image:linear-gradient(var(--attachment-fade),transparent_0,black_min(2.5rem,var(--scroll-area-overflow-x-start,0px)),black_calc(100%_-_min(2.5rem,var(--scroll-area-overflow-x-end,0px))),transparent_100%)]",
       withinFocusRingControlClass
     ),
     // The list pads 0.25rem so a tile's focus ring paints inside the viewport's clip.

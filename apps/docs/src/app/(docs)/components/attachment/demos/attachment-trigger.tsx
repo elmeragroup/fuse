@@ -20,12 +20,7 @@ export function AttachmentTrigger() {
           </Attachment.Content>
           <Dialog.Trigger render={<Attachment.Trigger aria-label="Preview inspection-report.pdf" />} />
           <Attachment.Actions>
-            <Attachment.Action
-              aria-label="Copy link to inspection-report.pdf"
-              onClick={() => {
-                // The demo has no file to link to; a real app writes the file's URL.
-                navigator.clipboard.writeText("inspection-report.pdf").catch(() => undefined);
-              }}>
+            <Attachment.Action aria-label="Copy link to inspection-report.pdf">
               <Copy />
             </Attachment.Action>
             <Attachment.Action aria-label="Remove inspection-report.pdf">
@@ -42,7 +37,12 @@ export function AttachmentTrigger() {
       </Dialog.Root>
       <Attachment.Root className="w-full">
         <Attachment.Media variant="image">
-          <img src={ATTIC_PHOTO} alt="Two people looking up at the beams of an attic" />
+          <img
+            src={ATTIC_PHOTO}
+            alt="Two people looking up at the beams of an attic"
+            loading="lazy"
+            decoding="async"
+          />
         </Attachment.Media>
         <Attachment.Content>
           <Attachment.Title>attic.webp</Attachment.Title>
