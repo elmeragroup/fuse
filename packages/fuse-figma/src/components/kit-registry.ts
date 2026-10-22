@@ -16,6 +16,7 @@ import type { Cell, ComponentDefinition } from "./component-spec";
 import { KBD } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
 import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
+import { RADIO } from "./radio-kit";
 import { ICON_TOGGLE, TOGGLE } from "./toggle-kit";
 
 /**
@@ -39,7 +40,7 @@ const BADGE_PAGE: KitPage = { slug: "badge", name: "Badge" };
 /** The page Kbd sits on alone. */
 const KBD_PAGE: KitPage = { slug: "kbd", name: "Kbd" };
 
-/** The page of the radio controls, Radio icon button first. */
+/** The page of the radio controls, Radio icon button first, then Radio. */
 const RADIO_PAGE: KitPage = { slug: "radio", name: "Radio" };
 
 /** The page Checkbox sits on alone. */
@@ -125,5 +126,6 @@ export const KIT: readonly KitEntry[] = [
   { definition: BADGE, page: BADGE_PAGE, previewCells: matrixCells(BADGE.axes) },
   { definition: KBD, page: KBD_PAGE, previewCells: matrixCells(KBD.axes) },
   { definition: RADIO_ICON_BUTTON, page: RADIO_PAGE, previewCells: matrixCells(RADIO_ICON_BUTTON.axes) },
+  { definition: RADIO, page: RADIO_PAGE, previewCells: matrixCells(RADIO.axes) },
   { definition: CHECKBOX, page: CHECKBOX_PAGE, previewCells: matrixCells(CHECKBOX.axes) },
 ];

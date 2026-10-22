@@ -1,14 +1,7 @@
 /**
  * The renderer of the `radio-icon-button` set: each cell as the real Fuse `<RadioIconButton>`
- * holding `<List />`, alone in a `<RadioGroup>`, since a radio renders checked only inside a
- * group.
- *
- * - `checked=on` sets the group's `defaultValue` to the button's value. The page renders static
- *   HTML, so the state the markup draws is the one the props start with.
- * - `disabled` sets the button's `isDisabled`.
- * - `invalid` sets the group's `isInvalid`. `RadioGroup` renders its own `Field.Root` and passes
- *   `isInvalid` to it, so the radio reads its validity from that root. An invalid `Field.Root`
- *   around the group would not reach the radio past the group's own root.
+ * holding `<List />`, alone in a `<RadioGroup>` as `radio-cell.ts` wraps a radio, which checks it
+ * at `checked=on` and marks it invalid at `invalid`. `disabled` sets the button's `isDisabled`.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
  * imports this module only after the run found the build.
@@ -19,11 +12,11 @@ import { createElement } from "react";
 import { radioIconButtonVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import { List } from "../../../fuse/dist/icons.js";
-import { RadioGroup, RadioIconButton } from "../../../fuse/dist/radio-group.js";
-import type { RadioGroupProps } from "../../../fuse/dist/radio-group.js";
+import { RadioIconButton } from "../../../fuse/dist/radio-group.js";
 import type { Cell } from "../components/component-spec.ts";
 import { ownKey } from "../components/own-key.ts";
 import type { CellRendering } from "./cell-renderers.ts";
+import { inRadioGroup } from "./radio-cell.ts";
 
 type RadioIconButtonSize = keyof typeof radioIconButtonVariants.variants.size;
 
@@ -42,13 +35,9 @@ export const radioIconButton: CellRendering = {
     if (!isSize(size)) {
       throw new Error(`Radio icon button has no size ${size ?? ""}`);
     }
-    const group: RadioGroupProps = { isInvalid: cell.state === "invalid" };
-    if (cell.checked === "on") {
-      group.defaultValue = VALUE;
-    }
-    return createElement(
-      RadioGroup,
-      group,
+    return inRadioGroup(
+      cell,
+      VALUE,
       createElement(
         RadioIconButton,
         { value: VALUE, "aria-label": CELL_LABEL, size, isDisabled: cell.state === "disabled" },

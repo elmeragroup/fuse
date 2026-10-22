@@ -6,7 +6,16 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { builtKit, literal, paint, SHADOW_XS, token, variantRoot } from "../../test/built-kit";
+import {
+  builtKit,
+  ERROR_RING,
+  FOCUS_RING,
+  literal,
+  paint,
+  SHADOW_XS,
+  token,
+  variantRoot,
+} from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
 import type { CoverageRow } from "./coverage";
 import type { ComponentRootSpec } from "./kit-spec";
@@ -21,15 +30,6 @@ beforeAll(async () => {
 function checkbox(checked: string, state: string): ComponentRootSpec {
   return variantRoot(spec, `checkbox/checked=${checked},state=${state}`);
 }
-
-/** The 3px `ring-error/20` halo the state face draws around an invalid control. */
-const ERROR_RING = {
-  color: paint("error/20"),
-  offsetX: 0,
-  offsetY: 0,
-  radius: literal(0),
-  spread: literal(3),
-};
 
 /** The indicator `checkbox.tsx` renders while checked or mixed, around its 14px glyph. */
 const indicator = (icon: string) => ({
@@ -107,10 +107,7 @@ describe("the Checkbox component set", () => {
   });
 
   it("rings focus, dims disabled, and keeps the primary border only on a checked invalid box", () => {
-    expect(checkbox("off", "focus").shadows).toEqual([
-      { color: paint("ring"), offsetX: 0, offsetY: 0, radius: literal(0), spread: literal(2) },
-      SHADOW_XS,
-    ]);
+    expect(checkbox("off", "focus").shadows).toEqual([FOCUS_RING, SHADOW_XS]);
     expect(checkbox("on", "disabled").opacity).toBe(0.5);
     // `aria-invalid:aria-checked:border-primary` matches `aria-checked="true"`, which a mixed box,
     // `aria-checked="mixed"`, does not carry, so it keeps the error border of the state face.

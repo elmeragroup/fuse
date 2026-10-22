@@ -40,3 +40,33 @@ export const radioIconButtonVariants = tv({
     size: "icon",
   },
 });
+
+/**
+ * Runtime-free recipe for `RadioGroupItem`'s circle, its indicator and the dot inside. Not
+ * exported from `@elmeragroup/fuse/radio-group`; the workspace-only recipe catalog re-exports
+ * it for the Figma component sync.
+ *
+ * - `root` is the 16px circle. It carries the `peer` marker for a sibling's `peer-*` styles, the
+ *   native outline reset and a hit area of 12px beside and 8px above and below the circle, drawn
+ *   by its `after:` pseudo-element.
+ * - `indicator` is a 16px box that centers the dot. Base UI mounts it only while checked.
+ * - `dot` is the 8px `primary-foreground` dot, centered on the circle.
+ */
+export const radioVariants = tv({
+  slots: {
+    root: cn(
+      // The root is a <span>, which never matches `:disabled`, so the state face keys off
+      // Base UI's `data-disabled` and `data-invalid` attributes, plus a consumer's
+      // `aria-invalid`. A checked invalid radio keeps its primary border beside the ring.
+      // The unchecked edge is the circle's only boundary, so it takes `muted-foreground`, as
+      // Checkbox does.
+      // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
+      "group/radio-group-item peer relative flex aspect-square size-4 shrink-0 rounded-full border border-muted-foreground transition-[color,box-shadow] outline-none after:absolute after:-inset-x-3 after:-inset-y-2 after:content-[''] data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground",
+      selfFocusRingClass,
+      dataStateFaceClass,
+      "aria-invalid:aria-checked:border-primary data-invalid:aria-checked:border-primary"
+    ),
+    indicator: "flex size-4 items-center justify-center",
+    dot: "absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-foreground",
+  },
+});

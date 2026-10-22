@@ -170,17 +170,46 @@ export function substituteVars(
  */
 export function evaluateNumber(value: string): number | undefined {
   const evaluated = evaluate(normalizeCss(value));
-  return evaluated?.value;
+  return evaluated !== undefined && Number.isFinite(evaluated.value) ? evaluated.value : undefined;
 }
 
 /**
- * A number and its unit. The unit is `%` when any operand of the expression was a percentage,
- * since the result then depends on the containing block whatever the operand order.
+ * Evaluate a percentage, such as the `calc(1 / 2 * 100%)` that `top-1/2` compiles to.
+ *
+ * @param value - A CSS value with no `var()` left in it.
+ * @returns The fraction, 0.5 for 50%, or undefined for a value that is not a percentage.
  */
-type Quantity = { readonly value: number; readonly unit: "px" | "" | "%" };
+export function evaluatePercentage(value: string): number | undefined {
+  const evaluated = evaluate(normalizeCss(value));
+  return evaluated?.unit === "%" && Number.isFinite(evaluated.value) ? evaluated.value : undefined;
+}
+
+/**
+ * Whether a value is an infinite length, such as the `calc(infinity * 1px)` that `rounded-full`
+ * compiles to. CSS clamps it to the largest length the property allows.
+ *
+ * @param value - A CSS value with no `var()` left in it.
+ * @returns True for a length of positive infinity.
+ */
+export function isInfiniteLength(value: string): boolean {
+  const evaluated = evaluate(normalizeCss(value));
+  return evaluated?.value === Number.POSITIVE_INFINITY && evaluated.unit === "px";
+}
+
+/**
+ * A number and its unit. The unit is `%` when an operand of the expression was a percentage,
+ * since the result then depends on the containing block whatever the operand order, and `mixed`
+ * when the expression also has a length, such as `calc(100% - 2px)`, whose value is then no
+ * share of anything.
+ */
+type Quantity = { readonly value: number; readonly unit: "px" | "" | "%" | "mixed" };
 
 function evaluate(expression: string): Quantity | undefined {
   const trimmed = expression.trim();
+  // `infinity` is a CSS math constant, a unitless number that only a `calc()` can hold.
+  if (trimmed === "infinity" || trimmed === "-infinity") {
+    return { value: trimmed === "infinity" ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY, unit: "" };
+  }
   const literal = /^([+-]?(?:\d+\.?\d*|\.\d+))(px|rem|%)?$/.exec(trimmed);
   if (literal !== null) {
     const number = Number(literal[1]);
@@ -277,11 +306,16 @@ function evaluateProduct(term: string): Quantity | undefined {
   return product;
 }
 
-/** The unit of a result: `%` when any operand depends on a percentage, else the first unit. */
+/**
+ * The unit of a result: `mixed` when the operands hold both a percentage and a length, `%` when
+ * any operand depends on a percentage, else the first unit.
+ */
 function commonUnit(quantities: readonly Quantity[]): Quantity["unit"] {
-  return quantities.some((quantity) => quantity.unit === "%")
-    ? "%"
-    : (quantities.find((quantity) => quantity.unit !== "")?.unit ?? "");
+  const units = new Set(quantities.map((quantity) => quantity.unit));
+  if (units.has("mixed") || (units.has("%") && units.has("px"))) {
+    return "mixed";
+  }
+  return units.has("%") ? "%" : (quantities.find((quantity) => quantity.unit !== "")?.unit ?? "");
 }
 
 /**
@@ -301,10 +335,18 @@ export function readNumber(value: string, index: VariableIndex): NumberSpec | un
   return length === undefined ? undefined : { kind: "literal", value: length };
 }
 
-/** A length or number in pixels, or undefined for anything that depends on a percentage. */
+/**
+ * A length or number in pixels, or undefined for anything that depends on a percentage or is
+ * infinite.
+ */
 function evaluateLength(value: string): number | undefined {
   const evaluated = evaluate(normalizeCss(value));
-  return evaluated === undefined || evaluated.unit === "%" ? undefined : evaluated.value;
+  return evaluated === undefined ||
+    evaluated.unit === "%" ||
+    evaluated.unit === "mixed" ||
+    !Number.isFinite(evaluated.value)
+    ? undefined
+    : evaluated.value;
 }
 
 /**

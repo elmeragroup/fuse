@@ -65,6 +65,37 @@ export const density = (name: string) =>
 /** A literal number field. */
 export const literal = (value: number) => ({ kind: "literal", value }) as const;
 
+/** A box with no padding or gap that centers its layers, with no shadow and full opacity. */
+export const CENTERED_BOX = {
+  paddingTop: literal(0),
+  paddingRight: literal(0),
+  paddingBottom: literal(0),
+  paddingLeft: literal(0),
+  itemSpacing: literal(0),
+  primaryAlign: "CENTER",
+  counterAlign: "CENTER",
+  shadows: [],
+  opacity: 1,
+} as const;
+
+/** The 2px `ring` the focus ring in `styles/utils.ts` draws around a focused control. */
+export const FOCUS_RING = {
+  color: paint("ring"),
+  offsetX: 0,
+  offsetY: 0,
+  radius: literal(0),
+  spread: literal(2),
+} as const;
+
+/** The 3px `ring-error/20` halo the state face draws around an invalid control. */
+export const ERROR_RING = {
+  color: paint("error/20"),
+  offsetX: 0,
+  offsetY: 0,
+  radius: literal(0),
+  spread: literal(3),
+} as const;
+
 /** Tailwind's shadow-xs, 0 1px 2px at 5% black. */
 export const SHADOW_XS = {
   color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.05 } },

@@ -11,7 +11,16 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { PHOSPHOR_ICON_NAMES, buttonVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import { density, literal, paint, SHADOW_XS, token, variantRoot } from "../../test/built-kit";
+import {
+  density,
+  ERROR_RING,
+  FOCUS_RING,
+  literal,
+  paint,
+  SHADOW_XS,
+  token,
+  variantRoot,
+} from "../../test/built-kit";
 import { buildKit, checkIconReferences } from "./build-kit";
 import { buildComponentSet, iconKey } from "./component-spec";
 import type { ComponentDefinition, IconSlot } from "./component-spec";
@@ -699,16 +708,11 @@ describe("the Radio icon button component set", () => {
       disabled.children[0]?.kind === "icon" && disabled.children[0].size,
     ]).toEqual([density("control-h-xs"), 0.5, literal(14)]);
     const invalid = radioIconButton("icon", "off", "invalid");
-    expect([invalid.stroke?.color, invalid.shadows]).toEqual([
-      paint("error"),
-      [{ color: paint("error/20"), offsetX: 0, offsetY: 0, radius: literal(0), spread: literal(3) }],
-    ]);
+    expect([invalid.stroke?.color, invalid.shadows]).toEqual([paint("error"), [ERROR_RING]]);
     // `[aria-invalid="true"]` adds an attribute to the class, and fuse.css's `data-checked:` wraps
     // its attribute in `:where()`, which adds nothing, so a checked invalid button keeps `error`.
     expect(radioIconButton("icon", "on", "invalid").stroke?.color).toEqual(paint("error"));
-    expect(radioIconButton("icon", "off", "focus").shadows).toEqual([
-      { color: paint("ring"), offsetX: 0, offsetY: 0, radius: literal(0), spread: literal(2) },
-    ]);
+    expect(radioIconButton("icon", "off", "focus").shadows).toEqual([FOCUS_RING]);
   });
 });
 
@@ -867,6 +871,7 @@ describe("the preview frames", () => {
       ["badge", "page/badge"],
       ["kbd", "page/kbd"],
       ["radio-icon-button", "page/radio"],
+      ["radio", "page/radio"],
       ["checkbox", "page/checkbox"],
     ]);
     expect(spec.icons.page).toBe("page/icons");
@@ -910,7 +915,13 @@ describe("the preview frames", () => {
       ],
       ["page/badge", [["badge", "Badge"]]],
       ["page/kbd", [["kbd", "Kbd"]]],
-      ["page/radio", [["radio-icon-button", "Radio icon button"]]],
+      [
+        "page/radio",
+        [
+          ["radio-icon-button", "Radio icon button"],
+          ["radio", "Radio"],
+        ],
+      ],
       ["page/checkbox", [["checkbox", "Checkbox"]]],
     ]);
     for (const preview of spec.previews) {

@@ -7,7 +7,16 @@
 import { SetCascade, splitClasses } from "./cascade";
 import type { BoxCascade, CoverageNote, LayerStyle } from "./cascade";
 import type { CoverageRow } from "./coverage";
-import { evaluateNumber, normalizeCss, readColor, readNumber, readShadows } from "./css-values";
+import {
+  evaluateNumber,
+  evaluatePercentage,
+  isInfiniteLength,
+  normalizeCss,
+  readColor,
+  readNumber,
+  readShadows,
+  splitTopLevel,
+} from "./css-values";
 import type { VariableIndex } from "./css-values";
 import { walkLayers } from "./kit-spec";
 import type {
@@ -227,6 +236,7 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
     const scope: MapScope = { definition, cell, context };
     const rootCascade = cellCascade.root(definition.classesFor(cell), definition.slot);
     const root: ComponentRootSpec = { name: definition.slot, ...mapBox(definition, rootCascade, scope) };
+    readPosition(rootCascade.style, "other");
     cellCascade.settle();
     for (const layer of walkLayers(root)) {
       if (layer.kind === "text") {
@@ -438,16 +448,20 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
       (slot.side === "start" ? start : end).push(icon);
     }
   }
-  const children: ChildLayerSpec[] = [
-    ...(box.parts ?? [])
-      .filter((child) => child.shownIn(cell))
-      .map((child): FrameLayerSpec => {
-        const name = partName(child);
-        const childCascade = cascade.part(child.classesFor(cell), name);
-        return { kind: "frame", key: child.key, name, ...mapBox(child, childCascade, scope) };
-      }),
-    ...start,
-  ];
+  const parts = (box.parts ?? [])
+    .filter((child) => child.shownIn(cell))
+    .map((child) => {
+      const name = partName(child);
+      const childCascade = cascade.part(child.classesFor(cell), name);
+      const layer: FrameLayerSpec = {
+        kind: "frame",
+        key: child.key,
+        name,
+        ...mapBox(child, childCascade, scope),
+      };
+      return { layer, style: childCascade.style };
+    });
+  const children: ChildLayerSpec[] = [...parts.map(({ layer }) => layer), ...start];
   const label = box.label?.shownIn(cell) === true ? box.label : undefined;
   if (label === undefined) {
     for (const property of TEXT_PROPERTIES) {
@@ -459,15 +473,14 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
   children.push(...end);
   // The layout reads once the children are known, since a grid maps only around one layer.
   const { primaryAlign, counterAlign } = readLayout(reader, children.length);
+  const layout =
+    primaryAlign === "CENTER" && counterAlign === "CENTER" && children.length === 1
+      ? "centers-its-one-layer"
+      : "other";
+  for (const part of parts) {
+    readPosition(part.style, layout);
+  }
   const width = number("width");
-  reader.read(
-    "position",
-    (value) => (normalizeCss(value) === "relative" ? value : undefined),
-    () => ({
-      outcome: "dropped",
-      detail: "it only anchors positioned descendants, which auto layout does not need",
-    })
-  );
   reader.read(
     "max-width",
     (value) => {
@@ -479,9 +492,15 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
     () => ({ outcome: "dropped", detail: "it is no less than the fixed width, so it never narrows the box" })
   );
 
+  const height = number("height");
+  reader.read(
+    "aspect-ratio",
+    (value) => (width !== undefined && height !== undefined ? value : undefined),
+    () => ({ outcome: "dropped", detail: "both sides are fixed, so the ratio sizes neither" })
+  );
   return {
     width,
-    height: number("height"),
+    height,
     minWidth: number("min-width"),
     paddingTop: number("padding-top") ?? ZERO,
     paddingRight: number("padding-right") ?? ZERO,
@@ -490,13 +509,111 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
     itemSpacing: number("gap") ?? ZERO,
     primaryAlign,
     counterAlign,
-    cornerRadius: number("border-radius") ?? ZERO,
+    cornerRadius: readCorner(reader, { width, height }, context) ?? ZERO,
     fill: fill === NO_FILL ? undefined : fill,
     stroke,
     shadows,
     opacity: opacity ?? 1,
     children,
   };
+}
+
+/**
+ * How a parent lays out its layers, as far as a positioned part needs to know: an auto layout
+ * centered on both axes around this one layer, or anything else, which is also what the root has.
+ */
+type ParentLayout = "centers-its-one-layer" | "other";
+
+/** The offsets of a part that centers itself on its containing block, each as a share of a size. */
+const CENTERING_OFFSETS = [
+  ["top", 0.5],
+  ["left", 0.5],
+] as const;
+
+/**
+ * Read where a box sits. A `relative` box stays where the flow puts it and only anchors positioned
+ * descendants, so it drops. `absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2` puts
+ * the box's center on its containing block's center. Inside a parent whose auto layout centers it
+ * as its one layer, that is where Figma draws it too, assuming the parent sits centered in the
+ * containing block, as Radio's indicator does in its root. Every other position, offset or
+ * translate stays unmapped.
+ *
+ * @param reader - The box's style.
+ * @param parent - How the box's parent lays it out. The root passes `other`.
+ */
+function readPosition(reader: LayerStyle, parent: ParentLayout): void {
+  const translate = splitTopLevel(normalizeCss(reader.resolved("translate") ?? ""), " ").map(
+    evaluatePercentage
+  );
+  const centered =
+    parent === "centers-its-one-layer" &&
+    normalizeCss(reader.raw("position") ?? "") === "absolute" &&
+    CENTERING_OFFSETS.every(
+      ([property, share]) => evaluatePercentage(reader.resolved(property) ?? "") === share
+    ) &&
+    translate.length === 2 &&
+    translate.every((share) => share === -0.5);
+  if (centered) {
+    for (const property of ["position", "top", "left", "translate"]) {
+      reader.read(
+        property,
+        (value) => value,
+        () => ({
+          outcome: "literal",
+          detail: "centered on its containing block, as its parent's auto layout centers it",
+        })
+      );
+    }
+    return;
+  }
+  reader.read(
+    "position",
+    (value) => (normalizeCss(value) === "relative" ? value : undefined),
+    () => ({
+      outcome: "dropped",
+      detail: "it only anchors positioned descendants, which auto layout does not need",
+    })
+  );
+}
+
+/**
+ * Read `border-radius` as the corner. An infinite radius, which `rounded-full` compiles to, reads
+ * as half the box's shorter side. CSS scales down radii whose sum exceeds a side, so it draws any
+ * larger radius as that half. The plugin writes the half itself rather than rely on Figma
+ * clamping a larger radius the same way. A box that hugs a side has no length to halve, so its
+ * pill corner stays unmapped.
+ *
+ * @param size - The box's width and height, each undefined when the box hugs that side.
+ * @returns The corner, or undefined when the box sets none or it does not map.
+ */
+function readCorner(
+  reader: LayerStyle,
+  size: { readonly width: NumberSpec | undefined; readonly height: NumberSpec | undefined },
+  context: BuildContext
+): NumberSpec | undefined {
+  const { width, height } = size;
+  const corner = reader.read(
+    "border-radius",
+    (value): { readonly radius: NumberSpec; readonly half: number | undefined } | undefined => {
+      const radius = readNumber(value, context.variables);
+      if (radius !== undefined) {
+        return { radius, half: undefined };
+      }
+      if (!isInfiniteLength(value) || width?.kind !== "literal" || height?.kind !== "literal") {
+        return undefined;
+      }
+      const half = Math.min(width.value, height.value) / 2;
+      return { radius: { kind: "literal", value: half }, half };
+    },
+    ({ radius, half }) =>
+      half === undefined
+        ? describeNumber(radius)
+        : {
+            outcome: "literal",
+            detail: `${half}px, half the shorter side, which CSS draws for any larger radius`,
+          }
+  );
+  return corner?.radius;
 }
 
 /**
