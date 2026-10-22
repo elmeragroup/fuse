@@ -74,6 +74,9 @@ export function BrandLogo({
   // 0px wide in a cramped row, because the clamped svg adds no min-content width. Chromium keeps
   // the width either way, so no Chromium test can catch its loss. Without preflight, `inline-flex`
   // would beat the user agent's `[hidden]` rule, so the span re-applies it.
+  const markProps = drawsMark
+    ? { className: "max-h-full min-h-full max-w-full min-w-full", ...MARK_FALLBACK_SIZES[brand] }
+    : null;
   return (
     <span
       aria-label={ariaLabel ?? title ?? displayName}
@@ -84,17 +87,7 @@ export function BrandLogo({
       {...rest}
       data-variant={variant}
       role="img">
-      {Mark === null ? (
-        displayName
-      ) : drawsMark ? (
-        <Mark
-          variant="mark"
-          className="max-h-full min-h-full max-w-full min-w-full"
-          {...MARK_FALLBACK_SIZES[brand]}
-        />
-      ) : (
-        <Mark variant={variant} />
-      )}
+      {Mark === null ? displayName : <Mark variant={variant} {...markProps} />}
     </span>
   );
 }

@@ -11,6 +11,8 @@ import { BRAND_CODES, BRANDS } from "../theme/tokens/themes";
 import type { BrandCode, ThemeInput } from "../theme/tokens/themes";
 import { BrandLogo } from "./brand-logo";
 
+const DRAWN_BRANDS = BRAND_CODES.filter((code): code is Exclude<BrandCode, "elma"> => code !== "elma");
+
 describe("BrandLogo", () => {
   it("uses an explicit title as the accessible name without inventing a mark", () => {
     render(<BrandLogo brand="elma" variant="mark" title="Elmera Group" />);
@@ -81,8 +83,7 @@ describe("BrandLogo", () => {
         ],
       },
     } satisfies Record<Exclude<BrandCode, "elma">, { letteringFrom: number; markInks: readonly string[] }>;
-    const drawn = BRAND_CODES.filter((code): code is Exclude<BrandCode, "elma"> => code !== "elma");
-    for (const brand of drawn) {
+    for (const brand of DRAWN_BRANDS) {
       const { letteringFrom, markInks } = artwork[brand];
       const { host, unmount } = render(
         <div style={{ color: text, width: 1000 }}>
@@ -127,7 +128,7 @@ describe("BrandLogo", () => {
 
   it("paints every mark at least half of a 24px tile in both dimensions", () => {
     // Elmera has no mark artwork; the fallback tests above own its no-path contract.
-    for (const brand of BRAND_CODES.filter((code) => code !== "elma")) {
+    for (const brand of DRAWN_BRANDS) {
       const { host, unmount } = render(
         <div style={{ width: 24, height: 24 }}>
           <style>{"svg { display: block; width: 24px; height: 24px; }"}</style>
@@ -192,36 +193,20 @@ function layoutSize(element: Element): readonly [number, number] {
   return [px(style.width), px(style.height)];
 }
 
-type MarkLayout = {
-  /** The svg's laid-out width and height. */
-  readonly svg: readonly [number, number];
-  /** How far the svg's painted centre sits from the span's painted centre. */
-  readonly offCentre: readonly [number, number];
-};
-
-/** The layout of a named BrandLogo span and the svg it draws. */
-function markLayout(name: string): MarkLayout {
-  const span = roleNamed("img", name);
-  const svg = span.querySelector("svg");
+/** The svg a named BrandLogo span draws. */
+function markSvg(name: string): SVGSVGElement {
+  const svg = roleNamed("img", name).querySelector("svg");
   if (svg === null) {
     throw new Error(`expected ${name} to draw an svg`);
   }
-  const spanBox = span.getBoundingClientRect();
-  const svgBox = svg.getBoundingClientRect();
-  return {
-    svg: layoutSize(svg),
-    offCentre: [
-      svgBox.left + svgBox.width / 2 - (spanBox.left + spanBox.width / 2),
-      svgBox.top + svgBox.height / 2 - (spanBox.top + spanBox.height / 2),
-    ],
-  };
+  return svg;
 }
 
 describe("BrandLogo mark sizing", () => {
   // Oracles: Tailwind `size-3` is 0.75rem and `size-6` is 1.5rem, so 12px and 24px at the 16px
   // root. The menu-row and Button recipes give an svg without a `size-` class `size-4`, 16px.
 
-  it("renders a size-3 mark in a menu item as a 12px svg centred in its 12px span", async () => {
+  it("renders a size-3 mark in a menu item as a 12px svg filling its 12px span", async () => {
     renderThemed(
       <DropdownMenu.Root defaultOpen>
         <DropdownMenu.Trigger>Brands</DropdownMenu.Trigger>
@@ -234,11 +219,8 @@ describe("BrandLogo mark sizing", () => {
       </DropdownMenu.Root>
     );
     await expect.element(page.getByRole("img", { name: "Small mark", exact: true })).toBeInTheDocument();
-    const { svg, offCentre } = markLayout("Small mark");
     expect(layoutSize(roleNamed("img", "Small mark"))).toEqual([12, 12]);
-    expect(svg).toEqual([12, 12]);
-    expect(offCentre[0]).toBeCloseTo(0, 1);
-    expect(offCentre[1]).toBeCloseTo(0, 1);
+    expect(layoutSize(markSvg("Small mark"))).toEqual([12, 12]);
   });
 
   it("renders a size-6 mark as a 24px svg inside a Button and outside any row", () => {
@@ -254,7 +236,7 @@ describe("BrandLogo mark sizing", () => {
       </>
     );
     for (const name of ["Button mark", "Standalone mark"]) {
-      expect(markLayout(name).svg, name).toEqual([24, 24]);
+      expect(layoutSize(markSvg(name)), name).toEqual([24, 24]);
     }
   });
 
@@ -278,7 +260,7 @@ describe("BrandLogo mark sizing", () => {
     );
     await expect.element(page.getByRole("img", { name: "Row mark", exact: true })).toBeInTheDocument();
     for (const name of ["Button mark", "Row mark"]) {
-      expect(markLayout(name).svg, name).toEqual([16, 16]);
+      expect(layoutSize(markSvg(name)), name).toEqual([16, 16]);
     }
   });
 
@@ -294,24 +276,23 @@ describe("BrandLogo mark sizing", () => {
   });
 
   it("renders every drawn brand's unsized mark outside any row at its artwork size", () => {
-    // Oracle: the width and height of each brand's mark artwork, its viewBox extent, written by hand.
-    const artwork = {
-      fkas: [242, 286],
-      fkab: [242, 286],
-      tkas: [238, 284],
-      guen: [192, 190],
-      ngfi: [203, 199],
-      fkse: [83.397, 64.796],
-    } satisfies Record<Exclude<BrandCode, "elma">, readonly [number, number]>;
-    for (const brand of BRAND_CODES) {
-      if (brand === "elma") continue;
-      const [width, height] = artwork[brand];
+    // Unit under test: BrandLogo's fallback size and clamp. Oracle: the bespoke mark's viewBox
+    // extent, which the artwork sets and BrandLogo doesn't.
+    for (const brand of DRAWN_BRANDS) {
       const { unmount } = renderThemed(
         <div style={{ width: 1000 }}>
           <BrandLogo brand={brand} variant="mark" title="Mark" />
         </div>
       );
-      const [svgWidth, svgHeight] = markLayout("Mark").svg;
+      const svg = markSvg("Mark");
+      const [, , width, height] = (svg.getAttribute("viewBox") ?? "")
+        .trim()
+        .split(/[\s,]+/u)
+        .map(Number);
+      if (width === undefined || height === undefined || !(width > 0 && height > 0)) {
+        throw new Error(`expected ${brand}'s mark to have a viewBox, got ${svg.getAttribute("viewBox")}`);
+      }
+      const [svgWidth, svgHeight] = layoutSize(svg);
       expect(Math.abs(svgWidth - width), `${brand} width ${svgWidth}`).toBeLessThanOrEqual(0.5);
       expect(Math.abs(svgHeight - height), `${brand} height ${svgHeight}`).toBeLessThanOrEqual(0.5);
       unmount();
