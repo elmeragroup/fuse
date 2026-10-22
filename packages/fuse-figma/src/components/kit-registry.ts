@@ -8,6 +8,7 @@
  * parse keys and check markup, load it without them. A comparison run loads the compiler anyway,
  * through `buildComponentSets()`.
  */
+import { AVATAR } from "./avatar-kit";
 import { BADGE } from "./badge-kit";
 import { BUTTON, ICON_BUTTON } from "./button-kit";
 import { CHECKBOX } from "./checkbox-kit";
@@ -73,6 +74,9 @@ const INPUT_PAGE: KitPage = { slug: "input", name: "Input" };
 
 /** The page Textarea sits on alone. */
 const TEXTAREA_PAGE: KitPage = { slug: "textarea", name: "Textarea" };
+
+/** The page Avatar sits on alone. */
+const AVATAR_PAGE: KitPage = { slug: "avatar", name: "Avatar" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -163,4 +167,5 @@ export const KIT: readonly KitEntry[] = [
   { definition: LABEL, page: LABEL_PAGE, previewCells: matrixCells(LABEL.axes) },
   { definition: INPUT, page: INPUT_PAGE, previewCells: matrixCells(INPUT.axes) },
   { definition: TEXTAREA, page: TEXTAREA_PAGE, previewCells: matrixCells(TEXTAREA.axes) },
+  { definition: AVATAR, page: AVATAR_PAGE, previewCells: matrixCells(AVATAR.axes) },
 ];

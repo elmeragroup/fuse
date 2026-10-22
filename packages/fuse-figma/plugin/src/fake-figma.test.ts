@@ -1,13 +1,14 @@
 /**
- * The layout rules of the in-memory file in `fake-figma.ts`, each on a few nodes built by hand.
- * The oracle is what the test file `Elmera Fuse - Import test` read back in net-zero probes on
- * 2026-10-22, named P0 to P7 as the fake's header names them, and the typings where no probe ran.
- * The planners' tests converge against these rules, so a rule that drifts from the real file
- * would let a plan pass that Figma would not keep.
+ * The layout, text and image rules of the in-memory file in `fake-figma.ts`, each on a few nodes
+ * built by hand. The oracle is what the test file `Elmera Fuse - Import test` read back in net-zero
+ * probes on 2026-10-22, named P0 to P9b as the fake's header names them, the PNG signature, the
+ * hashes `shasum -a 1` gives the fixture images, and the typings where no probe ran. The planners'
+ * tests converge against these rules,
+ * so a rule that drifts from the real file would let a plan pass that Figma would not keep.
  */
 import { describe, expect, it } from "vitest";
 
-import { fixtureFile, float } from "./fake-fixtures.ts";
+import { BLUE_PIXEL, fixtureFile, float, PNG_SIGNATURE, PORTRAIT_HEAD, RED_PIXEL } from "./fake-fixtures.ts";
 
 const file = fixtureFile([float("Fuse density", "control-h-xs", 24)]);
 const { figma } = file;
@@ -320,5 +321,82 @@ describe("rules 19 to 21: the text writes need the text's fonts loaded", () => {
         `Cannot write ${member} of ${text.id} with unloaded font "Inter Regular"`
       );
     }
+  });
+});
+
+/** The bytes of an ASCII text. */
+function ascii(text: string): Uint8Array {
+  return Uint8Array.from(text, (char) => char.charCodeAt(0));
+}
+
+/** The signature every PNG file opens with (PNG specification §5.2). */
+const PNG_SIGNATURE_BYTES = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
+/** The error a real file threw for bytes without a PNG header (P9b). */
+const UNSUPPORTED = "in createImage: Image type is unsupported";
+
+describe("rule 22: an image with a whole PNG header is stored under the SHA-1 of its bytes", () => {
+  it("decodes base64, names the image by the SHA-1 of its bytes, and finds it by that hash (P9, P9b)", () => {
+    const bytes = figma.base64Decode(RED_PIXEL.bytes);
+    expect([...bytes.slice(0, 8)]).toEqual(PNG_SIGNATURE_BYTES);
+    expect(figma.createImage(bytes).hash).toBe(RED_PIXEL.sha1);
+    expect(figma.createImage(figma.base64Decode(BLUE_PIXEL.bytes)).hash).toBe(BLUE_PIXEL.sha1);
+    expect(figma.getImageByHash(RED_PIXEL.sha1)?.hash).toBe(RED_PIXEL.sha1);
+    expect(figma.getImageByHash("0".repeat(40))).toBeNull();
+  });
+
+  it("stores a PNG cut off after its header and refuses the signature alone, as the real file did (P9b)", () => {
+    expect(figma.createImage(figma.base64Decode(PORTRAIT_HEAD.bytes)).hash).toBe(PORTRAIT_HEAD.sha1);
+    expect(() => figma.createImage(figma.base64Decode(PNG_SIGNATURE.bytes))).toThrow(UNSUPPORTED);
+    expect(() => figma.createImage(ascii('<svg xmlns="http://www.w3.org/2000/svg"/>'))).toThrow(UNSUPPORTED);
+  });
+
+  it("logs storing an image as a write, though an image is no node", () => {
+    const before = file.writes.length;
+    figma.createImage(figma.base64Decode(RED_PIXEL.bytes));
+    expect(file.writes.slice(before)).toEqual([`store the image ${RED_PIXEL.sha1}`]);
+  });
+});
+
+describe("rule 23: an image paint reads back with the defaults the real file filled in", () => {
+  it("fills in the defaults P9 read, and reads the same after its readback is written again (P9)", () => {
+    const frame = figma.createFrame();
+    const { hash } = figma.createImage(figma.base64Decode(RED_PIXEL.bytes));
+    frame.fills = [{ type: "IMAGE", scaleMode: "FILL", imageHash: hash }];
+    const readback = frame.fills;
+    expect(readback).toEqual([
+      {
+        type: "IMAGE",
+        scaleMode: "FILL",
+        imageHash: hash,
+        visible: true,
+        opacity: 1,
+        blendMode: "NORMAL",
+        scalingFactor: 1,
+        rotation: 0,
+        filters: {
+          exposure: 0,
+          contrast: 0,
+          saturation: 0,
+          temperature: 0,
+          tint: 0,
+          highlights: 0,
+          shadows: 0,
+        },
+        imageTransform: [
+          [1, 0, 0],
+          [0, 1, 0],
+        ],
+      },
+    ]);
+    frame.fills = readback;
+    expect(frame.fills).toEqual(readback);
+  });
+
+  it("refuses an image paint whose hash names no image the file holds", () => {
+    const frame = figma.createFrame();
+    expect(() => {
+      frame.fills = [{ type: "IMAGE", scaleMode: "FILL", imageHash: "no such image" }];
+    }).toThrow("holds no image no such image");
   });
 });

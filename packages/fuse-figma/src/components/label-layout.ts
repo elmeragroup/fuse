@@ -194,9 +194,10 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
     throw new Error(`${scope.variant}: the label needs a font family, size, line height and color`);
   }
   const lines = label.placement?.lines;
+  const characters = labelCharacters(label, scope.cell);
   const layout =
     lines === undefined
-      ? readLabelLayout(holder, label, scope.clamp)
+      ? readLabelLayout(holder, label, characters, scope.clamp)
       : readNativeLines(holder, lines, scope.variant);
   const fills = layout.sizing.horizontal.kind !== "hug";
   return {
@@ -204,7 +205,7 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
       kind: "text",
       key: label.key,
       name: label.name,
-      characters: labelCharacters(label, scope.cell),
+      characters,
       textProperty: label.textProperty,
       fontFamily,
       fontStyle: weight ?? "Regular",
@@ -423,16 +424,20 @@ function refuseItem(
  * in lines across its content width (CSS Text 3), so where that width is definite, fixed or
  * filling, text that wraps breaks its lines there, and the label fills the width with its height
  * following its lines. A flex or grid box sets the text as an anonymous item, which
- * {@link refuseItem} decides for. `white-space: nowrap` keeps the text on one line at its own width,
- * so the label hugs, unless a block box also hides its overflow behind an ellipsis, as `truncate`
- * does: then the label fills and ends in an ellipsis after one line. A line clamp ends wrapping text
- * after its lines. A box that hugs its width is as wide as its text on one line, since a kit frame
- * always has room to spare, so the label hugs and the ellipsis drops, unless a `max-width` stops the
- * box first.
+ * {@link refuseItem} decides for. A flex item whose text {@link neverWraps} keeps its own width
+ * wherever the box places it, so where the item's place refuses a fill, the label hugs there.
+ * `white-space: nowrap` keeps the text on one line at its own width, so the label hugs, unless a
+ * block box also hides its overflow behind an ellipsis, as `truncate` does: then the label fills and
+ * ends in an ellipsis after one line. A line clamp ends wrapping text after its lines. A box that
+ * hugs its width is as wide as its text on one line, since a kit frame always has room to spare, so
+ * the label hugs and the ellipsis drops, unless a `max-width` stops the box first.
+ *
+ * @param characters - The text the label shows in the cell.
  */
 function readLabelLayout(
   holder: Holder,
   label: LabelDefinition,
+  characters: string,
   lines: number | undefined
 ): Pick<TextLayerSpec, "sizing" | "truncation"> {
   const { style, sizing } = holder;
@@ -448,12 +453,14 @@ function readLabelLayout(
   const maxLines = ellipsis ? 1 : lines;
   const definite = sizing.horizontal.kind !== "hug";
   const capped = !definite && holder.limits.maxWidth !== undefined && (wrapping || ellipsis);
-  const refusal = capped
-    ? CAPPED
-    : definite && wrapping && item !== undefined
+  const placed =
+    definite && wrapping && item !== undefined
       ? refuseItem(holder, item, label, linesAcross(style, label.placement))
       : undefined;
-  const fills = definite && refusal === undefined && (wrapping || maxLines !== undefined);
+  // The item never shrinks below its one line, so it sits at its own width, which a hugging text draws.
+  const ownWidth = placed !== undefined && item === "flex" && neverWraps(style, characters);
+  const refusal = capped ? CAPPED : ownWidth ? undefined : placed;
+  const fills = definite && refusal === undefined && !ownWidth && (wrapping || maxLines !== undefined);
   const truncation = fills && maxLines !== undefined ? { maxLines } : undefined;
   if (refusal !== undefined) {
     style.read(
@@ -490,6 +497,9 @@ function readLabelLayout(
           detail: fills ? "the label keeps to one line" : "the label hugs its width",
         };
       }
+      if (ownWidth) {
+        return { outcome: "literal", detail: "the text never wraps, so the label keeps its own width" };
+      }
       return {
         outcome: "literal",
         detail: fills ? "the label wraps at the box's width" : "the box hugs the label on one line",
@@ -525,6 +535,29 @@ function textItem(holder: Holder): "flex" | "grid" | undefined {
 /** Whether a `white-space` value lets text wrap: unset, or `normal`. */
 function wraps(whiteSpace: string): boolean {
   return whiteSpace === "" || whiteSpace === "normal";
+}
+
+/**
+ * ASCII letters and digits alone, which line breaking keeps together (UAX #14 classes AL and NU), so
+ * such a text holds no soft wrap opportunity, as Avatar's initials hold none. Script is no guide:
+ * fullwidth letters such as `ＡＬ` are Latin and take class ID, which breaks between them. A space,
+ * a hyphen and every other character count as breakable, the safe answer.
+ */
+const UNBREAKABLE = /^[A-Za-z0-9]+$/;
+
+/**
+ * The properties that can break a text inside a word (CSS Text 3 §5.2 to §5.5). The build reads none
+ * of them, so a class that sets one lands unmapped wherever it sits.
+ */
+const WORD_BREAKING = ["word-break", "line-break", "hyphens", "overflow-wrap"] as const;
+
+/**
+ * Whether a browser never wraps a text: it holds no soft wrap opportunity, and the box sets nothing
+ * that breaks inside a word. Such a text sets one line at its own width whatever room the box gives
+ * it.
+ */
+function neverWraps(style: LayerStyle, characters: string): boolean {
+  return UNBREAKABLE.test(characters) && WORD_BREAKING.every((property) => !style.has(property));
 }
 
 /** The lines `-webkit-line-clamp` keeps: a whole number of at least 1, or undefined for any other value. */

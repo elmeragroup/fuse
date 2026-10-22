@@ -6,16 +6,9 @@ import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar";
 
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
+import { avatarVariants } from "./avatar-variants";
 
-const ROOT_CLASSES = cn(
-  "text-sm font-medium inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted align-middle text-muted-foreground select-none"
-);
-
-/**
- * Stack classes for `Avatar.Group`. `:where()` wraps the whole parent-and-child selector, so the
- * group's ring rule scores zero specificity and any explicit ring utility on a child avatar wins.
- */
-const GROUP_CLASSES = cn("flex -space-x-2 [:where(&>*)]:ring-2 [:where(&>*)]:ring-background");
+const slots = avatarVariants();
 
 /**
  * Client image-or-initials avatar. Base-ui Avatar owns image
@@ -26,7 +19,7 @@ export function AvatarRoot({
   ...props
 }: ComponentProps<typeof AvatarPrimitive.Root>): ReactElement {
   return (
-    <AvatarPrimitive.Root data-slot="avatar" className={mergeClassName(className, ROOT_CLASSES)} {...props} />
+    <AvatarPrimitive.Root data-slot="avatar" className={mergeClassName(className, slots.root())} {...props} />
   );
 }
 
@@ -35,7 +28,7 @@ export function AvatarRoot({
  * negative spacing nor a ring on every child.
  */
 export function AvatarGroup({ className, ...props }: ComponentProps<"div">): ReactElement {
-  return <div data-slot="avatar-group" className={cn(GROUP_CLASSES, className)} {...props} />;
+  return <div data-slot="avatar-group" className={cn(slots.group(), className)} {...props} />;
 }
 
 export function AvatarImage({
@@ -45,7 +38,7 @@ export function AvatarImage({
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
-      className={mergeClassName(className, "size-full object-cover")}
+      className={mergeClassName(className, slots.image())}
       {...props}
     />
   );
@@ -58,7 +51,7 @@ export function AvatarFallback({
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
-      className={mergeClassName(className, "flex size-full items-center justify-center")}
+      className={mergeClassName(className, slots.fallback())}
       {...props}
     />
   );

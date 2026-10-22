@@ -11,8 +11,9 @@
  * run stopped before its first write.
  *
  * The fake models the Figma rules below. Each rule a real file showed in 2026-10 names that run.
- * Rules 12 to 21 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
- * Import test` on 2026-10-22: P0 read the kit's nodes, and P1 to P7 built nodes on a scratch page.
+ * Rules 12 to 23 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
+ * Import test` on 2026-10-22: P0 and P0b read the kit's nodes, P1 to P7 and P9 built nodes on a
+ * scratch page, and P9b stored images and built no node.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
  *    COLOR variable in the collections' default modes, whatever opacity it was given. Two runs
@@ -130,7 +131,24 @@
  *    not settle whether either write needs the text's fonts. The fake requires them, as for
  *    `textAutoResize`, so Plan fails where Apply might.
  * 21. `textAlignHorizontal` and `textAlignVertical` need the text's fonts, as the typings say. A
- *    new text sets its lines from the top left, LEFT and TOP. No probe read a new text's alignment.
+ *    new text sets its lines from the top left, LEFT and TOP. On 2026-10-22 all 420 labels of the
+ *    real file's Button and Icon button sets read LEFT and TOP, and the plugin had written no
+ *    alignment when it made them, so those are Figma's defaults for a new text (P0b).
+ * 22. `createImage` stores an image under the SHA-1 of its bytes in lowercase hex, and
+ *    `getImageByHash` finds it there. On 2026-10-22 a real file decoded a PNG with `base64Decode`,
+ *    gave Avatar's portrait the hash `shasum -a 1` gives its bytes, found the image by that hash, and
+ *    returned null for an unknown one (P9, P9b). It stored the portrait's first 100 bytes and
+ *    refused its 8-byte signature alone with `in createImage: Image type is unsupported` (P9b), so
+ *    Figma reads the header, not the whole file. The fake stores bytes that open with a PNG
+ *    signature and a whole IHDR chunk, and throws that error for any other bytes. No probe stored
+ *    a JPEG or a GIF, a PNG cut inside its IHDR chunk, or one over the 4096px the reference states,
+ *    so the fake takes the narrow reading. Storing an image changes the file, though an image is no
+ *    node, so the fake logs it as a write, and a Plan that stores one fails a check for no writes.
+ * 23. An IMAGE paint reads back with Figma's defaults filled in. On 2026-10-22 a real file read a
+ *    written `{ type: 'IMAGE', scaleMode: 'FILL', imageHash }` back with `visible` true, `opacity`
+ *    1, `blendMode` NORMAL, `scalingFactor` 1, `rotation` 0, every filter at 0, the identity
+ *    `imageTransform` and the same hash, and read the same after that readback was written again
+ *    (P9). No probe wrote a hash the file holds no image for, so the fake throws for one.
  *
  * An instance's sublayers show the layers of its main component. An override, such as the
  * color an icon layer gives its glyph, belongs to the main layer it was made on. It moves to
@@ -160,6 +178,7 @@ import * as Hex from "@elmeragroup/color/hex";
 import { getOrThrow } from "@elmeragroup/color/result";
 
 import type { CollectionSpec, VariableValue as SyncedValue } from "../../src/variable-set.ts";
+import { sha1Hex } from "./sha1.ts";
 
 /** What a test sets up the fake file with. */
 export type FakeFigmaOptions = {
@@ -269,6 +288,8 @@ type FileState = {
   unavailableFonts: readonly FontNameInput[];
   readonly collections: readonly CollectionState[];
   readonly variables: ReadonlyMap<string, VariableState>;
+  /** The hash of each image the file stores (rule 22). */
+  readonly images: Set<string>;
 };
 
 /**
@@ -686,8 +707,42 @@ function requireType(variable: VariableState, type: VariableResolvedDataType, fi
   }
 }
 
-/** A paint as Figma stores it: 32-bit channels and the documented defaults filled in. */
-function storePaint(paint: Paint): Paint {
+/** The filters of an image paint, each at the 0 a real file read back where none was written (rule 23). */
+const NO_IMAGE_FILTERS: Required<ImageFilters> = {
+  exposure: 0,
+  contrast: 0,
+  saturation: 0,
+  temperature: 0,
+  tint: 0,
+  highlights: 0,
+  shadows: 0,
+};
+
+/**
+ * A paint as Figma stores it: 32-bit channels and the documented defaults filled in, and an image
+ * paint with the defaults a real file read back (rule 23).
+ */
+function storePaint(file: FileState, paint: Paint): Paint {
+  if (paint.type === "IMAGE") {
+    if (paint.imageHash === null || !file.images.has(paint.imageHash)) {
+      throw new Error(
+        `The fake Figma file holds no image ${String(paint.imageHash)}, and does not model a paint of an image it lacks.`
+      );
+    }
+    return {
+      visible: true,
+      blendMode: "NORMAL",
+      scalingFactor: 1,
+      rotation: 0,
+      imageTransform: [
+        [1, 0, 0],
+        [0, 1, 0],
+      ],
+      ...paint,
+      opacity: f32(paint.opacity ?? 1),
+      filters: { ...NO_IMAGE_FILTERS, ...paint.filters },
+    };
+  }
   if (paint.type !== "SOLID") {
     return paint;
   }
@@ -1981,6 +2036,58 @@ function base64Encode(data: Uint8Array): string {
   return encoded;
 }
 
+/** Standard base64, with or without padding, decoded as `figma.base64Decode` decodes it (rule 22). */
+function base64Decode(data: string): Uint8Array {
+  const bytes: number[] = [];
+  let bits = 0;
+  let count = 0;
+  for (const char of data.replace(/=+$/, "")) {
+    const digit = BASE64_DIGITS.indexOf(char);
+    if (digit < 0) {
+      throw new Error(`The fake Figma file decodes standard base64, which has no ${char}.`);
+    }
+    bits = (bits << 6) | digit;
+    count += 6;
+    if (count >= 8) {
+      count -= 8;
+      bytes.push((bits >> count) & 0xff);
+      bits &= (1 << count) - 1;
+    }
+  }
+  return Uint8Array.from(bytes);
+}
+
+/**
+ * The bytes a PNG file opens with: its signature, then the IHDR chunk's length, 13, and its type
+ * (PNG specification §5.2, §11.2.2). The chunk's 13 bytes of data and its CRC follow.
+ */
+const PNG_HEADER_START = [
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+];
+
+/** The signature and the whole IHDR chunk: 8 bytes, then 4 of length, 4 of type, 13 of data and 4 of CRC. */
+const PNG_HEADER_LENGTH = 33;
+
+/** An image the file stores, which a paint names by its hash. It is no node. */
+function exposeImage(hash: string): Image {
+  // SAFETY: the object models the image member the plugin reads, and the guard throws for every
+  // other member.
+  return guard({ hash }, "Image") as Image;
+}
+
+/** Store an image's bytes under their SHA-1, refusing bytes without a whole PNG header (rule 22). */
+function createImage(file: FileState, bytes: Uint8Array): Image {
+  const header =
+    bytes.length >= PNG_HEADER_LENGTH && PNG_HEADER_START.every((byte, index) => bytes[index] === byte);
+  if (!header) {
+    throw new Error("in createImage: Image type is unsupported");
+  }
+  const hash = sha1Hex(bytes);
+  file.images.add(hash);
+  file.writes.push(`store the image ${hash}`);
+  return exposeImage(hash);
+}
+
 /** A layer's box on its page: its position plus each ancestor's, up to the page. */
 function absoluteBox(state: NodeState): Rect {
   let x = 0;
@@ -2020,7 +2127,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
       throw new Error("Cannot write figma.mixed as fills.");
     }
     write(state, "fills");
-    state.fills = paints.map(storePaint);
+    state.fills = paints.map((paint) => storePaint(state.file, paint));
   }
 
   get strokes(): ReadonlyArray<Paint> {
@@ -2030,7 +2137,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
   set strokes(paints: ReadonlyArray<Paint>) {
     const state = live(this);
     write(state, "strokes");
-    state.strokes = paints.map(storePaint);
+    state.strokes = paints.map((paint) => storePaint(state.file, paint));
   }
 
   get strokeWeight(): number | PluginAPI["mixed"] {
@@ -2409,7 +2516,7 @@ class FakeText extends FakeSceneNode {
       throw new Error("Cannot write figma.mixed as fills.");
     }
     write(state, "fills");
-    state.fills = paints.map(storePaint);
+    state.fills = paints.map((paint) => storePaint(state.file, paint));
   }
 
   get characters(): string {
@@ -2643,7 +2750,7 @@ class FakeVector extends FakeSceneNode {
       throw new Error("Cannot write figma.mixed as fills.");
     }
     write(state, "fills");
-    state.fills = paints.map(storePaint);
+    state.fills = paints.map((paint) => storePaint(state.file, paint));
     state.overridden.add("fills");
   }
 
@@ -2654,7 +2761,7 @@ class FakeVector extends FakeSceneNode {
   set strokes(paints: ReadonlyArray<Paint>) {
     const state = live(this);
     write(state, "strokes");
-    state.strokes = paints.map(storePaint);
+    state.strokes = paints.map((paint) => storePaint(state.file, paint));
     state.overridden.add("strokes");
   }
 }
@@ -2823,7 +2930,7 @@ const NAMED_COLORS = new Map([
 ]);
 
 /** The paints an SVG paint attribute draws with: none, or one solid paint. */
-function svgPaints(value: string): Paint[] {
+function svgPaints(file: FileState, value: string): Paint[] {
   if (value === "none") {
     return [];
   }
@@ -2833,7 +2940,9 @@ function svgPaints(value: string): Paint[] {
     throw new Error(`The fake Figma file reads SVG paints in six-digit hex, white or black, not ${value}.`);
   }
   const { r, g, b } = getOrThrow(parsed);
-  return [storePaint({ type: "SOLID", color: { r, g, b }, opacity: 1, visible: true, blendMode: "NORMAL" })];
+  return [
+    storePaint(file, { type: "SOLID", color: { r, g, b }, opacity: 1, visible: true, blendMode: "NORMAL" }),
+  ];
 }
 
 /** Rule 6: the frame `createNodeFromSvg` makes. */
@@ -2862,8 +2971,8 @@ function drawSvg(file: FileState, svg: string): NodeState {
     const vector = createNode(file, "VECTOR", element.name);
     vector.width = frame.width;
     vector.height = frame.height;
-    vector.fills = svgPaints(element.fill);
-    vector.strokes = svgPaints(element.stroke);
+    vector.fills = svgPaints(file, element.fill);
+    vector.strokes = svgPaints(file, element.stroke);
     vector.parent = frame;
     return vector;
   });
@@ -3153,6 +3262,7 @@ export function createFakeFigma(options: FakeFigmaOptions): FakeFigma {
     unavailableFonts: options.unavailableFonts ?? [],
     collections: seeded.collections,
     variables: seeded.variables,
+    images: new Set(),
   };
   const document = createNode(file, "DOCUMENT", "Document", "0:0");
   const firstPage = createNode(file, "PAGE", "Page 1", "0:1");
@@ -3214,6 +3324,9 @@ export function createFakeFigma(options: FakeFigmaOptions): FakeFigma {
     | "combineAsVariants"
     | "flatten"
     | "base64Encode"
+    | "base64Decode"
+    | "createImage"
+    | "getImageByHash"
     | "variables"
   > = {
     get root(): DocumentNode {
@@ -3302,6 +3415,9 @@ export function createFakeFigma(options: FakeFigmaOptions): FakeFigma {
       return vector;
     },
     base64Encode,
+    base64Decode,
+    createImage: (bytes) => createImage(file, bytes),
+    getImageByHash: (hash) => (file.images.has(hash) ? exposeImage(hash) : null),
     // SAFETY: the object models the variable calls the plugin makes, and the guard throws for
     // every other member.
     variables: guard(variables, "figma.variables") as VariablesAPI,

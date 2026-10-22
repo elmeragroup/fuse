@@ -32,8 +32,8 @@ export type CellRenderer = {
   readonly element: (cell: Cell) => ReactElement;
   /**
    * The classes the cells pass that a host app compiles in its own Tailwind build, because Fuse's
-   * standalone `styles.css` holds only the classes Fuse's own source uses. Separator and Skeleton
-   * name the docs demos' sizes. Most renderers name none.
+   * standalone `styles.css` holds only the classes Fuse's own source uses. Separator, Skeleton and
+   * Avatar name the docs demos' sizes. Most renderers name none.
    */
   readonly hostClasses?: readonly string[];
 };
@@ -125,6 +125,11 @@ const SOURCES: readonly RendererSource[] = [
     set: "textarea",
     entry: "dist/textarea.js",
     load: async () => (await import("./textarea-cell.ts")).textarea,
+  },
+  {
+    set: "avatar",
+    entry: "dist/avatar.js",
+    load: async () => (await import("./avatar-cell.ts")).avatar,
   },
 ];
 

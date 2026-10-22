@@ -4,12 +4,15 @@
  * equal when it binds the same variable. A literal field counts as equal when no variable
  * binds it and the value matches within the precision Figma stores, which is a 32-bit
  * float. A planner looks up every variable and builds every paint before it records the
- * operation, so the operation only assigns.
+ * operation, so the operation only assigns. An image paint's operation also stores the image the
+ * paint names, first, so Plan stores nothing.
  */
 
 import type {
   ColorSpec,
   DirectionSpec,
+  FillSpec,
+  ImagePaintSpec,
   NumberSpec,
   RgbaSpec,
   ShadowSpec,
@@ -112,21 +115,33 @@ function describeRgba(color: RGB, alpha: number): string {
 }
 
 /**
+ * An image paint for a change line: the start of its image's hash, which tells two images apart,
+ * its scale mode, and its opacity where that is not full.
+ */
+function describeImage(paint: ImagePaint): string {
+  const opacity = paint.opacity ?? 1;
+  const faded = nearUnit(opacity, 1) ? "" : ` at ${Math.round(opacity * 100)}%`;
+  return `image ${paint.imageHash?.slice(0, 8) ?? "none"} at ${paint.scaleMode}${faded}`;
+}
+
+/**
  * What a node holds, for a change line. A bound paint shows as `variable`, because the paint
  * planner only reads a binding's id. A bound shadow also shows the color Figma stores, which
  * the shadow planner compares. A mismatch after an apply shows what Figma kept.
  */
 function describeHeldPaint(paint: Paint): string {
-  if (paint.type !== "SOLID") {
+  if (paint.type !== "SOLID" && paint.type !== "IMAGE") {
     return paint.type;
   }
-  const color =
-    paint.boundVariables?.color === undefined
-      ? describeRgba(paint.color, paint.opacity ?? 1)
-      : `variable at ${Math.round((paint.opacity ?? 1) * 100)}%`;
+  const shown =
+    paint.type === "IMAGE"
+      ? describeImage(paint)
+      : paint.boundVariables?.color === undefined
+        ? describeRgba(paint.color, paint.opacity ?? 1)
+        : `variable at ${Math.round((paint.opacity ?? 1) * 100)}%`;
   const hidden = paint.visible === false ? ", hidden" : "";
   const blend = (paint.blendMode ?? "NORMAL") === "NORMAL" ? "" : `, ${paint.blendMode}`;
-  return `${color}${hidden}${blend}`;
+  return `${shown}${hidden}${blend}`;
 }
 
 function describeHeldEffect(effect: Effect): string {
@@ -264,9 +279,14 @@ function rgbaMatches(color: RGB, alpha: number, spec: RgbaSpec): boolean {
   );
 }
 
-function paintMatches(run: Run, paint: Paint, spec: ColorSpec): boolean {
+/** Whether a paint shows as written: visible, and in the `NORMAL` blend mode the plugin writes. */
+function shows(paint: Paint): boolean {
   // Figma documents NORMAL as the blend mode of a paint that sets none.
-  if (paint.type !== "SOLID" || paint.visible === false || (paint.blendMode ?? "NORMAL") !== "NORMAL") {
+  return paint.visible !== false && (paint.blendMode ?? "NORMAL") === "NORMAL";
+}
+
+function paintMatches(run: Run, paint: Paint, spec: ColorSpec): boolean {
+  if (paint.type !== "SOLID" || !shows(paint)) {
     return false;
   }
   const boundId = paint.boundVariables?.color?.id;
@@ -279,7 +299,85 @@ function paintMatches(run: Run, paint: Paint, spec: ColorSpec): boolean {
 }
 
 /**
- * Plan a node's fills or strokes as a single solid paint, or as none.
+ * The image paint a spec asks for, at full opacity in the `NORMAL` blend mode. It names its image by
+ * the hash the build wrote, the SHA-1 of the bytes, which is the hash Figma names a stored image by
+ * (P9b), so the plan builds it without storing the image.
+ */
+function imagePaint(spec: ImagePaintSpec): ImagePaint {
+  return {
+    type: "IMAGE",
+    scaleMode: spec.scaleMode,
+    imageHash: spec.hash,
+    visible: true,
+    opacity: 1,
+    blendMode: "NORMAL",
+  };
+}
+
+/**
+ * Store the image a paint names, as the operation that writes the paint runs, so Plan stores
+ * nothing. Storing an image changes the file, though an image is no node.
+ *
+ * @param run - The run.
+ * @param spec - The image.
+ * @throws When Figma stores the image under another hash than the spec's, which a real file did not
+ *   do (P9b): the paint would name an image Figma does not hold, so the operation writes no paint.
+ */
+function storeImage(run: Run, spec: ImagePaintSpec): void {
+  const { hash } = run.figma.createImage(run.figma.base64Decode(spec.bytes));
+  if (hash !== spec.hash) {
+    throw new Error(
+      `Figma stored the image as ${hash}, where the kit names it ${spec.hash}, the SHA-1 the build wrote. The plugin writes no paint that names an image the file does not hold.`
+    );
+  }
+}
+
+/**
+ * Whether a held paint shows the image paint the spec asks for. On 2026-10-22 a real file read a
+ * written image paint back with its hash, its scale mode and Figma's defaults for the rest (P9), and
+ * named the image by the SHA-1 of its bytes (P9b). So the hash and the scale mode decide, besides the
+ * visibility, blend mode and opacity every paint is held to. The filters and rotation stay unread.
+ */
+function imageMatches(held: Paint, wanted: ImagePaint): boolean {
+  return (
+    held.type === "IMAGE" &&
+    shows(held) &&
+    nearUnit(held.opacity ?? 1, 1) &&
+    held.imageHash === wanted.imageHash &&
+    held.scaleMode === wanted.scaleMode
+  );
+}
+
+/** The paint a fill spec asks for, whether a held paint shows it, and its words in a change line. */
+type DesiredPaint = {
+  readonly shownBy: (held: Paint) => boolean;
+  /** Builds the paint to write, which a solid paint needs only when the node does not show it. */
+  readonly build: () => Paint;
+  /** What the operation does before it writes the paint, such as storing the image it names. */
+  readonly prepare: () => void;
+  readonly description: string;
+};
+
+function desiredPaint(run: Run, spec: FillSpec): DesiredPaint {
+  if (spec.kind !== "image") {
+    return {
+      shownBy: (held) => paintMatches(run, held, spec),
+      build: () => solidPaint(run, spec),
+      prepare: () => undefined,
+      description: describeColor(spec),
+    };
+  }
+  const paint = imagePaint(spec);
+  return {
+    shownBy: (held) => imageMatches(held, paint),
+    build: () => paint,
+    prepare: () => storeImage(run, spec),
+    description: describeImage(paint),
+  };
+}
+
+/**
+ * Plan a node's fills or strokes as a single solid or image paint, or as none.
  *
  * @param run - The run.
  * @param label - The node's label, for change lines.
@@ -293,7 +391,7 @@ export function planPaints(
   label: string,
   name: string,
   current: ReadonlyArray<Paint> | PluginAPI["mixed"],
-  spec: ColorSpec | undefined,
+  spec: FillSpec | undefined,
   write: (paints: Paint[]) => void
 ): void {
   const holds = current === run.figma.mixed ? undefined : current;
@@ -303,13 +401,17 @@ export function planPaints(
     }
     return;
   }
+  const desired = desiredPaint(run, spec);
   const [only] = holds ?? [];
-  if (holds?.length === 1 && only !== undefined && paintMatches(run, only, spec)) {
+  if (holds?.length === 1 && only !== undefined && desired.shownBy(only)) {
     return;
   }
-  const paint = solidPaint(run, spec);
+  const paint = desired.build();
   const held = holds === undefined ? "mixed" : describeHeld(holds, describeHeldPaint);
-  change(run.plan, label, `${name} → ${describeColor(spec)} (holds ${held})`, () => write([paint]));
+  change(run.plan, label, `${name} → ${desired.description} (holds ${held})`, () => {
+    desired.prepare();
+    write([paint]);
+  });
 }
 
 /**

@@ -1309,22 +1309,58 @@ describe("a label's sizing", () => {
   });
 });
 
-// Unit under test: `buildComponentSet` on a flex box whose own text wraps. Oracle: CSS Flexbox 1. The
-// text is an anonymous flex item, which does not grow (`flex: 0 1 auto`, §7.1), so a short label
-// sits at its own width where `justify-content` places it in a row, or `align-items` in a column. A
-// Figma text that fills the row sets its lines by its own alignment instead, so it draws what CSS
-// draws only where the two put the line in the same place: at the start, or both centered. A column
-// with an unset `align-items` stretches the item, which a fill draws whatever the alignment. Beside
-// other layers in a row the label keeps its own width, where a fill takes the room they leave.
+// Unit under test: `buildComponentSet` on a flex box whose own text wraps. Oracle: CSS Flexbox 1 and
+// CSS Text 3. The text is an anonymous flex item, which does not grow (`flex: 0 1 auto`, §7.1), so a
+// short label sits at its own width where `justify-content` places it in a row, or `align-items` in a
+// column. A Figma text that fills the row sets its lines by its own alignment instead, so it draws
+// what CSS draws only where the two put the line in the same place: at the start, or both centered. A
+// column with an unset `align-items` stretches the item, which a fill draws whatever the alignment.
+// Beside other layers in a row the label keeps its own width, where a fill takes the room they leave.
+// A text with no soft wrap opportunity, such as a word of ASCII letters (UAX #14 keeps classes AL and
+// NU together), never wraps, so its item keeps its own width wherever the box places it, which a
+// hugging text draws, unless `overflow-wrap` or `word-break` lets the browser break inside a word.
+// Fullwidth letters take class ID in LineBreak.txt, which breaks between them.
 describe("a wrapping label in a flex box", () => {
+  /** A label whose text wraps at its space. */
+  const TWO_WORDS: LabelDefinition = { ...LABEL, characters: "Two words" };
+
   it("fills a row that places it at the start", async () => {
-    const { variant } = await buildLabelled("flex w-[200px] justify-start", { label: LABEL });
+    const { variant } = await buildLabelled("flex w-[200px] justify-start", { label: TWO_WORDS });
     expect(textOf(variant?.root)?.sizing).toEqual(FILL_WIDTH);
   });
 
   it("stays unmapped in a row that centers it, where a fill sets its lines at the left", async () => {
-    const { variant, coverage } = await buildLabelled("flex w-[200px] justify-center", { label: LABEL });
+    const { variant, coverage } = await buildLabelled("flex w-[200px] justify-center", { label: TWO_WORDS });
     expect(textOf(variant?.root)?.sizing).toEqual({ horizontal: HUG, vertical: HUG });
+    expect(notesOf(coverage, "justify-center")).toContainEqual([
+      "justify-content",
+      "unmapped",
+      "the row places the label at its own width in the center, where a text that fills it sets its lines at the left",
+    ]);
+  });
+
+  it("hugs a word where a row centers it, since the word never wraps", async () => {
+    const { variant, coverage } = await buildLabelled("flex w-[200px] justify-center", { label: LABEL });
+    expect([textOf(variant?.root)?.sizing, variant?.root.primaryAlign]).toEqual([
+      { horizontal: HUG, vertical: HUG },
+      "CENTER",
+    ]);
+    expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
+
+  it("stays unmapped for fullwidth letters, which line breaking lets break between", async () => {
+    const { coverage } = await buildLabelled("flex w-[200px] justify-center", {
+      label: { ...LABEL, characters: "ＡＬ" },
+    });
+    expect(notesOf(coverage, "justify-center")).toContainEqual([
+      "justify-content",
+      "unmapped",
+      "the row places the label at its own width in the center, where a text that fills it sets its lines at the left",
+    ]);
+  });
+
+  it("stays unmapped for a word where word-break lets the browser break it", async () => {
+    const { coverage } = await buildLabelled("flex w-[200px] justify-center break-all", { label: LABEL });
     expect(notesOf(coverage, "justify-center")).toContainEqual([
       "justify-content",
       "unmapped",
@@ -1334,7 +1370,7 @@ describe("a wrapping label in a flex box", () => {
 
   it("fills a row that centers it when its lines are centered too", async () => {
     const { variant, coverage } = await buildLabelled("flex w-[200px] justify-center text-center", {
-      label: LABEL,
+      label: TWO_WORDS,
     });
     const text = textOf(variant?.root);
     expect([text?.sizing, text?.align.horizontal]).toEqual([FILL_WIDTH, "CENTER"]);
@@ -1343,7 +1379,7 @@ describe("a wrapping label in a flex box", () => {
 
   it("stays unmapped beside an icon in a row, where a fill takes the room the icon leaves", async () => {
     const { coverage } = await buildLabelled("flex w-[200px] [&_svg]:size-[16px]", {
-      label: LABEL,
+      label: TWO_WORDS,
       iconsFor: () => [ICON],
     });
     expect(notesOf(coverage, "flex")).toContainEqual([

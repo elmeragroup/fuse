@@ -14,7 +14,7 @@ import { ICONS_PAGE, inventoryPage, KIT_PAGES, pageKey, previewsOn } from "../..
 import type { InventoryPage } from "../../test/kit-inventory.ts";
 import { drawsShadowSpread } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
-import { childNamed } from "./fake-fixtures.ts";
+import { childNamed, RED_PIXEL } from "./fake-fixtures.ts";
 import { keyOf } from "./identity.ts";
 import { appliedFile, kitFixture, kitPage, syncedFile } from "./kit-fixture.ts";
 import { reconcileKit } from "./reconcile.ts";
@@ -642,6 +642,50 @@ describe("a later run on an applied file", () => {
     for (const box of [thumb, dot]) {
       expect(layout(box)).toEqual(["HORIZONTAL", "FIXED", "FIXED", "FIXED", "FIXED", false]);
     }
+    expect(await changes(file)).toEqual([]);
+  });
+});
+
+// Unit under test: `reconcileKit` on Avatar's image fills. Oracle: the hash a real file gave the
+// portrait, `1e57f3da…`, the SHA-1 of its bytes (P9b), the fake's rule 22, which logs storing an
+// image as a write, and the change lines `test/kit-inventory.ts` gives the Avatar page.
+describe("Avatar's image fills on an applied file", () => {
+  const PORTRAIT_SHA1 = "1e57f3da2ad606fcd410ba17f62d2fc032aa669c";
+  const AVATAR_PAGE = pageKey(inventoryPage("avatar"));
+
+  it("stores no image when Plan finds the Avatar set missing, and Apply stores each image cell's", async () => {
+    const file = await appliedFile();
+    setOn(await kitPage(file, AVATAR_PAGE), "Avatar").remove();
+    file.reopen();
+    const before = file.writes.length;
+    expect(await changes(file)).toContain("Avatar: create the component set Avatar with 8 variants");
+    expect(file.writes.slice(before)).toEqual([]);
+
+    await reconcileKit(file.figma, kit, true);
+    expect(file.writes.slice(before).filter((line) => line.startsWith("store the image"))).toEqual(
+      Array.from({ length: 4 }, () => `store the image ${PORTRAIT_SHA1}`)
+    );
+    file.reopen();
+    expect(await changes(file)).toEqual([]);
+  });
+
+  it("lists the one fill change and stores nothing when Plan finds an Avatar holding other bytes", async () => {
+    const file = await appliedFile();
+    const avatar = setOn(await kitPage(file, AVATAR_PAGE), "Avatar");
+    const image = childNamed(variantNamed(avatar, "content=image, size=32"), "FRAME", "avatar-image");
+    file.figma.createImage(file.figma.base64Decode(RED_PIXEL.bytes));
+    image.fills = [{ type: "IMAGE", scaleMode: "FILL", imageHash: RED_PIXEL.sha1 }];
+    file.reopen();
+    const before = file.writes.length;
+
+    expect(await changes(file)).toEqual([
+      `Avatar / content=image, size=32 / avatar-image: fill → image ${PORTRAIT_SHA1.slice(0, 8)} at FILL (holds image ${RED_PIXEL.sha1.slice(0, 8)} at FILL)`,
+      "Avatar: lay out 8 variants in 4 columns and 2 rows",
+      "Avatar: place Avatar in a row and stack 4 previews below them",
+    ]);
+    expect(file.writes.slice(before)).toEqual([]);
+    await reconcileKit(file.figma, kit, true);
+    file.reopen();
     expect(await changes(file)).toEqual([]);
   });
 });

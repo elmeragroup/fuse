@@ -18,7 +18,9 @@
  * own must name the `<svg>`'s `class` attribute exactly. The root and each part must hold their
  * label's characters where the cell shows the label, as their own text or in the attribute the label
  * names, as an `<input>` holds its placeholder, and no text where it does not, so the compare page
- * renders the text Figma draws. The pseudo-class variants,
+ * renders the text Figma draws. A box that shows an image must be an `<img>` whose `src` is a data
+ * URI of the image's bytes, and a box that shows none carries no `src`, so the page draws the
+ * picture Figma draws. The pseudo-class variants,
  * `enabled-hover:` and `focus-visible:`, stay out, since static markup cannot show them, and so
  * does the icon edge, which the slots check.
  */
@@ -291,6 +293,27 @@ function markupLabel(element: MarkupElement | undefined, expected: MarkupLabel):
 }
 
 /**
+ * The picture a box shows, as the markup would hold it: an `<img>` and its image's bytes, base64
+ * encoded, or nothing for a box that shows none.
+ */
+function expectedImage(box: BoxDefinition): readonly [element: string, bytes: string] | undefined {
+  return box.image === undefined ? undefined : ["img", Buffer.from(box.image()).toString("base64")];
+}
+
+/**
+ * The picture an element shows: its name and the payload of the data URI in its `src`, or the whole
+ * `src` where it is no base64 image data URI, or nothing for an element without one.
+ */
+function markupImage(
+  element: MarkupElement | undefined
+): readonly [element: string, bytes: string] | undefined {
+  const src = element?.attributes.get("src");
+  return element === undefined || src === undefined
+    ? undefined
+    : [element.name, src.replace(/^data:image\/(?:png|jpeg|gif);base64,/, "")];
+}
+
+/**
  * The markup's icons as the slots must list them: a slot that names no classes of its own makes
  * no claim about the `<svg>`'s, as Button's spinner leaves out its `animate-spin`.
  */
@@ -356,6 +379,7 @@ describe("each kit definition against the markup of its component", () => {
           }
           const rootLabel = expectedLabel(definition, cell);
           expect(markupLabel(root, rootLabel), `${key}: the label`).toEqual(rootLabel);
+          expect(markupImage(root), `${key}: the image`).toEqual(expectedImage(definition));
           const names = new Set(boxNames(definition, definition.slot));
           const slots = slotIcons(definition, definition.slot, cell);
           expect(slots, key).toEqual(claimedIcons(slots, markupIcons(elements, measured, names)));
@@ -370,6 +394,7 @@ describe("each kit definition against the markup of its component", () => {
             const element = elements[elementAt.get(path) ?? -1];
             const partLabel = expectedLabel(part, cell);
             expect(markupLabel(element, partLabel), `${key}: the label on ${path}`).toEqual(partLabel);
+            expect(markupImage(element), `${key}: the image on ${path}`).toEqual(expectedImage(part));
             for (const variant of attributeConditions(part, cell)) {
               expect(holdsIn(variant, cell), `${key}: ${variant} on ${path}`).toBe(
                 element !== undefined && ATTRIBUTE_VARIANTS.get(variant)?.(element) === true

@@ -1,13 +1,16 @@
 /**
  * Field planners on the in-memory file in `fake-figma.ts`, each against the Figma rule it
- * exists for: `resize` turns a hugging axis of an auto layout frame fixed (rules 5 and 14), and a
- * paint bound to a color variable takes the variable's alpha as its opacity (rule 1). The
- * oracle is the end state the spec asks for, and a second plan over that state must list
- * nothing.
+ * exists for: `resize` turns a hugging axis of an auto layout frame fixed (rules 5 and 14), a
+ * paint bound to a color variable takes the variable's alpha as its opacity (rule 1), and an image
+ * paint holds its image by the SHA-1 of its bytes, which storing the image writes (rules 22 and 23).
+ * The oracle is the end state the spec asks for, the write log, and a second plan over that state,
+ * which must list nothing.
  */
 import { describe, expect, it } from "vitest";
 
-import { color, fixtureFile, fixtureRun } from "./fake-fixtures.ts";
+import type { ImagePaintSpec } from "../../src/components/kit-spec.ts";
+import type { FakeFigma } from "./fake-figma.ts";
+import { BLUE_PIXEL, color, fixtureFile, fixtureRun, RED_PIXEL } from "./fake-fixtures.ts";
 import { near, planLayoutSizing, planNumber, planPaints } from "./fields.ts";
 import type { LayoutSizing } from "./fields.ts";
 import { changeLines, newPlan, performPlan } from "./plan.ts";
@@ -116,5 +119,52 @@ describe("planPaints", () => {
     });
     expect(fill?.opacity).toBeCloseTo(0.1, 5);
     expect(changeLines(await planFill())).toEqual([]);
+  });
+
+  /** Plan a frame's fill as an image paint at FILL. */
+  async function planImage(file: FakeFigma, frame: FrameNode, image: ImagePaintSpec): Promise<Plan> {
+    const plan = newPlan();
+    planPaints(await fixtureRun(file, plan), "Avatar", "fill", frame.fills, image, (paints) => {
+      frame.fills = paints;
+    });
+    return plan;
+  }
+
+  const RED_FILL: ImagePaintSpec = {
+    kind: "image",
+    bytes: RED_PIXEL.bytes,
+    hash: RED_PIXEL.sha1,
+    scaleMode: "FILL",
+  };
+
+  it("matches an image paint by its hash and its scale mode, and stores the image only when the write runs", async () => {
+    const file = fixtureFile([]);
+    file.figma.createImage(file.figma.base64Decode(RED_PIXEL.bytes));
+    const frame = file.figma.createFrame();
+    frame.fills = [{ type: "IMAGE", scaleMode: "FIT", imageHash: RED_PIXEL.sha1 }];
+    const before = file.writes.length;
+
+    const plan = await planImage(file, frame, RED_FILL);
+    const image = `image ${RED_PIXEL.sha1.slice(0, 8)}`;
+    expect(changeLines(plan)).toEqual([`Avatar: fill → ${image} at FILL (holds ${image} at FIT)`]);
+    expect(file.writes.slice(before)).toEqual([]);
+    await performPlan(plan);
+    expect(file.writes.slice(before)).toEqual([`store the image ${RED_PIXEL.sha1}`, `${frame.id} fills`]);
+    expect(frame.fills).toMatchObject([{ type: "IMAGE", scaleMode: "FILL", imageHash: RED_PIXEL.sha1 }]);
+    expect(changeLines(await planImage(file, frame, RED_FILL))).toEqual([]);
+  });
+
+  it("writes no fill when Figma names the stored image by another hash than the spec's", async () => {
+    const file = fixtureFile([]);
+    const frame = file.figma.createFrame();
+    frame.fills = [];
+    const plan = await planImage(file, frame, { ...RED_FILL, hash: BLUE_PIXEL.sha1 });
+    expect(changeLines(plan)).toEqual([
+      `Avatar: fill → image ${BLUE_PIXEL.sha1.slice(0, 8)} at FILL (holds none)`,
+    ]);
+    await expect(performPlan(plan)).rejects.toThrow(
+      `Figma stored the image as ${RED_PIXEL.sha1}, where the kit names it ${BLUE_PIXEL.sha1}`
+    );
+    expect(frame.fills).toEqual([]);
   });
 });

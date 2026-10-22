@@ -4,6 +4,8 @@
  * onto Figma fields. Every declaration it reads lands in the coverage table with what became
  * of it.
  */
+import { createHash } from "node:crypto";
+
 import { readSizing, roomInside, rootRoom, unstretched } from "./box-sizing";
 import type { Holder, Room } from "./box-sizing";
 import { SetCascade, splitClasses } from "./cascade";
@@ -30,6 +32,7 @@ import type {
   CounterAlignSpec,
   DirectionSpec,
   FrameLayerSpec,
+  ImagePaintSpec,
   NumberSpec,
   IconLayerSpec,
   PrimaryAlignSpec,
@@ -187,6 +190,12 @@ export type BoxDefinition = {
   readonly iconsFor: (cell: Cell) => readonly IconSlot[];
   /** The parts directly below this one, in DOM order. */
   readonly parts?: readonly PartDefinition[];
+  /**
+   * The picture the box shows, as an `<img>` shows its `src`: the bytes of a PNG file, the one
+   * format the kit ships, which the build reads when it maps the box. Undefined for a box that shows
+   * none.
+   */
+  readonly image?: () => Uint8Array;
 };
 
 /**
@@ -469,6 +478,46 @@ function readFill(value: string, index: VariableIndex): ColorSpec | typeof NO_FI
   return color?.kind === "literal" && color.color.a === 0 ? NO_FILL : color;
 }
 
+/**
+ * Read an image box's fill: the picture it shows, scaled as its `object-fit` says. `cover` scales
+ * the picture to cover the box and crops what overflows, which an image paint at FILL draws, and
+ * any other fit stays unmapped and leaves the box without a fill. The picture covers the box, so
+ * the build reads no `background-color` under it, and one the box sets stays unmapped.
+ *
+ * @param image - The picture's bytes.
+ * @param variant - The cell's variant key, for the error.
+ * @returns The image paint, or undefined where the fit does not map.
+ * @throws When the box sets no `object-fit`, whose initial `fill` stretches the picture to the box,
+ *   which no image paint draws.
+ */
+function readImage(reader: LayerStyle, image: () => Uint8Array, variant: string): ImagePaintSpec | undefined {
+  if (!reader.has("object-fit")) {
+    throw new Error(
+      `${variant}: a box that shows an image needs object-fit: cover, which an image paint at FILL draws`
+    );
+  }
+  const scaleMode = reader.read(
+    "object-fit",
+    (value) => (normalizeCss(value) === "cover" ? ("FILL" as const) : undefined),
+    () => ({
+      outcome: "literal",
+      detail: "the image covers the box and crops what overflows, an image paint at FILL",
+    })
+  );
+  if (scaleMode === undefined) {
+    return undefined;
+  }
+  const bytes = image();
+  // Figma names a stored image by the SHA-1 of its bytes (P9b), so the plugin compares a held paint
+  // with this hash and stores no image to learn it.
+  return {
+    kind: "image",
+    bytes: Buffer.from(bytes).toString("base64"),
+    hash: createHash("sha1").update(bytes).digest("hex"),
+    scaleMode,
+  };
+}
+
 function describeFill(fill: ColorSpec | typeof NO_FILL): CoverageNote {
   return fill === NO_FILL
     ? { outcome: "literal", detail: "no fill, since a transparent background paints nothing" }
@@ -641,7 +690,10 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope, room: 
     detail: `opacity ${value}`,
   }));
   const textColor = color("color");
-  const fill = reader.read("background-color", (value) => readFill(value, context.variables), describeFill);
+  const fill =
+    box.image === undefined
+      ? reader.read("background-color", (value) => readFill(value, context.variables), describeFill)
+      : readImage(reader, box.image, variantKey(definition, cell));
   // The box's lengths and layout read before its parts, since they decide what a part can fill.
   const { sizing, limits, clips } = readSizing(reader, room, context.variables);
   const layout = readFlow(reader);

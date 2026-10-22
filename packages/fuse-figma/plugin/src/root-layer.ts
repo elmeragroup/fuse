@@ -4,7 +4,14 @@
  * axis as fixed, hugging or filling its parent, and keeps within the spec's limits.
  */
 
-import type { BoxSpec, ColorSpec, LimitsSpec, NumberSpec, SizeSpec } from "../../src/components/kit-spec.ts";
+import type {
+  BoxSpec,
+  ColorSpec,
+  FillSpec,
+  LimitsSpec,
+  NumberSpec,
+  SizeSpec,
+} from "../../src/components/kit-spec.ts";
 import {
   LAYOUT_SIZING,
   near,
@@ -73,7 +80,7 @@ const CLEAR: ColorSpec = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.0015
  * @param spec - The root the spec asks for.
  * @returns The fill to plan, or undefined for none.
  */
-export function rootFill(spec: Pick<BoxSpec, "fill" | "shadows">): ColorSpec | undefined {
+export function rootFill(spec: Pick<BoxSpec, "fill" | "shadows">): FillSpec | undefined {
   const spreads = spec.shadows.some(
     (shadow) => shadow.spread.kind === "variable" || shadow.spread.value !== 0
   );

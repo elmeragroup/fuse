@@ -50,6 +50,26 @@ export type ColorSpec =
   | { readonly kind: "literal"; readonly color: RgbaSpec };
 
 /**
+ * An image paint: the bytes of an image file, which the plugin hands Figma to store, and how the
+ * image fills the box. `FILL` scales the image to cover the box and crops what overflows, as
+ * `object-fit: cover` draws an `<img>`.
+ */
+export type ImagePaintSpec = {
+  readonly kind: "image";
+  /** The bytes of a PNG file, base64 encoded, the one format the kit ships. */
+  readonly bytes: string;
+  /**
+   * The SHA-1 of the bytes in lowercase hex, the hash Figma names the stored image by (P9b). Plan
+   * compares a held paint with it, so it stores no image.
+   */
+  readonly hash: string;
+  readonly scaleMode: "FILL";
+};
+
+/** A box's fill: a solid paint, or an image. */
+export type FillSpec = ColorSpec | ImagePaintSpec;
+
+/**
  * A drop shadow. Tailwind's `ring-*` utilities become a zero-blur shadow with a spread. The blur
  * and spread can bind a FLOAT variable, as the outline Button's shadow does.
  */
@@ -232,7 +252,7 @@ export type BoxSpec = {
   /** Where the children sit across the direction, as `align-items` places them. */
   readonly counterAlign: CounterAlignSpec;
   readonly cornerRadius: NumberSpec;
-  readonly fill: ColorSpec | undefined;
+  readonly fill: FillSpec | undefined;
   readonly stroke: StrokeSpec | undefined;
   readonly shadows: readonly ShadowSpec[];
   /** The layer opacity, from 0 to 1. */

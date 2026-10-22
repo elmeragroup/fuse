@@ -1,17 +1,18 @@
 /**
  * The kit check, which opens every planning pass. It finds each error a later step of the
- * run could meet: a variable or mode the file lacks, a variable of the wrong type, or a spec
- * that contradicts itself. An operation that creates a node plans the node's contents when it
- * runs, so those plans can then look up nothing that fails.
+ * run could meet: a variable or mode the file lacks, a variable of the wrong type, image bytes
+ * Figma cannot store or a hash they do not give, or a spec that contradicts itself. An operation
+ * that creates a node plans
+ * the node's contents when it runs, so those plans can then look up nothing that fails.
  */
 
 import { fixedLength, topLevelSpecs, walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   BoxSpec,
   ChildLayerSpec,
-  ColorSpec,
   ComponentRootSpec,
   ComponentSetSpec,
+  FillSpec,
   KitSpec,
   NumberSpec,
   StringSpec,
@@ -21,6 +22,7 @@ import type {
 import { checkComponentSet } from "./component-set.ts";
 import { variableLabel } from "./fields.ts";
 import { PREVIEW_BACKGROUND } from "./previews.ts";
+import { sha1Hex } from "./sha1.ts";
 import type { KitVariables } from "./variables.ts";
 
 /** A variable the kit binds, and the type the bound field needs. */
@@ -33,7 +35,7 @@ function boundNumber(spec: NumberSpec | undefined): BoundRef[] {
   return spec?.kind === "variable" ? [{ ref: spec.variable, type: "FLOAT" }] : [];
 }
 
-function boundColor(spec: ColorSpec | undefined): BoundRef[] {
+function boundColor(spec: FillSpec | undefined): BoundRef[] {
   return spec?.kind === "variable" ? [{ ref: spec.variable, type: "COLOR" }] : [];
 }
 
@@ -121,6 +123,16 @@ function checkBox(set: ComponentSetSpec, variant: VariantSpec, box: BoxSpec, nam
   }
 }
 
+/** A variant's boxes, the root and every frame below it, each with its layer name. */
+function boxesOf(variant: VariantSpec): readonly { readonly box: BoxSpec; readonly name: string }[] {
+  return [
+    { box: variant.root, name: variant.root.name },
+    ...walkLayers(variant.root).flatMap((layer) =>
+      layer.kind === "frame" ? [{ box: layer, name: layer.name }] : []
+    ),
+  ];
+}
+
 /**
  * Refuse a sizing Figma cannot draw as CSS does. A variant sits in its component set, which has no
  * auto layout, so Figma refuses FILL on its root, as a real file did on 2026-10-22. Each box, the
@@ -136,10 +148,72 @@ function checkSizing(set: ComponentSetSpec): void {
         );
       }
     }
-    checkBox(set, variant, root, root.name);
-    for (const layer of walkLayers(root)) {
-      if (layer.kind === "frame") {
-        checkBox(set, variant, layer, layer.name);
+    for (const { box, name } of boxesOf(variant)) {
+      checkBox(set, variant, box, name);
+    }
+  }
+}
+
+/** The signature every PNG file opens with (PNG specification §5.2). */
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
+/** The IHDR chunk's type, `IHDR`, which follows its 4-byte length, 13, after the signature. */
+const IHDR = [0x49, 0x48, 0x44, 0x52];
+
+/** The signature and the whole IHDR chunk: 8 bytes, then 4 of length, 4 of type, 13 of data and 4 of CRC. */
+const PNG_HEADER_LENGTH = 33;
+
+/** The longest side, in pixels, of an image Figma's `createImage` reference says it stores. */
+const MAX_IMAGE_SIDE = 4096;
+
+/**
+ * What stops Figma from storing the bytes, or undefined where nothing does. The kit ships PNG alone.
+ * On 2026-10-22 a real file stored the first 100 bytes of a PNG and refused its signature alone
+ * (P9b), so Figma reads the header: the signature and the IHDR chunk, which holds the width and
+ * height (PNG specification §11.2.2). No probe ran past the 4096px the reference states.
+ */
+function unstorable(bytes: Uint8Array): string | undefined {
+  if (!PNG_SIGNATURE.every((byte, index) => bytes[index] === byte)) {
+    return "an image that is no PNG file, the one format the kit ships";
+  }
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  if (
+    bytes.length < PNG_HEADER_LENGTH ||
+    view.getUint32(8) !== 13 ||
+    !IHDR.every((byte, index) => bytes[12 + index] === byte)
+  ) {
+    return "a PNG whose header stops before a whole IHDR chunk";
+  }
+  const width = view.getUint32(16);
+  const height = view.getUint32(20);
+  if ([width, height].some((side) => side < 1 || side > MAX_IMAGE_SIDE)) {
+    return `a ${width} × ${height} image, and Figma stores images from 1 to ${MAX_IMAGE_SIDE} pixels on a side`;
+  }
+  return undefined;
+}
+
+/**
+ * Refuse an image fill Figma cannot store, or whose hash is not the SHA-1 of its bytes, the hash
+ * Figma names the stored image by (P9b). A new node stores its image only when the operation that
+ * creates it runs, after earlier writes, so the check refuses such a fill before the first write.
+ */
+function checkImages(figma: PluginAPI, set: ComponentSetSpec): void {
+  for (const variant of set.variants) {
+    for (const { box, name } of boxesOf(variant)) {
+      if (box.fill?.kind !== "image") {
+        continue;
+      }
+      const where = `${set.name}: ${name} in the variant ${variant.key} fills with`;
+      const bytes = figma.base64Decode(box.fill.bytes);
+      const problem = unstorable(bytes);
+      if (problem !== undefined) {
+        throw new Error(`${where} ${problem}.`);
+      }
+      const hash = sha1Hex(bytes);
+      if (hash !== box.fill.hash) {
+        throw new Error(
+          `${where} an image whose bytes hash to ${hash}, where the kit names ${box.fill.hash}. Build the plugin again.`
+        );
       }
     }
   }
@@ -172,14 +246,15 @@ export function kitCollections(kit: KitSpec): ReadonlySet<string> {
  * Check the kit against itself and against the file's variables. The planning pass calls this
  * before it records any operation.
  *
+ * @param figma - The plugin API, which decodes the kit's images.
  * @param variables - The file's variables.
  * @param kit - The kit.
  * @throws When the file lacks a variable or mode the kit names, a variable has the wrong type,
- *   or the spec contradicts itself, such as a page key listed twice, a node on a page the kit
- *   does not list, a preview that places a set from another page, or a fill or limit Figma
- *   cannot draw.
+ *   an image fill holds bytes Figma cannot store or a hash that is not their SHA-1, or the spec contradicts itself,
+ *   such as a page key listed twice, a node on a page the kit does not list, a preview that places
+ *   a set from another page, or a fill or limit Figma cannot draw.
  */
-export function checkKit(variables: KitVariables, kit: KitSpec): void {
+export function checkKit(figma: PluginAPI, variables: KitVariables, kit: KitSpec): void {
   const pages = new Set<string>();
   for (const page of kit.pages) {
     if (pages.has(page.key)) {
@@ -195,6 +270,7 @@ export function checkKit(variables: KitVariables, kit: KitSpec): void {
   for (const set of kit.componentSets) {
     checkComponentSet(set);
     checkSizing(set);
+    checkImages(figma, set);
   }
   for (const preview of kit.previews) {
     for (const group of preview.groups) {

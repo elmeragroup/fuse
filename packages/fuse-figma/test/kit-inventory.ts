@@ -95,6 +95,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Textarea",
     sets: [{ key: "textarea", name: "Textarea", variants: 10, previewed: 10 }],
   },
+  // The fallback and the image at 4 sizes.
+  { slug: "avatar", name: "Avatar", sets: [{ key: "avatar", name: "Avatar", variants: 8, previewed: 8 }] },
 ];
 
 /** The page that holds the icon library alone, after the component pages. */

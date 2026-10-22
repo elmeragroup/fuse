@@ -94,7 +94,7 @@ export async function reconcileKit(figma: PluginAPI, kit: KitSpec, apply: boolea
   const variables = await loadKitVariables(figma, kitCollections(kit));
   const startRun = (plan: Plan): Run => {
     const run: Run = { figma, variables, plan };
-    checkKit(variables, kit);
+    checkKit(figma, variables, kit);
     for (const font of kit.fonts) {
       requireFont(run, "The kit", font);
     }

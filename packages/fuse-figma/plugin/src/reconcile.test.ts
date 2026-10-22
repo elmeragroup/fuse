@@ -19,7 +19,20 @@ import type {
 } from "../../src/components/kit-spec.ts";
 import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
-import { aliasOf, childNamed, color, fixtureFile, string } from "./fake-fixtures.ts";
+import {
+  aliasOf,
+  BLUE_PIXEL,
+  childNamed,
+  color,
+  fixtureFile,
+  JPEG_HEAD,
+  PNG_4097_WIDE,
+  PNG_SIGNATURE,
+  PORTRAIT_HEAD,
+  RED_PIXEL,
+  string,
+} from "./fake-fixtures.ts";
+import type { ImageFixture } from "./fake-fixtures.ts";
 import { keyOf, setKey } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
 
@@ -138,6 +151,21 @@ const CHECK: IconLayerSpec = {
 const NESTED_LAYERS = [
   frame("button/control", "Control", [frame("button/indicator", "Indicator", [CHECK, LABEL])]),
 ];
+
+/**
+ * A 16px frame that an image covers, as an avatar's `<img>` covers its circle, with the hash the
+ * build would write for its bytes unless the case names another.
+ */
+function imageFrame(image: ImageFixture, hash = image.sha1): FrameLayerSpec {
+  return {
+    ...frame("button/image", "Image", []),
+    sizing: {
+      horizontal: { kind: "fixed", length: literal(16) },
+      vertical: { kind: "fixed", length: literal(16) },
+    },
+    fill: { kind: "image", bytes: image.bytes, hash, scaleMode: "FILL" },
+  };
+}
 
 /**
  * `KIT` with the variant's root holding the given layers and a library holding Check. It
@@ -368,6 +396,47 @@ describe("the kit check", () => {
     const { file, setup } = fixture("Roboto");
     await expect(reconcileKit(file.figma, kit, false)).rejects.toThrow(message);
     expect(file.writes.slice(setup)).toEqual([]);
+  });
+
+  // Unit under test: the kit check of an image fill. Oracle: the PNG specification's signature and
+  // IHDR chunk (§5.2, §11.2.2), the 4096px limit Figma's `createImage` reference states, P9b, where
+  // a real file refused a PNG signature alone and stored the first 100 bytes of a PNG, and the
+  // SHA-1 `shasum -a 1` gives each fixture.
+  const IMAGE = "Button: Image in the variant button/size=md fills with";
+  it.each([
+    [
+      "a PNG signature alone",
+      imageFrame(PNG_SIGNATURE),
+      `${IMAGE} a PNG whose header stops before a whole IHDR chunk.`,
+    ],
+    [
+      "the start of a JPEG",
+      imageFrame(JPEG_HEAD),
+      `${IMAGE} an image that is no PNG file, the one format the kit ships.`,
+    ],
+    [
+      "a PNG 4097 pixels wide",
+      imageFrame(PNG_4097_WIDE),
+      `${IMAGE} a 4097 × 1 image, and Figma stores images from 1 to 4096 pixels on a side.`,
+    ],
+    [
+      "a hash that is not the SHA-1 of the bytes",
+      imageFrame(RED_PIXEL, BLUE_PIXEL.sha1),
+      `${IMAGE} an image whose bytes hash to ${RED_PIXEL.sha1}, where the kit names ${BLUE_PIXEL.sha1}. Build the plugin again.`,
+    ],
+  ])("stops Plan and Apply before any write for an image fill with %s", async (_, layer, message) => {
+    const { file, setup } = fixture("Roboto");
+    await expect(reconcileKit(file.figma, nestedKit([layer]), false)).rejects.toThrow(message);
+    await expect(reconcileKit(file.figma, nestedKit([layer]), true)).rejects.toThrow(message);
+    expect(file.writes.slice(setup)).toEqual([]);
+  });
+
+  it("passes a PNG cut off after its header, which a real file stored, and Apply converges", async () => {
+    const { file } = fixture("Roboto");
+    const kit = nestedKit([imageFrame(PORTRAIT_HEAD)]);
+    await reconcileKit(file.figma, kit, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
   });
 });
 
@@ -677,5 +746,39 @@ describe("a variant whose layers sit in a frame inside a frame", () => {
     await expect(reconcileKit(file.figma, nestedKit(), false)).rejects.toThrow(message);
     await expect(reconcileKit(file.figma, nestedKit(), true)).rejects.toThrow(message);
     expect(file.writes.slice(before)).toEqual([]);
+  });
+});
+
+// Unit under test: `reconcileKit` on a variant whose frame fills with an image. Oracle: the fake's
+// rules 22 and 23, which follow what a real file read on 2026-10-22 (P9, P9b): Figma names an image
+// by the SHA-1 of its bytes, an image paint reads back with that hash and Figma's defaults, and
+// storing an image changes the file. The next Plan lists nothing, other bytes plan the one fill
+// write, and Plan stores no image.
+describe("a variant whose frame fills with an image", () => {
+  it("draws the image in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    const kit = nestedKit([imageFrame(RED_PIXEL)]);
+    await reconcileKit(file.figma, kit, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+    expect(childNamed(await buttonVariant(file), "FRAME", "Image").fills).toMatchObject([
+      { type: "IMAGE", scaleMode: "FILL", imageHash: RED_PIXEL.sha1 },
+    ]);
+  });
+
+  it("plans the one fill write when the image's bytes change, stores nothing in Plan, and converges", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, nestedKit([imageFrame(RED_PIXEL)]), true);
+    file.reopen();
+    const blue = nestedKit([imageFrame(BLUE_PIXEL)]);
+    const before = file.writes.length;
+    expect((await reconcileKit(file.figma, blue, false)).changes).toEqual([
+      `Button / size=md / Image: fill → image ${BLUE_PIXEL.sha1.slice(0, 8)} at FILL (holds image ${RED_PIXEL.sha1.slice(0, 8)} at FILL)`,
+      ...RELAYOUT,
+    ]);
+    expect(file.writes.slice(before)).toEqual([]);
+    await reconcileKit(file.figma, blue, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, blue, false)).toEqual({ changes: [], warnings: [] });
   });
 });

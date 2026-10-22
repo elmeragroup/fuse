@@ -8,6 +8,7 @@
  * which the sync builds one Figma component per icon `/icons` publishes.
  */
 
+export { avatarVariants } from "./avatar/avatar-variants";
 export { badgeVariants } from "./badge/badge-variants";
 export { buttonVariants } from "./button/button-variants";
 export { checkboxVariants } from "./checkbox/checkbox-variants";

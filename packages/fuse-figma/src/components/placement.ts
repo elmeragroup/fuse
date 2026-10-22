@@ -103,7 +103,9 @@ export function placeParts(parent: ParentBox, parts: readonly PlacedPart[]): Pri
 /**
  * Read where the root sits. The root has no parent to center it, so `relative` drops and any
  * other position stays unmapped. It sits in no flex line either, so `align-self: auto`, the
- * initial value, drops, and any other alignment, such as `stretch`, stays unmapped.
+ * initial value, drops, and any other alignment, such as `stretch`, stays unmapped. Nor does it sit
+ * in a line of text, so `vertical-align`, which places an inline box in its line, drops whatever
+ * its value, as Avatar's `align-middle` does.
  *
  * @param style - The root's style.
  */
@@ -116,6 +118,11 @@ export function placeRoot(style: LayerStyle): void {
       outcome: "dropped",
       detail: "the component's root sits in no row, and auto asks for no alignment",
     })
+  );
+  style.read(
+    "vertical-align",
+    (value) => value,
+    () => ({ outcome: "dropped", detail: "the component's root sits in no line box, so no line aligns it" })
   );
 }
 
