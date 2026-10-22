@@ -155,6 +155,22 @@ describe("fuseVariableSet", () => {
     }
   });
 
+  it("syncs input/50, which a disabled field box fills with, in input's pickers", () => {
+    // TOKEN_PAINTS gives input the surface and line paints, so the frame and shape fill pickers
+    // and the stroke picker offer it.
+    expect(spec("Fuse tokens", "input/50")).toMatchObject({
+      type: "COLOR",
+      scopes: ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      webSyntax: "color-mix(in oklab, var(--input) 50%, transparent)",
+    });
+    // themes.css: the internal dark input is oklch(1 0 0 / 40%), white at 40%, so half of it is
+    // white at 20%.
+    expect(value("Fuse brand", "dark/internal/private/input/50", "Fjordkraft")).toEqual({
+      _tag: "Color",
+      color: { r: 1, g: 1, b: 1, a: 0.2 },
+    });
+  });
+
   it("syncs the outline shadow lengths as their formulas give them for each outline width", () => {
     expect(spec("Fuse tokens", "button-outline-shadow-blur")).toMatchObject({
       type: "FLOAT",
@@ -208,6 +224,23 @@ describe("fuseVariableSet", () => {
     expect(value("Fuse brand", "light/internal/private/radius-checkbox", "Fjordkraft")).toEqual(px(4));
     expect(value("Fuse brand", "dark/external/company/radius-checkbox", "Elmera")).toEqual(px(4));
     expect(value("Fuse brand", "light/external/private/radius-checkbox", "TrøndelagKraft")).toEqual(px(4));
+  });
+
+  it("syncs the field box corner as its clamp gives it for each theme's radius", () => {
+    expect(spec("Fuse tokens", "radius-field-box")).toMatchObject({
+      type: "FLOAT",
+      scopes: ["CORNER_RADIUS"],
+      webSyntax:
+        "clamp(var(--radius) - 1000 * var(--radius-step, 0px), var(--radius-field, var(--radius)), var(--radius) + 1000 * var(--radius-step, 0px))",
+    });
+    // themes.css, through clamp(radius - 1000 * step, radius-field, radius + 1000 * step).
+    // Fjordkraft's internal theme sets 0.5rem and steps 0px, so both bounds are 8px and the corner
+    // is radius. External themes step 2px, so the bounds lie 4000px apart and the corner is
+    // radius-field, which every theme aliases to radius: 0.375rem, 6px, for Elmera and 1rem, 16px,
+    // for TrøndelagKraft. Their radius-md is 4px and 14px.
+    expect(value("Fuse brand", "light/internal/private/radius-field-box", "Fjordkraft")).toEqual(px(8));
+    expect(value("Fuse brand", "dark/external/company/radius-field-box", "Elmera")).toEqual(px(6));
+    expect(value("Fuse brand", "light/external/private/radius-field-box", "TrøndelagKraft")).toEqual(px(16));
   });
 
   it("turns var() references into aliases at the same theme path or to primitives", () => {

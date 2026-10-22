@@ -47,14 +47,14 @@ describe("fuse-figma sync", () => {
       assert.deepStrictEqual(figma.modeNames("Fuse brand"), [...BRAND_MODES.values()]);
       assert.deepStrictEqual(figma.modeNames("Fuse primitives"), ["Value"]);
       assert.deepStrictEqual(figma.modeNames("Fuse density"), ["Auto", "Dense", "Comfortable"]);
-      // 94 contract tokens, 5 radius rungs, 7 role tints, 2 outline shadow lengths and the
-      // compact and checkbox corners.
-      assert.strictEqual(figma.variableNames("Fuse tokens").length, 110);
-      // Those 110 per scheme, plus 39 density metrics.
-      assert.strictEqual(figma.variableNames("Fuse variant").length, 220 + 39);
+      // 94 contract tokens, 5 radius rungs, 8 role tints, 2 outline shadow lengths and the
+      // compact, checkbox and field box corners.
+      assert.strictEqual(figma.variableNames("Fuse tokens").length, 112);
+      // Those 112 per scheme, plus 39 density metrics.
+      assert.strictEqual(figma.variableNames("Fuse variant").length, 224 + 39);
       // Per scheme and variant, then per scheme, variant and segment.
-      assert.strictEqual(figma.variableNames("Fuse segment").length, 440);
-      assert.strictEqual(figma.variableNames("Fuse brand").length, 880);
+      assert.strictEqual(figma.variableNames("Fuse segment").length, 448);
+      assert.strictEqual(figma.variableNames("Fuse brand").length, 896);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 25);
       // 26 control metrics, 4 row, 2 label, 3 surface padding and 4 surface gap metrics.
       assert.strictEqual(figma.variableNames("Fuse density").length, 39);
@@ -398,7 +398,7 @@ describe("fuse-figma sync", () => {
       ]);
       assert.isTrue(figma.hasCollection(extensionId));
       assert.isTrue(figma.hasCollection(libraryId));
-      assert.strictEqual(figma.variableNames("Fuse brand").length, 880);
+      assert.strictEqual(figma.variableNames("Fuse brand").length, 896);
       assert.deepStrictEqual(figma.variableById(libraryPrimary).values, [
         { r: 0, g: 0, b: 0, a: 1 },
         { r: 0, g: 0, b: 0, a: 1 },
@@ -527,10 +527,10 @@ describe("fuse-figma check", () => {
       assert.include(printed, "Fuse tokens: create mode Light");
       assert.include(printed, "Fuse tokens: create mode Dark");
       assert.include(printed, "Fuse brand: create mode Telinet (private only)");
-      assert.include(printed, "Fuse brand: create variable ×880");
+      assert.include(printed, "Fuse brand: create variable ×896");
       assert.notInclude(printed, "Fuse brand: create variable light/external/private/primary");
-      assert.include(printed, "Fuse segment: create variable ×440");
-      assert.include(printed, "Fuse variant: create variable ×259");
+      assert.include(printed, "Fuse segment: create variable ×448");
+      assert.include(printed, "Fuse variant: create variable ×263");
       assert.include(printed, "Fuse density: create mode Auto");
       assert.include(printed, "Fuse density: create mode Comfortable");
       assert.include(printed, "Fuse density: create variable ×39");

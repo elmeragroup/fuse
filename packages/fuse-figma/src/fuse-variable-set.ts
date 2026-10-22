@@ -168,6 +168,7 @@ const ROLE_TINTS = [
   ["success", 20],
   ["warning", 20],
   ["info", 20],
+  ["input", 50],
 ] as const satisfies readonly (readonly [ColorTokenName, number])[];
 
 /** The tokens of the dimension kind. */
@@ -187,6 +188,10 @@ type DimensionTokenName = Extract<TokenEntry, { readonly kind: "dimension" }>["n
  *   2px, which gives `radius-md` capped at 10px.
  * - The checkbox corner is `checkboxCornerClass` in `corner-radius.ts`, which the Checkbox box
  *   rounds with: `radius-md` capped at 4px.
+ * - The field box corner is the `clamp()` that `fieldCornerClass` in `corner-radius.ts` declares
+ *   as `--field-corner` and rounds Input, Textarea and the other field boxes with. Its bounds lie
+ *   1000 steps either side of `--radius`, so internal themes, which step 0px, get `--radius`, and
+ *   external themes, which step 2px, get `--radius-field`.
  */
 const FORMULA_VARIABLES = [
   {
@@ -227,6 +232,20 @@ const FORMULA_VARIABLES = [
     scopes: ["CORNER_RADIUS"],
     description:
       "The corner of the Checkbox box: radius-md capped at 4px. Figma variables cannot compute, so the sync writes the result for each theme.",
+  },
+  {
+    name: "radius-field-box",
+    formula:
+      "clamp(var(--radius) - 1000 * var(--radius-step, 0px), var(--radius-field, var(--radius)), var(--radius) + 1000 * var(--radius-step, 0px))",
+    // CSS resolves clamp(MIN, VAL, MAX) as max(MIN, min(VAL, MAX)).
+    length: (scheme: ResolvedScheme) => {
+      const radius = scheme.tokens.radius.value;
+      const reach = 1000 * scheme.tokens["radius-step"].value;
+      return Math.max(radius - reach, Math.min(scheme.tokens["radius-field"].value, radius + reach));
+    },
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner of a field box, such as Input or Textarea: radius in internal themes, and radius-field in external ones. Figma variables cannot compute, so the sync writes the result for each theme.",
   },
 ] as const satisfies readonly {
   readonly name: string;
