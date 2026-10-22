@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
+import "../../dist/styles.css";
+import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
-import { roleNamed } from "../../test/themed-browser-render";
+import { px, renderThemed, roleNamed } from "../../test/themed-browser-render";
+import { Button } from "../components/button/button";
+import { DropdownMenu } from "../components/dropdown-menu";
 import { BRAND_CODES, BRANDS } from "../theme/tokens/themes";
 import type { BrandCode, ThemeInput } from "../theme/tokens/themes";
 import { BrandLogo } from "./brand-logo";
@@ -179,5 +183,138 @@ describe("BrandLogo", () => {
     expect(img.getAttribute("data-variant")).toBe("mark");
     expect(img.textContent).toBe("Elmera");
     expect(img.querySelector("svg")).toBeNull();
+  });
+});
+
+/** An element's laid-out width and height, read before transforms such as a menu's open animation. */
+function layoutSize(element: Element): readonly [number, number] {
+  const style = getComputedStyle(element);
+  return [px(style.width), px(style.height)];
+}
+
+type MarkLayout = {
+  /** The svg's laid-out width and height. */
+  readonly svg: readonly [number, number];
+  /** How far the svg's painted centre sits from the span's painted centre. */
+  readonly offCentre: readonly [number, number];
+};
+
+/** The layout of a named BrandLogo span and the svg it draws. */
+function markLayout(name: string): MarkLayout {
+  const span = roleNamed("img", name);
+  const svg = span.querySelector("svg");
+  if (svg === null) {
+    throw new Error(`expected ${name} to draw an svg`);
+  }
+  const spanBox = span.getBoundingClientRect();
+  const svgBox = svg.getBoundingClientRect();
+  return {
+    svg: layoutSize(svg),
+    offCentre: [
+      svgBox.left + svgBox.width / 2 - (spanBox.left + spanBox.width / 2),
+      svgBox.top + svgBox.height / 2 - (spanBox.top + spanBox.height / 2),
+    ],
+  };
+}
+
+describe("BrandLogo mark sizing", () => {
+  // Oracles: Tailwind `size-3` is 0.75rem and `size-6` is 1.5rem, so 12px and 24px at the 16px
+  // root. The menu-row and Button recipes give an svg without a `size-` class `size-4`, 16px.
+
+  it("renders a size-3 mark in a menu item as a 12px svg centred in its 12px span", async () => {
+    renderThemed(
+      <DropdownMenu.Root defaultOpen>
+        <DropdownMenu.Trigger>Brands</DropdownMenu.Trigger>
+        <DropdownMenu.Content>
+          <DropdownMenu.Item>
+            <BrandLogo brand="fkas" variant="mark" className="size-3" title="Small mark" />
+            Fjordkraft
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
+    );
+    await expect.element(page.getByRole("img", { name: "Small mark", exact: true })).toBeInTheDocument();
+    const { svg, offCentre } = markLayout("Small mark");
+    expect(layoutSize(roleNamed("img", "Small mark"))).toEqual([12, 12]);
+    expect(svg).toEqual([12, 12]);
+    expect(offCentre[0]).toBeCloseTo(0, 1);
+    expect(offCentre[1]).toBeCloseTo(0, 1);
+  });
+
+  it("renders a size-6 mark as a 24px svg inside a Button and outside any row", () => {
+    renderThemed(
+      <>
+        <Button>
+          <BrandLogo brand="fkas" variant="mark" className="size-6" title="Button mark" />
+          Fjordkraft
+        </Button>
+        <div style={{ width: 1000 }}>
+          <BrandLogo brand="fkas" variant="mark" className="size-6" title="Standalone mark" />
+        </div>
+      </>
+    );
+    for (const name of ["Button mark", "Standalone mark"]) {
+      expect(markLayout(name).svg, name).toEqual([24, 24]);
+    }
+  });
+
+  it("gives an unsized mark the 16px icon size in a menu item and in a Button", async () => {
+    renderThemed(
+      <>
+        <Button>
+          <BrandLogo brand="fkas" variant="mark" title="Button mark" />
+          Fjordkraft
+        </Button>
+        <DropdownMenu.Root defaultOpen>
+          <DropdownMenu.Trigger>Brands</DropdownMenu.Trigger>
+          <DropdownMenu.Content>
+            <DropdownMenu.Item>
+              <BrandLogo brand="fkas" variant="mark" title="Row mark" />
+              Fjordkraft
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      </>
+    );
+    await expect.element(page.getByRole("img", { name: "Row mark", exact: true })).toBeInTheDocument();
+    for (const name of ["Button mark", "Row mark"]) {
+      expect(markLayout(name).svg, name).toEqual([16, 16]);
+    }
+  });
+
+  it("keeps a hidden drawn mark out of layout", () => {
+    // Oracle: the HTML `hidden` attribute, which the user agent renders as `display: none`. Fuse
+    // ships no preflight, so this suite's CSS adds no `[hidden]` rule of its own.
+    const { host } = renderThemed(<BrandLogo brand="fkas" variant="mark" hidden />);
+    const span = host.querySelector('[role="img"]');
+    if (span === null) {
+      throw new Error("expected the BrandLogo span");
+    }
+    expect(getComputedStyle(span).display).toBe("none");
+  });
+
+  it("renders every drawn brand's unsized mark outside any row at its artwork size", () => {
+    // Oracle: the width and height of each brand's mark artwork, its viewBox extent, written by hand.
+    const artwork = {
+      fkas: [242, 286],
+      fkab: [242, 286],
+      tkas: [238, 284],
+      guen: [192, 190],
+      ngfi: [203, 199],
+      fkse: [83.397, 64.796],
+    } satisfies Record<Exclude<BrandCode, "elma">, readonly [number, number]>;
+    for (const brand of BRAND_CODES) {
+      if (brand === "elma") continue;
+      const [width, height] = artwork[brand];
+      const { unmount } = renderThemed(
+        <div style={{ width: 1000 }}>
+          <BrandLogo brand={brand} variant="mark" title="Mark" />
+        </div>
+      );
+      const [svgWidth, svgHeight] = markLayout("Mark").svg;
+      expect(Math.abs(svgWidth - width), `${brand} width ${svgWidth}`).toBeLessThanOrEqual(0.5);
+      expect(Math.abs(svgHeight - height), `${brand} height ${svgHeight}`).toBeLessThanOrEqual(0.5);
+      unmount();
+    }
   });
 });
