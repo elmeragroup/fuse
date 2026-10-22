@@ -16,6 +16,11 @@ export type CoverageOutcome = "bound" | "literal" | "dropped" | "unmapped";
 /** One declaration of one recipe class, with what the builder did with it. */
 export type CoverageRow = {
   readonly component: string;
+  /**
+   * The layer name of the part whose classes hold the declaration: the root's `data-slot`, or a
+   * part's. A declaration a part inherits keeps the part that set it.
+   */
+  readonly part: string;
   readonly className: string;
   readonly property: string;
   readonly value: string;

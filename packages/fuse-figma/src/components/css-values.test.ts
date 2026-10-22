@@ -102,6 +102,24 @@ describe("readNumber with a target floor", () => {
   it("leaves the max() unmapped when some mode falls below the floor", () => {
     expect(readNumber("max(var(--control-h-xs), 24px)", indexWithMinimum(20))).toBeUndefined();
   });
+
+  // Oracle: CSS Values 4, where a percentage resolves against the containing block, so a floor of
+  // `100%` is not a length the variable can be compared with.
+  it("leaves a percentage floor unmapped", () => {
+    expect(readNumber("max(var(--control-h-xs), 100%)", indexWithMinimum(24))).toBeUndefined();
+  });
+});
+
+// Oracle: CSS Values 4 "mixing percentages", under which a sum, product, `min()` or `max()` with a
+// percentage operand depends on the containing block whatever the operand order, which a Figma
+// number field cannot hold.
+describe("readNumber over a percentage", () => {
+  it.each(["100%", "calc(4px + 100%)", "calc(100% + 4px)", "min(100%, 4px)", "max(4px, 100%)"])(
+    "refuses %s",
+    (value) => {
+      expect(readNumber(value, index)).toBeUndefined();
+    }
+  );
 });
 
 describe("readColor", () => {
