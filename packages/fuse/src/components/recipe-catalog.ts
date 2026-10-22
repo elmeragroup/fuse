@@ -12,5 +12,6 @@ export { buttonVariants } from "./button/button-variants";
 export { checkboxVariants } from "./checkbox/checkbox-variants";
 export { kbdVariants } from "./kbd/kbd-variants";
 export { radioIconButtonVariants, radioVariants } from "./radio-group/radio-group-variants";
+export { switchVariants } from "./switch/switch-variants";
 export { toggleVariants } from "./toggle/toggle-variants";
 export { BESPOKE_ICON_NAMES, PHOSPHOR_ICON_NAMES } from "../icons/roster";

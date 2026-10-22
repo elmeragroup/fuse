@@ -19,6 +19,7 @@
  */
 import { checkboxVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import { BASE_UI_CHECKED_FACTS } from "./component-spec";
 import type { Cell, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
 
 const SLOTS = checkboxVariants();
@@ -65,13 +66,8 @@ export const CHECKBOX: ComponentDefinition = {
   columnAxis: "state",
   classesFor: () => SLOTS.root(),
   states: {},
-  // Base UI stamps `data-checked` and `aria-checked="true"` on a checked box, and
-  // `data-indeterminate` and `aria-checked="mixed"` on a mixed one.
-  facts: new Map([
-    ["data-checked", checked],
-    ["data-indeterminate", mixed],
-    ["aria-checked", checked],
-  ]),
+  // Base UI also stamps `data-indeterminate` and `aria-checked="mixed"` on a mixed box.
+  facts: new Map([...BASE_UI_CHECKED_FACTS, ["data-indeterminate", mixed]]),
   omittedStates: new Set(),
   omittedPseudoElements: new Map([["after", "a hit area around the box, which paints nothing"]]),
   label: undefined,

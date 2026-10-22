@@ -326,6 +326,45 @@ describe("Switch", () => {
     expect(measureSwitch("Nested"), "nested comfortable under dense").toEqual(denseDefault);
   });
 
+  it("takes a height or a narrower width from className, and a wider width with its max-w-*", () => {
+    // The standalone sheet holds only the utilities Fuse spells, so the overrides are ones it has.
+    renderThemed(
+      <>
+        <Switch aria-label="Taller" className="h-7" />
+        <Switch aria-label="Narrower" className="w-6" />
+        <Switch aria-label="Wider" className="max-w-xs w-72" />
+      </>
+    );
+
+    const taller = measureSwitch("Taller");
+    expect([taller.height, taller.width], "h-7").toEqual([28, 32]);
+    const narrower = measureSwitch("Narrower");
+    expect(narrower.width, "w-6 width").toBe(24);
+    expect(narrower.height, "w-6 height").toBeCloseTo(18.4, 1);
+    expect(measureSwitch("Wider").width, "w-72 max-w-xs").toBe(288);
+  });
+
+  it("keeps its size as a direct child of a vertical Field.Root, which stretches its children", () => {
+    renderThemed(
+      <div style={{ width: 320 }}>
+        <Field.Root>
+          <Field.Label>Default</Field.Label>
+          <Switch />
+        </Field.Root>
+        <Field.Root>
+          <Field.Label>Small</Field.Label>
+          <Switch size="sm" />
+        </Field.Root>
+      </div>
+    );
+
+    const fallback = measureSwitch("Default");
+    expect(fallback.width, "default width").toBe(32);
+    expect(fallback.height, "default height").toBeCloseTo(18.4, 1);
+    const small = measureSwitch("Small");
+    expect([small.width, small.height], "sm").toEqual([24, 14]);
+  });
+
   it("paints the shared ring on keyboard focus-visible and not on mouse focus, at both densities", async () => {
     renderThemed(
       <>

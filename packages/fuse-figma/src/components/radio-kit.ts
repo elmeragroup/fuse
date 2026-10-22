@@ -21,6 +21,7 @@
  */
 import { radioVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import { BASE_UI_CHECKED_FACTS } from "./component-spec";
 import type { Cell, ComponentDefinition, PartDefinition } from "./component-spec";
 
 const SLOTS = radioVariants();
@@ -61,11 +62,7 @@ export const RADIO: ComponentDefinition = {
   columnAxis: "state",
   classesFor: () => SLOTS.root(),
   states: {},
-  // Base UI stamps `data-checked` and `aria-checked="true"` on a checked radio.
-  facts: new Map([
-    ["data-checked", checked],
-    ["aria-checked", checked],
-  ]),
+  facts: BASE_UI_CHECKED_FACTS,
   omittedStates: new Set(),
   omittedPseudoElements: new Map([["after", "a hit area around the circle, which paints nothing"]]),
   label: undefined,

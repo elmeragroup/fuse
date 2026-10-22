@@ -9,16 +9,14 @@ import type { BoxCascade, CoverageNote, LayerStyle } from "./cascade";
 import type { CoverageRow } from "./coverage";
 import {
   evaluateNumber,
-  evaluatePercentage,
   isInfiniteLength,
   normalizeCss,
   readColor,
   readNumber,
   readShadows,
-  splitTopLevel,
 } from "./css-values";
 import type { VariableIndex } from "./css-values";
-import { walkLayers } from "./kit-spec";
+import { walkLayers, ZERO } from "./kit-spec";
 import type {
   AlignSpec,
   AxisSpec,
@@ -36,6 +34,8 @@ import type {
   SwapPropertySpec,
   VariantSpec,
 } from "./kit-spec";
+import { partsThatScale, placeParts, placeRoot, slotAroundDot } from "./placement";
+import type { Layout } from "./placement";
 import { makeStateTable } from "./state-table";
 import type { CompiledUtilities } from "./utility-css";
 
@@ -85,6 +85,17 @@ export function swapProperties(slots: readonly IconSlot[]): readonly SwapPropert
 export function iconKey(name: string): string {
   return `icon/${name}`;
 }
+
+/**
+ * The variants Base UI stamps on a checked control's root, for a definition's `facts`:
+ * `data-checked` and `aria-checked="true"` while it is on, and `data-unchecked` while it is off.
+ * A control with a third value adds its own, as Checkbox adds `data-indeterminate`.
+ */
+export const BASE_UI_CHECKED_FACTS: ReadonlyMap<string, (cell: Cell) => boolean> = new Map([
+  ["data-checked", (cell: Cell) => cell.checked === "on"],
+  ["data-unchecked", (cell: Cell) => cell.checked === "off"],
+  ["aria-checked", (cell: Cell) => cell.checked === "on"],
+]);
 
 /**
  * What a set's root element is, which decides the attributes its disabled state holds.
@@ -231,12 +242,14 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
     );
   };
   const cascade = new SetCascade(makeStateTable(definition), context, record);
-  const variants = matrixCells(definition.axes).map((cell): VariantSpec => {
+  const cells = matrixCells(definition.axes);
+  const scaling = partsThatScale(partsOf(definition), cells, context.compiled);
+  const variants = cells.map((cell): VariantSpec => {
     const cellCascade = cascade.cell(cell);
-    const scope: MapScope = { definition, cell, context };
+    const scope: MapScope = { definition, cell, context, scaling };
     const rootCascade = cellCascade.root(definition.classesFor(cell), definition.slot);
     const root: ComponentRootSpec = { name: definition.slot, ...mapBox(definition, rootCascade, scope) };
-    readPosition(rootCascade.style, "other");
+    placeRoot(rootCascade.style);
     cellCascade.settle();
     for (const layer of walkLayers(root)) {
       if (layer.kind === "text") {
@@ -289,9 +302,14 @@ export function definitionClasses(definition: ComponentDefinition): readonly str
   );
 }
 
+/** Every part below a box, depth first. */
+function partsOf(box: BoxDefinition): readonly PartDefinition[] {
+  return (box.parts ?? []).flatMap((part) => [part, ...partsOf(part)]);
+}
+
 /** The box and every part below it, depth first. */
 function boxesOf(box: BoxDefinition): readonly BoxDefinition[] {
-  return [box, ...(box.parts ?? []).flatMap(boxesOf)];
+  return [box, ...partsOf(box)];
 }
 
 /** A part's layer name: its `data-slot`, or its key for an element without one. */
@@ -344,8 +362,6 @@ function describeFill(fill: ColorSpec | typeof NO_FILL): CoverageNote {
     : describeColor(fill);
 }
 
-const ZERO: NumberSpec = { kind: "literal", value: 0 };
-
 function literalLayout(expected: readonly string[], detail: string) {
   return {
     map: (value: string) => (expected.includes(normalizeCss(value)) ? value : undefined),
@@ -372,34 +388,40 @@ function readAlign(reader: LayerStyle, property: string, axis: string): AlignSpe
  * Read how a box lays out its layers. A flex box is a horizontal auto layout that places them by
  * `align-items` and `justify-content`. A grid with no template stacks each layer in a row of its
  * own, so a grid with `place-content: center` is an auto layout centered on both axes only
- * around one layer. Any other grid stays unmapped.
+ * around one layer. Any other grid stays unmapped. A block box with no layers lays nothing out, so
+ * it is a frame like any other, and one with layers stays unmapped.
  *
  * @param layers - How many layers the box holds in the cell.
- * @returns The alignment on each axis.
+ * @returns Whether the layout is a flex row, and the alignment on each axis.
  */
-function readLayout(reader: LayerStyle, layers: number): Pick<BoxSpec, "primaryAlign" | "counterAlign"> {
-  if (normalizeCss(reader.raw("display") ?? "") === "grid") {
-    const centered =
-      layers === 1 &&
-      reader.read(
-        "place-content",
-        (value) => (normalizeCss(value) === "center" ? true : undefined),
-        () => ({ outcome: "literal", detail: "centered on both axes" })
-      ) === true;
+function readLayout(reader: LayerStyle, layers: number): Layout {
+  const display = normalizeCss(reader.raw("display") ?? "");
+  if (display === "grid") {
+    const center = literalLayout(["center"], "centered on both axes");
+    const centered = layers === 1 && reader.read("place-content", center.map, center.describe) !== undefined;
     reader.read(
       "display",
       (value) => (centered ? value : undefined),
       () => ({ outcome: "literal", detail: "an auto layout around its one layer" })
     );
-    return { primaryAlign: "CENTER", counterAlign: "CENTER" };
+    return { flexRow: false, primaryAlign: "CENTER", counterAlign: "CENTER", justify: "unset" };
   }
-  const display = literalLayout(["inline-flex", "flex"], "a horizontal auto layout");
-  reader.read("display", display.map, display.describe);
+  const empty = layers === 0 && display === "block";
+  const layout = empty
+    ? literalLayout(["block"], "a frame with no layers to lay out")
+    : literalLayout(["inline-flex", "flex"], "a horizontal auto layout");
+  reader.read("display", layout.map, layout.describe);
+  const direction = normalizeCss(reader.raw("flex-direction") ?? "row");
   // An unset alignment stays centered, as every root drew before parts. CSS packs it at the start
   // and stretches it, which shows only where a box has room to spare or children of unequal height.
   const counterAlign = readAlign(reader, "align-items", "counter") ?? "CENTER";
   const primaryAlign = readAlign(reader, "justify-content", "primary") ?? "CENTER";
-  return { primaryAlign, counterAlign };
+  return {
+    flexRow: !empty && (display === "flex" || display === "inline-flex") && direction === "row",
+    primaryAlign,
+    counterAlign,
+    justify: reader.has("justify-content") ? primaryAlign : "unset",
+  };
 }
 
 /** What the mapping of every layer of one cell reads besides the layer's own style. */
@@ -407,6 +429,8 @@ type MapScope = {
   readonly definition: ComponentDefinition;
   readonly cell: Cell;
   readonly context: BuildContext;
+  /** The parts that draw as a slot around a dot, the same in every cell. */
+  readonly scaling: ReadonlySet<PartDefinition>;
 };
 
 /**
@@ -453,11 +477,12 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
     .map((child) => {
       const name = partName(child);
       const childCascade = cascade.part(child.classesFor(cell), name);
+      const box = mapBox(child, childCascade, scope);
       const layer: FrameLayerSpec = {
         kind: "frame",
         key: child.key,
         name,
-        ...mapBox(child, childCascade, scope),
+        ...(scope.scaling.has(child) ? slotAroundDot(childCascade.style, box) : box),
       };
       return { layer, style: childCascade.style };
     });
@@ -472,15 +497,20 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
   }
   children.push(...end);
   // The layout reads once the children are known, since a grid maps only around one layer.
-  const { primaryAlign, counterAlign } = readLayout(reader, children.length);
-  const layout =
-    primaryAlign === "CENTER" && counterAlign === "CENTER" && children.length === 1
-      ? "centers-its-one-layer"
-      : "other";
-  for (const part of parts) {
-    readPosition(part.style, layout);
-  }
+  const layout = readLayout(reader, children.length);
   const width = number("width");
+  const paddingLeft = number("padding-left") ?? ZERO;
+  const paddingRight = number("padding-right") ?? ZERO;
+  const primaryAlign = placeParts(
+    {
+      style: reader,
+      layout,
+      layers: children.length,
+      size: { width, stroke, paddingLeft, paddingRight },
+    },
+    parts
+  );
+  const { counterAlign } = layout;
   reader.read(
     "max-width",
     (value) => {
@@ -503,9 +533,9 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
     height,
     minWidth: number("min-width"),
     paddingTop: number("padding-top") ?? ZERO,
-    paddingRight: number("padding-right") ?? ZERO,
+    paddingRight,
     paddingBottom: number("padding-bottom") ?? ZERO,
-    paddingLeft: number("padding-left") ?? ZERO,
+    paddingLeft,
     itemSpacing: number("gap") ?? ZERO,
     primaryAlign,
     counterAlign,
@@ -516,64 +546,6 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
     opacity: opacity ?? 1,
     children,
   };
-}
-
-/**
- * How a parent lays out its layers, as far as a positioned part needs to know: an auto layout
- * centered on both axes around this one layer, or anything else, which is also what the root has.
- */
-type ParentLayout = "centers-its-one-layer" | "other";
-
-/** The offsets of a part that centers itself on its containing block, each as a share of a size. */
-const CENTERING_OFFSETS = [
-  ["top", 0.5],
-  ["left", 0.5],
-] as const;
-
-/**
- * Read where a box sits. A `relative` box stays where the flow puts it and only anchors positioned
- * descendants, so it drops. `absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2` puts
- * the box's center on its containing block's center. Inside a parent whose auto layout centers it
- * as its one layer, that is where Figma draws it too, assuming the parent sits centered in the
- * containing block, as Radio's indicator does in its root. Every other position, offset or
- * translate stays unmapped.
- *
- * @param reader - The box's style.
- * @param parent - How the box's parent lays it out. The root passes `other`.
- */
-function readPosition(reader: LayerStyle, parent: ParentLayout): void {
-  const translate = splitTopLevel(normalizeCss(reader.resolved("translate") ?? ""), " ").map(
-    evaluatePercentage
-  );
-  const centered =
-    parent === "centers-its-one-layer" &&
-    normalizeCss(reader.raw("position") ?? "") === "absolute" &&
-    CENTERING_OFFSETS.every(
-      ([property, share]) => evaluatePercentage(reader.resolved(property) ?? "") === share
-    ) &&
-    translate.length === 2 &&
-    translate.every((share) => share === -0.5);
-  if (centered) {
-    for (const property of ["position", "top", "left", "translate"]) {
-      reader.read(
-        property,
-        (value) => value,
-        () => ({
-          outcome: "literal",
-          detail: "centered on its containing block, as its parent's auto layout centers it",
-        })
-      );
-    }
-    return;
-  }
-  reader.read(
-    "position",
-    (value) => (normalizeCss(value) === "relative" ? value : undefined),
-    () => ({
-      outcome: "dropped",
-      detail: "it only anchors positioned descendants, which auto layout does not need",
-    })
-  );
 }
 
 /**

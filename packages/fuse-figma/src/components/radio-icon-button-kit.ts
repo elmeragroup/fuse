@@ -15,7 +15,7 @@
  */
 import { radioIconButtonVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import { swapProperties } from "./component-spec";
+import { BASE_UI_CHECKED_FACTS, swapProperties } from "./component-spec";
 import type { Cell, ComponentDefinition, IconSlot } from "./component-spec";
 import { ownKey } from "./own-key";
 
@@ -70,11 +70,7 @@ export const RADIO_ICON_BUTTON: ComponentDefinition = {
   columnAxis: "state",
   classesFor,
   states: {},
-  // Base UI's radio renders `data-checked` and `aria-checked="true"` while it is checked.
-  facts: new Map([
-    ["data-checked", (cell: Cell) => cell.checked === "on"],
-    ["aria-checked", (cell: Cell) => cell.checked === "on"],
-  ]),
+  facts: BASE_UI_CHECKED_FACTS,
   omittedStates: new Set(),
   label: undefined,
   iconsFor: () => [ICON],
