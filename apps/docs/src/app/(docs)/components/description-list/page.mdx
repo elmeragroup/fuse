@@ -6,6 +6,7 @@ lede: >
 import { DescriptionListBasic } from "./demos/description-list-basic";
 import { DescriptionListInline } from "./demos/description-list-inline";
 import { DescriptionListInlineRows } from "./demos/description-list-inline-rows";
+import { DescriptionListLongValues } from "./demos/description-list-long-values";
 import { DescriptionListMultiDetails } from "./demos/description-list-multi-details";
 import { DescriptionListResponsive } from "./demos/description-list-responsive";
 
@@ -45,6 +46,12 @@ Each inline Item shares its own row between its term and details, whatever the o
 
 <Demo slug="description-list" id="inline-rows" title="Inline rows" file="description-list-inline-rows.tsx">
   <DescriptionListInlineRows />
+</Demo>
+
+Values in a real order summary are often longer than their labels: a time with seconds, an 18-digit ID, an invoice line that ends in an email address. A value wraps between its words beside its term, and an email address wider than the row breaks inside it rather than overflow the card.
+
+<Demo slug="description-list" id="long-values" title="Long values" file="description-list-long-values.tsx">
+  <DescriptionListLongValues />
 </Demo>
 
 <ApiReference slug="description-list" />
