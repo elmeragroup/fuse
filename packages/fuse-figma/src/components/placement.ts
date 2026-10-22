@@ -1,10 +1,10 @@
 /**
  * Where the parts of a box sit, read from the CSS that places them rather than from auto layout:
  * `position` and the centering pattern, an absolute part at its parent's top left, a translate
- * along a row, and a `scale`. `component-spec.ts` maps each box, then hands this module the box's
- * layout and the parts it mapped, and gets back the box's primary alignment and the parts' layers,
- * absolute where they sit outside the flow. A part that scales draws as a slot around a dot, which
- * the set's topology decides once for every cell.
+ * along a row, a `scale`, and the `rotate` of a part or an icon. `component-spec.ts` maps each box,
+ * then hands this module the box's layout and the parts it mapped, and gets back the box's primary
+ * alignment and the parts' layers, absolute where they sit outside the flow. A part that scales
+ * draws as a slot around a dot, which the set's topology decides once for every cell.
  */
 import { listNames, outOfFlow } from "./box-sizing";
 import { splitClasses } from "./cascade";
@@ -28,6 +28,7 @@ import type {
   FrameLayerSpec,
   NumberSpec,
   PrimaryAlignSpec,
+  RotationSpec,
   SizeSpec,
   StrokeSpec,
 } from "./kit-spec";
@@ -489,4 +490,50 @@ function scaled(spec: NumberSpec, share: number): NumberSpec {
 /** An axis's sizing at a share of its size: a fixed length scales, and hug or fill stays. */
 function scaledSize(size: SizeSpec, share: number): SizeSpec {
   return size.kind === "fixed" ? { kind: "fixed", length: scaled(size.length, share) } : size;
+}
+
+/**
+ * The degrees of a turn as Tailwind compiles it: `rotate-*` to an angle such as `180deg`, and
+ * `-rotate-*` to `calc(90deg * -1)`.
+ *
+ * @returns The degrees clockwise, or undefined for any other value, such as another unit or an axis.
+ */
+function clockwiseDegrees(value: string): number | undefined {
+  const angle = /^(-?\d*\.?\d+)deg$/.exec(value)?.[1];
+  const negated = /^calc\((\d*\.?\d+)deg \* -1\)$/.exec(value)?.[1];
+  if (angle !== undefined) {
+    return Number(angle);
+  }
+  return negated === undefined ? undefined : -Number(negated);
+}
+
+/**
+ * Read a part's or an icon's `rotate` as the turn Figma's `rotation` holds. CSS turns a box
+ * clockwise about its center and leaves its layout as it was. Figma counts degrees
+ * counterclockwise: on 2026-10-22 a real file read `relativeTransform` `[[0, -1], [1, 0]]` at -90, a
+ * clockwise turn in its y-down space (PQ), so `rotate: 90deg` is -90. Figma lays a turned layer out
+ * by its turned box (PR, PQ), so the plugin's kit check takes only the turns that keep the box.
+ * `none` is no turn.
+ *
+ * @param style - The part's or the icon's style.
+ * @returns The turn from -180 to 180, or undefined for none, no `rotate`, or one that does not map.
+ */
+export function readRotation(style: LayerStyle): RotationSpec | undefined {
+  const rotation = style.read(
+    "rotate",
+    (value) => {
+      const normalized = normalizeCss(value);
+      const clockwise = normalized === "none" ? 0 : clockwiseDegrees(normalized);
+      if (clockwise === undefined) {
+        return undefined;
+      }
+      const turned = ((-clockwise % 360) + 360) % 360;
+      return turned > 180 ? turned - 360 : turned;
+    },
+    (turn) => ({
+      outcome: "literal",
+      detail: turn === 0 ? "no turn" : `a rotation of ${turn}, counterclockwise as Figma counts it`,
+    })
+  );
+  return rotation === 0 ? undefined : rotation;
 }

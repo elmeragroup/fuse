@@ -11,9 +11,9 @@
  * run stopped before its first write.
  *
  * The fake models the Figma rules below. Each rule a real file showed in 2026-10 names that run.
- * Rules 12 to 24 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
- * Import test` on 2026-10-22: P0 and P0b read the kit's nodes, P1 to P9 built nodes on a scratch
- * page, and P9b stored images and built no node.
+ * Rules 12 to 26 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
+ * Import test` on 2026-10-22: P0 and P0b read the kit's nodes, P1 to P9, PB and PR built nodes on a
+ * scratch page, and P9b stored images and built no node.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
  *    COLOR variable in the collections' default modes, whatever opacity it was given. Two runs
@@ -162,6 +162,38 @@
  *    child hugged the text alone. The fake does not lay out, so it never counts one. The typings
  *    take ABSOLUTE only on a child of an auto layout frame, and no probe turned a filling layer
  *    absolute, so the fake throws for both.
+ * 25. A BOOLEAN property shows or hides the layers that link their `visible` to it, as a real file
+ *    showed on 2026-10-22 (PB). `addComponentProperty("Optional", "BOOLEAN", true)` on a set
+ *    returned `Optional#149:3`, and a text in each of two variants linked it through
+ *    `componentPropertyReferences = { visible: id }`. An instance listed it in
+ *    `componentProperties` as `{ type: "BOOLEAN", value: true }`. `setProperties({ [id]: false })`
+ *    hid the linked layer, which left the instance's auto layout with its 8px gap, so the hugging
+ *    instance went from 102 to 24 wide. Setting true showed it again at 102. A property added
+ *    with default false hid the component's own linked layer too: a hugging component of two
+ *    layers and a 4px gap went from 54 to 20 wide (PQ). The probes also read the instance's
+ *    `children` without the hidden layer, which the correction to PB and PQ puts down to
+ *    `figma.skipInvisibleInstanceChildren`: the probe environment sets it, and a plugin that does
+ *    not, as this one does not, gets the typings' default, false, where `children` lists the
+ *    hidden layer and the layer reads `visible` false. The fake reads a component's linked layer
+ *    at the property's default, and an instance's at the value the instance sets or else at the
+ *    default. It leaves a hidden sublayer out of `children` only while the flag is set, and a run
+ *    starts with it false. It does not lay out, so a hidden layer keeps its box's size. PB set
+ *    only a BOOLEAN property on an instance, so the fake throws for another kind, and for a
+ *    property the instance's set or component lacks. No probe wrote a layer's own `visible`, so
+ *    the fake reads every other layer as visible and takes no write.
+ * 26. `rotation` turns a layer counterclockwise by its degrees and reads from -180 to 180, the
+ *    typings' `atan2(-m10, m00)` of its transform, so a whole turn more reads the same. On
+ *    2026-10-22 a layer at -90 read `relativeTransform` `[[0, -1], [1, 0]]`, a clockwise turn in
+ *    Figma's y-down space, and a free frame turned about its top left, as the typings say (PQ).
+ *    The fake turns a layer outside auto layout about its top left. In an auto layout flow, a
+ *    real file kept a half-turned layer's box in its slot (PR): a 16px icon 34px into a hugging
+ *    row read `x` 50 and `y` 16 at 180, the transform's origin at the box's far corner, while its
+ *    `absoluteBoundingBox` and the row's size stayed, and read 34 and 0 again at 0. The fake moves
+ *    such a layer's origin so its box keeps its center, and `absoluteBoundingBox` bounds the
+ *    turned box. A quarter turn lays the layer out by its turned box: a 20 × 10 frame at -90 in a
+ *    hugging row made the row 10 × 20 and read `x` 10 and `y` 0 (PQ). The fake does not lay out,
+ *    so there it keeps the box's center and the row's size, as rule 24 keeps a hugging parent's
+ *    size around an absolute child.
  *
  * An instance's sublayers show the layers of its main component. An override, such as the
  * color an icon layer gives its glyph, belongs to the main layer it was made on. It moves to
@@ -209,7 +241,8 @@ export type FakeFigma = {
   readonly writes: readonly string[];
   /**
    * Start a new plugin run: every page but the current one needs `loadAsync` again, and so does
-   * every font. A run on another machine can lack fonts the file holds.
+   * every font, and `skipInvisibleInstanceChildren` is false again. A run on another machine can
+   * lack fonts the file holds.
    */
   readonly reopen: (options?: { readonly unavailableFonts?: readonly FontNameInput[] }) => void;
   /**
@@ -303,6 +336,11 @@ type FileState = {
   readonly variables: ReadonlyMap<string, VariableState>;
   /** The hash of each image the file stores (rule 22). */
   readonly images: Set<string>;
+  /**
+   * Whether `children` leaves out the hidden layers inside instances, as the plugin can ask with
+   * `figma.skipInvisibleInstanceChildren` (rule 25). Each run starts with false.
+   */
+  skipInvisibleInstanceChildren: boolean;
 };
 
 /**
@@ -325,6 +363,8 @@ type NodeState = {
   y: number;
   width: number;
   height: number;
+  /** The layer's rotation in degrees, counterclockwise, from -180 to 180 (rule 26). */
+  rotation: number;
   opacity: number;
   constraints: Constraints;
   fills: readonly Paint[];
@@ -366,6 +406,8 @@ type NodeState = {
   readonly variantOrder: Map<string, string[]>;
   /** The main component of an instance. */
   main: NodeState | undefined;
+  /** The BOOLEAN property values an instance sets, by property id (rule 25). */
+  readonly propertyValues: Map<string, boolean>;
   /** The layer of the main component that an instance's sublayer shows. */
   mirrorOf: NodeState | undefined;
   /** The fields a designer or the plugin overrode on an instance's sublayer. */
@@ -1425,6 +1467,37 @@ function linkProperties(state: NodeState, references: FrameNode["componentProper
   write(state, "componentPropertyReferences");
 }
 
+/** An instance's main component, and the set or component that holds the properties it shows. */
+function instanceOwner(state: NodeState) {
+  const main = state.main;
+  if (main === undefined) {
+    throw new Error(`The instance ${state.id} has no main component.`);
+  }
+  return { main, owner: main.parent?.type === "COMPONENT_SET" ? main.parent : main };
+}
+
+/**
+ * Whether a layer is hidden through a BOOLEAN property (rule 25). A component's layer that links
+ * its `visible` to a property hides while the property starts false. An instance's sublayer reads
+ * the property at the value the nearest instance around it sets, or else at its default.
+ */
+function hiddenByProperty(state: NodeState): boolean {
+  const main = state.mirrorOf ?? state;
+  const id = main.propertyReferences?.visible;
+  if (id === undefined) {
+    return false;
+  }
+  const defaultValue = propertyOwner(main)?.properties.get(id)?.defaultValue;
+  if (state.mirrorOf === undefined) {
+    return defaultValue === false;
+  }
+  let instance = state.parent;
+  while (instance !== undefined && instance.type !== "INSTANCE") {
+    instance = instance.parent;
+  }
+  return (instance?.propertyValues.get(id) ?? defaultValue) === false;
+}
+
 /** A variant's property values, read from its name, or undefined for a name without them. */
 function variantValues(name: string): ReadonlyMap<string, string> | undefined {
   const pairs = name.split(",").map((part) => part.trim().split("="));
@@ -1650,6 +1723,7 @@ type UncopiedField =
   | "mirrorOf"
   | "overridden"
   | "properties"
+  | "propertyValues"
   | "variantOrder";
 
 /**
@@ -1664,6 +1738,7 @@ function copiedFields(source: NodeState): Omit<NodeState, UncopiedField> {
     y: source.y,
     width: source.width,
     height: source.height,
+    rotation: source.rotation,
     opacity: source.opacity,
     constraints: { ...source.constraints },
     fills: source.fills,
@@ -1882,6 +1957,37 @@ class FakeSceneNode extends FakeBaseNode {
       write(state, "y");
       state.y = f32(value);
     }
+  }
+
+  get rotation(): number {
+    return live(this).rotation;
+  }
+
+  /**
+   * Rule 26. A layer in an auto layout flow keeps its box in its slot, so its origin moves with the
+   * turn and the box keeps its center. Any other layer turns about its top left, as the typings say.
+   */
+  set rotation(value: number) {
+    const state = live(this);
+    const rotation = readBackRotation(f32(value));
+    if (!placesItself(state)) {
+      const halfWidth = state.width / 2;
+      const halfHeight = state.height / 2;
+      const center = mapPoint(relativeTransform(state), halfWidth, halfHeight);
+      const { cos, sin } = turnOf(rotation);
+      state.x = f32(center.x - (cos * halfWidth + sin * halfHeight));
+      state.y = f32(center.y - (cos * halfHeight - sin * halfWidth));
+    }
+    write(state, "rotation");
+    state.rotation = rotation;
+  }
+
+  /**
+   * Rule 25: false for a layer a BOOLEAN property hides, and true for every other layer, since no
+   * probe wrote `visible`.
+   */
+  get visible(): boolean {
+    return !hiddenByProperty(live(this));
   }
 
   get layoutPositioning(): FrameNode["layoutPositioning"] {
@@ -2138,25 +2244,112 @@ function createImage(file: FileState, bytes: Uint8Array): Image {
   return exposeImage(hash);
 }
 
-/** A layer's box on its page: its position plus each ancestor's, up to the page. */
+/**
+ * A layer's box on its page: its position plus each ancestor's, up to the page. Where the layer or
+ * a frame around it is turned, the box bounds the layer's turned corners (rule 26).
+ */
 function absoluteBox(state: NodeState): Rect {
-  let x = 0;
-  let y = 0;
+  const chain: NodeState[] = [];
   for (
     let current: NodeState | undefined = state;
     current !== undefined && current.type !== "PAGE";
     current = current.parent
   ) {
-    x += current.x;
-    y += current.y;
+    chain.push(current);
   }
-  return { x, y, width: state.width, height: state.height };
+  if (chain.every((node) => node.rotation === 0)) {
+    let x = 0;
+    let y = 0;
+    for (const node of chain) {
+      x += node.x;
+      y += node.y;
+    }
+    return { x, y, width: state.width, height: state.height };
+  }
+  const transform = chain.reduce<Transform>(
+    (inner, outer) => compose(relativeTransform(outer), inner),
+    [
+      [1, 0, 0],
+      [0, 1, 0],
+    ]
+  );
+  const corners = [
+    [0, 0],
+    [state.width, 0],
+    [0, state.height],
+    [state.width, state.height],
+  ].map(([x = 0, y = 0]) => mapPoint(transform, x, y));
+  const left = Math.min(...corners.map((corner) => corner.x));
+  const top = Math.min(...corners.map((corner) => corner.y));
+  return {
+    x: left,
+    y: top,
+    width: Math.max(...corners.map((corner) => corner.x)) - left,
+    height: Math.max(...corners.map((corner) => corner.y)) - top,
+  };
+}
+
+/** A layer's transform within its parent, as `relativeTransform` holds it: its turn, then its place. */
+type Transform = readonly [readonly [number, number, number], readonly [number, number, number]];
+
+/**
+ * The cosine and sine of a turn in degrees, exact where they are whole, as at each quarter turn, so
+ * a half turn lands on whole pixels as the real file's did (rule 26).
+ */
+function turnOf(degrees: number) {
+  const radians = (degrees * Math.PI) / 180;
+  // Adding 0 turns a -0 into 0.
+  const whole = (value: number): number =>
+    Math.abs(value - Math.round(value)) < 1e-12 ? Math.round(value) + 0 : value;
+  return { cos: whole(Math.cos(radians)), sin: whole(Math.sin(radians)) };
+}
+
+/**
+ * A rotation as Figma reads it back, counterclockwise from -180 to 180, so a whole turn more or
+ * less reads the same (rule 26).
+ */
+function readBackRotation(degrees: number): number {
+  const turned = ((degrees % 360) + 360) % 360;
+  return turned > 180 ? turned - 360 : turned;
+}
+
+/** Rule 26: the typings' `atan2(-m10, m00)` reads `rotation` from this matrix. */
+function relativeTransform(state: NodeState): Transform {
+  const { cos, sin } = turnOf(state.rotation);
+  return [
+    [cos, sin, state.x],
+    [-sin, cos, state.y],
+  ];
+}
+
+function mapPoint(transform: Transform, x: number, y: number) {
+  const [[m00, m01, m02], [m10, m11, m12]] = transform;
+  return { x: m00 * x + m01 * y + m02, y: m10 * x + m11 * y + m12 };
+}
+
+/** The transform that applies `inner`, then `outer`. */
+function compose(outer: Transform, inner: Transform): Transform {
+  const [[a, b, c], [d, e, f]] = outer;
+  const [[g, h, i], [j, k, l]] = inner;
+  return [
+    [a * g + b * j, a * h + b * k, a * i + b * l + c],
+    [d * g + e * j, d * h + e * k, d * i + e * l + f],
+  ];
 }
 
 /** The members of frames, components, component sets and instances. */
 class FakeFrameLikeNode extends FakeSceneNode {
+  /**
+   * An instance lists every sublayer, and leaves out one a BOOLEAN property hides only while
+   * `figma.skipInvisibleInstanceChildren` is set (rule 25).
+   */
   get children(): ReadonlyArray<SceneNode> {
-    return childrenOf(live(this)).map(sceneOf);
+    const state = live(this);
+    const skipped = (child: NodeState): boolean =>
+      state.file.skipInvisibleInstanceChildren && child.mirrorOf !== undefined && hiddenByProperty(child);
+    return childrenOf(state)
+      .filter((child) => !skipped(child))
+      .map(sceneOf);
   }
 
   appendChild(child: SceneNode): void {
@@ -2549,6 +2742,47 @@ class FakeInstance extends FakeFrameLikeNode {
     state.main = main;
     mirror(state, main, true);
   }
+
+  /**
+   * Rule 25: the variant values the main component's name holds, then each property of its set or
+   * component at the value the instance sets, or else at its default.
+   */
+  get componentProperties(): ComponentProperties {
+    const state = live(this);
+    const { main, owner } = instanceOwner(state);
+    const properties: ComponentProperties = {};
+    if (owner !== main) {
+      for (const [name, value] of variantValues(main.name) ?? []) {
+        properties[name] = { type: "VARIANT", value };
+      }
+    }
+    for (const [id, property] of owner.properties) {
+      properties[id] = { type: property.type, value: state.propertyValues.get(id) ?? property.defaultValue };
+    }
+    return properties;
+  }
+
+  /** Rule 25: set BOOLEAN properties, the one kind PB set, and refuse every other. */
+  setProperties(properties: { [propertyName: string]: string | boolean | VariableAlias }): void {
+    const state = live(this);
+    const { owner } = instanceOwner(state);
+    const values = Object.entries(properties).map(([id, value]): readonly [string, boolean] => {
+      const property = owner.properties.get(id);
+      if (property === undefined) {
+        throw new Error(`${state.id} shows no property ${id} to set.`);
+      }
+      if (property.type !== "BOOLEAN" || (value !== true && value !== false)) {
+        throw new Error(
+          `The fake Figma file does not model setting the ${property.type} property ${id} on an instance.`
+        );
+      }
+      return [id, value];
+    });
+    write(state, "set properties");
+    for (const [id, value] of values) {
+      state.propertyValues.set(id, value);
+    }
+  }
 }
 
 class FakeText extends FakeSceneNode {
@@ -2903,6 +3137,7 @@ function createNode(file: FileState, type: NodeType, name: string, id?: string):
     y: 0,
     width: type === "TEXT" ? 0 : 100,
     height: type === "TEXT" ? 0 : 100,
+    rotation: 0,
     opacity: 1,
     constraints: { horizontal: "MIN", vertical: "MIN" },
     fills: type === "TEXT" ? [BLACK] : type === "VECTOR" || type === "INSTANCE" ? [] : [WHITE],
@@ -2932,6 +3167,7 @@ function createNode(file: FileState, type: NodeType, name: string, id?: string):
     properties: new Map(),
     variantOrder: new Map(),
     main: undefined,
+    propertyValues: new Map(),
     mirrorOf: undefined,
     overridden: new Set(),
     characters: "",
@@ -3314,6 +3550,7 @@ export function createFakeFigma(options: FakeFigmaOptions): FakeFigma {
     collections: seeded.collections,
     variables: seeded.variables,
     images: new Set(),
+    skipInvisibleInstanceChildren: false,
   };
   const document = createNode(file, "DOCUMENT", "Document", "0:0");
   const firstPage = createNode(file, "PAGE", "Page 1", "0:1");
@@ -3379,7 +3616,14 @@ export function createFakeFigma(options: FakeFigmaOptions): FakeFigma {
     | "createImage"
     | "getImageByHash"
     | "variables"
+    | "skipInvisibleInstanceChildren"
   > = {
+    get skipInvisibleInstanceChildren(): boolean {
+      return file.skipInvisibleInstanceChildren;
+    },
+    set skipInvisibleInstanceChildren(value: boolean) {
+      file.skipInvisibleInstanceChildren = value;
+    },
     get root(): DocumentNode {
       const node = document.exposed;
       if (node.type !== "DOCUMENT") {
@@ -3485,6 +3729,7 @@ export function createFakeFigma(options: FakeFigmaOptions): FakeFigma {
       }
       file.loadedFonts.clear();
       file.unavailableFonts = reopened?.unavailableFonts ?? file.unavailableFonts;
+      file.skipInvisibleInstanceChildren = false;
     },
     variable: (collection, name) => {
       const found = [...file.variables.values()].find(

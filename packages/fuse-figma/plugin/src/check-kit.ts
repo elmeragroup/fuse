@@ -1,9 +1,9 @@
 /**
  * The kit check, which opens every planning pass. It finds each error a later step of the
  * run could meet: a variable or mode the file lacks, a variable of the wrong type, image bytes
- * Figma cannot store or a hash they do not give, or a spec that contradicts itself. An operation
- * that creates a node plans
- * the node's contents when it runs, so those plans can then look up nothing that fails.
+ * Figma cannot store or a hash they do not give, a turn the plugin cannot draw, or a spec that
+ * contradicts itself. An operation that creates a node plans the node's contents when it runs, so
+ * those plans can then look up nothing that fails.
  */
 
 import { fixedLength, topLevelSpecs, walkLayers } from "../../src/components/kit-spec.ts";
@@ -162,6 +162,51 @@ function checkSizing(set: ComponentSetSpec): void {
   }
 }
 
+/** Whether a layer's two sides are fixed at one length, as an icon's always are. */
+function squareSides(layer: Exclude<ChildLayerSpec, { readonly kind: "text" }>): boolean {
+  if (layer.kind === "icon") {
+    return true;
+  }
+  const width = fixedLength(layer.sizing.horizontal);
+  const height = fixedLength(layer.sizing.vertical);
+  return width !== undefined && JSON.stringify(width) === JSON.stringify(height);
+}
+
+/**
+ * Refuse a turn the plugin cannot draw as CSS does. CSS's `rotate` leaves the layout as it was,
+ * while Figma lays a turned layer out by its turned box. On 2026-10-22 a real file kept a
+ * half-turned layer's box in its auto layout slot (PR), and a 20 × 10 frame at -90 made its hugging
+ * row 10 × 20 (PQ). So the kit takes a half turn on any layer and a quarter turn only on a layer
+ * with two equal fixed sides, whose box the turn keeps. The plugin places an absolute layer by its
+ * `x` and `y`, which a turn moves (PR), so an absolute frame cannot turn.
+ */
+function checkRotations(set: ComponentSetSpec): void {
+  for (const variant of set.variants) {
+    for (const layer of walkLayers(variant.root)) {
+      if (layer.kind === "text" || layer.rotation === undefined) {
+        continue;
+      }
+      const { rotation } = layer;
+      const where = `${set.name}: ${layer.name} in the variant ${variant.key}`;
+      if (rotation % 90 !== 0) {
+        throw new Error(
+          `${where} has a rotation of ${rotation}, and the kit draws only half and quarter turns.`
+        );
+      }
+      if (rotation % 180 !== 0 && !squareSides(layer)) {
+        throw new Error(
+          `${where} turns a quarter turn without two equal fixed sides, and Figma lays a turned layer out by its turned box, where CSS leaves the layout as it was.`
+        );
+      }
+      if (layer.kind === "frame" && layer.absolute !== undefined) {
+        throw new Error(
+          `${where} is absolute and turns, and the plugin places an absolute layer by an x and y that a turn moves.`
+        );
+      }
+    }
+  }
+}
+
 /** The signature every PNG file opens with (PNG specification §5.2). */
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
@@ -260,7 +305,7 @@ export function kitCollections(kit: KitSpec): ReadonlySet<string> {
  * @throws When the file lacks a variable or mode the kit names, a variable has the wrong type,
  *   an image fill holds bytes Figma cannot store or a hash that is not their SHA-1, or the spec contradicts itself,
  *   such as a page key listed twice, a node on a page the kit does not list, a preview that places
- *   a set from another page, or a fill or limit Figma cannot draw.
+ *   a set from another page, or a fill, limit or turn Figma cannot draw.
  */
 export function checkKit(figma: PluginAPI, variables: KitVariables, kit: KitSpec): void {
   const pages = new Set<string>();
@@ -278,6 +323,7 @@ export function checkKit(figma: PluginAPI, variables: KitVariables, kit: KitSpec
   for (const set of kit.componentSets) {
     checkComponentSet(set);
     checkSizing(set);
+    checkRotations(set);
     checkImages(figma, set);
   }
   for (const preview of kit.previews) {

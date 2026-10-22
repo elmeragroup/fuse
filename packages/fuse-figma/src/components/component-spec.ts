@@ -22,6 +22,7 @@ import type { VariableIndex } from "./css-values";
 import { fixedLength, walkLayers, ZERO } from "./kit-spec";
 import type {
   AxisSpec,
+  BooleanPropertySpec,
   BoxSpec,
   ChildLayerSpec,
   ColorSpec,
@@ -39,7 +40,9 @@ import type {
   VariantSpec,
 } from "./kit-spec";
 import { mapLabel, readLineClamp, readWithoutLabel, spaceBeforeLabel } from "./label-layout";
-import { partsThatScale, placeParts, placeRoot, slotAroundDot } from "./placement";
+import { booleanPropertiesOf, refusePresenceReads } from "./optional-parts";
+import type { OptionalPart } from "./optional-parts";
+import { partsThatScale, placeParts, placeRoot, readRotation, slotAroundDot } from "./placement";
 import type { Layout } from "./placement";
 import { makeStateTable } from "./state-table";
 import type { CompiledUtilities } from "./utility-css";
@@ -230,6 +233,13 @@ export type PartDefinition = BoxDefinition & {
   /** Whether a cell renders the part. Base UI mounts a checkbox's indicator only while checked. */
   readonly shownIn: (cell: Cell) => boolean;
   /**
+   * The BOOLEAN property of the set that shows or hides the part in the cells that render it, and
+   * the value it starts with, for a part a docs demo leaves out, such as a description. Undefined for
+   * a part that shows wherever a cell renders it. A part whose presence a selector reads, as
+   * `item-described:` reads Item's description, cannot be optional, and the build stops on one.
+   */
+  readonly optional?: BooleanPropertySpec;
+  /**
    * The declarations of the part's `style` attribute in a cell, in the attribute's order, which
    * cascade above every class, as a style attribute beats every rule of a style sheet. Undefined for
    * a part whose markup carries no `style`.
@@ -372,6 +382,16 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
       full
     );
   };
+  const optional = optionalParts(definition);
+  const booleans = booleanPropertiesOf(definition.name, optional);
+  if (optional.length > 0) {
+    refusePresenceReads(
+      definition.name,
+      optional,
+      new Set(definitionClasses(definition)),
+      context.compiled.rulesByClass
+    );
+  }
   const cascade = new SetCascade(makeStateTable(definition), context, record);
   const cells = matrixCells(definition.axes);
   const scaling = partsThatScale(partsOf(definition), cells, context.compiled);
@@ -402,19 +422,21 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
     return { key: variantKey(definition, cell), properties: cell, root };
   });
   cascade.finish();
+  const componentSet: BuiltComponent["componentSet"] = {
+    key: definition.key,
+    name: definition.name,
+    axes: definition.axes,
+    columnAxis: definition.columnAxis,
+    textProperties: textProperties(definition),
+    swapProperties: definition.swapProperties.map((property) => ({
+      name: property.name,
+      defaultIcon: iconKey(property.defaultIcon),
+    })),
+    variants,
+  };
   return {
-    componentSet: {
-      key: definition.key,
-      name: definition.name,
-      axes: definition.axes,
-      columnAxis: definition.columnAxis,
-      textProperties: textProperties(definition),
-      swapProperties: definition.swapProperties.map((property) => ({
-        name: property.name,
-        defaultIcon: iconKey(property.defaultIcon),
-      })),
-      variants,
-    },
+    // A set without an optional part leaves the field out, so a set built before it keeps its spec.
+    componentSet: booleans.length === 0 ? componentSet : { ...componentSet, booleanProperties: booleans },
     coverage: [...coverage.values()],
     fontStyles: [...fontStyles],
   };
@@ -470,6 +492,24 @@ function textProperties(definition: ComponentDefinition): readonly TextPropertyS
     }
   }
   return [...named].map(([name, { defaultValue }]) => ({ name, defaultValue }));
+}
+
+/**
+ * The optional parts, depth first, each with every `data-slot` that hiding it hides: its own and
+ * those of the parts inside it, a slotless part's included.
+ */
+function optionalParts(definition: ComponentDefinition): readonly OptionalPart[] {
+  return partsOf(definition).flatMap((part) =>
+    part.optional === undefined
+      ? []
+      : [
+          {
+            name: partName(part),
+            property: part.optional,
+            slots: [part, ...partsOf(part)].flatMap(({ slot }) => (slot === undefined ? [] : [slot])),
+          },
+        ]
+  );
 }
 
 /** The label of a box and of every part below it, depth first, with the layer name of its box. */
@@ -715,12 +755,16 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope, room: 
     const index = flowing.indexOf(part);
     const room = index === -1 ? absoluteRoom(holder) : roomInside(holder, index);
     const box = mapBox(part.child, part.cascade, scope, room);
-    const layer: FrameLayerSpec = {
+    const drawn: FrameLayerSpec = {
       kind: "frame",
       key: part.child.key,
       name: part.name,
       ...(scope.scaling.has(part.child) ? slotAroundDot(part.cascade.style, box) : box),
     };
+    const { optional } = part.child;
+    const linked = optional === undefined ? drawn : { ...drawn, visibleProperty: optional.name };
+    const rotation = readRotation(part.cascade.style);
+    const layer = rotation === undefined ? linked : { ...linked, rotation };
     return { layer, style: part.cascade.style };
   });
   const missing = unstretched(
@@ -891,7 +935,7 @@ function mapIcon(
   if (width === undefined || color === undefined || JSON.stringify(width) !== JSON.stringify(height)) {
     throw new Error(`${variantKey(definition, cell)}: the ${slot.name} needs a square size and a text color`);
   }
-  return {
+  const layer: IconLayerSpec = {
     kind: "icon",
     key: slot.key,
     name: slot.name,
@@ -900,4 +944,6 @@ function mapIcon(
     size: width,
     color,
   };
+  const rotation = readRotation(style);
+  return rotation === undefined ? layer : { ...layer, rotation };
 }

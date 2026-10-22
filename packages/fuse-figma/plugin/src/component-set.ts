@@ -1,12 +1,18 @@
 /**
- * One component set: its variants, its text and swap properties and the grid the variants sit
- * in.
+ * One component set: its variants, its text, boolean and swap properties and the grid the variants
+ * sit in.
  * The plugin edits an existing set in place, so the set and every variant keep their node
  * ids and component keys, and instances in other files keep following them.
  */
 
 import { walkLayers } from "../../src/components/kit-spec.ts";
-import type { AxisSpec, ComponentSetSpec, VariantSpec } from "../../src/components/kit-spec.ts";
+import type {
+  AxisSpec,
+  BooleanPropertySpec,
+  ComponentSetSpec,
+  TextPropertySpec,
+  VariantSpec,
+} from "../../src/components/kit-spec.ts";
 import { planChildren, requireNewSetFonts, requireNewTextFonts } from "./child-layers.ts";
 import type { LayerLinks } from "./child-layers.ts";
 import { near, planScalar } from "./fields.ts";
@@ -109,23 +115,38 @@ function gridCell(spec: ComponentSetSpec, variant: VariantSpec): GridCell {
 
 /**
  * Check that a component set's spec agrees with itself. Every variant sets a listed value on
- * each axis, the column axis is one of the axes, and every text layer links a property the
- * set defines. The planning pass runs this before it records any write, because an operation
- * that creates a set plans the set's contents when it runs.
+ * each axis, the column axis is one of the axes, every text layer links a TEXT property and every
+ * frame a BOOLEAN property the set defines, and no two properties share a name, since the plan
+ * finds each property's id by its name. The planning pass runs this before it records any write,
+ * because an operation that creates a set plans the set's contents when it runs.
  *
  * @param spec - The component set.
  * @throws When the spec contradicts itself.
  */
 export function checkComponentSet(spec: ComponentSetSpec): void {
   columnAxisOf(spec);
-  const properties = new Set(spec.textProperties.map((property) => property.name));
+  const texts = spec.textProperties.map((property) => property.name);
+  const booleans = (spec.booleanProperties ?? []).map((property) => property.name);
+  const names = [...texts, ...booleans, ...spec.swapProperties.map((property) => property.name)];
+  const twice = names.find((name, index) => names.indexOf(name) !== index);
+  if (twice !== undefined) {
+    throw new Error(
+      `${spec.name} names two properties ${twice}, and the plugin finds each property by its name.`
+    );
+  }
   for (const variant of spec.variants) {
     variantName(spec, variant);
     gridCell(spec, variant);
     for (const layer of walkLayers(variant.root)) {
-      if (layer.kind === "text" && layer.textProperty !== undefined && !properties.has(layer.textProperty)) {
+      const link =
+        layer.kind === "text"
+          ? { property: layer.textProperty, defined: texts }
+          : layer.kind === "frame"
+            ? { property: layer.visibleProperty, defined: booleans }
+            : undefined;
+      if (link?.property !== undefined && !link.defined.includes(link.property)) {
         throw new Error(
-          `${spec.name}: the variant ${variant.key} links ${layer.textProperty}, which the set does not define.`
+          `${spec.name}: the variant ${variant.key} links ${link.property}, which the set does not define.`
         );
       }
     }
@@ -204,26 +225,39 @@ function planGrid(
   );
 }
 
-function planTextProperties(
+/** A set's TEXT or BOOLEAN properties, each a name and the value it starts with. */
+type ValueProperties =
+  | { readonly type: "TEXT"; readonly properties: readonly TextPropertySpec[] }
+  | { readonly type: "BOOLEAN"; readonly properties: readonly BooleanPropertySpec[] };
+
+/** How a change line names each kind of property. */
+const KIND_NAMES = { TEXT: "text", BOOLEAN: "boolean" } as const;
+
+/**
+ * Plan the TEXT or BOOLEAN properties: add each one the set lacks, and give each one it holds the
+ * spec's default. An operation that adds a property puts its id in `ids` when it runs.
+ */
+function planValueProperties(
   run: Run,
   set: ComponentSetNode,
   spec: ComponentSetSpec,
+  { type, properties }: ValueProperties,
   ids: Map<string, string>
 ): void {
-  for (const property of spec.textProperties) {
+  for (const property of properties) {
     const found = Object.entries(set.componentPropertyDefinitions).find(
-      ([id, definition]) => definition.type === "TEXT" && id.split("#")[0] === property.name
+      ([id, definition]) => definition.type === type && id.split("#")[0] === property.name
     );
     if (found === undefined) {
-      change(run.plan, spec.name, `add the text property ${property.name}`, () => {
-        ids.set(property.name, set.addComponentProperty(property.name, "TEXT", property.defaultValue));
+      change(run.plan, spec.name, `add the ${KIND_NAMES[type]} property ${property.name}`, () => {
+        ids.set(property.name, set.addComponentProperty(property.name, type, property.defaultValue));
       });
       continue;
     }
     const [id, definition] = found;
     ids.set(property.name, id);
     if (definition.defaultValue !== property.defaultValue) {
-      change(run.plan, spec.name, `${property.name} default → ${property.defaultValue}`, () => {
+      change(run.plan, spec.name, `${property.name} default → ${String(property.defaultValue)}`, () => {
         ids.set(property.name, set.editComponentProperty(id, { defaultValue: property.defaultValue }));
       });
     }
@@ -360,7 +394,14 @@ async function planSetContents(
     set.name = spec.name;
   });
   const properties = new Map<string, string>();
-  planTextProperties(run, set, spec, properties);
+  planValueProperties(run, set, spec, { type: "TEXT", properties: spec.textProperties }, properties);
+  planValueProperties(
+    run,
+    set,
+    spec,
+    { type: "BOOLEAN", properties: spec.booleanProperties ?? [] },
+    properties
+  );
   planSwapProperties(run, set, spec, icons, properties);
   const links: LayerLinks = { properties, icons };
 

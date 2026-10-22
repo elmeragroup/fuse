@@ -1,156 +1,39 @@
 /**
- * `reconcileKit` with a one-variant kit on the in-memory file in `fake-figma.ts`, for a file
- * whose kit page holds a stale preview and no component set. The label's family follows
- * `font-sans`, which aliases a brand variable, so the run resolves it across collections before
- * it writes (rule 8) and needs the font it names (rule 7). The oracles are the change lines Plan
- * lists and the writes the file took.
+ * `reconcileKit` with the one-variant kit of `button-kit-fixture.ts` on the in-memory file in
+ * `fake-figma.ts`, for a file whose kit page holds a stale preview and no component set. The
+ * oracles are the change lines Plan lists and the writes the file took.
  */
 import { describe, expect, it } from "vitest";
 
-import { HUGGING_TEXT, NO_LIMITS, TOP_LEFT } from "../../src/components/kit-spec.ts";
-import type {
-  ChildLayerSpec,
-  ComponentRootSpec,
-  FrameLayerSpec,
-  IconLayerSpec,
-  KitSpec,
-  NumberSpec,
-  TextLayerSpec,
-} from "../../src/components/kit-spec.ts";
+import { NO_LIMITS } from "../../src/components/kit-spec.ts";
+import type { FrameLayerSpec, KitSpec, TextLayerSpec } from "../../src/components/kit-spec.ts";
+import {
+  buttonVariant,
+  CHECK,
+  FILL,
+  fixture,
+  frame,
+  KIT,
+  kitWithRoot,
+  LABEL,
+  literal,
+  nestedKit,
+  RELAYOUT,
+} from "./button-kit-fixture.ts";
 import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import {
-  aliasOf,
   BLUE_PIXEL,
   childNamed,
-  color,
-  fixtureFile,
   JPEG_HEAD,
   PNG_4097_WIDE,
   PNG_SIGNATURE,
   PORTRAIT_HEAD,
   RED_PIXEL,
-  string,
 } from "./fake-fixtures.ts";
 import type { ImageFixture } from "./fake-fixtures.ts";
 import { keyOf, setKey } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
-
-const literal = (value: number): NumberSpec => ({ kind: "literal", value });
-
-/** The label of the one Button variant, whose family follows `font-sans`. */
-const LABEL: TextLayerSpec = {
-  kind: "text",
-  key: "button/label",
-  name: "Label",
-  characters: "Button",
-  textProperty: undefined,
-  fontFamily: { kind: "variable", variable: { collection: "Fuse tokens", name: "font-sans" } },
-  fontStyle: "Medium",
-  fontSize: literal(14),
-  lineHeight: literal(20),
-  color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } },
-  underline: undefined,
-  sizing: HUGGING_TEXT,
-  align: TOP_LEFT,
-  truncation: undefined,
-};
-
-/** A kit with one Button variant, no icons and no previews, which bundles Roboto Medium. */
-const KIT: KitSpec = {
-  pages: [{ key: "page", name: "Fuse components" }],
-  fonts: [{ family: "Roboto", style: "Medium" }],
-  icons: {
-    key: "icons",
-    page: "page",
-    name: "Icons",
-    size: 16,
-    color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } },
-    icons: [],
-  },
-  componentSets: [
-    {
-      key: "button",
-      page: "page",
-      name: "Button",
-      axes: [{ name: "size", values: ["md"] }],
-      columnAxis: "size",
-      textProperties: [],
-      swapProperties: [],
-      variants: [
-        {
-          key: "button/size=md",
-          properties: { size: "md" },
-          root: {
-            name: "button",
-            direction: "HORIZONTAL",
-            sizing: { horizontal: { kind: "hug" }, vertical: { kind: "fixed", length: literal(36) } },
-            limits: NO_LIMITS,
-            clips: true,
-            paddingTop: literal(0),
-            paddingRight: literal(16),
-            paddingBottom: literal(0),
-            paddingLeft: literal(16),
-            itemSpacing: literal(8),
-            primaryAlign: "CENTER",
-            counterAlign: "CENTER",
-            cornerRadius: literal(6),
-            fill: undefined,
-            stroke: undefined,
-            shadows: [],
-            opacity: 1,
-            children: [LABEL],
-          },
-        },
-      ],
-    },
-  ],
-  previews: [],
-};
-
-const BLACK = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
-
-/** A frame layer with no padding, gap, corner, paint or ring, centered on both axes. */
-function frame(key: string, name: string, children: readonly ChildLayerSpec[]): FrameLayerSpec {
-  return {
-    kind: "frame",
-    key,
-    name,
-    direction: "HORIZONTAL",
-    sizing: { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
-    limits: NO_LIMITS,
-    clips: false,
-    paddingTop: literal(0),
-    paddingRight: literal(0),
-    paddingBottom: literal(0),
-    paddingLeft: literal(0),
-    itemSpacing: literal(0),
-    primaryAlign: "CENTER",
-    counterAlign: "CENTER",
-    cornerRadius: literal(0),
-    fill: undefined,
-    stroke: undefined,
-    shadows: [],
-    opacity: 1,
-    children,
-  };
-}
-
-/** A fixed Check icon, as a checkbox's indicator shows one. */
-const CHECK: IconLayerSpec = {
-  kind: "icon",
-  key: "button/check",
-  name: "Check",
-  icon: "icon/Check",
-  swapProperty: undefined,
-  size: literal(12),
-  color: BLACK,
-};
-
-/** The Button variant's layers moved two frames down: Control holds Indicator, which holds both. */
-const NESTED_LAYERS = [
-  frame("button/control", "Control", [frame("button/indicator", "Indicator", [CHECK, LABEL])]),
-];
 
 /**
  * A 16px frame that an image covers, as an avatar's `<img>` covers its circle, with the hash the
@@ -165,74 +48,6 @@ function imageFrame(image: ImageFixture, hash = image.sha1): FrameLayerSpec {
     },
     fill: { kind: "image", bytes: image.bytes, hash, scaleMode: "FILL" },
   };
-}
-
-/**
- * `KIT` with the variant's root holding the given layers and a library holding Check. It
- * bundles no font, so only the walks over the variant's layers require the label's font.
- */
-function nestedKit(children: readonly ChildLayerSpec[] = NESTED_LAYERS): KitSpec {
-  return {
-    ...KIT,
-    fonts: [],
-    icons: {
-      ...KIT.icons,
-      icons: [
-        {
-          key: "icon/Check",
-          name: "Check",
-          svg: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M2 8l4 4 8-8"/></svg>',
-        },
-      ],
-    },
-    componentSets: KIT.componentSets.map((set) => ({
-      ...set,
-      variants: set.variants.map((variant) => ({ ...variant, root: { ...variant.root, children } })),
-    })),
-  };
-}
-
-/** `KIT` with its one variant's root changed as `edit` says. */
-function kitWithRoot(edit: (root: ComponentRootSpec) => ComponentRootSpec): KitSpec {
-  return {
-    ...KIT,
-    componentSets: KIT.componentSets.map((set) => ({
-      ...set,
-      variants: set.variants.map((variant) => ({ ...variant, root: edit(variant.root) })),
-    })),
-  };
-}
-
-const FILL = { kind: "fill" } as const;
-
-/**
- * A file whose `font-sans` aliases a brand variable that holds `family` in its default mode.
- * The machine cannot load Comic Sans.
- *
- * @param family - The family the brand variable holds.
- * @param withPage - Whether the file holds the kit page, with its stale preview.
- * @returns The file, opened for a new run, and the number of writes its setup made.
- */
-function fixture(family: string, withPage = true) {
-  const file = fixtureFile([
-    color("Fuse tokens", "background", { r: 1, g: 1, b: 1, a: 1 }),
-    aliasOf("Fuse tokens", "font-sans", "STRING", {
-      collection: "Fuse brand",
-      variable: "light/external/private/font-sans",
-    }),
-    string("Fuse brand", "light/external/private/font-sans", family),
-  ]);
-  if (withPage) {
-    const page = file.figma.createPage();
-    page.name = "Fuse components";
-    setKey(page, "page");
-    const stale = file.figma.createFrame();
-    page.appendChild(stale);
-    stale.name = "Old preview";
-    setKey(stale, "preview/old");
-  }
-  file.reopen({ unavailableFonts: [{ family: "Comic Sans" }] });
-  return { file, setup: file.writes.length };
 }
 
 describe("reconcileKit on a file without the component set", () => {
@@ -621,18 +436,6 @@ function layerTree(parent: ChildrenMixin): LayerTree[] {
   });
 }
 
-/** The Button variant the kit page holds. */
-async function buttonVariant(file: FakeFigma): Promise<ComponentNode> {
-  const page = file.figma.root.children.find((node) => keyOf(node) === "page");
-  await page?.loadAsync();
-  const set = page?.children.find((node) => node.type === "COMPONENT_SET");
-  const variant = set?.type === "COMPONENT_SET" ? set.children[0] : undefined;
-  if (variant?.type !== "COMPONENT") {
-    throw new Error("the kit page holds no Button variant");
-  }
-  return variant;
-}
-
 /** A file the nested kit was applied to, opened for the next run, and its two frames. */
 async function nestedFile(): Promise<{
   readonly file: FakeFigma;
@@ -645,15 +448,6 @@ async function nestedFile(): Promise<{
   const control = childNamed(await buttonVariant(file), "FRAME", "Control");
   return { file, control, indicator: childNamed(control, "FRAME", "Indicator") };
 }
-
-/**
- * The lines a plan that changes anything in the Button set ends with: it lays out the set's grid
- * and the page again.
- */
-const RELAYOUT = [
-  "Button: lay out 1 variants in 1 columns and 1 rows",
-  "Fuse components: place Button and Icons in a row",
-];
 
 describe("a variant whose layers sit in a frame inside a frame", () => {
   it("creates both frames, the icon and the label in one Apply, and the next Plan lists nothing", async () => {

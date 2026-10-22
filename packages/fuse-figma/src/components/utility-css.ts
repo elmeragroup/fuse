@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import { compileAst } from "tailwindcss";
 
 import { splitClassName } from "./class-name";
+import { namedClasses } from "./css-selector";
 import { splitTopLevel } from "./css-values";
 import { compareSpecificity, specificityOf } from "./specificity";
 import type { Specificity } from "./specificity";
@@ -53,6 +54,12 @@ export type CompiledUtilities = {
   readonly rules: ReadonlyMap<string, UtilityRule>;
   /** Each full class Tailwind emitted a rule for, such as `data-checked:border-primary`. */
   readonly classes: ReadonlyMap<string, ClassPlacement>;
+  /**
+   * The selector of every rule that names a class outside a pseudo-class's parentheses, by that
+   * class, whatever the selector starts with. `item-described:` compiles to a selector that starts
+   * with `:where()`, which places no class, and a part's presence check still reads it here.
+   */
+  readonly rulesByClass: ReadonlyMap<string, readonly string[]>;
   /** The theme variables Tailwind emitted on `:root`, such as `--font-weight-medium: 500`. */
   readonly themeValues: ReadonlyMap<string, string>;
   /** Each custom property Tailwind registered with `@property`, such as `--tw-ring-offset-width`. */
@@ -224,7 +231,8 @@ export function baseBorderColor(compiled: CompiledUtilities): UtilityDeclaration
  *
  * Every rule whose selector starts with a class places that class, at the top level or inside
  * an at-rule such as the `@media (hover: hover)` around `enabled-hover:`. Its first rule gives
- * its order, and its most specific selector its specificity.
+ * its order, and its most specific selector its specificity. Every rule also lists its selector
+ * under each class it names, wherever the class sits in the selector.
  *
  * @param nodes - The syntax tree `build` returns.
  * @returns The utility rules, class placements, theme values and registered properties.
@@ -232,6 +240,7 @@ export function baseBorderColor(compiled: CompiledUtilities): UtilityDeclaration
 function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
   const rules = new Map<string, UtilityRule>();
   const classes = new Map<string, ClassPlacement>();
+  const rulesByClass = new Map<string, string[]>();
   const themeValues = new Map<string, string>();
   const registeredProperties = new Map<string, RegisteredProperty>();
   const baseRules: BaseRule[] = [];
@@ -242,6 +251,11 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
         node.nodes.forEach(place);
       }
       return;
+    }
+    if (node.kind === "rule") {
+      for (const name of new Set(namedClasses(node.selector))) {
+        rulesByClass.set(name, [...(rulesByClass.get(name) ?? []), node.selector]);
+      }
     }
     const leading = node.kind === "rule" ? leadingClass(node.selector) : undefined;
     if (node.kind !== "rule" || leading === undefined) {
@@ -295,7 +309,7 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
     }
   };
   nodes.forEach(visit);
-  return { rules, classes, themeValues, registeredProperties, baseRules };
+  return { rules, classes, rulesByClass, themeValues, registeredProperties, baseRules };
 }
 
 /**

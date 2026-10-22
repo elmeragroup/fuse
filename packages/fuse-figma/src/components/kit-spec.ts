@@ -160,7 +160,16 @@ export type IconLayerSpec = {
   readonly swapProperty: string | undefined;
   readonly size: NumberSpec;
   readonly color: ColorSpec;
+  /** How far the layer turns, in degrees as {@link RotationSpec} counts them, absent for none. */
+  readonly rotation?: RotationSpec;
 };
+
+/**
+ * A layer's turn in degrees, as Figma's `rotation` counts it: counterclockwise, from -180 to 180,
+ * about the layer's center as auto layout keeps its box in its slot (PR). CSS turns clockwise, so
+ * `rotate: 90deg` is -90 and `rotate: 180deg` is 180. The kit check takes only quarter turns.
+ */
+export type RotationSpec = number;
 
 /**
  * How an absolute layer follows its parent's resize on one axis, as Figma's constraints name it:
@@ -190,6 +199,13 @@ export type FrameLayerSpec = BoxSpec & {
   readonly name: string;
   /** Where the layer sits outside its parent's auto layout, absent for a layer the auto layout places. */
   readonly absolute?: AbsoluteSpec;
+  /**
+   * The BOOLEAN property of the set that shows or hides the layer, which links its `visible`, absent
+   * for a layer that shows wherever its variant holds it.
+   */
+  readonly visibleProperty?: string;
+  /** How far the layer turns, in degrees as {@link RotationSpec} counts them, absent for none. */
+  readonly rotation?: RotationSpec;
 };
 
 /** A layer inside a component root or a frame layer. */
@@ -342,8 +358,17 @@ export type SwapPropertySpec = {
 };
 
 /**
- * A component set: its variant axes, its TEXT and INSTANCE_SWAP properties, and one variant per
- * matrix cell.
+ * A BOOLEAN component property, which shows or hides the layers that link their `visible` to it,
+ * and the value it starts with.
+ */
+export type BooleanPropertySpec = {
+  readonly name: string;
+  readonly defaultValue: boolean;
+};
+
+/**
+ * A component set: its variant axes, its TEXT, BOOLEAN and INSTANCE_SWAP properties, and one variant
+ * per matrix cell.
  */
 export type ComponentSetSpec = {
   readonly key: string;
@@ -354,6 +379,11 @@ export type ComponentSetSpec = {
   /** The axis the plugin lays out as columns. The other axes form the rows, in axis order. */
   readonly columnAxis: string;
   readonly textProperties: readonly TextPropertySpec[];
+  /**
+   * The BOOLEAN properties that show or hide optional layers, absent on a set without one, so a set
+   * built before they existed keeps its spec.
+   */
+  readonly booleanProperties?: readonly BooleanPropertySpec[];
   readonly swapProperties: readonly SwapPropertySpec[];
   readonly variants: readonly VariantSpec[];
 };

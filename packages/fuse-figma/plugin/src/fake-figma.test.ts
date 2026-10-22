@@ -1,14 +1,22 @@
 /**
- * The layout, text and image rules of the in-memory file in `fake-figma.ts`, each on a few nodes
- * built by hand. The oracle is what the test file `Elmera Fuse - Import test` read back in net-zero
- * probes on 2026-10-22, named P0 to P9b as the fake's header names them, the PNG signature, the
- * hashes `shasum -a 1` gives the fixture images, and the typings where no probe ran. The planners'
- * tests converge against these rules,
- * so a rule that drifts from the real file would let a plan pass that Figma would not keep.
+ * The layout, text, image, property and rotation rules of the in-memory file in `fake-figma.ts`, each
+ * on a few nodes built by hand. The oracle is what the test file `Elmera Fuse - Import test` read
+ * back in net-zero probes on 2026-10-22, named P0 to P9b, PB and PR as the fake's header names them,
+ * the PNG signature, the hashes `shasum -a 1` gives the fixture images, and the typings where no
+ * probe ran. The planners' tests converge against these rules, so a rule that drifts from the real
+ * file would let a plan pass that Figma would not keep.
  */
 import { describe, expect, it } from "vitest";
 
-import { BLUE_PIXEL, fixtureFile, float, PNG_SIGNATURE, PORTRAIT_HEAD, RED_PIXEL } from "./fake-fixtures.ts";
+import {
+  BLUE_PIXEL,
+  childNamed,
+  fixtureFile,
+  float,
+  PNG_SIGNATURE,
+  PORTRAIT_HEAD,
+  RED_PIXEL,
+} from "./fake-fixtures.ts";
 
 const file = fixtureFile([float("Fuse density", "control-h-xs", 24)]);
 const { figma } = file;
@@ -462,5 +470,157 @@ describe("rule 24: an absolute layer sits outside its parent's auto layout and f
     expect(() => {
       filling.layoutPositioning = "ABSOLUTE";
     }).toThrow("does not model layoutPositioning ABSOLUTE");
+  });
+});
+
+describe("rule 25: a BOOLEAN property shows or hides the layers that link their visibility to it", () => {
+  /**
+   * The set PB built: two variants, each a row holding a `Title` and a `Detail` text, and a BOOLEAN
+   * property `Optional` that starts as `defaultValue` and that each variant's `Detail` links.
+   */
+  function optionalDetail(defaultValue = true) {
+    const variants = ["kind=a", "kind=b"].map((name) => {
+      const variant = figma.createComponent();
+      variant.name = name;
+      variant.layoutMode = "HORIZONTAL";
+      for (const layer of ["Title", "Detail"]) {
+        const text = figma.createText();
+        text.name = layer;
+        variant.appendChild(text);
+      }
+      return variant;
+    });
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    const id = set.addComponentProperty("Optional", "BOOLEAN", defaultValue);
+    for (const variant of variants) {
+      childNamed(variant, "TEXT", "Detail").componentPropertyReferences = { visible: id };
+    }
+    const [first] = variants;
+    if (first === undefined) {
+      throw new Error("the set holds no variant");
+    }
+    return { set, id, variant: first, instance: first.createInstance() };
+  }
+
+  /** Each layer a node lists, with whether it shows. */
+  const shown = (node: ChildrenMixin) => node.children.map((layer) => [layer.name, layer.visible]);
+
+  // The typings list an instance's variant properties in `componentProperties` beside the others.
+  it("adds the property as its name and an id, and lists it on an instance at its default (PB)", () => {
+    const { set, id, instance } = optionalDetail();
+    expect(id).toMatch(/^Optional#\d+:\d+$/);
+    expect(set.componentPropertyDefinitions[id]).toEqual({ type: "BOOLEAN", defaultValue: true });
+    expect(instance.componentProperties).toEqual({
+      kind: { type: "VARIANT", value: "a" },
+      [id]: { type: "BOOLEAN", value: true },
+    });
+    expect(shown(instance)).toEqual([
+      ["Title", true],
+      ["Detail", true],
+    ]);
+  });
+
+  // The plugin never sets `skipInvisibleInstanceChildren`, so it runs with the default the typings
+  // give, false, under which an instance lists its hidden layers.
+  it("hides the linked layer in an instance set to false, which keeps listing it, and leaves the variant's shown (PB)", () => {
+    const { id, variant, instance } = optionalDetail();
+    expect(figma.skipInvisibleInstanceChildren).toBe(false);
+    instance.setProperties({ [id]: false });
+    expect(instance.componentProperties[id]).toEqual({ type: "BOOLEAN", value: false });
+    expect(shown(instance)).toEqual([
+      ["Title", true],
+      ["Detail", false],
+    ]);
+    expect(shown(variant)).toEqual([
+      ["Title", true],
+      ["Detail", true],
+    ]);
+    instance.setProperties({ [id]: true });
+    expect(shown(instance)).toEqual([
+      ["Title", true],
+      ["Detail", true],
+    ]);
+  });
+
+  it("leaves the hidden layer out of the instance's children while skipInvisibleInstanceChildren is set (PB, correction)", () => {
+    const { id, variant, instance } = optionalDetail();
+    instance.setProperties({ [id]: false });
+    figma.skipInvisibleInstanceChildren = true;
+    try {
+      expect(shown(instance)).toEqual([["Title", true]]);
+      expect(shown(variant)).toEqual([
+        ["Title", true],
+        ["Detail", true],
+      ]);
+    } finally {
+      figma.skipInvisibleInstanceChildren = false;
+    }
+  });
+
+  it("hides the variant's own layer and an instance's while the property starts false (PQ)", () => {
+    const { id, variant, instance } = optionalDetail(false);
+    expect(shown(variant)).toEqual([
+      ["Title", true],
+      ["Detail", false],
+    ]);
+    expect(shown(instance)).toEqual([
+      ["Title", true],
+      ["Detail", false],
+    ]);
+    instance.setProperties({ [id]: true });
+    expect(shown(instance)).toEqual([
+      ["Title", true],
+      ["Detail", true],
+    ]);
+  });
+
+  it("refuses to set a property the instance's set does not define, and a layer's own visibility, where no probe ran", () => {
+    const { instance } = optionalDetail();
+    expect(() => {
+      instance.setProperties({ "Missing#9:9": false });
+    }).toThrow("shows no property Missing#9:9");
+    const [title] = instance.children;
+    expect(() => {
+      if (title !== undefined) {
+        title.visible = false;
+      }
+    }).toThrow("visible is read-only");
+  });
+});
+
+describe("rule 26: auto layout keeps a rotated layer's box in its slot, and the layer's place moves with the turn", () => {
+  /** The layer PR turned: a 16px icon instance in a row, 34px from the row's left. */
+  function iconInRow(): InstanceNode {
+    const row = autoLayout("HORIZONTAL");
+    const icon = figma.createComponent().createInstance();
+    icon.resize(16, 16);
+    icon.x = 34;
+    row.appendChild(icon);
+    return icon;
+  }
+
+  it("moves the icon's place to its far corner at 180 and keeps its box, and moves it back at 0 (PR)", () => {
+    const icon = iconInRow();
+    const box = icon.absoluteBoundingBox;
+    icon.rotation = 180;
+    expect([icon.rotation, icon.x, icon.y]).toEqual([180, 50, 16]);
+    expect(icon.absoluteBoundingBox).toEqual(box);
+    icon.rotation = 0;
+    expect([icon.rotation, icon.x, icon.y]).toEqual([0, 34, 0]);
+  });
+
+  // Oracle: the typings, which turn a layer about its top left and read its rotation from -180 to
+  // 180 as `atan2(-m10, m00)` of its transform, and PQ, where a free frame at -90 turned about its
+  // top left and read `relativeTransform` `[[0, -1], [1, 0]]`, its x axis pointing down.
+  it("turns a layer outside auto layout about its top left, and reads a whole turn more as the same rotation", () => {
+    const loose = figma.createFrame();
+    loose.resize(20, 10);
+    loose.x = 5;
+    loose.y = 5;
+    loose.rotation = -90;
+    expect([loose.rotation, loose.x, loose.y]).toEqual([-90, 5, 5]);
+    expect(loose.absoluteBoundingBox).toEqual({ x: -5, y: 5, width: 10, height: 20 });
+    loose.rotation = 270;
+    expect(loose.rotation).toBe(-90);
   });
 });

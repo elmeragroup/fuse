@@ -12,6 +12,7 @@ import type {
   FrameLayerSpec,
   IconLayerSpec,
   NumberSpec,
+  RotationSpec,
   TextLayerSpec,
   TextSizingSpec,
 } from "../../src/components/kit-spec.ts";
@@ -37,8 +38,8 @@ import { planBox, planLength } from "./root-layer.ts";
 import type { LayerParent } from "./root-layer.ts";
 
 /**
- * The TEXT and INSTANCE_SWAP properties of a component set, from the name in the spec to the
- * full property id. An operation that adds a property puts its id here when it runs, before
+ * The TEXT, BOOLEAN and INSTANCE_SWAP properties of a component set, from the name in the spec to
+ * the full property id. An operation that adds a property puts its id here when it runs, before
  * any layer links to it.
  */
 export type PropertyIds = ReadonlyMap<string, string>;
@@ -490,8 +491,64 @@ function planTypography(
 }
 
 /**
+ * Plan a layer's turn. Figma reads a rotation from -180 to 180, so two that differ by whole turns
+ * match. Auto layout keeps a turned layer's box in its slot and moves its `x` and `y` with the turn,
+ * as a real file did on 2026-10-22 (PR), so the plan compares the rotation alone.
+ *
+ * @param rotation - The turn the spec asks for, or undefined for none.
+ */
+function planRotation(
+  run: Run,
+  node: FrameNode | InstanceNode,
+  label: string,
+  rotation: RotationSpec | undefined
+): void {
+  const desired = rotation ?? 0;
+  const off = (((node.rotation - desired) % 360) + 360) % 360;
+  if (near(off, 0) || near(off, 360)) {
+    return;
+  }
+  change(run.plan, label, `rotation → ${desired}`, () => {
+    node.rotation = desired;
+  });
+}
+
+/**
+ * Plan the BOOLEAN property a frame's `visible` follows, which a designer toggles from the
+ * properties panel to show or hide the part (PB). A frame the spec shows wherever its variant holds
+ * it follows none.
+ *
+ * @param property - The property's name in the spec, or undefined for none.
+ * @param ids - The set's properties.
+ */
+function planVisibleLink(
+  run: Run,
+  frame: FrameNode,
+  label: string,
+  property: string | undefined,
+  ids: PropertyIds
+): void {
+  const linked = frame.componentPropertyReferences?.visible;
+  if (property !== undefined && (linked === undefined || linked !== ids.get(property))) {
+    change(run.plan, label, `visible → the ${property} property`, () => {
+      const id = ids.get(property);
+      if (id === undefined) {
+        throw new Error(`${label}: the ${property} property has no id when the layer links to it.`);
+      }
+      frame.componentPropertyReferences = { ...frame.componentPropertyReferences, visible: id };
+    });
+  } else if (property === undefined && linked !== undefined) {
+    change(run.plan, label, "visible → no property", () => {
+      const { visible: _unlinked, ...rest } = frame.componentPropertyReferences ?? {};
+      frame.componentPropertyReferences = rest;
+    });
+  }
+}
+
+/**
  * Plan an icon layer: an instance of the icon component the spec names, linked to the set's
- * swap property when it has one, sized by the cell and with its glyph in the label's color.
+ * swap property when it has one, sized and turned by the cell and with its glyph in the label's
+ * color.
  */
 async function planIcon(
   run: Run,
@@ -540,6 +597,7 @@ async function planIcon(
     },
     spec.size
   );
+  planRotation(run, instance, label, spec.rotation);
   // A swap or a redraw replaces the glyph, so the color goes on the glyph the instance holds
   // once those ran.
   const glyph = swapped || icon.redrawn ? undefined : glyphOf(instance);
@@ -618,7 +676,10 @@ function planPositioning(
   );
 }
 
-/** Plan a frame layer: its name, where it sits, its box, then the layers it holds. */
+/**
+ * Plan a frame layer: its name, where it sits, its box, the property that shows or hides it and its
+ * turn, then the layers it holds.
+ */
 async function planFrame(
   run: Run,
   frame: FrameNode,
@@ -635,6 +696,8 @@ async function planFrame(
   // as a turn of the parent moves a fill, so the layer's lengths are written whatever they read.
   const moved = spec.absolute !== undefined && holder.size === "unknown" ? "unknown" : holder.held;
   const size = planBox(run, frame, label, spec, { kind: "frame", parent: moved });
+  planVisibleLink(run, frame, label, spec.visibleProperty, links.properties);
+  planRotation(run, frame, label, spec.rotation);
   await planChildren(run, frame, label, spec, links, holder.size === "unknown" ? "unknown" : size);
 }
 

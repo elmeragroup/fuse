@@ -20,7 +20,7 @@ import type {
 } from "./component-spec";
 import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
-import type { BoxSpec, FrameLayerSpec, TextLayerSpec } from "./kit-spec";
+import type { BooleanPropertySpec, BoxSpec, FrameLayerSpec, TextLayerSpec } from "./kit-spec";
 
 describe("a class whose variant no cell models", () => {
   let coverage: readonly CoverageRow[];
@@ -2014,5 +2014,192 @@ describe("a label after a space the markup holds", () => {
     ["draws no gap with no icon before it, where it starts the line", "", [], literal(0)],
   ])("%s", async (_case, classes, icons, gap) => {
     expect(await gapOf(classes, icons)).toEqual(gap);
+  });
+});
+
+// Unit under test: `buildComponentSet` on parts behind a BOOLEAN property. Oracle: the Figma property
+// model, where one BOOLEAN property holds one default and shows or hides every layer that links its
+// `visible`, and CSS, where a parent's `:has()` restyles the parent once the part is gone, which
+// hiding a layer cannot do. Tailwind compiles `has-[>[data-slot=x]]:` to `:has( > [data-slot=x])`.
+describe("an optional part", () => {
+  const DETAIL: BooleanPropertySpec = { name: "Detail", defaultValue: true };
+  /** A 4px part, its `data-slot` `chip-` and its key unless the case names another. */
+  const part = (key: string, slot = `chip-${key}`): ReturnType<typeof dot> => ({
+    ...dot("size-[4px]"),
+    key,
+    slot,
+  });
+  const hidden = (key: string, optional: BooleanPropertySpec, slot?: string): PartDefinition => ({
+    ...part(key, slot),
+    optional,
+  });
+  const READS_DETAIL = "has-[>[data-slot=chip-detail]]";
+  const READS_TITLE = "has-[>[data-slot=chip-title]]";
+
+  it("links its frame's visibility to the property, which the set lists once", async () => {
+    const { componentSet, variant } = await buildFixture(
+      chip("flex", { parts: [part("title"), hidden("detail", DETAIL), hidden("hint", DETAIL)] })
+    );
+    expect(componentSet.booleanProperties).toEqual([DETAIL]);
+    expect(
+      variant?.root.children.map((layer) => [
+        layer.name,
+        layer.kind === "frame" ? layer.visibleProperty : layer,
+      ])
+    ).toEqual([
+      ["chip-title", undefined],
+      ["chip-detail", "Detail"],
+      ["chip-hint", "Detail"],
+    ]);
+  });
+
+  it("leaves the properties out of a set with no optional part, as a set built before them", async () => {
+    const { componentSet } = await buildFixture(chip("flex", { parts: [part("title")] }));
+    expect(componentSet.booleanProperties).toBeUndefined();
+  });
+
+  it("stops the build when two parts give one property two defaults, naming both", async () => {
+    await expect(
+      buildFixture(
+        chip("flex", {
+          parts: [hidden("detail", DETAIL), hidden("hint", { ...DETAIL, defaultValue: false })],
+        })
+      )
+    ).rejects.toThrow(
+      "Chip: the parts chip-detail and chip-hint both hide behind the Detail property, one starting true and one false."
+    );
+  });
+
+  it("stops the build when a selector of its parent reads whether it is there, naming the selector", async () => {
+    await expect(
+      buildFixture(
+        chip(`flex ${READS_DETAIL}:gap-[2px]`, {
+          facts: new Map([[READS_DETAIL, () => true]]),
+          parts: [hidden("detail", DETAIL)],
+        })
+      )
+    ).rejects.toThrow(
+      `Chip: chip-detail cannot hide behind the Detail property, since \`${READS_DETAIL}:gap-[2px]\` reads whether it is there through \`:has( > [data-slot=chip-detail])\`.`
+    );
+  });
+
+  // Tailwind compiles this class to `:has( > [data-label=")"] [data-slot=chip-detail])`.
+  it("reads past a parenthesis a quoted value holds inside the :has()", async () => {
+    const reads = 'has-[>[data-label=")"]_[data-slot=chip-detail]]';
+    await expect(
+      buildFixture(
+        chip(`flex ${reads}:gap-[2px]`, {
+          facts: new Map([[reads, () => true]]),
+          parts: [hidden("detail", DETAIL)],
+        })
+      )
+    ).rejects.toThrow(
+      `Chip: chip-detail cannot hide behind the Detail property, since \`${reads}:gap-[2px]\` reads whether it is there through \`:has( > [data-label=")"] [data-slot=chip-detail])\`.`
+    );
+  });
+
+  // Tailwind compiles fuse.css's `item-described:` to `:where(:has( > [data-slot="item-content"] >
+  // [data-slot="item-description"])) > .x`, a selector that does not start with the class.
+  it("stops the build on Item's item-described: arm over an optional description", async () => {
+    const media = { ...part("media", "item-media"), classesFor: () => "item-described:self-start" };
+    const content = {
+      ...part("content", "item-content"),
+      parts: [hidden("description", { ...DETAIL, name: "Description" }, "item-description")],
+    };
+    await expect(
+      buildFixture(
+        chip("flex", { facts: new Map([["item-described", () => true]]), parts: [media, content] })
+      )
+    ).rejects.toThrow(
+      'Chip: item-description cannot hide behind the Description property, since `item-described:self-start` reads whether it is there through `:has( > [data-slot="item-content"] > [data-slot="item-description"])`.'
+    );
+  });
+
+  // Tailwind compiles this class to `:has(:is([data-slot^=chip]))`, which needs some part whose slot
+  // starts with `chip` and may need the optional one.
+  it("stops the build where it cannot tell which parts a class reads", async () => {
+    const reads = "has-[[data-slot^=chip]]";
+    await expect(
+      buildFixture(
+        chip(`flex ${reads}:gap-[2px]`, {
+          facts: new Map([[reads, () => true]]),
+          parts: [hidden("detail", DETAIL)],
+        })
+      )
+    ).rejects.toThrow(
+      `Chip: chip-detail cannot hide behind the Detail property, since the build cannot tell which parts \`${reads}:gap-[2px]\` reads:`
+    );
+  });
+
+  // Tailwind compiles this class to `:has(:is([data-slot=description]))`. Hiding the content frame
+  // hides the description inside it.
+  it("stops the build when a selector reads whether a part inside it is there", async () => {
+    const reads = "has-[[data-slot=description]]";
+    const content: PartDefinition = {
+      ...dot("flex"),
+      key: "content",
+      slot: undefined,
+      optional: DETAIL,
+      parts: [part("description", "description")],
+    };
+    await expect(
+      buildFixture(
+        chip(`flex ${reads}:gap-[2px]`, { facts: new Map([[reads, () => true]]), parts: [content] })
+      )
+    ).rejects.toThrow(
+      `Chip: content cannot hide behind the Detail property, since \`${reads}:gap-[2px]\` reads whether description, which content holds, is there through \`:has(:is([data-slot=description]))\`.`
+    );
+  });
+
+  it("builds where a selector reads whether another part is there", async () => {
+    const { componentSet } = await buildFixture(
+      chip(`flex ${READS_TITLE}:gap-[2px]`, {
+        facts: new Map([[READS_TITLE, () => true]]),
+        parts: [part("title"), hidden("detail", DETAIL)],
+      })
+    );
+    expect(componentSet.booleanProperties).toEqual([DETAIL]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on icons and parts that `rotate-*` turns. Oracle: Tailwind's
+// compile, `rotate: 180deg` for `rotate-180` and `rotate: calc(90deg * -1)` for `-rotate-90`, CSS,
+// which turns a box clockwise about its center and leaves its layout as it was, and the typings,
+// under which Figma counts `rotation` counterclockwise.
+describe("a turned icon or part", () => {
+  const rotateRows = (coverage: readonly CoverageRow[]) =>
+    coverage.filter((row) => row.property === "rotate").map((row) => [row.part, row.outcome]);
+
+  it.each([
+    ["half a turn as 180", "rotate-180", 180],
+    ["a clockwise quarter turn as -90", "rotate-90", -90],
+    ["a counterclockwise quarter turn as 90", "-rotate-90", 90],
+    ["no turn as none", "rotate-none", undefined],
+  ])("turns an icon its own class turns, %s", async (_case, turn, rotation) => {
+    const { variant, coverage } = await buildFixture(
+      chip("text-[#000000]", { iconsFor: () => [{ ...ICON, classes: `size-4 ${turn}` }] })
+    );
+    const [icon] = variant?.root.children ?? [];
+    expect(icon?.kind === "icon" ? icon.rotation : icon).toBe(rotation);
+    expect(rotateRows(coverage)).toEqual([["Icon", "literal"]]);
+  });
+
+  it("turns a part", async () => {
+    const { variant } = await buildFixture(chip("inline-flex", { parts: [dot("size-[4px] rotate-180")] }));
+    expect(frameOf(variant?.root)?.rotation).toBe(180);
+  });
+
+  it("leaves a turn of the root unmapped, since a variant sits in its set outside any auto layout", async () => {
+    const { coverage } = await buildFixture(chip("inline-flex rotate-180"));
+    expect(rotateRows(coverage)).toEqual([["chip", "unmapped"]]);
+  });
+
+  it("leaves a turn in another unit unmapped", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("text-[#000000]", { iconsFor: () => [{ ...ICON, classes: "size-4 rotate-[0.5turn]" }] })
+    );
+    const [icon] = variant?.root.children ?? [];
+    expect(icon?.kind === "icon" ? icon.rotation : icon).toBeUndefined();
+    expect(rotateRows(coverage)).toEqual([["Icon", "unmapped"]]);
   });
 });
