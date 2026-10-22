@@ -114,7 +114,7 @@ describe("the Button component set", () => {
 
   it("covers every recipe size across the two sets, except the line-sized icon-inline", () => {
     const sizes = spec.componentSets
-      .filter((set) => set.page === "page/button")
+      .filter((set) => set.key === "button" || set.key === "icon-button")
       .flatMap((set) => set.axes.find((axis) => axis.name === "size")?.values ?? []);
     expect(sizes.toSorted()).toEqual(
       Object.keys(buttonVariants.variants.size)

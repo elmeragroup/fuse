@@ -19,6 +19,7 @@ export {
 export { badgeVariants } from "./badge/badge-variants";
 export { buttonVariants } from "./button/button-variants";
 export { checkboxVariants } from "./checkbox/checkbox-variants";
+export { confirmButtonVariants } from "./confirm-button/confirm-button-variants";
 export { fieldVariants } from "./field/field-variants";
 export { inputClass } from "./input/input-class";
 export { kbdVariants } from "./kbd/kbd-variants";

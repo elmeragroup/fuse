@@ -14,6 +14,7 @@ import { BUTTON, ICON_BUTTON } from "./button-kit";
 import { CHECKBOX } from "./checkbox-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
+import { CONFIRM_BUTTON } from "./confirm-button-kit";
 import { INPUT } from "./input-kit";
 import { KBD } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
@@ -37,7 +38,7 @@ export type KitPage = {
   readonly name: string;
 };
 
-/** The page Button and Icon button share. */
+/** The page Button, Icon button and Confirm button share. */
 const BUTTON_PAGE: KitPage = { slug: "button", name: "Button" };
 
 /** The page Toggle and Icon toggle share. */
@@ -145,6 +146,11 @@ export const KIT: readonly KitEntry[] = [
     previewCells: [...previewCells(BUTTON, "default", { icon: "none" }), ...iconCells(BUTTON, "default", {})],
   },
   { definition: ICON_BUTTON, page: BUTTON_PAGE, previewCells: previewCells(ICON_BUTTON, "icon", {}) },
+  {
+    definition: CONFIRM_BUTTON,
+    page: BUTTON_PAGE,
+    previewCells: previewCells(CONFIRM_BUTTON, "default", {}, ["armed"]),
+  },
   {
     definition: TOGGLE,
     page: TOGGLE_PAGE,

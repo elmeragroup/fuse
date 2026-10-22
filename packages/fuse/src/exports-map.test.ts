@@ -306,6 +306,7 @@ describe("exports map", () => {
       "badgeVariants",
       "buttonVariants",
       "checkboxVariants",
+      "confirmButtonVariants",
       "fieldVariants",
       "inputClass",
       "kbdVariants",

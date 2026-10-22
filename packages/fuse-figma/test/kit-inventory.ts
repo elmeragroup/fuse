@@ -37,6 +37,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "button", name: "Button", variants: 420, previewed: 70 },
       // 7 variants in 5 states, and 7 at each of 3 other sizes.
       { key: "icon-button", name: "Icon button", variants: 140, previewed: 56 },
+      // 2 variants in 4 states, armed off and on, and 2 at each of 3 other sizes.
+      { key: "confirm-button", name: "Confirm button", variants: 64, previewed: 22 },
     ],
   },
   {

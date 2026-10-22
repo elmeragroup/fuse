@@ -28,7 +28,7 @@ beforeAll(async () => {
 
 const DEFAULT_BUTTON = "variant=default, size=default, state=rest, icon=none";
 const LAY_OUT_BUTTONS = "Button: lay out 420 variants in 5 columns and 84 rows";
-const PLACE = "Button: place Button and Icon button in a row and stack 4 previews below them";
+const PLACE = "Button: place Button, Icon button and Confirm button in a row and stack 4 previews below them";
 
 /** Names as the plugin's change lines list them: `a`, `a and b`, `a, b and c`. */
 function listed(names: readonly string[]): string {
@@ -232,7 +232,7 @@ describe("Apply on a synced file without the kit pages", () => {
         inventoryPage("button").sets.map((set) => [set.name, set.previewed])
       );
       // A group has no padding, so it must not clip a focus ring at its edge.
-      expect(groups.map((group) => group.clipsContent)).toEqual([false, false]);
+      expect(groups.map((group) => group.clipsContent)).toEqual([false, false, false]);
       for (const group of groups) {
         const variants = sets.get(group.name);
         for (const instance of group.children) {
