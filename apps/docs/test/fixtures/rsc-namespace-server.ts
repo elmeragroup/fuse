@@ -514,6 +514,32 @@ function pathsTo(value: FlightJson, text: string, path: readonly string[] = []):
   return Object.entries(value).flatMap(([key, item]) => pathsTo(item, text, [...path, key]));
 }
 
+function isFlightArray(value: FlightJson): value is readonly FlightJson[] {
+  return Array.isArray(value);
+}
+
+function isFlightObject(value: FlightJson | undefined): value is FlightObject {
+  return value instanceof Object && !isFlightArray(value);
+}
+
+/**
+ * Every Flight element at any depth of `value`. An element is `["$", type, key, props, …]`;
+ * dev builds add fields after the props.
+ */
+function flightElements(value: FlightJson): { type: FlightJson | undefined; props: FlightObject }[] {
+  if (!(value instanceof Object)) {
+    return [];
+  }
+  const nested = Object.values(value).flatMap(flightElements);
+  if (isFlightArray(value) && value[0] === "$") {
+    const props = value[3];
+    if (isFlightObject(props)) {
+      return [{ type: value[1], props }, ...nested];
+    }
+  }
+  return nested;
+}
+
 function Fixture(): ReactElement {
   return createElement(
     "div",
@@ -614,11 +640,17 @@ if (!payload.includes(SELECT_FIELD_PLACEHOLDER)) {
 if (!payload.includes("meter.jpg")) {
   throw new Error(`Attachment's title is missing from the server payload:\n${payload.slice(0, 1500)}`);
 }
-// A server-rendered Attachment.AspectRatio is a div with its ratio class. A client one would
-// be a module reference with only its props.
-const attachmentFrame =
-  /\["\$","div",null,\{"data-slot":"attachment-aspect-ratio",[^}]*"className":"[^"]*\baspect-3\/4\b/u;
-if (!attachmentFrame.test(payload)) {
+// The `"div"` type tells a server-rendered Attachment.AspectRatio from a client one, which
+// Flight would write as a module reference carrying the same props.
+const attachmentFrame = models.flatMap(flightElements).some(
+  ({ type, props }) =>
+    type === "div" &&
+    props["data-slot"] === "attachment-aspect-ratio" &&
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Flight props are parsed JSON, so the JSON type is the only tag a class string has
+    typeof props.className === "string" &&
+    props.className.split(/\s+/u).includes("aspect-3/4")
+);
+if (!attachmentFrame) {
   throw new Error(`Attachment.AspectRatio was not rendered on the server:\n${payload.slice(0, 1500)}`);
 }
 
