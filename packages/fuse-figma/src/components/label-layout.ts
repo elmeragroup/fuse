@@ -193,7 +193,10 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
   if (fontFamily === undefined || fontSize === undefined || lineHeight === undefined || color === undefined) {
     throw new Error(`${scope.variant}: the label needs a font family, size, line height and color`);
   }
-  const layout = readLabelLayout(holder, label, scope.clamp);
+  const layout =
+    label.placement?.lines === "single"
+      ? readSingleLine(holder, scope.variant)
+      : readLabelLayout(holder, label, scope.clamp);
   const fills = layout.sizing.horizontal.kind !== "hug";
   return {
     layer: {
@@ -212,28 +215,58 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
       align: readTextAlign(style, fills ? label.placement : undefined),
       truncation: layout.truncation,
     },
-    ...placeInBox(holder, label.placement, fills),
+    ...placeInBox(holder, label.placement),
   };
 }
 
 /**
  * Where a native control's placement puts the label in its box. The label hugs its height, so the
  * box's alignment moves it down, and across where it also hugs its width. A label that fills the
- * width takes the placement across as its own text alignment instead.
+ * width takes the placement across as its own text alignment too, and the box's alignment across
+ * still holds it there once a designer makes the text hug.
  */
 function placeInBox(
   holder: Holder,
-  placement: TextPlacement | undefined,
-  fills: boolean
+  placement: TextPlacement | undefined
 ): Pick<MappedLabel, "primaryAlign" | "counterAlign"> {
   if (placement === undefined) {
     return { primaryAlign: undefined, counterAlign: undefined };
   }
   const down = PLACED_ALONG[placement.vertical];
-  const across = fills ? undefined : PLACED_ALONG[placement.horizontal];
+  const across = PLACED_ALONG[placement.horizontal];
   return holder.layout.direction === "HORIZONTAL"
     ? { primaryAlign: across, counterAlign: down }
     : { primaryAlign: down, counterAlign: across };
+}
+
+/** Why a native control's one line drops the declarations that set a box's own text in lines. */
+const SINGLE_LINE = "the control sets its text on one line itself";
+
+/**
+ * Read the layout of a label a native control sets on one line, as an `<input>` sets its value:
+ * across its content box and cut off there, whatever the box's `display` or `white-space` say, since
+ * the text is no line box or anonymous item of the box's own. The label fills the width and ends in
+ * an ellipsis after one line, the overflow the owner chose for a value too long for its box, where a
+ * browser clips it. The box's own text declarations shape nothing, so they drop.
+ *
+ * @param variant - The variant's key, for the error.
+ * @throws When the box hugs its width. A control with no width of its own takes an intrinsic width
+ *   from its `size`, which no Figma field holds.
+ */
+function readSingleLine(holder: Holder, variant: string): Pick<TextLayerSpec, "sizing" | "truncation"> {
+  if (holder.sizing.horizontal.kind === "hug") {
+    throw new Error(
+      `${variant}: the control sets its text on one line across its width, so its box needs a fixed or filling width`
+    );
+  }
+  for (const property of ["white-space", "text-overflow", "-webkit-line-clamp"]) {
+    holder.style.read(
+      property,
+      (written) => written,
+      () => ({ outcome: "dropped", detail: SINGLE_LINE })
+    );
+  }
+  return { sizing: FILLING, truncation: { maxLines: 1 } };
 }
 
 function readUnderline(style: LayerStyle): TextLayerSpec["underline"] {

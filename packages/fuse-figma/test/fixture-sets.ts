@@ -86,6 +86,8 @@ export type FixtureContext = {
   readonly variables?: VariableIndex;
   /** The base-layer declarations below every class. */
   readonly base?: readonly OuterDeclaration[];
+  /** The host page's inherited declarations, below the base layer's. */
+  readonly page?: readonly OuterDeclaration[];
 };
 
 /** A fixture's built set, with the variant of its first cell. */
@@ -95,10 +97,10 @@ export type BuiltFixture = BuiltComponent & {
 
 /**
  * Build a fixture's component set, compiling every class the definition uses and the
- * context's `registered` classes. No page declarations apply.
+ * context's `registered` classes.
  *
  * @param definition - The fixture.
- * @param context - The extra classes, variables and base-layer declarations.
+ * @param context - The extra classes, variables, and page and base-layer declarations.
  * @returns The set, its coverage and font styles, and its first cell's variant.
  */
 export async function buildFixture(
@@ -108,7 +110,7 @@ export async function buildFixture(
   const built = buildComponentSet(definition, {
     compiled: await compileUtilities([...definitionClasses(definition), ...(context.registered ?? [])]),
     variables: context.variables ?? makeVariableIndex([]),
-    page: [],
+    page: context.page ?? [],
     base: context.base ?? [],
   });
   return { ...built, variant: built.componentSet.variants[0] };

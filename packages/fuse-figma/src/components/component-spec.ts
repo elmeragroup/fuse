@@ -128,6 +128,13 @@ export type RootKind = "native-control" | "base-ui-span" | "base-ui-field-label"
 export type TextPlacement = {
   readonly horizontal: "start" | "center" | "end";
   readonly vertical: "top" | "center" | "bottom";
+  /**
+   * How the control sets its text in lines, which it does itself whatever the box's `display` and
+   * `white-space` say. `single` keeps the text on one line across the content box, as an `<input>`
+   * sets its value, so the label fills the box's width and ends in an ellipsis after one line.
+   * Undefined leaves the lines to the box's CSS.
+   */
+  readonly lines?: "single";
 };
 
 /**
@@ -142,6 +149,13 @@ export type LabelDefinition = {
   readonly shownIn: (cell: Cell) => boolean;
   /** Where the text sits in its box, or undefined for the top left, where CSS sets a box's text. */
   readonly placement?: TextPlacement;
+  /**
+   * The attribute in which the component's markup holds the characters in a cell, as an `<input>`
+   * holds its placeholder in `placeholder` and its value in `value`. It returns undefined for a cell
+   * whose box holds them as its own text, as a `<textarea>` holds its value, and a label without it
+   * holds them as its own text in every cell. `figma:compare`'s markup check reads the text there.
+   */
+  readonly textAttribute?: (cell: Cell) => string | undefined;
 } & (
   | {
       /** The text every cell shows, and the default of its property. */
@@ -206,6 +220,12 @@ export type ComponentDefinition = BoxDefinition & {
    * no auto layout, so the width is fixed. Without it, a root's `100%` stays unmapped.
    */
   readonly previewWidth?: number;
+  /**
+   * The declarations an element between the page and the root sets in a cell, which the root
+   * inherits over the page's, such as the text color an invalid Field root passes to its input.
+   * Undefined for a root that sits on the page itself.
+   */
+  readonly inheritedFor?: (cell: Cell) => readonly OuterDeclaration[];
   readonly axes: readonly AxisSpec[];
   readonly columnAxis: string;
   /**
@@ -294,7 +314,11 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
   const variants = cells.map((cell): VariantSpec => {
     const cellCascade = cascade.cell(cell);
     const scope: MapScope = { definition, cell, context, scaling };
-    const rootCascade = cellCascade.root(definition.classesFor(cell), definition.slot);
+    const rootCascade = cellCascade.root(
+      definition.classesFor(cell),
+      definition.slot,
+      definition.inheritedFor?.(cell) ?? []
+    );
     // A root clips its content, because Figma draws a drop shadow's spread only from a frame
     // that clips, and a focus ring is a spread shadow. The first run on a real file stored the
     // ring's 2px spread as 0 on a root that did not clip. Clipping costs a root nothing, since

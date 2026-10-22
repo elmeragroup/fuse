@@ -1,7 +1,7 @@
 /**
  * The whole kit on the in-memory file in `fake-figma.ts`, shared by the suites that apply it end
  * to end: the kit `buildKit()` writes, the variables `fuseVariableSet()` syncs, synced and applied
- * files, and the names the kit gives its pages and previews.
+ * files, and the kit pages they hold. `test/kit-inventory.ts` names the pages, sets and previews.
  */
 import { Result } from "effect";
 
@@ -100,22 +100,4 @@ export async function kitPage(file: FakeFigma, key = "page/button"): Promise<Pag
   }
   await page.loadAsync();
   return page;
-}
-
-/** The names of the four Button previews, which pin Fjordkraft private themes. */
-export const PREVIEWS: readonly string[] = [
-  "Button / Fjordkraft internal private, light",
-  "Button / Fjordkraft internal private, dark",
-  "Button / Fjordkraft external private, light",
-  "Button / Fjordkraft external private, dark",
-];
-
-/**
- * The names of the four previews on a component's page.
- *
- * @param component - The page's name, such as `Toggle`.
- * @returns The preview names, in the order of {@link PREVIEWS}.
- */
-export function previewsOf(component: string): readonly string[] {
-  return PREVIEWS.map((name) => name.replace("Button", component));
 }

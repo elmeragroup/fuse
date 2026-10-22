@@ -102,7 +102,7 @@ type ComputedStyle = ReadonlyMap<string, StyleEntry>;
 type Applied = {
   readonly part: string;
   readonly className: string;
-  /** -2 for the host page, -1 for the base layer, 0 for every recipe class. */
+  /** -2 for the host page and the root's ancestors, -1 for the base layer, 0 for every recipe class. */
   readonly rank: number;
   readonly specificity: Specificity;
   /** The class's place in Tailwind's output, which breaks a specificity tie. */
@@ -213,6 +213,11 @@ type Layer = {
   /** What became of an own declaration the mapping used without reading through it. */
   readonly marks: Map<string, CoverageNote>;
   readonly children: number[];
+  /**
+   * Whether the layer stands for the elements around the root, the page and its nearer ancestors,
+   * which the kit draws no layer for and whose computed values the root inherits.
+   */
+  readonly around: boolean;
 };
 
 /** The layers of one cell and what read their declarations. */
@@ -224,8 +229,16 @@ class CellLedger {
     this.scope = scope;
   }
 
-  /** Add a layer whose computed style is `applied` over `inherited`, below `parent`. */
-  add(inherited: ComputedStyle, applied: readonly Applied[], parent: Layer | undefined): Layer {
+  /**
+   * Add a layer whose computed style is `applied` over `inherited`, below `parent`. `kind` says
+   * whether the kit draws the layer, or it stands for the elements around the root.
+   */
+  add(
+    inherited: ComputedStyle,
+    applied: readonly Applied[],
+    parent: Layer | undefined,
+    kind: "drawn" | "around" = "drawn"
+  ): Layer {
     const id = this.#layers.length;
     const layer: Layer = {
       id,
@@ -233,6 +246,7 @@ class CellLedger {
       read: new Set(),
       marks: new Map(),
       children: [],
+      around: kind === "around",
     };
     this.#layers.push(layer);
     parent?.children.push(id);
@@ -271,15 +285,18 @@ class CellLedger {
           className: entry.source.className,
           property,
           value: entry.source.value,
-          ...(layer.marks.get(property) ?? this.#unread(property, entry)),
+          ...(layer.marks.get(property) ?? this.#unread(property, entry, layer)),
         });
       }
     };
     visit(0);
   }
 
-  /** What became of a declaration no layer read. */
-  #unread(property: string, entry: StyleEntry): CoverageNote {
+  /** What became of a declaration no layer read, on the layer that sets it. */
+  #unread(property: string, entry: StyleEntry, layer: Layer): CoverageNote {
+    if (layer.around && this.#overriddenBelow(layer, property)) {
+      return { outcome: "dropped", detail: "the root sets its own, so it does not inherit this" };
+    }
     if (this.scope.context.base.some((declaration) => declaration.className === entry.source.className)) {
       return {
         outcome: "dropped",
@@ -290,9 +307,32 @@ class CellLedger {
     if (reason !== undefined) {
       return { outcome: "dropped", detail: reason };
     }
-    return property.startsWith("--tw-")
-      ? { outcome: "dropped", detail: "Tailwind's bookkeeping, which no mapped property reads" }
-      : { outcome: "unmapped", detail: "the builder maps no Figma field from it" };
+    if (property.startsWith("--tw-")) {
+      return { outcome: "dropped", detail: "Tailwind's bookkeeping, which no mapped property reads" };
+    }
+    // A custom property draws nothing and the layer's own reads count already, so an unread one only
+    // passes its value down. With no part or icon below, nothing takes it, as the field box's shell
+    // corners pass a corner to parts an Input does not have. A synced variable stays unmapped, since
+    // substitution keeps it as its `var()` and never reads a local override, which the browser paints.
+    if (
+      property.startsWith("--") &&
+      layer.children.length === 0 &&
+      !this.scope.context.variables.owns(property)
+    ) {
+      return {
+        outcome: "dropped",
+        detail: "a custom property passes its value down, and the box holds no part or icon to take it",
+      };
+    }
+    return { outcome: "unmapped", detail: "the builder maps no Figma field from it" };
+  }
+
+  /** Whether the root below the layer around it sets the property itself, over what it inherits. */
+  #overriddenBelow(around: Layer, property: string): boolean {
+    return around.children.some((id) => {
+      const source = this.#layers[id]?.style.get(property)?.source.layer;
+      return source !== undefined && source !== around.id;
+    });
   }
 }
 
@@ -305,15 +345,43 @@ export class CellCascade {
   }
 
   /**
-   * Cascade the root over the host page's declarations.
+   * Cascade the root over the host page's declarations and its ancestors'. Without ancestors, the
+   * page's declarations apply on the root below its own classes. With them, the page and the
+   * ancestors compute a style of their own, the ancestors' declarations after the page's, since
+   * they sit nearer the root, and the root inherits its computed values as a part inherits its
+   * parent's. So an ancestor's `var()` resolves against the ancestor's custom properties, the
+   * root's `currentcolor` takes the inherited color, and every declaration of the root's own beats
+   * them.
    *
    * @param classes - The root's class string for the cell.
    * @param part - The root's layer name, which the coverage table names.
+   * @param ancestors - The declarations the elements between the page and the root set in the cell.
    * @returns The root's cascade.
    */
-  root(classes: string, part: string): BoxCascade {
-    const page = outerApplied(this.#ledger.scope.context.page, part, -2);
-    return cascadeBox(this.#ledger, { classes, part, inherited: new Map(), outer: page, ancestorRules: [] });
+  root(classes: string, part: string, ancestors: readonly OuterDeclaration[]): BoxCascade {
+    const { context } = this.#ledger.scope;
+    const page = outerApplied(context.page, part, -2);
+    if (ancestors.length === 0) {
+      return cascadeBox(this.#ledger, {
+        classes,
+        part,
+        inherited: new Map(),
+        outer: page,
+        ancestorRules: [],
+      });
+    }
+    // The sort in `computeStyle` is stable, so at one rank the ancestors' declarations apply last.
+    const around = this.#ledger.add(
+      new Map(),
+      [...page, ...outerApplied(ancestors, part, -2)],
+      undefined,
+      "around"
+    );
+    return cascadeBox(
+      this.#ledger,
+      { classes, part, inherited: inheritance(around, context), outer: [], ancestorRules: [] },
+      around
+    );
   }
 
   /**

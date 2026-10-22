@@ -27,6 +27,7 @@ import {
   variantRoot,
 } from "../../test/built-kit";
 import { buildFixture, chip } from "../../test/fixture-sets";
+import { ICONS_PAGE, KIT_PAGES, pageKey, previewsOn } from "../../test/kit-inventory";
 import { buildKit, checkIconReferences } from "./build-kit";
 import { iconKey } from "./component-spec";
 import type { IconSlot } from "./component-spec";
@@ -850,60 +851,18 @@ describe("the icon library", () => {
 describe("the preview frames", () => {
   it("put each component's sets on its own page, and the icons on a page of their own", () => {
     expect(spec.pages).toEqual([
-      { key: "page/button", name: "Button" },
-      { key: "page/toggle", name: "Toggle" },
-      { key: "page/badge", name: "Badge" },
-      { key: "page/kbd", name: "Kbd" },
-      { key: "page/radio", name: "Radio" },
-      { key: "page/checkbox", name: "Checkbox" },
-      { key: "page/switch", name: "Switch" },
-      { key: "page/separator", name: "Separator" },
-      { key: "page/skeleton", name: "Skeleton" },
-      { key: "page/loader", name: "Loader" },
-      { key: "page/label", name: "Label" },
-      { key: "page/icons", name: "Icons" },
+      ...KIT_PAGES.map((page) => ({ key: pageKey(page), name: page.name })),
+      ICONS_PAGE,
     ]);
-    expect(spec.componentSets.map((set) => [set.key, set.page])).toEqual([
-      ["button", "page/button"],
-      ["icon-button", "page/button"],
-      ["toggle", "page/toggle"],
-      ["icon-toggle", "page/toggle"],
-      ["badge", "page/badge"],
-      ["kbd", "page/kbd"],
-      ["radio-icon-button", "page/radio"],
-      ["radio", "page/radio"],
-      ["checkbox", "page/checkbox"],
-      ["switch", "page/switch"],
-      ["separator", "page/separator"],
-      ["skeleton", "page/skeleton"],
-      ["loader", "page/loader"],
-      ["label", "page/label"],
-    ]);
-    expect(spec.icons.page).toBe("page/icons");
+    expect(spec.componentSets.map((set) => [set.key, set.page])).toEqual(
+      KIT_PAGES.flatMap((page) => page.sets.map((set) => [set.key, pageKey(page)]))
+    );
+    expect(spec.icons.page).toBe(ICONS_PAGE.key);
   });
 
   it("pin four Fjordkraft private themes at Auto density on each component page, each on all five axes", () => {
     expect(spec.previews.map((preview) => [preview.key, preview.page])).toEqual(
-      [
-        "button",
-        "toggle",
-        "badge",
-        "kbd",
-        "radio",
-        "checkbox",
-        "switch",
-        "separator",
-        "skeleton",
-        "loader",
-        "label",
-      ].flatMap((page) =>
-        [
-          "internal-fkas-private-light",
-          "internal-fkas-private-dark",
-          "external-fkas-private-light",
-          "external-fkas-private-dark",
-        ].map((theme) => [`preview/${page}/${theme}`, `page/${page}`])
-      )
+      KIT_PAGES.flatMap((page) => previewsOn(page).map(({ key }) => [key, pageKey(page)]))
     );
     expect(spec.previews[3]?.modes).toEqual([
       { collection: "Fuse tokens", mode: "Dark" },
@@ -915,37 +874,9 @@ describe("the preview frames", () => {
   });
 
   it("give each preview a group per set on its page, each placing variants of its set", () => {
-    const groups = new Map([
-      [
-        "page/button",
-        [
-          ["button", "Button"],
-          ["icon-button", "Icon button"],
-        ],
-      ],
-      [
-        "page/toggle",
-        [
-          ["toggle", "Toggle"],
-          ["icon-toggle", "Icon toggle"],
-        ],
-      ],
-      ["page/badge", [["badge", "Badge"]]],
-      ["page/kbd", [["kbd", "Kbd"]]],
-      [
-        "page/radio",
-        [
-          ["radio-icon-button", "Radio icon button"],
-          ["radio", "Radio"],
-        ],
-      ],
-      ["page/checkbox", [["checkbox", "Checkbox"]]],
-      ["page/switch", [["switch", "Switch"]]],
-      ["page/separator", [["separator", "Separator"]]],
-      ["page/skeleton", [["skeleton", "Skeleton"]]],
-      ["page/loader", [["loader", "Loader"]]],
-      ["page/label", [["label", "Label"]]],
-    ]);
+    const groups = new Map(
+      KIT_PAGES.map((page) => [pageKey(page), page.sets.map((set) => [set.key, set.name] as const)])
+    );
     for (const preview of spec.previews) {
       expect(preview.groups.map((group) => [group.key, group.name])).toEqual(
         groups.get(preview.page)?.map(([key, name]) => [`${preview.key}/${key}`, name])
@@ -959,7 +890,12 @@ describe("the preview frames", () => {
     }
   });
 
-  it("loads Roboto Medium, the font-sans family every theme shares", () => {
-    expect(spec.fonts).toEqual([{ family: "Roboto", style: "Medium" }]);
+  it("loads Roboto Medium and Regular, the font-sans family every theme shares", () => {
+    // The labels of Button and the earlier sets set Medium. Input's text sets no weight and inherits
+    // the page's normal weight, Regular.
+    expect(spec.fonts).toEqual([
+      { family: "Roboto", style: "Medium" },
+      { family: "Roboto", style: "Regular" },
+    ]);
   });
 });

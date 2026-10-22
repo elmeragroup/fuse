@@ -11,8 +11,9 @@ import { inputGroupRootClass, readOnlyFillCancelClass } from "../../styles/field
 import { withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
-import { Input, inputClass } from "../input/input";
+import { Input } from "../input/input";
 import type { InputProps } from "../input/input";
+import { inputClass } from "../input/input-class";
 import { Textarea } from "../textarea/textarea";
 import { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group-variants";
 

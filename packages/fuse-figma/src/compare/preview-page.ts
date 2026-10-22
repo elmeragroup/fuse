@@ -43,8 +43,11 @@ export type PageLayout = {
   readonly top: number;
 };
 
-/** The layout `figma:compare` uses. */
-export const PAGE_LAYOUT: PageLayout = { padding: 8, slotWidth: 280, slotHeight: 96, columns: 6, top: 16 };
+/**
+ * The layout `figma:compare` uses. A slot holds the widest cell, Input's 384px box, with the padding
+ * on both sides, so a 3px ring around it stays inside its own crop and clear of the next slot.
+ */
+export const PAGE_LAYOUT: PageLayout = { padding: 8, slotWidth: 400, slotHeight: 96, columns: 6, top: 16 };
 
 /** A cell's place on the page: its id and its element's HTML. */
 export type PageCell = { readonly id: string; readonly html: string };

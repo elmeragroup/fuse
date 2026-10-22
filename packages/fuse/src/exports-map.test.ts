@@ -303,6 +303,7 @@ describe("exports map", () => {
       "buttonVariants",
       "checkboxVariants",
       "fieldVariants",
+      "inputClass",
       "kbdVariants",
       "loaderVariants",
       "radioIconButtonVariants",

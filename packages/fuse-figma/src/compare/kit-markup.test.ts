@@ -16,11 +16,15 @@
  * the measured element's `<svg>` descendants in order, each under the part that lists it, as a
  * child of that part or nested deeper, and with its `data-icon`. A slot that names classes of its
  * own must name the `<svg>`'s `class` attribute exactly. The root and each part must hold their
- * label's characters as their own text where the cell shows the label, and no text where it does
- * not, so the compare page renders the text Figma draws. The pseudo-class variants,
+ * label's characters where the cell shows the label, as their own text or in the attribute the label
+ * names, as an `<input>` holds its placeholder, and no text where it does not, so the compare page
+ * renders the text Figma draws. The pseudo-class variants,
  * `enabled-hover:` and `focus-visible:`, stay out, since static markup cannot show them, and so
  * does the icon edge, which the slots check.
  */
+import { createElement } from "react";
+
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { elementsOf } from "../../test/static-markup";
@@ -57,6 +61,17 @@ const ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => boolean>(
   // fuse.css defines `data-horizontal:` and `data-vertical:` on `[data-orientation=…]`.
   ["data-horizontal", (element) => element.attributes.get("data-orientation") === "horizontal"],
   ["data-vertical", (element) => element.attributes.get("data-orientation") === "vertical"],
+  // `placeholder:` styles `::placeholder`, which an input paints while it has a placeholder and no
+  // value. React writes `defaultValue` as the `value` attribute.
+  [
+    "placeholder",
+    (element) => element.attributes.has("placeholder") && (element.attributes.get("value") ?? "") === "",
+  ],
+  // The field box's read-only fill keys off the `readonly` attribute on an enabled control.
+  [
+    "[&[readonly]:not(:disabled)]",
+    (element) => element.attributes.has("readonly") && !element.attributes.has("disabled"),
+  ],
 ]);
 
 /**
@@ -239,9 +254,38 @@ function slotIcons(box: BoxDefinition, name: string, cell: Cell): readonly Marku
   ];
 }
 
-/** The text a box draws in a cell, its label's characters where the cell shows the label, or none. */
-function labelText(box: BoxDefinition, cell: Cell): string {
-  return box.label?.shownIn(cell) === true ? labelCharacters(box.label, cell) : "";
+/**
+ * A box's label as its markup holds it: the box's own text, and the attribute the label names with
+ * the value it holds there.
+ */
+type MarkupLabel = {
+  readonly text: string;
+  readonly attribute: readonly [name: string, value: string | undefined] | undefined;
+};
+
+/**
+ * Where a box draws its label in a cell: the label's characters as the box's own text, or in the
+ * attribute the label names, with no text of its own, as an `<input>` holds its placeholder. A box
+ * that shows no label in the cell holds no text.
+ */
+function expectedLabel(box: BoxDefinition, cell: Cell): MarkupLabel {
+  if (box.label?.shownIn(cell) !== true) {
+    return { text: "", attribute: undefined };
+  }
+  const characters = labelCharacters(box.label, cell);
+  const attribute = box.label.textAttribute?.(cell);
+  return attribute === undefined
+    ? { text: characters, attribute: undefined }
+    : { text: "", attribute: [attribute, characters] };
+}
+
+/** The label an element holds, read where `expected` says it sits. */
+function markupLabel(element: MarkupElement | undefined, expected: MarkupLabel): MarkupLabel {
+  const name = expected.attribute?.[0];
+  return {
+    text: element?.text ?? "",
+    attribute: name === undefined ? undefined : [name, element?.attributes.get(name)],
+  };
 }
 
 /**
@@ -308,7 +352,8 @@ describe("each kit definition against the markup of its component", () => {
               ancestorsOf(elements, measured).some(matches)
             );
           }
-          expect(root.text, `${key}: the label`).toBe(labelText(definition, cell));
+          const rootLabel = expectedLabel(definition, cell);
+          expect(markupLabel(root, rootLabel), `${key}: the label`).toEqual(rootLabel);
           const names = new Set(boxNames(definition, definition.slot));
           const slots = slotIcons(definition, definition.slot, cell);
           expect(slots, key).toEqual(claimedIcons(slots, markupIcons(elements, measured, names)));
@@ -321,7 +366,8 @@ describe("each kit definition against the markup of its component", () => {
           const elementAt = new Map(rendered);
           for (const { path, part } of shown) {
             const element = elements[elementAt.get(path) ?? -1];
-            expect(element?.text, `${key}: the label on ${path}`).toBe(labelText(part, cell));
+            const partLabel = expectedLabel(part, cell);
+            expect(markupLabel(element, partLabel), `${key}: the label on ${path}`).toEqual(partLabel);
             for (const variant of attributeConditions(part, cell)) {
               expect(holdsIn(variant, cell), `${key}: ${variant} on ${path}`).toBe(
                 element !== undefined && ATTRIBUTE_VARIANTS.get(variant)?.(element) === true
@@ -331,5 +377,43 @@ describe("each kit definition against the markup of its component", () => {
         }
       }
     }
+  });
+});
+
+// Unit under test: where the label check reads a box's label, through `textAttribute`. Oracle: the
+// markup React writes for a `<textarea>`, which holds a placeholder in its `placeholder` attribute
+// and a value as its own text, so one label reads an attribute in some cells and own text in others.
+describe("the label check of a box that holds its text in an attribute in some cells", () => {
+  // React writes the `&` as `&amp;` in the attribute and in the text, and the check reads the
+  // characters a label holds.
+  const TEXT = "Tell us more & then some";
+  const TEXTAREA: BoxDefinition = {
+    classesFor: () => "",
+    iconsFor: () => [],
+    label: {
+      key: "text",
+      name: "text",
+      characters: TEXT,
+      textProperty: "Text",
+      shownIn: () => true,
+      textAttribute: (cell) => (cell.content === "placeholder" ? "placeholder" : undefined),
+    },
+  };
+  const markup = (props: Readonly<Record<string, string>>) =>
+    elementsOf(renderToStaticMarkup(createElement("textarea", props)))[0];
+  const placeholder = expectedLabel(TEXTAREA, { content: "placeholder" });
+  const value = expectedLabel(TEXTAREA, { content: "value" });
+
+  it("reads a placeholder cell's attribute and a value cell's own text", () => {
+    expect([placeholder, value]).toEqual([
+      { text: "", attribute: ["placeholder", TEXT] },
+      { text: TEXT, attribute: undefined },
+    ]);
+    expect(markupLabel(markup({ placeholder: TEXT }), placeholder)).toEqual(placeholder);
+    expect(markupLabel(markup({ defaultValue: TEXT }), value)).toEqual(value);
+  });
+
+  it("fails a value cell whose markup holds the text as a placeholder", () => {
+    expect(markupLabel(markup({ placeholder: TEXT }), value)).not.toEqual(value);
   });
 });

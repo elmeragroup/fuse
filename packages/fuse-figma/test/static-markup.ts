@@ -26,7 +26,11 @@ const VOID_ELEMENTS = new Set([
 /** One element of a fragment, in document order. */
 export type MarkupElement = {
   readonly name: string;
-  /** Each attribute by name. An attribute written without a value holds the empty string. */
+  /**
+   * Each attribute by its name in lowercase, as an HTML parser reads it, since React writes some
+   * in camel case, such as `readOnly`. An attribute written without a value holds the empty string.
+   * Values read as {@link MarkupElement.text} does, with React's entities decoded.
+   */
   readonly attributes: ReadonlyMap<string, string>;
   /** The index of the parent element, or undefined at the fragment's top level. */
   readonly parent: number | undefined;
@@ -37,8 +41,11 @@ export type MarkupElement = {
   readonly text: string;
 };
 
-/** The entities React's static renderer writes in text, by the character each stands for. */
-const TEXT_ENTITIES = new Map([
+/**
+ * The entities React's static renderer writes in text and attribute values, by the character each
+ * stands for.
+ */
+const ENTITIES = new Map([
   ["&amp;", "&"],
   ["&lt;", "<"],
   ["&gt;", ">"],
@@ -46,9 +53,9 @@ const TEXT_ENTITIES = new Map([
   ["&#x27;", "'"],
 ]);
 
-/** Text as React wrote it, decoded in one pass, so `&amp;lt;` reads as `&lt;`. */
-function decodeText(text: string): string {
-  return text.replace(/&(?:amp|lt|gt|quot|#x27);/g, (entity) => TEXT_ENTITIES.get(entity) ?? entity);
+/** Text or an attribute value as React wrote it, decoded in one pass, so `&amp;lt;` reads as `&lt;`. */
+function decode(written: string): string {
+  return written.replace(/&(?:amp|lt|gt|quot|#x27);/g, (entity) => ENTITIES.get(entity) ?? entity);
 }
 
 /**
@@ -78,8 +85,8 @@ export function elementsOf(html: string): readonly MarkupElement[] {
       name: name.toLowerCase(),
       attributes: new Map(
         [...attributes.matchAll(/\s([\w:-]+)(?:="([^"]*)")?/g)].map(([, key = "", value = ""]) => [
-          key,
-          value,
+          key.toLowerCase(),
+          decode(value),
         ])
       ),
       parent: open.at(-1),
@@ -88,7 +95,7 @@ export function elementsOf(html: string): readonly MarkupElement[] {
       open.push(elements.length - 1);
     }
   }
-  return elements.map((element, index) => ({ ...element, text: decodeText(texts[index] ?? "") }));
+  return elements.map((element, index) => ({ ...element, text: decode(texts[index] ?? "") }));
 }
 
 /** An element with the elements it holds, in document order. */

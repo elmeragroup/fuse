@@ -1,19 +1,22 @@
 /**
  * `reconcileKit` end to end against the in-memory file in `fake-figma.ts`, with the kit
- * `buildKit()` writes from the Button, Toggle, Badge, Kbd, Radio icon button, Radio, Checkbox,
- * Switch, Separator, Skeleton, Loader and Label recipes and the variables `fuseVariableSet()` syncs. The fake models the Figma rules the real runs in 2026-10 confirmed, and throws for any Plugin API
- * member it does not model. The oracles are hand-written: the change lines Plan must list, the
- * values the Button recipe and the theme catalog give, and the order the kit's axes declare.
+ * `buildKit()` writes from the recipes and the variables `fuseVariableSet()` syncs. The fake models
+ * the Figma rules the real runs in 2026-10 confirmed, and throws for any Plugin API member it does
+ * not model. The oracles are hand-written: the pages, sets and previews of `test/kit-inventory.ts`,
+ * from which the change lines Plan must list are built, the values the Button recipe and the theme
+ * catalog give, and the order the kit's axes declare.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import type { CollectionSpec } from "../../src/variable-set.ts";
+import { ICONS_PAGE, inventoryPage, KIT_PAGES, pageKey, previewsOn } from "../../test/kit-inventory.ts";
+import type { InventoryPage } from "../../test/kit-inventory.ts";
 import { drawsShadowSpread } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed } from "./fake-fixtures.ts";
 import { keyOf } from "./identity.ts";
-import { appliedFile, kitFixture, kitPage, PREVIEWS, previewsOf, syncedFile } from "./kit-fixture.ts";
+import { appliedFile, kitFixture, kitPage, syncedFile } from "./kit-fixture.ts";
 import { reconcileKit } from "./reconcile.ts";
 
 let kit: KitSpec;
@@ -23,51 +26,32 @@ beforeAll(async () => {
   ({ kit, collections } = await kitFixture());
 }, 60_000);
 
-const TOGGLE_PAGE = "page/toggle";
-const BADGE_PAGE = "page/badge";
-const KBD_PAGE = "page/kbd";
-const RADIO_PAGE = "page/radio";
-const CHECKBOX_PAGE = "page/checkbox";
-const SWITCH_PAGE = "page/switch";
-const SEPARATOR_PAGE = "page/separator";
-const SKELETON_PAGE = "page/skeleton";
-const LOADER_PAGE = "page/loader";
-const LABEL_PAGE = "page/label";
-const ICONS_PAGE = "page/icons";
 const DEFAULT_BUTTON = "variant=default, size=default, state=rest, icon=none";
 const LAY_OUT_BUTTONS = "Button: lay out 420 variants in 5 columns and 84 rows";
 const PLACE = "Button: place Button and Icon button in a row and stack 4 previews below them";
-const CREATE_PREVIEWS = PREVIEWS.map((name) => `Button: create the preview ${name}`);
-const PLACE_TOGGLES = "Toggle: place Toggle and Icon toggle in a row and stack 4 previews below them";
-const TOGGLE_PREVIEWS = previewsOf("Toggle");
-const CREATE_TOGGLE_PREVIEWS = TOGGLE_PREVIEWS.map((name) => `Toggle: create the preview ${name}`);
-const PLACE_BADGES = "Badge: place Badge in a row and stack 4 previews below them";
-const BADGE_PREVIEWS = previewsOf("Badge");
-const CREATE_BADGE_PREVIEWS = BADGE_PREVIEWS.map((name) => `Badge: create the preview ${name}`);
-const PLACE_KBDS = "Kbd: place Kbd in a row and stack 4 previews below them";
-const KBD_PREVIEWS = previewsOf("Kbd");
-const CREATE_KBD_PREVIEWS = KBD_PREVIEWS.map((name) => `Kbd: create the preview ${name}`);
-const PLACE_RADIOS = "Radio: place Radio icon button and Radio in a row and stack 4 previews below them";
-const RADIO_PREVIEWS = previewsOf("Radio");
-const CREATE_RADIO_PREVIEWS = RADIO_PREVIEWS.map((name) => `Radio: create the preview ${name}`);
-const PLACE_CHECKBOXES = "Checkbox: place Checkbox in a row and stack 4 previews below them";
-const CHECKBOX_PREVIEWS = previewsOf("Checkbox");
-const CREATE_CHECKBOX_PREVIEWS = CHECKBOX_PREVIEWS.map((name) => `Checkbox: create the preview ${name}`);
-const PLACE_SWITCHES = "Switch: place Switch in a row and stack 4 previews below them";
-const SWITCH_PREVIEWS = previewsOf("Switch");
-const CREATE_SWITCH_PREVIEWS = SWITCH_PREVIEWS.map((name) => `Switch: create the preview ${name}`);
-const PLACE_SEPARATORS = "Separator: place Separator in a row and stack 4 previews below them";
-const SEPARATOR_PREVIEWS = previewsOf("Separator");
-const CREATE_SEPARATOR_PREVIEWS = SEPARATOR_PREVIEWS.map((name) => `Separator: create the preview ${name}`);
-const PLACE_SKELETONS = "Skeleton: place Skeleton in a row and stack 4 previews below them";
-const SKELETON_PREVIEWS = previewsOf("Skeleton");
-const CREATE_SKELETON_PREVIEWS = SKELETON_PREVIEWS.map((name) => `Skeleton: create the preview ${name}`);
-const PLACE_LOADERS = "Loader: place Loader in a row and stack 4 previews below them";
-const LOADER_PREVIEWS = previewsOf("Loader");
-const CREATE_LOADER_PREVIEWS = LOADER_PREVIEWS.map((name) => `Loader: create the preview ${name}`);
-const PLACE_LABELS = "Label: place Label in a row and stack 4 previews below them";
-const LABEL_PREVIEWS = previewsOf("Label");
-const CREATE_LABEL_PREVIEWS = LABEL_PREVIEWS.map((name) => `Label: create the preview ${name}`);
+
+/** Names as the plugin's change lines list them: `a`, `a and b`, `a, b and c`. */
+function listed(names: readonly string[]): string {
+  const last = names.at(-1) ?? "";
+  return names.length < 2 ? last : `${names.slice(0, -1).join(", ")} and ${last}`;
+}
+
+/** The names of a page's previews, in frame order. */
+const previewNames = (page: InventoryPage): readonly string[] => previewsOn(page).map(({ name }) => name);
+
+/** The pages a run creates on a file without them, the component pages first. */
+const CREATE_PAGES = [...KIT_PAGES, ICONS_PAGE].map((page) => `Document: create the page ${page.name}`);
+
+/** The component sets a run creates, page by page. */
+const CREATE_SETS = KIT_PAGES.flatMap((page) =>
+  page.sets.map((set) => `${page.name}: create the component set ${set.name} with ${set.variants} variants`)
+);
+
+/** Each page's previews a run creates, then its sets placed in a row with the previews below them. */
+const CREATE_AND_PLACE_PREVIEWS = KIT_PAGES.flatMap((page) => [
+  ...previewNames(page).map((name) => `${page.name}: create the preview ${name}`),
+  `${page.name}: place ${listed(page.sets.map((set) => set.name))} in a row and stack 4 previews below them`,
+]);
 
 /** The page the plugin put the whole kit on before each component got a page of its own. */
 const LEGACY_PAGE = { key: "page/components", name: "Fuse components" };
@@ -107,7 +91,7 @@ async function changes(file: FakeFigma): Promise<readonly string[]> {
 }
 
 async function iconLibrary(file: FakeFigma): Promise<FrameNode> {
-  return childNamed(await kitPage(file, ICONS_PAGE), "FRAME", "Icons");
+  return childNamed(await kitPage(file, ICONS_PAGE.key), "FRAME", "Icons");
 }
 
 /** Each child's id, by its name. */
@@ -200,55 +184,10 @@ describe("Apply on a synced file without the kit pages", () => {
   it("creates each page and each node on it once, and a second Plan lists nothing", async () => {
     expect(applied).toEqual({
       changes: [
-        "Document: create the page Button",
-        "Document: create the page Toggle",
-        "Document: create the page Badge",
-        "Document: create the page Kbd",
-        "Document: create the page Radio",
-        "Document: create the page Checkbox",
-        "Document: create the page Switch",
-        "Document: create the page Separator",
-        "Document: create the page Skeleton",
-        "Document: create the page Loader",
-        "Document: create the page Label",
-        "Document: create the page Icons",
+        ...CREATE_PAGES,
         "Icons: create the Icons frame with 135 icons",
-        "Button: create the component set Button with 420 variants",
-        "Button: create the component set Icon button with 140 variants",
-        "Toggle: create the component set Toggle with 192 variants",
-        "Toggle: create the component set Icon toggle with 64 variants",
-        "Badge: create the component set Badge with 57 variants",
-        "Kbd: create the component set Kbd with 2 variants",
-        "Radio: create the component set Radio icon button with 50 variants",
-        "Radio: create the component set Radio with 8 variants",
-        "Checkbox: create the component set Checkbox with 12 variants",
-        "Switch: create the component set Switch with 16 variants",
-        "Separator: create the component set Separator with 2 variants",
-        "Skeleton: create the component set Skeleton with 2 variants",
-        "Loader: create the component set Loader with 5 variants",
-        "Label: create the component set Label with 2 variants",
-        ...CREATE_PREVIEWS,
-        PLACE,
-        ...CREATE_TOGGLE_PREVIEWS,
-        PLACE_TOGGLES,
-        ...CREATE_BADGE_PREVIEWS,
-        PLACE_BADGES,
-        ...CREATE_KBD_PREVIEWS,
-        PLACE_KBDS,
-        ...CREATE_RADIO_PREVIEWS,
-        PLACE_RADIOS,
-        ...CREATE_CHECKBOX_PREVIEWS,
-        PLACE_CHECKBOXES,
-        ...CREATE_SWITCH_PREVIEWS,
-        PLACE_SWITCHES,
-        ...CREATE_SEPARATOR_PREVIEWS,
-        PLACE_SEPARATORS,
-        ...CREATE_SKELETON_PREVIEWS,
-        PLACE_SKELETONS,
-        ...CREATE_LOADER_PREVIEWS,
-        PLACE_LOADERS,
-        ...CREATE_LABEL_PREVIEWS,
-        PLACE_LABELS,
+        ...CREATE_SETS,
+        ...CREATE_AND_PLACE_PREVIEWS,
       ],
       warnings: [],
     });
@@ -256,102 +195,19 @@ describe("Apply on a synced file without the kit pages", () => {
   });
 
   it("shows the Button page and leaves nothing behind on the page that was current", async () => {
-    const [
-      first,
-      button,
-      toggle,
-      badge,
-      kbd,
-      radio,
-      checkbox,
-      switchPage,
-      separator,
-      skeleton,
-      loader,
-      label,
-      icons,
-    ] = file.figma.root.children;
+    const [first, ...pages] = file.figma.root.children;
     expect(first?.name).toBe("Page 1");
     await first?.loadAsync();
     expect(first?.children).toEqual([]);
-    expect(
-      [
-        button,
-        toggle,
-        badge,
-        kbd,
-        radio,
-        checkbox,
-        switchPage,
-        separator,
-        skeleton,
-        loader,
-        label,
-        icons,
-      ].map((page) => page?.name)
-    ).toEqual([
-      "Button",
-      "Toggle",
-      "Badge",
-      "Kbd",
-      "Radio",
-      "Checkbox",
-      "Switch",
-      "Separator",
-      "Skeleton",
-      "Loader",
-      "Label",
-      "Icons",
-    ]);
-    expect(file.figma.currentPage).toBe(button);
-    expect((await kitPage(file)).children.map((node) => node.name)).toEqual([
-      "Button",
-      "Icon button",
-      ...PREVIEWS,
-    ]);
-    expect((await kitPage(file, TOGGLE_PAGE)).children.map((node) => node.name)).toEqual([
-      "Toggle",
-      "Icon toggle",
-      ...TOGGLE_PREVIEWS,
-    ]);
-    expect((await kitPage(file, BADGE_PAGE)).children.map((node) => node.name)).toEqual([
-      "Badge",
-      ...BADGE_PREVIEWS,
-    ]);
-    expect((await kitPage(file, KBD_PAGE)).children.map((node) => node.name)).toEqual([
-      "Kbd",
-      ...KBD_PREVIEWS,
-    ]);
-    expect((await kitPage(file, RADIO_PAGE)).children.map((node) => node.name)).toEqual([
-      "Radio icon button",
-      "Radio",
-      ...RADIO_PREVIEWS,
-    ]);
-    expect((await kitPage(file, CHECKBOX_PAGE)).children.map((node) => node.name)).toEqual([
-      "Checkbox",
-      ...CHECKBOX_PREVIEWS,
-    ]);
-    expect((await kitPage(file, SWITCH_PAGE)).children.map((node) => node.name)).toEqual([
-      "Switch",
-      ...SWITCH_PREVIEWS,
-    ]);
-    expect((await kitPage(file, SEPARATOR_PAGE)).children.map((node) => node.name)).toEqual([
-      "Separator",
-      ...SEPARATOR_PREVIEWS,
-    ]);
-    expect((await kitPage(file, SKELETON_PAGE)).children.map((node) => node.name)).toEqual([
-      "Skeleton",
-      ...SKELETON_PREVIEWS,
-    ]);
-    expect((await kitPage(file, LOADER_PAGE)).children.map((node) => node.name)).toEqual([
-      "Loader",
-      ...LOADER_PREVIEWS,
-    ]);
-    expect((await kitPage(file, LABEL_PAGE)).children.map((node) => node.name)).toEqual([
-      "Label",
-      ...LABEL_PREVIEWS,
-    ]);
-    expect((await kitPage(file, ICONS_PAGE)).children.map((node) => node.name)).toEqual(["Icons"]);
+    expect(pages.map((page) => page.name)).toEqual([...KIT_PAGES, ICONS_PAGE].map((page) => page.name));
+    expect(file.figma.currentPage).toBe(pages[0]);
+    for (const page of KIT_PAGES) {
+      expect(
+        (await kitPage(file, pageKey(page))).children.map((node) => node.name),
+        page.name
+      ).toEqual([...page.sets.map((set) => set.name), ...previewNames(page)]);
+    }
+    expect((await kitPage(file, ICONS_PAGE.key)).children.map((node) => node.name)).toEqual(["Icons"]);
   });
 
   it("pins each preview's theme at Auto density, with a row of instances per set on the page", async () => {
@@ -372,12 +228,9 @@ describe("Apply on a synced file without the kit pages", () => {
     ]);
     for (const preview of previews) {
       const groups = preview.children.filter((node): node is FrameNode => node.type === "FRAME");
-      // Button: 7 variants in 5 states, 7 at each of 3 other sizes, and 7 with each of 2 icons.
-      // Icon button: 7 variants in 5 states, and 7 at each of 3 other sizes.
-      expect(groups.map((group) => [group.name, group.children.length])).toEqual([
-        ["Button", 70],
-        ["Icon button", 56],
-      ]);
+      expect(groups.map((group) => [group.name, group.children.length])).toEqual(
+        inventoryPage("button").sets.map((set) => [set.name, set.previewed])
+      );
       // A group has no padding, so it must not clip a focus ring at its edge.
       expect(groups.map((group) => group.clipsContent)).toEqual([false, false]);
       for (const group of groups) {
@@ -716,11 +569,11 @@ describe("a later run on an applied file", () => {
     const file = await appliedFile();
     const button = variantNamed(await componentSet(file, "Button"), DEFAULT_BUTTON);
     const label = childNamed(button, "TEXT", "label");
-    const separators = setOn(await kitPage(file, SEPARATOR_PAGE), "Separator");
+    const separators = setOn(await kitPage(file, "page/separator"), "Separator");
     const across = variantNamed(separators, "orientation=horizontal");
     const down = variantNamed(separators, "orientation=vertical");
     const track = variantNamed(
-      setOn(await kitPage(file, SWITCH_PAGE), "Switch"),
+      setOn(await kitPage(file, "page/switch"), "Switch"),
       "size=default, checked=off, state=rest"
     );
     const thumb = childNamed(track, "FRAME", "switch-thumb");
@@ -810,80 +663,23 @@ describe("a file the plugin laid out on one page", () => {
     const before = idsByName(legacy);
     const variantsBefore = [setOn(legacy, "Button"), setOn(legacy, "Icon button")].map(idsByName);
     const pagePhase = [
-      "Document: create the page Button",
-      "Document: create the page Toggle",
-      "Document: create the page Badge",
-      "Document: create the page Kbd",
-      "Document: create the page Radio",
-      "Document: create the page Checkbox",
-      "Document: create the page Switch",
-      "Document: create the page Separator",
-      "Document: create the page Skeleton",
-      "Document: create the page Loader",
-      "Document: create the page Label",
-      "Document: create the page Icons",
-      ...[
-        ...PREVIEWS,
-        ...TOGGLE_PREVIEWS,
-        ...BADGE_PREVIEWS,
-        ...KBD_PREVIEWS,
-        ...RADIO_PREVIEWS,
-        ...CHECKBOX_PREVIEWS,
-        ...SWITCH_PREVIEWS,
-        ...SEPARATOR_PREVIEWS,
-        ...SKELETON_PREVIEWS,
-        ...LOADER_PREVIEWS,
-        ...LABEL_PREVIEWS,
-      ].map((name) => `Fuse components: delete ${name}`),
+      ...CREATE_PAGES,
+      ...KIT_PAGES.flatMap(previewNames).map((name) => `Fuse components: delete ${name}`),
       "Fuse components: move Icons to the Icons page",
-      "Fuse components: move Button to the Button page",
-      "Fuse components: move Icon button to the Button page",
-      "Fuse components: move Toggle to the Toggle page",
-      "Fuse components: move Icon toggle to the Toggle page",
-      "Fuse components: move Badge to the Badge page",
-      "Fuse components: move Kbd to the Kbd page",
-      "Fuse components: move Radio icon button to the Radio page",
-      "Fuse components: move Radio to the Radio page",
-      "Fuse components: move Checkbox to the Checkbox page",
-      "Fuse components: move Switch to the Switch page",
-      "Fuse components: move Separator to the Separator page",
-      "Fuse components: move Skeleton to the Skeleton page",
-      "Fuse components: move Loader to the Loader page",
-      "Fuse components: move Label to the Label page",
+      ...KIT_PAGES.flatMap((page) =>
+        page.sets.map((set) => `Fuse components: move ${set.name} to the ${page.name} page`)
+      ),
     ];
+    // The icon library and every set move.
+    const moves = KIT_PAGES.flatMap((page) => page.sets).length + 1;
 
     expect(await reconcileKit(file.figma, kit, false)).toEqual({
-      changes: [...pagePhase, "Document: plan the rest of the kit again once the 15 moves land"],
+      changes: [...pagePhase, `Document: plan the rest of the kit again once the ${moves} moves land`],
       warnings: [],
     });
     const applied = await reconcileKit(file.figma, kit, true);
     expect(applied).toEqual({
-      changes: [
-        ...pagePhase,
-        ...CREATE_PREVIEWS,
-        PLACE,
-        ...CREATE_TOGGLE_PREVIEWS,
-        PLACE_TOGGLES,
-        ...CREATE_BADGE_PREVIEWS,
-        PLACE_BADGES,
-        ...CREATE_KBD_PREVIEWS,
-        PLACE_KBDS,
-        ...CREATE_RADIO_PREVIEWS,
-        PLACE_RADIOS,
-        ...CREATE_CHECKBOX_PREVIEWS,
-        PLACE_CHECKBOXES,
-        ...CREATE_SWITCH_PREVIEWS,
-        PLACE_SWITCHES,
-        ...CREATE_SEPARATOR_PREVIEWS,
-        PLACE_SEPARATORS,
-        ...CREATE_SKELETON_PREVIEWS,
-        PLACE_SKELETONS,
-        ...CREATE_LOADER_PREVIEWS,
-        PLACE_LOADERS,
-        ...CREATE_LABEL_PREVIEWS,
-        PLACE_LABELS,
-        "Document: delete the page Fuse components",
-      ],
+      changes: [...pagePhase, ...CREATE_AND_PLACE_PREVIEWS, "Document: delete the page Fuse components"],
       warnings: [],
     });
     file.reopen();
@@ -892,18 +688,7 @@ describe("a file the plugin laid out on one page", () => {
     expect(legacy.removed).toBe(true);
     expect(file.figma.root.children.map((page) => page.name)).toEqual([
       "Page 1",
-      "Button",
-      "Toggle",
-      "Badge",
-      "Kbd",
-      "Radio",
-      "Checkbox",
-      "Switch",
-      "Separator",
-      "Skeleton",
-      "Loader",
-      "Label",
-      "Icons",
+      ...[...KIT_PAGES, ICONS_PAGE].map((page) => page.name),
     ]);
     const button = await componentSet(file, "Button");
     const iconButton = await componentSet(file, "Icon button");
@@ -946,36 +731,12 @@ describe("a file the plugin laid out on one page", () => {
     file.reopen();
 
     const applied = await reconcileKit(file.figma, kit, true);
-    expect(applied.changes.slice(0, 12)).toEqual([
-      "Document: create the page Button",
-      "Document: create the page Toggle",
-      "Document: create the page Badge",
-      "Document: create the page Kbd",
-      "Document: create the page Radio",
-      "Document: create the page Checkbox",
-      "Document: create the page Switch",
-      "Document: create the page Separator",
-      "Document: create the page Skeleton",
-      "Document: create the page Loader",
-      "Document: create the page Label",
-      "Document: create the page Icons",
-    ]);
+    expect(applied.changes.slice(0, CREATE_PAGES.length)).toEqual(CREATE_PAGES);
     expect(file.figma.root.children.map((page) => page.name)).toEqual([
       "Page 1",
       "Button",
       "Icons",
-      "Button",
-      "Toggle",
-      "Badge",
-      "Kbd",
-      "Radio",
-      "Checkbox",
-      "Switch",
-      "Separator",
-      "Skeleton",
-      "Loader",
-      "Label",
-      "Icons",
+      ...[...KIT_PAGES, ICONS_PAGE].map((page) => page.name),
     ]);
     for (const { page, frame } of imported) {
       await page.loadAsync();

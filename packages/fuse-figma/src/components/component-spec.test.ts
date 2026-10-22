@@ -10,7 +10,13 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { CENTERED_BOX, FILL, fixed, fixedSize, HUG, literal, UNLIMITED } from "../../test/built-kit";
 import { buildFixture, chip, dot, frameOf, ICON } from "../../test/fixture-sets";
 import type { FixtureContext } from "../../test/fixture-sets";
-import type { IconSlot, LabelDefinition, PartDefinition, TextPlacement } from "./component-spec";
+import type {
+  IconSlot,
+  LabelDefinition,
+  OuterDeclaration,
+  PartDefinition,
+  TextPlacement,
+} from "./component-spec";
 import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
 import type { BoxSpec, FrameLayerSpec, TextLayerSpec } from "./kit-spec";
@@ -887,6 +893,45 @@ describe("a marker class", () => {
   );
 });
 
+// Unit under test: `buildComponentSet` on a box that declares a custom property none of its own
+// declarations read. Oracle: CSS Custom Properties 1, where a custom property draws nothing itself
+// and takes effect only where a `var()` reads it. The box's own reads count already, so an unread
+// one only passes its value down: a box with no part or icon has nothing to pass it to, while a part
+// that does not read it may still need a reader the builder lacks.
+describe("an unread custom property", () => {
+  it("drops on a box that holds no part or icon", async () => {
+    const { coverage } = await buildFixture(chip("[--chip-inner:4px]"));
+    expect(coverage).toEqual([
+      expect.objectContaining({
+        className: "[--chip-inner:4px]",
+        outcome: "dropped",
+        detail: "a custom property passes its value down, and the box holds no part or icon to take it",
+      }),
+    ]);
+  });
+
+  it("stays unmapped on a box whose part does not read it", async () => {
+    const { coverage } = await buildFixture(chip("[--chip-inner:4px]", { parts: [dot("")] }));
+    expect(coverage).toEqual([
+      expect.objectContaining({ className: "[--chip-inner:4px]", outcome: "unmapped" }),
+    ]);
+  });
+
+  // The browser paints `bg-card` with the box's own `--card`, red, while the builder keeps a synced
+  // variable as its `var()` and binds `card`. The override goes unread for that reason, not because
+  // it only passes its value down, so it must fail the gate.
+  it("stays unmapped on a leaf where it overrides a synced variable, which the builder binds instead", async () => {
+    const { coverage } = await buildFixture(chip("bg-card [--card:#ff0000]"), {
+      variables: makeVariableIndex([
+        { ref: { collection: "Fuse tokens", name: "card" }, webSyntax: "var(--card)" },
+      ]),
+    });
+    expect(coverage.filter((row) => row.className === "[--card:#ff0000]")).toEqual([
+      expect.objectContaining({ property: "--card", outcome: "unmapped" }),
+    ]);
+  });
+});
+
 // Unit under test: `buildComponentSet` on a root with `rounded-full`, which Tailwind compiles to
 // `border-radius: calc(infinity * 1px)`. Oracle: CSS Backgrounds 3, which scales down corner radii
 // whose sum exceeds a side, so any radius above half the shorter side draws as that half: 8px on
@@ -1470,6 +1515,48 @@ describe("a label that a native control places", () => {
   });
 });
 
+// Unit under test: `buildComponentSet` on a label whose definition says the control sets it on one
+// line, as an `<input>` sets its value. Oracle: HTML's rendering of a text `<input>`, which draws its
+// value on one line across its content box and clips it there, whatever the box's `display` or
+// `white-space` say, since the value is no anonymous flex item or line box of the box's own. The
+// owner chose an ellipsis at the end for the overflow (`DECISIONS.md` round 2), so the label fills the
+// width and ends in an ellipsis after one line. The placement still puts the text at the start of
+// the row, over the box's own `justify-content`.
+describe("a label that a native control sets on one line", () => {
+  const ONE_LINE: LabelDefinition = {
+    ...LABEL,
+    placement: { horizontal: "start", vertical: "center", lines: "single" },
+  };
+
+  it("fills a flex row that centers its layers and ends in an ellipsis after one line", async () => {
+    const { variant, coverage } = await buildLabelled("flex w-[200px] h-[40px] justify-center", {
+      label: ONE_LINE,
+    });
+    const text = textOf(variant?.root);
+    expect([text?.sizing, text?.truncation, text?.align]).toEqual([
+      FILL_WIDTH,
+      { maxLines: 1 },
+      { horizontal: "LEFT", vertical: "TOP" },
+    ]);
+    expect([variant?.root.primaryAlign, variant?.root.counterAlign]).toEqual(["MIN", "CENTER"]);
+    expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
+
+  it("keeps to one line whatever white-space says, and drops it with the reason", async () => {
+    const { variant, coverage } = await buildLabelled("w-[200px] whitespace-normal", { label: ONE_LINE });
+    expect(textOf(variant?.root)?.truncation).toEqual({ maxLines: 1 });
+    expect(notesOf(coverage, "whitespace-normal")).toEqual([
+      ["white-space", "dropped", "the control sets its text on one line itself"],
+    ]);
+  });
+
+  it("stops the build in a box that hugs its width, where the control's own width has no Figma form", async () => {
+    await expect(buildLabelled("flex", { label: ONE_LINE })).rejects.toThrow(
+      "chip/state=rest: the control sets its text on one line across its width, so its box needs a fixed or filling width"
+    );
+  });
+});
+
 // Unit under test: `buildComponentSet` on labels and the TEXT properties the set lists. Oracle: the
 // Figma property model, where one TEXT property holds one default for every layer it sets, so two
 // labels that name it must start with the same text, and a label whose text differs per cell sets
@@ -1530,5 +1617,64 @@ describe("a set's text properties", () => {
       ["50%", undefined],
       ["85%", undefined],
     ]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a root that inherits declarations from an ancestor in some
+// cells, as an `<input>` inside an invalid Field root inherits the root's `data-invalid:text-error`.
+// Oracle: CSS inheritance. An element inherits its parent's computed value, so the ancestor resolves
+// its own `var()` before the value reaches the root, and the root's `currentcolor` is the color it
+// inherits. Of two ancestors the nearer one passes its value down, so the ancestor's color beats the
+// page's, and an element's own declaration beats every inherited value.
+describe("a declaration an ancestor passes down in some cells", () => {
+  const RED: readonly OuterDeclaration[] = [
+    { className: "field data-invalid:text-[red]", property: "color", value: "rgb(255 0 0)" },
+  ];
+  const build = (
+    classes: string,
+    ancestors: readonly OuterDeclaration[],
+    states: readonly string[] = ["rest", "invalid"]
+  ) =>
+    buildFixture(
+      chip(`font-sans text-[14px] leading-[20px] ${classes}`, {
+        axes: [{ name: "state", values: states }],
+        label: LABEL,
+        inheritedFor: (cell) => (cell.state === "invalid" ? ancestors : []),
+      }),
+      {
+        ...FONT_SANS,
+        page: [{ className: "body text-[black]", property: "color", value: "rgb(0 0 0)" }],
+      }
+    );
+  const colors = (built: Awaited<ReturnType<typeof build>>) =>
+    built.componentSet.variants.map((variant) => textOf(variant.root)?.color);
+  const rgb = (r: number, g: number, b: number) => ({ kind: "literal", color: { r, g, b, a: 1 } });
+
+  it("colors the text in the cells that name it, over the page's color", async () => {
+    const built = await build("", RED);
+    expect(colors(built)).toEqual([rgb(0, 0, 0), rgb(1, 0, 0)]);
+    expect(notesOf(built.coverage, "field data-invalid:text-[red]")).toEqual([
+      ["color", "literal", "rgba(255, 0, 0, 1)"],
+    ]);
+  });
+
+  it("loses to a color class of the root's own, which leaves the ancestor's color unread", async () => {
+    const built = await build("text-[#0000ff]", RED);
+    expect(colors(built)).toEqual([rgb(0, 0, 1), rgb(0, 0, 1)]);
+    expect(notesOf(built.coverage, "field data-invalid:text-[red]")).toEqual([
+      ["color", "dropped", "the root sets its own, so it does not inherit this"],
+    ]);
+  });
+
+  it("passes the color the ancestor computes from its own custom property, whatever the root sets", async () => {
+    const tone: readonly OuterDeclaration[] = [
+      { className: "field [--tone:red]", property: "--tone", value: "rgb(255 0 0)" },
+      { className: "field text-(--tone)", property: "color", value: "var(--tone)" },
+    ];
+    expect(colors(await build("[--tone:#0000ff]", tone))).toEqual([rgb(0, 0, 0), rgb(1, 0, 0)]);
+  });
+
+  it("gives the root's currentcolor the color it inherits", async () => {
+    expect(colors(await build("text-current", RED, ["invalid"]))).toEqual([rgb(1, 0, 0)]);
   });
 });

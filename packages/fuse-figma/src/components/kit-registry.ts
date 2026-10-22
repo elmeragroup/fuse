@@ -13,6 +13,7 @@ import { BUTTON, ICON_BUTTON } from "./button-kit";
 import { CHECKBOX } from "./checkbox-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
+import { INPUT } from "./input-kit";
 import { KBD } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
 import { LABEL } from "./label-kit";
@@ -65,6 +66,9 @@ const LOADER_PAGE: KitPage = { slug: "loader", name: "Loader" };
 
 /** The page Label sits on alone. */
 const LABEL_PAGE: KitPage = { slug: "label", name: "Label" };
+
+/** The page Input sits on alone. */
+const INPUT_PAGE: KitPage = { slug: "input", name: "Input" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -153,4 +157,5 @@ export const KIT: readonly KitEntry[] = [
   { definition: SKELETON, page: SKELETON_PAGE, previewCells: matrixCells(SKELETON.axes) },
   { definition: LOADER, page: LOADER_PAGE, previewCells: matrixCells(LOADER.axes) },
   { definition: LABEL, page: LABEL_PAGE, previewCells: matrixCells(LABEL.axes) },
+  { definition: INPUT, page: INPUT_PAGE, previewCells: matrixCells(INPUT.axes) },
 ];
