@@ -14,12 +14,15 @@ import { axisValues } from "./kit-spec";
  * - `condition`: the class applies in the cells where the variant holds.
  * - `child`: the class styles the icons the selector reaches.
  * - `omitted`: no cell shows the state, so the class is dropped.
+ * - `omitted-element`: the class styles a pseudo-element the kit draws no layer for, so it is
+ *   dropped with the definition's reason.
  * - `unmodelled`: the definition neither models nor omits the variant, so the class is unmapped.
  */
 export type VariantMeaning =
   | { readonly kind: "condition"; readonly holds: (cell: Cell) => boolean }
   | { readonly kind: "child"; readonly selects: (slot: IconSlot) => boolean }
   | { readonly kind: "omitted" }
+  | { readonly kind: "omitted-element"; readonly reason: string }
   | { readonly kind: "unmodelled" };
 
 /** The meaning of each variant for one definition. */
@@ -56,6 +59,7 @@ const CHILD_SELECTORS = new Map<string, (slot: IconSlot) => boolean>([
   ["[&_svg]", () => true],
   // No kit icon carries a `size-*` class, so the recipe's size reaches every one.
   ["[&_svg:not([class*='size-'])]", () => true],
+  ["[&>svg]", (slot) => slot.direct],
   ["[&>svg:not([data-icon=inline-end])]", (slot) => slot.direct && slot.dataIcon !== "inline-end"],
 ]);
 
@@ -88,7 +92,7 @@ const FIXED_VARIANTS = new Set([...ICON_EDGES.keys(), ...CHILD_SELECTORS.keys(),
 export function makeStateTable(
   definition: Pick<
     ComponentDefinition,
-    "name" | "rootKind" | "axes" | "states" | "facts" | "omittedStates" | "iconsFor"
+    "name" | "rootKind" | "axes" | "states" | "facts" | "omittedStates" | "omittedPseudoElements" | "iconsFor"
   >
 ): StateTable {
   const stateValues = axisValues(definition, "state");
@@ -98,6 +102,7 @@ export function makeStateTable(
   } else if (stateValues.includes("disabled")) {
     throw new Error(`${definition.name} has a disabled state and names no root kind`);
   }
+  const omittedElements = definition.omittedPseudoElements ?? new Map<string, string>();
   // Every variant this table gives the definition a meaning.
   const sharedVariants = new Set([...FIXED_VARIANTS, ...[...sharedStates.values()].flat()]);
 
@@ -106,6 +111,7 @@ export function makeStateTable(
     { variants: new Set(Object.values(definition.states).flat()), shared: FIXED_VARIANTS },
     { variants: new Set(definition.facts.keys()), shared: sharedVariants },
     { variants: definition.omittedStates, shared: sharedVariants },
+    { variants: new Set(omittedElements.keys()), shared: sharedVariants },
   ];
   for (const source of sources) {
     for (const variant of source.variants) {
@@ -144,6 +150,10 @@ export function makeStateTable(
     const fact = definition.facts.get(variant);
     if (fact !== undefined) {
       return { kind: "condition", holds: fact };
+    }
+    const reason = omittedElements.get(variant);
+    if (reason !== undefined) {
+      return { kind: "omitted-element", reason };
     }
     return SHARED_OMISSIONS.has(variant) || definition.omittedStates.has(variant)
       ? { kind: "omitted" }

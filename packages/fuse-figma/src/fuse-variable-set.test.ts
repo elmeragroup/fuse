@@ -195,6 +195,21 @@ describe("fuseVariableSet", () => {
     expect(value("Fuse brand", "light/external/private/radius-compact", "TrøndelagKraft")).toEqual(px(10));
   });
 
+  it("syncs the checkbox corner as its formula gives it for each theme's radius", () => {
+    expect(spec("Fuse tokens", "radius-checkbox")).toMatchObject({
+      type: "FLOAT",
+      scopes: ["CORNER_RADIUS"],
+      webSyntax: "min(calc(var(--radius) - var(--radius-step, 0px)), 4px)",
+    });
+    // themes.css: the corner is radius-md, radius - step, capped at 4px. Fjordkraft's internal
+    // theme sets 0.5rem and steps 0px, so radius-md is 8px. Elmera's external theme sets 0.375rem
+    // and steps 2px, so radius-md is 4px, at the cap. TrøndelagKraft's sets 1rem, so radius-md is
+    // 14px. Every theme's radius-md reaches the cap.
+    expect(value("Fuse brand", "light/internal/private/radius-checkbox", "Fjordkraft")).toEqual(px(4));
+    expect(value("Fuse brand", "dark/external/company/radius-checkbox", "Elmera")).toEqual(px(4));
+    expect(value("Fuse brand", "light/external/private/radius-checkbox", "TrøndelagKraft")).toEqual(px(4));
+  });
+
   it("turns var() references into aliases at the same theme path or to primitives", () => {
     expect(value("Fuse brand", "dark/external/private/destructive", "Gudbrandsdal Energi")).toEqual(
       alias("Fuse brand", "dark/external/private/error")

@@ -1,7 +1,7 @@
 /**
  * `reconcileKit` end to end against the in-memory file in `fake-figma.ts`, with the kit
- * `buildKit()` writes from the Button, Toggle, Badge, Kbd and Radio icon button recipes and the
- * variables `fuseVariableSet()` syncs. The fake models the Figma rules the real runs in 2026-10 confirmed, and throws for any Plugin API
+ * `buildKit()` writes from the Button, Toggle, Badge, Kbd, Radio icon button and Checkbox recipes
+ * and the variables `fuseVariableSet()` syncs. The fake models the Figma rules the real runs in 2026-10 confirmed, and throws for any Plugin API
  * member it does not model. The oracles are hand-written: the change lines Plan must list, the
  * values the Button recipe and the theme catalog give, and the order the kit's axes declare.
  */
@@ -51,6 +51,7 @@ const TOGGLE_PAGE = "page/toggle";
 const BADGE_PAGE = "page/badge";
 const KBD_PAGE = "page/kbd";
 const RADIO_PAGE = "page/radio";
+const CHECKBOX_PAGE = "page/checkbox";
 const ICONS_PAGE = "page/icons";
 const DEFAULT_BUTTON = "variant=default, size=default, state=rest, icon=none";
 const LAY_OUT_BUTTONS = "Button: lay out 420 variants in 5 columns and 84 rows";
@@ -74,6 +75,9 @@ const CREATE_KBD_PREVIEWS = KBD_PREVIEWS.map((name) => `Kbd: create the preview 
 const PLACE_RADIOS = "Radio: place Radio icon button in a row and stack 4 previews below them";
 const RADIO_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Radio"));
 const CREATE_RADIO_PREVIEWS = RADIO_PREVIEWS.map((name) => `Radio: create the preview ${name}`);
+const PLACE_CHECKBOXES = "Checkbox: place Checkbox in a row and stack 4 previews below them";
+const CHECKBOX_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Checkbox"));
+const CREATE_CHECKBOX_PREVIEWS = CHECKBOX_PREVIEWS.map((name) => `Checkbox: create the preview ${name}`);
 
 /** The page the plugin put the whole kit on before each component got a page of its own. */
 const LEGACY_PAGE = { key: "page/components", name: "Fuse components" };
@@ -234,6 +238,7 @@ describe("Apply on a synced file without the kit pages", () => {
         "Document: create the page Badge",
         "Document: create the page Kbd",
         "Document: create the page Radio",
+        "Document: create the page Checkbox",
         "Document: create the page Icons",
         "Icons: create the Icons frame with 135 icons",
         "Button: create the component set Button with 420 variants",
@@ -243,6 +248,7 @@ describe("Apply on a synced file without the kit pages", () => {
         "Badge: create the component set Badge with 57 variants",
         "Kbd: create the component set Kbd with 2 variants",
         "Radio: create the component set Radio icon button with 50 variants",
+        "Checkbox: create the component set Checkbox with 12 variants",
         ...CREATE_PREVIEWS,
         PLACE,
         ...CREATE_TOGGLE_PREVIEWS,
@@ -253,6 +259,8 @@ describe("Apply on a synced file without the kit pages", () => {
         PLACE_KBDS,
         ...CREATE_RADIO_PREVIEWS,
         PLACE_RADIOS,
+        ...CREATE_CHECKBOX_PREVIEWS,
+        PLACE_CHECKBOXES,
       ],
       warnings: [],
     });
@@ -260,16 +268,17 @@ describe("Apply on a synced file without the kit pages", () => {
   });
 
   it("shows the Button page and leaves nothing behind on the page that was current", async () => {
-    const [first, button, toggle, badge, kbd, radio, icons] = file.figma.root.children;
+    const [first, button, toggle, badge, kbd, radio, checkbox, icons] = file.figma.root.children;
     expect(first?.name).toBe("Page 1");
     await first?.loadAsync();
     expect(first?.children).toEqual([]);
-    expect([button?.name, toggle?.name, badge?.name, kbd?.name, radio?.name, icons?.name]).toEqual([
+    expect([button, toggle, badge, kbd, radio, checkbox, icons].map((page) => page?.name)).toEqual([
       "Button",
       "Toggle",
       "Badge",
       "Kbd",
       "Radio",
+      "Checkbox",
       "Icons",
     ]);
     expect(file.figma.currentPage).toBe(button);
@@ -294,6 +303,10 @@ describe("Apply on a synced file without the kit pages", () => {
     expect((await kitPage(file, RADIO_PAGE)).children.map((node) => node.name)).toEqual([
       "Radio icon button",
       ...RADIO_PREVIEWS,
+    ]);
+    expect((await kitPage(file, CHECKBOX_PAGE)).children.map((node) => node.name)).toEqual([
+      "Checkbox",
+      ...CHECKBOX_PREVIEWS,
     ]);
     expect((await kitPage(file, ICONS_PAGE)).children.map((node) => node.name)).toEqual(["Icons"]);
   });
@@ -377,9 +390,14 @@ describe("Apply on a synced file without the kit pages", () => {
         ["preview/radio/internal-fkas-private-dark", RADIO_PREVIEWS[1], 50],
         ["preview/radio/external-fkas-private-light", RADIO_PREVIEWS[2], 50],
         ["preview/radio/external-fkas-private-dark", RADIO_PREVIEWS[3], 50],
+        // Checkbox: off, on and mixed, in 4 states.
+        ["preview/checkbox/internal-fkas-private-light", CHECKBOX_PREVIEWS[0], 12],
+        ["preview/checkbox/internal-fkas-private-dark", CHECKBOX_PREVIEWS[1], 12],
+        ["preview/checkbox/external-fkas-private-light", CHECKBOX_PREVIEWS[2], 12],
+        ["preview/checkbox/external-fkas-private-dark", CHECKBOX_PREVIEWS[3], 12],
       ]
     );
-    expect(progress).toEqual([1132, 1132]);
+    expect(progress).toEqual([1180, 1180]);
     const [first] = snapshot.previews;
     expect(new Set(Object.keys(first ?? {}))).toEqual(new Set(["key", "name", "modes", "instances"]));
     expect(first?.modes).toEqual(
@@ -780,10 +798,16 @@ describe("a file the plugin laid out on one page", () => {
       "Document: create the page Badge",
       "Document: create the page Kbd",
       "Document: create the page Radio",
+      "Document: create the page Checkbox",
       "Document: create the page Icons",
-      ...[...PREVIEWS, ...TOGGLE_PREVIEWS, ...BADGE_PREVIEWS, ...KBD_PREVIEWS, ...RADIO_PREVIEWS].map(
-        (name) => `Fuse components: delete ${name}`
-      ),
+      ...[
+        ...PREVIEWS,
+        ...TOGGLE_PREVIEWS,
+        ...BADGE_PREVIEWS,
+        ...KBD_PREVIEWS,
+        ...RADIO_PREVIEWS,
+        ...CHECKBOX_PREVIEWS,
+      ].map((name) => `Fuse components: delete ${name}`),
       "Fuse components: move Icons to the Icons page",
       "Fuse components: move Button to the Button page",
       "Fuse components: move Icon button to the Button page",
@@ -792,10 +816,11 @@ describe("a file the plugin laid out on one page", () => {
       "Fuse components: move Badge to the Badge page",
       "Fuse components: move Kbd to the Kbd page",
       "Fuse components: move Radio icon button to the Radio page",
+      "Fuse components: move Checkbox to the Checkbox page",
     ];
 
     expect(await reconcileKit(file.figma, kit, false)).toEqual({
-      changes: [...pagePhase, "Document: plan the rest of the kit again once the 8 moves land"],
+      changes: [...pagePhase, "Document: plan the rest of the kit again once the 9 moves land"],
       warnings: [],
     });
     const applied = await reconcileKit(file.figma, kit, true);
@@ -812,6 +837,8 @@ describe("a file the plugin laid out on one page", () => {
         PLACE_KBDS,
         ...CREATE_RADIO_PREVIEWS,
         PLACE_RADIOS,
+        ...CREATE_CHECKBOX_PREVIEWS,
+        PLACE_CHECKBOXES,
         "Document: delete the page Fuse components",
       ],
       warnings: [],
@@ -827,6 +854,7 @@ describe("a file the plugin laid out on one page", () => {
       "Badge",
       "Kbd",
       "Radio",
+      "Checkbox",
       "Icons",
     ]);
     const button = await componentSet(file, "Button");
@@ -870,12 +898,13 @@ describe("a file the plugin laid out on one page", () => {
     file.reopen();
 
     const applied = await reconcileKit(file.figma, kit, true);
-    expect(applied.changes.slice(0, 6)).toEqual([
+    expect(applied.changes.slice(0, 7)).toEqual([
       "Document: create the page Button",
       "Document: create the page Toggle",
       "Document: create the page Badge",
       "Document: create the page Kbd",
       "Document: create the page Radio",
+      "Document: create the page Checkbox",
       "Document: create the page Icons",
     ]);
     expect(file.figma.root.children.map((page) => page.name)).toEqual([
@@ -887,6 +916,7 @@ describe("a file the plugin laid out on one page", () => {
       "Badge",
       "Kbd",
       "Radio",
+      "Checkbox",
       "Icons",
     ]);
     for (const { page, frame } of imported) {

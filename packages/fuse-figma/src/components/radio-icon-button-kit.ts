@@ -70,8 +70,11 @@ export const RADIO_ICON_BUTTON: ComponentDefinition = {
   columnAxis: "state",
   classesFor,
   states: {},
-  // Base UI's radio renders `data-checked` while it is checked.
-  facts: new Map([["data-checked", (cell: Cell) => cell.checked === "on"]]),
+  // Base UI's radio renders `data-checked` and `aria-checked="true"` while it is checked.
+  facts: new Map([
+    ["data-checked", (cell: Cell) => cell.checked === "on"],
+    ["aria-checked", (cell: Cell) => cell.checked === "on"],
+  ]),
   omittedStates: new Set(),
   label: undefined,
   iconsFor: () => [ICON],

@@ -4,11 +4,14 @@
  * `button-variants.ts`, `toggle-variants.ts`, `badge-variants.ts`, `kbd-variants.ts`,
  * `radio-group-variants.ts`, `control-size.ts`, `state-face.ts`, the focus ring in
  * `styles/utils.ts` and the base layer of `fuse.css`. The spec builder is the unit under test.
+ * The whole kit's invariants sit here too. A later set's field expectations sit beside its
+ * definition, in `<name>-kit.test.ts`, as Checkbox's do.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { PHOSPHOR_ICON_NAMES, buttonVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import { density, literal, paint, SHADOW_XS, token, variantRoot } from "../../test/built-kit";
 import { buildKit, checkIconReferences } from "./build-kit";
 import { buildComponentSet, iconKey } from "./component-spec";
 import type { ComponentDefinition, IconSlot } from "./component-spec";
@@ -24,21 +27,10 @@ beforeAll(async () => {
   ({ spec, coverage } = await buildKit());
 });
 
-const token = (name: string) =>
-  ({ kind: "variable", variable: { collection: "Fuse tokens", name } }) as const;
-const density = (name: string) =>
-  ({ kind: "variable", variable: { collection: "Fuse density", name } }) as const;
-const paint = (name: string) =>
-  ({ kind: "variable", variable: { collection: "Fuse tokens", name } }) as const;
-const literal = (value: number) => ({ kind: "literal", value }) as const;
 const transparent = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0 } } as const;
 
 function find(key: string): ComponentRootSpec {
-  const found = spec.componentSets.flatMap((set) => set.variants).find((cell) => cell.key === key);
-  if (found === undefined) {
-    throw new Error(`the kit has no ${key}`);
-  }
-  return found.root;
+  return variantRoot(spec, key);
 }
 
 /** The color of a root's first layer, a label or an icon in these flat sets. */
@@ -442,15 +434,6 @@ describe("the Toggle component sets", () => {
 function badge(variant: string, size: string): ComponentRootSpec {
   return find(`badge/variant=${variant},size=${size}`);
 }
-
-/** Tailwind's shadow-xs, 0 1px 2px at 5% black. */
-const SHADOW_XS = {
-  color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.05 } },
-  offsetX: 0,
-  offsetY: 1,
-  radius: literal(2),
-  spread: literal(0),
-} as const;
 
 describe("the Badge component set", () => {
   it("holds every variant at the three sizes, 57 variants with a label and no state", () => {
@@ -873,6 +856,7 @@ describe("the preview frames", () => {
       { key: "page/badge", name: "Badge" },
       { key: "page/kbd", name: "Kbd" },
       { key: "page/radio", name: "Radio" },
+      { key: "page/checkbox", name: "Checkbox" },
       { key: "page/icons", name: "Icons" },
     ]);
     expect(spec.componentSets.map((set) => [set.key, set.page])).toEqual([
@@ -883,13 +867,14 @@ describe("the preview frames", () => {
       ["badge", "page/badge"],
       ["kbd", "page/kbd"],
       ["radio-icon-button", "page/radio"],
+      ["checkbox", "page/checkbox"],
     ]);
     expect(spec.icons.page).toBe("page/icons");
   });
 
   it("pin four Fjordkraft private themes at Auto density on each component page, each on all five axes", () => {
     expect(spec.previews.map((preview) => [preview.key, preview.page])).toEqual(
-      ["button", "toggle", "badge", "kbd", "radio"].flatMap((page) =>
+      ["button", "toggle", "badge", "kbd", "radio", "checkbox"].flatMap((page) =>
         [
           "internal-fkas-private-light",
           "internal-fkas-private-dark",
@@ -926,6 +911,7 @@ describe("the preview frames", () => {
       ["page/badge", [["badge", "Badge"]]],
       ["page/kbd", [["kbd", "Kbd"]]],
       ["page/radio", [["radio-icon-button", "Radio icon button"]]],
+      ["page/checkbox", [["checkbox", "Checkbox"]]],
     ]);
     for (const preview of spec.previews) {
       expect(preview.groups.map((group) => [group.key, group.name])).toEqual(

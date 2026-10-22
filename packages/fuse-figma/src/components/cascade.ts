@@ -16,7 +16,7 @@ import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { normalizeCss, splitTopLevel, substituteVars } from "./css-values";
 import { compareSpecificity } from "./specificity";
 import type { Specificity } from "./specificity";
-import type { StateTable } from "./state-table";
+import type { StateTable, VariantMeaning } from "./state-table";
 
 /** What a read became, for the coverage table. */
 export type CoverageNote = Pick<CoverageRow, "outcome" | "detail">;
@@ -553,20 +553,21 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
     const { variants, utility } = splitClassName(className);
     const rule = context.compiled.rules.get(utility);
     if (rule === undefined) {
+      const marker = isMarker(utility);
       record({
         part,
         className,
         property: "",
         value: "",
-        outcome: utility.startsWith("group/") || utility === "group" ? "dropped" : "unmapped",
-        detail: utility.startsWith("group") ? "a marker class with no CSS" : "Tailwind emits no rule for it",
+        outcome: marker ? "dropped" : "unmapped",
+        detail: marker ? "a marker class with no CSS" : "Tailwind emits no rule for it",
       });
       continue;
     }
     let selects: ((slot: IconSlot) => boolean) | undefined;
     const conditionVariants: string[] = [];
     let holds = true;
-    let skipped: { readonly variant: string; readonly omitted: boolean } | undefined;
+    let skipped: CoverageNote | undefined;
     for (const variant of variants) {
       const meaning = meaningOf(variant);
       if (meaning.kind === "child") {
@@ -575,25 +576,15 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
         continue;
       }
       if (meaning.kind !== "condition") {
-        skipped = { variant, omitted: meaning.kind === "omitted" };
+        skipped = skippedNote(variant, meaning);
         break;
       }
       conditionVariants.push(variant);
       holds &&= meaning.holds(cell);
     }
     if (skipped !== undefined) {
-      const { variant, omitted } = skipped;
       for (const declaration of rule.declarations) {
-        record({
-          part,
-          className,
-          property: declaration.property,
-          value: declaration.value,
-          outcome: omitted ? "dropped" : "unmapped",
-          detail: omitted
-            ? `no cell of the matrix shows \`${variant}\``
-            : `the definition neither models nor omits \`${variant}\``,
-        });
+        record({ part, className, property: declaration.property, value: declaration.value, ...skipped });
       }
       continue;
     }
@@ -632,6 +623,29 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
   return { applied, childRules };
 }
 
+/** What becomes of a class whose variant applies it in no cell the kit draws. */
+function skippedNote(
+  variant: string,
+  meaning: Exclude<VariantMeaning, { readonly kind: "condition" | "child" }>
+): CoverageNote {
+  switch (meaning.kind) {
+    case "omitted":
+      return { outcome: "dropped", detail: `no cell of the matrix shows \`${variant}\`` };
+    case "omitted-element":
+      return { outcome: "dropped", detail: meaning.reason };
+    case "unmodelled":
+      return { outcome: "unmapped", detail: `the definition neither models nor omits \`${variant}\`` };
+  }
+}
+
+/**
+ * Whether a utility is one of Tailwind's markers, `group` or `peer`, bare or named, which emit no
+ * CSS and only name the element a `group-*` or `peer-*` variant reads.
+ */
+function isMarker(utility: string): boolean {
+  return /^(?:group|peer)(?:\/.+)?$/.test(utility);
+}
+
 /** Declarations from outside the recipe, set on `part` at `rank`. */
 function outerApplied(declarations: readonly OuterDeclaration[], part: string, rank: number): Applied[] {
   return declarations.map(({ className, property, value }) => ({
@@ -663,15 +677,31 @@ function computeStyle(layer: number, inherited: ComputedStyle, applied: readonly
   for (const { part, className, declarations } of sorted) {
     for (const { property, value } of declarations) {
       for (const [longhand, longValue] of expandShorthand(property, value)) {
-        style.set(longhand, {
-          value: longValue,
-          source: { layer, part, className, property: longhand, value: longValue },
-          consumed: [],
-        });
+        const source = { layer, part, className, property: longhand, value: longValue };
+        style.set(
+          longhand,
+          inheritedCurrentColor(source, inherited) ?? { value: longValue, source, consumed: [] }
+        );
       }
     }
   }
   return style;
+}
+
+/**
+ * `color: currentcolor` computes to the color the element inherits, as `text-current` keeps its
+ * parent's text color. The entry keeps the class as its source and reads the inherited color's
+ * declarations, so the class lands in the coverage table with what it resolved to.
+ *
+ * @returns The inherited color under the class, or undefined for any other declaration or when
+ *   nothing passes a color down.
+ */
+function inheritedCurrentColor(source: Provenance, inherited: ComputedStyle): StyleEntry | undefined {
+  const parent = inherited.get("color");
+  if (source.property !== "color" || normalizeCss(source.value) !== "currentcolor" || parent === undefined) {
+    return undefined;
+  }
+  return { value: parent.value, source, consumed: [parent.source, ...parent.consumed] };
 }
 
 /**

@@ -299,6 +299,7 @@ describe("exports map", () => {
     expect(catalog).toEqual([
       "badgeVariants",
       "buttonVariants",
+      "checkboxVariants",
       "kbdVariants",
       "radioIconButtonVariants",
       "toggleVariants",

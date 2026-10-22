@@ -75,6 +75,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/radio-group.js",
     load: async () => (await import("./radio-icon-button-cell.ts")).radioIconButton,
   },
+  {
+    set: "checkbox",
+    entry: "dist/checkbox.js",
+    load: async () => (await import("./checkbox-cell.ts")).checkbox,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */
