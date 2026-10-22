@@ -47,10 +47,20 @@
           "type": "\"inline\" | \"responsive\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"responsive\"",
-          "description": "How terms and details sit. `responsive` stacks each details under its term on phones and sets them in two columns, with a rule between rows, from `sm` up. `inline` keeps each term and its details on one row at every width, for label/value rows in cards and summaries: the details align to the end, a short one never wraps and a long one wraps within 60% of the row. Inline rows take the label type, have no rules and space with the small surface gap, and the term is not muted. A colour class on a cell wins in both layouts. The inline cells' padding, rules, column and alignment come from the list, so override them with a `[:where([data-layout=inline])>&]:` class or a CSS rule. Defaults to `responsive`.",
+          "description": "How each Item's terms and details sit. `responsive` stacks the details under the term on phones and sets them in two columns from `sm` up, with a rule between Items at every width. `inline` is for label/value rows in cards and summaries: each Item shares its own row between its term and details, whatever the other Items hold. The details sits beside its term, at the end of the row. When the two don't fit on one line, both wrap within the row: each keeps its longest word and they share the rest, so a short one leaves the other room. Only when the term's longest word and the details' longest word can't share the row does the details move under its term, still at the end, rather than break a word; a word wider than the whole row then breaks in the details. Inline rows take the label type, have no rules and space with the small surface gap, and the term is not muted. A colour class on a cell wins in both layouts. The inline cells' padding, sizing and alignment come from the list, so override them with a `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. Override an inline Item's row, wrap and gap with a `[:where([data-layout=inline])>&]:` class. Defaults to `responsive`.",
           "required": false
         }
       ]
+    },
+    {
+      "name": "DescriptionList.Item",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/description-list/description-list.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
     },
     {
       "name": "DescriptionList.Term",

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, Suspense, useState } from "react";
+import { Suspense, useState } from "react";
 import type { FocusEvent, FormEvent, KeyboardEvent, ReactElement } from "react";
 
 import { CalendarDate } from "@internationalized/date";
@@ -226,17 +226,19 @@ export function CheckoutScreen(): ReactElement {
           <Card.Content>
             <DescriptionList.Root>
               <DescriptionList.Content>
-                <DescriptionList.Term>Spot price</DescriptionList.Term>
-                <DescriptionList.Details className={styles.value()}>
-                  {kroner(BASE_PRICE)}
-                </DescriptionList.Details>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Spot price</DescriptionList.Term>
+                  <DescriptionList.Details className={styles.value()}>
+                    {kroner(BASE_PRICE)}
+                  </DescriptionList.Details>
+                </DescriptionList.Item>
                 {picked.map((extra) => (
-                  <Fragment key={extra.id}>
+                  <DescriptionList.Item key={extra.id}>
                     <DescriptionList.Term>{extra.title}</DescriptionList.Term>
                     <DescriptionList.Details className={styles.value()}>
                       {kroner(extra.price)}
                     </DescriptionList.Details>
-                  </Fragment>
+                  </DescriptionList.Item>
                 ))}
               </DescriptionList.Content>
             </DescriptionList.Root>

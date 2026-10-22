@@ -6,6 +6,7 @@ import type {
   DescriptionListContentProps,
   DescriptionListDetailsProps,
   DescriptionListHeadingProps,
+  DescriptionListItemProps,
   DescriptionListRootProps,
   DescriptionListTermProps,
 } from "@elmeragroup/fuse/description-list";
@@ -17,6 +18,7 @@ test("public API exports only the namespace and part prop types, with native att
   expectTypeOf<DescriptionListContentProps>().toEqualTypeOf<
     ComponentProps<"dl"> & { layout?: "responsive" | "inline" }
   >();
+  expectTypeOf<DescriptionListItemProps>().toEqualTypeOf<ComponentProps<"div">>();
   expectTypeOf<DescriptionListTermProps>().toEqualTypeOf<ComponentProps<"dt">>();
   expectTypeOf<DescriptionListDetailsProps>().toEqualTypeOf<ComponentProps<"dd">>();
   expectTypeOf<DescriptionListRootProps["ref"]>().toEqualTypeOf<ComponentProps<"div">["ref"]>();
@@ -33,8 +35,10 @@ test("public API exports only the namespace and part prop types, with native att
       <DescriptionList.Heading>Customer</DescriptionList.Heading>
       <DescriptionList.Heading render={<h3 />}>Section</DescriptionList.Heading>
       <DescriptionList.Content>
-        <DescriptionList.Term>Name</DescriptionList.Term>
-        <DescriptionList.Details>Kari Nordmann</DescriptionList.Details>
+        <DescriptionList.Item data-testid="name">
+          <DescriptionList.Term>Name</DescriptionList.Term>
+          <DescriptionList.Details>Kari Nordmann</DescriptionList.Details>
+        </DescriptionList.Item>
       </DescriptionList.Content>
     </DescriptionList.Root>
   );
@@ -45,6 +49,8 @@ test("public API exports only the namespace and part prop types, with native att
   const _badLayout = <DescriptionList.Content layout="stacked" />;
   // @ts-expect-error only the content takes a layout
   const _termLayout = <DescriptionList.Term layout="inline" />;
+  // @ts-expect-error only the content takes a layout
+  const _itemLayout = <DescriptionList.Item layout="inline" />;
   // @ts-expect-error polymorphism is never an as prop
   const _noAs = <DescriptionList.Root as="section" />;
 });
