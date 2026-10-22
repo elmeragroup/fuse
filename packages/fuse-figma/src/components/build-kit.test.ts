@@ -21,13 +21,12 @@ import {
   token,
   variantRoot,
 } from "../../test/built-kit";
+import { buildFixture, chip } from "../../test/fixture-sets";
 import { buildKit, checkIconReferences } from "./build-kit";
-import { buildComponentSet, iconKey } from "./component-spec";
-import type { ComponentDefinition, IconSlot } from "./component-spec";
+import { iconKey } from "./component-spec";
+import type { IconSlot } from "./component-spec";
 import type { CoverageRow } from "./coverage";
-import { makeVariableIndex } from "./css-values";
 import type { ChildLayerSpec, ColorSpec, ComponentRootSpec, ComponentSetSpec, KitSpec } from "./kit-spec";
-import { compileUtilities } from "./utility-css";
 
 let spec: KitSpec;
 let coverage: readonly CoverageRow[];
@@ -766,20 +765,6 @@ describe("the icon reference check", () => {
     icon: "Plus",
     swapProperty: "Badge icon",
   };
-  const chip: ComponentDefinition = {
-    key: "chip",
-    name: "Chip",
-    slot: "chip",
-    axes: [{ name: "state", values: ["rest"] }],
-    columnAxis: "state",
-    classesFor: () => "text-[#000000] [&_svg]:size-[16px]",
-    states: {},
-    facts: new Map(),
-    omittedStates: new Set(),
-    label: undefined,
-    iconsFor: () => [badge],
-    swapProperties: [],
-  };
   const library = {
     key: "icons",
     name: "Icons",
@@ -814,12 +799,9 @@ describe("the icon reference check", () => {
   ])(
     "fails the build for an icon layer %s that links a swap property the set does not define",
     async (_, place) => {
-      const { componentSet } = buildComponentSet(chip, {
-        compiled: await compileUtilities(["text-[#000000]", "[&_svg]:size-[16px]"]),
-        variables: makeVariableIndex([]),
-        page: [],
-        base: [],
-      });
+      const { componentSet } = await buildFixture(
+        chip("text-[#000000] [&_svg]:size-[16px]", { iconsFor: () => [badge] })
+      );
       expect(() => checkIconReferences(place(componentSet), library)).toThrow(
         "chip/state=rest: the Badge icon links Badge icon, which Chip does not define"
       );

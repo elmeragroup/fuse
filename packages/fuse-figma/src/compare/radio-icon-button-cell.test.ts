@@ -9,34 +9,19 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
-import type { MarkupElement } from "../../test/static-markup";
+import { rootOf, stateAttributes } from "../../test/static-markup";
 import type { Cell } from "../components/component-spec";
 import { renderCellHtml } from "./cell-renderers";
 import { radioIconButton } from "./radio-icon-button-cell";
 
 /** The radio the cell renders, wherever it sits in its group, and its child elements. */
 function radio(cell: Cell) {
-  const elements = elementsOf(renderCellHtml(radioIconButton, cell));
-  const index = elements.findIndex((element) => element.attributes.get("data-slot") === "radio-icon-button");
-  const element = elements[index];
-  if (element?.name !== "span" || element.attributes.get("role") !== "radio") {
-    throw new Error(`no radio span in the ${JSON.stringify(cell)} cell`);
-  }
-  return { element, icons: elements.filter((candidate) => candidate.parent === index) };
-}
-
-/** The state attributes a radio carries, among the ones the cells vary. */
-function stateAttributes(element: MarkupElement): readonly string[] {
-  return [
-    "data-checked",
-    "data-unchecked",
-    "aria-disabled",
-    "data-disabled",
-    "disabled",
-    "aria-invalid",
-    "data-invalid",
-  ].filter((name) => element.attributes.has(name));
+  const element = rootOf(renderCellHtml(radioIconButton, cell), {
+    slot: "radio-icon-button",
+    name: "span",
+    role: "radio",
+  });
+  return { element, icons: element.children };
 }
 
 const REST: Cell = { size: "icon", checked: "off", state: "rest" };

@@ -1,50 +1,35 @@
 /**
  * How the spec builder records a class whose variant the matrix does not model. The unit under
- * test is `buildComponentSet`, with a one-cell definition and Tailwind's compiled utilities.
- * The oracle is the definition: a variant it omits is dropped, and any other variant no cell
- * models is unmapped, which the coverage gate refuses. That includes `focus-visible`, since the
- * definition's state axis has no focus value.
+ * test is `buildComponentSet`, with the one-cell `chip` fixture of `test/fixture-sets.ts` and
+ * Tailwind's compiled utilities. The oracle is the definition: a variant it omits is dropped, and
+ * any other variant no cell models is unmapped, which the coverage gate refuses. That includes
+ * `focus-visible`, since the definition's state axis has no focus value.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { buildComponentSet, definitionClasses } from "./component-spec";
-import type { BuildContext, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
+import { CENTERED_BOX, literal } from "../../test/built-kit";
+import { buildFixture, chip, dot, frameOf, ICON } from "../../test/fixture-sets";
+import type { FixtureContext } from "../../test/fixture-sets";
+import type { IconSlot } from "./component-spec";
+import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
-import type { BoxSpec, FrameLayerSpec } from "./kit-spec";
-import { compileUtilities } from "./utility-css";
-
-const CHIP: ComponentDefinition = {
-  key: "chip",
-  name: "Chip",
-  slot: "chip",
-  axes: [{ name: "state", values: ["rest"] }],
-  columnAxis: "state",
-  classesFor: () => "in-data-[slot=group]:bg-muted data-pressed:bg-muted focus-visible:bg-muted",
-  states: {},
-  facts: new Map(),
-  omittedStates: new Set(["in-data-[slot=group]"]),
-  label: undefined,
-  iconsFor: () => [],
-  swapProperties: [],
-};
-
-let context: BuildContext;
-
-beforeAll(async () => {
-  context = {
-    compiled: await compileUtilities(["bg-muted"]),
-    variables: makeVariableIndex([]),
-    page: [],
-    base: [],
-  };
-});
-
-function outcomes(className: string): ReadonlySet<string> {
-  const { coverage } = buildComponentSet(CHIP, context);
-  return new Set(coverage.filter((row) => row.className === className).map((row) => row.outcome));
-}
+import type { FrameLayerSpec } from "./kit-spec";
 
 describe("a class whose variant no cell models", () => {
+  let coverage: readonly CoverageRow[];
+
+  beforeAll(async () => {
+    ({ coverage } = await buildFixture(
+      chip("in-data-[slot=group]:bg-muted data-pressed:bg-muted focus-visible:bg-muted", {
+        omittedStates: new Set(["in-data-[slot=group]"]),
+      })
+    ));
+  });
+
+  function outcomes(className: string): ReadonlySet<string> {
+    return new Set(coverage.filter((row) => row.className === className).map((row) => row.outcome));
+  }
+
   it("is dropped when the definition omits the state", () => {
     expect(outcomes("in-data-[slot=group]:bg-muted")).toEqual(new Set(["dropped"]));
   });
@@ -60,14 +45,11 @@ describe("a class whose variant no cell models", () => {
   // Oracle: a `state` axis holds one value per cell, so `aria-invalid:` (state=invalid) and
   // `focus-visible:` (state=focus) never hold in the same cell, and the class would otherwise
   // leave no row in the coverage table.
-  it("is dropped, naming its variants, when they never hold in one cell together", () => {
-    const { coverage } = buildComponentSet(
-      {
-        ...CHIP,
+  it("is dropped, naming its variants, when they never hold in one cell together", async () => {
+    const { coverage } = await buildFixture(
+      chip("aria-invalid:focus-visible:bg-muted", {
         axes: [{ name: "state", values: ["rest", "focus", "invalid"] }],
-        classesFor: () => "aria-invalid:focus-visible:bg-muted",
-      },
-      context
+      })
     );
     expect(coverage).toEqual([
       expect.objectContaining({
@@ -86,11 +68,7 @@ describe("a class whose variant no cell models", () => {
 // must fail the gate rather than vanish.
 describe("a border with no color", () => {
   it("records the missing color as unmapped, under the class that drew the border", async () => {
-    const bordered: ComponentDefinition = { ...CHIP, classesFor: () => "border" };
-    const { componentSet, coverage } = buildComponentSet(bordered, {
-      ...context,
-      compiled: await compileUtilities(["border"]),
-    });
+    const { componentSet, coverage } = await buildFixture(chip("border"));
     expect(componentSet.variants[0]?.root.stroke).toBeUndefined();
     expect(coverage).toContainEqual(
       expect.objectContaining({ className: "border", property: "border-color", outcome: "unmapped" })
@@ -103,30 +81,20 @@ describe("a border with no color", () => {
 // `border-color: var(--border, currentcolor)`, and CSS cascade layers, under which any utility
 // beats a base-layer declaration.
 describe("the base-layer border color", () => {
-  const variables = makeVariableIndex(
-    ["border", "error"].map((name) => ({
-      ref: { collection: "Fuse tokens", name },
-      webSyntax: `var(--${name})`,
-    }))
-  );
-  const base = [
-    { className: "fuse.css base layer", property: "border-color", value: "var(--border, currentcolor)" },
-  ];
-
-  async function build(classes: string) {
-    return buildComponentSet(
-      { ...CHIP, classesFor: () => classes },
-      {
-        ...context,
-        compiled: await compileUtilities(classes.split(" ")),
-        variables,
-        base,
-      }
-    );
-  }
+  const context: FixtureContext = {
+    variables: makeVariableIndex(
+      ["border", "error"].map((name) => ({
+        ref: { collection: "Fuse tokens", name },
+        webSyntax: `var(--${name})`,
+      }))
+    ),
+    base: [
+      { className: "fuse.css base layer", property: "border-color", value: "var(--border, currentcolor)" },
+    ],
+  };
 
   it("colors a border no class colors with the border role", async () => {
-    const { componentSet, coverage } = await build("border");
+    const { componentSet, coverage } = await buildFixture(chip("border"), context);
     expect(componentSet.variants[0]?.root.stroke).toEqual({
       color: { kind: "variable", variable: { collection: "Fuse tokens", name: "border" } },
       weight: { kind: "literal", value: 1 },
@@ -141,7 +109,8 @@ describe("the base-layer border color", () => {
   });
 
   it("loses to a class that colors the border", async () => {
-    const strokeOf = async (classes: string) => (await build(classes)).componentSet.variants[0]?.root.stroke;
+    const strokeOf = async (classes: string) =>
+      (await buildFixture(chip(classes), context)).componentSet.variants[0]?.root.stroke;
     expect((await strokeOf("border border-transparent"))?.color).toEqual({
       kind: "literal",
       color: { r: 0, g: 0, b: 0, a: 0 },
@@ -157,14 +126,8 @@ describe("the base-layer border color", () => {
 // Oracle: CSS, where `background-color: transparent` paints nothing, as an unset background
 // does, so the root gets no fill.
 describe("a transparent background", () => {
-  const RING: ComponentDefinition = { ...CHIP, classesFor: () => "bg-transparent ring-2 ring-[rgb(0_0_0)]" };
-
   it("gives the root no fill, whatever shadow it casts", async () => {
-    const ringContext = {
-      ...context,
-      compiled: await compileUtilities(["bg-transparent", "ring-2", "ring-[rgb(0_0_0)]"]),
-    };
-    const { componentSet, coverage } = buildComponentSet(RING, ringContext);
+    const { componentSet, coverage } = await buildFixture(chip("bg-transparent ring-2 ring-[rgb(0_0_0)]"));
     const [variant] = componentSet.variants;
     expect(variant?.root.shadows).toEqual([
       {
@@ -189,14 +152,11 @@ describe("a transparent background", () => {
 describe("two conditional classes that set one property", () => {
   it("apply the more specific one, though Tailwind emits it first", async () => {
     const classes = ["aria-invalid:bg-[rgb(0_0_255)]", "data-checked:bg-[rgb(255_0_0)]"];
-    const { componentSet } = buildComponentSet(
-      {
-        ...CHIP,
+    const { componentSet } = await buildFixture(
+      chip(classes.join(" "), {
         axes: [{ name: "state", values: ["invalid"] }],
-        classesFor: () => classes.join(" "),
         facts: new Map([["data-checked", () => true]]),
-      },
-      { ...context, compiled: await compileUtilities(classes) }
+      })
     );
     expect(componentSet.variants[0]?.root.fill).toEqual({
       kind: "literal",
@@ -210,10 +170,7 @@ describe("two conditional classes that set one property", () => {
 // writes `TNUM`, so `font-variant-numeric` has no Figma form and is dropped, not unmapped.
 describe("tabular numerals", () => {
   it("drops font-variant-numeric", async () => {
-    const { coverage } = buildComponentSet(
-      { ...CHIP, classesFor: () => "tabular-nums" },
-      { ...context, compiled: await compileUtilities(["tabular-nums"]) }
-    );
+    const { coverage } = await buildFixture(chip("tabular-nums"));
     expect(
       coverage.filter((row) => row.property === "font-variant-numeric").map((row) => row.outcome)
     ).toEqual(["dropped"]);
@@ -225,10 +182,7 @@ describe("tabular numerals", () => {
 // Tailwind compiles the class to has no Figma form, as a transition has none.
 describe("an animation", () => {
   it("drops animate-pulse because Figma components do not animate", async () => {
-    const { coverage } = buildComponentSet(
-      { ...CHIP, classesFor: () => "animate-pulse" },
-      { ...context, compiled: await compileUtilities(["animate-pulse"]) }
-    );
+    const { coverage } = await buildFixture(chip("animate-pulse"));
     expect(
       coverage
         .filter((row) => row.className === "animate-pulse")
@@ -237,17 +191,12 @@ describe("an animation", () => {
   });
 });
 
-const zero = { kind: "literal", value: 0 } as const;
-
 // Unit under test: `buildComponentSet` on a root whose width is a percentage. Oracle: CSS, where a
 // percentage width is a share of the containing block, which a Figma number field cannot hold, so
 // the declaration fails the gate instead of passing as a fixed width.
 describe("a percentage width", () => {
   it.each(["w-full", "w-[calc(100%-4px)]"])("leaves %s unmapped", async (className) => {
-    const { componentSet, coverage } = buildComponentSet(
-      { ...CHIP, classesFor: () => className },
-      { ...context, compiled: await compileUtilities([className]) }
-    );
+    const { componentSet, coverage } = await buildFixture(chip(className));
     expect(componentSet.variants[0]?.root.width).toBeUndefined();
     expect(coverage).toEqual([
       expect.objectContaining({ className, property: "width", outcome: "unmapped" }),
@@ -260,10 +209,7 @@ describe("a percentage width", () => {
 // spare is the box's max-content width, the width of what it holds. That is a Figma hug.
 describe("a fit-content width", () => {
   it("hugs the content", async () => {
-    const { componentSet, coverage } = buildComponentSet(
-      { ...CHIP, classesFor: () => "w-fit" },
-      { ...context, compiled: await compileUtilities(["w-fit"]) }
-    );
+    const { componentSet, coverage } = await buildFixture(chip("w-fit"));
     expect(componentSet.variants[0]?.root.width).toBeUndefined();
     expect(coverage.map((row) => [row.className, row.property, row.outcome, row.detail])).toEqual([
       ["w-fit", "width", "literal", "the box hugs its content"],
@@ -271,54 +217,15 @@ describe("a fit-content width", () => {
   });
 });
 
-/** The one icon of the fixtures below, which sits inside the chip's dot. */
-const ICON: IconSlot = {
-  key: "icon",
-  name: "Icon",
-  side: "start",
-  direct: true,
-  dataIcon: undefined,
-  icon: "Plus",
-  swapProperty: undefined,
-};
-
-/** A part below the chip's root, the `chip-dot`, with the given classes and icons. */
-function dot(classes: string, icons: readonly IconSlot[] = []): PartDefinition {
-  return {
-    key: "dot",
-    slot: "chip-dot",
-    shownIn: () => true,
-    classesFor: () => classes,
-    label: undefined,
-    iconsFor: () => icons,
-  };
-}
-
-/**
- * Build a chip whose root carries `rootClasses` and holds `part`, compiling every class the two
- * use and `registered`, classes that make Tailwind register the custom properties they set.
- */
-async function buildNested(rootClasses: string, part: PartDefinition, registered: readonly string[] = []) {
-  const definition: ComponentDefinition = { ...CHIP, classesFor: () => rootClasses, parts: [part] };
-  const built = buildComponentSet(definition, {
-    ...context,
-    compiled: await compileUtilities([...definitionClasses(definition), ...registered]),
-  });
-  return { ...built, variant: built.componentSet.variants[0] };
-}
-
-function frameOf(box: BoxSpec | undefined): FrameLayerSpec | undefined {
-  const [first] = box?.children ?? [];
-  return first?.kind === "frame" ? first : undefined;
-}
-
 // Unit under test: the cascade `buildComponentSet` runs for a part below the root. Oracle: CSS
 // inheritance. `color` and an unregistered custom property inherit their parent's computed value,
 // and a custom property Tailwind registers with `@property … { inherits: false }`, as it does
 // `--tw-ring-offset-width` for `ring-2`, takes its initial value `0px` on every child.
 describe("a part below the root", () => {
   it("reads its parent's text color", async () => {
-    const { variant } = await buildNested("text-[#ff0000]", dot("[&_svg]:size-[16px]", [ICON]));
+    const { variant } = await buildFixture(
+      chip("text-[#ff0000]", { parts: [dot("[&_svg]:size-[16px]", [ICON])] })
+    );
     expect(frameOf(variant?.root)?.children).toEqual([
       expect.objectContaining({
         kind: "icon",
@@ -330,9 +237,8 @@ describe("a part below the root", () => {
   // Oracle: CSS Color 4, where `color: currentcolor` computes to the color the element inherits,
   // so `text-current` keeps the parent's red, and its row names what it resolved to.
   it("reads color: currentcolor as the color it inherits", async () => {
-    const { variant, coverage } = await buildNested(
-      "text-[#ff0000]",
-      dot("text-current [&_svg]:size-[16px]", [ICON])
+    const { variant, coverage } = await buildFixture(
+      chip("text-[#ff0000]", { parts: [dot("text-current [&_svg]:size-[16px]", [ICON])] })
     );
     expect(frameOf(variant?.root)?.children).toEqual([
       expect.objectContaining({ color: { kind: "literal", color: { r: 1, g: 0, b: 0, a: 1 } } }),
@@ -348,9 +254,8 @@ describe("a part below the root", () => {
   });
 
   it("reads a custom property its parent sets, which the parent's class reaches Figma through", async () => {
-    const { variant, coverage } = await buildNested(
-      "[--chip-corner:6px]",
-      dot("rounded-[var(--chip-corner)]")
+    const { variant, coverage } = await buildFixture(
+      chip("[--chip-corner:6px]", { parts: [dot("rounded-[var(--chip-corner)]")] })
     );
     expect(frameOf(variant?.root)?.cornerRadius).toEqual({ kind: "literal", value: 6 });
     expect(coverage.filter((row) => row.className === "[--chip-corner:6px]")).toEqual([
@@ -362,9 +267,10 @@ describe("a part below the root", () => {
   // depth below the root, and `[&>svg:not(…)]` to `.x > svg:not(…)`, which matches only a child
   // of the root. The icon is a child of the dot, so the 24px size must not reach it.
   it("takes the root's descendant selector and not its child selector", async () => {
-    const { variant } = await buildNested(
-      "text-[#000000] [&_svg]:size-[16px] [&>svg:not([data-icon=inline-end])]:size-[24px]",
-      dot("", [ICON])
+    const { variant } = await buildFixture(
+      chip("text-[#000000] [&_svg]:size-[16px] [&>svg:not([data-icon=inline-end])]:size-[24px]", {
+        parts: [dot("", [ICON])],
+      })
     );
     expect(frameOf(variant?.root)?.children).toEqual([
       expect.objectContaining({ kind: "icon", size: { kind: "literal", value: 16 } }),
@@ -373,7 +279,7 @@ describe("a part below the root", () => {
 
   // Oracle: the coverage contract, one row per distinct outcome of each declaration of each part.
   it("records one class on the root and on the part as two rows, one per part", async () => {
-    const { coverage } = await buildNested("bg-[#000000]", dot("bg-[#000000]"));
+    const { coverage } = await buildFixture(chip("bg-[#000000]", { parts: [dot("bg-[#000000]")] }));
     expect(
       coverage
         .filter((row) => row.className === "bg-[#000000]")
@@ -385,10 +291,16 @@ describe("a part below the root", () => {
   // Oracle: CSS inheritance passes `--chip-corner` through the dot to the ring below it, and the
   // coverage contract names the root's class as read, whichever layer the build maps first.
   it("records a root class only a grandchild reads as read, under the root", async () => {
-    const { variant, coverage } = await buildNested("[--chip-corner:6px]", {
-      ...dot(""),
-      parts: [{ ...dot("rounded-[var(--chip-corner)]"), key: "ring", slot: "chip-ring" }],
-    });
+    const { variant, coverage } = await buildFixture(
+      chip("[--chip-corner:6px]", {
+        parts: [
+          {
+            ...dot(""),
+            parts: [{ ...dot("rounded-[var(--chip-corner)]"), key: "ring", slot: "chip-ring" }],
+          },
+        ],
+      })
+    );
     expect(frameOf(frameOf(variant?.root))?.cornerRadius).toEqual({ kind: "literal", value: 6 });
     expect(coverage.filter((row) => row.className === "[--chip-corner:6px]")).toEqual([
       expect.objectContaining({ part: "chip", property: "--chip-corner", outcome: "literal" }),
@@ -397,9 +309,8 @@ describe("a part below the root", () => {
 
   // Oracle: CSS inheritance, under which the `<svg>` inherits the custom property its part sets.
   it("gives an icon the custom property its part sets", async () => {
-    const { variant, coverage } = await buildNested(
-      "text-[#000000]",
-      dot("[--icon-size:16px] [&_svg]:size-[var(--icon-size)]", [ICON])
+    const { variant, coverage } = await buildFixture(
+      chip("text-[#000000]", { parts: [dot("[--icon-size:16px] [&_svg]:size-[var(--icon-size)]", [ICON])] })
     );
     expect(frameOf(variant?.root)?.children).toEqual([
       expect.objectContaining({ kind: "icon", size: { kind: "literal", value: 16 } }),
@@ -410,12 +321,11 @@ describe("a part below the root", () => {
   });
 
   it("does not inherit a custom property registered with inherits: false", async () => {
-    const { variant } = await buildNested(
-      "[--tw-ring-offset-width:4px]",
-      dot("rounded-[var(--tw-ring-offset-width)]"),
-      ["ring-2"]
+    const { variant } = await buildFixture(
+      chip("[--tw-ring-offset-width:4px]", { parts: [dot("rounded-[var(--tw-ring-offset-width)]")] }),
+      { registered: ["ring-2"] }
     );
-    expect(frameOf(variant?.root)?.cornerRadius).toEqual(zero);
+    expect(frameOf(variant?.root)?.cornerRadius).toEqual(literal(0));
   });
 });
 
@@ -425,31 +335,20 @@ describe("a part below the root", () => {
 // and `items-center justify-center` centers them on both. The icon takes the root's white text
 // color and the dot's 12px `[&_svg]` size.
 describe("a root that holds a part", () => {
-  const definition: ComponentDefinition = {
-    ...CHIP,
+  const definition = chip("inline-flex items-start justify-end text-[#ffffff]", {
     axes: [{ name: "checked", values: ["off", "on"] }],
     columnAxis: "checked",
-    classesFor: () => "inline-flex items-start justify-end text-[#ffffff]",
     parts: [
       {
         ...dot("flex items-center justify-center size-[16px] bg-[#000000] [&_svg]:size-[12px]", [ICON]),
         shownIn: (cell) => cell.checked === "on",
       },
     ],
-  };
-
-  /** Build the chip, with its root's classes replaced by `rootClasses` when given. */
-  async function build(rootClasses?: string) {
-    const built: ComponentDefinition =
-      rootClasses === undefined ? definition : { ...definition, classesFor: () => rootClasses };
-    return buildComponentSet(built, {
-      ...context,
-      compiled: await compileUtilities(definitionClasses(built)),
-    });
-  }
+  });
 
   it("builds the part as a frame inside the root, in the cells that render it", async () => {
-    const { componentSet } = await build();
+    const { componentSet } = await buildFixture(definition);
+    const zero = literal(0);
     const box = { paddingTop: zero, paddingRight: zero, paddingBottom: zero, paddingLeft: zero };
     const [off, on] = componentSet.variants;
     expect(on?.root).toEqual({
@@ -494,7 +393,10 @@ describe("a root that holds a part", () => {
   });
 
   it("leaves an alignment other than start, center or end unmapped", async () => {
-    const { coverage } = await build("inline-flex justify-between items-baseline text-[#ffffff]");
+    const { coverage } = await buildFixture({
+      ...definition,
+      classesFor: () => "inline-flex justify-between items-baseline text-[#ffffff]",
+    });
     expect(
       coverage.filter((row) => row.outcome === "unmapped").map((row) => [row.part, row.property])
     ).toEqual([
@@ -511,9 +413,10 @@ describe("a root that holds a part", () => {
 // auto layout does not draw.
 describe("a grid that centers its content", () => {
   async function build(icons: readonly IconSlot[]) {
-    const { variant, coverage } = await buildNested(
-      "text-[#000000]",
-      dot("grid place-content-center size-[16px] [&_svg]:size-[12px]", icons)
+    const { variant, coverage } = await buildFixture(
+      chip("text-[#000000]", {
+        parts: [dot("grid place-content-center size-[16px] [&_svg]:size-[12px]", icons)],
+      })
     );
     const rows = coverage
       .filter((row) => row.className === "grid" || row.className === "place-content-center")
@@ -543,10 +446,7 @@ describe("a grid that centers its content", () => {
 // or more keeps its size, and under 12px shrinks, which the fixed Figma width does not draw.
 describe("a box's position, alignment and max width", () => {
   async function rowsOf(classes: string) {
-    const { coverage } = buildComponentSet(
-      { ...CHIP, classesFor: () => classes },
-      { ...context, compiled: await compileUtilities(classes.split(" ")) }
-    );
+    const { coverage } = await buildFixture(chip(classes));
     return coverage
       .filter((row) => ["position", "align-self", "max-width"].includes(row.property))
       .map((row) => [row.className, row.outcome, row.detail]);
@@ -596,10 +496,7 @@ describe("a class on a pseudo-element", () => {
   const HIT_AREA = ["after:absolute", "after:-inset-x-3", "after:content-['']"];
 
   async function build(omitted: ReadonlyMap<string, string>) {
-    const { coverage } = buildComponentSet(
-      { ...CHIP, classesFor: () => HIT_AREA.join(" "), omittedPseudoElements: omitted },
-      { ...context, compiled: await compileUtilities(HIT_AREA) }
-    );
+    const { coverage } = await buildFixture(chip(HIT_AREA.join(" "), { omittedPseudoElements: omitted }));
     return coverage.map((row) => [row.className, row.property, row.outcome, row.detail]);
   }
 
@@ -627,10 +524,7 @@ describe("a class that styles a composition", () => {
   const ARMS = ["has-[>[data-slot=checkbox]]:items-center", "*:data-[slot=field]:p-2"];
 
   async function build(omitted: ReadonlyMap<string, string>) {
-    const { coverage } = buildComponentSet(
-      { ...CHIP, classesFor: () => ARMS.join(" "), omittedCompositions: omitted },
-      { ...context, compiled: await compileUtilities(ARMS) }
-    );
+    const { coverage } = await buildFixture(chip(ARMS.join(" "), { omittedCompositions: omitted }));
     return coverage.map((row) => [row.className, row.property, row.outcome, row.detail]);
   }
 
@@ -661,10 +555,7 @@ describe("a marker class", () => {
   it.each(["group", "group/chip", "peer", "peer/chip"])(
     "drops %s as a marker with no CSS",
     async (className) => {
-      const { coverage } = buildComponentSet(
-        { ...CHIP, classesFor: () => className },
-        { ...context, compiled: await compileUtilities([className]) }
-      );
+      const { coverage } = await buildFixture(chip(className));
       expect(coverage).toEqual([
         expect.objectContaining({ className, outcome: "dropped", detail: "a marker class with no CSS" }),
       ]);
@@ -678,10 +569,7 @@ describe("a marker class", () => {
 // a 16px circle, 4px on an 8px one. A box that hugs a side has no length to halve before layout.
 describe("a pill corner", () => {
   async function build(classes: string) {
-    const { componentSet, coverage } = buildComponentSet(
-      { ...CHIP, classesFor: () => classes },
-      { ...context, compiled: await compileUtilities(classes.split(" ")) }
-    );
+    const { componentSet, coverage } = await buildFixture(chip(classes));
     return {
       corner: componentSet.variants[0]?.root.cornerRadius,
       rows: coverage
@@ -716,10 +604,7 @@ describe("an aspect ratio", () => {
     ["size-[16px] aspect-square", "dropped"],
     ["h-[16px] aspect-square", "unmapped"],
   ])("on %s is %s", async (classes, outcome) => {
-    const { coverage } = buildComponentSet(
-      { ...CHIP, classesFor: () => classes },
-      { ...context, compiled: await compileUtilities(classes.split(" ")) }
-    );
+    const { coverage } = await buildFixture(chip(classes));
     expect(coverage.filter((row) => row.className === "aspect-square").map((row) => row.outcome)).toEqual([
       outcome,
     ]);
@@ -737,7 +622,7 @@ describe("a part centered by absolute position", () => {
   const PLACEMENT = new Set(["position", "top", "left", "translate"]);
 
   async function build(parentClasses: string, partClasses: string) {
-    const { variant, coverage } = await buildNested(parentClasses, dot(partClasses));
+    const { variant, coverage } = await buildFixture(chip(parentClasses, { parts: [dot(partClasses)] }));
     return {
       frame: frameOf(variant?.root),
       rows: coverage
@@ -778,10 +663,7 @@ describe("a block box", () => {
     ["holds a layer", "unmapped", [ICON]],
   ])("that %s is %s", async (_case, outcome, icons) => {
     const classes = "block size-[16px] text-[#000000] [&_svg]:size-[12px]";
-    const { coverage } = buildComponentSet(
-      { ...CHIP, classesFor: () => classes, iconsFor: () => icons },
-      { ...context, compiled: await compileUtilities(classes.split(" ")) }
-    );
+    const { coverage } = await buildFixture(chip(classes, { iconsFor: () => icons }));
     expect(coverage.filter((row) => row.className === "block").map((row) => row.outcome)).toEqual([outcome]);
   });
 });
@@ -800,7 +682,9 @@ describe("a part translated along its parent's row", () => {
   const AT_START = "at the start of its parent's row, where it sits unmoved";
 
   async function build(rowClasses: string, partClasses: string) {
-    const { variant, coverage } = await buildNested(rowClasses, dot(`size-[16px] ${partClasses}`));
+    const { variant, coverage } = await buildFixture(
+      chip(rowClasses, { parts: [dot(`size-[16px] ${partClasses}`)] })
+    );
     return {
       align: variant?.root.primaryAlign,
       rows: coverage
@@ -859,40 +743,26 @@ describe("a part drawn at a scale", () => {
   const THUMB = "size-[16px] rounded-full bg-[#000000]";
 
   async function build(partClasses: string) {
-    const definition: ComponentDefinition = {
-      ...CHIP,
-      axes: [{ name: "checked", values: ["off", "on"] }],
-      columnAxis: "checked",
-      classesFor: () => "inline-flex",
-      facts: new Map([["data-unchecked", (cell) => cell.checked === "off"]]),
-      parts: [{ ...dot(partClasses), key: "thumb", slot: "chip-thumb" }],
-    };
-    const { componentSet, coverage } = buildComponentSet(definition, {
-      ...context,
-      compiled: await compileUtilities(definitionClasses(definition)),
-    });
+    const { componentSet, coverage } = await buildFixture(
+      chip("inline-flex", {
+        axes: [{ name: "checked", values: ["off", "on"] }],
+        columnAxis: "checked",
+        facts: new Map([["data-unchecked", (cell) => cell.checked === "off"]]),
+        parts: [{ ...dot(partClasses), key: "thumb", slot: "chip-thumb" }],
+      })
+    );
     return {
       frames: componentSet.variants.map((variant) => frameOf(variant.root)),
       rows: coverage.filter((row) => row.property === "scale").map((row) => [row.className, row.outcome]),
     };
   }
 
-  /** A frame with no padding, gap or shadow, centering what it holds. */
-  function frame(fields: Omit<FrameLayerSpec, "kind" | "minWidth" | keyof typeof BARE>): FrameLayerSpec {
-    return { kind: "frame", minWidth: undefined, ...BARE, ...fields };
+  /** A frame with no padding, gap, stroke or shadow, centering what it holds. */
+  function frame(
+    fields: Omit<FrameLayerSpec, "kind" | "minWidth" | "stroke" | keyof typeof CENTERED_BOX>
+  ): FrameLayerSpec {
+    return { kind: "frame", minWidth: undefined, stroke: undefined, ...CENTERED_BOX, ...fields };
   }
-  const BARE = {
-    paddingTop: zero,
-    paddingRight: zero,
-    paddingBottom: zero,
-    paddingLeft: zero,
-    itemSpacing: zero,
-    primaryAlign: "CENTER",
-    counterAlign: "CENTER",
-    stroke: undefined,
-    shadows: [],
-    opacity: 1,
-  } as const;
   const BLACK = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
 
   function slot(dotSize: number): FrameLayerSpec {
@@ -901,7 +771,7 @@ describe("a part drawn at a scale", () => {
       name: "chip-thumb",
       width: { kind: "literal", value: 16 },
       height: { kind: "literal", value: 16 },
-      cornerRadius: zero,
+      cornerRadius: literal(0),
       fill: undefined,
       children: [
         frame({
@@ -937,16 +807,10 @@ describe("a part drawn at a scale", () => {
 // else does.
 describe("an icon with classes of its own", () => {
   async function build(rootClasses: string, iconClasses: string) {
-    const definition: ComponentDefinition = {
-      ...CHIP,
-      classesFor: () => rootClasses,
-      iconsFor: () => [{ ...ICON, classes: iconClasses }],
-    };
-    const { componentSet, coverage } = buildComponentSet(definition, {
-      ...context,
-      compiled: await compileUtilities(definitionClasses(definition)),
-    });
-    const [icon] = componentSet.variants[0]?.root.children ?? [];
+    const { variant, coverage } = await buildFixture(
+      chip(rootClasses, { iconsFor: () => [{ ...ICON, classes: iconClasses }] })
+    );
+    const [icon] = variant?.root.children ?? [];
     return { size: icon?.kind === "icon" ? icon.size : undefined, coverage };
   }
 
