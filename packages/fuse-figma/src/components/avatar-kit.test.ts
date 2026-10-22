@@ -1,7 +1,7 @@
 /**
  * Unit under test: the Avatar component set as the build produces it. Oracle: the Fuse variable or
- * literal each Figma field of a cell must carry, read by hand from `avatarVariants` in
- * `avatar-variants.ts`, the docs demos' sizes (`size-6`, `size-8`, `size-10`, `size-12`) and
+ * literal each Figma field of a cell must carry, read by hand from the four class constants in
+ * `avatar-class.ts`, the docs demos' sizes (`size-6`, `size-8`, `size-10`, `size-12`) and
  * `research/avatar-meter.md` §3: a `muted` circle, 32px by default and 24, 40 or 48px at the other
  * sizes, whose `rounded-full` CSS draws as half the side, and which clips what it holds. The
  * fallback and the image fill the circle. The fallback centers the initials `AL` at 14/20 Medium in

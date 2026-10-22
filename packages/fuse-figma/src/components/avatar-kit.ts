@@ -2,7 +2,7 @@
  * Avatar, as one component set: initials or a picture in a circle, at the docs' four sizes, 8
  * cells. An Avatar is not interactive, so the set has no state axis, and its columns are the sizes.
  *
- * - The root is Base UI's `<span data-slot="avatar">`, the recipe's `root` slot: a `muted` circle
+ * - The root is Base UI's `<span data-slot="avatar">`, with `avatarRootClass`: a `muted` circle
  *   that clips what it holds, 32px by default. The docs size demo passes `size-6`, `size-8`,
  *   `size-10` and `size-12` as consumer classes, which the kit merges over the recipe as Avatar
  *   merges its `className`, for 24, 32, 40 and 48px. Its `align-middle` drops, since a variant root
@@ -19,11 +19,9 @@
  */
 import { readFileSync } from "node:fs";
 
-import { avatarVariants, cn } from "@elmeragroup/fuse/recipe-catalog";
+import { avatarFallbackClass, avatarImageClass, avatarRootClass, cn } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { Cell, ComponentDefinition, PartDefinition } from "./component-spec";
-
-const SLOTS = avatarVariants();
 
 /**
  * The docs demos' sizes, as consumer classes, by the `size` axis value in pixels, the recipe's 32
@@ -78,7 +76,7 @@ const FALLBACK: PartDefinition = {
   key: "fallback",
   slot: "avatar-fallback",
   shownIn: (cell) => !holdsImage(cell),
-  classesFor: () => SLOTS.fallback(),
+  classesFor: () => avatarFallbackClass,
   label: {
     key: "label",
     name: "label",
@@ -94,7 +92,7 @@ const IMAGE: PartDefinition = {
   key: "image",
   slot: "avatar-image",
   shownIn: holdsImage,
-  classesFor: () => SLOTS.image(),
+  classesFor: () => avatarImageClass,
   label: undefined,
   iconsFor: () => [],
   image: portraitPng,
@@ -113,7 +111,7 @@ export const AVATAR: ComponentDefinition = {
     { name: "size", values: [...SIZE_CLASSES.keys()] },
   ],
   columnAxis: "size",
-  classesFor: (cell) => cn(SLOTS.root(), sizeClassFor(cell)),
+  classesFor: (cell) => cn(avatarRootClass, sizeClassFor(cell)),
   states: {},
   facts: new Map(),
   omittedStates: new Set(),

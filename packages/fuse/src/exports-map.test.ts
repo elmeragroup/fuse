@@ -299,7 +299,10 @@ describe("exports map", () => {
       readFileSync(join(packageRoot, "src/components/recipe-catalog.ts"), "utf8")
     );
     expect(catalog).toEqual([
-      "avatarVariants",
+      "avatarFallbackClass",
+      "avatarGroupClass",
+      "avatarImageClass",
+      "avatarRootClass",
       "badgeVariants",
       "buttonVariants",
       "checkboxVariants",

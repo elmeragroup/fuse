@@ -10,7 +10,12 @@
  * table the component reads.
  */
 
-export { avatarVariants } from "./avatar/avatar-variants";
+export {
+  avatarFallbackClass,
+  avatarGroupClass,
+  avatarImageClass,
+  avatarRootClass,
+} from "./avatar/avatar-class";
 export { badgeVariants } from "./badge/badge-variants";
 export { buttonVariants } from "./button/button-variants";
 export { checkboxVariants } from "./checkbox/checkbox-variants";
