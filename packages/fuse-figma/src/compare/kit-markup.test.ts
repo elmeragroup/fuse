@@ -50,6 +50,9 @@ const ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => boolean>(
   ["aria-invalid", (element) => element.attributes.get("aria-invalid") === "true"],
   ["data-invalid", (element) => element.attributes.has("data-invalid")],
   ["data-[pending-indicator]", (element) => element.attributes.has("data-pending-indicator")],
+  // fuse.css defines `data-horizontal:` and `data-vertical:` on `[data-orientation=…]`.
+  ["data-horizontal", (element) => element.attributes.get("data-orientation") === "horizontal"],
+  ["data-vertical", (element) => element.attributes.get("data-orientation") === "vertical"],
 ]);
 
 /**

@@ -303,8 +303,10 @@ describe("exports map", () => {
       "kbdVariants",
       "radioIconButtonVariants",
       "radioVariants",
+      "separatorClass",
       "switchVariants",
       "toggleVariants",
+      "cn",
       "BESPOKE_ICON_NAMES",
       "PHOSPHOR_ICON_NAMES",
     ]);

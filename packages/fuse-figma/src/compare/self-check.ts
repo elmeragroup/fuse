@@ -116,7 +116,7 @@ export async function runSelfCheck(
   const painted: Perturbed = { preview: PREVIEWS[0].key, variant: firstInState("hover") };
   const grown: Perturbed = { preview: PREVIEWS[1].key, variant: firstInState("focus") };
   const renderers = await loadRenderers();
-  const launched = await CompareBrowser.launch(readPageAssets(build.success));
+  const launched = await CompareBrowser.launch(await readPageAssets(build.success, renderers));
   if (Result.isFailure(launched)) {
     return Result.fail(launched.failure);
   }

@@ -179,7 +179,7 @@ export class CompareBrowser {
       ),
     ];
     const stamps: ThemeStamps = themeStamps(theme);
-    const html = previewDocument(stamps, pageCells, layout);
+    const html = previewDocument(stamps, pageCells, layout, this.#assets.hostCss);
     const context = await this.#browser.newContext({
       deviceScaleFactor: DEVICE_SCALE,
       viewport: pageViewport(layout, pageCells.length),

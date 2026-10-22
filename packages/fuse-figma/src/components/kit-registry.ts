@@ -17,6 +17,7 @@ import { KBD } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
 import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
 import { RADIO } from "./radio-kit";
+import { SEPARATOR } from "./separator-kit";
 import { SWITCH } from "./switch-kit";
 import { ICON_TOGGLE, TOGGLE } from "./toggle-kit";
 
@@ -49,6 +50,9 @@ const CHECKBOX_PAGE: KitPage = { slug: "checkbox", name: "Checkbox" };
 
 /** The page Switch sits on alone. */
 const SWITCH_PAGE: KitPage = { slug: "switch", name: "Switch" };
+
+/** The page Separator sits on alone. */
+const SEPARATOR_PAGE: KitPage = { slug: "separator", name: "Separator" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -133,4 +137,5 @@ export const KIT: readonly KitEntry[] = [
   { definition: RADIO, page: RADIO_PAGE, previewCells: matrixCells(RADIO.axes) },
   { definition: CHECKBOX, page: CHECKBOX_PAGE, previewCells: matrixCells(CHECKBOX.axes) },
   { definition: SWITCH, page: SWITCH_PAGE, previewCells: matrixCells(SWITCH.axes) },
+  { definition: SEPARATOR, page: SEPARATOR_PAGE, previewCells: matrixCells(SEPARATOR.axes) },
 ];

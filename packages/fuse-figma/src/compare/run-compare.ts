@@ -279,9 +279,9 @@ export async function compareSnapshot(
   if (Result.isFailure(build)) {
     return Result.fail(build.failure);
   }
-  const assets = readPageAssets(build.success);
   // The Fuse build exists by now, so the renderers' imports of it load.
   const renderers = await loadRenderers();
+  const assets = await readPageAssets(build.success, renderers);
   const unchanged = unchangedByDesign((await buildComponentSets()).map((set) => set.componentSet));
   const launched = await CompareBrowser.launch(assets);
   if (Result.isFailure(launched)) {

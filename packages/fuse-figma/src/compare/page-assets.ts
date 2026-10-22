@@ -1,6 +1,7 @@
 /**
  * The files the comparison page loads, found on disk: Fuse's built CSS, Tailwind's preflight and
- * the brand font. The Fuse build is the one `pnpm --filter @elmeragroup/fuse build` writes, which
+ * the brand font, and the CSS of the classes the renderers name as the host's own, compiled as the
+ * host's build would. The Fuse build is the one `pnpm --filter @elmeragroup/fuse build` writes, which
  * the comparison also renders the components from.
  *
  * The font comes from `@fontsource/roboto`, Google's Roboto, the family Figma renders for the
@@ -14,7 +15,9 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { compileHostUtilities } from "../components/utility-css.ts";
 import { RENDERER_ENTRIES } from "./cell-renderers.ts";
+import type { CellRenderer } from "./cell-renderers.ts";
 import { ASSET_PATHS } from "./preview-page.ts";
 
 /** The Fuse package, next to this one in the workspace. */
@@ -44,6 +47,8 @@ export type PageAssets = {
   readonly fontDirectory: string;
   /** The font package's directory, whose pnpm path names its version, for the report. */
   readonly fontPackage: string;
+  /** The rules of every class a renderer names as the host's own. */
+  readonly hostCss: string;
 };
 
 /** The Fuse build and whether its sources changed after it. */
@@ -88,9 +93,13 @@ export function locateFuseBuild(): Result.Result<FuseBuild, FuseBuildMissing> {
  * Read the page's assets.
  *
  * @param build - The Fuse build.
- * @returns The paths and the font CSS.
+ * @param renderers - The renderers, whose host classes the page compiles.
+ * @returns The paths, the font CSS and the host's CSS.
  */
-export function readPageAssets(build: FuseBuild): PageAssets {
+export async function readPageAssets(
+  build: FuseBuild,
+  renderers: ReadonlyMap<string, CellRenderer>
+): Promise<PageAssets> {
   const fontPackage = dirname(fileURLToPath(import.meta.resolve("@fontsource/roboto/400.css")));
   const fontCss = FONT_WEIGHTS.map((weight) =>
     readFileSync(join(fontPackage, `${String(weight)}.css`), "utf8").replaceAll(
@@ -105,5 +114,8 @@ export function readPageAssets(build: FuseBuild): PageAssets {
     fontCss,
     fontDirectory: join(fontPackage, "files"),
     fontPackage,
+    hostCss: await compileHostUtilities(
+      [...renderers.values()].flatMap((renderer) => renderer.hostClasses ?? [])
+    ),
   };
 }

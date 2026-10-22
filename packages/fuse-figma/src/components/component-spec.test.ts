@@ -501,19 +501,21 @@ describe("a grid that centers its content", () => {
   });
 });
 
-// Unit under test: `buildComponentSet` on a root's `position` and `max-width`. Oracle: CSS. A
-// `relative` box stays where the flow puts it and only becomes the containing block of its
-// positioned descendants, which an auto layout has none of. CSS Sizing clamps a width by its
-// `max-width` only when the width is larger, so a fixed 16px width under a max of 16px or more
-// keeps its size, and under 12px shrinks, which the fixed Figma width does not draw.
-describe("a box's position and max width", () => {
+// Unit under test: `buildComponentSet` on a root's `position`, `align-self` and `max-width`.
+// Oracle: CSS. A `relative` box stays where the flow puts it and only becomes the containing block
+// of its positioned descendants, which an auto layout has none of. `align-self` places a flex item
+// across its parent's line, and a component's root sits in no line: `auto`, the initial value,
+// asks for nothing, while `stretch` asks for a length the root does not have. CSS Sizing clamps a
+// width by its `max-width` only when the width is larger, so a fixed 16px width under a max of 16px
+// or more keeps its size, and under 12px shrinks, which the fixed Figma width does not draw.
+describe("a box's position, alignment and max width", () => {
   async function rowsOf(classes: string) {
     const { coverage } = buildComponentSet(
       { ...CHIP, classesFor: () => classes },
       { ...context, compiled: await compileUtilities(classes.split(" ")) }
     );
     return coverage
-      .filter((row) => row.property === "position" || row.property === "max-width")
+      .filter((row) => ["position", "align-self", "max-width"].includes(row.property))
       .map((row) => [row.className, row.outcome, row.detail]);
   }
 
@@ -525,6 +527,16 @@ describe("a box's position and max width", () => {
 
   it("leaves absolute unmapped", async () => {
     expect(await rowsOf("absolute")).toEqual([["absolute", "unmapped", expect.any(String)]]);
+  });
+
+  it("drops self-auto on the root, which sits in no row", async () => {
+    expect(await rowsOf("self-auto")).toEqual([
+      ["self-auto", "dropped", "the component's root sits in no row, and auto asks for no alignment"],
+    ]);
+  });
+
+  it("leaves self-stretch unmapped", async () => {
+    expect(await rowsOf("self-stretch")).toEqual([["self-stretch", "unmapped", expect.any(String)]]);
   });
 
   it.each(["max-w-[16px]", "max-w-[24px]"])("drops %s at or above a 16px fixed width", async (max) => {

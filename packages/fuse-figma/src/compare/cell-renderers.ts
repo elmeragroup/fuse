@@ -30,10 +30,16 @@ export type CellRenderer = {
   readonly entry: `dist/${string}.js`;
   /** The real Fuse element for a parsed cell, with the states the markup draws set by props. */
   readonly element: (cell: Cell) => ReactElement;
+  /**
+   * The classes the cells pass that a host app compiles in its own Tailwind build, because Fuse's
+   * standalone `styles.css` holds only the classes Fuse's own source uses. Separator names the
+   * docs demos' lengths. Most renderers name none.
+   */
+  readonly hostClasses?: readonly string[];
 };
 
 /** The part of a renderer its own module defines, beside its import of the Fuse build. */
-export type CellRendering = Pick<CellRenderer, "element">;
+export type CellRendering = Pick<CellRenderer, "element" | "hostClasses">;
 
 type RendererSource = Pick<CellRenderer, "set" | "entry"> & {
   readonly load: () => Promise<CellRendering>;
@@ -89,6 +95,11 @@ const SOURCES: readonly RendererSource[] = [
     set: "switch",
     entry: "dist/switch.js",
     load: async () => (await import("./switch-cell.ts")).switchCell,
+  },
+  {
+    set: "separator",
+    entry: "dist/separator.js",
+    load: async () => (await import("./separator-cell.ts")).separator,
   },
 ];
 
