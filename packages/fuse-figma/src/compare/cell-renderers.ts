@@ -85,6 +85,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/checkbox.js",
     load: async () => (await import("./checkbox-cell.ts")).checkbox,
   },
+  {
+    set: "switch",
+    entry: "dist/switch.js",
+    load: async () => (await import("./switch-cell.ts")).switchCell,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

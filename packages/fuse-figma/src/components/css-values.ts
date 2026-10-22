@@ -169,8 +169,7 @@ export function substituteVars(
  *   percentage, or undefined for anything else.
  */
 export function evaluateNumber(value: string): number | undefined {
-  const evaluated = evaluate(normalizeCss(value));
-  return evaluated !== undefined && Number.isFinite(evaluated.value) ? evaluated.value : undefined;
+  return finiteQuantity(value)?.value;
 }
 
 /**
@@ -180,8 +179,24 @@ export function evaluateNumber(value: string): number | undefined {
  * @returns The fraction, 0.5 for 50%, or undefined for a value that is not a percentage.
  */
 export function evaluatePercentage(value: string): number | undefined {
-  const evaluated = evaluate(normalizeCss(value));
-  return evaluated?.unit === "%" && Number.isFinite(evaluated.value) ? evaluated.value : undefined;
+  const evaluated = finiteQuantity(value);
+  return evaluated?.unit === "%" ? evaluated.value : undefined;
+}
+
+/**
+ * Evaluate a length whose percentages take a known length, as a translate's percentage takes the
+ * width of the box it moves (CSS Transforms 1).
+ *
+ * @param value - A CSS value with no `var()` left in it.
+ * @param basis - The length in pixels that 100% stands for.
+ * @returns The length in pixels, or undefined for anything that is not a finite length. A
+ *   unitless number is a length only when it is 0.
+ */
+export function evaluateLengthOf(value: string, basis: number): number | undefined {
+  const evaluated = finiteQuantity(value, basis);
+  return evaluated?.unit === "px" || (evaluated?.unit === "" && evaluated.value === 0)
+    ? evaluated.value
+    : undefined;
 }
 
 /**
@@ -200,11 +215,25 @@ export function isInfiniteLength(value: string): boolean {
  * A number and its unit. The unit is `%` when an operand of the expression was a percentage,
  * since the result then depends on the containing block whatever the operand order, and `mixed`
  * when the expression also has a length, such as `calc(100% - 2px)`, whose value is then no
- * share of anything.
+ * share of anything. Where the evaluation knows the length a percentage takes, the percentage is
+ * that many pixels and the unit `px`.
  */
 type Quantity = { readonly value: number; readonly unit: "px" | "" | "%" | "mixed" };
 
-function evaluate(expression: string): Quantity | undefined {
+/**
+ * Evaluate a value to a finite quantity.
+ *
+ * @param value - A CSS value with no `var()` left in it.
+ * @param basis - The length in pixels a percentage stands for. Without it, a percentage stays a
+ *   share of an unknown length.
+ * @returns The quantity, or undefined for a value that does not evaluate or is infinite.
+ */
+function finiteQuantity(value: string, basis?: number): Quantity | undefined {
+  const evaluated = evaluate(normalizeCss(value), basis);
+  return evaluated !== undefined && Number.isFinite(evaluated.value) ? evaluated : undefined;
+}
+
+function evaluate(expression: string, basis?: number): Quantity | undefined {
   const trimmed = expression.trim();
   // `infinity` is a CSS math constant, a unitless number that only a `calc()` can hold.
   if (trimmed === "infinity" || trimmed === "-infinity") {
@@ -219,7 +248,9 @@ function evaluate(expression: string): Quantity | undefined {
       case "rem":
         return { value: number * ROOT_FONT_SIZE_PX, unit: "px" };
       case "%":
-        return { value: number / 100, unit: "%" };
+        return basis === undefined
+          ? { value: number / 100, unit: "%" }
+          : { value: (number / 100) * basis, unit: "px" };
       default:
         return { value: number, unit: "" };
     }
@@ -228,9 +259,9 @@ function evaluate(expression: string): Quantity | undefined {
   if (call !== null && matchingParen(trimmed, call[0].length - 1) === trimmed.length - 1) {
     const inner = trimmed.slice(call[0].length, -1);
     if (call[1] === "calc") {
-      return evaluateSum(inner);
+      return evaluateSum(inner, basis);
     }
-    const args = splitTopLevel(inner, ",").map(evaluateSum);
+    const args = splitTopLevel(inner, ",").map((arg) => evaluateSum(arg, basis));
     if (args.some((arg) => arg === undefined) || args.length === 0) {
       return undefined;
     }
@@ -239,7 +270,7 @@ function evaluate(expression: string): Quantity | undefined {
     return { value: pick(...defined.map((arg) => arg.value)), unit: commonUnit(defined) };
   }
   if (trimmed.startsWith("(") && matchingParen(trimmed, 0) === trimmed.length - 1) {
-    return evaluateSum(trimmed.slice(1, -1));
+    return evaluateSum(trimmed.slice(1, -1), basis);
   }
   return undefined;
 }
@@ -248,7 +279,7 @@ function evaluate(expression: string): Quantity | undefined {
  * Evaluate `a + b - c` over products. CSS requires spaces around `+` and `-`, so a space-
  * separated token that is `+` or `-` is an operator, and every other token joins a product.
  */
-function evaluateSum(expression: string): Quantity | undefined {
+function evaluateSum(expression: string, basis?: number): Quantity | undefined {
   const products: string[][] = [[]];
   const operators: string[] = [];
   for (const token of splitTopLevel(expression, " ")) {
@@ -259,7 +290,7 @@ function evaluateSum(expression: string): Quantity | undefined {
       products.at(-1)?.push(token);
     }
   }
-  const [first, ...rest] = products.map((tokens) => evaluateProduct(tokens.join("")));
+  const [first, ...rest] = products.map((tokens) => evaluateProduct(tokens.join(""), basis));
   let total = first;
   for (const [index, next] of rest.entries()) {
     if (total === undefined || next === undefined) {
@@ -274,7 +305,7 @@ function evaluateSum(expression: string): Quantity | undefined {
 }
 
 /** Evaluate `a*b/c`, splitting at the `*` and `/` that sit outside parentheses. */
-function evaluateProduct(term: string): Quantity | undefined {
+function evaluateProduct(term: string, basis?: number): Quantity | undefined {
   const factors: string[] = [];
   const operators: string[] = [];
   let depth = 0;
@@ -292,7 +323,7 @@ function evaluateProduct(term: string): Quantity | undefined {
     }
   }
   factors.push(term.slice(start));
-  const [first, ...rest] = factors.map(evaluate);
+  const [first, ...rest] = factors.map((factor) => evaluate(factor, basis));
   let product = first;
   for (const [index, next] of rest.entries()) {
     if (product === undefined || next === undefined) {
@@ -340,11 +371,8 @@ export function readNumber(value: string, index: VariableIndex): NumberSpec | un
  * infinite.
  */
 function evaluateLength(value: string): number | undefined {
-  const evaluated = evaluate(normalizeCss(value));
-  return evaluated === undefined ||
-    evaluated.unit === "%" ||
-    evaluated.unit === "mixed" ||
-    !Number.isFinite(evaluated.value)
+  const evaluated = finiteQuantity(value);
+  return evaluated === undefined || evaluated.unit === "%" || evaluated.unit === "mixed"
     ? undefined
     : evaluated.value;
 }

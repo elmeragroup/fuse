@@ -687,3 +687,163 @@ describe("a part centered by absolute position", () => {
     expect(rows).toEqual(["top: unmapped"]);
   });
 });
+
+// Unit under test: `buildComponentSet` on a root with `display: block`. Oracle: CSS Display. A
+// block box with nothing inside lays nothing out, so it draws as any frame of its size does. One
+// that holds a layer stacks it in block flow, which a horizontal auto layout does not draw.
+describe("a block box", () => {
+  it.each([
+    ["holds no layers", "literal", []],
+    ["holds a layer", "unmapped", [ICON]],
+  ])("that %s is %s", async (_case, outcome, icons) => {
+    const classes = "block size-[16px] text-[#000000] [&_svg]:size-[12px]";
+    const { coverage } = buildComponentSet(
+      { ...CHIP, classesFor: () => classes, iconsFor: () => icons },
+      { ...context, compiled: await compileUtilities(classes.split(" ")) }
+    );
+    expect(coverage.filter((row) => row.className === "block").map((row) => row.outcome)).toEqual([outcome]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a part its parent's row holds alone, moved along the row
+// by `translate-x`. Oracle: CSS. A flex row with no `justify-content` packs its child at the start
+// of its content box, and a translate moves the child's border box by its length, a percentage
+// taking the child's own width (CSS Transforms 1, the reference box). In a 32px row with a 1px
+// border, the content box is 30px wide, so a 16px part moved 0px sits at the start and one moved
+// 14px sits flush with the end, which Figma calls MIN and MAX. `calc(100% - 2px)` of the 16px part
+// is 14px. A 13px move leaves a gap no alignment draws, and so does any move in a row whose width
+// is not fixed or that does not pack its child at the start.
+describe("a part translated along its parent's row", () => {
+  const ROW = "inline-flex items-center w-[32px] h-[18.4px] border border-[#000000]";
+  const AT_END = "at the end of its parent's row, flush with the end of the content box";
+  const AT_START = "at the start of its parent's row, where it sits unmoved";
+
+  async function build(rowClasses: string, partClasses: string) {
+    const { variant, coverage } = await buildNested(rowClasses, dot(`size-[16px] ${partClasses}`));
+    return {
+      align: variant?.root.primaryAlign,
+      rows: coverage
+        .filter((row) => row.part === "chip-dot" && row.property === "translate")
+        .map((row) => [row.outcome, row.detail]),
+    };
+  }
+
+  it.each([
+    ["translate-x-[14px]", "MAX", AT_END],
+    ["translate-x-[calc(100%-2px)]", "MAX", AT_END],
+    ["translate-x-0", "MIN", AT_START],
+  ])("reads %s as the row's %s alignment", async (translate, align, detail) => {
+    expect(await build(ROW, translate)).toEqual({ align, rows: [["literal", detail]] });
+  });
+
+  it("agrees with a row that packs its child at the start", async () => {
+    expect(await build(`${ROW} justify-start`, "translate-x-0")).toEqual({
+      align: "MIN",
+      rows: [["literal", AT_START]],
+    });
+  });
+
+  it.each([
+    ["a move that leaves a gap", ROW, "translate-x-[13px]"],
+    [
+      "a move in a row with no fixed width",
+      "inline-flex items-center border border-[#000000]",
+      "translate-x-0",
+    ],
+    ["a move in a row that centers its child", `${ROW} justify-center`, "translate-x-0"],
+    ["a move in a row that packs its child at the end", `${ROW} justify-end`, "translate-x-[14px]"],
+    ["a move in a row that packs its child at the start", `${ROW} justify-start`, "translate-x-[14px]"],
+    ["a vertical move", ROW, "translate-y-[1px]"],
+  ])("leaves %s unmapped", async (_case, rowClasses, translate) => {
+    const { rows } = await build(rowClasses, translate);
+    expect(rows).toEqual([["unmapped", expect.any(String)]]);
+  });
+
+  // A grid with `place-content: center` centers its one child before the translate moves it, so a
+  // move of 0 leaves the part centered, which no row alignment read from the translate draws.
+  it("leaves a move in a centering grid unmapped, with the part still centered", async () => {
+    expect(await build("grid place-content-center size-[32px]", "block translate-x-0")).toEqual({
+      align: "CENTER",
+      rows: [["unmapped", expect.any(String)]],
+    });
+  });
+});
+
+// Unit under test: `buildComponentSet` on a part scaled by `scale-75` in its off cell. Oracle: CSS
+// Transforms 2. `scale` draws the box's paint at that share of its size around its center, and
+// leaves the box's layout size as it was. A 16px circle at 75% paints a 12px circle, radius 6, in
+// the middle of its 16px place, and at no scale a 16px circle, radius 8. Figma draws that as a
+// transparent 16px slot centering a dot, in both cells, so both cells have one layer tree.
+describe("a part drawn at a scale", () => {
+  const THUMB = "size-[16px] rounded-full bg-[#000000]";
+
+  async function build(partClasses: string) {
+    const definition: ComponentDefinition = {
+      ...CHIP,
+      axes: [{ name: "checked", values: ["off", "on"] }],
+      columnAxis: "checked",
+      classesFor: () => "inline-flex",
+      facts: new Map([["data-unchecked", (cell) => cell.checked === "off"]]),
+      parts: [{ ...dot(partClasses), key: "thumb", slot: "chip-thumb" }],
+    };
+    const { componentSet, coverage } = buildComponentSet(definition, {
+      ...context,
+      compiled: await compileUtilities(definitionClasses(definition)),
+    });
+    return {
+      frames: componentSet.variants.map((variant) => frameOf(variant.root)),
+      rows: coverage.filter((row) => row.property === "scale").map((row) => [row.className, row.outcome]),
+    };
+  }
+
+  /** A frame with no padding, gap or shadow, centering what it holds. */
+  function frame(fields: Omit<FrameLayerSpec, "kind" | "minWidth" | keyof typeof BARE>): FrameLayerSpec {
+    return { kind: "frame", minWidth: undefined, ...BARE, ...fields };
+  }
+  const BARE = {
+    paddingTop: zero,
+    paddingRight: zero,
+    paddingBottom: zero,
+    paddingLeft: zero,
+    itemSpacing: zero,
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    stroke: undefined,
+    shadows: [],
+    opacity: 1,
+  } as const;
+  const BLACK = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
+
+  function slot(dotSize: number): FrameLayerSpec {
+    return frame({
+      key: "thumb",
+      name: "chip-thumb",
+      width: { kind: "literal", value: 16 },
+      height: { kind: "literal", value: 16 },
+      cornerRadius: zero,
+      fill: undefined,
+      children: [
+        frame({
+          key: "dot",
+          name: "dot",
+          width: { kind: "literal", value: dotSize },
+          height: { kind: "literal", value: dotSize },
+          cornerRadius: { kind: "literal", value: dotSize / 2 },
+          fill: BLACK,
+          children: [],
+        }),
+      ],
+    });
+  }
+
+  it("is a slot its layout size, centering a dot at the scaled size, in every cell", async () => {
+    const { frames, rows } = await build(`${THUMB} data-unchecked:scale-75`);
+    expect(frames).toEqual([slot(12), slot(16)]);
+    expect(rows).toEqual([["data-unchecked:scale-75", "literal"]]);
+  });
+
+  it("leaves a scale that is not the same on both axes unmapped", async () => {
+    const { rows } = await build(`${THUMB} data-unchecked:scale-x-75`);
+    expect(rows).toEqual([["data-unchecked:scale-x-75", "unmapped"]]);
+  });
+});

@@ -33,6 +33,9 @@ export type NumberSpec =
   | { readonly kind: "variable"; readonly variable: VariableRef }
   | { readonly kind: "literal"; readonly value: number };
 
+/** A literal 0, the length of an unset padding, gap or corner. */
+export const ZERO: NumberSpec = { kind: "literal", value: 0 };
+
 /** A string field, such as a font family: bound to a STRING variable, or a literal. */
 export type StringSpec =
   | { readonly kind: "variable"; readonly variable: VariableRef }

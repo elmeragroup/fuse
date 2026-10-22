@@ -55,7 +55,7 @@ import { useContains } from "./use-contains";
 
 type OptionField = FilterFieldOfKind<"option" | "multiOption">;
 
-const switchSlots = switchVariants();
+const switchSlots = switchVariants({ size: "sm" });
 
 /** The menu's query, which `Content` owns beside its filter provider and `FieldList` reads. */
 const MenuQueryContext = createContext("");
@@ -524,7 +524,6 @@ function ToggleItem({
       <MenuPrimitive.CheckboxItemIndicator
         keepMounted
         data-slot="data-table-filter-toggle-switch"
-        data-size="sm"
         // The count takes the free space when it shows. Without it the switch does.
         className={cn(switchSlots.root(), count === undefined ? "ms-auto" : undefined)}>
         <MenuPrimitive.CheckboxItemIndicator keepMounted className={switchSlots.thumb()} />

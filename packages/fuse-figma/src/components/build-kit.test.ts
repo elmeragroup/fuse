@@ -861,6 +861,7 @@ describe("the preview frames", () => {
       { key: "page/kbd", name: "Kbd" },
       { key: "page/radio", name: "Radio" },
       { key: "page/checkbox", name: "Checkbox" },
+      { key: "page/switch", name: "Switch" },
       { key: "page/icons", name: "Icons" },
     ]);
     expect(spec.componentSets.map((set) => [set.key, set.page])).toEqual([
@@ -873,13 +874,14 @@ describe("the preview frames", () => {
       ["radio-icon-button", "page/radio"],
       ["radio", "page/radio"],
       ["checkbox", "page/checkbox"],
+      ["switch", "page/switch"],
     ]);
     expect(spec.icons.page).toBe("page/icons");
   });
 
   it("pin four Fjordkraft private themes at Auto density on each component page, each on all five axes", () => {
     expect(spec.previews.map((preview) => [preview.key, preview.page])).toEqual(
-      ["button", "toggle", "badge", "kbd", "radio", "checkbox"].flatMap((page) =>
+      ["button", "toggle", "badge", "kbd", "radio", "checkbox", "switch"].flatMap((page) =>
         [
           "internal-fkas-private-light",
           "internal-fkas-private-dark",
@@ -923,6 +925,7 @@ describe("the preview frames", () => {
         ],
       ],
       ["page/checkbox", [["checkbox", "Checkbox"]]],
+      ["page/switch", [["switch", "Switch"]]],
     ]);
     for (const preview of spec.previews) {
       expect(preview.groups.map((group) => [group.key, group.name])).toEqual(
