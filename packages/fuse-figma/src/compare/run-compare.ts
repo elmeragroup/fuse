@@ -20,6 +20,7 @@ import type { CellRenderer } from "./cell-renderers.ts";
 import { forcedPseudoClasses, parseCell, restingTwin } from "./cells.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { FuseBuildMissing } from "./page-assets.ts";
+import { measuredSelector } from "./preview-page.ts";
 import type { PageLayout } from "./preview-page.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
 import type { PreviewTheme } from "./preview-theme.ts";
@@ -158,7 +159,7 @@ export function planCells(instances: readonly InstanceSnapshot[], renderers: Ren
       request: {
         id: `c${String(index)}`,
         html: renderCellHtml(definition.renderer, cell),
-        measured: `[data-slot="${definition.slot}"]`,
+        measured: measuredSelector(definition),
         forced,
         restingHtml: forced.length === 0 ? undefined : renderCellHtml(definition.renderer, restingTwin(cell)),
       },

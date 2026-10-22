@@ -2,8 +2,9 @@
  * What each Tailwind variant in a recipe means for a cell of the matrix. Most of that meaning is
  * fixed by `fuse.css` and Tailwind, not by the component, so this table holds it once: the state
  * variants each value of a `state` axis renders, the icon edge, the child selectors that reach
- * the icons, and the states no standalone component shows. A definition adds only what is its
- * own: the attributes its own states render, facts for its own variants, and its own omissions.
+ * the icons, and the states and children no standalone component shows. A definition adds only
+ * what is its own: the attributes its own states render, facts for its own variants, and its own
+ * omissions.
  */
 import type { Cell, ComponentDefinition, IconSlot, RootKind } from "./component-spec";
 import { axisValues } from "./kit-spec";
@@ -31,10 +32,12 @@ export type StateTable = (variant: string) => VariantMeaning;
 
 /**
  * The variants each value of a `state` axis renders, apart from `disabled`. fuse.css gates
- * `enabled-hover:` on an enabled control.
+ * `enabled-hover:` on an enabled control, and `hover:` has no gate. tailwindcss-react-aria-components
+ * compiles `hover:` to `:hover`, or to `[data-hovered]` on an element marked `data-rac`, which React
+ * Aria stamps while the pointer is over it. A cell holds one state, so none is hovered and disabled.
  */
 const SHARED_STATES = new Map([
-  ["hover", ["enabled-hover"]],
+  ["hover", ["enabled-hover", "hover"]],
   ["focus", ["focus-visible"]],
   // Base UI marks a control inside an invalid Field `aria-invalid="true"` and `data-invalid`.
   ["invalid", ["aria-invalid", "data-invalid"]],
@@ -66,7 +69,7 @@ const CHILD_SELECTORS = new Map<string, (slot: IconSlot) => boolean>([
   ["[&>svg:not([data-icon=inline-end])]", (slot) => slot.direct && slot.dataIcon !== "inline-end"],
 ]);
 
-/** The states a component set leaves out, whatever the component. */
+/** The states and children a component set leaves out, whatever the component. */
 const SHARED_OMISSIONS = new Set([
   // A press lasts only as long as the pointer is down.
   "enabled-active",
@@ -76,6 +79,9 @@ const SHARED_OMISSIONS = new Set([
   "data-invalid",
   // Expanded belongs to the trigger of an open menu or popup.
   "aria-expanded",
+  // A link inside a box's text, as a description underlines one. The kit draws the text alone.
+  "[&>a]",
+  "[&>a:hover]",
 ]);
 
 /** The variants whose meaning is fixed here, which a definition's own states cannot render. */

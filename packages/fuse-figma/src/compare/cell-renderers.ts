@@ -1,7 +1,8 @@
 /**
  * How `figma:compare` renders each kit definition's cells: one renderer per definition, which turns
  * a cell into the real Fuse element. The page measures, forces and crops the element's root part,
- * the one element in the slot whose `data-slot` is the definition's `slot`, at any depth, since a
+ * the one element in the slot whose `data-slot` is the definition's `slot`, or the one the
+ * definition's `element` selects where the root carries no `data-slot`, at any depth, since a
  * radio renders inside its group. A renderer sets the states the markup draws, such as disabled
  * or pending, through the element's props. The page forces hover and focus itself.
  *

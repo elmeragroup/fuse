@@ -199,6 +199,21 @@ export type BoxDefinition = {
   readonly image?: () => Uint8Array;
 };
 
+/**
+ * An element that carries no `data-slot`, named by its tag and the attributes it carries, as React
+ * Aria's Link renders an `<a data-rac>`. `figma:compare` measures a root by its CSS form, such as
+ * `a[data-rac]`, and its markup check places a root or a part by it.
+ */
+export type ElementSelector = {
+  /** The element's tag name in lowercase, such as `a`. */
+  readonly tag: string;
+  /**
+   * The attributes the element carries, each name in lowercase. A string matches that exact value,
+   * and `true` matches the attribute with any value, as `[data-rac]` does.
+   */
+  readonly attributes: Readonly<Record<string, string | true>>;
+};
+
 /** One declaration of an element's `style` attribute, such as Base UI's `width: 85%` on a meter's fill. */
 export type InlineDeclaration = {
   readonly property: string;
@@ -212,11 +227,6 @@ export type InlineDeclaration = {
 export type PartDefinition = BoxDefinition & {
   /** The key of the part's frame layer. */
   readonly key: string;
-  /**
-   * The part's `data-slot`, which names its layer, or undefined for an element without one,
-   * such as Radio's dot, whose layer takes the part's key as its name.
-   */
-  readonly slot: string | undefined;
   /** Whether a cell renders the part. Base UI mounts a checkbox's indicator only while checked. */
   readonly shownIn: (cell: Cell) => boolean;
   /**
@@ -225,14 +235,37 @@ export type PartDefinition = BoxDefinition & {
    * a part whose markup carries no `style`.
    */
   readonly styleFor?: (cell: Cell) => readonly InlineDeclaration[];
-};
+} & (
+    | {
+        /** The part's `data-slot`, which names its layer. */
+        readonly slot: string;
+        /** A part its `data-slot` names needs no selector. */
+        readonly element?: never;
+      }
+    | {
+        /** No `data-slot`, as on Radio's dot, so the layer takes the part's key as its name. */
+        readonly slot: undefined;
+        /**
+         * The part's element, which `figma:compare`'s markup check finds below its parent part by
+         * this selector. Undefined for a part the check finds by its place, as the one child element
+         * of its parent beside the parts with a `data-slot`.
+         */
+        readonly element?: ElementSelector;
+      }
+  );
 
 /** A component the builder can turn into a component set. Its own box is the root. */
 export type ComponentDefinition = BoxDefinition & {
   readonly key: string;
   readonly name: string;
-  /** The root part's `data-slot`, which names the root layer. */
+  /** The root layer's name, and the root element's `data-slot` unless `element` names the element. */
   readonly slot: string;
+  /**
+   * The root element, for a root whose markup carries no `data-slot`, as React Aria's Link renders
+   * an `<a>` with none. `figma:compare` measures the one element of a cell this selector matches, and
+   * its markup check places the root there. Undefined for a root its `data-slot` names.
+   */
+  readonly element?: ElementSelector;
   /**
    * What the root element is. A set whose `state` axis has `disabled` names it, and
    * `state-table.ts` refuses one that does not.

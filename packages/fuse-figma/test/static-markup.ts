@@ -2,9 +2,12 @@
  * Read the HTML `renderToStaticMarkup` writes, shared by the compare renderers' tests. React
  * writes every element with a closing tag except the void ones, quotes every attribute value
  * and escapes `"` and `>` inside them, so a tag scan finds each element, its parent and its own
- * text. The module also finds the element a cell renders for its component's root, and reads the
- * state attributes the checked-control cells vary.
+ * text. The module also finds the element a cell renders for its component's root, matches an
+ * element a definition names by selector, and reads the state attributes the checked-control cells
+ * vary.
  */
+
+import type { ElementSelector } from "../src/components/component-spec.ts";
 
 /** Elements HTML never closes. */
 const VOID_ELEMENTS = new Set([
@@ -96,6 +99,28 @@ export function elementsOf(html: string): readonly MarkupElement[] {
     }
   }
   return elements.map((element, index) => ({ ...element, text: decode(texts[index] ?? "") }));
+}
+
+/**
+ * Whether an element is the one a definition's selector names: it has the selector's tag and each
+ * attribute the selector lists, with that exact value or, for `true`, any value, as the selector's
+ * CSS form matches it in the browser.
+ *
+ * @param selector - The element a root or a part names, where its markup carries no `data-slot`.
+ * @param element - An element of the markup.
+ * @returns Whether the element matches.
+ */
+export function selects(
+  selector: ElementSelector,
+  element: Pick<MarkupElement, "name" | "attributes">
+): boolean {
+  return (
+    element.name === selector.tag &&
+    Object.entries(selector.attributes).every(([name, value]) => {
+      const held = element.attributes.get(name);
+      return value === true ? held !== undefined : held === value;
+    })
+  );
 }
 
 /** An element with the elements it holds, in document order. */

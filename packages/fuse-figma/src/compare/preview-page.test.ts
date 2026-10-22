@@ -14,8 +14,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+import type { ElementSelector } from "../components/component-spec";
 import { compileHostUtilities } from "../components/utility-css";
-import { ASSET_PATHS, PAGE_LAYOUT, previewDocument } from "./preview-page";
+import { ASSET_PATHS, measuredSelector, PAGE_LAYOUT, previewDocument } from "./preview-page";
 
 /** The layers the built `styles.css` names, in the order its `@layer` statements first name them. */
 function declaredLayers(): readonly string[] {
@@ -64,5 +65,36 @@ describe("the preview page's stylesheets", () => {
       String.raw`.data-horizontal\:w-64:where([data-orientation="horizontal"]){width:calc(0.25rem * 64);}`,
       "}",
     ]);
+  });
+});
+
+// Unit under test: `measuredSelector`, the element the page measures, forces and crops in a cell's
+// slot. Oracle: CSS attribute selectors (Selectors Level 4 §6), where `[name]` matches the attribute
+// with any value and `[name="value"]` that exact value, and CSSOM's "serialize a string" (§2.1),
+// which escapes `"` and `\` with a backslash and a control character as its code point in hex and a
+// space, since a raw newline ends a CSS string (CSS Syntax Level 3 §4.3.5).
+describe("the element a cell measures", () => {
+  it("is the one whose data-slot is the definition's slot", () => {
+    expect(measuredSelector({ slot: "button" })).toBe('[data-slot="button"]');
+  });
+
+  it("is the one a root without a data-slot names by its tag and attributes", () => {
+    const element: ElementSelector = {
+      tag: "a",
+      attributes: { "data-rac": true, "aria-label": String.raw`Say "hi" \ bye` },
+    };
+    expect(measuredSelector({ slot: "link", element })).toBe(
+      String.raw`a[data-rac][aria-label="Say \"hi\" \\ bye"]`
+    );
+  });
+
+  it("escapes a newline, a tab and DEL in an attribute value as code points", () => {
+    const element: ElementSelector = {
+      tag: "div",
+      attributes: { "aria-label": "Thursday,\nOctober\t15\u007F" },
+    };
+    expect(measuredSelector({ slot: "calendar-cell", element })).toBe(
+      String.raw`div[aria-label="Thursday,\a October\9 15\7f "]`
+    );
   });
 });

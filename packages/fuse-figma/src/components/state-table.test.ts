@@ -1,30 +1,26 @@
 /**
- * The shared state table against fixture definitions. The unit under test is `makeStateTable`.
- * The oracle is what each variant means in the browser: fuse.css gates `enabled-hover:` on
- * hover of an enabled control, Tailwind's `focus-visible:` holds on keyboard focus, `disabled:`
- * on a native disabled control, `aria-disabled:` on a disabled Base UI span, which never matches
- * `:disabled`, `aria-invalid:` and `data-invalid:` on a control inside an invalid Field,
- * `has-data-[icon=…]:` while a descendant carries that `data-icon`, and each child selector
- * picks the `<svg>` elements its CSS selector matches.
+ * The shared state table against the `chip` fixture of `test/fixture-sets.ts`. The unit under test
+ * is `makeStateTable`. The oracle is what each variant means in the browser: fuse.css gates
+ * `enabled-hover:` on hover of an enabled control, and `hover:` holds on hover with no gate, since
+ * tailwindcss-react-aria-components compiles it to `:hover`, or to `[data-hovered]` on an element
+ * marked `data-rac`. Tailwind's `focus-visible:` holds on keyboard focus, `disabled:` on a native disabled
+ * control, `aria-disabled:` on a disabled Base UI span, which never matches `:disabled`,
+ * `aria-invalid:` and `data-invalid:` on a control inside an invalid Field, `has-data-[icon=…]:`
+ * while a descendant carries that `data-icon`, and each child selector picks the `<svg>` elements
+ * its CSS selector matches. `[&>a]:` and `[&>a:hover]:` compile to `> a` and `> a:hover`, a link
+ * child of the box, which no kit box holds.
  */
 import { describe, expect, it } from "vitest";
 
+import { chip } from "../../test/fixture-sets";
 import type { Cell, IconSlot } from "./component-spec";
 import { makeStateTable } from "./state-table";
 
 type Definition = Parameters<typeof makeStateTable>[0];
 
+/** The chip as a native control with no axes, with the fields a test gives it. */
 function definition(overrides: Partial<Definition>): Definition {
-  return {
-    name: "Chip",
-    rootKind: "native-control",
-    axes: [],
-    states: {},
-    facts: new Map(),
-    omittedStates: new Set(),
-    iconsFor: () => [],
-    ...overrides,
-  };
+  return chip("", { rootKind: "native-control", axes: [], ...overrides });
 }
 
 /**
@@ -45,6 +41,9 @@ const CONTROL_STATES = { name: "state", values: ["rest", "hover", "focus", "disa
 describe("the shared state entries", () => {
   it.each([
     ["enabled-hover", ["hover"]],
+    // A state axis holds one value per cell, so no cell is hovered and disabled at once, and the
+    // ungated `hover:` holds exactly where `enabled-hover:` does.
+    ["hover", ["hover"]],
     ["focus-visible", ["focus"]],
     ["disabled", ["disabled"]],
     ["data-disabled", ["disabled"]],
@@ -58,7 +57,7 @@ describe("the shared state entries", () => {
     expect(holdsAt(noFocus, "state", "enabled-hover")).toEqual(["hover"]);
   });
 
-  it.each(["enabled-hover", "focus-visible", "disabled", "data-disabled"])(
+  it.each(["enabled-hover", "hover", "focus-visible", "disabled", "data-disabled"])(
     "leave %s unmodelled without a state axis",
     (variant) => {
       expect(holdsAt(definition({ axes: [{ name: "size", values: ["sm", "lg"] }] }), "size", variant)).toBe(
@@ -114,7 +113,7 @@ describe("the shared state entries", () => {
     }
   );
 
-  it("omit the states no standalone component shows, and the definition's own omissions", () => {
+  it("omit the states no standalone component shows, a link inside a box's text, and the definition's own omissions", () => {
     const grouped = definition({
       axes: [CONTROL_STATES],
       omittedStates: new Set(["in-data-[slot=button-group]"]),
@@ -125,6 +124,8 @@ describe("the shared state entries", () => {
       "aria-invalid",
       "data-invalid",
       "aria-expanded",
+      "[&>a]",
+      "[&>a:hover]",
       "in-data-[slot=button-group]",
     ]) {
       expect(table(variant)).toEqual({ kind: "omitted" });

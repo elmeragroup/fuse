@@ -58,13 +58,17 @@ export const ICON: IconSlot = {
 };
 
 /**
- * A part below the chip's root, the `chip-dot`, shown in every cell.
+ * A part below the chip's root, the `chip-dot`, shown in every cell. Its type keeps the `data-slot`,
+ * so a test can spread it into another part with a slot of its own.
  *
  * @param classes - The part's classes.
  * @param icons - The icons the part holds.
  * @returns The part.
  */
-export function dot(classes: string, icons: readonly IconSlot[] = []): PartDefinition {
+export function dot(
+  classes: string,
+  icons: readonly IconSlot[] = []
+): Extract<PartDefinition, { readonly slot: string }> {
   return {
     key: "dot",
     slot: "chip-dot",

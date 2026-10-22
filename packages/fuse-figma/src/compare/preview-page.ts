@@ -14,6 +14,7 @@
  * every animation and transition, so a pending spinner stays at 0°.
  */
 
+import type { ComponentDefinition } from "../components/component-spec.ts";
 import type { ThemeStamps } from "./preview-theme.ts";
 
 /** The origin the browser loads the page and its assets from, served by request interception. */
@@ -97,6 +98,45 @@ export function pageViewport(layout: PageLayout, count: number): PageSize {
  */
 export function cellSelector(id: string, measured: string): string {
   return `[data-compare-cell="${id}"] ${measured}`;
+}
+
+/**
+ * The selector of the element a definition's cells measure: the one whose `data-slot` is the
+ * definition's `slot`, or, for a root whose markup carries no `data-slot`, the one its `element`
+ * names by tag and attributes, such as `a[data-rac]`.
+ *
+ * @param definition - The root's slot and, for a root without a `data-slot`, its element.
+ * @returns A selector for an element anywhere inside a cell's slot, as {@link cellSelector} takes it.
+ */
+export function measuredSelector(definition: Pick<ComponentDefinition, "slot" | "element">): string {
+  const { element } = definition;
+  if (element === undefined) {
+    return `[data-slot="${definition.slot}"]`;
+  }
+  const attributes = Object.entries(element.attributes).map(([name, value]) =>
+    value === true ? `[${name}]` : `[${name}=${cssString(value)}]`
+  );
+  return `${element.tag}${attributes.join("")}`;
+}
+
+/**
+ * A value as a quoted CSS string, as CSSOM's "serialize a string" writes it: NUL becomes U+FFFD, a
+ * control character from U+0001 to U+001F and U+007F becomes a backslash, its code point in hex and
+ * a space, and `"` and `\` take a backslash. A raw newline would end the string and void the
+ * selector.
+ */
+function cssString(value: string): string {
+  const escaped = Array.from(value, (character) => {
+    const code = character.codePointAt(0) ?? 0;
+    if (code === 0) {
+      return "�";
+    }
+    if (code <= 0x1f || code === 0x7f) {
+      return `\\${code.toString(16)} `;
+    }
+    return character === '"' || character === "\\" ? `\\${character}` : character;
+  });
+  return `"${escaped.join("")}"`;
 }
 
 /** The selector of the element that paints the theme's `background`. */
