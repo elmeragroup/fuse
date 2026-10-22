@@ -9,7 +9,6 @@ import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
 import { fuseVariableSet } from "../fuse-variable-set";
 import type { CollectionSpec, VariableSpec } from "../variable-set";
-import { splitClassName } from "./class-name";
 import { buildComponentSet, matrixCells, variantKey } from "./component-spec";
 import type { BuiltComponent, OuterDeclaration } from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
@@ -102,18 +101,17 @@ function kitVariables(): KitVariables {
 }
 
 async function buildSets(variables: VariableIndex): Promise<readonly KitComponentSet[]> {
-  const utilities = new Set(
+  const classes = new Set(
     KIT.flatMap(({ definition }) =>
       matrixCells(definition.axes).flatMap((cell) =>
         definition
           .classesFor(cell)
           .split(/\s+/)
           .filter((className) => className !== "")
-          .map((className) => splitClassName(className).utility)
       )
     )
   );
-  const compiled = await compileUtilities([...utilities]);
+  const compiled = await compileUtilities([...classes]);
   // The base layer's border color sets the color on each element, so a part does not inherit it
   // the way it inherits `PAGE`, and any utility that colors the border wins over it. The outline
   // Badge sets no border color, so its stroke binds `border`.

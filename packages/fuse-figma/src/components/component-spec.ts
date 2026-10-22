@@ -30,6 +30,8 @@ import type {
   SwapPropertySpec,
   VariantSpec,
 } from "./kit-spec";
+import { compareSpecificity } from "./specificity";
+import type { Specificity } from "./specificity";
 import { makeStateTable } from "./state-table";
 import type { StateTable } from "./state-table";
 import type { CompiledUtilities } from "./utility-css";
@@ -81,12 +83,26 @@ export function iconKey(name: string): string {
   return `icon/${name}`;
 }
 
+/**
+ * What a set's root element is, which decides the attributes its disabled state holds.
+ *
+ * - `native-control`: a native `<button>`, disabled through its `disabled` attribute.
+ * - `base-ui-span`: a Base UI `<span>`, such as a radio, which Base UI disables with
+ *   `aria-disabled` and keeps focusable.
+ */
+export type RootKind = "native-control" | "base-ui-span";
+
 /** A component the builder can turn into a component set. */
 export type ComponentDefinition = {
   readonly key: string;
   readonly name: string;
   /** The root part's `data-slot`, which names the root layer. */
   readonly slot: string;
+  /**
+   * What the root element is. A set whose `state` axis has `disabled` names it, and
+   * `state-table.ts` refuses one that does not.
+   */
+  readonly rootKind?: RootKind;
   readonly axes: readonly AxisSpec[];
   readonly columnAxis: string;
   /** The recipe's class string for one cell. */
@@ -202,8 +218,9 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
     );
   };
   const meaningOf = makeStateTable(definition);
+  const conditions: ConditionLog = new Map();
   const variants = matrixCells(definition.axes).map((cell): VariantSpec => {
-    const styles = cascade(definition, meaningOf, cell, context, record);
+    const styles = cascade(definition, meaningOf, cell, context, record, conditions);
     const root = mapRoot(definition, cell, styles, context, record);
     for (const child of root.children) {
       if (child.kind === "text") {
@@ -212,6 +229,22 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
     }
     return { key: variantKey(definition, cell), properties: cell, root };
   });
+  // A class whose variants never hold in one cell together, such as `aria-invalid:focus-visible:`
+  // on a set that draws invalid and focus as two values of its state axis, reaches no cell.
+  for (const [className, { held, variants: classVariants, declarations }] of conditions) {
+    if (held || classVariants.length < 2) {
+      continue;
+    }
+    for (const declaration of declarations) {
+      record({
+        className,
+        property: declaration.property,
+        value: declaration.value,
+        outcome: "dropped",
+        detail: `no cell of the matrix shows ${classVariants.map((variant) => `\`${variant}\``).join(" and ")} at once`,
+      });
+    }
+  }
   return {
     componentSet: {
       key: definition.key,
@@ -264,10 +297,26 @@ type Recorder = (row: Omit<CoverageRow, "component">) => void;
 
 type Applied = {
   readonly className: string;
+  /** -2 for the host page, -1 for the base layer, 0 for every recipe class. */
   readonly rank: number;
+  readonly specificity: Specificity;
+  /** The class's place in Tailwind's output, which breaks a specificity tie. */
   readonly order: number;
   readonly declarations: readonly { readonly property: string; readonly value: string }[];
 };
+
+/**
+ * Each class with a condition variant, its condition variants, its declarations, and whether
+ * they held together in some cell so far.
+ */
+type ConditionLog = Map<
+  string,
+  {
+    readonly held: boolean;
+    readonly variants: readonly string[];
+    readonly declarations: Applied["declarations"];
+  }
+>;
 
 /** A class that styles the icons its child selectors pick. */
 type ChildRule = {
@@ -276,16 +325,21 @@ type ChildRule = {
 };
 
 /**
- * Apply a cell's classes in cascade order. A class whose variants hold in the cell applies
- * after the unconditional classes, because Tailwind emits variant rules after plain ones with
- * the same specificity. Within a rank, Tailwind's output order decides.
+ * Apply a cell's classes in cascade order, as the browser applies rules in one cascade layer.
+ * The page's inherited declarations come first and the base layer's next. Then the recipe
+ * classes that hold in the cell apply by the specificity of each full class's compiled selector,
+ * and Tailwind's output order breaks a tie. A variant does not always add specificity:
+ * `aria-invalid:` adds an attribute, while fuse.css's `data-checked:` wraps its attribute in
+ * `:where()` and adds nothing, so `aria-invalid:border-error` beats `data-checked:border-primary`
+ * though Tailwind emits it first.
  */
 function cascade(
   definition: ComponentDefinition,
   meaningOf: StateTable,
   cell: Cell,
   context: BuildContext,
-  record: Recorder
+  record: Recorder,
+  conditions: ConditionLog
 ): CellStyles {
   const rootClasses: Applied[] = [];
   const childRules: ChildRule[] = [];
@@ -306,7 +360,7 @@ function cascade(
       continue;
     }
     let selects: ((slot: IconSlot) => boolean) | undefined;
-    let conditional = false;
+    const conditionVariants: string[] = [];
     let holds = true;
     let skipped: { readonly variant: string; readonly omitted: boolean } | undefined;
     for (const variant of variants) {
@@ -320,9 +374,10 @@ function cascade(
         skipped = { variant, omitted: meaning.kind === "omitted" };
         break;
       }
-      conditional = true;
+      conditionVariants.push(variant);
       holds &&= meaning.holds(cell);
     }
+    const conditional = conditionVariants.length > 0;
     if (skipped !== undefined) {
       const { variant, omitted } = skipped;
       for (const declaration of rule.declarations) {
@@ -338,13 +393,26 @@ function cascade(
       }
       continue;
     }
-    if (holds) {
-      const applied = {
-        className,
-        rank: conditional ? 1 : 0,
-        order: rule.order,
+    if (conditional) {
+      conditions.set(className, {
+        held: holds || conditions.get(className)?.held === true,
+        variants: conditionVariants,
         declarations: rule.declarations,
-      };
+      });
+    }
+    if (holds) {
+      const placement = context.compiled.classes.get(className);
+      if (placement === undefined) {
+        record({
+          className,
+          property: "",
+          value: "",
+          outcome: "unmapped",
+          detail: "Tailwind emits no rule for the class with its variants",
+        });
+        continue;
+      }
+      const applied = { className, rank: 0, ...placement, declarations: rule.declarations };
       if (selects === undefined) {
         rootClasses.push(applied);
       } else {
@@ -356,6 +424,7 @@ function cascade(
     declarations.map(({ className, property, value }) => ({
       className,
       rank,
+      specificity: [0, 0, 0],
       order: 0,
       declarations: [{ property, value }],
     }));
@@ -368,7 +437,12 @@ function cascade(
 
 function computeStyle(applied: readonly Applied[]): ReadonlyMap<string, StyleEntry> {
   const style = new Map<string, StyleEntry>();
-  const sorted = applied.toSorted((left, right) => left.rank - right.rank || left.order - right.order);
+  const sorted = applied.toSorted(
+    (left, right) =>
+      left.rank - right.rank ||
+      compareSpecificity(left.specificity, right.specificity) ||
+      left.order - right.order
+  );
   for (const { className, declarations } of sorted) {
     for (const { property, value } of declarations) {
       for (const [longhand, longValue] of expandShorthand(property, value)) {

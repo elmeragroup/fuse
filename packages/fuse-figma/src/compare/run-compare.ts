@@ -158,7 +158,7 @@ export function planCells(instances: readonly InstanceSnapshot[], renderers: Ren
       request: {
         id: `c${String(index)}`,
         html: renderCellHtml(definition.renderer, cell),
-        measured: `> [data-slot="${definition.slot}"]`,
+        measured: `[data-slot="${definition.slot}"]`,
         forced,
         restingHtml: forced.length === 0 ? undefined : renderCellHtml(definition.renderer, restingTwin(cell)),
       },

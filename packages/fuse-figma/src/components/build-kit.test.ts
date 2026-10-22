@@ -1,8 +1,9 @@
 /**
- * The Button, Toggle, Badge and Kbd kits against hand-written expectations: which Fuse variable
- * or literal each Figma field of a cell must carry, read from `button-variants.ts`,
- * `toggle-variants.ts`, `badge-variants.ts`, `kbd-variants.ts`, `control-size.ts`,
- * `state-face.ts` and the base layer of `fuse.css`. The spec builder is the unit under test.
+ * The Button, Toggle, Badge, Kbd and Radio icon button kits against hand-written expectations:
+ * which Fuse variable or literal each Figma field of a cell must carry, read from
+ * `button-variants.ts`, `toggle-variants.ts`, `badge-variants.ts`, `kbd-variants.ts`,
+ * `radio-group-variants.ts`, `control-size.ts`, `state-face.ts`, the focus ring in
+ * `styles/utils.ts` and the base layer of `fuse.css`. The spec builder is the unit under test.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -641,6 +642,79 @@ describe("the Kbd component set", () => {
   });
 });
 
+function radioIconButton(size: string, checked: string, state: string): ComponentRootSpec {
+  return find(`radio-icon-button/size=${size},checked=${checked},state=${state}`);
+}
+
+describe("the Radio icon button component set", () => {
+  it("holds the 5 × 2 × 5 matrix, with columns by state and an Icon swap property", () => {
+    const set = spec.componentSets.find((candidate) => candidate.key === "radio-icon-button");
+    expect(set?.axes).toEqual([
+      { name: "size", values: ["icon", "icon-xxs", "icon-xs", "icon-sm", "icon-lg"] },
+      { name: "checked", values: ["off", "on"] },
+      { name: "state", values: ["rest", "hover", "focus", "disabled", "invalid"] },
+    ]);
+    expect(set?.columnAxis).toBe("state");
+    expect(new Set(set?.variants.map((cell) => cell.key)).size).toBe(50);
+    expect([set?.textProperties, set?.swapProperties]).toEqual([
+      [],
+      [{ name: "Icon", defaultIcon: "icon/List" }],
+    ]);
+  });
+
+  it("draws a square card with an input border around a 16px List icon at the default size", () => {
+    expect(radioIconButton("icon", "off", "rest")).toEqual({
+      name: "radio-icon-button",
+      width: density("control-h-md"),
+      height: density("control-h-md"),
+      paddingTop: literal(0),
+      paddingRight: literal(0),
+      paddingBottom: literal(0),
+      paddingLeft: literal(0),
+      itemSpacing: literal(0),
+      cornerRadius: token("radius-lg"),
+      fill: paint("card"),
+      stroke: { color: paint("input"), weight: literal(1) },
+      shadows: [],
+      opacity: 1,
+      children: [
+        {
+          kind: "icon",
+          key: "icon",
+          name: "Icon",
+          icon: "icon/List",
+          swapProperty: "Icon",
+          size: literal(16),
+          color: paint("foreground"),
+        },
+      ],
+    });
+  });
+
+  it("fills checked with muted inside a primary border, dims disabled and rings invalid in error", () => {
+    const checked = radioIconButton("icon", "on", "rest");
+    expect([checked.fill, checked.stroke?.color]).toEqual([paint("muted"), paint("primary")]);
+    // The xs square keeps its 24px floor, which `control-h-xs` holds at both densities.
+    const disabled = radioIconButton("icon-xs", "on", "disabled");
+    expect([
+      disabled.width,
+      disabled.opacity,
+      disabled.children[0]?.kind === "icon" && disabled.children[0].size,
+    ]).toEqual([density("control-h-xs"), 0.5, literal(14)]);
+    const invalid = radioIconButton("icon", "off", "invalid");
+    expect([invalid.stroke?.color, invalid.shadows]).toEqual([
+      paint("error"),
+      [{ color: paint("error/20"), offsetX: 0, offsetY: 0, radius: literal(0), spread: literal(3) }],
+    ]);
+    // `[aria-invalid="true"]` adds an attribute to the class, and fuse.css's `data-checked:` wraps
+    // its attribute in `:where()`, which adds nothing, so a checked invalid button keeps `error`.
+    expect(radioIconButton("icon", "on", "invalid").stroke?.color).toEqual(paint("error"));
+    expect(radioIconButton("icon", "off", "focus").shadows).toEqual([
+      { color: paint("ring"), offsetX: 0, offsetY: 0, radius: literal(0), spread: literal(2) },
+    ]);
+  });
+});
+
 describe("the kit coverage", () => {
   it("leaves no declaration unmapped", () => {
     expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
@@ -716,7 +790,7 @@ describe("the icon reference check", () => {
 
   it("fails the build for an icon layer that links a swap property the set does not define", async () => {
     const { componentSet } = buildComponentSet(chip, {
-      compiled: await compileUtilities(["text-[#000000]", "size-[16px]"]),
+      compiled: await compileUtilities(["text-[#000000]", "[&_svg]:size-[16px]"]),
       variables: makeVariableIndex([]),
       page: [],
       base: [],
@@ -759,6 +833,7 @@ describe("the preview frames", () => {
       { key: "page/toggle", name: "Toggle" },
       { key: "page/badge", name: "Badge" },
       { key: "page/kbd", name: "Kbd" },
+      { key: "page/radio", name: "Radio" },
       { key: "page/icons", name: "Icons" },
     ]);
     expect(spec.componentSets.map((set) => [set.key, set.page])).toEqual([
@@ -768,13 +843,14 @@ describe("the preview frames", () => {
       ["icon-toggle", "page/toggle"],
       ["badge", "page/badge"],
       ["kbd", "page/kbd"],
+      ["radio-icon-button", "page/radio"],
     ]);
     expect(spec.icons.page).toBe("page/icons");
   });
 
   it("pin four Fjordkraft private themes at Auto density on each component page, each on all five axes", () => {
     expect(spec.previews.map((preview) => [preview.key, preview.page])).toEqual(
-      ["button", "toggle", "badge", "kbd"].flatMap((page) =>
+      ["button", "toggle", "badge", "kbd", "radio"].flatMap((page) =>
         [
           "internal-fkas-private-light",
           "internal-fkas-private-dark",
@@ -810,6 +886,7 @@ describe("the preview frames", () => {
       ],
       ["page/badge", [["badge", "Badge"]]],
       ["page/kbd", [["kbd", "Kbd"]]],
+      ["page/radio", [["radio-icon-button", "Radio icon button"]]],
     ]);
     for (const preview of spec.previews) {
       expect(preview.groups.map((group) => [group.key, group.name])).toEqual(

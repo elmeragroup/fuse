@@ -325,9 +325,6 @@
   the coverage table. The build records only the declaration that wins each property, so
   `aria-pressed:bg-muted` gets no row: `data-pressed:bg-muted` sets the same property later in
   Tailwind's order.
-- Make `packages/fuse-figma/src/compare/kit-markup.test.ts` fail when a definition's facts or
-  states name an attribute variant its explicit list lacks, such as `data-checked` once Checkbox
-  arrives. Today the test checks only the variants it lists, so a new fact goes unchecked.
 - Add Kbd group to the kit once a kit component can hold instances of another set. The group is
   the `group` slot of `kbdVariants`, a row of Kbd caps that inherit its corner through
   `*:data-[slot=kbd]:rounded-[inherit]`.

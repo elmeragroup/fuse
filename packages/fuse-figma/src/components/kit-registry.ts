@@ -14,6 +14,7 @@ import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
 import { KBD } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
+import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
 import { ICON_TOGGLE, TOGGLE } from "./toggle-kit";
 
 /**
@@ -36,6 +37,9 @@ const BADGE_PAGE: KitPage = { slug: "badge", name: "Badge" };
 
 /** The page Kbd sits on alone. */
 const KBD_PAGE: KitPage = { slug: "kbd", name: "Kbd" };
+
+/** The page of the radio controls, Radio icon button first. */
+const RADIO_PAGE: KitPage = { slug: "radio", name: "Radio" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -116,4 +120,5 @@ export const KIT: readonly KitEntry[] = [
   // A Badge has no state, so its previews place every cell of its matrix.
   { definition: BADGE, page: BADGE_PAGE, previewCells: matrixCells(BADGE.axes) },
   { definition: KBD, page: KBD_PAGE, previewCells: matrixCells(KBD.axes) },
+  { definition: RADIO_ICON_BUTTON, page: RADIO_PAGE, previewCells: matrixCells(RADIO_ICON_BUTTON.axes) },
 ];
