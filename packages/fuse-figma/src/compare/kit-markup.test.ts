@@ -61,11 +61,13 @@ const ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => boolean>(
   // fuse.css defines `data-horizontal:` and `data-vertical:` on `[data-orientation=…]`.
   ["data-horizontal", (element) => element.attributes.get("data-orientation") === "horizontal"],
   ["data-vertical", (element) => element.attributes.get("data-orientation") === "vertical"],
-  // `placeholder:` styles `::placeholder`, which an input paints while it has a placeholder and no
-  // value. React writes `defaultValue` as the `value` attribute.
+  // `placeholder:` styles `::placeholder`, which a control paints while it has a placeholder and no
+  // value. React writes an input's `defaultValue` as the `value` attribute, and a textarea's as its
+  // own text.
   [
     "placeholder",
-    (element) => element.attributes.has("placeholder") && (element.attributes.get("value") ?? "") === "",
+    (element) =>
+      element.attributes.has("placeholder") && (element.attributes.get("value") ?? element.text) === "",
   ],
   // The field box's read-only fill keys off the `readonly` attribute on an enabled control.
   [

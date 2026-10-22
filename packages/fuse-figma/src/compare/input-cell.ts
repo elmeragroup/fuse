@@ -21,7 +21,8 @@ import type { ComponentProps } from "react";
 import { Field } from "../../../fuse/dist/field.js";
 import { Input } from "../../../fuse/dist/input.js";
 import type { Cell } from "../components/component-spec.ts";
-import { INPUT_PREVIEW_WIDTH, INPUT_TEXT } from "../components/input-kit.ts";
+import { FIELD_BOX_PREVIEW_WIDTH } from "../components/field-box-kit.ts";
+import { INPUT_TEXT } from "../components/input-kit.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
 /** An `input` cell: an input holding a placeholder or a value, read-only, disabled or invalid. */
@@ -36,7 +37,7 @@ export const input: CellRendering = {
     });
     return createElement(
       "div",
-      { style: { width: `${INPUT_PREVIEW_WIDTH}px` } },
+      { style: { width: `${FIELD_BOX_PREVIEW_WIDTH}px` } },
       cell.state === "invalid" ? createElement(Field.Root, { invalid: true }, field) : field
     );
   },

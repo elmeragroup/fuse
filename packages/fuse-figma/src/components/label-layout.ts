@@ -193,10 +193,11 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
   if (fontFamily === undefined || fontSize === undefined || lineHeight === undefined || color === undefined) {
     throw new Error(`${scope.variant}: the label needs a font family, size, line height and color`);
   }
+  const lines = label.placement?.lines;
   const layout =
-    label.placement?.lines === "single"
-      ? readSingleLine(holder, scope.variant)
-      : readLabelLayout(holder, label, scope.clamp);
+    lines === undefined
+      ? readLabelLayout(holder, label, scope.clamp)
+      : readNativeLines(holder, lines, scope.variant);
   const fills = layout.sizing.horizontal.kind !== "hug";
   return {
     layer: {
@@ -242,22 +243,44 @@ function placeInBox(
 /** Why a native control's one line drops the declarations that set a box's own text in lines. */
 const SINGLE_LINE = "the control sets its text on one line itself";
 
+/** How the error for a native control in a box that hugs its width names the way it sets its text. */
+const NATIVE_LINES = {
+  single: "the control sets its text on one line across its width",
+  wrap: "the control wraps its text at its width",
+} as const;
+
 /**
- * Read the layout of a label a native control sets on one line, as an `<input>` sets its value:
- * across its content box and cut off there, whatever the box's `display` or `white-space` say, since
- * the text is no line box or anonymous item of the box's own. The label fills the width and ends in
- * an ellipsis after one line, the overflow the owner chose for a value too long for its box, where a
- * browser clips it. The box's own text declarations shape nothing, so they drop.
+ * Read the layout of a label a native control sets in lines itself, across its content box, whatever
+ * the box's `display` says, since the text is no line box or anonymous item of the box's own.
+ *
+ * - `single`, as an `<input>` sets its value: one line cut off at the content box, whatever
+ *   `white-space` says. The label fills the width and ends in an ellipsis after one line, the
+ *   overflow the owner chose for a value too long for its box, where a browser clips it. The box's
+ *   own text declarations shape nothing, so they drop.
+ * - `wrap`, as a `<textarea>` wraps its value: lines that break at the content box's width, so the
+ *   label fills the width with its height following its lines. A `<textarea>` honours its own
+ *   `white-space`, so only `normal` maps, and every other value stays unmapped, as do
+ *   `text-overflow` and `-webkit-line-clamp`, which this reader leaves unread.
  *
  * @param variant - The variant's key, for the error.
  * @throws When the box hugs its width. A control with no width of its own takes an intrinsic width
- *   from its `size`, which no Figma field holds.
+ *   from its `size` or `cols`, which no Figma field holds.
  */
-function readSingleLine(holder: Holder, variant: string): Pick<TextLayerSpec, "sizing" | "truncation"> {
+function readNativeLines(
+  holder: Holder,
+  lines: NonNullable<TextPlacement["lines"]>,
+  variant: string
+): Pick<TextLayerSpec, "sizing" | "truncation"> {
   if (holder.sizing.horizontal.kind === "hug") {
-    throw new Error(
-      `${variant}: the control sets its text on one line across its width, so its box needs a fixed or filling width`
+    throw new Error(`${variant}: ${NATIVE_LINES[lines]}, so its box needs a fixed or filling width`);
+  }
+  if (lines === "wrap") {
+    holder.style.read(
+      "white-space",
+      (written) => (wraps(normalizeCss(written)) ? written : undefined),
+      () => ({ outcome: "literal", detail: "the label wraps at the box's width" })
     );
+    return { sizing: FILLING, truncation: undefined };
   }
   for (const property of ["white-space", "text-overflow", "-webkit-line-clamp"]) {
     holder.style.read(

@@ -1557,6 +1557,50 @@ describe("a label that a native control sets on one line", () => {
   });
 });
 
+// Unit under test: `buildComponentSet` on a label whose definition says the control wraps it, as a
+// `<textarea>` wraps its value. Oracle: HTML's rendering of a `<textarea>`, which sets its value in
+// lines across its content box from the top left and wraps them at its width, whatever the box's
+// `display` says, since the value is no anonymous flex item of the box's own. So the label fills the
+// width with its height following its lines and no ellipsis. A `<textarea>` honours its own
+// `white-space`, so one that stops the wrap has no Figma form here.
+describe("a label that a native control wraps", () => {
+  const WRAPPING: LabelDefinition = {
+    ...LABEL,
+    placement: { horizontal: "start", vertical: "top", lines: "wrap" },
+  };
+
+  it("fills a flex row that centers its layers and wraps from the top left", async () => {
+    const { variant, coverage } = await buildLabelled("flex w-[200px] h-[80px] justify-center", {
+      label: WRAPPING,
+    });
+    const text = textOf(variant?.root);
+    expect([text?.sizing, text?.truncation, text?.align]).toEqual([
+      FILL_WIDTH,
+      undefined,
+      { horizontal: "LEFT", vertical: "TOP" },
+    ]);
+    expect([variant?.root.primaryAlign, variant?.root.counterAlign]).toEqual(["MIN", "MIN"]);
+    expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
+
+  it("reads whitespace-normal as the wrap, and leaves a nowrap that stops it unmapped", async () => {
+    const normal = await buildLabelled("w-[200px] whitespace-normal", { label: WRAPPING });
+    expect(notesOf(normal.coverage, "whitespace-normal")).toEqual([
+      ["white-space", "literal", "the label wraps at the box's width"],
+    ]);
+    const nowrap = await buildLabelled("w-[200px] whitespace-nowrap", { label: WRAPPING });
+    expect(notesOf(nowrap.coverage, "whitespace-nowrap")).toEqual([
+      ["white-space", "unmapped", "no Figma field reads nowrap"],
+    ]);
+  });
+
+  it("stops the build in a box that hugs its width, where the control's own width has no Figma form", async () => {
+    await expect(buildLabelled("flex", { label: WRAPPING })).rejects.toThrow(
+      "chip/state=rest: the control wraps its text at its width, so its box needs a fixed or filling width"
+    );
+  });
+});
+
 // Unit under test: `buildComponentSet` on labels and the TEXT properties the set lists. Oracle: the
 // Figma property model, where one TEXT property holds one default for every layer it sets, so two
 // labels that name it must start with the same text, and a label whose text differs per cell sets

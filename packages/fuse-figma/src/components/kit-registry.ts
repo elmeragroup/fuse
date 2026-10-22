@@ -23,6 +23,7 @@ import { RADIO } from "./radio-kit";
 import { SEPARATOR } from "./separator-kit";
 import { SKELETON } from "./skeleton-kit";
 import { SWITCH } from "./switch-kit";
+import { TEXTAREA } from "./textarea-kit";
 import { ICON_TOGGLE, TOGGLE } from "./toggle-kit";
 
 /**
@@ -69,6 +70,9 @@ const LABEL_PAGE: KitPage = { slug: "label", name: "Label" };
 
 /** The page Input sits on alone. */
 const INPUT_PAGE: KitPage = { slug: "input", name: "Input" };
+
+/** The page Textarea sits on alone. */
+const TEXTAREA_PAGE: KitPage = { slug: "textarea", name: "Textarea" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -158,4 +162,5 @@ export const KIT: readonly KitEntry[] = [
   { definition: LOADER, page: LOADER_PAGE, previewCells: matrixCells(LOADER.axes) },
   { definition: LABEL, page: LABEL_PAGE, previewCells: matrixCells(LABEL.axes) },
   { definition: INPUT, page: INPUT_PAGE, previewCells: matrixCells(INPUT.axes) },
+  { definition: TEXTAREA, page: TEXTAREA_PAGE, previewCells: matrixCells(TEXTAREA.axes) },
 ];

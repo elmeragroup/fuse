@@ -19,6 +19,7 @@ export { radioIconButtonVariants, radioVariants } from "./radio-group/radio-grou
 export { separatorClass } from "./separator/separator-class";
 export { skeletonClass } from "./skeleton/skeleton-class";
 export { switchVariants } from "./switch/switch-variants";
+export { textareaClass } from "./textarea/textarea-class";
 export { toggleVariants } from "./toggle/toggle-variants";
 export { cn } from "../styles/cn";
 export { BESPOKE_ICON_NAMES, PHOSPHOR_ICON_NAMES } from "../icons/roster";

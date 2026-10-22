@@ -129,12 +129,14 @@ export type TextPlacement = {
   readonly horizontal: "start" | "center" | "end";
   readonly vertical: "top" | "center" | "bottom";
   /**
-   * How the control sets its text in lines, which it does itself whatever the box's `display` and
-   * `white-space` say. `single` keeps the text on one line across the content box, as an `<input>`
-   * sets its value, so the label fills the box's width and ends in an ellipsis after one line.
-   * Undefined leaves the lines to the box's CSS.
+   * How the control sets its text in lines, which it does itself whatever the box's `display` says.
+   * `single` keeps the text on one line across the content box, as an `<input>` sets its value,
+   * whatever `white-space` says, so the label fills the box's width and ends in an ellipsis after one
+   * line. `wrap` wraps the text at the content box's width, as a `<textarea>` wraps its value, so the
+   * label fills the width with its height following its lines. Undefined leaves the lines to the
+   * box's CSS.
    */
-  readonly lines?: "single";
+  readonly lines?: "single" | "wrap";
 };
 
 /**

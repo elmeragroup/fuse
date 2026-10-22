@@ -89,6 +89,12 @@ export const KIT_PAGES: readonly InventoryPage[] = [
   { slug: "label", name: "Label", sets: [{ key: "label", name: "Label", variants: 2, previewed: 2 }] },
   // Placeholder and value in 5 states.
   { slug: "input", name: "Input", sets: [{ key: "input", name: "Input", variants: 10, previewed: 10 }] },
+  // Placeholder and value in 5 states.
+  {
+    slug: "textarea",
+    name: "Textarea",
+    sets: [{ key: "textarea", name: "Textarea", variants: 10, previewed: 10 }],
+  },
 ];
 
 /** The page that holds the icon library alone, after the component pages. */

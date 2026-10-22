@@ -311,6 +311,7 @@ describe("exports map", () => {
       "separatorClass",
       "skeletonClass",
       "switchVariants",
+      "textareaClass",
       "toggleVariants",
       "cn",
       "BESPOKE_ICON_NAMES",

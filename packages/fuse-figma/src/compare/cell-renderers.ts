@@ -121,6 +121,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/input.js",
     load: async () => (await import("./input-cell.ts")).input,
   },
+  {
+    set: "textarea",
+    entry: "dist/textarea.js",
+    load: async () => (await import("./textarea-cell.ts")).textarea,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */
