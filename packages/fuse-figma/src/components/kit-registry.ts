@@ -15,6 +15,7 @@ import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
 import { KBD } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
+import { LABEL } from "./label-kit";
 import { LOADER } from "./loader-kit";
 import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
 import { RADIO } from "./radio-kit";
@@ -61,6 +62,9 @@ const SKELETON_PAGE: KitPage = { slug: "skeleton", name: "Skeleton" };
 
 /** The page Loader sits on alone. */
 const LOADER_PAGE: KitPage = { slug: "loader", name: "Loader" };
+
+/** The page Label sits on alone. */
+const LABEL_PAGE: KitPage = { slug: "label", name: "Label" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -148,4 +152,5 @@ export const KIT: readonly KitEntry[] = [
   { definition: SEPARATOR, page: SEPARATOR_PAGE, previewCells: matrixCells(SEPARATOR.axes) },
   { definition: SKELETON, page: SKELETON_PAGE, previewCells: matrixCells(SKELETON.axes) },
   { definition: LOADER, page: LOADER_PAGE, previewCells: matrixCells(LOADER.axes) },
+  { definition: LABEL, page: LABEL_PAGE, previewCells: matrixCells(LABEL.axes) },
 ];

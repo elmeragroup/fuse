@@ -1,7 +1,7 @@
 /**
  * `reconcileKit` end to end against the in-memory file in `fake-figma.ts`, with the kit
  * `buildKit()` writes from the Button, Toggle, Badge, Kbd, Radio icon button, Radio, Checkbox,
- * Switch, Separator, Skeleton and Loader recipes and the variables `fuseVariableSet()` syncs. The fake models the Figma rules the real runs in 2026-10 confirmed, and throws for any Plugin API
+ * Switch, Separator, Skeleton, Loader and Label recipes and the variables `fuseVariableSet()` syncs. The fake models the Figma rules the real runs in 2026-10 confirmed, and throws for any Plugin API
  * member it does not model. The oracles are hand-written: the change lines Plan must list, the
  * values the Button recipe and the theme catalog give, and the order the kit's axes declare.
  */
@@ -32,6 +32,7 @@ const SWITCH_PAGE = "page/switch";
 const SEPARATOR_PAGE = "page/separator";
 const SKELETON_PAGE = "page/skeleton";
 const LOADER_PAGE = "page/loader";
+const LABEL_PAGE = "page/label";
 const ICONS_PAGE = "page/icons";
 const DEFAULT_BUTTON = "variant=default, size=default, state=rest, icon=none";
 const LAY_OUT_BUTTONS = "Button: lay out 420 variants in 5 columns and 84 rows";
@@ -64,6 +65,9 @@ const CREATE_SKELETON_PREVIEWS = SKELETON_PREVIEWS.map((name) => `Skeleton: crea
 const PLACE_LOADERS = "Loader: place Loader in a row and stack 4 previews below them";
 const LOADER_PREVIEWS = previewsOf("Loader");
 const CREATE_LOADER_PREVIEWS = LOADER_PREVIEWS.map((name) => `Loader: create the preview ${name}`);
+const PLACE_LABELS = "Label: place Label in a row and stack 4 previews below them";
+const LABEL_PREVIEWS = previewsOf("Label");
+const CREATE_LABEL_PREVIEWS = LABEL_PREVIEWS.map((name) => `Label: create the preview ${name}`);
 
 /** The page the plugin put the whole kit on before each component got a page of its own. */
 const LEGACY_PAGE = { key: "page/components", name: "Fuse components" };
@@ -206,6 +210,7 @@ describe("Apply on a synced file without the kit pages", () => {
         "Document: create the page Separator",
         "Document: create the page Skeleton",
         "Document: create the page Loader",
+        "Document: create the page Label",
         "Document: create the page Icons",
         "Icons: create the Icons frame with 135 icons",
         "Button: create the component set Button with 420 variants",
@@ -221,6 +226,7 @@ describe("Apply on a synced file without the kit pages", () => {
         "Separator: create the component set Separator with 2 variants",
         "Skeleton: create the component set Skeleton with 2 variants",
         "Loader: create the component set Loader with 5 variants",
+        "Label: create the component set Label with 2 variants",
         ...CREATE_PREVIEWS,
         PLACE,
         ...CREATE_TOGGLE_PREVIEWS,
@@ -241,6 +247,8 @@ describe("Apply on a synced file without the kit pages", () => {
         PLACE_SKELETONS,
         ...CREATE_LOADER_PREVIEWS,
         PLACE_LOADERS,
+        ...CREATE_LABEL_PREVIEWS,
+        PLACE_LABELS,
       ],
       warnings: [],
     });
@@ -260,15 +268,27 @@ describe("Apply on a synced file without the kit pages", () => {
       separator,
       skeleton,
       loader,
+      label,
       icons,
     ] = file.figma.root.children;
     expect(first?.name).toBe("Page 1");
     await first?.loadAsync();
     expect(first?.children).toEqual([]);
     expect(
-      [button, toggle, badge, kbd, radio, checkbox, switchPage, separator, skeleton, loader, icons].map(
-        (page) => page?.name
-      )
+      [
+        button,
+        toggle,
+        badge,
+        kbd,
+        radio,
+        checkbox,
+        switchPage,
+        separator,
+        skeleton,
+        loader,
+        label,
+        icons,
+      ].map((page) => page?.name)
     ).toEqual([
       "Button",
       "Toggle",
@@ -280,6 +300,7 @@ describe("Apply on a synced file without the kit pages", () => {
       "Separator",
       "Skeleton",
       "Loader",
+      "Label",
       "Icons",
     ]);
     expect(file.figma.currentPage).toBe(button);
@@ -325,6 +346,10 @@ describe("Apply on a synced file without the kit pages", () => {
     expect((await kitPage(file, LOADER_PAGE)).children.map((node) => node.name)).toEqual([
       "Loader",
       ...LOADER_PREVIEWS,
+    ]);
+    expect((await kitPage(file, LABEL_PAGE)).children.map((node) => node.name)).toEqual([
+      "Label",
+      ...LABEL_PREVIEWS,
     ]);
     expect((await kitPage(file, ICONS_PAGE)).children.map((node) => node.name)).toEqual(["Icons"]);
   });
@@ -715,6 +740,7 @@ describe("a file the plugin laid out on one page", () => {
       "Document: create the page Separator",
       "Document: create the page Skeleton",
       "Document: create the page Loader",
+      "Document: create the page Label",
       "Document: create the page Icons",
       ...[
         ...PREVIEWS,
@@ -727,6 +753,7 @@ describe("a file the plugin laid out on one page", () => {
         ...SEPARATOR_PREVIEWS,
         ...SKELETON_PREVIEWS,
         ...LOADER_PREVIEWS,
+        ...LABEL_PREVIEWS,
       ].map((name) => `Fuse components: delete ${name}`),
       "Fuse components: move Icons to the Icons page",
       "Fuse components: move Button to the Button page",
@@ -742,10 +769,11 @@ describe("a file the plugin laid out on one page", () => {
       "Fuse components: move Separator to the Separator page",
       "Fuse components: move Skeleton to the Skeleton page",
       "Fuse components: move Loader to the Loader page",
+      "Fuse components: move Label to the Label page",
     ];
 
     expect(await reconcileKit(file.figma, kit, false)).toEqual({
-      changes: [...pagePhase, "Document: plan the rest of the kit again once the 14 moves land"],
+      changes: [...pagePhase, "Document: plan the rest of the kit again once the 15 moves land"],
       warnings: [],
     });
     const applied = await reconcileKit(file.figma, kit, true);
@@ -772,6 +800,8 @@ describe("a file the plugin laid out on one page", () => {
         PLACE_SKELETONS,
         ...CREATE_LOADER_PREVIEWS,
         PLACE_LOADERS,
+        ...CREATE_LABEL_PREVIEWS,
+        PLACE_LABELS,
         "Document: delete the page Fuse components",
       ],
       warnings: [],
@@ -792,6 +822,7 @@ describe("a file the plugin laid out on one page", () => {
       "Separator",
       "Skeleton",
       "Loader",
+      "Label",
       "Icons",
     ]);
     const button = await componentSet(file, "Button");
@@ -835,7 +866,7 @@ describe("a file the plugin laid out on one page", () => {
     file.reopen();
 
     const applied = await reconcileKit(file.figma, kit, true);
-    expect(applied.changes.slice(0, 11)).toEqual([
+    expect(applied.changes.slice(0, 12)).toEqual([
       "Document: create the page Button",
       "Document: create the page Toggle",
       "Document: create the page Badge",
@@ -846,6 +877,7 @@ describe("a file the plugin laid out on one page", () => {
       "Document: create the page Separator",
       "Document: create the page Skeleton",
       "Document: create the page Loader",
+      "Document: create the page Label",
       "Document: create the page Icons",
     ]);
     expect(file.figma.root.children.map((page) => page.name)).toEqual([
@@ -862,6 +894,7 @@ describe("a file the plugin laid out on one page", () => {
       "Separator",
       "Skeleton",
       "Loader",
+      "Label",
       "Icons",
     ]);
     for (const { page, frame } of imported) {

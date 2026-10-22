@@ -109,8 +109,10 @@ export const BASE_UI_CHECKED_FACTS: ReadonlyMap<string, (cell: Cell) => boolean>
  * - `native-control`: a native `<button>`, disabled through its `disabled` attribute.
  * - `base-ui-span`: a Base UI `<span>`, such as a radio, which Base UI disables with
  *   `aria-disabled` and keeps focusable.
+ * - `base-ui-field-label`: Base UI's `Field.Label` `<label>`, which takes its Field's state as
+ *   data attributes, so a disabled Field marks it `data-disabled` alone.
  */
-export type RootKind = "native-control" | "base-ui-span";
+export type RootKind = "native-control" | "base-ui-span" | "base-ui-field-label";
 
 /** A text layer a part shows, and the set's text property that sets its characters. */
 export type LabelDefinition = {
@@ -185,6 +187,13 @@ export type ComponentDefinition = BoxDefinition & {
    * reason a designer reads in the coverage table. A class on one of them lands there as dropped.
    */
   readonly omittedPseudoElements?: ReadonlyMap<string, string>;
+  /**
+   * The variants that style the component inside a composition the kit does not draw, or style
+   * a child it holds there, such as a label's `has-[>[data-slot=checkbox]]:` around a checkbox,
+   * each with the reason a designer reads in the coverage table. A class with one of them lands
+   * there as dropped.
+   */
+  readonly omittedCompositions?: ReadonlyMap<string, string>;
   /** The INSTANCE_SWAP properties, each with the export name of the icon it starts with. */
   readonly swapProperties: readonly SwapPropertySpec[];
 };
@@ -508,7 +517,7 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
   children.push(...end);
   // The layout reads once the children are known, since a grid maps only around one layer.
   const layout = readLayout(reader, children.length);
-  const width = number("width");
+  const width = readWidth(reader, context);
   const paddingLeft = number("padding-left") ?? ZERO;
   const paddingRight = number("padding-right") ?? ZERO;
   const primaryAlign = placeParts(
@@ -556,6 +565,25 @@ function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSp
     opacity: opacity ?? 1,
     children,
   };
+}
+
+/** A width that hugs the box's content, which the box writes as no width. */
+const HUG = "hug";
+
+/**
+ * Read `width`. `fit-content` is the width of what the box holds in a container with room to
+ * spare, which the kit's frames are, so it hugs, as an unset width does.
+ *
+ * @returns The fixed width, or undefined when the box hugs or the width does not map.
+ */
+function readWidth(reader: LayerStyle, context: BuildContext): NumberSpec | undefined {
+  const width = reader.read(
+    "width",
+    (value) => (normalizeCss(value) === "fit-content" ? HUG : readNumber(value, context.variables)),
+    (read) =>
+      read === HUG ? { outcome: "literal", detail: "the box hugs its content" } : describeNumber(read)
+  );
+  return width === HUG ? undefined : width;
 }
 
 /**

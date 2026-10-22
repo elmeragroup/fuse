@@ -111,6 +111,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/loader.js",
     load: async () => (await import("./loader-cell.ts")).loader,
   },
+  {
+    set: "label",
+    entry: "dist/field.js",
+    load: async () => (await import("./label-cell.ts")).label,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

@@ -652,7 +652,7 @@ function skippedNote(
   switch (meaning.kind) {
     case "omitted":
       return { outcome: "dropped", detail: `no cell of the matrix shows \`${variant}\`` };
-    case "omitted-element":
+    case "omitted-for":
       return { outcome: "dropped", detail: meaning.reason };
     case "unmodelled":
       return { outcome: "unmapped", detail: `the definition neither models nor omits \`${variant}\`` };

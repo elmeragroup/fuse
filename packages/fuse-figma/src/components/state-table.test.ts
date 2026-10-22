@@ -88,6 +88,15 @@ describe("the shared state entries", () => {
     expect(holdsAt(span, "state", "disabled")).toBe("unmodelled");
   });
 
+  it("hold only data-disabled at disabled on a Base UI Field.Label, which takes its Field's state", () => {
+    // Base UI's `Field.Label` maps the Field's state to data attributes: a label in a disabled
+    // Field renders `<label data-disabled="">`, with neither `disabled` nor `aria-disabled`.
+    const label = definition({ rootKind: "base-ui-field-label", axes: [CONTROL_STATES] });
+    expect(holdsAt(label, "state", "data-disabled")).toEqual(["disabled"]);
+    expect(holdsAt(label, "state", "disabled")).toBe("unmodelled");
+    expect(holdsAt(label, "state", "aria-disabled")).toBe("unmodelled");
+  });
+
   it("leave aria-disabled to the definition on a native control", () => {
     expect(holdsAt(definition({ axes: [CONTROL_STATES] }), "state", "aria-disabled")).toBe("unmodelled");
   });
@@ -228,6 +237,11 @@ describe("one meaning per variant", () => {
       "both a fact and an omitted pseudo-element",
       { facts: new Map([["after", always]]), omittedPseudoElements: new Map([["after", "a hit area"]]) },
       "after",
+    ],
+    [
+      "both an omitted state and an omitted composition",
+      { omittedStates: new Set(["*"]), omittedCompositions: new Map([["*", "a label around a field"]]) },
+      "*",
     ],
   ])("refuses %s", (_case, overrides: Partial<Definition>, variant) => {
     expect(() => makeStateTable(definition({ axes: [CONTROL_STATES], ...overrides }))).toThrow(

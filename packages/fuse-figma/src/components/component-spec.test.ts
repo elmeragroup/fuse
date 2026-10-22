@@ -255,6 +255,22 @@ describe("a percentage width", () => {
   });
 });
 
+// Unit under test: `buildComponentSet` on a root with `w-fit`, which Tailwind compiles to
+// `width: fit-content`. Oracle: CSS Sizing 3, where a fit-content width in a container with room to
+// spare is the box's max-content width, the width of what it holds. That is a Figma hug.
+describe("a fit-content width", () => {
+  it("hugs the content", async () => {
+    const { componentSet, coverage } = buildComponentSet(
+      { ...CHIP, classesFor: () => "w-fit" },
+      { ...context, compiled: await compileUtilities(["w-fit"]) }
+    );
+    expect(componentSet.variants[0]?.root.width).toBeUndefined();
+    expect(coverage.map((row) => [row.className, row.property, row.outcome, row.detail])).toEqual([
+      ["w-fit", "width", "literal", "the box hugs its content"],
+    ]);
+  });
+});
+
 /** The one icon of the fixtures below, which sits inside the chip's dot. */
 const ICON: IconSlot = {
   key: "icon",
@@ -594,6 +610,42 @@ describe("a class on a pseudo-element", () => {
       ["after:-inset-x-3", "inset-inline", "dropped", reason],
       ["after:content-['']", "--tw-content", "dropped", reason],
       ["after:content-['']", "content", "dropped", reason],
+    ]);
+  });
+
+  it("is unmapped when the definition does not omit it", async () => {
+    expect(new Set((await build(new Map())).map(([, , outcome]) => outcome))).toEqual(new Set(["unmapped"]));
+  });
+});
+
+// Unit under test: `buildComponentSet` on a root whose classes style it around a child it holds or
+// style that child. Oracle: CSS, where `has-[>[data-slot=checkbox]]:` holds only while the root
+// holds a checkbox and `*:` styles the root's children, neither of which a set that draws the
+// root on its own renders. The definition that omits those variants names why, and one that does
+// not leaves the classes to fail the gate.
+describe("a class that styles a composition", () => {
+  const ARMS = ["has-[>[data-slot=checkbox]]:items-center", "*:data-[slot=field]:p-2"];
+
+  async function build(omitted: ReadonlyMap<string, string>) {
+    const { coverage } = buildComponentSet(
+      { ...CHIP, classesFor: () => ARMS.join(" "), omittedCompositions: omitted },
+      { ...context, compiled: await compileUtilities(ARMS) }
+    );
+    return coverage.map((row) => [row.className, row.property, row.outcome, row.detail]);
+  }
+
+  it("is dropped with the reason the definition omits it for", async () => {
+    const reason = "a chip around a control";
+    expect(
+      await build(
+        new Map([
+          ["has-[>[data-slot=checkbox]]", reason],
+          ["*", reason],
+        ])
+      )
+    ).toEqual([
+      ["has-[>[data-slot=checkbox]]:items-center", "align-items", "dropped", reason],
+      ["*:data-[slot=field]:p-2", "padding", "dropped", reason],
     ]);
   });
 
