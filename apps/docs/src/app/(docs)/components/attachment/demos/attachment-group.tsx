@@ -12,15 +12,15 @@ type SharedFile = {
 const FILES: readonly SharedFile[] = [
   { name: "lease-agreement.pdf", meta: "PDF · 1.4 MB" },
   {
-    name: "living-room.webp",
-    meta: "WEBP · 24 KB",
-    image: { src: "/landing/sites/tkas/usage.webp", alt: "An open-plan kitchen and living room" },
+    name: "leaf.webp",
+    meta: "WEBP · 26 KB",
+    image: { src: "/demos/photos/leaf.webp", alt: "Raindrops on a green leaf" },
   },
   { name: "meter-readings.csv", meta: "CSV · 18 KB" },
   {
-    name: "kitchen.webp",
-    meta: "WEBP · 52 KB",
-    image: { src: "/landing/sites/fkas/student.webp", alt: "Two people smiling in a kitchen" },
+    name: "ocean.webp",
+    meta: "WEBP · 87 KB",
+    image: { src: "/demos/photos/ocean.webp", alt: "Green ocean water seen from above" },
   },
   { name: "moving-notice.pdf", meta: "PDF · 220 KB" },
 ];

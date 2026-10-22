@@ -9,21 +9,21 @@ export function AttachmentImage() {
       <Attachment.Root orientation="vertical">
         <Attachment.Media variant="image">
           <img
-            src="/landing/sites/tkas/usage.webp"
-            alt="An open-plan kitchen and living room"
+            src="/demos/photos/colleagues.webp"
+            alt="Two colleagues smiling at a laptop on a shared desk"
             loading="lazy"
             decoding="async"
           />
         </Attachment.Media>
         <Attachment.Content>
-          <Attachment.Title>living-room.webp</Attachment.Title>
-          <Attachment.Description>WEBP · 24 KB</Attachment.Description>
+          <Attachment.Title>colleagues.webp</Attachment.Title>
+          <Attachment.Description>WEBP · 17 KB</Attachment.Description>
         </Attachment.Content>
         <Attachment.Actions>
-          <Attachment.Action aria-label="Download living-room.webp">
+          <Attachment.Action aria-label="Download colleagues.webp">
             <Download />
           </Attachment.Action>
-          <Attachment.Action aria-label="Remove living-room.webp">
+          <Attachment.Action aria-label="Remove colleagues.webp">
             <X />
           </Attachment.Action>
         </Attachment.Actions>
@@ -33,19 +33,19 @@ export function AttachmentImage() {
           <Attachment.AspectRatio ratio="3:4">
             <img
               className="size-full object-cover"
-              src="/landing/sites/fkse/market.webp"
-              alt="A woman smelling a branch of cherry blossom"
+              src="/demos/photos/coffee-break.webp"
+              alt="A woman holding a coffee cup"
               loading="lazy"
               decoding="async"
             />
           </Attachment.AspectRatio>
         </Attachment.Media>
         <Attachment.Content>
-          <Attachment.Title>blossom.webp</Attachment.Title>
-          <Attachment.Description>WEBP · 210 KB</Attachment.Description>
+          <Attachment.Title>coffee-break.webp</Attachment.Title>
+          <Attachment.Description>WEBP · 16 KB</Attachment.Description>
         </Attachment.Content>
         <Attachment.Actions>
-          <Attachment.Action aria-label="Remove blossom.webp">
+          <Attachment.Action aria-label="Remove coffee-break.webp">
             <X />
           </Attachment.Action>
         </Attachment.Actions>
@@ -53,18 +53,18 @@ export function AttachmentImage() {
       <Attachment.Root>
         <Attachment.Media variant="image">
           <img
-            src="/landing/sites/fkas/renovated.webp"
-            alt="Two people looking up at the beams of an attic"
+            src="/demos/photos/stairwell.webp"
+            alt="Two people talking on a stairwell, seen from above"
             loading="lazy"
             decoding="async"
           />
         </Attachment.Media>
         <Attachment.Content>
-          <Attachment.Title>attic.webp</Attachment.Title>
-          <Attachment.Description>WEBP · 64 KB</Attachment.Description>
+          <Attachment.Title>stairwell.webp</Attachment.Title>
+          <Attachment.Description>WEBP · 21 KB</Attachment.Description>
         </Attachment.Content>
         <Attachment.Actions>
-          <Attachment.Action aria-label="Remove attic.webp">
+          <Attachment.Action aria-label="Remove stairwell.webp">
             <X />
           </Attachment.Action>
         </Attachment.Actions>

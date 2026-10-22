@@ -4,7 +4,7 @@ import { Attachment } from "@elmeragroup/fuse/attachment";
 import { Dialog } from "@elmeragroup/fuse/dialog";
 import { Copy, FileMagnifyingGlass, X } from "@elmeragroup/fuse/icons";
 
-const ATTIC_PHOTO = "/landing/sites/fkas/renovated.webp";
+const MEETING_PHOTO = "/demos/photos/meeting.webp";
 
 export function AttachmentTrigger() {
   return (
@@ -37,23 +37,18 @@ export function AttachmentTrigger() {
       </Dialog.Root>
       <Attachment.Root className="w-full">
         <Attachment.Media variant="image">
-          <img
-            src={ATTIC_PHOTO}
-            alt="Two people looking up at the beams of an attic"
-            loading="lazy"
-            decoding="async"
-          />
+          <img src={MEETING_PHOTO} alt="Two people talking at a café table" loading="lazy" decoding="async" />
         </Attachment.Media>
         <Attachment.Content>
-          <Attachment.Title>attic.webp</Attachment.Title>
+          <Attachment.Title>meeting.webp</Attachment.Title>
           <Attachment.Description>Opens in a new tab</Attachment.Description>
         </Attachment.Content>
         <Attachment.Trigger
-          aria-label="Open attic.webp in a new tab"
-          render={<a href={ATTIC_PHOTO} target="_blank" rel="noreferrer" />}
+          aria-label="Open meeting.webp in a new tab"
+          render={<a href={MEETING_PHOTO} target="_blank" rel="noreferrer" />}
         />
         <Attachment.Actions>
-          <Attachment.Action aria-label="Remove attic.webp">
+          <Attachment.Action aria-label="Remove meeting.webp">
             <X />
           </Attachment.Action>
         </Attachment.Actions>

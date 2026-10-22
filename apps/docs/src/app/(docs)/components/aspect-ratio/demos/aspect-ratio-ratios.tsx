@@ -9,11 +9,18 @@ export function AspectRatioRatios() {
   return (
     <div className="max-w-xl grid w-full grid-cols-4 items-start gap-4">
       {RATIOS.map((ratio) => (
-        <AspectRatio key={ratio} ratio={ratio}>
-          <div className="text-sm font-medium flex size-full items-center justify-center rounded-md bg-muted text-muted-foreground tabular-nums">
-            {ratio}
-          </div>
-        </AspectRatio>
+        <figure key={ratio}>
+          <AspectRatio ratio={ratio}>
+            <img
+              className="size-full rounded-md object-cover"
+              src="/demos/photos/wood-waves.webp"
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+          </AspectRatio>
+          <figcaption className="text-sm pt-2 text-muted-foreground tabular-nums">{ratio}</figcaption>
+        </figure>
       ))}
     </div>
   );
