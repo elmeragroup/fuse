@@ -118,9 +118,8 @@ type HeadingStyleProps = {
    * height and weight together from the theme at any level: `--heading-<style>-size`,
    * `--heading-<style>-leading` and `--heading-<style>-weight`. External themes set the design's
    * bold heading styles, 34/40, 28/34, 24/32 and 20/32 at 700, and internal themes 36/49.5,
-   * 30/41.25, 24/33 and 18/24.75 at 500. Omitted, levels 1 to 3 take their theme defaults and
-   * levels 4 to 6 are 16/22 at 500. It excludes `size` and `font`; a JavaScript caller that
-   * passes them anyway gets the style. A `className` size, line height or weight still wins.
+   * 30/41.25, 24/33 and 18/24.75 at 500. It excludes `size` and `font`; a JavaScript caller
+   * that passes them anyway gets the style. A `className` size, line height or weight still wins.
    */
   typography: HeadingTypography;
   size?: undefined;

@@ -20,7 +20,7 @@ export const metadata = componentMetadata("heading");
   <HeadingBasic />
 </Demo>
 
-`typography` sets the size, line height and weight together from one of the theme's four named heading styles, `large`, `medium`, `small` and `xsmall`, while `level` keeps the document outline. External themes set the design's bold heading ramp, 34/40, 28/34, 24/32 and 20/32 at 700, and internal themes 36/49.5, 30/41.25, 24/33 and 18/24.75 at 500. An h1 without `typography` is heading small and an h2 heading xsmall, so a theme that changes a style moves those levels with it. Use `typography` when a heading should look like one of the design's heading styles, such as a page title at `medium` or a bold h4 at `xsmall`.
+`typography` sets the size, line height and weight together from one of the theme's four named heading styles, `large`, `medium`, `small` and `xsmall`, while `level` keeps the document outline. External themes set the design's bold heading ramp, 34/40, 28/34, 24/32 and 20/32 at 700, and internal themes 36/49.5, 30/41.25, 24/33 and 18/24.75 at 500. An h1 without `typography` is heading small and an h2 heading xsmall (and, in external themes, an h3 too), so a theme that changes a style moves those levels with it. Use `typography` when a heading should look like one of the design's heading styles, such as a page title at `medium` or a bold h4 at `xsmall`.
 
 <Demo slug="heading" id="styles" title="Named styles" file="heading-styles.tsx">
   <HeadingStyles />
