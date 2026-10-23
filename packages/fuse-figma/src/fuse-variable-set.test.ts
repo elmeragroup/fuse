@@ -7,10 +7,16 @@ import { compileUtilities } from "./components/utility-css.ts";
 import { fuseVariableSet } from "./fuse-variable-set.ts";
 import type { CollectionSpec, VariableSet, VariableSpec, VariableValue } from "./variable-set.ts";
 
+let built: VariableSet | undefined;
+
+/** The Fuse variable set, built on the first lookup and shared by every test in the file. */
 function variableSet(): VariableSet {
-  const result = fuseVariableSet();
-  if (Result.isFailure(result)) throw new Error(result.failure.message);
-  return result.success;
+  if (built === undefined) {
+    const result = fuseVariableSet();
+    if (Result.isFailure(result)) throw new Error(result.failure.message);
+    built = result.success;
+  }
+  return built;
 }
 
 function collection(name: string): CollectionSpec {
