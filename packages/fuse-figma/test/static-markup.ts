@@ -102,8 +102,9 @@ export function elementsOf(html: string): readonly MarkupElement[] {
 }
 
 /**
- * Whether an element is the one a definition's selector names: it has the selector's tag and each
- * attribute the selector lists, with that exact value or, for `true`, any value, as the selector's
+ * Whether an element is the one a definition's selector names: it has the selector's tag, each
+ * attribute the selector lists with that exact value or, for `true`, any value, and each attribute
+ * its `prefixes` list with a value that starts with a prefix that is not empty, as the selector's
  * CSS form matches it in the browser.
  *
  * @param selector - The element a root or a part names, where its markup carries no `data-slot`.
@@ -119,7 +120,10 @@ export function selects(
     Object.entries(selector.attributes).every(([name, value]) => {
       const held = element.attributes.get(name);
       return value === true ? held !== undefined : held === value;
-    })
+    }) &&
+    Object.entries(selector.prefixes ?? {}).every(
+      ([name, prefix]) => prefix !== "" && element.attributes.get(name)?.startsWith(prefix) === true
+    )
   );
 }
 

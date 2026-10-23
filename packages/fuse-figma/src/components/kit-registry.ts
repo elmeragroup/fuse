@@ -17,6 +17,7 @@ import {
   BREADCRUMB_SEPARATOR,
 } from "./breadcrumb-kit";
 import { BUTTON, ICON_BUTTON } from "./button-kit";
+import { CALENDAR_DAY } from "./calendar-day-kit";
 import { CHECKBOX } from "./checkbox-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
@@ -110,6 +111,9 @@ const SELECT_PAGE: KitPage = { slug: "select", name: "Select" };
 
 /** The page Empty sits on alone, until Empty with actions joins it. */
 const EMPTY_PAGE: KitPage = { slug: "empty", name: "Empty" };
+
+/** The page of the Calendar's day cell, alone until the month frame joins it. */
+const CALENDAR_PAGE: KitPage = { slug: "calendar", name: "Calendar" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -240,4 +244,5 @@ export const KIT: readonly KitEntry[] = [
   },
   { definition: SELECT_TRIGGER, page: SELECT_PAGE, previewCells: matrixCells(SELECT_TRIGGER.axes) },
   { definition: EMPTY, page: EMPTY_PAGE, previewCells: matrixCells(EMPTY.axes) },
+  { definition: CALENDAR_DAY, page: CALENDAR_PAGE, previewCells: matrixCells(CALENDAR_DAY.axes) },
 ];

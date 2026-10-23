@@ -91,8 +91,16 @@ export const BASE_UI_CHECKED_FACTS: ReadonlyMap<string, (cell: Cell) => boolean>
  *   marks them `data-disabled` alone and an invalid one `data-invalid` alone.
  * - `plain-element`: an element nothing stamps a state on, such as Field's title `<div>`, which
  *   shows a disabled Field only through the `group-data-disabled/field:` its definition names.
+ * - `react-aria-element`: a React Aria Components element marked `data-rac`, such as a Calendar day
+ *   cell `<div>`, which React Aria marks `aria-disabled="true"` and `data-disabled` while disabled,
+ *   and `aria-invalid="true"` and `data-invalid` while invalid, which `invalid:` reads there.
  */
-export type RootKind = "native-control" | "base-ui-span" | "base-ui-field-part" | "plain-element";
+export type RootKind =
+  | "native-control"
+  | "base-ui-span"
+  | "base-ui-field-part"
+  | "plain-element"
+  | "react-aria-element";
 
 /**
  * Where a native control sets its text within the text's box, which no class says, as an `<input>`
@@ -196,6 +204,13 @@ export type ElementSelector = {
    * and `true` matches the attribute with any value, as `[data-rac]` does.
    */
   readonly attributes: Readonly<Record<string, string | true>>;
+  /**
+   * The attributes whose values start with a prefix, each name in lowercase, as
+   * `[aria-label^="Tuesday, July 14, 2026"]` matches a day React Aria labels ` selected` while it is
+   * the value. An empty prefix matches nothing, as in CSS. Undefined for an element the attributes
+   * alone name.
+   */
+  readonly prefixes?: Readonly<Record<string, string>>;
 };
 
 /** One declaration of an element's `style` attribute, such as Base UI's `width: 85%` on a meter's fill. */

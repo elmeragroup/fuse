@@ -326,6 +326,7 @@ describe("exports map", () => {
       "switchVariants",
       "textareaClass",
       "toggleVariants",
+      "cellVariants",
       "cn",
       "BESPOKE_ICON_NAMES",
       "PHOSPHOR_ICON_NAMES",

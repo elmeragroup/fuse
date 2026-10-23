@@ -15,7 +15,7 @@ import { KIT } from "../components/kit-registry.ts";
 import { browserFootprint, coversRenderBounds, figmaFootprint, sharedCanvas } from "./align.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { BrowserUnavailable, CellRequest, FontNotLoaded, RenderedCell } from "./browser-render.ts";
-import { loadRenderers, renderCellHtml } from "./cell-renderers.ts";
+import { forcedAttributesFor, loadRenderers, renderCellHtml } from "./cell-renderers.ts";
 import type { CellRenderer } from "./cell-renderers.ts";
 import { forcedPseudoClasses, parseCell, restingTwin } from "./cells.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
@@ -161,6 +161,7 @@ export function planCells(instances: readonly InstanceSnapshot[], renderers: Ren
         html: renderCellHtml(definition.renderer, cell),
         measured: measuredSelector(definition),
         forced,
+        forcedAttributes: forcedAttributesFor(definition.renderer, cell),
         restingHtml: forced.length === 0 ? undefined : renderCellHtml(definition.renderer, restingTwin(cell)),
       },
     });

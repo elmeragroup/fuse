@@ -104,7 +104,8 @@ export function cellSelector(id: string, measured: string): string {
 /**
  * The selector of the element a definition's cells measure: the one whose `data-slot` is the
  * definition's `slot`, or, for a root whose markup carries no `data-slot`, the one its `element`
- * names by tag and attributes, such as `a[data-rac]`.
+ * names by tag and attributes, such as `a[data-rac]`, each attribute by its presence or its value,
+ * and each of its `prefixes` by the start of its value.
  *
  * @param definition - The root's slot and, for a root without a `data-slot`, its element.
  * @returns A selector for an element anywhere inside a cell's slot, as {@link cellSelector} takes it.
@@ -117,7 +118,10 @@ export function measuredSelector(definition: Pick<ComponentDefinition, "slot" | 
   const attributes = Object.entries(element.attributes).map(([name, value]) =>
     value === true ? `[${name}]` : `[${name}=${cssString(value)}]`
   );
-  return `${element.tag}${attributes.join("")}`;
+  const prefixes = Object.entries(element.prefixes ?? {}).map(
+    ([name, prefix]) => `[${name}^=${cssString(prefix)}]`
+  );
+  return `${element.tag}${[...attributes, ...prefixes].join("")}`;
 }
 
 /**

@@ -31,7 +31,10 @@
  * `data-slot` may sit between the outermost of them and the root, so the page draws the root in the
  * type and color the build passes down. The pseudo-class variants, `enabled-hover:`, `hover:` and `focus-visible:`, stay out, since
  * static markup cannot show them, and so does the icon edge, which the slots check. On a React Aria
- * element `hover:` reads `data-hovered`, which React Aria stamps only while a hydrated page is hovered.
+ * element marked `data-rac`, `hover:` and `enabled-hover:` read `data-hovered`, which React Aria
+ * stamps only while a hydrated page is hovered, so the renderer names it in its forced attributes,
+ * which the page writes on the measured element when it forces the cell's state. There both must
+ * hold exactly where those attributes carry `data-hovered`.
  */
 import { createElement } from "react";
 import type { ReactElement } from "react";
@@ -56,7 +59,7 @@ import type {
 import { KIT } from "../components/kit-registry";
 import { labelCharacters } from "../components/label-layout";
 import { makeStateTable } from "../components/state-table";
-import { loadRenderers, renderCellHtml } from "./cell-renderers";
+import { forcedAttributesFor, loadRenderers, renderCellHtml } from "./cell-renderers";
 import type { CellRendering } from "./cell-renderers";
 
 /**
@@ -99,7 +102,19 @@ const ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => boolean>(
   ],
   // Base UI stamps `data-placeholder` on a Select trigger while nothing is selected.
   ["data-placeholder", (element) => element.attributes.has("data-placeholder")],
+  // tailwindcss-react-aria-components compiles `invalid:` to `[data-invalid]` on an element marked
+  // `data-rac`, and to `:invalid` on any other, a validity static markup does not hold, which no
+  // set reads.
+  ["invalid", (element) => element.attributes.has("data-rac") && element.attributes.has("data-invalid")],
 ]);
+
+/**
+ * The variants that read `data-hovered` on an element marked `data-rac`, which React Aria stamps
+ * while the pointer is over it: tailwindcss-react-aria-components compiles `hover:` there to
+ * `[data-hovered]`, and fuse.css's `enabled-hover:` reads `[data-rac][data-hovered]` on an element
+ * that is not disabled.
+ */
+const REACT_ARIA_HOVER = ["hover", "enabled-hover"];
 
 /** Whether an element carries a group marker, such as `group/field`, in its `class`. */
 function marks(element: MarkupElement, marker: string): boolean {
@@ -534,6 +549,12 @@ function checkMarkup(definition: ComponentDefinition, cells: readonly Cell[], re
       for (const [variant, carries] of ATTRIBUTE_VARIANTS) {
         expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(carries(root));
       }
+      if (root.attributes.has("data-rac")) {
+        const hovered = Object.hasOwn(forcedAttributesFor(renderer, cell), "data-hovered");
+        for (const variant of REACT_ARIA_HOVER) {
+          expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(hovered);
+        }
+      }
       // A variant the root's own classes name selects the root below its group, and any other one a
       // part or an icon below the root, so the root itself can be the group, as Select's trigger is
       // for its caret.
@@ -640,6 +661,32 @@ describe("the markup check of a root without a data-slot", () => {
       element: { tag: "a", attributes: { "data-rac": true, role: "button" } },
     };
     expect(() => checkMarkup(button, CELLS, markup)).toThrow("the chip parts");
+  });
+});
+
+// Unit under test: `checkMarkup` on a React Aria root with a hover state. Oracle: React Aria stamps
+// `data-hovered` on an element marked `data-rac` only while a hydrated page hovers it, which
+// `hover:` reads there, so the renderer's forced attributes must carry it exactly in the cells where
+// the state table holds `hover:`. The hand-written renderer stamps it on the hover cell where it
+// passes, and nowhere where it fails.
+describe("the markup check of a React Aria root's hover", () => {
+  const DAY = chip("hover:bg-muted", {
+    element: { tag: "div", attributes: { "data-rac": true } },
+    axes: [{ name: "state", values: ["rest", "hover"] }],
+  });
+  const CELLS = [{ state: "rest" }, { state: "hover" }];
+  const element = () => createElement("div", { "data-rac": "" });
+
+  it("passes a renderer that names data-hovered for the hover cell", () => {
+    const stamped: CellRendering = {
+      element,
+      forcedAttributes: (cell) => (cell.state === "hover" ? { "data-hovered": "true" } : {}),
+    };
+    expect(() => checkMarkup(DAY, CELLS, stamped)).not.toThrow();
+  });
+
+  it("fails a renderer that leaves the hover cell as static markup has it", () => {
+    expect(() => checkMarkup(DAY, CELLS, { element })).toThrow("chip/state=hover: hover");
   });
 });
 

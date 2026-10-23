@@ -70,7 +70,8 @@ describe("the preview page's stylesheets", () => {
 
 // Unit under test: `measuredSelector`, the element the page measures, forces and crops in a cell's
 // slot. Oracle: CSS attribute selectors (Selectors Level 4 §6), where `[name]` matches the attribute
-// with any value and `[name="value"]` that exact value, and CSSOM's "serialize a string" (§2.1),
+// with any value, `[name="value"]` that exact value and `[name^="value"]` a value that starts with
+// it, and CSSOM's "serialize a string" (§2.1),
 // which escapes `"` and `\` with a backslash and a control character as its code point in hex and a
 // space, since a raw newline ends a CSS string (CSS Syntax Level 3 §4.3.5).
 describe("the element a cell measures", () => {
@@ -85,6 +86,17 @@ describe("the element a cell measures", () => {
     };
     expect(measuredSelector({ slot: "link", element })).toBe(
       String.raw`a[data-rac][aria-label="Say \"hi\" \\ bye"]`
+    );
+  });
+
+  it("matches an attribute by the prefix of its value, as React Aria labels a day selected", () => {
+    const element: ElementSelector = {
+      tag: "div",
+      attributes: { "data-rac": true },
+      prefixes: { "aria-label": 'Tuesday, "July" 14' },
+    };
+    expect(measuredSelector({ slot: "calendar-cell", element })).toBe(
+      String.raw`div[data-rac][aria-label^="Tuesday, \"July\" 14"]`
     );
   });
 

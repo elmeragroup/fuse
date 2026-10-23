@@ -9,7 +9,10 @@
  * cell against its resting twin: a forced cell whose measured element and descendants have the
  * twin's colors, shadows and underlines did not reach Fuse's `enabled-hover:` or
  * `focus-visible:` rules, and the page then hovers or focuses that element for real before its
- * screenshot.
+ * screenshot. React Aria draws its hover and focus faces from pointer and focus events only a
+ * hydrated page sees, so with the pseudo classes the page writes the attributes the cell's renderer
+ * names on the measured element, through CDP's `DOM.setAttributeValue`, as the Calendar day's
+ * `data-hovered` and its focused class.
  */
 
 import { Result } from "effect";
@@ -48,6 +51,12 @@ export type CellRequest = {
    */
   readonly measured: string;
   readonly forced: readonly ForcedPseudoClass[];
+  /**
+   * The attributes the page writes on the measured element with the forced pseudo classes, as
+   * React Aria would while the state holds. Empty for a cell whose state CSS draws from the pseudo
+   * classes alone.
+   */
+  readonly forcedAttributes: Readonly<Record<string, string>>;
   /** The same element at rest, rendered off to the side to check the forced state. */
   readonly restingHtml: string | undefined;
 };
@@ -261,7 +270,10 @@ async function checkFont(page: Page): Promise<Result.Result<string, FontNotLoade
   return Result.succeed(fonts.join(", "));
 }
 
-/** Force each cell's pseudo classes, and return the ids whose styles the forcing changed. */
+/**
+ * Force each cell's pseudo classes and write its forced attributes on the measured element, and
+ * return the ids whose styles that changed.
+ */
 async function forceStates(page: Page, requests: readonly CellRequest[]): Promise<ReadonlySet<string>> {
   const forcing = requests.filter((request) => request.forced.length > 0);
   if (forcing.length === 0) {
@@ -277,6 +289,9 @@ async function forceStates(page: Page, requests: readonly CellRequest[]): Promis
       selector: cellSelector(request.id, request.measured),
     });
     await cdp.send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: [...request.forced] });
+    for (const [name, value] of Object.entries(request.forcedAttributes)) {
+      await cdp.send("DOM.setAttributeValue", { nodeId, name, value });
+    }
   }
   const changed = new Set<string>();
   for (const request of forcing) {

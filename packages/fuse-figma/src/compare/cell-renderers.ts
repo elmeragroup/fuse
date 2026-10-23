@@ -4,7 +4,8 @@
  * the one element in the slot whose `data-slot` is the definition's `slot`, or the one the
  * definition's `element` selects where the root carries no `data-slot`, at any depth, since a
  * radio renders inside its group. A renderer sets the states the markup draws, such as disabled
- * or pending, through the element's props. The page forces hover and focus itself.
+ * or pending, through the element's props. The page forces hover and focus itself, and writes the
+ * attributes a renderer names for a hover or focus face React Aria sets only after hydration.
  *
  * A renderer's element comes from a module that imports the Fuse build, which exists only after
  * `pnpm --filter @elmeragroup/fuse build`. This module lists each renderer's set and the build
@@ -22,6 +23,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import type { ElmeraIconProps } from "../../../fuse/dist/icons.js";
 import type { Cell } from "../components/component-spec.ts";
+import { forcedPseudoClasses } from "./cells.ts";
 
 /** Renders the cells of one kit definition with the real Fuse component. */
 export type CellRenderer = {
@@ -37,10 +39,19 @@ export type CellRenderer = {
    * Avatar name the docs demos' sizes. Most renderers name none.
    */
   readonly hostClasses?: readonly string[];
+  /**
+   * The attributes React Aria writes on the measured element while a cell's hover or focus state
+   * holds, which static markup cannot hold: React Aria sets them from pointer and focus events once
+   * a page hydrates, and the compare page never does. The page writes them on the element when it
+   * forces the state, as `data-hovered`, which `hover:` reads on an element marked `data-rac`, or
+   * the class a `className` function gives at `isFocusVisible`. Undefined for a component whose
+   * hover and focus faces CSS draws from the pseudo classes the page forces.
+   */
+  readonly forcedAttributes?: (cell: Cell) => Readonly<Record<string, string>>;
 };
 
 /** The part of a renderer its own module defines, beside its import of the Fuse build. */
-export type CellRendering = Pick<CellRenderer, "element" | "hostClasses">;
+export type CellRendering = Pick<CellRenderer, "element" | "hostClasses" | "forcedAttributes">;
 
 type RendererSource = Pick<CellRenderer, "set" | "entry"> & {
   readonly load: () => Promise<CellRendering>;
@@ -207,6 +218,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/empty.js",
     load: async () => (await import("./empty-cell.ts")).empty,
   },
+  {
+    set: "calendar-day",
+    entry: "dist/react-aria/calendar.js",
+    load: async () => (await import("./calendar-day-cell.ts")).calendarDay,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */
@@ -243,8 +259,21 @@ export function markedIcon(
 }
 
 /**
- * Render a cell to static HTML. The page needs no hydration: CSS draws every state, and the
- * page forces hover and focus as pseudo classes.
+ * The attributes the page writes on a cell's measured element when it forces the cell's state.
+ *
+ * @param renderer - The cell's renderer, or the rendering its module defines.
+ * @param cell - The parsed cell.
+ * @returns The renderer's forced attributes for a cell whose state the page forces, and none for a
+ *   cell it forces nothing on.
+ */
+export function forcedAttributesFor(renderer: CellRendering, cell: Cell): Readonly<Record<string, string>> {
+  return forcedPseudoClasses(cell).length === 0 ? {} : (renderer.forcedAttributes?.(cell) ?? {});
+}
+
+/**
+ * Render a cell to static HTML. The page needs no hydration: CSS draws every state, the page
+ * forces hover and focus as pseudo classes, and it writes the attributes a renderer names for the
+ * faces React Aria sets after hydration.
  *
  * @param renderer - The cell's renderer, or the rendering its module defines.
  * @param cell - The parsed cell.

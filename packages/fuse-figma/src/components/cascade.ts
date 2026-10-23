@@ -49,6 +49,11 @@ const NO_FIGMA_FORM = new Map([
   // `shrink-0` keeps an element at its size, as Figma keeps every fixed or hugging child.
   ["flex-shrink", "Figma's auto layout does not shrink a fixed or hugging child"],
   ["outline-style", "Figma has no outline, and focus draws the ring"],
+  // `forced-color-adjust-none` keeps an element's own colors in a forced-colors mode.
+  [
+    "forced-color-adjust",
+    "the kit draws the normal colors, not the system colors a forced-colors mode paints",
+  ],
   // The plugin typings expose a text layer's `openTypeFeatures` as read-only, with no setter.
   ["font-variant-numeric", "the plugin API can read a text layer's OpenType features but not set them"],
 ]);
@@ -222,8 +227,10 @@ export class SetCascade {
   /**
    * Record the classes whose variants never held in one cell together, such as
    * `aria-invalid:focus-visible:` on a set that draws invalid and focus as two values of its
-   * state axis, and as unmapped the classes that style a child part no part of the definition
-   * took, since they style nothing the set draws. Call it after every cell.
+   * state axis, or whose one variant never held in a cell that gives the class, as Calendar's day
+   * cell gives `hover:bg-transparent` only while disabled, and as unmapped the classes that style a
+   * child part no part of the definition took, since they style nothing the set draws. Call it
+   * after every cell.
    */
   finish(): void {
     for (const { part, className, slot, taken, declarations } of this.#partRules.values()) {
@@ -242,9 +249,14 @@ export class SetCascade {
       }
     }
     for (const { part, className, held, variants, declarations } of this.#conditions.values()) {
-      if (held || variants.length < 2) {
+      if (held) {
         continue;
       }
+      const named = variants.map((variant) => `\`${variant}\``);
+      const detail =
+        named.length === 1
+          ? `no cell that gives the box this class shows ${named.join("")}`
+          : `no cell of the matrix shows ${named.join(" and ")} at once`;
       for (const declaration of declarations) {
         this.#record({
           part,
@@ -252,7 +264,7 @@ export class SetCascade {
           property: declaration.property,
           value: declaration.value,
           outcome: "dropped",
-          detail: `no cell of the matrix shows ${variants.map((variant) => `\`${variant}\``).join(" and ")} at once`,
+          detail,
         });
       }
     }

@@ -122,6 +122,23 @@ describe("the shared state entries", () => {
     }
   });
 
+  it("hold the disabled and invalid attributes React Aria stamps, and invalid:, on a React Aria element", () => {
+    // React Aria Components renders a disabled Calendar day cell with `aria-disabled="true"` and
+    // `data-disabled="true"`, and an invalid one with `aria-invalid="true"` and `data-invalid="true"`.
+    // tailwindcss-react-aria-components compiles `invalid:` to `[data-invalid]` on an element marked
+    // `data-rac`, and an element is never natively `:disabled` there.
+    const day = definition({
+      rootKind: "react-aria-element",
+      axes: [{ name: "state", values: [...CONTROL_STATES.values, "invalid"] }],
+    });
+    expect(holdsAt(day, "state", "aria-disabled")).toEqual(["disabled"]);
+    expect(holdsAt(day, "state", "data-disabled")).toEqual(["disabled"]);
+    expect(holdsAt(day, "state", "disabled")).toBe("unmodelled");
+    for (const variant of ["aria-invalid", "data-invalid", "invalid"]) {
+      expect(holdsAt(day, "state", variant), variant).toEqual(["invalid"]);
+    }
+  });
+
   it("leave aria-disabled to the definition on a native control", () => {
     expect(holdsAt(definition({ axes: [CONTROL_STATES] }), "state", "aria-disabled")).toBe("unmodelled");
   });

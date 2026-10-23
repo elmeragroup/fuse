@@ -75,6 +75,27 @@ describe("a class whose variant no cell models", () => {
       }),
     ]);
   });
+
+  // Oracle: a `state` axis holds one value per cell, and a recipe whose classes follow the cell's
+  // render props, as Calendar's day cell does, can give `hover:bg-muted` only in its disabled cell,
+  // which never shows `hover`. The class paints in no cell and would otherwise leave no row.
+  it("is dropped, naming its variant, when only cells that never show it give the class", async () => {
+    const { coverage } = await buildFixture({
+      ...chip("", {
+        rootKind: "native-control",
+        axes: [{ name: "state", values: ["rest", "hover", "disabled"] }],
+      }),
+      classesFor: (cell) => (cell.state === "disabled" ? "hover:bg-muted" : ""),
+    });
+    expect(coverage).toEqual([
+      expect.objectContaining({
+        className: "hover:bg-muted",
+        property: "background-color",
+        outcome: "dropped",
+        detail: "no cell that gives the box this class shows `hover`",
+      }),
+    ]);
+  });
 });
 
 // Unit under test: `buildComponentSet` on a root whose class sets a border width and style and

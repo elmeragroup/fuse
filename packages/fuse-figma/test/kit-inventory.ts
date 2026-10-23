@@ -149,6 +149,12 @@ export const KIT_PAGES: readonly InventoryPage[] = [
   },
   // The default, outline and dashed outline frames.
   { slug: "empty", name: "Empty", sets: [{ key: "empty", name: "Empty", variants: 3, previewed: 3 }] },
+  // Selected off and on, in 5 states.
+  {
+    slug: "calendar",
+    name: "Calendar",
+    sets: [{ key: "calendar-day", name: "Calendar day", variants: 10, previewed: 10 }],
+  },
 ];
 
 /** The page that holds the icon library alone, after the component pages. */
