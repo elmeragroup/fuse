@@ -5,12 +5,13 @@
  *
  * Hover and focus come from Chrome DevTools Protocol `CSS.forcePseudoState`, so every cell of a
  * page shows its state at once and no pointer or focus moves between screenshots. The page forces
- * them on the measured element, or on the part inside it that takes the set's states, as an
- * Accordion item's trigger. Fuse gates hover behind `@media (hover: hover)` and `:not(<disabled>)`,
- * so the page checks each forced cell against its resting twin: a forced cell whose measured
- * element and descendants have the twin's colors, shadows and underlines did not reach Fuse's
- * `enabled-hover:` or `focus-visible:` rules, and the page then hovers or focuses the forced element
- * for real before its screenshot. React Aria draws its hover and focus faces from pointer and focus
+ * them on the measured element, on the part inside it that takes the set's states, as an Accordion
+ * item's trigger, or on the sibling before it whose state it follows, as a Sidebar menu badge's menu
+ * button. Fuse gates hover behind `@media (hover: hover)` and `:not(<disabled>)`, so the page checks
+ * each forced cell against its resting twin: a forced cell whose measured element and descendants
+ * have the twin's colors, shadows and underlines did not reach Fuse's `enabled-hover:` or
+ * `focus-visible:` rules, and the page then hovers or focuses the forced element for real before its
+ * screenshot, unless the request says the kit draws the cell as at rest in the preview's theme. React Aria draws its hover and focus faces from pointer and focus
  * events only a hydrated page sees, so with the pseudo classes the page writes the attributes the
  * cell's renderer names on the forced element, through CDP's `DOM.setAttributeValue`, as the
  * Calendar day's `data-hovered` and its focused class.
@@ -65,6 +66,12 @@ export type CellRequest = {
   readonly forcedAttributes: Readonly<Record<string, string>>;
   /** The same element at rest, rendered off to the side to check the forced state. */
   readonly restingHtml: string | undefined;
+  /**
+   * Whether the kit draws the cell's forced state as it draws the cell at rest in the preview's
+   * theme, as `unchangedByDesign` decides before the page renders. A forced state that changes
+   * nothing is then what the cell should show, so the page hovers or focuses nothing for real.
+   */
+  readonly restsByDesign: boolean;
 };
 
 /**
@@ -365,7 +372,7 @@ async function renderCell(
   ) {
     throw new Error(`cell ${request.id} is ${box.width}×${box.height}, larger than its slot`);
   }
-  const interact = forcedState === "missing";
+  const interact = forcedState === "missing" && !request.restsByDesign;
   const forcedOn = page.locator(cellSelector(request.id, request.forcedOn));
   if (interact && request.forced.includes("hover")) {
     await forcedOn.hover({ force: true });

@@ -4,9 +4,9 @@
  * element in the slot whose `data-slot` is the definition's `slot`, or the one the definition's
  * `element` selects where the root carries no `data-slot`, at any depth, since a radio renders
  * inside its group. A renderer sets the states the markup draws, such as disabled or pending,
- * through the element's props. The page forces hover and focus itself, on the root part or on the
- * part the definition's `statePart` names, and writes the attributes a renderer names for a hover or
- * focus face React Aria sets only after hydration.
+ * through the element's props. The page forces hover and focus itself, on the root part, on the
+ * part the definition's `statePart` names or on the sibling its `statePeer` names, and writes the
+ * attributes a renderer names for a hover or focus face React Aria sets only after hydration.
  *
  * A renderer's element comes from a module that imports the Fuse build, which exists only after
  * `pnpm --filter @elmeragroup/fuse build`. This module lists each renderer's set and the build
@@ -248,6 +248,26 @@ const SOURCES: readonly RendererSource[] = [
     set: "accordion-item",
     entry: "dist/accordion.js",
     load: async () => (await import("./accordion-cell.ts")).accordionItem,
+  },
+  {
+    set: "sidebar-menu-button",
+    entry: "dist/sidebar.js",
+    load: async () => (await import("./sidebar-cell.ts")).sidebarMenuButton,
+  },
+  {
+    set: "sidebar-menu-sub-button",
+    entry: "dist/sidebar.js",
+    load: async () => (await import("./sidebar-cell.ts")).sidebarMenuSubButton,
+  },
+  {
+    set: "sidebar-group-label",
+    entry: "dist/sidebar.js",
+    load: async () => (await import("./sidebar-cell.ts")).sidebarGroupLabel,
+  },
+  {
+    set: "sidebar-menu-badge",
+    entry: "dist/sidebar.js",
+    load: async () => (await import("./sidebar-cell.ts")).sidebarMenuBadge,
   },
 ];
 

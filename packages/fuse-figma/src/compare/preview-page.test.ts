@@ -125,4 +125,12 @@ describe("the element a cell forces its state on", () => {
       '[data-slot="accordion-item"] [data-slot="accordion-trigger"]'
     );
   });
+
+  // Selectors 4 §4.5 and §16.4: `:has(~ x)` matches an element that some later sibling `x` follows,
+  // which is the peer a `peer-*` variant of `x` reads.
+  it("is the sibling before the measured element that the definition's statePeer names", () => {
+    expect(forcedSelector({ slot: "sidebar-menu-badge", statePeer: "sidebar-menu-button" })).toBe(
+      '[data-slot="sidebar-menu-button"]:has(~ [data-slot="sidebar-menu-badge"])'
+    );
+  });
 });

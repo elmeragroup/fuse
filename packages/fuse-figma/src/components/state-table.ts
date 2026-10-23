@@ -20,6 +20,10 @@ import { axisValues } from "./kit-spec";
  *   which ones.
  * - `element`: the class styles the box's child parts that are elements of one tag, as `[&_img]:`
  *   styles the `<img>` a consumer puts in Item's media.
+ * - `label-element`: the class styles the box's last child where it is an element of one tag, as
+ *   `[&>span:last-child]:` styles the `<span>` a Sidebar row holds its label in.
+ * - `specificity`: the variant tests nothing of the cell and only changes the class's specificity,
+ *   which its compiled placement already carries, as `[:where(&)]:` lowers it to (0,0,0).
  * - `omitted`: no cell shows the state, so the class is dropped.
  * - `omitted-for`: the class styles a pseudo-element the kit draws no layer for, the component
  *   inside a composition the kit does not draw, or the component under a media condition the kit
@@ -31,6 +35,8 @@ export type VariantMeaning =
   | { readonly kind: "child"; readonly selects: (slot: IconSlot) => boolean }
   | { readonly kind: "children" }
   | { readonly kind: "element"; readonly tag: string }
+  | { readonly kind: "label-element"; readonly tag: string }
+  | { readonly kind: "specificity" }
   | { readonly kind: "omitted" }
   | { readonly kind: "omitted-for"; readonly reason: string }
   | { readonly kind: "unmodelled" };
@@ -108,6 +114,20 @@ const CHILDREN = "*";
  */
 const ELEMENT_SELECTORS = new Map([["[&_img]", "img"]]);
 
+/**
+ * The child selectors that reach the element a box holds its label in, by that element's tag:
+ * `[&>span:last-child]:` compiles to `.… > span:last-child`, which styles the `<span>` a Sidebar
+ * row holds its text in, where the text ends the row.
+ */
+const LABEL_ELEMENT_SELECTORS = new Map([["[&>span:last-child]", "span"]]);
+
+/**
+ * The variants that select the box itself and only change the class's specificity: `[:where(&)]:`
+ * compiles a class to `:where(.class)`, which weighs nothing (Selectors 4 §17), as a Sidebar row's
+ * shell corner does, so a consumer's corner wins.
+ */
+const SPECIFICITY_ONLY = new Set(["[:where(&)]"]);
+
 /** The states and children a component set leaves out, whatever the component. */
 const SHARED_OMISSIONS = new Set([
   // A press lasts only as long as the pointer is down.
@@ -136,6 +156,8 @@ const FIXED_VARIANTS = new Set([
   ...ICON_EDGES.keys(),
   ...CHILD_SELECTORS.keys(),
   ...ELEMENT_SELECTORS.keys(),
+  ...LABEL_ELEMENT_SELECTORS.keys(),
+  ...SPECIFICITY_ONLY,
   ...SHARED_OMISSIONS,
   ...DESKTOP_BREAKPOINTS,
 ]);
@@ -223,6 +245,13 @@ export function makeStateTable(
     if (tag !== undefined) {
       return { kind: "element", tag };
     }
+    const labelTag = LABEL_ELEMENT_SELECTORS.get(variant);
+    if (labelTag !== undefined) {
+      return { kind: "label-element", tag: labelTag };
+    }
+    if (SPECIFICITY_ONLY.has(variant)) {
+      return { kind: "specificity" };
+    }
     const states = statesRendering.get(variant);
     if (states !== undefined) {
       return { kind: "condition", holds: (cell) => states.has(cell.state ?? "") };
@@ -255,10 +284,14 @@ export function makeStateTable(
   };
 }
 
-/** The child parts a class styles: those that carry a `data-slot`, or the elements of a tag. */
+/**
+ * The children a class styles: the parts that carry a `data-slot`, the parts that are elements of a
+ * tag, or the element of a tag that holds the box's label as its last child.
+ */
 export type PartTarget =
   | { readonly kind: "slot"; readonly slot: string }
-  | { readonly kind: "tag"; readonly tag: string };
+  | { readonly kind: "tag"; readonly tag: string }
+  | { readonly kind: "label"; readonly tag: string };
 
 /** What a class's variants say about it in one cell. */
 export type VariantReading = {
@@ -344,6 +377,16 @@ export function readVariants(variants: readonly string[], meaningOf: StateTable,
       target = { kind: "tag", tag: meaning.tag };
       continue;
     }
+    if (meaning.kind === "label-element") {
+      if (selects !== undefined) {
+        return skip(PAST_CHILD_ELEMENT);
+      }
+      target = { kind: "label", tag: meaning.tag };
+      continue;
+    }
+    if (meaning.kind === "specificity") {
+      continue;
+    }
     if (meaning.kind !== "condition") {
       return skip(skippedNote(variant, meaning));
     }
@@ -361,7 +404,10 @@ function slotOfVariant(variant: string | undefined): string | undefined {
 /** What becomes of a class whose variant applies it in no cell the kit draws. */
 function skippedNote(
   variant: string,
-  meaning: Exclude<VariantMeaning, { readonly kind: "condition" | "child" | "children" | "element" }>
+  meaning: Exclude<
+    VariantMeaning,
+    { readonly kind: "condition" | "child" | "children" | "element" | "label-element" | "specificity" }
+  >
 ): CoverageNote {
   switch (meaning.kind) {
     case "omitted":

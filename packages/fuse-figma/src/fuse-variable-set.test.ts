@@ -136,9 +136,9 @@ describe("fuseVariableSet", () => {
   // role's pickers, and the role's own color in every theme at the tint's share of its alpha. The
   // compiled rule's last declaration of the property is the `color-mix()` in its `@supports`
   // block, which wins over the fallback before it.
-  it("syncs the tints the soft Badges, the muted Item and the Alerts paint with", async () => {
-    // TOKEN_PAINTS: warning, info, error and success are surfaces, inks and lines, and muted is a
-    // surface and a line.
+  it("syncs the tints the soft Badges, the muted Item, the Alerts and the Sidebar group label paint with", async () => {
+    // TOKEN_PAINTS: warning, info, error and success are surfaces, inks and lines, muted is a
+    // surface and a line, and sidebar-foreground is an ink.
     const strokes = ["ALL_FILLS", "STROKE_COLOR"] as const;
     const tints = [
       { utility: "border-warning/20", role: "warning", tint: "warning/20", share: 0.2, scopes: strokes },
@@ -152,6 +152,13 @@ describe("fuseVariableSet", () => {
       },
       { utility: "bg-error/5", role: "error", tint: "error/5", share: 0.05, scopes: strokes },
       { utility: "bg-success/5", role: "success", tint: "success/5", share: 0.05, scopes: strokes },
+      {
+        utility: "text-sidebar-foreground/70",
+        role: "sidebar-foreground",
+        tint: "sidebar-foreground/70",
+        share: 0.7,
+        scopes: ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      },
     ] as const;
     const compiled = await compileUtilities(tints.map(({ utility }) => utility));
     const brand = collection("Fuse brand");
@@ -159,7 +166,7 @@ describe("fuseVariableSet", () => {
       const mix = compiled.rules
         .get(utility)
         ?.declarations.findLast((declaration) =>
-          /^(border|background)-color$/.test(declaration.property)
+          /^((border|background)-)?color$/.test(declaration.property)
         )?.value;
       expect(mix, utility).toBeDefined();
       expect(spec("Fuse tokens", tint)).toMatchObject({ type: "COLOR", scopes, webSyntax: mix });

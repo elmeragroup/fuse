@@ -274,10 +274,7 @@ export class SetCascade {
           property: declaration.property,
           value: declaration.value,
           outcome: "unmapped",
-          detail:
-            target.kind === "slot"
-              ? `the definition draws no part with \`data-slot=${target.slot}\` below ${part}`
-              : `the definition draws no \`<${target.tag}>\` part below ${part}`,
+          detail: untakenDetail(target, part),
         });
       }
     }
@@ -301,6 +298,18 @@ export class SetCascade {
         });
       }
     }
+  }
+}
+
+/** Why a class that styles a child the definition never draws reaches nothing the set draws. */
+function untakenDetail(target: PartTarget, part: string): string {
+  switch (target.kind) {
+    case "slot":
+      return `the definition draws no part with \`data-slot=${target.slot}\` below ${part}`;
+    case "tag":
+      return `the definition draws no \`<${target.tag}>\` part below ${part}`;
+    case "label":
+      return `the definition holds no label in a \`<${target.tag}>\` that is the last child of ${part}`;
   }
 }
 
@@ -514,10 +523,11 @@ export class CellCascade {
   }
 
   /**
-   * Cascade the root over the host page's declarations and the elements around it. Without any, the
-   * page's declarations apply on the root below its own classes. With them, the page and the host's
-   * declarations compute a style of their own, the host's after the page's, since they sit nearer
-   * the root. Each ancestor named by its classes then computes its own style over what it inherits
+   * Cascade the root over the host page's declarations and the elements around it. The page's
+   * declarations resolve among themselves first, as the page's own cascade does, so the root sees one
+   * value per property. With no host declaration or ancestor around the root, the page's values apply
+   * on the root below its own classes. With either, the page and the host's declarations compute a
+   * style of their own, the host's after the page's, since they sit nearer the root. Each ancestor named by its classes then computes its own style over what it inherits
    * from the element outside it, outermost first, its classes cascading with the cell's states and
    * facts as the root's do. The root inherits the innermost computed values as a part inherits its
    * parent's. So an ancestor's `var()` resolves against the ancestor's custom properties, a nearer
@@ -543,7 +553,7 @@ export class CellCascade {
     }
   ): BoxCascade {
     const { context } = this.#ledger.scope;
-    const page = outerApplied(context.page, part, -2);
+    const page = outerApplied(cascadeOwn(context.page), part, -2);
     const defaults = outerApplied(around.defaults, part, ELEMENT_DEFAULT_RANK);
     if (around.declarations.length === 0 && around.ancestors.length === 0) {
       // The page's declarations apply on the root as declarations the root inherits, each computed
@@ -723,6 +733,35 @@ export class BoxCascade {
       },
       this.#layer
     );
+  }
+
+  /**
+   * Cascade the element this box holds its label in, over what this box passes down, where a class
+   * of this box reaches it, as `[&>span:last-child]:truncate` reaches the `<span>` a Sidebar row
+   * holds its text in. The kit draws no layer for the element, whose label the box draws as its own
+   * text.
+   *
+   * @param element - The tag of the element that holds the label, and whether the label is the
+   *   box's last child in the cell.
+   * @returns The element's style, or undefined where no class of this box reaches it, so the label
+   *   reads this box's style.
+   */
+  labelElement(element: { readonly tag: string; readonly last: boolean }): LayerStyle | undefined {
+    const taken = this.#partRules.filter(
+      (rule) => element.last && rule.target.kind === "label" && rule.target.tag === element.tag
+    );
+    if (taken.length === 0) {
+      return undefined;
+    }
+    for (const rule of taken) {
+      takePartRule(this.#ledger.scope.partRules, rule);
+    }
+    const layer = this.#ledger.add(
+      inheritance(this.#layer, this.#ledger.scope.context),
+      taken.map((rule) => rule.applied),
+      this.#layer
+    );
+    return new LayerStyle(this.#ledger, layer);
   }
 
   /**
@@ -1135,6 +1174,8 @@ function outerApplied(declarations: readonly OuterDeclaration[], part: string, r
  * `style` attribute last. A variant does not always add specificity: `aria-invalid:` adds an
  * attribute, while fuse.css's `data-checked:` wraps its attribute in `:where()` and adds nothing, so
  * `aria-invalid:border-error` beats `data-checked:border-primary` though Tailwind emits it first.
+ * An important declaration, which Tailwind's `!` suffix marks, beats every normal one (CSS Cascade 4
+ * §6.1), so the important ones apply after them all, in the same order among themselves.
  *
  * @param parentOf - The parent's computed value of a property, which an `inherit` takes.
  */
@@ -1151,22 +1192,70 @@ function computeStyle(
       compareSpecificity(left.specificity, right.specificity) ||
       left.order - right.order
   );
-  for (const { part, className, declarations, computedOutside } of sorted) {
-    for (const { property, value } of declarations) {
-      for (const [longhand, longValue] of expandShorthand(property, value)) {
-        const source = { layer, part, className, property: longhand, value: longValue };
-        const entry: StyleEntry =
-          computedOutside === undefined
-            ? { value: longValue, source, consumed: [], computed: false }
-            : { value: computedOutside(longValue), source, consumed: [], computed: true };
-        style.set(
-          longhand,
-          inheritedKeyword(source, parentOf) ?? inheritedCurrentColor(source, inherited) ?? entry
-        );
-      }
+  const declared = sorted.flatMap(({ part, className, declarations, computedOutside }) =>
+    declarations.map(({ property, value }) => ({
+      part,
+      className,
+      property,
+      computedOutside,
+      ...importance(value),
+    }))
+  );
+  const ordered = [
+    ...declared.filter(({ important }) => !important),
+    ...declared.filter(({ important }) => important),
+  ];
+  for (const { part, className, property, value, computedOutside } of ordered) {
+    for (const [longhand, longValue] of expandShorthand(property, value)) {
+      const source = { layer, part, className, property: longhand, value: longValue };
+      const entry: StyleEntry =
+        computedOutside === undefined
+          ? { value: longValue, source, consumed: [], computed: false }
+          : { value: computedOutside(longValue), source, consumed: [], computed: true };
+      style.set(
+        longhand,
+        inheritedKeyword(source, parentOf) ?? inheritedCurrentColor(source, inherited) ?? entry
+      );
     }
   }
   return style;
+}
+
+/**
+ * The declarations an element outside the root applies among themselves, as its own cascade
+ * resolves them before the root inherits (CSS Cascade 4 §6): for each property as declared, the
+ * last important declaration, or else the last one, with its importance taken off, since the root
+ * inherits a value and no importance. The winners keep the order they were declared in.
+ *
+ * @param declarations - The element's declarations, in the order it applies them.
+ * @returns The one declaration that wins each property.
+ */
+function cascadeOwn(declarations: readonly OuterDeclaration[]): readonly OuterDeclaration[] {
+  const winners = new Map<string, { readonly at: number; readonly important: boolean }>();
+  declarations.forEach((declaration, at) => {
+    const { important } = importance(declaration.value);
+    if (important || winners.get(declaration.property)?.important !== true) {
+      winners.set(declaration.property, { at, important });
+    }
+  });
+  return declarations.flatMap((declaration, at) =>
+    winners.get(declaration.property)?.at === at
+      ? [{ ...declaration, value: importance(declaration.value).value }]
+      : []
+  );
+}
+
+/** A declaration's value marked `!important`, which Tailwind prints after the value. */
+const IMPORTANT = /\s*!important$/;
+
+/**
+ * Split a declaration's value from its importance.
+ *
+ * @param value - The value as the compiled rule holds it, `!important` included where it says so.
+ * @returns The value without the mark, and whether it carried one.
+ */
+function importance(value: string) {
+  return { value: value.replace(IMPORTANT, ""), important: IMPORTANT.test(value) };
 }
 
 /**

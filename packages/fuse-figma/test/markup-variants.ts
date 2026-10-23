@@ -1,10 +1,20 @@
 /**
  * The variants `src/compare/kit-markup.test.ts` checks each kit definition's state table against, as
  * Tailwind and fuse.css compile them: the attribute variants an element carries, the group variants
- * an element above it carries, the parent-context and tag variants, and the variants static markup
- * cannot show. A definition whose state table names a variant none of them lists fails the suite.
+ * an element above it carries, the peer variants a sibling before it carries, the parent-context and
+ * tag variants, and the variants static markup cannot show. A definition whose state table names a
+ * variant none of them lists fails the suite.
  */
 import type { MarkupElement } from "./static-markup.ts";
+
+/**
+ * Whether an element matches fuse.css's `data-active:`, which reads `[data-state="active"]` or a
+ * `data-active` that is not `"false"`.
+ */
+function isActive(element: MarkupElement): boolean {
+  const active = element.attributes.get("data-active");
+  return element.attributes.get("data-state") === "active" || (active !== undefined && active !== "false");
+}
 
 /**
  * Whether an element matches each attribute variant, as Tailwind and fuse.css compile it:
@@ -46,6 +56,9 @@ export const ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => bo
   ],
   // Base UI stamps `data-placeholder` on a Select trigger while nothing is selected.
   ["data-placeholder", (element) => element.attributes.has("data-placeholder")],
+  // fuse.css defines `data-active:` on `[data-state="active"]` and on a `data-active` that is not
+  // `"false"`, which a Sidebar row's `useRender` stamps while it is the current item.
+  ["data-active", isActive],
   // tailwindcss-react-aria-components compiles `invalid:` to `[data-invalid]` on an element marked
   // `data-rac`, and to `:invalid` on any other, a validity static markup does not hold, which no
   // set reads.
@@ -92,6 +105,22 @@ export const GROUP_VARIANTS = new Map<string, (ancestor: MarkupElement) => boole
     `group-data-[size=${size}]/item`,
     (ancestor) => marks(ancestor, "group/item") && ancestor.attributes.get("data-size") === size,
   ]),
+  // A collapsed `Sidebar.Root` carries the `group` marker and `data-collapsible="icon"`, which its rows
+  // read as the icon rail.
+  [
+    "group-data-[collapsible=icon]",
+    (ancestor) => marks(ancestor, "group") && ancestor.attributes.get("data-collapsible") === "icon",
+  ],
+]);
+
+/**
+ * Whether a sibling before the measured element matches each peer variant, which selects the
+ * elements after it: `peer-data-active/menu-button:` compiles to `:is(:where(.peer\/menu-button)…
+ * ~ *)`, so it holds after an element that carries the `peer/menu-button` marker and is active, as a
+ * Sidebar menu badge holds after its active menu button.
+ */
+export const PEER_VARIANTS = new Map<string, (sibling: MarkupElement) => boolean>([
+  ["peer-data-active/menu-button", (sibling) => marks(sibling, "peer/menu-button") && isActive(sibling)],
 ]);
 
 /**
@@ -130,13 +159,15 @@ export const TAG_VARIANTS = new Map<string, (element: MarkupElement) => boolean>
 
 /**
  * The condition variants static markup cannot check against the measured element's attributes:
- * the pseudo classes the page forces, the icon edge, which holds on a descendant, and the
- * breakpoints, which the page's viewport decides.
+ * the pseudo classes the page forces, on the measured element or on the sibling a peer variant
+ * reads, the icon edge, which holds on a descendant, and the breakpoints, which the page's viewport
+ * decides.
  */
 export const NOT_ATTRIBUTES = new Set([
   "enabled-hover",
   "hover",
   "focus-visible",
+  "peer-hover/menu-button",
   "has-data-[icon=inline-start]",
   "has-data-[icon=inline-end]",
   "sm",

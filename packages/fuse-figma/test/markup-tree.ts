@@ -22,6 +22,12 @@ export function ancestorsOf(elements: readonly MarkupElement[], index: number): 
   return parent === undefined || element === undefined ? [] : [element, ...ancestorsOf(elements, parent)];
 }
 
+/** The siblings before an element, those of its parent's children that come first in the markup. */
+export function siblingsBefore(elements: readonly MarkupElement[], index: number): readonly MarkupElement[] {
+  const parent = elements[index]?.parent;
+  return elements.slice(0, index).filter((element) => element.parent === parent);
+}
+
 /** Whether an element sits inside another, at any depth. */
 export function inside(elements: readonly MarkupElement[], index: number, outer: number): boolean {
   const parent = elements[index]?.parent;

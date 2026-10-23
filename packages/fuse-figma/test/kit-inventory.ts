@@ -175,6 +175,20 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     // 2 variants at 3 radii, closed and open, in 4 states.
     sets: [{ key: "accordion-item", name: "Accordion item", variants: 48, previewed: 48 }],
   },
+  {
+    slug: "sidebar",
+    name: "Sidebar",
+    sets: [
+      // 2 variants at 3 sizes, expanded and collapsed, inactive and active, in 4 states.
+      { key: "sidebar-menu-button", name: "Sidebar menu button", variants: 96, previewed: 96 },
+      // 2 sizes, inactive and active, in 4 states.
+      { key: "sidebar-menu-sub-button", name: "Sidebar menu sub button", variants: 16, previewed: 16 },
+      // At rest alone.
+      { key: "sidebar-group-label", name: "Sidebar group label", variants: 1, previewed: 1 },
+      // At rest, beside a hovered menu button and beside an active one.
+      { key: "sidebar-menu-badge", name: "Sidebar menu badge", variants: 3, previewed: 3 },
+    ],
+  },
 ];
 
 /** The page that holds the icon library alone, after the component pages. */

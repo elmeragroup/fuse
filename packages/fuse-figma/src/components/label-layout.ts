@@ -5,13 +5,13 @@
  * layers, and asks this module for the label, for the line clamp the box's display reads, for that
  * gap, and to settle the text declarations of a box that shows no label.
  */
-import { listNames, widthCapInside } from "./box-sizing";
+import { listNames, UNREAD_SHARE, widthCapInside } from "./box-sizing";
 import type { Holder, WidthCap } from "./box-sizing";
 import type { CoverageNote, LayerStyle } from "./cascade";
 import type { Cell, LabelDefinition, TextPlacement } from "./component-spec";
 import { describeNumber, evaluateLength, evaluateNumber, normalizeCss, readNumber } from "./css-values";
 import type { VariableIndex } from "./css-values";
-import { HUGGING_TEXT, TOP_LEFT } from "./kit-spec";
+import { HUGGING_TEXT, NO_LIMITS, TOP_LEFT } from "./kit-spec";
 import type {
   ColorSpec,
   CounterAlignSpec,
@@ -23,6 +23,7 @@ import type {
   TextLayerSpec,
   TextSizingSpec,
 } from "./kit-spec";
+import type { Layout } from "./placement";
 
 /** A box's label, and the alignments a native control's placement gives the box, where it sets them. */
 export type MappedLabel = {
@@ -122,6 +123,89 @@ export function readWithoutLabel(style: LayerStyle): void {
   for (const property of ["text-overflow", "-webkit-line-clamp"]) {
     style.mark(property, "dropped", "the box holds no text of its own");
   }
+}
+
+/** How a block container sets its text: in lines from its start, across its own width. */
+const TEXT_BLOCK: Layout = {
+  flex: false,
+  blocks: false,
+  direction: "HORIZONTAL",
+  primaryAlign: "MIN",
+  counterAlign: "MIN",
+  justify: "unset",
+};
+
+/** The declarations of a label's element that set how its text sits in its row. */
+const ELEMENT_LAYOUT = ["overflow", "text-overflow", "white-space"] as const;
+
+/** Why a label's element stays unmapped where a text that fills its row's room would not draw it. */
+const UNENDED =
+  "the label's element ends no row that packs its layers at the start with none growing and sets its text from the start, where a text that fills the room left draws it";
+
+/** Why a label's element stays unmapped in a row that hugs its width up to a cap. */
+const CAPPED_ELEMENT =
+  "the row hugs its width up to a cap, where CSS cuts the label's element off, and a text in a hugging frame keeps its own width";
+
+/** The `text-align` values that set a line from its start in a left-to-right page, unset included. */
+const FROM_START = new Set(["", "left", "start"]);
+
+/**
+ * The box a label sits in where its box holds it in an element of its own that a class styles, as a
+ * Sidebar row holds its text in a `<span>` that `[&>span:last-child]:truncate` cuts off. A flex item
+ * is blockified (CSS Display 3 §2.7), so the element is a block container that sets the text in lines
+ * across its own width and takes its own `text-overflow` (CSS Overflow 3 §4.2), and one that hides
+ * its overflow shrinks below its text (CSS Flexbox 1 §4.5). It does not grow (CSS Flexbox 1 §7.1),
+ * so last in a row that packs its layers at the start, with none growing, and setting its text from
+ * the start, the element is as wide as its text up to the room the row leaves it, which a text that
+ * fills that room draws, since nothing sits after it. In a row that hugs its width with no cap on
+ * it, the element hugs its text. Anywhere else, a centred or end-aligned text and a row that hugs up
+ * to a cap among them, the element's layout stays unmapped, and the label maps from the row.
+ *
+ * @param row - The box that holds the element, whose last layer the label is.
+ * @param element - The element's style.
+ * @param label - The label.
+ * @param growing - The index of the row's layer that grows, or undefined for none.
+ * @returns The element as the box its label sits in, or undefined where its layout stays unmapped.
+ */
+export function labelElementHolder(
+  row: Holder,
+  element: LayerStyle,
+  label: LabelDefinition,
+  growing: number | undefined
+): Holder | undefined {
+  const { layout } = row;
+  const ends =
+    layout.flex &&
+    layout.direction === "HORIZONTAL" &&
+    (layout.justify === "unset" || layout.justify === "MIN") &&
+    growing === undefined &&
+    FROM_START.has(normalizeCss(element.resolved("text-align") ?? ""));
+  const fills = row.sizing.horizontal.kind !== "hug";
+  const capped = ends && !fills && widthCapInside(row, row.layers.indexOf(label.name)).kind !== "none";
+  if (!ends || capped) {
+    for (const property of ELEMENT_LAYOUT) {
+      element.mark(property, "unmapped", capped ? CAPPED_ELEMENT : UNENDED);
+    }
+    return undefined;
+  }
+  element.read(
+    "overflow",
+    (value) => value,
+    (): CoverageNote =>
+      fills
+        ? { outcome: "literal", detail: "the label's element clips its text at the room the row leaves it" }
+        : { outcome: "dropped", detail: NEVER_OVERFLOWS }
+  );
+  return {
+    style: element,
+    layout: TEXT_BLOCK,
+    sizing: { horizontal: fills ? { kind: "fill" } : { kind: "hug" }, vertical: { kind: "hug" } },
+    limits: NO_LIMITS,
+    extent: { horizontal: undefined, vertical: undefined },
+    layers: [label.name],
+    widthCap: { kind: "none" },
+    shares: [UNREAD_SHARE],
+  };
 }
 
 /**

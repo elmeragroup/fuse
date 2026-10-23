@@ -22,7 +22,14 @@ import {
 } from "./box-sizing";
 import type { Holder, Room, RowShare } from "./box-sizing";
 import type { BoxCascade, LayerStyle } from "./cascade";
-import type { BoxDefinition, BuildContext, Cell, IconSlot, PartDefinition } from "./component-spec";
+import type {
+  BoxDefinition,
+  BuildContext,
+  Cell,
+  IconSlot,
+  LabelDefinition,
+  PartDefinition,
+} from "./component-spec";
 import {
   describeNumber,
   evaluateNumber,
@@ -46,7 +53,14 @@ import type {
   SizeSpec,
   SizingSpec,
 } from "./kit-spec";
-import { inertClamp, mapLabel, readLineClamp, readWithoutLabel, spaceBeforeLabel } from "./label-layout";
+import {
+  inertClamp,
+  labelElementHolder,
+  mapLabel,
+  readLineClamp,
+  readWithoutLabel,
+  spaceBeforeLabel,
+} from "./label-layout";
 import { placeParts, readRotation, slotAroundDot, wrapMargins } from "./placement";
 import type { Layout } from "./placement";
 
@@ -617,16 +631,21 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     reader.missing(missing.property, missing.neededBy, missing.detail);
   }
   const clamp = readLineClamp(holder, label);
+  const labelHolder = label === undefined ? holder : labelBox(holder, cascade, label, growing);
   const placed =
     label === undefined
       ? undefined
-      : mapLabel(holder, label, {
+      : mapLabel(labelHolder, label, {
           cell,
           variables: context.variables,
           color: textColor,
           clamp,
           variant,
         });
+  // A label whose element fills the room the row leaves it takes all the room there is, so the row's
+  // alignment shows only where its layers overflow it, and an unset one packs them at the start
+  // there, as a collapsed Sidebar row keeps its icon at its start.
+  const packsAtStart = labelHolder !== holder && labelHolder.sizing.horizontal.kind === "fill";
   if (placed === undefined) {
     readWithoutLabel(reader);
   }
@@ -671,7 +690,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     paddingLeft,
     itemSpacing: space ?? number("gap") ?? ZERO,
     // A native control's placement of its label wins over the box's own alignment.
-    primaryAlign: placed?.primaryAlign ?? placement.primaryAlign,
+    primaryAlign: placed?.primaryAlign ?? (packsAtStart ? "MIN" : placement.primaryAlign),
     counterAlign:
       placed?.counterAlign ?? (textBlock ? blockLineAlign(layout, sizing, limits) : layout.counterAlign),
     cornerRadius: readCorner(reader, sizing, context) ?? ZERO,
@@ -679,6 +698,29 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     opacity: opacity ?? 1,
     children,
   };
+}
+
+/**
+ * The box a label sits in: the element the box holds it in where a class of the box styles that
+ * element and the element ends a row that {@link labelElementHolder} draws, as
+ * `[&>span:last-child]:truncate` styles a Sidebar row's `<span>`, or else the box itself.
+ *
+ * @param holder - The box.
+ * @param cascade - The box's cascade, which cascades the label's element.
+ * @param label - The label the box shows in the cell.
+ * @param growing - The index of the box's layer that grows, or undefined for none.
+ * @returns The holder whose style and layout the label maps from.
+ */
+function labelBox(
+  holder: Holder,
+  cascade: BoxCascade,
+  label: LabelDefinition,
+  growing: number | undefined
+): Holder {
+  const tag = label.textElement?.tag;
+  const element =
+    tag === undefined ? undefined : cascade.labelElement({ tag, last: holder.layers.at(-1) === label.name });
+  return element === undefined ? holder : (labelElementHolder(holder, element, label, growing) ?? holder);
 }
 
 /**

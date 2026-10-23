@@ -15,6 +15,7 @@ import { Result } from "effect";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { buildComponentSets } from "../components/build-kit.ts";
 import { variantKey } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
@@ -28,6 +29,7 @@ import { compareSnapshot, planCells } from "./run-compare.ts";
 import type { CompareFailure, CompareOptions, CompareReport } from "./run-compare.ts";
 import { SNAPSHOT_FORMAT, SNAPSHOT_VERSION } from "./snapshot.ts";
 import type { InstanceSnapshot, KitSnapshot, PreviewSnapshot } from "./snapshot.ts";
+import { tokenColorsIn, unchangedByDesign } from "./unchanged-by-design.ts";
 
 /** The fake previews: a light internal theme at dense, and a dark company theme at comfortable. */
 const PREVIEWS = [
@@ -116,6 +118,7 @@ export async function runSelfCheck(
   const painted: Perturbed = { preview: PREVIEWS[0].key, variant: firstInState("hover") };
   const grown: Perturbed = { preview: PREVIEWS[1].key, variant: firstInState("focus") };
   const renderers = await loadRenderers();
+  const componentSets = (await buildComponentSets()).map((set) => set.componentSet);
   const launched = await CompareBrowser.launch(await readPageAssets(build.success, renderers));
   if (Result.isFailure(launched)) {
     return Result.fail(launched.failure);
@@ -134,7 +137,8 @@ export async function runSelfCheck(
         box: { x: 0, y: 0, width: 0, height: 0 },
         image: null,
       }));
-      const { planned, unsupported } = planCells(placeholders, renderers);
+      const unchanged = unchangedByDesign(componentSets, tokenColorsIn(theme.success));
+      const { planned, unsupported } = planCells(placeholders, renderers, unchanged);
       if (unsupported.length > 0) {
         throw new Error(
           `the comparison cannot render these cells of the kit: ${unsupported.map((entry) => entry.reason).join("; ")}`

@@ -39,6 +39,12 @@ import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
 import { RADIO } from "./radio-kit";
 import { SELECT_TRIGGER } from "./select-trigger-kit";
 import { SEPARATOR } from "./separator-kit";
+import {
+  SIDEBAR_GROUP_LABEL,
+  SIDEBAR_MENU_BADGE,
+  SIDEBAR_MENU_BUTTON,
+  SIDEBAR_MENU_SUB_BUTTON,
+} from "./sidebar-kit";
 import { SKELETON } from "./skeleton-kit";
 import { SWITCH } from "./switch-kit";
 import { TEXTAREA } from "./textarea-kit";
@@ -130,6 +136,9 @@ const ALERT_PAGE: KitPage = { slug: "alert", name: "Alert" };
 
 /** The page Accordion's item sits on alone, until a stacked accordion joins it. */
 const ACCORDION_PAGE: KitPage = { slug: "accordion", name: "Accordion" };
+
+/** The page of Sidebar's rows, until the panel and the icon rail join them. */
+const SIDEBAR_PAGE: KitPage = { slug: "sidebar", name: "Sidebar" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -266,4 +275,20 @@ export const KIT: readonly KitEntry[] = [
   { definition: ITEM_LINK, page: ITEM_PAGE, previewCells: matrixCells(ITEM_LINK.axes) },
   { definition: ALERT, page: ALERT_PAGE, previewCells: matrixCells(ALERT.axes) },
   { definition: ACCORDION_ITEM, page: ACCORDION_PAGE, previewCells: matrixCells(ACCORDION_ITEM.axes) },
+  {
+    definition: SIDEBAR_MENU_BUTTON,
+    page: SIDEBAR_PAGE,
+    previewCells: matrixCells(SIDEBAR_MENU_BUTTON.axes),
+  },
+  {
+    definition: SIDEBAR_MENU_SUB_BUTTON,
+    page: SIDEBAR_PAGE,
+    previewCells: matrixCells(SIDEBAR_MENU_SUB_BUTTON.axes),
+  },
+  {
+    definition: SIDEBAR_GROUP_LABEL,
+    page: SIDEBAR_PAGE,
+    previewCells: matrixCells(SIDEBAR_GROUP_LABEL.axes),
+  },
+  { definition: SIDEBAR_MENU_BADGE, page: SIDEBAR_PAGE, previewCells: matrixCells(SIDEBAR_MENU_BADGE.axes) },
 ];

@@ -231,8 +231,9 @@ export function baseBorderColor(compiled: CompiledUtilities): UtilityDeclaration
  *
  * Every rule whose selector starts with a class places that class, at the top level or inside
  * an at-rule such as the `@media (hover: hover)` around `enabled-hover:`, and so does a `*:` rule,
- * `:is(.class > *)…`, for the class whose children it styles, and an `item-described:` rule,
- * `:where(…) > .class`, for the class it selects in a parent context. Its first rule gives
+ * `:is(.class > *)…`, for the class whose children it styles, an `item-described:` rule,
+ * `:where(…) > .class`, for the class it selects in a parent context, and a `[:where(&)]:` rule,
+ * `:where(.class)`, for the class it selects at no specificity. Its first rule gives
  * its order, and its most specific selector its specificity. Every rule also lists its selector
  * under each class it names, wherever the class sits in the selector.
  *
@@ -261,7 +262,10 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
     }
     const leading =
       node.kind === "rule"
-        ? (leadingClass(node.selector) ?? childrenClass(node.selector) ?? contextClass(node.selector))
+        ? (leadingClass(node.selector) ??
+          childrenClass(node.selector) ??
+          contextClass(node.selector) ??
+          weightlessClass(node.selector))
         : undefined;
     if (node.kind !== "rule" || leading === undefined) {
       return;
@@ -373,6 +377,28 @@ function contextClass(selector: string): { readonly name: string; readonly rest:
   const after = selector.slice(`:where(${context.argument})`.length);
   const child = /^\s*>\s*/.exec(after);
   return child === null ? undefined : leadingClass(after.slice(child[0].length));
+}
+
+/**
+ * The class a rule wraps whole in one `:where()`, as Tailwind compiles `[:where(&)]:rounded-md` to
+ * `:where(.\[\:where\(\&\)\]\:rounded-md)`, which selects the element that carries the class at a
+ * specificity of (0,0,0) (Selectors 4 §17).
+ */
+function weightlessClass(selector: string): { readonly name: string; readonly rest: string } | undefined {
+  const [alternative, ...others] = selectorAlternatives(selector);
+  const [wrapper, ...after] = alternative ?? [];
+  if (
+    others.length > 0 ||
+    after.length > 0 ||
+    wrapper?.kind !== "pseudo" ||
+    wrapper.name !== "where" ||
+    wrapper.element ||
+    wrapper.argument === undefined
+  ) {
+    return undefined;
+  }
+  const inner = leadingClass(wrapper.argument);
+  return inner?.rest === "" ? inner : undefined;
 }
 
 /**

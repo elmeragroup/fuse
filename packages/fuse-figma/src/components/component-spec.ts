@@ -301,6 +301,13 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly statePart?: string;
   /**
+   * The `data-slot` of the sibling before the root whose state the set's `state` axis follows, for a
+   * root that reads it through `peer-*` variants, as a Sidebar menu badge reads its menu button's
+   * hover through `peer-hover/menu-button:`. `figma:compare` forces hover and focus on that sibling.
+   * A definition names it or `statePart`, not both. Undefined for a root that takes its states itself.
+   */
+  readonly statePeer?: string;
+  /**
    * The width in pixels the root's container gives it, which a root's percentage width takes and a
    * block-level root with no width fills, as the Figma preview and the compare host draw it. A
    * variant root sits in its component set, which has no auto layout, so the width is fixed. Without

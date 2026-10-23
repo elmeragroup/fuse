@@ -103,16 +103,21 @@ export function cellSelector(id: string, measured: string): string {
 
 /**
  * The selector of the element a definition's cells force hover and focus on: the part its
- * `statePart` names inside the measured element, as an Accordion item's trigger, or the measured
+ * `statePart` names inside the measured element, as an Accordion item's trigger, the sibling before
+ * the measured element its `statePeer` names, as a Sidebar menu badge's menu button, or the measured
  * element itself.
  *
- * @param definition - The root's slot and element, and the part that takes the set's states.
+ * @param definition - The root's slot and element, and the part or sibling that takes the set's
+ *   states.
  * @returns A selector for an element anywhere inside a cell's slot, as {@link cellSelector} takes it.
  */
 export function forcedSelector(
-  definition: Pick<ComponentDefinition, "slot" | "element" | "statePart">
+  definition: Pick<ComponentDefinition, "slot" | "element" | "statePart" | "statePeer">
 ): string {
   const measured = measuredSelector(definition);
+  if (definition.statePeer !== undefined) {
+    return `[data-slot="${definition.statePeer}"]:has(~ ${measured})`;
+  }
   return definition.statePart === undefined ? measured : `${measured} [data-slot="${definition.statePart}"]`;
 }
 

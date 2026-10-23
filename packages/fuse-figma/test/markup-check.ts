@@ -31,12 +31,14 @@ import {
   markupLabel,
   markupParts,
   pathSegment,
+  siblingsBefore,
 } from "./markup-tree.ts";
 import type { MarkupIcon, MarkupLabel } from "./markup-tree.ts";
 import {
   ATTRIBUTE_VARIANTS,
   GROUP_VARIANTS,
   PARENT_VARIANTS,
+  PEER_VARIANTS,
   REACT_ARIA_HOVER,
   TAG_VARIANTS,
 } from "./markup-variants.ts";
@@ -217,6 +219,18 @@ export function checkMarkup(
       }
       for (const [variant, holds] of PARENT_VARIANTS) {
         expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(holds(elements, measured));
+      }
+      // A peer variant holds exactly where a sibling before the root is the peer in that state, and
+      // the sibling a definition's `statePeer` names, which the page forces, sits there once.
+      const before = siblingsBefore(elements, measured);
+      for (const [variant, matches] of PEER_VARIANTS) {
+        expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(before.some(matches));
+      }
+      if (definition.statePeer !== undefined) {
+        expect(
+          before.filter((element) => element.attributes.get("data-slot") === definition.statePeer),
+          `${key}: the ${definition.statePeer} before the root that takes the states`
+        ).toHaveLength(1);
       }
       for (const [variant, matches] of TAG_VARIANTS) {
         if (meaningOf(variant).kind === "condition") {

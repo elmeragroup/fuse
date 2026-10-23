@@ -219,10 +219,24 @@ function readShadowStack(root: LayerStyle, variables: VariableIndex): readonly S
 /**
  * A CSS border becomes an inside stroke. A solid border draws a solid stroke, and a dashed one a
  * dashed stroke, as {@link dashesOf} says. A border with no style or any other style stays
- * unmapped, and so does one with no color, which would otherwise draw no stroke and leave no row.
+ * unmapped, and so does one with no color, which would otherwise draw no stroke and leave no row. A
+ * border of no width paints nothing whatever its style and color (CSS Backgrounds 3 §3), as a
+ * Sidebar row's `border-0` resets its `<button>`'s, so it draws no stroke.
  */
 function readStroke(root: LayerStyle, variables: VariableIndex): StrokeSpec | undefined {
   if (!root.has("border-width")) {
+    return undefined;
+  }
+  const width = readNumber(root.resolved("border-width") ?? "", variables);
+  if (width?.kind === "literal" && width.value === 0) {
+    root.read(
+      "border-width",
+      (value) => value,
+      () => ({ outcome: "literal", detail: "no stroke" })
+    );
+    for (const property of ["border-style", "border-color"]) {
+      root.mark(property, "dropped", "the border has no width, so it draws nothing");
+    }
     return undefined;
   }
   root.missing(

@@ -24,7 +24,6 @@ import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import {
   sidebarMenuActionShellClass,
-  sidebarRowShellClass,
   sidebarSectionShellClass,
   sidebarSurfaceShellClass,
 } from "../../styles/inner-corner/sidebar";
@@ -49,11 +48,11 @@ import { Skeleton } from "../skeleton/skeleton";
 import { TooltipContent, TooltipRoot, TooltipTrigger } from "../tooltip/tooltip";
 import type { TooltipContentProps } from "../tooltip/tooltip";
 import { sidebarStrings } from "./intl";
+import { sidebarGroupLabelClass, sidebarMenuBadgeClass } from "./sidebar-class";
 import {
   sidebarGroupActionBoxClass,
   sidebarMenuButtonVariants,
   sidebarMenuActionBoxClass,
-  sidebarMenuBadgeOffsetClass,
   sidebarMenuSubButtonVariants,
   sidebarRowBoxClass,
 } from "./sidebar-variants";
@@ -632,12 +631,7 @@ export function SidebarGroupLabel({ className, render, ...props }: SidebarGroupL
     defaultTagName: "div",
     props: mergeProps<"div">(
       {
-        className: cn(
-          sidebarRowShellClass,
-          "text-xs font-medium flex h-8 shrink-0 items-center px-(--row-px) text-sidebar-foreground/70 transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0",
-          selfFocusRingClass,
-          className
-        ),
+        className: cn(sidebarGroupLabelClass, className),
       },
       props
     ),
@@ -806,17 +800,7 @@ export function SidebarMenuAction({
 export type SidebarMenuBadgeProps = ComponentProps<"div">;
 
 export function SidebarMenuBadge({ className, ...props }: SidebarMenuBadgeProps): ReactElement {
-  return (
-    <div
-      data-slot="sidebar-menu-badge"
-      className={cn(
-        sidebarMenuBadgeOffsetClass,
-        "text-xs font-medium pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-sidebar-foreground tabular-nums select-none group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-active/menu-button:text-sidebar-accent-foreground",
-        className
-      )}
-      {...props}
-    />
-  );
+  return <div data-slot="sidebar-menu-badge" className={cn(sidebarMenuBadgeClass, className)} {...props} />;
 }
 
 export type SidebarMenuSkeletonProps = ComponentProps<"div"> & {

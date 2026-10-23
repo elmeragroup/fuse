@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { buildComponentSets } from "../components/build-kit.ts";
 import type { Cell } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
+import type { ComponentSetSpec } from "../components/kit-spec.ts";
 import { browserFootprint, coversRenderBounds, figmaFootprint, sharedCanvas } from "./align.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { BrowserUnavailable, CellRequest, FontNotLoaded, RenderedCell } from "./browser-render.ts";
@@ -28,7 +29,7 @@ import { compose, diffRasters, encodePng, parsePng } from "./raster.ts";
 import type { Raster, Rgb } from "./raster.ts";
 import { renderReportHtml } from "./report-html.ts";
 import type { CanvasRect, InstanceSnapshot, KitSnapshot, PreviewSnapshot } from "./snapshot.ts";
-import { unchangedByDesign } from "./unchanged-by-design.ts";
+import { tokenColorsIn, unchangedByDesign } from "./unchanged-by-design.ts";
 import { judgeCell, worstFirst } from "./verdict.ts";
 import type { BoxSize, CellFlag, CellVerdict } from "./verdict.ts";
 
@@ -136,9 +137,15 @@ export type CellPlan = {
  *
  * @param instances - The preview's instances.
  * @param renderers - The renderers, by definition key.
+ * @param unchanged - The variant keys the kit draws as at rest in the preview's theme, from
+ *   `unchangedByDesign`.
  * @returns The planned cells, and the instances whose variant the harness cannot render.
  */
-export function planCells(instances: readonly InstanceSnapshot[], renderers: Renderers): CellPlan {
+export function planCells(
+  instances: readonly InstanceSnapshot[],
+  renderers: Renderers,
+  unchanged: ReadonlySet<string>
+): CellPlan {
   const renderable = KIT.flatMap(({ definition }) => {
     const renderer = renderers.get(definition.key);
     return renderer === undefined ? [] : [{ ...definition, renderer }];
@@ -164,6 +171,7 @@ export function planCells(instances: readonly InstanceSnapshot[], renderers: Ren
         forced,
         forcedAttributes: forcedAttributesFor(definition.renderer, cell),
         restingHtml: forced.length === 0 ? undefined : renderCellHtml(definition.renderer, restingTwin(cell)),
+        restsByDesign: unchanged.has(instance.variant),
       },
     });
   });
@@ -285,7 +293,7 @@ export async function compareSnapshot(
   // The Fuse build exists by now, so the renderers' imports of it load.
   const renderers = await loadRenderers();
   const assets = await readPageAssets(build.success, renderers);
-  const unchanged = unchangedByDesign((await buildComponentSets()).map((set) => set.componentSet));
+  const componentSets = (await buildComponentSets()).map((set) => set.componentSet);
   const launched = await CompareBrowser.launch(assets);
   if (Result.isFailure(launched)) {
     return Result.fail(launched.failure);
@@ -299,7 +307,7 @@ export async function compareSnapshot(
   const previews: ReportPreview[] = [];
   try {
     for (const [previewIndex, preview] of snapshot.previews.entries()) {
-      const outcome = await comparePreview(browser, preview, previewIndex, renderers, unchanged, options);
+      const outcome = await comparePreview(browser, preview, previewIndex, renderers, componentSets, options);
       if (Result.isFailure(outcome)) {
         return Result.fail(outcome.failure);
       }
@@ -330,7 +338,7 @@ async function comparePreview(
   preview: PreviewSnapshot,
   previewIndex: number,
   renderers: Renderers,
-  unchanged: ReadonlySet<string>,
+  componentSets: readonly Pick<ComponentSetSpec, "key" | "axes" | "variants">[],
   options: CompareOptions
 ): Promise<
   Result.Result<
@@ -351,7 +359,8 @@ async function comparePreview(
       preview: { key: preview.key, name: preview.name, theme: null, background: null, font: null },
     });
   }
-  const { planned, unsupported } = planCells(preview.instances, renderers);
+  const unchanged = unchangedByDesign(componentSets, tokenColorsIn(theme.success));
+  const { planned, unsupported } = planCells(preview.instances, renderers, unchanged);
   const rendered = await browser.renderPreview(
     theme.success,
     planned.map((cell) => cell.request),
@@ -381,8 +390,8 @@ async function comparePreview(
           : { renderBounds: instance.image.renderBounds, png: png.success },
     };
     const stem = `p${String(previewIndex).padStart(2, "0")}-${request.id}`;
-    const unchangedByDesign = unchanged.has(instance.variant) && cell.state === "missing";
-    const compared = compareCell(figmaSide, cell, stateFlags(cell, unchangedByDesign), background, options);
+    const restsByDesign = request.restsByDesign && cell.state === "missing";
+    const compared = compareCell(figmaSide, cell, stateFlags(cell, restsByDesign), background, options);
     const write = (suffix: string, raster: Raster) => {
       const path = `cells/${stem}-${suffix}.png`;
       writeFileSync(join(options.outDir, path), encodePng(raster));
@@ -409,7 +418,7 @@ async function comparePreview(
       browserBox: cell.box,
       pixels: compared._tag === "Compared" ? { raw: compared.raw, tolerant: compared.tolerant } : null,
       verdict: compared.verdict,
-      unchangedByDesign,
+      unchangedByDesign: restsByDesign,
       images: pictures,
     });
   }

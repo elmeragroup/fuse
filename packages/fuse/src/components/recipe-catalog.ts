@@ -12,7 +12,8 @@
  * constants and its `meterToneCell` lookup come along, so the sync picks each Meter cell's tone
  * and icon from the table the component reads. Item's title face comes along with its part
  * recipes, since `Item.Title` renders it as it is, and so does its unclamped description face,
- * which Alert's description renders with Alert's own type and colour.
+ * which Alert's description renders with Alert's own type and colour. Sidebar's row recipes come
+ * along without its panel's classes, which stay in `sidebar.tsx`.
  */
 
 export { accordionVariants } from "./accordion/accordion-variants";
@@ -46,6 +47,8 @@ export { paginationVariants } from "./pagination/pagination-variants";
 export { radioIconButtonVariants, radioVariants } from "./radio-group/radio-group-variants";
 export { selectTriggerVariants } from "./select/select-variants";
 export { separatorClass } from "./separator/separator-class";
+export { sidebarGroupLabelClass, sidebarMenuBadgeClass } from "./sidebar/sidebar-class";
+export { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar/sidebar-variants";
 export { skeletonClass } from "./skeleton/skeleton-class";
 export { switchVariants } from "./switch/switch-variants";
 export { textareaClass } from "./textarea/textarea-class";

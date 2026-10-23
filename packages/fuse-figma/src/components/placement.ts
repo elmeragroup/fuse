@@ -171,14 +171,33 @@ const VERTICAL_MARGINS: ReadonlySet<string> = new Set(["margin-top", "margin-bot
  * siblings and its parent's edge, and the root sits alone in its component set, so a margin drops,
  * as Field legend's `mb-3` does. A block whose width its container gives it is the exception: its
  * width is the container's less its horizontal margins (CSS 2.1 §10.3.3), which the build does not
- * subtract, so those margins stay unmapped.
+ * subtract, so those margins stay unmapped. For the same reason an absolute root's offsets, which
+ * place it in its containing block, drop with its position, as a menu badge's `absolute right-1`
+ * does, and so does a translate, which moves its painting, as a sub row's `-translate-x-px` does. An
+ * absolute box with no width shrinks to fit its content (CSS 2.1 §10.3.7), so where the preview width
+ * would make the root fill, its position stays unmapped.
  *
  * @param style - The root's style.
  * @param room - What the root's container gives it, whose automatic width says whether the root
  *   takes the preview width.
  */
 export function placeRoot(style: LayerStyle, room: Room): void {
-  readPosition(style, "other");
+  const width = normalizeCss(style.resolved("width") ?? "auto");
+  const widthFromContainer = room.horizontal.auto.kind !== "hug" && width === "auto";
+  if (normalizeCss(style.resolved("position") ?? "") === "absolute") {
+    placeAbsoluteRoot(style, widthFromContainer);
+  } else {
+    readPosition(style, "other");
+  }
+  style.read(
+    "translate",
+    (value) => value,
+    () => ({
+      outcome: "dropped",
+      detail:
+        "the component's root sits alone in its component set, so a translate moves it against nothing the set draws",
+    })
+  );
   style.read(
     "align-self",
     (value) => (normalizeCss(value) === "auto" ? value : undefined),
@@ -200,8 +219,6 @@ export function placeRoot(style: LayerStyle, room: Room): void {
       detail: "the component's root sits in no flex line, so nothing grows or shrinks it",
     })
   );
-  const width = normalizeCss(style.resolved("width") ?? "auto");
-  const widthFromContainer = room.horizontal.auto.kind !== "hug" && width === "auto";
   for (const property of MARGINS) {
     if (widthFromContainer && !VERTICAL_MARGINS.has(property)) {
       style.mark(
@@ -218,6 +235,60 @@ export function placeRoot(style: LayerStyle, room: Room): void {
         outcome: "dropped",
         detail:
           "the component's root sits alone in its component set, so its margin spaces it from nothing the set draws",
+      })
+    );
+  }
+}
+
+/** The offsets that place an absolute box in its containing block. */
+const INSETS = ["top", "right", "bottom", "left"] as const;
+
+/** Each axis of an absolute box: its size and the two insets that can set it. */
+const INSET_AXES = [
+  { size: "width", insets: ["left", "right"] },
+  { size: "height", insets: ["top", "bottom"] },
+] as const;
+
+/**
+ * Read an absolute root's position and offsets, which drop where they only place the root, as the
+ * root sits alone in its component set. Where the container's width would make the root fill, its
+ * position stays unmapped, since an absolute box with no width shrinks to fit its content. Where
+ * both insets of an axis are set and the root's size on that axis is automatic, the insets size the
+ * root from its containing block (CSS 2.1 §10.3.7, §10.6.4), so they and the position stay unmapped.
+ *
+ * @param style - The root's style.
+ * @param widthFromContainer - Whether the root's width is the preview width, which an absolute box
+ *   with no width of its own does not take.
+ */
+function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean): void {
+  if (widthFromContainer) {
+    style.mark(
+      "position",
+      "unmapped",
+      "an absolute root shrinks to fit its content, where the preview width would make it fill"
+    );
+    return;
+  }
+  const given = (property: string): boolean => normalizeCss(style.resolved(property) ?? "auto") !== "auto";
+  const sizing = INSET_AXES.find(({ size, insets }) => !given(size) && insets.every(given));
+  if (sizing !== undefined) {
+    for (const property of ["position", ...sizing.insets]) {
+      style.mark(
+        property,
+        "unmapped",
+        `with an automatic ${sizing.size}, opposing insets size the absolute root from its containing block, which the set does not draw`
+      );
+    }
+    return;
+  }
+  for (const property of ["position", ...INSETS]) {
+    style.read(
+      property,
+      (value) => value,
+      () => ({
+        outcome: "dropped",
+        detail:
+          "the component's root sits alone in its component set, so the offsets that place it in its containing block place it against nothing the set draws",
       })
     );
   }

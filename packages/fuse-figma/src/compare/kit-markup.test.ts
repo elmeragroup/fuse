@@ -14,7 +14,9 @@
  * where a part takes the set's states, and a condition the root's or a part's own classes name must
  * hold exactly when that element carries it. A group variant must hold exactly where an element
  * above each element that names it is the group in that state, or, where no element below the root
- * names it, the root or an element around it, a parent-context variant such as
+ * names it, the root or an element around it, a peer variant such as `peer-data-active/menu-button:`
+ * exactly where a sibling before the root is the peer in that state, with the sibling a definition's
+ * `statePeer` names there once, a parent-context variant such as
  * `item-described:` exactly where the root holds what it reads for the parts below it, and a tag
  * variant such as `[a]:` exactly where the root is that element. The parts must match the measured
  * element's descendants that carry a part's `data-slot` or that its `element` selects, each below
@@ -59,6 +61,7 @@ import {
   GROUP_VARIANTS,
   NOT_ATTRIBUTES,
   PARENT_VARIANTS,
+  PEER_VARIANTS,
   TAG_VARIANTS,
 } from "../../test/markup-variants";
 import { elementsOf } from "../../test/static-markup";
@@ -89,7 +92,14 @@ describe("each kit definition against the markup of its component", () => {
         ...Object.values(definition.states).flat(),
         ...recipeConditions,
       ]);
-      const listed = [NOT_ATTRIBUTES, ATTRIBUTE_VARIANTS, GROUP_VARIANTS, PARENT_VARIANTS, TAG_VARIANTS];
+      const listed = [
+        NOT_ATTRIBUTES,
+        ATTRIBUTE_VARIANTS,
+        GROUP_VARIANTS,
+        PEER_VARIANTS,
+        PARENT_VARIANTS,
+        TAG_VARIANTS,
+      ];
       const unlisted = [...named].filter((variant) => !listed.some((list) => list.has(variant)));
       expect(unlisted).toEqual([]);
     }
