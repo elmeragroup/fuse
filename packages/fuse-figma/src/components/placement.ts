@@ -43,8 +43,13 @@ export type Layout = {
   /** Whether the box is a flex box, which lays out its layers along its direction. */
   readonly flex: boolean;
   /**
-   * The flex box's direction, a row or a column. A `-webkit-box` that clamps its text is a column,
-   * and every other box is horizontal.
+   * Whether the box is a block box that holds only block-level parts, which CSS stacks down it with
+   * no gap, each as wide as the box where it sets no width of its own (CSS 2.1 §9.4.1, §10.3.3).
+   */
+  readonly blocks: boolean;
+  /**
+   * The flex box's direction, a row or a column. A `-webkit-box` that clamps its text and a box that
+   * stacks blocks are columns, and every other box is horizontal.
    */
   readonly direction: DirectionSpec;
   readonly primaryAlign: PrimaryAlignSpec;

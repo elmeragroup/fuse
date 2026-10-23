@@ -20,7 +20,7 @@ import type { CellRenderer } from "./cell-renderers.ts";
 import { forcedPseudoClasses, parseCell, restingTwin } from "./cells.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { FuseBuildMissing } from "./page-assets.ts";
-import { measuredSelector } from "./preview-page.ts";
+import { forcedSelector, measuredSelector } from "./preview-page.ts";
 import type { PageLayout } from "./preview-page.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
 import type { PreviewTheme } from "./preview-theme.ts";
@@ -160,6 +160,7 @@ export function planCells(instances: readonly InstanceSnapshot[], renderers: Ren
         id: `c${String(index)}`,
         html: renderCellHtml(definition.renderer, cell),
         measured: measuredSelector(definition),
+        forcedOn: forcedSelector(definition),
         forced,
         forcedAttributes: forcedAttributesFor(definition.renderer, cell),
         restingHtml: forced.length === 0 ? undefined : renderCellHtml(definition.renderer, restingTwin(cell)),

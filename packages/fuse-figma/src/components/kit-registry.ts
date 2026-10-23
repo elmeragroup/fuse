@@ -8,6 +8,7 @@
  * parse keys and check markup, load it without them. A comparison run loads the compiler anyway,
  * through `buildComponentSets()`.
  */
+import { ACCORDION_ITEM } from "./accordion-kit";
 import { ALERT } from "./alert-kit";
 import { AVATAR } from "./avatar-kit";
 import { BADGE } from "./badge-kit";
@@ -126,6 +127,9 @@ const ITEM_PAGE: KitPage = { slug: "item", name: "Item" };
 
 /** The page Alert sits on alone, until Alert with an action joins it. */
 const ALERT_PAGE: KitPage = { slug: "alert", name: "Alert" };
+
+/** The page Accordion's item sits on alone, until a stacked accordion joins it. */
+const ACCORDION_PAGE: KitPage = { slug: "accordion", name: "Accordion" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -261,4 +265,5 @@ export const KIT: readonly KitEntry[] = [
   { definition: ITEM, page: ITEM_PAGE, previewCells: matrixCells(ITEM.axes) },
   { definition: ITEM_LINK, page: ITEM_PAGE, previewCells: matrixCells(ITEM_LINK.axes) },
   { definition: ALERT, page: ALERT_PAGE, previewCells: matrixCells(ALERT.axes) },
+  { definition: ACCORDION_ITEM, page: ACCORDION_PAGE, previewCells: matrixCells(ACCORDION_ITEM.axes) },
 ];

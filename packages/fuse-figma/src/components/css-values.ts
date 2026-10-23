@@ -106,11 +106,22 @@ function singleVar(value: string): VarCall | undefined {
 }
 
 /**
+ * What a custom property holds where a `var()` reads it. A declared value holds `var()`s of its own,
+ * which substitution resolves in turn where the reading element is. A computed value was resolved
+ * on the element that declared the property, as a child inherits it (CSS Custom Properties 1 §2),
+ * so substitution takes it as it is. A computed value is undefined where a `var()` with no value and
+ * no fallback left the property guaranteed-invalid (§3), and the reading `var()` takes its fallback.
+ */
+export type CustomValue =
+  | { readonly value: string; readonly computed: false }
+  | { readonly value: string | undefined; readonly computed: true };
+
+/**
  * Replace every `var()` the resolver knows, and keep the synced variables. A `var()` the
  * resolver does not know falls back to its fallback, as CSS does for an unset property.
  *
  * @param value - A CSS value.
- * @param resolve - The value of a custom property, or undefined when nothing sets it.
+ * @param resolve - What a custom property holds, or undefined when nothing sets it.
  * @param keep - Whether a custom property stays a `var()` reference.
  * @param read - Collects each custom property the substitution read.
  * @returns The value with known variables substituted, or undefined when a `var()` has no
@@ -118,7 +129,7 @@ function singleVar(value: string): VarCall | undefined {
  */
 export function substituteVars(
   value: string,
-  resolve: (customProperty: string) => string | undefined,
+  resolve: (customProperty: string) => CustomValue | undefined,
   keep: (customProperty: string) => boolean,
   read: Set<string>,
   depth = 0
@@ -146,10 +157,14 @@ export function substituteVars(
       continue;
     }
     const own = resolve(call.name);
-    const replacement = own ?? call.fallback;
     if (own !== undefined) {
       read.add(call.name);
     }
+    if (own?.computed === true && own.value !== undefined) {
+      result += own.value;
+      continue;
+    }
+    const replacement = own?.value ?? call.fallback;
     if (replacement === undefined) {
       return undefined;
     }

@@ -196,7 +196,7 @@ describe("the Alert component set", () => {
       ])
     );
     expect(reasons("[--ring:var(--warning-soft-foreground)]")).toEqual(
-      new Set(["--ring dropped: the box overrides the synced `ring`, which no layer of the cell reads"])
+      new Set(["--ring dropped: the box overrides the synced `ring`, which no layer at or below it reads"])
     );
   });
 });

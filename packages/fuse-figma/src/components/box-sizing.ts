@@ -257,16 +257,20 @@ function stretches({ style, layout }: Holder): boolean {
   return layout.flex && layout.direction === "VERTICAL" && !style.has("align-items");
 }
 
-/** Whether a flex box's length on an axis is definite: fixed, or filling a definite length. */
+/**
+ * Whether a flex box's length on an axis is definite: fixed, or filling a definite length. A box that
+ * stacks blocks is one too, as the containing block its blocks size against.
+ */
 function definite({ layout }: Holder, size: SizeSpec): boolean {
-  return layout.flex && size.kind !== "hug";
+  return (layout.flex || layout.blocks) && size.kind !== "hug";
 }
 
 /**
  * The room a box gives one of its parts. Where the box's length is definite, a part's `100%`
  * across the box's direction fills it, as a stretch does, and so does a `100%` along it when the
  * part is the box's only layer. A column that stretches its layers fills a part's unset width
- * across a definite width (CSS Flexbox 1 §9.4 step 11). Every other length hugs.
+ * across a definite width (CSS Flexbox 1 §9.4 step 11), as a box that stacks blocks fills a block's
+ * (CSS 2.1 §10.3.3). Every other length hugs.
  *
  * @param holder - The box.
  * @param index - The part's place among the box's layers.
@@ -277,11 +281,11 @@ export function roomInside(holder: Holder, index: number): Room {
   const percent = (size: SizeSpec): PercentBasis => (definite(holder, size) ? { kind: "parent" } : NO_BASIS);
   const siblings = layers.filter((_name, place) => place !== index);
   const along = (axis: DirectionSpec): readonly string[] =>
-    layout.flex && layout.direction === axis ? siblings : [];
+    (layout.flex || layout.blocks) && layout.direction === axis ? siblings : [];
   return {
     horizontal: {
       percent: percent(sizing.horizontal),
-      auto: stretches(holder) && definite(holder, sizing.horizontal) ? FILL : HUG,
+      auto: (stretches(holder) || layout.blocks) && definite(holder, sizing.horizontal) ? FILL : HUG,
       siblings: along("HORIZONTAL"),
       length: innerLength(holder, "horizontal", "content"),
     },

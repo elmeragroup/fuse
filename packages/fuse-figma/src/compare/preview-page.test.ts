@@ -16,7 +16,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ElementSelector } from "../components/component-spec";
 import { compileHostUtilities } from "../components/utility-css";
-import { ASSET_PATHS, measuredSelector, PAGE_LAYOUT, previewDocument } from "./preview-page";
+import { ASSET_PATHS, forcedSelector, measuredSelector, PAGE_LAYOUT, previewDocument } from "./preview-page";
 
 /** The layers the built `styles.css` names, in the order its `@layer` statements first name them. */
 function declaredLayers(): readonly string[] {
@@ -107,6 +107,22 @@ describe("the element a cell measures", () => {
     };
     expect(measuredSelector({ slot: "calendar-cell", element })).toBe(
       String.raw`div[aria-label="Thursday,\a October\9 15\7f "]`
+    );
+  });
+});
+
+// Unit under test: `forcedSelector`, the element the page forces hover and focus on in a cell's slot.
+// Oracle: the rule on `ComponentDefinition.statePart`, that a part which takes the set's states takes
+// the forced pseudo classes, and CSS's descendant combinator, which matches that part at any depth
+// inside the measured element. A root that takes its states takes them itself.
+describe("the element a cell forces its state on", () => {
+  it("is the measured element of a root that takes its states", () => {
+    expect(forcedSelector({ slot: "button" })).toBe('[data-slot="button"]');
+  });
+
+  it("is the part the definition's statePart names inside the measured element", () => {
+    expect(forcedSelector({ slot: "accordion-item", statePart: "accordion-trigger" })).toBe(
+      '[data-slot="accordion-item"] [data-slot="accordion-trigger"]'
     );
   });
 });

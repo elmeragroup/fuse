@@ -81,7 +81,8 @@ export const BASE_UI_CHECKED_FACTS: ReadonlyMap<string, (cell: Cell) => boolean>
 ]);
 
 /**
- * What a set's root element is, which decides the attributes its disabled state holds.
+ * What the element that takes a set's states is, the root or the part its `statePart` names, which
+ * decides the attributes its disabled state holds.
  *
  * - `native-control`: a native `<button>`, disabled through its `disabled` attribute.
  * - `base-ui-span`: a Base UI `<span>`, such as a radio, which Base UI disables with
@@ -189,6 +190,14 @@ export type BoxDefinition = {
    * none.
    */
   readonly image?: () => Uint8Array;
+  /**
+   * The declarations the browser's default style sheet gives the box's element, which no class
+   * sets, such as `display: block` on a `<p>` or a `<div>`. They apply on the box below the base
+   * layer and every class, as the user agent's origin does, so a class's own `display` beats them.
+   * Undefined for a box whose classes set what the kit reads, or whose element is inline, as a
+   * `<span>` or an `<a>` is.
+   */
+  readonly elementDefaults?: readonly OuterDeclaration[];
 };
 
 /**
@@ -280,10 +289,17 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly element?: ElementSelector;
   /**
-   * What the root element is. A set whose `state` axis has `disabled` names it, and
-   * `state-table.ts` refuses one that does not.
+   * What the element that takes the set's states is: the root, or the part `statePart` names. A set
+   * whose `state` axis has `disabled` names it, and `state-table.ts` refuses one that does not.
    */
   readonly rootKind?: RootKind;
+  /**
+   * The `data-slot` of the part that takes the set's `state` axis, for a root that a pointer does not
+   * hover, a keyboard does not focus and a native `disabled` does not disable, as an Accordion item
+   * holds the trigger that does. `figma:compare` forces hover and focus on that part, and its markup
+   * check reads the state's attributes there. Undefined for a root that takes its states itself.
+   */
+  readonly statePart?: string;
   /**
    * The width in pixels the root's container gives it, which a root's percentage width takes and a
    * block-level root with no width fills, as the Figma preview and the compare host draw it. A
@@ -299,14 +315,6 @@ export type ComponentDefinition = BoxDefinition & {
    * `ancestorsFor` instead.
    */
   readonly inheritedFor?: (cell: Cell) => readonly OuterDeclaration[];
-  /**
-   * The declarations the browser's default style sheet gives the root's element, which no class
-   * sets, such as `display: block` on a `<p>` or a `<div>`. They apply on the root below the base
-   * layer and every class, as the user agent's origin does, so a class's own `display` beats them.
-   * Undefined for a root whose classes set what the kit reads, or whose element is inline, as a
-   * `<span>` or an `<a>` is.
-   */
-  readonly elementDefaults?: readonly OuterDeclaration[];
   /**
    * The elements between the page and the root in a cell, outermost first, each named by the
    * recipe classes it carries, as a Breadcrumb link sits in `Breadcrumb.List` and `Breadcrumb.Item`.

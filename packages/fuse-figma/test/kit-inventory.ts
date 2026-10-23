@@ -169,6 +169,12 @@ export const KIT_PAGES: readonly InventoryPage[] = [
   },
   // 5 tones without and with a description.
   { slug: "alert", name: "Alert", sets: [{ key: "alert", name: "Alert", variants: 10, previewed: 10 }] },
+  {
+    slug: "accordion",
+    name: "Accordion",
+    // 2 variants at 3 radii, closed and open, in 4 states.
+    sets: [{ key: "accordion-item", name: "Accordion item", variants: 48, previewed: 48 }],
+  },
 ];
 
 /** The page that holds the icon library alone, after the component pages. */

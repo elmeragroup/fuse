@@ -1,11 +1,12 @@
 /**
  * How `figma:compare` renders each kit definition's cells: one renderer per definition, which turns
- * a cell into the real Fuse element. The page measures, forces and crops the element's root part,
- * the one element in the slot whose `data-slot` is the definition's `slot`, or the one the
- * definition's `element` selects where the root carries no `data-slot`, at any depth, since a
- * radio renders inside its group. A renderer sets the states the markup draws, such as disabled
- * or pending, through the element's props. The page forces hover and focus itself, and writes the
- * attributes a renderer names for a hover or focus face React Aria sets only after hydration.
+ * a cell into the real Fuse element. The page measures and crops the element's root part, the one
+ * element in the slot whose `data-slot` is the definition's `slot`, or the one the definition's
+ * `element` selects where the root carries no `data-slot`, at any depth, since a radio renders
+ * inside its group. A renderer sets the states the markup draws, such as disabled or pending,
+ * through the element's props. The page forces hover and focus itself, on the root part or on the
+ * part the definition's `statePart` names, and writes the attributes a renderer names for a hover or
+ * focus face React Aria sets only after hydration.
  *
  * A renderer's element comes from a module that imports the Fuse build, which exists only after
  * `pnpm --filter @elmeragroup/fuse build`. This module lists each renderer's set and the build
@@ -40,7 +41,7 @@ export type CellRenderer = {
    */
   readonly hostClasses?: readonly string[];
   /**
-   * The attributes React Aria writes on the measured element while a cell's hover or focus state
+   * The attributes React Aria writes on the forced element while a cell's hover or focus state
    * holds, which static markup cannot hold: React Aria sets them from pointer and focus events once
    * a page hydrates, and the compare page never does. The page writes them on the element when it
    * forces the state, as `data-hovered`, which `hover:` reads on an element marked `data-rac`, or
@@ -243,6 +244,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/alert.js",
     load: async () => (await import("./alert-cell.ts")).alert,
   },
+  {
+    set: "accordion-item",
+    entry: "dist/accordion.js",
+    load: async () => (await import("./accordion-cell.ts")).accordionItem,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */
@@ -279,7 +285,7 @@ export function markedIcon(
 }
 
 /**
- * The attributes the page writes on a cell's measured element when it forces the cell's state.
+ * The attributes the page writes on a cell's forced element when it forces the cell's state.
  *
  * @param renderer - The cell's renderer, or the rendering its module defines.
  * @param cell - The parsed cell.

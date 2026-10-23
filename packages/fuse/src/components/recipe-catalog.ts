@@ -15,6 +15,7 @@
  * which Alert's description renders with Alert's own type and colour.
  */
 
+export { accordionVariants } from "./accordion/accordion-variants";
 export { alertVariants } from "./alert/alert-variants";
 export {
   avatarFallbackClass,

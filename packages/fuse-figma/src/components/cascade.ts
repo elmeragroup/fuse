@@ -46,6 +46,8 @@ const NO_FIGMA_FORM = new Map([
   ["transition-timing-function", "Figma components do not animate"],
   ["transition-duration", "Figma components do not animate"],
   ["animation", "Figma components do not animate"],
+  // Base UI writes `animation-name: none` on an open Accordion panel.
+  ["animation-name", "Figma components do not animate"],
   // `shrink-0` keeps an element at its size, as Figma keeps every fixed or hugging child.
   ["flex-shrink", "Figma's auto layout does not shrink a fixed or hugging child"],
   ["outline-style", "Figma has no outline, and focus draws the ring"],
@@ -100,17 +102,34 @@ type Provenance = {
   readonly value: string;
 };
 
-/** A declaration in a layer's computed style. */
+/**
+ * A declaration in a layer's computed style. A computed entry's value was resolved where it was
+ * declared: an inherited value, an `inherit`, a `currentcolor`, and a declaration of the page the
+ * root inherits, each as the element outside computed it. Its `var()`s are synced variables that
+ * element left as references, which the layer's own custom properties do not reach (CSS Custom
+ * Properties 1 §2). Its value is undefined where a `var()` with no value and no fallback left it
+ * guaranteed-invalid (§3), which a read leaves unmapped. A declaration of the layer's own is
+ * resolved where the layer reads it.
+ */
 type StyleEntry = {
-  /** The value the layer reads: as set, or as its parent computed it when inherited. */
-  readonly value: string;
   readonly source: Provenance;
   /**
    * The custom property declarations an inherited value read where its ancestor computed it,
    * which a read of the value reads too.
    */
   readonly consumed: readonly Provenance[];
-};
+} & (
+  | {
+      /** The value as the layer's own declaration sets it. */
+      readonly value: string;
+      readonly computed: false;
+    }
+  | {
+      /** The value as the element that declared it computed it, or undefined where it is invalid. */
+      readonly value: string | undefined;
+      readonly computed: true;
+    }
+);
 
 type ComputedStyle = ReadonlyMap<string, StyleEntry>;
 
@@ -120,19 +139,27 @@ const INLINE_STYLE = "inline style";
 /** The rank of a style attribute's declarations, above every class (CSS Cascade 4 §6.2). */
 const INLINE_RANK = 1;
 
+/** The rank of the browser's default style sheet, below the host page and every class (CSS Cascade 4 §6.2). */
+const ELEMENT_DEFAULT_RANK = -3;
+
 /** One class or rule a layer applies, with what orders it in the cascade. */
 type Applied = {
   readonly part: string;
   readonly className: string;
   /**
-   * -2 for the host page and the root's ancestors, -1 for the base layer, 0 for every recipe class,
-   * and 1 for the element's `style` attribute.
+   * -3 for the browser's default style sheet, -2 for the host page and the root's ancestors, -1 for
+   * the base layer, 0 for every recipe class, and 1 for the element's `style` attribute.
    */
   readonly rank: number;
   readonly specificity: Specificity;
   /** The class's place in Tailwind's output, which breaks a specificity tie. */
   readonly order: number;
   readonly declarations: readonly { readonly property: string; readonly value: string }[];
+  /**
+   * How an element outside computes the declarations' values, for declarations the element inherits
+   * from it rather than sets, as the root inherits the page's. Undefined for the element's own.
+   */
+  readonly computedOutside?: (value: string) => string | undefined;
 };
 
 /** A class that styles the icons its child selectors pick. */
@@ -437,42 +464,21 @@ class CellLedger {
     // A custom property draws nothing, and a read of it on the layer or below it counts on this
     // declaration, so an unread one only passes its value down to layers that never take it. With no
     // part or icon below, nothing could, as the field box's shell corners pass a corner to parts an
-    // Input does not have. Below Select's trigger, its value and caret read none of them. A synced
-    // variable stays unmapped where a layer reads it, since substitution keeps it as its `var()` and
-    // never reads a local override, which the browser paints. Where no layer reads it, the browser
-    // paints the override nowhere, as an Alert's `--ring` reaches only a focus ring the set omits.
-    if (property.startsWith("--") && !this.scope.context.variables.owns(property)) {
+    // Input does not have. Below Select's trigger, its value and caret read none of them. A local
+    // value of a synced variable is read wherever a declaration of the box or of a layer inside it
+    // resolves through it, so an unread one paints nowhere, whatever a layer outside the box reads,
+    // as an Alert's `--ring` reaches only a focus ring the set omits.
+    if (property.startsWith("--")) {
       return {
         outcome: "dropped",
-        detail:
-          layer.children.length === 0
+        detail: this.scope.context.variables.owns(property)
+          ? `the box overrides the synced \`${property.slice(2)}\`, which no layer at or below it reads`
+          : layer.children.length === 0
             ? "a custom property passes its value down, and the box holds no part or icon to take it"
             : "a custom property passes its value down, and no part or icon below reads it",
       };
     }
-    if (property.startsWith("--") && !this.#readsVariable(property)) {
-      return {
-        outcome: "dropped",
-        detail: `the box overrides the synced \`${property.slice(2)}\`, which no layer of the cell reads`,
-      };
-    }
     return { outcome: "unmapped", detail: "the builder maps no Figma field from it" };
-  }
-
-  /**
-   * Whether a layer of the cell read a declaration whose value names a synced variable, which
-   * substitution keeps as `var(<name>)`, through a theme value or another custom property.
-   */
-  #readsVariable(property: string): boolean {
-    const reference = `var(${property})`;
-    return this.#layers.some((layer) =>
-      [...layer.style].some(
-        ([name, entry]) =>
-          entry.source.layer === layer.id &&
-          layer.read.has(name) &&
-          (substitute(layer, this.scope.context, entry.value, new Set()) ?? "").includes(reference)
-      )
-    );
   }
 
   /**
@@ -538,13 +544,17 @@ export class CellCascade {
   ): BoxCascade {
     const { context } = this.#ledger.scope;
     const page = outerApplied(context.page, part, -2);
-    const defaults = outerApplied(around.defaults, part, -3);
+    const defaults = outerApplied(around.defaults, part, ELEMENT_DEFAULT_RANK);
     if (around.declarations.length === 0 && around.ancestors.length === 0) {
+      // The page's declarations apply on the root as declarations the root inherits, each computed
+      // on the page, so the root's own custom properties reach none of them, and the coverage table
+      // keeps them under the root, as it lists what the root reads and what it overrides.
+      const computedOutside = pageValue(context);
       return cascadeBox(this.#ledger, {
         classes,
         part,
         inherited: new Map(),
-        outer: [...defaults, ...page],
+        outer: [...defaults, ...page.map((applied) => ({ ...applied, computedOutside }))],
         ancestorRules: [],
         ancestorPartRules: [],
         selected: [],
@@ -667,14 +677,18 @@ export class BoxCascade {
    * @param part - The part's layer name.
    * @param element - The part's `data-slot`, or undefined for a part without one, and its tag where
    *   the definition names it.
-   * @param inline - The declarations of the part's `style` attribute, which beat every class.
+   * @param outer - The declarations of the part's `style` attribute, which beat every class, and
+   *   those the browser's default style sheet gives its element, which every class beats.
    * @returns The part's cascade.
    */
   part(
     classes: string,
     part: string,
     element: { readonly slot: string | undefined; readonly tag: string | undefined },
-    inline: readonly InlineDeclaration[] = []
+    outer: {
+      readonly inline: readonly InlineDeclaration[];
+      readonly defaults: readonly OuterDeclaration[];
+    } = { inline: [], defaults: [] }
   ): BoxCascade {
     const tagged = (rule: PartRule) => rule.target.kind === "tag" && rule.target.tag === element.tag;
     const taken = [
@@ -692,11 +706,14 @@ export class BoxCascade {
         classes,
         part,
         inherited: inheritance(this.#layer, this.#ledger.scope.context),
-        outer: outerApplied(
-          inline.map((declaration) => ({ className: INLINE_STYLE, ...declaration })),
-          part,
-          INLINE_RANK
-        ),
+        outer: [
+          ...outerApplied(outer.defaults, part, ELEMENT_DEFAULT_RANK),
+          ...outerApplied(
+            outer.inline.map((declaration) => ({ className: INLINE_STYLE, ...declaration })),
+            part,
+            INLINE_RANK
+          ),
+        ],
         ancestorRules: [...this.#ancestorRules, ...this.#ownRules],
         ancestorPartRules: [
           ...this.#ancestorPartRules,
@@ -783,7 +800,7 @@ export class LayerStyle {
     const entry = this.#layer.style.get(property);
     return entry === undefined
       ? undefined
-      : substitute(this.#layer, this.#ledger.scope.context, entry.value, new Set());
+      : substitute(this.#layer, this.#ledger.scope.context, entry, new Set());
   }
 
   /**
@@ -802,7 +819,7 @@ export class LayerStyle {
     const entry = declaring?.style.get(other);
     return declaring === undefined || entry === undefined
       ? undefined
-      : substitute(declaring, this.#ledger.scope.context, entry.value, new Set());
+      : substitute(declaring, this.#ledger.scope.context, entry, new Set());
   }
 
   /**
@@ -854,11 +871,14 @@ export class LayerStyle {
       return undefined;
     }
     const read = new Set<string>();
-    const resolved = substitute(this.#layer, this.#ledger.scope.context, entry.value, read);
+    const resolved = substitute(this.#layer, this.#ledger.scope.context, entry, read);
     const mapped = resolved === undefined ? undefined : map(resolved);
     const note =
       mapped === undefined
-        ? { outcome: "unmapped" as const, detail: `no Figma field reads ${resolved ?? entry.value}` }
+        ? {
+            outcome: "unmapped" as const,
+            detail: `no Figma field reads ${resolved ?? entry.value ?? "an invalid value"}`,
+          }
         : describe(mapped);
     for (const source of sourcesOf(this.#layer, entry, read)) {
       this.#ledger.noteRead(source, note);
@@ -885,16 +905,44 @@ function inheritsProperty(property: string, context: BuildContext): boolean {
 function inheritance(layer: Layer, context: BuildContext): ComputedStyle {
   const passed = new Map<string, StyleEntry>();
   for (const [property, entry] of layer.style) {
-    const read = new Set<string>();
-    const value = inheritsProperty(property, context)
-      ? substitute(layer, context, entry.value, read)
-      : undefined;
-    if (value !== undefined) {
-      const [, ...consumed] = sourcesOf(layer, entry, read);
-      passed.set(property, { value, source: entry.source, consumed });
+    if (!inheritsProperty(property, context)) {
+      continue;
     }
+    // A value that fails to resolve passes down as guaranteed-invalid, with what it read.
+    const read = new Set<string>();
+    const value = substitute(layer, context, entry, read);
+    const [, ...consumed] = sourcesOf(layer, entry, read);
+    passed.set(property, { value, source: entry.source, consumed, computed: true });
   }
   return passed;
+}
+
+/**
+ * How the page computes a declaration's value: against the page's own custom properties, then the
+ * theme's, then the registered initial value, with a synced variable the page does not set left as
+ * its `var()`. The page sets no custom property the kit's build declares, so the read goes unrecorded.
+ *
+ * @returns The page's computed value, or undefined where a reference has no value and no fallback.
+ */
+function pageValue(context: BuildContext): (value: string) => string | undefined {
+  const own = new Map(
+    context.page.flatMap(({ property, value }) =>
+      property.startsWith("--") ? [[property, value] as const] : []
+    )
+  );
+  return (value) =>
+    substituteVars(
+      value,
+      (name) => {
+        const declared =
+          own.get(name) ??
+          context.compiled.themeValues.get(name) ??
+          context.compiled.registeredProperties.get(name)?.initialValue;
+        return declared === undefined ? undefined : { value: declared, computed: false };
+      },
+      (name) => context.variables.owns(name) && !own.has(name),
+      new Set()
+    );
 }
 
 /**
@@ -913,12 +961,12 @@ function parentValue(
     return undefined;
   }
   const read = new Set<string>();
-  const value = substitute(parent, context, entry.value, read);
+  const value = substitute(parent, context, entry, read);
   if (value === undefined) {
     return undefined;
   }
   const [, ...consumed] = sourcesOf(parent, entry, read);
-  return { value, source: entry.source, consumed };
+  return { value, source: entry.source, consumed, computed: true };
 }
 
 /** The provenance of a declaration, then of every declaration its value read. */
@@ -934,22 +982,37 @@ function sourcesOf(layer: Layer, entry: StyleEntry, read: ReadonlySet<string>): 
 }
 
 /**
- * Substitute Tailwind's custom properties in a value: the layer's own, then the theme's, then
- * the registered initial value. Synced variables stay `var()` references.
+ * Resolve one of a layer's entries where CSS resolves it (CSS Custom Properties 1 §2 and §3). A
+ * computed entry was resolved where it was declared, so it reads as it is. A declaration of the
+ * layer's own reads the custom properties the layer sets or inherits, then the theme's, then the
+ * registered initial value. A synced variable the layer neither sets nor inherits stays a `var()`
+ * reference, which binds it. One it sets or inherits resolves to that value, which the browser paints
+ * in its place, as an Accordion item's `--ring` reaches the focus ring of the trigger inside it.
  */
 function substitute(
   layer: Layer,
   context: BuildContext,
-  value: string,
+  entry: StyleEntry,
   read: Set<string>
 ): string | undefined {
+  if (entry.computed) {
+    return entry.value;
+  }
   return substituteVars(
-    value,
-    (name) =>
-      layer.style.get(name)?.value ??
-      context.compiled.themeValues.get(name) ??
-      context.compiled.registeredProperties.get(name)?.initialValue,
-    context.variables.owns,
+    entry.value,
+    (name) => {
+      const custom = layer.style.get(name);
+      if (custom !== undefined) {
+        return custom.computed
+          ? { value: custom.value, computed: true }
+          : { value: custom.value, computed: false };
+      }
+      const outside =
+        context.compiled.themeValues.get(name) ??
+        context.compiled.registeredProperties.get(name)?.initialValue;
+      return outside === undefined ? undefined : { value: outside, computed: false };
+    },
+    (name) => context.variables.owns(name) && !layer.style.has(name),
     read
   );
 }
@@ -1088,14 +1151,17 @@ function computeStyle(
       compareSpecificity(left.specificity, right.specificity) ||
       left.order - right.order
   );
-  for (const { part, className, declarations } of sorted) {
+  for (const { part, className, declarations, computedOutside } of sorted) {
     for (const { property, value } of declarations) {
       for (const [longhand, longValue] of expandShorthand(property, value)) {
         const source = { layer, part, className, property: longhand, value: longValue };
+        const entry: StyleEntry =
+          computedOutside === undefined
+            ? { value: longValue, source, consumed: [], computed: false }
+            : { value: computedOutside(longValue), source, consumed: [], computed: true };
         style.set(
           longhand,
-          inheritedKeyword(source, parentOf) ??
-            inheritedCurrentColor(source, inherited) ?? { value: longValue, source, consumed: [] }
+          inheritedKeyword(source, parentOf) ?? inheritedCurrentColor(source, inherited) ?? entry
         );
       }
     }
@@ -1119,7 +1185,7 @@ function inheritedKeyword(
   const parent = normalizeCss(source.value) === "inherit" ? parentOf(source.property) : undefined;
   return parent === undefined
     ? undefined
-    : { value: parent.value, source, consumed: [parent.source, ...parent.consumed] };
+    : { value: parent.value, source, consumed: [parent.source, ...parent.consumed], computed: true };
 }
 
 /**
@@ -1135,7 +1201,7 @@ function inheritedCurrentColor(source: Provenance, inherited: ComputedStyle): St
   if (source.property !== "color" || normalizeCss(source.value) !== "currentcolor" || parent === undefined) {
     return undefined;
   }
-  return { value: parent.value, source, consumed: [parent.source, ...parent.consumed] };
+  return { value: parent.value, source, consumed: [parent.source, ...parent.consumed], computed: true };
 }
 
 /**

@@ -4,15 +4,16 @@
  * at device scale 2 and crops each cell with a transparent background.
  *
  * Hover and focus come from Chrome DevTools Protocol `CSS.forcePseudoState`, so every cell of a
- * page shows its state at once and no pointer or focus moves between screenshots. Fuse gates
- * hover behind `@media (hover: hover)` and `:not(<disabled>)`, so the page checks each forced
- * cell against its resting twin: a forced cell whose measured element and descendants have the
- * twin's colors, shadows and underlines did not reach Fuse's `enabled-hover:` or
- * `focus-visible:` rules, and the page then hovers or focuses that element for real before its
- * screenshot. React Aria draws its hover and focus faces from pointer and focus events only a
- * hydrated page sees, so with the pseudo classes the page writes the attributes the cell's renderer
- * names on the measured element, through CDP's `DOM.setAttributeValue`, as the Calendar day's
- * `data-hovered` and its focused class.
+ * page shows its state at once and no pointer or focus moves between screenshots. The page forces
+ * them on the measured element, or on the part inside it that takes the set's states, as an
+ * Accordion item's trigger. Fuse gates hover behind `@media (hover: hover)` and `:not(<disabled>)`,
+ * so the page checks each forced cell against its resting twin: a forced cell whose measured
+ * element and descendants have the twin's colors, shadows and underlines did not reach Fuse's
+ * `enabled-hover:` or `focus-visible:` rules, and the page then hovers or focuses the forced element
+ * for real before its screenshot. React Aria draws its hover and focus faces from pointer and focus
+ * events only a hydrated page sees, so with the pseudo classes the page writes the attributes the
+ * cell's renderer names on the forced element, through CDP's `DOM.setAttributeValue`, as the
+ * Calendar day's `data-hovered` and its focused class.
  */
 
 import { Result } from "effect";
@@ -46,15 +47,20 @@ export type CellRequest = {
   readonly id: string;
   readonly html: string;
   /**
-   * The element the page forces, compares and crops, as a selector for an element inside the
-   * cell's slot, as `cellSelector` reads it. The resting twin's slot uses the same one.
+   * The element the page compares and crops, as a selector for an element inside the cell's slot,
+   * as `cellSelector` reads it. The resting twin's slot uses the same one.
    */
   readonly measured: string;
+  /**
+   * The element the page forces the cell's state on: the measured element, or the part inside it
+   * that takes the set's states, as an Accordion item's trigger.
+   */
+  readonly forcedOn: string;
   readonly forced: readonly ForcedPseudoClass[];
   /**
-   * The attributes the page writes on the measured element with the forced pseudo classes, as
-   * React Aria would while the state holds. Empty for a cell whose state CSS draws from the pseudo
-   * classes alone.
+   * The attributes the page writes on the forced element with the forced pseudo classes, as React
+   * Aria would while the state holds. Empty for a cell whose state CSS draws from the pseudo classes
+   * alone.
    */
   readonly forcedAttributes: Readonly<Record<string, string>>;
   /** The same element at rest, rendered off to the side to check the forced state. */
@@ -271,7 +277,7 @@ async function checkFont(page: Page): Promise<Result.Result<string, FontNotLoade
 }
 
 /**
- * Force each cell's pseudo classes and write its forced attributes on the measured element, and
+ * Force each cell's pseudo classes and write its forced attributes on its forced element, and
  * return the ids whose styles that changed.
  */
 async function forceStates(page: Page, requests: readonly CellRequest[]): Promise<ReadonlySet<string>> {
@@ -286,7 +292,7 @@ async function forceStates(page: Page, requests: readonly CellRequest[]): Promis
   for (const request of forcing) {
     const { nodeId } = await cdp.send("DOM.querySelector", {
       nodeId: root.nodeId,
-      selector: cellSelector(request.id, request.measured),
+      selector: cellSelector(request.id, request.forcedOn),
     });
     await cdp.send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: [...request.forced] });
     for (const [name, value] of Object.entries(request.forcedAttributes)) {
@@ -360,10 +366,11 @@ async function renderCell(
     throw new Error(`cell ${request.id} is ${box.width}×${box.height}, larger than its slot`);
   }
   const interact = forcedState === "missing";
+  const forcedOn = page.locator(cellSelector(request.id, request.forcedOn));
   if (interact && request.forced.includes("hover")) {
-    await measured.hover({ force: true });
+    await forcedOn.hover({ force: true });
   } else if (interact) {
-    await measured.focus();
+    await forcedOn.focus();
   }
   const state: StateOutcome = !interact
     ? forcedState
@@ -381,7 +388,7 @@ async function renderCell(
   );
   if (interact) {
     await page.mouse.move(0, 0);
-    await measured.blur();
+    await forcedOn.blur();
   }
   return { raster, box: { width: box.width, height: box.height }, state };
 }

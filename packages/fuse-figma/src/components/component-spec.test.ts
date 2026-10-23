@@ -1390,39 +1390,6 @@ describe("an unread custom property", () => {
       }),
     ]);
   });
-
-  // The browser paints `bg-card` with the box's own `--card`, red, while the builder keeps a synced
-  // variable as its `var()` and binds `card`. The override goes unread for that reason, not because
-  // it only passes its value down, so it must fail the gate.
-  it("stays unmapped on a leaf where it overrides a synced variable, which the builder binds instead", async () => {
-    const { coverage } = await buildFixture(chip("bg-card [--card:#ff0000]"), {
-      variables: makeVariableIndex([
-        { ref: { collection: "Fuse tokens", name: "card" }, webSyntax: "var(--card)" },
-      ]),
-    });
-    expect(coverage.filter((row) => row.className === "[--card:#ff0000]")).toEqual([
-      expect.objectContaining({ property: "--card", outcome: "unmapped" }),
-    ]);
-  });
-
-  // Where no layer reads a value that names `var(--card)`, the browser paints the override nowhere,
-  // as an Alert's `--ring` reaches only the focus ring a set without focus leaves out.
-  it("drops where it overrides a synced variable that no layer of the cell reads", async () => {
-    const definition = chip("bg-[#000000] [--card:#ff0000] focus-visible:bg-card", {
-      omittedStates: new Set(["focus-visible"]),
-    });
-    const { coverage } = await buildFixture(definition, {
-      variables: makeVariableIndex([
-        { ref: { collection: "Fuse tokens", name: "card" }, webSyntax: "var(--card)" },
-      ]),
-    });
-    expect(coverage.filter((row) => row.className === "[--card:#ff0000]")).toEqual([
-      expect.objectContaining({
-        outcome: "dropped",
-        detail: "the box overrides the synced `card`, which no layer of the cell reads",
-      }),
-    ]);
-  });
 });
 
 // Unit under test: `buildComponentSet` on a root with `rounded-full`, which Tailwind compiles to

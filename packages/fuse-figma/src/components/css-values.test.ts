@@ -44,9 +44,11 @@ describe("substituteVars", () => {
     const read = new Set<string>();
     const ringShadow =
       "var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor)";
-    expect(substituteVars(ringShadow, (name) => values.get(name), index.owns, read)).toBe(
-      " 0 0 0 calc(2px + 0px) var(--ring)"
-    );
+    const declared = (name: string) => {
+      const value = values.get(name);
+      return value === undefined ? undefined : { value, computed: false };
+    };
+    expect(substituteVars(ringShadow, declared, index.owns, read)).toBe(" 0 0 0 calc(2px + 0px) var(--ring)");
     expect([...read]).toEqual(["--tw-ring-offset-width", "--tw-ring-color"]);
   });
 

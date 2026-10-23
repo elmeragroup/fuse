@@ -112,7 +112,8 @@ const DIRECTIONS = new Map<string, { readonly direction: DirectionSpec; readonly
  * `align-items` stretches its layers across it, which {@link roomInside} gives them. A grid places
  * its layers by `place-content`, which {@link readDisplay} reads, so its alignments stay unread.
  * `line-clamp-*` makes a `-webkit-box` column, which sets its text from the top left. A row whose
- * parts set their own `align-self` aligns as {@link readSelfAlignment} says.
+ * parts set their own `align-self` aligns as {@link readSelfAlignment} says. A block box that
+ * {@link stacksBlocks} is a column from the top left, where alignments do not apply.
  *
  * @param flow - The parts in the box's flow, and the names of its icons and label, which set no
  *   alignment of their own.
@@ -121,11 +122,13 @@ const DIRECTIONS = new Map<string, { readonly direction: DirectionSpec; readonly
  */
 function readFlow(reader: LayerStyle, flow: FlowLayers): Flow {
   const display = normalizeCss(reader.raw("display") ?? "");
-  if (display === "grid" || display === "-webkit-box") {
-    const column = display === "-webkit-box";
+  const blocks = stacksBlocks(reader, flow);
+  if (display === "grid" || display === "-webkit-box" || blocks) {
+    const column = display !== "grid";
     return {
       layout: {
         flex: false,
+        blocks,
         direction: column ? "VERTICAL" : "HORIZONTAL",
         primaryAlign: column ? "MIN" : "CENTER",
         counterAlign: column ? "MIN" : "CENTER",
@@ -149,6 +152,7 @@ function readFlow(reader: LayerStyle, flow: FlowLayers): Flow {
   return {
     layout: {
       flex,
+      blocks: false,
       direction,
       primaryAlign,
       counterAlign,
@@ -156,6 +160,27 @@ function readFlow(reader: LayerStyle, flow: FlowLayers): Flow {
     },
     self,
   };
+}
+
+/** The displays that make a box block-level, which a block box stacks down its content box. */
+const BLOCK_LEVEL: ReadonlySet<string> = new Set(["block", "flex", "grid"]);
+
+/** The gaps, which separate the items of flex, grid and multi-column boxes and no blocks. */
+const GAPS = ["gap", "row-gap", "column-gap"] as const;
+
+/**
+ * Whether a block box stacks its layers as blocks: every layer in its flow is a part whose display
+ * is block-level, and the box sets no gap, which separates no blocks (CSS Box Alignment 3 §8). A part
+ * whose display nothing sets may be inline, so it leaves the box as it was.
+ */
+function stacksBlocks(reader: LayerStyle, flow: FlowLayers): boolean {
+  return (
+    normalizeCss(reader.raw("display") ?? "") === "block" &&
+    flow.parts.length > 0 &&
+    flow.others.length === 0 &&
+    flow.parts.every(({ style }) => BLOCK_LEVEL.has(normalizeCss(style.raw("display") ?? ""))) &&
+    GAPS.every((property) => !reader.has(property))
+  );
 }
 
 /** An axis that fills the room its parent gives it, as a stretched part fills its row's height. */
@@ -333,15 +358,17 @@ function settleSelfAlignment(
  * `place-content: center` is an auto layout centered on both axes only around one layer. Any other
  * grid stays unmapped. A block box with no layers lays nothing out, so it is a frame like any
  * other. One that holds only its label sets the text in lines across its width, which the label's
- * own sizing draws, as `label-layout.ts` reads it for a block box. One with any other layer stays
- * unmapped. A `-webkit-box` maps only where it clamps its label, as {@link readLineClamp} decides
- * for the label too, as a column around the label. On any other display a `-webkit-box-orient` sets
- * nothing, as {@link inertClamp} says.
+ * own sizing draws, as `label-layout.ts` reads it for a block box. One that stacks block-level parts
+ * is a vertical auto layout where its width is fixed or fills, which its parts fill. One with any
+ * other layer stays unmapped. A `-webkit-box` maps only where it clamps its label, as
+ * {@link readLineClamp} decides for the label too, as a column around the label. On any other display
+ * a `-webkit-box-orient` sets nothing, as {@link inertClamp} says.
  *
  * @param layers - The names of the box's layers in the cell, in its flow.
  * @param label - The name of the label the box shows in the cell, or undefined for none.
  * @param layout - The box's layout, as {@link readFlow} read it.
  * @param clamp - The lines the box clamps its label to, or undefined for none.
+ * @param width - The box's width, as its sizing reads it.
  * @returns Whether the box is a block that sets its own text in lines.
  */
 function readDisplay(
@@ -349,7 +376,8 @@ function readDisplay(
   layers: readonly string[],
   label: string | undefined,
   layout: Layout,
-  clamp: number | undefined
+  clamp: number | undefined,
+  width: SizeSpec
 ): boolean {
   const display = normalizeCss(reader.raw("display") ?? "");
   if (display === "-webkit-box") {
@@ -378,11 +406,17 @@ function readDisplay(
     return false;
   }
   const ownText = label !== undefined && layers.length === 1 && layers[0] === label;
+  // Blocks fill a box only across a width it has before they lay out.
+  const stacked = layout.blocks && width.kind !== "hug";
   const flow =
-    display === "block" && (layers.length === 0 || ownText)
+    display === "block" && (layers.length === 0 || ownText || stacked)
       ? literalLayout(
           ["block"],
-          ownText ? "a block box that sets its own text in lines" : "a frame with no layers to lay out"
+          stacked
+            ? "a vertical auto layout, its block-level parts stacked down it, each as wide as the box"
+            : ownText
+              ? "a block box that sets its own text in lines"
+              : "a frame with no layers to lay out"
         )
       : literalLayout(
           ["inline-flex", "flex"],
@@ -493,7 +527,10 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
           child.classesFor(cell),
           name,
           { slot: child.slot, tag: child.element?.tag },
-          child.styleFor?.(cell) ?? []
+          {
+            inline: child.styleFor?.(cell) ?? [],
+            defaults: child.elementDefaults ?? [],
+          }
         ),
       };
     });
@@ -603,7 +640,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     ...end,
   ];
   // The display reads once the layers are known, since a grid maps only around one item.
-  const textBlock = readDisplay(reader, holder.layers, label?.name, layout, clamp);
+  const textBlock = readDisplay(reader, holder.layers, label?.name, layout, clamp, sizing.horizontal);
   const width = fixedLength(sizing.horizontal);
   const height = fixedLength(sizing.vertical);
   const paddingLeft = number("padding-left") ?? ZERO;
