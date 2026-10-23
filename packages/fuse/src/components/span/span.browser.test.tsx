@@ -87,4 +87,17 @@ describe("Span", () => {
     expect(getComputedStyle(strong).color).toBe(cssVarColor(strong, "--muted-foreground"));
     expect(px(getComputedStyle(strong).fontSize)).toBe(14);
   });
+
+  it("gives an inline child the Span's snug line height and size", () => {
+    renderThemed(
+      <Span>
+        Total <strong>42</strong>
+      </Span>
+    );
+    // Span defaults to snug at 16px: 16 × 1.375 = 22, not text-base's own 24.
+    expect(px(getComputedStyle(spanNamed("Total 42")).lineHeight)).toBe(22);
+    const child = spanNamed("42");
+    expect(px(getComputedStyle(child).lineHeight)).toBe(22);
+    expect(px(getComputedStyle(child).fontSize)).toBe(16);
+  });
 });

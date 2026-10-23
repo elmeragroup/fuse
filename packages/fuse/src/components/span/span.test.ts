@@ -27,6 +27,14 @@ describe("spanVariants", () => {
     expect(resolved).not.toContain("leading-relaxed");
   });
 
+  it("resolves a size onto Text's classes at Span's snug leading", () => {
+    // Oracle: the parent Text recipe at the same size and leading, pinned in its own tests.
+    const tokens = (classes: string) => new Set(classes.split(/\s+/));
+    expect(tokens(spanVariants({ size: "sm" }))).toEqual(
+      tokens(textVariants({ size: "sm", leading: "snug" }))
+    );
+  });
+
   it.each(VARIANTS)("resolves variant %s onto Text's class", (variant) => {
     const resolved = spanVariants({ variant });
     // Oracle: the parent Text recipe's class for the variant, pinned in its own tests.
