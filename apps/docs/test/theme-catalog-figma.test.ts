@@ -161,6 +161,22 @@ describe("Figma DTCG documents", () => {
       $type: "fontWeight",
       $value: 400,
     });
+    // The paragraph line heights in px: external 14/20, 16/22 and 18/24, and internal relaxed
+    // 1.625 × 14, 16 and 18.
+    for (const [name, external, relaxed] of [
+      ["paragraph-leading-sm", 20, 22.75],
+      ["paragraph-leading-base", 22, 26],
+      ["paragraph-leading-lg", 24, 29.25],
+    ] as const) {
+      expect(token<FigmaDimensionToken>(document.size, name), name).toEqual({
+        $type: "dimension",
+        $value: { value: external, unit: "px" },
+      });
+      expect(token<FigmaDimensionToken>(internal.size, name), name).toEqual({
+        $type: "dimension",
+        $value: { value: relaxed, unit: "px" },
+      });
+    }
   });
 
   it("writes hex from the same rounded channels as components", () => {

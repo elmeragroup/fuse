@@ -169,6 +169,15 @@ describe("token extraction", () => {
     expect(tokens.find((token) => token.name === "--control-h-md")?.isColor).toBe(false);
   });
 
+  it("reads the variable of a shorthand with a fallback", () => {
+    const tokens = extractTokens({
+      sources: ['const a = "text-sm leading-(--paragraph-leading-sm,1.421875rem)";'],
+      stylesheets: [],
+      colors,
+    });
+    expect(tokens).toEqual([{ name: "--paragraph-leading-sm", isColor: false }]);
+  });
+
   it("reads a theme colour named in an arbitrary value as its role", () => {
     const tokens = extractTokens({
       sources: [

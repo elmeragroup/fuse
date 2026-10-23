@@ -3,7 +3,16 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { cssVarColor, px, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
+import {
+  cssVarColor,
+  fkasExternal,
+  fkasPrivate,
+  px,
+  renderThemed,
+  roleNamed,
+  textNamed,
+} from "../../../test/themed-browser-render";
+import { ThemeScope } from "../../theme";
 import { Text } from "./text";
 
 const WIDGET_ROLES = ["button", "link", "textbox", "checkbox", "radio", "listitem", "heading"] as const;
@@ -132,6 +141,119 @@ describe("Text", () => {
       );
       // leading-tight: 16 × 1.25 = 20.
       expect(lineHeightOf(textNamed("Tight child."))).toBe(20);
+    });
+  });
+
+  /**
+   * A Text's default line height comes from the theme's paragraph roles at sm, default and lg.
+   * The expected heights are the design values, written by hand: the internal relaxed ratio,
+   * 1.625 × 14, 16 and 18px, and the external paragraph styles 14/20, 16/22 and 18/24.
+   * `text-without-themes.browser.test.tsx` covers a host without `themes.css`.
+   */
+  describe("paragraph line height", () => {
+    const ROLE_SIZES = ["sm", "default", "lg"] as const;
+    const PLAIN_SIZES = ["xs", "xl", "2xl"] as const;
+    const INTERNAL = { sm: 22.75, default: 26, lg: 29.25 } as const;
+    const EXTERNAL = { sm: 20, default: 22, lg: 24 } as const;
+    // relaxed 1.625 × 12, 20 and 24px, in every theme.
+    const RELAXED = { xs: 19.5, xl: 32.5, "2xl": 39 } as const;
+
+    function SizedTexts({ prefix }: { prefix: string }) {
+      return (
+        <>
+          {[...ROLE_SIZES, ...PLAIN_SIZES].map((size) => (
+            <Text key={size} size={size}>{`${prefix} ${size}`}</Text>
+          ))}
+        </>
+      );
+    }
+
+    function lineHeightNamed(name: string): number {
+      return px(getComputedStyle(textNamed(name)).lineHeight);
+    }
+
+    it("sets sm, default and lg from the theme's role in internal and external themes, in light and dark", () => {
+      renderThemed(
+        <>
+          <SizedTexts prefix="Internal" />
+          <ThemeScope theme={fkasExternal}>
+            <SizedTexts prefix="External" />
+          </ThemeScope>
+          <div data-theme="dark">
+            <ThemeScope theme={fkasPrivate}>
+              <SizedTexts prefix="Dark internal" />
+            </ThemeScope>
+            <ThemeScope theme={fkasExternal}>
+              <SizedTexts prefix="Dark external" />
+            </ThemeScope>
+          </div>
+        </>
+      );
+      for (const size of ROLE_SIZES) {
+        expect(lineHeightNamed(`Internal ${size}`), size).toBe(INTERNAL[size]);
+        expect(lineHeightNamed(`External ${size}`), size).toBe(EXTERNAL[size]);
+        expect(lineHeightNamed(`Dark internal ${size}`), size).toBe(INTERNAL[size]);
+        expect(lineHeightNamed(`Dark external ${size}`), size).toBe(EXTERNAL[size]);
+      }
+    });
+
+    it("keeps xs, xl and 2xl relaxed in internal and external themes", () => {
+      renderThemed(
+        <>
+          <SizedTexts prefix="Internal" />
+          <ThemeScope theme={fkasExternal}>
+            <SizedTexts prefix="External" />
+          </ThemeScope>
+        </>
+      );
+      for (const size of PLAIN_SIZES) {
+        expect(lineHeightNamed(`Internal ${size}`), size).toBe(RELAXED[size]);
+        expect(lineHeightNamed(`External ${size}`), size).toBe(RELAXED[size]);
+      }
+    });
+
+    it("resets the roles in an internal scope nested in an external one", () => {
+      renderThemed(
+        <ThemeScope theme={fkasExternal}>
+          <Text>Outer external</Text>
+          <ThemeScope theme={fkasPrivate}>
+            <Text>Nested internal</Text>
+          </ThemeScope>
+        </ThemeScope>
+      );
+      expect(lineHeightNamed("Outer external")).toBe(22);
+      expect(lineHeightNamed("Nested internal")).toBe(26);
+    });
+
+    it("lets an explicit leading or a className leading replace the external role", () => {
+      renderThemed(
+        <ThemeScope theme={fkasExternal}>
+          <Text leading="snug" size="lg">
+            Snug prop
+          </Text>
+          <Text leading="relaxed">Relaxed prop</Text>
+          <Text className="leading-tight">Tight class</Text>
+        </ThemeScope>
+      );
+      // snug 18 × 1.375 = 24.75, relaxed 16 × 1.625 = 26, tight 16 × 1.25 = 20.
+      expect(lineHeightNamed("Snug prop")).toBe(24.75);
+      expect(lineHeightNamed("Relaxed prop")).toBe(26);
+      expect(lineHeightNamed("Tight class")).toBe(20);
+    });
+
+    it("gives a link and a child paragraph the external role", () => {
+      renderThemed(
+        <ThemeScope theme={fkasExternal}>
+          <Text size="sm">
+            Read the <a href="#terms">terms</a>
+          </Text>
+          <Text elementType="div" size="lg">
+            <p>Large child.</p>
+          </Text>
+        </ThemeScope>
+      );
+      expect(px(getComputedStyle(roleNamed("link", "terms")).lineHeight)).toBe(20);
+      expect(lineHeightNamed("Large child.")).toBe(24);
     });
   });
 });

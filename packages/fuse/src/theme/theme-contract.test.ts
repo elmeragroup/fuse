@@ -338,6 +338,9 @@ describe("theme contract", () => {
         "selection-disabled-foreground",
         "button-outline-width",
         "selection-title-weight",
+        "paragraph-leading-sm",
+        "paragraph-leading-base",
+        "paragraph-leading-lg",
         "font-sans",
         "font-heading",
       ] as const) {
@@ -524,7 +527,7 @@ describe("derived roles", () => {
 describe("external variant layer roles", () => {
   const rules = parseStyleRules(generateThemesCss());
 
-  it("sets the radius step, the transparent card edge and shadow, the page-tinted card section divider, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows, the card-filled unstriped disabled row with its muted text and the medium selection row title once for the external variant", () => {
+  it("sets the radius step, the transparent card edge and shadow, the page-tinted card section divider, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows, the card-filled unstriped disabled row with its muted text, the medium selection row title and the 14/20, 16/22 and 18/24 paragraph line heights once for the external variant", () => {
     const external = {
       "radius-step": "2px",
       "card-border": "oklch(0 0 0 / 0)",
@@ -540,6 +543,9 @@ describe("external variant layer roles", () => {
       "selection-disabled-hatch": "oklch(0 0 0 / 0)",
       "selection-disabled-foreground": "var(--muted-foreground)",
       "selection-title-weight": "500",
+      "paragraph-leading-sm": "1.25rem",
+      "paragraph-leading-base": "1.375rem",
+      "paragraph-leading-lg": "1.5rem",
     } as const;
     for (const [brand, palette] of Object.entries(EXTERNAL_PALETTES)) {
       for (const key of Object.keys(external)) {
@@ -562,7 +568,8 @@ describe("external variant layer roles", () => {
     // shadow, the 1px border hairline,
     // the border-coloured selection row edge, the primary checked-row edge, dividers that follow
     // those edges, the muted disabled row striped in black at 2% with foreground text, the
-    // regular selection row title and round fields with --radius.
+    // regular selection row title, the relaxed 1.625 paragraph line heights at 14, 16 and 18px
+    // and round fields with --radius.
     for (const selector of [":root", '[data-theme-variant="internal"]']) {
       expect(declaration(rules, selector, "card-border"), selector).toBe("var(--border)");
       expect(declaration(rules, selector, "card-section-divider"), selector).toBe("var(--border)");
@@ -581,6 +588,9 @@ describe("external variant layer roles", () => {
       );
       expect(declaration(rules, selector, "button-outline-width"), selector).toBe("1px");
       expect(declaration(rules, selector, "selection-title-weight"), selector).toBe("400");
+      expect(declaration(rules, selector, "paragraph-leading-sm"), selector).toBe("1.421875rem");
+      expect(declaration(rules, selector, "paragraph-leading-base"), selector).toBe("1.625rem");
+      expect(declaration(rules, selector, "paragraph-leading-lg"), selector).toBe("1.828125rem");
       expect(declaration(rules, selector, "radius-field"), selector).toBe("var(--radius)");
     }
   });

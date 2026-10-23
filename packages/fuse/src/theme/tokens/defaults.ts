@@ -153,6 +153,12 @@ export const LAYER_DEFAULTS = {
   // the regular weight the internal row was ported with, and the external variant layer sets
   // the customer-facing radio card's medium title.
   "selection-title-weight": "400",
+  // The line height of a Text at sm, default and lg size (`text-variants.ts`). Internal themes
+  // keep the relaxed ratio each size had before the roles, 1.625 × 14, 16 and 18px, and the
+  // external variant layer sets the customer-facing paragraph styles.
+  "paragraph-leading-sm": "1.421875rem",
+  "paragraph-leading-base": "1.625rem",
+  "paragraph-leading-lg": "1.828125rem",
   "font-sans": "Roboto, ui-sans-serif, system-ui, sans-serif",
   "font-heading": "var(--font-sans)",
 } as const satisfies LayerTokens;

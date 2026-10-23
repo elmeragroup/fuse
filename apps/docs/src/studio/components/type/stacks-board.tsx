@@ -11,7 +11,7 @@ const stacksBoard = tv({
     root: "m-0 flex list-none flex-col p-8",
     entry: "flex flex-col gap-1 border-b border-border py-4 last:border-b-0",
     head: "flex items-baseline justify-between gap-4",
-    // Text sets relaxed leading; these keep each size's own.
+    // Text sets its paragraph leading; these keep each size's own.
     name: "leading-(--text-sm--line-height)",
     stack: "font-mono leading-(--text-xs--line-height)",
     // The stack itself, as the knob would write it.

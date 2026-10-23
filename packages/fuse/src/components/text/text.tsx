@@ -23,6 +23,15 @@ export type TextProps = Omit<ComponentPropsWithoutRef<"p">, "slot"> &
     render?: useRender.RenderProp;
   };
 
+/**
+ * A body paragraph, or another text element through `elementType` or `render`. Without a
+ * `leading` prop, its line height at `sm`, the default size and `lg` comes from the theme's
+ * `--paragraph-leading-sm`, `--paragraph-leading-base` and `--paragraph-leading-lg`, and the
+ * other sizes are relaxed. Descendants inherit the line height and take the Text's font size.
+ *
+ * @param props - The recipe axes, the host element and the native paragraph props.
+ * @returns The rendered text element, with `data-slot="text"`.
+ */
 export function Text({
   className,
   variant,

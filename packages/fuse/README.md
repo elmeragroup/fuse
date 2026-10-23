@@ -106,6 +106,18 @@ The checked row's tint and the disabled fill win over a background class on the 
 }
 ```
 
+A `Text` at `sm`, the default size and `lg` reads its line height from `--paragraph-leading-sm`, `--paragraph-leading-base` and `--paragraph-leading-lg`. Without them it keeps the relaxed 1.625 ratio, as internal themes do. For the external themes' paragraph styles, 14/20, 16/22 and 18/24, set:
+
+```css
+:root {
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+}
+```
+
+A `leading` prop or a `className` leading on the Text replaces the role. `Span` keeps its own snug default.
+
 `Dialog.Content`, `AlertDialog.Content` and `Sheet.Content` fill with `--dialog` and take `--dialog-foreground` as their text colour. Without them a modal takes your `--popover` and `--popover-foreground`, as internal themes and every dark theme do. For the external light look, where a modal fills with the page tint so the card-coloured fields and selection rows inside it stand apart as they do on the page, set the pair in your light rules and point it back at the popover pair in your dark ones, as the themes do:
 
 ```css

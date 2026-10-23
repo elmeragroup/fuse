@@ -249,6 +249,9 @@ const DIMENSION_SCOPES = {
   "radius-field": ["CORNER_RADIUS"],
   "radius-step": [],
   "button-outline-width": ["STROKE_FLOAT"],
+  "paragraph-leading-sm": ["LINE_HEIGHT"],
+  "paragraph-leading-base": ["LINE_HEIGHT"],
+  "paragraph-leading-lg": ["LINE_HEIGHT"],
 } as const satisfies Record<DimensionTokenName, readonly VariableScope[]>;
 
 /**
