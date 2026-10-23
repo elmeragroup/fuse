@@ -223,6 +223,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/react-aria/calendar.js",
     load: async () => (await import("./calendar-day-cell.ts")).calendarDay,
   },
+  {
+    set: "link",
+    entry: "dist/react-aria/link.js",
+    load: async () => (await import("./link-cell.ts")).link,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

@@ -328,6 +328,9 @@ describe("exports map", () => {
       "toggleVariants",
       "cellVariants",
       "cn",
+      "linkVariants",
+      "racDisabledStateFaceClass",
+      "focusRing",
       "BESPOKE_ICON_NAMES",
       "PHOSPHOR_ICON_NAMES",
     ]);

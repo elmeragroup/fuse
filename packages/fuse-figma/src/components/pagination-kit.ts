@@ -19,6 +19,7 @@ import { buttonVariants, cn, paginationVariants } from "@elmeragroup/fuse/recipe
 
 import { BUTTON_OMITTED_STATES, BUTTON_PENDING_ONLY_VARIANTS } from "./button-kit";
 import type { Cell, ComponentDefinition, IconSlot } from "./component-spec";
+import { HOST_TYPE } from "./host-type";
 
 const { link, linkIcon, ellipsis, ellipsisIcon } = paginationVariants();
 
@@ -42,16 +43,6 @@ const OMITTED_STATES = new Set([
  * the docs Basic demo. The compare renderer renders the same text.
  */
 export const PAGINATION_LINK_LABEL = "1";
-
-/**
- * The page's own type, which a link inherits, since Button's `icon` square sets none: the
- * browser's `medium` 16px, and preflight's `line-height: 1.5` on `<html>`, as the docs and the
- * compare page load it.
- */
-const HOST_TYPE = [
-  { className: "html, the browser's medium font size", property: "font-size", value: "16px" },
-  { className: "html, Tailwind preflight", property: "line-height", value: "1.5" },
-];
 
 /**
  * A page link, as `<Pagination.Link href isActive>1</Pagination.Link>`: ghost, or outline while

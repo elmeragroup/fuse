@@ -193,11 +193,16 @@ export type BoxDefinition = {
 
 /**
  * An element that carries no `data-slot`, named by its tag and the attributes it carries, as React
- * Aria's Link renders an `<a data-rac>`. `figma:compare` measures a root by its CSS form, such as
- * `a[data-rac]`, and its markup check places a root or a part by it.
+ * Aria's Calendar renders a day as a `<div data-rac role="button">`. `figma:compare` measures a root
+ * by its CSS form, such as `div[data-rac][role="button"]`, and its markup check places a root or a
+ * part by it.
  */
 export type ElementSelector = {
-  /** The element's tag name in lowercase, such as `a`. */
+  /**
+   * The element's tag name in lowercase, such as `div`, or `*` for any tag, as CSS's universal
+   * selector matches, for a root whose tag changes with the cell, as React Aria's Link renders an
+   * `<a>` while enabled and a `<span role="link">` while disabled.
+   */
   readonly tag: string;
   /**
    * The attributes the element carries, each name in lowercase. A string matches that exact value,
@@ -268,10 +273,10 @@ export type ComponentDefinition = BoxDefinition & {
   readonly slot: string;
   /**
    * The root element, for a root whose markup carries no `data-slot`, as React Aria's Link renders
-   * an `<a>` with none, or one whose `data-slot` changes with the cell, as Pagination's edge link
-   * carries `pagination-previous` or `pagination-next`. `figma:compare` measures the one element of
-   * a cell this selector matches, and its markup check places the root there. Undefined for a root
-   * its `data-slot` names.
+   * an `<a>` or a `<span>` with none, or one whose `data-slot` changes with the cell, as Pagination's
+   * edge link carries `pagination-previous` or `pagination-next`. `figma:compare` measures the one
+   * element of a cell this selector matches, and its markup check places the root there. Undefined
+   * for a root its `data-slot` names.
    */
   readonly element?: ElementSelector;
   /**

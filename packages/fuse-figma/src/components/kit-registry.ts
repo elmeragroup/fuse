@@ -28,6 +28,7 @@ import { INPUT } from "./input-kit";
 import { KBD } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
 import { LABEL } from "./label-kit";
+import { LINK } from "./link-kit";
 import { LOADER } from "./loader-kit";
 import { METER } from "./meter-kit";
 import { PAGINATION_EDGE, PAGINATION_ELLIPSIS, PAGINATION_LINK } from "./pagination-kit";
@@ -114,6 +115,9 @@ const EMPTY_PAGE: KitPage = { slug: "empty", name: "Empty" };
 
 /** The page of the Calendar's day cell, alone until the month frame joins it. */
 const CALENDAR_PAGE: KitPage = { slug: "calendar", name: "Calendar" };
+
+/** The page React Aria's Link sits on alone. */
+const LINK_PAGE: KitPage = { slug: "link", name: "Link" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -245,4 +249,5 @@ export const KIT: readonly KitEntry[] = [
   { definition: SELECT_TRIGGER, page: SELECT_PAGE, previewCells: matrixCells(SELECT_TRIGGER.axes) },
   { definition: EMPTY, page: EMPTY_PAGE, previewCells: matrixCells(EMPTY.axes) },
   { definition: CALENDAR_DAY, page: CALENDAR_PAGE, previewCells: matrixCells(CALENDAR_DAY.axes) },
+  { definition: LINK, page: LINK_PAGE, previewCells: matrixCells(LINK.axes) },
 ];

@@ -45,11 +45,11 @@ export type PageLayout = {
 };
 
 /**
- * The layout `figma:compare` uses. A slot holds the widest and the tallest cell, Empty's 512px box,
- * which stands about 213px tall at the comfortable density, with the padding on every side, so a 3px
- * ring around a cell stays inside its own crop and clear of the next slot.
+ * The layout `figma:compare` uses. A slot holds the widest cell, Empty's 512px box, and the tallest
+ * markup, the 320px Calendar around a Calendar day, with the padding on every side, so a 3px ring
+ * around a cell stays inside its own crop and nothing a cell renders reaches the next slot.
  */
-export const PAGE_LAYOUT: PageLayout = { padding: 8, slotWidth: 528, slotHeight: 240, columns: 6, top: 16 };
+export const PAGE_LAYOUT: PageLayout = { padding: 8, slotWidth: 528, slotHeight: 336, columns: 6, top: 16 };
 
 /** A cell's place on the page: its id and its element's HTML. */
 export type PageCell = { readonly id: string; readonly html: string };
@@ -104,7 +104,7 @@ export function cellSelector(id: string, measured: string): string {
 /**
  * The selector of the element a definition's cells measure: the one whose `data-slot` is the
  * definition's `slot`, or, for a root whose markup carries no `data-slot`, the one its `element`
- * names by tag and attributes, such as `a[data-rac]`, each attribute by its presence or its value,
+ * names by tag and attributes, such as `*[data-rac]`, each attribute by its presence or its value,
  * and each of its `prefixes` by the start of its value.
  *
  * @param definition - The root's slot and, for a root without a `data-slot`, its element.

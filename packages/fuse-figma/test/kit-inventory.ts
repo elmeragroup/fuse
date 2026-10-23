@@ -155,6 +155,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Calendar",
     sets: [{ key: "calendar-day", name: "Calendar day", variants: 10, previewed: 10 }],
   },
+  // 6 variants at 2 weights, in 4 states.
+  { slug: "link", name: "Link", sets: [{ key: "link", name: "Link", variants: 48, previewed: 48 }] },
 ];
 
 /** The page that holds the icon library alone, after the component pages. */
