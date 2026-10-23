@@ -99,6 +99,9 @@ environment `npm`, which only `main` can deploy to, and holds `id-token: write`.
 exchanges the job's OIDC token for a short-lived publish token. It generates provenance
 without a `--provenance` flag for every publication except a retry, which
 [Publish gates and recovery](#publish-gates-and-recovery) explains. The job holds no npm token.
+Keep the package's publishing access at "Require two-factor authentication and disallow
+bypass 2fa tokens". That setting stops every npm token from publishing the package and
+leaves trusted publishing working.
 
 For a `workflow_call`, npm checks the calling workflow's filename, not the called file.
 `@elmeragroup/fuse` therefore needs one trusted-publisher entry per entry point, each for
@@ -115,8 +118,7 @@ entry, because the engine publishes under `pending` and then promotes with `npm 
 ([npm/cli#10038](https://github.com/npm/cli/pull/10038)). The npm bundled with
 `.node-version` is older, so the [publish workflow](../.github/workflows/publish-release.yml)
 installs an exact npm before the engine runs. Raise that pin only to a release older than
-the `minimumReleaseAge` window in `pnpm-workspace.yaml`. With the token gone, set the
-package's publishing access to "Require two-factor authentication and disallow tokens".
+the `minimumReleaseAge` window in `pnpm-workspace.yaml`.
 
 Two gaps remain. Build and publish share a job, so build code can request an OIDC token
 during the run. Removing the request pair from the environment stops code that reads its own
