@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import { NO_LIMITS } from "../../src/components/kit-spec.ts";
-import type { FrameLayerSpec, KitSpec, TextLayerSpec } from "../../src/components/kit-spec.ts";
+import type { FrameLayerSpec, KitSpec, StrokeSpec, TextLayerSpec } from "../../src/components/kit-spec.ts";
 import {
   buttonVariant,
   CHECK,
@@ -658,5 +658,53 @@ describe("a variant whose bar holds an absolute fill", () => {
     await expect(reconcileKit(file.figma, filling, false)).rejects.toThrow(message);
     await expect(reconcileKit(file.figma, filling, true)).rejects.toThrow(message);
     expect(file.writes.slice(setup)).toEqual([]);
+  });
+});
+
+// Unit under test: `reconcileKit` on a variant whose root strokes a dashed border, as the dashed
+// Empty does. Oracle: the fake's rule 27, after what a real file read on 2026-10-22 (PD): a dash
+// pattern sits apart from the stroke's paints, so the color binding the stroke takes keeps it, a new
+// pattern replaces it, and `[]` clears it. The pattern matches only with the same lengths, and the
+// next Plan lists nothing.
+describe("a variant whose root strokes a dashed border", () => {
+  const SOLID_STROKE: StrokeSpec = {
+    color: { kind: "variable", variable: { collection: "Fuse tokens", name: "background" } },
+    weight: literal(1),
+  };
+  const stroked = (stroke: StrokeSpec) => kitWithRoot((root) => ({ ...root, stroke }));
+  const DASHED = stroked({ ...SOLID_STROKE, dashPattern: [3, 2] });
+  const SOLID = stroked(SOLID_STROKE);
+
+  it("draws the dashes over the bound color in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, DASHED, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, DASHED, false)).toEqual({ changes: [], warnings: [] });
+    const root = await buttonVariant(file);
+    expect(root.dashPattern).toEqual([3, 2]);
+    expect(root.strokes).toMatchObject([
+      { type: "SOLID", boundVariables: { color: { id: file.variable("Fuse tokens", "background").id } } },
+    ]);
+  });
+
+  it("plans a pattern a designer changed back to the kit's, and clears it for a solid stroke", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, DASHED, true);
+    file.reopen();
+    (await buttonVariant(file)).dashPattern = [4, 4];
+    expect((await reconcileKit(file.figma, DASHED, false)).changes).toEqual([
+      "Button / size=md: dashPattern → 3, 2 (holds 4, 4)",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, DASHED, true);
+    file.reopen();
+    expect((await reconcileKit(file.figma, SOLID, false)).changes).toEqual([
+      "Button / size=md: dashPattern → none (holds 3, 2)",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, SOLID, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, SOLID, false)).toEqual({ changes: [], warnings: [] });
+    expect((await buttonVariant(file)).dashPattern).toEqual([]);
   });
 });

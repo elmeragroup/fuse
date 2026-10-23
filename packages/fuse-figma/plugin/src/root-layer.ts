@@ -157,6 +157,30 @@ function planLimit(
 const LIMITS: readonly (keyof LimitsSpec)[] = ["minWidth", "maxWidth", "minHeight", "maxHeight"];
 
 /**
+ * Plan a stroke's dash pattern, the empty list for a solid stroke. The pattern sits apart from the
+ * stroke's paints, so the color binding the stroke takes keeps it (PD). It matches only with as
+ * many lengths, each within what a 32-bit float keeps. It moves no layer, so it lies outside the
+ * writes that can resize the box.
+ */
+function planDashPattern(run: Run, node: LayerParent, label: string, desired: readonly number[]): void {
+  const held = node.dashPattern;
+  const matches =
+    held.length === desired.length &&
+    held.every((length, index) => {
+      const wanted = desired[index];
+      return wanted !== undefined && near(length, wanted);
+    });
+  if (matches) {
+    return;
+  }
+  const lengths = (pattern: readonly number[]): string =>
+    pattern.length === 0 ? "none" : pattern.join(", ");
+  change(run.plan, label, `dashPattern → ${lengths(desired)} (holds ${lengths(held)})`, () => {
+    node.dashPattern = desired;
+  });
+}
+
+/**
  * Where the box a plan draws sits. A variant's `root` sits in its component set, which never turns,
  * and gets the fill a spread shadow needs. A `frame` below the root gets no such fill, since no
  * part below a root casts a spread yet. Its `parent` is `unknown` when the box that holds it turns
@@ -268,6 +292,9 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
     });
   }
   const resizes = laidOut || run.plan.operations.length > stroked;
+  if (spec.stroke !== undefined) {
+    planDashPattern(run, node, label, spec.stroke.dashPattern ?? []);
+  }
   planShadows(run, node, label, spec.shadows);
   planNumber(
     run,

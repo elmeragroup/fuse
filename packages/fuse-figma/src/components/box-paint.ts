@@ -9,7 +9,7 @@ import { createHash } from "node:crypto";
 import type { CoverageNote, LayerStyle } from "./cascade";
 import { describeNumber, normalizeCss, readColor, readNumber, readShadows } from "./css-values";
 import type { VariableIndex } from "./css-values";
-import type { BoxSpec, ColorSpec, ImagePaintSpec, ShadowSpec, StrokeSpec } from "./kit-spec";
+import type { BoxSpec, ColorSpec, ImagePaintSpec, NumberSpec, ShadowSpec, StrokeSpec } from "./kit-spec";
 
 /**
  * What a color read from CSS became, for the coverage table.
@@ -175,9 +175,9 @@ function readShadowStack(root: LayerStyle, variables: VariableIndex): readonly S
 }
 
 /**
- * A CSS border becomes an inside stroke. A border with no style or a style other than solid
- * stays unmapped, and so does one with no color, which would otherwise draw no stroke and leave
- * no row.
+ * A CSS border becomes an inside stroke. A solid border draws a solid stroke, and a dashed one a
+ * dashed stroke, as {@link dashesOf} says. A border with no style or any other style stays
+ * unmapped, and so does one with no color, which would otherwise draw no stroke and leave no row.
  */
 function readStroke(root: LayerStyle, variables: VariableIndex): StrokeSpec | undefined {
   if (!root.has("border-width")) {
@@ -188,12 +188,60 @@ function readStroke(root: LayerStyle, variables: VariableIndex): StrokeSpec | un
     "border-width",
     "no class or base rule colors the border, so the stroke is left out"
   );
+  const weight = root.read("border-width", (value) => readNumber(value, variables), describeNumber);
   const style = root.read(
     "border-style",
-    (value) => (normalizeCss(value) === "solid" ? value : undefined),
-    () => ({ outcome: "literal", detail: "a solid stroke" })
+    (value) => borderStyle(normalizeCss(value), weight),
+    (read) => ({ outcome: "literal", detail: read.detail })
   );
-  const weight = root.read("border-width", (value) => readNumber(value, variables), describeNumber);
   const color = root.read("border-color", (value) => readColor(value, variables), describeColor);
-  return style === undefined || weight === undefined || color === undefined ? undefined : { color, weight };
+  if (style === undefined || weight === undefined || color === undefined) {
+    return undefined;
+  }
+  return style.dashPattern === undefined
+    ? { color, weight }
+    : { color, weight, dashPattern: style.dashPattern };
+}
+
+/** A border style the stroke draws: the dash pattern of a dashed one, and its coverage detail. */
+type BorderStyle = {
+  readonly dashPattern: readonly number[] | undefined;
+  readonly detail: string;
+};
+
+/**
+ * Read a border style as the stroke's. A dashed border's dashes follow its width, so it maps only
+ * at a literal width, since a bound width takes another length in each mode.
+ *
+ * @param style - The computed `border-style`.
+ * @param weight - The border's width, as the stroke reads it.
+ * @returns The style, or undefined for one no stroke draws.
+ */
+function borderStyle(style: string, weight: NumberSpec | undefined): BorderStyle | undefined {
+  if (style === "solid") {
+    return { dashPattern: undefined, detail: "a solid stroke" };
+  }
+  if (style !== "dashed" || weight?.kind !== "literal") {
+    return undefined;
+  }
+  const [dash, gap] = dashesOf(weight.value);
+  return {
+    dashPattern: [dash, gap],
+    detail: `a dashed stroke, ${dash}px dashes and ${gap}px gaps, as Chromium draws a ${weight.value}px dashed border`,
+  };
+}
+
+/**
+ * The dash and gap Chromium draws along a dashed border of a width, which CSS leaves to the browser
+ * (CSS Backgrounds 3 §4.2). On 2026-10-23 the compare run's Chromium drew 3px dashes and 2px gaps
+ * along a 1px border, 6px and 4px along a 2px one, and 6px and 3px along a 3px one: 3 and 2 times
+ * the width below 3px, and 2 times and once the width from 3px. Chromium also stretches a side's gaps
+ * by up to half a pixel so the side ends on a dash, where a Figma dash pattern repeats its lengths
+ * around the whole stroke, so the dashes along a side can drift a few pixels from the browser's.
+ *
+ * @param width - The border's width in pixels.
+ * @returns The dash and the gap in pixels.
+ */
+function dashesOf(width: number): readonly [number, number] {
+  return width < 3 ? [3 * width, 2 * width] : [2 * width, width];
 }

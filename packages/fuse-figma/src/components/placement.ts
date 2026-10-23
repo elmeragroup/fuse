@@ -267,7 +267,7 @@ export function slotAroundDot(style: LayerStyle, box: BoxSpec): BoxSpec {
     },
     limits: NO_LIMITS,
     cornerRadius: scaled(cornerRadius, share),
-    stroke: stroke === undefined ? undefined : { ...stroke, weight: scaled(stroke.weight, share) },
+    stroke: stroke === undefined ? undefined : scaledStroke(stroke, share),
   };
   return {
     direction: "HORIZONTAL",
@@ -537,6 +537,15 @@ function readScale(reader: LayerStyle, box: BoxSpec): number {
 /** A length at a share of its size. A bound length keeps its variable, which only a share of 1 reaches. */
 function scaled(spec: NumberSpec, share: number): NumberSpec {
   return spec.kind === "literal" ? { kind: "literal", value: spec.value * share } : spec;
+}
+
+/** A stroke at a share of its size: its weight and each dash and gap length scale with the paint. */
+function scaledStroke(stroke: StrokeSpec, share: number): StrokeSpec {
+  const weight = scaled(stroke.weight, share);
+  const { dashPattern } = stroke;
+  return dashPattern === undefined
+    ? { ...stroke, weight }
+    : { ...stroke, weight, dashPattern: dashPattern.map((length) => length * share) };
 }
 
 /** An axis's sizing at a share of its size: a fixed length scales, and hug or fill stays. */

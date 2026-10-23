@@ -21,6 +21,7 @@ export { breadcrumbVariants } from "./breadcrumb/breadcrumb-variants";
 export { buttonVariants } from "./button/button-variants";
 export { checkboxVariants } from "./checkbox/checkbox-variants";
 export { confirmButtonVariants } from "./confirm-button/confirm-button-variants";
+export { emptyMediaVariants, emptyVariants } from "./empty/empty-variants";
 export { fieldVariants } from "./field/field-variants";
 export { inputClass } from "./input/input-class";
 export { kbdVariants } from "./kbd/kbd-variants";

@@ -1,16 +1,17 @@
 /**
- * The layout, text, image, property and rotation rules of the in-memory file in `fake-figma.ts`, each
- * on a few nodes built by hand. The oracle is what the test file `Elmera Fuse - Import test` read
- * back in net-zero probes on 2026-10-22, named P0 to P9b, PB and PR as the fake's header names them,
- * the PNG signature, the hashes `shasum -a 1` gives the fixture images, and the typings where no
- * probe ran. The planners' tests converge against these rules, so a rule that drifts from the real
- * file would let a plan pass that Figma would not keep.
+ * The layout, text, image, property, rotation and stroke rules of the in-memory file in
+ * `fake-figma.ts`, each on a few nodes built by hand. The oracle is what the test file `Elmera Fuse -
+ * Import test` read back in net-zero probes on 2026-10-22, named P0 to P9b, PB, PR and PD as the
+ * fake's header names them, the PNG signature, the hashes `shasum -a 1` gives the fixture images,
+ * and the typings where no probe ran. The planners' tests converge against these rules, so a rule
+ * that drifts from the real file would let a plan pass that Figma would not keep.
  */
 import { describe, expect, it } from "vitest";
 
 import {
   BLUE_PIXEL,
   childNamed,
+  color,
   fixtureFile,
   float,
   PNG_SIGNATURE,
@@ -622,5 +623,26 @@ describe("rule 26: auto layout keeps a rotated layer's box in its slot, and the 
     expect(loose.absoluteBoundingBox).toEqual({ x: -5, y: 5, width: 10, height: 20 });
     loose.rotation = 270;
     expect(loose.rotation).toBe(-90);
+  });
+});
+
+describe("rule 27: a stroke's dash pattern sits apart from its paints", () => {
+  it("keeps the pattern through a color binding, takes another with the binding kept, and clears it with [] (PD)", () => {
+    const dashed = fixtureFile([color("Fuse tokens", "border", { r: 0.9, g: 0.9, b: 0.9, a: 1 })]);
+    const border = dashed.variable("Fuse tokens", "border");
+    // The frame PD built: a 1px SOLID stroke with the pattern `[4, 4]`.
+    const frame = dashed.figma.createFrame();
+    const solid: SolidPaint = { type: "SOLID", color: { r: 0, g: 0, b: 0 } };
+    frame.strokes = [solid];
+    frame.strokeWeight = 1;
+    frame.dashPattern = [4, 4];
+    expect(frame.dashPattern).toEqual([4, 4]);
+    frame.strokes = [dashed.figma.variables.setBoundVariableForPaint(solid, "color", border)];
+    expect(frame.dashPattern).toEqual([4, 4]);
+    frame.dashPattern = [2, 2];
+    expect(frame.dashPattern).toEqual([2, 2]);
+    expect(frame.strokes).toMatchObject([{ boundVariables: { color: { id: border.id } } }]);
+    frame.dashPattern = [];
+    expect(frame.dashPattern).toEqual([]);
   });
 });

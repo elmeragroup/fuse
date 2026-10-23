@@ -11,9 +11,9 @@
  * run stopped before its first write.
  *
  * The fake models the Figma rules below. Each rule a real file showed in 2026-10 names that run.
- * Rules 12 to 26 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
- * Import test` on 2026-10-22: P0 and P0b read the kit's nodes, P1 to P9, PB and PR built nodes on a
- * scratch page, and P9b stored images and built no node.
+ * Rules 12 to 27 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
+ * Import test` on 2026-10-22: P0 and P0b read the kit's nodes, P1 to P9, PB, PR, PQ and PD built
+ * nodes on a scratch page, and P9b stored images and built no node.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
  *    COLOR variable in the collections' default modes, whatever opacity it was given. Two runs
@@ -194,6 +194,12 @@
  *    hugging row made the row 10 × 20 and read `x` 10 and `y` 0 (PQ). The fake does not lay out,
  *    so there it keeps the box's center and the row's size, as rule 24 keeps a hugging parent's
  *    size around an absolute child.
+ * 27. `dashPattern` holds a stroke's dash and gap lengths apart from its paints. On 2026-10-22 a
+ *    real file kept `[4, 4]` on a frame with a 1px SOLID stroke, kept it once the stroke's color
+ *    was bound to `border` through `setBoundVariableForPaint` and written back, took `[2, 2]` with
+ *    the binding kept, and cleared it with `[]` (PD). So writing `strokes` leaves the pattern, and
+ *    writing the pattern leaves the paints. No probe wrote a pattern of odd length or a length that
+ *    is not positive, so the fake stores any list as written, each length a 32-bit float.
  *
  * An instance's sublayers show the layers of its main component. An override, such as the
  * color an icon layer gives its glyph, belongs to the main layer it was made on. It moves to
@@ -372,6 +378,8 @@ type NodeState = {
   strokeWeights: Sides;
   strokeAlign: FrameNode["strokeAlign"];
   strokesIncludedInLayout: boolean;
+  /** The stroke's dash and gap lengths, apart from its paints, empty for a solid stroke (rule 27). */
+  dashPattern: readonly number[];
   effects: readonly Effect[];
   radii: Corners;
   clipsContent: boolean;
@@ -1746,6 +1754,7 @@ function copiedFields(source: NodeState): Omit<NodeState, UncopiedField> {
     strokeWeights: { ...source.strokeWeights },
     strokeAlign: source.strokeAlign,
     strokesIncludedInLayout: source.strokesIncludedInLayout,
+    dashPattern: source.dashPattern,
     effects: source.effects,
     radii: { ...source.radii },
     clipsContent: source.clipsContent,
@@ -2432,6 +2441,16 @@ class FakeFrameLikeNode extends FakeSceneNode {
     const state = live(this);
     write(state, "strokesIncludedInLayout");
     state.strokesIncludedInLayout = value;
+  }
+
+  get dashPattern(): ReadonlyArray<number> {
+    return live(this).dashPattern;
+  }
+
+  set dashPattern(lengths: ReadonlyArray<number>) {
+    const state = live(this);
+    write(state, "dashPattern");
+    state.dashPattern = lengths.map((length) => f32(length));
   }
 
   get effects(): ReadonlyArray<Effect> {
@@ -3145,6 +3164,7 @@ function createNode(file: FileState, type: NodeType, name: string, id?: string):
     strokeWeights: { top: 1, right: 1, bottom: 1, left: 1 },
     strokeAlign: "INSIDE",
     strokesIncludedInLayout: false,
+    dashPattern: [],
     effects: [],
     radii: { topLeft: 0, topRight: 0, bottomRight: 0, bottomLeft: 0 },
     clipsContent: type === "FRAME",

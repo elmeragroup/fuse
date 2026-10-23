@@ -85,6 +85,11 @@ export type ShadowSpec = {
 export type StrokeSpec = {
   readonly color: ColorSpec;
   readonly weight: NumberSpec;
+  /**
+   * The lengths in pixels of a dashed stroke's dash and gap, which repeat around the box, as Figma's
+   * `dashPattern` holds them. Absent for a solid stroke.
+   */
+  readonly dashPattern?: readonly number[];
 };
 
 /**

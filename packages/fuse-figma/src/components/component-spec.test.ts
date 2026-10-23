@@ -137,6 +137,50 @@ describe("the base-layer border color", () => {
   });
 });
 
+// Unit under test: `buildComponentSet` on a root with a dashed border. Oracle: the dashes and gaps
+// the compare run's Chromium drew along a straight edge of a CSS dashed border on 2026-10-23: 3px
+// and 2px at a 1px width, 6px and 4px at 2px, and 6px and 3px at 3px, before it stretched a side's
+// gaps by up to half a pixel to end the side on a dash. CSS leaves the lengths to the browser (CSS
+// Backgrounds 3 §4.2).
+describe("a dashed border", () => {
+  const variables = makeVariableIndex([
+    { ref: { collection: "Fuse tokens", name: "outline-width" }, webSyntax: "var(--outline-width)" },
+  ]);
+  const strokeOf = async (classes: string) => {
+    const { componentSet, coverage } = await buildFixture(chip(`${classes} border-[#000000]`), { variables });
+    return { stroke: componentSet.variants[0]?.root.stroke, coverage };
+  };
+  const BLACK = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
+
+  it.each([
+    ["border", 1, [3, 2]],
+    ["border-2", 2, [6, 4]],
+    ["border-[3px]", 3, [6, 3]],
+  ])("draws %s border-dashed with the dashes and gaps Chromium draws", async (width, weight, dashPattern) => {
+    const { stroke, coverage } = await strokeOf(`${width} border-dashed`);
+    expect(stroke).toEqual({ color: BLACK, weight: literal(weight), dashPattern });
+    expect(coverage).toContainEqual(
+      expect.objectContaining({ className: "border-dashed", property: "border-style", outcome: "literal" })
+    );
+  });
+
+  it.each([
+    ["a dotted border", "border border-dotted", "border-dotted"],
+    // The dashes follow the width, which takes another length in each of the variable's modes.
+    [
+      "a dashed border whose width binds a variable",
+      "border-(length:--outline-width) border-dashed",
+      "border-dashed",
+    ],
+  ])("leaves %s unmapped", async (_, classes, styleClass) => {
+    const { stroke, coverage } = await strokeOf(classes);
+    expect(stroke).toBeUndefined();
+    expect(coverage).toContainEqual(
+      expect.objectContaining({ className: styleClass, property: "border-style", outcome: "unmapped" })
+    );
+  });
+});
+
 // Unit under test: `buildComponentSet` on a root with a transparent background and a ring.
 // Oracle: CSS, where `background-color: transparent` paints nothing, as an unset background
 // does, so the root gets no fill.
@@ -1610,6 +1654,15 @@ describe("a part drawn at a scale", () => {
   it("leaves a scale that is not the same on both axes unmapped", async () => {
     const { rows } = await build(`${THUMB} data-unchecked:scale-x-75`);
     expect(rows).toEqual([["data-unchecked:scale-x-75", "unmapped"]]);
+  });
+
+  // A 1px dashed border paints 3px dashes and 2px gaps (see "a dashed border"), so at 75% it paints
+  // a 0.75px stroke with 2.25px dashes and 1.5px gaps.
+  it("draws a dashed border's weight and dashes at the scaled size", async () => {
+    const { frames } = await build("size-[16px] border border-dashed border-[#000000] scale-75");
+    const strokes = frames.map((slot) => frameOf(slot)?.stroke);
+    const scaledStroke = { color: BLACK, weight: literal(0.75), dashPattern: [2.25, 1.5] };
+    expect(strokes).toEqual([scaledStroke, scaledStroke]);
   });
 });
 

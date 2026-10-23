@@ -308,6 +308,8 @@ describe("exports map", () => {
       "buttonVariants",
       "checkboxVariants",
       "confirmButtonVariants",
+      "emptyMediaVariants",
+      "emptyVariants",
       "fieldVariants",
       "inputClass",
       "kbdVariants",
