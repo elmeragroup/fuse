@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
 import {
   captureActions,
   columnFilters,
@@ -19,7 +20,6 @@ import {
   FIELDS,
   focusIs,
   menuOpen,
-  nextFrames,
   Orders,
   popoverOpen,
   renderCounted,
