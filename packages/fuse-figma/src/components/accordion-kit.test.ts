@@ -224,6 +224,24 @@ describe("the Accordion item component set", () => {
     ]).toEqual([1, 0.5, 1]);
   });
 
+  // On 2026-10-23 a real file drew a part's 2px spread ring only over a visible fill with clipping
+  // on (PR2), as it draws a root's (2026-10-20), and the near-clear black at alpha 0.0015 changes no
+  // 8-bit channel. A resting trigger casts no ring and keeps neither.
+  it("gives a focused trigger the near-clear fill and the clipping its ring needs", () => {
+    const clear = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.0015 } };
+    const focused = (variant: string) => trigger(item(variant, "none", "off", "focus"));
+    const resting = trigger(item("default", "none", "off", "rest"));
+    expect([
+      [focused("default").fill, focused("default").clips],
+      [focused("card").fill, focused("card").clips],
+      [resting.fill, resting.clips],
+    ]).toEqual([
+      [clear, true],
+      [clear, true],
+      [undefined, false],
+    ]);
+  });
+
   it("reads the panel's height from Base UI's style and drops its animation", () => {
     const reasons = (className: string) =>
       new Set(

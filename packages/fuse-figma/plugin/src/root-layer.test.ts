@@ -1,5 +1,5 @@
 /**
- * The box planner on the in-memory file in `fake-figma.ts`. `rootFill` is checked against what a
+ * The box planner on the in-memory file in `fake-figma.ts`. `ringFill` is checked against what a
  * real file showed on 2026-10-20: Figma drew a focus ring's spread over a fill at alpha 0.001 and
  * not over a fill at alpha 0. The fill must also change no pixel, so it moves no 8-bit channel by
  * half a step. `planBox` is checked against hand-written boxes, planned as a variant's root and
@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { NO_LIMITS, TOP_LEFT } from "../../src/components/kit-spec.ts";
+import { NO_LIMITS, ringFill, TOP_LEFT } from "../../src/components/kit-spec.ts";
 import type {
   BoxSpec,
   FrameLayerSpec,
@@ -25,7 +25,7 @@ import { childNamed, color, fixtureFile, fixtureRun, float } from "./fake-fixtur
 import { setKey } from "./identity.ts";
 import { changeLines, newPlan, performPlan } from "./plan.ts";
 import type { Plan } from "./plan.ts";
-import { planBox, rootFill } from "./root-layer.ts";
+import { planBox } from "./root-layer.ts";
 import type { BoxPlace } from "./root-layer.ts";
 
 const RING: ShadowSpec = {
@@ -36,9 +36,9 @@ const RING: ShadowSpec = {
   spread: { kind: "literal", value: 2 },
 };
 
-describe("rootFill", () => {
+describe("ringFill", () => {
   it("gives a ringed root without a fill one that Figma counts and that shows nothing", () => {
-    const fill = rootFill({ fill: undefined, shadows: [RING] });
+    const fill = ringFill({ fill: undefined, shadows: [RING] });
     if (fill?.kind !== "literal") {
       throw new Error("a ringed root without a fill gets no literal fill");
     }

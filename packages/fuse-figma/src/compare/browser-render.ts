@@ -29,6 +29,7 @@ import {
   ASSET_PATHS,
   BACKGROUND_PROBE,
   cellSelector,
+  fontSweepSelector,
   PAGE_ORIGIN,
   pageViewport,
   previewDocument,
@@ -211,7 +212,7 @@ export class CompareBrowser {
       const page = await context.newPage();
       await page.route(`${PAGE_ORIGIN}/**`, (route) => this.#serve(route, html));
       await page.goto(`${PAGE_ORIGIN}/preview.html`);
-      const font = await checkFont(page);
+      const font = await checkFont(page, fontSweepSelector(requests));
       if (Result.isFailure(font)) {
         return Result.fail(font.failure);
       }
@@ -230,14 +231,17 @@ export class CompareBrowser {
 }
 
 /**
- * Load the face of every element in a cell that holds text, and check that each one's first
- * font family has a loaded face at its weight. The sweep covers every element with a non-blank
- * text node of its own, whatever the component, so a label in a child span counts too, and every
- * `<input>` or `<textarea>` that draws a value or a placeholder, which no text node holds.
+ * Load the face of every element in the cells' measured elements that holds text, and check that
+ * each one's first font family has a loaded face at its weight. The sweep covers every element with
+ * a non-blank text node of its own, whatever the component, so a label in a child span counts too,
+ * and every `<input>` or `<textarea>` that draws a value or a placeholder, which no text node holds.
+ *
+ * @param selector - The elements to sweep, as {@link fontSweepSelector} names them.
  */
-async function checkFont(page: Page): Promise<Result.Result<string, FontNotLoaded>> {
-  const report = await page.evaluate(async () => {
-    const styles = [...document.querySelectorAll("[data-compare-cell] *")]
+async function checkFont(page: Page, selector: string): Promise<Result.Result<string, FontNotLoaded>> {
+  const report = await page.evaluate(async (sweep) => {
+    const swept = sweep === "" ? [] : [...document.querySelectorAll(sweep)];
+    const styles = swept
       .filter(
         (element) =>
           [...element.childNodes].some(
@@ -260,7 +264,7 @@ async function checkFont(page: Page): Promise<Result.Result<string, FontNotLoade
       }
     });
     return { used: [...used], loaded };
-  });
+  }, selector);
   const loaded = new Set(
     report.loaded.map((entry) => {
       const [weight = "", family = ""] = entry.split("|");

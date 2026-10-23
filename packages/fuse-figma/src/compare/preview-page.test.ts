@@ -16,7 +16,14 @@ import { describe, expect, it } from "vitest";
 
 import type { ElementSelector } from "../components/component-spec";
 import { compileHostUtilities } from "../components/utility-css";
-import { ASSET_PATHS, forcedSelector, measuredSelector, PAGE_LAYOUT, previewDocument } from "./preview-page";
+import {
+  ASSET_PATHS,
+  fontSweepSelector,
+  forcedSelector,
+  measuredSelector,
+  PAGE_LAYOUT,
+  previewDocument,
+} from "./preview-page";
 
 /** The layers the built `styles.css` names, in the order its `@layer` statements first name them. */
 function declaredLayers(): readonly string[] {
@@ -132,5 +139,26 @@ describe("the element a cell forces its state on", () => {
     expect(forcedSelector({ slot: "sidebar-menu-badge", statePeer: "sidebar-menu-button" })).toBe(
       '[data-slot="sidebar-menu-button"]:has(~ [data-slot="sidebar-menu-badge"])'
     );
+  });
+});
+
+// Selectors 4 §16.1: `a b` matches a `b` at any depth below an `a`, so the list reaches each cell's
+// measured element, the box the page crops, and every element in it, and no element of the cell
+// around it, such as the month heading of the Calendar a day cell sits in, which takes the theme's
+// heading font.
+describe("the elements the font check reads", () => {
+  it("are each cell's measured element and everything in it", () => {
+    expect(
+      fontSweepSelector([
+        { id: "day", measured: "div[data-rac]" },
+        { id: "button", measured: '[data-slot="button"]' },
+      ])
+    ).toBe(
+      '[data-compare-cell="day"] div[data-rac], [data-compare-cell="day"] div[data-rac] *, [data-compare-cell="button"] [data-slot="button"], [data-compare-cell="button"] [data-slot="button"] *'
+    );
+  });
+
+  it("are none for no cells", () => {
+    expect(fontSweepSelector([])).toBe("");
   });
 });

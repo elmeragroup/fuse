@@ -102,6 +102,26 @@ export function cellSelector(id: string, measured: string): string {
 }
 
 /**
+ * The elements whose text the font check reads: each cell's measured element and every element in
+ * it, the box the page crops and compares. Text a renderer draws around that box takes no part, as
+ * the month heading of the Calendar a day cell sits in, which takes the theme's heading font, Neo
+ * Sans in Fjordkraft's external themes, and which the comparison never shows.
+ *
+ * @param requests - The cells, by id and measured element.
+ * @returns A selector list from the document root, empty for no cells.
+ */
+export function fontSweepSelector(
+  requests: readonly { readonly id: string; readonly measured: string }[]
+): string {
+  return requests
+    .flatMap(({ id, measured }) => {
+      const root = cellSelector(id, measured);
+      return [root, `${root} *`];
+    })
+    .join(", ");
+}
+
+/**
  * The selector of the element a definition's cells force hover and focus on: the part its
  * `statePart` names inside the measured element, as an Accordion item's trigger, the sibling before
  * the measured element its `statePeer` names, as a Sidebar menu badge's menu button, or the measured

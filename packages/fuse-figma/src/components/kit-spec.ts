@@ -81,6 +81,39 @@ export type ShadowSpec = {
   readonly spread: NumberSpec;
 };
 
+/**
+ * A fill Figma counts as visible that changes no 8-bit channel: black at an alpha below half a
+ * step, 1/510, moves a channel by less than 0.5, which rounds away. Figma does not count a fill
+ * at alpha 0. On a real file on 2026-10-20, ghost and link focus rings held their 2px spread
+ * over such a fill and drew nothing, and a test frame drew the ring once its fill reached 0.001.
+ */
+const CLEAR: ColorSpec = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.0015 } };
+
+/**
+ * Whether a box casts a shadow with a spread, as a focus ring is.
+ *
+ * @param shadows - The box's shadows.
+ * @returns True where a spread is bound or is not 0.
+ */
+export function castsSpread(shadows: readonly ShadowSpec[]): boolean {
+  return shadows.some((shadow) => shadow.spread.kind === "variable" || shadow.spread.value !== 0);
+}
+
+/**
+ * The fill a box's spread ring needs. Figma draws a drop shadow's spread only from a frame that
+ * clips its content and has a visible fill, a root on a real file on 2026-10-20 and a part below
+ * one on 2026-10-23 (PR2). A box without a fill, such as a ghost Button or an Accordion trigger,
+ * therefore gets one that shows nothing, as CSS paints nothing for an unset `background-color`. The
+ * plugin gives a root this fill, since the build makes every root clip, and the build gives a part
+ * the fill and clipping, so the part's spec holds what the plugin writes.
+ *
+ * @param box - The box's fill and shadows.
+ * @returns The fill the box draws, or undefined for none.
+ */
+export function ringFill(box: Pick<BoxSpec, "fill" | "shadows">): FillSpec | undefined {
+  return box.fill ?? (castsSpread(box.shadows) ? CLEAR : undefined);
+}
+
 /** A stroke drawn inside the box and counted in the auto layout, as a CSS border is. */
 export type StrokeSpec = {
   readonly color: ColorSpec;

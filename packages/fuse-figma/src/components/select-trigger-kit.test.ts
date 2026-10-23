@@ -104,7 +104,10 @@ describe("the Select trigger component set", () => {
     ]);
   });
 
-  it("draws a card field box that hugs its value and caret and spaces them to its ends", () => {
+  // The trigger hugs its value and caret, so its `justify-between` has no free space to spread and
+  // packs them at its start with the 6px gap between them (CSS Box Alignment 3 §8), which Figma draws
+  // as MIN with the gap, where its SPACE_BETWEEN dropped the gap on the owner's file on 2026-10-23.
+  it("draws a card field box that hugs its value and caret, packed at its start with the gap", () => {
     expect(trigger("default", "rest", "placeholder", "off")).toEqual({
       name: "select-trigger",
       direction: "HORIZONTAL",
@@ -116,7 +119,7 @@ describe("the Select trigger component set", () => {
       paddingBottom: literal(0),
       paddingLeft: density("control-px-md"),
       itemSpacing: density("control-gap-md"),
-      primaryAlign: "SPACE_BETWEEN",
+      primaryAlign: "MIN",
       counterAlign: "CENTER",
       cornerRadius: token("radius-field-box"),
       fill: paint("card"),

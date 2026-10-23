@@ -6,7 +6,8 @@
  *
  * - The box draws the field box chrome: the field corner `radius-field-box`, a 1px `input` border,
  *   a `card` fill and `shadow-xs`, at the size's control height, inset and gap. It hugs the value and
- *   the caret and spaces them to its ends.
+ *   the caret, so its `justify-between` has no room to spread and packs them at its start, the gap
+ *   between them.
  * - The value is `Select.Value`'s `<span data-slot="select-value">`, a part that holds the text, one
  *   TEXT property, `Value`, that starts as the docs Basic demo's placeholder in every cell. The
  *   trigger's `*:data-[slot=select-value]:` classes make it a clipping flex row, whose `display: flex`

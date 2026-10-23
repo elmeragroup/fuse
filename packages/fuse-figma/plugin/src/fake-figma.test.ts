@@ -2,7 +2,7 @@
  * The layout, text, image, property, rotation and stroke rules of the in-memory file in
  * `fake-figma.ts`, each on a few nodes built by hand. The oracle is what the test file `Elmera Fuse -
  * Import test` read back in net-zero probes on 2026-10-22 and 2026-10-23, named P0 to P9b, PB, PR,
- * PD, PL, PF and PH as the
+ * PD, PL, PF, PH and PZ as the
  * fake's header names them, the PNG signature, the hashes `shasum -a 1` gives the fixture images,
  * and the typings where no probe ran. The planners' tests converge against these rules, so a rule
  * that drifts from the real file would let a plan pass that Figma would not keep.
@@ -270,6 +270,8 @@ describe("rule 19: a text's layout sizing and its auto resize move together as t
 
   it("fixes a filling text's width on resize, and keeps its height on its lines (P3)", async () => {
     const text = await textIn(autoLayout("HORIZONTAL"), "WIDTH_AND_HEIGHT");
+    // P3's text held three lines, so it had a width when it filled. Rule 31 covers an empty one.
+    text.characters = "Three lines of text";
     text.layoutSizingHorizontal = "FILL";
     text.resize(80, 14);
     expect([text.textAutoResize, text.width, ...sizing(text)]).toEqual(["HEIGHT", 80, "FIXED", "HUG"]);
@@ -693,6 +695,41 @@ describe("rule 29: a layer that fills across a hugging row stretches to the heig
 
   it("keeps the frame's own height while it hugs", () => {
     expect(hugRow().box.height).toBe(16);
+  });
+});
+
+describe("rule 31: a fill across never widens a text that is 0 wide, and a positive width lets it take over (PZ)", () => {
+  /** A text in a fixed 384px row, its font loaded, auto-resizing as given. */
+  async function inRow(autoResize: TextNode["textAutoResize"]): Promise<TextNode> {
+    const row = autoLayout("HORIZONTAL");
+    row.resize(384, 40);
+    return textIn(row, autoResize);
+  }
+
+  it("leaves an empty text under HEIGHT 0 wide through a fill, its characters and the fill again", async () => {
+    const text = await inRow("HEIGHT");
+    expect(text.width).toBe(0);
+    text.layoutSizingHorizontal = "FILL";
+    text.characters = "Two words";
+    text.layoutSizingHorizontal = "FILL";
+    expect([text.width, ...sizing(text)]).toEqual([0, "FILL", "HUG"]);
+  });
+
+  it("gives a text its characters' width before a fill, which the fill keeps", async () => {
+    const text = await inRow("WIDTH_AND_HEIGHT");
+    text.characters = "Two words";
+    text.layoutSizingHorizontal = "FILL";
+    expect(sizing(text)).toEqual(["FILL", "HUG"]);
+    expect(text.width).toBeGreaterThan(0);
+  });
+
+  it("keeps a 0-wide filling text filling through a positive resize, which gives it a width", async () => {
+    const text = await inRow("HEIGHT");
+    text.layoutSizingHorizontal = "FILL";
+    text.characters = "Two words";
+    text.resize(1, text.height);
+    expect(sizing(text)).toEqual(["FILL", "HUG"]);
+    expect(text.width).toBeGreaterThan(0);
   });
 });
 

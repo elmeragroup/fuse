@@ -4,14 +4,8 @@
  * axis as fixed, hugging or filling its parent, and keeps within the spec's limits.
  */
 
-import type {
-  BoxSpec,
-  ColorSpec,
-  FillSpec,
-  LimitsSpec,
-  NumberSpec,
-  SizeSpec,
-} from "../../src/components/kit-spec.ts";
+import { ringFill } from "../../src/components/kit-spec.ts";
+import type { BoxSpec, LimitsSpec, NumberSpec, SizeSpec } from "../../src/components/kit-spec.ts";
 import {
   LAYOUT_SIZING,
   near,
@@ -61,30 +55,6 @@ function strokeWeightField(node: LayerParent): NumberField {
       node.strokeWeight = value;
     },
   };
-}
-
-/**
- * A fill Figma counts as visible that changes no 8-bit channel: black at an alpha below half a
- * step, 1/510, moves a channel by less than 0.5, which rounds away. Figma does not count a fill
- * at alpha 0. On a real file on 2026-10-20, ghost and link focus rings held their 2px spread
- * over such a fill and drew nothing, and a test frame drew the ring once its fill reached 0.001.
- */
-const CLEAR: ColorSpec = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.0015 } };
-
-/**
- * The fill a root needs. Figma draws a drop shadow's spread only from a frame that clips its
- * content and has a visible fill, and a focus ring is a spread shadow. A root without a fill,
- * such as a ghost Button, therefore gets one that shows nothing, as CSS paints nothing for an
- * unset `background-color`.
- *
- * @param spec - The root the spec asks for.
- * @returns The fill to plan, or undefined for none.
- */
-export function rootFill(spec: Pick<BoxSpec, "fill" | "shadows">): FillSpec | undefined {
-  const spreads = spec.shadows.some(
-    (shadow) => shadow.spread.kind === "variable" || shadow.spread.value !== 0
-  );
-  return spec.fill ?? (spreads ? CLEAR : undefined);
 }
 
 /**
@@ -190,9 +160,10 @@ function planDashPattern(run: Run, node: LayerParent, label: string, desired: re
 
 /**
  * Where the box a plan draws sits. A variant's `root` sits in its component set, which never turns,
- * and gets the fill a spread shadow needs. A `frame` below the root gets no such fill, since no
- * part below a root casts a spread yet. Its `parent` is `unknown` when the box that holds it turns
- * in this run, which moves the frame's fill to the other axis and can change its size.
+ * and gets the fill a spread shadow needs from {@link ringFill}. A `frame` below the root takes the
+ * fill its spec holds, where the build already put that fill and clipping for a ring (PR2). Its
+ * `parent` is `unknown` when the box that holds it turns in this run, which moves the frame's fill
+ * to the other axis and can change its size.
  */
 export type BoxPlace = { readonly kind: "root" } | { readonly kind: "frame"; readonly parent: Held };
 
@@ -279,7 +250,7 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
   planScalar(run, label, "clipsContent", node.clipsContent, clips, () => {
     node.clipsContent = clips;
   });
-  planPaints(run, label, "fill", node.fills, place.kind === "root" ? rootFill(spec) : spec.fill, (paints) => {
+  planPaints(run, label, "fill", node.fills, place.kind === "root" ? ringFill(spec) : spec.fill, (paints) => {
     node.fills = paints;
   });
   // A CSS border sits inside the box and takes room from the content, so the stroke is drawn

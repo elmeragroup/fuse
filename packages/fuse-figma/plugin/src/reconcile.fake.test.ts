@@ -8,6 +8,7 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { walkLayers } from "../../src/components/kit-spec.ts";
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import type { CollectionSpec } from "../../src/variable-set.ts";
 import { ICONS_PAGE, inventoryPage, KIT_PAGES, pageKey, previewsOn } from "../../test/kit-inventory.ts";
@@ -15,7 +16,7 @@ import type { InventoryPage } from "../../test/kit-inventory.ts";
 import { drawsShadowSpread } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed, RED_PIXEL } from "./fake-fixtures.ts";
-import { keyOf } from "./identity.ts";
+import { keyOf, setKey } from "./identity.ts";
 import { appliedFile, kitFixture, kitPage, syncedFile } from "./kit-fixture.ts";
 import { reconcileKit } from "./reconcile.ts";
 
@@ -161,6 +162,14 @@ function onlySolid(paints: ReadonlyArray<Paint> | PluginAPI["mixed"], figma: Plu
   return paint;
 }
 
+/** The text layers below a node, at any depth, in layer order. */
+function textsIn(node: BaseNode): TextNode[] {
+  if (node.type === "TEXT") {
+    return [node];
+  }
+  return "children" in node ? node.children.flatMap(textsIn) : [];
+}
+
 function property(set: ComponentSetNode, name: string): ComponentPropertyDefinitions[string] {
   const found = Object.entries(set.componentPropertyDefinitions).find(
     ([id]) => id === name || id.startsWith(`${name}#`)
@@ -243,6 +252,40 @@ describe("Apply on a synced file without the kit pages", () => {
         }
       }
     }
+  });
+
+  // Rule 31 (PZ): a fill never widens a 0-wide text, so a text that fills across must have a width
+  // before its fill is written, or its characters stack one per line.
+  it("gives every text the spec fills across a width", async () => {
+    const filling = kit.componentSets.flatMap((set) =>
+      set.variants.flatMap((variant) =>
+        walkLayers(variant.root).filter(
+          (layer) => layer.kind === "text" && layer.sizing.horizontal.kind === "fill"
+        )
+      )
+    );
+    const texts = [];
+    for (const page of KIT_PAGES) {
+      const sets = (await kitPage(file, pageKey(page))).children.filter(
+        (node) => node.type === "COMPONENT_SET"
+      );
+      texts.push(...sets.flatMap(textsIn));
+    }
+    const filled = texts.filter((text) => text.layoutSizingHorizontal === "FILL");
+    expect(filled).toHaveLength(filling.length);
+    expect(filled.filter((text) => text.width < 1).map((text) => text.id)).toEqual([]);
+  });
+
+  // A real file drew a part's spread ring only over a visible fill with clipping on (PR2), as rule 3
+  // reads for a root.
+  it("draws the ring of a focused Accordion trigger, a part below the item", async () => {
+    const focused = variantNamed(
+      setOn(await kitPage(file, "page/accordion"), "Accordion item"),
+      "variant=default, radius=none, open=off, state=focus"
+    );
+    const header = childNamed(focused, "FRAME", "accordion-header");
+    const trigger = childNamed(header, "FRAME", "accordion-trigger");
+    expect([trigger.effects.length, drawsShadowSpread(trigger)]).toEqual([1, true]);
   });
 
   it("writes nothing on a second Apply but showing the page", async () => {
@@ -354,6 +397,48 @@ describe("Apply on a synced file without the kit pages", () => {
 });
 
 describe("a later run on an applied file", () => {
+  // The owner's file on 2026-10-23 held every filling text at width 0, written by a plugin that laid
+  // a new text out before its characters. Under rule 31 that text stays 0 wide whatever FILL it
+  // reads, until a positive width lets the fill take over (PZ). An interrupted Apply can also leave
+  // it empty and unlinked, and the run that gives its characters back must widen it too.
+  it.each([
+    ["holding its characters", (characters: string) => characters],
+    ["empty and unlinked", () => ""],
+  ])("repairs a filling text an earlier run left 0 wide and %s, in one Apply", async (_case, held0) => {
+    const file = await appliedFile();
+    // Input's text is its root's own label, a filling text the variant holds directly.
+    const parent = setOn(await kitPage(file, "page/input"), "Input").children[0];
+    const held = parent?.type === "COMPONENT" ? textsIn(parent)[0] : undefined;
+    if (parent?.type !== "COMPONENT" || held?.layoutSizingHorizontal !== "FILL") {
+      throw new Error("the Input set's first variant holds no filling text");
+    }
+    const { name, characters } = held;
+    const index = parent.children.indexOf(held);
+    const key = keyOf(held);
+    held.remove();
+    await file.figma.loadFontAsync({ family: "Inter", style: "Regular" });
+    const stale = file.figma.createText();
+    parent.insertChild(index, stale);
+    setKey(stale, key);
+    stale.name = name;
+    stale.textAutoResize = "HEIGHT";
+    stale.layoutSizingHorizontal = "FILL";
+    stale.characters = held0(characters);
+    expect([stale.width, stale.componentPropertyReferences?.characters]).toEqual([0, undefined]);
+
+    expect(await changes(file)).toContainEqual(
+      expect.stringContaining(`${name}: width → 1 for the fill to take over, layoutSizingHorizontal → FILL`)
+    );
+    await reconcileKit(file.figma, kit, true);
+    expect([stale.layoutSizingHorizontal, stale.width >= 1, stale.characters]).toEqual([
+      "FILL",
+      true,
+      characters,
+    ]);
+    expect(stale.componentPropertyReferences?.characters).toBeDefined();
+    expect(await changes(file)).toEqual([]);
+  });
+
   it("keeps the keys of a renamed variant and a renamed label, and plans only their names back", async () => {
     const file = await appliedFile();
     const button = await componentSet(file, "Button");

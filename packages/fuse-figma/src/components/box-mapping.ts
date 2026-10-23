@@ -38,7 +38,7 @@ import {
   readColor,
   readNumber,
 } from "./css-values";
-import { fixedLength, iconKey, ZERO } from "./kit-spec";
+import { castsSpread, fixedLength, iconKey, ringFill, ZERO } from "./kit-spec";
 import type {
   BoxSpec,
   ChildLayerSpec,
@@ -97,6 +97,18 @@ const PRIMARY_ALIGNMENTS = new Map<string, { readonly align: PrimaryAlignSpec; r
   ["space-between", { align: "SPACE_BETWEEN", where: "spaced out between the ends of" }],
 ]);
 
+/**
+ * Where `justify-content` places the children of a box that hugs them along its direction with no
+ * minimum there. Such a box has no free space, so `space-between` packs them at its start with the
+ * gap between them (CSS Box Alignment 3 §5.3, §8). Figma's SPACE_BETWEEN would drop the gap: a real
+ * file drew no gap under it beside a filling text on 2026-10-23 (PV), and the owner's Select triggers
+ * drew the caret against the value.
+ */
+const HUGGED_ALIGNMENTS = new Map<string, { readonly align: PrimaryAlignSpec; readonly where: string }>([
+  ...PRIMARY_ALIGNMENTS,
+  ["space-between", { align: "MIN", where: "with no room to space them out, so packed at the start of" }],
+]);
+
 function readAlign<Align extends PrimaryAlignSpec>(
   reader: LayerStyle,
   property: string,
@@ -131,10 +143,16 @@ const DIRECTIONS = new Map<string, { readonly direction: DirectionSpec; readonly
  *
  * @param flow - The parts in the box's flow, and the names of its icons and label, which set no
  *   alignment of their own.
+ * @param box - The box's sizing and limits, which say whether it hugs its layers along its
+ *   direction with no minimum, so `justify-content` has no free space to distribute.
  * @returns The box's layout, and the alignment its parts set, which {@link settleSelfAlignment}
  *   settles once the parts map.
  */
-function readFlow(reader: LayerStyle, flow: FlowLayers): Flow {
+function readFlow(
+  reader: LayerStyle,
+  flow: FlowLayers,
+  box: { readonly sizing: SizingSpec; readonly limits: LimitsSpec }
+): Flow {
   const display = normalizeCss(reader.raw("display") ?? "");
   const blocks = stacksBlocks(reader, flow);
   if (display === "grid" || display === "-webkit-box" || blocks) {
@@ -162,7 +180,13 @@ function readFlow(reader: LayerStyle, flow: FlowLayers): Flow {
   const unset = direction === "VERTICAL" ? "MIN" : "CENTER";
   const self = flex && direction === "HORIZONTAL" ? readSelfAlignment(reader, flow) : undefined;
   const counterAlign = self?.align ?? readAlign(reader, "align-items", "counter", ALIGNMENTS) ?? unset;
-  const primaryAlign = readAlign(reader, "justify-content", "primary", PRIMARY_ALIGNMENTS) ?? unset;
+  const column = direction === "VERTICAL";
+  const hugged =
+    flex &&
+    (column ? box.sizing.vertical : box.sizing.horizontal).kind === "hug" &&
+    (column ? box.limits.minHeight : box.limits.minWidth) === undefined;
+  const primaryAlign =
+    readAlign(reader, "justify-content", "primary", hugged ? HUGGED_ALIGNMENTS : PRIMARY_ALIGNMENTS) ?? unset;
   return {
     layout: {
       flex,
@@ -550,10 +574,14 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     });
   const flowing = shown.filter((part) => !outOfFlow(part.cascade.style));
   // A part's own `align-self` can decide the box's alignment, so the layout reads once they cascade.
-  const { layout, self } = readFlow(reader, {
-    parts: flowing.map(({ name, cascade: part }) => ({ name, style: part.style })),
-    others: [...start, ...(label === undefined ? [] : [label]), ...end].map(({ name }) => name),
-  });
+  const { layout, self } = readFlow(
+    reader,
+    {
+      parts: flowing.map(({ name, cascade: part }) => ({ name, style: part.style })),
+      others: [...start, ...(label === undefined ? [] : [label]), ...end].map(({ name }) => name),
+    },
+    { sizing, limits }
+  );
   const holder: Holder = {
     style: reader,
     layout,
@@ -596,7 +624,9 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       return index === growing ? growingRoom(holder, index, inside) : inside;
     };
     const room = index === -1 ? absoluteRoom(holder) : lessMargins(inFlow(), part.cascade.style);
-    const box = mapBox(part.child, part.cascade, scope, room);
+    const own = mapBox(part.child, part.cascade, scope, room);
+    // Figma draws a part's spread ring only over a visible fill with clipping on (PR2).
+    const box = castsSpread(own.shadows) ? { ...own, fill: ringFill(own), clips: true } : own;
     const drawn: FrameLayerSpec = {
       kind: "frame",
       key: part.child.key,

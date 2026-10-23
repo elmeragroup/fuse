@@ -419,8 +419,10 @@ function autoResizeOf(sizing: TextSizingSpec): "WIDTH_AND_HEIGHT" | "HEIGHT" | "
 /**
  * Plan how a text sizes and truncates as one operation, in the order its writes depend on each
  * other. The auto resize comes first, since it moves the text's hug: on a real file on 2026-10-22
- * a fill across a hugging text turned it to a fixed width with an auto height (P3). The sizing on
- * each axis follows, then a fixed width or height, which the auto resize must already keep, then
+ * a fill across a hugging text turned it to a fixed width with an auto height (P3). A filling text
+ * that reads less than a pixel wide, and that the spec gives characters, gets a 1px width next,
+ * since a fill never widens a 0-wide text and any positive width lets it take over (PZ). The sizing
+ * on each axis follows, then a fixed width or height, which the auto resize must already keep, then
  * the truncation, and last the maximum lines, which a text keeps only while it truncates (P4).
  *
  * @param held - `unknown` when the text's box turns in this run, which moves its fill to the other
@@ -439,14 +441,24 @@ function planTextLayout(run: Run, text: TextNode, label: string, spec: TextLayer
     label,
     (plan) => {
       const group = { ...run, plan };
+      // A text that fills across but reads less than a pixel wide stays so whatever FILL and
+      // characters it gets, until a positive width lets the fill take over (PZ), as an earlier run
+      // that laid a new text out before its characters left every filling text. The run leaves the
+      // text holding the spec's characters, which `planCharacters` writes or links before this, so
+      // they decide, whatever it holds now, and a text the spec leaves empty gets no width.
+      const stuck = spec.sizing.horizontal.kind === "fill" && text.width < 1 && spec.characters.length > 0;
       // A new auto resize moves the text's hug, and a hugging text's size follows its characters and
       // its font, which the run can change first, so the sizing and the lengths after a new auto
-      // resize are written whatever the text reads now.
-      const lengths: Held = held === "read" && text.textAutoResize === autoResize ? "read" : "unknown";
+      // resize, or after the repair, are written whatever the text reads now.
+      const lengths: Held =
+        !stuck && held === "read" && text.textAutoResize === autoResize ? "read" : "unknown";
       const reads = lengths === "read" ? text : undefined;
       planScalar(group, label, "textAutoResize", text.textAutoResize, autoResize, () => {
         text.textAutoResize = autoResize;
       });
+      if (stuck) {
+        change(plan, label, "width → 1 for the fill to take over", () => text.resize(1, text.height));
+      }
       for (const [axis, member] of SIZING_MEMBERS) {
         if (reads?.[member] !== sizing[axis]) {
           change(plan, label, `${member} → ${sizing[axis]}`, () => {
@@ -506,6 +518,9 @@ function planTypography(
   planLineHeight(run, text, label, spec.lineHeight);
   planLetterSpacing(run, text, label, spec);
   planUnderline(run, text, label, spec);
+  // A new text hugs its characters, and an empty one is 0 wide, which a fill never widens (PZ), so
+  // the characters go in before the layout.
+  planCharacters(run, text, label, spec, propertyIds);
   planTextLayout(run, text, label, spec, parent);
   const { horizontal, vertical } = spec.align;
   planScalar(run, label, "textAlignHorizontal", text.textAlignHorizontal, horizontal, () => {
@@ -514,7 +529,16 @@ function planTypography(
   planScalar(run, label, "textAlignVertical", text.textAlignVertical, vertical, () => {
     text.textAlignVertical = vertical;
   });
+}
 
+/** Plan a text's characters, or the TEXT property of the set that sets them. */
+function planCharacters(
+  run: Run,
+  text: TextNode,
+  label: string,
+  spec: TextLayerSpec,
+  propertyIds: PropertyIds
+): void {
   const property = spec.textProperty;
   if (property === undefined) {
     planScalar(run, label, "characters", text.characters, spec.characters, () => {

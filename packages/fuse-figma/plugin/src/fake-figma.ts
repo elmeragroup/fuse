@@ -11,9 +11,9 @@
  * run stopped before its first write.
  *
  * The fake models the Figma rules below. Each rule a real file showed in 2026-10 names that run.
- * Rules 12 to 30 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
+ * Rules 12 to 31 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
  * Import test` on 2026-10-22 and 2026-10-23: P0 and P0b read the kit's nodes, P1 to P9, PB, PR,
- * PQ, PD, PL, PF and PH built nodes on a scratch page, and P9b stored images and built no node.
+ * PQ, PD, PL, PF, PH and PZ built nodes on a scratch page, and P9b stored images and built no node.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
  *    COLOR variable in the collections' default modes, whatever opacity it was given. Two runs
@@ -121,9 +121,10 @@
  *    (P3). FILL across a WIDTH_AND_HEIGHT text in a row switches it to HEIGHT and fills the row.
  *    Writing WIDTH_AND_HEIGHT on a text that fills keeps it HEIGHT and filling. A resize of a
  *    HEIGHT text fixes its width and keeps its height on its lines, and stops a fill as rule 14
- *    says. No probe wrote HUG or FIXED on a text, or FILL down one. The fake takes HUG or FIXED
- *    only where the auto resize already reads it, so the write only stops a fill, and throws for
- *    the rest. A sizing write needs the text's fonts, as an auto resize write does.
+ *    says, except on a 0-wide text (rule 31). No probe wrote HUG or FIXED on a text, or FILL down
+ *    one. The fake takes HUG or FIXED only where the auto resize already reads it, so the write
+ *    only stops a fill, and throws for the rest. A sizing write needs the text's fonts, as an auto
+ *    resize write does.
  * 20. `textTruncation` and `maxLines`, as a real file showed on 2026-10-22 (P4). A `maxLines`
  *    write while truncation is DISABLED changes nothing, and the maximum reads null. ENDING on a
  *    text with no maximum reads `maxLines` 1, and null under ENDING is accepted. `maxLines` takes
@@ -219,6 +220,15 @@
  *    it was 21, 24 and 21 tall at 150% in the Dense, Comfortable and Auto modes, so the line box
  *    follows the bound size (PH). The fake keeps the percent as written, through a font size
  *    binding. It does not set text, so the line box leaves the text's size as it was.
+ * 31. A fill across never widens a text that is 0 wide. On 2026-10-23 the owner's real file held
+ *    every filling text of the kit at width 0, its characters one per line, and a probe replayed
+ *    the plugin's order for a new text in a fixed 384px row: an empty text under HEIGHT was 0 wide,
+ *    and FILL left it 0 wide after its characters arrived and after FILL was written again. Writing
+ *    the characters first gave it 364. `resize(1, height)` on the 0-wide filling text kept FILL and
+ *    reflowed it to 364 (PZ). The fake gives a text that hugs its characters a width when they are
+ *    written, half its font size a character, since it measures no glyphs, and 0 for none. A fill
+ *    keeps a text's width, so one that was 0 wide reads 0 across, and a positive resize of such a
+ *    text keeps its fill. The fake does not lay out, so the text keeps the width written.
  *
  * An instance's sublayers show the layers of its main component. An override, such as the
  * color an icon layer gives its glyph, belongs to the main layer it was made on. It moves to
@@ -878,13 +888,15 @@ function storeEffect(state: NodeState, effect: Effect, held: ReadonlySet<string>
 
 /**
  * Resize a node, turn an auto layout frame's sizing modes to FIXED (rule 5), and stop it filling
- * its auto layout parent (rule 14). A text whose height follows its lines keeps it (rule 19).
+ * its auto layout parent (rule 14). A text whose height follows its lines keeps it (rule 19), and a
+ * 0-wide one that fills across keeps the fill, which the width lets take over (rule 31).
  */
 function resize(state: NodeState, width: number, height: number): void {
   const followsLines = state.type === "TEXT" && state.textAutoResize === "HEIGHT";
   if (width < 0.01 || (!followsLines && height < 0.01)) {
     throw new Error(`Cannot resize ${state.id} to ${width} × ${height}: both must be at least 0.01.`);
   }
+  const stuckFill = followsLines && state.width === 0 && fills(state, "HORIZONTAL");
   state.width = f32(width);
   if (!followsLines) {
     state.height = f32(height);
@@ -893,8 +905,19 @@ function resize(state: NodeState, width: number, height: number): void {
     state.primaryAxisSizingMode = "FIXED";
     state.counterAxisSizingMode = "FIXED";
   }
+  if (stuckFill) {
+    return;
+  }
   state.layoutGrow = 0;
   state.layoutAlign = "INHERIT";
+}
+
+/**
+ * The width the fake gives a text that hugs its characters. It measures no glyphs, so each
+ * character takes half the font size, and an empty text is 0 wide, as a real one is (rule 31).
+ */
+function measuredWidth(characters: string, fontSize: number): number {
+  return f32(characters.length * fontSize * 0.5);
 }
 
 /** Where a child's start and size land on one axis when its parent grows from `before` to `after`. */
@@ -993,7 +1016,10 @@ function fills(state: NodeState, axis: Axis): boolean {
 function lengthOn(state: NodeState, axis: Axis): number {
   const own = axis === "HORIZONTAL" ? state.width : state.height;
   const parent = state.parent;
+  // A fill never widens a 0-wide text (rule 31).
+  const stuck = state.type === "TEXT" && axis === "HORIZONTAL" && own === 0;
   if (
+    stuck ||
     parent === undefined ||
     !isAutoLayout(parent) ||
     parent.layoutMode === axis ||
@@ -2886,6 +2912,10 @@ class FakeText extends FakeSceneNode {
     state.styles = Array.from({ length: Math.max(1, value.length) }, () => first);
     if (state.autoRename) {
       state.name = value;
+    }
+    // A text that hugs its characters takes their width, and an empty one is 0 wide (rule 31).
+    if (state.textAutoResize === "WIDTH_AND_HEIGHT") {
+      state.width = measuredWidth(value, first.fontSize);
     }
   }
 
