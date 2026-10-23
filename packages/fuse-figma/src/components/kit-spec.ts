@@ -146,6 +146,23 @@ export type TextLayerSpec = {
   readonly align: TextAlignSpec;
   /** Where the text cuts its characters off, or undefined where it shows them all. */
   readonly truncation: TruncationSpec | undefined;
+  /** The space added between letters, absent for the font's own spacing. */
+  readonly letterSpacing?: LetterSpacingSpec;
+  /**
+   * The width at which a text that hugs its width wraps, as a box around it that hugs its width up to
+   * a `max-width` wraps it in CSS. A hugging Figma text with a `maxWidth` wraps there (P7). Absent for
+   * a text nothing caps.
+   */
+  readonly maxWidth?: NumberSpec;
+};
+
+/**
+ * Letter spacing as a percent of the font size, as Figma's `letterSpacing` holds it in `PERCENT`.
+ * An `em` spacing in CSS is the same share, so it keeps its ratio at any font size (PL).
+ */
+export type LetterSpacingSpec = {
+  readonly unit: "PERCENT";
+  readonly value: number;
 };
 
 /**

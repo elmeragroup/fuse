@@ -34,7 +34,7 @@ import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
 import type { Siblings } from "./identity.ts";
 import { change, changeTogether, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
-import { planBox, planLength } from "./root-layer.ts";
+import { planBox, planLength, planLimit } from "./root-layer.ts";
 import type { LayerParent } from "./root-layer.ts";
 
 /**
@@ -322,6 +322,24 @@ function offsetMatches(current: TextDecorationOffset | null, desired: TextDecora
 }
 
 /**
+ * Plan a label's letter spacing, a percent of its font size (PL). A label the spec gives no spacing
+ * plans none, so a published label keeps whatever spacing it holds.
+ */
+function planLetterSpacing(run: Run, text: TextNode, label: string, spec: TextLayerSpec): void {
+  const desired = spec.letterSpacing;
+  const held = text.letterSpacing;
+  if (
+    desired === undefined ||
+    (held !== run.figma.mixed && held.unit === desired.unit && near(held.value, desired.value))
+  ) {
+    return;
+  }
+  change(run.plan, label, `letterSpacing → ${desired.value}%`, () => {
+    text.letterSpacing = { unit: desired.unit, value: desired.value };
+  });
+}
+
+/**
  * Plan the underline as one operation, because Figma holds an underline offset only while the
  * layer is underlined.
  */
@@ -403,6 +421,7 @@ function planTextLayout(run: Run, text: TextNode, label: string, spec: TextLayer
       planLength(group, text, label, "height", spec.sizing.vertical, lengths, (value) =>
         text.resize(text.width, value)
       );
+      planLimit(group, text, label, "maxWidth", spec.maxWidth);
       planScalar(group, label, "textTruncation", text.textTruncation, truncation, () => {
         text.textTruncation = truncation;
       });
@@ -459,6 +478,7 @@ function planTypography(
       text.lineHeight = { unit: "PIXELS", value };
     }
   );
+  planLetterSpacing(run, text, label, spec);
   planUnderline(run, text, label, spec);
   planTextLayout(run, text, label, spec, parent);
   const { horizontal, vertical } = spec.align;

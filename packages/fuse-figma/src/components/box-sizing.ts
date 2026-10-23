@@ -38,10 +38,29 @@ type AxisRoom = {
   readonly length: number | undefined;
 };
 
+/**
+ * The widest a box that hugs its width grows in CSS before the text it holds wraps: the content
+ * width that the nearest boxes around it that hug their width up to a `max-width` leave, in pixels.
+ * `unread` where one of those widths, or a padding or border between, is no literal length, and
+ * `none` where no such box caps it.
+ */
+export type WidthCap =
+  | { readonly kind: "none" }
+  | { readonly kind: "pixels"; readonly value: number }
+  | { readonly kind: "unread" };
+
+/** No cap on a box's width. */
+const NO_CAP: WidthCap = { kind: "none" };
+
+/** A cap the build cannot read in pixels. */
+const UNREAD_CAP: WidthCap = { kind: "unread" };
+
 /** What a box's parent gives it on each axis. */
 export type Room = {
   readonly horizontal: AxisRoom;
   readonly vertical: AxisRoom;
+  /** The cap the boxes around the box set on its width, as {@link widthCapInside} reads it. */
+  readonly widthCap: WidthCap;
 };
 
 const HUG: SizeSpec = { kind: "hug" };
@@ -73,6 +92,7 @@ export function rootRoom(previewWidth: number | undefined, style: LayerStyle): R
       length: undefined,
     },
     vertical: { percent: NO_BASIS, auto: HUG, siblings: [], length: undefined },
+    widthCap: NO_CAP,
   };
 }
 
@@ -94,7 +114,77 @@ export type Holder = {
    * An absolute part sits outside it.
    */
   readonly layers: readonly string[];
+  /** The cap the boxes around the box set on its width, from its room. */
+  readonly widthCap: WidthCap;
+  /** How much of a row each of `layers` takes, in the same order. */
+  readonly shares: readonly RowShare[];
 };
+
+/**
+ * How much of a row a layer takes along it, its margins included, in pixels, or `unread` where the
+ * build does not know before it maps the layer, as for a text or a box that hugs what it holds.
+ */
+export type RowShare = { readonly kind: "pixels"; readonly value: number } | { readonly kind: "unread" };
+
+/** A share the build does not know. */
+export const UNREAD_SHARE: RowShare = { kind: "unread" };
+
+/**
+ * The margins that set a box's horizontal margins as a whole: shorthands and logical sides, which the
+ * build does not read apart.
+ */
+const WHOLE_MARGINS = ["margin", "margin-inline", "margin-inline-start", "margin-inline-end"] as const;
+
+/**
+ * A box's left and right margins together, in pixels.
+ *
+ * @param style - The box's style.
+ * @returns Their sum, 0 for none, or undefined where one is no literal or a shorthand or logical
+ *   margin sets them.
+ */
+function horizontalMargins(style: LayerStyle): number | undefined {
+  if (WHOLE_MARGINS.some((property) => style.has(property))) {
+    return undefined;
+  }
+  const left = literalPixels(style, "margin-left");
+  const right = literalPixels(style, "margin-right");
+  return left === undefined || right === undefined ? undefined : left + right;
+}
+
+/**
+ * The share of a row a part takes: its literal width and its left and right margins.
+ *
+ * @param style - The part's style.
+ * @returns The share, or `unread` where the part's width is no literal length, as where it hugs.
+ */
+export function partShare(style: LayerStyle): RowShare {
+  const width = style.resolved("width");
+  const length = width === undefined ? undefined : evaluateLength(width);
+  const margins = horizontalMargins(style);
+  return length === undefined || margins === undefined
+    ? UNREAD_SHARE
+    : { kind: "pixels", value: length + margins };
+}
+
+/**
+ * A part's room once its own margins are taken off the cap, since a margin takes its room from the
+ * space the part's box gets (CSS Sizing 3 §2.3).
+ *
+ * @param room - The room the part's parent gives it.
+ * @param style - The part's style.
+ * @returns The room, its cap less the part's left and right margins, or `unread` where they are no
+ *   literals.
+ */
+export function lessMargins(room: Room, style: LayerStyle): Room {
+  if (room.widthCap.kind !== "pixels") {
+    return room;
+  }
+  const margins = horizontalMargins(style);
+  return {
+    ...room,
+    widthCap: margins === undefined ? UNREAD_CAP : { kind: "pixels", value: room.widthCap.value - margins },
+  };
+}
 
 /**
  * Whether a box sits out of its parent's flow, as `position: absolute` and `fixed` take it, so it
@@ -157,7 +247,7 @@ export function absoluteRoom(holder: Holder): Room {
       length: undefined,
     };
   };
-  return { horizontal: axisRoom("horizontal"), vertical: axisRoom("vertical") };
+  return { horizontal: axisRoom("horizontal"), vertical: axisRoom("vertical"), widthCap: NO_CAP };
 }
 
 /**
@@ -202,7 +292,81 @@ export function roomInside(holder: Holder, index: number): Room {
       siblings: along("VERTICAL"),
       length: innerLength(holder, "vertical", "content"),
     },
+    widthCap: widthCapInside(holder, index),
   };
+}
+
+/**
+ * The cap on the width of one layer a box holds, a part or the box's own text. A box that hugs its
+ * width is as wide as what it holds, up to its `max-width` and the cap the boxes around it set, and
+ * no narrower than its `min-width` (CSS 2.1 §10.4), so what it holds wraps at that width less the
+ * box's padding and border (CSS Sizing 3 §5.1). In a row the other layers and the gaps between them
+ * take their share of it (CSS Flexbox 1 §9.7), and a share the build cannot read leaves the cap
+ * `unread`. A box whose width is fixed or fills sets the width of what it holds instead, so no cap
+ * passes through it.
+ *
+ * @param holder - The box.
+ * @param index - The layer's place in the box's flow, as `holder.layers` lists it.
+ * @returns The cap in pixels, `unread` where a length it needs is no literal, or `none`.
+ */
+export function widthCapInside(holder: Holder, index: number): WidthCap {
+  const content = contentCap(holder);
+  const others = holder.shares.filter((_share, place) => place !== index);
+  if (content.kind !== "pixels" || holder.layout.direction !== "HORIZONTAL" || others.length === 0) {
+    return content;
+  }
+  const gap = holder.style.has("column-gap") ? undefined : literalPixels(holder.style, "gap");
+  let room = content.value - (gap ?? 0) * others.length;
+  for (const share of others) {
+    if (share.kind === "unread" || gap === undefined) {
+      return UNREAD_CAP;
+    }
+    room -= share.value;
+  }
+  return { kind: "pixels", value: room };
+}
+
+/**
+ * The cap on a box's content width: its own limits, resolved as CSS resolves them, and the cap the
+ * boxes around it set, less its padding and border.
+ */
+function contentCap(holder: Holder): WidthCap {
+  if (holder.sizing.horizontal.kind !== "hug") {
+    return NO_CAP;
+  }
+  const { minWidth, maxWidth } = holder.limits;
+  const own: WidthCap =
+    maxWidth === undefined
+      ? NO_CAP
+      : maxWidth.kind === "literal"
+        ? { kind: "pixels", value: maxWidth.value }
+        : UNREAD_CAP;
+  const outer = narrower(own, holder.widthCap);
+  if (outer.kind !== "pixels") {
+    return outer;
+  }
+  if (minWidth !== undefined && minWidth.kind !== "literal") {
+    return UNREAD_CAP;
+  }
+  // The minimum wins over the maximum and the cap (CSS 2.1 §10.4).
+  const border = Math.max(outer.value, minWidth?.value ?? 0);
+  const insets = ["padding-left", "padding-right", "border-width", "border-width"].map((property) =>
+    literalPixels(holder.style, property)
+  );
+  return insets.some((inset) => inset === undefined)
+    ? UNREAD_CAP
+    : { kind: "pixels", value: insets.reduce<number>((rest, inset) => rest - (inset ?? 0), border) };
+}
+
+/** The narrower of two caps. Either one unread makes the narrower unread. */
+function narrower(left: WidthCap, right: WidthCap): WidthCap {
+  if (left.kind === "unread" || right.kind === "unread") {
+    return UNREAD_CAP;
+  }
+  if (left.kind === "none") {
+    return right;
+  }
+  return right.kind === "none" ? left : { kind: "pixels", value: Math.min(left.value, right.value) };
 }
 
 /** A declaration a box needs and its cascade leaves unset, for `LayerStyle.missing`. */

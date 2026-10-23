@@ -11,9 +11,9 @@
  * run stopped before its first write.
  *
  * The fake models the Figma rules below. Each rule a real file showed in 2026-10 names that run.
- * Rules 12 to 27 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
- * Import test` on 2026-10-22: P0 and P0b read the kit's nodes, P1 to P9, PB, PR, PQ and PD built
- * nodes on a scratch page, and P9b stored images and built no node.
+ * Rules 12 to 28 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
+ * Import test` on 2026-10-22 and 2026-10-23: P0 and P0b read the kit's nodes, P1 to P9, PB, PR,
+ * PQ, PD and PL built nodes on a scratch page, and P9b stored images and built no node.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
  *    COLOR variable in the collections' default modes, whatever opacity it was given. Two runs
@@ -200,6 +200,12 @@
  *    the binding kept, and cleared it with `[]` (PD). So writing `strokes` leaves the pattern, and
  *    writing the pattern leaves the paints. No probe wrote a pattern of odd length or a length that
  *    is not positive, so the fake stores any list as written, each length a 32-bit float.
+ * 28. `letterSpacing` on a text. On 2026-10-23 a new text read `{ unit: "PERCENT", value: 0 }`,
+ *    `{ unit: "PERCENT", value: -2.5 }` read back exactly and narrowed a hugging 18px Roboto Medium
+ *    text from 122 to 116 wide, and `{ unit: "PIXELS", value: -0.45 }` read back as the 32-bit float
+ *    -0.44999998807907104 (PL). The write needs the text's fonts, as every text write does (rule 7).
+ *    The plugin writes one spacing for the whole layer, so the fake keeps one and never reads mixed.
+ *    It does not lay out, so the spacing leaves the text's size as it was.
  *
  * An instance's sublayers show the layers of its main component. An override, such as the
  * color an icon layer gives its glyph, belongs to the main layer it was made on. It moves to
@@ -424,6 +430,8 @@ type NodeState = {
   /** The style of each character, or of the one a text layer without characters types in. */
   styles: readonly CharacterStyle[];
   textDecoration: TextDecoration;
+  /** The text's letter spacing, one for the whole layer (rule 28). */
+  letterSpacing: LetterSpacing;
   textDecorationOffset: TextDecorationOffset | null;
   textAutoResize: TextNode["textAutoResize"];
   textAlignHorizontal: TextNode["textAlignHorizontal"];
@@ -1778,6 +1786,7 @@ function copiedFields(source: NodeState): Omit<NodeState, UncopiedField> {
     characters: source.characters,
     styles: source.styles,
     textDecoration: source.textDecoration,
+    letterSpacing: { ...source.letterSpacing },
     textDecorationOffset: source.textDecorationOffset === null ? null : { ...source.textDecorationOffset },
     textAutoResize: source.textAutoResize,
     textAlignHorizontal: source.textAlignHorizontal,
@@ -2886,6 +2895,20 @@ class FakeText extends FakeSceneNode {
     restyle(state, 0, state.styles.length, (style) => ({ ...style, lineHeight }));
   }
 
+  get letterSpacing(): LetterSpacing | PluginAPI["mixed"] {
+    return live(this).letterSpacing;
+  }
+
+  set letterSpacing(value: LetterSpacing | PluginAPI["mixed"]) {
+    const state = live(this);
+    if (value === MIXED) {
+      throw new Error("Cannot write figma.mixed as a letter spacing.");
+    }
+    requireHeldFonts(state, "letterSpacing");
+    write(state, "letterSpacing");
+    state.letterSpacing = { unit: value.unit, value: f32(value.value) };
+  }
+
   get textDecoration(): TextDecoration | PluginAPI["mixed"] {
     return live(this).textDecoration;
   }
@@ -3201,6 +3224,7 @@ function createNode(file: FileState, type: NodeType, name: string, id?: string):
     ],
     textDecoration: "NONE",
     textDecorationOffset: null,
+    letterSpacing: { unit: "PERCENT", value: 0 },
     textAutoResize: "WIDTH_AND_HEIGHT",
     textAlignHorizontal: "LEFT",
     textAlignVertical: "TOP",

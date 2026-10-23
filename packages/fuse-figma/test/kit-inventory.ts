@@ -147,6 +147,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     // 2 sizes in 4 states, holding the placeholder or a value, closed and open.
     sets: [{ key: "select-trigger", name: "Select trigger", variants: 32, previewed: 32 }],
   },
+  // The default, outline and dashed outline frames.
+  { slug: "empty", name: "Empty", sets: [{ key: "empty", name: "Empty", variants: 3, previewed: 3 }] },
 ];
 
 /** The page that holds the icon library alone, after the component pages. */

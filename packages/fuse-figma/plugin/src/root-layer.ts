@@ -123,10 +123,18 @@ export function planLength(
   );
 }
 
-/** Plan one limit, or remove one the spec drops. */
-function planLimit(
+/**
+ * Plan one limit of a box or a text, or remove one the spec drops.
+ *
+ * @param run - The run.
+ * @param node - The box, or a text layer.
+ * @param label - The node's label, for change lines.
+ * @param name - The limit.
+ * @param spec - The length the limit should hold, or undefined for none.
+ */
+export function planLimit(
   run: Run,
-  node: LayerParent,
+  node: LayerParent | TextNode,
   label: string,
   name: keyof LimitsSpec,
   spec: NumberSpec | undefined

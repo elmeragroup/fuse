@@ -773,18 +773,25 @@ describe("a grid that centers its content", () => {
   });
 });
 
-// Unit under test: `buildComponentSet` on a root's `position` and `align-self`. Oracle: CSS. A
+// Unit under test: `buildComponentSet` on a root's `position`, `align-self` and `flex`. Oracle: CSS. A
 // `relative` box stays where the flow puts it and only becomes the containing block of its
 // positioned descendants, which an auto layout has none of. `align-self` places a flex item across
 // its parent's line, and a component's root sits in no line: `auto`, the initial value, asks for
-// nothing, while `stretch` asks for a length the root does not have.
+// nothing, while `stretch` asks for a length the root does not have. `flex` grows or shrinks a flex
+// item along its line (CSS Flexbox 1 §7), which the root is not.
 describe("a box's position and alignment", () => {
   async function rowsOf(classes: string) {
     const { coverage } = await buildFixture(chip(classes));
     return coverage
-      .filter((row) => ["position", "align-self"].includes(row.property))
+      .filter((row) => ["position", "align-self", "flex"].includes(row.property))
       .map((row) => [row.className, row.outcome, row.detail]);
   }
+
+  it("drops flex-1 on the root, which sits in no flex line", async () => {
+    expect(await rowsOf("flex-1")).toEqual([
+      ["flex-1", "dropped", "the component's root sits in no flex line, so nothing grows or shrinks it"],
+    ]);
+  });
 
   it("drops relative, which anchors no layer in auto layout", async () => {
     expect(await rowsOf("relative")).toEqual([
@@ -829,9 +836,52 @@ describe("a box's margin", () => {
     ]);
   });
 
-  it("leaves a part's margin unmapped", async () => {
-    const { coverage } = await buildFixture(chip("flex", { parts: [dot("size-2 mt-1")] }));
-    expect(notesOf(coverage, "mt-1")).toEqual([["margin-top", "unmapped", expect.any(String)]]);
+  // Oracle: CSS Flexbox 1 §4.2. A flex item's margins add to the space between it and its siblings
+  // and its parent's edge, and never collapse, so a frame around the part whose padding is the margin
+  // draws the part's margin box. The frame carries the part's BOOLEAN property, so hiding the part
+  // takes its margin away too, as CSS does when the part is not rendered.
+  it("draws a part's margin in a flex parent as the padding of a transparent frame around it", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex flex-col items-center", {
+        parts: [{ ...dot("size-[8px] bg-[#000000] mb-2"), optional: { name: "Dot", defaultValue: true } }],
+      })
+    );
+    const BLACK = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
+    const plain = { ...CENTERED_BOX, clips: false, cornerRadius: literal(0), stroke: undefined };
+    expect(frameOf(variant?.root)).toEqual({
+      ...plain,
+      kind: "frame",
+      key: "dot",
+      name: "chip-dot",
+      visibleProperty: "Dot",
+      sizing: { horizontal: HUG, vertical: HUG },
+      paddingBottom: literal(8),
+      fill: undefined,
+      children: [
+        {
+          ...plain,
+          kind: "frame",
+          key: "box",
+          name: "box",
+          sizing: fixedSize(literal(8), literal(8)),
+          fill: BLACK,
+          children: [],
+        },
+      ],
+    });
+    expect(notesOf(coverage, "mb-2")).toEqual([
+      ["margin-bottom", "literal", "8px of padding on a frame around the part, the space the margin adds"],
+    ]);
+  });
+
+  it.each([
+    ["a negative margin", "flex", "size-[8px] -mt-1", "-mt-1", "margin-top"],
+    ["a margin in a parent that is no flex box", "block", "size-[8px] mt-1", "mt-1", "margin-top"],
+    ["a margin beside a fill", "flex flex-col w-[100px]", "w-full h-[8px] mt-1", "mt-1", "margin-top"],
+    ["a logical margin", "flex", "size-[8px] mx-1", "mx-1", "margin-inline"],
+  ])("leaves %s on a part unmapped", async (_, parent, part, className, property) => {
+    const { coverage } = await buildFixture(chip(parent, { parts: [dot(part)] }));
+    expect(notesOf(coverage, className)).toEqual([[property, "unmapped", expect.any(String)]]);
   });
 
   it("leaves the horizontal margins of a block that takes the preview width unmapped, and drops its vertical ones", async () => {
@@ -1808,6 +1858,17 @@ describe("a label's sizing", () => {
     }
   );
 
+  // Oracle: CSS Text 4 §6.1, where `text-wrap-mode` and `text-wrap-style`, which `text-wrap` sets,
+  // are inherited, so a part's label wraps as its parent's `text-balance` says.
+  it("reads the text-wrap a part's label inherits from the box around it", async () => {
+    const { coverage } = await buildLabelled("flex items-start text-balance", {
+      parts: [{ ...dot(""), label: LABEL }],
+    });
+    expect(notesOf(coverage, "text-balance")).toEqual([
+      ["text-wrap", "dropped", "the box hugs the label on one line"],
+    ]);
+  });
+
   it("leaves text-balance unmapped beside nowrap, where the later of the two decides whether the text wraps", async () => {
     const { coverage } = await buildLabelled("w-[100px] whitespace-nowrap text-balance", { label: LABEL });
     expect(notesOf(coverage, "text-balance")).toEqual([["text-wrap", "unmapped", expect.any(String)]]);
@@ -1819,6 +1880,57 @@ describe("a label's sizing", () => {
     const hugging = await buildLabelled("flex flex-col", { label: LABEL });
     expect(textOf(hugging.variant?.root)?.sizing).toEqual({ horizontal: HUG, vertical: HUG });
     expect(hugging.coverage.filter((row) => row.property === "align-items")).toEqual([]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a label whose box sets `letter-spacing`. Oracle: CSS Text 3
+// §8.2, where an `em` spacing is a share of the font size, Tailwind's `tracking-tight`, which is
+// `-0.025em`, and probe PL, where Figma read `{ unit: "PERCENT", value: -2.5 }` back exactly and drew
+// it at any size as the same share.
+describe("a label's letter spacing", () => {
+  it("reads an em spacing as a percent of the font size", async () => {
+    const { variant, coverage } = await buildLabelled("tracking-tight", { label: LABEL });
+    expect(textOf(variant?.root)?.letterSpacing).toEqual({ unit: "PERCENT", value: -2.5 });
+    expect(notesOf(coverage, "tracking-tight")).toContainEqual([
+      "letter-spacing",
+      "literal",
+      "letters -2.5% of the font size apart",
+    ]);
+  });
+
+  // Oracle: CSS Text 4 §8.2, where an `em` spacing computes to a length where it is declared, which
+  // the element's children inherit. Inherited at the same font size it is the same share of it, and
+  // at another size it is not.
+  it.each([
+    ["the same", "", "", { unit: "PERCENT", value: -2.5 }],
+    ["another", "text-[18px]", "text-[14px]", undefined],
+  ])(
+    "reads an em spacing a label inherits at %s font size",
+    async (_, outerSize, innerSize, letterSpacing) => {
+      const { variant, coverage } = await buildLabelled("flex", {
+        parts: [
+          {
+            ...dot(`flex ${outerSize} tracking-tight`),
+            parts: [{ ...dot(innerSize), key: "inner", slot: "chip-inner", label: LABEL }],
+          },
+        ],
+      });
+      expect(textOf(variant?.root)?.letterSpacing).toEqual(letterSpacing);
+      const [outcome] = notesOf(coverage, "tracking-tight")
+        .filter(([property]) => property === "letter-spacing")
+        .map(([, note]) => note);
+      expect(outcome).toBe(letterSpacing === undefined ? "unmapped" : "literal");
+    }
+  );
+
+  it("leaves a spacing in pixels unmapped and draws none", async () => {
+    const { variant, coverage } = await buildLabelled("tracking-[1px]", { label: LABEL });
+    expect(textOf(variant?.root)?.letterSpacing).toBeUndefined();
+    expect(notesOf(coverage, "tracking-[1px]")).toContainEqual([
+      "letter-spacing",
+      "unmapped",
+      expect.any(String),
+    ]);
   });
 });
 
@@ -1973,11 +2085,6 @@ describe("a label that ends in an ellipsis", () => {
     expect(notesOf(coverage, "max-w-[100px]")).toContainEqual(["max-width", "unmapped", detail]);
   });
 
-  it("leaves a wrapping label in a box that hugs up to a max-width unmapped", async () => {
-    const { coverage } = await buildLabelled("w-fit max-w-[100px]", { label: LABEL });
-    expect(notesOf(coverage, "max-w-[100px]").map(([, outcome]) => outcome)).toContain("unmapped");
-  });
-
   // Tailwind emits `flex` after `line-clamp-2`, so its `display: flex` replaces the clamp's
   // `-webkit-box`, and `-webkit-line-clamp` and `-webkit-box-orient` take effect only in a
   // `-webkit-box` (CSS Overflow 4 §4.2), as Chromium leaves Select's value. The clamp sets nothing,
@@ -2008,6 +2115,111 @@ describe("a label that ends in an ellipsis", () => {
       ["-webkit-line-clamp", "unmapped"],
       ["display", "unmapped"],
     ]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a wrapping label in boxes that hug their width up to a
+// `max-width`. Oracle: CSS Sizing 3 §5.1 and CSS 2.1 §10.4, where a box that hugs its width is as
+// wide as its text, up to its `max-width` raised to its `min-width`, so its text wraps at that width
+// less the box's padding and border. In a row the layers beside the text and the gaps take their
+// share of that width (CSS Flexbox 1 §9.7), and a part's margins take theirs (CSS Sizing 3 §2.3).
+// Probe P7: a hugging Figma text with a `maxWidth` wrapped there and kept hugging, and Figma takes
+// only a positive `maxWidth`.
+describe("a label under a max-width", () => {
+  /** The cap a built label wraps at, as its text layer's `maxWidth`. */
+  async function capOf(classes: string, fields: Parameters<typeof chip>[1]) {
+    const { variant } = await buildLabelled(classes, fields);
+    const text = textOf(variant?.root);
+    return { sizing: text?.sizing, maxWidth: text?.maxWidth };
+  }
+  const HUGGING = { horizontal: HUG, vertical: HUG };
+  const STOPS = "chip/state=rest: a box around label caps its width";
+
+  it("gives a wrapping label in a box that hugs up to a max-width that width less the padding", async () => {
+    const { variant, coverage } = await buildLabelled("w-fit max-w-[100px] px-[10px]", { label: LABEL });
+    const text = textOf(variant?.root);
+    expect([text?.sizing, text?.maxWidth]).toEqual([HUGGING, literal(80)]);
+    expect(notesOf(coverage, "max-w-[100px]")).toEqual([["max-width", "literal", "100px"]]);
+  });
+
+  // CSS 2.1 §10.4: the box is lowered to its 100px maximum and then raised to its 200px minimum, so
+  // the minimum wins and the text has 200px less 20px of padding.
+  it("caps a label at the min-width that wins over the max-width, less the padding", async () => {
+    expect(await capOf("w-fit min-w-[200px] max-w-[100px] px-[10px]", { label: LABEL })).toEqual({
+      sizing: HUGGING,
+      maxWidth: literal(180),
+    });
+  });
+
+  it("stops the build where the padding leaves the label no width under the cap", async () => {
+    await expect(buildLabelled("w-fit max-w-[16px] px-[8px]", { label: LABEL })).rejects.toThrow(
+      `${STOPS} at 0px, and Figma takes only a positive max width`
+    );
+  });
+
+  // The cap passes down through every box that hugs its width: each part is as wide as its text, up
+  // to what the box around it leaves inside its padding.
+  it("gives a label in a part the max-width of a box around it, less the padding in between", async () => {
+    expect(
+      await capOf("flex flex-col items-center max-w-[100px] px-[10px]", {
+        parts: [{ ...dot("px-[4px]"), label: LABEL }],
+      })
+    ).toEqual({ sizing: HUGGING, maxWidth: literal(72) });
+  });
+
+  it("takes a fixed part and the gap beside a text part out of a capped row's width", async () => {
+    expect(
+      await capOf("flex max-w-[100px] gap-[4px]", {
+        parts: [
+          { ...dot("w-[16px] h-[16px]"), key: "mark", slot: "chip-mark" },
+          { ...dot(""), key: "text", slot: "chip-text", label: LABEL },
+        ],
+      })
+    ).toEqual({ sizing: HUGGING, maxWidth: literal(80) });
+  });
+
+  it("takes an icon and the gap beside the label out of its capped part's width", async () => {
+    expect(
+      await capOf("flex flex-col items-center max-w-[100px]", {
+        parts: [{ ...dot("flex gap-[4px] [&_svg]:size-[16px]", [ICON]), label: LABEL }],
+      })
+    ).toEqual({ sizing: HUGGING, maxWidth: literal(80) });
+  });
+
+  it("takes a part's own margins out of the cap it gets", async () => {
+    expect(
+      await capOf("flex flex-col items-center max-w-[100px]", {
+        parts: [{ ...dot("ml-[10px] mr-[10px]"), label: LABEL }],
+      })
+    ).toEqual({ sizing: HUGGING, maxWidth: literal(80) });
+  });
+
+  // A part that hugs what it holds takes a width the build does not read before it maps the part.
+  it("stops the build where a part beside the label's part takes a share of the row it cannot read", async () => {
+    const definition = chip(`${TEXT_STYLE} flex max-w-[100px] gap-[4px]`, {
+      parts: [
+        { ...dot("flex [&_svg]:size-[16px]", [ICON]), key: "other", slot: "chip-other" },
+        { ...dot(""), key: "text", slot: "chip-text", label: LABEL },
+      ],
+    });
+    await expect(buildFixture(definition, FONT_SANS)).rejects.toThrow(
+      `${STOPS}, and the build cannot read in pixels the room the label has under it`
+    );
+  });
+
+  it("stops the build where a box around a wrapping label caps it at no literal width", async () => {
+    const context: FixtureContext = {
+      variables: makeVariableIndex([
+        { ref: { collection: "Fuse tokens", name: "font-sans" }, webSyntax: "var(--font-sans)" },
+        { ref: { collection: "Fuse density", name: "cap" }, webSyntax: "var(--cap)" },
+      ]),
+    };
+    const definition = chip(`${TEXT_STYLE} flex flex-col items-center max-w-(--cap)`, {
+      parts: [{ ...dot(""), label: LABEL }],
+    });
+    await expect(buildFixture(definition, context)).rejects.toThrow(
+      `${STOPS}, and the build cannot read in pixels the room the label has under it`
+    );
   });
 });
 

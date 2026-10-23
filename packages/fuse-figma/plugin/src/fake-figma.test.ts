@@ -646,3 +646,22 @@ describe("rule 27: a stroke's dash pattern sits apart from its paints", () => {
     expect(frame.dashPattern).toEqual([]);
   });
 });
+
+describe("rule 28: a text's letter spacing", () => {
+  it("starts at 0%, keeps a percent as written and pixels as a 32-bit float (PL)", async () => {
+    const text = await textIn(autoLayout("HORIZONTAL"), "WIDTH_AND_HEIGHT");
+    expect(text.letterSpacing).toEqual({ unit: "PERCENT", value: 0 });
+    text.letterSpacing = { unit: "PERCENT", value: -2.5 };
+    expect(text.letterSpacing).toEqual({ unit: "PERCENT", value: -2.5 });
+    text.letterSpacing = { unit: "PIXELS", value: -0.45 };
+    expect(text.letterSpacing).toEqual({ unit: "PIXELS", value: -0.44999998807907104 });
+  });
+
+  it("refuses a write while the text's font is not loaded", async () => {
+    const text = await textIn(autoLayout("HORIZONTAL"), "WIDTH_AND_HEIGHT");
+    file.reopen();
+    expect(() => {
+      text.letterSpacing = { unit: "PERCENT", value: -2.5 };
+    }).toThrow(`Cannot write letterSpacing of ${text.id} with unloaded font "Inter Regular"`);
+  });
+});

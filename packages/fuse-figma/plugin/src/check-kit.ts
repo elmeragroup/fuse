@@ -77,6 +77,7 @@ function layerRefs(layer: ChildLayerSpec): BoundRef[] {
           layer.lineHeight,
           fixedLength(layer.sizing.horizontal),
           fixedLength(layer.sizing.vertical),
+          layer.maxWidth,
         ].flatMap(boundNumber),
         ...boundColor(layer.color),
       ];

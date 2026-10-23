@@ -5,16 +5,17 @@
  * layers, and asks this module for the label, for the line clamp the box's display reads, for that
  * gap, and to settle the text declarations of a box that shows no label.
  */
-import { listNames } from "./box-sizing";
-import type { Holder } from "./box-sizing";
+import { listNames, widthCapInside } from "./box-sizing";
+import type { Holder, WidthCap } from "./box-sizing";
 import type { CoverageNote, LayerStyle } from "./cascade";
 import type { Cell, LabelDefinition, TextPlacement } from "./component-spec";
-import { describeNumber, evaluateNumber, normalizeCss, readNumber } from "./css-values";
+import { describeNumber, evaluateLength, evaluateNumber, normalizeCss, readNumber } from "./css-values";
 import type { VariableIndex } from "./css-values";
 import { HUGGING_TEXT, TOP_LEFT } from "./kit-spec";
 import type {
   ColorSpec,
   CounterAlignSpec,
+  LetterSpacingSpec,
   NumberSpec,
   StringSpec,
   TextAlignSpec,
@@ -55,9 +56,11 @@ const TEXT_PROPERTIES = [
   "font-size",
   "font-weight",
   "line-height",
+  "letter-spacing",
   "text-decoration-line",
   "text-underline-offset",
   "text-align",
+  "text-wrap",
 ] as const;
 
 /** Where `text-align` sets a label's lines, by the value Tailwind compiles, in a left-to-right page. */
@@ -212,35 +215,80 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
     (fontStyle) => ({ outcome: "literal", detail: `font style ${fontStyle}` })
   );
   const underline = readUnderline(style);
+  const letterSpacing = readLetterSpacing(style);
   if (fontFamily === undefined || fontSize === undefined || lineHeight === undefined || color === undefined) {
     throw new Error(`${scope.variant}: the label needs a font family, size, line height and color`);
   }
   const lines = label.placement?.lines;
   const characters = labelCharacters(label, scope.cell);
-  const layout =
+  const layout: LabelLayout =
     lines === undefined
-      ? readLabelLayout(holder, label, characters, scope.clamp)
-      : readNativeLines(holder, lines, scope.variant);
+      ? readLabelLayout(holder, label, characters, scope.clamp, scope.variant)
+      : { ...readNativeLines(holder, lines, scope.variant), maxWidth: undefined };
   const fills = layout.sizing.horizontal.kind !== "hug";
+  const layer: TextLayerSpec = {
+    kind: "text",
+    key: label.key,
+    name: label.name,
+    characters,
+    textProperty: label.textProperty,
+    fontFamily,
+    fontStyle: weight ?? "Regular",
+    fontSize,
+    lineHeight,
+    color,
+    underline,
+    sizing: layout.sizing,
+    align: readTextAlign(style, fills ? label.placement : undefined),
+    truncation: layout.truncation,
+  };
+  const wraps = layout.maxWidth === undefined ? layer : { ...layer, maxWidth: layout.maxWidth };
   return {
-    layer: {
-      kind: "text",
-      key: label.key,
-      name: label.name,
-      characters,
-      textProperty: label.textProperty,
-      fontFamily,
-      fontStyle: weight ?? "Regular",
-      fontSize,
-      lineHeight,
-      color,
-      underline,
-      sizing: layout.sizing,
-      align: readTextAlign(style, fills ? label.placement : undefined),
-      truncation: layout.truncation,
-    },
+    layer: letterSpacing === undefined ? wraps : { ...wraps, letterSpacing },
     ...placeInBox(holder, label.placement),
   };
+}
+
+/** Why an `em` spacing a label inherits from an element of another font size has no Figma form. */
+const SPACED_ELSEWHERE =
+  "the label inherits this em spacing from an element of another font size, where CSS computes it";
+
+/**
+ * Read `letter-spacing` in `em`, a share of the font size, as Figma's percent of it: `-0.025em`, which
+ * `tracking-tight` sets, is -2.5%. CSS computes an `em` spacing where it is declared (CSS Text 4
+ * §8.2), and a child inherits that length, so the percent holds only where the label's font size is
+ * the declaring element's. An inherited spacing at another size, and any other unit, stay unmapped.
+ *
+ * @param style - The label's box's style.
+ * @returns The spacing, or undefined where none maps.
+ */
+function readLetterSpacing(style: LayerStyle): LetterSpacingSpec | undefined {
+  const declared = style.resolvedWhereDeclared("letter-spacing", "font-size");
+  const own = style.resolved("font-size");
+  const sameSize = declared !== undefined && own !== undefined && sameLength(declared, own);
+  const spacing = style.read(
+    "letter-spacing",
+    (value): LetterSpacingSpec | "elsewhere" | undefined => {
+      const ems = /^(-?\d*\.?\d+)em$/.exec(normalizeCss(value))?.[1];
+      if (ems === undefined) {
+        return undefined;
+      }
+      return sameSize ? { unit: "PERCENT", value: Number(ems) * 100 } : "elsewhere";
+    },
+    (read): CoverageNote =>
+      read === "elsewhere"
+        ? { outcome: "unmapped", detail: SPACED_ELSEWHERE }
+        : { outcome: "literal", detail: `letters ${read.value}% of the font size apart` }
+  );
+  return spacing === "elsewhere" ? undefined : spacing;
+}
+
+/** Whether two computed lengths are the same: the same value, or the same number of pixels. */
+function sameLength(left: string, right: string): boolean {
+  const pixels = evaluateLength(left);
+  return (
+    normalizeCss(left) === normalizeCss(right) || (pixels !== undefined && pixels === evaluateLength(right))
+  );
 }
 
 /**
@@ -379,10 +427,10 @@ type Refusal = {
 };
 
 /**
- * A box that hugs its width grows to its `max-width` and no further, so CSS wraps, truncates or
- * clamps the label there. A text in a hugging Figma frame keeps its own width past the frame's
- * limit, as a real file showed on 2026-10-22 (P7). A text `maxWidth` would wrap it, which the first
- * set that needs it can map.
+ * A box that hugs its width grows to its `max-width` and no further, so CSS truncates or clamps the
+ * label there, or wraps it at a `max-width` that is no literal length. A text in a hugging Figma
+ * frame keeps its own width past the frame's limit, as a real file showed on 2026-10-22 (P7). A
+ * wrapping label at a literal cap takes it as its own `maxWidth` instead, which wraps it there.
  */
 const CAPPED: Refusal = {
   anchor: "max-width",
@@ -452,16 +500,22 @@ function refuseItem(
  * block box also hides its overflow behind an ellipsis, as `truncate` does: then the label fills and
  * ends in an ellipsis after one line. A line clamp ends wrapping text after its lines. A box that
  * hugs its width is as wide as its text on one line, since a kit frame always has room to spare, so
- * the label hugs and the ellipsis drops, unless a `max-width` stops the box first.
+ * the label hugs and the ellipsis drops, unless a `max-width` stops the box first. A wrapping label
+ * in such a box hugs up to the cap the box and the boxes around it set, as {@link widthCapInside}
+ * reads it, and a hugging Figma text with that `maxWidth` wraps there (P7).
  *
  * @param characters - The text the label shows in the cell.
+ * @param variant - The variant's key, for the error.
+ * @throws When a box around a wrapping label caps its width at a length that is no literal, which
+ *   the label's `maxWidth` needs.
  */
 function readLabelLayout(
   holder: Holder,
   label: LabelDefinition,
   characters: string,
-  lines: number | undefined
-): Pick<TextLayerSpec, "sizing" | "truncation"> {
+  lines: number | undefined,
+  variant: string
+): LabelLayout {
   const { style, sizing } = holder;
   const value = (property: string): string => normalizeCss(style.resolved(property) ?? "");
   const whiteSpace = value("white-space");
@@ -474,7 +528,25 @@ function readLabelLayout(
   const ellipsis = truncates && item === undefined;
   const maxLines = ellipsis ? 1 : lines;
   const definite = sizing.horizontal.kind !== "hug";
-  const capped = !definite && holder.limits.maxWidth !== undefined && (wrapping || ellipsis);
+  const cap: WidthCap =
+    !definite && wrapping && !ellipsis && lines === undefined
+      ? widthCapInside(holder, holder.layers.indexOf(label.name))
+      : { kind: "none" };
+  if (cap.kind === "unread" && holder.limits.maxWidth === undefined) {
+    throw new Error(
+      `${variant}: a box around ${label.name} caps its width, and the build cannot read in pixels the room the label has under it`
+    );
+  }
+  if (cap.kind === "pixels" && cap.value <= 0) {
+    throw new Error(
+      `${variant}: a box around ${label.name} caps its width at ${cap.value}px, and Figma takes only a positive max width`
+    );
+  }
+  const capped =
+    !definite &&
+    holder.limits.maxWidth !== undefined &&
+    (ellipsis || lines !== undefined || cap.kind === "unread");
+  const maxWidth = cap.kind === "pixels" ? cap.value : undefined;
   const placed =
     definite && wrapping && item !== undefined
       ? refuseItem(holder, item, label, linesAcross(style, label.placement))
@@ -522,6 +594,9 @@ function readLabelLayout(
       if (ownWidth) {
         return { outcome: "literal", detail: "the text never wraps, so the label keeps its own width" };
       }
+      if (maxWidth !== undefined) {
+        return { outcome: "literal", detail: "the label wraps at the max width the boxes around it set" };
+      }
       return {
         outcome: "literal",
         detail: fills ? "the label wraps at the box's width" : "the box hugs the label on one line",
@@ -543,7 +618,7 @@ function readLabelLayout(
           detail: "white-space keeps the text on one line, and text-wrap wraps it, so the later one decides",
         };
       }
-      if (fills) {
+      if (fills || maxWidth !== undefined) {
         return {
           outcome: "dropped",
           detail: "a Figma text fills each line before it starts the next, so it cannot even out its lines",
@@ -572,8 +647,18 @@ function readLabelLayout(
   } else {
     style.mark("-webkit-line-clamp", "dropped", inert);
   }
-  return { sizing: fills ? FILLING : HUGGING_TEXT, truncation };
+  return {
+    sizing: fills ? FILLING : HUGGING_TEXT,
+    truncation,
+    maxWidth: maxWidth === undefined ? undefined : { kind: "literal", value: maxWidth },
+  };
 }
+
+/** How a label sizes, truncates and wraps at a max width, as {@link readLabelLayout} reads it. */
+type LabelLayout = Pick<TextLayerSpec, "sizing" | "truncation"> & {
+  /** The width a hugging label wraps at, or undefined for none. */
+  readonly maxWidth: NumberSpec | undefined;
+};
 
 /**
  * The advance width of Roboto's space, U+0020, in font units by Figma style, of 2048 units per em, as

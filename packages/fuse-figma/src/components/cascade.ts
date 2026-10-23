@@ -57,7 +57,9 @@ const NO_FIGMA_FORM = new Map([
  * The properties a child inherits from its parent, as CSS passes them down. Custom properties
  * inherit too, unless their `@property` says `inherits: false`. `white-space` and `text-align`
  * inherit, so a `truncate` on a box keeps the label of a part below it on one line, while the
- * `overflow` and `text-overflow` it also sets stay on the box.
+ * `overflow` and `text-overflow` it also sets stay on the box. `text-wrap` sets `text-wrap-mode`
+ * and `text-wrap-style`, which inherit (CSS Text 4 §6.1), so a part's label wraps as Empty's
+ * `text-balance` on the root says.
  */
 const INHERITED_PROPERTIES = new Set([
   "color",
@@ -69,6 +71,7 @@ const INHERITED_PROPERTIES = new Set([
   "letter-spacing",
   "white-space",
   "text-align",
+  "text-wrap",
 ]);
 
 /**
@@ -333,6 +336,16 @@ class CellLedger {
   around(id: number): Layer | undefined {
     const layer = this.#layers[id];
     return layer?.around === true ? layer : undefined;
+  }
+
+  /**
+   * Any layer of the cell, drawn or around the root, by its id.
+   *
+   * @param id - A layer's id.
+   * @returns The layer, or undefined for an id the cell has not given out.
+   */
+  layer(id: number): Layer | undefined {
+    return this.#layers[id];
   }
 
   /** Record a read of a declaration, under the part and class that set it. */
@@ -708,6 +721,25 @@ export class LayerStyle {
     return entry === undefined
       ? undefined
       : substitute(this.#layer, this.#ledger.scope.context, entry.value, new Set());
+  }
+
+  /**
+   * The computed value of `other` on the element that declared `property`, with Tailwind's variables
+   * substituted, without recording a read. CSS computes a relative length where it is declared, so
+   * an inherited `em` letter spacing is a share of the declaring element's font size, which this
+   * names.
+   *
+   * @param property - The property whose declaring element to read.
+   * @param other - The property to read there.
+   * @returns The value, or undefined where nothing sets `property` or that element has no `other`.
+   */
+  resolvedWhereDeclared(property: string, other: string): string | undefined {
+    const source = this.#layer.style.get(property)?.source.layer;
+    const declaring = source === undefined ? undefined : this.#ledger.layer(source);
+    const entry = declaring?.style.get(other);
+    return declaring === undefined || entry === undefined
+      ? undefined
+      : substitute(declaring, this.#ledger.scope.context, entry.value, new Set());
   }
 
   /**

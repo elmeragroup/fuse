@@ -202,6 +202,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/select.js",
     load: async () => (await import("./select-trigger-cell.ts")).selectTrigger,
   },
+  {
+    set: "empty",
+    entry: "dist/empty.js",
+    load: async () => (await import("./empty-cell.ts")).empty,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

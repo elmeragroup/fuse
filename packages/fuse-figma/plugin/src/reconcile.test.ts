@@ -181,6 +181,19 @@ describe("the kit check", () => {
       "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a FLOAT.",
     ],
     [
+      "a text whose max width binds a string variable",
+      kitWithRoot((root) => ({
+        ...root,
+        children: [
+          {
+            ...LABEL,
+            maxWidth: { kind: "variable", variable: { collection: "Fuse tokens", name: "font-sans" } },
+          },
+        ],
+      })),
+      "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a FLOAT.",
+    ],
+    [
       "a limit that binds a string variable",
       kitWithRoot((root) => ({
         ...root,
@@ -706,5 +719,75 @@ describe("a variant whose root strokes a dashed border", () => {
     file.reopen();
     expect(await reconcileKit(file.figma, SOLID, false)).toEqual({ changes: [], warnings: [] });
     expect((await buttonVariant(file)).dashPattern).toEqual([]);
+  });
+});
+
+// Unit under test: `reconcileKit` on a label with letter spacing, as Empty's title has. Oracle: the
+// fake's rule 28, after what a real file read on 2026-10-23 (PL): a new text holds 0%, and -2.5% reads
+// back as written. The next Plan lists nothing, and a label with no spacing in the spec plans none, so
+// a published label keeps whatever a designer gave it.
+describe("a label with letter spacing", () => {
+  const SPACED = kitWithRoot((root) => ({
+    ...root,
+    children: [{ ...LABEL, letterSpacing: { unit: "PERCENT", value: -2.5 } }],
+  }));
+  const labelOf = async (file: FakeFigma) => childNamed(await buttonVariant(file), "TEXT", "Label");
+
+  it("writes the spacing in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, SPACED, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, SPACED, false)).toEqual({ changes: [], warnings: [] });
+    expect((await labelOf(file)).letterSpacing).toEqual({ unit: "PERCENT", value: -2.5 });
+  });
+
+  it("plans a spacing a designer changed back, and none for a label the spec gives no spacing", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, SPACED, true);
+    file.reopen();
+    await file.figma.loadFontAsync({ family: "Roboto", style: "Medium" });
+    (await labelOf(file)).letterSpacing = { unit: "PIXELS", value: 1 };
+    expect((await reconcileKit(file.figma, SPACED, false)).changes).toEqual([
+      "Button / size=md / Label: letterSpacing → -2.5%",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, SPACED, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, SPACED, false)).toEqual({ changes: [], warnings: [] });
+    expect(await reconcileKit(file.figma, KIT, false)).toEqual({ changes: [], warnings: [] });
+  });
+});
+
+// Unit under test: `reconcileKit` on a hugging label with a max width, as Empty's title and
+// description wrap under the header's `max-w-sm`. Oracle: the fake's rule 16, after what a real file
+// read on 2026-10-22 (P7): a text in auto layout keeps a `maxWidth`, and `null` clears it. The next
+// Plan lists nothing.
+describe("a label that wraps at a max width", () => {
+  const CAPPED = kitWithRoot((root) => ({
+    ...root,
+    children: [{ ...LABEL, maxWidth: literal(72) }],
+  }));
+  const labelOf = async (file: FakeFigma) => childNamed(await buttonVariant(file), "TEXT", "Label");
+
+  it("writes the max width in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, CAPPED, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, CAPPED, false)).toEqual({ changes: [], warnings: [] });
+    expect((await labelOf(file)).maxWidth).toBe(72);
+  });
+
+  it("clears the max width for a label the spec gives none, and converges", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, CAPPED, true);
+    file.reopen();
+    expect((await reconcileKit(file.figma, KIT, false)).changes).toEqual([
+      "Button / size=md / Label: maxWidth → none",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, KIT, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, KIT, false)).toEqual({ changes: [], warnings: [] });
+    expect((await labelOf(file)).maxWidth).toBeNull();
   });
 });

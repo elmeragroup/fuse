@@ -21,6 +21,7 @@ import { CHECKBOX } from "./checkbox-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
 import { CONFIRM_BUTTON } from "./confirm-button-kit";
+import { EMPTY } from "./empty-kit";
 import { FIELD_DESCRIPTION, FIELD_ERROR, FIELD_LEGEND, FIELD_TITLE } from "./field-text-kit";
 import { INPUT } from "./input-kit";
 import { KBD } from "./kbd-kit";
@@ -106,6 +107,9 @@ const BREADCRUMB_PARTS_PAGE: KitPage = { slug: "breadcrumb", name: "Breadcrumb" 
 
 /** The page of Select's parts, the trigger alone until the popup's sets join it. */
 const SELECT_PAGE: KitPage = { slug: "select", name: "Select" };
+
+/** The page Empty sits on alone, until Empty with actions joins it. */
+const EMPTY_PAGE: KitPage = { slug: "empty", name: "Empty" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -235,4 +239,5 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(BREADCRUMB_SEPARATOR.axes),
   },
   { definition: SELECT_TRIGGER, page: SELECT_PAGE, previewCells: matrixCells(SELECT_TRIGGER.axes) },
+  { definition: EMPTY, page: EMPTY_PAGE, previewCells: matrixCells(EMPTY.axes) },
 ];

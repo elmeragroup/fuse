@@ -5,8 +5,18 @@
  * `component-spec.ts` assembles a set from the root of each cell.
  */
 import { describeColor, readPaint } from "./box-paint";
-import { absoluteRoom, outOfFlow, readGrowth, readSizing, roomInside, unstretched } from "./box-sizing";
-import type { Holder, Room } from "./box-sizing";
+import {
+  absoluteRoom,
+  lessMargins,
+  outOfFlow,
+  partShare,
+  readGrowth,
+  readSizing,
+  roomInside,
+  UNREAD_SHARE,
+  unstretched,
+} from "./box-sizing";
+import type { Holder, Room, RowShare } from "./box-sizing";
 import type { BoxCascade, LayerStyle } from "./cascade";
 import type { BoxDefinition, BuildContext, Cell, IconSlot, PartDefinition } from "./component-spec";
 import {
@@ -32,7 +42,7 @@ import type {
   SizingSpec,
 } from "./kit-spec";
 import { inertClamp, mapLabel, readLineClamp, readWithoutLabel, spaceBeforeLabel } from "./label-layout";
-import { placeParts, readRotation, slotAroundDot } from "./placement";
+import { placeParts, readRotation, slotAroundDot, wrapMargins } from "./placement";
 import type { Layout } from "./placement";
 
 /**
@@ -287,6 +297,13 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       ...(label === undefined ? [] : [label.name]),
       ...end.map(({ name }) => name),
     ],
+    widthCap: room.widthCap,
+    shares: [
+      ...flowing.map((part) => partShare(part.cascade.style)),
+      ...start.map(iconShare),
+      ...(label === undefined ? [] : [UNREAD_SHARE]),
+      ...end.map(iconShare),
+    ],
   };
   readGrowth(
     holder,
@@ -294,7 +311,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   );
   const parts = shown.map((part) => {
     const index = flowing.indexOf(part);
-    const room = index === -1 ? absoluteRoom(holder) : roomInside(holder, index);
+    const room =
+      index === -1 ? absoluteRoom(holder) : lessMargins(roomInside(holder, index), part.cascade.style);
     const box = mapBox(part.child, part.cascade, scope, room);
     const drawn: FrameLayerSpec = {
       kind: "frame",
@@ -305,7 +323,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     const { optional } = part.child;
     const linked = optional === undefined ? drawn : { ...drawn, visibleProperty: optional.name };
     const rotation = readRotation(part.cascade.style);
-    const layer = rotation === undefined ? linked : { ...linked, rotation };
+    const turned = rotation === undefined ? linked : { ...linked, rotation };
+    const layer = wrapMargins(part.cascade.style, turned, layout, context.variables);
     return { layer, style: part.cascade.style };
   });
   const missing = unstretched(
@@ -430,6 +449,13 @@ function readCorner(reader: LayerStyle, sizing: SizingSpec, context: BuildContex
     ({ radius, detail }) => (detail === undefined ? describeNumber(radius) : { outcome: "literal", detail })
   );
   return corner?.radius;
+}
+
+/** The share of a row an icon takes: its literal size, or `unread` for a bound one. */
+function iconShare(icon: ChildLayerSpec): RowShare {
+  return icon.kind === "icon" && icon.size.kind === "literal"
+    ? { kind: "pixels", value: icon.size.value }
+    : UNREAD_SHARE;
 }
 
 /** What an icon's `display` makes of it, by the value Tailwind compiles. */
