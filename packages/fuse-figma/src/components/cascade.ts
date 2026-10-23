@@ -24,7 +24,8 @@ import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { normalizeCss, splitTopLevel, substituteVars } from "./css-values";
 import { compareSpecificity } from "./specificity";
 import type { Specificity } from "./specificity";
-import type { StateTable, VariantMeaning } from "./state-table";
+import { readVariants } from "./state-table";
+import type { StateTable } from "./state-table";
 
 /** What a read became, for the coverage table. */
 export type CoverageNote = Pick<CoverageRow, "outcome" | "detail">;
@@ -132,11 +133,36 @@ type ChildRule = {
   readonly applied: Applied;
 };
 
-/** The recipe classes of one box that hold in a cell: its own, and the ones that reach icons. */
+/** A class that styles the box's child parts with one `data-slot`, as `*:data-[slot=x]:` does. */
+type PartRule = {
+  readonly slot: string;
+  readonly applied: Applied;
+};
+
+/**
+ * The recipe classes of one box that hold in a cell: its own, the ones that reach icons, and the ones
+ * that reach its child parts.
+ */
 type BoxClasses = {
   readonly applied: readonly Applied[];
   readonly childRules: readonly ChildRule[];
+  readonly partRules: readonly PartRule[];
 };
+
+/**
+ * Each class that styles a child part, by part and class, with the slot it names, its declarations,
+ * and whether a part of that slot took it in some cell so far.
+ */
+type PartRuleLog = Map<
+  string,
+  {
+    readonly part: string;
+    readonly className: string;
+    readonly slot: string;
+    readonly taken: boolean;
+    readonly declarations: Applied["declarations"];
+  }
+>;
 
 /**
  * Each class with a condition variant, by part and class, with its condition variants, its
@@ -159,6 +185,7 @@ export class SetCascade {
   readonly #context: BuildContext;
   readonly #record: Recorder;
   readonly #conditions: ConditionLog = new Map();
+  readonly #partRules: PartRuleLog = new Map();
 
   /**
    * @param meaningOf - The definition's state table.
@@ -185,15 +212,32 @@ export class SetCascade {
       context: this.#context,
       record: this.#record,
       conditions: this.#conditions,
+      partRules: this.#partRules,
     });
   }
 
   /**
    * Record the classes whose variants never held in one cell together, such as
    * `aria-invalid:focus-visible:` on a set that draws invalid and focus as two values of its
-   * state axis. Call it after every cell.
+   * state axis, and as unmapped the classes that style a child part no part of the definition
+   * took, since they style nothing the set draws. Call it after every cell.
    */
   finish(): void {
+    for (const { part, className, slot, taken, declarations } of this.#partRules.values()) {
+      if (taken) {
+        continue;
+      }
+      for (const declaration of declarations) {
+        this.#record({
+          part,
+          className,
+          property: declaration.property,
+          value: declaration.value,
+          outcome: "unmapped",
+          detail: `the definition draws no part with \`data-slot=${slot}\` below ${part}`,
+        });
+      }
+    }
     for (const { part, className, held, variants, declarations } of this.#conditions.values()) {
       if (held || variants.length < 2) {
         continue;
@@ -218,6 +262,7 @@ type CellScope = {
   readonly context: BuildContext;
   readonly record: Recorder;
   readonly conditions: ConditionLog;
+  readonly partRules: PartRuleLog;
 };
 
 /** A layer of the cell: its computed style, what read it, and the layers below it. */
@@ -358,18 +403,19 @@ class CellLedger {
     if (property.startsWith("--tw-")) {
       return { outcome: "dropped", detail: "Tailwind's bookkeeping, which no mapped property reads" };
     }
-    // A custom property draws nothing and the layer's own reads count already, so an unread one only
-    // passes its value down. With no part or icon below, nothing takes it, as the field box's shell
-    // corners pass a corner to parts an Input does not have. A synced variable stays unmapped, since
-    // substitution keeps it as its `var()` and never reads a local override, which the browser paints.
-    if (
-      property.startsWith("--") &&
-      layer.children.length === 0 &&
-      !this.scope.context.variables.owns(property)
-    ) {
+    // A custom property draws nothing, and a read of it on the layer or below it counts on this
+    // declaration, so an unread one only passes its value down to layers that never take it. With no
+    // part or icon below, nothing could, as the field box's shell corners pass a corner to parts an
+    // Input does not have. Below Select's trigger, its value and caret read none of them. A synced
+    // variable stays unmapped, since substitution keeps it as its `var()` and never reads a local
+    // override, which the browser paints.
+    if (property.startsWith("--") && !this.scope.context.variables.owns(property)) {
       return {
         outcome: "dropped",
-        detail: "a custom property passes its value down, and the box holds no part or icon to take it",
+        detail:
+          layer.children.length === 0
+            ? "a custom property passes its value down, and the box holds no part or icon to take it"
+            : "a custom property passes its value down, and no part or icon below reads it",
       };
     }
     return { outcome: "unmapped", detail: "the builder maps no Figma field from it" };
@@ -417,7 +463,8 @@ export class CellCascade {
    * parent's. So an ancestor's `var()` resolves against the ancestor's custom properties, a nearer
    * ancestor's own declaration beats what it inherits from a farther one, the root's `currentcolor`
    * takes the inherited color, and every declaration of the root's own beats them. A child selector
-   * of an ancestor reaches the root's icons as a descendant.
+   * of an ancestor reaches the root's icons as a descendant. An ancestor's `*:data-[slot=…]:` reaches
+   * no part, so `SetCascade.finish` leaves it unmapped.
    *
    * @param classes - The root's class string for the cell.
    * @param part - The root's layer name, which the coverage table names.
@@ -442,6 +489,7 @@ export class CellCascade {
         inherited: new Map(),
         outer: page,
         ancestorRules: [],
+        selected: [],
       });
     }
     // The sort in `computeStyle` is stable, so at one rank the host's declarations apply last.
@@ -461,7 +509,7 @@ export class CellCascade {
     }
     return cascadeBox(
       this.#ledger,
-      { classes, part, inherited: inheritance(outside, context), outer: [], ancestorRules },
+      { classes, part, inherited: inheritance(outside, context), outer: [], ancestorRules, selected: [] },
       outside
     );
   }
@@ -484,13 +532,19 @@ function cascadeBox(
     readonly inherited: ComputedStyle;
     readonly outer: readonly Applied[];
     readonly ancestorRules: readonly ChildRule[];
+    /** The parent's classes that style this box as its child, which cascade with its own. */
+    readonly selected: readonly Applied[];
   },
   parent?: Layer
 ): BoxCascade {
   const own = boxClasses(box.classes, box.part, ledger.scope);
   const base = outerApplied(ledger.scope.context.base, box.part, -1);
-  const layer = ledger.add(box.inherited, [...box.outer, ...base, ...own.applied], parent);
-  return new BoxCascade(ledger, layer, box.ancestorRules, own.childRules);
+  const layer = ledger.add(box.inherited, [...box.outer, ...base, ...box.selected, ...own.applied], parent);
+  return new BoxCascade(ledger, layer, {
+    ancestorRules: box.ancestorRules,
+    ownRules: own.childRules,
+    partRules: own.partRules,
+  });
 }
 
 /**
@@ -504,29 +558,52 @@ export class BoxCascade {
   readonly #layer: Layer;
   readonly #ancestorRules: readonly ChildRule[];
   readonly #ownRules: readonly ChildRule[];
+  readonly #partRules: readonly PartRule[];
 
+  /**
+   * @param ledger - The cell's layers.
+   * @param layer - The box's layer.
+   * @param rules - The child selectors of the boxes above that reach this box's icons as
+   *   descendants, this box's own, and this box's classes that style its child parts.
+   */
   constructor(
     ledger: CellLedger,
     layer: Layer,
-    ancestorRules: readonly ChildRule[],
-    ownRules: readonly ChildRule[]
+    rules: {
+      readonly ancestorRules: readonly ChildRule[];
+      readonly ownRules: readonly ChildRule[];
+      readonly partRules: readonly PartRule[];
+    }
   ) {
     this.style = new LayerStyle(ledger, layer);
     this.#ledger = ledger;
     this.#layer = layer;
-    this.#ancestorRules = ancestorRules;
-    this.#ownRules = ownRules;
+    this.#ancestorRules = rules.ancestorRules;
+    this.#ownRules = rules.ownRules;
+    this.#partRules = rules.partRules;
   }
 
   /**
-   * Cascade a part directly below this box, over what this box passes down.
+   * Cascade a part directly below this box, over what this box passes down. This box's
+   * `*:data-[slot=…]:` classes that name the part's slot cascade with the part's own classes by
+   * specificity, as CSS applies `:is(.… > *)[data-slot="…"]` to the box's children.
    *
    * @param classes - The part's class string for the cell.
    * @param part - The part's layer name.
+   * @param slot - The part's `data-slot`, or undefined for a part without one.
    * @param inline - The declarations of the part's `style` attribute, which beat every class.
    * @returns The part's cascade.
    */
-  part(classes: string, part: string, inline: readonly InlineDeclaration[] = []): BoxCascade {
+  part(
+    classes: string,
+    part: string,
+    slot: string | undefined,
+    inline: readonly InlineDeclaration[] = []
+  ): BoxCascade {
+    const taken = this.#partRules.filter((rule) => rule.slot === slot);
+    for (const rule of taken) {
+      takePartRule(this.#ledger.scope.partRules, rule);
+    }
     return cascadeBox(
       this.#ledger,
       {
@@ -539,6 +616,7 @@ export class BoxCascade {
           INLINE_RANK
         ),
         ancestorRules: [...this.#ancestorRules, ...this.#ownRules],
+        selected: taken.map((rule) => rule.applied),
       },
       this.#layer
     );
@@ -552,8 +630,8 @@ export class BoxCascade {
    *
    * @param slot - The icon.
    * @returns The icon's computed style.
-   * @throws When one of the icon's own classes has a child selector, which the builder does not
-   *   model inside an icon.
+   * @throws When one of the icon's own classes has a child selector or styles a child part, which
+   *   the builder does not model inside an icon.
    */
   icon(slot: IconSlot): LayerStyle {
     const selected = [
@@ -561,7 +639,7 @@ export class BoxCascade {
       ...this.#ownRules.filter((rule) => rule.selects(slot)),
     ];
     const own = boxClasses(slot.classes ?? "", slot.name, this.#ledger.scope);
-    const [nested] = own.childRules;
+    const [nested] = [...own.childRules, ...own.partRules];
     if (nested !== undefined) {
       throw new Error(`the ${slot.name}'s own class ${nested.applied.className} selects inside the icon`);
     }
@@ -780,6 +858,7 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
   const { meaningOf, cell, context, record, conditions } = scope;
   const applied: Applied[] = [];
   const childRules: ChildRule[] = [];
+  const partRules: PartRule[] = [];
   for (const className of splitClasses(classes)) {
     const { variants, utility } = splitClassName(className);
     const rule = context.compiled.rules.get(utility);
@@ -795,24 +874,7 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
       });
       continue;
     }
-    let selects: ((slot: IconSlot) => boolean) | undefined;
-    const conditionVariants: string[] = [];
-    let holds = true;
-    let skipped: CoverageNote | undefined;
-    for (const variant of variants) {
-      const meaning = meaningOf(variant);
-      if (meaning.kind === "child") {
-        const outer = selects;
-        selects = outer === undefined ? meaning.selects : (slot) => outer(slot) && meaning.selects(slot);
-        continue;
-      }
-      if (meaning.kind !== "condition") {
-        skipped = skippedNote(variant, meaning);
-        break;
-      }
-      conditionVariants.push(variant);
-      holds &&= meaning.holds(cell);
-    }
+    const { selects, slot, conditionVariants, holds, skipped } = readVariants(variants, meaningOf, cell);
     if (skipped !== undefined) {
       for (const declaration of rule.declarations) {
         record({ part, className, property: declaration.property, value: declaration.value, ...skipped });
@@ -845,27 +907,36 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
       continue;
     }
     const entry = { part, className, rank: 0, ...placement, declarations: rule.declarations };
-    if (selects === undefined) {
+    if (slot !== undefined) {
+      partRules.push({ slot, applied: entry });
+      logPartRule(scope.partRules, { part, className, slot, declarations: rule.declarations });
+    } else if (selects === undefined) {
       applied.push(entry);
     } else {
       childRules.push({ selects, applied: entry });
     }
   }
-  return { applied, childRules };
+  return { applied, childRules, partRules };
 }
 
-/** What becomes of a class whose variant applies it in no cell the kit draws. */
-function skippedNote(
-  variant: string,
-  meaning: Exclude<VariantMeaning, { readonly kind: "condition" | "child" }>
-): CoverageNote {
-  switch (meaning.kind) {
-    case "omitted":
-      return { outcome: "dropped", detail: `no cell of the matrix shows \`${variant}\`` };
-    case "omitted-for":
-      return { outcome: "dropped", detail: meaning.reason };
-    case "unmodelled":
-      return { outcome: "unmapped", detail: `the definition neither models nor omits \`${variant}\`` };
+/** Log a class that styles a child part, keeping whether a part took it in an earlier cell. */
+function logPartRule(
+  log: PartRuleLog,
+  rule: { readonly part: string; readonly className: string; readonly slot: string } & Pick<
+    Applied,
+    "declarations"
+  >
+): void {
+  const key = JSON.stringify([rule.part, rule.className]);
+  log.set(key, { ...rule, taken: log.get(key)?.taken === true });
+}
+
+/** Note that a child part took a class of its parent's. */
+function takePartRule(log: PartRuleLog, rule: PartRule): void {
+  const key = JSON.stringify([rule.applied.part, rule.applied.className]);
+  const logged = log.get(key);
+  if (logged !== undefined) {
+    log.set(key, { ...logged, taken: true });
   }
 }
 

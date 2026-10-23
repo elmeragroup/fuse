@@ -2,7 +2,7 @@
  * How a box sizes each axis, read from its CSS and from the room its parent gives it: the length
  * a `width` or `height` sets, a `100%` that fills its parent, a share of a length in pixels, the
  * stretch a column gives an unset width, the `min-*` and `max-*` limits, and whether
- * `overflow: hidden` clips the box. `component-spec.ts` reads a box's sizing before it maps the
+ * `overflow: hidden` clips the box. `box-mapping.ts` reads a box's sizing before it maps the
  * box's parts, then asks this module for the room each part gets, in the box's flow or, for an
  * absolute part, against its containing block. `label-layout.ts` reads the box's own text against
  * the same holder.
@@ -232,6 +232,40 @@ export function unstretched(holder: Holder, parts: readonly LayerStyle[]): Missi
         detail: "the column hugs its width, so Figma has no width to stretch a layer across",
       }
     : undefined;
+}
+
+/**
+ * Read the `flex` of the parts in a flex box's flow. A box that hugs its length along its direction,
+ * with no limit there that can change that length, is as long as its layers, so it leaves no free
+ * space (CSS Flexbox 1 §9.7), and the one part that grows keeps its own length, as `flex: 1` does
+ * from its zero basis. Any other `flex` stays unread, so it lands unmapped: in a box of definite
+ * length the part takes the room the others leave, a minimum can leave room past the layers and a
+ * maximum can take room away, and two parts that grow share the free space by their grow.
+ *
+ * @param holder - The box.
+ * @param parts - The style of each part in the box's flow.
+ */
+export function readGrowth(holder: Holder, parts: readonly LayerStyle[]): void {
+  const { layout, sizing, style } = holder;
+  const horizontal = layout.direction === "HORIZONTAL";
+  const along = horizontal ? sizing.horizontal : sizing.vertical;
+  const axis = horizontal ? WIDTH : HEIGHT;
+  // A zero minimum never lengthens the box, and any other limit along the axis can.
+  const limited =
+    style.has(axis.max) || (style.has(axis.min) && evaluateLength(style.resolved(axis.min) ?? "") !== 0);
+  const growing = parts.filter((part) => part.has("flex"));
+  const [only] = growing;
+  if (!layout.flex || along.kind !== "hug" || limited || growing.length !== 1 || only === undefined) {
+    return;
+  }
+  only.read(
+    "flex",
+    (value) => (normalizeCss(value) === "1" ? value : undefined),
+    () => ({
+      outcome: "dropped",
+      detail: `the ${axis.flow} hugs its layers, so the one layer that grows has no room to grow into`,
+    })
+  );
 }
 
 /** The properties that size one axis, and the words its coverage rows use. */

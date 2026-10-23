@@ -230,7 +230,8 @@ export function baseBorderColor(compiled: CompiledUtilities): UtilityDeclaration
  * rules of the `base` layer are kept apart, since no class selects them.
  *
  * Every rule whose selector starts with a class places that class, at the top level or inside
- * an at-rule such as the `@media (hover: hover)` around `enabled-hover:`. Its first rule gives
+ * an at-rule such as the `@media (hover: hover)` around `enabled-hover:`, and so does a `*:` rule,
+ * `:is(.class > *)…`, for the class whose children it styles. Its first rule gives
  * its order, and its most specific selector its specificity. Every rule also lists its selector
  * under each class it names, wherever the class sits in the selector.
  *
@@ -257,7 +258,8 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
         rulesByClass.set(name, [...(rulesByClass.get(name) ?? []), node.selector]);
       }
     }
-    const leading = node.kind === "rule" ? leadingClass(node.selector) : undefined;
+    const leading =
+      node.kind === "rule" ? (leadingClass(node.selector) ?? childrenClass(node.selector)) : undefined;
     if (node.kind !== "rule" || leading === undefined) {
       return;
     }
@@ -335,6 +337,17 @@ function effectiveDeclarations(nodes: readonly AstNode[]): readonly UtilityDecla
     }
     return declarationsOf([node]);
   });
+}
+
+/**
+ * The class a `*:` rule styles the children of, as Tailwind compiles `*:data-[slot=x]:flex` to
+ * `:is(.\*\:data-\[slot\=x\]\:flex > *)[data-slot="x"]`, which selects each child of the element
+ * that carries the class.
+ */
+function childrenClass(selector: string): { readonly name: string; readonly rest: string } | undefined {
+  const opening = ":is(";
+  const inner = selector.startsWith(opening) ? leadingClass(selector.slice(opening.length)) : undefined;
+  return inner?.rest.startsWith(" > *)") === true ? inner : undefined;
 }
 
 /**

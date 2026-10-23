@@ -30,6 +30,7 @@ import { METER } from "./meter-kit";
 import { PAGINATION_EDGE, PAGINATION_ELLIPSIS, PAGINATION_LINK } from "./pagination-kit";
 import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
 import { RADIO } from "./radio-kit";
+import { SELECT_TRIGGER } from "./select-trigger-kit";
 import { SEPARATOR } from "./separator-kit";
 import { SKELETON } from "./skeleton-kit";
 import { SWITCH } from "./switch-kit";
@@ -98,6 +99,9 @@ const PAGINATION_PAGE: KitPage = { slug: "pagination", name: "Pagination" };
  * name keeps it apart from `BREADCRUMB_PAGE`, the current page's set.
  */
 const BREADCRUMB_PARTS_PAGE: KitPage = { slug: "breadcrumb", name: "Breadcrumb" };
+
+/** The page of Select's parts, the trigger alone until the popup's sets join it. */
+const SELECT_PAGE: KitPage = { slug: "select", name: "Select" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -222,4 +226,5 @@ export const KIT: readonly KitEntry[] = [
     page: BREADCRUMB_PARTS_PAGE,
     previewCells: matrixCells(BREADCRUMB_SEPARATOR.axes),
   },
+  { definition: SELECT_TRIGGER, page: SELECT_PAGE, previewCells: matrixCells(SELECT_TRIGGER.axes) },
 ];

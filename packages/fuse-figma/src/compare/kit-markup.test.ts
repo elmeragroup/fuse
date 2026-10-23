@@ -93,20 +93,30 @@ const ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => boolean>(
     "[&[readonly]:not(:disabled)]",
     (element) => element.attributes.has("readonly") && !element.attributes.has("disabled"),
   ],
+  // Base UI stamps `data-placeholder` on a Select trigger while nothing is selected.
+  ["data-placeholder", (element) => element.attributes.has("data-placeholder")],
 ]);
 
+/** Whether an element carries a group marker, such as `group/field`, in its `class`. */
+function marks(element: MarkupElement, marker: string): boolean {
+  return (element.attributes.get("class") ?? "").split(/\s+/).includes(marker);
+}
+
 /**
- * Whether an ancestor matches each group variant, which selects the measured element below it:
+ * Whether an ancestor matches each group variant, which selects the elements below it:
  * `group-data-disabled/field:` compiles to `:where(.group\/field)[data-disabled] *`, so it holds
  * below an element that carries the `group/field` marker and `data-disabled`, as a disabled
- * `Field.Root` does.
+ * `Field.Root` does, and `group-data-[popup-open]/select-trigger:` holds below an open Select
+ * trigger, as its caret is.
  */
 const GROUP_VARIANTS = new Map<string, (ancestor: MarkupElement) => boolean>([
   [
     "group-data-disabled/field",
-    (ancestor) =>
-      (ancestor.attributes.get("class") ?? "").split(/\s+/).includes("group/field") &&
-      ancestor.attributes.has("data-disabled"),
+    (ancestor) => marks(ancestor, "group/field") && ancestor.attributes.has("data-disabled"),
+  ],
+  [
+    "group-data-[popup-open]/select-trigger",
+    (ancestor) => marks(ancestor, "group/select-trigger") && ancestor.attributes.has("data-popup-open"),
   ],
 ]);
 
@@ -497,10 +507,16 @@ function checkMarkup(definition: ComponentDefinition, cells: readonly Cell[], re
       for (const [variant, carries] of ATTRIBUTE_VARIANTS) {
         expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(carries(root));
       }
+      // A variant the root's own classes name selects the root below its group, and any other one a
+      // part or an icon below the root, so the root itself can be the group, as Select's trigger is
+      // for its caret.
+      const rootVariants = new Set(
+        splitClasses(definition.classesFor(cell)).flatMap((className) => splitClassName(className).variants)
+      );
       for (const [variant, matches] of GROUP_VARIANTS) {
-        expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(
-          ancestorsOf(elements, measured).some(matches)
-        );
+        const ancestors = ancestorsOf(elements, measured);
+        const groups = rootVariants.has(variant) ? ancestors : [root, ...ancestors];
+        expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(groups.some(matches));
       }
       const rootLabel = expectedLabel(definition, cell);
       expect(

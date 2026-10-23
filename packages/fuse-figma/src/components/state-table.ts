@@ -2,10 +2,12 @@
  * What each Tailwind variant in a recipe means for a cell of the matrix. Most of that meaning is
  * fixed by `fuse.css` and Tailwind, not by the component, so this table holds it once: the state
  * variants each value of a `state` axis renders, the icon edge, the child selectors that reach
- * the icons, the breakpoints the kit draws at, and the states and children no standalone component
- * shows. A definition adds only what is its own: the attributes its own states render, facts for
- * its own variants, and its own omissions.
+ * the icons, the `*:` that reaches a child part, the breakpoints the kit draws at, and the states
+ * and children no standalone component shows. A definition adds only what is its own: the
+ * attributes its own states render, facts for its own variants, and its own omissions.
+ * {@link readVariants} reads a class's variants through the table for one cell.
  */
+import type { CoverageNote } from "./cascade";
 import type { Cell, ComponentDefinition, IconSlot, RootKind } from "./component-spec";
 import { axisValues } from "./kit-spec";
 
@@ -14,6 +16,8 @@ import { axisValues } from "./kit-spec";
  *
  * - `condition`: the class applies in the cells where the variant holds.
  * - `child`: the class styles the icons the selector reaches.
+ * - `children`: the class styles the box's children, as `*:` does, and the variant after it names
+ *   which ones.
  * - `omitted`: no cell shows the state, so the class is dropped.
  * - `omitted-for`: the class styles a pseudo-element the kit draws no layer for, the component
  *   inside a composition the kit does not draw, or the component under a media condition the kit
@@ -23,6 +27,7 @@ import { axisValues } from "./kit-spec";
 export type VariantMeaning =
   | { readonly kind: "condition"; readonly holds: (cell: Cell) => boolean }
   | { readonly kind: "child"; readonly selects: (slot: IconSlot) => boolean }
+  | { readonly kind: "children" }
   | { readonly kind: "omitted" }
   | { readonly kind: "omitted-for"; readonly reason: string }
   | { readonly kind: "unmodelled" };
@@ -68,6 +73,9 @@ const CHILD_SELECTORS = new Map<string, (slot: IconSlot) => boolean>([
   ["[&>svg]", (slot) => slot.direct],
   ["[&>svg:not([data-icon=inline-end])]", (slot) => slot.direct && slot.dataIcon !== "inline-end"],
 ]);
+
+/** Tailwind's variant for an element's children, which compiles `*:x` to `:is(.… > *)`. */
+const CHILDREN = "*";
 
 /** The states and children a component set leaves out, whatever the component. */
 const SHARED_OMISSIONS = new Set([
@@ -194,8 +202,108 @@ export function makeStateTable(
     if (reason !== undefined) {
       return { kind: "omitted-for", reason };
     }
-    return SHARED_OMISSIONS.has(variant) || definition.omittedStates.has(variant)
-      ? { kind: "omitted" }
-      : { kind: "unmodelled" };
+    if (SHARED_OMISSIONS.has(variant) || definition.omittedStates.has(variant)) {
+      return { kind: "omitted" };
+    }
+    // `*:` styles the box's children, which a definition that draws them reaches by their slot. One
+    // that omits `*`, as Label omits the Field card it can wrap, draws none of them.
+    return variant === CHILDREN ? { kind: "children" } : { kind: "unmodelled" };
   };
+}
+
+/** What a class's variants say about it in one cell. */
+export type VariantReading = {
+  /** The icons its child selectors reach, or undefined for a class on the box itself. */
+  readonly selects: ((slot: IconSlot) => boolean) | undefined;
+  /** The `data-slot` of the child parts it styles, or undefined for a class on the box itself. */
+  readonly slot: string | undefined;
+  readonly conditionVariants: readonly string[];
+  /** Whether every condition variant holds in the cell. */
+  readonly holds: boolean;
+  /** What becomes of a class that applies in no cell the kit draws, or undefined for one that may. */
+  readonly skipped: CoverageNote | undefined;
+};
+
+/** `*:` before anything but a part's slot. */
+const BARE_CHILDREN: CoverageNote = {
+  outcome: "unmapped",
+  detail: "the builder reads `*:` only before a `data-[slot=…]:` that names one part",
+};
+
+/** A variant after `*:data-[slot=…]:`, which tests the child's own state. */
+const PAST_CHILD_SLOT: CoverageNote = {
+  outcome: "unmapped",
+  detail:
+    "the builder reads `*:data-[slot=…]:` only as a class's last variants, and models no state of the child",
+};
+
+/**
+ * Read a class's variants, outermost first. A condition holds or not in the cell, a child selector
+ * narrows the icons the class reaches, and `*:` followed by `data-[slot=x]:` makes the class style
+ * the box's child parts whose `data-slot` is `x`. Any other variant skips the class.
+ *
+ * @param variants - The class's variants, outermost first.
+ * @param meaningOf - The definition's state table.
+ * @param cell - The cell.
+ * @returns The icons or child parts the class reaches, its condition variants and whether they
+ *   hold, or what becomes of a class that applies in no cell the kit draws.
+ */
+export function readVariants(variants: readonly string[], meaningOf: StateTable, cell: Cell): VariantReading {
+  let selects: VariantReading["selects"];
+  let slot: string | undefined;
+  const conditionVariants: string[] = [];
+  let holds = true;
+  for (let index = 0; index < variants.length; index += 1) {
+    const variant = variants[index] ?? "";
+    const meaning = meaningOf(variant);
+    const skip = (skipped: CoverageNote): VariantReading => ({
+      selects,
+      slot,
+      conditionVariants,
+      holds,
+      skipped,
+    });
+    if (slot !== undefined) {
+      return skip(PAST_CHILD_SLOT);
+    }
+    if (meaning.kind === "child") {
+      const outer = selects;
+      selects = outer === undefined ? meaning.selects : (icon) => outer(icon) && meaning.selects(icon);
+      continue;
+    }
+    if (meaning.kind === "children") {
+      slot = slotOfVariant(variants[index + 1]);
+      if (slot === undefined || selects !== undefined) {
+        return skip(BARE_CHILDREN);
+      }
+      index += 1;
+      continue;
+    }
+    if (meaning.kind !== "condition") {
+      return skip(skippedNote(variant, meaning));
+    }
+    conditionVariants.push(variant);
+    holds &&= meaning.holds(cell);
+  }
+  return { selects, slot, conditionVariants, holds, skipped: undefined };
+}
+
+/** The `data-slot` a `data-[slot=x]` variant tests for, or undefined for any other variant. */
+function slotOfVariant(variant: string | undefined): string | undefined {
+  return /^data-\[slot=([\w-]+)\]$/.exec(variant ?? "")?.[1];
+}
+
+/** What becomes of a class whose variant applies it in no cell the kit draws. */
+function skippedNote(
+  variant: string,
+  meaning: Exclude<VariantMeaning, { readonly kind: "condition" | "child" | "children" }>
+): CoverageNote {
+  switch (meaning.kind) {
+    case "omitted":
+      return { outcome: "dropped", detail: `no cell of the matrix shows \`${variant}\`` };
+    case "omitted-for":
+      return { outcome: "dropped", detail: meaning.reason };
+    case "unmodelled":
+      return { outcome: "unmapped", detail: `the definition neither models nor omits \`${variant}\`` };
+  }
 }

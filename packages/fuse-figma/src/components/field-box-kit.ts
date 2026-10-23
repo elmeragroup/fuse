@@ -36,13 +36,22 @@ export function showsPlaceholder(cell: Cell): boolean {
 /**
  * `Field.Root` around the control, at its default vertical orientation. Its `data-invalid:text-error`
  * holds where the cell is invalid, and the control inherits it, as preflight gives a form control
- * `color: inherit`.
+ * `color: inherit`. Select trigger names it around an invalid trigger too.
  */
 export const FIELD_ROOT: AncestorDefinition = {
   slot: "field",
   classes: fieldVariants().root(),
   undrawn: "the Field lays out its label, control and messages, which the set does not draw",
 };
+
+/**
+ * The Field root's `[&>.sr-only]:w-auto`, as a definition omits it: it widens a visually hidden child
+ * of the Field, which no cell holds.
+ */
+export const FIELD_ROOT_SR_ONLY = [
+  "[&>.sr-only]",
+  "a visually hidden child of the Field, which no cell holds",
+] as const;
 
 /**
  * The matrix, states, facts and omissions of a field box set. A definition spreads it and adds its
@@ -75,7 +84,7 @@ export const FIELD_BOX_SET: Pick<
   facts: new Map([["placeholder", showsPlaceholder]]),
   omittedStates: new Set(["aria-disabled", "entry-floor"]),
   omittedCompositions: new Map([
-    ["[&>.sr-only]", "a visually hidden child of the Field, which no cell holds"],
+    FIELD_ROOT_SR_ONLY,
     [
       "[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]",
       "the Field stretches the control to its width, which the control's own `w-full` already takes",

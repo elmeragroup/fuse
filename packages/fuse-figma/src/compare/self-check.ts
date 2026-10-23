@@ -167,12 +167,14 @@ export async function runSelfCheck(
           height: cell.box.height + 2 * RENDER_MARGIN,
         };
         const inset = (options.layout.padding - RENDER_MARGIN) * DEVICE_SCALE;
+        // The PNG takes every device pixel the render bounds touch. Select trigger's 3px invalid ring
+        // ends 0.09 device pixels into a column past a 110.546875px box, which a rounded width drops.
         const cut = crop(
           cell.raster,
           { x: inset, y: inset },
           {
-            width: Math.round(renderBounds.width * DEVICE_SCALE),
-            height: Math.round(renderBounds.height * DEVICE_SCALE),
+            width: Math.ceil(renderBounds.width * DEVICE_SCALE),
+            height: Math.ceil(renderBounds.height * DEVICE_SCALE),
           }
         );
         const png =

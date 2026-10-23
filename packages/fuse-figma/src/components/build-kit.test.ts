@@ -29,9 +29,9 @@ import {
 import { buildFixture, chip } from "../../test/fixture-sets";
 import { ICONS_PAGE, KIT_PAGES, pageKey, previewsOn } from "../../test/kit-inventory";
 import { buildKit, checkIconReferences } from "./build-kit";
-import { iconKey } from "./component-spec";
 import type { IconSlot } from "./component-spec";
 import type { CoverageRow } from "./coverage";
+import { iconKey } from "./kit-spec";
 import type { ChildLayerSpec, ColorSpec, ComponentRootSpec, ComponentSetSpec, KitSpec } from "./kit-spec";
 
 let spec: KitSpec;

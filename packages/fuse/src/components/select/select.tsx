@@ -9,11 +9,8 @@ import { CaretDown } from "../../icons/generated/caret-down";
 import { CaretUp } from "../../icons/generated/caret-up";
 import { Check } from "../../icons/generated/check";
 import { cn } from "../../styles/cn";
-import { fieldBoxChromeClass } from "../../styles/field-box";
 import { selectGroupShellClass, selectPopupShellClass } from "../../styles/inner-corner/select";
 import { mergeClassName } from "../../styles/merge-class-name";
-import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
-import { selfFocusRingClass } from "../../styles/utils";
 import {
   menuGroupLabelClass,
   menuItemClass,
@@ -24,7 +21,7 @@ import {
 import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
-import { selectTriggerSize } from "./select-variants";
+import { selectTriggerVariants } from "./select-variants";
 
 export function SelectRoot<Value = unknown, Multiple extends boolean | undefined = false>(
   props: SelectRootType.Props<Value, Multiple>
@@ -47,27 +44,15 @@ export function SelectTrigger({
   children,
   ...props
 }: SelectTriggerProps): ReactElement {
+  const slots = selectTriggerVariants({ size });
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-size={size}
-      className={mergeClassName(
-        className,
-        selfFocusRingClass,
-        fieldBoxChromeClass,
-        nativeStateFaceClass,
-        dataStateFaceClass,
-        selectTriggerSize({ size }),
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
-        "group/select-trigger flex w-fit items-center justify-between whitespace-nowrap outline-none select-none data-placeholder:text-muted-foreground *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-      )}
+      className={mergeClassName(className, slots.trigger())}
       {...props}>
       {children}
-      <SelectPrimitive.Icon
-        render={
-          <CaretDown className="ease-in-out pointer-events-none size-4 text-muted-foreground transition-transform duration-200 group-data-[popup-open]/select-trigger:rotate-180" />
-        }
-      />
+      <SelectPrimitive.Icon render={<CaretDown className={slots.caret()} />} />
     </SelectPrimitive.Trigger>
   );
 }
@@ -79,7 +64,7 @@ export function SelectValue({
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
-      className={mergeClassName(className, "flex flex-1 text-left")}
+      className={mergeClassName(className, selectTriggerVariants().value())}
       {...props}
     />
   );

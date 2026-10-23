@@ -1,7 +1,7 @@
 /**
  * A box's label: the box's own text, mapped from the box's style. This module owns the label's
  * typography, how it sizes and truncates in the box, where it sets its lines, where a native
- * control places it, and the gap a space before it draws. `component-spec.ts` assembles a box's
+ * control places it, and the gap a space before it draws. `box-mapping.ts` assembles a box's
  * layers, and asks this module for the label, for the line clamp the box's display reads, for that
  * gap, and to settle the text declarations of a box that shows no label.
  */
@@ -135,6 +135,21 @@ export function readLineClamp(holder: Holder, label: LabelDefinition | undefined
     value("overflow") === "hidden" &&
     wraps(value("white-space"));
   return holds ? lineCount(value("-webkit-line-clamp")) : undefined;
+}
+
+/**
+ * Why a box's line clamp sets nothing where its display is not `-webkit-box`: `-webkit-line-clamp`
+ * and `-webkit-box-orient` take effect only in a `-webkit-box` (CSS Overflow 4 §4.2), so a later
+ * `display: flex` over a `line-clamp-*` leaves both inert, as Select's trigger leaves its value.
+ *
+ * @param style - The box's style.
+ * @returns The reason, or undefined for a `-webkit-box`, which the clamp can take effect in.
+ */
+export function inertClamp(style: LayerStyle): string | undefined {
+  const display = normalizeCss(style.resolved("display") ?? "");
+  return display === "-webkit-box"
+    ? undefined
+    : `the box's display is ${display === "" ? "unset" : display}, and a line clamp takes effect only in a -webkit-box`;
 }
 
 /**
@@ -512,11 +527,16 @@ function readLabelLayout(
     (written) => (truncates ? written : undefined),
     () => cut(ending(1))
   );
-  style.read(
-    "-webkit-line-clamp",
-    (written) => (lines !== undefined ? written : undefined),
-    () => cut(ending(lines ?? 0))
-  );
+  const inert = inertClamp(style);
+  if (inert === undefined) {
+    style.read(
+      "-webkit-line-clamp",
+      (written) => (lines !== undefined ? written : undefined),
+      () => cut(ending(lines ?? 0))
+    );
+  } else {
+    style.mark("-webkit-line-clamp", "dropped", inert);
+  }
   return { sizing: fills ? FILLING : HUGGING_TEXT, truncation };
 }
 

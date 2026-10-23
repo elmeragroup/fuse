@@ -318,6 +318,7 @@ describe("exports map", () => {
       "paginationVariants",
       "radioIconButtonVariants",
       "radioVariants",
+      "selectTriggerVariants",
       "separatorClass",
       "skeletonClass",
       "switchVariants",

@@ -1,7 +1,7 @@
 /**
  * Where the parts of a box sit, read from the CSS that places them rather than from auto layout:
  * `position` and the centering pattern, an absolute part at its parent's top left, a translate
- * along a row, a `scale`, and the `rotate` of a part or an icon. `component-spec.ts` maps each box,
+ * along a row, a `scale`, and the `rotate` of a part or an icon. `box-mapping.ts` maps each box,
  * then hands this module the box's layout and the parts it mapped, and gets back the box's primary
  * alignment and the parts' layers, absolute where they sit outside the flow. A part that scales
  * draws as a slot around a dot, which the set's topology decides once for every cell.

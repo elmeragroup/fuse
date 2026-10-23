@@ -482,3 +482,13 @@ export type KitSpec = {
 export function topLevelSpecs(kit: KitSpec): readonly (IconLibrarySpec | ComponentSetSpec | PreviewSpec)[] {
   return [kit.icons, ...kit.componentSets, ...kit.previews];
 }
+
+/**
+ * The key of the icon component for a Fuse icon.
+ *
+ * @param name - The icon's export name, such as `ArrowRight`.
+ * @returns The key, such as `icon/ArrowRight`.
+ */
+export function iconKey(name: string): string {
+  return `icon/${name}`;
+}

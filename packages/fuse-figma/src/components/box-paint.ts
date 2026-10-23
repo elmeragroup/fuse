@@ -1,6 +1,6 @@
 /**
  * How a box paints, read from its style: its fill, or the picture it shows, its stroke, its drop
- * shadows, and an outline that paints nothing. `component-spec.ts` maps a box's layout and layers,
+ * shadows, and an outline that paints nothing. `box-mapping.ts` maps a box's layout and layers,
  * and asks this module for the box's paint and for the coverage note of a color it reads itself,
  * such as a text color.
  */

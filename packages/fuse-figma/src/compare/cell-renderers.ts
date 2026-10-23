@@ -177,6 +177,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/breadcrumb.js",
     load: async () => (await import("./breadcrumb-cell.ts")).breadcrumbSeparator,
   },
+  {
+    set: "select-trigger",
+    entry: "dist/select.js",
+    load: async () => (await import("./select-trigger-cell.ts")).selectTrigger,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

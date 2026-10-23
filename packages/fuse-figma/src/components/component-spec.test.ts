@@ -442,6 +442,64 @@ describe("a root that holds a part", () => {
   });
 });
 
+// Unit under test: `buildComponentSet` on a part with `flex-1`, which Tailwind compiles to `flex: 1`,
+// a grow of 1 from a zero basis. Oracle: CSS Flexbox 1 §9.7. A row that hugs its width is as wide as
+// its layers, so it has no free space, and the one layer that grows keeps its own width, as Chromium
+// draws Select's value at its text's width in its `w-fit` trigger. A row with a fixed width gives the
+// growing layer the room the others leave, and two growing layers share the free space by their
+// grow, neither of which the builder maps, so both stay unmapped.
+describe("a part that grows along its row", () => {
+  const detail = "the row hugs its layers, so the one layer that grows has no room to grow into";
+
+  it("keeps its own width in a row that hugs its layers", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex", {
+        parts: [dot("flex-1 h-[8px]"), { ...dot("size-[8px]"), key: "ring", slot: "chip-ring" }],
+      })
+    );
+    const [grown] = variant?.root.children ?? [];
+    expect(grown?.kind === "frame" && grown.sizing).toEqual({ horizontal: HUG, vertical: fixed(literal(8)) });
+    expect(coverage.filter((row) => row.className === "flex-1")).toEqual([
+      expect.objectContaining({ part: "chip-dot", property: "flex", outcome: "dropped", detail }),
+    ]);
+  });
+
+  // A zero minimum never widens the row, so the row still has no free space.
+  it("keeps its own width in a row that hugs its layers above a zero minimum", async () => {
+    const { coverage } = await buildFixture(chip("flex min-w-0", { parts: [dot("flex-1 h-[8px]")] }));
+    expect(coverage.filter((row) => row.className === "flex-1")).toEqual([
+      expect.objectContaining({ property: "flex", outcome: "dropped", detail }),
+    ]);
+  });
+
+  // A row that hugs its width up to a minimum is the minimum's width where its layers are narrower,
+  // which leaves free space the growing layer takes: 92px of the 100px beside the 8px ring. A maximum
+  // can take room away. Neither is the layer's own width.
+  it.each([
+    ["a row with a fixed width", "flex w-[100px]", [dot("flex-1")]],
+    [
+      "a row with two layers that grow",
+      "flex",
+      [dot("flex-1"), { ...dot("flex-1"), key: "ring", slot: "chip-ring" }],
+    ],
+    [
+      "a row that hugs up to a minimum width",
+      "flex w-fit min-w-[100px]",
+      [dot("flex-1 size-[8px]"), { ...dot("size-[8px]"), key: "ring", slot: "chip-ring" }],
+    ],
+    [
+      "a row that hugs below a maximum width",
+      "flex w-fit max-w-[10px]",
+      [dot("flex-1 size-[8px]"), { ...dot("size-[8px]"), key: "ring", slot: "chip-ring" }],
+    ],
+  ])("leaves flex-1 unmapped in %s", async (_name, classes, parts) => {
+    const { coverage } = await buildFixture(chip(classes, { parts }));
+    expect(new Set(coverage.filter((row) => row.className === "flex-1").map((row) => row.outcome))).toEqual(
+      new Set(["unmapped"])
+    );
+  });
+});
+
 // Unit under test: `buildComponentSet` on a flex column. Oracle: CSS Flexbox 1 and Box Alignment 3.
 // `flex-direction: column` lays the items out top to bottom, a vertical auto layout. An unset
 // `align-items` is `normal`, which behaves as `stretch` on a flex item, so an item with an auto
@@ -898,6 +956,54 @@ describe("a class that styles a composition", () => {
   });
 });
 
+// Unit under test: `buildComponentSet` on a root whose `*:data-[slot=…]:` classes style a part below
+// it. Oracle: Tailwind compiles `*:data-[slot=chip-dot]:size-[8px]` to
+// `:is(.… > *)[data-slot="chip-dot"]`, which matches each child of the root that carries the slot at
+// (0,2,0), so it beats the part's own `size-[4px]` at (0,1,0) and leaves a part with another slot
+// alone. A slot no part of the definition carries leaves the class styling nothing the set draws, and
+// a variant past the slot tests the child's own state, which no cell models, so both fail the gate.
+describe("a class that styles a child part through `*:data-[slot=…]:`", () => {
+  const RING = { ...dot(""), key: "ring", slot: "chip-ring" };
+
+  it("sizes the part that carries the slot over the part's own size, and leaves another part as it is", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex *:data-[slot=chip-dot]:size-[8px]", { parts: [dot("size-[4px]"), RING] })
+    );
+    const [first, second] = variant?.root.children ?? [];
+    expect([first?.kind === "frame" && first.sizing, second?.kind === "frame" && second.sizing]).toEqual([
+      fixedSize(literal(8), literal(8)),
+      { horizontal: HUG, vertical: HUG },
+    ]);
+    expect(
+      new Set(
+        coverage
+          .filter((row) => row.className === "*:data-[slot=chip-dot]:size-[8px]")
+          .map((row) => `${row.part} ${row.property} ${row.outcome}`)
+      )
+    ).toEqual(new Set(["chip width literal", "chip height literal"]));
+  });
+
+  it.each([
+    [
+      "*:data-[slot=chip-gap]:size-[8px]",
+      "the definition draws no part with `data-slot=chip-gap` below chip",
+    ],
+    [
+      "*:data-[slot=chip-dot]:hover:size-[8px]",
+      "the builder reads `*:data-[slot=…]:` only as a class's last variants, and models no state of the child",
+    ],
+    ["*:size-[8px]", "the builder reads `*:` only before a `data-[slot=…]:` that names one part"],
+  ])("leaves %s unmapped", async (className, detail) => {
+    const { coverage } = await buildFixture(chip(`flex ${className}`, { parts: [dot("")] }));
+    expect(new Set(coverage.filter((row) => row.className === className).map((row) => row.detail))).toEqual(
+      new Set([detail])
+    );
+    expect(new Set(coverage.filter((row) => row.className === className).map((row) => row.outcome))).toEqual(
+      new Set(["unmapped"])
+    );
+  });
+});
+
 // Unit under test: `buildComponentSet` on a root with Tailwind's marker classes. Oracle: Tailwind
 // emits no CSS for `group`, `group/<name>`, `peer` or `peer/<name>`. Each only names an element
 // that a descendant's `group-*` or a sibling's `peer-*` variant reads, so it has nothing to draw.
@@ -930,10 +1036,21 @@ describe("an unread custom property", () => {
     ]);
   });
 
-  it("stays unmapped on a box whose part does not read it", async () => {
-    const { coverage } = await buildFixture(chip("[--chip-inner:4px]", { parts: [dot("")] }));
-    expect(coverage).toEqual([
-      expect.objectContaining({ className: "[--chip-inner:4px]", outcome: "unmapped" }),
+  // A part that reads it reads it through the box's declaration, so the declaration is read, as "a
+  // part below the root" shows. Unread at the end of the cell, it reached no Figma field of any
+  // layer below, as the shell corners of Select's trigger reach neither its value nor its caret.
+  it("drops on a box whose part and icon do not read it", async () => {
+    const { coverage } = await buildFixture(
+      chip("[--chip-inner:4px] [&_svg]:size-[16px] text-[#000000]", {
+        parts: [dot("")],
+        iconsFor: () => [ICON],
+      })
+    );
+    expect(coverage.filter((row) => row.className === "[--chip-inner:4px]")).toEqual([
+      expect.objectContaining({
+        outcome: "dropped",
+        detail: "a custom property passes its value down, and no part or icon below reads it",
+      }),
     ]);
   });
 
@@ -1685,6 +1802,23 @@ describe("a label that ends in an ellipsis", () => {
   it("leaves a wrapping label in a box that hugs up to a max-width unmapped", async () => {
     const { coverage } = await buildLabelled("w-fit max-w-[100px]", { label: LABEL });
     expect(notesOf(coverage, "max-w-[100px]").map(([, outcome]) => outcome)).toContain("unmapped");
+  });
+
+  // Tailwind emits `flex` after `line-clamp-2`, so its `display: flex` replaces the clamp's
+  // `-webkit-box`, and `-webkit-line-clamp` and `-webkit-box-orient` take effect only in a
+  // `-webkit-box` (CSS Overflow 4 §4.2), as Chromium leaves Select's value. The clamp sets nothing,
+  // and the flex box clips its wrapping text.
+  it("drops the clamp of a box whose later display replaces its -webkit-box", async () => {
+    const detail = "the box's display is flex, and a line clamp takes effect only in a -webkit-box";
+    const { variant, coverage } = await buildLabelled("w-[100px] line-clamp-2 flex", { label: LABEL });
+    const text = textOf(variant?.root);
+    expect([text?.sizing, text?.truncation]).toEqual([FILL_WIDTH, undefined]);
+    expect(notesOf(coverage, "flex")).toEqual([["display", "literal", "a horizontal auto layout"]]);
+    expect(notesOf(coverage, "line-clamp-2")).toEqual([
+      ["-webkit-box-orient", "dropped", detail],
+      ["-webkit-line-clamp", "dropped", detail],
+      ["overflow", "literal", "the box clips its content"],
+    ]);
   });
 
   // `-webkit-line-clamp` clamps lines that wrap, so `nowrap` leaves it nothing to clamp, and the

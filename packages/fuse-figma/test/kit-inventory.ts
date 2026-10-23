@@ -127,6 +127,12 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "breadcrumb-separator", name: "Breadcrumb separator", variants: 1, previewed: 1 },
     ],
   },
+  {
+    slug: "select",
+    name: "Select",
+    // 2 sizes in 4 states, holding the placeholder or a value, closed and open.
+    sets: [{ key: "select-trigger", name: "Select trigger", variants: 32, previewed: 32 }],
+  },
 ];
 
 /** The page that holds the icon library alone, after the component pages. */
