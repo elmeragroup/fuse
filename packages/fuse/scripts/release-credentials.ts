@@ -1,24 +1,14 @@
-/** npm reads this variable through setup-node's `.npmrc`; named once so every access is computed. */
-const NPM_TOKEN_ENV = "NODE_AUTH_TOKEN";
-
 /**
- * Environment variables that hold publish credentials in the publish step: npm's token, the
- * GitHub token the engine uses, and the OIDC request pair a future `id-token: write` grant adds.
+ * Environment variables that hold publish credentials in the publish step: the GitHub token the
+ * engine uses, and the OIDC request pair that the job's `id-token: write` grant adds. npm
+ * exchanges that pair for its publish token, so the step holds no npm token.
  */
 export const RELEASE_CREDENTIAL_ENV = [
-  NPM_TOKEN_ENV,
-  "NPM_TOKEN",
   "GH_TOKEN",
   "GITHUB_TOKEN",
   "ACTIONS_ID_TOKEN_REQUEST_TOKEN",
   "ACTIONS_ID_TOKEN_REQUEST_URL",
 ] as const;
-
-/**
- * The non-secret value actions/setup-node exports for `NODE_AUTH_TOKEN` when no token is set. Its
- * `.npmrc` interpolates the variable, so npm installs of public packages keep working with it.
- */
-export const NPM_AUTH_PLACEHOLDER = "XXXXX-XXXXX-XXXXX-XXXXX";
 
 /**
  * Runs `run` with the publish credentials removed from `process.env`, then restores them, also
@@ -41,9 +31,6 @@ export function withoutReleaseCredentials<T>(run: () => T): T {
       saved.set(name, value);
       Reflect.deleteProperty(process.env, name);
     }
-  }
-  if (saved.has(NPM_TOKEN_ENV)) {
-    process.env[NPM_TOKEN_ENV] = NPM_AUTH_PLACEHOLDER;
   }
   try {
     return run();

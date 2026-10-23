@@ -244,14 +244,15 @@ jobs:
   release:
     needs: [checks, browser, canary-opt-out]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RELEASE_ENABLED == 'true' && needs.canary-opt-out.outputs.skip != 'true'
+    # The called workflow cannot hold more than this grant. npm's trusted publishing needs
+    # `id-token: write` here and in publish-release.yml, and validates this file's name.
     permissions:
       contents: write
       pull-requests: read
+      id-token: write
     uses: ./.github/workflows/publish-release.yml
     with:
       source_commit: ${{ github.sha }}
-    secrets:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   version:
     needs: [checks, browser]

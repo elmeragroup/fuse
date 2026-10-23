@@ -134,11 +134,18 @@ describe("release wiring", () => {
     const command = asString(engine.run, "publish run");
     expect(command).toContain('pnpm release retry "$RECORD_TAG"');
     expect(command).toContain('pnpm release publish "$SOURCE_COMMIT"');
-    // The engine's GitHub and npm authentication and its command inputs are env-driven; a dropped
-    // or renamed expression would stay invisible until a real publication.
+    // npm signs provenance for GITHUB_SHA, but a retry dispatch runs at main's head while it
+    // uploads an archive recorded for an earlier commit. Only the retry turns provenance off.
+    const lines = command.split("\n").map((line) => line.trim());
+    expect(lines.filter((line) => line.includes("NPM_CONFIG_PROVENANCE"))).toEqual([
+      'NPM_CONFIG_PROVENANCE=false pnpm release retry "$RECORD_TAG"',
+    ]);
+    expect(lines).toContain('pnpm release publish "$SOURCE_COMMIT"');
+    // The engine's GitHub authentication and its command inputs are env-driven; a dropped or
+    // renamed expression would stay invisible until a real publication. npm authenticates through
+    // the job's OIDC token, so the step holds no npm token.
     expect(asRecord(engine.env, "publish env")).toEqual({
       GH_TOKEN: "${{ github.token }}",
-      NODE_AUTH_TOKEN: "${{ secrets.NPM_TOKEN }}",
       SOURCE_COMMIT: "${{ inputs.source_commit }}",
       RECORD_TAG: "${{ inputs.record_tag }}",
     });
@@ -156,6 +163,38 @@ describe("release wiring", () => {
     expect(browser.if).toBe("inputs.record_tag == ''");
     expect(browser.run).toBe("pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium");
     expect(steps.indexOf(browser)).toBeLessThan(steps.indexOf(engine));
+  });
+
+  it("installs an exact npm that can promote over OIDC before the engine runs, on both paths", () => {
+    const steps = jobSteps(readWorkflow("publish-release"), "publish");
+    const pin = requiredRunStep(steps, "npm install --global npm@");
+    // The publish and retry paths both promote with `npm dist-tag add`, so the pin is unconditional.
+    expect(pin.if).toBeUndefined();
+    const version = /^npm install --global npm@(\d+)\.(\d+)\.(\d+)$/.exec(
+      asString(pin.run, "npm pin").trim()
+    );
+    if (version === null) throw new Error("the npm pin must name an exact version");
+    // npm documents 11.21.0 as the first release whose `dist-tag` authenticates over OIDC
+    // (npm/cli#10038); the runner's bundled npm is older.
+    const [major, minor] = version.slice(1).map(Number);
+    expect(
+      major > 11 || (major === 11 && minor >= 21),
+      `npm ${version.slice(1).join(".")} must be at least 11.21.0`
+    ).toBe(true);
+    const engine = steps.findIndex(
+      (step) => step.run !== undefined && asString(step.run, "publish run").includes("pnpm release ")
+    );
+    expect(steps.indexOf(pin)).toBeLessThan(engine);
+  });
+
+  it("publishes from the npm environment that npm's trusted-publisher entries name", () => {
+    // An OIDC token from any other job, such as deploy-prod or a preview job, lacks the `npm`
+    // environment claim and cannot match the entries.
+    const job = asRecord(
+      asRecord(readWorkflow("publish-release").jobs, "publish jobs").publish,
+      "publish job"
+    );
+    expect(job.environment).toBe("npm");
   });
 
   it("keeps a bounded queue for publications instead of replacing a waiting release", () => {
@@ -178,17 +217,21 @@ describe("release wiring", () => {
     expect(asRecord(callInputs.source_commit, "source_commit").required).toBe(true);
     // A caller cannot request a retry; that path stays dispatch-only.
     expect(callInputs.record_tag).toBeUndefined();
+    // npm authenticates over OIDC, so the caller passes no npm token.
+    expect(call.secrets).toBeUndefined();
     const dispatch = asRecord(events.workflow_dispatch, "workflow_dispatch");
     const dispatchInputs = asRecord(dispatch.inputs, "dispatch inputs");
     expect(asRecord(dispatchInputs.record_tag, "record_tag").required).toBe(true);
   });
 
   it("grants the publish workflow the permissions the release path needs", () => {
-    // The workflow runs only after activation, so a dropped grant would stay invisible until
-    // the first real publication; the caller cannot elevate the called workflow above these.
+    // A dropped grant would stay invisible until the next real publication; the caller cannot
+    // elevate the called workflow above these. `id-token: write` lets npm exchange the job's OIDC
+    // token for a publish token.
     expect(readWorkflow("publish-release").permissions).toEqual({
       contents: "write",
       "pull-requests": "read",
+      "id-token": "write",
     });
   });
 });

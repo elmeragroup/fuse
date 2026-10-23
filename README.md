@@ -99,7 +99,7 @@ The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@e
 
 ## Release
 
-Once publishing is activated, every push to `main` publishes a **canary** and the bot opens or updates the **Version Packages PR** while changesets are pending; merging that PR publishes the **stable** line and is the release action — several canaries can precede a stable. Publishing runs on the [`@elmeragroup/internal` release engine](https://github.com/elmeragroup/internal) with a token for now, moving to OIDC later. The [release runbook](scripts/RELEASE.md) owns the channels, the pack-adapter gates, and the activation prerequisites.
+Once publishing is activated, every push to `main` publishes a **canary** and the bot opens or updates the **Version Packages PR** while changesets are pending; merging that PR publishes the **stable** line and is the release action — several canaries can precede a stable. Publishing runs on the [`@elmeragroup/internal` release engine](https://github.com/elmeragroup/internal) and authenticates to npm through trusted publishing (OIDC). The [release runbook](scripts/RELEASE.md) owns the channels, the pack-adapter gates, and the activation prerequisites.
 
 ## Reading by task
 
