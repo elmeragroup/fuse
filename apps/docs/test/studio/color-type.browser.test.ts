@@ -219,6 +219,35 @@ describe("the studio's Type page", () => {
     }
   });
 
+  it("shows the themed heading scale and resizes the specimen H1 after a --heading-1-size edit", async () => {
+    const { context, page, errors } = await openStudio(browser(), { route: TYPE_PAGE });
+    try {
+      const board = artboard(page, "Specimen");
+      // The Specimen's first four rows are H1 to H4, in order.
+      const reading = (level: number) => board.locator("[data-type-reading]").nth(level - 1);
+      // external-palettes.ts: h1 heading small 24/32 and h2 and h3 heading xsmall 20/32, all at
+      // 700; h4 has no roles and keeps 16px at snug 1.375, 22px, at 500.
+      await expect.poll(() => reading(1).textContent()).toBe("24 / 32 px · 700");
+      expect(await reading(2).textContent()).toBe("20 / 32 px · 700");
+      expect(await reading(3).textContent()).toBe("20 / 32 px · 700");
+      expect(await reading(4).textContent()).toBe("16 / 22 px · 500");
+
+      const field = tokenRow(page, "heading-1-size").getByRole("textbox", {
+        name: "--heading-1-size in px",
+        exact: true,
+      });
+      await field.fill("28");
+      await field.press("Enter");
+
+      const h1 = board.locator('[data-specimen="h1"]');
+      await expect.poll(() => computed(h1, "fontSize")).toBe("28px");
+      await expect.poll(() => reading(1).textContent()).toBe("28 / 32 px · 700");
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
   it("reports the selection title's new weight after a --selection-title-weight edit", async () => {
     const { context, page, errors } = await openStudio(browser(), { route: TYPE_PAGE });
     try {

@@ -95,6 +95,15 @@ export const TOKEN_NAMES = [
   "paragraph-leading-sm",
   "paragraph-leading-base",
   "paragraph-leading-lg",
+  "heading-1-size",
+  "heading-1-leading",
+  "heading-1-weight",
+  "heading-2-size",
+  "heading-2-leading",
+  "heading-2-weight",
+  "heading-3-size",
+  "heading-3-leading",
+  "heading-3-weight",
   "font-sans",
   "font-heading",
 ] as const;
@@ -301,6 +310,15 @@ export const TOKEN_KINDS = {
   "paragraph-leading-sm": "dimension",
   "paragraph-leading-base": "dimension",
   "paragraph-leading-lg": "dimension",
+  "heading-1-size": "dimension",
+  "heading-1-leading": "dimension",
+  "heading-1-weight": "fontWeight",
+  "heading-2-size": "dimension",
+  "heading-2-leading": "dimension",
+  "heading-2-weight": "fontWeight",
+  "heading-3-size": "dimension",
+  "heading-3-leading": "dimension",
+  "heading-3-weight": "fontWeight",
   "font-sans": "fontFamily",
   "font-heading": "fontFamily",
 } as const satisfies Record<TokenName, TokenKind>;
@@ -590,6 +608,24 @@ export const TOKEN_DESCRIPTIONS = {
     "The line height of a default-size Text (16px). Internal themes keep the relaxed 1.625 ratio, and external themes set the 16/22 paragraph style.",
   "paragraph-leading-lg":
     "The line height of a large Text (size lg, 18px). Internal themes keep the relaxed 1.625 ratio, and external themes set the 18/24 paragraph style.",
+  "heading-1-size":
+    "The font size of a level 1 Heading without a size prop. Internal themes keep 24px, and external themes set the 24/32 heading small style.",
+  "heading-1-leading":
+    "The line height of a level 1 Heading without a size prop. Internal themes keep the snug 1.375 ratio, and external themes set the 24/32 heading small style.",
+  "heading-1-weight":
+    "The font weight of a level 1 Heading without a font prop. Internal themes keep 500, and external themes set the bold heading small style.",
+  "heading-2-size":
+    "The font size of a level 2 Heading without a size prop. Internal themes keep 18px, and external themes set the 20/32 heading xsmall style.",
+  "heading-2-leading":
+    "The line height of a level 2 Heading without a size prop. Internal themes keep the snug 1.375 ratio, and external themes set the 20/32 heading xsmall style.",
+  "heading-2-weight":
+    "The font weight of a level 2 Heading without a font prop. Internal themes keep 500, and external themes set the bold heading xsmall style.",
+  "heading-3-size":
+    "The font size of a level 3 Heading without a size prop. Internal themes keep 16px, and external themes set the 20/32 heading xsmall style.",
+  "heading-3-leading":
+    "The line height of a level 3 Heading without a size prop. Internal themes keep the snug 1.375 ratio, and external themes set the 20/32 heading xsmall style.",
+  "heading-3-weight":
+    "The font weight of a level 3 Heading without a font prop. Internal themes keep 500, and external themes set the bold heading xsmall style.",
   "font-sans": "The body font stack, with Roboto first.",
   "font-heading":
     "The heading font. It follows font-sans unless the theme sets its own, such as Neo Sans in external Fjordkraft themes.",
@@ -648,6 +684,15 @@ export const EXTERNAL_RESET_KEYS = [
   "paragraph-leading-sm",
   "paragraph-leading-base",
   "paragraph-leading-lg",
+  "heading-1-size",
+  "heading-1-leading",
+  "heading-1-weight",
+  "heading-2-size",
+  "heading-2-leading",
+  "heading-2-weight",
+  "heading-3-size",
+  "heading-3-leading",
+  "heading-3-weight",
   "font-heading",
 ] as const;
 
@@ -713,6 +758,15 @@ const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
   "paragraph-leading-sm",
   "paragraph-leading-base",
   "paragraph-leading-lg",
+  "heading-1-size",
+  "heading-1-leading",
+  "heading-1-weight",
+  "heading-2-size",
+  "heading-2-leading",
+  "heading-2-weight",
+  "heading-3-size",
+  "heading-3-leading",
+  "heading-3-weight",
   "font-heading",
 ]);
 

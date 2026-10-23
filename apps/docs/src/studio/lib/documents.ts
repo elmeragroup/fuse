@@ -236,7 +236,9 @@ const COLOR_SECTIONS: readonly SectionId[] = [
 
 const TYPE_BOARD_WIDTH = 640;
 const TYPE_COLUMN = TYPE_BOARD_WIDTH + 120;
-const TYPE_ROW = 960;
+// The comfortable specimen is 914px tall, so the Font stacks board starts 120px below it, the gap
+// between the page's columns.
+const TYPE_ROW = 1034;
 
 /**
  * The Type page: the specimen, the control and label type pairs dense against comfortable, and

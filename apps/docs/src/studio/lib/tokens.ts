@@ -136,6 +136,15 @@ export const TOKEN_TABLE = {
   "paragraph-leading-sm": { section: "typography", kind: "dimension" },
   "paragraph-leading-base": { section: "typography", kind: "dimension" },
   "paragraph-leading-lg": { section: "typography", kind: "dimension" },
+  "heading-1-size": { section: "typography", kind: "dimension" },
+  "heading-1-leading": { section: "typography", kind: "dimension" },
+  "heading-1-weight": { section: "typography", kind: "fontWeight" },
+  "heading-2-size": { section: "typography", kind: "dimension" },
+  "heading-2-leading": { section: "typography", kind: "dimension" },
+  "heading-2-weight": { section: "typography", kind: "fontWeight" },
+  "heading-3-size": { section: "typography", kind: "dimension" },
+  "heading-3-leading": { section: "typography", kind: "dimension" },
+  "heading-3-weight": { section: "typography", kind: "fontWeight" },
   "font-sans": { section: "typography", kind: "fontFamily" },
   "font-heading": { section: "typography", kind: "fontFamily" },
 } as const satisfies Record<TokenName, TokenRow>;
@@ -168,8 +177,8 @@ export function sectionTokens(section: SectionId): readonly TokenName[] {
 /**
  * The keys a dark palette keeps from light: geometry, the card edge, section divider and shadow
  * colors, the outline and selection border and divider colors, the disabled selection row's fill,
- * stripe and text colors, the selection title weight, the paragraph line heights and the heading
- * font. Fuse keeps this set private as `LIGHT_ONLY_KEYS` in
+ * stripe and text colors, the selection title weight, the paragraph line heights, the heading
+ * scale and the heading font. Fuse keeps this set private as `LIGHT_ONLY_KEYS` in
  * `packages/fuse/src/theme/tokens/contract.ts`; the studio tests check every one declares the
  * same value in both schemes of every theme. An edit to one applies to both schemes.
  */
@@ -194,6 +203,15 @@ export const LIGHT_ONLY_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>([
   "paragraph-leading-sm",
   "paragraph-leading-base",
   "paragraph-leading-lg",
+  "heading-1-size",
+  "heading-1-leading",
+  "heading-1-weight",
+  "heading-2-size",
+  "heading-2-leading",
+  "heading-2-weight",
+  "heading-3-size",
+  "heading-3-leading",
+  "heading-3-weight",
   "font-heading",
 ]);
 

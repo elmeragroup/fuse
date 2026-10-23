@@ -67,7 +67,8 @@ export function Calendar<T extends DateValue>({
 
 /**
  * Month navigation row. Reads `useLocale()` so caret icons flip in RTL.
- * The month title is the public Heading rendered onto RAC Heading.
+ * The month title is the public Heading rendered onto RAC Heading, at `size="lg"` and
+ * `font="default"` so the level 2 theme roles do not restyle it.
  * Reused by RangeCalendar.
  */
 export function CalendarHeader(): ReactElement {
@@ -79,7 +80,7 @@ export function CalendarHeader(): ReactElement {
       <Button variant="ghost" size="icon" slot="previous">
         {direction === "rtl" ? <CaretRight aria-hidden /> : <CaretLeft aria-hidden />}
       </Button>
-      <Heading size="lg" className={heading()} render={<AriaHeading />} />
+      <Heading size="lg" font="default" className={heading()} render={<AriaHeading />} />
       <Button variant="ghost" size="icon" slot="next">
         {direction === "rtl" ? <CaretLeft aria-hidden /> : <CaretRight aria-hidden />}
       </Button>
