@@ -177,8 +177,9 @@ export function extractTokens(input: TokenScanInput): readonly TokenRef[] {
     }
     // Tailwind v4 CSS-variable shorthand: `h-(--control-h-md)`, `size-(--control-h-lg)`, and
     // the typed form `text-(length:--control-text)` whose data-type hint disambiguates a utility
-    // that could read a colour or a length.
-    const shorthandPattern = /(?<!var)\(\s*(?:[a-z-]+:)?(--[a-z0-9-]+)\s*\)/gi;
+    // that could read a colour or a length. A fallback after a comma, as in
+    // `leading-(--paragraph-leading-sm,1.421875rem)`, still names the variable it falls back from.
+    const shorthandPattern = /(?<!var)\(\s*(?:[a-z-]+:)?(--[a-z0-9-]+)\s*[,)]/gi;
     let shorthand = shorthandPattern.exec(text);
     while (shorthand !== null) {
       const token = shorthand[1];

@@ -14,7 +14,7 @@ const typeRow = tv({
   slots: {
     row: "grid grid-cols-[9rem_minmax(0,1fr)] items-center gap-4 border-b border-border py-3 last:border-b-0",
     meta: "flex min-w-0 flex-col gap-0.5",
-    // Text sets relaxed leading; these keep each size's own.
+    // Text sets its paragraph leading; these keep each size's own.
     name: "leading-(--text-sm--line-height)",
     token: "font-mono leading-(--text-xs--line-height) break-all",
     value: "font-mono leading-(--text-xs--line-height) tabular-nums",

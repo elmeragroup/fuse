@@ -45,7 +45,14 @@ describe("TOKEN_TABLE", () => {
       "radius-step",
       "button-outline-width",
     ]);
-    expect(sectionTokens("typography")).toEqual(["selection-title-weight", "font-sans", "font-heading"]);
+    expect(sectionTokens("typography")).toEqual([
+      "selection-title-weight",
+      "paragraph-leading-sm",
+      "paragraph-leading-base",
+      "paragraph-leading-lg",
+      "font-sans",
+      "font-heading",
+    ]);
     expect(sectionTokens("variant")).toEqual([
       "card-border",
       "card-section-divider",
@@ -83,6 +90,9 @@ describe("LIGHT_ONLY_TOKENS", () => {
         "radius-step",
         "button-outline-width",
         "selection-title-weight",
+        "paragraph-leading-sm",
+        "paragraph-leading-base",
+        "paragraph-leading-lg",
         "font-heading",
       ].toSorted()
     );

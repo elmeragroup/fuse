@@ -22,8 +22,9 @@ export default function TokensPage(): ReactElement {
         The swatches below show live values for whichever theme the header picker is on.
       </p>
       <p>
-        Most role tokens are colours. The rest hold a length, such as <code>--radius</code>, a font stack,
-        such as <code>--font-heading</code>, or a font weight, <code>--selection-title-weight</code>, and the{" "}
+        Most role tokens are colours. The rest hold a length, such as <code>--radius</code> or the paragraph
+        line height <code>--paragraph-leading-base</code>, a font stack, such as <code>--font-heading</code>,
+        or a font weight, <code>--selection-title-weight</code>, and the{" "}
         <Link href="/handbook/theming">theming page</Link> says what each variant sets them to.
       </p>
 

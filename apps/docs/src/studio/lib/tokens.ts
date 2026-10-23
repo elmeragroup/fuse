@@ -133,6 +133,9 @@ export const TOKEN_TABLE = {
   "radius-step": { section: "shape", kind: "dimension" },
   "button-outline-width": { section: "shape", kind: "dimension" },
   "selection-title-weight": { section: "typography", kind: "fontWeight" },
+  "paragraph-leading-sm": { section: "typography", kind: "dimension" },
+  "paragraph-leading-base": { section: "typography", kind: "dimension" },
+  "paragraph-leading-lg": { section: "typography", kind: "dimension" },
   "font-sans": { section: "typography", kind: "fontFamily" },
   "font-heading": { section: "typography", kind: "fontFamily" },
 } as const satisfies Record<TokenName, TokenRow>;
@@ -165,7 +168,8 @@ export function sectionTokens(section: SectionId): readonly TokenName[] {
 /**
  * The keys a dark palette keeps from light: geometry, the card edge, section divider and shadow
  * colors, the outline and selection border and divider colors, the disabled selection row's fill,
- * stripe and text colors, and the heading font. Fuse keeps this set private as `LIGHT_ONLY_KEYS` in
+ * stripe and text colors, the selection title weight, the paragraph line heights and the heading
+ * font. Fuse keeps this set private as `LIGHT_ONLY_KEYS` in
  * `packages/fuse/src/theme/tokens/contract.ts`; the studio tests check every one declares the
  * same value in both schemes of every theme. An edit to one applies to both schemes.
  */
@@ -187,6 +191,9 @@ export const LIGHT_ONLY_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>([
   "radius-step",
   "button-outline-width",
   "selection-title-weight",
+  "paragraph-leading-sm",
+  "paragraph-leading-base",
+  "paragraph-leading-lg",
   "font-heading",
 ]);
 

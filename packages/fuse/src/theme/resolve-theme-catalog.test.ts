@@ -43,9 +43,9 @@ const SLUGS = [
 
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
 // `radius-field` field corner, the card edge, section divider and shadow, the two outline Button roles, the resting and
-// checked selection row borders and dividers, the disabled selection row fill, stripe and text
-// and the selection row title weight and the modal fill and text.
-const TOKEN_COUNT = 95;
+// checked selection row borders and dividers, the disabled selection row fill, stripe and text,
+// the selection row title weight, the three paragraph line heights and the modal fill and text.
+const TOKEN_COUNT = 98;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;
@@ -363,6 +363,25 @@ describe("resolveThemeCatalog", () => {
       reference: { space: "token", name: "font-sans" },
       value: "Roboto",
     });
+  });
+
+  it("reads the paragraph line heights as px, kept in both schemes", () => {
+    // External paragraph styles 14/20, 16/22 and 18/24; internal relaxed 1.625 × 14, 16 and 18.
+    const expected = [
+      ["paragraph-leading-sm", 20, 22.75],
+      ["paragraph-leading-base", 22, 26],
+      ["paragraph-leading-lg", 24, 29.25],
+    ] as const;
+    for (const [name, external, internal] of expected) {
+      expect(light("external-fkas-private").tokens[name], name).toMatchObject({
+        kind: "dimension",
+        codeSyntax: `var(--${name})`,
+        value: external,
+      });
+      expect(theme("external-guen-company").schemes.dark.tokens[name].value, name).toBe(external);
+      expect(light("internal-fkas-private").tokens[name].value, name).toBe(internal);
+      expect(theme("internal-ngfi-company").schemes.dark.tokens[name].value, name).toBe(internal);
+    }
   });
 
   it("reads font weights as numbers, kept in both schemes", () => {
