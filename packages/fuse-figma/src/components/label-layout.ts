@@ -16,6 +16,7 @@ import type {
   ColorSpec,
   CounterAlignSpec,
   LetterSpacingSpec,
+  LineHeightSpec,
   NumberSpec,
   StringSpec,
   TextAlignSpec,
@@ -176,24 +177,26 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
   const fontSize = style.read("font-size", (value) => readNumber(value, variables), describeNumber);
   const lineHeight = style.read(
     "line-height",
-    (value) => {
+    (value): LineHeightSpec | undefined => {
       const bound = variables.lookup(value);
       if (bound !== undefined) {
-        return { kind: "variable" as const, variable: bound };
+        return { kind: "variable", variable: bound };
       }
       const number = evaluateNumber(value);
       if (number === undefined) {
         return undefined;
       }
-      // A unitless line height multiplies the font size, which must then be a literal.
       if (/px|rem|%/.test(value)) {
-        return { kind: "literal" as const, value: number };
+        return { kind: "literal", value: number };
       }
-      return fontSize?.kind === "literal"
-        ? { kind: "literal" as const, value: number * fontSize.value }
-        : undefined;
+      // A unitless line height multiplies the font size: pixels over a literal size, and a percent of
+      // a size a variable sets per mode, which a Figma line height in percent follows (PH).
+      if (fontSize?.kind === "literal") {
+        return { kind: "literal", value: number * fontSize.value };
+      }
+      return fontSize === undefined ? undefined : { kind: "percent", value: number * 100 };
     },
-    describeNumber
+    describeLineHeight
   );
   const fontFamily = style.read(
     "font-family",
@@ -247,6 +250,13 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
     layer: letterSpacing === undefined ? wraps : { ...wraps, letterSpacing },
     ...placeInBox(holder, label.placement),
   };
+}
+
+/** What became of a line height, for the coverage table. */
+function describeLineHeight(spec: LineHeightSpec): CoverageNote {
+  return spec.kind === "percent"
+    ? { outcome: "literal", detail: `lines ${spec.value}% of the font size apart` }
+    : describeNumber(spec);
 }
 
 /** Why an `em` spacing a label inherits from an element of another font size has no Figma form. */

@@ -167,6 +167,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "item-link", name: "Item link", variants: 8, previewed: 8 },
     ],
   },
+  // 5 tones without and with a description.
+  { slug: "alert", name: "Alert", sets: [{ key: "alert", name: "Alert", variants: 10, previewed: 10 }] },
 ];
 
 /** The page that holds the icon library alone, after the component pages. */

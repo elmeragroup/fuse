@@ -438,8 +438,9 @@ class CellLedger {
     // declaration, so an unread one only passes its value down to layers that never take it. With no
     // part or icon below, nothing could, as the field box's shell corners pass a corner to parts an
     // Input does not have. Below Select's trigger, its value and caret read none of them. A synced
-    // variable stays unmapped, since substitution keeps it as its `var()` and never reads a local
-    // override, which the browser paints.
+    // variable stays unmapped where a layer reads it, since substitution keeps it as its `var()` and
+    // never reads a local override, which the browser paints. Where no layer reads it, the browser
+    // paints the override nowhere, as an Alert's `--ring` reaches only a focus ring the set omits.
     if (property.startsWith("--") && !this.scope.context.variables.owns(property)) {
       return {
         outcome: "dropped",
@@ -449,7 +450,29 @@ class CellLedger {
             : "a custom property passes its value down, and no part or icon below reads it",
       };
     }
+    if (property.startsWith("--") && !this.#readsVariable(property)) {
+      return {
+        outcome: "dropped",
+        detail: `the box overrides the synced \`${property.slice(2)}\`, which no layer of the cell reads`,
+      };
+    }
     return { outcome: "unmapped", detail: "the builder maps no Figma field from it" };
+  }
+
+  /**
+   * Whether a layer of the cell read a declaration whose value names a synced variable, which
+   * substitution keeps as `var(<name>)`, through a theme value or another custom property.
+   */
+  #readsVariable(property: string): boolean {
+    const reference = `var(${property})`;
+    return this.#layers.some((layer) =>
+      [...layer.style].some(
+        ([name, entry]) =>
+          entry.source.layer === layer.id &&
+          layer.read.has(name) &&
+          (substitute(layer, this.scope.context, entry.value, new Set()) ?? "").includes(reference)
+      )
+    );
   }
 
   /**

@@ -11,9 +11,9 @@
  * run stopped before its first write.
  *
  * The fake models the Figma rules below. Each rule a real file showed in 2026-10 names that run.
- * Rules 12 to 29 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
+ * Rules 12 to 30 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
  * Import test` on 2026-10-22 and 2026-10-23: P0 and P0b read the kit's nodes, P1 to P9, PB, PR,
- * PQ, PD, PL and PF built nodes on a scratch page, and P9b stored images and built no node.
+ * PQ, PD, PL, PF and PH built nodes on a scratch page, and P9b stored images and built no node.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
  *    COLOR variable in the collections' default modes, whatever opacity it was given. Two runs
@@ -214,6 +214,11 @@
  *    of the other layers in the flow that do not fill the axis, so it follows them as they resize,
  *    and `absoluteBoundingBox` reads the same. No probe filled a layer whose siblings all fill, so
  *    there the layer keeps its own length.
+ * 30. `lineHeight` in `PERCENT` on a text. On 2026-10-23 a 16px Roboto Regular text read 150% and
+ *    137.5% back exactly and was 24 and 22 tall. With `fontSize` bound to `Fuse density / label-text`
+ *    it was 21, 24 and 21 tall at 150% in the Dense, Comfortable and Auto modes, so the line box
+ *    follows the bound size (PH). The fake keeps the percent as written, through a font size
+ *    binding. It does not set text, so the line box leaves the text's size as it was.
  *
  * An instance's sublayers show the layers of its main component. An override, such as the
  * color an icon layer gives its glyph, belongs to the main layer it was made on. It moves to

@@ -74,7 +74,7 @@ function layerRefs(layer: ChildLayerSpec): BoundRef[] {
         ...boundString(layer.fontFamily),
         ...[
           layer.fontSize,
-          layer.lineHeight,
+          layer.lineHeight.kind === "percent" ? undefined : layer.lineHeight,
           fixedLength(layer.sizing.horizontal),
           fixedLength(layer.sizing.vertical),
           layer.maxWidth,

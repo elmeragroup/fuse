@@ -543,7 +543,8 @@ export function heightBounds(layer: ChildLayerSpec | undefined): HeightBounds {
     if (sizing.vertical.kind === "fixed") {
       return lengthBounds(sizing.vertical.length);
     }
-    const line = lengthBounds(lineHeight);
+    // A percent line height follows a font size a variable sets per mode, so its pixels are unknown.
+    const line = lineHeight.kind === "percent" ? UNBOUNDED : lengthBounds(lineHeight);
     const lines = sizing.horizontal.kind === "hug" && maxWidth === undefined ? 1 : truncation?.maxLines;
     return {
       min: line.min,

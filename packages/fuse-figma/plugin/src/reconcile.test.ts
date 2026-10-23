@@ -795,6 +795,41 @@ describe("a label with letter spacing", () => {
   });
 });
 
+// Unit under test: `reconcileKit` on a label with a percent line height, as Alert's title and body
+// have over the bound `label-text`. Oracle: the fake's rule 30, after what a real file read on
+// 2026-10-23 (PH): a percent line height reads back as written. The next Plan lists nothing, and a
+// line height a designer set in pixels plans the percent back.
+describe("a label with a percent line height", () => {
+  const PERCENT = kitWithRoot((root) => ({
+    ...root,
+    children: [{ ...LABEL, lineHeight: { kind: "percent", value: 137.5 } }],
+  }));
+  const labelOf = async (file: FakeFigma) => childNamed(await buttonVariant(file), "TEXT", "Label");
+
+  it("writes the percent in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, PERCENT, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, PERCENT, false)).toEqual({ changes: [], warnings: [] });
+    expect((await labelOf(file)).lineHeight).toEqual({ unit: "PERCENT", value: 137.5 });
+  });
+
+  it("plans the percent back over a line height in pixels", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, PERCENT, true);
+    file.reopen();
+    await file.figma.loadFontAsync({ family: "Roboto", style: "Medium" });
+    (await labelOf(file)).lineHeight = { unit: "PIXELS", value: 137.5 };
+    expect((await reconcileKit(file.figma, PERCENT, false)).changes).toEqual([
+      "Button / size=md / Label: lineHeight → 137.5%",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, PERCENT, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, PERCENT, false)).toEqual({ changes: [], warnings: [] });
+  });
+});
+
 // Unit under test: `reconcileKit` on a hugging label with a max width, as Empty's title and
 // description wrap under the header's `max-w-sm`. Oracle: the fake's rule 16, after what a real file
 // read on 2026-10-22 (P7): a text in auto layout keeps a `maxWidth`, and `null` clears it. The next

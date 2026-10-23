@@ -11,6 +11,7 @@ import type {
   DirectionSpec,
   FrameLayerSpec,
   IconLayerSpec,
+  LineHeightSpec,
   NumberSpec,
   RotationSpec,
   TextLayerSpec,
@@ -322,6 +323,44 @@ function offsetMatches(current: TextDecorationOffset | null, desired: TextDecora
 }
 
 /**
+ * Plan a text's line height: in pixels or bound to a variable as a number field, or a percent of the
+ * font size, which follows a font size a variable sets per mode, as a real file did on 2026-10-23
+ * (PH). A percent clears a binding the layer held.
+ */
+function planLineHeight(run: Run, text: TextNode, label: string, spec: LineHeightSpec): void {
+  if (spec.kind !== "percent") {
+    planTextNumber(
+      run,
+      text,
+      label,
+      "lineHeight",
+      spec,
+      (value) =>
+        text.lineHeight !== run.figma.mixed &&
+        text.lineHeight.unit === "PIXELS" &&
+        near(text.lineHeight.value, value),
+      (value) => {
+        text.lineHeight = { unit: "PIXELS", value };
+      }
+    );
+    return;
+  }
+  const held = text.lineHeight;
+  if (
+    textBinding(run, text, "lineHeight") === null &&
+    held !== run.figma.mixed &&
+    held.unit === "PERCENT" &&
+    near(held.value, spec.value)
+  ) {
+    return;
+  }
+  change(run.plan, label, `lineHeight → ${spec.value}%`, () => {
+    text.setBoundVariable("lineHeight", null);
+    text.lineHeight = { unit: "PERCENT", value: spec.value };
+  });
+}
+
+/**
  * Plan a label's letter spacing, a percent of its font size (PL). A label the spec gives no spacing
  * plans none, so a published label keeps whatever spacing it holds.
  */
@@ -464,20 +503,7 @@ function planTypography(
       text.fontSize = value;
     }
   );
-  planTextNumber(
-    run,
-    text,
-    label,
-    "lineHeight",
-    spec.lineHeight,
-    (value) =>
-      text.lineHeight !== run.figma.mixed &&
-      text.lineHeight.unit === "PIXELS" &&
-      near(text.lineHeight.value, value),
-    (value) => {
-      text.lineHeight = { unit: "PIXELS", value };
-    }
-  );
+  planLineHeight(run, text, label, spec.lineHeight);
   planLetterSpacing(run, text, label, spec);
   planUnderline(run, text, label, spec);
   planTextLayout(run, text, label, spec, parent);

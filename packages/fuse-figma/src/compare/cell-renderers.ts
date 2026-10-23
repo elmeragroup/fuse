@@ -238,6 +238,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/item.js",
     load: async () => (await import("./item-cell.ts")).itemLink,
   },
+  {
+    set: "alert",
+    entry: "dist/alert.js",
+    load: async () => (await import("./alert-cell.ts")).alert,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

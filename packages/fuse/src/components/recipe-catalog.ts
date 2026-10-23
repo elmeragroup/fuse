@@ -11,9 +11,11 @@
  * roster, from which the sync builds one Figma component per icon `/icons` publishes. Meter's
  * constants and its `meterToneCell` lookup come along, so the sync picks each Meter cell's tone
  * and icon from the table the component reads. Item's title face comes along with its part
- * recipes, since `Item.Title` renders it as it is.
+ * recipes, since `Item.Title` renders it as it is, and so does its unclamped description face,
+ * which Alert's description renders with Alert's own type and colour.
  */
 
+export { alertVariants } from "./alert/alert-variants";
 export {
   avatarFallbackClass,
   avatarGroupClass,
@@ -29,6 +31,7 @@ export { emptyMediaVariants, emptyVariants } from "./empty/empty-variants";
 export { fieldVariants } from "./field/field-variants";
 export { inputClass } from "./input/input-class";
 export { itemActionsClass, itemContentClass, itemDescriptionClass, itemHeaderClass } from "./item/item-class";
+export { ITEM_DESCRIPTION_CLASSES } from "./item/item-description-classes";
 export { itemFooterVariants } from "./item/item-footer-variants";
 export { itemMediaVariants } from "./item/item-media-variants";
 export { ITEM_TITLE_CLASSES } from "./item/item-title-classes";

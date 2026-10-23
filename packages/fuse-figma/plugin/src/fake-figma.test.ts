@@ -2,7 +2,7 @@
  * The layout, text, image, property, rotation and stroke rules of the in-memory file in
  * `fake-figma.ts`, each on a few nodes built by hand. The oracle is what the test file `Elmera Fuse -
  * Import test` read back in net-zero probes on 2026-10-22 and 2026-10-23, named P0 to P9b, PB, PR,
- * PD, PL and PF as the
+ * PD, PL, PF and PH as the
  * fake's header names them, the PNG signature, the hashes `shasum -a 1` gives the fixture images,
  * and the typings where no probe ran. The planners' tests converge against these rules, so a rule
  * that drifts from the real file would let a plan pass that Figma would not keep.
@@ -693,5 +693,15 @@ describe("rule 29: a layer that fills across a hugging row stretches to the heig
 
   it("keeps the frame's own height while it hugs", () => {
     expect(hugRow().box.height).toBe(16);
+  });
+});
+
+describe("rule 30: a text's percent line height", () => {
+  it("keeps a percent as written, through a font size bound to a variable (PH)", async () => {
+    const text = await textIn(autoLayout("HORIZONTAL"), "WIDTH_AND_HEIGHT");
+    text.lineHeight = { unit: "PERCENT", value: 137.5 };
+    expect(text.lineHeight).toEqual({ unit: "PERCENT", value: 137.5 });
+    text.setBoundVariable("fontSize", file.variable("Fuse density", "control-h-xs"));
+    expect([text.fontSize, text.lineHeight]).toEqual([24, { unit: "PERCENT", value: 137.5 }]);
   });
 });

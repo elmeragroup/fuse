@@ -8,6 +8,7 @@
  * parse keys and check markup, load it without them. A comparison run loads the compiler anyway,
  * through `buildComponentSets()`.
  */
+import { ALERT } from "./alert-kit";
 import { AVATAR } from "./avatar-kit";
 import { BADGE } from "./badge-kit";
 import {
@@ -122,6 +123,9 @@ const LINK_PAGE: KitPage = { slug: "link", name: "Link" };
 
 /** The page of Item's rows, the row and the link row, until Item group joins them. */
 const ITEM_PAGE: KitPage = { slug: "item", name: "Item" };
+
+/** The page Alert sits on alone, until Alert with an action joins it. */
+const ALERT_PAGE: KitPage = { slug: "alert", name: "Alert" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -256,4 +260,5 @@ export const KIT: readonly KitEntry[] = [
   { definition: LINK, page: LINK_PAGE, previewCells: matrixCells(LINK.axes) },
   { definition: ITEM, page: ITEM_PAGE, previewCells: matrixCells(ITEM.axes) },
   { definition: ITEM_LINK, page: ITEM_PAGE, previewCells: matrixCells(ITEM_LINK.axes) },
+  { definition: ALERT, page: ALERT_PAGE, previewCells: matrixCells(ALERT.axes) },
 ];

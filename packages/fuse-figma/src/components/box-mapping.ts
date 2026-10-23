@@ -703,10 +703,15 @@ function iconShare(icon: ChildLayerSpec): RowShare {
     : UNREAD_SHARE;
 }
 
-/** What an icon's `display` makes of it, by the value Tailwind compiles. */
+/**
+ * What an icon's `display` makes of it, by the value Tailwind compiles. An icon in a flex box is a
+ * flex item, which lays out as a block whatever its display (CSS Display 3 §2.7), so `block` shows it
+ * as `inline-block` does.
+ */
 const ICON_DISPLAYS = new Map([
   ["none", { shown: false, detail: "the icon is left out" }],
   ["inline-block", { shown: true, detail: "the icon shows where its box's auto layout places it" }],
+  ["block", { shown: true, detail: "the icon shows where its box's auto layout places it" }],
 ]);
 
 /**

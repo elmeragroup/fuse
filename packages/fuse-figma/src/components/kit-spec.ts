@@ -141,7 +141,7 @@ export type TextLayerSpec = {
   /** The Figma style of the font family, such as `Medium`, which the plugin loads. */
   readonly fontStyle: string;
   readonly fontSize: NumberSpec;
-  readonly lineHeight: NumberSpec;
+  readonly lineHeight: LineHeightSpec;
   readonly color: ColorSpec;
   /**
    * The underline `text-decoration-line: underline` draws, or undefined for none. `offset` is
@@ -161,6 +161,14 @@ export type TextLayerSpec = {
    */
   readonly maxWidth?: NumberSpec;
 };
+
+/**
+ * A text's line height: a number field in pixels, or a percent of the font size, as Figma's
+ * `lineHeight` holds it in `PERCENT`. A unitless CSS line height over a font size a variable sets is
+ * that share of the size in every mode. A real file kept a percent as written and drew the line box
+ * at that share of a font size bound to `label-text` in each density mode (PH).
+ */
+export type LineHeightSpec = NumberSpec | { readonly kind: "percent"; readonly value: number };
 
 /**
  * Letter spacing as a percent of the font size, as Figma's `letterSpacing` holds it in `PERCENT`.
