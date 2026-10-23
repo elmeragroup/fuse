@@ -114,6 +114,49 @@ export function ringFill(box: Pick<BoxSpec, "fill" | "shadows">): FillSpec | und
   return box.fill ?? (castsSpread(box.shadows) ? CLEAR : undefined);
 }
 
+/**
+ * Whether a box's fill shows: a literal color only where its alpha moves an 8-bit channel by half a
+ * step or more, so not the clear one {@link ringFill} gives a box for its ring.
+ *
+ * @param fill - The box's fill.
+ * @returns False for no fill and for one that changes no pixel.
+ */
+function showsFill(fill: FillSpec | undefined): boolean {
+  return fill !== undefined && (fill.kind !== "literal" || fill.color.a * 255 >= 0.5);
+}
+
+/** A layer and its frames below it, the layers that can fill or cast a shadow. */
+function framesOf(layer: ChildLayerSpec): readonly FrameLayerSpec[] {
+  return layer.kind === "frame"
+    ? [layer, ...walkLayers(layer).filter((below): below is FrameLayerSpec => below.kind === "frame")]
+    : [];
+}
+
+/**
+ * A fill that a box putting its first layer on top would paint over a shadow: a frame that shows a
+ * fill anywhere in an earlier layer, and a frame that casts a shadow anywhere in a later one. CSS
+ * paints the shadow above the fill wherever the later box paints after the earlier one, so the box
+ * cannot prove it draws them in CSS's order.
+ *
+ * @param layers - The box's layers, in order.
+ * @returns The names of the frame that fills and the frame that casts the shadow, or undefined.
+ */
+export function coveredShadow(
+  layers: readonly ChildLayerSpec[]
+): { readonly fill: string; readonly shadow: string } | undefined {
+  for (const [index, later] of layers.entries()) {
+    const shadow = framesOf(later).find((frame) => frame.shadows.length > 0);
+    const fill = layers
+      .slice(0, index)
+      .flatMap(framesOf)
+      .find((frame) => showsFill(frame.fill));
+    if (shadow !== undefined && fill !== undefined) {
+      return { fill: fill.name, shadow: shadow.name };
+    }
+  }
+  return undefined;
+}
+
 /** A stroke drawn inside the box and counted in the auto layout, as a CSS border is. */
 export type StrokeSpec = {
   readonly color: ColorSpec;
@@ -359,9 +402,19 @@ export type BoxSpec = {
   readonly cornerRadius: NumberSpec;
   readonly fill: FillSpec | undefined;
   readonly stroke: StrokeSpec | undefined;
+  /**
+   * The drop shadows in the order Figma paints them, each above the ones before it (PE2), so the
+   * reverse of `box-shadow`'s, whose first shadow CSS paints on top.
+   */
   readonly shadows: readonly ShadowSpec[];
   /** The layer opacity, from 0 to 1. */
   readonly opacity: number;
+  /**
+   * True for a box that paints its first layer on top, as Figma's `itemReverseZIndex` does, where
+   * CSS paints a ring an earlier layer holds over a later layer's fill. Absent for a box that paints
+   * each layer above the ones before it, as Figma does by default.
+   */
+  readonly firstOnTop?: true;
   readonly children: readonly ChildLayerSpec[];
 };
 

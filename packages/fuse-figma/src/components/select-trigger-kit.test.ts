@@ -202,9 +202,9 @@ describe("the Select trigger component set", () => {
   it("rings focus, strokes and rings invalid with error, and dims disabled to 50% on the card fill", () => {
     for (const content of CONTENTS) {
       const focus = trigger("default", "focus", content, "off");
-      expect([focus.stroke?.color, focus.shadows]).toEqual([paint("input"), [FOCUS_RING, SHADOW_XS]]);
+      expect([focus.stroke?.color, focus.shadows]).toEqual([paint("input"), [SHADOW_XS, FOCUS_RING]]);
       const invalid = trigger("default", "invalid", content, "off");
-      expect([invalid.stroke?.color, invalid.shadows]).toEqual([paint("error"), [ERROR_RING, SHADOW_XS]]);
+      expect([invalid.stroke?.color, invalid.shadows]).toEqual([paint("error"), [SHADOW_XS, ERROR_RING]]);
       const disabled = trigger("default", "disabled", content, "off");
       expect([disabled.opacity, disabled.fill]).toEqual([0.5, paint("card")]);
     }

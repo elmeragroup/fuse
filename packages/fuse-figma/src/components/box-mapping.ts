@@ -38,7 +38,7 @@ import {
   readColor,
   readNumber,
 } from "./css-values";
-import { castsSpread, fixedLength, iconKey, ringFill, ZERO } from "./kit-spec";
+import { castsSpread, coveredShadow, fixedLength, iconKey, ringFill, walkLayers, ZERO } from "./kit-spec";
 import type {
   BoxSpec,
   ChildLayerSpec,
@@ -638,7 +638,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     const rotation = readRotation(part.cascade.style);
     const turned = rotation === undefined ? linked : { ...linked, rotation };
     const layer = wrapMargins(part.cascade.style, turned, layout, context.variables);
-    return { layer, style: part.cascade.style };
+    return { layer, style: part.cascade.style, paints: own.fill !== undefined };
   });
   // The parts a row stretches across its height, which their own height decides once they map.
   const stretched =
@@ -709,7 +709,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     (value) => (width !== undefined && height !== undefined ? value : undefined),
     () => ({ outcome: "dropped", detail: "both sides are fixed, so the ratio sizes neither" })
   );
-  return {
+  const mappedBox: BoxSpec = {
     direction: layout.direction,
     sizing,
     limits,
@@ -728,6 +728,112 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     opacity: opacity ?? 1,
     children,
   };
+  return layout.blocks && stacksFirstOnTop(reader, mapped) ? { ...mappedBox, firstOnTop: true } : mappedBox;
+}
+
+/** A part a box stacks: its layer, its style and whether it paints a fill of its own. */
+type StackedPart = {
+  readonly layer: FrameLayerSpec;
+  readonly style: LayerStyle;
+  readonly paints: boolean;
+};
+
+/**
+ * The properties that put a box in a layer of its own at any value but their initial one: a box
+ * that is positioned or that makes a stacking context, which CSS paints after the inline-level boxes
+ * of the stacking context around it (CSS 2.1 Appendix E). Each value lists the property's initial
+ * values, as the build reads them.
+ */
+const OWN_LAYER: ReadonlyMap<string, readonly string[]> = new Map([
+  ["position", ["static"]],
+  ["opacity", ["1", "100%"]],
+  ["transform", ["none"]],
+  ["translate", ["none"]],
+  ["rotate", ["none"]],
+  ["scale", ["none"]],
+  ["filter", ["none"]],
+  ["backdrop-filter", ["none"]],
+  ["isolation", ["auto"]],
+  ["mix-blend-mode", ["normal"]],
+  ["will-change", ["auto"]],
+  ["contain", ["none"]],
+  ["clip-path", ["none"]],
+  ["mask-image", ["none"]],
+  ["perspective", ["none"]],
+]);
+
+/** Whether a block paints its background with its block siblings': it sets no property of {@link OWN_LAYER}. */
+function paintsInFlow(style: LayerStyle): boolean {
+  return [...OWN_LAYER].every(([property, initial]) => {
+    const value = style.resolved(property);
+    return value === undefined || initial.includes(normalizeCss(value));
+  });
+}
+
+/** Whether a flex block holds a layer that casts a shadow, which paints as a flex item does. */
+function ringsAsItem({ layer, style }: StackedPart): boolean {
+  return (
+    normalizeCss(style.raw("display") ?? "") === "flex" &&
+    walkLayers(layer).some((below) => below.kind === "frame" && below.shadows.length > 0)
+  );
+}
+
+/**
+ * Whether a box that stacks blocks paints its first layer on top. CSS paints each block's background
+ * and shadows in tree order, then the inline-level boxes, then the positioned boxes and stacking
+ * contexts (CSS 2.1 Appendix E), and a flex item paints as an inline block does (CSS Flexbox 1 §4.3).
+ * So a ring that a flex block's layer casts paints over a later block's fill, as the Accordion
+ * trigger's focus ring over the open panel, while a block's own ring paints below the later block,
+ * and a later positioned block or stacking context paints above the ring, as Figma's own order does.
+ * Figma paints a later layer above an earlier one, and the first on top with `itemReverseZIndex`
+ * (PZ2), which lifts every earlier layer above every later one. So the box puts its first layer on
+ * top only where every block after the ring paints in flow, and no earlier layer shows a fill that
+ * would cover a later layer's shadow. Otherwise it keeps Figma's order and its `display` stays
+ * unmapped, with the reason.
+ *
+ * @param reader - The box's style, which notes a stacking no order draws.
+ * @param parts - The blocks, in the order the box stacks them.
+ * @returns True where a flex block's layer casts a shadow, a later block that paints in flow fills,
+ *   and one order draws both.
+ */
+function stacksFirstOnTop(reader: LayerStyle, parts: readonly StackedPart[]): boolean {
+  const lifted = parts.findIndex(
+    (part, index) =>
+      ringsAsItem(part) && parts.slice(index + 1).some((later) => later.paints && paintsInFlow(later.style))
+  );
+  if (lifted === -1) {
+    return false;
+  }
+  const refusal = stackingRefusal(parts, lifted);
+  if (refusal !== undefined) {
+    reader.read(
+      "display",
+      (value) => value,
+      () => ({ outcome: "unmapped", detail: refusal })
+    );
+  }
+  return refusal === undefined;
+}
+
+/**
+ * Why no one order of a box's blocks draws the ring of a flex block's layer above a later block's
+ * fill as CSS does: a later block paints above the ring as a positioned box or a stacking context,
+ * or an earlier fill would cover a later shadow once the first layer is on top.
+ *
+ * @param parts - The blocks, in the order the box stacks them.
+ * @param lifted - The index of the first flex block whose layer's ring a later block's fill meets.
+ * @returns The reason, or undefined where the first layer on top draws both.
+ */
+function stackingRefusal(parts: readonly StackedPart[], lifted: number): string | undefined {
+  const lifts = "the ring a flex block's layer casts paints above a later block's fill";
+  const raised = parts.slice(lifted + 1).find((later) => !paintsInFlow(later.style));
+  if (raised !== undefined) {
+    return `${lifts} and below ${raised.layer.name}, a positioned box or a stacking context (CSS 2.1 Appendix E), and Figma paints a box's layers in one order`;
+  }
+  const covered = coveredShadow(parts.map(({ layer }) => layer));
+  return covered === undefined
+    ? undefined
+    : `${lifts}, and putting the first layer on top would also paint the fill of ${covered.fill} over the shadow ${covered.shadow} casts, which CSS can paint above it`;
 }
 
 /**

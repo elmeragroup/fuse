@@ -125,11 +125,11 @@ describe("the Switch component set", () => {
   });
 
   it("rings focus, dims disabled, and draws invalid with the error border and ring", () => {
-    expect(track("default", "off", "focus").shadows).toEqual([FOCUS_RING, SHADOW_XS]);
+    expect(track("default", "off", "focus").shadows).toEqual([SHADOW_XS, FOCUS_RING]);
     expect(track("sm", "on", "disabled").opacity).toBe(0.5);
     for (const checked of ["off", "on"]) {
       const invalid = track("default", checked, "invalid");
-      expect([invalid.stroke?.color, invalid.shadows]).toEqual([paint("error"), [ERROR_RING, SHADOW_XS]]);
+      expect([invalid.stroke?.color, invalid.shadows]).toEqual([paint("error"), [SHADOW_XS, ERROR_RING]]);
     }
   });
 

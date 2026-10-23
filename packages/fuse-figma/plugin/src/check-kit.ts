@@ -1,12 +1,12 @@
 /**
  * The kit check, which opens every planning pass. It finds each error a later step of the
  * run could meet: a variable or mode the file lacks, a variable of the wrong type, image bytes
- * Figma cannot store or a hash they do not give, a turn the plugin cannot draw, or a spec that
- * contradicts itself. An operation that creates a node plans the node's contents when it runs, so
- * those plans can then look up nothing that fails.
+ * Figma cannot store or a hash they do not give, a turn or a stacking the plugin cannot draw, or a
+ * spec that contradicts itself. An operation that creates a node plans the node's contents when it
+ * runs, so those plans can then look up nothing that fails.
  */
 
-import { fixedLength, topLevelSpecs, walkLayers } from "../../src/components/kit-spec.ts";
+import { coveredShadow, fixedLength, topLevelSpecs, walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   BoxSpec,
   ChildLayerSpec,
@@ -225,6 +225,34 @@ function checkRotations(set: ComponentSetSpec): void {
   }
 }
 
+/**
+ * Refuse a stack the plugin cannot draw as the build decides one. The build puts a box's first layer
+ * on top only in a column, the one shape a real file drew on 2026-10-23 (PZ2), and only where no
+ * earlier fill covers a later shadow (`box-mapping.ts`), so a built kit passes. This guards a spec
+ * written by hand, through the same {@link coveredShadow} the build reads.
+ */
+function checkStacking(set: ComponentSetSpec): void {
+  for (const variant of set.variants) {
+    for (const { box, name } of boxesOf(variant)) {
+      if (box.firstOnTop !== true) {
+        continue;
+      }
+      const where = `${set.name}: ${name} in the variant ${variant.key}`;
+      if (box.direction !== "VERTICAL") {
+        throw new Error(
+          `${where} puts its first layer on top in a row, and a real file drew that only in a column (PZ2).`
+        );
+      }
+      const covered = coveredShadow(box.children);
+      if (covered !== undefined) {
+        throw new Error(
+          `${where} puts its first layer on top, so the fill of ${covered.fill} would cover the shadow ${covered.shadow} casts, which CSS can paint above that fill.`
+        );
+      }
+    }
+  }
+}
+
 /** The signature every PNG file opens with (PNG specification §5.2). */
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
@@ -323,7 +351,7 @@ export function kitCollections(kit: KitSpec): ReadonlySet<string> {
  * @throws When the file lacks a variable or mode the kit names, a variable has the wrong type,
  *   an image fill holds bytes Figma cannot store or a hash that is not their SHA-1, or the spec contradicts itself,
  *   such as a page key listed twice, a node on a page the kit does not list, a preview that places
- *   a set from another page, or a fill, limit or turn Figma cannot draw.
+ *   a set from another page, or a fill, limit, turn or stacking Figma cannot draw.
  */
 export function checkKit(figma: PluginAPI, variables: KitVariables, kit: KitSpec): void {
   const pages = new Set<string>();
@@ -342,6 +370,7 @@ export function checkKit(figma: PluginAPI, variables: KitVariables, kit: KitSpec
     checkComponentSet(set);
     checkSizing(set);
     checkRotations(set);
+    checkStacking(set);
     checkImages(figma, set);
   }
   for (const preview of kit.previews) {

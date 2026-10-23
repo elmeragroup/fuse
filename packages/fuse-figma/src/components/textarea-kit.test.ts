@@ -121,10 +121,10 @@ describe("the Textarea component set", () => {
 
   it.each([
     ["rest", paint("input"), [SHADOW_XS], paint("card"), 1],
-    ["focus", paint("input"), [FOCUS_RING, SHADOW_XS], paint("card"), 1],
+    ["focus", paint("input"), [SHADOW_XS, FOCUS_RING], paint("card"), 1],
     ["disabled", paint("input"), [SHADOW_XS], paint("input/50"), 0.5],
     ["readonly", paint("input"), [SHADOW_XS], paint("muted"), 1],
-    ["invalid", paint("error"), [ERROR_RING, SHADOW_XS], paint("card"), 1],
+    ["invalid", paint("error"), [SHADOW_XS, ERROR_RING], paint("card"), 1],
   ] as const)("draws the %s face in both contents", (state, stroke, shadows, fill, opacity) => {
     for (const content of ["placeholder", "value"]) {
       const box = textarea(content, state);

@@ -175,6 +175,28 @@ describe("planBox", () => {
     expect(changeLines(await planOn(frame, "Radio / Indicator", PART, part))).toEqual([]);
   });
 
+  // Oracle: a real file on 2026-10-23, where a later effect painted above an earlier one (PE2), so
+  // the spec lists a ring above a 1px border last. A frame a run wrote in CSS's order, the ring
+  // first, takes the new order once, and the next Plan lists nothing.
+  it("writes the shadows in the spec's order once where the frame holds them in another", async () => {
+    const root = file.figma.createComponent();
+    root.layoutMode = "HORIZONTAL";
+    const frame = file.figma.createFrame();
+    root.appendChild(frame);
+    const border: ShadowSpec = { ...RING, spread: { kind: "literal", value: 1 } };
+    await performPlan(await planOn(frame, "Row", PART, { ...BOX, shadows: [RING, border] }));
+
+    const plan = await planOn(frame, "Row", PART, { ...BOX, shadows: [border, RING] });
+    expect(changeLines(plan)).toContain(
+      "Row: shadows → ring 0 0 0 1, ring 0 0 0 2 (holds variable, stored #808080 at 100%, 0 0 0 2, variable, stored #808080 at 100%, 0 0 0 1)"
+    );
+    await performPlan(plan);
+    expect(
+      frame.effects.map((effect) => (effect.type === "DROP_SHADOW" ? effect.spread : undefined))
+    ).toEqual([1, 2]);
+    expect(changeLines(await planOn(frame, "Row", PART, { ...BOX, shadows: [border, RING] }))).toEqual([]);
+  });
+
   // Oracle: CSS Basic UI 4 §5, where an outline takes no layout space, and the typings'
   // `strokesIncludedInLayout`, whose false lets the stroke overlap the frame's children.
   it("leaves a stroke drawn from an outline out of the frame's layout", async () => {
@@ -479,5 +501,24 @@ describe("planBox sizing, direction, limits and clipping", () => {
     expect(changeLines(plan)).toEqual(["Box: clipsContent → true"]);
     await performPlan(plan);
     expect(part.clipsContent).toBe(true);
+  });
+
+  // Oracle: the fake's rule 33, after a real file on 2026-10-23 (PZ2): a vertical stack paints a
+  // later child above an earlier one, and the first on top with `itemReverseZIndex` true.
+  it("puts the stack's first layer on top where the spec says, and back in Figma's order where it no longer does", async () => {
+    const part = partInColumn();
+    const column = plainBox("VERTICAL", { horizontal: fixed(px(100)), vertical: fixed(px(100)) });
+    const lifted: BoxSpec = { ...column, firstOnTop: true };
+    const plan = await planTree(part, lifted, PART);
+    expect(changeLines(plan)).toEqual([
+      "Box: layoutMode → VERTICAL",
+      "Box: width → 100, height → 100",
+      "Box: itemReverseZIndex → true",
+    ]);
+    await performPlan(plan);
+    expect([part.itemReverseZIndex, changeLines(await planTree(part, lifted, PART))]).toEqual([true, []]);
+
+    await performPlan(await planTree(part, column, PART));
+    expect([part.itemReverseZIndex, changeLines(await planTree(part, column, PART))]).toEqual([false, []]);
   });
 });

@@ -59,7 +59,9 @@ export function readPaint(
   const cleared = readClearOutline(reader, variables);
   // A box holds one stroke, so its border keeps it.
   const stroke = reader.has("border-width") || cleared ? border : readInsideOutline(reader, variables);
-  const shadows = readShadowStack(reader, variables);
+  // CSS paints the first shadow of `box-shadow` on top (CSS Backgrounds 3 §7.1), and Figma paints a
+  // later effect above an earlier one (PE2), so the spec lists the shadows in Figma's order.
+  const shadows = readShadowStack(reader, variables).toReversed();
   const fill =
     image === undefined
       ? reader.read("background-color", (value) => readFill(value, variables), describeFill)

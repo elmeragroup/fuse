@@ -118,9 +118,9 @@ describe("the Input component set", () => {
   it("rings focus, strokes and rings invalid with error, and keeps the input border otherwise", () => {
     for (const content of ["placeholder", "value"]) {
       const focus = input(content, "focus");
-      expect([focus.stroke?.color, focus.shadows]).toEqual([paint("input"), [FOCUS_RING, SHADOW_XS]]);
+      expect([focus.stroke?.color, focus.shadows]).toEqual([paint("input"), [SHADOW_XS, FOCUS_RING]]);
       const invalid = input(content, "invalid");
-      expect([invalid.stroke?.color, invalid.shadows]).toEqual([paint("error"), [ERROR_RING, SHADOW_XS]]);
+      expect([invalid.stroke?.color, invalid.shadows]).toEqual([paint("error"), [SHADOW_XS, ERROR_RING]]);
     }
   });
 

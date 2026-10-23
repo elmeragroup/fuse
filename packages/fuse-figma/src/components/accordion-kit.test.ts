@@ -38,6 +38,7 @@ import {
 } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
 import type { CoverageRow } from "./coverage";
+import { walkLayers } from "./kit-spec";
 import type { ChildLayerSpec, ComponentRootSpec, FrameLayerSpec } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
@@ -240,6 +241,24 @@ describe("the Accordion item component set", () => {
       [clear, true],
       [undefined, false],
     ]);
+  });
+
+  // CSS paints the trigger, a flex item, after every block's background (CSS 2.1 Appendix E, CSS
+  // Flexbox 1 §4.3), so its focus ring stays whole over the open panel's fill, where Figma paints the
+  // later panel on top unless the item puts its first layer on top (PZ2). Only a card panel fills,
+  // only an open item shows the panel, and only focus rings the trigger, and no other box in the kit
+  // holds a ring in a flex block before a filled block.
+  it("puts the header above the panel only where the focused trigger's ring meets the card panel's fill", () => {
+    const reversed = spec.componentSets.flatMap((set) =>
+      set.variants.flatMap((variant) =>
+        [variant.root, ...walkLayers(variant.root).filter((layer) => layer.kind === "frame")].flatMap(
+          (box) => (box.firstOnTop === true ? [`${variant.key} ${box.name}`] : [])
+        )
+      )
+    );
+    expect(reversed).toEqual(
+      RADII.map((radius) => `accordion-item/variant=card,radius=${radius},open=on,state=focus accordion-item`)
+    );
   });
 
   it("reads the panel's height from Base UI's style and drops its animation", () => {

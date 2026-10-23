@@ -11,9 +11,10 @@
  * run stopped before its first write.
  *
  * The fake models the Figma rules below. Each rule a real file showed in 2026-10 names that run.
- * Rules 12 to 31 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
+ * Rules 12 to 33 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
  * Import test` on 2026-10-22 and 2026-10-23: P0 and P0b read the kit's nodes, P1 to P9, PB, PR,
- * PQ, PD, PL, PF, PH and PZ built nodes on a scratch page, and P9b stored images and built no node.
+ * PQ, PD, PL, PF, PH, PZ, PI and PZ2 built nodes on a scratch page, and P9b stored images and built
+ * no node.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
  *    COLOR variable in the collections' default modes, whatever opacity it was given. Two runs
@@ -229,6 +230,23 @@
  *    written, half its font size a character, since it measures no glyphs, and 0 for none. A fill
  *    keeps a text's width, so one that was 0 wide reads 0 across, and a positive resize of such a
  *    text keeps its fill. The fake does not lay out, so the text keeps the width written.
+ * 32. An instance takes its main component's new size only when it is read. On 2026-10-23, after an
+ *    Apply that repaired the owner's 0-wide texts, a new Plan still re-stacked the previews on seven
+ *    pages, and a probe showed why: in the call that resized a component, the component and an
+ *    instance that was read took the new height at once, while an instance nobody read kept its old
+ *    size and its hugging auto layout parent sized from it (816 tall for three, 48 once each instance
+ *    was read first). Waiting changed nothing, and a fresh call read every size settled (PI). The
+ *    fake gives an instance its main component's size on a read of its width or height, and on every
+ *    instance when a run starts. An instance resized or rescaled itself keeps its own size. A frame
+ *    or component that wraps a horizontal auto layout and hugs its height, as a preview and its
+ *    groups do, sizes from its children as they stand: rows of its width less its side padding,
+ *    `itemSpacing` between children, `counterAxisSpacing` between rows, and its top and bottom
+ *    padding. An instance of one takes the component's height. No other frame lays out.
+ * 33. An auto layout paints a later child above an earlier one, and its first child on top when
+ *    `itemReverseZIndex` is true, which reads back as written. On 2026-10-23 a vertical stack's
+ *    filled panel painted over the bottom edge of a 2px ring its header held, and with the field true
+ *    the ring was whole (PZ2). `paintsAbove` says which of two layers paints on top. Only a vertical
+ *    stack was probed, so the fake refuses the field true on any other frame.
  *
  * An instance's sublayers show the layers of its main component. An override, such as the
  * color an icon layer gives its glyph, belongs to the main layer it was made on. It moves to
@@ -412,6 +430,8 @@ type NodeState = {
   effects: readonly Effect[];
   radii: Corners;
   clipsContent: boolean;
+  /** Whether the auto layout paints its first child on top (rule 33). */
+  itemReverseZIndex: boolean;
   layoutMode: FrameNode["layoutMode"];
   layoutWrap: FrameNode["layoutWrap"];
   primaryAxisSizingMode: FrameNode["primaryAxisSizingMode"];
@@ -897,6 +917,7 @@ function resize(state: NodeState, width: number, height: number): void {
     throw new Error(`Cannot resize ${state.id} to ${width} × ${height}: both must be at least 0.01.`);
   }
   const stuckFill = followsLines && state.width === 0 && fills(state, "HORIZONTAL");
+  ownSize(state);
   state.width = f32(width);
   if (!followsLines) {
     state.height = f32(height);
@@ -974,7 +995,15 @@ function resizeWithConstraints(state: NodeState, width: number, height: number):
   }
 }
 
+/** Note that an instance holds a size of its own, which its main component's resize leaves (rule 32). */
+function ownSize(state: NodeState): void {
+  if (state.type === "INSTANCE") {
+    state.overridden.add("size");
+  }
+}
+
 function rescale(state: NodeState, scale: number): void {
+  ownSize(state);
   state.x = f32(state.x * scale);
   state.y = f32(state.y * scale);
   state.width = f32(state.width * scale);
@@ -1009,11 +1038,73 @@ function fills(state: NodeState, axis: Axis): boolean {
 }
 
 /**
- * A node's length on an axis: the length it stretches to across an auto layout that hugs that axis
- * (rule 29), the longest of the parent's other layers in its flow that do not fill the axis, or its
- * own where it does not stretch so or no such layer sets a length.
+ * Give an instance its main component's size, as a read of it does (rule 32). An instance resized
+ * or rescaled itself keeps its own size, and any other node, and an instance's sublayer, reads as
+ * it stands.
+ *
+ * @returns The node.
+ */
+function settled(state: NodeState): NodeState {
+  const { main } = state;
+  if (state.type === "INSTANCE" && main !== undefined && !state.overridden.has("size")) {
+    state.width = lengthOn(main, "HORIZONTAL");
+    state.height = lengthOn(main, "VERTICAL");
+  }
+  return state;
+}
+
+/**
+ * The height of a horizontal auto layout that wraps and hugs its height (rule 32): its children in
+ * flow, as they stand, packed into rows of its width less its side padding with `itemSpacing`
+ * between them, each row as tall as its tallest child, `counterAxisSpacing` between the rows, and
+ * its top and bottom padding.
+ */
+function wrapHeight(state: NodeState): number {
+  const room = state.width - state.padding.left - state.padding.right;
+  const rows: number[] = [];
+  let rowWidth = 0;
+  let rowHeight = 0;
+  let count = 0;
+  for (const child of childrenOf(state)) {
+    if (child.layoutPositioning === "ABSOLUTE") {
+      continue;
+    }
+    const width = lengthOn(child, "HORIZONTAL");
+    const height = lengthOn(child, "VERTICAL");
+    if (count > 0 && rowWidth + state.itemSpacing + width > room) {
+      rows.push(rowHeight);
+      rowWidth = 0;
+      rowHeight = 0;
+      count = 0;
+    }
+    rowWidth += (count > 0 ? state.itemSpacing : 0) + width;
+    rowHeight = Math.max(rowHeight, height);
+    count += 1;
+  }
+  if (count > 0) {
+    rows.push(rowHeight);
+  }
+  const between = Math.max(0, rows.length - 1) * (state.counterAxisSpacing ?? 0);
+  return state.padding.top + rows.reduce((sum, row) => sum + row, 0) + between + state.padding.bottom;
+}
+
+/**
+ * A node's length on an axis: the height a wrapping row that hugs it sizes to from its children
+ * (rule 32), the length it stretches to across an auto layout that hugs that axis (rule 29), the
+ * longest of the parent's other layers in its flow that do not fill the axis, or its own where it
+ * does not stretch so or no such layer sets a length.
  */
 function lengthOn(state: NodeState, axis: Axis): number {
+  // An instance holds its main component's size, or its own (rule 32), so only a frame lays out.
+  if (
+    axis === "VERTICAL" &&
+    state.type !== "INSTANCE" &&
+    state.layoutMode === "HORIZONTAL" &&
+    state.layoutWrap === "WRAP" &&
+    state.counterAxisSizingMode === "AUTO"
+  ) {
+    return wrapHeight(state);
+  }
   const own = axis === "HORIZONTAL" ? state.width : state.height;
   const parent = state.parent;
   // A fill never widens a 0-wide text (rule 31).
@@ -1828,6 +1919,7 @@ function copiedFields(source: NodeState): Omit<NodeState, UncopiedField> {
     effects: source.effects,
     radii: { ...source.radii },
     clipsContent: source.clipsContent,
+    itemReverseZIndex: source.itemReverseZIndex,
     layoutMode: source.layoutMode,
     layoutWrap: source.layoutWrap,
     primaryAxisSizingMode: source.primaryAxisSizingMode,
@@ -2093,11 +2185,11 @@ class FakeSceneNode extends FakeBaseNode {
   }
 
   get width(): number {
-    return lengthOn(live(this), "HORIZONTAL");
+    return lengthOn(settled(live(this)), "HORIZONTAL");
   }
 
   get height(): number {
-    return lengthOn(live(this), "VERTICAL");
+    return lengthOn(settled(live(this)), "VERTICAL");
   }
 
   get absoluteBoundingBox(): Rect | null {
@@ -2577,6 +2669,21 @@ class FakeFrameLikeNode extends FakeSceneNode {
     const state = live(this);
     write(state, "clipsContent");
     state.clipsContent = value;
+  }
+
+  get itemReverseZIndex(): boolean {
+    return live(this).itemReverseZIndex;
+  }
+
+  set itemReverseZIndex(value: boolean) {
+    const state = live(this);
+    if (value && state.layoutMode !== "VERTICAL") {
+      throw new Error(
+        `The fake Figma file models itemReverseZIndex only on a vertical auto layout (PZ2), and ${state.id} is ${state.layoutMode === "NONE" ? "no auto layout" : "a horizontal one"}.`
+      );
+    }
+    write(state, "itemReverseZIndex");
+    state.itemReverseZIndex = value;
   }
 
   get layoutMode(): FrameNode["layoutMode"] {
@@ -3259,6 +3366,7 @@ function createNode(file: FileState, type: NodeType, name: string, id?: string):
     effects: [],
     radii: { topLeft: 0, topRight: 0, bottomRight: 0, bottomLeft: 0 },
     clipsContent: type === "FRAME",
+    itemReverseZIndex: false,
     layoutMode: "NONE",
     layoutWrap: "NO_WRAP",
     primaryAxisSizingMode: "FIXED",
@@ -3634,6 +3742,39 @@ export function drawsShadowSpread(node: SceneNode): boolean {
   );
 }
 
+/** A node and the layers that hold it, from the document down. */
+function lineage(state: NodeState): readonly NodeState[] {
+  return state.parent === undefined ? [state] : [...lineage(state.parent), state];
+}
+
+/**
+ * Whether Figma paints one layer above another (rule 33). A layer paints above the frames that hold
+ * it. Of two layers in different children of one frame, the one in the later child paints above,
+ * or the one in the earlier child where the frame is an auto layout with `itemReverseZIndex` true.
+ *
+ * @param upper - A layer of a fake file.
+ * @param lower - Another layer of the same file.
+ * @returns True when `upper` paints above `lower`.
+ */
+export function paintsAbove(upper: SceneNode, lower: SceneNode): boolean {
+  const above = lineage(live(upper));
+  const below = lineage(live(lower));
+  const split = above.findIndex((state, index) => below[index] !== state);
+  if (split === -1 || split >= below.length) {
+    return above.length > below.length;
+  }
+  const holder = above[split - 1];
+  const upperChild = above[split];
+  const lowerChild = below[split];
+  if (holder === undefined || upperChild === undefined || lowerChild === undefined) {
+    throw new Error("The fake Figma file compares only layers of one document.");
+  }
+  const children = childrenOf(holder);
+  const later = children.indexOf(upperChild) > children.indexOf(lowerChild);
+  const reversed = holder.layoutMode !== "NONE" && holder.itemReverseZIndex;
+  return reversed ? !later : later;
+}
+
 function fontUnavailable(file: FileState, font: FontNameInput): boolean {
   return file.unavailableFonts.some(
     (missing) =>
@@ -3842,6 +3983,10 @@ export function createFakeFigma(options: FakeFigmaOptions): FakeFigma {
       file.loadedFonts.clear();
       file.unavailableFonts = reopened?.unavailableFonts ?? file.unavailableFonts;
       file.skipInvisibleInstanceChildren = false;
+      // A new run reads every instance at its main component's size (rule 32).
+      for (const node of file.nodes.values()) {
+        settled(node);
+      }
     },
     variable: (collection, name) => {
       const found = [...file.variables.values()].find(

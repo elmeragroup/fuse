@@ -6,7 +6,13 @@
 import { describe, expect, it } from "vitest";
 
 import { NO_LIMITS } from "../../src/components/kit-spec.ts";
-import type { FrameLayerSpec, KitSpec, StrokeSpec, TextLayerSpec } from "../../src/components/kit-spec.ts";
+import type {
+  FrameLayerSpec,
+  KitSpec,
+  ShadowSpec,
+  StrokeSpec,
+  TextLayerSpec,
+} from "../../src/components/kit-spec.ts";
 import {
   buttonVariant,
   CHECK,
@@ -34,6 +40,15 @@ import {
 import type { ImageFixture } from "./fake-fixtures.ts";
 import { keyOf, setKey } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
+
+/** A 2px black ring, as a focus ring spreads. */
+const RING: ShadowSpec = {
+  color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } },
+  offsetX: 0,
+  offsetY: 0,
+  radius: literal(0),
+  spread: literal(2),
+};
 
 /**
  * A 16px frame that an image covers, as an avatar's `<img>` covers its circle, with the hash the
@@ -238,6 +253,45 @@ describe("the kit check", () => {
         },
       ]),
       "Button: Control in the variant button/size=md sets maxWidth on its fixed width. Fold the limit into the width, as CSS resolves a width against its own limits.",
+    ],
+    [
+      "a row that puts its first layer on top, which a real file drew only in a column (PZ2)",
+      kitWithRoot((root) => ({ ...root, firstOnTop: true })),
+      "Button: button in the variant button/size=md puts its first layer on top in a row, and a real file drew that only in a column (PZ2).",
+    ],
+    [
+      "a column that puts its first layer, a fill, above a later layer's ring, which CSS paints above the fill",
+      kitWithRoot((root) => ({
+        ...root,
+        direction: "VERTICAL",
+        firstOnTop: true,
+        children: [
+          {
+            ...frame("button/panel", "Panel", []),
+            fill: { kind: "literal", color: { r: 0, g: 0, b: 1, a: 1 } },
+          },
+          frame("button/header", "Header", [{ ...frame("button/ring", "Ring", []), shadows: [RING] }]),
+        ],
+      })),
+      "Button: button in the variant button/size=md puts its first layer on top, so the fill of Panel would cover the shadow Ring casts, which CSS can paint above that fill.",
+    ],
+    [
+      "a column that puts its first layer, which holds a fill, above a later layer's ring",
+      kitWithRoot((root) => ({
+        ...root,
+        direction: "VERTICAL",
+        firstOnTop: true,
+        children: [
+          frame("button/header", "Header", [
+            {
+              ...frame("button/badge", "Badge", []),
+              fill: { kind: "literal", color: { r: 0, g: 0, b: 1, a: 1 } },
+            },
+          ]),
+          { ...frame("button/footer", "Footer", []), shadows: [RING] },
+        ],
+      })),
+      "Button: button in the variant button/size=md puts its first layer on top, so the fill of Badge would cover the shadow Footer casts, which CSS can paint above that fill.",
     ],
   ])("stops Plan before any write for %s", async (_, kit, message) => {
     const { file, setup } = fixture("Roboto");

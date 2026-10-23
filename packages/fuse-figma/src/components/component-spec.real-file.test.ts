@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import { literal } from "../../test/built-kit";
 import { buildFixture, chip, dot, frameOf, ICON } from "../../test/fixture-sets";
+import type { PartDefinition } from "./component-spec";
 import type { CoverageRow } from "./coverage";
 
 /** The property, outcome and detail of each coverage row of one class. */
@@ -45,6 +46,113 @@ describe("justify-between in a box that hugs its layers along its direction", ()
   ])("spaces them out where the box has %s", async (_case, classes) => {
     const { variant } = await buildFixture(row(classes));
     expect(variant?.root.primaryAlign).toBe("SPACE_BETWEEN");
+  });
+});
+
+// Oracle: CSS Backgrounds 3 §7.1, where the first shadow of `box-shadow` paints on top, and a real
+// file on 2026-10-23, where a later effect in `effects` painted above an earlier one (PE2). Tailwind
+// lists the ring before the shadow, so the ring paints on top in the browser, and Figma draws it on
+// top only last in the list, as the outline Sidebar row's ring above its 1px border.
+describe("a box with a ring and a shadow", () => {
+  it("lists them in the order Figma paints them, the ring that CSS paints on top last", async () => {
+    const { variant } = await buildFixture(chip("ring-2 ring-[#ff0000] shadow-[0_0_0_1px_#0000ff]"));
+    expect(variant?.root.shadows.map((shadow) => [shadow.color, shadow.spread])).toEqual([
+      [{ kind: "literal", color: { r: 0, g: 0, b: 1, a: 1 } }, literal(1)],
+      [{ kind: "literal", color: { r: 1, g: 0, b: 0, a: 1 } }, literal(2)],
+    ]);
+  });
+});
+
+// Oracle: CSS 2.1 Appendix E, where a stacking context paints the backgrounds and shadows of its
+// blocks in tree order, its inline-level boxes after them, and its positioned boxes and the stacking
+// contexts inside it after those, CSS Flexbox 1 §4.3, where a flex item paints as an inline block
+// does, CSS Color 3 §3.2, where `opacity` below 1 makes a stacking context, and a real file on
+// 2026-10-23, where an auto layout painted a later child above an earlier one, and the first on top
+// with `itemReverseZIndex` (PZ2). So in a block that stacks blocks, a flex block's item casts its
+// ring over a later block's fill, as the Accordion trigger's focus ring over the open panel, while a
+// block's own ring paints below a later block, and a later positioned block or stacking context
+// paints above the ring, as Figma's own order does. Where no one order of the box's layers draws
+// both, the box keeps Figma's order and its `display` stays unmapped.
+describe("a block that stacks a ring and a later block's fill", () => {
+  const RING = "ring-2 ring-[#ff0000]";
+  const part = (key: string, classes: string, parts: readonly PartDefinition[] = []): PartDefinition => ({
+    ...dot(classes),
+    key,
+    slot: `chip-${key}`,
+    parts,
+  });
+  const ringed = part("ringed", `block size-[8px] ${RING}`);
+  const panel = part("panel", "block h-[8px] bg-[#0000ff]");
+  const between = (raised: string) =>
+    `the ring a flex block's layer casts paints above a later block's fill and below ${raised}, a positioned box or a stacking context (CSS 2.1 Appendix E), and Figma paints a box's layers in one order`;
+  const covered = (fill: string, shadow: string) =>
+    `the ring a flex block's layer casts paints above a later block's fill, and putting the first layer on top would also paint the fill of ${fill} over the shadow ${shadow} casts, which CSS can paint above it`;
+
+  it.each([
+    [
+      "a flex block's item rings it, before a filled block",
+      [part("header", "flex", [ringed]), panel],
+      true,
+      [],
+    ],
+    [
+      "a block rings itself, before a filled block",
+      [part("header", `flex h-[8px] ${RING}`), panel],
+      undefined,
+      [],
+    ],
+    [
+      "a block inside a block rings it, before a filled block",
+      [part("header", "block", [ringed]), panel],
+      undefined,
+      [],
+    ],
+    [
+      "a flex block's item rings it, before a block with no fill",
+      [part("header", "flex", [ringed]), part("panel", "block h-[8px]")],
+      undefined,
+      [],
+    ],
+    [
+      "a flex block's item rings it, after a filled block",
+      [panel, part("header", "flex", [ringed])],
+      undefined,
+      [],
+    ],
+    [
+      "a flex block's item rings it, before a filled block at 50% opacity, which paints above the ring",
+      [part("header", "flex", [ringed]), part("panel", "block h-[8px] bg-[#0000ff] opacity-50")],
+      undefined,
+      [],
+    ],
+    [
+      "a flex block's item rings it, before a filled positioned block, which paints above the ring",
+      [part("header", "flex", [ringed]), part("panel", "relative block h-[8px] bg-[#0000ff]")],
+      undefined,
+      [],
+    ],
+    [
+      "a flex block's item rings it, before a filled block and a block at 50% opacity",
+      [part("header", "flex", [ringed]), panel, part("faded", "block h-[8px] opacity-50")],
+      undefined,
+      [["display", between("chip-faded")]],
+    ],
+    [
+      "a flex block's filled item rings it, before another flex block's ringed item and a filled block",
+      [
+        part("first", "flex", [part("filled", `block size-[8px] bg-[#00ff00] ${RING}`)]),
+        part("second", "flex", [ringed]),
+        panel,
+      ],
+      undefined,
+      [["display", covered("chip-filled", "chip-ringed")]],
+    ],
+  ])("puts the first layer on top only where %s", async (_case, parts, firstOnTop, unmapped) => {
+    const { variant, coverage } = await buildFixture(chip("block w-[200px]", { parts }));
+    expect([variant?.root.direction, variant?.root.firstOnTop]).toEqual(["VERTICAL", firstOnTop]);
+    expect(
+      coverage.filter((row) => row.outcome === "unmapped").map((row) => [row.property, row.detail])
+    ).toEqual(unmapped);
   });
 });
 

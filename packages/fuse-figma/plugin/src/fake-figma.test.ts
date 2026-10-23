@@ -9,6 +9,7 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { paintsAbove } from "./fake-figma.ts";
 import {
   BLUE_PIXEL,
   childNamed,
@@ -730,6 +731,123 @@ describe("rule 31: a fill across never widens a text that is 0 wide, and a posit
     text.resize(1, text.height);
     expect(sizing(text)).toEqual(["FILL", "HUG"]);
     expect(text.width).toBeGreaterThan(0);
+  });
+});
+
+describe("rule 32: an instance takes its main component's new size when read, and a wrap frame sizes from its children as they stand (PI)", () => {
+  /** A 100px wrap row that hugs its height, padded 4 and spaced 2, holding an instance of a 40px square. */
+  function wrapped(api: PluginAPI = figma) {
+    const component = api.createComponent();
+    component.resize(40, 40);
+    const row = api.createFrame();
+    row.layoutMode = "HORIZONTAL";
+    row.layoutWrap = "WRAP";
+    row.resize(100, 10);
+    row.layoutSizingVertical = "HUG";
+    row.paddingTop = 4;
+    row.paddingBottom = 4;
+    row.counterAxisSpacing = 2;
+    const instance = component.createInstance();
+    row.appendChild(instance);
+    return { component, row, instance };
+  }
+
+  it("keeps the instance and the frame at the old size until the instance is read", () => {
+    const { component, row, instance } = wrapped();
+    expect(row.height).toBe(48);
+    component.resize(40, 20);
+    expect(row.height).toBe(48);
+    expect(instance.height).toBe(20);
+    expect(row.height).toBe(28);
+  });
+
+  it("wraps the children into rows of the frame's width", () => {
+    const { component, row } = wrapped();
+    const second = component.createInstance();
+    row.appendChild(second);
+    const third = component.createInstance();
+    row.appendChild(third);
+    // Two 40px squares and a 0px gap fit 92px, and the third starts a row.
+    expect(row.height).toBe(4 + 40 + 2 + 40 + 4);
+  });
+
+  it.each([
+    ["resized", (instance: InstanceNode) => instance.resize(32, 32)],
+    ["rescaled", (instance: InstanceNode) => instance.rescale(2)],
+  ])("keeps the size of an instance a designer %s, in this run and the next", (_, change) => {
+    const own = fixtureFile([]);
+    const component = own.figma.createComponent();
+    component.resize(16, 16);
+    const instance = component.createInstance();
+    change(instance);
+    const read = [instance.width, instance.height];
+    own.reopen();
+    expect([...read, instance.width, instance.height]).toEqual([32, 32, 32, 32]);
+  });
+
+  it("gives an instance of a wrapping component the component's height on its first read", () => {
+    const component = figma.createComponent();
+    component.layoutMode = "HORIZONTAL";
+    component.layoutWrap = "WRAP";
+    component.resize(100, 10);
+    component.layoutSizingVertical = "HUG";
+    const child = childOf(component);
+    child.resize(40, 40);
+    expect(component.createInstance().height).toBe(40);
+  });
+
+  it("settles every instance in a new run", () => {
+    const own = fixtureFile([]);
+    const { component, row } = wrapped(own.figma);
+    component.resize(40, 20);
+    own.reopen();
+    expect(row.height).toBe(28);
+  });
+});
+
+describe("rule 33: an auto layout paints a later child above an earlier one, and the first on top with itemReverseZIndex (PZ2)", () => {
+  /** A vertical stack of a header holding a ring and a panel below it, as an open Accordion item holds. */
+  function stack() {
+    const item = autoLayout("VERTICAL");
+    const header = childOf(item);
+    const ring = childOf(header);
+    const panel = childOf(item);
+    return { item, header, ring, panel };
+  }
+
+  it("paints the panel over the header's ring until the stack puts its first child on top", () => {
+    const { item, header, ring, panel } = stack();
+    expect([item.itemReverseZIndex, paintsAbove(ring, panel), paintsAbove(panel, header)]).toEqual([
+      false,
+      false,
+      true,
+    ]);
+    item.itemReverseZIndex = true;
+    expect([item.itemReverseZIndex, paintsAbove(ring, panel), paintsAbove(panel, header)]).toEqual([
+      true,
+      true,
+      false,
+    ]);
+  });
+
+  it("paints a layer above the frame that holds it, whatever the order", () => {
+    const { item, header, ring } = stack();
+    item.itemReverseZIndex = true;
+    expect([paintsAbove(ring, header), paintsAbove(header, ring), paintsAbove(ring, item)]).toEqual([
+      true,
+      false,
+      true,
+    ]);
+  });
+
+  it.each([
+    ["a horizontal auto layout", () => autoLayout("HORIZONTAL")],
+    ["a frame with no auto layout", () => figma.createFrame()],
+  ])("refuses the first child on top on %s, which no probe drew", (_, make) => {
+    const frame = make();
+    expect(() => {
+      frame.itemReverseZIndex = true;
+    }).toThrow("The fake Figma file models itemReverseZIndex only on a vertical auto layout (PZ2)");
   });
 });
 

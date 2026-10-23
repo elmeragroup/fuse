@@ -196,6 +196,16 @@ describe("the Sidebar menu button", () => {
       "sidebar-accent-foreground",
     ],
     ["default", "focus", "off", undefined, [FOCUS_RING], "sidebar-foreground"],
+    // CSS paints the ring, the first shadow, above the 1px outline, and Figma paints the last effect
+    // on top (PE2), so the ring comes last.
+    [
+      "outline",
+      "focus",
+      "off",
+      paint("background"),
+      [outlineRing("sidebar-border"), FOCUS_RING],
+      "sidebar-foreground",
+    ],
   ])(
     "fills the %s row at %s, active %s, and colors its icon and label",
     (variant, state, active, fill, shadows, color) => {

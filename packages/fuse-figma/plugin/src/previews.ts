@@ -300,8 +300,24 @@ export type RowNode = {
 };
 
 /**
+ * Read the height of every instance a preview's groups hold. Within one plugin run an instance takes
+ * its main component's new size only when it is read, and a preview sizes from its instances as they
+ * stand, so a preview read after its variants shrank, before its instances, reads its old height. On
+ * 2026-10-23 a real file read such a preview 816 tall, and 48 once each instance's height was read
+ * first (PI).
+ *
+ * @returns The heights read, which the caller discards.
+ */
+function settleInstances(frame: FrameNode): readonly number[] {
+  return frame.children
+    .filter(isFrame)
+    .flatMap((group) => group.children.filter(isInstance).map((instance) => instance.height));
+}
+
+/**
  * The page layout: the row's nodes from where the first one sits, then the previews stacked below
- * the tallest of them, left-aligned with the first node.
+ * the tallest of them, left-aligned with the first node. Each preview's instances settle before its
+ * height is read.
  */
 function pageLayout(row: readonly RowNode[], frames: readonly Target<FrameNode>[]): Placed[] {
   const nodes = row.map((entry) => entry.node.get());
@@ -318,6 +334,7 @@ function pageLayout(row: readonly RowNode[], frames: readonly Target<FrameNode>[
   let y = first.y + Math.max(...nodes.map((node) => node.height)) + PREVIEW_MARGIN;
   for (const target of frames) {
     const frame = target.get();
+    settleInstances(frame);
     placed.push({ node: frame, x: first.x, y });
     y += frame.height + PREVIEW_SPACING;
   }

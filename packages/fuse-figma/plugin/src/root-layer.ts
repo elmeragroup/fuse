@@ -245,6 +245,12 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
   const laidOut = run.plan.operations.length > before;
   planNumber(run, node, label, cornerField(node), spec.cornerRadius);
 
+  // Figma paints a later layer above an earlier one, and the first on top with the field true (PZ2).
+  const firstOnTop = spec.firstOnTop === true;
+  planScalar(run, label, "itemReverseZIndex", node.itemReverseZIndex, firstOnTop, () => {
+    node.itemReverseZIndex = firstOnTop;
+  });
+
   // The build makes every root clip, for its focus ring's spread (`component-spec.ts`).
   const { clips } = spec;
   planScalar(run, label, "clipsContent", node.clipsContent, clips, () => {
