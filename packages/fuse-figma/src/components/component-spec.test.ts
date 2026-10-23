@@ -667,6 +667,35 @@ describe("a root's percentage width against the preview width", () => {
     const { variant } = await buildFixture(chip(classes, { previewWidth: 256 }));
     expect(variant?.root.sizing.horizontal).toEqual(horizontal);
   });
+
+  // CSS 2.1 §6.4.1: the browser's default style sheet makes a `<p>` or a `<div>` block-level, and any
+  // author declaration beats it. The block box sets its text in lines across its width (CSS Text 3).
+  describe("with the display its element takes from the browser's default style sheet", () => {
+    const P_BLOCK = { className: "user agent style sheet, p", property: "display", value: "block" };
+
+    it("fills the preview width and sets its label in lines across it", async () => {
+      const { variant, coverage } = await buildLabelled("", {
+        previewWidth: 256,
+        elementDefaults: [P_BLOCK],
+        label: LABEL,
+      });
+      expect(variant?.root.sizing.horizontal).toEqual(fixed(literal(256)));
+      expect(textOf(variant?.root)?.sizing).toEqual(FILL_WIDTH);
+      expect(notesOf(coverage, P_BLOCK.className)).toEqual([
+        ["display", "literal", "a block box that sets its own text in lines"],
+      ]);
+    });
+
+    it("loses to a display class of the root's own", async () => {
+      const { variant, coverage } = await buildLabelled("inline-flex", {
+        previewWidth: 256,
+        elementDefaults: [P_BLOCK],
+        label: LABEL,
+      });
+      expect(variant?.root.sizing.horizontal).toEqual(HUG);
+      expect(notesOf(coverage, P_BLOCK.className)).toEqual([]);
+    });
+  });
 });
 
 // Unit under test: `buildComponentSet` on a part with `grid place-content-center`. Oracle: CSS Grid,
@@ -731,6 +760,56 @@ describe("a box's position and alignment", () => {
 
   it("leaves self-stretch unmapped", async () => {
     expect(await rowsOf("self-stretch")).toEqual([["self-stretch", "unmapped", expect.any(String)]]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a box's margins. Oracle: CSS 2.1 §8.3 and §10.3.3. A
+// margin lies outside the box's border, where it spaces the box from its siblings and its parent's
+// edge. A component's root sits alone in its component set, so its margin changes nothing the set
+// draws, unless the root is a block whose width its container gives it: the width is then the
+// container's less the horizontal margins. A part's margin moves it within its parent, which the kit
+// does not yet draw.
+describe("a box's margin", () => {
+  it.each([
+    ["mb-3", "margin-bottom"],
+    ["-mt-1.5", "margin-top"],
+    ["mx-auto", "margin-inline"],
+  ])("drops %s on the root, which sits beside no other box", async (className, property) => {
+    const { coverage } = await buildFixture(chip(className));
+    expect(notesOf(coverage, className)).toEqual([
+      [
+        property,
+        "dropped",
+        "the component's root sits alone in its component set, so its margin spaces it from nothing the set draws",
+      ],
+    ]);
+  });
+
+  it("leaves a part's margin unmapped", async () => {
+    const { coverage } = await buildFixture(chip("flex", { parts: [dot("size-2 mt-1")] }));
+    expect(notesOf(coverage, "mt-1")).toEqual([["margin-top", "unmapped", expect.any(String)]]);
+  });
+
+  it("leaves the horizontal margins of a block that takes the preview width unmapped, and drops its vertical ones", async () => {
+    const { coverage } = await buildFixture(chip("block mx-[16px] my-[4px]", { previewWidth: 384 }));
+    // CSS draws the block 352px wide, 384px less the two 16px margins.
+    expect(notesOf(coverage, "mx-[16px]")).toEqual([
+      [
+        "margin-inline",
+        "unmapped",
+        "the root's width is its container's less this margin, which the build does not subtract",
+      ],
+    ]);
+    expect(notesOf(coverage, "my-[4px]").map(([property, outcome]) => [property, outcome])).toEqual([
+      ["margin-block", "dropped"],
+    ]);
+  });
+
+  it("drops the horizontal margins of a block whose width is its own", async () => {
+    const { coverage } = await buildFixture(chip("block w-[200px] mx-[16px]", { previewWidth: 384 }));
+    expect(notesOf(coverage, "mx-[16px]").map(([property, outcome]) => [property, outcome])).toEqual([
+      ["margin-inline", "dropped"],
+    ]);
   });
 });
 
@@ -1388,6 +1467,21 @@ describe("a block box", () => {
     const { coverage } = await buildFixture(chip(classes, { iconsFor: () => icons }));
     expect(coverage.filter((row) => row.className === "block").map((row) => row.outcome)).toEqual([outcome]);
   });
+
+  it("that holds only its label sets it in lines across its width", async () => {
+    const { variant, coverage } = await buildLabelled("block w-[100px]", { label: LABEL });
+    expect(textOf(variant?.root)?.sizing).toEqual(FILL_WIDTH);
+    expect(notesOf(coverage, "block")).toEqual([
+      ["display", "literal", "a block box that sets its own text in lines"],
+    ]);
+  });
+
+  // CSS 2.1 §9.4.1: a block box sets its first line box at the top of its content box, so a box
+  // taller than its line, by its height or its minimum, keeps the text at the top.
+  it.each(["h-[100px]", "min-h-[100px]"])("with %s sets its line at the top", async (height) => {
+    const { variant } = await buildLabelled(`block w-[100px] ${height}`, { label: LABEL });
+    expect(variant?.root.counterAlign).toBe("MIN");
+  });
 });
 
 // Unit under test: `buildComponentSet` on a part its parent's row holds alone, moved along the row
@@ -1637,6 +1731,33 @@ describe("a label's sizing", () => {
     expect(notesOf(coverage, "whitespace-nowrap")).toEqual([
       ["white-space", "literal", "the label hugs its width"],
     ]);
+  });
+
+  // Oracle: CSS Text 4 §6.3. `text-wrap: balance` and `pretty` choose where a wrapping text breaks its
+  // lines, and change nothing on a text that sets one line. A Figma text fills each line before the
+  // next, so the kit draws the breaks a greedy browser would.
+  it.each(["text-balance", "text-pretty"])(
+    "drops %s on a label that wraps, and on one that hugs its one line",
+    async (className) => {
+      const wrapping = await buildLabelled(`w-[100px] ${className}`, { label: LABEL });
+      expect(textOf(wrapping.variant?.root)?.sizing).toEqual(FILL_WIDTH);
+      expect(notesOf(wrapping.coverage, className)).toEqual([
+        [
+          "text-wrap",
+          "dropped",
+          "a Figma text fills each line before it starts the next, so it cannot even out its lines",
+        ],
+      ]);
+      const hugging = await buildLabelled(`w-fit ${className}`, { label: LABEL });
+      expect(notesOf(hugging.coverage, className)).toEqual([
+        ["text-wrap", "dropped", "the box hugs the label on one line"],
+      ]);
+    }
+  );
+
+  it("leaves text-balance unmapped beside nowrap, where the later of the two decides whether the text wraps", async () => {
+    const { coverage } = await buildLabelled("w-[100px] whitespace-nowrap text-balance", { label: LABEL });
+    expect(notesOf(coverage, "text-balance")).toEqual([["text-wrap", "unmapped", expect.any(String)]]);
   });
 
   it("stretches across a column with a definite width, and hugs in a column that hugs its width", async () => {

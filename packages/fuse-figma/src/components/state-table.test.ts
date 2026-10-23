@@ -88,13 +88,38 @@ describe("the shared state entries", () => {
     expect(holdsAt(span, "state", "disabled")).toBe("unmodelled");
   });
 
-  it("hold only data-disabled at disabled on a Base UI Field.Label, which takes its Field's state", () => {
+  it("hold only data-disabled at disabled on a Base UI Field part, which takes its Field's state", () => {
     // Base UI's `Field.Label` maps the Field's state to data attributes: a label in a disabled
     // Field renders `<label data-disabled="">`, with neither `disabled` nor `aria-disabled`.
-    const label = definition({ rootKind: "base-ui-field-label", axes: [CONTROL_STATES] });
+    const label = definition({ rootKind: "base-ui-field-part", axes: [CONTROL_STATES] });
     expect(holdsAt(label, "state", "data-disabled")).toEqual(["disabled"]);
     expect(holdsAt(label, "state", "disabled")).toBe("unmodelled");
     expect(holdsAt(label, "state", "aria-disabled")).toBe("unmodelled");
+  });
+
+  it("hold only data-invalid at invalid on a Base UI Field part, which takes its Field's state", () => {
+    // An error in an invalid Field renders `<div data-invalid="" role="alert">`, with no
+    // `aria-invalid`, which Base UI stamps on the control alone.
+    const error = definition({
+      rootKind: "base-ui-field-part",
+      axes: [{ name: "state", values: ["invalid"] }],
+    });
+    expect(holdsAt(error, "state", "data-invalid")).toEqual(["invalid"]);
+    expect(holdsAt(error, "state", "aria-invalid")).toBe("omitted");
+  });
+
+  it("hold no attribute at disabled on a plain element, which shows its Field's state only through a group variant", () => {
+    // Field's title is a `<div>` Base UI does not render, so a disabled Field stamps nothing on it,
+    // and its `group-data-disabled/field:` reads the Field root around it.
+    const title = definition({
+      rootKind: "plain-element",
+      axes: [CONTROL_STATES],
+      states: { disabled: ["group-data-disabled/field"] },
+    });
+    expect(holdsAt(title, "state", "group-data-disabled/field")).toEqual(["disabled"]);
+    for (const variant of ["disabled", "data-disabled", "aria-disabled"]) {
+      expect(holdsAt(title, "state", variant), variant).toBe("unmodelled");
+    }
   });
 
   it("leave aria-disabled to the definition on a native control", () => {

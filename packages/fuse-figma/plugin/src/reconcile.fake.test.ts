@@ -789,3 +789,102 @@ describe("a file the plugin laid out on one page", () => {
     }
   });
 });
+
+// Unit under test: `reconcileKit` on a file the plugin applied before Label moved to the Field page.
+// Oracle: the Field page's row in `test/kit-inventory.ts`, the README's two-phase Apply for a run that
+// moves a node, and a moved node keeping its id and its variants' ids and component keys.
+describe("a file with Label on the page it used to sit on alone", () => {
+  const FIELD = inventoryPage("field");
+  /** The Label set, rest and disabled. */
+  const LABEL = { key: "label", name: "Label", variants: 2, previewed: 2 };
+  /** The page Label sat on alone, with its own four previews. */
+  const LABEL_PAGE: InventoryPage = { slug: "label", name: "Label", sets: [LABEL] };
+
+  /**
+   * The kit as the plugin wrote it before the Field page: Label alone on its own page, previewed
+   * there, and none of the sets that joined it on the Field page.
+   */
+  function labelPageKit(): KitSpec {
+    const field = pageKey(FIELD);
+    const label = { key: pageKey(LABEL_PAGE), name: LABEL_PAGE.name };
+    const previewKey = (key: string) => key.replace(`preview/${FIELD.slug}/`, `preview/${LABEL_PAGE.slug}/`);
+    return {
+      ...kit,
+      pages: kit.pages.map((page) => (page.key === field ? label : page)),
+      componentSets: kit.componentSets.flatMap((set) => {
+        if (set.page !== field) {
+          return [set];
+        }
+        return set.key === LABEL.key ? [{ ...set, page: label.key }] : [];
+      }),
+      previews: kit.previews.map((preview) =>
+        preview.page === field
+          ? {
+              ...preview,
+              key: previewKey(preview.key),
+              name: preview.name.replace(`${FIELD.name} / `, `${LABEL_PAGE.name} / `),
+              page: label.key,
+              groups: preview.groups
+                .filter((group) => group.componentSet === LABEL.key)
+                .map((group) => ({ ...group, key: previewKey(group.key) })),
+            }
+          : preview
+      ),
+    };
+  }
+
+  it("moves Label to the Field page with its ids, then deletes the Label page, in one Apply", async () => {
+    const file = syncedFile(collections);
+    await reconcileKit(file.figma, labelPageKit(), true);
+    file.reopen();
+    const old = await kitPage(file, pageKey(LABEL_PAGE));
+    const label = setOn(old, LABEL.name);
+    const before = {
+      set: label.id,
+      variants: idsByName(label),
+      keys: label.children.map((variant) => (variant.type === "COMPONENT" ? variant.key : "")),
+    };
+    const pagePhase = [
+      `Document: create the page ${FIELD.name}`,
+      ...previewNames(LABEL_PAGE).map((name) => `${LABEL_PAGE.name}: delete ${name}`),
+      `${LABEL_PAGE.name}: move ${LABEL.name} to the ${FIELD.name} page`,
+    ];
+
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({
+      changes: [...pagePhase, "Document: plan the rest of the kit again once the move lands"],
+      warnings: [],
+    });
+    expect(await reconcileKit(file.figma, kit, true)).toEqual({
+      changes: [
+        ...pagePhase,
+        ...FIELD.sets
+          .filter((set) => set.key !== LABEL.key)
+          .map((set) => `${FIELD.name}: create the component set ${set.name} with ${set.variants} variants`),
+        ...previewNames(FIELD).map((name) => `${FIELD.name}: create the preview ${name}`),
+        `${FIELD.name}: place ${listed(FIELD.sets.map((set) => set.name))} in a row and stack 4 previews below them`,
+        `Document: delete the page ${LABEL_PAGE.name}`,
+      ],
+      warnings: [],
+    });
+    file.reopen();
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+
+    expect(old.removed).toBe(true);
+    // The plugin creates a missing page after the last one and never reorders pages.
+    expect(file.figma.root.children.map((page) => page.name)).toEqual([
+      "Page 1",
+      ...[...KIT_PAGES.filter((page) => page !== FIELD), ICONS_PAGE, FIELD].map((page) => page.name),
+    ]);
+    const page = await kitPage(file, pageKey(FIELD));
+    expect(page.children.map((node) => node.name)).toEqual([
+      ...FIELD.sets.map((set) => set.name),
+      ...previewNames(FIELD),
+    ]);
+    const moved = setOn(page, LABEL.name);
+    expect({
+      set: moved.id,
+      variants: idsByName(moved),
+      keys: moved.children.map((variant) => (variant.type === "COMPONENT" ? variant.key : "")),
+    }).toEqual(before);
+  });
+});

@@ -20,7 +20,10 @@ import { fieldVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { AncestorDefinition, Cell, ComponentDefinition } from "./component-spec";
 
-/** The width a field box's `w-full` takes, in the Figma preview and on the compare page. */
+/**
+ * The width a Field gives what it holds, in the Figma preview and on the compare page: a field box's
+ * `w-full` takes it, and Field's description, error and legend fill it as block boxes.
+ */
 export const FIELD_BOX_PREVIEW_WIDTH = 384;
 
 /**
@@ -52,6 +55,13 @@ export const FIELD_ROOT_SR_ONLY = [
   "[&>.sr-only]",
   "a visually hidden child of the Field, which no cell holds",
 ] as const;
+
+/**
+ * The variant of the Field root's stretch, `[&>…]:w-full`, which widens every child but a Checkbox or
+ * a Switch to the Field's width. A definition whose root sits in a Field omits it with its own
+ * reason.
+ */
+export const FIELD_ROOT_STRETCH = "[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]";
 
 /**
  * The matrix, states, facts and omissions of a field box set. A definition spreads it and adds its
@@ -86,7 +96,7 @@ export const FIELD_BOX_SET: Pick<
   omittedCompositions: new Map([
     FIELD_ROOT_SR_ONLY,
     [
-      "[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]",
+      FIELD_ROOT_STRETCH,
       "the Field stretches the control to its width, which the control's own `w-full` already takes",
     ],
   ]),

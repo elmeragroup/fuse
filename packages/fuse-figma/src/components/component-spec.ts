@@ -86,10 +86,13 @@ export const BASE_UI_CHECKED_FACTS: ReadonlyMap<string, (cell: Cell) => boolean>
  * - `native-control`: a native `<button>`, disabled through its `disabled` attribute.
  * - `base-ui-span`: a Base UI `<span>`, such as a radio, which Base UI disables with
  *   `aria-disabled` and keeps focusable.
- * - `base-ui-field-label`: Base UI's `Field.Label` `<label>`, which takes its Field's state as
- *   data attributes, so a disabled Field marks it `data-disabled` alone.
+ * - `base-ui-field-part`: Base UI's `Field.Label` `<label>`, `Field.Description` `<p>` or
+ *   `Field.Error` `<div>`, which take their Field's state as data attributes, so a disabled Field
+ *   marks them `data-disabled` alone and an invalid one `data-invalid` alone.
+ * - `plain-element`: an element nothing stamps a state on, such as Field's title `<div>`, which
+ *   shows a disabled Field only through the `group-data-disabled/field:` its definition names.
  */
-export type RootKind = "native-control" | "base-ui-span" | "base-ui-field-label";
+export type RootKind = "native-control" | "base-ui-span" | "base-ui-field-part" | "plain-element";
 
 /**
  * Where a native control sets its text within the text's box, which no class says, as an `<input>`
@@ -277,6 +280,14 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly inheritedFor?: (cell: Cell) => readonly OuterDeclaration[];
   /**
+   * The declarations the browser's default style sheet gives the root's element, which no class
+   * sets, such as `display: block` on a `<p>` or a `<div>`. They apply on the root below the base
+   * layer and every class, as the user agent's origin does, so a class's own `display` beats them.
+   * Undefined for a root whose classes set what the kit reads, or whose element is inline, as a
+   * `<span>` or an `<a>` is.
+   */
+  readonly elementDefaults?: readonly OuterDeclaration[];
+  /**
    * The elements between the page and the root in a cell, outermost first, each named by the
    * recipe classes it carries, as a Breadcrumb link sits in `Breadcrumb.List` and `Breadcrumb.Item`.
    * Each cascades its classes with the cell's states and facts, and the root inherits their
@@ -410,17 +421,19 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
     const rootCascade = cellCascade.root(definition.classesFor(cell), definition.slot, {
       declarations: definition.inheritedFor?.(cell) ?? [],
       ancestors: definition.ancestorsFor?.(cell) ?? [],
+      defaults: definition.elementDefaults ?? [],
     });
     // A root clips its content, because Figma draws a drop shadow's spread only from a frame
     // that clips, and a focus ring is a spread shadow. The first run on a real file stored the
     // ring's 2px spread as 0 on a root that did not clip. Clipping costs a root nothing, since
     // every child sits inside its padding.
+    const room = rootRoom(definition.previewWidth, rootCascade.style);
     const root: ComponentRootSpec = {
       name: definition.slot,
-      ...mapBox(definition, rootCascade, scope, rootRoom(definition.previewWidth, rootCascade.style)),
+      ...mapBox(definition, rootCascade, scope, room),
       clips: true,
     };
-    placeRoot(rootCascade.style);
+    placeRoot(rootCascade.style, room);
     cellCascade.settle();
     for (const layer of walkLayers(root)) {
       if (layer.kind === "text") {

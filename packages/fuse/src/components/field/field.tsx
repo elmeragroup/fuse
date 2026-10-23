@@ -11,7 +11,6 @@ import type { VariantProps } from "tailwind-variants";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
-import { labelTypeClass } from "../../styles/label-type";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
 import { fieldVariants } from "./field-variants";
@@ -37,7 +36,8 @@ export function FieldRoot({
   className,
   orientation = "vertical",
   ...props
-}: ComponentProps<typeof FieldPrimitive.Root> & VariantProps<typeof fieldVariants>): ReactElement {
+}: ComponentProps<typeof FieldPrimitive.Root> &
+  Pick<VariantProps<typeof fieldVariants>, "orientation">): ReactElement {
   return (
     <DescriptionOwnerContext.Provider value={fieldDescriptionOwner}>
       <FieldPrimitive.Root
@@ -127,11 +127,7 @@ export function FieldLegend({
     <FieldsetPrimitive.Legend
       data-slot="field-legend"
       data-variant={variant}
-      className={mergeClassName(
-        className,
-        "font-medium mb-3 text-balance",
-        variant === "label" ? labelTypeClass : "text-base"
-      )}
+      className={mergeClassName(className, fieldVariants({ variant }).legend())}
       {...definedProps(props)}
     />
   );
@@ -160,9 +156,13 @@ export function FieldContent({ className, ...props }: ComponentProps<"div">): Re
   );
 }
 
-const fieldHeadingClassName = fieldVariants().heading();
+const fieldTitleClassName = fieldVariants().title();
 
 const fieldLabelClassName = fieldVariants().label();
+
+const fieldDescriptionClassName = fieldVariants().description();
+
+const fieldErrorClassName = fieldVariants().error();
 
 /**
  * A label whose direct child is a `Checkbox` renders as a choice row: centered with a pointer
@@ -188,7 +188,7 @@ export function FieldTitle({ className, ...props }: ComponentProps<"div">): Reac
     <div
       data-slot="field-title"
       data-field-heading=""
-      className={cn("items-center", fieldHeadingClassName, className)}
+      className={cn(fieldTitleClassName, className)}
       {...props}
     />
   );
@@ -224,11 +224,7 @@ const unownedDescriptionState: UnownedDescriptionState = {
  */
 export function FieldDescription({ className, ...props }: FieldDescriptionProps): ReactElement {
   const owner = use(DescriptionOwnerContext);
-  const descriptionClassName = mergeClassName(
-    className,
-    labelTypeClass,
-    "font-normal text-left text-pretty text-muted-foreground group-has-data-horizontal/field:text-balance last:mt-0 [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary [[data-variant=legend]+&]:-mt-1.5"
-  );
+  const descriptionClassName = mergeClassName(className, fieldDescriptionClassName);
   if (owner?._tag === "field") {
     return (
       <FieldPrimitive.Description
@@ -329,7 +325,7 @@ export function FieldError({
   children,
   ...props
 }: ComponentProps<typeof FieldPrimitive.Error>): ReactElement {
-  const errorClassName = mergeClassName(className, labelTypeClass, "font-normal text-error");
+  const errorClassName = mergeClassName(className, fieldErrorClassName);
   // Two branches, not `match={children ? true : undefined}`: Base UI merges every present
   // key, so a forwarded `children={undefined}` would erase the message it renders itself.
   if (!children) {

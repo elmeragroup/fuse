@@ -87,8 +87,22 @@ export const KIT_PAGES: readonly InventoryPage[] = [
   },
   // 5 sizes.
   { slug: "loader", name: "Loader", sets: [{ key: "loader", name: "Loader", variants: 5, previewed: 5 }] },
-  // Rest and disabled.
-  { slug: "label", name: "Label", sets: [{ key: "label", name: "Label", variants: 2, previewed: 2 }] },
+  {
+    slug: "field",
+    name: "Field",
+    sets: [
+      // Rest and disabled.
+      { key: "label", name: "Label", variants: 2, previewed: 2 },
+      // At rest alone, the same in every state of its Field.
+      { key: "field-description", name: "Field description", variants: 1, previewed: 1 },
+      // In an invalid Field alone.
+      { key: "field-error", name: "Field error", variants: 1, previewed: 1 },
+      // The legend and label variants.
+      { key: "field-legend", name: "Field legend", variants: 2, previewed: 2 },
+      // Rest and disabled.
+      { key: "field-title", name: "Field title", variants: 2, previewed: 2 },
+    ],
+  },
   // Placeholder and value in 5 states.
   { slug: "input", name: "Input", sets: [{ key: "input", name: "Input", variants: 10, previewed: 10 }] },
   // Placeholder and value in 5 states.

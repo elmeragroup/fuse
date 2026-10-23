@@ -82,6 +82,12 @@ const FILLING: TextSizingSpec = { horizontal: { kind: "fill" }, vertical: { kind
 const NEVER_OVERFLOWS = "the box hugs the label, so it never overflows";
 
 /**
+ * The `text-wrap` styles that choose where a wrapping text breaks its lines (CSS Text 4 §6.3):
+ * `balance` evens out their lengths, and `pretty` keeps a short word off the last one.
+ */
+const EVENED_LINES = new Set(["balance", "pretty"]);
+
+/**
  * The characters a label shows in a cell.
  *
  * @param label - The label.
@@ -519,6 +525,35 @@ function readLabelLayout(
       return {
         outcome: "literal",
         detail: fills ? "the label wraps at the box's width" : "the box hugs the label on one line",
+      };
+    }
+  );
+  // `text-wrap` sets whether the text wraps as `white-space` does, so beside a `white-space` that
+  // keeps it on one line the later declaration decides, which the build does not order.
+  style.read(
+    "text-wrap",
+    (written) => (EVENED_LINES.has(normalizeCss(written)) ? written : undefined),
+    (): CoverageNote => {
+      if (refusal !== undefined) {
+        return { outcome: "unmapped", detail: refusal.detail };
+      }
+      if (!wrapping) {
+        return {
+          outcome: "unmapped",
+          detail: "white-space keeps the text on one line, and text-wrap wraps it, so the later one decides",
+        };
+      }
+      if (fills) {
+        return {
+          outcome: "dropped",
+          detail: "a Figma text fills each line before it starts the next, so it cannot even out its lines",
+        };
+      }
+      return {
+        outcome: "dropped",
+        detail: ownWidth
+          ? "the text never wraps, so the label keeps its own width"
+          : "the box hugs the label on one line",
       };
     }
   );

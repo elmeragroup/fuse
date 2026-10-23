@@ -123,6 +123,26 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./label-cell.ts")).label,
   },
   {
+    set: "field-description",
+    entry: "dist/field.js",
+    load: async () => (await import("./field-text-cell.ts")).fieldDescription,
+  },
+  {
+    set: "field-error",
+    entry: "dist/field.js",
+    load: async () => (await import("./field-text-cell.ts")).fieldError,
+  },
+  {
+    set: "field-legend",
+    entry: "dist/field.js",
+    load: async () => (await import("./field-text-cell.ts")).fieldLegend,
+  },
+  {
+    set: "field-title",
+    entry: "dist/field.js",
+    load: async () => (await import("./field-text-cell.ts")).fieldTitle,
+  },
+  {
     set: "input",
     entry: "dist/input.js",
     load: async () => (await import("./input-cell.ts")).input,

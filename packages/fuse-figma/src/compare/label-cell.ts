@@ -12,6 +12,7 @@ import { createElement } from "react";
 
 import { Field } from "../../../fuse/dist/field.js";
 import type { Cell } from "../components/component-spec.ts";
+import { LABEL_TEXT } from "../components/label-kit.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
 /** A `label` cell: the field label at rest, or inside a disabled Field. */
@@ -20,6 +21,6 @@ export const label: CellRendering = {
     createElement(
       Field.Root,
       { disabled: cell.state === "disabled" },
-      createElement(Field.Label, null, "Email")
+      createElement(Field.Label, null, LABEL_TEXT)
     ),
 };

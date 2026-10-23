@@ -16,6 +16,9 @@ import { fieldVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { ComponentDefinition } from "./component-spec";
 
+/** The label's text, the default of its `Label` property: the docs' field label. */
+export const LABEL_TEXT = "Email";
+
 /** Why the kit drops the arms that style a label wrapping a control or a Field card. */
 const COMPOSITION =
   "a label that wraps a control or a Field card is Field composition, which waits for wave 3";
@@ -25,7 +28,7 @@ export const LABEL: ComponentDefinition = {
   key: "label",
   name: "Label",
   slot: "field-label",
-  rootKind: "base-ui-field-label",
+  rootKind: "base-ui-field-part",
   axes: [{ name: "state", values: ["rest", "disabled"] }],
   columnAxis: "state",
   classesFor: () => fieldVariants().label(),
@@ -39,7 +42,7 @@ export const LABEL: ComponentDefinition = {
       COMPOSITION,
     ])
   ),
-  label: { key: "label", name: "label", characters: "Email", textProperty: "Label", shownIn: () => true },
+  label: { key: "label", name: "label", characters: LABEL_TEXT, textProperty: "Label", shownIn: () => true },
   iconsFor: () => [],
   swapProperties: [],
 };

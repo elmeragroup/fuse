@@ -7,6 +7,7 @@
  * draws as a slot around a dot, which the set's topology decides once for every cell.
  */
 import { listNames, outOfFlow } from "./box-sizing";
+import type { Room } from "./box-sizing";
 import { splitClasses } from "./cascade";
 import type { CoverageNote, LayerStyle } from "./cascade";
 import { splitClassName } from "./class-name";
@@ -143,16 +144,46 @@ function alignAlongRow(parent: ParentBox, parts: readonly PlacedPart[]): Primary
   return moved ?? layout.primaryAlign;
 }
 
+/** The margin properties, physical and logical, as Tailwind compiles `m-*`, `mx-*`, `ms-*` and the rest. */
+const MARGINS = [
+  "margin",
+  "margin-top",
+  "margin-right",
+  "margin-bottom",
+  "margin-left",
+  "margin-block",
+  "margin-block-start",
+  "margin-block-end",
+  "margin-inline",
+  "margin-inline-start",
+  "margin-inline-end",
+] as const;
+
+/** The margins above and below a box, which leave its width alone. The `margin` shorthand sets all four. */
+const VERTICAL_MARGINS: ReadonlySet<string> = new Set([
+  "margin-top",
+  "margin-bottom",
+  "margin-block",
+  "margin-block-start",
+  "margin-block-end",
+]);
+
 /**
  * Read where the root sits. The root has no parent to center it, so `relative` drops and any
  * other position stays unmapped. It sits in no flex line either, so `align-self: auto`, the
  * initial value, drops, and any other alignment, such as `stretch`, stays unmapped. Nor does it sit
  * in a line of text, so `vertical-align`, which places an inline box in its line, drops whatever
- * its value, as Avatar's `align-middle` does.
+ * its value, as Avatar's `align-middle` does. A margin lies outside the box and spaces it from its
+ * siblings and its parent's edge, and the root sits alone in its component set, so a margin drops,
+ * as Field legend's `mb-3` does. A block whose width its container gives it is the exception: its
+ * width is the container's less its horizontal margins (CSS 2.1 §10.3.3), which the build does not
+ * subtract, so those margins stay unmapped.
  *
  * @param style - The root's style.
+ * @param room - What the root's container gives it, whose automatic width says whether the root
+ *   takes the preview width.
  */
-export function placeRoot(style: LayerStyle): void {
+export function placeRoot(style: LayerStyle, room: Room): void {
   readPosition(style, "other");
   style.read(
     "align-self",
@@ -167,6 +198,27 @@ export function placeRoot(style: LayerStyle): void {
     (value) => value,
     () => ({ outcome: "dropped", detail: "the component's root sits in no line box, so no line aligns it" })
   );
+  const width = normalizeCss(style.resolved("width") ?? "auto");
+  const widthFromContainer = room.horizontal.auto.kind !== "hug" && width === "auto";
+  for (const property of MARGINS) {
+    if (widthFromContainer && !VERTICAL_MARGINS.has(property)) {
+      style.mark(
+        property,
+        "unmapped",
+        "the root's width is its container's less this margin, which the build does not subtract"
+      );
+      continue;
+    }
+    style.read(
+      property,
+      (value) => value,
+      () => ({
+        outcome: "dropped",
+        detail:
+          "the component's root sits alone in its component set, so its margin spaces it from nothing the set draws",
+      })
+    );
+  }
 }
 
 /**

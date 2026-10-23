@@ -25,7 +25,7 @@
 import { selectTriggerVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { Cell, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
-import { FIELD_ROOT, FIELD_ROOT_SR_ONLY, showsPlaceholder } from "./field-box-kit";
+import { FIELD_ROOT, FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH, showsPlaceholder } from "./field-box-kit";
 
 /** The text every cell shows, the default of the `Value` property: the docs Basic demo's placeholder. */
 export const SELECT_TRIGGER_TEXT = "Pick a fruit";
@@ -131,7 +131,7 @@ export const SELECT_TRIGGER: ComponentDefinition = {
   omittedCompositions: new Map([
     FIELD_ROOT_SR_ONLY,
     [
-      "[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]",
+      FIELD_ROOT_STRETCH,
       "the Field stretches the trigger across its own width, which the set does not draw, and the trigger hugs its value as it does outside a Field",
     ],
   ]),

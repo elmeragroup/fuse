@@ -55,8 +55,23 @@ const DISABLED_BY_ROOT = {
   // A span never matches `:disabled`. Base UI keeps a disabled span focusable and stamps
   // `aria-disabled="true"` and `data-disabled` on it.
   "base-ui-span": ["aria-disabled", "data-disabled"],
-  // Base UI maps the Field's state onto its label as data attributes, `data-disabled` among them.
-  "base-ui-field-label": ["data-disabled"],
+  // Base UI maps the Field's state onto its label, description and error as data attributes,
+  // `data-disabled` among them.
+  "base-ui-field-part": ["data-disabled"],
+  // Nothing stamps a plain element, so only a group variant that reads the element around it holds.
+  "plain-element": [],
+} as const satisfies Record<RootKind, readonly string[]>;
+
+/**
+ * The variants the `invalid` state renders, by what the root element is. An invalid Field stamps
+ * `aria-invalid` and `data-invalid` on its control, and `data-invalid` alone on its label,
+ * description and error. A set with no root kind takes the shared entry, the control's.
+ */
+const INVALID_BY_ROOT = {
+  "native-control": ["aria-invalid", "data-invalid"],
+  "base-ui-span": ["aria-invalid", "data-invalid"],
+  "base-ui-field-part": ["data-invalid"],
+  "plain-element": [],
 } as const satisfies Record<RootKind, readonly string[]>;
 
 /** `has-data-[icon=…]:` holds while some icon of the cell, or the span around it, carries the `data-icon`. */
@@ -138,6 +153,7 @@ export function makeStateTable(
   const sharedStates = new Map<string, readonly string[]>(SHARED_STATES);
   if (definition.rootKind !== undefined) {
     sharedStates.set("disabled", DISABLED_BY_ROOT[definition.rootKind]);
+    sharedStates.set("invalid", INVALID_BY_ROOT[definition.rootKind]);
   } else if (stateValues.includes("disabled")) {
     throw new Error(`${definition.name} has a disabled state and names no root kind`);
   }

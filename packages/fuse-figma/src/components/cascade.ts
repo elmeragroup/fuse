@@ -468,8 +468,9 @@ export class CellCascade {
    *
    * @param classes - The root's class string for the cell.
    * @param part - The root's layer name, which the coverage table names.
-   * @param around - The declarations the host sets around the root in the cell, and the ancestors
-   *   named by their classes, outermost first.
+   * @param around - The declarations the host sets around the root in the cell, the ancestors
+   *   named by their classes, outermost first, and the declarations the browser's default style
+   *   sheet gives the root's element, which apply on the root below everything else.
    * @returns The root's cascade.
    */
   root(
@@ -478,16 +479,18 @@ export class CellCascade {
     around: {
       readonly declarations: readonly OuterDeclaration[];
       readonly ancestors: readonly AncestorDefinition[];
+      readonly defaults: readonly OuterDeclaration[];
     }
   ): BoxCascade {
     const { context } = this.#ledger.scope;
     const page = outerApplied(context.page, part, -2);
+    const defaults = outerApplied(around.defaults, part, -3);
     if (around.declarations.length === 0 && around.ancestors.length === 0) {
       return cascadeBox(this.#ledger, {
         classes,
         part,
         inherited: new Map(),
-        outer: page,
+        outer: [...defaults, ...page],
         ancestorRules: [],
         selected: [],
       });
@@ -509,7 +512,14 @@ export class CellCascade {
     }
     return cascadeBox(
       this.#ledger,
-      { classes, part, inherited: inheritance(outside, context), outer: [], ancestorRules, selected: [] },
+      {
+        classes,
+        part,
+        inherited: inheritance(outside, context),
+        outer: defaults,
+        ancestorRules,
+        selected: [],
+      },
       outside
     );
   }

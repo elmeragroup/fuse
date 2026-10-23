@@ -26,6 +26,7 @@ import type {
   DirectionSpec,
   FrameLayerSpec,
   IconLayerSpec,
+  LimitsSpec,
   NumberSpec,
   PrimaryAlignSpec,
   SizingSpec,
@@ -136,15 +137,25 @@ function readFlow(reader: LayerStyle): Layout {
  * A grid with no template stacks each layer in a row of its own, so a grid with
  * `place-content: center` is an auto layout centered on both axes only around one layer. Any other
  * grid stays unmapped. A block box with no layers lays nothing out, so it is a frame like any
- * other, and one with layers stays unmapped. A `-webkit-box` maps only where it clamps its label,
- * as {@link readLineClamp} decides for the label too, as a column around the label. On any other
- * display a `-webkit-box-orient` sets nothing, as {@link inertClamp} says.
+ * other. One that holds only its label sets the text in lines across its width, which the label's
+ * own sizing draws, as `label-layout.ts` reads it for a block box. One with any other layer stays
+ * unmapped. A `-webkit-box` maps only where it clamps its label, as {@link readLineClamp} decides
+ * for the label too, as a column around the label. On any other display a `-webkit-box-orient` sets
+ * nothing, as {@link inertClamp} says.
  *
- * @param layers - How many layers the box holds in the cell.
+ * @param layers - The names of the box's layers in the cell, in its flow.
+ * @param label - The name of the label the box shows in the cell, or undefined for none.
  * @param layout - The box's layout, as {@link readFlow} read it.
  * @param clamp - The lines the box clamps its label to, or undefined for none.
+ * @returns Whether the box is a block that sets its own text in lines.
  */
-function readDisplay(reader: LayerStyle, layers: number, layout: Layout, clamp: number | undefined): void {
+function readDisplay(
+  reader: LayerStyle,
+  layers: readonly string[],
+  label: string | undefined,
+  layout: Layout,
+  clamp: number | undefined
+): boolean {
   const display = normalizeCss(reader.raw("display") ?? "");
   if (display === "-webkit-box") {
     for (const property of ["display", "-webkit-box-orient"]) {
@@ -154,7 +165,7 @@ function readDisplay(reader: LayerStyle, layers: number, layout: Layout, clamp: 
         () => ({ outcome: "literal", detail: "a column around its clamped label" })
       );
     }
-    return;
+    return false;
   }
   const inert = inertClamp(reader);
   if (inert !== undefined) {
@@ -162,22 +173,43 @@ function readDisplay(reader: LayerStyle, layers: number, layout: Layout, clamp: 
   }
   if (display === "grid") {
     const center = literalLayout(["center"], "centered on both axes");
-    const centered = layers === 1 && reader.read("place-content", center.map, center.describe) !== undefined;
+    const centered =
+      layers.length === 1 && reader.read("place-content", center.map, center.describe) !== undefined;
     reader.read(
       "display",
       (value) => (centered ? value : undefined),
       () => ({ outcome: "literal", detail: "an auto layout around its one layer" })
     );
-    return;
+    return false;
   }
+  const ownText = label !== undefined && layers.length === 1 && layers[0] === label;
   const flow =
-    layers === 0 && display === "block"
-      ? literalLayout(["block"], "a frame with no layers to lay out")
+    display === "block" && (layers.length === 0 || ownText)
+      ? literalLayout(
+          ["block"],
+          ownText ? "a block box that sets its own text in lines" : "a frame with no layers to lay out"
+        )
       : literalLayout(
           ["inline-flex", "flex"],
           layout.direction === "VERTICAL" ? "a vertical auto layout" : "a horizontal auto layout"
         );
   reader.read("display", flow.map, flow.describe);
+  return display === "block" && ownText;
+}
+
+/**
+ * Where a block that sets its own text in lines puts its line down the box. CSS sets the first line
+ * box at the top of the content box (CSS 2.1 §9.4.1). A box that hugs its height with no limit is as
+ * tall as its lines, so the row's unset centering, which every published row draws, puts the line in
+ * the same place. A box with a height or a limit of its own can be taller than its lines, and the
+ * line stays at the top.
+ *
+ * @returns MIN where the box can be taller than its lines, else the layout's own alignment.
+ */
+function blockLineAlign(layout: Layout, sizing: SizingSpec, limits: LimitsSpec): CounterAlignSpec {
+  const hugsLines =
+    sizing.vertical.kind === "hug" && limits.minHeight === undefined && limits.maxHeight === undefined;
+  return hugsLines ? layout.counterAlign : "MIN";
 }
 
 /** What the mapping of every layer of one cell reads besides the layer's own style. */
@@ -307,7 +339,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     ...end,
   ];
   // The display reads once the layers are known, since a grid maps only around one item.
-  readDisplay(reader, holder.layers.length, layout, clamp);
+  const textBlock = readDisplay(reader, holder.layers, label?.name, layout, clamp);
   const width = fixedLength(sizing.horizontal);
   const height = fixedLength(sizing.vertical);
   const paddingLeft = number("padding-left") ?? ZERO;
@@ -339,7 +371,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     itemSpacing: space ?? number("gap") ?? ZERO,
     // A native control's placement of its label wins over the box's own alignment.
     primaryAlign: placed?.primaryAlign ?? placement.primaryAlign,
-    counterAlign: placed?.counterAlign ?? layout.counterAlign,
+    counterAlign:
+      placed?.counterAlign ?? (textBlock ? blockLineAlign(layout, sizing, limits) : layout.counterAlign),
     cornerRadius: readCorner(reader, sizing, context) ?? ZERO,
     ...paint,
     opacity: opacity ?? 1,

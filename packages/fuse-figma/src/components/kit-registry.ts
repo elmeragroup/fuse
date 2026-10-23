@@ -21,6 +21,7 @@ import { CHECKBOX } from "./checkbox-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
 import { CONFIRM_BUTTON } from "./confirm-button-kit";
+import { FIELD_DESCRIPTION, FIELD_ERROR, FIELD_LEGEND, FIELD_TITLE } from "./field-text-kit";
 import { INPUT } from "./input-kit";
 import { KBD } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
@@ -76,8 +77,11 @@ const SKELETON_PAGE: KitPage = { slug: "skeleton", name: "Skeleton" };
 /** The page Loader sits on alone. */
 const LOADER_PAGE: KitPage = { slug: "loader", name: "Loader" };
 
-/** The page Label sits on alone. */
-const LABEL_PAGE: KitPage = { slug: "label", name: "Label" };
+/**
+ * The page of Field's text parts: the label, the description, the error, the legend and the title.
+ * Label sat on a page of its own until they joined it.
+ */
+const FIELD_PAGE: KitPage = { slug: "field", name: "Field" };
 
 /** The page Input sits on alone. */
 const INPUT_PAGE: KitPage = { slug: "input", name: "Input" };
@@ -194,7 +198,11 @@ export const KIT: readonly KitEntry[] = [
   { definition: SEPARATOR, page: SEPARATOR_PAGE, previewCells: matrixCells(SEPARATOR.axes) },
   { definition: SKELETON, page: SKELETON_PAGE, previewCells: matrixCells(SKELETON.axes) },
   { definition: LOADER, page: LOADER_PAGE, previewCells: matrixCells(LOADER.axes) },
-  { definition: LABEL, page: LABEL_PAGE, previewCells: matrixCells(LABEL.axes) },
+  { definition: LABEL, page: FIELD_PAGE, previewCells: matrixCells(LABEL.axes) },
+  { definition: FIELD_DESCRIPTION, page: FIELD_PAGE, previewCells: matrixCells(FIELD_DESCRIPTION.axes) },
+  { definition: FIELD_ERROR, page: FIELD_PAGE, previewCells: matrixCells(FIELD_ERROR.axes) },
+  { definition: FIELD_LEGEND, page: FIELD_PAGE, previewCells: matrixCells(FIELD_LEGEND.axes) },
+  { definition: FIELD_TITLE, page: FIELD_PAGE, previewCells: matrixCells(FIELD_TITLE.axes) },
   { definition: INPUT, page: INPUT_PAGE, previewCells: matrixCells(INPUT.axes) },
   { definition: TEXTAREA, page: TEXTAREA_PAGE, previewCells: matrixCells(TEXTAREA.axes) },
   { definition: AVATAR, page: AVATAR_PAGE, previewCells: matrixCells(AVATAR.axes) },

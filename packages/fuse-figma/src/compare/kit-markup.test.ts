@@ -26,7 +26,10 @@
  * URI of the image's bytes, and a box that shows none carries no `src`, so the page draws the
  * picture Figma draws. A part's `style` attribute must hold exactly the declarations its
  * definition cascades above its classes, so a meter's fill is as wide in Figma as Base UI makes
- * it. The pseudo-class variants, `enabled-hover:`, `hover:` and `focus-visible:`, stay out, since
+ * it. The elements around the measured element must carry each ancestor its definition names,
+ * outermost first, with its `data-slot` and exactly its classes, and no other element with a
+ * `data-slot` may sit between the outermost of them and the root, so the page draws the root in the
+ * type and color the build passes down. The pseudo-class variants, `enabled-hover:`, `hover:` and `focus-visible:`, stay out, since
  * static markup cannot show them, and so does the icon edge, which the slots check. On a React Aria
  * element `hover:` reads `data-hovered`, which React Aria stamps only while a hydrated page is hovered.
  */
@@ -43,6 +46,7 @@ import { splitClasses } from "../components/cascade";
 import { splitClassName } from "../components/class-name";
 import { definitionClasses, variantKey } from "../components/component-spec";
 import type {
+  AncestorDefinition,
   BoxDefinition,
   Cell,
   ComponentDefinition,
@@ -125,6 +129,29 @@ function ancestorsOf(elements: readonly MarkupElement[], index: number): readonl
   const parent = elements[index]?.parent;
   const element = parent === undefined ? undefined : elements[parent];
   return parent === undefined || element === undefined ? [] : [element, ...ancestorsOf(elements, parent)];
+}
+
+/**
+ * The elements with a `data-slot` around the measured element, from the outermost one whose slot a
+ * definition names as an ancestor inward, each as its `data-slot` and `class`. An element outside
+ * that one, such as Breadcrumb's root around its list, styles nothing the definition claims.
+ *
+ * @param slots - The `data-slot` of each ancestor the definition names in the cell.
+ */
+function markupAncestors(
+  elements: readonly MarkupElement[],
+  measured: number,
+  slots: ReadonlySet<string>
+): readonly (readonly [string | undefined, string | undefined])[] {
+  const slotted = ancestorsOf(elements, measured)
+    .toReversed()
+    .filter((element) => element.attributes.has("data-slot"));
+  const outermost = slotted.findIndex((element) => slots.has(element.attributes.get("data-slot") ?? ""));
+  return outermost === -1
+    ? []
+    : slotted
+        .slice(outermost)
+        .map((element) => [element.attributes.get("data-slot"), element.attributes.get("class")] as const);
 }
 
 /**
@@ -518,6 +545,11 @@ function checkMarkup(definition: ComponentDefinition, cells: readonly Cell[], re
         const groups = rootVariants.has(variant) ? ancestors : [root, ...ancestors];
         expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(groups.some(matches));
       }
+      const ancestors = definition.ancestorsFor?.(cell) ?? [];
+      expect(
+        markupAncestors(elements, measured, new Set(ancestors.map(({ slot }) => slot))),
+        `${key}: the ancestors`
+      ).toEqual(ancestors.map(({ slot, classes }) => [slot, classes]));
       const rootLabel = expectedLabel(definition, cell);
       expect(
         markupLabel(labelHolder(elements, measured, definition), rootLabel),
@@ -690,6 +722,53 @@ describe("the markup check of parts that share a selector under two parents", ()
       const markup = chipMarkup(left(hidden()), right(hidden(createElement("svg"))));
       expect(() => checkMarkup(ONE_ICON, CELLS, markup)).toThrow("chip/state=rest: icons");
     });
+  });
+});
+
+// Unit under test: `checkMarkup` on a definition that names the elements around its root. Oracle: the
+// rule on `ComponentDefinition.ancestorsFor`, that the cell sits in those elements, outermost first,
+// each carrying its `data-slot` and exactly its classes. The hand-written markup holds a trail, a list
+// and an item around the chip where it passes, an element the definition does not name outside them,
+// and breaks one rule where it fails.
+describe("the markup check of the elements around a root", () => {
+  const LIST: AncestorDefinition = { slot: "chip-list", classes: "flex gap-1", undrawn: "the list" };
+  const ITEM: AncestorDefinition = { slot: "chip-item", classes: "inline-flex", undrawn: "the item" };
+  const CELLS = [{ state: "rest" }];
+  const around = (list: string, ...items: readonly string[]): CellRendering => ({
+    element: () =>
+      createElement(
+        "nav",
+        { "data-slot": "chip-trail" },
+        createElement(
+          "ol",
+          { "data-slot": "chip-list", className: list },
+          items.reduceRight<ReactElement>(
+            (inner, item) => createElement("li", { "data-slot": "chip-item", className: item }, inner),
+            createElement("span", { "data-slot": "chip" })
+          )
+        )
+      ),
+  });
+
+  it("passes a root inside each element its definition names, in order and with exactly their classes", () => {
+    expect(() =>
+      checkMarkup(chip("", { ancestorsFor: () => [LIST, ITEM] }), CELLS, around("flex gap-1", "inline-flex"))
+    ).not.toThrow();
+  });
+
+  it.each([
+    ["drops the item", [LIST, ITEM], around("flex gap-1")],
+    ["gives the list other classes", [LIST, ITEM], around("flex gap-2", "inline-flex")],
+    [
+      "puts an item the definition does not name around the root",
+      [LIST],
+      around("flex gap-1", "inline-flex"),
+    ],
+    ["nests the item twice", [LIST, ITEM], around("flex gap-1", "inline-flex", "inline-flex")],
+  ])("fails markup that %s", (_case, ancestors, markup) => {
+    expect(() => checkMarkup(chip("", { ancestorsFor: () => ancestors }), CELLS, markup)).toThrow(
+      "chip/state=rest: the ancestors"
+    );
   });
 });
 
