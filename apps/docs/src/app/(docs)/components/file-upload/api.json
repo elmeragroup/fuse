@@ -1,0 +1,169 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "file-upload",
+  "parts": [
+    {
+      "name": "FileUpload.Root",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/file-upload/file-upload.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "accept",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The `accept` attribute's syntax, such as `\"image/*,.pdf\"`. The picker receives it as-is, and every source enforces it: a file that fails it reaches `onReject` with `\"type\"`.",
+          "required": false
+        },
+        {
+          "name": "capture",
+          "origin": "declared",
+          "type": "\"environment\" | \"user\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Ask a phone to capture new media with the front (`\"user\"`) or back (`\"environment\"`) camera.",
+          "required": false
+        },
+        {
+          "name": "directory",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "The picker selects folders, and dropped folders expand into their files.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Ignore every source, and disable each `FileUpload.Trigger`.",
+          "required": false
+        },
+        {
+          "name": "multiple",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Take more than one file. Without it, a pick, drop or paste of several files rejects them all with `\"count\"`.",
+          "required": false
+        },
+        {
+          "name": "onReject",
+          "origin": "declared",
+          "type": "((rejections: FileRejection[]) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Receives the files and folders that did not pass, with the reason for each. For one pick, drop or paste it runs right after `onSelect`, in the same task.",
+          "required": false
+        },
+        {
+          "name": "onSelect",
+          "origin": "declared",
+          "type": "((files: File[]) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Receives the files that passed `accept` and the count rule, in a fresh array for each call.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "FileUpload.Dropzone",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/file-upload/file-upload-dropzone.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "FileUpload.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/file-upload/file-upload-trigger.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 290,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "FileUpload.Description",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/file-upload/file-upload-description.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "useFileUpload",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/file-upload/file-upload-context.ts",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": []
+    }
+  ]
+}
