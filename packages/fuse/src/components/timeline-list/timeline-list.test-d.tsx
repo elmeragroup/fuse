@@ -17,6 +17,9 @@ test("public API exports only the namespace and part prop types", () => {
   expectTypeOf<TimelineListItemProps>().toEqualTypeOf<ComponentProps<"li">>();
   expectTypeOf<TimelineListTitleProps>().not.toHaveProperty("noMargin");
   expectTypeOf<TimelineListTitleProps["level"]>().toEqualTypeOf<1 | 2 | 3 | 4 | 5 | 6 | undefined>();
+  expectTypeOf<TimelineListTitleProps["typography"]>().toEqualTypeOf<
+    "large" | "medium" | "small" | "xsmall" | undefined
+  >();
   expectTypeOf<TimelineListDescriptionProps>().toEqualTypeOf<ComponentProps<"div">>();
   expectTypeOf<TimelineListRootProps["ref"]>().toEqualTypeOf<ComponentProps<"ol">["ref"]>();
   expectTypeOf<TimelineListTimeProps["date"]>().toEqualTypeOf<string | Date>();
@@ -40,6 +43,20 @@ test("parts take native attributes and no polymorphic as prop", () => {
     </TimelineList.Root>
   );
 
+  const _styledTitle = (
+    <TimelineList.Title level={2} typography="xsmall">
+      Delivered
+    </TimelineList.Title>
+  );
+  const _sizedTitle = (
+    <TimelineList.Title size="lg" font="semi-bold">
+      Shipped
+    </TimelineList.Title>
+  );
+  // @ts-expect-error the title keeps Heading's exclusion of size beside typography
+  const _styleAndSize = <TimelineList.Title typography="small" size="lg" />;
+  // @ts-expect-error the title keeps Heading's exclusion of font beside typography
+  const _styleAndFont = <TimelineList.Title typography="small" font="normal" />;
   // @ts-expect-error noMargin is forced and omitted from the public type
   const _noMargin = <TimelineList.Title noMargin={false}>Order placed</TimelineList.Title>;
   // @ts-expect-error date is required

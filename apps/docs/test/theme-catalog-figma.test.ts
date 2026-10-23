@@ -177,15 +177,16 @@ describe("Figma DTCG documents", () => {
         $value: { value: relaxed, unit: "px" },
       });
     }
-    // The h1 to h3 scale in px and weights: external heading small 24/32 and heading xsmall
-    // 20/32 at 700, and internal 24, 18 and 16px at the snug 1.375 ratio at 500.
-    for (const [level, external, internalType] of [
-      [1, { size: 24, leading: 32 }, { size: 24, leading: 33 }],
-      [2, { size: 20, leading: 32 }, { size: 18, leading: 24.75 }],
-      [3, { size: 20, leading: 32 }, { size: 16, leading: 22 }],
+    // The heading styles in px and weights: external large 34/40, medium 28/34, small 24/32 and
+    // xsmall 20/32 at 700, and internal 36, 30, 24 and 18px at the snug 1.375 ratio at 500.
+    for (const [style, external, internalType] of [
+      ["large", { size: 34, leading: 40 }, { size: 36, leading: 49.5 }],
+      ["medium", { size: 28, leading: 34 }, { size: 30, leading: 41.25 }],
+      ["small", { size: 24, leading: 32 }, { size: 24, leading: 33 }],
+      ["xsmall", { size: 20, leading: 32 }, { size: 18, leading: 24.75 }],
     ] as const) {
       for (const part of ["size", "leading"] as const) {
-        const name = `heading-${String(level)}-${part}`;
+        const name = `heading-${style}-${part}`;
         expect(token<FigmaDimensionToken>(document.size, name), name).toEqual({
           $type: "dimension",
           $value: { value: external[part], unit: "px" },
@@ -195,7 +196,7 @@ describe("Figma DTCG documents", () => {
           $value: { value: internalType[part], unit: "px" },
         });
       }
-      const weight = `heading-${String(level)}-weight`;
+      const weight = `heading-${style}-weight`;
       expect(token<FigmaFontWeightToken>(document.weight, weight), weight).toEqual({
         $type: "fontWeight",
         $value: 700,
@@ -205,6 +206,39 @@ describe("Figma DTCG documents", () => {
         $value: 500,
       });
     }
+    // h1 and h2 alias heading small and xsmall in both variants, and h3 aliases heading xsmall
+    // in external themes and holds 16/22 at 500 in internal ones.
+    for (const [doc, level, style] of [
+      [document, 1, "small"],
+      [internal, 1, "small"],
+      [document, 2, "xsmall"],
+      [internal, 2, "xsmall"],
+      [document, 3, "xsmall"],
+    ] as const) {
+      for (const part of ["size", "leading"] as const) {
+        const name = `heading-${String(level)}-${part}`;
+        expect(token<FigmaDimensionToken>(doc.size, name), name).toEqual({
+          $type: "dimension",
+          $value: `{size.heading-${style}-${part}}`,
+        });
+      }
+      expect(token<FigmaFontWeightToken>(doc.weight, `heading-${String(level)}-weight`)).toEqual({
+        $type: "fontWeight",
+        $value: `{weight.heading-${style}-weight}`,
+      });
+    }
+    expect(token<FigmaDimensionToken>(internal.size, "heading-3-size")).toEqual({
+      $type: "dimension",
+      $value: { value: 16, unit: "px" },
+    });
+    expect(token<FigmaDimensionToken>(internal.size, "heading-3-leading")).toEqual({
+      $type: "dimension",
+      $value: { value: 22, unit: "px" },
+    });
+    expect(token<FigmaFontWeightToken>(internal.weight, "heading-3-weight")).toEqual({
+      $type: "fontWeight",
+      $value: 500,
+    });
   });
 
   it("writes hex from the same rounded channels as components", () => {

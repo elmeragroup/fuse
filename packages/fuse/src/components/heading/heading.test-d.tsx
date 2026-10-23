@@ -36,3 +36,28 @@ test("HeadingProps is native heading props plus the recipe axes and level, and t
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Heading as="p" />;
 });
+
+test("typography takes a named heading style and excludes size and font", () => {
+  expectTypeOf<HeadingProps["typography"]>().toEqualTypeOf<
+    "large" | "medium" | "small" | "xsmall" | undefined
+  >();
+
+  const _styled = (
+    <Heading level={4} typography="xsmall" variant="muted" className="mb-4">
+      Contact details
+    </Heading>
+  );
+  const _sized = (
+    <Heading level={2} size="2xl" font="semi-bold">
+      Your agreement
+    </Heading>
+  );
+  const _forwarded = <Heading typography="large" size={undefined} font={undefined} />;
+
+  // @ts-expect-error typography sets the size, so a size prop beside it is an error
+  const _withSize = <Heading typography="medium" size="xl" />;
+  // @ts-expect-error typography sets the weight, so a font prop beside it is an error
+  const _withFont = <Heading typography="small" font="semi-bold" />;
+  // @ts-expect-error typography takes only the four named styles
+  const _badStyle = <Heading typography="xlarge" />;
+});

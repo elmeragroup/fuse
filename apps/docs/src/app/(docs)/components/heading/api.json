@@ -23,11 +23,11 @@
         },
         {
           "name": "font",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"normal\" | \"semi-bold\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The plain weight, `default` 500, `normal` 400 or `semi-bold` 600, the same in every theme. It replaces a level's themed weight. Not allowed with `typography`.",
           "required": false
         },
         {
@@ -36,7 +36,7 @@
           "type": "HeadingLevel | undefined",
           "shortType": null,
           "defaultValue": "2",
-          "description": "Document-outline level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `2`. For levels 1 to 3 it also picks the theme's default size, line height and weight: `--heading-<level>-size` and `--heading-<level>-leading` apply when `size` is omitted, and `--heading-<level>-weight` when `font` is omitted. Internal themes keep h1 at 24/33, h2 at 18/24.75 and h3 at 16/22, all at 500; external themes set h1 to 24/32 and h2 and h3 to 20/32, all at 700. Levels 4 to 6 are 16/22 at 500 in every theme.",
+          "description": "Document-outline level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `2`. Without `typography`, levels 1 to 3 also pick the theme's default size, line height and weight: `--heading-<level>-size` and `--heading-<level>-leading` apply when `size` is omitted, and `--heading-<level>-weight` when `font` is omitted. Themes point h1 at the heading small style and h2 at heading xsmall, and external themes point h3 at heading xsmall too: internal themes keep h1 at 24/33, h2 at 18/24.75 and h3 at 16/22, all at 500, and external themes set h1 to 24/32 and h2 and h3 to 20/32, all at 700. Levels 4 to 6 are 16/22 at 500 in every theme.",
           "required": false
         },
         {
@@ -61,11 +61,20 @@
         },
         {
           "name": "size",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "A rung of the plain type scale, the same in every theme, at the snug 1.375 line height (`6xl` at 1.25). It replaces a level's themed size and line height. Not allowed with `typography`.",
+          "required": false
+        },
+        {
+          "name": "typography",
+          "origin": "declared",
+          "type": "HeadingTypography | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A named heading style, `large`, `medium`, `small` or `xsmall`, which sets the size, line height and weight together from the theme at any level: `--heading-<style>-size`, `--heading-<style>-leading` and `--heading-<style>-weight`. External themes set the design's bold heading styles, 34/40, 28/34, 24/32 and 20/32 at 700, and internal themes 36/49.5, 30/41.25, 24/33 and 18/24.75 at 500. It excludes `size` and `font`; a JavaScript caller that passes them anyway gets the style. A `className` size, line height or weight still wins.",
           "required": false
         },
         {

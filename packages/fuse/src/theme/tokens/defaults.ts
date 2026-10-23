@@ -159,16 +159,33 @@ export const LAYER_DEFAULTS = {
   "paragraph-leading-sm": "1.421875rem",
   "paragraph-leading-base": "1.625rem",
   "paragraph-leading-lg": "1.828125rem",
-  // The size, line height and weight of a level 1 to 3 Heading without a size or font prop
-  // (`heading.tsx`). Internal themes keep the scale those levels had before the roles: h1
-  // text-2xl, h2 text-lg and h3 text-base, each at the snug 1.375 ratio as a length, and the
-  // medium weight. The external variant layer sets the customer-facing heading styles.
-  "heading-1-size": "1.5rem",
-  "heading-1-leading": "2.0625rem",
-  "heading-1-weight": "500",
-  "heading-2-size": "1.125rem",
-  "heading-2-leading": "1.546875rem",
-  "heading-2-weight": "500",
+  // The four heading styles a Heading's `typography` prop selects (`heading.tsx`). Internal
+  // themes set Tailwind's text-4xl, text-3xl, text-2xl and text-lg rungs at the snug 1.375 ratio
+  // as a length, all at the medium weight, so the h1 and h2 that point at small and xsmall keep
+  // the scale they had before the roles. The external variant layer sets the customer-facing
+  // heading styles.
+  "heading-large-size": "2.25rem",
+  "heading-large-leading": "3.09375rem",
+  "heading-large-weight": "500",
+  "heading-medium-size": "1.875rem",
+  "heading-medium-leading": "2.578125rem",
+  "heading-medium-weight": "500",
+  "heading-small-size": "1.5rem",
+  "heading-small-leading": "2.0625rem",
+  "heading-small-weight": "500",
+  "heading-xsmall-size": "1.125rem",
+  "heading-xsmall-leading": "1.546875rem",
+  "heading-xsmall-weight": "500",
+  // The size, line height and weight of a level 1 to 3 Heading without a `typography`, `size` or
+  // `font` prop. An h1 is heading small and an h2 heading xsmall in every theme. Internal h3 has
+  // no named style and keeps text-base at the snug ratio and the medium weight; the external
+  // variant layer points it at heading xsmall.
+  "heading-1-size": "var(--heading-small-size)",
+  "heading-1-leading": "var(--heading-small-leading)",
+  "heading-1-weight": "var(--heading-small-weight)",
+  "heading-2-size": "var(--heading-xsmall-size)",
+  "heading-2-leading": "var(--heading-xsmall-leading)",
+  "heading-2-weight": "var(--heading-xsmall-weight)",
   "heading-3-size": "1rem",
   "heading-3-leading": "1.375rem",
   "heading-3-weight": "500",

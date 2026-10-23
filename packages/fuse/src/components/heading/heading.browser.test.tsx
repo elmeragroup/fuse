@@ -239,6 +239,127 @@ describe("Heading level scale", () => {
 });
 
 /**
+ * A `typography` style sets the size, line height and weight at any level. The expected type is
+ * written by hand: internal themes set Tailwind's text-4xl, text-3xl, text-2xl and text-lg at
+ * the snug 1.375 ratio, all at 500, and external themes the design's bold heading ramp, large
+ * 34/40, medium 28/34, small 24/32 and xsmall 20/32, all at 700.
+ */
+describe("Heading named styles", () => {
+  const STYLES = ["large", "medium", "small", "xsmall"] as const;
+  const INTERNAL = {
+    large: { size: 36, leading: 49.5, weight: "500" },
+    medium: { size: 30, leading: 41.25, weight: "500" },
+    small: { size: 24, leading: 33, weight: "500" },
+    xsmall: { size: 18, leading: 24.75, weight: "500" },
+  } as const;
+  const EXTERNAL = {
+    large: { size: 34, leading: 40, weight: "700" },
+    medium: { size: 28, leading: 34, weight: "700" },
+    small: { size: 24, leading: 32, weight: "700" },
+    xsmall: { size: 20, leading: 32, weight: "700" },
+  } as const;
+
+  function StyledHeadings({ prefix }: { prefix: string }) {
+    return (
+      <>
+        {STYLES.map((style) => (
+          <Heading key={style} typography={style}>{`${prefix} ${style}`}</Heading>
+        ))}
+      </>
+    );
+  }
+
+  it("sets each style's type in internal and external themes, in light and dark", () => {
+    renderThemed(
+      <>
+        <StyledHeadings prefix="Internal" />
+        <ThemeScope theme={fkasExternal}>
+          <StyledHeadings prefix="External" />
+        </ThemeScope>
+        <div data-theme="dark">
+          <ThemeScope theme={fkasPrivate}>
+            <StyledHeadings prefix="Dark internal" />
+          </ThemeScope>
+          <ThemeScope theme={fkasExternal}>
+            <StyledHeadings prefix="Dark external" />
+          </ThemeScope>
+        </div>
+      </>
+    );
+    for (const style of STYLES) {
+      expect(typeOf(`Internal ${style}`, 2), style).toEqual(INTERNAL[style]);
+      expect(typeOf(`External ${style}`, 2), style).toEqual(EXTERNAL[style]);
+      expect(typeOf(`Dark internal ${style}`, 2), style).toEqual(INTERNAL[style]);
+      expect(typeOf(`Dark external ${style}`, 2), style).toEqual(EXTERNAL[style]);
+    }
+  });
+
+  it("keeps the level for the outline while the style sets the type, at a themed level and at h4", () => {
+    renderThemed(
+      <ThemeScope theme={fkasExternal}>
+        <Heading level={2} typography="medium">
+          Medium h2
+        </Heading>
+        <Heading level={4} typography="xsmall">
+          Bold h4
+        </Heading>
+        <Heading level={1} typography="large">
+          Large h1
+        </Heading>
+      </ThemeScope>
+    );
+    expect(typeOf("Medium h2", 2)).toEqual(EXTERNAL.medium);
+    expect(typeOf("Bold h4", 4)).toEqual(EXTERNAL.xsmall);
+    expect(typeOf("Large h1", 1)).toEqual(EXTERNAL.large);
+  });
+
+  it("lets a className size, line height or weight replace a style's", () => {
+    renderThemed(
+      <ThemeScope theme={fkasExternal}>
+        <Heading typography="small" className="text-3xl">
+          Large class
+        </Heading>
+        <Heading typography="small" className="leading-tight">
+          Tight class
+        </Heading>
+        <Heading typography="small" className="font-normal">
+          Regular class
+        </Heading>
+      </ThemeScope>
+    );
+    // text-3xl is 30px with its own 1.2 line height, 36px: the size class drops the leading role.
+    expect(typeOf("Large class", 2)).toEqual({ size: 30, leading: 36, weight: "700" });
+    // leading-tight 24 × 1.25 = 30px.
+    expect(typeOf("Tight class", 2)).toEqual({ size: 24, leading: 30, weight: "700" });
+    expect(typeOf("Regular class", 2)).toEqual({ size: 24, leading: 32, weight: "400" });
+  });
+
+  it("lets the style win over a size and font a JavaScript caller passes anyway", () => {
+    renderThemed(
+      <ThemeScope theme={fkasExternal}>
+        {/* @ts-expect-error the type excludes size and font beside typography, as a JavaScript caller would not know */}
+        <Heading typography="medium" size="xl" font="normal">
+          Loose props
+        </Heading>
+      </ThemeScope>
+    );
+    expect(typeOf("Loose props", 2)).toEqual(EXTERNAL.medium);
+  });
+
+  it("moves a style and the level that points at it when a theme scope overrides the style role", () => {
+    renderThemed(
+      <ThemeScope theme={fkasExternal} style={{ "--heading-small-size": "1.75rem" }}>
+        <Heading typography="small">Styled small</Heading>
+        <Heading level={1}>Default h1</Heading>
+      </ThemeScope>
+    );
+    // 1.75rem is 28px; the line height and weight stay heading small's 32px and 700.
+    expect(typeOf("Styled small", 2)).toEqual({ size: 28, leading: 32, weight: "700" });
+    expect(typeOf("Default h1", 1)).toEqual({ size: 28, leading: 32, weight: "700" });
+  });
+});
+
+/**
  * A TimelineList title is not a document section heading, so it keeps Heading's scale from
  * before the theme roles in every theme, written by hand: level 1 text-2xl, level 2 text-lg and
  * level 3 text-base at the snug 1.375 ratio, all at 500.
@@ -291,6 +412,20 @@ describe("TimelineList title scale", () => {
       </ThemeScope>
     );
     expect(typeOf("Forwarded", 1)).toEqual(TITLE[1]);
+  });
+
+  it("forwards a typography style, which replaces the title's pinned type", () => {
+    renderThemed(
+      <ThemeScope theme={fkasExternal}>
+        <TimelineList.Root>
+          <TimelineList.Item>
+            <TimelineList.Title typography="xsmall">Styled</TimelineList.Title>
+          </TimelineList.Item>
+        </TimelineList.Root>
+      </ThemeScope>
+    );
+    // The external heading xsmall style, 20/32 at 700, on the title's default level 3.
+    expect(typeOf("Styled", 3)).toEqual({ size: 20, leading: 32, weight: "700" });
   });
 
   it("lets a size or font prop replace the title's type", () => {

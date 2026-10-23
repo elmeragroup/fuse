@@ -1,11 +1,12 @@
 ---
 lede: >
   A heading with independent level and size. Levels 1 to 3 take their default size, line height and
-  weight from the theme, which external themes set to their own heading styles.
+  weight from the theme, and `typography` picks one of the theme's named heading styles at any level.
 ---
 
 import { HeadingBasic } from "./demos/heading-basic";
 import { HeadingSizes } from "./demos/heading-sizes";
+import { HeadingStyles } from "./demos/heading-styles";
 import { HeadingVariants } from "./demos/heading-variants";
 import { HeadingModifiers } from "./demos/heading-modifiers";
 
@@ -18,6 +19,14 @@ export const metadata = componentMetadata("heading");
 <Demo slug="heading" id="basic" title="Levels" file="heading-basic.tsx">
   <HeadingBasic />
 </Demo>
+
+`typography` sets the size, line height and weight together from one of the theme's four named heading styles, `large`, `medium`, `small` and `xsmall`, while `level` keeps the document outline. External themes set the design's bold heading ramp, 34/40, 28/34, 24/32 and 20/32 at 700, and internal themes 36/49.5, 30/41.25, 24/33 and 18/24.75 at 500. An h1 without `typography` is heading small and an h2 heading xsmall (and, in external themes, an h3 too), so a theme that changes a style moves those levels with it. Use `typography` when a heading should look like one of the design's heading styles, such as a page title at `medium` or a bold h4 at `xsmall`.
+
+<Demo slug="heading" id="styles" title="Named styles" file="heading-styles.tsx">
+  <HeadingStyles />
+</Demo>
+
+`size` and `font` set the plain type scale instead, the same in every theme, for a heading that matches no named style. They cannot be combined with `typography`, and a `className` size, line height or weight replaces either.
 
 <Demo slug="heading" id="sizes" title="Sizes" file="heading-sizes.tsx">
   <HeadingSizes />

@@ -248,6 +248,35 @@ describe("the studio's Type page", () => {
     }
   });
 
+  it("shows the four heading styles and moves heading small and the H1 after a --heading-small-size edit", async () => {
+    const { context, page, errors } = await openStudio(browser(), { route: TYPE_PAGE });
+    try {
+      const board = artboard(page, "Specimen");
+      // The style rows follow H1 to H4. external-palettes.ts: large 34/40, medium 28/34, small
+      // 24/32 and xsmall 20/32, all at 700.
+      const reading = (row: number) => board.locator("[data-type-reading]").nth(row);
+      await expect.poll(() => reading(4).textContent()).toBe("34 / 40 px · 700");
+      expect(await reading(5).textContent()).toBe("28 / 34 px · 700");
+      expect(await reading(6).textContent()).toBe("24 / 32 px · 700");
+      expect(await reading(7).textContent()).toBe("20 / 32 px · 700");
+
+      const field = tokenRow(page, "heading-small-size").getByRole("textbox", {
+        name: "--heading-small-size in px",
+        exact: true,
+      });
+      await field.fill("26");
+      await field.press("Enter");
+
+      // The H1 points at heading small, so both rows move.
+      await expect.poll(() => computed(board.locator('[data-specimen="small"]'), "fontSize")).toBe("26px");
+      await expect.poll(() => reading(6).textContent()).toBe("26 / 32 px · 700");
+      await expect.poll(() => reading(0).textContent()).toBe("26 / 32 px · 700");
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
   it("reports the selection title's new weight after a --selection-title-weight edit", async () => {
     const { context, page, errors } = await openStudio(browser(), { route: TYPE_PAGE });
     try {

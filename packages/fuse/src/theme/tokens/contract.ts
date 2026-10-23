@@ -95,6 +95,18 @@ export const TOKEN_NAMES = [
   "paragraph-leading-sm",
   "paragraph-leading-base",
   "paragraph-leading-lg",
+  "heading-large-size",
+  "heading-large-leading",
+  "heading-large-weight",
+  "heading-medium-size",
+  "heading-medium-leading",
+  "heading-medium-weight",
+  "heading-small-size",
+  "heading-small-leading",
+  "heading-small-weight",
+  "heading-xsmall-size",
+  "heading-xsmall-leading",
+  "heading-xsmall-weight",
   "heading-1-size",
   "heading-1-leading",
   "heading-1-weight",
@@ -310,6 +322,18 @@ export const TOKEN_KINDS = {
   "paragraph-leading-sm": "dimension",
   "paragraph-leading-base": "dimension",
   "paragraph-leading-lg": "dimension",
+  "heading-large-size": "dimension",
+  "heading-large-leading": "dimension",
+  "heading-large-weight": "fontWeight",
+  "heading-medium-size": "dimension",
+  "heading-medium-leading": "dimension",
+  "heading-medium-weight": "fontWeight",
+  "heading-small-size": "dimension",
+  "heading-small-leading": "dimension",
+  "heading-small-weight": "fontWeight",
+  "heading-xsmall-size": "dimension",
+  "heading-xsmall-leading": "dimension",
+  "heading-xsmall-weight": "fontWeight",
   "heading-1-size": "dimension",
   "heading-1-leading": "dimension",
   "heading-1-weight": "fontWeight",
@@ -608,24 +632,48 @@ export const TOKEN_DESCRIPTIONS = {
     "The line height of a default-size Text (16px). Internal themes keep the relaxed 1.625 ratio, and external themes set the 16/22 paragraph style.",
   "paragraph-leading-lg":
     "The line height of a large Text (size lg, 18px). Internal themes keep the relaxed 1.625 ratio, and external themes set the 18/24 paragraph style.",
+  "heading-large-size":
+    "The font size of the heading large style, a Heading with typography large. Internal themes set 36px, 36/49.5 at the snug 1.375 ratio, and external themes set the designed 34/40.",
+  "heading-large-leading":
+    "The line height of the heading large style, a Heading with typography large. Internal themes keep the snug 1.375 ratio, 36/49.5, and external themes set the designed 34/40.",
+  "heading-large-weight":
+    "The font weight of the heading large style, a Heading with typography large. Internal themes keep 500, and external themes set the bold 700.",
+  "heading-medium-size":
+    "The font size of the heading medium style, a Heading with typography medium. Internal themes set 30px, 30/41.25 at the snug 1.375 ratio, and external themes set the designed 28/34.",
+  "heading-medium-leading":
+    "The line height of the heading medium style, a Heading with typography medium. Internal themes keep the snug 1.375 ratio, 30/41.25, and external themes set the designed 28/34.",
+  "heading-medium-weight":
+    "The font weight of the heading medium style, a Heading with typography medium. Internal themes keep 500, and external themes set the bold 700.",
+  "heading-small-size":
+    "The font size of the heading small style, a Heading with typography small. Internal themes set 24px, 24/33 at the snug 1.375 ratio, and external themes set the designed 24/32.",
+  "heading-small-leading":
+    "The line height of the heading small style, a Heading with typography small. Internal themes keep the snug 1.375 ratio, 24/33, and external themes set the designed 24/32.",
+  "heading-small-weight":
+    "The font weight of the heading small style, a Heading with typography small. Internal themes keep 500, and external themes set the bold 700.",
+  "heading-xsmall-size":
+    "The font size of the heading xsmall style, a Heading with typography xsmall. Internal themes set 18px, 18/24.75 at the snug 1.375 ratio, and external themes set the designed 20/32.",
+  "heading-xsmall-leading":
+    "The line height of the heading xsmall style, a Heading with typography xsmall. Internal themes keep the snug 1.375 ratio, 18/24.75, and external themes set the designed 20/32.",
+  "heading-xsmall-weight":
+    "The font weight of the heading xsmall style, a Heading with typography xsmall. Internal themes keep 500, and external themes set the bold 700.",
   "heading-1-size":
-    "The font size of a level 1 Heading without a size prop. Internal themes keep 24px, and external themes set the 24/32 heading small style.",
+    "The font size of a level 1 Heading without a typography or size prop. It points at heading-small-size, the heading small style, in every theme.",
   "heading-1-leading":
-    "The line height of a level 1 Heading without a size prop. Internal themes keep the snug 1.375 ratio, and external themes set the 24/32 heading small style.",
+    "The line height of a level 1 Heading without a typography or size prop. It points at heading-small-leading, the heading small style, in every theme.",
   "heading-1-weight":
-    "The font weight of a level 1 Heading without a font prop. Internal themes keep 500, and external themes set the bold heading small style.",
+    "The font weight of a level 1 Heading without a typography or font prop. It points at heading-small-weight, the heading small style, in every theme.",
   "heading-2-size":
-    "The font size of a level 2 Heading without a size prop. Internal themes keep 18px, and external themes set the 20/32 heading xsmall style.",
+    "The font size of a level 2 Heading without a typography or size prop. It points at heading-xsmall-size, the heading xsmall style, in every theme.",
   "heading-2-leading":
-    "The line height of a level 2 Heading without a size prop. Internal themes keep the snug 1.375 ratio, and external themes set the 20/32 heading xsmall style.",
+    "The line height of a level 2 Heading without a typography or size prop. It points at heading-xsmall-leading, the heading xsmall style, in every theme.",
   "heading-2-weight":
-    "The font weight of a level 2 Heading without a font prop. Internal themes keep 500, and external themes set the bold heading xsmall style.",
+    "The font weight of a level 2 Heading without a typography or font prop. It points at heading-xsmall-weight, the heading xsmall style, in every theme.",
   "heading-3-size":
-    "The font size of a level 3 Heading without a size prop. Internal themes keep 16px, and external themes set the 20/32 heading xsmall style.",
+    "The font size of a level 3 Heading without a typography or size prop. Internal themes keep 16px, and external themes point it at heading-xsmall-size, the heading xsmall style.",
   "heading-3-leading":
-    "The line height of a level 3 Heading without a size prop. Internal themes keep the snug 1.375 ratio, and external themes set the 20/32 heading xsmall style.",
+    "The line height of a level 3 Heading without a typography or size prop. Internal themes keep the snug 1.375 ratio, 22px, and external themes point it at heading-xsmall-leading, the heading xsmall style.",
   "heading-3-weight":
-    "The font weight of a level 3 Heading without a font prop. Internal themes keep 500, and external themes set the bold heading xsmall style.",
+    "The font weight of a level 3 Heading without a typography or font prop. Internal themes keep 500, and external themes point it at heading-xsmall-weight, the heading xsmall style.",
   "font-sans": "The body font stack, with Roboto first.",
   "font-heading":
     "The heading font. It follows font-sans unless the theme sets its own, such as Neo Sans in external Fjordkraft themes.",
@@ -635,7 +683,9 @@ export const TOKEN_DESCRIPTIONS = {
  * The roles a light theme rule resets. They are every key the external variant layer, an
  * external palette or a segment delta can assign, plus each derived role computed from them
  * and each alias that reads one of them. `--sidebar-ring` defaults to `var(--ring)`, so the
- * rule restates it and the alias resolves against the scope's own ring.
+ * rule restates it and the alias resolves against the scope's own ring. The h1 and h2 roles,
+ * `--heading-1-*` and `--heading-2-*`, point at the heading small and xsmall styles in every
+ * theme, so the rule restates them the same way.
  */
 export const EXTERNAL_RESET_KEYS = [
   "background",
@@ -684,6 +734,18 @@ export const EXTERNAL_RESET_KEYS = [
   "paragraph-leading-sm",
   "paragraph-leading-base",
   "paragraph-leading-lg",
+  "heading-large-size",
+  "heading-large-leading",
+  "heading-large-weight",
+  "heading-medium-size",
+  "heading-medium-leading",
+  "heading-medium-weight",
+  "heading-small-size",
+  "heading-small-leading",
+  "heading-small-weight",
+  "heading-xsmall-size",
+  "heading-xsmall-leading",
+  "heading-xsmall-weight",
   "heading-1-size",
   "heading-1-leading",
   "heading-1-weight",
@@ -758,6 +820,18 @@ const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
   "paragraph-leading-sm",
   "paragraph-leading-base",
   "paragraph-leading-lg",
+  "heading-large-size",
+  "heading-large-leading",
+  "heading-large-weight",
+  "heading-medium-size",
+  "heading-medium-leading",
+  "heading-medium-weight",
+  "heading-small-size",
+  "heading-small-leading",
+  "heading-small-weight",
+  "heading-xsmall-size",
+  "heading-xsmall-leading",
+  "heading-xsmall-weight",
   "heading-1-size",
   "heading-1-leading",
   "heading-1-weight",

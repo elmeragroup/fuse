@@ -118,23 +118,35 @@ A `Text` at `sm`, the default size and `lg` reads its line height from `--paragr
 
 A `leading` prop or a `className` leading on the Text replaces the role. `Span` keeps its own snug default.
 
-A `Heading` at level 1, 2 or 3 reads its size and line height from `--heading-<level>-size` and `--heading-<level>-leading` when it has no `size` prop, and its weight from `--heading-<level>-weight` when it has no `font` prop. Without them h1 is 24/33, h2 18/24.75 and h3 16/22, all at 500, as in internal themes. For the external themes' heading styles, a bold 24/32 h1 and 20/32 h2 and h3, set:
+A `Heading` with `typography="large"`, `"medium"`, `"small"` or `"xsmall"` reads its size, line height and weight from `--heading-<style>-size`, `--heading-<style>-leading` and `--heading-<style>-weight`. Without `typography`, a `Heading` at level 1, 2 or 3 reads its size and line height from `--heading-<level>-size` and `--heading-<level>-leading` when it has no `size` prop, and its weight from `--heading-<level>-weight` when it has no `font` prop. Without them the styles are 36/49.5, 30/41.25, 24/33 and 18/24.75, and h1 is 24/33, h2 18/24.75 and h3 16/22, all at 500, as in internal themes. For the external themes' heading styles, bold 34/40, 28/34, 24/32 and 20/32, with h1 at heading small and h2 and h3 at heading xsmall, set:
 
 ```css
 :root {
-  --heading-1-size: 1.5rem;
-  --heading-1-leading: 2rem;
-  --heading-1-weight: 700;
-  --heading-2-size: 1.25rem;
-  --heading-2-leading: 2rem;
-  --heading-2-weight: 700;
-  --heading-3-size: 1.25rem;
-  --heading-3-leading: 2rem;
-  --heading-3-weight: 700;
+  --heading-large-size: 2.125rem;
+  --heading-large-leading: 2.5rem;
+  --heading-large-weight: 700;
+  --heading-medium-size: 1.75rem;
+  --heading-medium-leading: 2.125rem;
+  --heading-medium-weight: 700;
+  --heading-small-size: 1.5rem;
+  --heading-small-leading: 2rem;
+  --heading-small-weight: 700;
+  --heading-xsmall-size: 1.25rem;
+  --heading-xsmall-leading: 2rem;
+  --heading-xsmall-weight: 700;
+  --heading-1-size: var(--heading-small-size);
+  --heading-1-leading: var(--heading-small-leading);
+  --heading-1-weight: var(--heading-small-weight);
+  --heading-2-size: var(--heading-xsmall-size);
+  --heading-2-leading: var(--heading-xsmall-leading);
+  --heading-2-weight: var(--heading-xsmall-weight);
+  --heading-3-size: var(--heading-xsmall-size);
+  --heading-3-leading: var(--heading-xsmall-leading);
+  --heading-3-weight: var(--heading-xsmall-weight);
 }
 ```
 
-h4 to h6 have no roles and stay 16/22 at 500. A `size` or `font` prop, or a `className` size or weight, replaces the roles. `headingVariants()` on its own knows no level and keeps the plain scale.
+The level roles resolve where you declare them, so declare a style and the levels that point at it on the same element. h4 to h6 have no roles and stay 16/22 at 500. `typography` cannot be combined with `size` or `font`. Without it, a `size` or `font` prop replaces the level roles, and a `className` size or weight replaces any role. `headingVariants()` on its own knows no level or style and keeps the plain scale.
 
 `Dialog.Content`, `AlertDialog.Content` and `Sheet.Content` fill with `--dialog` and take `--dialog-foreground` as their text colour. Without them a modal takes your `--popover` and `--popover-foreground`, as internal themes and every dark theme do. For the external light look, where a modal fills with the page tint so the card-coloured fields and selection rows inside it stand apart as they do on the page, set the pair in your light rules and point it back at the popover pair in your dark ones, as the themes do:
 

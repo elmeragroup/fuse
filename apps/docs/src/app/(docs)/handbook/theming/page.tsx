@@ -320,14 +320,20 @@ export default function ThemingPage(): ReactElement {
         <code>Span</code> keeps its own snug default.
       </p>
       <p>
-        A <code>Heading</code>&apos;s default type is themed at levels 1 to 3. Without a <code>size</code>{" "}
-        prop, an h1 reads <code>--heading-1-size</code> and <code>--heading-1-leading</code>, and without a{" "}
-        <code>font</code> prop it reads <code>--heading-1-weight</code>, and h2 and h3 read their own roles.
-        External themes set h1 to the heading small style, 24/32, and h2 and h3 to heading xsmall, 20/32, all
-        at <code>700</code>. Internal themes keep h1 at 24/33, h2 at 18/24.75 and h3 at 16/22, all at{" "}
-        <code>500</code>. h4 to h6 stay 16/22 at <code>500</code> in every theme. A <code>size</code> prop
-        replaces a level&apos;s size and line height, a <code>font</code> prop its weight, and a{" "}
-        <code>className</code> size or weight replaces the role.
+        A <code>Heading</code>&apos;s type is themed through four named heading styles, large, medium, small
+        and xsmall, each a size, line height and weight such as <code>--heading-medium-size</code>,{" "}
+        <code>--heading-medium-leading</code> and <code>--heading-medium-weight</code>. External themes set
+        the design&apos;s bold heading ramp, 34/40, 28/34, 24/32 and 20/32 at <code>700</code>, and internal
+        themes Tailwind&apos;s 36, 30, 24 and 18px at the snug 1.375 ratio and <code>500</code>. The{" "}
+        <code>typography</code> prop picks a style at any level. Without it, levels 1 to 3 read their own
+        roles, <code>--heading-1-size</code> to <code>--heading-3-weight</code>, which point at the styles: an
+        h1 is heading small and an h2 heading xsmall in every theme, and an h3 is heading xsmall in external
+        themes and 16/22 at <code>500</code> in internal ones. A theme rule that sets a style therefore moves
+        the levels that point at it; a rule on a plain wrapper inside the theme scope moves only the style,
+        because the level roles have already resolved against the scope. h4 to h6 stay 16/22 at{" "}
+        <code>500</code> in every theme. Without <code>typography</code>, a <code>size</code> prop replaces a
+        level&apos;s size and line height and a <code>font</code> prop its weight, and a{" "}
+        <code>className</code> size or weight replaces any role.
       </p>
       <p>
         The modals, <code>Dialog</code>, <code>AlertDialog</code> and <code>Sheet</code>, fill with{" "}

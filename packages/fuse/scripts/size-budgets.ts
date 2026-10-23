@@ -261,7 +261,9 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // 2026-10-06: main measured 24451, 15 bytes under that ceiling. The field corner classes,
   // which read `--radius-field` (+142), take styles.css to 24593, over it, so the shared entry
   // recalibrates to measured × 1.5, as a code owner approved.
-  { name: "themes.css", file: "themes.css", measuredGzip: 4472, ceilingGzip: 6416 },
+  // 2026-10-23: the twelve heading style roles and the restated level pointers, base 6207 → 6450,
+  // +243, ceiling raised by the delta: 6416 + 243 = 6659.
+  { name: "themes.css", file: "themes.css", measuredGzip: 6450, ceilingGzip: 6659 },
   { name: "styles.css", file: "styles.css", measuredGzip: 24593 },
 ] satisfies readonly Measured<CssBudget>[]);
 

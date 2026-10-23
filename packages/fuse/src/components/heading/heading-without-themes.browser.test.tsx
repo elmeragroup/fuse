@@ -29,7 +29,7 @@ function types(prefix: string): readonly { size: number; leading: number; weight
   });
 }
 
-describe("Heading level scale without themes.css", () => {
+describe("Heading scale and styles without themes.css", () => {
   it("keeps the level-free scale when the host sets no heading role", () => {
     render(<LevelHeadings prefix="Host" />);
     // text-2xl, text-lg and text-base at snug 1.375, all at 500.
@@ -65,5 +65,25 @@ describe("Heading level scale without themes.css", () => {
       { size: 20, leading: 32, weight: "700" },
       { size: 16, leading: 22, weight: "500" },
     ]);
+  });
+
+  it("keeps the internal named styles when the host sets no heading role", () => {
+    render(
+      <div>
+        <Heading typography="large">Host large</Heading>
+        <Heading typography="medium">Host medium</Heading>
+        <Heading typography="small">Host small</Heading>
+        <Heading typography="xsmall">Host xsmall</Heading>
+      </div>
+    );
+    // text-4xl, text-3xl, text-2xl and text-lg at snug 1.375, all at 500.
+    const typeOf = (name: string) => {
+      const style = getComputedStyle(headingNamed(name, 2));
+      return { size: px(style.fontSize), leading: px(style.lineHeight), weight: style.fontWeight };
+    };
+    expect(typeOf("Host large")).toEqual({ size: 36, leading: 49.5, weight: "500" });
+    expect(typeOf("Host medium")).toEqual({ size: 30, leading: 41.25, weight: "500" });
+    expect(typeOf("Host small")).toEqual({ size: 24, leading: 33, weight: "500" });
+    expect(typeOf("Host xsmall")).toEqual({ size: 18, leading: 24.75, weight: "500" });
   });
 });

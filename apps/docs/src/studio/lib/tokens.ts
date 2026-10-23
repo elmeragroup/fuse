@@ -136,6 +136,18 @@ export const TOKEN_TABLE = {
   "paragraph-leading-sm": { section: "typography", kind: "dimension" },
   "paragraph-leading-base": { section: "typography", kind: "dimension" },
   "paragraph-leading-lg": { section: "typography", kind: "dimension" },
+  "heading-large-size": { section: "typography", kind: "dimension" },
+  "heading-large-leading": { section: "typography", kind: "dimension" },
+  "heading-large-weight": { section: "typography", kind: "fontWeight" },
+  "heading-medium-size": { section: "typography", kind: "dimension" },
+  "heading-medium-leading": { section: "typography", kind: "dimension" },
+  "heading-medium-weight": { section: "typography", kind: "fontWeight" },
+  "heading-small-size": { section: "typography", kind: "dimension" },
+  "heading-small-leading": { section: "typography", kind: "dimension" },
+  "heading-small-weight": { section: "typography", kind: "fontWeight" },
+  "heading-xsmall-size": { section: "typography", kind: "dimension" },
+  "heading-xsmall-leading": { section: "typography", kind: "dimension" },
+  "heading-xsmall-weight": { section: "typography", kind: "fontWeight" },
   "heading-1-size": { section: "typography", kind: "dimension" },
   "heading-1-leading": { section: "typography", kind: "dimension" },
   "heading-1-weight": { section: "typography", kind: "fontWeight" },
@@ -178,7 +190,7 @@ export function sectionTokens(section: SectionId): readonly TokenName[] {
  * The keys a dark palette keeps from light: geometry, the card edge, section divider and shadow
  * colors, the outline and selection border and divider colors, the disabled selection row's fill,
  * stripe and text colors, the selection title weight, the paragraph line heights, the heading
- * scale and the heading font. Fuse keeps this set private as `LIGHT_ONLY_KEYS` in
+ * styles and scale and the heading font. Fuse keeps this set private as `LIGHT_ONLY_KEYS` in
  * `packages/fuse/src/theme/tokens/contract.ts`; the studio tests check every one declares the
  * same value in both schemes of every theme. An edit to one applies to both schemes.
  */
@@ -203,6 +215,18 @@ export const LIGHT_ONLY_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>([
   "paragraph-leading-sm",
   "paragraph-leading-base",
   "paragraph-leading-lg",
+  "heading-large-size",
+  "heading-large-leading",
+  "heading-large-weight",
+  "heading-medium-size",
+  "heading-medium-leading",
+  "heading-medium-weight",
+  "heading-small-size",
+  "heading-small-leading",
+  "heading-small-weight",
+  "heading-xsmall-size",
+  "heading-xsmall-leading",
+  "heading-xsmall-weight",
   "heading-1-size",
   "heading-1-leading",
   "heading-1-weight",
