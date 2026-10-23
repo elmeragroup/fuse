@@ -10,12 +10,12 @@ import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
 import {
   columnFilters,
   CUSTOMER_NORD,
   focusIs,
   menuOpen,
-  nextFrames,
   Orders,
   popoverOpen,
   renderCounted,
