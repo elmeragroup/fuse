@@ -21,6 +21,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { SidebarSimple } from "../../icons/generated/sidebar-simple";
 import { ariaDisabledGuard } from "../../internal/aria-disabled-guard";
 import { definedProps } from "../../internal/defined-props";
+import { isTextEntry } from "../../internal/text-entry";
 import { cn } from "../../styles/cn";
 import {
   sidebarMenuActionShellClass,
@@ -97,30 +98,6 @@ function isSidebarShortcut(event: KeyboardEvent): boolean {
   const isApple = APPLE_PLATFORM.test(navigator.platform);
   const hasCommandModifier = isApple ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
   return hasCommandModifier && !isTextEntry(event.target);
-}
-
-/** Input types that take no typed text, so the shortcut still works while one has focus. */
-const NON_TEXT_INPUT_TYPES = new Set([
-  "button",
-  "checkbox",
-  "color",
-  "file",
-  "hidden",
-  "image",
-  "radio",
-  "range",
-  "reset",
-  "submit",
-]);
-
-function isTextEntry(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-  if (target.isContentEditable || target instanceof HTMLTextAreaElement) {
-    return true;
-  }
-  return target instanceof HTMLInputElement && !NON_TEXT_INPUT_TYPES.has(target.type);
 }
 
 export type SidebarContextValue = {
