@@ -17,7 +17,7 @@ export function FileUploadCompact() {
       onSelect={(files) => {
         setNames((current) => [...current, ...files.map((file) => file.name)].slice(0, MAX_FILES));
       }}
-      className="max-w-md w-full">
+      className="max-w-lg w-full">
       <FileUpload.Dropzone>
         <FileUpload.Trigger render={<Button size="sm" />}>
           <Plus data-icon="inline-start" />
