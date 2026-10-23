@@ -17,11 +17,10 @@
  *   A designer replaces the picture by changing that fill on an instance.
  * - Avatar group stacks avatars, which waits for kit components that hold instances.
  */
-import { readFileSync } from "node:fs";
-
 import { avatarFallbackClass, avatarImageClass, avatarRootClass, cn } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { Cell, ComponentDefinition, PartDefinition } from "./component-spec";
+import { portraitPng } from "./portrait";
 
 /**
  * The docs demos' sizes, as consumer classes, by the `size` axis value in pixels, the recipe's 32
@@ -55,19 +54,6 @@ export function sizeClassFor(cell: Cell): string {
  * shows them. The compare renderer renders the same text.
  */
 export const AVATAR_INITIALS = "AL";
-
-/**
- * The docs portrait as a PNG, which Figma stores where it takes no SVG. The docs demo
- * `avatar-basic.tsx` draws it as an SVG data URI: a `#5b8def` square with a white head and
- * shoulders. On 2026-10-22 Playwright's Chromium drew that data URI in a 96 × 96 `<img>` at a device
- * scale of 1, twice the largest Avatar, and the `<img>`'s element screenshot is the file. The build
- * and the compare renderer both read it here, so Figma and the browser draw the same pixels.
- *
- * @returns The bytes of `avatar-portrait.png`.
- */
-export function portraitPng(): Uint8Array {
-  return readFileSync(new URL("./avatar-portrait.png", import.meta.url));
-}
 
 const holdsImage = (cell: Cell): boolean => cell.content === "image";
 

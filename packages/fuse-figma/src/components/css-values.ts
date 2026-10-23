@@ -4,6 +4,7 @@
  * Tailwind's own variables are substituted, or it stays unmapped.
  */
 import * as CssColor from "@elmeragroup/color/css-color";
+import * as Srgb from "@elmeragroup/color/srgb";
 
 import type { CoverageRow } from "./coverage";
 import type { ColorSpec, NumberSpec, ShadowSpec, SizeSpec, VariableRef } from "./kit-spec";
@@ -397,10 +398,11 @@ export type PercentBasis =
 
 /**
  * Read a `width` or `height` as the sizing of its axis. A length is fixed. `fit-content` is the size
- * of what the box holds where its container has room to spare, which a kit frame always has, so it
- * hugs. A percentage takes the basis: against a length in pixels any share is that share of it, and
- * against a parent's auto layout only the whole fills, since a fill takes no share. Any other
- * percentage stays unread, as {@link readNumber} leaves it.
+ * of what the box holds where its container has room to spare, which a kit frame's default content
+ * has, so it hugs, unless `readLength` in `box-sizing.ts` fills a text box's room. A percentage takes
+ * the basis: against a length in pixels any share is that share of it, and against a parent's auto
+ * layout only the whole fills, since a fill takes no share. Any other percentage stays unread, as
+ * {@link readNumber} leaves it.
  *
  * @param value - A compiled value with Tailwind's variables already substituted.
  * @param index - The synced variables.
@@ -470,10 +472,23 @@ function flooredVariable(value: string, index: VariableIndex): VariableRef | und
 }
 
 /**
+ * `color-mix()` toward `transparent`, as Tailwind compiles an opacity modifier such as
+ * `outline-black/10`: the space, the color and its share.
+ */
+const TOWARD_TRANSPARENT = /^color-mix\(in [a-z-]+, ?(.+) (\d+(?:\.\d+)?)%, ?transparent\)$/;
+
+/**
  * Read a color as a paint. A synced variable binds, including a role tint whose code syntax is
  * the `color-mix()` toward `transparent` that `bg-error/10` compiles to, and a color literal
- * becomes sRGB. A mix the sync has no tint for stays unmapped, because a Figma paint takes its
- * opacity from the variable it binds.
+ * becomes sRGB. A literal mixed toward `transparent` keeps its channels at that share of its alpha,
+ * since a mix interpolates premultiplied colors (CSS Color 5 §2.4), as `outline-black/10` paints
+ * black at 10%. A share outside 0% to 100% is no color in CSS's grammar, so it stays unmapped. A
+ * variable mix the sync has no tint for stays unmapped, because a Figma paint takes its opacity
+ * from the variable it binds.
+ *
+ * `@elmeragroup/color` parses the color and builds the mixed one. It has no `color-mix()` parser,
+ * no mix toward `transparent` in sRGB, and no shorthand hex, so this reader matches the mix's form,
+ * checks its share, scales the alpha, and spells a shorthand out.
  *
  * @param value - A compiled value with Tailwind's variables already substituted.
  * @param index - The synced variables.
@@ -488,12 +503,39 @@ export function readColor(value: string, index: VariableIndex): ColorSpec | unde
   if (normalized === "transparent") {
     return { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0 } };
   }
-  const parsed = CssColor.parse(normalized);
-  if (parsed._tag === "err") {
+  const mix = TOWARD_TRANSPARENT.exec(normalized);
+  const share = mix === null ? 1 : Number(mix[2]) / 100;
+  const srgb = parseLiteral(mix === null ? normalized : (mix[1] ?? ""));
+  if (srgb === undefined || share < 0 || share > 1) {
     return undefined;
   }
-  const srgb = CssColor.toSrgb(parsed.value);
-  return { kind: "literal", color: { r: srgb.r, g: srgb.g, b: srgb.b, a: srgb.alpha } };
+  const mixed = Srgb.make({ r: srgb.r, g: srgb.g, b: srgb.b, alpha: srgb.alpha * share });
+  return mixed._tag === "err"
+    ? undefined
+    : {
+        kind: "literal",
+        color: { r: mixed.value.r, g: mixed.value.g, b: mixed.value.b, a: mixed.value.alpha },
+      };
+}
+
+/**
+ * Parse a color literal through `@elmeragroup/color` as sRGB. Tailwind's theme writes black and
+ * white as the shorthand `#000` and `#fff`, which the shared parser refuses, so the reader spells a
+ * shorthand out to the six digits it takes.
+ *
+ * @returns The color, or undefined for a value that is no color literal the parser reads.
+ */
+function parseLiteral(value: string): Srgb.Srgb | undefined {
+  const shorthand = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(value);
+  const parsed = CssColor.parse(
+    shorthand === null
+      ? value
+      : `#${shorthand
+          .slice(1)
+          .map((digit) => digit.repeat(2))
+          .join("")}`
+  );
+  return parsed._tag === "err" ? undefined : CssColor.toSrgb(parsed.value);
 }
 
 /**

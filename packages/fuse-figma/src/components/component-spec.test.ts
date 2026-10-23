@@ -202,6 +202,49 @@ describe("a dashed border", () => {
   });
 });
 
+// Unit under test: `buildComponentSet` on a box with an outline. Oracle: CSS Basic UI 4 §5, where an
+// outline lies outside the border edge, `outline-offset` away from it, so an offset of minus its
+// width lays a solid outline over the box's outer pixels, where a Figma inside stroke of that weight
+// lies, as Item's image media frames its picture with `outline-1 -outline-offset-1`. A box holds one
+// stroke, so a border keeps it, and an outline anywhere else lies outside the box, which no stroke
+// of the box draws.
+describe("an outline drawn inside the box", () => {
+  const strokeOf = async (classes: string) => {
+    const { componentSet, coverage } = await buildFixture(chip(`size-[40px] ${classes}`));
+    return { stroke: componentSet.variants[0]?.root.stroke, coverage };
+  };
+
+  it("draws as an inside stroke of its width and color", async () => {
+    const { stroke, coverage } = await strokeOf("outline-1 -outline-offset-1 outline-black/10");
+    // `color-mix(in oklab, #000 10%, transparent)` is black at 10% alpha. An outline takes no layout
+    // space, so the stroke stays out of the box's layout and the box's content keeps its room.
+    expect(stroke).toEqual({
+      color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.1 } },
+      weight: literal(1),
+      inLayout: false,
+    });
+    const outline = coverage.filter((row) => row.property.startsWith("outline"));
+    expect(new Set(outline.map((row) => `${row.className} ${row.property} ${row.outcome}`))).toEqual(
+      new Set([
+        "outline-1 outline-style literal",
+        "outline-1 outline-width literal",
+        "-outline-offset-1 outline-offset literal",
+        "outline-black/10 outline-color literal",
+      ])
+    );
+  });
+
+  it.each([
+    ["an outline outside the box", "outline-2 outline-offset-2 outline-[#000000]"],
+    ["an outline beside a border", "border border-[#ff0000] outline-1 -outline-offset-1 outline-[#000000]"],
+  ])("leaves %s unmapped", async (_, classes) => {
+    const { coverage } = await strokeOf(classes);
+    expect(
+      new Set(coverage.filter((row) => row.property === "outline-width").map((row) => row.outcome))
+    ).toEqual(new Set(["unmapped"]));
+  });
+});
+
 // Unit under test: `buildComponentSet` on a root with a transparent background and a ring.
 // Oracle: CSS, where `background-color: transparent` paints nothing, as an unset background
 // does, so the root gets no fill.
@@ -294,6 +337,26 @@ describe("a fit-content width", () => {
     expect(coverage.map((row) => [row.className, row.property, row.outcome, row.detail])).toEqual([
       ["w-fit", "width", "literal", "the box hugs its content"],
     ]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a part whose height is `auto`, directly or through a custom
+// property, as Item's media reads `h-(--item-media-line)` where `--item-media-line` is `auto`. Oracle:
+// CSS 2.1 §10.6.3, where `auto` is a height's initial value: the box is as tall as what it holds,
+// which a Figma hug draws, as it draws a part that sets no height.
+describe("an automatic length", () => {
+  it.each([
+    ["h-auto", "h-auto"],
+    ["[--chip-line:auto] h-(--chip-line)", "h-(--chip-line)"],
+  ])("hugs the content with %s", async (classes, heightClass) => {
+    const { variant, coverage } = await buildFixture(chip("flex", { parts: [dot(`w-[8px] ${classes}`)] }));
+    expect(frameOf(variant?.root)?.sizing.vertical).toEqual(HUG);
+    expect(
+      coverage
+        .filter((row) => row.className === heightClass)
+        .map((row) => [row.property, row.outcome, row.detail])
+    ).toEqual([["height", "literal", "the box hugs its content"]]);
+    expect(new Set(coverage.map((row) => row.outcome))).not.toContain("unmapped");
   });
 });
 
@@ -511,10 +574,32 @@ describe("a root that holds a part", () => {
 // a grow of 1 from a zero basis. Oracle: CSS Flexbox 1 §9.7. A row that hugs its width is as wide as
 // its layers, so it has no free space, and the one layer that grows keeps its own width, as Chromium
 // draws Select's value at its text's width in its `w-fit` trigger. A row with a fixed width gives the
-// growing layer the room the others leave, and two growing layers share the free space by their
-// grow, neither of which the builder maps, so both stay unmapped.
+// one growing layer the room the others leave, as Figma's fill takes it, where the layer sets no
+// width of its own, which a zero basis ignores. Two growing layers share the free space by their
+// grow, which the builder does not map, so it stays unmapped.
 describe("a part that grows along its row", () => {
   const detail = "the row hugs its layers, so the one layer that grows has no room to grow into";
+
+  it("fills the room the others leave in a row with a fixed width", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex w-[100px] gap-[4px]", {
+        parts: [dot("flex-1 h-[8px]"), { ...dot("size-[8px]"), key: "ring", slot: "chip-ring" }],
+      })
+    );
+    const [grown] = variant?.root.children ?? [];
+    expect(grown?.kind === "frame" && grown.sizing).toEqual({
+      horizontal: FILL,
+      vertical: fixed(literal(8)),
+    });
+    expect(coverage.filter((row) => row.className === "flex-1")).toEqual([
+      expect.objectContaining({
+        part: "chip-dot",
+        property: "flex",
+        outcome: "literal",
+        detail: "the one layer that grows fills the room the row's other layers leave",
+      }),
+    ]);
+  });
 
   it("keeps its own width in a row that hugs its layers", async () => {
     const { variant, coverage } = await buildFixture(
@@ -529,6 +614,21 @@ describe("a part that grows along its row", () => {
     ]);
   });
 
+  // The growing layer takes what the row's other layers and its gaps leave: 100px less a 20px ring
+  // and a 4px gap is 76px, which an absolute layer inside it that fills it takes.
+  it("gives the growing layer the row's length less its other layers and gaps", async () => {
+    const FILLER = { ...dot("absolute top-0 left-0 w-full h-full"), key: "filler", slot: "chip-filler" };
+    const { variant } = await buildFixture(
+      chip("flex w-[100px] gap-[4px]", {
+        parts: [
+          { ...dot("relative flex-1 h-[8px]"), parts: [FILLER] },
+          { ...dot("w-[20px] h-[8px]"), key: "ring", slot: "chip-ring" },
+        ],
+      })
+    );
+    expect(frameOf(frameOf(variant?.root))?.sizing.horizontal).toEqual(fixed(literal(76)));
+  });
+
   // A zero minimum never widens the row, so the row still has no free space.
   it("keeps its own width in a row that hugs its layers above a zero minimum", async () => {
     const { coverage } = await buildFixture(chip("flex min-w-0", { parts: [dot("flex-1 h-[8px]")] }));
@@ -541,7 +641,11 @@ describe("a part that grows along its row", () => {
   // which leaves free space the growing layer takes: 92px of the 100px beside the 8px ring. A maximum
   // can take room away. Neither is the layer's own width.
   it.each([
-    ["a row with a fixed width", "flex w-[100px]", [dot("flex-1")]],
+    [
+      "a row with a fixed width, on a layer with a width of its own",
+      "flex w-[100px]",
+      [dot("flex-1 w-[20px]")],
+    ],
     [
       "a row with two layers that grow",
       "flex",
@@ -843,18 +947,18 @@ describe("a box's position and alignment", () => {
 // does not yet draw.
 describe("a box's margin", () => {
   it.each([
-    ["mb-3", "margin-bottom"],
-    ["-mt-1.5", "margin-top"],
-    ["mx-auto", "margin-inline"],
-  ])("drops %s on the root, which sits beside no other box", async (className, property) => {
+    ["mb-3", ["margin-bottom"]],
+    ["-mt-1.5", ["margin-top"]],
+    ["mx-auto", ["margin-left", "margin-right"]],
+  ])("drops %s on the root, which sits beside no other box", async (className, properties) => {
     const { coverage } = await buildFixture(chip(className));
-    expect(notesOf(coverage, className)).toEqual([
-      [
+    expect(notesOf(coverage, className)).toEqual(
+      properties.map((property) => [
         property,
         "dropped",
         "the component's root sits alone in its component set, so its margin spaces it from nothing the set draws",
-      ],
-    ]);
+      ])
+    );
   });
 
   // Oracle: CSS Flexbox 1 §4.2. A flex item's margins add to the space between it and its siblings
@@ -895,11 +999,48 @@ describe("a box's margin", () => {
     ]);
   });
 
+  // Oracle: CSS Box 3 §5, where a margin of 0 adds no space on any side, as Item's title and
+  // description reset a host's `<p>` margins with `m-0`.
+  it.each([
+    ["m-0", ["margin-bottom", "margin-left", "margin-right", "margin-top"]],
+    ["mx-0", ["margin-left", "margin-right"]],
+  ])("drops a zero %s on a part, which adds no space", async (className, properties) => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex", { parts: [dot(`size-[8px] ${className}`)] })
+    );
+    expect(frameOf(variant?.root)?.children).toEqual([]);
+    expect(notesOf(coverage, className)).toEqual(
+      properties.map((property) => [property, "dropped", "a zero margin adds no space"])
+    );
+  });
+
+  // Oracle: CSS Logical Properties 1 §4, where a left-to-right page puts `mx-1`'s inline sides on
+  // the left and the right.
+  it("draws a logical margin as the physical sides it sets", async () => {
+    const { variant } = await buildFixture(chip("flex", { parts: [dot("size-[8px] mx-1")] }));
+    const frame = frameOf(variant?.root);
+    expect([frame?.paddingLeft, frame?.paddingRight, frame?.paddingTop]).toEqual([
+      literal(4),
+      literal(4),
+      literal(0),
+    ]);
+  });
+
+  // Oracle: CSS Box 3 §5, where `margin` sets all four sides, and CSS Cascade 4 §6, where a style
+  // attribute's declaration beats every class, so `margin: 0` in the style resets `mt-1`'s top.
+  it("draws no top margin where a style attribute's `margin: 0` resets `mt-1`", async () => {
+    const { variant } = await buildFixture(
+      chip("flex", {
+        parts: [{ ...dot("size-[8px] mt-1"), styleFor: () => [{ property: "margin", value: "0" }] }],
+      })
+    );
+    expect([frameOf(variant?.root)?.paddingTop, frameOf(variant?.root)?.children]).toEqual([literal(0), []]);
+  });
+
   it.each([
     ["a negative margin", "flex", "size-[8px] -mt-1", "-mt-1", "margin-top"],
     ["a margin in a parent that is no flex box", "block", "size-[8px] mt-1", "mt-1", "margin-top"],
     ["a margin beside a fill", "flex flex-col w-[100px]", "w-full h-[8px] mt-1", "mt-1", "margin-top"],
-    ["a logical margin", "flex", "size-[8px] mx-1", "mx-1", "margin-inline"],
   ])("leaves %s on a part unmapped", async (_, parent, part, className, property) => {
     const { coverage } = await buildFixture(chip(parent, { parts: [dot(part)] }));
     expect(notesOf(coverage, className)).toEqual([[property, "unmapped", expect.any(String)]]);
@@ -908,22 +1049,24 @@ describe("a box's margin", () => {
   it("leaves the horizontal margins of a block that takes the preview width unmapped, and drops its vertical ones", async () => {
     const { coverage } = await buildFixture(chip("block mx-[16px] my-[4px]", { previewWidth: 384 }));
     // CSS draws the block 352px wide, 384px less the two 16px margins.
-    expect(notesOf(coverage, "mx-[16px]")).toEqual([
-      [
-        "margin-inline",
+    expect(notesOf(coverage, "mx-[16px]")).toEqual(
+      ["margin-left", "margin-right"].map((property) => [
+        property,
         "unmapped",
         "the root's width is its container's less this margin, which the build does not subtract",
-      ],
-    ]);
+      ])
+    );
     expect(notesOf(coverage, "my-[4px]").map(([property, outcome]) => [property, outcome])).toEqual([
-      ["margin-block", "dropped"],
+      ["margin-bottom", "dropped"],
+      ["margin-top", "dropped"],
     ]);
   });
 
   it("drops the horizontal margins of a block whose width is its own", async () => {
     const { coverage } = await buildFixture(chip("block w-[200px] mx-[16px]", { previewWidth: 384 }));
     expect(notesOf(coverage, "mx-[16px]").map(([property, outcome]) => [property, outcome])).toEqual([
-      ["margin-inline", "dropped"],
+      ["margin-left", "dropped"],
+      ["margin-right", "dropped"],
     ]);
   });
 });
@@ -1901,6 +2044,39 @@ describe("a label's sizing", () => {
     const hugging = await buildLabelled("flex flex-col", { label: LABEL });
     expect(textOf(hugging.variant?.root)?.sizing).toEqual({ horizontal: HUG, vertical: HUG });
     expect(hugging.coverage.filter((row) => row.property === "align-items")).toEqual([]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a `w-fit` part that holds only its text, in a column of
+// definite width, as Item's title sits in its content column. Oracle: CSS Sizing 3 §5.1, where
+// `fit-content` is the smaller of the text's one-line width and the room the column leaves, so a
+// title longer than the column wraps at the column's width (CSS Text 3). A box that paints nothing
+// and starts its text at its start draws the same at the column's width, which a fill gives it and
+// its text then fills and wraps at. A box that paints shows its own width, so it keeps hugging.
+describe("a `w-fit` part that holds only its text in a column", () => {
+  const title = (classes: string): PartDefinition => ({
+    ...dot(`flex w-fit items-center ${classes}`),
+    key: "title",
+    slot: "chip-title",
+    label: { ...LABEL, characters: "A title longer than its column" },
+  });
+
+  it("wraps its text at the column's width", async () => {
+    const { variant, coverage } = await buildLabelled("flex flex-col w-[100px]", { parts: [title("")] });
+    const frame = frameOf(variant?.root);
+    expect([frame?.sizing.horizontal, textOf(frame)?.sizing]).toEqual([FILL, FILL_WIDTH]);
+    expect(notesOf(coverage, "w-fit")).toEqual([
+      [
+        "width",
+        "literal",
+        "the box fits its text up to the width its parent gives it, where its text wraps, which a fill draws, since the box paints nothing and starts its text at its start",
+      ],
+    ]);
+  });
+
+  it("keeps hugging where it paints", async () => {
+    const { variant } = await buildLabelled("flex flex-col w-[100px]", { parts: [title("bg-[#ff0000]")] });
+    expect(frameOf(variant?.root)?.sizing.horizontal).toEqual(HUG);
   });
 });
 

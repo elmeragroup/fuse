@@ -11,9 +11,9 @@
  * run stopped before its first write.
  *
  * The fake models the Figma rules below. Each rule a real file showed in 2026-10 names that run.
- * Rules 12 to 28 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
+ * Rules 12 to 29 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
  * Import test` on 2026-10-22 and 2026-10-23: P0 and P0b read the kit's nodes, P1 to P9, PB, PR,
- * PQ, PD and PL built nodes on a scratch page, and P9b stored images and built no node.
+ * PQ, PD, PL and PF built nodes on a scratch page, and P9b stored images and built no node.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
  *    COLOR variable in the collections' default modes, whatever opacity it was given. Two runs
@@ -206,6 +206,14 @@
  *    -0.44999998807907104 (PL). The write needs the text's fonts, as every text write does (rule 7).
  *    The plugin writes one spacing for the whole layer, so the fake keeps one and never reads mixed.
  *    It does not lay out, so the spacing leaves the text's size as it was.
+ * 29. A layer that fills across an auto layout that hugs that axis stretches to the length the
+ *    layout's other layers set. On 2026-10-23 a hugging row held a fixed 40 × 40 frame and a 39 × 16
+ *    hugging frame. FILL down the small frame read FILL and `layoutAlign` STRETCH, made it 40 tall
+ *    with its text centred, and left the row hugging both ways. Resizing the square to 60 tall made
+ *    the row and the filled frame 60 tall (PF). The fake reads such a layer's length as the longest
+ *    of the other layers in the flow that do not fill the axis, so it follows them as they resize,
+ *    and `absoluteBoundingBox` reads the same. No probe filled a layer whose siblings all fill, so
+ *    there the layer keeps its own length.
  *
  * An instance's sublayers show the layers of its main component. An override, such as the
  * color an icon layer gives its glyph, belongs to the main layer it was made on. It moves to
@@ -970,6 +978,29 @@ function fills(state: NodeState, axis: Axis): boolean {
     return false;
   }
   return parent.layoutMode === axis ? state.layoutGrow === 1 : state.layoutAlign === "STRETCH";
+}
+
+/**
+ * A node's length on an axis: the length it stretches to across an auto layout that hugs that axis
+ * (rule 29), the longest of the parent's other layers in its flow that do not fill the axis, or its
+ * own where it does not stretch so or no such layer sets a length.
+ */
+function lengthOn(state: NodeState, axis: Axis): number {
+  const own = axis === "HORIZONTAL" ? state.width : state.height;
+  const parent = state.parent;
+  if (
+    parent === undefined ||
+    !isAutoLayout(parent) ||
+    parent.layoutMode === axis ||
+    parent[modeOn(parent, axis)] !== "AUTO" ||
+    !fills(state, axis)
+  ) {
+    return own;
+  }
+  const lengths = parent.children
+    .filter((child) => child !== state && child.layoutPositioning !== "ABSOLUTE" && !fills(child, axis))
+    .map((child) => lengthOn(child, axis));
+  return lengths.length === 0 ? own : Math.max(...lengths);
 }
 
 /**
@@ -2031,11 +2062,11 @@ class FakeSceneNode extends FakeBaseNode {
   }
 
   get width(): number {
-    return live(this).width;
+    return lengthOn(live(this), "HORIZONTAL");
   }
 
   get height(): number {
-    return live(this).height;
+    return lengthOn(live(this), "VERTICAL");
   }
 
   get absoluteBoundingBox(): Rect | null {
@@ -2275,6 +2306,8 @@ function absoluteBox(state: NodeState): Rect {
   ) {
     chain.push(current);
   }
+  const width = lengthOn(state, "HORIZONTAL");
+  const height = lengthOn(state, "VERTICAL");
   if (chain.every((node) => node.rotation === 0)) {
     let x = 0;
     let y = 0;
@@ -2282,7 +2315,7 @@ function absoluteBox(state: NodeState): Rect {
       x += node.x;
       y += node.y;
     }
-    return { x, y, width: state.width, height: state.height };
+    return { x, y, width, height };
   }
   const transform = chain.reduce<Transform>(
     (inner, outer) => compose(relativeTransform(outer), inner),
@@ -2293,9 +2326,9 @@ function absoluteBox(state: NodeState): Rect {
   );
   const corners = [
     [0, 0],
-    [state.width, 0],
-    [0, state.height],
-    [state.width, state.height],
+    [width, 0],
+    [0, height],
+    [width, height],
   ].map(([x = 0, y = 0]) => mapPoint(transform, x, y));
   const left = Math.min(...corners.map((corner) => corner.x));
   const top = Math.min(...corners.map((corner) => corner.y));

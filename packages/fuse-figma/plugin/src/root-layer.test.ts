@@ -174,6 +174,32 @@ describe("planBox", () => {
     expect([frame.clipsContent, frame.fills]).toEqual([false, []]);
     expect(changeLines(await planOn(frame, "Radio / Indicator", PART, part))).toEqual([]);
   });
+
+  // Oracle: CSS Basic UI 4 §5, where an outline takes no layout space, and the typings'
+  // `strokesIncludedInLayout`, whose false lets the stroke overlap the frame's children.
+  it("leaves a stroke drawn from an outline out of the frame's layout", async () => {
+    const root = file.figma.createComponent();
+    root.layoutMode = "HORIZONTAL";
+    const frame = file.figma.createFrame();
+    root.appendChild(frame);
+    // As a run that drew a border there left it.
+    frame.layoutMode = "HORIZONTAL";
+    frame.strokesIncludedInLayout = true;
+    const outlined: BoxSpec = {
+      ...BOX,
+      clips: false,
+      stroke: {
+        color: { kind: "variable", variable: { collection: "Fuse tokens", name: "primary" } },
+        weight: { kind: "literal", value: 1 },
+        inLayout: false,
+      },
+    };
+    const plan = await planOn(frame, "Item / Media", PART, outlined);
+    expect(changeLines(plan)).toContain("Item / Media: strokesIncludedInLayout → false");
+    await performPlan(plan);
+    expect(frame.strokesIncludedInLayout).toBe(false);
+    expect(changeLines(await planOn(frame, "Item / Media", PART, outlined))).toEqual([]);
+  });
 });
 
 const px = (value: number): NumberSpec => ({ kind: "literal", value });

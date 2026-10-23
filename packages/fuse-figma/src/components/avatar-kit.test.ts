@@ -35,7 +35,7 @@ beforeAll(async () => {
 });
 
 /** The checked-in portrait, read here as the file it is. */
-const PORTRAIT = readFileSync(new URL("./avatar-portrait.png", import.meta.url));
+const PORTRAIT = readFileSync(new URL("./portrait.png", import.meta.url));
 
 function avatar(content: string, size: string): ComponentRootSpec {
   return variantRoot(spec, `avatar/content=${content},size=${size}`);

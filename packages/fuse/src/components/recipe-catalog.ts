@@ -10,7 +10,8 @@
  * docs demo's consumer classes to a recipe as a component merges its `className`, and the icon
  * roster, from which the sync builds one Figma component per icon `/icons` publishes. Meter's
  * constants and its `meterToneCell` lookup come along, so the sync picks each Meter cell's tone
- * and icon from the table the component reads.
+ * and icon from the table the component reads. Item's title face comes along with its part
+ * recipes, since `Item.Title` renders it as it is.
  */
 
 export {
@@ -27,6 +28,11 @@ export { confirmButtonVariants } from "./confirm-button/confirm-button-variants"
 export { emptyMediaVariants, emptyVariants } from "./empty/empty-variants";
 export { fieldVariants } from "./field/field-variants";
 export { inputClass } from "./input/input-class";
+export { itemActionsClass, itemContentClass, itemDescriptionClass, itemHeaderClass } from "./item/item-class";
+export { itemFooterVariants } from "./item/item-footer-variants";
+export { itemMediaVariants } from "./item/item-media-variants";
+export { ITEM_TITLE_CLASSES } from "./item/item-title-classes";
+export { itemVariants } from "./item/item-variants";
 export { kbdVariants } from "./kbd/kbd-variants";
 export { loaderVariants } from "./loader/loader-variants";
 export { METER_CONSTANTS } from "./meter/meter-constants";

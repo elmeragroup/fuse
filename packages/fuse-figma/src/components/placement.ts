@@ -147,29 +147,14 @@ function alignAlongRow(parent: ParentBox, parts: readonly PlacedPart[]): Primary
   return moved ?? layout.primaryAlign;
 }
 
-/** The margin properties, physical and logical, as Tailwind compiles `m-*`, `mx-*`, `ms-*` and the rest. */
-const MARGINS = [
-  "margin",
-  "margin-top",
-  "margin-right",
-  "margin-bottom",
-  "margin-left",
-  "margin-block",
-  "margin-block-start",
-  "margin-block-end",
-  "margin-inline",
-  "margin-inline-start",
-  "margin-inline-end",
-] as const;
+/**
+ * A box's margins, by their physical sides. The cascade splits `m-*`, `mx-*`, `ms-*` and the other
+ * shorthand and logical margins into these, so they cascade side by side.
+ */
+const MARGINS = ["margin-top", "margin-right", "margin-bottom", "margin-left"] as const;
 
-/** The margins above and below a box, which leave its width alone. The `margin` shorthand sets all four. */
-const VERTICAL_MARGINS: ReadonlySet<string> = new Set([
-  "margin-top",
-  "margin-bottom",
-  "margin-block",
-  "margin-block-start",
-  "margin-block-end",
-]);
+/** The margins above and below a box, which leave its width alone. */
+const VERTICAL_MARGINS: ReadonlySet<string> = new Set(["margin-top", "margin-bottom"]);
 
 /**
  * Read where the root sits. The root has no parent to center it, so `relative` drops and any
@@ -233,19 +218,17 @@ export function placeRoot(style: LayerStyle, room: Room): void {
   }
 }
 
-/** A part's physical margins, which the frame around the part draws as its padding. */
-const PART_MARGINS = ["margin-top", "margin-right", "margin-bottom", "margin-left"] as const;
-
 /**
- * Draw a part's margins. A flex item's margins add to the space between it and its siblings and its
- * parent's edge, and never collapse (CSS Flexbox 1 §4.2), so a transparent frame around the part,
- * hugging it, whose padding is the margins, draws the part's margin box. The frame keeps the part's
- * key, name and BOOLEAN property, so hiding the part hides its margin too, and the part's own box
- * sits in it as a layer named `box`. Only `margin-top`, `margin-right`, `margin-bottom` and
- * `margin-left` map, at a length of zero or more, on a part in a flex parent's flow whose sides are
- * fixed or hug: a negative margin pulls a sibling closer, which no padding draws, a margin beside a
- * fill takes room from it, and a logical or shorthand margin stays unmapped. Where any of them does
- * not map, none does, so no frame draws part of a margin.
+ * Draw a part's margins, which the cascade gives by their physical sides. A margin of zero adds no
+ * space, so it drops, as Item's title and description reset a `<p>`'s margins with `m-0`. A flex
+ * item's other margins add to the space between it and its siblings and its parent's edge, and
+ * never collapse (CSS Flexbox 1 §4.2), so a transparent frame around the part, hugging it, whose
+ * padding is the margins, draws the part's margin box. The frame keeps the part's key, name and
+ * BOOLEAN property, so hiding the part hides its margin too, and the part's own box sits in it as a
+ * layer named `box`. They map at a positive length, on a part in a flex parent's flow whose sides
+ * are fixed or hug: a negative margin pulls a sibling closer, which no padding draws, and a margin
+ * beside a fill takes room from it. Where any of them does not map, none does, so no frame draws
+ * part of a margin.
  *
  * @param style - The part's style.
  * @param layer - The part's layer as the mapping drew it.
@@ -259,7 +242,15 @@ export function wrapMargins(
   parent: Pick<Layout, "flex">,
   variables: VariableIndex
 ): FrameLayerSpec {
-  const set = PART_MARGINS.filter((property) => style.has(property));
+  const zero = (property: string) => evaluateLength(style.resolved(property) ?? "") === 0;
+  for (const property of MARGINS.filter((side) => style.has(side) && zero(side))) {
+    style.read(
+      property,
+      (value) => value,
+      () => ({ outcome: "dropped", detail: "a zero margin adds no space" })
+    );
+  }
+  const set = MARGINS.filter((property) => style.has(property) && !zero(property));
   const fixedOrHugs = layer.sizing.horizontal.kind !== "fill" && layer.sizing.vertical.kind !== "fill";
   const length = (value: string): NumberSpec | undefined => {
     const spec = readNumber(value, variables);
@@ -269,15 +260,17 @@ export function wrapMargins(
   if (set.length === 0 || !parent.flex || outOfFlow(style) || !fixedOrHugs || !maps) {
     return layer;
   }
-  const margin = (property: (typeof PART_MARGINS)[number]): NumberSpec =>
-    style.read(property, length, (spec) =>
-      spec.kind === "literal"
-        ? {
-            outcome: "literal",
-            detail: `${spec.value}px of padding on a frame around the part, the space the margin adds`,
-          }
-        : describeNumber(spec)
-    ) ?? ZERO;
+  const margin = (property: (typeof MARGINS)[number]): NumberSpec =>
+    (set.includes(property)
+      ? style.read(property, length, (spec) =>
+          spec.kind === "literal"
+            ? {
+                outcome: "literal",
+                detail: `${spec.value}px of padding on a frame around the part, the space the margin adds`,
+              }
+            : describeNumber(spec)
+        )
+      : undefined) ?? ZERO;
   const { visibleProperty, ...box } = layer;
   const frame: FrameLayerSpec = {
     kind: "frame",

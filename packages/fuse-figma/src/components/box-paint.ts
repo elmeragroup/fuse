@@ -7,7 +7,14 @@
 import { createHash } from "node:crypto";
 
 import type { CoverageNote, LayerStyle } from "./cascade";
-import { describeNumber, normalizeCss, readColor, readNumber, readShadows } from "./css-values";
+import {
+  describeNumber,
+  evaluateLength,
+  normalizeCss,
+  readColor,
+  readNumber,
+  readShadows,
+} from "./css-values";
 import type { VariableIndex } from "./css-values";
 import type { BoxSpec, ColorSpec, ImagePaintSpec, NumberSpec, ShadowSpec, StrokeSpec } from "./kit-spec";
 
@@ -48,8 +55,10 @@ export function readPaint(
   variables: VariableIndex,
   variant: string
 ): BoxPaint {
-  const stroke = readStroke(reader, variables);
-  readClearOutline(reader, variables);
+  const border = readStroke(reader, variables);
+  const cleared = readClearOutline(reader, variables);
+  // A box holds one stroke, so its border keeps it.
+  const stroke = reader.has("border-width") || cleared ? border : readInsideOutline(reader, variables);
   const shadows = readShadowStack(reader, variables);
   const fill =
     image === undefined
@@ -122,12 +131,14 @@ function readImage(reader: LayerStyle, image: () => Uint8Array, variant: string)
  * Drop an outline that paints nothing: a literal color at alpha 0, as `outline-transparent` sets,
  * the way {@link readFill} reads a transparent background as no fill. A meter's bar keeps such an
  * outline for forced-colors mode, where the browser paints it in a system color. Any other outline
- * stays unread, and so unmapped, since Figma draws no outline.
+ * is left to {@link readInsideOutline}.
+ *
+ * @returns Whether the box's outline paints nothing.
  */
-function readClearOutline(reader: LayerStyle, index: VariableIndex): void {
+function readClearOutline(reader: LayerStyle, index: VariableIndex): boolean {
   const color = readColor(reader.resolved("outline-color") ?? "", index);
   if (color?.kind !== "literal" || color.color.a !== 0) {
-    return;
+    return false;
   }
   for (const property of ["outline-style", "outline-width", "outline-offset", "outline-color"]) {
     reader.read(
@@ -136,6 +147,37 @@ function readClearOutline(reader: LayerStyle, index: VariableIndex): void {
       () => ({ outcome: "dropped", detail: "the outline is transparent, so it paints nothing" })
     );
   }
+  return true;
+}
+
+/**
+ * Read an outline drawn inside the box as the box's stroke. An outline lies outside the border edge,
+ * `outline-offset` from it (CSS Basic UI 4 §5), so a solid outline whose offset is minus its literal
+ * width lies over the box's outer pixels, where a Figma inside stroke of that weight lies, as Item's
+ * image media frames its picture with `outline-1 -outline-offset-1`. Any other outline stays unread,
+ * and so unmapped, since it lies outside the box, where no stroke of the box draws.
+ *
+ * @returns The stroke, or undefined where the box sets no outline that lies inside it.
+ */
+function readInsideOutline(reader: LayerStyle, variables: VariableIndex): StrokeSpec | undefined {
+  const width = evaluateLength(reader.resolved("outline-width") ?? "");
+  const offset = evaluateLength(reader.resolved("outline-offset") ?? "");
+  const color = readColor(reader.resolved("outline-color") ?? "", variables);
+  const solid = normalizeCss(reader.resolved("outline-style") ?? "") === "solid";
+  if (!solid || width === undefined || width <= 0 || offset !== -width || color === undefined) {
+    return undefined;
+  }
+  const inside = (detail: string) => () => ({ outcome: "literal" as const, detail });
+  reader.read("outline-style", (value) => value, inside("a solid inside stroke"));
+  reader.read("outline-width", (value) => value, inside(`a ${width}px inside stroke`));
+  reader.read(
+    "outline-offset",
+    (value) => value,
+    inside("the outline lies over the box's edge, where an inside stroke lies")
+  );
+  reader.read("outline-color", (value) => readColor(value, variables), describeColor);
+  // An outline takes no layout space, so the box's layers keep their room under the stroke.
+  return { color, weight: { kind: "literal", value: width }, inLayout: false };
 }
 
 /** The `box-shadow` every Tailwind shadow and ring utility writes, one layer per custom property. */

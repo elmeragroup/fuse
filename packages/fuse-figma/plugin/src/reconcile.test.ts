@@ -80,6 +80,18 @@ describe("reconcileKit on a file without the component set", () => {
   });
 });
 
+/** A hugging frame around the label, as Item's actions hold their text. */
+const BOX = frame("button/box", "Box", [LABEL]);
+
+/** A fixed 40 × 40 frame, as Item's image media sets a row's height. */
+const SQUARE: FrameLayerSpec = {
+  ...frame("button/square", "Square", []),
+  sizing: {
+    horizontal: { kind: "fixed", length: literal(40) },
+    vertical: { kind: "fixed", length: literal(40) },
+  },
+};
+
 describe("the kit check", () => {
   const OTHER_PAGE = { key: "page/other", name: "Other" };
   const PREVIEW_ELSEWHERE: KitSpec = {
@@ -160,6 +172,13 @@ describe("the kit check", () => {
         ]),
       ]),
       "Button: Label in the variant button/size=md fills the width of a parent that hugs it, so Figma would shrink it to its smallest width.",
+    ],
+    [
+      "a frame that fills the height of a row that hugs it, beside no layer that sets a height",
+      nestedKit([
+        frame("button/row", "Row", [{ ...BOX, sizing: { horizontal: { kind: "hug" }, vertical: FILL } }]),
+      ]),
+      "Button: Box in the variant button/size=md fills the height of a parent that hugs it, beside no layer that sets that height, so Figma would shrink it to its smallest height.",
     ],
     [
       "a text whose fixed width binds a string variable",
@@ -265,6 +284,24 @@ describe("the kit check", () => {
     await reconcileKit(file.figma, kit, true);
     file.reopen();
     expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+  });
+
+  // Oracle: PF, where a real file stretched a frame that filled down a row hugging its height to the
+  // height of the fixed square beside it, and kept the row hugging (fake rule 29).
+  it("passes a frame that fills the height of a hugging row beside a fixed square, and Apply converges", async () => {
+    const { file } = fixture("Roboto");
+    const kit = nestedKit([
+      frame("button/row", "Row", [
+        SQUARE,
+        { ...BOX, sizing: { horizontal: { kind: "hug" }, vertical: FILL } },
+      ]),
+    ]);
+    await reconcileKit(file.figma, kit, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+    const row = childNamed(await buttonVariant(file), "FRAME", "Row");
+    const box = childNamed(row, "FRAME", "Box");
+    expect([box.layoutSizingVertical, box.height, row.layoutSizingVertical]).toEqual(["FILL", 40, "HUG"]);
   });
 });
 

@@ -52,6 +52,18 @@ describe("compileUtilities", () => {
       inherits: false,
     });
   });
+
+  // Oracle: fuse.css's `@custom-variant item-described` puts the class after a parent context,
+  // `:where(:has( > [data-slot="item-content"] > [data-slot="item-description"])) > .item-described\:…`.
+  // `:where()` weighs nothing (Selectors 4 §17), so the rule weighs (0,1,0), as the bare utility does,
+  // and Tailwind prints a variant's rule after every bare utility's.
+  it("places a class whose rule selects it as the child of a parent context", async () => {
+    const compiled = await compileUtilities(["self-start", "item-described:self-start"]);
+    const bare = compiled.classes.get("self-start");
+    const described = compiled.classes.get("item-described:self-start");
+    expect(described?.specificity).toEqual([0, 1, 0]);
+    expect((described?.order ?? -1) > (bare?.order ?? Number.POSITIVE_INFINITY)).toBe(true);
+  });
 });
 
 // Unit under test: `baseBorderColor`, which reads the base-layer border color every Fuse part gets

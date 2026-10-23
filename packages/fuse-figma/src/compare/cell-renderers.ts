@@ -228,6 +228,16 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/react-aria/link.js",
     load: async () => (await import("./link-cell.ts")).link,
   },
+  {
+    set: "item",
+    entry: "dist/item.js",
+    load: async () => (await import("./item-cell.ts")).item,
+  },
+  {
+    set: "item-link",
+    entry: "dist/item.js",
+    load: async () => (await import("./item-cell.ts")).itemLink,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

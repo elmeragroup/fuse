@@ -285,7 +285,9 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
   // A CSS border sits inside the box and takes room from the content, so the stroke is drawn
   // inside and counts in the auto layout. A transparent CSS border arrives as a paint with
   // alpha 0, which keeps its weight in the layout: on a real file on 2026-10-20 a default
-  // Button hugged to 64px, a 42px label, 10px of padding a side and two 1px sides.
+  // Button hugged to 64px, a 42px label, 10px of padding a side and two 1px sides. A stroke drawn
+  // from a CSS outline takes no room, so it stays out of the layout and overlaps the box's layers,
+  // as the typings' `strokesIncludedInLayout` false draws.
   const stroked = run.plan.operations.length;
   planPaints(run, label, "stroke", node.strokes, spec.stroke?.color, (paints) => {
     node.strokes = paints;
@@ -295,8 +297,9 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
     planScalar(run, label, "strokeAlign", node.strokeAlign, "INSIDE", () => {
       node.strokeAlign = "INSIDE";
     });
-    planScalar(run, label, "strokesIncludedInLayout", node.strokesIncludedInLayout, true, () => {
-      node.strokesIncludedInLayout = true;
+    const included = spec.stroke.inLayout ?? true;
+    planScalar(run, label, "strokesIncludedInLayout", node.strokesIncludedInLayout, included, () => {
+      node.strokesIncludedInLayout = included;
     });
   }
   const resizes = laidOut || run.plan.operations.length > stroked;

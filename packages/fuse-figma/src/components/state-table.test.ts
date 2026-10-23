@@ -58,6 +58,16 @@ describe("the shared state entries", () => {
     expect(holdsAt(noFocus, "state", "enabled-hover")).toEqual(["hover"]);
   });
 
+  it("omit a shared state's variants that a definition without the state omits", () => {
+    // A row that renders a `<div>` takes no focus or hover, so its set has no state axis, and the
+    // variants of the states it never shows land in its coverage as dropped.
+    const still = definition({ axes: [], omittedStates: new Set(["focus-visible", "enabled-hover"]) });
+    const table = makeStateTable(still);
+    expect(table("focus-visible")).toEqual({ kind: "omitted" });
+    expect(table("enabled-hover")).toEqual({ kind: "omitted" });
+    expect(table("hover")).toEqual({ kind: "unmodelled" });
+  });
+
   it.each(["enabled-hover", "hover", "focus-visible", "disabled", "data-disabled"])(
     "leave %s unmodelled without a state axis",
     (variant) => {

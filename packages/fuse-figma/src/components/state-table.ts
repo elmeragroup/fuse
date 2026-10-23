@@ -18,6 +18,8 @@ import { axisValues } from "./kit-spec";
  * - `child`: the class styles the icons the selector reaches.
  * - `children`: the class styles the box's children, as `*:` does, and the variant after it names
  *   which ones.
+ * - `element`: the class styles the box's child parts that are elements of one tag, as `[&_img]:`
+ *   styles the `<img>` a consumer puts in Item's media.
  * - `omitted`: no cell shows the state, so the class is dropped.
  * - `omitted-for`: the class styles a pseudo-element the kit draws no layer for, the component
  *   inside a composition the kit does not draw, or the component under a media condition the kit
@@ -28,6 +30,7 @@ export type VariantMeaning =
   | { readonly kind: "condition"; readonly holds: (cell: Cell) => boolean }
   | { readonly kind: "child"; readonly selects: (slot: IconSlot) => boolean }
   | { readonly kind: "children" }
+  | { readonly kind: "element"; readonly tag: string }
   | { readonly kind: "omitted" }
   | { readonly kind: "omitted-for"; readonly reason: string }
   | { readonly kind: "unmodelled" };
@@ -98,6 +101,13 @@ const CHILD_SELECTORS = new Map<string, (slot: IconSlot) => boolean>([
 /** Tailwind's variant for an element's children, which compiles `*:x` to `:is(.… > *)`. */
 const CHILDREN = "*";
 
+/**
+ * The child selectors that reach a part by its element's tag, as `[&_img]:` compiles to `.… img`.
+ * The selector matches an `<img>` at any depth, so the class reaches each `<img>` part below the box,
+ * through the parts between, as a child selector reaches an icon below them.
+ */
+const ELEMENT_SELECTORS = new Map([["[&_img]", "img"]]);
+
 /** The states and children a component set leaves out, whatever the component. */
 const SHARED_OMISSIONS = new Set([
   // A press lasts only as long as the pointer is down.
@@ -125,6 +135,7 @@ const DESKTOP_BREAKPOINTS = new Set(["sm", "md"]);
 const FIXED_VARIANTS = new Set([
   ...ICON_EDGES.keys(),
   ...CHILD_SELECTORS.keys(),
+  ...ELEMENT_SELECTORS.keys(),
   ...SHARED_OMISSIONS,
   ...DESKTOP_BREAKPOINTS,
 ]);
@@ -137,8 +148,9 @@ const FIXED_VARIANTS = new Set([
  * @param definition - The component.
  * @returns The meaning of each variant.
  * @throws When the definition has a disabled state and names no root kind, or gives a variant
- *   a second meaning: a fact or an omission for a shared variant, a state that renders a fixed
- *   one, or one variant declared twice.
+ *   a second meaning: a fact for a shared variant, an omission of a fixed variant or of a shared
+ *   state's variant where the state axis shows that state, a state that renders a fixed one, or
+ *   one variant declared twice.
  */
 export function makeStateTable(
   definition: Pick<
@@ -168,12 +180,18 @@ export function makeStateTable(
   const omittedMedia = definition.omittedMedia ?? new Map<string, string>();
   // Every variant this table gives the definition a meaning.
   const sharedVariants = new Set([...FIXED_VARIANTS, ...[...sharedStates.values()].flat()]);
+  // The variants of the shared states the definition's state axis shows. A set without a state may
+  // omit its variants, as a `<div>` row that takes no focus omits `focus-visible`.
+  const shownVariants = new Set([
+    ...FIXED_VARIANTS,
+    ...stateValues.flatMap((state) => sharedStates.get(state) ?? []),
+  ]);
 
   const sources = [
     // A state may add to a shared state entry, as a pending Button renders `data-disabled`.
     { variants: new Set(Object.values(definition.states).flat()), shared: FIXED_VARIANTS },
     { variants: new Set(definition.facts.keys()), shared: sharedVariants },
-    { variants: definition.omittedStates, shared: sharedVariants },
+    { variants: definition.omittedStates, shared: shownVariants },
     { variants: new Set(omittedElements.keys()), shared: sharedVariants },
     { variants: new Set(omittedCompositions.keys()), shared: sharedVariants },
     { variants: new Set(omittedMedia.keys()), shared: sharedVariants },
@@ -200,6 +218,10 @@ export function makeStateTable(
     const selects = CHILD_SELECTORS.get(variant);
     if (selects !== undefined) {
       return { kind: "child", selects };
+    }
+    const tag = ELEMENT_SELECTORS.get(variant);
+    if (tag !== undefined) {
+      return { kind: "element", tag };
     }
     const states = statesRendering.get(variant);
     if (states !== undefined) {
@@ -233,12 +255,17 @@ export function makeStateTable(
   };
 }
 
+/** The child parts a class styles: those that carry a `data-slot`, or the elements of a tag. */
+export type PartTarget =
+  | { readonly kind: "slot"; readonly slot: string }
+  | { readonly kind: "tag"; readonly tag: string };
+
 /** What a class's variants say about it in one cell. */
 export type VariantReading = {
   /** The icons its child selectors reach, or undefined for a class on the box itself. */
   readonly selects: ((slot: IconSlot) => boolean) | undefined;
-  /** The `data-slot` of the child parts it styles, or undefined for a class on the box itself. */
-  readonly slot: string | undefined;
+  /** The child parts it styles, or undefined for a class on the box itself. */
+  readonly target: PartTarget | undefined;
   readonly conditionVariants: readonly string[];
   /** Whether every condition variant holds in the cell. */
   readonly holds: boolean;
@@ -259,10 +286,18 @@ const PAST_CHILD_SLOT: CoverageNote = {
     "the builder reads `*:data-[slot=…]:` only as a class's last variants, and models no state of the child",
 };
 
+/** A variant after an element selector such as `[&_img]:`, or one inside an icon's selector. */
+const PAST_CHILD_ELEMENT: CoverageNote = {
+  outcome: "unmapped",
+  detail:
+    "the builder reads a selector such as `[&_img]:` only as a class's last variant on the box itself, and models no state of the element",
+};
+
 /**
  * Read a class's variants, outermost first. A condition holds or not in the cell, a child selector
- * narrows the icons the class reaches, and `*:` followed by `data-[slot=x]:` makes the class style
- * the box's child parts whose `data-slot` is `x`. Any other variant skips the class.
+ * narrows the icons the class reaches, `*:` followed by `data-[slot=x]:` makes the class style the
+ * box's child parts whose `data-slot` is `x`, and an element selector such as `[&_img]:` makes it
+ * style the box's child parts of that tag. Any other variant skips the class.
  *
  * @param variants - The class's variants, outermost first.
  * @param meaningOf - The definition's state table.
@@ -272,7 +307,7 @@ const PAST_CHILD_SLOT: CoverageNote = {
  */
 export function readVariants(variants: readonly string[], meaningOf: StateTable, cell: Cell): VariantReading {
   let selects: VariantReading["selects"];
-  let slot: string | undefined;
+  let target: PartTarget | undefined;
   const conditionVariants: string[] = [];
   let holds = true;
   for (let index = 0; index < variants.length; index += 1) {
@@ -280,13 +315,13 @@ export function readVariants(variants: readonly string[], meaningOf: StateTable,
     const meaning = meaningOf(variant);
     const skip = (skipped: CoverageNote): VariantReading => ({
       selects,
-      slot,
+      target,
       conditionVariants,
       holds,
       skipped,
     });
-    if (slot !== undefined) {
-      return skip(PAST_CHILD_SLOT);
+    if (target !== undefined) {
+      return skip(target.kind === "slot" ? PAST_CHILD_SLOT : PAST_CHILD_ELEMENT);
     }
     if (meaning.kind === "child") {
       const outer = selects;
@@ -294,11 +329,19 @@ export function readVariants(variants: readonly string[], meaningOf: StateTable,
       continue;
     }
     if (meaning.kind === "children") {
-      slot = slotOfVariant(variants[index + 1]);
+      const slot = slotOfVariant(variants[index + 1]);
       if (slot === undefined || selects !== undefined) {
         return skip(BARE_CHILDREN);
       }
+      target = { kind: "slot", slot };
       index += 1;
+      continue;
+    }
+    if (meaning.kind === "element") {
+      if (selects !== undefined) {
+        return skip(PAST_CHILD_ELEMENT);
+      }
+      target = { kind: "tag", tag: meaning.tag };
       continue;
     }
     if (meaning.kind !== "condition") {
@@ -307,7 +350,7 @@ export function readVariants(variants: readonly string[], meaningOf: StateTable,
     conditionVariants.push(variant);
     holds &&= meaning.holds(cell);
   }
-  return { selects, slot, conditionVariants, holds, skipped: undefined };
+  return { selects, target, conditionVariants, holds, skipped: undefined };
 }
 
 /** The `data-slot` a `data-[slot=x]` variant tests for, or undefined for any other variant. */
@@ -318,7 +361,7 @@ function slotOfVariant(variant: string | undefined): string | undefined {
 /** What becomes of a class whose variant applies it in no cell the kit draws. */
 function skippedNote(
   variant: string,
-  meaning: Exclude<VariantMeaning, { readonly kind: "condition" | "child" | "children" }>
+  meaning: Exclude<VariantMeaning, { readonly kind: "condition" | "child" | "children" | "element" }>
 ): CoverageNote {
   switch (meaning.kind) {
     case "omitted":

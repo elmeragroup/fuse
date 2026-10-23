@@ -11,7 +11,10 @@
  * Oracle: the static markup the real Fuse component renders for every preview cell, through the
  * definition's compare renderer. A condition must hold in a cell exactly when the measured
  * element carries the attribute its variant selects, and a condition a part's own classes name
- * must hold exactly when that part's element carries it. The parts must match the measured
+ * must hold exactly when that part's element carries it. A group variant must hold exactly where the
+ * root or an element around it is the group in that state, a parent-context variant such as
+ * `item-described:` exactly where the root holds what it reads for the parts below it, and a tag
+ * variant such as `[a]:` exactly where the root is that element. The parts must match the measured
  * element's descendants that carry a part's `data-slot` or that its `element` selects, each below
  * its parent part, and any other part with no `data-slot` must be the one child element of its
  * parent part beside those parts and Base UI's hidden span. The slots must match the measured
@@ -137,6 +140,43 @@ const GROUP_VARIANTS = new Map<string, (ancestor: MarkupElement) => boolean>([
     "group-data-[popup-open]/select-trigger",
     (ancestor) => marks(ancestor, "group/select-trigger") && ancestor.attributes.has("data-popup-open"),
   ],
+  // `group-data-[size=sm]/item:` holds below an Item row that carries `data-size="sm"`, as the image
+  // media's `size-8` does.
+  ...["default", "sm", "xs"].map((size): [string, (ancestor: MarkupElement) => boolean] => [
+    `group-data-[size=${size}]/item`,
+    (ancestor) => marks(ancestor, "group/item") && ancestor.attributes.get("data-size") === size,
+  ]),
+]);
+
+/**
+ * Whether the measured root holds what a parent-context variant reads, for each part directly below
+ * it: fuse.css's `item-described:` compiles to
+ * `:where(:has( > [data-slot="item-content"] > [data-slot="item-description"])) > &`, so it holds on
+ * the children of a row whose content column holds a description.
+ */
+const PARENT_VARIANTS = new Map<string, (elements: readonly MarkupElement[], parent: number) => boolean>([
+  [
+    "item-described",
+    (elements, parent) =>
+      elements.some(
+        (content, index) =>
+          content.parent === parent &&
+          content.attributes.get("data-slot") === "item-content" &&
+          elements.some(
+            (description) =>
+              description.parent === index && description.attributes.get("data-slot") === "item-description"
+          )
+      ),
+  ],
+]);
+
+/**
+ * The variants that test the root's own tag: `[a]:` compiles to `:is(a)`. Each is checked on a set
+ * whose definition gives it a meaning, since a link root of a set that never reads it, as React Aria's
+ * Link, is an `<a>` too.
+ */
+const TAG_VARIANTS = new Map<string, (element: MarkupElement) => boolean>([
+  ["[a]", (element) => element.name === "a"],
 ]);
 
 /** The ancestors of an element, its parent first. */
@@ -310,6 +350,15 @@ function unnamedChild(
     : undefined;
 }
 
+/**
+ * Whether an element is the bare child a box holds its label's text in, as Item's actions hold
+ * theirs in a `<span>`, which is the label's and no part.
+ */
+function holdsLabel(box: BoxDefinition | undefined, element: MarkupElement): boolean {
+  const selector = box?.label?.textElement;
+  return selector !== undefined && selects(selector, element);
+}
+
 /** The nearest ancestor of an element among `found`: the measured element and the parts found so far. */
 function partOwner(
   elements: readonly MarkupElement[],
@@ -356,7 +405,11 @@ function markupParts(
       found.set(index, { path: `${parent.path}/${slot}`, box: parts.find((part) => part.slot === slot) });
     } else if (selected !== undefined) {
       found.set(index, { path: `${parent.path}/${pathSegment(selected)}`, box: selected });
-    } else if (element.parent === owner && unnamedChild(elements, owner, slots, parts) === index) {
+    } else if (
+      element.parent === owner &&
+      unnamedChild(elements, owner, slots, parts) === index &&
+      !holdsLabel(parent.box, element)
+    ) {
       const byPlace = parts.find((part) => part.slot === undefined && part.element === undefined);
       found.set(index, { path: `${parent.path}/${UNNAMED}`, box: byPlace });
     }
@@ -502,10 +555,8 @@ describe("each kit definition against the markup of its component", () => {
         ...Object.values(definition.states).flat(),
         ...recipeConditions,
       ]);
-      const unlisted = [...named].filter(
-        (variant) =>
-          !NOT_ATTRIBUTES.has(variant) && !ATTRIBUTE_VARIANTS.has(variant) && !GROUP_VARIANTS.has(variant)
-      );
+      const listed = [NOT_ATTRIBUTES, ATTRIBUTE_VARIANTS, GROUP_VARIANTS, PARENT_VARIANTS, TAG_VARIANTS];
+      const unlisted = [...named].filter((variant) => !listed.some((list) => list.has(variant)));
       expect(unlisted).toEqual([]);
     }
   );
@@ -565,6 +616,14 @@ function checkMarkup(definition: ComponentDefinition, cells: readonly Cell[], re
         const ancestors = ancestorsOf(elements, measured);
         const groups = rootVariants.has(variant) ? ancestors : [root, ...ancestors];
         expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(groups.some(matches));
+      }
+      for (const [variant, holds] of PARENT_VARIANTS) {
+        expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(holds(elements, measured));
+      }
+      for (const [variant, matches] of TAG_VARIANTS) {
+        if (meaningOf(variant).kind === "condition") {
+          expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(matches(root));
+        }
       }
       const ancestors = definition.ancestorsFor?.(cell) ?? [];
       expect(

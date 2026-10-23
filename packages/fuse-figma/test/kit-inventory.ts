@@ -157,6 +157,16 @@ export const KIT_PAGES: readonly InventoryPage[] = [
   },
   // 6 variants at 2 weights, in 4 states.
   { slug: "link", name: "Link", sets: [{ key: "link", name: "Link", variants: 48, previewed: 48 }] },
+  {
+    slug: "item",
+    name: "Item",
+    sets: [
+      // 3 variants at 3 sizes, without and with a description, with icon and image media.
+      { key: "item", name: "Item", variants: 36, previewed: 36 },
+      // The default and outline link rows in 4 states.
+      { key: "item-link", name: "Item link", variants: 8, previewed: 8 },
+    ],
+  },
 ];
 
 /** The page that holds the icon library alone, after the component pages. */

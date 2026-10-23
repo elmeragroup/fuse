@@ -13,7 +13,7 @@ import { avatar } from "./avatar-cell";
 import { renderCellHtml } from "./cell-renderers";
 
 const PORTRAIT_URI = `data:image/png;base64,${readFileSync(
-  new URL("../components/avatar-portrait.png", import.meta.url)
+  new URL("../components/portrait.png", import.meta.url)
 ).toString("base64")}`;
 
 describe("the Avatar renderer", () => {

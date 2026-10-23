@@ -1,7 +1,8 @@
 /**
  * The layout, text, image, property, rotation and stroke rules of the in-memory file in
  * `fake-figma.ts`, each on a few nodes built by hand. The oracle is what the test file `Elmera Fuse -
- * Import test` read back in net-zero probes on 2026-10-22, named P0 to P9b, PB, PR and PD as the
+ * Import test` read back in net-zero probes on 2026-10-22 and 2026-10-23, named P0 to P9b, PB, PR,
+ * PD, PL and PF as the
  * fake's header names them, the PNG signature, the hashes `shasum -a 1` gives the fixture images,
  * and the typings where no probe ran. The planners' tests converge against these rules, so a rule
  * that drifts from the real file would let a plan pass that Figma would not keep.
@@ -663,5 +664,34 @@ describe("rule 28: a text's letter spacing", () => {
     expect(() => {
       text.letterSpacing = { unit: "PERCENT", value: -2.5 };
     }).toThrow(`Cannot write letterSpacing of ${text.id} with unloaded font "Inter Regular"`);
+  });
+});
+
+describe("rule 29: a layer that fills across a hugging row stretches to the height its other layers set", () => {
+  /** PF's row: hugging both ways, a fixed 40 × 40 square, and a hugging 39 × 16 frame beside it. */
+  function hugRow() {
+    const row = autoLayout("HORIZONTAL");
+    row.primaryAxisSizingMode = "AUTO";
+    row.counterAxisSizingMode = "AUTO";
+    const square = childOf(row);
+    square.resize(40, 40);
+    const box = autoLayout("HORIZONTAL");
+    row.appendChild(box);
+    box.resize(39, 16);
+    box.primaryAxisSizingMode = "AUTO";
+    box.counterAxisSizingMode = "AUTO";
+    return { row, square, box };
+  }
+
+  it("stretches the filling frame to the square's 40, keeps the row hugging, and follows the square to 60 (PF)", () => {
+    const { row, square, box } = hugRow();
+    box.layoutSizingVertical = "FILL";
+    expect([box.layoutSizingVertical, box.height, sizing(row)]).toEqual(["FILL", 40, ["HUG", "HUG"]]);
+    square.resize(40, 60);
+    expect([box.height, box.absoluteBoundingBox?.height]).toEqual([60, 60]);
+  });
+
+  it("keeps the frame's own height while it hugs", () => {
+    expect(hugRow().box.height).toBe(16);
   });
 });

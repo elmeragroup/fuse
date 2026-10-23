@@ -17,7 +17,15 @@ import {
   readSize,
 } from "./css-values";
 import type { PercentBasis, VariableIndex } from "./css-values";
-import type { BoxSpec, DirectionSpec, LimitsSpec, NumberSpec, SizeSpec, SizingSpec } from "./kit-spec";
+import type {
+  BoxSpec,
+  ChildLayerSpec,
+  DirectionSpec,
+  LimitsSpec,
+  NumberSpec,
+  SizeSpec,
+  SizingSpec,
+} from "./kit-spec";
 import type { Layout } from "./placement";
 
 /** What a box's parent gives it on one axis. */
@@ -130,22 +138,13 @@ export type RowShare = { readonly kind: "pixels"; readonly value: number } | { r
 export const UNREAD_SHARE: RowShare = { kind: "unread" };
 
 /**
- * The margins that set a box's horizontal margins as a whole: shorthands and logical sides, which the
- * build does not read apart.
- */
-const WHOLE_MARGINS = ["margin", "margin-inline", "margin-inline-start", "margin-inline-end"] as const;
-
-/**
- * A box's left and right margins together, in pixels.
+ * A box's left and right margins together, in pixels. The cascade splits a shorthand or logical
+ * margin into its physical sides, so these two hold every horizontal margin.
  *
  * @param style - The box's style.
- * @returns Their sum, 0 for none, or undefined where one is no literal or a shorthand or logical
- *   margin sets them.
+ * @returns Their sum, 0 for none, or undefined where one is no literal.
  */
 function horizontalMargins(style: LayerStyle): number | undefined {
-  if (WHOLE_MARGINS.some((property) => style.has(property))) {
-    return undefined;
-  }
   const left = literalPixels(style, "margin-left");
   const right = literalPixels(style, "margin-right");
   return left === undefined || right === undefined ? undefined : left + right;
@@ -311,19 +310,63 @@ export function roomInside(holder: Holder, index: number): Room {
  */
 export function widthCapInside(holder: Holder, index: number): WidthCap {
   const content = contentCap(holder);
-  const others = holder.shares.filter((_share, place) => place !== index);
-  if (content.kind !== "pixels" || holder.layout.direction !== "HORIZONTAL" || others.length === 0) {
+  if (content.kind !== "pixels" || holder.layout.direction !== "HORIZONTAL") {
     return content;
   }
+  const room = lessShares(holder, index, content.value);
+  return room === undefined ? UNREAD_CAP : { kind: "pixels", value: room };
+}
+
+/**
+ * A row's length less the shares of every layer but one and the gaps between them (CSS Flexbox 1
+ * §9.7), in pixels.
+ *
+ * @param holder - The row.
+ * @param index - The one layer's place in the row's flow.
+ * @param length - The row's content length.
+ * @returns The length left, or undefined where a share or the gap is no literal, or a `column-gap`
+ *   is set.
+ */
+function lessShares(holder: Holder, index: number, length: number): number | undefined {
+  const others = holder.shares.filter((_share, place) => place !== index);
+  if (others.length === 0) {
+    return length;
+  }
   const gap = holder.style.has("column-gap") ? undefined : literalPixels(holder.style, "gap");
-  let room = content.value - (gap ?? 0) * others.length;
+  let room = length - (gap ?? 0) * others.length;
   for (const share of others) {
     if (share.kind === "unread" || gap === undefined) {
-      return UNREAD_CAP;
+      return undefined;
     }
     room -= share.value;
   }
-  return { kind: "pixels", value: room };
+  return room;
+}
+
+/**
+ * The room of the part that grows along its box's direction: it fills the box along it, as
+ * {@link readGrowth} decides, and in a row its length is the row's content length less the other
+ * layers and the gaps, or unknown where one of them does not read in pixels. In a column the other
+ * layers' heights are unknown before they map, so its length is unknown.
+ *
+ * @param holder - The box.
+ * @param index - The part's place in the box's flow.
+ * @param room - The room the box gives the part.
+ * @returns The part's room.
+ */
+export function growingRoom(holder: Holder, index: number, room: Room): Room {
+  if (holder.layout.direction === "VERTICAL") {
+    return { ...room, vertical: { ...room.vertical, auto: FILL, length: undefined } };
+  }
+  const { length } = room.horizontal;
+  return {
+    ...room,
+    horizontal: {
+      ...room.horizontal,
+      auto: FILL,
+      length: length === undefined ? undefined : lessShares(holder, index, length),
+    },
+  };
 }
 
 /**
@@ -379,7 +422,8 @@ type MissingDeclaration = {
 
 /**
  * Find the stretch a box cannot draw. A column that hugs its width is as wide as its widest layer
- * and stretches the others to it, and Figma shrinks a layer that fills a hugging frame, so the
+ * and stretches the others to it, while Figma stretches a layer that fills a hugging frame only to
+ * the width the frame's other layers set (PF). The build cannot tell which layer is widest, so the
  * stretch has no Figma form where a part sets no width of its own.
  *
  * @param holder - The box.
@@ -402,34 +446,165 @@ export function unstretched(holder: Holder, parts: readonly LayerStyle[]): Missi
  * Read the `flex` of the parts in a flex box's flow. A box that hugs its length along its direction,
  * with no limit there that can change that length, is as long as its layers, so it leaves no free
  * space (CSS Flexbox 1 §9.7), and the one part that grows keeps its own length, as `flex: 1` does
- * from its zero basis. Any other `flex` stays unread, so it lands unmapped: in a box of definite
- * length the part takes the room the others leave, a minimum can leave room past the layers and a
- * maximum can take room away, and two parts that grow share the free space by their grow.
+ * from its zero basis. In a box of definite length along its direction the one part that grows takes
+ * the room the others leave, which Figma's fill takes, where it sets no length of its own along the
+ * direction, since its zero basis ignores one. Any other `flex` stays unread, so it lands unmapped: a
+ * minimum can leave room past the layers and a maximum can take room away, and two parts that grow
+ * share the free space by their grow.
  *
  * @param holder - The box.
  * @param parts - The style of each part in the box's flow.
+ * @returns The place in `parts` of the part that fills the box along its direction, or undefined
+ *   for none.
  */
-export function readGrowth(holder: Holder, parts: readonly LayerStyle[]): void {
+export function readGrowth(holder: Holder, parts: readonly LayerStyle[]): number | undefined {
   const { layout, sizing, style } = holder;
   const horizontal = layout.direction === "HORIZONTAL";
   const along = horizontal ? sizing.horizontal : sizing.vertical;
   const axis = horizontal ? WIDTH : HEIGHT;
+  const growing = parts.filter((part) => part.has("flex"));
+  const [only] = growing;
+  if (!layout.flex || growing.length !== 1 || only === undefined) {
+    return undefined;
+  }
+  const one = (value: string) => (normalizeCss(value) === "1" ? value : undefined);
+  if (along.kind !== "hug") {
+    if (only.has(axis.length)) {
+      return undefined;
+    }
+    const fills = only.read("flex", one, () => ({
+      outcome: "literal",
+      detail: `the one layer that grows fills the room the ${axis.flow}'s other layers leave`,
+    }));
+    return fills === undefined ? undefined : parts.indexOf(only);
+  }
   // A zero minimum never lengthens the box, and any other limit along the axis can.
   const limited =
     style.has(axis.max) || (style.has(axis.min) && evaluateLength(style.resolved(axis.min) ?? "") !== 0);
-  const growing = parts.filter((part) => part.has("flex"));
-  const [only] = growing;
-  if (!layout.flex || along.kind !== "hug" || limited || growing.length !== 1 || only === undefined) {
-    return;
-  }
-  only.read(
-    "flex",
-    (value) => (normalizeCss(value) === "1" ? value : undefined),
-    () => ({
+  if (!limited) {
+    only.read("flex", one, () => ({
       outcome: "dropped",
       detail: `the ${axis.flow} hugs its layers, so the one layer that grows has no room to grow into`,
-    })
+    }));
+  }
+  return undefined;
+}
+
+/**
+ * The least and the greatest height in pixels a mapped layer draws at, in every mode and with every
+ * text its properties can set, or no greatest where one is unknown.
+ */
+export type HeightBounds = { readonly min: number; readonly max: number | undefined };
+
+/** A height this module cannot bound: a bound length, a fill, or a layer turned on its side. */
+const UNBOUNDED: HeightBounds = { min: 0, max: undefined };
+
+const NO_HEIGHT: HeightBounds = { min: 0, max: 0 };
+
+/** A length's bounds: its value where literal, unknown where a variable takes a length per mode. */
+function lengthBounds(length: NumberSpec): HeightBounds {
+  return length.kind === "literal" ? { min: length.value, max: length.value } : UNBOUNDED;
+}
+
+function sum(bounds: readonly HeightBounds[]): HeightBounds {
+  return bounds.reduce(
+    (total, next) => ({
+      min: total.min + next.min,
+      max: total.max === undefined || next.max === undefined ? undefined : total.max + next.max,
+    }),
+    NO_HEIGHT
   );
+}
+
+function times(bounds: HeightBounds, least: number, most: number): HeightBounds {
+  return { min: bounds.min * least, max: bounds.max === undefined ? undefined : bounds.max * most };
+}
+
+/**
+ * The height bounds of a mapped layer, as a row compares its layers before it stretches one across
+ * its height. A fixed height is its length. A text sets at least one line, and at most one where it
+ * hugs a width nothing caps, or as many as its truncation keeps. A hugging box is its padding, its
+ * in-layout stroke and its layers in flow: their sum and gaps in a column, the tallest in a row,
+ * within its limits. A layer a property can hide draws no height at least. A bound length, a fill and
+ * a layer turned a quarter leave the greatest height unknown.
+ *
+ * @param layer - The layer, or undefined for none, whose height is unknown.
+ * @returns The layer's height bounds.
+ */
+export function heightBounds(layer: ChildLayerSpec | undefined): HeightBounds {
+  if (layer === undefined) {
+    return UNBOUNDED;
+  }
+  if (layer.kind === "icon") {
+    return lengthBounds(layer.size);
+  }
+  if (layer.kind === "text") {
+    const { sizing, lineHeight, maxWidth, truncation } = layer;
+    if (sizing.vertical.kind === "fixed") {
+      return lengthBounds(sizing.vertical.length);
+    }
+    const line = lengthBounds(lineHeight);
+    const lines = sizing.horizontal.kind === "hug" && maxWidth === undefined ? 1 : truncation?.maxLines;
+    return {
+      min: line.min,
+      max: lines === undefined || line.max === undefined ? undefined : line.max * lines,
+    };
+  }
+  if (layer.rotation !== undefined && layer.rotation % 180 !== 0) {
+    return UNBOUNDED;
+  }
+  const own = boxHeightBounds(layer);
+  return layer.visibleProperty === undefined ? own : { min: 0, max: own.max };
+}
+
+function boxHeightBounds(box: BoxSpec): HeightBounds {
+  const { vertical } = box.sizing;
+  if (vertical.kind !== "hug") {
+    return vertical.kind === "fixed" ? lengthBounds(vertical.length) : UNBOUNDED;
+  }
+  const flowing = box.children.filter((child) => child.kind !== "frame" || child.absolute === undefined);
+  const heights = flowing.map((child) => heightBounds(child));
+  const shown = flowing.filter((child) => child.kind !== "frame" || child.visibleProperty === undefined);
+  const gaps = times(
+    lengthBounds(box.itemSpacing),
+    Math.max(0, shown.length - 1),
+    Math.max(0, flowing.length - 1)
+  );
+  const layers = box.direction === "VERTICAL" ? sum([...heights, gaps]) : tallest(heights);
+  const stroke =
+    box.stroke === undefined || box.stroke.inLayout === false ? NO_HEIGHT : lengthBounds(box.stroke.weight);
+  const hugged = sum([lengthBounds(box.paddingTop), layers, lengthBounds(box.paddingBottom), stroke, stroke]);
+  return withinLimits(hugged, box.limits);
+}
+
+/** The bounds of the tallest of a row's layers. */
+function tallest(bounds: readonly HeightBounds[]): HeightBounds {
+  return bounds.reduce(
+    (most, next) => ({
+      min: Math.max(most.min, next.min),
+      max: most.max === undefined || next.max === undefined ? undefined : Math.max(most.max, next.max),
+    }),
+    NO_HEIGHT
+  );
+}
+
+/**
+ * Bounds kept within a box's `minHeight` and `maxHeight`. A bound `minHeight` leaves the greatest
+ * height unknown, and a bound `maxHeight` the least.
+ */
+function withinLimits(bounds: HeightBounds, { minHeight, maxHeight }: LimitsSpec): HeightBounds {
+  const floor = minHeight === undefined ? NO_HEIGHT : lengthBounds(minHeight);
+  const raised = {
+    min: Math.max(bounds.min, floor.min),
+    max: bounds.max === undefined || floor.max === undefined ? undefined : Math.max(bounds.max, floor.max),
+  };
+  if (maxHeight === undefined) {
+    return raised;
+  }
+  const ceiling = lengthBounds(maxHeight).max;
+  return ceiling === undefined
+    ? { min: 0, max: raised.max }
+    : { min: Math.min(raised.min, ceiling), max: Math.min(raised.max ?? ceiling, ceiling) };
 }
 
 /** The properties that size one axis, and the words its coverage rows use. */
@@ -470,6 +645,14 @@ const HEIGHT: AxisProperties = {
 type BoxSizing = Pick<BoxSpec, "sizing" | "limits" | "clips"> & { readonly extent: Extent };
 
 /**
+ * What a `fit-content` width draws as. `fit-content` is the smaller of what the box holds on one line
+ * and the room its parent gives it (CSS Sizing 3 §5.1). A kit frame's default content fits its room,
+ * so the width hugs (`content`). A box whose text wraps at that room, and that draws the same at the
+ * room's width, fills the room where its parent stretches it (`room`), as `box-mapping.ts` decides.
+ */
+export type FitContent = "content" | "room";
+
+/**
  * Read a box's sizing and limits on both axes, `field-sizing: content`, and `overflow: hidden`.
  * `field-sizing: content` sizes a form control to its content on each side no length sets (CSS
  * Basic UI 4). The kit hugs such a side already, so it reads where the height hugs. `overflow:
@@ -479,11 +662,17 @@ type BoxSizing = Pick<BoxSpec, "sizing" | "limits" | "clips"> & { readonly exten
  * @param reader - The box's style.
  * @param room - What the box's parent gives it.
  * @param variables - The synced variables a length can bind.
+ * @param fit - What a `fit-content` width draws as.
  * @returns The box's sizing, limits, clipping and extent.
  */
-export function readSizing(reader: LayerStyle, room: Room, variables: VariableIndex): BoxSizing {
-  const horizontal = readAxis(reader, WIDTH, room.horizontal, variables);
-  const vertical = readAxis(reader, HEIGHT, room.vertical, variables);
+export function readSizing(
+  reader: LayerStyle,
+  room: Room,
+  variables: VariableIndex,
+  fit: FitContent
+): BoxSizing {
+  const horizontal = readAxis(reader, WIDTH, room.horizontal, variables, fit);
+  const vertical = readAxis(reader, HEIGHT, room.vertical, variables, "content");
   reader.read(
     "field-sizing",
     (value) => (normalizeCss(value) === "content" && vertical.size.kind === "hug" ? value : undefined),
@@ -569,9 +758,10 @@ function readAxis(
   reader: LayerStyle,
   axis: AxisProperties,
   room: AxisRoom,
-  variables: VariableIndex
+  variables: VariableIndex,
+  fit: FitContent
 ): AxisRead {
-  const size = reader.has(axis.length) ? (readLength(reader, axis, room, variables) ?? HUG) : room.auto;
+  const size = reader.has(axis.length) ? (readLength(reader, axis, room, variables, fit) ?? HUG) : room.auto;
   const bounds = (["min", "max"] as const).flatMap((side): Bound[] => {
     const property = axis[side];
     const value = reader.resolved(property);
@@ -700,7 +890,8 @@ function usedLength(length: number, min: number | undefined, max: number | undef
  * Read `width` or `height` as its axis's sizing, through {@link readSize}. A `100%` along a flex
  * box's direction beside other layers stays unmapped: CSS sizes it at the whole length and then
  * shrinks or overflows it with them (CSS Flexbox 1 §9.7), where a fill takes only the room they
- * leave.
+ * leave. A `fit-content` width fills a room that stretches it where `fit` says it draws so, as
+ * {@link FitContent} says, and hugs otherwise.
  *
  * @returns The sizing, or undefined when the value does not map.
  */
@@ -708,12 +899,20 @@ function readLength(
   reader: LayerStyle,
   axis: AxisProperties,
   room: AxisRoom,
-  variables: VariableIndex
+  variables: VariableIndex,
+  fit: FitContent
 ): SizeSpec | undefined {
   const { siblings, percent } = room;
   const read = reader.read(
     axis.length,
     (value) => {
+      // `auto` is a length's initial value, which sizes the axis as no length does.
+      if (normalizeCss(value) === "auto") {
+        return { size: room.auto, share: undefined };
+      }
+      if (normalizeCss(value) === "fit-content" && fit === "room" && room.auto.kind === "fill") {
+        return { size: { kind: "fitted" } as const, share: undefined };
+      }
       const share = evaluatePercentage(value);
       if (share === 1 && siblings.length > 0) {
         return { size: { kind: "shared" } as const, share };
@@ -730,6 +929,11 @@ function readLength(
             detail: `${listNames(siblings)} ${shares} the ${axis.flow}, and a fill takes only the room ${leaves}, where CSS sizes 100% of the ${axis.flow}`,
           };
         }
+        case "fitted":
+          return {
+            outcome: "literal",
+            detail: `the box fits its text up to the ${axis.length} its parent gives it, where its text wraps, which a fill draws, since the box paints nothing and starts its text at its start`,
+          };
         case "hug":
           return { outcome: "literal", detail: "the box hugs its content" };
         case "fill":
@@ -748,6 +952,9 @@ function readLength(
       }
     }
   )?.size;
+  if (read?.kind === "fitted") {
+    return FILL;
+  }
   return read === undefined || read.kind === "shared" ? undefined : read;
 }
 

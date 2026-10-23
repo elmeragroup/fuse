@@ -102,9 +102,12 @@ const AXES = [
  * hugs, or that holds an absolute frame filling an axis.
  * Figma clamps a fixed length to a limit, so the plan would resize the box on every run. CSS
  * resolves a `width` against its own `min-width` and `max-width`, so the build folds such a limit
- * into the length. A hugging box takes its size from its layers, so a layer that fills it
- * collapses to its smallest size, where CSS resolves the percentage against an auto size the same
- * circular way. Figma refuses FILL on an absolute layer, as a real file did on 2026-10-22 (P8).
+ * into the length. A hugging box takes its size from its layers, so a layer that fills it along
+ * the box's direction collapses to its smallest size, where CSS resolves the percentage against an
+ * auto size the same circular way. Across the direction a layer that fills stretches to the length
+ * the box's other layers set, as a real file did on 2026-10-23 (PF), so it passes beside a layer in
+ * the flow that sets a length there, a fixed or hugging one or an icon, and collapses beside none.
+ * Figma refuses FILL on an absolute layer, as a real file did on 2026-10-22 (P8).
  */
 function checkBox(set: ComponentSetSpec, variant: VariantSpec, box: BoxSpec, name: string): void {
   for (const { axis, length, limits } of AXES) {
@@ -124,9 +127,23 @@ function checkBox(set: ComponentSetSpec, variant: VariantSpec, box: BoxSpec, nam
       );
     }
     const filling = box.children.find((child) => child.kind !== "icon" && child.sizing[axis].kind === "fill");
-    if (filling !== undefined && box.sizing[axis].kind === "hug") {
+    if (filling === undefined || box.sizing[axis].kind !== "hug") {
+      continue;
+    }
+    const across = (box.direction === "HORIZONTAL" ? "vertical" : "horizontal") === axis;
+    if (!across) {
       throw new Error(
         `${set.name}: ${filling.name} in the variant ${variant.key} fills the ${length} of a parent that hugs it, so Figma would shrink it to its smallest ${length}.`
+      );
+    }
+    const setsLength = box.children.some(
+      (child) =>
+        child.kind === "icon" ||
+        (child.sizing[axis].kind !== "fill" && !(child.kind === "frame" && child.absolute !== undefined))
+    );
+    if (!setsLength) {
+      throw new Error(
+        `${set.name}: ${filling.name} in the variant ${variant.key} fills the ${length} of a parent that hugs it, beside no layer that sets that ${length}, so Figma would shrink it to its smallest ${length}.`
       );
     }
   }

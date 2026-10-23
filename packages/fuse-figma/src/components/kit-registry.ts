@@ -25,6 +25,7 @@ import { CONFIRM_BUTTON } from "./confirm-button-kit";
 import { EMPTY } from "./empty-kit";
 import { FIELD_DESCRIPTION, FIELD_ERROR, FIELD_LEGEND, FIELD_TITLE } from "./field-text-kit";
 import { INPUT } from "./input-kit";
+import { ITEM, ITEM_LINK } from "./item-kit";
 import { KBD } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
 import { LABEL } from "./label-kit";
@@ -118,6 +119,9 @@ const CALENDAR_PAGE: KitPage = { slug: "calendar", name: "Calendar" };
 
 /** The page React Aria's Link sits on alone. */
 const LINK_PAGE: KitPage = { slug: "link", name: "Link" };
+
+/** The page of Item's rows, the row and the link row, until Item group joins them. */
+const ITEM_PAGE: KitPage = { slug: "item", name: "Item" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -250,4 +254,6 @@ export const KIT: readonly KitEntry[] = [
   { definition: EMPTY, page: EMPTY_PAGE, previewCells: matrixCells(EMPTY.axes) },
   { definition: CALENDAR_DAY, page: CALENDAR_PAGE, previewCells: matrixCells(CALENDAR_DAY.axes) },
   { definition: LINK, page: LINK_PAGE, previewCells: matrixCells(LINK.axes) },
+  { definition: ITEM, page: ITEM_PAGE, previewCells: matrixCells(ITEM.axes) },
+  { definition: ITEM_LINK, page: ITEM_PAGE, previewCells: matrixCells(ITEM_LINK.axes) },
 ];

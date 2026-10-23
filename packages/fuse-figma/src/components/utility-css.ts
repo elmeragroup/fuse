@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 import { compileAst } from "tailwindcss";
 
 import { splitClassName } from "./class-name";
-import { namedClasses } from "./css-selector";
+import { namedClasses, selectorAlternatives } from "./css-selector";
 import { splitTopLevel } from "./css-values";
 import { compareSpecificity, specificityOf } from "./specificity";
 import type { Specificity } from "./specificity";
@@ -56,8 +56,8 @@ export type CompiledUtilities = {
   readonly classes: ReadonlyMap<string, ClassPlacement>;
   /**
    * The selector of every rule that names a class outside a pseudo-class's parentheses, by that
-   * class, whatever the selector starts with. `item-described:` compiles to a selector that starts
-   * with `:where()`, which places no class, and a part's presence check still reads it here.
+   * class, whatever the selector starts with, so a part's presence check reads the `:has()` of an
+   * `item-described:` rule, `:where(:has(…)) > .class`, here.
    */
   readonly rulesByClass: ReadonlyMap<string, readonly string[]>;
   /** The theme variables Tailwind emitted on `:root`, such as `--font-weight-medium: 500`. */
@@ -231,7 +231,8 @@ export function baseBorderColor(compiled: CompiledUtilities): UtilityDeclaration
  *
  * Every rule whose selector starts with a class places that class, at the top level or inside
  * an at-rule such as the `@media (hover: hover)` around `enabled-hover:`, and so does a `*:` rule,
- * `:is(.class > *)…`, for the class whose children it styles. Its first rule gives
+ * `:is(.class > *)…`, for the class whose children it styles, and an `item-described:` rule,
+ * `:where(…) > .class`, for the class it selects in a parent context. Its first rule gives
  * its order, and its most specific selector its specificity. Every rule also lists its selector
  * under each class it names, wherever the class sits in the selector.
  *
@@ -259,7 +260,9 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
       }
     }
     const leading =
-      node.kind === "rule" ? (leadingClass(node.selector) ?? childrenClass(node.selector)) : undefined;
+      node.kind === "rule"
+        ? (leadingClass(node.selector) ?? childrenClass(node.selector) ?? contextClass(node.selector))
+        : undefined;
     if (node.kind !== "rule" || leading === undefined) {
       return;
     }
@@ -348,6 +351,28 @@ function childrenClass(selector: string): { readonly name: string; readonly rest
   const opening = ":is(";
   const inner = selector.startsWith(opening) ? leadingClass(selector.slice(opening.length)) : undefined;
   return inner?.rest.startsWith(" > *)") === true ? inner : undefined;
+}
+
+/**
+ * The class a rule selects as the child of a parent context, as fuse.css's `item-described:` compiles
+ * to `:where(:has( > [data-slot="item-content"] > [data-slot="item-description"])) > .item-described\:…`:
+ * one `:where()`, the child combinator, then the class, which is the rule's subject.
+ */
+function contextClass(selector: string): { readonly name: string; readonly rest: string } | undefined {
+  const [alternative, ...others] = selectorAlternatives(selector);
+  const [context] = alternative ?? [];
+  if (
+    others.length > 0 ||
+    context?.kind !== "pseudo" ||
+    context.name !== "where" ||
+    context.element ||
+    context.argument === undefined
+  ) {
+    return undefined;
+  }
+  const after = selector.slice(`:where(${context.argument})`.length);
+  const child = /^\s*>\s*/.exec(after);
+  return child === null ? undefined : leadingClass(after.slice(child[0].length));
 }
 
 /**

@@ -5,9 +5,13 @@
  * `component-spec.ts` assembles a set from the root of each cell.
  */
 import { describeColor, readPaint } from "./box-paint";
+import type { BoxPaint } from "./box-paint";
 import {
   absoluteRoom,
+  growingRoom,
+  heightBounds,
   lessMargins,
+  listNames,
   outOfFlow,
   partShare,
   readGrowth,
@@ -39,6 +43,7 @@ import type {
   LimitsSpec,
   NumberSpec,
   PrimaryAlignSpec,
+  SizeSpec,
   SizingSpec,
 } from "./kit-spec";
 import { inertClamp, mapLabel, readLineClamp, readWithoutLabel, spaceBeforeLabel } from "./label-layout";
@@ -106,20 +111,27 @@ const DIRECTIONS = new Map<string, { readonly direction: DirectionSpec; readonly
  * to spare or layers of unequal height. A column takes CSS's start on both axes, and its unset
  * `align-items` stretches its layers across it, which {@link roomInside} gives them. A grid places
  * its layers by `place-content`, which {@link readDisplay} reads, so its alignments stay unread.
- * `line-clamp-*` makes a `-webkit-box` column, which sets its text from the top left.
+ * `line-clamp-*` makes a `-webkit-box` column, which sets its text from the top left. A row whose
+ * parts set their own `align-self` aligns as {@link readSelfAlignment} says.
  *
- * @returns The box's layout.
+ * @param flow - The parts in the box's flow, and the names of its icons and label, which set no
+ *   alignment of their own.
+ * @returns The box's layout, and the alignment its parts set, which {@link settleSelfAlignment}
+ *   settles once the parts map.
  */
-function readFlow(reader: LayerStyle): Layout {
+function readFlow(reader: LayerStyle, flow: FlowLayers): Flow {
   const display = normalizeCss(reader.raw("display") ?? "");
   if (display === "grid" || display === "-webkit-box") {
     const column = display === "-webkit-box";
     return {
-      flex: false,
-      direction: column ? "VERTICAL" : "HORIZONTAL",
-      primaryAlign: column ? "MIN" : "CENTER",
-      counterAlign: column ? "MIN" : "CENTER",
-      justify: "unset",
+      layout: {
+        flex: false,
+        direction: column ? "VERTICAL" : "HORIZONTAL",
+        primaryAlign: column ? "MIN" : "CENTER",
+        counterAlign: column ? "MIN" : "CENTER",
+        justify: "unset",
+      },
+      self: undefined,
     };
   }
   const flex = display === "flex" || display === "inline-flex";
@@ -131,15 +143,188 @@ function readFlow(reader: LayerStyle): Layout {
       )?.direction ?? "HORIZONTAL")
     : "HORIZONTAL";
   const unset = direction === "VERTICAL" ? "MIN" : "CENTER";
-  const counterAlign = readAlign(reader, "align-items", "counter", ALIGNMENTS) ?? unset;
+  const self = flex && direction === "HORIZONTAL" ? readSelfAlignment(reader, flow) : undefined;
+  const counterAlign = self?.align ?? readAlign(reader, "align-items", "counter", ALIGNMENTS) ?? unset;
   const primaryAlign = readAlign(reader, "justify-content", "primary", PRIMARY_ALIGNMENTS) ?? unset;
   return {
-    flex,
-    direction,
-    primaryAlign,
-    counterAlign,
-    justify: reader.has("justify-content") ? primaryAlign : "unset",
+    layout: {
+      flex,
+      direction,
+      primaryAlign,
+      counterAlign,
+      justify: reader.has("justify-content") ? primaryAlign : "unset",
+    },
+    self,
   };
+}
+
+/** An axis that fills the room its parent gives it, as a stretched part fills its row's height. */
+const FILL_SIZE: SizeSpec = { kind: "fill" };
+
+/** The layers in a box's flow: its parts, each with its style, and its icons and label by name. */
+type FlowLayers = {
+  readonly parts: readonly { readonly name: string; readonly style: LayerStyle }[];
+  readonly others: readonly string[];
+};
+
+/** How a box lays out its layers, and the alignment its parts set, where they set one. */
+type Flow = {
+  readonly layout: Layout;
+  readonly self: SelfAlignment | undefined;
+};
+
+/**
+ * A row's alignment that its parts set through `align-self`, beside the row's own `align-items`,
+ * which the row draws once its parts map.
+ */
+type SelfAlignment = {
+  /** The alignment the parts that set one ask for, which the row takes. */
+  readonly align: CounterAlignSpec;
+  /** The row's own `align-items`, where the layers that set none take it. */
+  readonly own: { readonly align: CounterAlignSpec; readonly where: string } | undefined;
+  /** The names of the parts that set an alignment. */
+  readonly setters: readonly string[];
+  /** The names of the layers that set none, the icons and the label among them. */
+  readonly loose: readonly string[];
+  /** The names of the loose parts that draw the same stretched, as {@link stretchesAlike} says. */
+  readonly stretchable: ReadonlySet<string>;
+};
+
+/**
+ * Whether a part a row places by its `align-items` draws the same stretched across the row's height:
+ * a flex row that sets no height or margin of its own, paints nothing, pads the same above and below,
+ * and places its own layers across the way the row places it, as Item's `flex items-center` actions
+ * do. Stretched, it centers what it holds where the row would center it.
+ */
+function stretchesAlike(style: LayerStyle, own: CounterAlignSpec): boolean {
+  const display = normalizeCss(style.raw("display") ?? "");
+  const direction = normalizeCss(style.resolved("flex-direction") ?? "row");
+  const placed = ALIGNMENTS.get(normalizeCss(style.resolved("align-items") ?? ""))?.align;
+  const unset = (properties: readonly string[]) => properties.every((property) => !style.has(property));
+  return (
+    (display === "flex" || display === "inline-flex") &&
+    direction === "row" &&
+    placed === own &&
+    unset([
+      "height",
+      "min-height",
+      "max-height",
+      "margin-top",
+      "margin-right",
+      "margin-bottom",
+      "margin-left",
+    ]) &&
+    unset(["background-color", "border-width", "box-shadow", "outline-width"]) &&
+    style.resolved("padding-top") === style.resolved("padding-bottom")
+  );
+}
+
+/**
+ * Read the counter alignment of a row whose parts set their own `align-self`, which places a part
+ * across the row in place of the row's `align-items` (CSS Box Alignment 3 §6.1), as Item's
+ * `item-described:self-start` tops the media and the content beside a description. A Figma auto
+ * layout aligns all its layers one way, so the row takes the alignment its parts ask for, where they
+ * all ask for one, and each part's `align-self` reads as literal. What becomes of the row's own
+ * `align-items` waits for the parts to map, as {@link settleSelfAlignment} says. Two alignments, one
+ * Figma has no form for, or a row that leaves a layer to an unset `align-items` leave `align-self`
+ * unread, so unmapped.
+ *
+ * @returns The alignment, or undefined where no part sets one, where it is the row's own, or where the
+ *   row cannot draw it, which leaves the row's own `align-items` to decide.
+ */
+function readSelfAlignment(reader: LayerStyle, { parts, others }: FlowLayers): SelfAlignment | undefined {
+  const selfOf = (style: LayerStyle) => normalizeCss(style.resolved("align-self") ?? "auto");
+  const setters = parts.filter((part) => selfOf(part.style) !== "auto");
+  const values = new Set(setters.map((part) => selfOf(part.style)));
+  const [value] = values;
+  const self = values.size === 1 && value !== undefined ? ALIGNMENTS.get(value) : undefined;
+  const looseParts = parts.filter((part) => !setters.includes(part));
+  const loose = [...looseParts.map((part) => part.name), ...others];
+  const own = ALIGNMENTS.get(normalizeCss(reader.resolved("align-items") ?? ""));
+  if (self === undefined || (loose.length > 0 && own === undefined)) {
+    return undefined;
+  }
+  for (const part of setters) {
+    part.style.read(
+      "align-self",
+      (read) => read,
+      () => ({
+        outcome: "literal",
+        detail: `${self.where} the counter axis, where the row places its layers`,
+      })
+    );
+  }
+  if (own?.align === self.align) {
+    return undefined;
+  }
+  return {
+    align: self.align,
+    own,
+    setters: setters.map((part) => part.name),
+    loose,
+    stretchable: new Set(
+      own === undefined
+        ? []
+        : looseParts.filter((part) => stretchesAlike(part.style, own.align)).map((part) => part.name)
+    ),
+  };
+}
+
+/**
+ * Settle a row that takes the alignment its parts set. A layer that sets none stretches across the
+ * row's height, where a fill across a hugging row stretches to the height its other layers set (PF),
+ * and so centers what it holds where CSS centers it, as Item's actions do. That draws what CSS draws
+ * only where the layer {@link stretchesAlike} and is no taller than the row: its tallest height, as
+ * {@link heightBounds} reads it, is no taller than the shortest height of a layer that sets an
+ * alignment, as Item's actions, one 20px line, beside a content column of at least two lines. The
+ * row's `align-items` then reads as literal through those layers. Where a layer that sets none
+ * cannot stretch so, the row cannot place it as CSS does, so `align-items` stays unmapped, naming it.
+ *
+ * @param self - The alignment the row's parts set.
+ * @param layers - The layers of the row's parts in its flow, as mapped.
+ * @returns The names of the layers that stretch, none where `align-items` stays unmapped.
+ */
+function settleSelfAlignment(
+  reader: LayerStyle,
+  self: SelfAlignment,
+  layers: readonly FrameLayerSpec[]
+): ReadonlySet<string> {
+  const { own, setters, loose, stretchable } = self;
+  if (loose.length === 0 || own === undefined) {
+    reader.read(
+      "align-items",
+      (read) => read,
+      () => ({ outcome: "dropped", detail: "every layer of the row sets its own `align-self`" })
+    );
+    return new Set();
+  }
+  const floor = Math.max(
+    ...layers.filter((layer) => setters.includes(layer.name)).map((layer) => heightBounds(layer).min)
+  );
+  const fits = (name: string) => {
+    const tallest = heightBounds(layers.find((layer) => layer.name === name)).max;
+    return tallest !== undefined && tallest <= floor;
+  };
+  const stretch = loose.every((name) => stretchable.has(name) && fits(name));
+  if (!stretch) {
+    reader.mark(
+      "align-items",
+      "unmapped",
+      `Figma aligns a row's layers one way, so ${listNames(loose)} can sit ${own.where} the counter axis only by stretching across it, which draws what CSS draws only for a layer that paints nothing, places its own layers so and is no taller than the layers that set \`align-self\``
+    );
+    return new Set();
+  }
+  const [it, places, stretches] =
+    loose.length === 1 ? ["it", "places its", "stretches"] : ["them", "place their", "stretch"];
+  reader.read(
+    "align-items",
+    (read) => read,
+    () => ({
+      outcome: "literal",
+      detail: `${listNames(loose)} ${stretches} across the counter axis and ${places} layers ${own.where} it, where CSS places ${it} ${own.where} the counter axis`,
+    })
+  );
+  return new Set(loose);
 }
 
 /**
@@ -222,6 +407,26 @@ function blockLineAlign(layout: Layout, sizing: SizingSpec, limits: LimitsSpec):
   return hugsLines ? layout.counterAlign : "MIN";
 }
 
+/**
+ * Whether a box that holds only its text draws the same at the width its parent gives it as at its
+ * text's own width, so a `fit-content` width that wraps the text there can fill it: the box paints
+ * nothing, its text wraps, and it sets its text from its start, along a row by `justify-content`
+ * and in its lines by `text-align`.
+ */
+function drawsAlikeWide(reader: LayerStyle, paint: BoxPaint): boolean {
+  const value = (property: string) => normalizeCss(reader.resolved(property) ?? "");
+  return (
+    paint.fill === undefined &&
+    paint.stroke === undefined &&
+    paint.shadows.length === 0 &&
+    ["", "normal"].includes(value("white-space")) &&
+    value("text-wrap") !== "nowrap" &&
+    ["", "row"].includes(value("flex-direction")) &&
+    ["", "normal", "start", "flex-start", "left"].includes(value("justify-content")) &&
+    ["", "start", "left"].includes(value("text-align"))
+  );
+}
+
 /** What the mapping of every layer of one cell reads besides the layer's own style. */
 export type MapScope = {
   /** The variant's key, for errors. */
@@ -258,13 +463,17 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     detail: `opacity ${value}`,
   }));
   const textColor = color("color");
-  // The box's lengths and layout read before its parts, since they decide what a part can fill.
-  const { sizing, limits, clips, extent } = readSizing(reader, room, context.variables);
-  const layout = readFlow(reader);
+  const label = box.label?.shownIn(cell) === true ? box.label : undefined;
+  const slots = box.iconsFor(cell);
+  const onlyText =
+    label !== undefined && slots.length === 0 && !(box.parts ?? []).some((child) => child.shownIn(cell));
+  // The box's lengths and layout read before its parts map, since they decide what a part can fill.
+  const fit = onlyText && drawsAlikeWide(reader, paint) ? "room" : "content";
+  const { sizing, limits, clips, extent } = readSizing(reader, room, context.variables, fit);
 
   const start: ChildLayerSpec[] = [];
   const end: ChildLayerSpec[] = [];
-  for (const slot of box.iconsFor(cell)) {
+  for (const slot of slots) {
     const icon = mapIcon(slot, cascade.icon(slot), scope);
     if (icon !== undefined) {
       (slot.side === "start" ? start : end).push(icon);
@@ -280,11 +489,20 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       return {
         child,
         name,
-        cascade: cascade.part(child.classesFor(cell), name, child.slot, child.styleFor?.(cell) ?? []),
+        cascade: cascade.part(
+          child.classesFor(cell),
+          name,
+          { slot: child.slot, tag: child.element?.tag },
+          child.styleFor?.(cell) ?? []
+        ),
       };
     });
   const flowing = shown.filter((part) => !outOfFlow(part.cascade.style));
-  const label = box.label?.shownIn(cell) === true ? box.label : undefined;
+  // A part's own `align-self` can decide the box's alignment, so the layout reads once they cascade.
+  const { layout, self } = readFlow(reader, {
+    parts: flowing.map(({ name, cascade: part }) => ({ name, style: part.style })),
+    others: [...start, ...(label === undefined ? [] : [label]), ...end].map(({ name }) => name),
+  });
   const holder: Holder = {
     style: reader,
     layout,
@@ -305,14 +523,28 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       ...end.map(iconShare),
     ],
   };
-  readGrowth(
+  const growing = readGrowth(
     holder,
     flowing.map((part) => part.cascade.style)
   );
-  const parts = shown.map((part) => {
+  if (growing !== undefined && layout.direction === "HORIZONTAL") {
+    reader.read(
+      "flex-wrap",
+      (value) => (normalizeCss(value) === "wrap" ? value : undefined),
+      () => ({
+        outcome: "dropped",
+        detail:
+          "the one layer that grows takes what the row's other layers leave, so the row breaks no line until they overflow it, and a Figma row never wraps",
+      })
+    );
+  }
+  const mapped = shown.map((part) => {
     const index = flowing.indexOf(part);
-    const room =
-      index === -1 ? absoluteRoom(holder) : lessMargins(roomInside(holder, index), part.cascade.style);
+    const inFlow = (): Room => {
+      const inside = roomInside(holder, index);
+      return index === growing ? growingRoom(holder, index, inside) : inside;
+    };
+    const room = index === -1 ? absoluteRoom(holder) : lessMargins(inFlow(), part.cascade.style);
     const box = mapBox(part.child, part.cascade, scope, room);
     const drawn: FrameLayerSpec = {
       kind: "frame",
@@ -327,6 +559,19 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     const layer = wrapMargins(part.cascade.style, turned, layout, context.variables);
     return { layer, style: part.cascade.style };
   });
+  // The parts a row stretches across its height, which their own height decides once they map.
+  const stretched =
+    self === undefined
+      ? new Set<string>()
+      : settleSelfAlignment(
+          reader,
+          self,
+          mapped.filter(({ style }) => !outOfFlow(style)).map(({ layer }) => layer)
+        );
+  const parts = mapped.map(({ layer, style }) => ({
+    style,
+    layer: stretched.has(layer.name) ? { ...layer, sizing: { ...layer.sizing, vertical: FILL_SIZE } } : layer,
+  }));
   const missing = unstretched(
     holder,
     flowing.map((part) => part.cascade.style)

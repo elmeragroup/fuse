@@ -25,7 +25,7 @@ import { normalizeCss, splitTopLevel, substituteVars } from "./css-values";
 import { compareSpecificity } from "./specificity";
 import type { Specificity } from "./specificity";
 import { readVariants } from "./state-table";
-import type { StateTable } from "./state-table";
+import type { PartTarget, StateTable } from "./state-table";
 
 /** What a read became, for the coverage table. */
 export type CoverageNote = Pick<CoverageRow, "outcome" | "detail">;
@@ -141,9 +141,12 @@ type ChildRule = {
   readonly applied: Applied;
 };
 
-/** A class that styles the box's child parts with one `data-slot`, as `*:data-[slot=x]:` does. */
+/**
+ * A class that styles the box's child parts with one `data-slot`, as `*:data-[slot=x]:` does, or
+ * of one tag, as `[&_img]:` does.
+ */
 type PartRule = {
-  readonly slot: string;
+  readonly target: PartTarget;
   readonly applied: Applied;
 };
 
@@ -158,15 +161,15 @@ type BoxClasses = {
 };
 
 /**
- * Each class that styles a child part, by part and class, with the slot it names, its declarations,
- * and whether a part of that slot took it in some cell so far.
+ * Each class that styles a child part, by part and class, with the parts it names, its
+ * declarations, and whether such a part took it in some cell so far.
  */
 type PartRuleLog = Map<
   string,
   {
     readonly part: string;
     readonly className: string;
-    readonly slot: string;
+    readonly target: PartTarget;
     readonly taken: boolean;
     readonly declarations: Applied["declarations"];
   }
@@ -233,7 +236,7 @@ export class SetCascade {
    * after every cell.
    */
   finish(): void {
-    for (const { part, className, slot, taken, declarations } of this.#partRules.values()) {
+    for (const { part, className, target, taken, declarations } of this.#partRules.values()) {
       if (taken) {
         continue;
       }
@@ -244,7 +247,10 @@ export class SetCascade {
           property: declaration.property,
           value: declaration.value,
           outcome: "unmapped",
-          detail: `the definition draws no part with \`data-slot=${slot}\` below ${part}`,
+          detail:
+            target.kind === "slot"
+              ? `the definition draws no part with \`data-slot=${target.slot}\` below ${part}`
+              : `the definition draws no \`<${target.tag}>\` part below ${part}`,
         });
       }
     }
@@ -517,6 +523,7 @@ export class CellCascade {
         inherited: new Map(),
         outer: [...defaults, ...page],
         ancestorRules: [],
+        ancestorPartRules: [],
         selected: [],
       });
     }
@@ -543,6 +550,7 @@ export class CellCascade {
         inherited: inheritance(outside, context),
         outer: defaults,
         ancestorRules,
+        ancestorPartRules: [],
         selected: [],
       },
       outside
@@ -567,6 +575,8 @@ function cascadeBox(
     readonly inherited: ComputedStyle;
     readonly outer: readonly Applied[];
     readonly ancestorRules: readonly ChildRule[];
+    /** The tag rules of the boxes above, such as `[&_img]:`, which reach parts at any depth. */
+    readonly ancestorPartRules: readonly PartRule[];
     /** The parent's classes that style this box as its child, which cascade with its own. */
     readonly selected: readonly Applied[];
   },
@@ -579,6 +589,7 @@ function cascadeBox(
     ancestorRules: box.ancestorRules,
     ownRules: own.childRules,
     partRules: own.partRules,
+    ancestorPartRules: box.ancestorPartRules,
   });
 }
 
@@ -594,12 +605,14 @@ export class BoxCascade {
   readonly #ancestorRules: readonly ChildRule[];
   readonly #ownRules: readonly ChildRule[];
   readonly #partRules: readonly PartRule[];
+  readonly #ancestorPartRules: readonly PartRule[];
 
   /**
    * @param ledger - The cell's layers.
    * @param layer - The box's layer.
    * @param rules - The child selectors of the boxes above that reach this box's icons as
-   *   descendants, this box's own, and this box's classes that style its child parts.
+   *   descendants, this box's own, this box's classes that style its child parts, and the tag rules
+   *   of the boxes above, which reach its parts as descendants.
    */
   constructor(
     ledger: CellLedger,
@@ -608,6 +621,7 @@ export class BoxCascade {
       readonly ancestorRules: readonly ChildRule[];
       readonly ownRules: readonly ChildRule[];
       readonly partRules: readonly PartRule[];
+      readonly ancestorPartRules: readonly PartRule[];
     }
   ) {
     this.style = new LayerStyle(ledger, layer);
@@ -616,26 +630,36 @@ export class BoxCascade {
     this.#ancestorRules = rules.ancestorRules;
     this.#ownRules = rules.ownRules;
     this.#partRules = rules.partRules;
+    this.#ancestorPartRules = rules.ancestorPartRules;
   }
 
   /**
    * Cascade a part directly below this box, over what this box passes down. This box's
    * `*:data-[slot=…]:` classes that name the part's slot cascade with the part's own classes by
-   * specificity, as CSS applies `:is(.… > *)[data-slot="…"]` to the box's children.
+   * specificity, as CSS applies `:is(.… > *)[data-slot="…"]` to the box's children. Its classes such
+   * as `[&_img]:` that name the part's tag do too, and so do those of the boxes above, since
+   * `.… img` matches an `<img>` at any depth.
    *
    * @param classes - The part's class string for the cell.
    * @param part - The part's layer name.
-   * @param slot - The part's `data-slot`, or undefined for a part without one.
+   * @param element - The part's `data-slot`, or undefined for a part without one, and its tag where
+   *   the definition names it.
    * @param inline - The declarations of the part's `style` attribute, which beat every class.
    * @returns The part's cascade.
    */
   part(
     classes: string,
     part: string,
-    slot: string | undefined,
+    element: { readonly slot: string | undefined; readonly tag: string | undefined },
     inline: readonly InlineDeclaration[] = []
   ): BoxCascade {
-    const taken = this.#partRules.filter((rule) => rule.slot === slot);
+    const tagged = (rule: PartRule) => rule.target.kind === "tag" && rule.target.tag === element.tag;
+    const taken = [
+      ...this.#ancestorPartRules.filter(tagged),
+      ...this.#partRules.filter((rule) =>
+        rule.target.kind === "slot" ? rule.target.slot === element.slot : tagged(rule)
+      ),
+    ];
     for (const rule of taken) {
       takePartRule(this.#ledger.scope.partRules, rule);
     }
@@ -651,6 +675,10 @@ export class BoxCascade {
           INLINE_RANK
         ),
         ancestorRules: [...this.#ancestorRules, ...this.#ownRules],
+        ancestorPartRules: [
+          ...this.#ancestorPartRules,
+          ...this.#partRules.filter((rule) => rule.target.kind === "tag"),
+        ],
         selected: taken.map((rule) => rule.applied),
       },
       this.#layer
@@ -928,7 +956,7 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
       });
       continue;
     }
-    const { selects, slot, conditionVariants, holds, skipped } = readVariants(variants, meaningOf, cell);
+    const { selects, target, conditionVariants, holds, skipped } = readVariants(variants, meaningOf, cell);
     if (skipped !== undefined) {
       for (const declaration of rule.declarations) {
         record({ part, className, property: declaration.property, value: declaration.value, ...skipped });
@@ -961,9 +989,9 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
       continue;
     }
     const entry = { part, className, rank: 0, ...placement, declarations: rule.declarations };
-    if (slot !== undefined) {
-      partRules.push({ slot, applied: entry });
-      logPartRule(scope.partRules, { part, className, slot, declarations: rule.declarations });
+    if (target !== undefined) {
+      partRules.push({ target, applied: entry });
+      logPartRule(scope.partRules, { part, className, target, declarations: rule.declarations });
     } else if (selects === undefined) {
       applied.push(entry);
     } else {
@@ -976,7 +1004,7 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
 /** Log a class that styles a child part, keeping whether a part took it in an earlier cell. */
 function logPartRule(
   log: PartRuleLog,
-  rule: { readonly part: string; readonly className: string; readonly slot: string } & Pick<
+  rule: { readonly part: string; readonly className: string; readonly target: PartTarget } & Pick<
     Applied,
     "declarations"
   >
@@ -1088,42 +1116,56 @@ function inheritedCurrentColor(source: Provenance, inherited: ComputedStyle): St
 }
 
 /**
- * Split the padding shorthands into the sides Figma pads, and name a logical inset by its physical
- * side, keeping every other property. A side may be a `calc()` with spaces, as `px-2.5` compiles to
+ * Split the padding and margin shorthands into their physical sides, as Figma pads a box and as a
+ * part's margin draws, and name a logical inset or margin by its physical side, keeping every other
+ * property. Each side then cascades with the physical one, so a style attribute's `margin: 0` resets
+ * a class's `mt-1`. A side may be a `calc()` with spaces, as `px-2.5` compiles to
  * `calc(var(--spacing) * 2.5)`.
  */
 function expandShorthand(property: string, value: string): readonly (readonly [string, string])[] {
   const parts = splitTopLevel(normalizeCss(value), " ");
+  const box = property === "padding" || property.startsWith("padding-") ? "padding" : "margin";
   switch (property) {
-    case "padding": {
+    case "padding":
+    case "margin": {
       const [top = value, right = top, bottom = top, left = right] = parts;
       return [
-        ["padding-top", top],
-        ["padding-right", right],
-        ["padding-bottom", bottom],
-        ["padding-left", left],
+        [`${box}-top`, top],
+        [`${box}-right`, right],
+        [`${box}-bottom`, bottom],
+        [`${box}-left`, left],
       ];
     }
-    case "padding-inline": {
+    case "padding-inline":
+    case "margin-inline": {
       const [left = value, right = left] = parts;
       return [
-        ["padding-left", left],
-        ["padding-right", right],
+        [`${box}-left`, left],
+        [`${box}-right`, right],
       ];
     }
-    case "padding-block": {
+    case "padding-block":
+    case "margin-block": {
       const [top = value, bottom = top] = parts;
       return [
-        ["padding-top", top],
-        ["padding-bottom", bottom],
+        [`${box}-top`, top],
+        [`${box}-bottom`, bottom],
       ];
     }
-    // A left-to-right page puts the inline start on the left and its end on the right, where each
-    // cascades with the physical side (CSS Logical Properties 1 §4).
+    // A left-to-right page puts the inline start on the left and its end on the right, and the block
+    // start on top, where each cascades with the physical side (CSS Logical Properties 1 §4).
     case "inset-inline-start":
       return [["left", value]];
     case "inset-inline-end":
       return [["right", value]];
+    case "margin-inline-start":
+      return [["margin-left", value]];
+    case "margin-inline-end":
+      return [["margin-right", value]];
+    case "margin-block-start":
+      return [["margin-top", value]];
+    case "margin-block-end":
+      return [["margin-bottom", value]];
     default:
       return [[property, value]];
   }

@@ -19,8 +19,9 @@
 import { createElement } from "react";
 
 import { Avatar } from "../../../fuse/dist/avatar.js";
-import { AVATAR_INITIALS, portraitPng, SIZE_CLASSES, sizeClassFor } from "../components/avatar-kit.ts";
+import { AVATAR_INITIALS, SIZE_CLASSES, sizeClassFor } from "../components/avatar-kit.ts";
 import type { Cell } from "../components/component-spec.ts";
+import { portraitPng } from "../components/portrait.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
 /** An `avatar` cell: the initials or the portrait in a circle of one size. */

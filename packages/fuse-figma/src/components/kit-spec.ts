@@ -90,6 +90,12 @@ export type StrokeSpec = {
    * `dashPattern` holds them. Absent for a solid stroke.
    */
   readonly dashPattern?: readonly number[];
+  /**
+   * False for a stroke drawn from a CSS outline, which takes no room in the box's layout (CSS Basic
+   * UI 4 §5), so the box's layers keep their room under it, as Figma's `strokesIncludedInLayout`
+   * false draws. Absent for a border, which takes its room, as `box-sizing: border-box` counts it.
+   */
+  readonly inLayout?: false;
 };
 
 /**

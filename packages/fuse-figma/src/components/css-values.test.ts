@@ -151,6 +151,22 @@ describe("readColor", () => {
     expect(readColor("#ff0000", index)).toEqual({ kind: "literal", color: { r: 1, g: 0, b: 0, a: 1 } });
     expect(readColor("color-mix(in oklab, var(--muted) 50%, transparent)", index)).toBeUndefined();
   });
+
+  // Oracle: CSS Color 5 §2.4, where a mix interpolates premultiplied colors, so a mix toward
+  // `transparent`, all zeros premultiplied, keeps the color's channels in any space and scales its
+  // alpha, as `outline-black/10` paints black at 10%.
+  it.each(["color-mix(in oklab, #000 10%, transparent)", "color-mix(in srgb,#000000 10%,transparent)"])(
+    "reads %s as the color at that share of its alpha",
+    (value) => {
+      expect(readColor(value, index)).toEqual({ kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.1 } });
+    }
+  );
+
+  // Oracle: CSS Color 5 §2.1, whose `color-mix()` grammar takes a percentage from 0% to 100%, so a
+  // share past 100% is no color, and no paint takes an alpha above 1.
+  it("leaves a mix whose share lies outside 0% to 100% unmapped", () => {
+    expect(readColor("color-mix(in oklab, #000 200%, transparent)", index)).toBeUndefined();
+  });
 });
 
 describe("readShadows", () => {
