@@ -9,7 +9,8 @@
  * - `Fuse tokens` holds one variable per role token, per radius rung a component uses, per
  *   role tint the component kit binds and per formula a recipe writes over the tokens, with a
  *   Light and a Dark mode. These are the variables designers bind. Each one aliases
- *   `<scheme>/<token>` in `Fuse variant` for its scheme mode.
+ *   `<scheme>/<token>` in `Fuse variant` for its scheme mode. It also holds the hidden values
+ *   behind each formula over tokens and density metrics, one per `Fuse density` mode.
  * - `Fuse variant` has an Internal and an External mode. `<scheme>/<token>` aliases
  *   `<scheme>/<variant>/<token>` in `Fuse segment`. `density/<metric>` holds the metric in
  *   the variant's default density, which the Auto mode of `Fuse density` reads.
@@ -21,8 +22,10 @@
  * - `Fuse primitives` holds the neutral ramp and brand accents in a single mode. The neutral
  *   ramp is hidden from pickers, because it holds one value in every theme, and stays an alias
  *   target. The brand accents stay in the fill and text pickers for cross-brand artwork.
- * - `Fuse density` holds the density metrics with an Auto, a Dense and a Comfortable mode.
- *   Auto follows the frame's variant, as apps do.
+ * - `Fuse density` holds the density metrics and the formulas that read them, with an Auto, a
+ *   Dense and a Comfortable mode. Auto follows the frame's variant, as apps do. A formula that
+ *   also reads tokens aliases its hidden `Fuse tokens` value for each mode, and so takes the
+ *   frame's theme too.
  *
  * Every bound variable takes all four hops, so a hidden variable's name never depends on
  * which axes a token varies on. The variables of `Fuse variant`, `Fuse segment` and
@@ -49,6 +52,7 @@ import type {
   Density,
   DensityMetricEntry,
   DensityMetricKind,
+  DensityMetricName,
   PrimitiveEntry,
   PrimitiveName,
   RadiusRungName,
@@ -131,6 +135,20 @@ const DENSITY_MODES = { dense: "Dense", comfortable: "Comfortable" } as const sa
 
 const DENSITIES = ["dense", "comfortable"] as const satisfies readonly Density[];
 
+/** Each `Fuse density` mode by its lowercase key, which names the hidden values behind a formula. */
+const DENSITY_MODE_NAMES = { auto: AUTO_DENSITY_MODE, ...DENSITY_MODES } as const;
+
+/** A `Fuse density` mode: Auto, which follows the frame's variant, or a density it pins. */
+type DensityMode = keyof typeof DENSITY_MODE_NAMES;
+
+/** The `Fuse density` modes in collection order. */
+const DENSITY_COLLECTION_MODES = ["auto", ...DENSITIES] as const satisfies readonly DensityMode[];
+
+/** The density a `Fuse density` mode shows in a theme variant: Auto shows the variant's default. */
+function densityIn(mode: DensityMode, variant: ThemeVariant): Density {
+  return mode === "auto" ? defaultDensityForVariant(variant) : mode;
+}
+
 /** The Figma variable type each token kind syncs as. */
 const VARIABLE_TYPES = {
   color: "COLOR",
@@ -162,8 +180,11 @@ type ColorTokenName = Extract<TokenEntry, { readonly kind: "color" }>["name"];
  */
 const ROLE_TINTS = [
   ["primary", 80],
+  ["muted", 50],
+  ["error", 5],
   ["error", 10],
   ["error", 20],
+  ["success", 5],
   ["success", 10],
   ["success", 20],
   ["warning", 20],
@@ -174,11 +195,45 @@ const ROLE_TINTS = [
 /** The tokens of the dimension kind. */
 type DimensionTokenName = Extract<TokenEntry, { readonly kind: "dimension" }>["name"];
 
+/** A density metric's pixels at one density. */
+type MetricAt = (name: DensityMetricName) => number;
+
 /**
- * The lengths a recipe writes as a formula over theme tokens. Figma variables cannot compute, so
- * each formula syncs as its own FLOAT variable holding what the formula gives for each theme.
- * The code syntax is the formula as Tailwind compiles the recipe's class, which the kit's builder
- * binds once it compares the two with the fallbacks of synced variables dropped.
+ * A length a recipe writes as a formula. What the formula reads decides where it syncs:
+ *
+ * - `theme`: theme tokens alone. A `Fuse tokens` variable holds what it gives for each theme.
+ * - `density`: density metrics alone. A `Fuse density` variable holds what it gives for each
+ *   density, and its Auto mode reads `density/<name>` in `Fuse variant`, as a metric's does.
+ * - `theme and density`: both. A `Fuse density` variable aliases `<name>/<mode>` in `Fuse tokens`
+ *   for each of its modes, `auto`, `dense` and `comfortable`. Those hidden variables take the
+ *   four hops of every `Fuse tokens` variable and hold what the formula gives for each theme at
+ *   their density, and `auto` at the theme variant's default density.
+ *
+ * A formula that reads a metric syncs in `Fuse density` even when the metric holds one value at
+ * both densities, as `surface-pad-sm` does, so a later density change never moves its variable
+ * to another collection, which would unbind the layers that use it.
+ */
+type FormulaVariable = {
+  readonly name: string;
+  readonly formula: string;
+  readonly scopes: readonly VariableScope[];
+  readonly description: string;
+} & (
+  | { readonly reads: "theme"; readonly length: (scheme: ResolvedScheme) => number }
+  | { readonly reads: "density"; readonly length: (metric: MetricAt) => number }
+  | {
+      readonly reads: "theme and density";
+      readonly length: (scheme: ResolvedScheme, metric: MetricAt) => number;
+    }
+);
+
+/**
+ * The lengths a recipe writes as a formula over theme tokens or density metrics. Figma variables
+ * cannot compute, so each formula syncs as its own FLOAT variable holding what the formula gives,
+ * where `FormulaVariable` says. The code syntax is the formula as Tailwind compiles the recipe's
+ * class, which the kit's builder binds once it compares the two with the fallbacks of synced
+ * variables dropped. The builder reads Tailwind's own theme variables, such as `--spacing` and
+ * `--leading-snug`, as their values, so the code syntax spells those out, `0.25rem` and `1.375`.
  *
  * - The outline Button's shadow lengths read `--button-outline-width`. At a 1px outline they
  *   give Tailwind's `shadow-xs`. From 2px the shadow stays inside the border box, where it
@@ -192,10 +247,19 @@ type DimensionTokenName = Extract<TokenEntry, { readonly kind: "dimension" }>["n
  *   as `--field-corner` and rounds Input, Textarea and the other field boxes with. Its bounds lie
  *   1000 steps either side of `--radius`, so internal themes, which step 0px, get `--radius`, and
  *   external themes, which step 2px, get `--radius-field`.
+ * - An inner corner is the `--shell-inner` a shell in `inner-corner/` publishes and `rounded-inner`
+ *   reads: `max(0px, rung - border - padding)`. Several components' shells compile to the same
+ *   formula, and the builder binds by code syntax, so each corner is named for its shell's rung,
+ *   border and padding, such as `radius-inner/lg-border-pad-md`. The catalog's rungs are already
+ *   clamped at 0, which changes no result, since the padding is never negative.
+ * - Empty pads twice `--surface-pad-lg` from Tailwind's `md` breakpoint up, an open Accordion
+ *   panel sits `--surface-gap-lg` plus 6px below its trigger, and an Alert's icon box beside a
+ *   description is one line of `--label-text` at `leading-snug`.
  */
 const FORMULA_VARIABLES = [
   {
     name: "button-outline-shadow-blur",
+    reads: "theme",
     formula: "max(0px, 4px - 2 * var(--button-outline-width, 1px))",
     length: (scheme: ResolvedScheme) => Math.max(0, 4 - 2 * scheme.tokens["button-outline-width"].value),
     scopes: ["EFFECT_FLOAT"],
@@ -204,6 +268,7 @@ const FORMULA_VARIABLES = [
   },
   {
     name: "button-outline-shadow-spread",
+    reads: "theme",
     formula: "min(0px, 2px - 2 * var(--button-outline-width, 1px))",
     length: (scheme: ResolvedScheme) => Math.min(0, 2 - 2 * scheme.tokens["button-outline-width"].value),
     scopes: ["EFFECT_FLOAT"],
@@ -212,6 +277,7 @@ const FORMULA_VARIABLES = [
   },
   {
     name: "radius-compact",
+    reads: "theme",
     formula:
       "min(calc(var(--radius) - var(--radius-step, 0px)), max(10px, var(--radius) - 1000 * var(--radius-step, 0px)))",
     // The catalog's `radius-md` is the formula's first term, already clamped at 0 as CSS clamps
@@ -227,6 +293,7 @@ const FORMULA_VARIABLES = [
   },
   {
     name: "radius-checkbox",
+    reads: "theme",
     formula: "min(calc(var(--radius) - var(--radius-step, 0px)), 4px)",
     length: (scheme: ResolvedScheme) => Math.min(scheme.rungs["radius-md"].value, 4),
     scopes: ["CORNER_RADIUS"],
@@ -235,6 +302,7 @@ const FORMULA_VARIABLES = [
   },
   {
     name: "radius-field-box",
+    reads: "theme",
     formula:
       "clamp(var(--radius) - 1000 * var(--radius-step, 0px), var(--radius-field, var(--radius)), var(--radius) + 1000 * var(--radius-step, 0px))",
     // CSS resolves clamp(MIN, VAL, MAX) as max(MIN, min(VAL, MAX)).
@@ -247,13 +315,121 @@ const FORMULA_VARIABLES = [
     description:
       "The corner of a field box, such as Input or Textarea: radius in internal themes, and radius-field in external ones. Figma variables cannot compute, so the sync writes the result for each theme.",
   },
-] as const satisfies readonly {
-  readonly name: string;
-  readonly formula: string;
-  readonly length: (scheme: ResolvedScheme) => number;
-  readonly scopes: readonly VariableScope[];
-  readonly description: string;
-}[];
+  {
+    name: "radius-inner/lg-pad-8px",
+    reads: "theme",
+    // `2 * var(--spacing)` at Tailwind's 0.25rem spacing.
+    formula: "max(0px, var(--radius) - 2 * 0.25rem)",
+    length: (scheme) => Math.max(0, scheme.rungs["radius-lg"].value - 8),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner inside a radius-lg shell padded 8px, such as a group of a floating Sidebar in the icon rail: radius-lg less 8px, at least 0. Figma variables cannot compute, so the sync writes the result for each theme.",
+  },
+  {
+    name: "radius-inner/sm-pad-md",
+    reads: "theme and density",
+    formula: "max(0px, calc(var(--radius) - 2 * var(--radius-step, 0px)) - var(--surface-pad-md))",
+    length: (scheme, metric) => Math.max(0, scheme.rungs["radius-sm"].value - metric("surface-pad-md")),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner inside a radius-sm shell padded with surface-pad-md, such as a default Accordion item: radius-sm less surface-pad-md, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
+  },
+  {
+    name: "radius-inner/lg-pad-md",
+    reads: "theme and density",
+    formula: "max(0px, var(--radius) - var(--surface-pad-md))",
+    length: (scheme, metric) => Math.max(0, scheme.rungs["radius-lg"].value - metric("surface-pad-md")),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner inside a radius-lg shell padded with surface-pad-md, such as a Toast or an Accordion item with the lg radius: radius-lg less surface-pad-md, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
+  },
+  {
+    name: "radius-inner/xl-pad-md",
+    reads: "theme and density",
+    formula: "max(0px, calc(var(--radius) + 2 * var(--radius-step, 0px)) - var(--surface-pad-md))",
+    length: (scheme, metric) => Math.max(0, scheme.rungs["radius-xl"].value - metric("surface-pad-md")),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner inside a radius-xl shell padded with surface-pad-md, such as an Accordion item with the xl radius: radius-xl less surface-pad-md, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
+  },
+  {
+    name: "radius-inner/lg-border-pad-md",
+    reads: "theme and density",
+    formula: "max(0px, var(--radius) - 1px - var(--surface-pad-md))",
+    length: (scheme, metric) => Math.max(0, scheme.rungs["radius-lg"].value - 1 - metric("surface-pad-md")),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner inside a radius-lg shell with a 1px border, padded with surface-pad-md, such as a card Accordion item or a SelectionItem: radius-lg less 1px and surface-pad-md, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
+  },
+  {
+    name: "radius-inner/xl-border-pad-md",
+    reads: "theme and density",
+    formula: "max(0px, calc(var(--radius) + 2 * var(--radius-step, 0px)) - 1px - var(--surface-pad-md))",
+    length: (scheme, metric) => Math.max(0, scheme.rungs["radius-xl"].value - 1 - metric("surface-pad-md")),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner inside a radius-xl shell with a 1px border, padded with surface-pad-md, such as a card Accordion item with the xl radius: radius-xl less 1px and surface-pad-md, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
+  },
+  {
+    name: "radius-inner/lg-pad-sm",
+    reads: "theme and density",
+    formula: "max(0px, var(--radius) - var(--surface-pad-sm))",
+    length: (scheme, metric) => Math.max(0, scheme.rungs["radius-lg"].value - metric("surface-pad-sm")),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner inside a radius-lg shell padded with surface-pad-sm, such as the header, footer or a group of a floating Sidebar, or a Select group: radius-lg less surface-pad-sm, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
+  },
+  {
+    name: "empty-pad-desktop",
+    reads: "density",
+    formula: "calc(2 * var(--surface-pad-lg))",
+    length: (metric) => 2 * metric("surface-pad-lg"),
+    scopes: ["GAP"],
+    description:
+      "The padding of Empty on a desktop window, at the md breakpoint and wider: twice surface-pad-lg. Figma variables cannot compute, so the sync writes the result for each density.",
+  },
+  {
+    name: "accordion-panel-pt",
+    reads: "density",
+    // `--spacing(1.5)` at Tailwind's 0.25rem spacing, which Tailwind inlines.
+    formula: "calc(var(--surface-gap-lg) + calc(0.25rem * 1.5))",
+    length: (metric) => metric("surface-gap-lg") + 6,
+    scopes: ["GAP"],
+    description:
+      "The space above the text of an open Accordion panel: surface-gap-lg plus 6px. Figma variables cannot compute, so the sync writes the result for each density.",
+  },
+  {
+    name: "label-line-snug",
+    reads: "density",
+    // `var(--leading-snug)` at Tailwind's 1.375.
+    formula: "calc(var(--label-text) * 1.375)",
+    length: (metric) => metric("label-text") * 1.375,
+    scopes: ["WIDTH_HEIGHT"],
+    description:
+      "One line of label text at the snug line height, label-text times 1.375, such as the icon box of an Alert beside a description, which sets the glyph on the first line of the title. Figma variables cannot compute, so the sync writes the result for each density.",
+  },
+] as const satisfies readonly FormulaVariable[];
+
+/** The formulas of `FORMULA_VARIABLES` that read what `Reads` names. */
+type FormulaReading<Reads extends FormulaVariable["reads"]> = Extract<
+  (typeof FORMULA_VARIABLES)[number],
+  { readonly reads: Reads }
+>;
+
+/** The formulas over theme tokens alone. */
+const THEME_FORMULAS = FORMULA_VARIABLES.filter(
+  (formula): formula is FormulaReading<"theme"> => formula.reads === "theme"
+);
+
+/** The formulas over density metrics alone. */
+const DENSITY_FORMULAS = FORMULA_VARIABLES.filter(
+  (formula): formula is FormulaReading<"density"> => formula.reads === "density"
+);
+
+/** The formulas over theme tokens and density metrics. */
+const THEME_DENSITY_FORMULAS = FORMULA_VARIABLES.filter(
+  (formula): formula is FormulaReading<"theme and density"> => formula.reads === "theme and density"
+);
 
 /**
  * The pickers that offer each dimension token. A length can round corners, space a gap or
@@ -333,22 +509,27 @@ function isSyncedRung(entry: RungEntry): entry is RungEntry<SyncedRungName> {
 }
 
 /**
- * One variable designers bind in `Fuse tokens`. `Fuse brand` holds its value per theme, and
- * the variant and segment collections pass the frame's choice of each axis along.
+ * One variable in `Fuse tokens`: a variable designers bind, or a hidden value a `Fuse density`
+ * formula aliases. `Fuse brand` holds its value per theme, and the variant and segment
+ * collections pass the frame's choice of each axis along.
  */
 type BoundVariable = {
   readonly name:
     | TokenName
     | SyncedRungName
     | `${ColorTokenName}/${number}`
-    | (typeof FORMULA_VARIABLES)[number]["name"];
+    | FormulaReading<"theme">["name"]
+    | `${FormulaReading<"theme and density">["name"]}/${DensityMode}`;
   readonly type: VariableType;
 
   /** The pickers that offer the `Fuse tokens` variable. */
   readonly scopes: readonly VariableScope[];
 
-  /** The CSS a developer pastes. Every `var()` in it names a property the shipped CSS defines. */
-  readonly webSyntax: string;
+  /**
+   * The CSS a developer pastes, or undefined for a hidden value. Every `var()` in it names a
+   * property the shipped CSS defines.
+   */
+  readonly webSyntax: string | undefined;
 
   /** What the token or rung is for, from the catalog. */
   readonly description: string;
@@ -366,14 +547,15 @@ type ThemePath = {
 
 /**
  * Every `Fuse tokens` variable: each role token, then each synced radius rung, then each role
- * tint, then the formula variables. A rung's code syntax is the `calc()` `fuse.css` declares.
+ * tint, then the formulas over tokens, then the hidden values of each formula over tokens and
+ * density metrics. A rung's code syntax is the `calc()` `fuse.css` declares.
  * `fuse.css` declares the rungs in `@theme inline`, so Tailwind inlines them into its utilities
  * and the built CSS does not define `--radius-sm` and most other rungs as custom properties.
  * Figma variables cannot compute, so each rung holds the px the catalog computes per theme, each
  * tint holds its role's color at the tint's alpha, and each formula variable holds what its
  * formula gives.
  */
-function boundVariables(template: ResolvedScheme): readonly BoundVariable[] {
+function boundVariables(template: ResolvedScheme, metrics: MetricsByDensity): readonly BoundVariable[] {
   const tokens = Object.values(template.tokens).map((entry): BoundVariable => ({
     name: entry.name,
     type: VARIABLE_TYPES[entry.kind],
@@ -404,7 +586,7 @@ function boundVariables(template: ResolvedScheme): readonly BoundVariable[] {
       return { _tag: "Color", color: { r, g, b, a: (alpha * percent) / 100 } };
     },
   }));
-  const formulas = FORMULA_VARIABLES.map(({ name, formula, length, scopes, description }): BoundVariable => ({
+  const formulas = THEME_FORMULAS.map(({ name, formula, length, scopes, description }): BoundVariable => ({
     name,
     type: VARIABLE_TYPES.dimension,
     scopes,
@@ -412,7 +594,81 @@ function boundVariables(template: ResolvedScheme): readonly BoundVariable[] {
     description,
     leafIn: (scheme) => ({ _tag: "Float", value: length(scheme) }),
   }));
-  return [...tokens, ...rungs, ...tints, ...formulas];
+  const perDensity = THEME_DENSITY_FORMULAS.flatMap(({ name, length }) =>
+    DENSITY_COLLECTION_MODES.map((mode): BoundVariable => ({
+      name: perDensityName(name, mode),
+      type: VARIABLE_TYPES.dimension,
+      ...HIDDEN_METADATA,
+      leafIn: (scheme, path) => ({
+        _tag: "Float",
+        value: length(scheme, metrics[densityIn(mode, path.variant)]),
+      }),
+    }))
+  );
+  return [...tokens, ...rungs, ...tints, ...formulas, ...perDensity];
+}
+
+/** The hidden `Fuse tokens` variable holding a formula over tokens and metrics for one density mode. */
+function perDensityName<Name extends string>(name: Name, mode: DensityMode): `${Name}/${DensityMode}` {
+  return `${name}/${mode}`;
+}
+
+/** Each density metric's pixels at each density. */
+type MetricsByDensity = { readonly [D in Density]: MetricAt };
+
+/**
+ * Read each density metric's pixels at each density.
+ *
+ * @throws Error when a formula reads a metric the catalog lacks, which is a defect in Fuse's
+ *   density metrics.
+ */
+function metricsByDensity(density: readonly DensityMetricEntry[]): MetricsByDensity {
+  const at =
+    (mode: Density): MetricAt =>
+    (name) => {
+      const metric = density.find((entry) => entry.name === name);
+      if (metric === undefined) {
+        throw new Error(
+          `The theme catalog has no density metric ${name}, a defect in Fuse's density metrics.`
+        );
+      }
+      return metric.px[mode];
+    };
+  return { dense: at("dense"), comfortable: at("comfortable") };
+}
+
+/**
+ * A `Fuse density` variable whose value depends on the density alone: a density metric, or a
+ * formula over metrics. Auto reads `density/<name>` in `Fuse variant`.
+ */
+type DensityLength = {
+  readonly name: string;
+  readonly px: { readonly [D in Density]: number };
+  readonly scopes: readonly VariableScope[];
+  readonly webSyntax: string;
+  readonly description: string;
+};
+
+/** Every density metric, then every formula over metrics alone, with its pixels per density. */
+function densityLengths(
+  density: readonly DensityMetricEntry[],
+  metrics: MetricsByDensity
+): readonly DensityLength[] {
+  const catalogLengths = density.map((metric): DensityLength => ({
+    name: metric.name,
+    px: metric.px,
+    scopes: DENSITY_SCOPES[metric.metricKind],
+    webSyntax: metric.codeSyntax,
+    description: metric.description,
+  }));
+  const formulas = DENSITY_FORMULAS.map(({ name, formula, length, scopes, description }): DensityLength => ({
+    name,
+    px: { dense: length(metrics.dense), comfortable: length(metrics.comfortable) },
+    scopes,
+    webSyntax: formula,
+    description,
+  }));
+  return [...catalogLengths, ...formulas];
 }
 
 /**
@@ -427,15 +683,17 @@ export function fuseVariableSet(): Result.Result<VariableSet, InvalidVariableSet
   const catalog = resolveThemeCatalog();
   // The token list comes from the first theme; every theme holds the same tokens and rungs.
   const [first] = catalog.themes;
-  const bound = boundVariables(first.schemes.light);
+  const metrics = metricsByDensity(catalog.density);
+  const bound = boundVariables(first.schemes.light, metrics);
+  const lengths = densityLengths(catalog.density, metrics);
   return makeVariableSet(
     [
       primitivesCollection(catalog.primitives),
       brandCollection(catalog, bound),
       segmentCollection(bound),
-      variantCollection(bound, catalog.density),
+      variantCollection(bound, lengths),
       tokensCollection(bound),
-      densityCollection(catalog.density),
+      densityCollection(lengths),
     ],
     RETIRED_COLLECTIONS
   );
@@ -550,12 +808,12 @@ function segmentCollection(bound: readonly BoundVariable[]): CollectionSpec {
 
 /**
  * One variable per bound variable for each scheme, aliasing the segment variable of each
- * variant, and one variable per density metric holding the metric in the variant's default
- * density.
+ * variant, and one variable per density metric or formula over metrics holding its length in
+ * the variant's default density.
  */
 function variantCollection(
   bound: readonly BoundVariable[],
-  density: readonly DensityMetricEntry[]
+  lengths: readonly DensityLength[]
 ): CollectionSpec {
   const tokens = SCHEMES.flatMap((scheme) =>
     bound.map((variable): VariableSpec => ({
@@ -570,14 +828,14 @@ function variantCollection(
       ),
     }))
   );
-  const metrics = density.map((metric): VariableSpec => ({
-    name: variantDensityName(metric),
+  const metrics = lengths.map((length): VariableSpec => ({
+    name: variantDensityName(length.name),
     type: VARIABLE_TYPES.dimension,
     ...HIDDEN_METADATA,
     values: new Map(
       THEME_VARIANTS.map((variant) => [
         VARIANT_MODES[variant],
-        { _tag: "Float", value: metric.px[defaultDensityForVariant(variant)] },
+        { _tag: "Float", value: length.px[defaultDensityForVariant(variant)] },
       ])
     ),
   }));
@@ -610,9 +868,9 @@ function variantVariableName(scheme: ResolvedColorScheme, name: string): string 
   return `${scheme}/${name}`;
 }
 
-/** The `Fuse variant` variable holding one density metric in the variant's default density. */
-function variantDensityName(metric: DensityMetricEntry): string {
-  return `density/${metric.name}`;
+/** The `Fuse variant` variable holding one density length in the variant's default density. */
+function variantDensityName(name: string): string {
+  return `density/${name}`;
 }
 
 /** The `Fuse segment` variable for one bound variable in one scheme and variant. */
@@ -626,30 +884,45 @@ function brandVariableName(path: ThemePath, name: string): string {
 }
 
 /**
- * One FLOAT variable per density metric, named after its custom property. Dense and
- * Comfortable hold the metric's literals, and Auto aliases the metric in `Fuse variant`, so it
- * follows the frame's variant the way apps pick a variant's default density. A metric's kind
- * decides its scopes.
+ * One FLOAT variable per density metric, named after its custom property, and one per formula
+ * over metrics or over tokens and metrics. Dense and Comfortable hold a metric's literals, and
+ * Auto aliases the metric in `Fuse variant`, so it follows the frame's variant the way apps pick
+ * a variant's default density. A formula over metrics alone takes the same shape. A formula over
+ * tokens and metrics aliases its hidden `Fuse tokens` value for each mode instead, which takes the
+ * frame's theme. A metric's kind decides its scopes.
  */
-function densityCollection(density: readonly DensityMetricEntry[]): CollectionSpec {
-  const variables = density.map((metric): VariableSpec => ({
-    name: metric.name,
+function densityCollection(lengths: readonly DensityLength[]): CollectionSpec {
+  const literal = lengths.map((length): VariableSpec => ({
+    name: length.name,
     type: VARIABLE_TYPES.dimension,
-    scopes: DENSITY_SCOPES[metric.metricKind],
-    webSyntax: metric.codeSyntax,
-    description: metric.description,
+    scopes: length.scopes,
+    webSyntax: length.webSyntax,
+    description: length.description,
     values: new Map<string, VariableValue>([
-      [AUTO_DENSITY_MODE, alias(VARIANT_COLLECTION, variantDensityName(metric))],
+      [AUTO_DENSITY_MODE, alias(VARIANT_COLLECTION, variantDensityName(length.name))],
       ...DENSITIES.map((mode): [string, VariableValue] => [
         DENSITY_MODES[mode],
-        { _tag: "Float", value: metric.px[mode] },
+        { _tag: "Float", value: length.px[mode] },
       ]),
     ]),
   }));
+  const themed = THEME_DENSITY_FORMULAS.map(({ name, formula, scopes, description }): VariableSpec => ({
+    name,
+    type: VARIABLE_TYPES.dimension,
+    scopes,
+    webSyntax: formula,
+    description,
+    values: new Map(
+      DENSITY_COLLECTION_MODES.map((mode) => [
+        DENSITY_MODE_NAMES[mode],
+        alias(TOKENS_COLLECTION, perDensityName(name, mode)),
+      ])
+    ),
+  }));
   return {
     name: DENSITY_COLLECTION,
-    modes: [AUTO_DENSITY_MODE, ...DENSITIES.map((mode) => DENSITY_MODES[mode])],
-    variables,
+    modes: DENSITY_COLLECTION_MODES.map((mode) => DENSITY_MODE_NAMES[mode]),
+    variables: [...literal, ...themed],
   };
 }
 

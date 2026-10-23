@@ -47,17 +47,19 @@ describe("fuse-figma sync", () => {
       assert.deepStrictEqual(figma.modeNames("Fuse brand"), [...BRAND_MODES.values()]);
       assert.deepStrictEqual(figma.modeNames("Fuse primitives"), ["Value"]);
       assert.deepStrictEqual(figma.modeNames("Fuse density"), ["Auto", "Dense", "Comfortable"]);
-      // 95 contract tokens, 5 radius rungs, 8 role tints, 2 outline shadow lengths and the
-      // compact, checkbox and field box corners.
-      assert.strictEqual(figma.variableNames("Fuse tokens").length, 113);
-      // Those 113 per scheme, plus 39 density metrics.
-      assert.strictEqual(figma.variableNames("Fuse variant").length, 226 + 39);
+      // 95 contract tokens, 5 radius rungs, 11 role tints, 2 outline shadow lengths, the compact,
+      // checkbox and field box corners and 1 inner corner, which make 117, plus the Auto, Dense
+      // and Comfortable values behind each of the 6 inner corners in `Fuse density`.
+      assert.strictEqual(figma.variableNames("Fuse tokens").length, 117 + 6 * 3);
+      // Those 135 per scheme, plus 39 density metrics and 3 formulas over them.
+      assert.strictEqual(figma.variableNames("Fuse variant").length, 270 + 39 + 3);
       // Per scheme and variant, then per scheme, variant and segment.
-      assert.strictEqual(figma.variableNames("Fuse segment").length, 452);
-      assert.strictEqual(figma.variableNames("Fuse brand").length, 904);
+      assert.strictEqual(figma.variableNames("Fuse segment").length, 540);
+      assert.strictEqual(figma.variableNames("Fuse brand").length, 1080);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 25);
-      // 26 control metrics, 4 row, 2 label, 3 surface padding and 4 surface gap metrics.
-      assert.strictEqual(figma.variableNames("Fuse density").length, 39);
+      // 26 control metrics, 4 row, 2 label, 3 surface padding and 4 surface gap metrics, 3
+      // formulas over metrics and 6 inner corners, which read tokens and metrics.
+      assert.strictEqual(figma.variableNames("Fuse density").length, 39 + 3 + 6);
       assert.strictEqual(writes(figma), 1);
       assert.include(yield* output, "reading it back matches the tokens");
     })
@@ -100,6 +102,7 @@ describe("fuse-figma sync", () => {
       });
       // The hidden variables only feed aliases, so no picker offers them and they carry no code.
       for (const [collection, variable] of [
+        ["Fuse tokens", "radius-inner/lg-pad-sm/dense"],
         ["Fuse variant", "light/primary"],
         ["Fuse variant", "density/control-h-md"],
         ["Fuse segment", "light/external/primary"],
@@ -398,7 +401,7 @@ describe("fuse-figma sync", () => {
       ]);
       assert.isTrue(figma.hasCollection(extensionId));
       assert.isTrue(figma.hasCollection(libraryId));
-      assert.strictEqual(figma.variableNames("Fuse brand").length, 904);
+      assert.strictEqual(figma.variableNames("Fuse brand").length, 1080);
       assert.deepStrictEqual(figma.variableById(libraryPrimary).values, [
         { r: 0, g: 0, b: 0, a: 1 },
         { r: 0, g: 0, b: 0, a: 1 },
@@ -527,13 +530,13 @@ describe("fuse-figma check", () => {
       assert.include(printed, "Fuse tokens: create mode Light");
       assert.include(printed, "Fuse tokens: create mode Dark");
       assert.include(printed, "Fuse brand: create mode Telinet (private only)");
-      assert.include(printed, "Fuse brand: create variable ×904");
+      assert.include(printed, "Fuse brand: create variable ×1080");
       assert.notInclude(printed, "Fuse brand: create variable light/external/private/primary");
-      assert.include(printed, "Fuse segment: create variable ×452");
-      assert.include(printed, "Fuse variant: create variable ×265");
+      assert.include(printed, "Fuse segment: create variable ×540");
+      assert.include(printed, "Fuse variant: create variable ×312");
       assert.include(printed, "Fuse density: create mode Auto");
       assert.include(printed, "Fuse density: create mode Comfortable");
-      assert.include(printed, "Fuse density: create variable ×39");
+      assert.include(printed, "Fuse density: create variable ×48");
     })
   );
 
