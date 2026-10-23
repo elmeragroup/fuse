@@ -34,6 +34,12 @@ import { LABEL } from "./label-kit";
 import { LINK } from "./link-kit";
 import { LOADER } from "./loader-kit";
 import { METER } from "./meter-kit";
+import {
+  NAVIGATION_MENU_BAR_LINK,
+  NAVIGATION_MENU_BAR_TRIGGER,
+  NAVIGATION_MENU_ROW_LINK,
+  NAVIGATION_MENU_VERTICAL_TRIGGER,
+} from "./navigation-menu-kit";
 import { PAGINATION_EDGE, PAGINATION_ELLIPSIS, PAGINATION_LINK } from "./pagination-kit";
 import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
 import { RADIO } from "./radio-kit";
@@ -139,6 +145,9 @@ const ACCORDION_PAGE: KitPage = { slug: "accordion", name: "Accordion" };
 
 /** The page of Sidebar's rows, until the panel and the icon rail join them. */
 const SIDEBAR_PAGE: KitPage = { slug: "sidebar", name: "Sidebar" };
+
+/** The page of Navigation menu's triggers and links, until the popup's sets join them. */
+const NAVIGATION_MENU_PAGE: KitPage = { slug: "navigation-menu", name: "Navigation menu" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -291,4 +300,24 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(SIDEBAR_GROUP_LABEL.axes),
   },
   { definition: SIDEBAR_MENU_BADGE, page: SIDEBAR_PAGE, previewCells: matrixCells(SIDEBAR_MENU_BADGE.axes) },
+  {
+    definition: NAVIGATION_MENU_BAR_TRIGGER,
+    page: NAVIGATION_MENU_PAGE,
+    previewCells: matrixCells(NAVIGATION_MENU_BAR_TRIGGER.axes),
+  },
+  {
+    definition: NAVIGATION_MENU_VERTICAL_TRIGGER,
+    page: NAVIGATION_MENU_PAGE,
+    previewCells: matrixCells(NAVIGATION_MENU_VERTICAL_TRIGGER.axes),
+  },
+  {
+    definition: NAVIGATION_MENU_BAR_LINK,
+    page: NAVIGATION_MENU_PAGE,
+    previewCells: matrixCells(NAVIGATION_MENU_BAR_LINK.axes),
+  },
+  {
+    definition: NAVIGATION_MENU_ROW_LINK,
+    page: NAVIGATION_MENU_PAGE,
+    previewCells: matrixCells(NAVIGATION_MENU_ROW_LINK.axes),
+  },
 ];

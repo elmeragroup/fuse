@@ -36,6 +36,7 @@ import {
 import type { MarkupIcon, MarkupLabel } from "./markup-tree.ts";
 import {
   ATTRIBUTE_VARIANTS,
+  DESCENDANT_ATTRIBUTE_VARIANTS,
   GROUP_VARIANTS,
   PARENT_VARIANTS,
   PEER_VARIANTS,
@@ -219,6 +220,16 @@ export function checkMarkup(
       }
       for (const [variant, holds] of PARENT_VARIANTS) {
         expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(holds(elements, measured));
+      }
+      // An attribute variant an element below the root names on itself holds exactly where that
+      // element carries the attribute, as a Navigation menu caret carries its Root's `data-side`.
+      for (const [variant, carries] of DESCENDANT_ATTRIBUTE_VARIANTS) {
+        for (const index of elementsNaming(elements, measured, variant)) {
+          const element = elements[index];
+          expect(holdsIn(variant, cell), `${key}: ${variant} on ${element?.name ?? ""}`).toBe(
+            element !== undefined && carries(element)
+          );
+        }
       }
       // A peer variant holds exactly where a sibling before the root is the peer in that state, and
       // the sibling a definition's `statePeer` names, which the page forces, sits there once.

@@ -264,6 +264,7 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
       node.kind === "rule"
         ? (leadingClass(node.selector) ??
           childrenClass(node.selector) ??
+          descendantsClass(node.selector) ??
           contextClass(node.selector) ??
           weightlessClass(node.selector))
         : undefined;
@@ -355,6 +356,19 @@ function childrenClass(selector: string): { readonly name: string; readonly rest
   const opening = ":is(";
   const inner = selector.startsWith(opening) ? leadingClass(selector.slice(opening.length)) : undefined;
   return inner?.rest.startsWith(" > *)") === true ? inner : undefined;
+}
+
+/**
+ * The class a `**:` rule styles every element below, as Tailwind compiles
+ * `data-popup-open:**:text-accent-foreground` to
+ * `:is(.data-popup-open\:\*\*\:text-accent-foreground[data-popup-open] *)`: the class and its
+ * conditions, then the descendant combinator and the universal selector, which select every element
+ * below the element that carries the class.
+ */
+function descendantsClass(selector: string): { readonly name: string; readonly rest: string } | undefined {
+  const opening = ":is(";
+  const inner = selector.startsWith(opening) ? leadingClass(selector.slice(opening.length)) : undefined;
+  return inner?.rest.endsWith(" *)") === true && !inner.rest.endsWith("> *)") ? inner : undefined;
 }
 
 /**

@@ -790,8 +790,10 @@ function readAxis(
  * typings require a positive limit. Beside a fixed length, CSS resolves the length against its
  * limits (CSS 2.1 §10.4 and §10.7): lowered to the maximum, then raised to the minimum, so the
  * minimum wins a conflict. Figma would clamp a fixed length to a limit on every resize, so the
- * limits fold into the length: one that moves it sets it, and one that never moves it drops. A fold
- * to a length of zero or less, and a limit that a bound or non-literal value on either side keeps
+ * limits fold into the length: one that moves it sets it, and one that never moves it drops. A
+ * length bound to a variable that every limit binds too never moves in any mode, as the md control
+ * rung's `min-h-(--control-h-md)` beside its `h-(--control-h-md)`, so those limits drop. A fold to a
+ * length of zero or less, and a limit that any other bound or non-literal value on either side keeps
  * from comparing, stay unmapped.
  */
 function resolveLimits(size: SizeSpec, bounds: readonly Bound[], axis: AxisProperties): AxisRead {
@@ -824,6 +826,17 @@ function resolveLimits(size: SizeSpec, bounds: readonly Bound[], axis: AxisPrope
     };
   }
   const { length } = size;
+  if (kept.length > 0 && kept.every((bound) => sameVariable(bound.value, length))) {
+    return {
+      size,
+      min: undefined,
+      max: undefined,
+      notes: new Map([
+        ...zeroNotes,
+        ...kept.map((bound): [Bound, CoverageNote] => [bound, neverMoves(bound, axis)]),
+      ]),
+    };
+  }
   const min = comparable(kept, "min");
   const max = comparable(kept, "max");
   const unmapped: AxisRead = {
@@ -847,14 +860,9 @@ function resolveLimits(size: SizeSpec, bounds: readonly Bound[], axis: AxisPrope
       bound.side === "min" ? undefined : pixelsOf(min),
       bound.side === "max" ? undefined : pixelsOf(max)
     );
-    if (without !== used) {
-      return { outcome: "literal", detail: `the fixed ${axis.length} resolves to ${used}px against it` };
-    }
-    const [than, never] = bound.side === "min" ? ["more", axis.grows] : ["less", axis.shrinks];
-    return {
-      outcome: "dropped",
-      detail: `it is no ${than} than the fixed ${axis.length}, so it never ${never} the box`,
-    };
+    return without === used
+      ? neverMoves(bound, axis)
+      : { outcome: "literal", detail: `the fixed ${axis.length} resolves to ${used}px against it` };
   };
   return {
     size: { kind: "fixed", length: { kind: "literal", value: used } },
@@ -862,6 +870,25 @@ function resolveLimits(size: SizeSpec, bounds: readonly Bound[], axis: AxisPrope
     max: undefined,
     notes: new Map([...zeroNotes, ...kept.map((bound): [Bound, CoverageNote] => [bound, foldNote(bound)])]),
   };
+}
+
+/** Why a limit that never moves a fixed length drops. */
+function neverMoves(bound: Bound, axis: AxisProperties): CoverageNote {
+  const [than, never] = bound.side === "min" ? ["more", axis.grows] : ["less", axis.shrinks];
+  return {
+    outcome: "dropped",
+    detail: `it is no ${than} than the fixed ${axis.length}, so it never ${never} the box`,
+  };
+}
+
+/** Whether a limit binds the variable a length binds, so it holds the length's value in every mode. */
+function sameVariable(limit: NumberSpec | undefined, length: NumberSpec): boolean {
+  return (
+    limit?.kind === "variable" &&
+    length.kind === "variable" &&
+    limit.variable.collection === length.variable.collection &&
+    limit.variable.name === length.variable.name
+  );
 }
 
 /** A limit as the fold compares it: unset, a literal length in pixels, or a value it cannot compare. */

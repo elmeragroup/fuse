@@ -178,14 +178,29 @@ type PartRule = {
 };
 
 /**
- * The recipe classes of one box that hold in a cell: its own, the ones that reach icons, and the ones
- * that reach its child parts.
+ * The recipe classes of one box that hold in a cell: its own, the ones that reach icons, the ones
+ * that reach its child parts, and the ones that reach every element below it, as `**:` does.
  */
 type BoxClasses = {
   readonly applied: readonly Applied[];
   readonly childRules: readonly ChildRule[];
   readonly partRules: readonly PartRule[];
+  readonly descendantRules: readonly Applied[];
 };
+
+/**
+ * Each class that styles every element below its box, by part and class, with its declarations, and
+ * whether an element below the box took it in some cell so far.
+ */
+type DescendantRuleLog = Map<
+  string,
+  {
+    readonly part: string;
+    readonly className: string;
+    readonly taken: boolean;
+    readonly declarations: Applied["declarations"];
+  }
+>;
 
 /**
  * Each class that styles a child part, by part and class, with the parts it names, its
@@ -224,6 +239,7 @@ export class SetCascade {
   readonly #record: Recorder;
   readonly #conditions: ConditionLog = new Map();
   readonly #partRules: PartRuleLog = new Map();
+  readonly #descendantRules: DescendantRuleLog = new Map();
 
   /**
    * @param meaningOf - The definition's state table.
@@ -251,6 +267,7 @@ export class SetCascade {
       record: this.#record,
       conditions: this.#conditions,
       partRules: this.#partRules,
+      descendantRules: this.#descendantRules,
     });
   }
 
@@ -259,10 +276,26 @@ export class SetCascade {
    * `aria-invalid:focus-visible:` on a set that draws invalid and focus as two values of its
    * state axis, or whose one variant never held in a cell that gives the class, as Calendar's day
    * cell gives `hover:bg-transparent` only while disabled, and as unmapped the classes that style a
-   * child part no part of the definition took, since they style nothing the set draws. Call it
+   * child part no part of the definition took, since they style nothing the set draws, and as
+   * dropped the classes for every element below a box that holds no element in any cell. Call it
    * after every cell.
    */
   finish(): void {
+    for (const { part, className, taken, declarations } of this.#descendantRules.values()) {
+      if (taken) {
+        continue;
+      }
+      for (const declaration of declarations) {
+        this.#record({
+          part,
+          className,
+          property: declaration.property,
+          value: declaration.value,
+          outcome: "dropped",
+          detail: "no element sits below the box in any cell, so the class styles nothing the set draws",
+        });
+      }
+    }
     for (const { part, className, target, taken, declarations } of this.#partRules.values()) {
       if (taken) {
         continue;
@@ -320,6 +353,7 @@ type CellScope = {
   readonly record: Recorder;
   readonly conditions: ConditionLog;
   readonly partRules: PartRuleLog;
+  readonly descendantRules: DescendantRuleLog;
 };
 
 /** A layer of the cell: its computed style, what read it, and the layers below it. */
@@ -534,7 +568,9 @@ export class CellCascade {
    * ancestor's own declaration beats what it inherits from a farther one, the root's `currentcolor`
    * takes the inherited color, and every declaration of the root's own beats them. A child selector
    * of an ancestor reaches the root's icons as a descendant. An ancestor's `*:data-[slot=…]:` reaches
-   * no part, so `SetCascade.finish` leaves it unmapped.
+   * no part, so `SetCascade.finish` leaves it unmapped. An ancestor's `**:` reaches the ancestors
+   * inside it, the root, and every part and icon below the root, each cascading it with its own
+   * classes.
    *
    * @param classes - The root's class string for the cell.
    * @param part - The root's layer name, which the coverage table names.
@@ -567,6 +603,7 @@ export class CellCascade {
         outer: [...defaults, ...page.map((applied) => ({ ...applied, computedOutside }))],
         ancestorRules: [],
         ancestorPartRules: [],
+        ancestorDescendants: [],
         selected: [],
       });
     }
@@ -578,13 +615,17 @@ export class CellCascade {
       { undrawn: undefined }
     );
     const ancestorRules: ChildRule[] = [];
+    const descendants: Applied[] = [];
     for (const ancestor of around.ancestors) {
       const own = boxClasses(ancestor.classes, ancestor.slot, this.#ledger.scope);
-      outside = this.#ledger.add(inheritance(outside, context), own.applied, outside, {
+      takeDescendantRules(this.#ledger.scope.descendantRules, descendants);
+      outside = this.#ledger.add(inheritance(outside, context), [...descendants, ...own.applied], outside, {
         undrawn: ancestor.undrawn,
       });
       ancestorRules.push(...own.childRules);
+      descendants.push(...own.descendantRules);
     }
+    takeDescendantRules(this.#ledger.scope.descendantRules, descendants);
     return cascadeBox(
       this.#ledger,
       {
@@ -594,7 +635,8 @@ export class CellCascade {
         outer: defaults,
         ancestorRules,
         ancestorPartRules: [],
-        selected: [],
+        ancestorDescendants: descendants,
+        selected: descendants,
       },
       outside
     );
@@ -620,7 +662,12 @@ function cascadeBox(
     readonly ancestorRules: readonly ChildRule[];
     /** The tag rules of the boxes above, such as `[&_img]:`, which reach parts at any depth. */
     readonly ancestorPartRules: readonly PartRule[];
-    /** The parent's classes that style this box as its child, which cascade with its own. */
+    /** The `**:` classes of the boxes above, which reach every element below them. */
+    readonly ancestorDescendants: readonly Applied[];
+    /**
+     * The classes of the boxes above that style this box, its parent's that name it as a child and
+     * the `**:` classes above it, which cascade with its own.
+     */
     readonly selected: readonly Applied[];
   },
   parent?: Layer
@@ -633,6 +680,7 @@ function cascadeBox(
     ownRules: own.childRules,
     partRules: own.partRules,
     ancestorPartRules: box.ancestorPartRules,
+    descendants: [...box.ancestorDescendants, ...own.descendantRules],
   });
 }
 
@@ -649,13 +697,15 @@ export class BoxCascade {
   readonly #ownRules: readonly ChildRule[];
   readonly #partRules: readonly PartRule[];
   readonly #ancestorPartRules: readonly PartRule[];
+  readonly #descendants: readonly Applied[];
 
   /**
    * @param ledger - The cell's layers.
    * @param layer - The box's layer.
    * @param rules - The child selectors of the boxes above that reach this box's icons as
-   *   descendants, this box's own, this box's classes that style its child parts, and the tag rules
-   *   of the boxes above, which reach its parts as descendants.
+   *   descendants, this box's own, this box's classes that style its child parts, the tag rules of
+   *   the boxes above, which reach its parts as descendants, and the `**:` classes of this box and
+   *   the boxes above, which reach every element below it.
    */
   constructor(
     ledger: CellLedger,
@@ -665,6 +715,7 @@ export class BoxCascade {
       readonly ownRules: readonly ChildRule[];
       readonly partRules: readonly PartRule[];
       readonly ancestorPartRules: readonly PartRule[];
+      readonly descendants: readonly Applied[];
     }
   ) {
     this.style = new LayerStyle(ledger, layer);
@@ -674,6 +725,7 @@ export class BoxCascade {
     this.#ownRules = rules.ownRules;
     this.#partRules = rules.partRules;
     this.#ancestorPartRules = rules.ancestorPartRules;
+    this.#descendants = rules.descendants;
   }
 
   /**
@@ -681,7 +733,8 @@ export class BoxCascade {
    * `*:data-[slot=…]:` classes that name the part's slot cascade with the part's own classes by
    * specificity, as CSS applies `:is(.… > *)[data-slot="…"]` to the box's children. Its classes such
    * as `[&_img]:` that name the part's tag do too, and so do those of the boxes above, since
-   * `.… img` matches an `<img>` at any depth.
+   * `.… img` matches an `<img>` at any depth. So do the `**:` classes of this box and the boxes
+   * above, since `:is(.… *)` matches every element below.
    *
    * @param classes - The part's class string for the cell.
    * @param part - The part's layer name.
@@ -710,6 +763,7 @@ export class BoxCascade {
     for (const rule of taken) {
       takePartRule(this.#ledger.scope.partRules, rule);
     }
+    takeDescendantRules(this.#ledger.scope.descendantRules, this.#descendants);
     return cascadeBox(
       this.#ledger,
       {
@@ -729,7 +783,8 @@ export class BoxCascade {
           ...this.#ancestorPartRules,
           ...this.#partRules.filter((rule) => rule.target.kind === "tag"),
         ],
-        selected: taken.map((rule) => rule.applied),
+        ancestorDescendants: this.#descendants,
+        selected: [...taken.map((rule) => rule.applied), ...this.#descendants],
       },
       this.#layer
     );
@@ -739,7 +794,8 @@ export class BoxCascade {
    * Cascade the element this box holds its label in, over what this box passes down, where a class
    * of this box reaches it, as `[&>span:last-child]:truncate` reaches the `<span>` a Sidebar row
    * holds its text in. The kit draws no layer for the element, whose label the box draws as its own
-   * text.
+   * text. A `**:` class of this box or a box above reaches the element too, and stays unmapped,
+   * since the element's own layout decides whether the label reads its style.
    *
    * @param element - The tag of the element that holds the label, and whether the label is the
    *   box's last child in the cell.
@@ -747,6 +803,21 @@ export class BoxCascade {
    *   reads this box's style.
    */
   labelElement(element: { readonly tag: string; readonly last: boolean }): LayerStyle | undefined {
+    const { record, descendantRules } = this.#ledger.scope;
+    takeDescendantRules(descendantRules, this.#descendants);
+    for (const { part, className, declarations } of this.#descendants) {
+      for (const { property, value } of declarations) {
+        record({
+          part,
+          className,
+          property,
+          value,
+          outcome: "unmapped",
+          detail:
+            "the class reaches the element the box holds its label in, which the kit draws no layer for",
+        });
+      }
+    }
     const taken = this.#partRules.filter(
       (rule) => element.last && rule.target.kind === "label" && rule.target.tag === element.tag
     );
@@ -767,13 +838,14 @@ export class BoxCascade {
   /**
    * Cascade an icon this box lists, over what this box passes down. A child selector on this
    * box reaches the icon as the selector says. One on a box above reaches it as a descendant,
-   * never as a direct child. The icon's own classes cascade with them by specificity, so a box's
-   * `[&_svg]:size-4` (0,1,1) beats the icon's own `size-6` (0,1,0), as in CSS.
+   * never as a direct child. A `**:` class of this box or a box above reaches it as an element below
+   * them. The icon's own classes cascade with them by specificity, so a box's `[&_svg]:size-4`
+   * (0,1,1) beats the icon's own `size-6` (0,1,0), as in CSS.
    *
    * @param slot - The icon.
    * @returns The icon's computed style.
-   * @throws When one of the icon's own classes has a child selector or styles a child part, which
-   *   the builder does not model inside an icon.
+   * @throws When one of the icon's own classes has a child selector or styles a child part or the
+   *   elements below the icon, which the builder does not model inside an icon.
    */
   icon(slot: IconSlot): LayerStyle {
     const selected = [
@@ -781,13 +853,18 @@ export class BoxCascade {
       ...this.#ownRules.filter((rule) => rule.selects(slot)),
     ];
     const own = boxClasses(slot.classes ?? "", slot.name, this.#ledger.scope);
-    const [nested] = [...own.childRules, ...own.partRules];
+    const [nested] = [
+      ...own.childRules.map(({ applied }) => applied),
+      ...own.partRules.map(({ applied }) => applied),
+      ...own.descendantRules,
+    ];
     if (nested !== undefined) {
-      throw new Error(`the ${slot.name}'s own class ${nested.applied.className} selects inside the icon`);
+      throw new Error(`the ${slot.name}'s own class ${nested.className} selects inside the icon`);
     }
+    takeDescendantRules(this.#ledger.scope.descendantRules, this.#descendants);
     const layer = this.#ledger.add(
       inheritance(this.#layer, this.#ledger.scope.context),
-      [...selected.map((rule) => rule.applied), ...own.applied],
+      [...selected.map((rule) => rule.applied), ...this.#descendants, ...own.applied],
       this.#layer
     );
     return new LayerStyle(this.#ledger, layer);
@@ -986,9 +1063,11 @@ function pageValue(context: BuildContext): (value: string) => string | undefined
 
 /**
  * A parent's computed value of a property, inherited or not, with the parent's custom properties
- * substituted, as a child's `inherit` takes it.
+ * substituted, as a child's `inherit` takes it. A value whose substitution fails is the
+ * guaranteed-invalid value, undefined, under the parent's declaration.
  *
- * @returns The value under the parent's declaration, or undefined where the parent sets none.
+ * @returns The value under the parent's declaration, or undefined where the parent has no entry for
+ *   the property.
  */
 function parentValue(
   parent: Layer | undefined,
@@ -999,11 +1078,10 @@ function parentValue(
   if (parent === undefined || entry === undefined) {
     return undefined;
   }
+  // A value that fails to resolve stays guaranteed-invalid, with what it read, as `inheritance()`
+  // passes it down, so an `inherit` of it reads as invalid rather than as nothing set.
   const read = new Set<string>();
   const value = substitute(parent, context, entry, read);
-  if (value === undefined) {
-    return undefined;
-  }
   const [, ...consumed] = sourcesOf(parent, entry, read);
   return { value, source: entry.source, consumed, computed: true };
 }
@@ -1058,14 +1136,16 @@ function substitute(
 
 /**
  * Sort a box's classes for one cell by their variants. A class with a child selector styles the
- * icons it reaches, a class whose variants hold styles the box, and a class with a variant no
- * cell shows or the definition does not model lands in the coverage table.
+ * icons it reaches, a `**:` class every element below the box, a class whose variants hold styles
+ * the box, and a class with a variant no cell shows or the definition does not model lands in the
+ * coverage table.
  */
 function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses {
   const { meaningOf, cell, context, record, conditions } = scope;
   const applied: Applied[] = [];
   const childRules: ChildRule[] = [];
   const partRules: PartRule[] = [];
+  const descendantRules: Applied[] = [];
   for (const className of splitClasses(classes)) {
     const { variants, utility } = splitClassName(className);
     const rule = context.compiled.rules.get(utility);
@@ -1081,7 +1161,11 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
       });
       continue;
     }
-    const { selects, target, conditionVariants, holds, skipped } = readVariants(variants, meaningOf, cell);
+    const { selects, target, descendants, conditionVariants, holds, skipped } = readVariants(
+      variants,
+      meaningOf,
+      cell
+    );
     if (skipped !== undefined) {
       for (const declaration of rule.declarations) {
         record({ part, className, property: declaration.property, value: declaration.value, ...skipped });
@@ -1117,13 +1201,33 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
     if (target !== undefined) {
       partRules.push({ target, applied: entry });
       logPartRule(scope.partRules, { part, className, target, declarations: rule.declarations });
+    } else if (descendants) {
+      descendantRules.push(entry);
+      const key = JSON.stringify([part, className]);
+      scope.descendantRules.set(key, {
+        part,
+        className,
+        taken: scope.descendantRules.get(key)?.taken === true,
+        declarations: rule.declarations,
+      });
     } else if (selects === undefined) {
       applied.push(entry);
     } else {
       childRules.push({ selects, applied: entry });
     }
   }
-  return { applied, childRules, partRules };
+  return { applied, childRules, partRules, descendantRules };
+}
+
+/** Note that an element below their boxes took the `**:` classes. */
+function takeDescendantRules(log: DescendantRuleLog, rules: readonly Applied[]): void {
+  for (const rule of rules) {
+    const key = JSON.stringify([rule.part, rule.className]);
+    const logged = log.get(key);
+    if (logged !== undefined) {
+      log.set(key, { ...logged, taken: true });
+    }
+  }
 }
 
 /** Log a class that styles a child part, keeping whether a part took it in an earlier cell. */
@@ -1177,7 +1281,9 @@ function outerApplied(declarations: readonly OuterDeclaration[], part: string, r
  * An important declaration, which Tailwind's `!` suffix marks, beats every normal one (CSS Cascade 4
  * §6.1), so the important ones apply after them all, in the same order among themselves.
  *
- * @param parentOf - The parent's computed value of a property, which an `inherit` takes.
+ * @param parentOf - The parent's computed value of a property, which an `inherit` takes. A root with
+ *   no host around it has no parent layer, and the page's declarations it inherits, each computed on
+ *   the page, stand for that value.
  */
 function computeStyle(
   layer: number,
@@ -1205,18 +1311,25 @@ function computeStyle(
     ...declared.filter(({ important }) => !important),
     ...declared.filter(({ important }) => important),
   ];
-  for (const { part, className, property, value, computedOutside } of ordered) {
-    for (const [longhand, longValue] of expandShorthand(property, value)) {
+  const entries = ordered.flatMap(({ part, className, property, value, computedOutside }) =>
+    expandShorthand(property, value).map(([longhand, longValue]) => {
       const source = { layer, part, className, property: longhand, value: longValue };
       const entry: StyleEntry =
         computedOutside === undefined
           ? { value: longValue, source, consumed: [], computed: false }
           : { value: computedOutside(longValue), source, consumed: [], computed: true };
-      style.set(
-        longhand,
-        inheritedKeyword(source, parentOf) ?? inheritedCurrentColor(source, inherited) ?? entry
-      );
-    }
+      return { source, entry };
+    })
+  );
+  const outside = new Map(
+    entries.flatMap(({ source, entry }) => (entry.computed ? [[source.property, entry] as const] : []))
+  );
+  const parentOrOutside = (property: string) => parentOf(property) ?? outside.get(property);
+  for (const { source, entry } of entries) {
+    style.set(
+      source.property,
+      inheritedKeyword(source, parentOrOutside) ?? inheritedCurrentColor(source, inherited) ?? entry
+    );
   }
   return style;
 }
@@ -1262,20 +1375,34 @@ function importance(value: string) {
  * `inherit` computes to the parent's value of the property, inherited or not (CSS Cascade 4 §7.3),
  * as a meter fill's `height: inherit` takes its bar's height. The entry keeps the declaration as its
  * source and reads the parent's declaration, so the declaration lands in the coverage table with
- * what it resolved to.
+ * what it resolved to, or with the invalid value a failed substitution outside left, which a read
+ * leaves unmapped. Only where nothing outside holds an entry for the property does it take the
+ * property's initial value, where {@link INITIAL_VALUES} holds one.
  *
- * @returns The parent's value under the declaration, or undefined for any other value or where the
- *   parent sets no value of the property.
+ * @returns The parent's value under the declaration, or undefined for any other value or where
+ *   neither the parent nor the initial values give one.
  */
 function inheritedKeyword(
   source: Provenance,
   parentOf: (property: string) => StyleEntry | undefined
 ): StyleEntry | undefined {
-  const parent = normalizeCss(source.value) === "inherit" ? parentOf(source.property) : undefined;
-  return parent === undefined
-    ? undefined
-    : { value: parent.value, source, consumed: [parent.source, ...parent.consumed], computed: true };
+  if (normalizeCss(source.value) !== "inherit") {
+    return undefined;
+  }
+  const parent = parentOf(source.property);
+  if (parent !== undefined) {
+    return { value: parent.value, source, consumed: [parent.source, ...parent.consumed], computed: true };
+  }
+  const initial = INITIAL_VALUES.get(source.property);
+  return initial === undefined ? undefined : { value: initial, source, consumed: [], computed: true };
 }
+
+/**
+ * The value an inherited property starts with on the document's root, which an `inherit` takes where
+ * nothing outside the element sets the property: `font-weight` is `normal`, 400 (CSS Fonts 4 §2.2),
+ * since neither the docs page nor Tailwind's preflight sets a weight on `<html>` or `<body>`.
+ */
+const INITIAL_VALUES = new Map([["font-weight", "400"]]);
 
 /**
  * `color: currentcolor` computes to the color the element inherits, as `text-current` keeps its

@@ -414,7 +414,9 @@ export type PercentBasis =
 /**
  * Read a `width` or `height` as the sizing of its axis. A length is fixed. `fit-content` is the size
  * of what the box holds where its container has room to spare, which a kit frame's default content
- * has, so it hugs, unless `readLength` in `box-sizing.ts` fills a text box's room. A percentage takes
+ * has, so it hugs, unless `readLength` in `box-sizing.ts` fills a text box's room. `max-content` is
+ * the size of what the box holds laid out on one line whatever room it has (CSS Sizing 3 §5.1), which
+ * a frame that hugs a hugging text draws, so it hugs. A percentage takes
  * the basis: against a length in pixels any share is that share of it, and against a parent's auto
  * layout only the whole fills, since a fill takes no share. Any other percentage stays unread, as
  * {@link readNumber} leaves it.
@@ -425,7 +427,7 @@ export type PercentBasis =
  * @returns The sizing, or undefined for a value no sizing holds.
  */
 export function readSize(value: string, index: VariableIndex, basis: PercentBasis): SizeSpec | undefined {
-  if (normalizeCss(value) === "fit-content") {
+  if (["fit-content", "max-content"].includes(normalizeCss(value))) {
     return { kind: "hug" };
   }
   const length = readNumber(value, index);

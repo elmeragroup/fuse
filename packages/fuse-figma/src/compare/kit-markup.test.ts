@@ -58,6 +58,7 @@ import { checkMarkup, expectedLabel } from "../../test/markup-check";
 import { markupLabel } from "../../test/markup-tree";
 import {
   ATTRIBUTE_VARIANTS,
+  DESCENDANT_ATTRIBUTE_VARIANTS,
   GROUP_VARIANTS,
   NOT_ATTRIBUTES,
   PARENT_VARIANTS,
@@ -95,6 +96,7 @@ describe("each kit definition against the markup of its component", () => {
       const listed = [
         NOT_ATTRIBUTES,
         ATTRIBUTE_VARIANTS,
+        DESCENDANT_ATTRIBUTE_VARIANTS,
         GROUP_VARIANTS,
         PEER_VARIANTS,
         PARENT_VARIANTS,

@@ -269,6 +269,26 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/sidebar.js",
     load: async () => (await import("./sidebar-cell.ts")).sidebarMenuBadge,
   },
+  {
+    set: "navigation-menu-bar-trigger",
+    entry: "dist/navigation-menu.js",
+    load: async () => (await import("./navigation-menu-cell.ts")).navigationMenuBarTrigger,
+  },
+  {
+    set: "navigation-menu-vertical-trigger",
+    entry: "dist/navigation-menu.js",
+    load: async () => (await import("./navigation-menu-cell.ts")).navigationMenuVerticalTrigger,
+  },
+  {
+    set: "navigation-menu-bar-link",
+    entry: "dist/navigation-menu.js",
+    load: async () => (await import("./navigation-menu-cell.ts")).navigationMenuBarLink,
+  },
+  {
+    set: "navigation-menu-row-link",
+    entry: "dist/navigation-menu.js",
+    load: async () => (await import("./navigation-menu-cell.ts")).navigationMenuRowLink,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

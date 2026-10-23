@@ -18,6 +18,8 @@ import { axisValues } from "./kit-spec";
  * - `child`: the class styles the icons the selector reaches.
  * - `children`: the class styles the box's children, as `*:` does, and the variant after it names
  *   which ones.
+ * - `descendants`: the class styles every element below the box, at any depth, as `**:` does: its
+ *   parts and its icons, and theirs.
  * - `element`: the class styles the box's child parts that are elements of one tag, as `[&_img]:`
  *   styles the `<img>` a consumer puts in Item's media.
  * - `label-element`: the class styles the box's last child where it is an element of one tag, as
@@ -34,6 +36,7 @@ export type VariantMeaning =
   | { readonly kind: "condition"; readonly holds: (cell: Cell) => boolean }
   | { readonly kind: "child"; readonly selects: (slot: IconSlot) => boolean }
   | { readonly kind: "children" }
+  | { readonly kind: "descendants" }
   | { readonly kind: "element"; readonly tag: string }
   | { readonly kind: "label-element"; readonly tag: string }
   | { readonly kind: "specificity" }
@@ -108,6 +111,12 @@ const CHILD_SELECTORS = new Map<string, (slot: IconSlot) => boolean>([
 const CHILDREN = "*";
 
 /**
+ * Tailwind's variant for every element below an element, which compiles `**:x` to `:is(.… *)`, as a
+ * Navigation menu trigger's `enabled-hover:**:text-accent-foreground` recolours its caret.
+ */
+const DESCENDANTS = "**";
+
+/**
  * The child selectors that reach a part by its element's tag, as `[&_img]:` compiles to `.… img`.
  * The selector matches an `<img>` at any depth, so the class reaches each `<img>` part below the box,
  * through the parts between, as a child selector reaches an icon below them.
@@ -153,6 +162,7 @@ const DESKTOP_BREAKPOINTS = new Set(["sm", "md"]);
 
 /** The variants whose meaning is fixed here, which a definition's own states cannot render. */
 const FIXED_VARIANTS = new Set([
+  DESCENDANTS,
   ...ICON_EDGES.keys(),
   ...CHILD_SELECTORS.keys(),
   ...ELEMENT_SELECTORS.keys(),
@@ -252,6 +262,9 @@ export function makeStateTable(
     if (SPECIFICITY_ONLY.has(variant)) {
       return { kind: "specificity" };
     }
+    if (variant === DESCENDANTS) {
+      return { kind: "descendants" };
+    }
     const states = statesRendering.get(variant);
     if (states !== undefined) {
       return { kind: "condition", holds: (cell) => states.has(cell.state ?? "") };
@@ -299,6 +312,8 @@ export type VariantReading = {
   readonly selects: ((slot: IconSlot) => boolean) | undefined;
   /** The child parts it styles, or undefined for a class on the box itself. */
   readonly target: PartTarget | undefined;
+  /** Whether it styles every element below the box, as `**:` does, and not the box itself. */
+  readonly descendants: boolean;
   readonly conditionVariants: readonly string[];
   /** Whether every condition variant holds in the cell. */
   readonly holds: boolean;
@@ -326,11 +341,19 @@ const PAST_CHILD_ELEMENT: CoverageNote = {
     "the builder reads a selector such as `[&_img]:` only as a class's last variant on the box itself, and models no state of the element",
 };
 
+/** A variant after `**:`, or `**:` inside a child selector. */
+const PAST_DESCENDANTS: CoverageNote = {
+  outcome: "unmapped",
+  detail:
+    "the builder reads `**:` only as a class's last variant on the box itself, and models no state of the elements below it",
+};
+
 /**
  * Read a class's variants, outermost first. A condition holds or not in the cell, a child selector
  * narrows the icons the class reaches, `*:` followed by `data-[slot=x]:` makes the class style the
- * box's child parts whose `data-slot` is `x`, and an element selector such as `[&_img]:` makes it
- * style the box's child parts of that tag. Any other variant skips the class.
+ * box's child parts whose `data-slot` is `x`, an element selector such as `[&_img]:` makes it
+ * style the box's child parts of that tag, and `**:` as the last variant makes it style every
+ * element below the box. Any other variant skips the class.
  *
  * @param variants - The class's variants, outermost first.
  * @param meaningOf - The definition's state table.
@@ -341,6 +364,7 @@ const PAST_CHILD_ELEMENT: CoverageNote = {
 export function readVariants(variants: readonly string[], meaningOf: StateTable, cell: Cell): VariantReading {
   let selects: VariantReading["selects"];
   let target: PartTarget | undefined;
+  let descendants = false;
   const conditionVariants: string[] = [];
   let holds = true;
   for (let index = 0; index < variants.length; index += 1) {
@@ -349,12 +373,20 @@ export function readVariants(variants: readonly string[], meaningOf: StateTable,
     const skip = (skipped: CoverageNote): VariantReading => ({
       selects,
       target,
+      descendants,
       conditionVariants,
       holds,
       skipped,
     });
     if (target !== undefined) {
       return skip(target.kind === "slot" ? PAST_CHILD_SLOT : PAST_CHILD_ELEMENT);
+    }
+    if (descendants || (meaning.kind === "descendants" && selects !== undefined)) {
+      return skip(PAST_DESCENDANTS);
+    }
+    if (meaning.kind === "descendants") {
+      descendants = true;
+      continue;
     }
     if (meaning.kind === "child") {
       const outer = selects;
@@ -393,7 +425,7 @@ export function readVariants(variants: readonly string[], meaningOf: StateTable,
     conditionVariants.push(variant);
     holds &&= meaning.holds(cell);
   }
-  return { selects, target, conditionVariants, holds, skipped: undefined };
+  return { selects, target, descendants, conditionVariants, holds, skipped: undefined };
 }
 
 /** The `data-slot` a `data-[slot=x]` variant tests for, or undefined for any other variant. */
@@ -406,7 +438,16 @@ function skippedNote(
   variant: string,
   meaning: Exclude<
     VariantMeaning,
-    { readonly kind: "condition" | "child" | "children" | "element" | "label-element" | "specificity" }
+    {
+      readonly kind:
+        | "condition"
+        | "child"
+        | "children"
+        | "descendants"
+        | "element"
+        | "label-element"
+        | "specificity";
+    }
   >
 ): CoverageNote {
   switch (meaning.kind) {

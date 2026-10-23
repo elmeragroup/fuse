@@ -56,6 +56,8 @@ export const ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => bo
   ],
   // Base UI stamps `data-placeholder` on a Select trigger while nothing is selected.
   ["data-placeholder", (element) => element.attributes.has("data-placeholder")],
+  // Base UI stamps `data-popup-open` on a Select or Navigation menu trigger while its popup is open.
+  ["data-popup-open", (element) => element.attributes.has("data-popup-open")],
   // fuse.css defines `data-active:` on `[data-state="active"]` and on a `data-active` that is not
   // `"false"`, which a Sidebar row's `useRender` stamps while it is the current item.
   ["data-active", isActive],
@@ -94,6 +96,12 @@ export const GROUP_VARIANTS = new Map<string, (ancestor: MarkupElement) => boole
     "group-data-[popup-open]/select-trigger",
     (ancestor) => marks(ancestor, "group/select-trigger") && ancestor.attributes.has("data-popup-open"),
   ],
+  // An open Navigation menu trigger carries `data-popup-open`, which its caret reads.
+  [
+    "group-data-popup-open/navigation-menu-trigger",
+    (ancestor) =>
+      marks(ancestor, "group/navigation-menu-trigger") && ancestor.attributes.has("data-popup-open"),
+  ],
   // An open Accordion item's trigger carries `data-panel-open`, which its caret reads.
   [
     "group-data-[panel-open]/accordion-trigger",
@@ -112,6 +120,18 @@ export const GROUP_VARIANTS = new Map<string, (ancestor: MarkupElement) => boole
     (ancestor) => marks(ancestor, "group") && ancestor.attributes.get("data-collapsible") === "icon",
   ],
 ]);
+
+/**
+ * Whether an element below the measured element matches each attribute variant its own classes
+ * name, as a Navigation menu trigger's caret writes its Root's side in `data-side` and reads it
+ * through `data-[side=bottom]:`, which compiles to `[data-side="bottom"]`.
+ */
+export const DESCENDANT_ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => boolean>(
+  ["bottom", "left", "right", "top", "inline-end", "inline-start"].map((side) => [
+    `data-[side=${side}]`,
+    (element: MarkupElement) => element.attributes.get("data-side") === side,
+  ])
+);
 
 /**
  * Whether a sibling before the measured element matches each peer variant, which selects the
@@ -160,8 +180,8 @@ export const TAG_VARIANTS = new Map<string, (element: MarkupElement) => boolean>
 /**
  * The condition variants static markup cannot check against the measured element's attributes:
  * the pseudo classes the page forces, on the measured element or on the sibling a peer variant
- * reads, the icon edge, which holds on a descendant, and the breakpoints, which the page's viewport
- * decides.
+ * reads, the icon edge, which holds on a descendant, the breakpoints, which the page's viewport
+ * decides, and `ltr:`, which the page's direction decides, left to right on the compare page.
  */
 export const NOT_ATTRIBUTES = new Set([
   "enabled-hover",
@@ -172,4 +192,5 @@ export const NOT_ATTRIBUTES = new Set([
   "has-data-[icon=inline-end]",
   "sm",
   "md",
+  "ltr",
 ]);

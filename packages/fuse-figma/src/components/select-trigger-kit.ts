@@ -123,8 +123,9 @@ export const SELECT_TRIGGER: ComponentDefinition = {
   facts: new Map([
     ["data-placeholder", showsPlaceholder],
     ["group-data-[popup-open]/select-trigger", showsOpen],
-    // Base UI stamps `data-pressed` beside `data-popup-open` while the popup is open. No class reads
-    // it here.
+    // Base UI stamps both of these on the trigger while the popup is open. No class of the trigger
+    // reads them. The caret reads the first through its group variant above.
+    ["data-popup-open", showsOpen],
     ["data-pressed", showsOpen],
   ]),
   omittedStates: new Set(["aria-disabled"]),

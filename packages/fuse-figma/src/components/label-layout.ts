@@ -311,7 +311,7 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
   const layout: LabelLayout =
     lines === undefined
       ? readLabelLayout(holder, label, characters, scope.clamp, scope.variant)
-      : { ...readNativeLines(holder, lines, scope.variant), maxWidth: undefined };
+      : { ...readNativeLines(holder, lines, scope.variant), maxWidth: undefined, packsAtStart: false };
   const fills = layout.sizing.horizontal.kind !== "hug";
   const layer: TextLayerSpec = {
     kind: "text",
@@ -330,9 +330,11 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
     truncation: layout.truncation,
   };
   const wraps = layout.maxWidth === undefined ? layer : { ...layer, maxWidth: layout.maxWidth };
+  const placed = placeInBox(holder, label.placement);
   return {
     layer: letterSpacing === undefined ? wraps : { ...wraps, letterSpacing },
-    ...placeInBox(holder, label.placement),
+    primaryAlign: layout.packsAtStart ? "MIN" : placed.primaryAlign,
+    counterAlign: placed.counterAlign,
   };
 }
 
@@ -533,12 +535,42 @@ const CAPPED: Refusal = {
 };
 
 /**
+ * Whether a flex row's text item draws as a text that fills the room the row's other layer leaves:
+ * the label is the first of two layers that the row spaces between its ends, it sets its lines from
+ * the start, and the other layer is as wide as a length says. The item then sits at the start,
+ * shrinks to the room the other layer and the row's gap leave and wraps there (CSS Flexbox 1 §9.7),
+ * and the other layer ends the row, as a vertical Navigation menu trigger holds its title and caret.
+ * The gap is the least space between them under any distributed alignment (CSS Box Alignment 3 §8),
+ * and a filling text leaves no room to space out, so the row packs its layers at the start with its
+ * gap between them, which draws what CSS draws. On 2026-10-23 a real file kept no gap under
+ * SPACE_BETWEEN beside a filling text: the text took the whole room and met the caret (PV). The
+ * builder measures no text, so a label whose longest word is wider than that room draws wrapped in
+ * Figma, where CSS keeps the word whole and pushes the other layer out (CSS Flexbox 1 §4.5).
+ */
+function spacedFirst(holder: Holder, label: LabelDefinition, across: Across): boolean {
+  const { layout, layers, shares } = holder;
+  return (
+    layout.direction === "HORIZONTAL" &&
+    layout.justify === "SPACE_BETWEEN" &&
+    layers.length === 2 &&
+    layers[0] === label.name &&
+    shares[1]?.kind === "pixels" &&
+    across === "LEFT"
+  );
+}
+
+/** What a row's `justify-content` draws where its label fills the room as {@link spacedFirst} says. */
+const SPACED_FIRST =
+  "the label fills the room the other layer leaves, so nothing is left to space out, and the row packs its layers at the start with its gap between them";
+
+/**
  * Find where a flex or grid box sets its wrapping text somewhere a filling text does not. The text
  * is an anonymous item, which does not grow (CSS Flexbox 1 §7.1), so a short label sits at its own
  * width where the box places it, while a text that fills the box sets its lines by its alignment.
  * The two agree across a column that stretches the item, and where the box places the item where
  * the text sets its lines. Beside other layers in a row the label keeps its own width, where a fill
- * takes the room they leave. A grid sets its text as a grid item, which a fill does not draw.
+ * takes the room they leave, unless {@link spacedFirst} says the two agree. A grid sets its text as a
+ * grid item, which a fill does not draw.
  *
  * @returns Why the label cannot fill, or undefined where a fill draws what CSS draws.
  */
@@ -641,13 +673,21 @@ function readLabelLayout(
     holder.limits.maxWidth !== undefined &&
     (ellipsis || lines !== undefined || cap.kind === "unread");
   const maxWidth = cap.kind === "pixels" ? cap.value : undefined;
+  const across = linesAcross(style, label.placement);
   const placed =
-    definite && wrapping && item !== undefined
-      ? refuseItem(holder, item, label, linesAcross(style, label.placement))
-      : undefined;
+    definite && wrapping && item !== undefined ? refuseItem(holder, item, label, across) : undefined;
   // The item never shrinks below its one line, so it sits at its own width, which a hugging text draws.
   const ownWidth = placed !== undefined && item === "flex" && neverWraps(style, characters);
-  const refusal = capped ? CAPPED : ownWidth ? undefined : placed;
+  const spaced =
+    !capped && placed !== undefined && !ownWidth && item === "flex" && spacedFirst(holder, label, across);
+  const refusal = capped ? CAPPED : ownWidth || spaced ? undefined : placed;
+  if (spaced) {
+    style.read(
+      "justify-content",
+      (written) => written,
+      () => ({ outcome: "literal", detail: SPACED_FIRST })
+    );
+  }
   const fills = definite && refusal === undefined && !ownWidth && (wrapping || maxLines !== undefined);
   const truncation = fills && maxLines !== undefined ? { maxLines } : undefined;
   if (refusal !== undefined) {
@@ -745,6 +785,7 @@ function readLabelLayout(
     sizing: fills ? FILLING : HUGGING_TEXT,
     truncation,
     maxWidth: maxWidth === undefined ? undefined : { kind: "literal", value: maxWidth },
+    packsAtStart: spaced,
   };
 }
 
@@ -752,6 +793,11 @@ function readLabelLayout(
 type LabelLayout = Pick<TextLayerSpec, "sizing" | "truncation"> & {
   /** The width a hugging label wraps at, or undefined for none. */
   readonly maxWidth: NumberSpec | undefined;
+  /**
+   * Whether the label fills the room its row's other layer and gap leave, as {@link spacedFirst}
+   * decides, so the row packs its layers at the start with its gap between them.
+   */
+  readonly packsAtStart: boolean;
 };
 
 /**

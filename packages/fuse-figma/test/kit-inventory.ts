@@ -189,6 +189,25 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "sidebar-menu-badge", name: "Sidebar menu badge", variants: 3, previewed: 3 },
     ],
   },
+  {
+    slug: "navigation-menu",
+    name: "Navigation menu",
+    sets: [
+      // 4 states, closed and open.
+      { key: "navigation-menu-bar-trigger", name: "Navigation menu bar trigger", variants: 8, previewed: 8 },
+      // 4 states, closed and open.
+      {
+        key: "navigation-menu-vertical-trigger",
+        name: "Navigation menu vertical trigger",
+        variants: 8,
+        previewed: 8,
+      },
+      // 3 states, inactive and active.
+      { key: "navigation-menu-bar-link", name: "Navigation menu bar link", variants: 6, previewed: 6 },
+      // 3 states, inactive and active.
+      { key: "navigation-menu-row-link", name: "Navigation menu row link", variants: 6, previewed: 6 },
+    ],
+  },
 ];
 
 /** The page that holds the icon library alone, after the component pages. */
