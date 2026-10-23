@@ -37,19 +37,39 @@ function fkasCompanyLight(): TokenLayer {
 
 /**
  * The light reset keys every external brand palette assigns itself. Composition derives the
- * secondary hover, the sidebar ring aliases the ring, the field radius aliases the radius, and
- * the external variant layer sets its keys for every brand.
+ * secondary hover, the sidebar ring aliases the ring, the field radius aliases the radius, the
+ * h1 and h2 roles alias the heading small and xsmall styles, and the external variant layer
+ * sets its keys for every brand.
  */
 type BrandPaletteKey = Exclude<
   ExternalResetKey,
-  "secondary-hover" | "sidebar-ring" | "radius-field" | keyof typeof EXTERNAL_VARIANT_LAYER
+  | "secondary-hover"
+  | "sidebar-ring"
+  | "radius-field"
+  | HeadingPointerKey
+  | keyof typeof EXTERNAL_VARIANT_LAYER
 >;
+
+/** The h1 and h2 roles, which point at a heading style in every theme. */
+const HEADING_POINTERS = [
+  ["heading-1-size", "var(--heading-small-size)"],
+  ["heading-1-leading", "var(--heading-small-leading)"],
+  ["heading-1-weight", "var(--heading-small-weight)"],
+  ["heading-2-size", "var(--heading-xsmall-size)"],
+  ["heading-2-leading", "var(--heading-xsmall-leading)"],
+  ["heading-2-weight", "var(--heading-xsmall-weight)"],
+] as const;
+
+type HeadingPointerKey = (typeof HEADING_POINTERS)[number][0];
+
+const HEADING_POINTER_KEYS: ReadonlySet<string> = new Set(HEADING_POINTERS.map(([name]) => name));
 
 const BRAND_PALETTE_KEYS = EXTERNAL_RESET_KEYS.filter(
   (key): key is BrandPaletteKey =>
     key !== "secondary-hover" &&
     key !== "sidebar-ring" &&
     key !== "radius-field" &&
+    !HEADING_POINTER_KEYS.has(key) &&
     !(key in EXTERNAL_VARIANT_LAYER)
 );
 
@@ -275,6 +295,13 @@ describe("theme contract", () => {
     expect(supplied.has("radius")).toBe(true);
     expect(supplied.has("radius-field")).toBe(false);
     supplied.add("radius-field");
+    // The h1 and h2 roles point at the heading small and xsmall styles, variant-layer keys, so a
+    // light rule that resets a style restates its level's pointer too.
+    for (const [name, pointer] of HEADING_POINTERS) {
+      expect(DEFAULTS[name], name).toBe(pointer);
+      expect(supplied.has(name), name).toBe(false);
+      supplied.add(name);
+    }
 
     expect([...supplied].toSorted((left, right) => left.localeCompare(right))).toEqual(
       [...EXTERNAL_RESET_KEYS].toSorted((left, right) => left.localeCompare(right))
@@ -341,6 +368,18 @@ describe("theme contract", () => {
         "paragraph-leading-sm",
         "paragraph-leading-base",
         "paragraph-leading-lg",
+        "heading-large-size",
+        "heading-large-leading",
+        "heading-large-weight",
+        "heading-medium-size",
+        "heading-medium-leading",
+        "heading-medium-weight",
+        "heading-small-size",
+        "heading-small-leading",
+        "heading-small-weight",
+        "heading-xsmall-size",
+        "heading-xsmall-leading",
+        "heading-xsmall-weight",
         "heading-1-size",
         "heading-1-leading",
         "heading-1-weight",
@@ -536,7 +575,7 @@ describe("derived roles", () => {
 describe("external variant layer roles", () => {
   const rules = parseStyleRules(generateThemesCss());
 
-  it("sets the radius step, the transparent card edge and shadow, the page-tinted card section divider, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows, the card-filled unstriped disabled row with its muted text, the medium selection row title, the 14/20, 16/22 and 18/24 paragraph line heights and the bold 24/32 h1 and 20/32 h2 and h3 once for the external variant", () => {
+  it("sets the radius step, the transparent card edge and shadow, the page-tinted card section divider, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows, the card-filled unstriped disabled row with its muted text, the medium selection row title, the 14/20, 16/22 and 18/24 paragraph line heights, the bold 34/40, 28/34, 24/32 and 20/32 heading styles and the h3 pointer at heading xsmall once for the external variant", () => {
     const external = {
       "radius-step": "2px",
       "card-border": "oklch(0 0 0 / 0)",
@@ -555,15 +594,21 @@ describe("external variant layer roles", () => {
       "paragraph-leading-sm": "1.25rem",
       "paragraph-leading-base": "1.375rem",
       "paragraph-leading-lg": "1.5rem",
-      "heading-1-size": "1.5rem",
-      "heading-1-leading": "2rem",
-      "heading-1-weight": "700",
-      "heading-2-size": "1.25rem",
-      "heading-2-leading": "2rem",
-      "heading-2-weight": "700",
-      "heading-3-size": "1.25rem",
-      "heading-3-leading": "2rem",
-      "heading-3-weight": "700",
+      "heading-large-size": "2.125rem",
+      "heading-large-leading": "2.5rem",
+      "heading-large-weight": "700",
+      "heading-medium-size": "1.75rem",
+      "heading-medium-leading": "2.125rem",
+      "heading-medium-weight": "700",
+      "heading-small-size": "1.5rem",
+      "heading-small-leading": "2rem",
+      "heading-small-weight": "700",
+      "heading-xsmall-size": "1.25rem",
+      "heading-xsmall-leading": "2rem",
+      "heading-xsmall-weight": "700",
+      "heading-3-size": "var(--heading-xsmall-size)",
+      "heading-3-leading": "var(--heading-xsmall-leading)",
+      "heading-3-weight": "var(--heading-xsmall-weight)",
     } as const;
     for (const [brand, palette] of Object.entries(EXTERNAL_PALETTES)) {
       for (const key of Object.keys(external)) {
@@ -577,18 +622,23 @@ describe("external variant layer roles", () => {
       }
     }
     // Every external rule rounds fields with its own --radius, the corner of a card or a
-    // selection row, rather than a field corner of the variant's.
+    // selection row, rather than a field corner of the variant's, and restates the h1 and h2
+    // pointers so they resolve against its own heading styles.
     for (const brand of ["fkas", "tkas", "guen", "fkab", "fkse", "elma", "ngfi"]) {
       const selector = `[data-theme-variant="external"][data-theme-brand="${brand}"]`;
       expect(declaration(rules, selector, "radius-field"), selector).toBe("var(--radius)");
+      for (const [key, pointer] of HEADING_POINTERS) {
+        expect(declaration(rules, selector, key), `${selector} ${key}`).toBe(pointer);
+      }
     }
     // Internal themes and the root keep the border-coloured card edge, Tailwind's 5% black card
     // shadow, the 1px border hairline,
     // the border-coloured selection row edge, the primary checked-row edge, dividers that follow
     // those edges, the muted disabled row striped in black at 2% with foreground text, the
     // regular selection row title, the relaxed 1.625 paragraph line heights at 14, 16 and 18px,
-    // the 500-weight h1 at 24px, h2 at 18px and h3 at 16px with snug 1.375 line heights, 33,
-    // 24.75 and 22px, and round fields with --radius.
+    // the 500-weight heading styles at 36, 30, 24 and 18px with snug 1.375 line heights, 49.5,
+    // 41.25, 33 and 24.75px, h1 and h2 pointing at small and xsmall, the 500-weight h3 at 16/22,
+    // and round fields with --radius.
     for (const selector of [":root", '[data-theme-variant="internal"]']) {
       expect(declaration(rules, selector, "card-border"), selector).toBe("var(--border)");
       expect(declaration(rules, selector, "card-section-divider"), selector).toBe("var(--border)");
@@ -611,12 +661,19 @@ describe("external variant layer roles", () => {
       expect(declaration(rules, selector, "paragraph-leading-base"), selector).toBe("1.625rem");
       expect(declaration(rules, selector, "paragraph-leading-lg"), selector).toBe("1.828125rem");
       for (const [key, value] of [
-        ["heading-1-size", "1.5rem"],
-        ["heading-1-leading", "2.0625rem"],
-        ["heading-1-weight", "500"],
-        ["heading-2-size", "1.125rem"],
-        ["heading-2-leading", "1.546875rem"],
-        ["heading-2-weight", "500"],
+        ["heading-large-size", "2.25rem"],
+        ["heading-large-leading", "3.09375rem"],
+        ["heading-large-weight", "500"],
+        ["heading-medium-size", "1.875rem"],
+        ["heading-medium-leading", "2.578125rem"],
+        ["heading-medium-weight", "500"],
+        ["heading-small-size", "1.5rem"],
+        ["heading-small-leading", "2.0625rem"],
+        ["heading-small-weight", "500"],
+        ["heading-xsmall-size", "1.125rem"],
+        ["heading-xsmall-leading", "1.546875rem"],
+        ["heading-xsmall-weight", "500"],
+        ...HEADING_POINTERS,
         ["heading-3-size", "1rem"],
         ["heading-3-leading", "1.375rem"],
         ["heading-3-weight", "500"],

@@ -45,8 +45,8 @@ const SLUGS = [
 // `radius-field` field corner, the card edge, section divider and shadow, the two outline Button roles, the resting and
 // checked selection row borders and dividers, the disabled selection row fill, stripe and text,
 // the selection row title weight, the three paragraph line heights, the size, line height and
-// weight of h1 to h3 and the modal fill and text.
-const TOKEN_COUNT = 107;
+// weight of the four heading styles and of h1 to h3, and the modal fill and text.
+const TOKEN_COUNT = 119;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;
@@ -385,10 +385,24 @@ describe("resolveThemeCatalog", () => {
     }
   });
 
-  it("reads the h1 to h3 scale as px and weights, kept in both schemes", () => {
-    // External h1 heading small 24/32 and h2 and h3 heading xsmall 20/32, all at 700; internal
-    // h1 24px, h2 18px and h3 16px at the snug 1.375 ratio, all at 500.
+  it("reads the heading styles and the h1 to h3 scale as px and weights, kept in both schemes", () => {
+    // External heading styles large 34/40, medium 28/34, small 24/32 and xsmall 20/32, all at
+    // 700; internal 36, 30, 24 and 18px at the snug 1.375 ratio, all at 500. h1 is heading small
+    // and h2 heading xsmall in both variants, external h3 is heading xsmall and internal h3 16/22
+    // at 500.
     const expected = [
+      ["heading-large-size", "dimension", 34, 36],
+      ["heading-large-leading", "dimension", 40, 49.5],
+      ["heading-large-weight", "fontWeight", 700, 500],
+      ["heading-medium-size", "dimension", 28, 30],
+      ["heading-medium-leading", "dimension", 34, 41.25],
+      ["heading-medium-weight", "fontWeight", 700, 500],
+      ["heading-small-size", "dimension", 24, 24],
+      ["heading-small-leading", "dimension", 32, 33],
+      ["heading-small-weight", "fontWeight", 700, 500],
+      ["heading-xsmall-size", "dimension", 20, 18],
+      ["heading-xsmall-leading", "dimension", 32, 24.75],
+      ["heading-xsmall-weight", "fontWeight", 700, 500],
       ["heading-1-size", "dimension", 24, 24],
       ["heading-1-leading", "dimension", 32, 33],
       ["heading-1-weight", "fontWeight", 700, 500],
@@ -408,6 +422,33 @@ describe("resolveThemeCatalog", () => {
       expect(theme("external-guen-company").schemes.dark.tokens[name].value, name).toBe(external);
       expect(light("internal-fkas-private").tokens[name].value, name).toBe(internal);
       expect(theme("internal-ngfi-company").schemes.dark.tokens[name].value, name).toBe(internal);
+    }
+  });
+
+  it("keeps the h1, h2 and external h3 roles as one-hop references to their heading style", () => {
+    const pointers = [
+      ["heading-1-size", "heading-small-size"],
+      ["heading-1-leading", "heading-small-leading"],
+      ["heading-1-weight", "heading-small-weight"],
+      ["heading-2-size", "heading-xsmall-size"],
+      ["heading-2-leading", "heading-xsmall-leading"],
+      ["heading-2-weight", "heading-xsmall-weight"],
+    ] as const;
+    for (const slug of ["external-fkas-private", "internal-fkas-private"] as const) {
+      for (const [name, target] of pointers) {
+        expect(light(slug).tokens[name].reference, `${slug} ${name}`).toEqual({
+          space: "token",
+          name: target,
+        });
+      }
+    }
+    for (const part of ["size", "leading", "weight"] as const) {
+      expect(light("external-fkas-private").tokens[`heading-3-${part}`].reference).toEqual({
+        space: "token",
+        name: `heading-xsmall-${part}`,
+      });
+      expect(light("internal-fkas-private").tokens[`heading-3-${part}`].reference).toBeUndefined();
+      expect(light("external-fkas-private").tokens[`heading-small-${part}`].reference).toBeUndefined();
     }
   });
 

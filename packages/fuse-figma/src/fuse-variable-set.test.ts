@@ -107,9 +107,21 @@ describe("fuseVariableSet", () => {
         px(26)
       );
     }
-    // An h1's heading scale syncs as FLOATs the font size, line height and font weight pickers
-    // offer, kept in both schemes: the external bold heading small, 24/32 at 700, and the
-    // internal 24px at the snug 1.375 ratio, 33px, at 500.
+    // The heading styles sync as FLOATs the font size, line height and font weight pickers
+    // offer, kept in both schemes: the external bold heading medium, 28/34 at 700, and the
+    // internal 30px at the snug 1.375 ratio, 41.25px, at 500.
+    expect(spec("Fuse tokens", "heading-medium-size")).toMatchObject({
+      type: "FLOAT",
+      scopes: ["FONT_SIZE"],
+    });
+    expect(spec("Fuse tokens", "heading-medium-leading")).toMatchObject({
+      type: "FLOAT",
+      scopes: ["LINE_HEIGHT"],
+    });
+    expect(spec("Fuse tokens", "heading-medium-weight")).toMatchObject({
+      type: "FLOAT",
+      scopes: ["FONT_STYLE"],
+    });
     expect(spec("Fuse tokens", "heading-1-size")).toMatchObject({ type: "FLOAT", scopes: ["FONT_SIZE"] });
     expect(spec("Fuse tokens", "heading-1-leading")).toMatchObject({
       type: "FLOAT",
@@ -118,8 +130,9 @@ describe("fuseVariableSet", () => {
     expect(spec("Fuse tokens", "heading-1-weight")).toMatchObject({ type: "FLOAT", scopes: ["FONT_STYLE"] });
     for (const scheme of ["light", "dark"]) {
       for (const [name, external, internal] of [
-        ["heading-1-size", 24, 24],
-        ["heading-1-leading", 32, 33],
+        ["heading-medium-size", 28, 30],
+        ["heading-medium-leading", 34, 41.25],
+        ["heading-medium-weight", 700, 500],
       ] as const) {
         expect(value("Fuse brand", `${scheme}/external/private/${name}`, "Fjordkraft"), name).toEqual(
           px(external)
@@ -128,12 +141,20 @@ describe("fuseVariableSet", () => {
           px(internal)
         );
       }
-      expect(value("Fuse brand", `${scheme}/external/private/heading-1-weight`, "Fjordkraft")).toEqual(
-        px(700)
+      // An h1 aliases heading small at its own theme path in both variants, and h3 aliases
+      // heading xsmall in external themes and holds 16px in internal ones.
+      for (const variant of ["external", "internal"]) {
+        for (const part of ["size", "leading", "weight"]) {
+          expect(
+            value("Fuse brand", `${scheme}/${variant}/private/heading-1-${part}`, "Fjordkraft"),
+            `${scheme} ${variant} heading-1-${part}`
+          ).toEqual(alias("Fuse brand", `${scheme}/${variant}/private/heading-small-${part}`));
+        }
+      }
+      expect(value("Fuse brand", `${scheme}/external/private/heading-3-size`, "Fjordkraft")).toEqual(
+        alias("Fuse brand", `${scheme}/external/private/heading-xsmall-size`)
       );
-      expect(value("Fuse brand", `${scheme}/internal/private/heading-1-weight`, "Fjordkraft")).toEqual(
-        px(500)
-      );
+      expect(value("Fuse brand", `${scheme}/internal/private/heading-3-size`, "Fjordkraft")).toEqual(px(16));
     }
   });
 

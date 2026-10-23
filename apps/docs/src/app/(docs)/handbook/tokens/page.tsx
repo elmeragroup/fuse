@@ -24,8 +24,8 @@ export default function TokensPage(): ReactElement {
       <p>
         Most role tokens are colours. The rest hold a length, such as <code>--radius</code> or the paragraph
         line height <code>--paragraph-leading-base</code>, a font stack, such as <code>--font-heading</code>,
-        or a font weight, such as <code>--selection-title-weight</code> or <code>--heading-1-weight</code>,
-        and the <Link href="/handbook/theming">theming page</Link> says what each variant sets them to.
+        or a font weight, such as <code>--selection-title-weight</code> or <code>--heading-small-weight</code>
+        , and the <Link href="/handbook/theming">theming page</Link> says what each variant sets them to.
       </p>
 
       <h2 id="colour-tokens">Colour tokens</h2>

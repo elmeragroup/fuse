@@ -333,7 +333,13 @@
   "heading": {
     "title": "Heading",
     "rsc": "client",
-    "demos": ["heading-basic.tsx", "heading-sizes.tsx", "heading-variants.tsx", "heading-modifiers.tsx"]
+    "demos": [
+      "heading-basic.tsx",
+      "heading-styles.tsx",
+      "heading-sizes.tsx",
+      "heading-variants.tsx",
+      "heading-modifiers.tsx"
+    ]
   },
   "input": {
     "title": "Input",

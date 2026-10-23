@@ -444,8 +444,16 @@ const LENGTH_KNOBS = {
   "paragraph-leading-sm": { max: 48, step: 0.25, unit: "rem" },
   "paragraph-leading-base": { max: 48, step: 0.25, unit: "rem" },
   "paragraph-leading-lg": { max: 48, step: 0.25, unit: "rem" },
-  // The heading scale: whole-pixel sizes, and line heights in quarter pixels for the internal
-  // snug 24.75px h2.
+  // The heading styles and scale: whole-pixel sizes, and line heights in quarter pixels for the
+  // internal snug 24.75px xsmall style and 41.25px medium style.
+  "heading-large-size": { max: 64, step: 1, unit: "rem" },
+  "heading-large-leading": { max: 64, step: 0.25, unit: "rem" },
+  "heading-medium-size": { max: 64, step: 1, unit: "rem" },
+  "heading-medium-leading": { max: 64, step: 0.25, unit: "rem" },
+  "heading-small-size": { max: 64, step: 1, unit: "rem" },
+  "heading-small-leading": { max: 64, step: 0.25, unit: "rem" },
+  "heading-xsmall-size": { max: 64, step: 1, unit: "rem" },
+  "heading-xsmall-leading": { max: 64, step: 0.25, unit: "rem" },
   "heading-1-size": { max: 64, step: 1, unit: "rem" },
   "heading-1-leading": { max: 64, step: 0.25, unit: "rem" },
   "heading-2-size": { max: 64, step: 1, unit: "rem" },

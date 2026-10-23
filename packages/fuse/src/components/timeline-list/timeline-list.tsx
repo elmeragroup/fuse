@@ -12,11 +12,15 @@ export type TimelineListRootProps = ComponentProps<"ol">;
 export type TimelineListItemProps = ComponentProps<"li">;
 type HeadingProps = ComponentPropsWithoutRef<typeof Heading>;
 
-export type TimelineListTitleProps = Omit<HeadingProps, "noMargin" | "level"> & {
+/** `Omit` over each member of a union, so the Heading's `typography` exclusion survives. */
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+
+export type TimelineListTitleProps = DistributiveOmit<HeadingProps, "noMargin" | "level"> & {
   /**
    * Document-outline level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `3`. The title
    * keeps Heading's scale from before the theme roles in every theme: 24/33 at level 1, 18/24.75
-   * at level 2 and 16/22 from level 3 down, all at 500, unless `size` or `font` replaces it.
+   * at level 2 and 16/22 from level 3 down, all at 500, unless `size`, `font` or `typography`
+   * replaces it.
    */
   level?: HeadingProps["level"];
 };
@@ -66,22 +70,30 @@ function levelSize(level: NonNullable<HeadingProps["level"]>): NonNullable<Headi
 /**
  * An item's title, a level 3 Heading by default. It is not a document section heading, so it
  * keeps Heading's scale from before the theme roles at 500 in every theme instead of reading the
- * level's roles; a `size` or `font` prop still replaces either. The resolved size and font are
- * passed after the rest props, so a forwarded `undefined` cannot erase them.
+ * level's roles; a `size` or `font` prop still replaces either. A `typography` style is
+ * forwarded to the Heading and replaces both, so the title then pins no size or font. The
+ * resolved size and font are passed after the rest props, so a forwarded `undefined` cannot
+ * erase them.
  */
-function TimelineListTitle({
-  className,
-  level = 3,
-  size,
-  font,
-  ...props
-}: TimelineListTitleProps): ReactElement {
+function TimelineListTitle({ className, level = 3, ...props }: TimelineListTitleProps): ReactElement {
+  if (props.typography !== undefined) {
+    return (
+      <Heading
+        data-slot="timeline-list-title"
+        className={cn(title(), className)}
+        level={level}
+        {...props}
+        noMargin
+      />
+    );
+  }
+  const { size, font, ...rest } = props;
   return (
     <Heading
       data-slot="timeline-list-title"
       className={cn(title(), className)}
       level={level}
-      {...props}
+      {...rest}
       size={size ?? levelSize(level)}
       font={font ?? "default"}
       noMargin

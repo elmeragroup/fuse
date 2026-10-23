@@ -82,17 +82,24 @@ export const EXTERNAL_VARIANT_LAYER = {
   "paragraph-leading-sm": "1.25rem",
   "paragraph-leading-base": "1.375rem",
   "paragraph-leading-lg": "1.5rem",
-  // The external desktop heading styles: h1 is heading small, 24/32, and h2 and h3 are heading
-  // xsmall, 20/32, all bold. h4 to h6 have no role and keep Heading's plain default.
-  "heading-1-size": "1.5rem",
-  "heading-1-leading": "2rem",
-  "heading-1-weight": "700",
-  "heading-2-size": "1.25rem",
-  "heading-2-leading": "2rem",
-  "heading-2-weight": "700",
-  "heading-3-size": "1.25rem",
-  "heading-3-leading": "2rem",
-  "heading-3-weight": "700",
+  // The external desktop heading styles, all bold: large 34/40, medium 28/34, small 24/32 and
+  // xsmall 20/32. An h1 and h2 follow small and xsmall through the defaults' pointers, and h3
+  // points at xsmall too. h4 to h6 have no role and keep Heading's plain default.
+  "heading-large-size": "2.125rem",
+  "heading-large-leading": "2.5rem",
+  "heading-large-weight": "700",
+  "heading-medium-size": "1.75rem",
+  "heading-medium-leading": "2.125rem",
+  "heading-medium-weight": "700",
+  "heading-small-size": "1.5rem",
+  "heading-small-leading": "2rem",
+  "heading-small-weight": "700",
+  "heading-xsmall-size": "1.25rem",
+  "heading-xsmall-leading": "2rem",
+  "heading-xsmall-weight": "700",
+  "heading-3-size": "var(--heading-xsmall-size)",
+  "heading-3-leading": "var(--heading-xsmall-leading)",
+  "heading-3-weight": "var(--heading-xsmall-weight)",
 } as const satisfies TokenLayer;
 
 /**
