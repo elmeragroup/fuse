@@ -36,7 +36,7 @@
           "type": "HeadingLevel | undefined",
           "shortType": null,
           "defaultValue": "2",
-          "description": "Document-outline level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `2`. Visual `size` is independent of `level`.",
+          "description": "Document-outline level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `2`. For levels 1 to 3 it also picks the theme's default size, line height and weight: `--heading-<level>-size` and `--heading-<level>-leading` apply when `size` is omitted, and `--heading-<level>-weight` when `font` is omitted. Internal themes keep h1 at 24/33, h2 at 18/24.75 and h3 at 16/22, all at 500; external themes set h1 to 24/32 and h2 and h3 to 20/32, all at 700. Levels 4 to 6 are 16/22 at 500 in every theme.",
           "required": false
         },
         {

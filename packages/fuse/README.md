@@ -118,6 +118,24 @@ A `Text` at `sm`, the default size and `lg` reads its line height from `--paragr
 
 A `leading` prop or a `className` leading on the Text replaces the role. `Span` keeps its own snug default.
 
+A `Heading` at level 1, 2 or 3 reads its size and line height from `--heading-<level>-size` and `--heading-<level>-leading` when it has no `size` prop, and its weight from `--heading-<level>-weight` when it has no `font` prop. Without them h1 is 24/33, h2 18/24.75 and h3 16/22, all at 500, as in internal themes. For the external themes' heading styles, a bold 24/32 h1 and 20/32 h2 and h3, set:
+
+```css
+:root {
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
+}
+```
+
+h4 to h6 have no roles and stay 16/22 at 500. A `size` or `font` prop, or a `className` size or weight, replaces the roles. `headingVariants()` on its own knows no level and keeps the plain scale.
+
 `Dialog.Content`, `AlertDialog.Content` and `Sheet.Content` fill with `--dialog` and take `--dialog-foreground` as their text colour. Without them a modal takes your `--popover` and `--popover-foreground`, as internal themes and every dark theme do. For the external light look, where a modal fills with the page tint so the card-coloured fields and selection rows inside it stand apart as they do on the page, set the pair in your light rules and point it back at the popover pair in your dark ones, as the themes do:
 
 ```css

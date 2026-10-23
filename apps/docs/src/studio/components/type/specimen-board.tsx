@@ -17,26 +17,44 @@ const specimenBoard = tv({
 
 const styles = specimenBoard();
 
+// Each heading renders by level alone, so its row shows the theme's heading scale.
 const HEADINGS = [
-  { level: 1, size: "4xl", text: "Power for the whole home" },
-  { level: 2, size: "3xl", text: "Your agreement" },
-  { level: 3, size: "2xl", text: "Usage this month" },
-  { level: 4, size: "xl", text: "Invoices" },
+  {
+    level: 1,
+    tokens: "--font-heading, --heading-1-*",
+    text: "Power for the whole home",
+  },
+  {
+    level: 2,
+    tokens: "--font-heading, --heading-2-*",
+    text: "Your agreement",
+  },
+  {
+    level: 3,
+    tokens: "--font-heading, --heading-3-*",
+    text: "Usage this month",
+  },
+  { level: 4, tokens: "--font-heading", text: "Invoices" },
 ] as const;
 
 /**
- * The theme's two font stacks at work: headings H1 to H4 in `--font-heading`, then body, label
- * and small text in `--font-sans`, and a selection row's title at `--selection-title-weight`.
+ * The theme's two font stacks at work: headings H1 to H4 in `--font-heading` at the theme's
+ * heading scale, where H1 to H3 read `--heading-<level>-size`, `--heading-<level>-leading` and
+ * `--heading-<level>-weight` and H4 keeps Heading's default, then body, label and small text in
+ * `--font-sans`, and a selection row's title at `--selection-title-weight`. The heading rows
+ * report their computed weight too.
  * Each row reports the type the browser computed. The selection sample's second row is
  * disabled, so the `--selection-disabled-background`, `--selection-disabled-hatch` and
- * `--selection-disabled-foreground` knobs have a row to paint in either scheme.
+ * `--selection-disabled-foreground` knobs have a row to paint in either scheme. The H1 to H3 rows
+ * name their roles as `--heading-<level>-*`, the size, leading and weight trio, so each label fits
+ * two lines of the row's 9rem column.
  */
 export function SpecimenBoard(): ReactElement {
   return (
     <div className={styles.root()}>
-      {HEADINGS.map(({ level, size, text }) => (
-        <TypeRow key={level} name={`H${String(level)}`} tokens="--font-heading" target="h1, h2, h3, h4">
-          <Heading level={level} size={size} data-specimen={`h${String(level)}`}>
+      {HEADINGS.map(({ level, tokens, text }) => (
+        <TypeRow key={level} name={`H${String(level)}`} tokens={tokens} target="h1, h2, h3, h4" weight>
+          <Heading level={level} data-specimen={`h${String(level)}`}>
             {text}
           </Heading>
         </TypeRow>

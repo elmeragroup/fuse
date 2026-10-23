@@ -18,9 +18,10 @@ import {
   navButtons,
   visibleMonthTitle,
 } from "../../../test/rac-calendar-testing";
-import { cssVarColor, px, renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, fkasExternal, px, renderThemed } from "../../../test/themed-browser-render";
 import { CaretLeft } from "../../icons/generated/caret-left";
 import { CaretRight } from "../../icons/generated/caret-right";
+import { ThemeScope } from "../../theme";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { Calendar } from "./calendar";
 
@@ -101,6 +102,21 @@ describe("Calendar", () => {
     expect(visibleRangeLabel).not.toBe("");
     expect(visibleRangeLabel).toMatch(/July\s+2026/i);
     expect(calendarGrid().getAttribute("aria-labelledby")).toBeNull();
+  });
+
+  it("keeps the month title at 18px, snug and 500 in an external theme", async () => {
+    renderCalendar(
+      <ThemeScope theme={fkasExternal}>
+        <Calendar defaultValue={july14} />
+      </ThemeScope>
+    );
+    const visibleTitle = visibleMonthTitle();
+    await expect.element(visibleTitle).toBeVisible();
+    const style = getComputedStyle(visibleTitle);
+    // lg 18px at snug 1.375 = 24.75px, not the external level 2 heading style.
+    expect(px(style.fontSize)).toBe(18);
+    expect(px(style.lineHeight)).toBe(24.75);
+    expect(style.fontWeight).toBe("500");
   });
 
   it("lays out RTL columns and mirrors navigation and keyboard date movement", async () => {

@@ -56,7 +56,7 @@
           "type": "HeadingLevel | undefined",
           "shortType": null,
           "defaultValue": "3",
-          "description": "Document-outline level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `2`. Visual `size` is independent of `level`.",
+          "description": "Document-outline level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `3`. The title keeps Heading's scale from before the theme roles in every theme: 24/33 at level 1, 18/24.75 at level 2 and 16/22 from level 3 down, all at 500, unless `size` or `font` replaces it.",
           "required": false
         },
         {
