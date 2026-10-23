@@ -18,8 +18,8 @@ catalog:
   "@paper-design/shaders-react": 0.0.81
   "@phosphor-icons/react": 2.1.10
   "@mdx-js/loader": 3.1.1
-  "@next/mdx": 16.4.0
-  "@next/playwright": 16.4.0
+  "@next/mdx": 16.4.2
+  "@next/playwright": 16.4.2
   "@shadcn/lint": 0.1.1
   # satori, which next/og bundles, pins this exact build; the OG card measures text with it.
   "@shuding/opentype.js": 1.4.0-beta.0
@@ -41,7 +41,7 @@ catalog:
   eslint-plugin-turbo: 2.10.12
   fast-check: 4.10.2
   "libphonenumber-js": 1.13.13
-  next: 16.4.0
+  next: 16.4.2
   oxc-parser: 0.148.0
   oxc-transform: 0.148.0
   oxfmt: 0.68.0
