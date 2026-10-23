@@ -14,7 +14,8 @@ export default function ReleasesPage(): ReactElement {
       <h2 id="current-readiness">Current readiness</h2>
       <p>
         Automated npm publishing and per-PR preview infrastructure are <strong>not active yet</strong>.
-        Publishing stays off until activation: the repository needs its npm token secret and the{" "}
+        Publishing stays off until activation: npm needs a trusted-publisher entry for the{" "}
+        <code>merge.yml</code> workflow in the <code>npm</code> environment, and the repository needs the{" "}
         <code>RELEASE_ENABLED</code> variable, alongside the pending org and repository setup (the{" "}
         <code>@elmeragroup/fuse</code> name claim, the repository going public, and required org 2FA). Until
         then nothing publishes and no release PR is opened. Per-PR installable package previews and docs
@@ -38,8 +39,8 @@ export default function ReleasesPage(): ReactElement {
       <p>
         <strong>Publishing is a CI action, gated on activation.</strong> Once activated, every ordinary merge
         publishes a canary, and stable releases ship by merging the Version Packages PR; a failed publication
-        is retried from its recorded archive. The pipeline authenticates with a scoped npm token today; OIDC
-        Trusted Publishing with signed provenance is the target, and local publishing remains outside this
+        is retried from its recorded archive. The pipeline authenticates to npm through trusted publishing
+        (OIDC), and its publish job holds no long-lived npm credential. Local publishing remains outside this
         flow.
       </p>
 
@@ -109,12 +110,13 @@ export default function ReleasesPage(): ReactElement {
 
       <h2 id="supply-chain">Provenance</h2>
       <p>
-        Trusted Publishing via OIDC, signed provenance, and required two-factor authentication for every org
-        member are pending target controls, not already configured. Until the OIDC pivot, publish runs
-        authenticate with a scoped npm token; it is the pipeline&apos;s only long-lived credential and is
-        rotated when maintainers change. Every published version is intended to carry a signed provenance
-        attestation naming the source repo, commit and workflow, verifiable with{" "}
-        <code>npm audit signatures</code>.
+        Trusted publishing completes its OIDC exchange only for a <code>merge.yml</code> or{" "}
+        <code>publish-release.yml</code> run of this repository in the <code>npm</code> GitHub environment,
+        and only <code>main</code> can deploy to that environment. Each version a merge publishes carries a
+        signed provenance attestation that names the source repo, commit and workflow, and{" "}
+        <code>npm audit signatures</code> verifies it. A retried publication carries no attestation, because
+        it can run at a later commit than the one its archive came from. Required two-factor authentication
+        for every org member is still a pending target control.
       </p>
 
       <h2 id="licensing">Licensing</h2>

@@ -8,9 +8,6 @@ on:
       source_commit:
         required: true
         type: string
-    secrets:
-      NPM_TOKEN:
-        required: true
   workflow_dispatch:
     inputs:
       record_tag:
@@ -18,13 +15,18 @@ on:
         required: true
         type: string
 
+# id-token: write lets npm exchange the job's OIDC token for a publish token (trusted publishing).
 permissions:
   contents: write
   pull-requests: read
+  id-token: write
 
 jobs:
   publish:
     if: github.ref == 'refs/heads/main'
+    # npm's trusted-publisher entries name this environment, and only main can deploy to it, so an
+    # OIDC token from any other job cannot publish.
+    environment: npm
     runs-on: ubuntu-latest
     timeout-minutes: 40
     concurrency:
@@ -58,16 +60,25 @@ jobs:
         if: inputs.record_tag == ''
         run: pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium
 
-      # GH_TOKEN authenticates the engine's GitHub API calls; NPM_TOKEN remains until the OIDC pivot.
+      # The engine runs the first `npm` on PATH, and both paths promote with `npm dist-tag add`,
+      # which authenticates over OIDC from npm 11.21.0. The npm bundled with .node-version is older.
+      # The OIDC exchange stores its token in npm's `cli` config layer, which outranks the placeholder
+      # `_authToken` that setup-node writes to `.npmrc`.
+      - name: Install npm with OIDC dist-tag support
+        run: npm install --global npm@11.21.1
+
+      # GH_TOKEN authenticates the engine's GitHub API calls. npm authenticates through the job's
+      # OIDC token, so this step holds no npm token. npm signs provenance for GITHUB_SHA, which on a
+      # retry dispatch is main's head rather than the recorded archive's commit, so the retry
+      # publishes without provenance.
       - name: Publish checked commit or retry recorded archive
         env:
           GH_TOKEN: ${{ github.token }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOURCE_COMMIT: ${{ inputs.source_commit }}
           RECORD_TAG: ${{ inputs.record_tag }}
         run: |
           if [ -n "$RECORD_TAG" ]; then
-            pnpm release retry "$RECORD_TAG"
+            NPM_CONFIG_PROVENANCE=false pnpm release retry "$RECORD_TAG"
           else
             pnpm release publish "$SOURCE_COMMIT"
           fi

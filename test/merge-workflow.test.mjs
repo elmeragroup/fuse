@@ -182,14 +182,19 @@ describe("merge workflow", () => {
     expect(optOut.outputs).toEqual({ skip: "${{ steps.labels.outputs.skip }}" });
     expect(release.uses).toBe("./.github/workflows/publish-release.yml");
     // The called workflow cannot hold more than the caller grants; the engine records its
-    // publication with `contents: write` and reads the release PR with `pull-requests: read`.
-    expect(release.permissions).toEqual({ contents: "write", "pull-requests": "read" });
+    // publication with `contents: write`, reads the release PR with `pull-requests: read`, and
+    // npm authenticates with the job's OIDC token through `id-token: write`.
+    expect(release.permissions).toEqual({
+      contents: "write",
+      "pull-requests": "read",
+      "id-token": "write",
+    });
     // The job is skipped while RELEASE_ENABLED is unset, so dropped call wiring would stay
     // invisible until activation.
     const releaseWith = asRecord(release.with, "release with");
     expect(releaseWith.source_commit).toBe("${{ github.sha }}");
-    const releaseSecrets = asRecord(release.secrets, "release secrets");
-    expect(releaseSecrets.NPM_TOKEN).toBe("${{ secrets.NPM_TOKEN }}");
+    // npm authenticates over OIDC, so the call passes no secrets.
+    expect(release.secrets).toBeUndefined();
     const version = asRecord(jobs.version, "version job");
     expect(version.needs).toEqual(["checks", "browser"]);
     expect(version.if).toBe(activatedPush);

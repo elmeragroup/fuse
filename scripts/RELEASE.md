@@ -18,8 +18,9 @@ Publishing and version-PR creation are disabled until the repository variable
    Allow Actions to create and approve pull requests. Require branches to be current
    before merging so an outdated Version Packages PR cannot merge. Enable Dependabot
    alerts and Dependabot security updates.
-4. Set the granular, organization-scoped `NPM_TOKEN` repository secret, then set
-   `RELEASE_ENABLED=true`. Rotate the token when maintainers change.
+4. Add the `merge.yml` trusted-publisher entry on npm, as
+   [Authentication](#authentication-and-pending-work) describes, then set
+   `RELEASE_ENABLED=true`.
 5. Verify that the next push to `main` publishes a canary, sets the `canary` dist-tag
    and creates its GitHub release record. Verify `latest` after the first stable release.
 
@@ -73,26 +74,57 @@ Local `pnpm ci:checks` includes both browser and packed-consumer tasks; `pnpm ch
 the packed-consumer and package checks to CI.
 
 The adapter builds and runs its gates with the publish credentials removed from the
-environment ([release-credentials.ts](../packages/fuse/scripts/release-credentials.ts)); the
-engine holds its GitHub token from before packing and npm reads its token only at publication.
-This stops code that reads its environment, not a targeted process, which can still read any
-ancestor process's `/proc/<pid>/environ`; full isolation needs a publish job that never builds,
-which waits on a prepare-only engine operation.
+environment ([release-credentials.ts](../packages/fuse/scripts/release-credentials.ts)). These
+are the GitHub token and the OIDC request pair, `ACTIONS_ID_TOKEN_REQUEST_URL` and
+`ACTIONS_ID_TOKEN_REQUEST_TOKEN`. The engine holds its GitHub token from before packing, and npm
+requests its OIDC token only at publication. [Authentication](#authentication-and-pending-work)
+describes the gap this leaves.
 
-If publication fails after an archive was recorded, dispatch **Publish Release**
-on `main` with the record tag, `v<version>` or `canary-<full commit SHA>`.
+If publication fails after an archive was recorded, add the `publish-release.yml`
+trusted-publisher entry on npm ([Authentication](#authentication-and-pending-work)), then
+dispatch **Publish Release** on `main` with the record tag, `v<version>` or
+`canary-<full commit SHA>`.
 A dispatch from another ref is skipped. Retry restores and verifies the recorded
 archive against its source; it never repacks. The workflow uses
 `pnpm release retry <record-tag>` for this path.
 
+A retry publishes without provenance. npm names `GITHUB_SHA` as the source commit, and a
+dispatch runs at the head of `main`, which can be later than the commit the recorded archive
+came from. The workflow sets `NPM_CONFIG_PROVENANCE=false` for the retry command only.
+
 ## Authentication and pending work
 
-The engine currently promotes with `npm dist-tag add`. The tracked
-[npm OIDC limitation](https://github.com/npm/cli/issues/8547) is why the pipeline
-uses a token. Move to Trusted Publishing once the package exists, the repository
-is public and the engine supports OIDC promotion. Configure the trusted publisher
-for `publish-release.yml`, request `id-token: write`, enable provenance, then delete
-`NPM_TOKEN` and update this runbook.
+The publish job authenticates to npm through trusted publishing. It runs in the GitHub
+environment `npm`, which only `main` can deploy to, and holds `id-token: write`. npm
+exchanges the job's OIDC token for a short-lived publish token. It generates provenance
+without a `--provenance` flag for every publication except a retry, which
+[Publish gates and recovery](#publish-gates-and-recovery) explains. The job holds no npm token.
+
+For a `workflow_call`, npm checks the calling workflow's filename, not the called file.
+`@elmeragroup/fuse` therefore needs one trusted-publisher entry per entry point, each for
+repository `elmeragroup/fuse` and environment `npm`:
+
+- `merge.yml` covers every publication from a push to `main`.
+- `publish-release.yml` covers a **Publish Release** retry. Add it only when a retry is needed.
+
+npm deletes an entry that has not published within 2 days of its creation, so add each entry
+shortly before the run that uses it. Enable "Allow npm dist-tag" and direct publish on each
+entry, because the engine publishes under `pending` and then promotes with `npm dist-tag add`.
+
+`npm dist-tag` authenticates over OIDC from npm 11.21.0
+([npm/cli#10038](https://github.com/npm/cli/pull/10038)). The npm bundled with
+`.node-version` is older, so the [publish workflow](../.github/workflows/publish-release.yml)
+installs an exact npm before the engine runs. Raise that pin only to a release older than
+the `minimumReleaseAge` window in `pnpm-workspace.yaml`. With the token gone, set the
+package's publishing access to "Require two-factor authentication and disallow tokens".
+
+Two gaps remain. Build and publish share a job, so build code can request an OIDC token
+during the run. Removing the request pair from the environment stops code that reads its own
+environment, but a same-user process can still read any ancestor process's
+`/proc/<pid>/environ`. Closing that gap needs a publish job that never builds, which waits on a
+prepare-only engine operation. Keeping the original run's provenance on a retry needs an
+engine change in `elmeragroup/internal` that records the attestation and passes it back
+through `--provenance-file`.
 
 The Next App Router fixture is `packages/fuse/scripts/package-check-next-consumer.ts`
 over `packages/fuse/test/packed-consumer/next-app-router/`. It installs the packed
