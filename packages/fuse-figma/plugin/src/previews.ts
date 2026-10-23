@@ -13,6 +13,7 @@ import type { Siblings } from "./identity.ts";
 import type { PlannedPage } from "./pages.ts";
 import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
+import { settleInstances } from "./settle.ts";
 
 /** A frame that wraps its children in rows of a fixed width, with even gaps and padding. */
 export type WrapGrid = {
@@ -300,24 +301,9 @@ export type RowNode = {
 };
 
 /**
- * Read the height of every instance a preview's groups hold. Within one plugin run an instance takes
- * its main component's new size only when it is read, and a preview sizes from its instances as they
- * stand, so a preview read after its variants shrank, before its instances, reads its old height. On
- * 2026-10-23 a real file read such a preview 816 tall, and 48 once each instance's height was read
- * first (PI).
- *
- * @returns The heights read, which the caller discards.
- */
-function settleInstances(frame: FrameNode): readonly number[] {
-  return frame.children
-    .filter(isFrame)
-    .flatMap((group) => group.children.filter(isInstance).map((instance) => instance.height));
-}
-
-/**
  * The page layout: the row's nodes from where the first one sits, then the previews stacked below
- * the tallest of them, left-aligned with the first node. Each preview's instances settle before its
- * height is read.
+ * the tallest of them, left-aligned with the first node. Each preview's instances, and the instances
+ * nested in them, settle before its height is read (`settle.ts`).
  */
 function pageLayout(row: readonly RowNode[], frames: readonly Target<FrameNode>[]): Placed[] {
   const nodes = row.map((entry) => entry.node.get());

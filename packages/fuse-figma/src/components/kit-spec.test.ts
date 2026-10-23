@@ -7,7 +7,14 @@
 import { describe, expect, it } from "vitest";
 
 import { coveredShadow, HUGGING_TEXT, NO_LIMITS, TOP_LEFT, walkLayers } from "./kit-spec";
-import type { BoxSpec, ChildLayerSpec, FrameLayerSpec, IconLayerSpec, TextLayerSpec } from "./kit-spec";
+import type {
+  BoxSpec,
+  ChildLayerSpec,
+  FrameLayerSpec,
+  IconLayerSpec,
+  InstanceLayerSpec,
+  TextLayerSpec,
+} from "./kit-spec";
 
 const zero = { kind: "literal", value: 0 } as const;
 const black = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
@@ -69,13 +76,26 @@ function icon(key: string): IconLayerSpec {
   };
 }
 
+function instance(key: string): InstanceLayerSpec {
+  return {
+    kind: "instance",
+    key,
+    name: key,
+    componentSet: "button",
+    variant: "button/size=sm",
+    sizing: { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
+  };
+}
+
 describe("walkLayers", () => {
-  it("lists every layer below a root depth first, frames before what they hold", () => {
+  // An instance is one row of this panel: the inner set's own panel lists what it holds.
+  it("lists every layer below a root depth first, frames before what they hold, and an instance as one layer", () => {
     const root = box([
       icon("start"),
       frame("track", [frame("thumb", [icon("dot")]), text("caption")]),
       frame("empty", []),
       text("label"),
+      frame("actions", [instance("action")]),
     ]);
     expect(walkLayers(root).map((layer) => layer.key)).toEqual([
       "start",
@@ -85,6 +105,8 @@ describe("walkLayers", () => {
       "caption",
       "empty",
       "label",
+      "actions",
+      "action",
     ]);
   });
 });

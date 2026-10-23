@@ -555,6 +555,12 @@ export function heightBounds(layer: ChildLayerSpec | undefined): HeightBounds {
       max: lines === undefined || line.max === undefined ? undefined : line.max * lines,
     };
   }
+  if (layer.kind === "instance") {
+    // A hugging instance takes the inner variant's height, which this spec does not hold.
+    const { vertical } = layer.sizing;
+    const own = vertical.kind === "fixed" ? lengthBounds(vertical.length) : UNBOUNDED;
+    return layer.visibleProperty === undefined ? own : { min: 0, max: own.max };
+  }
   if (layer.rotation !== undefined && layer.rotation % 180 !== 0) {
     return UNBOUNDED;
   }

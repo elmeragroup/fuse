@@ -108,7 +108,7 @@ async function planButton(
     component,
     "Button",
     { direction: "HORIZONTAL", children: [spec] },
-    { properties: new Map(), icons: new Map() },
+    { properties: new Map(), icons: new Map(), sets: new Map() },
     "read"
   );
 }

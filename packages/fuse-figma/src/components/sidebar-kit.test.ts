@@ -211,10 +211,9 @@ describe("the Sidebar menu button", () => {
     (variant, state, active, fill, shadows, color) => {
       const root = menuButton(variant, "default", "off", active, state);
       expect([root.fill, root.shadows]).toEqual([fill, shadows]);
-      expect(root.children.map((child) => child.kind !== "frame" && child.color)).toEqual([
-        paint(color),
-        paint(color),
-      ]);
+      expect(
+        root.children.map((child) => (child.kind === "text" || child.kind === "icon") && child.color)
+      ).toEqual([paint(color), paint(color)]);
     }
   );
 

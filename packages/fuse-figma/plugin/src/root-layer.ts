@@ -33,7 +33,13 @@ function paddingField(node: LayerParent, side: "Top" | "Right" | "Bottom" | "Lef
   };
 }
 
-function cornerField(node: LayerParent): NumberField {
+/**
+ * The corner radius of a box or an instance, which a spec sets on all four corners at once.
+ *
+ * @param node - The box, or an instance layer that overrides its corners.
+ * @returns The field.
+ */
+export function cornerField(node: LayerParent | InstanceNode): NumberField {
   const corners = ["topLeftRadius", "topRightRadius", "bottomRightRadius", "bottomLeftRadius"] as const;
   return {
     name: "cornerRadius",
@@ -61,7 +67,7 @@ function strokeWeightField(node: LayerParent): NumberField {
  * Plan a fixed width or height, or unbind one the spec lets the box or text hug or fill.
  *
  * @param run - The run.
- * @param node - The box, or a text layer.
+ * @param node - The box, a text layer or an instance layer.
  * @param label - The node's label, for change lines.
  * @param name - The axis's length.
  * @param spec - The axis's sizing.
@@ -70,7 +76,7 @@ function strokeWeightField(node: LayerParent): NumberField {
  */
 export function planLength(
   run: Run,
-  node: LayerParent | TextNode,
+  node: LayerParent | TextNode | InstanceNode,
   label: string,
   name: "width" | "height",
   spec: SizeSpec,

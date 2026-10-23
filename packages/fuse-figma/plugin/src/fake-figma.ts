@@ -11,10 +11,10 @@
  * run stopped before its first write.
  *
  * The fake models the Figma rules below. Each rule a real file showed in 2026-10 names that run.
- * Rules 12 to 33 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
- * Import test` on 2026-10-22 and 2026-10-23: P0 and P0b read the kit's nodes, P1 to P9, PB, PR,
- * PQ, PD, PL, PF, PH, PZ, PI and PZ2 built nodes on a scratch page, and P9b stored images and built
- * no node.
+ * Rules 12 to 40 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
+ * Import test` from 2026-10-22 to 2026-10-24: P0 and P0b read the kit's nodes, P1 to P9, PB, PR,
+ * PQ, PD, PL, PF, PH, PZ, PI, PZ2, N1 to N5 and NS built nodes on a scratch page, and P9b stored
+ * images and built no node.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
  *    COLOR variable in the collections' default modes, whatever opacity it was given. Two runs
@@ -179,10 +179,10 @@
  *    hidden layer and the layer reads `visible` false. The fake reads a component's linked layer
  *    at the property's default, and an instance's at the value the instance sets or else at the
  *    default. It leaves a hidden sublayer out of `children` only while the flag is set, and a run
- *    starts with it false. It does not lay out, so a hidden layer keeps its box's size. PB set
- *    only a BOOLEAN property on an instance, so the fake throws for another kind, and for a
- *    property the instance's set or component lacks. No probe wrote a layer's own `visible`, so
- *    the fake reads every other layer as visible and takes no write.
+ *    starts with it false. A hidden layer leaves only the layout rule 32 lays out, and keeps its
+ *    box's size. PB set only a BOOLEAN property on an instance, and rule 34 covers the other kinds.
+ *    The fake throws for a property the instance's set or component lacks. No probe wrote a layer's
+ *    own `visible`, so the fake reads every other layer as visible and takes no write.
  * 26. `rotation` turns a layer counterclockwise by its degrees and reads from -180 to 180, the
  *    typings' `atan2(-m10, m00)` of its transform, so a whole turn more reads the same. On
  *    2026-10-22 a layer at -90 read `relativeTransform` `[[0, -1], [1, 0]]`, a clockwise turn in
@@ -237,22 +237,77 @@
  *    size and its hugging auto layout parent sized from it (816 tall for three, 48 once each instance
  *    was read first). Waiting changed nothing, and a fresh call read every size settled (PI). The
  *    fake gives an instance its main component's size on a read of its width or height, and on every
- *    instance when a run starts. An instance resized or rescaled itself keeps its own size. A frame
+ *    instance when a run starts. An instance resized or rescaled itself keeps its own length on each
+ *    axis, until HUG on an axis lets that axis take its content's length again, as HUG gave a
+ *    resized nested instance its hug width on 2026-10-23 (N4). A frame
  *    or component that wraps a horizontal auto layout and hugs its height, as a preview and its
  *    groups do, sizes from its children as they stand: rows of its width less its side padding,
  *    `itemSpacing` between children, `counterAxisSpacing` between rows, and its top and bottom
- *    padding. An instance of one takes the component's height. No other frame lays out.
+ *    padding. An instance of one takes the component's height. The same holds at every depth (N2):
+ *    a component that hugged a nested instance of another set's variant, padded 16 a side, read 102
+ *    wide, kept 102 after the variant grew, read 94 for the nested instance and then 126. So a frame
+ *    or component that hugs an axis without wrapping and holds an instance of a set's variant sizes
+ *    that axis from its children as they stand, their lengths and `itemSpacing` along its direction
+ *    and the longest across, and its padding. A nested instance seen through an outer instance takes
+ *    the size its main layer stands at. A new run settles a nested instance before the instances
+ *    that show it. No other frame lays out.
  * 33. An auto layout paints a later child above an earlier one, and its first child on top when
  *    `itemReverseZIndex` is true, which reads back as written. On 2026-10-23 a vertical stack's
  *    filled panel painted over the bottom edge of a 2px ring its header held, and with the field true
  *    the ring was whole (PZ2). `paintsAbove` says which of two layers paints on top. Only a vertical
  *    stack was probed, so the fake refuses the field true on any other frame.
+ * 34. `setProperties` on an instance nested in a component (N1, 2026-10-23). `componentProperties`
+ *    listed `Label#<id>` TEXT, `Show icon#<id>` BOOLEAN and the variant by its bare name, VARIANT, and
+ *    `setProperties` wrote a TEXT value (`Retry`), a BOOLEAN false, which hid the linked layer, and a
+ *    VARIANT value (`outline`). The fake shows a TEXT value as the characters of each sublayer whose
+ *    main layer links the property, and an outer instance shows the values the component set on the
+ *    instance nested in it and applies the swap values among them when it swaps that instance. One
+ *    projection of the values serves `componentProperties` and the swap. A VARIANT write swaps to the set's variant with the values asked for, as
+ *    rule 35 does. N1 ran with the fonts loaded, so the fake requires the linked labels' fonts for a
+ *    TEXT write, as rule 7 requires them for every text write. On 2026-10-24 an INSTANCE_SWAP value,
+ *    a component's id, swapped the nested instance's icon to that component, `componentProperties`
+ *    read the id back, and a fill override on the icon's glyph stayed (NS). So the fake swaps each
+ *    sublayer whose main layer links the property's `mainComponent`, and the glyph's override moves
+ *    to the new glyph of the same name, as below. It refuses a variable value, a value of the wrong
+ *    type, and a variant value the set lacks.
+ * 35. `swapComponent` and a VARIANT write keep the instance's node id and its TEXT and BOOLEAN values
+ *    (N1), and its `componentPropertyReferences.visible`, its `isExposedInstance` and its swap
+ *    property's value (NS). An override the instance itself holds stays, and a sublayer's fill
+ *    override moves to the new sublayer of the same name, as below.
+ * 36. A sublayer's id is `I`, the instance's id, `;` and its main layer's id (N1), and a sublayer reads
+ *    the shared plugin data its main layer carries where it holds none of its own (N3), so the kit's
+ *    keys find the sublayers of a nested instance.
+ * 37. `overrides` lists each layer of an instance that holds an override, from the instance down, with
+ *    its fields: the instance's own `name`, `width` and `height` (N1), its `fills`, `effects` and "the
+ *    corner fields", and a sublayer's `fills` (N3). N3 did not name the corner fields, so the fake
+ *    lists `cornerRadius` and the four corners the typings name. A property value is no override
+ *    (N1). A fill written equal to the main's left no `fills` override, and `overrides` listed only
+ *    the instance's `name` (NS), so a fill, stroke, effects or corner the fake stores equal to what
+ *    the layer's source shows clears that override, and the field follows the source again.
+ *    `removeOverrides` exists (N3), and the fake follows the typings' "removes all direct
+ *    overrides": it clears what `overrides` lists and keeps the property values.
+ * 38. An instance and its sublayers show their main component's fills, strokes, effects and corners,
+ *    and its corner bindings, until they override them. On 2026-10-23 a padding change and a fill
+ *    rebound to `destructive` on the inner variant reached the nested instance, which kept its `Retry`
+ *    label (N2), and an instance's own fill bound to `success`, corner 2 and shadow, and its label's
+ *    fill, all stayed when the main rebound its fill, set its corner to 10, cleared its effects and
+ *    changed its label's fill (N3).
+ * 39. `isExposedInstance` reads back true once written on an instance inside a component in a set,
+ *    an instance of that component lists the nested instance in `exposedInstances`, and
+ *    `setProperties` on the listed instance sets its TEXT (`Undo`) (N5). The typings make the field
+ *    writable only on such an instance and inherited below it, so the fake refuses it elsewhere and
+ *    reads an instance seen through an outer instance from its main layer alone.
+ * 40. Binding the width or height of an instance that hugs that axis records the binding and keeps
+ *    the hug length: on 2026-10-23 a nested instance whose height bound `row-h` kept its 26px hug
+ *    height (N4). The plugin therefore writes FIXED before it binds an instance's length. A binding
+ *    on any other axis resizes, as rule 5 says: on 2026-10-24 a frame that hugged its 28px height
+ *    turned FIXED, in its layout sizing and its counter-axis mode, at `row-h`'s 32 (NS).
  *
- * An instance's sublayers show the layers of its main component. An override, such as the
- * color an icon layer gives its glyph, belongs to the main layer it was made on. It moves to
- * the layer of the same name when the instance swaps, as Figma's help describes and the plugin
- * relies on, and it is lost when the main component replaces that layer, which is the fake's
- * reading of how Figma ties overrides to layers.
+ * An instance's sublayers show the layers of its main component, and a nested instance's sublayers
+ * the sublayers its main layer shows. An override, such as the color an icon layer gives its glyph,
+ * belongs to the main layer it was made on. It moves to the layer of the same name when the
+ * instance swaps, as Figma's help describes and the plugin relies on, and it is lost when the main
+ * component replaces that layer, which is the fake's reading of how Figma ties overrides to layers.
  *
  * It also models what the plugin typings document for a plugin with
  * `"documentAccess": "dynamic-page"`, as the components plugin declares: a page other than the
@@ -266,7 +321,8 @@
  * `Removing this node is not allowed`, and removed the page once another page showed.
  *
  * The fake does not lay out: an auto layout frame keeps the size it was given, so a hugging
- * frame does not grow with its content. Nor does it set text: a text keeps the size it was given,
+ * frame does not grow with its content, apart from the frames rule 32 sizes from their children
+ * as they stand. Nor does it set text: a text keeps the size it was given,
  * so a wrapped, filling or truncated text's height is not modelled. It draws nothing either: a
  * layer's render bounds are its box, and a PNG export holds bytes that name the layer and the
  * scale.
@@ -463,11 +519,20 @@ type NodeState = {
   readonly variantOrder: Map<string, string[]>;
   /** The main component of an instance. */
   main: NodeState | undefined;
-  /** The BOOLEAN property values an instance sets, by property id (rule 25). */
-  readonly propertyValues: Map<string, boolean>;
+  /**
+   * The property values an instance sets, by property id: a BOOLEAN's flag (rule 25), a TEXT's
+   * characters and an INSTANCE_SWAP's component id (rule 34).
+   */
+  readonly propertyValues: Map<string, string | boolean>;
+  /** Whether an instance inside a component in a set is exposed to the instances around it (rule 39). */
+  exposedInstance: boolean;
   /** The layer of the main component that an instance's sublayer shows. */
   mirrorOf: NodeState | undefined;
-  /** The fields a designer or the plugin overrode on an instance's sublayer. */
+  /**
+   * The fields a designer or the plugin overrode on an instance or its sublayer (rules 37 and 38), by
+   * the name of the state field they cover, `size` for the width and height, and `mainComponent` for a
+   * nested instance swapped apart from its main layer.
+   */
   readonly overridden: Set<string>;
   characters: string;
   /** The style of each character, or of the one a text layer without characters types in. */
@@ -636,11 +701,157 @@ function childrenOf(state: NodeState): NodeState[] {
       `The page ${state.name} is not loaded. Under "documentAccess": "dynamic-page", call page.loadAsync() before reading its children.`
     );
   }
-  const source = state.type === "INSTANCE" ? state.main : state.mirrorOf;
+  const source = sourceOf(state);
   if (source !== undefined) {
     mirror(state, source, false);
   }
   return state.children;
+}
+
+/**
+ * The layer an instance or a sublayer shows, its children and every field it does not override
+ * (rule 38): an instance's main component, a sublayer's main layer, or the component a nested
+ * instance was swapped to.
+ */
+function sourceOf(state: NodeState): NodeState | undefined {
+  const own = state.mirrorOf === undefined || state.overridden.has("mainComponent");
+  return state.type === "INSTANCE" && own ? state.main : state.mirrorOf;
+}
+
+/** The fields an instance or a sublayer shows from its source until it overrides them (rule 38). */
+type ShownField = "fills" | "strokes" | "effects" | "radii";
+
+/** A field as a layer shows it: its own where it overrides it or has no source, else its source's (rule 38). */
+function shown<Field extends ShownField>(state: NodeState, field: Field): NodeState[Field] {
+  const source = sourceOf(state);
+  return source === undefined || state.overridden.has(field) ? state[field] : shown(source, field);
+}
+
+/** Note an override of a field on an instance or a sublayer (rule 37); any other layer has none. */
+function markOverride(state: NodeState, field: string): void {
+  if (sourceOf(state) !== undefined) {
+    state.overridden.add(field);
+  }
+}
+
+/**
+ * Note a write of a field an instance or a sublayer shows from its source (rule 37): an override,
+ * or none where the layer now holds what its source shows. On 2026-10-24 a fill written equal to the
+ * main's left no `fills` override, and the field followed the main again (NS).
+ */
+function noteOverride(state: NodeState, field: ShownField): void {
+  const source = sourceOf(state);
+  if (source === undefined) {
+    return;
+  }
+  const shownBySource: Pick<NodeState, ShownField> = {
+    fills: shown(source, "fills"),
+    strokes: shown(source, "strokes"),
+    effects: shown(source, "effects"),
+    radii: shown(source, "radii"),
+  };
+  if (fieldKey(field, state, state.bindings) === fieldKey(field, shownBySource, shownBindings(source))) {
+    state.overridden.delete(field);
+  } else {
+    state.overridden.add(field);
+  }
+}
+
+/** A plain value a key holds. */
+type KeyPart = string | number | boolean | null;
+
+/**
+ * A layer's paints, effects or corners for a field, as text that two layers holding the same ones
+ * share, whatever order their objects list their fields in.
+ */
+function fieldKey(
+  field: ShownField,
+  layer: Pick<NodeState, ShownField>,
+  bindings: ReadonlyMap<VariableBindableNodeField, string>
+): string {
+  switch (field) {
+    case "fills":
+    case "strokes":
+      return JSON.stringify(layer[field].map(paintKey));
+    case "effects":
+      return JSON.stringify(layer.effects.map(effectKey));
+    case "radii": {
+      const { topLeft, topRight, bottomRight, bottomLeft } = layer.radii;
+      const corners = [...CORNERS].map((corner) => bindings.get(corner) ?? null);
+      return JSON.stringify([topLeft, topRight, bottomRight, bottomLeft, ...corners]);
+    }
+  }
+}
+
+/** A stored paint's fields in a fixed order. */
+function paintKey(paint: Paint): readonly KeyPart[] {
+  const shared = [paint.type, paint.visible ?? true, paint.blendMode ?? "NORMAL", paint.opacity ?? 1];
+  switch (paint.type) {
+    case "SOLID":
+      return [
+        ...shared,
+        paint.color.r,
+        paint.color.g,
+        paint.color.b,
+        paint.boundVariables?.color?.id ?? null,
+      ];
+    case "IMAGE":
+      return [...shared, paint.imageHash, paint.scaleMode];
+    default:
+      return shared;
+  }
+}
+
+/** A stored effect's fields in a fixed order. */
+function effectKey(effect: Effect): readonly KeyPart[] {
+  if (effect.type !== "DROP_SHADOW" && effect.type !== "INNER_SHADOW") {
+    return [effect.type, effect.visible];
+  }
+  const bound = [...EFFECT_FIELD_TYPES.keys()].map((name) => effect.boundVariables?.[name]?.id ?? null);
+  const { r, g, b, a } = effect.color;
+  return [
+    effect.type,
+    effect.visible,
+    effect.blendMode,
+    r,
+    g,
+    b,
+    a,
+    effect.offset.x,
+    effect.offset.y,
+    effect.radius,
+    effect.spread ?? 0,
+    ...bound,
+  ];
+}
+
+/** The main component's layer a sublayer shows, through every instance between them. */
+function rootMain(state: NodeState): NodeState {
+  let main = state;
+  while (main.mirrorOf !== undefined) {
+    main = main.mirrorOf;
+  }
+  return main;
+}
+
+/** The nearest instance around a layer, which sets the properties its main layer links. */
+function nearestInstance(state: NodeState): NodeState | undefined {
+  let current = state.parent;
+  while (current !== undefined && current.type !== "INSTANCE") {
+    current = current.parent;
+  }
+  return current;
+}
+
+/**
+ * The value an instance sets for a property, or the one the instance it shows through sets, as an
+ * outer instance shows the values a component set on the instance nested in it.
+ */
+function propertyValue(state: NodeState, id: string): string | boolean | undefined {
+  return (
+    state.propertyValues.get(id) ??
+    (state.mirrorOf === undefined ? undefined : propertyValue(state.mirrorOf, id))
+  );
 }
 
 /**
@@ -995,11 +1206,20 @@ function resizeWithConstraints(state: NodeState, width: number, height: number):
   }
 }
 
-/** Note that an instance holds a size of its own, which its main component's resize leaves (rule 32). */
+/**
+ * Note that an instance holds a width and a height of its own, which its main component's resize
+ * leaves (rule 32), until a HUG on an axis lets that axis follow its content again.
+ */
 function ownSize(state: NodeState): void {
   if (state.type === "INSTANCE") {
-    state.overridden.add("size");
+    state.overridden.add("width");
+    state.overridden.add("height");
   }
+}
+
+/** The override that holds an instance's own length on an axis (rule 32). */
+function lengthOverride(axis: Axis): "width" | "height" {
+  return axis === "HORIZONTAL" ? "width" : "height";
 }
 
 function rescale(state: NodeState, scale: number): void {
@@ -1038,19 +1258,68 @@ function fills(state: NodeState, axis: Axis): boolean {
 }
 
 /**
- * Give an instance its main component's size, as a read of it does (rule 32). An instance resized
- * or rescaled itself keeps its own size, and any other node, and an instance's sublayer, reads as
- * it stands.
+ * Give an instance the size of what it shows, as a read of it does (rule 32): its main component's,
+ * or for a nested instance seen through an outer instance, its main layer's as that stands. An
+ * instance resized or rescaled itself keeps its own length on each axis it does not hug again, and
+ * any other node reads as it stands.
  *
  * @returns The node.
  */
 function settled(state: NodeState): NodeState {
-  const { main } = state;
-  if (state.type === "INSTANCE" && main !== undefined && !state.overridden.has("size")) {
-    state.width = lengthOn(main, "HORIZONTAL");
-    state.height = lengthOn(main, "VERTICAL");
+  const source = sourceOf(state);
+  if (state.type !== "INSTANCE" || source === undefined) {
+    return state;
+  }
+  if (!state.overridden.has(lengthOverride("HORIZONTAL"))) {
+    state.width = lengthOn(source, "HORIZONTAL");
+  }
+  if (!state.overridden.has(lengthOverride("VERTICAL"))) {
+    state.height = lengthOn(source, "VERTICAL");
   }
   return state;
+}
+
+/**
+ * Whether a frame or component sizes an axis from its children as they stand (rule 32): it hugs that
+ * axis without wrapping and holds an instance of a set's variant in its flow, as a component that
+ * nests another set's variant did on a real file (N2). The fake lays out no other frame.
+ */
+function hugsInstances(state: NodeState, axis: Axis): boolean {
+  return (
+    (state.type === "FRAME" || state.type === "COMPONENT") &&
+    state.mirrorOf === undefined &&
+    isAutoLayout(state) &&
+    state.layoutWrap !== "WRAP" &&
+    state[modeOn(state, axis)] === "AUTO" &&
+    childrenOf(state).some(
+      (child) =>
+        child.type === "INSTANCE" &&
+        child.layoutPositioning !== "ABSOLUTE" &&
+        child.main?.parent?.type === "COMPONENT_SET"
+    )
+  );
+}
+
+/**
+ * The length of an axis a frame hugs around its children as they stand (rule 32): along its
+ * direction their lengths, `itemSpacing` between them and its padding, and across it the longest
+ * child that does not fill that axis and its padding. A layer a BOOLEAN property hides leaves the
+ * layout, as it did on a real file (PB), and so does an absolute one (rule 24).
+ */
+function huggedLength(state: NodeState, axis: Axis): number {
+  const flow = childrenOf(state).filter(
+    (child) => child.layoutPositioning !== "ABSOLUTE" && !hiddenByProperty(child)
+  );
+  const padding =
+    axis === "HORIZONTAL"
+      ? state.padding.left + state.padding.right
+      : state.padding.top + state.padding.bottom;
+  if (state.layoutMode === axis) {
+    const lengths = flow.reduce((sum, child) => sum + lengthOn(child, axis), 0);
+    return padding + lengths + state.itemSpacing * Math.max(0, flow.length - 1);
+  }
+  const across = flow.filter((child) => !fills(child, axis)).map((child) => lengthOn(child, axis));
+  return padding + Math.max(0, ...across);
 }
 
 /**
@@ -1092,7 +1361,8 @@ function wrapHeight(state: NodeState): number {
  * A node's length on an axis: the height a wrapping row that hugs it sizes to from its children
  * (rule 32), the length it stretches to across an auto layout that hugs that axis (rule 29), the
  * longest of the parent's other layers in its flow that do not fill the axis, or its own where it
- * does not stretch so or no such layer sets a length.
+ * does not stretch so or no such layer sets a length. Its own is the length it hugs around a nested
+ * instance as its children stand (rule 32), or the one it was given.
  */
 function lengthOn(state: NodeState, axis: Axis): number {
   // An instance holds its main component's size, or its own (rule 32), so only a frame lays out.
@@ -1105,7 +1375,8 @@ function lengthOn(state: NodeState, axis: Axis): number {
   ) {
     return wrapHeight(state);
   }
-  const own = axis === "HORIZONTAL" ? state.width : state.height;
+  const given = axis === "HORIZONTAL" ? state.width : state.height;
+  const own = hugsInstances(state, axis) ? huggedLength(state, axis) : given;
   const parent = state.parent;
   // A fill never widens a 0-wide text (rule 31).
   const stuck = state.type === "TEXT" && axis === "HORIZONTAL" && own === 0;
@@ -1191,6 +1462,10 @@ function setSizing(state: NodeState, axis: Axis, value: Sizing): void {
     }
   } else if (inLayout) {
     stopFilling(state, axis);
+  }
+  // An instance that hugs an axis again takes its content's length there (rule 32, N4).
+  if (value === "HUG") {
+    state.overridden.delete(lengthOverride(axis));
   }
   if (ownLayout) {
     state[modeOn(state, axis)] = value === "HUG" ? "AUTO" : "FIXED";
@@ -1355,6 +1630,9 @@ function bindNodeField(state: NodeState, field: VariableBindableNodeField, varia
     for (const target of targets) {
       state.bindings.delete(target);
     }
+    if (targets.some((target) => CORNERS.has(target))) {
+      noteOverride(state, "radii");
+    }
     write(state, `unbind ${field}`);
     return;
   }
@@ -1362,10 +1640,27 @@ function bindNodeField(state: NodeState, field: VariableBindableNodeField, varia
   requireType(bound, "FLOAT", field);
   const value = resolveNumber(state.file, bound, state);
   for (const target of targets) {
-    setNumberField(state, target, value);
+    if (!keepsHug(state, target)) {
+      setNumberField(state, target, value);
+    }
     state.bindings.set(target, bound.id);
   }
+  if (targets.some((target) => CORNERS.has(target))) {
+    noteOverride(state, "radii");
+  }
   write(state, `bind ${field}`);
+}
+
+/** The fields that hold a corner's radius. */
+const CORNERS: ReadonlySet<VariableBindableNodeField> = new Set(bindingTargets("cornerRadius"));
+
+/**
+ * Whether a binding leaves an instance's length as it hugs: on 2026-10-23 a real file recorded a
+ * height binding on a nested instance that hugged its height and kept the hug height, 26 (N4).
+ */
+function keepsHug(state: NodeState, field: VariableBindableNodeField): boolean {
+  const axis = field === "width" ? "HORIZONTAL" : field === "height" ? "VERTICAL" : undefined;
+  return state.type === "INSTANCE" && axis !== undefined && sizingOn(state, axis) === "HUG";
 }
 
 /** The distinct fonts of some characters' styles. */
@@ -1532,9 +1827,23 @@ function bindTextField(state: NodeState, field: BindableField, variable: Variabl
   bindTextRange(state, 0, state.styles.length, field, variable);
 }
 
+/**
+ * The variable each bound field follows, by id, the corners as the layer shows them: an instance or a
+ * sublayer that does not override its corners shows its source's (rule 38).
+ */
+function shownBindings(state: NodeState): ReadonlyMap<VariableBindableNodeField, string> {
+  const source = sourceOf(state);
+  if (source === undefined || state.overridden.has("radii")) {
+    return state.bindings;
+  }
+  const own = [...state.bindings].filter(([field]) => !CORNERS.has(field));
+  const corners = [...shownBindings(source)].filter(([field]) => CORNERS.has(field));
+  return new Map([...own, ...corners]);
+}
+
 function nodeBindings(state: NodeState): NonNullable<FrameNode["boundVariables"]> {
   const nodeFields: { [field in VariableBindableNodeField]?: VariableAlias } = {};
-  for (const [field, id] of state.bindings) {
+  for (const [field, id] of shownBindings(state)) {
     nodeFields[field] = alias(id);
   }
   const textFields: { [field in VariableBindableTextField]?: VariableAlias[] } = {};
@@ -1549,10 +1858,10 @@ function nodeBindings(state: NodeState): NonNullable<FrameNode["boundVariables"]
 
 /** The variable ids a layer's fields, text, paints and effects bind. */
 function layerBindings(state: NodeState): string[] {
-  const paints = [...shownFills(state), ...state.strokes].flatMap((paint) =>
+  const paints = [...shown(state, "fills"), ...shown(state, "strokes")].flatMap((paint) =>
     paint.type === "SOLID" && paint.boundVariables?.color !== undefined ? [paint.boundVariables.color.id] : []
   );
-  const effects = state.effects.flatMap((effect) =>
+  const effects = shown(state, "effects").flatMap((effect) =>
     effect.type === "DROP_SHADOW" || effect.type === "INNER_SHADOW"
       ? [...EFFECT_FIELD_TYPES.keys()].flatMap((field) => effect.boundVariables?.[field]?.id ?? [])
       : []
@@ -1648,10 +1957,11 @@ function instanceOwner(state: NodeState) {
 /**
  * Whether a layer is hidden through a BOOLEAN property (rule 25). A component's layer that links
  * its `visible` to a property hides while the property starts false. An instance's sublayer reads
- * the property at the value the nearest instance around it sets, or else at its default.
+ * the property at the value the nearest instance around it sets, or the instance it shows through,
+ * or else at its default.
  */
 function hiddenByProperty(state: NodeState): boolean {
-  const main = state.mirrorOf ?? state;
+  const main = rootMain(state);
   const id = main.propertyReferences?.visible;
   if (id === undefined) {
     return false;
@@ -1660,11 +1970,23 @@ function hiddenByProperty(state: NodeState): boolean {
   if (state.mirrorOf === undefined) {
     return defaultValue === false;
   }
-  let instance = state.parent;
-  while (instance !== undefined && instance.type !== "INSTANCE") {
-    instance = instance.parent;
+  const instance = nearestInstance(state);
+  return ((instance === undefined ? undefined : propertyValue(instance, id)) ?? defaultValue) === false;
+}
+
+/**
+ * The characters a text shows (rule 34): a sublayer whose main layer links a TEXT property shows the
+ * value the nearest instance sets, and otherwise its main layer's, until a designer overrides them.
+ */
+function charactersOf(state: NodeState): string {
+  const source = state.mirrorOf;
+  if (source === undefined || state.overridden.has("characters")) {
+    return state.characters;
   }
-  return (instance?.propertyValues.get(id) ?? defaultValue) === false;
+  const id = rootMain(state).propertyReferences?.characters;
+  const instance = nearestInstance(state);
+  const value = id === undefined || instance === undefined ? undefined : propertyValue(instance, id);
+  return value === undefined || value === true || value === false ? charactersOf(source) : value;
 }
 
 /** A variant's property values, read from its name, or undefined for a name without them. */
@@ -1893,6 +2215,7 @@ type UncopiedField =
   | "overridden"
   | "properties"
   | "propertyValues"
+  | "exposedInstance"
   | "variantOrder";
 
 /**
@@ -1959,6 +2282,7 @@ function copyNode(file: FileState, source: NodeState, type: NodeType, id?: strin
 /** A duplicate of a node with its layers and its shared plugin data, as Figma's clone makes. */
 function duplicate(file: FileState, source: NodeState): NodeState {
   const copy = copyNode(file, source, source.type);
+  copy.exposedInstance = source.exposedInstance;
   for (const [key, value] of source.sharedData) {
     copy.sharedData.set(key, value);
   }
@@ -1984,6 +2308,13 @@ function placeOnCurrentPage(file: FileState, state: NodeState): void {
   insert(page, state, undefined);
 }
 
+/** A shared plugin data entry as a node reads it: its own, or a sublayer's main layer's (rule 36). */
+function sharedDataOf(state: NodeState, entry: string): string {
+  return (
+    state.sharedData.get(entry) ?? (state.mirrorOf === undefined ? "" : sharedDataOf(state.mirrorOf, entry))
+  );
+}
+
 /** The members every node has. */
 class FakeBaseNode {
   get id(): string {
@@ -2005,13 +2336,15 @@ class FakeBaseNode {
     const before = set === undefined ? undefined : variantValues(state.name);
     state.name = value;
     state.autoRename = false;
+    markOverride(state, "name");
     if (set !== undefined && before !== undefined) {
       renameVariantValues(set, state, before, variantValues(value));
     }
   }
 
+  /** Rule 36: a sublayer reads its main layer's entry where it holds none of its own. */
   getSharedPluginData(namespace: string, key: string): string {
-    return live(this).sharedData.get(`${namespace}${SHARED_DATA_SEPARATOR}${key}`) ?? "";
+    return sharedDataOf(live(this), `${namespace}${SHARED_DATA_SEPARATOR}${key}`);
   }
 
   setSharedPluginData(namespace: string, key: string, value: string): void {
@@ -2535,26 +2868,22 @@ class FakeFrameLikeNode extends FakeSceneNode {
   }
 
   get fills(): ReadonlyArray<Paint> | PluginAPI["mixed"] {
-    return live(this).fills;
+    return shown(live(this), "fills");
   }
 
   set fills(paints: ReadonlyArray<Paint> | PluginAPI["mixed"]) {
-    const state = live(this);
-    if (paints === MIXED) {
-      throw new Error("Cannot write figma.mixed as fills.");
-    }
-    write(state, "fills");
-    state.fills = paints.map((paint) => storePaint(state.file, paint));
+    writeFills(live(this), paints);
   }
 
   get strokes(): ReadonlyArray<Paint> {
-    return live(this).strokes;
+    return shown(live(this), "strokes");
   }
 
   set strokes(paints: ReadonlyArray<Paint>) {
     const state = live(this);
     write(state, "strokes");
     state.strokes = paints.map((paint) => storePaint(state.file, paint));
+    noteOverride(state, "strokes");
   }
 
   get strokeWeight(): number | PluginAPI["mixed"] {
@@ -2619,19 +2948,20 @@ class FakeFrameLikeNode extends FakeSceneNode {
   }
 
   get effects(): ReadonlyArray<Effect> {
-    return live(this).effects;
+    return shown(live(this), "effects");
   }
 
   /** Rule 2: a new color binding stores the variable's value, a held one keeps the color written. */
   set effects(effects: ReadonlyArray<Effect>) {
     const state = live(this);
     write(state, "effects");
-    const held = heldColorBindings(state.effects);
+    const held = heldColorBindings(shown(state, "effects"));
     state.effects = effects.map((effect) => storeEffect(state, effect, held));
+    noteOverride(state, "effects");
   }
 
   get cornerRadius(): number | PluginAPI["mixed"] {
-    const { topLeft, topRight, bottomRight, bottomLeft } = live(this).radii;
+    const { topLeft, topRight, bottomRight, bottomLeft } = shown(live(this), "radii");
     return topLeft === topRight && topRight === bottomRight && bottomRight === bottomLeft ? topLeft : MIXED;
   }
 
@@ -2643,22 +2973,23 @@ class FakeFrameLikeNode extends FakeSceneNode {
     write(state, "cornerRadius");
     const radius = f32(value);
     state.radii = { topLeft: radius, topRight: radius, bottomRight: radius, bottomLeft: radius };
+    noteOverride(state, "radii");
   }
 
   get topLeftRadius(): number {
-    return live(this).radii.topLeft;
+    return shown(live(this), "radii").topLeft;
   }
 
   get topRightRadius(): number {
-    return live(this).radii.topRight;
+    return shown(live(this), "radii").topRight;
   }
 
   get bottomRightRadius(): number {
-    return live(this).radii.bottomRight;
+    return shown(live(this), "radii").bottomRight;
   }
 
   get bottomLeftRadius(): number {
-    return live(this).radii.bottomLeft;
+    return shown(live(this), "radii").bottomLeft;
   }
 
   get clipsContent(): boolean {
@@ -2931,6 +3262,7 @@ class FakeInstance extends FakeFrameLikeNode {
     return Promise.resolve(main === undefined ? null : componentOf(main));
   }
 
+  /** Rule 35: the instance keeps its node and its property values. */
   swapComponent(componentNode: ComponentNode): void {
     const state = live(this);
     const main = live(componentNode);
@@ -2938,13 +3270,12 @@ class FakeInstance extends FakeFrameLikeNode {
       throw new Error(`An instance swaps only to a component, and ${main.id} is a ${main.type}.`);
     }
     write(state, `swap to ${main.id}`);
-    state.main = main;
-    mirror(state, main, true);
+    swapTo(state, main);
   }
 
   /**
-   * Rule 25: the variant values the main component's name holds, then each property of its set or
-   * component at the value the instance sets, or else at its default.
+   * Rules 25 and 34: the variant values the main component's name holds, then each property of its
+   * set or component at the value the instance sets, or else at its default.
    */
   get componentProperties(): ComponentProperties {
     const state = live(this);
@@ -2955,33 +3286,270 @@ class FakeInstance extends FakeFrameLikeNode {
         properties[name] = { type: "VARIANT", value };
       }
     }
-    for (const [id, property] of owner.properties) {
-      properties[id] = { type: property.type, value: state.propertyValues.get(id) ?? property.defaultValue };
+    for (const [id, { type, value }] of shownProperties(state)) {
+      properties[id] = { type, value };
     }
     return properties;
   }
 
-  /** Rule 25: set BOOLEAN properties, the one kind PB set, and refuse every other. */
+  /** Rules 25 and 34. */
   setProperties(properties: { [propertyName: string]: string | boolean | VariableAlias }): void {
+    setProperties(live(this), properties);
+  }
+
+  /** Rule 39: an instance reads its own mark, or the one its main layer carries. */
+  get isExposedInstance(): boolean {
+    return exposedOf(live(this));
+  }
+
+  set isExposedInstance(value: boolean) {
     const state = live(this);
-    const { owner } = instanceOwner(state);
-    const values = Object.entries(properties).map(([id, value]): readonly [string, boolean] => {
-      const property = owner.properties.get(id);
-      if (property === undefined) {
-        throw new Error(`${state.id} shows no property ${id} to set.`);
+    const component = nearestComponent(state);
+    if (state.mirrorOf !== undefined || component?.parent?.type !== "COMPONENT_SET") {
+      throw new Error(
+        `The fake Figma file writes isExposedInstance only on an instance inside a component in a set (N5), and ${state.id} is none.`
+      );
+    }
+    write(state, "isExposedInstance");
+    state.exposedInstance = value;
+  }
+
+  /** Rule 39: the instances below this one that their main layers expose. */
+  get exposedInstances(): InstanceNode[] {
+    return exposedBelow(live(this)).map((state) => {
+      const node = state.exposed;
+      if (node.type !== "INSTANCE") {
+        throw new Error(`${state.id} is a ${node.type}, not an instance.`);
       }
-      if (property.type !== "BOOLEAN" || (value !== true && value !== false)) {
-        throw new Error(
-          `The fake Figma file does not model setting the ${property.type} property ${id} on an instance.`
-        );
-      }
-      return [id, value];
+      return node;
     });
-    write(state, "set properties");
-    for (const [id, value] of values) {
-      state.propertyValues.set(id, value);
+  }
+
+  /** Rule 37: each layer with an override, from the instance down, and its overridden fields. */
+  get overrides(): { id: string; overriddenFields: NodeChangeProperty[] }[] {
+    const entries: { id: string; overriddenFields: NodeChangeProperty[] }[] = [];
+    const visit = (state: NodeState): void => {
+      const fields = [...state.overridden].flatMap((field) => OVERRIDE_FIELDS.get(field) ?? []);
+      if (fields.length > 0) {
+        entries.push({ id: state.id, overriddenFields: fields });
+      }
+      for (const child of childrenOf(state)) {
+        visit(child);
+      }
+    };
+    visit(live(this));
+    return entries;
+  }
+
+  /** Rule 37: the typings' "removes all direct overrides", which keeps the property values. */
+  removeOverrides(): void {
+    const state = live(this);
+    write(state, "remove overrides");
+    const clear = (layer: NodeState): void => {
+      const source = sourceOf(layer);
+      if (layer.overridden.has("name") && source !== undefined) {
+        layer.name = source.name;
+      }
+      for (const field of OVERRIDE_FIELDS.keys()) {
+        layer.overridden.delete(field);
+      }
+      for (const child of childrenOf(layer)) {
+        clear(child);
+      }
+    };
+    clear(state);
+  }
+}
+
+/**
+ * The fields `overrides` lists for each override the fake notes (rule 37): N1 listed an instance's
+ * `name`, `width` and `height`, and N3 its `fills`, `effects` and "the corner fields", which the fake
+ * takes as the four corners the typings name and `cornerRadius`, and a sublayer's `fills`.
+ */
+const OVERRIDE_FIELDS: ReadonlyMap<string, readonly NodeChangeProperty[]> = new Map<
+  string,
+  readonly NodeChangeProperty[]
+>([
+  ["name", ["name"]],
+  ["width", ["width"]],
+  ["height", ["height"]],
+  ["fills", ["fills"]],
+  ["strokes", ["strokes"]],
+  ["effects", ["effects"]],
+  ["radii", ["cornerRadius", "topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius"]],
+  ["characters", ["characters"]],
+]);
+
+/**
+ * Whether an instance is exposed (rule 39): a primary instance by its own mark, and an instance seen
+ * through an outer instance by the mark its main layer carries, which it inherits.
+ */
+function exposedOf(state: NodeState): boolean {
+  return state.mirrorOf === undefined ? state.exposedInstance : exposedOf(state.mirrorOf);
+}
+
+/** The nearest component around a layer. */
+function nearestComponent(state: NodeState): NodeState | undefined {
+  let current = state.parent;
+  while (current !== undefined && current.type !== "COMPONENT") {
+    current = current.parent;
+  }
+  return current;
+}
+
+/** The exposed instances below a layer, each one without the ones below it (rule 39). */
+function exposedBelow(state: NodeState): readonly NodeState[] {
+  return childrenOf(state).flatMap((child) =>
+    child.type === "INSTANCE" && exposedOf(child) ? [child] : exposedBelow(child)
+  );
+}
+
+/**
+ * Point an instance at another component, keeping its node, its property values and its own
+ * overrides (rules 35 and 37). A nested instance that swaps keeps the component apart from its main
+ * layer. The swap properties the instance sets swap their layers in the new component too.
+ */
+function swapTo(state: NodeState, main: NodeState): void {
+  state.main = main;
+  if (state.mirrorOf !== undefined) {
+    state.overridden.add("mainComponent");
+  }
+  mirror(state, main, true);
+  applySwapValues(state);
+}
+
+/**
+ * The layers below an instance whose main layers link a property of `field`, down to the instances
+ * nested in it, which set their own properties.
+ */
+function linkedBelow(
+  state: NodeState,
+  field: "characters" | "mainComponent",
+  id: string
+): readonly NodeState[] {
+  return childrenOf(state).flatMap((child) => {
+    const linked = rootMain(child).propertyReferences?.[field] === id ? [child] : [];
+    return child.type === "INSTANCE" ? linked : [...linked, ...linkedBelow(child, field, id)];
+  });
+}
+
+/** A property's value as an instance shows it, and whether an instance set it rather than defaulted. */
+type ShownProperty = {
+  readonly type: PropertyState["type"];
+  readonly value: string | boolean;
+  readonly given: boolean;
+};
+
+/**
+ * Each TEXT, BOOLEAN and INSTANCE_SWAP property of an instance's set or component at the value the
+ * instance shows (rules 25 and 34): the one it sets, or the one the instance it shows through sets,
+ * as an outer instance shows the values a component set on the instance nested in it (N1), or else
+ * the default. `componentProperties` reads it, and a swap applies the swap values an instance set.
+ */
+function shownProperties(state: NodeState): ReadonlyMap<string, ShownProperty> {
+  const { owner } = instanceOwner(state);
+  return new Map(
+    [...owner.properties].map(([id, property]) => {
+      const given = propertyValue(state, id);
+      return [id, { type: property.type, value: given ?? property.defaultValue, given: given !== undefined }];
+    })
+  );
+}
+
+/**
+ * Swap each layer a set INSTANCE_SWAP value the instance shows links to the component the value
+ * names (rule 34). A layer whose property no instance set shows its main layer's component.
+ */
+function applySwapValues(state: NodeState): void {
+  for (const [id, { type, value, given }] of shownProperties(state)) {
+    if (type !== "INSTANCE_SWAP" || !given || value === true || value === false) {
+      continue;
+    }
+    const component = componentWithId(state.file, value);
+    for (const layer of linkedBelow(state, "mainComponent", id)) {
+      if (layer.main !== component) {
+        swapTo(layer, component);
+      }
     }
   }
+}
+
+/**
+ * Set an instance's properties (rules 25 and 34). A VARIANT goes by its bare name and shows the
+ * set's variant with the values asked for, through a swap that keeps the node and the other values,
+ * as N1's did. A TEXT goes by its id and sets the characters the layers linked to it show, and
+ * needs their fonts loaded, as every text write does (rule 7), since N1 ran with them loaded. A
+ * BOOLEAN shows or hides its layers (PB). An INSTANCE_SWAP takes a component's id and swaps the
+ * layers linked to it, as NS's did.
+ */
+function setProperties(
+  state: NodeState,
+  properties: { readonly [propertyName: string]: string | boolean | VariableAlias }
+): void {
+  const { main, owner } = instanceOwner(state);
+  const options = owner === main ? new Map<string, string[]>() : variantOptions(owner);
+  const variant = new Map(variantValues(main.name) ?? []);
+  const values: (readonly [string, string | boolean])[] = [];
+  for (const [name, given] of Object.entries(properties)) {
+    const value = propertyInput(name, given);
+    const flag = value === true || value === false;
+    const choices = options.get(name);
+    if (choices !== undefined) {
+      if (value === true || value === false || !choices.includes(value)) {
+        throw new Error(`${owner.id} has no ${name} ${String(value)} to show.`);
+      }
+      variant.set(name, value);
+      continue;
+    }
+    const property = owner.properties.get(name);
+    if (property === undefined) {
+      throw new Error(`${state.id} shows no property ${name} to set.`);
+    }
+    if (flag !== (property.type === "BOOLEAN")) {
+      throw new Error(`The ${property.type} property ${name} takes no ${String(value)}.`);
+    }
+    if (property.type === "INSTANCE_SWAP" && value !== true && value !== false) {
+      componentWithId(state.file, value);
+    }
+    if (property.type === "TEXT") {
+      for (const text of linkedBelow(state, "characters", name)) {
+        requireHeldFonts(text, "characters");
+      }
+    }
+    values.push([name, value]);
+  }
+  const target = owner === main ? main : variantWith(owner, variant);
+  write(state, "set properties");
+  for (const [id, value] of values) {
+    state.propertyValues.set(id, value);
+  }
+  if (target !== main) {
+    swapTo(state, target);
+  } else {
+    applySwapValues(state);
+  }
+}
+
+/** A value `setProperties` was given, refusing a variable, which no probe set (rule 34). */
+function propertyInput(name: string, value: string | boolean | VariableAlias): string | boolean {
+  if (value === true || value === false || isText(value)) {
+    return value;
+  }
+  throw new Error(`The fake Figma file does not model setting ${name} to a variable.`);
+}
+
+/** The variant of a set that shows every value asked for (rule 34). */
+function variantWith(set: NodeState, values: ReadonlyMap<string, string>): NodeState {
+  const found = set.children.find((child) => {
+    const shownValues = variantValues(child.name);
+    return shownValues !== undefined && [...values].every(([name, value]) => shownValues.get(name) === value);
+  });
+  if (found === undefined) {
+    throw new Error(
+      `${set.id} has no variant ${[...values].map(([name, value]) => `${name}=${value}`).join(", ")}.`
+    );
+  }
+  return found;
 }
 
 class FakeText extends FakeSceneNode {
@@ -2990,20 +3558,16 @@ class FakeText extends FakeSceneNode {
   }
 
   get fills(): ReadonlyArray<Paint> | PluginAPI["mixed"] {
-    return live(this).fills;
+    return shown(live(this), "fills");
   }
 
   set fills(paints: ReadonlyArray<Paint> | PluginAPI["mixed"]) {
-    const state = live(this);
-    if (paints === MIXED) {
-      throw new Error("Cannot write figma.mixed as fills.");
-    }
-    write(state, "fills");
-    state.fills = paints.map((paint) => storePaint(state.file, paint));
+    writeFills(live(this), paints);
   }
 
+  /** Rule 34: a sublayer shows the TEXT property value its instance sets. */
   get characters(): string {
-    return live(this).characters;
+    return charactersOf(live(this));
   }
 
   /** New characters take the style of the first character (rule 10). */
@@ -3011,6 +3575,7 @@ class FakeText extends FakeSceneNode {
     const state = live(this);
     requireHeldFonts(state, "characters");
     write(state, "characters");
+    markOverride(state, "characters");
     const [first] = state.styles;
     if (first === undefined) {
       throw new Error(`${state.id} holds no character style.`);
@@ -3186,7 +3751,7 @@ class FakeText extends FakeSceneNode {
   getRangeAllFontNames(start: number, end: number): FontName[] {
     const state = live(this);
     requireRange(state, start, end);
-    return distinctFonts(state.styles.slice(start, end));
+    return distinctFonts(shownStyles(state).slice(start, end));
   }
 
   /** The new font needs loading, as for `fontName` (rule 7). */
@@ -3228,11 +3793,22 @@ class FakeText extends FakeSceneNode {
 }
 
 function requireRange(state: NodeState, start: number, end: number): void {
-  if (start < 0 || end > state.characters.length || start >= end) {
-    throw new Error(
-      `The range ${start} to ${end} is outside the ${state.characters.length} characters of ${state.id}.`
-    );
+  const { length } = charactersOf(state);
+  if (start < 0 || end > length || start >= end) {
+    throw new Error(`The range ${start} to ${end} is outside the ${length} characters of ${state.id}.`);
   }
+}
+
+/**
+ * The style of each character a text shows. A sublayer that shows a TEXT property's characters gives
+ * each its first character's style, as written characters take it (rules 10 and 34).
+ */
+function shownStyles(state: NodeState): readonly CharacterStyle[] {
+  const shown = charactersOf(state);
+  const [first] = state.styles;
+  return shown === state.characters || first === undefined
+    ? state.styles
+    : Array.from({ length: Math.max(1, shown.length) }, () => first);
 }
 
 class FakeVector extends FakeSceneNode {
@@ -3240,37 +3816,35 @@ class FakeVector extends FakeSceneNode {
     return "VECTOR";
   }
 
-  /** A sublayer of an instance shows its main layer's fills until they are overridden. */
+  /** A sublayer of an instance shows its main layer's fills until they are overridden (rule 38). */
   get fills(): ReadonlyArray<Paint> | PluginAPI["mixed"] {
-    return shownFills(live(this));
+    return shown(live(this), "fills");
   }
 
   set fills(paints: ReadonlyArray<Paint> | PluginAPI["mixed"]) {
-    const state = live(this);
-    if (paints === MIXED) {
-      throw new Error("Cannot write figma.mixed as fills.");
-    }
-    write(state, "fills");
-    state.fills = paints.map((paint) => storePaint(state.file, paint));
-    state.overridden.add("fills");
+    writeFills(live(this), paints);
   }
 
   get strokes(): ReadonlyArray<Paint> {
-    return live(this).strokes;
+    return shown(live(this), "strokes");
   }
 
   set strokes(paints: ReadonlyArray<Paint>) {
     const state = live(this);
     write(state, "strokes");
     state.strokes = paints.map((paint) => storePaint(state.file, paint));
-    state.overridden.add("strokes");
+    noteOverride(state, "strokes");
   }
 }
 
-function shownFills(state: NodeState): readonly Paint[] {
-  return state.mirrorOf !== undefined && !state.overridden.has("fills")
-    ? shownFills(state.mirrorOf)
-    : state.fills;
+/** Write a layer's fills, an override on an instance or a sublayer (rule 37). */
+function writeFills(state: NodeState, paints: ReadonlyArray<Paint> | PluginAPI["mixed"]): void {
+  if (paints === MIXED) {
+    throw new Error("Cannot write figma.mixed as fills.");
+  }
+  write(state, "fills");
+  state.fills = paints.map((paint) => storePaint(state.file, paint));
+  noteOverride(state, "fills");
 }
 
 /** A node object, and the guarded node a plugin sees for it. */
@@ -3387,6 +3961,7 @@ function createNode(file: FileState, type: NodeType, name: string, id?: string):
     variantOrder: new Map(),
     main: undefined,
     propertyValues: new Map(),
+    exposedInstance: false,
     mirrorOf: undefined,
     overridden: new Set(),
     characters: "",
@@ -3738,7 +4313,7 @@ export function drawsShadowSpread(node: SceneNode): boolean {
   return (
     (state.type === "FRAME" || state.type === "COMPONENT" || state.type === "INSTANCE") &&
     state.clipsContent &&
-    state.fills.some((paint) => paint.visible !== false && (paint.opacity ?? 1) > 0)
+    shown(state, "fills").some((paint) => paint.visible !== false && (paint.opacity ?? 1) > 0)
   );
 }
 
@@ -3983,9 +4558,18 @@ export function createFakeFigma(options: FakeFigmaOptions): FakeFigma {
       file.loadedFonts.clear();
       file.unavailableFonts = reopened?.unavailableFonts ?? file.unavailableFonts;
       file.skipInvisibleInstanceChildren = false;
-      // A new run reads every instance at its main component's size (rule 32).
-      for (const node of file.nodes.values()) {
-        settled(node);
+      // A new run reads every instance at its main component's size (rule 32), a nested one before
+      // the instances that show it, so the settling repeats until no size moves.
+      const standing = [...file.nodes.values()].filter((node) => !node.removed);
+      for (let pass = 0; pass <= standing.length; pass += 1) {
+        const moved = standing.filter((node) => {
+          const { width, height } = node;
+          settled(node);
+          return node.width !== width || node.height !== height;
+        });
+        if (moved.length === 0) {
+          break;
+        }
       }
     },
     variable: (collection, name) => {

@@ -95,6 +95,48 @@ describe("unchangedByDesign", () => {
       unchangedByDesign([set], () => undefined),
     ]).toEqual([new Set(["chip/state=hover,pressed=on"]), new Set(), new Set()]);
   });
+
+  // An instance layer's overrides are the composite's own paints, so they resolve in the theme as a
+  // frame's do: a nested fill and ring overridden with tokens the theme gives one color draw alike.
+  it("holds a forced cell whose instance overrides resolve to its resting twin's in the theme", () => {
+    const token = (name: string) =>
+      ({ kind: "variable", variable: { collection: "Fuse tokens", name } }) as const;
+    const action = (fill: string, ring: string): ComponentRootSpec => ({
+      ...ROOT,
+      children: [
+        {
+          kind: "instance",
+          key: "chip/action",
+          name: "button",
+          componentSet: "button",
+          variant: "button/size=sm",
+          overrides: [
+            { path: [], field: "fill", color: token(fill) },
+            {
+              path: [],
+              field: "effects",
+              shadows: [{ color: token(ring), offsetX: 0, offsetY: 0, radius: zero, spread: zero }],
+            },
+          ],
+          sizing: { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
+        },
+      ],
+    });
+    const set = {
+      key: "chip",
+      axes: [
+        { name: "state", values: ["rest", "hover"] },
+        { name: "pressed", values: ["on"] },
+      ],
+      variants: [variant("rest", action("accent", "ring")), variant("hover", action("muted", "border"))],
+    };
+    const black = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
+    const white = { kind: "literal", color: { r: 1, g: 1, b: 1, a: 1 } } as const;
+    expect([
+      unchangedByDesign([set], () => black),
+      unchangedByDesign([set], (name) => (name === "muted" ? white : black)),
+    ]).toEqual([new Set(["chip/state=hover,pressed=on"]), new Set()]);
+  });
 });
 
 // Unit under test: `tokenColorsIn`, the theme a preview stamps resolved for each token. Oracle:

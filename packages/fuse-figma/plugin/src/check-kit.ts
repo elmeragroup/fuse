@@ -1,18 +1,26 @@
 /**
  * The kit check, which opens every planning pass. It finds each error a later step of the
  * run could meet: a variable or mode the file lacks, a variable of the wrong type, image bytes
- * Figma cannot store or a hash they do not give, a turn or a stacking the plugin cannot draw, or a
- * spec that contradicts itself. An operation that creates a node plans the node's contents when it
- * runs, so those plans can then look up nothing that fails.
+ * Figma cannot store or a hash they do not give, a turn or a stacking the plugin cannot draw, an
+ * instance layer it cannot plan, or a spec that contradicts itself. An operation that creates a node
+ * plans the node's contents when it runs, so those plans can then look up nothing that fails.
  */
 
-import { coveredShadow, fixedLength, topLevelSpecs, walkLayers } from "../../src/components/kit-spec.ts";
+import {
+  coveredShadow,
+  fixedLength,
+  layerAt,
+  topLevelSpecs,
+  walkLayers,
+} from "../../src/components/kit-spec.ts";
 import type {
   BoxSpec,
   ChildLayerSpec,
   ComponentRootSpec,
   ComponentSetSpec,
   FillSpec,
+  InstanceLayerSpec,
+  InstanceOverride,
   KitSpec,
   NumberSpec,
   StringSpec,
@@ -66,6 +74,22 @@ function boxRefs(box: BoxSpec): BoundRef[] {
   ];
 }
 
+/** The variables an instance override binds. */
+function overrideRefs(override: InstanceOverride): BoundRef[] {
+  switch (override.field) {
+    case "cornerRadius":
+      return boundNumber(override.value);
+    case "effects":
+      return override.shadows.flatMap((shadow) => [
+        ...boundNumber(shadow.radius),
+        ...boundNumber(shadow.spread),
+        ...boundColor(shadow.color),
+      ]);
+    default:
+      return boundColor(override.color);
+  }
+}
+
 /** The variables one layer's own fields bind. A frame's layers come from the walk. */
 function layerRefs(layer: ChildLayerSpec): BoundRef[] {
   switch (layer.kind) {
@@ -85,6 +109,11 @@ function layerRefs(layer: ChildLayerSpec): BoundRef[] {
       return [...boundNumber(layer.size), ...boundColor(layer.color)];
     case "frame":
       return boxRefs(layer);
+    case "instance":
+      return [
+        ...[fixedLength(layer.sizing.horizontal), fixedLength(layer.sizing.vertical)].flatMap(boundNumber),
+        ...(layer.overrides ?? []).flatMap(overrideRefs),
+      ];
   }
 }
 
@@ -201,7 +230,7 @@ function squareSides(layer: Exclude<ChildLayerSpec, { readonly kind: "text" }>):
 function checkRotations(set: ComponentSetSpec): void {
   for (const variant of set.variants) {
     for (const layer of walkLayers(variant.root)) {
-      if (layer.kind === "text" || layer.rotation === undefined) {
+      if (layer.kind === "text" || layer.kind === "instance" || layer.rotation === undefined) {
         continue;
       }
       const { rotation } = layer;
@@ -251,6 +280,130 @@ function checkStacking(set: ComponentSetSpec): void {
       }
     }
   }
+}
+
+/** The layer an override's field applies to: the root or a frame, a text, or an icon. */
+const OVERRIDE_TARGETS = {
+  fill: "box",
+  strokeColor: "box",
+  cornerRadius: "box",
+  effects: "box",
+  textColor: "text",
+  glyph: "icon",
+} as const satisfies Record<InstanceOverride["field"], LayerKind>;
+
+/** What a layer is, for an override: a box, the root or a frame, or another layer's kind. */
+type LayerKind = "box" | Exclude<ChildLayerSpec["kind"], "frame">;
+
+function kindOf(layer: BoxSpec | ChildLayerSpec): LayerKind {
+  return !("kind" in layer) || layer.kind === "frame" ? "box" : layer.kind;
+}
+
+/** The properties of the inner set an instance can set, by the spec's group and Figma's type. */
+const PROPERTY_GROUPS = [
+  { group: "text", type: "TEXT" },
+  { group: "boolean", type: "BOOLEAN" },
+  { group: "swap", type: "INSTANCE_SWAP" },
+] as const;
+
+function propertyNames(
+  set: ComponentSetSpec,
+  type: (typeof PROPERTY_GROUPS)[number]["type"]
+): readonly string[] {
+  const properties =
+    type === "TEXT"
+      ? set.textProperties
+      : type === "BOOLEAN"
+        ? (set.booleanProperties ?? [])
+        : set.swapProperties;
+  return properties.map((property) => property.name);
+}
+
+/** Refuse a property an instance sets that the inner set lacks, or defines as another type. */
+function checkInstanceProperties(
+  where: string,
+  layer: InstanceLayerSpec,
+  inner: ComponentSetSpec,
+  icons: KitSpec["icons"]
+): void {
+  for (const { group, type } of PROPERTY_GROUPS) {
+    for (const [name, value] of Object.entries(layer.properties?.[group] ?? {})) {
+      if (propertyNames(inner, type).includes(name)) {
+        if (group === "swap" && !icons.icons.some((icon) => icon.key === value)) {
+          throw new Error(`${where} swaps ${name} to ${String(value)}, which the kit's icon library lacks.`);
+        }
+        continue;
+      }
+      const other = PROPERTY_GROUPS.find((candidate) => propertyNames(inner, candidate.type).includes(name));
+      throw new Error(
+        other === undefined
+          ? `${where} sets the property ${name}, which ${inner.name} does not define.`
+          : `${where} sets ${name} as a ${type} property, which ${inner.name} defines as a ${other.type} property.`
+      );
+    }
+  }
+}
+
+/**
+ * Refuse an instance layer the plugin cannot plan: an instance of its own set, of a set the kit lists
+ * later or not at all, or of a variant the inner set lacks, a property the inner set lacks or defines
+ * as another type, a swap to an icon the library lacks, and an override at a path the inner variant
+ * lacks, on a layer that takes no such override, or of a field another override of the same layer
+ * sets, since the plugin compares each with what the layer holds and would write them in turn. The
+ * plugin plans the sets in kit order, so an instance's variant exists by the time its set is planned,
+ * and a later set or a cycle cannot.
+ */
+function checkInstances(kit: KitSpec): void {
+  const order = new Map(kit.componentSets.map((set, index) => [set.key, index]));
+  kit.componentSets.forEach((set, index) => {
+    for (const variant of set.variants) {
+      for (const layer of walkLayers(variant.root)) {
+        if (layer.kind !== "instance") {
+          continue;
+        }
+        const where = `${set.name}: ${layer.name} in the variant ${variant.key}`;
+        const at = order.get(layer.componentSet);
+        const inner = at === undefined ? undefined : kit.componentSets[at];
+        if (at === undefined || inner === undefined) {
+          throw new Error(`${where} shows ${layer.componentSet}, which the kit does not define.`);
+        }
+        if (at === index) {
+          throw new Error(`${where} is an instance of its own set.`);
+        }
+        if (at > index) {
+          throw new Error(
+            `${where} shows ${inner.name}, which the kit lists after ${set.name}, and the plugin plans the sets in kit order.`
+          );
+        }
+        const shown = inner.variants.find((candidate) => candidate.key === layer.variant);
+        if (shown === undefined) {
+          throw new Error(`${where} shows ${layer.variant}, which ${inner.name} does not define.`);
+        }
+        checkInstanceProperties(where, layer, inner, kit.icons);
+        const overridden = new Set<string>();
+        for (const override of layer.overrides ?? []) {
+          const target = layerAt(shown.root, override.path);
+          const path = override.path.length === 0 ? "the root" : override.path.join(" / ");
+          const field = JSON.stringify([...override.path, override.field]);
+          if (overridden.has(field)) {
+            throw new Error(
+              `${where} overrides the ${override.field} of ${path} twice, and the plugin would write each in turn on every run.`
+            );
+          }
+          overridden.add(field);
+          if (target === undefined) {
+            throw new Error(`${where} overrides ${path}, which ${inner.name} ${layer.variant} lacks.`);
+          }
+          const kind = kindOf(target);
+          if (kind !== OVERRIDE_TARGETS[override.field]) {
+            throw new Error(
+              `${where} overrides the ${override.field} of ${path}, a ${kind}, which takes none.`
+            );
+          }
+        }
+      }
+    }
+  });
 }
 
 /** The signature every PNG file opens with (PNG specification §5.2). */
@@ -351,7 +504,8 @@ export function kitCollections(kit: KitSpec): ReadonlySet<string> {
  * @throws When the file lacks a variable or mode the kit names, a variable has the wrong type,
  *   an image fill holds bytes Figma cannot store or a hash that is not their SHA-1, or the spec contradicts itself,
  *   such as a page key listed twice, a node on a page the kit does not list, a preview that places
- *   a set from another page, or a fill, limit, turn or stacking Figma cannot draw.
+ *   a set from another page, an instance the plugin cannot plan, or a fill, limit, turn or stacking
+ *   Figma cannot draw.
  */
 export function checkKit(figma: PluginAPI, variables: KitVariables, kit: KitSpec): void {
   const pages = new Set<string>();
@@ -373,6 +527,7 @@ export function checkKit(figma: PluginAPI, variables: KitVariables, kit: KitSpec
     checkStacking(set);
     checkImages(figma, set);
   }
+  checkInstances(kit);
   for (const preview of kit.previews) {
     for (const group of preview.groups) {
       const set = kit.componentSets.find((candidate) => candidate.key === group.componentSet);

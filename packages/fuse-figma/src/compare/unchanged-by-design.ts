@@ -15,7 +15,7 @@ import { isDeepStrictEqual } from "node:util";
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
 import { variantKey } from "../components/component-spec.ts";
-import type { BoxSpec, ColorSpec, ComponentSetSpec } from "../components/kit-spec.ts";
+import type { BoxSpec, ColorSpec, ComponentSetSpec, InstanceOverride } from "../components/kit-spec.ts";
 import { ownKey } from "../components/own-key.ts";
 import { forcedPseudoClasses, restingTwin } from "./cells.ts";
 import type { PreviewTheme } from "./preview-theme.ts";
@@ -85,9 +85,33 @@ export function tokenColorsIn(theme: PreviewTheme): TokenColorOf {
   };
 }
 
-/** A box with each `Fuse tokens` color it paints, at any depth, as the theme resolves it. */
+/** A color as the theme resolves it, where it is a `Fuse tokens` variable the theme gives a color. */
+type ThemeColor = (color: ColorSpec) => ColorSpec;
+
+/** An instance override with its colors as the theme resolves them. */
+function overrideInTheme(override: InstanceOverride, paint: ThemeColor): InstanceOverride {
+  switch (override.field) {
+    case "cornerRadius":
+      return override;
+    case "effects":
+      return {
+        ...override,
+        shadows: override.shadows.map((shadow) => ({ ...shadow, color: paint(shadow.color) })),
+      };
+    case "fill":
+    case "strokeColor":
+      return override.color === undefined ? override : { ...override, color: paint(override.color) };
+    default:
+      return { ...override, color: paint(override.color) };
+  }
+}
+
+/**
+ * A box with each `Fuse tokens` color it paints, at any depth, as the theme resolves it. An instance
+ * layer's own colors are its overrides; the inner set paints the rest, which resolves there.
+ */
 function inTheme<Box extends BoxSpec>(box: Box, colorOf: TokenColorOf): Box {
-  const paint = (color: ColorSpec): ColorSpec =>
+  const paint: ThemeColor = (color) =>
     color.kind === "variable" && color.variable.collection === "Fuse tokens"
       ? (colorOf(color.variable.name) ?? color)
       : color;
@@ -96,8 +120,17 @@ function inTheme<Box extends BoxSpec>(box: Box, colorOf: TokenColorOf): Box {
     fill: box.fill === undefined || box.fill.kind === "image" ? box.fill : paint(box.fill),
     stroke: box.stroke === undefined ? undefined : { ...box.stroke, color: paint(box.stroke.color) },
     shadows: box.shadows.map((shadow) => ({ ...shadow, color: paint(shadow.color) })),
-    children: box.children.map((child) =>
-      child.kind === "frame" ? inTheme(child, colorOf) : { ...child, color: paint(child.color) }
-    ),
+    children: box.children.map((child) => {
+      switch (child.kind) {
+        case "frame":
+          return inTheme(child, colorOf);
+        case "instance":
+          return child.overrides === undefined
+            ? child
+            : { ...child, overrides: child.overrides.map((override) => overrideInTheme(override, paint)) };
+        default:
+          return { ...child, color: paint(child.color) };
+      }
+    }),
   };
 }

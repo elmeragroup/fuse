@@ -1,5 +1,5 @@
 /**
- * The text, icon and frame layers inside a variant's root, and the layers each frame holds.
+ * The text, icon, frame and instance layers inside a variant's root, and the layers each frame holds.
  */
 
 import { walkLayers } from "../../src/components/kit-spec.ts";
@@ -17,13 +17,16 @@ import type {
   TextLayerSpec,
   TextSizingSpec,
 } from "../../src/components/kit-spec.ts";
+import type { PlannedSet } from "./component-set.ts";
 import {
   describeNumber,
+  heldFonts,
   LAYOUT_SIZING,
   near,
   planNumber,
   planPaints,
   planScalar,
+  planVisibleLink,
   requireFont,
   SIZING_MEMBERS,
   solidPaint,
@@ -33,6 +36,7 @@ import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
 import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
 import type { Siblings } from "./identity.ts";
+import { innerVariant, linkedLabels, planInstance, planNewInstance } from "./instance-layers.ts";
 import { change, changeTogether, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { planBox, planLength, planLimit } from "./root-layer.ts";
@@ -45,11 +49,32 @@ import type { LayerParent } from "./root-layer.ts";
  */
 export type PropertyIds = ReadonlyMap<string, string>;
 
-/** What a variant's layers link to: the set's properties and the kit's icons. */
+/**
+ * What a variant's layers link to: the set's properties, the kit's icons, and the sets the run
+ * planned before this one, whose variants its instance layers show.
+ */
 export type LayerLinks = {
   readonly properties: PropertyIds;
   readonly icons: ReadonlyMap<string, PlannedIcon>;
+  readonly sets: ReadonlyMap<string, PlannedSet>;
 };
+
+/**
+ * The layers whose fonts a new node's writes need: its text layers, and the labels of each inner
+ * variant whose TEXT property an instance layer among them sets.
+ *
+ * @param layers - The layers the new node brings, such as `walkLayers` lists below a box.
+ * @param sets - The sets the run planned before this one.
+ * @returns The layers to require fonts for.
+ */
+export function fontLayers(
+  layers: readonly ChildLayerSpec[],
+  sets: ReadonlyMap<string, PlannedSet>
+): readonly ChildLayerSpec[] {
+  return layers.flatMap((layer): readonly ChildLayerSpec[] =>
+    layer.kind === "instance" ? linkedLabels(innerVariant(sets, layer, layer.name).spec) : [layer]
+  );
+}
 
 /**
  * The box a layer sits in, as the layer's planners need it: the node, the direction the spec lays
@@ -187,15 +212,17 @@ async function resolveOnPage(
  * @param run - The run.
  * @param pageModes - The modes the page pins. A page the run creates pins none.
  * @param set - The component set.
+ * @param sets - The sets the run planned before this one, whose labels its instance layers set.
  */
 export async function requireNewSetFonts(
   run: Run,
   pageModes: PageNode["explicitVariableModes"],
-  set: ComponentSetSpec
+  set: ComponentSetSpec,
+  sets: ReadonlyMap<string, PlannedSet>
 ): Promise<void> {
   const families = new Map<string, string>();
   for (const variant of set.variants) {
-    for (const layer of walkLayers(variant.root)) {
+    for (const layer of fontLayers(walkLayers(variant.root), sets)) {
       if (layer.kind !== "text") {
         continue;
       }
@@ -215,14 +242,6 @@ export async function requireNewSetFonts(
       }
     }
   }
-}
-
-/** Every font a layer's characters use. An empty layer holds the one font it would type in. */
-function heldFonts(run: Run, text: TextNode): FontName[] {
-  if (text.characters.length > 0) {
-    return text.getRangeAllFontNames(0, text.characters.length);
-  }
-  return text.fontName === run.figma.mixed ? [] : [text.fontName];
 }
 
 /**
@@ -584,38 +603,6 @@ function planRotation(
 }
 
 /**
- * Plan the BOOLEAN property a frame's `visible` follows, which a designer toggles from the
- * properties panel to show or hide the part (PB). A frame the spec shows wherever its variant holds
- * it follows none.
- *
- * @param property - The property's name in the spec, or undefined for none.
- * @param ids - The set's properties.
- */
-function planVisibleLink(
-  run: Run,
-  frame: FrameNode,
-  label: string,
-  property: string | undefined,
-  ids: PropertyIds
-): void {
-  const linked = frame.componentPropertyReferences?.visible;
-  if (property !== undefined && (linked === undefined || linked !== ids.get(property))) {
-    change(run.plan, label, `visible → the ${property} property`, () => {
-      const id = ids.get(property);
-      if (id === undefined) {
-        throw new Error(`${label}: the ${property} property has no id when the layer links to it.`);
-      }
-      frame.componentPropertyReferences = { ...frame.componentPropertyReferences, visible: id };
-    });
-  } else if (property === undefined && linked !== undefined) {
-    change(run.plan, label, "visible → no property", () => {
-      const { visible: _unlinked, ...rest } = frame.componentPropertyReferences ?? {};
-      frame.componentPropertyReferences = rest;
-    });
-  }
-}
-
-/**
  * Plan an icon layer: an instance of the icon component the spec names, linked to the set's
  * swap property when it has one, sized and turned by the cell and with its glyph in the label's
  * color.
@@ -668,9 +655,9 @@ async function planIcon(
     spec.size
   );
   planRotation(run, instance, label, spec.rotation);
-  // A swap or a redraw replaces the glyph, so the color goes on the glyph the instance holds
-  // once those ran.
-  const glyph = swapped || icon.redrawn ? undefined : glyphOf(instance);
+  // A swap or a redraw replaces the glyph, and a repaint of the component reaches a glyph whose color
+  // equals it (NS), so the color goes on the glyph the instance holds once those ran.
+  const glyph = swapped || icon.changesGlyph ? undefined : glyphOf(instance);
   if (glyph === undefined) {
     const paint = solidPaint(run, spec.color);
     change(
@@ -788,7 +775,7 @@ async function planChild(
       await planFrame(run, found, layerLabel, spec, links, holder);
       return existing(found);
     }
-    requireNewTextFonts(run, parent, label, walkLayers(spec));
+    requireNewTextFonts(run, parent, label, fontLayers(walkLayers(spec), links.sets));
     return create(
       run.plan,
       label,
@@ -810,6 +797,23 @@ async function planChild(
       description,
       () => placeOwned(parent, run.figma.createText(), spec.key, spec.name),
       (made, plan) => planText({ ...run, plan }, made, layerLabel, spec, links.properties, [], holder.held)
+    );
+  }
+  if (spec.kind === "instance") {
+    const inner = innerVariant(links.sets, spec, layerLabel);
+    // A TEXT property writes the inner labels' characters, which needs their fonts (rule 34).
+    requireNewTextFonts(run, parent, label, linkedLabels(inner.spec));
+    const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isInstance);
+    if (found !== undefined) {
+      await planInstance(run, found, layerLabel, spec, inner, links, holder.held);
+      return existing(found);
+    }
+    return create(
+      run.plan,
+      label,
+      description,
+      () => placeOwned(parent, inner.node.get().createInstance(), spec.key, spec.name),
+      (made, plan) => planNewInstance({ ...run, plan }, made, layerLabel, spec, inner, links)
     );
   }
   const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isInstance);

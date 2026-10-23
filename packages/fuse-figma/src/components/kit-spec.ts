@@ -320,8 +320,73 @@ export type FrameLayerSpec = BoxSpec & {
   readonly rotation?: RotationSpec;
 };
 
+/**
+ * The TEXT, BOOLEAN and INSTANCE_SWAP values an instance layer gives the inner set's properties, each
+ * by the property's name, only where the value differs from the property's default. A swap value is
+ * the key of an icon component.
+ */
+export type InstancePropertiesSpec = {
+  readonly text?: Readonly<Record<string, string>>;
+  readonly boolean?: Readonly<Record<string, boolean>>;
+  readonly swap?: Readonly<Record<string, string>>;
+};
+
+/**
+ * A paint, corner or shadow an instance layer overrides on the inner variant's root, at the empty
+ * `path`, or on a layer below it, at the keys of the layers from the root down. `fill`, `strokeColor`,
+ * `cornerRadius` and `effects` apply to the root or a frame, `textColor` to a text and `glyph` to an
+ * icon's glyph. A `fill` or `strokeColor` of undefined paints none.
+ */
+export type InstanceOverride =
+  | {
+      readonly path: readonly string[];
+      readonly field: "fill" | "strokeColor";
+      readonly color: ColorSpec | undefined;
+    }
+  | { readonly path: readonly string[]; readonly field: "textColor" | "glyph"; readonly color: ColorSpec }
+  | { readonly path: readonly string[]; readonly field: "cornerRadius"; readonly value: NumberSpec }
+  | { readonly path: readonly string[]; readonly field: "effects"; readonly shadows: readonly ShadowSpec[] };
+
+/**
+ * An instance layer: an instance of another component set's variant inside a variant, such as an
+ * Alert's action Button, so the composite stays linked to the set that draws the part. The inner set
+ * owns every layer inside the instance, so {@link walkLayers} stops at it. The layer sets the inner
+ * set's properties, overrides paints, corners and shadows, and sizes itself in its parent's auto
+ * layout.
+ */
+export type InstanceLayerSpec = {
+  readonly kind: "instance";
+  readonly key: string;
+  /** The layer name, the inner root's `data-slot`, as other layers take theirs. */
+  readonly name: string;
+  /** The key of the inner component set, which the kit lists before the set that holds this layer. */
+  readonly componentSet: string;
+  /** The key of the inner set's variant the instance shows. */
+  readonly variant: string;
+  /** The inner set's property values that differ from their defaults, absent where none does. */
+  readonly properties?: InstancePropertiesSpec;
+  /** The overrides on the instance and the layers below it, absent for none. */
+  readonly overrides?: readonly InstanceOverride[];
+  /**
+   * How the instance sizes in its parent's auto layout. Only a fixed axis has a length, which may bind
+   * a variable. A real file kept a hugging instance's height when its height bound one (N4), so the
+   * plugin fixes the axis before it binds the length.
+   */
+  readonly sizing: SizingSpec;
+  /**
+   * True for an instance whose properties a designer sets from the outer instance's properties panel,
+   * as Figma's `isExposedInstance` marks it, absent for one they do not.
+   */
+  readonly exposed?: true;
+  /**
+   * The BOOLEAN property of the set that shows or hides the instance, which links its `visible`, absent
+   * for an instance that shows wherever its variant holds it.
+   */
+  readonly visibleProperty?: string;
+};
+
 /** A layer inside a component root or a frame layer. */
-export type ChildLayerSpec = TextLayerSpec | IconLayerSpec | FrameLayerSpec;
+export type ChildLayerSpec = TextLayerSpec | IconLayerSpec | FrameLayerSpec | InstanceLayerSpec;
 
 /**
  * Where an auto layout box places its children across its direction: at the start, centered or
@@ -430,13 +495,35 @@ export type ComponentRootSpec = BoxSpec & {
 
 /**
  * Every layer below a box, depth first: each layer, then the layers a frame among them holds,
- * before the next sibling.
+ * before the next sibling. An instance layer is one layer, since the inner set owns what it holds.
  *
  * @param box - A component root or a frame layer.
  * @returns The layers in layer order, the box itself left out.
  */
 export function walkLayers(box: BoxSpec): readonly ChildLayerSpec[] {
   return box.children.flatMap((child) => (child.kind === "frame" ? [child, ...walkLayers(child)] : [child]));
+}
+
+/**
+ * The layer at a key path below a box, the path an instance override names: the box itself for the
+ * empty path, and otherwise the layer whose key is the path's last, below the frames its other keys
+ * name.
+ *
+ * @param box - A variant's root.
+ * @param path - The keys from the box down.
+ * @returns The box or the layer, or undefined where the box holds none at the path.
+ */
+export function layerAt(box: BoxSpec, path: readonly string[]): BoxSpec | ChildLayerSpec | undefined {
+  let layer: BoxSpec | ChildLayerSpec = box;
+  for (const key of path) {
+    const next: ChildLayerSpec | undefined =
+      "children" in layer ? layer.children.find((child) => child.key === key) : undefined;
+    if (next === undefined) {
+      return undefined;
+    }
+    layer = next;
+  }
+  return layer;
 }
 
 /** One variant of a component set, one cell of its matrix. */

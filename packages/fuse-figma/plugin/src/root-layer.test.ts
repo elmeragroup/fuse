@@ -270,7 +270,14 @@ describe("planBox sizing, direction, limits and clipping", () => {
     const plan = newPlan();
     const run = await fixtureRun(file, plan);
     const size = planBox(run, node, "Box", spec, place);
-    await planChildren(run, node, "Box", spec, { properties: new Map(), icons: new Map() }, size);
+    await planChildren(
+      run,
+      node,
+      "Box",
+      spec,
+      { properties: new Map(), icons: new Map(), sets: new Map() },
+      size
+    );
     return plan;
   }
 

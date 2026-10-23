@@ -50,7 +50,7 @@ function find(key: string): ComponentRootSpec {
 /** The color of a root's first layer, a label or an icon in these flat sets. */
 function firstColor(box: ComponentRootSpec): ColorSpec | undefined {
   const [first] = box.children;
-  return first?.kind === "frame" ? undefined : first?.color;
+  return first?.kind === "text" || first?.kind === "icon" ? first.color : undefined;
 }
 
 function root(variant: string, size: string, state: string, icon: string): ComponentRootSpec {

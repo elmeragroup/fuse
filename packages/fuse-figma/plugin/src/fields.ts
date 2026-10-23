@@ -66,6 +66,21 @@ export function requireFont(run: Run, label: string, font: FontName): void {
 }
 
 /**
+ * Every font a text layer's characters use, each range of mixed ones included. An empty layer holds
+ * the one font it would type in.
+ *
+ * @param run - The run.
+ * @param text - The text layer.
+ * @returns The fonts.
+ */
+export function heldFonts(run: Run, text: TextNode): FontName[] {
+  if (text.characters.length > 0) {
+    return text.getRangeAllFontNames(0, text.characters.length);
+  }
+  return text.fontName === run.figma.mixed ? [] : [text.fontName];
+}
+
+/**
  * Whether two numbers agree within what a 32-bit float keeps.
  *
  * @param left - One value.
@@ -219,6 +234,41 @@ export function planNumber(
     }
     field.write(spec.value);
   });
+}
+
+/**
+ * Plan the BOOLEAN property a layer's `visible` follows, which a designer toggles from the properties
+ * panel to show or hide the part (PB). A layer the spec shows wherever its variant holds it follows
+ * none.
+ *
+ * @param run - The run.
+ * @param layer - A frame or an instance layer.
+ * @param label - The layer's label, for change lines.
+ * @param property - The property's name in the spec, or undefined for none.
+ * @param ids - The set's property ids by name, which an operation that adds one fills in when it runs.
+ */
+export function planVisibleLink(
+  run: Run,
+  layer: FrameNode | InstanceNode,
+  label: string,
+  property: string | undefined,
+  ids: ReadonlyMap<string, string>
+): void {
+  const linked = layer.componentPropertyReferences?.visible;
+  if (property !== undefined && (linked === undefined || linked !== ids.get(property))) {
+    change(run.plan, label, `visible → the ${property} property`, () => {
+      const id = ids.get(property);
+      if (id === undefined) {
+        throw new Error(`${label}: the ${property} property has no id when the layer links to it.`);
+      }
+      layer.componentPropertyReferences = { ...layer.componentPropertyReferences, visible: id };
+    });
+  } else if (property === undefined && linked !== undefined) {
+    change(run.plan, label, "visible → no property", () => {
+      const { visible: _unlinked, ...rest } = layer.componentPropertyReferences ?? {};
+      layer.componentPropertyReferences = rest;
+    });
+  }
 }
 
 /**
