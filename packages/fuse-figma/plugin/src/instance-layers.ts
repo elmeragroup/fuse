@@ -31,6 +31,7 @@ import type {
 import type { PlannedSet } from "./component-set.ts";
 import {
   heldFonts,
+  heldSizing,
   LAYOUT_SIZING,
   planNumber,
   planPaints,
@@ -488,10 +489,7 @@ function planSizing(run: Run, instance: InstanceNode, label: string, sizing: Siz
     horizontal: LAYOUT_SIZING[sizing.horizontal.kind],
     vertical: LAYOUT_SIZING[sizing.vertical.kind],
   };
-  const reads =
-    held === "read"
-      ? { horizontal: instance.layoutSizingHorizontal, vertical: instance.layoutSizingVertical }
-      : undefined;
+  const reads = held === "read" ? heldSizing(instance) : undefined;
   const writeSizing = (): void => {
     instance.layoutSizingHorizontal = desired.horizontal;
     instance.layoutSizingVertical = desired.vertical;

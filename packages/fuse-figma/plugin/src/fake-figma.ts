@@ -88,8 +88,9 @@
  *    mode across it. A text reads HUG across while its `textAutoResize` is WIDTH_AND_HEIGHT, and
  *    down while it is that or HEIGHT. Every other axis reads FIXED. Writing FILL sets the grow or
  *    the stretch, as a real file showed (P1), and fixes the layer's own mode on that axis. Writing
- *    HUG or FIXED clears the fill and sets the mode. The fake hides `layoutGrow` and
- *    `layoutAlign`, so the plugin writes only the shorthand. Rule 19 covers the write on a text.
+ *    HUG or FIXED clears the fill and sets the mode. The fake reads `layoutGrow` and `layoutAlign`
+ *    but takes no write of them, so the plugin writes only the shorthand. Rule 19 covers the write
+ *    on a text, and rule 42 the read of a hidden layer.
  * 13. A sizing write Figma cannot apply throws the message a real file threw on 2026-10-22 (P1).
  *    FILL on a frame that has no auto layout and sits in none threw `node must be an
  *    auto-layout frame or a child of an auto-layout frame`, and the fake throws it for HUG there
@@ -309,6 +310,15 @@
  *    afterwards kept the field listed, unlike a fill (NS), so an equal write leaves the override
  *    (NA). A label that overrides none shows its main layer's alignment, as rule 38 has the rest
  *    follow the main. No probe swapped an instance with the override, so a swap drops it.
+ * 42. A hidden child of an auto layout reads `layoutSizingHorizontal` or `layoutSizingVertical`
+ *    FIXED on an axis it fills, and keeps the fill in `layoutGrow` 1 along its parent's direction or
+ *    `layoutAlign` STRETCH across it. On 2026-10-24 a hidden frame in a fixed 300-wide column read
+ *    FIXED and STRETCH after a FILL across, read FILL and 300 wide once shown, and FIXED and STRETCH
+ *    hidden again, and a FILL written while shown read the same once hidden. Hidden in a fixed row, a
+ *    FILL along read FIXED with `layoutGrow` 1 and FILL once shown, and in a hugging row a FILL down
+ *    read FIXED with STRETCH and FILL once shown (NH). The owner's file read Alert's and Empty's hidden
+ *    actions that way after an Apply. The fake hides a layer only through a BOOLEAN property (rule
+ *    25), and reads a hidden layer that hugs as it reads a shown one, which no probe contradicted.
  *
  * An instance's sublayers show the layers of its main component, and a nested instance's sublayers
  * the sublayers its main layer shows. An override, such as the color an icon layer gives its glyph,
@@ -1410,7 +1420,8 @@ function lengthOn(state: NodeState, axis: Axis): number {
  */
 function sizingOn(state: NodeState, axis: Axis): Sizing {
   if (fills(state, axis)) {
-    return "FILL";
+    // A hidden layer keeps the fill in its grow or stretch and reads FIXED (rule 42).
+    return hiddenByProperty(state) ? "FIXED" : "FILL";
   }
   if (state.type === "TEXT") {
     return textHugs(state, axis) ? "HUG" : "FIXED";
@@ -2446,6 +2457,15 @@ function pinMode(state: NodeState, collection: VariableCollection, modeId: strin
 
 /** The members every layer has. */
 class FakeSceneNode extends FakeBaseNode {
+  /**
+   * The page or layer that holds the layer, as the typings name it, or null where none does. The
+   * plugin reads it to find a hidden child's fill (rule 42).
+   */
+  get parent(): (BaseNode & ChildrenMixin) | null {
+    const parent = live(this).parent?.exposed;
+    return parent === undefined || parent.type === "DOCUMENT" || !("children" in parent) ? null : parent;
+  }
+
   remove(): void {
     const state = live(this);
     if (state.mirrorOf !== undefined) {
@@ -2603,6 +2623,16 @@ class FakeSceneNode extends FakeBaseNode {
     const state = live(this);
     write(state, "constraints");
     state.constraints = { ...value };
+  }
+
+  /** Rule 12: the fill along an auto layout parent's direction, which only the shorthand writes. */
+  get layoutGrow(): number {
+    return live(this).layoutGrow;
+  }
+
+  /** Rule 12: the stretch across an auto layout parent, which only the shorthand writes. */
+  get layoutAlign(): "INHERIT" | "STRETCH" {
+    return live(this).layoutAlign;
   }
 
   get layoutSizingHorizontal(): Sizing {

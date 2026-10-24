@@ -1,9 +1,8 @@
 /**
  * The layout, text, image, property, rotation and stroke rules of the in-memory file in
  * `fake-figma.ts`, each on a few nodes built by hand. The oracle is what the test file `Elmera Fuse -
- * Import test` read back in net-zero probes on 2026-10-22 and 2026-10-23, named P0 to P9b, PB, PR,
- * PD, PL, PF, PH and PZ as the
- * fake's header names them, the PNG signature, the hashes `shasum -a 1` gives the fixture images,
+ * Import test` read back in net-zero probes from 2026-10-22 to 2026-10-24, named P0 to P9b, PB, PR,
+ * PD, PL, PF, PH, PZ and NH as the fake's header names them, the PNG signature, the hashes `shasum -a 1` gives the fixture images,
  * and the typings where no probe ran. The planners' tests converge against these rules, so a rule
  * that drifts from the real file would let a plan pass that Figma would not keep.
  */
@@ -105,10 +104,16 @@ describe("rule 12: layout sizing reads as a projection of the sizing modes, the 
     expect([child.primaryAxisSizingMode, child.counterAxisSizingMode]).toEqual(["AUTO", "FIXED"]);
   });
 
-  it("keeps the fields behind the shorthand hidden, so the plugin writes only the shorthand", () => {
+  it("reads the fields behind the shorthand and takes no write of them, so the plugin writes only the shorthand", () => {
     const child = childOf(autoLayout("HORIZONTAL"));
-    expect(() => child.layoutGrow).toThrow("does not model FrameNode.layoutGrow");
-    expect(() => child.layoutAlign).toThrow("does not model FrameNode.layoutAlign");
+    child.layoutSizingHorizontal = "FILL";
+    expect([child.layoutGrow, child.layoutAlign]).toEqual([1, "INHERIT"]);
+    expect(() => {
+      child.layoutGrow = 0;
+    }).toThrow("FrameNode.layoutGrow is read-only");
+    expect(() => {
+      child.layoutAlign = "STRETCH";
+    }).toThrow("FrameNode.layoutAlign is read-only");
   });
 });
 
@@ -590,6 +595,68 @@ describe("rule 25: a BOOLEAN property shows or hides the layers that link their 
         title.visible = false;
       }
     }).toThrow("visible is read-only");
+  });
+});
+
+describe("rule 42: a hidden child reads FIXED on an axis it fills, and keeps the fill in layoutGrow or layoutAlign (NH)", () => {
+  /**
+   * A variant of `direction`, fixed 300 × 100 unless it hugs, holding a frame whose visibility the
+   * BOOLEAN `Shown` links, which starts false, so the frame starts hidden. `show` changes the default.
+   */
+  function hiddenChild(direction: "HORIZONTAL" | "VERTICAL", hugs = false) {
+    const variant = figma.createComponent();
+    variant.layoutMode = direction;
+    variant.resize(300, 100);
+    if (hugs) {
+      variant.primaryAxisSizingMode = "AUTO";
+      variant.counterAxisSizingMode = "AUTO";
+    }
+    const child = childOf(variant);
+    const set = figma.combineAsVariants([variant], figma.currentPage);
+    const id = set.addComponentProperty("Shown", "BOOLEAN", false);
+    child.componentPropertyReferences = { visible: id };
+    const show = (shown: boolean) => {
+      set.editComponentProperty(id, { defaultValue: shown });
+    };
+    return { child, show };
+  }
+
+  it("reads a hidden fill across a fixed column FIXED with layoutAlign STRETCH, and FILL once shown", () => {
+    const { child, show } = hiddenChild("VERTICAL");
+    child.layoutSizingHorizontal = "FILL";
+    expect([child.visible, child.layoutSizingHorizontal, child.layoutAlign]).toEqual([
+      false,
+      "FIXED",
+      "STRETCH",
+    ]);
+    show(true);
+    expect([child.visible, child.layoutSizingHorizontal]).toEqual([true, "FILL"]);
+    show(false);
+    expect([child.layoutSizingHorizontal, child.layoutAlign]).toEqual(["FIXED", "STRETCH"]);
+  });
+
+  it("reads a fill written while shown FIXED with STRETCH once hidden", () => {
+    const { child, show } = hiddenChild("VERTICAL");
+    show(true);
+    child.layoutSizingHorizontal = "FILL";
+    show(false);
+    expect([child.layoutSizingHorizontal, child.layoutAlign]).toEqual(["FIXED", "STRETCH"]);
+  });
+
+  it("reads a hidden fill along a fixed row FIXED with layoutGrow 1, and FILL once shown", () => {
+    const { child, show } = hiddenChild("HORIZONTAL");
+    child.layoutSizingHorizontal = "FILL";
+    expect([child.layoutSizingHorizontal, child.layoutGrow]).toEqual(["FIXED", 1]);
+    show(true);
+    expect(child.layoutSizingHorizontal).toBe("FILL");
+  });
+
+  it("reads a hidden fill down a hugging row FIXED with STRETCH, and FILL once shown", () => {
+    const { child, show } = hiddenChild("HORIZONTAL", true);
+    child.layoutSizingVertical = "FILL";
+    expect([child.layoutSizingVertical, child.layoutAlign]).toEqual(["FIXED", "STRETCH"]);
+    show(true);
+    expect(child.layoutSizingVertical).toBe("FILL");
   });
 });
 

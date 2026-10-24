@@ -1,8 +1,8 @@
 /**
  * `reconcileKit` with the one-variant kit of `button-kit-fixture.ts` on the in-memory file in
  * `fake-figma.ts`, for a part that hides behind a BOOLEAN property and for layers that turn. The
- * oracles are the fake's rules 25 and 26, which follow what a real file did on 2026-10-22 (PB, PR,
- * PQ), the change lines Plan lists, and the writes the file took.
+ * oracles are the fake's rules 25, 26 and 42, which follow what a real file did on 2026-10-22 and
+ * 2026-10-24 (PB, PR, PQ, NH), the change lines Plan lists, and the writes the file took.
  */
 import { describe, expect, it } from "vitest";
 
@@ -19,6 +19,7 @@ import {
   fixture,
   frame,
   KIT,
+  kitWithRoot,
   literal,
   nestedKit,
   RELAYOUT,
@@ -178,6 +179,51 @@ describe("a variant whose part hides behind a BOOLEAN property", () => {
     await reconcileKit(file.figma, hidden, true);
     file.reopen();
     expect(await reconcileKit(file.figma, hidden, false)).toEqual({ changes: [], warnings: [] });
+  });
+});
+
+// Unit under test: `reconcileKit` on a variant whose hidden parts fill, as Alert's actions stretch
+// down a described row and Empty's content fills across. Oracle: the fake's rule 42, which follows
+// what a real file did on 2026-10-24 (NH): a hidden child reads FIXED on an axis it fills and keeps
+// the fill in `layoutGrow` along its parent and `layoutAlign` STRETCH across it. The second Plan lists
+// nothing, and the parts show filling once the property is on.
+describe("a variant whose hidden parts fill their row", () => {
+  const FILL_SIZE = { kind: "fill" } as const;
+  const HUG_SIZE = { kind: "hug" } as const;
+  const OFF: BooleanPropertySpec = { name: "Detail", defaultValue: false };
+  const part = (key: string, name: string, sizing: FrameLayerSpec["sizing"]): FrameLayerSpec => ({
+    ...frame(key, name, []),
+    sizing,
+    visibleProperty: "Detail",
+  });
+  const HIDDEN = withBooleans(
+    kitWithRoot((root) => ({
+      ...root,
+      sizing: { horizontal: { kind: "fixed", length: literal(300) }, vertical: root.sizing.vertical },
+      children: [
+        part("button/across", "Across", { horizontal: HUG_SIZE, vertical: FILL_SIZE }),
+        part("button/along", "Along", { horizontal: FILL_SIZE, vertical: HUG_SIZE }),
+      ],
+    })),
+    [OFF]
+  );
+
+  it("fills across and along while hidden in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, HIDDEN, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, HIDDEN, false)).toEqual({ changes: [], warnings: [] });
+    const variant = await buttonVariant(file);
+    const across = childNamed(variant, "FRAME", "Across");
+    const along = childNamed(variant, "FRAME", "Along");
+    expect([across.visible, across.layoutAlign, along.layoutGrow]).toEqual([false, "STRETCH", 1]);
+    const instance = variant.createInstance();
+    const [id = ""] = Object.keys(instance.componentProperties).filter((name) => name.startsWith("Detail#"));
+    instance.setProperties({ [id]: true });
+    expect([
+      childNamed(instance, "FRAME", "Across").layoutSizingVertical,
+      childNamed(instance, "FRAME", "Along").layoutSizingHorizontal,
+    ]).toEqual(["FILL", "FILL"]);
   });
 });
 

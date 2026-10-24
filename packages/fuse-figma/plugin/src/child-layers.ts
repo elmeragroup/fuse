@@ -21,6 +21,7 @@ import type { PlannedSet } from "./component-set.ts";
 import {
   describeNumber,
   heldFonts,
+  heldSizing,
   LAYOUT_SIZING,
   near,
   planNumber,
@@ -471,7 +472,7 @@ function planTextLayout(run: Run, text: TextNode, label: string, spec: TextLayer
       // resize, or after the repair, are written whatever the text reads now.
       const lengths: Held =
         !stuck && held === "read" && text.textAutoResize === autoResize ? "read" : "unknown";
-      const reads = lengths === "read" ? text : undefined;
+      const reads = lengths === "read" ? heldSizing(text) : undefined;
       planScalar(group, label, "textAutoResize", text.textAutoResize, autoResize, () => {
         text.textAutoResize = autoResize;
       });
@@ -479,7 +480,7 @@ function planTextLayout(run: Run, text: TextNode, label: string, spec: TextLayer
         change(plan, label, "width → 1 for the fill to take over", () => text.resize(1, text.height));
       }
       for (const [axis, member] of SIZING_MEMBERS) {
-        if (reads?.[member] !== sizing[axis]) {
+        if (reads?.[axis] !== sizing[axis]) {
           change(plan, label, `${member} → ${sizing[axis]}`, () => {
             text[member] = sizing[axis];
           });

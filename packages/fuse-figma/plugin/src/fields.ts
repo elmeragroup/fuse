@@ -619,13 +619,44 @@ export const SIZING_MEMBERS = [
 ] as const;
 
 /**
+ * How a layer sizes on each axis, as the plan compares it with the spec. A hidden child of an auto
+ * layout reads `layoutSizing*` FIXED on an axis it fills, while it keeps the fill in `layoutGrow` 1
+ * along its parent's direction and `layoutAlign` STRETCH across it, as a real file showed on
+ * 2026-10-24 (NH), so a hidden child's fill reads from those. A shown layer reads FILL itself.
+ *
+ * @param node - A frame, component, instance or text.
+ * @returns The sizing on each axis.
+ */
+export function heldSizing(
+  node: Pick<
+    FrameNode,
+    "layoutSizingHorizontal" | "layoutSizingVertical" | "layoutGrow" | "layoutAlign" | "visible" | "parent"
+  >
+): LayoutSizing {
+  const read: LayoutSizing = { horizontal: node.layoutSizingHorizontal, vertical: node.layoutSizingVertical };
+  if (node.visible) {
+    return read;
+  }
+  const { parent } = node;
+  if (parent === null || !("layoutMode" in parent) || parent.layoutMode === "NONE") {
+    return read;
+  }
+  const fills = (axis: "HORIZONTAL" | "VERTICAL"): boolean =>
+    parent.layoutMode === axis ? node.layoutGrow === 1 : node.layoutAlign === "STRETCH";
+  return {
+    horizontal: fills("HORIZONTAL") ? "FILL" : read.horizontal,
+    vertical: fills("VERTICAL") ? "FILL" : read.vertical,
+  };
+}
+
+/**
  * The sizing an auto layout frame reads once its direction is `direction`. A direction change
  * keeps both sizing modes, each in its role along or across the direction, so a hug moves to the
  * other axis with it, as a real file showed on 2026-10-22. A fill stays, since it comes from the
  * parent's layout.
  */
 function sizingAlong(node: FrameNode | ComponentNode, direction: DirectionSpec): LayoutSizing {
-  const held: LayoutSizing = { horizontal: node.layoutSizingHorizontal, vertical: node.layoutSizingVertical };
+  const held = heldSizing(node);
   if (node.layoutMode === direction) {
     return held;
   }
