@@ -7,7 +7,12 @@ import { describe, expect, it } from "vitest";
 
 import { density, FILL, fixed, HUG, literal } from "../../test/built-kit";
 import { buildFixture, buildFixtures, chip, dot, ICON } from "../../test/fixture-sets";
-import type { ComponentDefinition, LabelDefinition, PartDefinition } from "./component-spec";
+import type {
+  ComponentDefinition,
+  InstanceDefinition,
+  LabelDefinition,
+  PartDefinition,
+} from "./component-spec";
 import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
 import type { BoxSpec } from "./kit-spec";
@@ -254,6 +259,22 @@ describe("a separator that cancels its popup's padding", () => {
     expect(unmapped(coverage)).toEqual([]);
   });
 
+  // As Select's listbox fills its popup: a list that pads nothing across inside a popup that pads
+  // nothing across and clips spans the popup's padding box, so the popup clips the overshoot there.
+  it.each([
+    ["clips", "overflow-hidden", "dropped"],
+    ["does not clip", "", "unmapped"],
+  ])(
+    "reads the margins of a list's separators as the popup around the list that %s",
+    async (_, overflow, outcome) => {
+      const definition = chip(`flex flex-col w-[200px] ${overflow}`, {
+        parts: [{ ...dot("flex flex-col"), key: "list", slot: "list", parts: popup("", ROWS).parts ?? [] }],
+      });
+      const { coverage } = await buildFixture(definition, { variables: SYNCED });
+      expect(notesOf(coverage, SEPARATOR_MARGIN).map(([, read]) => read)).toEqual([outcome, outcome]);
+    }
+  );
+
   // Unit under test: the coverage of a composite whose instance part's rows sit in sections.
   // Oracle: Figma's instance model, under which an instance carries a fill it overrides at the
   // layer's key path (N3), and the rule that a passed class the instance overrides keeps its read.
@@ -308,6 +329,205 @@ describe("a separator that cancels its popup's padding", () => {
       "unmapped",
       "unmapped",
     ]);
+  });
+});
+
+// Oracle: the CSS box model (CSS 2.1 §8.3, §10.3.3) and CSS Flexbox 1 §4.2. A menu separator,
+// `-mx-(--surface-pad-sm) my-1 h-px`, is a 1px rule with 4px of margin above and below it, which
+// neither collapses in a flex column nor narrows the rule, so the rows around it sit 4px above and
+// 4px below the rule. Worked by hand in a 200px column of two 32px rows: the rule runs from 36 to 37,
+// and the column is 32 + 4 + 1 + 4 + 32 = 73 tall.
+describe("a separator's margins above and below it", () => {
+  const SEPARATOR = "-mx-(--surface-pad-sm) my-1 h-px bg-[#cccccc]";
+  const part = (key: string, classes: string, slot = key): PartDefinition => ({ ...dot(classes), key, slot });
+  const rows = (separator: PartDefinition | InstanceDefinition) => [
+    part("row-0", "h-[32px]"),
+    separator,
+    part("row-2", "h-[32px]"),
+  ];
+  const popup = (classes: string, parts: readonly (PartDefinition | InstanceDefinition)[]) =>
+    chip(`flex flex-col w-[200px] ${classes}`, { parts });
+  const MARGIN = {
+    kind: "frame",
+    key: "separator-1",
+    name: "separator",
+    direction: "VERTICAL",
+    sizing: { horizontal: FILL, vertical: HUG },
+    paddingTop: literal(4),
+    paddingBottom: literal(4),
+    paddingLeft: literal(0),
+    paddingRight: literal(0),
+    fill: undefined,
+  };
+  const RULE = { key: "box", name: "box", sizing: { horizontal: FILL, vertical: fixed(literal(1)) } };
+
+  it("draws the rule in a frame that fills across and pads its top and bottom by the margins", async () => {
+    const { variant, coverage } = await buildFixture(
+      popup("overflow-hidden", rows(part("separator-1", SEPARATOR, "separator"))),
+      { variables: SYNCED }
+    );
+    const separator = variant?.root.children[1];
+    expect(separator).toMatchObject(MARGIN);
+    expect(separator?.kind === "frame" ? separator.children : undefined).toMatchObject([RULE]);
+    expect(notesOf(coverage, "my-1")).toEqual(
+      ["margin-top", "margin-bottom"].map((property) => [
+        property,
+        "literal",
+        "4px of padding on a frame around the part, the space the margin adds",
+      ])
+    );
+    expect(unmapped(coverage)).toEqual([]);
+  });
+
+  it("keeps the frame inside a section of a popup whose padding it cancels", async () => {
+    const { variant, coverage } = await buildFixture(
+      popup("p-(--surface-pad-sm)", rows(part("separator-1", SEPARATOR, "separator"))),
+      { variables: SYNCED }
+    );
+    expect(layerNames(variant?.root)).toEqual(["section", "separator", "section"]);
+    expect(variant?.root.children[1]).toMatchObject(MARGIN);
+    expect(unmapped(coverage)).toEqual([]);
+  });
+
+  // Oracle: CSS 2.1 §8.3.1. In a block column, as Select's list stacks its rows, a block's vertical
+  // margin collapses only with a margin it adjoins: none between two rows that set no margin, so the
+  // rule still sits 4px from each, and the column's own where the separator comes first.
+  const blocks = (order: readonly ("row" | "separator")[]) =>
+    chip("block w-[200px] overflow-hidden", {
+      parts: order.map((kind, at) =>
+        kind === "row"
+          ? part(`row-${at}`, "block h-[32px]")
+          : part(`separator-${at}`, `block ${SEPARATOR}`, "separator")
+      ),
+    });
+
+  it("draws the frame in a block column where no margin adjoins the separator's", async () => {
+    const { variant, coverage } = await buildFixture(blocks(["row", "separator", "row"]), {
+      variables: SYNCED,
+    });
+    expect(variant?.root.children[1]).toMatchObject(MARGIN);
+    expect(unmapped(coverage)).toEqual([]);
+  });
+
+  it("leaves the margins unmapped where they collapse with the column's", async () => {
+    const { coverage } = await buildFixture(blocks(["separator", "row", "row"]), { variables: SYNCED });
+    expect(notesOf(coverage, "my-1").map(([, outcome]) => outcome)).toEqual(["unmapped", "unmapped"]);
+  });
+
+  // Unit under test: the same rule on an instance part, whose margins the composite passes. Oracle: as
+  // above, and Figma's instance model, under which the frame around an instance is the composite's own
+  // layer, so the instance carries only its own sizing (N4) and the composite owns the margins' reads.
+  it("draws an instance's margins in the same frame, and keeps the reads of the margins it passes", async () => {
+    const separator: ComponentDefinition = {
+      ...chip("-mx-(--surface-pad-sm) h-px bg-[#cccccc] w-[144px]"),
+      key: "separator",
+      name: "Separator",
+      slot: "separator",
+    };
+    const [, composite] = await buildFixtures(
+      [
+        separator,
+        popup(
+          "overflow-hidden",
+          rows({
+            kind: "instance",
+            key: "separator-1",
+            of: separator,
+            cell: () => ({ state: "rest" }),
+            classesFor: () => "my-1 w-auto",
+            shownIn: () => true,
+          })
+        ),
+      ],
+      { variables: SYNCED }
+    );
+    const frame = composite?.componentSet.variants[0]?.root.children[1];
+    expect(frame).toMatchObject(MARGIN);
+    expect(frame?.kind === "frame" ? frame.children : undefined).toMatchObject([
+      { kind: "instance", key: "box", name: "box", sizing: { horizontal: FILL } },
+    ]);
+    expect(notesOf(composite?.coverage ?? [], "my-1")).toEqual(
+      ["margin-top", "margin-bottom"].map((property) => [
+        property,
+        "literal",
+        "4px of padding on a frame around the part, the space the margin adds",
+      ])
+    );
+    expect(unmapped(composite?.coverage ?? [])).toEqual([]);
+  });
+
+  // Unit under test: the stacking of a composite that holds the popup as an instance, which draws the
+  // popup's inner root in place, the wrapped separator instance among its layers. Oracle: every
+  // instance the mapping places paints its inner root, so the outer build resolves the separator
+  // inside its frame to the separator's own root, a 1px fill, rather than failing to find it.
+  it("paints a wrapped instance where a composite above draws the instance that holds it", async () => {
+    const separator: ComponentDefinition = {
+      ...chip("-mx-(--surface-pad-sm) h-px bg-[#cccccc] w-[144px]"),
+      key: "separator",
+      name: "Separator",
+      slot: "separator",
+    };
+    const inner: ComponentDefinition = {
+      ...popup(
+        "overflow-hidden",
+        rows({
+          kind: "instance",
+          key: "separator-1",
+          of: separator,
+          cell: () => ({ state: "rest" }),
+          classesFor: () => "my-1 w-auto",
+          shownIn: () => true,
+        })
+      ),
+      key: "popup",
+      name: "Popup",
+      slot: "popup",
+    };
+    const [, , outer] = await buildFixtures(
+      [
+        separator,
+        inner,
+        chip("flex flex-col", {
+          parts: [
+            {
+              kind: "instance",
+              key: "popup",
+              of: inner,
+              cell: () => ({ state: "rest" }),
+              shownIn: () => true,
+            },
+          ],
+        }),
+      ],
+      { variables: SYNCED }
+    );
+    expect(outer?.componentSet.variants[0]?.root.children).toMatchObject([
+      { kind: "instance", key: "popup", componentSet: "popup" },
+    ]);
+    expect(unmapped(outer?.coverage ?? [])).toEqual([]);
+  });
+});
+
+// Oracle: CSS Overflow 3 §3, where a box's initial `overflow: visible` draws its content's shadows past
+// its edges, as an open Select's column shows its popup's. A root that paints draws a spread ring only
+// while it clips (PR2), so the build refuses to leave one unclipped.
+describe("a composite root that leaves its layers unclipped", () => {
+  const SHADOWED = { ...dot("w-[100px] h-[20px] shadow-[0_4px_6px_#000000]"), key: "popup", slot: "popup" };
+
+  it("clips nothing where it paints nothing", async () => {
+    const { variant } = await buildFixture(
+      chip("flex flex-col", { parts: [SHADOWED], rootOverflow: "visible" }),
+      { variables: SYNCED }
+    );
+    expect(variant?.root.clips).toBe(false);
+  });
+
+  it("refuses a root that paints", async () => {
+    await expect(
+      buildFixture(chip("flex flex-col bg-[#ffffff]", { parts: [SHADOWED], rootOverflow: "visible" }), {
+        variables: SYNCED,
+      })
+    ).rejects.toThrow("a root that leaves its layers unclipped must paint nothing");
   });
 });
 

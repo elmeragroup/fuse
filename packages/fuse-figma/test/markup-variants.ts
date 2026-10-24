@@ -122,16 +122,23 @@ export const GROUP_VARIANTS = new Map<string, (ancestor: MarkupElement) => boole
 ]);
 
 /**
- * Whether an element below the measured element matches each attribute variant its own classes
- * name, as a Navigation menu trigger's caret writes its Root's side in `data-side` and reads it
- * through `data-[side=bottom]:`, which compiles to `[data-side="bottom"]`.
+ * Whether an element at, below or around the measured element matches each attribute variant its own
+ * classes name, as a Navigation menu trigger's caret writes its Root's side in `data-side` and reads
+ * it through `data-[side=bottom]:`, which compiles to `[data-side="bottom"]`, and as Base UI stamps an
+ * open Select popup `data-open` and its side, and Fuse its `data-align-trigger`, which the popup's
+ * own classes read around each row.
  */
-export const DESCENDANT_ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => boolean>(
-  ["bottom", "left", "right", "top", "inline-end", "inline-start"].map((side) => [
-    `data-[side=${side}]`,
-    (element: MarkupElement) => element.attributes.get("data-side") === side,
-  ])
-);
+export const NAMED_ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => boolean>([
+  ...["bottom", "left", "right", "top", "inline-end", "inline-start"].map(
+    (side): [string, (element: MarkupElement) => boolean] => [
+      `data-[side=${side}]`,
+      (element) => element.attributes.get("data-side") === side,
+    ]
+  ),
+  ["data-open", (element) => element.attributes.has("data-open")],
+  ["data-closed", (element) => element.attributes.has("data-closed")],
+  ["data-[align-trigger=true]", (element) => element.attributes.get("data-align-trigger") === "true"],
+]);
 
 /**
  * Whether a sibling before the measured element matches each peer variant, which selects the
@@ -180,13 +187,14 @@ export const TAG_VARIANTS = new Map<string, (element: MarkupElement) => boolean>
 /**
  * The condition variants static markup cannot check against the measured element's attributes:
  * the pseudo classes the page forces, on the measured element or on the sibling a peer variant
- * reads, the icon edge, which holds on a descendant, the breakpoints, which the page's viewport
+ * reads, `focus` among them for a highlighted menu row, the icon edge, which holds on a descendant, the breakpoints, which the page's viewport
  * decides, and `ltr:`, which the page's direction decides, left to right on the compare page.
  */
 export const NOT_ATTRIBUTES = new Set([
   "enabled-hover",
   "hover",
   "focus-visible",
+  "focus",
   "peer-hover/menu-button",
   "has-data-[icon=inline-start]",
   "has-data-[icon=inline-end]",

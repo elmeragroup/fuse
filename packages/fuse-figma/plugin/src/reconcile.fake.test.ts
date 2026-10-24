@@ -131,11 +131,12 @@ function onlySolid(paints: ReadonlyArray<Paint> | PluginAPI["mixed"], figma: Plu
 }
 
 /** The text layers below a node, at any depth, in layer order. */
+/** The texts of a node's own layers, down to its instances, whose texts are their main's, as the spec walks them. */
 function textsIn(node: BaseNode): TextNode[] {
   if (node.type === "TEXT") {
     return [node];
   }
-  return "children" in node ? node.children.flatMap(textsIn) : [];
+  return "children" in node && node.type !== "INSTANCE" ? node.children.flatMap(textsIn) : [];
 }
 
 function property(set: ComponentSetNode, name: string): ComponentPropertyDefinitions[string] {

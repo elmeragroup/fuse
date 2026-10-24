@@ -6,10 +6,10 @@
  * alignment and the parts' layers, absolute where they sit outside the flow. A part that scales
  * draws as a slot around a dot, which the set's topology decides once for every cell.
  */
-import { listNames, outOfFlow } from "./box-sizing";
+import { listNames, marginsAcross, outOfFlow } from "./box-sizing";
 import type { Room } from "./box-sizing";
 import { splitClasses } from "./cascade";
-import type { CoverageNote, LayerStyle, SpecField } from "./cascade";
+import type { CoverageNote, LayerStyle } from "./cascade";
 import { splitClassName } from "./class-name";
 import type { Cell, PartDefinition } from "./component-spec";
 import {
@@ -40,6 +40,7 @@ import type {
   SizeSpec,
   StrokeSpec,
 } from "./kit-spec";
+import { MARGINS, VERTICAL_MARGINS } from "./margin-box";
 import type { CompiledUtilities } from "./utility-css";
 
 /** How a box lays out its layers, as the box mapping read it. */
@@ -177,23 +178,6 @@ function alignAlongRow(parent: ParentBox, parts: readonly PlacedPart[]): Primary
 }
 
 /**
- * A box's margins, by their physical sides. The cascade splits `m-*`, `mx-*`, `ms-*` and the other
- * shorthand and logical margins into these, so they cascade side by side.
- */
-const MARGINS = ["margin-top", "margin-right", "margin-bottom", "margin-left"] as const;
-
-/** The padding of the frame around a part that draws each of its margins. */
-const PADDING_OF = {
-  "margin-top": "paddingTop",
-  "margin-right": "paddingRight",
-  "margin-bottom": "paddingBottom",
-  "margin-left": "paddingLeft",
-} as const satisfies Record<(typeof MARGINS)[number], SpecField>;
-
-/** The margins above and below a box, which leave its width alone. */
-const VERTICAL_MARGINS: ReadonlySet<string> = new Set(["margin-top", "margin-bottom"]);
-
-/**
  * Read where the root sits. The root has no parent to center it, so `relative` drops and any
  * other position stays unmapped. It sits in no flex line either, so `align-self: auto`, the
  * initial value, drops, and any other alignment, such as `stretch`, stays unmapped. A `flex` that
@@ -202,8 +186,9 @@ const VERTICAL_MARGINS: ReadonlySet<string> = new Set(["margin-top", "margin-bot
  * its value, as Avatar's `align-middle` does. A margin lies outside the box and spaces it from its
  * siblings and its parent's edge, and the root sits alone in its component set, so a margin drops,
  * as Field legend's `mb-3` does. A block whose width its container gives it is the exception: its
- * width is the container's less its horizontal margins (CSS 2.1 §10.3.3), which the build does not
- * subtract, so those margins stay unmapped. For the same reason an absolute root's offsets, which
+ * width is the container's less its horizontal margins (CSS 2.1 §10.3.3), which the root's room
+ * subtracts where each is the same length in every mode, as {@link marginsAcross} reads them, and
+ * which otherwise stay unmapped. For the same reason an absolute root's offsets, which
  * place it in its containing block, drop with its position, as a menu badge's `absolute right-1`
  * does, and so does a translate, which moves its painting, as a sub row's `-translate-x-px` does. An
  * absolute box with no width shrinks to fit its content (CSS 2.1 §10.3.7), so where the preview width
@@ -212,8 +197,9 @@ const VERTICAL_MARGINS: ReadonlySet<string> = new Set(["margin-top", "margin-bot
  * @param style - The root's style.
  * @param room - What the root's container gives it, whose automatic width says whether the root
  *   takes the preview width.
+ * @param variables - The synced variables a margin can read, with the values they hold in each mode.
  */
-export function placeRoot(style: LayerStyle, room: Room): void {
+export function placeRoot(style: LayerStyle, room: Room, variables: VariableIndex): void {
   const width = normalizeCss(style.resolved("width") ?? "auto");
   const widthFromContainer = room.horizontal.auto.kind !== "hug" && width === "auto";
   if (normalizeCss(style.resolved("position") ?? "") === "absolute") {
@@ -255,14 +241,24 @@ export function placeRoot(style: LayerStyle, room: Room): void {
     }),
     []
   );
+  const across = widthFromContainer ? marginsAcross(style, variables) : undefined;
   for (const property of MARGINS) {
     if (widthFromContainer && !VERTICAL_MARGINS.has(property)) {
-      style.mark(
-        property,
-        "unmapped",
-        "the root's width is its container's less this margin, which the build does not subtract",
-        []
-      );
+      if (across === undefined) {
+        style.mark(
+          property,
+          "unmapped",
+          "the root's width is its container's less this margin, which the build subtracts only where it holds one length in every mode",
+          []
+        );
+      } else {
+        style.mark(
+          property,
+          "literal",
+          "the root's width is its container's less this margin, the same length in every mode",
+          style.feed("sizing")
+        );
+      }
       continue;
     }
     style.read(
@@ -333,104 +329,6 @@ function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean): void
       []
     );
   }
-}
-
-/**
- * Draw a part's margins, which the cascade gives by their physical sides. A margin of zero adds no
- * space, so it drops, as Item's title and description reset a `<p>`'s margins with `m-0`. A flex
- * item's other margins add to the space between it and its siblings and its parent's edge, and
- * never collapse (CSS Flexbox 1 §4.2), so a transparent frame around the part, hugging it, whose
- * padding is the margins, draws the part's margin box. The frame keeps the part's key, name and
- * BOOLEAN property, so hiding the part hides its margin too, and the part's own box sits in it as a
- * layer named `box`. They map at a positive length, on a part in a flex parent's flow whose sides
- * are fixed or hug: a negative margin pulls a sibling closer, which no padding draws, and a margin
- * beside a fill takes room from it. Where any of them does not map, none does, so no frame draws
- * part of a margin.
- *
- * @param style - The part's style.
- * @param layer - The part's layer as the mapping drew it.
- * @param parent - Whether the part's parent is a flex box.
- * @param variables - The synced variables a margin can bind.
- * @returns The frame around the part, or the layer as it was where it has no margin that maps.
- */
-export function wrapMargins(
-  style: LayerStyle,
-  layer: FrameLayerSpec,
-  parent: Pick<Layout, "flex">,
-  variables: VariableIndex
-): FrameLayerSpec {
-  const zero = dropZeroMargins(style);
-  const set = MARGINS.filter((property) => style.has(property) && !zero(property));
-  const fixedOrHugs = layer.sizing.horizontal.kind !== "fill" && layer.sizing.vertical.kind !== "fill";
-  const length = (value: string): NumberSpec | undefined => {
-    const spec = readNumber(value, variables);
-    return spec?.kind === "literal" && spec.value < 0 ? undefined : spec;
-  };
-  const maps = set.every((property) => length(style.resolved(property) ?? "") !== undefined);
-  if (set.length === 0 || !parent.flex || outOfFlow(style) || !fixedOrHugs || !maps) {
-    return layer;
-  }
-  // The part's own box moves into the frame, and so do the fields its reads filled.
-  style.relocateFeeds("box", new Set());
-  const margin = (property: (typeof MARGINS)[number]): NumberSpec =>
-    (set.includes(property)
-      ? style.read(
-          property,
-          length,
-          (spec) =>
-            spec.kind === "literal"
-              ? {
-                  outcome: "literal",
-                  detail: `${spec.value}px of padding on a frame around the part, the space the margin adds`,
-                }
-              : describeNumber(spec),
-          style.feed(PADDING_OF[property])
-        )
-      : undefined) ?? ZERO;
-  const { visibleProperty, ...box } = layer;
-  const frame: FrameLayerSpec = {
-    kind: "frame",
-    key: layer.key,
-    name: layer.name,
-    direction: "HORIZONTAL",
-    sizing: { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
-    limits: NO_LIMITS,
-    clips: false,
-    paddingTop: margin("margin-top"),
-    paddingRight: margin("margin-right"),
-    paddingBottom: margin("margin-bottom"),
-    paddingLeft: margin("margin-left"),
-    itemSpacing: ZERO,
-    primaryAlign: "CENTER",
-    counterAlign: "CENTER",
-    cornerRadius: ZERO,
-    fill: undefined,
-    stroke: undefined,
-    shadows: [],
-    opacity: 1,
-    children: [{ ...box, key: "box", name: "box" }],
-  };
-  return visibleProperty === undefined ? frame : { ...frame, visibleProperty };
-}
-
-/**
- * Drop a part's margins of zero, which add no space, as Item's title and description reset a `<p>`'s
- * margins with `m-0`.
- *
- * @param style - The part's style.
- * @returns The test of whether the style's margin on a side is zero.
- */
-export function dropZeroMargins(style: LayerStyle): (property: string) => boolean {
-  const zero = (property: string) => evaluateLength(style.resolved(property) ?? "") === 0;
-  for (const property of MARGINS.filter((side) => style.has(side) && zero(side))) {
-    style.read(
-      property,
-      (value) => value,
-      () => ({ outcome: "dropped", detail: "a zero margin adds no space" }),
-      []
-    );
-  }
-  return zero;
 }
 
 /**

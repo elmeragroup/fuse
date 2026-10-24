@@ -24,6 +24,7 @@ import { allPartsOf, framePartsOf, rootSlotOf } from "../src/components/definiti
 import { labelCharacters } from "../src/components/label-layout.ts";
 import { makeStateTable } from "../src/components/state-table.ts";
 import {
+  ancestorIndexes,
   ancestorsOf,
   elementsNaming,
   inside,
@@ -41,7 +42,7 @@ import {
 import type { MarkupIcon, MarkupLabel } from "./markup-tree.ts";
 import {
   ATTRIBUTE_VARIANTS,
-  DESCENDANT_ATTRIBUTE_VARIANTS,
+  NAMED_ATTRIBUTE_VARIANTS,
   GROUP_VARIANTS,
   PARENT_VARIANTS,
   PEER_VARIANTS,
@@ -50,6 +51,13 @@ import {
 } from "./markup-variants.ts";
 import { elementsOf } from "./static-markup.ts";
 import type { MarkupElement } from "./static-markup.ts";
+
+/** Whether an element's own classes name a variant. */
+function namesVariant(element: MarkupElement | undefined, variant: string): boolean {
+  return splitClasses(element?.attributes.get("class") ?? "").some((className) =>
+    splitClassName(className).variants.includes(variant)
+  );
+}
 
 /**
  * The element of the part a definition's `statePart` names inside the measured element, or
@@ -471,10 +479,18 @@ function checkRendering(
     for (const [variant, holds] of PARENT_VARIANTS) {
       expect(holdsIn(variant), `${key}: ${variant}`).toBe(holds(elements, measured));
     }
-    // An attribute variant an element below the root names on itself holds exactly where that
-    // element carries the attribute, as a Navigation menu caret carries its Root's `data-side`.
-    for (const [variant, carries] of DESCENDANT_ATTRIBUTE_VARIANTS) {
-      for (const index of elementsNaming(elements, measured, variant, instances)) {
+    // An attribute variant an element at or below the root, or around it as an ancestor the definition
+    // names, names on itself holds exactly where that element carries the attribute, as a Navigation
+    // menu caret carries its Root's `data-side`, and an open Select popup its `data-open` around a row.
+    const namedAncestors = new Set((definition.ancestorsFor?.(cell) ?? []).map(({ slot }) => slot));
+    for (const [variant, carries] of NAMED_ATTRIBUTE_VARIANTS) {
+      const around = [
+        measured,
+        ...ancestorIndexes(elements, measured).filter((index) =>
+          namedAncestors.has(elements[index]?.attributes.get("data-slot") ?? "")
+        ),
+      ].filter((index) => namesVariant(elements[index], variant));
+      for (const index of [...around, ...elementsNaming(elements, measured, variant, instances)]) {
         const element = elements[index];
         expect(holdsIn(variant), `${key}: ${variant} on ${element?.name ?? ""}`).toBe(
           element !== undefined && carries(element)

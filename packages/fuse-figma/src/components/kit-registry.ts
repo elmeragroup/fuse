@@ -34,6 +34,7 @@ import { axisValues } from "./kit-spec";
 import { LABEL } from "./label-kit";
 import { LINK } from "./link-kit";
 import { LOADER } from "./loader-kit";
+import { MENU_GROUP_LABEL, MENU_SEPARATOR } from "./menu-kit";
 import { METER } from "./meter-kit";
 import {
   NAVIGATION_MENU_BAR_LINK,
@@ -44,6 +45,7 @@ import {
 import { PAGINATION_EDGE, PAGINATION_ELLIPSIS, PAGINATION_LINK, PAGINATION_ROW } from "./pagination-kit";
 import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
 import { RADIO } from "./radio-kit";
+import { SELECT_ITEM, SELECT_OPEN, SELECT_POPUP } from "./select-kit";
 import { SELECT_TRIGGER } from "./select-trigger-kit";
 import { SEPARATOR } from "./separator-kit";
 import {
@@ -123,7 +125,10 @@ const PAGINATION_PAGE: KitPage = { slug: "pagination", name: "Pagination" };
  */
 const BREADCRUMB_PARTS_PAGE: KitPage = { slug: "breadcrumb", name: "Breadcrumb" };
 
-/** The page of Select's parts, the trigger alone until the popup's sets join it. */
+/**
+ * The page of Select's parts: the trigger, the menu parts every menu family shares, the row, the
+ * popup and the open Select.
+ */
 const SELECT_PAGE: KitPage = { slug: "select", name: "Select" };
 
 /** The page Empty sits on alone. */
@@ -285,6 +290,11 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(BREADCRUMB_TRAIL.axes),
   },
   { definition: SELECT_TRIGGER, page: SELECT_PAGE, previewCells: matrixCells(SELECT_TRIGGER.axes) },
+  { definition: MENU_GROUP_LABEL, page: SELECT_PAGE, previewCells: matrixCells(MENU_GROUP_LABEL.axes) },
+  { definition: MENU_SEPARATOR, page: SELECT_PAGE, previewCells: matrixCells(MENU_SEPARATOR.axes) },
+  { definition: SELECT_ITEM, page: SELECT_PAGE, previewCells: matrixCells(SELECT_ITEM.axes) },
+  { definition: SELECT_POPUP, page: SELECT_PAGE, previewCells: matrixCells(SELECT_POPUP.axes) },
+  { definition: SELECT_OPEN, page: SELECT_PAGE, previewCells: matrixCells(SELECT_OPEN.axes) },
   { definition: EMPTY, page: EMPTY_PAGE, previewCells: matrixCells(EMPTY.axes) },
   { definition: CALENDAR_DAY, page: CALENDAR_PAGE, previewCells: matrixCells(CALENDAR_DAY.axes) },
   { definition: LINK, page: LINK_PAGE, previewCells: matrixCells(LINK.axes) },

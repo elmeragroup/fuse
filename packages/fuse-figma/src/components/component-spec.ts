@@ -383,6 +383,13 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly previewWidth?: number;
   /**
+   * `visible` for a composite root that paints nothing of its own and holds layers whose shadows
+   * reach past it, as the open Select's popup casts its shadow below and beside the column that holds
+   * it, so the root leaves them unclipped. Undefined for every other root, which clips, as a spread
+   * ring on the root needs (PR2). The build stops on a root that is `visible` and paints.
+   */
+  readonly rootOverflow?: "visible";
+  /**
    * The declarations the host sets around the root in a cell with no class to name them, which the
    * root inherits over the page's, such as the type a Pagination link takes from the browser's
    * medium font size and preflight on `<html>`, since its classes set none. Undefined for a root
@@ -570,14 +577,24 @@ export function buildComponentSet(
     // A root clips its content, because Figma draws a drop shadow's spread only from a frame
     // that clips, and a focus ring is a spread shadow. The first run on a real file stored the
     // ring's 2px spread as 0 on a root that did not clip. Clipping costs a root nothing, since
-    // every child sits inside its padding.
-    const room = rootRoom(definition.previewWidth, rootCascade.style);
+    // every child sits inside its padding, except a child's shadow at the root's edge, which a
+    // root that paints nothing leaves unclipped through `rootOverflow`.
+    const room = rootRoom(definition.previewWidth, rootCascade.style, context.variables);
+    const mapped = mapBox(definition, rootCascade, scope, room);
+    if (
+      definition.rootOverflow === "visible" &&
+      (mapped.fill !== undefined || mapped.stroke !== undefined || mapped.shadows.length > 0)
+    ) {
+      throw new Error(
+        `${definition.name}: a root that leaves its layers unclipped must paint nothing, and ${variantKey(definition, cell)} paints`
+      );
+    }
     const root: ComponentRootSpec = {
       name: definition.slot,
-      ...mapBox(definition, rootCascade, scope, room),
-      clips: true,
+      ...mapped,
+      clips: definition.rootOverflow !== "visible",
     };
-    placeRoot(rootCascade.style, room);
+    placeRoot(rootCascade.style, room, context.variables);
     cellCascade.settle();
     instances.settle();
     for (const layer of walkLayers(root)) {

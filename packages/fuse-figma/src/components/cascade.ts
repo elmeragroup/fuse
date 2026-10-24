@@ -53,6 +53,8 @@ const NO_FIGMA_FORM = new Map([
   ["user-select", "a static frame has no selection"],
   ["-webkit-user-select", "a static frame has no selection"],
   ["pointer-events", "a static frame has no pointer"],
+  // `scroll-my-1` keeps a Select group 4px from the popup's edge when it scrolls into view.
+  ["scroll-margin-block", "a static frame does not scroll, so nothing scrolls the box into view"],
   ["transition-property", "Figma components do not animate"],
   ["transition-timing-function", "Figma components do not animate"],
   ["transition-duration", "Figma components do not animate"],
@@ -135,7 +137,9 @@ export type SpecField =
   | keyof TextLayerSpec
   | keyof IconLayerSpec
   | "layers"
-  | "instance";
+  | "instance"
+  /** The frame a composite draws around an instance part for its margins, which the composite owns. */
+  | "around";
 
 /**
  * An instance part's inner root built in place, as the cascade routes to it: the origin of the inner

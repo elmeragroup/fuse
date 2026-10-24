@@ -1041,25 +1041,59 @@ describe("a box's margin", () => {
   it.each([
     ["a negative margin", "flex", "size-[8px] -mt-1", "-mt-1", "margin-top"],
     ["a margin in a parent that is no flex box", "block", "size-[8px] mt-1", "mt-1", "margin-top"],
-    ["a margin beside a fill", "flex flex-col w-[100px]", "w-full h-[8px] mt-1", "mt-1", "margin-top"],
+    ["a margin beside a fill", "flex w-[100px]", "flex-1 h-[8px] ml-1", "ml-1", "margin-left"],
   ])("leaves %s on a part unmapped", async (_, parent, part, className, property) => {
     const { coverage } = await buildFixture(chip(parent, { parts: [dot(part)] }));
     expect(notesOf(coverage, className)).toEqual([[property, "unmapped", expect.any(String)]]);
   });
 
-  it("leaves the horizontal margins of a block that takes the preview width unmapped, and drops its vertical ones", async () => {
-    const { coverage } = await buildFixture(chip("block mx-[16px] my-[4px]", { previewWidth: 384 }));
-    // CSS draws the block 352px wide, 384px less the two 16px margins.
+  // Oracle: CSS 2.1 §10.3.3, under which a block with no width is its container's width less its
+  // margins across: 384px less two 16px margins is 352px, and 144px less two margins of minus
+  // `surface-pad-sm`, 4px in every mode, is 152px.
+  it("draws a block that takes the preview width at that width less its margins across, and drops its vertical ones", async () => {
+    const { variant, coverage } = await buildFixture(chip("block mx-[16px] my-[4px]", { previewWidth: 384 }));
+    expect(variant?.root.sizing.horizontal).toEqual(fixed(literal(352)));
     expect(notesOf(coverage, "mx-[16px]")).toEqual(
       ["margin-left", "margin-right"].map((property) => [
         property,
-        "unmapped",
-        "the root's width is its container's less this margin, which the build does not subtract",
+        "literal",
+        "the root's width is its container's less this margin, the same length in every mode",
       ])
     );
     expect(notesOf(coverage, "my-[4px]").map(([property, outcome]) => [property, outcome])).toEqual([
       ["margin-bottom", "dropped"],
       ["margin-top", "dropped"],
+    ]);
+  });
+
+  const padSm = (minimum: number, maximum: number) =>
+    makeVariableIndex([
+      {
+        ref: { collection: "Fuse density", name: "surface-pad-sm" },
+        webSyntax: "var(--surface-pad-sm)",
+        minimum,
+        maximum,
+      },
+    ]);
+
+  it("subtracts a margin that reads a variable holding one length in every mode", async () => {
+    const { variant } = await buildFixture(chip("block -mx-(--surface-pad-sm)", { previewWidth: 144 }), {
+      variables: padSm(4, 4),
+    });
+    expect(variant?.root.sizing.horizontal).toEqual(fixed(literal(152)));
+  });
+
+  it("leaves a margin unmapped that reads a variable whose length differs between modes", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("block -mx-(--surface-pad-sm)", { previewWidth: 144 }),
+      { variables: padSm(4, 6) }
+    );
+    expect(variant?.root.sizing.horizontal).toEqual(fixed(literal(144)));
+    expect(
+      notesOf(coverage, "-mx-(--surface-pad-sm)").map(([property, outcome]) => [property, outcome])
+    ).toEqual([
+      ["margin-left", "unmapped"],
+      ["margin-right", "unmapped"],
     ]);
   });
 

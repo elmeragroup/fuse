@@ -407,8 +407,9 @@ function fills(feed: FeedTarget, path: readonly string[], field: string): boolea
  * A row of a composite's declaration on the in-place layers, by what the instance does with the
  * fields the declaration's reads fill. A read that fills a field the instance draws another way than
  * the variant, where no instance field carries it, is unmapped with that difference. One that fills a
- * field an override or the instance's own sizing carries keeps its outcome, bound or literal. One whose
- * fields the variant draws the same repeats it and drops. A row that is no read keeps its outcome.
+ * field an override or the instance's own sizing carries keeps its outcome, bound or literal, and so
+ * does one the frame around the instance draws, as its margins. One whose fields the variant draws the
+ * same repeats it and drops. A row that is no read keeps its outcome.
  */
 function classified(row: Row, visit: Visit): Row {
   const [diff] = visit.diffs;
@@ -416,6 +417,9 @@ function classified(row: Row, visit: Visit): Row {
     return row;
   }
   const fed = visit.sink.feeds.get(declarationKey(row)) ?? [];
+  if (fed.some((feed) => feed.field === "around")) {
+    return row;
+  }
   const unmapped = diff.unmapped.find((difference) =>
     fed.some((feed) => fills(feed, difference.path, difference.field))
   );

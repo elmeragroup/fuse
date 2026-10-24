@@ -9,6 +9,7 @@
  */
 import type { CoverageNote, Feed, LayerStyle } from "./cascade";
 import {
+  affineLength,
   describeNumber,
   evaluateLength,
   evaluatePercentage,
@@ -94,20 +95,28 @@ const BLOCK_LEVEL = new Set(["block", "flex", "grid", "flow-root"]);
  * The room a variant root has. Its component set has no auto layout, so it fills nothing and an
  * unset length hugs, except where the definition names the width the root's container gives it: a
  * block-level root, such as a `flex` column, then takes that width, as a block box with no width
- * fills its container. With no preview width, an in-flow block-level root with no margins, padding
- * or border across takes `100%` as its unset width, which hugs. An in-flow root with no preview width
- * lays out in unbounded room, as {@link Room.unbounded} says, since nothing in its component set
- * gives it a width.
+ * fills its container less its margins across (CSS 2.1 §10.3.3), where each is the same length in
+ * every mode, as a menu separator's `-mx-(--surface-pad-sm)` widens it by 4px on each side at both
+ * densities. With no preview width, an in-flow block-level root with no margins, padding or border
+ * across takes `100%` as its unset width, which hugs. An in-flow root with no preview width lays out
+ * in unbounded room, as {@link Room.unbounded} says, since nothing in its component set gives it a
+ * width.
  *
  * @param previewWidth - The width the root's container gives it, which its percentage width takes,
  *   or undefined where the definition names none.
  * @param style - The root's style, whose `display` says whether the root is block-level and whose
  *   `position` whether it sits in its container's flow.
+ * @param variables - The synced variables a margin can read, with the values they hold in each mode.
  * @returns The root's room.
  */
-export function rootRoom(previewWidth: number | undefined, style: LayerStyle): Room {
+export function rootRoom(
+  previewWidth: number | undefined,
+  style: LayerStyle,
+  variables: VariableIndex
+): Room {
   const blockLevel = BLOCK_LEVEL.has(normalizeCss(style.raw("display") ?? ""));
   const fills = previewWidth !== undefined && blockLevel;
+  const margins = marginsAcross(style, variables) ?? 0;
   const inFlow = !outOfFlow(style);
   const percent = (): PercentBasis => {
     if (previewWidth !== undefined) {
@@ -119,7 +128,7 @@ export function rootRoom(previewWidth: number | undefined, style: LayerStyle): R
   return {
     horizontal: {
       percent: percent(),
-      auto: fills ? { kind: "fixed", length: { kind: "literal", value: previewWidth } } : HUG,
+      auto: fills ? { kind: "fixed", length: { kind: "literal", value: previewWidth - margins } } : HUG,
       siblings: [],
       length: undefined,
     },
@@ -127,6 +136,37 @@ export function rootRoom(previewWidth: number | undefined, style: LayerStyle): R
     widthCap: NO_CAP,
     unbounded: inFlow && previewWidth === undefined,
   };
+}
+
+/**
+ * A box's left and right margins together, in pixels, where each is the same length in every mode:
+ * a literal, or a sum of synced variables that each hold one value in every mode, as
+ * `surface-pad-sm` holds 4px at both densities. Undefined where a margin is no such length.
+ *
+ * @param style - The box's style.
+ * @param variables - The synced variables, with the values they hold in each mode.
+ * @returns The margins in pixels, or undefined.
+ */
+export function marginsAcross(style: LayerStyle, variables: VariableIndex): number | undefined {
+  const sides = ["margin-left", "margin-right"].map((property) => {
+    const length = affineLength(style.resolved(property) ?? "0px");
+    if (length === undefined) {
+      return undefined;
+    }
+    let pixels = length.constant;
+    for (const [name, coefficient] of length.coefficients) {
+      const ref = variables.lookup(`var(${name})`);
+      const least = ref === undefined ? undefined : variables.minimum(ref);
+      if (ref === undefined || least === undefined || variables.maximum(ref) !== least) {
+        return undefined;
+      }
+      pixels += coefficient * least;
+    }
+    return pixels;
+  });
+  return sides.every((side) => side !== undefined)
+    ? sides.reduce<number>((sum, side) => sum + side, 0)
+    : undefined;
 }
 
 /**

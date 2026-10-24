@@ -297,6 +297,31 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./select-trigger-cell.ts")).selectTrigger,
   },
   {
+    set: "menu-group-label",
+    entry: "dist/select.js",
+    module: { url: new URL("menu-cell.ts", import.meta.url), name: "menuGroupLabel" },
+  },
+  {
+    set: "menu-separator",
+    entry: "dist/select.js",
+    load: async () => (await import("./menu-cell.ts")).menuSeparator,
+  },
+  {
+    set: "select-item",
+    entry: "dist/select.js",
+    module: { url: new URL("select-cell.ts", import.meta.url), name: "selectItem" },
+  },
+  {
+    set: "select-popup",
+    entry: "dist/select.js",
+    module: { url: new URL("select-cell.ts", import.meta.url), name: "selectPopup" },
+  },
+  {
+    set: "select-open",
+    entry: "dist/select.js",
+    module: { url: new URL("select-cell.ts", import.meta.url), name: "selectOpen" },
+  },
+  {
     set: "empty",
     entry: "dist/empty.js",
     load: async () => (await import("./empty-cell.ts")).empty,

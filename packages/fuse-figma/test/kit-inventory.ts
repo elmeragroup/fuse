@@ -156,8 +156,20 @@ export const KIT_PAGES: readonly InventoryPage[] = [
   {
     slug: "select",
     name: "Select",
-    // 2 sizes in 4 states, holding the placeholder or a value, closed and open.
-    sets: [{ key: "select-trigger", name: "Select trigger", variants: 32, previewed: 32 }],
+    sets: [
+      // 2 sizes in 4 states, holding the placeholder or a value, closed and open.
+      { key: "select-trigger", name: "Select trigger", variants: 32, previewed: 32 },
+      // The plain caption every menu family shares.
+      { key: "menu-group-label", name: "Menu group label", variants: 1, previewed: 1 },
+      // The hairline between groups.
+      { key: "menu-separator", name: "Menu separator", variants: 1, previewed: 1 },
+      // Selected off and on, at rest, highlighted and disabled.
+      { key: "select-item", name: "Select item", variants: 6, previewed: 6 },
+      // The Basic demo's rows, and the Groups demo's groups.
+      { key: "select-popup", name: "Select popup", variants: 2, previewed: 2 },
+      // Below the trigger, at the default and the small size.
+      { key: "select-open", name: "Select (open)", variants: 2, previewed: 2 },
+    ],
   },
   // The default, outline and dashed outline frames.
   { slug: "empty", name: "Empty", sets: [{ key: "empty", name: "Empty", variants: 3, previewed: 3 }] },

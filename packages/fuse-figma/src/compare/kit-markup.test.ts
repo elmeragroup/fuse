@@ -66,7 +66,7 @@ import { checkMarkup, expectedLabel } from "../../test/markup-check";
 import { markupLabel } from "../../test/markup-tree";
 import {
   ATTRIBUTE_VARIANTS,
-  DESCENDANT_ATTRIBUTE_VARIANTS,
+  NAMED_ATTRIBUTE_VARIANTS,
   GROUP_VARIANTS,
   NOT_ATTRIBUTES,
   PARENT_VARIANTS,
@@ -91,9 +91,14 @@ import type { CellRendering } from "./cell-renderers";
 
 /**
  * The kit sets whose renderer mounts on the compare page, by key, written by hand so a new one is a
- * decision: none yet, until the menu sets land.
+ * decision.
  */
-const CHECKED_ON_THE_MOUNTED_PAGE: readonly string[] = [];
+const CHECKED_ON_THE_MOUNTED_PAGE: readonly string[] = [
+  "menu-group-label",
+  "select-item",
+  "select-popup",
+  "select-open",
+];
 
 describe("each kit definition against the markup of its component", () => {
   it.each(KIT.map(({ definition }) => [definition.name, definition] as const))(
@@ -111,7 +116,7 @@ describe("each kit definition against the markup of its component", () => {
       const listed = [
         NOT_ATTRIBUTES,
         ATTRIBUTE_VARIANTS,
-        DESCENDANT_ATTRIBUTE_VARIANTS,
+        NAMED_ATTRIBUTE_VARIANTS,
         GROUP_VARIANTS,
         PEER_VARIANTS,
         PARENT_VARIANTS,

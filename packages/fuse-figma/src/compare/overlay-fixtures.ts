@@ -93,6 +93,15 @@ const POPUP: PartDefinition = {
   parts: [HEADER],
 };
 
+/**
+ * What Base UI stamps on an open popup below its trigger, `data-open` and its side, which the popup's
+ * motion classes read.
+ */
+const OPEN_BELOW = new Map([
+  ["data-open", () => true],
+  ["data-[side=bottom]", () => true],
+]);
+
 const CONTENT = [{ name: "content", values: ["header"] }];
 const HIGHLIGHT = [{ name: "state", values: ["rest", "highlighted"] }];
 
@@ -105,6 +114,7 @@ export const OVERLAY_FIXTURES: readonly OverlayFixture[] = [
       slot: "popover-content",
       axes: CONTENT,
       parts: [HEADER],
+      facts: OPEN_BELOW,
     }),
     source: {
       set: "fixture-popover",
@@ -115,15 +125,14 @@ export const OVERLAY_FIXTURES: readonly OverlayFixture[] = [
   },
   {
     // The markup check reads an open composite's trigger and popup under one root that carries the
-    // composite's slot, as the Figma frame holds both. The popup's motion classes read the side Base
-    // UI places it on, below the trigger.
+    // composite's slot, as the Figma frame holds both.
     definition: definition({
       key: "fixture-popover-open",
       name: "Popover (open)",
       slot: "popover-open",
       axes: CONTENT,
       parts: [textPart("trigger", "popover-trigger", FIXTURE_TEXT.trigger), POPUP],
-      facts: new Map([["data-[side=bottom]", () => true]]),
+      facts: OPEN_BELOW,
     }),
     source: {
       set: "fixture-popover-open",

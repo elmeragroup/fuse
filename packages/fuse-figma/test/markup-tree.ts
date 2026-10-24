@@ -25,6 +25,12 @@ export function ancestorsOf(elements: readonly MarkupElement[], index: number): 
   return parent === undefined || element === undefined ? [] : [element, ...ancestorsOf(elements, parent)];
 }
 
+/** The indexes of an element's ancestors, nearest first. */
+export function ancestorIndexes(elements: readonly MarkupElement[], index: number): readonly number[] {
+  const parent = elements[index]?.parent;
+  return parent === undefined ? [] : [parent, ...ancestorIndexes(elements, parent)];
+}
+
 /** The siblings before an element, those of its parent's children that come first in the markup. */
 export function siblingsBefore(elements: readonly MarkupElement[], index: number): readonly MarkupElement[] {
   const parent = elements[index]?.parent;

@@ -35,6 +35,7 @@ import type {
 } from "./component-spec";
 import {
   describeNumber,
+  evaluateLength,
   evaluateNumber,
   isInfiniteLength,
   normalizeCss,
@@ -64,15 +65,14 @@ import {
   readWithoutLabel,
   spaceBeforeLabel,
 } from "./label-layout";
+import { adjoinsMargin, wrapFrameMargins, wrapInstanceMargins } from "./margin-box";
 import {
   dropIdleOrigin,
-  dropZeroMargins,
   endsInFlow,
   padToOffset,
   placeParts,
   readRotation,
   slotAroundDot,
-  wrapMargins,
 } from "./placement";
 import type { Layout } from "./placement";
 import { stacksFirstOnTop } from "./stacking";
@@ -238,7 +238,15 @@ export type MapScope = {
   readonly values: PropertyValues;
   /** What each instance layer the mapping places paints, which the stacking of the boxes above reads. */
   readonly painted: PaintedInstances;
+  /**
+   * Whether the box's parent clips what overflows it and pads nothing across, so a box that fills it
+   * across clips at its own sides too, as Select's list fills its clipping popup. Absent for a root.
+   */
+  readonly clipsAround?: true;
 };
+
+/** A box's paddings across, which a part that fills it spans inside. */
+const SIDE_PADDINGS = ["padding-left", "padding-right"] as const;
 
 /** The TEXT and INSTANCE_SWAP values a mapping applies, by property name. */
 export type PropertyValues = {
@@ -412,6 +420,9 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       ? last.cascade.style
       : undefined;
   readWraps(holder, growing);
+  const flush = SIDE_PADDINGS.every((property) => evaluateLength(reader.resolved(property) ?? "0px") === 0);
+  const { clipsAround: _parent, ...own } = scope;
+  const partScope: MapScope = clips && flush ? { ...own, clipsAround: true } : own;
   const mapped = shown.map((part): MappedPart => {
     const index = flowing.indexOf(part);
     const inFlow = (): Room => {
@@ -419,7 +430,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       return index === growing ? growingRoom(holder, index, inside) : inside;
     };
     const room = index === -1 ? absoluteRoom(holder) : lessMargins(inFlow(), part.cascade.style);
-    return mapPart(part, room, layout, scope);
+    const styles = flowing.map((each) => each.cascade.style);
+    return mapPart(part, room, layout, partScope, layout.blocks && adjoinsMargin(styles, index));
   });
   const parts = settledParts(reader, flow, mapped, scope);
   const missing = unstretched(
@@ -467,7 +479,12 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const height = fixedLength(sizing.vertical);
   // Separators that cancel a column's padding move the padding onto sections around the runs between them.
   const bleed = readBleed(
-    { style: reader, layout, clips, drawsOthers: after.length > 0 },
+    {
+      style: reader,
+      layout,
+      clips: clips || (scope.clipsAround === true && sizing.horizontal.kind === "fill"),
+      drawsOthers: after.length > 0,
+    },
     parts,
     context.variables
   );
@@ -610,15 +627,34 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
  * @param room - What the box gives the part on each axis.
  * @param layout - The box's layout, which a part's margins read.
  * @param scope - The cell, the build context, the parts that scale and the instance parts.
+ * @param collapses - Whether a vertical margin of the part adjoins another margin in a block box, as
+ *   {@link adjoinsMargin} says.
  * @returns The part as mapped.
  */
-function mapPart(part: ShownPart, room: Room, layout: Layout, scope: MapScope): MappedPart {
+function mapPart(
+  part: ShownPart,
+  room: Room,
+  layout: Layout,
+  scope: MapScope,
+  collapses: boolean
+): MappedPart {
   if (part.kind === "instance") {
-    // An instance has no margin box of its own, so only a zero margin maps.
-    dropZeroMargins(part.cascade.style);
-    const { layer, painted } = scope.instances.map(part, room);
+    const { layer: drawn, painted } = scope.instances.map(part, room);
+    const { layer, instance } = wrapInstanceMargins(
+      part.cascade.style,
+      drawn,
+      layout,
+      scope.context.variables,
+      collapses
+    );
     // The stacking reads what the instance draws, its inner root as built in place.
-    return { layer, stacked: painted, style: part.cascade.style, paints: painted.fill !== undefined };
+    const mapped: MappedPart = {
+      layer,
+      stacked: painted,
+      style: part.cascade.style,
+      paints: painted.fill !== undefined,
+    };
+    return instance === layer ? mapped : { ...mapped, wrapped: instance };
   }
   const own = mapBox(part.child, part.cascade, scope, room);
   // Figma draws a part's spread ring only over a visible fill with clipping on (PR2).
@@ -633,7 +669,7 @@ function mapPart(part: ShownPart, room: Room, layout: Layout, scope: MapScope): 
   const linked = optional === undefined ? drawn : { ...drawn, visibleProperty: optional.name };
   const rotation = readRotation(part.cascade.style);
   const turned = rotation === undefined ? linked : { ...linked, rotation };
-  const layer = wrapMargins(part.cascade.style, turned, layout, scope.context.variables);
+  const layer = wrapFrameMargins(part.cascade.style, turned, layout, scope.context.variables, collapses);
   return { layer, stacked: layer, style: part.cascade.style, paints: own.fill !== undefined };
 }
 
@@ -663,10 +699,13 @@ function settledParts(
     mapped.filter(({ style }) => !outOfFlow(style)).map(({ layer }) => layer),
     scope.context.variables
   );
-  return mapped.map(({ layer, style, stacked }) => {
+  return mapped.map(({ layer, style, stacked, wrapped }) => {
     const placed = stretchedLayer(layer, stretched);
     if (placed.kind === "instance") {
       painted.note(placed, stacked);
+    }
+    if (wrapped !== undefined) {
+      painted.note(wrapped, { ...stacked, key: wrapped.key, name: wrapped.name });
     }
     return { style, layer: placed };
   });
@@ -682,6 +721,11 @@ type MappedPart = {
   readonly stacked: FrameLayerSpec;
   readonly style: LayerStyle;
   readonly paints: boolean;
+  /**
+   * The instance inside the frame that draws an instance part's margins, as the margin box returned
+   * it, absent for any other part.
+   */
+  readonly wrapped?: InstanceLayerSpec;
 };
 
 /**
