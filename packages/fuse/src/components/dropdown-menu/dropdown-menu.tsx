@@ -11,13 +11,10 @@ import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import {
-  menuGroupLabelClass,
   menuItemIndicatorClass,
   menuItemIndicatorRoomClass,
-  menuItemInsetClass,
   menuSeparatorClass,
 } from "../overlay/menu-row-classes";
-import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 import { dropdownMenuVariants } from "./dropdown-menu-variants";
@@ -55,15 +52,14 @@ function DropdownMenuPopup({
   return (
     <OverlayPortal portal={DropdownMenuPortal} container={container}>
       <MenuPrimitive.Positioner
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- positioner is not a focus target
-        className={cn(overlayPositionerClass, "outline-none")}
+        className={dropdownMenuSlots.positioner()}
         align={align}
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}>
         <MenuPrimitive.Popup
           data-slot={dataSlot}
-          className={mergeClassName(className, overlayTimedPopupClass, popupClassName)}
+          className={mergeClassName(className, popupClassName)}
           {...props}
         />
       </MenuPrimitive.Positioner>
@@ -97,7 +93,7 @@ export type DropdownMenuContentProps = ComponentProps<typeof MenuPrimitive.Popup
 } & Omit<OverlayPositionerProps<ComponentProps<typeof MenuPrimitive.Positioner>>, "align"> &
   OverlayContainerProps;
 
-/** Popup chrome specific to the root menu; the surface and motion are shared. */
+/** The root menu's popup: the shared surface and motion with this menu's chrome. */
 const dropdownMenuContentClassName = dropdownMenuSlots.content();
 
 /**
@@ -140,7 +136,7 @@ export function DropdownMenuLabel({ className, inset, ...props }: DropdownMenuLa
     <MenuPrimitive.GroupLabel
       data-slot="dropdown-menu-label"
       data-inset={inset ? true : undefined}
-      className={mergeClassName(className, menuGroupLabelClass, menuItemInsetClass, "font-medium")}
+      className={mergeClassName(className, dropdownMenuSlots.label())}
       {...props}
     />
   );
@@ -299,10 +295,7 @@ export function DropdownMenuShortcut({ className, ...props }: ComponentProps<"sp
   return (
     <span
       data-slot="dropdown-menu-shortcut"
-      className={cn(
-        "text-xs tracking-widest ml-auto text-muted-foreground group-focus/dropdown-menu-item:text-accent-foreground",
-        className
-      )}
+      className={cn(dropdownMenuSlots.shortcut(), className)}
       {...props}
     />
   );
@@ -329,14 +322,10 @@ export function DropdownMenuSubTrigger({
     <MenuPrimitive.SubmenuTrigger
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset ? true : undefined}
-      className={mergeClassName(
-        className,
-        dropdownMenuItemClassName,
-        "data-popup-open:bg-accent data-popup-open:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground"
-      )}
+      className={mergeClassName(className, dropdownMenuSlots.subTrigger())}
       {...props}>
       {children}
-      <CaretRight className="ml-auto" />
+      <CaretRight className={dropdownMenuSlots.subTriggerCaret()} />
     </MenuPrimitive.SubmenuTrigger>
   );
 }
@@ -361,7 +350,7 @@ export type DropdownMenuSubContentProps = ComponentProps<typeof MenuPrimitive.Po
   sideOffset?: ComponentProps<typeof MenuPrimitive.Positioner>["sideOffset"];
 } & OverlayContainerProps;
 
-/** Popup chrome specific to a submenu; the surface and motion are shared. */
+/** A submenu's popup: the shared surface and motion with the submenu's chrome. */
 const dropdownMenuSubContentClassName = dropdownMenuSlots.subContent();
 
 /**

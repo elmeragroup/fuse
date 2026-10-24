@@ -5,12 +5,14 @@ import type { ComponentProps, ReactElement } from "react";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
 import { cn } from "../../styles/cn";
-import { popoverShellClass } from "../../styles/inner-corner/popover";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
-import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
+import { overlayPositionerClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
+import { popoverVariants } from "./popover-variants";
+
+const popoverSlots = popoverVariants();
 
 export function PopoverRoot(props: ComponentProps<typeof PopoverPrimitive.Root>): ReactElement {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
@@ -71,13 +73,7 @@ export function PopoverContent({
         className={overlayPositionerClass}>
         <PopoverPrimitive.Popup
           data-slot="popover-content"
-          className={mergeClassName(
-            className,
-            selfFocusRingClass,
-            overlayTimedPopupClass,
-            popoverShellClass,
-            "text-sm flex w-72 flex-col gap-4"
-          )}
+          className={mergeClassName(className, popoverSlots.content())}
           {...props}>
           {children}
           {showArrow ? (
@@ -90,9 +86,7 @@ export function PopoverContent({
 }
 
 export function PopoverHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
-  return (
-    <div data-slot="popover-header" className={cn("text-sm flex flex-col gap-1", className)} {...props} />
-  );
+  return <div data-slot="popover-header" className={cn(popoverSlots.header(), className)} {...props} />;
 }
 
 export function PopoverTitle({
@@ -102,7 +96,7 @@ export function PopoverTitle({
   return (
     <PopoverPrimitive.Title
       data-slot="popover-title"
-      className={mergeClassName(className, "font-medium text-balance")}
+      className={mergeClassName(className, popoverSlots.title())}
       {...props}
     />
   );
@@ -115,7 +109,7 @@ export function PopoverDescription({
   return (
     <PopoverPrimitive.Description
       data-slot="popover-description"
-      className={mergeClassName(className, "text-pretty text-muted-foreground")}
+      className={mergeClassName(className, popoverSlots.description())}
       {...props}
     />
   );

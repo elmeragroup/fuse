@@ -1,9 +1,18 @@
 import { cn } from "../../styles/cn";
 import { controlLabel } from "../../styles/control-size";
 import { fieldBoxChromeClass } from "../../styles/field-box";
+import { selectGroupShellClass, selectPopupShellClass } from "../../styles/inner-corner/select";
 import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
+import {
+  menuGroupLabelClass,
+  menuItemClass,
+  menuItemIndicatorClass,
+  menuItemIndicatorRoomClass,
+  menuSeparatorClass,
+} from "../overlay/menu-row-classes";
+import { overlayTimedPopupClass } from "../overlay/overlay-classes";
 
 /**
  * The module-private recipe for `Select.Trigger` and the value and caret it holds. It is not
@@ -46,5 +55,41 @@ export const selectTriggerVariants = tv({
   ],
   defaultVariants: {
     size: "default",
+  },
+});
+
+/**
+ * The module-private recipe for the parts of the open Select. It is not exported from
+ * `@elmeragroup/fuse/select`, and the workspace-only recipe catalog re-exports it for the Figma
+ * component sync. The scroll arrows keep their classes in `select.tsx`.
+ *
+ * - `content` is the shared timed popup on the Select shell, which pads nothing. It is as wide as
+ *   the trigger and at least 144px, scrolls within the available height, and skips its entrance
+ *   animation while it aligns the selected item with the trigger.
+ * - `item` is the shared menu row with room for the trailing check, highlighted on `focus:`, which
+ *   recolours its descendants. Its last span child, the indicator, lays out its glyph.
+ * - `itemText` fills the row on one line.
+ * - `itemIndicator` is the shared trailing check slot at 16px.
+ * - `group` is the Select group shell, which pads its rows, and keeps a 4px scroll margin.
+ * - `label` is the shared group label.
+ * - `separator` is the shared hairline, which ignores the pointer.
+ */
+export const selectContentVariants = tv({
+  slots: {
+    content: [
+      overlayTimedPopupClass,
+      selectPopupShellClass,
+      "relative max-h-(--available-height) w-(--anchor-width) min-w-36 overflow-x-hidden overflow-y-auto data-[align-trigger=true]:animate-none",
+    ],
+    item: [
+      menuItemClass,
+      menuItemIndicatorRoomClass,
+      "w-full focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+    ],
+    itemText: "flex flex-1 shrink-0 gap-2 whitespace-nowrap",
+    itemIndicator: [menuItemIndicatorClass, "size-4"],
+    group: [selectGroupShellClass, "scroll-my-1"],
+    label: menuGroupLabelClass,
+    separator: [menuSeparatorClass, "pointer-events-none"],
   },
 });

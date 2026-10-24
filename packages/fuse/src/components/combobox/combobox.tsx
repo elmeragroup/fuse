@@ -19,13 +19,7 @@ import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { controlMd } from "../../styles/control-size-md";
 import { fieldBoxShellClass } from "../../styles/inner-corner/field";
-import {
-  chipRemoveShellClass,
-  chipShellClass,
-  chipsShellClass,
-  listboxListShellClass,
-  listboxPopupShellClass,
-} from "../../styles/inner-corner/listbox";
+import { chipRemoveShellClass, chipShellClass, chipsShellClass } from "../../styles/inner-corner/listbox";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { withinStateFaceClass, withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
@@ -36,16 +30,10 @@ import {
   InputGroupPlainInput,
   InputGroupRoot,
 } from "../input-group/input-group";
-import {
-  menuGroupLabelClass,
-  menuItemClass,
-  menuItemIndicatorClass,
-  menuItemIndicatorRoomClass,
-  menuSeparatorClass,
-} from "../overlay/menu-row-classes";
-import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
+import { overlayPositionerClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
+import { comboboxVariants } from "./combobox-variants";
 import {
   ChipIndexCommit,
   ChipIndexContext,
@@ -53,6 +41,8 @@ import {
   useChipIndex,
 } from "./hooks/use-chip-index";
 import { comboboxStrings } from "./intl";
+
+const comboboxSlots = comboboxVariants();
 
 type ComboboxItemLabelFn = (itemValue: ReactNode) => string;
 
@@ -99,7 +89,7 @@ export function ComboboxTrigger({
       className={mergeClassName(className, "[&_svg:not([class*='size-'])]:size-4")}
       {...definedProps(props)}>
       {children}
-      <CaretDown className="ease-in-out pointer-events-none size-4 text-muted-foreground transition-transform duration-200 in-data-popup-open:rotate-180" />
+      <CaretDown className={comboboxSlots.caret()} />
     </ComboboxPrimitive.Trigger>
   );
 }
@@ -250,16 +240,7 @@ export function ComboboxContent({
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
           data-external-anchor={anchor ? "true" : "false"}
-          className={mergeClassName(
-            className,
-            overlayTimedPopupClass,
-            listboxPopupShellClass,
-            // The popup pads nothing on the inline axis, so the List's own padding is the one
-            // inset its `--inner-corner` assumes. A search group the popup directly owns takes
-            // its own 4px inline margin and a width that fits inside it, which overrides the
-            // group's `w-full` (the phone field's), and the popup pads only above it.
-            "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] overflow-hidden has-[>[data-slot=input-group]]:pt-1.5 data-[external-anchor=true]:min-w-(--anchor-width) *:data-[slot=input-group]:mx-1 *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:w-[calc(100%---spacing(2))] *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none"
-          )}
+          className={mergeClassName(className, comboboxSlots.content())}
           {...props}
         />
       </ComboboxPrimitive.Positioner>
@@ -279,11 +260,7 @@ export function ComboboxList({
   return (
     <ComboboxPrimitive.List
       data-slot="combobox-list"
-      className={mergeClassName(
-        className,
-        listboxListShellClass,
-        "no-scrollbar max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto overscroll-contain"
-      )}
+      className={mergeClassName(className, comboboxSlots.list())}
       {...props}
     />
   );
@@ -297,15 +274,10 @@ export function ComboboxItem({
   return (
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
-      className={mergeClassName(
-        className,
-        menuItemClass,
-        menuItemIndicatorRoomClass,
-        "w-full data-highlighted:bg-accent data-highlighted:text-accent-foreground data-highlighted:**:text-accent-foreground"
-      )}
+      className={mergeClassName(className, comboboxSlots.item())}
       {...props}>
       {children}
-      <ComboboxPrimitive.ItemIndicator render={<span className={cn(menuItemIndicatorClass, "size-4")} />}>
+      <ComboboxPrimitive.ItemIndicator render={<span className={comboboxSlots.itemIndicator()} />}>
         <Check className="pointer-events-none" />
       </ComboboxPrimitive.ItemIndicator>
     </ComboboxPrimitive.Item>
@@ -328,7 +300,7 @@ export function ComboboxLabel({
   return (
     <ComboboxPrimitive.GroupLabel
       data-slot="combobox-label"
-      className={mergeClassName(className, menuGroupLabelClass)}
+      className={mergeClassName(className, comboboxSlots.label())}
       {...props}
     />
   );
@@ -349,11 +321,7 @@ export function ComboboxEmpty({
   return (
     <ComboboxPrimitive.Empty
       data-slot="combobox-empty"
-      className={mergeClassName(
-        className,
-        // The empty state is a row: the row inset pads it, and its text stays fixed.
-        "text-sm hidden w-full justify-center px-(--row-px) py-(--row-py) text-center text-muted-foreground group-data-empty/combobox-content:flex"
-      )}
+      className={mergeClassName(className, comboboxSlots.empty())}
       {...props}>
       {children ?? strings.format("empty")}
     </ComboboxPrimitive.Empty>
@@ -367,7 +335,7 @@ export function ComboboxSeparator({
   return (
     <ComboboxPrimitive.Separator
       data-slot="combobox-separator"
-      className={mergeClassName(className, menuSeparatorClass)}
+      className={mergeClassName(className, comboboxSlots.separator())}
       {...props}
     />
   );

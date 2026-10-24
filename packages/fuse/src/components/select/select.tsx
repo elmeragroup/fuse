@@ -8,20 +8,13 @@ import type { SelectRoot as SelectRootType } from "@base-ui/react/select";
 import { CaretDown } from "../../icons/generated/caret-down";
 import { CaretUp } from "../../icons/generated/caret-up";
 import { Check } from "../../icons/generated/check";
-import { cn } from "../../styles/cn";
-import { selectGroupShellClass, selectPopupShellClass } from "../../styles/inner-corner/select";
 import { mergeClassName } from "../../styles/merge-class-name";
-import {
-  menuGroupLabelClass,
-  menuItemClass,
-  menuItemIndicatorClass,
-  menuItemIndicatorRoomClass,
-  menuSeparatorClass,
-} from "../overlay/menu-row-classes";
-import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
+import { overlayPositionerClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
-import { selectTriggerVariants } from "./select-variants";
+import { selectContentVariants, selectTriggerVariants } from "./select-variants";
+
+const selectContentSlots = selectContentVariants();
 
 export function SelectRoot<Value = unknown, Multiple extends boolean | undefined = false>(
   props: SelectRootType.Props<Value, Multiple>
@@ -108,12 +101,7 @@ export function SelectContent({
         <SelectPrimitive.Popup
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger ? "true" : "false"}
-          className={mergeClassName(
-            className,
-            overlayTimedPopupClass,
-            selectPopupShellClass,
-            "relative max-h-(--available-height) w-(--anchor-width) min-w-36 overflow-x-hidden overflow-y-auto data-[align-trigger=true]:animate-none"
-          )}
+          className={mergeClassName(className, selectContentSlots.content())}
           {...props}>
           <SelectScrollUpButton />
           <SelectPrimitive.List>{children}</SelectPrimitive.List>
@@ -132,17 +120,12 @@ export function SelectItem({
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
-      className={mergeClassName(
-        className,
-        menuItemClass,
-        menuItemIndicatorRoomClass,
-        "w-full focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
-      )}
+      className={mergeClassName(className, selectContentSlots.item())}
       {...props}>
-      <SelectPrimitive.ItemText className="flex flex-1 shrink-0 gap-2 whitespace-nowrap">
+      <SelectPrimitive.ItemText className={selectContentSlots.itemText()}>
         {children}
       </SelectPrimitive.ItemText>
-      <SelectPrimitive.ItemIndicator render={<span className={cn(menuItemIndicatorClass, "size-4")} />}>
+      <SelectPrimitive.ItemIndicator render={<span className={selectContentSlots.itemIndicator()} />}>
         <Check className="pointer-events-none" />
       </SelectPrimitive.ItemIndicator>
     </SelectPrimitive.Item>
@@ -161,7 +144,7 @@ export function SelectGroup({
   return (
     <SelectPrimitive.Group
       data-slot="select-group"
-      className={mergeClassName(className, selectGroupShellClass, "scroll-my-1")}
+      className={mergeClassName(className, selectContentSlots.group())}
       {...props}
     />
   );
@@ -174,7 +157,7 @@ export function SelectLabel({
   return (
     <SelectPrimitive.GroupLabel
       data-slot="select-label"
-      className={mergeClassName(className, menuGroupLabelClass)}
+      className={mergeClassName(className, selectContentSlots.label())}
       {...props}
     />
   );
@@ -187,7 +170,7 @@ export function SelectSeparator({
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"
-      className={mergeClassName(className, menuSeparatorClass, "pointer-events-none")}
+      className={mergeClassName(className, selectContentSlots.separator())}
       {...props}
     />
   );

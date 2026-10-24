@@ -13,7 +13,10 @@
  * and icon from the table the component reads. Item's title face comes along with its part
  * recipes, since `Item.Title` renders it as it is, and so does its unclamped description face,
  * which Alert's description renders with Alert's own type and colour. Sidebar's row recipes come
- * along without its panel's classes, which stay in `sidebar.tsx`.
+ * along without its panel's classes, which stay in `sidebar.tsx`. The menu families' recipes come
+ * along with the shared menu rows and popup faces they compose, so the sync can read a part whole
+ * or the face it shares with the other families. Command's list shell comes along from `styles/`,
+ * since `Command.List` adds it to the list recipe to pad its rows and publish their corner.
  */
 
 export { accordionVariants } from "./accordion/accordion-variants";
@@ -28,7 +31,10 @@ export { badgeVariants } from "./badge/badge-variants";
 export { breadcrumbVariants } from "./breadcrumb/breadcrumb-variants";
 export { buttonVariants } from "./button/button-variants";
 export { checkboxVariants } from "./checkbox/checkbox-variants";
+export { comboboxVariants } from "./combobox/combobox-variants";
+export { commandVariants } from "./command/command-variants";
 export { confirmButtonVariants } from "./confirm-button/confirm-button-variants";
+export { dropdownMenuVariants } from "./dropdown-menu/dropdown-menu-variants";
 export { emptyMediaVariants, emptyVariants } from "./empty/empty-variants";
 export { fieldVariants } from "./field/field-variants";
 export { inputClass } from "./input/input-class";
@@ -44,9 +50,23 @@ export { METER_CONSTANTS } from "./meter/meter-constants";
 export { meterToneCell } from "./meter/meter-tone";
 export { meterVariants } from "./meter/meter-variants";
 export { navigationMenuVariants } from "./navigation-menu/navigation-menu-variants";
+export {
+  menuGroupLabelClass,
+  menuItemClass,
+  menuItemIndicatorClass,
+  menuItemIndicatorRoomClass,
+  menuItemInsetClass,
+  menuSeparatorClass,
+} from "./overlay/menu-row-classes";
+export {
+  overlayModalPopupClass,
+  overlayPopupSurfaceClass,
+  overlayTimedPopupClass,
+} from "./overlay/overlay-classes";
 export { paginationVariants } from "./pagination/pagination-variants";
+export { popoverVariants } from "./popover/popover-variants";
 export { radioIconButtonVariants, radioVariants } from "./radio-group/radio-group-variants";
-export { selectTriggerVariants } from "./select/select-variants";
+export { selectContentVariants, selectTriggerVariants } from "./select/select-variants";
 export { separatorClass } from "./separator/separator-class";
 export { sidebarGroupLabelClass, sidebarMenuBadgeClass } from "./sidebar/sidebar-class";
 export { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar/sidebar-variants";
@@ -56,6 +76,7 @@ export { textareaClass } from "./textarea/textarea-class";
 export { toggleVariants } from "./toggle/toggle-variants";
 export { cellVariants } from "../styles/calendar";
 export { cn } from "../styles/cn";
+export { commandListShellClass } from "../styles/inner-corner/command";
 export { linkVariants } from "../styles/link";
 export { racDisabledStateFaceClass } from "../styles/state-face";
 export { focusRing } from "../styles/utils";
