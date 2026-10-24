@@ -25,6 +25,52 @@ export type FixtureVariable = {
   readonly value: VariableValue;
 };
 
+/** The bytes of an image file, base64 encoded, and their SHA-1 in lowercase hex, as `shasum -a 1` gives it. */
+export type ImageFixture = {
+  readonly bytes: string;
+  readonly sha1: string;
+};
+
+/** A complete 1 × 1 red PNG, which pngjs wrote, for an image fill. */
+export const RED_PIXEL: ImageFixture = {
+  bytes: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWP4z8DwHwAFAAH/e+m+7wAAAABJRU5ErkJggg==",
+  sha1: "176f91bcf3f65721b854f6e0f977230134860d15",
+};
+
+/** A complete 1 × 1 blue PNG, for an image fill whose bytes differ from the red one's. */
+export const BLUE_PIXEL: ImageFixture = {
+  bytes: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWNgYPj/HwADAgH/FAeIXAAAAABJRU5ErkJggg==",
+  sha1: "4032015acdb969242695aef672b1c2c9f29b7b55",
+};
+
+/**
+ * The first 100 bytes of Avatar's 96 × 96 portrait: the signature, the IHDR chunk and part of the
+ * image data. A real file stored them on 2026-10-22 (P9b).
+ */
+export const PORTRAIT_HEAD: ImageFixture = {
+  bytes:
+    "iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAAFjElEQVR4nOycW0xcRRiA5+yesxcWllJ2VcAubbgUS6GVWjXaWipqNJpYo30waNOYGJ980Rjjm8YXfWh86YtPEg==",
+  sha1: "f795b54d5a30ea3c271e50c06bec58093d8fc3ee",
+};
+
+/** A PNG's 8-byte signature alone, which a real file refused as `Image type is unsupported` (P9b). */
+export const PNG_SIGNATURE: ImageFixture = {
+  bytes: "iVBORw0KGgo=",
+  sha1: "4caece539b039b16e16206ea2478f8c5ffb2ca05",
+};
+
+/** The start of a JPEG file: its SOI and JFIF APP0 markers. */
+export const JPEG_HEAD: ImageFixture = {
+  bytes: "/9j/4AAQSkZJRgABAQAAAQABAAA=",
+  sha1: "152630b75949650726d58c1645884d7976c361ed",
+};
+
+/** {@link RED_PIXEL} with its IHDR width set to 4097, one past the 4096px Figma's reference allows. */
+export const PNG_4097_WIDE: ImageFixture = {
+  bytes: "iVBORw0KGgoAAAANSUhEUgAAEAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWP4z8DwHwAFAAH/e+m+7wAAAABJRU5ErkJggg==",
+  sha1: "548243127dc3e5e2493b4b6069c3ff52a72d79f0",
+};
+
 /** A FLOAT variable. */
 export function float(collection: string, name: string, value: number): FixtureVariable {
   return { collection, name, type: "FLOAT", value: { _tag: "Float", value } };

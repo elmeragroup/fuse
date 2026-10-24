@@ -10,40 +10,21 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
-import type { MarkupElement } from "../../test/static-markup";
+import { rootOf, stateAttributes } from "../../test/static-markup";
+import type { MarkupNode } from "../../test/static-markup";
 import type { Cell } from "../components/component-spec";
 import { renderCellHtml } from "./cell-renderers";
 import { switchCell } from "./switch-cell";
 
 /** The switch's track the cell renders, wherever it sits, and the thumb inside it. */
 function track(cell: Cell) {
-  const elements = elementsOf(renderCellHtml(switchCell, cell));
-  const index = elements.findIndex((element) => element.attributes.get("data-slot") === "switch");
-  const element = elements[index];
-  if (element?.name !== "span" || element.attributes.get("role") !== "switch") {
-    throw new Error(`no switch span in the ${JSON.stringify(cell)} cell`);
-  }
-  const inside = elements.filter((child) => child.parent === index);
-  return { element, inside };
+  const element = rootOf(renderCellHtml(switchCell, cell), { slot: "switch", name: "span", role: "switch" });
+  return { element, inside: element.children };
 }
 
 /** Each element inside the track: its name, its `data-slot` and its state attributes. */
-function children(inside: readonly MarkupElement[]) {
+function children(inside: readonly MarkupNode[]) {
   return inside.map((child) => [child.name, child.attributes.get("data-slot"), stateAttributes(child)]);
-}
-
-/** The state attributes an element carries, among the ones the cells vary. */
-function stateAttributes(element: MarkupElement | undefined): readonly string[] {
-  return [
-    "data-checked",
-    "data-unchecked",
-    "aria-disabled",
-    "data-disabled",
-    "disabled",
-    "aria-invalid",
-    "data-invalid",
-  ].filter((name) => element?.attributes.has(name) === true);
 }
 
 const REST: Cell = { size: "default", checked: "off", state: "rest" };

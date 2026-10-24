@@ -8,7 +8,17 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { builtKit, density, literal, paint, token, variantRoot } from "../../test/built-kit";
+import {
+  builtKit,
+  density,
+  HUG,
+  HUGGING_LABEL,
+  literal,
+  paint,
+  token,
+  UNLIMITED,
+  variantRoot,
+} from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
 
 let spec: BuiltSets["spec"];
@@ -20,6 +30,10 @@ beforeAll(async () => {
 /** A label at `opacity`, hugging its text. */
 const label = (opacity: number) => ({
   name: "field-label",
+  direction: "HORIZONTAL",
+  sizing: { horizontal: HUG, vertical: HUG },
+  limits: UNLIMITED,
+  clips: true,
   paddingTop: literal(0),
   paddingRight: literal(0),
   paddingBottom: literal(0),
@@ -42,6 +56,7 @@ const label = (opacity: number) => ({
       fontSize: density("label-text"),
       lineHeight: density("label-leading"),
       color: paint("foreground"),
+      ...HUGGING_LABEL,
     },
   ],
 });

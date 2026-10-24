@@ -5,17 +5,19 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { NO_LIMITS } from "../components/kit-spec";
 import type { ComponentRootSpec, VariantSpec } from "../components/kit-spec";
-import { unchangedByDesign } from "./unchanged-by-design";
+import { tokenColorsIn, unchangedByDesign } from "./unchanged-by-design";
 
 const muted = { kind: "variable", variable: { collection: "Fuse tokens", name: "muted" } } as const;
 const zero = { kind: "literal", value: 0 } as const;
 
 const ROOT: ComponentRootSpec = {
   name: "chip",
-  width: undefined,
-  height: undefined,
-  minWidth: undefined,
+  direction: "HORIZONTAL",
+  sizing: { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
+  limits: NO_LIMITS,
+  clips: true,
   paddingTop: zero,
   paddingRight: zero,
   paddingBottom: zero,
@@ -57,6 +59,106 @@ describe("unchangedByDesign", () => {
         variant("focus", { ...ROOT, shadows: [ring] }),
       ],
     };
-    expect(unchangedByDesign([set])).toEqual(new Set(["chip/state=hover,pressed=on"]));
+    expect(unchangedByDesign([set], () => undefined)).toEqual(new Set(["chip/state=hover,pressed=on"]));
   });
+
+  // A hovered Sidebar menu badge paints `sidebar-accent-foreground` where it paints
+  // `sidebar-foreground` at rest. Where the preview's theme gives both one color, the hover face is
+  // the rest face; where it gives them two, or does not resolve them, it is not.
+  it("holds a forced cell whose token colors resolve to its resting twin's in the theme", () => {
+    const token = (name: string) =>
+      ({ kind: "variable", variable: { collection: "Fuse tokens", name } }) as const;
+    const text = (name: string) => ({
+      ...ROOT,
+      fill: undefined,
+      shadows: [],
+      stroke: { color: token(name), weight: zero },
+    });
+    const set = {
+      key: "chip",
+      axes: [
+        { name: "state", values: ["rest", "hover"] },
+        { name: "pressed", values: ["on"] },
+      ],
+      variants: [
+        variant("rest", text("sidebar-foreground")),
+        variant("hover", text("sidebar-accent-foreground")),
+      ],
+    };
+    const black = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
+    const white = { kind: "literal", color: { r: 1, g: 1, b: 1, a: 1 } } as const;
+    const alike = (name: string) => (name.startsWith("sidebar") ? black : undefined);
+    const apart = (name: string) => (name === "sidebar-foreground" ? black : white);
+    expect([
+      unchangedByDesign([set], alike),
+      unchangedByDesign([set], apart),
+      unchangedByDesign([set], () => undefined),
+    ]).toEqual([new Set(["chip/state=hover,pressed=on"]), new Set(), new Set()]);
+  });
+
+  // An instance layer's overrides are the composite's own paints, so they resolve in the theme as a
+  // frame's do: a nested fill and ring overridden with tokens the theme gives one color draw alike.
+  it("holds a forced cell whose instance overrides resolve to its resting twin's in the theme", () => {
+    const token = (name: string) =>
+      ({ kind: "variable", variable: { collection: "Fuse tokens", name } }) as const;
+    const action = (fill: string, ring: string): ComponentRootSpec => ({
+      ...ROOT,
+      children: [
+        {
+          kind: "instance",
+          key: "chip/action",
+          name: "button",
+          componentSet: "button",
+          variant: "button/size=sm",
+          overrides: [
+            { path: [], field: "fill", color: token(fill) },
+            {
+              path: [],
+              field: "effects",
+              shadows: [{ color: token(ring), offsetX: 0, offsetY: 0, radius: zero, spread: zero }],
+            },
+          ],
+          sizing: { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
+        },
+      ],
+    });
+    const set = {
+      key: "chip",
+      axes: [
+        { name: "state", values: ["rest", "hover"] },
+        { name: "pressed", values: ["on"] },
+      ],
+      variants: [variant("rest", action("accent", "ring")), variant("hover", action("muted", "border"))],
+    };
+    const black = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
+    const white = { kind: "literal", color: { r: 1, g: 1, b: 1, a: 1 } } as const;
+    expect([
+      unchangedByDesign([set], () => black),
+      unchangedByDesign([set], (name) => (name === "muted" ? white : black)),
+    ]).toEqual([new Set(["chip/state=hover,pressed=on"]), new Set()]);
+  });
+});
+
+// Unit under test: `tokenColorsIn`, the theme a preview stamps resolved for each token. Oracle:
+// `defaults.ts`, which gives `sidebar-foreground` and `sidebar-accent-foreground` both
+// `NEUTRAL_950` and `sidebar-accent` `NEUTRAL_LINE`, and `internal-dark-palette.ts`, which gives the
+// first two `oklch(0.985 0 0)` in the internal dark theme.
+describe("tokenColorsIn", () => {
+  it.each(["light", "dark"] as const)(
+    "resolves the internal Fjordkraft private %s theme's sidebar text tokens to one color, and the accent fill to another",
+    (scheme) => {
+      const colorOf = tokenColorsIn({
+        scheme,
+        variant: "internal",
+        brand: "fkas",
+        segment: "private",
+        density: "dense",
+      });
+      const text = colorOf("sidebar-foreground");
+      expect(text).toMatchObject({ kind: "literal" });
+      expect(colorOf("sidebar-accent-foreground")).toEqual(text);
+      expect(colorOf("sidebar-accent")).not.toEqual(text);
+      expect(colorOf("radius-md")).toBeUndefined();
+    }
+  );
 });

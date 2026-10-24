@@ -4,8 +4,10 @@
  * Tailwind's own variables are substituted, or it stays unmapped.
  */
 import * as CssColor from "@elmeragroup/color/css-color";
+import * as Srgb from "@elmeragroup/color/srgb";
 
-import type { ColorSpec, NumberSpec, ShadowSpec, VariableRef } from "./kit-spec";
+import type { CoverageRow } from "./coverage";
+import type { ColorSpec, NumberSpec, ShadowSpec, SizeSpec, VariableRef } from "./kit-spec";
 
 /** The root font size the catalog assumes when it turns `rem` into pixels. */
 const ROOT_FONT_SIZE_PX = 16;
@@ -18,6 +20,8 @@ export type VariableIndex = {
   readonly lookup: (value: string) => VariableRef | undefined;
   /** The smallest value a FLOAT variable holds in any mode, or undefined when unknown. */
   readonly minimum: (ref: VariableRef) => number | undefined;
+  /** The largest value a FLOAT variable holds in any mode, or undefined when unknown. */
+  readonly maximum: (ref: VariableRef) => number | undefined;
   /** Whether a custom property is a synced variable, which substitution must keep. */
   readonly owns: (customProperty: string) => boolean;
 };
@@ -26,7 +30,7 @@ export type VariableIndex = {
  * Index synced variables by their web code syntax.
  *
  * @param variables - Each synced variable with the code syntax the sync writes for it, and the
- *   smallest value it holds in any mode when it is a FLOAT variable.
+ *   smallest and largest values it holds in any mode when it is a FLOAT variable.
  * @returns The index.
  */
 export function makeVariableIndex(
@@ -34,6 +38,7 @@ export function makeVariableIndex(
     readonly ref: VariableRef;
     readonly webSyntax: string;
     readonly minimum?: number | undefined;
+    readonly maximum?: number | undefined;
   }[]
 ): VariableIndex {
   const owned = new Set<string>();
@@ -56,15 +61,20 @@ export function makeVariableIndex(
     );
   const bySyntax = new Map<string, VariableRef>();
   const minimums = new Map<string, number>();
-  for (const { ref, webSyntax, minimum } of variables) {
+  const maximums = new Map<string, number>();
+  for (const { ref, webSyntax, minimum, maximum } of variables) {
     bySyntax.set(canonical(webSyntax), ref);
     if (minimum !== undefined) {
       minimums.set(refKey(ref), minimum);
+    }
+    if (maximum !== undefined) {
+      maximums.set(refKey(ref), maximum);
     }
   }
   return {
     lookup: (value) => bySyntax.get(canonical(value)),
     minimum: (ref) => minimums.get(refKey(ref)),
+    maximum: (ref) => maximums.get(refKey(ref)),
     owns: (customProperty) => owned.has(customProperty),
   };
 }
@@ -104,11 +114,22 @@ function singleVar(value: string): VarCall | undefined {
 }
 
 /**
+ * What a custom property holds where a `var()` reads it. A declared value holds `var()`s of its own,
+ * which substitution resolves in turn where the reading element is. A computed value was resolved
+ * on the element that declared the property, as a child inherits it (CSS Custom Properties 1 §2),
+ * so substitution takes it as it is. A computed value is undefined where a `var()` with no value and
+ * no fallback left the property guaranteed-invalid (§3), and the reading `var()` takes its fallback.
+ */
+export type CustomValue =
+  | { readonly value: string; readonly computed: false }
+  | { readonly value: string | undefined; readonly computed: true };
+
+/**
  * Replace every `var()` the resolver knows, and keep the synced variables. A `var()` the
  * resolver does not know falls back to its fallback, as CSS does for an unset property.
  *
  * @param value - A CSS value.
- * @param resolve - The value of a custom property, or undefined when nothing sets it.
+ * @param resolve - What a custom property holds, or undefined when nothing sets it.
  * @param keep - Whether a custom property stays a `var()` reference.
  * @param read - Collects each custom property the substitution read.
  * @returns The value with known variables substituted, or undefined when a `var()` has no
@@ -116,7 +137,7 @@ function singleVar(value: string): VarCall | undefined {
  */
 export function substituteVars(
   value: string,
-  resolve: (customProperty: string) => string | undefined,
+  resolve: (customProperty: string) => CustomValue | undefined,
   keep: (customProperty: string) => boolean,
   read: Set<string>,
   depth = 0
@@ -144,10 +165,14 @@ export function substituteVars(
       continue;
     }
     const own = resolve(call.name);
-    const replacement = own ?? call.fallback;
     if (own !== undefined) {
       read.add(call.name);
     }
+    if (own?.computed === true && own.value !== undefined) {
+      result += own.value;
+      continue;
+    }
+    const replacement = own?.value ?? call.fallback;
     if (replacement === undefined) {
       return undefined;
     }
@@ -367,10 +392,93 @@ export function readNumber(value: string, index: VariableIndex): NumberSpec | un
 }
 
 /**
- * A length or number in pixels, or undefined for anything that depends on a percentage or is
- * infinite.
+ * What a number field read from CSS became, for the coverage table.
+ *
+ * @param spec - The number field, as {@link readNumber} read it.
+ * @returns Bound with the variable's collection and name, or literal with the pixels.
  */
-function evaluateLength(value: string): number | undefined {
+export function describeNumber(spec: NumberSpec): Pick<CoverageRow, "outcome" | "detail"> {
+  return spec.kind === "variable"
+    ? { outcome: "bound", detail: `${spec.variable.collection} / ${spec.variable.name}` }
+    : { outcome: "literal", detail: `${spec.value}px` };
+}
+
+/**
+ * What a box's `100%` stands for on one axis.
+ *
+ * - `parent`: the box sits in an auto layout whose length on the axis is definite, fixed or itself
+ *   filling a definite length, so `100%` fills that length.
+ * - `length`: a length in pixels, such as the preview width a variant root takes, or the parent an
+ *   absolute box takes as its containing block. `of` names it for the coverage table, such as
+ *   `the preview`, which the axis's length follows.
+ * - `hugging`: the box sits in a flex box or a box that stacks blocks whose length on the axis hugs
+ *   its content, so a percentage is cyclic, as CSS Sizing 3 calls it. Figma shrinks a layer that
+ *   fills a hugging frame, so it does not read. Where nothing bounds the width CSS gives the parent,
+ *   it is at least as wide as each layer it holds, so a `max-width` of `100%` or more never limits
+ *   the box.
+ * - `unset`: the box is an in-flow variant root alone in its component set with no preview width, so
+ *   its container gives it no width, and it is a block-level box with no margins, padding or border,
+ *   whose unset width and `100%` are the same width (CSS 2.1 §10.3.3). The kit draws that unset
+ *   width hugging, so `100%` hugs too. An absolute root's `100%` takes its containing block, while
+ *   its unset width shrinks to fit (§10.3.7), so it takes `none`.
+ * - `none`: no length the build knows, as for a root with no preview width of any other kind, or
+ *   an absolute box whose containing block lies above its parent.
+ */
+export type PercentBasis =
+  | { readonly kind: "parent" }
+  | { readonly kind: "length"; readonly value: number; readonly of: string }
+  | { readonly kind: "hugging" }
+  | { readonly kind: "unset" }
+  | { readonly kind: "none" };
+
+/**
+ * Read a `width` or `height` as the sizing of its axis. A length is fixed. `fit-content` is the size
+ * of what the box holds where its container has room to spare, which a kit frame's default content
+ * has, so it hugs, unless `readLength` in `box-sizing.ts` fills a text box's room. `max-content` is
+ * the size of what the box holds laid out on one line whatever room it has (CSS Sizing 3 §5.1), which
+ * a frame that hugs a hugging text draws, so it hugs. A percentage takes
+ * the basis: against a length in pixels any share is that share of it, against a parent's auto
+ * layout only the whole fills, since a fill takes no share, and where the whole is the box's unset
+ * width only the whole hugs, as that width does. Any other percentage stays unread, as
+ * {@link readNumber} leaves it.
+ *
+ * @param value - A compiled value with Tailwind's variables already substituted.
+ * @param index - The synced variables.
+ * @param basis - What `100%` stands for on the axis.
+ * @returns The sizing, or undefined for a value no sizing holds.
+ */
+export function readSize(value: string, index: VariableIndex, basis: PercentBasis): SizeSpec | undefined {
+  if (["fit-content", "max-content"].includes(normalizeCss(value))) {
+    return { kind: "hug" };
+  }
+  const length = readNumber(value, index);
+  if (length !== undefined) {
+    return { kind: "fixed", length };
+  }
+  const share = evaluatePercentage(value);
+  if (share === undefined) {
+    return undefined;
+  }
+  switch (basis.kind) {
+    case "parent":
+      return share === 1 ? { kind: "fill" } : undefined;
+    case "length":
+      return { kind: "fixed", length: { kind: "literal", value: share * basis.value } };
+    case "unset":
+      return share === 1 ? { kind: "hug" } : undefined;
+    case "hugging":
+    case "none":
+      return undefined;
+  }
+}
+
+/**
+ * Evaluate a length or number in pixels.
+ *
+ * @param value - A CSS value with no `var()` left in it.
+ * @returns The pixels, or undefined for anything that depends on a percentage or is infinite.
+ */
+export function evaluateLength(value: string): number | undefined {
   const evaluated = finiteQuantity(value);
   return evaluated === undefined || evaluated.unit === "%" || evaluated.unit === "mixed"
     ? undefined
@@ -405,10 +513,23 @@ function flooredVariable(value: string, index: VariableIndex): VariableRef | und
 }
 
 /**
+ * `color-mix()` toward `transparent`, as Tailwind compiles an opacity modifier such as
+ * `outline-black/10`: the space, the color and its share.
+ */
+const TOWARD_TRANSPARENT = /^color-mix\(in [a-z-]+, ?(.+) (\d+(?:\.\d+)?)%, ?transparent\)$/;
+
+/**
  * Read a color as a paint. A synced variable binds, including a role tint whose code syntax is
  * the `color-mix()` toward `transparent` that `bg-error/10` compiles to, and a color literal
- * becomes sRGB. A mix the sync has no tint for stays unmapped, because a Figma paint takes its
- * opacity from the variable it binds.
+ * becomes sRGB. A literal mixed toward `transparent` keeps its channels at that share of its alpha,
+ * since a mix interpolates premultiplied colors (CSS Color 5 §2.4), as `outline-black/10` paints
+ * black at 10%. A share outside 0% to 100% is no color in CSS's grammar, so it stays unmapped. A
+ * variable mix the sync has no tint for stays unmapped, because a Figma paint takes its opacity
+ * from the variable it binds.
+ *
+ * `@elmeragroup/color` parses the color and builds the mixed one. It has no `color-mix()` parser,
+ * no mix toward `transparent` in sRGB, and no shorthand hex, so this reader matches the mix's form,
+ * checks its share, scales the alpha, and spells a shorthand out.
  *
  * @param value - A compiled value with Tailwind's variables already substituted.
  * @param index - The synced variables.
@@ -423,12 +544,39 @@ export function readColor(value: string, index: VariableIndex): ColorSpec | unde
   if (normalized === "transparent") {
     return { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0 } };
   }
-  const parsed = CssColor.parse(normalized);
-  if (parsed._tag === "err") {
+  const mix = TOWARD_TRANSPARENT.exec(normalized);
+  const share = mix === null ? 1 : Number(mix[2]) / 100;
+  const srgb = parseLiteral(mix === null ? normalized : (mix[1] ?? ""));
+  if (srgb === undefined || share < 0 || share > 1) {
     return undefined;
   }
-  const srgb = CssColor.toSrgb(parsed.value);
-  return { kind: "literal", color: { r: srgb.r, g: srgb.g, b: srgb.b, a: srgb.alpha } };
+  const mixed = Srgb.make({ r: srgb.r, g: srgb.g, b: srgb.b, alpha: srgb.alpha * share });
+  return mixed._tag === "err"
+    ? undefined
+    : {
+        kind: "literal",
+        color: { r: mixed.value.r, g: mixed.value.g, b: mixed.value.b, a: mixed.value.alpha },
+      };
+}
+
+/**
+ * Parse a color literal through `@elmeragroup/color` as sRGB. Tailwind's theme writes black and
+ * white as the shorthand `#000` and `#fff`, which the shared parser refuses, so the reader spells a
+ * shorthand out to the six digits it takes.
+ *
+ * @returns The color, or undefined for a value that is no color literal the parser reads.
+ */
+function parseLiteral(value: string): Srgb.Srgb | undefined {
+  const shorthand = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(value);
+  const parsed = CssColor.parse(
+    shorthand === null
+      ? value
+      : `#${shorthand
+          .slice(1)
+          .map((digit) => digit.repeat(2))
+          .join("")}`
+  );
+  return parsed._tag === "err" ? undefined : CssColor.toSrgb(parsed.value);
 }
 
 /**

@@ -38,6 +38,12 @@ function classesFor(cell: Cell): string {
   return badgeVariants({ variant, size });
 }
 
+/**
+ * The label every cell shows, the default of the `Label` text property. The compare renderer
+ * renders the same text.
+ */
+export const BADGE_LABEL = "Badge";
+
 /** A Badge with a label, as `<Badge>Badge</Badge>`. */
 export const BADGE: ComponentDefinition = {
   key: "badge",
@@ -55,7 +61,7 @@ export const BADGE: ComponentDefinition = {
   // the root's own text, so no cell has that span, and the root's own `text-*` and the base's
   // `font-medium` set the same type.
   omittedStates: new Set(["[&>span]"]),
-  label: { key: "label", name: "label", characters: "Badge", textProperty: "Label", shownIn: () => true },
+  label: { key: "label", name: "label", characters: BADGE_LABEL, textProperty: "Label", shownIn: () => true },
   iconsFor: () => [],
   swapProperties: [],
 };

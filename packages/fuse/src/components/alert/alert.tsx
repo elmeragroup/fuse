@@ -36,18 +36,6 @@ type AlertActionProps =
       actionLabel?: never;
     };
 
-// An alert's text takes the label text, `--label-text`, so it follows document density as
-// SelectionItem's rows do: 14px dense and 16px comfortable. The title keeps Item.Title's
-// `font-medium` and `leading-snug`, written as the size's `/snug` modifier because tailwind-merge
-// drops a line height that comes before a font size. The body's size is the recipe's
-// `description` slot.
-const ALERT_TITLE_TYPE = cn("text-(length:--label-text)/snug");
-
-// Beside a description Item.Media is one title line tall and centres the glyph on it. Item sizes
-// that line for Item.Title's fixed `text-sm`; the alert title reads `--label-text`, so the media
-// line does too. It replaces Item.Media's own `item-described:` value of the same property.
-const ALERT_MEDIA_LINE = cn("item-described:[--item-media-line:calc(var(--label-text)*var(--leading-snug))]");
-
 const ALERT_ICONS = {
   default: Info,
   warning: Warning,
@@ -107,7 +95,7 @@ function AlertRoot({
   role = "alert",
   ...props
 }: AlertRootProps): ReactElement {
-  const { base, button } = alertVariants({ variant });
+  const { base, media, button } = alertVariants({ variant });
 
   return (
     <ItemRootElement
@@ -118,7 +106,7 @@ function AlertRoot({
       variant="outline"
       size="sm"
       className={cn(base(), className)}>
-      <ItemMedia variant="icon" className={ALERT_MEDIA_LINE}>
+      <ItemMedia variant="icon" className={media()}>
         <AlertIcon variant={variant} />
       </ItemMedia>
       <ItemContent>{children}</ItemContent>
@@ -147,12 +135,10 @@ function AlertIcon({ variant, className, ...props }: AlertIconProps): ReactEleme
  */
 function AlertTitle({ children, className, level = 3, ...props }: AlertTitleProps): ReactElement {
   const TitleTag = `h${level}` as const;
+  const { title } = alertVariants();
 
   return (
-    <TitleTag
-      data-slot="item-title"
-      className={cn(ITEM_TITLE_CLASSES, ALERT_TITLE_TYPE, className)}
-      {...props}>
+    <TitleTag data-slot="item-title" className={cn(ITEM_TITLE_CLASSES, title(), className)} {...props}>
       {children}
     </TitleTag>
   );

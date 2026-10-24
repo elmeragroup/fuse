@@ -14,6 +14,7 @@
  * every animation and transition, so a pending spinner stays at 0°.
  */
 
+import type { ComponentDefinition } from "../components/component-spec.ts";
 import type { ThemeStamps } from "./preview-theme.ts";
 
 /** The origin the browser loads the page and its assets from, served by request interception. */
@@ -43,8 +44,12 @@ export type PageLayout = {
   readonly top: number;
 };
 
-/** The layout `figma:compare` uses. */
-export const PAGE_LAYOUT: PageLayout = { padding: 8, slotWidth: 280, slotHeight: 96, columns: 6, top: 16 };
+/**
+ * The layout `figma:compare` uses. A slot holds the widest cell, Empty's 512px box, and the tallest
+ * markup, the 320px Calendar around a Calendar day, with the padding on every side, so a 3px ring
+ * around a cell stays inside its own crop and nothing a cell renders reaches the next slot.
+ */
+export const PAGE_LAYOUT: PageLayout = { padding: 8, slotWidth: 528, slotHeight: 336, columns: 6, top: 16 };
 
 /** A cell's place on the page: its id and its element's HTML. */
 export type PageCell = { readonly id: string; readonly html: string };
@@ -94,6 +99,89 @@ export function pageViewport(layout: PageLayout, count: number): PageSize {
  */
 export function cellSelector(id: string, measured: string): string {
   return `[data-compare-cell="${id}"] ${measured}`;
+}
+
+/**
+ * The elements whose text the font check reads: each cell's measured element and every element in
+ * it, the box the page crops and compares. Text a renderer draws around that box takes no part, as
+ * the month heading of the Calendar a day cell sits in, which takes the theme's heading font, Neo
+ * Sans in Fjordkraft's external themes, and which the comparison never shows.
+ *
+ * @param requests - The cells, by id and measured element.
+ * @returns A selector list from the document root, empty for no cells.
+ */
+export function fontSweepSelector(
+  requests: readonly { readonly id: string; readonly measured: string }[]
+): string {
+  return requests
+    .flatMap(({ id, measured }) => {
+      const root = cellSelector(id, measured);
+      return [root, `${root} *`];
+    })
+    .join(", ");
+}
+
+/**
+ * The selector of the element a definition's cells force hover and focus on: the part its
+ * `statePart` names inside the measured element, as an Accordion item's trigger, the sibling before
+ * the measured element its `statePeer` names, as a Sidebar menu badge's menu button, or the measured
+ * element itself.
+ *
+ * @param definition - The root's slot and element, and the part or sibling that takes the set's
+ *   states.
+ * @returns A selector for an element anywhere inside a cell's slot, as {@link cellSelector} takes it.
+ */
+export function forcedSelector(
+  definition: Pick<ComponentDefinition, "slot" | "element" | "statePart" | "statePeer">
+): string {
+  const measured = measuredSelector(definition);
+  if (definition.statePeer !== undefined) {
+    return `[data-slot="${definition.statePeer}"]:has(~ ${measured})`;
+  }
+  return definition.statePart === undefined ? measured : `${measured} [data-slot="${definition.statePart}"]`;
+}
+
+/**
+ * The selector of the element a definition's cells measure: the one whose `data-slot` is the
+ * definition's `slot`, or, for a root whose markup carries no `data-slot`, the one its `element`
+ * names by tag and attributes, such as `*[data-rac]`, each attribute by its presence or its value,
+ * and each of its `prefixes` by the start of its value.
+ *
+ * @param definition - The root's slot and, for a root without a `data-slot`, its element.
+ * @returns A selector for an element anywhere inside a cell's slot, as {@link cellSelector} takes it.
+ */
+export function measuredSelector(definition: Pick<ComponentDefinition, "slot" | "element">): string {
+  const { element } = definition;
+  if (element === undefined) {
+    return `[data-slot="${definition.slot}"]`;
+  }
+  const attributes = Object.entries(element.attributes).map(([name, value]) =>
+    value === true ? `[${name}]` : `[${name}=${cssString(value)}]`
+  );
+  const prefixes = Object.entries(element.prefixes ?? {}).map(
+    ([name, prefix]) => `[${name}^=${cssString(prefix)}]`
+  );
+  return `${element.tag}${[...attributes, ...prefixes].join("")}`;
+}
+
+/**
+ * A value as a quoted CSS string, as CSSOM's "serialize a string" writes it: NUL becomes U+FFFD, a
+ * control character from U+0001 to U+001F and U+007F becomes a backslash, its code point in hex and
+ * a space, and `"` and `\` take a backslash. A raw newline would end the string and void the
+ * selector.
+ */
+function cssString(value: string): string {
+  const escaped = Array.from(value, (character) => {
+    const code = character.codePointAt(0) ?? 0;
+    if (code === 0) {
+      return "�";
+    }
+    if (code <= 0x1f || code === 0x7f) {
+      return `\\${code.toString(16)} `;
+    }
+    return character === '"' || character === "\\" ? `\\${character}` : character;
+  });
+  return `"${escaped.join("")}"`;
 }
 
 /** The selector of the element that paints the theme's `background`. */

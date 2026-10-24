@@ -14,8 +14,16 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+import type { ElementSelector } from "../components/component-spec";
 import { compileHostUtilities } from "../components/utility-css";
-import { ASSET_PATHS, PAGE_LAYOUT, previewDocument } from "./preview-page";
+import {
+  ASSET_PATHS,
+  fontSweepSelector,
+  forcedSelector,
+  measuredSelector,
+  PAGE_LAYOUT,
+  previewDocument,
+} from "./preview-page";
 
 /** The layers the built `styles.css` names, in the order its `@layer` statements first name them. */
 function declaredLayers(): readonly string[] {
@@ -64,5 +72,93 @@ describe("the preview page's stylesheets", () => {
       String.raw`.data-horizontal\:w-64:where([data-orientation="horizontal"]){width:calc(0.25rem * 64);}`,
       "}",
     ]);
+  });
+});
+
+// Unit under test: `measuredSelector`, the element the page measures, forces and crops in a cell's
+// slot. Oracle: CSS attribute selectors (Selectors Level 4 §6), where `[name]` matches the attribute
+// with any value, `[name="value"]` that exact value and `[name^="value"]` a value that starts with
+// it, and CSSOM's "serialize a string" (§2.1),
+// which escapes `"` and `\` with a backslash and a control character as its code point in hex and a
+// space, since a raw newline ends a CSS string (CSS Syntax Level 3 §4.3.5).
+describe("the element a cell measures", () => {
+  it("is the one whose data-slot is the definition's slot", () => {
+    expect(measuredSelector({ slot: "button" })).toBe('[data-slot="button"]');
+  });
+
+  it("is the one a root without a data-slot names by its tag and attributes", () => {
+    const element: ElementSelector = {
+      tag: "a",
+      attributes: { "data-rac": true, "aria-label": String.raw`Say "hi" \ bye` },
+    };
+    expect(measuredSelector({ slot: "link", element })).toBe(
+      String.raw`a[data-rac][aria-label="Say \"hi\" \\ bye"]`
+    );
+  });
+
+  it("matches an attribute by the prefix of its value, as React Aria labels a day selected", () => {
+    const element: ElementSelector = {
+      tag: "div",
+      attributes: { "data-rac": true },
+      prefixes: { "aria-label": 'Tuesday, "July" 14' },
+    };
+    expect(measuredSelector({ slot: "calendar-cell", element })).toBe(
+      String.raw`div[data-rac][aria-label^="Tuesday, \"July\" 14"]`
+    );
+  });
+
+  it("escapes a newline, a tab and DEL in an attribute value as code points", () => {
+    const element: ElementSelector = {
+      tag: "div",
+      attributes: { "aria-label": "Thursday,\nOctober\t15\u007F" },
+    };
+    expect(measuredSelector({ slot: "calendar-cell", element })).toBe(
+      String.raw`div[aria-label="Thursday,\a October\9 15\7f "]`
+    );
+  });
+});
+
+// Unit under test: `forcedSelector`, the element the page forces hover and focus on in a cell's slot.
+// Oracle: the rule on `ComponentDefinition.statePart`, that a part which takes the set's states takes
+// the forced pseudo classes, and CSS's descendant combinator, which matches that part at any depth
+// inside the measured element. A root that takes its states takes them itself.
+describe("the element a cell forces its state on", () => {
+  it("is the measured element of a root that takes its states", () => {
+    expect(forcedSelector({ slot: "button" })).toBe('[data-slot="button"]');
+  });
+
+  it("is the part the definition's statePart names inside the measured element", () => {
+    expect(forcedSelector({ slot: "accordion-item", statePart: "accordion-trigger" })).toBe(
+      '[data-slot="accordion-item"] [data-slot="accordion-trigger"]'
+    );
+  });
+
+  // Selectors 4 §4.5 and §16.4: `:has(~ x)` matches an element that some later sibling `x` follows,
+  // which is the peer a `peer-*` variant of `x` reads.
+  it("is the sibling before the measured element that the definition's statePeer names", () => {
+    expect(forcedSelector({ slot: "sidebar-menu-badge", statePeer: "sidebar-menu-button" })).toBe(
+      '[data-slot="sidebar-menu-button"]:has(~ [data-slot="sidebar-menu-badge"])'
+    );
+  });
+});
+
+// Selectors 4 §16.1: `a b` matches a `b` at any depth below an `a`, so the list reaches each cell's
+// measured element, the box the page crops, and every element in it, and no element of the cell
+// around it, such as the month heading of the Calendar a day cell sits in, which takes the theme's
+// heading font.
+describe("the elements the font check reads", () => {
+  it("are each cell's measured element and everything in it", () => {
+    expect(
+      fontSweepSelector([
+        { id: "day", measured: "div[data-rac]" },
+        { id: "button", measured: '[data-slot="button"]' },
+      ])
+    ).toBe(
+      '[data-compare-cell="day"] div[data-rac], [data-compare-cell="day"] div[data-rac] *, [data-compare-cell="button"] [data-slot="button"], [data-compare-cell="button"] [data-slot="button"] *'
+    );
+  });
+
+  it("are none for no cells", () => {
+    expect(fontSweepSelector([])).toBe("");
   });
 });

@@ -6,13 +6,14 @@
 
 import type { NumberSpec, PreviewGroupSpec, PreviewSpec } from "../../src/components/kit-spec.ts";
 import type { PlannedSet } from "./component-set.ts";
-import { near, planNumber, planPaints, planScalar, planSizing } from "./fields.ts";
+import { near, planLayoutSizing, planNumber, planPaints, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
 import type { Siblings } from "./identity.ts";
 import type { PlannedPage } from "./pages.ts";
 import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
+import { settleInstances } from "./settle.ts";
 
 /** A frame that wraps its children in rows of a fixed width, with even gaps and padding. */
 export type WrapGrid = {
@@ -71,11 +72,14 @@ export function planWrapFrame(run: Run, frame: FrameNode, label: string, grid: W
   planScalar(run, label, "layoutWrap", frame.layoutWrap, "WRAP", () => {
     frame.layoutWrap = "WRAP";
   });
-  planSizing(
+  planLayoutSizing(
     run,
     frame,
     label,
-    (group) =>
+    { direction: "HORIZONTAL", sizing: { horizontal: "FIXED", vertical: "HUG" } },
+    // A preview sits on its page, and a group in a preview that lays it out in rows.
+    "read",
+    (group, lengths) =>
       planNumber(
         group,
         frame,
@@ -86,9 +90,9 @@ export function planWrapFrame(run: Run, frame: FrameNode, label: string, grid: W
           matches: (value) => near(frame.width, value),
           write: (value) => frame.resize(value, frame.height),
         },
-        literal(grid.width)
-      ),
-    { primary: "FIXED", counter: "AUTO" }
+        literal(grid.width),
+        lengths
+      )
   );
   planScalar(run, label, "counterAxisAlignItems", frame.counterAxisAlignItems, "CENTER", () => {
     frame.counterAxisAlignItems = "CENTER";
@@ -298,7 +302,8 @@ export type RowNode = {
 
 /**
  * The page layout: the row's nodes from where the first one sits, then the previews stacked below
- * the tallest of them, left-aligned with the first node.
+ * the tallest of them, left-aligned with the first node. Each preview's instances, and the instances
+ * nested in them, settle before its height is read (`settle.ts`).
  */
 function pageLayout(row: readonly RowNode[], frames: readonly Target<FrameNode>[]): Placed[] {
   const nodes = row.map((entry) => entry.node.get());
@@ -315,6 +320,7 @@ function pageLayout(row: readonly RowNode[], frames: readonly Target<FrameNode>[
   let y = first.y + Math.max(...nodes.map((node) => node.height)) + PREVIEW_MARGIN;
   for (const target of frames) {
     const frame = target.get();
+    settleInstances(frame);
     placed.push({ node: frame, x: first.x, y });
     y += frame.height + PREVIEW_SPACING;
   }

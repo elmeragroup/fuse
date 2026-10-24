@@ -53,7 +53,8 @@ export const sidebarGroupActionBoxClass = cn(
 );
 
 /**
- * `Sidebar.MenuButton` recipe — module-private, never a facade export.
+ * `Sidebar.MenuButton` recipe — package-private, never a facade export. The workspace-only
+ * recipe catalog re-exports it for the Figma component sync.
  * The ref's template strings verbatim (`cva` → `tv`), with two locked rewrites: the
  * `group-has-data-[sidebar=menu-action]` selector keys on `data-slot`, and the
  * `ring-sidebar-ring` focus literals are the canonical `focusRing`.
@@ -98,7 +99,8 @@ function subButtonSize(size: "sm" | "md"): string {
 }
 
 /**
- * `Sidebar.MenuSubButton` size axis — module-private. Each size takes the control size's
+ * `Sidebar.MenuSubButton` size axis — package-private, re-exported by the workspace-only recipe
+ * catalog for the Figma component sync. Each size takes the control size's
  * height and type: `md` the md height with the density type pair, `sm` the sm height with
  * the fixed `text-sm`. The row keeps its own inset and gap.
  */

@@ -15,6 +15,8 @@ test("Root takes the three-value orientation axis, Legend the two-value variant 
   const _badLegend = <Field.Legend variant="title" />;
   // @ts-expect-error fieldVariants is package-private; no size axis exists
   const _noSize = <Field.Root size="sm" />;
+  // @ts-expect-error the legend's variant axis belongs to Legend, not Root
+  const _noRootVariant = <Field.Root variant="label" />;
 
   const _control = <Field.Control render={<textarea />} />;
   const _label = <Field.Label render={<span />} />;

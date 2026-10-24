@@ -33,7 +33,7 @@ const VARIANTS = Object.keys(buttonVariants.variants.variant).filter(isVariant);
  * The sizes in the recipe's order, with its default first. Figma makes the top-left variant a
  * set's default, so an instance a designer places starts at the size `<Button>` renders.
  */
-const LABEL_SIZES = ["default", "xs", "sm", "lg"] as const satisfies readonly ButtonSize[];
+export const BUTTON_LABEL_SIZES = ["default", "xs", "sm", "lg"] as const satisfies readonly ButtonSize[];
 const ICON_SIZES = ["icon", "icon-xs", "icon-sm", "icon-lg"] as const satisfies readonly ButtonSize[];
 
 function isVariant(value: string | undefined): value is ButtonVariant {
@@ -55,14 +55,20 @@ function classesFor(cell: Cell): string {
 const STATE_AXIS = { name: "state", values: ["rest", "hover", "focus", "disabled", "pending"] };
 
 /**
- * A pending Button stays focusable, so Base UI marks it `aria-disabled` and `data-disabled`
- * instead of `disabled`, and the state face draws the disabled look. `state-table.ts` gives
- * hover, focus and disabled their variants.
+ * The variants a pending Button renders beyond the disabled face's `data-disabled`. It stays
+ * focusable, so Base UI marks it `aria-disabled` instead of `disabled`, and Button stamps
+ * `data-pending-indicator` while the spinner shows.
  */
-const STATES = { pending: ["data-disabled", "aria-disabled", "data-[pending-indicator]"] };
+export const BUTTON_PENDING_ONLY_VARIANTS = ["aria-disabled", "data-[pending-indicator]"] as const;
+
+/**
+ * A pending Button draws the disabled look of the state face. `state-table.ts` gives hover, focus
+ * and disabled their variants.
+ */
+const STATES = { pending: ["data-disabled", ...BUTTON_PENDING_ONLY_VARIANTS] };
 
 /** The group corners belong to a Button group, which a standalone component does not show. */
-const OMITTED_STATES = new Set(["in-data-[slot=button-group]"]);
+export const BUTTON_OMITTED_STATES: ReadonlySet<string> = new Set(["in-data-[slot=button-group]"]);
 
 /**
  * The spinner `isPending` renders in a span that carries `data-icon="inline-start"`, so a
@@ -122,6 +128,12 @@ function buttonIcons(cell: Cell): readonly IconSlot[] {
   }
 }
 
+/**
+ * The label every `Button` cell shows, the default of the `Label` text property. The compare
+ * renderer renders the same text, and names each icon button with it.
+ */
+export const BUTTON_LABEL = "Button";
+
 export const BUTTON: ComponentDefinition = {
   key: "button",
   name: "Button",
@@ -129,7 +141,7 @@ export const BUTTON: ComponentDefinition = {
   rootKind: "native-control",
   axes: [
     { name: "variant", values: VARIANTS },
-    { name: "size", values: LABEL_SIZES },
+    { name: "size", values: BUTTON_LABEL_SIZES },
     STATE_AXIS,
     { name: "icon", values: ["none", "start", "end"] },
   ],
@@ -137,8 +149,14 @@ export const BUTTON: ComponentDefinition = {
   classesFor,
   states: STATES,
   facts: new Map(),
-  omittedStates: OMITTED_STATES,
-  label: { key: "label", name: "label", characters: "Button", textProperty: "Label", shownIn: () => true },
+  omittedStates: BUTTON_OMITTED_STATES,
+  label: {
+    key: "label",
+    name: "label",
+    characters: BUTTON_LABEL,
+    textProperty: "Label",
+    shownIn: () => true,
+  },
   iconsFor: buttonIcons,
   swapProperties: swapProperties([START_ICON, END_ICON]),
 };
@@ -154,7 +172,7 @@ export const ICON_BUTTON: ComponentDefinition = {
   classesFor,
   states: STATES,
   facts: new Map(),
-  omittedStates: OMITTED_STATES,
+  omittedStates: BUTTON_OMITTED_STATES,
   label: undefined,
   iconsFor: (cell) => (cell.state === "pending" ? [SPINNER, ONLY_ICON] : [ONLY_ICON]),
   swapProperties: swapProperties([ONLY_ICON]),

@@ -328,14 +328,6 @@
 - Add Attachment and AspectRatio to the kit. Attachment needs its five states, three sizes and
   both orientations, with Button instances for its actions. AspectRatio needs one frame per
   ratio in its seven-ratio set.
-- Add Kbd group to the kit once a kit component can hold instances of another set. The group is
-  the `group` slot of `kbdVariants`, a row of Kbd caps that inherit its corner through
-  `*:data-[slot=kbd]:rounded-[inherit]`.
-- Check on a real file whether Figma clamps a corner radius larger than half the shorter side,
-  as CSS does. Draw a 16px frame with a 100px radius and compare it with one at 8px. The build
-  writes `rounded-full` as the exact half (`readCorner` in `src/components/component-spec.ts`),
-  so it does not depend on the answer. If Figma clamps, a pill corner on a box that hugs a side
-  could write a large radius instead of staying unmapped.
 
 ## Data table
 

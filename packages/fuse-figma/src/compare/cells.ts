@@ -116,7 +116,7 @@ export function parseCell<Definition extends Pick<ComponentDefinition, "key" | "
   });
 }
 
-/** A pseudo class the page forces on a cell's measured element. */
+/** A pseudo class the page forces on a cell's measured element, or the part of it that takes its states. */
 export type ForcedPseudoClass = "hover" | "focus" | "focus-visible";
 
 /** The `state` values the page forces. Every other state is one the markup draws itself. */

@@ -1,41 +1,32 @@
 /**
  * Turn a recipe into a Figma component set. For every cell of the variant matrix the builder
- * asks `cascade.ts` for the computed style of the root, each part and each icon, and maps it
- * onto Figma fields. Every declaration it reads lands in the coverage table with what became
- * of it.
+ * asks `cascade.ts` for the computed style of the root, each part and each icon, and
+ * `box-mapping.ts` maps it onto Figma fields. Every declaration it reads lands in the coverage
+ * table with what became of it. This module holds the definition types and assembles the set.
  */
+import { mapBox, NO_VALUES, partName } from "./box-mapping";
+import type { MapScope } from "./box-mapping";
+import { rootRoom } from "./box-sizing";
 import { SetCascade, splitClasses } from "./cascade";
-import type { BoxCascade, CoverageNote, LayerStyle } from "./cascade";
 import type { CoverageRow } from "./coverage";
-import {
-  evaluateNumber,
-  isInfiniteLength,
-  normalizeCss,
-  readColor,
-  readNumber,
-  readShadows,
-} from "./css-values";
 import type { VariableIndex } from "./css-values";
-import { walkLayers, ZERO } from "./kit-spec";
+import { allPartsOf, framePartsOf, instancePartsOf, partsOf, renderedSlots } from "./definition-parts";
+import { checkInstanceOrder, InstanceParts } from "./instance-parts";
+import type { InnerSet } from "./instance-parts";
+import { iconKey, walkLayers } from "./kit-spec";
 import type {
-  AlignSpec,
   AxisSpec,
-  BoxSpec,
-  ChildLayerSpec,
-  ColorSpec,
+  BooleanPropertySpec,
   ComponentRootSpec,
   ComponentSetSpec,
-  FrameLayerSpec,
-  NumberSpec,
-  IconLayerSpec,
-  ShadowSpec,
-  StringSpec,
-  StrokeSpec,
   SwapPropertySpec,
+  TextPropertySpec,
   VariantSpec,
 } from "./kit-spec";
-import { partsThatScale, placeParts, placeRoot, slotAroundDot } from "./placement";
-import type { Layout } from "./placement";
+import { booleanPropertiesOf, refusePresenceReads } from "./optional-parts";
+import type { OptionalPart } from "./optional-parts";
+import { partsThatScale, placeRoot } from "./placement";
+import { PaintedInstances } from "./stacking";
 import { makeStateTable } from "./state-table";
 import type { CompiledUtilities } from "./utility-css";
 
@@ -83,16 +74,6 @@ export function swapProperties(slots: readonly IconSlot[]): readonly SwapPropert
 }
 
 /**
- * The key of the icon component for a Fuse icon.
- *
- * @param name - The icon's export name, such as `ArrowRight`.
- * @returns The key, such as `icon/ArrowRight`.
- */
-export function iconKey(name: string): string {
-  return `icon/${name}`;
-}
-
-/**
  * The variants Base UI stamps on a checked control's root, for a definition's `facts`:
  * `data-checked` and `aria-checked="true"` while it is on, and `data-unchecked` while it is off.
  * A control with a third value adds its own, as Checkbox adds `data-indeterminate`.
@@ -104,25 +85,95 @@ export const BASE_UI_CHECKED_FACTS: ReadonlyMap<string, (cell: Cell) => boolean>
 ]);
 
 /**
- * What a set's root element is, which decides the attributes its disabled state holds.
+ * What the element that takes a set's states is, the root or the part its `statePart` names, which
+ * decides the attributes its disabled state holds.
  *
  * - `native-control`: a native `<button>`, disabled through its `disabled` attribute.
  * - `base-ui-span`: a Base UI `<span>`, such as a radio, which Base UI disables with
  *   `aria-disabled` and keeps focusable.
- * - `base-ui-field-label`: Base UI's `Field.Label` `<label>`, which takes its Field's state as
- *   data attributes, so a disabled Field marks it `data-disabled` alone.
+ * - `base-ui-field-part`: Base UI's `Field.Label` `<label>`, `Field.Description` `<p>` or
+ *   `Field.Error` `<div>`, which take their Field's state as data attributes, so a disabled Field
+ *   marks them `data-disabled` alone and an invalid one `data-invalid` alone.
+ * - `plain-element`: an element nothing stamps a state on, such as Field's title `<div>`, which
+ *   shows a disabled Field only through the `group-data-disabled/field:` its definition names.
+ * - `react-aria-element`: a React Aria Components element marked `data-rac`, such as a Calendar day
+ *   cell `<div>`, which React Aria marks `aria-disabled="true"` and `data-disabled` while disabled,
+ *   and `aria-invalid="true"` and `data-invalid` while invalid, which `invalid:` reads there.
  */
-export type RootKind = "native-control" | "base-ui-span" | "base-ui-field-label";
+export type RootKind =
+  | "native-control"
+  | "base-ui-span"
+  | "base-ui-field-part"
+  | "plain-element"
+  | "react-aria-element";
 
-/** A text layer a part shows, and the set's text property that sets its characters. */
+/**
+ * Where a native control sets its text within the text's box, which no class says, as an `<input>`
+ * centers its value down its box and a `<textarea>` starts its text at the top.
+ */
+export type TextPlacement = {
+  readonly horizontal: "start" | "center" | "end";
+  readonly vertical: "top" | "center" | "bottom";
+  /**
+   * How the control sets its text in lines, which it does itself whatever the box's `display` says.
+   * `single` keeps the text on one line across the content box, as an `<input>` sets its value,
+   * whatever `white-space` says, so the label fills the box's width and ends in an ellipsis after one
+   * line. `wrap` wraps the text at the content box's width, as a `<textarea>` wraps its value, so the
+   * label fills the width with its height following its lines. Undefined leaves the lines to the
+   * box's CSS.
+   */
+  readonly lines?: "single" | "wrap";
+};
+
+/**
+ * A text layer a part shows, and where its characters come from: one text in every cell, which a
+ * TEXT property of the set can set, or a text per cell, which no property sets, since one property
+ * holds one default.
+ */
 export type LabelDefinition = {
   readonly key: string;
   readonly name: string;
-  readonly characters: string;
-  readonly textProperty: string;
   /** Whether a cell shows the label. A Kbd shows it in its text cell and not its icon cell. */
   readonly shownIn: (cell: Cell) => boolean;
-};
+  /** Where the text sits in its box, or undefined for the top left, where CSS sets a box's text. */
+  readonly placement?: TextPlacement;
+  /**
+   * The attribute in which the component's markup holds the characters in a cell, as an `<input>`
+   * holds its placeholder in `placeholder` and its value in `value`. It returns undefined for a cell
+   * whose box holds them as its own text, as a `<textarea>` holds its value, and a label without it
+   * holds them as its own text in every cell. `figma:compare`'s markup check reads the text there.
+   */
+  readonly textAttribute?: (cell: Cell) => string | undefined;
+  /**
+   * The child element in which the component's markup holds the characters as its own text, for a
+   * box that wraps them in an element with no `class` or `style`, as Pagination's edge link wraps
+   * its copy in a bare `<span>`. A flex row lays such an element out as it would the text alone, so
+   * the kit draws the characters as the box's own text layer, between the icons on either side.
+   * `figma:compare`'s markup check reads the text there, and fails an element that carries a `class`
+   * or `style`. Undefined for a label the box holds as its own text or in `textAttribute`.
+   */
+  readonly textElement?: ElementSelector;
+  /**
+   * Set where the markup holds a space before the characters, as Meter's value holds one after its
+   * icon. A box that sets its text in lines draws it as one space advance after a start icon, and
+   * collapses it at the start of a line.
+   */
+  readonly leadingSpace?: true;
+} & (
+  | {
+      /** The text every cell shows, and the default of its property. */
+      readonly characters: string;
+      /** The set's TEXT property that sets the characters, or undefined for none. */
+      readonly textProperty: string | undefined;
+      readonly charactersFor?: never;
+    }
+  | {
+      /** The text a cell shows. */
+      readonly charactersFor: (cell: Cell) => string;
+      readonly characters?: never;
+      readonly textProperty?: never;
+    }
+);
 
 /**
  * What the root, or a part below it, renders in a cell: its classes and its children. The
@@ -135,8 +186,63 @@ export type BoxDefinition = {
   readonly label: LabelDefinition | undefined;
   /** The icons a cell renders in this part, in DOM order. A start icon sits before the label. */
   readonly iconsFor: (cell: Cell) => readonly IconSlot[];
-  /** The parts directly below this one, in DOM order. */
-  readonly parts?: readonly PartDefinition[];
+  /** The parts directly below this one, in DOM order, each a frame or an instance of another set. */
+  readonly parts?: readonly (PartDefinition | InstanceDefinition)[];
+  /**
+   * How many element children the box's markup holds in a cell beside the parts, the icons and the
+   * element of its label the definition draws, such as the visually hidden `<span>` that holds an
+   * ellipsis's copy, so the build knows every element child the box holds. A class that styles every
+   * child but the last, as `space-y-4` does, reads that count, and stays unmapped on a box whose
+   * definition leaves this unset. `figma:compare`'s markup check holds the count to the markup.
+   */
+  readonly undrawnChildren?: (cell: Cell) => number;
+  /**
+   * The picture the box shows, as an `<img>` shows its `src`: the bytes of a PNG file, the one
+   * format the kit ships, which the build reads when it maps the box. Undefined for a box that shows
+   * none.
+   */
+  readonly image?: () => Uint8Array;
+  /**
+   * The declarations the browser's default style sheet gives the box's element, which no class
+   * sets, such as `display: block` on a `<p>` or a `<div>`. They apply on the box below the base
+   * layer and every class, as the user agent's origin does, so a class's own `display` beats them.
+   * Undefined for a box whose classes set what the kit reads, or whose element is inline, as a
+   * `<span>` or an `<a>` is.
+   */
+  readonly elementDefaults?: readonly OuterDeclaration[];
+};
+
+/**
+ * An element that carries no `data-slot`, named by its tag and the attributes it carries, as React
+ * Aria's Calendar renders a day as a `<div data-rac role="button">`. `figma:compare` measures a root
+ * by its CSS form, such as `div[data-rac][role="button"]`, and its markup check places a root or a
+ * part by it.
+ */
+export type ElementSelector = {
+  /**
+   * The element's tag name in lowercase, such as `div`, or `*` for any tag, as CSS's universal
+   * selector matches, for a root whose tag changes with the cell, as React Aria's Link renders an
+   * `<a>` while enabled and a `<span role="link">` while disabled.
+   */
+  readonly tag: string;
+  /**
+   * The attributes the element carries, each name in lowercase. A string matches that exact value,
+   * and `true` matches the attribute with any value, as `[data-rac]` does.
+   */
+  readonly attributes: Readonly<Record<string, string | true>>;
+  /**
+   * The attributes whose values start with a prefix, each name in lowercase, as
+   * `[aria-label^="Tuesday, July 14, 2026"]` matches a day React Aria labels ` selected` while it is
+   * the value. An empty prefix matches nothing, as in CSS. Undefined for an element the attributes
+   * alone name.
+   */
+  readonly prefixes?: Readonly<Record<string, string>>;
+};
+
+/** One declaration of an element's `style` attribute, such as Base UI's `width: 85%` on a meter's fill. */
+export type InlineDeclaration = {
+  readonly property: string;
+  readonly value: string;
 };
 
 /**
@@ -146,26 +252,152 @@ export type BoxDefinition = {
 export type PartDefinition = BoxDefinition & {
   /** The key of the part's frame layer. */
   readonly key: string;
-  /**
-   * The part's `data-slot`, which names its layer, or undefined for an element without one,
-   * such as Radio's dot, whose layer takes the part's key as its name.
-   */
-  readonly slot: string | undefined;
   /** Whether a cell renders the part. Base UI mounts a checkbox's indicator only while checked. */
   readonly shownIn: (cell: Cell) => boolean;
+  /**
+   * The BOOLEAN property of the set that shows or hides the part in the cells that render it, and
+   * the value it starts with, for a part a docs demo leaves out, such as a description. Undefined for
+   * a part that shows wherever a cell renders it. A part whose presence a selector reads, as
+   * `item-described:` reads Item's description, cannot be optional, and the build stops on one.
+   */
+  readonly optional?: BooleanPropertySpec;
+  /**
+   * The declarations of the part's `style` attribute in a cell, in the attribute's order, which
+   * cascade above every class, as a style attribute beats every rule of a style sheet. Undefined for
+   * a part whose markup carries no `style`.
+   */
+  readonly styleFor?: (cell: Cell) => readonly InlineDeclaration[];
+} & (
+    | {
+        /** The part's `data-slot`, which names its layer. */
+        readonly slot: string;
+        /** A part its `data-slot` names needs no selector. */
+        readonly element?: never;
+      }
+    | {
+        /** No `data-slot`, as on Radio's dot, so the layer takes the part's key as its name. */
+        readonly slot: undefined;
+        /**
+         * The part's element, which `figma:compare`'s markup check finds below its parent part by
+         * this selector. Undefined for a part the check finds by its place, as the one child element
+         * of its parent beside the parts with a `data-slot`.
+         */
+        readonly element?: ElementSelector;
+      }
+  );
+
+/**
+ * The values a composite gives the inner set's TEXT, BOOLEAN and INSTANCE_SWAP properties, each by
+ * the property's name: the characters of the label the property sets, whether the part the property
+ * shows is there, and the export name of the icon the property picks, such as `Star`.
+ */
+export type InstanceProperties = {
+  readonly text?: Readonly<Record<string, string>>;
+  readonly boolean?: Readonly<Record<string, boolean>>;
+  readonly swap?: Readonly<Record<string, string>>;
+};
+
+/**
+ * A part that renders another kit component, as Alert renders a Button for its action. The set draws
+ * it as an instance of the inner set's variant, so the composite stays linked to the set that draws
+ * the part. The build maps the inner root in place, below the outer parts, and proves the instance
+ * draws what that root draws, as `instance-parts.ts` says.
+ */
+export type InstanceDefinition = {
+  readonly kind: "instance";
+  /** The key of the instance layer. */
+  readonly key: string;
+  /** The inner component, whose set the kit builds before the set that holds this part. */
+  readonly of: ComponentDefinition;
+  /** The inner set's cell the part renders in an outer cell. */
+  readonly cell: (outer: Cell) => Cell;
+  /**
+   * The classes the outer component passes the inner one as its `className`, which the inner
+   * component merges after its own with `cn`, as Alert passes its tone's `button` slot. Undefined for
+   * none.
+   */
+  readonly classesFor?: (outer: Cell) => string;
+  /**
+   * The values the outer cell gives the inner set's properties, undefined where every property keeps
+   * its default.
+   */
+  readonly properties?: (outer: Cell) => InstanceProperties;
+  /** Whether a cell renders the part. */
+  readonly shownIn: (cell: Cell) => boolean;
+  /**
+   * The BOOLEAN property of the outer set that shows or hides the instance, and the value it starts
+   * with, as {@link PartDefinition.optional} says for a frame. Undefined for an instance that shows
+   * wherever a cell renders it.
+   */
+  readonly optional?: BooleanPropertySpec;
+  /** True where a designer sets the inner set's properties from the outer instance's panel. */
+  readonly exposed?: true;
 };
 
 /** A component the builder can turn into a component set. Its own box is the root. */
 export type ComponentDefinition = BoxDefinition & {
   readonly key: string;
   readonly name: string;
-  /** The root part's `data-slot`, which names the root layer. */
+  /** The root layer's name, and the root element's `data-slot` unless `element` names the element. */
   readonly slot: string;
   /**
-   * What the root element is. A set whose `state` axis has `disabled` names it, and
-   * `state-table.ts` refuses one that does not.
+   * The root element, for a root whose markup carries no `data-slot`, as React Aria's Link renders
+   * an `<a>` or a `<span>` with none, or one whose `data-slot` changes with the cell, as Pagination's
+   * edge link carries `pagination-previous` or `pagination-next`. `figma:compare` measures the one
+   * element of a cell this selector matches, and its markup check places the root there. Undefined
+   * for a root its `data-slot` names.
+   */
+  readonly element?: ElementSelector;
+  /**
+   * The `data-slot` the element `element` names carries in a cell, as Pagination's edge link carries
+   * `pagination-previous` or `pagination-next` by its direction. Undefined for an element that carries
+   * none in any cell, as React Aria's Link renders none, and for a root its `data-slot` names. The
+   * presence check reads it for an instance part's root, and the markup check holds it to what each
+   * cell renders.
+   */
+  readonly elementSlot?: (cell: Cell) => string;
+  /**
+   * What the element that takes the set's states is: the root, or the part `statePart` names. A set
+   * whose `state` axis has `disabled` names it, and `state-table.ts` refuses one that does not.
    */
   readonly rootKind?: RootKind;
+  /**
+   * The `data-slot` of the part that takes the set's `state` axis, for a root that a pointer does not
+   * hover, a keyboard does not focus and a native `disabled` does not disable, as an Accordion item
+   * holds the trigger that does. `figma:compare` forces hover and focus on that part, and its markup
+   * check reads the state's attributes there. Undefined for a root that takes its states itself.
+   */
+  readonly statePart?: string;
+  /**
+   * The `data-slot` of the sibling before the root whose state the set's `state` axis follows, for a
+   * root that reads it through `peer-*` variants, as a Sidebar menu badge reads its menu button's
+   * hover through `peer-hover/menu-button:`. `figma:compare` forces hover and focus on that sibling.
+   * A definition names it or `statePart`, not both. Undefined for a root that takes its states itself.
+   */
+  readonly statePeer?: string;
+  /**
+   * The width in pixels the root's container gives it, which a root's percentage width takes and a
+   * block-level root with no width fills, as the Figma preview and the compare host draw it. A
+   * variant root sits in its component set, which has no auto layout, so the width is fixed. Without
+   * it, a root's percentage stays unmapped and its unset width hugs.
+   */
+  readonly previewWidth?: number;
+  /**
+   * The declarations the host sets around the root in a cell with no class to name them, which the
+   * root inherits over the page's, such as the type a Pagination link takes from the browser's
+   * medium font size and preflight on `<html>`, since its classes set none. Undefined for a root
+   * that inherits nothing more from the host. An element a Fuse recipe styles is named in
+   * `ancestorsFor` instead.
+   */
+  readonly inheritedFor?: (cell: Cell) => readonly OuterDeclaration[];
+  /**
+   * The elements between the page and the root in a cell, outermost first, each named by the
+   * recipe classes it carries, as a Breadcrumb link sits in `Breadcrumb.List` and `Breadcrumb.Item`.
+   * Each cascades its classes with the cell's states and facts, and the root inherits their
+   * computed values, as an invalid Field root passes its `data-invalid:text-error` to its input.
+   * Undefined, or none in a cell, for a root with no such element around it.
+   */
+  readonly ancestorsFor?: (cell: Cell) => readonly AncestorDefinition[];
   readonly axes: readonly AxisSpec[];
   readonly columnAxis: string;
   /**
@@ -194,8 +426,33 @@ export type ComponentDefinition = BoxDefinition & {
    * there as dropped.
    */
   readonly omittedCompositions?: ReadonlyMap<string, string>;
+  /**
+   * The media variants that style the component under a condition of the user's device the kit does
+   * not draw, such as `forced-colors:`, each with the reason a designer reads in the coverage table.
+   * A class with one of them lands there as dropped.
+   */
+  readonly omittedMedia?: ReadonlyMap<string, string>;
   /** The INSTANCE_SWAP properties, each with the export name of the icon it starts with. */
   readonly swapProperties: readonly SwapPropertySpec[];
+};
+
+/**
+ * An element between the page and the root, named by its recipe classes. The kit draws no layer
+ * for it. Its classes cascade in each cell as the root's do, and the root inherits its computed
+ * values, so it takes the element's type and text color. Its own declarations that do not inherit,
+ * such as a list's flex row, reach no drawn layer.
+ */
+export type AncestorDefinition = {
+  /** The element's `data-slot`, which names it in the coverage table, such as `breadcrumb-list`. */
+  readonly slot: string;
+  /** The classes the element carries, as its recipe gives them. */
+  readonly classes: string;
+  /**
+   * Why the kit draws none of the element's own declarations that do not inherit, which the
+   * coverage table gives for each of them, such as `the list lays out and wraps the trail, which the
+   * set does not draw`.
+   */
+  readonly undrawn: string;
 };
 
 /**
@@ -231,22 +488,44 @@ export type BuiltComponent = {
   readonly fontStyles: readonly string[];
 };
 
-/** The Figma style of each Roboto weight a recipe reaches. */
-const FONT_STYLES = new Map([
-  [400, "Regular"],
-  [500, "Medium"],
-  [600, "SemiBold"],
-  [700, "Bold"],
-]);
+/**
+ * Build the component sets of a list of definitions in its order, each with the sets before it at
+ * hand, so a set builds after the sets its instance parts show.
+ *
+ * @template Entry - What the list holds for each set, its definition among it.
+ * @param entries - The definitions, each set after the sets it holds instances of.
+ * @param context - The compiled utilities and the synced variables.
+ * @returns Each entry with its built set, in the list's order.
+ * @throws When an instance part shows a set the list puts later or lacks, or the instance parts form
+ *   a cycle, as {@link checkInstanceOrder} says, or a set does not build.
+ */
+export function buildSetsInOrder<Entry extends { readonly definition: ComponentDefinition }>(
+  entries: readonly Entry[],
+  context: BuildContext
+): readonly (readonly [Entry, BuiltComponent])[] {
+  checkInstanceOrder(entries.map(({ definition }) => definition));
+  const built = new Map<string, InnerSet>();
+  return entries.map((entry) => {
+    const set = buildComponentSet(entry.definition, context, built);
+    built.set(entry.definition.key, set.componentSet);
+    return [entry, set] as const;
+  });
+}
 
 /**
  * Build the component set for every cell of the definition's matrix.
  *
  * @param definition - The component.
  * @param context - The compiled utilities and the synced variables.
+ * @param inner - The sets built before this one, by key, which its instance parts show.
  * @returns The component set, its coverage and the font styles its text uses.
+ * @throws When an instance part shows a set `inner` lacks, or a cell does not build.
  */
-export function buildComponentSet(definition: ComponentDefinition, context: BuildContext): BuiltComponent {
+export function buildComponentSet(
+  definition: ComponentDefinition,
+  context: BuildContext,
+  inner: ReadonlyMap<string, InnerSet> = new Map()
+): BuiltComponent {
   const coverage = new Map<string, CoverageRow>();
   const fontStyles = new Set<string>();
   const record = (row: Omit<CoverageRow, "component">): void => {
@@ -256,16 +535,51 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
       full
     );
   };
-  const cascade = new SetCascade(makeStateTable(definition), context, record);
   const cells = matrixCells(definition.axes);
+  const optional = optionalParts(definition, cells, undefined);
+  const booleans = booleanPropertiesOf(definition.name, optional);
+  // The inner sets list their own optional parts' properties, but a class of this set can read them.
+  const presence = [...optional, ...innerOptionalParts(definition, cells, [], new Set([definition]))];
+  if (presence.length > 0) {
+    refusePresenceReads(
+      definition.name,
+      presence,
+      new Set(definitionClasses(definition)),
+      context.compiled.rulesByClass
+    );
+  }
+  const cascade = new SetCascade(makeStateTable(definition), context, record);
+  const instances = new InstanceParts(context, inner, record);
   const scaling = partsThatScale(partsOf(definition), cells, context.compiled);
   const variants = cells.map((cell): VariantSpec => {
     const cellCascade = cascade.cell(cell);
-    const scope: MapScope = { definition, cell, context, scaling };
-    const rootCascade = cellCascade.root(definition.classesFor(cell), definition.slot);
-    const root: ComponentRootSpec = { name: definition.slot, ...mapBox(definition, rootCascade, scope) };
-    placeRoot(rootCascade.style);
+    const scope: MapScope = {
+      variant: variantKey(definition, cell),
+      cell,
+      context,
+      scaling,
+      instances,
+      values: NO_VALUES,
+      painted: new PaintedInstances(),
+    };
+    const rootCascade = cellCascade.root(definition.classesFor(cell), definition.slot, {
+      declarations: definition.inheritedFor?.(cell) ?? [],
+      ancestors: definition.ancestorsFor?.(cell) ?? [],
+      defaults: definition.elementDefaults ?? [],
+    });
+    // A root clips its content, because Figma draws a drop shadow's spread only from a frame
+    // that clips, and a focus ring is a spread shadow. The first run on a real file stored the
+    // ring's 2px spread as 0 on a root that did not clip. Clipping costs a root nothing, since
+    // every child sits inside its padding.
+    const room = rootRoom(definition.previewWidth, rootCascade.style);
+    const root: ComponentRootSpec = {
+      name: definition.slot,
+      ...mapBox(definition, rootCascade, scope, room),
+      clips: true,
+    };
+    placeRoot(rootCascade.style, room);
     cellCascade.settle();
+    instances.settle();
     for (const layer of walkLayers(root)) {
       if (layer.kind === "text") {
         fontStyles.add(layer.fontStyle);
@@ -274,21 +588,22 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
     return { key: variantKey(definition, cell), properties: cell, root };
   });
   cascade.finish();
+  instances.finish();
+  const componentSet: BuiltComponent["componentSet"] = {
+    key: definition.key,
+    name: definition.name,
+    axes: definition.axes,
+    columnAxis: definition.columnAxis,
+    textProperties: textProperties(definition),
+    swapProperties: definition.swapProperties.map((property) => ({
+      name: property.name,
+      defaultIcon: iconKey(property.defaultIcon),
+    })),
+    variants,
+  };
   return {
-    componentSet: {
-      key: definition.key,
-      name: definition.name,
-      axes: definition.axes,
-      columnAxis: definition.columnAxis,
-      textProperties: boxesOf(definition).flatMap(({ label }) =>
-        label === undefined ? [] : [{ name: label.textProperty, defaultValue: label.characters }]
-      ),
-      swapProperties: definition.swapProperties.map((property) => ({
-        name: property.name,
-        defaultIcon: iconKey(property.defaultIcon),
-      })),
-      variants,
-    },
+    // A set without an optional part leaves the field out, so a set built before it keeps its spec.
+    componentSet: booleans.length === 0 ? componentSet : { ...componentSet, booleanProperties: booleans },
     coverage: [...coverage.values()],
     fontStyles: [...fontStyles],
   };
@@ -306,34 +621,134 @@ export function variantKey(definition: Pick<ComponentDefinition, "key" | "axes">
 }
 
 /**
- * Every class the root, its parts and their icons use in any cell of the matrix, which the build
- * compiles.
+ * Every class the elements around the root, the root, its parts and their icons use in any cell of
+ * the matrix, which the build compiles. An instance part adds the classes the outer component passes
+ * it in each cell that renders it. Its inner component's classes are the inner definition's own,
+ * which the build compiles for the inner set, built first.
  *
  * @param definition - The component.
- * @returns The classes, in the order the boxes first use them, each box's before its icons'.
+ * @returns The classes, in the order the elements first use them, the ancestors' before the boxes',
+ *   and each box's before its icons'.
  */
 export function definitionClasses(definition: ComponentDefinition): readonly string[] {
-  return matrixCells(definition.axes).flatMap((cell) =>
-    boxesOf(definition).flatMap((box) => [
-      ...splitClasses(box.classesFor(cell)),
-      ...box.iconsFor(cell).flatMap((slot) => splitClasses(slot.classes ?? "")),
-    ])
+  return matrixCells(definition.axes).flatMap((cell) => [
+    ...(definition.ancestorsFor?.(cell) ?? []).flatMap((ancestor) => splitClasses(ancestor.classes)),
+    ...boxClasses(definition, cell),
+  ]);
+}
+
+/** The classes a box, its icons and the parts below it use in a cell, depth first. */
+function boxClasses(box: BoxDefinition, cell: Cell): readonly string[] {
+  return [
+    ...splitClasses(box.classesFor(cell)),
+    ...box.iconsFor(cell).flatMap((slot) => splitClasses(slot.classes ?? "")),
+    ...(box.parts ?? []).flatMap((part) =>
+      "kind" in part
+        ? part.shownIn(cell)
+          ? splitClasses(part.classesFor?.(cell) ?? "")
+          : []
+        : boxClasses(part, cell)
+    ),
+  ];
+}
+
+/**
+ * The TEXT properties a set's labels name, each once, in the order the boxes first name them. One
+ * property holds one default, so two labels that name it must start with the same characters.
+ *
+ * @throws When two labels name one property with different characters, naming both labels.
+ */
+function textProperties(definition: ComponentDefinition): readonly TextPropertySpec[] {
+  const named = new Map<string, { readonly defaultValue: string; readonly label: string }>();
+  for (const { box, label } of labelsOf(definition, definition.slot)) {
+    if (label.textProperty === undefined) {
+      continue;
+    }
+    const where = `${box} / ${label.name}`;
+    const first = named.get(label.textProperty);
+    if (first === undefined) {
+      named.set(label.textProperty, { defaultValue: label.characters, label: where });
+    } else if (first.defaultValue !== label.characters) {
+      throw new Error(
+        `${definition.name}: the labels ${first.label} and ${where} both set the ${label.textProperty} property, one starting as "${first.defaultValue}" and one as "${label.characters}". A TEXT property holds one default, so give them one text or a property each.`
+      );
+    }
+  }
+  return [...named].map(([name, { defaultValue }]) => ({ name, defaultValue }));
+}
+
+/**
+ * A definition's optional parts, depth first, each with every `data-slot` that hiding it hides, as the
+ * markup renders them in the cells given: its own and those of the elements inside it, through the
+ * instances it holds, whose inner roots and parts the DOM holds too.
+ *
+ * @param definition - The definition.
+ * @param cells - Its cells, or the inner cells an instance of it shows.
+ * @param inside - The instance that holds the definition's root, for an inner set's parts.
+ * @returns The parts.
+ */
+function optionalParts(
+  definition: ComponentDefinition,
+  cells: readonly Cell[],
+  inside: OptionalPart["inside"]
+): readonly OptionalPart[] {
+  return allPartsOf(definition).flatMap((part): OptionalPart[] =>
+    part.optional === undefined
+      ? []
+      : [
+          {
+            name: "kind" in part ? part.of.slot : partName(part),
+            property: part.optional,
+            slots: renderedSlots(part, cells),
+            inside,
+          },
+        ]
   );
 }
 
-/** Every part below a box, depth first. */
-function partsOf(box: BoxDefinition): readonly PartDefinition[] {
-  return (box.parts ?? []).flatMap((part) => [part, ...partsOf(part)]);
+/**
+ * The optional parts of the inner sets a box's instance parts show, in the inner cells each instance
+ * shows, through the instances those sets hold in turn. A definition the walk is already inside adds
+ * nothing again.
+ *
+ * @param box - The definition whose instance parts the walk starts at.
+ * @param cells - The cells of the definition, or the inner cells an instance of it shows.
+ * @param path - The keys of the instance parts from the set down to the box.
+ * @param inside - The definitions the walk is inside.
+ * @returns The parts, each with the instance that holds it and its set.
+ */
+function innerOptionalParts(
+  box: ComponentDefinition,
+  cells: readonly Cell[],
+  path: readonly string[],
+  inside: ReadonlySet<ComponentDefinition>
+): readonly OptionalPart[] {
+  return instancePartsOf(box).flatMap((part) => {
+    const { of } = part;
+    if (inside.has(of)) {
+      return [];
+    }
+    const shown = cells.filter((cell) => part.shownIn(cell)).map((cell) => part.cell(cell));
+    const keys = [...path, part.key];
+    return [
+      ...optionalParts(of, shown, { instance: keys.join(" / "), set: of.name }),
+      ...innerOptionalParts(of, shown, keys, new Set([...inside, of])),
+    ];
+  });
 }
 
-/** The box and every part below it, depth first. */
-function boxesOf(box: BoxDefinition): readonly BoxDefinition[] {
-  return [box, ...partsOf(box)];
-}
-
-/** A part's layer name: its `data-slot`, or its key for an element without one. */
-function partName(part: PartDefinition): string {
-  return part.slot ?? part.key;
+/**
+ * The label of a box and of every frame part below it, depth first, with the layer name of its box.
+ * An instance part's labels belong to its inner set.
+ */
+function labelsOf(
+  box: BoxDefinition,
+  name: string
+): readonly { readonly box: string; readonly label: LabelDefinition }[] {
+  return [
+    ...(box.label === undefined ? [] : [{ box: name, label: box.label }]),
+    ...framePartsOf(box).flatMap((part) => labelsOf(part, partName(part))),
+  ];
 }
 
 /** Every cell of the matrix, the first axis varying slowest. */
@@ -342,486 +757,4 @@ export function matrixCells(axes: readonly AxisSpec[]): readonly Cell[] {
     (cells, axis) => cells.flatMap((cell) => axis.values.map((value) => ({ ...cell, [axis.name]: value }))),
     [{}]
   );
-}
-
-function describeNumber(spec: NumberSpec): CoverageNote {
-  return spec.kind === "variable"
-    ? { outcome: "bound", detail: `${spec.variable.collection} / ${spec.variable.name}` }
-    : { outcome: "literal", detail: `${spec.value}px` };
-}
-
-function describeColor(spec: ColorSpec): CoverageNote {
-  if (spec.kind === "variable") {
-    return { outcome: "bound", detail: `${spec.variable.collection} / ${spec.variable.name}` };
-  }
-  const { r, g, b, a } = spec.color;
-  return {
-    outcome: "literal",
-    detail: `rgba(${[r, g, b].map((channel) => Math.round(channel * 255)).join(", ")}, ${a})`,
-  };
-}
-
-/** A background that paints nothing, which the root writes as no fill. */
-const NO_FILL = "no fill";
-
-/**
- * Read a background as the root's fill. A literal color at alpha 0, such as `transparent`,
- * paints nothing in CSS, so it becomes no fill, as an unset background does. The plugin then
- * gives a root that casts a spread shadow its clear fill, which Figma counts and an alpha-0
- * fill it does not.
- */
-function readFill(value: string, index: VariableIndex): ColorSpec | typeof NO_FILL | undefined {
-  const color = readColor(value, index);
-  return color?.kind === "literal" && color.color.a === 0 ? NO_FILL : color;
-}
-
-function describeFill(fill: ColorSpec | typeof NO_FILL): CoverageNote {
-  return fill === NO_FILL
-    ? { outcome: "literal", detail: "no fill, since a transparent background paints nothing" }
-    : describeColor(fill);
-}
-
-function literalLayout(expected: readonly string[], detail: string) {
-  return {
-    map: (value: string) => (expected.includes(normalizeCss(value)) ? value : undefined),
-    describe: () => ({ outcome: "literal" as const, detail }),
-  };
-}
-
-/** Where `align-items` and `justify-content` place a box's children, by the value Tailwind compiles. */
-const ALIGNMENTS = new Map<string, { readonly align: AlignSpec; readonly where: string }>([
-  ["flex-start", { align: "MIN", where: "at the start of" }],
-  ["center", { align: "CENTER", where: "centered on" }],
-  ["flex-end", { align: "MAX", where: "at the end of" }],
-]);
-
-function readAlign(reader: LayerStyle, property: string, axis: string): AlignSpec | undefined {
-  return reader.read(
-    property,
-    (value) => ALIGNMENTS.get(normalizeCss(value)),
-    ({ where }) => ({ outcome: "literal", detail: `${where} the ${axis} axis` })
-  )?.align;
-}
-
-/**
- * Read how a box lays out its layers. A flex box is a horizontal auto layout that places them by
- * `align-items` and `justify-content`. A grid with no template stacks each layer in a row of its
- * own, so a grid with `place-content: center` is an auto layout centered on both axes only
- * around one layer. Any other grid stays unmapped. A block box with no layers lays nothing out, so
- * it is a frame like any other, and one with layers stays unmapped.
- *
- * @param layers - How many layers the box holds in the cell.
- * @returns Whether the layout is a flex row, and the alignment on each axis.
- */
-function readLayout(reader: LayerStyle, layers: number): Layout {
-  const display = normalizeCss(reader.raw("display") ?? "");
-  if (display === "grid") {
-    const center = literalLayout(["center"], "centered on both axes");
-    const centered = layers === 1 && reader.read("place-content", center.map, center.describe) !== undefined;
-    reader.read(
-      "display",
-      (value) => (centered ? value : undefined),
-      () => ({ outcome: "literal", detail: "an auto layout around its one layer" })
-    );
-    return { flexRow: false, primaryAlign: "CENTER", counterAlign: "CENTER", justify: "unset" };
-  }
-  const empty = layers === 0 && display === "block";
-  const layout = empty
-    ? literalLayout(["block"], "a frame with no layers to lay out")
-    : literalLayout(["inline-flex", "flex"], "a horizontal auto layout");
-  reader.read("display", layout.map, layout.describe);
-  const direction = normalizeCss(reader.raw("flex-direction") ?? "row");
-  // An unset alignment stays centered, as every root drew before parts. CSS packs it at the start
-  // and stretches it, which shows only where a box has room to spare or children of unequal height.
-  const counterAlign = readAlign(reader, "align-items", "counter") ?? "CENTER";
-  const primaryAlign = readAlign(reader, "justify-content", "primary") ?? "CENTER";
-  return {
-    flexRow: !empty && (display === "flex" || display === "inline-flex") && direction === "row",
-    primaryAlign,
-    counterAlign,
-    justify: reader.has("justify-content") ? primaryAlign : "unset",
-  };
-}
-
-/** What the mapping of every layer of one cell reads besides the layer's own style. */
-type MapScope = {
-  readonly definition: ComponentDefinition;
-  readonly cell: Cell;
-  readonly context: BuildContext;
-  /** The parts that draw as a slot around a dot, the same in every cell. */
-  readonly scaling: ReadonlySet<PartDefinition>;
-};
-
-/**
- * Map a box, the root or a part, and the parts and icons below it, from the cascade of each.
- *
- * @param box - The root's or the part's definition.
- * @param cascade - The box's cascade.
- * @returns The box, without the root's name or a frame's key.
- */
-function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): BoxSpec {
-  const { definition, cell, context } = scope;
-  const reader = cascade.style;
-  const number = (property: string): NumberSpec | undefined =>
-    reader.read(property, (value) => readNumber(value, context.variables), describeNumber);
-  const color = (property: string): ColorSpec | undefined =>
-    reader.read(property, (value) => readColor(value, context.variables), describeColor);
-
-  for (const [property, layout] of [
-    ["box-sizing", literalLayout(["border-box"], "strokes count in the auto layout")],
-    ["white-space", literalLayout(["nowrap"], "the label hugs its width")],
-  ] as const) {
-    reader.read(property, layout.map, layout.describe);
-  }
-
-  const stroke = readStroke(reader, context);
-  const shadows = readShadowStack(reader, context);
-  const opacity = reader.read("opacity", evaluateNumber, (value) => ({
-    outcome: "literal",
-    detail: `opacity ${value}`,
-  }));
-  const textColor = color("color");
-  const fill = reader.read("background-color", (value) => readFill(value, context.variables), describeFill);
-
-  const start: ChildLayerSpec[] = [];
-  const end: ChildLayerSpec[] = [];
-  for (const slot of box.iconsFor(cell)) {
-    const icon = mapIcon(slot, cascade.icon(slot), scope);
-    if (icon !== undefined) {
-      (slot.side === "start" ? start : end).push(icon);
-    }
-  }
-  const parts = (box.parts ?? [])
-    .filter((child) => child.shownIn(cell))
-    .map((child) => {
-      const name = partName(child);
-      const childCascade = cascade.part(child.classesFor(cell), name);
-      const box = mapBox(child, childCascade, scope);
-      const layer: FrameLayerSpec = {
-        kind: "frame",
-        key: child.key,
-        name,
-        ...(scope.scaling.has(child) ? slotAroundDot(childCascade.style, box) : box),
-      };
-      return { layer, style: childCascade.style };
-    });
-  const children: ChildLayerSpec[] = [...parts.map(({ layer }) => layer), ...start];
-  const label = box.label?.shownIn(cell) === true ? box.label : undefined;
-  if (label === undefined) {
-    for (const property of TEXT_PROPERTIES) {
-      reader.mark(property, "dropped", "the cell shows no text");
-    }
-  } else {
-    children.push(mapLabel(definition, label, cell, reader, context, textColor));
-  }
-  children.push(...end);
-  // The layout reads once the children are known, since a grid maps only around one layer.
-  const layout = readLayout(reader, children.length);
-  const width = readWidth(reader, context);
-  const paddingLeft = number("padding-left") ?? ZERO;
-  const paddingRight = number("padding-right") ?? ZERO;
-  const primaryAlign = placeParts(
-    {
-      style: reader,
-      layout,
-      layers: children.length,
-      size: { width, stroke, paddingLeft, paddingRight },
-    },
-    parts
-  );
-  const { counterAlign } = layout;
-  reader.read(
-    "max-width",
-    (value) => {
-      const max = readNumber(value, context.variables);
-      return max?.kind === "literal" && width?.kind === "literal" && max.value >= width.value
-        ? max
-        : undefined;
-    },
-    () => ({ outcome: "dropped", detail: "it is no less than the fixed width, so it never narrows the box" })
-  );
-
-  const height = number("height");
-  reader.read(
-    "aspect-ratio",
-    (value) => (width !== undefined && height !== undefined ? value : undefined),
-    () => ({ outcome: "dropped", detail: "both sides are fixed, so the ratio sizes neither" })
-  );
-  return {
-    width,
-    height,
-    minWidth: number("min-width"),
-    paddingTop: number("padding-top") ?? ZERO,
-    paddingRight,
-    paddingBottom: number("padding-bottom") ?? ZERO,
-    paddingLeft,
-    itemSpacing: number("gap") ?? ZERO,
-    primaryAlign,
-    counterAlign,
-    cornerRadius: readCorner(reader, { width, height }, context) ?? ZERO,
-    fill: fill === NO_FILL ? undefined : fill,
-    stroke,
-    shadows,
-    opacity: opacity ?? 1,
-    children,
-  };
-}
-
-/** A width that hugs the box's content, which the box writes as no width. */
-const HUG = "hug";
-
-/**
- * Read `width`. `fit-content` is the width of what the box holds in a container with room to
- * spare, which the kit's frames are, so it hugs, as an unset width does.
- *
- * @returns The fixed width, or undefined when the box hugs or the width does not map.
- */
-function readWidth(reader: LayerStyle, context: BuildContext): NumberSpec | undefined {
-  const width = reader.read(
-    "width",
-    (value) => (normalizeCss(value) === "fit-content" ? HUG : readNumber(value, context.variables)),
-    (read) =>
-      read === HUG ? { outcome: "literal", detail: "the box hugs its content" } : describeNumber(read)
-  );
-  return width === HUG ? undefined : width;
-}
-
-/**
- * Read `border-radius` as the corner. An infinite radius, which `rounded-full` compiles to, reads
- * as half the box's shorter side. CSS scales down radii whose sum exceeds a side, so it draws any
- * larger radius as that half. The plugin writes the half itself rather than rely on Figma
- * clamping a larger radius the same way. A box that hugs a side has no length to halve, so its
- * pill corner stays unmapped.
- *
- * @param size - The box's width and height, each undefined when the box hugs that side.
- * @returns The corner, or undefined when the box sets none or it does not map.
- */
-function readCorner(
-  reader: LayerStyle,
-  size: { readonly width: NumberSpec | undefined; readonly height: NumberSpec | undefined },
-  context: BuildContext
-): NumberSpec | undefined {
-  const { width, height } = size;
-  const corner = reader.read(
-    "border-radius",
-    (value): { readonly radius: NumberSpec; readonly half: number | undefined } | undefined => {
-      const radius = readNumber(value, context.variables);
-      if (radius !== undefined) {
-        return { radius, half: undefined };
-      }
-      if (!isInfiniteLength(value) || width?.kind !== "literal" || height?.kind !== "literal") {
-        return undefined;
-      }
-      const half = Math.min(width.value, height.value) / 2;
-      return { radius: { kind: "literal", value: half }, half };
-    },
-    ({ radius, half }) =>
-      half === undefined
-        ? describeNumber(radius)
-        : {
-            outcome: "literal",
-            detail: `${half}px, half the shorter side, which CSS draws for any larger radius`,
-          }
-  );
-  return corner?.radius;
-}
-
-/**
- * Map one icon. A slot whose computed style is `display: none` is left out, as the pending
- * Button leaves out its own leading icon while its spinner takes the place. The icon's glyph
- * takes the text color it inherits, as a Fuse icon paints with `currentColor`.
- *
- * @returns The icon layer, or undefined for an icon the cell hides.
- */
-function mapIcon(
-  slot: IconSlot,
-  style: LayerStyle,
-  { definition, cell, context }: MapScope
-): IconLayerSpec | undefined {
-  const hidden = style.read(
-    "display",
-    (value) => (normalizeCss(value) === "none" ? true : undefined),
-    () => ({ outcome: "literal", detail: "the icon is left out" })
-  );
-  if (hidden === true) {
-    for (const property of ["width", "height"]) {
-      style.mark(property, "dropped", "the icon is left out");
-    }
-    return undefined;
-  }
-  const width = style.read("width", (value) => readNumber(value, context.variables), describeNumber);
-  const height = style.read("height", (value) => readNumber(value, context.variables), describeNumber);
-  const color = style.read("color", (value) => readColor(value, context.variables), describeColor);
-  if (width === undefined || color === undefined || JSON.stringify(width) !== JSON.stringify(height)) {
-    throw new Error(`${variantKey(definition, cell)}: the ${slot.name} needs a square size and a text color`);
-  }
-  return {
-    kind: "icon",
-    key: slot.key,
-    name: slot.name,
-    icon: iconKey(slot.icon),
-    swapProperty: slot.swapProperty,
-    size: width,
-    color,
-  };
-}
-
-/** The `box-shadow` every Tailwind shadow and ring utility writes, one layer per custom property. */
-const TAILWIND_SHADOW_LAYERS = [
-  "--tw-inset-shadow",
-  "--tw-inset-ring-shadow",
-  "--tw-ring-offset-shadow",
-  "--tw-ring-shadow",
-  "--tw-shadow",
-] as const;
-
-const TAILWIND_SHADOW_STACK = TAILWIND_SHADOW_LAYERS.map((layer) => `var(${layer})`).join(",");
-
-/**
- * Read the drop shadows. Tailwind composes `box-shadow` from one custom property per layer,
- * so the builder reads each layer a class set on its own. A layer that does not map, such
- * as a shadow whose blur is a formula over a variable, leaves the other layers in place.
- */
-function readShadowStack(root: LayerStyle, context: BuildContext): readonly ShadowSpec[] {
-  const raw = root.raw("box-shadow");
-  if (raw === undefined) {
-    return [];
-  }
-  const describe = (mapped: readonly ShadowSpec[]) => ({
-    outcome: mapped.some((shadow) => shadow.color.kind === "variable")
-      ? ("bound" as const)
-      : ("literal" as const),
-    detail: mapped.length === 0 ? "no visible shadow" : `${mapped.length} drop shadow(s)`,
-  });
-  if (normalizeCss(raw) !== TAILWIND_SHADOW_STACK) {
-    return root.read("box-shadow", (value) => readShadows(value, context.variables), describe) ?? [];
-  }
-  root.mark("box-shadow", "literal", "Tailwind's shadow stack, read layer by layer");
-  return TAILWIND_SHADOW_LAYERS.flatMap((layer) =>
-    root.has(layer)
-      ? (root.read(layer, (value) => readShadows(value, context.variables), describe) ?? [])
-      : []
-  );
-}
-
-/**
- * A CSS border becomes an inside stroke. A border with no style or a style other than solid
- * stays unmapped, and so does one with no color, which would otherwise draw no stroke and leave
- * no row.
- */
-function readStroke(root: LayerStyle, context: BuildContext): StrokeSpec | undefined {
-  if (!root.has("border-width")) {
-    return undefined;
-  }
-  root.missing(
-    "border-color",
-    "border-width",
-    "no class or base rule colors the border, so the stroke is left out"
-  );
-  const style = root.read(
-    "border-style",
-    (value) => (normalizeCss(value) === "solid" ? value : undefined),
-    () => ({ outcome: "literal", detail: "a solid stroke" })
-  );
-  const weight = root.read("border-width", (value) => readNumber(value, context.variables), describeNumber);
-  const color = root.read("border-color", (value) => readColor(value, context.variables), describeColor);
-  return style === undefined || weight === undefined || color === undefined ? undefined : { color, weight };
-}
-
-/** The text properties a label reads, which a part without a label drops. */
-const TEXT_PROPERTIES = [
-  "font-family",
-  "font-size",
-  "font-weight",
-  "line-height",
-  "text-decoration-line",
-  "text-underline-offset",
-] as const;
-
-function mapLabel(
-  definition: ComponentDefinition,
-  label: LabelDefinition,
-  cell: Cell,
-  root: LayerStyle,
-  context: BuildContext,
-  color: ColorSpec | undefined
-): ChildLayerSpec {
-  const fontSize = root.read("font-size", (value) => readNumber(value, context.variables), describeNumber);
-  const lineHeight = root.read(
-    "line-height",
-    (value) => {
-      const bound = context.variables.lookup(value);
-      if (bound !== undefined) {
-        return { kind: "variable" as const, variable: bound };
-      }
-      const number = evaluateNumber(value);
-      if (number === undefined) {
-        return undefined;
-      }
-      // A unitless line height multiplies the font size, which must then be a literal.
-      if (/px|rem|%/.test(value)) {
-        return { kind: "literal" as const, value: number };
-      }
-      return fontSize?.kind === "literal"
-        ? { kind: "literal" as const, value: number * fontSize.value }
-        : undefined;
-    },
-    describeNumber
-  );
-  const fontFamily = root.read(
-    "font-family",
-    (value): StringSpec | undefined => {
-      const bound = context.variables.lookup(value);
-      return bound === undefined ? undefined : { kind: "variable", variable: bound };
-    },
-    (spec) => ({
-      outcome: "bound",
-      detail: spec.kind === "variable" ? `${spec.variable.collection} / ${spec.variable.name}` : spec.value,
-    })
-  );
-  const weight = root.read(
-    "font-weight",
-    (value) => {
-      const number = evaluateNumber(value);
-      return number === undefined ? undefined : FONT_STYLES.get(number);
-    },
-    (style) => ({ outcome: "literal", detail: `font style ${style}` })
-  );
-  const underlined = root.read(
-    "text-decoration-line",
-    (value) => {
-      const line = normalizeCss(value);
-      return line === "underline" ? true : line === "none" ? false : undefined;
-    },
-    (drawn) => ({ outcome: "literal", detail: drawn ? "an underline" : "no decoration" })
-  );
-  let underline: { readonly offset: number | undefined } | undefined;
-  if (underlined === true) {
-    underline = {
-      offset: root.read("text-underline-offset", evaluateNumber, (offset) => ({
-        outcome: "literal",
-        detail: `an underline offset of ${offset}px`,
-      })),
-    };
-  } else {
-    root.mark("text-underline-offset", "dropped", "the cell draws no underline");
-  }
-  if (fontFamily === undefined || fontSize === undefined || lineHeight === undefined || color === undefined) {
-    throw new Error(
-      `${variantKey(definition, cell)}: the label needs a font family, size, line height and color`
-    );
-  }
-  return {
-    kind: "text",
-    key: label.key,
-    name: label.name,
-    characters: label.characters,
-    textProperty: label.textProperty,
-    fontFamily,
-    fontStyle: weight ?? "Regular",
-    fontSize,
-    lineHeight,
-    color,
-    underline,
-  };
 }

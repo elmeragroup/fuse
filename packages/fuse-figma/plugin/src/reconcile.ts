@@ -54,13 +54,18 @@ async function planKit(run: Run, kit: KitSpec): Promise<Target<PageNode>> {
     return result;
   };
 
-  // The icons come first, because the sets' icon layers and swap properties use them.
+  // The icons come first, because the sets' icon layers and swap properties use them. The sets follow
+  // in kit order, which puts each set after the sets whose variants its instance layers show.
   const library = await onPage(kit.icons.page, (page) => planIconLibrary(run, page, kit.icons));
   const sets: PlannedSet[] = [];
+  const setsByKey = new Map<string, PlannedSet>();
   for (const spec of kit.componentSets) {
-    sets.push(await onPage(spec.page, (page) => planComponentSet(run, page, spec, library.icons)));
+    const set = await onPage(spec.page, (page) =>
+      planComponentSet(run, page, spec, library.icons, setsByKey)
+    );
+    sets.push(set);
+    setsByKey.set(spec.key, set);
   }
-  const setsByKey = new Map(sets.map((set) => [set.spec.key, set]));
   for (const page of pages.listed) {
     const key = page.spec.key;
     const previews = kit.previews.filter((preview) => preview.page === key);
@@ -94,7 +99,7 @@ export async function reconcileKit(figma: PluginAPI, kit: KitSpec, apply: boolea
   const variables = await loadKitVariables(figma, kitCollections(kit));
   const startRun = (plan: Plan): Run => {
     const run: Run = { figma, variables, plan };
-    checkKit(variables, kit);
+    checkKit(figma, variables, kit);
     for (const font of kit.fonts) {
       requireFont(run, "The kit", font);
     }

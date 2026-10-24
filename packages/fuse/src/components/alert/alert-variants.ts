@@ -1,16 +1,27 @@
 /**
- * Module-private slot recipe. Not exported from the public entry —
- * there is no proven recipe-borrowing use.
+ * Module-private slot recipe. Not exported from the public entry, since there is no proven
+ * recipe-borrowing use; the workspace-only recipe catalog re-exports it for the Figma component
+ * sync.
  *
  * `variant` is the status axis only. Item supplies `variant="outline"` / `size="sm"`
- * underneath; this recipe is not a density rung.
+ * underneath; this recipe is not a density rung. The `media` and `title` slots add to Item.Media's
+ * and Item.Title's own classes.
  */
 import { tv } from "../../styles/tv";
 
 export const alertVariants = tv({
   slots: {
     base: "relative",
+    // Beside a description Item.Media is one title line tall and centres the glyph on it. Item sizes
+    // that line for Item.Title's fixed `text-sm`; the alert title reads `--label-text`, so the media
+    // line does too. It replaces Item.Media's own `item-described:` value of the same property.
+    media: "item-described:[--item-media-line:calc(var(--label-text)*var(--leading-snug))]",
     icon: "block size-5 shrink-0 text-foreground",
+    // An alert's title takes the label text, `--label-text`, so it follows document density as
+    // SelectionItem's rows do: 14px dense and 16px comfortable. It keeps Item.Title's `font-medium`
+    // and `leading-snug`, written as the size's `/snug` modifier because tailwind-merge drops a line
+    // height that comes before a font size.
+    title: "text-(length:--label-text)/snug",
     // The body takes the label text, `--label-text`, at `leading-normal`, as SelectionItem's
     // description does: 14px dense and 16px comfortable. The size carries the line height as its
     // `/normal` modifier, because tailwind-merge drops a line height that comes before a font size.

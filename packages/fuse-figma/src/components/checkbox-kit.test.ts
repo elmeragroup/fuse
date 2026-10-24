@@ -10,10 +10,13 @@ import {
   builtKit,
   ERROR_RING,
   FOCUS_RING,
+  fixedSize,
+  HUG,
   literal,
   paint,
   SHADOW_XS,
   token,
+  UNLIMITED,
   variantRoot,
 } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
@@ -36,6 +39,10 @@ const indicator = (icon: string) => ({
   kind: "frame",
   key: "indicator",
   name: "checkbox-indicator",
+  direction: "HORIZONTAL",
+  sizing: { horizontal: HUG, vertical: HUG },
+  limits: UNLIMITED,
+  clips: false,
   paddingTop: literal(0),
   paddingRight: literal(0),
   paddingBottom: literal(0),
@@ -74,8 +81,10 @@ describe("the Checkbox component set", () => {
   it("draws an empty 16px card box with a muted-foreground border and the 4px-capped corner when off", () => {
     expect(checkbox("off", "rest")).toEqual({
       name: "checkbox",
-      width: literal(16),
-      height: literal(16),
+      direction: "HORIZONTAL",
+      sizing: fixedSize(literal(16), literal(16)),
+      limits: UNLIMITED,
+      clips: true,
       paddingTop: literal(0),
       paddingRight: literal(0),
       paddingBottom: literal(0),
@@ -107,19 +116,19 @@ describe("the Checkbox component set", () => {
   });
 
   it("rings focus, dims disabled, and keeps the primary border only on a checked invalid box", () => {
-    expect(checkbox("off", "focus").shadows).toEqual([FOCUS_RING, SHADOW_XS]);
+    expect(checkbox("off", "focus").shadows).toEqual([SHADOW_XS, FOCUS_RING]);
     expect(checkbox("on", "disabled").opacity).toBe(0.5);
     // `aria-invalid:aria-checked:border-primary` matches `aria-checked="true"`, which a mixed box,
     // `aria-checked="mixed"`, does not carry, so it keeps the error border of the state face.
     const checkedInvalid = checkbox("on", "invalid");
     expect([checkedInvalid.stroke?.color, checkedInvalid.shadows]).toEqual([
       paint("primary"),
-      [ERROR_RING, SHADOW_XS],
+      [SHADOW_XS, ERROR_RING],
     ]);
     const mixedInvalid = checkbox("mixed", "invalid");
     expect([mixedInvalid.stroke?.color, mixedInvalid.shadows]).toEqual([
       paint("error"),
-      [ERROR_RING, SHADOW_XS],
+      [SHADOW_XS, ERROR_RING],
     ]);
     expect(checkbox("off", "invalid").stroke?.color).toEqual(paint("error"));
   });

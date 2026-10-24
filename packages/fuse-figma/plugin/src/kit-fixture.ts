@@ -1,14 +1,19 @@
 /**
  * The whole kit on the in-memory file in `fake-figma.ts`, shared by the suites that apply it end
  * to end: the kit `buildKit()` writes, the variables `fuseVariableSet()` syncs, synced and applied
- * files, and the names the kit gives its pages and previews.
+ * files, the kit pages they hold and the sets and icon library on them, and the change lines a run
+ * lists as it creates the pages and previews. `test/kit-inventory.ts` names the pages, sets and
+ * previews.
  */
 import { Result } from "effect";
 
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import type { AliasCycle, CollectionSpec, InvalidVariableSet, VariableSet } from "../../src/variable-set.ts";
+import { ICONS_PAGE, KIT_PAGES, previewsOn } from "../../test/kit-inventory.ts";
+import type { InventoryPage } from "../../test/kit-inventory.ts";
 import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
+import { childNamed } from "./fake-fixtures.ts";
 import { keyOf } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
 
@@ -102,20 +107,73 @@ export async function kitPage(file: FakeFigma, key = "page/button"): Promise<Pag
   return page;
 }
 
-/** The names of the four Button previews, which pin Fjordkraft private themes. */
-export const PREVIEWS: readonly string[] = [
-  "Button / Fjordkraft internal private, light",
-  "Button / Fjordkraft internal private, dark",
-  "Button / Fjordkraft external private, light",
-  "Button / Fjordkraft external private, dark",
-];
+/**
+ * The component set of a name on a page.
+ *
+ * @param page - The page.
+ * @param name - The set's name.
+ * @returns The set.
+ * @throws When the page holds no set of that name.
+ */
+export function setOn(page: PageNode, name: string): ComponentSetNode {
+  const set = page.children.find(
+    (node): node is ComponentSetNode => node.type === "COMPONENT_SET" && node.name === name
+  );
+  if (set === undefined) {
+    throw new Error(`${page.name} has no component set ${name}`);
+  }
+  return set;
+}
 
 /**
- * The names of the four previews on a component's page.
+ * The component set of a name on the Button page.
  *
- * @param component - The page's name, such as `Toggle`.
- * @returns The preview names, in the order of {@link PREVIEWS}.
+ * @param file - The file.
+ * @param name - The set's name.
+ * @returns The set.
  */
-export function previewsOf(component: string): readonly string[] {
-  return PREVIEWS.map((name) => name.replace("Button", component));
+export async function componentSet(file: FakeFigma, name: string): Promise<ComponentSetNode> {
+  return setOn(await kitPage(file), name);
 }
+
+/**
+ * The icon library on the Icons page.
+ *
+ * @param file - The file.
+ * @returns The library's frame.
+ */
+export async function iconLibrary(file: FakeFigma): Promise<FrameNode> {
+  return childNamed(await kitPage(file, ICONS_PAGE.key), "FRAME", "Icons");
+}
+
+/**
+ * Names as the plugin's change lines list them: `a`, `a and b`, `a, b and c`.
+ *
+ * @param names - The names.
+ * @returns The list.
+ */
+export function listed(names: readonly string[]): string {
+  const last = names.at(-1) ?? "";
+  return names.length < 2 ? last : `${names.slice(0, -1).join(", ")} and ${last}`;
+}
+
+/**
+ * The names of a page's previews, in frame order.
+ *
+ * @param page - The page.
+ * @returns The names.
+ */
+export function previewNames(page: InventoryPage): readonly string[] {
+  return previewsOn(page).map(({ name }) => name);
+}
+
+/** The pages a run creates on a file without them, the component pages first. */
+export const CREATE_PAGES = [...KIT_PAGES, ICONS_PAGE].map(
+  (page) => `Document: create the page ${page.name}`
+);
+
+/** Each page's previews a run creates, then its sets placed in a row with the previews below them. */
+export const CREATE_AND_PLACE_PREVIEWS = KIT_PAGES.flatMap((page) => [
+  ...previewNames(page).map((name) => `${page.name}: create the preview ${name}`),
+  `${page.name}: place ${listed(page.sets.map((set) => set.name))} in a row and stack 4 previews below them`,
+]);

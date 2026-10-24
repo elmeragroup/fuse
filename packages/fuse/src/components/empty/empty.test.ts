@@ -9,7 +9,7 @@ import { emptyMediaVariants, emptyVariants } from "./empty-variants";
 
 describe("emptyVariants", () => {
   it("keeps the anatomy layout classes without a control-box size axis", () => {
-    const resolved = emptyVariants();
+    const resolved = emptyVariants().root();
     expect(resolved).toContain("flex");
     expect(resolved).toContain("min-w-0");
     expect(resolved).toContain("flex-1");
@@ -28,9 +28,9 @@ describe("emptyVariants", () => {
 
   it("carries no destructive, raw palette, or dark classes", () => {
     const resolved = [
-      emptyVariants(),
-      emptyVariants({ variant: "outline" }),
-      emptyVariants({ variant: "outline-dashed" }),
+      emptyVariants().root(),
+      emptyVariants({ variant: "outline" }).root(),
+      emptyVariants({ variant: "outline-dashed" }).root(),
     ].join(" ");
     expect(resolved).not.toContain("dark:");
     expect(resolved).not.toContain("destructive");

@@ -4,14 +4,19 @@
  * equal when it binds the same variable. A literal field counts as equal when no variable
  * binds it and the value matches within the precision Figma stores, which is a 32-bit
  * float. A planner looks up every variable and builds every paint before it records the
- * operation, so the operation only assigns.
+ * operation, so the operation only assigns. An image paint's operation also stores the image the
+ * paint names, first, so Plan stores nothing.
  */
 
 import type {
   ColorSpec,
+  DirectionSpec,
+  FillSpec,
+  ImagePaintSpec,
   NumberSpec,
   RgbaSpec,
   ShadowSpec,
+  SizeSpec,
   VariableRef,
 } from "../../src/components/kit-spec.ts";
 import { change, changeTogether, requirement } from "./plan.ts";
@@ -58,6 +63,21 @@ export function requireFont(run: Run, label: string, font: FontName): void {
       );
     }
   });
+}
+
+/**
+ * Every font a text layer's characters use, each range of mixed ones included. An empty layer holds
+ * the one font it would type in.
+ *
+ * @param run - The run.
+ * @param text - The text layer.
+ * @returns The fonts.
+ */
+export function heldFonts(run: Run, text: TextNode): FontName[] {
+  if (text.characters.length > 0) {
+    return text.getRangeAllFontNames(0, text.characters.length);
+  }
+  return text.fontName === run.figma.mixed ? [] : [text.fontName];
 }
 
 /**
@@ -110,21 +130,33 @@ function describeRgba(color: RGB, alpha: number): string {
 }
 
 /**
+ * An image paint for a change line: the start of its image's hash, which tells two images apart,
+ * its scale mode, and its opacity where that is not full.
+ */
+function describeImage(paint: ImagePaint): string {
+  const opacity = paint.opacity ?? 1;
+  const faded = nearUnit(opacity, 1) ? "" : ` at ${Math.round(opacity * 100)}%`;
+  return `image ${paint.imageHash?.slice(0, 8) ?? "none"} at ${paint.scaleMode}${faded}`;
+}
+
+/**
  * What a node holds, for a change line. A bound paint shows as `variable`, because the paint
  * planner only reads a binding's id. A bound shadow also shows the color Figma stores, which
  * the shadow planner compares. A mismatch after an apply shows what Figma kept.
  */
 function describeHeldPaint(paint: Paint): string {
-  if (paint.type !== "SOLID") {
+  if (paint.type !== "SOLID" && paint.type !== "IMAGE") {
     return paint.type;
   }
-  const color =
-    paint.boundVariables?.color === undefined
-      ? describeRgba(paint.color, paint.opacity ?? 1)
-      : `variable at ${Math.round((paint.opacity ?? 1) * 100)}%`;
+  const shown =
+    paint.type === "IMAGE"
+      ? describeImage(paint)
+      : paint.boundVariables?.color === undefined
+        ? describeRgba(paint.color, paint.opacity ?? 1)
+        : `variable at ${Math.round((paint.opacity ?? 1) * 100)}%`;
   const hidden = paint.visible === false ? ", hidden" : "";
   const blend = (paint.blendMode ?? "NORMAL") === "NORMAL" ? "" : `, ${paint.blendMode}`;
-  return `${color}${hidden}${blend}`;
+  return `${shown}${hidden}${blend}`;
 }
 
 function describeHeldEffect(effect: Effect): string {
@@ -151,6 +183,14 @@ export function variableLabel(ref: VariableRef): string {
 }
 
 /**
+ * What a planner compares the spec with. `read` compares it with the node as the planning pass
+ * reads it. `unknown` records the write whatever the node reads, for a field that an earlier
+ * operation of the run changes in a way the pass cannot read ahead, as a direction change moves a
+ * hug or a fill to the other axis and resizes the box.
+ */
+export type Held = "read" | "unknown";
+
+/**
  * Plan one number field against its spec.
  *
  * @param run - The run.
@@ -158,18 +198,20 @@ export function variableLabel(ref: VariableRef): string {
  * @param label - The node's label, for change lines.
  * @param field - The field.
  * @param spec - The value the field should hold.
+ * @param held - Whether to compare with what the node holds, or write the field whatever it holds.
  */
 export function planNumber(
   run: Run,
   node: SceneNode,
   label: string,
   field: NumberField,
-  spec: NumberSpec
+  spec: NumberSpec,
+  held: Held = "read"
 ): void {
   const bound = node.boundVariables;
   if (spec.kind === "variable") {
     const variable = run.variables.variable(spec.variable);
-    if (field.bindings.every((binding) => bound?.[binding]?.id === variable.id)) {
+    if (held === "read" && field.bindings.every((binding) => bound?.[binding]?.id === variable.id)) {
       return;
     }
     change(run.plan, label, `${field.name} → ${spec.variable.name}`, () => {
@@ -179,7 +221,11 @@ export function planNumber(
     });
     return;
   }
-  if (field.bindings.every((binding) => bound?.[binding] === undefined) && field.matches(spec.value)) {
+  if (
+    held === "read" &&
+    field.bindings.every((binding) => bound?.[binding] === undefined) &&
+    field.matches(spec.value)
+  ) {
     return;
   }
   change(run.plan, label, `${field.name} → ${describeNumber(spec)}`, () => {
@@ -188,6 +234,41 @@ export function planNumber(
     }
     field.write(spec.value);
   });
+}
+
+/**
+ * Plan the BOOLEAN property a layer's `visible` follows, which a designer toggles from the properties
+ * panel to show or hide the part (PB). A layer the spec shows wherever its variant holds it follows
+ * none.
+ *
+ * @param run - The run.
+ * @param layer - A frame or an instance layer.
+ * @param label - The layer's label, for change lines.
+ * @param property - The property's name in the spec, or undefined for none.
+ * @param ids - The set's property ids by name, which an operation that adds one fills in when it runs.
+ */
+export function planVisibleLink(
+  run: Run,
+  layer: FrameNode | InstanceNode,
+  label: string,
+  property: string | undefined,
+  ids: ReadonlyMap<string, string>
+): void {
+  const linked = layer.componentPropertyReferences?.visible;
+  if (property !== undefined && (linked === undefined || linked !== ids.get(property))) {
+    change(run.plan, label, `visible → the ${property} property`, () => {
+      const id = ids.get(property);
+      if (id === undefined) {
+        throw new Error(`${label}: the ${property} property has no id when the layer links to it.`);
+      }
+      layer.componentPropertyReferences = { ...layer.componentPropertyReferences, visible: id };
+    });
+  } else if (property === undefined && linked !== undefined) {
+    change(run.plan, label, "visible → no property", () => {
+      const { visible: _unlinked, ...rest } = layer.componentPropertyReferences ?? {};
+      layer.componentPropertyReferences = rest;
+    });
+  }
 }
 
 /**
@@ -248,9 +329,14 @@ function rgbaMatches(color: RGB, alpha: number, spec: RgbaSpec): boolean {
   );
 }
 
-function paintMatches(run: Run, paint: Paint, spec: ColorSpec): boolean {
+/** Whether a paint shows as written: visible, and in the `NORMAL` blend mode the plugin writes. */
+function shows(paint: Paint): boolean {
   // Figma documents NORMAL as the blend mode of a paint that sets none.
-  if (paint.type !== "SOLID" || paint.visible === false || (paint.blendMode ?? "NORMAL") !== "NORMAL") {
+  return paint.visible !== false && (paint.blendMode ?? "NORMAL") === "NORMAL";
+}
+
+function paintMatches(run: Run, paint: Paint, spec: ColorSpec): boolean {
+  if (paint.type !== "SOLID" || !shows(paint)) {
     return false;
   }
   const boundId = paint.boundVariables?.color?.id;
@@ -263,7 +349,85 @@ function paintMatches(run: Run, paint: Paint, spec: ColorSpec): boolean {
 }
 
 /**
- * Plan a node's fills or strokes as a single solid paint, or as none.
+ * The image paint a spec asks for, at full opacity in the `NORMAL` blend mode. It names its image by
+ * the hash the build wrote, the SHA-1 of the bytes, which is the hash Figma names a stored image by
+ * (P9b), so the plan builds it without storing the image.
+ */
+function imagePaint(spec: ImagePaintSpec): ImagePaint {
+  return {
+    type: "IMAGE",
+    scaleMode: spec.scaleMode,
+    imageHash: spec.hash,
+    visible: true,
+    opacity: 1,
+    blendMode: "NORMAL",
+  };
+}
+
+/**
+ * Store the image a paint names, as the operation that writes the paint runs, so Plan stores
+ * nothing. Storing an image changes the file, though an image is no node.
+ *
+ * @param run - The run.
+ * @param spec - The image.
+ * @throws When Figma stores the image under another hash than the spec's, which a real file did not
+ *   do (P9b): the paint would name an image Figma does not hold, so the operation writes no paint.
+ */
+function storeImage(run: Run, spec: ImagePaintSpec): void {
+  const { hash } = run.figma.createImage(run.figma.base64Decode(spec.bytes));
+  if (hash !== spec.hash) {
+    throw new Error(
+      `Figma stored the image as ${hash}, where the kit names it ${spec.hash}, the SHA-1 the build wrote. The plugin writes no paint that names an image the file does not hold.`
+    );
+  }
+}
+
+/**
+ * Whether a held paint shows the image paint the spec asks for. On 2026-10-22 a real file read a
+ * written image paint back with its hash, its scale mode and Figma's defaults for the rest (P9), and
+ * named the image by the SHA-1 of its bytes (P9b). So the hash and the scale mode decide, besides the
+ * visibility, blend mode and opacity every paint is held to. The filters and rotation stay unread.
+ */
+function imageMatches(held: Paint, wanted: ImagePaint): boolean {
+  return (
+    held.type === "IMAGE" &&
+    shows(held) &&
+    nearUnit(held.opacity ?? 1, 1) &&
+    held.imageHash === wanted.imageHash &&
+    held.scaleMode === wanted.scaleMode
+  );
+}
+
+/** The paint a fill spec asks for, whether a held paint shows it, and its words in a change line. */
+type DesiredPaint = {
+  readonly shownBy: (held: Paint) => boolean;
+  /** Builds the paint to write, which a solid paint needs only when the node does not show it. */
+  readonly build: () => Paint;
+  /** What the operation does before it writes the paint, such as storing the image it names. */
+  readonly prepare: () => void;
+  readonly description: string;
+};
+
+function desiredPaint(run: Run, spec: FillSpec): DesiredPaint {
+  if (spec.kind !== "image") {
+    return {
+      shownBy: (held) => paintMatches(run, held, spec),
+      build: () => solidPaint(run, spec),
+      prepare: () => undefined,
+      description: describeColor(spec),
+    };
+  }
+  const paint = imagePaint(spec);
+  return {
+    shownBy: (held) => imageMatches(held, paint),
+    build: () => paint,
+    prepare: () => storeImage(run, spec),
+    description: describeImage(paint),
+  };
+}
+
+/**
+ * Plan a node's fills or strokes as a single solid or image paint, or as none.
  *
  * @param run - The run.
  * @param label - The node's label, for change lines.
@@ -277,7 +441,7 @@ export function planPaints(
   label: string,
   name: string,
   current: ReadonlyArray<Paint> | PluginAPI["mixed"],
-  spec: ColorSpec | undefined,
+  spec: FillSpec | undefined,
   write: (paints: Paint[]) => void
 ): void {
   const holds = current === run.figma.mixed ? undefined : current;
@@ -287,13 +451,17 @@ export function planPaints(
     }
     return;
   }
+  const desired = desiredPaint(run, spec);
   const [only] = holds ?? [];
-  if (holds?.length === 1 && only !== undefined && paintMatches(run, only, spec)) {
+  if (holds?.length === 1 && only !== undefined && desired.shownBy(only)) {
     return;
   }
-  const paint = solidPaint(run, spec);
+  const paint = desired.build();
   const held = holds === undefined ? "mixed" : describeHeld(holds, describeHeldPaint);
-  change(run.plan, label, `${name} → ${describeColor(spec)} (holds ${held})`, () => write([paint]));
+  change(run.plan, label, `${name} → ${desired.description} (holds ${held})`, () => {
+    desired.prepare();
+    write([paint]);
+  });
 }
 
 /**
@@ -431,56 +599,124 @@ export function planShadows(
   });
 }
 
-/** The sizing modes of an auto layout frame. */
-export type SizingModes = {
-  readonly primary: "FIXED" | "AUTO";
-  readonly counter: "FIXED" | "AUTO";
+/** How a node sizes along each axis, as `layoutSizingHorizontal` and `layoutSizingVertical` name it. */
+export type LayoutSizing = {
+  readonly horizontal: FrameNode["layoutSizingHorizontal"];
+  readonly vertical: FrameNode["layoutSizingVertical"];
 };
 
+/** The `layoutSizing*` value each kind of axis sizing writes. */
+export const LAYOUT_SIZING = {
+  fixed: "FIXED",
+  hug: "HUG",
+  fill: "FILL",
+} as const satisfies Record<SizeSpec["kind"], LayoutSizing["horizontal"]>;
+
+/** Each axis and the member that sizes it. */
+export const SIZING_MEMBERS = [
+  ["horizontal", "layoutSizingHorizontal"],
+  ["vertical", "layoutSizingVertical"],
+] as const;
+
 /**
- * Plan a size and the sizing modes as one operation. `resize` turns both sizing modes to
- * FIXED, so the operation writes both sizing modes again after the size.
+ * How a layer sizes on each axis, as the plan compares it with the spec. A hidden child of an auto
+ * layout reads `layoutSizing*` FIXED on an axis it fills, while it keeps the fill in `layoutGrow` 1
+ * along its parent's direction and `layoutAlign` STRETCH across it, as a real file showed on
+ * 2026-10-24 (NH), so a hidden child's fill reads from those. A shown layer reads FILL itself.
+ *
+ * @param node - A frame, component, instance or text.
+ * @returns The sizing on each axis.
+ */
+export function heldSizing(
+  node: Pick<
+    FrameNode,
+    "layoutSizingHorizontal" | "layoutSizingVertical" | "layoutGrow" | "layoutAlign" | "visible" | "parent"
+  >
+): LayoutSizing {
+  const read: LayoutSizing = { horizontal: node.layoutSizingHorizontal, vertical: node.layoutSizingVertical };
+  if (node.visible) {
+    return read;
+  }
+  const { parent } = node;
+  if (parent === null || !("layoutMode" in parent) || parent.layoutMode === "NONE") {
+    return read;
+  }
+  const fills = (axis: "HORIZONTAL" | "VERTICAL"): boolean =>
+    parent.layoutMode === axis ? node.layoutGrow === 1 : node.layoutAlign === "STRETCH";
+  return {
+    horizontal: fills("HORIZONTAL") ? "FILL" : read.horizontal,
+    vertical: fills("VERTICAL") ? "FILL" : read.vertical,
+  };
+}
+
+/**
+ * The sizing an auto layout frame reads once its direction is `direction`. A direction change
+ * keeps both sizing modes, each in its role along or across the direction, so a hug moves to the
+ * other axis with it, as a real file showed on 2026-10-22. A fill stays, since it comes from the
+ * parent's layout.
+ */
+function sizingAlong(node: FrameNode | ComponentNode, direction: DirectionSpec): LayoutSizing {
+  const held = heldSizing(node);
+  if (node.layoutMode === direction) {
+    return held;
+  }
+  const after = (current: LayoutSizing["horizontal"], axis: DirectionSpec): LayoutSizing["horizontal"] => {
+    if (current === "FILL") {
+      return current;
+    }
+    const mode = axis === direction ? node.primaryAxisSizingMode : node.counterAxisSizingMode;
+    return mode === "AUTO" ? "HUG" : "FIXED";
+  };
+  return { horizontal: after(held.horizontal, "HORIZONTAL"), vertical: after(held.vertical, "VERTICAL") };
+}
+
+/**
+ * Plan a node's fixed lengths and its layout sizing as one operation. A resize, or a width or
+ * height binding, turns a hugging or filling axis fixed, so the operation writes both axes' sizing
+ * again after the lengths. The operation runs after the one that sets the node's direction, so
+ * the plan compares the spec with the sizing the node reads in that direction. A turn also
+ * resizes the node, as a hug moves to the other axis. On a real file on 2026-10-22 a row 40 tall
+ * became 14 tall as a column. So when the node turns, the operation writes its fixed lengths
+ * whatever the node reads now.
  *
  * @param run - The run.
- * @param node - The auto layout frame.
+ * @param node - The auto layout frame, which may also sit in one.
  * @param label - The node's label, for change lines.
- * @param planSize - Plans the size into the run it receives.
- * @param modes - The sizing modes the spec asks for.
+ * @param spec - The direction and the sizing the spec asks for.
+ * @param held - `unknown` when the node's parent turns in this run, which moves a fill to the
+ *   other axis, so the operation writes both axes' sizing and the fixed lengths whatever the node
+ *   reads now.
+ * @param planLengths - Plans the fixed lengths into the run it receives, compared with what the
+ *   node holds, or written whatever it holds when the lengths are `unknown`.
  */
-export function planSizing(
+export function planLayoutSizing(
   run: Run,
   node: FrameNode | ComponentNode,
   label: string,
-  planSize: (group: Run) => void,
-  modes: SizingModes
+  spec: { readonly direction: DirectionSpec; readonly sizing: LayoutSizing },
+  held: Held,
+  planLengths: (group: Run, lengths: Held) => void
 ): void {
-  const writeModes = (): void => {
-    node.primaryAxisSizingMode = modes.primary;
-    node.counterAxisSizingMode = modes.counter;
+  const { sizing } = spec;
+  // No probe has shown what a box stores in its modes, or how it sizes, when it first gets an auto
+  // layout, as every new box does, so a box without one writes its sizing whatever it predicts.
+  const reads = held === "read" && node.layoutMode !== "NONE" ? sizingAlong(node, spec.direction) : undefined;
+  const lengths: Held = held === "read" && node.layoutMode === spec.direction ? "read" : "unknown";
+  const writeSizing = (): void => {
+    node.layoutSizingHorizontal = sizing.horizontal;
+    node.layoutSizingVertical = sizing.vertical;
   };
   changeTogether(
     run.plan,
     label,
     (plan) => {
-      const group: Run = { ...run, plan };
-      planSize(group);
-      planScalar(
-        group,
-        label,
-        "primaryAxisSizingMode",
-        node.primaryAxisSizingMode,
-        modes.primary,
-        writeModes
-      );
-      planScalar(
-        group,
-        label,
-        "counterAxisSizingMode",
-        node.counterAxisSizingMode,
-        modes.counter,
-        writeModes
-      );
+      planLengths({ ...run, plan }, lengths);
+      for (const [axis, member] of SIZING_MEMBERS) {
+        if (reads?.[axis] !== sizing[axis]) {
+          change(plan, label, `${member} → ${sizing[axis]}`, writeSizing);
+        }
+      }
     },
-    writeModes
+    writeSizing
   );
 }

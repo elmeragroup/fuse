@@ -8,6 +8,8 @@ import { emptyMediaVariants, emptyVariants } from "./empty-variants";
 type EmptyRootProps = ComponentProps<"div"> & VariantProps<typeof emptyVariants>;
 type EmptyMediaProps = ComponentProps<"div"> & VariantProps<typeof emptyMediaVariants>;
 
+const styles = emptyVariants();
+
 /**
  * Centered empty-state layout. Server component — it owns no state,
  * no handlers, and no browser APIs.
@@ -16,17 +18,11 @@ type EmptyMediaProps = ComponentProps<"div"> & VariantProps<typeof emptyMediaVar
  * `rounded-inner`.
  */
 function EmptyRoot({ className, variant = "default", ...props }: EmptyRootProps): ReactElement {
-  return <div data-slot="empty" className={cn(emptyVariants({ variant }), className)} {...props} />;
+  return <div data-slot="empty" className={cn(emptyVariants({ variant }).root(), className)} {...props} />;
 }
 
 function EmptyHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
-  return (
-    <div
-      data-slot="empty-header"
-      className={cn("max-w-sm flex flex-col items-center gap-2 text-center", className)}
-      {...props}
-    />
-  );
+  return <div data-slot="empty-header" className={cn(styles.header(), className)} {...props} />;
 }
 
 function EmptyMedia({ className, variant = "default", ...props }: EmptyMediaProps): ReactElement {
@@ -41,35 +37,15 @@ function EmptyMedia({ className, variant = "default", ...props }: EmptyMediaProp
 }
 
 function EmptyTitle({ className, ...props }: ComponentProps<"div">): ReactElement {
-  return (
-    <div data-slot="empty-title" className={cn("text-lg font-medium tracking-tight", className)} {...props} />
-  );
+  return <div data-slot="empty-title" className={cn(styles.title(), className)} {...props} />;
 }
 
 function EmptyDescription({ className, ...props }: ComponentProps<"p">): ReactElement {
-  return (
-    <p
-      data-slot="empty-description"
-      className={cn(
-        "text-sm/relaxed text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
-        className
-      )}
-      {...props}
-    />
-  );
+  return <p data-slot="empty-description" className={cn(styles.description(), className)} {...props} />;
 }
 
 function EmptyContent({ className, ...props }: ComponentProps<"div">): ReactElement {
-  return (
-    <div
-      data-slot="empty-content"
-      className={cn(
-        "max-w-sm text-sm flex w-full min-w-0 flex-col items-center gap-4 text-balance",
-        className
-      )}
-      {...props}
-    />
-  );
+  return <div data-slot="empty-content" className={cn(styles.content(), className)} {...props} />;
 }
 
 EmptyRoot.displayName = "Empty.Root";

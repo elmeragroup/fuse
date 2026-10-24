@@ -22,6 +22,7 @@ import {
 import { DENSITIES } from "../../theme/density";
 import { Checkbox, CheckboxGroup } from "../checkbox/checkbox";
 import { Form } from "../form/form";
+import { Switch } from "../switch/switch";
 import { Field } from "./index";
 
 describe("Field", () => {
@@ -435,6 +436,78 @@ describe("Field", () => {
     expect(street.top).toBe(city.top);
     expect(city.left).toBeGreaterThan(street.right);
     expect(legend.getBoundingClientRect().bottom).toBeLessThanOrEqual(street.top);
+  });
+});
+
+describe("Field child widths", () => {
+  /** The computed content width of `element`, in px. */
+  function widthOf(element: Element): number {
+    return px(getComputedStyle(element).width);
+  }
+
+  it("keeps a lone Checkbox and Switch at their own width in a vertical root sized to its content, and stretches other children", () => {
+    // A fit-content box sizes the root to the control alone. A stretched control there takes its
+    // own content width: the checkbox's 2px border, or a switch's thumb and border.
+    const lone = (control: ReactNode) => (
+      <div style={{ width: "fit-content" }}>
+        <Field.Root>{control}</Field.Root>
+      </div>
+    );
+    renderThemed(
+      <>
+        {lone(<Checkbox aria-label="Terms" />)}
+        {lone(<Switch aria-label="Alerts" />)}
+        {lone(<Switch size="sm" aria-label="Compact" />)}
+        <div style={{ width: 320 }}>
+          <Field.Root>
+            <Field.Control aria-label="Name" render={<input />} />
+          </Field.Root>
+        </div>
+      </>
+    );
+    // The widths each control draws outside a Field.
+    expect(widthOf(roleNamed("checkbox", "Terms")), "checkbox").toBe(16);
+    expect(widthOf(roleNamed("switch", "Alerts")), "default switch").toBe(32);
+    expect(widthOf(roleNamed("switch", "Compact")), "sm switch").toBe(24);
+    expect(widthOf(textboxNamed("Name")), "input").toBe(320);
+  });
+
+  it("lays out a responsive root like a horizontal one in a field group past the md width", () => {
+    // Unit under test: the responsive orientation's md row. Oracle: the horizontal orientation,
+    // which that row reproduces. The 480px group is past the md container width of 28rem.
+    const rows = (orientation: "horizontal" | "responsive") => (
+      <section aria-label={orientation}>
+        <Field.Group style={{ width: 480 }}>
+          <Field.Root orientation={orientation}>
+            <Field.Label>Name</Field.Label>
+            <Field.Control render={<input />} />
+          </Field.Root>
+          <Field.Root orientation={orientation}>
+            <Checkbox />
+            <Field.Label>Terms</Field.Label>
+          </Field.Root>
+          <Field.Root orientation={orientation}>
+            <Switch />
+            <Field.Label>Alerts</Field.Label>
+          </Field.Root>
+        </Field.Group>
+      </section>
+    );
+    renderThemed(
+      <>
+        {rows("horizontal")}
+        {rows("responsive")}
+      </>
+    );
+    function widthsIn(orientation: string) {
+      const section = page.getByRole("region", { name: orientation, exact: true });
+      return {
+        input: widthOf(section.getByRole("textbox", { name: "Name", exact: true }).element()),
+        checkbox: widthOf(section.getByRole("checkbox", { name: "Terms", exact: true }).element()),
+        switch: widthOf(section.getByRole("switch", { name: "Alerts", exact: true }).element()),
+      };
+    }
+    expect(widthsIn("responsive")).toEqual(widthsIn("horizontal"));
   });
 });
 

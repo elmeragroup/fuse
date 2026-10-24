@@ -20,14 +20,12 @@ import { Star } from "../../../fuse/dist/icons.js";
 import { Toggle, toggleVariants } from "../../../fuse/dist/toggle.js";
 import type { Cell } from "../components/component-spec.ts";
 import { ownKey } from "../components/own-key.ts";
+import { TOGGLE_LABEL } from "../components/toggle-kit.ts";
 import { markedIcon } from "./cell-renderers.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
 type ToggleVariant = keyof typeof toggleVariants.variants.variant;
 type ToggleSize = keyof typeof toggleVariants.variants.size;
-
-/** The label every label cell shows, the kit's `Label` default. */
-const CELL_LABEL = "Toggle";
 
 function isVariant(value: string | undefined): value is ToggleVariant {
   return ownKey(toggleVariants.variants.variant, value);
@@ -54,11 +52,11 @@ function toggleProps(cell: Cell) {
 function labelChildren(icon: string | undefined): readonly (ReactElement | string)[] {
   switch (icon) {
     case "start":
-      return [markedIcon(Star, "inline-start"), CELL_LABEL];
+      return [markedIcon(Star, "inline-start"), TOGGLE_LABEL];
     case "end":
-      return [CELL_LABEL, markedIcon(Star, "inline-end")];
+      return [TOGGLE_LABEL, markedIcon(Star, "inline-end")];
     default:
-      return [CELL_LABEL];
+      return [TOGGLE_LABEL];
   }
 }
 
@@ -72,7 +70,7 @@ export const iconToggle: CellRendering = {
   element: (cell) =>
     createElement(
       Toggle,
-      { ...toggleProps(cell), "aria-label": CELL_LABEL },
+      { ...toggleProps(cell), "aria-label": TOGGLE_LABEL },
       markedIcon(Star, "inline-start")
     ),
 };

@@ -4,12 +4,17 @@
  * at device scale 2 and crops each cell with a transparent background.
  *
  * Hover and focus come from Chrome DevTools Protocol `CSS.forcePseudoState`, so every cell of a
- * page shows its state at once and no pointer or focus moves between screenshots. Fuse gates
- * hover behind `@media (hover: hover)` and `:not(<disabled>)`, so the page checks each forced
- * cell against its resting twin: a forced cell whose measured element and descendants have the
- * twin's colors, shadows and underlines did not reach Fuse's `enabled-hover:` or
- * `focus-visible:` rules, and the page then hovers or focuses that element for real before its
- * screenshot.
+ * page shows its state at once and no pointer or focus moves between screenshots. The page forces
+ * them on the measured element, on the part inside it that takes the set's states, as an Accordion
+ * item's trigger, or on the sibling before it whose state it follows, as a Sidebar menu badge's menu
+ * button. Fuse gates hover behind `@media (hover: hover)` and `:not(<disabled>)`, so the page checks
+ * each forced cell against its resting twin: a forced cell whose measured element and descendants
+ * have the twin's colors, shadows and underlines did not reach Fuse's `enabled-hover:` or
+ * `focus-visible:` rules, and the page then hovers or focuses the forced element for real before its
+ * screenshot, unless the request says the kit draws the cell as at rest in the preview's theme. React Aria draws its hover and focus faces from pointer and focus
+ * events only a hydrated page sees, so with the pseudo classes the page writes the attributes the
+ * cell's renderer names on the forced element, through CDP's `DOM.setAttributeValue`, as the
+ * Calendar day's `data-hovered` and its focused class.
  */
 
 import { Result } from "effect";
@@ -24,6 +29,7 @@ import {
   ASSET_PATHS,
   BACKGROUND_PROBE,
   cellSelector,
+  fontSweepSelector,
   PAGE_ORIGIN,
   pageViewport,
   previewDocument,
@@ -43,13 +49,30 @@ export type CellRequest = {
   readonly id: string;
   readonly html: string;
   /**
-   * The element the page forces, compares and crops, as a selector for an element inside the
-   * cell's slot, as `cellSelector` reads it. The resting twin's slot uses the same one.
+   * The element the page compares and crops, as a selector for an element inside the cell's slot,
+   * as `cellSelector` reads it. The resting twin's slot uses the same one.
    */
   readonly measured: string;
+  /**
+   * The element the page forces the cell's state on: the measured element, or the part inside it
+   * that takes the set's states, as an Accordion item's trigger.
+   */
+  readonly forcedOn: string;
   readonly forced: readonly ForcedPseudoClass[];
+  /**
+   * The attributes the page writes on the forced element with the forced pseudo classes, as React
+   * Aria would while the state holds. Empty for a cell whose state CSS draws from the pseudo classes
+   * alone.
+   */
+  readonly forcedAttributes: Readonly<Record<string, string>>;
   /** The same element at rest, rendered off to the side to check the forced state. */
   readonly restingHtml: string | undefined;
+  /**
+   * Whether the kit draws the cell's forced state as it draws the cell at rest in the preview's
+   * theme, as `unchangedByDesign` decides before the page renders. A forced state that changes
+   * nothing is then what the cell should show, so the page hovers or focuses nothing for real.
+   */
+  readonly restsByDesign: boolean;
 };
 
 /**
@@ -189,7 +212,7 @@ export class CompareBrowser {
       const page = await context.newPage();
       await page.route(`${PAGE_ORIGIN}/**`, (route) => this.#serve(route, html));
       await page.goto(`${PAGE_ORIGIN}/preview.html`);
-      const font = await checkFont(page);
+      const font = await checkFont(page, fontSweepSelector(requests));
       if (Result.isFailure(font)) {
         return Result.fail(font.failure);
       }
@@ -208,17 +231,24 @@ export class CompareBrowser {
 }
 
 /**
- * Load the face of every element in a cell that holds text, and check that each one's first
- * font family has a loaded face at its weight. The sweep covers every element with a non-blank
- * text node of its own, whatever the component, so a label in a child span counts too.
+ * Load the face of every element in the cells' measured elements that holds text, and check that
+ * each one's first font family has a loaded face at its weight. The sweep covers every element with
+ * a non-blank text node of its own, whatever the component, so a label in a child span counts too,
+ * and every `<input>` or `<textarea>` that draws a value or a placeholder, which no text node holds.
+ *
+ * @param selector - The elements to sweep, as {@link fontSweepSelector} names them.
  */
-async function checkFont(page: Page): Promise<Result.Result<string, FontNotLoaded>> {
-  const report = await page.evaluate(async () => {
-    const styles = [...document.querySelectorAll("[data-compare-cell] *")]
-      .filter((element) =>
-        [...element.childNodes].some(
-          (node) => node.nodeType === Node.TEXT_NODE && (node.textContent ?? "").trim() !== ""
-        )
+async function checkFont(page: Page, selector: string): Promise<Result.Result<string, FontNotLoaded>> {
+  const report = await page.evaluate(async (sweep) => {
+    const swept = sweep === "" ? [] : [...document.querySelectorAll(sweep)];
+    const styles = swept
+      .filter(
+        (element) =>
+          [...element.childNodes].some(
+            (node) => node.nodeType === Node.TEXT_NODE && (node.textContent ?? "").trim() !== ""
+          ) ||
+          ((element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) &&
+            (element.value || element.placeholder).trim() !== "")
       )
       .map((element) => getComputedStyle(element));
     const fonts = new Set(styles.map((style) => `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`));
@@ -234,7 +264,7 @@ async function checkFont(page: Page): Promise<Result.Result<string, FontNotLoade
       }
     });
     return { used: [...used], loaded };
-  });
+  }, selector);
   const loaded = new Set(
     report.loaded.map((entry) => {
       const [weight = "", family = ""] = entry.split("|");
@@ -257,7 +287,10 @@ async function checkFont(page: Page): Promise<Result.Result<string, FontNotLoade
   return Result.succeed(fonts.join(", "));
 }
 
-/** Force each cell's pseudo classes, and return the ids whose styles the forcing changed. */
+/**
+ * Force each cell's pseudo classes and write its forced attributes on its forced element, and
+ * return the ids whose styles that changed.
+ */
 async function forceStates(page: Page, requests: readonly CellRequest[]): Promise<ReadonlySet<string>> {
   const forcing = requests.filter((request) => request.forced.length > 0);
   if (forcing.length === 0) {
@@ -270,9 +303,12 @@ async function forceStates(page: Page, requests: readonly CellRequest[]): Promis
   for (const request of forcing) {
     const { nodeId } = await cdp.send("DOM.querySelector", {
       nodeId: root.nodeId,
-      selector: cellSelector(request.id, request.measured),
+      selector: cellSelector(request.id, request.forcedOn),
     });
     await cdp.send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: [...request.forced] });
+    for (const [name, value] of Object.entries(request.forcedAttributes)) {
+      await cdp.send("DOM.setAttributeValue", { nodeId, name, value });
+    }
   }
   const changed = new Set<string>();
   for (const request of forcing) {
@@ -340,11 +376,12 @@ async function renderCell(
   ) {
     throw new Error(`cell ${request.id} is ${box.width}×${box.height}, larger than its slot`);
   }
-  const interact = forcedState === "missing";
+  const interact = forcedState === "missing" && !request.restsByDesign;
+  const forcedOn = page.locator(cellSelector(request.id, request.forcedOn));
   if (interact && request.forced.includes("hover")) {
-    await measured.hover({ force: true });
+    await forcedOn.hover({ force: true });
   } else if (interact) {
-    await measured.focus();
+    await forcedOn.focus();
   }
   const state: StateOutcome = !interact
     ? forcedState
@@ -362,7 +399,7 @@ async function renderCell(
   );
   if (interact) {
     await page.mouse.move(0, 0);
-    await measured.blur();
+    await forcedOn.blur();
   }
   return { raster, box: { width: box.width, height: box.height }, state };
 }

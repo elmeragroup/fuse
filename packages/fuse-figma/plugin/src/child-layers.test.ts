@@ -2,13 +2,15 @@
  * `planChildren` on a variant's label, on the in-memory file in `fake-figma.ts`. Each test
  * builds the label by hand as the spec describes it, then changes what a designer or another
  * machine could leave behind: a binding some characters dropped, a style or weight binding, a
- * size only some characters hold, a font the machine lacks. The fake models the Figma rules
- * these depend on, per-character fonts, sizes and bindings (rule 10) and the fonts a write
- * needs (rule 7). The oracles are the change lines the spec asks for, the writes the file took
+ * size only some characters hold, a font the machine lacks, a new sizing or truncation. The fake
+ * models the Figma rules these depend on, per-character fonts, sizes and bindings (rule 10), the
+ * fonts a write needs (rule 7), and a text's sizing and truncation as a real file showed them
+ * (rules 19 and 20). The oracles are the change lines the spec asks for, the writes the file took
  * and the label it holds afterwards.
  */
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HUGGING_TEXT, TOP_LEFT } from "../../src/components/kit-spec.ts";
 import type { TextLayerSpec } from "../../src/components/kit-spec.ts";
 import { planChildren } from "./child-layers.ts";
 import type { FakeFigma } from "./fake-figma.ts";
@@ -34,6 +36,9 @@ const LABEL: TextLayerSpec = {
   lineHeight: { kind: "variable", variable: { collection: "Fuse density", name: "control-leading" } },
   color: { kind: "variable", variable: { collection: "Fuse tokens", name: "foreground" } },
   underline: undefined,
+  sizing: HUGGING_TEXT,
+  align: TOP_LEFT,
+  truncation: undefined,
 };
 
 /** The variables the label binds, and the ones a designer could bind to its font. */
@@ -48,7 +53,10 @@ const VARIABLES = [
   float("Fuse density", "display-text", 18),
 ];
 
-/** A synced file with a Button variant whose label matches `LABEL`, and what a test changes. */
+/**
+ * A synced file with a Button variant, a row as the kit's roots are, whose label matches `LABEL`,
+ * and what a test changes.
+ */
 type ButtonFile = {
   readonly file: FakeFigma;
   readonly component: ComponentNode;
@@ -62,6 +70,7 @@ async function buttonFile(): Promise<ButtonFile> {
   await figma.loadFontAsync(ROBOTO_MEDIUM);
   await figma.loadFontAsync(COMIC_SANS_BOLD);
   const component = figma.createComponent();
+  component.layoutMode = "HORIZONTAL";
   const label = figma.createText();
   component.appendChild(label);
   setKey(label, LABEL.key);
@@ -94,10 +103,14 @@ async function planButton(
   plan: Plan,
   spec: TextLayerSpec = LABEL
 ): Promise<void> {
-  await planChildren(await fixtureRun(file, plan), component, "Button", [spec], {
-    properties: new Map(),
-    icons: new Map(),
-  });
+  await planChildren(
+    await fixtureRun(file, plan),
+    component,
+    "Button",
+    { direction: "HORIZONTAL", children: [spec] },
+    { properties: new Map(), icons: new Map(), sets: new Map() },
+    "read"
+  );
 }
 
 async function changesFor(button: ButtonFile, spec: TextLayerSpec = LABEL): Promise<string[]> {
@@ -142,6 +155,84 @@ describe("planChildren on a label", () => {
     expect(writes).toEqual([`${label.id} textDecoration`, `${label.id} textDecorationOffset`]);
     expect(label.textDecorationOffset).toEqual({ unit: "PIXELS", value: 4 });
     expect(await changesFor(button, link)).toEqual([]);
+  });
+
+  // The order is the one `research/plugin-api.md` §3 trap 6 sets: the auto resize, then the sizing
+  // a new auto resize moves, then the truncation and its maximum. ENDING alone reads one line (P4),
+  // and the plan writes the maximum anyway, so the line says what the label keeps.
+  it("turns a hugging label into one that fills its row and ends in an ellipsis, in one operation (P3, P4)", async () => {
+    const truncated: TextLayerSpec = {
+      ...LABEL,
+      sizing: { horizontal: { kind: "fill" }, vertical: { kind: "hug" } },
+      truncation: { maxLines: 1 },
+    };
+    const line =
+      "Button / Label: textAutoResize → HEIGHT, layoutSizingHorizontal → FILL, layoutSizingVertical → HUG, textTruncation → ENDING, maxLines → 1";
+    expect(await changesFor(button, truncated)).toEqual([line]);
+
+    const { lines, writes } = await applyTo(button, truncated);
+    expect(lines).toEqual([line]);
+    expect(writes).toEqual(
+      ["textAutoResize", "layoutSizingHorizontal", "layoutSizingVertical", "textTruncation", "maxLines"].map(
+        (field) => `${label.id} ${field}`
+      )
+    );
+    expect([
+      label.layoutSizingHorizontal,
+      label.layoutSizingVertical,
+      label.textTruncation,
+      label.maxLines,
+    ]).toEqual(["FILL", "HUG", "ENDING", 1]);
+    expect(await changesFor(button, truncated)).toEqual([]);
+  });
+
+  it("fixes a label's width after its sizing, then centers its lines, and converges", async () => {
+    const fixed: TextLayerSpec = {
+      ...LABEL,
+      sizing: {
+        horizontal: { kind: "fixed", length: { kind: "literal", value: 120 } },
+        vertical: { kind: "hug" },
+      },
+      align: { horizontal: "CENTER", vertical: "TOP" },
+    };
+    const { lines, writes } = await applyTo(button, fixed);
+    expect(lines).toEqual([
+      "Button / Label: textAutoResize → HEIGHT, layoutSizingHorizontal → FIXED, layoutSizingVertical → HUG, width → 120",
+      "Button / Label: textAlignHorizontal → CENTER",
+    ]);
+    expect(writes).toEqual(
+      [
+        "textAutoResize",
+        "layoutSizingHorizontal",
+        "layoutSizingVertical",
+        "unbind width",
+        "resize",
+        "textAlignHorizontal",
+      ].map((field) => `${label.id} ${field}`)
+    );
+    expect([label.width, label.layoutSizingHorizontal, label.layoutSizingVertical]).toEqual([
+      120,
+      "FIXED",
+      "HUG",
+    ]);
+    expect(await changesFor(button, fixed)).toEqual([]);
+  });
+
+  // A hugging label's width follows its characters and its font, which an earlier write of the same
+  // run can change, so a width that matches before the label turns fixed proves nothing.
+  it("writes a fixed width that a hugging label already measures, once its auto resize changes", async () => {
+    label.resize(120, 20);
+    expect([label.textAutoResize, label.width]).toEqual(["WIDTH_AND_HEIGHT", 120]);
+    const fixed: TextLayerSpec = {
+      ...LABEL,
+      sizing: {
+        horizontal: { kind: "fixed", length: { kind: "literal", value: 120 } },
+        vertical: { kind: "hug" },
+      },
+    };
+    expect(await changesFor(button, fixed)).toEqual([
+      "Button / Label: textAutoResize → HEIGHT, layoutSizingHorizontal → FIXED, layoutSizingVertical → HUG, width → 120",
+    ]);
   });
 
   it("writes a literal font size over a label whose first character alone holds it", async () => {

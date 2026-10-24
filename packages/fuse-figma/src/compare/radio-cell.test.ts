@@ -9,49 +9,23 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
-import type { MarkupElement } from "../../test/static-markup";
+import { rootOf, stateAttributes } from "../../test/static-markup";
 import type { Cell } from "../components/component-spec";
 import { renderCellHtml } from "./cell-renderers";
 import { radio } from "./radio-cell";
 
 /** The radio the cell renders, wherever it sits in its group, and the elements inside it. */
 function item(cell: Cell) {
-  const elements = elementsOf(renderCellHtml(radio, cell));
-  const index = elements.findIndex((element) => element.attributes.get("data-slot") === "radio-group-item");
-  const element = elements[index];
-  if (element?.name !== "span" || element.attributes.get("role") !== "radio") {
-    throw new Error(`no radio span in the ${JSON.stringify(cell)} cell`);
-  }
-  const inside = elements.flatMap((child, childIndex) => {
-    if (child.parent !== index) {
-      return [];
-    }
-    const grandchildren = elements.filter((candidate) => candidate.parent === childIndex);
-    return [
-      {
-        slot: child.attributes.get("data-slot"),
-        children: grandchildren.map((grandchild) => [
-          grandchild.name,
-          grandchild.attributes.get("data-slot"),
-        ]),
-      },
-    ];
+  const element = rootOf(renderCellHtml(radio, cell), {
+    slot: "radio-group-item",
+    name: "span",
+    role: "radio",
   });
+  const inside = element.children.map((child) => ({
+    slot: child.attributes.get("data-slot"),
+    children: child.children.map((grandchild) => [grandchild.name, grandchild.attributes.get("data-slot")]),
+  }));
   return { element, inside };
-}
-
-/** The state attributes a radio carries, among the ones the cells vary. */
-function stateAttributes(element: MarkupElement): readonly string[] {
-  return [
-    "data-checked",
-    "data-unchecked",
-    "aria-disabled",
-    "data-disabled",
-    "disabled",
-    "aria-invalid",
-    "data-invalid",
-  ].filter((name) => element.attributes.has(name));
 }
 
 const REST: Cell = { checked: "off", state: "rest" };

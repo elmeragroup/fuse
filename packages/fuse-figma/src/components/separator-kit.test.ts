@@ -6,7 +6,7 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { builtKit, literal, paint, variantRoot } from "../../test/built-kit";
+import { builtKit, fixedSize, literal, paint, UNLIMITED, variantRoot } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
 
 let spec: BuiltSets["spec"];
@@ -18,6 +18,9 @@ beforeAll(async () => {
 /** A line with no padding, gap, corner, shadow or layers. */
 const LINE = {
   name: "separator",
+  direction: "HORIZONTAL",
+  limits: UNLIMITED,
+  clips: true,
   paddingTop: literal(0),
   paddingRight: literal(0),
   paddingBottom: literal(0),
@@ -47,13 +50,11 @@ describe("the Separator component set", () => {
   it("draws a 256 × 1 border line across and a 1 × 16 one down", () => {
     expect(variantRoot(spec, "separator/orientation=horizontal")).toEqual({
       ...LINE,
-      width: literal(256),
-      height: literal(1),
+      sizing: fixedSize(literal(256), literal(1)),
     });
     expect(variantRoot(spec, "separator/orientation=vertical")).toEqual({
       ...LINE,
-      width: literal(1),
-      height: literal(16),
+      sizing: fixedSize(literal(1), literal(16)),
     });
   });
 });
