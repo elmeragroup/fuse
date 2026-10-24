@@ -136,9 +136,9 @@ describe("fuseVariableSet", () => {
   // role's pickers, and the role's own color in every theme at the tint's share of its alpha. The
   // compiled rule's last declaration of the property is the `color-mix()` in its `@supports`
   // block, which wins over the fallback before it.
-  it("syncs the tints the soft Badges, the muted Item, the Alerts and the Sidebar group label paint with", async () => {
-    // TOKEN_PAINTS: warning, info, error and success are surfaces, inks and lines, muted is a
-    // surface and a line, and sidebar-foreground is an ink.
+  it("syncs the tints the soft Badges, the muted Item, the Alerts, the Sidebar group label and the popups paint with", async () => {
+    // TOKEN_PAINTS: warning, info, error, success and foreground are surfaces, inks and lines,
+    // muted is a surface and a line, and sidebar-foreground is an ink.
     const strokes = ["ALL_FILLS", "STROKE_COLOR"] as const;
     const tints = [
       { utility: "border-warning/20", role: "warning", tint: "warning/20", share: 0.2, scopes: strokes },
@@ -158,6 +158,14 @@ describe("fuseVariableSet", () => {
         tint: "sidebar-foreground/70",
         share: 0.7,
         scopes: ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      },
+      // The ring around every popup.
+      {
+        utility: "border-foreground/10",
+        role: "foreground",
+        tint: "foreground/10",
+        share: 0.1,
+        scopes: strokes,
       },
     ] as const;
     const compiled = await compileUtilities(tints.map(({ utility }) => utility));
@@ -332,6 +340,15 @@ describe("fuseVariableSet", () => {
         dense: 19.25,
         comfortable: 22,
       },
+      // A menu row keeps room for its 16px indicator and the 8px gap beside it: --row-px is
+      // 0.5rem dense and 0.75rem comfortable.
+      {
+        name: "row-indicator-room",
+        webSyntax: "calc(var(--row-px) + 1.5rem)",
+        scopes: ["GAP"],
+        dense: 32,
+        comfortable: 36,
+      },
     ] as const;
     for (const { name, webSyntax, scopes, dense, comfortable } of formulas) {
       expect(spec("Fuse density", name)).toMatchObject({ type: "FLOAT", scopes, webSyntax });
@@ -372,6 +389,16 @@ describe("fuseVariableSet", () => {
       ],
       // A floating Sidebar's header, footer or group, and Select.Group.
       ["radius-inner/lg-pad-sm", "max(0px, var(--radius) - var(--surface-pad-sm))"],
+      // The DropdownMenu popups and Combobox.List.
+      [
+        "radius-inner/md-pad-sm",
+        "max(0px, calc(var(--radius) - var(--radius-step, 0px)) - var(--surface-pad-sm))",
+      ],
+      // Command.List.
+      [
+        "radius-inner/xl-gap-sm",
+        "max(0px, calc(var(--radius) + 2 * var(--radius-step, 0px)) - var(--surface-gap-sm))",
+      ],
     ] as const;
     for (const [name, webSyntax] of formulas) {
       expect(spec("Fuse density", name)).toMatchObject({

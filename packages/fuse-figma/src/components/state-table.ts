@@ -153,6 +153,22 @@ const SHARED_OMISSIONS = new Set([
 ]);
 
 /**
+ * The frames of a transition, which Base UI marks while a popup or a panel enters or leaves. The kit
+ * draws every component at rest, so neither holds. A definition can still model or omit one, as
+ * Accordion omits both, and its meaning wins.
+ */
+const TRANSITION_FRAMES = new Map([
+  [
+    "data-starting-style",
+    "Base UI sets `data-starting-style` on a transition's first frame, and the kit draws the component at rest",
+  ],
+  [
+    "data-ending-style",
+    "Base UI sets `data-ending-style` on a transition's last frame, and the kit draws the component at rest",
+  ],
+]);
+
+/**
  * The breakpoints the kit draws at. Tailwind's `sm:` and `md:` hold from 40rem and 48rem, 640px and
  * 768px, which a desktop window reaches, so every cell draws a class's desktop arm. The compare
  * page's viewport is 2400px wide, so the browser draws the same arm. A wider breakpoint and a
@@ -290,6 +306,10 @@ export function makeStateTable(
     }
     if (SHARED_OMISSIONS.has(variant) || definition.omittedStates.has(variant)) {
       return { kind: "omitted" };
+    }
+    const frame = TRANSITION_FRAMES.get(variant);
+    if (frame !== undefined) {
+      return { kind: "omitted-for", reason: frame };
     }
     // `*:` styles the box's children, which a definition that draws them reaches by their slot. One
     // that omits `*`, as Label omits the Field card it can wrap, draws none of them.

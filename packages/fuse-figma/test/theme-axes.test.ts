@@ -281,6 +281,19 @@ describe("fuse-figma resolving Fuse tokens on a frame", () => {
       assert.deepStrictEqual(corner("lg-pad-sm", light("external-fkas-private")), [8, 8, 8]);
       assert.deepStrictEqual(corner("lg-pad-sm", light("external-tkas-private")), [12, 12, 12]);
       assert.deepStrictEqual(corner("lg-pad-sm", dark("external-elma-company")), [2, 2, 2]);
+      // A DropdownMenu or Combobox row: radius-md less 4px at both densities. Fuse's
+      // concentric-corners browser test measures 4px internal, 6px for Fjordkraft's external
+      // theme, 10px for TrøndelagKraft's and 2px for Gudbrandsdal's. Elmera's radius-md is 4px,
+      // which leaves 0.
+      assert.deepStrictEqual(corner("md-pad-sm", light("internal-fkas-private")), [4, 4, 4]);
+      assert.deepStrictEqual(corner("md-pad-sm", light("external-fkas-private")), [6, 6, 6]);
+      assert.deepStrictEqual(corner("md-pad-sm", dark("external-tkas-company")), [10, 10, 10]);
+      assert.deepStrictEqual(corner("md-pad-sm", light("external-guen-private")), [2, 2, 2]);
+      assert.deepStrictEqual(corner("md-pad-sm", light("external-elma-company")), [0, 0, 0]);
+      // A Command row: radius-xl less --surface-gap-sm, 0.5rem dense and 0.75rem comfortable.
+      assert.deepStrictEqual(corner("xl-gap-sm", light("internal-fkas-private")), [0, 0, 0]);
+      assert.deepStrictEqual(corner("xl-gap-sm", light("external-fkas-private")), [8, 4, 4]);
+      assert.deepStrictEqual(corner("xl-gap-sm", light("external-tkas-private")), [12, 8, 8]);
 
       assert.deepStrictEqual(
         figma.aliasChain("Fuse density", "radius-inner/xl-border-pad-md", {

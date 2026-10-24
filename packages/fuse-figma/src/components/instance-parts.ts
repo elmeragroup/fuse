@@ -229,8 +229,8 @@ export class InstanceParts {
       fed: (declaration, feed) => {
         fedInto(sink, declaration, feed);
       },
-      relocate: (path, into, keep) => {
-        relocate(sink.feeds, path, into, keep);
+      relocate: (move) => {
+        relocate(sink.feeds, move);
       },
     };
     this.#visits.push(visit);
@@ -380,26 +380,10 @@ function fedInto(sink: FeedSink, declaration: Declaration, feed: Feed): void {
   }
 }
 
-/**
- * Move the feeds at or below a layer's path into the layer the mapping puts in its place, as a scaled
- * part's dot or a part's box inside its margins, keeping the fields of `keep` on the layer itself.
- */
-function relocate(
-  feeds: Map<string, FeedTarget[]>,
-  path: readonly string[],
-  into: string,
-  keep: ReadonlySet<SpecField>
-): void {
-  const below = (feed: FeedTarget) => path.every((key, index) => feed.path[index] === key);
+/** Move each feed to the targets `move` gives it, where the mapping draws its field instead. */
+function relocate(feeds: Map<string, FeedTarget[]>, move: (feed: FeedTarget) => readonly FeedTarget[]): void {
   for (const [key, fed] of feeds) {
-    feeds.set(
-      key,
-      fed.map((feed) =>
-        below(feed) && (feed.path.length > path.length || !keep.has(feed.field))
-          ? { ...feed, path: [...path, into, ...feed.path.slice(path.length)] }
-          : feed
-      )
-    );
+    feeds.set(key, fed.flatMap(move));
   }
 }
 

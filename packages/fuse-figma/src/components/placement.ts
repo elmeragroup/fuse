@@ -13,6 +13,7 @@ import type { CoverageNote, LayerStyle, SpecField } from "./cascade";
 import { splitClassName } from "./class-name";
 import type { Cell, PartDefinition } from "./component-spec";
 import {
+  affineLength,
   describeNumber,
   evaluateLength,
   evaluateLengthOf,
@@ -20,9 +21,11 @@ import {
   evaluatePercentage,
   normalizeCss,
   readNumber,
+  sameAffine,
   splitTopLevel,
+  sumAffine,
 } from "./css-values";
-import type { VariableIndex } from "./css-values";
+import type { AffineLength, VariableIndex } from "./css-values";
 import { fixedLength, NO_LIMITS, ZERO } from "./kit-spec";
 import type {
   AbsoluteSpec,
@@ -99,12 +102,27 @@ export type Placement = {
  *
  * @param parent - The box that holds the parts.
  * @param parts - The parts the cell renders in it, as mapped.
+ * @param inFlowEnd - The style of the absolute part that draws in flow at the row's end, as
+ *   {@link endsInFlow} found it, or undefined.
  * @returns The box's primary alignment, the translate's where one maps, else the layout's, and the
  *   parts' layers in order.
  */
-export function placeParts(parent: ParentBox, parts: readonly PlacedPart[]): Placement {
+export function placeParts(
+  parent: ParentBox,
+  parts: readonly PlacedPart[],
+  inFlowEnd: LayerStyle | undefined
+): Placement {
   const centering = centersAlone(parent, parts) ? "centers-its-one-layer" : "other";
   const layers = parts.map(({ style, layer }) => {
+    if (style === inFlowEnd) {
+      style.read(
+        "position",
+        (value) => value,
+        () => ({ outcome: "literal", detail: IN_FLOW_END }),
+        style.feed("absolute")
+      );
+      return layer;
+    }
     if (layer.kind === "instance") {
       readPosition(style, "other");
       return layer;
@@ -535,6 +553,131 @@ function readPosition(reader: LayerStyle, parent: ParentLayout): void {
       outcome: "dropped",
       detail: "it only anchors positioned descendants, which auto layout does not need",
     }),
+    []
+  );
+}
+
+/** How the coverage table names the place of an absolute part {@link endsInFlow} draws in flow. */
+const IN_FLOW_END =
+  "drawn in flow after the row's other layers, where the row's end padding, its gap and the part's width put it";
+
+/** A row an absolute part can end in flow, as {@link endsInFlow} reads it. */
+export type EndRow = {
+  readonly style: LayerStyle;
+  readonly layout: Layout;
+  /** How many layers sit in the row's flow, all of them parts before the absolute one. */
+  readonly layers: number;
+  /** Whether the row's last layer in flow ends at its content box's end: one grows, or the row hugs. */
+  readonly endsFlush: boolean;
+};
+
+/** The offsets and limits of an absolute part that leave its static position on the cross axis. */
+const STATIC_ACROSS = ["left", "top", "bottom", "translate", "align-self", ...MARGINS] as const;
+
+/**
+ * Whether an absolute part at the end of a row draws in flow there, as a menu row's trailing check
+ * does. An absolute box with `right` set and `left`, `top` and `bottom` auto sits `right` from the end
+ * of its containing block, the row's padding box, and across the row at its static position, which
+ * `align-items: center` centers in the content box (CSS 2.1 §10.3.7, CSS Flexbox 1 §4.1). Where the
+ * row's end padding is that offset, the row's gap and the part's width, at every value of the
+ * variables they read, and the row's last layer in flow ends at its content box's end, the part sits
+ * exactly where the row's gap after that layer puts it with an end padding of the offset. The row
+ * must be a positioned flex row with no border, centering its layers, with at least one layer in
+ * flow and no label or icon of its own, so the part is its last layer.
+ *
+ * @param row - The row.
+ * @param part - The style of the row's last part.
+ * @returns Whether the part draws in flow.
+ */
+export function endsInFlow(row: EndRow, part: LayerStyle): boolean {
+  const { style, layout } = row;
+  const keyword = (reader: LayerStyle, property: string): string =>
+    normalizeCss(reader.resolved(property) ?? "");
+  const holds =
+    layout.flex &&
+    layout.direction === "HORIZONTAL" &&
+    keyword(style, "align-items") === "center" &&
+    !["", "static"].includes(keyword(style, "position")) &&
+    (!style.has("border-width") || evaluateLength(style.resolved("border-width") ?? "") === 0) &&
+    !style.has("column-gap") &&
+    row.layers > 0 &&
+    row.endsFlush &&
+    keyword(part, "position") === "absolute" &&
+    part.has("right") &&
+    part.has("width") &&
+    STATIC_ACROSS.every((property) => !part.has(property));
+  return (
+    holds &&
+    sumsTo(style.resolved("padding-right") ?? "0px", [
+      part.resolved("right") ?? "",
+      style.resolved("gap") ?? "0px",
+      part.resolved("width") ?? "",
+    ])
+  );
+}
+
+/**
+ * Read a row's end padding as the offset of the absolute part {@link endsInFlow} draws in flow, and
+ * the part's `right` as that padding.
+ *
+ * @param row - The row's style.
+ * @param part - The part's style.
+ * @param variables - The synced variables the offset can bind.
+ * @returns The row's end padding, or undefined where the offset reads as no number.
+ */
+export function padToOffset(
+  row: LayerStyle,
+  part: LayerStyle,
+  variables: VariableIndex
+): NumberSpec | undefined {
+  const offset = part.read(
+    "right",
+    (value) => readNumber(value, variables),
+    (spec) => ({
+      outcome: describeNumber(spec).outcome,
+      detail: `${describeNumber(spec).detail}, the row's end padding, since the part draws in flow at the row's end`,
+    }),
+    row.feed("paddingRight")
+  );
+  return row.read(
+    "padding-right",
+    () => offset,
+    (spec) => ({
+      outcome: describeNumber(spec).outcome,
+      detail: `${describeNumber(spec).detail}, the indicator's offset: the indicator draws in flow after the row's other layers, in the room this padding keeps`,
+    }),
+    row.feed("paddingRight")
+  );
+}
+
+/** Whether a length equals the sum of others wherever the variables they read take a value. */
+function sumsTo(total: string, terms: readonly string[]): boolean {
+  const whole = affineLength(total);
+  const parts = terms.map(affineLength).filter((part): part is AffineLength => part !== undefined);
+  return whole !== undefined && parts.length === terms.length && sameAffine(whole, sumAffine(parts));
+}
+
+/** The properties that transform a box about its `transform-origin`. */
+const TRANSFORMS = ["transform", "translate", "rotate", "scale"] as const;
+
+/**
+ * Drop a box's `transform-origin` where the box sets no transform at rest, as a popup's origin only
+ * places the zoom of its enter animation. The origin moves nothing without a transform (CSS
+ * Transforms 1 §6). Beside a transform it stays unread, so it lands unmapped, since the kit turns and
+ * scales a layer about its center.
+ *
+ * @param style - The box's style.
+ */
+export function dropIdleOrigin(style: LayerStyle): void {
+  if (TRANSFORMS.some((property) => style.has(property))) {
+    return;
+  }
+  // Base UI writes `--transform-origin` on the positioner, so the value may never resolve here, and
+  // the declaration is marked rather than read.
+  style.mark(
+    "transform-origin",
+    "dropped",
+    "the box sets no transform at rest, so the origin a transform moves about moves nothing",
     []
   );
 }

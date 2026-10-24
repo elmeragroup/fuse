@@ -1,6 +1,6 @@
 /**
  * Unit under test: the code syntax `fuseVariableSet` gives the tints and formula variables that
- * Item, Empty, Alert, Accordion and the floating Sidebar paint and space with, as
+ * Item, Empty, Alert, Accordion, the floating Sidebar and the menus paint and space with, as
  * `buildComponentSet` binds it. Oracle: Tailwind's compile of the classes Fuse writes for them, read on the `chip`
  * fixture. No kit set renders these components yet, so no kit test reaches these classes. Each
  * fixture copies its class from the Fuse source the comment names, because the recipe catalog
@@ -9,7 +9,7 @@
 import { Result } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { density, fixed, paint, token } from "../../test/built-kit";
+import { density, fixed, literal, paint, token } from "../../test/built-kit";
 import { buildFixture, chip, dot, frameOf } from "../../test/fixture-sets";
 import { fuseVariableSet } from "../fuse-variable-set";
 import { makeVariableIndex } from "./css-values";
@@ -38,7 +38,7 @@ function syncedVariables(): VariableIndex {
  */
 const PUBLISH_INNER_CORNER = "[--inner-corner:var(--shell-inner)]";
 
-describe("the tints and formulas of Item, Empty, Alert, Accordion and the floating Sidebar", () => {
+describe("the tints and formulas of Item, Empty, Alert, Accordion, the floating Sidebar and the menus", () => {
   it.each([
     // The muted Item, `item-variants.ts`.
     ["bg-muted/50", "muted/50"],
@@ -89,6 +89,28 @@ describe("the tints and formulas of Item, Empty, Alert, Accordion and the floati
     expect(coverage.filter((row) => row.outcome !== "bound")).toEqual([]);
   });
 
+  it("binds a popup's ring to the foreground/10 tint", async () => {
+    // The popup surface in `overlay/overlay-classes.ts`, without its shadow.
+    const { variant, coverage } = await buildFixture(chip("ring-1 ring-foreground/10"), {
+      variables: syncedVariables(),
+    });
+    expect(variant?.root.shadows).toEqual([
+      { color: paint("foreground/10"), offsetX: 0, offsetY: 0, radius: literal(0), spread: literal(1) },
+    ]);
+    expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
+
+  it.each([
+    // `indicatorRoom` in `overlay/menu-row-classes.ts`.
+    ["pr-[calc(var(--row-px)+1.5rem)]", "paddingRight"],
+    // `inset` in `overlay/menu-row-classes.ts`, without its `data-inset:` arm.
+    ["pl-[calc(var(--row-px)+1.5rem)]", "paddingLeft"],
+  ] as const)("binds the menu row's %s to the indicator room", async (padding, field) => {
+    const { variant, coverage } = await buildFixture(chip(padding), { variables: syncedVariables() });
+    expect(variant?.root[field]).toEqual(density("row-indicator-room"));
+    expect(coverage.filter((row) => row.outcome !== "bound")).toEqual([]);
+  });
+
   it.each([
     // `accordionItemShellClass` in `inner-corner/accordion.ts`.
     ["[--shell-inner:max(0px,--theme(--radius-sm)-var(--surface-pad-md))]", "radius-inner/sm-pad-md"],
@@ -108,6 +130,11 @@ describe("the tints and formulas of Item, Empty, Alert, Accordion and the floati
     ],
     // `sidebarSectionShellClass` in `inner-corner/sidebar.ts`, floating, without its context arms.
     ["[--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-sm))]", "radius-inner/lg-pad-sm"],
+    // `menuPopupShellClass` in `inner-corner/menu.ts`, and `listboxListShellClass` in
+    // `inner-corner/listbox.ts` without its `data-empty:` arms.
+    ["[--shell-inner:max(0px,--theme(--radius-md)-var(--surface-pad-sm))]", "radius-inner/md-pad-sm"],
+    // `commandListBoundaryClass` in `inner-corner/command.ts`.
+    ["[--shell-inner:max(0px,--theme(--radius-xl)-var(--surface-gap-sm))]", "radius-inner/xl-gap-sm"],
   ])("binds rounded-inner inside the shell %s to %s", async (shell, corner) => {
     const { variant, coverage } = await buildFixture(
       chip(`${shell} ${PUBLISH_INNER_CORNER}`, { parts: [dot("rounded-inner")] }),

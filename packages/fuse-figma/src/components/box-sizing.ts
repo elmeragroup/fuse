@@ -1,8 +1,8 @@
 /**
  * How a box sizes each axis, read from its CSS and from the room its parent gives it: the length
  * a `width` or `height` sets, a `100%` that fills its parent, a share of a length in pixels, the
- * stretch a column gives an unset width, the `min-*` and `max-*` limits, and whether
- * `overflow: hidden` clips the box. `box-mapping.ts` reads a box's sizing before it maps the
+ * stretch a column gives an unset width, the `min-*` and `max-*` limits, and whether the box's
+ * `overflow` clips it. `box-mapping.ts` reads a box's sizing before it maps the
  * box's parts, then asks this module for the room each part gets, in the box's flow or, for an
  * absolute part, against its containing block. `label-layout.ts` reads the box's own text against
  * the same holder.
@@ -27,6 +27,7 @@ import type {
   SizingSpec,
 } from "./kit-spec";
 import type { Layout } from "./placement";
+import { roomyMaximum, WITH_ROOM } from "./popup-room";
 
 /** What a box's parent gives it on one axis. */
 type AxisRoom = {
@@ -812,12 +813,22 @@ type BoxSizing = Pick<BoxSpec, "sizing" | "limits" | "clips"> & {
  */
 export type FitContent = "content" | "room";
 
+/** The properties that clip a box's overflow, on both axes and on each. */
+const OVERFLOWS = ["overflow", "overflow-x", "overflow-y"] as const;
+
 /**
- * Read a box's sizing and limits on both axes, `field-sizing: content`, and `overflow: hidden`.
+ * The overflow values that clip a box's content at its padding box. `auto` and `scroll` scroll it
+ * too, which a static frame does not show (CSS Overflow 3 §3).
+ */
+const CLIPPING: ReadonlySet<string> = new Set(["hidden", "clip", "auto", "scroll"]);
+
+/**
+ * Read a box's sizing and limits on both axes, `field-sizing: content`, and its overflow.
  * `field-sizing: content` sizes a form control to its content on each side no length sets (CSS
- * Basic UI 4). The kit hugs such a side already, so it reads where the height hugs. `overflow:
- * hidden` clips the box's content at its padding box, as Figma's clipping does. A part shows what
- * overflows it otherwise, as a CSS box does, and a variant root clips whatever it sets.
+ * Basic UI 4). The kit hugs such a side already, so it reads where the height hugs. An `overflow`,
+ * `overflow-x` or `overflow-y` of `hidden`, `clip`, `auto` or `scroll` clips the box's content at
+ * its padding box, as Figma's clipping does. A part shows what overflows it otherwise, as a CSS box
+ * does, and a variant root clips whatever it sets.
  *
  * @param reader - The box's style.
  * @param room - What the box's parent gives it.
@@ -848,12 +859,15 @@ export function readSizing(
     () => ({ outcome: "literal", detail: "the height hugs its content" }),
     reader.feed("sizing")
   );
-  const clips = reader.read(
-    "overflow",
-    (value) => (normalizeCss(value) === "hidden" ? true : undefined),
-    () => ({ outcome: "literal", detail: "the box clips its content" }),
-    reader.feed("clips")
-  );
+  // A `visible` axis beside one that clips computes to `auto` (CSS Overflow 3 §3), so either clips both.
+  const clips = OVERFLOWS.map((property) =>
+    reader.read(
+      property,
+      (value) => (CLIPPING.has(normalizeCss(value)) ? true : undefined),
+      () => ({ outcome: "literal", detail: "the box clips its content" }),
+      reader.feed("clips")
+    )
+  ).some((clipped) => clipped === true);
   return {
     sizing: { horizontal: horizontal.size, vertical: vertical.size },
     limits: {
@@ -862,7 +876,7 @@ export function readSizing(
       minHeight: vertical.min,
       maxHeight: vertical.max,
     },
-    clips: clips ?? false,
+    clips,
     known: { horizontal: horizontal.known, vertical: vertical.known },
     extent: {
       horizontal: usedPixels(horizontal, room.horizontal.length),
@@ -954,8 +968,17 @@ function readAxis(
       []
     );
   }
+  const popupMaximum = roomyMaximum(reader.raw(axis.max) ?? "", variables);
+  // Nothing sets the available height outside a positioner, so the value never resolves and the
+  // maximum is marked rather than read.
+  if (popupMaximum?.kind === "none") {
+    reader.mark(axis.max, "dropped", WITH_ROOM, []);
+  }
   const bounds = (["min", "max"] as const).flatMap((side): Bound[] => {
     const property = axis[side];
+    if (side === "max" && popupMaximum !== undefined) {
+      return popupMaximum.kind === "length" ? [{ side, property, value: popupMaximum.value }] : [];
+    }
     const value = reader.resolved(property);
     return value === undefined || (side === "max" && inertMaximum)
       ? []
@@ -966,11 +989,16 @@ function readAxis(
   for (const [bound, note] of limited.notes) {
     // A limit that stays a limit fills the box's limits, and one that folds into the length its sizing.
     const limit = bound.side === "min" ? limited.min : limited.max;
+    const feed = [...reader.feed(limit === undefined ? "sizing" : "limits"), ...inside];
+    if (bound.side === "max" && popupMaximum !== undefined && note !== undefined) {
+      reader.mark(bound.property, note.outcome, `${note.detail}, since ${WITH_ROOM}`, feed);
+      continue;
+    }
     reader.read(
       bound.property,
       () => note,
       (decided) => decided,
-      [...reader.feed(limit === undefined ? "sizing" : "limits"), ...inside]
+      feed
     );
   }
   return { ...limited, known: read !== undefined };

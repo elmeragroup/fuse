@@ -139,14 +139,11 @@ export function readFlow(
     flex &&
     (column ? box.sizing.vertical : box.sizing.horizontal).kind === "hug" &&
     (column ? box.limits.minHeight : box.limits.minWidth) === undefined;
-  const primaryAlign =
-    readAlign(
-      reader,
-      "justify-content",
-      "primary",
-      hugged ? HUGGED_ALIGNMENTS : PRIMARY_ALIGNMENTS,
-      reader.feed("primaryAlign")
-    ) ?? unset;
+  const autoStart = flex && !column && readAutoStart(reader, flow);
+  const alignments = hugged ? HUGGED_ALIGNMENTS : PRIMARY_ALIGNMENTS;
+  const primaryAlign = autoStart
+    ? (alignments.get("space-between")?.align ?? unset)
+    : (readAlign(reader, "justify-content", "primary", alignments, reader.feed("primaryAlign")) ?? unset);
   return {
     layout: {
       flex,
@@ -154,10 +151,47 @@ export function readFlow(
       direction,
       primaryAlign,
       counterAlign,
-      justify: reader.has("justify-content") ? primaryAlign : "unset",
+      justify: autoStart ? "SPACE_BETWEEN" : reader.has("justify-content") ? primaryAlign : "unset",
     },
     self,
   };
+}
+
+/** How the coverage table names an auto start margin {@link readAutoStart} reads. */
+const AUTO_START =
+  "the auto margin takes the row's free space, which ends the row with the layer, as space-between places two layers";
+
+/**
+ * Read an auto start margin on the last of a flex row's two layers, as a menu row's shortcut or
+ * caret ends the row. Auto margins take the row's free space before `justify-content` distributes
+ * it (CSS Flexbox 1 §8.1), so the margin ends the row with the layer and leaves the first at the
+ * start, as `space-between` places two layers, and the row reads as spaced between its ends. The row
+ * must leave `justify-content` unset and the layer its end margin, so nothing else places the two.
+ * An auto margin anywhere else stays unread, so it lands unmapped.
+ *
+ * @param reader - The row's style.
+ * @param flow - The row's layers in flow.
+ * @returns Whether the row reads as spaced between its ends.
+ */
+function readAutoStart(reader: LayerStyle, flow: FlowLayers): boolean {
+  const { last } = flow;
+  const auto = (property: string) => normalizeCss(last?.resolved(property) ?? "") === "auto";
+  if (
+    last === undefined ||
+    flow.parts.length + flow.others.length !== 2 ||
+    reader.has("justify-content") ||
+    !auto("margin-left") ||
+    last.has("margin-right")
+  ) {
+    return false;
+  }
+  last.read(
+    "margin-left",
+    (value) => value,
+    () => ({ outcome: "literal", detail: AUTO_START }),
+    reader.feed("primaryAlign")
+  );
+  return true;
 }
 
 /** The displays that make a box block-level, which a block box stacks down its content box. */
@@ -198,6 +232,11 @@ export type FlowLayer = { readonly key: string; readonly name: string };
 export type FlowLayers = {
   readonly parts: readonly (FlowLayer & { readonly style: LayerStyle; readonly sizing: Feed })[];
   readonly others: readonly FlowLayer[];
+  /**
+   * The style of the box's last layer in flow, a part or an icon, which {@link readAutoStart} reads,
+   * or undefined where the label ends the flow or the box holds no layer.
+   */
+  readonly last: LayerStyle | undefined;
 };
 
 /** How a box lays out its layers, and the alignment its parts set, where they set one. */

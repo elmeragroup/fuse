@@ -191,6 +191,7 @@ const ROLE_TINTS = [
   ["info", 20],
   ["input", 50],
   ["sidebar-foreground", 70],
+  ["foreground", 10],
 ] as const satisfies readonly (readonly [ColorTokenName, number])[];
 
 /** The tokens of the dimension kind. */
@@ -256,6 +257,8 @@ type FormulaVariable = {
  * - Empty pads twice `--surface-pad-lg` from Tailwind's `md` breakpoint up, an open Accordion
  *   panel sits `--surface-gap-lg` plus 6px below its trigger, and an Alert's icon box beside a
  *   description is one line of `--label-text` at `leading-snug`.
+ * - A menu row's indicator room and its inset compile to one formula, `--row-px` plus 1.5rem, and
+ *   the builder binds by code syntax, so one variable, `row-indicator-room`, serves both.
  */
 const FORMULA_VARIABLES = [
   {
@@ -381,6 +384,24 @@ const FORMULA_VARIABLES = [
       "The corner inside a radius-lg shell padded with surface-pad-sm, such as the header, footer or a group of a floating Sidebar, or a Select group: radius-lg less surface-pad-sm, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
   },
   {
+    name: "radius-inner/md-pad-sm",
+    reads: "theme and density",
+    formula: "max(0px, calc(var(--radius) - var(--radius-step, 0px)) - var(--surface-pad-sm))",
+    length: (scheme, metric) => Math.max(0, scheme.rungs["radius-md"].value - metric("surface-pad-sm")),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner inside a radius-md shell padded with surface-pad-sm, such as a DropdownMenu popup or a Combobox list: radius-md less surface-pad-sm, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
+  },
+  {
+    name: "radius-inner/xl-gap-sm",
+    reads: "theme and density",
+    formula: "max(0px, calc(var(--radius) + 2 * var(--radius-step, 0px)) - var(--surface-gap-sm))",
+    length: (scheme, metric) => Math.max(0, scheme.rungs["radius-xl"].value - metric("surface-gap-sm")),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner inside a radius-xl shell padded with surface-gap-sm, such as a Command list: radius-xl less surface-gap-sm, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
+  },
+  {
     name: "empty-pad-desktop",
     reads: "density",
     formula: "calc(2 * var(--surface-pad-lg))",
@@ -408,6 +429,16 @@ const FORMULA_VARIABLES = [
     scopes: ["WIDTH_HEIGHT"],
     description:
       "One line of label text at the snug line height, label-text times 1.375, such as the icon box of an Alert beside a description, which sets the glyph on the first line of the title. Figma variables cannot compute, so the sync writes the result for each density.",
+  },
+  {
+    name: "row-indicator-room",
+    reads: "density",
+    // `1.5rem` is the 16px indicator and the 8px gap beside it.
+    formula: "calc(var(--row-px) + 1.5rem)",
+    length: (metric) => metric("row-px") + 24,
+    scopes: ["GAP"],
+    description:
+      "The padding a menu row keeps for its 16px indicator and the 8px gap beside it, row-px plus 24px: the end padding of a Select, Combobox or DropdownMenu checkbox or radio row, and the start padding of an inset DropdownMenu row. Figma variables cannot compute, so the sync writes the result for each density.",
   },
 ] as const satisfies readonly FormulaVariable[];
 

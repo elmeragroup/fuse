@@ -473,6 +473,205 @@ export function readSize(value: string, index: VariableIndex, basis: PercentBasi
 }
 
 /**
+ * A length that is a constant plus each variable it reads times a coefficient, in pixels, as the
+ * sums, differences and scalings `calc()` writes over synced variables give it. Two such lengths
+ * are the same wherever the variables take a value exactly when their constants and coefficients
+ * match, which {@link sameAffine} checks.
+ */
+export type AffineLength = {
+  readonly constant: number;
+  /** Each variable's coefficient, by its custom property, such as `--row-px`. */
+  readonly coefficients: ReadonlyMap<string, number>;
+};
+
+/** An affine quantity: a length in pixels, or a plain number, which scales a length. */
+type Affine = AffineLength & { readonly unit: "px" | "" };
+
+/** How far apart two coefficients may be and still count as one. */
+const SAME_COEFFICIENT = 1e-9;
+
+/**
+ * Read a length as an affine expression of the variables it reads. Every `var()` left in the value
+ * is a synced variable, a length. A product or quotient that scales a variable by a number, and a
+ * `min()` or `max()` over no variable, stay affine. Anything else, a product of two variables, a
+ * `min()` or `max()` over one, a percentage or a division by a length, is no affine length.
+ *
+ * @param value - A CSS value whose `var()`s are synced variables or none.
+ * @returns The length, or undefined where the value is no affine length.
+ */
+export function affineLength(value: string): AffineLength | undefined {
+  const read = affine(value);
+  return read !== undefined && (read.unit === "px" || isZero(read)) ? read : undefined;
+}
+
+/**
+ * Add affine lengths.
+ *
+ * @param lengths - The lengths.
+ * @returns Their sum.
+ */
+export function sumAffine(lengths: readonly AffineLength[]): AffineLength {
+  return lengths.reduce<AffineLength>((sum, length) => combine(sum, length, 1), {
+    constant: 0,
+    coefficients: new Map(),
+  });
+}
+
+/**
+ * Whether two affine lengths are the same wherever their variables take a value.
+ *
+ * @param left - A length.
+ * @param right - Another length.
+ * @returns True when their constants and every variable's coefficient match.
+ */
+export function sameAffine(left: AffineLength, right: AffineLength): boolean {
+  return isZero(combine(left, right, -1));
+}
+
+/** Whether an affine quantity is zero wherever its variables take a value. */
+function isZero({ constant, coefficients }: AffineLength): boolean {
+  return (
+    Math.abs(constant) < SAME_COEFFICIENT &&
+    [...coefficients.values()].every((coefficient) => Math.abs(coefficient) < SAME_COEFFICIENT)
+  );
+}
+
+/** `left + sign * right`, keeping the left's unit. */
+function combine<Length extends AffineLength>(left: Length, right: AffineLength, sign: 1 | -1): Length {
+  const coefficients = new Map(left.coefficients);
+  for (const [name, coefficient] of right.coefficients) {
+    coefficients.set(name, (coefficients.get(name) ?? 0) + sign * coefficient);
+  }
+  return { ...left, constant: left.constant + sign * right.constant, coefficients };
+}
+
+/** Multiply an affine quantity by a number. */
+function scale(quantity: Affine, factor: number): Affine {
+  return {
+    unit: quantity.unit,
+    constant: quantity.constant * factor,
+    coefficients: new Map(
+      [...quantity.coefficients].map(([name, coefficient]) => [name, coefficient * factor])
+    ),
+  };
+}
+
+/** Read one operand, a literal, a `var()`, a call or a parenthesised sum, as {@link evaluate} does. */
+function affine(expression: string): Affine | undefined {
+  const trimmed = expression.trim();
+  const literal = /^([+-]?(?:\d+\.?\d*|\.\d+))(px|rem)?$/.exec(trimmed);
+  if (literal !== null) {
+    const number = Number(literal[1]);
+    return literal[2] === undefined
+      ? { unit: "", constant: number, coefficients: new Map() }
+      : {
+          unit: "px",
+          constant: literal[2] === "rem" ? number * ROOT_FONT_SIZE_PX : number,
+          coefficients: new Map(),
+        };
+  }
+  const variable = singleVar(trimmed);
+  if (variable !== undefined) {
+    return { unit: "px", constant: 0, coefficients: new Map([[variable.name, 1]]) };
+  }
+  const call = /^(calc|min|max)\(/.exec(trimmed);
+  if (call !== null && matchingParen(trimmed, call[0].length - 1) === trimmed.length - 1) {
+    const inner = trimmed.slice(call[0].length, -1);
+    if (call[1] === "calc") {
+      return affineSum(inner);
+    }
+    // Over no variable, `min()` and `max()` pick a constant. Over one they pick per value.
+    const args = splitTopLevel(inner, ",").map(affineSum);
+    const constants = args.filter((arg): arg is Affine => arg?.coefficients.size === 0);
+    if (constants.length === 0 || constants.length !== args.length) {
+      return undefined;
+    }
+    const pick = call[1] === "min" ? Math.min : Math.max;
+    const [first] = constants;
+    return first === undefined
+      ? undefined
+      : {
+          unit: first.unit,
+          constant: pick(...constants.map((arg) => arg.constant)),
+          coefficients: new Map(),
+        };
+  }
+  if (trimmed.startsWith("(") && matchingParen(trimmed, 0) === trimmed.length - 1) {
+    return affineSum(trimmed.slice(1, -1));
+  }
+  return undefined;
+}
+
+/** Read `a + b - c` over products, whose operands share a unit, as {@link evaluateSum} splits it. */
+function affineSum(expression: string): Affine | undefined {
+  const products: string[][] = [[]];
+  const operators: string[] = [];
+  for (const token of splitTopLevel(expression, " ")) {
+    if (token === "+" || token === "-") {
+      operators.push(token);
+      products.push([]);
+    } else {
+      products.at(-1)?.push(token);
+    }
+  }
+  const [first, ...rest] = products.map((tokens) => affineProduct(tokens.join("")));
+  let total = first;
+  for (const [index, next] of rest.entries()) {
+    if (total === undefined || next === undefined || total.unit !== next.unit) {
+      return undefined;
+    }
+    total = combine(total, next, operators[index] === "+" ? 1 : -1);
+  }
+  return total;
+}
+
+/**
+ * Read `a*b/c`, as {@link evaluateProduct} splits it. A product stays affine where at most one
+ * factor reads a variable and at most one is a length, and a quotient where its divisor is a
+ * nonzero number.
+ */
+function affineProduct(term: string): Affine | undefined {
+  const factors: string[] = [];
+  const operators: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let index = 0; index < term.length; index += 1) {
+    const char = term.charAt(index);
+    if (char === "(") {
+      depth += 1;
+    } else if (char === ")") {
+      depth -= 1;
+    } else if ((char === "*" || char === "/") && depth === 0) {
+      factors.push(term.slice(start, index));
+      operators.push(char);
+      start = index + 1;
+    }
+  }
+  factors.push(term.slice(start));
+  const [first, ...rest] = factors.map(affine);
+  let product = first;
+  for (const [index, next] of rest.entries()) {
+    if (product === undefined || next === undefined) {
+      return undefined;
+    }
+    if (operators[index] === "/") {
+      if (next.unit !== "" || next.coefficients.size > 0 || next.constant === 0) {
+        return undefined;
+      }
+      product = scale(product, 1 / next.constant);
+      continue;
+    }
+    const [number, quantity] =
+      next.unit === "" && next.coefficients.size === 0 ? [next, product] : [product, next];
+    if (number.unit !== "" || number.coefficients.size > 0) {
+      return undefined;
+    }
+    product = scale(quantity, number.constant);
+  }
+  return product;
+}
+
+/**
  * Evaluate a length or number in pixels.
  *
  * @param value - A CSS value with no `var()` left in it.

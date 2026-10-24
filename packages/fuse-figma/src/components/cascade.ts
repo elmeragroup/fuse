@@ -147,10 +147,11 @@ export type InPlace = {
   readonly composite: (row: Omit<CoverageRow, "component">, origin: Origin) => void;
   readonly fed: (declaration: Declaration, feed: Feed) => void;
   /**
-   * Move the fields reads filled at or below a layer's path into a layer the mapping puts in its
-   * place, keeping those of `keep` on the layer itself.
+   * Move each field the reads filled to where the mapping draws it instead. `move` gives a feed's new
+   * targets, the feed itself where the mapping leaves it, or several where one layer's field becomes
+   * a field of each of several layers.
    */
-  readonly relocate: (path: readonly string[], into: string, keep: ReadonlySet<SpecField>) => void;
+  readonly relocate: (move: (feed: FeedTarget) => readonly FeedTarget[]) => void;
 };
 
 /**
@@ -1126,7 +1127,23 @@ export class LayerStyle {
    * @param keep - The fields that stay.
    */
   relocateFeeds(into: string, keep: ReadonlySet<SpecField>): void {
-    this.#layer.inPlace?.relocate(this.path, into, keep);
+    const { path } = this;
+    this.moveFeeds((feed) =>
+      path.every((key, index) => feed.path[index] === key) &&
+      (feed.path.length > path.length || !keep.has(feed.field))
+        ? [{ ...feed, path: [...path, into, ...feed.path.slice(path.length)] }]
+        : [feed]
+    );
+  }
+
+  /**
+   * Move the fields the reads of the cell filled to where the mapping draws them instead, as the
+   * layers of a column move into the section frames around them.
+   *
+   * @param move - A feed's new targets: the feed itself where nothing moves it, or several.
+   */
+  moveFeeds(move: (feed: FeedTarget) => readonly FeedTarget[]): void {
+    this.#layer.inPlace?.relocate(move);
   }
 
   /** Whether the computed style sets the property. */

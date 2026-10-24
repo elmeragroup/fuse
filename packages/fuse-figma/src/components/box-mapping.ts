@@ -41,6 +41,7 @@ import {
   readColor,
   readNumber,
 } from "./css-values";
+import { readBleed, sectioned } from "./full-bleed";
 import type { CascadedInstance, InstanceParts } from "./instance-parts";
 import { castsSpread, fixedLength, iconKey, ringFill, ZERO } from "./kit-spec";
 import type {
@@ -63,7 +64,16 @@ import {
   readWithoutLabel,
   spaceBeforeLabel,
 } from "./label-layout";
-import { dropZeroMargins, placeParts, readRotation, slotAroundDot, wrapMargins } from "./placement";
+import {
+  dropIdleOrigin,
+  dropZeroMargins,
+  endsInFlow,
+  padToOffset,
+  placeParts,
+  readRotation,
+  slotAroundDot,
+  wrapMargins,
+} from "./placement";
 import type { Layout } from "./placement";
 import { stacksFirstOnTop } from "./stacking";
 import type { PaintedInstances } from "./stacking";
@@ -294,6 +304,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   ]);
 
   const paint = readPaint(reader, box.image, context.variables, variant);
+  dropIdleOrigin(reader);
   const opacity = reader.read(
     "opacity",
     evaluateNumber,
@@ -316,10 +327,14 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
 
   const start: ChildLayerSpec[] = [];
   const end: ChildLayerSpec[] = [];
+  // The style of the last icon on each side, where a row's last layer can set an auto margin.
+  const lastIcon = new Map<IconSlot["side"], LayerStyle>();
   for (const slot of slots) {
-    const icon = mapIcon(slot, cascade.icon(slot), scope);
+    const style = cascade.icon(slot);
+    const icon = mapIcon(slot, style, scope);
     if (icon !== undefined) {
       (slot.side === "start" ? start : end).push(icon);
+      lastIcon.set(slot.side, style);
     }
   }
   // Every part cascades before any maps, since an absolute part sits out of the box's flow. The box's
@@ -346,6 +361,10 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         sizing: sizingOf(part.kind === "instance" ? part.visit.part : part.child, cascade.path),
       })),
       others: [...start, ...(label === undefined ? [] : [label]), ...end],
+      // The flow ends with the last end icon, else the label, else the last start icon or part.
+      last:
+        lastIcon.get("end") ??
+        (label === undefined ? (lastIcon.get("start") ?? flowing.at(-1)?.cascade.style) : undefined),
     },
     { sizing, limits, inside }
   );
@@ -376,6 +395,22 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     holder,
     flowing.map((part) => part.cascade.style)
   );
+  // An absolute part that ends the row draws in flow there where the row's end padding keeps its room.
+  const last = shown.at(-1);
+  const inFlowEnd =
+    last?.kind === "frame" &&
+    holder.layers.length === flowing.length &&
+    endsInFlow(
+      {
+        style: reader,
+        layout,
+        layers: flowing.length,
+        endsFlush: growing !== undefined || sizing.horizontal.kind === "hug",
+      },
+      last.cascade.style
+    )
+      ? last.cascade.style
+      : undefined;
   readWraps(holder, growing);
   const mapped = shown.map((part): MappedPart => {
     const index = flowing.indexOf(part);
@@ -430,8 +465,20 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   });
   const width = fixedLength(sizing.horizontal);
   const height = fixedLength(sizing.vertical);
-  const paddingLeft = number("padding-left", "paddingLeft") ?? ZERO;
-  const paddingRight = number("padding-right", "paddingRight") ?? ZERO;
+  // Separators that cancel a column's padding move the padding onto sections around the runs between them.
+  const bleed = readBleed(
+    { style: reader, layout, clips, drawsOthers: after.length > 0 },
+    parts,
+    context.variables
+  );
+  const sections = bleed.kind === "sections" ? bleed : undefined;
+  const paddingLeft = sections?.paddingLeft ?? number("padding-left", "paddingLeft") ?? ZERO;
+  const paddingRight =
+    sections?.paddingRight ??
+    (inFlowEnd === undefined
+      ? number("padding-right", "paddingRight")
+      : padToOffset(reader, inFlowEnd, context.variables)) ??
+    ZERO;
   const placement = placeParts(
     {
       style: reader,
@@ -439,9 +486,18 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       layers: holder.layers.length,
       size: { width, stroke: paint.stroke, paddingLeft, paddingRight },
     },
-    parts
+    parts,
+    inFlowEnd
   );
-  const children: readonly ChildLayerSpec[] = [...placement.layers, ...after];
+  const itemSpacing = space ?? number("gap", "itemSpacing") ?? ZERO;
+  const counterAlign =
+    placed?.counterAlign ?? (textBlock ? blockLineAlign(layout, sizing, limits) : layout.counterAlign);
+  const children: readonly ChildLayerSpec[] = [
+    ...(sections === undefined
+      ? placement.layers
+      : sectioned(reader, placement.layers, sections, { itemSpacing, counterAlign })),
+    ...after,
+  ];
   reader.read(
     "aspect-ratio",
     (value) => (width !== undefined && height !== undefined ? value : undefined),
@@ -454,14 +510,13 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     limits,
     clips,
     paddingTop: number("padding-top", "paddingTop") ?? ZERO,
-    paddingRight,
+    paddingRight: sections === undefined ? paddingRight : ZERO,
     paddingBottom: number("padding-bottom", "paddingBottom") ?? ZERO,
-    paddingLeft,
-    itemSpacing: space ?? number("gap", "itemSpacing") ?? ZERO,
+    paddingLeft: sections === undefined ? paddingLeft : ZERO,
+    itemSpacing,
     // A native control's placement of its label wins over the box's own alignment.
     primaryAlign: placed?.primaryAlign ?? (packsAtStart ? "MIN" : placement.primaryAlign),
-    counterAlign:
-      placed?.counterAlign ?? (textBlock ? blockLineAlign(layout, sizing, limits) : layout.counterAlign),
+    counterAlign,
     cornerRadius: readCorner(reader, sizing, context) ?? ZERO,
     ...paint,
     opacity: opacity ?? 1,
