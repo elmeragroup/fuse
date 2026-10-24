@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import { elementsOf } from "../../test/static-markup";
 import { ALERT } from "../components/alert-kit";
 import type { BoxDefinition, Cell } from "../components/component-spec";
+import { framePartsOf } from "../components/definition-parts";
 import { alert } from "./alert-cell";
 import { renderCellHtml } from "./cell-renderers";
 
@@ -21,7 +22,7 @@ function definedClasses(
 ): readonly (readonly [string, string])[] {
   return [
     [slot, box.classesFor(cell)],
-    ...(box.parts ?? [])
+    ...framePartsOf(box)
       .filter((part) => part.shownIn(cell))
       .flatMap((part) => definedClasses(part, part.slot ?? part.key, cell)),
   ];

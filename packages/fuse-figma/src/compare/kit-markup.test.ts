@@ -21,7 +21,11 @@
  * variant such as `[a]:` exactly where the root is that element. The parts must match the measured
  * element's descendants that carry a part's `data-slot` or that its `element` selects, each below
  * its parent part, and any other part with no `data-slot` must be the one child element of its
- * parent part beside those parts and Base UI's hidden span. The slots must match the measured
+ * parent part beside those parts and Base UI's hidden span. Parts of one parent that name the same
+ * elements take them in DOM order. An instance part must be the element its inner root's `data-slot`
+ * or `element` names below its parent part, whose `class` holds the inner classes with the passed
+ * ones merged by `cn` and whose text the inner label's characters, and the check, its variant checks
+ * among them, reads nothing inside it. The slots must match the measured
  * element's `<svg>` descendants in order, each under the part that lists it, its nearest ancestor
  * among the root and the parts, as a child of that part or nested deeper, and with its `data-icon`.
  * A slot that names classes of its own must name the `<svg>`'s `class` attribute exactly. The root
@@ -53,7 +57,7 @@ import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { chip, ICON } from "../../test/fixture-sets";
+import { chip, dot, ICON } from "../../test/fixture-sets";
 import { checkMarkup, expectedLabel } from "../../test/markup-check";
 import { markupLabel } from "../../test/markup-tree";
 import {
@@ -71,6 +75,7 @@ import { definitionClasses } from "../components/component-spec";
 import type {
   AncestorDefinition,
   BoxDefinition,
+  Cell,
   ComponentDefinition,
   IconSlot,
   PartDefinition,
@@ -364,6 +369,183 @@ describe("the label check of a box that holds its text in an attribute in some c
 
   it("fails a value cell whose markup holds the text as a placeholder", () => {
     expect(markupLabel(markup({ placeholder: TEXT }), value)).not.toEqual(value);
+  });
+});
+
+// Unit under test: `checkMarkup` on a definition that holds an instance part beside a frame part.
+// Oracle: the rule that an instance part is found like a part, by its inner root's `data-slot` below
+// its parent part, that its `class` holds the inner definition's classes for the inner cell with the
+// classes the outer component passes merged after them by `cn`, and that it holds the characters the
+// outer cell gives the inner label's TEXT property. The check stops there, since the inner set's own
+// renderer test owns the markup inside it, so an icon and a `chip-dot` span inside the badge are no
+// icon or part of the chip. The hand-written markup holds what the rule says where it passes.
+describe("the markup check of an instance part", () => {
+  const BADGE = chip("inline-flex px-2 bg-[rgb(255_0_0)]", {
+    key: "badge",
+    name: "Badge",
+    slot: "badge",
+    label: { key: "label", name: "label", characters: "Badge", textProperty: "Label", shownIn: () => true },
+  });
+  const HOLDER = chip("flex", {
+    parts: [
+      dot(""),
+      {
+        kind: "instance",
+        key: "action",
+        of: BADGE,
+        cell: () => ({ state: "rest" }),
+        classesFor: () => "px-4",
+        properties: () => ({ text: { Label: "Undo" } }),
+        shownIn: () => true,
+      },
+    ],
+  });
+  const CELLS = [{ state: "rest" }];
+  const markup = (className: string, text: string): CellRendering =>
+    chipMarkup(
+      createElement("span", { "data-slot": "chip-dot" }),
+      createElement(
+        "span",
+        { "data-slot": "badge", className },
+        createElement("svg"),
+        createElement("span", { "data-slot": "chip-dot" }),
+        text
+      )
+    );
+
+  it("finds the inner root by its data-slot and reads its merged class and label, and nothing inside it", () => {
+    expect(() =>
+      checkMarkup(HOLDER, CELLS, markup("px-4 inline-flex bg-[rgb(255_0_0)]", "Undo"))
+    ).not.toThrow();
+  });
+
+  it("fails an inner root that keeps the padding the outer component's class replaces", () => {
+    expect(() =>
+      checkMarkup(HOLDER, CELLS, markup("inline-flex px-2 bg-[rgb(255_0_0)] px-4", "Undo"))
+    ).toThrow("chip/state=rest: the instance on /(action): the class");
+  });
+
+  it("fails an inner root that holds the label's default where the outer cell gives another", () => {
+    expect(() => checkMarkup(HOLDER, CELLS, markup("inline-flex bg-[rgb(255_0_0)] px-4", "Badge"))).toThrow(
+      "chip/state=rest: the instance on /(action): the label"
+    );
+  });
+
+  it("fails a cell that renders no inner root", () => {
+    const without: CellRendering = chipMarkup(createElement("span", { "data-slot": "chip-dot" }));
+    expect(() => checkMarkup(HOLDER, CELLS, without)).toThrow("chip/state=rest: parts");
+  });
+
+  // Oracle: a Kbd group's markup, two sibling caps with one `data-slot`, which the definition names
+  // as two instance parts by their keys, matched to the caps in DOM order.
+  describe("of one component twice beside each other", () => {
+    const cap = (key: string, text: string) => ({
+      kind: "instance" as const,
+      key,
+      of: BADGE,
+      cell: () => ({ state: "rest" }),
+      properties: () => ({ text: { Label: text } }),
+      shownIn: () => true,
+    });
+    const GROUP = chip("flex", { parts: [cap("ctrl", "Ctrl"), cap("k", "K")] });
+    const caps = (...texts: readonly string[]): CellRendering =>
+      chipMarkup(
+        ...texts.map((text) =>
+          createElement(
+            "span",
+            { "data-slot": "badge", className: "inline-flex px-2 bg-[rgb(255_0_0)]" },
+            text
+          )
+        )
+      );
+
+    it("finds each part in DOM order and reads its own label", () => {
+      expect(() => checkMarkup(GROUP, CELLS, caps("Ctrl", "K"))).not.toThrow();
+    });
+
+    it("fails the caps in the other order", () => {
+      expect(() => checkMarkup(GROUP, CELLS, caps("K", "Ctrl"))).toThrow(
+        "chip/state=rest: the instance on /(ctrl): the label"
+      );
+    });
+
+    it("fails a cell that renders one of them", () => {
+      expect(() => checkMarkup(GROUP, CELLS, caps("Ctrl"))).toThrow("chip/state=rest: parts");
+    });
+
+    it("fails a cell that renders a third", () => {
+      expect(() => checkMarkup(GROUP, CELLS, caps("Ctrl", "K", "K"))).toThrow("chip/state=rest: parts");
+    });
+  });
+
+  // A Select trigger as an instance shows it: Base UI stamps `data-popup-open` on the trigger while
+  // its popup is open, which the trigger's `open=on` holds, and its caret reads that through
+  // `group-data-[popup-open]/select-trigger:`.
+  const TRIGGER = chip("group/select-trigger inline-flex", {
+    key: "select-trigger",
+    name: "Select trigger",
+    slot: "select-trigger",
+    axes: [{ name: "open", values: ["off", "on"] }],
+    columnAxis: "open",
+    facts: new Map([["data-popup-open", (cell: Cell) => cell.open === "on"]]),
+  });
+  const OPEN_TRIGGER = chip("flex", {
+    parts: [
+      {
+        kind: "instance",
+        key: "trigger",
+        of: TRIGGER,
+        cell: () => ({ open: "on" }),
+        shownIn: () => true,
+      },
+    ],
+  });
+  const trigger = (attributes: Readonly<Record<string, string>>): CellRendering =>
+    chipMarkup(
+      createElement(
+        "span",
+        { "data-slot": "select-trigger", className: "group/select-trigger inline-flex", ...attributes },
+        createElement("svg", { className: "group-data-[popup-open]/select-trigger:rotate-180" })
+      )
+    );
+
+  // Oracle: the rule that the inner set's own renderer test owns the markup inside an instance, so a
+  // resting composite holding an open Select trigger, whose caret reads the trigger's
+  // `group-data-[popup-open]/select-trigger:`, holds no condition of the composite's state table.
+  it("leaves the variants an element inside the instance names to the inner set", () => {
+    expect(() => checkMarkup(OPEN_TRIGGER, CELLS, trigger({ "data-popup-open": "" }))).not.toThrow();
+  });
+
+  // Oracle: Base UI's trigger, which carries `data-popup-open` only while its popup is open, so a
+  // composite that names the open trigger and renders a closed one draws another variant than its
+  // markup holds.
+  it("fails an instance root whose state attributes differ from the inner cell the part names", () => {
+    expect(() => checkMarkup(OPEN_TRIGGER, CELLS, trigger({}))).toThrow(
+      "chip/state=rest: the instance on /(trigger): data-popup-open"
+    );
+  });
+
+  // Oracle: Tailwind compiles `group-data-[popup-open]/select-trigger:` to
+  // `:where(.group\/select-trigger)[data-popup-open] *`, which holds below the trigger only while it is
+  // open. This trigger declares only that fact, so a closed render fails on the fact alone.
+  it("fails an instance root that does not show a group fact its inner cell declares", () => {
+    const grouped = chip("flex", {
+      parts: [
+        {
+          kind: "instance",
+          key: "trigger",
+          of: {
+            ...TRIGGER,
+            facts: new Map([["group-data-[popup-open]/select-trigger", (cell: Cell) => cell.open === "on"]]),
+          },
+          cell: () => ({ open: "on" }),
+          shownIn: () => true,
+        },
+      ],
+    });
+    expect(() => checkMarkup(grouped, CELLS, trigger({}))).toThrow(
+      "chip/state=rest: the instance on /(trigger): group-data-[popup-open]/select-trigger"
+    );
   });
 });
 

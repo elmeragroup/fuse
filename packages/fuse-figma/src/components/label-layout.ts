@@ -42,6 +42,8 @@ export type LabelScope = {
   readonly clamp: number | undefined;
   /** The variant's key, for errors. */
   readonly variant: string;
+  /** The keys of the layers from the root down to the text layer, which the fields its reads fill name. */
+  readonly path: readonly string[];
 };
 
 /** The Figma style of each Roboto weight a recipe reaches. */
@@ -115,13 +117,15 @@ export function readWithoutLabel(style: LayerStyle): void {
   style.read(
     "white-space",
     (value) => (normalizeCss(value) === "nowrap" ? value : undefined),
-    () => ({ outcome: "literal", detail: "the label hugs its width" })
+    () => ({ outcome: "literal", detail: "the label hugs its width" }),
+    // The note passes down to the labels of the box's parts, which fill their own fields.
+    []
   );
   for (const property of TEXT_PROPERTIES) {
-    style.mark(property, "dropped", "the cell shows no text");
+    style.mark(property, "dropped", "the cell shows no text", []);
   }
   for (const property of ["text-overflow", "-webkit-line-clamp"]) {
-    style.mark(property, "dropped", "the box holds no text of its own");
+    style.mark(property, "dropped", "the box holds no text of its own", []);
   }
 }
 
@@ -184,7 +188,7 @@ export function labelElementHolder(
   const capped = ends && !fills && widthCapInside(row, row.layers.indexOf(label.name)).kind !== "none";
   if (!ends || capped) {
     for (const property of ELEMENT_LAYOUT) {
-      element.mark(property, "unmapped", capped ? CAPPED_ELEMENT : UNENDED);
+      element.mark(property, "unmapped", capped ? CAPPED_ELEMENT : UNENDED, []);
     }
     return undefined;
   }
@@ -194,7 +198,8 @@ export function labelElementHolder(
     (): CoverageNote =>
       fills
         ? { outcome: "literal", detail: "the label's element clips its text at the room the row leaves it" }
-        : { outcome: "dropped", detail: NEVER_OVERFLOWS }
+        : { outcome: "dropped", detail: NEVER_OVERFLOWS },
+    element.feed("sizing")
   );
   return {
     style: element,
@@ -257,8 +262,13 @@ export function inertClamp(style: LayerStyle): string | undefined {
  */
 export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelScope): MappedLabel {
   const { style } = holder;
-  const { color, variables } = scope;
-  const fontSize = style.read("font-size", (value) => readNumber(value, variables), describeNumber);
+  const { color, variables, path } = scope;
+  const fontSize = style.read(
+    "font-size",
+    (value) => readNumber(value, variables),
+    describeNumber,
+    style.feed("fontSize", path)
+  );
   const lineHeight = style.read(
     "line-height",
     (value): LineHeightSpec | undefined => {
@@ -280,7 +290,8 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
       }
       return fontSize === undefined ? undefined : { kind: "percent", value: number * 100 };
     },
-    describeLineHeight
+    describeLineHeight,
+    style.feed("lineHeight", path)
   );
   const fontFamily = style.read(
     "font-family",
@@ -291,7 +302,8 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
     (spec) => ({
       outcome: "bound",
       detail: spec.kind === "variable" ? `${spec.variable.collection} / ${spec.variable.name}` : spec.value,
-    })
+    }),
+    style.feed("fontFamily", path)
   );
   const weight = style.read(
     "font-weight",
@@ -299,10 +311,11 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
       const number = evaluateNumber(value);
       return number === undefined ? undefined : FONT_STYLES.get(number);
     },
-    (fontStyle) => ({ outcome: "literal", detail: `font style ${fontStyle}` })
+    (fontStyle) => ({ outcome: "literal", detail: `font style ${fontStyle}` }),
+    style.feed("fontStyle", path)
   );
-  const underline = readUnderline(style);
-  const letterSpacing = readLetterSpacing(style);
+  const underline = readUnderline(style, path);
+  const letterSpacing = readLetterSpacing(style, path);
   if (fontFamily === undefined || fontSize === undefined || lineHeight === undefined || color === undefined) {
     throw new Error(`${scope.variant}: the label needs a font family, size, line height and color`);
   }
@@ -310,8 +323,8 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
   const characters = labelCharacters(label, scope.cell);
   const layout: LabelLayout =
     lines === undefined
-      ? readLabelLayout(holder, label, characters, scope.clamp, scope.variant)
-      : { ...readNativeLines(holder, lines, scope.variant), maxWidth: undefined, packsAtStart: false };
+      ? readLabelLayout(holder, label, characters, scope.clamp, scope.variant, path)
+      : { ...readNativeLines(holder, lines, scope.variant, path), maxWidth: undefined, packsAtStart: false };
   const fills = layout.sizing.horizontal.kind !== "hug";
   const layer: TextLayerSpec = {
     kind: "text",
@@ -326,7 +339,7 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
     color,
     underline,
     sizing: layout.sizing,
-    align: readTextAlign(style, fills ? label.placement : undefined),
+    align: readTextAlign(style, fills ? label.placement : undefined, path),
     truncation: layout.truncation,
   };
   const wraps = layout.maxWidth === undefined ? layer : { ...layer, maxWidth: layout.maxWidth };
@@ -358,7 +371,7 @@ const SPACED_ELSEWHERE =
  * @param style - The label's box's style.
  * @returns The spacing, or undefined where none maps.
  */
-function readLetterSpacing(style: LayerStyle): LetterSpacingSpec | undefined {
+function readLetterSpacing(style: LayerStyle, path: readonly string[]): LetterSpacingSpec | undefined {
   const declared = style.resolvedWhereDeclared("letter-spacing", "font-size");
   const own = style.resolved("font-size");
   const sameSize = declared !== undefined && own !== undefined && sameLength(declared, own);
@@ -374,7 +387,8 @@ function readLetterSpacing(style: LayerStyle): LetterSpacingSpec | undefined {
     (read): CoverageNote =>
       read === "elsewhere"
         ? { outcome: "unmapped", detail: SPACED_ELSEWHERE }
-        : { outcome: "literal", detail: `letters ${read.value}% of the font size apart` }
+        : { outcome: "literal", detail: `letters ${read.value}% of the font size apart` },
+    style.feed("letterSpacing", path)
   );
   return spacing === "elsewhere" ? undefined : spacing;
 }
@@ -436,7 +450,8 @@ const NATIVE_LINES = {
 function readNativeLines(
   holder: Holder,
   lines: NonNullable<TextPlacement["lines"]>,
-  variant: string
+  variant: string,
+  path: readonly string[]
 ): Pick<TextLayerSpec, "sizing" | "truncation"> {
   if (holder.sizing.horizontal.kind === "hug") {
     throw new Error(`${variant}: ${NATIVE_LINES[lines]}, so its box needs a fixed or filling width`);
@@ -445,7 +460,8 @@ function readNativeLines(
     holder.style.read(
       "white-space",
       (written) => (wraps(normalizeCss(written)) ? written : undefined),
-      () => ({ outcome: "literal", detail: "the label wraps at the box's width" })
+      () => ({ outcome: "literal", detail: "the label wraps at the box's width" }),
+      holder.style.feed("sizing", path)
     );
     return { sizing: FILLING, truncation: undefined };
   }
@@ -453,30 +469,34 @@ function readNativeLines(
     holder.style.read(
       property,
       (written) => written,
-      () => ({ outcome: "dropped", detail: SINGLE_LINE })
+      () => ({ outcome: "dropped", detail: SINGLE_LINE }),
+      []
     );
   }
   return { sizing: FILLING, truncation: { maxLines: 1 } };
 }
 
-function readUnderline(style: LayerStyle): TextLayerSpec["underline"] {
+function readUnderline(style: LayerStyle, path: readonly string[]): TextLayerSpec["underline"] {
   const underlined = style.read(
     "text-decoration-line",
     (value) => {
       const line = normalizeCss(value);
       return line === "underline" ? true : line === "none" ? false : undefined;
     },
-    (drawn) => ({ outcome: "literal", detail: drawn ? "an underline" : "no decoration" })
+    (drawn) => ({ outcome: "literal", detail: drawn ? "an underline" : "no decoration" }),
+    style.feed("underline", path)
   );
   if (underlined !== true) {
-    style.mark("text-underline-offset", "dropped", "the cell draws no underline");
+    style.mark("text-underline-offset", "dropped", "the cell draws no underline", []);
     return undefined;
   }
   return {
-    offset: style.read("text-underline-offset", evaluateNumber, (offset) => ({
-      outcome: "literal",
-      detail: `an underline offset of ${offset}px`,
-    })),
+    offset: style.read(
+      "text-underline-offset",
+      evaluateNumber,
+      (offset) => ({ outcome: "literal", detail: `an underline offset of ${offset}px` }),
+      style.feed("underline", path)
+    ),
   };
 }
 
@@ -488,11 +508,16 @@ function readUnderline(style: LayerStyle): TextLayerSpec["underline"] {
  *
  * @param placement - The placement across that a filling label takes, or undefined for none.
  */
-function readTextAlign(style: LayerStyle, placement: TextPlacement | undefined): TextAlignSpec {
+function readTextAlign(
+  style: LayerStyle,
+  placement: TextPlacement | undefined,
+  path: readonly string[]
+): TextAlignSpec {
   const across = style.read(
     "text-align",
     (value) => TEXT_ALIGNS.get(normalizeCss(value)),
-    ({ where }) => ({ outcome: "literal", detail: `the label sets its lines ${where}` })
+    ({ where }) => ({ outcome: "literal", detail: `the label sets its lines ${where}` }),
+    style.feed("align", path)
   )?.align;
   const placed = placement === undefined ? TOP_LEFT.horizontal : PLACED_ACROSS[placement.horizontal];
   return { horizontal: across ?? placed, vertical: TOP_LEFT.vertical };
@@ -640,7 +665,8 @@ function readLabelLayout(
   label: LabelDefinition,
   characters: string,
   lines: number | undefined,
-  variant: string
+  variant: string,
+  path: readonly string[]
 ): LabelLayout {
   const { style, sizing } = holder;
   const value = (property: string): string => normalizeCss(style.resolved(property) ?? "");
@@ -685,7 +711,9 @@ function readLabelLayout(
     style.read(
       "justify-content",
       (written) => written,
-      () => ({ outcome: "literal", detail: SPACED_FIRST })
+      () => ({ outcome: "literal", detail: SPACED_FIRST }),
+      // The row packs its layers at its start, which its own alignment draws.
+      style.feed("primaryAlign", path.slice(0, -1))
     );
   }
   const fills = definite && refusal === undefined && !ownWidth && (wrapping || maxLines !== undefined);
@@ -694,7 +722,8 @@ function readLabelLayout(
     style.read(
       refusal.anchor,
       (written) => written,
-      () => ({ outcome: "unmapped", detail: refusal.detail })
+      () => ({ outcome: "unmapped", detail: refusal.detail }),
+      []
     );
   }
   const cut = (detail: string): CoverageNote => {
@@ -735,7 +764,8 @@ function readLabelLayout(
         outcome: "literal",
         detail: fills ? "the label wraps at the box's width" : "the box hugs the label on one line",
       };
-    }
+    },
+    style.feed("sizing", path)
   );
   // `text-wrap` sets whether the text wraps as `white-space` does, so beside a `white-space` that
   // keeps it on one line the later declaration decides, which the build does not order.
@@ -764,22 +794,25 @@ function readLabelLayout(
           ? "the text never wraps, so the label keeps its own width"
           : "the box hugs the label on one line",
       };
-    }
+    },
+    []
   );
   style.read(
     "text-overflow",
     (written) => (truncates ? written : undefined),
-    () => cut(ending(1))
+    () => cut(ending(1)),
+    style.feed("truncation", path)
   );
   const inert = inertClamp(style);
   if (inert === undefined) {
     style.read(
       "-webkit-line-clamp",
       (written) => (lines !== undefined ? written : undefined),
-      () => cut(ending(lines ?? 0))
+      () => cut(ending(lines ?? 0)),
+      style.feed("truncation", path)
     );
   } else {
-    style.mark("-webkit-line-clamp", "dropped", inert);
+    style.mark("-webkit-line-clamp", "dropped", inert, []);
   }
   return {
     sizing: fills ? FILLING : HUGGING_TEXT,

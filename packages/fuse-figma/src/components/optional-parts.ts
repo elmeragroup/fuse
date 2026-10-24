@@ -16,6 +16,12 @@ export type OptionalPart = {
   readonly property: BooleanPropertySpec;
   /** Each `data-slot` that hiding the part hides: its own, if it has one, and every part's inside it. */
   readonly slots: readonly string[];
+  /**
+   * For a part of an instance's inner set: the instance, by the keys of the instance parts from the
+   * set down to it, and the inner set whose property the part hides behind, which lists it. Undefined
+   * for a part of the set's own.
+   */
+  readonly inside: { readonly instance: string; readonly set: string } | undefined;
 };
 
 /**
@@ -49,7 +55,9 @@ export function booleanPropertiesOf(
  * Refuse an optional part when a class of the set reads, through a `data-slot` inside `:has()`,
  * whether the part or a part inside it is there, as `item-described:` reads whether Item holds a
  * description. Every rule that names the class counts, whatever its selector starts with. A rule
- * the scanner cannot read refuses too, since it may read such a slot.
+ * the scanner cannot read refuses too, since it may read such a slot. An optional part of an
+ * instance's inner set counts too: a designer hides it on the instance, exposed or not, and the
+ * set's class reads it all the same.
  *
  * @param set - The set's name, for the error.
  * @param parts - The optional parts.
@@ -71,7 +79,12 @@ export function refusePresenceReads(
     return read;
   };
   for (const part of parts) {
-    const hides = `${part.name} cannot hide behind the ${part.property.name} property`;
+    const { inside } = part;
+    const holder = inside === undefined ? part.name : `${part.name} in the ${inside.instance} instance`;
+    const hides =
+      inside === undefined
+        ? `${holder} cannot hide behind the ${part.property.name} property`
+        : `${holder} cannot hide behind ${inside.set}'s ${part.property.name} property`;
     for (const className of classes) {
       for (const selector of rulesByClass.get(className) ?? []) {
         const read = readsOf(selector);
@@ -82,7 +95,7 @@ export function refusePresenceReads(
         }
         const test = read.tests.find(({ slot }) => part.slots.includes(slot));
         if (test !== undefined) {
-          const what = test.slot === part.name ? "it" : `${test.slot}, which ${part.name} holds,`;
+          const what = test.slot === part.name ? "it" : `${test.slot}, which ${holder} holds,`;
           throw new Error(
             `${set}: ${hides}, since \`${className}\` reads whether ${what} is there through \`${test.clause}\`. A BOOLEAN property hides a layer and cannot restyle the box that reads it, so give the part's presence a variant axis instead.`
           );

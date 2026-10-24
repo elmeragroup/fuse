@@ -64,7 +64,12 @@ export function readPaint(
   const shadows = readShadowStack(reader, variables).toReversed();
   const fill =
     image === undefined
-      ? reader.read("background-color", (value) => readFill(value, variables), describeFill)
+      ? reader.read(
+          "background-color",
+          (value) => readFill(value, variables),
+          describeFill,
+          reader.feed("fill")
+        )
       : readImage(reader, image, variant);
   return { fill: fill === NO_FILL ? undefined : fill, stroke, shadows };
 }
@@ -113,7 +118,8 @@ function readImage(reader: LayerStyle, image: () => Uint8Array, variant: string)
     () => ({
       outcome: "literal",
       detail: "the image covers the box and crops what overflows, an image paint at FILL",
-    })
+    }),
+    reader.feed("fill")
   );
   if (scaleMode === undefined) {
     return undefined;
@@ -146,7 +152,8 @@ function readClearOutline(reader: LayerStyle, index: VariableIndex): boolean {
     reader.read(
       property,
       (value) => value,
-      () => ({ outcome: "dropped", detail: "the outline is transparent, so it paints nothing" })
+      () => ({ outcome: "dropped", detail: "the outline is transparent, so it paints nothing" }),
+      []
     );
   }
   return true;
@@ -170,14 +177,16 @@ function readInsideOutline(reader: LayerStyle, variables: VariableIndex): Stroke
     return undefined;
   }
   const inside = (detail: string) => () => ({ outcome: "literal" as const, detail });
-  reader.read("outline-style", (value) => value, inside("a solid inside stroke"));
-  reader.read("outline-width", (value) => value, inside(`a ${width}px inside stroke`));
+  const stroke = reader.feed("stroke");
+  reader.read("outline-style", (value) => value, inside("a solid inside stroke"), stroke);
+  reader.read("outline-width", (value) => value, inside(`a ${width}px inside stroke`), stroke);
   reader.read(
     "outline-offset",
     (value) => value,
-    inside("the outline lies over the box's edge, where an inside stroke lies")
+    inside("the outline lies over the box's edge, where an inside stroke lies"),
+    stroke
   );
-  reader.read("outline-color", (value) => readColor(value, variables), describeColor);
+  reader.read("outline-color", (value) => readColor(value, variables), describeColor, stroke);
   // An outline takes no layout space, so the box's layers keep their room under the stroke.
   return { color, weight: { kind: "literal", value: width }, inLayout: false };
 }
@@ -203,6 +212,7 @@ function readShadowStack(root: LayerStyle, variables: VariableIndex): readonly S
   if (raw === undefined) {
     return [];
   }
+  const shadows = root.feed("shadows");
   const describe = (mapped: readonly ShadowSpec[]) => ({
     outcome: mapped.some((shadow) => shadow.color.kind === "variable")
       ? ("bound" as const)
@@ -210,11 +220,13 @@ function readShadowStack(root: LayerStyle, variables: VariableIndex): readonly S
     detail: mapped.length === 0 ? "no visible shadow" : `${mapped.length} drop shadow(s)`,
   });
   if (normalizeCss(raw) !== TAILWIND_SHADOW_STACK) {
-    return root.read("box-shadow", (value) => readShadows(value, variables), describe) ?? [];
+    return root.read("box-shadow", (value) => readShadows(value, variables), describe, shadows) ?? [];
   }
-  root.mark("box-shadow", "literal", "Tailwind's shadow stack, read layer by layer");
+  root.mark("box-shadow", "literal", "Tailwind's shadow stack, read layer by layer", shadows);
   return TAILWIND_SHADOW_LAYERS.flatMap((layer) =>
-    root.has(layer) ? (root.read(layer, (value) => readShadows(value, variables), describe) ?? []) : []
+    root.has(layer)
+      ? (root.read(layer, (value) => readShadows(value, variables), describe, shadows) ?? [])
+      : []
   );
 }
 
@@ -234,10 +246,11 @@ function readStroke(root: LayerStyle, variables: VariableIndex): StrokeSpec | un
     root.read(
       "border-width",
       (value) => value,
-      () => ({ outcome: "literal", detail: "no stroke" })
+      () => ({ outcome: "literal", detail: "no stroke" }),
+      root.feed("stroke")
     );
     for (const property of ["border-style", "border-color"]) {
-      root.mark(property, "dropped", "the border has no width, so it draws nothing");
+      root.mark(property, "dropped", "the border has no width, so it draws nothing", []);
     }
     return undefined;
   }
@@ -246,13 +259,15 @@ function readStroke(root: LayerStyle, variables: VariableIndex): StrokeSpec | un
     "border-width",
     "no class or base rule colors the border, so the stroke is left out"
   );
-  const weight = root.read("border-width", (value) => readNumber(value, variables), describeNumber);
+  const stroke = root.feed("stroke");
+  const weight = root.read("border-width", (value) => readNumber(value, variables), describeNumber, stroke);
   const style = root.read(
     "border-style",
     (value) => borderStyle(normalizeCss(value), weight),
-    (read) => ({ outcome: "literal", detail: read.detail })
+    (read) => ({ outcome: "literal", detail: read.detail }),
+    stroke
   );
-  const color = root.read("border-color", (value) => readColor(value, variables), describeColor);
+  const color = root.read("border-color", (value) => readColor(value, variables), describeColor, stroke);
   if (style === undefined || weight === undefined || color === undefined) {
     return undefined;
   }

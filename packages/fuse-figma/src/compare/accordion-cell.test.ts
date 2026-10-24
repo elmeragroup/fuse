@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import { elementsOf } from "../../test/static-markup";
 import { ACCORDION_ITEM } from "../components/accordion-kit";
 import type { BoxDefinition, Cell } from "../components/component-spec";
+import { framePartsOf } from "../components/definition-parts";
 import { accordionItem } from "./accordion-cell";
 import { renderCellHtml } from "./cell-renderers";
 
@@ -22,7 +23,7 @@ function definedClasses(
 ): readonly (readonly [string, string])[] {
   return [
     ...(slot === undefined ? [] : [[slot, box.classesFor(cell)] as const]),
-    ...(box.parts ?? [])
+    ...framePartsOf(box)
       .filter((part) => part.shownIn(cell))
       .flatMap((part) => definedClasses(part, part.slot, cell)),
   ];

@@ -5,11 +5,19 @@
  * child-selector classes that reach it over what its box passes down.
  * The Figma mapping reads each layer's computed style through a {@link LayerStyle}.
  *
- * Every declaration in a computed style names its provenance: the layer it applies to, and the
- * part and class that set it. A read records that provenance with what the mapping made of it.
- * Once the whole cell is mapped, {@link CellCascade.settle} gives every declaration no layer
- * read its row in the coverage table, so coverage does not depend on the order the mapping
- * visits the layers in.
+ * Every declaration in a computed style names its provenance: the layer it applies to, the part and
+ * class that set it, and the origin that owns its rows. A read records that provenance with what the
+ * mapping made of it, and the spec fields the read fills. Who owns a row, the logs each owner keeps
+ * across the cells and where a row goes live in `coverage-log.ts`. Once the whole cell is mapped,
+ * {@link CellCascade.settle} gives every declaration no layer read its row in the coverage table, so
+ * coverage does not depend on the order the mapping visits the layers in.
+ *
+ * An instance part's inner root cascades in the same cell, below its parent box, in a scope of its
+ * own ({@link BoxCascade.instance}): its classes read the inner definition's state table and cell,
+ * and the inner component owns them, while the composite owns the classes the outer component passes
+ * and those of its own boxes that reach the root. The rows of the composite's declarations these
+ * layers read, inherited ones too, and the fields their reads fill, go to the instance part, as
+ * `instance-parts.ts` says.
  */
 import { splitClassName } from "./class-name";
 import type {
@@ -21,7 +29,10 @@ import type {
   OuterDeclaration,
 } from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
+import { CascadeLogs, routed } from "./coverage-log";
+import type { LoggedRule, Origin } from "./coverage-log";
 import { normalizeCss, splitTopLevel, substituteVars } from "./css-values";
+import type { ComponentRootSpec, FrameLayerSpec, IconLayerSpec, TextLayerSpec } from "./kit-spec";
 import { compareSpecificity } from "./specificity";
 import type { Specificity } from "./specificity";
 import { readVariants } from "./state-table";
@@ -91,15 +102,61 @@ export function splitClasses(classes: string): readonly string[] {
   return classes.split(/\s+/).filter((name) => name !== "");
 }
 
-/** Where a declaration comes from: the layer it applies to, and the part and class that set it. */
-type Provenance = {
+/** A declaration as its coverage row names it: the part and class that set it, and the property and value. */
+export type Declaration = Pick<CoverageRow, "part" | "className" | "property" | "value">;
+
+/**
+ * A spec field a read fills: the field of the layer at a key path from the root, which for an inner
+ * root built in place is that root. `layers` stands for the layers a box holds, which a read that
+ * leaves out an icon changes, and `instance` for an instance layer as a whole, whose inner root a
+ * read below it fills.
+ */
+export type FeedTarget = {
+  readonly path: readonly string[];
+  readonly field: SpecField;
+};
+
+/**
+ * Every spec field a read of a declaration fills, which an instance part built in place uses to tell
+ * which of its fields the declaration sets. One declaration can fill several: `place-content` both
+ * alignments, and a column's `align-items` the sizing of each layer the column stretches. Empty for
+ * a read that fills none.
+ */
+export type Feed = readonly FeedTarget[];
+
+/** A field of a spec layer a read can fill. */
+export type SpecField =
+  | keyof ComponentRootSpec
+  | keyof FrameLayerSpec
+  | keyof TextLayerSpec
+  | keyof IconLayerSpec
+  | "layers"
+  | "instance";
+
+/**
+ * An instance part's inner root built in place, as the cascade routes to it: the origin of the inner
+ * component's own declarations, where the row of a composite's declaration on an in-place layer waits
+ * for the instance's diff, and where the field each read of a declaration fills goes.
+ */
+export type InPlace = {
+  readonly inner: Origin;
+  readonly composite: (row: Omit<CoverageRow, "component">, origin: Origin) => void;
+  readonly fed: (declaration: Declaration, feed: Feed) => void;
+  /**
+   * Move the fields reads filled at or below a layer's path into a layer the mapping puts in its
+   * place, keeping those of `keep` on the layer itself.
+   */
+  readonly relocate: (path: readonly string[], into: string, keep: ReadonlySet<SpecField>) => void;
+};
+
+/**
+ * Where a declaration comes from: the layer it applies to, the part and class that set it, and the
+ * origin that owns its rows.
+ */
+type Provenance = Declaration & {
   /** The id of the layer whose own cascade holds the declaration. */
   readonly layer: number;
-  readonly part: string;
-  readonly className: string;
-  readonly property: string;
-  /** The value as the class or rule sets it. */
-  readonly value: string;
+  readonly origin: Origin;
 };
 
 /**
@@ -143,9 +200,11 @@ const INLINE_RANK = 1;
 const ELEMENT_DEFAULT_RANK = -3;
 
 /** One class or rule a layer applies, with what orders it in the cascade. */
-type Applied = {
+export type Applied = {
   readonly part: string;
   readonly className: string;
+  /** Who owns the rows of its declarations. */
+  readonly origin: Origin;
   /**
    * -3 for the browser's default style sheet, -2 for the host page and the root's ancestors, -1 for
    * the base layer, 0 for every recipe class, and 1 for the element's `style` attribute.
@@ -172,9 +231,18 @@ type ChildRule = {
  * A class that styles the box's child parts with one `data-slot`, as `*:data-[slot=x]:` does, or
  * of one tag, as `[&_img]:` does.
  */
-type PartRule = {
+export type PartRule = {
   readonly target: PartTarget;
   readonly applied: Applied;
+  /** The entry that logs the class, which a part that takes the rule marks. */
+  readonly logged: LoggedRule;
+};
+
+/** A class that styles every element below its box, as `**:` does. */
+type DescendantRule = {
+  readonly applied: Applied;
+  /** The entry that logs the class, which an element that takes the rule marks. */
+  readonly logged: LoggedRule;
 };
 
 /**
@@ -185,61 +253,29 @@ type BoxClasses = {
   readonly applied: readonly Applied[];
   readonly childRules: readonly ChildRule[];
   readonly partRules: readonly PartRule[];
-  readonly descendantRules: readonly Applied[];
+  readonly descendantRules: readonly DescendantRule[];
 };
 
 /**
- * Each class that styles every element below its box, by part and class, with its declarations, and
- * whether an element below the box took it in some cell so far.
+ * The cascade a box below another runs in where it is another definition's root built in place, as
+ * an instance part's inner component is: the inner definition's state table and cell, which its own
+ * classes read, the logs those classes keep across the outer set's cells, where the rows of its
+ * layers go, and the origin and logs of the classes the outer component passes it.
  */
-type DescendantRuleLog = Map<
-  string,
-  {
-    readonly part: string;
-    readonly className: string;
-    readonly taken: boolean;
-    readonly declarations: Applied["declarations"];
-  }
->;
-
-/**
- * Each class that styles a child part, by part and class, with the parts it names, its
- * declarations, and whether such a part took it in some cell so far.
- */
-type PartRuleLog = Map<
-  string,
-  {
-    readonly part: string;
-    readonly className: string;
-    readonly target: PartTarget;
-    readonly taken: boolean;
-    readonly declarations: Applied["declarations"];
-  }
->;
-
-/**
- * Each class with a condition variant, by part and class, with its condition variants, its
- * declarations, and whether they held together in some cell so far.
- */
-type ConditionLog = Map<
-  string,
-  {
-    readonly part: string;
-    readonly className: string;
-    readonly held: boolean;
-    readonly variants: readonly string[];
-    readonly declarations: Applied["declarations"];
-  }
->;
+export type InstanceScope = {
+  readonly meaningOf: StateTable;
+  readonly cell: Cell;
+  readonly logs: CascadeLogs;
+  readonly inPlace: InPlace;
+  readonly passed: { readonly origin: Origin; readonly logs: CascadeLogs };
+};
 
 /** The cascade of every cell of one component set. */
 export class SetCascade {
   readonly #meaningOf: StateTable;
   readonly #context: BuildContext;
-  readonly #record: Recorder;
-  readonly #conditions: ConditionLog = new Map();
-  readonly #partRules: PartRuleLog = new Map();
-  readonly #descendantRules: DescendantRuleLog = new Map();
+  readonly #origin: Origin;
+  readonly #logs = new CascadeLogs();
 
   /**
    * @param meaningOf - The definition's state table.
@@ -250,7 +286,7 @@ export class SetCascade {
   constructor(meaningOf: StateTable, context: BuildContext, record: Recorder) {
     this.#meaningOf = meaningOf;
     this.#context = context;
-    this.#record = record;
+    this.#origin = { record };
   }
 
   /**
@@ -264,101 +300,46 @@ export class SetCascade {
       meaningOf: this.#meaningOf,
       cell,
       context: this.#context,
-      record: this.#record,
-      conditions: this.#conditions,
-      partRules: this.#partRules,
-      descendantRules: this.#descendantRules,
+      origin: this.#origin,
+      record: this.#origin.record,
+      logs: this.#logs,
+      inPlace: undefined,
     });
   }
 
   /**
-   * Record the classes whose variants never held in one cell together, such as
-   * `aria-invalid:focus-visible:` on a set that draws invalid and focus as two values of its
-   * state axis, or whose one variant never held in a cell that gives the class, as Calendar's day
-   * cell gives `hover:bg-transparent` only while disabled, and as unmapped the classes that style a
-   * child part no part of the definition took, since they style nothing the set draws, and as
-   * dropped the classes for every element below a box that holds no element in any cell. Call it
-   * after every cell.
+   * Record what the classes of the set's own boxes leave once every cell has cascaded, as
+   * {@link CascadeLogs.finish} says.
    */
   finish(): void {
-    for (const { part, className, taken, declarations } of this.#descendantRules.values()) {
-      if (taken) {
-        continue;
-      }
-      for (const declaration of declarations) {
-        this.#record({
-          part,
-          className,
-          property: declaration.property,
-          value: declaration.value,
-          outcome: "dropped",
-          detail: "no element sits below the box in any cell, so the class styles nothing the set draws",
-        });
-      }
-    }
-    for (const { part, className, target, taken, declarations } of this.#partRules.values()) {
-      if (taken) {
-        continue;
-      }
-      for (const declaration of declarations) {
-        this.#record({
-          part,
-          className,
-          property: declaration.property,
-          value: declaration.value,
-          outcome: "unmapped",
-          detail: untakenDetail(target, part),
-        });
-      }
-    }
-    for (const { part, className, held, variants, declarations } of this.#conditions.values()) {
-      if (held) {
-        continue;
-      }
-      const named = variants.map((variant) => `\`${variant}\``);
-      const detail =
-        named.length === 1
-          ? `no cell that gives the box this class shows ${named.join("")}`
-          : `no cell of the matrix shows ${named.join(" and ")} at once`;
-      for (const declaration of declarations) {
-        this.#record({
-          part,
-          className,
-          property: declaration.property,
-          value: declaration.value,
-          outcome: "dropped",
-          detail,
-        });
-      }
-    }
+    this.#logs.finish(this.#origin.record);
   }
 }
 
-/** Why a class that styles a child the definition never draws reaches nothing the set draws. */
-function untakenDetail(target: PartTarget, part: string): string {
-  switch (target.kind) {
-    case "slot":
-      return `the definition draws no part with \`data-slot=${target.slot}\` below ${part}`;
-    case "tag":
-      return `the definition draws no \`<${target.tag}>\` part below ${part}`;
-    case "label":
-      return `the definition holds no label in a \`<${target.tag}>\` that is the last child of ${part}`;
-  }
-}
-
-type CellScope = {
+/**
+ * What the boxes of a cell cascade with: the state table and cell their classes read, the origin that
+ * owns their classes, where a row that names no layer goes, and the logs of that origin, which those
+ * classes keep. An instance part's inner root and the layers below it cascade in a scope of their
+ * own, whose `inPlace` takes the rows and fields of what they read.
+ */
+export type CellScope = {
   readonly meaningOf: StateTable;
   readonly cell: Cell;
   readonly context: BuildContext;
+  readonly origin: Origin;
   readonly record: Recorder;
-  readonly conditions: ConditionLog;
-  readonly partRules: PartRuleLog;
-  readonly descendantRules: DescendantRuleLog;
+  readonly logs: CascadeLogs;
+  readonly inPlace: InPlace | undefined;
 };
 
 /** A layer of the cell: its computed style, what read it, and the layers below it. */
 type Layer = {
   readonly id: number;
+  /**
+   * The instance part built in place whose layers hold this one, which takes the rows of the
+   * composite's declarations on it, undefined for a layer of the set's own boxes.
+   */
+  readonly inPlace: InPlace | undefined;
   readonly style: ComputedStyle;
   /** The own declarations some layer of the cell read, by property. */
   readonly read: Set<string>;
@@ -380,13 +361,43 @@ type Layer = {
 /** What a layer around the root stands for: the page, or an ancestor and its reason. */
 type AroundLayer = { readonly undrawn: string | undefined };
 
-/** The layers of one cell and what read their declarations. */
+/**
+ * The layers of one cell and what read their declarations. Ledgers of one cell share its layers, each
+ * with the scope it cascades its boxes in.
+ */
 class CellLedger {
   readonly scope: CellScope;
-  readonly #layers: Layer[] = [];
+  readonly #layers: Layer[];
 
-  constructor(scope: CellScope) {
+  constructor(scope: CellScope, layers: Layer[] = []) {
     this.scope = scope;
+    this.#layers = layers;
+  }
+
+  /**
+   * A ledger of the same cell's layers that cascades its boxes in another scope.
+   *
+   * @param scope - The scope.
+   * @returns The ledger.
+   */
+  withScope(scope: CellScope): CellLedger {
+    return new CellLedger(scope, this.#layers);
+  }
+
+  /**
+   * Where the row of a declaration goes: its origin's, unless an instance part built in place holds
+   * the layer that reads it and the inner component does not own it, which leaves the row of a
+   * composite's declaration read in place to wait for the instance's diff. That holds for a
+   * declaration of an outer box that an in-place layer inherits too, as a custom property the outer
+   * root sets reaches a `var()` of the inner root's: the instance draws what it changes, so the
+   * instance's diff settles its row, and its origin still owns the row.
+   *
+   * @param source - The declaration.
+   * @param reader - The layer that reads it, or the layer that declares it where no layer read it.
+   * @returns The recorder of its row.
+   */
+  recordFor(source: Provenance, reader: Layer): Recorder {
+    return routed(reader.inPlace, source.origin);
   }
 
   /**
@@ -403,6 +414,7 @@ class CellLedger {
     const { context } = this.scope;
     const layer: Layer = {
       id,
+      inPlace: this.scope.inPlace,
       style: computeStyle(id, inherited, applied, (property) => parentValue(parent, context, property)),
       read: new Set(),
       marks: new Map(),
@@ -436,10 +448,18 @@ class CellLedger {
     return this.#layers[id];
   }
 
-  /** Record a read of a declaration, under the part and class that set it. */
-  noteRead(source: Provenance, note: CoverageNote): void {
+  /**
+   * Record a read of a declaration, under the part and class that set it, where {@link recordFor}
+   * says, and the fields the read fills, where an instance part built in place holds the reading
+   * layer.
+   */
+  noteRead(source: Provenance, note: CoverageNote, feed: Feed, reader: Layer): void {
     this.#layers[source.layer]?.read.add(source.property);
-    this.scope.record({
+    reader.inPlace?.fed(source, feed);
+    this.recordFor(
+      source,
+      reader
+    )({
       part: source.part,
       className: source.className,
       property: source.property,
@@ -463,7 +483,10 @@ class CellLedger {
         if (entry.source.layer !== id || layer.read.has(property)) {
           continue;
         }
-        this.scope.record({
+        this.recordFor(
+          entry.source,
+          layer
+        )({
           part: entry.source.part,
           className: entry.source.className,
           property,
@@ -588,57 +611,66 @@ export class CellCascade {
       readonly defaults: readonly OuterDeclaration[];
     }
   ): BoxCascade {
-    const { context } = this.#ledger.scope;
-    const page = outerApplied(cascadeOwn(context.page), part, -2);
-    const defaults = outerApplied(around.defaults, part, ELEMENT_DEFAULT_RANK);
+    const { context, origin } = this.#ledger.scope;
+    const page = outerApplied(cascadeOwn(context.page), part, -2, origin);
+    const defaults = outerApplied(around.defaults, part, ELEMENT_DEFAULT_RANK, origin);
     if (around.declarations.length === 0 && around.ancestors.length === 0) {
       // The page's declarations apply on the root as declarations the root inherits, each computed
       // on the page, so the root's own custom properties reach none of them, and the coverage table
       // keeps them under the root, as it lists what the root reads and what it overrides.
       const computedOutside = pageValue(context);
-      return cascadeBox(this.#ledger, {
-        classes,
-        part,
-        inherited: new Map(),
-        outer: [...defaults, ...page.map((applied) => ({ ...applied, computedOutside }))],
-        ancestorRules: [],
-        ancestorPartRules: [],
-        ancestorDescendants: [],
-        selected: [],
-      });
+      return cascadeBox(
+        this.#ledger,
+        {
+          classes,
+          passed: undefined,
+          part,
+          inherited: new Map(),
+          outer: [...defaults, ...page.map((applied) => ({ ...applied, computedOutside }))],
+          ancestorRules: [],
+          ancestorPartRules: [],
+          ancestorDescendants: [],
+          selected: [],
+        },
+        { parent: undefined, path: [] }
+      );
     }
     // The sort in `computeStyle` is stable, so at one rank the host's declarations apply last.
     let outside = this.#ledger.add(
       new Map(),
-      [...page, ...outerApplied(around.declarations, part, -2)],
+      [...page, ...outerApplied(around.declarations, part, -2, origin)],
       undefined,
       { undrawn: undefined }
     );
     const ancestorRules: ChildRule[] = [];
-    const descendants: Applied[] = [];
+    const descendants: DescendantRule[] = [];
     for (const ancestor of around.ancestors) {
       const own = boxClasses(ancestor.classes, ancestor.slot, this.#ledger.scope);
-      takeDescendantRules(this.#ledger.scope.descendantRules, descendants);
-      outside = this.#ledger.add(inheritance(outside, context), [...descendants, ...own.applied], outside, {
-        undrawn: ancestor.undrawn,
-      });
+      takeAll(descendants);
+      outside = this.#ledger.add(
+        inheritance(outside, context),
+        [...appliedOf(descendants), ...own.applied],
+        outside,
+        { undrawn: ancestor.undrawn }
+      );
       ancestorRules.push(...own.childRules);
       descendants.push(...own.descendantRules);
     }
-    takeDescendantRules(this.#ledger.scope.descendantRules, descendants);
+    takeAll(descendants);
     return cascadeBox(
       this.#ledger,
       {
         classes,
+        passed: undefined,
         part,
         inherited: inheritance(outside, context),
         outer: defaults,
         ancestorRules,
         ancestorPartRules: [],
         ancestorDescendants: descendants,
-        selected: descendants,
+        selected: appliedOf(descendants),
       },
-      outside
+      { parent: outside, path: [] }
     );
   }
 
@@ -652,10 +684,17 @@ export class CellCascade {
   }
 }
 
+/**
+ * Cascade one box over what it inherits: the outer declarations, the base layer, the classes of the
+ * boxes above that select it, and its own classes, and beside them the classes the outer component
+ * passes an inner root built in place, which cascade with the root's own in the scope they own.
+ */
 function cascadeBox(
   ledger: CellLedger,
   box: {
     readonly classes: string;
+    /** The classes the outer component passes an inner root built in place, and their scope. */
+    readonly passed: { readonly classes: string; readonly scope: CellScope } | undefined;
     readonly part: string;
     readonly inherited: ComputedStyle;
     readonly outer: readonly Applied[];
@@ -663,19 +702,34 @@ function cascadeBox(
     /** The tag rules of the boxes above, such as `[&_img]:`, which reach parts at any depth. */
     readonly ancestorPartRules: readonly PartRule[];
     /** The `**:` classes of the boxes above, which reach every element below them. */
-    readonly ancestorDescendants: readonly Applied[];
+    readonly ancestorDescendants: readonly DescendantRule[];
     /**
      * The classes of the boxes above that style this box, its parent's that name it as a child and
      * the `**:` classes above it, which cascade with its own.
      */
     readonly selected: readonly Applied[];
   },
-  parent?: Layer
+  at: { readonly parent: Layer | undefined; readonly path: readonly string[] }
 ): BoxCascade {
-  const own = boxClasses(box.classes, box.part, ledger.scope);
-  const base = outerApplied(ledger.scope.context.base, box.part, -1);
-  const layer = ledger.add(box.inherited, [...box.outer, ...base, ...box.selected, ...own.applied], parent);
-  return new BoxCascade(ledger, layer, {
+  const mine = boxClasses(box.classes, box.part, ledger.scope);
+  const passed =
+    box.passed === undefined ? undefined : boxClasses(box.passed.classes, box.part, box.passed.scope);
+  const own: BoxClasses =
+    passed === undefined
+      ? mine
+      : {
+          applied: [...mine.applied, ...passed.applied],
+          childRules: [...mine.childRules, ...passed.childRules],
+          partRules: [...mine.partRules, ...passed.partRules],
+          descendantRules: [...mine.descendantRules, ...passed.descendantRules],
+        };
+  const base = outerApplied(ledger.scope.context.base, box.part, -1, ledger.scope.origin);
+  const layer = ledger.add(
+    box.inherited,
+    [...box.outer, ...base, ...box.selected, ...own.applied],
+    at.parent
+  );
+  return new BoxCascade(ledger, layer, at.path, {
     ancestorRules: box.ancestorRules,
     ownRules: own.childRules,
     partRules: own.partRules,
@@ -691,17 +745,23 @@ function cascadeBox(
 export class BoxCascade {
   /** The box's computed style. */
   readonly style: LayerStyle;
+  /**
+   * The keys of the layers from the root down to the box's, the root of an instance part built in
+   * place counting as a root, which the fields its reads fill name.
+   */
+  readonly path: readonly string[];
   readonly #ledger: CellLedger;
   readonly #layer: Layer;
   readonly #ancestorRules: readonly ChildRule[];
   readonly #ownRules: readonly ChildRule[];
   readonly #partRules: readonly PartRule[];
   readonly #ancestorPartRules: readonly PartRule[];
-  readonly #descendants: readonly Applied[];
+  readonly #descendants: readonly DescendantRule[];
 
   /**
    * @param ledger - The cell's layers.
    * @param layer - The box's layer.
+   * @param path - The keys of the layers from the root down to the box's.
    * @param rules - The child selectors of the boxes above that reach this box's icons as
    *   descendants, this box's own, this box's classes that style its child parts, the tag rules of
    *   the boxes above, which reach its parts as descendants, and the `**:` classes of this box and
@@ -710,15 +770,17 @@ export class BoxCascade {
   constructor(
     ledger: CellLedger,
     layer: Layer,
+    path: readonly string[],
     rules: {
       readonly ancestorRules: readonly ChildRule[];
       readonly ownRules: readonly ChildRule[];
       readonly partRules: readonly PartRule[];
       readonly ancestorPartRules: readonly PartRule[];
-      readonly descendants: readonly Applied[];
+      readonly descendants: readonly DescendantRule[];
     }
   ) {
-    this.style = new LayerStyle(ledger, layer);
+    this.style = new LayerStyle(ledger, layer, path);
+    this.path = path;
     this.#ledger = ledger;
     this.#layer = layer;
     this.#ancestorRules = rules.ancestorRules;
@@ -726,6 +788,15 @@ export class BoxCascade {
     this.#partRules = rules.partRules;
     this.#ancestorPartRules = rules.ancestorPartRules;
     this.#descendants = rules.descendants;
+  }
+
+  /**
+   * The instance part built in place whose layers hold this box, undefined for a box of the set's own.
+   *
+   * @returns The in-place build.
+   */
+  inPlace(): InPlace | undefined {
+    return this.#ledger.scope.inPlace;
   }
 
   /**
@@ -738,8 +809,8 @@ export class BoxCascade {
    *
    * @param classes - The part's class string for the cell.
    * @param part - The part's layer name.
-   * @param element - The part's `data-slot`, or undefined for a part without one, and its tag where
-   *   the definition names it.
+   * @param element - The part's key, its `data-slot`, or undefined for a part without one, and its
+   *   tag where the definition names it.
    * @param outer - The declarations of the part's `style` attribute, which beat every class, and
    *   those the browser's default style sheet gives its element, which every class beats.
    * @returns The part's cascade.
@@ -747,11 +818,84 @@ export class BoxCascade {
   part(
     classes: string,
     part: string,
-    element: { readonly slot: string | undefined; readonly tag: string | undefined },
+    element: {
+      readonly key: string;
+      readonly slot: string | undefined;
+      readonly tag: string | undefined;
+    },
     outer: {
       readonly inline: readonly InlineDeclaration[];
       readonly defaults: readonly OuterDeclaration[];
     } = { inline: [], defaults: [] }
+  ): BoxCascade {
+    return this.#below({ classes, passed: undefined }, part, element, outer, this.#ledger, [
+      ...this.path,
+      element.key,
+    ]);
+  }
+
+  /**
+   * Cascade another definition's root directly below this box, as an instance part renders the inner
+   * component there. It takes what this box and the boxes above pass to a part, as {@link part} says.
+   * Its own classes, and those of the layers below it, read the inner definition's state table and
+   * cell, and the inner component owns them. The classes the outer component passes cascade with its
+   * own, read the same table and cell, and are the passed origin's. Its layers' rows and the fields
+   * their reads fill go where `scope.inPlace` says, and its path starts again at the inner root.
+   *
+   * @param classes - The inner root's classes for the inner cell, and the outer component's
+   *   `className`, each as it survives their merge.
+   * @param part - The inner root's layer name.
+   * @param element - The inner root's `data-slot` and tag.
+   * @param defaults - The declarations the browser's default style sheet gives its element.
+   * @param scope - The inner definition's state table and cell, its logs, the in-place build and the
+   *   origin of the passed classes.
+   * @returns The inner root's cascade.
+   */
+  instance(
+    classes: { readonly own: string; readonly passed: string },
+    part: string,
+    element: { readonly slot: string | undefined; readonly tag: string | undefined },
+    defaults: readonly OuterDeclaration[],
+    scope: InstanceScope
+  ): BoxCascade {
+    const inner: CellScope = {
+      meaningOf: scope.meaningOf,
+      cell: scope.cell,
+      context: this.#ledger.scope.context,
+      origin: scope.inPlace.inner,
+      record: scope.inPlace.inner.record,
+      logs: scope.logs,
+      inPlace: scope.inPlace,
+    };
+    const passed: CellScope = {
+      ...inner,
+      origin: scope.passed.origin,
+      logs: scope.passed.logs,
+      record: (row) => {
+        scope.inPlace.composite(row, scope.passed.origin);
+      },
+    };
+    return this.#below(
+      { classes: classes.own, passed: { classes: classes.passed, scope: passed } },
+      part,
+      element,
+      { inline: [], defaults },
+      this.#ledger.withScope(inner),
+      []
+    );
+  }
+
+  /** Cascade a box directly below this one, in the scope `ledger` cascades its boxes in. */
+  #below(
+    classes: { readonly classes: string; readonly passed: { classes: string; scope: CellScope } | undefined },
+    part: string,
+    element: { readonly slot: string | undefined; readonly tag: string | undefined },
+    outer: {
+      readonly inline: readonly InlineDeclaration[];
+      readonly defaults: readonly OuterDeclaration[];
+    },
+    ledger: CellLedger,
+    path: readonly string[]
   ): BoxCascade {
     const tagged = (rule: PartRule) => rule.target.kind === "tag" && rule.target.tag === element.tag;
     const taken = [
@@ -760,22 +904,22 @@ export class BoxCascade {
         rule.target.kind === "slot" ? rule.target.slot === element.slot : tagged(rule)
       ),
     ];
-    for (const rule of taken) {
-      takePartRule(this.#ledger.scope.partRules, rule);
-    }
-    takeDescendantRules(this.#ledger.scope.descendantRules, this.#descendants);
+    takeAll(taken);
+    takeAll(this.#descendants);
+    const { origin } = ledger.scope;
     return cascadeBox(
-      this.#ledger,
+      ledger,
       {
-        classes,
+        ...classes,
         part,
         inherited: inheritance(this.#layer, this.#ledger.scope.context),
         outer: [
-          ...outerApplied(outer.defaults, part, ELEMENT_DEFAULT_RANK),
+          ...outerApplied(outer.defaults, part, ELEMENT_DEFAULT_RANK, origin),
           ...outerApplied(
             outer.inline.map((declaration) => ({ className: INLINE_STYLE, ...declaration })),
             part,
-            INLINE_RANK
+            INLINE_RANK,
+            origin
           ),
         ],
         ancestorRules: [...this.#ancestorRules, ...this.#ownRules],
@@ -784,9 +928,9 @@ export class BoxCascade {
           ...this.#partRules.filter((rule) => rule.target.kind === "tag"),
         ],
         ancestorDescendants: this.#descendants,
-        selected: [...taken.map((rule) => rule.applied), ...this.#descendants],
+        selected: [...appliedOf(taken), ...appliedOf(this.#descendants)],
       },
-      this.#layer
+      { parent: this.#layer, path }
     );
   }
 
@@ -794,20 +938,27 @@ export class BoxCascade {
    * Cascade the element this box holds its label in, over what this box passes down, where a class
    * of this box reaches it, as `[&>span:last-child]:truncate` reaches the `<span>` a Sidebar row
    * holds its text in. The kit draws no layer for the element, whose label the box draws as its own
-   * text. A `**:` class of this box or a box above reaches the element too, and stays unmapped,
-   * since the element's own layout decides whether the label reads its style.
+   * text, so the element's path is the text layer's. A `**:` class of this box or a box above
+   * reaches the element too, and stays unmapped, since the element's own layout decides whether the
+   * label reads its style.
    *
-   * @param element - The tag of the element that holds the label, and whether the label is the
-   *   box's last child in the cell.
+   * @param element - The tag of the element that holds the label, whether the label is the box's
+   *   last child in the cell, and the label's key.
    * @returns The element's style, or undefined where no class of this box reaches it, so the label
    *   reads this box's style.
    */
-  labelElement(element: { readonly tag: string; readonly last: boolean }): LayerStyle | undefined {
-    const { record, descendantRules } = this.#ledger.scope;
-    takeDescendantRules(descendantRules, this.#descendants);
-    for (const { part, className, declarations } of this.#descendants) {
+  labelElement(element: {
+    readonly tag: string;
+    readonly last: boolean;
+    readonly key: string;
+  }): LayerStyle | undefined {
+    takeAll(this.#descendants);
+    for (const { part, className, origin, declarations } of appliedOf(this.#descendants)) {
       for (const { property, value } of declarations) {
-        record({
+        routed(
+          this.#ledger.scope.inPlace,
+          origin
+        )({
           part,
           className,
           property,
@@ -824,15 +975,13 @@ export class BoxCascade {
     if (taken.length === 0) {
       return undefined;
     }
-    for (const rule of taken) {
-      takePartRule(this.#ledger.scope.partRules, rule);
-    }
+    takeAll(taken);
     const layer = this.#ledger.add(
       inheritance(this.#layer, this.#ledger.scope.context),
-      taken.map((rule) => rule.applied),
+      appliedOf(taken),
       this.#layer
     );
-    return new LayerStyle(this.#ledger, layer);
+    return new LayerStyle(this.#ledger, layer, [...this.path, element.key]);
   }
 
   /**
@@ -853,21 +1002,17 @@ export class BoxCascade {
       ...this.#ownRules.filter((rule) => rule.selects(slot)),
     ];
     const own = boxClasses(slot.classes ?? "", slot.name, this.#ledger.scope);
-    const [nested] = [
-      ...own.childRules.map(({ applied }) => applied),
-      ...own.partRules.map(({ applied }) => applied),
-      ...own.descendantRules,
-    ];
+    const [nested] = appliedOf([...own.childRules, ...own.partRules, ...own.descendantRules]);
     if (nested !== undefined) {
       throw new Error(`the ${slot.name}'s own class ${nested.className} selects inside the icon`);
     }
-    takeDescendantRules(this.#ledger.scope.descendantRules, this.#descendants);
+    takeAll(this.#descendants);
     const layer = this.#ledger.add(
       inheritance(this.#layer, this.#ledger.scope.context),
-      [...selected.map((rule) => rule.applied), ...this.#descendants, ...own.applied],
+      [...appliedOf(selected), ...appliedOf(this.#descendants), ...own.applied],
       this.#layer
     );
-    return new LayerStyle(this.#ledger, layer);
+    return new LayerStyle(this.#ledger, layer, [...this.path, slot.key]);
   }
 }
 
@@ -877,12 +1022,42 @@ export class BoxCascade {
  * each one.
  */
 export class LayerStyle {
+  /**
+   * The keys of the layers from the root down to the spec layer this style draws, which the fields
+   * its reads fill name.
+   */
+  readonly path: readonly string[];
   readonly #ledger: CellLedger;
   readonly #layer: Layer;
 
-  constructor(ledger: CellLedger, layer: Layer) {
+  constructor(ledger: CellLedger, layer: Layer, path: readonly string[]) {
+    this.path = path;
     this.#ledger = ledger;
     this.#layer = layer;
+  }
+
+  /**
+   * The one field a read fills on the spec layer this style draws, or on another layer at `path`. A
+   * read that fills several joins their feeds.
+   *
+   * @param field - The spec field.
+   * @param path - The keys of the layer the read fills, this style's own by default.
+   * @returns The feed.
+   */
+  feed(field: SpecField, path: readonly string[] = this.path): Feed {
+    return [{ path, field }];
+  }
+
+  /**
+   * Move the fields the reads of the cell filled at or below this style's layer into a layer the
+   * mapping puts in its place, as a scaled part's dot and a part's box inside its margins hold what
+   * the part drew, keeping those of `keep` on the layer itself.
+   *
+   * @param into - The key of the layer that takes them.
+   * @param keep - The fields that stay.
+   */
+  relocateFeeds(into: string, keep: ReadonlySet<SpecField>): void {
+    this.#layer.inPlace?.relocate(this.path, into, keep);
   }
 
   /** Whether the computed style sets the property. */
@@ -943,15 +1118,16 @@ export class LayerStyle {
    * the root, used without reading through it. The kit draws no layer for those elements, so the
    * layers below them note what they pass down, as a root that shows no text drops the type its
    * list sets. A drawn parent notes its own. A read of the declaration anywhere in the cell takes
-   * precedence.
+   * precedence. `feed` names the spec fields the declaration fills that way.
    */
-  mark(property: string, outcome: CoverageOutcome, detail: string): void {
-    const source = this.#layer.style.get(property)?.source.layer;
+  mark(property: string, outcome: CoverageOutcome, detail: string, feed: Feed): void {
+    const source = this.#layer.style.get(property)?.source;
     if (source === undefined) {
       return;
     }
-    const owner = source === this.#layer.id ? this.#layer : this.#ledger.around(source);
+    const owner = source.layer === this.#layer.id ? this.#layer : this.#ledger.around(source.layer);
     owner?.marks.set(property, { outcome, detail });
+    this.#layer.inPlace?.fed(source, feed);
   }
 
   /**
@@ -961,7 +1137,10 @@ export class LayerStyle {
   missing(property: string, neededBy: string, detail: string): void {
     const entry = this.#layer.style.get(neededBy);
     if (entry !== undefined && !this.#layer.style.has(property)) {
-      this.#ledger.scope.record({
+      this.#ledger.recordFor(
+        entry.source,
+        this.#layer
+      )({
         part: entry.source.part,
         className: entry.source.className,
         property,
@@ -975,12 +1154,18 @@ export class LayerStyle {
   /**
    * Read a property through a mapping.
    *
+   * @param property - The property.
+   * @param map - Maps the value onto a Figma field, or returns undefined where none reads it.
+   * @param describe - What the mapped value became, for the coverage table.
+   * @param feed - The spec fields the mapped value fills, which an instance part built in place uses
+   *   to tell which of its fields a declaration sets.
    * @returns The mapped value, or undefined when the property is unset or does not map.
    */
   read<T>(
     property: string,
     map: (value: string) => T | undefined,
-    describe: (mapped: T) => CoverageNote
+    describe: (mapped: T) => CoverageNote,
+    feed: Feed
   ): T | undefined {
     const entry = this.#layer.style.get(property);
     if (entry === undefined) {
@@ -997,7 +1182,7 @@ export class LayerStyle {
           }
         : describe(mapped);
     for (const source of sourcesOf(this.#layer, entry, read)) {
-      this.#ledger.noteRead(source, note);
+      this.#ledger.noteRead(source, note, feed, this.#layer);
     }
     return mapped;
   }
@@ -1141,11 +1326,11 @@ function substitute(
  * coverage table.
  */
 function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses {
-  const { meaningOf, cell, context, record, conditions } = scope;
+  const { meaningOf, cell, context, record, logs } = scope;
   const applied: Applied[] = [];
   const childRules: ChildRule[] = [];
   const partRules: PartRule[] = [];
-  const descendantRules: Applied[] = [];
+  const descendantRules: DescendantRule[] = [];
   for (const className of splitClasses(classes)) {
     const { variants, utility } = splitClassName(className);
     const rule = context.compiled.rules.get(utility);
@@ -1173,14 +1358,10 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
       continue;
     }
     if (conditionVariants.length > 0) {
-      const key = JSON.stringify([part, className]);
-      conditions.set(key, {
-        part,
-        className,
-        held: holds || conditions.get(key)?.held === true,
-        variants: conditionVariants,
-        declarations: rule.declarations,
-      });
+      logs.condition(
+        { part, className, declarations: rule.declarations, variants: conditionVariants },
+        holds
+      );
     }
     if (!holds) {
       continue;
@@ -1197,19 +1378,20 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
       });
       continue;
     }
-    const entry = { part, className, rank: 0, ...placement, declarations: rule.declarations };
+    const entry = {
+      part,
+      className,
+      origin: scope.origin,
+      rank: 0,
+      ...placement,
+      declarations: rule.declarations,
+    };
     if (target !== undefined) {
-      partRules.push({ target, applied: entry });
-      logPartRule(scope.partRules, { part, className, target, declarations: rule.declarations });
+      const logged = logs.partRule({ part, className, target, declarations: rule.declarations });
+      partRules.push({ target, applied: entry, logged });
     } else if (descendants) {
-      descendantRules.push(entry);
-      const key = JSON.stringify([part, className]);
-      scope.descendantRules.set(key, {
-        part,
-        className,
-        taken: scope.descendantRules.get(key)?.taken === true,
-        declarations: rule.declarations,
-      });
+      const logged = logs.descendantRule({ part, className, declarations: rule.declarations });
+      descendantRules.push({ applied: entry, logged });
     } else if (selects === undefined) {
       applied.push(entry);
     } else {
@@ -1219,35 +1401,15 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
   return { applied, childRules, partRules, descendantRules };
 }
 
-/** Note that an element below their boxes took the `**:` classes. */
-function takeDescendantRules(log: DescendantRuleLog, rules: readonly Applied[]): void {
+/** The classes of rules, in their order. */
+function appliedOf(rules: readonly { readonly applied: Applied }[]): Applied[] {
+  return rules.map((rule) => rule.applied);
+}
+
+/** Note that an element took each rule, on the entry that logs its class. */
+function takeAll(rules: readonly { readonly logged: LoggedRule }[]): void {
   for (const rule of rules) {
-    const key = JSON.stringify([rule.part, rule.className]);
-    const logged = log.get(key);
-    if (logged !== undefined) {
-      log.set(key, { ...logged, taken: true });
-    }
-  }
-}
-
-/** Log a class that styles a child part, keeping whether a part took it in an earlier cell. */
-function logPartRule(
-  log: PartRuleLog,
-  rule: { readonly part: string; readonly className: string; readonly target: PartTarget } & Pick<
-    Applied,
-    "declarations"
-  >
-): void {
-  const key = JSON.stringify([rule.part, rule.className]);
-  log.set(key, { ...rule, taken: log.get(key)?.taken === true });
-}
-
-/** Note that a child part took a class of its parent's. */
-function takePartRule(log: PartRuleLog, rule: PartRule): void {
-  const key = JSON.stringify([rule.applied.part, rule.applied.className]);
-  const logged = log.get(key);
-  if (logged !== undefined) {
-    log.set(key, { ...logged, taken: true });
+    rule.logged.take();
   }
 }
 
@@ -1260,10 +1422,16 @@ function isMarker(utility: string): boolean {
 }
 
 /** Declarations from outside the recipe, set on `part` at `rank`. */
-function outerApplied(declarations: readonly OuterDeclaration[], part: string, rank: number): Applied[] {
+function outerApplied(
+  declarations: readonly OuterDeclaration[],
+  part: string,
+  rank: number,
+  origin: Origin
+): Applied[] {
   return declarations.map(({ className, property, value }) => ({
     part,
     className,
+    origin,
     rank,
     specificity: [0, 0, 0],
     order: 0,
@@ -1298,10 +1466,11 @@ function computeStyle(
       compareSpecificity(left.specificity, right.specificity) ||
       left.order - right.order
   );
-  const declared = sorted.flatMap(({ part, className, declarations, computedOutside }) =>
+  const declared = sorted.flatMap(({ part, className, origin, declarations, computedOutside }) =>
     declarations.map(({ property, value }) => ({
       part,
       className,
+      origin,
       property,
       computedOutside,
       ...importance(value),
@@ -1311,9 +1480,9 @@ function computeStyle(
     ...declared.filter(({ important }) => !important),
     ...declared.filter(({ important }) => important),
   ];
-  const entries = ordered.flatMap(({ part, className, property, value, computedOutside }) =>
+  const entries = ordered.flatMap(({ part, className, origin, property, value, computedOutside }) =>
     expandShorthand(property, value).map(([longhand, longValue]) => {
-      const source = { layer, part, className, property: longhand, value: longValue };
+      const source: Provenance = { layer, part, className, origin, property: longhand, value: longValue };
       const entry: StyleEntry =
         computedOutside === undefined
           ? { value: longValue, source, consumed: [], computed: false }

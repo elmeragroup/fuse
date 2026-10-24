@@ -7,7 +7,7 @@
  * absolute part, against its containing block. `label-layout.ts` reads the box's own text against
  * the same holder.
  */
-import type { CoverageNote, LayerStyle } from "./cascade";
+import type { CoverageNote, Feed, LayerStyle } from "./cascade";
 import {
   describeNumber,
   evaluateLength,
@@ -476,20 +476,30 @@ export function readGrowth(holder: Holder, parts: readonly LayerStyle[]): number
     if (only.has(axis.length)) {
       return undefined;
     }
-    const fills = only.read("flex", one, () => ({
-      outcome: "literal",
-      detail: `the one layer that grows fills the room the ${axis.flow}'s other layers leave`,
-    }));
+    const fills = only.read(
+      "flex",
+      one,
+      () => ({
+        outcome: "literal",
+        detail: `the one layer that grows fills the room the ${axis.flow}'s other layers leave`,
+      }),
+      only.feed("sizing")
+    );
     return fills === undefined ? undefined : parts.indexOf(only);
   }
   // A zero minimum never lengthens the box, and any other limit along the axis can.
   const limited =
     style.has(axis.max) || (style.has(axis.min) && evaluateLength(style.resolved(axis.min) ?? "") !== 0);
   if (!limited) {
-    only.read("flex", one, () => ({
-      outcome: "dropped",
-      detail: `the ${axis.flow} hugs its layers, so the one layer that grows has no room to grow into`,
-    }));
+    only.read(
+      "flex",
+      one,
+      () => ({
+        outcome: "dropped",
+        detail: `the ${axis.flow} hugs its layers, so the one layer that grows has no room to grow into`,
+      }),
+      []
+    );
   }
   return undefined;
 }
@@ -674,25 +684,30 @@ export type FitContent = "content" | "room";
  * @param room - What the box's parent gives it.
  * @param variables - The synced variables a length can bind.
  * @param fit - What a `fit-content` width draws as.
+ * @param inside - The sizing of the layers inside the box, which its lengths and limits decide too:
+ *   whether a layer fills or hugs, the length a share takes, and where a text wraps.
  * @returns The box's sizing, limits, clipping and extent.
  */
 export function readSizing(
   reader: LayerStyle,
   room: Room,
   variables: VariableIndex,
-  fit: FitContent
+  fit: FitContent,
+  inside: Feed
 ): BoxSizing {
-  const horizontal = readAxis(reader, WIDTH, room.horizontal, variables, fit);
-  const vertical = readAxis(reader, HEIGHT, room.vertical, variables, "content");
+  const horizontal = readAxis(reader, WIDTH, room.horizontal, variables, { fit, inside });
+  const vertical = readAxis(reader, HEIGHT, room.vertical, variables, { fit: "content", inside });
   reader.read(
     "field-sizing",
     (value) => (normalizeCss(value) === "content" && vertical.size.kind === "hug" ? value : undefined),
-    () => ({ outcome: "literal", detail: "the height hugs its content" })
+    () => ({ outcome: "literal", detail: "the height hugs its content" }),
+    reader.feed("sizing")
   );
   const clips = reader.read(
     "overflow",
     (value) => (normalizeCss(value) === "hidden" ? true : undefined),
-    () => ({ outcome: "literal", detail: "the box clips its content" })
+    () => ({ outcome: "literal", detail: "the box clips its content" }),
+    reader.feed("clips")
   );
   return {
     sizing: { horizontal: horizontal.size, vertical: vertical.size },
@@ -763,16 +778,19 @@ const ZERO_MINIMUM = "Figma takes no zero minimum, and its auto layout never shr
 
 /**
  * Read one axis: its length through {@link readLength}, an unset length as the room gives it, and
- * its limits as {@link resolveLimits} decides.
+ * its limits as {@link resolveLimits} decides. Each read fills the sizing of the layers inside too,
+ * as `inside` names it.
  */
 function readAxis(
   reader: LayerStyle,
   axis: AxisProperties,
   room: AxisRoom,
   variables: VariableIndex,
-  fit: FitContent
+  { fit, inside }: { readonly fit: FitContent; readonly inside: Feed }
 ): AxisRead {
-  const size = reader.has(axis.length) ? (readLength(reader, axis, room, variables, fit) ?? HUG) : room.auto;
+  const size = reader.has(axis.length)
+    ? (readLength(reader, axis, room, variables, { fit, inside }) ?? HUG)
+    : room.auto;
   const bounds = (["min", "max"] as const).flatMap((side): Bound[] => {
     const property = axis[side];
     const value = reader.resolved(property);
@@ -781,10 +799,13 @@ function readAxis(
   const read = resolveLimits(size, bounds, axis);
   // Each note was decided from the value the read substitutes, so the read only records it.
   for (const [bound, note] of read.notes) {
+    // A limit that stays a limit fills the box's limits, and one that folds into the length its sizing.
+    const limit = bound.side === "min" ? read.min : read.max;
     reader.read(
       bound.property,
       () => note,
-      (decided) => decided
+      (decided) => decided,
+      [...reader.feed(limit === undefined ? "sizing" : "limits"), ...inside]
     );
   }
   return read;
@@ -929,7 +950,8 @@ function usedLength(length: number, min: number | undefined, max: number | undef
  * box's direction beside other layers stays unmapped: CSS sizes it at the whole length and then
  * shrinks or overflows it with them (CSS Flexbox 1 §9.7), where a fill takes only the room they
  * leave. A `fit-content` width fills a room that stretches it where `fit` says it draws so, as
- * {@link FitContent} says, and hugs otherwise.
+ * {@link FitContent} says, and hugs otherwise. The read fills the sizing of the layers inside too,
+ * as `inside` names it.
  *
  * @returns The sizing, or undefined when the value does not map.
  */
@@ -938,7 +960,7 @@ function readLength(
   axis: AxisProperties,
   room: AxisRoom,
   variables: VariableIndex,
-  fit: FitContent
+  { fit, inside }: { readonly fit: FitContent; readonly inside: Feed }
 ): SizeSpec | undefined {
   const { siblings, percent } = room;
   const read = reader.read(
@@ -988,7 +1010,8 @@ function readLength(
           return { outcome: "literal", detail };
         }
       }
-    }
+    },
+    [...reader.feed("sizing"), ...inside]
   )?.size;
   if (read?.kind === "fitted") {
     return FILL;

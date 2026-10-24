@@ -4,7 +4,7 @@
  * Each fixture is `chip`, a one-cell set whose root carries the classes a test gives it, and
  * each build compiles every class the fixture uses, as the kit build compiles its definitions'.
  */
-import { buildComponentSet, definitionClasses } from "../src/components/component-spec.ts";
+import { buildComponentSet, buildSetsInOrder, definitionClasses } from "../src/components/component-spec.ts";
 import type {
   BuiltComponent,
   ComponentDefinition,
@@ -118,6 +118,35 @@ export async function buildFixture(
     base: context.base ?? [],
   });
   return { ...built, variant: built.componentSet.variants[0] };
+}
+
+/**
+ * Build fixtures' component sets in their order, each with the sets before it, as the kit build
+ * builds the sets its instance parts show first, compiling every class the definitions use and the
+ * context's `registered` classes.
+ *
+ * @param definitions - The fixtures, each after the fixtures it holds instances of.
+ * @param context - The extra classes, variables, and page and base-layer declarations.
+ * @returns Each fixture's set, its coverage and font styles, in the definitions' order.
+ */
+export async function buildFixtures(
+  definitions: readonly ComponentDefinition[],
+  context: FixtureContext = {}
+): Promise<readonly BuiltComponent[]> {
+  const compiled = await compileUtilities([
+    ...definitions.flatMap((definition) => definitionClasses(definition)),
+    ...(context.registered ?? []),
+  ]);
+  const built = buildSetsInOrder(
+    definitions.map((definition) => ({ definition })),
+    {
+      compiled,
+      variables: context.variables ?? makeVariableIndex([]),
+      page: context.page ?? [],
+      base: context.base ?? [],
+    }
+  );
+  return built.map(([, set]) => set);
 }
 
 /**

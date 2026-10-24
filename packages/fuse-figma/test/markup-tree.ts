@@ -8,8 +8,11 @@ import { splitClasses } from "../src/components/cascade.ts";
 import { splitClassName } from "../src/components/class-name.ts";
 import type {
   BoxDefinition,
+  Cell,
   ComponentDefinition,
+  ElementSelector,
   IconSlot,
+  InstanceDefinition,
   PartDefinition,
 } from "../src/components/component-spec.ts";
 import { selects } from "./static-markup.ts";
@@ -34,14 +37,31 @@ export function inside(elements: readonly MarkupElement[], index: number, outer:
   return parent !== undefined && (parent === outer || inside(elements, parent, outer));
 }
 
-/** The elements inside the measured element whose `class` holds a class with the variant. */
+/** Whether an element is one of `instances` or sits inside one, whose markup the inner set owns. */
+function ownedByInstance(
+  elements: readonly MarkupElement[],
+  index: number,
+  instances: ReadonlySet<number>
+): boolean {
+  const parent = elements[index]?.parent;
+  return instances.has(index) || (parent !== undefined && ownedByInstance(elements, parent, instances));
+}
+
+/**
+ * The elements inside the measured element whose `class` holds a class with the variant, outside the
+ * instance parts, whose markup the inner set's own renderer test owns.
+ *
+ * @param instances - The elements of the instance parts the cell renders.
+ */
 export function elementsNaming(
   elements: readonly MarkupElement[],
   measured: number,
-  variant: string
+  variant: string,
+  instances: ReadonlySet<number> = new Set()
 ): readonly number[] {
   return elements.flatMap((element, index) =>
     inside(elements, index, measured) &&
+    !ownedByInstance(elements, index, instances) &&
     splitClasses(element.attributes.get("class") ?? "").some((className) =>
       splitClassName(className).variants.includes(variant)
     )
@@ -86,19 +106,21 @@ export type MarkupIcon = Pick<IconSlot, "direct" | "dataIcon"> & {
 
 /**
  * The `<svg>` elements inside the measured element, each with its owning part and the
- * `data-icon` it or its parent carries.
+ * `data-icon` it or its parent carries. An icon inside an instance part belongs to the inner set.
  *
  * @param owners - The part path of the measured element, `""`, and of each part element the check
  *   found.
+ * @param instances - The elements of the instance parts the check found, whose icons it skips.
  */
 export function markupIcons(
   elements: readonly MarkupElement[],
-  owners: ReadonlyMap<number, string>
+  owners: ReadonlyMap<number, string>,
+  instances: ReadonlySet<number> = new Set()
 ): readonly MarkupIcon[] {
   return elements.flatMap((element, index): MarkupIcon[] => {
     const owner = partOwner(elements, index, owners);
     const path = owner === undefined ? undefined : owners.get(owner);
-    if (element.name !== "svg" || path === undefined) {
+    if (element.name !== "svg" || path === undefined || (owner !== undefined && instances.has(owner))) {
       return [];
     }
     const direct = element.parent === owner;
@@ -128,10 +150,24 @@ const UNNAMED = "(no data-slot)";
 
 /**
  * How a part path names a part: by its `data-slot`, by its key in parentheses where it names its
- * element, or as {@link UNNAMED} where the markup can only find it by place.
+ * element, or as {@link UNNAMED} where the markup can only find it by place. An instance part is named
+ * by its key in parentheses, since two instances of one component share their inner root's slot.
  */
-export function pathSegment(part: PartDefinition): string {
+export function pathSegment(part: PartDefinition | InstanceDefinition): string {
+  if ("kind" in part) {
+    return `(${part.key})`;
+  }
   return part.slot ?? (part.element === undefined ? UNNAMED : `(${part.key})`);
+}
+
+/** The `data-slot` of a part's element, undefined for an element that carries none. */
+function partSlot(part: PartDefinition | InstanceDefinition): string | undefined {
+  return "kind" in part ? (part.of.element === undefined ? part.of.slot : undefined) : part.slot;
+}
+
+/** The selector of a part's element, undefined for one its `data-slot` or its place names. */
+function partElement(part: PartDefinition | InstanceDefinition): ElementSelector | undefined {
+  return "kind" in part ? part.of.element : part.element;
 }
 
 /**
@@ -147,9 +183,15 @@ function isHiddenPresentation(element: MarkupElement): boolean {
   );
 }
 
+/** A part a parent holds: a frame, or an instance of another set. */
+type AnyPart = PartDefinition | InstanceDefinition;
+
 /** The part among a parent's own parts whose `element` selects an element. */
-function selectedPart(parts: readonly PartDefinition[], element: MarkupElement): PartDefinition | undefined {
-  return parts.find((part) => part.element !== undefined && selects(part.element, element));
+function selectedPart(parts: readonly AnyPart[], element: MarkupElement): AnyPart | undefined {
+  return parts.find((part) => {
+    const selector = partElement(part);
+    return selector !== undefined && selects(selector, element);
+  });
 }
 
 /**
@@ -161,7 +203,7 @@ function unnamedChild(
   elements: readonly MarkupElement[],
   parent: number,
   slots: ReadonlySet<string>,
-  parts: readonly PartDefinition[]
+  parts: readonly AnyPart[]
 ): number | undefined {
   const children = elements.flatMap((element, child) => {
     const slot = element.attributes.get("data-slot");
@@ -197,47 +239,93 @@ function partOwner(
 }
 
 /**
- * A box the check found in the markup: its part path, and the definition whose own parts scope the
- * elements below it, undefined for an element that is no part of its parent, which the path check
- * then fails.
+ * A box the check found in the markup: its part path, and the part whose own parts scope the elements
+ * below it, undefined for an element that is no part of its parent, which the path check then fails.
+ * An instance part's inner component owns the elements below it, so the check looks no further there.
  */
-type FoundBox = { readonly path: string; readonly box: BoxDefinition | undefined };
+type FoundBox = { readonly path: string; readonly box: BoxDefinition | InstanceDefinition | undefined };
+
+/**
+ * The part an element takes among the parts of its parent that the cell renders and that name it:
+ * the first for the first such element below the parent, the second for the second, in DOM order, as
+ * two instances of one component sit side by side. An element past the last takes the last, so the
+ * path check counts it twice.
+ */
+function inOrder(
+  candidates: readonly AnyPart[],
+  counts: Map<string, number>,
+  key: string
+): AnyPart | undefined {
+  const seen = counts.get(key) ?? 0;
+  counts.set(key, seen + 1);
+  return candidates[Math.min(seen, candidates.length - 1)];
+}
 
 /**
  * Each part the markup renders inside the measured element: its path and its element, once per
  * element, so two elements at one path stay two entries.
  * An element whose `data-slot` names a box of the definition is a part, below its nearest part, and
- * so is an element that one of that part's own parts selects by its `element`. An element with no
+ * so is an element that one of that part's own parts selects by its `element`. Parts of one parent
+ * that the cell renders and that name the same elements take them in DOM order. An element with no
  * `data-slot` is a part when it is the {@link unnamedChild} of a part. That is where Radio's dot
- * sits, alone in the indicator, and Meter's header, beside the bar and the hidden span.
+ * sits, alone in the indicator, and Meter's header, beside the bar and the hidden span. An instance
+ * part is found the same way, by its inner root's `data-slot` or element, and the elements below it
+ * belong to the inner set, so none of them is a part.
+ *
+ * @param cell - The cell, which says which parts render.
  */
 export function markupParts(
   elements: readonly MarkupElement[],
   measured: number,
   definition: ComponentDefinition,
-  slots: ReadonlySet<string>
+  slots: ReadonlySet<string>,
+  cell: Cell
 ): readonly (readonly [string, number])[] {
   const found = new Map<number, FoundBox>([[measured, { path: "", box: definition }]]);
+  const counts = new Map<string, number>();
   // Elements come in document order, so a part is found before its descendants are visited.
   for (const [index, element] of elements.entries()) {
     const owner = partOwner(elements, index, found);
     const parent = owner === undefined ? undefined : found.get(owner);
-    if (owner === undefined || parent === undefined || index === measured) {
+    if (
+      owner === undefined ||
+      parent === undefined ||
+      index === measured ||
+      (parent.box !== undefined && "kind" in parent.box)
+    ) {
       continue;
     }
     const parts = parent.box?.parts ?? [];
+    const rendered = parts.filter((part) => part.shownIn(cell));
     const slot = element.attributes.get("data-slot");
     const selected = selectedPart(parts, element);
     if (slot !== undefined && slots.has(slot)) {
-      found.set(index, { path: `${parent.path}/${slot}`, box: parts.find((part) => part.slot === slot) });
+      const part = inOrder(
+        rendered.filter((candidate) => partSlot(candidate) === slot),
+        counts,
+        `${owner} [data-slot=${slot}]`
+      );
+      found.set(index, {
+        path: `${parent.path}/${part === undefined ? slot : pathSegment(part)}`,
+        box: part ?? parts.find((candidate) => partSlot(candidate) === slot),
+      });
     } else if (selected !== undefined) {
-      found.set(index, { path: `${parent.path}/${pathSegment(selected)}`, box: selected });
+      const part =
+        inOrder(
+          rendered.filter((candidate) => {
+            const selector = partElement(candidate);
+            return selector !== undefined && selects(selector, element);
+          }),
+          counts,
+          `${owner} ${pathSegment(selected)}`
+        ) ?? selected;
+      found.set(index, { path: `${parent.path}/${pathSegment(part)}`, box: part });
     } else if (
       element.parent === owner &&
       unnamedChild(elements, owner, slots, parts) === index &&
       !holdsLabel(parent.box, element)
     ) {
-      const byPlace = parts.find((part) => part.slot === undefined && part.element === undefined);
+      const byPlace = parts.find((part) => partSlot(part) === undefined && partElement(part) === undefined);
       found.set(index, { path: `${parent.path}/${UNNAMED}`, box: byPlace });
     }
   }

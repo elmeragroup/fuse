@@ -9,7 +9,7 @@
 import { listNames, outOfFlow } from "./box-sizing";
 import type { Room } from "./box-sizing";
 import { splitClasses } from "./cascade";
-import type { CoverageNote, LayerStyle } from "./cascade";
+import type { CoverageNote, LayerStyle, SpecField } from "./cascade";
 import { splitClassName } from "./class-name";
 import type { Cell, PartDefinition } from "./component-spec";
 import {
@@ -30,6 +30,7 @@ import type {
   CounterAlignSpec,
   DirectionSpec,
   FrameLayerSpec,
+  InstanceLayerSpec,
   NumberSpec,
   PrimaryAlignSpec,
   RotationSpec,
@@ -66,10 +67,10 @@ type RowSize = {
   readonly paddingRight: NumberSpec;
 };
 
-/** A part a box holds: its computed style and the layer the mapping drew for it. */
+/** A part a box holds: its computed style and the layer the mapping drew for it, a frame or an instance. */
 export type PlacedPart = {
   readonly style: LayerStyle;
-  readonly layer: FrameLayerSpec;
+  readonly layer: FrameLayerSpec | InstanceLayerSpec;
 };
 
 /** The box that holds the parts, as far as placing them needs to know. */
@@ -87,13 +88,14 @@ export type ParentBox = {
 /** Where a box places its parts: its primary alignment, and each part's layer, absolute where it sits outside the flow. */
 export type Placement = {
   readonly primaryAlign: PrimaryAlignSpec;
-  readonly layers: readonly FrameLayerSpec[];
+  readonly layers: readonly (FrameLayerSpec | InstanceLayerSpec)[];
 };
 
 /**
  * Read where each part of a box sits, and the box's primary alignment. A part that centers itself
  * by absolute position, one absolute at the box's top left, or one moved along a row by a
- * translate, reads here. A translate on the one part of a flex row sets the row's alignment.
+ * translate, reads here. A translate on the one part of a flex row sets the row's alignment. An
+ * instance sits where the flow puts it, so only its `relative` maps.
  *
  * @param parent - The box that holds the parts.
  * @param parts - The parts the cell renders in it, as mapped.
@@ -103,6 +105,10 @@ export type Placement = {
 export function placeParts(parent: ParentBox, parts: readonly PlacedPart[]): Placement {
   const centering = centersAlone(parent, parts) ? "centers-its-one-layer" : "other";
   const layers = parts.map(({ style, layer }) => {
+    if (layer.kind === "instance") {
+      readPosition(style, "other");
+      return layer;
+    }
     const absolute = readAbsoluteStart(style, layer, parent.style);
     switch (absolute.kind) {
       case "absolute":
@@ -158,6 +164,14 @@ function alignAlongRow(parent: ParentBox, parts: readonly PlacedPart[]): Primary
  */
 const MARGINS = ["margin-top", "margin-right", "margin-bottom", "margin-left"] as const;
 
+/** The padding of the frame around a part that draws each of its margins. */
+const PADDING_OF = {
+  "margin-top": "paddingTop",
+  "margin-right": "paddingRight",
+  "margin-bottom": "paddingBottom",
+  "margin-left": "paddingLeft",
+} as const satisfies Record<(typeof MARGINS)[number], SpecField>;
+
 /** The margins above and below a box, which leave its width alone. */
 const VERTICAL_MARGINS: ReadonlySet<string> = new Set(["margin-top", "margin-bottom"]);
 
@@ -196,7 +210,8 @@ export function placeRoot(style: LayerStyle, room: Room): void {
       outcome: "dropped",
       detail:
         "the component's root sits alone in its component set, so a translate moves it against nothing the set draws",
-    })
+    }),
+    []
   );
   style.read(
     "align-self",
@@ -204,12 +219,14 @@ export function placeRoot(style: LayerStyle, room: Room): void {
     () => ({
       outcome: "dropped",
       detail: "the component's root sits in no row, and auto asks for no alignment",
-    })
+    }),
+    []
   );
   style.read(
     "vertical-align",
     (value) => value,
-    () => ({ outcome: "dropped", detail: "the component's root sits in no line box, so no line aligns it" })
+    () => ({ outcome: "dropped", detail: "the component's root sits in no line box, so no line aligns it" }),
+    []
   );
   style.read(
     "flex",
@@ -217,14 +234,16 @@ export function placeRoot(style: LayerStyle, room: Room): void {
     () => ({
       outcome: "dropped",
       detail: "the component's root sits in no flex line, so nothing grows or shrinks it",
-    })
+    }),
+    []
   );
   for (const property of MARGINS) {
     if (widthFromContainer && !VERTICAL_MARGINS.has(property)) {
       style.mark(
         property,
         "unmapped",
-        "the root's width is its container's less this margin, which the build does not subtract"
+        "the root's width is its container's less this margin, which the build does not subtract",
+        []
       );
       continue;
     }
@@ -235,7 +254,8 @@ export function placeRoot(style: LayerStyle, room: Room): void {
         outcome: "dropped",
         detail:
           "the component's root sits alone in its component set, so its margin spaces it from nothing the set draws",
-      })
+      }),
+      []
     );
   }
 }
@@ -265,7 +285,8 @@ function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean): void
     style.mark(
       "position",
       "unmapped",
-      "an absolute root shrinks to fit its content, where the preview width would make it fill"
+      "an absolute root shrinks to fit its content, where the preview width would make it fill",
+      []
     );
     return;
   }
@@ -276,7 +297,8 @@ function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean): void
       style.mark(
         property,
         "unmapped",
-        `with an automatic ${sizing.size}, opposing insets size the absolute root from its containing block, which the set does not draw`
+        `with an automatic ${sizing.size}, opposing insets size the absolute root from its containing block, which the set does not draw`,
+        []
       );
     }
     return;
@@ -289,7 +311,8 @@ function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean): void
         outcome: "dropped",
         detail:
           "the component's root sits alone in its component set, so the offsets that place it in its containing block place it against nothing the set draws",
-      })
+      }),
+      []
     );
   }
 }
@@ -318,14 +341,7 @@ export function wrapMargins(
   parent: Pick<Layout, "flex">,
   variables: VariableIndex
 ): FrameLayerSpec {
-  const zero = (property: string) => evaluateLength(style.resolved(property) ?? "") === 0;
-  for (const property of MARGINS.filter((side) => style.has(side) && zero(side))) {
-    style.read(
-      property,
-      (value) => value,
-      () => ({ outcome: "dropped", detail: "a zero margin adds no space" })
-    );
-  }
+  const zero = dropZeroMargins(style);
   const set = MARGINS.filter((property) => style.has(property) && !zero(property));
   const fixedOrHugs = layer.sizing.horizontal.kind !== "fill" && layer.sizing.vertical.kind !== "fill";
   const length = (value: string): NumberSpec | undefined => {
@@ -336,15 +352,21 @@ export function wrapMargins(
   if (set.length === 0 || !parent.flex || outOfFlow(style) || !fixedOrHugs || !maps) {
     return layer;
   }
+  // The part's own box moves into the frame, and so do the fields its reads filled.
+  style.relocateFeeds("box", new Set());
   const margin = (property: (typeof MARGINS)[number]): NumberSpec =>
     (set.includes(property)
-      ? style.read(property, length, (spec) =>
-          spec.kind === "literal"
-            ? {
-                outcome: "literal",
-                detail: `${spec.value}px of padding on a frame around the part, the space the margin adds`,
-              }
-            : describeNumber(spec)
+      ? style.read(
+          property,
+          length,
+          (spec) =>
+            spec.kind === "literal"
+              ? {
+                  outcome: "literal",
+                  detail: `${spec.value}px of padding on a frame around the part, the space the margin adds`,
+                }
+              : describeNumber(spec),
+          style.feed(PADDING_OF[property])
         )
       : undefined) ?? ZERO;
   const { visibleProperty, ...box } = layer;
@@ -371,6 +393,26 @@ export function wrapMargins(
     children: [{ ...box, key: "box", name: "box" }],
   };
   return visibleProperty === undefined ? frame : { ...frame, visibleProperty };
+}
+
+/**
+ * Drop a part's margins of zero, which add no space, as Item's title and description reset a `<p>`'s
+ * margins with `m-0`.
+ *
+ * @param style - The part's style.
+ * @returns The test of whether the style's margin on a side is zero.
+ */
+export function dropZeroMargins(style: LayerStyle): (property: string) => boolean {
+  const zero = (property: string) => evaluateLength(style.resolved(property) ?? "") === 0;
+  for (const property of MARGINS.filter((side) => style.has(side) && zero(side))) {
+    style.read(
+      property,
+      (value) => value,
+      () => ({ outcome: "dropped", detail: "a zero margin adds no space" }),
+      []
+    );
+  }
+  return zero;
 }
 
 /**
@@ -406,6 +448,9 @@ export function partsThatScale(
  * @returns The slot, without its key and name.
  */
 export function slotAroundDot(style: LayerStyle, box: BoxSpec): BoxSpec {
+  // The dot holds the part's paint and layers, and so the fields its reads filled, and the slot keeps
+  // the part's size.
+  style.relocateFeeds("dot", new Set(["sizing", "limits"]));
   const share = readScale(style, box);
   const { sizing, limits, cornerRadius, stroke } = box;
   const dot: FrameLayerSpec = {
@@ -477,7 +522,8 @@ function readPosition(reader: LayerStyle, parent: ParentLayout): void {
         () => ({
           outcome: "literal",
           detail: "centered on its containing block, as its parent's auto layout centers it",
-        })
+        }),
+        reader.feed("absolute")
       );
     }
     return;
@@ -488,7 +534,8 @@ function readPosition(reader: LayerStyle, parent: ParentLayout): void {
     () => ({
       outcome: "dropped",
       detail: "it only anchors positioned descendants, which auto layout does not need",
-    })
+    }),
+    []
   );
 }
 
@@ -560,7 +607,8 @@ function readAbsoluteStart(style: LayerStyle, layer: FrameLayerSpec, parent: Lay
     style.read(
       property,
       () => note,
-      (decided) => decided
+      (decided) => decided,
+      style.feed("absolute")
     );
   }
   return bounds.length === 0
@@ -648,7 +696,9 @@ function readTranslate(
         align === "MIN"
           ? "at the start of its parent's row, where it sits unmoved"
           : "at the end of its parent's row, flush with the end of the content box",
-    })
+    }),
+    // The move places the part where its parent's alignment draws it.
+    reader.feed("primaryAlign", reader.path.slice(0, -1))
   );
 }
 
@@ -681,7 +731,8 @@ function readScale(reader: LayerStyle, box: BoxSpec): number {
       (share) => ({
         outcome: "literal",
         detail: `a dot at ${Math.round(share * 10_000) / 100}% of the part's size, centered in a slot the part's size`,
-      })
+      }),
+      reader.feed("sizing", [...reader.path, "dot"])
     ) ?? 1
   );
 }
@@ -746,7 +797,8 @@ export function readRotation(style: LayerStyle): RotationSpec | undefined {
     (turn) => ({
       outcome: "literal",
       detail: turn === 0 ? "no turn" : `a rotation of ${turn}, counterclockwise as Figma counts it`,
-    })
+    }),
+    style.feed("rotation")
   );
   return rotation === 0 ? undefined : rotation;
 }

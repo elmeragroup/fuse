@@ -9,7 +9,7 @@ import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
 import { fuseVariableSet } from "../fuse-variable-set";
 import type { CollectionSpec, VariableSpec } from "../variable-set";
-import { buildComponentSet, definitionClasses, variantKey } from "./component-spec";
+import { buildSetsInOrder, definitionClasses, variantKey } from "./component-spec";
 import type { BuiltComponent, OuterDeclaration } from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { makeVariableIndex, readColor } from "./css-values";
@@ -110,10 +110,10 @@ async function buildSets(variables: VariableIndex): Promise<readonly KitComponen
   const base: readonly OuterDeclaration[] = [
     { className: "fuse.css base layer", ...baseBorderColor(compiled) },
   ];
-  return KIT.map(({ definition, page }) => {
-    const set = buildComponentSet(definition, { compiled, variables, page: PAGE, base });
-    return { ...set, componentSet: { ...set.componentSet, page: pageSpec(page).key } };
-  });
+  return buildSetsInOrder(KIT, { compiled, variables, page: PAGE, base }).map(([{ page }, set]) => ({
+    ...set,
+    componentSet: { ...set.componentSet, page: pageSpec(page).key },
+  }));
 }
 
 /**

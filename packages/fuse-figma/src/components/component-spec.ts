@@ -4,12 +4,15 @@
  * `box-mapping.ts` maps it onto Figma fields. Every declaration it reads lands in the coverage
  * table with what became of it. This module holds the definition types and assembles the set.
  */
-import { mapBox, partName } from "./box-mapping";
+import { mapBox, NO_VALUES, partName } from "./box-mapping";
 import type { MapScope } from "./box-mapping";
 import { rootRoom } from "./box-sizing";
 import { SetCascade, splitClasses } from "./cascade";
 import type { CoverageRow } from "./coverage";
 import type { VariableIndex } from "./css-values";
+import { allPartsOf, framePartsOf, instancePartsOf, partsOf, renderedSlots } from "./definition-parts";
+import { checkInstanceOrder, InstanceParts } from "./instance-parts";
+import type { InnerSet } from "./instance-parts";
 import { iconKey, walkLayers } from "./kit-spec";
 import type {
   AxisSpec,
@@ -23,6 +26,7 @@ import type {
 import { booleanPropertiesOf, refusePresenceReads } from "./optional-parts";
 import type { OptionalPart } from "./optional-parts";
 import { partsThatScale, placeRoot } from "./placement";
+import { PaintedInstances } from "./stacking";
 import { makeStateTable } from "./state-table";
 import type { CompiledUtilities } from "./utility-css";
 
@@ -182,8 +186,8 @@ export type BoxDefinition = {
   readonly label: LabelDefinition | undefined;
   /** The icons a cell renders in this part, in DOM order. A start icon sits before the label. */
   readonly iconsFor: (cell: Cell) => readonly IconSlot[];
-  /** The parts directly below this one, in DOM order. */
-  readonly parts?: readonly PartDefinition[];
+  /** The parts directly below this one, in DOM order, each a frame or an instance of another set. */
+  readonly parts?: readonly (PartDefinition | InstanceDefinition)[];
   /**
    * The picture the box shows, as an `<img>` shows its `src`: the bytes of a PNG file, the one
    * format the kit ships, which the build reads when it maps the box. Undefined for a box that shows
@@ -274,6 +278,54 @@ export type PartDefinition = BoxDefinition & {
       }
   );
 
+/**
+ * The values a composite gives the inner set's TEXT, BOOLEAN and INSTANCE_SWAP properties, each by
+ * the property's name: the characters of the label the property sets, whether the part the property
+ * shows is there, and the export name of the icon the property picks, such as `Star`.
+ */
+export type InstanceProperties = {
+  readonly text?: Readonly<Record<string, string>>;
+  readonly boolean?: Readonly<Record<string, boolean>>;
+  readonly swap?: Readonly<Record<string, string>>;
+};
+
+/**
+ * A part that renders another kit component, as Alert renders a Button for its action. The set draws
+ * it as an instance of the inner set's variant, so the composite stays linked to the set that draws
+ * the part. The build maps the inner root in place, below the outer parts, and proves the instance
+ * draws what that root draws, as `instance-parts.ts` says.
+ */
+export type InstanceDefinition = {
+  readonly kind: "instance";
+  /** The key of the instance layer. */
+  readonly key: string;
+  /** The inner component, whose set the kit builds before the set that holds this part. */
+  readonly of: ComponentDefinition;
+  /** The inner set's cell the part renders in an outer cell. */
+  readonly cell: (outer: Cell) => Cell;
+  /**
+   * The classes the outer component passes the inner one as its `className`, which the inner
+   * component merges after its own with `cn`, as Alert passes its tone's `button` slot. Undefined for
+   * none.
+   */
+  readonly classesFor?: (outer: Cell) => string;
+  /**
+   * The values the outer cell gives the inner set's properties, undefined where every property keeps
+   * its default.
+   */
+  readonly properties?: (outer: Cell) => InstanceProperties;
+  /** Whether a cell renders the part. */
+  readonly shownIn: (cell: Cell) => boolean;
+  /**
+   * The BOOLEAN property of the outer set that shows or hides the instance, and the value it starts
+   * with, as {@link PartDefinition.optional} says for a frame. Undefined for an instance that shows
+   * wherever a cell renders it.
+   */
+  readonly optional?: BooleanPropertySpec;
+  /** True where a designer sets the inner set's properties from the outer instance's panel. */
+  readonly exposed?: true;
+};
+
 /** A component the builder can turn into a component set. Its own box is the root. */
 export type ComponentDefinition = BoxDefinition & {
   readonly key: string;
@@ -288,6 +340,14 @@ export type ComponentDefinition = BoxDefinition & {
    * for a root its `data-slot` names.
    */
   readonly element?: ElementSelector;
+  /**
+   * The `data-slot` the element `element` names carries in a cell, as Pagination's edge link carries
+   * `pagination-previous` or `pagination-next` by its direction. Undefined for an element that carries
+   * none in any cell, as React Aria's Link renders none, and for a root its `data-slot` names. The
+   * presence check reads it for an instance part's root, and the markup check holds it to what each
+   * cell renders.
+   */
+  readonly elementSlot?: (cell: Cell) => string;
   /**
    * What the element that takes the set's states is: the root, or the part `statePart` names. A set
    * whose `state` axis has `disabled` names it, and `state-table.ts` refuses one that does not.
@@ -421,13 +481,43 @@ export type BuiltComponent = {
 };
 
 /**
+ * Build the component sets of a list of definitions in its order, each with the sets before it at
+ * hand, so a set builds after the sets its instance parts show.
+ *
+ * @template Entry - What the list holds for each set, its definition among it.
+ * @param entries - The definitions, each set after the sets it holds instances of.
+ * @param context - The compiled utilities and the synced variables.
+ * @returns Each entry with its built set, in the list's order.
+ * @throws When an instance part shows a set the list puts later or lacks, or the instance parts form
+ *   a cycle, as {@link checkInstanceOrder} says, or a set does not build.
+ */
+export function buildSetsInOrder<Entry extends { readonly definition: ComponentDefinition }>(
+  entries: readonly Entry[],
+  context: BuildContext
+): readonly (readonly [Entry, BuiltComponent])[] {
+  checkInstanceOrder(entries.map(({ definition }) => definition));
+  const built = new Map<string, InnerSet>();
+  return entries.map((entry) => {
+    const set = buildComponentSet(entry.definition, context, built);
+    built.set(entry.definition.key, set.componentSet);
+    return [entry, set] as const;
+  });
+}
+
+/**
  * Build the component set for every cell of the definition's matrix.
  *
  * @param definition - The component.
  * @param context - The compiled utilities and the synced variables.
+ * @param inner - The sets built before this one, by key, which its instance parts show.
  * @returns The component set, its coverage and the font styles its text uses.
+ * @throws When an instance part shows a set `inner` lacks, or a cell does not build.
  */
-export function buildComponentSet(definition: ComponentDefinition, context: BuildContext): BuiltComponent {
+export function buildComponentSet(
+  definition: ComponentDefinition,
+  context: BuildContext,
+  inner: ReadonlyMap<string, InnerSet> = new Map()
+): BuiltComponent {
   const coverage = new Map<string, CoverageRow>();
   const fontStyles = new Set<string>();
   const record = (row: Omit<CoverageRow, "component">): void => {
@@ -437,22 +527,33 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
       full
     );
   };
-  const optional = optionalParts(definition);
+  const cells = matrixCells(definition.axes);
+  const optional = optionalParts(definition, cells, undefined);
   const booleans = booleanPropertiesOf(definition.name, optional);
-  if (optional.length > 0) {
+  // The inner sets list their own optional parts' properties, but a class of this set can read them.
+  const presence = [...optional, ...innerOptionalParts(definition, cells, [], new Set([definition]))];
+  if (presence.length > 0) {
     refusePresenceReads(
       definition.name,
-      optional,
+      presence,
       new Set(definitionClasses(definition)),
       context.compiled.rulesByClass
     );
   }
   const cascade = new SetCascade(makeStateTable(definition), context, record);
-  const cells = matrixCells(definition.axes);
+  const instances = new InstanceParts(context, inner, record);
   const scaling = partsThatScale(partsOf(definition), cells, context.compiled);
   const variants = cells.map((cell): VariantSpec => {
     const cellCascade = cascade.cell(cell);
-    const scope: MapScope = { variant: variantKey(definition, cell), cell, context, scaling };
+    const scope: MapScope = {
+      variant: variantKey(definition, cell),
+      cell,
+      context,
+      scaling,
+      instances,
+      values: NO_VALUES,
+      painted: new PaintedInstances(),
+    };
     const rootCascade = cellCascade.root(definition.classesFor(cell), definition.slot, {
       declarations: definition.inheritedFor?.(cell) ?? [],
       ancestors: definition.ancestorsFor?.(cell) ?? [],
@@ -470,6 +571,7 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
     };
     placeRoot(rootCascade.style, room);
     cellCascade.settle();
+    instances.settle();
     for (const layer of walkLayers(root)) {
       if (layer.kind === "text") {
         fontStyles.add(layer.fontStyle);
@@ -478,6 +580,7 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
     return { key: variantKey(definition, cell), properties: cell, root };
   });
   cascade.finish();
+  instances.finish();
   const componentSet: BuiltComponent["componentSet"] = {
     key: definition.key,
     name: definition.name,
@@ -511,7 +614,9 @@ export function variantKey(definition: Pick<ComponentDefinition, "key" | "axes">
 
 /**
  * Every class the elements around the root, the root, its parts and their icons use in any cell of
- * the matrix, which the build compiles.
+ * the matrix, which the build compiles. An instance part adds the classes the outer component passes
+ * it in each cell that renders it. Its inner component's classes are the inner definition's own,
+ * which the build compiles for the inner set, built first.
  *
  * @param definition - The component.
  * @returns The classes, in the order the elements first use them, the ancestors' before the boxes',
@@ -520,11 +625,23 @@ export function variantKey(definition: Pick<ComponentDefinition, "key" | "axes">
 export function definitionClasses(definition: ComponentDefinition): readonly string[] {
   return matrixCells(definition.axes).flatMap((cell) => [
     ...(definition.ancestorsFor?.(cell) ?? []).flatMap((ancestor) => splitClasses(ancestor.classes)),
-    ...boxesOf(definition).flatMap((box) => [
-      ...splitClasses(box.classesFor(cell)),
-      ...box.iconsFor(cell).flatMap((slot) => splitClasses(slot.classes ?? "")),
-    ]),
+    ...boxClasses(definition, cell),
   ]);
+}
+
+/** The classes a box, its icons and the parts below it use in a cell, depth first. */
+function boxClasses(box: BoxDefinition, cell: Cell): readonly string[] {
+  return [
+    ...splitClasses(box.classesFor(cell)),
+    ...box.iconsFor(cell).flatMap((slot) => splitClasses(slot.classes ?? "")),
+    ...(box.parts ?? []).flatMap((part) =>
+      "kind" in part
+        ? part.shownIn(cell)
+          ? splitClasses(part.classesFor?.(cell) ?? "")
+          : []
+        : boxClasses(part, cell)
+    ),
+  ];
 }
 
 /**
@@ -553,42 +670,77 @@ function textProperties(definition: ComponentDefinition): readonly TextPropertyS
 }
 
 /**
- * The optional parts, depth first, each with every `data-slot` that hiding it hides: its own and
- * those of the parts inside it, a slotless part's included.
+ * A definition's optional parts, depth first, each with every `data-slot` that hiding it hides, as the
+ * markup renders them in the cells given: its own and those of the elements inside it, through the
+ * instances it holds, whose inner roots and parts the DOM holds too.
+ *
+ * @param definition - The definition.
+ * @param cells - Its cells, or the inner cells an instance of it shows.
+ * @param inside - The instance that holds the definition's root, for an inner set's parts.
+ * @returns The parts.
  */
-function optionalParts(definition: ComponentDefinition): readonly OptionalPart[] {
-  return partsOf(definition).flatMap((part) =>
+function optionalParts(
+  definition: ComponentDefinition,
+  cells: readonly Cell[],
+  inside: OptionalPart["inside"]
+): readonly OptionalPart[] {
+  return allPartsOf(definition).flatMap((part): OptionalPart[] =>
     part.optional === undefined
       ? []
       : [
           {
-            name: partName(part),
+            name: "kind" in part ? part.of.slot : partName(part),
             property: part.optional,
-            slots: [part, ...partsOf(part)].flatMap(({ slot }) => (slot === undefined ? [] : [slot])),
+            slots: renderedSlots(part, cells),
+            inside,
           },
         ]
   );
 }
 
-/** The label of a box and of every part below it, depth first, with the layer name of its box. */
+/**
+ * The optional parts of the inner sets a box's instance parts show, in the inner cells each instance
+ * shows, through the instances those sets hold in turn. A definition the walk is already inside adds
+ * nothing again.
+ *
+ * @param box - The definition whose instance parts the walk starts at.
+ * @param cells - The cells of the definition, or the inner cells an instance of it shows.
+ * @param path - The keys of the instance parts from the set down to the box.
+ * @param inside - The definitions the walk is inside.
+ * @returns The parts, each with the instance that holds it and its set.
+ */
+function innerOptionalParts(
+  box: ComponentDefinition,
+  cells: readonly Cell[],
+  path: readonly string[],
+  inside: ReadonlySet<ComponentDefinition>
+): readonly OptionalPart[] {
+  return instancePartsOf(box).flatMap((part) => {
+    const { of } = part;
+    if (inside.has(of)) {
+      return [];
+    }
+    const shown = cells.filter((cell) => part.shownIn(cell)).map((cell) => part.cell(cell));
+    const keys = [...path, part.key];
+    return [
+      ...optionalParts(of, shown, { instance: keys.join(" / "), set: of.name }),
+      ...innerOptionalParts(of, shown, keys, new Set([...inside, of])),
+    ];
+  });
+}
+
+/**
+ * The label of a box and of every frame part below it, depth first, with the layer name of its box.
+ * An instance part's labels belong to its inner set.
+ */
 function labelsOf(
   box: BoxDefinition,
   name: string
 ): readonly { readonly box: string; readonly label: LabelDefinition }[] {
   return [
     ...(box.label === undefined ? [] : [{ box: name, label: box.label }]),
-    ...(box.parts ?? []).flatMap((part) => labelsOf(part, partName(part))),
+    ...framePartsOf(box).flatMap((part) => labelsOf(part, partName(part))),
   ];
-}
-
-/** Every part below a box, depth first. */
-function partsOf(box: BoxDefinition): readonly PartDefinition[] {
-  return (box.parts ?? []).flatMap((part) => [part, ...partsOf(part)]);
-}
-
-/** The box and every part below it, depth first. */
-function boxesOf(box: BoxDefinition): readonly BoxDefinition[] {
-  return [box, ...partsOf(box)];
 }
 
 /** Every cell of the matrix, the first axis varying slowest. */

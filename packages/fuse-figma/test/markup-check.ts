@@ -1,10 +1,12 @@
+import { expect } from "vitest";
+
 /**
  * `checkMarkup`, the assertions `src/compare/kit-markup.test.ts` runs on every preview cell of a kit
  * definition against the static markup its renderer gives, and what a definition says that markup
  * holds: its parts, icons, labels, styles and images. The suite's header states the rules and their
  * oracle.
  */
-import { expect } from "vitest";
+import { cn } from "@elmeragroup/fuse/recipe-catalog";
 
 import { forcedAttributesFor, renderCellHtml } from "../src/compare/cell-renderers.ts";
 import type { CellRendering } from "../src/compare/cell-renderers.ts";
@@ -15,8 +17,10 @@ import type {
   BoxDefinition,
   Cell,
   ComponentDefinition,
+  InstanceDefinition,
   PartDefinition,
 } from "../src/components/component-spec.ts";
+import { framePartsOf, rootSlotOf } from "../src/components/definition-parts.ts";
 import { labelCharacters } from "../src/components/label-layout.ts";
 import { makeStateTable } from "../src/components/state-table.ts";
 import {
@@ -66,25 +70,31 @@ function statePartOf(
   return found[0];
 }
 
-/** Every box of a definition, the root or a part, by the name its layer takes. */
+/** Every box of a definition, the root or a part, by the name its layer takes, an instance's by its inner root's. */
 function boxNames(box: BoxDefinition, name: string): readonly string[] {
-  return [name, ...(box.parts ?? []).flatMap((part) => boxNames(part, part.slot ?? part.key))];
+  return [
+    name,
+    ...(box.parts ?? []).flatMap((part) =>
+      "kind" in part ? [part.of.slot] : boxNames(part, part.slot ?? part.key)
+    ),
+  ];
 }
 
 /**
  * Each part a cell renders below a box, with its path, such as
- * `/radio-group-indicator/(no data-slot)`, each part named by its {@link pathSegment}.
+ * `/radio-group-indicator/(no data-slot)`, each part named by its {@link pathSegment}. The inner
+ * component of an instance part holds parts of its own set, which the list leaves out.
  */
 function slotParts(
   box: BoxDefinition,
   path: string,
   cell: Cell
-): readonly { readonly path: string; readonly part: PartDefinition }[] {
+): readonly { readonly path: string; readonly part: PartDefinition | InstanceDefinition }[] {
   return (box.parts ?? [])
     .filter((part) => part.shownIn(cell))
     .flatMap((part) => {
       const partPath = `${path}/${pathSegment(part)}`;
-      return [{ path: partPath, part }, ...slotParts(part, partPath, cell)];
+      return [{ path: partPath, part }, ...("kind" in part ? [] : slotParts(part, partPath, cell))];
     });
 }
 
@@ -103,7 +113,7 @@ function attributeConditions(box: BoxDefinition, cell: Cell): ReadonlySet<string
  */
 function slotIcons(box: BoxDefinition, path: string, cell: Cell): readonly MarkupIcon[] {
   return [
-    ...(box.parts ?? [])
+    ...framePartsOf(box)
       .filter((part) => part.shownIn(cell))
       .flatMap((part) => slotIcons(part, `${path}/${pathSegment(part)}`, cell)),
     ...box
@@ -161,9 +171,147 @@ function claimedIcons(slots: readonly MarkupIcon[], markup: readonly MarkupIcon[
 }
 
 /**
+ * The inner root as an instance part renders it in an outer cell: its label shows the characters the
+ * outer cell gives its TEXT property, where it gives one.
+ */
+function instanceRoot(part: InstanceDefinition, cell: Cell): ComponentDefinition {
+  const { label } = part.of;
+  if (label?.textProperty === undefined) {
+    return part.of;
+  }
+  const characters = part.properties?.(cell).text?.[label.textProperty];
+  return characters === undefined ? part.of : { ...part.of, label: { ...label, characters } };
+}
+
+/**
+ * Check that each attribute condition of a definition's state table holds in a cell exactly where
+ * the element that takes the states carries its attribute: the root, or the part `statePart` names
+ * inside it, and then each attribute condition the root's own classes name on the root itself.
+ *
+ * @param definition - The definition.
+ * @param holds - Whether a variant holds in the cell, as the definition's state table says.
+ * @param elements - The cell's markup.
+ * @param measured - The index of the root's element.
+ * @param where - How a failure names the cell and the element.
+ * @returns The element that takes the states.
+ */
+function checkAttributeStates(
+  definition: ComponentDefinition,
+  holds: { readonly cell: Cell; readonly variant: (variant: string) => boolean },
+  elements: readonly MarkupElement[],
+  measured: number,
+  where: string
+): MarkupElement | undefined {
+  const root = elements[measured];
+  const stateTaker = statePartOf(definition, elements, measured) ?? root;
+  if (root === undefined || stateTaker === undefined) {
+    return undefined;
+  }
+  for (const [variant, carries] of ATTRIBUTE_VARIANTS) {
+    expect(holds.variant(variant), `${where}: ${variant}`).toBe(carries(stateTaker));
+  }
+  if (stateTaker !== root) {
+    for (const variant of attributeConditions(definition, holds.cell)) {
+      expect(holds.variant(variant), `${where}: ${variant} on the root`).toBe(
+        ATTRIBUTE_VARIANTS.get(variant)?.(root) === true
+      );
+    }
+  }
+  return stateTaker;
+}
+
+/** Whether a variant of a definition's state table holds in a cell, as a condition. */
+function conditionHolds(definition: ComponentDefinition, cell: Cell): (variant: string) => boolean {
+  const meaningOf = makeStateTable(definition);
+  return (variant) => {
+    const meaning = meaningOf(variant);
+    return meaning.kind === "condition" && meaning.holds(cell);
+  };
+}
+
+/**
+ * Check that an instance's element shows the inner cell the part names: its attribute conditions, as
+ * {@link checkAttributeStates} checks a root's, and each fact the inner definition declares that the
+ * markup at and around the element shows. A group variant holds where the element or one around it is
+ * the group in that state, a peer variant where a sibling before it is the peer, and a tag variant
+ * on the element itself. The markup inside the element stays the inner set's.
+ *
+ * @param of - The inner definition.
+ * @param inner - The inner cell the part names.
+ * @param elements - The outer cell's markup.
+ * @param index - The index of the instance's element.
+ * @param where - How a failure names the cell and the instance.
+ */
+function checkInnerCell(
+  of: ComponentDefinition,
+  inner: Cell,
+  elements: readonly MarkupElement[],
+  index: number,
+  where: string
+): void {
+  const holds = conditionHolds(of, inner);
+  checkAttributeStates(of, { cell: inner, variant: holds }, elements, index, where);
+  const element = elements[index];
+  if (element === undefined) {
+    return;
+  }
+  const around = [element, ...ancestorsOf(elements, index)];
+  const before = siblingsBefore(elements, index);
+  const shown = (variant: string): boolean | undefined => {
+    const group = GROUP_VARIANTS.get(variant);
+    if (group !== undefined) {
+      return around.some(group);
+    }
+    const peer = PEER_VARIANTS.get(variant);
+    if (peer !== undefined) {
+      return before.some(peer);
+    }
+    return TAG_VARIANTS.get(variant)?.(element);
+  };
+  for (const variant of of.facts.keys()) {
+    const markup = shown(variant);
+    if (markup !== undefined) {
+      expect(holds(variant), `${where}: ${variant}`).toBe(markup);
+    }
+  }
+}
+
+/**
+ * Check an instance part's element, and stop there, since the inner set's own renderer test owns
+ * the markup inside it: its `class` holds the inner definition's classes for the inner cell with the
+ * classes the outer component passes merged after them by `cn`, in any order, it carries the
+ * `data-slot` the inner definition says its root carries in the inner cell, it shows the inner cell
+ * the part names, as {@link checkInnerCell} says, and it holds the inner root's label characters, or
+ * those the outer cell gives the label's TEXT property.
+ */
+function checkInstance(
+  part: InstanceDefinition,
+  cell: Cell,
+  elements: readonly MarkupElement[],
+  index: number | undefined,
+  where: string
+): void {
+  const element = index === undefined ? undefined : elements[index];
+  const inner = part.cell(cell);
+  const merged = cn(part.of.classesFor(inner), part.classesFor?.(cell) ?? "");
+  expect(splitClasses(element?.attributes.get("class") ?? "").toSorted(), `${where}: the class`).toEqual(
+    splitClasses(merged).toSorted()
+  );
+  expect(element?.attributes.get("data-slot"), `${where}: the data-slot`).toBe(rootSlotOf(part.of, inner));
+  if (index !== undefined) {
+    checkInnerCell(part.of, inner, elements, index, where);
+  }
+  const root = instanceRoot(part, cell);
+  const label = expectedLabel(root, inner);
+  expect(markupLabel(labelHolder(elements, index, root), label), `${where}: the label`).toEqual(label);
+}
+
+/**
  * Check a definition against its renderer's markup for each cell: the cell renders one measured
- * element, each attribute condition holds exactly where its element carries the attribute, and the
- * parts, icons, labels, images and styles sit where the definition says.
+ * element, which carries the `data-slot` the definition says its root carries in the cell, each
+ * attribute condition holds exactly where its element carries the attribute, and the parts, icons,
+ * labels, images and styles sit where the definition says. An instance part is checked as
+ * {@link checkInstance} says.
  */
 export function checkMarkup(
   definition: ComponentDefinition,
@@ -184,17 +332,29 @@ export function checkMarkup(
     expect(roots, `${key}: the ${definition.slot} parts`).toHaveLength(1);
     // The one root part the line above checks.
     for (const { root, measured } of roots) {
-      const stateTaker = statePartOf(definition, elements, measured) ?? root;
-      for (const [variant, carries] of ATTRIBUTE_VARIANTS) {
-        expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(carries(stateTaker));
-      }
-      if (stateTaker !== root) {
-        for (const variant of attributeConditions(definition, cell)) {
-          expect(holdsIn(variant, cell), `${key}: ${variant} on the root`).toBe(
-            ATTRIBUTE_VARIANTS.get(variant)?.(root) === true
-          );
-        }
-      }
+      expect(root.attributes.get("data-slot"), `${key}: the root's data-slot`).toBe(
+        rootSlotOf(definition, cell)
+      );
+      // The instance parts come first, since the inner set owns the markup inside each, which the
+      // variant checks below leave alone.
+      const names = new Set(boxNames(definition, definition.slot));
+      const shown = slotParts(definition, "", cell);
+      const rendered = markupParts(elements, measured, definition, names, cell);
+      const elementAt = new Map(rendered);
+      const instances = new Set(
+        shown.flatMap(({ path, part }) => {
+          const index = elementAt.get(path);
+          return "kind" in part && index !== undefined ? [index] : [];
+        })
+      );
+      const stateTaker =
+        checkAttributeStates(
+          definition,
+          { cell, variant: conditionHolds(definition, cell) },
+          elements,
+          measured,
+          key
+        ) ?? root;
       if (stateTaker.attributes.has("data-rac")) {
         const hovered = Object.hasOwn(forcedAttributesFor(renderer, cell), "data-hovered");
         for (const variant of REACT_ARIA_HOVER) {
@@ -210,7 +370,7 @@ export function checkMarkup(
       );
       for (const [variant, matches] of GROUP_VARIANTS) {
         const ancestors = ancestorsOf(elements, measured);
-        const namers = elementsNaming(elements, measured, variant);
+        const namers = elementsNaming(elements, measured, variant, instances);
         const holds = rootVariants.has(variant)
           ? ancestors.some(matches)
           : namers.length > 0
@@ -224,7 +384,7 @@ export function checkMarkup(
       // An attribute variant an element below the root names on itself holds exactly where that
       // element carries the attribute, as a Navigation menu caret carries its Root's `data-side`.
       for (const [variant, carries] of DESCENDANT_ATTRIBUTE_VARIANTS) {
-        for (const index of elementsNaming(elements, measured, variant)) {
+        for (const index of elementsNaming(elements, measured, variant, instances)) {
           const element = elements[index];
           expect(holdsIn(variant, cell), `${key}: ${variant} on ${element?.name ?? ""}`).toBe(
             element !== undefined && carries(element)
@@ -259,23 +419,23 @@ export function checkMarkup(
         `${key}: the label`
       ).toEqual(rootLabel);
       expect(markupImage(root), `${key}: the image`).toEqual(expectedImage(definition));
-      const names = new Set(boxNames(definition, definition.slot));
-      const shown = slotParts(definition, "", cell);
-      const rendered = markupParts(elements, measured, definition, names);
       const renderedPaths = rendered.map(([path]) => path);
       expect(shown.map(({ path }) => path).toSorted(), `${key}: parts`).toEqual(renderedPaths.toSorted());
       // One element per path, so the lookup below reads the only element at each path.
       expect(new Set(renderedPaths).size, `${key}: a part rendered twice`).toBe(renderedPaths.length);
-      const elementAt = new Map(rendered);
       const owners = new Map([
         [measured, ""],
         ...rendered.map(([path, index]): [number, string] => [index, path]),
       ]);
       const slots = slotIcons(definition, "", cell);
-      expect(slots, `${key}: icons`).toEqual(claimedIcons(slots, markupIcons(elements, owners)));
+      expect(slots, `${key}: icons`).toEqual(claimedIcons(slots, markupIcons(elements, owners, instances)));
       for (const { path, part } of shown) {
         const index = elementAt.get(path);
         const element = index === undefined ? undefined : elements[index];
+        if ("kind" in part) {
+          checkInstance(part, cell, elements, index, `${key}: the instance on ${path}`);
+          continue;
+        }
         const partLabel = expectedLabel(part, cell);
         expect(
           markupLabel(labelHolder(elements, index, part), partLabel),

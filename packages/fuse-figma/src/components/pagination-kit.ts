@@ -134,6 +134,7 @@ export const PAGINATION_EDGE: ComponentDefinition = {
   name: "Pagination edge",
   slot: "pagination-edge",
   element: { tag: "a", attributes: {} },
+  elementSlot: (cell) => `pagination-${directionOf(cell)}`,
   axes: [{ name: "direction", values: ["previous", "next"] }, STATE_AXIS],
   columnAxis: "state",
   classesFor: (cell) =>
