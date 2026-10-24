@@ -86,8 +86,14 @@ import type {
 } from "../components/component-spec";
 import { KIT } from "../components/kit-registry";
 import { makeStateTable } from "../components/state-table";
-import { loadRenderers } from "./cell-renderers";
+import { isClientRenderer, loadRenderers } from "./cell-renderers";
 import type { CellRendering } from "./cell-renderers";
+
+/**
+ * The kit sets whose renderer mounts on the compare page, by key, written by hand so a new one is a
+ * decision: none yet, until the menu sets land.
+ */
+const CHECKED_ON_THE_MOUNTED_PAGE: readonly string[] = [];
 
 describe("each kit definition against the markup of its component", () => {
   it.each(KIT.map(({ definition }) => [definition.name, definition] as const))(
@@ -118,14 +124,22 @@ describe("each kit definition against the markup of its component", () => {
 
   it("renders one measured element per cell, holds each attribute condition exactly where it carries it, and places its parts, icons and label", async () => {
     const renderers = await loadRenderers();
+    // No KIT key lacks a renderer.
+    expect(
+      KIT.filter(({ definition }) => renderers.has(definition.key)).map(({ definition }) => definition.key)
+    ).toEqual(KIT.map(({ definition }) => definition.key));
+    // A client set's popup renders only once a page mounts it, so `figma:compare` checks its markup
+    // on the mounted page, in the self-check and in every run. These are the sets it covers.
+    expect(
+      KIT.filter(({ definition }) => {
+        const renderer = renderers.get(definition.key);
+        return renderer !== undefined && isClientRenderer(renderer);
+      }).map(({ definition }) => definition.key)
+    ).toEqual(CHECKED_ON_THE_MOUNTED_PAGE);
     const checked = KIT.flatMap((entry) => {
       const renderer = renderers.get(entry.definition.key);
-      return renderer === undefined ? [] : [{ ...entry, renderer }];
+      return renderer === undefined || isClientRenderer(renderer) ? [] : [{ ...entry, renderer }];
     });
-    // No KIT key lacks a renderer.
-    expect(checked.map(({ definition }) => definition.key)).toEqual(
-      KIT.map(({ definition }) => definition.key)
-    );
     for (const { definition, previewCells, renderer } of checked) {
       checkMarkup(definition, previewCells, renderer);
     }

@@ -14,7 +14,7 @@
  * every animation and transition, so a pending spinner stays at 0°.
  */
 
-import type { ComponentDefinition } from "../components/component-spec.ts";
+import type { Cell, ComponentDefinition } from "../components/component-spec.ts";
 import type { ThemeStamps } from "./preview-theme.ts";
 
 /** The origin the browser loads the page and its assets from, served by request interception. */
@@ -26,9 +26,20 @@ export const ASSET_PATHS = {
   themes: "/fuse/themes.css",
   preflight: "/tailwind/preflight.css",
   fonts: "/fonts/fonts.css",
+  /** The bundle that mounts the client cells, as `client-bundle.ts` builds it. */
+  client: "/compare/client.js",
   /** Font files, by file name under this prefix. */
   fontFiles: "/fonts/files/",
 } as const;
+
+/**
+ * The attribute the client bundle sets on `<html>` once it has mounted the client cells, which the
+ * page waits for before it measures: {@link MOUNTED_DONE}, or the reason the mount failed.
+ */
+export const MOUNTED = "data-compare-mounted";
+
+/** {@link MOUNTED}'s value once every client cell is mounted and its popup placed. */
+export const MOUNTED_DONE = "done";
 
 /** The layers Fuse's built `styles.css` declares, in its order. */
 const STYLES_LAYERS = ["properties", "theme", "base", "components", "utilities"] as const;
@@ -51,8 +62,21 @@ export type PageLayout = {
  */
 export const PAGE_LAYOUT: PageLayout = { padding: 8, slotWidth: 528, slotHeight: 336, columns: 6, top: 16 };
 
-/** A cell's place on the page: its id and its element's HTML. */
-export type PageCell = { readonly id: string; readonly html: string };
+/**
+ * What a cell's slot holds: the static markup of its element, or the set and cell the page's client
+ * bundle mounts there, as an overlay renders only once a page runs it.
+ */
+export type CellContent =
+  | { readonly _tag: "Static"; readonly html: string }
+  | { readonly _tag: "Client"; readonly set: string; readonly cell: Cell };
+
+/** A cell's place on the page: its id, what its slot holds, and the elements its box spans. */
+export type PageCell = {
+  readonly id: string;
+  readonly content: CellContent;
+  /** Selectors for the measured elements, as {@link cellSelector} takes them. */
+  readonly measured: readonly string[];
+};
 
 /** A point in CSS pixels. */
 export type PagePoint = { readonly x: number; readonly y: number };
@@ -60,18 +84,23 @@ export type PagePoint = { readonly x: number; readonly y: number };
 /** A size in CSS pixels. */
 export type PageSize = { readonly width: number; readonly height: number };
 
+/** A rectangle in CSS pixels. */
+export type PageRect = PagePoint & PageSize;
+
 /**
- * The top-left corner of a cell's slot.
+ * A cell's slot: the part of the page its element and its crop stay inside.
  *
  * @param layout - The page layout.
  * @param index - The cell's position on the page.
- * @returns The slot's corner. The measured element's border box starts `padding` pixels further
- *   in.
+ * @returns The slot's rectangle. The element's border box starts `padding` pixels in from its
+ *   corner.
  */
-function slotOrigin(layout: PageLayout, index: number): PagePoint {
+export function slotRect(layout: PageLayout, index: number): PageRect {
   return {
     x: (index % layout.columns) * layout.slotWidth,
     y: layout.top + Math.floor(index / layout.columns) * layout.slotHeight,
+    width: layout.slotWidth,
+    height: layout.slotHeight,
   };
 }
 
@@ -111,13 +140,15 @@ export function cellSelector(id: string, measured: string): string {
  * @returns A selector list from the document root, empty for no cells.
  */
 export function fontSweepSelector(
-  requests: readonly { readonly id: string; readonly measured: string }[]
+  requests: readonly { readonly id: string; readonly measured: readonly string[] }[]
 ): string {
   return requests
-    .flatMap(({ id, measured }) => {
-      const root = cellSelector(id, measured);
-      return [root, `${root} *`];
-    })
+    .flatMap(({ id, measured }) =>
+      measured.flatMap((element) => {
+        const root = cellSelector(id, element);
+        return [root, `${root} *`];
+      })
+    )
     .join(", ");
 }
 
@@ -165,6 +196,25 @@ export function measuredSelector(definition: Pick<ComponentDefinition, "slot" | 
 }
 
 /**
+ * The selectors of the elements a cell's box spans: the measured element of {@link measuredSelector},
+ * or, for an open composite, the trigger and popup its renderer names by `data-slot`, whose union
+ * the page measures.
+ *
+ * @param definition - The root's slot and, for a root without a `data-slot`, its element.
+ * @param union - The `data-slot` of each element an open composite's box spans, undefined for a cell
+ *   that measures its root.
+ * @returns One selector per measured element, as {@link cellSelector} takes it.
+ */
+export function measuredSelectors(
+  definition: Pick<ComponentDefinition, "slot" | "element">,
+  union: readonly string[] | undefined
+): readonly string[] {
+  return union === undefined
+    ? [measuredSelector(definition)]
+    : union.map((slot) => `[data-slot=${cssString(slot)}]`);
+}
+
+/**
  * A value as a quoted CSS string, as CSSOM's "serialize a string" writes it: NUL becomes U+FFFD, a
  * control character from U+0001 to U+001F and U+007F becomes a backslash, its code point in hex and
  * a space, and `"` and `\` take a backslash. A raw newline would end the string and void the
@@ -186,6 +236,27 @@ function cssString(value: string): string {
 
 /** The selector of the element that paints the theme's `background`. */
 export const BACKGROUND_PROBE = "[data-compare-probe]";
+
+/**
+ * The selector of every client cell's slot. The page hides each one and shows only its measured
+ * elements, so a popup part's crop shows none of the trigger it anchors to.
+ */
+export const CLIENT_HIDDEN = "[data-compare-client]";
+
+function slotHtml(cell: PageCell, { x, y }: PagePoint): string {
+  const style = `left:${String(x)}px;top:${String(y)}px`;
+  switch (cell.content._tag) {
+    case "Static":
+      return `<div data-compare-cell="${cell.id}" style="${style}">${cell.content.html}</div>`;
+    case "Client": {
+      const marks = attributes({
+        "data-compare-client": cell.content.set,
+        "data-compare-props": JSON.stringify(cell.content.cell),
+      });
+      return `<div data-compare-cell="${cell.id}"${marks} style="${style}"></div>`;
+    }
+  }
+}
 
 function attributes(entries: Readonly<Record<string, string>>): string {
   return Object.entries(entries)
@@ -209,10 +280,13 @@ export function previewDocument(
   layout: PageLayout,
   hostCss: string
 ): string {
-  const slots = cells.map((cell, index) => {
-    const { x, y } = slotOrigin(layout, index);
-    return `<div data-compare-cell="${cell.id}" style="left:${x}px;top:${y}px">${cell.html}</div>`;
-  });
+  const slots = cells.map((cell, index) => slotHtml(cell, slotRect(layout, index)));
+  const clients = cells.filter((cell) => cell.content._tag === "Client");
+  const shown = clients.flatMap((cell) =>
+    cell.measured.map((element) => `${cellSelector(cell.id, element)}{visibility:visible}`)
+  );
+  const clientCss = clients.length === 0 ? [] : [`${CLIENT_HIDDEN}{visibility:hidden}`, ...shown];
+  const script = clients.length === 0 ? [] : [`<script type="module" src="${ASSET_PATHS.client}"></script>`];
   return `<!doctype html>
 <html lang="en"${attributes(stamps.root)}>
 <head>
@@ -231,11 +305,12 @@ html,body{background:transparent!important}
 body{margin:0;font-family:var(--font-sans);color:var(--foreground);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 [data-compare-cell]{position:absolute;display:flex;align-items:flex-start;padding:${layout.padding}px}
 ${BACKGROUND_PROBE}{position:absolute;left:0;top:0;width:4px;height:4px;background:var(--background)}
+${clientCss.join("\n")}
 </style>
 </head>
 <body${attributes(stamps.body)}>
 <div data-compare-probe></div>
-${slots.join("\n")}
+${[...slots, ...script].join("\n")}
 </body>
 </html>
 `;

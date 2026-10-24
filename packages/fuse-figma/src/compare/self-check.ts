@@ -5,10 +5,19 @@
  * second render.
  *
  * The fake export cuts each crop to the box plus a margin, as render bounds would be, and places
- * the boxes at fractional canvas positions, so the alignment math has work to do. The kit's
+ * the boxes at fractional canvas positions, so the alignment math has work to do. A client cell
+ * keeps the browser crop's whole padding, so a popup's shadow stays in its PNG, as Figma's render
+ * bounds hold a node's effects. The kit's
  * first hover cell gets a magenta square painted into its PNG, and its first focus cell grows by
  * a pixel. A working harness reports both at the top, the grown box first, and every other cell
  * at no mismatch with equal box sizes.
+ *
+ * Beside the kit's cells it renders the overlay fixtures of `overlay-fixture-cell.ts` as client
+ * cells: a Popover's popup, the open Popover as its trigger and popup together, and a Dropdown menu
+ * item and the selected item of a Select, each at rest and highlighted. They prove that a client
+ * cell mounts, measures and forces its state the same way twice and passes the markup check. The
+ * Select item's rest cell must show no fill and its highlighted cell the theme's `accent`, which
+ * fails where a stray focus or highlight from the mount draws.
  */
 
 import { Result } from "effect";
@@ -19,17 +28,22 @@ import { buildComponentSets } from "../components/build-kit.ts";
 import { variantKey } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
-import { loadRenderers } from "./cell-renderers.ts";
+import type { CellRequest } from "./browser-render.ts";
+import { loadClientRenderer, loadRenderers } from "./cell-renderers.ts";
+import { OVERLAY_FIXTURES } from "./overlay-fixtures.ts";
+import type { FixtureFill } from "./overlay-fixtures.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
+import type { PageLayout } from "./preview-page.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
 import { crop, encodePng } from "./raster.ts";
 import type { Raster } from "./raster.ts";
 import { parseSnapshot } from "./read-snapshot.ts";
-import { compareSnapshot, planCells } from "./run-compare.ts";
-import type { CompareFailure, CompareOptions, CompareReport } from "./run-compare.ts";
+import { compareSnapshot, planCells, renderables, withFixtures } from "./run-compare.ts";
+import type { CompareFailure, CompareFixture, CompareOptions, CompareReport } from "./run-compare.ts";
 import { SNAPSHOT_FORMAT, SNAPSHOT_VERSION } from "./snapshot.ts";
 import type { InstanceSnapshot, KitSnapshot, PreviewSnapshot } from "./snapshot.ts";
 import { tokenColorsIn, unchangedByDesign } from "./unchanged-by-design.ts";
+import type { TokenColorOf } from "./unchanged-by-design.ts";
 
 /** The fake previews: a light internal theme at dense, and a dark company theme at comfortable. */
 const PREVIEWS = [
@@ -55,8 +69,66 @@ const PREVIEWS = [
   },
 ] as const;
 
-/** How far the fake render bounds reach past the box, in canvas pixels. */
+/** How far a static cell's fake render bounds reach past the box, in canvas pixels. */
 const RENDER_MARGIN = 3;
+
+/**
+ * How far a cell's fake render bounds reach past its box. A static cell's reach 3 pixels, which
+ * covers the 3px rings the kit draws. A client cell's reach the browser crop's whole padding, since
+ * a popup's shadow spreads further, and Figma's render bounds hold a node's whole shadow.
+ */
+function renderMargin(request: CellRequest, layout: PageLayout): number {
+  return request.content._tag === "Client" ? layout.padding : RENDER_MARGIN;
+}
+
+/**
+ * The overlay fixtures with their client renderers, loaded as `loadRenderers` loads a kit set's. The
+ * renderings import the Fuse build, so call this only after `locateFuseBuild` found it.
+ */
+async function overlayFixtures(): Promise<readonly CompareFixture[]> {
+  return Promise.all(
+    OVERLAY_FIXTURES.map(async ({ definition, source, cells }) => ({
+      definition,
+      cells,
+      renderer: await loadClientRenderer(source),
+    }))
+  );
+}
+
+/** How far inside its start edge, in device pixels, a fixture's fill is read, clear of a rounded corner's curve at mid height. */
+const FILL_INSET = 4;
+
+/**
+ * Whether a fixture cell shows the fill its fixture names, read at mid height just inside its start
+ * edge.
+ *
+ * @returns Undefined when it does, or a line that says what the cell showed.
+ */
+function fillMismatch(
+  raster: Raster,
+  padding: number,
+  fill: FixtureFill,
+  colorOf: TokenColorOf,
+  where: string
+): string | undefined {
+  const x = padding * DEVICE_SCALE + FILL_INSET;
+  const y = Math.floor(raster.height / 2);
+  const [r = 0, g = 0, b = 0, a = 0] = crop(raster, { x, y }, { width: 1, height: 1 }).data;
+  const shown = `rgba(${String(r)} ${String(g)} ${String(b)} ${String(a)})`;
+  if (fill._tag === "None") {
+    return a === 0 ? undefined : `${where}: shows ${shown} where it paints no fill`;
+  }
+  const color = colorOf(fill.token);
+  if (color?.kind !== "literal") {
+    return `${where}: the theme resolves no color for ${fill.token}`;
+  }
+  const expected = [color.color.r, color.color.g, color.color.b].map((channel) => Math.round(channel * 255));
+  const matches =
+    [r, g, b].every((channel, index) => Math.abs(channel - (expected[index] ?? 0)) <= 1) && a === 255;
+  return matches
+    ? undefined
+    : `${where}: shows ${shown} where it paints ${fill.token}, rgb(${expected.join(" ")})`;
+}
 
 /**
  * The variant key of the first cell the kit's preview frames place in a state, in registry
@@ -112,12 +184,23 @@ export async function runSelfCheck(
   if (Result.isFailure(build)) {
     return Result.fail(build.failure);
   }
-  const variants = KIT.flatMap(({ definition, previewCells }) =>
-    previewCells.map((cell) => variantKey(definition, cell))
+  const fixtures = await overlayFixtures();
+  const fillOf = new Map(
+    OVERLAY_FIXTURES.flatMap(({ definition, fill }) =>
+      fill === undefined ? [] : [[definition.key, fill] as const]
+    )
   );
+  const fillMismatches: string[] = [];
+  const variants = [
+    ...KIT.flatMap(({ definition, previewCells }) =>
+      previewCells.map((cell) => variantKey(definition, cell))
+    ),
+    ...fixtures.flatMap(({ definition, cells }) => cells.map((cell) => variantKey(definition, cell))),
+  ];
   const painted: Perturbed = { preview: PREVIEWS[0].key, variant: firstInState("hover") };
   const grown: Perturbed = { preview: PREVIEWS[1].key, variant: firstInState("focus") };
-  const renderers = await loadRenderers();
+  const renderers = withFixtures(await loadRenderers(), fixtures);
+  const renderable = renderables(renderers, fixtures);
   const componentSets = (await buildComponentSets()).map((set) => set.componentSet);
   const launched = await CompareBrowser.launch(await readPageAssets(build.success, renderers));
   if (Result.isFailure(launched)) {
@@ -138,7 +221,7 @@ export async function runSelfCheck(
         image: null,
       }));
       const unchanged = unchangedByDesign(componentSets, tokenColorsIn(theme.success));
-      const { planned, unsupported } = planCells(placeholders, renderers, unchanged);
+      const { planned, unsupported } = planCells(placeholders, renderable, unchanged);
       if (unsupported.length > 0) {
         throw new Error(
           `the comparison cannot render these cells of the kit: ${unsupported.map((entry) => entry.reason).join("; ")}`
@@ -152,6 +235,24 @@ export async function runSelfCheck(
       if (Result.isFailure(rendered)) {
         return Result.fail(rendered.failure);
       }
+      const colorOf = tokenColorsIn(theme.success);
+      for (const { instance, cell, definition, request } of planned) {
+        const fill = fillOf.get(definition.key)?.(cell);
+        const raster = rendered.success.cells.get(request.id)?.raster;
+        const mismatch =
+          fill === undefined || raster === undefined
+            ? undefined
+            : fillMismatch(
+                raster,
+                options.layout.padding,
+                fill,
+                colorOf,
+                `${preview.key} ${instance.variant}`
+              );
+        if (mismatch !== undefined) {
+          fillMismatches.push(mismatch);
+        }
+      }
       const instances = planned.map(({ instance, request }, index): InstanceSnapshot => {
         const cell = rendered.success.cells.get(request.id);
         if (cell === undefined) {
@@ -164,13 +265,14 @@ export async function runSelfCheck(
             cell.box.width + (preview.key === grown.preview && instance.variant === grown.variant ? 1 : 0),
           height: cell.box.height,
         };
+        const margin = renderMargin(request, options.layout);
         const renderBounds = {
-          x: box.x - RENDER_MARGIN,
-          y: box.y - RENDER_MARGIN,
-          width: cell.box.width + 2 * RENDER_MARGIN,
-          height: cell.box.height + 2 * RENDER_MARGIN,
+          x: box.x - margin,
+          y: box.y - margin,
+          width: cell.box.width + 2 * margin,
+          height: cell.box.height + 2 * margin,
         };
-        const inset = (options.layout.padding - RENDER_MARGIN) * DEVICE_SCALE;
+        const inset = (options.layout.padding - margin) * DEVICE_SCALE;
         // The PNG takes every device pixel the render bounds touch. Select trigger's 3px invalid ring
         // ends 0.09 device pixels into a column past a 110.546875px box, which a rounded width drops.
         const cut = crop(
@@ -209,12 +311,16 @@ export async function runSelfCheck(
   if (Result.isFailure(reread)) {
     throw reread.failure;
   }
-  const compared = await compareSnapshot(reread.success, options);
-  return Result.map(compared, (report) => judgeSelfCheck(report, [grown, painted]));
+  const compared = await compareSnapshot(reread.success, options, fixtures);
+  return Result.map(compared, (report) => judgeSelfCheck(report, [grown, painted], fillMismatches));
 }
 
-function judgeSelfCheck(report: CompareReport, expectedTop: readonly Perturbed[]): SelfCheckResult {
-  const lines: string[] = [];
+function judgeSelfCheck(
+  report: CompareReport,
+  expectedTop: readonly Perturbed[],
+  fillMismatches: readonly string[]
+): SelfCheckResult {
+  const lines: string[] = [...fillMismatches.map((line) => `fill: ${line}`)];
   const top = report.rows.slice(0, expectedTop.length);
   const topMatches = expectedTop.every(
     (expected, index) => top[index]?.preview === expected.preview && top[index].variant === expected.variant
@@ -239,7 +345,8 @@ function judgeSelfCheck(report: CompareReport, expectedTop: readonly Perturbed[]
     worstTolerant === 0 &&
     worstRaw === 0 &&
     flagged.length === 0 &&
-    report.skipped.length === 0;
+    report.skipped.length === 0 &&
+    fillMismatches.length === 0;
   lines.push(
     passed
       ? "Self-check passed: the two changed cells lead the report and every other cell matches exactly."

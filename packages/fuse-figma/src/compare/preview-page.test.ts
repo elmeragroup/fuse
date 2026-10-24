@@ -18,12 +18,16 @@ import type { ElementSelector } from "../components/component-spec";
 import { compileHostUtilities } from "../components/utility-css";
 import {
   ASSET_PATHS,
+  cellSelector,
+  CLIENT_HIDDEN,
   fontSweepSelector,
   forcedSelector,
   measuredSelector,
+  measuredSelectors,
   PAGE_LAYOUT,
   previewDocument,
 } from "./preview-page";
+import type { PageCell } from "./preview-page";
 
 /** The layers the built `styles.css` names, in the order its `@layer` statements first name them. */
 function declaredLayers(): readonly string[] {
@@ -32,13 +36,14 @@ function declaredLayers(): readonly string[] {
   return [...new Set(statements.flatMap(([, names = ""]) => names.split(",").map((name) => name.trim())))];
 }
 
+const STAMPS = {
+  root: { "data-theme": "light", "data-density": "dense" },
+  body: { "data-theme-variant": "internal", "data-theme-brand": "fkas", "data-theme-segment": "private" },
+};
+
 /** The `<style>` block's lines, trimmed and without blanks. */
-function styleLines(hostCss = ""): readonly string[] {
-  const stamps = {
-    root: { "data-theme": "light", "data-density": "dense" },
-    body: { "data-theme-variant": "internal", "data-theme-brand": "fkas", "data-theme-segment": "private" },
-  };
-  const html = previewDocument(stamps, [], PAGE_LAYOUT, hostCss);
+function styleLines(hostCss = "", cells: readonly PageCell[] = []): readonly string[] {
+  const html = previewDocument(STAMPS, cells, PAGE_LAYOUT, hostCss);
   const style = /<style>([\s\S]*?)<\/style>/.exec(html)?.[1] ?? "";
   return style
     .split("\n")
@@ -150,15 +155,77 @@ describe("the elements the font check reads", () => {
   it("are each cell's measured element and everything in it", () => {
     expect(
       fontSweepSelector([
-        { id: "day", measured: "div[data-rac]" },
-        { id: "button", measured: '[data-slot="button"]' },
+        { id: "day", measured: ["div[data-rac]"] },
+        { id: "button", measured: ['[data-slot="button"]'] },
       ])
     ).toBe(
       '[data-compare-cell="day"] div[data-rac], [data-compare-cell="day"] div[data-rac] *, [data-compare-cell="button"] [data-slot="button"], [data-compare-cell="button"] [data-slot="button"] *'
     );
   });
 
+  it("are both elements of a cell that measures a trigger and its popup", () => {
+    expect(fontSweepSelector([{ id: "open", measured: ['[data-slot="t"]', '[data-slot="p"]'] }])).toBe(
+      '[data-compare-cell="open"] [data-slot="t"], [data-compare-cell="open"] [data-slot="t"] *, [data-compare-cell="open"] [data-slot="p"], [data-compare-cell="open"] [data-slot="p"] *'
+    );
+  });
+
   it("are none for no cells", () => {
     expect(fontSweepSelector([])).toBe("");
+  });
+});
+
+// Unit under test: `measuredSelectors`, the elements a cell's box spans. Oracle: the rule that a
+// popup part measures its popup, its root as any other part, and an open composite measures the
+// union of the trigger and the popup its renderer names by `data-slot`.
+describe("the elements a cell's box spans", () => {
+  it("are the root alone for a renderer that names no union", () => {
+    expect(measuredSelectors({ slot: "popover-content" }, undefined)).toEqual([
+      '[data-slot="popover-content"]',
+    ]);
+  });
+
+  it("are the trigger and the popup an open composite's renderer names", () => {
+    expect(measuredSelectors({ slot: "popover-open" }, ["popover-trigger", "popover-content"])).toEqual([
+      '[data-slot="popover-trigger"]',
+      '[data-slot="popover-content"]',
+    ]);
+  });
+});
+
+// Unit under test: the slot `previewDocument` writes for a client cell, which the page's bundle
+// mounts. Oracle: the HTML attribute grammar, where `&quot;` in a double-quoted value is `"`, and
+// the CSS cascade, where `visibility: visible` on a descendant overrides an inherited `hidden`.
+describe("a client cell's slot", () => {
+  const client: PageCell = {
+    id: "c4",
+    content: { _tag: "Client", set: "fixture-popover", cell: { content: "header", note: 'a "b" & c' } },
+    measured: ['[data-slot="popover-content"]'],
+  };
+  const slotOf = (html: string) => /<div data-compare-cell="c4"[^>]*>(.*?)<\/div>/.exec(html);
+
+  it("names the set and the cell for the bundle, and holds no markup of its own", () => {
+    const html = previewDocument(STAMPS, [client], PAGE_LAYOUT, "");
+    const slot = slotOf(html);
+    expect(slot?.[1]).toBe("");
+    expect(slot?.[0]).toContain(' data-compare-client="fixture-popover"');
+    const props = /data-compare-props="([^"]*)"/.exec(slot?.[0] ?? "")?.[1] ?? "";
+    expect(JSON.parse(props.replaceAll("&quot;", '"').replaceAll("&amp;", "&"))).toEqual({
+      content: "header",
+      note: 'a "b" & c',
+    });
+  });
+
+  it("loads the client bundle after the slots, and a page of static cells loads none", () => {
+    const html = previewDocument(STAMPS, [client], PAGE_LAYOUT, "");
+    const script = `<script type="module" src="${ASSET_PATHS.client}"></script>`;
+    expect(html.indexOf(script)).toBeGreaterThan(html.indexOf('data-compare-cell="c4"'));
+    const staticCell: PageCell = { id: "c0", content: { _tag: "Static", html: "<b></b>" }, measured: ["b"] };
+    expect(previewDocument(STAMPS, [staticCell], PAGE_LAYOUT, "")).not.toContain("<script");
+  });
+
+  it("hides everything in the slot but the measured elements, as the trigger a popup part anchors to", () => {
+    const lines = styleLines("", [client]);
+    expect(lines).toContain(`${CLIENT_HIDDEN}{visibility:hidden}`);
+    expect(lines).toContain(`${cellSelector("c4", '[data-slot="popover-content"]')}{visibility:visible}`);
   });
 });

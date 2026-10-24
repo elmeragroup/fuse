@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 /**
  * How `figma:compare` renders each kit definition's cells: one renderer per definition, which turns
  * a cell into the real Fuse element. The page measures and crops the element's root part, the one
@@ -14,7 +15,14 @@
  * modules only in {@link loadRenderers}.
  *
  * To compare a new definition, add a module beside this one whose renderings build its element,
- * and list it below with the definition's key and its `dist/` entry.
+ * and list it below with the definition's key and its `dist/` entry. A client renderer's entry
+ * names its module and export once, as a {@link ClientSource}, which both {@link loadRenderers} and
+ * the page's bundle read.
+ *
+ * An overlay draws nothing in static markup: its popup portals into a container it resolves in an
+ * effect. A {@link ClientCellRenderer} declares that its cells hydrate on the page instead, which
+ * loads a browser bundle of those renderers, as `client-bundle.ts` builds it, and mounts each cell
+ * open in its slot.
  */
 
 import { createElement } from "react";
@@ -24,7 +32,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import type { ElmeraIconProps } from "../../../fuse/dist/icons.js";
 import type { Cell } from "../components/component-spec.ts";
-import { forcedPseudoClasses } from "./cells.ts";
+import { forcedPseudoClasses, highlightAttributes } from "./cells.ts";
+import type { Highlight } from "./cells.ts";
 
 /** Renders the cells of one kit definition with the real Fuse component. */
 export type CellRenderer = {
@@ -54,14 +63,67 @@ export type CellRenderer = {
    * hover and focus faces CSS draws from the pseudo classes the page forces.
    */
   readonly forcedAttributes?: (cell: Cell) => Readonly<Record<string, string>>;
+  /**
+   * How the set's markup shows a highlighted row, for a set with a `state=highlighted` cell: the page
+   * forces `:focus` on the row, or writes `data-highlighted` on it. Undefined for a set with none.
+   */
+  readonly highlight?: Highlight;
 };
 
 /** The part of a renderer its own module defines, beside its import of the Fuse build. */
-export type CellRendering = Pick<CellRenderer, "element" | "hostClasses" | "forcedAttributes">;
+export type CellRendering = Pick<CellRenderer, "element" | "hostClasses" | "forcedAttributes" | "highlight">;
 
-type RendererSource = Pick<CellRenderer, "set" | "entry"> & {
+/**
+ * The part of a client renderer its own module defines, which the page's bundle imports. The page
+ * mounts the element in the cell's slot with React's `createRoot` and waits for the popup to settle.
+ */
+export type ClientCellRendering = Pick<CellRenderer, "hostClasses" | "forcedAttributes" | "highlight"> & {
+  /**
+   * The real Fuse element for a parsed cell, open through `defaultOpen`, with its popup portalled
+   * into `container`, the cell's slot, through the overlay's `container` prop, so the popup lays out
+   * beside the trigger inside the slot. `turnedOn` is as for {@link CellRenderer.element}.
+   */
+  readonly element: (cell: Cell, turnedOn: ReadonlySet<string>, container: HTMLElement) => ReactElement;
+  /**
+   * The `data-slot` of each element an open composite's box spans, such as its trigger and its
+   * popup, whose union the page measures. Undefined for a popup part or a row, which the page
+   * measures as any other root.
+   */
+  readonly union?: readonly string[];
+};
+
+/**
+ * Where a client rendering lives: a module beside this one and the export that holds the rendering.
+ * The page's bundle imports it from there, and {@link loadRenderers} loads it from the same place.
+ */
+export type ClientModule = { readonly url: URL; readonly name: string };
+
+/** A client renderer as `SOURCES` lists it: its set, its build entry and its rendering's module. */
+export type ClientSource = Pick<CellRenderer, "set" | "entry"> & { readonly module: ClientModule };
+
+/** Renders the cells of one kit definition by mounting the real Fuse component on the page. */
+export type ClientCellRenderer = Pick<CellRenderer, "set" | "entry"> &
+  ClientCellRendering & { readonly module: ClientModule };
+
+/** A renderer of either kind. */
+export type AnyCellRenderer = CellRenderer | ClientCellRenderer;
+
+/**
+ * Whether a renderer's cells hydrate on the page.
+ *
+ * @param renderer - A renderer of either kind.
+ * @returns True for a client renderer.
+ */
+export function isClientRenderer(renderer: AnyCellRenderer): renderer is ClientCellRenderer {
+  return "module" in renderer;
+}
+
+/** A static renderer as `SOURCES` lists it, with the import of its module's rendering. */
+type StaticSource = Pick<CellRenderer, "set" | "entry"> & {
   readonly load: () => Promise<CellRendering>;
 };
+
+type RendererSource = StaticSource | ClientSource;
 
 const SOURCES: readonly RendererSource[] = [
   {
@@ -320,11 +382,39 @@ export const RENDERER_ENTRIES: readonly string[] = SOURCES.map((source) => sourc
  *
  * @returns Each renderer, by the key of the definition it renders.
  */
-export async function loadRenderers(): Promise<ReadonlyMap<string, CellRenderer>> {
+export async function loadRenderers(): Promise<ReadonlyMap<string, AnyCellRenderer>> {
   const renderers = await Promise.all(
-    SOURCES.map(async ({ load, ...source }): Promise<CellRenderer> => ({ ...source, ...(await load()) }))
+    SOURCES.map(async (source): Promise<AnyCellRenderer> => {
+      if ("module" in source) {
+        return loadClientRenderer(source);
+      }
+      const { load, ...named } = source;
+      return { ...named, ...(await load()) };
+    })
   );
   return new Map(renderers.map((renderer) => [renderer.set, renderer]));
+}
+
+/**
+ * Load a client renderer from the module its source names. It imports the Fuse build, so call this
+ * only after `locateFuseBuild` found it.
+ *
+ * @param source - The renderer's set, build entry and module.
+ * @returns The renderer.
+ * @throws When the module has no export by the source's name, which the source must fix.
+ */
+export async function loadClientRenderer(source: ClientSource): Promise<ClientCellRenderer> {
+  // SAFETY: a client renderer's module exports a ClientCellRendering under each name a source
+  // lists, as `overlay-fixture-cell.ts` does. The page's bundle imports the same name, and rolldown
+  // refuses a name the module does not export, so a wrong name fails both loads.
+  const renderings = (await import(source.module.url.href)) as Readonly<
+    Record<string, ClientCellRendering | undefined>
+  >;
+  const rendering = renderings[source.module.name];
+  if (rendering === undefined) {
+    throw new Error(`${source.module.url.pathname} exports no rendering ${source.module.name}`);
+  }
+  return { ...source, ...rendering };
 }
 
 /**
@@ -349,11 +439,17 @@ export function markedIcon(
  *
  * @param renderer - The cell's renderer, or the rendering its module defines.
  * @param cell - The parsed cell.
- * @returns The renderer's forced attributes for a cell whose state the page forces, and none for a
- *   cell it forces nothing on.
+ * @returns `data-highlighted` for a highlighted row its set marks, with the renderer's forced
+ *   attributes for a cell whose state the page forces, and none for a cell it forces nothing on.
  */
-export function forcedAttributesFor(renderer: CellRendering, cell: Cell): Readonly<Record<string, string>> {
-  return forcedPseudoClasses(cell).length === 0 ? {} : (renderer.forcedAttributes?.(cell) ?? {});
+export function forcedAttributesFor(
+  renderer: Pick<CellRendering, "forcedAttributes" | "highlight">,
+  cell: Cell
+): Readonly<Record<string, string>> {
+  const highlighted = highlightAttributes(cell, renderer.highlight);
+  return forcedPseudoClasses(cell, renderer.highlight).length === 0 && Object.keys(highlighted).length === 0
+    ? {}
+    : { ...highlighted, ...renderer.forcedAttributes?.(cell) };
 }
 
 /** No BOOLEAN property turned on, as a preview shows every property at its default. */

@@ -375,9 +375,36 @@ export function checkMarkup(
 ): void {
   for (const cell of cells) {
     for (const turnedOn of renderingsOf(definition)) {
-      checkRendering(definition, cell, turnedOn, renderer);
+      checkRendering(
+        definition,
+        cell,
+        turnedOn,
+        renderCellHtml(renderer, cell, turnedOn),
+        forcedAttributesFor(renderer, cell)
+      );
     }
   }
+}
+
+/**
+ * Check the markup the compare page mounted for a client cell, as {@link checkMarkup} checks a static
+ * cell's: a popup part or a row in its slot's HTML, and an open composite as its measured elements
+ * under one root that carries the composite's slot. The page mounts each cell with every BOOLEAN
+ * property at its default, as the previews show it.
+ *
+ * @param definition - The cell's definition.
+ * @param cell - The parsed cell.
+ * @param html - The mounted markup, read before the page forces any state.
+ * @param forcedAttributes - The attributes the page writes on the cell's forced element.
+ * @throws An assertion error naming the first difference, as the static check does.
+ */
+export function checkMountedMarkup(
+  definition: ComponentDefinition,
+  cell: Cell,
+  html: string,
+  forcedAttributes: Readonly<Record<string, string>>
+): void {
+  checkRendering(definition, cell, new Set(), html, forcedAttributes);
 }
 
 /** Check one rendering of a cell, with the given BOOLEAN properties turned on, as {@link checkMarkup} says. */
@@ -385,7 +412,8 @@ function checkRendering(
   definition: ComponentDefinition,
   cell: Cell,
   turnedOn: ReadonlySet<string>,
-  renderer: CellRendering
+  html: string,
+  forcedAttributes: Readonly<Record<string, string>>
 ): void {
   const meaningOf = makeStateTable(definition);
   const holdsIn = conditionHolds(definition, cell);
@@ -393,7 +421,7 @@ function checkRendering(
     turnedOn.size === 0
       ? variantKey(definition, cell)
       : `${variantKey(definition, cell)} with ${[...turnedOn].join(", ")} on`;
-  const elements = elementsOf(renderCellHtml(renderer, cell, turnedOn));
+  const elements = elementsOf(html);
   const roots = elements.flatMap((element, index) =>
     isRoot(definition, element) ? [{ root: element, measured: index }] : []
   );
@@ -418,7 +446,7 @@ function checkRendering(
     const stateTaker =
       checkAttributeStates(definition, { cell, variant: holdsIn }, elements, measured, key) ?? root;
     if (stateTaker.attributes.has("data-rac")) {
-      const hovered = Object.hasOwn(forcedAttributesFor(renderer, cell), "data-hovered");
+      const hovered = Object.hasOwn(forcedAttributes, "data-hovered");
       for (const variant of REACT_ARIA_HOVER) {
         expect(holdsIn(variant), `${key}: ${variant}`).toBe(hovered);
       }

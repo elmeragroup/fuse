@@ -16,16 +16,27 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { compileHostUtilities } from "../components/utility-css.ts";
-import { RENDERER_ENTRIES } from "./cell-renderers.ts";
-import type { CellRenderer } from "./cell-renderers.ts";
+import { isClientRenderer, RENDERER_ENTRIES } from "./cell-renderers.ts";
+import type { AnyCellRenderer } from "./cell-renderers.ts";
+import { buildClientBundle } from "./client-bundle.ts";
+import { OVERLAY_FIXTURES } from "./overlay-fixtures.ts";
 import { ASSET_PATHS } from "./preview-page.ts";
 
 /** The Fuse package, next to this one in the workspace. */
 const FUSE_ROOT = fileURLToPath(new URL("../../../fuse/", import.meta.url));
 
-/** The build outputs the comparison reads: the CSS, the icons and each renderer's entry. */
+/**
+ * The build outputs the comparison reads: the CSS, the icons, each renderer's entry and each entry
+ * the self-check's overlay fixtures import.
+ */
 const BUILD_OUTPUTS: readonly string[] = [
-  ...new Set(["dist/styles.css", "dist/themes.css", "dist/icons.js", ...RENDERER_ENTRIES]),
+  ...new Set([
+    "dist/styles.css",
+    "dist/themes.css",
+    "dist/icons.js",
+    ...RENDERER_ENTRIES,
+    ...OVERLAY_FIXTURES.map(({ source }) => source.entry),
+  ]),
 ];
 
 /** The font weights the page can load, every upright cut the package ships. */
@@ -49,6 +60,8 @@ export type PageAssets = {
   readonly fontPackage: string;
   /** The rules of every class a renderer names as the host's own. */
   readonly hostCss: string;
+  /** The bundle that mounts the client cells, empty when no renderer is a client renderer. */
+  readonly client: string;
 };
 
 /** The Fuse build and whether its sources changed after it. */
@@ -93,12 +106,13 @@ export function locateFuseBuild(): Result.Result<FuseBuild, FuseBuildMissing> {
  * Read the page's assets.
  *
  * @param build - The Fuse build.
- * @param renderers - The renderers, whose host classes the page compiles.
- * @returns The paths, the font CSS and the host's CSS.
+ * @param renderers - The renderers, whose host classes the page compiles and whose client
+ *   renderers it bundles.
+ * @returns The paths, the font CSS, the host's CSS and the client bundle.
  */
 export async function readPageAssets(
   build: FuseBuild,
-  renderers: ReadonlyMap<string, CellRenderer>
+  renderers: ReadonlyMap<string, AnyCellRenderer>
 ): Promise<PageAssets> {
   const fontPackage = dirname(fileURLToPath(import.meta.resolve("@fontsource/roboto/400.css")));
   const fontCss = FONT_WEIGHTS.map((weight) =>
@@ -117,5 +131,6 @@ export async function readPageAssets(
     hostCss: await compileHostUtilities(
       [...renderers.values()].flatMap((renderer) => renderer.hostClasses ?? [])
     ),
+    client: await buildClientBundle([...renderers.values()].filter(isClientRenderer)),
   };
 }
