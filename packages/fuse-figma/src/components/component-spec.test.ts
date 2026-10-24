@@ -1917,6 +1917,12 @@ const LABEL: LabelDefinition = {
 /** The text classes a label needs, which the chip's root carries and its parts inherit. */
 const TEXT_STYLE = "font-sans text-[14px] leading-[20px] text-[#000000]";
 
+/**
+ * What `white-space-collapse: collapse`, which `white-space: normal` and `nowrap` set, does to a label
+ * whose characters hold no run of white space: nothing (CSS Text 4 §3.1).
+ */
+const COLLAPSES = "the characters hold no run of white space or line break to collapse";
+
 /** A build context whose `font-sans` binds the synced family, as every kit label's does. */
 const FONT_SANS: FixtureContext = {
   variables: makeVariableIndex([
@@ -1975,7 +1981,8 @@ describe("a label's sizing", () => {
     const { variant, coverage } = await buildLabelled("w-[100px] whitespace-normal", { label: LABEL });
     expect(textOf(variant?.root)?.sizing).toEqual(FILL_WIDTH);
     expect(notesOf(coverage, "whitespace-normal")).toEqual([
-      ["white-space", "literal", "the label wraps at the box's width"],
+      ["text-wrap-mode", "literal", "the label wraps at the box's width"],
+      ["white-space-collapse", "dropped", COLLAPSES],
     ]);
   });
 
@@ -1983,28 +1990,32 @@ describe("a label's sizing", () => {
     const { variant, coverage } = await buildLabelled("flex w-[100px] whitespace-nowrap", { label: LABEL });
     expect(textOf(variant?.root)?.sizing).toEqual({ horizontal: HUG, vertical: HUG });
     expect(notesOf(coverage, "whitespace-nowrap")).toEqual([
-      ["white-space", "literal", "the label hugs its width"],
+      ["text-wrap-mode", "literal", "the label hugs its width"],
+      ["white-space-collapse", "dropped", COLLAPSES],
     ]);
   });
 
-  // Oracle: CSS Text 4 §6.3. `text-wrap: balance` and `pretty` choose where a wrapping text breaks its
-  // lines, and change nothing on a text that sets one line. A Figma text fills each line before the
-  // next, so the kit draws the breaks a greedy browser would.
+  // Oracle: CSS Text 4 §6.1 and §6.3. `text-wrap: balance` and `pretty` set `text-wrap-mode` to
+  // `wrap`, and their `text-wrap-style` chooses where a wrapping text breaks its lines, which changes
+  // nothing on a text that sets one line. A Figma text fills each line before the next, so the kit
+  // draws the breaks a greedy browser would.
   it.each(["text-balance", "text-pretty"])(
     "drops %s on a label that wraps, and on one that hugs its one line",
     async (className) => {
       const wrapping = await buildLabelled(`w-[100px] ${className}`, { label: LABEL });
       expect(textOf(wrapping.variant?.root)?.sizing).toEqual(FILL_WIDTH);
       expect(notesOf(wrapping.coverage, className)).toEqual([
+        ["text-wrap-mode", "literal", "the label wraps at the box's width"],
         [
-          "text-wrap",
+          "text-wrap-style",
           "dropped",
           "a Figma text fills each line before it starts the next, so it cannot even out its lines",
         ],
       ]);
       const hugging = await buildLabelled(`w-fit ${className}`, { label: LABEL });
       expect(notesOf(hugging.coverage, className)).toEqual([
-        ["text-wrap", "dropped", "the box hugs the label on one line"],
+        ["text-wrap-mode", "literal", "the box hugs the label on one line"],
+        ["text-wrap-style", "dropped", "the box hugs the label on one line"],
       ]);
     }
   );
@@ -2016,13 +2027,66 @@ describe("a label's sizing", () => {
       parts: [{ ...dot(""), label: LABEL }],
     });
     expect(notesOf(coverage, "text-balance")).toEqual([
-      ["text-wrap", "dropped", "the box hugs the label on one line"],
+      ["text-wrap-mode", "literal", "the box hugs the label on one line"],
+      ["text-wrap-style", "dropped", "the box hugs the label on one line"],
     ]);
   });
 
-  it("leaves text-balance unmapped beside nowrap, where the later of the two decides whether the text wraps", async () => {
-    const { coverage } = await buildLabelled("w-[100px] whitespace-nowrap text-balance", { label: LABEL });
-    expect(notesOf(coverage, "text-balance")).toEqual([["text-wrap", "unmapped", expect.any(String)]]);
+  // Oracle: CSS Cascade 4 §6.4, where the later of two declarations of one specificity wins, and
+  // Tailwind 4's output, which puts `.text-balance` before `.whitespace-nowrap`. So the element's
+  // `text-wrap-mode` is `nowrap`: the label hugs one line, `text-balance`'s mode loses and leaves no
+  // row, and its style has no lines to choose.
+  it("lets nowrap win over text-balance on one element, as the later rule does", async () => {
+    const { variant, coverage } = await buildLabelled("w-[100px] whitespace-nowrap text-balance", {
+      label: LABEL,
+    });
+    expect(textOf(variant?.root)?.sizing).toEqual({ horizontal: HUG, vertical: HUG });
+    expect(notesOf(coverage, "text-balance")).toEqual([
+      ["text-wrap-style", "dropped", "the label keeps to one line, so it breaks no lines to choose"],
+    ]);
+  });
+
+  // Oracle: CSS Cascade 4 §7.2, where an element takes its parent's value of an inherited property only
+  // where no declaration of its own sets the property, and CSS Text 4 §6.1, where `white-space: nowrap`
+  // and `text-wrap: balance` both set `text-wrap-mode`. So a `nowrap` the element declares keeps its
+  // text on one line under any `text-wrap` it inherits, as a Button label does inside Empty's
+  // `text-balance` content, and a `text-wrap` the element declares wraps a text whose `nowrap` it
+  // inherits. A root without a label sets no text of its own, so a mode it declares that no label
+  // reads drops.
+  describe("beside a white-space declared on another element", () => {
+    it("drops an inherited text-balance where the label's own nowrap keeps it on one line", async () => {
+      const { coverage } = await buildLabelled("flex text-balance", {
+        parts: [{ ...dot("flex whitespace-nowrap"), label: LABEL }],
+      });
+      expect(notesOf(coverage, "text-balance")).toEqual([
+        ["text-wrap-mode", "dropped", "the cell shows no text"],
+        ["text-wrap-style", "dropped", "the label keeps to one line, so it breaks no lines to choose"],
+      ]);
+    });
+
+    it("lets a text-balance the label's box declares wrap the text an inherited nowrap keeps on one line", async () => {
+      const { coverage } = await buildLabelled("flex whitespace-nowrap", {
+        parts: [{ ...dot("flex text-balance"), label: LABEL }],
+      });
+      expect(notesOf(coverage, "text-balance")).toEqual([
+        ["text-wrap-mode", "literal", "the box hugs the label on one line"],
+        ["text-wrap-style", "dropped", "the box hugs the label on one line"],
+      ]);
+    });
+
+    // The page is the element around the root, so the root's own `white-space` is the nearer one. With
+    // nothing between them, the build applies the page's declarations below the root's own, so the
+    // page's mode loses there and leaves no row, as any page declaration the root sets its own of does.
+    it("drops a page's text-balance where the root's own nowrap keeps the label on one line", async () => {
+      const { variant, coverage } = await buildFixture(
+        chip(`${TEXT_STYLE} whitespace-nowrap`, { label: LABEL }),
+        { ...FONT_SANS, page: [{ className: "body text-balance", property: "text-wrap", value: "balance" }] }
+      );
+      expect(textOf(variant?.root)?.sizing).toEqual({ horizontal: HUG, vertical: HUG });
+      expect(notesOf(coverage, "body text-balance")).toEqual([
+        ["text-wrap-style", "dropped", "the label keeps to one line, so it breaks no lines to choose"],
+      ]);
+    });
   });
 
   it("stretches across a column with a definite width, and hugs in a column that hugs its width", async () => {
@@ -2218,7 +2282,8 @@ describe("a label that ends in an ellipsis", () => {
     expect(notesOf(coverage, "truncate")).toEqual([
       ["overflow", "literal", "the box clips its content"],
       ["text-overflow", "literal", "the label ends in an ellipsis after 1 line"],
-      ["white-space", "literal", "the label keeps to one line"],
+      ["text-wrap-mode", "literal", "the label keeps to one line"],
+      ["white-space-collapse", "dropped", COLLAPSES],
     ]);
   });
 
@@ -2230,7 +2295,8 @@ describe("a label that ends in an ellipsis", () => {
     expect(notesOf(coverage, "truncate")).toEqual([
       ["overflow", "literal", "the box clips its content"],
       ["text-overflow", "dropped", "a flex box sets its text as a flex item, which takes no ellipsis"],
-      ["white-space", "literal", "the label hugs its width"],
+      ["text-wrap-mode", "literal", "the label hugs its width"],
+      ["white-space-collapse", "dropped", COLLAPSES],
     ]);
   });
 
@@ -2241,7 +2307,8 @@ describe("a label that ends in an ellipsis", () => {
     expect(notesOf(coverage, "truncate")).toEqual([
       ["overflow", "literal", "the box clips its content"],
       ["text-overflow", "dropped", "the box hugs the label, so it never overflows"],
-      ["white-space", "literal", "the label hugs its width"],
+      ["text-wrap-mode", "literal", "the label hugs its width"],
+      ["white-space-collapse", "dropped", COLLAPSES],
     ]);
   });
 
@@ -2421,7 +2488,8 @@ describe("a label below a root that sets its text layout", () => {
     expect(notesOf(coverage, "truncate")).toEqual([
       ["overflow", "literal", "the box clips its content"],
       ["text-overflow", "dropped", "the box holds no text of its own"],
-      ["white-space", "literal", "the label hugs its width"],
+      ["text-wrap-mode", "literal", "the label hugs its width"],
+      ["white-space-collapse", "dropped", COLLAPSES],
     ]);
   });
 
@@ -2508,7 +2576,8 @@ describe("a label that a native control sets on one line", () => {
     const { variant, coverage } = await buildLabelled("w-[200px] whitespace-normal", { label: ONE_LINE });
     expect(textOf(variant?.root)?.truncation).toEqual({ maxLines: 1 });
     expect(notesOf(coverage, "whitespace-normal")).toEqual([
-      ["white-space", "dropped", "the control sets its text on one line itself"],
+      ["text-wrap-mode", "dropped", "the control sets its text on one line itself"],
+      ["white-space-collapse", "dropped", "the control sets its text on one line itself"],
     ]);
   });
 
@@ -2548,11 +2617,13 @@ describe("a label that a native control wraps", () => {
   it("reads whitespace-normal as the wrap, and leaves a nowrap that stops it unmapped", async () => {
     const normal = await buildLabelled("w-[200px] whitespace-normal", { label: WRAPPING });
     expect(notesOf(normal.coverage, "whitespace-normal")).toEqual([
-      ["white-space", "literal", "the label wraps at the box's width"],
+      ["text-wrap-mode", "literal", "the label wraps at the box's width"],
+      ["white-space-collapse", "dropped", "the label draws the value's characters as written"],
     ]);
     const nowrap = await buildLabelled("w-[200px] whitespace-nowrap", { label: WRAPPING });
     expect(notesOf(nowrap.coverage, "whitespace-nowrap")).toEqual([
-      ["white-space", "unmapped", "no Figma field reads nowrap"],
+      ["text-wrap-mode", "unmapped", "no Figma field reads nowrap"],
+      ["white-space-collapse", "dropped", "the label draws the value's characters as written"],
     ]);
   });
 

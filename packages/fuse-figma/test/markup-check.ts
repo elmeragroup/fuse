@@ -20,7 +20,7 @@ import type {
   InstanceDefinition,
   PartDefinition,
 } from "../src/components/component-spec.ts";
-import { framePartsOf, rootSlotOf } from "../src/components/definition-parts.ts";
+import { allPartsOf, framePartsOf, rootSlotOf } from "../src/components/definition-parts.ts";
 import { labelCharacters } from "../src/components/label-layout.ts";
 import { makeStateTable } from "../src/components/state-table.ts";
 import {
@@ -35,6 +35,7 @@ import {
   markupLabel,
   markupParts,
   pathSegment,
+  rendersIn,
   siblingsBefore,
 } from "./markup-tree.ts";
 import type { MarkupIcon, MarkupLabel } from "./markup-tree.ts";
@@ -81,20 +82,22 @@ function boxNames(box: BoxDefinition, name: string): readonly string[] {
 }
 
 /**
- * Each part a cell renders below a box, with its path, such as
- * `/radio-group-indicator/(no data-slot)`, each part named by its {@link pathSegment}. The inner
- * component of an instance part holds parts of its own set, which the list leaves out.
+ * Each part a cell renders below a box with the given BOOLEAN properties turned on, as
+ * {@link rendersIn} says, with its path, such as `/radio-group-indicator/(no data-slot)`, each part
+ * named by its {@link pathSegment}. The inner component of an instance part holds parts of its own set,
+ * which the list leaves out.
  */
 function slotParts(
   box: BoxDefinition,
   path: string,
-  cell: Cell
+  cell: Cell,
+  turnedOn: ReadonlySet<string>
 ): readonly { readonly path: string; readonly part: PartDefinition | InstanceDefinition }[] {
   return (box.parts ?? [])
-    .filter((part) => part.shownIn(cell))
+    .filter((part) => rendersIn(part, cell, turnedOn))
     .flatMap((part) => {
       const partPath = `${path}/${pathSegment(part, box.parts ?? [])}`;
-      return [{ path: partPath, part }, ...("kind" in part ? [] : slotParts(part, partPath, cell))];
+      return [{ path: partPath, part }, ...("kind" in part ? [] : slotParts(part, partPath, cell, turnedOn))];
     });
 }
 
@@ -111,11 +114,16 @@ function attributeConditions(box: BoxDefinition, cell: Cell): ReadonlySet<string
  * The icons a cell places in a box and the parts it renders below it, in DOM order: a part's
  * icons sit inside it, before the box's own. Each names its owner by the box's part path.
  */
-function slotIcons(box: BoxDefinition, path: string, cell: Cell): readonly MarkupIcon[] {
+function slotIcons(
+  box: BoxDefinition,
+  path: string,
+  cell: Cell,
+  turnedOn: ReadonlySet<string>
+): readonly MarkupIcon[] {
   return [
     ...framePartsOf(box)
-      .filter((part) => part.shownIn(cell))
-      .flatMap((part) => slotIcons(part, `${path}/${pathSegment(part, box.parts ?? [])}`, cell)),
+      .filter((part) => rendersIn(part, cell, turnedOn))
+      .flatMap((part) => slotIcons(part, `${path}/${pathSegment(part, box.parts ?? [])}`, cell, turnedOn)),
     ...box
       .iconsFor(cell)
       .map(({ direct, dataIcon, classes }) => ({ owner: path, direct, dataIcon, classes })),
@@ -313,6 +321,7 @@ function checkInstance(
  *
  * @param box - The root's or the part's definition.
  * @param cell - The cell.
+ * @param turnedOn - The BOOLEAN properties that start false which the rendering turns on.
  * @param elements - The cell's markup.
  * @param index - The index of the box's element, undefined where the markup lacks it.
  * @param where - How a failure names the cell and the box.
@@ -320,6 +329,7 @@ function checkInstance(
 function checkElementChildren(
   box: BoxDefinition,
   cell: Cell,
+  turnedOn: ReadonlySet<string>,
   elements: readonly MarkupElement[],
   index: number | undefined,
   where: string
@@ -329,7 +339,8 @@ function checkElementChildren(
     return;
   }
   const labelElement = box.label?.shownIn(cell) === true && box.label.textElement !== undefined ? 1 : 0;
-  const drawn = (box.parts ?? []).filter((part) => part.shownIn(cell)).length + box.iconsFor(cell).length;
+  const drawn =
+    (box.parts ?? []).filter((part) => rendersIn(part, cell, turnedOn)).length + box.iconsFor(cell).length;
   expect(
     elements.filter((element) => element.parent === index),
     where
@@ -337,151 +348,177 @@ function checkElementChildren(
 }
 
 /**
- * Check a definition against its renderer's markup for each cell: the cell renders one measured
- * element, which carries the `data-slot` the definition says its root carries in the cell, each
- * attribute condition holds exactly where its element carries the attribute, and the parts, icons,
- * labels, images and styles sit where the definition says. An instance part is checked as
- * {@link checkInstance} says.
+ * The ways the markup check renders each cell: with every BOOLEAN property at its default, as the
+ * previews show it, and, where a part hides behind a property that starts false, once more with each
+ * such property turned on, so the check reaches the parts they hide.
+ */
+function renderingsOf(definition: ComponentDefinition): readonly ReadonlySet<string>[] {
+  const startingFalse = new Set(
+    allPartsOf(definition).flatMap(({ optional }) =>
+      optional === undefined || optional.defaultValue ? [] : [optional.name]
+    )
+  );
+  return startingFalse.size === 0 ? [new Set()] : [new Set(), startingFalse];
+}
+
+/**
+ * Check a definition against its renderer's markup for each cell, as {@link renderingsOf} renders it:
+ * the cell renders one measured element, which carries the `data-slot` the definition says its root
+ * carries in the cell, each attribute condition holds exactly where its element carries the
+ * attribute, and the parts, icons, labels, images and styles sit where the definition says. An
+ * instance part is checked as {@link checkInstance} says.
  */
 export function checkMarkup(
   definition: ComponentDefinition,
   cells: readonly Cell[],
   renderer: CellRendering
 ): void {
-  const meaningOf = makeStateTable(definition);
-  const holdsIn = (variant: string, cell: Cell): boolean => {
-    const meaning = meaningOf(variant);
-    return meaning.kind === "condition" && meaning.holds(cell);
-  };
   for (const cell of cells) {
-    const key = variantKey(definition, cell);
-    const elements = elementsOf(renderCellHtml(renderer, cell));
-    const roots = elements.flatMap((element, index) =>
-      isRoot(definition, element) ? [{ root: element, measured: index }] : []
+    for (const turnedOn of renderingsOf(definition)) {
+      checkRendering(definition, cell, turnedOn, renderer);
+    }
+  }
+}
+
+/** Check one rendering of a cell, with the given BOOLEAN properties turned on, as {@link checkMarkup} says. */
+function checkRendering(
+  definition: ComponentDefinition,
+  cell: Cell,
+  turnedOn: ReadonlySet<string>,
+  renderer: CellRendering
+): void {
+  const meaningOf = makeStateTable(definition);
+  const holdsIn = conditionHolds(definition, cell);
+  const key =
+    turnedOn.size === 0
+      ? variantKey(definition, cell)
+      : `${variantKey(definition, cell)} with ${[...turnedOn].join(", ")} on`;
+  const elements = elementsOf(renderCellHtml(renderer, cell, turnedOn));
+  const roots = elements.flatMap((element, index) =>
+    isRoot(definition, element) ? [{ root: element, measured: index }] : []
+  );
+  expect(roots, `${key}: the ${definition.slot} parts`).toHaveLength(1);
+  // The one root part the line above checks.
+  for (const { root, measured } of roots) {
+    expect(root.attributes.get("data-slot"), `${key}: the root's data-slot`).toBe(
+      rootSlotOf(definition, cell)
     );
-    expect(roots, `${key}: the ${definition.slot} parts`).toHaveLength(1);
-    // The one root part the line above checks.
-    for (const { root, measured } of roots) {
-      expect(root.attributes.get("data-slot"), `${key}: the root's data-slot`).toBe(
-        rootSlotOf(definition, cell)
-      );
-      // The instance parts come first, since the inner set owns the markup inside each, which the
-      // variant checks below leave alone.
-      const names = new Set(boxNames(definition, definition.slot));
-      const shown = slotParts(definition, "", cell);
-      const rendered = markupParts(elements, measured, definition, names, cell);
-      const elementAt = new Map(rendered);
-      const instances = new Set(
-        shown.flatMap(({ path, part }) => {
-          const index = elementAt.get(path);
-          return "kind" in part && index !== undefined ? [index] : [];
-        })
-      );
-      const stateTaker =
-        checkAttributeStates(
-          definition,
-          { cell, variant: conditionHolds(definition, cell) },
-          elements,
-          measured,
-          key
-        ) ?? root;
-      if (stateTaker.attributes.has("data-rac")) {
-        const hovered = Object.hasOwn(forcedAttributesFor(renderer, cell), "data-hovered");
-        for (const variant of REACT_ARIA_HOVER) {
-          expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(hovered);
-        }
-      }
-      // A variant the root's own classes name selects the root below its group. One an element below
-      // the root names selects that element below its group, which may be the root or a part between,
-      // as Select's trigger is for its caret and Accordion's trigger for its own. A variant no element
-      // names holds nowhere, unless the root or an element around it is its group in that state.
-      const rootVariants = new Set(
-        splitClasses(definition.classesFor(cell)).flatMap((className) => splitClassName(className).variants)
-      );
-      for (const [variant, matches] of GROUP_VARIANTS) {
-        const ancestors = ancestorsOf(elements, measured);
-        const namers = elementsNaming(elements, measured, variant, instances);
-        const holds = rootVariants.has(variant)
-          ? ancestors.some(matches)
-          : namers.length > 0
-            ? namers.every((index) => ancestorsOf(elements, index).some(matches))
-            : [root, ...ancestors].some(matches);
-        expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(holds);
-      }
-      for (const [variant, holds] of PARENT_VARIANTS) {
-        expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(holds(elements, measured));
-      }
-      // An attribute variant an element below the root names on itself holds exactly where that
-      // element carries the attribute, as a Navigation menu caret carries its Root's `data-side`.
-      for (const [variant, carries] of DESCENDANT_ATTRIBUTE_VARIANTS) {
-        for (const index of elementsNaming(elements, measured, variant, instances)) {
-          const element = elements[index];
-          expect(holdsIn(variant, cell), `${key}: ${variant} on ${element?.name ?? ""}`).toBe(
-            element !== undefined && carries(element)
-          );
-        }
-      }
-      // A peer variant holds exactly where a sibling before the root is the peer in that state, and
-      // the sibling a definition's `statePeer` names, which the page forces, sits there once.
-      const before = siblingsBefore(elements, measured);
-      for (const [variant, matches] of PEER_VARIANTS) {
-        expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(before.some(matches));
-      }
-      if (definition.statePeer !== undefined) {
-        expect(
-          before.filter((element) => element.attributes.get("data-slot") === definition.statePeer),
-          `${key}: the ${definition.statePeer} before the root that takes the states`
-        ).toHaveLength(1);
-      }
-      for (const [variant, matches] of TAG_VARIANTS) {
-        if (meaningOf(variant).kind === "condition") {
-          expect(holdsIn(variant, cell), `${key}: ${variant}`).toBe(matches(root));
-        }
-      }
-      const ancestors = definition.ancestorsFor?.(cell) ?? [];
-      expect(
-        markupAncestors(elements, measured, new Set(ancestors.map(({ slot }) => slot))),
-        `${key}: the ancestors`
-      ).toEqual(ancestors.map(({ slot, classes }) => [slot, classes]));
-      const rootLabel = expectedLabel(definition, cell);
-      expect(
-        markupLabel(labelHolder(elements, measured, definition), rootLabel),
-        `${key}: the label`
-      ).toEqual(rootLabel);
-      expect(markupImage(root), `${key}: the image`).toEqual(expectedImage(definition));
-      checkElementChildren(definition, cell, elements, measured, `${key}: the element children of the root`);
-      const renderedPaths = rendered.map(([path]) => path);
-      expect(shown.map(({ path }) => path).toSorted(), `${key}: parts`).toEqual(renderedPaths.toSorted());
-      // One element per path, so the lookup below reads the only element at each path.
-      expect(new Set(renderedPaths).size, `${key}: a part rendered twice`).toBe(renderedPaths.length);
-      const owners = new Map([
-        [measured, ""],
-        ...rendered.map(([path, index]): [number, string] => [index, path]),
-      ]);
-      const slots = slotIcons(definition, "", cell);
-      expect(slots, `${key}: icons`).toEqual(claimedIcons(slots, markupIcons(elements, owners, instances)));
-      for (const { path, part } of shown) {
+    // The instance parts come first, since the inner set owns the markup inside each, which the
+    // variant checks below leave alone.
+    const names = new Set(boxNames(definition, definition.slot));
+    const shown = slotParts(definition, "", cell, turnedOn);
+    const rendered = markupParts(elements, measured, definition, names, cell, turnedOn);
+    const elementAt = new Map(rendered);
+    const instances = new Set(
+      shown.flatMap(({ path, part }) => {
         const index = elementAt.get(path);
-        const element = index === undefined ? undefined : elements[index];
-        if ("kind" in part) {
-          checkInstance(part, cell, elements, index, `${key}: the instance on ${path}`);
-          continue;
-        }
-        const partLabel = expectedLabel(part, cell);
-        expect(
-          markupLabel(labelHolder(elements, index, part), partLabel),
-          `${key}: the label on ${path}`
-        ).toEqual(partLabel);
-        expect(markupImage(element), `${key}: the image on ${path}`).toEqual(expectedImage(part));
-        checkElementChildren(part, cell, elements, index, `${key}: the element children on ${path}`);
-        expect(element?.attributes.get("style"), `${key}: the style on ${path}`).toEqual(
-          expectedStyle(part, cell)
+        return "kind" in part && index !== undefined ? [index] : [];
+      })
+    );
+    const stateTaker =
+      checkAttributeStates(definition, { cell, variant: holdsIn }, elements, measured, key) ?? root;
+    if (stateTaker.attributes.has("data-rac")) {
+      const hovered = Object.hasOwn(forcedAttributesFor(renderer, cell), "data-hovered");
+      for (const variant of REACT_ARIA_HOVER) {
+        expect(holdsIn(variant), `${key}: ${variant}`).toBe(hovered);
+      }
+    }
+    // A variant the root's own classes name selects the root below its group. One an element below
+    // the root names selects that element below its group, which may be the root or a part between,
+    // as Select's trigger is for its caret and Accordion's trigger for its own. A variant no element
+    // names holds nowhere, unless the root or an element around it is its group in that state.
+    const rootVariants = new Set(
+      splitClasses(definition.classesFor(cell)).flatMap((className) => splitClassName(className).variants)
+    );
+    for (const [variant, matches] of GROUP_VARIANTS) {
+      const ancestors = ancestorsOf(elements, measured);
+      const namers = elementsNaming(elements, measured, variant, instances);
+      const holds = rootVariants.has(variant)
+        ? ancestors.some(matches)
+        : namers.length > 0
+          ? namers.every((index) => ancestorsOf(elements, index).some(matches))
+          : [root, ...ancestors].some(matches);
+      expect(holdsIn(variant), `${key}: ${variant}`).toBe(holds);
+    }
+    for (const [variant, holds] of PARENT_VARIANTS) {
+      expect(holdsIn(variant), `${key}: ${variant}`).toBe(holds(elements, measured));
+    }
+    // An attribute variant an element below the root names on itself holds exactly where that
+    // element carries the attribute, as a Navigation menu caret carries its Root's `data-side`.
+    for (const [variant, carries] of DESCENDANT_ATTRIBUTE_VARIANTS) {
+      for (const index of elementsNaming(elements, measured, variant, instances)) {
+        const element = elements[index];
+        expect(holdsIn(variant), `${key}: ${variant} on ${element?.name ?? ""}`).toBe(
+          element !== undefined && carries(element)
         );
-        for (const variant of attributeConditions(part, cell)) {
-          expect(holdsIn(variant, cell), `${key}: ${variant} on ${path}`).toBe(
-            element !== undefined && ATTRIBUTE_VARIANTS.get(variant)?.(element) === true
-          );
-        }
+      }
+    }
+    // A peer variant holds exactly where a sibling before the root is the peer in that state, and
+    // the sibling a definition's `statePeer` names, which the page forces, sits there once.
+    const before = siblingsBefore(elements, measured);
+    for (const [variant, matches] of PEER_VARIANTS) {
+      expect(holdsIn(variant), `${key}: ${variant}`).toBe(before.some(matches));
+    }
+    if (definition.statePeer !== undefined) {
+      expect(
+        before.filter((element) => element.attributes.get("data-slot") === definition.statePeer),
+        `${key}: the ${definition.statePeer} before the root that takes the states`
+      ).toHaveLength(1);
+    }
+    for (const [variant, matches] of TAG_VARIANTS) {
+      if (meaningOf(variant).kind === "condition") {
+        expect(holdsIn(variant), `${key}: ${variant}`).toBe(matches(root));
+      }
+    }
+    const ancestors = definition.ancestorsFor?.(cell) ?? [];
+    expect(
+      markupAncestors(elements, measured, new Set(ancestors.map(({ slot }) => slot))),
+      `${key}: the ancestors`
+    ).toEqual(ancestors.map(({ slot, classes }) => [slot, classes]));
+    const rootLabel = expectedLabel(definition, cell);
+    expect(markupLabel(labelHolder(elements, measured, definition), rootLabel), `${key}: the label`).toEqual(
+      rootLabel
+    );
+    expect(markupImage(root), `${key}: the image`).toEqual(expectedImage(definition));
+    checkElementChildren(
+      definition,
+      cell,
+      turnedOn,
+      elements,
+      measured,
+      `${key}: the element children of the root`
+    );
+    const renderedPaths = rendered.map(([path]) => path);
+    expect(shown.map(({ path }) => path).toSorted(), `${key}: parts`).toEqual(renderedPaths.toSorted());
+    // One element per path, so the lookup below reads the only element at each path.
+    expect(new Set(renderedPaths).size, `${key}: a part rendered twice`).toBe(renderedPaths.length);
+    const owners = new Map([
+      [measured, ""],
+      ...rendered.map(([path, index]): [number, string] => [index, path]),
+    ]);
+    const slots = slotIcons(definition, "", cell, turnedOn);
+    expect(slots, `${key}: icons`).toEqual(claimedIcons(slots, markupIcons(elements, owners, instances)));
+    for (const { path, part } of shown) {
+      const index = elementAt.get(path);
+      const element = index === undefined ? undefined : elements[index];
+      if ("kind" in part) {
+        checkInstance(part, cell, elements, index, `${key}: the instance on ${path}`);
+        continue;
+      }
+      const partLabel = expectedLabel(part, cell);
+      expect(
+        markupLabel(labelHolder(elements, index, part), partLabel),
+        `${key}: the label on ${path}`
+      ).toEqual(partLabel);
+      expect(markupImage(element), `${key}: the image on ${path}`).toEqual(expectedImage(part));
+      checkElementChildren(part, cell, turnedOn, elements, index, `${key}: the element children on ${path}`);
+      expect(element?.attributes.get("style"), `${key}: the style on ${path}`).toEqual(
+        expectedStyle(part, cell)
+      );
+      for (const variant of attributeConditions(part, cell)) {
+        expect(holdsIn(variant), `${key}: ${variant} on ${path}`).toBe(
+          element !== undefined && ATTRIBUTE_VARIANTS.get(variant)?.(element) === true
+        );
       }
     }
   }

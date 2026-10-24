@@ -64,7 +64,9 @@ const TEXT_PROPERTIES = [
   "text-decoration-line",
   "text-underline-offset",
   "text-align",
-  "text-wrap",
+  "white-space-collapse",
+  "text-wrap-mode",
+  "text-wrap-style",
   "overflow-wrap",
 ] as const;
 
@@ -90,10 +92,40 @@ const FILLING: TextSizingSpec = { horizontal: { kind: "fill" }, vertical: { kind
 const NEVER_OVERFLOWS = "the box hugs the label, so it never overflows";
 
 /**
- * The `text-wrap` styles that choose where a wrapping text breaks its lines (CSS Text 4 §6.3):
+ * The `text-wrap-style` values that choose where a wrapping text breaks its lines (CSS Text 4 §6.3):
  * `balance` evens out their lengths, and `pretty` keeps a short word off the last one.
  */
 const EVENED_LINES = new Set(["balance", "pretty"]);
+
+/**
+ * Whether the wrapping longhands let a text wrap: `text-wrap-mode` unset or `wrap`, which `white-space`
+ * and `text-wrap` both set, so the cascade's winner decides.
+ */
+function wraps(mode: string): boolean {
+  return mode === "" || mode === "wrap";
+}
+
+/**
+ * What `white-space-collapse` does to a label's characters: `collapse`, its initial value, folds runs
+ * of white space and line breaks into one space, which changes nothing in characters that hold none, so
+ * it drops. Characters that hold one, or another value, keep white space a Figma text draws as written,
+ * which the build does not compare, so they stay unmapped.
+ *
+ * @param style - The label's box.
+ * @param characters - The characters the label shows.
+ */
+function readWhiteSpaceCollapse(style: LayerStyle, characters: string): void {
+  style.read(
+    "white-space-collapse",
+    (written) =>
+      normalizeCss(written) === "collapse" && !/\s\s|[\t\n\r]|^\s|\s$/.test(characters) ? written : undefined,
+    () => ({
+      outcome: "dropped",
+      detail: "the characters hold no run of white space or line break to collapse",
+    }),
+    []
+  );
+}
 
 /**
  * The characters a label shows in a cell.
@@ -115,13 +147,15 @@ export function labelCharacters(label: LabelDefinition, cell: Cell): string {
  * @param style - The box's style.
  */
 export function readWithoutLabel(style: LayerStyle): void {
-  style.read(
-    "white-space",
-    (value) => (normalizeCss(value) === "nowrap" ? value : undefined),
-    () => ({ outcome: "literal", detail: "the label hugs its width" }),
-    // The note passes down to the labels of the box's parts, which fill their own fields.
-    []
-  );
+  if (normalizeCss(style.resolved("text-wrap-mode") ?? "") === "nowrap") {
+    style.read(
+      "text-wrap-mode",
+      (value) => value,
+      () => ({ outcome: "literal", detail: "the label hugs its width" }),
+      // The note passes down to the labels of the box's parts, which fill their own fields.
+      []
+    );
+  }
   for (const property of TEXT_PROPERTIES) {
     style.mark(property, "dropped", "the cell shows no text", []);
   }
@@ -141,7 +175,7 @@ const TEXT_BLOCK: Layout = {
 };
 
 /** The declarations of a label's element that set how its text sits in its row. */
-const ELEMENT_LAYOUT = ["overflow", "text-overflow", "white-space"] as const;
+const ELEMENT_LAYOUT = ["overflow", "text-overflow", "white-space-collapse", "text-wrap-mode"] as const;
 
 /** Why a label's element stays unmapped where a text that fills its row's room would not draw it. */
 const UNENDED =
@@ -237,7 +271,8 @@ export function readLineClamp(holder: Holder, label: LabelDefinition | undefined
     holder.layers.length === 1 &&
     value("-webkit-box-orient") === "vertical" &&
     value("overflow") === "hidden" &&
-    wraps(value("white-space"));
+    ["", "collapse"].includes(value("white-space-collapse")) &&
+    wraps(value("text-wrap-mode"));
   return holds ? lineCount(value("-webkit-line-clamp")) : undefined;
 }
 
@@ -496,14 +531,26 @@ function readNativeLines(
   }
   if (lines === "wrap") {
     holder.style.read(
-      "white-space",
+      "text-wrap-mode",
       (written) => (wraps(normalizeCss(written)) ? written : undefined),
       () => ({ outcome: "literal", detail: "the label wraps at the box's width" }),
       holder.style.feed("sizing", path)
     );
+    holder.style.read(
+      "white-space-collapse",
+      (written) => (normalizeCss(written) === "collapse" ? written : undefined),
+      () => ({ outcome: "dropped", detail: "the label draws the value's characters as written" }),
+      []
+    );
     return { sizing: FILLING, truncation: undefined };
   }
-  for (const property of ["white-space", "text-overflow", "-webkit-line-clamp"]) {
+  for (const property of [
+    "white-space-collapse",
+    "text-wrap-mode",
+    "text-wrap-style",
+    "text-overflow",
+    "-webkit-line-clamp",
+  ]) {
     holder.style.read(
       property,
       (written) => written,
@@ -685,11 +732,13 @@ function refuseItem(
  * following its lines. A flex or grid box sets the text as an anonymous item, which
  * {@link refuseItem} decides for. A flex item whose text {@link neverWraps} keeps its own width
  * wherever the box places it, so where the item's place refuses a fill, the label hugs there.
- * `white-space: nowrap` keeps the text on one line at its own width, so the label hugs, unless a
- * block box also hides its overflow behind an ellipsis, as `truncate` does: then the label fills and
- * ends in an ellipsis after one line. A line clamp ends wrapping text after its lines. A box that
- * hugs its width is as wide as its text on one line, since a kit frame always has room to spare, so
- * the label hugs and the ellipsis drops, unless a `max-width` stops the box first. A wrapping label
+ * A `text-wrap-mode` of `nowrap`, which `white-space: nowrap` and `text-wrap: nowrap` set and the
+ * cascade takes from the declaration nearer the label, keeps the text on one line at its own width,
+ * so the label hugs, unless a block box also hides its overflow behind an ellipsis, as `truncate`
+ * does: then the label fills and ends in an ellipsis after one line. A line clamp ends wrapping
+ * text after its lines. A box that hugs its width is as wide as its text on one line, since a kit
+ * frame always has room to spare, so the label hugs and the ellipsis drops, unless a `max-width`
+ * stops the box first. A wrapping label
  * in such a box hugs up to the cap the box and the boxes around it set, as {@link widthCapInside}
  * reads it, and a hugging Figma text with that `maxWidth` wraps there (P7).
  *
@@ -708,10 +757,10 @@ function readLabelLayout(
 ): LabelLayout {
   const { style, sizing } = holder;
   const value = (property: string): string => normalizeCss(style.resolved(property) ?? "");
-  const whiteSpace = value("white-space");
-  const wrapping = wraps(whiteSpace);
+  const mode = value("text-wrap-mode");
+  const wrapping = wraps(mode);
   const truncates =
-    value("overflow") === "hidden" && whiteSpace === "nowrap" && value("text-overflow") === "ellipsis";
+    value("overflow") === "hidden" && mode === "nowrap" && value("text-overflow") === "ellipsis";
   // `text-overflow` applies to block containers (CSS Overflow 3 §4.2). A flex or grid box sets its
   // own text as an anonymous item, which it clips with no ellipsis.
   const item = textItem(holder);
@@ -779,9 +828,10 @@ function readLabelLayout(
   const ending = (count: number): string =>
     `the label ends in an ellipsis after ${count} ${count === 1 ? "line" : "lines"}`;
 
+  readWhiteSpaceCollapse(style, characters);
   style.read(
-    "white-space",
-    (written) => (["normal", "nowrap"].includes(normalizeCss(written)) ? written : undefined),
+    "text-wrap-mode",
+    (written) => (["wrap", "nowrap"].includes(normalizeCss(written)) ? written : undefined),
     (): CoverageNote => {
       if (refusal !== undefined) {
         return { outcome: "unmapped", detail: refusal.detail };
@@ -805,20 +855,17 @@ function readLabelLayout(
     },
     style.feed("sizing", path)
   );
-  // `text-wrap` sets whether the text wraps as `white-space` does, so beside a `white-space` that
-  // keeps it on one line the later declaration decides, which the build does not order.
+  // `text-wrap-style` chooses where a text that wraps breaks its lines, so on a text the cascade's
+  // `text-wrap-mode` keeps on one line it has no lines to choose.
   style.read(
-    "text-wrap",
+    "text-wrap-style",
     (written) => (EVENED_LINES.has(normalizeCss(written)) ? written : undefined),
     (): CoverageNote => {
       if (refusal !== undefined) {
         return { outcome: "unmapped", detail: refusal.detail };
       }
       if (!wrapping) {
-        return {
-          outcome: "unmapped",
-          detail: "white-space keeps the text on one line, and text-wrap wraps it, so the later one decides",
-        };
+        return { outcome: "dropped", detail: "the label keeps to one line, so it breaks no lines to choose" };
       }
       if (fills || maxWidth !== undefined) {
         return {
@@ -930,11 +977,6 @@ function textItem(holder: Holder): "flex" | "grid" | undefined {
   }
   const display = normalizeCss(holder.style.raw("display") ?? "");
   return display === "grid" || display === "inline-grid" ? "grid" : undefined;
-}
-
-/** Whether a `white-space` value lets text wrap: unset, or `normal`. */
-function wraps(whiteSpace: string): boolean {
-  return whiteSpace === "" || whiteSpace === "normal";
 }
 
 /**

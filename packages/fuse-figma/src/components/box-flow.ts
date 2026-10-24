@@ -6,6 +6,7 @@
 import { heightBounds, listNames } from "./box-sizing";
 import type { Feed, LayerStyle } from "./cascade";
 import { normalizeCss } from "./css-values";
+import type { VariableIndex } from "./css-values";
 import type {
   ChildLayerSpec,
   CounterAlignSpec,
@@ -315,14 +316,16 @@ function readSelfAlignment(reader: LayerStyle, { parts, others }: FlowLayers): S
  * @param reader - The box's style.
  * @param flow - The box's flow, as {@link readFlow} read it.
  * @param layers - The layers of the box's parts in its flow, as mapped.
+ * @param variables - The synced variables, whose values across their modes bound the layers' heights.
  * @returns The keys of the layers that stretch.
  */
 export function settleFlow(
   reader: LayerStyle,
   flow: Flow,
-  layers: readonly ChildLayerSpec[]
+  layers: readonly ChildLayerSpec[],
+  variables: VariableIndex
 ): ReadonlySet<string> {
-  return flow.self === undefined ? new Set() : settleSelfAlignment(reader, flow.self, layers);
+  return flow.self === undefined ? new Set() : settleSelfAlignment(reader, flow.self, layers, variables);
 }
 
 /**
@@ -346,19 +349,22 @@ export function stretchedLayer(
  * and so centers what it holds where CSS centers it, as Item's actions do. That draws what CSS draws
  * only where the layer {@link stretchesAlike} and is no taller than the row: its tallest height, as
  * {@link heightBounds} reads it, is no taller than the shortest height of a layer that sets an
- * alignment, as Item's actions, one 20px line, beside a content column of at least two lines. The
- * row's `align-items` then reads as literal through those layers. Where a layer that sets none
- * cannot stretch so, the row cannot place it as CSS does, so `align-items` stays unmapped, naming it.
- * The row tells its layers apart by their keys.
+ * alignment, in every mode, as Item's actions, one 20px line, beside a content column of at least two
+ * lines, or Alert's action, a Button at most 36px tall, beside a title and a description that set at
+ * least 44.25px between them. The row's `align-items` then reads as literal through those layers.
+ * Where a layer that sets none cannot stretch so, the row cannot place it as CSS does, so
+ * `align-items` stays unmapped, naming it. The row tells its layers apart by their keys.
  *
  * @param self - The alignment the row's parts set.
  * @param layers - The layers of the row's parts in its flow, as mapped.
+ * @param variables - The synced variables, whose values across their modes bound the layers' heights.
  * @returns The keys of the layers that stretch, none where `align-items` stays unmapped.
  */
 function settleSelfAlignment(
   reader: LayerStyle,
   self: SelfAlignment,
-  layers: readonly ChildLayerSpec[]
+  layers: readonly ChildLayerSpec[],
+  variables: VariableIndex
 ): ReadonlySet<string> {
   const { own, setters, loose, stretchable, stretching } = self;
   const names = loose.map(({ name }) => name);
@@ -372,10 +378,13 @@ function settleSelfAlignment(
     return new Set();
   }
   const floor = Math.max(
-    ...layers.filter((layer) => setters.has(layer.key)).map((layer) => heightBounds(layer).min)
+    ...layers.filter((layer) => setters.has(layer.key)).map((layer) => heightBounds(layer, variables).min)
   );
   const fits = (key: string) => {
-    const tallest = heightBounds(layers.find((layer) => layer.key === key)).max;
+    const tallest = heightBounds(
+      layers.find((layer) => layer.key === key),
+      variables
+    ).max;
     return tallest !== undefined && tallest <= floor;
   };
   const stretch = loose.every(({ key }) => stretchable.has(key) && fits(key));

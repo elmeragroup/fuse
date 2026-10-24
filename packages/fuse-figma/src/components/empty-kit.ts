@@ -19,13 +19,25 @@
  *   here.` at 14/22.75 in `muted-foreground`, behind the `Description` BOOLEAN property, as the docs
  *   leave it out beside a table. Their `Title` and `Description text` properties set them, the
  *   second named apart from the BOOLEAN, since the plugin finds a property by its name.
- * - Empty with actions, which holds Buttons in `Empty.Content`, waits until kit components can hold
- *   instances.
+ * - The content is the docs With actions demo's `Empty.Content`, a column that fills the root's width
+ *   up to `max-w-sm`, 384px, centering a default and a secondary Button 16px apart: instances of
+ *   Button at the default size, at rest and with no icon, labelled `Create order` and `Import
+ *   orders`. Their own classes draw them but the alignment of their labels, which the root's
+ *   `text-center` centers, so each instance overrides its label's alignment. The `Actions` BOOLEAN
+ *   property, which starts false, hides the content, so every variant draws the Basic demo's header
+ *   alone, and a designer turns the actions on.
  */
 import { emptyMediaVariants, emptyVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import { BUTTON } from "./button-kit";
 import { swapProperties } from "./component-spec";
-import type { Cell, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
+import type {
+  Cell,
+  ComponentDefinition,
+  IconSlot,
+  InstanceDefinition,
+  PartDefinition,
+} from "./component-spec";
 
 /** The width the kit's previews and the compare host give Empty: 384px of header inside its padding. */
 export const EMPTY_PREVIEW_WIDTH = 512;
@@ -122,7 +134,54 @@ const HEADER: PartDefinition = {
   parts: [MEDIA, TITLE, DESCRIPTION],
 };
 
-/** An Empty, as `<Empty.Root variant><Empty.Header>…</Empty.Header></Empty.Root>` in a 512px container. */
+/** The BOOLEAN property that shows the actions, which starts false, so a published cell shows none. */
+export const EMPTY_ACTIONS_PROPERTY = "Actions";
+
+/** The label of the first action, the default Button, as the docs With actions demo gives it. */
+export const EMPTY_PRIMARY_ACTION_LABEL = "Create order";
+
+/** The label of the second action, the secondary Button, as the docs With actions demo gives it. */
+export const EMPTY_SECONDARY_ACTION_LABEL = "Import orders";
+
+/**
+ * An action, a Button of the given variant at the default size, as the docs With actions demo
+ * places it.
+ *
+ * @param key - The instance's key.
+ * @param variant - The Button variant.
+ * @param label - The label, which the instance gives Button's `Label`.
+ */
+function actionOf(key: string, variant: string, label: string): InstanceDefinition {
+  return {
+    kind: "instance",
+    key,
+    of: BUTTON,
+    cell: () => ({ variant, size: "default", state: "rest", icon: "none" }),
+    properties: () => ({ text: { Label: label } }),
+    shownIn: always,
+    exposed: true,
+  };
+}
+
+/** The content around the actions, behind the `Actions` BOOLEAN property, which starts false. */
+const CONTENT: PartDefinition = {
+  key: "content",
+  slot: "empty-content",
+  shownIn: always,
+  optional: { name: EMPTY_ACTIONS_PROPERTY, defaultValue: false },
+  classesFor: () => styles.content(),
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    actionOf("primary", "default", EMPTY_PRIMARY_ACTION_LABEL),
+    actionOf("secondary", "secondary", EMPTY_SECONDARY_ACTION_LABEL),
+  ],
+};
+
+/**
+ * An Empty, as `<Empty.Root variant><Empty.Header>…</Empty.Header></Empty.Root>` in a 512px container,
+ * with the actions' `Empty.Content` behind the `Actions` property.
+ */
 export const EMPTY: ComponentDefinition = {
   key: "empty",
   name: "Empty",
@@ -136,6 +195,6 @@ export const EMPTY: ComponentDefinition = {
   omittedStates: new Set(),
   label: undefined,
   iconsFor: () => [],
-  parts: [HEADER],
+  parts: [HEADER, CONTENT],
   swapProperties: swapProperties([TRAY]),
 };

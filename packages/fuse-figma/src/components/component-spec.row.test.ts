@@ -7,8 +7,10 @@ import { describe, expect, it } from "vitest";
 
 import { FILL } from "../../test/built-kit";
 import { buildFixture, chip, dot, frameOf } from "../../test/fixture-sets";
+import { heightBounds } from "./box-sizing";
 import type { PartDefinition } from "./component-spec";
 import type { CoverageRow } from "./coverage";
+import { makeVariableIndex } from "./css-values";
 
 /** The outcome and detail of each coverage row of one class. */
 const notesOf = (coverage: readonly CoverageRow[], className: string) =>
@@ -153,6 +155,111 @@ describe("a part's own alignment across its row", () => {
       ["chip-ring", "literal", "centered on the counter axis"],
       ["chip", "unmapped", UNSTRETCHED],
     ]);
+  });
+
+  // Oracle: the arithmetic of each variable's values across its modes, and CSS Inline 3 §4.4, where a
+  // unitless line height is that share of the font size. A layer at least as tall in every mode as
+  // the ring's content at its tallest holds the ring's content inside the row it sets, so the
+  // stretched ring centres it where CSS does; content that can outgrow that layer in some mode
+  // cannot stretch. A dot of `h-(--tall)`, 20px or 24px, is at least 20px tall, and one line of
+  // `text-(length:--size)/normal` over 14px or 16px at least 21px. A `max-h-(--low)` of 12px or 16px
+  // holds a dot around a 40px layer to 12px in one mode, and a `min-h-(--low)` raises an empty dot to
+  // no more than that there, so neither keeps a 14px content inside the row.
+  describe("against heights a variable sets", () => {
+    const variables = makeVariableIndex([
+      { ref: { collection: "Fuse tokens", name: "font-sans" }, webSyntax: "var(--font-sans)" },
+      {
+        ref: { collection: "Fuse density", name: "tall" },
+        webSyntax: "var(--tall)",
+        minimum: 20,
+        maximum: 24,
+      },
+      {
+        ref: { collection: "Fuse density", name: "size" },
+        webSyntax: "var(--size)",
+        minimum: 14,
+        maximum: 16,
+      },
+      { ref: { collection: "Fuse density", name: "low" }, webSyntax: "var(--low)", minimum: 12, maximum: 16 },
+      {
+        ref: { collection: "Fuse density", name: "high" },
+        webSyntax: "var(--high)",
+        minimum: 16,
+        maximum: 24,
+      },
+      {
+        ref: { collection: "Fuse density", name: "floor" },
+        webSyntax: "var(--floor)",
+        minimum: 12,
+        maximum: 32,
+      },
+      { ref: { collection: "Fuse density", name: "cap" }, webSyntax: "var(--cap)", minimum: 16, maximum: 24 },
+    ]);
+    const TALL_DOT = dot("w-[8px] h-(--tall) self-start");
+    const LINE_DOT: PartDefinition = {
+      ...dot("flex font-sans text-[#000000] text-(length:--size)/normal self-start"),
+      label: { key: "label", name: "label", characters: "Dot", textProperty: undefined, shownIn: () => true },
+    };
+    const holding = (setter: PartDefinition, content: string) =>
+      chip("flex items-center", {
+        parts: [
+          setter,
+          {
+            ...RING("flex items-center"),
+            parts: [{ ...dot(`w-[4px] ${content}`), key: "inner", slot: "chip-inner" }],
+          },
+        ],
+      });
+
+    it.each([
+      ["a bound height", TALL_DOT, "h-(--low)"],
+      ["a line over a bound font size", LINE_DOT, "h-[20px]"],
+    ])("stretches the ring where %s is never shorter than its content", async (_setter, setter, content) => {
+      const { variant, coverage } = await buildFixture(holding(setter, content), { variables });
+      const ring = variant?.root.children[1];
+      expect(ring?.kind === "frame" && ring.sizing.vertical).toEqual(FILL);
+      expect(notesOf(coverage, "items-center").find(([part]) => part === "chip")?.[1]).toBe("literal");
+    });
+
+    it.each([
+      ["a bound height", TALL_DOT, "h-(--high)"],
+      ["a line over a bound font size", LINE_DOT, "h-[22px]"],
+      [
+        "a bound max height",
+        {
+          ...dot("flex w-[8px] max-h-(--low) self-start"),
+          parts: [{ ...dot("w-[8px] h-[40px]"), key: "tall", slot: "chip-tall" }],
+        },
+        "h-[14px]",
+      ],
+      ["a bound min height", dot("w-[8px] min-h-(--low) self-start"), "h-[14px]"],
+      [
+        "a 24px height, beside content whose minimum outgrows its maximum in one mode,",
+        dot("w-[8px] h-[24px] self-start"),
+        "min-h-(--floor) max-h-(--cap)",
+      ],
+    ])(
+      "leaves the row's alignment unmapped where %s can be shorter than its content",
+      async (_setter, setter, content) => {
+        const { coverage } = await buildFixture(holding(setter, content), { variables });
+        expect(notesOf(coverage, "items-center").find(([part]) => part === "chip")).toEqual([
+          "chip",
+          "unmapped",
+          UNSTRETCHED,
+        ]);
+      }
+    );
+
+    // Oracle: CSS 2.1 §10.7, where a minimum above the maximum wins. A `min-h-(--floor)` of 12px or 32px
+    // over a `max-h-(--cap)` of 16px or 24px holds an empty box to 12px in the first mode and raises it
+    // to 32px in the second.
+    it("bounds a box whose minimum outgrows its maximum in one mode by the minimum", async () => {
+      const { variant } = await buildFixture(
+        chip("flex", { parts: [dot("w-[4px] min-h-(--floor) max-h-(--cap)")] }),
+        { variables }
+      );
+      expect(heightBounds(variant?.root.children[0], variables)).toEqual({ min: 12, max: 32 });
+    });
   });
 
   it("leaves two alignments a row cannot draw at once unmapped", async () => {

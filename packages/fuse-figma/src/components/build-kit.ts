@@ -82,7 +82,8 @@ function kitVariables(): KitVariables {
     throw new Error(`the Fuse variable set does not build: ${String(variableSet.failure)}`);
   }
   const collections = variableSet.success.collections;
-  const minimumOf = minimums(collections);
+  const minimumOf = extremes(collections, Math.min);
+  const maximumOf = extremes(collections, Math.max);
   const variables = makeVariableIndex(
     collections.flatMap((collection) =>
       collection.variables.flatMap((variable) =>
@@ -93,6 +94,7 @@ function kitVariables(): KitVariables {
                 ref: { collection: collection.name, name: variable.name },
                 webSyntax: variable.webSyntax,
                 minimum: minimumOf(collection.name, variable.name),
+                maximum: maximumOf(collection.name, variable.name),
               },
             ]
       )
@@ -238,11 +240,12 @@ export function checkIconReferences(set: Omit<ComponentSetSpec, "page">, library
 }
 
 /**
- * The smallest number each FLOAT variable holds in any mode. An alias can land in any mode of
- * its target, so it counts every value the target holds.
+ * The smallest or the largest number each FLOAT variable holds in any mode, as `pick` chooses among
+ * its values. An alias can land in any mode of its target, so it counts every value the target holds.
  */
-function minimums(
-  collections: readonly CollectionSpec[]
+function extremes(
+  collections: readonly CollectionSpec[],
+  pick: (...values: number[]) => number
 ): (collection: string, name: string) => number | undefined {
   const specs = new Map<string, VariableSpec>(
     collections.flatMap((collection) =>
@@ -250,7 +253,7 @@ function minimums(
     )
   );
   const memo = new Map<string, number | undefined>();
-  const minimumOf = (collection: string, name: string): number | undefined => {
+  const extremeOf = (collection: string, name: string): number | undefined => {
     const key = `${collection}/${name}`;
     if (memo.has(key)) {
       return memo.get(key);
@@ -262,19 +265,19 @@ function minimums(
         case "Float":
           return value.value;
         case "Alias":
-          return minimumOf(value.target.collection, value.target.variable);
+          return extremeOf(value.target.collection, value.target.variable);
         default:
           return undefined;
       }
     });
-    const minimum =
+    const extreme =
       values.length === 0 || values.includes(undefined)
         ? undefined
-        : Math.min(...values.filter((value) => value !== undefined));
-    memo.set(key, minimum);
-    return minimum;
+        : pick(...values.filter((value) => value !== undefined));
+    memo.set(key, extreme);
+    return extreme;
   };
-  return minimumOf;
+  return extremeOf;
 }
 
 /** The family `font-sans` resolves to, which every theme shares. The plugin loads it. */

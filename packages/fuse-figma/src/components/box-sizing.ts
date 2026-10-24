@@ -618,14 +618,19 @@ export function readGrowth(holder: Holder, parts: readonly LayerStyle[]): number
  */
 export type HeightBounds = { readonly min: number; readonly max: number | undefined };
 
-/** A height this module cannot bound: a bound length, a fill, or a layer turned on its side. */
+/** A height this module cannot bound: a fill, a layer turned on its side, or an unknown variable. */
 const UNBOUNDED: HeightBounds = { min: 0, max: undefined };
 
 const NO_HEIGHT: HeightBounds = { min: 0, max: 0 };
 
-/** A length's bounds: its value where literal, unknown where a variable takes a length per mode. */
-function lengthBounds(length: NumberSpec): HeightBounds {
-  return length.kind === "literal" ? { min: length.value, max: length.value } : UNBOUNDED;
+/**
+ * A length's bounds: its value where literal, and where a variable sets it, the least and the greatest
+ * value the variable holds across its modes, with no least or greatest where the index knows none.
+ */
+function lengthBounds(length: NumberSpec, variables: VariableIndex): HeightBounds {
+  return length.kind === "literal"
+    ? { min: length.value, max: length.value }
+    : { min: variables.minimum(length.variable) ?? 0, max: variables.maximum(length.variable) };
 }
 
 function sum(bounds: readonly HeightBounds[]): HeightBounds {
@@ -645,28 +650,34 @@ function times(bounds: HeightBounds, least: number, most: number): HeightBounds 
 /**
  * The height bounds of a mapped layer, as a row compares its layers before it stretches one across
  * its height. A fixed height is its length. A text sets at least one line, and at most one where it
- * hugs a width nothing caps, or as many as its truncation keeps. A hugging box is its padding, its
- * in-layout stroke and its layers in flow: their sum and gaps in a column, the tallest in a row,
- * within its limits. A layer a property can hide draws no height at least. A bound length, a fill and
- * a layer turned a quarter leave the greatest height unknown.
+ * hugs a width nothing caps, or as many as its truncation keeps; a percent line is that share of the
+ * font size. A hugging box is its padding, its in-layout stroke and its layers in flow: their sum and
+ * gaps in a column, the tallest in a row, within its limits. A layer a property can hide draws no
+ * height at least. A bound length spans the values its variable holds across its modes. A fill, a
+ * layer turned a quarter and a variable the index knows no values of leave the greatest height
+ * unknown.
  *
  * @param layer - The layer, or undefined for none, whose height is unknown.
+ * @param variables - The synced variables, whose values across their modes bound a bound length.
  * @returns The layer's height bounds.
  */
-export function heightBounds(layer: ChildLayerSpec | undefined): HeightBounds {
+export function heightBounds(layer: ChildLayerSpec | undefined, variables: VariableIndex): HeightBounds {
   if (layer === undefined) {
     return UNBOUNDED;
   }
   if (layer.kind === "icon") {
-    return lengthBounds(layer.size);
+    return lengthBounds(layer.size, variables);
   }
   if (layer.kind === "text") {
     const { sizing, lineHeight, maxWidth, truncation } = layer;
     if (sizing.vertical.kind === "fixed") {
-      return lengthBounds(sizing.vertical.length);
+      return lengthBounds(sizing.vertical.length, variables);
     }
-    // A percent line height follows a font size a variable sets per mode, so its pixels are unknown.
-    const line = lineHeight.kind === "percent" ? UNBOUNDED : lengthBounds(lineHeight);
+    // A percent line height is that share of the font size in each mode (PH).
+    const line =
+      lineHeight.kind === "percent"
+        ? times(lengthBounds(layer.fontSize, variables), lineHeight.value / 100, lineHeight.value / 100)
+        : lengthBounds(lineHeight, variables);
     const lines = sizing.horizontal.kind === "hug" && maxWidth === undefined ? 1 : truncation?.maxLines;
     return {
       min: line.min,
@@ -676,34 +687,42 @@ export function heightBounds(layer: ChildLayerSpec | undefined): HeightBounds {
   if (layer.kind === "instance") {
     // A hugging instance takes the inner variant's height, which this spec does not hold.
     const { vertical } = layer.sizing;
-    const own = vertical.kind === "fixed" ? lengthBounds(vertical.length) : UNBOUNDED;
+    const own = vertical.kind === "fixed" ? lengthBounds(vertical.length, variables) : UNBOUNDED;
     return layer.visibleProperty === undefined ? own : { min: 0, max: own.max };
   }
   if (layer.rotation !== undefined && layer.rotation % 180 !== 0) {
     return UNBOUNDED;
   }
-  const own = boxHeightBounds(layer);
+  const own = boxHeightBounds(layer, variables);
   return layer.visibleProperty === undefined ? own : { min: 0, max: own.max };
 }
 
-function boxHeightBounds(box: BoxSpec): HeightBounds {
+function boxHeightBounds(box: BoxSpec, variables: VariableIndex): HeightBounds {
   const { vertical } = box.sizing;
   if (vertical.kind !== "hug") {
-    return vertical.kind === "fixed" ? lengthBounds(vertical.length) : UNBOUNDED;
+    return vertical.kind === "fixed" ? lengthBounds(vertical.length, variables) : UNBOUNDED;
   }
   const flowing = box.children.filter((child) => child.kind !== "frame" || child.absolute === undefined);
-  const heights = flowing.map((child) => heightBounds(child));
+  const heights = flowing.map((child) => heightBounds(child, variables));
   const shown = flowing.filter((child) => child.kind !== "frame" || child.visibleProperty === undefined);
   const gaps = times(
-    lengthBounds(box.itemSpacing),
+    lengthBounds(box.itemSpacing, variables),
     Math.max(0, shown.length - 1),
     Math.max(0, flowing.length - 1)
   );
   const layers = box.direction === "VERTICAL" ? sum([...heights, gaps]) : tallest(heights);
   const stroke =
-    box.stroke === undefined || box.stroke.inLayout === false ? NO_HEIGHT : lengthBounds(box.stroke.weight);
-  const hugged = sum([lengthBounds(box.paddingTop), layers, lengthBounds(box.paddingBottom), stroke, stroke]);
-  return withinLimits(hugged, box.limits);
+    box.stroke === undefined || box.stroke.inLayout === false
+      ? NO_HEIGHT
+      : lengthBounds(box.stroke.weight, variables);
+  const hugged = sum([
+    lengthBounds(box.paddingTop, variables),
+    layers,
+    lengthBounds(box.paddingBottom, variables),
+    stroke,
+    stroke,
+  ]);
+  return withinLimits(hugged, box.limits, variables);
 }
 
 /** The bounds of the tallest of a row's layers. */
@@ -718,22 +737,27 @@ function tallest(bounds: readonly HeightBounds[]): HeightBounds {
 }
 
 /**
- * Bounds kept within a box's `minHeight` and `maxHeight`. A bound `minHeight` leaves the greatest
- * height unknown, and a bound `maxHeight` the least.
+ * Bounds kept within a box's `minHeight` and `maxHeight`, each a length's bounds, as
+ * {@link usedLength} keeps one length: capped by the maximum, then raised to the minimum, which wins
+ * where they conflict (CSS 2.1 §10.7). The least height takes each limit's least value, and the
+ * greatest each limit's greatest, so the bounds hold in every mode. A maximum with no greatest value
+ * only lowers a height, which leaves the greatest as it is, and a minimum with none leaves it unknown.
  */
-function withinLimits(bounds: HeightBounds, { minHeight, maxHeight }: LimitsSpec): HeightBounds {
-  const floor = minHeight === undefined ? NO_HEIGHT : lengthBounds(minHeight);
-  const raised = {
-    min: Math.max(bounds.min, floor.min),
-    max: bounds.max === undefined || floor.max === undefined ? undefined : Math.max(bounds.max, floor.max),
+function withinLimits(
+  bounds: HeightBounds,
+  { minHeight, maxHeight }: LimitsSpec,
+  variables: VariableIndex
+): HeightBounds {
+  const floor = minHeight === undefined ? undefined : lengthBounds(minHeight, variables);
+  const ceiling = maxHeight === undefined ? undefined : lengthBounds(maxHeight, variables);
+  const highest = bounds.max ?? ceiling?.max;
+  return {
+    min: usedLength(bounds.min, floor?.min, ceiling?.min),
+    max:
+      highest === undefined || (floor !== undefined && floor.max === undefined)
+        ? undefined
+        : usedLength(highest, floor?.max, ceiling?.max),
   };
-  if (maxHeight === undefined) {
-    return raised;
-  }
-  const ceiling = lengthBounds(maxHeight).max;
-  return ceiling === undefined
-    ? { min: 0, max: raised.max }
-    : { min: Math.min(raised.min, ceiling), max: Math.min(raised.max ?? ceiling, ceiling) };
 }
 
 /** The properties that size one axis, and the words its coverage rows use. */

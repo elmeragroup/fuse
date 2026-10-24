@@ -1,8 +1,8 @@
 /**
  * `reconcileKit` with a kit whose Alert set holds an instance of its Button set's variant, on the
- * in-memory file in `fake-figma.ts`. The oracles are the fake's rules 32 to 40, which follow what a
- * real file did with a nested instance on 2026-10-23 (N1 to N5), the change lines Plan lists, and a
- * second Plan that lists nothing.
+ * in-memory file in `fake-figma.ts`. The oracles are the fake's rules 32 to 41, which follow what a
+ * real file did with a nested instance on 2026-10-23 and 2026-10-24 (N1 to N5, NS, NA), the change
+ * lines Plan lists, and a second Plan that lists nothing.
  */
 import { describe, expect, it } from "vitest";
 
@@ -116,6 +116,7 @@ const LABEL_COLOR: InstanceOverride = {
   field: "textColor",
   color: token("background"),
 };
+const LABEL_CENTER: InstanceOverride = { path: ["button/label"], field: "textAlign", horizontal: "CENTER" };
 const GLYPH_COLOR: InstanceOverride = {
   path: ["button/adornment", "button/glyph"],
   field: "glyph",
@@ -352,6 +353,11 @@ describe("the kit check of instance layers", () => {
       "a text color override on the root",
       withAction({ overrides: [{ path: [], field: "textColor", color: BLACK }] }),
       `${where} overrides the textColor of the root, a box, which takes none.`,
+    ],
+    [
+      "a text alignment override on the root",
+      withAction({ overrides: [{ path: [], field: "textAlign", horizontal: "CENTER" }] }),
+      `${where} overrides the textAlign of the root, a box, which takes none.`,
     ],
     [
       "a BOOLEAN link the outer set lacks",
@@ -660,6 +666,55 @@ describe("a set that holds an instance of an earlier set's variant", () => {
       action.height,
       action.layoutSizingVertical,
     ]).toEqual([{ changes: [], warnings: [] }, 32, "FIXED"]);
+  });
+
+  // NA: an alignment override on the label stays through the main's edits and an equal write, so the
+  // plan reads the label's alignment against the spec's, and puts back the variant's own where the spec
+  // drops the override.
+  it("centers the action's label with its override, keeps it through an in-place Button edit, and puts back the variant's own, each converging", async () => {
+    const centered = { ...ACTION, overrides: [ROOT_FILL, LABEL_COLOR, LABEL_CENTER] };
+    const file = await appliedFile(kitWith(BUTTON, centered));
+    const label = async () => childNamed((await alertAction(file)).action, "TEXT", "Label");
+    expect([
+      await reconcileKit(file.figma, kitWith(BUTTON, centered), false),
+      (await label()).textAlignHorizontal,
+    ]).toEqual([{ changes: [], warnings: [] }, "CENTER"]);
+    const padded = buttonSet((variant) =>
+      variant === "default" ? buttonRoot(token("primary"), 36, 16) : buttonRoot(token("background"))
+    );
+    const edited = kitWith(padded, centered);
+    await reconcileKit(file.figma, edited, true);
+    file.reopen();
+    expect([await reconcileKit(file.figma, edited, false), (await label()).textAlignHorizontal]).toEqual([
+      { changes: [], warnings: [] },
+      "CENTER",
+    ]);
+    const dropped = kitWith(padded, { ...ACTION, overrides: [ROOT_FILL, LABEL_COLOR] });
+    expect((await reconcileKit(file.figma, dropped, false)).changes).toContain(
+      "Alert / tone=default / button / Label: textAlignHorizontal → LEFT"
+    );
+    await reconcileKit(file.figma, dropped, true);
+    file.reopen();
+    expect([await reconcileKit(file.figma, dropped, false), (await label()).textAlignHorizontal]).toEqual([
+      { changes: [], warnings: [] },
+      "LEFT",
+    ]);
+  });
+
+  // Rule 21: an alignment write needs every font the label holds, as a TEXT write does.
+  it("loads the font a designer gave the action's label before it aligns the label, and converges", async () => {
+    const file = await appliedFile();
+    const bold = { family: "Roboto", style: "Bold" };
+    await file.figma.loadFontAsync(bold);
+    childNamed((await alertAction(file)).action, "TEXT", "Label").fontName = bold;
+    file.reopen();
+    const centered = kitWith(BUTTON, { ...ACTION, overrides: [ROOT_FILL, LABEL_COLOR, LABEL_CENTER] });
+    await reconcileKit(file.figma, centered, true);
+    file.reopen();
+    expect([
+      await reconcileKit(file.figma, centered, false),
+      childNamed((await alertAction(file)).action, "TEXT", "Label").textAlignHorizontal,
+    ]).toEqual([{ changes: [], warnings: [] }, "CENTER"]);
   });
 
   // A TEXT write changes the label's characters, which needs every font the label holds.

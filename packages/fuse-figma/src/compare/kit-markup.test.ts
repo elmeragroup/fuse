@@ -47,6 +47,10 @@
  * which the page writes on the measured element when it forces the cell's state. There both must
  * hold exactly where those attributes carry `data-hovered`.
  *
+ * Each cell renders with every BOOLEAN property at its default, as its preview shows it, so a part
+ * behind a property that starts false must be absent there, and a definition with such a part
+ * renders each cell once more with each such property on, where the part must be there.
+ *
  * `test/markup-check.ts` holds the assertions, `test/markup-tree.ts` the queries over the markup and
  * `test/markup-variants.ts` the variant tables. This suite runs them on every kit definition and on
  * hand-written fixtures.
@@ -657,5 +661,60 @@ describe("the label check of a label held in a bare child element", () => {
     expect(() => checkMarkup(WRAPPED, CELLS, wrapped({ className: "font-bold" }))).toThrow(
       "chip/state=rest: the label"
     );
+  });
+});
+
+// Unit under test: `checkMarkup` on a part behind a BOOLEAN property that starts false, as Alert's
+// actions are. Oracle: what Figma draws, where a property that starts false hides the part in every
+// variant and the previews show each property at its default (PQ), while a designer who turns it on
+// sees the part. So the cell's markup must leave the part out, and the markup with the property on
+// must hold it. The hand-written renderers render the part at the property's value, always, or never.
+describe("the markup check of a part behind a BOOLEAN property that starts false", () => {
+  const ACTION: PartDefinition = {
+    ...dot(""),
+    key: "action",
+    slot: "chip-action",
+    optional: { name: "Action", defaultValue: false },
+  };
+  const HOLDER = chip("flex", { parts: [dot(""), ACTION] });
+  const CELLS = [{ state: "rest" }];
+  const rendering = (shows: (turnedOn: ReadonlySet<string>) => boolean): CellRendering => ({
+    element: (_cell, turnedOn) =>
+      createElement(
+        "span",
+        { "data-slot": "chip" },
+        createElement("span", { "data-slot": "chip-dot" }),
+        shows(turnedOn) ? createElement("span", { "data-slot": "chip-action" }) : null
+      ),
+  });
+
+  it("passes a renderer that renders the part only while the property is on", () => {
+    expect(() =>
+      checkMarkup(
+        HOLDER,
+        CELLS,
+        rendering((turnedOn) => turnedOn.has("Action"))
+      )
+    ).not.toThrow();
+  });
+
+  it("fails a renderer that renders the part while the property keeps its default", () => {
+    expect(() =>
+      checkMarkup(
+        HOLDER,
+        CELLS,
+        rendering(() => true)
+      )
+    ).toThrow("chip/state=rest: parts");
+  });
+
+  it("fails a renderer that leaves the part out with the property on", () => {
+    expect(() =>
+      checkMarkup(
+        HOLDER,
+        CELLS,
+        rendering(() => false)
+      )
+    ).toThrow("chip/state=rest with Action on: parts");
   });
 });

@@ -2,8 +2,9 @@
  * The in-place diff of an instance part: what the inner component's root, built where the composite
  * renders it, draws differently from the inner set's variant, and what the instance layer carries for
  * each difference. A Figma instance takes everything from its main component but its property values,
- * the paints, corners and shadows it overrides, and its own sizing in its parent's auto layout, so a
- * difference the instance cannot carry stays unmapped, and the composite cannot drift from its parts.
+ * the paints, corners, shadows and text alignments it overrides, and its own sizing in its parent's
+ * auto layout, so a difference the instance cannot carry stays unmapped, and the composite cannot
+ * drift from its parts.
  */
 import { isDeepStrictEqual } from "node:util";
 
@@ -270,9 +271,10 @@ function diffLayers(
 }
 
 /**
- * Diff a text: its characters become the value of the TEXT property that sets them, its color an
- * override, and every other field stays unmapped where it differs. Characters on a label no property
- * sets, or two labels that give one property two texts, stay unmapped.
+ * Diff a text: its characters become the value of the TEXT property that sets them, its color and its
+ * alignment across its lines overrides, and every other field stays unmapped where it differs.
+ * Characters on a label no property sets, or two labels that give one property two texts, stay
+ * unmapped, and so does an alignment that differs down the text, which no override carries.
  */
 function diffText(
   found: Found,
@@ -288,6 +290,13 @@ function diffText(
     } else if (field === "color") {
       if (!isDeepStrictEqual(inPlace.color, variant.color)) {
         found.overrides.push({ path, field: "textColor", color: inPlace.color });
+      }
+    } else if (field === "align" && inPlace.align.vertical === variant.align.vertical) {
+      // A label's TEXT property can give it more lines, which the alignment across places, so the
+      // instance carries a different one as an override (NA), as Empty's `text-center` reaches its
+      // Button labels.
+      if (inPlace.align.horizontal !== variant.align.horizontal) {
+        found.overrides.push({ path, field: "textAlign", horizontal: inPlace.align.horizontal });
       }
     } else {
       diffField(found, path, field, built.get(field), held.get(field));

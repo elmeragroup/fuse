@@ -298,6 +298,25 @@ describe("an instance part", () => {
     });
   });
 
+  // Oracle: CSS Text 3 §7.1, where `text-align` places each line of a text across its box, and probe
+  // NA, where a real file kept a `textAlignHorizontal` override on an instance's label through the
+  // main's alignment and character edits. A label's TEXT property can give it more lines than the
+  // composite shows, which the alignment places, so the instance carries the composite's alignment as
+  // an override wherever it differs, as Empty's `text-center` reaches its Button labels.
+  it("overrides the label's alignment where an outer `text-center` reaches it, and keeps the class's read", async () => {
+    const { chip: built, layer } = await buildBoth(holding(badgePart(), "flex items-center text-center"));
+    expect(layer).toEqual({
+      ...PLAIN,
+      overrides: [{ path: ["label"], field: "textAlign", horizontal: "CENTER" }],
+    });
+    expect(unmappedOf(built.coverage)).toEqual([]);
+    expect(
+      built.coverage
+        .filter((row) => row.className === "text-center")
+        .map((row) => [row.part, row.property, row.outcome])
+    ).toEqual([["chip", "text-align", "literal"]]);
+  });
+
   // Oracle: Figma's instance model, under which an instance's padding is its main component's, so a
   // padding the composite gives the badge has no instance field.
   it("leaves a padding the composite draws another way unmapped, naming the field, the inner variant and the fix", async () => {
@@ -310,7 +329,7 @@ describe("an instance part", () => {
     ]);
     for (const { property, detail } of differences) {
       expect(detail).toBe(
-        `the root draws ${property} {"kind":"literal","value":16} where the composite holds it and {"kind":"literal","value":8} in ${BADGE_VARIANT}, and an instance carries only property values, paints, corners, shadows and its own sizing, so give Badge an axis that draws it, or draw the part as a frame`
+        `the root draws ${property} {"kind":"literal","value":16} where the composite holds it and {"kind":"literal","value":8} in ${BADGE_VARIANT}, and an instance carries only property values, paints, corners, shadows, text alignments and its own sizing, so give Badge an axis that draws it, or draw the part as a frame`
       );
     }
     expect(

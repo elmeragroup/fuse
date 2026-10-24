@@ -73,12 +73,13 @@ const NO_FIGMA_FORM = new Map([
 
 /**
  * The properties a child inherits from its parent, as CSS passes them down. Custom properties
- * inherit too, unless their `@property` says `inherits: false`. `white-space` and `text-align`
- * inherit, so a `truncate` on a box keeps the label of a part below it on one line, while the
- * `overflow` and `text-overflow` it also sets stay on the box. `text-wrap` sets `text-wrap-mode`
- * and `text-wrap-style`, which inherit (CSS Text 4 §6.1), so a part's label wraps as Empty's
- * `text-balance` on the root says. `overflow-wrap` inherits (CSS Text 3 §5.5), so each label below
- * the box that sets it decides whether it breaks a word there.
+ * inherit too, unless their `@property` says `inherits: false`. `white-space` and `text-wrap` are
+ * shorthands, which `expandShorthand` splits: `white-space-collapse`, `text-wrap-mode` and
+ * `text-wrap-style` inherit (CSS Text 4 §3.1 and §6.1), so a `truncate` on a box keeps the label of a
+ * part below it on one line, while the `overflow` and `text-overflow` it also sets stay on the box,
+ * and a part's label wraps as Empty's `text-balance` on the root says. `text-align` inherits too, and
+ * `overflow-wrap` (CSS Text 3 §5.5), so each label below the box that sets it decides whether it
+ * breaks a word there.
  */
 const INHERITED_PROPERTIES = new Set([
   "color",
@@ -88,9 +89,10 @@ const INHERITED_PROPERTIES = new Set([
   "font-style",
   "line-height",
   "letter-spacing",
-  "white-space",
+  "white-space-collapse",
+  "text-wrap-mode",
+  "text-wrap-style",
   "text-align",
-  "text-wrap",
   "overflow-wrap",
 ]);
 
@@ -1663,6 +1665,56 @@ function inheritedKeyword(
  */
 const INITIAL_VALUES = new Map([["font-weight", "400"]]);
 
+/** The longhands `white-space`'s keywords set (CSS Text 4 §3): `white-space-collapse`, then `text-wrap-mode`. */
+const WHITE_SPACE = new Map([
+  ["normal", ["collapse", "wrap"]],
+  ["nowrap", ["collapse", "nowrap"]],
+  ["pre", ["preserve", "nowrap"]],
+  ["pre-wrap", ["preserve", "wrap"]],
+  ["pre-line", ["preserve-breaks", "wrap"]],
+  ["break-spaces", ["break-spaces", "wrap"]],
+]);
+
+/** The values of `text-wrap-mode`, one of the two `text-wrap` sets in any order (CSS Text 4 §6.1). */
+const WRAP_MODES = new Set(["wrap", "nowrap"]);
+
+/** The values of `text-wrap-style`, the other one `text-wrap` sets (CSS Text 4 §6.1). */
+const WRAP_STYLES = new Set(["auto", "balance", "stable", "pretty"]);
+
+/**
+ * The longhands `white-space` and `text-wrap` set, which share `text-wrap-mode`, so the declaration
+ * that sets it wins as the cascade decides: the nearer element's, and on one element the later in
+ * cascade order. `white-space` sets `white-space-collapse` and `text-wrap-mode` by its keyword, and
+ * `text-wrap` sets `text-wrap-mode` and `text-wrap-style`, each one it leaves out at its initial value,
+ * `wrap` and `auto`. A value neither reads, such as a `var()` or a global keyword, sets each longhand
+ * to itself, which an `inherit` takes and a read leaves unmapped otherwise.
+ */
+function wrappingLonghands(
+  property: "white-space" | "text-wrap",
+  value: string
+): readonly (readonly [string, string])[] {
+  const written = normalizeCss(value);
+  if (property === "white-space") {
+    const [collapse = written, mode = written] = WHITE_SPACE.get(written) ?? [];
+    return [
+      ["white-space-collapse", collapse],
+      ["text-wrap-mode", mode],
+    ];
+  }
+  const words = written.split(" ");
+  const mode = words.filter((word) => WRAP_MODES.has(word));
+  const style = words.filter((word) => WRAP_STYLES.has(word));
+  return mode.length + style.length === words.length && mode.length <= 1 && style.length <= 1
+    ? [
+        ["text-wrap-mode", mode[0] ?? "wrap"],
+        ["text-wrap-style", style[0] ?? "auto"],
+      ]
+    : [
+        ["text-wrap-mode", value],
+        ["text-wrap-style", value],
+      ];
+}
+
 /**
  * `color: currentcolor` computes to the color the element inherits, as `text-current` keeps its
  * parent's text color. The entry keeps the class as its source and reads the inherited color's
@@ -1684,7 +1736,8 @@ function inheritedCurrentColor(source: Provenance, inherited: ComputedStyle): St
  * part's margin draws, and name a logical inset or margin by its physical side, keeping every other
  * property. Each side then cascades with the physical one, so a style attribute's `margin: 0` resets
  * a class's `mt-1`. A side may be a `calc()` with spaces, as `px-2.5` compiles to
- * `calc(var(--spacing) * 2.5)`.
+ * `calc(var(--spacing) * 2.5)`. `white-space` and `text-wrap` split into their longhands, as
+ * {@link wrappingLonghands} says.
  */
 function expandShorthand(property: string, value: string): readonly (readonly [string, string])[] {
   const parts = splitTopLevel(normalizeCss(value), " ");
@@ -1730,6 +1783,9 @@ function expandShorthand(property: string, value: string): readonly (readonly [s
       return [["margin-top", value]];
     case "margin-block-end":
       return [["margin-bottom", value]];
+    case "white-space":
+    case "text-wrap":
+      return wrappingLonghands(property, value);
     default:
       return [[property, value]];
   }

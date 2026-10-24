@@ -41,6 +41,35 @@ const DEFAULT_BUTTON = "variant=default, size=default, state=rest, icon=none";
 const LAY_OUT_BUTTONS = "Button: lay out 420 variants in 5 columns and 84 rows";
 const PLACE = "Button: place Button, Icon button and Confirm button in a row and stack 4 previews below them";
 
+/** The change line of an instance that waits for Button's changes, at its label. */
+const waitsForButton = (label: string) => `${label} / button: plan again once Button's changes land`;
+
+/**
+ * What any change to the Button set makes Plan list for the sets that hold Button instances, in kit
+ * order: Empty's two actions in each of its 3 variants and Alert's action in each of its 10. Each
+ * instance plans again once Button's changes land, and each set's grid, which reads the instances'
+ * sizes, lays out again after them.
+ */
+const AFTER_BUTTON = [
+  ...["default", "outline", "outline-dashed"].flatMap((frame) => [
+    waitsForButton(`Empty / variant=${frame} / empty-content`),
+    waitsForButton(`Empty / variant=${frame} / empty-content`),
+  ]),
+  "Empty: lay out 3 variants in 3 columns and 1 rows",
+  ...["default", "destructive", "warning", "success", "info"].flatMap((tone) =>
+    ["off", "on"].map((described) =>
+      waitsForButton(`Alert / variant=${tone}, described=${described} / item-actions`)
+    )
+  ),
+  "Alert: lay out 10 variants in 2 columns and 5 rows",
+];
+
+/** The pages of the sets that hold Button instances, which place their sets and previews again after them. */
+const PLACE_AFTER_BUTTON = [
+  "Empty: place Empty in a row and stack 4 previews below them",
+  "Alert: place Alert in a row and stack 4 previews below them",
+];
+
 /** The component sets a run creates, page by page. */
 const CREATE_SETS = KIT_PAGES.flatMap((page) =>
   page.sets.map((set) => `${page.name}: create the component set ${set.name} with ${set.variants} variants`)
@@ -417,7 +446,9 @@ describe("a later run on an applied file", () => {
       `Button / ${DEFAULT_BUTTON}: name → ${DEFAULT_BUTTON}`,
       `Button / ${DEFAULT_BUTTON} / label: name → label`,
       LAY_OUT_BUTTONS,
+      ...AFTER_BUTTON,
       PLACE,
+      ...PLACE_AFTER_BUTTON,
     ]);
     await reconcileKit(file.figma, kit, true);
     expect(variant.name).toBe(DEFAULT_BUTTON);
@@ -448,7 +479,9 @@ describe("a later run on an applied file", () => {
       `Button: create the variant ${name}`,
       "Button: reorder the variants",
       LAY_OUT_BUTTONS,
+      ...AFTER_BUTTON,
       PLACE,
+      ...PLACE_AFTER_BUTTON,
     ]);
     await reconcileKit(file.figma, kit, true);
     expect(await changes(file)).toEqual([]);
@@ -463,7 +496,13 @@ describe("a later run on an applied file", () => {
     button.appendChild(variantNamed(button, DEFAULT_BUTTON));
     expect(property(button, "icon").variantOptions).toEqual(["none", "start", "end"]);
 
-    expect(await changes(file)).toEqual(["Button: reorder the variants", LAY_OUT_BUTTONS, PLACE]);
+    expect(await changes(file)).toEqual([
+      "Button: reorder the variants",
+      LAY_OUT_BUTTONS,
+      ...AFTER_BUTTON,
+      PLACE,
+      ...PLACE_AFTER_BUTTON,
+    ]);
     await reconcileKit(file.figma, kit, true);
     expect(await changes(file)).toEqual([]);
     expect(button.children[0]?.name).toBe(DEFAULT_BUTTON);
@@ -484,7 +523,9 @@ describe("a later run on an applied file", () => {
       `${label}: show Plus`,
       `${label}: glyph fill → primary-foreground`,
       LAY_OUT_BUTTONS,
+      ...AFTER_BUTTON,
       PLACE,
+      ...PLACE_AFTER_BUTTON,
     ]);
     await reconcileKit(file.figma, kit, true);
     expect(await changes(file)).toEqual([]);
@@ -611,7 +652,9 @@ describe("a later run on an applied file", () => {
     expect(await changes(file)).toEqual([
       "Button / variant=default, size=default, state=focus, icon=none: shadows → ring 0 0 0 2 (holds variable, stored #000000 at 100%, 0 0 0 2)",
       LAY_OUT_BUTTONS,
+      ...AFTER_BUTTON,
       PLACE,
+      ...PLACE_AFTER_BUTTON,
     ]);
     await reconcileKit(file.figma, kit, true);
     expect(await changes(file)).toEqual([]);

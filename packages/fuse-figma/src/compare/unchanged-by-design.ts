@@ -92,6 +92,7 @@ type ThemeColor = (color: ColorSpec) => ColorSpec;
 function overrideInTheme(override: InstanceOverride, paint: ThemeColor): InstanceOverride {
   switch (override.field) {
     case "cornerRadius":
+    case "textAlign":
       return override;
     case "effects":
       return {

@@ -20,6 +20,8 @@ export type VariableIndex = {
   readonly lookup: (value: string) => VariableRef | undefined;
   /** The smallest value a FLOAT variable holds in any mode, or undefined when unknown. */
   readonly minimum: (ref: VariableRef) => number | undefined;
+  /** The largest value a FLOAT variable holds in any mode, or undefined when unknown. */
+  readonly maximum: (ref: VariableRef) => number | undefined;
   /** Whether a custom property is a synced variable, which substitution must keep. */
   readonly owns: (customProperty: string) => boolean;
 };
@@ -28,7 +30,7 @@ export type VariableIndex = {
  * Index synced variables by their web code syntax.
  *
  * @param variables - Each synced variable with the code syntax the sync writes for it, and the
- *   smallest value it holds in any mode when it is a FLOAT variable.
+ *   smallest and largest values it holds in any mode when it is a FLOAT variable.
  * @returns The index.
  */
 export function makeVariableIndex(
@@ -36,6 +38,7 @@ export function makeVariableIndex(
     readonly ref: VariableRef;
     readonly webSyntax: string;
     readonly minimum?: number | undefined;
+    readonly maximum?: number | undefined;
   }[]
 ): VariableIndex {
   const owned = new Set<string>();
@@ -58,15 +61,20 @@ export function makeVariableIndex(
     );
   const bySyntax = new Map<string, VariableRef>();
   const minimums = new Map<string, number>();
-  for (const { ref, webSyntax, minimum } of variables) {
+  const maximums = new Map<string, number>();
+  for (const { ref, webSyntax, minimum, maximum } of variables) {
     bySyntax.set(canonical(webSyntax), ref);
     if (minimum !== undefined) {
       minimums.set(refKey(ref), minimum);
+    }
+    if (maximum !== undefined) {
+      maximums.set(refKey(ref), maximum);
     }
   }
   return {
     lookup: (value) => bySyntax.get(canonical(value)),
     minimum: (ref) => minimums.get(refKey(ref)),
+    maximum: (ref) => maximums.get(refKey(ref)),
     owns: (customProperty) => owned.has(customProperty),
   };
 }

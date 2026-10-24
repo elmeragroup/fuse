@@ -302,6 +302,13 @@
  *    height (N4). The plugin therefore writes FIXED before it binds an instance's length. A binding
  *    on any other axis resizes, as rule 5 says: on 2026-10-24 a frame that hugged its 28px height
  *    turned FIXED, in its layout sizing and its counter-axis mode, at `row-h`'s 32 (NS).
+ * 41. An instance's label keeps a `textAlignHorizontal` override. On 2026-10-24 a CENTER written on
+ *    the label sublayer of an instance of a component whose label was LEFT listed the sublayer with
+ *    `textAlignHorizontal` in `overrides`, and the label kept CENTER and showed the new characters
+ *    when the main's label turned RIGHT and took new characters. Writing the main's RIGHT on it
+ *    afterwards kept the field listed, unlike a fill (NS), so an equal write leaves the override
+ *    (NA). A label that overrides none shows its main layer's alignment, as rule 38 has the rest
+ *    follow the main. No probe swapped an instance with the override, so a swap drops it.
  *
  * An instance's sublayers show the layers of its main component, and a nested instance's sublayers
  * the sublayers its main layer shows. An override, such as the color an icon layer gives its glyph,
@@ -1989,6 +1996,17 @@ function charactersOf(state: NodeState): string {
   return value === undefined || value === true || value === false ? charactersOf(source) : value;
 }
 
+/**
+ * The horizontal alignment a text shows (rule 41): a sublayer shows its main layer's until it
+ * overrides it.
+ */
+function alignmentOf(state: NodeState): TextNode["textAlignHorizontal"] {
+  const source = state.mirrorOf;
+  return source === undefined || state.overridden.has("textAlignHorizontal")
+    ? state.textAlignHorizontal
+    : alignmentOf(source);
+}
+
 /** A variant's property values, read from its name, or undefined for a name without them. */
 function variantValues(name: string): ReadonlyMap<string, string> | undefined {
   const pairs = name.split(",").map((part) => part.trim().split("="));
@@ -3378,6 +3396,7 @@ const OVERRIDE_FIELDS: ReadonlyMap<string, readonly NodeChangeProperty[]> = new 
   ["effects", ["effects"]],
   ["radii", ["cornerRadius", "topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius"]],
   ["characters", ["characters"]],
+  ["textAlignHorizontal", ["textAlignHorizontal"]],
 ]);
 
 /**
@@ -3696,14 +3715,17 @@ class FakeText extends FakeSceneNode {
     }
   }
 
+  /** A sublayer of an instance shows its main layer's alignment until it overrides it (rule 41). */
   get textAlignHorizontal(): TextNode["textAlignHorizontal"] {
-    return live(this).textAlignHorizontal;
+    return alignmentOf(live(this));
   }
 
+  /** On an instance's sublayer the write is an override, even one equal to the main's (rule 41). */
   set textAlignHorizontal(value: TextNode["textAlignHorizontal"]) {
     const state = live(this);
     requireHeldFonts(state, "textAlignHorizontal");
     write(state, "textAlignHorizontal");
+    markOverride(state, "textAlignHorizontal");
     state.textAlignHorizontal = value;
   }
 

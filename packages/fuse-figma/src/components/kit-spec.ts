@@ -332,10 +332,11 @@ export type InstancePropertiesSpec = {
 };
 
 /**
- * A paint, corner or shadow an instance layer overrides on the inner variant's root, at the empty
- * `path`, or on a layer below it, at the keys of the layers from the root down. `fill`, `strokeColor`,
- * `cornerRadius` and `effects` apply to the root or a frame, `textColor` to a text and `glyph` to an
- * icon's glyph. A `fill` or `strokeColor` of undefined paints none.
+ * A paint, corner, shadow or text alignment an instance layer overrides on the inner variant's root, at
+ * the empty `path`, or on a layer below it, at the keys of the layers from the root down. `fill`,
+ * `strokeColor`, `cornerRadius` and `effects` apply to the root or a frame, `textColor` and
+ * `textAlign`, the alignment across a text's lines, to a text, and `glyph` to an icon's glyph. A `fill`
+ * or `strokeColor` of undefined paints none.
  */
 export type InstanceOverride =
   | {
@@ -344,6 +345,11 @@ export type InstanceOverride =
       readonly color: ColorSpec | undefined;
     }
   | { readonly path: readonly string[]; readonly field: "textColor" | "glyph"; readonly color: ColorSpec }
+  | {
+      readonly path: readonly string[];
+      readonly field: "textAlign";
+      readonly horizontal: TextAlignSpec["horizontal"];
+    }
   | { readonly path: readonly string[]; readonly field: "cornerRadius"; readonly value: NumberSpec }
   | { readonly path: readonly string[]; readonly field: "effects"; readonly shadows: readonly ShadowSpec[] };
 

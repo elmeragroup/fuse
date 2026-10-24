@@ -126,7 +126,7 @@ const BREADCRUMB_PARTS_PAGE: KitPage = { slug: "breadcrumb", name: "Breadcrumb" 
 /** The page of Select's parts, the trigger alone until the popup's sets join it. */
 const SELECT_PAGE: KitPage = { slug: "select", name: "Select" };
 
-/** The page Empty sits on alone, until Empty with actions joins it. */
+/** The page Empty sits on alone. */
 const EMPTY_PAGE: KitPage = { slug: "empty", name: "Empty" };
 
 /** The page of the Calendar's day cell, alone until the month frame joins it. */
@@ -138,7 +138,7 @@ const LINK_PAGE: KitPage = { slug: "link", name: "Link" };
 /** The page of Item's rows, the row and the link row, until Item group joins them. */
 const ITEM_PAGE: KitPage = { slug: "item", name: "Item" };
 
-/** The page Alert sits on alone, until Alert with an action joins it. */
+/** The page Alert sits on alone. */
 const ALERT_PAGE: KitPage = { slug: "alert", name: "Alert" };
 
 /** The page Accordion's item sits on alone, until a stacked accordion joins it. */

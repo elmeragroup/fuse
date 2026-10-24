@@ -21,6 +21,17 @@
  *   (`leading-snug`) and 150% (`leading-normal`) of it, a percent that follows the size at each
  *   density (PH). The content column fills the row's spare width with a 4px gap, and both texts
  *   fill it and wrap there. Alert does not clamp the description.
+ * - The action is `alert.tsx`'s `<Button size="sm">` in `Item.Actions`, whose `flex items-center
+ *   gap-2` row centers it on the alert's row. Its label is the docs Action demo's `Retry`. The tone's
+ *   `button` slot replaces the default Button's `bg-primary` and `text-primary-foreground`: default
+ *   `bg-background text-foreground`, destructive `bg-error text-error-foreground`, warning
+ *   `bg-warning text-warning-foreground`, success `bg-success text-success-foreground` and info
+ *   `bg-info text-info-foreground`, each compiling to the token's `var()`. A docs alert without
+ *   `onAction` renders no action, so the `Action` property starts false, which hides the actions in
+ *   every cell (PQ). Beside a description the media and the content top-align, so the actions
+ *   stretch down the row to stay centered: the Button is at most 36px tall (`control-h-sm`, 32px dense
+ *   and 36px comfortable), and the title and the description at least 44.25px with their gap (one
+ *   14px line each at 137.5% and 150%, 4px apart).
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -37,7 +48,7 @@ import {
 } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
 import type { CoverageRow } from "./coverage";
-import type { ChildLayerSpec, ComponentRootSpec, FrameLayerSpec } from "./kit-spec";
+import type { ChildLayerSpec, ComponentRootSpec, FrameLayerSpec, InstanceLayerSpec } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
 let coverage: readonly CoverageRow[];
@@ -65,6 +76,15 @@ function only(box: { readonly children: readonly ChildLayerSpec[] }): ChildLayer
   return box.children[0];
 }
 
+/** Each tone's action fill and label color, from its `button` slot. */
+const ACTIONS = [
+  ["default", "background", "foreground"],
+  ["destructive", "error", "error-foreground"],
+  ["warning", "warning", "warning-foreground"],
+  ["success", "success", "success-foreground"],
+  ["info", "info", "info-foreground"],
+] as const;
+
 /** Each tone's row fill, row stroke, text color, icon and icon color. */
 const TONES = [
   ["default", "background", "border", "foreground", "Info", "foreground"],
@@ -88,7 +108,7 @@ describe("the Alert component set", () => {
         { name: "Title", defaultValue: "Scheduled maintenance" },
         { name: "Description", defaultValue: "Read-only access tonight from 22:00 to 23:00." },
       ],
-      undefined,
+      [{ name: "Action", defaultValue: false }],
       [],
     ]);
   });
@@ -181,6 +201,66 @@ describe("the Alert component set", () => {
     expect(frame(alert("default", "off"), "item-content").children.map((child) => child.name)).toEqual([
       "item-title",
     ]);
+  });
+
+  it.each(ACTIONS)(
+    "holds the %s action, a small Button filled with %s, its Retry label in %s, behind the Action property",
+    (variant, fill, text) => {
+      for (const described of ["off", "on"]) {
+        const root = alert(variant, described);
+        expect(root.children.map((child) => child.name)).toEqual([
+          "item-media",
+          "item-content",
+          "item-actions",
+        ]);
+        const actions = frame(root, "item-actions");
+        expect([actions.visibleProperty, only(actions)]).toEqual([
+          "Action",
+          {
+            kind: "instance",
+            key: "action",
+            name: "button",
+            componentSet: "button",
+            variant: "button/variant=default,size=sm,state=rest,icon=none",
+            sizing: { horizontal: HUG, vertical: fixed(density("control-h-sm")) },
+            properties: { text: { Label: "Retry" } },
+            overrides: [
+              { path: [], field: "fill", color: paint(fill) },
+              { path: ["label"], field: "textColor", color: paint(text) },
+            ],
+            exposed: true,
+          } satisfies InstanceLayerSpec,
+        ]);
+      }
+    }
+  );
+
+  it("centers the actions on the row 8px apart, hugging them, and stretches them down a described row", () => {
+    const off = frame(alert("default", "off"), "item-actions");
+    const on = frame(alert("default", "on"), "item-actions");
+    expect([off.direction, off.itemSpacing, off.counterAlign, off.fill, off.stroke]).toEqual([
+      "HORIZONTAL",
+      literal(8),
+      "CENTER",
+      undefined,
+      undefined,
+    ]);
+    expect([off.sizing, on.sizing, on.counterAlign]).toEqual([
+      { horizontal: HUG, vertical: HUG },
+      { horizontal: HUG, vertical: FILL },
+      "CENTER",
+    ]);
+    const reasons = new Set(
+      coverage
+        .filter((row) => row.component === "Alert" && row.className === "items-center" && row.part === "item")
+        .map((row) => `${row.outcome}: ${row.detail}`)
+    );
+    expect(reasons).toEqual(
+      new Set([
+        "literal: centered on the counter axis",
+        "literal: item-actions stretches across the counter axis and places its layers centered on it, where CSS places it centered on the counter axis",
+      ])
+    );
   });
 
   it("drops the rich-text spacing and the ring the warning and info tones set for a focus the row never takes", () => {

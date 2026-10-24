@@ -2,7 +2,7 @@
  * The instance rules of the in-memory file in `fake-figma.ts`: an instance of a set's variant nested
  * in another component, its properties, swaps, overrides, exposure and size. The oracle is what the
  * test file `Elmera Fuse - Import test` read back in the net-zero probes N1 to N5 on 2026-10-23 and NS
- * on 2026-10-24, as the fake's header names them, and the typings where no probe ran. The planners' instance tests
+ * and NA on 2026-10-24, as the fake's header names them, and the typings where no probe ran. The planners' instance tests
  * converge against these rules, so a rule that drifts from the real file would let a plan pass that
  * Figma would not keep.
  */
@@ -477,5 +477,37 @@ describe("rule 40: a bound height on an instance that hugs it records the bindin
     instance.layoutSizingVertical = "FIXED";
     instance.setBoundVariable("height", rowH);
     expect([instance.height, instance.layoutSizingVertical]).toEqual([32, "FIXED"]);
+  });
+});
+
+describe("rule 41: an instance's label keeps a text alignment override (NA)", () => {
+  /** Each overridden node's id and its fields, in a fixed order. */
+  const listed = (instance: InstanceNode) =>
+    instance.overrides.map(({ id, overriddenFields }) => [id, [...overriddenFields].sort()]);
+
+  it("lists the label's alignment override and keeps it through the main's alignment and characters", async () => {
+    const { a1, instance } = await nested();
+    const label = childNamed(instance, "TEXT", "Label");
+    label.textAlignHorizontal = "CENTER";
+    expect(listed(instance)).toEqual([[label.id, ["textAlignHorizontal"]]]);
+    const main = childNamed(a1, "TEXT", "Label");
+    main.textAlignHorizontal = "RIGHT";
+    main.characters = "Button now";
+    expect([label.textAlignHorizontal, label.characters]).toEqual(["CENTER", "Button now"]);
+  });
+
+  it("keeps the override listed after a write equal to the main's, unlike a fill (NA, NS)", async () => {
+    const { a1, instance } = await nested();
+    const label = childNamed(instance, "TEXT", "Label");
+    label.textAlignHorizontal = "CENTER";
+    label.textAlignHorizontal = childNamed(a1, "TEXT", "Label").textAlignHorizontal;
+    expect(listed(instance)).toEqual([[label.id, ["textAlignHorizontal"]]]);
+  });
+
+  // Rule 38's model: a sublayer shows its main layer's field until it overrides it.
+  it("shows the main's alignment on a label that overrides none", async () => {
+    const { a1, instance } = await nested();
+    childNamed(a1, "TEXT", "Label").textAlignHorizontal = "RIGHT";
+    expect(childNamed(instance, "TEXT", "Label").textAlignHorizontal).toBe("RIGHT");
   });
 });

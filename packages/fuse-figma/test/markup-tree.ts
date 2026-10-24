@@ -198,6 +198,23 @@ function isHiddenPresentation(element: MarkupElement): boolean {
 /** A part a parent holds: a frame, or an instance of another set. */
 type AnyPart = PartDefinition | InstanceDefinition;
 
+/**
+ * Whether a cell renders a part with the given BOOLEAN properties, each of which starts false, turned
+ * on: where the part's `shownIn` holds, and, behind a property, where the property starts true or is
+ * among `turnedOn`.
+ *
+ * @param part - A frame or an instance part.
+ * @param cell - The cell.
+ * @param turnedOn - The BOOLEAN properties that start false which the rendering turns on.
+ * @returns Whether the markup holds the part.
+ */
+export function rendersIn(part: AnyPart, cell: Cell, turnedOn: ReadonlySet<string>): boolean {
+  const { optional } = part;
+  return (
+    part.shownIn(cell) && (optional === undefined || optional.defaultValue || turnedOn.has(optional.name))
+  );
+}
+
 /** The part among a parent's own parts whose `element` selects an element. */
 function selectedPart(parts: readonly AnyPart[], element: MarkupElement): AnyPart | undefined {
   return parts.find((part) => {
@@ -285,13 +302,16 @@ function inOrder(
  * belong to the inner set, so none of them is a part.
  *
  * @param cell - The cell, which says which parts render.
+ * @param turnedOn - The BOOLEAN properties that start false which the rendering turns on, whose parts
+ *   render too.
  */
 export function markupParts(
   elements: readonly MarkupElement[],
   measured: number,
   definition: ComponentDefinition,
   slots: ReadonlySet<string>,
-  cell: Cell
+  cell: Cell,
+  turnedOn: ReadonlySet<string>
 ): readonly (readonly [string, number])[] {
   const found = new Map<number, FoundBox>([[measured, { path: "", box: definition }]]);
   const counts = new Map<string, number>();
@@ -308,7 +328,7 @@ export function markupParts(
       continue;
     }
     const parts = parent.box?.parts ?? [];
-    const rendered = parts.filter((part) => part.shownIn(cell));
+    const rendered = parts.filter((part) => rendersIn(part, cell, turnedOn));
     const slot = element.attributes.get("data-slot");
     const selected = selectedPart(parts, element);
     if (slot !== undefined && slots.has(slot)) {

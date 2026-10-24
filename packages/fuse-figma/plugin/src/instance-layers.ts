@@ -2,14 +2,16 @@
  * Instance layers: an instance of another kit set's variant inside a variant, such as an Alert's
  * action Button, so the composite stays linked to the set that draws the part. The plan points the
  * instance at the variant, sets the inner set's properties, overrides paints, corners and shadows on
- * it and on the layers below it, sizes it in its parent's auto layout, links its visibility to the
- * outer set's BOOLEAN property and marks whether it is exposed.
+ * it and on the layers below it, and a text's alignment across its lines, sizes it in its parent's
+ * auto layout, links its visibility to the outer set's BOOLEAN property and marks whether it is
+ * exposed.
  *
  * On 2026-10-23 and 2026-10-24 a real file showed what a nested instance does (N1 to N5, NS):
  * `swapComponent` and a variant change keep its node, its property values, its visibility link and
  * its exposure, its sublayers read the shared plugin data of their main layers, so the plan finds
  * them by key, an override survives an edit of the same field in the main, and an override written
- * equal to the main's is none, so that field follows the main again.
+ * equal to the main's is none, so that field follows the main again. A text's alignment is the
+ * exception: its override stays listed after a write equal to the main's (NA).
  *
  * The plan reads an instance in stages, each against what the stage before leaves (`planInstance`).
  */
@@ -240,7 +242,8 @@ function heldLayers(instance: InstanceNode, label: string): ReadonlyMap<string, 
 type OverrideWrite =
   | { readonly field: "fill" | "strokeColor" | "textColor" | "glyph"; readonly paint: FillSpec | undefined }
   | { readonly field: "cornerRadius"; readonly value: NumberSpec }
-  | { readonly field: "effects"; readonly shadows: readonly ShadowSpec[] };
+  | { readonly field: "effects"; readonly shadows: readonly ShadowSpec[] }
+  | { readonly field: "textAlign"; readonly horizontal: TextLayerSpec["align"]["horizontal"] };
 
 /** The write an override of the spec asks for. */
 function writeOf(override: InstanceOverride): OverrideWrite {
@@ -249,6 +252,8 @@ function writeOf(override: InstanceOverride): OverrideWrite {
       return { field: override.field, value: override.value };
     case "effects":
       return { field: override.field, shadows: override.shadows };
+    case "textAlign":
+      return { field: override.field, horizontal: override.horizontal };
     default:
       return { field: override.field, paint: override.color };
   }
@@ -287,6 +292,15 @@ function planOverride(run: Run, layer: HeldLayer, write: OverrideWrite): void {
       }
       planPaints(run, label, "text color", node.fills, write.paint, (paints) => {
         node.fills = paints;
+      });
+      return;
+    }
+    case "textAlign": {
+      if (node.type !== "TEXT") {
+        throw new Error(`${label} is a ${node.type}, which takes no text alignment override.`);
+      }
+      planScalar(run, label, "textAlignHorizontal", node.textAlignHorizontal, write.horizontal, () => {
+        node.textAlignHorizontal = write.horizontal;
       });
       return;
     }
@@ -341,6 +355,9 @@ function innerValue(
   if (layer.kind === "text" && field === "textColor") {
     return { field, paint: layer.color };
   }
+  if (layer.kind === "text" && field === "textAlign") {
+    return { field, horizontal: layer.align.horizontal };
+  }
   if (layer.kind === "icon" && field === "glyph") {
     return { field, paint: layer.color };
   }
@@ -362,6 +379,8 @@ function fieldsOf(
     } else if (node.type === "TEXT") {
       if (name === "fills") {
         fields.add("textColor");
+      } else if (name === "textAlignHorizontal") {
+        fields.add("textAlign");
       }
     } else if (node.type === "FRAME" || node.type === "INSTANCE") {
       const field = BOX_FIELDS.get(name);
@@ -593,10 +612,13 @@ function changesFirst(
 
 /**
  * Require every font the labels of an instance the file holds use where the run may write their TEXT
- * property: a TEXT write changes a label's characters, which needs each font the label holds loaded,
- * a font a designer gave it and each range of mixed ones included, as Figma's text guide says. Planned
- * before the first write, so a font this machine lacks stops the run with nothing written.
+ * property or their alignment: a TEXT write changes a label's characters, and an alignment write its
+ * lines, which needs each font the label holds loaded, a font a designer gave it and each range of
+ * mixed ones included, as Figma's text guide and the typings say. A label the spec aligns, or one that
+ * holds an alignment the spec may drop, takes its fonts too. Planned before the first write, so a font
+ * this machine lacks stops the run with nothing written.
  *
+ * @param spec - The instance layer, whose overrides name the labels it aligns.
  * @param differ - The properties the instance's values differ in now, or undefined where its stages
  *   wait for an earlier operation, after which the run may write any of its TEXT properties.
  */
@@ -605,6 +627,7 @@ function requireHeldLabelFonts(
   instance: InstanceNode,
   label: string,
   inner: InnerVariant,
+  spec: InstanceLayerSpec,
   differ: readonly DesiredProperty[] | undefined
 ): void {
   const written = new Set(
@@ -612,14 +635,22 @@ function requireHeldLabelFonts(
       ? inner.set.spec.textProperties.map((property) => property.name)
       : differ.flatMap((desired) => (desired.type === "TEXT" ? [desired.name] : []))
   );
-  const keys = new Set(
-    linkedLabels(inner.spec).flatMap((text) =>
+  const keys = new Set([
+    ...linkedLabels(inner.spec).flatMap((text) =>
       text.textProperty !== undefined && written.has(text.textProperty) ? [text.key] : []
+    ),
+    ...(spec.overrides ?? []).flatMap((override) =>
+      override.field === "textAlign" ? [override.path.at(-1) ?? ""] : []
+    ),
+  ]);
+  const aligned = new Set(
+    instance.overrides.flatMap(({ id, overriddenFields }) =>
+      overriddenFields.includes("textAlignHorizontal") ? [id] : []
     )
   );
   for (const layer of heldLayers(instance, label).values()) {
     const { node } = layer;
-    if (node.type === "TEXT" && keys.has(layer.path.at(-1) ?? "")) {
+    if (node.type === "TEXT" && (keys.has(layer.path.at(-1) ?? "") || aligned.has(node.id))) {
       for (const font of heldFonts(run, node)) {
         requireFont(run, layer.label, font);
       }
@@ -668,7 +699,7 @@ export async function planInstance(
   const shows = inner.node.existing !== undefined && main?.id === inner.node.existing.id;
   const now = shows && !changesFirst(spec, inner, links.icons);
   const differ = now ? differingProperties(instance, spec, inner, links.icons, label) : undefined;
-  requireHeldLabelFonts(run, instance, label, inner, differ);
+  requireHeldLabelFonts(run, instance, label, inner, spec, differ);
   if (now) {
     planStages(run, instance, label, spec, inner, links, held);
     return;

@@ -85,6 +85,8 @@ function overrideRefs(override: InstanceOverride): BoundRef[] {
         ...boundNumber(shadow.spread),
         ...boundColor(shadow.color),
       ]);
+    case "textAlign":
+      return [];
     default:
       return boundColor(override.color);
   }
@@ -289,6 +291,7 @@ const OVERRIDE_TARGETS = {
   cornerRadius: "box",
   effects: "box",
   textColor: "text",
+  textAlign: "text",
   glyph: "icon",
 } as const satisfies Record<InstanceOverride["field"], LayerKind>;
 

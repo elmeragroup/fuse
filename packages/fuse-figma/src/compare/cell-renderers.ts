@@ -32,8 +32,13 @@ export type CellRenderer = {
   readonly set: string;
   /** The Fuse build output `element` imports, which the run checks for before loading it. */
   readonly entry: `dist/${string}.js`;
-  /** The real Fuse element for a parsed cell, with the states the markup draws set by props. */
-  readonly element: (cell: Cell) => ReactElement;
+  /**
+   * The real Fuse element for a parsed cell, with the states the markup draws set by props, and with
+   * the parts behind each BOOLEAN property of `turnedOn`, which starts false, rendered. A preview shows
+   * every property at its default, so the compare page turns none on; the markup check turns them on
+   * too, to check the parts they hide.
+   */
+  readonly element: (cell: Cell, turnedOn: ReadonlySet<string>) => ReactElement;
   /**
    * The classes the cells pass that a host app compiles in its own Tailwind build, because Fuse's
    * standalone `styles.css` holds only the classes Fuse's own source uses. Separator, Skeleton and
@@ -351,6 +356,9 @@ export function forcedAttributesFor(renderer: CellRendering, cell: Cell): Readon
   return forcedPseudoClasses(cell).length === 0 ? {} : (renderer.forcedAttributes?.(cell) ?? {});
 }
 
+/** No BOOLEAN property turned on, as a preview shows every property at its default. */
+const AT_DEFAULTS: ReadonlySet<string> = new Set();
+
 /**
  * Render a cell to static HTML. The page needs no hydration: CSS draws every state, the page
  * forces hover and focus as pseudo classes, and it writes the attributes a renderer names for the
@@ -358,8 +366,14 @@ export function forcedAttributesFor(renderer: CellRendering, cell: Cell): Readon
  *
  * @param renderer - The cell's renderer, or the rendering its module defines.
  * @param cell - The parsed cell.
+ * @param turnedOn - The BOOLEAN properties that start false whose parts the cell renders, none for the
+ *   cell as its preview shows it.
  * @returns The element as an HTML string.
  */
-export function renderCellHtml(renderer: CellRendering, cell: Cell): string {
-  return renderToStaticMarkup(renderer.element(cell));
+export function renderCellHtml(
+  renderer: CellRendering,
+  cell: Cell,
+  turnedOn: ReadonlySet<string> = AT_DEFAULTS
+): string {
+  return renderToStaticMarkup(renderer.element(cell, turnedOn));
 }

@@ -202,8 +202,8 @@ function drawsAlikeWide(reader: LayerStyle, paint: BoxPaint): boolean {
     paint.fill === undefined &&
     paint.stroke === undefined &&
     paint.shadows.length === 0 &&
-    ["", "normal"].includes(value("white-space")) &&
-    value("text-wrap") !== "nowrap" &&
+    ["", "collapse"].includes(value("white-space-collapse")) &&
+    value("text-wrap-mode") !== "nowrap" &&
     ["", "row"].includes(value("flex-direction")) &&
     ["", "normal", "start", "flex-start", "left"].includes(value("justify-content")) &&
     ["", "start", "left"].includes(value("text-align"))
@@ -386,7 +386,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     const room = index === -1 ? absoluteRoom(holder) : lessMargins(inFlow(), part.cascade.style);
     return mapPart(part, room, layout, scope);
   });
-  const parts = settledParts(reader, flow, mapped, scope.painted);
+  const parts = settledParts(reader, flow, mapped, scope);
   const missing = unstretched(
     holder,
     flowing.map((part) => part.cascade.style)
@@ -591,19 +591,22 @@ function mapPart(part: ShownPart, room: Room, layout: Layout, scope: MapScope): 
  * @param reader - The box's style.
  * @param flow - The box's flow, as {@link readFlow} read it.
  * @param mapped - The box's parts, as {@link mapPart} mapped them.
- * @param painted - What each instance layer of the mapping paints.
+ * @param scope - The mapping's scope: the synced variables, whose values bound the parts' heights, and
+ *   what each instance layer of the mapping paints.
  * @returns Each part's style and layer.
  */
 function settledParts(
   reader: LayerStyle,
   flow: Flow,
   mapped: readonly MappedPart[],
-  painted: PaintedInstances
+  scope: MapScope
 ): readonly Pick<MappedPart, "layer" | "style">[] {
+  const { painted } = scope;
   const stretched = settleFlow(
     reader,
     flow,
-    mapped.filter(({ style }) => !outOfFlow(style)).map(({ layer }) => layer)
+    mapped.filter(({ style }) => !outOfFlow(style)).map(({ layer }) => layer),
+    scope.context.variables
   );
   return mapped.map(({ layer, style, stacked }) => {
     const placed = stretchedLayer(layer, stretched);

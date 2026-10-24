@@ -410,6 +410,7 @@ const OVERRIDDEN_FIELD = {
   cornerRadius: "cornerRadius",
   effects: "shadows",
   textColor: "color",
+  textAlign: "align",
   glyph: "color",
 } as const satisfies Record<InstanceOverride["field"], SpecField>;
 
@@ -454,7 +455,7 @@ function classified(row: Row, visit: Visit): Row {
 /** Why a difference stays unmapped: the field, the two values, the inner variant and the fix. */
 function differenceDetail(visit: Visit, difference: InstanceDifference): string {
   const layer = difference.path.length === 0 ? "the root" : difference.path.join(" / ");
-  return `${layer} draws ${difference.field} ${difference.inPlace} where the composite holds it and ${difference.variant} in ${visit.variant.key}, and an instance carries only property values, paints, corners, shadows and its own sizing, so give ${visit.part.of.name} an axis that draws it, or draw the part as a frame`;
+  return `${layer} draws ${difference.field} ${difference.inPlace} where the composite holds it and ${difference.variant} in ${visit.variant.key}, and an instance carries only property values, paints, corners, shadows, text alignments and its own sizing, so give ${visit.part.of.name} an axis that draws it, or draw the part as a frame`;
 }
 
 /** The property values an instance layer gives the inner set, undefined where none differs from its default. */

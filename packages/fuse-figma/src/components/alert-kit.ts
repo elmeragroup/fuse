@@ -19,19 +19,31 @@
  *   then top-align, and the media is one title line tall, `--label-text` times `--leading-snug`,
  *   the `label-line-snug` variable. The description's presence is the `described` axis, not a
  *   BOOLEAN property, since a selector reads it.
- * - The action, a Button in Item.Actions, waits for kit components that hold instances.
+ * - The action is `alert.tsx`'s `<Button size="sm">` in Item.Actions: an instance of Button's
+ *   `default` variant at `sm`, at rest and with no icon, whose label is the docs Action demo's
+ *   `Retry`. The tone's `button` slot overrides its fill and label color, which the build proves by
+ *   the instance's in-place diff. It sits behind the `Action` BOOLEAN property, which starts false,
+ *   so every variant draws the alert as the docs Variants demo shows it, and a designer turns it on.
  */
 import {
   alertVariants,
   cn,
   ITEM_DESCRIPTION_CLASSES,
   ITEM_TITLE_CLASSES,
+  itemActionsClass,
   itemContentClass,
   itemMediaVariants,
   itemVariants,
 } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { Cell, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
+import { BUTTON } from "./button-kit";
+import type {
+  Cell,
+  ComponentDefinition,
+  IconSlot,
+  InstanceDefinition,
+  PartDefinition,
+} from "./component-spec";
 import { ownKey } from "./own-key";
 
 /** The width the kit's previews and the compare host give an Alert, the docs demo's `max-w-lg`. */
@@ -157,9 +169,39 @@ const CONTENT: PartDefinition = {
   parts: [TITLE, DESCRIPTION],
 };
 
+/** The action's label, which the instance gives Button's `Label`: the docs Action demo's. */
+export const ALERT_ACTION_LABEL = "Retry";
+
+/** The BOOLEAN property that shows the action, which starts false, so a published cell shows none. */
+export const ALERT_ACTION_PROPERTY = "Action";
+
+/** The action, a small Button in the tone's fill and text color, as `alert.tsx` renders it. */
+const ACTION: InstanceDefinition = {
+  kind: "instance",
+  key: "action",
+  of: BUTTON,
+  cell: () => ({ variant: "default", size: "sm", state: "rest", icon: "none" }),
+  classesFor: (cell) => slotsFor(cell).button(),
+  properties: () => ({ text: { Label: ALERT_ACTION_LABEL } }),
+  shownIn: always,
+  exposed: true,
+};
+
+/** Item's actions around the action, behind the `Action` BOOLEAN property, which starts false. */
+const ACTIONS: PartDefinition = {
+  key: "actions",
+  slot: "item-actions",
+  shownIn: always,
+  optional: { name: ALERT_ACTION_PROPERTY, defaultValue: false },
+  classesFor: () => itemActionsClass,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [ACTION],
+};
+
 /**
  * An Alert, as `<Alert.Root variant>` around its title and, where the cell is described, its
- * description, in a 512px container.
+ * description, in a 512px container, with the action behind the `Action` property.
  */
 export const ALERT: ComponentDefinition = {
   key: "alert",
@@ -198,6 +240,6 @@ export const ALERT: ComponentDefinition = {
   ]),
   label: undefined,
   iconsFor: () => [],
-  parts: [MEDIA, CONTENT],
+  parts: [MEDIA, CONTENT, ACTIONS],
   swapProperties: [],
 };

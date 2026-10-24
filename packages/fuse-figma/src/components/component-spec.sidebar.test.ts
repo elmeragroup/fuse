@@ -205,7 +205,12 @@ describe("a label in a `<span>` that `[&>span:last-child]:` styles", () => {
     expect(truncateRows(coverage)).toEqual([
       ["overflow", "literal", "the label's element clips its text at the room the row leaves it"],
       ["text-overflow", "literal", "the label ends in an ellipsis after 1 line"],
-      ["white-space", "literal", "the label keeps to one line"],
+      ["text-wrap-mode", "literal", "the label keeps to one line"],
+      [
+        "white-space-collapse",
+        "dropped",
+        "the characters hold no run of white space or line break to collapse",
+      ],
     ]);
   });
 
@@ -231,7 +236,12 @@ describe("a label in a `<span>` that `[&>span:last-child]:` styles", () => {
     expect(truncateRows(coverage)).toEqual([
       ["overflow", "dropped", "the box hugs the label, so it never overflows"],
       ["text-overflow", "dropped", "the box hugs the label, so it never overflows"],
-      ["white-space", "literal", "the label hugs its width"],
+      ["text-wrap-mode", "literal", "the label hugs its width"],
+      [
+        "white-space-collapse",
+        "dropped",
+        "the characters hold no run of white space or line break to collapse",
+      ],
     ]);
   });
 
@@ -250,7 +260,8 @@ describe("a label in a `<span>` that `[&>span:last-child]:` styles", () => {
     expect(truncateRows(coverage)).toEqual([
       ["overflow", "unmapped", detail],
       ["text-overflow", "unmapped", detail],
-      ["white-space", "unmapped", detail],
+      ["text-wrap-mode", "unmapped", detail],
+      ["white-space-collapse", "unmapped", detail],
     ]);
   });
 
@@ -267,7 +278,8 @@ describe("a label in a `<span>` that `[&>span:last-child]:` styles", () => {
     expect(truncateRows(coverage)).toEqual([
       ["overflow", "unmapped", detail],
       ["text-overflow", "unmapped", detail],
-      ["white-space", "unmapped", detail],
+      ["text-wrap-mode", "unmapped", detail],
+      ["white-space-collapse", "unmapped", detail],
     ]);
   });
 

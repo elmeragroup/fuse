@@ -135,7 +135,8 @@ describe("the Field description component set", () => {
     );
     expect(reasons("Field description", "text-pretty")).toEqual(
       new Set([
-        "text-wrap dropped: a Figma text fills each line before it starts the next, so it cannot even out its lines",
+        "text-wrap-mode literal: the label wraps at the box's width",
+        "text-wrap-style dropped: a Figma text fills each line before it starts the next, so it cannot even out its lines",
       ])
     );
     expect(reasons("Field description", "[&>a]:")).toEqual(
@@ -201,7 +202,8 @@ describe("the Field legend component set", () => {
     );
     expect(reasons("Field legend", "text-balance")).toEqual(
       new Set([
-        "text-wrap dropped: a Figma text fills each line before it starts the next, so it cannot even out its lines",
+        "text-wrap-mode literal: the label wraps at the box's width",
+        "text-wrap-style dropped: a Figma text fills each line before it starts the next, so it cannot even out its lines",
       ])
     );
   });
