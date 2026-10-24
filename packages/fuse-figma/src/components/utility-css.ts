@@ -52,6 +52,12 @@ export type ClassPlacement = {
 export type CompiledUtilities = {
   /** Each bare utility Tailwind emitted a rule for. A utility it does not know is absent. */
   readonly rules: ReadonlyMap<string, UtilityRule>;
+  /**
+   * Each bare utility whose rule styles every child of the element that carries it but the last, as
+   * Tailwind compiles `space-y-4` to `:where(.space-y-4 > :not(:last-child))`. Such a utility has no
+   * entry in `rules`, since its rule selects no element by the class alone.
+   */
+  readonly exceptLastChildRules: ReadonlyMap<string, UtilityRule>;
   /** Each full class Tailwind emitted a rule for, such as `data-checked:border-primary`. */
   readonly classes: ReadonlyMap<string, ClassPlacement>;
   /**
@@ -224,8 +230,10 @@ export function baseBorderColor(compiled: CompiledUtilities): UtilityDeclaration
 
 /**
  * Read Tailwind's build output. A rule whose whole selector is one class is that utility's
- * rule. A `@supports` block that tests `color-mix()` overrides the declarations before it,
- * because every browser Fuse supports passes that test. Any other nested block, such as
+ * rule, and so is one that styles every child but the last of the element that carries one class,
+ * as `space-y-*` compiles, which the read keeps apart. A `@supports` block that tests
+ * `color-mix()` overrides the declarations before it, because every browser Fuse supports passes
+ * that test. Any other nested block, such as
  * `@media (forced-colors: active)`, describes a mode Figma does not show and is skipped. The
  * rules of the `base` layer are kept apart, since no class selects them.
  *
@@ -242,6 +250,7 @@ export function baseBorderColor(compiled: CompiledUtilities): UtilityDeclaration
  */
 function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
   const rules = new Map<string, UtilityRule>();
+  const exceptLastChildRules = new Map<string, UtilityRule>();
   const classes = new Map<string, ClassPlacement>();
   const rulesByClass = new Map<string, string[]>();
   const themeValues = new Map<string, string>();
@@ -317,9 +326,27 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
     if (leading?.rest === "") {
       rules.set(leading.name, { utility: leading.name, declarations: effectiveDeclarations(node.nodes) });
     }
+    const spacing = exceptLastChildClass(node.selector);
+    if (spacing !== undefined) {
+      exceptLastChildRules.set(spacing, {
+        utility: spacing,
+        declarations: effectiveDeclarations(node.nodes),
+      });
+    }
   };
   nodes.forEach(visit);
-  return { rules, classes, rulesByClass, themeValues, registeredProperties, baseRules };
+  return { rules, exceptLastChildRules, classes, rulesByClass, themeValues, registeredProperties, baseRules };
+}
+
+/**
+ * The class a rule styles every child but the last of, as Tailwind compiles `space-y-4` to
+ * `:where(.space-y-4 > :not(:last-child))`: one `:where()` around the class, the child combinator and
+ * `:not(:last-child)`.
+ */
+function exceptLastChildClass(selector: string): string | undefined {
+  const opening = ":where(";
+  const inner = selector.startsWith(opening) ? leadingClass(selector.slice(opening.length)) : undefined;
+  return inner?.rest === " > :not(:last-child))" ? inner.name : undefined;
 }
 
 /**

@@ -95,6 +95,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./kbd-cell.ts")).kbd,
   },
   {
+    set: "kbd-group",
+    entry: "dist/kbd.js",
+    load: async () => (await import("./kbd-cell.ts")).kbdGroup,
+  },
+  {
     set: "radio-icon-button",
     entry: "dist/radio-group.js",
     load: async () => (await import("./radio-icon-button-cell.ts")).radioIconButton,
@@ -190,6 +195,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./pagination-cell.ts")).paginationEllipsis,
   },
   {
+    set: "pagination-row",
+    entry: "dist/pagination.js",
+    load: async () => (await import("./pagination-cell.ts")).paginationRow,
+  },
+  {
     set: "breadcrumb-link",
     entry: "dist/breadcrumb.js",
     load: async () => (await import("./breadcrumb-cell.ts")).breadcrumbLink,
@@ -208,6 +218,11 @@ const SOURCES: readonly RendererSource[] = [
     set: "breadcrumb-separator",
     entry: "dist/breadcrumb.js",
     load: async () => (await import("./breadcrumb-cell.ts")).breadcrumbSeparator,
+  },
+  {
+    set: "breadcrumb-trail",
+    entry: "dist/breadcrumb.js",
+    load: async () => (await import("./breadcrumb-cell.ts")).breadcrumbTrail,
   },
   {
     set: "select-trigger",

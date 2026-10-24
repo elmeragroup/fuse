@@ -53,8 +53,16 @@ export const KIT_PAGES: readonly InventoryPage[] = [
   },
   // 19 variants at 3 sizes.
   { slug: "badge", name: "Badge", sets: [{ key: "badge", name: "Badge", variants: 57, previewed: 57 }] },
-  // The text cap and the icon cap.
-  { slug: "kbd", name: "Kbd", sets: [{ key: "kbd", name: "Kbd", variants: 2, previewed: 2 }] },
+  {
+    slug: "kbd",
+    name: "Kbd",
+    sets: [
+      // The text cap and the icon cap.
+      { key: "kbd", name: "Kbd", variants: 2, previewed: 2 },
+      // The docs Combination demo's Ctrl and K.
+      { key: "kbd-group", name: "Kbd group", variants: 1, previewed: 1 },
+    ],
+  },
   {
     slug: "radio",
     name: "Radio",
@@ -125,6 +133,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "pagination-edge", name: "Pagination edge", variants: 6, previewed: 6 },
       // The md square alone.
       { key: "pagination-ellipsis", name: "Pagination ellipsis", variants: 1, previewed: 1 },
+      // The docs Basic demo's previous, pages 1 to 3 and next.
+      { key: "pagination-row", name: "Pagination row", variants: 1, previewed: 1 },
     ],
   },
   {
@@ -139,6 +149,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "breadcrumb-ellipsis", name: "Breadcrumb ellipsis", variants: 1, previewed: 1 },
       // The 14px chevron alone.
       { key: "breadcrumb-separator", name: "Breadcrumb separator", variants: 1, previewed: 1 },
+      // The docs Basic demo's trail, and the Ellipsis demo's.
+      { key: "breadcrumb-trail", name: "Breadcrumb trail", variants: 2, previewed: 2 },
     ],
   },
   {

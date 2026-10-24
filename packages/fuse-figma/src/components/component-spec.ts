@@ -189,6 +189,14 @@ export type BoxDefinition = {
   /** The parts directly below this one, in DOM order, each a frame or an instance of another set. */
   readonly parts?: readonly (PartDefinition | InstanceDefinition)[];
   /**
+   * How many element children the box's markup holds in a cell beside the parts, the icons and the
+   * element of its label the definition draws, such as the visually hidden `<span>` that holds an
+   * ellipsis's copy, so the build knows every element child the box holds. A class that styles every
+   * child but the last, as `space-y-4` does, reads that count, and stays unmapped on a box whose
+   * definition leaves this unset. `figma:compare`'s markup check holds the count to the markup.
+   */
+  readonly undrawnChildren?: (cell: Cell) => number;
+  /**
    * The picture the box shows, as an `<img>` shows its `src`: the bytes of a PNG file, the one
    * format the kit ships, which the build reads when it maps the box. Undefined for a box that shows
    * none.

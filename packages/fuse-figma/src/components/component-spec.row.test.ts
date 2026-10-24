@@ -169,8 +169,80 @@ describe("a part's own alignment across its row", () => {
 // widths overflow it. A layer with `flex: 1` starts from a zero basis, so it takes what the others
 // leave and breaks no line until the others and its narrowest content overflow the row, while a
 // Figma row never wraps. A row of layers with widths of their own can break wherever they overflow.
+// A row that hugs its width is as wide as its layers on one line (CSS Sizing 3 §5.1) only where the
+// width CSS makes available to it is unbounded: a `max-width` of its own or of a box around it, a
+// box of fixed width around it, which narrows a flex item to its width (CSS Flexbox 1 §9.7) or caps a
+// column's item at its own (§9.4), a grid's track, against which its item sizes (CSS Grid 1 §6.2),
+// and the containing block of an absolute box (CSS 2.1 §10.3.7) can each make it narrower than its
+// layers, while Figma draws it hugging them all the same. So can its own `min-content` width (CSS
+// Sizing 3 §5.1), which no Figma sizing reads.
 describe("a row that wraps", () => {
   const RING: PartDefinition = { ...dot("size-[8px]"), key: "ring", slot: "chip-ring" };
+  const HUGGING =
+    "the row hugs its layers and nothing bounds the width CSS gives it, so it never runs out of room to break a line, and a Figma row never wraps";
+  /** A wrapping row of two layers of the given width, as a part. */
+  const wrapping = (classes: string, width: number): PartDefinition => ({
+    ...dot(classes),
+    key: "row",
+    slot: "chip-row",
+    parts: [
+      { ...dot(`w-[${width}px] h-[8px]`), key: "first", slot: "chip-first" },
+      { ...dot(`w-[${width}px] h-[8px]`), key: "second", slot: "chip-second" },
+    ],
+  });
+
+  it.each([
+    [
+      "a row of fixed width, which narrows it",
+      chip("flex w-[100px]", { parts: [wrapping("flex flex-wrap", 80)] }),
+    ],
+    [
+      "a column of fixed width that starts its items, which caps it",
+      chip("flex flex-col items-start w-[12px]", { parts: [wrapping("flex flex-wrap", 8)] }),
+    ],
+    [
+      "the containing block of an absolute part",
+      chip("relative flex", { parts: [wrapping("absolute top-0 left-0 flex flex-wrap", 8)] }),
+    ],
+    ["a 12px grid track", chip("grid grid-cols-[12px]", { parts: [wrapping("flex flex-wrap", 8)] })],
+    [
+      "a 100px grid track that a grid centers",
+      chip("grid grid-cols-[100px] place-content-center", { parts: [wrapping("flex flex-wrap", 80)] }),
+    ],
+  ])("leaves `flex-wrap` unmapped on a hugging row inside %s", async (_bound, definition) => {
+    const { coverage } = await buildFixture(definition);
+    expect(notesOf(coverage, "flex-wrap").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+  });
+
+  it("leaves `flex-wrap` unmapped on a row whose width is its min-content, which no sizing reads", async () => {
+    const { coverage } = await buildFixture(
+      chip("flex flex-wrap w-min", {
+        parts: [
+          { ...dot("w-[80px] h-[8px]"), key: "first", slot: "chip-first" },
+          { ...dot("w-[80px] h-[8px]"), key: "second", slot: "chip-second" },
+        ],
+      })
+    );
+    expect(notesOf(coverage, "flex-wrap").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+  });
+
+  it("drops `flex-wrap` where the row hugs its width and nothing bounds it", async () => {
+    const { coverage } = await buildFixture(chip("flex flex-wrap", { parts: [dot("size-[8px]"), RING] }));
+    expect(notesOf(coverage, "flex-wrap")).toEqual([["chip", "dropped", HUGGING]]);
+  });
+
+  it.each([
+    ["its own max-width", chip("flex flex-wrap max-w-[12px]", { parts: [dot("size-[8px]"), RING] })],
+    [
+      "the max-width of a hugging box around it",
+      chip("flex max-w-[12px]", {
+        parts: [{ ...dot("flex flex-wrap"), parts: [{ ...RING, key: "inner" }, RING] }],
+      }),
+    ],
+  ])("leaves `flex-wrap` unmapped on a hugging row that %s caps", async (_cap, definition) => {
+    const { coverage } = await buildFixture(definition);
+    expect(notesOf(coverage, "flex-wrap").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+  });
 
   it("drops `flex-wrap` where one layer grows to fill the row's fixed width", async () => {
     const { coverage } = await buildFixture(

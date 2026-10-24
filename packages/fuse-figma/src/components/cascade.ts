@@ -77,7 +77,8 @@ const NO_FIGMA_FORM = new Map([
  * inherit, so a `truncate` on a box keeps the label of a part below it on one line, while the
  * `overflow` and `text-overflow` it also sets stay on the box. `text-wrap` sets `text-wrap-mode`
  * and `text-wrap-style`, which inherit (CSS Text 4 §6.1), so a part's label wraps as Empty's
- * `text-balance` on the root says.
+ * `text-balance` on the root says. `overflow-wrap` inherits (CSS Text 3 §5.5), so each label below
+ * the box that sets it decides whether it breaks a word there.
  */
 const INHERITED_PROPERTIES = new Set([
   "color",
@@ -90,6 +91,7 @@ const INHERITED_PROPERTIES = new Set([
   "white-space",
   "text-align",
   "text-wrap",
+  "overflow-wrap",
 ]);
 
 /**
@@ -246,14 +248,27 @@ type DescendantRule = {
 };
 
 /**
+ * A class that styles every child of its box but the last, as `space-y-4` does through
+ * `:where(.space-y-4 > :not(:last-child))`, with where its rows go.
+ */
+type ExceptLastRule = {
+  readonly part: string;
+  readonly className: string;
+  readonly declarations: readonly { readonly property: string; readonly value: string }[];
+  readonly record: Recorder;
+};
+
+/**
  * The recipe classes of one box that hold in a cell: its own, the ones that reach icons, the ones
- * that reach its child parts, and the ones that reach every element below it, as `**:` does.
+ * that reach its child parts, the ones that reach every element below it, as `**:` does, and the ones
+ * that reach every child but the last.
  */
 type BoxClasses = {
   readonly applied: readonly Applied[];
   readonly childRules: readonly ChildRule[];
   readonly partRules: readonly PartRule[];
   readonly descendantRules: readonly DescendantRule[];
+  readonly exceptLastRules: readonly ExceptLastRule[];
 };
 
 /**
@@ -591,7 +606,8 @@ export class CellCascade {
    * ancestor's own declaration beats what it inherits from a farther one, the root's `currentcolor`
    * takes the inherited color, and every declaration of the root's own beats them. A child selector
    * of an ancestor reaches the root's icons as a descendant. An ancestor's `*:data-[slot=…]:` reaches
-   * no part, so `SetCascade.finish` leaves it unmapped. An ancestor's `**:` reaches the ancestors
+   * no part, so `SetCascade.finish` leaves it unmapped. An ancestor's class that spaces its children,
+   * as `space-y-4` does, drops with the ancestor's reason. An ancestor's `**:` reaches the ancestors
    * inside it, the root, and every part and icon below the root, each cascading it with its own
    * classes.
    *
@@ -655,6 +671,12 @@ export class CellCascade {
       );
       ancestorRules.push(...own.childRules);
       descendants.push(...own.descendantRules);
+      // The ancestor's children sit outside what the set draws, as its other own declarations do.
+      for (const { part: holder, className, declarations, record } of own.exceptLastRules) {
+        for (const { property, value } of declarations) {
+          record({ part: holder, className, property, value, outcome: "dropped", detail: ancestor.undrawn });
+        }
+      }
     }
     takeAll(descendants);
     return cascadeBox(
@@ -722,6 +744,7 @@ function cascadeBox(
           childRules: [...mine.childRules, ...passed.childRules],
           partRules: [...mine.partRules, ...passed.partRules],
           descendantRules: [...mine.descendantRules, ...passed.descendantRules],
+          exceptLastRules: [...mine.exceptLastRules, ...passed.exceptLastRules],
         };
   const base = outerApplied(ledger.scope.context.base, box.part, -1, ledger.scope.origin);
   const layer = ledger.add(
@@ -735,6 +758,7 @@ function cascadeBox(
     partRules: own.partRules,
     ancestorPartRules: box.ancestorPartRules,
     descendants: [...box.ancestorDescendants, ...own.descendantRules],
+    exceptLast: own.exceptLastRules,
   });
 }
 
@@ -757,6 +781,7 @@ export class BoxCascade {
   readonly #partRules: readonly PartRule[];
   readonly #ancestorPartRules: readonly PartRule[];
   readonly #descendants: readonly DescendantRule[];
+  readonly #exceptLast: readonly ExceptLastRule[];
 
   /**
    * @param ledger - The cell's layers.
@@ -764,8 +789,9 @@ export class BoxCascade {
    * @param path - The keys of the layers from the root down to the box's.
    * @param rules - The child selectors of the boxes above that reach this box's icons as
    *   descendants, this box's own, this box's classes that style its child parts, the tag rules of
-   *   the boxes above, which reach its parts as descendants, and the `**:` classes of this box and
-   *   the boxes above, which reach every element below it.
+   *   the boxes above, which reach its parts as descendants, the `**:` classes of this box and the
+   *   boxes above, which reach every element below it, and this box's classes that style every child
+   *   but the last.
    */
   constructor(
     ledger: CellLedger,
@@ -777,6 +803,7 @@ export class BoxCascade {
       readonly partRules: readonly PartRule[];
       readonly ancestorPartRules: readonly PartRule[];
       readonly descendants: readonly DescendantRule[];
+      readonly exceptLast: readonly ExceptLastRule[];
     }
   ) {
     this.style = new LayerStyle(ledger, layer, path);
@@ -788,6 +815,26 @@ export class BoxCascade {
     this.#partRules = rules.partRules;
     this.#ancestorPartRules = rules.ancestorPartRules;
     this.#descendants = rules.descendants;
+    this.#exceptLast = rules.exceptLast;
+  }
+
+  /**
+   * Give the classes of this box that style every child but the last, as `space-y-4` does, their
+   * rows once the mapping knows how many element children the box's markup holds in the cell:
+   * dropped for a box that holds one or none, since `:not(:last-child)` then matches no child,
+   * unmapped for more, since the kit draws no margin between a box's children, and unmapped where the
+   * count is unknown.
+   *
+   * @param children - The element children the box's markup holds in the cell, drawn or not, or
+   *   undefined where the definition does not count them.
+   */
+  spaceChildren(children: number | undefined): void {
+    const note = childSpacingNote(children);
+    for (const { part, className, declarations, record } of this.#exceptLast) {
+      for (const { property, value } of declarations) {
+        record({ part, className, property, value, ...note });
+      }
+    }
   }
 
   /**
@@ -1002,7 +1049,10 @@ export class BoxCascade {
       ...this.#ownRules.filter((rule) => rule.selects(slot)),
     ];
     const own = boxClasses(slot.classes ?? "", slot.name, this.#ledger.scope);
-    const [nested] = appliedOf([...own.childRules, ...own.partRules, ...own.descendantRules]);
+    const [nested] = [
+      ...appliedOf([...own.childRules, ...own.partRules, ...own.descendantRules]),
+      ...own.exceptLastRules,
+    ];
     if (nested !== undefined) {
       throw new Error(`the ${slot.name}'s own class ${nested.className} selects inside the icon`);
     }
@@ -1014,6 +1064,23 @@ export class BoxCascade {
     );
     return new LayerStyle(this.#ledger, layer, [...this.path, slot.key]);
   }
+}
+
+/** What a class that styles every child but the last makes of a box that holds `children`. */
+function childSpacingNote(children: number | undefined): CoverageNote {
+  if (children === undefined) {
+    return {
+      outcome: "unmapped",
+      detail:
+        "the definition does not count the element children the box's markup holds, so the build cannot tell which is the last",
+    };
+  }
+  return children <= 1
+    ? {
+        outcome: "dropped",
+        detail: `\`:not(:last-child)\` styles every child but the last, and the box holds ${children === 0 ? "none" : "one"}, so the class styles nothing the set draws`,
+      }
+    : { outcome: "unmapped", detail: "the kit draws no margin between a box's children" };
 }
 
 /**
@@ -1322,8 +1389,9 @@ function substitute(
 /**
  * Sort a box's classes for one cell by their variants. A class with a child selector styles the
  * icons it reaches, a `**:` class every element below the box, a class whose variants hold styles
- * the box, and a class with a variant no cell shows or the definition does not model lands in the
- * coverage table.
+ * the box, a class whose rule styles every child but the last waits for the mapping to count the
+ * box's children, and a class with a variant no cell shows or the definition does not model lands
+ * in the coverage table.
  */
 function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses {
   const { meaningOf, cell, context, record, logs } = scope;
@@ -1331,9 +1399,11 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
   const childRules: ChildRule[] = [];
   const partRules: PartRule[] = [];
   const descendantRules: DescendantRule[] = [];
+  const exceptLastRules: ExceptLastRule[] = [];
   for (const className of splitClasses(classes)) {
     const { variants, utility } = splitClassName(className);
-    const rule = context.compiled.rules.get(utility);
+    const exceptLast = context.compiled.exceptLastChildRules.get(utility);
+    const rule = context.compiled.rules.get(utility) ?? exceptLast;
     if (rule === undefined) {
       const marker = isMarker(utility);
       record({
@@ -1364,6 +1434,26 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
       );
     }
     if (!holds) {
+      continue;
+    }
+    if (rule === exceptLast) {
+      // The box's children take the rule, and only the mapping knows how many it holds. A variant
+      // that moves the rule onto other elements spaces children the kit does not model.
+      const moved = selects !== undefined || target !== undefined || descendants;
+      if (moved) {
+        for (const declaration of rule.declarations) {
+          record({
+            part,
+            className,
+            property: declaration.property,
+            value: declaration.value,
+            outcome: "unmapped",
+            detail: "the class spaces the children of elements below the box, which the kit does not model",
+          });
+        }
+      } else {
+        exceptLastRules.push({ part, className, declarations: rule.declarations, record });
+      }
       continue;
     }
     const placement = context.compiled.classes.get(className);
@@ -1398,7 +1488,7 @@ function boxClasses(classes: string, part: string, scope: CellScope): BoxClasses
       childRules.push({ selects, applied: entry });
     }
   }
-  return { applied, childRules, partRules, descendantRules };
+  return { applied, childRules, partRules, descendantRules, exceptLastRules };
 }
 
 /** The classes of rules, in their order. */

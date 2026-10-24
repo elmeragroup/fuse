@@ -1,6 +1,5 @@
 /**
- * Breadcrumb's parts, as four component sets on one page. The trail that lays them out waits until
- * kit components can hold instances.
+ * Breadcrumb's parts and the trail that lays them out, as five component sets on one page.
  *
  * - `Breadcrumb link` is a link at rest, hover and focus: 3 cells. It is an `<a>` that hugs its
  *   text, turns `foreground` on hover and draws the shared focus ring.
@@ -8,18 +7,30 @@
  * - `Breadcrumb ellipsis` is the 20px box around DotsThree: 1 cell. Its copy is visually hidden, so
  *   the kit draws no text for it.
  * - `Breadcrumb separator` is the `<li>` around the CaretRight it draws by default, at 14px: 1 cell.
+ * - `Breadcrumb trail` is the docs Basic demo's trail, `Home`, `Quick start` and the current page,
+ *   and the Ellipsis demo's, which puts the ellipsis after `Home`: 2 cells. The list is its root,
+ *   and each entry an item frame around an instance of the part's set, with a separator instance
+ *   between the entries.
  *
  * Every part sits in `Breadcrumb.List`, and a link, the page and the ellipsis sit in a
- * `Breadcrumb.Item` inside it. The sets name both by their recipe slots, and the build cascades
+ * `Breadcrumb.Item` inside it. The part sets name both by their recipe slots, and the build cascades
  * their classes around the root. The list's `text-sm` and `text-muted-foreground` set the type and
  * the text color each part inherits, and the icons take that color. The list's flex row and `sm:`
- * gap and the item's flex row lay out the trail, which no set draws. The list's `wrap-break-word`
- * breaks a word only where the word overflows the list, which a part that hugs its text never does.
+ * gap and the item's flex row lay out the trail, which the trail set draws. As the trail's root the
+ * list hugs its entries and nothing bounds the width CSS gives it, so it never wraps them, and its
+ * `wrap-break-word`, which each part's text inherits, breaks no word of a text that hugs it.
  * `Breadcrumb.Root` around the list carries no class.
  */
 import { breadcrumbVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { AncestorDefinition, ComponentDefinition, IconSlot } from "./component-spec";
+import type {
+  AncestorDefinition,
+  Cell,
+  ComponentDefinition,
+  IconSlot,
+  InstanceDefinition,
+  PartDefinition,
+} from "./component-spec";
 
 const { list, item, link, page, separator, ellipsis } = breadcrumbVariants();
 
@@ -159,5 +170,95 @@ export const BREADCRUMB_SEPARATOR: ComponentDefinition = {
   omittedStates: new Set(),
   label: undefined,
   iconsFor: () => [CARET],
+  swapProperties: [],
+};
+
+/** The text of the trail's second link, the docs Basic demo's. The compare renderer renders it. */
+export const BREADCRUMB_TRAIL_LINK_LABEL = "Quick start";
+
+/** Whether a trail cell shows the ellipsis, as the docs Ellipsis demo does. */
+const collapsed = (cell: Cell): boolean => cell.ellipsis === "on";
+
+/**
+ * An entry of the trail: a `Breadcrumb.Item` around an instance of a part's set, in the cells the
+ * instance's `shownIn` names.
+ */
+function entry(inner: InstanceDefinition): PartDefinition {
+  return {
+    key: `${inner.key}-item`,
+    slot: "breadcrumb-item",
+    shownIn: inner.shownIn,
+    classesFor: () => item(),
+    label: undefined,
+    iconsFor: () => [],
+    parts: [{ ...inner, shownIn: () => true }],
+  };
+}
+
+/** The separator after an entry, an instance of the separator's set. */
+function separatorAfter(key: string, shownIn: (cell: Cell) => boolean = () => true): InstanceDefinition {
+  return {
+    kind: "instance",
+    key: `${key}-separator`,
+    of: BREADCRUMB_SEPARATOR,
+    cell: () => ({ size: "14" }),
+    shownIn,
+  };
+}
+
+/**
+ * The docs Basic demo's trail, and the Ellipsis demo's at `ellipsis=on`: `Breadcrumb.List` holding
+ * `Home`, `Quick start` and the current page, each in its item, with a separator between them. The
+ * links and the page are exposed, so a designer retypes them from the trail's panel.
+ */
+export const BREADCRUMB_TRAIL: ComponentDefinition = {
+  key: "breadcrumb-trail",
+  name: "Breadcrumb trail",
+  slot: "breadcrumb-list",
+  axes: [{ name: "ellipsis", values: ["off", "on"] }],
+  columnAxis: "ellipsis",
+  classesFor: () => list(),
+  states: {},
+  facts: new Map(),
+  omittedStates: new Set(),
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    entry({
+      kind: "instance",
+      key: "home",
+      of: BREADCRUMB_LINK,
+      cell: () => ({ state: "rest" }),
+      shownIn: () => true,
+      exposed: true,
+    }),
+    separatorAfter("home"),
+    entry({
+      kind: "instance",
+      key: "ellipsis",
+      of: BREADCRUMB_ELLIPSIS,
+      cell: () => ({ size: "20" }),
+      shownIn: collapsed,
+    }),
+    separatorAfter("ellipsis", collapsed),
+    entry({
+      kind: "instance",
+      key: "quick-start",
+      of: BREADCRUMB_LINK,
+      cell: () => ({ state: "rest" }),
+      properties: () => ({ text: { Label: BREADCRUMB_TRAIL_LINK_LABEL } }),
+      shownIn: () => true,
+      exposed: true,
+    }),
+    separatorAfter("quick-start"),
+    entry({
+      kind: "instance",
+      key: "page",
+      of: BREADCRUMB_PAGE,
+      cell: () => ({ current: "page" }),
+      shownIn: () => true,
+      exposed: true,
+    }),
+  ],
   swapProperties: [],
 };

@@ -69,6 +69,17 @@ export type Room = {
   readonly vertical: AxisRoom;
   /** The cap the boxes around the box set on its width, as {@link widthCapInside} reads it. */
   readonly widthCap: WidthCap;
+  /**
+   * Whether the width CSS makes available to the box is unbounded, apart from the Figma sizing the
+   * box gets: every box around it, up to an in-flow root with no preview width, hugs its width with
+   * no `max-width`, so a box that hugs lays out at its max-content width (CSS Sizing 3 §5.1). A box
+   * of fixed or filling width narrows a hugging flex item to its own width (CSS Flexbox 1 §9.7) and
+   * caps a column's item at it (§9.4), a `max-width` caps what it holds, and an absolute box shrinks
+   * to fit its containing block (CSS 2.1 §10.3.7), so each of them bounds the box. Figma draws a part
+   * that hugs at its own width whatever bounds it, so where this is false the build cannot tell
+   * whether CSS draws the box at that width.
+   */
+  readonly unbounded: boolean;
 };
 
 const HUG: SizeSpec = { kind: "hug" };
@@ -82,26 +93,56 @@ const BLOCK_LEVEL = new Set(["block", "flex", "grid", "flow-root"]);
  * The room a variant root has. Its component set has no auto layout, so it fills nothing and an
  * unset length hugs, except where the definition names the width the root's container gives it: a
  * block-level root, such as a `flex` column, then takes that width, as a block box with no width
- * fills its container.
+ * fills its container. With no preview width, an in-flow block-level root with no margins, padding
+ * or border across takes `100%` as its unset width, which hugs. An in-flow root with no preview width
+ * lays out in unbounded room, as {@link Room.unbounded} says, since nothing in its component set
+ * gives it a width.
  *
  * @param previewWidth - The width the root's container gives it, which its percentage width takes,
  *   or undefined where the definition names none.
- * @param style - The root's style, whose `display` says whether the root is block-level.
+ * @param style - The root's style, whose `display` says whether the root is block-level and whose
+ *   `position` whether it sits in its container's flow.
  * @returns The root's room.
  */
 export function rootRoom(previewWidth: number | undefined, style: LayerStyle): Room {
-  const fills = previewWidth !== undefined && BLOCK_LEVEL.has(normalizeCss(style.raw("display") ?? ""));
+  const blockLevel = BLOCK_LEVEL.has(normalizeCss(style.raw("display") ?? ""));
+  const fills = previewWidth !== undefined && blockLevel;
+  const inFlow = !outOfFlow(style);
+  const percent = (): PercentBasis => {
+    if (previewWidth !== undefined) {
+      return { kind: "length", value: previewWidth, of: "the preview" };
+    }
+    // An absolute root's 100% takes its containing block, while its unset width shrinks to fit.
+    return inFlow && blockLevel && noInsetsAcross(style) ? { kind: "unset" } : NO_BASIS;
+  };
   return {
     horizontal: {
-      percent:
-        previewWidth === undefined ? NO_BASIS : { kind: "length", value: previewWidth, of: "the preview" },
+      percent: percent(),
       auto: fills ? { kind: "fixed", length: { kind: "literal", value: previewWidth } } : HUG,
       siblings: [],
       length: undefined,
     },
     vertical: { percent: NO_BASIS, auto: HUG, siblings: [], length: undefined },
     widthCap: NO_CAP,
+    unbounded: inFlow && previewWidth === undefined,
   };
+}
+
+/**
+ * Whether a box sets no margin, padding or border across: each margin zero or `auto`, which beside
+ * a `100%` width resolves to zero (CSS 2.1 §10.3.3), and each padding and the border zero.
+ */
+function noInsetsAcross(style: LayerStyle): boolean {
+  const margins = ["margin-left", "margin-right"].every((property) => {
+    const value = style.resolved(property);
+    return value === undefined || normalizeCss(value) === "auto" || evaluateLength(value) === 0;
+  });
+  return (
+    margins &&
+    ["padding-left", "padding-right", "border-width", "border-left-width", "border-right-width"].every(
+      (property) => literalPixels(style, property) === 0
+    )
+  );
 }
 
 /** A box's border-box length in pixels on each axis, undefined where the build cannot tell it. */
@@ -124,6 +165,13 @@ export type Holder = {
   readonly layers: readonly string[];
   /** The cap the boxes around the box set on its width, from its room. */
   readonly widthCap: WidthCap;
+  /** Whether the width CSS makes available to the box is unbounded, as {@link Room.unbounded} says. */
+  readonly unbounded: boolean;
+  /**
+   * Whether the box's width sizing is what CSS gives it, as the sizing's `known` says: false where its
+   * `width` does not map and the box hugs in its place.
+   */
+  readonly widthKnown: boolean;
   /** How much of a row each of `layers` takes, in the same order. */
   readonly shares: readonly RowShare[];
 };
@@ -246,7 +294,13 @@ export function absoluteRoom(holder: Holder): Room {
       length: undefined,
     };
   };
-  return { horizontal: axisRoom("horizontal"), vertical: axisRoom("vertical"), widthCap: NO_CAP };
+  // The containing block bounds the width an absolute box shrinks to fit (CSS 2.1 §10.3.7).
+  return {
+    horizontal: axisRoom("horizontal"),
+    vertical: axisRoom("vertical"),
+    widthCap: NO_CAP,
+    unbounded: false,
+  };
 }
 
 /**
@@ -270,7 +324,8 @@ function definite({ layout }: Holder, size: SizeSpec): boolean {
  * across the box's direction fills it, as a stretch does, and so does a `100%` along it when the
  * part is the box's only layer. A column that stretches its layers fills a part's unset width
  * across a definite width (CSS Flexbox 1 §9.4 step 11), as a box that stacks blocks fills a block's
- * (CSS 2.1 §10.3.3). Every other length hugs.
+ * (CSS 2.1 §10.3.3). Every other length hugs. The part's room is unbounded only where the box hugs
+ * its width with nothing bounding it, as {@link hugsUncapped} says.
  *
  * @param holder - The box.
  * @param index - The part's place among the box's layers.
@@ -278,7 +333,12 @@ function definite({ layout }: Holder, size: SizeSpec): boolean {
  */
 export function roomInside(holder: Holder, index: number): Room {
   const { layout, sizing, layers } = holder;
-  const percent = (size: SizeSpec): PercentBasis => (definite(holder, size) ? { kind: "parent" } : NO_BASIS);
+  const percent = (size: SizeSpec): PercentBasis => {
+    if (definite(holder, size)) {
+      return { kind: "parent" };
+    }
+    return layout.flex || layout.blocks ? { kind: "hugging" } : NO_BASIS;
+  };
   const siblings = layers.filter((_name, place) => place !== index);
   const along = (axis: DirectionSpec): readonly string[] =>
     (layout.flex || layout.blocks) && layout.direction === axis ? siblings : [];
@@ -296,6 +356,7 @@ export function roomInside(holder: Holder, index: number): Room {
       length: innerLength(holder, "vertical", "content"),
     },
     widthCap: widthCapInside(holder, index),
+    unbounded: hugsUncapped(holder),
   };
 }
 
@@ -371,6 +432,53 @@ export function growingRoom(holder: Holder, index: number, room: Room): Room {
       length: length === undefined ? undefined : lessShares(holder, index, length),
     },
   };
+}
+
+/**
+ * The `display` values whose box lays what it holds out in a context the kit models as hugging it:
+ * unset, which takes an inline or a block box from the element, flow layout, and a flex box.
+ */
+const FLOW_DISPLAYS: ReadonlySet<string> = new Set([
+  "",
+  "inline",
+  "block",
+  "inline-block",
+  "flow-root",
+  "list-item",
+  "flex",
+  "inline-flex",
+]);
+
+/**
+ * Whether a box hugs its width with nothing bounding the width CSS makes available to what it holds.
+ *
+ * - Its room is unbounded, as {@link Room.unbounded} says.
+ * - Its hug is one CSS gives it, as `widthKnown` says, and no `width` that does not map, such as
+ *   `w-min`, which can make it narrower than what it holds.
+ * - It sets no `max-width` but one of `100%` or more, which never binds there, since every box around
+ *   it hugs what it holds.
+ * - It lays what it holds out in a context the kit models as hugging it, flow or flex, as
+ *   {@link FLOW_DISPLAYS} lists. A grid sizes each item against its track (CSS Grid 1 §6.2), which
+ *   the kit does not read, and no other context is modeled.
+ *
+ * Such a box lays what it holds out at its max-content width (CSS Sizing 3 §5.1), so its row never
+ * runs out of room, a text in it sets no line narrower than a word, and each layer it holds has
+ * unbounded room too.
+ *
+ * @param holder - The box.
+ * @returns True where the box hugs and nothing bounds it.
+ */
+export function hugsUncapped(holder: Holder): boolean {
+  const maximum = holder.style.resolved("max-width");
+  const unlimited =
+    maximum === undefined || normalizeCss(maximum) === "none" || (evaluatePercentage(maximum) ?? 0) >= 1;
+  return (
+    holder.sizing.horizontal.kind === "hug" &&
+    holder.widthKnown &&
+    holder.unbounded &&
+    unlimited &&
+    FLOW_DISPLAYS.has(normalizeCss(holder.style.raw("display") ?? ""))
+  );
 }
 
 /**
@@ -660,10 +768,17 @@ const HEIGHT: AxisProperties = {
 };
 
 /**
- * A box's sizing on each axis, the limits Figma keeps it within, whether it clips, and its length in
- * pixels where the build can tell it.
+ * A box's sizing on each axis, the limits Figma keeps it within, whether it clips, its length in
+ * pixels where the build can tell it, and whether each axis's sizing is what CSS gives it.
  */
-type BoxSizing = Pick<BoxSpec, "sizing" | "limits" | "clips"> & { readonly extent: Extent };
+type BoxSizing = Pick<BoxSpec, "sizing" | "limits" | "clips"> & {
+  readonly extent: Extent;
+  /**
+   * Whether each axis's sizing is what CSS gives the box: its length read, or unset and sized as its
+   * room says. False where a length does not map, as `w-min` does not, and the axis hugs in its place.
+   */
+  readonly known: { readonly horizontal: boolean; readonly vertical: boolean };
+};
 
 /**
  * What a `fit-content` width draws as. `fit-content` is the smaller of what the box holds on one line
@@ -695,8 +810,14 @@ export function readSizing(
   fit: FitContent,
   inside: Feed
 ): BoxSizing {
-  const horizontal = readAxis(reader, WIDTH, room.horizontal, variables, { fit, inside });
-  const vertical = readAxis(reader, HEIGHT, room.vertical, variables, { fit: "content", inside });
+  // A parent that hugs its width with nothing bounding it is as wide as each layer it holds.
+  const roomy = room.horizontal.percent.kind === "hugging" && room.unbounded;
+  const horizontal = readAxis(reader, WIDTH, room.horizontal, variables, { fit, inside, roomy });
+  const vertical = readAxis(reader, HEIGHT, room.vertical, variables, {
+    fit: "content",
+    inside,
+    roomy: false,
+  });
   reader.read(
     "field-sizing",
     (value) => (normalizeCss(value) === "content" && vertical.size.kind === "hug" ? value : undefined),
@@ -718,6 +839,7 @@ export function readSizing(
       maxHeight: vertical.max,
     },
     clips: clips ?? false,
+    known: { horizontal: horizontal.known, vertical: vertical.known },
     extent: {
       horizontal: usedPixels(horizontal, room.horizontal.length),
       vertical: usedPixels(vertical, room.vertical.length),
@@ -776,31 +898,50 @@ type AxisRead = {
 /** Why a zero minimum drops: `min-w-0` lets a flex item shrink below its content. */
 const ZERO_MINIMUM = "Figma takes no zero minimum, and its auto layout never shrinks a layer";
 
+/** Why a maximum of the whole parent or more drops in a parent as wide as each layer it holds. */
+const WHOLE_PARENT_MAXIMUM =
+  "its parent hugs what it holds and nothing bounds the width CSS gives the parent, so 100% of the parent is never narrower than the box";
+
 /**
  * Read one axis: its length through {@link readLength}, an unset length as the room gives it, and
  * its limits as {@link resolveLimits} decides. Each read fills the sizing of the layers inside too,
- * as `inside` names it.
+ * as `inside` names it. Where the parent is at least as long as each layer it holds (`roomy`), a
+ * maximum of `100%` or more never limits the box, so it drops. A length that does not map leaves
+ * the axis hugging in its place, which the result marks as not `known`.
  */
 function readAxis(
   reader: LayerStyle,
   axis: AxisProperties,
   room: AxisRoom,
   variables: VariableIndex,
-  { fit, inside }: { readonly fit: FitContent; readonly inside: Feed }
-): AxisRead {
-  const size = reader.has(axis.length)
-    ? (readLength(reader, axis, room, variables, { fit, inside }) ?? HUG)
+  { fit, inside, roomy }: { readonly fit: FitContent; readonly inside: Feed; readonly roomy: boolean }
+): AxisRead & { readonly known: boolean } {
+  const read = reader.has(axis.length)
+    ? readLength(reader, axis, room, variables, { fit, inside })
     : room.auto;
+  const size = read ?? HUG;
+  const maximum = reader.resolved(axis.max);
+  const inertMaximum = roomy && maximum !== undefined && (evaluatePercentage(maximum) ?? 0) >= 1;
+  if (inertMaximum) {
+    reader.read(
+      axis.max,
+      (value) => value,
+      () => ({ outcome: "dropped", detail: WHOLE_PARENT_MAXIMUM }),
+      []
+    );
+  }
   const bounds = (["min", "max"] as const).flatMap((side): Bound[] => {
     const property = axis[side];
     const value = reader.resolved(property);
-    return value === undefined ? [] : [{ side, property, value: readNumber(value, variables) }];
+    return value === undefined || (side === "max" && inertMaximum)
+      ? []
+      : [{ side, property, value: readNumber(value, variables) }];
   });
-  const read = resolveLimits(size, bounds, axis);
+  const limited = resolveLimits(size, bounds, axis);
   // Each note was decided from the value the read substitutes, so the read only records it.
-  for (const [bound, note] of read.notes) {
+  for (const [bound, note] of limited.notes) {
     // A limit that stays a limit fills the box's limits, and one that folds into the length its sizing.
-    const limit = bound.side === "min" ? read.min : read.max;
+    const limit = bound.side === "min" ? limited.min : limited.max;
     reader.read(
       bound.property,
       () => note,
@@ -808,7 +949,7 @@ function readAxis(
       [...reader.feed(limit === undefined ? "sizing" : "limits"), ...inside]
     );
   }
-  return read;
+  return { ...limited, known: read !== undefined };
 }
 
 /**
@@ -995,7 +1136,13 @@ function readLength(
             detail: `the box fits its text up to the ${axis.length} its parent gives it, where its text wraps, which a fill draws, since the box paints nothing and starts its text at its start`,
           };
         case "hug":
-          return { outcome: "literal", detail: "the box hugs its content" };
+          return {
+            outcome: "literal",
+            detail:
+              share === 1 && percent.kind === "unset"
+                ? "100% sizes an in-flow block-level box with no margins, padding or border as its unset width does, which hugs, since the root sits alone in its component set"
+                : "the box hugs its content",
+          };
         case "fill":
           return { outcome: "literal", detail: `the box fills its parent's ${axis.length}` };
         case "fixed": {

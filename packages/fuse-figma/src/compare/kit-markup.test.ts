@@ -478,6 +478,62 @@ describe("the markup check of an instance part", () => {
     });
   });
 
+  // Oracle: a Breadcrumb trail's markup, sibling `<li>` items with one `data-slot`, each around one
+  // instance, which the definition names as frame parts by their keys, matched to the items in DOM
+  // order as the caps above are.
+  describe("in frame parts that share a data-slot beside each other", () => {
+    const item = (key: string, text: string) => ({
+      key,
+      slot: "chip-item",
+      shownIn: () => true,
+      classesFor: () => "",
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        {
+          kind: "instance" as const,
+          key: `${key}-badge`,
+          of: BADGE,
+          cell: () => ({ state: "rest" }),
+          properties: () => ({ text: { Label: text } }),
+          shownIn: () => true,
+        },
+      ],
+    });
+    const TRAIL = chip("flex", { parts: [item("first", "Home"), item("second", "Docs")] });
+    const items = (...texts: readonly string[]): CellRendering =>
+      chipMarkup(
+        ...texts.map((text) =>
+          createElement(
+            "li",
+            { "data-slot": "chip-item" },
+            createElement(
+              "span",
+              { "data-slot": "badge", className: "inline-flex px-2 bg-[rgb(255_0_0)]" },
+              text
+            )
+          )
+        )
+      );
+
+    it("finds each item in DOM order and the instance inside it", () => {
+      expect(() => checkMarkup(TRAIL, CELLS, items("Home", "Docs"))).not.toThrow();
+    });
+
+    it("fails the items in the other order", () => {
+      expect(() => checkMarkup(TRAIL, CELLS, items("Docs", "Home"))).toThrow(
+        "chip/state=rest: the instance on /chip-item(first)/(first-badge): the label"
+      );
+    });
+
+    it.each([
+      ["one of them", ["Home"]],
+      ["a third", ["Home", "Docs", "Docs"]],
+    ])("fails a cell that renders %s", (_case, texts) => {
+      expect(() => checkMarkup(TRAIL, CELLS, items(...texts))).toThrow("chip/state=rest: parts");
+    });
+  });
+
   // A Select trigger as an instance shows it: Base UI stamps `data-popup-open` on the trigger while
   // its popup is open, which the trigger's `open=on` holds, and its caret reads that through
   // `group-data-[popup-open]/select-trigger:`.
@@ -545,6 +601,29 @@ describe("the markup check of an instance part", () => {
     });
     expect(() => checkMarkup(grouped, CELLS, trigger({}))).toThrow(
       "chip/state=rest: the instance on /(trigger): group-data-[popup-open]/select-trigger"
+    );
+  });
+});
+
+// Unit under test: `checkMarkup` on a box whose definition counts the element children the kit draws
+// no layer for, which a class that spaces every child but the last reads. Oracle: the markup of
+// Breadcrumb's ellipsis, an icon and the visually hidden `<span>` that holds its copy, so the box
+// holds two element children where the definition draws one icon and counts one more.
+describe("the markup check of a box that counts its element children", () => {
+  const COUNTED = chip("", { iconsFor: () => [ICON], undrawnChildren: () => 1 });
+  const CELLS = [{ state: "rest" }];
+  const hiddenCopy = createElement("span", { className: "sr-only" }, "More");
+
+  it("passes the icon beside the hidden copy", () => {
+    expect(() => checkMarkup(COUNTED, CELLS, chipMarkup(createElement("svg"), hiddenCopy))).not.toThrow();
+  });
+
+  it.each([
+    ["without the hidden copy", chipMarkup(createElement("svg"))],
+    ["with a second hidden element", chipMarkup(createElement("svg"), hiddenCopy, hiddenCopy)],
+  ])("fails the box %s", (_case, markup) => {
+    expect(() => checkMarkup(COUNTED, CELLS, markup)).toThrow(
+      "chip/state=rest: the element children of the root"
     );
   });
 });

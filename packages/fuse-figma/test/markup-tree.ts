@@ -151,13 +151,25 @@ const UNNAMED = "(no data-slot)";
 /**
  * How a part path names a part: by its `data-slot`, by its key in parentheses where it names its
  * element, or as {@link UNNAMED} where the markup can only find it by place. An instance part is named
- * by its key in parentheses, since two instances of one component share their inner root's slot.
+ * by its key in parentheses, since two instances of one component share their inner root's slot, and
+ * a part whose `data-slot` a sibling shares by its slot and its key, as a trail's items are.
+ *
+ * @param part - The part.
+ * @param siblings - Every part of the part's parent, the part among them.
+ * @returns The segment.
  */
-export function pathSegment(part: PartDefinition | InstanceDefinition): string {
+export function pathSegment(
+  part: PartDefinition | InstanceDefinition,
+  siblings: readonly (PartDefinition | InstanceDefinition)[]
+): string {
   if ("kind" in part) {
     return `(${part.key})`;
   }
-  return part.slot ?? (part.element === undefined ? UNNAMED : `(${part.key})`);
+  if (part.slot === undefined) {
+    return part.element === undefined ? UNNAMED : `(${part.key})`;
+  }
+  const shared = siblings.some((other) => other !== part && !("kind" in other) && other.slot === part.slot);
+  return shared ? `${part.slot}(${part.key})` : part.slot;
 }
 
 /** The `data-slot` of a part's element, undefined for an element that carries none. */
@@ -306,7 +318,7 @@ export function markupParts(
         `${owner} [data-slot=${slot}]`
       );
       found.set(index, {
-        path: `${parent.path}/${part === undefined ? slot : pathSegment(part)}`,
+        path: `${parent.path}/${part === undefined ? slot : pathSegment(part, parts)}`,
         box: part ?? parts.find((candidate) => partSlot(candidate) === slot),
       });
     } else if (selected !== undefined) {
@@ -317,9 +329,9 @@ export function markupParts(
             return selector !== undefined && selects(selector, element);
           }),
           counts,
-          `${owner} ${pathSegment(selected)}`
+          `${owner} ${pathSegment(selected, parts)}`
         ) ?? selected;
-      found.set(index, { path: `${parent.path}/${pathSegment(part)}`, box: part });
+      found.set(index, { path: `${parent.path}/${pathSegment(part, parts)}`, box: part });
     } else if (
       element.parent === owner &&
       unnamedChild(elements, owner, slots, parts) === index &&

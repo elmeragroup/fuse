@@ -1,5 +1,5 @@
 /**
- * Unit under test: the three Pagination component sets as the build produces them. Oracle: the
+ * Unit under test: the four Pagination component sets as the build produces them. Oracle: the
  * Fuse variable or literal each Figma field of a cell must carry, read by hand from
  * `pagination.tsx`, `pagination-variants.ts`, `button-variants.ts` and `control-size.ts`, from the
  * docs Basic demo, and from the host page the compare draws: the browser's 16px `medium` font size
@@ -7,7 +7,11 @@
  * `icon` square sets no type. Each link cell is also cross-checked against the Icon button cell of
  * its variant and state: a link renders that recipe at `size="icon"` with the `gap-1` of
  * `paginationVariants`, so the two agree on everything but the gap and what the box holds.
- * `build-kit.test.ts` pins the square's box and each variant's paint by hand.
+ * `build-kit.test.ts` pins the square's box and each variant's paint by hand. The row's root is a
+ * `flex-col items-center justify-center` column around the `flex-row items-center justify-center
+ * gap-1` row, whose items carry no class and hug their parts, as Chromium measured the Basic demo on
+ * the compare page on 2026-10-24: each item as wide and tall as its link or edge, the items 4px
+ * apart, and the root as wide as the row.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -27,7 +31,7 @@ import {
 } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
 import type { CoverageRow } from "./coverage";
-import type { ComponentRootSpec } from "./kit-spec";
+import type { ComponentRootSpec, InstanceLayerSpec } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
 let coverage: readonly CoverageRow[];
@@ -273,6 +277,92 @@ describe("the Pagination ellipsis component set", () => {
           swapProperty: undefined,
           size: literal(16),
           color: paint("foreground"),
+        },
+      ],
+    });
+  });
+});
+
+/** A box with no paint, padding or limits that hugs what it holds, centered on both axes. */
+const box = (direction: string, itemSpacing: number) => ({
+  direction,
+  sizing: { horizontal: HUG, vertical: HUG },
+  limits: UNLIMITED,
+  paddingTop: literal(0),
+  paddingRight: literal(0),
+  paddingBottom: literal(0),
+  paddingLeft: literal(0),
+  itemSpacing: literal(itemSpacing),
+  primaryAlign: "CENTER",
+  counterAlign: "CENTER",
+  cornerRadius: literal(0),
+  shadows: [],
+  opacity: 1,
+});
+
+/** A `Pagination.Item` around one part, as a frame that hugs it. */
+const item = (key: string, part: InstanceLayerSpec) => ({
+  kind: "frame",
+  key: `${key}-item`,
+  name: "pagination-item",
+  ...box("HORIZONTAL", 0),
+  clips: false,
+  children: [part],
+});
+
+/** An edge, at the md label height and hugging its copy, as the edge set draws it. */
+const edgeInstance = (direction: string): InstanceLayerSpec => ({
+  kind: "instance",
+  key: direction,
+  name: "pagination-edge",
+  componentSet: "pagination-edge",
+  variant: `pagination-edge/direction=${direction},state=rest`,
+  sizing: { horizontal: HUG, vertical: fixed(density("control-h-md")) },
+});
+
+/** A page link, the md square, exposed to the row's panel. */
+const pageInstance = (number: string, current: string): InstanceLayerSpec => ({
+  kind: "instance",
+  key: `page-${number}`,
+  name: "pagination-link",
+  componentSet: "pagination-link",
+  variant: `pagination-link/current=${current},state=rest`,
+  sizing: fixedSize(density("control-h-md"), density("control-h-md")),
+  exposed: true,
+});
+
+describe("the Pagination row component set", () => {
+  it("holds one variant on the Pagination page under a one-value pages property, with no properties of its own", () => {
+    const rows = set("pagination-row");
+    expect([rows?.name, rows?.page]).toEqual(["Pagination row", "page/pagination"]);
+    expect(rows?.axes).toEqual([{ name: "pages", values: ["3"] }]);
+    expect(rows?.columnAxis).toBe("pages");
+    expect([rows?.textProperties, rows?.swapProperties, rows?.booleanProperties]).toEqual([
+      [],
+      [],
+      undefined,
+    ]);
+  });
+
+  it("centers the row of previous, pages 1 to 3 with 1 current, and next, 4px apart, in a column that hugs it", () => {
+    expect(variantRoot(spec, "pagination-row/pages=3")).toEqual({
+      name: "pagination",
+      ...box("VERTICAL", 0),
+      clips: true,
+      children: [
+        {
+          kind: "frame",
+          key: "content",
+          name: "pagination-content",
+          ...box("HORIZONTAL", 4),
+          clips: false,
+          children: [
+            item("previous", edgeInstance("previous")),
+            item("page-1", pageInstance("1", "on")),
+            item("page-2", { ...pageInstance("2", "off"), properties: { text: { Label: "2" } } }),
+            item("page-3", { ...pageInstance("3", "off"), properties: { text: { Label: "3" } } }),
+            item("next", edgeInstance("next")),
+          ],
         },
       ],
     });

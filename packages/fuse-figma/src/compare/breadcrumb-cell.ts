@@ -1,5 +1,5 @@
 /**
- * The renderers of the four Breadcrumb sets: each cell as the real Fuse part inside the
+ * The renderers of the five Breadcrumb sets: each cell as the real Fuse part inside the
  * `Breadcrumb.Root` and `Breadcrumb.List` around it, as the docs Basic and Ellipsis demos place it.
  *
  * - A `breadcrumb-link` cell renders `<Breadcrumb.Link href="/">` around the text
@@ -8,6 +8,8 @@
  * - A `breadcrumb-ellipsis` cell renders `<Breadcrumb.Ellipsis />` in an item.
  * - A `breadcrumb-separator` cell renders `<Breadcrumb.Separator />` in the list, which draws its
  *   default CaretRight.
+ * - A `breadcrumb-trail` cell renders the docs Basic demo's trail, and at `ellipsis=on` the
+ *   Ellipsis demo's, and the page measures the list.
  * - The list sets the type and the muted text color each part inherits, and the item makes the
  *   part a flex item, so the page measures the box the trail gives it.
  * - The root and the ellipsis read their copy from `LocaleProvider`, which throws without one, so
@@ -22,14 +24,19 @@ import type { ReactElement } from "react";
 
 import { Breadcrumb } from "../../../fuse/dist/breadcrumb.js";
 import { LocaleProvider } from "../../../fuse/dist/theme.js";
-import { BREADCRUMB_LINK_LABEL, BREADCRUMB_PAGE_LABEL } from "../components/breadcrumb-kit.ts";
+import {
+  BREADCRUMB_LINK_LABEL,
+  BREADCRUMB_PAGE_LABEL,
+  BREADCRUMB_TRAIL_LINK_LABEL,
+} from "../components/breadcrumb-kit.ts";
+import type { Cell } from "../components/component-spec.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
-/** The part in a trail of its own, in English. */
-function inTrail(part: ReactElement): ReactElement {
+/** The parts in a trail of their own, in English. */
+function inTrail(...parts: readonly ReactElement[]): ReactElement {
   return createElement(LocaleProvider, {
     locale: "en-US",
-    children: createElement(Breadcrumb.Root, null, createElement(Breadcrumb.List, null, part)),
+    children: createElement(Breadcrumb.Root, null, createElement(Breadcrumb.List, null, ...parts)),
   });
 }
 
@@ -56,4 +63,21 @@ export const breadcrumbEllipsis: CellRendering = {
 /** The `breadcrumb-separator` cell: the default chevron. */
 export const breadcrumbSeparator: CellRendering = {
   element: () => inTrail(createElement(Breadcrumb.Separator)),
+};
+
+/** A `breadcrumb-trail` cell: the Basic demo's trail, or the Ellipsis demo's at `ellipsis=on`. */
+export const breadcrumbTrail: CellRendering = {
+  element: (cell: Cell) => {
+    const separator = () => createElement(Breadcrumb.Separator);
+    const entry = (part: ReactElement) => createElement(Breadcrumb.Item, null, part);
+    const collapsed = cell.ellipsis === "on" ? [entry(createElement(Breadcrumb.Ellipsis)), separator()] : [];
+    return inTrail(
+      entry(createElement(Breadcrumb.Link, { href: "/" }, BREADCRUMB_LINK_LABEL)),
+      separator(),
+      ...collapsed,
+      entry(createElement(Breadcrumb.Link, { href: "/quick-start" }, BREADCRUMB_TRAIL_LINK_LABEL)),
+      separator(),
+      entry(createElement(Breadcrumb.Page, null, BREADCRUMB_PAGE_LABEL))
+    );
+  },
 };

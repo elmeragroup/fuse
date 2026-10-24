@@ -645,13 +645,13 @@ describe("the Kbd component set", () => {
     ]);
   });
 
-  it("places both caps in each preview", () => {
+  it("places both caps, then the group's one variant, in each preview", () => {
     const previews = spec.previews.filter((preview) => preview.page === "page/kbd");
     expect(previews).toHaveLength(4);
     for (const preview of previews) {
-      expect(preview.groups.flatMap((group) => group.variants)).toEqual([
-        "kbd/content=text",
-        "kbd/content=icon",
+      expect(preview.groups.map((group) => group.variants)).toEqual([
+        ["kbd/content=text", "kbd/content=icon"],
+        ["kbd-group/keys=2"],
       ]);
     }
   });

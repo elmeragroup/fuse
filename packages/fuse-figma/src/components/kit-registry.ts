@@ -17,6 +17,7 @@ import {
   BREADCRUMB_LINK,
   BREADCRUMB_PAGE,
   BREADCRUMB_SEPARATOR,
+  BREADCRUMB_TRAIL,
 } from "./breadcrumb-kit";
 import { BUTTON, ICON_BUTTON } from "./button-kit";
 import { CALENDAR_DAY } from "./calendar-day-kit";
@@ -28,7 +29,7 @@ import { EMPTY } from "./empty-kit";
 import { FIELD_DESCRIPTION, FIELD_ERROR, FIELD_LEGEND, FIELD_TITLE } from "./field-text-kit";
 import { INPUT } from "./input-kit";
 import { ITEM, ITEM_LINK } from "./item-kit";
-import { KBD } from "./kbd-kit";
+import { KBD, KBD_GROUP } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
 import { LABEL } from "./label-kit";
 import { LINK } from "./link-kit";
@@ -40,7 +41,7 @@ import {
   NAVIGATION_MENU_ROW_LINK,
   NAVIGATION_MENU_VERTICAL_TRIGGER,
 } from "./navigation-menu-kit";
-import { PAGINATION_EDGE, PAGINATION_ELLIPSIS, PAGINATION_LINK } from "./pagination-kit";
+import { PAGINATION_EDGE, PAGINATION_ELLIPSIS, PAGINATION_LINK, PAGINATION_ROW } from "./pagination-kit";
 import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
 import { RADIO } from "./radio-kit";
 import { SELECT_TRIGGER } from "./select-trigger-kit";
@@ -74,7 +75,7 @@ const TOGGLE_PAGE: KitPage = { slug: "toggle", name: "Toggle" };
 /** The page Badge sits on alone. */
 const BADGE_PAGE: KitPage = { slug: "badge", name: "Badge" };
 
-/** The page Kbd sits on alone. */
+/** The page of Kbd's key cap and the group that combines caps. */
 const KBD_PAGE: KitPage = { slug: "kbd", name: "Kbd" };
 
 /** The page of the radio controls, Radio icon button first, then Radio. */
@@ -113,12 +114,12 @@ const AVATAR_PAGE: KitPage = { slug: "avatar", name: "Avatar" };
 /** The page Meter sits on alone. */
 const METER_PAGE: KitPage = { slug: "meter", name: "Meter" };
 
-/** The page of Pagination's parts: the link, the edge links and the ellipsis. */
+/** The page of Pagination's parts, the link, the edge links and the ellipsis, and the row of them. */
 const PAGINATION_PAGE: KitPage = { slug: "pagination", name: "Pagination" };
 
 /**
- * The page of Breadcrumb's parts: the link, the current page, the ellipsis and the separator. Its
- * name keeps it apart from `BREADCRUMB_PAGE`, the current page's set.
+ * The page of Breadcrumb's parts, the link, the current page, the ellipsis and the separator, and the
+ * trail of them. Its name keeps it apart from `BREADCRUMB_PAGE`, the current page's set.
  */
 const BREADCRUMB_PARTS_PAGE: KitPage = { slug: "breadcrumb", name: "Breadcrumb" };
 
@@ -233,6 +234,7 @@ export const KIT: readonly KitEntry[] = [
   // A Badge has no state, so its previews place every cell of its matrix.
   { definition: BADGE, page: BADGE_PAGE, previewCells: matrixCells(BADGE.axes) },
   { definition: KBD, page: KBD_PAGE, previewCells: matrixCells(KBD.axes) },
+  { definition: KBD_GROUP, page: KBD_PAGE, previewCells: matrixCells(KBD_GROUP.axes) },
   { definition: RADIO_ICON_BUTTON, page: RADIO_PAGE, previewCells: matrixCells(RADIO_ICON_BUTTON.axes) },
   { definition: RADIO, page: RADIO_PAGE, previewCells: matrixCells(RADIO.axes) },
   { definition: CHECKBOX, page: CHECKBOX_PAGE, previewCells: matrixCells(CHECKBOX.axes) },
@@ -256,6 +258,7 @@ export const KIT: readonly KitEntry[] = [
     page: PAGINATION_PAGE,
     previewCells: matrixCells(PAGINATION_ELLIPSIS.axes),
   },
+  { definition: PAGINATION_ROW, page: PAGINATION_PAGE, previewCells: matrixCells(PAGINATION_ROW.axes) },
   {
     definition: BREADCRUMB_LINK,
     page: BREADCRUMB_PARTS_PAGE,
@@ -275,6 +278,11 @@ export const KIT: readonly KitEntry[] = [
     definition: BREADCRUMB_SEPARATOR,
     page: BREADCRUMB_PARTS_PAGE,
     previewCells: matrixCells(BREADCRUMB_SEPARATOR.axes),
+  },
+  {
+    definition: BREADCRUMB_TRAIL,
+    page: BREADCRUMB_PARTS_PAGE,
+    previewCells: matrixCells(BREADCRUMB_TRAIL.axes),
   },
   { definition: SELECT_TRIGGER, page: SELECT_PAGE, previewCells: matrixCells(SELECT_TRIGGER.axes) },
   { definition: EMPTY, page: EMPTY_PAGE, previewCells: matrixCells(EMPTY.axes) },

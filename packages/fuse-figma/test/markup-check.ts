@@ -93,7 +93,7 @@ function slotParts(
   return (box.parts ?? [])
     .filter((part) => part.shownIn(cell))
     .flatMap((part) => {
-      const partPath = `${path}/${pathSegment(part)}`;
+      const partPath = `${path}/${pathSegment(part, box.parts ?? [])}`;
       return [{ path: partPath, part }, ...("kind" in part ? [] : slotParts(part, partPath, cell))];
     });
 }
@@ -115,7 +115,7 @@ function slotIcons(box: BoxDefinition, path: string, cell: Cell): readonly Marku
   return [
     ...framePartsOf(box)
       .filter((part) => part.shownIn(cell))
-      .flatMap((part) => slotIcons(part, `${path}/${pathSegment(part)}`, cell)),
+      .flatMap((part) => slotIcons(part, `${path}/${pathSegment(part, box.parts ?? [])}`, cell)),
     ...box
       .iconsFor(cell)
       .map(({ direct, dataIcon, classes }) => ({ owner: path, direct, dataIcon, classes })),
@@ -307,6 +307,36 @@ function checkInstance(
 }
 
 /**
+ * Check that a box whose definition counts the element children it draws no layer for holds exactly
+ * as many element children in a cell as the definition says: its parts, its icons, the element of
+ * its label and the undrawn ones. A box that counts none makes no claim.
+ *
+ * @param box - The root's or the part's definition.
+ * @param cell - The cell.
+ * @param elements - The cell's markup.
+ * @param index - The index of the box's element, undefined where the markup lacks it.
+ * @param where - How a failure names the cell and the box.
+ */
+function checkElementChildren(
+  box: BoxDefinition,
+  cell: Cell,
+  elements: readonly MarkupElement[],
+  index: number | undefined,
+  where: string
+): void {
+  const undrawn = box.undrawnChildren?.(cell);
+  if (undrawn === undefined || index === undefined) {
+    return;
+  }
+  const labelElement = box.label?.shownIn(cell) === true && box.label.textElement !== undefined ? 1 : 0;
+  const drawn = (box.parts ?? []).filter((part) => part.shownIn(cell)).length + box.iconsFor(cell).length;
+  expect(
+    elements.filter((element) => element.parent === index),
+    where
+  ).toHaveLength(drawn + labelElement + undrawn);
+}
+
+/**
  * Check a definition against its renderer's markup for each cell: the cell renders one measured
  * element, which carries the `data-slot` the definition says its root carries in the cell, each
  * attribute condition holds exactly where its element carries the attribute, and the parts, icons,
@@ -419,6 +449,7 @@ export function checkMarkup(
         `${key}: the label`
       ).toEqual(rootLabel);
       expect(markupImage(root), `${key}: the image`).toEqual(expectedImage(definition));
+      checkElementChildren(definition, cell, elements, measured, `${key}: the element children of the root`);
       const renderedPaths = rendered.map(([path]) => path);
       expect(shown.map(({ path }) => path).toSorted(), `${key}: parts`).toEqual(renderedPaths.toSorted());
       // One element per path, so the lookup below reads the only element at each path.
@@ -442,6 +473,7 @@ export function checkMarkup(
           `${key}: the label on ${path}`
         ).toEqual(partLabel);
         expect(markupImage(element), `${key}: the image on ${path}`).toEqual(expectedImage(part));
+        checkElementChildren(part, cell, elements, index, `${key}: the element children on ${path}`);
         expect(element?.attributes.get("style"), `${key}: the style on ${path}`).toEqual(
           expectedStyle(part, cell)
         );

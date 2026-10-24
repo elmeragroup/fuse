@@ -5,7 +5,7 @@
  * layers, and asks this module for the label, for the line clamp the box's display reads, for that
  * gap, and to settle the text declarations of a box that shows no label.
  */
-import { listNames, UNREAD_SHARE, widthCapInside } from "./box-sizing";
+import { hugsUncapped, listNames, UNREAD_SHARE, widthCapInside } from "./box-sizing";
 import type { Holder, WidthCap } from "./box-sizing";
 import type { CoverageNote, LayerStyle } from "./cascade";
 import type { Cell, LabelDefinition, TextPlacement } from "./component-spec";
@@ -65,6 +65,7 @@ const TEXT_PROPERTIES = [
   "text-underline-offset",
   "text-align",
   "text-wrap",
+  "overflow-wrap",
 ] as const;
 
 /** Where `text-align` sets a label's lines, by the value Tailwind compiles, in a left-to-right page. */
@@ -209,6 +210,10 @@ export function labelElementHolder(
     extent: { horizontal: undefined, vertical: undefined },
     layers: [label.name],
     widthCap: { kind: "none" },
+    // A row that hugs with nothing bounding it lays the element out at its max-content width.
+    unbounded: hugsUncapped(row),
+    // The rule above decides the element's sizing.
+    widthKnown: true,
     shares: [UNREAD_SHARE],
   };
 }
@@ -326,6 +331,7 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
       ? readLabelLayout(holder, label, characters, scope.clamp, scope.variant, path)
       : { ...readNativeLines(holder, lines, scope.variant, path), maxWidth: undefined, packsAtStart: false };
   const fills = layout.sizing.horizontal.kind !== "hug";
+  readOverflowWrap(holder, layout);
   const layer: TextLayerSpec = {
     kind: "text",
     key: label.key,
@@ -349,6 +355,38 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
     primaryAlign: layout.packsAtStart ? "MIN" : placed.primaryAlign,
     counterAlign: placed.counterAlign,
   };
+}
+
+/**
+ * Read the `overflow-wrap` a label's text takes, set on its box or inherited from a box around it,
+ * which breaks a word only where the word would overflow its line (CSS Text 3 §5.5). A text that
+ * hugs its width, with no `maxWidth` of its own and nothing bounding the width CSS gives its box, sets
+ * each line at its max-content width, where every word fits, so the declaration drops. Any other text
+ * can set a line narrower than a word, so it stays unmapped. Every label reads it, so a box with no
+ * text of its own that passes it down settles with what its texts make of it.
+ *
+ * @param holder - The box the label sits in.
+ * @param layout - The label's sizing and the width it wraps at.
+ */
+function readOverflowWrap(holder: Holder, layout: LabelLayout): void {
+  const fits =
+    layout.sizing.horizontal.kind === "hug" && layout.maxWidth === undefined && hugsUncapped(holder);
+  holder.style.read(
+    "overflow-wrap",
+    (value) => value,
+    (): CoverageNote =>
+      fits
+        ? {
+            outcome: "dropped",
+            detail:
+              "the text hugs its width and nothing bounds the width CSS gives it, so no line is narrower than a word, and no word overflows to break",
+          }
+        : {
+            outcome: "unmapped",
+            detail: "the text can set a line narrower than a word, and the builder measures no word",
+          },
+    []
+  );
 }
 
 /** What became of a line height, for the coverage table. */

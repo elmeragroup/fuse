@@ -12,6 +12,7 @@ import type { BoxPaint } from "./box-paint";
 import {
   absoluteRoom,
   growingRoom,
+  hugsUncapped,
   lessMargins,
   outOfFlow,
   partShare,
@@ -311,7 +312,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     label !== undefined && slots.length === 0 && !(box.parts ?? []).some((child) => child.shownIn(cell));
   // The box's lengths and layout read before its parts map, since they decide what a part can fill.
   const fit = onlyText && drawsAlikeWide(reader, paint) ? "room" : "content";
-  const { sizing, limits, clips, extent } = readSizing(reader, room, context.variables, fit, inside);
+  const { sizing, limits, clips, extent, known } = readSizing(reader, room, context.variables, fit, inside);
 
   const start: ChildLayerSpec[] = [];
   const end: ChildLayerSpec[] = [];
@@ -325,6 +326,14 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // flow, `holder.layers`, is the one membership every layout reader below reads: the rooms, the
   // stretch, the label, the display and the placement.
   const shown = cascadeParts(box, cascade, scope);
+  // Every part and icon is an element child, absolute or hidden ones too, and so is the element a
+  // label's characters sit in, beside the ones the definition draws no layer for.
+  const undrawn = box.undrawnChildren?.(cell);
+  cascade.spaceChildren(
+    undrawn === undefined
+      ? undefined
+      : shown.length + slots.length + (label?.textElement === undefined ? 0 : 1) + undrawn
+  );
   const flowing = shown.filter((part) => !outOfFlow(part.cascade.style));
   // A part's own `align-self` can decide the box's alignment, so the layout reads once they cascade.
   const flow = readFlow(
@@ -354,6 +363,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       ...end.map(({ name }) => name),
     ],
     widthCap: room.widthCap,
+    unbounded: room.unbounded,
+    widthKnown: known.horizontal,
     shares: [
       ...flowing.map((part) => partShare(part.cascade.style)),
       ...start.map(iconShare),
@@ -365,18 +376,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     holder,
     flowing.map((part) => part.cascade.style)
   );
-  if (growing !== undefined && layout.direction === "HORIZONTAL") {
-    reader.read(
-      "flex-wrap",
-      (value) => (normalizeCss(value) === "wrap" ? value : undefined),
-      () => ({
-        outcome: "dropped",
-        detail:
-          "the one layer that grows takes what the row's other layers leave, so the row breaks no line until they overflow it, and a Figma row never wraps",
-      }),
-      []
-    );
-  }
+  readWraps(holder, growing);
   const mapped = shown.map((part): MappedPart => {
     const index = flowing.indexOf(part);
     const inFlow = (): Room => {
@@ -473,6 +473,39 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     paints,
   }));
   return layout.blocks && stacksFirstOnTop(reader, stacks) ? { ...mappedBox, firstOnTop: true } : mappedBox;
+}
+
+/**
+ * Read a flex row's `flex-wrap` where the row never breaks a line. A wrapping row breaks a line only
+ * where its layers overflow it (CSS Flexbox 1 §9.3), while a Figma row never wraps.
+ *
+ * - In a row of fixed or filling width with one layer that grows, that layer takes what the others
+ *   leave, so the row breaks no line until they overflow it.
+ * - A row that hugs its width with nothing bounding the width CSS gives it lays its layers out on one
+ *   line, so it never runs out of room, as {@link hugsUncapped} says.
+ *
+ * Elsewhere it stays unread, so it lands unmapped.
+ *
+ * @param holder - The box.
+ * @param growing - The place of the box's layer that grows, as `readGrowth` found it.
+ */
+function readWraps(holder: Holder, growing: number | undefined): void {
+  const { style, layout } = holder;
+  if (!layout.flex || layout.direction !== "HORIZONTAL" || (growing === undefined && !hugsUncapped(holder))) {
+    return;
+  }
+  style.read(
+    "flex-wrap",
+    (value) => (normalizeCss(value) === "wrap" ? value : undefined),
+    () => ({
+      outcome: "dropped",
+      detail:
+        growing === undefined
+          ? "the row hugs its layers and nothing bounds the width CSS gives it, so it never runs out of room to break a line, and a Figma row never wraps"
+          : "the one layer that grows takes what the row's other layers leave, so the row breaks no line until they overflow it, and a Figma row never wraps",
+    }),
+    []
+  );
 }
 
 /**
