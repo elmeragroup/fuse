@@ -174,6 +174,42 @@ describe("an auto start margin on the last of two layers", () => {
     expect(unmapped(coverage)).toEqual([]);
   });
 
+  // CSS Flexbox 1 §9.7: an item that does not shrink or grow and sets no width keeps its max-content
+  // width, which a Figma frame that hugs what it holds draws, so only the text shrinks to the room
+  // left, as beside a layer of fixed width. A Command row's Kbd group shortcut is such a layer.
+  const keys = (classes: string): PartDefinition => ({
+    ...dot(`flex ${classes}`, [{ ...ICON, classes: "size-[16px]" }]),
+    key: "keys",
+    slot: "keys",
+    after: "label",
+  });
+  const keyed = (classes: string) =>
+    chip("flex w-[200px] gap-[8px] font-sans text-[14px]/[20px] text-[#000000]", {
+      label: WORDS,
+      parts: [keys(classes)],
+    });
+
+  it("fills the label beside a last layer that keeps its own width", async () => {
+    const { variant, coverage } = await buildFixture(keyed("ms-auto shrink-0"), { variables: SYNCED });
+    expect([
+      variant?.root.primaryAlign,
+      variant?.root.itemSpacing,
+      textOf(variant?.root)?.sizing.horizontal,
+    ]).toEqual(["MIN", literal(8), FILL]);
+    expect(unmapped(coverage)).toEqual([]);
+  });
+
+  // CSS Flexbox 1 §9.7: a layer that shrinks too gives up some of the room by its flex base size, which
+  // no Figma fill draws.
+  it.each(["ms-auto", "ms-auto shrink-0 grow"])(
+    "keeps the label at its own width beside `%s`",
+    async (classes) => {
+      const { variant, coverage } = await buildFixture(keyed(classes), { variables: SYNCED });
+      expect(textOf(variant?.root)?.sizing.horizontal).toEqual(HUG);
+      expect(unmapped(coverage).length).toBeGreaterThan(0);
+    }
+  );
+
   it.each([
     ["on the first of two layers", [caret("ml-auto", "start")]],
     ["on the last of three layers after an icon", [caret("", "end"), caret("ml-auto", "end")]],
@@ -272,6 +308,33 @@ describe("a part the markup holds after the label", () => {
     );
     expect(layerNames(variant?.root)).toEqual(["head", "Icon", "text", "End", "shortcut"]);
     expect(unmapped(coverage)).toEqual([]);
+  });
+
+  // A Command row's shortcut is a Kbd group, so the part after the text is an instance.
+  it("draws an instance part after them too, as a frame part draws", async () => {
+    const keys: ComponentDefinition = { ...chip("flex size-[4px]"), key: "keys", name: "Keys", slot: "keys" };
+    const after: InstanceDefinition = {
+      kind: "instance",
+      key: "shortcut",
+      of: keys,
+      cell: () => ({ state: "rest" }),
+      shownIn: () => true,
+      after: "label",
+    };
+    const [, row] = await buildFixtures(
+      [
+        keys,
+        chip("flex gap-[8px] font-sans text-[14px]/[20px] text-[#000000] [&_svg]:size-[16px]", {
+          label: TEXT,
+          iconsFor: () => [ICON],
+          parts: [after, head],
+        }),
+      ],
+      { variables: SYNCED }
+    );
+    const root = row?.componentSet.variants[0]?.root;
+    expect(root?.children.map((child) => child.key)).toEqual(["head", "icon", "text", "shortcut"]);
+    expect(unmapped(row?.coverage ?? [])).toEqual([]);
   });
 });
 
@@ -953,5 +1016,57 @@ describe("an empty part", () => {
       variables: SYNCED,
     });
     expect(layerNames(variant?.root)).toEqual(["header", "list"]);
+  });
+});
+
+// Figma takes a text layer's sizing from the main component and only its characters from the TEXT
+// property, so a label a property sets in place draws as its variant lays it out. CSS Flexbox 1 §8.1
+// and §9.7, as above: a label first of two layers spaced by an auto margin, beside a layer that keeps
+// its own width, fills the room left at any text that fits, and a one-word label that keeps its own
+// width draws a text with no break opportunity only.
+describe("a label a TEXT property sets in place", () => {
+  const keys: PartDefinition = {
+    ...dot("flex ms-auto shrink-0", [{ ...ICON, classes: "size-[16px]" }]),
+    key: "keys",
+    slot: "keys",
+    after: "label",
+  };
+  const row = (characters: string): ComponentDefinition =>
+    chip("flex w-[200px] gap-[8px] font-sans text-[14px]/[20px] text-[#000000]", {
+      key: "row",
+      name: "Row",
+      slot: "row",
+      label: { ...TEXT, characters, textProperty: "Label" },
+      parts: [keys],
+    });
+  const holding = (inner: ComponentDefinition, characters: string) =>
+    chip("flex w-[200px] flex-col", {
+      parts: [
+        {
+          kind: "instance",
+          key: "row",
+          of: inner,
+          cell: () => ({ state: "rest" }),
+          shownIn: () => true,
+          properties: () => ({ text: { Label: characters } }),
+        },
+      ],
+    });
+
+  it("takes its variant's filling layout for one word, which draws it as CSS does", async () => {
+    const inner = row("Two words");
+    const [, built] = await buildFixtures([inner, holding(inner, "Customers")], { variables: SYNCED });
+    expect(built?.componentSet.variants[0]?.root.children[0]).toMatchObject({
+      kind: "instance",
+      properties: { text: { Label: "Customers" } },
+    });
+    expect(unmapped(built?.coverage ?? [])).toEqual([]);
+  });
+
+  it("stays unmapped where its variant keeps one word at its own width and the text it gets can wrap", async () => {
+    const inner = row("Customers");
+    const [own, built] = await buildFixtures([inner, holding(inner, "Two words")], { variables: SYNCED });
+    expect(unmapped(own?.coverage ?? [])).toEqual([]);
+    expect(unmapped(built?.coverage ?? []).map((row) => row.property)).toEqual(["primaryAlign", "sizing"]);
   });
 });

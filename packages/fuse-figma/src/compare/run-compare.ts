@@ -23,7 +23,7 @@ import { fallbackInteraction, forcedPseudoClasses, parseCell, restingTwin } from
 import { checkClientMarkup } from "./client-markup.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { FuseBuildMissing } from "./page-assets.ts";
-import { forcedSelector, measuredSelectors } from "./preview-page.ts";
+import { forcedSelector, measuredSelectors, slotSpan } from "./preview-page.ts";
 import type { CellContent, PageLayout } from "./preview-page.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
 import type { PreviewTheme } from "./preview-theme.ts";
@@ -175,12 +175,14 @@ export type CellPlan = {
  * @param renderable - The definitions the run renders, with their renderers.
  * @param unchanged - The variant keys the kit draws as at rest in the preview's theme, from
  *   `unchangedByDesign`.
+ * @param layout - The page layout, whose slots a cell wider than one spans.
  * @returns The planned cells, and the instances whose variant the harness cannot render.
  */
 export function planCells(
   instances: readonly InstanceSnapshot[],
   renderable: readonly Renderable[],
-  unchanged: ReadonlySet<string>
+  unchanged: ReadonlySet<string>,
+  layout: PageLayout
 ): CellPlan {
   const planned: PlannedCell[] = [];
   const unsupported: { variant: string; reason: string }[] = [];
@@ -214,6 +216,7 @@ export function planCells(
         id: `c${String(index)}`,
         content: content(cell),
         measured: measuredSelectors(definition, isClientRenderer(renderer) ? renderer.union : undefined),
+        span: slotSpan(layout, definition.previewWidth),
         forcedOn: forcedSelector(definition),
         forced,
         forcedAttributes,
@@ -436,7 +439,7 @@ async function comparePreview(
     });
   }
   const unchanged = unchangedByDesign(componentSets, tokenColorsIn(theme.success));
-  const { planned, unsupported } = planCells(preview.instances, renderable, unchanged);
+  const { planned, unsupported } = planCells(preview.instances, renderable, unchanged, options.layout);
   const rendered = await browser.renderPreview(
     theme.success,
     planned.map((cell) => cell.request),

@@ -253,8 +253,12 @@ export type Holder = {
 /**
  * How much of a row a layer takes along it, its margins included, in pixels, or `unread` where the
  * build does not know before it maps the layer, as for a text or a box that hugs what it holds.
+ * `hugs` is an unread share that keeps its own width, as {@link partShare} says.
  */
-export type RowShare = { readonly kind: "pixels"; readonly value: number } | { readonly kind: "unread" };
+export type RowShare =
+  | { readonly kind: "pixels"; readonly value: number }
+  | { readonly kind: "unread" }
+  | { readonly kind: "hugs" };
 
 /** A share the build does not know. */
 export const UNREAD_SHARE: RowShare = { kind: "unread" };
@@ -276,15 +280,30 @@ function horizontalMargins(style: LayerStyle): number | undefined {
  * The share of a row a part takes: its literal width and its left and right margins.
  *
  * @param style - The part's style.
- * @returns The share, or `unread` where the part's width is no literal length, as where it hugs.
+ * @returns The share, or `unread` where the part's width is no literal length, as where it hugs, or
+ *   `hugs` where it sets no width and neither shrinks nor grows, so it keeps its max-content width
+ *   (CSS Flexbox 1 §9.7), as a Figma frame that hugs what it holds draws it.
  */
 export function partShare(style: LayerStyle): RowShare {
   const width = style.resolved("width");
-  const length = width === undefined ? undefined : evaluateLength(width);
+  if (width === undefined) {
+    return keepsOwnWidth(style) ? { kind: "hugs" } : UNREAD_SHARE;
+  }
+  const length = evaluateLength(width);
   const margins = horizontalMargins(style);
   return length === undefined || margins === undefined
     ? UNREAD_SHARE
     : { kind: "pixels", value: length + margins };
+}
+
+/** Whether a flex item neither shrinks nor grows from its `auto` basis, as `shrink-0` alone sets. */
+function keepsOwnWidth(style: LayerStyle): boolean {
+  return (
+    normalizeCss(style.resolved("flex-shrink") ?? "") === "0" &&
+    !style.has("flex") &&
+    !style.has("flex-basis") &&
+    ["", "0"].includes(normalizeCss(style.resolved("flex-grow") ?? ""))
+  );
 }
 
 /**
@@ -488,7 +507,7 @@ function lessShares(holder: Holder, index: number, length: number): number | und
   const gap = holder.style.has("column-gap") ? undefined : literalPixels(holder.style, "gap");
   let room = length - (gap ?? 0) * others.length;
   for (const share of others) {
-    if (share.kind === "unread" || gap === undefined) {
+    if (share.kind !== "pixels" || gap === undefined) {
       return undefined;
     }
     room -= share.value;

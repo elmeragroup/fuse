@@ -11,7 +11,7 @@
  * run stopped before its first write.
  *
  * The fake models the Figma rules below. Each rule a real file showed in 2026-10 names that run.
- * Rules 12 to 44 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
+ * Rules 12 to 45 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
  * Import test` from 2026-10-22 to 2026-10-25: P0 and P0b read the kit's nodes, P1 to P9, PB, PR,
  * PQ, PD, PL, PF, PH, PZ, PI, PZ2, N1 to N5, NS, NA, NH, PI2, PI3 and PH3 built nodes on a scratch page, and
  * P9b stored images and built no node.
@@ -333,6 +333,17 @@
  *    null, and kept both listed after `minWidth` went back to null (PH3). The fake lists both from the
  *    first write on. It does not lay out, so the minimum clamps no size. No probe wrote another limit
  *    on an instance, so the fake lists none for those.
+ * 45. TEXT values set through exposure two levels down. On 2026-10-25 a `Command item` row instance
+ *    listed in `exposedInstances` its exposed `kbd-group` and the two exposed caps inside it, and the
+ *    group's own `exposedInstances` listed the caps. `setProperties` on each cap set its TEXT, and the
+ *    row's `overrides` listed `componentProperties` on both caps. The values stayed through the row's
+ *    own TEXT write, a switch of the row's variant and edits of all three mains, and the switch gave
+ *    the caps new ids, the old ones no longer existing (PN). So the fake lists the exposed instances
+ *    below an exposed one too, marks `componentProperties` on a sublayer that sets properties, and
+ *    carries each such sublayer's values to the new sublayer at the same names when its instance
+ *    swaps. With both caps named `kbd`, each value stayed with the cap in the same place among the
+ *    caps of that name, through a switch and back, and a value set on the second cap alone stayed on
+ *    the second (PN2), so the fake matches each layer by its name and that place.
  *
  * An instance's sublayers show the layers of its main component, and a nested instance's sublayers
  * the sublayers its main layer shows. An override, such as the color an icon layer gives its glyph,
@@ -3448,6 +3459,7 @@ const OVERRIDE_FIELDS: ReadonlyMap<string, readonly NodeChangeProperty[]> = new 
   ["textAlignHorizontal", ["textAlignHorizontal"]],
   ["minWidth", ["minWidth"]],
   ["minHeight", ["minHeight"]],
+  ["componentProperties", ["componentProperties"]],
 ]);
 
 /**
@@ -3467,11 +3479,56 @@ function nearestComponent(state: NodeState): NodeState | undefined {
   return current;
 }
 
-/** The exposed instances below a layer, each one without the ones below it (rule 39). */
+/** The exposed instances below a layer, each one before those exposed below it (rules 39 and 45). */
 function exposedBelow(state: NodeState): readonly NodeState[] {
   return childrenOf(state).flatMap((child) =>
-    child.type === "INSTANCE" && exposedOf(child) ? [child] : exposedBelow(child)
+    child.type === "INSTANCE" && exposedOf(child) ? [child, ...exposedBelow(child)] : exposedBelow(child)
   );
+}
+
+/** A layer's place among its siblings: its name and its index among the siblings of that name (PN2). */
+type NamedPlace = { readonly name: string; readonly index: number };
+
+/** The property values a sublayer instance sets itself, at the places of the layers down to it (rule 45). */
+type NestedValues = {
+  readonly places: readonly NamedPlace[];
+  readonly values: ReadonlyMap<string, string | boolean>;
+};
+
+/** A child's place among its siblings: its name, and how many siblings before it share that name. */
+function placeOf(siblings: readonly NodeState[], child: NodeState): NamedPlace {
+  const index = siblings.filter((sibling) => sibling.name === child.name).indexOf(child);
+  return { name: child.name, index };
+}
+
+/** The values each sublayer instance below a layer sets itself, as the layer holds them now. */
+function nestedValues(state: NodeState, places: readonly NamedPlace[] = []): readonly NestedValues[] {
+  return state.children.flatMap((child) => {
+    const at = [...places, placeOf(state.children, child)];
+    const own = child.overridden.has("componentProperties")
+      ? [{ places: at, values: new Map(child.propertyValues) }]
+      : [];
+    return [...own, ...nestedValues(child, at)];
+  });
+}
+
+/**
+ * Give the sublayer instance at each entry's places the values it set before a swap: the sibling of
+ * the same name in the same place among those of that name, as a real file kept them (rule 45, PN2).
+ */
+function restoreNested(state: NodeState, nested: readonly NestedValues[]): void {
+  for (const { places, values } of nested) {
+    let at: NodeState | undefined = state;
+    for (const { name, index } of places) {
+      at = at === undefined ? undefined : childrenOf(at).filter((child) => child.name === name)[index];
+    }
+    if (at?.type === "INSTANCE") {
+      for (const [id, value] of values) {
+        at.propertyValues.set(id, value);
+      }
+      at.overridden.add("componentProperties");
+    }
+  }
 }
 
 /**
@@ -3480,11 +3537,13 @@ function exposedBelow(state: NodeState): readonly NodeState[] {
  * layer. The swap properties the instance sets swap their layers in the new component too.
  */
 function swapTo(state: NodeState, main: NodeState): void {
+  const nested = nestedValues(state);
   state.main = main;
   if (state.mirrorOf !== undefined) {
     state.overridden.add("mainComponent");
   }
   mirror(state, main, true);
+  restoreNested(state, nested);
   applySwapValues(state);
 }
 
@@ -3594,6 +3653,10 @@ function setProperties(
   write(state, "set properties");
   for (const [id, value] of values) {
     state.propertyValues.set(id, value);
+  }
+  // A sublayer's values are an override of the instance around it (rule 45).
+  if (state.mirrorOf !== undefined && values.length > 0) {
+    state.overridden.add("componentProperties");
   }
   if (target !== main) {
     swapTo(state, target);

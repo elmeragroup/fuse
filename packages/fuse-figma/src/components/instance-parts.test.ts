@@ -18,6 +18,7 @@ import type {
   BuiltComponent,
   ComponentDefinition,
   InstanceDefinition,
+  InstanceProperties,
   PartDefinition,
 } from "./component-spec";
 import type { CoverageRow } from "./coverage";
@@ -1086,5 +1087,105 @@ describe("a glyph the composite gives classes", () => {
     await expect(
       buildBoth(holding(badgePart({ swapClasses: () => ({ Glyph: "rotate-180" }) })))
     ).rejects.toThrow("Glyph");
+  });
+});
+
+// Figma sets an exposed instance's TEXT property through exposure, two levels down too, and the
+// value survives the outer instance's own property writes and variant switches (PN). So where the
+// composite gives a label of an instance inside the instance another text, the instance carries it as
+// a nested value at that instance's key path, and every other difference inside stays unmapped.
+describe("a nested instance's TEXT property", () => {
+  /** A pair of exposed badges, the first labelled `One`, as a Kbd group holds its caps. */
+  const PAIR: ComponentDefinition = chip("flex gap-1", {
+    key: "pair",
+    name: "Pair",
+    slot: "pair",
+    parts: [
+      badgePart({ key: "first", properties: () => ({ text: { Label: "One" } }), exposed: true }),
+      badgePart({ key: "second", exposed: true }),
+    ],
+  });
+  /** The pair as the row's part. */
+  const PAIR_PART: InstanceDefinition = {
+    kind: "instance",
+    key: "pair",
+    of: PAIR,
+    cell: () => ({ state: "rest" }),
+    shownIn: () => true,
+  };
+  /** A row holding the pair, exposed or not, as a Command row holds its shortcut. */
+  const row = (exposed: boolean): ComponentDefinition =>
+    chip("flex", {
+      key: "row",
+      name: "Row",
+      slot: "row",
+      parts: [exposed ? { ...PAIR_PART, exposed: true } : PAIR_PART],
+    });
+  /** An instance of `of` whose outer cell gives the nested values. */
+  const holder = (
+    of: ComponentDefinition,
+    nested: NonNullable<InstanceProperties["nested"]>
+  ): ComponentDefinition =>
+    chip("flex", {
+      parts: [
+        {
+          kind: "instance",
+          key: "held",
+          of,
+          cell: () => ({ state: "rest" }),
+          shownIn: () => true,
+          properties: () => ({ nested }),
+        },
+      ],
+    });
+
+  it("carries the texts it gives an exposed instance's labels as nested values at its key", async () => {
+    const [, , built] = await buildFixtures(
+      [
+        BADGE,
+        PAIR,
+        holder(PAIR, [
+          { path: ["first"], text: { Label: "Alt" } },
+          { path: ["second"], text: { Label: "N" } },
+        ]),
+      ],
+      FONT_SANS
+    );
+    expect(built?.componentSet.variants[0]?.root.children[0]).toMatchObject({
+      kind: "instance",
+      variant: "pair/state=rest",
+      properties: {
+        nested: [
+          { path: ["first"], text: { Label: "Alt" } },
+          { path: ["second"], text: { Label: "N" } },
+        ],
+      },
+    });
+    expect(unmappedOf(built?.coverage ?? [])).toEqual([]);
+  });
+
+  it("carries them two instances down, at the path of keys", async () => {
+    const [, , , built] = await buildFixtures(
+      [BADGE, PAIR, row(true), holder(row(true), [{ path: ["pair", "second"], text: { Label: "N" } }])],
+      FONT_SANS
+    );
+    expect(built?.componentSet.variants[0]?.root.children[0]).toMatchObject({
+      properties: { nested: [{ path: ["pair", "second"], text: { Label: "N" } }] },
+    });
+    expect(unmappedOf(built?.coverage ?? [])).toEqual([]);
+  });
+
+  it("leaves the text unmapped where the instance inside is not exposed", async () => {
+    const [, , , built] = await buildFixtures(
+      [BADGE, PAIR, row(false), holder(row(false), [{ path: ["pair", "second"], text: { Label: "N" } }])],
+      FONT_SANS
+    );
+    expect(unmappedOf(built?.coverage ?? []).map((found) => found.property)).toEqual(["instance"]);
+  });
+
+  it("refuses a path that names no instance part", async () => {
+    await expect(
+      buildFixtures([BADGE, PAIR, holder(PAIR, [{ path: ["third"], text: { Label: "N" } }])], FONT_SANS)
+    ).rejects.toThrow("third");
   });
 });

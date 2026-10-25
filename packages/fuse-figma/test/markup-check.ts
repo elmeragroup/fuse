@@ -50,6 +50,7 @@ import type { MarkupIcon, MarkupLabel } from "./markup-tree.ts";
 import {
   ATTRIBUTE_VARIANTS,
   NAMED_ATTRIBUTE_VARIANTS,
+  NOT_ATTRIBUTES,
   GROUP_HAS_VARIANTS,
   GROUP_VARIANTS,
   HAS_VARIANTS,
@@ -319,7 +320,9 @@ function checkInnerCell(
       expect(holds(variant), `${where}: ${variant}`).toBe(markup);
     }
   }
-  for (const variant of part.facts?.keys() ?? []) {
+  // A fact the page forces, as `in-data-highlighted` on a highlighted Command row's shortcut, is
+  // not in the markup the page mounts.
+  for (const variant of [...(part.facts?.keys() ?? [])].filter((name) => !NOT_ATTRIBUTES.has(name))) {
     const carries = ATTRIBUTE_VARIANTS.get(variant) ?? NAMED_ATTRIBUTE_VARIANTS.get(variant);
     const has = HAS_VARIANTS.get(variant);
     const groupHas = GROUP_HAS_VARIANTS.get(variant);

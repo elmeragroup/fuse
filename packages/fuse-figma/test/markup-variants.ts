@@ -285,8 +285,10 @@ export const NOT_ATTRIBUTES = new Set([
   // Input group rings while its control has keyboard focus, which the page forces on the control.
   "has-[[data-focus-ring-control]:focus-visible]",
   "peer-hover/menu-button",
-  // The page writes `data-highlighted` on a highlighted Combobox row when it forces the state.
+  // The page writes `data-highlighted` on a highlighted Combobox or Command row when it forces the
+  // state, and a Command row's trailing part reads it from the row.
   "data-highlighted",
+  "in-data-highlighted",
   // A Dropdown menu row's shortcut reads the row's DOM focus.
   "group-focus/dropdown-menu-item",
   "has-data-[icon=inline-start]",

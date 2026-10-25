@@ -222,6 +222,16 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "combobox-open", name: "Combobox (open)", variants: 1, previewed: 1 },
     ],
   },
+  {
+    slug: "command",
+    name: "Command",
+    sets: [
+      // No trailing part, a shortcut and a caret, at rest, highlighted and disabled.
+      { key: "command-item", name: "Command item", variants: 9, previewed: 9 },
+      // The docs Groups demo's list.
+      { key: "command-list", name: "Command list", variants: 1, previewed: 1 },
+    ],
+  },
   // The default, outline and dashed outline frames.
   { slug: "empty", name: "Empty", sets: [{ key: "empty", name: "Empty", variants: 3, previewed: 3 }] },
   // Selected off and on, in 5 states.

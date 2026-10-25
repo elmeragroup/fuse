@@ -355,6 +355,51 @@ function checkInstanceProperties(
 }
 
 /**
+ * Refuse a nested value the plugin cannot set: one at a path the inner variant lacks, through an
+ * instance that is not exposed, which Figma lists in no `exposedInstances` (N5, PN), ending at a layer
+ * that is no instance, or for a TEXT property the nested set does not define.
+ */
+function checkNestedValues(where: string, layer: InstanceLayerSpec, shown: VariantSpec, kit: KitSpec): void {
+  for (const nested of layer.properties?.nested ?? []) {
+    const at = `${where} gives a nested value at ${nested.path.join(" / ")}`;
+    let root: ComponentRootSpec = shown.root;
+    let rootKey = shown.key;
+    let pending: string[] = [];
+    let target: ComponentSetSpec | undefined;
+    for (const key of nested.path) {
+      pending = [...pending, key];
+      const found = layerAt(root, pending);
+      if (found === undefined) {
+        throw new Error(`${at}, which ${rootKey} lacks.`);
+      }
+      if ("kind" in found && found.kind === "instance") {
+        if (found.exposed !== true) {
+          throw new Error(`${at}, and ${key} is not exposed, so a designer could not set it either.`);
+        }
+        target = kit.componentSets.find((set) => set.key === found.componentSet);
+        const variant = target?.variants.find((candidate) => candidate.key === found.variant);
+        if (variant === undefined) {
+          throw new Error(`${at}, whose ${key} shows ${found.variant}, which the kit does not define.`);
+        }
+        root = variant.root;
+        rootKey = variant.key;
+        pending = [];
+      } else if ("kind" in found && found.kind !== "frame") {
+        throw new Error(`${at}, which is no instance.`);
+      }
+    }
+    if (pending.length > 0 || target === undefined) {
+      throw new Error(`${at}, which is no instance.`);
+    }
+    const defined = propertyNames(target, "TEXT");
+    const unknown = Object.keys(nested.text).find((name) => !defined.includes(name));
+    if (unknown !== undefined) {
+      throw new Error(`${at} for ${unknown}, which ${target.name} does not define as a TEXT property.`);
+    }
+  }
+}
+
+/**
  * Refuse an instance layer the plugin cannot plan: an instance of its own set, of a set the kit lists
  * later or not at all, or of a variant the inner set lacks, a property the inner set lacks or defines
  * as another type, a swap to an icon the library lacks, and an override at a path the inner variant
@@ -390,6 +435,7 @@ function checkInstances(kit: KitSpec): void {
           throw new Error(`${where} shows ${layer.variant}, which ${inner.name} does not define.`);
         }
         checkInstanceProperties(where, layer, inner, kit.icons);
+        checkNestedValues(where, layer, shown, kit);
         const overridden = new Set<string>();
         for (const override of layer.overrides ?? []) {
           const target = layerAt(shown.root, override.path);

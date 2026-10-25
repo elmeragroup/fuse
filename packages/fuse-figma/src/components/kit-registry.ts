@@ -23,6 +23,7 @@ import { BUTTON, ICON_BUTTON } from "./button-kit";
 import { CALENDAR_DAY } from "./calendar-day-kit";
 import { CHECKBOX } from "./checkbox-kit";
 import { COMBOBOX_EMPTY, COMBOBOX_ITEM, COMBOBOX_OPEN, COMBOBOX_POPUP } from "./combobox-kit";
+import { COMMAND_ITEM, COMMAND_LIST } from "./command-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
 import { CONFIRM_BUTTON } from "./confirm-button-kit";
@@ -170,6 +171,9 @@ const SIDEBAR_PAGE: KitPage = { slug: "sidebar", name: "Sidebar" };
 
 /** The page of Combobox's open state: its row, its empty message, its popup and the open input. */
 const COMBOBOX_PAGE: KitPage = { slug: "combobox", name: "Combobox" };
+
+/** The page of Command's rows and list. The palette dialog waits for a dialog surface. */
+const COMMAND_PAGE: KitPage = { slug: "command", name: "Command" };
 
 /** The page of Navigation menu's triggers and links, until the popup's sets join them. */
 const NAVIGATION_MENU_PAGE: KitPage = { slug: "navigation-menu", name: "Navigation menu" };
@@ -356,6 +360,8 @@ export const KIT: readonly KitEntry[] = [
   { definition: COMBOBOX_EMPTY, page: COMBOBOX_PAGE, previewCells: matrixCells(COMBOBOX_EMPTY.axes) },
   { definition: COMBOBOX_POPUP, page: COMBOBOX_PAGE, previewCells: matrixCells(COMBOBOX_POPUP.axes) },
   { definition: COMBOBOX_OPEN, page: COMBOBOX_PAGE, previewCells: matrixCells(COMBOBOX_OPEN.axes) },
+  { definition: COMMAND_ITEM, page: COMMAND_PAGE, previewCells: matrixCells(COMMAND_ITEM.axes) },
+  { definition: COMMAND_LIST, page: COMMAND_PAGE, previewCells: matrixCells(COMMAND_LIST.axes) },
   { definition: EMPTY, page: EMPTY_PAGE, previewCells: matrixCells(EMPTY.axes) },
   { definition: CALENDAR_DAY, page: CALENDAR_PAGE, previewCells: matrixCells(CALENDAR_DAY.axes) },
   { definition: LINK, page: LINK_PAGE, previewCells: matrixCells(LINK.axes) },

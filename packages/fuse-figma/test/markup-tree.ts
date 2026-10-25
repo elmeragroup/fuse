@@ -377,7 +377,11 @@ export function markupParts(
     if (emptyUnrendered) {
       continue;
     }
-    if (slot !== undefined && slots.has(slot)) {
+    // A slot no part of the parent claims belongs to an instance part whose inner root its element
+    // names, as a Command row carries `command-item`, which the selector branch finds.
+    const claimed =
+      slot !== undefined && (selected === undefined || parts.some((part) => partSlot(part) === slot));
+    if (slot !== undefined && slots.has(slot) && claimed) {
       const part = inOrder(
         rendered.filter((candidate) => partSlot(candidate) === slot),
         counts,

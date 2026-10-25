@@ -334,6 +334,17 @@ export type InstancePropertiesSpec = {
   readonly text?: Readonly<Record<string, string>>;
   readonly boolean?: Readonly<Record<string, boolean>>;
   readonly swap?: Readonly<Record<string, string>>;
+  /**
+   * The TEXT values of exposed instances inside the instance, each at the keys of the instance layers
+   * from the inner root down, which the plugin sets on the exposed sublayer (PN). Absent for none.
+   */
+  readonly nested?: readonly NestedPropertiesSpec[];
+};
+
+/** The TEXT values of one exposed instance inside an instance, at the keys of the instance layers down to it. */
+export type NestedPropertiesSpec = {
+  readonly path: readonly string[];
+  readonly text: Readonly<Record<string, string>>;
 };
 
 /**

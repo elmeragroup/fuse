@@ -17,7 +17,10 @@ import type {
   ComponentRootSpec,
   FrameLayerSpec,
   IconLayerSpec,
+  InstanceLayerSpec,
   InstanceOverride,
+  InstancePropertiesSpec,
+  NestedPropertiesSpec,
   SizingSpec,
   TextLayerSpec,
 } from "./kit-spec";
@@ -45,6 +48,8 @@ export type InstanceDiff = {
   readonly text: Readonly<Record<string, string>>;
   /** The key of the icon each INSTANCE_SWAP property picks, by the property's name, where it differs. */
   readonly swap: Readonly<Record<string, string>>;
+  /** The TEXT values of exposed instances inside the root that differ, at their key paths. */
+  readonly nested: readonly NestedPropertiesSpec[];
   /** The paints, corners and shadows that differ, in layer order, the root first. */
   readonly overrides: readonly InstanceOverride[];
   /** The sizing of the root built in place, which the instance takes in its parent's auto layout. */
@@ -87,6 +92,7 @@ type Found = {
   readonly root: SizingSpec;
   readonly text: Map<string, string>;
   readonly swap: Map<string, string>;
+  readonly nested: NestedPropertiesSpec[];
   readonly overrides: InstanceOverride[];
   readonly mirrored: Mirrored[];
   readonly unmapped: InstanceDifference[];
@@ -105,6 +111,9 @@ type Found = {
  *   length draws another way where that length changes.
  * - A text the variant fills across, a direct child of a root the instance hugs, draws at its own
  *   width, as the text built in place hugs (PH2).
+ * - An exposed instance inside the root that differs only in TEXT values, its own or those of exposed
+ *   instances inside it, carries them as nested values at its key path, since Figma sets an exposed
+ *   instance's TEXT property through exposure at any depth (PN).
  * - A glyph turned half a turn in place, where the variant's is unturned and a property swaps it,
  *   becomes a swap to its proven half-turn mirror (`glyph-mirrors.ts`), since Figma turns no layer
  *   inside an instance (PT).
@@ -123,6 +132,7 @@ export function diffInstance(inPlace: ComponentRootSpec, variant: ComponentRootS
     root: inPlace.sizing,
     text: new Map(),
     swap: new Map(),
+    nested: [],
     overrides: [],
     mirrored: [],
     unmapped: [],
@@ -131,6 +141,7 @@ export function diffInstance(inPlace: ComponentRootSpec, variant: ComponentRootS
   return {
     text: Object.fromEntries(found.text),
     swap: Object.fromEntries(found.swap),
+    nested: found.nested,
     overrides: found.overrides,
     sizing: inPlace.sizing,
     mirrored: found.mirrored,
@@ -305,10 +316,68 @@ function diffLayers(
       diffText(found, at, layer, held);
     } else if (layer.kind === "icon" && held?.kind === "icon") {
       diffIcon(found, at, layer, held);
+    } else if (layer.kind === "instance" && held?.kind === "instance") {
+      diffNested(found, at, layer, held);
     } else {
       diffField(found, at, "instance", layer, held);
     }
   });
+}
+
+/** An instance layer's BOOLEAN and INSTANCE_SWAP values, its property values beside its TEXT values. */
+function untexted(layer: InstanceLayerSpec): Pick<InstancePropertiesSpec, "boolean" | "swap"> {
+  const { boolean, swap } = layer.properties ?? {};
+  const booleans = boolean === undefined ? {} : { boolean };
+  return swap === undefined ? booleans : { ...booleans, swap };
+}
+
+/** An instance layer's TEXT values, its own at the empty path and those it gives instances inside it. */
+function textsOf(layer: InstanceLayerSpec): ReadonlyMap<string, NestedPropertiesSpec> {
+  const { text, nested = [] } = layer.properties ?? {};
+  return new Map(
+    [{ path: [], text: text ?? {} }, ...nested].map((values) => [JSON.stringify(values.path), values])
+  );
+}
+
+/**
+ * Diff an instance layer inside the root. Where the two differ only in TEXT values and the instance
+ * in place is exposed, each value that differs becomes a nested value at the instance's key path
+ * (PN). A value the variant gives and the instance in place leaves at its default, and every other
+ * difference, leaves the whole layer unmapped.
+ */
+function diffNested(
+  found: Found,
+  path: readonly string[],
+  inPlace: InstanceLayerSpec,
+  variant: InstanceLayerSpec
+): void {
+  const built = textsOf(inPlace);
+  const held = textsOf(variant);
+  const changed: NestedPropertiesSpec[] = [];
+  let carried =
+    inPlace.exposed === true &&
+    isDeepStrictEqual(
+      { ...inPlace, properties: untexted(inPlace) },
+      { ...variant, properties: untexted(variant) }
+    );
+  for (const at of new Set([...built.keys(), ...held.keys()])) {
+    const values = built.get(at);
+    const heldText = held.get(at)?.text ?? {};
+    if (Object.keys(heldText).some((name) => values?.text[name] === undefined)) {
+      carried = false;
+    }
+    const text = Object.fromEntries(
+      Object.entries(values?.text ?? {}).filter(([name, value]) => heldText[name] !== value)
+    );
+    if (values !== undefined && Object.keys(text).length > 0) {
+      changed.push({ path: [...path, ...values.path], text });
+    }
+  }
+  if (!carried) {
+    diffField(found, path, "instance", inPlace, variant);
+    return;
+  }
+  found.nested.push(...changed);
 }
 
 /**

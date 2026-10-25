@@ -61,12 +61,14 @@ import type {
 } from "./kit-spec";
 import {
   inertClamp,
+  labelCharacters,
   labelElementHolder,
   mapLabel,
   readLineClamp,
   readWithoutLabel,
   spaceBeforeLabel,
 } from "./label-layout";
+import type { LabelScope } from "./label-layout";
 import { adjoinsMargin, foldNegativeMargin, wrapFrameMargins, wrapInstanceMargins } from "./margin-box";
 import type { FoldingBox } from "./margin-box";
 import {
@@ -379,7 +381,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // absolute part first in the DOM that may end a row beside its label in flow.
   const leading = label !== undefined && end.length === 0 ? leadingAbsolute(inDom) : undefined;
   const afterLabel = (part: ShownPart): boolean =>
-    part === leading || (part.kind === "frame" && part.child.after === "label");
+    part === leading || (part.kind === "frame" ? part.child.after : part.visit.part.after) === "label";
   const before = inDom.filter((part) => !afterLabel(part));
   const trailing = inDom.filter((part) => afterLabel(part));
   const shown = [...before, ...trailing];
@@ -497,17 +499,21 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   }
   const clamp = readLineClamp(holder, label);
   const labelHolder = label === undefined ? holder : labelBox(holder, cascade, label, growing);
-  const placed =
-    label === undefined
-      ? undefined
-      : mapLabel(labelHolder, label, {
-          cell,
-          variables: context.variables,
-          color: textColor,
-          clamp,
-          variant,
-          path: [...cascade.path, label.key],
-        });
+  const labelScope = (shown: LabelDefinition): LabelScope => {
+    const own: LabelScope = {
+      cell,
+      variables: context.variables,
+      color: textColor,
+      clamp,
+      variant,
+      path: [...cascade.path, shown.key],
+    };
+    // A TEXT value gave the label other characters in place, so its layout follows its variant's.
+    return shown === box.label || box.label === undefined
+      ? own
+      : { ...own, variantCharacters: labelCharacters(box.label, cell) };
+  };
+  const placed = label === undefined ? undefined : mapLabel(labelHolder, label, labelScope(label));
   // A label whose element fills the room the row leaves it takes all the room there is, so the row's
   // alignment shows only where its layers overflow it, and an unset one packs them at the start
   // there, as a collapsed Sidebar row keeps its icon at its start.

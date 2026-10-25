@@ -56,10 +56,11 @@ export type PageLayout = {
 };
 
 /**
- * The layout `figma:compare` uses. A slot holds the widest cell, Empty's 512px box, and the tallest
+ * The layout `figma:compare` uses. A slot holds the widest cell of one slot, Empty's 512px box, and the tallest
  * markup, the open Popover and the Popover popup below its hidden trigger at the comfortable density,
  * with the padding on every side, so a 3px ring
- * around a cell stays inside its own crop and nothing a cell renders reaches the next slot.
+ * around a cell stays inside its own crop and nothing a cell renders reaches the next slot. A wider cell,
+ * the Command list's 576px, spans slots, as {@link slotRects} places it.
  */
 export const PAGE_LAYOUT: PageLayout = { padding: 8, slotWidth: 528, slotHeight: 400, columns: 6, top: 16 };
 
@@ -77,6 +78,8 @@ export type PageCell = {
   readonly content: CellContent;
   /** Selectors for the measured elements, as {@link cellSelector} takes them. */
   readonly measured: readonly string[];
+  /** How many slots the cell spans across, as {@link slotSpan} gives them, 1 where absent. */
+  readonly span?: number;
 };
 
 /** A point in CSS pixels. */
@@ -106,16 +109,58 @@ export function slotRect(layout: PageLayout, index: number): PageRect {
 }
 
 /**
+ * How many slots a cell spans across: one, or as many as its root's width and the padding on both
+ * sides need where that is wider than a slot, as the Command list's 576px is.
+ *
+ * @param layout - The page layout.
+ * @param width - The width the cell's definition gives its root, undefined for none.
+ * @returns The span, at least 1.
+ */
+export function slotSpan(layout: PageLayout, width: number | undefined): number {
+  return Math.max(1, Math.ceil(((width ?? 0) + 2 * layout.padding) / layout.slotWidth));
+}
+
+/**
+ * Each cell's slot. A cell of one slot takes the place {@link slotRect} gives it among the other
+ * cells of one slot, so a wide cell moves no other cell. Each wide cell takes a row of its own below
+ * the grid, as wide as its span.
+ *
+ * @param layout - The page layout.
+ * @param cells - The cells, in page order.
+ * @returns The slots, in the cells' order.
+ */
+export function slotRects(layout: PageLayout, cells: readonly Pick<PageCell, "span">[]): readonly PageRect[] {
+  const narrow = cells.filter(({ span }) => (span ?? 1) === 1).length;
+  const rows = Math.max(1, Math.ceil(narrow / layout.columns));
+  let placed = 0;
+  let wide = 0;
+  return cells.map(({ span = 1 }) => {
+    if (span === 1) {
+      placed += 1;
+      return slotRect(layout, placed - 1);
+    }
+    wide += 1;
+    return {
+      x: 0,
+      y: layout.top + (rows + wide - 1) * layout.slotHeight,
+      width: span * layout.slotWidth,
+      height: layout.slotHeight,
+    };
+  });
+}
+
+/**
  * The viewport that shows every slot, so no crop needs scrolling.
  *
  * @param layout - The page layout.
- * @param count - How many cells the page holds.
+ * @param cells - The cells, in page order.
  * @returns The viewport size in CSS pixels.
  */
-export function pageViewport(layout: PageLayout, count: number): PageSize {
+export function pageViewport(layout: PageLayout, cells: readonly Pick<PageCell, "span">[]): PageSize {
+  const rects = slotRects(layout, cells);
   return {
-    width: layout.columns * layout.slotWidth,
-    height: layout.top + Math.max(1, Math.ceil(count / layout.columns)) * layout.slotHeight,
+    width: Math.max(layout.columns * layout.slotWidth, ...rects.map((rect) => rect.x + rect.width)),
+    height: Math.max(layout.top + layout.slotHeight, ...rects.map((rect) => rect.y + rect.height)),
   };
 }
 
@@ -247,8 +292,10 @@ export const BACKGROUND_PROBE = "[data-compare-probe]";
  */
 export const CLIENT_HIDDEN = "[data-compare-client]";
 
-function slotHtml(cell: PageCell, { x, y }: PagePoint): string {
-  const style = `left:${String(x)}px;top:${String(y)}px`;
+function slotHtml(cell: PageCell, { x, y, width }: PageRect): string {
+  // A wide slot gives its cell the width it spans, which beats the client slot's one-slot width.
+  const wide = (cell.span ?? 1) > 1 ? `;width:${String(width)}px;box-sizing:border-box` : "";
+  const style = `left:${String(x)}px;top:${String(y)}px${wide}`;
   switch (cell.content._tag) {
     case "Static":
       return `<div data-compare-cell="${cell.id}" style="${style}">${cell.content.html}</div>`;
@@ -284,7 +331,8 @@ export function previewDocument(
   layout: PageLayout,
   hostCss: string
 ): string {
-  const slots = cells.map((cell, index) => slotHtml(cell, slotRect(layout, index)));
+  const rects = slotRects(layout, cells);
+  const slots = cells.map((cell, index) => slotHtml(cell, rects[index] ?? slotRect(layout, index)));
   const clients = cells.filter((cell) => cell.content._tag === "Client");
   const shown = clients.flatMap((cell) =>
     cell.measured.map((element) => `${cellSelector(cell.id, element)}{visibility:visible}`)

@@ -724,3 +724,130 @@ describe("rule 44: a minimum width on an instance root is an override that stays
     ]);
   });
 });
+
+/**
+ * PN's sets: a `Kbd` cap whose 12px text links the TEXT property `Label`, default `K`; a `Kbd group`
+ * holding two exposed caps, `kbd-1` set to `Ctrl` and `kbd-2`; and a `Command item` set of two rows,
+ * `highlighted=false` and `true`, each holding a text linked to `Label` and an exposed `kbd-group`.
+ */
+async function twoLevels(capNames: readonly [string, string] = ["kbd-1", "kbd-2"]) {
+  const file = probeFile();
+  const { figma } = file;
+  await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+  const labelled = (name: string, characters: string) => {
+    const component = figma.createComponent();
+    component.name = name;
+    component.layoutMode = "HORIZONTAL";
+    const text = figma.createText();
+    text.name = "label";
+    text.characters = characters;
+    component.appendChild(text);
+    return { component, text };
+  };
+  const cap = labelled("content=text", "K");
+  const kbd = figma.combineAsVariants([cap.component], figma.currentPage);
+  const capLabel = kbd.addComponentProperty("Label", "TEXT", "K");
+  cap.text.componentPropertyReferences = { characters: capLabel };
+  const group = figma.createComponent();
+  group.name = "keys=2";
+  group.layoutMode = "HORIZONTAL";
+  const caps = capNames.map((name) => {
+    const instance = cap.component.createInstance();
+    instance.name = name;
+    group.appendChild(instance);
+    return instance;
+  });
+  figma.combineAsVariants([group], figma.currentPage);
+  caps[0]?.setProperties({ [capLabel]: "Ctrl" });
+  for (const instance of caps) {
+    instance.isExposedInstance = true;
+  }
+  const rows = ["false", "true"].map((highlighted) => {
+    const row = labelled(`highlighted=${highlighted}`, "New customer");
+    const shortcut = group.createInstance();
+    shortcut.name = "kbd-group";
+    row.component.appendChild(shortcut);
+    return { ...row, shortcut };
+  });
+  const item = figma.combineAsVariants(
+    rows.map(({ component }) => component),
+    figma.currentPage
+  );
+  const rowLabel = item.addComponentProperty("Label", "TEXT", "New customer");
+  for (const row of rows) {
+    row.text.componentPropertyReferences = { characters: rowLabel };
+    row.shortcut.isExposedInstance = true;
+  }
+  const [first] = rows;
+  if (first === undefined) {
+    throw new Error("the item set holds no rows");
+  }
+  return { figma, group, kbd, cap, row: first.component.createInstance(), ids: { capLabel, rowLabel } };
+}
+
+/** The caps a row shows through its exposed group, and their TEXT values, in layer order. */
+function capsOf(row: InstanceNode, capLabel: string) {
+  const group = row.exposedInstances.find((instance) => instance.name === "kbd-group");
+  const caps = group?.exposedInstances ?? [];
+  return { caps, values: caps.map((instance) => instance.componentProperties[capLabel]?.value) };
+}
+
+describe("rule 45: TEXT values set through exposure two levels down stay through the outer instance's writes (PN)", () => {
+  it("lists instances exposed two levels down, and each cap shows its group's value", async () => {
+    const { row, ids } = await twoLevels();
+    expect(row.exposedInstances.map((instance) => instance.name)).toEqual(["kbd-group", "kbd-1", "kbd-2"]);
+    expect(capsOf(row, ids.capLabel).values).toEqual(["Ctrl", "K"]);
+  });
+
+  it("sets each cap's TEXT through exposure and lists `componentProperties` among the row's overrides", async () => {
+    const { row, ids } = await twoLevels();
+    const { caps } = capsOf(row, ids.capLabel);
+    caps[0]?.setProperties({ [ids.capLabel]: "Alt" });
+    caps[1]?.setProperties({ [ids.capLabel]: "N" });
+    expect(capsOf(row, ids.capLabel).values).toEqual(["Alt", "N"]);
+    expect(
+      row.overrides
+        .filter(({ id }) => caps.some((instance) => instance.id === id))
+        .map((entry) => entry.overriddenFields)
+    ).toEqual([["componentProperties"], ["componentProperties"]]);
+  });
+
+  it("keeps the caps' values through the row's own TEXT write, a variant switch and edits of the mains, which give the caps new ids", async () => {
+    const { row, ids, group, cap } = await twoLevels();
+    const { caps } = capsOf(row, ids.capLabel);
+    caps[0]?.setProperties({ [ids.capLabel]: "Alt" });
+    caps[1]?.setProperties({ [ids.capLabel]: "N" });
+    const before = caps.map((instance) => instance.id);
+    row.setProperties({ [ids.rowLabel]: "Customers" });
+    expect(capsOf(row, ids.capLabel).values).toEqual(["Alt", "N"]);
+    row.setProperties({ highlighted: "true" });
+    const after = capsOf(row, ids.capLabel);
+    expect(after.values).toEqual(["Alt", "N"]);
+    expect(after.caps.map((instance) => instance.id).some((id) => before.includes(id))).toBe(false);
+    group.itemSpacing = 6;
+    cap.component.paddingLeft = 4;
+    expect(capsOf(row, ids.capLabel).values).toEqual(["Alt", "N"]);
+  });
+});
+
+// PN2: the kit names both caps `kbd`, their data-slot, and Figma keeps each value with the same-named
+// cap in the same place.
+describe("rule 45: same-named caps keep their own values through a variant switch (PN2)", () => {
+  it("keeps the first cap's and the second cap's values on each", async () => {
+    const { row, ids } = await twoLevels(["kbd", "kbd"]);
+    const { caps } = capsOf(row, ids.capLabel);
+    caps[0]?.setProperties({ [ids.capLabel]: "Alt" });
+    caps[1]?.setProperties({ [ids.capLabel]: "N" });
+    row.setProperties({ highlighted: "true" });
+    expect(capsOf(row, ids.capLabel).values).toEqual(["Alt", "N"]);
+    row.setProperties({ highlighted: "false" });
+    expect(capsOf(row, ids.capLabel).values).toEqual(["Alt", "N"]);
+  });
+
+  it("keeps a value set on the second cap alone on the second", async () => {
+    const { row, ids } = await twoLevels(["kbd", "kbd"]);
+    capsOf(row, ids.capLabel).caps[1]?.setProperties({ [ids.capLabel]: "M" });
+    row.setProperties({ highlighted: "true" });
+    expect(capsOf(row, ids.capLabel).values).toEqual(["Ctrl", "M"]);
+  });
+});

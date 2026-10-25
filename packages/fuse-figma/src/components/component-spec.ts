@@ -332,6 +332,18 @@ export type InstanceProperties = {
   readonly text?: Readonly<Record<string, string>>;
   readonly boolean?: Readonly<Record<string, boolean>>;
   readonly swap?: Readonly<Record<string, string>>;
+  /**
+   * The TEXT values for the instances inside the inner root, each at the keys of the instance parts
+   * from the inner root down, as a Command row gives its Kbd group's caps `Alt` and a letter.
+   * Undefined for none.
+   */
+  readonly nested?: readonly NestedProperties[];
+};
+
+/** The TEXT values for one instance inside an instance, at the keys of the instance parts down to it. */
+export type NestedProperties = {
+  readonly path: readonly string[];
+  readonly text: Readonly<Record<string, string>>;
 };
 
 /**
@@ -384,6 +396,12 @@ export type InstanceDefinition = {
    * `hugging-rows.ts` says: it hugs across, and its siblings fill. Undefined for a part that never is.
    */
   readonly setsWidth?: (cell: Cell) => boolean;
+  /**
+   * `"label"` for an instance the markup holds after its box's label and end icons, as a Command
+   * row's Kbd group shortcut follows the row's own text, as {@link PartDefinition.after} says for a
+   * frame.
+   */
+  readonly after?: "label";
   /** True where a designer sets the inner set's properties from the outer instance's panel. */
   readonly exposed?: true;
   /**

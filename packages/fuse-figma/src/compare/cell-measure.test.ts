@@ -7,7 +7,7 @@
 import { describe, expect, it } from "vitest";
 
 import { cellClip, clipInsideSlot, measuredBox } from "./cell-measure";
-import { PAGE_LAYOUT, slotRect } from "./preview-page";
+import { PAGE_LAYOUT, pageViewport, slotRect, slotRects, slotSpan } from "./preview-page";
 
 describe("measuredBox", () => {
   it("is the one element's box for a cell that measures one element", () => {
@@ -36,6 +36,29 @@ describe("slotRect", () => {
   it("places a cell's slot on the page's grid, below the probe row", () => {
     expect(slotRect(PAGE_LAYOUT, 0)).toEqual({ x: 0, y: 16, width: 528, height: 400 });
     expect(slotRect(PAGE_LAYOUT, 7)).toEqual({ x: 528, y: 416, width: 528, height: 400 });
+  });
+});
+
+// A cell wider than a slot spans as many slots as its width and the padding on both sides need, in a
+// row of its own below the grid, so every other cell keeps the slot `slotRect` gives it. Worked by
+// hand: the Command list's 576px plus 2 × 8px is 592px, past one 528px slot, so it spans two, 1056px.
+describe("slotRects", () => {
+  it("spans a cell wider than a slot across two slots", () => {
+    expect([
+      slotSpan(PAGE_LAYOUT, 512),
+      slotSpan(PAGE_LAYOUT, 576),
+      slotSpan(PAGE_LAYOUT, undefined),
+    ]).toEqual([1, 2, 1]);
+  });
+
+  it("keeps every one-slot cell on the grid and puts a wide cell in a row of its own below it", () => {
+    const cells = [{ span: 1 }, { span: 2 }, ...Array.from({ length: 6 }, () => ({ span: 1 }))];
+    const rects = slotRects(PAGE_LAYOUT, cells);
+    expect(rects.filter((_rect, index) => index !== 1)).toEqual(
+      Array.from({ length: 7 }, (_cell, index) => slotRect(PAGE_LAYOUT, index))
+    );
+    expect(rects[1]).toEqual({ x: 0, y: 816, width: 1056, height: 400 });
+    expect(pageViewport(PAGE_LAYOUT, cells)).toEqual({ width: 3168, height: 1216 });
   });
 });
 

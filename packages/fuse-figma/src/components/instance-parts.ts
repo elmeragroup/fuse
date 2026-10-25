@@ -31,6 +31,7 @@ import type {
   ComponentDefinition,
   InstanceDefinition,
   InstanceProperties,
+  NestedProperties,
   PartDefinition,
 } from "./component-spec";
 import type { CoverageRow } from "./coverage";
@@ -147,6 +148,7 @@ export class InstanceParts {
   readonly #sets: ReadonlyMap<string, InnerSet>;
   readonly #emit: Recorder;
   readonly #owner: FeedSink | undefined;
+  readonly #given: readonly NestedProperties[];
   readonly #parts = new Map<InstanceDefinition, PartRecord>();
   readonly #visits: Visit[] = [];
 
@@ -157,12 +159,21 @@ export class InstanceParts {
    *   parts.
    * @param owner - The feeds of the inner root built in place that holds the parts, undefined for a
    *   set's own.
+   * @param given - The TEXT values an outer composite gives instances at or below these parts, at the
+   *   keys from here down, none for a set's own.
    */
-  constructor(context: BuildContext, sets: ReadonlyMap<string, InnerSet>, emit: Recorder, owner?: FeedSink) {
+  constructor(
+    context: BuildContext,
+    sets: ReadonlyMap<string, InnerSet>,
+    emit: Recorder,
+    owner?: FeedSink,
+    given: readonly NestedProperties[] = []
+  ) {
     this.#context = context;
     this.#sets = sets;
     this.#emit = emit;
     this.#owner = owner;
+    this.#given = given;
   }
 
   /**
@@ -196,7 +207,8 @@ export class InstanceParts {
     const record = this.#recordOf(part, set);
     const given = new Set(splitClasses(part.classesFor?.(outer) ?? ""));
     const merged = splitClasses(cn(of.classesFor(cell), [...given].join(" ")));
-    const values = part.properties?.(outer) ?? {};
+    const values = withGiven(part.properties?.(outer) ?? {}, this.#given, part.key);
+    checkNested(values.nested ?? [], part.of, part.key);
     const innerRows: Row[] = [];
     const compositeRows: Visit["compositeRows"] = [];
     const inner: Origin = {
@@ -219,7 +231,7 @@ export class InstanceParts {
       compositeRows,
       sink,
       diffs: [],
-      nested: new InstanceParts(this.#context, this.#sets, inner.record, sink),
+      nested: new InstanceParts(this.#context, this.#sets, inner.record, sink, values.nested),
     };
     const inPlace: InPlace = {
       inner,
@@ -465,7 +477,8 @@ function propertiesOf(
   const text: InstancePropertiesSpec = Object.keys(diff.text).length === 0 ? {} : { text: diff.text };
   const boolean = Object.keys(booleans).length === 0 ? text : { ...text, boolean: booleans };
   const swap = Object.keys(diff.swap).length === 0 ? boolean : { ...boolean, swap: diff.swap };
-  return Object.keys(swap).length === 0 ? undefined : swap;
+  const nested = diff.nested.length === 0 ? swap : { ...swap, nested: diff.nested };
+  return Object.keys(nested).length === 0 ? undefined : nested;
 }
 
 /**
@@ -541,6 +554,54 @@ function valuesOf(
     );
   }
   return { text, swap, swapClasses };
+}
+
+/**
+ * An instance part's own property values with the TEXT values an outer composite gives it: those at
+ * its key alone join its text, and those below it join the values it gives the instances inside.
+ */
+function withGiven(
+  values: InstanceProperties,
+  given: readonly NestedProperties[],
+  key: string
+): InstanceProperties {
+  const at = given.filter(({ path }) => path[0] === key);
+  if (at.length === 0) {
+    return values;
+  }
+  const own = at.filter(({ path }) => path.length === 1).map(({ text }) => text);
+  const below = at
+    .filter(({ path }) => path.length > 1)
+    .map(({ path, text }) => ({ path: path.slice(1), text }));
+  return {
+    ...values,
+    text: Object.fromEntries([
+      ...Object.entries(values.text ?? {}),
+      ...own.flatMap((text) => Object.entries(text)),
+    ]),
+    nested: [...(values.nested ?? []), ...below],
+  };
+}
+
+/**
+ * Refuse nested TEXT values at a path whose keys do not name an instance part at each level down from
+ * the inner definition. The inner set at the path's end refuses a property it does not define.
+ *
+ * @throws When a key names no instance part of the definition the path has reached.
+ */
+function checkNested(nested: readonly NestedProperties[], of: ComponentDefinition, where: string): void {
+  for (const { path } of nested) {
+    let at = of;
+    for (const key of path) {
+      const part = instancePartsOf(at).find((candidate) => candidate.key === key);
+      if (part === undefined) {
+        throw new Error(
+          `${where} gives a nested value at ${path.join(" / ")}, and ${at.name} holds no instance part ${key}`
+        );
+      }
+      at = part.of;
+    }
+  }
 }
 
 /**

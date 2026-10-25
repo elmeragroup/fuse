@@ -221,7 +221,7 @@ export async function runSelfCheck(
         image: null,
       }));
       const unchanged = unchangedByDesign(componentSets, tokenColorsIn(theme.success));
-      const { planned, unsupported } = planCells(placeholders, renderable, unchanged);
+      const { planned, unsupported } = planCells(placeholders, renderable, unchanged, options.layout);
       if (unsupported.length > 0) {
         throw new Error(
           `the comparison cannot render these cells of the kit: ${unsupported.map((entry) => entry.reason).join("; ")}`

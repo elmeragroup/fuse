@@ -44,6 +44,13 @@ export type LabelScope = {
   readonly variant: string;
   /** The keys of the layers from the root down to the text layer, which the fields its reads fill name. */
   readonly path: readonly string[];
+  /**
+   * The characters the label shows in its own set's variant, where a composite's TEXT property value
+   * gives it others in place. Figma takes a text layer's sizing from the main component and only its
+   * characters from the property, so the layout follows these. Undefined for a label that shows its
+   * own.
+   */
+  readonly variantCharacters?: string;
 };
 
 /** The Figma style of each Roboto weight a recipe reaches. */
@@ -363,7 +370,14 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
   const characters = labelCharacters(label, scope.cell);
   const layout: LabelLayout =
     lines === undefined
-      ? readLabelLayout(holder, label, characters, scope.clamp, scope.variant, path)
+      ? readLabelLayout(
+          holder,
+          label,
+          { shown: characters, built: scope.variantCharacters },
+          scope.clamp,
+          scope.variant,
+          path
+        )
       : { ...readNativeLines(holder, lines, scope.variant, path), maxWidth: undefined, packsAtStart: false };
   const fills = layout.sizing.horizontal.kind !== "hug";
   readOverflowWrap(holder, layout);
@@ -647,7 +661,8 @@ const CAPPED: Refusal = {
 /**
  * Whether a flex row's text item draws as a text that fills the room the row's other layer leaves:
  * the label is the first of two layers that the row spaces between its ends, it sets its lines from
- * the start, and the other layer is as wide as a length says. The item then sits at the start,
+ * the start, and the other layer is as wide as a length says, or keeps its own width, as a Command
+ * row's Kbd group shortcut does, which a Figma frame that hugs draws. The item then sits at the start,
  * shrinks to the room the other layer and the row's gap leave and wraps there (CSS Flexbox 1 §9.7),
  * and the other layer ends the row, as a vertical Navigation menu trigger holds its title and caret.
  * The gap is the least space between them under any distributed alignment (CSS Box Alignment 3 §8),
@@ -664,7 +679,7 @@ function spacedFirst(holder: Holder, label: LabelDefinition, across: Across): bo
     layout.justify === "SPACE_BETWEEN" &&
     layers.length === 2 &&
     layers[0] === label.name &&
-    shares[1]?.kind === "pixels" &&
+    (shares[1]?.kind === "pixels" || shares[1]?.kind === "hugs") &&
     across === "LEFT"
   );
 }
@@ -760,7 +775,11 @@ function refuseItem(
  * in such a box hugs up to the cap the box and the boxes around it set, as {@link widthCapInside}
  * reads it, and a hugging Figma text with that `maxWidth` wraps there (P7).
  *
- * @param characters - The text the label shows in the cell.
+ * @param characters - The text the label shows in the cell, and the text its own set's variant shows
+ *   where a composite's TEXT property value gives it this one in place. A text with no break
+ *   opportunity keeps its own width only where the variant's does too, so it takes the variant's
+ *   filling layout otherwise. A variant that keeps its text at its own width, given a text that can
+ *   wrap, lays out another way, which the instance diff leaves unmapped.
  * @param variant - The variant's key, for the error.
  * @throws When a box around a wrapping label caps its width at a length that is no literal, which
  *   the label's `maxWidth` needs.
@@ -768,7 +787,7 @@ function refuseItem(
 function readLabelLayout(
   holder: Holder,
   label: LabelDefinition,
-  characters: string,
+  characters: { readonly shown: string; readonly built: string | undefined },
   lines: number | undefined,
   variant: string,
   path: readonly string[]
@@ -808,7 +827,13 @@ function readLabelLayout(
   const placed =
     definite && wrapping && item !== undefined ? refuseItem(holder, item, label, across) : undefined;
   // The item never shrinks below its one line, so it sits at its own width, which a hugging text draws.
-  const ownWidth = placed !== undefined && item === "flex" && neverWraps(style, characters);
+  // In place, a one-word text keeps its own width only where its variant's text does too, and takes
+  // the variant's filling layout otherwise, which draws it as CSS does.
+  const ownWidth =
+    placed !== undefined &&
+    item === "flex" &&
+    neverWraps(style, characters.shown) &&
+    (characters.built === undefined || neverWraps(style, characters.built));
   const beforeMargin = definite && !capped && item === "flex" && fillsBeforeMargin(holder, label, across);
   const spaced =
     beforeMargin ||
@@ -851,7 +876,7 @@ function readLabelLayout(
   const ending = (count: number): string =>
     `the label ends in an ellipsis after ${count} ${count === 1 ? "line" : "lines"}`;
 
-  readWhiteSpaceCollapse(style, characters);
+  readWhiteSpaceCollapse(style, characters.shown);
   style.read(
     "text-wrap-mode",
     (written) => (["wrap", "nowrap"].includes(normalizeCss(written)) ? written : undefined),

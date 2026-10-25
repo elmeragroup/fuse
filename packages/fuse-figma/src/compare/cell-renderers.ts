@@ -392,6 +392,16 @@ const SOURCES: readonly RendererSource[] = [
     module: { url: new URL("combobox-cell.ts", import.meta.url), name: "comboboxOpen" },
   },
   {
+    set: "command-item",
+    entry: "dist/command.js",
+    module: { url: new URL("command-cell.ts", import.meta.url), name: "commandItem" },
+  },
+  {
+    set: "command-list",
+    entry: "dist/command.js",
+    module: { url: new URL("command-cell.ts", import.meta.url), name: "commandList" },
+  },
+  {
     set: "empty",
     entry: "dist/empty.js",
     load: async () => (await import("./empty-cell.ts")).empty,

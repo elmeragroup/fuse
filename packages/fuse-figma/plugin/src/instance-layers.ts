@@ -13,6 +13,11 @@
  * equal to the main's is none, so that field follows the main again. A text's alignment is the
  * exception: its override stays listed after a write equal to the main's (NA).
  *
+ * On 2026-10-25 a real file set the TEXT property of an instance exposed two levels down through
+ * exposure, and the value stayed through the outer instance's own writes and a switch of its variant,
+ * which gave the nested sublayers new ids (PN). So the last stage finds each nested instance again by
+ * its key path and sets the values the spec gives it.
+ *
  * The plan reads an instance in stages, each against what the stage before leaves (`planInstance`).
  */
 
@@ -22,6 +27,7 @@ import type {
   FillSpec,
   InstanceLayerSpec,
   InstanceOverride,
+  NestedPropertiesSpec,
   NumberSpec,
   ShadowSpec,
   SizingSpec,
@@ -237,6 +243,72 @@ function heldLayers(instance: InstanceNode, label: string): ReadonlyMap<string, 
   };
   walk(instance, [], label);
   return found;
+}
+
+/**
+ * The instance inside `instance` at a key path, found by the keys its main layers carry through frames
+ * and nested instances (N3), or undefined where the path leads nowhere.
+ */
+function nestedAt(instance: InstanceNode, path: readonly string[]): InstanceNode | undefined {
+  let at: SceneNode = instance;
+  for (const key of path) {
+    const next: SceneNode | undefined =
+      at.type === "FRAME" || at.type === "INSTANCE"
+        ? at.children.find((child) => keyOf(child) === key)
+        : undefined;
+    if (next === undefined) {
+      return undefined;
+    }
+    at = next;
+  }
+  return at.type === "INSTANCE" ? at : undefined;
+}
+
+/** The TEXT values a nested instance holds another way than the spec gives them, by property id. */
+function differingNested(
+  target: InstanceNode,
+  nested: NestedPropertiesSpec,
+  label: string
+): Readonly<Record<string, string>> {
+  const held = Object.entries(target.componentProperties);
+  return Object.fromEntries(
+    Object.entries(nested.text).flatMap(([name, value]) => {
+      const found = held.find(([id, property]) => property.type === "TEXT" && id.split("#")[0] === name);
+      if (found === undefined) {
+        throw new Error(`${label}: the nested instance has no TEXT property ${name} to set.`);
+      }
+      return found[1].value === value ? [] : [[found[0], value]];
+    })
+  );
+}
+
+/**
+ * Plan the TEXT values the spec gives instances exposed inside the instance, each found again by its
+ * key path when its operation runs, since a variant switch gives nested sublayers new ids (PN).
+ */
+function planNested(run: Run, instance: InstanceNode, label: string, spec: InstanceLayerSpec): void {
+  for (const nested of spec.properties?.nested ?? []) {
+    const at = `${label} / ${nested.path.join(" / ")}`;
+    const target = nestedAt(instance, nested.path);
+    if (target === undefined) {
+      throw new Error(`${at}: the instance holds no nested instance at that path.`);
+    }
+    const differ = differingNested(target, nested, at);
+    if (Object.keys(differ).length === 0) {
+      continue;
+    }
+    const described = Object.entries(nested.text)
+      .filter(([name]) => Object.keys(differ).some((id) => id.split("#")[0] === name))
+      .map(([name, value]) => `${name} ${JSON.stringify(value)}`)
+      .join(", ");
+    change(run.plan, at, `properties → ${described}`, () => {
+      const now = nestedAt(instance, nested.path);
+      if (now === undefined) {
+        throw new Error(`${at}: the instance holds no nested instance at that path.`);
+      }
+      now.setProperties(differingNested(now, nested, at));
+    });
+  }
 }
 
 /** An override the plan writes: the spec's, or the inner variant's own value for one it dropped. */
@@ -551,6 +623,7 @@ function planOverridesAndSizing(
   held: Held
 ): void {
   planOverrides(run, instance, label, spec, inner.spec.root);
+  planNested(run, instance, label, spec);
   planSizing(run, instance, label, spec.sizing, held);
   // An instance with no minimum of its own shows the inner variant's (PH3).
   planLimit(run, instance, label, "minWidth", spec.minWidth ?? inner.spec.root.limits.minWidth);
@@ -620,7 +693,8 @@ function changesFirst(
  *
  * @param spec - The instance layer, whose overrides name the labels it aligns.
  * @param differ - The properties the instance's values differ in now, or undefined where its stages
- *   wait for an earlier operation, after which the run may write any of its TEXT properties.
+ *   wait for an earlier operation, after which the run may write any of its TEXT properties and any
+ *   nested value.
  */
 function requireHeldLabelFonts(
   run: Run,
@@ -653,6 +727,23 @@ function requireHeldLabelFonts(
     if (node.type === "TEXT" && (keys.has(layer.path.at(-1) ?? "") || aligned.has(node.id))) {
       for (const font of heldFonts(run, node)) {
         requireFont(run, layer.label, font);
+      }
+    }
+  }
+  // A nested value writes the labels of the instance it reaches, whatever fonts they hold now: those
+  // whose values differ now, or every one where an earlier write, the main or the instance's own
+  // properties, runs first and can replace the instances it reaches.
+  const replaced = differ === undefined || differ.length > 0;
+  for (const nested of spec.properties?.nested ?? []) {
+    const target = nestedAt(instance, nested.path);
+    const at = `${label} / ${nested.path.join(" / ")}`;
+    const writes =
+      target !== undefined && (replaced || Object.keys(differingNested(target, nested, at)).length > 0);
+    for (const layer of writes ? heldLayers(target, at).values() : []) {
+      if (layer.node.type === "TEXT") {
+        for (const font of heldFonts(run, layer.node)) {
+          requireFont(run, layer.label, font);
+        }
       }
     }
   }

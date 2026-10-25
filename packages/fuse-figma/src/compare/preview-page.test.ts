@@ -237,6 +237,13 @@ describe("a client cell's slot", () => {
     );
   });
 
+  // Oracle: CSS 2.1 §6.4.3, under which a `style` attribute beats the page's stylesheet, and the
+  // two slots a 576px list spans, 1056px, where one slot's 528px would shrink it to 512px.
+  it("gives a client slot that spans two slots their width, below the grid", () => {
+    const html = previewDocument(STAMPS, [{ ...client, span: 2 }], PAGE_LAYOUT, "");
+    expect(slotOf(html)?.[0]).toContain('style="left:0px;top:416px;width:1056px;box-sizing:border-box"');
+  });
+
   it("hides everything in the slot but the measured elements, as the trigger a popup part anchors to", () => {
     const lines = styleLines("", [client]);
     expect(lines).toContain(`${CLIENT_HIDDEN}{visibility:hidden}`);

@@ -112,6 +112,8 @@ const CHECKED_ON_THE_MOUNTED_PAGE: readonly string[] = [
   "combobox-empty",
   "combobox-popup",
   "combobox-open",
+  "command-item",
+  "command-list",
 ];
 
 describe("each kit definition against the markup of its component", () => {

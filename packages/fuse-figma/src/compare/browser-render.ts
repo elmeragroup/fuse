@@ -46,6 +46,7 @@ import {
   pageViewport,
   previewDocument,
   slotRect,
+  slotRects,
 } from "./preview-page.ts";
 import type { CellContent, PageCell, PageLayout, PageRect } from "./preview-page.ts";
 import type { PreviewTheme, ThemeStamps } from "./preview-theme.ts";
@@ -67,6 +68,8 @@ export type CellRequest = {
    * union is the cell's box. The resting twin's slot uses the same ones.
    */
   readonly measured: readonly string[];
+  /** How many slots the cell spans across, as `slotSpan` gives them. */
+  readonly span: number;
   /**
    * The element the page forces the cell's state on: the measured element, or the part inside it
    * that takes the set's states, as an Accordion item's trigger.
@@ -222,16 +225,17 @@ export class CompareBrowser {
     layout: PageLayout
   ): Promise<Result.Result<RenderedPreview, FontNotLoaded>> {
     const pageCells: PageCell[] = [
-      ...requests.map(({ id, content, measured }) => ({ id, content, measured })),
-      ...requests.flatMap(({ id, resting, measured }) =>
-        resting === undefined ? [] : [{ id: `${REFERENCE_PREFIX}${id}`, content: resting, measured }]
+      ...requests.map(({ id, content, measured, span }) => ({ id, content, measured, span })),
+      ...requests.flatMap(({ id, resting, measured, span }) =>
+        resting === undefined ? [] : [{ id: `${REFERENCE_PREFIX}${id}`, content: resting, measured, span }]
       ),
     ];
+    const rects = slotRects(layout, pageCells);
     const stamps: ThemeStamps = themeStamps(theme);
     const html = previewDocument(stamps, pageCells, layout, this.#assets.hostCss);
     const context = await this.#browser.newContext({
       deviceScaleFactor: DEVICE_SCALE,
-      viewport: pageViewport(layout, pageCells.length),
+      viewport: pageViewport(layout, pageCells),
       colorScheme: theme.scheme,
     });
     try {
@@ -255,7 +259,13 @@ export class CompareBrowser {
           : forcedIds.has(request.id)
             ? "forced"
             : "missing";
-        const rendered = await renderCell(page, request, state, layout, slotRect(layout, index));
+        const rendered = await renderCell(
+          page,
+          request,
+          state,
+          layout,
+          rects[index] ?? slotRect(layout, index)
+        );
         cells.set(request.id, { ...rendered, mounted: mounted.get(request.id) });
       }
       return Result.succeed({ background: await probeBackground(page), font: font.success, cells });
