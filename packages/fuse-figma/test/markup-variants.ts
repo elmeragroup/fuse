@@ -138,6 +138,9 @@ export const NAMED_ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement)
   ["data-open", (element) => element.attributes.has("data-open")],
   ["data-closed", (element) => element.attributes.has("data-closed")],
   ["data-[align-trigger=true]", (element) => element.attributes.get("data-align-trigger") === "true"],
+  // Base UI marks the trigger of an open popup `aria-expanded="true"`, which an instance part's facts
+  // declare for a Button trigger in place.
+  ["aria-expanded", (element) => element.attributes.get("aria-expanded") === "true"],
 ]);
 
 /**

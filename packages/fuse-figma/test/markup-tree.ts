@@ -180,7 +180,10 @@ export function pathSegment(
 
 /** The `data-slot` of a part's element, undefined for an element that carries none. */
 function partSlot(part: PartDefinition | InstanceDefinition): string | undefined {
-  return "kind" in part ? (part.of.element === undefined ? part.of.slot : undefined) : part.slot;
+  if (!("kind" in part)) {
+    return part.slot;
+  }
+  return part.slot ?? (part.of.element === undefined ? part.of.slot : undefined);
 }
 
 /** The selector of a part's element, undefined for one its `data-slot` or its place names. */

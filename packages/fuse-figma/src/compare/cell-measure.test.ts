@@ -34,8 +34,8 @@ describe("measuredBox", () => {
 
 describe("slotRect", () => {
   it("places a cell's slot on the page's grid, below the probe row", () => {
-    expect(slotRect(PAGE_LAYOUT, 0)).toEqual({ x: 0, y: 16, width: 528, height: 336 });
-    expect(slotRect(PAGE_LAYOUT, 7)).toEqual({ x: 528, y: 352, width: 528, height: 336 });
+    expect(slotRect(PAGE_LAYOUT, 0)).toEqual({ x: 0, y: 16, width: 528, height: 400 });
+    expect(slotRect(PAGE_LAYOUT, 7)).toEqual({ x: 528, y: 416, width: 528, height: 400 });
   });
 });
 

@@ -57,10 +57,11 @@ export type PageLayout = {
 
 /**
  * The layout `figma:compare` uses. A slot holds the widest cell, Empty's 512px box, and the tallest
- * markup, the 320px Calendar around a Calendar day, with the padding on every side, so a 3px ring
+ * markup, the open Popover and the Popover popup below its hidden trigger at the comfortable density,
+ * with the padding on every side, so a 3px ring
  * around a cell stays inside its own crop and nothing a cell renders reaches the next slot.
  */
-export const PAGE_LAYOUT: PageLayout = { padding: 8, slotWidth: 528, slotHeight: 336, columns: 6, top: 16 };
+export const PAGE_LAYOUT: PageLayout = { padding: 8, slotWidth: 528, slotHeight: 400, columns: 6, top: 16 };
 
 /**
  * What a cell's slot holds: the static markup of its element, or the set and cell the page's client

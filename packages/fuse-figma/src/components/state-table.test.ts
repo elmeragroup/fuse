@@ -15,7 +15,8 @@ import { describe, expect, it } from "vitest";
 
 import { chip } from "../../test/fixture-sets";
 import type { Cell, IconSlot } from "./component-spec";
-import { makeStateTable } from "./state-table";
+import { INPUT } from "./input-kit";
+import { makeStateTable, withInPlaceFacts } from "./state-table";
 
 type Definition = Parameters<typeof makeStateTable>[0];
 
@@ -316,5 +317,49 @@ describe("one meaning per variant", () => {
     expect(() => makeStateTable(definition({ axes: [CONTROL_STATES], ...overrides }))).toThrow(
       `Chip gives \`${variant}\` a second meaning`
     );
+  });
+});
+
+// Unit under test: `withInPlaceFacts`. Oracle: Base UI stamps `aria-expanded="true"` on the trigger
+// of an open popup, so `aria-expanded:` holds on that instance alone, while every set omits it.
+describe("the facts an instance part declares in place", () => {
+  const states = definition({ axes: [CONTROL_STATES] });
+  const expanded = new Map([["aria-expanded", () => true]]);
+
+  it("hold a variant the kit omits for every set, and leave the set's own meanings", () => {
+    const inPlace = withInPlaceFacts(makeStateTable(states), expanded, "Chip");
+    const holdsWhere = (variant: string) => {
+      const meaning = inPlace(variant);
+      return meaning.kind === "condition"
+        ? CONTROL_STATES.values.filter((state) => meaning.holds({ state }))
+        : meaning.kind;
+    };
+    expect([holdsWhere("aria-expanded"), holdsWhere("disabled")]).toEqual([
+      CONTROL_STATES.values,
+      ["disabled"],
+    ]);
+    expect(makeStateTable(states)("aria-expanded")).toEqual({ kind: "omitted" });
+  });
+
+  it("refuse a state's variant, which the set gives a meaning", () => {
+    expect(() =>
+      withInPlaceFacts(makeStateTable(states), new Map([["disabled", () => true]]), "Chip")
+    ).toThrow("an instance of Chip gives `disabled` a second meaning");
+  });
+
+  // Oracle: Input's `invalid` state renders `aria-invalid` and `data-invalid`, the attributes an
+  // invalid Field stamps on its control, though every set without an invalid state drops them.
+  it.each(
+    ["aria-invalid", "data-invalid"].flatMap((variant) =>
+      ["rest", "invalid"].map((state) => [variant, state])
+    )
+  )("refuse %s on an Input instance, holding at state=%s", (variant, state) => {
+    expect(() =>
+      withInPlaceFacts(
+        makeStateTable(INPUT),
+        new Map([[variant, (cell: Cell) => cell.state === state]]),
+        "Input"
+      )
+    ).toThrow(`an instance of Input gives \`${variant}\` a second meaning`);
   });
 });

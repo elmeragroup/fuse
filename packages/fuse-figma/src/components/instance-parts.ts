@@ -36,7 +36,7 @@ import type {
 import type { CoverageRow } from "./coverage";
 import { CascadeLogs } from "./coverage-log";
 import type { Origin } from "./coverage-log";
-import { instancePartsOf, partsOf, rootSlotOf } from "./definition-parts";
+import { instancePartsOf, instanceRootSlotOf, partsOf } from "./definition-parts";
 import { diffInstance } from "./instance-diff";
 import type { InstanceDiff, InstanceDifference } from "./instance-diff";
 import type {
@@ -50,7 +50,7 @@ import type {
 } from "./kit-spec";
 import { partsThatScale } from "./placement";
 import { PaintedInstances } from "./stacking";
-import { makeStateTable } from "./state-table";
+import { makeStateTable, withInPlaceFacts } from "./state-table";
 import type { StateTable } from "./state-table";
 
 /** A component set the build made before the set that holds an instance of it. */
@@ -240,7 +240,7 @@ export class InstanceParts {
         passed: merged.filter((className) => given.has(className)).join(" "),
       },
       of.slot,
-      { slot: rootSlotOf(of, cell), tag: of.element?.tag },
+      { slot: instanceRootSlotOf(part, cell), tag: of.element?.tag },
       of.elementDefaults ?? [],
       { meaningOf: record.meaningOf, cell, logs: record.logs, inPlace, passed: record.passed }
     );
@@ -345,7 +345,10 @@ export class InstanceParts {
       return known;
     }
     const made: PartRecord = {
-      meaningOf: makeStateTable(part.of),
+      meaningOf:
+        part.facts === undefined
+          ? makeStateTable(part.of)
+          : withInPlaceFacts(makeStateTable(part.of), part.facts, part.of.name),
       logs: new CascadeLogs(),
       passed: { origin: { record: this.#emit }, logs: new CascadeLogs() },
       scaling: partsThatScale(

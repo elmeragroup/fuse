@@ -171,6 +171,16 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "select-open", name: "Select (open)", variants: 2, previewed: 2 },
     ],
   },
+  {
+    slug: "popover",
+    name: "Popover",
+    sets: [
+      // The Basic demo's header and Fields.
+      { key: "popover-content", name: "Popover content", variants: 1, previewed: 1 },
+      // Below the outline Button trigger.
+      { key: "popover-open", name: "Popover (open)", variants: 1, previewed: 1 },
+    ],
+  },
   // The default, outline and dashed outline frames.
   { slug: "empty", name: "Empty", sets: [{ key: "empty", name: "Empty", variants: 3, previewed: 3 }] },
   // Selected off and on, in 5 states.

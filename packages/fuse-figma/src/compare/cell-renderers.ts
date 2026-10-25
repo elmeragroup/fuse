@@ -322,6 +322,16 @@ const SOURCES: readonly RendererSource[] = [
     module: { url: new URL("select-cell.ts", import.meta.url), name: "selectOpen" },
   },
   {
+    set: "popover-content",
+    entry: "dist/popover.js",
+    module: { url: new URL("popover-cell.ts", import.meta.url), name: "popoverContent" },
+  },
+  {
+    set: "popover-open",
+    entry: "dist/popover.js",
+    module: { url: new URL("popover-cell.ts", import.meta.url), name: "popoverOpen" },
+  },
+  {
     set: "empty",
     entry: "dist/empty.js",
     load: async () => (await import("./empty-cell.ts")).empty,

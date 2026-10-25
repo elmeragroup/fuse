@@ -43,6 +43,7 @@ import {
   NAVIGATION_MENU_VERTICAL_TRIGGER,
 } from "./navigation-menu-kit";
 import { PAGINATION_EDGE, PAGINATION_ELLIPSIS, PAGINATION_LINK, PAGINATION_ROW } from "./pagination-kit";
+import { POPOVER_CONTENT, POPOVER_OPEN } from "./popover-kit";
 import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
 import { RADIO } from "./radio-kit";
 import { SELECT_ITEM, SELECT_OPEN, SELECT_POPUP } from "./select-kit";
@@ -130,6 +131,9 @@ const BREADCRUMB_PARTS_PAGE: KitPage = { slug: "breadcrumb", name: "Breadcrumb" 
  * popup and the open Select.
  */
 const SELECT_PAGE: KitPage = { slug: "select", name: "Select" };
+
+/** The page of Popover's popup and the open Popover. */
+const POPOVER_PAGE: KitPage = { slug: "popover", name: "Popover" };
 
 /** The page Empty sits on alone. */
 const EMPTY_PAGE: KitPage = { slug: "empty", name: "Empty" };
@@ -295,6 +299,8 @@ export const KIT: readonly KitEntry[] = [
   { definition: SELECT_ITEM, page: SELECT_PAGE, previewCells: matrixCells(SELECT_ITEM.axes) },
   { definition: SELECT_POPUP, page: SELECT_PAGE, previewCells: matrixCells(SELECT_POPUP.axes) },
   { definition: SELECT_OPEN, page: SELECT_PAGE, previewCells: matrixCells(SELECT_OPEN.axes) },
+  { definition: POPOVER_CONTENT, page: POPOVER_PAGE, previewCells: matrixCells(POPOVER_CONTENT.axes) },
+  { definition: POPOVER_OPEN, page: POPOVER_PAGE, previewCells: matrixCells(POPOVER_OPEN.axes) },
   { definition: EMPTY, page: EMPTY_PAGE, previewCells: matrixCells(EMPTY.axes) },
   { definition: CALENDAR_DAY, page: CALENDAR_PAGE, previewCells: matrixCells(CALENDAR_DAY.axes) },
   { definition: LINK, page: LINK_PAGE, previewCells: matrixCells(LINK.axes) },

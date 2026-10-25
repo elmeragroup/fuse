@@ -511,3 +511,68 @@ describe("rule 41: an instance's label keeps a text alignment override (NA)", ()
     expect(childNamed(instance, "TEXT", "Label").textAlignHorizontal).toBe("RIGHT");
   });
 });
+
+describe("an empty TEXT property keeps a filling text's width and one line's height (PE3)", () => {
+  /**
+   * The component PE3 built: a row fixed at 256 × 36, padded 10 and centred, holding a text that fills
+   * across and follows its lines, linked to the TEXT property `Text`, and an instance of it filling a
+   * column fixed at 256. The real file read the text 236 wide; the fake lays out no fill along a row's
+   * direction, so the text keeps the width the fake measures, and the tests read what PE3 says the
+   * empty value keeps.
+   */
+  async function inputLike() {
+    const { figma } = probeFile();
+    await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+    const main = figma.createComponent();
+    main.layoutMode = "HORIZONTAL";
+    main.resize(256, 36);
+    main.paddingLeft = 10;
+    main.paddingRight = 10;
+    main.paddingTop = 10;
+    main.paddingBottom = 10;
+    main.counterAxisAlignItems = "CENTER";
+    const text = figma.createText();
+    text.name = "Text";
+    text.characters = "Value";
+    main.appendChild(text);
+    text.layoutSizingHorizontal = "FILL";
+    const property = main.addComponentProperty("Text", "TEXT", "Value");
+    text.componentPropertyReferences = { characters: property };
+    const column = figma.createFrame();
+    column.layoutMode = "VERTICAL";
+    column.resize(256, 100);
+    const instance = main.createInstance();
+    column.appendChild(instance);
+    instance.layoutSizingHorizontal = "FILL";
+    return { property, instance, mainText: text };
+  }
+
+  /** What PE3 read unchanged by the empty value: the text's size, sizing and resize, and the instance's height. */
+  const kept = (instance: InstanceNode) => {
+    const text = childNamed(instance, "TEXT", "Text");
+    return [text.width, text.height, text.layoutSizingHorizontal, text.textAutoResize, instance.height];
+  };
+
+  it("keeps the text's size, its fill and its lines, and the instance's 36px height, with no override", async () => {
+    const { property, instance, mainText } = await inputLike();
+    expect(mainText.width).toBeGreaterThan(0);
+    const before = kept(instance);
+    instance.setProperties({ [property]: "" });
+    expect([childNamed(instance, "TEXT", "Text").characters, ...kept(instance), instance.overrides]).toEqual([
+      "",
+      mainText.width,
+      mainText.height,
+      "FILL",
+      "HEIGHT",
+      36,
+      [],
+    ]);
+    expect(kept(instance)).toEqual(before);
+  });
+
+  it("reads the same for an instance set to the empty value before any read", async () => {
+    const { property, instance, mainText } = await inputLike();
+    instance.setProperties({ [property]: "" });
+    expect(kept(instance)).toEqual([mainText.width, mainText.height, "FILL", "HEIGHT", 36]);
+  });
+});

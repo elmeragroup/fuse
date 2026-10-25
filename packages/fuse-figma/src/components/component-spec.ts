@@ -312,6 +312,12 @@ export type InstanceDefinition = {
   /** The inner set's cell the part renders in an outer cell. */
   readonly cell: (outer: Cell) => Cell;
   /**
+   * The `data-slot` the outer component stamps on the inner root in place of the inner root's own,
+   * as `Popover.Trigger` stamps `popover-trigger` on the Button it renders. The layer keeps the inner
+   * root's name. Undefined where the inner root keeps its own slot.
+   */
+  readonly slot?: string;
+  /**
    * The classes the outer component passes the inner one as its `className`, which the inner
    * component merges after its own with `cn`, as Alert passes its tone's `button` slot. Undefined for
    * none.
@@ -332,6 +338,16 @@ export type InstanceDefinition = {
   readonly optional?: BooleanPropertySpec;
   /** True where a designer sets the inner set's properties from the outer instance's panel. */
   readonly exposed?: true;
+  /**
+   * The variants that hold for the inner root where the outer component renders it, beyond the inner
+   * set's own facts, as Base UI stamps `aria-expanded` on the trigger of an open popup. Each may name
+   * a variant the inner set omits, through the omissions every set shares, such as `aria-expanded`,
+   * or its own `omittedStates`, or one it leaves unmodelled. A variant the inner set gives a meaning
+   * stops the build, as Input's `invalid` state renders `aria-invalid`, and so does one it omits with
+   * a reason. The in-place cascade reads them, and the diff carries what they paint as overrides.
+   * Undefined for none.
+   */
+  readonly facts?: ReadonlyMap<string, (cell: Cell) => boolean>;
 };
 
 /** A component the builder can turn into a component set. Its own box is the root. */

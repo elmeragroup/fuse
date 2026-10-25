@@ -318,6 +318,36 @@ export function makeStateTable(
 }
 
 /**
+ * Extend an inner set's state table with the facts an instance part declares for the inner root in
+ * place, as an open popup's trigger is `aria-expanded`. A fact may name only a variant the inner table
+ * omits or leaves unmodelled. A variant the inner set renders through a state or a fact keeps that
+ * meaning, as Input's `invalid` state renders `aria-invalid` and `data-invalid`, which every set
+ * without an invalid state drops.
+ *
+ * @param meaningOf - The inner set's state table.
+ * @param facts - The instance part's facts, by variant.
+ * @param name - The inner set's name, for errors.
+ * @returns The table the in-place cascade reads.
+ * @throws When a fact names a variant the inner table gives another meaning, a defect in the
+ *   definition.
+ */
+export function withInPlaceFacts(
+  meaningOf: StateTable,
+  facts: ReadonlyMap<string, (cell: Cell) => boolean>,
+  name: string
+): StateTable {
+  for (const variant of facts.keys()) {
+    if (!["omitted", "unmodelled"].includes(meaningOf(variant).kind)) {
+      throw new Error(`an instance of ${name} gives \`${variant}\` a second meaning`);
+    }
+  }
+  return (variant) => {
+    const fact = facts.get(variant);
+    return fact === undefined ? meaningOf(variant) : { kind: "condition", holds: fact };
+  };
+}
+
+/**
  * The children a class styles: the parts that carry a `data-slot`, the parts that are elements of a
  * tag, or the element of a tag that holds the box's label as its last child.
  */

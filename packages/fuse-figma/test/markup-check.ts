@@ -20,9 +20,14 @@ import type {
   InstanceDefinition,
   PartDefinition,
 } from "../src/components/component-spec.ts";
-import { allPartsOf, framePartsOf, rootSlotOf } from "../src/components/definition-parts.ts";
+import {
+  allPartsOf,
+  framePartsOf,
+  instanceRootSlotOf,
+  rootSlotOf,
+} from "../src/components/definition-parts.ts";
 import { labelCharacters } from "../src/components/label-layout.ts";
-import { makeStateTable } from "../src/components/state-table.ts";
+import { makeStateTable, withInPlaceFacts } from "../src/components/state-table.ts";
 import {
   ancestorIndexes,
   ancestorsOf,
@@ -79,12 +84,15 @@ function statePartOf(
   return found[0];
 }
 
-/** Every box of a definition, the root or a part, by the name its layer takes, an instance's by its inner root's. */
+/**
+ * Every box of a definition, the root or a part, by the `data-slot` its element carries: an instance's
+ * by the slot the outer component stamps on its inner root, or the inner root's own.
+ */
 function boxNames(box: BoxDefinition, name: string): readonly string[] {
   return [
     name,
     ...(box.parts ?? []).flatMap((part) =>
-      "kind" in part ? [part.of.slot] : boxNames(part, part.slot ?? part.key)
+      "kind" in part ? [part.slot ?? part.of.slot] : boxNames(part, part.slot ?? part.key)
     ),
   ];
 }
@@ -236,9 +244,17 @@ function checkAttributeStates(
   return stateTaker;
 }
 
-/** Whether a variant of a definition's state table holds in a cell, as a condition. */
-function conditionHolds(definition: ComponentDefinition, cell: Cell): (variant: string) => boolean {
-  const meaningOf = makeStateTable(definition);
+/**
+ * Whether a variant of a definition's state table holds in a cell, as a condition, with the facts an
+ * instance part declares for the root in place where it declares any.
+ */
+function conditionHolds(
+  definition: ComponentDefinition,
+  cell: Cell,
+  inPlace?: ReadonlyMap<string, (cell: Cell) => boolean>
+): (variant: string) => boolean {
+  const own = makeStateTable(definition);
+  const meaningOf = inPlace === undefined ? own : withInPlaceFacts(own, inPlace, definition.name);
   return (variant) => {
     const meaning = meaningOf(variant);
     return meaning.kind === "condition" && meaning.holds(cell);
@@ -250,22 +266,24 @@ function conditionHolds(definition: ComponentDefinition, cell: Cell): (variant: 
  * {@link checkAttributeStates} checks a root's, and each fact the inner definition declares that the
  * markup at and around the element shows. A group variant holds where the element or one around it is
  * the group in that state, a peer variant where a sibling before it is the peer, and a tag variant
- * on the element itself. The markup inside the element stays the inner set's.
+ * on the element itself. Each fact the part declares for the inner root in place holds exactly where
+ * the element carries its attribute. The markup inside the element stays the inner set's.
  *
- * @param of - The inner definition.
+ * @param part - The instance part.
  * @param inner - The inner cell the part names.
  * @param elements - The outer cell's markup.
  * @param index - The index of the instance's element.
  * @param where - How a failure names the cell and the instance.
  */
 function checkInnerCell(
-  of: ComponentDefinition,
+  part: InstanceDefinition,
   inner: Cell,
   elements: readonly MarkupElement[],
   index: number,
   where: string
 ): void {
-  const holds = conditionHolds(of, inner);
+  const { of } = part;
+  const holds = conditionHolds(of, inner, part.facts);
   checkAttributeStates(of, { cell: inner, variant: holds }, elements, index, where);
   const element = elements[index];
   if (element === undefined) {
@@ -290,6 +308,11 @@ function checkInnerCell(
       expect(holds(variant), `${where}: ${variant}`).toBe(markup);
     }
   }
+  for (const variant of part.facts?.keys() ?? []) {
+    const carries = ATTRIBUTE_VARIANTS.get(variant) ?? NAMED_ATTRIBUTE_VARIANTS.get(variant);
+    expect(carries, `${where}: an attribute for the in-place fact ${variant}`).toBeDefined();
+    expect(holds(variant), `${where}: ${variant} in place`).toBe(carries?.(element) === true);
+  }
 }
 
 /**
@@ -313,9 +336,11 @@ function checkInstance(
   expect(splitClasses(element?.attributes.get("class") ?? "").toSorted(), `${where}: the class`).toEqual(
     splitClasses(merged).toSorted()
   );
-  expect(element?.attributes.get("data-slot"), `${where}: the data-slot`).toBe(rootSlotOf(part.of, inner));
+  expect(element?.attributes.get("data-slot"), `${where}: the data-slot`).toBe(
+    instanceRootSlotOf(part, inner)
+  );
   if (index !== undefined) {
-    checkInnerCell(part.of, inner, elements, index, where);
+    checkInnerCell(part, inner, elements, index, where);
   }
   const root = instanceRoot(part, cell);
   const label = expectedLabel(root, inner);
@@ -482,8 +507,11 @@ function checkRendering(
     // An attribute variant an element at or below the root, or around it as an ancestor the definition
     // names, names on itself holds exactly where that element carries the attribute, as a Navigation
     // menu caret carries its Root's `data-side`, and an open Select popup its `data-open` around a row.
+    // A variant the definition omits draws in no cell, so it makes no claim about the markup, as the
+    // `aria-expanded:` of a Button trigger drawn as a frame.
     const namedAncestors = new Set((definition.ancestorsFor?.(cell) ?? []).map(({ slot }) => slot));
-    for (const [variant, carries] of NAMED_ATTRIBUTE_VARIANTS) {
+    const omits = (variant: string) => ["omitted", "omitted-for"].includes(meaningOf(variant).kind);
+    for (const [variant, carries] of [...NAMED_ATTRIBUTE_VARIANTS].filter(([variant]) => !omits(variant))) {
       const around = [
         measured,
         ...ancestorIndexes(elements, measured).filter((index) =>

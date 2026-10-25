@@ -98,6 +98,8 @@ const CHECKED_ON_THE_MOUNTED_PAGE: readonly string[] = [
   "select-item",
   "select-popup",
   "select-open",
+  "popover-content",
+  "popover-open",
 ];
 
 describe("each kit definition against the markup of its component", () => {

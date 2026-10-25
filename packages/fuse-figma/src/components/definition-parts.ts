@@ -55,6 +55,18 @@ export function rootSlotOf(definition: ComponentDefinition, cell: Cell): string 
 }
 
 /**
+ * The `data-slot` an instance part's inner root carries in place: the slot the outer component stamps
+ * on it, or the inner root's own in the inner cell.
+ *
+ * @param part - An instance part.
+ * @param inner - The inner cell the part renders.
+ * @returns The slot, or undefined for an inner root that carries none.
+ */
+export function instanceRootSlotOf(part: InstanceDefinition, inner: Cell): string | undefined {
+  return part.slot ?? rootSlotOf(part.of, inner);
+}
+
+/**
  * Every `data-slot` the markup renders for a part and the elements inside it, in the cells given, as
  * the DOM holds them: a frame's own and those below it, and an instance's inner root's in each inner
  * cell the part shows and those its inner component renders, through its own instance parts in turn.
@@ -84,7 +96,7 @@ function slotsBelow(
     return [];
   }
   const shown = cells.filter((cell) => part.shownIn(cell)).map((cell) => part.cell(cell));
-  const roots = shown.flatMap((cell) => rootSlotOf(of, cell) ?? []);
+  const roots = shown.flatMap((cell) => instanceRootSlotOf(part, cell) ?? []);
   return [...new Set(roots), ...partSlots(of, shown, new Set([...inside, of]))];
 }
 
