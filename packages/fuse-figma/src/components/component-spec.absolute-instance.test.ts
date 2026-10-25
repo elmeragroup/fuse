@@ -73,6 +73,16 @@ const badgeRows = (coverage: readonly CoverageRow[]) =>
     .map((row) => [row.property, row.outcome, row.detail])
     .toSorted(([left = ""], [right = ""]) => (left < right ? -1 : left > right ? 1 : 0));
 
+/** The outcome and detail of the item's own `relative`. */
+const itemPosition = (coverage: readonly CoverageRow[]) =>
+  coverage
+    .filter((row) => row.part === "item" && row.property === "position")
+    .map((row) => [row.outcome, row.detail]);
+
+/** Why an item that holds a placed instance drops its `relative`. */
+const ANCHORS =
+  "it anchors the absolute instance it holds, whose MAX × CENTER constraints place it against this frame (N11)";
+
 describe("an absolute instance part", () => {
   it("ends 4px from its item's end and centres on the row in every mode, MAX × CENTER", async () => {
     const { root, coverage } = await buildItem(badge(SIDEBAR_OFFSETS));
@@ -89,6 +99,7 @@ describe("an absolute instance part", () => {
       centerOffset: 0,
     });
     expect(badgeRows(coverage)).toEqual([]);
+    expect(itemPosition(coverage)).toEqual([["dropped", ANCHORS]]);
   });
 
   // A top that puts the badge's centre 2px below the row's in one mode and 4px in another, as a fixed
@@ -103,6 +114,9 @@ describe("an absolute instance part", () => {
       ["position", "unmapped", `in the badge instance, ${detail}`],
       ["right", "unmapped", `in the badge instance, ${detail}`],
       ["top", "unmapped", `in the badge instance, ${detail}`],
+    ]);
+    expect(itemPosition(coverage)).toEqual([
+      ["dropped", "it only anchors positioned descendants, which auto layout does not need"],
     ]);
   });
 
@@ -131,6 +145,7 @@ describe("an absolute instance part", () => {
       ],
     });
     const [, , built] = await buildFixtures([ROW, inner, list], { variables: VARIABLES });
+    expect(itemPosition(built?.coverage ?? [])).toEqual([["dropped", ANCHORS]]);
     const [item] = built?.componentSet.variants[0]?.root.children ?? [];
     const [, placed] = item?.kind === "frame" ? item.children : [];
     expect(placed?.kind === "instance" ? placed.absolute : undefined).toEqual({

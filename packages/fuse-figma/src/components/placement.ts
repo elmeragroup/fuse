@@ -141,7 +141,7 @@ export function placeParts(
     }
     if (layer.kind === "instance") {
       if (normalizeCss(style.resolved("position") ?? "") !== "absolute") {
-        readPosition(style, "other");
+        readPosition(style, "other", false);
         return layer;
       }
       const anchored = readAnchored(style, parent.style, flow, parent.layers);
@@ -154,7 +154,7 @@ export function placeParts(
       case "refused":
         return layer;
       case "other":
-        readPosition(style, centering);
+        readPosition(style, centering, anchorsInstance(layer.children));
         return layer;
     }
   });
@@ -217,14 +217,20 @@ function alignAlongRow(parent: ParentBox, parts: readonly PlacedPart[]): Primary
  * @param room - What the root's container gives it, whose automatic width says whether the root
  *   takes the preview width.
  * @param variables - The synced variables a margin can read, with the values they hold in each mode.
+ * @param layers - The root's layers, as mapped.
  */
-export function placeRoot(style: LayerStyle, room: Room, variables: VariableIndex): void {
+export function placeRoot(
+  style: LayerStyle,
+  room: Room,
+  variables: VariableIndex,
+  layers: readonly ChildLayerSpec[]
+): void {
   const width = normalizeCss(style.resolved("width") ?? "auto");
   const widthFromContainer = room.horizontal.auto.kind !== "hug" && width === "auto";
   if (outOfFlow(style)) {
     placeAbsoluteRoot(style, widthFromContainer);
   } else {
-    readPosition(style, "other");
+    readPosition(style, "other", anchorsInstance(layers));
   }
   style.read(
     "translate",
@@ -441,9 +447,15 @@ export function slotAroundDot(style: LayerStyle, box: BoxSpec): BoxSpec {
  */
 type ParentLayout = "centers-its-one-layer" | "other";
 
+/** Whether a box holds an instance its constraints place, as a Sidebar menu item holds its badge. */
+function anchorsInstance(layers: readonly ChildLayerSpec[]): boolean {
+  return layers.some((layer) => layer.kind === "instance" && layer.absolute !== undefined);
+}
+
 /**
  * Read where a box sits. A `relative` box stays where the flow puts it and only anchors positioned
- * descendants, so it drops. `absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2` puts
+ * descendants, so it drops. Where it anchors an instance placed by its constraints, the coverage
+ * table says so, since Figma places that instance against the frame without it. `absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2` puts
  * the box's center on its containing block's center. Inside a parent whose auto layout centers it
  * as its one layer, that is where Figma draws it too, assuming the parent sits centered in the
  * containing block, as Radio's indicator does in its root. Every other position, offset or
@@ -451,8 +463,10 @@ type ParentLayout = "centers-its-one-layer" | "other";
  *
  * @param reader - The box's style.
  * @param parent - How the box's parent lays it out. The root passes `other`.
+ * @param anchors - Whether the box holds an instance its constraints place. An instance part passes
+ *   false, since its own layers are its set's.
  */
-function readPosition(reader: LayerStyle, parent: ParentLayout): void {
+function readPosition(reader: LayerStyle, parent: ParentLayout, anchors: boolean): void {
   const translate = splitTopLevel(normalizeCss(reader.resolved("translate") ?? ""), " ").map(
     evaluatePercentage
   );
@@ -481,7 +495,9 @@ function readPosition(reader: LayerStyle, parent: ParentLayout): void {
     (value) => (normalizeCss(value) === "relative" ? value : undefined),
     () => ({
       outcome: "dropped",
-      detail: "it only anchors positioned descendants, which auto layout does not need",
+      detail: anchors
+        ? "it anchors the absolute instance it holds, whose MAX × CENTER constraints place it against this frame (N11)"
+        : "it only anchors positioned descendants, which auto layout does not need",
     }),
     []
   );

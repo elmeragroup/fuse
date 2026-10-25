@@ -10,7 +10,7 @@ import type { LayerStyle } from "./cascade";
  * draws nothing while no row matches. A part that paints, pads, sets a length or a margin, or sits in
  * a parent that spaces its children with a gap, stays drawn.
  *
- * A part that leaves no trace draws in no layer either: at `opacity: 0` it paints nothing of itself or
+ * A part that leaves no trace, a frame or an instance, draws in no layer either: at `opacity: 0` it paints nothing of itself or
  * what it holds (CSS Color 4 §3.2), and a top margin of minus its height leaves its margin box 0 tall
  * (CSS 2.1 §8.3, §10.6), so it takes no room in a column with no gap, as the collapsed Sidebar rail's
  * group label (`h-8 -mt-8 opacity-0`) fades out and pulls the rows up.

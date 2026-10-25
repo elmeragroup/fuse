@@ -138,7 +138,7 @@ const HOUSE: IconSlot = {
 };
 
 /** The text color `Sidebar.Root` sets around its rows, which a row that sets none inherits. */
-const SIDEBAR_TEXT: readonly OuterDeclaration[] = [
+export const SIDEBAR_TEXT: readonly OuterDeclaration[] = [
   {
     className: "Sidebar.Root text-sidebar-foreground",
     property: "color",

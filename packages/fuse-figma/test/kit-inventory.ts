@@ -272,6 +272,21 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "sidebar-group-label", name: "Sidebar group label", variants: 1, previewed: 1 },
       // At rest, beside a hovered menu button and beside an active one.
       { key: "sidebar-menu-badge", name: "Sidebar menu badge", variants: 3, previewed: 3 },
+      // Expanded and collapsed.
+      { key: "sidebar-group", name: "Sidebar group", variants: 2, previewed: 2 },
+      // Expanded and collapsed.
+      { key: "sidebar-header", name: "Sidebar header", variants: 2, previewed: 2 },
+      // Expanded and collapsed.
+      { key: "sidebar-footer", name: "Sidebar footer", variants: 2, previewed: 2 },
+      // The rich menu demo's three sub rows.
+      { key: "sidebar-menu-sub", name: "Sidebar sub menu", variants: 1, previewed: 1 },
+      // Inactive and active.
+      {
+        key: "sidebar-menu-item-with-badge",
+        name: "Sidebar menu item with badge",
+        variants: 2,
+        previewed: 2,
+      },
     ],
   },
   {

@@ -66,6 +66,13 @@ import {
   SIDEBAR_MENU_BUTTON,
   SIDEBAR_MENU_SUB_BUTTON,
 } from "./sidebar-kit";
+import {
+  SIDEBAR_FOOTER,
+  SIDEBAR_GROUP,
+  SIDEBAR_HEADER,
+  SIDEBAR_MENU_ITEM_WITH_BADGE,
+  SIDEBAR_MENU_SUB,
+} from "./sidebar-section-kit";
 import { SKELETON } from "./skeleton-kit";
 import { SWITCH } from "./switch-kit";
 import { TEXTAREA } from "./textarea-kit";
@@ -386,6 +393,15 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(SIDEBAR_GROUP_LABEL.axes),
   },
   { definition: SIDEBAR_MENU_BADGE, page: SIDEBAR_PAGE, previewCells: matrixCells(SIDEBAR_MENU_BADGE.axes) },
+  { definition: SIDEBAR_GROUP, page: SIDEBAR_PAGE, previewCells: matrixCells(SIDEBAR_GROUP.axes) },
+  { definition: SIDEBAR_HEADER, page: SIDEBAR_PAGE, previewCells: matrixCells(SIDEBAR_HEADER.axes) },
+  { definition: SIDEBAR_FOOTER, page: SIDEBAR_PAGE, previewCells: matrixCells(SIDEBAR_FOOTER.axes) },
+  { definition: SIDEBAR_MENU_SUB, page: SIDEBAR_PAGE, previewCells: matrixCells(SIDEBAR_MENU_SUB.axes) },
+  {
+    definition: SIDEBAR_MENU_ITEM_WITH_BADGE,
+    page: SIDEBAR_PAGE,
+    previewCells: matrixCells(SIDEBAR_MENU_ITEM_WITH_BADGE.axes),
+  },
   {
     definition: NAVIGATION_MENU_BAR_TRIGGER,
     page: NAVIGATION_MENU_PAGE,

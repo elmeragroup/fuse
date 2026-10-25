@@ -662,6 +662,7 @@ export function buildComponentSet(
       instances,
       values: NO_VALUES,
       painted: new PaintedInstances(),
+      translates: new WeakMap(),
     };
     const rootCascade = cellCascade.root(definition.classesFor(cell), definition.slot, {
       declarations: definition.inheritedFor?.(cell) ?? [],
@@ -692,7 +693,7 @@ export function buildComponentSet(
       ...mapped,
       clips: definition.rootOverflow !== "visible",
     };
-    placeRoot(rootCascade.style, room, context.variables);
+    placeRoot(rootCascade.style, room, context.variables, root.children);
     if (root.clips && !clipsInCss(rootCascade.style)) {
       const shadowsOf = (layer: InstanceLayerSpec): readonly ShadowSpec[] =>
         rootEffects(layer) ??

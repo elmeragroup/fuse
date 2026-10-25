@@ -6,8 +6,8 @@
 import { describe, expect, it } from "vitest";
 
 import { FILL, fixed, fixedSize, HUG, literal } from "../../test/built-kit";
-import { buildFixture, chip, dot, ICON } from "../../test/fixture-sets";
-import type { LabelDefinition } from "./component-spec";
+import { buildFixture, buildFixtures, chip, dot, frameOf, ICON } from "../../test/fixture-sets";
+import type { ComponentDefinition, LabelDefinition } from "./component-spec";
 import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
 import type { BoxSpec, TextLayerSpec } from "./kit-spec";
@@ -474,5 +474,71 @@ describe("a part that leaves no trace", () => {
   ])("stays drawn with %s", async (_case, column, classes) => {
     const { variant } = await buildFixture(chip(`${column} w-[48px]`, { parts: [label(classes), row] }));
     expect(variant?.root.children.map((child) => child.name)).toEqual(["chip-label", "chip-row"]);
+  });
+
+  // A collapsed Sidebar group's label is an instance of the label set, whose rail arm the group's
+  // instance names as a fact, so the in-place root takes the fade and the pull-up.
+  describe("as an instance", () => {
+    const RAIL = "group-data-[collapsible=icon]";
+    const inner = (pullUp: string) =>
+      chip(`flex h-[32px] ${RAIL}:${pullUp} ${RAIL}:opacity-0`, {
+        key: "label",
+        name: "Label",
+        slot: "label",
+        omittedCompositions: new Map([[RAIL, "the rail, which the label set does not draw"]]),
+      });
+    const holder = (of: ComponentDefinition) =>
+      chip("flex flex-col w-[48px]", {
+        key: "group",
+        name: "Group",
+        slot: "group",
+        parts: [
+          {
+            kind: "instance",
+            key: "label",
+            of,
+            cell: () => ({ state: "rest" }),
+            facts: new Map([[RAIL, () => true]]),
+            shownIn: () => true,
+          },
+          row,
+        ],
+      });
+
+    it("draws in no layer and leaves no unmapped row", async () => {
+      const of = inner("-mt-[32px]");
+      const [, built] = await buildFixtures([of, holder(of)]);
+      expect(built?.componentSet.variants[0]?.root.children.map((child) => child.name)).toEqual(["chip-row"]);
+      expect(built?.coverage.filter((covered) => covered.outcome === "unmapped")).toEqual([]);
+    });
+
+    it("stays drawn with a margin short of its height", async () => {
+      const of = inner("-mt-[16px]");
+      const [, built] = await buildFixtures([of, holder(of)]);
+      expect(built?.componentSet.variants[0]?.root.children.map((child) => child.name)).toEqual([
+        "label",
+        "chip-row",
+      ]);
+    });
+  });
+});
+
+// Oracle: CSS 2.1 §9.2.1, where `display: list-item` makes a box block-level, and §10.3.3, where a
+// block-level box with no width fills its containing block, as a Sidebar menu item fills its menu.
+describe("a list item root", () => {
+  it("takes the preview width and stacks its block parts down it", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("relative", {
+        previewWidth: 120,
+        elementDefaults: [
+          { className: "user agent style sheet, li", property: "display", value: "list-item" },
+        ],
+        parts: [{ ...dot("flex h-[32px] w-full"), key: "row", slot: "chip-row" }],
+      })
+    );
+    expect(variant?.root.sizing).toEqual({ horizontal: fixed(literal(120)), vertical: HUG });
+    expect(variant?.root.direction).toBe("VERTICAL");
+    expect(frameOf(variant?.root)?.sizing).toEqual({ horizontal: FILL, vertical: fixed(literal(32)) });
+    expect(coverage.filter((covered) => covered.outcome === "unmapped")).toEqual([]);
   });
 });

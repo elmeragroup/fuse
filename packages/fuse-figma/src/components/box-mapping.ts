@@ -84,6 +84,8 @@ import {
 import type { Layout } from "./placement";
 import { stacksFirstOnTop } from "./stacking";
 import type { PaintedInstances } from "./stacking";
+import { foldTranslate, sharedTranslate } from "./translate-fold";
+import type { CarriedTranslates } from "./translate-fold";
 
 /**
  * A part's layer name: its `data-slot`, or its key for an element without one.
@@ -263,6 +265,8 @@ export type MapScope = {
   readonly values: PropertyValues;
   /** What each instance layer the mapping places paints, which the stacking of the boxes above reads. */
   readonly painted: PaintedInstances;
+  /** The translate each box that paints and pads nothing carries up from its rows, as `translate-fold.ts` says. */
+  readonly translates: CarriedTranslates;
   /**
    * Whether the box's parent clips what overflows it and pads nothing across, so a box that fills it
    * across clips at its own sides too, as Select's list fills its clipping popup. Absent for a root.
@@ -384,12 +388,9 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // stretch, the label, the display and the placement.
   const cascaded = cascadeParts(box, cascade, scope);
   // An empty part that CSS draws 0 tall and that paints nothing draws in no layer (PE4), and so does a
-  // part that leaves no trace.
+  // part that leaves no trace, a frame or an instance.
   const leftOut = cascaded.flatMap((part) => {
-    if (part.kind !== "frame") {
-      return [];
-    }
-    if (vanishes(part.child, part.cascade.style, reader, scope.cell)) {
+    if (part.kind === "frame" && vanishes(part.child, part.cascade.style, reader, scope.cell)) {
       return [{ part, reason: EMPTY_PART }];
     }
     return leavesNoTrace(part.cascade.style, reader) ? [{ part, reason: NO_TRACE }] : [];
@@ -600,15 +601,29 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     hugs: sizing.horizontal.kind === "hug",
     inFlexRow: scope.inFlexRow === true,
   };
+  // Rows that share a translate across move a column's content box, or a wrapper carries it up.
+  const shared =
+    layout.direction === "VERTICAL" && sections === undefined && endInFlow === undefined
+      ? sharedTranslate(
+          flowing.map((part) => ({ style: part.cascade.style, instance: part.kind === "instance" })),
+          scope.translates
+        )
+      : undefined;
+  const moved = shared && foldTranslate(reader, shared, context.variables);
+  if (shared !== undefined && moved === undefined && !folding.paints && !clips && flush) {
+    scope.translates.set(reader, shared);
+  }
   const paddingLeft =
     sections?.paddingLeft ??
+    moved?.left ??
     foldNegativeMargin(reader, "left", folding, context.variables) ??
     number("padding-left", "paddingLeft") ??
     ZERO;
   const paddingRight =
     sections?.paddingRight ??
     (endInFlow === undefined
-      ? (foldNegativeMargin(reader, "right", folding, context.variables) ??
+      ? (moved?.right ??
+        foldNegativeMargin(reader, "right", folding, context.variables) ??
         number("padding-right", "paddingRight"))
       : padToOffset(reader, endInFlow, context.variables)) ??
     ZERO;

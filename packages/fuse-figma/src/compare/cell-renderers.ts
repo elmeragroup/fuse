@@ -457,6 +457,31 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./sidebar-cell.ts")).sidebarMenuBadge,
   },
   {
+    set: "sidebar-group",
+    entry: "dist/sidebar.js",
+    load: async () => (await import("./sidebar-cell.ts")).sidebarGroup,
+  },
+  {
+    set: "sidebar-header",
+    entry: "dist/sidebar.js",
+    load: async () => (await import("./sidebar-cell.ts")).sidebarHeader,
+  },
+  {
+    set: "sidebar-footer",
+    entry: "dist/sidebar.js",
+    load: async () => (await import("./sidebar-cell.ts")).sidebarFooter,
+  },
+  {
+    set: "sidebar-menu-sub",
+    entry: "dist/sidebar.js",
+    load: async () => (await import("./sidebar-cell.ts")).sidebarMenuSub,
+  },
+  {
+    set: "sidebar-menu-item-with-badge",
+    entry: "dist/sidebar.js",
+    load: async () => (await import("./sidebar-cell.ts")).sidebarMenuItemWithBadge,
+  },
+  {
     set: "navigation-menu-bar-trigger",
     entry: "dist/navigation-menu.js",
     load: async () => (await import("./navigation-menu-cell.ts")).navigationMenuBarTrigger,

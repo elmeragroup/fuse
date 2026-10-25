@@ -278,6 +278,7 @@ export class InstanceParts {
       instances: visit.nested,
       values: visit.values,
       painted: new PaintedInstances(),
+      translates: new WeakMap(),
     };
     const root: ComponentRootSpec = {
       name: part.of.slot,

@@ -328,10 +328,12 @@ function checkInnerCell(
     const has = HAS_VARIANTS.get(variant);
     const groupHas = GROUP_HAS_VARIANTS.get(variant);
     const within = IN_VARIANTS.get(variant);
+    const group = GROUP_VARIANTS.get(variant);
     const markup =
       carries?.(element) ??
       has?.(elements, index) ??
       (within === undefined ? undefined : ancestorsOf(elements, index).some(within)) ??
+      (group === undefined ? undefined : around.some(group)) ??
       (groupHas === undefined
         ? undefined
         : ancestorIndexes(elements, index).some((ancestor) => groupHas(elements, ancestor)));

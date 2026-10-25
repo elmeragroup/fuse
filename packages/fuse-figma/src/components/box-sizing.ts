@@ -106,8 +106,11 @@ const HUG: SizeSpec = { kind: "hug" };
 const FILL: SizeSpec = { kind: "fill" };
 const NO_BASIS: PercentBasis = { kind: "none" };
 
-/** The `display` values that make a box block-level, whose unset width fills its container (CSS 2.1 §10.3.3). */
-const BLOCK_LEVEL = new Set(["block", "flex", "grid", "flow-root"]);
+/**
+ * The `display` values that make a box block-level, whose unset width fills its container (CSS 2.1
+ * §9.2.1, §10.3.3), a list item's included.
+ */
+const BLOCK_LEVEL = new Set(["block", "list-item", "flex", "grid", "flow-root"]);
 
 /**
  * The room a variant root has. Its component set has no auto layout, so it fills nothing and an
