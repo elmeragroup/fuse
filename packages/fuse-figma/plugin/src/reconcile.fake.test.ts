@@ -372,6 +372,22 @@ describe("Apply on a synced file without the kit pages", () => {
     );
   });
 
+  // PK: the swapped icon reads its new icon's key, so the override finds it by the Icon button's layer.
+  it.each([
+    ["caret", "CaretDown"],
+    ["caret open", "CaretUp"],
+    ["clear", "X"],
+  ])("colors the %s Input group's swapped %s glyph in muted-foreground", async (form, icon) => {
+    const set = setOn(await kitPage(file, "page/input"), "Input group");
+    const variant = variantNamed(set, `form=${form}, state=rest`);
+    const button = childNamed(childNamed(variant, "FRAME", "input-group-addon"), "INSTANCE", "button");
+    const swapped = childNamed(button, "INSTANCE", "Icon");
+    expect([
+      (await swapped.getMainComponentAsync())?.name,
+      onlySolid(childNamed(swapped, "VECTOR", "glyph").fills, file.figma).boundVariables?.color?.id,
+    ]).toEqual([icon, file.variable("Fuse tokens", "muted-foreground").id]);
+  });
+
   it("draws each icon as one glyph in the library's foreground, and leaves the artwork out", async () => {
     const icons = await iconLibrary(file);
     const plus = childNamed(icons, "COMPONENT", "Plus");

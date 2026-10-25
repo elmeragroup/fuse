@@ -851,3 +851,124 @@ describe("rule 45: same-named caps keep their own values through a variant switc
     expect(capsOf(row, ids.capLabel).values).toEqual(["Ctrl", "M"]);
   });
 });
+
+describe("rule 48: a swapped sublayer reads its new main component's shared plugin data (PK)", () => {
+  /**
+   * The owner's file as PK read it: the Icons `Plus` and `CaretDown` keyed `icon/Plus` and
+   * `icon/CaretDown`, and an `Icon button` variant holding a Plus instance named `Icon`, keyed
+   * `icon-only` and linked to the INSTANCE_SWAP property `Icon`.
+   */
+  function iconButton() {
+    const { figma } = probeFile();
+    const [plus, caret] = ["Plus", "CaretDown"].map((name) => {
+      const glyph = figma.createComponent();
+      glyph.name = name;
+      glyph.setSharedPluginData("fuse", "key", `icon/${name}`);
+      return glyph;
+    });
+    if (plus === undefined || caret === undefined) {
+      throw new Error("no icons");
+    }
+    const button = figma.createComponent();
+    button.name = "variant=ghost, size=icon-sm, state=rest";
+    const icon = plus.createInstance();
+    icon.name = "Icon";
+    icon.setSharedPluginData("fuse", "key", "icon-only");
+    button.appendChild(icon);
+    const set = figma.combineAsVariants([button], figma.currentPage);
+    const swap = set.addComponentProperty("Icon", "INSTANCE_SWAP", plus.id);
+    icon.componentPropertyReferences = { mainComponent: swap };
+    return { figma, button, caret, icon, instance: button.createInstance(), swap };
+  }
+
+  /** The swapped layer's key, name, place and id, and the key of the main's layer at that place. */
+  const read = (instance: InstanceNode, icon: InstanceNode) => {
+    const [only, ...rest] = instance.children;
+    return [
+      only?.getSharedPluginData("fuse", "key"),
+      only?.name,
+      rest.length,
+      only?.id,
+      icon.getSharedPluginData("fuse", "key"),
+    ];
+  };
+
+  it("reads icon/CaretDown on a layer the Icon property swaps, and icon-only on the main's layer", () => {
+    const { caret, icon, instance, swap } = iconButton();
+    instance.setProperties({ [swap]: caret.id });
+    expect(read(instance, icon)).toEqual([
+      "icon/CaretDown",
+      "Icon",
+      0,
+      `I${instance.id};${icon.id}`,
+      "icon-only",
+    ]);
+  });
+
+  it("reads icon/CaretDown on a layer swapComponent swaps, and icon-only on the main's layer", () => {
+    const { caret, icon, instance } = iconButton();
+    onlyChildOfType(instance, "INSTANCE").swapComponent(caret);
+    expect(read(instance, icon)).toEqual([
+      "icon/CaretDown",
+      "Icon",
+      0,
+      `I${instance.id};${icon.id}`,
+      "icon-only",
+    ]);
+  });
+
+  // PK read the swap inside the Input group's variant; an Input group instance shows that variant.
+  it("shows the swapped icon's main and key on an instance of the component that holds it", async () => {
+    const { figma, button, caret, swap } = iconButton();
+    const group = figma.createComponent();
+    const held = button.createInstance();
+    group.appendChild(held);
+    const icon = onlyChildOfType(onlyChildOfType(group.createInstance(), "INSTANCE"), "INSTANCE");
+    held.setProperties({ [swap]: caret.id });
+    expect([(await icon.getMainComponentAsync())?.name, icon.getSharedPluginData("fuse", "key")]).toEqual([
+      "CaretDown",
+      "icon/CaretDown",
+    ]);
+  });
+
+  // PK2: a swap made on the main's own layer keeps that layer's key, and the instance follows it.
+  it("keeps icon-only on a main's own swapped layer and on an instance's sublayer that shows Q (PK2)", async () => {
+    const { figma } = probeFile();
+    const [p, q] = ["P", "Q"].map((name) => {
+      const component = figma.createComponent();
+      component.name = name;
+      component.resize(16, 16);
+      component.setSharedPluginData("fuse", "key", `icon/${name}`);
+      const glyph = figma.createFrame();
+      glyph.name = "glyph";
+      component.appendChild(glyph);
+      return component;
+    });
+    if (p === undefined || q === undefined) {
+      throw new Error("no components");
+    }
+    const m = figma.createComponent();
+    m.layoutMode = "HORIZONTAL";
+    m.layoutSizingHorizontal = "HUG";
+    m.layoutSizingVertical = "HUG";
+    const icon = p.createInstance();
+    icon.name = "Icon";
+    icon.setSharedPluginData("fuse", "key", "icon-only");
+    m.appendChild(icon);
+    const i = m.createInstance();
+    const row = async () => {
+      const sublayer = onlyChildOfType(i, "INSTANCE");
+      return [
+        icon.getSharedPluginData("fuse", "key"),
+        (await icon.getMainComponentAsync())?.name,
+        sublayer.getSharedPluginData("fuse", "key"),
+        (await sublayer.getMainComponentAsync())?.name,
+        sublayer.children.map((child) => child.name),
+        i.overrides,
+      ];
+    };
+    expect(await row()).toEqual(["icon-only", "P", "icon-only", "P", ["glyph"], []]);
+    icon.swapComponent(q);
+    expect(await row()).toEqual(["icon-only", "Q", "icon-only", "Q", ["glyph"], []]);
+  });
+});

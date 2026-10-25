@@ -484,7 +484,8 @@ describe("a set that holds an instance of an earlier set's variant", () => {
     );
   });
 
-  // A swap property replaces the icon and its glyph, so the glyph's override waits for the write.
+  // A swap property replaces the icon and its glyph, so the glyph's override waits for the write. The
+  // swapped icon reads Plus's key (PK), so the override finds it by the Button's layer at its place.
   it("creates an action that swaps its glyph to Plus and colors it, and converges", async () => {
     const colored = kitWith(BUTTON, {
       ...ACTION,

@@ -14,7 +14,8 @@
  * Rules 12 to 47 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
  * Import test` from 2026-10-22 to 2026-10-25: P0 and P0b read the kit's nodes, P1 to P9, PB, PR,
  * PQ, PD, PL, PF, PH, PZ, PI, PZ2, N1 to N5, N9, N11, NS, NA, NH, PI2, PI3, PH3 and PS built nodes on a scratch page, and
- * P9b stored images and built no node.
+ * P9b stored images and built no node. Rule 48 names PK, a reading of the owner's file on 2026-10-25,
+ * and PK2, built on a scratch frame the same day.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
  *    COLOR variable in the collections' default modes, whatever opacity it was given. Two runs
@@ -277,8 +278,8 @@
  *    property's value (NS). An override the instance itself holds stays, and a sublayer's fill
  *    override moves to the new sublayer of the same name, as below.
  * 36. A sublayer's id is `I`, the instance's id, `;` and its main layer's id (N1), and a sublayer reads
- *    the shared plugin data its main layer carries where it holds none of its own (N3), so the kit's
- *    keys find the sublayers of a nested instance.
+ *    the shared plugin data its main layer carries where it holds none of its own (N3). A swapped one
+ *    reads its new main component's instead (rule 48).
  * 37. `overrides` lists each layer of an instance that holds an override, from the instance down, with
  *    its fields: the instance's own `name`, `width` and `height` (N1), its `fills`, `effects` and "the
  *    corner fields", and a sublayer's `fills` (N3). N3 did not name the corner fields, so the fake
@@ -368,6 +369,17 @@
  *    it, an instance's through its main, and an instance whose main hugs nested instances hugs its own
  *    by its main's layout as that stands, each settled from its source as that stands (rule 32).
  *    Writing ABSOLUTE on an instance lists `layoutPositioning`.
+ * 48. A swapped sublayer reads its new main component's shared plugin data. On 2026-10-25 the owner's
+ *    Apply stopped on an `Icon button` instance whose INSTANCE_SWAP `Icon` showed CaretDown: its one
+ *    child, `Icon`, an instance of CaretDown with the id `I<instance>;<main layer>`, read the key
+ *    `icon/CaretDown`, while the main's `Icon` at the same place, a Plus instance, read `icon-only`
+ *    (PK). So a sublayer swapped by `swapComponent` or a swap property reads the entries its new main
+ *    component carries where it holds none of its own, and keeps its name (rule 43), its id and its
+ *    place, as the instance's children stand one for one, in order, for its main's. A swap made on the
+ *    main's own layer is no swap apart: after `swapComponent(Q)` on a component's own `Icon`, keyed
+ *    `icon-only`, the layer still read `icon-only`, and an instance's sublayer read `icon-only`, named
+ *    Q from `getMainComponentAsync`, showed Q's `glyph` and listed no override (PK2). So a sublayer
+ *    that does not swap apart reads its main layer's entries and shows its main layer's component.
  *
  * An instance's sublayers show the layers of its main component, and a nested instance's sublayers
  * the sublayers its main layer shows. An override, such as the color an icon layer gives its glyph,
@@ -2164,6 +2176,15 @@ function linkProperties(state: NodeState, references: FrameNode["componentProper
   write(state, "componentPropertyReferences");
 }
 
+/**
+ * The component an instance shows, whose layers its children stand for (rule 48): its own main where
+ * it is no sublayer or swapped apart, else the one its main layer shows.
+ */
+function shownComponent(state: NodeState): NodeState | undefined {
+  const source = sourceOf(state);
+  return source === undefined || source.type === "COMPONENT" ? source : shownComponent(source);
+}
+
 /** An instance's main component, and the set or component that holds the properties it shows. */
 function instanceOwner(state: NodeState) {
   const main = state.main;
@@ -2539,11 +2560,13 @@ function placeOnCurrentPage(file: FileState, state: NodeState): void {
   insert(page, state, undefined);
 }
 
-/** A shared plugin data entry as a node reads it: its own, or a sublayer's main layer's (rule 36). */
+/**
+ * A shared plugin data entry as a node reads it: its own, or a sublayer's main layer's (rule 36), or a
+ * swapped sublayer's new main component's (rule 48).
+ */
 function sharedDataOf(state: NodeState, entry: string): string {
-  return (
-    state.sharedData.get(entry) ?? (state.mirrorOf === undefined ? "" : sharedDataOf(state.mirrorOf, entry))
-  );
+  const source = state.mirrorOf === undefined ? undefined : sourceOf(state);
+  return state.sharedData.get(entry) ?? (source === undefined ? "" : sharedDataOf(source, entry));
 }
 
 /** The members every node has. */
@@ -2573,7 +2596,7 @@ class FakeBaseNode {
     }
   }
 
-  /** Rule 36: a sublayer reads its main layer's entry where it holds none of its own. */
+  /** Rules 36 and 48: a sublayer reads its main layer's entry, or a swapped one its new main's. */
   getSharedPluginData(namespace: string, key: string): string {
     return sharedDataOf(live(this), `${namespace}${SHARED_DATA_SEPARATOR}${key}`);
   }
@@ -3553,8 +3576,9 @@ class FakeInstance extends FakeFrameLikeNode {
     );
   }
 
+  /** Rule 48: a sublayer shows its main layer's component until it swaps apart. */
   getMainComponentAsync(): Promise<ComponentNode | null> {
-    const main = live(this).main;
+    const main = shownComponent(live(this));
     return Promise.resolve(main === undefined ? null : componentOf(main));
   }
 
