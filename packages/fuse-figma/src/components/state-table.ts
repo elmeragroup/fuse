@@ -26,6 +26,8 @@ import { axisValues } from "./kit-spec";
  *   `[&>input]:` styles the `<input>` Input group holds as its control.
  * - `label-element`: the class styles the box's last child where it is an element of one tag, as
  *   `[&>span:last-child]:` styles the `<span>` a Sidebar row holds its label in.
+ * - `every-child`: the class styles each of the box's direct child parts at no specificity, as
+ *   `[:where(&>*)]:` rings each avatar of an Avatar group.
  * - `specificity`: the variant tests nothing of the cell and only changes the class's specificity,
  *   which its compiled placement already carries, as `[:where(&)]:` lowers it to (0,0,0).
  * - `omitted`: no cell shows the state, so the class is dropped.
@@ -42,6 +44,7 @@ export type VariantMeaning =
   | { readonly kind: "element"; readonly tag: string }
   | { readonly kind: "child-element"; readonly tag: string }
   | { readonly kind: "label-element"; readonly tag: string }
+  | { readonly kind: "every-child" }
   | { readonly kind: "specificity" }
   | { readonly kind: "omitted" }
   | { readonly kind: "omitted-for"; readonly reason: string }
@@ -147,6 +150,14 @@ const LABEL_ELEMENT_SELECTORS = new Map([["[&>span:last-child]", "span"]]);
  */
 const SPECIFICITY_ONLY = new Set(["[:where(&)]"]);
 
+/**
+ * The variant that reaches every child of the box at no specificity: `[:where(&>*)]:` compiles a
+ * class to `:where(.class > *)`, which weighs nothing (Selectors 4 §17), so a child's own class wins,
+ * as an avatar's own ring beats the one its Avatar group gives every avatar. The builder reaches the
+ * box's child parts with it, the ones a set draws there.
+ */
+const EVERY_CHILD = "[:where(&>*)]";
+
 /** The states and children a component set leaves out, whatever the component. */
 const SHARED_OMISSIONS = new Set([
   // A press lasts only as long as the pointer is down.
@@ -195,6 +206,7 @@ const FIXED_VARIANTS = new Set([
   ...CHILD_ELEMENT_SELECTORS.keys(),
   ...LABEL_ELEMENT_SELECTORS.keys(),
   ...SPECIFICITY_ONLY,
+  EVERY_CHILD,
   ...SHARED_OMISSIONS,
   ...DESKTOP_BREAKPOINTS,
 ]);
@@ -292,6 +304,9 @@ export function makeStateTable(
     }
     if (SPECIFICITY_ONLY.has(variant)) {
       return { kind: "specificity" };
+    }
+    if (variant === EVERY_CHILD) {
+      return { kind: "every-child" };
     }
     if (variant === DESCENDANTS) {
       return { kind: "descendants" };
@@ -402,12 +417,13 @@ export function withPartFacts(
 
 /**
  * The children a class styles: the parts that carry a `data-slot`, the parts that are elements of a
- * tag, or the element of a tag that holds the box's label as its last child.
+ * tag, every direct child part, or the element of a tag that holds the box's label as its last child.
  */
 export type PartTarget =
   | { readonly kind: "slot"; readonly slot: string }
   | { readonly kind: "tag"; readonly tag: string }
   | { readonly kind: "child-tag"; readonly tag: string }
+  | { readonly kind: "every-child" }
   | { readonly kind: "label"; readonly tag: string };
 
 /** What a class's variants say about it in one cell. */
@@ -456,7 +472,8 @@ const PAST_DESCENDANTS: CoverageNote = {
  * Read a class's variants, outermost first. A condition holds or not in the cell, a child selector
  * narrows the icons the class reaches, `*:` followed by `data-[slot=x]:` makes the class style the
  * box's child parts whose `data-slot` is `x`, an element selector such as `[&_img]:` makes it
- * style the box's child parts of that tag, and `**:` as the last variant makes it style every
+ * style the box's child parts of that tag, `[:where(&>*)]:` makes it style every direct child part,
+ * and `**:` as the last variant makes it style every
  * element below the box. Any other variant skips the class.
  *
  * @param variants - The class's variants, outermost first.
@@ -527,6 +544,13 @@ export function readVariants(variants: readonly string[], meaningOf: StateTable,
       target = { kind: "label", tag: meaning.tag };
       continue;
     }
+    if (meaning.kind === "every-child") {
+      if (selects !== undefined) {
+        return skip(PAST_CHILD_ELEMENT);
+      }
+      target = { kind: "every-child" };
+      continue;
+    }
     if (meaning.kind === "specificity") {
       continue;
     }
@@ -558,6 +582,7 @@ function skippedNote(
         | "element"
         | "child-element"
         | "label-element"
+        | "every-child"
         | "specificity";
     }
   >

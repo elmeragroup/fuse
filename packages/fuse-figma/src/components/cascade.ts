@@ -32,7 +32,7 @@ import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { CascadeLogs, routed } from "./coverage-log";
 import type { LoggedRule, Origin } from "./coverage-log";
 import { normalizeCss, splitTopLevel, substituteVars } from "./css-values";
-import type { ComponentRootSpec, FrameLayerSpec, IconLayerSpec, TextLayerSpec } from "./kit-spec";
+import type { ComponentRootSpec, FrameLayerSpec, IconLayerSpec, NumberSpec, TextLayerSpec } from "./kit-spec";
 import { compareSpecificity } from "./specificity";
 import type { Specificity } from "./specificity";
 import { readVariants, withPartFacts } from "./state-table";
@@ -40,6 +40,15 @@ import type { PartTarget, StateTable } from "./state-table";
 
 /** What a read became, for the coverage table. */
 export type CoverageNote = Pick<CoverageRow, "outcome" | "detail">;
+
+/**
+ * Reads the declarations of one class that styles every child of a box but the last as the box's
+ * item spacing, with what becomes of each declaration, or undefined where the class draws no item
+ * spacing.
+ */
+export type ChildSpacing = (
+  declarations: readonly { readonly property: string; readonly value: string }[]
+) => { readonly itemSpacing: NumberSpec; readonly notes: ReadonlyMap<string, CoverageNote> } | undefined;
 
 /** Adds one row to the coverage table of the set. */
 export type Recorder = (row: Omit<CoverageRow, "component">) => void;
@@ -864,20 +873,29 @@ export class BoxCascade {
   /**
    * Give the classes of this box that style every child but the last, as `space-y-4` does, their
    * rows once the mapping knows how many element children the box's markup holds in the cell:
-   * dropped for a box that holds one or none, since `:not(:last-child)` then matches no child,
-   * unmapped for more, since the kit draws no margin between a box's children, and unmapped where the
-   * count is unknown.
+   * dropped for a box that holds one or none, since `:not(:last-child)` then matches no child, and
+   * unmapped for more, since the kit draws no margin between a box's children, unless the one such
+   * class reads as the box's item spacing through `spacing`. Unmapped where the count is unknown.
    *
    * @param children - The element children the box's markup holds in the cell, drawn or not, or
    *   undefined where the definition does not count them.
+   * @param spacing - Reads a class as the item spacing, where the box draws every element child as
+   *   a layer in its flow, or undefined where it cannot.
+   * @returns The item spacing the class draws, or undefined.
    */
-  spaceChildren(children: number | undefined): void {
+  spaceChildren(children: number | undefined, spacing?: ChildSpacing): NumberSpec | undefined {
+    const [only, ...others] = this.#exceptLast;
+    const spaced =
+      children !== undefined && children > 1 && only !== undefined && others.length === 0
+        ? spacing?.(only.declarations)
+        : undefined;
     const note = childSpacingNote(children);
     for (const { part, className, declarations, record } of this.#exceptLast) {
       for (const { property, value } of declarations) {
-        record({ part, className, property, value, ...note });
+        record({ part, className, property, value, ...(spaced?.notes.get(property) ?? note) });
       }
     }
+    return spaced?.itemSpacing;
   }
 
   /**
@@ -1003,7 +1021,7 @@ export class BoxCascade {
           ? rule.target.slot === element.slot
           : rule.target.kind === "child-tag"
             ? rule.target.tag === element.tag
-            : tagged(rule)
+            : rule.target.kind === "every-child" || tagged(rule)
       ),
     ];
     takeAll(taken);

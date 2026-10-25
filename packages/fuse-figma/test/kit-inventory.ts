@@ -128,7 +128,16 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     sets: [{ key: "textarea", name: "Textarea", variants: 10, previewed: 10 }],
   },
   // The fallback and the image at 4 sizes.
-  { slug: "avatar", name: "Avatar", sets: [{ key: "avatar", name: "Avatar", variants: 8, previewed: 8 }] },
+  {
+    slug: "avatar",
+    name: "Avatar",
+    sets: [
+      // The initials and the picture, at 4 sizes.
+      { key: "avatar", name: "Avatar", variants: 8, previewed: 8 },
+      // The docs Group demo's three avatars.
+      { key: "avatar-group", name: "Avatar group", variants: 1, previewed: 1 },
+    ],
+  },
   // 4 modes at 4 levels.
   { slug: "meter", name: "Meter", sets: [{ key: "meter", name: "Meter", variants: 16, previewed: 16 }] },
   {

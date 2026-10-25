@@ -8,6 +8,13 @@
  * `muted-foreground`. The image is the checked-in docs portrait, a 96px PNG, which covers the
  * circle as `object-fit: cover` draws it, an image paint at FILL, named by the hash a real file gave
  * it (P9b).
+ *
+ * The Avatar group oracle is `avatarGroupClass` and the docs Group demo: three avatars at the recipe's
+ * 32px, Ada Lovelace's, Grace Hopper's and Katherine Johnson's, whose initials the fallback holds.
+ * Tailwind compiles `-space-x-2` to a -8px `margin-inline-end` on every avatar but the last, so each
+ * starts 8px over the one before, the later on top, which a Figma row draws with an item spacing of
+ * -8 (probe N7). `[:where(&>*)]:ring-2 [:where(&>*)]:ring-background` gives each avatar a 2px
+ * `background` spread ring, which the Avatar set's root does not draw, so each instance carries it.
  */
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -75,6 +82,27 @@ const FILLING_PART = {
   clips: false,
   cornerRadius: literal(0),
 } as const;
+
+/** A 32px fallback avatar of the group, exposed to its panel, ringed in `background`. */
+const member = (key: string) =>
+  ({
+    kind: "instance",
+    key,
+    name: "avatar",
+    componentSet: "avatar",
+    variant: "avatar/content=fallback,size=32",
+    sizing: fixedSize(literal(32), literal(32)),
+    overrides: [
+      {
+        path: [],
+        field: "effects",
+        shadows: [
+          { color: paint("background"), offsetX: 0, offsetY: 0, radius: literal(0), spread: literal(2) },
+        ],
+      },
+    ],
+    exposed: true,
+  }) as const;
 
 describe("the Avatar component set", () => {
   it("holds the fallback and the image at four sizes, 32 first, with columns by size and one Label property", () => {
@@ -177,5 +205,30 @@ describe("the Avatar component set", () => {
     // and height as 32-bit big-endian numbers (PNG specification §5.2, §11.2.2).
     expect([...PORTRAIT.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     expect([PORTRAIT.readUInt32BE(16), PORTRAIT.readUInt32BE(20)]).toEqual([96, 96]);
+  });
+});
+
+describe("the Avatar group component set", () => {
+  it("holds one variant on the Avatar page under a one-value avatars property, with no properties of its own", () => {
+    const set = spec.componentSets.find((candidate) => candidate.key === "avatar-group");
+    expect([set?.name, set?.page]).toEqual(["Avatar group", "page/avatar"]);
+    expect(set?.axes).toEqual([{ name: "avatars", values: ["3"] }]);
+    expect([set?.textProperties, set?.swapProperties, set?.booleanProperties]).toEqual([[], [], undefined]);
+  });
+
+  it("overlaps the three ringed avatars by 8px, AL keeping the fallback's own initials", () => {
+    expect(variantRoot(spec, "avatar-group/avatars=3")).toEqual({
+      name: "avatar-group",
+      ...CENTERED,
+      itemSpacing: literal(-8),
+      sizing: { horizontal: HUG, vertical: HUG },
+      clips: true,
+      cornerRadius: literal(0),
+      children: [
+        member("al"),
+        { ...member("gh"), properties: { text: { Label: "GH" } } },
+        { ...member("kj"), properties: { text: { Label: "KJ" } } },
+      ],
+    });
   });
 });

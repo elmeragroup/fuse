@@ -754,7 +754,9 @@ describe("a later run on an applied file", () => {
 
 // Unit under test: `reconcileKit` on Avatar's image fills. Oracle: the hash a real file gave the
 // portrait, `1e57f3da…`, the SHA-1 of its bytes (P9b), the fake's rule 22, which logs storing an
-// image as a write, and the change lines `test/kit-inventory.ts` gives the Avatar page.
+// image as a write, and the change lines `test/kit-inventory.ts` gives the Avatar page. Avatar
+// group's three avatars are instances of Avatar, so each plans again once Avatar's changes land, and
+// the group's grid lays out again after them.
 describe("Avatar's image fills on an applied file", () => {
   const PORTRAIT_SHA1 = "1e57f3da2ad606fcd410ba17f62d2fc032aa669c";
   const AVATAR_PAGE = pageKey(inventoryPage("avatar"));
@@ -787,7 +789,12 @@ describe("Avatar's image fills on an applied file", () => {
     expect(await changes(file)).toEqual([
       `Avatar / content=image, size=32 / avatar-image: fill → image ${PORTRAIT_SHA1.slice(0, 8)} at FILL (holds image ${RED_PIXEL.sha1.slice(0, 8)} at FILL)`,
       "Avatar: lay out 8 variants in 4 columns and 2 rows",
-      "Avatar: place Avatar in a row and stack 4 previews below them",
+      ...Array.from(
+        { length: 3 },
+        () => "Avatar group / avatars=3 / avatar: plan again once Avatar's changes land"
+      ),
+      "Avatar group: lay out 1 variants in 1 columns and 1 rows",
+      "Avatar: place Avatar and Avatar group in a row and stack 4 previews below them",
     ]);
     expect(file.writes.slice(before)).toEqual([]);
     await reconcileKit(file.figma, kit, true);

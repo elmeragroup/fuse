@@ -425,7 +425,8 @@ function contextClass(selector: string): { readonly name: string; readonly rest:
  * The class a rule wraps whole in one `:where()`, as Tailwind compiles `[:where(&)]:rounded-md` to
  * `:where(.\[\:where\(\&\)\]\:rounded-md)`, which selects the element that carries the class at a
  * specificity of (0,0,0) (Selectors 4 §17). The `:where()` may hold the class below a parent context,
- * as `in-data-[slot=…]:[:where(&)]:rounded-inner` compiles to `:where(:where([data-slot="…"]) .…)`.
+ * as `in-data-[slot=…]:[:where(&)]:rounded-inner` compiles to `:where(:where([data-slot="…"]) .…)`,
+ * or select its children, as `[:where(&>*)]:ring-2` compiles to `:where(.… > *)`.
  */
 function weightlessClass(selector: string): { readonly name: string; readonly rest: string } | undefined {
   const [alternative, ...others] = selectorAlternatives(selector);
@@ -441,7 +442,7 @@ function weightlessClass(selector: string): { readonly name: string; readonly re
     return undefined;
   }
   const inner = leadingClass(wrapper.argument) ?? contextClass(wrapper.argument);
-  return inner?.rest === "" ? inner : undefined;
+  return inner?.rest === "" || inner?.rest === " > *" ? inner : undefined;
 }
 
 /**

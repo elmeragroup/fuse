@@ -1,6 +1,8 @@
 /**
- * Avatar, as one component set: initials or a picture in a circle, at the docs' four sizes, 8
- * cells. An Avatar is not interactive, so the set has no state axis, and its columns are the sizes.
+ * Avatar, as two component sets on one page.
+ *
+ * `Avatar` is initials or a picture in a circle, at the docs' four sizes, 8 cells. An Avatar is not
+ * interactive, so the set has no state axis, and its columns are the sizes.
  *
  * - The root is Base UI's `<span data-slot="avatar">`, with `avatarRootClass`: a `muted` circle
  *   that clips what it holds, 32px by default. The docs size demo passes `size-6`, `size-8`,
@@ -15,11 +17,27 @@
  * - An image cell holds `<img data-slot="avatar-image">`, which fills the circle and shows the docs
  *   portrait as an image paint. Its `object-cover` covers the circle, which the paint draws at FILL.
  *   A designer replaces the picture by changing that fill on an instance.
- * - Avatar group stacks avatars, which waits for kit components that hold instances.
+ *
+ * `Avatar group` is the docs Group demo's three avatars: 1 cell. The group's `<div
+ * data-slot="avatar-group">` holds an instance of the 32px fallback avatar per person, each showing
+ * its initials through `Label`. The demo's avatars hold pictures, but the image avatar's picture is
+ * an image paint no instance property sets, so each instance shows the initials its fallback holds.
+ *
+ * - `-space-x-2` draws as an item spacing of -8, each avatar 8px over the one before, the later on
+ *   top, as CSS paints a later sibling (`negativeRowSpacing` in `box-flow.ts`).
+ * - `[:where(&>*)]:ring-2 [:where(&>*)]:ring-background` reaches every avatar, so each instance
+ *   carries the 2px `background` ring as a shadow override. The avatar root's `muted` fill and its
+ *   clipping let the spread draw (probe PR2).
  */
-import { avatarFallbackClass, avatarImageClass, avatarRootClass, cn } from "@elmeragroup/fuse/recipe-catalog";
+import {
+  avatarFallbackClass,
+  avatarGroupClass,
+  avatarImageClass,
+  avatarRootClass,
+  cn,
+} from "@elmeragroup/fuse/recipe-catalog";
 
-import type { Cell, ComponentDefinition, PartDefinition } from "./component-spec";
+import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
 import { portraitPng } from "./portrait";
 
 /**
@@ -104,5 +122,50 @@ export const AVATAR: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [],
   parts: [FALLBACK, IMAGE],
+  swapProperties: [],
+};
+
+/**
+ * The initials of the docs Group demo's people, in its order. The compare renderer renders the same
+ * initials.
+ */
+export const AVATAR_GROUP_INITIALS = ["AL", "GH", "KJ"] as const;
+
+/**
+ * An avatar of the group, exposed, so a designer retypes its initials from the group's panel.
+ *
+ * @param initials - The avatar's initials, which the `Label` property sets.
+ * @returns The 32px fallback avatar, keyed by its initials.
+ */
+function memberOf(initials: string): InstanceDefinition {
+  return {
+    kind: "instance",
+    key: initials.toLowerCase(),
+    of: AVATAR,
+    cell: () => ({ content: "fallback", size: "32" }),
+    properties: () => ({ text: { Label: initials } }),
+    shownIn: () => true,
+    exposed: true,
+  };
+}
+
+/**
+ * A stack of avatars, as `<Avatar.Group>` around three `<Avatar.Root>`s. The recipe declares no axes,
+ * so the set's one property, `avatars`, names how many the stack holds.
+ */
+export const AVATAR_GROUP: ComponentDefinition = {
+  key: "avatar-group",
+  name: "Avatar group",
+  slot: "avatar-group",
+  axes: [{ name: "avatars", values: [String(AVATAR_GROUP_INITIALS.length)] }],
+  columnAxis: "avatars",
+  classesFor: () => avatarGroupClass,
+  states: {},
+  facts: new Map(),
+  omittedStates: new Set(),
+  label: undefined,
+  iconsFor: () => [],
+  parts: AVATAR_GROUP_INITIALS.map(memberOf),
+  undrawnChildren: () => 0,
   swapProperties: [],
 };

@@ -4,8 +4,8 @@
  * parts set through `align-self`, which settles once the parts map.
  */
 import { heightBounds, listNames } from "./box-sizing";
-import type { Feed, LayerStyle } from "./cascade";
-import { normalizeCss } from "./css-values";
+import type { ChildSpacing, CoverageNote, Feed, LayerStyle } from "./cascade";
+import { describeNumber, evaluateLength, normalizeCss, readNumber } from "./css-values";
 import type { VariableIndex } from "./css-values";
 import type {
   ChildLayerSpec,
@@ -161,6 +161,16 @@ export function readFlow(
     justify:
       autoStart !== undefined ? "SPACE_BETWEEN" : reader.has("justify-content") ? primaryAlign : "unset",
   };
+  // A flex item sits in no line box, so `vertical-align` does not apply to it (CSS Flexbox 1 §3), as
+  // an avatar's `align-middle` in an Avatar group.
+  for (const { style } of flex ? flow.parts : []) {
+    style.read(
+      "vertical-align",
+      (value) => value,
+      () => ({ outcome: "dropped", detail: "a flex item sits in no line box, so no line aligns it" }),
+      []
+    );
+  }
   return { layout: autoStart === "label-fills" ? { ...layout, labelFills: true } : layout, self };
 }
 
@@ -324,6 +334,70 @@ function stacksBlocks(reader: LayerStyle, flow: FlowLayers): boolean {
     flow.parts.every(({ style }) => BLOCK_LEVEL.has(normalizeCss(style.raw("display") ?? ""))) &&
     GAPS.every((property) => !reader.has(property))
   );
+}
+
+/** The reverse flag Tailwind's `space-x-*` multiplies its margins by, 0 unless `space-x-reverse` sets it. */
+const SPACE_X_REVERSE = "--tw-space-x-reverse";
+
+/**
+ * Read a negative `space-x-*` as the item spacing of a left-to-right flex row that draws every
+ * element child as a layer in its flow. Tailwind compiles `-space-x-2` to `--tw-space-x-reverse: 0`,
+ * `margin-inline-start: calc(L * var(--tw-space-x-reverse))` and `margin-inline-end: calc(L * calc(1 -
+ * var(--tw-space-x-reverse)))` on every child but the last, L being `calc(0.25rem * -2)`. So each
+ * child but the last ends -L early, and each child starts that far over the one before (CSS Flexbox 1
+ * §9.4), a later sibling painting over an earlier one (§5.4). A Figma row with that negative item
+ * spacing draws the same, the later layer on top (probe N7). L binds a synced variable whose code
+ * syntax it equals, else it is a literal. Any other shape, a positive `space-x-*` among them, reads
+ * nothing, so its rows stay unmapped.
+ *
+ * @param variables - The synced variables.
+ * @returns The reading `BoxCascade.spaceChildren` takes.
+ */
+export function negativeRowSpacing(variables: VariableIndex): ChildSpacing {
+  return (declarations) => {
+    const values = new Map(declarations.map(({ property, value }) => [property, normalizeCss(value)]));
+    const end = /^calc\((.+) \* calc\(1 - var\(--tw-space-x-reverse\)\)\)$/.exec(
+      values.get("margin-inline-end") ?? ""
+    )?.[1];
+    if (
+      end === undefined ||
+      values.size !== 3 ||
+      values.get(SPACE_X_REVERSE) !== "0" ||
+      values.get("margin-inline-start") !== `calc(${end} * var(${SPACE_X_REVERSE}))` ||
+      (evaluateLength(end) ?? 0) >= 0
+    ) {
+      return undefined;
+    }
+    const itemSpacing = readNumber(end, variables);
+    if (itemSpacing === undefined) {
+      return undefined;
+    }
+    const { outcome, detail } = describeNumber(itemSpacing);
+    const notes = new Map<string, CoverageNote>([
+      [
+        SPACE_X_REVERSE,
+        {
+          outcome: "dropped",
+          detail: "0 keeps the margins on the end side of each child, which the item spacing draws",
+        },
+      ],
+      [
+        "margin-inline-start",
+        {
+          outcome: "dropped",
+          detail: `0 while \`${SPACE_X_REVERSE}\` is 0, so the start side keeps no margin`,
+        },
+      ],
+      [
+        "margin-inline-end",
+        {
+          outcome,
+          detail: `${detail}, the item spacing: every child but the last ends that far early, and a later layer draws on top as a later sibling does`,
+        },
+      ],
+    ]);
+    return { itemSpacing, notes };
+  };
 }
 
 /** An axis that fills the room its parent gives it, as a stretched part fills its row's height. */

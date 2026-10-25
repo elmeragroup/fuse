@@ -247,6 +247,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./avatar-cell.ts")).avatar,
   },
   {
+    set: "avatar-group",
+    entry: "dist/avatar.js",
+    load: async () => (await import("./avatar-cell.ts")).avatarGroup,
+  },
+  {
     set: "meter",
     entry: "dist/meter.js",
     load: async () => (await import("./meter-cell.ts")).meter,

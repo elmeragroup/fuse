@@ -5,7 +5,7 @@
  * `label-layout.ts` sets its label and `placement.ts` places its parts. `component-spec.ts`
  * assembles a set from the root of each cell.
  */
-import { orderModified, readFlow, settleFlow, stretchedLayer } from "./box-flow";
+import { negativeRowSpacing, orderModified, readFlow, settleFlow, stretchedLayer } from "./box-flow";
 import type { Flow } from "./box-flow";
 import { describeColor, readPaint } from "./box-paint";
 import type { BoxPaint } from "./box-paint";
@@ -415,11 +415,10 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // Every part and icon is an element child, absolute or hidden ones too, and so is the element a
   // label's characters sit in, beside the ones the definition draws no layer for.
   const undrawn = box.undrawnChildren?.(cell);
-  cascade.spaceChildren(
+  const elementChildren =
     undrawn === undefined
       ? undefined
-      : shown.length + empty.length + slots.length + (label?.textElement === undefined ? 0 : 1) + undrawn
-  );
+      : shown.length + empty.length + slots.length + (label?.textElement === undefined ? 0 : 1) + undrawn;
   const flowing = shown.filter((part) => !outOfFlow(part.cascade.style));
   const flowingBefore = before.filter((part) => !outOfFlow(part.cascade.style));
   const flowingAfter = trailing.filter((part) => !outOfFlow(part.cascade.style));
@@ -454,6 +453,20 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     { sizing, limits, inside }
   );
   const { layout } = flow;
+  // A class that spaces every child but the last draws as the item spacing only where each element
+  // child is a part in the row's flow with no margin of its own, which would beat the class's
+  // `:where()`, beside no icon or text, and no gap adds to it.
+  const spacedRow =
+    layout.flex &&
+    layout.direction === "HORIZONTAL" &&
+    elementChildren === flowing.length &&
+    others.length === 0 &&
+    !["gap", "column-gap"].some((property) => reader.has(property)) &&
+    flowing.every(({ cascade: { style } }) => !style.has("margin-left") && !style.has("margin-right"));
+  const spaced = cascade.spaceChildren(
+    elementChildren,
+    spacedRow ? negativeRowSpacing(context.variables) : undefined
+  );
   const holder: Holder = {
     style: reader,
     layout,
@@ -648,6 +661,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // A grid in one column spaces its rows by `row-gap`, which `gap` sets too.
   const itemSpacing =
     space ??
+    spaced ??
     (layout.oneColumnGrid === true ? number("row-gap", "itemSpacing") : undefined) ??
     number("gap", "itemSpacing") ??
     ZERO;
