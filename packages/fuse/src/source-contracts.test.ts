@@ -95,6 +95,16 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["dropdown-menu", ["components/dropdown-menu/dropdown-menu.tsx"]],
   ["field", ["components/field/field.tsx"]],
   ["file-trigger", ["react-aria/file-trigger/file-trigger.tsx"]],
+  [
+    "file-upload",
+    [
+      "components/file-upload/file-upload-context.ts",
+      "components/file-upload/file-upload.tsx",
+      "components/file-upload/file-upload-trigger.tsx",
+      "components/file-upload/file-upload-description.tsx",
+      "components/file-upload/file-upload-dropzone.tsx",
+    ],
+  ],
   ["focusable", ["react-aria/focusable/focusable.tsx"]],
   ["form", ["components/form/form.tsx"]],
   ["grid-list", ["react-aria/grid-list/grid-list.tsx"]],
@@ -379,6 +389,7 @@ describe("RSC classification", () => {
     ["dialog", "Dialog"],
     ["dropdown-menu", "DropdownMenu"],
     ["field", "Field"],
+    ["file-upload", "FileUpload"],
     ["input-group", "InputGroup"],
     ["item", "Item"],
     ["navigation-menu", "NavigationMenu"],
@@ -526,6 +537,12 @@ describe("runtime listeners and layout motion", () => {
   // say the list is complete. Each owner's browser test covers its own cleanup.
   it("installs event listeners only from the reviewed owners", () => {
     expect(filesContainingCode(".addEventListener(").toSorted()).toEqual([
+      // Document `dragover` and `drop`, ref-counted across Roots: a file dropped outside every
+      // zone would otherwise open in the tab and replace the page.
+      "components/file-upload/document-drop-guard.ts",
+      // Document `paste` and `beforepaste`: Firefox targets `<body>` for a paste while a button has
+      // focus, so a listener on the Root would miss it.
+      "components/file-upload/file-upload.tsx",
       // Native `beforeinput`: React's `onBeforeInput` is a `textInput`/`keypress` polyfill that misses
       // paste in Firefox. The numeric filter strips a paste before maxlength.
       "components/input/input.tsx",

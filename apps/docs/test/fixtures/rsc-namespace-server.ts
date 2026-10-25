@@ -37,6 +37,7 @@ import { DataTableFilter } from "@elmeragroup/fuse/data-table-filter";
 import { Dialog } from "@elmeragroup/fuse/dialog";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import { Field } from "@elmeragroup/fuse/field";
+import { FileUpload } from "@elmeragroup/fuse/file-upload";
 import { InputGroup } from "@elmeragroup/fuse/input-group";
 import { Item } from "@elmeragroup/fuse/item";
 import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
@@ -285,6 +286,7 @@ function namespaceElements(): ReactElement[] {
       "Separator",
       "Title",
     ]),
+    ...renderNamespace("FileUpload", FileUpload, ["Root", "Dropzone", "Trigger", "Description"]),
     ...renderNamespace("InputGroup", InputGroup, ["Root", "Addon", "Button", "Text", "Input", "Textarea"]),
     ...renderNamespace("Item", Item, ["Root", "Group", "Separator"], {
       server: ["Media", "Content", "Actions", "Title", "Description", "Header", "Footer"],

@@ -144,6 +144,10 @@
       "types": "./src/field.ts",
       "import": "./src/field.ts"
     },
+    "./file-upload": {
+      "types": "./src/file-upload.ts",
+      "import": "./src/file-upload.ts"
+    },
     "./flags": {
       "types": "./src/flags.ts",
       "import": "./src/flags.ts"

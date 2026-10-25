@@ -5,7 +5,7 @@ import type { ComponentProps, MouseEvent, ReactElement, ReactNode } from "react"
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { definedProps } from "../../internal/defined-props";
-import { OWN_CLICK_SELECTOR, selectionReaches } from "../../internal/own-click";
+import { pressesRegion } from "../../internal/own-click";
 import { cn } from "../../styles/cn";
 import { Skeleton } from "../skeleton/skeleton";
 import { Table } from "../table/table";
@@ -25,48 +25,6 @@ const { emptyCell, head, skeleton, row: rowClass } = dataTableVariants();
 
 /** The cell type a row's `getAllCells()` returns. */
 type CellOf<TRow> = TRow extends RowSource<infer TCell> ? TCell : never;
-
-/**
- * Elements a click on a row must not also press the row through: the shared own-click set, plus
- * the ARIA widgets Fuse renders as non-native elements (Base UI's checkbox and radio spans, a
- * slider thumb, a date segment) that a table cell can hold. The slider's track has no role, so
- * its control is named by slot.
- */
-const INTERACTIVE_DESCENDANT = [
-  OWN_CLICK_SELECTOR,
-  "[role=checkbox]",
-  "[role=radio]",
-  "[role=switch]",
-  "[role=slider]",
-  "[role=spinbutton]",
-  "[role=textbox]",
-  "[role=combobox]",
-  "[role=menuitem]",
-  "[data-slot=slider-control]",
-].join(",");
-
-/**
- * Whether a click on a row presses it. React bubbles a click from a portal, such as an open menu,
- * to the `<tr>` that owns it in the React tree, though its DOM sits outside the row; such a click
- * never presses the row. Inside the row, an interactive element owns its click, and a click that
- * ends a text selection reaching into the row (a drag to copy an order number) selects, not
- * presses.
- *
- * @param target - The click's target.
- * @param row - The `<tr>` that received the click.
- * @returns `true` when the target sits inside the row's DOM and outside every interactive element
- * in it, and no text selection reaches into the row.
- */
-function pressesRow(target: EventTarget | null, row: Element): boolean {
-  if (!(target instanceof Element) || !row.contains(target)) {
-    return false;
-  }
-  const interactive = target.closest(INTERACTIVE_DESCENDANT);
-  if (interactive !== null && interactive !== row && row.contains(interactive)) {
-    return false;
-  }
-  return !selectionReaches(row);
-}
 
 function ariaSort(column: HeaderSource["column"]): "ascending" | "descending" | "none" | undefined {
   if (column.getCanSort?.() !== true) {
@@ -211,7 +169,7 @@ export function RowCells<TCell extends CellSource>({
         if (
           onPress !== undefined &&
           !event.defaultPrevented &&
-          pressesRow(event.target, event.currentTarget)
+          pressesRegion(event.target, event.currentTarget)
         ) {
           onPress(event);
         }
