@@ -2,11 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { fetchText } from "./docs-server";
 
-const OLD_RELEASE_CLAIMS = [
-  "Merging that PR publishes",
-  "every PR gets an installable build",
-  "package is bound to its release workflow",
-] as const;
+const OLD_RELEASE_CLAIMS = ["Merging that PR publishes", "every PR gets an installable build"] as const;
 
 describe("release readiness copy", () => {
   it("marks automated publishing and previews as pending target state, without the old unconditional claims", async () => {
@@ -39,8 +35,15 @@ describe("release readiness copy", () => {
     expect(html, "releases must label per-PR previews as planned, not available today").toContain(
       "Per-PR previews (planned)"
     );
-    expect(html, "releases must keep the token temporary and singular until the OIDC pivot").toContain(
-      "only long-lived credential"
+    expect(html, "releases must name trusted publishing over OIDC as the npm authentication").toContain(
+      "authenticates to npm through trusted publishing (OIDC)"
+    );
+    expect(
+      html,
+      "releases must describe signed provenance as current for publications from merges"
+    ).toContain("version a merge publishes carries a signed provenance attestation");
+    expect(html, "releases must not describe an npm token as a pipeline credential").not.toContain(
+      "npm token"
     );
     expect(
       html,
@@ -54,24 +57,15 @@ describe("release readiness copy", () => {
       html,
       "releases must not list the merge-suite theme contract as a packed-artifact gate"
     ).not.toContain("theme-contract test");
-    expect(
-      html,
-      "releases must frame Trusted Publishing/OIDC and provenance as pending target controls"
-    ).toContain("pending target controls");
+    expect(html, "releases must keep org-wide two-factor authentication a pending target control").toContain(
+      "two-factor authentication for every org member is still a pending target control"
+    );
     expect(html, "releases must not claim that merging a release PR publishes today").not.toContain(
       OLD_RELEASE_CLAIMS[0]
     );
     expect(html, "releases must not claim every PR gets an installable build today").not.toContain(
       OLD_RELEASE_CLAIMS[1]
     );
-    expect(
-      html,
-      "releases must not claim the package is already bound as an npm Trusted Publisher"
-    ).not.toContain(OLD_RELEASE_CLAIMS[2]);
-    expect(
-      html,
-      "releases must not assert that no npm token exists on a developer machine as a current construction"
-    ).not.toContain("no npm token exists on a developer machine");
   });
 });
 

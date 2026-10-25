@@ -23,7 +23,7 @@ export const PUBLISH_GATES = ["package:check", "size-limit", "test:packed-consum
  * runs the publish gates against the packed tarball, then returns its bytes. `dist/` is
  * rebuildable output, so no restoration is needed. The build and gates install and run
  * dependency code, so they run without the publish credentials; the engine captured its GitHub
- * token before calling this and reads the npm token only after it returns.
+ * token before calling this, and npm requests its OIDC token only after it returns.
  */
 export function pack(intent: ReleaseIntent): Uint8Array {
   return withoutReleaseCredentials(() => {

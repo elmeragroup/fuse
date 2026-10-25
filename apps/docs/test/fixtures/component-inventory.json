@@ -310,6 +310,16 @@
     "rsc": "client",
     "demos": ["file-trigger-basic.tsx", "file-trigger-modes.tsx"]
   },
+  "file-upload": {
+    "title": "File Upload",
+    "rsc": "client",
+    "demos": [
+      "file-upload-compact.tsx",
+      "file-upload-limits.tsx",
+      "file-upload-picker.tsx",
+      "file-upload-folders.tsx"
+    ]
+  },
   "focusable": {
     "title": "Focusable",
     "rsc": "client",

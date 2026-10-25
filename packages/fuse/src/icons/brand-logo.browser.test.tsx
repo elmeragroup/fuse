@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
+import "../../dist/styles.css";
+import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
-import { roleNamed } from "../../test/themed-browser-render";
+import { px, renderThemed, roleNamed } from "../../test/themed-browser-render";
+import { Button } from "../components/button/button";
+import { DropdownMenu } from "../components/dropdown-menu";
 import { BRAND_CODES, BRANDS } from "../theme/tokens/themes";
 import type { BrandCode, ThemeInput } from "../theme/tokens/themes";
 import { BrandLogo } from "./brand-logo";
+
+const DRAWN_BRANDS = BRAND_CODES.filter((code): code is Exclude<BrandCode, "elma"> => code !== "elma");
 
 describe("BrandLogo", () => {
   it("uses an explicit title as the accessible name without inventing a mark", () => {
@@ -77,8 +83,7 @@ describe("BrandLogo", () => {
         ],
       },
     } satisfies Record<Exclude<BrandCode, "elma">, { letteringFrom: number; markInks: readonly string[] }>;
-    const drawn = BRAND_CODES.filter((code): code is Exclude<BrandCode, "elma"> => code !== "elma");
-    for (const brand of drawn) {
+    for (const brand of DRAWN_BRANDS) {
       const { letteringFrom, markInks } = artwork[brand];
       const { host, unmount } = render(
         <div style={{ color: text, width: 1000 }}>
@@ -123,7 +128,7 @@ describe("BrandLogo", () => {
 
   it("paints every mark at least half of a 24px tile in both dimensions", () => {
     // Elmera has no mark artwork; the fallback tests above own its no-path contract.
-    for (const brand of BRAND_CODES.filter((code) => code !== "elma")) {
+    for (const brand of DRAWN_BRANDS) {
       const { host, unmount } = render(
         <div style={{ width: 24, height: 24 }}>
           <style>{"svg { display: block; width: 24px; height: 24px; }"}</style>
@@ -179,5 +184,118 @@ describe("BrandLogo", () => {
     expect(img.getAttribute("data-variant")).toBe("mark");
     expect(img.textContent).toBe("Elmera");
     expect(img.querySelector("svg")).toBeNull();
+  });
+});
+
+/** An element's laid-out width and height, read before transforms such as a menu's open animation. */
+function layoutSize(element: Element): readonly [number, number] {
+  const style = getComputedStyle(element);
+  return [px(style.width), px(style.height)];
+}
+
+/** The svg a named BrandLogo span draws. */
+function markSvg(name: string): SVGSVGElement {
+  const svg = roleNamed("img", name).querySelector("svg");
+  if (svg === null) {
+    throw new Error(`expected ${name} to draw an svg`);
+  }
+  return svg;
+}
+
+describe("BrandLogo mark sizing", () => {
+  // Oracles: Tailwind `size-3` is 0.75rem and `size-6` is 1.5rem, so 12px and 24px at the 16px
+  // root. The menu-row and Button recipes give an svg without a `size-` class `size-4`, 16px.
+
+  it("renders a size-3 mark in a menu item as a 12px svg filling its 12px span", async () => {
+    renderThemed(
+      <DropdownMenu.Root defaultOpen>
+        <DropdownMenu.Trigger>Brands</DropdownMenu.Trigger>
+        <DropdownMenu.Content>
+          <DropdownMenu.Item>
+            <BrandLogo brand="fkas" variant="mark" className="size-3" title="Small mark" />
+            Fjordkraft
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
+    );
+    await expect.element(page.getByRole("img", { name: "Small mark", exact: true })).toBeInTheDocument();
+    expect(layoutSize(roleNamed("img", "Small mark"))).toEqual([12, 12]);
+    expect(layoutSize(markSvg("Small mark"))).toEqual([12, 12]);
+  });
+
+  it("renders a size-6 mark as a 24px svg inside a Button and outside any row", () => {
+    renderThemed(
+      <>
+        <Button>
+          <BrandLogo brand="fkas" variant="mark" className="size-6" title="Button mark" />
+          Fjordkraft
+        </Button>
+        <div style={{ width: 1000 }}>
+          <BrandLogo brand="fkas" variant="mark" className="size-6" title="Standalone mark" />
+        </div>
+      </>
+    );
+    for (const name of ["Button mark", "Standalone mark"]) {
+      expect(layoutSize(markSvg(name)), name).toEqual([24, 24]);
+    }
+  });
+
+  it("gives an unsized mark the 16px icon size in a menu item and in a Button", async () => {
+    renderThemed(
+      <>
+        <Button>
+          <BrandLogo brand="fkas" variant="mark" title="Button mark" />
+          Fjordkraft
+        </Button>
+        <DropdownMenu.Root defaultOpen>
+          <DropdownMenu.Trigger>Brands</DropdownMenu.Trigger>
+          <DropdownMenu.Content>
+            <DropdownMenu.Item>
+              <BrandLogo brand="fkas" variant="mark" title="Row mark" />
+              Fjordkraft
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      </>
+    );
+    await expect.element(page.getByRole("img", { name: "Row mark", exact: true })).toBeInTheDocument();
+    for (const name of ["Button mark", "Row mark"]) {
+      expect(layoutSize(markSvg(name)), name).toEqual([16, 16]);
+    }
+  });
+
+  it("keeps a hidden drawn mark out of layout", () => {
+    // Oracle: the HTML `hidden` attribute, which the user agent renders as `display: none`. Fuse
+    // ships no preflight, so this suite's CSS adds no `[hidden]` rule of its own.
+    const { host } = renderThemed(<BrandLogo brand="fkas" variant="mark" hidden />);
+    const span = host.querySelector('[role="img"]');
+    if (span === null) {
+      throw new Error("expected the BrandLogo span");
+    }
+    expect(getComputedStyle(span).display).toBe("none");
+  });
+
+  it("renders every drawn brand's unsized mark outside any row at its artwork size", () => {
+    // Unit under test: BrandLogo's fallback size and clamp. Oracle: the bespoke mark's viewBox
+    // extent, which the artwork sets and BrandLogo doesn't.
+    for (const brand of DRAWN_BRANDS) {
+      const { unmount } = renderThemed(
+        <div style={{ width: 1000 }}>
+          <BrandLogo brand={brand} variant="mark" title="Mark" />
+        </div>
+      );
+      const svg = markSvg("Mark");
+      const [, , width, height] = (svg.getAttribute("viewBox") ?? "")
+        .trim()
+        .split(/[\s,]+/u)
+        .map(Number);
+      if (width === undefined || height === undefined || !(width > 0 && height > 0)) {
+        throw new Error(`expected ${brand}'s mark to have a viewBox, got ${svg.getAttribute("viewBox")}`);
+      }
+      const [svgWidth, svgHeight] = layoutSize(svg);
+      expect(Math.abs(svgWidth - width), `${brand} width ${svgWidth}`).toBeLessThanOrEqual(0.5);
+      expect(Math.abs(svgHeight - height), `${brand} height ${svgHeight}`).toBeLessThanOrEqual(0.5);
+      unmount();
+    }
   });
 });
