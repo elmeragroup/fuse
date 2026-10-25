@@ -159,10 +159,8 @@ export function checkComponentSet(spec: ComponentSetSpec): void {
       const link =
         layer.kind === "text"
           ? { property: layer.textProperty, defined: texts }
-          : layer.kind === "frame" || layer.kind === "instance"
-            ? { property: layer.visibleProperty, defined: booleans }
-            : undefined;
-      if (link?.property !== undefined && !link.defined.includes(link.property)) {
+          : { property: layer.visibleProperty, defined: booleans };
+      if (link.property !== undefined && !link.defined.includes(link.property)) {
         throw new Error(
           `${spec.name}: the variant ${variant.key} links ${link.property}, which the set does not define.`
         );

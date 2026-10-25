@@ -176,13 +176,153 @@ describe("an auto start margin on the last of two layers", () => {
 
   it.each([
     ["on the first of two layers", [caret("ml-auto", "start")]],
-    ["on the last of three layers", [caret("", "start"), caret("ml-auto", "end")]],
+    ["on the last of three layers after an icon", [caret("", "end"), caret("ml-auto", "end")]],
   ])("stays unmapped %s", async (_case, icons) => {
     const { variant, coverage } = await buildFixture(row(icons), { variables: SYNCED });
     expect(textOf(variant?.root)?.sizing.horizontal).toEqual(HUG);
     expect(notesOf(coverage, "ml-auto")).toEqual([
       ["margin-left", "unmapped", "the builder maps no Figma field from it"],
     ]);
+  });
+});
+
+// Oracle: CSS Flexbox 1 §8.1, as above. The auto margin on the last layer takes the row's free space,
+// so the layers before it sit packed at the start with the gap between them, the label at its own
+// width, and the last layer ends the row. A label right before the last layer that fills the room
+// the others and the gaps leave draws the same: a label paints nothing past its text, which starts at
+// its left. Worked by hand at 200px: a 16px icon, 8px, the label from 24px, 8px, the 16px caret from
+// 184px, the row's end. A row that centers its text would set the label's text away from its left.
+describe("an auto start margin on the last of several layers, after the label", () => {
+  const caret = (classes: string, side: "start" | "end") => ({
+    ...ICON,
+    key: `${side}-${classes}`,
+    side,
+    classes: `size-[16px] ${classes}`,
+  });
+  const row = (classes: string, characters: string) =>
+    chip(`flex w-[200px] gap-[8px] font-sans text-[14px]/[20px] text-[#000000] ${classes}`, {
+      label: { ...TEXT, characters },
+      iconsFor: () => [caret("", "start"), caret("ml-auto", "end")],
+    });
+  const textOf = (box: BoxSpec | undefined) => box?.children.find((child) => child.kind === "text");
+
+  it.each(["Two words", "One"])(
+    "fills the label %s and packs the row at its start with its gap",
+    async (words) => {
+      const { variant, coverage } = await buildFixture(row("", words), { variables: SYNCED });
+      expect([
+        variant?.root.primaryAlign,
+        variant?.root.itemSpacing,
+        textOf(variant?.root)?.sizing.horizontal,
+      ]).toEqual(["MIN", literal(8), FILL]);
+      expect(notesOf(coverage, "ml-auto")).toEqual([
+        [
+          "margin-left",
+          "literal",
+          "the auto margin takes the row's free space after the label, which fills that space in Figma and paints nothing past its text, so the layer ends the row",
+        ],
+      ]);
+      expect(unmapped(coverage)).toEqual([]);
+    }
+  );
+
+  // Oracle: CSS Box Alignment 3 §5.3. With no auto margin, `justify-between` spaces three layers out,
+  // so the label sits at its own width between the icons, as the rule above leaves such a row.
+  it("leaves a `justify-between` row with no auto margin as it was, its label at its own width", async () => {
+    const { variant } = await buildFixture(
+      chip("flex w-[200px] justify-between gap-[8px] font-sans text-[14px]/[20px] text-[#000000]", {
+        label: { ...TEXT, characters: "One" },
+        iconsFor: () => [caret("", "start"), caret("", "end")],
+      }),
+      { variables: SYNCED }
+    );
+    expect([variant?.root.primaryAlign, textOf(variant?.root)?.sizing.horizontal]).toEqual([
+      "SPACE_BETWEEN",
+      HUG,
+    ]);
+  });
+
+  it("stays unmapped where the row centers its text", async () => {
+    const { coverage } = await buildFixture(row("text-center", "Two words"), { variables: SYNCED });
+    expect(notesOf(coverage, "ml-auto")).toEqual([
+      ["margin-left", "unmapped", "the builder maps no Figma field from it"],
+    ]);
+  });
+});
+
+// Oracle: CSS 2.1 §9.2 and CSS Flexbox 1 §4: a part placed after the box's own text in the DOM is the
+// row's last flex item, after the text's anonymous item and the icons around the text.
+describe("a part the markup holds after the label", () => {
+  const shortcut: PartDefinition = {
+    ...dot("size-[4px]"),
+    key: "shortcut",
+    slot: "shortcut",
+    after: "label",
+  };
+  const head: PartDefinition = { ...dot("size-[4px]"), key: "head", slot: "head" };
+
+  it("draws after the start icons, the label and the end icons, and after the parts before it", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex gap-[8px] font-sans text-[14px]/[20px] text-[#000000] [&_svg]:size-[16px]", {
+        label: TEXT,
+        iconsFor: () => [ICON, { ...ICON, key: "end", name: "End", side: "end" }],
+        parts: [shortcut, head],
+      }),
+      { variables: SYNCED }
+    );
+    expect(layerNames(variant?.root)).toEqual(["head", "Icon", "text", "End", "shortcut"]);
+    expect(unmapped(coverage)).toEqual([]);
+  });
+});
+
+// Oracle: CSS 2.1 §10.3.7 and CSS Flexbox 1 §4.1, as for the indicator at the end above. An absolute
+// box first in the DOM leaves the flow, so the row's text is its only item, and the box sits `right`
+// from the row's padding box's end. A box with no width is as wide as the one 16px icon it holds.
+// Worked by hand at 200px with `pr-[32px]` and `right-[8px]`: the text fills 200 - 8 - 32 = 160px,
+// then 8px of gap, then the indicator from 176 to 192, 8px from the end, where a row padded 8px at its
+// end draws it after the text.
+describe("an absolute end indicator first in the DOM beside the row's own text", () => {
+  const row = (padding: string, shown = true) =>
+    chip(
+      `relative flex w-[200px] items-center gap-2 px-[8px] ${padding} font-sans text-[14px]/[20px] text-[#000000] [&_svg]:size-[16px]`,
+      {
+        label: TEXT,
+        parts: [
+          {
+            ...indicator("absolute right-[8px] flex items-center justify-center"),
+            shownIn: () => shown,
+            iconsFor: () => [{ ...ICON, direct: false }],
+          },
+        ],
+      }
+    );
+
+  it("draws the indicator in flow after the text, with the row padded to its offset", async () => {
+    const { variant, coverage } = await buildFixture(row("pr-[32px]"), { variables: SYNCED });
+    const root = variant?.root;
+    expect(layerNames(root)).toEqual(["text", "item-indicator"]);
+    expect(layerOf(root, "item-indicator")).not.toHaveProperty("absolute");
+    const text = layerOf(root, "text");
+    expect([
+      root?.paddingRight,
+      root?.itemSpacing,
+      text?.kind === "text" ? text.sizing.horizontal : text,
+    ]).toEqual([literal(8), literal(8), FILL]);
+    expect(notesOf(coverage, "absolute")).toEqual([
+      [
+        "position",
+        "literal",
+        "drawn in flow after the row's other layers, where the row's end padding, its gap and the part's width put it",
+      ],
+    ]);
+    expect(unmapped(coverage)).toEqual([]);
+  });
+
+  it("stays absolute where the padding leaves another room than the offset, the gap and the icon", async () => {
+    const { coverage } = await buildFixture(row("pr-[40px]"), { variables: SYNCED });
+    expect(
+      notesOf(coverage, "absolute").map(([property, outcome]) => [property, outcome])
+    ).not.toContainEqual(["position", "literal"]);
   });
 });
 
@@ -647,6 +787,86 @@ describe("a popup's motion", () => {
         "dropped",
         "the box sets no transform at rest, so the origin a transform moves about moves nothing",
       ],
+    ]);
+  });
+});
+
+// Oracle: CSS 2.1 §10.3.7 and §10.3.3. An absolutely placed popup with no width of its own shrinks to
+// fit its widest block, at least its `min-width`, and every block in it is that wide. A Figma column
+// whose layers all fill hugs only to its `minWidth` (PM), and one that hugs a layer takes that layer's
+// width while its filling layers stretch to it (PH2, PF). So the row the popup names hugs, every other
+// block fills, and a popup that names none hugs its `minWidth`.
+describe("a popup that hugs its rows and names the row that sets its width", () => {
+  const block = [{ className: "user agent style sheet, div", property: "display", value: "block" }] as const;
+  const row = (key: string, characters: string, setsWidth: boolean): PartDefinition => {
+    const part: PartDefinition = {
+      ...dot("flex px-[8px] font-sans text-[14px]/[20px] text-[#000000]"),
+      key,
+      slot: key,
+      label: { ...TEXT, characters },
+    };
+    return setsWidth ? { ...part, setsWidth: () => true } : part;
+  };
+  const popup = (classes: string, names: boolean) =>
+    chip(`${classes} p-[4px]`, {
+      elementDefaults: block,
+      parts: [
+        row("short", "Short", false),
+        {
+          ...dot(""),
+          key: "group",
+          slot: "group",
+          elementDefaults: block,
+          parts: [row("long", "A much longer row", names), row("mid", "Middle", false)],
+        },
+      ],
+    });
+  const sizingOf = (box: BoxSpec | undefined, name: string) => {
+    const layer = layerOf(box, name);
+    return layer?.kind === "frame" ? layer.sizing.horizontal : layer;
+  };
+
+  it("hugs the named row and the group around it, and fills every other block", async () => {
+    const { variant, coverage } = await buildFixture(popup("min-w-[128px]", true), { variables: SYNCED });
+    const root = variant?.root;
+    const group = layerOf(root, "group");
+    expect([
+      root?.sizing.horizontal,
+      sizingOf(root, "short"),
+      sizingOf(root, "group"),
+      group?.kind === "frame" ? sizingOf(group, "long") : group,
+      group?.kind === "frame" ? sizingOf(group, "mid") : group,
+    ]).toEqual([HUG, FILL, HUG, HUG, FILL]);
+    // The popup's 128px minimum less its 4px padding on each side keeps the named row at least 120px
+    // wide, so it never draws narrower than the rows that fill (PH3).
+    const long = group?.kind === "frame" ? layerOf(group, "long") : group;
+    expect(long?.kind === "frame" ? long.limits.minWidth : long).toEqual(literal(120));
+    expect(
+      notesOf(coverage, "user agent style sheet, div").map(([property, outcome]) => [property, outcome])
+    ).toEqual([
+      ["display", "literal"],
+      ["display", "literal"],
+    ]);
+    expect(unmapped(coverage)).toEqual([]);
+  });
+
+  it("fills every block of a popup that names no row, which hugs its minimum", async () => {
+    const { variant, coverage } = await buildFixture(popup("min-w-[128px]", false), { variables: SYNCED });
+    const root = variant?.root;
+    expect([root?.limits.minWidth, sizingOf(root, "short"), sizingOf(root, "group")]).toEqual([
+      literal(128),
+      FILL,
+      FILL,
+    ]);
+    expect(unmapped(coverage)).toEqual([]);
+  });
+
+  it("leaves a hugging block box with no minimum and no named row as it was, its display unmapped", async () => {
+    const { coverage } = await buildFixture(popup("", false), { variables: SYNCED });
+    expect(notesOf(coverage, "user agent style sheet, div")).toContainEqual([
+      "display",
+      "unmapped",
+      expect.any(String),
     ]);
   });
 });

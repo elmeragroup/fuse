@@ -44,6 +44,11 @@ describe("the kit check of BOOLEAN properties and turns", () => {
       "Button: the variant button/size=md links Detail, which the set does not define.",
     ],
     [
+      "an icon that links a BOOLEAN property the set lacks",
+      nestedKit([{ ...CHECK, visibleProperty: "Detail" }]),
+      "Button: the variant button/size=md links Detail, which the set does not define.",
+    ],
+    [
       "a BOOLEAN property named as a TEXT property",
       withBooleans(
         {

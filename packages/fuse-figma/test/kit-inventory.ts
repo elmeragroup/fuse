@@ -159,8 +159,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     sets: [
       // 2 sizes in 4 states, holding the placeholder or a value, closed and open.
       { key: "select-trigger", name: "Select trigger", variants: 32, previewed: 32 },
-      // The plain caption every menu family shares.
-      { key: "menu-group-label", name: "Menu group label", variants: 1, previewed: 1 },
+      // The plain caption, and Dropdown menu's Medium caption, plain and inset.
+      { key: "menu-group-label", name: "Menu group label", variants: 3, previewed: 3 },
       // The hairline between groups.
       { key: "menu-separator", name: "Menu separator", variants: 1, previewed: 1 },
       // Selected off and on, at rest, highlighted and disabled.
@@ -179,6 +179,25 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "popover-content", name: "Popover content", variants: 1, previewed: 1 },
       // Below the outline Button trigger.
       { key: "popover-open", name: "Popover (open)", variants: 1, previewed: 1 },
+    ],
+  },
+  {
+    slug: "dropdown-menu",
+    name: "Dropdown menu",
+    sets: [
+      // Default and destructive, plain and inset, at rest, highlighted, focused and disabled.
+      { key: "dropdown-menu-item", name: "Dropdown menu item", variants: 16, previewed: 16 },
+      // Checked off and on, at rest, highlighted, focused and disabled.
+      { key: "dropdown-menu-checkbox-item", name: "Dropdown menu checkbox item", variants: 8, previewed: 8 },
+      { key: "dropdown-menu-radio-item", name: "Dropdown menu radio item", variants: 8, previewed: 8 },
+      // At rest, highlighted, focused, open and disabled.
+      { key: "dropdown-menu-sub-trigger", name: "Dropdown menu sub trigger", variants: 5, previewed: 5 },
+      // The Basic, Checkboxes, Radio group, Destructive and Submenu demos' popups.
+      { key: "dropdown-menu-popup", name: "Dropdown menu popup", variants: 5, previewed: 5 },
+      // The Submenu demo's submenu.
+      { key: "dropdown-menu-sub-content", name: "Dropdown menu sub content", variants: 1, previewed: 1 },
+      // Below the outline Button trigger, the Basic demo's popup.
+      { key: "dropdown-menu-open", name: "Dropdown menu (open)", variants: 1, previewed: 1 },
     ],
   },
   // The default, outline and dashed outline frames.

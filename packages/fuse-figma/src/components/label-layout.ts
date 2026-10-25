@@ -669,6 +669,24 @@ function spacedFirst(holder: Holder, label: LabelDefinition, across: Across): bo
   );
 }
 
+/**
+ * Whether a flex row's text item draws as a text that fills the room before the row's last layer,
+ * whose auto start margin takes the free space (CSS Flexbox 1 §8.1), as `readAutoStart` in
+ * `box-flow.ts` reads it for three or more layers: the label sits right before that layer and sets its
+ * lines from the start. The label then paints nothing past its text, so a fill draws what CSS draws
+ * at any length of text that fits.
+ */
+function fillsBeforeMargin(holder: Holder, label: LabelDefinition, across: Across): boolean {
+  const { layout, layers } = holder;
+  return (
+    layout.direction === "HORIZONTAL" &&
+    layout.labelFills === true &&
+    layers.length > 2 &&
+    layers.at(-2) === label.name &&
+    across === "LEFT"
+  );
+}
+
 /** What a row's `justify-content` draws where its label fills the room as {@link spacedFirst} says. */
 const SPACED_FIRST =
   "the label fills the room the other layer leaves, so nothing is left to space out, and the row packs its layers at the start with its gap between them";
@@ -791,8 +809,10 @@ function readLabelLayout(
     definite && wrapping && item !== undefined ? refuseItem(holder, item, label, across) : undefined;
   // The item never shrinks below its one line, so it sits at its own width, which a hugging text draws.
   const ownWidth = placed !== undefined && item === "flex" && neverWraps(style, characters);
+  const beforeMargin = definite && !capped && item === "flex" && fillsBeforeMargin(holder, label, across);
   const spaced =
-    !capped && placed !== undefined && !ownWidth && item === "flex" && spacedFirst(holder, label, across);
+    beforeMargin ||
+    (!capped && placed !== undefined && !ownWidth && item === "flex" && spacedFirst(holder, label, across));
   const refusal = capped ? CAPPED : ownWidth || spaced ? undefined : placed;
   if (spaced) {
     style.read(
@@ -803,7 +823,10 @@ function readLabelLayout(
       style.feed("primaryAlign", path.slice(0, -1))
     );
   }
-  const fills = definite && refusal === undefined && !ownWidth && (wrapping || maxLines !== undefined);
+  const fills =
+    definite &&
+    refusal === undefined &&
+    (beforeMargin || (!ownWidth && (wrapping || maxLines !== undefined)));
   const truncation = fills && maxLines !== undefined ? { maxLines } : undefined;
   if (refusal !== undefined) {
     style.read(

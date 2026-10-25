@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { childNamed, color, fixtureFile, float } from "./fake-fixtures.ts";
+import { childNamed, color, fixtureFile, float, onlyChildOfType } from "./fake-fixtures.ts";
 
 const PRIMARY = { r: 0, g: 0, b: 1, a: 1 };
 
@@ -574,5 +574,153 @@ describe("an empty TEXT property keeps a filling text's width and one line's hei
     const { property, instance, mainText } = await inputLike();
     instance.setProperties({ [property]: "" });
     expect(kept(instance)).toEqual([mainText.width, mainText.height, "FILL", "HEIGHT", 36]);
+  });
+});
+
+describe("rule 43: one icon instance links a BOOLEAN's visible and an INSTANCE_SWAP together (PI2, PI3)", () => {
+  /**
+   * The set PI2 built: two 16px glyph components, `Icon/A` and `Icon/B`, and a variant row that hugs,
+   * gap 8 and padded 8 across, holding an instance of `Icon/A` named `icon` and a 14px text. The set
+   * has a BOOLEAN `Icon`, default false, and an INSTANCE_SWAP `Icon glyph`, default `Icon/A`, and the
+   * icon links both.
+   */
+  async function iconRow() {
+    const { figma } = probeFile();
+    await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+    const [a, b] = ["Icon/A", "Icon/B"].map((name) => {
+      const glyph = figma.createComponent();
+      glyph.name = name;
+      glyph.resize(16, 16);
+      return glyph;
+    });
+    if (a === undefined || b === undefined) {
+      throw new Error("no glyphs");
+    }
+    const row = figma.createComponent();
+    row.name = "state=rest";
+    row.layoutMode = "HORIZONTAL";
+    row.layoutSizingHorizontal = "HUG";
+    row.layoutSizingVertical = "HUG";
+    row.itemSpacing = 8;
+    row.paddingLeft = 8;
+    row.paddingRight = 8;
+    const icon = a.createInstance();
+    icon.name = "icon";
+    row.appendChild(icon);
+    const text = figma.createText();
+    text.characters = "Rename";
+    row.appendChild(text);
+    const set = figma.combineAsVariants([row], figma.currentPage);
+    const shown = set.addComponentProperty("Icon", "BOOLEAN", false);
+    const glyph = set.addComponentProperty("Icon glyph", "INSTANCE_SWAP", a.id);
+    icon.componentPropertyReferences = { visible: shown, mainComponent: glyph };
+    return { a, b, row, icon, ids: { shown, glyph } };
+  }
+
+  it("reads both links back and hides the main's icon while the BOOLEAN starts false", async () => {
+    const { icon, ids } = await iconRow();
+    expect([icon.componentPropertyReferences, icon.visible]).toEqual([
+      { visible: ids.shown, mainComponent: ids.glyph },
+      false,
+    ]);
+  });
+
+  it("shows, swaps and hides an instance's icon, keeping both links and the swap value", async () => {
+    const { a, b, row, ids } = await iconRow();
+    const instance = row.createInstance();
+    const read = async () => {
+      const icon = childNamed(instance, "INSTANCE", "icon");
+      return [icon.visible, (await icon.getMainComponentAsync())?.name, icon.componentPropertyReferences];
+    };
+    const links = { visible: ids.shown, mainComponent: ids.glyph };
+    expect(await read()).toEqual([false, a.name, links]);
+    instance.setProperties({ [ids.shown]: true });
+    expect(await read()).toEqual([true, a.name, links]);
+    instance.setProperties({ [ids.glyph]: b.id });
+    expect(await read()).toEqual([true, b.name, links]);
+    instance.setProperties({ [ids.shown]: false });
+    expect([...(await read()), instance.componentProperties[ids.glyph]]).toEqual([
+      false,
+      b.name,
+      links,
+      { type: "INSTANCE_SWAP", value: b.id },
+    ]);
+    instance.setProperties({ [ids.shown]: true });
+    expect(await read()).toEqual([true, b.name, links]);
+  });
+
+  /** The icon's name and whether the instance lists its `name` among the overrides. */
+  const nameOf = (instance: InstanceNode) => {
+    const icon = onlyChildOfType(instance, "INSTANCE");
+    return [
+      icon.name,
+      instance.overrides.find((entry) => entry.id === icon.id)?.overriddenFields.includes("name") === true,
+    ];
+  };
+
+  // PI3: the swap keeps `icon` and lists `name`; a swap back to `Icon/A` keeps it listed.
+  it("keeps the icon's name through a swap and back, and lists its name among the overrides (PI3)", async () => {
+    const { a, b, row, ids } = await iconRow();
+    const instance = row.createInstance();
+    instance.setProperties({ [ids.shown]: true });
+    expect(nameOf(instance)).toEqual(["icon", false]);
+    instance.setProperties({ [ids.glyph]: b.id });
+    expect(nameOf(instance)).toEqual(["icon", true]);
+    instance.setProperties({ [ids.glyph]: a.id });
+    expect(nameOf(instance)).toEqual(["icon", true]);
+  });
+
+  // PI3: a name a designer gave the icon stays through the swap.
+  it("keeps a hand-set name through a swap (PI3)", async () => {
+    const { b, row, ids } = await iconRow();
+    const instance = row.createInstance();
+    onlyChildOfType(instance, "INSTANCE").name = "custom";
+    instance.setProperties({ [ids.shown]: true, [ids.glyph]: b.id });
+    expect(nameOf(instance)).toEqual(["custom", true]);
+  });
+});
+
+describe("rule 44: a minimum width on an instance root is an override that stays listed (PH3)", () => {
+  /** PH3's row: a component fixed 88 wide with a text, and an instance of it in a hugging column. */
+  async function minimumRow() {
+    const { figma } = probeFile();
+    await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+    const row = figma.createComponent();
+    row.layoutMode = "HORIZONTAL";
+    row.resize(88, 36);
+    const label = figma.createText();
+    label.characters = "Messages";
+    row.appendChild(label);
+    const column = figma.createFrame();
+    column.layoutMode = "VERTICAL";
+    column.layoutSizingHorizontal = "HUG";
+    column.layoutSizingVertical = "HUG";
+    const instance = row.createInstance();
+    column.appendChild(instance);
+    return instance;
+  }
+
+  /** The fields the instance's root lists among its overrides. */
+  const listed = (instance: InstanceNode) =>
+    instance.overrides.find((entry) => entry.id === instance.id)?.overriddenFields ?? [];
+
+  it("lists minWidth and minHeight once minWidth is written, with minHeight reading null", async () => {
+    const instance = await minimumRow();
+    instance.minWidth = 88;
+    expect([instance.minWidth, instance.minHeight, listed(instance)]).toEqual([
+      88,
+      null,
+      expect.arrayContaining(["minWidth", "minHeight"]),
+    ]);
+  });
+
+  it("keeps both listed after a reset to null", async () => {
+    const instance = await minimumRow();
+    instance.minWidth = 88;
+    instance.minWidth = null;
+    expect([instance.minWidth, listed(instance)]).toEqual([
+      null,
+      expect.arrayContaining(["minWidth", "minHeight"]),
+    ]);
   });
 });

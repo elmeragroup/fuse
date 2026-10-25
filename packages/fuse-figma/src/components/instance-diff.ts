@@ -8,6 +8,7 @@
  */
 import { isDeepStrictEqual } from "node:util";
 
+import { drawsAtOwnWidth } from "./hugging-rows";
 import { ringFill } from "./kit-spec";
 import type {
   BoxSpec,
@@ -71,6 +72,8 @@ type FieldValue =
 
 /** What the diff gathers as it walks the two roots. */
 type Found = {
+  /** The sizing of the inner root built in place, which the instance takes. */
+  readonly root: SizingSpec;
   readonly text: Map<string, string>;
   readonly swap: Map<string, string>;
   readonly overrides: InstanceOverride[];
@@ -88,6 +91,8 @@ type Found = {
  * - The root's sizing is the instance's, whatever the outer layout makes of each axis: a fill, a
  *   length or a hug (N4). The layers inside guard it, since a layer that sizes against the root's
  *   length draws another way where that length changes.
+ * - A text the variant fills across, a direct child of a root the instance hugs, draws at its own
+ *   width, as the text built in place hugs (PH2).
  * - Every other field, the kinds and keys of a box's layers among them, stays unmapped where it
  *   differs, and the diff compares no layer of a box whose layers differ.
  *
@@ -96,7 +101,13 @@ type Found = {
  * @returns The property values, overrides and sizing the instance carries, and what it cannot.
  */
 export function diffInstance(inPlace: ComponentRootSpec, variant: ComponentRootSpec): InstanceDiff {
-  const found: Found = { text: new Map(), swap: new Map(), overrides: [], unmapped: [] };
+  const found: Found = {
+    root: inPlace.sizing,
+    text: new Map(),
+    swap: new Map(),
+    overrides: [],
+    unmapped: [],
+  };
   diffBox(found, [], inPlace, variant, "root");
   return {
     text: Object.fromEntries(found.text),
@@ -291,6 +302,9 @@ function diffText(
       if (!isDeepStrictEqual(inPlace.color, variant.color)) {
         found.overrides.push({ path, field: "textColor", color: inPlace.color });
       }
+    } else if (field === "sizing" && drawsAtOwnWidth(found.root, path, inPlace.sizing, variant.sizing)) {
+      // The variant's filling text draws at its own width once the instance hugs (PH2).
+      continue;
     } else if (field === "align" && inPlace.align.vertical === variant.align.vertical) {
       // A label's TEXT property can give it more lines, which the alignment across places, so the
       // instance carries a different one as an override (NA), as Empty's `text-center` reaches its

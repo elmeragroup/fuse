@@ -59,6 +59,14 @@ export type IconSlot = {
    * inherits. An icon without them takes its style from its boxes alone.
    */
   readonly classes?: string;
+  /**
+   * The BOOLEAN property that shows or hides the icon, which links the icon layer's `visible` beside
+   * its swap link (PI2), or undefined for an icon that shows wherever its cell lists it. A cell lists
+   * an optional icon wherever the set can show it, and the markup renders it only while the property
+   * is on. A class that reads whether the icon is there, through an `svg` inside `:has()`, stops the
+   * build, as it does for an optional part.
+   */
+  readonly optional?: BooleanPropertySpec;
 };
 
 /**
@@ -177,7 +185,8 @@ export type LabelDefinition = {
 
 /**
  * What the root, or a part below it, renders in a cell: its classes and its children. The
- * children sit in DOM order: the parts first, then the start icons, the label and the end icons.
+ * children sit in DOM order: the parts first, then the start icons, the label and the end icons, and
+ * last the parts whose `after` names the label.
  */
 export type BoxDefinition = {
   /** The recipe's class string for one cell. */
@@ -237,6 +246,12 @@ export type ElementSelector = {
    * alone name.
    */
   readonly prefixes?: Readonly<Record<string, string>>;
+  /**
+   * The attributes whose values end with a suffix, each name in lowercase, as `[data-slot$="-label"]`
+   * matches the group label of Select and of Dropdown menu, which name their slots by family. An empty
+   * suffix matches nothing, as in CSS. Undefined for an element the other fields name.
+   */
+  readonly suffixes?: Readonly<Record<string, string>>;
 };
 
 /** One declaration of an element's `style` attribute, such as Base UI's `width: 85%` on a meter's fill. */
@@ -267,6 +282,17 @@ export type PartDefinition = BoxDefinition & {
    * a part whose markup carries no `style`.
    */
   readonly styleFor?: (cell: Cell) => readonly InlineDeclaration[];
+  /**
+   * `"label"` for a part the markup holds after its box's label and end icons, as a Dropdown menu
+   * row's shortcut follows the row's own text, so its layer sits after theirs. Undefined for a part
+   * that sits before them, as the box's parts do by default.
+   */
+  readonly after?: "label";
+  /**
+   * Whether the part is the row that sets the width of a popup that hugs its rows, in a cell, as
+   * `hugging-rows.ts` says: it hugs across, and its siblings fill. Undefined for a part that never is.
+   */
+  readonly setsWidth?: (cell: Cell) => boolean;
 } & (
     | {
         /** The part's `data-slot`, which names its layer. */
@@ -336,6 +362,11 @@ export type InstanceDefinition = {
    * wherever a cell renders it.
    */
   readonly optional?: BooleanPropertySpec;
+  /**
+   * Whether the part is the row that sets the width of a popup that hugs its rows, in a cell, as
+   * `hugging-rows.ts` says: it hugs across, and its siblings fill. Undefined for a part that never is.
+   */
+  readonly setsWidth?: (cell: Cell) => boolean;
   /** True where a designer sets the inner set's properties from the outer instance's panel. */
   readonly exposed?: true;
   /**
@@ -725,7 +756,7 @@ function optionalParts(
   cells: readonly Cell[],
   inside: OptionalPart["inside"]
 ): readonly OptionalPart[] {
-  return allPartsOf(definition).flatMap((part): OptionalPart[] =>
+  const parts = allPartsOf(definition).flatMap((part): OptionalPart[] =>
     part.optional === undefined
       ? []
       : [
@@ -733,10 +764,25 @@ function optionalParts(
             name: "kind" in part ? part.of.slot : partName(part),
             property: part.optional,
             slots: renderedSlots(part, cells),
+            elements: [],
             inside,
           },
         ]
   );
+  // An icon is an `<svg>` with no slot, listed once by its key however many cells show it.
+  const icons = new Map(
+    [definition, ...partsOf(definition)].flatMap((box) =>
+      cells.flatMap((cell) => box.iconsFor(cell).map((slot) => [slot.key, slot] as const))
+    )
+  );
+  return [
+    ...parts,
+    ...[...icons.values()].flatMap((slot): OptionalPart[] =>
+      slot.optional === undefined
+        ? []
+        : [{ name: slot.name, property: slot.optional, slots: [], elements: ["svg"], inside }]
+    ),
+  ];
 }
 
 /**

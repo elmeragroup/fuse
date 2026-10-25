@@ -12,7 +12,7 @@ import { forcedAttributesFor, renderCellHtml } from "../src/compare/cell-rendere
 import type { CellRendering } from "../src/compare/cell-renderers.ts";
 import { splitClasses } from "../src/components/cascade.ts";
 import { splitClassName } from "../src/components/class-name.ts";
-import { variantKey } from "../src/components/component-spec.ts";
+import { matrixCells, variantKey } from "../src/components/component-spec.ts";
 import type {
   BoxDefinition,
   Cell,
@@ -24,6 +24,7 @@ import {
   allPartsOf,
   framePartsOf,
   instanceRootSlotOf,
+  partsOf,
   rootSlotOf,
 } from "../src/components/definition-parts.ts";
 import { labelCharacters } from "../src/components/label-layout.ts";
@@ -32,6 +33,7 @@ import {
   ancestorIndexes,
   ancestorsOf,
   elementsNaming,
+  iconsRenderedIn,
   inside,
   isRoot,
   labelHolder,
@@ -128,7 +130,8 @@ function attributeConditions(box: BoxDefinition, cell: Cell): ReadonlySet<string
 
 /**
  * The icons a cell places in a box and the parts it renders below it, in DOM order: a part's
- * icons sit inside it, before the box's own. Each names its owner by the box's part path.
+ * icons sit inside it, before the box's own, and a part whose `after` names the label holds its
+ * icons after them. Each names its owner by the box's part path.
  */
 function slotIcons(
   box: BoxDefinition,
@@ -136,13 +139,19 @@ function slotIcons(
   cell: Cell,
   turnedOn: ReadonlySet<string>
 ): readonly MarkupIcon[] {
+  const partIcons = (after: boolean) =>
+    framePartsOf(box)
+      .filter((part) => rendersIn(part, cell, turnedOn) && (part.after === "label") === after)
+      .flatMap((part) => slotIcons(part, `${path}/${pathSegment(part, box.parts ?? [])}`, cell, turnedOn));
   return [
-    ...framePartsOf(box)
-      .filter((part) => rendersIn(part, cell, turnedOn))
-      .flatMap((part) => slotIcons(part, `${path}/${pathSegment(part, box.parts ?? [])}`, cell, turnedOn)),
-    ...box
-      .iconsFor(cell)
-      .map(({ direct, dataIcon, classes }) => ({ owner: path, direct, dataIcon, classes })),
+    ...partIcons(false),
+    ...iconsRenderedIn(box, cell, turnedOn).map(({ direct, dataIcon, classes }) => ({
+      owner: path,
+      direct,
+      dataIcon,
+      classes,
+    })),
+    ...partIcons(true),
   ];
 }
 
@@ -373,7 +382,8 @@ function checkElementChildren(
   }
   const labelElement = box.label?.shownIn(cell) === true && box.label.textElement !== undefined ? 1 : 0;
   const drawn =
-    (box.parts ?? []).filter((part) => rendersIn(part, cell, turnedOn)).length + box.iconsFor(cell).length;
+    (box.parts ?? []).filter((part) => rendersIn(part, cell, turnedOn)).length +
+    iconsRenderedIn(box, cell, turnedOn).length;
   expect(
     elements.filter((element) => element.parent === index),
     where
@@ -382,12 +392,15 @@ function checkElementChildren(
 
 /**
  * The ways the markup check renders each cell: with every BOOLEAN property at its default, as the
- * previews show it, and, where a part hides behind a property that starts false, once more with each
- * such property turned on, so the check reaches the parts they hide.
+ * previews show it, and, where a part or an icon hides behind a property that starts false, once more
+ * with each such property turned on, so the check reaches the parts and icons they hide.
  */
 function renderingsOf(definition: ComponentDefinition): readonly ReadonlySet<string>[] {
+  const icons = [definition, ...partsOf(definition)].flatMap((box) =>
+    matrixCells(definition.axes).flatMap((cell) => box.iconsFor(cell))
+  );
   const startingFalse = new Set(
-    allPartsOf(definition).flatMap(({ optional }) =>
+    [...allPartsOf(definition), ...icons].flatMap(({ optional }) =>
       optional === undefined || optional.defaultValue ? [] : [optional.name]
     )
   );

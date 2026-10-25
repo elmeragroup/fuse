@@ -11,7 +11,14 @@ import { namedClasses, slotReadsOf } from "./css-selector";
 
 describe("slotReadsOf", () => {
   it("reads no part where a data-slot sits outside any :has()", () => {
-    expect(slotReadsOf(".x > [data-slot=chip-dot]")).toEqual({ kind: "read", tests: [] });
+    expect(slotReadsOf(".x > [data-slot=chip-dot]")).toEqual({ kind: "read", tests: [], elements: [] });
+  });
+
+  it("reads an element type inside a :has(), and none outside one", () => {
+    expect([slotReadsOf(".x:has( > svg)"), slotReadsOf(".x svg")]).toEqual([
+      { kind: "read", tests: [], elements: [{ element: "svg", clause: ":has( > svg)" }] },
+      { kind: "read", tests: [], elements: [] },
+    ]);
   });
 
   it.each([

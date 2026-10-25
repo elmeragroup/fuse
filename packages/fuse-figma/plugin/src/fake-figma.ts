@@ -11,10 +11,10 @@
  * run stopped before its first write.
  *
  * The fake models the Figma rules below. Each rule a real file showed in 2026-10 names that run.
- * Rules 12 to 40 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
- * Import test` from 2026-10-22 to 2026-10-24: P0 and P0b read the kit's nodes, P1 to P9, PB, PR,
- * PQ, PD, PL, PF, PH, PZ, PI, PZ2, N1 to N5 and NS built nodes on a scratch page, and P9b stored
- * images and built no node.
+ * Rules 12 to 44 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
+ * Import test` from 2026-10-22 to 2026-10-25: P0 and P0b read the kit's nodes, P1 to P9, PB, PR,
+ * PQ, PD, PL, PF, PH, PZ, PI, PZ2, N1 to N5, NS, NA, NH, PI2, PI3 and PH3 built nodes on a scratch page, and
+ * P9b stored images and built no node.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
  *    COLOR variable in the collections' default modes, whatever opacity it was given. Two runs
@@ -319,6 +319,20 @@
  *    read FIXED with STRETCH and FILL once shown (NH). The owner's file read Alert's and Empty's hidden
  *    actions that way after an Apply. The fake hides a layer only through a BOOLEAN property (rule
  *    25), and reads a hidden layer that hugs as it reads a shown one, which no probe contradicted.
+ * 43. One icon instance links a BOOLEAN's `visible` and an INSTANCE_SWAP's `mainComponent` together.
+ *    On 2026-10-25 an `Icon/A` instance in a hugging row, gap 8, took both links and read both back;
+ *    with the BOOLEAN's default false it was hidden in the main and in an instance, and the row was
+ *    59 wide. Setting it true showed the icon (83 wide), a swap through the property to `Icon/B` kept
+ *    it shown with both links, and false hid it again with the swap value kept (PI2). Rules 25 and 34
+ *    already read the two links apart, so the fake needs nothing more for them. The swap listed the
+ *    icon's `name` in the instance's `overrides`, while the layer kept its name `icon`, a hand-set
+ *    `custom` too, and a swap back to `Icon/A` still listed `name` (PI3). So a layer a property swaps
+ *    keeps its name, and the fake lists `name` among its overrides from then on.
+ * 44. A `minWidth` written on an instance is an override. On 2026-10-25 a fresh instance listed
+ *    `minWidth` and `minHeight` on its root after a `minWidth` write alone, with `minHeight` reading
+ *    null, and kept both listed after `minWidth` went back to null (PH3). The fake lists both from the
+ *    first write on. It does not lay out, so the minimum clamps no size. No probe wrote another limit
+ *    on an instance, so the fake lists none for those.
  *
  * An instance's sublayers show the layers of its main component, and a nested instance's sublayers
  * the sublayers its main layer shows. An override, such as the color an icon layer gives its glyph,
@@ -1546,6 +1560,11 @@ function storeLimit(state: NodeState, field: LimitField, value: number | null): 
 function setLimit(state: NodeState, field: LimitField, value: number | null): void {
   storeLimit(state, field, value);
   write(state, field);
+  // Rule 44: a minimum width written on an instance lists both minimums among its overrides.
+  if (field === "minWidth" && state.type === "INSTANCE") {
+    markOverride(state, "minWidth");
+    markOverride(state, "minHeight");
+  }
 }
 
 /** Write the number a node field takes, as a binding or a literal write does. */
@@ -3427,6 +3446,8 @@ const OVERRIDE_FIELDS: ReadonlyMap<string, readonly NodeChangeProperty[]> = new 
   ["radii", ["cornerRadius", "topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius"]],
   ["characters", ["characters"]],
   ["textAlignHorizontal", ["textAlignHorizontal"]],
+  ["minWidth", ["minWidth"]],
+  ["minHeight", ["minHeight"]],
 ]);
 
 /**
@@ -3507,7 +3528,8 @@ function shownProperties(state: NodeState): ReadonlyMap<string, ShownProperty> {
 
 /**
  * Swap each layer a set INSTANCE_SWAP value the instance shows links to the component the value
- * names (rule 34). A layer whose property no instance set shows its main layer's component.
+ * names (rule 34). The layer keeps its name, and `overrides` lists its `name` (rule 43). A layer whose
+ * property no instance set shows its main layer's component.
  */
 function applySwapValues(state: NodeState): void {
   for (const [id, { type, value, given }] of shownProperties(state)) {
@@ -3518,6 +3540,7 @@ function applySwapValues(state: NodeState): void {
     for (const layer of linkedBelow(state, "mainComponent", id)) {
       if (layer.main !== component) {
         swapTo(layer, component);
+        layer.overridden.add("name");
       }
     }
   }

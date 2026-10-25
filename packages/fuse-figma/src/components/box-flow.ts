@@ -139,59 +139,83 @@ export function readFlow(
     flex &&
     (column ? box.sizing.vertical : box.sizing.horizontal).kind === "hug" &&
     (column ? box.limits.minHeight : box.limits.minWidth) === undefined;
-  const autoStart = flex && !column && readAutoStart(reader, flow);
+  const autoStart = flex && !column ? readAutoStart(reader, flow) : undefined;
   const alignments = hugged ? HUGGED_ALIGNMENTS : PRIMARY_ALIGNMENTS;
-  const primaryAlign = autoStart
-    ? (alignments.get("space-between")?.align ?? unset)
-    : (readAlign(reader, "justify-content", "primary", alignments, reader.feed("primaryAlign")) ?? unset);
-  return {
-    layout: {
-      flex,
-      blocks: false,
-      direction,
-      primaryAlign,
-      counterAlign,
-      justify: autoStart ? "SPACE_BETWEEN" : reader.has("justify-content") ? primaryAlign : "unset",
-    },
-    self,
+  // A label that fills before the margin leaves no free space, so the row packs at its start.
+  const primaryAlign =
+    autoStart === "label-fills"
+      ? "MIN"
+      : autoStart === "spaced"
+        ? (alignments.get("space-between")?.align ?? unset)
+        : (readAlign(reader, "justify-content", "primary", alignments, reader.feed("primaryAlign")) ?? unset);
+  const layout: Layout = {
+    flex,
+    blocks: false,
+    direction,
+    primaryAlign,
+    counterAlign,
+    justify:
+      autoStart !== undefined ? "SPACE_BETWEEN" : reader.has("justify-content") ? primaryAlign : "unset",
   };
+  return { layout: autoStart === "label-fills" ? { ...layout, labelFills: true } : layout, self };
 }
 
-/** How the coverage table names an auto start margin {@link readAutoStart} reads. */
+/** How the coverage table names an auto start margin {@link readAutoStart} reads on two layers. */
 const AUTO_START =
   "the auto margin takes the row's free space, which ends the row with the layer, as space-between places two layers";
 
+/** How the coverage table names an auto start margin {@link readAutoStart} reads after the label. */
+const AUTO_START_AFTER_LABEL =
+  "the auto margin takes the row's free space after the label, which fills that space in Figma and paints nothing past its text, so the layer ends the row";
+
+/** The `text-align` values that set a label's text from its left, where a filling label draws as one at its own width. */
+const FROM_LEFT: ReadonlySet<string> = new Set(["", "start", "left"]);
+
 /**
- * Read an auto start margin on the last of a flex row's two layers, as a menu row's shortcut or
- * caret ends the row. Auto margins take the row's free space before `justify-content` distributes
- * it (CSS Flexbox 1 §8.1), so the margin ends the row with the layer and leaves the first at the
- * start, as `space-between` places two layers, and the row reads as spaced between its ends. The row
- * must leave `justify-content` unset and the layer its end margin, so nothing else places the two.
+ * Read an auto start margin on the last layer of a flex row, as a menu row's shortcut or caret ends
+ * the row. Auto margins take the row's free space before `justify-content` distributes it (CSS
+ * Flexbox 1 §8.1), so the margin ends the row with the layer and packs the others at the start. The
+ * row must leave `justify-content` unset and the layer its end margin, so nothing else places them.
+ *
+ * - On the last of two layers the row reads as spaced between its ends, as `space-between` places
+ *   two layers: `spaced`.
+ * - On the last of more layers, with the row's own label right before it and the row setting its
+ *   text from the left, the label fills the free space in Figma and paints nothing past its text, so
+ *   the row packs at its start with its gap and draws what CSS draws: `label-fills`. The layers
+ *   before the label keep their widths.
+ *
  * An auto margin anywhere else stays unread, so it lands unmapped.
  *
  * @param reader - The row's style.
  * @param flow - The row's layers in flow.
- * @returns Whether the row reads as spaced between its ends.
+ * @returns How the margin places the row's layers, or undefined where it stays unread.
  */
-function readAutoStart(reader: LayerStyle, flow: FlowLayers): boolean {
+function readAutoStart(reader: LayerStyle, flow: FlowLayers): "spaced" | "label-fills" | undefined {
   const { last } = flow;
   const auto = (property: string) => normalizeCss(last?.resolved(property) ?? "") === "auto";
+  const count = flow.parts.length + flow.others.length;
+  const placing =
+    count === 2
+      ? "spaced"
+      : count > 2 && flow.labelBeforeLast && FROM_LEFT.has(normalizeCss(reader.resolved("text-align") ?? ""))
+        ? "label-fills"
+        : undefined;
   if (
     last === undefined ||
-    flow.parts.length + flow.others.length !== 2 ||
+    placing === undefined ||
     reader.has("justify-content") ||
     !auto("margin-left") ||
     last.has("margin-right")
   ) {
-    return false;
+    return undefined;
   }
   last.read(
     "margin-left",
     (value) => value,
-    () => ({ outcome: "literal", detail: AUTO_START }),
+    () => ({ outcome: "literal", detail: placing === "spaced" ? AUTO_START : AUTO_START_AFTER_LABEL }),
     reader.feed("primaryAlign")
   );
-  return true;
+  return placing;
 }
 
 /** The displays that make a box block-level, which a block box stacks down its content box. */
@@ -237,6 +261,8 @@ export type FlowLayers = {
    * or undefined where the label ends the flow or the box holds no layer.
    */
   readonly last: LayerStyle | undefined;
+  /** Whether the box's own label sits right before the last of three or more layers in flow. */
+  readonly labelBeforeLast: boolean;
 };
 
 /** How a box lays out its layers, and the alignment its parts set, where they set one. */

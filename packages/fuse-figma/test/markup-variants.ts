@@ -126,7 +126,8 @@ export const GROUP_VARIANTS = new Map<string, (ancestor: MarkupElement) => boole
  * classes name, as a Navigation menu trigger's caret writes its Root's side in `data-side` and reads
  * it through `data-[side=bottom]:`, which compiles to `[data-side="bottom"]`, and as Base UI stamps an
  * open Select popup `data-open` and its side, and Fuse its `data-align-trigger`, which the popup's
- * own classes read around each row.
+ * own classes read around each row. A Dropdown menu row names its own `data-inset` and
+ * `data-variant`, which other sets' roots never carry.
  */
 export const NAMED_ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => boolean>([
   ...["bottom", "left", "right", "top", "inline-end", "inline-start"].map(
@@ -141,6 +142,10 @@ export const NAMED_ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement)
   // Base UI marks the trigger of an open popup `aria-expanded="true"`, which an instance part's facts
   // declare for a Button trigger in place.
   ["aria-expanded", (element) => element.attributes.get("aria-expanded") === "true"],
+  // Fuse stamps `data-inset` on an inset Dropdown menu row or label, and `data-variant` on its rows.
+  ["data-inset", (element) => element.attributes.has("data-inset")],
+  ["data-[variant=destructive]", (element) => element.attributes.get("data-variant") === "destructive"],
+  ["not-data-[variant=destructive]", (element) => element.attributes.get("data-variant") !== "destructive"],
 ]);
 
 /**
@@ -199,6 +204,8 @@ export const NOT_ATTRIBUTES = new Set([
   "focus-visible",
   "focus",
   "peer-hover/menu-button",
+  // A Dropdown menu row's shortcut reads the row's DOM focus.
+  "group-focus/dropdown-menu-item",
   "has-data-[icon=inline-start]",
   "has-data-[icon=inline-end]",
   "sm",

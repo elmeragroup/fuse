@@ -100,6 +100,13 @@ const CHECKED_ON_THE_MOUNTED_PAGE: readonly string[] = [
   "select-open",
   "popover-content",
   "popover-open",
+  "dropdown-menu-item",
+  "dropdown-menu-checkbox-item",
+  "dropdown-menu-radio-item",
+  "dropdown-menu-sub-trigger",
+  "dropdown-menu-popup",
+  "dropdown-menu-sub-content",
+  "dropdown-menu-open",
 ];
 
 describe("each kit definition against the markup of its component", () => {

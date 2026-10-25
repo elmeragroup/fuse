@@ -177,7 +177,7 @@ export function forcedSelector(
  * The selector of the element a definition's cells measure: the one whose `data-slot` is the
  * definition's `slot`, or, for a root whose markup carries no `data-slot`, the one its `element`
  * names by tag and attributes, such as `*[data-rac]`, each attribute by its presence or its value,
- * and each of its `prefixes` by the start of its value.
+ * each of its `prefixes` by the start of its value and each of its `suffixes` by its end.
  *
  * @param definition - The root's slot and, for a root without a `data-slot`, its element.
  * @returns A selector for an element anywhere inside a cell's slot, as {@link cellSelector} takes it.
@@ -193,7 +193,10 @@ export function measuredSelector(definition: Pick<ComponentDefinition, "slot" | 
   const prefixes = Object.entries(element.prefixes ?? {}).map(
     ([name, prefix]) => `[${name}^=${cssString(prefix)}]`
   );
-  return `${element.tag}${[...attributes, ...prefixes].join("")}`;
+  const suffixes = Object.entries(element.suffixes ?? {}).map(
+    ([name, suffix]) => `[${name}$=${cssString(suffix)}]`
+  );
+  return `${element.tag}${[...attributes, ...prefixes, ...suffixes].join("")}`;
 }
 
 /**
@@ -286,7 +289,16 @@ export function previewDocument(
   const shown = clients.flatMap((cell) =>
     cell.measured.map((element) => `${cellSelector(cell.id, element)}{visibility:visible}`)
   );
-  const clientCss = clients.length === 0 ? [] : [`${CLIENT_HIDDEN}{visibility:hidden}`, ...shown];
+  // A popup shrinks to fit the slot that holds its portal (CSS 2.1 §10.3.7), so a client slot takes the
+  // whole slot's width, as a page gives a popup room for its widest row.
+  const clientCss =
+    clients.length === 0
+      ? []
+      : [
+          `${CLIENT_HIDDEN}{visibility:hidden}`,
+          `${CLIENT_HIDDEN}{width:${String(layout.slotWidth)}px;box-sizing:border-box}`,
+          ...shown,
+        ];
   const script = clients.length === 0 ? [] : [`<script type="module" src="${ASSET_PATHS.client}"></script>`];
   return `<!doctype html>
 <html lang="en"${attributes(stamps.root)}>

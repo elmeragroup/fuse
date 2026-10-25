@@ -359,6 +359,26 @@ describe("the kit check", () => {
   });
 });
 
+// Oracle: PM, where a real file drew a column that hugs both ways with a `minWidth` of 128, whose
+// sections all fill across, 128 wide with its sections 128 wide.
+describe("a column that hugs its width from a minimum, every layer filling across", () => {
+  it("passes the kit check, and Apply converges", async () => {
+    const { file } = fixture("Roboto");
+    const kit = nestedKit([
+      {
+        ...frame("button/column", "Column", [
+          { ...BOX, sizing: { horizontal: FILL, vertical: { kind: "hug" } } },
+        ]),
+        direction: "VERTICAL",
+        limits: { ...NO_LIMITS, minWidth: literal(128) },
+      },
+    ]);
+    await reconcileKit(file.figma, kit, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+  });
+});
+
 describe("a set that moves to a page pinning other modes", () => {
   const GRAY = { r: 0.5, g: 0.5, b: 0.5, a: 1 };
   const RED = { r: 1, g: 0, b: 0, a: 1 };

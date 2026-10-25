@@ -274,6 +274,11 @@ export type IconLayerSpec = {
   readonly color: ColorSpec;
   /** How far the layer turns, in degrees as {@link RotationSpec} counts them, absent for none. */
   readonly rotation?: RotationSpec;
+  /**
+   * The BOOLEAN property of the set that shows or hides the icon, which links its `visible` beside
+   * its swap link (PI2), absent for an icon that shows wherever its variant holds it.
+   */
+  readonly visibleProperty?: string;
 };
 
 /**
@@ -379,6 +384,12 @@ export type InstanceLayerSpec = {
    * plugin fixes the axis before it binds the length.
    */
   readonly sizing: SizingSpec;
+  /**
+   * The least width the instance takes, as a popup's widest row keeps the popup's minimum, absent for
+   * the inner variant's own. A hugging instance with one fills its filling text up to it and hugs past
+   * it (PH3).
+   */
+  readonly minWidth?: NumberSpec;
   /**
    * True for an instance whose properties a designer sets from the outer instance's properties panel,
    * as Figma's `isExposedInstance` marks it, absent for one they do not.

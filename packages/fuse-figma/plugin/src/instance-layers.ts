@@ -47,7 +47,7 @@ import type { PlannedIcon } from "./icons.ts";
 import { keyOf } from "./identity.ts";
 import { change, changeTogether, newPlan, performPlan } from "./plan.ts";
 import type { Target } from "./plan.ts";
-import { cornerField, planLength } from "./root-layer.ts";
+import { cornerField, planLength, planLimit } from "./root-layer.ts";
 
 /** The inner set and variant an instance layer shows, as the plan leaves them. */
 export type InnerVariant = {
@@ -552,6 +552,8 @@ function planOverridesAndSizing(
 ): void {
   planOverrides(run, instance, label, spec, inner.spec.root);
   planSizing(run, instance, label, spec.sizing, held);
+  // An instance with no minimum of its own shows the inner variant's (PH3).
+  planLimit(run, instance, label, "minWidth", spec.minWidth ?? inner.spec.root.limits.minWidth);
   planVisibleLink(run, instance, label, spec.visibleProperty, links.properties);
   const exposed = spec.exposed === true;
   planScalar(run, label, "isExposedInstance", instance.isExposedInstance, exposed, () => {

@@ -3045,6 +3045,37 @@ describe("an optional part", () => {
     );
   });
 
+  /** The fixture icon behind the `Icon` property, which starts false, its glyph picked by `Icon glyph`. */
+  const SHOWN_ICON: BooleanPropertySpec = { name: "Icon", defaultValue: false };
+  const OPTIONAL_ICON = { ...ICON, swapProperty: "Icon glyph", optional: SHOWN_ICON };
+
+  it("links an optional icon's visibility to the property beside its swap property", async () => {
+    const { componentSet, variant } = await buildFixture(
+      chip("flex text-[#000000] [&_svg]:size-[16px]", { iconsFor: () => [OPTIONAL_ICON] })
+    );
+    expect([
+      componentSet.booleanProperties,
+      variant?.root.children.map((layer) =>
+        layer.kind === "icon" ? [layer.name, layer.swapProperty, layer.visibleProperty] : layer.kind
+      ),
+    ]).toEqual([[SHOWN_ICON], [["Icon", "Icon glyph", "Icon"]]]);
+  });
+
+  // Tailwind compiles `has-[>svg]:` to `:has( > svg)`, which holds only while the icon is there.
+  it("stops the build when a selector of its box reads whether an optional icon is there", async () => {
+    const reads = "has-[>svg]";
+    await expect(
+      buildFixture(
+        chip(`flex text-[#000000] [&_svg]:size-[16px] ${reads}:gap-[2px]`, {
+          facts: new Map([[reads, () => true]]),
+          iconsFor: () => [OPTIONAL_ICON],
+        })
+      )
+    ).rejects.toThrow(
+      `Chip: Icon cannot hide behind the Icon property, since \`${reads}:gap-[2px]\` reads whether it is there through \`:has( > svg)\`.`
+    );
+  });
+
   it("builds where a selector reads whether another part is there", async () => {
     const { componentSet } = await buildFixture(
       chip(`flex ${READS_TITLE}:gap-[2px]`, {

@@ -87,7 +87,7 @@ export function markupAncestors(
   elements: readonly MarkupElement[],
   measured: number,
   slots: ReadonlySet<string>
-): readonly (readonly [string | undefined, string | undefined])[] {
+): readonly (readonly [string | undefined, string])[] {
   const slotted = ancestorsOf(elements, measured)
     .toReversed()
     .filter((element) => element.attributes.has("data-slot"));
@@ -96,7 +96,10 @@ export function markupAncestors(
     ? []
     : slotted
         .slice(outermost)
-        .map((element) => [element.attributes.get("data-slot"), element.attributes.get("class")] as const);
+        // A classless element, as Base UI's Dropdown menu group is, carries no classes.
+        .map(
+          (element) => [element.attributes.get("data-slot"), element.attributes.get("class") ?? ""] as const
+        );
 }
 
 /**
@@ -224,6 +227,26 @@ export function rendersIn(part: AnyPart, cell: Cell, turnedOn: ReadonlySet<strin
   );
 }
 
+/**
+ * The icons a cell renders in a box with the given BOOLEAN properties, each of which starts false,
+ * turned on: those its `iconsFor` lists, less an optional icon whose property starts false and is
+ * not among `turnedOn`.
+ *
+ * @param box - The root's or a part's definition.
+ * @param cell - The cell.
+ * @param turnedOn - The BOOLEAN properties that start false which the rendering turns on.
+ * @returns The icons the markup holds in the box.
+ */
+export function iconsRenderedIn(
+  box: BoxDefinition,
+  cell: Cell,
+  turnedOn: ReadonlySet<string>
+): readonly IconSlot[] {
+  return box
+    .iconsFor(cell)
+    .filter(({ optional }) => optional === undefined || optional.defaultValue || turnedOn.has(optional.name));
+}
+
 /** The part among a parent's own parts whose `element` selects an element. */
 function selectedPart(parts: readonly AnyPart[], element: MarkupElement): AnyPart | undefined {
   return parts.find((part) => {
@@ -305,10 +328,12 @@ function inOrder(
  * An element whose `data-slot` names a box of the definition is a part, below its nearest part, and
  * so is an element that one of that part's own parts selects by its `element`. Parts of one parent
  * that the cell renders and that name the same elements take them in DOM order. An element with no
- * `data-slot` is a part when it is the {@link unnamedChild} of a part. That is where Radio's dot
+ * `data-slot` is a part when it is the {@link unnamedChild} of a part that holds a part found by
+ * place. That is where Radio's dot
  * sits, alone in the indicator, and Meter's header, beside the bar and the hidden span. An instance
  * part is found the same way, by its inner root's `data-slot` or element, and the elements below it
- * belong to the inner set, so none of them is a part.
+ * belong to the inner set, so none of them is a part. An empty element whose `data-slot` names a part
+ * the cell does not render is no part where its box counts undrawn children: it draws nothing.
  *
  * @param cell - The cell, which says which parts render.
  * @param turnedOn - The BOOLEAN properties that start false which the rendering turns on, whose parts
@@ -340,6 +365,18 @@ export function markupParts(
     const rendered = parts.filter((part) => rendersIn(part, cell, turnedOn));
     const slot = element.attributes.get("data-slot");
     const selected = selectedPart(parts, element);
+    // An empty element of a part the cell does not render draws nothing, as a checkable menu row's
+    // indicator `<span>` waits empty while unchecked, where the box counts it as an undrawn child.
+    const emptyUnrendered =
+      slot !== undefined &&
+      (parent.box?.undrawnChildren?.(cell) ?? 0) > 0 &&
+      element.text.trim() === "" &&
+      !elements.some((other) => other.parent === index) &&
+      parts.some((part) => partSlot(part) === slot) &&
+      !rendered.some((part) => partSlot(part) === slot);
+    if (emptyUnrendered) {
+      continue;
+    }
     if (slot !== undefined && slots.has(slot)) {
       const part = inOrder(
         rendered.filter((candidate) => partSlot(candidate) === slot),
@@ -364,7 +401,10 @@ export function markupParts(
     } else if (
       element.parent === owner &&
       unnamedChild(elements, owner, slots, parts) === index &&
-      !holdsLabel(parent.box, element)
+      !holdsLabel(parent.box, element) &&
+      // A box with no part found by place draws no layer for its one bare child, as a menu row's
+      // indicator holds Base UI's `<span>` around its Check.
+      parts.some((part) => partSlot(part) === undefined && partElement(part) === undefined)
     ) {
       const byPlace = parts.find((part) => partSlot(part) === undefined && partElement(part) === undefined);
       found.set(index, { path: `${parent.path}/${UNNAMED}`, box: byPlace });

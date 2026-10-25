@@ -159,3 +159,26 @@ export function childNamed<Type extends SceneNode["type"]>(
   }
   return child;
 }
+
+/**
+ * The one child of a given type, for a test that reads the child's name, which a designer may have
+ * changed.
+ *
+ * @param parent - The node whose children to search.
+ * @param type - The child's node type.
+ * @returns The child, narrowed to its type.
+ * @throws When the parent holds no such child, or more than one.
+ */
+export function onlyChildOfType<Type extends SceneNode["type"]>(
+  parent: ChildrenMixin,
+  type: Type
+): Extract<SceneNode, { readonly type: Type }> {
+  const children = parent.children.filter(
+    (node): node is Extract<SceneNode, { readonly type: Type }> => node.type === type
+  );
+  const [child] = children;
+  if (child === undefined || children.length > 1) {
+    throw new Error(`${String(children.length)} children of type ${type}, not one`);
+  }
+  return child;
+}

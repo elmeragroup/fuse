@@ -55,6 +55,16 @@ describe("selects", () => {
     expect(selects(byPrefix("aria-label", ""), labelled("Tuesday"))).toBe(false);
   });
 
+  // `[data-slot$="-label"]` (Selectors Level 4 §6.2) matches a value that ends with the suffix, and
+  // nothing when the suffix is empty.
+  it("matches an attribute whose value ends with a suffix, and no other, and nothing by an empty one", () => {
+    const bySuffix = (suffix: string) => ({ tag: "div", attributes: {}, suffixes: { "aria-label": suffix } });
+    expect(selects(bySuffix("-label"), labelled("select-label"))).toBe(true);
+    expect(selects(bySuffix("-label"), labelled("dropdown-menu-label"))).toBe(true);
+    expect(selects(bySuffix("-label"), labelled("select-label-text"))).toBe(false);
+    expect(selects(bySuffix(""), labelled("select-label"))).toBe(false);
+  });
+
   it("matches an element of any tag by the universal tag, still by its attributes", () => {
     const element = (tag: string, props: Readonly<Record<string, string>>) =>
       elementsOf(renderToStaticMarkup(createElement(tag, props)))[0] ?? {

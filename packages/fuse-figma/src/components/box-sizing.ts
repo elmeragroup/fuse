@@ -82,6 +82,11 @@ export type Room = {
    * whether CSS draws the box at that width.
    */
   readonly unbounded: boolean;
+  /**
+   * The least width a popup that hugs its rows keeps its named row at, for the row and the frames
+   * around it, as `hugging-rows.ts` reads it. Absent elsewhere.
+   */
+  readonly rowMinimum?: NumberSpec;
 };
 
 const HUG: SizeSpec = { kind: "hug" };
@@ -139,16 +144,33 @@ export function rootRoom(
 }
 
 /**
- * A box's left and right margins together, in pixels, where each is the same length in every mode:
- * a literal, or a sum of synced variables that each hold one value in every mode, as
- * `surface-pad-sm` holds 4px at both densities. Undefined where a margin is no such length.
+ * A box's left and right margins together, in pixels, where each is the same length in every mode,
+ * as {@link pixelsAcross} reads them.
  *
  * @param style - The box's style.
  * @param variables - The synced variables, with the values they hold in each mode.
  * @returns The margins in pixels, or undefined.
  */
 export function marginsAcross(style: LayerStyle, variables: VariableIndex): number | undefined {
-  const sides = ["margin-left", "margin-right"].map((property) => {
+  return pixelsAcross(style, ["margin-left", "margin-right"], variables);
+}
+
+/**
+ * Two lengths of a box together, in pixels, such as its left and right padding, where each is the
+ * same length in every mode: a literal, or a sum of synced variables that each hold one value in
+ * every mode, as `surface-pad-sm` holds 4px at both densities. Undefined where one is no such length.
+ *
+ * @param style - The box's style.
+ * @param properties - The two properties, such as `padding-left` and `padding-right`.
+ * @param variables - The synced variables, with the values they hold in each mode.
+ * @returns The lengths in pixels, or undefined.
+ */
+export function pixelsAcross(
+  style: LayerStyle,
+  properties: readonly [string, string],
+  variables: VariableIndex
+): number | undefined {
+  const sides = properties.map((property) => {
     const length = affineLength(style.resolved(property) ?? "0px");
     if (length === undefined) {
       return undefined;
@@ -707,7 +729,8 @@ export function heightBounds(layer: ChildLayerSpec | undefined, variables: Varia
     return UNBOUNDED;
   }
   if (layer.kind === "icon") {
-    return lengthBounds(layer.size, variables);
+    const own = lengthBounds(layer.size, variables);
+    return layer.visibleProperty === undefined ? own : { min: 0, max: own.max };
   }
   if (layer.kind === "text") {
     const { sizing, lineHeight, maxWidth, truncation } = layer;
@@ -745,7 +768,9 @@ function boxHeightBounds(box: BoxSpec, variables: VariableIndex): HeightBounds {
   }
   const flowing = box.children.filter((child) => child.kind !== "frame" || child.absolute === undefined);
   const heights = flowing.map((child) => heightBounds(child, variables));
-  const shown = flowing.filter((child) => child.kind !== "frame" || child.visibleProperty === undefined);
+  const shown = flowing.filter(
+    (child) => (child.kind !== "frame" && child.kind !== "icon") || child.visibleProperty === undefined
+  );
   const gaps = times(
     lengthBounds(box.itemSpacing, variables),
     Math.max(0, shown.length - 1),

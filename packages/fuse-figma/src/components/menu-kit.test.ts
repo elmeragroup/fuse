@@ -6,7 +6,9 @@
  * wide in a 144px host that pads 4px across.
  *
  * - The caption is `text-xs px-(--row-px) py-1.5 text-muted-foreground`: 12px type on a 16px line,
- *   inset by `row-px` across and 6px down, in `muted-foreground`.
+ *   inset by `row-px` across and 6px down, in `muted-foreground`. Dropdown menu's adds `font-medium`,
+ *   and its inset form `data-inset:pl-[calc(var(--row-px)+1.5rem)]`, the code syntax of the synced
+ *   `row-indicator-room`. Chromium measured each Dropdown caption 136px wide in a 144px popup.
  * - The separator is `-mx-(--surface-pad-sm) my-1 h-px bg-border`: a 1px `border` rule, its container's
  *   width plus `surface-pad-sm`, 4px at both densities, on each side.
  */
@@ -32,13 +34,28 @@ beforeAll(async () => {
 });
 
 describe("the Menu group label component set", () => {
-  it("draws the plain caption on the Select page, its text a property", () => {
+  it("draws the plain caption and Dropdown menu's two on the Select page, its text a property", () => {
     const set = spec.componentSets.find((candidate) => candidate.key === "menu-group-label");
     expect([set?.name, set?.page, set?.axes, set?.textProperties]).toEqual([
       "Menu group label",
       "page/select",
-      [{ name: "kind", values: ["plain"] }],
+      [{ name: "kind", values: ["plain", "menu", "menu inset"] }],
       [{ name: "Label", defaultValue: "Citrus" }],
+    ]);
+  });
+
+  it.each([
+    ["menu", density("row-px")],
+    ["menu inset", density("row-indicator-room")],
+  ])("sets Dropdown menu's %s caption in Medium, padded at its start by %o", (kind, start) => {
+    const root = variantRoot(spec, `menu-group-label/kind=${kind}`);
+    expect([root.sizing, root.paddingLeft, root.paddingRight]).toEqual([
+      { horizontal: fixed(literal(136)), vertical: HUG },
+      start,
+      density("row-px"),
+    ]);
+    expect(root.children).toEqual([
+      expect.objectContaining({ kind: "text", fontStyle: "Medium", color: paint("muted-foreground") }),
     ]);
   });
 

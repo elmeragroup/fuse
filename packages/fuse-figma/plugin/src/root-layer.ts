@@ -110,7 +110,7 @@ export function planLength(
  */
 export function planLimit(
   run: Run,
-  node: LayerParent | TextNode,
+  node: LayerParent | TextNode | InstanceNode,
   label: string,
   name: keyof LimitsSpec,
   spec: NumberSpec | undefined

@@ -245,6 +245,28 @@ describe("an instance part", () => {
         expect(unmappedOf(built?.coverage ?? [])).toEqual([]);
       });
 
+      // Oracle: PH2. A text that fills its variant's 200px row draws at its own width once the
+      // instance hugs across, as the row's text does in place in an outer row that hugs it.
+      it("and draws a text that fills the variant's width at its own width, as the hugging text in place", async () => {
+        const WORDS = chip("flex font-sans text-[14px] leading-[20px] text-[rgb(0_0_0)]", {
+          key: "wide",
+          name: "Wide",
+          slot: "wide",
+          previewWidth: 200,
+          label: {
+            key: "label",
+            name: "label",
+            characters: "Two words",
+            textProperty: "Label",
+            shownIn: () => true,
+          },
+        });
+        const [variant, built] = await buildFixtures([WORDS, holding(widePart(WORDS))], FONT_SANS);
+        const text = variant?.componentSet.variants[0]?.root.children[0];
+        expect(text?.kind === "text" ? text.sizing.horizontal : text).toEqual(FILL);
+        expect(unmappedOf(built?.coverage ?? [])).toEqual([]);
+      });
+
       it("and leaves a part that fills the variant's width unmapped", async () => {
         const WIDE = wide("h-[6px] w-full bg-[rgb(0_0_0)]");
         const [, built] = await buildFixtures([WIDE, holding(widePart(WIDE))]);

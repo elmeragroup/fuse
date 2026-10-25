@@ -17,6 +17,11 @@ export type OptionalPart = {
   /** Each `data-slot` that hiding the part hides: its own, if it has one, and every part's inside it. */
   readonly slots: readonly string[];
   /**
+   * Each element type that hiding the part hides and a selector can test by its type alone: `svg`
+   * for an optional icon. Empty for a frame or an instance part, which the build finds by its slot.
+   */
+  readonly elements: readonly string[];
+  /**
    * For a part of an instance's inner set: the instance, by the keys of the instance parts from the
    * set down to it, and the inner set whose property the part hides behind, which lists it. Undefined
    * for a part of the set's own.
@@ -54,7 +59,7 @@ export function booleanPropertiesOf(
 /**
  * Refuse an optional part when a class of the set reads, through a `data-slot` inside `:has()`,
  * whether the part or a part inside it is there, as `item-described:` reads whether Item holds a
- * description. Every rule that names the class counts, whatever its selector starts with. A rule
+ * description, or, for an optional icon, through an `svg` inside `:has()`, as `has-[>svg]:` does. Every rule that names the class counts, whatever its selector starts with. A rule
  * the scanner cannot read refuses too, since it may read such a slot. An optional part of an
  * instance's inner set counts too: a designer hides it on the instance, exposed or not, and the
  * set's class reads it all the same.
@@ -93,9 +98,12 @@ export function refusePresenceReads(
             `${set}: ${hides}, since the build cannot tell which parts \`${className}\` reads: ${read.reason}.`
           );
         }
-        const test = read.tests.find(({ slot }) => part.slots.includes(slot));
+        const test =
+          read.tests.find(({ slot }) => part.slots.includes(slot)) ??
+          read.elements.find(({ element }) => part.elements.includes(element));
         if (test !== undefined) {
-          const what = test.slot === part.name ? "it" : `${test.slot}, which ${holder} holds,`;
+          const found = "slot" in test ? test.slot : part.name;
+          const what = found === part.name ? "it" : `${found}, which ${holder} holds,`;
           throw new Error(
             `${set}: ${hides}, since \`${className}\` reads whether ${what} is there through \`${test.clause}\`. A BOOLEAN property hides a layer and cannot restyle the box that reads it, so give the part's presence a variant axis instead.`
           );

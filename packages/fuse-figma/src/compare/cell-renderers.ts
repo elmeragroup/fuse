@@ -298,7 +298,7 @@ const SOURCES: readonly RendererSource[] = [
   },
   {
     set: "menu-group-label",
-    entry: "dist/select.js",
+    entry: "dist/dropdown-menu.js",
     module: { url: new URL("menu-cell.ts", import.meta.url), name: "menuGroupLabel" },
   },
   {
@@ -330,6 +330,41 @@ const SOURCES: readonly RendererSource[] = [
     set: "popover-open",
     entry: "dist/popover.js",
     module: { url: new URL("popover-cell.ts", import.meta.url), name: "popoverOpen" },
+  },
+  {
+    set: "dropdown-menu-item",
+    entry: "dist/dropdown-menu.js",
+    module: { url: new URL("dropdown-menu-cell.ts", import.meta.url), name: "dropdownMenuItem" },
+  },
+  {
+    set: "dropdown-menu-checkbox-item",
+    entry: "dist/dropdown-menu.js",
+    module: { url: new URL("dropdown-menu-cell.ts", import.meta.url), name: "dropdownMenuCheckboxItem" },
+  },
+  {
+    set: "dropdown-menu-radio-item",
+    entry: "dist/dropdown-menu.js",
+    module: { url: new URL("dropdown-menu-cell.ts", import.meta.url), name: "dropdownMenuRadioItem" },
+  },
+  {
+    set: "dropdown-menu-sub-trigger",
+    entry: "dist/dropdown-menu.js",
+    module: { url: new URL("dropdown-menu-cell.ts", import.meta.url), name: "dropdownMenuSubTrigger" },
+  },
+  {
+    set: "dropdown-menu-popup",
+    entry: "dist/dropdown-menu.js",
+    module: { url: new URL("dropdown-menu-cell.ts", import.meta.url), name: "dropdownMenuPopup" },
+  },
+  {
+    set: "dropdown-menu-sub-content",
+    entry: "dist/dropdown-menu.js",
+    module: { url: new URL("dropdown-menu-cell.ts", import.meta.url), name: "dropdownMenuSubContent" },
+  },
+  {
+    set: "dropdown-menu-open",
+    entry: "dist/dropdown-menu.js",
+    module: { url: new URL("dropdown-menu-cell.ts", import.meta.url), name: "dropdownMenuOpen" },
   },
   {
     set: "empty",

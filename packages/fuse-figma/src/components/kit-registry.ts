@@ -25,6 +25,13 @@ import { CHECKBOX } from "./checkbox-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
 import { CONFIRM_BUTTON } from "./confirm-button-kit";
+import {
+  DROPDOWN_MENU_CHECKBOX_ITEM,
+  DROPDOWN_MENU_ITEM,
+  DROPDOWN_MENU_RADIO_ITEM,
+  DROPDOWN_MENU_SUB_TRIGGER,
+} from "./dropdown-menu-kit";
+import { DROPDOWN_MENU_OPEN, DROPDOWN_MENU_POPUP, DROPDOWN_MENU_SUB_CONTENT } from "./dropdown-popup-kit";
 import { EMPTY } from "./empty-kit";
 import { FIELD_DESCRIPTION, FIELD_ERROR, FIELD_LEGEND, FIELD_TITLE } from "./field-text-kit";
 import { INPUT } from "./input-kit";
@@ -134,6 +141,9 @@ const SELECT_PAGE: KitPage = { slug: "select", name: "Select" };
 
 /** The page of Popover's popup and the open Popover. */
 const POPOVER_PAGE: KitPage = { slug: "popover", name: "Popover" };
+
+/** The page of Dropdown menu's rows, until its popups and the open menu join them. */
+const DROPDOWN_MENU_PAGE: KitPage = { slug: "dropdown-menu", name: "Dropdown menu" };
 
 /** The page Empty sits on alone. */
 const EMPTY_PAGE: KitPage = { slug: "empty", name: "Empty" };
@@ -301,6 +311,41 @@ export const KIT: readonly KitEntry[] = [
   { definition: SELECT_OPEN, page: SELECT_PAGE, previewCells: matrixCells(SELECT_OPEN.axes) },
   { definition: POPOVER_CONTENT, page: POPOVER_PAGE, previewCells: matrixCells(POPOVER_CONTENT.axes) },
   { definition: POPOVER_OPEN, page: POPOVER_PAGE, previewCells: matrixCells(POPOVER_OPEN.axes) },
+  {
+    definition: DROPDOWN_MENU_ITEM,
+    page: DROPDOWN_MENU_PAGE,
+    previewCells: matrixCells(DROPDOWN_MENU_ITEM.axes),
+  },
+  {
+    definition: DROPDOWN_MENU_CHECKBOX_ITEM,
+    page: DROPDOWN_MENU_PAGE,
+    previewCells: matrixCells(DROPDOWN_MENU_CHECKBOX_ITEM.axes),
+  },
+  {
+    definition: DROPDOWN_MENU_RADIO_ITEM,
+    page: DROPDOWN_MENU_PAGE,
+    previewCells: matrixCells(DROPDOWN_MENU_RADIO_ITEM.axes),
+  },
+  {
+    definition: DROPDOWN_MENU_SUB_TRIGGER,
+    page: DROPDOWN_MENU_PAGE,
+    previewCells: matrixCells(DROPDOWN_MENU_SUB_TRIGGER.axes),
+  },
+  {
+    definition: DROPDOWN_MENU_POPUP,
+    page: DROPDOWN_MENU_PAGE,
+    previewCells: matrixCells(DROPDOWN_MENU_POPUP.axes),
+  },
+  {
+    definition: DROPDOWN_MENU_SUB_CONTENT,
+    page: DROPDOWN_MENU_PAGE,
+    previewCells: matrixCells(DROPDOWN_MENU_SUB_CONTENT.axes),
+  },
+  {
+    definition: DROPDOWN_MENU_OPEN,
+    page: DROPDOWN_MENU_PAGE,
+    previewCells: matrixCells(DROPDOWN_MENU_OPEN.axes),
+  },
   { definition: EMPTY, page: EMPTY_PAGE, previewCells: matrixCells(EMPTY.axes) },
   { definition: CALENDAR_DAY, page: CALENDAR_PAGE, previewCells: matrixCells(CALENDAR_DAY.axes) },
   { definition: LINK, page: LINK_PAGE, previewCells: matrixCells(LINK.axes) },

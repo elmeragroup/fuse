@@ -756,3 +756,95 @@ describe("a set that holds an instance of an earlier set's variant", () => {
     ]);
   });
 });
+
+// Unit under test: `reconcileKit` on a Button whose icon hides behind a BOOLEAN property and swaps
+// through an INSTANCE_SWAP one, as a menu row's icon does, and an Alert whose action shows the icon
+// and swaps it to Plus. Oracle: the fake's rule 43, which follows what a real file did on 2026-10-25
+// (PI2): one icon instance holds both links, hides while the property starts false and keeps both
+// through a swap. The second Plan lists nothing.
+describe("an icon that hides behind a BOOLEAN property and swaps through another", () => {
+  const OPTIONAL_GLYPH: IconLayerSpec = { ...GLYPH, visibleProperty: "Icon" };
+  const button: ComponentSetSpec = {
+    ...buttonSet((variant) => ({
+      ...buttonRoot(token(variant === "default" ? "primary" : "background")),
+      children: [OPTIONAL_GLYPH, LABEL],
+    })),
+    booleanProperties: [{ name: "Icon", defaultValue: false }],
+  };
+  const action: InstanceLayerSpec = {
+    ...ACTION,
+    properties: { boolean: { Icon: true }, swap: { Glyph: "icon/Plus" } },
+  };
+  const kit = kitWith(button, action);
+
+  it("links the icon's visibility and glyph in one Apply, and a second Plan lists nothing", async () => {
+    const file = await appliedFile(kit);
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+    const set = await setOf(file, "button");
+    const [variant] = set.children;
+    if (variant?.type !== "COMPONENT") {
+      throw new Error("the Button set holds no variant");
+    }
+    const ids = Object.keys(set.componentPropertyDefinitions);
+    const glyph = childNamed(variant, "INSTANCE", "Glyph");
+    expect([glyph.componentPropertyReferences, glyph.visible]).toEqual([
+      {
+        visible: ids.find((id) => id.startsWith("Icon#")),
+        mainComponent: ids.find((id) => id.startsWith("Glyph#")),
+      },
+      false,
+    ]);
+  });
+
+  it("shows the action's icon as Plus, swapped through the property, and keeps it in a second run", async () => {
+    const file = await appliedFile(kit);
+    await reconcileKit(file.figma, kit, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+    const icon = childNamed((await alertAction(file)).action, "INSTANCE", "Glyph");
+    expect([icon.visible, (await icon.getMainComponentAsync())?.name]).toEqual([true, "Plus"]);
+  });
+});
+
+// Unit under test: `reconcileKit` on an instance that hugs across from a minimum width, as a popup's
+// widest row does. Oracle: the fake's rule 44, which follows what a real file did on 2026-10-25 (PH3):
+// the root takes the `minWidth`, lists it and `minHeight` among its overrides, and keeps them listed.
+// The second Plan lists nothing, so the plan reads neither as an override to drop.
+describe("an instance that hugs across from a minimum width", () => {
+  const action: InstanceLayerSpec = {
+    ...ACTION,
+    sizing: { horizontal: HUG, vertical: HUG },
+    minWidth: literal(88),
+  };
+  const kit = kitWith(BUTTON, action);
+
+  it("writes the minimum in one Apply, and a second Plan lists nothing", async () => {
+    const file = await appliedFile(kit);
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+    const { action: held } = await alertAction(file);
+    expect([held.minWidth, held.layoutSizingHorizontal]).toEqual([88, "HUG"]);
+  });
+
+  it("stops Plan before any write where the minimum binds a color variable", async () => {
+    const file = tokenFile();
+    const bound = kitWith(BUTTON, {
+      ...action,
+      minWidth: { kind: "variable", variable: { collection: "Fuse tokens", name: "background" } },
+    });
+    await expect(reconcileKit(file.figma, bound, false)).rejects.toThrow(
+      "Fuse tokens/background is a COLOR variable, and the kit binds it to a field that takes a FLOAT."
+    );
+  });
+
+  it("takes the minimum back to none when the spec drops it, and converges", async () => {
+    const file = await appliedFile(kit);
+    const { minWidth: _dropped, ...plain } = action;
+    const kitWithout = kitWith(BUTTON, plain);
+    expect((await reconcileKit(file.figma, kitWithout, false)).changes).toContain(
+      "Alert / tone=default / button: minWidth → none"
+    );
+    await reconcileKit(file.figma, kitWithout, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, kitWithout, false)).toEqual({ changes: [], warnings: [] });
+  });
+});

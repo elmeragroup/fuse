@@ -46,8 +46,8 @@ const waitsForButton = (label: string) => `${label} / button: plan again once Bu
 
 /**
  * What any change to the Button set makes Plan list for the sets that hold Button instances, in kit
- * order: the open Popover's trigger, Empty's two actions in each of its 3 variants and Alert's action in
- * each of its 10. Each
+ * order: the open Popover's trigger, the open Dropdown menu's trigger, Empty's two actions in each of its
+ * 3 variants and Alert's action in each of its 10. Each
  * instance plans again once Button's changes land, and each set's grid, which reads the instances'
  * sizes, lays out again after them.
  */
@@ -55,6 +55,9 @@ const AFTER_BUTTON = [
   // The open Popover sits on a page before Empty's.
   "Popover (open) / placement=below / button: plan again once Button's changes land",
   "Popover (open): lay out 1 variants in 1 columns and 1 rows",
+  // The open Dropdown menu sits on a page after Popover's and before Empty's.
+  "Dropdown menu (open) / placement=below / button: plan again once Button's changes land",
+  "Dropdown menu (open): lay out 1 variants in 1 columns and 1 rows",
   ...["default", "outline", "outline-dashed"].flatMap((frame) => [
     waitsForButton(`Empty / variant=${frame} / empty-content`),
     waitsForButton(`Empty / variant=${frame} / empty-content`),
@@ -71,6 +74,7 @@ const AFTER_BUTTON = [
 /** The pages of the sets that hold Button instances, which place their sets and previews again after them. */
 const PLACE_AFTER_BUTTON = [
   "Popover: place Popover content and Popover (open) in a row and stack 4 previews below them",
+  "Dropdown menu: place Dropdown menu item, Dropdown menu checkbox item, Dropdown menu radio item, Dropdown menu sub trigger, Dropdown menu popup, Dropdown menu sub content and Dropdown menu (open) in a row and stack 4 previews below them",
   "Empty: place Empty in a row and stack 4 previews below them",
   "Alert: place Alert in a row and stack 4 previews below them",
 ];

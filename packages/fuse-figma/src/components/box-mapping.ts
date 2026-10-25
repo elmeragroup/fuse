@@ -43,6 +43,7 @@ import {
   readNumber,
 } from "./css-values";
 import { readBleed, sectioned } from "./full-bleed";
+import { holdsWidthRow, namedMinimum, rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
 import type { CascadedInstance, InstanceParts } from "./instance-parts";
 import { castsSpread, fixedLength, iconKey, ringFill, ZERO } from "./kit-spec";
 import type {
@@ -68,7 +69,9 @@ import {
 import { adjoinsMargin, wrapFrameMargins, wrapInstanceMargins } from "./margin-box";
 import {
   dropIdleOrigin,
+  endsBesideLabel,
   endsInFlow,
+  huggedWidth,
   padToOffset,
   placeParts,
   readRotation,
@@ -348,7 +351,15 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // Every part cascades before any maps, since an absolute part sits out of the box's flow. The box's
   // flow, `holder.layers`, is the one membership every layout reader below reads: the rooms, the
   // stretch, the label, the display and the placement.
-  const shown = cascadeParts(box, cascade, scope);
+  const inDom = cascadeParts(box, cascade, scope);
+  // The parts the markup holds after the label draw after it and the end icons, and so does an
+  // absolute part first in the DOM that may end a row beside its label in flow.
+  const leading = label !== undefined && end.length === 0 ? leadingAbsolute(inDom) : undefined;
+  const afterLabel = (part: ShownPart): boolean =>
+    part === leading || (part.kind === "frame" && part.child.after === "label");
+  const before = inDom.filter((part) => !afterLabel(part));
+  const trailing = inDom.filter((part) => afterLabel(part));
+  const shown = [...before, ...trailing];
   // Every part and icon is an element child, absolute or hidden ones too, and so is the element a
   // label's characters sit in, beside the ones the definition draws no layer for.
   const undrawn = box.undrawnChildren?.(cell);
@@ -358,6 +369,17 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       : shown.length + slots.length + (label?.textElement === undefined ? 0 : 1) + undrawn
   );
   const flowing = shown.filter((part) => !outOfFlow(part.cascade.style));
+  const flowingBefore = before.filter((part) => !outOfFlow(part.cascade.style));
+  const flowingAfter = trailing.filter((part) => !outOfFlow(part.cascade.style));
+  const others = [...start, ...(label === undefined ? [] : [label]), ...end];
+  // A part's place in `holder.layers`: the parts before the label, its icons and itself, then the rest.
+  const layerIndex = (index: number): number =>
+    index < flowingBefore.length ? index : index + others.length;
+  const order = [
+    ...flowingBefore.map(({ name }) => name),
+    ...others.map(({ name }) => name),
+    ...flowingAfter.map(({ name }) => name),
+  ];
   // A part's own `align-self` can decide the box's alignment, so the layout reads once they cascade.
   const flow = readFlow(
     reader,
@@ -368,11 +390,14 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         style: part.cascade.style,
         sizing: sizingOf(part.kind === "instance" ? part.visit.part : part.child, cascade.path),
       })),
-      others: [...start, ...(label === undefined ? [] : [label]), ...end],
-      // The flow ends with the last end icon, else the label, else the last start icon or part.
+      others,
+      // The flow ends with the last part after the label, else the last end icon, else the label, else
+      // the last start icon or part.
       last:
+        flowingAfter.at(-1)?.cascade.style ??
         lastIcon.get("end") ??
-        (label === undefined ? (lastIcon.get("start") ?? flowing.at(-1)?.cascade.style) : undefined),
+        (label === undefined ? (lastIcon.get("start") ?? flowingBefore.at(-1)?.cascade.style) : undefined),
+      labelBeforeLast: label !== undefined && order.length > 2 && order.at(-2) === label.name,
     },
     { sizing, limits, inside }
   );
@@ -383,20 +408,16 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     sizing,
     limits,
     extent,
-    layers: [
-      ...flowing.map(({ name }) => name),
-      ...start.map(({ name }) => name),
-      ...(label === undefined ? [] : [label.name]),
-      ...end.map(({ name }) => name),
-    ],
+    layers: order,
     widthCap: room.widthCap,
     unbounded: room.unbounded,
     widthKnown: known.horizontal,
     shares: [
-      ...flowing.map((part) => partShare(part.cascade.style)),
+      ...flowingBefore.map((part) => partShare(part.cascade.style)),
       ...start.map(iconShare),
       ...(label === undefined ? [] : [UNREAD_SHARE]),
       ...end.map(iconShare),
+      ...flowingAfter.map((part) => partShare(part.cascade.style)),
     ],
   };
   const growing = readGrowth(
@@ -423,11 +444,19 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const flush = SIDE_PADDINGS.every((property) => evaluateLength(reader.resolved(property) ?? "0px") === 0);
   const { clipsAround: _parent, ...own } = scope;
   const partScope: MapScope = clips && flush ? { ...own, clipsAround: true } : own;
+  // A popup that hugs its rows hugs the one that sets its width and fills the others.
+  const across = rowsAcross(
+    { layout, width: sizing.horizontal, limits },
+    flowing.map((part) => holdsWidthRow(part.kind === "instance" ? part.visit.part : part.child, cell))
+  );
+  const minimum =
+    across === undefined ? undefined : rowMinimum(limits.minWidth, room, reader, context.variables);
   const mapped = shown.map((part): MappedPart => {
     const index = flowing.indexOf(part);
     const inFlow = (): Room => {
-      const inside = roomInside(holder, index);
-      return index === growing ? growingRoom(holder, index, inside) : inside;
+      const inside = roomInside(holder, layerIndex(index));
+      const room = rowRoom(inside, across?.[index], minimum);
+      return index === growing ? growingRoom(holder, layerIndex(index), room) : room;
     };
     const room = index === -1 ? absoluteRoom(holder) : lessMargins(inFlow(), part.cascade.style);
     const styles = flowing.map((each) => each.cascade.style);
@@ -465,6 +494,26 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     label === undefined || placed === undefined
       ? undefined
       : spaceBeforeLabel(holder, label, placed.layer, start.length, variant);
+  // An absolute part first in the DOM ends the row in flow where the row ends flush: one layer grows,
+  // the row hugs, or the label fills.
+  const leadingEnd =
+    leading !== undefined &&
+    endsBesideLabel(
+      {
+        style: reader,
+        layout,
+        layers: holder.layers.length,
+        endsFlush:
+          growing !== undefined ||
+          sizing.horizontal.kind === "hug" ||
+          placed?.layer.sizing.horizontal.kind === "fill",
+      },
+      leading.cascade.style,
+      huggedWidth(mapped[shown.indexOf(leading)]?.layer)
+    )
+      ? leading.cascade.style
+      : undefined;
+  const endInFlow = inFlowEnd ?? leadingEnd;
   const after: readonly ChildLayerSpec[] = [
     ...start,
     ...(placed === undefined ? [] : [placed.layer]),
@@ -472,7 +521,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   ];
   // The display reads once the layers are known, since a grid maps only around one item.
   const textBlock = readDisplay(reader, holder.layers, label?.name, layout, clamp, {
-    width: sizing.horizontal,
+    width: across === undefined ? sizing.horizontal : FILL_ACROSS,
     inside,
   });
   const width = fixedLength(sizing.horizontal);
@@ -492,9 +541,9 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const paddingLeft = sections?.paddingLeft ?? number("padding-left", "paddingLeft") ?? ZERO;
   const paddingRight =
     sections?.paddingRight ??
-    (inFlowEnd === undefined
+    (endInFlow === undefined
       ? number("padding-right", "paddingRight")
-      : padToOffset(reader, inFlowEnd, context.variables)) ??
+      : padToOffset(reader, endInFlow, context.variables)) ??
     ZERO;
   const placement = placeParts(
     {
@@ -504,16 +553,26 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       size: { width, stroke: paint.stroke, paddingLeft, paddingRight },
     },
     parts,
-    inFlowEnd
+    endInFlow
   );
   const itemSpacing = space ?? number("gap", "itemSpacing") ?? ZERO;
   const counterAlign =
     placed?.counterAlign ?? (textBlock ? blockLineAlign(layout, sizing, limits) : layout.counterAlign);
+  // The parts before the label sit first, sectioned where separators cancel the box's padding, and
+  // the parts after the label last.
+  const first = placement.layers.slice(0, before.length);
   const children: readonly ChildLayerSpec[] = [
     ...(sections === undefined
-      ? placement.layers
-      : sectioned(reader, placement.layers, sections, { itemSpacing, counterAlign })),
+      ? first
+      : sectioned(reader, first, sections, {
+          itemSpacing,
+          counterAlign,
+          hugs: new Set(
+            flowing.flatMap((part, index) => (across?.[index]?.kind === "hug" ? [part.key] : []))
+          ),
+        })),
     ...after,
+    ...placement.layers.slice(before.length),
   ];
   reader.read(
     "aspect-ratio",
@@ -580,6 +639,19 @@ function readWraps(holder: Holder, growing: number | undefined): void {
   );
 }
 
+/** A width a box's blocks fill, as a popup's rows fill it where `rowsAcross` sizes them. */
+const FILL_ACROSS: SizeSpec = { kind: "fill" };
+
+/**
+ * The absolute part first in a box's DOM that may end the row in flow beside the box's label, as
+ * {@link endsBesideLabel} decides once the box maps: a frame part, out of the flow, with no other
+ * part after it.
+ */
+function leadingAbsolute(parts: readonly ShownPart[]): ShownPart | undefined {
+  const [first] = parts;
+  return first?.kind === "frame" && parts.length === 1 && outOfFlow(first.cascade.style) ? first : undefined;
+}
+
 /**
  * Cascade the parts a box shows in the cell, each below the box: a frame part's own classes, style
  * attribute and element defaults, and an instance part's inner root, as {@link InstanceParts.cascade}
@@ -638,8 +710,11 @@ function mapPart(
   scope: MapScope,
   collapses: boolean
 ): MappedPart {
+  // The row that sets a popup's width keeps the popup's minimum, which no class of its own sets.
+  const minimum = namedMinimum(part.kind === "instance" ? part.visit.part : part.child, scope.cell, room);
   if (part.kind === "instance") {
-    const { layer: drawn, painted } = scope.instances.map(part, room);
+    const { layer: built, painted } = scope.instances.map(part, room);
+    const drawn = minimum === undefined ? built : { ...built, minWidth: minimum };
     const { layer, instance } = wrapInstanceMargins(
       part.cascade.style,
       drawn,
@@ -656,7 +731,8 @@ function mapPart(
     };
     return instance === layer ? mapped : { ...mapped, wrapped: instance };
   }
-  const own = mapBox(part.child, part.cascade, scope, room);
+  const frame = mapBox(part.child, part.cascade, scope, room);
+  const own = minimum === undefined ? frame : { ...frame, limits: { ...frame.limits, minWidth: minimum } };
   // Figma draws a part's spread ring only over a visible fill with clipping on (PR2).
   const box = castsSpread(own.shadows) ? { ...own, fill: ringFill(own), clips: true } : own;
   const drawn: FrameLayerSpec = {
@@ -917,6 +993,7 @@ function mapIcon(
     size: width,
     color,
   };
+  const linked = slot.optional === undefined ? layer : { ...layer, visibleProperty: slot.optional.name };
   const rotation = readRotation(style);
-  return rotation === undefined ? layer : { ...layer, rotation };
+  return rotation === undefined ? linked : { ...linked, rotation };
 }

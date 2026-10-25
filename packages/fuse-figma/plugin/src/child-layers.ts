@@ -605,8 +605,8 @@ function planRotation(
 
 /**
  * Plan an icon layer: an instance of the icon component the spec names, linked to the set's
- * swap property when it has one, sized and turned by the cell and with its glyph in the label's
- * color.
+ * swap property when it has one, sized and turned by the cell, its visibility linked to the set's
+ * BOOLEAN property when it hides behind one (PI2), and with its glyph in the label's color.
  */
 async function planIcon(
   run: Run,
@@ -656,6 +656,7 @@ async function planIcon(
     spec.size
   );
   planRotation(run, instance, label, spec.rotation);
+  planVisibleLink(run, instance, label, spec.visibleProperty, links.properties);
   // A swap or a redraw replaces the glyph, and a repaint of the component reaches a glyph whose color
   // equals it (NS), so the color goes on the glyph the instance holds once those ran.
   const glyph = swapped || icon.changesGlyph ? undefined : glyphOf(instance);

@@ -112,6 +112,11 @@ describe("the element a cell measures", () => {
     );
   });
 
+  it("matches an attribute by the suffix of its value, as two menu families name their group labels", () => {
+    const element: ElementSelector = { tag: "div", attributes: {}, suffixes: { "data-slot": "-label" } };
+    expect(measuredSelector({ slot: "menu-group-label", element })).toBe('div[data-slot$="-label"]');
+  });
+
   it("escapes a newline, a tab and DEL in an attribute value as code points", () => {
     const element: ElementSelector = {
       tag: "div",
@@ -221,6 +226,15 @@ describe("a client cell's slot", () => {
     expect(html.indexOf(script)).toBeGreaterThan(html.indexOf('data-compare-cell="c4"'));
     const staticCell: PageCell = { id: "c0", content: { _tag: "Static", html: "<b></b>" }, measured: ["b"] };
     expect(previewDocument(STAMPS, [staticCell], PAGE_LAYOUT, "")).not.toContain("<script");
+  });
+
+  // Oracle: CSS 2.1 §10.3.7, under which an absolute box with no width shrinks to fit the width of its
+  // containing block, the slot that holds its portal: a slot as narrow as its trigger would hold a
+  // Dropdown menu popup to its `min-w-32` where a page gives it room for its widest row.
+  it("gives a client slot the slot's whole width, as the containing block its popup shrinks to fit", () => {
+    expect(styleLines("", [client])).toContain(
+      `${CLIENT_HIDDEN}{width:${String(PAGE_LAYOUT.slotWidth)}px;box-sizing:border-box}`
+    );
   });
 
   it("hides everything in the slot but the measured elements, as the trigger a popup part anchors to", () => {

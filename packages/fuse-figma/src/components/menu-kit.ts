@@ -4,11 +4,13 @@
  * holds them as instances.
  *
  * - `Menu group label` is a group's caption: `text-xs`, the row inset across and 6px down, in
- *   `muted-foreground`, 1 cell. Its `kind` axis holds the plain label every family renders; Dropdown
- *   menu's `font-medium` and inset forms join it as values, so the published variant keeps its name.
- *   The cell is Select's label, `Select.Label` in a `Select.Group`, as wide as the group pads it in the
- *   docs Groups demo's popup: the popup's 144px less the group's `surface-pad-sm` on each side, 4px
- *   at both densities.
+ *   `muted-foreground`, 3 cells. Its `kind` axis picks the family per cell. `plain` is the label every
+ *   family but Dropdown menu renders, drawn as Select's, `Select.Label` in a `Select.Group`. `menu` is
+ *   Dropdown menu's `DropdownMenu.Label`, which adds `font-medium`, and `menu inset` is that label with
+ *   `inset`, which pads its start by the row inset plus the 16px indicator and its 8px gap, as
+ *   `row-indicator-room`. Each cell is as wide as its popup pads it: 144px less `surface-pad-sm` on
+ *   each side, 4px at both densities. Select's popup is 144px wide in the docs Groups demo, and the
+ *   Dropdown cells draw their popup at that width.
  * - `Menu separator` is the hairline between groups: 1px of `border`, 4px from what sits above and
  *   below it, with negative side margins that cancel its popup's padding, 1 cell. A popup draws it
  *   across its whole width, whatever it pads. Alone, the cell draws it as a popup 144px wide that
@@ -16,6 +18,7 @@
  *   its margins to 144px. Alone, its margins above and below space it from nothing the set draws.
  */
 import {
+  dropdownMenuVariants,
   menuGroupLabelClass,
   menuSeparatorClass,
   selectContentVariants,
@@ -79,22 +82,65 @@ export const SELECT_GROUP_ANCESTOR: AncestorDefinition = {
   undrawn: "the group's padding, which the Select popup set draws around its rows",
 };
 
-/** A group's caption, as `<Select.Label>Citrus</Select.Label>` in a `Select.Group`. */
+/**
+ * The variants Base UI stamps on an open Dropdown menu popup below its trigger: `data-open` and the
+ * side it places the popup on, which the popup's motion classes read.
+ */
+export const DROPDOWN_POPUP_FACTS: ReadonlyMap<string, (cell: Cell) => boolean> = new Map([
+  ["data-open", always],
+  ["data-closed", never],
+  ["data-[side=bottom]", always],
+  ...["top", "left", "right", "inline-start", "inline-end"].map(
+    (side) => [`data-[side=${side}]`, never] as const
+  ),
+]);
+
+const dropdownMenu = dropdownMenuVariants();
+
+/** The open Dropdown menu popup around a row or a group, which the row inherits its text color and inner corner from. */
+export const DROPDOWN_POPUP_ANCESTOR: AncestorDefinition = {
+  slot: "dropdown-menu-content",
+  classes: dropdownMenu.content(),
+  undrawn: "the popup's surface, padding and motion, which the Dropdown menu sets draw around their rows",
+};
+
+/** A Dropdown menu group, Base UI's classless `<div role="group">` around a label and its rows. */
+const DROPDOWN_GROUP_ANCESTOR: AncestorDefinition = {
+  slot: "dropdown-menu-group",
+  classes: "",
+  undrawn: "the group, which draws nothing",
+};
+
+/** Whether a group label cell is Dropdown menu's, `menu` or `menu inset`, rather than the plain one. */
+const isDropdownLabel = (cell: Cell): boolean => cell.kind !== "plain";
+
+/**
+ * A group's caption: `<Select.Label>Citrus</Select.Label>` in a `Select.Group` at `kind=plain`, and
+ * `<DropdownMenu.Label>Citrus</DropdownMenu.Label>` in a `DropdownMenu.Group`, `inset` at
+ * `kind=menu inset`.
+ */
 export const MENU_GROUP_LABEL: ComponentDefinition = {
   key: "menu-group-label",
   name: "Menu group label",
   slot: "menu-group-label",
-  // The family names the element's slot. Select's is `select-label`.
-  element: { tag: "div", attributes: { "data-slot": "select-label" } },
-  elementSlot: () => "select-label",
-  axes: [{ name: "kind", values: ["plain"] }],
+  // Each family names the element's slot, which ends `-label` in both.
+  element: { tag: "div", attributes: {}, suffixes: { "data-slot": "-label" } },
+  elementSlot: (cell) => (isDropdownLabel(cell) ? "dropdown-menu-label" : "select-label"),
+  axes: [{ name: "kind", values: ["plain", "menu", "menu inset"] }],
   columnAxis: "kind",
-  classesFor: () => menuGroupLabelClass,
+  classesFor: (cell) => (isDropdownLabel(cell) ? dropdownMenu.label() : menuGroupLabelClass),
   previewWidth: PADDED_CONTENT_WIDTH,
-  ancestorsFor: () => [SELECT_POPUP_ANCESTOR, SELECT_GROUP_ANCESTOR],
+  ancestorsFor: (cell) =>
+    isDropdownLabel(cell)
+      ? [DROPDOWN_POPUP_ANCESTOR, DROPDOWN_GROUP_ANCESTOR]
+      : [SELECT_POPUP_ANCESTOR, SELECT_GROUP_ANCESTOR],
   elementDefaults: DIV_BLOCK,
   states: {},
-  facts: SELECT_POPUP_FACTS,
+  facts: new Map([
+    ...SELECT_POPUP_FACTS,
+    // Fuse stamps `data-inset` on an inset Dropdown menu label.
+    ["data-inset", (cell: Cell) => cell.kind === "menu inset"],
+  ]),
   omittedStates: new Set(),
   label: {
     key: "label",

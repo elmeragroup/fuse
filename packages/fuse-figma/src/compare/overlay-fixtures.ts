@@ -147,6 +147,13 @@ export const OVERLAY_FIXTURES: readonly OverlayFixture[] = [
       name: "Dropdown menu item",
       slot: "dropdown-menu-item",
       axes: HIGHLIGHT,
+      // The item's own classes read its tone and inset, which Fuse stamps as `data-variant="default"`
+      // and no `data-inset`.
+      facts: new Map<string, (cell: Cell) => boolean>([
+        ["data-[variant=destructive]", () => false],
+        ["not-data-[variant=destructive]", () => true],
+        ["data-inset", () => false],
+      ]),
       label: {
         key: "label",
         name: "Label",

@@ -212,7 +212,12 @@ export function sectioned(
   style: LayerStyle,
   layers: readonly (FrameLayerSpec | InstanceLayerSpec)[],
   bleed: Extract<Bleed, { readonly kind: "sections" }>,
-  column: { readonly itemSpacing: NumberSpec; readonly counterAlign: CounterAlignSpec }
+  column: {
+    readonly itemSpacing: NumberSpec;
+    readonly counterAlign: CounterAlignSpec;
+    /** The keys of the layers that hug across, where a popup that hugs its rows names one. */
+    readonly hugs?: ReadonlySet<string>;
+  }
 ): readonly (FrameLayerSpec | InstanceLayerSpec)[] {
   moveIntoSections(
     style,
@@ -241,7 +246,10 @@ export function sectioned(
       return [];
     }
     drawn.add(key);
-    return [section(key, runs.get(key) ?? [], bleed, column)];
+    const run = runs.get(key) ?? [];
+    // A section that holds the row a popup takes its width from hugs it, as the row does.
+    const hugs = run.some((each) => column.hugs?.has(each.key) === true);
+    return [section(key, run, bleed, column, hugs)];
   });
 }
 
@@ -250,14 +258,15 @@ function section(
   key: string,
   layers: readonly (FrameLayerSpec | InstanceLayerSpec)[],
   bleed: Extract<Bleed, { readonly kind: "sections" }>,
-  column: { readonly itemSpacing: NumberSpec; readonly counterAlign: CounterAlignSpec }
+  column: { readonly itemSpacing: NumberSpec; readonly counterAlign: CounterAlignSpec },
+  hugs: boolean
 ): FrameLayerSpec {
   return {
     kind: "frame",
     key,
     name: "section",
     direction: "VERTICAL",
-    sizing: { horizontal: { kind: "fill" }, vertical: { kind: "hug" } },
+    sizing: { horizontal: { kind: hugs ? "hug" : "fill" }, vertical: { kind: "hug" } },
     limits: NO_LIMITS,
     clips: false,
     paddingTop: ZERO,

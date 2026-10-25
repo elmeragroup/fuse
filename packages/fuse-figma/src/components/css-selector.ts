@@ -229,17 +229,24 @@ export type SlotTest = {
   readonly clause: string;
 };
 
+/** An element type a selector tests inside `:has()`, such as `svg`, and the outermost `:has()` that holds it. */
+export type ElementTest = {
+  readonly element: string;
+  readonly clause: string;
+};
+
 /**
- * What a selector reads of the parts around the element it styles: the `data-slot` values it tests
- * inside `:has()`, which hold only while such a part is there. `unreadable` says why the scanner
- * cannot tell which parts the selector reads, which differs from reading none.
+ * What a selector reads of the parts around the element it styles: the `data-slot` values and the
+ * element types it tests inside `:has()`, which hold only while such a part or element is there.
+ * `unreadable` says why the scanner cannot tell which parts the selector reads, which differs from
+ * reading none.
  */
 export type SlotReads =
-  | { readonly kind: "read"; readonly tests: readonly SlotTest[] }
+  | { readonly kind: "read"; readonly tests: readonly SlotTest[]; readonly elements: readonly ElementTest[] }
   | { readonly kind: "unreadable"; readonly reason: string };
 
 /**
- * Collect the `data-slot` tests inside `:has()`, at any depth.
+ * Collect the `data-slot` and element type tests inside `:has()`, at any depth.
  *
  * @param clause - The outermost `:has()` around `selector`, or undefined outside any.
  * @returns Why the scanner cannot read the selector, or undefined once it collected every test.
@@ -247,7 +254,8 @@ export type SlotReads =
 function collectSlotTests(
   selector: string,
   clause: string | undefined,
-  tests: SlotTest[]
+  tests: SlotTest[],
+  elements: ElementTest[]
 ): string | undefined {
   for (const parts of selectorAlternatives(selector)) {
     for (const part of parts) {
@@ -256,10 +264,14 @@ function collectSlotTests(
       }
       if (part.kind === "pseudo" && part.argument !== undefined) {
         const inner = clause ?? (part.name === "has" ? `:has(${part.argument})` : undefined);
-        const reason = collectSlotTests(part.argument, inner, tests);
+        const reason = collectSlotTests(part.argument, inner, tests, elements);
         if (reason !== undefined) {
           return reason;
         }
+      }
+      if (part.kind === "type" && clause !== undefined) {
+        elements.push({ element: part.name, clause });
+        continue;
       }
       if (part.kind !== "attribute" || clause === undefined) {
         continue;
@@ -286,7 +298,8 @@ function collectSlotTests(
 /**
  * Read which parts a selector needs to be there, through the `data-slot` values it tests inside
  * `:has()`, as `item-described:` tests Item's description in
- * `:where(:has(> [data-slot="item-content"] > [data-slot="item-description"])) > .x`.
+ * `:where(:has(> [data-slot="item-content"] > [data-slot="item-description"])) > .x`, and the
+ * element types it tests there, as `has-[>svg]:` tests an icon in `:has( > svg)`.
  *
  * @param selector - A selector or selector list, as Tailwind prints it.
  * @returns Each test with the `:has()` that holds it, or why the scanner cannot read the selector:
@@ -294,6 +307,7 @@ function collectSlotTests(
  */
 export function slotReadsOf(selector: string): SlotReads {
   const tests: SlotTest[] = [];
-  const reason = collectSlotTests(selector, undefined, tests);
-  return reason === undefined ? { kind: "read", tests } : { kind: "unreadable", reason };
+  const elements: ElementTest[] = [];
+  const reason = collectSlotTests(selector, undefined, tests, elements);
+  return reason === undefined ? { kind: "read", tests, elements } : { kind: "unreadable", reason };
 }

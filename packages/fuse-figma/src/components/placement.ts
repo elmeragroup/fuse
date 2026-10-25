@@ -30,6 +30,7 @@ import { fixedLength, NO_LIMITS, ZERO } from "./kit-spec";
 import type {
   AbsoluteSpec,
   BoxSpec,
+  ChildLayerSpec,
   CounterAlignSpec,
   DirectionSpec,
   FrameLayerSpec,
@@ -61,6 +62,12 @@ export type Layout = {
   readonly counterAlign: CounterAlignSpec;
   /** Where `justify-content` packs the layers, or `unset` where nothing sets it. */
   readonly justify: PrimaryAlignSpec | "unset";
+  /**
+   * True where an auto start margin on the row's last layer takes the room after the row's own label,
+   * which the label then fills, as `readAutoStart` in `box-flow.ts` reads it. Absent elsewhere,
+   * a real `justify-content: space-between` included.
+   */
+  readonly labelFills?: true;
 };
 
 /** The lengths of a row that place a part along it. The width is undefined where the row hugs it. */
@@ -463,7 +470,7 @@ const IN_FLOW_END =
 export type EndRow = {
   readonly style: LayerStyle;
   readonly layout: Layout;
-  /** How many layers sit in the row's flow, all of them parts before the absolute one. */
+  /** How many layers sit in the row's flow, all of them before the absolute one. */
   readonly layers: number;
   /** Whether the row's last layer in flow ends at its content box's end: one grows, or the row hugs. */
   readonly endsFlush: boolean;
@@ -481,13 +488,35 @@ const STATIC_ACROSS = ["left", "top", "bottom", "translate", "align-self", ...MA
  * variables they read, and the row's last layer in flow ends at its content box's end, the part sits
  * exactly where the row's gap after that layer puts it with an end padding of the offset. The row
  * must be a positioned flex row with no border, centering its layers, with at least one layer in
- * flow and no label or icon of its own, so the part is its last layer.
+ * flow and no label or icon of its own, so the part is its last layer, and the part must set its
+ * width.
  *
  * @param row - The row.
  * @param part - The style of the row's last part.
  * @returns Whether the part draws in flow.
  */
 export function endsInFlow(row: EndRow, part: LayerStyle): boolean {
+  return part.has("width") && endsAt(row, part, part.resolved("width") ?? "");
+}
+
+/**
+ * Whether an absolute part first in the DOM draws in flow as the row's last layer, after the row's own
+ * text, as a Dropdown menu checkbox row's check does: as {@link endsInFlow} says, with the text the
+ * row's layer in flow, and with the part as wide as its `width`, or else as the width it hugs, the
+ * one icon it holds, as mapped.
+ *
+ * @param row - The row.
+ * @param part - The style of the part.
+ * @param hugged - The width the part hugs in pixels, or undefined where it holds other than one icon.
+ * @returns Whether the part draws in flow.
+ */
+export function endsBesideLabel(row: EndRow, part: LayerStyle, hugged: number | undefined): boolean {
+  const width = part.has("width") ? part.resolved("width") : hugged === undefined ? undefined : `${hugged}px`;
+  return width !== undefined && endsAt(row, part, width);
+}
+
+/** The test {@link endsInFlow} and {@link endsBesideLabel} share, with the part's width given. */
+function endsAt(row: EndRow, part: LayerStyle, width: string): boolean {
   const { style, layout } = row;
   const keyword = (reader: LayerStyle, property: string): string =>
     normalizeCss(reader.resolved(property) ?? "");
@@ -502,14 +531,13 @@ export function endsInFlow(row: EndRow, part: LayerStyle): boolean {
     row.endsFlush &&
     keyword(part, "position") === "absolute" &&
     part.has("right") &&
-    part.has("width") &&
     STATIC_ACROSS.every((property) => !part.has(property));
   return (
     holds &&
     sumsTo(style.resolved("padding-right") ?? "0px", [
       part.resolved("right") ?? "",
       style.resolved("gap") ?? "0px",
-      part.resolved("width") ?? "",
+      width,
     ])
   );
 }
@@ -842,4 +870,26 @@ export function readRotation(style: LayerStyle): RotationSpec | undefined {
     style.feed("rotation")
   );
   return rotation === 0 ? undefined : rotation;
+}
+
+/**
+ * The width in pixels a mapped frame hugs where it holds one icon of a literal size between literal
+ * paddings, as a menu row's indicator holds its check, or undefined for any other layer.
+ *
+ * @param layer - The mapped layer, or undefined for none.
+ * @returns The width, or undefined.
+ */
+export function huggedWidth(layer: ChildLayerSpec | undefined): number | undefined {
+  if (layer?.kind !== "frame" || layer.sizing.horizontal.kind !== "hug") {
+    return undefined;
+  }
+  const [icon, ...rest] = layer.children;
+  const { paddingLeft, paddingRight } = layer;
+  return icon?.kind === "icon" &&
+    rest.length === 0 &&
+    icon.size.kind === "literal" &&
+    paddingLeft.kind === "literal" &&
+    paddingRight.kind === "literal"
+    ? paddingLeft.value + icon.size.value + paddingRight.value
+    : undefined;
 }
