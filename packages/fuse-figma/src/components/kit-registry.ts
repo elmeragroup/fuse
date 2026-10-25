@@ -154,7 +154,7 @@ const SELECT_PAGE: KitPage = { slug: "select", name: "Select" };
 /** The page of Popover's popup and the open Popover. */
 const POPOVER_PAGE: KitPage = { slug: "popover", name: "Popover" };
 
-/** The page of Dropdown menu's rows, until its popups and the open menu join them. */
+/** The page of Dropdown menu's rows, its popups and the open menu. */
 const DROPDOWN_MENU_PAGE: KitPage = { slug: "dropdown-menu", name: "Dropdown menu" };
 
 /** The page Empty sits on alone. */
@@ -175,7 +175,7 @@ const ALERT_PAGE: KitPage = { slug: "alert", name: "Alert" };
 /** The page Accordion's item sits on alone, until a stacked accordion joins it. */
 const ACCORDION_PAGE: KitPage = { slug: "accordion", name: "Accordion" };
 
-/** The page of Sidebar's rows, until the panel and the icon rail join them. */
+/** The page of Sidebar's rows and sections, and of the panel, expanded and collapsed to its icon rail. */
 const SIDEBAR_PAGE: KitPage = { slug: "sidebar", name: "Sidebar" };
 
 /** The page of Combobox's open state: its row, its empty message, its popup and the open input. */

@@ -37,6 +37,7 @@ import {
 import { swapProperties } from "./component-spec";
 import type { Cell, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
 import { ownKey } from "./own-key";
+import { always } from "./popup-facts";
 import { portraitPng } from "./portrait";
 
 /** The width the kit's previews and the compare host give an Item row, which fills it. */
@@ -129,8 +130,6 @@ const LIGHTNING: IconSlot = {
   icon: "Lightning",
   swapProperty: "Icon",
 };
-
-const always = (): boolean => true;
 
 /** The title, in the text a set gives it, which its `Title` property sets. */
 function title(characters: string): PartDefinition {

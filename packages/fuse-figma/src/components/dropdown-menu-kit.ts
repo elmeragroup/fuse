@@ -59,19 +59,18 @@ import {
   DROPDOWN_MENU_SUB_TRIGGER_TEXT,
   DROPDOWN_ROW_CELL_WIDTH,
 } from "./dropdown-menu-text";
+import { SURFACE_PAD_SM } from "./kit-lengths";
 import { DROPDOWN_POPUP_ANCESTOR, DROPDOWN_POPUP_FACTS } from "./menu-kit";
+import { always, never, openPopupFacts } from "./popup-facts";
 
 const { item, shortcut, subTrigger, subTriggerCaret } = dropdownMenuVariants();
-
-const always = (): boolean => true;
-const never = (): boolean => false;
 
 /**
  * The width a row takes in a Dropdown menu popup at its minimum: `min-w-32`, 128px, less
  * `surface-pad-sm`, 4px at both densities, on each side. The docs Submenu demo's rows are narrower,
  * so its popup is that minimum.
  */
-export const DROPDOWN_ROW_WIDTH = 128 - 2 * 4;
+export const DROPDOWN_ROW_WIDTH = 128 - 2 * SURFACE_PAD_SM;
 
 /** The CaretRight that ends the row, fixed, so no swap property picks it. */
 const CARET: IconSlot = {
@@ -104,7 +103,7 @@ export const DROPDOWN_MENU_SUB_TRIGGER: ComponentDefinition = {
   // An open submenu marks its trigger `data-popup-open`.
   states: { highlighted: ["focus"], focus: ["focus"], open: ["data-popup-open"] },
   facts: new Map<string, (cell: Cell) => boolean>([
-    ...[...DROPDOWN_POPUP_FACTS].filter(([variant]) => variant !== "data-open"),
+    ...openPopupFacts({ open: false }),
     // The docs give the trigger no `inset`, and it takes no tone.
     ["data-inset", never],
     ["data-[variant=destructive]", never],

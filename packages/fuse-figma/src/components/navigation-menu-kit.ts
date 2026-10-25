@@ -29,6 +29,7 @@
 import { navigationMenuVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { Cell, ComponentDefinition, IconSlot } from "./component-spec";
+import { always } from "./popup-facts";
 
 /** The bar trigger's text, the default of its `Label` property: the docs Basic demo's first trigger. */
 export const NAVIGATION_MENU_BAR_TRIGGER_TEXT = "Customers";
@@ -59,8 +60,6 @@ export type CaretSide = (typeof CARET_SIDES)[number];
 
 /** The recipe's slots, which take no variant but the trigger's orientation and the link's box. */
 const SLOTS = navigationMenuVariants();
-
-const always = (): boolean => true;
 
 /**
  * Whether a cell shows the trigger's popup open.

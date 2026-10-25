@@ -39,6 +39,7 @@ import type {
   InstanceDefinition,
   OuterDeclaration,
 } from "./component-spec";
+import { always, never } from "./popup-facts";
 import { SIDEBAR_FOOTER, SIDEBAR_GROUP, SIDEBAR_HEADER } from "./sidebar-section-kit";
 
 /** The height of the app frame demo's frame, `h-[28rem]`, which the Root's `h-full` takes. */
@@ -74,8 +75,6 @@ export function panelVariant(cell: Cell): PanelVariant {
   return variant;
 }
 
-const always = (): boolean => true;
-const never = (): boolean => false;
 const collapsed = (cell: Cell): boolean => cell.collapsed === "on";
 
 /** The rail widths the Provider's wrapper sets in its style around the container. */

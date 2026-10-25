@@ -24,7 +24,7 @@ import { createElement } from "react";
 import { Field } from "../../../fuse/dist/field.js";
 import { Textarea } from "../../../fuse/dist/textarea.js";
 import type { Cell } from "../components/component-spec.ts";
-import { FIELD_BOX_PREVIEW_WIDTH } from "../components/field-box-kit.ts";
+import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
 import { TEXTAREA_TEXT } from "../components/textarea-kit.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 

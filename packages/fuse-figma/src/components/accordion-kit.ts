@@ -24,9 +24,11 @@
  */
 import { accordionVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { Cell, ComponentDefinition, IconSlot, OuterDeclaration, PartDefinition } from "./component-spec";
+import type { Cell, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
+import { DIV_BLOCK } from "./element-defaults";
 import { HOST_TYPE } from "./host-type";
 import { ownKey } from "./own-key";
+import { always } from "./popup-facts";
 
 /** The width the kit's previews and the compare host give an item, which its block box fills. */
 export const ACCORDION_PREVIEW_WIDTH = 384;
@@ -83,15 +85,6 @@ function slotsFor(cell: Cell) {
   return accordionVariants({ variant, radius });
 }
 
-/**
- * The display the browser's default style sheet gives a `<div>`, which the item, the panel and the
- * panel's text box are, and which no class of theirs sets.
- */
-const DIV_BLOCK: readonly OuterDeclaration[] = [
-  { className: "user agent style sheet, div", property: "display", value: "block" },
-];
-
-const always = (): boolean => true;
 const showsOpen = (cell: Cell): boolean => accordionLook(cell).open;
 
 /** The caret `Accordion.Trigger` renders by default, CaretDown with the `icon` slot's classes. */

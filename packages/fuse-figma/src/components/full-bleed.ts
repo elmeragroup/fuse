@@ -16,6 +16,7 @@ import {
   readNumber,
   sameAffine,
   sumAffine,
+  ZERO_AFFINE,
 } from "./css-values";
 import type { AffineLength, VariableIndex } from "./css-values";
 import { NO_LIMITS, ZERO } from "./kit-spec";
@@ -190,11 +191,8 @@ function crossesBack(part: LayerStyle): boolean {
 function cancelOut(first: string, second: string): boolean {
   const lengths = [affineLength(first), affineLength(second)];
   const read = lengths.filter((length): length is AffineLength => length !== undefined);
-  return read.length === 2 && sameAffine(sumAffine(read), ZERO_LENGTH);
+  return read.length === 2 && sameAffine(sumAffine(read), ZERO_AFFINE);
 }
-
-/** The length zero, as an affine length. */
-const ZERO_LENGTH: AffineLength = { constant: 0, coefficients: new Map() };
 
 /**
  * Draw a column's layers as {@link readBleed} decided: each run of layers between separators in a

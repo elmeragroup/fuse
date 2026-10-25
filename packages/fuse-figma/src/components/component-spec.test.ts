@@ -1823,6 +1823,14 @@ describe("a block box", () => {
     expect(coverage.filter((row) => row.className === "block").map((row) => row.outcome)).toEqual([outcome]);
   });
 
+  // CSS Display 3 §2.1: `flow-root` is block-level, so a block box stacks a `flow-root` part as it
+  // stacks a `block` one.
+  it.each(["block", "flow-root"])("stacks a %s part as a block", async (display) => {
+    const { coverage } = await buildFixture(chip("block w-[100px]", { parts: [dot(`${display} h-[8px]`)] }));
+    const root = coverage.filter((row) => row.part === "chip" && row.className === "block");
+    expect(root.map((row) => row.outcome)).toEqual(["literal"]);
+  });
+
   it("that holds only its label sets it in lines across its width", async () => {
     const { variant, coverage } = await buildLabelled("block w-[100px]", { label: LABEL });
     expect(textOf(variant?.root)?.sizing).toEqual(FILL_WIDTH);

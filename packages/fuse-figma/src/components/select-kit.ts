@@ -32,24 +32,25 @@ import { selectContentVariants } from "@elmeragroup/fuse/recipe-catalog";
 import type {
   Cell,
   ComponentDefinition,
-  IconSlot,
   InstanceDefinition,
   OuterDeclaration,
   PartDefinition,
 } from "./component-spec";
+import { DIV_BLOCK } from "./element-defaults";
 import {
-  DIV_BLOCK,
-  MENU_GROUP_LABEL,
-  MENU_SEPARATOR,
+  MENU_CHECK,
+  menuGroupPart,
+  menuRowPart,
+  menuSeparatorPart,
   SELECT_POPUP_ANCESTOR,
   SELECT_POPUP_FACTS,
   SELECT_POPUP_WIDTH,
 } from "./menu-kit";
+import { always } from "./popup-facts";
 import { SELECT_TRIGGER } from "./select-trigger-kit";
 
 const { content, item, itemText, itemIndicator, group } = selectContentVariants();
 
-const always = (): boolean => true;
 const isSelected = (cell: Cell): boolean => cell.selected === "on";
 
 /** The text every row cell shows, the default of its `Label` property: the docs Basic demo's first row. */
@@ -77,18 +78,6 @@ const ANCHOR_WIDTH: OuterDeclaration = {
   value: `${SELECT_POPUP_WIDTH}px`,
 };
 
-/** The Check the indicator holds, fixed, so no swap property picks it. */
-const CHECK: IconSlot = {
-  key: "check",
-  name: "Check",
-  side: "end",
-  direct: true,
-  dataIcon: undefined,
-  icon: "Check",
-  swapProperty: undefined,
-  classes: "pointer-events-none",
-};
-
 /** Base UI's `ItemText` `<div>`, which holds the row's text and fills the row. */
 const ITEM_TEXT: PartDefinition = {
   key: "text",
@@ -114,7 +103,7 @@ const ITEM_INDICATOR: PartDefinition = {
   shownIn: isSelected,
   classesFor: () => itemIndicator(),
   label: undefined,
-  iconsFor: () => [CHECK],
+  iconsFor: () => [MENU_CHECK],
 };
 
 /**
@@ -152,59 +141,31 @@ export const SELECT_ITEM: ComponentDefinition = {
 };
 
 /** A row of the popup, an instance of the row's set at rest and not selected, its label exposed. */
-function rowOf(label: string, shownIn: (cell: Cell) => boolean): InstanceDefinition {
-  return {
-    kind: "instance",
-    key: `item-${label.toLowerCase()}`,
-    of: SELECT_ITEM,
-    cell: () => ({ selected: "off", state: "rest" }),
-    // The instance carries a label only where it differs from the row set's own, so Apple's carries none.
-    properties: () => ({ text: { Label: label } }),
-    shownIn,
-    exposed: true,
-  };
-}
+const rowOf = (label: string, shownIn: (cell: Cell) => boolean): InstanceDefinition =>
+  menuRowPart(SELECT_ITEM, { selected: "off", state: "rest" }, label, shownIn);
 
 const isFlat = (cell: Cell): boolean => cell.content === "flat";
 const isGrouped = (cell: Cell): boolean => cell.content === "grouped";
 
 /** A `Select.Group` holding its label and rows, each an instance. */
 function groupOf({ label, rows }: (typeof SELECT_GROUPS)[number]): PartDefinition {
-  return {
-    key: `group-${label.toLowerCase()}`,
+  return menuGroupPart({
     slot: "select-group",
+    classes: group(),
+    label,
+    rows: rows.map((row) => rowOf(row, isGrouped)),
     shownIn: isGrouped,
-    classesFor: () => group(),
-    elementDefaults: DIV_BLOCK,
-    label: undefined,
-    iconsFor: () => [],
-    parts: [
-      {
-        kind: "instance",
-        key: `label-${label.toLowerCase()}`,
-        of: MENU_GROUP_LABEL,
-        cell: () => ({ kind: "plain" }),
-        properties: () => ({ text: { Label: label } }),
-        shownIn: isGrouped,
-        exposed: true,
-      },
-      ...rows.map((row) => rowOf(row, isGrouped)),
-    ],
-  };
+  });
 }
 
 /**
  * The separator between the groups, an instance of the shared set. Select's `separator` slot is the
  * shared class plus `pointer-events-none`, which the composite passes.
  */
-const GROUP_SEPARATOR: InstanceDefinition = {
-  kind: "instance",
-  key: "separator",
-  of: MENU_SEPARATOR,
-  cell: () => ({ size: "default" }),
-  classesFor: () => "pointer-events-none",
+const GROUP_SEPARATOR: InstanceDefinition = menuSeparatorPart({
+  classes: "pointer-events-none",
   shownIn: isGrouped,
-};
+});
 
 /** Base UI's listbox `<div>`, which holds the rows and carries no class. */
 const LIST: PartDefinition = {

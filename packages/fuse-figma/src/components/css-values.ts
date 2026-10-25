@@ -534,6 +534,9 @@ type Affine = AffineLength & { readonly unit: "px" | "" };
 /** How far apart two coefficients may be and still count as one. */
 const SAME_COEFFICIENT = 1e-9;
 
+/** The length zero, as an affine length. */
+export const ZERO_AFFINE: AffineLength = { constant: 0, coefficients: new Map() };
+
 /**
  * Read a length as an affine expression of the variables it reads. Every `var()` left in the value
  * is a synced variable, a length. A product or quotient that scales a variable by a number, and a
@@ -555,10 +558,7 @@ export function affineLength(value: string): AffineLength | undefined {
  * @returns Their sum.
  */
 export function sumAffine(lengths: readonly AffineLength[]): AffineLength {
-  return lengths.reduce<AffineLength>((sum, length) => combine(sum, length, 1), {
-    constant: 0,
-    coefficients: new Map(),
-  });
+  return lengths.reduce<AffineLength>((sum, length) => combine(sum, length, 1), ZERO_AFFINE);
 }
 
 /**
@@ -570,6 +570,16 @@ export function sumAffine(lengths: readonly AffineLength[]): AffineLength {
  */
 export function sameAffine(left: AffineLength, right: AffineLength): boolean {
   return isZero(combine(left, right, -1));
+}
+
+/**
+ * The one value an affine length takes wherever its variables take a value.
+ *
+ * @param length - A length.
+ * @returns Its constant when it reads no variable, or undefined.
+ */
+export function constantOf(length: AffineLength): number | undefined {
+  return isZero({ constant: 0, coefficients: length.coefficients }) ? length.constant : undefined;
 }
 
 /** Whether an affine quantity is zero wherever its variables take a value. */
@@ -589,10 +599,17 @@ function combine<Length extends AffineLength>(left: Length, right: AffineLength,
   return { ...left, constant: left.constant + sign * right.constant, coefficients };
 }
 
-/** Multiply an affine quantity by a number. */
-function scale(quantity: Affine, factor: number): Affine {
+/**
+ * Multiply an affine quantity by a number, keeping its unit.
+ *
+ * @template Length - The quantity's type, an affine length or one with a unit.
+ * @param quantity - The quantity.
+ * @param factor - The number.
+ * @returns The product.
+ */
+export function scaleAffine<Length extends AffineLength>(quantity: Length, factor: number): Length {
   return {
-    unit: quantity.unit,
+    ...quantity,
     constant: quantity.constant * factor,
     coefficients: new Map(
       [...quantity.coefficients].map(([name, coefficient]) => [name, coefficient * factor])
@@ -702,7 +719,7 @@ function affineProduct(term: string): Affine | undefined {
       if (next.unit !== "" || next.coefficients.size > 0 || next.constant === 0) {
         return undefined;
       }
-      product = scale(product, 1 / next.constant);
+      product = scaleAffine(product, 1 / next.constant);
       continue;
     }
     const [number, quantity] =
@@ -710,7 +727,7 @@ function affineProduct(term: string): Affine | undefined {
     if (number.unit !== "" || number.coefficients.size > 0) {
       return undefined;
     }
-    product = scale(quantity, number.constant);
+    product = scaleAffine(quantity, number.constant);
   }
   return product;
 }

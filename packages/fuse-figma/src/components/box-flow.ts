@@ -3,7 +3,7 @@
  * alignments its flex, grid or block layout gives them, a column's stretch, and the alignment a row's
  * parts set through `align-self`, which settles once the parts map.
  */
-import { heightBounds, listNames } from "./box-sizing";
+import { BLOCK_LEVEL, heightBounds, listNames } from "./box-sizing";
 import type { ChildSpacing, CoverageNote, Feed, LayerStyle } from "./cascade";
 import { describeNumber, evaluateLength, normalizeCss, readNumber } from "./css-values";
 import type { VariableIndex } from "./css-values";
@@ -307,9 +307,6 @@ function readAutoStart(reader: LayerStyle, flow: FlowLayers): "spaced" | "label-
   );
   return placing;
 }
-
-/** The displays that make a box block-level, which a block box stacks down its content box. */
-const BLOCK_LEVEL: ReadonlySet<string> = new Set(["block", "list-item", "flex", "grid"]);
 
 /**
  * The displays of a block container that stacks its block-level children: a block box, and a list

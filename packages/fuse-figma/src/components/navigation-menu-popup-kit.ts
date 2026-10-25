@@ -21,7 +21,7 @@
 import { navigationMenuVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
-import { DIV_BLOCK } from "./menu-kit";
+import { DIV_BLOCK, LI_LIST_ITEM } from "./element-defaults";
 import { NAVIGATION_MENU_ROW_LINK } from "./navigation-menu-kit";
 import {
   NAVIGATION_MENU_POPUP_CONTENTS,
@@ -29,15 +29,9 @@ import {
   navigationMenuPopupOf,
 } from "./navigation-menu-popup-text";
 import type { NavigationMenuPopupContentName, NavigationMenuPopupLink } from "./navigation-menu-popup-text";
+import { always } from "./popup-facts";
 
 const { popup, viewport, content } = navigationMenuVariants();
-
-const always = (): boolean => true;
-
-/** The display the browser's default style sheet gives an `<li>`, which no class of the demo's sets. */
-const LI_LIST_ITEM = [
-  { className: "user agent style sheet, li", property: "display", value: "list-item" },
-] as const;
 
 /**
  * A `<li>` of an item's list, shown in that item's cell, holding a row link instance at rest and

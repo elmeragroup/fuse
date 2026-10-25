@@ -1,7 +1,10 @@
 /**
  * The docs Basic demo's popups, as the Navigation menu popup set and its compare renderer both read
- * them. The module imports nothing, so the compare page's browser bundle can take it.
+ * them. The module imports only the import-free `kit-lengths.ts`, so the compare page's browser
+ * bundle can take it.
  */
+
+import { SURFACE_PAD_SM } from "./kit-lengths";
 
 /** A link in a popup's list, with its `href` and its text. */
 export type NavigationMenuPopupLink = { readonly href: string; readonly text: string };
@@ -32,7 +35,7 @@ export const NAVIGATION_MENU_POPUPS = {
   customers: {
     trigger: "Customers",
     listClass: "grid w-64 gap-1",
-    popupWidth: 256 + 2 * 4,
+    popupWidth: 256 + 2 * SURFACE_PAD_SM,
     links: [
       { href: "#electricity", text: "Electricity" },
       { href: "#solar", text: "Solar panels" },
@@ -42,7 +45,7 @@ export const NAVIGATION_MENU_POPUPS = {
   business: {
     trigger: "Business",
     listClass: "grid w-72 gap-1",
-    popupWidth: 288 + 2 * 4,
+    popupWidth: 288 + 2 * SURFACE_PAD_SM,
     links: [
       { href: "#contracts", text: "Power contracts" },
       { href: "#reporting", text: "Energy reporting" },

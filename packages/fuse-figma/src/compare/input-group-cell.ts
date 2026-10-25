@@ -33,8 +33,8 @@ import { MagnifyingGlass } from "../../../fuse/dist/icons.js";
 import { InputGroup } from "../../../fuse/dist/input-group.js";
 import { LocaleProvider } from "../../../fuse/dist/theme.js";
 import type { Cell } from "../components/component-spec.ts";
-import { FIELD_BOX_PREVIEW_WIDTH } from "../components/field-box-kit.ts";
 import { INPUT_GROUP_TEXT } from "../components/input-group-text.ts";
+import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
 /** The items of the Combobox around a `caret` or `clear` cell. */

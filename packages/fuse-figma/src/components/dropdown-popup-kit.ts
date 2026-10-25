@@ -44,11 +44,11 @@ import {
   DROPDOWN_TRIGGER_TEXT,
 } from "./dropdown-menu-text";
 import type { DropdownDemoNode } from "./dropdown-menu-text";
-import { DIV_BLOCK, DROPDOWN_POPUP_FACTS, MENU_GROUP_LABEL, MENU_SEPARATOR } from "./menu-kit";
+import { DIV_BLOCK } from "./element-defaults";
+import { DROPDOWN_POPUP_FACTS, MENU_GROUP_LABEL, menuSeparatorPart } from "./menu-kit";
+import { always, openPopupFacts } from "./popup-facts";
 
 const { content, subContent } = dropdownMenuVariants();
-
-const always = (): boolean => true;
 
 /** A key part made of a node's place, unique within the popup's parts. */
 const keyOf = (prefix: string, index: number, node: DropdownDemoNode): string =>
@@ -119,14 +119,7 @@ function partOf(
       }));
     case "separator":
       // `DropdownMenu.Separator` stamps its own slot on the shared separator.
-      return {
-        kind: "instance",
-        key,
-        of: MENU_SEPARATOR,
-        cell: () => ({ size: "default" }),
-        slot: "dropdown-menu-separator",
-        shownIn,
-      };
+      return menuSeparatorPart({ key, slot: "dropdown-menu-separator", shownIn });
     case "item":
       return instance(
         DROPDOWN_MENU_ITEM,
@@ -175,13 +168,7 @@ export const DROPDOWN_MENU_POPUP: ComponentDefinition = {
 };
 
 /** The variants Base UI stamps on an open submenu, placed on the right of its trigger. */
-const SUBMENU_FACTS: ReadonlyMap<string, (cell: Cell) => boolean> = new Map([
-  ...[...DROPDOWN_POPUP_FACTS].filter(([variant]) => !variant.startsWith("data-[side=")),
-  ["data-[side=right]", always],
-  ...["top", "bottom", "left", "inline-start", "inline-end"].map(
-    (side) => [`data-[side=${side}]`, (): boolean => false] as const
-  ),
-]);
+const SUBMENU_FACTS: ReadonlyMap<string, (cell: Cell) => boolean> = openPopupFacts({ side: "right" });
 
 /** The submenu's popup, as `<DropdownMenu.SubContent>` holding the docs Submenu demo's rows. */
 export const DROPDOWN_MENU_SUB_CONTENT: ComponentDefinition = {

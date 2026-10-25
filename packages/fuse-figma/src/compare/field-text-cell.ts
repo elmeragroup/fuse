@@ -20,7 +20,6 @@ import type { ReactElement } from "react";
 
 import { Field } from "../../../fuse/dist/field.js";
 import type { Cell } from "../components/component-spec.ts";
-import { FIELD_BOX_PREVIEW_WIDTH } from "../components/field-box-kit.ts";
 import {
   FIELD_DESCRIPTION_TEXT,
   FIELD_ERROR_TEXT,
@@ -28,6 +27,7 @@ import {
   FIELD_TITLE_TEXT,
   legendVariantFor,
 } from "../components/field-text-kit.ts";
+import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
 /** A Field part in a host as wide as the Field the kit draws. */

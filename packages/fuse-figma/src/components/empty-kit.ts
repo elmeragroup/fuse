@@ -38,6 +38,7 @@ import type {
   InstanceDefinition,
   PartDefinition,
 } from "./component-spec";
+import { always } from "./popup-facts";
 
 /** The width the kit's previews and the compare host give Empty: 384px of header inside its padding. */
 export const EMPTY_PREVIEW_WIDTH = 512;
@@ -68,8 +69,6 @@ export function emptyVariantFor(cell: Cell): EmptyVariant {
   }
   return variant;
 }
-
-const always = (): boolean => true;
 
 /** The slots of the parts without an axis. */
 const styles = emptyVariants();

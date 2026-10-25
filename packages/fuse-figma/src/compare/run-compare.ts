@@ -122,33 +122,16 @@ export type CompareFailure = FuseBuildMissing | BrowserUnavailable | FontNotLoad
 export type Renderable = ComponentDefinition & { readonly renderer: AnyCellRenderer };
 
 /**
- * A definition outside the kit the self-check renders beside the kit's cells, such as an overlay
- * that proves the client cells, with its renderer and the cells it renders.
- */
-export type CompareFixture = {
-  readonly definition: ComponentDefinition;
-  readonly renderer: AnyCellRenderer;
-  readonly cells: readonly Cell[];
-};
-
-/**
- * The definitions the run renders: each kit definition that has a renderer, then the fixtures.
+ * The definitions the run renders: each kit definition that has a renderer.
  *
  * @param renderers - The kit's renderers, by definition key.
- * @param fixtures - The definitions outside the kit, none for a real comparison.
  * @returns Each definition with its renderer.
  */
-export function renderables(
-  renderers: ReadonlyMap<string, AnyCellRenderer>,
-  fixtures: readonly CompareFixture[]
-): readonly Renderable[] {
-  return [
-    ...KIT.flatMap(({ definition }) => {
-      const renderer = renderers.get(definition.key);
-      return renderer === undefined ? [] : [{ ...definition, renderer }];
-    }),
-    ...fixtures.map(({ definition, renderer }) => ({ ...definition, renderer })),
-  ];
+export function renderables(renderers: ReadonlyMap<string, AnyCellRenderer>): readonly Renderable[] {
+  return KIT.flatMap(({ definition }) => {
+    const renderer = renderers.get(definition.key);
+    return renderer === undefined ? [] : [{ ...definition, renderer }];
+  });
 }
 
 /**
@@ -324,14 +307,11 @@ function compareCell(
  *
  * @param snapshot - The parsed snapshot.
  * @param options - Where to write, the diff threshold and the page layout.
- * @param fixtures - The definitions outside the kit the snapshot's cells may name, which only the
- *   self-check passes.
  * @returns The report, already written to `options.outDir`, or why the run could not start.
  */
 export async function compareSnapshot(
   snapshot: KitSnapshot,
-  options: CompareOptions,
-  fixtures: readonly CompareFixture[] = []
+  options: CompareOptions
 ): Promise<Result.Result<CompareReport, CompareFailure>> {
   if (snapshot.scale !== DEVICE_SCALE) {
     return Result.fail(
@@ -345,9 +325,9 @@ export async function compareSnapshot(
     return Result.fail(build.failure);
   }
   // The Fuse build exists by now, so the renderers' imports of it load.
-  const renderers = withFixtures(await loadRenderers(), fixtures);
+  const renderers = await loadRenderers();
   const assets = await readPageAssets(build.success, renderers);
-  const renderable = renderables(renderers, fixtures);
+  const renderable = renderables(renderers);
   const componentSets = (await buildComponentSets()).map((set) => set.componentSet);
   const launched = await CompareBrowser.launch(assets);
   if (Result.isFailure(launched)) {
@@ -393,23 +373,6 @@ export async function compareSnapshot(
   writeFileSync(join(options.outDir, "report.json"), `${JSON.stringify(report, null, 2)}\n`);
   writeFileSync(join(options.outDir, "report.html"), renderReportHtml(report));
   return Result.succeed(report);
-}
-
-/**
- * The kit's renderers with each fixture's.
- *
- * @param renderers - The kit's renderers, by definition key.
- * @param fixtures - The definitions outside the kit.
- * @returns Every renderer, by definition key.
- */
-export function withFixtures(
-  renderers: ReadonlyMap<string, AnyCellRenderer>,
-  fixtures: readonly CompareFixture[]
-): ReadonlyMap<string, AnyCellRenderer> {
-  return new Map([
-    ...renderers,
-    ...fixtures.map(({ definition, renderer }) => [definition.key, renderer] as const),
-  ]);
 }
 
 async function comparePreview(

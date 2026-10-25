@@ -19,24 +19,14 @@ import { compileHostUtilities } from "../components/utility-css.ts";
 import { isClientRenderer, RENDERER_ENTRIES } from "./cell-renderers.ts";
 import type { AnyCellRenderer } from "./cell-renderers.ts";
 import { buildClientBundle } from "./client-bundle.ts";
-import { OVERLAY_FIXTURES } from "./overlay-fixtures.ts";
 import { ASSET_PATHS } from "./preview-page.ts";
 
 /** The Fuse package, next to this one in the workspace. */
 const FUSE_ROOT = fileURLToPath(new URL("../../../fuse/", import.meta.url));
 
-/**
- * The build outputs the comparison reads: the CSS, the icons, each renderer's entry and each entry
- * the self-check's overlay fixtures import.
- */
+/** The build outputs the comparison reads: the CSS, the icons and each renderer's entry. */
 const BUILD_OUTPUTS: readonly string[] = [
-  ...new Set([
-    "dist/styles.css",
-    "dist/themes.css",
-    "dist/icons.js",
-    ...RENDERER_ENTRIES,
-    ...OVERLAY_FIXTURES.map(({ source }) => source.entry),
-  ]),
+  ...new Set(["dist/styles.css", "dist/themes.css", "dist/icons.js", ...RENDERER_ENTRIES]),
 ];
 
 /** The font weights the page can load, every upright cut the package ships. */

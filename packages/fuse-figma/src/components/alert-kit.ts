@@ -45,6 +45,7 @@ import type {
   PartDefinition,
 } from "./component-spec";
 import { ownKey } from "./own-key";
+import { always } from "./popup-facts";
 
 /** The width the kit's previews and the compare host give an Alert, the docs demo's `max-w-lg`. */
 export const ALERT_PREVIEW_WIDTH = 512;
@@ -104,8 +105,6 @@ export function alertLook(cell: Cell): AlertLook {
 function slotsFor(cell: Cell) {
   return alertVariants({ variant: alertLook(cell).variant });
 }
-
-const always = (): boolean => true;
 
 /** The tone's icon, `Alert.Icon`'s `<svg>`, with the classes it carries. */
 function toneIcons(cell: Cell): readonly IconSlot[] {

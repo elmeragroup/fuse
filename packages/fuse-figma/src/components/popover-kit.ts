@@ -21,6 +21,7 @@ import { fieldVariants, popoverVariants } from "@elmeragroup/fuse/recipe-catalog
 
 import { BUTTON } from "./button-kit";
 import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
+import { userAgentDisplay } from "./element-defaults";
 import { FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH } from "./field-box-kit";
 import { INPUT } from "./input-kit";
 import { LABEL_OMITTED_COMPOSITIONS } from "./label-kit";
@@ -30,11 +31,9 @@ import {
   POPOVER_TITLE_TEXT,
   POPOVER_TRIGGER_TEXT,
 } from "./popover-text";
+import { always, never, openPopupFacts } from "./popup-facts";
 
 const { content, header, title, description } = popoverVariants();
-
-const always = (): boolean => true;
-const never = (): boolean => false;
 
 /**
  * The variants the popup's cell holds: `data-open` and the side Base UI stamps on an open popup below
@@ -43,12 +42,7 @@ const never = (): boolean => false;
 const POPUP_FACTS: ReadonlyMap<string, (cell: Cell) => boolean> = new Map([
   // The demo's Fields are enabled, so the label's disabled face never holds.
   ["group-data-disabled/field", never],
-  ["data-open", always],
-  ["data-closed", never],
-  ["data-[side=bottom]", always],
-  ...["top", "left", "right", "inline-start", "inline-end"].map(
-    (side) => [`data-[side=${side}]`, never] as const
-  ),
+  ...openPopupFacts(),
 ]);
 
 /** The title, Base UI's `<h2>`. */
@@ -57,7 +51,7 @@ const TITLE: PartDefinition = {
   slot: "popover-title",
   shownIn: always,
   classesFor: () => title(),
-  elementDefaults: [{ className: "user agent style sheet, h2", property: "display", value: "block" }],
+  elementDefaults: userAgentDisplay("h2"),
   label: {
     key: "text",
     name: "text",
@@ -74,7 +68,7 @@ const DESCRIPTION: PartDefinition = {
   slot: "popover-description",
   shownIn: always,
   classesFor: () => description(),
-  elementDefaults: [{ className: "user agent style sheet, p", property: "display", value: "block" }],
+  elementDefaults: userAgentDisplay("p"),
   label: {
     key: "text",
     name: "text",

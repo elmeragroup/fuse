@@ -19,12 +19,7 @@
 import { fieldVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { AncestorDefinition, Cell, ComponentDefinition } from "./component-spec";
-
-/**
- * The width a Field gives what it holds, in the Figma preview and on the compare page: a field box's
- * `w-full` takes it, and Field's description, error and legend fill it as block boxes.
- */
-export const FIELD_BOX_PREVIEW_WIDTH = 384;
+import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 
 /**
  * Whether a cell shows the placeholder, where the control holds a placeholder and no value.

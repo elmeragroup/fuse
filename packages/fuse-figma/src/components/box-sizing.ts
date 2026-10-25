@@ -107,10 +107,11 @@ const FILL: SizeSpec = { kind: "fill" };
 const NO_BASIS: PercentBasis = { kind: "none" };
 
 /**
- * The `display` values that make a box block-level, whose unset width fills its container (CSS 2.1
- * §9.2.1, §10.3.3), a list item's included.
+ * The displays that make a box block-level (CSS Display 3 §2.1), whose unset width fills its
+ * container (CSS 2.1 §10.3.3) and which a block box stacks down its content box, a list item's and a
+ * flow root's included.
  */
-const BLOCK_LEVEL = new Set(["block", "list-item", "flex", "grid", "flow-root"]);
+export const BLOCK_LEVEL: ReadonlySet<string> = new Set(["block", "list-item", "flex", "grid", "flow-root"]);
 
 /**
  * The room a variant root has. Its component set has no auto layout, so it fills nothing and an

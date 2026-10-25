@@ -39,8 +39,9 @@ import {
 } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
+import { DIV_BLOCK, LI_LIST_ITEM } from "./element-defaults";
 import { INPUT } from "./input-kit";
-import { DIV_BLOCK } from "./menu-kit";
+import { always } from "./popup-facts";
 import {
   SIDEBAR_GROUP_LABEL,
   SIDEBAR_MENU_BADGE,
@@ -84,13 +85,7 @@ export const SIDEBAR_SUB_ROWS = [
 /** The rich menu demo's row that holds the first badge. */
 export const SIDEBAR_BADGE_ROW = { label: "Orders", icon: "Package" } as const;
 
-const always = (): boolean => true;
 const collapsed = (cell: Cell): boolean => cell.collapsed === "on";
-
-/** The display the browser's default style sheet gives an `<li>`, which no class of a menu item sets. */
-const LI_LIST_ITEM = [
-  { className: "user agent style sheet, li", property: "display", value: "list-item" },
-] as const;
 
 /** Why no section draws the floating Sidebar's padding and inner corner. */
 const FLOATING = "a floating Sidebar, which no docs demo shows";

@@ -22,8 +22,10 @@
  */
 import { fieldVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { Cell, ComponentDefinition, LabelDefinition, OuterDeclaration } from "./component-spec";
-import { FIELD_BOX_PREVIEW_WIDTH, FIELD_ROOT, FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH } from "./field-box-kit";
+import type { Cell, ComponentDefinition, LabelDefinition } from "./component-spec";
+import { userAgentDisplay } from "./element-defaults";
+import { FIELD_ROOT, FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH } from "./field-box-kit";
+import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 
 /** The description's text, the default of its `Text` property: the docs Basic demo's description. */
 export const FIELD_DESCRIPTION_TEXT = "Work address preferred.";
@@ -63,11 +65,6 @@ function text(characters: string): LabelDefinition {
   return { key: "text", name: "text", characters, textProperty: "Text", shownIn: () => true };
 }
 
-/** The display the browser's default style sheet gives a `<p>` or a `<div>`. */
-function blockElement(tag: "p" | "div"): readonly OuterDeclaration[] {
-  return [{ className: `user agent style sheet, ${tag}`, property: "display", value: "block" }];
-}
-
 /**
  * The omissions of a part in a `Field.Root`: the root's child selectors, which reach the part, with
  * the stretch's reason for the part.
@@ -91,7 +88,7 @@ export const FIELD_DESCRIPTION: ComponentDefinition = {
   name: "Field description",
   slot: "field-description",
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,
-  elementDefaults: blockElement("p"),
+  elementDefaults: userAgentDisplay("p"),
   axes: [{ name: "state", values: ["rest"] }],
   columnAxis: "state",
   classesFor: () => fieldVariants().description(),
@@ -120,7 +117,7 @@ export const FIELD_ERROR: ComponentDefinition = {
   slot: "field-error",
   rootKind: "base-ui-field-part",
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,
-  elementDefaults: blockElement("div"),
+  elementDefaults: userAgentDisplay("div"),
   axes: [{ name: "state", values: ["invalid"] }],
   columnAxis: "state",
   classesFor: () => fieldVariants().error(),
@@ -139,7 +136,7 @@ export const FIELD_LEGEND: ComponentDefinition = {
   name: "Field legend",
   slot: "field-legend",
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,
-  elementDefaults: blockElement("div"),
+  elementDefaults: userAgentDisplay("div"),
   axes: [{ name: "variant", values: LEGEND_VARIANTS }],
   columnAxis: "variant",
   classesFor: (cell) => fieldVariants({ variant: legendVariantFor(cell) }).legend(),

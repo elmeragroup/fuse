@@ -45,24 +45,23 @@ import type {
   AncestorDefinition,
   Cell,
   ComponentDefinition,
-  IconSlot,
   InstanceDefinition,
   OuterDeclaration,
   PartDefinition,
 } from "./component-spec";
+import { DIV_BLOCK } from "./element-defaults";
 import { INPUT_GROUP } from "./input-group-kit";
-import { DIV_BLOCK, MENU_GROUP_LABEL, MENU_SEPARATOR } from "./menu-kit";
+import { SURFACE_PAD_SM } from "./kit-lengths";
+import { MENU_CHECK, menuGroupPart, menuRowPart, menuSeparatorPart } from "./menu-kit";
+import { always, never, openPopupFacts } from "./popup-facts";
 
 const { content, list, item, itemIndicator, empty } = comboboxVariants();
-
-const always = (): boolean => true;
-const never = (): boolean => false;
 
 /** The popup's width, its `min-w-[calc(var(--anchor-width)+--spacing(7))]`: the anchor's plus 28px. */
 const COMBOBOX_POPUP_WIDTH = COMBOBOX_ANCHOR_WIDTH + 28;
 
 /** The width the list gives a row: the popup's, less `surface-pad-sm`, 4px at both densities, on each side. */
-const COMBOBOX_ROW_WIDTH = COMBOBOX_POPUP_WIDTH - 2 * 4;
+const COMBOBOX_ROW_WIDTH = COMBOBOX_POPUP_WIDTH - 2 * SURFACE_PAD_SM;
 
 /**
  * The input's width, which Base UI's positioner publishes as `--anchor-width` and the popup's width
@@ -81,12 +80,7 @@ const ANCHOR_WIDTH: OuterDeclaration = {
  */
 function popupFacts(isEmpty: (cell: Cell) => boolean): ReadonlyMap<string, (cell: Cell) => boolean> {
   return new Map<string, (cell: Cell) => boolean>([
-    ["data-open", always],
-    ["data-closed", never],
-    ["data-[side=bottom]", always],
-    ...["top", "left", "right", "inline-start", "inline-end"].map(
-      (side) => [`data-[side=${side}]`, never] as const
-    ),
+    ...openPopupFacts(),
     ["data-[external-anchor=true]", never],
     ["has-[>[data-slot=input-group]]", never],
     ["data-empty", isEmpty],
@@ -114,18 +108,6 @@ const LIST_ANCESTOR: AncestorDefinition = {
   undrawn: "the list's padding and height, which the Combobox popup set draws around its rows",
 };
 
-/** The Check the indicator holds, fixed, so no swap property picks it. */
-const CHECK: IconSlot = {
-  key: "check",
-  name: "Check",
-  side: "end",
-  direct: true,
-  dataIcon: undefined,
-  icon: "Check",
-  swapProperty: undefined,
-  classes: "pointer-events-none",
-};
-
 /** Base UI's `ItemIndicator`, rendered as a `<span>`, which it mounts only while the row is selected. */
 const ITEM_INDICATOR: PartDefinition = {
   key: "indicator",
@@ -135,7 +117,7 @@ const ITEM_INDICATOR: PartDefinition = {
   shownIn: (cell) => cell.selected === "on",
   classesFor: () => itemIndicator(),
   label: undefined,
-  iconsFor: () => [CHECK],
+  iconsFor: () => [MENU_CHECK],
 };
 
 /**
@@ -205,54 +187,26 @@ const isGrouped = (cell: Cell): boolean => cell.content === "grouped";
 const isEmpty = (cell: Cell): boolean => cell.content === "empty";
 
 /** A row of the popup, an instance of the row's set at rest and not selected, its label exposed. */
-function rowOf(label: string, shownIn: (cell: Cell) => boolean): InstanceDefinition {
-  return {
-    kind: "instance",
-    key: `item-${label.toLowerCase()}`,
-    of: COMBOBOX_ITEM,
-    cell: () => ({ selected: "off", state: "rest" }),
-    properties: () => ({ text: { Label: label } }),
-    shownIn,
-    exposed: true,
-  };
-}
+const rowOf = (label: string, shownIn: (cell: Cell) => boolean): InstanceDefinition =>
+  menuRowPart(COMBOBOX_ITEM, { selected: "off", state: "rest" }, label, shownIn);
 
 /** A `Combobox.Group`, Base UI's classless `<div role="group">`, holding its label and rows. */
 function groupOf({ value: label, items: rows }: (typeof COMBOBOX_GROUPS)[number]): PartDefinition {
-  return {
-    key: `group-${label.toLowerCase()}`,
+  return menuGroupPart({
     slot: "combobox-group",
+    classes: "",
+    labelSlot: "combobox-label",
+    label,
+    rows: rows.map((row) => rowOf(row, isGrouped)),
     shownIn: isGrouped,
-    classesFor: () => "",
-    elementDefaults: DIV_BLOCK,
-    label: undefined,
-    iconsFor: () => [],
-    parts: [
-      {
-        kind: "instance",
-        key: `label-${label.toLowerCase()}`,
-        of: MENU_GROUP_LABEL,
-        // Combobox's label is the shared one, as Select's is.
-        cell: () => ({ kind: "plain" }),
-        slot: "combobox-label",
-        properties: () => ({ text: { Label: label } }),
-        shownIn: isGrouped,
-        exposed: true,
-      },
-      ...rows.map((row) => rowOf(row, isGrouped)),
-    ],
-  };
+  });
 }
 
 /** The separator between the groups, an instance of the shared set, with Combobox's own slot. */
-const GROUP_SEPARATOR: InstanceDefinition = {
-  kind: "instance",
-  key: "separator",
-  of: MENU_SEPARATOR,
-  cell: () => ({ size: "default" }),
+const GROUP_SEPARATOR: InstanceDefinition = menuSeparatorPart({
   slot: "combobox-separator",
   shownIn: isGrouped,
-};
+});
 
 /** `Combobox.List`, which pads the rows, publishes their corner and scrolls past 252px. */
 const LIST: PartDefinition = {

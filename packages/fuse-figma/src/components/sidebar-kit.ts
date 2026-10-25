@@ -32,6 +32,7 @@ import {
 import { swapProperties } from "./component-spec";
 import type { Cell, ComponentDefinition, IconSlot, OuterDeclaration } from "./component-spec";
 import { ownKey } from "./own-key";
+import { always } from "./popup-facts";
 
 /** The width of a menu row: the docs' 16rem Sidebar less a group's dense 8px row inset each side. */
 export const SIDEBAR_ROW_WIDTH = 240;
@@ -123,8 +124,6 @@ const MENU_BUTTON_SIZES = Object.keys(sidebarMenuButtonVariants.variants.size).f
 
 /** The sub button's sizes in the recipe's order, its default first. */
 const SUB_BUTTON_SIZES = Object.keys(sidebarMenuSubButtonVariants.variants.size).filter(isSubButtonSize);
-
-const always = (): boolean => true;
 
 /** The docs demos' House before the first row's label, which the `Icon` swap property picks. */
 const HOUSE: IconSlot = {

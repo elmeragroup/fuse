@@ -11,7 +11,7 @@
  * `border-top + top + height / 2 − parent height / 2` must leave no variable in it.
  */
 import type { LayerStyle } from "./cascade";
-import { affineLength, normalizeCss, sumAffine } from "./css-values";
+import { affineLength, constantOf, normalizeCss, scaleAffine, sumAffine } from "./css-values";
 import type { AffineLength } from "./css-values";
 import type { AnchoredSpec } from "./kit-spec";
 
@@ -39,16 +39,6 @@ const sets = (style: LayerStyle, property: string): boolean =>
 /** A box's length on one side as an affine length, 0 where it sets none. */
 const lengthOf = (style: LayerStyle, property: string): AffineLength | undefined =>
   affineLength(style.resolved(property) ?? "0px");
-
-/** An affine length times a number. */
-function times(length: AffineLength, factor: number): AffineLength {
-  return {
-    constant: length.constant * factor,
-    coefficients: new Map(
-      [...length.coefficients].map(([name, coefficient]) => [name, coefficient * factor])
-    ),
-  };
-}
 
 /** The top border's width: the side's own, else `border-width`'s, else none. */
 function borderTop(style: LayerStyle): AffineLength | undefined {
@@ -115,10 +105,7 @@ function centreOffset(
   ) {
     return undefined;
   }
-  const offset = sumAffine([border, top, times(height, 0.5), times(outer, -0.5)]);
-  return [...offset.coefficients.values()].every((coefficient) => Math.abs(coefficient) < 1e-9)
-    ? offset.constant
-    : undefined;
+  return constantOf(sumAffine([border, top, scaleAffine(height, 0.5), scaleAffine(outer, -0.5)]));
 }
 
 /** Where an absolute instance part sits, as the module comment says. */

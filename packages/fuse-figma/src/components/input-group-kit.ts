@@ -44,16 +44,15 @@ import type {
   InstanceDefinition,
   PartDefinition,
 } from "./component-spec";
-import { FIELD_BOX_PREVIEW_WIDTH, FIELD_ROOT, FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH } from "./field-box-kit";
+import { FIELD_ROOT, FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH } from "./field-box-kit";
 import { INPUT_GROUP_TEXT } from "./input-group-text";
+import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
+import { always, never } from "./popup-facts";
 
 /** The forms, Combobox's default input first, and its input while the popup is open last. */
 const FORMS = ["caret", "search", "clear", "caret open"] as const;
 
 const { trigger, inputTrigger, caret: caretGlyph } = comboboxVariants();
-
-const always = (): boolean => true;
-const never = (): boolean => false;
 
 /** Whether a cell shows Combobox's caret, closed or open. */
 function showsCaret(cell: Cell): boolean {

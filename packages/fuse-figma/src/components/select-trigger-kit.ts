@@ -27,6 +27,7 @@ import { selectTriggerVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { Cell, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
 import { FIELD_ROOT, FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH, showsPlaceholder } from "./field-box-kit";
+import { always } from "./popup-facts";
 
 /** The text every cell shows, the default of the `Value` property: the docs Basic demo's placeholder. */
 export const SELECT_TRIGGER_TEXT = "Pick a fruit";
@@ -66,8 +67,6 @@ export function showsOpen(cell: Cell): boolean {
 function slotsFor(cell: Cell) {
   return selectTriggerVariants({ size: sizeFor(cell) });
 }
-
-const always = (): boolean => true;
 
 /** The value, `Select.Value`, which holds the placeholder or the selected item's label. */
 const VALUE: PartDefinition = {

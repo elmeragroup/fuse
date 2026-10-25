@@ -38,13 +38,12 @@ import type {
   OuterDeclaration,
   PartDefinition,
 } from "./component-spec";
+import { DIV_BLOCK } from "./element-defaults";
 import { KBD_GROUP } from "./kbd-kit";
-import { DIV_BLOCK, MENU_GROUP_LABEL } from "./menu-kit";
+import { menuGroupPart, menuRowPart } from "./menu-kit";
+import { always, never } from "./popup-facts";
 
 const { list, item, trailing } = commandVariants();
-
-const always = (): boolean => true;
-const never = (): boolean => false;
 
 /** The list around a row, which publishes the row's inner corner. */
 const LIST_ANCESTOR: AncestorDefinition = {
@@ -145,48 +144,24 @@ const isGrouped = (cell: Cell): boolean => cell.content === "grouped";
  * shortcut's caps show the demo's Alt and the row's letter as nested values (PN).
  */
 function rowOf({ label, key }: (typeof COMMAND_GROUPS)[number]["items"][number]): InstanceDefinition {
-  return {
-    kind: "instance",
-    key: `item-${label.toLowerCase().replaceAll(" ", "-")}`,
-    of: COMMAND_ITEM,
-    cell: () => ({ trailing: "shortcut", state: "rest" }),
-    properties: () => ({
-      text: { Label: label },
-      nested: [
-        { path: ["shortcut", "modifier"], text: { Label: COMMAND_LIST_MODIFIER } },
-        { path: ["shortcut", "key"], text: { Label: key } },
-      ],
-    }),
-    shownIn: isGrouped,
-    exposed: true,
-  };
+  return menuRowPart(COMMAND_ITEM, { trailing: "shortcut", state: "rest" }, label, isGrouped, {
+    nested: [
+      { path: ["shortcut", "modifier"], text: { Label: COMMAND_LIST_MODIFIER } },
+      { path: ["shortcut", "key"], text: { Label: key } },
+    ],
+  });
 }
 
 /** A `Command.Group`, Base UI's classless `<div role="group">`, holding its label and rows. */
 function groupOf({ value: label, items: rows }: (typeof COMMAND_GROUPS)[number]): PartDefinition {
-  return {
-    key: `group-${label.toLowerCase().replaceAll(" ", "-")}`,
+  return menuGroupPart({
     slot: "command-group",
+    classes: "",
+    labelSlot: "command-label",
+    label,
+    rows: rows.map(rowOf),
     shownIn: isGrouped,
-    classesFor: () => "",
-    elementDefaults: DIV_BLOCK,
-    label: undefined,
-    iconsFor: () => [],
-    parts: [
-      {
-        kind: "instance",
-        key: `label-${label.toLowerCase().replaceAll(" ", "-")}`,
-        of: MENU_GROUP_LABEL,
-        // Command's label is the shared one, class for class.
-        cell: () => ({ kind: "plain" }),
-        slot: "command-label",
-        properties: () => ({ text: { Label: label } }),
-        shownIn: isGrouped,
-        exposed: true,
-      },
-      ...rows.map(rowOf),
-    ],
-  };
+  });
 }
 
 /**

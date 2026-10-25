@@ -24,18 +24,18 @@ import {
   selectContentVariants,
 } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { AncestorDefinition, Cell, ComponentDefinition, OuterDeclaration } from "./component-spec";
-
-const always = (): boolean => true;
-const never = (): boolean => false;
-
-/**
- * The display the browser's default style sheet gives a `<div>`, which every menu part and Select's
- * list, group and item text are, and which no class of theirs sets.
- */
-export const DIV_BLOCK: readonly OuterDeclaration[] = [
-  { className: "user agent style sheet, div", property: "display", value: "block" },
-];
+import type {
+  AncestorDefinition,
+  Cell,
+  ComponentDefinition,
+  IconSlot,
+  InstanceDefinition,
+  InstanceProperties,
+  PartDefinition,
+} from "./component-spec";
+import { DIV_BLOCK } from "./element-defaults";
+import { SURFACE_PAD_SM } from "./kit-lengths";
+import { always, never, openPopupFacts } from "./popup-facts";
 
 /** The group label every cell shows, the default of its `Label` property: the docs Groups demo's first. */
 export const MENU_GROUP_LABEL_TEXT = "Citrus";
@@ -49,7 +49,7 @@ export const SELECT_POPUP_WIDTH = 144;
  * popup that pads its rows so gives its separator this width, which the separator's margins widen
  * back to the popup's.
  */
-export const PADDED_CONTENT_WIDTH = SELECT_POPUP_WIDTH - 2 * 4;
+export const PADDED_CONTENT_WIDTH = SELECT_POPUP_WIDTH - 2 * SURFACE_PAD_SM;
 
 /**
  * The variants Base UI stamps on an open Select popup that sits below its trigger, as the kit draws
@@ -57,12 +57,7 @@ export const PADDED_CONTENT_WIDTH = SELECT_POPUP_WIDTH - 2 * 4;
  * kit draws the popup below the trigger rather than over it. The popup's motion classes read them.
  */
 export const SELECT_POPUP_FACTS: ReadonlyMap<string, (cell: Cell) => boolean> = new Map([
-  ["data-open", always],
-  ["data-closed", never],
-  ["data-[side=bottom]", always],
-  ...["top", "left", "right", "inline-start", "inline-end"].map(
-    (side) => [`data-[side=${side}]`, never] as const
-  ),
+  ...openPopupFacts(),
   ["data-[align-trigger=true]", never],
 ]);
 
@@ -86,14 +81,7 @@ export const SELECT_GROUP_ANCESTOR: AncestorDefinition = {
  * The variants Base UI stamps on an open Dropdown menu popup below its trigger: `data-open` and the
  * side it places the popup on, which the popup's motion classes read.
  */
-export const DROPDOWN_POPUP_FACTS: ReadonlyMap<string, (cell: Cell) => boolean> = new Map([
-  ["data-open", always],
-  ["data-closed", never],
-  ["data-[side=bottom]", always],
-  ...["top", "left", "right", "inline-start", "inline-end"].map(
-    (side) => [`data-[side=${side}]`, never] as const
-  ),
-]);
+export const DROPDOWN_POPUP_FACTS: ReadonlyMap<string, (cell: Cell) => boolean> = openPopupFacts();
 
 const dropdownMenu = dropdownMenuVariants();
 
@@ -176,3 +164,127 @@ export const MENU_SEPARATOR: ComponentDefinition = {
   iconsFor: () => [],
   swapProperties: [],
 };
+
+/** The key part a menu row or group takes from its label: lowercase, a hyphen for each space. */
+const keyOf = (label: string): string => label.toLowerCase().replaceAll(" ", "-");
+
+/** The Check a selected row's indicator holds, fixed, so no swap property picks it. */
+export const MENU_CHECK: IconSlot = {
+  key: "check",
+  name: "Check",
+  side: "end",
+  direct: true,
+  dataIcon: undefined,
+  icon: "Check",
+  swapProperty: undefined,
+  classes: "pointer-events-none",
+};
+
+/**
+ * A row of a menu popup, an instance of the family's row set at one cell, its label exposed.
+ *
+ * @param of - The family's row set.
+ * @param cell - The row set's cell every popup cell shows.
+ * @param label - The row's text, which also names its layer.
+ * @param shownIn - Whether a popup cell shows the row.
+ * @param extra - The instance's other property values, such as a Command row's shortcut caps.
+ * @returns The row's instance part.
+ */
+export function menuRowPart(
+  of: ComponentDefinition,
+  cell: Cell,
+  label: string,
+  shownIn: (cell: Cell) => boolean,
+  extra: Omit<InstanceProperties, "text"> = {}
+): InstanceDefinition {
+  return {
+    kind: "instance",
+    key: `item-${keyOf(label)}`,
+    of,
+    cell: () => cell,
+    // The instance carries a label only where it differs from the row set's own.
+    properties: () => ({ text: { Label: label }, ...extra }),
+    shownIn,
+    exposed: true,
+  };
+}
+
+/** A menu group: its element, its label and the rows it holds. */
+export type MenuGroup = {
+  /** The group's `data-slot`. */
+  readonly slot: string;
+  /** The group's classes, empty for Base UI's classless `<div role="group">`. */
+  readonly classes: string;
+  /** The `data-slot` the family stamps on the shared label, undefined where it keeps its own. */
+  readonly labelSlot?: string;
+  /** The group's caption, which also names its layers. */
+  readonly label: string;
+  /** The group's rows, each from {@link menuRowPart}. */
+  readonly rows: readonly InstanceDefinition[];
+  /** Whether a popup cell shows the group. */
+  readonly shownIn: (cell: Cell) => boolean;
+};
+
+/**
+ * A menu group holding an instance of the shared group label and its rows.
+ *
+ * @param group - The group's slot, classes, label and rows.
+ * @returns The group's part.
+ */
+export function menuGroupPart({ slot, classes, labelSlot, label, rows, shownIn }: MenuGroup): PartDefinition {
+  const caption: InstanceDefinition = {
+    kind: "instance",
+    key: `label-${keyOf(label)}`,
+    of: MENU_GROUP_LABEL,
+    // Every family but Dropdown menu renders the plain label, class for class.
+    cell: () => ({ kind: "plain" }),
+    properties: () => ({ text: { Label: label } }),
+    shownIn,
+    exposed: true,
+  };
+  return {
+    key: `group-${keyOf(label)}`,
+    slot,
+    shownIn,
+    classesFor: () => classes,
+    elementDefaults: DIV_BLOCK,
+    label: undefined,
+    iconsFor: () => [],
+    parts: [labelSlot === undefined ? caption : { ...caption, slot: labelSlot }, ...rows],
+  };
+}
+
+/** A separator between a menu's groups, as a family stamps it. */
+export type MenuSeparator = {
+  /** The instance layer's key, `separator` by default. */
+  readonly key?: string;
+  /** The `data-slot` the family stamps on the shared separator, undefined where it keeps its own. */
+  readonly slot?: string;
+  /** The classes the family passes the separator, undefined for none. */
+  readonly classes?: string;
+  /** Whether a popup cell shows the separator. */
+  readonly shownIn: (cell: Cell) => boolean;
+};
+
+/**
+ * An instance of the shared separator.
+ *
+ * @param separator - The family's key, slot, classes and the cells that show it.
+ * @returns The separator's instance part.
+ */
+export function menuSeparatorPart({
+  key = "separator",
+  slot,
+  classes,
+  shownIn,
+}: MenuSeparator): InstanceDefinition {
+  const separator: InstanceDefinition = {
+    kind: "instance",
+    key,
+    of: MENU_SEPARATOR,
+    cell: () => ({ size: "default" }),
+    shownIn,
+  };
+  const slotted = slot === undefined ? separator : { ...separator, slot };
+  return classes === undefined ? slotted : { ...slotted, classesFor: () => classes };
+}

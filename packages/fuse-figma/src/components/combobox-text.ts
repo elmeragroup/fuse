@@ -1,8 +1,10 @@
 /**
  * The docs Combobox demos' text and the kit's anchor width, which `combobox-kit.ts` draws and
- * `combobox-cell.ts` renders. It imports nothing, so the compare page's browser bundle can take it
- * without the kit's builder.
+ * `combobox-cell.ts` renders. It imports only the import-free `kit-lengths.ts`, so the compare page's
+ * browser bundle can take it without the kit's builder.
  */
+
+import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 
 /** The text every row cell shows, the default of its `Label` property: the docs Basic demo's first row. */
 export const COMBOBOX_ITEM_TEXT = "Apple";
@@ -26,4 +28,4 @@ export const COMBOBOX_EMPTY_TEXT = "No results.";
  * The input's width, which Base UI publishes on the popup as `--anchor-width`: the Input group set's
  * preview width, which the open composite's input takes.
  */
-export const COMBOBOX_ANCHOR_WIDTH = 384;
+export const COMBOBOX_ANCHOR_WIDTH = FIELD_BOX_PREVIEW_WIDTH;

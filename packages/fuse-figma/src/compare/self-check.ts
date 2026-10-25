@@ -12,12 +12,10 @@
  * a pixel. A working harness reports both at the top, the grown box first, and every other cell
  * at no mismatch with equal box sizes.
  *
- * Beside the kit's cells it renders the overlay fixtures of `overlay-fixture-cell.ts` as client
- * cells: a Popover's popup, the open Popover as its trigger and popup together, and a Dropdown menu
- * item and the selected item of a Select, each at rest and highlighted. They prove that a client
- * cell mounts, measures and forces its state the same way twice and passes the markup check. The
- * Select item's rest cell must show no fill and its highlighted cell the theme's `accent`, which
- * fails where a stray focus or highlight from the mount draws.
+ * The kit's client cells, popups and open composites included, prove that a client cell mounts,
+ * measures and forces its state the same way twice. A Select item at rest must also show no fill and
+ * a highlighted one the theme's `accent`, which fails where a stray focus or highlight from the mount
+ * draws.
  */
 
 import { Result } from "effect";
@@ -26,20 +24,20 @@ import { join } from "node:path";
 
 import { buildComponentSets } from "../components/build-kit.ts";
 import { variantKey } from "../components/component-spec.ts";
+import type { Cell } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
+import { SELECT_ITEM } from "../components/select-kit.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { CellRequest } from "./browser-render.ts";
-import { loadClientRenderer, loadRenderers } from "./cell-renderers.ts";
-import { OVERLAY_FIXTURES } from "./overlay-fixtures.ts";
-import type { FixtureFill } from "./overlay-fixtures.ts";
+import { loadRenderers } from "./cell-renderers.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { PageLayout } from "./preview-page.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
 import { crop, encodePng } from "./raster.ts";
 import type { Raster } from "./raster.ts";
 import { parseSnapshot } from "./read-snapshot.ts";
-import { compareSnapshot, planCells, renderables, withFixtures } from "./run-compare.ts";
-import type { CompareFailure, CompareFixture, CompareOptions, CompareReport } from "./run-compare.ts";
+import { compareSnapshot, planCells, renderables } from "./run-compare.ts";
+import type { CompareFailure, CompareOptions, CompareReport } from "./run-compare.ts";
 import { SNAPSHOT_FORMAT, SNAPSHOT_VERSION } from "./snapshot.ts";
 import type { InstanceSnapshot, KitSnapshot, PreviewSnapshot } from "./snapshot.ts";
 import { tokenColorsIn, unchangedByDesign } from "./unchanged-by-design.ts";
@@ -82,32 +80,40 @@ function renderMargin(request: CellRequest, layout: PageLayout): number {
 }
 
 /**
- * The overlay fixtures with their client renderers, loaded as `loadRenderers` loads a kit set's. The
- * renderings import the Fuse build, so call this only after `locateFuseBuild` found it.
+ * The fill a cell's measured element shows just inside its start edge, written by hand from the
+ * compiled CSS: none, where the element paints no background and the page hides the popup around it,
+ * or a `Fuse tokens` color the theme resolves.
  */
-async function overlayFixtures(): Promise<readonly CompareFixture[]> {
-  return Promise.all(
-    OVERLAY_FIXTURES.map(async ({ definition, source, cells }) => ({
-      definition,
-      cells,
-      renderer: await loadClientRenderer(source),
-    }))
-  );
+type ExpectedFill = { readonly _tag: "None" } | { readonly _tag: "Token"; readonly token: string };
+
+/**
+ * The fill a Select item cell must show, by state. Fuse's built Select item paints
+ * `background-color: var(--accent)` under `focus:bg-accent` and no background otherwise. A disabled
+ * row is not checked.
+ */
+function selectItemFill(cell: Cell): ExpectedFill | undefined {
+  switch (cell.state) {
+    case "rest":
+      return { _tag: "None" };
+    case "highlighted":
+      return { _tag: "Token", token: "accent" };
+    default:
+      return undefined;
+  }
 }
 
-/** How far inside its start edge, in device pixels, a fixture's fill is read, clear of a rounded corner's curve at mid height. */
+/** How far inside its start edge, in device pixels, a cell's fill is read, clear of a rounded corner's curve at mid height. */
 const FILL_INSET = 4;
 
 /**
- * Whether a fixture cell shows the fill its fixture names, read at mid height just inside its start
- * edge.
+ * Whether a cell shows the fill it must, read at mid height just inside its start edge.
  *
  * @returns Undefined when it does, or a line that says what the cell showed.
  */
 function fillMismatch(
   raster: Raster,
   padding: number,
-  fill: FixtureFill,
+  fill: ExpectedFill,
   colorOf: TokenColorOf,
   where: string
 ): string | undefined {
@@ -184,23 +190,14 @@ export async function runSelfCheck(
   if (Result.isFailure(build)) {
     return Result.fail(build.failure);
   }
-  const fixtures = await overlayFixtures();
-  const fillOf = new Map(
-    OVERLAY_FIXTURES.flatMap(({ definition, fill }) =>
-      fill === undefined ? [] : [[definition.key, fill] as const]
-    )
-  );
   const fillMismatches: string[] = [];
-  const variants = [
-    ...KIT.flatMap(({ definition, previewCells }) =>
-      previewCells.map((cell) => variantKey(definition, cell))
-    ),
-    ...fixtures.flatMap(({ definition, cells }) => cells.map((cell) => variantKey(definition, cell))),
-  ];
+  const variants = KIT.flatMap(({ definition, previewCells }) =>
+    previewCells.map((cell) => variantKey(definition, cell))
+  );
   const painted: Perturbed = { preview: PREVIEWS[0].key, variant: firstInState("hover") };
   const grown: Perturbed = { preview: PREVIEWS[1].key, variant: firstInState("focus") };
-  const renderers = withFixtures(await loadRenderers(), fixtures);
-  const renderable = renderables(renderers, fixtures);
+  const renderers = await loadRenderers();
+  const renderable = renderables(renderers);
   const componentSets = (await buildComponentSets()).map((set) => set.componentSet);
   const launched = await CompareBrowser.launch(await readPageAssets(build.success, renderers));
   if (Result.isFailure(launched)) {
@@ -237,7 +234,7 @@ export async function runSelfCheck(
       }
       const colorOf = tokenColorsIn(theme.success);
       for (const { instance, cell, definition, request } of planned) {
-        const fill = fillOf.get(definition.key)?.(cell);
+        const fill = definition.key === SELECT_ITEM.key ? selectItemFill(cell) : undefined;
         const raster = rendered.success.cells.get(request.id)?.raster;
         const mismatch =
           fill === undefined || raster === undefined
@@ -311,7 +308,7 @@ export async function runSelfCheck(
   if (Result.isFailure(reread)) {
     throw reread.failure;
   }
-  const compared = await compareSnapshot(reread.success, options, fixtures);
+  const compared = await compareSnapshot(reread.success, options);
   return Result.map(compared, (report) => judgeSelfCheck(report, [grown, painted], fillMismatches));
 }
 

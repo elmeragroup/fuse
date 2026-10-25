@@ -27,6 +27,7 @@ import type {
   InlineDeclaration,
   PartDefinition,
 } from "./component-spec";
+import { always } from "./popup-facts";
 
 /** The width a container gives a meter in the kit's previews and the compare host, `w-64`. */
 export const METER_PREVIEW_WIDTH = 256;
@@ -151,8 +152,6 @@ export function fillStyleFor(cell: Cell): readonly InlineDeclaration[] {
     { property: "width", value: `${shareOf(cell)}%` },
   ];
 }
-
-const always = (): boolean => true;
 
 /** The label, Base UI's `Meter.Label`. */
 const LABEL: PartDefinition = {

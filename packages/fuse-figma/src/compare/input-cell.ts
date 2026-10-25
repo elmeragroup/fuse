@@ -21,8 +21,8 @@ import type { ComponentProps } from "react";
 import { Field } from "../../../fuse/dist/field.js";
 import { Input } from "../../../fuse/dist/input.js";
 import type { Cell } from "../components/component-spec.ts";
-import { FIELD_BOX_PREVIEW_WIDTH } from "../components/field-box-kit.ts";
 import { INPUT_TEXT } from "../components/input-kit.ts";
+import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
 /** An `input` cell: an input holding a placeholder or a value, read-only, disabled or invalid. */

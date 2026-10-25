@@ -548,9 +548,9 @@ export async function loadRenderers(): Promise<ReadonlyMap<string, AnyCellRender
  * @returns The renderer.
  * @throws When the module has no export by the source's name, which the source must fix.
  */
-export async function loadClientRenderer(source: ClientSource): Promise<ClientCellRenderer> {
+async function loadClientRenderer(source: ClientSource): Promise<ClientCellRenderer> {
   // SAFETY: a client renderer's module exports a ClientCellRendering under each name a source
-  // lists, as `overlay-fixture-cell.ts` does. The page's bundle imports the same name, and rolldown
+  // lists, as `select-cell.ts` does. The page's bundle imports the same name, and rolldown
   // refuses a name the module does not export, so a wrong name fails both loads.
   const renderings = (await import(source.module.url.href)) as Readonly<
     Record<string, ClientCellRendering | undefined>
