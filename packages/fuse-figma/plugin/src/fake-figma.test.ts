@@ -1,8 +1,8 @@
 /**
  * The layout, text, image, property, rotation and stroke rules of the in-memory file in
  * `fake-figma.ts`, each on a few nodes built by hand. The oracle is what the test file `Elmera Fuse -
- * Import test` read back in net-zero probes from 2026-10-22 to 2026-10-24, named P0 to P9b, PB, PR,
- * PD, PL, PF, PH, PZ and NH as the fake's header names them, the PNG signature, the hashes `shasum -a 1` gives the fixture images,
+ * Import test` read back in net-zero probes from 2026-10-22 to 2026-10-25, named P0 to P9b, PB, PR,
+ * PD, PL, PF, PH, PZ, NH, N9, PS and PS2 as the fake's header names them, the PNG signature, the hashes `shasum -a 1` gives the fixture images,
  * and the typings where no probe ran. The planners' tests converge against these rules, so a rule
  * that drifts from the real file would let a plan pass that Figma would not keep.
  */
@@ -761,12 +761,93 @@ describe("rule 46: a stroke's weight on each side", () => {
     column.appendChild(component.createInstance());
     column.strokes = [{ type: "SOLID", color: { r: 0, g: 0, b: 0 } }];
     const [top, right, bottom, left] = weights;
+    // A nonzero side first on a never-written weight is unprobed (rule 49), so the weight comes first.
+    column.strokeWeight = Math.max(...weights);
     column.strokeTopWeight = top;
     column.strokeRightWeight = right;
     column.strokeBottomWeight = bottom;
     column.strokeLeftWeight = left;
     column.strokesIncludedInLayout = included;
     expect([column.width, column.height]).toEqual(size);
+  });
+});
+
+describe("rule 49: a 0 side on a never-written stroke weight sets every side", () => {
+  type Weights = readonly [number, number, number, number];
+  const SIDES = ["strokeTopWeight", "strokeRightWeight", "strokeBottomWeight", "strokeLeftWeight"] as const;
+  const read = (frame: FrameNode) => SIDES.map((side) => frame[side]);
+  const stroked = (direction: "VERTICAL" | "NONE") => {
+    const frame = figma.createFrame();
+    frame.layoutMode = direction;
+    frame.strokes = [{ type: "SOLID", color: { r: 0, g: 0, b: 0 } }];
+    return frame;
+  };
+
+  // PS2's isolated rows: a frame or an auto layout frame whose weight was never written.
+  it.each(["NONE", "VERTICAL"] as const)("zeroes every side on the first 0, layout %s (PS2)", (direction) => {
+    const frame = stroked(direction);
+    expect(read(frame)).toEqual([1, 1, 1, 1]);
+    frame.strokeTopWeight = 0;
+    expect(read(frame)).toEqual([0, 0, 0, 0]);
+    frame.strokeRightWeight = 0;
+    expect(read(frame)).toEqual([0, 0, 0, 0]);
+  });
+
+  it("writes each side alone after an explicit strokeWeight (PS2)", () => {
+    const frame = stroked("NONE");
+    frame.strokeWeight = 1;
+    frame.strokeTopWeight = 0;
+    expect(read(frame)).toEqual([0, 1, 1, 1]);
+    frame.strokeRightWeight = 0;
+    expect(read(frame)).toEqual([0, 0, 1, 1]);
+  });
+
+  it("ends the plugin's old sequence at the one side written after the spill (PS2)", () => {
+    const frame = stroked("VERTICAL");
+    frame.strokeTopWeight = 0;
+    frame.strokeRightWeight = 0;
+    frame.strokeBottomWeight = 0;
+    expect(read(frame)).toEqual([0, 0, 0, 0]);
+    frame.strokeLeftWeight = 1;
+    expect([...read(frame), frame.strokeWeight === figma.mixed]).toEqual([0, 0, 0, 1, true]);
+  });
+
+  // PS2's explicit table. Each start is a `strokeWeight` write, then the sides, nonzero last.
+  it.each([
+    [[1, 1, 1, 1], "strokeTopWeight", 0, [0, 1, 1, 1]],
+    [[1, 1, 1, 1], "strokeLeftWeight", 0, [1, 1, 1, 0]],
+    [[1, 1, 1, 1], "strokeTopWeight", 2, [2, 1, 1, 1]],
+    [[2, 2, 2, 2], "strokeRightWeight", 1, [2, 1, 2, 2]],
+    [[2, 1, 1, 1], "strokeRightWeight", 0, [2, 0, 1, 1]],
+    [[0, 1, 0, 1], "strokeRightWeight", 0, [0, 0, 0, 1]],
+    [[0, 0, 0, 1], "strokeLeftWeight", 0, [0, 0, 0, 0]],
+    [[0, 0, 0, 0], "strokeLeftWeight", 1, [0, 0, 0, 1]],
+  ] as const)("from %j, %s = %d reads %j (PS2)", (start: Weights, side, weight, result: Weights) => {
+    const frame = stroked("VERTICAL");
+    frame.strokeWeight = 1;
+    const [top, right, bottom, left] = start;
+    const writes = [
+      ["strokeTopWeight", top],
+      ["strokeRightWeight", right],
+      ["strokeBottomWeight", bottom],
+      ["strokeLeftWeight", left],
+    ] as const;
+    for (const [field, value] of [
+      ...writes.filter(([, w]) => w === 0),
+      ...writes.filter(([, w]) => w !== 0),
+    ]) {
+      frame[field] = value;
+    }
+    expect(read(frame)).toEqual(start);
+    frame[side] = weight;
+    expect(read(frame)).toEqual(result);
+  });
+
+  it("refuses a nonzero side first on a never-written weight, which no probe read", () => {
+    const frame = stroked("VERTICAL");
+    expect(() => {
+      frame.strokeLeftWeight = 1;
+    }).toThrow(/PS2/);
   });
 });
 

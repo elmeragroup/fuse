@@ -5,7 +5,7 @@
  */
 
 import { ringFill } from "../../src/components/kit-spec.ts";
-import type { BoxSpec, LimitsSpec, NumberSpec, SizeSpec } from "../../src/components/kit-spec.ts";
+import type { BoxSpec, LimitsSpec, NumberSpec, SideStroke, SizeSpec } from "../../src/components/kit-spec.ts";
 import {
   LAYOUT_SIZING,
   near,
@@ -63,17 +63,38 @@ function strokeWeightField(node: LayerParent): NumberField {
   };
 }
 
-/** One side's stroke weight, which a stroke on some sides writes alone (N9, PS). */
-function strokeSideField(node: LayerParent, side: "Top" | "Right" | "Bottom" | "Left"): NumberField {
-  const name = `stroke${side}Weight` as const;
-  return {
-    name,
-    bindings: [name],
-    matches: (value) => near(node[name], value),
-    write: (value) => {
-      node[name] = value;
-    },
-  };
+/**
+ * Plan a stroke on some sides: its four weights, compared and written as one change. On a node whose
+ * weight was never written, a 0 on one side sets every side to 0, and after a `strokeWeight` write
+ * each side writes alone (PS2). So the change writes `strokeWeight` first, at the largest side's
+ * weight, then every side, and a side that already matched is written again after the spill.
+ *
+ * @param run - The run.
+ * @param node - The box.
+ * @param label - The box's label, for change lines.
+ * @param sides - Each side's weight.
+ */
+function planStrokeSides(run: Run, node: LayerParent, label: string, sides: SideStroke["sides"]): void {
+  const weights = [
+    ["strokeTopWeight", sides.top],
+    ["strokeRightWeight", sides.right],
+    ["strokeBottomWeight", sides.bottom],
+    ["strokeLeftWeight", sides.left],
+  ] as const;
+  const bound = node.boundVariables;
+  if (weights.every(([field, weight]) => bound?.[field] === undefined && near(node[field], weight))) {
+    return;
+  }
+  const described = weights.map(([, weight]) => weight).join(" ");
+  change(run.plan, label, `stroke weights → ${described}`, () => {
+    for (const [field] of weights) {
+      node.setBoundVariable(field, null);
+    }
+    node.strokeWeight = Math.max(...weights.map(([, weight]) => weight));
+    for (const [field, weight] of weights) {
+      node[field] = weight;
+    }
+  });
 }
 
 /**
@@ -292,15 +313,7 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
   });
   if (stroke !== undefined) {
     if ("sides" in stroke) {
-      const { top, right, bottom, left } = stroke.sides;
-      for (const [side, weight] of [
-        ["Top", top],
-        ["Right", right],
-        ["Bottom", bottom],
-        ["Left", left],
-      ] as const) {
-        planNumber(run, node, label, strokeSideField(node, side), { kind: "literal", value: weight });
-      }
+      planStrokeSides(run, node, label, stroke.sides);
     } else {
       planNumber(run, node, label, strokeWeightField(node), stroke.weight);
     }

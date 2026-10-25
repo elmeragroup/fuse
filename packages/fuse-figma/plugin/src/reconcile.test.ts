@@ -834,18 +834,22 @@ describe("a variant whose root strokes a dashed border", () => {
 });
 
 // Unit under test: `reconcileKit` on a variant whose root strokes some sides, as the Sidebar
-// container's `border-r` does. Oracle: the fake's rule 46, after what a real file read on 2026-10-23
-// and 2026-10-25 (N9, PS): each side holds its own weight, `strokeWeight` reads mixed, and the stroke
-// counts in the layout, each side taking room on its own side. The next Plan lists nothing, and a
-// side a designer changed plans back alone.
+// container's `border-r` and a sub menu's `border-l` do. Oracle: the fake's rules 46 and 49, after
+// what a real file read on 2026-10-23 and 2026-10-25 (N9, PS, PS2): each side holds its own weight,
+// `strokeWeight` reads mixed, the stroke counts in the layout, each side taking room on its own side,
+// and a first 0 on a new variant's weight sets every side. One Apply writes the sides, the next Plan
+// lists nothing, and a side a designer changed plans the four weights back as one change.
 describe("a variant whose root strokes some sides", () => {
-  const RIGHT_EDGE = kitWithRoot((root) => ({
-    ...root,
-    stroke: {
-      color: { kind: "variable", variable: { collection: "Fuse tokens", name: "background" } },
-      sides: { top: 0, right: 1, bottom: 0, left: 0 },
-    },
-  }));
+  const edged = (sides: { top: number; right: number; bottom: number; left: number }) =>
+    kitWithRoot((root) => ({
+      ...root,
+      stroke: {
+        color: { kind: "variable", variable: { collection: "Fuse tokens", name: "background" } },
+        sides,
+      },
+    }));
+  const LEFT_EDGE = edged({ top: 0, right: 0, bottom: 0, left: 1 });
+  const RIGHT_EDGE = edged({ top: 0, right: 1, bottom: 0, left: 0 });
   const weights = (root: ComponentNode) => [
     root.strokeTopWeight,
     root.strokeRightWeight,
@@ -855,21 +859,42 @@ describe("a variant whose root strokes some sides", () => {
     root.strokesIncludedInLayout,
   ];
 
-  it("writes each side's weight in the layout in one Apply, and the next Plan lists nothing", async () => {
+  it.each([
+    ["left", LEFT_EDGE, [0, 0, 0, 1]],
+    ["right", RIGHT_EDGE, [0, 1, 0, 0]],
+  ] as const)(
+    "writes a new variant's %s edge in the layout in one Apply, and the next Plan lists nothing",
+    async (_edge, kit, sides) => {
+      const { file } = fixture("Roboto");
+      await reconcileKit(file.figma, kit, true);
+      file.reopen();
+      expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+      expect(weights(await buttonVariant(file))).toEqual([...sides, "INSIDE", true]);
+    }
+  );
+
+  it("writes the left edge back in one Apply from every side at 0, as the owner's file held it (PS2)", async () => {
     const { file } = fixture("Roboto");
-    await reconcileKit(file.figma, RIGHT_EDGE, true);
+    await reconcileKit(file.figma, LEFT_EDGE, true);
     file.reopen();
-    expect(await reconcileKit(file.figma, RIGHT_EDGE, false)).toEqual({ changes: [], warnings: [] });
-    expect(weights(await buttonVariant(file))).toEqual([0, 1, 0, 0, "INSIDE", true]);
+    (await buttonVariant(file)).strokeLeftWeight = 0;
+    expect((await reconcileKit(file.figma, LEFT_EDGE, false)).changes).toEqual([
+      "Button / size=md: stroke weights → 0 0 0 1",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, LEFT_EDGE, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, LEFT_EDGE, false)).toEqual({ changes: [], warnings: [] });
+    expect(weights(await buttonVariant(file))).toEqual([0, 0, 0, 1, "INSIDE", true]);
   });
 
-  it("plans a side a designer changed back to the kit's", async () => {
+  it("plans a side a designer changed back to the kit's as one change of the four weights", async () => {
     const { file } = fixture("Roboto");
     await reconcileKit(file.figma, RIGHT_EDGE, true);
     file.reopen();
     (await buttonVariant(file)).strokeLeftWeight = 2;
     expect((await reconcileKit(file.figma, RIGHT_EDGE, false)).changes).toEqual([
-      "Button / size=md: strokeLeftWeight → 0",
+      "Button / size=md: stroke weights → 0 1 0 0",
       ...RELAYOUT,
     ]);
   });

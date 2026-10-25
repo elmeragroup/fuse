@@ -15,7 +15,8 @@
  * Import test` from 2026-10-22 to 2026-10-25: P0 and P0b read the kit's nodes, P1 to P9, PB, PR,
  * PQ, PD, PL, PF, PH, PZ, PI, PZ2, N1 to N5, N9, N11, NS, NA, NH, PI2, PI3, PH3 and PS built nodes on a scratch page, and
  * P9b stored images and built no node. Rule 48 names PK, a reading of the owner's file on 2026-10-25,
- * and PK2, built on a scratch frame the same day.
+ * and PK2, built on a scratch frame the same day. Rule 49 names PS2, a reading of the owner's file
+ * and frames built on a scratch page on 2026-10-25.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
  *    COLOR variable in the collections' default modes, whatever opacity it was given. Two runs
@@ -352,9 +353,10 @@
  *    columns padded 10 on the left and right around a 50 × 20 child took per-side weights (PS). With
  *    `strokesIncludedInLayout` true each side's weight took room on its own side: a left weight of 1
  *    hugged the column to 71 wide with the child at x 11, and a top weight of 2 hugged it to 22 tall.
- *    With false the stroke took none, at 70 × 20. So the fake writes each side alone, reads
- *    `strokeWeight` mixed while the sides differ, and the frames it lays out (rule 32) keep each side's
- *    weight clear beside the padding while the stroke counts in the layout. It places no child.
+ *    With false the stroke took none, at 70 × 20. So the fake writes each side alone once the weight
+ *    was written (rule 49), reads `strokeWeight` mixed while the sides differ, and the frames it lays
+ *    out (rule 32) keep each side's weight clear beside the padding while the stroke counts in the
+ *    layout. It places no child.
  * 47. An absolute instance at MAX across and CENTER down. On 2026-10-25 a hugging badge instance,
  *    ABSOLUTE in a 200px item that hugged a row bound to `row-h`, kept 4px from the item's end as its
  *    own TEXT widened it from 23 to 39 and as the item widened to 240, and kept its centre's offset
@@ -380,6 +382,15 @@
  *    `icon-only`, the layer still read `icon-only`, and an instance's sublayer read `icon-only`, named
  *    Q from `getMainComponentAsync`, showed Q's `glyph` and listed no override (PK2). So a sublayer
  *    that does not swap apart reads its main layer's entries and shows its main layer's component.
+ * 49. A 0 side weight on a stroke whose weight was never written. On 2026-10-25 the owner's Apply wrote
+ *    sides top 0, right 0 and bottom 0 on a new Sidebar sub menu variant and left the left side, which
+ *    read the default 1, and the file read every side 0. Frames, auto layout frames and components
+ *    whose `strokeWeight` was never written read `[1,1,1,1]`, and top 0 turned them to `[0,0,0,0]`,
+ *    with a plain or a bound stroke. After an explicit `strokeWeight`, or after that spill, each side
+ *    wrote alone: from `[1,1,1,1]` top 0 read `[0,1,1,1]`, and from `[0,0,0,0]` left 1 read `[0,0,0,1]`
+ *    (PS2). So the fake spills the first 0 to every side, then writes each side alone, and throws for a
+ *    nonzero side written first, which no probe read. A side binding neither spills nor counts as a
+ *    write, which no probe read either.
  *
  * An instance's sublayers show the layers of its main component, and a nested instance's sublayers
  * the sublayers its main layer shows. An override, such as the color an icon layer gives its glyph,
@@ -563,6 +574,8 @@ type NodeState = {
   fills: readonly Paint[];
   strokes: readonly Paint[];
   strokeWeights: Sides;
+  /** Whether a weight was written, after which each side writes alone (rule 49). */
+  strokeWeightWritten: boolean;
   strokeAlign: FrameNode["strokeAlign"];
   strokesIncludedInLayout: boolean;
   /** The stroke's dash and gap lengths, apart from its paints, empty for a solid stroke (rule 27). */
@@ -1826,6 +1839,25 @@ function setNumberField(state: NodeState, field: VariableBindableNodeField, valu
   }
 }
 
+/**
+ * Write one side's stroke weight (rule 49). On a node whose weight was never written, a 0 sets every
+ * side to 0, and a nonzero weight throws, as no probe read one.
+ */
+function writeStrokeSide(state: NodeState, side: keyof Sides, value: number): void {
+  const weight = f32(value);
+  if (state.strokeWeightWritten) {
+    state.strokeWeights[side] = weight;
+    return;
+  }
+  if (weight !== 0) {
+    throw new Error(
+      `The fake Figma file does not model a nonzero ${side} weight on a never-written stroke weight (PS2).`
+    );
+  }
+  state.strokeWeights = { top: 0, right: 0, bottom: 0, left: 0 };
+  state.strokeWeightWritten = true;
+}
+
 /** The fields a binding to `cornerRadius` or `strokeWeight` lands on, as the typings note. */
 function bindingTargets(field: VariableBindableNodeField): readonly VariableBindableNodeField[] {
   switch (field) {
@@ -2488,6 +2520,7 @@ function copiedFields(source: NodeState): Omit<NodeState, UncopiedField> {
     fills: source.fills,
     strokes: source.strokes,
     strokeWeights: { ...source.strokeWeights },
+    strokeWeightWritten: source.strokeWeightWritten,
     strokeAlign: source.strokeAlign,
     strokesIncludedInLayout: source.strokesIncludedInLayout,
     dashPattern: source.dashPattern,
@@ -3194,6 +3227,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
     write(state, "strokeWeight");
     const weight = f32(value);
     state.strokeWeights = { top: weight, right: weight, bottom: weight, left: weight };
+    state.strokeWeightWritten = true;
   }
 
   get strokeTopWeight(): number {
@@ -3203,7 +3237,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
   set strokeTopWeight(value: number) {
     const state = live(this);
     write(state, "strokeTopWeight");
-    state.strokeWeights.top = f32(value);
+    writeStrokeSide(state, "top", value);
   }
 
   get strokeRightWeight(): number {
@@ -3213,7 +3247,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
   set strokeRightWeight(value: number) {
     const state = live(this);
     write(state, "strokeRightWeight");
-    state.strokeWeights.right = f32(value);
+    writeStrokeSide(state, "right", value);
   }
 
   get strokeBottomWeight(): number {
@@ -3223,7 +3257,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
   set strokeBottomWeight(value: number) {
     const state = live(this);
     write(state, "strokeBottomWeight");
-    state.strokeWeights.bottom = f32(value);
+    writeStrokeSide(state, "bottom", value);
   }
 
   get strokeLeftWeight(): number {
@@ -3233,7 +3267,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
   set strokeLeftWeight(value: number) {
     const state = live(this);
     write(state, "strokeLeftWeight");
-    state.strokeWeights.left = f32(value);
+    writeStrokeSide(state, "left", value);
   }
 
   get strokeAlign(): FrameNode["strokeAlign"] {
@@ -4316,6 +4350,7 @@ function createNode(file: FileState, type: NodeType, name: string, id?: string):
     fills: type === "TEXT" ? [BLACK] : type === "VECTOR" || type === "INSTANCE" ? [] : [WHITE],
     strokes: [],
     strokeWeights: { top: 1, right: 1, bottom: 1, left: 1 },
+    strokeWeightWritten: false,
     strokeAlign: "INSIDE",
     strokesIncludedInLayout: false,
     dashPattern: [],
