@@ -1,6 +1,6 @@
 /**
- * Navigation menu's bar and row parts, as four component sets on the Navigation menu page. The
- * popup, its viewport, the indicator and the content panel wait for the overlay sets.
+ * Navigation menu's bar and row parts, as four component sets on the Navigation menu page. The open
+ * popup is `navigation-menu-popup-kit.ts`'s set. The indicator is in no set.
  *
  * - `Navigation menu bar trigger`: `NavigationMenu.Trigger` in a horizontal Root, the md control box
  *   that hugs the docs Basic demo's `Customers` and a 16px CaretDown, in four states, closed and
@@ -23,7 +23,7 @@
  * which takes no disabled state. `data-active` marks the link of the current page.
  *
  * The rows draw outside the popup, on `rounded-sm`. In the popup they round with the popup's inner
- * corner, which waits with the popup's set. The demos give a row a title and a description below
+ * corner, which the popup set's row instances carry as an override. The demos give a row a title and a description below
  * it, and the sets draw the one-line form, the title alone.
  */
 import { navigationMenuVariants } from "@elmeragroup/fuse/recipe-catalog";
@@ -94,8 +94,13 @@ const CARET: IconSlot = {
   classes: SLOTS.triggerIcon(),
 };
 
-/** Why no cell draws a row's arm inside the popup. */
-const IN_POPUP = "a row inside the Navigation menu's popup, which waits for the popup's set";
+/** Why no cell draws a vertical trigger's arm inside the popup, where the docs Nested demo puts it. */
+const TRIGGER_IN_POPUP =
+  "a row inside the Navigation menu's popup, as the docs Nested demo's trigger sits, which no set draws: the Navigation menu popup set holds row links alone";
+
+/** Why no cell draws a row link's arm inside the popup. */
+const LINK_IN_POPUP =
+  "a row inside the Navigation menu's popup, which the Navigation menu popup set draws as an instance of this set with its corner overridden";
 
 /**
  * Why no cell draws a caret's right-to-left arm. The kit draws a left-to-right page, where a logical
@@ -171,7 +176,7 @@ export const NAVIGATION_MENU_VERTICAL_TRIGGER: ComponentDefinition = {
   facts: triggerFacts("right"),
   omittedCompositions: new Map([
     ["rtl", RIGHT_TO_LEFT],
-    ["in-data-[slot=navigation-menu-popup]", IN_POPUP],
+    ["in-data-[slot=navigation-menu-popup]", TRIGGER_IN_POPUP],
   ]),
   label: {
     key: "text",
@@ -219,7 +224,7 @@ export const NAVIGATION_MENU_ROW_LINK: ComponentDefinition = {
   name: "Navigation menu row link",
   previewWidth: NAVIGATION_MENU_ROW_LINK_WIDTH,
   classesFor: () => SLOTS.link({ box: "row" }),
-  omittedCompositions: new Map([["in-data-[slot=navigation-menu-popup]", IN_POPUP]]),
+  omittedCompositions: new Map([["in-data-[slot=navigation-menu-popup]", LINK_IN_POPUP]]),
   label: {
     key: "text",
     name: "text",

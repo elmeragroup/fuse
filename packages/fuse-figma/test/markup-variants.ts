@@ -238,6 +238,18 @@ export const PEER_VARIANTS = new Map<string, (sibling: MarkupElement) => boolean
 ]);
 
 /**
+ * Whether an ancestor of an element matches each `in-*` variant, which selects the elements inside it:
+ * `in-data-[slot=navigation-menu-popup]:` compiles to `:where([data-slot="navigation-menu-popup"]) &`,
+ * so it holds on a row link inside the Navigation menu's popup.
+ */
+export const IN_VARIANTS = new Map<string, (ancestor: MarkupElement) => boolean>([
+  [
+    "in-data-[slot=navigation-menu-popup]",
+    (ancestor) => ancestor.attributes.get("data-slot") === "navigation-menu-popup",
+  ],
+]);
+
+/**
  * Whether the measured root holds what a parent-context variant reads, for each part directly below
  * it: fuse.css's `item-described:` compiles to
  * `:where(:has( > [data-slot="item-content"] > [data-slot="item-description"])) > &`, so it holds on

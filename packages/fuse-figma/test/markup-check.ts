@@ -54,6 +54,7 @@ import {
   GROUP_HAS_VARIANTS,
   GROUP_VARIANTS,
   HAS_VARIANTS,
+  IN_VARIANTS,
   PARENT_VARIANTS,
   PEER_VARIANTS,
   REACT_ARIA_HOVER,
@@ -265,8 +266,8 @@ function conditionHolds(
   cell: Cell,
   inPlace?: ReadonlyMap<string, (cell: Cell) => boolean>
 ): (variant: string) => boolean {
-  const own = makeStateTable(definition);
-  const meaningOf = inPlace === undefined ? own : withInPlaceFacts(own, inPlace, definition.name);
+  const meaningOf =
+    inPlace === undefined ? makeStateTable(definition) : withInPlaceFacts(definition, inPlace);
   return (variant) => {
     const meaning = meaningOf(variant);
     return meaning.kind === "condition" && meaning.holds(cell);
@@ -326,9 +327,11 @@ function checkInnerCell(
     const carries = ATTRIBUTE_VARIANTS.get(variant) ?? NAMED_ATTRIBUTE_VARIANTS.get(variant);
     const has = HAS_VARIANTS.get(variant);
     const groupHas = GROUP_HAS_VARIANTS.get(variant);
+    const within = IN_VARIANTS.get(variant);
     const markup =
       carries?.(element) ??
       has?.(elements, index) ??
+      (within === undefined ? undefined : ancestorsOf(elements, index).some(within)) ??
       (groupHas === undefined
         ? undefined
         : ancestorIndexes(elements, index).some((ancestor) => groupHas(elements, ancestor)));

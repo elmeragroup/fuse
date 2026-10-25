@@ -64,6 +64,15 @@ describe("compileUtilities", () => {
     expect(described?.specificity).toEqual([0, 1, 0]);
     expect((described?.order ?? -1) > (bare?.order ?? Number.POSITIVE_INFINITY)).toBe(true);
   });
+
+  // Oracle: Tailwind compiles `in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner` to
+  // `:where([data-slot="navigation-menu-popup"]) :where(.…)`, a weightless class below a parent
+  // context. Both `:where()`s weigh nothing (Selectors 4 §17), so the rule weighs (0,0,0).
+  it("places a weightless class whose rule selects it below a parent context", async () => {
+    const className = "in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner";
+    const compiled = await compileUtilities([className]);
+    expect(compiled.classes.get(className)?.specificity).toEqual([0, 0, 0]);
+  });
 });
 
 // Unit under test: `baseBorderColor`, which reads the base-layer border color every Fuse part gets

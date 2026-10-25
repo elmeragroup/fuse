@@ -307,7 +307,7 @@ describe("the row link", () => {
       [
         "in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner",
         "dropped",
-        "a row inside the Navigation menu's popup, which waits for the popup's set",
+        "a row inside the Navigation menu's popup, which the Navigation menu popup set draws as an instance of this set with its corner overridden",
       ],
       [
         "hover:**:text-accent-foreground",

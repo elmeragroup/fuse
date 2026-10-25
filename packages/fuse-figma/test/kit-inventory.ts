@@ -291,6 +291,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "navigation-menu-bar-link", name: "Navigation menu bar link", variants: 6, previewed: 6 },
       // 3 states, inactive and active.
       { key: "navigation-menu-row-link", name: "Navigation menu row link", variants: 6, previewed: 6 },
+      // The Basic demo's two popups, Customers and Business.
+      { key: "navigation-menu-popup", name: "Navigation menu popup", variants: 2, previewed: 2 },
     ],
   },
 ];

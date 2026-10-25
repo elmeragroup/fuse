@@ -27,6 +27,7 @@ import type {
   SizeSpec,
   SizingSpec,
 } from "./kit-spec";
+import { AUTO_HEIGHT, autoHeightBasis } from "./percent-height";
 import type { Layout } from "./placement";
 import { roomyMaximum, withRoom } from "./popup-room";
 
@@ -456,7 +457,7 @@ export function roomInside(holder: Holder, index: number): Room {
       length: innerLength(holder, "horizontal", "content"),
     },
     vertical: {
-      percent: percent(sizing.vertical),
+      percent: autoHeightBasis(layout, sizing.vertical) ?? percent(sizing.vertical),
       auto: HUG,
       siblings: along("VERTICAL"),
       length: innerLength(holder, "vertical", "content"),
@@ -1362,7 +1363,8 @@ function readLength(
         return { size: { kind: "fitted" } as const, share: undefined };
       }
       const share = evaluatePercentage(value);
-      if (share === 1 && siblings.length > 0) {
+      // A percentage that computes to `auto` sizes the box by its content, so siblings share nothing.
+      if (share === 1 && siblings.length > 0 && percent.kind !== "auto") {
         return { size: { kind: "shared" } as const, share };
       }
       const size = readSize(value, variables, percent);
@@ -1386,9 +1388,11 @@ function readLength(
           return {
             outcome: "literal",
             detail:
-              share === 1 && percent.kind === "unset"
-                ? "100% sizes an in-flow block-level box with no margins, padding or border as its unset width does, which hugs, since the root sits alone in its component set"
-                : "the box hugs its content",
+              percent.kind === "auto" && share !== undefined
+                ? AUTO_HEIGHT
+                : share === 1 && percent.kind === "unset"
+                  ? "100% sizes an in-flow block-level box with no margins, padding or border as its unset width does, which hugs, since the root sits alone in its component set"
+                  : "the box hugs its content",
           };
         case "fill":
           return { outcome: "literal", detail: `the box fills its parent's ${axis.length}` };

@@ -52,6 +52,7 @@ import {
   NAVIGATION_MENU_ROW_LINK,
   NAVIGATION_MENU_VERTICAL_TRIGGER,
 } from "./navigation-menu-kit";
+import { NAVIGATION_MENU_POPUP } from "./navigation-menu-popup-kit";
 import { PAGINATION_EDGE, PAGINATION_ELLIPSIS, PAGINATION_LINK, PAGINATION_ROW } from "./pagination-kit";
 import { POPOVER_CONTENT, POPOVER_OPEN } from "./popover-kit";
 import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
@@ -175,7 +176,7 @@ const COMBOBOX_PAGE: KitPage = { slug: "combobox", name: "Combobox" };
 /** The page of Command's rows and list. The palette dialog waits for a dialog surface. */
 const COMMAND_PAGE: KitPage = { slug: "command", name: "Command" };
 
-/** The page of Navigation menu's triggers and links, until the popup's sets join them. */
+/** The page of Navigation menu's triggers, links and open popup. */
 const NAVIGATION_MENU_PAGE: KitPage = { slug: "navigation-menu", name: "Navigation menu" };
 
 /**
@@ -404,5 +405,10 @@ export const KIT: readonly KitEntry[] = [
     definition: NAVIGATION_MENU_ROW_LINK,
     page: NAVIGATION_MENU_PAGE,
     previewCells: matrixCells(NAVIGATION_MENU_ROW_LINK.axes),
+  },
+  {
+    definition: NAVIGATION_MENU_POPUP,
+    page: NAVIGATION_MENU_PAGE,
+    previewCells: matrixCells(NAVIGATION_MENU_POPUP.axes),
   },
 ];

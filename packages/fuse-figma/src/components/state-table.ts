@@ -333,27 +333,39 @@ export function makeStateTable(
 }
 
 /**
- * Extend an inner set's state table with the facts an instance part declares for the inner root in
- * place, as an open popup's trigger is `aria-expanded`. A fact may name only a variant the inner table
- * omits or leaves unmodelled. A variant the inner set renders through a state or a fact keeps that
- * meaning, as Input's `invalid` state renders `aria-invalid` and `data-invalid`, which every set
- * without an invalid state drops.
+ * The state table an instance part's in-place cascade reads: the inner set's, extended with the facts
+ * the part declares for the inner root in place, as an open popup's trigger is `aria-expanded`. A fact
+ * may name only a variant the inner table omits, through the omissions every set shares, the set's
+ * own `omittedStates` or its `omittedCompositions`, as a row link drawn outside the popup omits
+ * `in-data-[slot=navigation-menu-popup]`, or one it leaves unmodelled. An omitted pseudo-element, media
+ * condition or transition frame stays refused, since no composite draws one. A variant the inner set renders through a state or a fact
+ * keeps that meaning, as Input's `invalid` state renders `aria-invalid` and `data-invalid`, which every
+ * set without an invalid state drops.
  *
- * @param meaningOf - The inner set's state table.
+ * @param inner - The inner set's definition.
  * @param facts - The instance part's facts, by variant.
- * @param name - The inner set's name, for errors.
  * @returns The table the in-place cascade reads.
  * @throws When a fact names a variant the inner table gives another meaning, a defect in the
  *   definition.
  */
 export function withInPlaceFacts(
-  meaningOf: StateTable,
-  facts: ReadonlyMap<string, (cell: Cell) => boolean>,
-  name: string
+  inner: Parameters<typeof makeStateTable>[0],
+  facts: ReadonlyMap<string, (cell: Cell) => boolean>
 ): StateTable {
+  const meaningOf = makeStateTable(inner);
+  const admits = (variant: string): boolean => {
+    const { kind } = meaningOf(variant);
+    // A composition the inner set omits is the context the composite draws around it. Its other
+    // reasoned omissions, a pseudo-element, a media condition or a transition frame, draw nothing.
+    return (
+      kind === "omitted" ||
+      kind === "unmodelled" ||
+      (kind === "omitted-for" && inner.omittedCompositions?.has(variant) === true)
+    );
+  };
   for (const variant of facts.keys()) {
-    if (!["omitted", "unmodelled"].includes(meaningOf(variant).kind)) {
-      throw new Error(`an instance of ${name} gives \`${variant}\` a second meaning`);
+    if (!admits(variant)) {
+      throw new Error(`an instance of ${inner.name} gives \`${variant}\` a second meaning`);
     }
   }
   return (variant) => {

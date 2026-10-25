@@ -357,10 +357,7 @@ export class InstanceParts {
       return known;
     }
     const made: PartRecord = {
-      meaningOf:
-        part.facts === undefined
-          ? makeStateTable(part.of)
-          : withInPlaceFacts(makeStateTable(part.of), part.facts, part.of.name),
+      meaningOf: part.facts === undefined ? makeStateTable(part.of) : withInPlaceFacts(part.of, part.facts),
       logs: new CascadeLogs(),
       passed: { origin: { record: this.#emit }, logs: new CascadeLogs() },
       scaling: partsThatScale(

@@ -102,6 +102,9 @@ function literalLayout(expected: readonly string[], detail: string) {
   };
 }
 
+/** Why a grid in one column drops its `column-gap`. */
+const ONE_COLUMN_GAP = "the grid lays its items in one column, which has no column gap";
+
 /**
  * Read `display` once the box's layers are known. A flex box is an auto layout along its direction.
  * A grid with no template stacks each layer in a row of its own, so a grid with
@@ -155,6 +158,16 @@ function readDisplay(
   if (inert !== undefined) {
     reader.mark("-webkit-box-orient", "dropped", inert, []);
   }
+  if (display === "grid" && layout.oneColumnGrid === true) {
+    reader.read(
+      "display",
+      (value) => value,
+      () => ({ outcome: "literal", detail: "a vertical auto layout, its items in the grid's one column" }),
+      lays
+    );
+    reader.mark("column-gap", "dropped", ONE_COLUMN_GAP, []);
+    return false;
+  }
   if (display === "grid") {
     const center = literalLayout(["center"], "centered on both axes");
     const centered =
@@ -175,19 +188,24 @@ function readDisplay(
   // Blocks fill a box only across a width it has before they lay out.
   const stacked = layout.blocks && width.kind !== "hug";
   const flow =
-    display === "block" && (layers.length === 0 || ownText || stacked)
+    display === "list-item" && stacked
       ? literalLayout(
-          ["block"],
-          stacked
-            ? "a vertical auto layout, its block-level parts stacked down it, each as wide as the box"
-            : ownText
-              ? "a block box that sets its own text in lines"
-              : "a frame with no layers to lay out"
+          ["list-item"],
+          "a vertical auto layout, its block-level parts stacked down it as in a block box, since Tailwind preflight's `list-style: none` on the list leaves the item no marker"
         )
-      : literalLayout(
-          ["inline-flex", "flex"],
-          layout.direction === "VERTICAL" ? "a vertical auto layout" : "a horizontal auto layout"
-        );
+      : display === "block" && (layers.length === 0 || ownText || stacked)
+        ? literalLayout(
+            ["block"],
+            stacked
+              ? "a vertical auto layout, its block-level parts stacked down it, each as wide as the box"
+              : ownText
+                ? "a block box that sets its own text in lines"
+                : "a frame with no layers to lay out"
+          )
+        : literalLayout(
+            ["inline-flex", "flex"],
+            layout.direction === "VERTICAL" ? "a vertical auto layout" : "a horizontal auto layout"
+          );
   reader.read("display", flow.map, flow.describe, lays);
   return display === "block" && ownText;
 }
@@ -596,7 +614,12 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     parts,
     endInFlow
   );
-  const itemSpacing = space ?? number("gap", "itemSpacing") ?? ZERO;
+  // A grid in one column spaces its rows by `row-gap`, which `gap` sets too.
+  const itemSpacing =
+    space ??
+    (layout.oneColumnGrid === true ? number("row-gap", "itemSpacing") : undefined) ??
+    number("gap", "itemSpacing") ??
+    ZERO;
   const counterAlign =
     placed?.counterAlign ?? (textBlock ? blockLineAlign(layout, sizing, limits) : layout.counterAlign);
   // The parts before the label sit first, sectioned where separators cancel the box's padding, and

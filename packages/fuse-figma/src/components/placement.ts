@@ -68,6 +68,11 @@ export type Layout = {
    * a real `justify-content: space-between` included.
    */
   readonly labelFills?: true;
+  /**
+   * True for a grid that puts every item in one column, as `placesInOneColumn` in `box-flow.ts`
+   * reads it, which the box draws as a flex column. Absent elsewhere.
+   */
+  readonly oneColumnGrid?: true;
 };
 
 /** The lengths of a row that place a part along it. The width is undefined where the row hugs it. */

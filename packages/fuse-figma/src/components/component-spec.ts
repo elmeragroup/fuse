@@ -408,10 +408,11 @@ export type InstanceDefinition = {
    * The variants that hold for the inner root where the outer component renders it, beyond the inner
    * set's own facts, as Base UI stamps `aria-expanded` on the trigger of an open popup. Each may name
    * a variant the inner set omits, through the omissions every set shares, such as `aria-expanded`,
-   * or its own `omittedStates`, or one it leaves unmodelled. A variant the inner set gives a meaning
-   * stops the build, as Input's `invalid` state renders `aria-invalid`, and so does one it omits with
-   * a reason. The in-place cascade reads them, and the diff carries what they paint as overrides.
-   * Undefined for none.
+   * or its own `omittedStates` or `omittedCompositions`, as a row link drawn outside the popup omits
+   * `in-data-[slot=navigation-menu-popup]`, or one it leaves unmodelled. A variant the inner set gives
+   * a meaning stops the build, as Input's `invalid` state renders `aria-invalid`, and so does an
+   * omitted pseudo-element, media condition or transition frame. The in-place cascade reads them, and
+   * the diff carries what they paint as overrides. Undefined for none.
    */
   readonly facts?: ReadonlyMap<string, (cell: Cell) => boolean>;
 };

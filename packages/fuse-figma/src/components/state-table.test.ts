@@ -327,7 +327,7 @@ describe("the facts an instance part declares in place", () => {
   const expanded = new Map([["aria-expanded", () => true]]);
 
   it("hold a variant the kit omits for every set, and leave the set's own meanings", () => {
-    const inPlace = withInPlaceFacts(makeStateTable(states), expanded, "Chip");
+    const inPlace = withInPlaceFacts(states, expanded);
     const holdsWhere = (variant: string) => {
       const meaning = inPlace(variant);
       return meaning.kind === "condition"
@@ -341,10 +341,42 @@ describe("the facts an instance part declares in place", () => {
     expect(makeStateTable(states)("aria-expanded")).toEqual({ kind: "omitted" });
   });
 
+  // Oracle: Tailwind compiles `in-data-[slot=navigation-menu-popup]:` to
+  // `:where([data-slot="navigation-menu-popup"]) .…`, which holds on a row link inside the popup and
+  // on no row link outside it, where the row link set draws its cells.
+  it("hold a variant the set omits with a reason, as a row link omits the popup it can sit in", () => {
+    const inPopup = "in-data-[slot=navigation-menu-popup]";
+    const outside = definition({
+      axes: [CONTROL_STATES],
+      omittedCompositions: new Map([[inPopup, "a row inside the popup"]]),
+    });
+    const meaning = withInPlaceFacts(outside, new Map([[inPopup, () => true]]))(inPopup);
+    expect(meaning.kind === "condition" && meaning.holds({ state: "rest" })).toBe(true);
+    expect(makeStateTable(outside)(inPopup)).toEqual({
+      kind: "omitted-for",
+      reason: "a row inside the popup",
+    });
+  });
+
+  // Oracle: a fact says a variant holds where the composite draws the inner root. A composite draws
+  // the context a composition names, but no layer of a pseudo-element, no media condition other than
+  // the desktop window, and no transition frame, so a fact for one of those draws nothing.
+  it.each([
+    ["a pseudo-element", { omittedPseudoElements: new Map([["before", "the ::before glyph"]]) }, "before"],
+    ["a media condition", { omittedMedia: new Map([["print", "a printed page"]]) }, "print"],
+    ["a transition frame", {}, "data-starting-style"],
+  ] as const)("refuse %s the set omits with a reason", (_kind, omission, variant) => {
+    const inner = definition({ axes: [CONTROL_STATES], ...omission });
+    expect(makeStateTable(inner)(variant).kind).toBe("omitted-for");
+    expect(() => withInPlaceFacts(inner, new Map([[variant, () => true]]))).toThrow(
+      `an instance of Chip gives \`${variant}\` a second meaning`
+    );
+  });
+
   it("refuse a state's variant, which the set gives a meaning", () => {
-    expect(() =>
-      withInPlaceFacts(makeStateTable(states), new Map([["disabled", () => true]]), "Chip")
-    ).toThrow("an instance of Chip gives `disabled` a second meaning");
+    expect(() => withInPlaceFacts(states, new Map([["disabled", () => true]]))).toThrow(
+      "an instance of Chip gives `disabled` a second meaning"
+    );
   });
 
   // Oracle: Input's `invalid` state renders `aria-invalid` and `data-invalid`, the attributes an
@@ -354,12 +386,8 @@ describe("the facts an instance part declares in place", () => {
       ["rest", "invalid"].map((state) => [variant, state])
     )
   )("refuse %s on an Input instance, holding at state=%s", (variant, state) => {
-    expect(() =>
-      withInPlaceFacts(
-        makeStateTable(INPUT),
-        new Map([[variant, (cell: Cell) => cell.state === state]]),
-        "Input"
-      )
-    ).toThrow(`an instance of Input gives \`${variant}\` a second meaning`);
+    expect(() => withInPlaceFacts(INPUT, new Map([[variant, (cell: Cell) => cell.state === state]]))).toThrow(
+      `an instance of Input gives \`${variant}\` a second meaning`
+    );
   });
 });

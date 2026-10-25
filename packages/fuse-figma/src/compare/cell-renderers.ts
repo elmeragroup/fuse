@@ -476,6 +476,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/navigation-menu.js",
     load: async () => (await import("./navigation-menu-cell.ts")).navigationMenuRowLink,
   },
+  {
+    set: "navigation-menu-popup",
+    entry: "dist/navigation-menu.js",
+    module: { url: new URL("navigation-menu-popup-cell.ts", import.meta.url), name: "navigationMenuPopup" },
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

@@ -455,6 +455,8 @@ export function describeNumber(spec: NumberSpec): Pick<CoverageRow, "outcome" | 
  *   fills a hugging frame, so it does not read. Where nothing bounds the width CSS gives the parent,
  *   it is at least as wide as each layer it holds, so a `max-width` of `100%` or more never limits
  *   the box.
+ * - `auto`: the box sits in a parent that stacks its layers down and hugs its height, so a percentage
+ *   height computes to `auto` (CSS 2.1 §10.5) and any share hugs, as `percent-height.ts` says.
  * - `unset`: the box is an in-flow variant root alone in its component set with no preview width, so
  *   its container gives it no width, and it is a block-level box with no margins, padding or border,
  *   whose unset width and `100%` are the same width (CSS 2.1 §10.3.3). The kit draws that unset
@@ -467,6 +469,7 @@ export type PercentBasis =
   | { readonly kind: "parent" }
   | { readonly kind: "length"; readonly value: number; readonly of: string }
   | { readonly kind: "hugging" }
+  | { readonly kind: "auto" }
   | { readonly kind: "unset" }
   | { readonly kind: "none" };
 
@@ -477,9 +480,9 @@ export type PercentBasis =
  * the size of what the box holds laid out on one line whatever room it has (CSS Sizing 3 §5.1), which
  * a frame that hugs a hugging text draws, so it hugs. A percentage takes
  * the basis: against a length in pixels any share is that share of it, against a parent's auto
- * layout only the whole fills, since a fill takes no share, and where the whole is the box's unset
- * width only the whole hugs, as that width does. Any other percentage stays unread, as
- * {@link readNumber} leaves it.
+ * layout only the whole fills, since a fill takes no share, where the whole is the box's unset
+ * width only the whole hugs, as that width does, and where it computes to `auto` any share hugs. Any
+ * other percentage stays unread, as {@link readNumber} leaves it.
  *
  * @param value - A compiled value with Tailwind's variables already substituted.
  * @param index - The synced variables.
@@ -505,6 +508,8 @@ export function readSize(value: string, index: VariableIndex, basis: PercentBasi
       return { kind: "fixed", length: { kind: "literal", value: share * basis.value } };
     case "unset":
       return share === 1 ? { kind: "hug" } : undefined;
+    case "auto":
+      return { kind: "hug" };
     case "hugging":
     case "none":
       return undefined;

@@ -80,7 +80,8 @@ const DIRECTIONS = new Map<string, { readonly direction: DirectionSpec; readonly
  * `justify-content`. In a row an unset alignment stays centered, as every published row was drawn.
  * CSS packs a row's layers at the start and stretches them, which shows only where a row has room
  * to spare or layers of unequal height. A column takes CSS's start on both axes, and its unset
- * `align-items` stretches its layers across it, which {@link roomInside} gives them. A grid places
+ * `align-items` stretches its layers across it, which {@link roomInside} gives them. A grid that puts
+ * every item in one column, as {@link placesInOneColumn} says, is such a column. Any other grid places
  * its layers by `place-content`, which {@link readDisplay} reads, so its alignments stay unread.
  * `line-clamp-*` makes a `-webkit-box` column, which sets its text from the top left. A row whose
  * parts set their own `align-self` aligns as {@link readSelfAlignment} says. A block box that
@@ -100,6 +101,9 @@ export function readFlow(
   box: { readonly sizing: SizingSpec; readonly limits: LimitsSpec; readonly inside: Feed }
 ): Flow {
   const display = normalizeCss(reader.raw("display") ?? "");
+  if (display === "grid" && placesInOneColumn(reader, flow)) {
+    return { layout: ONE_COLUMN_GRID, self: undefined };
+  }
   const blocks = stacksBlocks(reader, flow);
   if (display === "grid" || display === "-webkit-box" || blocks) {
     const column = display !== "grid";
@@ -160,6 +164,82 @@ export function readFlow(
   return { layout: autoStart === "label-fills" ? { ...layout, labelFills: true } : layout, self };
 }
 
+/**
+ * The properties of a grid that size, place or align its tracks or items, which a grid in one column
+ * from its start leaves unset. Tailwind writes some as shorthands, as `grid-cols-2` sets
+ * `grid-template-columns` and `col-span-2` sets `grid-column`, so the list names both forms.
+ */
+const GRID_TRACKS = [
+  "grid",
+  "grid-template",
+  "grid-template-columns",
+  "grid-template-rows",
+  "grid-template-areas",
+  "grid-auto-columns",
+  "grid-auto-rows",
+  "place-items",
+  "justify-items",
+  "align-items",
+  "place-content",
+  "justify-content",
+  "align-content",
+] as const;
+
+/**
+ * The properties of a grid item that place or align it in the grid, or that would read as a flex
+ * item's share, which a grid item ignores and the column {@link ONE_COLUMN_GRID} draws would not.
+ */
+const ITEM_PLACEMENT = [
+  "grid-area",
+  "grid-column",
+  "grid-column-start",
+  "grid-column-end",
+  "grid-row",
+  "grid-row-start",
+  "grid-row-end",
+  "place-self",
+  "justify-self",
+  "align-self",
+  "flex",
+  "flex-grow",
+  "flex-shrink",
+  "flex-basis",
+] as const;
+
+/**
+ * Whether a grid puts every item in one column, one row each: it sets no track, template or alignment
+ * of its own, flows its items in rows, which is the default, and holds only parts that set no
+ * placement. Its one `auto` column then stretches to a definite grid width (CSS Grid 1 §7.1, §8.5,
+ * §11.8), each item stretches across it (CSS Box Alignment 3 §6.1), and each row takes its item's
+ * height. A box, icon or label that is no part may sit in the grid as an anonymous item, which the
+ * rule does not model.
+ */
+function placesInOneColumn(reader: LayerStyle, flow: FlowLayers): boolean {
+  const autoFlow = normalizeCss(reader.raw("grid-auto-flow") ?? "row");
+  return (
+    flow.parts.length > 0 &&
+    flow.others.length === 0 &&
+    autoFlow === "row" &&
+    GRID_TRACKS.every((property) => !reader.has(property)) &&
+    flow.parts.every(({ style }) => ITEM_PLACEMENT.every((property) => !style.has(property)))
+  );
+}
+
+/**
+ * A grid in one column, drawn as a vertical auto layout packed at its start whose unset alignment
+ * across stretches its parts, as a flex column's does: {@link roomInside} fills them across a definite
+ * width. Grid items and flex items paint alike, in their order (CSS Grid 1 §9, CSS Flexbox 1 §4.3).
+ */
+const ONE_COLUMN_GRID: Layout = {
+  flex: true,
+  blocks: false,
+  direction: "VERTICAL",
+  primaryAlign: "MIN",
+  counterAlign: "MIN",
+  justify: "unset",
+  oneColumnGrid: true,
+};
+
 /** How the coverage table names an auto start margin {@link readAutoStart} reads on two layers. */
 const AUTO_START =
   "the auto margin takes the row's free space, which ends the row with the layer, as space-between places two layers";
@@ -219,7 +299,14 @@ function readAutoStart(reader: LayerStyle, flow: FlowLayers): "spaced" | "label-
 }
 
 /** The displays that make a box block-level, which a block box stacks down its content box. */
-const BLOCK_LEVEL: ReadonlySet<string> = new Set(["block", "flex", "grid"]);
+const BLOCK_LEVEL: ReadonlySet<string> = new Set(["block", "list-item", "flex", "grid"]);
+
+/**
+ * The displays of a block container that stacks its block-level children: a block box, and a list
+ * item, which is a block box with a marker (CSS Display 3 §2.3). Tailwind preflight's `list-style:
+ * none` on a list leaves its items no marker, as every list the kit draws has.
+ */
+export const BLOCK_CONTAINERS: ReadonlySet<string> = new Set(["block", "list-item"]);
 
 /** The gaps, which separate the items of flex, grid and multi-column boxes and no blocks. */
 const GAPS = ["gap", "row-gap", "column-gap"] as const;
@@ -231,7 +318,7 @@ const GAPS = ["gap", "row-gap", "column-gap"] as const;
  */
 function stacksBlocks(reader: LayerStyle, flow: FlowLayers): boolean {
   return (
-    normalizeCss(reader.raw("display") ?? "") === "block" &&
+    BLOCK_CONTAINERS.has(normalizeCss(reader.raw("display") ?? "")) &&
     flow.parts.length > 0 &&
     flow.others.length === 0 &&
     flow.parts.every(({ style }) => BLOCK_LEVEL.has(normalizeCss(style.raw("display") ?? ""))) &&
