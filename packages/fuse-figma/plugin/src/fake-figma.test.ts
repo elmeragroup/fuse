@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { paintsAbove } from "./fake-figma.ts";
+import { createFakeFigma, paintsAbove } from "./fake-figma.ts";
 import {
   BLUE_PIXEL,
   childNamed,
@@ -718,6 +718,58 @@ describe("rule 27: a stroke's dash pattern sits apart from its paints", () => {
   });
 });
 
+describe("rule 46: a stroke's weight on each side", () => {
+  it("writes each side alone and reads the stroke's weight mixed until one weight sets every side (N9)", () => {
+    // N9's frame: a fixed column with a stroke whose weights are top 0, right 1, bottom 0, left 0.
+    const frame = autoLayout("VERTICAL");
+    frame.resize(120, 40);
+    frame.strokes = [{ type: "SOLID", color: { r: 0, g: 0, b: 0 } }];
+    frame.strokeTopWeight = 0;
+    frame.strokeRightWeight = 1;
+    frame.strokeBottomWeight = 0;
+    frame.strokeLeftWeight = 0;
+    frame.strokeAlign = "INSIDE";
+    frame.strokesIncludedInLayout = false;
+    expect([
+      frame.strokeTopWeight,
+      frame.strokeRightWeight,
+      frame.strokeBottomWeight,
+      frame.strokeLeftWeight,
+      frame.strokeWeight === figma.mixed,
+      frame.strokesIncludedInLayout,
+    ]).toEqual([0, 1, 0, 0, true, false]);
+    frame.strokeWeight = 2;
+    expect([frame.strokeTopWeight, frame.strokeRightWeight, frame.strokeWeight]).toEqual([2, 2, 2]);
+  });
+
+  // PS's hugging frames: a column padded 10 on the left and right, around a 50 × 20 child, which the
+  // fake lays out where the child is an instance of a set's variant (rule 32).
+  it.each([
+    [[0, 0, 0, 1], true, [71, 20]],
+    [[2, 0, 0, 0], true, [70, 22]],
+    [[0, 0, 0, 1], false, [70, 20]],
+    [[2, 0, 0, 0], false, [70, 20]],
+  ] as const)("hugs a column with weights %j, in the layout %s, at %j (PS)", (weights, included, size) => {
+    const component = figma.createComponent();
+    component.resize(50, 20);
+    figma.combineAsVariants([component], figma.currentPage);
+    const column = autoLayout("VERTICAL");
+    column.primaryAxisSizingMode = "AUTO";
+    column.counterAxisSizingMode = "AUTO";
+    column.paddingLeft = 10;
+    column.paddingRight = 10;
+    column.appendChild(component.createInstance());
+    column.strokes = [{ type: "SOLID", color: { r: 0, g: 0, b: 0 } }];
+    const [top, right, bottom, left] = weights;
+    column.strokeTopWeight = top;
+    column.strokeRightWeight = right;
+    column.strokeBottomWeight = bottom;
+    column.strokeLeftWeight = left;
+    column.strokesIncludedInLayout = included;
+    expect([column.width, column.height]).toEqual(size);
+  });
+});
+
 describe("rule 28: a text's letter spacing", () => {
   it("starts at 0%, keeps a percent as written and pixels as a 32-bit float (PL)", async () => {
     const text = await textIn(autoLayout("HORIZONTAL"), "WIDTH_AND_HEIGHT");
@@ -925,5 +977,107 @@ describe("rule 30: a text's percent line height", () => {
     expect(text.lineHeight).toEqual({ unit: "PERCENT", value: 137.5 });
     text.setBoundVariable("fontSize", file.variable("Fuse density", "control-h-xs"));
     expect([text.fontSize, text.lineHeight]).toEqual([24, { unit: "PERCENT", value: 137.5 }]);
+  });
+});
+
+describe("rule 47: an absolute instance at MAX × CENTER keeps its end inset and its centre offset", () => {
+  /**
+   * N11's item: a 200px component that hugs its height around a row instance whose height binds
+   * `row-h`, 32 Dense and 36 Comfortable, and an absolute badge instance 23 × 19 at MAX × CENTER, 4px
+   * from the end and centred on the row.
+   */
+  async function badgeInItem() {
+    const own = createFakeFigma({
+      collections: [
+        {
+          name: "Fuse density",
+          modes: ["Dense", "Comfortable"],
+          variables: [
+            {
+              name: "row-h",
+              type: "FLOAT",
+              scopes: [],
+              webSyntax: undefined,
+              description: "",
+              values: new Map([
+                ["Dense", { _tag: "Float", value: 32 }],
+                ["Comfortable", { _tag: "Float", value: 36 }],
+              ]),
+            },
+          ],
+        },
+      ],
+    });
+    const api = own.figma;
+    const row = api.createComponent();
+    row.layoutMode = "HORIZONTAL";
+    row.resize(100, 32);
+    row.setBoundVariable("height", own.variable("Fuse density", "row-h"));
+    api.combineAsVariants([row], api.currentPage);
+    const badge = api.createComponent();
+    badge.resize(23, 19);
+    api.combineAsVariants([badge], api.currentPage);
+    const item = api.createComponent();
+    item.layoutMode = "VERTICAL";
+    item.resize(200, 10);
+    item.primaryAxisSizingMode = "AUTO";
+    const rowInstance = row.createInstance();
+    item.appendChild(rowInstance);
+    rowInstance.layoutSizingHorizontal = "FILL";
+    const placed = badge.createInstance();
+    item.appendChild(placed);
+    placed.layoutPositioning = "ABSOLUTE";
+    placed.constraints = { horizontal: "MAX", vertical: "CENTER" };
+    placed.x = 200 - 4 - 23;
+    placed.y = 32 / 2 - 19 / 2;
+    const [density] = await api.variables.getLocalVariableCollectionsAsync();
+    return { api, badge, item, rowInstance, placed, density };
+  }
+
+  it("keeps the end inset as the instance widens and its parent widens (N11)", async () => {
+    const { badge, item, placed } = await badgeInItem();
+    expect([placed.x, placed.y]).toEqual([173, 6.5]);
+    badge.resize(39, 19);
+    expect([placed.x, placed.y]).toEqual([157, 6.5]);
+    item.resize(240, item.height);
+    item.primaryAxisSizingMode = "AUTO";
+    expect([placed.x, placed.y]).toEqual([197, 6.5]);
+  });
+
+  // An instance takes its new size when read (rule 32, PI), so the row settles before the item.
+  it("keeps the centre offset through a density switch (N11)", async () => {
+    const { item, rowInstance, placed, density } = await badgeInItem();
+    const comfortable = density?.modes[1]?.modeId ?? "";
+    if (density === undefined) {
+      throw new Error("the file holds no density collection");
+    }
+    item.setExplicitVariableModeForCollection(density, comfortable);
+    expect([rowInstance.height, item.height, placed.y]).toEqual([36, 36, 8.5]);
+  });
+
+  // An instance lays out as its main does, so a padding the main takes later reaches it (N2, N11).
+  it("hugs an outer instance with the layout its main holds now", async () => {
+    const { item } = await badgeInItem();
+    const outer = item.createInstance();
+    expect(outer.height).toBe(32);
+    item.paddingTop = 4;
+    expect(outer.height).toBe(36);
+  });
+
+  // N11: an outer instance's badge followed the main's badge from 197 to 221 with no override.
+  it("moves an outer instance's badge with the main's, as no override of its own", async () => {
+    const { item, placed } = await badgeInItem();
+    const outer = item.createInstance();
+    const [, outerBadge] = outer.children;
+    const inset = (badge: SceneNode | undefined) =>
+      badge === undefined ? undefined : outer.width - badge.x - badge.width;
+    expect(inset(outerBadge)).toBe(4);
+    placed.x = 200 - 8 - 23;
+    expect([inset(outerBadge), outer.overrides]).toEqual([8, []]);
+  });
+
+  it("lists `layoutPositioning` as the instance's override, and never its place or constraints (N11)", async () => {
+    const { placed } = await badgeInItem();
+    expect(placed.overrides).toEqual([{ id: placed.id, overriddenFields: ["layoutPositioning"] }]);
   });
 });

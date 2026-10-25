@@ -833,6 +833,48 @@ describe("a variant whose root strokes a dashed border", () => {
   });
 });
 
+// Unit under test: `reconcileKit` on a variant whose root strokes some sides, as the Sidebar
+// container's `border-r` does. Oracle: the fake's rule 46, after what a real file read on 2026-10-23
+// and 2026-10-25 (N9, PS): each side holds its own weight, `strokeWeight` reads mixed, and the stroke
+// counts in the layout, each side taking room on its own side. The next Plan lists nothing, and a
+// side a designer changed plans back alone.
+describe("a variant whose root strokes some sides", () => {
+  const RIGHT_EDGE = kitWithRoot((root) => ({
+    ...root,
+    stroke: {
+      color: { kind: "variable", variable: { collection: "Fuse tokens", name: "background" } },
+      sides: { top: 0, right: 1, bottom: 0, left: 0 },
+    },
+  }));
+  const weights = (root: ComponentNode) => [
+    root.strokeTopWeight,
+    root.strokeRightWeight,
+    root.strokeBottomWeight,
+    root.strokeLeftWeight,
+    root.strokeAlign,
+    root.strokesIncludedInLayout,
+  ];
+
+  it("writes each side's weight in the layout in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, RIGHT_EDGE, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, RIGHT_EDGE, false)).toEqual({ changes: [], warnings: [] });
+    expect(weights(await buttonVariant(file))).toEqual([0, 1, 0, 0, "INSIDE", true]);
+  });
+
+  it("plans a side a designer changed back to the kit's", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, RIGHT_EDGE, true);
+    file.reopen();
+    (await buttonVariant(file)).strokeLeftWeight = 2;
+    expect((await reconcileKit(file.figma, RIGHT_EDGE, false)).changes).toEqual([
+      "Button / size=md: strokeLeftWeight → 0",
+      ...RELAYOUT,
+    ]);
+  });
+});
+
 // Unit under test: `reconcileKit` on a label with letter spacing, as Empty's title has. Oracle: the
 // fake's rule 28, after what a real file read on 2026-10-23 (PL): a new text holds 0%, and -2.5% reads
 // back as written. The next Plan lists nothing, and a label with no spacing in the spec plans none, so

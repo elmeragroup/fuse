@@ -42,7 +42,7 @@ import {
   readColor,
   readNumber,
 } from "./css-values";
-import { EMPTY_PART, vanishes } from "./empty-part";
+import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
 import { readBleed, sectioned } from "./full-bleed";
 import { holdsWidthRow, namedMinimum, rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
 import type { CascadedInstance, InstanceParts } from "./instance-parts";
@@ -383,13 +383,21 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // flow, `holder.layers`, is the one membership every layout reader below reads: the rooms, the
   // stretch, the label, the display and the placement.
   const cascaded = cascadeParts(box, cascade, scope);
-  // An empty part that CSS draws 0 tall and that paints nothing draws in no layer (PE4).
-  const empty = cascaded.filter(
-    (part) => part.kind === "frame" && vanishes(part.child, part.cascade.style, reader, scope.cell)
-  );
-  for (const part of empty) {
-    part.cascade.style.dropOwn(EMPTY_PART);
+  // An empty part that CSS draws 0 tall and that paints nothing draws in no layer (PE4), and so does a
+  // part that leaves no trace.
+  const leftOut = cascaded.flatMap((part) => {
+    if (part.kind !== "frame") {
+      return [];
+    }
+    if (vanishes(part.child, part.cascade.style, reader, scope.cell)) {
+      return [{ part, reason: EMPTY_PART }];
+    }
+    return leavesNoTrace(part.cascade.style, reader) ? [{ part, reason: NO_TRACE }] : [];
+  });
+  for (const { part, reason } of leftOut) {
+    part.cascade.style.dropOwn(reason);
   }
+  const empty: readonly ShownPart[] = leftOut.map(({ part }) => part);
   const inDom = orderModified(
     reader,
     cascaded.filter((part) => !empty.includes(part)),
@@ -614,6 +622,14 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     parts,
     endInFlow
   );
+  // Placement gives an absolute instance a new layer, which paints what the layer it replaces does.
+  placement.layers.forEach((layer, index) => {
+    const before = parts[index]?.layer;
+    const drawn = before?.kind === "instance" && layer !== before ? scope.painted.resolve(before) : undefined;
+    if (layer.kind === "instance" && drawn?.kind === "frame") {
+      scope.painted.note(layer, drawn);
+    }
+  });
   // A grid in one column spaces its rows by `row-gap`, which `gap` sets too.
   const itemSpacing =
     space ??

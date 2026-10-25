@@ -63,6 +63,19 @@ function strokeWeightField(node: LayerParent): NumberField {
   };
 }
 
+/** One side's stroke weight, which a stroke on some sides writes alone (N9, PS). */
+function strokeSideField(node: LayerParent, side: "Top" | "Right" | "Bottom" | "Left"): NumberField {
+  const name = `stroke${side}Weight` as const;
+  return {
+    name,
+    bindings: [name],
+    matches: (value) => near(node[name], value),
+    write: (value) => {
+      node[name] = value;
+    },
+  };
+}
+
 /**
  * Plan a fixed width or height, or unbind one the spec lets the box or text hug or fill.
  *
@@ -270,24 +283,38 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
   // alpha 0, which keeps its weight in the layout: on a real file on 2026-10-20 a default
   // Button hugged to 64px, a 42px label, 10px of padding a side and two 1px sides. A stroke drawn
   // from a CSS outline takes no room, so it stays out of the layout and overlaps the box's layers,
-  // as the typings' `strokesIncludedInLayout` false draws.
+  // as the typings' `strokesIncludedInLayout` false draws. A border on some sides writes each side's
+  // weight and counts in the layout, where each side takes room on its own side (N9, PS).
   const stroked = run.plan.operations.length;
-  planPaints(run, label, "stroke", node.strokes, spec.stroke?.color, (paints) => {
+  const { stroke } = spec;
+  planPaints(run, label, "stroke", node.strokes, stroke?.color, (paints) => {
     node.strokes = paints;
   });
-  if (spec.stroke !== undefined) {
-    planNumber(run, node, label, strokeWeightField(node), spec.stroke.weight);
+  if (stroke !== undefined) {
+    if ("sides" in stroke) {
+      const { top, right, bottom, left } = stroke.sides;
+      for (const [side, weight] of [
+        ["Top", top],
+        ["Right", right],
+        ["Bottom", bottom],
+        ["Left", left],
+      ] as const) {
+        planNumber(run, node, label, strokeSideField(node, side), { kind: "literal", value: weight });
+      }
+    } else {
+      planNumber(run, node, label, strokeWeightField(node), stroke.weight);
+    }
     planScalar(run, label, "strokeAlign", node.strokeAlign, "INSIDE", () => {
       node.strokeAlign = "INSIDE";
     });
-    const included = spec.stroke.inLayout ?? true;
+    const included = "sides" in stroke || stroke.inLayout !== false;
     planScalar(run, label, "strokesIncludedInLayout", node.strokesIncludedInLayout, included, () => {
       node.strokesIncludedInLayout = included;
     });
   }
   const resizes = laidOut || run.plan.operations.length > stroked;
-  if (spec.stroke !== undefined) {
-    planDashPattern(run, node, label, spec.stroke.dashPattern ?? []);
+  if (stroke !== undefined) {
+    planDashPattern(run, node, label, "sides" in stroke ? [] : (stroke.dashPattern ?? []));
   }
   planShadows(run, node, label, spec.shadows);
   planNumber(

@@ -16,7 +16,15 @@ import {
   readShadows,
 } from "./css-values";
 import type { VariableIndex } from "./css-values";
-import type { BoxSpec, ColorSpec, ImagePaintSpec, NumberSpec, ShadowSpec, StrokeSpec } from "./kit-spec";
+import type {
+  BoxSpec,
+  ColorSpec,
+  EverySideStroke,
+  ImagePaintSpec,
+  NumberSpec,
+  ShadowSpec,
+  SideStroke,
+} from "./kit-spec";
 
 /**
  * What a color read from CSS became, for the coverage table.
@@ -55,10 +63,13 @@ export function readPaint(
   variables: VariableIndex,
   variant: string
 ): BoxPaint {
-  const border = readStroke(reader, variables);
+  const border = reader.has("border-width")
+    ? readStroke(reader, variables)
+    : readSideStroke(reader, variables);
   const cleared = readClearOutline(reader, variables);
   // A box holds one stroke, so its border keeps it.
-  const stroke = reader.has("border-width") || cleared ? border : readInsideOutline(reader, variables);
+  const bordered = reader.has("border-width") || BORDER_SIDES.some((side) => reader.has(sideWidth(side)));
+  const stroke = bordered || cleared ? border : readInsideOutline(reader, variables);
   // CSS paints the first shadow of `box-shadow` on top (CSS Backgrounds 3 §7.1), and Figma paints a
   // later effect above an earlier one (PE2), so the spec lists the shadows in Figma's order.
   const shadows = readShadowStack(reader, variables).toReversed();
@@ -168,7 +179,7 @@ function readClearOutline(reader: LayerStyle, index: VariableIndex): boolean {
  *
  * @returns The stroke, or undefined where the box sets no outline that lies inside it.
  */
-function readInsideOutline(reader: LayerStyle, variables: VariableIndex): StrokeSpec | undefined {
+function readInsideOutline(reader: LayerStyle, variables: VariableIndex): EverySideStroke | undefined {
   const width = evaluateLength(reader.resolved("outline-width") ?? "");
   const offset = evaluateLength(reader.resolved("outline-offset") ?? "");
   const color = readColor(reader.resolved("outline-color") ?? "", variables);
@@ -237,7 +248,7 @@ function readShadowStack(root: LayerStyle, variables: VariableIndex): readonly S
  * border of no width paints nothing whatever its style and color (CSS Backgrounds 3 §3), as a
  * Sidebar row's `border-0` resets its `<button>`'s, so it draws no stroke.
  */
-function readStroke(root: LayerStyle, variables: VariableIndex): StrokeSpec | undefined {
+function readStroke(root: LayerStyle, variables: VariableIndex): EverySideStroke | undefined {
   if (!root.has("border-width")) {
     return undefined;
   }
@@ -274,6 +285,64 @@ function readStroke(root: LayerStyle, variables: VariableIndex): StrokeSpec | un
   return style.dashPattern === undefined
     ? { color, weight }
     : { color, weight, dashPattern: style.dashPattern };
+}
+
+/** The sides a CSS border can set alone, as `border-l` sets `border-left-width`. */
+const BORDER_SIDES = ["top", "right", "bottom", "left"] as const;
+
+type BorderSide = (typeof BORDER_SIDES)[number];
+
+const sideWidth = (side: BorderSide) => `border-${side}-width`;
+
+/**
+ * A CSS border on some sides becomes a solid stroke with a weight on each side, as `border-r` draws
+ * the Sidebar container's edge, and each side's weight takes room on that side (PS). Each side's literal width counts, and a side the box sets no
+ * width on draws nothing, since Tailwind preflight's `border: 0 solid` leaves it 0. A box that also
+ * sets `border-width` takes the stroke {@link readStroke} reads, and its sides stay unread, and so
+ * unmapped. A side's width that is no literal, a style other than solid, or no color leaves the
+ * stroke out, with the sides that do not map unmapped.
+ */
+function readSideStroke(root: LayerStyle, variables: VariableIndex): SideStroke | undefined {
+  const given = BORDER_SIDES.filter((side) => root.has(sideWidth(side)));
+  const [first] = given;
+  if (first === undefined) {
+    return undefined;
+  }
+  root.missing(
+    "border-color",
+    sideWidth(first),
+    "no class or base rule colors the border, so the stroke is left out"
+  );
+  const stroke = root.feed("stroke");
+  const sides = { top: 0, right: 0, bottom: 0, left: 0 };
+  let complete = true;
+  for (const side of given) {
+    const width = root.read(
+      sideWidth(side),
+      (value) => {
+        const read = readNumber(value, variables);
+        return read?.kind === "literal" && read.value >= 0 ? read.value : undefined;
+      },
+      (weight) => ({
+        outcome: "literal",
+        detail: `a ${weight}px ${side} stroke that takes its room on that side (PS)`,
+      }),
+      stroke
+    );
+    const solid = root.read(
+      `border-${side}-style`,
+      (value) => (normalizeCss(value) === "solid" ? value : undefined),
+      () => ({ outcome: "literal", detail: "a solid stroke" }),
+      stroke
+    );
+    if (width === undefined || solid === undefined) {
+      complete = false;
+    } else {
+      sides[side] = width;
+    }
+  }
+  const color = root.read("border-color", (value) => readColor(value, variables), describeColor, stroke);
+  return complete && color !== undefined ? { color, sides } : undefined;
 }
 
 /** A border style the stroke draws: the dash pattern of a dashed one, and its coverage detail. */

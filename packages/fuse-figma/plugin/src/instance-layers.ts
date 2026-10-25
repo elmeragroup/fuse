@@ -34,6 +34,7 @@ import type {
   TextLayerSpec,
   VariantSpec,
 } from "../../src/components/kit-spec.ts";
+import { planAnchoring } from "./anchoring.ts";
 import type { PlannedSet } from "./component-set.ts";
 import {
   heldFonts,
@@ -624,7 +625,15 @@ function planOverridesAndSizing(
 ): void {
   planOverrides(run, instance, label, spec, inner.spec.root);
   planNested(run, instance, label, spec);
+  // Figma refuses FILL on an absolute layer (P8), so an instance leaves the flow after its sizing
+  // and comes back into it before.
+  if (spec.absolute === undefined) {
+    planAnchoring(run, instance, label, undefined, held);
+  }
   planSizing(run, instance, label, spec.sizing, held);
+  if (spec.absolute !== undefined) {
+    planAnchoring(run, instance, label, spec.absolute, held);
+  }
   // An instance with no minimum of its own shows the inner variant's (PH3).
   planLimit(run, instance, label, "minWidth", spec.minWidth ?? inner.spec.root.limits.minWidth);
   planVisibleLink(run, instance, label, spec.visibleProperty, links.properties);

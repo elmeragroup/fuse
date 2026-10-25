@@ -157,8 +157,14 @@ export function coveredShadow(
   return undefined;
 }
 
-/** A stroke drawn inside the box and counted in the auto layout, as a CSS border is. */
-export type StrokeSpec = {
+/**
+ * A stroke drawn inside the box: one weight on every side, or a weight on each side, as a CSS border
+ * on some sides draws.
+ */
+export type StrokeSpec = EverySideStroke | SideStroke;
+
+/** A stroke of one weight on every side, counted in the auto layout as a CSS border is. */
+export type EverySideStroke = {
   readonly color: ColorSpec;
   readonly weight: NumberSpec;
   /**
@@ -173,6 +179,38 @@ export type StrokeSpec = {
    */
   readonly inLayout?: false;
 };
+
+/**
+ * A solid stroke with a weight in pixels on each side, 0 on a side the CSS border leaves bare. It
+ * counts in the auto layout, where each side's weight takes room on that side, as a CSS border on
+ * that side does (PS).
+ */
+export type SideStroke = {
+  readonly color: ColorSpec;
+  readonly sides: Readonly<Record<StrokeSide, number>>;
+};
+
+/** A side of a box's stroke. */
+export type StrokeSide = "top" | "right" | "bottom" | "left";
+
+/**
+ * The room a box's stroke takes in its auto layout on one side: none for no stroke or one drawn out
+ * of the layout, the weight of a stroke on every side, and the side's own weight of a stroke on some
+ * sides (PS).
+ *
+ * @param stroke - The box's stroke, or undefined for none.
+ * @param side - The side.
+ * @returns The room in pixels, or the bound weight of a stroke on every side.
+ */
+export function strokeRoom(stroke: StrokeSpec | undefined, side: StrokeSide): NumberSpec {
+  if (stroke === undefined) {
+    return ZERO;
+  }
+  if ("sides" in stroke) {
+    return { kind: "literal", value: stroke.sides[side] };
+  }
+  return stroke.inLayout === false ? ZERO : stroke.weight;
+}
 
 /**
  * How a text layer sizes each axis. Its height follows its lines unless both sides are fixed: it
@@ -290,10 +328,15 @@ export type RotationSpec = number;
 
 /**
  * How an absolute layer follows its parent's resize on one axis, as Figma's constraints name it:
- * `STRETCH` keeps its distance to both of the parent's edges, so it grows with the parent, and
- * `SCALE` keeps its position and length as shares of the parent's.
+ * `STRETCH` keeps its distance to both of the parent's edges, so it grows with the parent, `SCALE`
+ * keeps its position and length as shares of the parent's, `MAX` keeps its distance to the parent's
+ * end, and `CENTER` keeps its centre's distance from the parent's centre, as the layer and the parent
+ * resize (N11).
  */
-export type ConstraintSpec = "STRETCH" | "SCALE";
+export type ConstraintSpec = "STRETCH" | "SCALE" | "MAX" | "CENTER";
+
+/** A constraint that keeps the layer's place as the spec's `x` and `y` set it, at the parent's start. */
+type PlacingConstraint = Extract<ConstraintSpec, "STRETCH" | "SCALE">;
 
 /**
  * A layer outside its parent's auto layout, as `position: absolute` takes a box out of its parent's
@@ -303,7 +346,21 @@ export type ConstraintSpec = "STRETCH" | "SCALE";
 export type AbsoluteSpec = {
   readonly x: number;
   readonly y: number;
-  readonly constraints: { readonly horizontal: ConstraintSpec; readonly vertical: ConstraintSpec };
+  readonly constraints: { readonly horizontal: PlacingConstraint; readonly vertical: PlacingConstraint };
+};
+
+/**
+ * An instance outside its parent's auto layout at the parent's end and centred down it, as a Sidebar
+ * menu badge sits over the end of its row. The instance hugs its content, so its `x` and `y` follow
+ * a width only Figma knows: the spec holds what MAX and CENTER keep instead, and the plugin places the
+ * instance from them once its size and its parent's have settled.
+ */
+export type AnchoredSpec = {
+  readonly constraints: { readonly horizontal: "MAX"; readonly vertical: "CENTER" };
+  /** The pixels from the instance's end to its parent's, which MAX keeps. */
+  readonly endInset: number;
+  /** The pixels from the parent's centre down to the instance's centre, which CENTER keeps. */
+  readonly centerOffset: number;
 };
 
 /**
@@ -411,10 +468,23 @@ export type InstanceLayerSpec = {
    * for an instance that shows wherever its variant holds it.
    */
   readonly visibleProperty?: string;
+  /** Where the instance sits outside its parent's auto layout, absent for one the auto layout places. */
+  readonly absolute?: AnchoredSpec;
 };
 
 /** A layer inside a component root or a frame layer. */
 export type ChildLayerSpec = TextLayerSpec | IconLayerSpec | FrameLayerSpec | InstanceLayerSpec;
+
+/**
+ * Whether a layer sits outside its parent's auto layout: an absolute frame or instance, which takes no
+ * room in the flow and counts toward no hug (P8).
+ *
+ * @param layer - The layer.
+ * @returns True for an absolute layer.
+ */
+export function outOfLayout(layer: ChildLayerSpec): boolean {
+  return (layer.kind === "frame" || layer.kind === "instance") && layer.absolute !== undefined;
+}
 
 /**
  * Where an auto layout box places its children across its direction: at the start, centered or

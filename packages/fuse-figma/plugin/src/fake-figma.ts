@@ -11,9 +11,9 @@
  * run stopped before its first write.
  *
  * The fake models the Figma rules below. Each rule a real file showed in 2026-10 names that run.
- * Rules 12 to 45 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
+ * Rules 12 to 47 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
  * Import test` from 2026-10-22 to 2026-10-25: P0 and P0b read the kit's nodes, P1 to P9, PB, PR,
- * PQ, PD, PL, PF, PH, PZ, PI, PZ2, N1 to N5, NS, NA, NH, PI2, PI3 and PH3 built nodes on a scratch page, and
+ * PQ, PD, PL, PF, PH, PZ, PI, PZ2, N1 to N5, N9, N11, NS, NA, NH, PI2, PI3, PH3 and PS built nodes on a scratch page, and
  * P9b stored images and built no node.
  *
  * 1. `setBoundVariableForPaint` returns the paint with its opacity set to the alpha of the bound
@@ -57,8 +57,9 @@
  *    distance to both edges, so its size grows by what the parent's grows. A child that changes
  *    size resizes its own children the same way. An auto layout frame places the children in its
  *    flow by its layout instead, which the fake leaves as they are, and constrains only its
- *    absolute children (rule 24). The fake throws for `MAX` and `CENTER`, which it does not
- *    model. `resizeWithoutConstraints` leaves the children as they are. Figma's reference pages
+ *    absolute children (rule 24). `MAX` across and `CENTER` down keep the anchors rule 47 names, so
+ *    the child's `x` and `y` follow the new size. The fake throws for `CENTER` across and `MAX`
+ *    down, which no probe read. `resizeWithoutConstraints` leaves the children as they are. Figma's reference pages
  *    for `resize` and `resizeWithoutConstraints` say so, and the icon components rely on it to
  *    bring a glyph back with its component.
  * 10. A text layer keeps a font, size, line height and text field bindings per character, as
@@ -344,6 +345,29 @@
  *    swaps. With both caps named `kbd`, each value stayed with the cap in the same place among the
  *    caps of that name, through a switch and back, and a value set on the second cap alone stayed on
  *    the second (PN2), so the fake matches each layer by its name and that place.
+ * 46. A stroke's weight on each side. On 2026-10-23 a fixed column took a stroke bound to `border`
+ *    with weights top 0, right 1, bottom 0 and left 0, INSIDE, and `strokesIncludedInLayout` false:
+ *    `strokeWeight` read mixed, and a filling child took the column's full 120 (N9). On 2026-10-25
+ *    columns padded 10 on the left and right around a 50 × 20 child took per-side weights (PS). With
+ *    `strokesIncludedInLayout` true each side's weight took room on its own side: a left weight of 1
+ *    hugged the column to 71 wide with the child at x 11, and a top weight of 2 hugged it to 22 tall.
+ *    With false the stroke took none, at 70 × 20. So the fake writes each side alone, reads
+ *    `strokeWeight` mixed while the sides differ, and the frames it lays out (rule 32) keep each side's
+ *    weight clear beside the padding while the stroke counts in the layout. It places no child.
+ * 47. An absolute instance at MAX across and CENTER down. On 2026-10-25 a hugging badge instance,
+ *    ABSOLUTE in a 200px item that hugged a row bound to `row-h`, kept 4px from the item's end as its
+ *    own TEXT widened it from 23 to 39 and as the item widened to 240, and kept its centre's offset
+ *    from the item's centre as the item went 40, 36 and 32 tall through density switches. An outer
+ *    instance of the item pinned Comfortable read its row 36 tall and the badge at the same offset. The
+ *    badge listed `layoutPositioning` and `name` among its overrides, and `width` and `height` once its
+ *    own size differed from its main's, never `x`, `y` or `constraints` (N11). So the fake keeps an
+ *    anchored child's end inset and centre offset and reads `x` and `y` from them and the sizes as they
+ *    stand. A sublayer an instance shows reads its source's anchor and constraints as they stand until
+ *    its own are written, and places itself against its own parent, as the outer instance's badge
+ *    followed the main's from 197 to 221. A bound length resolves in the modes of the layer that reads
+ *    it, an instance's through its main, and an instance whose main hugs nested instances hugs its own
+ *    by its main's layout as that stands, each settled from its source as that stands (rule 32).
+ *    Writing ABSOLUTE on an instance lists `layoutPositioning`.
  *
  * An instance's sublayers show the layers of its main component, and a nested instance's sublayers
  * the sublayers its main layer shows. An override, such as the color an icon layer gives its glyph,
@@ -518,6 +542,12 @@ type NodeState = {
   rotation: number;
   opacity: number;
   constraints: Constraints;
+  /**
+   * What MAX and CENTER keep of an absolute layer's place (rule 47): the pixels from its end to its
+   * parent's, and from its parent's centre down to its own, from which `x` and `y` read. Undefined on
+   * an axis whose constraint keeps `x` or `y` as written.
+   */
+  anchors: { end: number | undefined; centre: number | undefined };
   fills: readonly Paint[];
   strokes: readonly Paint[];
   strokeWeights: Sides;
@@ -1209,8 +1239,10 @@ function constrainAxis(
       return [(start * after) / before, (size * after) / before];
     case "STRETCH":
       return [start, size + after - before];
-    default:
-      throw new Error(`The fake Figma file does not model ${constraint} constraints.`);
+    // The layer's anchors keep its place (rule 47), so `x` and `y` read it from the new length.
+    case "MAX":
+    case "CENTER":
+      return [start, size];
   }
 }
 
@@ -1245,6 +1277,73 @@ function resizeWithConstraints(state: NodeState, width: number, height: number):
     if (f32(childWidth) !== child.width || f32(childHeight) !== child.height) {
       resizeWithConstraints(child, childWidth, childHeight);
     }
+  }
+}
+
+/**
+ * A layer's constraints: its own once written, else, for a sublayer an instance shows, its source's as
+ * that stands (rule 47), since an outer instance's badge kept no constraints of its own (N11).
+ */
+function constraintsOf(state: NodeState): Constraints {
+  return state.mirrorOf === undefined || state.overridden.has("constraints")
+    ? state.constraints
+    : constraintsOf(state.mirrorOf);
+}
+
+/** Whether a layer's constraint on an axis keeps an anchor (rule 47): MAX across, CENTER down. */
+function anchoredOn(state: NodeState, axis: Axis): boolean {
+  const constraints = constraintsOf(state);
+  return axis === "HORIZONTAL" ? constraints.horizontal === "MAX" : constraints.vertical === "CENTER";
+}
+
+/**
+ * A layer's anchor on an axis: its own once its place is written, else, for a sublayer an instance
+ * shows, its source's as that stands. An outer instance's badge followed the main's badge from 197 to
+ * 221 with no override (N11).
+ */
+function anchorOf(state: NodeState, axis: Axis): number | undefined {
+  const written = state.overridden.has(axis === "HORIZONTAL" ? "x" : "y");
+  if (state.mirrorOf !== undefined && !written) {
+    return anchorOf(state.mirrorOf, axis);
+  }
+  return axis === "HORIZONTAL" ? state.anchors.end : state.anchors.centre;
+}
+
+/** A layer's length on an axis and its parent's. */
+type Lengths = { readonly own: number; readonly outer: number };
+
+/** A layer's length and its parent's on an axis, each as a read gives it (rules 32, 47). */
+function lengthsOn(state: NodeState, parent: NodeState, axis: Axis): Lengths {
+  return { own: lengthOn(settled(state), axis), outer: lengthOn(settled(parent), axis) };
+}
+
+/**
+ * Where an anchored layer sits on an axis (rule 47): its parent's length less its end inset and its
+ * own length across, and its parent's centre moved by its centre offset down.
+ *
+ * @returns The `x` or `y`, or undefined for a layer that keeps the one written.
+ */
+function anchoredPlace(state: NodeState, axis: Axis): number | undefined {
+  const anchor = anchorOf(state, axis);
+  const parent = state.parent;
+  if (anchor === undefined || parent === undefined || !anchoredOn(state, axis)) {
+    return undefined;
+  }
+  const { own, outer } = lengthsOn(state, parent, axis);
+  return f32(axis === "HORIZONTAL" ? outer - anchor - own : outer / 2 + anchor - own / 2);
+}
+
+/** Write a layer's place on an axis: an anchor where its constraint keeps one (rule 47), else `x` or `y`. */
+function place(state: NodeState, axis: Axis, value: number): void {
+  const parent = state.parent;
+  const anchored = parent !== undefined && anchoredOn(state, axis);
+  const lengths = anchored ? lengthsOn(state, parent, axis) : undefined;
+  if (axis === "HORIZONTAL") {
+    state.anchors.end = lengths === undefined ? undefined : lengths.outer - value - lengths.own;
+    state.x = value;
+  } else {
+    state.anchors.centre = lengths === undefined ? undefined : value + lengths.own / 2 - lengths.outer / 2;
+    state.y = value;
   }
 }
 
@@ -1312,13 +1411,75 @@ function settled(state: NodeState): NodeState {
   if (state.type !== "INSTANCE" || source === undefined) {
     return state;
   }
-  if (!state.overridden.has(lengthOverride("HORIZONTAL"))) {
-    state.width = lengthOn(source, "HORIZONTAL");
-  }
-  if (!state.overridden.has(lengthOverride("VERTICAL"))) {
-    state.height = lengthOn(source, "VERTICAL");
+  for (const axis of ["HORIZONTAL", "VERTICAL"] as const) {
+    if (!state.overridden.has(lengthOverride(axis))) {
+      const length =
+        boundThrough(source, state, axis) ?? ownHug(state, source, axis) ?? lengthOn(source, axis);
+      if (axis === "HORIZONTAL") {
+        state.width = length;
+      } else {
+        state.height = length;
+      }
+    }
   }
   return state;
+}
+
+/**
+ * The length an instance binds through its main, or its main's main, in the instance's own modes
+ * (rule 47), up to the first source that holds a length of its own.
+ */
+function boundThrough(source: NodeState, consumer: NodeState, axis: Axis): number | undefined {
+  for (let node: NodeState | undefined = source; node !== undefined; node = sourceOf(node)) {
+    const length = boundLength(node, consumer, axis);
+    if (length !== undefined || node.overridden.has(lengthOverride(axis))) {
+      return length;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * The length an instance hugs around its own nested instances, each settled first, where its main
+ * hugs them (rules 32, 47): an Item instance pinned Comfortable hugged its row at 36 (N11). A nested
+ * instance settles from its source as that stands, so the instance stays stale until its sources are
+ * read (N2). The layout is its main's as that stands, a padding added later included, and the
+ * children and the modes they read are the instance's own.
+ */
+function ownHug(state: NodeState, source: NodeState, axis: Axis): number | undefined {
+  if (!hugsInstances(source, axis)) {
+    return undefined;
+  }
+  for (const child of childrenOf(state)) {
+    if (child.type === "INSTANCE") {
+      settled(child);
+    }
+  }
+  return huggedLength(state, axis, layoutOwner(source));
+}
+
+/** The node a layer takes its layout from: the end of its chain of sources, its main's own layer. */
+function layoutOwner(state: NodeState): NodeState {
+  let owner = state;
+  for (let next = sourceOf(owner); next !== undefined; next = sourceOf(owner)) {
+    owner = next;
+  }
+  return owner;
+}
+
+/**
+ * A length a layer binds, in the modes a consumer reads (rules 8, 47): an instance reads its main's
+ * binding in its own modes, as an item pinned Comfortable read its row's `row-h` as 36 (N11). A
+ * binding that leaves a hugging instance at its hug size (rule 40) gives none.
+ *
+ * @returns The length, or undefined where the axis binds none.
+ */
+function boundLength(state: NodeState, consumer: NodeState, axis: Axis): number | undefined {
+  const field = axis === "HORIZONTAL" ? "width" : "height";
+  const bound = state.bindings.get(field);
+  return bound === undefined || keepsHug(state, field)
+    ? undefined
+    : f32(resolveNumber(state.file, variableState(state.file, bound), consumer));
 }
 
 /**
@@ -1346,19 +1507,21 @@ function hugsInstances(state: NodeState, axis: Axis): boolean {
  * The length of an axis a frame hugs around its children as they stand (rule 32): along its
  * direction their lengths, `itemSpacing` between them and its padding, and across it the longest
  * child that does not fill that axis and its padding. A layer a BOOLEAN property hides leaves the
- * layout, as it did on a real file (PB), and so does an absolute one (rule 24).
+ * layout, as it did on a real file (PB), and so does an absolute one (rule 24). An instance lays out
+ * its own children by its main's layout as that stands, so `layout` names the node whose direction,
+ * padding, spacing and stroke apply (rule 47).
  */
-function huggedLength(state: NodeState, axis: Axis): number {
+function huggedLength(state: NodeState, axis: Axis, layout: NodeState = state): number {
   const flow = childrenOf(state).filter(
     (child) => child.layoutPositioning !== "ABSOLUTE" && !hiddenByProperty(child)
   );
   const padding =
     axis === "HORIZONTAL"
-      ? state.padding.left + state.padding.right
-      : state.padding.top + state.padding.bottom;
-  if (state.layoutMode === axis) {
+      ? inset(layout, "left") + inset(layout, "right")
+      : inset(layout, "top") + inset(layout, "bottom");
+  if (layout.layoutMode === axis) {
     const lengths = flow.reduce((sum, child) => sum + lengthOn(child, axis), 0);
-    return padding + lengths + state.itemSpacing * Math.max(0, flow.length - 1);
+    return padding + lengths + layout.itemSpacing * Math.max(0, flow.length - 1);
   }
   const across = flow.filter((child) => !fills(child, axis)).map((child) => lengthOn(child, axis));
   return padding + Math.max(0, ...across);
@@ -1371,7 +1534,7 @@ function huggedLength(state: NodeState, axis: Axis): number {
  * its top and bottom padding.
  */
 function wrapHeight(state: NodeState): number {
-  const room = state.width - state.padding.left - state.padding.right;
+  const room = state.width - inset(state, "left") - inset(state, "right");
   const rows: number[] = [];
   let rowWidth = 0;
   let rowHeight = 0;
@@ -1396,7 +1559,15 @@ function wrapHeight(state: NodeState): number {
     rows.push(rowHeight);
   }
   const between = Math.max(0, rows.length - 1) * (state.counterAxisSpacing ?? 0);
-  return state.padding.top + rows.reduce((sum, row) => sum + row, 0) + between + state.padding.bottom;
+  return inset(state, "top") + rows.reduce((sum, row) => sum + row, 0) + between + inset(state, "bottom");
+}
+
+/**
+ * What an auto layout keeps clear inside one edge: its padding, and the stroke's weight on that side
+ * while `strokesIncludedInLayout` is true (rule 46, PS).
+ */
+function inset(state: NodeState, side: keyof Sides): number {
+  return state.padding[side] + (state.strokesIncludedInLayout ? state.strokeWeights[side] : 0);
 }
 
 /**
@@ -1417,7 +1588,7 @@ function lengthOn(state: NodeState, axis: Axis): number {
   ) {
     return wrapHeight(state);
   }
-  const given = axis === "HORIZONTAL" ? state.width : state.height;
+  const given = boundLength(state, state, axis) ?? (axis === "HORIZONTAL" ? state.width : state.height);
   const own = hugsInstances(state, axis) ? huggedLength(state, axis) : given;
   const parent = state.parent;
   // A fill never widens a 0-wide text (rule 31).
@@ -2292,6 +2463,7 @@ function copiedFields(source: NodeState): Omit<NodeState, UncopiedField> {
     rotation: source.rotation,
     opacity: source.opacity,
     constraints: { ...source.constraints },
+    anchors: { ...source.anchors },
     fills: source.fills,
     strokes: source.strokes,
     strokeWeights: { ...source.strokeWeights },
@@ -2507,7 +2679,8 @@ class FakeSceneNode extends FakeBaseNode {
   }
 
   get x(): number {
-    return live(this).x;
+    const state = live(this);
+    return anchoredPlace(state, "HORIZONTAL") ?? state.x;
   }
 
   set x(value: number) {
@@ -2516,19 +2689,22 @@ class FakeSceneNode extends FakeBaseNode {
     // apart from an absolute child's (rule 24).
     if (placesItself(state)) {
       write(state, "x");
-      state.x = f32(value);
+      markOverride(state, "x");
+      place(state, "HORIZONTAL", f32(value));
     }
   }
 
   get y(): number {
-    return live(this).y;
+    const state = live(this);
+    return anchoredPlace(state, "VERTICAL") ?? state.y;
   }
 
   set y(value: number) {
     const state = live(this);
     if (placesItself(state)) {
       write(state, "y");
-      state.y = f32(value);
+      markOverride(state, "y");
+      place(state, "VERTICAL", f32(value));
     }
   }
 
@@ -2583,6 +2759,12 @@ class FakeSceneNode extends FakeBaseNode {
     }
     write(state, "layoutPositioning");
     state.layoutPositioning = value;
+    // An instance turned absolute lists `layoutPositioning` among its overrides (N11).
+    if (value === "ABSOLUTE") {
+      markOverride(state, "layoutPositioning");
+    } else {
+      state.overridden.delete("layoutPositioning");
+    }
   }
 
   get width(): number {
@@ -2646,13 +2828,25 @@ class FakeSceneNode extends FakeBaseNode {
   }
 
   get constraints(): Constraints {
-    return live(this).constraints;
+    return constraintsOf(live(this));
   }
 
   set constraints(value: Constraints) {
     const state = live(this);
+    if (value.horizontal === "CENTER" || value.vertical === "MAX") {
+      throw new Error(
+        `The fake Figma file does not model ${value.horizontal} across and ${value.vertical} down on ${state.id}.`
+      );
+    }
     write(state, "constraints");
+    markOverride(state, "constraints");
+    const held = {
+      HORIZONTAL: anchoredPlace(state, "HORIZONTAL") ?? state.x,
+      VERTICAL: anchoredPlace(state, "VERTICAL") ?? state.y,
+    };
     state.constraints = { ...value };
+    place(state, "HORIZONTAL", held.HORIZONTAL);
+    place(state, "VERTICAL", held.VERTICAL);
   }
 
   /** Rule 12: the fill along an auto layout parent's direction, which only the shorthand writes. */
@@ -2983,16 +3177,40 @@ class FakeFrameLikeNode extends FakeSceneNode {
     return live(this).strokeWeights.top;
   }
 
+  set strokeTopWeight(value: number) {
+    const state = live(this);
+    write(state, "strokeTopWeight");
+    state.strokeWeights.top = f32(value);
+  }
+
   get strokeRightWeight(): number {
     return live(this).strokeWeights.right;
+  }
+
+  set strokeRightWeight(value: number) {
+    const state = live(this);
+    write(state, "strokeRightWeight");
+    state.strokeWeights.right = f32(value);
   }
 
   get strokeBottomWeight(): number {
     return live(this).strokeWeights.bottom;
   }
 
+  set strokeBottomWeight(value: number) {
+    const state = live(this);
+    write(state, "strokeBottomWeight");
+    state.strokeWeights.bottom = f32(value);
+  }
+
   get strokeLeftWeight(): number {
     return live(this).strokeWeights.left;
+  }
+
+  set strokeLeftWeight(value: number) {
+    const state = live(this);
+    write(state, "strokeLeftWeight");
+    state.strokeWeights.left = f32(value);
   }
 
   get strokeAlign(): FrameNode["strokeAlign"] {
@@ -3460,6 +3678,7 @@ const OVERRIDE_FIELDS: ReadonlyMap<string, readonly NodeChangeProperty[]> = new 
   ["minWidth", ["minWidth"]],
   ["minHeight", ["minHeight"]],
   ["componentProperties", ["componentProperties"]],
+  ["layoutPositioning", ["layoutPositioning"]],
 ]);
 
 /**
@@ -4069,6 +4288,7 @@ function createNode(file: FileState, type: NodeType, name: string, id?: string):
     rotation: 0,
     opacity: 1,
     constraints: { horizontal: "MIN", vertical: "MIN" },
+    anchors: { end: undefined, centre: undefined },
     fills: type === "TEXT" ? [BLACK] : type === "VECTOR" || type === "INSTANCE" ? [] : [WHITE],
     strokes: [],
     strokeWeights: { top: 1, right: 1, bottom: 1, left: 1 },

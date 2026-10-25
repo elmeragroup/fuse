@@ -1003,11 +1003,8 @@ describe("a box's position and alignment", () => {
     ]);
   });
 
-  // An absolute root drops its position where it hugs, which `component-spec.sidebar.test.ts` holds.
-  it("leaves fixed unmapped", async () => {
-    expect(await rowsOf("fixed")).toEqual([["fixed", "unmapped", expect.any(String)]]);
-  });
-
+  // An absolute or fixed root drops its position where it hugs, which `component-spec.sidebar.test.ts`
+  // holds.
   it("drops self-auto on the root, which sits in no row", async () => {
     expect(await rowsOf("self-auto")).toEqual([
       ["self-auto", "dropped", "the component's root sits in no row, and auto asks for no alignment"],

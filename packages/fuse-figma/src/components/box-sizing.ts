@@ -18,6 +18,7 @@ import {
   readSize,
 } from "./css-values";
 import type { PercentBasis, VariableIndex } from "./css-values";
+import { outOfLayout, strokeRoom } from "./kit-spec";
 import type {
   BoxSpec,
   ChildLayerSpec,
@@ -119,18 +120,20 @@ const BLOCK_LEVEL = new Set(["block", "flex", "grid", "flow-root"]);
  * in unbounded room, as {@link Room.unbounded} says, since nothing in its component set gives it a
  * width.
  *
- * @param previewWidth - The width the root's container gives it, which its percentage width takes,
- *   or undefined where the definition names none.
+ * @param preview - The width the root's container gives it, which its percentage width takes, and
+ *   the height its containing block gives it, which its percentage height takes, each undefined
+ *   where the definition names none.
  * @param style - The root's style, whose `display` says whether the root is block-level and whose
  *   `position` whether it sits in its container's flow.
  * @param variables - The synced variables a margin can read, with the values they hold in each mode.
  * @returns The root's room.
  */
 export function rootRoom(
-  previewWidth: number | undefined,
+  preview: { readonly width: number | undefined; readonly height: number | undefined },
   style: LayerStyle,
   variables: VariableIndex
 ): Room {
+  const { width: previewWidth, height: previewHeight } = preview;
   const blockLevel = BLOCK_LEVEL.has(normalizeCss(style.raw("display") ?? ""));
   const fills = previewWidth !== undefined && blockLevel;
   const margins = marginsAcross(style, variables) ?? 0;
@@ -149,7 +152,13 @@ export function rootRoom(
       siblings: [],
       length: undefined,
     },
-    vertical: { percent: NO_BASIS, auto: HUG, siblings: [], length: undefined },
+    vertical: {
+      percent:
+        previewHeight === undefined ? NO_BASIS : { kind: "length", value: previewHeight, of: "the preview" },
+      auto: HUG,
+      siblings: [],
+      length: undefined,
+    },
     widthCap: NO_CAP,
     unbounded: inFlow && previewWidth === undefined,
   };
@@ -353,30 +362,51 @@ function literalPixels(style: LayerStyle, property: string): number | undefined 
   return value === undefined ? 0 : evaluateLength(value);
 }
 
+/** The border sides of each axis, which `border-l` and its siblings set alone. */
+const AXIS_BORDERS = {
+  horizontal: ["border-left-width", "border-right-width"],
+  vertical: ["border-top-width", "border-bottom-width"],
+} as const;
+
+/**
+ * The pixels a box's borders take on one axis: each side's own width where the box sets one, as
+ * `border-r` does, or `border-width` otherwise.
+ *
+ * @returns The two sides' widths together, or undefined where one is no literal length.
+ */
+function bordersOn(style: LayerStyle, axis: keyof Extent): number | undefined {
+  const sides = AXIS_BORDERS[axis].map((side) =>
+    literalPixels(style, style.has(side) ? side : "border-width")
+  );
+  return sides.some((side) => side === undefined)
+    ? undefined
+    : sides.reduce<number>((sum, side) => sum + (side ?? 0), 0);
+}
+
 /**
  * The length in pixels of a box's content box or padding box on one axis: its length less its
  * borders, and less its padding for the content box.
  */
 function innerLength(holder: Holder, axis: keyof Extent, box: "content" | "padding"): number | undefined {
   const outer = holder.extent[axis];
-  const border = literalPixels(holder.style, "border-width");
+  const borders = bordersOn(holder.style, axis);
   const sides = box === "content" ? SIDES[axis].map((side) => literalPixels(holder.style, side)) : [];
-  if (outer === undefined || border === undefined || sides.some((side) => side === undefined)) {
+  if (outer === undefined || borders === undefined || sides.some((side) => side === undefined)) {
     return undefined;
   }
-  return sides.reduce<number>((rest, side) => rest - (side ?? 0), outer - 2 * border);
+  return sides.reduce<number>((rest, side) => rest - (side ?? 0), outer - borders);
 }
 
 /** A box's fixed length on one axis and its literal border and padding there, as {@link AxisRoom.outer}. */
 function outerOf(holder: Holder, axis: keyof Extent): Pick<AxisRoom, "outer"> {
   const size = holder.sizing[axis];
-  const border = literalPixels(holder.style, "border-width");
+  const borders = bordersOn(holder.style, axis);
   const sides = SIDES[axis].map((side) => literalPixels(holder.style, side));
-  if (size.kind !== "fixed" || border === undefined || sides.some((side) => side === undefined)) {
+  if (size.kind !== "fixed" || borders === undefined || sides.some((side) => side === undefined)) {
     return {};
   }
   return {
-    outer: { length: size.length, inset: sides.reduce<number>((sum, side) => sum + (side ?? 0), 2 * border) },
+    outer: { length: size.length, inset: sides.reduce<number>((sum, side) => sum + (side ?? 0), borders) },
   };
 }
 
@@ -614,9 +644,10 @@ function contentCap(holder: Holder): WidthCap {
   }
   // The minimum wins over the maximum and the cap (CSS 2.1 §10.4).
   const border = Math.max(outer.value, minWidth?.value ?? 0);
-  const insets = ["padding-left", "padding-right", "border-width", "border-width"].map((property) =>
-    literalPixels(holder.style, property)
-  );
+  const insets = [
+    ...["padding-left", "padding-right"].map((property) => literalPixels(holder.style, property)),
+    bordersOn(holder.style, "horizontal"),
+  ];
   return insets.some((inset) => inset === undefined)
     ? UNREAD_CAP
     : { kind: "pixels", value: insets.reduce<number>((rest, inset) => rest - (inset ?? 0), border) };
@@ -822,7 +853,7 @@ function boxHeightBounds(box: BoxSpec, variables: VariableIndex): HeightBounds {
   if (vertical.kind !== "hug") {
     return vertical.kind === "fixed" ? lengthBounds(vertical.length, variables) : UNBOUNDED;
   }
-  const flowing = box.children.filter((child) => child.kind !== "frame" || child.absolute === undefined);
+  const flowing = box.children.filter((child) => !outOfLayout(child));
   const heights = flowing.map((child) => heightBounds(child, variables));
   const shown = flowing.filter(
     (child) => (child.kind !== "frame" && child.kind !== "icon") || child.visibleProperty === undefined
@@ -833,16 +864,12 @@ function boxHeightBounds(box: BoxSpec, variables: VariableIndex): HeightBounds {
     Math.max(0, flowing.length - 1)
   );
   const layers = box.direction === "VERTICAL" ? sum([...heights, gaps]) : tallest(heights);
-  const stroke =
-    box.stroke === undefined || box.stroke.inLayout === false
-      ? NO_HEIGHT
-      : lengthBounds(box.stroke.weight, variables);
   const hugged = sum([
     lengthBounds(box.paddingTop, variables),
     layers,
     lengthBounds(box.paddingBottom, variables),
-    stroke,
-    stroke,
+    lengthBounds(strokeRoom(box.stroke, "top"), variables),
+    lengthBounds(strokeRoom(box.stroke, "bottom"), variables),
   ]);
   return withinLimits(hugged, box.limits, variables);
 }

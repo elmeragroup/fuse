@@ -466,6 +466,12 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly previewWidth?: number;
   /**
+   * The height in pixels the root's containing block gives it, which a root's percentage height
+   * takes, as the Sidebar demo frame's `h-[28rem]` gives the container's `h-full`. Without it, a
+   * root's percentage height stays unmapped. The compare renderer draws the same block around it.
+   */
+  readonly previewHeight?: number;
+  /**
    * `visible` for a composite root that paints nothing of its own and holds layers whose shadows
    * reach past it, as the open Select's popup casts its shadow below and beside the column that holds
    * it, so the root leaves them unclipped. Undefined for every other root, which clips, as a spread
@@ -667,7 +673,11 @@ export function buildComponentSet(
     // ring's 2px spread as 0 on a root that did not clip. Clipping costs a root nothing, since
     // every child sits inside its padding, except a child's shadow at the root's edge, which a
     // root that paints nothing leaves unclipped through `rootOverflow`.
-    const room = rootRoom(definition.previewWidth, rootCascade.style, context.variables);
+    const room = rootRoom(
+      { width: definition.previewWidth, height: definition.previewHeight },
+      rootCascade.style,
+      context.variables
+    );
     const mapped = mapBox(definition, rootCascade, scope, room);
     if (
       definition.rootOverflow === "visible" &&

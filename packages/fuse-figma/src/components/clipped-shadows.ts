@@ -13,6 +13,7 @@
  */
 import { heightBounds } from "./box-sizing";
 import type { ModeView, VariableIndex } from "./css-values";
+import { outOfLayout, strokeRoom } from "./kit-spec";
 import type { BoxSpec, ChildLayerSpec, ComponentRootSpec, NumberSpec, ShadowSpec } from "./kit-spec";
 
 /** A layer whose shadow reaches past the root, and how far in each measure that reaches it. */
@@ -118,27 +119,24 @@ function reachesIn(
   variables: VariableIndex
 ): readonly Reach[] {
   const height = exactHeight(asLayer(box), variables);
-  const stroke =
-    box.stroke === undefined || box.stroke.inLayout === false ? 0 : exact(box.stroke.weight, variables);
+  const strokeTop = exact(strokeRoom(box.stroke, "top"), variables);
+  const strokeBottom = exact(strokeRoom(box.stroke, "bottom"), variables);
   const above = exact(box.paddingTop, variables);
   const below = exact(box.paddingBottom, variables);
   if (
     box.direction !== "HORIZONTAL" ||
     height === undefined ||
-    stroke === undefined ||
+    strokeTop === undefined ||
+    strokeBottom === undefined ||
     above === undefined ||
     below === undefined
   ) {
     return [];
   }
-  const start = top + stroke + above;
-  const room = height - 2 * stroke - above - below;
+  const start = top + strokeTop + above;
+  const room = height - strokeTop - strokeBottom - above - below;
   return box.children.flatMap((layer): readonly Reach[] => {
-    if (
-      layer.kind === "text" ||
-      layer.kind === "icon" ||
-      (layer.kind === "frame" && layer.absolute !== undefined)
-    ) {
+    if (layer.kind === "text" || layer.kind === "icon" || outOfLayout(layer)) {
       return [];
     }
     const own = layer.sizing.vertical.kind === "fill" ? room : exactHeight(layer, variables);

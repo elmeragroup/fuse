@@ -1799,8 +1799,8 @@ function inheritedCurrentColor(source: Provenance, inherited: ComputedStyle): St
 }
 
 /**
- * Split the padding and margin shorthands into their physical sides, as Figma pads a box and as a
- * part's margin draws, and name a logical inset or margin by its physical side, keeping every other
+ * Split the padding, margin and inset shorthands into their physical sides, as Figma pads a box and
+ * as a part's margin draws, and name a logical inset or margin by its physical side, keeping every other
  * property. Each side then cascades with the physical one, so a style attribute's `margin: 0` resets
  * a class's `mt-1`. A side may be a `calc()` with spaces, as `px-2.5` compiles to
  * `calc(var(--spacing) * 2.5)`. `white-space` and `text-wrap` split into their longhands, as
@@ -1836,8 +1836,33 @@ function expandShorthand(property: string, value: string): readonly (readonly [s
         [`${box}-bottom`, bottom],
       ];
     }
+    // `inset` sets the four offsets as `margin` sets the four margins (CSS Position 3 §3.1).
+    case "inset": {
+      const [top = value, right = top, bottom = top, left = right] = parts;
+      return [
+        ["top", top],
+        ["right", right],
+        ["bottom", bottom],
+        ["left", left],
+      ];
+    }
     // A left-to-right page puts the inline start on the left and its end on the right, and the block
-    // start on top, where each cascades with the physical side (CSS Logical Properties 1 §4).
+    // start on top, where each cascades with the physical side (CSS Logical Properties 1 §4), as the
+    // Sidebar container's `inset-y-0` sets its top and bottom.
+    case "inset-inline": {
+      const [left = value, right = left] = parts;
+      return [
+        ["left", left],
+        ["right", right],
+      ];
+    }
+    case "inset-block": {
+      const [top = value, bottom = top] = parts;
+      return [
+        ["top", top],
+        ["bottom", bottom],
+      ];
+    }
     case "inset-inline-start":
       return [["left", value]];
     case "inset-inline-end":

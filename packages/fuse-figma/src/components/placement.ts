@@ -6,6 +6,7 @@
  * alignment and the parts' layers, absolute where they sit outside the flow. A part that scales
  * draws as a slot around a dot, which the set's topology decides once for every cell.
  */
+import { readAnchored } from "./anchored-part";
 import { listNames, marginsAcross, outOfFlow } from "./box-sizing";
 import type { Room } from "./box-sizing";
 import { splitClasses } from "./cascade";
@@ -26,7 +27,7 @@ import {
   sumAffine,
 } from "./css-values";
 import type { AffineLength, VariableIndex } from "./css-values";
-import { fixedLength, NO_LIMITS, ZERO } from "./kit-spec";
+import { fixedLength, NO_LIMITS, strokeRoom, ZERO } from "./kit-spec";
 import type {
   AbsoluteSpec,
   BoxSpec,
@@ -111,7 +112,8 @@ export type Placement = {
  * Read where each part of a box sits, and the box's primary alignment. A part that centers itself
  * by absolute position, one absolute at the box's top left, or one moved along a row by a
  * translate, reads here. A translate on the one part of a flex row sets the row's alignment. An
- * instance sits where the flow puts it, so only its `relative` maps.
+ * instance sits where the flow puts it, so only its `relative` maps, or it sits absolutely at its
+ * parent's end and centred down it, as {@link readAnchored} reads it.
  *
  * @param parent - The box that holds the parts.
  * @param parts - The parts the cell renders in it, as mapped.
@@ -126,6 +128,7 @@ export function placeParts(
   inFlowEnd: LayerStyle | undefined
 ): Placement {
   const centering = centersAlone(parent, parts) ? "centers-its-one-layer" : "other";
+  const flow = parts.filter((part) => !outOfFlow(part.style)).map((part) => part.style);
   const layers = parts.map(({ style, layer }) => {
     if (style === inFlowEnd) {
       style.read(
@@ -137,8 +140,12 @@ export function placeParts(
       return layer;
     }
     if (layer.kind === "instance") {
-      readPosition(style, "other");
-      return layer;
+      if (normalizeCss(style.resolved("position") ?? "") !== "absolute") {
+        readPosition(style, "other");
+        return layer;
+      }
+      const anchored = readAnchored(style, parent.style, flow, parent.layers);
+      return anchored === undefined ? layer : { ...layer, absolute: anchored };
     }
     const absolute = readAbsoluteStart(style, layer, parent.style);
     switch (absolute.kind) {
@@ -200,7 +207,7 @@ function alignAlongRow(parent: ParentBox, parts: readonly PlacedPart[]): Primary
  * as Field legend's `mb-3` does. A block whose width its container gives it is the exception: its
  * width is the container's less its horizontal margins (CSS 2.1 §10.3.3), which the root's room
  * subtracts where each is the same length in every mode, as {@link marginsAcross} reads them, and
- * which otherwise stay unmapped. For the same reason an absolute root's offsets, which
+ * which otherwise stay unmapped. For the same reason an absolute or fixed root's offsets, which
  * place it in its containing block, drop with its position, as a menu badge's `absolute right-1`
  * does, and so does a translate, which moves its painting, as a sub row's `-translate-x-px` does. An
  * absolute box with no width shrinks to fit its content (CSS 2.1 §10.3.7), so where the preview width
@@ -214,7 +221,7 @@ function alignAlongRow(parent: ParentBox, parts: readonly PlacedPart[]): Primary
 export function placeRoot(style: LayerStyle, room: Room, variables: VariableIndex): void {
   const width = normalizeCss(style.resolved("width") ?? "auto");
   const widthFromContainer = room.horizontal.auto.kind !== "hug" && width === "auto";
-  if (normalizeCss(style.resolved("position") ?? "") === "absolute") {
+  if (outOfFlow(style)) {
     placeAbsoluteRoot(style, widthFromContainer);
   } else {
     readPosition(style, "other");
@@ -296,8 +303,11 @@ const INSET_AXES = [
 ] as const;
 
 /**
- * Read an absolute root's position and offsets, which drop where they only place the root, as the
- * root sits alone in its component set. Where the container's width would make the root fill, its
+ * Read an absolute or fixed root's position, offsets and `z-index`, which drop where they only place
+ * the root, as the root sits alone in its component set. A fixed box is an absolute box whose
+ * containing block is the viewport or an ancestor that contains its paint (CSS 2.1 §9.6.1), as the
+ * Sidebar container is in its demo frame, and `z-index` orders it among the boxes it overlaps
+ * (CSS 2.1 §9.9.1). Where the container's width would make the root fill, its
  * position stays unmapped, since an absolute box with no width shrinks to fit its content. Where
  * both insets of an axis are set and the root's size on that axis is automatic, the insets size the
  * root from its containing block (CSS 2.1 §10.3.7, §10.6.4), so they and the position stay unmapped.
@@ -341,6 +351,16 @@ function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean): void
       []
     );
   }
+  style.read(
+    "z-index",
+    (value) => value,
+    () => ({
+      outcome: "dropped",
+      detail:
+        "the component's root sits alone in its component set, so its stacking level orders it among nothing the set draws",
+    }),
+    []
+  );
 }
 
 /**
@@ -698,12 +718,19 @@ function readAbsoluteStart(style: LayerStyle, layer: FrameLayerSpec, parent: Lay
  */
 function contentWidth(reader: LayerStyle, box: RowSize): number | undefined {
   const { width, stroke, paddingLeft, paddingRight } = box;
-  const border = reader.has("border-width") ? stroke?.weight : ZERO;
+  // A border the stroke leaves out, as one with no color, takes room the spec does not say.
+  const bordered = ["border-width", "border-left-width", "border-right-width"].some((property) =>
+    reader.has(property)
+  );
+  const left = strokeRoom(stroke, "left");
+  const right = strokeRoom(stroke, "right");
   return width?.kind === "literal" &&
-    border?.kind === "literal" &&
+    (stroke !== undefined || !bordered) &&
+    left.kind === "literal" &&
+    right.kind === "literal" &&
     paddingLeft.kind === "literal" &&
     paddingRight.kind === "literal"
-    ? width.value - 2 * border.value - paddingLeft.value - paddingRight.value
+    ? width.value - left.value - right.value - paddingLeft.value - paddingRight.value
     : undefined;
 }
 
@@ -797,7 +824,7 @@ function readScale(reader: LayerStyle, box: BoxSpec): number {
           literal(fixedLength(box.sizing.horizontal)) &&
           literal(fixedLength(box.sizing.vertical)) &&
           literal(box.cornerRadius) &&
-          (box.stroke === undefined || literal(box.stroke.weight)) &&
+          (box.stroke === undefined || "sides" in box.stroke || literal(box.stroke.weight)) &&
           box.shadows.length === 0 &&
           box.children.length === 0;
         return x !== undefined && x > 0 && y === x && z.length === 0 && scalable ? x : undefined;
@@ -818,6 +845,13 @@ function scaled(spec: NumberSpec, share: number): NumberSpec {
 
 /** A stroke at a share of its size: its weight and each dash and gap length scale with the paint. */
 function scaledStroke(stroke: StrokeSpec, share: number): StrokeSpec {
+  if ("sides" in stroke) {
+    const { top, right, bottom, left } = stroke.sides;
+    return {
+      ...stroke,
+      sides: { top: top * share, right: right * share, bottom: bottom * share, left: left * share },
+    };
+  }
   const weight = scaled(stroke.weight, share);
   const { dashPattern } = stroke;
   return dashPattern === undefined

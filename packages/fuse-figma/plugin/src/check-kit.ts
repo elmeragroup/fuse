@@ -10,6 +10,7 @@ import {
   coveredShadow,
   fixedLength,
   layerAt,
+  outOfLayout,
   topLevelSpecs,
   walkLayers,
 } from "../../src/components/kit-spec.ts";
@@ -67,7 +68,7 @@ function boxRefs(box: BoxSpec): BoundRef[] {
       box.paddingLeft,
       box.itemSpacing,
       box.cornerRadius,
-      box.stroke?.weight,
+      box.stroke !== undefined && "weight" in box.stroke ? box.stroke.weight : undefined,
       ...box.shadows.flatMap((shadow) => [shadow.radius, shadow.spread]),
     ].flatMap(boundNumber),
     ...[box.fill, box.stroke?.color, ...box.shadows.map((shadow) => shadow.color)].flatMap(boundColor),
@@ -146,7 +147,7 @@ const AXES = [
 function checkBox(set: ComponentSetSpec, variant: VariantSpec, box: BoxSpec, name: string): void {
   for (const { axis, length, limits } of AXES) {
     const absolute = box.children.find(
-      (child) => child.kind === "frame" && child.absolute !== undefined && child.sizing[axis].kind === "fill"
+      (child) => child.kind !== "icon" && outOfLayout(child) && child.sizing[axis].kind === "fill"
     );
     if (absolute !== undefined) {
       throw new Error(
@@ -175,9 +176,7 @@ function checkBox(set: ComponentSetSpec, variant: VariantSpec, box: BoxSpec, nam
     const setsLength =
       box.limits[limits[0]] !== undefined ||
       box.children.some(
-        (child) =>
-          child.kind === "icon" ||
-          (child.sizing[axis].kind !== "fill" && !(child.kind === "frame" && child.absolute !== undefined))
+        (child) => child.kind === "icon" || (child.sizing[axis].kind !== "fill" && !outOfLayout(child))
       );
     if (!setsLength) {
       throw new Error(

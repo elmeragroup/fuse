@@ -10,7 +10,7 @@ import { isDeepStrictEqual } from "node:util";
 
 import { HALF_TURN_MIRRORS } from "./glyph-mirrors";
 import { drawsAtOwnWidth } from "./hugging-rows";
-import { ringFill } from "./kit-spec";
+import { outOfLayout, ringFill } from "./kit-spec";
 import type {
   BoxSpec,
   ChildLayerSpec,
@@ -234,7 +234,7 @@ function diffBox(
 
 /** How many of a box's layers its auto layout places, hidden ones included. */
 function flowCount(box: BoxSpec): number {
-  return box.children.filter((layer) => layer.kind !== "frame" || layer.absolute === undefined).length;
+  return box.children.filter((layer) => !outOfLayout(layer)).length;
 }
 
 /** Note a field no instance field carries where its two values differ. */

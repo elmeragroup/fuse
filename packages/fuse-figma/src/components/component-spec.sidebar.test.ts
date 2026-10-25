@@ -5,8 +5,8 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { FILL, fixedSize, HUG, literal } from "../../test/built-kit";
-import { buildFixture, chip, ICON } from "../../test/fixture-sets";
+import { FILL, fixed, fixedSize, HUG, literal } from "../../test/built-kit";
+import { buildFixture, chip, dot, ICON } from "../../test/fixture-sets";
 import type { LabelDefinition } from "./component-spec";
 import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
@@ -103,6 +103,29 @@ describe("a root's offsets", () => {
       ["position", "absolute", "dropped", OFFSET],
       ["top", "6px", "dropped", OFFSET],
       ["right", "0.25rem", "dropped", OFFSET],
+    ]);
+  });
+
+  // CSS 2.1 §9.6.1 and §9.9.1: a fixed box is an absolute box whose containing block is the
+  // viewport, or the nearest ancestor that contains its paint, as the Sidebar demo frame's
+  // `contain-paint` does, and `z-index` orders it among the boxes it overlaps. The root overlaps
+  // nothing the set draws, so its stacking level drops with its position and offsets.
+  it.each(["fixed", "absolute"])("drop with the stacking level on a %s root", async (position) => {
+    const classes = `${position} inset-y-0 left-0 z-10 flex h-[40px] w-[256px]`;
+    const { coverage } = await buildFixture(chip(classes));
+    const STACKED =
+      "the component's root sits alone in its component set, so its stacking level orders it among nothing the set draws";
+    expect([
+      ...rowsOf(coverage, position),
+      ...rowsOf(coverage, "inset-y-0"),
+      ...rowsOf(coverage, "left-0"),
+      ...rowsOf(coverage, "z-10"),
+    ]).toEqual([
+      ["position", position, "dropped", OFFSET],
+      ["bottom", "0px", "dropped", OFFSET],
+      ["top", "0px", "dropped", OFFSET],
+      ["left", "0px", "dropped", OFFSET],
+      ["z-index", "10", "dropped", STACKED],
     ]);
   });
 
@@ -334,4 +357,122 @@ describe("an important declaration of the page", () => {
       expect(textOf(variant?.root)?.color).toEqual(expected);
     }
   );
+});
+
+// Oracle: CSS Backgrounds 3 §3 and CSS 2.1 §8.1. A border on one side lies inside the border box
+// between the margin and the padding of that side, so `border-l` puts the content 1px further from
+// the box's left edge than its padding alone does, and the sides with no border width draw nothing,
+// as a Sidebar container's `border-r` and a sub menu's `border-l` draw. Probe PS: Figma's per-side
+// weights with `strokesIncludedInLayout` true take room on their own side, as a CSS border does, so
+// each padding stays as the CSS sets it.
+describe("a border on some sides", () => {
+  const RED = { kind: "literal", color: { r: 1, g: 0, b: 0, a: 1 } };
+  const room = (side: string, width: number) =>
+    `a ${width}px ${side} stroke that takes its room on that side (PS)`;
+
+  it("strokes those sides in the layout and leaves each padding as the CSS sets it", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex border-l border-r-2 border-[#ff0000] px-[10px]")
+    );
+    expect(variant?.root.stroke).toEqual({ color: RED, sides: { top: 0, right: 2, bottom: 0, left: 1 } });
+    expect([
+      variant?.root.paddingTop,
+      variant?.root.paddingRight,
+      variant?.root.paddingBottom,
+      variant?.root.paddingLeft,
+    ]).toEqual([literal(0), literal(10), literal(0), literal(10)]);
+    expect([...rowsOf(coverage, "border-l"), ...rowsOf(coverage, "border-r-2")]).toEqual([
+      ["border-left-style", "var(--tw-border-style)", "literal", "a solid stroke"],
+      ["border-left-width", "1px", "literal", room("left", 1)],
+      ["border-right-style", "var(--tw-border-style)", "literal", "a solid stroke"],
+      ["border-right-width", "2px", "literal", room("right", 2)],
+    ]);
+  });
+
+  it("keeps a bound padding beside the border", async () => {
+    const { variant } = await buildFixture(chip("flex border-l border-[#ff0000] px-(--row-px)"), {
+      variables: makeVariableIndex([
+        { ref: { collection: "Fuse density", name: "row-px" }, webSyntax: "var(--row-px)" },
+      ]),
+    });
+    const ROW_PX = { kind: "variable", variable: { collection: "Fuse density", name: "row-px" } };
+    expect([variant?.root.stroke, variant?.root.paddingLeft]).toEqual([
+      { color: RED, sides: { top: 0, right: 0, bottom: 0, left: 1 } },
+      ROW_PX,
+    ]);
+  });
+
+  // CSS 2.1 §10.1 and §10.2: an absolute box's percentage width takes its containing block, the
+  // padding box of its nearest positioned ancestor, which lies inside the borders.
+  it("leaves an absolute part's 100% width the padding box inside the border", async () => {
+    const { variant } = await buildFixture(
+      chip("relative flex w-[256px] border-r border-[#ff0000]", {
+        parts: [dot("absolute top-0 left-0 w-full h-[4px]")],
+      })
+    );
+    const part = variant?.root.children[0];
+    expect(part?.kind === "frame" ? part.sizing.horizontal : undefined).toEqual(fixed(literal(255)));
+  });
+
+  it("leaves a side unmapped where the box also sets a border on every side", async () => {
+    const { variant, coverage } = await buildFixture(chip("border border-r-2 border-[#ff0000]"));
+    expect(variant?.root.stroke).toEqual({ color: RED, weight: literal(1) });
+    expect(rowsOf(coverage, "border-r-2").map(([property, , outcome]) => [property, outcome])).toEqual([
+      ["border-right-style", "unmapped"],
+      ["border-right-width", "unmapped"],
+    ]);
+  });
+});
+
+// Oracle: CSS 2.1 §10.5, where a percentage height takes the height of the containing block when
+// that block's height is given, as the Sidebar demo frame's `h-[28rem]` gives the Sidebar container's
+// `h-full`. With no preview height a root's percentage height has no block to take.
+describe("a root's 100% height", () => {
+  it("takes the preview height the definition names", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex flex-col w-[256px] h-full", { previewHeight: 448 })
+    );
+    expect(variant?.root.sizing.vertical).toEqual(fixed(literal(448)));
+    expect(rowsOf(coverage, "h-full")).toEqual([
+      ["height", "100%", "literal", "448px, the preview height that 100% takes"],
+    ]);
+  });
+});
+
+// Oracle: CSS Color 4 §3.2, where `opacity: 0` paints nothing of the box or what it holds, and CSS
+// 2.1 §8.3 and §10.6, where a top margin of minus the box's height leaves its margin box 0 tall, so the
+// box takes no room in a column that sets no gap, as the collapsed Sidebar rail's group label
+// (`h-8 -mt-8 opacity-0`) pulls the rows up and fades out.
+describe("a part that leaves no trace", () => {
+  const label = (classes: string) => ({ ...dot(classes), key: "label", slot: "chip-label" });
+  const row = { ...dot("h-[32px]"), key: "row", slot: "chip-row" };
+  const NO_TRACE =
+    "the part paints nothing at opacity 0, and its top margin takes back its height, so it takes no room in its column";
+
+  it("draws in no layer, its declarations dropped", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex flex-col w-[48px]", { parts: [label("flex h-[32px] -mt-[32px] opacity-0"), row] })
+    );
+    expect(variant?.root.children.map((child) => child.name)).toEqual(["chip-row"]);
+    expect(
+      coverage
+        .filter((row) => row.part === "chip-label")
+        .map((row) => [row.property, row.outcome, row.detail])
+        .toSorted(([left = ""], [right = ""]) => (left < right ? -1 : left > right ? 1 : 0))
+    ).toEqual([
+      ["display", "dropped", NO_TRACE],
+      ["height", "dropped", NO_TRACE],
+      ["margin-top", "dropped", NO_TRACE],
+      ["opacity", "dropped", NO_TRACE],
+    ]);
+  });
+
+  it.each([
+    ["a margin short of its height", "flex flex-col", "h-[32px] -mt-[16px] opacity-0"],
+    ["a part it still paints", "flex flex-col", "h-[32px] -mt-[32px] opacity-50"],
+    ["a column that spaces its parts", "flex flex-col gap-[4px]", "h-[32px] -mt-[32px] opacity-0"],
+  ])("stays drawn with %s", async (_case, column, classes) => {
+    const { variant } = await buildFixture(chip(`${column} w-[48px]`, { parts: [label(classes), row] }));
+    expect(variant?.root.children.map((child) => child.name)).toEqual(["chip-label", "chip-row"]);
+  });
 });
