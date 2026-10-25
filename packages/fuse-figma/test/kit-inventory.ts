@@ -117,8 +117,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Input",
     sets: [
       { key: "input", name: "Input", variants: 10, previewed: 10 },
-      // Combobox's caret and clear forms and Command's search form, in 4 states.
-      { key: "input-group", name: "Input group", variants: 12, previewed: 12 },
+      // Combobox's caret and clear forms, Command's search form and Combobox's open caret form, in 4 states.
+      { key: "input-group", name: "Input group", variants: 16, previewed: 16 },
     ],
   },
   // Placeholder and value in 5 states.
@@ -206,6 +206,20 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "dropdown-menu-sub-content", name: "Dropdown menu sub content", variants: 1, previewed: 1 },
       // Below the outline Button trigger, the Basic demo's popup.
       { key: "dropdown-menu-open", name: "Dropdown menu (open)", variants: 1, previewed: 1 },
+    ],
+  },
+  {
+    slug: "combobox",
+    name: "Combobox",
+    sets: [
+      // Selected off and on, at rest, highlighted and disabled.
+      { key: "combobox-item", name: "Combobox item", variants: 6, previewed: 6 },
+      // The message while no row matches.
+      { key: "combobox-empty", name: "Combobox empty", variants: 1, previewed: 1 },
+      // The Basic demo's rows, the Groups demo's groups, and no match.
+      { key: "combobox-popup", name: "Combobox popup", variants: 3, previewed: 3 },
+      // The input with the Basic demo's popup open below it.
+      { key: "combobox-open", name: "Combobox (open)", variants: 1, previewed: 1 },
     ],
   },
   // The default, outline and dashed outline frames.

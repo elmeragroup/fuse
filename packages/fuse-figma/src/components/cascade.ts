@@ -55,6 +55,12 @@ const NO_FIGMA_FORM = new Map([
   ["pointer-events", "a static frame has no pointer"],
   // `scroll-my-1` keeps a Select group 4px from the popup's edge when it scrolls into view.
   ["scroll-margin-block", "a static frame does not scroll, so nothing scrolls the box into view"],
+  // `scroll-py-1` keeps a Combobox row 4px from its list's edge when it scrolls into view.
+  ["scroll-padding-block", "a static frame does not scroll, so nothing scrolls into its view"],
+  ["overscroll-behavior", "a static frame does not scroll, so no scroll chains past it"],
+  // `no-scrollbar` hides a scrolling list's scrollbar.
+  ["scrollbar-width", "a Figma frame that clips draws no scrollbar"],
+  ["-ms-overflow-style", "a Figma frame that clips draws no scrollbar"],
   ["transition-property", "Figma components do not animate"],
   ["transition-timing-function", "Figma components do not animate"],
   ["transition-duration", "Figma components do not animate"],
@@ -647,6 +653,7 @@ export class CellCascade {
         {
           classes,
           passed: undefined,
+          composite: undefined,
           part,
           inherited: new Map(),
           outer: [...defaults, ...page.map((applied) => ({ ...applied, computedOutside }))],
@@ -691,6 +698,7 @@ export class CellCascade {
       {
         classes,
         passed: undefined,
+        composite: undefined,
         part,
         inherited: inheritance(outside, context),
         outer: defaults,
@@ -724,6 +732,8 @@ function cascadeBox(
     readonly classes: string;
     /** The classes the outer component passes an inner root built in place, and their scope. */
     readonly passed: { readonly classes: string; readonly scope: CellScope } | undefined;
+    /** The scope of the composite that holds the box in place, as {@link BoxCascade} keeps it. */
+    readonly composite: CellScope | undefined;
     readonly part: string;
     readonly inherited: ComputedStyle;
     readonly outer: readonly Applied[];
@@ -766,6 +776,7 @@ function cascadeBox(
     ancestorPartRules: box.ancestorPartRules,
     descendants: [...box.ancestorDescendants, ...own.descendantRules],
     exceptLast: own.exceptLastRules,
+    composite: box.composite,
   });
 }
 
@@ -789,6 +800,11 @@ export class BoxCascade {
   readonly #ancestorPartRules: readonly PartRule[];
   readonly #descendants: readonly DescendantRule[];
   readonly #exceptLast: readonly ExceptLastRule[];
+  /**
+   * The scope of the composite whose instance part holds this box in place, which the classes it gives
+   * an icon below cascade in, undefined for a box of the set's own.
+   */
+  readonly #composite: CellScope | undefined;
 
   /**
    * @param ledger - The cell's layers.
@@ -811,6 +827,7 @@ export class BoxCascade {
       readonly ancestorPartRules: readonly PartRule[];
       readonly descendants: readonly DescendantRule[];
       readonly exceptLast: readonly ExceptLastRule[];
+      readonly composite: CellScope | undefined;
     }
   ) {
     this.style = new LayerStyle(ledger, layer, path);
@@ -823,6 +840,7 @@ export class BoxCascade {
     this.#ancestorPartRules = rules.ancestorPartRules;
     this.#descendants = rules.descendants;
     this.#exceptLast = rules.exceptLast;
+    this.#composite = rules.composite;
   }
 
   /**
@@ -969,6 +987,7 @@ export class BoxCascade {
       ledger,
       {
         ...classes,
+        composite: classes.passed?.scope ?? this.#composite,
         part,
         inherited: inheritance(this.#layer, this.#ledger.scope.context),
         outer: [
@@ -1050,27 +1069,36 @@ export class BoxCascade {
    * (0,1,1) beats the icon's own `size-6` (0,1,0), as in CSS.
    *
    * @param slot - The icon.
+   * @param given - The classes the composite that holds this box in place gives the icon, as
+   *   Combobox gives its caret's CaretDown `caret()`, which cascade after the icon's own in the
+   *   composite's scope, so their rows are the composite's. Undefined for none.
    * @returns The icon's computed style.
-   * @throws When one of the icon's own classes has a child selector or styles a child part or the
+   * @throws When one of the icon's own classes, or one the composite gives it, has a child selector or styles a child part or the
    *   elements below the icon, which the builder does not model inside an icon.
    */
-  icon(slot: IconSlot): LayerStyle {
+  icon(slot: IconSlot, given?: string): LayerStyle {
+    // The element carries both its own classes and those given, which a selector such as
+    // `:not([class*='size-'])` reads.
+    const element = given === undefined ? slot : { ...slot, classes: `${slot.classes ?? ""} ${given}` };
     const selected = [
-      ...this.#ancestorRules.filter((rule) => rule.selects({ ...slot, direct: false })),
-      ...this.#ownRules.filter((rule) => rule.selects(slot)),
+      ...this.#ancestorRules.filter((rule) => rule.selects({ ...element, direct: false })),
+      ...this.#ownRules.filter((rule) => rule.selects(element)),
     ];
     const own = boxClasses(slot.classes ?? "", slot.name, this.#ledger.scope);
-    const [nested] = [
-      ...appliedOf([...own.childRules, ...own.partRules, ...own.descendantRules]),
-      ...own.exceptLastRules,
-    ];
+    // The classes a composite gives the icon are the composite's, so they cascade in its scope.
+    const passed =
+      given === undefined ? undefined : boxClasses(given, slot.name, this.#composite ?? this.#ledger.scope);
+    const [nested] = [own, ...(passed === undefined ? [] : [passed])].flatMap((classes) => [
+      ...appliedOf([...classes.childRules, ...classes.partRules, ...classes.descendantRules]),
+      ...classes.exceptLastRules,
+    ]);
     if (nested !== undefined) {
       throw new Error(`the ${slot.name}'s own class ${nested.className} selects inside the icon`);
     }
     takeAll(this.#descendants);
     const layer = this.#ledger.add(
       inheritance(this.#layer, this.#ledger.scope.context),
-      [...appliedOf(selected), ...appliedOf(this.#descendants), ...own.applied],
+      [...appliedOf(selected), ...appliedOf(this.#descendants), ...own.applied, ...(passed?.applied ?? [])],
       this.#layer
     );
     return new LayerStyle(this.#ledger, layer, [...this.path, slot.key]);
@@ -1222,6 +1250,20 @@ export class LayerStyle {
     const owner = source.layer === this.#layer.id ? this.#layer : this.#ledger.around(source.layer);
     owner?.marks.set(property, { outcome, detail });
     this.#layer.inPlace?.fed(source, feed);
+  }
+
+  /**
+   * Note every declaration the layer sets itself as dropped, for a layer the kit draws nowhere in
+   * the cell, as an empty list draws nothing. A read of one elsewhere in the cell takes precedence.
+   *
+   * @param detail - Why the layer draws nowhere.
+   */
+  dropOwn(detail: string): void {
+    for (const [property, entry] of this.#layer.style) {
+      if (entry.source.layer === this.#layer.id) {
+        this.#layer.marks.set(property, { outcome: "dropped", detail });
+      }
+    }
   }
 
   /**

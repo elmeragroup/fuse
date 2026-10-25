@@ -399,9 +399,10 @@ function descendantsClass(selector: string): { readonly name: string; readonly r
 }
 
 /**
- * The class a rule selects as the child of a parent context, as fuse.css's `item-described:` compiles
- * to `:where(:has( > [data-slot="item-content"] > [data-slot="item-description"])) > .item-described\:…`:
- * one `:where()`, the child combinator, then the class, which is the rule's subject.
+ * The class a rule selects as the child or a descendant of a context, as fuse.css's `item-described:`
+ * compiles to `:where(:has( > [data-slot="item-content"] > [data-slot="item-description"])) > .item-described\:…`
+ * and Tailwind's `in-data-popup-open:` to `:where([data-popup-open]) .in-data-popup-open\:…`: one
+ * `:where()`, the child or descendant combinator, then the class, which is the rule's subject.
  */
 function contextClass(selector: string): { readonly name: string; readonly rest: string } | undefined {
   const [alternative, ...others] = selectorAlternatives(selector);
@@ -416,8 +417,8 @@ function contextClass(selector: string): { readonly name: string; readonly rest:
     return undefined;
   }
   const after = selector.slice(`:where(${context.argument})`.length);
-  const child = /^\s*>\s*/.exec(after);
-  return child === null ? undefined : leadingClass(after.slice(child[0].length));
+  const combinator = /^(?:\s*>\s*|\s+)/.exec(after);
+  return combinator === null ? undefined : leadingClass(after.slice(combinator[0].length));
 }
 
 /**

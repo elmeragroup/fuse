@@ -212,7 +212,7 @@ export class InstanceParts {
       part,
       variant,
       cell,
-      values: valuesOf(values, set, part.key),
+      values: valuesOf(values, part.swapClasses?.(outer) ?? {}, set, part.key),
       scaling: record.scaling,
       booleans: booleansOf(values, set, part.key),
       innerRows,
@@ -411,7 +411,8 @@ function fills(feed: FeedTarget, path: readonly string[], field: string): boolea
  * fields the declaration's reads fill. A read that fills a field the instance draws another way than
  * the variant, where no instance field carries it, is unmapped with that difference. One that fills a
  * field an override or the instance's own sizing carries keeps its outcome, bound or literal, and so
- * does one the frame around the instance draws, as its margins. One whose fields the variant draws the
+ * does one the frame around the instance draws, as its margins. One that turns a glyph the instance
+ * swaps to its half-turn mirror keeps its outcome, its detail naming the mirror. One whose fields the variant draws the
  * same repeats it and drops. A row that is no read keeps its outcome.
  */
 function classified(row: Row, visit: Visit): Row {
@@ -428,6 +429,13 @@ function classified(row: Row, visit: Visit): Row {
   );
   if (unmapped !== undefined) {
     return { ...row, outcome: "unmapped", detail: differenceDetail(visit, unmapped) };
+  }
+  const mirrored = diff.mirrored.find(({ path }) => fed.some((feed) => fills(feed, path, "rotation")));
+  if (mirrored !== undefined) {
+    return {
+      ...row,
+      detail: `the instance swaps the glyph to ${mirrored.icon}, its half-turn mirror, since Figma turns no layer inside an instance (PT)`,
+    };
   }
   const carried = [
     ...diff.overrides.map((override) => ({ path: override.path, field: OVERRIDDEN_FIELD[override.field] })),
@@ -501,14 +509,19 @@ function booleansOf(
 }
 
 /**
- * The TEXT and INSTANCE_SWAP values an outer cell gives the inner set, which the mapping applies to
- * the inner root's labels and icons in place, leaving the inner definition as it is. The diff then
- * finds them as property values, or leaves unmapped what they change beside the characters and the
- * icon.
+ * The TEXT and INSTANCE_SWAP values an outer cell gives the inner set, and the classes it gives the
+ * icon each INSTANCE_SWAP property places, which the mapping applies to the inner root's labels and
+ * icons in place, leaving the inner definition as it is. The diff then finds them as property values
+ * and overrides, or leaves unmapped what they change beside the characters, the icon and its paint.
  *
  * @throws When a value names a property the inner set does not define as that type.
  */
-function valuesOf(values: InstanceProperties, set: InnerSet, where: string): PropertyValues {
+function valuesOf(
+  values: InstanceProperties,
+  swapClasses: Readonly<Record<string, string>>,
+  set: InnerSet,
+  where: string
+): PropertyValues {
   const text = values.text ?? {};
   const swap = values.swap ?? {};
   refuseUndefined(
@@ -518,14 +531,16 @@ function valuesOf(values: InstanceProperties, set: InnerSet, where: string): Pro
     Object.keys(text),
     set.textProperties.map(({ name }) => name)
   );
-  refuseUndefined(
-    where,
-    set,
-    "INSTANCE_SWAP",
-    Object.keys(swap),
-    set.swapProperties.map(({ name }) => name)
-  );
-  return { text, swap };
+  for (const given of [swap, swapClasses]) {
+    refuseUndefined(
+      where,
+      set,
+      "INSTANCE_SWAP",
+      Object.keys(given),
+      set.swapProperties.map(({ name }) => name)
+    );
+  }
+  return { text, swap, swapClasses };
 }
 
 /**

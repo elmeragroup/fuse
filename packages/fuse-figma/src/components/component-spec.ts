@@ -365,6 +365,12 @@ export type InstanceDefinition = {
    * its default.
    */
   readonly properties?: (outer: Cell) => InstanceProperties;
+  /**
+   * The classes the outer component gives the icon each INSTANCE_SWAP property places, by the
+   * property's name, as Combobox renders the CaretDown in its caret button with `caret()`. They
+   * cascade after the inner icon's own classes. Undefined for none.
+   */
+  readonly swapClasses?: (outer: Cell) => Readonly<Record<string, string>>;
   /** Whether a cell renders the part. */
   readonly shownIn: (cell: Cell) => boolean;
   /**
@@ -752,7 +758,7 @@ export function variantKey(definition: Pick<ComponentDefinition, "key" | "axes">
 /**
  * Every class the elements around the root, the root, its parts and their icons use in any cell of
  * the matrix, which the build compiles. An instance part adds the classes the outer component passes
- * it in each cell that renders it. Its inner component's classes are the inner definition's own,
+ * it, and those it gives the icons its swap properties place, in each cell that renders it. Its inner component's classes are the inner definition's own,
  * which the build compiles for the inner set, built first.
  *
  * @param definition - The component.
@@ -774,7 +780,10 @@ function boxClasses(box: BoxDefinition, cell: Cell): readonly string[] {
     ...(box.parts ?? []).flatMap((part) =>
       "kind" in part
         ? part.shownIn(cell)
-          ? splitClasses(part.classesFor?.(cell) ?? "")
+          ? [
+              ...splitClasses(part.classesFor?.(cell) ?? ""),
+              ...Object.values(part.swapClasses?.(cell) ?? {}).flatMap(splitClasses),
+            ]
           : []
         : boxClasses(part, cell)
     ),

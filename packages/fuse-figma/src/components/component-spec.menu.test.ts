@@ -720,6 +720,42 @@ describe("a list capped in height that clips", () => {
     expect(unmapped(coverage)).toEqual([]);
   });
 
+  it("drops a cap at the available width, which the kit's popup never reaches", async () => {
+    // Combobox's popup, `max-w-(--available-width)`: Base UI's positioner writes the width between the
+    // anchor's side and the viewport's edge, less the collision padding, as it writes the height.
+    const { variant, coverage } = await buildFixture(popup("w-[150px] max-w-(--available-width)"), {
+      variables: SYNCED,
+    });
+    expect(layerOf(variant?.root, "list")).toMatchObject({
+      sizing: { horizontal: fixed(literal(150)) },
+      limits: { maxWidth: undefined },
+    });
+    expect(notesOf(coverage, "max-w-(--available-width)")).toEqual([
+      ["max-width", "dropped", "the kit draws a popup with room, so the available width never caps it"],
+    ]);
+    expect(unmapped(coverage)).toEqual([]);
+  });
+
+  // Oracle: CSS Scroll Snap 1 §4.1 (`scroll-padding` insets only the scrollport's snap and scroll-into
+  // -view area), CSS Overscroll Behavior 1 §2 (`overscroll-behavior` only says where a scroll chains),
+  // and CSS Scrollbars 1 §3 with IE's `-ms-overflow-style` (whether a scroll container shows its
+  // scrollbar). A static frame does not scroll and Figma draws no scrollbar, so none of them shows.
+  it("drops a list's scroll behaviour, which a frame that does not scroll never shows", async () => {
+    const classes = "max-h-[120px] overflow-y-auto no-scrollbar scroll-py-1 overscroll-contain";
+    const { coverage } = await buildFixture(popup(classes), { variables: SYNCED });
+    expect(
+      coverage
+        .filter((row) => ["no-scrollbar", "scroll-py-1", "overscroll-contain"].includes(row.className))
+        .map((row) => [row.property, row.outcome])
+    ).toEqual([
+      ["-ms-overflow-style", "dropped"],
+      ["scrollbar-width", "dropped"],
+      ["scroll-padding-block", "dropped"],
+      ["overscroll-behavior", "dropped"],
+    ]);
+    expect(unmapped(coverage)).toEqual([]);
+  });
+
   it("caps at the length a cap takes beside an available height the kit's popup never reaches", async () => {
     // Combobox's list, `max-h-[min(calc(var(--spacing)*72),calc(var(--available-height)-calc(var(--spacing)*9)))]`.
     const cap = "max-h-[min(252px,calc(var(--available-height)-36px))]";
@@ -868,5 +904,54 @@ describe("a popup that hugs its rows and names the row that sets its width", () 
       "unmapped",
       expect.any(String),
     ]);
+  });
+});
+
+// Oracle: CSS 2.1 §10.6.3, where a block with no in-flow children, no padding, no border and no
+// height is 0 tall, and CSS Backgrounds 3, where a box with no background, border or shadow paints
+// nothing; probe PE4, where Figma keeps an auto-layout frame with no children at its last height
+// rather than hugging it to 0. So a part none of whose parts shows in a cell, which paints nothing and
+// pads nothing down a column, draws in no layer there.
+describe("an empty part", () => {
+  const ROW: PartDefinition = { ...dot("h-[30px]"), key: "row", slot: "row", shownIn: () => false };
+  const popup = (list: string, rows: readonly PartDefinition[] = [ROW]) =>
+    chip("flex flex-col w-[200px] bg-[#ffffff]", {
+      parts: [
+        { ...dot("h-[20px]"), key: "header", slot: "header" },
+        { ...dot(list), key: "list", slot: "list", parts: rows },
+      ],
+    });
+  const EMPTY_REASON =
+    "the part holds nothing in this cell, paints nothing and pads nothing down its column, so CSS draws it 0 tall, while Figma keeps an auto-layout frame with no children at its last height (PE4)";
+
+  it("draws no layer for a part that holds nothing, paints nothing and pads nothing", async () => {
+    const { variant, coverage } = await buildFixture(popup("p-0 max-h-[120px] overflow-y-auto"), {
+      variables: SYNCED,
+    });
+    expect(layerNames(variant?.root)).toEqual(["header"]);
+    expect(notesOf(coverage, "max-h-[120px]")).toEqual([["max-height", "dropped", EMPTY_REASON]]);
+    expect(unmapped(coverage)).toEqual([]);
+  });
+
+  it.each([
+    ["pads down its column", "py-1"],
+    ["paints a fill", "bg-[#eeeeee]"],
+    ["sets a height", "h-[10px]"],
+    ["keeps a margin", "mt-2"],
+  ])("draws a part that %s", async (_why, classes) => {
+    const { variant } = await buildFixture(popup(classes), { variables: SYNCED });
+    expect(layerNames(variant?.root)).toEqual(["header", "list"]);
+  });
+
+  it("draws a part that holds no parts in any cell, a box drawn by its own lengths", async () => {
+    const { variant } = await buildFixture(popup("p-0", []), { variables: SYNCED });
+    expect(layerNames(variant?.root)).toEqual(["header", "list"]);
+  });
+
+  it("draws a part that holds a row", async () => {
+    const { variant } = await buildFixture(popup("p-0", [{ ...ROW, shownIn: () => true }]), {
+      variables: SYNCED,
+    });
+    expect(layerNames(variant?.root)).toEqual(["header", "list"]);
   });
 });

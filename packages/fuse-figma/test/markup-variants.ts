@@ -102,6 +102,11 @@ export const GROUP_VARIANTS = new Map<string, (ancestor: MarkupElement) => boole
     (ancestor) =>
       marks(ancestor, "group/navigation-menu-trigger") && ancestor.attributes.has("data-popup-open"),
   ],
+  // An open Combobox popup carries `data-empty` while no row matches, which shows its empty message.
+  [
+    "group-data-empty/combobox-content",
+    (ancestor) => marks(ancestor, "group/combobox-content") && ancestor.attributes.has("data-empty"),
+  ],
   // An open Accordion item's trigger carries `data-panel-open`, which its caret reads.
   [
     "group-data-[panel-open]/accordion-trigger",
@@ -139,6 +144,13 @@ export const NAMED_ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement)
   ["data-open", (element) => element.attributes.has("data-open")],
   ["data-closed", (element) => element.attributes.has("data-closed")],
   ["data-[align-trigger=true]", (element) => element.attributes.get("data-align-trigger") === "true"],
+  // Fuse stamps `data-external-anchor` on a Combobox popup, `"true"` where it sits against an anchor
+  // other than its input, and Base UI stamps `data-empty` on the popup and its list while no row matches.
+  ["data-[external-anchor=true]", (element) => element.attributes.get("data-external-anchor") === "true"],
+  ["data-empty", (element) => element.attributes.has("data-empty")],
+  // Tailwind's `in-data-popup-open:` holds below an element that carries `data-popup-open`, as Combobox's
+  // CaretDown sits in the open trigger an instance part's root renders.
+  ["in-data-popup-open", (element) => element.attributes.has("data-popup-open")],
   // Base UI marks the trigger of an open popup `aria-expanded="true"`, which an instance part's facts
   // declare for a Button trigger in place.
   ["aria-expanded", (element) => element.attributes.get("aria-expanded") === "true"],
@@ -180,6 +192,8 @@ export const HAS_VARIANTS = new Map<string, (elements: readonly MarkupElement[],
       ["has-[>[data-align=inline-start]]", (child) => child.attributes.get("data-align") === "inline-start"],
       ["has-[>[data-align=inline-end]]", (child) => child.attributes.get("data-align") === "inline-end"],
       ["has-[>button]", (child) => child.name === "button"],
+      // A Combobox popup that holds a search field as its own child.
+      ["has-[>[data-slot=input-group]]", (child) => child.attributes.get("data-slot") === "input-group"],
       ["has-[>svg]", (child) => child.name === "svg"],
     ] as const satisfies readonly (readonly [string, (child: MarkupElement) => boolean])[]
   ).map(([variant, matches]) => [
@@ -271,6 +285,8 @@ export const NOT_ATTRIBUTES = new Set([
   // Input group rings while its control has keyboard focus, which the page forces on the control.
   "has-[[data-focus-ring-control]:focus-visible]",
   "peer-hover/menu-button",
+  // The page writes `data-highlighted` on a highlighted Combobox row when it forces the state.
+  "data-highlighted",
   // A Dropdown menu row's shortcut reads the row's DOM focus.
   "group-focus/dropdown-menu-item",
   "has-data-[icon=inline-start]",

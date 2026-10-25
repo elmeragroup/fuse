@@ -42,6 +42,7 @@ import {
   readColor,
   readNumber,
 } from "./css-values";
+import { EMPTY_PART, vanishes } from "./empty-part";
 import { readBleed, sectioned } from "./full-bleed";
 import { holdsWidthRow, namedMinimum, rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
 import type { CascadedInstance, InstanceParts } from "./instance-parts";
@@ -258,10 +259,12 @@ const SIDE_PADDINGS = ["padding-left", "padding-right"] as const;
 export type PropertyValues = {
   readonly text: Readonly<Record<string, string>>;
   readonly swap: Readonly<Record<string, string>>;
+  /** The classes the outer component gives the icon each INSTANCE_SWAP property places. */
+  readonly swapClasses: Readonly<Record<string, string>>;
 };
 
 /** No property values, as a set's own cells take their labels and icons from the definition. */
-export const NO_VALUES: PropertyValues = { text: {}, swap: {} };
+export const NO_VALUES: PropertyValues = { text: {}, swap: {}, swapClasses: {} };
 
 /** A label showing the characters a TEXT value gives its property, where one does. */
 function labelWith(label: LabelDefinition, text: PropertyValues["text"]): LabelDefinition {
@@ -273,6 +276,11 @@ function labelWith(label: LabelDefinition, text: PropertyValues["text"]): LabelD
 function slotWith(slot: IconSlot, swap: PropertyValues["swap"]): IconSlot {
   const icon = slot.swapProperty === undefined ? undefined : swap[slot.swapProperty];
   return icon === undefined ? slot : { ...slot, icon };
+}
+
+/** The classes the outer component gives the icon a slot's swap property places, if any. */
+function givenClasses(slot: IconSlot, values: PropertyValues): string | undefined {
+  return slot.swapProperty === undefined ? undefined : values.swapClasses[slot.swapProperty];
 }
 
 /** A part a cell shows in a box, cascaded: a frame, or an instance of another set. */
@@ -344,7 +352,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // The style of the last icon on each side, where a row's last layer can set an auto margin.
   const lastIcon = new Map<IconSlot["side"], LayerStyle>();
   for (const slot of slots) {
-    const style = cascade.icon(slot);
+    const style = cascade.icon(slot, givenClasses(slot, scope.values));
     const icon = mapIcon(slot, style, scope);
     if (icon !== undefined) {
       (slot.side === "start" ? start : end).push(icon);
@@ -354,9 +362,17 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // Every part cascades before any maps, since an absolute part sits out of the box's flow. The box's
   // flow, `holder.layers`, is the one membership every layout reader below reads: the rooms, the
   // stretch, the label, the display and the placement.
+  const cascaded = cascadeParts(box, cascade, scope);
+  // An empty part that CSS draws 0 tall and that paints nothing draws in no layer (PE4).
+  const empty = cascaded.filter(
+    (part) => part.kind === "frame" && vanishes(part.child, part.cascade.style, reader, scope.cell)
+  );
+  for (const part of empty) {
+    part.cascade.style.dropOwn(EMPTY_PART);
+  }
   const inDom = orderModified(
     reader,
-    cascadeParts(box, cascade, scope),
+    cascaded.filter((part) => !empty.includes(part)),
     slots.length + (label === undefined ? 0 : 1)
   );
   // The parts the markup holds after the label draw after it and the end icons, and so does an
@@ -373,7 +389,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   cascade.spaceChildren(
     undrawn === undefined
       ? undefined
-      : shown.length + slots.length + (label?.textElement === undefined ? 0 : 1) + undrawn
+      : shown.length + empty.length + slots.length + (label?.textElement === undefined ? 0 : 1) + undrawn
   );
   const flowing = shown.filter((part) => !outOfFlow(part.cascade.style));
   const flowingBefore = before.filter((part) => !outOfFlow(part.cascade.style));

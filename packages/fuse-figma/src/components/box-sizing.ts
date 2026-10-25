@@ -28,7 +28,7 @@ import type {
   SizingSpec,
 } from "./kit-spec";
 import type { Layout } from "./placement";
-import { roomyMaximum, WITH_ROOM } from "./popup-room";
+import { roomyMaximum, withRoom } from "./popup-room";
 
 /** What a box's parent gives it on one axis. */
 type AxisRoom = {
@@ -1130,11 +1130,11 @@ function readAxis(
       []
     );
   }
-  const popupMaximum = roomyMaximum(reader.raw(axis.max) ?? "", variables);
-  // Nothing sets the available height outside a positioner, so the value never resolves and the
+  const popupMaximum = roomyMaximum(axis.max, reader.raw(axis.max) ?? "", variables);
+  // Nothing sets the available room outside a positioner, so the value never resolves and the
   // maximum is marked rather than read.
   if (popupMaximum?.kind === "none") {
-    reader.mark(axis.max, "dropped", WITH_ROOM, []);
+    reader.mark(axis.max, "dropped", withRoom(axis.max), []);
   }
   const bounds = (["min", "max"] as const).flatMap((side): Bound[] => {
     const property = axis[side];
@@ -1153,7 +1153,7 @@ function readAxis(
     const limit = bound.side === "min" ? limited.min : limited.max;
     const feed = [...reader.feed(limit === undefined ? "sizing" : "limits"), ...inside];
     if (bound.side === "max" && popupMaximum !== undefined && note !== undefined) {
-      reader.mark(bound.property, note.outcome, `${note.detail}, since ${WITH_ROOM}`, feed);
+      reader.mark(bound.property, note.outcome, `${note.detail}, since ${withRoom(axis.max)}`, feed);
       continue;
     }
     reader.read(

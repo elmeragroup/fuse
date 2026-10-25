@@ -8,6 +8,7 @@
  */
 import { isDeepStrictEqual } from "node:util";
 
+import { HALF_TURN_MIRRORS } from "./glyph-mirrors";
 import { drawsAtOwnWidth } from "./hugging-rows";
 import { ringFill } from "./kit-spec";
 import type {
@@ -48,8 +49,18 @@ export type InstanceDiff = {
   readonly overrides: readonly InstanceOverride[];
   /** The sizing of the root built in place, which the instance takes in its parent's auto layout. */
   readonly sizing: SizingSpec;
+  /** Each glyph turned half a turn in place that the instance swaps to its mirror, at its key path. */
+  readonly mirrored: readonly Mirrored[];
   /** The differences no instance field carries. */
   readonly unmapped: readonly InstanceDifference[];
+};
+
+/** A glyph turned half a turn in place, which the instance draws as its half-turn mirror. */
+export type Mirrored = {
+  /** The keys of the layers from the inner root down to the glyph. */
+  readonly path: readonly string[];
+  /** The key of the mirror the instance swaps to. */
+  readonly icon: string;
 };
 
 /** A layer the diff compares field by field: the root or a frame, a text or an icon. */
@@ -77,6 +88,7 @@ type Found = {
   readonly text: Map<string, string>;
   readonly swap: Map<string, string>;
   readonly overrides: InstanceOverride[];
+  readonly mirrored: Mirrored[];
   readonly unmapped: InstanceDifference[];
 };
 
@@ -93,6 +105,9 @@ type Found = {
  *   length draws another way where that length changes.
  * - A text the variant fills across, a direct child of a root the instance hugs, draws at its own
  *   width, as the text built in place hugs (PH2).
+ * - A glyph turned half a turn in place, where the variant's is unturned and a property swaps it,
+ *   becomes a swap to its proven half-turn mirror (`glyph-mirrors.ts`), since Figma turns no layer
+ *   inside an instance (PT).
  * - The spacing of a box with fewer than two layers in its auto layout in both trees draws nothing,
  *   since a gap sits only between adjacent items (CSS Box Alignment 3 §8). A layer a BOOLEAN hides
  *   counts, since a designer can show it.
@@ -109,6 +124,7 @@ export function diffInstance(inPlace: ComponentRootSpec, variant: ComponentRootS
     text: new Map(),
     swap: new Map(),
     overrides: [],
+    mirrored: [],
     unmapped: [],
   };
   diffBox(found, [], inPlace, variant, "root");
@@ -117,6 +133,7 @@ export function diffInstance(inPlace: ComponentRootSpec, variant: ComponentRootS
     swap: Object.fromEntries(found.swap),
     overrides: found.overrides,
     sizing: inPlace.sizing,
+    mirrored: found.mirrored,
     unmapped: found.unmapped,
   };
 }
@@ -351,9 +368,21 @@ function diffCharacters(
 }
 
 /**
+ * The icon an instance swaps to for an in-place glyph turned half a turn where the variant's is
+ * unturned: the glyph's proven half-turn mirror, behind a swap property. Undefined for any other turn.
+ */
+function halfTurnMirror(inPlace: IconLayerSpec, variant: IconLayerSpec): string | undefined {
+  return inPlace.rotation === 180 && variant.rotation === undefined && variant.swapProperty !== undefined
+    ? HALF_TURN_MIRRORS.get(inPlace.icon)
+    : undefined;
+}
+
+/**
  * Diff an icon: the icon it shows becomes the value of the INSTANCE_SWAP property that picks it, its
  * color a glyph override, and every other field stays unmapped where it differs. Another icon in a
- * layer no property swaps stays unmapped.
+ * layer no property swaps stays unmapped. A glyph turned half a turn in place draws its half-turn
+ * mirror unturned, so it swaps to the mirror where one is proven, since Figma turns no layer inside an
+ * instance (PT).
  */
 function diffIcon(
   found: Found,
@@ -363,15 +392,23 @@ function diffIcon(
 ): void {
   const built = fieldsOf(inPlace);
   const held = fieldsOf(variant);
+  const mirror = halfTurnMirror(inPlace, variant);
+  if (mirror !== undefined) {
+    found.mirrored.push({ path, icon: mirror });
+  }
   for (const field of fieldNames(inPlace, variant)) {
+    if (field === "rotation" && mirror !== undefined) {
+      continue;
+    }
     if (field === "icon") {
-      if (inPlace.icon === variant.icon) {
+      const shown = mirror ?? inPlace.icon;
+      if (shown === variant.icon) {
         continue;
       }
       if (variant.swapProperty === undefined) {
-        noteUnmapped(found, path, field, inPlace.icon, variant.icon);
+        noteUnmapped(found, path, field, shown, variant.icon);
       } else {
-        found.swap.set(variant.swapProperty, inPlace.icon);
+        found.swap.set(variant.swapProperty, shown);
       }
     } else if (field === "color") {
       if (!isDeepStrictEqual(inPlace.color, variant.color)) {

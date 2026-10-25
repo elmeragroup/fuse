@@ -988,3 +988,103 @@ describe("the order sets with instance parts build in", () => {
     );
   });
 });
+
+// Oracle: CSS Transforms 2 §5, where `rotate-180` turns the glyph half a turn about its centre, and
+// probe PT, where Figma refuses a turn on a layer inside an instance. A half-turned CaretDown draws
+// the shape CaretUp draws unturned, as `glyph-mirrors.test.ts` proves from the icon library, so the
+// instance swaps to CaretUp. A turn with no proven mirror has no instance field.
+describe("a glyph the composite gives classes", () => {
+  it("takes the classes the composite gives the icon a swap property places, as an override", async () => {
+    const { chip: built, layer } = await buildBoth(
+      holding(
+        badgePart({
+          properties: () => ({ swap: { Icon: "Star" } }),
+          swapClasses: () => ({ Icon: "text-[rgb(0_0_255)]" }),
+        })
+      )
+    );
+    expect(layer).toEqual({
+      ...PLAIN,
+      properties: { swap: { Icon: "icon/Star" } },
+      overrides: [{ path: ["icon"], field: "glyph", color: rgb(0, 0, 255) }],
+    });
+    expect(unmappedOf(built.coverage)).toEqual([]);
+  });
+
+  it("swaps a half-turned CaretDown to CaretUp, its half-turn mirror", async () => {
+    const { chip: built, layer } = await buildBoth(
+      holding(
+        badgePart({
+          properties: () => ({ swap: { Icon: "CaretDown" } }),
+          swapClasses: () => ({ Icon: "rotate-180" }),
+        })
+      )
+    );
+    expect(layer).toEqual({ ...PLAIN, properties: { swap: { Icon: "icon/CaretUp" } } });
+    expect(unmappedOf(built.coverage)).toEqual([]);
+  });
+
+  it.each([
+    ["a half-turned glyph with no proven mirror", "CaretRight", "rotate-180"],
+    ["a quarter-turned CaretDown", "CaretDown", "rotate-90"],
+  ])("leaves %s unmapped", async (_what, icon, turn) => {
+    const { chip: built } = await buildBoth(
+      holding(
+        badgePart({ properties: () => ({ swap: { Icon: icon } }), swapClasses: () => ({ Icon: turn }) })
+      )
+    );
+    expect(unmappedOf(built.coverage).map((row) => row.property)).toContain("rotation");
+  });
+
+  // Tailwind compiles `in-data-popup-open:` to `:where([data-popup-open]) .class`: the class holds
+  // below any element that carries `data-popup-open` (Selectors 4 §15.1, the descendant combinator).
+  it.each([
+    [true, { ...PLAIN, properties: { swap: { Icon: "icon/CaretUp" } } }],
+    [false, { ...PLAIN, properties: { swap: { Icon: "icon/CaretDown" } } }],
+  ])("turns a glyph whose ancestor's popup is open where that holds (%s)", async (open, expected) => {
+    const { chip: built, layer } = await buildBoth(
+      holding(
+        badgePart({
+          properties: () => ({ swap: { Icon: "CaretDown" } }),
+          swapClasses: () => ({ Icon: "in-data-popup-open:rotate-180" }),
+          facts: new Map([["in-data-popup-open", () => open]]),
+        })
+      )
+    );
+    expect(layer).toEqual(expected);
+    expect(unmappedOf(built.coverage)).toEqual([]);
+  });
+
+  // The classes the composite gives the glyph are the composite's, so their rows are the composite's
+  // too, as the classes it passes the inner root are.
+  it("records the classes it gives the glyph in its own coverage, the turn carried by the mirror swap", async () => {
+    const { chip: built } = await buildBoth(
+      holding(
+        badgePart({
+          properties: () => ({ swap: { Icon: "CaretDown" } }),
+          swapClasses: () => ({ Icon: "text-[rgb(0_0_255)] in-data-popup-open:rotate-180" }),
+          facts: new Map([["in-data-popup-open", () => true]]),
+        })
+      )
+    );
+    expect(
+      built.coverage
+        .filter((row) => ["text-[rgb(0_0_255)]", "in-data-popup-open:rotate-180"].includes(row.className))
+        .map((row) => [row.className, row.property, row.outcome, row.detail])
+    ).toEqual([
+      ["text-[rgb(0_0_255)]", "color", "literal", expect.any(String)],
+      [
+        "in-data-popup-open:rotate-180",
+        "rotate",
+        "literal",
+        "the instance swaps the glyph to icon/CaretUp, its half-turn mirror, since Figma turns no layer inside an instance (PT)",
+      ],
+    ]);
+  });
+
+  it("refuses classes for a swap property the inner set does not define", async () => {
+    await expect(
+      buildBoth(holding(badgePart({ swapClasses: () => ({ Glyph: "rotate-180" }) })))
+    ).rejects.toThrow("Glyph");
+  });
+});

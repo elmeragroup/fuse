@@ -372,6 +372,26 @@ const SOURCES: readonly RendererSource[] = [
     module: { url: new URL("dropdown-menu-cell.ts", import.meta.url), name: "dropdownMenuOpen" },
   },
   {
+    set: "combobox-item",
+    entry: "dist/combobox.js",
+    module: { url: new URL("combobox-cell.ts", import.meta.url), name: "comboboxItem" },
+  },
+  {
+    set: "combobox-empty",
+    entry: "dist/combobox.js",
+    module: { url: new URL("combobox-cell.ts", import.meta.url), name: "comboboxEmpty" },
+  },
+  {
+    set: "combobox-popup",
+    entry: "dist/combobox.js",
+    module: { url: new URL("combobox-cell.ts", import.meta.url), name: "comboboxPopup" },
+  },
+  {
+    set: "combobox-open",
+    entry: "dist/combobox.js",
+    module: { url: new URL("combobox-cell.ts", import.meta.url), name: "comboboxOpen" },
+  },
+  {
     set: "empty",
     entry: "dist/empty.js",
     load: async () => (await import("./empty-cell.ts")).empty,
