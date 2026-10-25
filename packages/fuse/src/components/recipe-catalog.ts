@@ -12,13 +12,14 @@
  * constants and its `meterToneCell` lookup come along, so the sync picks each Meter cell's tone
  * and icon from the table the component reads. Item's title face comes along with its part
  * recipes, since `Item.Title` renders it as it is, and so does its unclamped description face,
- * which Alert's description renders with Alert's own type and colour. Sidebar's row recipes come
- * along without its panel's classes, which stay in `sidebar.tsx`. The menu families' recipes come
- * along with the shared menu rows and popup faces they compose, so the sync can read a part whole
- * or the face it shares with the other families. Command's list shell comes along from `styles/`,
- * since `Command.List` adds it to the list recipe to pad its rows and publish their corner.
- * InputGroup's root chrome comes along from `styles/field-box.ts`, where it sits beside the field
- * box it shares.
+ * which Alert's description renders with Alert's own type and colour. Sidebar's desktop parts
+ * come along, with the rail widths the Provider sets as `--sidebar-width` and
+ * `--sidebar-width-icon`; its mobile Sheet's classes stay in `sidebar.tsx`. The menu families'
+ * recipes come along with the shared menu rows and popup faces they compose, so the sync can read
+ * a part whole or the face it shares with the other families. Command's list shell comes along
+ * from `styles/`, since `Command.List` adds it to the list recipe to pad its rows and publish their
+ * corner. InputGroup's root chrome comes along from `styles/field-box.ts`, where it sits beside the
+ * field box it shares.
  */
 
 export { accordionVariants } from "./accordion/accordion-variants";
@@ -72,8 +73,34 @@ export { popoverVariants } from "./popover/popover-variants";
 export { radioIconButtonVariants, radioVariants } from "./radio-group/radio-group-variants";
 export { selectContentVariants, selectTriggerVariants } from "./select/select-variants";
 export { separatorClass } from "./separator/separator-class";
-export { sidebarGroupLabelClass, sidebarMenuBadgeClass } from "./sidebar/sidebar-class";
-export { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar/sidebar-variants";
+export {
+  sidebarContentClass,
+  sidebarGroupClass,
+  sidebarGroupContentClass,
+  sidebarGroupLabelClass,
+  sidebarIconClass,
+  sidebarInputClass,
+  sidebarInsetClass,
+  sidebarMenuBadgeClass,
+  sidebarMenuClass,
+  sidebarMenuItemClass,
+  sidebarMenuSkeletonClass,
+  sidebarMenuSkeletonIconClass,
+  sidebarMenuSkeletonTextClass,
+  sidebarMenuSubClass,
+  sidebarMenuSubItemClass,
+  sidebarRailClass,
+  sidebarSectionClass,
+  sidebarSeparatorClass,
+  sidebarTriggerClass,
+  sidebarWrapperClass,
+} from "./sidebar/sidebar-class";
+export {
+  sidebarMenuButtonVariants,
+  sidebarMenuSubButtonVariants,
+  sidebarPanelVariants,
+} from "./sidebar/sidebar-variants";
+export { SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON, SIDEBAR_WIDTH_MOBILE } from "./sidebar/sidebar-width";
 export { skeletonClass } from "./skeleton/skeleton-class";
 export { switchVariants } from "./switch/switch-variants";
 export { textareaClass } from "./textarea/textarea-class";

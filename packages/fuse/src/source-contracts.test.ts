@@ -575,7 +575,8 @@ describe("runtime listeners and layout motion", () => {
       "components/meter/meter-variants.ts",
       // Base UI sizes and places the shared popup through its --popup-* and --positioner-* variables.
       "components/navigation-menu/navigation-menu-variants.ts",
-      "components/sidebar/sidebar.tsx",
+      // The panel's gap and container tween their width as the rail collapses.
+      "components/sidebar/sidebar-variants.ts",
       "styles/panel-height.ts",
     ]);
   });
@@ -942,7 +943,7 @@ describe("state faces", () => {
       // The country trigger adds its hover and press faces only while the field is editable.
       "components/phone-number-field/phone-number-field.tsx": ["active:scale-[0.97]", "hover:bg-muted"],
       // The rail, an aria-hidden resize handle that is never disabled.
-      "components/sidebar/sidebar.tsx": [
+      "components/sidebar/sidebar-class.ts": [
         "hover:after:bg-sidebar-border",
         "hover:group-data-[collapsible=offcanvas]:bg-sidebar",
       ],
