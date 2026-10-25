@@ -955,7 +955,11 @@ export class BoxCascade {
     const taken = [
       ...this.#ancestorPartRules.filter(tagged),
       ...this.#partRules.filter((rule) =>
-        rule.target.kind === "slot" ? rule.target.slot === element.slot : tagged(rule)
+        rule.target.kind === "slot"
+          ? rule.target.slot === element.slot
+          : rule.target.kind === "child-tag"
+            ? rule.target.tag === element.tag
+            : tagged(rule)
       ),
     ];
     takeAll(taken);

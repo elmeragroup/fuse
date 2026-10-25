@@ -259,6 +259,10 @@ type FormulaVariable = {
  *   description is one line of `--label-text` at `leading-snug`.
  * - A menu row's indicator room and its inset compile to one formula, `--row-px` plus 1.5rem, and
  *   the builder binds by code syntax, so one variable, `row-indicator-room`, serves both.
+ * - An Input group addon that holds a button pads its outer side by `--control-px-icon-md` and
+ *   pulls back 4px with a negative margin. The kit folds the margin into the padding, which no class
+ *   spells, so `addon-px-button` binds by the affine value the fold makes, and the button's corner,
+ *   the field corner less the border and that padding, binds by code syntax.
  */
 const FORMULA_VARIABLES = [
   {
@@ -309,12 +313,7 @@ const FORMULA_VARIABLES = [
     reads: "theme",
     formula:
       "clamp(var(--radius) - 1000 * var(--radius-step, 0px), var(--radius-field, var(--radius)), var(--radius) + 1000 * var(--radius-step, 0px))",
-    // CSS resolves clamp(MIN, VAL, MAX) as max(MIN, min(VAL, MAX)).
-    length: (scheme: ResolvedScheme) => {
-      const radius = scheme.tokens.radius.value;
-      const reach = 1000 * scheme.tokens["radius-step"].value;
-      return Math.max(radius - reach, Math.min(scheme.tokens["radius-field"].value, radius + reach));
-    },
+    length: (scheme: ResolvedScheme) => fieldCorner(scheme),
     scopes: ["CORNER_RADIUS"],
     description:
       "The corner of a field box, such as Input or Textarea: radius in internal themes, and radius-field in external ones. Figma variables cannot compute, so the sync writes the result for each theme.",
@@ -402,6 +401,17 @@ const FORMULA_VARIABLES = [
       "The corner inside a radius-xl shell padded with surface-gap-sm, such as a Command list: radius-xl less surface-gap-sm, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
   },
   {
+    name: "radius-inner/field-border-pad-addon-button",
+    reads: "theme and density",
+    // The field corner, then `var(--spacing)` at Tailwind's 0.25rem spacing.
+    formula:
+      "max(0px, clamp(var(--radius) - 1000 * var(--radius-step, 0px), var(--radius-field, var(--radius)), var(--radius) + 1000 * var(--radius-step, 0px)) - 1px - var(--control-px-icon-md) + 0.25rem)",
+    length: (scheme, metric) => Math.max(0, fieldCorner(scheme) - 1 - (metric("control-px-icon-md") - 4)),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner of a button in an Input group addon, such as the caret of a Combobox: the field box corner less its 1px border and addon-px-button, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
+  },
+  {
     name: "empty-pad-desktop",
     reads: "density",
     formula: "calc(2 * var(--surface-pad-lg))",
@@ -440,7 +450,27 @@ const FORMULA_VARIABLES = [
     description:
       "The padding a menu row keeps for its 16px indicator and the 8px gap beside it, row-px plus 24px: the end padding of a Select, Combobox or DropdownMenu checkbox or radio row, and the start padding of an inset DropdownMenu row. Figma variables cannot compute, so the sync writes the result for each density.",
   },
+  {
+    name: "addon-px-button",
+    reads: "density",
+    // `var(--spacing)` at Tailwind's 0.25rem spacing.
+    formula: "calc(var(--control-px-icon-md) - 0.25rem)",
+    length: (metric) => metric("control-px-icon-md") - 4,
+    scopes: ["GAP"],
+    description:
+      "The padding on the outer side of an Input group addon that holds a button, such as the caret of a Combobox: control-px-icon-md less the 4px that the negative margin of the addon takes back. Figma variables cannot compute, so the sync writes the result for each density.",
+  },
 ] as const satisfies readonly FormulaVariable[];
+
+/**
+ * The field box corner a theme resolves `fieldCornerClass`'s clamp to: CSS resolves clamp(MIN, VAL,
+ * MAX) as max(MIN, min(VAL, MAX)).
+ */
+function fieldCorner(scheme: ResolvedScheme): number {
+  const radius = scheme.tokens.radius.value;
+  const reach = 1000 * scheme.tokens["radius-step"].value;
+  return Math.max(radius - reach, Math.min(scheme.tokens["radius-field"].value, radius + reach));
+}
 
 /** The formulas of `FORMULA_VARIABLES` that read what `Reads` names. */
 type FormulaReading<Reads extends FormulaVariable["reads"]> = Extract<

@@ -5,7 +5,7 @@
  * `label-layout.ts` sets its label and `placement.ts` places its parts. `component-spec.ts`
  * assembles a set from the root of each cell.
  */
-import { readFlow, settleFlow, stretchedLayer } from "./box-flow";
+import { orderModified, readFlow, settleFlow, stretchedLayer } from "./box-flow";
 import type { Flow } from "./box-flow";
 import { describeColor, readPaint } from "./box-paint";
 import type { BoxPaint } from "./box-paint";
@@ -66,7 +66,8 @@ import {
   readWithoutLabel,
   spaceBeforeLabel,
 } from "./label-layout";
-import { adjoinsMargin, wrapFrameMargins, wrapInstanceMargins } from "./margin-box";
+import { adjoinsMargin, foldNegativeMargin, wrapFrameMargins, wrapInstanceMargins } from "./margin-box";
+import type { FoldingBox } from "./margin-box";
 import {
   dropIdleOrigin,
   endsBesideLabel,
@@ -246,6 +247,8 @@ export type MapScope = {
    * across clips at its own sides too, as Select's list fills its clipping popup. Absent for a root.
    */
   readonly clipsAround?: true;
+  /** Whether the box is a flex item in a row, where a negative margin across can fold. Absent for a root. */
+  readonly inFlexRow?: true;
 };
 
 /** A box's paddings across, which a part that fills it spans inside. */
@@ -351,7 +354,11 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // Every part cascades before any maps, since an absolute part sits out of the box's flow. The box's
   // flow, `holder.layers`, is the one membership every layout reader below reads: the rooms, the
   // stretch, the label, the display and the placement.
-  const inDom = cascadeParts(box, cascade, scope);
+  const inDom = orderModified(
+    reader,
+    cascadeParts(box, cascade, scope),
+    slots.length + (label === undefined ? 0 : 1)
+  );
   // The parts the markup holds after the label draw after it and the end icons, and so does an
   // absolute part first in the DOM that may end a row beside its label in flow.
   const leading = label !== undefined && end.length === 0 ? leadingAbsolute(inDom) : undefined;
@@ -442,8 +449,10 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       : undefined;
   readWraps(holder, growing);
   const flush = SIDE_PADDINGS.every((property) => evaluateLength(reader.resolved(property) ?? "0px") === 0);
-  const { clipsAround: _parent, ...own } = scope;
-  const partScope: MapScope = clips && flush ? { ...own, clipsAround: true } : own;
+  const { clipsAround: _parent, inFlexRow: _row, ...own } = scope;
+  const clipped: MapScope = clips && flush ? { ...own, clipsAround: true } : own;
+  const partScope: MapScope =
+    layout.flex && layout.direction === "HORIZONTAL" ? { ...clipped, inFlexRow: true } : clipped;
   // A popup that hugs its rows hugs the one that sets its width and fills the others.
   const across = rowsAcross(
     { layout, width: sizing.horizontal, limits },
@@ -538,11 +547,21 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     context.variables
   );
   const sections = bleed.kind === "sections" ? bleed : undefined;
-  const paddingLeft = sections?.paddingLeft ?? number("padding-left", "paddingLeft") ?? ZERO;
+  const folding: FoldingBox = {
+    paints: paint.fill !== undefined || paint.stroke !== undefined || paint.shadows.length > 0,
+    hugs: sizing.horizontal.kind === "hug",
+    inFlexRow: scope.inFlexRow === true,
+  };
+  const paddingLeft =
+    sections?.paddingLeft ??
+    foldNegativeMargin(reader, "left", folding, context.variables) ??
+    number("padding-left", "paddingLeft") ??
+    ZERO;
   const paddingRight =
     sections?.paddingRight ??
     (endInFlow === undefined
-      ? number("padding-right", "paddingRight")
+      ? (foldNegativeMargin(reader, "right", folding, context.variables) ??
+        number("padding-right", "paddingRight"))
       : padToOffset(reader, endInFlow, context.variables)) ??
     ZERO;
   const placement = placeParts(
@@ -679,7 +698,11 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
         cascade: cascade.part(
           child.classesFor(cell),
           name,
-          { key: child.key, slot: child.slot, tag: child.element?.tag },
+          {
+            key: child.key,
+            slot: child.slot,
+            tag: child.slot === undefined ? child.element?.tag : child.tag,
+          },
           {
             inline: child.styleFor?.(cell) ?? [],
             defaults: child.elementDefaults ?? [],

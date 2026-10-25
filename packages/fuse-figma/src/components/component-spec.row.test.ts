@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import { FILL } from "../../test/built-kit";
-import { buildFixture, chip, dot, frameOf } from "../../test/fixture-sets";
+import { buildFixture, chip, dot, frameOf, ICON } from "../../test/fixture-sets";
 import { heightBounds } from "./box-sizing";
 import type { PartDefinition } from "./component-spec";
 import type { CoverageRow } from "./coverage";
@@ -367,5 +367,133 @@ describe("a row that wraps", () => {
   it("leaves `flex-wrap` unmapped on a row with no layer that grows", async () => {
     const { coverage } = await buildFixture(chip("flex flex-wrap w-[100px]", { parts: [RING] }));
     expect(notesOf(coverage, "flex-wrap").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+  });
+});
+
+// Oracle: CSS Flexbox 1 §5.4. A flex box lays its items out in order-modified document order: by
+// `order`, lowest first, with document order breaking ties, as Command's search addon follows its
+// input in the DOM and draws first through `order-first`. Figma draws its layers in list order, so a
+// row whose parts carry `order` lists them so. Outside a flex box `order` places nothing, and beside a
+// label or an icon, which take no `order` here, the builder leaves it unread.
+describe("a part's `order` in its row", () => {
+  const RING = (classes: string) => ({ ...dot(classes), key: "ring", slot: "chip-ring" });
+  const keysOf = (layers: readonly { readonly key: string }[] | undefined) =>
+    layers?.map((layer) => layer.key);
+
+  it("lists the parts in order-modified document order, and reads each `order` it sorts by", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex", { parts: [dot("size-[4px]"), RING("size-[8px] order-first")] })
+    );
+    expect(keysOf(variant?.root.children)).toEqual(["ring", "dot"]);
+    expect(notesOf(coverage, "order-first")).toEqual([
+      ["chip-ring", "literal", "the layer sits first in the row's order-modified document order"],
+    ]);
+  });
+
+  it("keeps document order among parts of equal `order`", async () => {
+    const { variant } = await buildFixture(
+      chip("flex", {
+        parts: [
+          dot("size-[4px] order-last"),
+          RING("size-[8px] order-last"),
+          { ...dot("size-[2px]"), key: "pin", slot: "chip-pin" },
+        ],
+      })
+    );
+    expect(keysOf(variant?.root.children)).toEqual(["pin", "dot", "ring"]);
+  });
+
+  it.each([
+    ["outside a flex box", chip("block", { parts: [dot("size-[4px]"), RING("size-[8px] order-first")] })],
+    [
+      "beside the box's own icon",
+      chip("flex text-[rgb(0_0_0)]", {
+        iconsFor: () => [{ ...ICON, classes: "size-4" }],
+        parts: [RING("size-[8px] order-first")],
+      }),
+    ],
+  ])("keeps document order and leaves `order` unmapped %s", async (_name, definition) => {
+    const { coverage } = await buildFixture(definition);
+    expect(notesOf(coverage, "order-first").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+  });
+});
+
+// Oracle: Tailwind compiles `[&>input]:pr-[6px]` to `.… > input`, which matches an `<input>` that is
+// a direct child of the box and nothing deeper, as Input group's root pads its own control beside a
+// trailing addon. The builder knows a part's tag only where the definition declares it.
+describe("a class that styles a direct `<input>` child through `[&>input]:`", () => {
+  const UNTAGGED = { ...dot("h-[8px] w-[40px]"), key: "control", slot: "chip-control" };
+  const CONTROL = { ...UNTAGGED, tag: "input" };
+
+  it("styles a direct child part that declares the tag", async () => {
+    const { variant, coverage } = await buildFixture(chip("flex [&>input]:pr-[6px]", { parts: [CONTROL] }));
+    const control = frameOf(variant?.root);
+    expect(control?.paddingRight).toEqual({ kind: "literal", value: 6 });
+    expect(notesOf(coverage, "[&>input]:pr-[6px]").map(([part, outcome]) => [part, outcome])).toEqual([
+      ["chip", "literal"],
+    ]);
+  });
+
+  it("reaches no `<input>` below a direct child, nor a part that declares no tag", async () => {
+    const nested = await buildFixture(
+      chip("flex [&>input]:pr-[6px]", { parts: [{ ...dot("flex"), parts: [CONTROL] }] })
+    );
+    const untagged = await buildFixture(chip("flex [&>input]:pr-[6px]", { parts: [UNTAGGED] }));
+    for (const { coverage } of [nested, untagged]) {
+      expect(notesOf(coverage, "[&>input]:pr-[6px]")).toEqual([
+        ["chip", "unmapped", "the definition draws no direct `<input>` child of chip"],
+      ]);
+    }
+  });
+});
+
+// Oracle: CSS Flexbox 1 §9.2 and CSS 2.1 §8.3. A flex item's outer size along the row is its margin
+// box, so a negative end margin of 4px takes 4px from the room it uses, and the next item, or the
+// row's end, sits 4px nearer its content. A box that paints nothing shows only its content, so taking
+// the 4px from its padding on that side instead, with its width hugging, draws the same pixels, as
+// Input group's trailing addon pulls its button toward the field's edge with `-mr-1`. Figma has no
+// negative padding, so the fold holds only where the padding less the margin is 0 or more in every
+// mode, and it binds the synced variable whose formula is that difference.
+describe("a negative margin across a row on a box that paints nothing", () => {
+  const variablesWith = (minimum: number) =>
+    makeVariableIndex([
+      { ref: { collection: "Fuse density", name: "p" }, webSyntax: "var(--p)", minimum, maximum: 12 },
+      {
+        ref: { collection: "Fuse density", name: "p-tight" },
+        webSyntax: "calc(var(--p) - 0.25rem)",
+        minimum: minimum - 4,
+        maximum: 8,
+      },
+    ]);
+  const ADDON = "flex h-[8px] pr-(--p) -mr-1";
+
+  it("folds into the padding on its side, which binds the variable of the difference", async () => {
+    const { variant, coverage } = await buildFixture(chip("flex w-[100px]", { parts: [dot(ADDON)] }), {
+      variables: variablesWith(8),
+    });
+    const addon = frameOf(variant?.root);
+    expect([addon?.kind, addon?.paddingRight]).toEqual([
+      "frame",
+      { kind: "variable", variable: { collection: "Fuse density", name: "p-tight" } },
+    ]);
+    expect(notesOf(coverage, "-mr-1")).toEqual([
+      [
+        "chip-dot",
+        "bound",
+        "Fuse density / p-tight, the padding on its side less this margin, since the box paints nothing and its width hugs",
+      ],
+    ]);
+    expect(notesOf(coverage, "pr-(--p)")).toEqual([
+      ["chip-dot", "bound", "Fuse density / p-tight, this padding less the negative margin on its side"],
+    ]);
+  });
+
+  it.each([
+    ["a box that paints", chip("flex w-[100px]", { parts: [dot(`${ADDON} bg-[rgb(0_0_0)]`)] }), 8],
+    ["a padding the margin takes below 0 in a mode", chip("flex w-[100px]", { parts: [dot(ADDON)] }), 2],
+    ["a box in a column", chip("flex flex-col w-[100px]", { parts: [dot(ADDON)] }), 8],
+  ])("leaves the margin unmapped on %s", async (_name, definition, minimum) => {
+    const { coverage } = await buildFixture(definition, { variables: variablesWith(minimum) });
+    expect(notesOf(coverage, "-mr-1").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
   });
 });

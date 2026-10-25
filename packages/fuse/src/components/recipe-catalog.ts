@@ -17,6 +17,8 @@
  * along with the shared menu rows and popup faces they compose, so the sync can read a part whole
  * or the face it shares with the other families. Command's list shell comes along from `styles/`,
  * since `Command.List` adds it to the list recipe to pad its rows and publish their corner.
+ * InputGroup's root chrome comes along from `styles/field-box.ts`, where it sits beside the field
+ * box it shares.
  */
 
 export { accordionVariants } from "./accordion/accordion-variants";
@@ -38,6 +40,8 @@ export { dropdownMenuVariants } from "./dropdown-menu/dropdown-menu-variants";
 export { emptyMediaVariants, emptyVariants } from "./empty/empty-variants";
 export { fieldVariants } from "./field/field-variants";
 export { inputClass } from "./input/input-class";
+export { inputGroupInputControlClass } from "./input-group/input-group-class";
+export { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group/input-group-variants";
 export { itemActionsClass, itemContentClass, itemDescriptionClass, itemHeaderClass } from "./item/item-class";
 export { ITEM_DESCRIPTION_CLASSES } from "./item/item-description-classes";
 export { itemFooterVariants } from "./item/item-footer-variants";
@@ -77,6 +81,7 @@ export { toggleVariants } from "./toggle/toggle-variants";
 export { cellVariants } from "../styles/calendar";
 export { cn } from "../styles/cn";
 export { commandListShellClass } from "../styles/inner-corner/command";
+export { inputGroupRootClass } from "../styles/field-box";
 export { linkVariants } from "../styles/link";
 export { racDisabledStateFaceClass } from "../styles/state-face";
 export { focusRing } from "../styles/utils";

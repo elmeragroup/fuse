@@ -224,3 +224,75 @@ export function dropZeroMargins(style: LayerStyle): (property: string) => boolea
   }
   return zero;
 }
+
+/** What a box is to the fold of its negative margins: what it paints, its width and its parent. */
+export type FoldingBox = {
+  /** Whether the box paints a fill, a stroke or a shadow. */
+  readonly paints: boolean;
+  /** Whether the box's width hugs what it holds. */
+  readonly hugs: boolean;
+  /** Whether the box is a flex item in a row. */
+  readonly inFlexRow: boolean;
+};
+
+/**
+ * Fold a negative margin across a row into the padding on its side, where the box paints nothing.
+ * A flex item's outer size along the row is its margin box (CSS Flexbox 1 §9.2, CSS 2.1 §8.3), so a
+ * negative end margin of 4px takes 4px from the room it uses and pulls the next item, or the row's
+ * end, 4px nearer its content. A box that paints nothing and hugs its width shows only its content,
+ * which sits in the same place when the 4px come off its padding instead, as Input group's trailing
+ * addon pulls its button toward the field's edge with `-mr-1`. Figma has no negative padding, so the
+ * fold holds only where the padding less the margin is 0 or more in every mode, and where it reads a
+ * variable, only where a synced variable's formula is that difference.
+ *
+ * @param style - The box's style.
+ * @param side - The side of the margin and the padding, `left` or `right`.
+ * @param box - What the box paints, whether it hugs, and whether it sits in a row.
+ * @param variables - The synced variables the folded padding can bind.
+ * @returns The padding on that side, with both declarations read, or undefined where nothing folds.
+ */
+export function foldNegativeMargin(
+  style: LayerStyle,
+  side: "left" | "right",
+  box: FoldingBox,
+  variables: VariableIndex
+): NumberSpec | undefined {
+  const marginProperty = side === "left" ? "margin-left" : "margin-right";
+  const paddingProperty = `padding-${side}`;
+  const margin = evaluateLength(style.resolved(marginProperty) ?? "");
+  const padding = style.resolved(paddingProperty) ?? "0px";
+  if (margin === undefined || margin >= 0 || box.paints || !box.hugs || !box.inFlexRow) {
+    return undefined;
+  }
+  const held = readNumber(padding, variables);
+  const least = held?.kind === "literal" ? held.value : held && variables.minimum(held.variable);
+  if (held === undefined || least === undefined || least + margin < 0) {
+    return undefined;
+  }
+  const ref = held.kind === "literal" ? undefined : variables.lookupAffine(`calc(${padding} + ${margin}px)`);
+  const folded: NumberSpec | undefined =
+    held.kind === "literal"
+      ? { kind: "literal", value: held.value + margin }
+      : ref && { kind: "variable", variable: ref };
+  if (folded === undefined) {
+    return undefined;
+  }
+  const field = PADDING_OF[marginProperty];
+  const { outcome, detail } = describeNumber(folded);
+  style.read(
+    paddingProperty,
+    () => folded,
+    () => ({ outcome, detail: `${detail}, this padding less the negative margin on its side` }),
+    style.feed(field)
+  );
+  style.read(
+    marginProperty,
+    () => folded,
+    () => ({
+      outcome,
+      detail: `${detail}, the padding on its side less this margin, since the box paints nothing and its width hugs`,
+    }),
+    style.feed(field)
+  );
+  return folded;
+}

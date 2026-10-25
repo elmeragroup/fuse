@@ -170,6 +170,8 @@ function untakenDetail(target: PartTarget, part: string): string {
       return `the definition draws no part with \`data-slot=${target.slot}\` below ${part}`;
     case "tag":
       return `the definition draws no \`<${target.tag}>\` part below ${part}`;
+    case "child-tag":
+      return `the definition draws no direct \`<${target.tag}>\` child of ${part}`;
     case "label":
       return `the definition holds no label in a \`<${target.tag}>\` that is the last child of ${part}`;
   }

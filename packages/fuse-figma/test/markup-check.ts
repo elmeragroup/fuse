@@ -50,7 +50,9 @@ import type { MarkupIcon, MarkupLabel } from "./markup-tree.ts";
 import {
   ATTRIBUTE_VARIANTS,
   NAMED_ATTRIBUTE_VARIANTS,
+  GROUP_HAS_VARIANTS,
   GROUP_VARIANTS,
+  HAS_VARIANTS,
   PARENT_VARIANTS,
   PEER_VARIANTS,
   REACT_ARIA_HOVER,
@@ -319,8 +321,16 @@ function checkInnerCell(
   }
   for (const variant of part.facts?.keys() ?? []) {
     const carries = ATTRIBUTE_VARIANTS.get(variant) ?? NAMED_ATTRIBUTE_VARIANTS.get(variant);
-    expect(carries, `${where}: an attribute for the in-place fact ${variant}`).toBeDefined();
-    expect(holds(variant), `${where}: ${variant} in place`).toBe(carries?.(element) === true);
+    const has = HAS_VARIANTS.get(variant);
+    const groupHas = GROUP_HAS_VARIANTS.get(variant);
+    const markup =
+      carries?.(element) ??
+      has?.(elements, index) ??
+      (groupHas === undefined
+        ? undefined
+        : ancestorIndexes(elements, index).some((ancestor) => groupHas(elements, ancestor)));
+    expect(markup, `${where}: the markup for the in-place fact ${variant}`).toBeDefined();
+    expect(holds(variant), `${where}: ${variant} in place`).toBe(markup === true);
   }
 }
 
@@ -516,6 +526,19 @@ function checkRendering(
     }
     for (const [variant, holds] of PARENT_VARIANTS) {
       expect(holdsIn(variant), `${key}: ${variant}`).toBe(holds(elements, measured));
+    }
+    // A `has-[>…]` variant holds exactly where the element that names it holds the child it reads, as
+    // an Input group's root holds its own disabled control, and its addon a button.
+    for (const [variant, has] of HAS_VARIANTS) {
+      const namers = [
+        ...(rootVariants.has(variant) ? [measured] : []),
+        ...elementsNaming(elements, measured, variant, instances),
+      ];
+      for (const index of namers) {
+        expect(holdsIn(variant), `${key}: ${variant} on ${elements[index]?.name ?? ""}`).toBe(
+          has(elements, index)
+        );
+      }
     }
     // An attribute variant an element at or below the root, or around it as an ancestor the definition
     // names, names on itself holds exactly where that element carries the attribute, as a Navigation

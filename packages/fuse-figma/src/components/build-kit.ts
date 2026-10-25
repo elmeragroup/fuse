@@ -12,8 +12,8 @@ import type { CollectionSpec, VariableSpec } from "../variable-set";
 import { buildSetsInOrder, definitionClasses, variantKey } from "./component-spec";
 import type { BuiltComponent, OuterDeclaration } from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
-import { makeVariableIndex, readColor } from "./css-values";
-import type { VariableIndex } from "./css-values";
+import { makeVariableIndex, pinnedIndex, readColor } from "./css-values";
+import type { ModeView, VariableIndex } from "./css-values";
 import { fuseIcons, ICON_SIZE } from "./icon-library";
 import { KIT } from "./kit-registry";
 import type { KitPage } from "./kit-registry";
@@ -68,8 +68,15 @@ const PAGE: readonly OuterDeclaration[] = [
   { className: "body font-sans", property: "font-family", value: "var(--font-sans)" },
 ];
 
-/** The variable set the kit binds, and the index its CSS values resolve through. */
-type KitVariables = { readonly collections: readonly CollectionSpec[]; readonly variables: VariableIndex };
+/**
+ * The variable set the kit binds, the index its CSS values resolve through, and each mode of a
+ * collection with more than one, as the index resolves in it.
+ */
+type KitVariables = {
+  readonly collections: readonly CollectionSpec[];
+  readonly variables: VariableIndex;
+  readonly modes: readonly ModeView[];
+};
 
 /** A built component set, placed on its page. */
 export type KitComponentSet = Omit<BuiltComponent, "componentSet"> & {
@@ -100,10 +107,46 @@ function kitVariables(): KitVariables {
       )
     )
   );
-  return { collections, variables };
+  return { collections, variables, modes: modeViews(collections, variables, minimumOf, maximumOf) };
 }
 
-async function buildSets(variables: VariableIndex): Promise<readonly KitComponentSet[]> {
+/**
+ * Each mode of a collection with more than one, named `Collection / Mode`: the collection's
+ * variables hold that mode's value, or the bounds of the variable an alias there names, and every
+ * other variable keeps its bounds across all modes.
+ */
+function modeViews(
+  collections: readonly CollectionSpec[],
+  variables: VariableIndex,
+  minimumOf: (collection: string, name: string) => number | undefined,
+  maximumOf: (collection: string, name: string) => number | undefined
+): readonly ModeView[] {
+  return collections
+    .filter((collection) => collection.modes.length > 1)
+    .flatMap((collection) => {
+      const specs = new Map(collection.variables.map((variable) => [variable.name, variable]));
+      return collection.modes.map((mode) => ({
+        name: `${collection.name} / ${mode}`,
+        variables: pinnedIndex(variables, (ref) => {
+          const value =
+            ref.collection === collection.name ? specs.get(ref.name)?.values.get(mode) : undefined;
+          switch (value?._tag) {
+            case "Float":
+              return { minimum: value.value, maximum: value.value };
+            case "Alias": {
+              const minimum = minimumOf(value.target.collection, value.target.variable);
+              const maximum = maximumOf(value.target.collection, value.target.variable);
+              return minimum === undefined || maximum === undefined ? undefined : { minimum, maximum };
+            }
+            default:
+              return undefined;
+          }
+        }),
+      }));
+    });
+}
+
+async function buildSets({ variables, modes }: KitVariables): Promise<readonly KitComponentSet[]> {
   const classes = new Set(KIT.flatMap(({ definition }) => definitionClasses(definition)));
   const compiled = await compileUtilities([...classes]);
   // The base layer's border color sets the color on each element, so a part does not inherit it
@@ -112,7 +155,7 @@ async function buildSets(variables: VariableIndex): Promise<readonly KitComponen
   const base: readonly OuterDeclaration[] = [
     { className: "fuse.css base layer", ...baseBorderColor(compiled) },
   ];
-  return buildSetsInOrder(KIT, { compiled, variables, page: PAGE, base }).map(([{ page }, set]) => ({
+  return buildSetsInOrder(KIT, { compiled, variables, page: PAGE, base, modes }).map(([{ page }, set]) => ({
     ...set,
     componentSet: { ...set.componentSet, page: pageSpec(page).key },
   }));
@@ -126,7 +169,7 @@ async function buildSets(variables: VariableIndex): Promise<readonly KitComponen
  * @throws When the variable set does not build.
  */
 export async function buildComponentSets(): Promise<readonly KitComponentSet[]> {
-  return buildSets(kitVariables().variables);
+  return buildSets(kitVariables());
 }
 
 /**
@@ -140,8 +183,9 @@ export async function buildKit(): Promise<{
   readonly spec: KitSpec;
   readonly coverage: readonly CoverageRow[];
 }> {
-  const { collections, variables } = kitVariables();
-  const built = await buildSets(variables);
+  const kitVariableSet = kitVariables();
+  const { collections, variables } = kitVariableSet;
+  const built = await buildSets(kitVariableSet);
   const glyphColor = readColor("var(--foreground)", variables);
   if (glyphColor === undefined) {
     throw new Error("the variable set has no foreground for the icon glyphs");

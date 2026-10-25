@@ -6,6 +6,7 @@
  */
 import { buildComponentSet, buildSetsInOrder, definitionClasses } from "../src/components/component-spec.ts";
 import type {
+  BuildContext,
   BuiltComponent,
   ComponentDefinition,
   IconSlot,
@@ -13,7 +14,7 @@ import type {
   PartDefinition,
 } from "../src/components/component-spec.ts";
 import { makeVariableIndex } from "../src/components/css-values.ts";
-import type { VariableIndex } from "../src/components/css-values.ts";
+import type { ModeView, VariableIndex } from "../src/components/css-values.ts";
 import type { BoxSpec, FrameLayerSpec, VariantSpec } from "../src/components/kit-spec.ts";
 import { compileUtilities } from "../src/components/utility-css.ts";
 
@@ -92,12 +93,31 @@ export type FixtureContext = {
   readonly base?: readonly OuterDeclaration[];
   /** The host page's inherited declarations, below the base layer's. */
   readonly page?: readonly OuterDeclaration[];
+  /** The modes the build measures geometry in. */
+  readonly modes?: readonly ModeView[];
 };
 
 /** A fixture's built set, with the variant of its first cell. */
 export type BuiltFixture = BuiltComponent & {
   readonly variant: VariantSpec | undefined;
 };
+
+/** The build context of fixtures: their classes compiled, and the context's variables, page and modes. */
+async function buildContext(
+  definitions: readonly ComponentDefinition[],
+  context: FixtureContext
+): Promise<BuildContext> {
+  const built: BuildContext = {
+    compiled: await compileUtilities([
+      ...definitions.flatMap((definition) => definitionClasses(definition)),
+      ...(context.registered ?? []),
+    ]),
+    variables: context.variables ?? makeVariableIndex([]),
+    page: context.page ?? [],
+    base: context.base ?? [],
+  };
+  return context.modes === undefined ? built : { ...built, modes: context.modes };
+}
 
 /**
  * Build a fixture's component set, compiling every class the definition uses and the
@@ -111,12 +131,7 @@ export async function buildFixture(
   definition: ComponentDefinition,
   context: FixtureContext = {}
 ): Promise<BuiltFixture> {
-  const built = buildComponentSet(definition, {
-    compiled: await compileUtilities([...definitionClasses(definition), ...(context.registered ?? [])]),
-    variables: context.variables ?? makeVariableIndex([]),
-    page: context.page ?? [],
-    base: context.base ?? [],
-  });
+  const built = buildComponentSet(definition, await buildContext([definition], context));
   return { ...built, variant: built.componentSet.variants[0] };
 }
 
@@ -133,18 +148,9 @@ export async function buildFixtures(
   definitions: readonly ComponentDefinition[],
   context: FixtureContext = {}
 ): Promise<readonly BuiltComponent[]> {
-  const compiled = await compileUtilities([
-    ...definitions.flatMap((definition) => definitionClasses(definition)),
-    ...(context.registered ?? []),
-  ]);
   const built = buildSetsInOrder(
     definitions.map((definition) => ({ definition })),
-    {
-      compiled,
-      variables: context.variables ?? makeVariableIndex([]),
-      page: context.page ?? [],
-      base: context.base ?? [],
-    }
+    await buildContext(definitions, context)
   );
   return built.map(([, set]) => set);
 }

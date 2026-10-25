@@ -93,6 +93,9 @@ type Found = {
  *   length draws another way where that length changes.
  * - A text the variant fills across, a direct child of a root the instance hugs, draws at its own
  *   width, as the text built in place hugs (PH2).
+ * - The spacing of a box with fewer than two layers in its auto layout in both trees draws nothing,
+ *   since a gap sits only between adjacent items (CSS Box Alignment 3 §8). A layer a BOOLEAN hides
+ *   counts, since a designer can show it.
  * - Every other field, the kinds and keys of a box's layers among them, stays unmapped where it
  *   differs, and the diff compares no layer of a box whose layers differ.
  *
@@ -190,10 +193,20 @@ function diffBox(
       case "children":
         diffLayers(found, path, inPlace.children, variant.children);
         break;
+      case "itemSpacing":
+        if (flowCount(inPlace) > 1 || flowCount(variant) > 1) {
+          diffField(found, path, field, built.get(field), held.get(field));
+        }
+        break;
       default:
         diffField(found, path, field, built.get(field), held.get(field));
     }
   }
+}
+
+/** How many of a box's layers its auto layout places, hidden ones included. */
+function flowCount(box: BoxSpec): number {
+  return box.children.filter((layer) => layer.kind !== "frame" || layer.absolute === undefined).length;
 }
 
 /** Note a field no instance field carries where its two values differ. */

@@ -34,6 +34,7 @@ import {
 import { DROPDOWN_MENU_OPEN, DROPDOWN_MENU_POPUP, DROPDOWN_MENU_SUB_CONTENT } from "./dropdown-popup-kit";
 import { EMPTY } from "./empty-kit";
 import { FIELD_DESCRIPTION, FIELD_ERROR, FIELD_LEGEND, FIELD_TITLE } from "./field-text-kit";
+import { INPUT_GROUP } from "./input-group-kit";
 import { INPUT } from "./input-kit";
 import { ITEM, ITEM_LINK } from "./item-kit";
 import { KBD, KBD_GROUP } from "./kbd-kit";
@@ -112,7 +113,7 @@ const LOADER_PAGE: KitPage = { slug: "loader", name: "Loader" };
  */
 const FIELD_PAGE: KitPage = { slug: "field", name: "Field" };
 
-/** The page Input sits on alone. */
+/** The page of Input and the Input group that Combobox and Command render. */
 const INPUT_PAGE: KitPage = { slug: "input", name: "Input" };
 
 /** The page Textarea sits on alone. */
@@ -267,6 +268,7 @@ export const KIT: readonly KitEntry[] = [
   { definition: FIELD_LEGEND, page: FIELD_PAGE, previewCells: matrixCells(FIELD_LEGEND.axes) },
   { definition: FIELD_TITLE, page: FIELD_PAGE, previewCells: matrixCells(FIELD_TITLE.axes) },
   { definition: INPUT, page: INPUT_PAGE, previewCells: matrixCells(INPUT.axes) },
+  { definition: INPUT_GROUP, page: INPUT_PAGE, previewCells: matrixCells(INPUT_GROUP.axes) },
   { definition: TEXTAREA, page: TEXTAREA_PAGE, previewCells: matrixCells(TEXTAREA.axes) },
   { definition: AVATAR, page: AVATAR_PAGE, previewCells: matrixCells(AVATAR.axes) },
   { definition: METER, page: METER_PAGE, previewCells: matrixCells(METER.axes) },

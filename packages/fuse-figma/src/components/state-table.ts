@@ -22,6 +22,8 @@ import { axisValues } from "./kit-spec";
  *   parts and its icons, and theirs.
  * - `element`: the class styles the box's child parts that are elements of one tag, as `[&_img]:`
  *   styles the `<img>` a consumer puts in Item's media.
+ * - `child-element`: the class styles the box's direct child parts that are elements of one tag, as
+ *   `[&>input]:` styles the `<input>` Input group holds as its control.
  * - `label-element`: the class styles the box's last child where it is an element of one tag, as
  *   `[&>span:last-child]:` styles the `<span>` a Sidebar row holds its label in.
  * - `specificity`: the variant tests nothing of the cell and only changes the class's specificity,
@@ -38,6 +40,7 @@ export type VariantMeaning =
   | { readonly kind: "children" }
   | { readonly kind: "descendants" }
   | { readonly kind: "element"; readonly tag: string }
+  | { readonly kind: "child-element"; readonly tag: string }
   | { readonly kind: "label-element"; readonly tag: string }
   | { readonly kind: "specificity" }
   | { readonly kind: "omitted" }
@@ -104,6 +107,7 @@ const CHILD_SELECTORS = new Map<string, (slot: IconSlot) => boolean>([
   // `[class*='size-']` matches a class attribute that holds `size-` anywhere in it.
   ["[&_svg:not([class*='size-'])]", (slot) => !(slot.classes ?? "").includes("size-")],
   ["[&>svg]", (slot) => slot.direct],
+  ["[&>svg:not([class*='size-'])]", (slot) => slot.direct && !(slot.classes ?? "").includes("size-")],
   ["[&>svg:not([data-icon=inline-end])]", (slot) => slot.direct && slot.dataIcon !== "inline-end"],
 ]);
 
@@ -122,6 +126,12 @@ const DESCENDANTS = "**";
  * through the parts between, as a child selector reaches an icon below them.
  */
 const ELEMENT_SELECTORS = new Map([["[&_img]", "img"]]);
+
+/**
+ * The child selectors that reach a box's direct child parts by their element's tag, as `[&>input]:`
+ * compiles to `.… > input`. Only a part whose definition declares its tag takes one.
+ */
+const CHILD_ELEMENT_SELECTORS = new Map([["[&>input]", "input"]]);
 
 /**
  * The child selectors that reach the element a box holds its label in, by that element's tag:
@@ -182,6 +192,7 @@ const FIXED_VARIANTS = new Set([
   ...ICON_EDGES.keys(),
   ...CHILD_SELECTORS.keys(),
   ...ELEMENT_SELECTORS.keys(),
+  ...CHILD_ELEMENT_SELECTORS.keys(),
   ...LABEL_ELEMENT_SELECTORS.keys(),
   ...SPECIFICITY_ONLY,
   ...SHARED_OMISSIONS,
@@ -271,6 +282,10 @@ export function makeStateTable(
     if (tag !== undefined) {
       return { kind: "element", tag };
     }
+    const childTag = CHILD_ELEMENT_SELECTORS.get(variant);
+    if (childTag !== undefined) {
+      return { kind: "child-element", tag: childTag };
+    }
     const labelTag = LABEL_ELEMENT_SELECTORS.get(variant);
     if (labelTag !== undefined) {
       return { kind: "label-element", tag: labelTag };
@@ -354,6 +369,7 @@ export function withInPlaceFacts(
 export type PartTarget =
   | { readonly kind: "slot"; readonly slot: string }
   | { readonly kind: "tag"; readonly tag: string }
+  | { readonly kind: "child-tag"; readonly tag: string }
   | { readonly kind: "label"; readonly tag: string };
 
 /** What a class's variants say about it in one cell. */
@@ -459,6 +475,13 @@ export function readVariants(variants: readonly string[], meaningOf: StateTable,
       target = { kind: "tag", tag: meaning.tag };
       continue;
     }
+    if (meaning.kind === "child-element") {
+      if (selects !== undefined) {
+        return skip(PAST_CHILD_ELEMENT);
+      }
+      target = { kind: "child-tag", tag: meaning.tag };
+      continue;
+    }
     if (meaning.kind === "label-element") {
       if (selects !== undefined) {
         return skip(PAST_CHILD_ELEMENT);
@@ -495,6 +518,7 @@ function skippedNote(
         | "children"
         | "descendants"
         | "element"
+        | "child-element"
         | "label-element"
         | "specificity";
     }

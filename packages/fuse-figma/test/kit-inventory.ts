@@ -112,7 +112,15 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     ],
   },
   // Placeholder and value in 5 states.
-  { slug: "input", name: "Input", sets: [{ key: "input", name: "Input", variants: 10, previewed: 10 }] },
+  {
+    slug: "input",
+    name: "Input",
+    sets: [
+      { key: "input", name: "Input", variants: 10, previewed: 10 },
+      // Combobox's caret and clear forms and Command's search form, in 4 states.
+      { key: "input-group", name: "Input group", variants: 12, previewed: 12 },
+    ],
+  },
   // Placeholder and value in 5 states.
   {
     slug: "textarea",

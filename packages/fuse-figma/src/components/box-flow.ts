@@ -476,3 +476,57 @@ function settleSelfAlignment(
   );
   return new Set(loose.map(({ key }) => key));
 }
+
+/** The `display` values whose box lays its children out as flex items, which `order` places. */
+const FLEX_DISPLAYS: ReadonlySet<string> = new Set(["flex", "inline-flex"]);
+
+/** A position in a list as a word, from 0: first, second, third, then 4th and on. */
+function ordinal(place: number): string {
+  return ["first", "second", "third"][place] ?? `${place + 1}th`;
+}
+
+/**
+ * Lay a flex box's parts out in order-modified document order (CSS Flexbox 1 §5.4): by `order`,
+ * lowest first, with document order breaking ties, as Command's search addon follows its input in
+ * the DOM and draws first through `order-first`. Figma draws layers in list order, so the parts take
+ * that order, and each `order` reads as the place it gives. Outside a flex box, beside the box's own
+ * icons or label, or with an `order` that is no integer, the parts keep document order and `order`
+ * stays unread.
+ *
+ * @param box - The box's style.
+ * @param parts - The box's parts, in document order.
+ * @param ownLayers - How many icons and labels the box holds itself, which take no `order`.
+ * @returns The parts in the order the box lays them out.
+ */
+export function orderModified<Part extends { readonly cascade: { readonly style: LayerStyle } }>(
+  box: LayerStyle,
+  parts: readonly Part[],
+  ownLayers: number
+): readonly Part[] {
+  const orders = parts.map((part) => part.cascade.style.resolved("order"));
+  const values = orders.map((order) => (order === undefined ? 0 : Number(normalizeCss(order))));
+  if (
+    !FLEX_DISPLAYS.has(normalizeCss(box.resolved("display") ?? "")) ||
+    ownLayers > 0 ||
+    orders.every((order) => order === undefined) ||
+    !values.every(Number.isInteger)
+  ) {
+    return parts;
+  }
+  const flow = normalizeCss(box.resolved("flex-direction") ?? "").startsWith("column") ? "column" : "row";
+  const sorted = parts
+    .map((part, index) => ({ part, index, value: values[index] ?? 0 }))
+    .toSorted((one, other) => one.value - other.value || one.index - other.index);
+  sorted.forEach(({ part }, place) =>
+    part.cascade.style.read(
+      "order",
+      (value) => value,
+      () => ({
+        outcome: "literal",
+        detail: `the layer sits ${ordinal(place)} in the ${flow}'s order-modified document order`,
+      }),
+      []
+    )
+  );
+  return sorted.map(({ part }) => part);
+}

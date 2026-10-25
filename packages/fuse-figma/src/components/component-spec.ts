@@ -8,8 +8,12 @@ import { mapBox, NO_VALUES, partName } from "./box-mapping";
 import type { MapScope } from "./box-mapping";
 import { rootRoom } from "./box-sizing";
 import { SetCascade, splitClasses } from "./cascade";
+import type { LayerStyle } from "./cascade";
+import { clippedShadows } from "./clipped-shadows";
+import type { ClippedShadow } from "./clipped-shadows";
 import type { CoverageRow } from "./coverage";
-import type { VariableIndex } from "./css-values";
+import { normalizeCss } from "./css-values";
+import type { ModeView, VariableIndex } from "./css-values";
 import { allPartsOf, framePartsOf, instancePartsOf, partsOf, renderedSlots } from "./definition-parts";
 import { checkInstanceOrder, InstanceParts } from "./instance-parts";
 import type { InnerSet } from "./instance-parts";
@@ -19,6 +23,8 @@ import type {
   BooleanPropertySpec,
   ComponentRootSpec,
   ComponentSetSpec,
+  InstanceLayerSpec,
+  ShadowSpec,
   SwapPropertySpec,
   TextPropertySpec,
   VariantSpec,
@@ -299,6 +305,11 @@ export type PartDefinition = BoxDefinition & {
         readonly slot: string;
         /** A part its `data-slot` names needs no selector. */
         readonly element?: never;
+        /**
+         * The part's element's tag, such as `input`, which a direct-child selector such as
+         * `[&>input]:` reaches it by. Undefined where no class reaches the part by its tag.
+         */
+        readonly tag?: string;
       }
     | {
         /** No `data-slot`, as on Radio's dot, so the layer takes the part's key as its name. */
@@ -532,6 +543,11 @@ export type BuildContext = {
    * recipe class, since any utility beats the base layer. A root that does not read one drops it.
    */
   readonly base: readonly OuterDeclaration[];
+  /**
+   * Each mode of the synced collections, with the variables as it resolves them, which the build
+   * measures a layer's geometry in where the bounds across all modes cannot tell. Undefined for none.
+   */
+  readonly modes?: readonly ModeView[];
 };
 
 /** A component set and the coverage of the recipe classes it read. */
@@ -642,6 +658,23 @@ export function buildComponentSet(
       clips: definition.rootOverflow !== "visible",
     };
     placeRoot(rootCascade.style, room, context.variables);
+    if (root.clips && !clipsInCss(rootCascade.style)) {
+      const shadowsOf = (layer: InstanceLayerSpec): readonly ShadowSpec[] =>
+        rootEffects(layer) ??
+        inner.get(layer.componentSet)?.variants.find((variant) => variant.key === layer.variant)?.root
+          .shadows ??
+        [];
+      for (const clipped of clippedShadows(root, shadowsOf, context.variables, context.modes ?? [])) {
+        record({
+          part: clipped.part,
+          className: "",
+          property: "effects",
+          value: `${clipped.reach}px`,
+          outcome: "dropped",
+          detail: clippedDetail(variantKey(definition, cell), clipped),
+        });
+      }
+    }
     cellCascade.settle();
     instances.settle();
     for (const layer of walkLayers(root)) {
@@ -671,6 +704,38 @@ export function buildComponentSet(
     coverage: [...coverage.values()],
     fontStyles: [...fontStyles],
   };
+}
+
+/** The shadows an instance overrides on its root, or undefined where it draws its variant's own. */
+function rootEffects(layer: InstanceLayerSpec): readonly ShadowSpec[] | undefined {
+  for (const override of layer.overrides ?? []) {
+    if (override.field === "effects" && override.path.length === 0) {
+      return override.shadows;
+    }
+  }
+  return undefined;
+}
+
+/** The `overflow` values that clip a box's content in CSS (CSS Overflow 3 §3). */
+const CSS_CLIPS: ReadonlySet<string> = new Set(["hidden", "clip", "auto", "scroll"]);
+
+/**
+ * Whether a box clips its content down in CSS, through `overflow` or `overflow-y`, as Tailwind
+ * compiles `overflow-hidden` to the shorthand. A `visible` axis beside one that clips computes to
+ * `auto` (CSS Overflow 3 §3), so either one clipping clips both.
+ */
+function clipsInCss(style: LayerStyle): boolean {
+  return ["overflow", "overflow-x", "overflow-y"].some((property) =>
+    normalizeCss(style.resolved(property) ?? "")
+      .split(" ")
+      .some((value) => CSS_CLIPS.has(value))
+  );
+}
+
+/** Why a coverage row lists a shadow that reaches past a variant's root, which the root's clip cuts. */
+function clippedDetail(variant: string, { reach, edges, modes }: ClippedShadow): string {
+  const where = modes === undefined ? "" : ` at ${modes.join(" and ")}`;
+  return `in ${variant} the shadow reaches ${reach}px past the root's ${edges}${where}, which CSS paints, since the root does not clip, while the root of every Figma variant clips so it can draw its own ring (PR2)`;
 }
 
 /**

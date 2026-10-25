@@ -349,6 +349,16 @@ describe("fuseVariableSet", () => {
         dense: 32,
         comfortable: 36,
       },
+      // An Input group addon beside a button pads its outer side by the md control icon inset less
+      // the 4px its negative margin takes back: --control-px-icon-md is 0.5rem dense and 0.75rem
+      // comfortable.
+      {
+        name: "addon-px-button",
+        webSyntax: "calc(var(--control-px-icon-md) - 0.25rem)",
+        scopes: ["GAP"],
+        dense: 4,
+        comfortable: 8,
+      },
     ] as const;
     for (const { name, webSyntax, scopes, dense, comfortable } of formulas) {
       expect(spec("Fuse density", name)).toMatchObject({ type: "FLOAT", scopes, webSyntax });
@@ -398,6 +408,12 @@ describe("fuseVariableSet", () => {
       [
         "radius-inner/xl-gap-sm",
         "max(0px, calc(var(--radius) + 2 * var(--radius-step, 0px)) - var(--surface-gap-sm))",
+      ],
+      // The button in an Input group addon: the field corner less its 1px border and the addon's
+      // padding beside a button.
+      [
+        "radius-inner/field-border-pad-addon-button",
+        "max(0px, clamp(var(--radius) - 1000 * var(--radius-step, 0px), var(--radius-field, var(--radius)), var(--radius) + 1000 * var(--radius-step, 0px)) - 1px - var(--control-px-icon-md) + 0.25rem)",
       ],
     ] as const;
     for (const [name, webSyntax] of formulas) {

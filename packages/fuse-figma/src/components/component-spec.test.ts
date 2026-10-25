@@ -20,7 +20,7 @@ import type {
   TextPlacement,
 } from "./component-spec";
 import type { CoverageRow } from "./coverage";
-import { makeVariableIndex } from "./css-values";
+import { makeVariableIndex, pinnedIndex } from "./css-values";
 import type { BooleanPropertySpec, BoxSpec, FrameLayerSpec, TextLayerSpec } from "./kit-spec";
 
 describe("a class whose variant no cell models", () => {
@@ -629,6 +629,34 @@ describe("a part that grows along its row", () => {
     expect(frameOf(frameOf(variant?.root))?.sizing.horizontal).toEqual(fixed(literal(76)));
   });
 
+  // CSS Flexbox 1 §9.2 step 3: a definite flex basis, as `flex: 1`'s 0%, is the item's flex base size,
+  // so its `width` sizes nothing along the row. Its own `min-width` replaces the automatic minimum
+  // (§4.5), which would read the width as its specified size suggestion. 100px less the 20px ring.
+  it("fills the room the others leave over a width of its own, where it sets its minimum", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex w-[100px]", {
+        parts: [
+          dot("flex-1 w-full min-w-0 h-[8px]"),
+          { ...dot("w-[20px] h-[8px]"), key: "ring", slot: "chip-ring" },
+        ],
+      })
+    );
+    const [grown] = variant?.root.children ?? [];
+    expect(grown?.kind === "frame" && grown.sizing).toEqual({
+      horizontal: FILL,
+      vertical: fixed(literal(8)),
+    });
+    expect(coverage.filter((row) => row.className === "w-full")).toEqual([
+      expect.objectContaining({
+        part: "chip-dot",
+        property: "width",
+        outcome: "dropped",
+        detail:
+          "the layer grows from a zero flex basis, which sizes it along the row in place of its width, and its own min-width replaces the automatic minimum that would read the width",
+      }),
+    ]);
+  });
+
   // A zero minimum never widens the row, so the row still has no free space.
   it("keeps its own width in a row that hugs its layers above a zero minimum", async () => {
     const { coverage } = await buildFixture(chip("flex min-w-0", { parts: [dot("flex-1 h-[8px]")] }));
@@ -666,6 +694,57 @@ describe("a part that grows along its row", () => {
     expect(new Set(coverage.filter((row) => row.className === "flex-1").map((row) => row.outcome))).toEqual(
       new Set(["unmapped"])
     );
+  });
+});
+
+// Unit under test: `buildComponentSet` on a part with `max-h-full`, `max-height: 100%`. Oracle: CSS 2.1
+// §10.5 and §10.7. The percentage takes the parent's content height, its fixed height less its border
+// and padding, and the used height is the part's height lowered to it. Where the part's height is at
+// least that, the part is exactly as tall as the parent's content box, which Figma's fill down draws.
+// Where it is shorter, the maximum never lowers it, which the builder leaves unread.
+describe("a part capped at its parent's height", () => {
+  const H = makeVariableIndex([{ ref: { collection: "Fuse density", name: "h" }, webSyntax: "var(--h)" }]);
+  const capped = (root: string, part: string, variables = makeVariableIndex([])) =>
+    buildFixture(chip(root, { parts: [dot(part)] }), { variables });
+
+  it("fills down where its height is the parent's own height variable and a border insets it", async () => {
+    const { variant, coverage } = await capped(
+      "flex items-center w-[100px] h-(--h) border border-[rgb(0_0_0)]",
+      "w-[10px] h-(--h) max-h-full",
+      H
+    );
+    expect(frameOf(variant?.root)?.sizing).toEqual({ horizontal: fixed(literal(10)), vertical: FILL });
+    expect(
+      coverage
+        .filter((row) => ["h-(--h)", "max-h-full"].includes(row.className) && row.part === "chip-dot")
+        .map((row) => [row.className, row.outcome, row.detail])
+    ).toEqual([
+      [
+        "h-(--h)",
+        "dropped",
+        "the 100% maximum lowers the height to the parent's content height, which a fill down draws",
+      ],
+      ["max-h-full", "literal", "the box fills its parent's content height, which the height reaches"],
+    ]);
+  });
+
+  it("fills down where its literal height reaches the parent's content height", async () => {
+    const { variant } = await capped(
+      "flex items-center w-[100px] h-[40px] border border-[rgb(0_0_0)]",
+      "w-[10px] h-[39px] max-h-full"
+    );
+    expect(frameOf(variant?.root)?.sizing.vertical).toEqual(FILL);
+  });
+
+  it("leaves the maximum unmapped where the part is shorter than the parent's content height", async () => {
+    const { variant, coverage } = await capped(
+      "flex items-center w-[100px] h-[40px] border border-[rgb(0_0_0)]",
+      "w-[10px] h-[20px] max-h-full"
+    );
+    expect(frameOf(variant?.root)?.sizing.vertical).toEqual(fixed(literal(20)));
+    expect(coverage.filter((row) => row.className === "max-h-full").map((row) => row.outcome)).toEqual([
+      "unmapped",
+    ]);
   });
 });
 
@@ -3126,5 +3205,82 @@ describe("a turned icon or part", () => {
     const [icon] = variant?.root.children ?? [];
     expect(icon?.kind === "icon" ? icon.rotation : icon).toBeUndefined();
     expect(rotateRows(coverage)).toEqual([["Icon", "unmapped"]]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a part whose shadow reaches past its root's top or bottom.
+// Oracle: CSS Overflow 3 §3 and CSS Backgrounds 3 §7.1. A box whose `overflow` is `visible` paints
+// what its children's shadows reach past it, a spread ring as far as its spread, while every kit
+// root clips (PR2), so the band past the root is a known difference the coverage table names. A
+// 32px part centred in a 36px row with a 3px ring reaches 1px past the row's top and bottom, and in
+// a 44px row it stays 1px inside.
+describe("a part's shadow past a root that clips", () => {
+  const RING = "shadow-[0_0_0_3px_rgb(0_0_0)]";
+  const rowsOf = (coverage: readonly CoverageRow[]) =>
+    coverage
+      .filter((row) => row.property === "effects")
+      .map((row) => [row.part, row.className, row.outcome, row.detail]);
+
+  it("records the reach past the root, which CSS paints and the root's clip cuts", async () => {
+    const { coverage } = await buildFixture(
+      chip("flex items-center w-[100px] h-[36px]", { parts: [dot(`size-[32px] ${RING}`)] })
+    );
+    expect(rowsOf(coverage)).toEqual([
+      [
+        "chip-dot",
+        "",
+        "dropped",
+        "in chip/state=rest the shadow reaches 1px past the root's top and bottom, which CSS paints, since the root does not clip, while the root of every Figma variant clips so it can draw its own ring (PR2)",
+      ],
+    ]);
+  });
+
+  it("names the modes in which the shadow reaches past the root", async () => {
+    const length = (dense: number, comfortable: number) => ({ dense, comfortable });
+    const lengths = { row: length(36, 44), part: length(32, 36) };
+    const ref = (name: string) => ({ collection: "Fuse density", name });
+    const variables = makeVariableIndex(
+      Object.entries(lengths).map(([name, { dense, comfortable }]) => ({
+        ref: ref(name),
+        webSyntax: `var(--${name})`,
+        minimum: Math.min(dense, comfortable),
+        maximum: Math.max(dense, comfortable),
+      }))
+    );
+    const view = (mode: "dense" | "comfortable") =>
+      pinnedIndex(variables, (pinned) => {
+        const value =
+          pinned.collection === "Fuse density" && (pinned.name === "row" || pinned.name === "part")
+            ? lengths[pinned.name][mode]
+            : undefined;
+        return value === undefined ? undefined : { minimum: value, maximum: value };
+      });
+    const { coverage } = await buildFixture(
+      chip("flex items-center w-[100px] h-(--row)", { parts: [dot(`w-[32px] h-(--part) ${RING}`)] }),
+      {
+        variables,
+        modes: [
+          { name: "Fuse density / Dense", variables: view("dense") },
+          { name: "Fuse density / Comfortable", variables: view("comfortable") },
+        ],
+      }
+    );
+    expect(rowsOf(coverage).map(([, , , detail]) => detail)).toEqual([
+      "in chip/state=rest the shadow reaches 1px past the root's top and bottom at Fuse density / Dense, which CSS paints, since the root does not clip, while the root of every Figma variant clips so it can draw its own ring (PR2)",
+    ]);
+  });
+
+  it.each([
+    [
+      "a root that clips in CSS too",
+      chip("flex items-center w-[100px] h-[36px] overflow-hidden", { parts: [dot(`size-[32px] ${RING}`)] }),
+    ],
+    [
+      "a shadow that stays inside the root",
+      chip("flex items-center w-[100px] h-[44px]", { parts: [dot(`size-[32px] ${RING}`)] }),
+    ],
+  ])("records nothing for %s", async (_name, definition) => {
+    const { coverage } = await buildFixture(definition);
+    expect(rowsOf(coverage)).toEqual([]);
   });
 });

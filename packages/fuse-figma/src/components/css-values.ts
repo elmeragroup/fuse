@@ -18,6 +18,12 @@ const ROOT_FONT_SIZE_PX = 16;
  */
 export type VariableIndex = {
   readonly lookup: (value: string) => VariableRef | undefined;
+  /**
+   * The synced variable whose code syntax is the same affine length as a value the builder made
+   * itself, such as a padding less a margin, which no class spells the way the formula does.
+   * Undefined where none is, or the value is no affine length.
+   */
+  readonly lookupAffine: (value: string) => VariableRef | undefined;
   /** The smallest value a FLOAT variable holds in any mode, or undefined when unknown. */
   readonly minimum: (ref: VariableRef) => number | undefined;
   /** The largest value a FLOAT variable holds in any mode, or undefined when unknown. */
@@ -71,13 +77,46 @@ export function makeVariableIndex(
       maximums.set(refKey(ref), maximum);
     }
   }
+  const byAffine = [...bySyntax].flatMap(([syntax, ref]) => {
+    const length = affineLength(syntax);
+    return length === undefined || length.coefficients.size === 0 ? [] : [{ length, ref }];
+  });
   return {
     lookup: (value) => bySyntax.get(canonical(value)),
+    lookupAffine: (value) => {
+      const length = affineLength(canonical(value));
+      return length === undefined
+        ? undefined
+        : byAffine.find((entry) => sameAffine(entry.length, length))?.ref;
+    },
     minimum: (ref) => minimums.get(refKey(ref)),
     maximum: (ref) => maximums.get(refKey(ref)),
     owns: (customProperty) => owned.has(customProperty),
   };
 }
+
+/**
+ * The synced variables as one mode of a collection resolves them: each variable `pin` answers for
+ * holds that mode's least and greatest value, and every other keeps its bounds across all modes.
+ * Lookups by code syntax stay the same.
+ *
+ * @param index - The synced variables.
+ * @param pin - The bounds a variable holds in the mode, or undefined for one the mode leaves alone.
+ * @returns The variables in the mode.
+ */
+export function pinnedIndex(
+  index: VariableIndex,
+  pin: (ref: VariableRef) => { readonly minimum: number; readonly maximum: number } | undefined
+): VariableIndex {
+  return {
+    ...index,
+    minimum: (ref) => pin(ref)?.minimum ?? index.minimum(ref),
+    maximum: (ref) => pin(ref)?.maximum ?? index.maximum(ref),
+  };
+}
+
+/** One mode of a collection, named as `Collection / Mode`, with the variables as it resolves them. */
+export type ModeView = { readonly name: string; readonly variables: VariableIndex };
 
 function refKey(ref: VariableRef): string {
   return `${ref.collection}/${ref.name}`;

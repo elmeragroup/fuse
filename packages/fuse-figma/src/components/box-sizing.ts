@@ -46,6 +46,17 @@ type AxisRoom = {
    * length, or undefined where a length the parent's sizing or padding reads is no literal.
    */
   readonly length: number | undefined;
+  /**
+   * True on the axis along which the box grows from a zero flex basis, which sizes it there in place
+   * of its own length (CSS Flexbox 1 §9.2 step 3). Absent elsewhere.
+   */
+  readonly zeroBasis?: true;
+  /**
+   * The parent's fixed length on the axis and the pixels its border and padding take from it, which
+   * a `100%` maximum resolves against. Absent where the parent's length is not fixed or an inset is
+   * no literal.
+   */
+  readonly outer?: { readonly length: NumberSpec; readonly inset: number };
 };
 
 /**
@@ -336,6 +347,19 @@ function innerLength(holder: Holder, axis: keyof Extent, box: "content" | "paddi
   return sides.reduce<number>((rest, side) => rest - (side ?? 0), outer - 2 * border);
 }
 
+/** A box's fixed length on one axis and its literal border and padding there, as {@link AxisRoom.outer}. */
+function outerOf(holder: Holder, axis: keyof Extent): Pick<AxisRoom, "outer"> {
+  const size = holder.sizing[axis];
+  const border = literalPixels(holder.style, "border-width");
+  const sides = SIDES[axis].map((side) => literalPixels(holder.style, side));
+  if (size.kind !== "fixed" || border === undefined || sides.some((side) => side === undefined)) {
+    return {};
+  }
+  return {
+    outer: { length: size.length, inset: sides.reduce<number>((sum, side) => sum + (side ?? 0), 2 * border) },
+  };
+}
+
 /**
  * The room an absolute part has. It sits out of its parent's flow, so it shares no line with the
  * parent's other layers, and an unset length hugs, as CSS shrinks an absolute box to fit what it
@@ -417,6 +441,7 @@ export function roomInside(holder: Holder, index: number): Room {
       auto: HUG,
       siblings: along("VERTICAL"),
       length: innerLength(holder, "vertical", "content"),
+      ...outerOf(holder, "vertical"),
     },
     widthCap: widthCapInside(holder, index),
     unbounded: hugsUncapped(holder),
@@ -484,7 +509,7 @@ function lessShares(holder: Holder, index: number, length: number): number | und
  */
 export function growingRoom(holder: Holder, index: number, room: Room): Room {
   if (holder.layout.direction === "VERTICAL") {
-    return { ...room, vertical: { ...room.vertical, auto: FILL, length: undefined } };
+    return { ...room, vertical: { ...room.vertical, auto: FILL, length: undefined, zeroBasis: true } };
   }
   const { length } = room.horizontal;
   return {
@@ -492,6 +517,7 @@ export function growingRoom(holder: Holder, index: number, room: Room): Room {
     horizontal: {
       ...room.horizontal,
       auto: FILL,
+      zeroBasis: true,
       length: length === undefined ? undefined : lessShares(holder, index, length),
     },
   };
@@ -644,7 +670,7 @@ export function readGrowth(holder: Holder, parts: readonly LayerStyle[]): number
   }
   const one = (value: string) => (normalizeCss(value) === "1" ? value : undefined);
   if (along.kind !== "hug") {
-    if (only.has(axis.length)) {
+    if (only.has(axis.length) && !replacesAutomaticMinimum(only, axis)) {
       return undefined;
     }
     const fills = only.read(
@@ -673,6 +699,16 @@ export function readGrowth(holder: Holder, parts: readonly LayerStyle[]): number
     );
   }
   return undefined;
+}
+
+/**
+ * Whether a growing layer sets its own minimum along its parent's direction, which replaces the
+ * automatic minimum (CSS Flexbox 1 §4.5). The automatic minimum reads the layer's own length as its
+ * specified size suggestion, so without a minimum of its own that length can still widen it.
+ */
+function replacesAutomaticMinimum(layer: LayerStyle, axis: AxisProperties): boolean {
+  const minimum = layer.resolved(axis.min);
+  return minimum !== undefined && normalizeCss(minimum) !== "auto";
 }
 
 /**
@@ -1005,6 +1041,52 @@ const ZERO_MINIMUM = "Figma takes no zero minimum, and its auto layout never shr
 const WHOLE_PARENT_MAXIMUM =
   "its parent hugs what it holds and nothing bounds the width CSS gives the parent, so 100% of the parent is never narrower than the box";
 
+const CAPPED_LENGTH =
+  "the 100% maximum lowers the height to the parent's content height, which a fill down draws";
+const CAPPING_MAXIMUM = "the box fills its parent's content height, which the height reaches";
+
+/**
+ * Whether a box's `max-height: 100%` lowers its height to its parent's content height (CSS 2.1 §10.5,
+ * §10.7): the parent's length is fixed, and the box's own height is that length's variable, or literal
+ * pixels at least the parent's content height. Then the box is exactly as tall as the parent's
+ * content box, which a fill down draws. Only the height is read this way, and only with no minimum
+ * beside it, which could raise the height again.
+ */
+function capsAtParent(
+  reader: LayerStyle,
+  axis: AxisProperties,
+  room: AxisRoom,
+  variables: VariableIndex
+): boolean {
+  const { outer } = room;
+  const maximum = reader.resolved(axis.max);
+  const own = reader.resolved(axis.length);
+  if (
+    axis !== HEIGHT ||
+    outer === undefined ||
+    maximum === undefined ||
+    own === undefined ||
+    reader.has(axis.min)
+  ) {
+    return false;
+  }
+  if (evaluatePercentage(maximum) !== 1) {
+    return false;
+  }
+  const length = readNumber(own, variables);
+  if (length === undefined) {
+    return false;
+  }
+  if (sameVariable(length, outer.length)) {
+    return true;
+  }
+  return (
+    length.kind === "literal" &&
+    outer.length.kind === "literal" &&
+    length.value >= outer.length.value - outer.inset
+  );
+}
+
 /**
  * Read one axis: its length through {@link readLength}, an unset length as the room gives it, and
  * its limits as {@link resolveLimits} decides. Each read fills the sizing of the layers inside too,
@@ -1019,6 +1101,21 @@ function readAxis(
   variables: VariableIndex,
   { fit, inside, roomy }: { readonly fit: FitContent; readonly inside: Feed; readonly roomy: boolean }
 ): AxisRead & { readonly known: boolean } {
+  if (capsAtParent(reader, axis, room, variables)) {
+    reader.read(
+      axis.length,
+      () => FILL,
+      () => ({ outcome: "dropped", detail: CAPPED_LENGTH }),
+      []
+    );
+    reader.read(
+      axis.max,
+      () => FILL,
+      () => ({ outcome: "literal", detail: CAPPING_MAXIMUM }),
+      [...reader.feed("sizing"), ...inside]
+    );
+    return { size: FILL, min: undefined, max: undefined, notes: new Map(), known: true };
+  }
   const read = reader.has(axis.length)
     ? readLength(reader, axis, room, variables, { fit, inside })
     : room.auto;
@@ -1221,6 +1318,20 @@ function readLength(
   { fit, inside }: { readonly fit: FitContent; readonly inside: Feed }
 ): SizeSpec | undefined {
   const { siblings, percent } = room;
+  if (room.zeroBasis === true) {
+    // `readGrowth` lets a growing layer keep a length only where its own minimum stands in for the
+    // automatic one, so the zero basis alone sizes it along its parent's direction.
+    reader.read(
+      axis.length,
+      () => room.auto,
+      () => ({
+        outcome: "dropped",
+        detail: `the layer grows from a zero flex basis, which sizes it along the ${axis.flow} in place of its ${axis.length}, and its own ${axis.min} replaces the automatic minimum that would read the ${axis.length}`,
+      }),
+      []
+    );
+    return room.auto;
+  }
   const read = reader.read(
     axis.length,
     (value) => {

@@ -148,6 +148,71 @@ export const NAMED_ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement)
   ["not-data-[variant=destructive]", (element) => element.attributes.get("data-variant") !== "destructive"],
 ]);
 
+/** The children of an element in the markup. */
+function childrenOf(elements: readonly MarkupElement[], index: number): readonly MarkupElement[] {
+  return elements.filter((element) => element.parent === index);
+}
+
+/** Whether an element sits below another, at any depth. */
+function below(elements: readonly MarkupElement[], index: number, outer: number): boolean {
+  const parent = elements[index]?.parent;
+  return parent !== undefined && (parent === outer || below(elements, parent, outer));
+}
+
+/**
+ * Whether an element holds what each `has-[>…]:` variant reads, as Tailwind compiles it:
+ * `has-[>button]:` is `:has(> button)`, which holds on an element with a `<button>` child, as an Input
+ * group addon holding a button, and `has-[>[data-focus-ring-control]:disabled]:` holds on an Input
+ * group whose own control, a direct child, is disabled.
+ */
+export const HAS_VARIANTS = new Map<string, (elements: readonly MarkupElement[], index: number) => boolean>(
+  (
+    [
+      [
+        "has-[>[data-focus-ring-control]:disabled]",
+        (child) => child.attributes.has("data-focus-ring-control") && child.attributes.has("disabled"),
+      ],
+      [
+        "has-[>[data-focus-ring-control][aria-invalid=true]]",
+        (child) =>
+          child.attributes.has("data-focus-ring-control") && child.attributes.get("aria-invalid") === "true",
+      ],
+      ["has-[>[data-align=inline-start]]", (child) => child.attributes.get("data-align") === "inline-start"],
+      ["has-[>[data-align=inline-end]]", (child) => child.attributes.get("data-align") === "inline-end"],
+      ["has-[>button]", (child) => child.name === "button"],
+      ["has-[>svg]", (child) => child.name === "svg"],
+    ] as const satisfies readonly (readonly [string, (child: MarkupElement) => boolean])[]
+  ).map(([variant, matches]) => [
+    variant,
+    (elements: readonly MarkupElement[], index: number) => childrenOf(elements, index).some(matches),
+  ])
+);
+
+/**
+ * Whether an ancestor is the group each `group-has-…:` variant reads: `group-has-data-[slot=combobox-clear]/input-group:`
+ * compiles to `:where(.group\/input-group):has([data-slot="combobox-clear"]) *`, so it holds below an
+ * Input group that holds Combobox's clear button, as the caret beside it does.
+ */
+export const GROUP_HAS_VARIANTS = new Map<
+  string,
+  (elements: readonly MarkupElement[], ancestor: number) => boolean
+>([
+  [
+    "group-has-data-[slot=combobox-clear]/input-group",
+    (elements, ancestor) => {
+      const group = elements[ancestor];
+      return (
+        group !== undefined &&
+        marks(group, "group/input-group") &&
+        elements.some(
+          (element, index) =>
+            below(elements, index, ancestor) && element.attributes.get("data-slot") === "combobox-clear"
+        )
+      );
+    },
+  ],
+]);
+
 /**
  * Whether a sibling before the measured element matches each peer variant, which selects the
  * elements after it: `peer-data-active/menu-button:` compiles to `:is(:where(.peer\/menu-button)…
@@ -203,6 +268,8 @@ export const NOT_ATTRIBUTES = new Set([
   "hover",
   "focus-visible",
   "focus",
+  // Input group rings while its control has keyboard focus, which the page forces on the control.
+  "has-[[data-focus-ring-control]:focus-visible]",
   "peer-hover/menu-button",
   // A Dropdown menu row's shortcut reads the row's DOM focus.
   "group-focus/dropdown-menu-item",

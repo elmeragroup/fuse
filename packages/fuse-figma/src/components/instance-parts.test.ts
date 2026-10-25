@@ -363,6 +363,52 @@ describe("an instance part", () => {
   });
 });
 
+// Unit under test: the in-place diff of an instance whose root holds one layer. Oracle: CSS Box
+// Alignment 3 §8, a gap sits only between adjacent items, so a box with fewer than two items draws no
+// gap whatever its `gap` says, as an icon button holds its one icon. A hidden optional layer is still a
+// layer a designer can show, so it counts.
+describe("a gap the composite passes to an instance", () => {
+  /** An inner set whose root holds the given dot parts and one icon, with a 4px gap. */
+  function lone(parts: readonly PartDefinition[]): ComponentDefinition {
+    return chip("text-[rgb(0_0_0)] inline-flex items-center gap-1 rounded-[4px] bg-[rgb(255_0_0)] p-1", {
+      key: "lone",
+      name: "Lone",
+      slot: "lone",
+      iconsFor: () => [{ ...ICON, classes: "size-4" }],
+      parts,
+    });
+  }
+
+  async function itemSpacingRows(inner: ComponentDefinition): Promise<readonly string[]> {
+    const part: InstanceDefinition = {
+      kind: "instance",
+      key: "action",
+      of: inner,
+      cell: () => ({ state: "rest" }),
+      classesFor: () => "gap-2",
+      shownIn: () => true,
+    };
+    const [, built] = await buildFixtures([inner, holding(part)], FONT_SANS);
+    return unmappedOf(built?.coverage ?? []).map((row) => `${row.className} ${row.property}`);
+  }
+
+  it("is no difference where the inner root holds one layer", async () => {
+    expect(await itemSpacingRows(lone([]))).toEqual([]);
+  });
+
+  it("stays unmapped where the inner root holds two layers", async () => {
+    expect(await itemSpacingRows(lone([dot("size-[6px] bg-[rgb(0_0_0)]")]))).toEqual([
+      "gap-2 gap",
+      " itemSpacing",
+    ]);
+  });
+
+  it("stays unmapped where the second layer hides behind a property that starts false", async () => {
+    const hidden = { ...dot("size-[6px] bg-[rgb(0_0_0)]"), optional: { name: "Dot", defaultValue: false } };
+    expect(await itemSpacingRows(lone([hidden]))).toEqual(["gap-2 gap", " itemSpacing"]);
+  });
+});
+
 // Unit under test: the coverage table of a set that holds an instance part. Oracle: the rule that the
 // inner component's own classes are the inner set's coverage, while the composite lists the classes it
 // passes: as the override they draw, or as dropped where the inner variant draws the same.
@@ -856,7 +902,8 @@ describe("an instance of a set with a part that scales", () => {
         sizing: resting?.root.sizing,
       },
     ]);
-    expect(built?.coverage.filter((row) => row.className === "")).toEqual([]);
+    // The in-place diff names no class, and lists what it cannot carry as unmapped.
+    expect(built?.coverage.filter((row) => row.className === "" && row.outcome === "unmapped")).toEqual([]);
   });
 });
 

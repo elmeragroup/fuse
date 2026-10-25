@@ -86,7 +86,7 @@ export function ComboboxTrigger({
   return (
     <ComboboxPrimitive.Trigger
       data-slot="combobox-trigger"
-      className={mergeClassName(className, "[&_svg:not([class*='size-'])]:size-4")}
+      className={mergeClassName(className, comboboxSlots.trigger())}
       {...definedProps(props)}>
       {children}
       <CaretDown className={comboboxSlots.caret()} />
@@ -198,7 +198,7 @@ export function ComboboxInput({
             aria-labelledby=""
             render={<ComboboxTrigger />}
             data-slot="input-group-button"
-            className="group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
+            className={comboboxSlots.inputTrigger()}
             disabled={disabled}
           />
         ) : null}
