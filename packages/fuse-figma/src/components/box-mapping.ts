@@ -766,6 +766,9 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
         return scope.instances.cascade(child, cascade, cell);
       }
       const name = partName(child);
+      if (child.facts !== undefined && (child.parts?.length ?? 0) > 0) {
+        throw new Error(`the part ${name} holds parts, which carry none of its facts`);
+      }
       return {
         kind: "frame",
         child,
@@ -782,7 +785,8 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
           {
             inline: child.styleFor?.(cell) ?? [],
             defaults: child.elementDefaults ?? [],
-          }
+          },
+          child.facts
         ),
       };
     });
@@ -819,7 +823,8 @@ function mapPart(
       drawn,
       layout,
       scope.context.variables,
-      collapses
+      collapses,
+      scope.clipsAround === true
     );
     // The stacking reads what the instance draws, its inner root as built in place.
     const mapped: MappedPart = {
@@ -844,7 +849,14 @@ function mapPart(
   const linked = optional === undefined ? drawn : { ...drawn, visibleProperty: optional.name };
   const rotation = readRotation(part.cascade.style);
   const turned = rotation === undefined ? linked : { ...linked, rotation };
-  const layer = wrapFrameMargins(part.cascade.style, turned, layout, scope.context.variables, collapses);
+  const layer = wrapFrameMargins(
+    part.cascade.style,
+    turned,
+    layout,
+    scope.context.variables,
+    collapses,
+    scope.clipsAround === true
+  );
   return { layer, stacked: layer, style: part.cascade.style, paints: own.fill !== undefined };
 }
 

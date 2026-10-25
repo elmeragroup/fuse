@@ -35,7 +35,7 @@ import { normalizeCss, splitTopLevel, substituteVars } from "./css-values";
 import type { ComponentRootSpec, FrameLayerSpec, IconLayerSpec, TextLayerSpec } from "./kit-spec";
 import { compareSpecificity } from "./specificity";
 import type { Specificity } from "./specificity";
-import { readVariants } from "./state-table";
+import { readVariants, withPartFacts } from "./state-table";
 import type { PartTarget, StateTable } from "./state-table";
 
 /** What a read became, for the coverage table. */
@@ -602,6 +602,7 @@ class CellLedger {
 /** The cascade of one cell. */
 export class CellCascade {
   readonly #ledger: CellLedger;
+  #backdrop: LayerStyle | undefined;
 
   constructor(scope: CellScope) {
     this.#ledger = new CellLedger(scope);
@@ -683,6 +684,13 @@ export class CellCascade {
         outside,
         { undrawn: ancestor.undrawn }
       );
+      if (ancestor.backdrop === true) {
+        if (this.#backdrop !== undefined) {
+          throw new Error(`${part}: a cell names two ancestors that paint behind the root`);
+        }
+        // Its reads fill the root's fields, so the style takes the root's path.
+        this.#backdrop = new LayerStyle(this.#ledger, outside, []);
+      }
       ancestorRules.push(...own.childRules);
       descendants.push(...own.descendantRules);
       // The ancestor's children sit outside what the set draws, as its other own declarations do.
@@ -709,6 +717,16 @@ export class CellCascade {
       },
       { parent: outside, path: [] }
     );
+  }
+
+  /**
+   * The style of the ancestor that paints behind the root, which `root` cascaded, or undefined where
+   * the cell names none.
+   *
+   * @returns The ancestor's style.
+   */
+  backdrop(): LayerStyle | undefined {
+    return this.#backdrop;
   }
 
   /**
@@ -886,6 +904,8 @@ export class BoxCascade {
    * @param outer - The declarations of the part's `style` attribute, which beat every class, and
    *   those the browser's default style sheet gives its element, which every class beats.
    * @returns The part's cascade.
+   * @param facts - The variants only the part's own element carries, which its classes read over the
+   *   set's table, as {@link withPartFacts} says. Undefined for none.
    */
   part(
     classes: string,
@@ -898,9 +918,15 @@ export class BoxCascade {
     outer: {
       readonly inline: readonly InlineDeclaration[];
       readonly defaults: readonly OuterDeclaration[];
-    } = { inline: [], defaults: [] }
+    } = { inline: [], defaults: [] },
+    facts?: ReadonlyMap<string, (cell: Cell) => boolean>
   ): BoxCascade {
-    return this.#below({ classes, passed: undefined }, part, element, outer, this.#ledger, [
+    const { scope } = this.#ledger;
+    const ledger =
+      facts === undefined
+        ? this.#ledger
+        : this.#ledger.withScope({ ...scope, meaningOf: withPartFacts(scope.meaningOf, facts, part) });
+    return this.#below({ classes, passed: undefined }, part, element, outer, ledger, [
       ...this.path,
       element.key,
     ]);

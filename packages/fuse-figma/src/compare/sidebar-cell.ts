@@ -35,6 +35,9 @@
  *   `Orders` menu button, active where the cell is, and its `12` badge, in a 240px host. The badge's
  *   crop is the item's, so the host leaves the badge where the item's end puts it.
  *
+ * The panel renderer renders a `sidebar` cell as `sidebar-panel-kit.ts` draws it: the sections above
+ * inside the real `Sidebar.Provider` and `Sidebar.Root`, in a host as tall as the app frame demo's frame.
+ *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
  * imports this module only after the run found the build.
  */
@@ -44,6 +47,7 @@ import type { ReactElement } from "react";
 
 import { ChartBar, House, Package, Receipt, User, Users } from "../../../fuse/dist/icons.js";
 import { Sidebar } from "../../../fuse/dist/sidebar.js";
+import { LocaleProvider } from "../../../fuse/dist/theme.js";
 import type { Cell } from "../components/component-spec.ts";
 import {
   menuButtonLook,
@@ -55,6 +59,12 @@ import {
   SIDEBAR_SUB_ROW_WIDTH,
   subButtonLook,
 } from "../components/sidebar-kit.ts";
+import {
+  panelVariant,
+  SIDEBAR_PANEL_HEIGHT,
+  SIDEBAR_PROVIDER_CLASS,
+  SIDEBAR_ROOT_CLASS,
+} from "../components/sidebar-panel-kit.ts";
 import {
   SIDEBAR_BADGE_ROW,
   SIDEBAR_FOOTER_ICON,
@@ -178,69 +188,69 @@ function menuRow(
   );
 }
 
+/** The icon collapse demo's group: `Navigation` and its five rows, `Orders` active. */
+function groupSection(): ReactElement {
+  return createElement(
+    Sidebar.Group,
+    { key: "group" },
+    createElement(Sidebar.GroupLabel, null, SIDEBAR_GROUP_LABEL_TEXT),
+    createElement(
+      Sidebar.GroupContent,
+      null,
+      createElement(
+        Sidebar.Menu,
+        null,
+        ...SIDEBAR_GROUP_ROWS.map(({ label, icon }) =>
+          menuRow(label, rowIcon(icon), {
+            isActive: label === SIDEBAR_GROUP_ACTIVE_ROW,
+          })
+        )
+      )
+    )
+  );
+}
+
+/** The app frame demo's header: its search field showing `Search orders`. */
+function headerSection(): ReactElement {
+  return createElement(
+    Sidebar.Header,
+    { key: "header" },
+    createElement(Sidebar.Input, {
+      placeholder: SIDEBAR_INPUT_PLACEHOLDER,
+      "aria-label": SIDEBAR_INPUT_PLACEHOLDER,
+    })
+  );
+}
+
+/** The landing dashboard's footer: one large row naming the signed-in seller. */
+function footerSection(): ReactElement {
+  return createElement(
+    Sidebar.Footer,
+    { key: "footer" },
+    createElement(
+      Sidebar.Menu,
+      null,
+      menuRow(SIDEBAR_FOOTER_TEXT, rowIcon(SIDEBAR_FOOTER_ICON), {
+        size: "lg",
+        isActive: false,
+      })
+    )
+  );
+}
+
 /** A `sidebar-group` cell: the icon collapse demo's group, expanded or collapsed. */
 export const sidebarGroup: CellRendering = {
-  element: (cell: Cell) =>
-    host(
-      SIDEBAR_SECTION_WIDTH,
-      createElement(
-        Sidebar.Group,
-        null,
-        createElement(Sidebar.GroupLabel, null, SIDEBAR_GROUP_LABEL_TEXT),
-        createElement(
-          Sidebar.GroupContent,
-          null,
-          createElement(
-            Sidebar.Menu,
-            null,
-            ...SIDEBAR_GROUP_ROWS.map(({ label, icon }) =>
-              menuRow(label, rowIcon(icon), {
-                isActive: label === SIDEBAR_GROUP_ACTIVE_ROW,
-              })
-            )
-          )
-        )
-      ),
-      rootAround(cell.collapsed === "on")
-    ),
+  element: (cell: Cell) => host(SIDEBAR_SECTION_WIDTH, groupSection(), rootAround(cell.collapsed === "on")),
 };
 
 /** A `sidebar-header` cell: the app frame demo's header, expanded or collapsed. */
 export const sidebarHeader: CellRendering = {
-  element: (cell: Cell) =>
-    host(
-      SIDEBAR_SECTION_WIDTH,
-      createElement(
-        Sidebar.Header,
-        null,
-        createElement(Sidebar.Input, {
-          placeholder: SIDEBAR_INPUT_PLACEHOLDER,
-          "aria-label": SIDEBAR_INPUT_PLACEHOLDER,
-        })
-      ),
-      rootAround(cell.collapsed === "on")
-    ),
+  element: (cell: Cell) => host(SIDEBAR_SECTION_WIDTH, headerSection(), rootAround(cell.collapsed === "on")),
 };
 
 /** A `sidebar-footer` cell: the landing dashboard's footer row, expanded or collapsed. */
 export const sidebarFooter: CellRendering = {
-  element: (cell: Cell) =>
-    host(
-      SIDEBAR_SECTION_WIDTH,
-      createElement(
-        Sidebar.Footer,
-        null,
-        createElement(
-          Sidebar.Menu,
-          null,
-          menuRow(SIDEBAR_FOOTER_TEXT, rowIcon(SIDEBAR_FOOTER_ICON), {
-            size: "lg",
-            isActive: false,
-          })
-        )
-      ),
-      rootAround(cell.collapsed === "on")
-    ),
+  element: (cell: Cell) => host(SIDEBAR_SECTION_WIDTH, footerSection(), rootAround(cell.collapsed === "on")),
 };
 
 /** The `sidebar-menu-sub` cell: the rich menu demo's sub menu in an expanded Sidebar. */
@@ -285,4 +295,41 @@ export const sidebarMenuItemWithBadge: CellRendering = {
       ),
       rootAround(false)
     ),
+};
+
+/**
+ * The `sidebar` cells: the desktop panel as `sidebar-panel-kit.ts` draws it, the header, a
+ * `Sidebar.Content` holding the group and a `Sidebar.Separator`, and the footer, in a `Sidebar.Provider` that is open where
+ * the cell is expanded, around a `Sidebar.Root` that collapses to the icon rail.
+ * The Provider reads its labels from `LocaleProvider`, which throws without one. The host stands for
+ * the demo frame: as tall as its 28rem, and containing its paint, so the Root's fixed container takes
+ * the host's height, as the frame's `contain-paint` makes it do.
+ */
+export const sidebarPanel: CellRendering = {
+  element: (cell: Cell) =>
+    createElement(
+      "div",
+      { style: { position: "relative", height: `${SIDEBAR_PANEL_HEIGHT}px`, contain: "paint" } },
+      createElement(LocaleProvider, {
+        locale: "en-US",
+        children: createElement(
+          Sidebar.Provider,
+          { defaultOpen: cell.collapsed !== "on", className: SIDEBAR_PROVIDER_CLASS },
+          createElement(
+            Sidebar.Root,
+            { variant: panelVariant(cell), collapsible: "icon", className: SIDEBAR_ROOT_CLASS },
+            headerSection(),
+            createElement(
+              Sidebar.Content,
+              { key: "content" },
+              groupSection(),
+              createElement(Sidebar.Separator, { key: "separator" })
+            ),
+            footerSection()
+          )
+        ),
+      })
+    ),
+  // Fuse's own source never uses the Provider's class, so its standalone CSS lacks it.
+  hostClasses: [SIDEBAR_PROVIDER_CLASS],
 };

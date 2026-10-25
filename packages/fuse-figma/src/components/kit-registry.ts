@@ -66,6 +66,7 @@ import {
   SIDEBAR_MENU_BUTTON,
   SIDEBAR_MENU_SUB_BUTTON,
 } from "./sidebar-kit";
+import { SIDEBAR } from "./sidebar-panel-kit";
 import {
   SIDEBAR_FOOTER,
   SIDEBAR_GROUP,
@@ -402,6 +403,7 @@ export const KIT: readonly KitEntry[] = [
     page: SIDEBAR_PAGE,
     previewCells: matrixCells(SIDEBAR_MENU_ITEM_WITH_BADGE.axes),
   },
+  { definition: SIDEBAR, page: SIDEBAR_PAGE, previewCells: matrixCells(SIDEBAR.axes) },
   {
     definition: NAVIGATION_MENU_BAR_TRIGGER,
     page: NAVIGATION_MENU_PAGE,

@@ -6,6 +6,7 @@
  */
 import { mapBox, NO_VALUES, partName } from "./box-mapping";
 import type { MapScope } from "./box-mapping";
+import { readBackdrop } from "./box-paint";
 import { rootRoom } from "./box-sizing";
 import { SetCascade, splitClasses } from "./cascade";
 import type { LayerStyle } from "./cascade";
@@ -299,6 +300,14 @@ export type PartDefinition = BoxDefinition & {
    * `hugging-rows.ts` says: it hugs across, and its siblings fill. Undefined for a part that never is.
    */
   readonly setsWidth?: (cell: Cell) => boolean;
+  /**
+   * The variants only the part's own element carries, and whether each holds in a cell, as Base UI
+   * stamps `data-orientation` on `Sidebar.Separator` inside a panel whose root carries none. The part's
+   * classes cascade with them over the set's table. A part with facts holds no parts, since their
+   * elements carry none of them, and a fact cannot give a variant the set's table already gives a
+   * meaning; the build stops on either. Undefined for a part that carries only the set's facts.
+   */
+  readonly facts?: ReadonlyMap<string, (cell: Cell) => boolean>;
 } & (
     | {
         /** The part's `data-slot`, which names its layer. */
@@ -549,6 +558,13 @@ export type AncestorDefinition = {
    * set does not draw`.
    */
   readonly undrawn: string;
+  /**
+   * True for the ancestor that paints behind the root and whose box holds the root's, as
+   * `Sidebar.Provider`'s wrapper paints the inset panel's band. A root that paints no background
+   * takes this ancestor's background as its fill, and the coverage table names the ancestor's class.
+   * Undefined for every other ancestor. A cell names at most one.
+   */
+  readonly backdrop?: true;
 };
 
 /**
@@ -679,7 +695,10 @@ export function buildComponentSet(
       rootCascade.style,
       context.variables
     );
-    const mapped = mapBox(definition, rootCascade, scope, room);
+    const box = mapBox(definition, rootCascade, scope, room);
+    const behind = box.fill === undefined ? cellCascade.backdrop() : undefined;
+    const backdrop = behind && readBackdrop(behind, rootCascade.style, context.variables);
+    const mapped = backdrop === undefined ? box : { ...box, fill: backdrop };
     if (
       definition.rootOverflow === "visible" &&
       (mapped.fill !== undefined || mapped.stroke !== undefined || mapped.shadows.length > 0)

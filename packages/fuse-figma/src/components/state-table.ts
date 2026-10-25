@@ -375,6 +375,32 @@ export function withInPlaceFacts(
 }
 
 /**
+ * The table a frame part's classes read: the set's, with the variants the part's own element carries
+ * as conditions, as a part definition's `facts` says.
+ *
+ * @param meaningOf - The set's table.
+ * @param facts - The part's facts, by variant.
+ * @param part - The part's layer name, for the error.
+ * @returns The part's table.
+ * @throws When a fact names a variant the set's table gives a meaning, a defect in the definition.
+ */
+export function withPartFacts(
+  meaningOf: StateTable,
+  facts: ReadonlyMap<string, (cell: Cell) => boolean>,
+  part: string
+): StateTable {
+  for (const variant of facts.keys()) {
+    if (meaningOf(variant).kind === "condition") {
+      throw new Error(`the part ${part} gives \`${variant}\` a second meaning`);
+    }
+  }
+  return (variant) => {
+    const fact = facts.get(variant);
+    return fact === undefined ? meaningOf(variant) : { kind: "condition", holds: fact };
+  };
+}
+
+/**
  * The children a class styles: the parts that carry a `data-slot`, the parts that are elements of a
  * tag, or the element of a tag that holds the box's label as its last child.
  */

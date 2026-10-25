@@ -4,7 +4,9 @@
  * the cell with its recipe, the kit's 240px and 191px preview widths, and the `group` marker and
  * `text-sidebar-foreground` that the desktop `Sidebar.Root` in `sidebar.tsx` carries around its rows.
  * The sections sit in the docs' 16rem Sidebar, 256px, and the sub menu and the item with badge in a
- * 240px menu row.
+ * 240px menu row. The panel sits in a host as tall as the app frame demo's 28rem frame that contains
+ * its paint, as the frame's `contain-paint` does, around the `data-*` markers the desktop
+ * `Sidebar.Root` stamps.
  * The markup check in `kit-markup.test.ts` reads each cell's conditions, labels and icons, not the
  * row's classes or the host, so it cannot tell a renderer that drops the variant or the size, or one
  * that sets the rows at another width or in another color.
@@ -19,6 +21,7 @@ import {
   SIDEBAR_MENU_BUTTON,
   SIDEBAR_MENU_SUB_BUTTON,
 } from "../components/sidebar-kit";
+import { SIDEBAR } from "../components/sidebar-panel-kit";
 import {
   SIDEBAR_FOOTER,
   SIDEBAR_GROUP,
@@ -38,6 +41,7 @@ import {
   sidebarMenuItemWithBadge,
   sidebarMenuSub,
   sidebarMenuSubButton,
+  sidebarPanel,
 } from "./sidebar-cell";
 
 /**
@@ -123,4 +127,27 @@ describe("the Sidebar section renderers", () => {
     expect([host, collapsible]).toEqual([["width:240px", "group text-sidebar-foreground"], ""]);
     expect(root).toBe(SIDEBAR_MENU_ITEM_WITH_BADGE.classesFor(cell));
   });
+});
+
+describe("the Sidebar panel renderer", () => {
+  it.each([
+    { variant: "sidebar", collapsed: "off", state: "expanded", marker: "" },
+    { variant: "sidebar", collapsed: "on", state: "collapsed", marker: "icon" },
+    { variant: "inset", collapsed: "off", state: "expanded", marker: "" },
+    { variant: "inset", collapsed: "on", state: "collapsed", marker: "icon" },
+  ])(
+    "renders the $state $variant panel in a 448px host that contains its paint",
+    ({ variant, collapsed, state, marker }) => {
+      const cell = { variant, collapsed };
+      const elements = elementsOf(renderCellHtml(sidebarPanel, cell));
+      const bySlot = (slot: string) =>
+        elements.find((element) => element.attributes.get("data-slot") === slot);
+      const panel = bySlot("sidebar");
+      expect(elements[0]?.attributes.get("style")).toBe("position:relative;height:448px;contain:paint");
+      expect(
+        ["state", "collapsible", "variant", "side"].map((name) => panel?.attributes.get(`data-${name}`))
+      ).toEqual([state, marker, variant, "left"]);
+      expect(bySlot("sidebar-container")?.attributes.get("class")).toBe(SIDEBAR.classesFor(cell));
+    }
+  );
 });

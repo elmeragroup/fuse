@@ -482,6 +482,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./sidebar-cell.ts")).sidebarMenuItemWithBadge,
   },
   {
+    set: "sidebar",
+    entry: "dist/sidebar.js",
+    load: async () => (await import("./sidebar-cell.ts")).sidebarPanel,
+  },
+  {
     set: "navigation-menu-bar-trigger",
     entry: "dist/navigation-menu.js",
     load: async () => (await import("./navigation-menu-cell.ts")).navigationMenuBarTrigger,

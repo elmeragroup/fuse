@@ -7,7 +7,7 @@
  */
 import { outOfFlow } from "./box-sizing";
 import type { LayerStyle, SpecField } from "./cascade";
-import { describeNumber, evaluateLength, readNumber } from "./css-values";
+import { describeNumber, evaluateLength, normalizeCss, readNumber } from "./css-values";
 import type { VariableIndex } from "./css-values";
 import { NO_LIMITS, ZERO } from "./kit-spec";
 import type { FrameLayerSpec, InstanceLayerSpec, NumberSpec } from "./kit-spec";
@@ -72,6 +72,7 @@ export function adjoinsMargin(styles: readonly LayerStyle[], index: number): boo
  * @param parent - The part's parent's layout.
  * @param variables - The synced variables a margin can bind.
  * @param collapses - Whether a vertical margin of the part adjoins another margin in a block parent.
+ * @param clipped - Whether the parent clips what overflows it and pads nothing across.
  * @returns The frame around the part, or the layer as it was where it has no margin that maps.
  */
 export function wrapFrameMargins(
@@ -79,9 +80,10 @@ export function wrapFrameMargins(
   layer: FrameLayerSpec,
   parent: Pick<Layout, "flex" | "blocks" | "direction">,
   variables: VariableIndex,
-  collapses: boolean
+  collapses: boolean,
+  clipped: boolean
 ): FrameLayerSpec {
-  const frame = drawMargins(style, layer, parent, variables, collapses);
+  const frame = drawMargins(style, layer, parent, variables, collapses, clipped);
   if (frame === undefined) {
     return layer;
   }
@@ -99,6 +101,7 @@ export function wrapFrameMargins(
  * @param parent - The part's parent's layout.
  * @param variables - The synced variables a margin can bind.
  * @param collapses - Whether a vertical margin of the part adjoins another margin in a block parent.
+ * @param clipped - Whether the parent clips what overflows it and pads nothing across.
  * @returns The layer the parent holds and the instance layer inside it.
  */
 export function wrapInstanceMargins(
@@ -106,9 +109,10 @@ export function wrapInstanceMargins(
   layer: InstanceLayerSpec,
   parent: Pick<Layout, "flex" | "blocks" | "direction">,
   variables: VariableIndex,
-  collapses: boolean
+  collapses: boolean,
+  clipped: boolean
 ): InstanceMarginBox {
-  const frame = drawMargins(style, layer, parent, variables, collapses);
+  const frame = drawMargins(style, layer, parent, variables, collapses, clipped);
   if (frame === undefined) {
     return { layer, instance: layer };
   }
@@ -134,19 +138,30 @@ export function wrapInstanceMargins(
  * across stay with the part, for the column's separator rule to read (`full-bleed.ts`). A block
  * column's vertical margins collapse where they adjoin another margin (CSS 2.1 §8.3.1), so there the
  * frame draws them only where `collapses` says no margin adjoins them.
+ *
+ * Such a part at `width: 100%` keeps its width past a start margin, so it reaches past the column's
+ * end by that margin (CSS 2.1 §10.3.3). In a column that clips and pads nothing across, the clip cuts
+ * it there (CSS Overflow 3 §3), so it shows from the start margin to the column's end, as
+ * `Sidebar.Separator`'s `data-horizontal:w-full mx-2` does in `Sidebar.Content`. There the frame also
+ * pads a positive literal start margin, and the end margin drops, since it shows nothing.
  */
 function drawMargins(
   style: LayerStyle,
   layer: FrameLayerSpec | InstanceLayerSpec,
   parent: Pick<Layout, "flex" | "blocks" | "direction">,
   variables: VariableIndex,
-  collapses: boolean
+  collapses: boolean,
+  clipped: boolean
 ): FrameLayerSpec | undefined {
   const zero = dropZeroMargins(style);
   const { horizontal, vertical } = layer.sizing;
   const across = parent.direction === "VERTICAL" && horizontal.kind === "fill" && vertical.kind !== "fill";
+  const overshoots = across && clipped && overshootsEnd(style, zero, variables);
   const set = MARGINS.filter(
-    (property) => style.has(property) && !zero(property) && (!across || VERTICAL_MARGINS.has(property))
+    (property) =>
+      style.has(property) &&
+      !zero(property) &&
+      (!across || VERTICAL_MARGINS.has(property) || (overshoots && property === "margin-left"))
   );
   const fixedOrHugs = horizontal.kind !== "fill" && vertical.kind !== "fill";
   const length = (value: string): NumberSpec | undefined => {
@@ -157,6 +172,9 @@ function drawMargins(
   const flows = parent.flex || (parent.blocks && !collapses);
   if (set.length === 0 || !flows || outOfFlow(style) || !(fixedOrHugs || across) || !maps) {
     return undefined;
+  }
+  if (overshoots && style.has("margin-right") && !zero("margin-right")) {
+    style.mark("margin-right", "dropped", CLIPPED_END, []);
   }
   // A frame part's own box moves into the frame, and so do the fields its reads filled. An instance
   // keeps its fields, which the build diffs against the inner variant.
@@ -169,12 +187,17 @@ function drawMargins(
           property,
           length,
           (spec) =>
-            spec.kind === "literal"
-              ? {
-                  outcome: "literal",
-                  detail: `${spec.value}px of padding on a frame around the part, the space the margin adds`,
-                }
-              : describeNumber(spec),
+            spec.kind !== "literal"
+              ? describeNumber(spec)
+              : overshoots && property === "margin-left"
+                ? {
+                    outcome: "literal",
+                    detail: `${spec.value}px of padding at the start of a frame around the part, which keeps its 100% width past the margin, so its column's clip cuts its end`,
+                  }
+                : {
+                    outcome: "literal",
+                    detail: `${spec.value}px of padding on a frame around the part, the space the margin adds`,
+                  },
           layer.kind === "frame" ? style.feed(PADDING_OF[property]) : style.feed("around")
         )
       : undefined) ?? ZERO;
@@ -203,6 +226,32 @@ function drawMargins(
     children: [],
   };
   return layer.visibleProperty === undefined ? frame : { ...frame, visibleProperty: layer.visibleProperty };
+}
+
+/** Why the end margin of a part that overshoots its clipping column drops. */
+const CLIPPED_END =
+  "the part keeps its 100% width past its start margin, so it reaches past its column's end, which clips it, and the end margin shows nothing";
+
+/**
+ * Whether a part is as wide as its column and sets a positive literal start margin, and its end
+ * margin is zero or a positive literal, so it reaches past the column's end by the start margin.
+ *
+ * @param style - The part's style.
+ * @param zero - The test of whether a margin of the part is zero.
+ * @param variables - The synced variables a margin can bind, which make it no literal.
+ * @returns True where the part overshoots the column's end.
+ */
+function overshootsEnd(
+  style: LayerStyle,
+  zero: (property: string) => boolean,
+  variables: VariableIndex
+): boolean {
+  const positive = (property: string) => {
+    const spec = readNumber(style.resolved(property) ?? "", variables);
+    return spec?.kind === "literal" && spec.value > 0;
+  };
+  const end = !style.has("margin-right") || zero("margin-right") || positive("margin-right");
+  return normalizeCss(style.resolved("width") ?? "") === "100%" && positive("margin-left") && end;
 }
 
 /**

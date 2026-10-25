@@ -85,6 +85,38 @@ export function readPaint(
   return { fill: fill === NO_FILL ? undefined : fill, stroke, shadows };
 }
 
+/**
+ * Read the background an ancestor paints behind a root that paints none, as the root's fill. The
+ * root shows it across its box, since the ancestor's box holds the root's (CSS 2.1 Appendix E).
+ *
+ * @param backdrop - The ancestor's style, whose reads fill the root's fields.
+ * @param root - The root's style.
+ * @param variables - The synced variables the color can bind.
+ * @returns The fill, or undefined where the ancestor paints no background.
+ */
+export function readBackdrop(
+  backdrop: LayerStyle,
+  root: LayerStyle,
+  variables: VariableIndex
+): ColorSpec | undefined {
+  if (!backdrop.has("background-color")) {
+    return undefined;
+  }
+  const fill = backdrop.read(
+    "background-color",
+    (value) => readFill(value, variables),
+    (read) => {
+      const { outcome, detail } = describeFill(read);
+      return {
+        outcome,
+        detail: `${detail}, which the ancestor paints behind the root, so the root shows it across its box`,
+      };
+    },
+    root.feed("fill")
+  );
+  return fill === NO_FILL ? undefined : fill;
+}
+
 /** A background that paints nothing, which the root writes as no fill. */
 const NO_FILL = "no fill";
 

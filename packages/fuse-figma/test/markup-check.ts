@@ -535,10 +535,17 @@ function checkRendering(
     for (const [variant, holds] of PARENT_VARIANTS) {
       expect(holdsIn(variant), `${key}: ${variant}`).toBe(holds(elements, measured));
     }
-    // A `has-[>…]` variant holds exactly where the element that names it holds the child it reads, as
-    // an Input group's root holds its own disabled control, and its addon a button.
+    // A `has-*` variant holds exactly where the element that names it holds what it reads, as an
+    // Input group's root holds its own disabled control, its addon a button, and the Sidebar panel's
+    // wrapper, an ancestor the definition names, an inset Root.
+    const namedAncestors = new Set((definition.ancestorsFor?.(cell) ?? []).map(({ slot }) => slot));
     for (const [variant, has] of HAS_VARIANTS) {
       const namers = [
+        ...ancestorIndexes(elements, measured).filter(
+          (index) =>
+            namedAncestors.has(elements[index]?.attributes.get("data-slot") ?? "") &&
+            namesVariant(elements[index], variant)
+        ),
         ...(rootVariants.has(variant) ? [measured] : []),
         ...elementsNaming(elements, measured, variant, instances),
       ];
@@ -553,7 +560,6 @@ function checkRendering(
     // menu caret carries its Root's `data-side`, and an open Select popup its `data-open` around a row.
     // A variant the definition omits draws in no cell, so it makes no claim about the markup, as the
     // `aria-expanded:` of a Button trigger drawn as a frame.
-    const namedAncestors = new Set((definition.ancestorsFor?.(cell) ?? []).map(({ slot }) => slot));
     const omits = (variant: string) => ["omitted", "omitted-for"].includes(meaningOf(variant).kind);
     for (const [variant, carries] of [...NAMED_ATTRIBUTE_VARIANTS].filter(([variant]) => !omits(variant))) {
       const around = [
@@ -631,8 +637,10 @@ function checkRendering(
       expect(element?.attributes.get("style"), `${key}: the style on ${path}`).toEqual(
         expectedStyle(part, cell)
       );
+      // A part's own facts hold on its element, as a Sidebar separator's `data-orientation` does.
+      const holdsOnPart = (variant: string) => part.facts?.get(variant)?.(cell) ?? holdsIn(variant);
       for (const variant of attributeConditions(part, cell)) {
-        expect(holdsIn(variant), `${key}: ${variant} on ${path}`).toBe(
+        expect(holdsOnPart(variant), `${key}: ${variant} on ${path}`).toBe(
           element !== undefined && ATTRIBUTE_VARIANTS.get(variant)?.(element) === true
         );
       }

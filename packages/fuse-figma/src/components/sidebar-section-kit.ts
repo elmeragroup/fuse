@@ -25,7 +25,7 @@
  *
  * Each section sits 256px wide, the docs' 16rem Sidebar, as the row sets' 240px rows sit inside a
  * group's dense 8px inset, and the sub menu and the item sit in a 240px menu row. The collapsed cells keep that
- * width: the icon rail is the panel's, which a later set draws.
+ * width: the icon rail is the panel's, which the `Sidebar` set draws.
  */
 import {
   sidebarGroupClass,

@@ -124,6 +124,16 @@ export const GROUP_VARIANTS = new Map<string, (ancestor: MarkupElement) => boole
     "group-data-[collapsible=icon]",
     (ancestor) => marks(ancestor, "group") && ancestor.attributes.get("data-collapsible") === "icon",
   ],
+  // The desktop `Sidebar.Root` also carries `data-collapsible="offcanvas"` while it slides off, and
+  // the side it sits on in `data-side`, which its container reads.
+  [
+    "group-data-[collapsible=offcanvas]",
+    (ancestor) => marks(ancestor, "group") && ancestor.attributes.get("data-collapsible") === "offcanvas",
+  ],
+  ...["left", "right"].map((side): [string, (ancestor: MarkupElement) => boolean] => [
+    `group-data-[side=${side}]`,
+    (ancestor) => marks(ancestor, "group") && ancestor.attributes.get("data-side") === side,
+  ]),
 ]);
 
 /**
@@ -175,10 +185,12 @@ function below(elements: readonly MarkupElement[], index: number, outer: number)
  * Whether an element holds what each `has-[>…]:` variant reads, as Tailwind compiles it:
  * `has-[>button]:` is `:has(> button)`, which holds on an element with a `<button>` child, as an Input
  * group addon holding a button, and `has-[>[data-focus-ring-control]:disabled]:` holds on an Input
- * group whose own control, a direct child, is disabled.
+ * group whose own control, a direct child, is disabled. `has-data-[variant=inset]:` is
+ * `:has([data-variant="inset"])`, which holds on an element with such an element at any depth below
+ * it, as `Sidebar.Provider`'s wrapper around an inset `Sidebar.Root`.
  */
-export const HAS_VARIANTS = new Map<string, (elements: readonly MarkupElement[], index: number) => boolean>(
-  (
+export const HAS_VARIANTS = new Map<string, (elements: readonly MarkupElement[], index: number) => boolean>([
+  ...(
     [
       [
         "has-[>[data-focus-ring-control]:disabled]",
@@ -196,11 +208,18 @@ export const HAS_VARIANTS = new Map<string, (elements: readonly MarkupElement[],
       ["has-[>[data-slot=input-group]]", (child) => child.attributes.get("data-slot") === "input-group"],
       ["has-[>svg]", (child) => child.name === "svg"],
     ] as const satisfies readonly (readonly [string, (child: MarkupElement) => boolean])[]
-  ).map(([variant, matches]) => [
+  ).map(([variant, matches]): [string, (elements: readonly MarkupElement[], index: number) => boolean] => [
     variant,
-    (elements: readonly MarkupElement[], index: number) => childrenOf(elements, index).some(matches),
-  ])
-);
+    (elements, index) => childrenOf(elements, index).some(matches),
+  ]),
+  [
+    "has-data-[variant=inset]",
+    (elements, index) =>
+      elements.some(
+        (element, at) => element.attributes.get("data-variant") === "inset" && below(elements, at, index)
+      ),
+  ],
+]);
 
 /**
  * Whether an ancestor is the group each `group-has-…:` variant reads: `group-has-data-[slot=combobox-clear]/input-group:`
