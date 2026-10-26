@@ -265,7 +265,8 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // which read `--radius-field` (+142), take styles.css to 24593, over it, so the shared entry
   // recalibrates to measured × 1.5, as a code owner approved.
   // 2026-10-23: the twelve heading style roles and the restated level pointers, base 6207 → 6450,
-  // +243, ceiling raised by the delta: 6416 + 243 = 6659.
+  // +243, ceiling raised by the delta: 6416 + 243 = 6659. The base is main as #406 left it; the
+  // 4472 record above was not re-measured while themes.css grew under its ceiling.
   { name: "themes.css", file: "themes.css", measuredGzip: 6450, ceilingGzip: 6659 },
   { name: "styles.css", file: "styles.css", measuredGzip: 24593 },
 ] satisfies readonly Measured<CssBudget>[]);
