@@ -676,31 +676,29 @@ const planOverridesAndSizing = Effect.fnUntraced(function* (
  *
  * @param held - `unknown` when the box that holds the instance turns in this run.
  */
-function planStages(
+const planStages = Effect.fnUntraced(function* (
   instance: InstanceNode,
   label: string,
   spec: InstanceLayerSpec,
   inner: InnerVariant,
   links: InstanceLinks,
   held: Held
-): Effect.Effect<void, PluginError, PlanServices> {
-  return Effect.gen(function* () {
-    const differ = differingProperties(instance, spec, inner, links.icons, label);
-    if (differ.length === 0) {
-      yield* planOverridesAndSizing(instance, label, spec, inner, links, held);
-      return;
-    }
-    const described = differ.map((desired) => `${desired.name} ${desired.shown}`).join(", ");
-    yield* changeLater(
-      label,
-      `properties → ${described}`,
-      Effect.gen(function* () {
-        writeProperties(instance, label, inner, differ);
-        yield* planWhenRun(planOverridesAndSizing(instance, label, spec, inner, links, "read"));
-      })
-    );
-  });
-}
+): Effect.fn.Return<void, PluginError, PlanServices> {
+  const differ = differingProperties(instance, spec, inner, links.icons, label);
+  if (differ.length === 0) {
+    yield* planOverridesAndSizing(instance, label, spec, inner, links, held);
+    return;
+  }
+  const described = differ.map((desired) => `${desired.name} ${desired.shown}`).join(", ");
+  yield* changeLater(
+    label,
+    `properties → ${described}`,
+    Effect.gen(function* () {
+      writeProperties(instance, label, inner, differ);
+      yield* planWhenRun(planOverridesAndSizing(instance, label, spec, inner, links, "read"));
+    })
+  );
+});
 
 /**
  * Whether the run writes to what the instance shows before the instance's own operations: the inner

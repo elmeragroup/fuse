@@ -60,21 +60,20 @@ const planKit = Effect.fnUntraced(function* (kit: KitSpec) {
   const changed = new Set<string>();
   // Plans the nodes of one page, and records whether that recorded any operation, which may
   // move or resize what the page layout reads.
-  const onPage = <Result>(
+  const onPage = Effect.fnUntraced(function* <Result>(
     key: string,
     plan: (page: PlannedPage) => Effect.Effect<Result, PluginError, PlanServices>
-  ): Effect.Effect<Result, PluginError, PlanServices> =>
-    Effect.gen(function* () {
-      const page = pages.listed.find((candidate) => candidate.spec.key === key);
-      if (page === undefined) {
-        throw new Error(`The kit places a node on the page ${key}, which it does not list.`);
-      }
-      const [result, recorded] = yield* Plan.watch(plan(page));
-      if (recorded) {
-        changed.add(key);
-      }
-      return result;
-    });
+  ): Effect.fn.Return<Result, PluginError, PlanServices> {
+    const page = pages.listed.find((candidate) => candidate.spec.key === key);
+    if (page === undefined) {
+      throw new Error(`The kit places a node on the page ${key}, which it does not list.`);
+    }
+    const [result, recorded] = yield* Plan.watch(plan(page));
+    if (recorded) {
+      changed.add(key);
+    }
+    return result;
+  });
 
   // The icons come first, because the sets' icon layers and swap properties use them. The sets follow
   // in kit order, which puts each set after the sets whose variants its instance layers show.
@@ -159,11 +158,10 @@ const reconcileFile = Effect.fnUntraced(function* (apply: boolean) {
  * @param apply - Whether to write the changes or only list them.
  * @returns The changes and the warnings.
  */
-export const reconcile = (apply: boolean) =>
-  Effect.gen(function* () {
-    const kit = yield* Kit;
-    return yield* Effect.provideService(reconcileFile(apply), GlyphFont, kit.glyphFont);
-  }).pipe(Effect.provide(kitVariablesLayer));
+export const reconcile = Effect.fnUntraced(function* (apply: boolean) {
+  const kit = yield* Kit;
+  return yield* Effect.provideService(reconcileFile(apply), GlyphFont, kit.glyphFont);
+}, Effect.provide(kitVariablesLayer));
 
 /**
  * Plan or apply the kit on the current file, as a promise.

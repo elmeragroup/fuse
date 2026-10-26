@@ -57,15 +57,14 @@ export class Plan extends Context.Service<Plan, PlanRecorder>()("@elmeragroup/fu
    * @param effect - The planning to watch.
    * @returns What the effect returned, and whether it recorded an operation.
    */
-  static readonly watch = <A, E, R>(
+  static readonly watch = Effect.fnUntraced(function* <A, E, R>(
     effect: Effect.Effect<A, E, R>
-  ): Effect.Effect<readonly [A, boolean], E, R | Plan> =>
-    Effect.gen(function* () {
-      const plan = yield* Plan;
-      const start = plan.operations.length;
-      const result = yield* effect;
-      return [result, plan.operations.length > start] as const;
-    });
+  ): Effect.fn.Return<readonly [A, boolean], E, R | Plan> {
+    const plan = yield* Plan;
+    const start = plan.operations.length;
+    const result = yield* effect;
+    return [result, plan.operations.length > start] as const;
+  });
 }
 
 /**
@@ -187,17 +186,15 @@ export function changeWith(
  * @param perform - The write.
  * @returns The Effect that records the operation.
  */
-export function changeLater<R>(
+export const changeLater = Effect.fnUntraced(function* <R>(
   label: string,
   description: string,
   perform: Effect.Effect<void, PluginError, R>
-): Effect.Effect<void, never, R | Plan> {
-  return Effect.gen(function* () {
-    const context = yield* Effect.context<R>();
-    const plan = yield* Plan;
-    changeWith(plan, label, description, Effect.provideContext(perform, context));
-  });
-}
+): Effect.fn.Return<void, never, R | Plan> {
+  const context = yield* Effect.context<R>();
+  const plan = yield* Plan;
+  changeWith(plan, label, description, Effect.provideContext(perform, context));
+});
 
 /**
  * Record the writes a group plans as one operation, for writes where a later one depends on
@@ -244,15 +241,13 @@ export function existing<Node>(node: Node): Target<Node> {
  *   parent.
  * @returns The Effect that plans and performs the writes.
  */
-export function planWhenRun<E, R>(
+export const planWhenRun = Effect.fnUntraced(function* <E, R>(
   stage: Effect.Effect<void, E, R>
-): Effect.Effect<void, E | PluginError, Exclude<R, Plan> | Plan> {
-  return Effect.gen(function* () {
-    const later = newPlan(yield* Plan);
-    yield* Effect.provideService(stage, Plan, later);
-    yield* performPlan(later);
-  });
-}
+): Effect.fn.Return<void, E | PluginError, Exclude<R, Plan> | Plan> {
+  const later = newPlan(yield* Plan);
+  yield* Effect.provideService(stage, Plan, later);
+  yield* performPlan(later);
+});
 
 /**
  * Record the creation of a node as one operation. When it runs, the operation makes the node,
@@ -271,36 +266,32 @@ export function planWhenRun<E, R>(
  *   that `make` finishes needs none.
  * @returns The node, for later operations to read once this one has run.
  */
-export function create<Node, R = never>(
+export const create = Effect.fnUntraced(function* <Node, R = never>(
   label: string,
   description: string,
   make: () => Node,
   configure?: (node: Node) => Effect.Effect<void, PluginError, R>
-): Effect.Effect<Target<Node>, never, Exclude<R, Plan> | Plan> {
-  return Effect.gen(function* () {
-    let made: Node | undefined;
-    const perform = Effect.gen(function* () {
-      const node = make();
-      made = node;
-      if (configure !== undefined) {
-        yield* planWhenRun(configure(node));
-      }
-    });
-    yield* changeLater(label, description, perform);
-    const target: Target<Node> = {
-      existing: undefined,
-      get: () => {
-        if (made === undefined) {
-          throw new Error(
-            `${label}: an operation read the node that "${description}" makes before that ran.`
-          );
-        }
-        return made;
-      },
-    };
-    return target;
+): Effect.fn.Return<Target<Node>, never, Exclude<R, Plan> | Plan> {
+  let made: Node | undefined;
+  const perform = Effect.gen(function* () {
+    const node = make();
+    made = node;
+    if (configure !== undefined) {
+      yield* planWhenRun(configure(node));
+    }
   });
-}
+  yield* changeLater(label, description, perform);
+  const target: Target<Node> = {
+    existing: undefined,
+    get: () => {
+      if (made === undefined) {
+        throw new Error(`${label}: an operation read the node that "${description}" makes before that ran.`);
+      }
+      return made;
+    },
+  };
+  return target;
+});
 
 /**
  * Whether owned children sit in spec order once the plan has run. A node an operation creates
@@ -371,17 +362,15 @@ export const performPlan = Effect.fnUntraced(function* (plan: PlanRecorder) {
  *   `Plan`.
  * @returns The plan and what the planner returned.
  */
-export function runPlan<A, E, R>(
+export const runPlan = Effect.fnUntraced(function* <A, E, R>(
   apply: boolean,
   planner: Effect.Effect<A, E, R>
-): Effect.Effect<PlannedRun<A>, E | PluginError, Exclude<R, Plan>> {
-  return Effect.gen(function* () {
-    const plan = newPlan();
-    const result = yield* Effect.provideService(planner, Plan, plan);
-    yield* meetRequirements(plan);
-    if (apply) {
-      yield* performPlan(plan);
-    }
-    return { plan, result };
-  });
-}
+): Effect.fn.Return<PlannedRun<A>, E | PluginError, Exclude<R, Plan>> {
+  const plan = newPlan();
+  const result = yield* Effect.provideService(planner, Plan, plan);
+  yield* meetRequirements(plan);
+  if (apply) {
+    yield* performPlan(plan);
+  }
+  return { plan, result };
+});

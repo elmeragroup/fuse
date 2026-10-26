@@ -340,22 +340,20 @@ function childKind(
  *   as {@link planBox} returns for the parent, so the parent's absolute layers are planned to be
  *   written again after the resize.
  */
-export function planChildren(
+export const planChildren = Effect.fnUntraced(function* (
   parent: LayerParent,
   label: string,
   box: Pick<BoxSpec, "direction" | "children">,
   links: LayerLinks,
   size: Held
-): Effect.Effect<void, PluginError, PlanServices> {
-  return Effect.gen(function* () {
-    const run = yield* currentRun;
-    const holder: Holder = {
-      node: parent,
-      held: parent.layoutMode === box.direction ? "read" : "unknown",
-      size,
-    };
-    yield* planOwnedChildren(parent, label, "layer", box.children, (spec) =>
-      childKind(run, holder, label, spec, links)
-    );
-  });
-}
+): Effect.fn.Return<void, PluginError, PlanServices> {
+  const run = yield* currentRun;
+  const holder: Holder = {
+    node: parent,
+    held: parent.layoutMode === box.direction ? "read" : "unknown",
+    size,
+  };
+  yield* planOwnedChildren(parent, label, "layer", box.children, (spec) =>
+    childKind(run, holder, label, spec, links)
+  );
+});

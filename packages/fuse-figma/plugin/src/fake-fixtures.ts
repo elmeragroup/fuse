@@ -148,12 +148,12 @@ export async function fixtureRun(file: FakeFigma, plan: PlanRecorder): Promise<R
 }
 
 /** The file's variables, with every collection the file holds as one the kit names. */
-function fixtureVariables(file: FakeFigma): Effect.Effect<KitVariables, DuplicateCollections> {
-  return Effect.gen(function* () {
-    const collections = yield* Effect.promise(() => file.figma.variables.getLocalVariableCollectionsAsync());
-    return yield* loadKitVariables(file.figma, new Set(collections.map((collection) => collection.name)));
-  });
-}
+const fixtureVariables = Effect.fnUntraced(function* (
+  file: FakeFigma
+): Effect.fn.Return<KitVariables, DuplicateCollections> {
+  const collections = yield* Effect.promise(() => file.figma.variables.getLocalVariableCollectionsAsync());
+  return yield* loadKitVariables(file.figma, new Set(collections.map((collection) => collection.name)));
+});
 
 /**
  * Provide the services a structural planner reads on a fixture file: the file, its variables, with
