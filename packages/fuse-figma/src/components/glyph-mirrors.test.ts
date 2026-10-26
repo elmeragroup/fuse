@@ -6,6 +6,7 @@
  * The paths need not share a decomposition, and Phosphor's do not: CaretDown's caps start where
  * CaretUp's end.
  */
+import { Effect } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { HALF_TURN_MIRRORS } from "./glyph-mirrors";
@@ -15,7 +16,7 @@ import type { IconSpec } from "./kit-spec";
 let library: readonly IconSpec[];
 
 beforeAll(async () => {
-  library = await fuseIcons();
+  library = await Effect.runPromise(fuseIcons);
 });
 
 type Point = readonly [number, number];

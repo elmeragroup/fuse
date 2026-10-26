@@ -19,6 +19,7 @@
  * layers read, inherited ones too, and the fields their reads fill, go to the instance part, as
  * `instance-parts.ts` says.
  */
+import { KitUnmappable } from "./build-errors";
 import { splitClassName } from "./class-name";
 import type {
   AncestorDefinition,
@@ -695,7 +696,9 @@ export class CellCascade {
       );
       if (ancestor.backdrop === true) {
         if (this.#backdrop !== undefined) {
-          throw new Error(`${part}: a cell names two ancestors that paint behind the root`);
+          throw new KitUnmappable({
+            message: `${part}: a cell names two ancestors that paint behind the root`,
+          });
         }
         // Its reads fill the root's fields, so the style takes the root's path.
         this.#backdrop = new LayerStyle(this.#ledger, outside, []);
@@ -1137,7 +1140,9 @@ export class BoxCascade {
       ...classes.exceptLastRules,
     ]);
     if (nested !== undefined) {
-      throw new Error(`the ${slot.name}'s own class ${nested.className} selects inside the icon`);
+      throw new KitUnmappable({
+        message: `the ${slot.name}'s own class ${nested.className} selects inside the icon`,
+      });
     }
     takeAll(this.#descendants);
     const layer = this.#ledger.add(

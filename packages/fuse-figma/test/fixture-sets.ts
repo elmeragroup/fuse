@@ -4,6 +4,8 @@
  * Each fixture is `chip`, a one-cell set whose root carries the classes a test gives it, and
  * each build compiles every class the fixture uses, as the kit build compiles its definitions'.
  */
+import { Effect } from "effect";
+
 import { buildComponentSet, buildSetsInOrder, definitionClasses } from "../src/components/component-spec.ts";
 import type {
   BuildContext,
@@ -108,10 +110,12 @@ async function buildContext(
   context: FixtureContext
 ): Promise<BuildContext> {
   const built: BuildContext = {
-    compiled: await compileUtilities([
-      ...definitions.flatMap((definition) => definitionClasses(definition)),
-      ...(context.registered ?? []),
-    ]),
+    compiled: await Effect.runPromise(
+      compileUtilities([
+        ...definitions.flatMap((definition) => definitionClasses(definition)),
+        ...(context.registered ?? []),
+      ])
+    ),
     variables: context.variables ?? makeVariableIndex([]),
     page: context.page ?? [],
     base: context.base ?? [],

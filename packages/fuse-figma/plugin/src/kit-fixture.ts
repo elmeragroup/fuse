@@ -7,7 +7,7 @@
  */
 import { Effect, Result } from "effect";
 
-import type { KitContradiction } from "../../src/components/kit-check.ts";
+import type { KitBuildError } from "../../src/components/build-errors.ts";
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import type { AliasCycle, CollectionSpec, InvalidVariableSet, VariableSet } from "../../src/variable-set.ts";
 import { ICONS_PAGE, KIT_PAGES, previewsOn } from "../../test/kit-inventory.ts";
@@ -26,7 +26,7 @@ const SPEC_BUILDER = "../../src/components/build-kit.ts";
 const TOKEN_SYNC = "../../src/fuse-variable-set.ts";
 
 type SpecBuilder = {
-  readonly buildKit: () => Effect.Effect<{ readonly spec: KitSpec }, KitContradiction>;
+  readonly buildKit: () => Effect.Effect<{ readonly spec: KitSpec }, KitBuildError>;
 };
 type TokenSync = {
   readonly fuseVariableSet: () => Result.Result<VariableSet, InvalidVariableSet | AliasCycle>;

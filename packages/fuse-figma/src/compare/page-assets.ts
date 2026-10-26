@@ -10,7 +10,7 @@
  * system font.
  */
 
-import { Result } from "effect";
+import { Effect, Result } from "effect";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -118,8 +118,8 @@ export async function readPageAssets(
     fontCss,
     fontDirectory: join(fontPackage, "files"),
     fontPackage,
-    hostCss: await compileHostUtilities(
-      [...renderers.values()].flatMap((renderer) => renderer.hostClasses ?? [])
+    hostCss: await Effect.runPromise(
+      compileHostUtilities([...renderers.values()].flatMap((renderer) => renderer.hostClasses ?? []))
     ),
     client: await buildClientBundle([...renderers.values()].filter(isClientRenderer)),
   };

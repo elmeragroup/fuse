@@ -6,7 +6,7 @@
  * `client-markup.ts` says. It writes three pictures per cell, `report.json` and `report.html`.
  */
 
-import { Result } from "effect";
+import { Effect, Result } from "effect";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -328,7 +328,7 @@ export async function compareSnapshot(
   const renderers = await loadRenderers();
   const assets = await readPageAssets(build.success, renderers);
   const renderable = renderables(renderers);
-  const componentSets = (await buildComponentSets()).map((set) => set.componentSet);
+  const componentSets = (await Effect.runPromise(buildComponentSets())).map((set) => set.componentSet);
   const launched = await CompareBrowser.launch(assets);
   if (Result.isFailure(launched)) {
     return Result.fail(launched.failure);

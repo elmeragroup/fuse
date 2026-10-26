@@ -1,13 +1,14 @@
+import { mapBox, NO_VALUES, partName } from "./box-mapping";
+import type { MapScope } from "./box-mapping";
+import { readBackdrop } from "./box-paint";
+import { rootRoom } from "./box-sizing";
 /**
  * Turn a recipe into a Figma component set. For every cell of the variant matrix the builder
  * asks `cascade.ts` for the computed style of the root, each part and each icon, and
  * `box-mapping.ts` maps it onto Figma fields. Every declaration it reads lands in the coverage
  * table with what became of it. This module holds the definition types and assembles the set.
  */
-import { mapBox, NO_VALUES, partName } from "./box-mapping";
-import type { MapScope } from "./box-mapping";
-import { readBackdrop } from "./box-paint";
-import { rootRoom } from "./box-sizing";
+import { KitUnmappable } from "./build-errors";
 import { SetCascade, splitClasses } from "./cascade";
 import type { LayerStyle } from "./cascade";
 import { clippedShadows } from "./clipped-shadows";
@@ -703,9 +704,9 @@ export function buildComponentSet(
       definition.rootOverflow === "visible" &&
       (mapped.fill !== undefined || mapped.stroke !== undefined || mapped.shadows.length > 0)
     ) {
-      throw new Error(
-        `${definition.name}: a root that leaves its layers unclipped must paint nothing, and ${variantKey(definition, cell)} paints`
-      );
+      throw new KitUnmappable({
+        message: `${definition.name}: a root that leaves its layers unclipped must paint nothing, and ${variantKey(definition, cell)} paints`,
+      });
     }
     const root: ComponentRootSpec = {
       name: definition.slot,
@@ -856,9 +857,9 @@ function textProperties(definition: ComponentDefinition): readonly TextPropertyS
     if (first === undefined) {
       named.set(label.textProperty, { defaultValue: label.characters, label: where });
     } else if (first.defaultValue !== label.characters) {
-      throw new Error(
-        `${definition.name}: the labels ${first.label} and ${where} both set the ${label.textProperty} property, one starting as "${first.defaultValue}" and one as "${label.characters}". A TEXT property holds one default, so give them one text or a property each.`
-      );
+      throw new KitUnmappable({
+        message: `${definition.name}: the labels ${first.label} and ${where} both set the ${label.textProperty} property, one starting as "${first.defaultValue}" and one as "${label.characters}". A TEXT property holds one default, so give them one text or a property each.`,
+      });
     }
   }
   return [...named].map(([name, { defaultValue }]) => ({ name, defaultValue }));

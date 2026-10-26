@@ -18,7 +18,7 @@
  * draws.
  */
 
-import { Result } from "effect";
+import { Effect, Result } from "effect";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -198,7 +198,7 @@ export async function runSelfCheck(
   const grown: Perturbed = { preview: PREVIEWS[1].key, variant: firstInState("focus") };
   const renderers = await loadRenderers();
   const renderable = renderables(renderers);
-  const componentSets = (await buildComponentSets()).map((set) => set.componentSet);
+  const componentSets = (await Effect.runPromise(buildComponentSets())).map((set) => set.componentSet);
   const launched = await CompareBrowser.launch(await readPageAssets(build.success, renderers));
   if (Result.isFailure(launched)) {
     return Result.fail(launched.failure);

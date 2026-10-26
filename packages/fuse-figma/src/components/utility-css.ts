@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 /**
  * Compile recipe classes against `fuse.css` and read back each bare utility's declarations, and
  * where each full class sits in the output and how specific its selector is. The spec builder
@@ -12,6 +13,8 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { compileAst } from "tailwindcss";
 
+import { KitSourceInvalid, runTool } from "./build-errors";
+import type { KitBuildError } from "./build-errors";
 import { splitClassName } from "./class-name";
 import { namedClasses, selectorAlternatives } from "./css-selector";
 import { splitTopLevel } from "./css-values";
@@ -107,11 +110,14 @@ function consumerEntry(): AstNode[] {
  *
  * @param classes - Recipe classes, with or without variants.
  * @returns Each bare utility's declarations, each full class's placement, and the variables
- *   they read.
+ *   they read. The Effect fails with `KitSourceInvalid` when `fuse.css` imports what the build
+ *   cannot load, and with `KitToolFailed` when Tailwind fails otherwise.
  */
-export async function compileUtilities(classes: readonly string[]): Promise<CompiledUtilities> {
+export function compileUtilities(
+  classes: readonly string[]
+): Effect.Effect<CompiledUtilities, KitBuildError> {
   const candidates = new Set(classes.flatMap((className) => [className, splitClassName(className).utility]));
-  return readCompiledUtilities(await buildConsumerCss([...candidates]));
+  return Effect.map(buildConsumerCss([...candidates]), readCompiledUtilities);
 }
 
 /**
@@ -121,9 +127,9 @@ export async function compileUtilities(classes: readonly string[]): Promise<Comp
  * @param classes - The host's classes, with or without variants.
  * @returns The rules that select the classes, one per line, each inside the at-rules that wrap it,
  *   such as `@media (hover: hover)`. The rest of the compile, which Fuse's own `styles.css`
- *   already holds, stays out.
+ *   already holds, stays out. The Effect fails as {@link compileUtilities} does.
  */
-export async function compileHostUtilities(classes: readonly string[]): Promise<string> {
+export function compileHostUtilities(classes: readonly string[]): Effect.Effect<string, KitBuildError> {
   const wanted = new Set(classes);
   const select = (node: AstNode): AstNode[] => {
     if (node.kind === "rule") {
@@ -142,7 +148,7 @@ export async function compileHostUtilities(classes: readonly string[]): Promise<
     const nodes = node.nodes.flatMap(select);
     return nodes.length === 0 ? [] : [{ ...node, nodes }];
   };
-  return (await buildConsumerCss(classes)).flatMap(select).map(toCss).join("\n");
+  return Effect.map(buildConsumerCss(classes), (nodes) => nodes.flatMap(select).map(toCss).join("\n"));
 }
 
 /**
@@ -170,7 +176,7 @@ function toCss(node: AstNode): string {
 }
 
 /** Build the candidates against the standalone consumer entry and `fuse.css`. */
-async function buildConsumerCss(candidates: readonly string[]): Promise<AstNode[]> {
+function buildConsumerCss(candidates: readonly string[]): Effect.Effect<AstNode[], KitBuildError> {
   const stylesheets = new Map<string, string>([
     ["tailwindcss/theme.css", fileURLToPath(import.meta.resolve("tailwindcss/theme.css"))],
     ["tailwindcss/utilities.css", fileURLToPath(import.meta.resolve("tailwindcss/utilities.css"))],
@@ -180,23 +186,27 @@ async function buildConsumerCss(candidates: readonly string[]): Promise<AstNode[
       fileURLToPath(new URL("../../node_modules/tw-animate-css/dist/tw-animate.css", import.meta.url)),
     ],
   ]);
-  const compiler = await compileAst(consumerEntry(), {
-    base: "/",
-    loadStylesheet: async (id, base) => {
-      const path = stylesheets.get(id);
-      if (path === undefined) {
-        throw new Error(`fuse.css imports no stylesheet named ${id}`);
-      }
-      return { path: id, base, content: await readFile(path, "utf8") };
-    },
-    loadModule: async (id, base) => {
-      if (id !== "tailwindcss-react-aria-components") {
-        throw new Error(`fuse.css loads no plugin but tailwindcss-react-aria-components, received ${id}`);
-      }
-      return { path: id, base, module: (await import("tailwindcss-react-aria-components")).default };
-    },
+  return runTool("tailwindcss", async () => {
+    const compiler = await compileAst(consumerEntry(), {
+      base: "/",
+      loadStylesheet: async (id, base) => {
+        const path = stylesheets.get(id);
+        if (path === undefined) {
+          throw new KitSourceInvalid({ message: `fuse.css imports no stylesheet named ${id}` });
+        }
+        return { path: id, base, content: await readFile(path, "utf8") };
+      },
+      loadModule: async (id, base) => {
+        if (id !== "tailwindcss-react-aria-components") {
+          throw new KitSourceInvalid({
+            message: `fuse.css loads no plugin but tailwindcss-react-aria-components, received ${id}`,
+          });
+        }
+        return { path: id, base, module: (await import("tailwindcss-react-aria-components")).default };
+      },
+    });
+    return compiler.build([...candidates]);
   });
-  return compiler.build([...candidates]);
 }
 
 /**
@@ -212,18 +222,21 @@ const PART_ARM = ":where(:not(:is(button, input, select, textarea, meter, progre
  * @param compiled - A compile against `fuse.css`.
  * @returns The `border-color` declaration of the base rule whose selector list holds the arm
  *   every part matches.
- * @throws When the base layer has no rule with that arm, or the rule sets no border color.
+ * @throws `KitSourceInvalid` when the base layer has no rule with that arm, or the rule sets no
+ *   border color.
  */
 export function baseBorderColor(compiled: CompiledUtilities): UtilityDeclaration {
   const rule = compiled.baseRules.find((candidate) =>
     splitTopLevel(candidate.selector, ",").includes(PART_ARM)
   );
   if (rule === undefined) {
-    throw new Error(`fuse.css's base layer has no rule for ${PART_ARM}`);
+    throw new KitSourceInvalid({ message: `fuse.css's base layer has no rule for ${PART_ARM}` });
   }
   const borderColor = rule.declarations.findLast((declaration) => declaration.property === "border-color");
   if (borderColor === undefined) {
-    throw new Error(`fuse.css's base-layer rule for ${PART_ARM} sets no border-color`);
+    throw new KitSourceInvalid({
+      message: `fuse.css's base-layer rule for ${PART_ARM} sets no border-color`,
+    });
   }
   return borderColor;
 }

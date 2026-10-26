@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 /**
  * The icon library the kit builds: one component per icon `@elmeragroup/fuse/icons` publishes
  * that paints only with `currentColor`, drawn from the markup the Fuse icon renders. Those are
@@ -15,6 +16,8 @@ import { build } from "rolldown";
 
 import { BESPOKE_ICON_NAMES, PHOSPHOR_ICON_NAMES } from "@elmeragroup/fuse/recipe-catalog";
 
+import { KitSourceInvalid, runTool } from "./build-errors";
+import type { KitBuildError } from "./build-errors";
 import { iconKey } from "./kit-spec";
 import type { IconSpec } from "./kit-spec";
 
@@ -73,49 +76,63 @@ function iconSpec(name: string, markup: string): IconSpec | undefined {
 /**
  * Render every icon `@elmeragroup/fuse/icons` publishes, the Phosphor roster then the bespoke
  * icons, and keep those {@link iconSpec} admits. Node cannot load the bespoke TSX, so this
- * bundles {@link ICON_MARKUP_SOURCE} with rolldown into a temporary directory and imports the
- * bundle.
+ * bundles {@link ICON_MARKUP_SOURCE} with rolldown into a temporary directory, which it removes
+ * afterwards, and imports the bundle.
  *
- * @returns The icon specs, in roster order.
- * @throws When the roster names an icon `/icons` does not export.
+ * @returns The icon specs, in roster order. The Effect fails with `KitSourceInvalid` when the
+ *   roster names an icon `/icons` does not export, and with `KitToolFailed` when rolldown fails.
  */
-export async function fuseIcons(): Promise<readonly IconSpec[]> {
-  const outDir = mkdtempSync(join(tmpdir(), "fuse-figma-icons-"));
-  try {
-    await build({
-      input: ICON_MARKUP_ID,
-      // The bundle's imports resolve from this package, which depends on Fuse and React.
-      cwd: fileURLToPath(new URL("../..", import.meta.url)),
-      plugins: [
-        {
-          name: "fuse-icon-markup",
-          resolveId: (id) => (id === ICON_MARKUP_ID ? id : undefined),
-          load: (id) => (id === ICON_MARKUP_ID ? ICON_MARKUP_SOURCE : undefined),
-        },
-      ],
-      platform: "node",
-      logLevel: "silent",
-      transform: {
-        jsx: { runtime: "automatic" },
-        define: { "process.env.NODE_ENV": JSON.stringify("production") },
-      },
-      output: { dir: outDir, format: "esm", entryFileNames: "icon-markup.mjs" },
-    });
-    // SAFETY: the bundle is ICON_MARKUP_SOURCE, whose one export is `renderIcon`.
-    const markup = (await import(pathToFileURL(join(outDir, "icon-markup.mjs")).href)) as IconMarkup;
-    const render = (name: string, size: number | undefined): IconSpec[] => {
-      const svg = markup.renderIcon(name, size);
-      if (svg === undefined) {
-        throw new Error(`@elmeragroup/fuse/icons exports no ${name}, which the icon roster lists`);
-      }
-      const spec = iconSpec(name, svg);
-      return spec === undefined ? [] : [spec];
-    };
-    return [
-      ...PHOSPHOR_ICON_NAMES.flatMap((name) => render(name, ICON_SIZE)),
-      ...BESPOKE_ICON_NAMES.flatMap((name) => render(name, undefined)),
-    ];
-  } finally {
-    rmSync(outDir, { recursive: true, force: true });
-  }
-}
+export const fuseIcons: Effect.Effect<readonly IconSpec[], KitBuildError> = Effect.acquireUseRelease(
+  Effect.sync(() => mkdtempSync(join(tmpdir(), "fuse-figma-icons-"))),
+  (outDir) =>
+    Effect.gen(function* () {
+      yield* runTool("rolldown", () =>
+        build({
+          input: ICON_MARKUP_ID,
+          // The bundle's imports resolve from this package, which depends on Fuse and React.
+          cwd: fileURLToPath(new URL("../..", import.meta.url)),
+          plugins: [
+            {
+              name: "fuse-icon-markup",
+              resolveId: (id) => (id === ICON_MARKUP_ID ? id : undefined),
+              load: (id) => (id === ICON_MARKUP_ID ? ICON_MARKUP_SOURCE : undefined),
+            },
+          ],
+          platform: "node",
+          logLevel: "silent",
+          transform: {
+            jsx: { runtime: "automatic" },
+            define: { "process.env.NODE_ENV": JSON.stringify("production") },
+          },
+          output: { dir: outDir, format: "esm", entryFileNames: "icon-markup.mjs" },
+        })
+      );
+      // SAFETY: the bundle is ICON_MARKUP_SOURCE, whose one export is `renderIcon`.
+      const markup = (yield* Effect.promise(
+        () => import(pathToFileURL(join(outDir, "icon-markup.mjs")).href)
+      )) as IconMarkup;
+      const render = (
+        name: string,
+        size: number | undefined
+      ): Effect.Effect<IconSpec[], KitSourceInvalid> => {
+        const svg = markup.renderIcon(name, size);
+        if (svg === undefined) {
+          return Effect.fail(
+            new KitSourceInvalid({
+              message: `@elmeragroup/fuse/icons exports no ${name}, which the icon roster lists`,
+            })
+          );
+        }
+        const spec = iconSpec(name, svg);
+        return Effect.succeed(spec === undefined ? [] : [spec]);
+      };
+      const phosphor = yield* Effect.forEach(PHOSPHOR_ICON_NAMES, (name) => render(name, ICON_SIZE));
+      const bespoke = yield* Effect.forEach(BESPOKE_ICON_NAMES, (name) => render(name, undefined));
+      const icons: readonly IconSpec[] = [...phosphor.flat(), ...bespoke.flat()];
+      return icons;
+    }),
+  (outDir) =>
+    Effect.sync(() => {
+      rmSync(outDir, { recursive: true, force: true });
+    })
+);

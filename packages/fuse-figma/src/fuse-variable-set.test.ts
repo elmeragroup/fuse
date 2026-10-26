@@ -1,4 +1,4 @@
-import { Result } from "effect";
+import { Effect, Result } from "effect";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -210,7 +210,7 @@ describe("fuseVariableSet", () => {
         scopes: strokes,
       },
     ] as const;
-    const compiled = await compileUtilities(tints.map(({ utility }) => utility));
+    const compiled = await Effect.runPromise(compileUtilities(tints.map(({ utility }) => utility)));
     const brand = collection("Fuse brand");
     for (const { utility, role, tint, share, scopes } of tints) {
       const mix = compiled.rules

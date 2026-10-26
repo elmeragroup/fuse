@@ -1,10 +1,3 @@
-/**
- * Map a box, the root or a part, and the parts and icons below it onto Figma fields, from the
- * cascade of each: its display, corner and icons, assembled from what the other modules read.
- * `box-flow.ts` lays out its flow, `box-sizing.ts` sizes it, `box-paint.ts` paints it,
- * `label-layout.ts` sets its label and `placement.ts` places its parts. `component-spec.ts`
- * assembles a set from the root of each cell.
- */
 import { negativeRowSpacing, orderModified, readFlow, settleFlow, stretchedLayer } from "./box-flow";
 import type { Flow } from "./box-flow";
 import { describeColor, readPaint } from "./box-paint";
@@ -23,6 +16,14 @@ import {
   unstretched,
 } from "./box-sizing";
 import type { Holder, Room, RowShare } from "./box-sizing";
+/**
+ * Map a box, the root or a part, and the parts and icons below it onto Figma fields, from the
+ * cascade of each: its display, corner and icons, assembled from what the other modules read.
+ * `box-flow.ts` lays out its flow, `box-sizing.ts` sizes it, `box-paint.ts` paints it,
+ * `label-layout.ts` sets its label and `placement.ts` places its parts. `component-spec.ts`
+ * assembles a set from the root of each cell.
+ */
+import { KitUnmappable } from "./build-errors";
 import type { BoxCascade, Feed, LayerStyle, SpecField } from "./cascade";
 import type {
   BoxDefinition,
@@ -819,7 +820,7 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
       }
       const name = partName(child);
       if (child.facts !== undefined && (child.parts?.length ?? 0) > 0) {
-        throw new Error(`the part ${name} holds parts, which carry none of its facts`);
+        throw new KitUnmappable({ message: `the part ${name} holds parts, which carry none of its facts` });
       }
       return {
         kind: "frame",
@@ -1145,7 +1146,7 @@ function mapIcon(
     style.feed("color")
   );
   if (width === undefined || color === undefined || JSON.stringify(width) !== JSON.stringify(height)) {
-    throw new Error(`${variant}: the ${slot.name} needs a square size and a text color`);
+    throw new KitUnmappable({ message: `${variant}: the ${slot.name} needs a square size and a text color` });
   }
   const layer: IconLayerSpec = {
     kind: "icon",
