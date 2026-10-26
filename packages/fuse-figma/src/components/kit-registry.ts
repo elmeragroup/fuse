@@ -57,6 +57,7 @@ import { PAGINATION_EDGE, PAGINATION_ELLIPSIS, PAGINATION_LINK, PAGINATION_ROW }
 import { POPOVER_CONTENT, POPOVER_OPEN } from "./popover-kit";
 import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
 import { RADIO } from "./radio-kit";
+import { SELECT_FIELD } from "./select-field-kit";
 import { SELECT_ITEM, SELECT_OPEN, SELECT_POPUP } from "./select-kit";
 import { SELECT_TRIGGER } from "./select-trigger-kit";
 import { SEPARATOR } from "./separator-kit";
@@ -326,6 +327,7 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(BREADCRUMB_TRAIL.axes),
   },
   { definition: SELECT_TRIGGER, page: SELECT_PAGE, previewCells: matrixCells(SELECT_TRIGGER.axes) },
+  { definition: SELECT_FIELD, page: SELECT_PAGE, previewCells: matrixCells(SELECT_FIELD.axes) },
   { definition: MENU_GROUP_LABEL, page: SELECT_PAGE, previewCells: matrixCells(MENU_GROUP_LABEL.axes) },
   { definition: MENU_SEPARATOR, page: SELECT_PAGE, previewCells: matrixCells(MENU_SEPARATOR.axes) },
   { definition: SELECT_ITEM, page: SELECT_PAGE, previewCells: matrixCells(SELECT_ITEM.axes) },

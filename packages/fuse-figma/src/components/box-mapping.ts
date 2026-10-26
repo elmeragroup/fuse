@@ -6,8 +6,15 @@
  * assembles a set from the root of each cell.
  */
 
-import { negativeRowSpacing, orderModified, readFlow, settleFlow, stretchedLayer } from "./box-flow";
-import type { Flow } from "./box-flow";
+import {
+  negativeRowSpacing,
+  orderModified,
+  readFlow,
+  readSpaceBetween,
+  settleFlow,
+  stretchedLayer,
+} from "./box-flow";
+import type { Flow, UnspacedReason } from "./box-flow";
 import { describeColor, readPaint } from "./box-paint";
 import type { BoxPaint } from "./box-paint";
 import {
@@ -692,6 +699,10 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     () => ({ outcome: "dropped", detail: "both sides are fixed, so the ratio sizes neither" }),
     []
   );
+  const unspaced = spacesNothingOut(layout, placement.primaryAlign, children);
+  if (layout.spaceBetweenUnread === true) {
+    readSpaceBetween(reader, unspaced);
+  }
   const mappedBox: BoxSpec = {
     direction: layout.direction,
     sizing,
@@ -705,7 +716,9 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     // A native control's placement of its label wins over the box's own alignment.
     primaryAlign:
       placed?.primaryAlign ??
-      (packsAtStart || leavesRoomAtEnd(layout, sizing, placement.primaryAlign, children)
+      (packsAtStart ||
+      leavesRoomAtEnd(layout, sizing, placement.primaryAlign, children) ||
+      unspaced !== undefined
         ? "MIN"
         : placement.primaryAlign),
     counterAlign,
@@ -753,6 +766,43 @@ function leavesRoomAtEnd(
     flowing.every((child) => child.kind === "icon" || child.sizing.horizontal.kind !== "fill") &&
     flowing.some((child) => child.kind !== "icon" && child.sizing.horizontal.kind === "hug")
   );
+}
+
+/**
+ * Whether a flex box that spaces its layers out between its ends has no free space to share out
+ * between two layers, so `space-between` packs its layers at the start with the gap between them
+ * (CSS Box Alignment 3 §5.3, §8):
+ *
+ * - It holds one layer in its flow, which `space-between` places as `flex-start` does, as Select
+ *   field's heading row holds its lone label.
+ * - It holds a layer that fills it along its direction, which takes the free space (CSS Flexbox 1
+ *   §9.7), as Select field's filling trigger packs its growing value and its caret. Figma's
+ *   SPACE_BETWEEN would drop the gap beside a filling layer (PV), so the box draws MIN with its gap.
+ *
+ * A layer a BOOLEAN hides stays in the flow here, since the property shows it again, and SPACE_BETWEEN
+ * packs the lone visible layer at the start while it is hidden (W5-P1).
+ *
+ * @param layout - The box's layout.
+ * @param aligned - The alignment the box's placement gives it.
+ * @param children - The box's layers.
+ * @returns Why the box packs its layers at its start, or undefined where it spaces them out.
+ */
+function spacesNothingOut(
+  layout: Layout,
+  aligned: PrimaryAlignSpec,
+  children: readonly ChildLayerSpec[]
+): UnspacedReason | undefined {
+  if (!layout.flex || aligned !== "SPACE_BETWEEN") {
+    return undefined;
+  }
+  const along = layout.direction === "HORIZONTAL" ? "horizontal" : "vertical";
+  const flowing = children.filter((child) => !outOfLayout(child));
+  if (flowing.length < 2) {
+    return "lone";
+  }
+  return flowing.some((child) => child.kind !== "icon" && child.sizing[along].kind === "fill")
+    ? "grows"
+    : undefined;
 }
 
 /**

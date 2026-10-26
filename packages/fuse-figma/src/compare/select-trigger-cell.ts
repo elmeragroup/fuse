@@ -1,8 +1,10 @@
 /**
  * The renderer of the `select-trigger` set: each cell as the real Fuse `Select.Trigger` around a
- * `Select.Value`, in a `Select.Root` that holds no `Select.Content`. The trigger hugs its value and
- * caret, so the cell needs no host width.
+ * `Select.Value`, in a `Select.Root` that holds no `Select.Content`.
  *
+ * - `width=hug` renders the trigger as it is, hugging its value and caret, so the cell needs no host
+ *   width. `width=fill` passes `w-full`, as SelectField does, in a host as wide as the kit's preview
+ *   width, which the trigger fills.
  * - `size` sets the trigger's `size`, and `disabled` sets the root's `disabled`.
  * - The value shows the `placeholder` `select-trigger-kit.ts` draws while nothing is selected. A
  *   `content=value` cell selects the root's one item, whose label is the same text, so Base UI
@@ -23,7 +25,8 @@ import { createElement } from "react";
 import { Field } from "../../../fuse/dist/field.js";
 import { Select } from "../../../fuse/dist/select.js";
 import type { Cell } from "../components/component-spec.ts";
-import { SELECT_TRIGGER_TEXT, showsOpen, sizeFor } from "../components/select-trigger-kit.ts";
+import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
+import { fills, SELECT_TRIGGER_TEXT, showsOpen, sizeFor } from "../components/select-trigger-kit.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
 /** The value of the root's one item, whose label is the text the kit draws. */
@@ -42,10 +45,13 @@ export const selectTrigger: CellRendering = {
       },
       createElement(
         Select.Trigger,
-        { size: sizeFor(cell) },
+        fills(cell) ? { size: sizeFor(cell), className: "w-full" } : { size: sizeFor(cell) },
         createElement(Select.Value, { placeholder: SELECT_TRIGGER_TEXT })
       )
     );
-    return cell.state === "invalid" ? createElement(Field.Root, { invalid: true }, root) : root;
+    const field = cell.state === "invalid" ? createElement(Field.Root, { invalid: true }, root) : root;
+    return fills(cell)
+      ? createElement("div", { style: { width: `${FIELD_BOX_PREVIEW_WIDTH}px` } }, field)
+      : field;
   },
 };

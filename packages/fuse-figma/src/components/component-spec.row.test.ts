@@ -538,3 +538,66 @@ describe("a fixed row's layer that fills it and hugs a narrower label", () => {
     expect(text?.primaryAlign).toBe(align);
   });
 });
+
+// Oracle: CSS Box Alignment 3 §5.3 and §8 and CSS Flexbox 1 §9.7. A layer that grows takes the free
+// space of its row, so `justify-content: space-between` has none to share out and packs the layers at
+// the start with the gap between them. A real file drew no gap under Figma's SPACE_BETWEEN beside a
+// filling text (PV, W5-P3), and under MIN a 384px row drew a filling text 0..364 and a 16px frame
+// 368..384 with its bound 4px gap (W5-P3), so the row draws MIN with its gap.
+describe("a `justify-between` row of fixed width whose one layer grows", () => {
+  /** A 16px part after the first, as Select's caret follows its value. */
+  const end = { ...dot("flex w-[16px] h-[8px]"), key: "end", slot: "chip-end" };
+
+  it("packs its layers at the start with the gap, the growing layer filling", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex w-[200px] items-center justify-between gap-[6px]", {
+        parts: [dot("flex flex-1 h-[8px]"), end],
+      })
+    );
+    expect([
+      variant?.root.primaryAlign,
+      variant?.root.itemSpacing,
+      frameOf(variant?.root)?.sizing.horizontal,
+    ]).toEqual(["MIN", { kind: "literal", value: 6 }, FILL]);
+    expect(notesOf(coverage, "justify-between")).toEqual([
+      [
+        "chip",
+        "literal",
+        "beside a layer that grows into the free space, so packed at the start of the primary axis with the gap, which Figma's SPACE_BETWEEN would drop (PV, W5-P3)",
+      ],
+    ]);
+  });
+
+  it("keeps SPACE_BETWEEN where no layer grows, so the free space spreads them", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex w-[200px] items-center justify-between gap-[6px]", {
+        parts: [dot("flex w-[8px] h-[8px]"), end],
+      })
+    );
+    expect([variant?.root.primaryAlign, frameOf(variant?.root)?.sizing.horizontal]).toEqual([
+      "SPACE_BETWEEN",
+      { kind: "fixed", length: { kind: "literal", value: 8 } },
+    ]);
+    expect(notesOf(coverage, "justify-between")).toEqual([
+      ["chip", "literal", "spaced out between the ends of the primary axis"],
+    ]);
+  });
+});
+
+// Oracle: CSS Box Alignment 3 §5.3: `space-between` with one alignment subject behaves as
+// `flex-start`, as Select field's heading row packs its lone label at its start.
+describe("a `justify-between` row of fixed width that holds one layer", () => {
+  it("packs the layer at the start", async () => {
+    const { variant, coverage } = await buildFixture(
+      chip("flex w-[200px] items-center justify-between", { parts: [dot("flex w-[8px] h-[8px]")] })
+    );
+    expect(variant?.root.primaryAlign).toBe("MIN");
+    expect(notesOf(coverage, "justify-between")).toEqual([
+      [
+        "chip",
+        "literal",
+        "with one layer, which `space-between` places as `flex-start` does, so packed at the start of the primary axis",
+      ],
+    ]);
+  });
+});

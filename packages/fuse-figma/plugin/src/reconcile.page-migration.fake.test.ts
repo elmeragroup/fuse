@@ -169,14 +169,27 @@ describe("a file with Label on the page it used to sit on alone", () => {
   const LABEL = { key: "label", name: "Label", variants: 2, previewed: 2 };
   /** The page Label sat on alone, with its own four previews. */
   const LABEL_PAGE: InventoryPage = { slug: "label", name: "Label", sets: [LABEL] };
-  const TEXTAREA = inventoryPage("textarea");
-  /** The Textarea page's set that shows Field description and Field error, which came after them. */
-  const TEXTAREA_FIELD = { key: "textarea-field", name: "Textarea field", variants: 5, previewed: 5 };
+  /**
+   * The sets that show Field description and Field error, which came after them, each with its page
+   * and whether its group sits before another in that page's previews, so creating it reorders them.
+   */
+  const LATER = [
+    {
+      page: inventoryPage("textarea"),
+      set: { name: "Textarea field", variants: 5 },
+      reorders: false,
+    },
+    {
+      page: inventoryPage("select"),
+      set: { name: "Select field", variants: 8 },
+      reorders: true,
+    },
+  ] as const;
 
   /**
    * The kit as the plugin wrote it before the Field page: Label alone on its own page, previewed
    * there, and none of the sets that joined it on the Field page, nor a later set that shows one of
-   * them, as Textarea field shows Field description.
+   * them, as Textarea field and Select field show Field description.
    */
   function labelPageKit(): KitSpec {
     const field = pageKey(FIELD);
@@ -254,11 +267,19 @@ describe("a file with Label on the page it used to sit on alone", () => {
         ...FIELD.sets
           .filter((set) => set.key !== LABEL.key)
           .map((set) => `${FIELD.name}: create the component set ${set.name} with ${set.variants} variants`),
-        `${TEXTAREA.name}: create the component set ${TEXTAREA_FIELD.name} with ${TEXTAREA_FIELD.variants} variants`,
+        ...LATER.map(
+          ({ page, set }) =>
+            `${page.name}: create the component set ${set.name} with ${set.variants} variants`
+        ),
         ...previewNames(FIELD).map((name) => `${FIELD.name}: create the preview ${name}`),
         `${FIELD.name}: place ${listed(FIELD.sets.map((set) => set.name))} in a row and stack 4 previews below them`,
-        ...previewNames(TEXTAREA).map((name) => `${name}: create the group ${TEXTAREA_FIELD.name}`),
-        `${TEXTAREA.name}: place ${listed(TEXTAREA.sets.map((set) => set.name))} in a row and stack 4 previews below them`,
+        ...LATER.flatMap(({ page, set, reorders }) => [
+          ...previewNames(page).flatMap((name) => [
+            `${name}: create the group ${set.name}`,
+            ...(reorders ? [`${name}: reorder the groups`] : []),
+          ]),
+          `${page.name}: place ${listed(page.sets.map((each) => each.name))} in a row and stack 4 previews below them`,
+        ]),
         `Document: delete the page ${LABEL_PAGE.name}`,
       ],
       warnings: [],

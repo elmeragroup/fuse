@@ -506,6 +506,15 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly ancestorsFor?: (cell: Cell) => readonly AncestorDefinition[];
   readonly axes: readonly AxisSpec[];
+  /**
+   * The axes added to the set after a file first held it, as Select trigger gained `width`. Each
+   * leaves its first value out of the variant key, so the variants the set held before keep their
+   * keys and the plugin renames them in place to name the new axis. A real file kept each renamed
+   * variant's id and a designer's instance of it linked, reading the new axis at its first value
+   * (W5-P2), where a new key would delete the variant and orphan those instances. The variant name
+   * still lists every axis. Undefined for a set whose axes it has held from the start.
+   */
+  readonly addedAxes?: ReadonlySet<string>;
   readonly columnAxis: string;
   /**
    * The variants each of the component's own states renders, beyond the ones `state-table.ts`
@@ -796,14 +805,21 @@ function clippedDetail(variant: string, { reach, edges, modes }: ClippedShadow):
 }
 
 /**
- * The key of one variant, such as `button/variant=default,size=sm,state=rest,icon=none`.
+ * The key of one variant, such as `button/variant=default,size=sm,state=rest,icon=none`. An axis the
+ * definition added later is left out at its first value, as `addedAxes` says.
  *
  * @param definition - The component.
  * @param cell - The cell.
  * @returns The key.
  */
-export function variantKey(definition: Pick<ComponentDefinition, "key" | "axes">, cell: Cell): string {
-  return `${definition.key}/${definition.axes.map((axis) => `${axis.name}=${cell[axis.name] ?? ""}`).join(",")}`;
+export function variantKey(
+  definition: Pick<ComponentDefinition, "key" | "axes" | "addedAxes">,
+  cell: Cell
+): string {
+  const keyed = definition.axes.filter(
+    (axis) => definition.addedAxes?.has(axis.name) !== true || cell[axis.name] !== axis.values[0]
+  );
+  return `${definition.key}/${keyed.map((axis) => `${axis.name}=${cell[axis.name] ?? ""}`).join(",")}`;
 }
 
 /**

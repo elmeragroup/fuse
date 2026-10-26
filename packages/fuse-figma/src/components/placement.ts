@@ -74,6 +74,12 @@ export type Layout = {
    * reads it, which the box draws as a flex column. Absent elsewhere.
    */
   readonly oneColumnGrid?: true;
+  /**
+   * True for a flex box of fixed or filling length whose `justify-content: space-between` the flow
+   * leaves unread, since whether it spaces anything out depends on the layers it maps. The box mapping
+   * reads it once they map, through `readSpaceBetween` in `box-flow.ts`. Absent elsewhere.
+   */
+  readonly spaceBetweenUnread?: true;
 };
 
 /** The lengths of a row that place a part along it. The width is undefined where the row hugs it. */

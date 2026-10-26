@@ -195,13 +195,16 @@ function partElement(part: PartDefinition | InstanceDefinition): ElementSelector
 }
 
 /**
- * Whether an element is the visually hidden `<span role="presentation">` Base UI's `MeterRoot`
- * appends to the root, which the kit draws no layer for.
+ * Whether an element is one Base UI renders visually hidden, which the kit draws no layer for: the
+ * `<span role="presentation">` `MeterRoot` appends to the root, or the `<input aria-hidden="true">`
+ * that holds a Select's value for a form, beside the trigger. Both carry no `data-slot` and clip to
+ * nothing with `clip-path: inset(50%)`.
  */
 function isHiddenPresentation(element: MarkupElement): boolean {
+  const presentation = element.name === "span" && element.attributes.get("role") === "presentation";
+  const formValue = element.name === "input" && element.attributes.get("aria-hidden") === "true";
   return (
-    element.name === "span" &&
-    element.attributes.get("role") === "presentation" &&
+    (presentation || formValue) &&
     element.attributes.get("data-slot") === undefined &&
     (element.attributes.get("style") ?? "").includes("clip-path:inset(50%)")
   );

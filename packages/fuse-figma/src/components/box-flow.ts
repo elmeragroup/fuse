@@ -49,6 +49,37 @@ const HUGGED_ALIGNMENTS = new Map<string, { readonly align: PrimaryAlignSpec; re
 ]);
 
 /**
+ * Why a box of fixed or filling length that `space-between` sets spaces nothing out, as the box
+ * mapping finds once its layers map: it holds one layer in its flow, or one that fills it along its
+ * direction. Undefined where it spaces its layers out.
+ */
+export type UnspacedReason = "lone" | "grows";
+
+/** What a box's `space-between` became, by why it spaces nothing out, or where it spaces its layers out. */
+const SPACE_BETWEEN_DETAILS = {
+  spaced: "spaced out between the ends of the primary axis",
+  lone: "with one layer, which `space-between` places as `flex-start` does, so packed at the start of the primary axis",
+  grows:
+    "beside a layer that grows into the free space, so packed at the start of the primary axis with the gap, which Figma's SPACE_BETWEEN would drop (PV, W5-P3)",
+} as const satisfies Record<UnspacedReason | "spaced", string>;
+
+/**
+ * Read the `justify-content: space-between` that {@link readFlow} leaves unread on a box of fixed or
+ * filling length, once its layers map and the box mapping knows whether it spaces anything out.
+ *
+ * @param reader - The box's style.
+ * @param unspaced - Why the box spaces nothing out, or undefined where it spaces its layers out.
+ */
+export function readSpaceBetween(reader: LayerStyle, unspaced: UnspacedReason | undefined): void {
+  reader.read(
+    "justify-content",
+    (value) => (normalizeCss(value) === "space-between" ? value : undefined),
+    () => ({ outcome: "literal", detail: SPACE_BETWEEN_DETAILS[unspaced ?? "spaced"] }),
+    reader.feed("primaryAlign")
+  );
+}
+
+/**
  * Read an alignment along one axis, `justify-content` along the box's direction or `align-items`
  * across it, filling the fields `feed` names.
  */
@@ -146,13 +177,23 @@ export function readFlow(
     (column ? box.limits.minHeight : box.limits.minWidth) === undefined;
   const autoStart = flex && !column ? readAutoStart(reader, flow) : undefined;
   const alignments = hugged ? HUGGED_ALIGNMENTS : PRIMARY_ALIGNMENTS;
+  // A box with free space spaces its layers out only where they map to leave it some, so the box
+  // mapping reads its `space-between` once they map.
+  const spaceBetweenUnread =
+    flex &&
+    !hugged &&
+    autoStart === undefined &&
+    normalizeCss(reader.resolved("justify-content") ?? "") === "space-between";
   // A label that fills before the margin leaves no free space, so the row packs at its start.
   const primaryAlign =
     autoStart === "label-fills"
       ? "MIN"
       : autoStart === "spaced"
         ? (alignments.get("space-between")?.align ?? unset)
-        : (readAlign(reader, "justify-content", "primary", alignments, reader.feed("primaryAlign")) ?? unset);
+        : spaceBetweenUnread
+          ? "SPACE_BETWEEN"
+          : (readAlign(reader, "justify-content", "primary", alignments, reader.feed("primaryAlign")) ??
+            unset);
   const layout: Layout = {
     flex,
     blocks: false,
@@ -172,7 +213,10 @@ export function readFlow(
       []
     );
   }
-  return { layout: autoStart === "label-fills" ? { ...layout, labelFills: true } : layout, self };
+  if (autoStart === "label-fills") {
+    return { layout: { ...layout, labelFills: true }, self };
+  }
+  return { layout: spaceBetweenUnread ? { ...layout, spaceBetweenUnread: true } : layout, self };
 }
 
 /**

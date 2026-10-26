@@ -318,6 +318,12 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./select-trigger-cell.ts")).selectTrigger,
   },
   {
+    set: "select-field",
+    entry: "dist/select-field.js",
+    load: async () => (await import("./select-field-cell.ts")).selectField,
+  },
+
+  {
     set: "menu-group-label",
     entry: "dist/dropdown-menu.js",
     module: { url: new URL("menu-cell.ts", import.meta.url), name: "menuGroupLabel" },

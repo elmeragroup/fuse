@@ -6,20 +6,15 @@
  * - The heading row is FieldFrame's label row with TextareaField's 8px gap: a `Label` instance and,
  *   behind the `Counter` BOOLEAN property, the character counter at the row's end in 12px
  *   `muted-foreground`. The docs Basic demo shows no counter, so the property starts off; the
- *   Counter demo's `maxLength={120}` shows `0/120` over an empty textarea.
+ *   Counter demo's `maxLength={120}` shows `0/120` over an empty textarea. The row packs its children
+ *   with `SPACE_BETWEEN`, and with the counter hidden Figma packs the lone label at the start, as
+ *   CSS's `justify-between` does (W5-P1).
  * - The control is a `Textarea` instance in the cell's state, holding the Basic demo's placeholder.
  *   `Field.Control` renders it, so it carries `data-slot="field-control"`, which takes the states.
  * - A `Field error` instance follows the control in the invalid cell, where Base UI renders the
  *   error, and a `Field description` instance closes the column.
- * - An invalid Field passes its `data-invalid:text-error` down, so the label's text turns `error`,
- *   which the Label instance carries as an override. A disabled Field dims the label through
- *   `group-data-disabled/field:`, which the Label instance's disabled variant draws. The counter and
- *   the description keep their own color in every state.
- * - Base UI stamps the Field's disabled or invalid state on the label and the description as data
- *   attributes, and an instance's facts read its inner cell, so the cells with a stamp hold their own
- *   label or description instance, whose facts hold it.
- * - The Field stretches each child to its width. The column's stretch gives them that width
- *   already, so the stretch is omitted.
+ * - The label, the error and the description, and the states Base UI stamps on them, come from
+ *   `field-frame-kit.ts`.
  */
 import {
   cn,
@@ -28,11 +23,15 @@ import {
   textareaFieldVariants,
 } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
-import { FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH } from "./field-box-kit";
-import { FIELD_DESCRIPTION, FIELD_ERROR } from "./field-text-kit";
+import type { ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
+import {
+  FIELD_FRAME_DISABLED,
+  FIELD_FRAME_OMISSIONS,
+  frameDescriptions,
+  frameError,
+  frameLabelRow,
+} from "./field-frame-kit";
 import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
-import { LABEL } from "./label-kit";
 import { always } from "./popup-facts";
 import { TEXTAREA } from "./textarea-kit";
 
@@ -60,29 +59,6 @@ export const TEXTAREA_FIELD_COUNTER_PROPERTY = "Counter";
 const frame = fieldFrameVariants();
 const parts = textareaFieldVariants();
 
-/** Whether a cell is invalid, where Base UI renders the Field's error. */
-function isInvalid(cell: Cell): boolean {
-  return cell.state === "invalid";
-}
-
-/**
- * The Field's label, a `Label` instance, dimmed in a disabled Field. Base UI stamps an invalid
- * Field's `data-invalid` on the label, which no Label cell shows, and facts read the inner cell, so
- * the invalid cell holds a second instance whose fact holds it.
- */
-function label(invalid: boolean): InstanceDefinition {
-  return {
-    kind: "instance",
-    key: invalid ? "label-invalid" : "label",
-    of: LABEL,
-    cell: (outer) => ({ state: outer.state === "disabled" ? "disabled" : "rest" }),
-    properties: () => ({ text: { Label: TEXTAREA_FIELD_LABEL } }),
-    facts: new Map([["data-invalid", () => invalid]]),
-    shownIn: (cell) => isInvalid(cell) === invalid,
-    exposed: true,
-  };
-}
-
 /** The `current/max` character counter at the end of the heading row, a bare `<span>`. */
 const COUNTER: PartDefinition = {
   key: "counter",
@@ -101,15 +77,7 @@ const COUNTER: PartDefinition = {
 };
 
 /** FieldFrame's heading row, with TextareaField's gap between the label and the counter. */
-const LABEL_ROW: PartDefinition = {
-  key: "label-row",
-  slot: undefined,
-  shownIn: always,
-  classesFor: () => cn(frame.labelRow(), parts.labelRow()),
-  label: undefined,
-  iconsFor: () => [],
-  parts: [label(false), label(true), COUNTER],
-};
+const LABEL_ROW = frameLabelRow(TEXTAREA_FIELD_LABEL, cn(frame.labelRow(), parts.labelRow()), [COUNTER]);
 
 /** The control, a `Textarea` instance in the cell's state, holding the placeholder. */
 const CONTROL: InstanceDefinition = {
@@ -123,47 +91,6 @@ const CONTROL: InstanceDefinition = {
   shownIn: always,
   exposed: true,
 };
-
-/** The error under the control, which an invalid Field shows. */
-const ERROR: InstanceDefinition = {
-  kind: "instance",
-  key: "error",
-  of: FIELD_ERROR,
-  cell: () => ({ state: "invalid" }),
-  properties: () => ({ text: { Text: TEXTAREA_FIELD_ERROR } }),
-  shownIn: isInvalid,
-  exposed: true,
-};
-
-/** The Field state Base UI stamps on the description: none, `data-disabled` or `data-invalid`. */
-type DescriptionStamp = "none" | "disabled" | "invalid";
-
-/** The stamp a cell's Field puts on its description. */
-function stampOf(cell: Cell): DescriptionStamp {
-  return cell.state === "disabled" || cell.state === "invalid" ? cell.state : "none";
-}
-
-/**
- * The description that closes the column, with FieldFrame's `text-pretty`. Base UI stamps the
- * Field's disabled or invalid state on it, and facts read the inner cell, so each stamp is its own
- * instance whose facts hold it. The description's classes read neither attribute.
- */
-function description(stamp: DescriptionStamp): InstanceDefinition {
-  return {
-    kind: "instance",
-    key: stamp === "none" ? "description" : `description-${stamp}`,
-    of: FIELD_DESCRIPTION,
-    cell: () => ({ state: "rest" }),
-    classesFor: () => frame.description(),
-    properties: () => ({ text: { Text: TEXTAREA_FIELD_DESCRIPTION } }),
-    facts: new Map([
-      ["data-disabled", () => stamp === "disabled"],
-      ["data-invalid", () => stamp === "invalid"],
-    ]),
-    shownIn: (cell) => stampOf(cell) === stamp,
-    exposed: true,
-  };
-}
 
 /**
  * A textarea field, as `<TextareaField label description placeholder maxLength?>`, read-only,
@@ -182,22 +109,21 @@ export const TEXTAREA_FIELD: ComponentDefinition = {
   classesFor: () => fieldVariants().root(),
   // The root is the `group/field` a disabled Field marks `data-disabled`, which the label reads.
   states: {
-    disabled: ["group-data-disabled/field"],
+    disabled: FIELD_FRAME_DISABLED,
     // The read-only textarea, as Textarea's own state renders it.
     readonly: ["[&[readonly]:not(:disabled)]"],
   },
   // The textarea holds no value, so it shows its placeholder.
   facts: new Map([["placeholder", always]]),
   omittedStates: new Set(),
-  omittedCompositions: new Map([
-    FIELD_ROOT_SR_ONLY,
-    [
-      FIELD_ROOT_STRETCH,
-      "the Field stretches each child to its width, which the column's stretch already gives them",
-    ],
-  ]),
+  omittedCompositions: FIELD_FRAME_OMISSIONS,
   label: undefined,
   iconsFor: () => [],
-  parts: [LABEL_ROW, CONTROL, ERROR, description("none"), description("disabled"), description("invalid")],
+  parts: [
+    LABEL_ROW,
+    CONTROL,
+    frameError(TEXTAREA_FIELD_ERROR),
+    ...frameDescriptions(TEXTAREA_FIELD_DESCRIPTION),
+  ],
   swapProperties: [],
 };

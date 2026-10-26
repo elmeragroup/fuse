@@ -178,8 +178,10 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     slug: "select",
     name: "Select",
     sets: [
-      // 2 sizes in 4 states, holding the placeholder or a value, closed and open.
-      { key: "select-trigger", name: "Select trigger", variants: 32, previewed: 32 },
+      // Hugging and filling, 2 sizes in 4 states, holding the placeholder or a value, closed and open.
+      { key: "select-trigger", name: "Select trigger", variants: 64, previewed: 64 },
+      // The labelled select in 4 states, holding the placeholder or a value.
+      { key: "select-field", name: "Select field", variants: 8, previewed: 8 },
       // The plain caption, and Dropdown menu's Medium caption, plain and inset.
       { key: "menu-group-label", name: "Menu group label", variants: 3, previewed: 3 },
       // The hairline between groups.
