@@ -43,19 +43,29 @@ describe("textVariants", () => {
     expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
   });
 
-  it("cascades each type-scale size onto the host and descendants", () => {
+  it("sizes the host with the full size class and descendants with font size alone", () => {
     for (const size of SIZES) {
       const token = SIZE_TOKEN[size];
-      const resolved = textVariants({ size });
-      expect(resolved, size).toContain(`text-${token}`);
-      expect(resolved, size).toContain(`*:text-${token}`);
-      expect(resolved, size).toContain(`**:text-${token}`);
-      expect(resolved, size).not.toContain("--control-");
-      expect(resolved, size).not.toContain("data-density");
+      const classes = textVariants({ size }).split(/\s+/);
+      expect(classes, size).toContain(`text-${token}`);
+      expect(classes, size).toContain(`*:text-(length:--text-${token})`);
+      expect(classes, size).toContain(`**:text-(length:--text-${token})`);
+      // The plain descendant form would also reset each descendant's line height.
+      expect(classes, size).not.toContain(`*:text-${token}`);
+      expect(classes, size).not.toContain(`**:text-${token}`);
+      expect(classes.join(" "), size).not.toContain("--control-");
+      expect(classes.join(" "), size).not.toContain("data-density");
     }
-    expect(textVariants({ size: "sm" })).toContain("text-sm");
-    expect(textVariants({ size: "sm" })).toContain("*:text-sm");
-    expect(textVariants({ size: "sm" })).toContain("**:text-sm");
+  });
+
+  it.each([
+    ["a child size", "*:text-lg", "*:text-(length:--text-base)"],
+    ["a descendant size", "**:text-sm", "**:text-(length:--text-base)"],
+    ["the host size", "text-lg", "text-base"],
+  ])("lets a className replace %s", (_row, className, replaced) => {
+    const classes = textVariants({ className }).split(/\s+/);
+    expect(classes).toContain(className);
+    expect(classes).not.toContain(replaced);
   });
 
   it.each<
