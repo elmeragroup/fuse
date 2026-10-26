@@ -74,6 +74,15 @@
   as `RadioItem` rows. `--selection-title-weight` is 500 in `EXTERNAL_VARIANT_LAYER`, from the
   radio card the sales flow used before `RadioItem` (`text-base/5 font-medium`), and internal
   themes keep the 400 the internal row was ported with.
+- Ask design for the breakpoint of the external mobile heading step. The Figma mobile scale is
+  heading large 32/40, medium 24/34, small 20/32 and xsmall 18/32, all at 700, so an external h1,
+  heading small, would step from 24px to 20px below that breakpoint, and h2 and h3, heading
+  xsmall, from 20px to 18px. The Telinet sales-flow mobile frames use the desktop sizes for now.
+  `--heading-1-size` to `--heading-3-size` hold one value per theme, so the step needs a
+  responsive value kind in the theme generator (`generateThemesCss`), such as a base value plus
+  one value inside a media query.
+- Ask design for an external heading style below heading xsmall. External h4 to h6 have no heading
+  roles and keep Heading's 16/22 at 500, the library's paragraph medium prominent, until then.
 - Ask design whether external themes keep the reference's 4px corner on the standalone
   `Calendar` (`styles/corner-radius.ts`), or round it from the brand radius. Internal themes
   round it with `--radius`.

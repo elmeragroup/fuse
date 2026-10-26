@@ -107,6 +107,34 @@ describe("fuseVariableSet", () => {
         px(26)
       );
     }
+    // An h1's heading scale syncs as FLOATs the font size, line height and font weight pickers
+    // offer, kept in both schemes: the external bold heading small, 24/32 at 700, and the
+    // internal 24px at the snug 1.375 ratio, 33px, at 500.
+    expect(spec("Fuse tokens", "heading-1-size")).toMatchObject({ type: "FLOAT", scopes: ["FONT_SIZE"] });
+    expect(spec("Fuse tokens", "heading-1-leading")).toMatchObject({
+      type: "FLOAT",
+      scopes: ["LINE_HEIGHT"],
+    });
+    expect(spec("Fuse tokens", "heading-1-weight")).toMatchObject({ type: "FLOAT", scopes: ["FONT_STYLE"] });
+    for (const scheme of ["light", "dark"]) {
+      for (const [name, external, internal] of [
+        ["heading-1-size", 24, 24],
+        ["heading-1-leading", 32, 33],
+      ] as const) {
+        expect(value("Fuse brand", `${scheme}/external/private/${name}`, "Fjordkraft"), name).toEqual(
+          px(external)
+        );
+        expect(value("Fuse brand", `${scheme}/internal/private/${name}`, "Fjordkraft"), name).toEqual(
+          px(internal)
+        );
+      }
+      expect(value("Fuse brand", `${scheme}/external/private/heading-1-weight`, "Fjordkraft")).toEqual(
+        px(700)
+      );
+      expect(value("Fuse brand", `${scheme}/internal/private/heading-1-weight`, "Fjordkraft")).toEqual(
+        px(500)
+      );
+    }
   });
 
   it("syncs each role tint as its role's color at the tint's alpha, with Tailwind's color-mix()", () => {

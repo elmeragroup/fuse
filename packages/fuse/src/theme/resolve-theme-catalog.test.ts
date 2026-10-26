@@ -44,8 +44,9 @@ const SLUGS = [
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
 // `radius-field` field corner, the card edge, section divider and shadow, the two outline Button roles, the resting and
 // checked selection row borders and dividers, the disabled selection row fill, stripe and text,
-// the selection row title weight, the three paragraph line heights and the modal fill and text.
-const TOKEN_COUNT = 98;
+// the selection row title weight, the three paragraph line heights, the size, line height and
+// weight of h1 to h3 and the modal fill and text.
+const TOKEN_COUNT = 107;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;
@@ -375,6 +376,32 @@ describe("resolveThemeCatalog", () => {
     for (const [name, external, internal] of expected) {
       expect(light("external-fkas-private").tokens[name], name).toMatchObject({
         kind: "dimension",
+        codeSyntax: `var(--${name})`,
+        value: external,
+      });
+      expect(theme("external-guen-company").schemes.dark.tokens[name].value, name).toBe(external);
+      expect(light("internal-fkas-private").tokens[name].value, name).toBe(internal);
+      expect(theme("internal-ngfi-company").schemes.dark.tokens[name].value, name).toBe(internal);
+    }
+  });
+
+  it("reads the h1 to h3 scale as px and weights, kept in both schemes", () => {
+    // External h1 heading small 24/32 and h2 and h3 heading xsmall 20/32, all at 700; internal
+    // h1 24px, h2 18px and h3 16px at the snug 1.375 ratio, all at 500.
+    const expected = [
+      ["heading-1-size", "dimension", 24, 24],
+      ["heading-1-leading", "dimension", 32, 33],
+      ["heading-1-weight", "fontWeight", 700, 500],
+      ["heading-2-size", "dimension", 20, 18],
+      ["heading-2-leading", "dimension", 32, 24.75],
+      ["heading-2-weight", "fontWeight", 700, 500],
+      ["heading-3-size", "dimension", 20, 16],
+      ["heading-3-leading", "dimension", 32, 22],
+      ["heading-3-weight", "fontWeight", 700, 500],
+    ] as const;
+    for (const [name, kind, external, internal] of expected) {
+      expect(light("external-fkas-private").tokens[name], name).toMatchObject({
+        kind,
         codeSyntax: `var(--${name})`,
         value: external,
       });

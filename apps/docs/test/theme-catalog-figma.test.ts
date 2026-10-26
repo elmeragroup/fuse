@@ -177,6 +177,34 @@ describe("Figma DTCG documents", () => {
         $value: { value: relaxed, unit: "px" },
       });
     }
+    // The h1 to h3 scale in px and weights: external heading small 24/32 and heading xsmall
+    // 20/32 at 700, and internal 24, 18 and 16px at the snug 1.375 ratio at 500.
+    for (const [level, external, internalType] of [
+      [1, { size: 24, leading: 32 }, { size: 24, leading: 33 }],
+      [2, { size: 20, leading: 32 }, { size: 18, leading: 24.75 }],
+      [3, { size: 20, leading: 32 }, { size: 16, leading: 22 }],
+    ] as const) {
+      for (const part of ["size", "leading"] as const) {
+        const name = `heading-${String(level)}-${part}`;
+        expect(token<FigmaDimensionToken>(document.size, name), name).toEqual({
+          $type: "dimension",
+          $value: { value: external[part], unit: "px" },
+        });
+        expect(token<FigmaDimensionToken>(internal.size, name), name).toEqual({
+          $type: "dimension",
+          $value: { value: internalType[part], unit: "px" },
+        });
+      }
+      const weight = `heading-${String(level)}-weight`;
+      expect(token<FigmaFontWeightToken>(document.weight, weight), weight).toEqual({
+        $type: "fontWeight",
+        $value: 700,
+      });
+      expect(token<FigmaFontWeightToken>(internal.weight, weight), weight).toEqual({
+        $type: "fontWeight",
+        $value: 500,
+      });
+    }
   });
 
   it("writes hex from the same rounded channels as components", () => {
