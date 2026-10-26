@@ -437,36 +437,24 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 - Decide on the Fuse side whether the Combobox popup should span the Input group. Base UI anchors
   it to the `<input>`, so in `packages/fuse/src/components/combobox/combobox.tsx` the popup stops
   10px (dense) or 18px (comfortable) short of the group's right edge.
-- Pending since 2026-10-26: record the real-file baseline for the plugin's move to Effect. Build
-  `figma:plugin` from `main` at 51add90f, run the plugin on `Elmera Fuse - Import test`, and write
-  the results here:
-  - the Plan lines on a file the kit was applied to
-  - the Plan lines on a copy you drifted on purpose, with the edits you made
-  - the Apply lines on a freshly synced file
-  - the wall-clock time of one Plan and one Apply
-  - whether one Cmd+Z undoes a whole Apply
-  - the `figma:compare` report for a snapshot export
-
-  Each migration step that changes the plugin lists its real-file checks below. Run them against
-  this baseline before that step's PR merges.
-
-  - Effect at the plugin edge (`plugin/src/services.ts`, pending): check that the plugin loads,
-    since Effect calls `BigInt` at load and writes a `globalThis` key per fiber step. Check that
-    Plan and Apply list the baseline's lines in about the baseline's time, that one Cmd+Z still
-    undoes an Apply, and that a snapshot export still shows its progress. On a file the token sync
-    never wrote, Plan must still show "The file has no local collection named Fuse tokens" with the
-    hint to run `figma:sync`.
-  - The plan engine in Effect (`plugin/src/plan.ts`, pending): run Plan on an applied file and on
-    the drifted copy, and Apply on a freshly synced file. Each must list the baseline's lines. One
-    Cmd+Z must still undo a whole Apply, and the Figma UI must not redraw partway through a run.
-    Time one Plan and one Apply against the baseline. On the in-memory file the full kit's Apply
-    went from 520 ms to 580 ms and the Plan of an applied file from 147 ms to 165 ms, about 12%.
-  - Snapshot export in Effect (`plugin/src/snapshots.ts`, pending): export snapshots from an
-    applied file and check that the UI counts the progress up while the export runs. Run the export
-    through `figma:compare` and compare its report with the baseline's.
-  - Comparison tooling in Effect (`scripts/compare.ts`, pending): run `figma:compare` on the baseline
-    snapshot export and compare the report with the baseline's. The self-check report matched the
-    one from before the change on 2026-10-26, but no real snapshot was at hand.
+- Finish the real-file checks for the plugin's move to Effect (#410, merged 2026-10-26). On
+  2026-10-26 builds of #410 loaded in Figma, Plan on `Elmera Fuse - Import test` matched the kit,
+  and deleting its Meter page drifted it to seven Plan lines that one Apply cleared. A fresh file
+  took all 31 pages and the Icons frame in one Apply of 260 changes, then matched. Two snapshot
+  exports compared like the run at cfaccd22, from before Effect: 3,508 cells, 580 size flags,
+  about 1,995 at 0% and one at 5.43%, the Item link's focus cell. Still unchecked:
+  - the time of one Plan and one Apply against a `figma:plugin` build from 51add90f. On the
+    in-memory file the full kit's Apply went from 520 ms to 580 ms and the Plan of an applied file
+    from 147 ms to 165 ms.
+  - that one Cmd+Z undoes a whole Apply, and that the Figma UI does not redraw partway through a
+    run
+  - that the UI counts the progress up while a snapshot export runs
+  - that Plan on a file the token sync never wrote shows "The file has no local collection named
+    Fuse tokens" with the hint to run `figma:sync`
+- Find why the `fuse-design-tokens-sync` export of 2026-10-26 draws some icons in the Fjordkraft
+  external private light previews in `#5C1900` where the browser and the Import test export draw
+  the foreground: the Sidebar's Home icon and the destructive Dropdown menu popup's Profile icon.
+  Plan matched the kit on that file, so read the glyph's bound variable and resolved color there.
 
 ## Data table
 
