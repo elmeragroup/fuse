@@ -437,6 +437,18 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 - Decide on the Fuse side whether the Combobox popup should span the Input group. Base UI anchors
   it to the `<input>`, so in `packages/fuse/src/components/combobox/combobox.tsx` the popup stops
   10px (dense) or 18px (comfortable) short of the group's right edge.
+- Pending since 2026-10-26: record the real-file baseline for the plugin's move to Effect. Build
+  `figma:plugin` from `main` at 51add90f, run the plugin on `Elmera Fuse - Import test`, and write
+  the results here:
+  - the Plan lines on a file the kit was applied to
+  - the Plan lines on a copy you drifted on purpose, with the edits you made
+  - the Apply lines on a freshly synced file
+  - the wall-clock time of one Plan and one Apply
+  - whether one Cmd+Z undoes a whole Apply
+  - the `figma:compare` report for a snapshot export
+
+  Each migration step that changes the plugin lists its real-file checks below. Run them against
+  this baseline before that step's PR merges.
 
 ## Data table
 
