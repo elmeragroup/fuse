@@ -29,6 +29,7 @@ import {
   toggle,
   tokenRow,
 } from "./page";
+import type { Box } from "./page";
 
 const browser = launchSuiteBrowser();
 
@@ -51,6 +52,17 @@ const ARTBOARD_GAP = 36;
 const PART_GAP = 8;
 
 const RED = "rgb(255, 0, 0)";
+
+/**
+ * The buttons at the end of the Overview's profile card, in reading order. They are Buttons,
+ * which read no typography token, so a part bar over one has no Type menu.
+ */
+const PROFILE_BUTTONS = ["Save", "Preview", "Export", "Reset", "Delete", "Approve", "Learn more"] as const;
+
+/** Whether the boxes `a` and `b` share any area. */
+function overlaps(a: Box, b: Box): boolean {
+  return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+}
 
 /** The floating theme toolbar over a picked part. */
 function partBar(page: Page): Locator {
@@ -562,21 +574,28 @@ describe("the studio's theme toolbar", () => {
     try {
       const bar = await selectBoard(page, LIGHT_BOARD);
       // The press framed the artboard with room above it for the bar, so the bar's menus open at
-      // one place against it however many rows the bar wraps to. The Type menu grows with the
-      // typography roles and covers the artboard's right side, so the next target is a button at
-      // the profile card's start, left of the menu.
+      // one place against it however many rows the bar wraps to.
       await expect.poll(async () => (await placement(page, LIGHT_BOARD)).gap).toBeCloseTo(ARTBOARD_GAP, 0);
       await page.getByRole("button", { name: "Select part", exact: true }).click();
       await menuButton(bar, "Type").click();
       const type = page.getByRole("dialog", { name: "Type", exact: true });
       await type.waitFor({ state: "visible" });
-      const reset = artboard(page, LIGHT_BOARD).getByRole("button", { name: "Reset", exact: true });
-      const target = await box(reset);
-      expect(target.x + target.width).toBeLessThan((await box(type)).x);
+      await settleFrames(page);
+      // The Type menu fills the canvas below the bar, under its trigger, and covers a span of the
+      // artboard as wide as itself. Where the trigger lands depends on how the bar's text wraps, so
+      // the target is the first profile button the menu leaves uncovered.
+      const menu = await box(type);
+      const buttons = PROFILE_BUTTONS.map((name) =>
+        artboard(page, LIGHT_BOARD).getByRole("button", { name, exact: true })
+      );
+      const boxes = await Promise.all(buttons.map(box));
+      const target = buttons[boxes.findIndex((button) => !overlaps(button, menu))];
+      if (target === undefined) {
+        throw new Error(`the open Type menu at ${JSON.stringify(menu)} covers every profile button`);
+      }
 
-      // A Button reads no typography token, so its part bar has no Type menu; Escape returns to
-      // the artboard's bar.
-      await reset.click();
+      // Escape returns from the part bar to the artboard's bar.
+      await target.click();
       await partBar(page).waitFor({ state: "visible" });
       await page.keyboard.press("Escape");
       await bar.waitFor({ state: "visible" });
