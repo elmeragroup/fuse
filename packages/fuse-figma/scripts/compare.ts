@@ -49,15 +49,12 @@ const describe = (error: unknown): string => (error instanceof Error ? error.mes
 
 /** Run the self-check, print its lines and the report path, and stop when it failed. */
 const selfCheck = Effect.fn("compare.selfCheck")(function* (options: CompareOptions) {
-  const result = yield* Effect.promise(() => runSelfCheck(options));
-  if (Result.isFailure(result)) {
-    return yield* stop(result.failure.message);
-  }
-  for (const line of result.success.lines) {
+  const result = yield* runSelfCheck(options).pipe(Effect.catch((failure) => stop(failure.message)));
+  for (const line of result.lines) {
     yield* Console.log(line);
   }
   yield* Console.log(`Report: ${resolve(options.outDir, "report.html")}`);
-  if (!result.success.passed) {
+  if (!result.passed) {
     return yield* new CompareStopped();
   }
 });
@@ -72,11 +69,9 @@ const compare = Effect.fn("compare.snapshot")(function* (snapshotPath: string, o
   if (Result.isFailure(snapshot)) {
     return yield* stop(snapshot.failure.message);
   }
-  const result = yield* Effect.promise(() => compareSnapshot(snapshot.success, options));
-  if (Result.isFailure(result)) {
-    return yield* stop(result.failure.message);
-  }
-  const report = result.success;
+  const report = yield* compareSnapshot(snapshot.success, options).pipe(
+    Effect.catch((failure) => stop(failure.message))
+  );
   const sized = report.rows.filter((row) => row.verdict.flags.includes("size")).length;
   yield* Console.log(
     `Compared ${String(report.rows.length)} cells from ${String(report.previews.length)} previews; ${String(sized)} differ in box size, ${String(report.skipped.length)} skipped.`

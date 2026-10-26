@@ -15,12 +15,10 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { KitBuildError } from "../components/build-errors.ts";
 import { compileHostUtilities } from "../components/utility-css.ts";
 import { isClientRenderer, RENDERER_ENTRIES } from "./cell-renderers.ts";
 import type { AnyCellRenderer } from "./cell-renderers.ts";
 import { buildClientBundle } from "./client-bundle.ts";
-import type { ClientBundleFailed } from "./client-bundle.ts";
 import { ASSET_PATHS } from "./preview-page.ts";
 
 /** The Fuse package, next to this one in the workspace. */
@@ -100,13 +98,13 @@ export function locateFuseBuild(): Result.Result<FuseBuild, FuseBuildMissing> {
  * @param build - The Fuse build.
  * @param renderers - The renderers, whose host classes the page compiles and whose client
  *   renderers it bundles.
- * @returns The paths, the font CSS, the host's CSS and the client bundle, or why the host's CSS
- *   or the bundle did not build.
+ * @returns The paths, the font CSS, the host's CSS and the client bundle. The Effect fails with why
+ *   the host's CSS or the bundle did not build.
  */
-export async function readPageAssets(
+export const readPageAssets = Effect.fnUntraced(function* (
   build: FuseBuild,
   renderers: ReadonlyMap<string, AnyCellRenderer>
-): Promise<Result.Result<PageAssets, KitBuildError | ClientBundleFailed>> {
+) {
   const fontPackage = dirname(fileURLToPath(import.meta.resolve("@fontsource/roboto/400.css")));
   const fontCss = FONT_WEIGHTS.map((weight) =>
     readFileSync(join(fontPackage, `${String(weight)}.css`), "utf8").replaceAll(
@@ -114,26 +112,19 @@ export async function readPageAssets(
       `url(${ASSET_PATHS.fontFiles}`
     )
   ).join("\n");
-  const hostCss = await Effect.runPromise(
-    Effect.result(
-      compileHostUtilities([...renderers.values()].flatMap((renderer) => renderer.hostClasses ?? []))
-    )
+  const hostCss = yield* compileHostUtilities(
+    [...renderers.values()].flatMap((renderer) => renderer.hostClasses ?? [])
   );
-  if (Result.isFailure(hostCss)) {
-    return Result.fail(hostCss.failure);
-  }
-  const client = await buildClientBundle([...renderers.values()].filter(isClientRenderer));
-  if (Result.isFailure(client)) {
-    return Result.fail(client.failure);
-  }
-  return Result.succeed({
+  const client = yield* buildClientBundle([...renderers.values()].filter(isClientRenderer));
+  const assets: PageAssets = {
     styles: join(build.root, "dist/styles.css"),
     themes: join(build.root, "dist/themes.css"),
     preflight: fileURLToPath(import.meta.resolve("tailwindcss/preflight.css")),
     fontCss,
     fontDirectory: join(fontPackage, "files"),
     fontPackage,
-    hostCss: hostCss.success,
-    client: client.success,
-  });
-}
+    hostCss,
+    client,
+  };
+  return assets;
+});
