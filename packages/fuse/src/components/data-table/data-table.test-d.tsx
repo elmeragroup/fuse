@@ -13,11 +13,11 @@ import {
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
-import type { Column, Row } from "@tanstack/react-table";
+import type { Column, HeaderGroup, Row } from "@tanstack/react-table";
 import { expectTypeOf, test } from "vitest";
 
 import { actionsColumn, createFuseTableHook, DataTable, selectColumn } from "@elmeragroup/fuse/data-table";
-import type { RegisteredRowProps } from "@elmeragroup/fuse/data-table";
+import type { DataTableHeaderProps, RegisteredRowProps } from "@elmeragroup/fuse/data-table";
 
 type Order = {
   readonly id: number;
@@ -113,6 +113,26 @@ test("a header part rejects a table whose FlexRender takes another header type t
         <DataTable.Header table={matching} />
         {/* @ts-expect-error -- FlexRender needs a depth the header groups' headers lack */}
         <DataTable.Header table={mismatched} />
+      </>
+    );
+  }
+
+  expectTypeOf(Headers).toBeFunction();
+});
+
+test("a wrapper typed with DataTableHeaderProps takes the table from useTable", () => {
+  function OrderHeader(props: DataTableHeaderProps<HeaderGroup<typeof everyFeature, Order>>): ReactElement {
+    return <DataTable.Header {...props} />;
+  }
+
+  function Headers(): ReactElement {
+    const sorted = useTable({ features: everyFeature, columns: [], data: orders });
+    const core = useTable({ features: coreOnly, columns: [], data: orders });
+    return (
+      <>
+        <OrderHeader table={sorted} />
+        {/* @ts-expect-error -- the core table's columns lack the wrapper header type's feature members */}
+        <OrderHeader table={core} />
       </>
     );
   }

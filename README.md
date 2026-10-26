@@ -26,7 +26,7 @@ An electrical fuse connects the name to Elmera's energy business. To fuse means 
 
 - **Node**: `>=24.13 <25` — the version in [`.node-version`](.node-version) (`24.13.0`). The build, codegen and docs scripts run TypeScript directly through Node's type-stripping flags, so an older major fails.
 - **pnpm 11** — `packageManager` pins the exact version; use Corepack.
-- **macOS on Apple silicon, or Linux on x64 or arm64.** tsrs runs every type-check and builds Fuse's declarations, and tsrs 0.18 ships binaries for those platforms only. On Windows or an Intel Mac, `pnpm type-check`, `pnpm test:types` and `pnpm build` fail.
+- **macOS on Apple silicon, or Linux on x64 or arm64.** tsrs runs the package type-checks and builds Fuse's declarations, and tsrs 0.18 ships binaries for those platforms only. On Windows or an Intel Mac, `pnpm type-check` and `pnpm build` fail.
 - `.ref/` reference checkouts are needed only to lift new reference implementations or artwork. They are not needed to build, test, or run the repo.
 
 ```sh

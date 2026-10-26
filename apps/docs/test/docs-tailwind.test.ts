@@ -42,11 +42,11 @@ function srcTsFiles(): string[] {
 
 /** Parse only the supplied sources; no library project or type checking is needed. */
 function recipeSlotFailures(sources: readonly { file: string; source: string }[]): string[] {
-  const api = new API({ cwd: docsRoot });
+  const api = new API();
   try {
-    return sources.flatMap(({ file, source }, index) => {
+    return sources.flatMap(({ file, source }) => {
       // createSourceFile parses outside any program, so no project, library or resolution runs.
-      const retained = api.createSourceFile(`/docs-recipe-check/${String(index)}.tsx`, source);
+      const retained = api.createSourceFile("/recipe.tsx", source);
       const parsed = retained.sourceFile;
       const failures: string[] = [];
       function inspectRecipe(node: Node): void {

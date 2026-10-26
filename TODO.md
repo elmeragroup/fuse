@@ -149,6 +149,9 @@
 - Bump tsrs to 0.19 once it is on npm. It targets TypeScript 7.1 beta exactly and adds Windows
   and Intel macOS binaries, so drop the platform note in the
   [README prerequisites](README.md#prerequisites) in the same change.
+  Move the Fuse type tests (`packages/fuse/vitest.types.config.ts`) to the tsrs checker only
+  after confirming `data-table.test-d.tsx` fails under tsrs with the TypeScript 7.1 header fix
+  in `data-table-source.ts` reverted.
 - Move `typescript` to 7.1 stable when it ships.
 - Bump `@elmeragroup/internal` to its tsrs-based canary once it is on npm. Update its catalog pin
   and its `minimumReleaseAgeExclude` entry in `pnpm-workspace.yaml`, then run

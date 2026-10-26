@@ -29,7 +29,7 @@ import { DataTablePagination } from "./data-table-pagination";
 import type { DataTablePaginationProps } from "./data-table-pagination";
 import { DataTableSortButton } from "./data-table-sort-button";
 import type { DataTableSortButtonProps } from "./data-table-sort-button";
-import type { HeaderOf, NoComponents } from "./data-table-source";
+import type { NoComponents } from "./data-table-source";
 
 /** A row of any table built through `createFuseTableHook`, as the registered parts read it. */
 type ContextRow = Row<StockFeatures, RowData>;
@@ -104,7 +104,7 @@ export function RegisteredContent({ children, ...props }: RegisteredContentProps
   return (
     <table.Subscribe source={table.store} selector={(state) => state}>
       {() => (
-        <ContentTable<HeaderOf<AppContextTable>, ContextRow>
+        <ContentTable
           table={table}
           renderHeader={(header) => (
             <table.AppHeader header={header}>{(appHeader) => <appHeader.FlexRender />}</table.AppHeader>

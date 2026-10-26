@@ -139,14 +139,11 @@ type OwnedDeclarationParser = DeclarationParser & {
 };
 
 function createDeclarationParser(): OwnedDeclarationParser {
-  const api = new API({ cwd: process.cwd() });
-  let nextId = 0;
+  const api = new API();
   const parsedFiles = new Map<string, readonly string[]>();
   const specifiers = (declaration: string): string[] => {
-    const fileName = `/declaration-${String(nextId)}.d.ts`;
-    nextId += 1;
     // Parsing needs no program, so the source file is created outside any project.
-    const retained = api.createSourceFile(fileName, declaration);
+    const retained = api.createSourceFile("/declaration.d.ts", declaration);
     try {
       return collectModuleSpecifierNodes(retained.sourceFile);
     } finally {
