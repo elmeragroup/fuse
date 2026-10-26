@@ -116,7 +116,6 @@ describe("planBox", () => {
     `${label}: cornerRadius → radius-sm`,
     ...clipAndFill,
     `${label}: stroke → primary (holds none)`,
-    `${label}: strokesIncludedInLayout → true`,
     `${label}: shadows → ring 0 0 0 2 (holds none)`,
     `${label}: opacity → 0.5`,
   ];
@@ -203,23 +202,40 @@ describe("planBox", () => {
 
   // Oracle: CSS Basic UI 4 §5, where an outline takes no layout space, and the typings'
   // `strokesIncludedInLayout`, whose false lets the stroke overlap the frame's children.
-  it("leaves a stroke drawn from an outline out of the frame's layout", async () => {
+  const outlined: BoxSpec = {
+    ...BOX,
+    clips: false,
+    stroke: {
+      color: { kind: "variable", variable: { collection: "Fuse tokens", name: "primary" } },
+      weight: { kind: "literal", value: 1 },
+      inLayout: false,
+    },
+  };
+
+  /** A frame below an auto layout root, as the build makes it. */
+  function frameInRoot(): FrameNode {
     const root = file.figma.createComponent();
     root.layoutMode = "HORIZONTAL";
     const frame = file.figma.createFrame();
     root.appendChild(frame);
+    return frame;
+  }
+
+  it("leaves a stroke drawn from an outline out of the frame's layout", async () => {
+    const frame = frameInRoot();
     // As a run that drew a border there left it.
     frame.layoutMode = "HORIZONTAL";
     frame.strokesIncludedInLayout = true;
-    const outlined: BoxSpec = {
-      ...BOX,
-      clips: false,
-      stroke: {
-        color: { kind: "variable", variable: { collection: "Fuse tokens", name: "primary" } },
-        weight: { kind: "literal", value: 1 },
-        inLayout: false,
-      },
-    };
+    const plan = await planOn(frame, "Item / Media", PART, outlined);
+    expect(changeLines(plan)).toContain("Item / Media: strokesIncludedInLayout → false");
+    await Effect.runPromise(performPlan(plan));
+    expect(frame.strokesIncludedInLayout).toBe(false);
+    expect(changeLines(await planOn(frame, "Item / Media", PART, outlined))).toEqual([]);
+  });
+
+  // Oracle: PS3 on 2026-10-26, where a new frame read false and turning its auto layout on read true.
+  it("leaves the stroke out of a new frame's layout after the plan turns its auto layout on", async () => {
+    const frame = frameInRoot();
     const plan = await planOn(frame, "Item / Media", PART, outlined);
     expect(changeLines(plan)).toContain("Item / Media: strokesIncludedInLayout → false");
     await Effect.runPromise(performPlan(plan));

@@ -10,21 +10,22 @@
  * instead of passing on an `undefined`. Every write lands in a log, so a test can tell that a
  * run stopped before its first write.
  *
- * The fake models the Figma rules its modules list, numbered 1 to 56. Each rule a real file showed
+ * The fake models the Figma rules its modules list, numbered 1 to 58. Each rule a real file showed
  * in 2026-10 names that run.
  * Rules 12 to 47 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
  * Import test` from 2026-10-22 to 2026-10-25: P0 and P0b read the kit's nodes, P1 to P9, PB, PR,
  * PQ, PD, PL, PF, PH, PZ, PI, PZ2, N1 to N5, N9, N11, NS, NA, NH, PI2, PI3, PH3 and PS built nodes on a scratch page, and
  * P9b stored images and built no node. Rule 48 names PK, a reading of the owner's file on 2026-10-25,
  * and PK2, built on a scratch frame the same day. Rule 49 names PS2, a reading of the owner's file
- * and frames built on a scratch page on 2026-10-25.
+ * and frames built on a scratch page on 2026-10-25. Rules 57 and 58 name PS3, and rule 57 also PS4,
+ * probes on scratch frames in the owner's file `Untitled` on 2026-10-26.
  *
  * Each rule's probe notes sit beside the code that models it. `fake/paints.ts` models rules 1, 2,
  * 3, 22, 23, 27, 33, 46, 49. `fake/overrides.ts` models rules 36, 37, 38, 48. `fake/instances.ts`
  * models rules 4, 25, 34, 35, 39, 41, 43, 44, 45. `fake/svg.ts` models rule 6. `fake/text.ts`
  * models rules 7, 10, 19, 20, 21, 28, 30, 50, 51, 52, 53, 54, 55. `fake/variables.ts` models rules
  * 8, 11. `fake/layout.ts` models rules 5, 9, 12, 13, 14, 15, 16, 17, 18, 24, 26, 29, 31, 32, 40,
- * 42, 47, 56. `fake/guard.ts` holds the guard, `fake/state.ts` the file's records, `fake/tree.ts`
+ * 42, 47, 56, 57, 58. `fake/guard.ts` holds the guard, `fake/state.ts` the file's records, `fake/tree.ts`
  * the node tree and `fake/nodes.ts` the node classes. Each module imports only the ones listed
  * before it here: guard, state, overrides, tree, variables, paints, text, layout, instances, svg
  * and nodes.

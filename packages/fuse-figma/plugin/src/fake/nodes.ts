@@ -40,8 +40,10 @@ import {
   rescale,
   resize,
   resizeWithConstraints,
+  setLayoutMode,
   setLimit,
   setSizing,
+  setStrokesIncludedInLayout,
   settled,
   sizingOn,
   turnOf,
@@ -615,9 +617,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
   }
 
   set strokesIncludedInLayout(value: boolean) {
-    const state = live(this);
-    write(state, "strokesIncludedInLayout");
-    state.strokesIncludedInLayout = value;
+    setStrokesIncludedInLayout(live(this), value);
   }
 
   get dashPattern(): ReadonlyArray<number> {
@@ -705,9 +705,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
   }
 
   set layoutMode(value: FrameNode["layoutMode"]) {
-    const state = live(this);
-    write(state, "layoutMode");
-    state.layoutMode = value;
+    setLayoutMode(live(this), value);
   }
 
   get layoutWrap(): FrameNode["layoutWrap"] {

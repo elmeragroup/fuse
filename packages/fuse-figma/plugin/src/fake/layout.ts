@@ -187,6 +187,18 @@
  *    by an instance whose main is unbound, what `removeOverrides` does to an own unbind, which the
  *    fake reverts, and the order of the listed fields. A HUG write drops the length from the
  *    overrides as rule 32 says, where G13 still listed it.
+ * 57. Turning auto layout on includes the strokes in the layout. On 2026-10-26, on scratch frames in
+ *    the owner's file `Untitled` (PS3), a new frame or component read `strokesIncludedInLayout`
+ *    false, and `layoutMode` from NONE to HORIZONTAL or VERTICAL set it true. PS4, on the same file
+ *    that day, read a new frame false and NONE to GRID set it true. HORIZONTAL to VERTICAL, to GRID,
+ *    to HORIZONTAL again and to NONE kept the value, so a frame turned back to NONE reads what it
+ *    held. In auto layout a false written after true stuck, whatever stroke, weight, align,
+ *    clipping, children or sizing writes came around it. The owner's Apply that created Item's image
+ *    media read the new box's false, wrote no false, and its `layoutMode` write then turned the
+ *    field true.
+ * 58. `strokesIncludedInLayout` takes a write only in auto layout. On the same frames a write while
+ *    `layoutMode` was NONE threw `in set_strokesIncludedInLayout: Can only set
+ *    strokesIncludedInLayout on nodes with layoutMode !== NONE` (PS3).
  */
 
 import { hiddenByProperty, markOverride, noteOverride } from "./overrides.ts";
@@ -586,11 +598,15 @@ function wrapHeight(state: NodeState): number {
 }
 
 /**
- * What an auto layout keeps clear inside one edge: its padding, and the stroke's weight on that side
- * while `strokesIncludedInLayout` is true (rule 46, PS).
+ * What an auto layout keeps clear inside one edge: its padding, and the weight of a stroke it holds on
+ * that side while `strokesIncludedInLayout` is true (rule 46, PS). A frame without a stroke keeps its
+ * padding alone: in PS4 a stroke-less hugging row with the field true, padding 0, around a fixed
+ * 20 × 20 child measured 20 × 20 at weight 1 and at weight 4, and the same row with a SOLID INSIDE
+ * stroke of weight 4 measured 28 × 28.
  */
 function inset(state: NodeState, side: keyof Sides): number {
-  return state.padding[side] + (state.strokesIncludedInLayout ? state.strokeWeights[side] : 0);
+  const stroked = state.strokesIncludedInLayout && state.strokes.length > 0;
+  return state.padding[side] + (stroked ? state.strokeWeights[side] : 0);
 }
 
 /**
@@ -741,6 +757,26 @@ function setTextSizing(state: NodeState, axis: Axis, value: Sizing, member: stri
   if (isAutoLayout(state.parent)) {
     stopFilling(state, axis);
   }
+}
+
+/** Write `layoutMode`: turning auto layout on includes the strokes in it (rule 57). */
+export function setLayoutMode(state: NodeState, value: FrameNode["layoutMode"]): void {
+  write(state, "layoutMode");
+  if (state.layoutMode === "NONE" && value !== "NONE") {
+    state.strokesIncludedInLayout = true;
+  }
+  state.layoutMode = value;
+}
+
+/** Write `strokesIncludedInLayout`, which only an auto layout takes (rule 58). */
+export function setStrokesIncludedInLayout(state: NodeState, value: boolean): void {
+  if (!isAutoLayout(state)) {
+    throw new Error(
+      "in set_strokesIncludedInLayout: Can only set strokesIncludedInLayout on nodes with layoutMode !== NONE"
+    );
+  }
+  write(state, "strokesIncludedInLayout");
+  state.strokesIncludedInLayout = value;
 }
 
 function requireAutoLayoutOrChild(state: NodeState, field: string): void {

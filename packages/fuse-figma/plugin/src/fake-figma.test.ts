@@ -2,7 +2,8 @@
  * The layout, text, image, property, rotation and stroke rules of the in-memory file in
  * `fake-figma.ts`, each on a few nodes built by hand. The oracle is what the test file `Elmera Fuse -
  * Import test` read back in net-zero probes from 2026-10-22 to 2026-10-25, named P0 to P9b, PB, PR,
- * PD, PL, PF, PH, PZ, NH, N9, PS and PS2 as the fake's header names them, the PNG signature, the hashes `shasum -a 1` gives the fixture images,
+ * PD, PL, PF, PH, PZ, NH, N9, PS and PS2 as the fake's header names them, PS3 and PS4 on the owner's
+ * file `Untitled` on 2026-10-26, the PNG signature, the hashes `shasum -a 1` gives the fixture images,
  * and the typings where no probe ran. The planners' tests converge against these rules, so a rule
  * that drifts from the real file would let a plan pass that Figma would not keep.
  */
@@ -848,6 +849,77 @@ describe("rule 49: a 0 side on a never-written stroke weight sets every side", (
     expect(() => {
       frame.strokeLeftWeight = 1;
     }).toThrow(/PS2/);
+  });
+});
+
+describe("rule 57: turning auto layout on includes the strokes in the layout (PS3, PS4)", () => {
+  it.each([
+    ["frame", () => figma.createFrame()],
+    ["component", () => figma.createComponent()],
+  ] as const)("starts a new %s false and turns it true with a row or a column", (_, make) => {
+    for (const direction of ["HORIZONTAL", "VERTICAL"] as const) {
+      const node = make();
+      expect(node.strokesIncludedInLayout).toBe(false);
+      node.layoutMode = direction;
+      expect(node.strokesIncludedInLayout).toBe(true);
+    }
+  });
+
+  it("turns a new frame true with a grid (PS4)", () => {
+    const frame = figma.createFrame();
+    expect(frame.strokesIncludedInLayout).toBe(false);
+    frame.layoutMode = "GRID";
+    expect(frame.strokesIncludedInLayout).toBe(true);
+  });
+
+  // PS4's row: padding 0, hugging both axes, around a fixed 20 × 20 child, which the fake lays out
+  // where the child is an instance of a set's variant (rule 32).
+  it.each([
+    ["no stroke paint, weight 1", false, 1, [20, 20]],
+    ["no stroke paint, weight 4", false, 4, [20, 20]],
+    ["a SOLID INSIDE stroke, weight 4", true, 4, [28, 28]],
+  ] as const)("hugs a row in the layout with %s at %j (PS4)", (_, painted, weight, size) => {
+    const component = figma.createComponent();
+    component.resize(20, 20);
+    figma.combineAsVariants([component], figma.currentPage);
+    const row = autoLayout("HORIZONTAL");
+    row.primaryAxisSizingMode = "AUTO";
+    row.counterAxisSizingMode = "AUTO";
+    row.appendChild(component.createInstance());
+    if (painted) {
+      row.strokes = [{ type: "SOLID", color: { r: 0, g: 0, b: 0 } }];
+      row.strokeAlign = "INSIDE";
+    }
+    row.strokeWeight = weight;
+    expect(row.strokesIncludedInLayout).toBe(true);
+    expect([row.width, row.height]).toEqual(size);
+  });
+
+  it.each(["VERTICAL", "GRID", "HORIZONTAL", "NONE"] as const)(
+    "keeps a row's false when it turns to %s",
+    (direction) => {
+      const frame = autoLayout("HORIZONTAL");
+      frame.strokesIncludedInLayout = false;
+      frame.layoutMode = direction;
+      expect(frame.strokesIncludedInLayout).toBe(false);
+    }
+  );
+});
+
+describe("rule 58: strokesIncludedInLayout takes a write only in auto layout (PS3)", () => {
+  it("refuses a write on a frame without auto layout with the real file's error", () => {
+    const frame = figma.createFrame();
+    expect(() => {
+      frame.strokesIncludedInLayout = true;
+    }).toThrow(
+      "in set_strokesIncludedInLayout: Can only set strokesIncludedInLayout on nodes with layoutMode !== NONE"
+    );
+  });
+
+  it("keeps a false written after the turn", () => {
+    const frame = autoLayout("VERTICAL");
+    frame.strokesIncludedInLayout = false;
+    expect(frame.strokesIncludedInLayout).toBe(false);
   });
 });
 
