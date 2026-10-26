@@ -7,9 +7,9 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { build } from "rolldown";
 
 import { buildKit, renderCoverage } from "../src/components/build-kit.ts";
+import { bundlePlugin } from "./plugin-bundle.ts";
 
 const pluginDir = fileURLToPath(new URL("../plugin/", import.meta.url));
 const distDir = `${pluginDir}dist/`;
@@ -21,15 +21,7 @@ const { spec, coverage } = await buildKit();
 mkdirSync(distDir, { recursive: true });
 writeFileSync(specPath, `${JSON.stringify(spec, null, 2)}\n`);
 writeFileSync(coveragePath, renderCoverage(coverage));
-
-// Figma runs the main thread as one classic script, so the bundle is an IIFE with no
-// imports, and the spec arrives as an inlined literal.
-await build({
-  input: `${pluginDir}src/code.ts`,
-  platform: "neutral",
-  transform: { define: { __FUSE_KIT__: JSON.stringify(spec) } },
-  output: { file: codePath, format: "iife" },
-});
+writeFileSync(codePath, await bundlePlugin(spec));
 
 const totals = new Map<string, number>();
 for (const row of coverage) {
