@@ -562,16 +562,21 @@ describe("the studio's theme toolbar", () => {
     try {
       const bar = await selectBoard(page, LIGHT_BOARD);
       // The press framed the artboard with room above it for the bar, so the bar's menus open at
-      // one place against it however many rows the bar wraps to, and the Type menu, which opens
-      // from the bar's start, ends left of the profile card's last buttons.
+      // one place against it however many rows the bar wraps to. The Type menu grows with the
+      // typography roles and covers the artboard's right side, so the next target is a button at
+      // the profile card's start, left of the menu.
       await expect.poll(async () => (await placement(page, LIGHT_BOARD)).gap).toBeCloseTo(ARTBOARD_GAP, 0);
       await page.getByRole("button", { name: "Select part", exact: true }).click();
       await menuButton(bar, "Type").click();
-      await page.getByRole("dialog", { name: "Type", exact: true }).waitFor({ state: "visible" });
+      const type = page.getByRole("dialog", { name: "Type", exact: true });
+      await type.waitFor({ state: "visible" });
+      const reset = artboard(page, LIGHT_BOARD).getByRole("button", { name: "Reset", exact: true });
+      const target = await box(reset);
+      expect(target.x + target.width).toBeLessThan((await box(type)).x);
 
       // A Button reads no typography token, so its part bar has no Type menu; Escape returns to
       // the artboard's bar.
-      await artboard(page, LIGHT_BOARD).getByRole("button", { name: "Approve", exact: true }).click();
+      await reset.click();
       await partBar(page).waitFor({ state: "visible" });
       await page.keyboard.press("Escape");
       await bar.waitFor({ state: "visible" });
