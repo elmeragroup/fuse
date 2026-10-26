@@ -5,6 +5,8 @@
  * ids and component keys, and instances in other files keep following them.
  */
 
+import { Effect } from "effect";
+
 import { columnAxisOf, gridCell, variantName } from "../../src/components/kit-check.ts";
 import { walkLayers } from "../../src/components/kit-spec.ts";
 import type {
@@ -18,7 +20,7 @@ import { planBox } from "./box.ts";
 import { planChildren } from "./child-layers.ts";
 import type { LayerLinks, PropertyIds } from "./child-layers.ts";
 import { planSetProperty } from "./component-properties.ts";
-import { createIn, near, planScalar } from "./fields.ts";
+import { near, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { fontLayers, requireNewSetFonts, requireNewTextFonts } from "./fonts.ts";
 import type { PlannedIcon } from "./icons.ts";
@@ -26,8 +28,9 @@ import { indexSiblings, placeOwned, planOwnedChildren, setKey } from "./identity
 import type { OwnedChild, Siblings } from "./identity.ts";
 import { innerSpecs } from "./instance-layers.ts";
 import type { PlannedPage } from "./pages.ts";
-import { change, existing } from "./plan.ts";
+import { change, create, existing, Plan, watchLeaf } from "./plan.ts";
 import type { Target } from "./plan.ts";
+import { currentRun } from "./services.ts";
 import { settleInstances } from "./settle.ts";
 
 /** The gap between variants in the set's grid, and between the grid and the set's edge. */
@@ -261,20 +264,20 @@ function planSwapProperties(
   }
 }
 
-async function planVariantFields(
-  run: Run,
+const planVariantFields = Effect.fnUntraced(function* (
   component: ComponentNode,
   name: string,
   label: string,
   variant: VariantSpec,
   links: LayerLinks
-): Promise<void> {
+) {
+  const run = yield* currentRun;
   planScalar(run, label, "name", component.name, name, () => {
     component.name = name;
   });
   const size = planBox(run, component, label, variant.root, { kind: "root" });
-  await planChildren(run, component, label, variant.root, links, size);
-}
+  yield* planChildren(component, label, variant.root, links, size);
+});
 
 /** How to find, create and plan one variant of a set. */
 function variantKind(
@@ -293,7 +296,7 @@ function variantKind(
     make: () => run.figma.createComponent(),
     requireNew: () =>
       requireNewTextFonts(run, set, label, fontLayers(walkLayers(variant.root), innerSpecs(links.sets))),
-    plan: (component, inner) => planVariantFields(inner, component, name, label, variant, links),
+    plan: (component) => planVariantFields(component, name, label, variant, links),
   };
 }
 
@@ -315,54 +318,58 @@ function holdsChanged(spec: ComponentSetSpec, sets: ReadonlyMap<string, PlannedS
  * @param properties - The set's property ids by name, which this fills in, at once for a property the
  *   set holds and when its operation runs for one the run adds.
  */
-async function planSetContents(
-  run: Run,
+const planSetContents = Effect.fnUntraced(function* (
   set: ComponentSetNode,
   spec: ComponentSetSpec,
   { icons, sets }: Omit<LayerLinks, "properties">,
   properties: Map<string, string>
-): Promise<PlannedContents> {
-  const start = run.plan.operations.length;
-  planScalar(run, spec.name, "name", set.name, spec.name, () => {
-    set.name = spec.name;
-  });
-  planValueProperties(run, set, spec, { type: "TEXT", properties: spec.textProperties }, properties);
-  planValueProperties(
-    run,
-    set,
-    spec,
-    { type: "BOOLEAN", properties: spec.booleanProperties ?? [] },
-    properties
-  );
-  planSwapProperties(run, set, spec, icons, properties);
-  const links: LayerLinks = { properties, icons, sets };
+) {
+  const run = yield* currentRun;
+  const planVariants = Effect.gen(function* () {
+    planScalar(run, spec.name, "name", set.name, spec.name, () => {
+      set.name = spec.name;
+    });
+    planValueProperties(run, set, spec, { type: "TEXT", properties: spec.textProperties }, properties);
+    planValueProperties(
+      run,
+      set,
+      spec,
+      { type: "BOOLEAN", properties: spec.booleanProperties ?? [] },
+      properties
+    );
+    planSwapProperties(run, set, spec, icons, properties);
+    const links: LayerLinks = { properties, icons, sets };
 
-  // The layers panel lists the variants in spec order. Figma keeps each variant property's
-  // values in an order of its own: a new value goes last, and moving the variants or renaming a
-  // value leaves it where it is, as a real file showed on 2026-10-20. A set the plugin creates
-  // lists its values in spec order, but a set that gained values later keeps them last.
-  const planned = await planOwnedChildren(run, set, spec.name, "variant", spec.variants, (variant) =>
-    variantKind(run, set, spec, variant, links)
+    // The layers panel lists the variants in spec order. Figma keeps each variant property's
+    // values in an order of its own: a new value goes last, and moving the variants or renaming a
+    // value leaves it where it is, as a real file showed on 2026-10-20. A set the plugin creates
+    // lists its values in spec order, but a set that gained values later keeps them last.
+    const planned = yield* planOwnedChildren(set, spec.name, "variant", spec.variants, (variant) =>
+      variantKind(run, set, spec, variant, links)
+    );
+    return new Map(planned.map((child) => [child.spec.key, child.node]));
+  });
+  const [variants, recorded] = yield* Plan.watch(planVariants);
+  const [, gridded] = watchLeaf(run.plan, () =>
+    planGrid(run, set, spec, variants, recorded || holdsChanged(spec, sets))
   );
-  const variants = new Map(planned.map((child) => [child.spec.key, child.node]));
-  planGrid(run, set, spec, variants, run.plan.operations.length > start || holdsChanged(spec, sets));
-  return { variants, changed: run.plan.operations.length > start };
-}
+  const contents: PlannedContents = { variants, changed: recorded || gridded };
+  return contents;
+});
 
 /**
  * Record the creation of a set. Figma builds a set from components, so the operation creates
  * every variant with its key and name, combines them, and then plans the set's contents. The
  * caller requires the fonts the set's labels need first.
  */
-function createSet(
-  run: Run,
+const createSet = Effect.fnUntraced(function* (
   page: PlannedPage,
   spec: ComponentSetSpec,
   links: Omit<LayerLinks, "properties">
-): PlannedSet {
+) {
+  const run = yield* currentRun;
   const properties = new Map<string, string>();
-  const node = createIn(
-    run,
+  const node = yield* create(
     page.spec.name,
     `create the component set ${spec.name} with ${spec.variants.length} variants`,
     () => {
@@ -375,9 +382,7 @@ function createSet(
       set.name = spec.name;
       return set;
     },
-    async (set, inner) => {
-      await planSetContents(inner, set, spec, links, properties);
-    }
+    (set) => Effect.asVoid(planSetContents(set, spec, links, properties))
   );
   // The set's children, indexed by key the first time a later operation reads a variant.
   let made: Siblings | undefined;
@@ -397,33 +402,33 @@ function createSet(
       },
     ])
   );
-  return { spec, node, variants, properties, changed: true };
-}
+  const planned: PlannedSet = { spec, node, variants, properties, changed: true };
+  return planned;
+});
 
 /**
  * Plan one component set against the spec. The kit lists a set after every set whose variants its
  * instance layers show, so those are planned first.
  *
- * @param run - The run.
  * @param page - The page the set sits on.
  * @param spec - The component set.
  * @param icons - The kit's icons, by key, which the set's icon layers and swap properties use.
  * @param sets - The sets the run planned before this one, by key, which its instance layers show.
  * @returns The set, its variants and its property ids, as later operations find them.
  */
-export async function planComponentSet(
-  run: Run,
+export const planComponentSet = Effect.fnUntraced(function* (
   page: PlannedPage,
   spec: ComponentSetSpec,
   icons: ReadonlyMap<string, PlannedIcon>,
   sets: ReadonlyMap<string, PlannedSet>
-): Promise<PlannedSet> {
-  const found = page.find(spec.key, spec.name, isComponentSet);
+) {
+  const found = yield* page.find(spec.key, spec.name, isComponentSet);
   if (found === undefined) {
-    await requireNewSetFonts(run, page.modes, spec, innerSpecs(sets));
-    return createSet(run, page, spec, { icons, sets });
+    yield* requireNewSetFonts(page.modes, spec, innerSpecs(sets));
+    return yield* createSet(page, spec, { icons, sets });
   }
   const properties = new Map<string, string>();
-  const contents = await planSetContents(run, found, spec, { icons, sets }, properties);
-  return { spec, node: existing(found), properties, ...contents };
-}
+  const contents = yield* planSetContents(found, spec, { icons, sets }, properties);
+  const planned: PlannedSet = { spec, node: existing(found), properties, ...contents };
+  return planned;
+});

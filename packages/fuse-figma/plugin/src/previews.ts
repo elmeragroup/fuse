@@ -4,16 +4,21 @@
  * renders the theme's value.
  */
 
+import { Effect } from "effect";
+
 import type { NumberSpec, PreviewGroupSpec, PreviewSpec } from "../../src/components/kit-spec.ts";
 import type { PlannedSet } from "./component-set.ts";
-import { createIn, near, planLayoutSizing, planNumber, planPaints, planScalar } from "./fields.ts";
+import type { PluginError } from "./errors.ts";
+import { near, planLayoutSizing, planNumber, planPaints, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { placeOwned, planOwnedChildren } from "./identity.ts";
 import type { OwnedChild } from "./identity.ts";
 import { planInstanceSizing } from "./instance-sizing.ts";
 import type { PlannedPage } from "./pages.ts";
-import { change, existing } from "./plan.ts";
+import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
+import { currentRun } from "./services.ts";
+import type { PlanServices } from "./services.ts";
 import { settleInstances } from "./settle.ts";
 
 /** A frame that wraps its children in rows of a fixed width, with even gaps and padding. */
@@ -167,16 +172,15 @@ function planModes(run: Run, frame: FrameNode, label: string, spec: PreviewSpec)
  * swap the pass cannot read the new variant's lengths ahead, so they are written whatever the
  * instance reads now.
  */
-async function planInstances(
-  run: Run,
+function planInstances(
   group: FrameNode,
   label: string,
   previewKey: string,
   spec: PreviewGroupSpec,
   set: PlannedSet
-): Promise<void> {
+): Effect.Effect<void, PluginError, PlanServices> {
   const children = spec.variants.map((variant) => ({ key: `${previewKey}/${variant}`, variant }));
-  await planOwnedChildren(run, group, label, "instance", children, ({ key, variant }) => {
+  return planOwnedChildren(group, label, "instance", children, ({ key, variant }) => {
     const component = set.variants.get(variant);
     const root = set.spec.variants.find((candidate) => candidate.key === variant)?.root;
     if (component === undefined || root === undefined) {
@@ -189,32 +193,34 @@ async function planInstances(
       accept: isInstance,
       description: `add an instance of ${variant}`,
       make: () => component.get().createInstance(),
-      plan: async (instance, inner, origin) => {
-        if (origin === "new") {
-          planInstanceSizing(inner, instance, lengthsLabel, root.sizing, "read");
-          return;
-        }
-        const main = await instance.getMainComponentAsync();
-        const swaps = component.existing === undefined || main?.id !== component.existing.id;
-        if (swaps) {
-          change(inner.plan, label, `point the instance ${key} at ${variant}`, () =>
-            instance.swapComponent(component.get())
-          );
-        }
-        planInstanceSizing(inner, instance, lengthsLabel, root.sizing, swaps ? "unknown" : "read");
-      },
+      plan: (instance, origin) =>
+        Effect.gen(function* () {
+          const inner = yield* currentRun;
+          if (origin === "new") {
+            planInstanceSizing(inner, instance, lengthsLabel, root.sizing, "read");
+            return;
+          }
+          const main = yield* Effect.promise(() => instance.getMainComponentAsync());
+          const swaps = component.existing === undefined || main?.id !== component.existing.id;
+          if (swaps) {
+            change(inner.plan, label, `point the instance ${key} at ${variant}`, () =>
+              instance.swapComponent(component.get())
+            );
+          }
+          planInstanceSizing(inner, instance, lengthsLabel, root.sizing, swaps ? "unknown" : "read");
+        }),
     } satisfies OwnedChild<InstanceNode, void>;
-  });
+  }).pipe(Effect.asVoid);
 }
 
-async function planGroupFields(
-  run: Run,
+const planGroupFields = Effect.fnUntraced(function* (
   group: FrameNode,
   label: string,
   previewKey: string,
   spec: PreviewGroupSpec,
   set: PlannedSet
-): Promise<void> {
+) {
+  const run = yield* currentRun;
   planScalar(run, label, "name", group.name, spec.name, () => {
     group.name = spec.name;
   });
@@ -224,8 +230,8 @@ async function planGroupFields(
   planScalar(run, label, "clipsContent", group.clipsContent, false, () => {
     group.clipsContent = false;
   });
-  await planInstances(run, group, label, previewKey, spec, set);
-}
+  yield* planInstances(group, label, previewKey, spec, set);
+});
 
 /** How to find, create and plan one group of a preview frame, which places one set's variants. */
 function groupKind(
@@ -246,61 +252,59 @@ function groupKind(
     accept: isFrame,
     description: `create the group ${spec.name}`,
     make: () => run.figma.createFrame(),
-    plan: (group, inner) => planGroupFields(inner, group, label, preview.key, spec, set),
+    plan: (group) => planGroupFields(group, label, preview.key, spec, set),
   };
 }
 
-async function planFrame(
-  run: Run,
+const planFrame = Effect.fnUntraced(function* (
   frame: FrameNode,
   spec: PreviewSpec,
   sets: ReadonlyMap<string, PlannedSet>
-): Promise<void> {
+) {
+  const run = yield* currentRun;
   planScalar(run, spec.name, "name", frame.name, spec.name, () => {
     frame.name = spec.name;
   });
   planWrapFrame(run, frame, spec.name, PREVIEW_GRID);
   planModes(run, frame, spec.name, spec);
-  await planOwnedChildren(run, frame, spec.name, "group", spec.groups, (group) =>
+  yield* planOwnedChildren(frame, spec.name, "group", spec.groups, (group) =>
     groupKind(run, spec, group, sets)
   );
-}
+});
 
 /**
  * Plan a page's preview frames against the spec.
  *
- * @param run - The run.
  * @param page - The page the previews sit on.
  * @param specs - The page's previews.
  * @param sets - The component sets as the plan leaves them, by key.
  * @returns The preview frames, in spec order, as later operations find them.
  */
-export async function planPreviews(
-  run: Run,
+export const planPreviews = Effect.fnUntraced(function* (
   page: PlannedPage,
   specs: readonly PreviewSpec[],
   sets: ReadonlyMap<string, PlannedSet>
-): Promise<Target<FrameNode>[]> {
+) {
+  const run = yield* currentRun;
   const frames: Target<FrameNode>[] = [];
   for (const spec of specs) {
-    const found = page.find(spec.key, spec.name, isFrame);
+    const found = yield* page.find(spec.key, spec.name, isFrame);
     if (found !== undefined) {
-      await planFrame(run, found, spec, sets);
+      yield* planFrame(found, spec, sets);
       frames.push(existing(found));
       continue;
     }
     frames.push(
-      createIn(
-        run,
+      yield* create(
         page.spec.name,
         `create the preview ${spec.name}`,
         () => placeOwned(page.node.get(), run.figma.createFrame(), spec.key, spec.name),
-        (made, inner) => planFrame(inner, made, spec, sets)
+        (made) => planFrame(made, spec, sets)
       )
     );
   }
   return frames;
-}
+});
 
 /** A node of a page's row, such as a component set, and its name for the change line. */
 export type RowNode = {

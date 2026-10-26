@@ -5,6 +5,8 @@
  * will read. `instance-layers.ts` adds the fonts an instance's held labels need, bound to its stages.
  */
 
+import { Effect } from "effect";
+
 import { walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   ChildLayerSpec,
@@ -16,6 +18,7 @@ import type {
 import { FontUnavailable } from "./errors.ts";
 import type { Run } from "./fields.ts";
 import { requirement } from "./plan.ts";
+import { currentRun } from "./services.ts";
 
 /** The inner variant an instance layer shows. */
 export type InnerSpecs = (layer: InstanceLayerSpec) => VariantSpec;
@@ -32,17 +35,19 @@ export type InnerSpecs = (layer: InstanceLayerSpec) => VariantSpec;
 export function requireFont(run: Run, label: string, font: FontName): void {
   const axes = font.variationSettings === undefined ? "" : ` ${JSON.stringify(font.variationSettings)}`;
   const key = `font ${font.family} ${font.style}${axes}`;
-  requirement(run.plan, key, async () => {
-    try {
-      await run.figma.loadFontAsync(font);
-    } catch (cause) {
-      throw new FontUnavailable({
-        message: `${label} needs the font ${font.family} ${font.style}, which Figma cannot load. Install it, then run the plugin again.`,
-        font,
-        cause,
-      });
-    }
-  });
+  requirement(
+    run.plan,
+    key,
+    Effect.tryPromise({
+      try: () => run.figma.loadFontAsync(font),
+      catch: (cause) =>
+        new FontUnavailable({
+          message: `${label} needs the font ${font.family} ${font.style}, which Figma cannot load. Install it, then run the plugin again.`,
+          font,
+          cause,
+        }),
+    })
+  );
 }
 
 /**
@@ -86,16 +91,19 @@ function isAlias(value: VariableValue): value is VariableAlias {
  * reads each collection in the mode the page pins for it, or in the collection's default
  * mode, and so does every alias the variable follows.
  */
-async function resolveOnPage(
-  run: Run,
+const resolveOnPage = Effect.fnUntraced(function* (
+  figma: PluginAPI,
   variable: Variable,
   pageModes: PageNode["explicitVariableModes"]
-): Promise<VariableValue> {
+) {
   const seen = new Set<string>();
   let current = variable;
   while (!seen.has(current.id)) {
     seen.add(current.id);
-    const collection = await run.figma.variables.getVariableCollectionByIdAsync(current.variableCollectionId);
+    const { variableCollectionId } = current;
+    const collection = yield* Effect.promise(() =>
+      figma.variables.getVariableCollectionByIdAsync(variableCollectionId)
+    );
     if (collection === null) {
       throw new Error(`${current.name} belongs to no collection the file holds.`);
     }
@@ -106,14 +114,14 @@ async function resolveOnPage(
     if (!isAlias(value)) {
       return value;
     }
-    const target = await run.figma.variables.getVariableByIdAsync(value.id);
+    const target = yield* Effect.promise(() => figma.variables.getVariableByIdAsync(value.id));
     if (target === null) {
       throw new Error(`${current.name} aliases a variable the file does not hold.`);
     }
     current = target;
   }
   throw new Error(`${variable.name} aliases itself.`);
-}
+});
 
 /**
  * Require the fonts of the text layers in a component set the run creates. A new set sits
@@ -121,18 +129,17 @@ async function resolveOnPage(
  * through `resolveForConsumer`. The plan follows the family variable through the modes the
  * set will read instead, which is what Figma renders once the set exists.
  *
- * @param run - The run.
  * @param pageModes - The modes the page pins. A page the run creates pins none.
  * @param set - The component set.
  * @param innerOf - The inner variant each of the set's instance layers shows, whose labels the layer
  *   sets.
  */
-export async function requireNewSetFonts(
-  run: Run,
+export const requireNewSetFonts = Effect.fnUntraced(function* (
   pageModes: PageNode["explicitVariableModes"],
   set: ComponentSetSpec,
   innerOf: InnerSpecs
-): Promise<void> {
+) {
+  const run = yield* currentRun;
   const families = new Map<string, string>();
   for (const variant of set.variants) {
     for (const layer of fontLayers(walkLayers(variant.root), innerOf)) {
@@ -146,7 +153,7 @@ export async function requireNewSetFonts(
         if (family === undefined) {
           // SAFETY: the kit check confirmed the font family variable is a STRING variable,
           // and an alias keeps its variable's type, so the value is a string.
-          family = (await resolveOnPage(run, variable, pageModes)) as string;
+          family = (yield* resolveOnPage(run.figma, variable, pageModes)) as string;
           families.set(variable.id, family);
         }
       }
@@ -155,7 +162,7 @@ export async function requireNewSetFonts(
       }
     }
   }
-}
+});
 
 /**
  * Require the fonts of the text layers a new node gets, resolved through the existing node it

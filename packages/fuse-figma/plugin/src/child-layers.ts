@@ -4,6 +4,8 @@
  * `instance-layers.ts`, and an icon or a frame here. `fonts.ts` requires the fonts a new layer needs.
  */
 
+import { Effect } from "effect";
+
 import { walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   AbsoluteSpec,
@@ -16,6 +18,7 @@ import type {
 import { planBox } from "./box.ts";
 import type { LayerParent } from "./box.ts";
 import type { PlannedSet } from "./component-set.ts";
+import type { PluginError } from "./errors.ts";
 import {
   changeTogetherIn,
   near,
@@ -33,6 +36,8 @@ import { planOwnedChildren } from "./identity.ts";
 import type { OwnedChild } from "./identity.ts";
 import { innerSpecs, innerVariant, planInstance, planNewInstance } from "./instance-layers.ts";
 import { change } from "./plan.ts";
+import { currentRun } from "./services.ts";
+import type { PlanServices } from "./services.ts";
 import { planText } from "./text-layer.ts";
 
 /**
@@ -97,13 +102,13 @@ function planRotation(
  * swap property when it has one, sized and turned by the cell, its visibility linked to the set's
  * BOOLEAN property when it hides behind one (PI2), and with its glyph in the label's color.
  */
-async function planIcon(
-  run: Run,
+const planIcon = Effect.fnUntraced(function* (
   instance: InstanceNode,
   label: string,
   spec: IconLayerSpec,
   links: LayerLinks
-): Promise<void> {
+) {
+  const run = yield* currentRun;
   planScalar(run, label, "name", instance.name, spec.name, () => {
     instance.name = spec.name;
   });
@@ -111,7 +116,7 @@ async function planIcon(
   if (icon === undefined) {
     throw new Error(`${label} shows ${spec.icon}, which the kit's icon library lacks.`);
   }
-  const main = await instance.getMainComponentAsync();
+  const main = yield* Effect.promise(() => instance.getMainComponentAsync());
   const swapped = icon.node.existing === undefined || main?.id !== icon.node.existing.id;
   if (swapped) {
     change(run.plan, label, `show ${icon.spec.name}`, () => instance.swapComponent(icon.node.get()));
@@ -168,7 +173,7 @@ async function planIcon(
   planPaints(run, `${label} / glyph`, "fill", glyph.fills, spec.color, (paints) => {
     glyph.fills = paints;
   });
-}
+});
 
 const isText = (node: BaseNode): node is TextNode => node.type === "TEXT";
 const isInstance = (node: BaseNode): node is InstanceNode => node.type === "INSTANCE";
@@ -228,14 +233,14 @@ function planPositioning(
  * Plan a frame layer: its name, where it sits, its box, the property that shows or hides it and its
  * turn, then the layers it holds.
  */
-async function planFrame(
-  run: Run,
+const planFrame = Effect.fnUntraced(function* (
   frame: FrameNode,
   label: string,
   spec: FrameLayerSpec,
   links: LayerLinks,
   holder: Holder
-): Promise<void> {
+) {
+  const run = yield* currentRun;
   planScalar(run, label, "name", frame.name, spec.name, () => {
     frame.name = spec.name;
   });
@@ -246,8 +251,8 @@ async function planFrame(
   const size = planBox(run, frame, label, spec, { kind: "frame", parent: moved });
   planVisibleLink(run, frame, label, spec.visibleProperty, links.properties);
   planRotation(run, frame, label, spec.rotation);
-  await planChildren(run, frame, label, spec, links, holder.size === "unknown" ? "unknown" : size);
-}
+  yield* planChildren(frame, label, spec, links, holder.size === "unknown" ? "unknown" : size);
+});
 
 /** How to find, create and plan one layer of a variant or of a frame layer. */
 function childKind(
@@ -268,7 +273,7 @@ function childKind(
       make: () => run.figma.createFrame(),
       requireNew: () =>
         requireNewTextFonts(run, parent, label, fontLayers(walkLayers(spec), innerSpecs(links.sets))),
-      plan: (frame, inner) => planFrame(inner, frame, layerLabel, spec, links, holder),
+      plan: (frame) => planFrame(frame, layerLabel, spec, links, holder),
     } satisfies OwnedChild<FrameNode, void>;
   }
   if (spec.kind === "text") {
@@ -278,15 +283,17 @@ function childKind(
       description,
       make: () => run.figma.createText(),
       requireNew: () => requireNewTextFonts(run, parent, label, [spec]),
-      plan: (text, inner, origin) =>
-        planText(
-          inner,
-          text,
-          layerLabel,
-          spec,
-          links.properties,
-          origin === "found" ? heldFonts(inner, text) : [],
-          holder.held
+      plan: (text, origin) =>
+        Effect.map(currentRun, (inner) =>
+          planText(
+            inner,
+            text,
+            layerLabel,
+            spec,
+            links.properties,
+            origin === "found" ? heldFonts(inner, text) : [],
+            holder.held
+          )
         ),
     } satisfies OwnedChild<TextNode, void>;
   }
@@ -299,10 +306,10 @@ function childKind(
       accept: isInstance,
       description,
       make: () => inner.node.get().createInstance(),
-      plan: (instance, layerRun, origin) =>
+      plan: (instance, origin) =>
         origin === "found"
-          ? planInstance(layerRun, instance, layerLabel, spec, inner, links, holder.held)
-          : planNewInstance(layerRun, instance, layerLabel, spec, inner, links),
+          ? planInstance(instance, layerLabel, spec, inner, links, holder.held)
+          : planNewInstance(instance, layerLabel, spec, inner, links),
     } satisfies OwnedChild<InstanceNode, void>;
   }
   const icon = links.icons.get(spec.icon);
@@ -314,7 +321,7 @@ function childKind(
     accept: isInstance,
     description,
     make: () => icon.node.get().createInstance(),
-    plan: (instance, inner) => planIcon(inner, instance, layerLabel, spec, links),
+    plan: (instance) => planIcon(instance, layerLabel, spec, links),
   } satisfies OwnedChild<InstanceNode, void>;
 }
 
@@ -323,7 +330,6 @@ function childKind(
  * update the rest, delete the kit's layers the spec dropped and restore the spec's order. A
  * frame layer plans its own layers the same way, so a key is unique among its siblings alone.
  *
- * @param run - The run.
  * @param parent - The variant component, or a frame layer below it.
  * @param label - The parent's label, for change lines.
  * @param box - The parent's spec: its layers, in order, and the direction it lays them out along.
@@ -334,20 +340,22 @@ function childKind(
  *   as {@link planBox} returns for the parent, so the parent's absolute layers are planned to be
  *   written again after the resize.
  */
-export async function planChildren(
-  run: Run,
+export function planChildren(
   parent: LayerParent,
   label: string,
   box: Pick<BoxSpec, "direction" | "children">,
   links: LayerLinks,
   size: Held
-): Promise<void> {
-  const holder: Holder = {
-    node: parent,
-    held: parent.layoutMode === box.direction ? "read" : "unknown",
-    size,
-  };
-  await planOwnedChildren(run, parent, label, "layer", box.children, (spec) =>
-    childKind(run, holder, label, spec, links)
-  );
+): Effect.Effect<void, PluginError, PlanServices> {
+  return Effect.gen(function* () {
+    const run = yield* currentRun;
+    const holder: Holder = {
+      node: parent,
+      held: parent.layoutMode === box.direction ? "read" : "unknown",
+      size,
+    };
+    yield* planOwnedChildren(parent, label, "layer", box.children, (spec) =>
+      childKind(run, holder, label, spec, links)
+    );
+  });
 }

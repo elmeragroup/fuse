@@ -4,12 +4,12 @@
  * and its own kit, so no program reads a module global.
  */
 
-import { Context, Effect, Layer, Scheduler } from "effect";
+import { Context, Effect, Scheduler } from "effect";
 
-import type { KitSpec } from "../../src/components/kit-spec.ts";
-import { kitCollections } from "./check-kit.ts";
+import type { GlyphFontSpec, KitSpec } from "../../src/components/kit-spec.ts";
 import type { PluginError } from "./errors.ts";
-import { loadKitVariables } from "./variables.ts";
+import type { Run } from "./fields.ts";
+import { Plan } from "./plan.ts";
 import type { KitVariables } from "./variables.ts";
 
 /** The Figma Plugin API over the open file. */
@@ -20,23 +20,35 @@ export class FigmaPlugin extends Context.Service<FigmaPlugin, PluginAPI>()(
 /** The kit the spec builder wrote. */
 export class Kit extends Context.Service<Kit, KitSpec>()("@elmeragroup/fuse-figma/plugin/Kit") {}
 
-/** The file's variables and modes that the kit binds, found by name. */
+/**
+ * The file's variables and modes that the kit binds, found by name. `kitVariablesLayer` in
+ * `variables.ts` reads them from the file.
+ */
 export class FileVariables extends Context.Service<FileVariables, KitVariables>()(
   "@elmeragroup/fuse-figma/plugin/FileVariables"
-) {
-  /**
-   * Read the collections the kit names from the file. Each build reads the file again, so a run
-   * that follows an Apply sees what the Apply wrote.
-   */
-  static readonly layer = Layer.effect(
-    FileVariables,
-    Effect.gen(function* () {
-      const figma = yield* FigmaPlugin;
-      const kit = yield* Kit;
-      return yield* loadKitVariables(figma, kitCollections(kit));
-    })
-  );
-}
+) {}
+
+/** The font the kit draws its glyphs in, which a text planner gives the glyph ranges. */
+export class GlyphFont extends Context.Service<GlyphFont, GlyphFontSpec>()(
+  "@elmeragroup/fuse-figma/plugin/GlyphFont"
+) {}
+
+/** What the planning walk reads: the file, its variables, the glyph font and the current recorder. */
+export type PlanServices = FigmaPlugin | FileVariables | GlyphFont | Plan;
+
+/**
+ * The run the leaf planners take, built from the services in scope. Inside a new node's contents or
+ * a deferred stage the `Plan` service is that recorder, so the run records there.
+ */
+export const currentRun: Effect.Effect<Run, never, PlanServices> = Effect.gen(function* () {
+  const run: Run = {
+    figma: yield* FigmaPlugin,
+    variables: yield* FileVariables,
+    plan: yield* Plan,
+    glyphFont: yield* GlyphFont,
+  };
+  return run;
+});
 
 /**
  * Run a plugin program once over a file and a kit.

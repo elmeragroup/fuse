@@ -20,6 +20,7 @@ import type { CollectionSpec } from "../src/variable-set.ts";
  */
 const BUTTON_KIT = "../plugin/src/button-kit-fixture.ts";
 const FAKE_FIGMA = "../plugin/src/fake-figma.ts";
+const KIT_FIXTURE = "../plugin/src/kit-fixture.ts";
 
 /** The in-memory file, as far as the test reads it. */
 type FakeFile = { readonly figma: object };
@@ -27,6 +28,13 @@ type FakeFile = { readonly figma: object };
 type ButtonKitFixture = {
   readonly KIT: KitSpec;
   readonly fixture: (family: string, withPage?: boolean) => { readonly file: FakeFile };
+};
+
+type KitFixtureModule = {
+  readonly kitFixture: () => Promise<{
+    readonly kit: KitSpec;
+    readonly collections: readonly CollectionSpec[];
+  }>;
 };
 
 type FakeFigmaModule = {
@@ -56,6 +64,8 @@ type LoadedPlugin = {
    * @returns The message, cloned as Figma clones what crosses to the UI.
    */
   readonly ask: (request: string) => Promise<PostedMessage>;
+  /** How many times the bundle has called `setTimeout`, each a turn Figma could redraw or edit in. */
+  readonly timers: () => number;
 };
 
 /**
@@ -90,14 +100,21 @@ function load(code: string, file: FakeFile): LoadedPlugin {
     ui,
   };
   Reflect.setPrototypeOf(figma, file.figma);
+  // Effect looks `setTimeout` up when it schedules, so a counter in place from the start sees every call.
+  let timers = 0;
+  const countedTimeout = (handler: () => void, delay?: number) => {
+    timers += 1;
+    return setTimeout(handler, delay);
+  };
   new Script(code, { filename: "code.js" }).runInNewContext({
     figma,
     __html__: HTML,
-    setTimeout,
+    setTimeout: countedTimeout,
     clearTimeout,
     console,
   });
   return {
+    timers: () => timers,
     shown,
     ask: (request) =>
       new Promise((resolve, reject) => {
@@ -151,6 +168,25 @@ describe("the plugin bundle", () => {
       remaining: [],
       warnings: [],
     });
+  });
+
+  // Effect hands the thread back through `setTimeout` every 2048 operations unless the program runs
+  // under `Scheduler.PreventSchedulerYield`, and each such turn lets Figma redraw or take an edit in
+  // the middle of a run. The run awaits only the fake's settled promises, which resolve without one.
+  // The whole kit runs long enough between awaits to reach that budget, where the one-variant kit
+  // does not: without the reference, its Apply and Plan took 145 turns on 2026-10-26.
+  it("plans and applies the whole kit without handing the thread back to Figma", async () => {
+    // SAFETY: the path names kit-fixture.ts, whose `kitFixture` resolves to the built kit and the
+    // collections the token sync writes.
+    const { kitFixture } = (await import(KIT_FIXTURE)) as KitFixtureModule;
+    const { kit, collections } = await kitFixture();
+    const plugin = load(
+      await Effect.runPromise(bundlePlugin(kit)),
+      fixtures.createFakeFigma({ collections })
+    );
+    expect((await plugin.ask("apply")).kind).toBe("applied");
+    expect((await plugin.ask("plan")).kind).toBe("plan");
+    expect(plugin.timers()).toBe(0);
   });
 
   it("answers a request it does not know with an error", async () => {

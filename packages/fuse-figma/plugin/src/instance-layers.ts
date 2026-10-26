@@ -22,6 +22,8 @@
  * The plan reads an instance in stages, each against what the stage before leaves (`planInstance`).
  */
 
+import { Effect } from "effect";
+
 import { layerAt, ringFill, walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   ComponentRootSpec,
@@ -37,6 +39,7 @@ import type {
 import { planAnchoring } from "./anchoring.ts";
 import { findProperty, propertyName } from "./component-properties.ts";
 import type { PlannedSet } from "./component-set.ts";
+import type { PluginError } from "./errors.ts";
 import {
   cornerField,
   planLimit,
@@ -45,7 +48,6 @@ import {
   planScalar,
   planShadows,
   planVisibleLink,
-  withPlan,
 } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
 import { heldFonts, linkedLabels, requireFont } from "./fonts.ts";
@@ -55,8 +57,10 @@ import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
 import { keyOf } from "./identity.ts";
 import { planInstanceSizing } from "./instance-sizing.ts";
-import { change, newPlan, performPlan } from "./plan.ts";
+import { changeLater, changeWith, planWhenRun } from "./plan.ts";
 import type { Target } from "./plan.ts";
+import { currentRun } from "./services.ts";
+import type { PlanServices } from "./services.ts";
 
 /** The inner set and variant an instance layer shows, as the plan leaves them. */
 export type InnerVariant = {
@@ -225,9 +229,11 @@ function pathKey(path: readonly string[]): string {
  * itself where a designer deleted the main, whose layers can no longer be read. Then each sublayer
  * gives its own key, as N3 read every sublayer but a swapped one.
  */
-async function keySource(instance: InstanceNode): Promise<ChildrenMixin> {
-  const main = await instance.getMainComponentAsync();
-  return main === null || main.removed ? instance : main;
+function keySource(instance: InstanceNode): Effect.Effect<ChildrenMixin> {
+  return Effect.map(
+    Effect.promise(() => instance.getMainComponentAsync()),
+    (main): ChildrenMixin => (main === null || main.removed ? instance : main)
+  );
 }
 
 /**
@@ -260,7 +266,7 @@ function besideMain(
  * layer it stands for (`besideMain`). The walk goes down through frames and stops at an icon or
  * another nested instance.
  */
-async function heldLayers(instance: InstanceNode, label: string): Promise<ReadonlyMap<string, HeldLayer>> {
+const heldLayers = Effect.fnUntraced(function* (instance: InstanceNode, label: string) {
   const found = new Map<string, HeldLayer>([[pathKey([]), { node: instance, label, path: [] }]]);
   const walk = (
     parent: ChildrenMixin,
@@ -280,22 +286,23 @@ async function heldLayers(instance: InstanceNode, label: string): Promise<Readon
       }
     }
   };
-  walk(instance, await keySource(instance), [], label);
-  return found;
-}
+  walk(instance, yield* keySource(instance), [], label);
+  const layers: ReadonlyMap<string, HeldLayer> = found;
+  return layers;
+});
 
 /**
  * The instance inside `instance` at a key path, found through frames and nested instances by the keys
  * of the main components' layers (`besideMain`), or undefined where the path leads nowhere.
  */
-async function nestedAt(
+const nestedAt = Effect.fnUntraced(function* (
   instance: InstanceNode,
   path: readonly string[],
   label: string
-): Promise<InstanceNode | undefined> {
+) {
   let at: SceneNode = instance;
   let atLabel = label;
-  let main: ChildrenMixin | undefined = await keySource(instance);
+  let main: ChildrenMixin | undefined = yield* keySource(instance);
   for (const key of path) {
     const found: readonly [SceneNode, SceneNode] | undefined =
       main !== undefined && (at.type === "FRAME" || at.type === "INSTANCE")
@@ -308,13 +315,13 @@ async function nestedAt(
     at = child;
     atLabel = `${atLabel} / ${child.name}`;
     if (child.type === "INSTANCE") {
-      main = await keySource(child);
+      main = yield* keySource(child);
     } else {
       main = source.type === "FRAME" ? source : undefined;
     }
   }
   return at.type === "INSTANCE" ? at : undefined;
-}
+});
 
 /** The TEXT values a nested instance holds another way than the spec gives them, by property id. */
 function differingNested(
@@ -337,15 +344,15 @@ function differingNested(
  * Plan the TEXT values the spec gives instances exposed inside the instance, each found again by its
  * key path when its operation runs, since a variant switch gives nested sublayers new ids (PN).
  */
-async function planNested(
-  run: Run,
+const planNested = Effect.fnUntraced(function* (
   instance: InstanceNode,
   label: string,
   spec: InstanceLayerSpec
-): Promise<void> {
+) {
+  const run = yield* currentRun;
   for (const nested of spec.properties?.nested ?? []) {
     const at = `${label} / ${nested.path.join(" / ")}`;
-    const target = await nestedAt(instance, nested.path, label);
+    const target = yield* nestedAt(instance, nested.path, label);
     if (target === undefined) {
       throw new Error(`${at}: the instance holds no nested instance at that path.`);
     }
@@ -357,15 +364,20 @@ async function planNested(
       .filter(([name]) => Object.keys(differ).some((id) => propertyName(id) === name))
       .map(([name, value]) => `${name} ${JSON.stringify(value)}`)
       .join(", ");
-    change(run.plan, at, `properties → ${described}`, async () => {
-      const now = await nestedAt(instance, nested.path, label);
-      if (now === undefined) {
-        throw new Error(`${at}: the instance holds no nested instance at that path.`);
-      }
-      now.setProperties(differingNested(now, nested, at));
-    });
+    changeWith(
+      run.plan,
+      at,
+      `properties → ${described}`,
+      Effect.gen(function* () {
+        const now = yield* nestedAt(instance, nested.path, label);
+        if (now === undefined) {
+          throw new Error(`${at}: the instance holds no nested instance at that path.`);
+        }
+        now.setProperties(differingNested(now, nested, at));
+      })
+    );
   }
-}
+});
 
 /** An override the plan writes: the spec's, or the inner variant's own value for one it dropped. */
 type OverrideWrite =
@@ -620,34 +632,24 @@ function planLabelGlyphs(run: Run, layers: ReadonlyMap<string, HeldLayer>, root:
 }
 
 /**
- * Plan, when an operation runs, what it then reads: the writes `stage` records into a plan of their
- * own, performed at once, as `create` plans a new node's contents.
- */
-async function planWhenRun(run: Run, stage: (later: Run) => Promise<void>): Promise<void> {
-  const later = newPlan(run.plan);
-  await stage(withPlan(run, later));
-  await performPlan(later);
-}
-
-/**
  * The last stage: the overrides, the linked labels' glyph ranges and the sizing against the sublayers
  * as they stand, the link to the outer set's BOOLEAN property and the exposure.
  *
  * @param held - `unknown` when the box that holds the instance turns in this run.
  */
-async function planOverridesAndSizing(
-  run: Run,
+const planOverridesAndSizing = Effect.fnUntraced(function* (
   instance: InstanceNode,
   label: string,
   spec: InstanceLayerSpec,
   inner: InnerVariant,
   links: InstanceLinks,
   held: Held
-): Promise<void> {
-  const layers = await heldLayers(instance, label);
+) {
+  const run = yield* currentRun;
+  const layers = yield* heldLayers(instance, label);
   planOverrides(run, instance, layers, label, spec, inner.spec.root);
   planLabelGlyphs(run, layers, inner.spec.root);
-  await planNested(run, instance, label, spec);
+  yield* planNested(instance, label, spec);
   // Figma refuses FILL on an absolute layer (P8), so an instance leaves the flow after its sizing
   // and comes back into it before.
   if (spec.absolute === undefined) {
@@ -664,7 +666,7 @@ async function planOverridesAndSizing(
   planScalar(run, label, "isExposedInstance", instance.isExposedInstance, exposed, () => {
     instance.isExposedInstance = exposed;
   });
-}
+});
 
 /**
  * The stages after the main: the properties in one `setProperties`, then the last stage. A property
@@ -674,25 +676,28 @@ async function planOverridesAndSizing(
  *
  * @param held - `unknown` when the box that holds the instance turns in this run.
  */
-async function planStages(
-  run: Run,
+function planStages(
   instance: InstanceNode,
   label: string,
   spec: InstanceLayerSpec,
   inner: InnerVariant,
   links: InstanceLinks,
   held: Held
-): Promise<void> {
-  const differ = differingProperties(instance, spec, inner, links.icons, label);
-  if (differ.length === 0) {
-    await planOverridesAndSizing(run, instance, label, spec, inner, links, held);
-    return;
-  }
-  const described = differ.map((desired) => `${desired.name} ${desired.shown}`).join(", ");
-  change(run.plan, label, `properties → ${described}`, async () => {
-    writeProperties(instance, label, inner, differ);
-    await planWhenRun(run, (later) =>
-      planOverridesAndSizing(later, instance, label, spec, inner, links, "read")
+): Effect.Effect<void, PluginError, PlanServices> {
+  return Effect.gen(function* () {
+    const differ = differingProperties(instance, spec, inner, links.icons, label);
+    if (differ.length === 0) {
+      yield* planOverridesAndSizing(instance, label, spec, inner, links, held);
+      return;
+    }
+    const described = differ.map((desired) => `${desired.name} ${desired.shown}`).join(", ");
+    yield* changeLater(
+      label,
+      `properties → ${described}`,
+      Effect.gen(function* () {
+        writeProperties(instance, label, inner, differ);
+        yield* planWhenRun(planOverridesAndSizing(instance, label, spec, inner, links, "read"));
+      })
     );
   });
 }
@@ -728,14 +733,14 @@ function changesFirst(
  *   wait for an earlier operation, after which the run may write any of its TEXT properties and any
  *   nested value.
  */
-async function requireHeldLabelFonts(
-  run: Run,
+const requireHeldLabelFonts = Effect.fnUntraced(function* (
   instance: InstanceNode,
   label: string,
   inner: InnerVariant,
   spec: InstanceLayerSpec,
   differ: readonly DesiredProperty[] | undefined
-): Promise<void> {
+) {
+  const run = yield* currentRun;
   const written = new Set(
     differ === undefined
       ? inner.set.spec.textProperties.map((property) => property.name)
@@ -754,7 +759,7 @@ async function requireHeldLabelFonts(
       overriddenFields.includes("textAlignHorizontal") ? [id] : []
     )
   );
-  for (const layer of (await heldLayers(instance, label)).values()) {
+  for (const layer of (yield* heldLayers(instance, label)).values()) {
     const { node } = layer;
     if (node.type === "TEXT" && (keys.has(layer.path.at(-1) ?? "") || aligned.has(node.id))) {
       for (const font of heldFonts(run, node)) {
@@ -767,11 +772,11 @@ async function requireHeldLabelFonts(
   // properties, runs first and can replace the instances it reaches.
   const replaced = differ === undefined || differ.length > 0;
   for (const nested of spec.properties?.nested ?? []) {
-    const target = await nestedAt(instance, nested.path, label);
+    const target = yield* nestedAt(instance, nested.path, label);
     const at = `${label} / ${nested.path.join(" / ")}`;
     const writes =
       target !== undefined && (replaced || Object.keys(differingNested(target, nested, at)).length > 0);
-    for (const layer of writes ? (await heldLayers(target, at)).values() : []) {
+    for (const layer of writes ? (yield* heldLayers(target, at)).values() : []) {
       if (layer.node.type === "TEXT") {
         for (const font of heldFonts(run, layer.node)) {
           requireFont(run, layer.label, font);
@@ -779,7 +784,7 @@ async function requireHeldLabelFonts(
       }
     }
   }
-}
+});
 
 /** `prop=value, prop=value`, the variant's values in the set's axis order. */
 function variantLabel(variant: VariantSpec): string {
@@ -798,65 +803,68 @@ function variantLabel(variant: VariantSpec): string {
  * with what those operations replace. Either way one operation swaps where it must and plans the
  * other stages once it runs.
  *
- * @param run - The run.
  * @param instance - The instance.
  * @param label - The instance's label, for change lines.
  * @param spec - The instance layer.
  * @param inner - The inner set and variant.
  * @param links - The outer set's properties and the kit's icons.
  * @param held - `unknown` when the box that holds the instance turns in this run.
+ * @returns The Effect that plans the instance.
  */
-export async function planInstance(
-  run: Run,
+export const planInstance = Effect.fnUntraced(function* (
   instance: InstanceNode,
   label: string,
   spec: InstanceLayerSpec,
   inner: InnerVariant,
   links: InstanceLinks,
   held: Held
-): Promise<void> {
+) {
+  const run = yield* currentRun;
   planScalar(run, label, "name", instance.name, spec.name, () => {
     instance.name = spec.name;
   });
-  const main = await instance.getMainComponentAsync();
+  const main = yield* Effect.promise(() => instance.getMainComponentAsync());
   const shows = inner.node.existing !== undefined && main?.id === inner.node.existing.id;
   const now = shows && !changesFirst(spec, inner, links.icons);
   const differ = now ? differingProperties(instance, spec, inner, links.icons, label) : undefined;
-  await requireHeldLabelFonts(run, instance, label, inner, spec, differ);
+  yield* requireHeldLabelFonts(instance, label, inner, spec, differ);
   if (now) {
-    await planStages(run, instance, label, spec, inner, links, held);
+    yield* planStages(instance, label, spec, inner, links, held);
     return;
   }
   const set = inner.set.spec.name;
   const description = shows
     ? `plan again once ${set}'s changes land`
     : `show ${set} ${variantLabel(inner.spec)}`;
-  change(run.plan, label, description, async () => {
-    if (!shows) {
-      instance.swapComponent(inner.node.get());
-    }
-    await planWhenRun(run, (later) => planStages(later, instance, label, spec, inner, links, "read"));
-  });
-}
+  yield* changeLater(
+    label,
+    description,
+    Effect.gen(function* () {
+      if (!shows) {
+        instance.swapComponent(inner.node.get());
+      }
+      yield* planWhenRun(planStages(instance, label, spec, inner, links, "read"));
+    })
+  );
+});
 
 /**
  * Plan an instance layer an operation of this run created from the inner variant, once the inner
  * set's operations have run, so its layers exist, in the stages {@link planInstance} plans.
  *
- * @param run - The plan of the operation that created it.
  * @param instance - The new instance.
  * @param label - The instance's label, for change lines.
  * @param spec - The instance layer.
  * @param inner - The inner set and variant.
  * @param links - The outer set's properties and the kit's icons.
+ * @returns The Effect that plans the instance, into the recorder of the operation that created it.
  */
-export async function planNewInstance(
-  run: Run,
+export function planNewInstance(
   instance: InstanceNode,
   label: string,
   spec: InstanceLayerSpec,
   inner: InnerVariant,
   links: InstanceLinks
-): Promise<void> {
-  await planStages(run, instance, label, spec, inner, links, "read");
+): Effect.Effect<void, PluginError, PlanServices> {
+  return planStages(instance, label, spec, inner, links, "read");
 }

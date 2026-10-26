@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 /**
  * Field planners on the in-memory file in `fake-figma.ts`, each against the Figma rule it
  * exists for: `resize` turns a hugging axis of an auto layout frame fixed (rules 5 and 14), a
@@ -14,7 +15,7 @@ import { BLUE_PIXEL, color, fixtureFile, fixtureRun, RED_PIXEL } from "./fake-fi
 import { near, planLayoutSizing, planNumber, planPaints } from "./fields.ts";
 import type { LayoutSizing } from "./fields.ts";
 import { changeLines, newPlan, performPlan } from "./plan.ts";
-import type { Plan } from "./plan.ts";
+import type { PlanRecorder } from "./plan.ts";
 
 /** A root that hugs the row and keeps a fixed height, as a Button does. */
 const BUTTON_SIZING: LayoutSizing = { horizontal: "HUG", vertical: "FIXED" };
@@ -33,7 +34,7 @@ describe("planLayoutSizing", () => {
   const file = fixtureFile([]);
 
   /** Plan a 32px literal height on the frame, hugging its width. */
-  async function planButtonHeight(frame: FrameNode): Promise<Plan> {
+  async function planButtonHeight(frame: FrameNode): Promise<PlanRecorder> {
     const plan = newPlan();
     const run = await fixtureRun(file, plan);
     planLayoutSizing(
@@ -64,7 +65,7 @@ describe("planLayoutSizing", () => {
     const plan = await planButtonHeight(frame);
     expect(changeLines(plan)).toEqual(["Button: height → 32"]);
 
-    await performPlan(plan);
+    await Effect.runPromise(performPlan(plan));
     expect([frame.height, frame.layoutSizingHorizontal, frame.layoutSizingVertical]).toEqual([
       32,
       "HUG",
@@ -78,7 +79,7 @@ describe("planLayoutSizing", () => {
     const plan = await planButtonHeight(frame);
     expect(changeLines(plan)).toEqual(["Button: height → 32, layoutSizingHorizontal → HUG"]);
 
-    await performPlan(plan);
+    await Effect.runPromise(performPlan(plan));
     expect(changeLines(await planButtonHeight(frame))).toEqual([]);
   });
 
@@ -92,7 +93,7 @@ describe("planPaints", () => {
     const file = fixtureFile([color("Fuse tokens", "error/10", { r: 0.8, g: 0.1, b: 0.1, a: 0.1 })]);
     const frame = file.figma.createFrame();
     frame.fills = [];
-    const planFill = async (): Promise<Plan> => {
+    const planFill = async (): Promise<PlanRecorder> => {
       const plan = newPlan();
       planPaints(
         await fixtureRun(file, plan),
@@ -109,7 +110,7 @@ describe("planPaints", () => {
 
     const plan = await planFill();
     expect(changeLines(plan)).toEqual(["Button: fill → error/10 (holds none)"]);
-    await performPlan(plan);
+    await Effect.runPromise(performPlan(plan));
     const [fill] = frame.fills;
     expect(fill).toMatchObject({
       type: "SOLID",
@@ -122,7 +123,7 @@ describe("planPaints", () => {
   });
 
   /** Plan a frame's fill as an image paint at FILL. */
-  async function planImage(file: FakeFigma, frame: FrameNode, image: ImagePaintSpec): Promise<Plan> {
+  async function planImage(file: FakeFigma, frame: FrameNode, image: ImagePaintSpec): Promise<PlanRecorder> {
     const plan = newPlan();
     planPaints(await fixtureRun(file, plan), "Avatar", "fill", frame.fills, image, (paints) => {
       frame.fills = paints;
@@ -148,7 +149,7 @@ describe("planPaints", () => {
     const image = `image ${RED_PIXEL.sha1.slice(0, 8)}`;
     expect(changeLines(plan)).toEqual([`Avatar: fill → ${image} at FILL (holds ${image} at FIT)`]);
     expect(file.writes.slice(before)).toEqual([]);
-    await performPlan(plan);
+    await Effect.runPromise(performPlan(plan));
     expect(file.writes.slice(before)).toEqual([`store the image ${RED_PIXEL.sha1}`, `${frame.id} fills`]);
     expect(frame.fills).toMatchObject([{ type: "IMAGE", scaleMode: "FILL", imageHash: RED_PIXEL.sha1 }]);
     expect(changeLines(await planImage(file, frame, RED_FILL))).toEqual([]);
@@ -162,7 +163,7 @@ describe("planPaints", () => {
     expect(changeLines(plan)).toEqual([
       `Avatar: fill → image ${BLUE_PIXEL.sha1.slice(0, 8)} at FILL (holds none)`,
     ]);
-    await expect(performPlan(plan)).rejects.toThrow(
+    await expect(Effect.runPromise(performPlan(plan))).rejects.toThrow(
       `Figma stored the image as ${RED_PIXEL.sha1}, where the kit names it ${BLUE_PIXEL.sha1}`
     );
     expect(frame.fills).toEqual([]);

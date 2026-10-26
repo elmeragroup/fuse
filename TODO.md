@@ -456,6 +456,11 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
     undoes an Apply, and that a snapshot export still shows its progress. On a file the token sync
     never wrote, Plan must still show "The file has no local collection named Fuse tokens" with the
     hint to run `figma:sync`.
+  - The plan engine in Effect (`plugin/src/plan.ts`, pending): run Plan on an applied file and on
+    the drifted copy, and Apply on a freshly synced file. Each must list the baseline's lines. One
+    Cmd+Z must still undo a whole Apply, and the Figma UI must not redraw partway through a run.
+    Time one Plan and one Apply against the baseline. On the in-memory file the full kit's Apply
+    went from 520 ms to 580 ms and the Plan of an applied file from 147 ms to 165 ms, about 12%.
 
 ## Data table
 

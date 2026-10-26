@@ -5,7 +5,17 @@
  * nothing. Apply runs the same pass to the end and meets every requirement, so a conflict, a
  * missing variable or a font Figma cannot load stops the run before the first write. Then it
  * performs the operations in the order the pass recorded them.
+ *
+ * The pass runs as an Effect. The `Plan` service holds the recorder the structural walk records
+ * into, and the walk hands the leaf planners that recorder in their `Run`. The leaf planners stay
+ * synchronous and record each operation with a plain write, which `change` wraps in an Effect. An
+ * operation that plans a new node's contents when it runs, as `create` and `planWhenRun` record,
+ * captures the services it reads when the pass records it, and provides its own recorder.
  */
+
+import { Context, Effect } from "effect";
+
+import type { PluginError } from "./errors.ts";
 
 /** A write, or writes that must run together, and the line Plan shows for it. */
 export type Operation = {
@@ -13,7 +23,8 @@ export type Operation = {
   readonly label: string;
   /** What changes, such as `paddingLeft → control-px-button-sm`. */
   readonly description: string;
-  readonly perform: () => void | Promise<void>;
+  /** The write, which reads no service: one it needs was captured when the pass recorded it. */
+  readonly perform: Effect.Effect<void, PluginError>;
 };
 
 /**
@@ -22,17 +33,54 @@ export type Operation = {
  * operations run.
  */
 export type Requirements = {
-  readonly byKey: Map<string, () => Promise<void>>;
+  readonly byKey: Map<string, Effect.Effect<void, PluginError>>;
   /** True once the run has met them. A requirement after that is one the pass missed. */
   met: boolean;
 };
 
-/** What a planning pass found: its operations, in the order Apply performs them, and its warnings. */
-export type Plan = {
+/**
+ * What a planning pass found: its operations, in the order Apply performs them, and its warnings.
+ * The recorder only grows, and one fiber writes it, so order is the order of recording.
+ */
+export type PlanRecorder = {
   readonly operations: Operation[];
   readonly warnings: string[];
   readonly requirements: Requirements;
 };
+
+/** The recorder the structural walk records into: the run's own, or a group's or a new node's. */
+export class Plan extends Context.Service<Plan, PlanRecorder>()("@elmeragroup/fuse-figma/plugin/Plan") {
+  /**
+   * Run an effect and report whether it recorded an operation into the current recorder. An
+   * operation the effect records into a recorder of its own, such as a new node's, does not count.
+   *
+   * @param effect - The planning to watch.
+   * @returns What the effect returned, and whether it recorded an operation.
+   */
+  static readonly watch = <A, E, R>(
+    effect: Effect.Effect<A, E, R>
+  ): Effect.Effect<readonly [A, boolean], E, R | Plan> =>
+    Effect.gen(function* () {
+      const plan = yield* Plan;
+      const start = plan.operations.length;
+      const result = yield* effect;
+      return [result, plan.operations.length > start] as const;
+    });
+}
+
+/**
+ * Run a leaf planner and report whether it recorded an operation, as {@link Plan.watch} does for
+ * an effect. The leaf planners stay synchronous, so they watch each other through this.
+ *
+ * @param plan - The recorder the planner records into.
+ * @param planner - The planning to watch.
+ * @returns What the planner returned, and whether it recorded an operation.
+ */
+export function watchLeaf<A>(plan: PlanRecorder, planner: () => A): readonly [A, boolean] {
+  const start = plan.operations.length;
+  const result = planner();
+  return [result, plan.operations.length > start];
+}
 
 /**
  * A node an operation writes to. Either the pass read it from the file, or an earlier
@@ -47,7 +95,7 @@ export type Target<Node> = {
 
 /** A planning pass that has run to the end, and what its planner returned. */
 export type PlannedRun<Result> = {
-  readonly plan: Plan;
+  readonly plan: PlanRecorder;
   readonly result: Result;
 };
 
@@ -59,7 +107,7 @@ export type PlannedRun<Result> = {
  *   a run.
  * @returns A plan with no operations.
  */
-export function newPlan(parent?: Plan): Plan {
+export function newPlan(parent?: PlanRecorder): PlanRecorder {
   if (parent !== undefined) {
     return { operations: [], warnings: parent.warnings, requirements: parent.requirements };
   }
@@ -72,11 +120,11 @@ export function newPlan(parent?: Plan): Plan {
  *
  * @param plan - The plan.
  * @param key - What the requirement is, such as `font Roboto Medium`.
- * @param meet - Meets the requirement, or throws when the run cannot.
- * @throws When the run has met its requirements already and has not met this one, because a
- *   write may have run before it.
+ * @param meet - Meets the requirement, or fails when the run cannot.
+ * @throws A defect when the run has met its requirements already and has not met this one,
+ *   because a write may have run before it.
  */
-export function requirement(plan: Plan, key: string, meet: () => Promise<void>): void {
+export function requirement(plan: PlanRecorder, key: string, meet: Effect.Effect<void, PluginError>): void {
   const { requirements } = plan;
   if (requirements.byKey.has(key)) {
     return;
@@ -91,13 +139,14 @@ export function requirement(plan: Plan, key: string, meet: () => Promise<void>):
  * Meet a run's requirements, one after another.
  *
  * @param plan - Any plan of the run.
+ * @returns The Effect that meets them.
  */
-async function meetRequirements(plan: Plan): Promise<void> {
+const meetRequirements = Effect.fnUntraced(function* (plan: PlanRecorder) {
   for (const meet of plan.requirements.byKey.values()) {
-    await meet();
+    yield* meet;
   }
   plan.requirements.met = true;
-}
+});
 
 /**
  * Record one operation.
@@ -107,13 +156,47 @@ async function meetRequirements(plan: Plan): Promise<void> {
  * @param description - What changes.
  * @param perform - The write that makes the change. It runs only when Apply performs the plan.
  */
-export function change(
-  plan: Plan,
+export function change(plan: PlanRecorder, label: string, description: string, perform: () => void): void {
+  changeWith(plan, label, description, Effect.sync(perform));
+}
+
+/**
+ * Record one operation whose write is an Effect, such as one that awaits Figma.
+ *
+ * @param plan - The plan.
+ * @param label - The node the change touches.
+ * @param description - What changes.
+ * @param perform - The write. It runs only when Apply performs the plan.
+ */
+export function changeWith(
+  plan: PlanRecorder,
   label: string,
   description: string,
-  perform: () => void | Promise<void>
+  perform: Effect.Effect<void, PluginError>
 ): void {
   plan.operations.push({ label, description, perform });
+}
+
+/**
+ * Record, into the current recorder, an operation whose write reads services, such as one that
+ * plans more when it runs. The services are the ones in scope now, captured as the operation is
+ * recorded, so the operation reads the run's file and its recorder's parent when Apply performs it.
+ *
+ * @param label - The node the change touches.
+ * @param description - What changes.
+ * @param perform - The write.
+ * @returns The Effect that records the operation.
+ */
+export function changeLater<R>(
+  label: string,
+  description: string,
+  perform: Effect.Effect<void, PluginError, R>
+): Effect.Effect<void, never, R | Plan> {
+  return Effect.gen(function* () {
+    const context = yield* Effect.context<R>();
+    const plan = yield* Plan;
+    changeWith(plan, label, description, Effect.provideContext(perform, context));
+  });
 }
 
 /**
@@ -128,9 +211,9 @@ export function change(
  *   an earlier one.
  */
 export function changeTogether(
-  plan: Plan,
+  plan: PlanRecorder,
   label: string,
-  build: (group: Plan) => void,
+  build: (group: PlanRecorder) => void,
   finish: () => void
 ): void {
   const group = newPlan(plan);
@@ -139,10 +222,7 @@ export function changeTogether(
     return;
   }
   const description = group.operations.map((operation) => operation.description).join(", ");
-  change(plan, label, description, async () => {
-    await performPlan(group);
-    finish();
-  });
+  changeWith(plan, label, description, Effect.andThen(performPlan(group), Effect.sync(finish)));
 }
 
 /**
@@ -156,6 +236,25 @@ export function existing<Node>(node: Node): Target<Node> {
 }
 
 /**
+ * Plan, when the operation that calls this runs, what that operation then reads: the writes
+ * `stage` records into a recorder of its own, performed at once, as `create` plans a new node's
+ * contents.
+ *
+ * @param stage - Plans the writes. It reads the recorder the operation was recorded into as its
+ *   parent.
+ * @returns The Effect that plans and performs the writes.
+ */
+export function planWhenRun<E, R>(
+  stage: Effect.Effect<void, E, R>
+): Effect.Effect<void, E | PluginError, Exclude<R, Plan> | Plan> {
+  return Effect.gen(function* () {
+    const later = newPlan(yield* Plan);
+    yield* Effect.provideService(stage, Plan, later);
+    yield* performPlan(later);
+  });
+}
+
+/**
  * Record the creation of a node as one operation. When it runs, the operation makes the node,
  * plans the node's fields and its contents against the spec, and performs that plan at once.
  * Plan therefore lists a new node once, however much the spec puts inside it.
@@ -165,40 +264,42 @@ export function existing<Node>(node: Node): Target<Node> {
  * outer pass requires the fonts the new node's text needs, so the contents' plan finds every
  * requirement met.
  *
- * @param plan - The plan.
  * @param label - Where the node goes.
  * @param description - What gets created, such as `create the text layer Label`.
  * @param make - Creates the node and gives it its key.
- * @param configure - Plans the new node's fields into the plan it receives. A node that `make`
- *   finishes needs none.
+ * @param configure - Plans the new node's fields into the recorder it is given as `Plan`. A node
+ *   that `make` finishes needs none.
  * @returns The node, for later operations to read once this one has run.
  */
-export function create<Node>(
-  plan: Plan,
+export function create<Node, R = never>(
   label: string,
   description: string,
   make: () => Node,
-  configure?: (node: Node, inner: Plan) => void | Promise<void>
-): Target<Node> {
-  let made: Node | undefined;
-  change(plan, label, description, async () => {
-    const node = make();
-    made = node;
-    if (configure !== undefined) {
-      const inner = newPlan(plan);
-      await configure(node, inner);
-      await performPlan(inner);
-    }
-  });
-  return {
-    existing: undefined,
-    get: () => {
-      if (made === undefined) {
-        throw new Error(`${label}: an operation read the node that "${description}" makes before that ran.`);
+  configure?: (node: Node) => Effect.Effect<void, PluginError, R>
+): Effect.Effect<Target<Node>, never, Exclude<R, Plan> | Plan> {
+  return Effect.gen(function* () {
+    let made: Node | undefined;
+    const perform = Effect.gen(function* () {
+      const node = make();
+      made = node;
+      if (configure !== undefined) {
+        yield* planWhenRun(configure(node));
       }
-      return made;
-    },
-  };
+    });
+    yield* changeLater(label, description, perform);
+    const target: Target<Node> = {
+      existing: undefined,
+      get: () => {
+        if (made === undefined) {
+          throw new Error(
+            `${label}: an operation read the node that "${description}" makes before that ran.`
+          );
+        }
+        return made;
+      },
+    };
+    return target;
+  });
 }
 
 /**
@@ -230,7 +331,7 @@ export function keepsOrder<Node>(children: readonly Node[], owned: readonly Targ
  * @param label - The node the warning concerns.
  * @param message - What the plugin left out and why.
  */
-export function warn(plan: Plan, label: string, message: string): void {
+export function warn(plan: PlanRecorder, label: string, message: string): void {
   const line = `${label}: ${message}`;
   if (!plan.warnings.includes(line)) {
     plan.warnings.push(line);
@@ -243,7 +344,7 @@ export function warn(plan: Plan, label: string, message: string): void {
  * @param plan - The plan.
  * @returns One `label: description` line per operation, in order.
  */
-export function changeLines(plan: Plan): string[] {
+export function changeLines(plan: PlanRecorder): string[] {
   return plan.operations.map((operation) => `${operation.label}: ${operation.description}`);
 }
 
@@ -251,12 +352,13 @@ export function changeLines(plan: Plan): string[] {
  * Perform a plan's operations one after another, in the order the pass recorded them.
  *
  * @param plan - The plan.
+ * @returns The Effect that performs them.
  */
-export async function performPlan(plan: Plan): Promise<void> {
+export const performPlan = Effect.fnUntraced(function* (plan: PlanRecorder) {
   for (const operation of plan.operations) {
-    await operation.perform();
+    yield* operation.perform;
   }
-}
+});
 
 /**
  * Plan a run, meet its requirements, and perform the plan when the run applies. The planning
@@ -265,18 +367,21 @@ export async function performPlan(plan: Plan): Promise<void> {
  * fails where an apply would.
  *
  * @param apply - Whether to perform the plan or only return it.
- * @param planner - Records the run's operations and warnings into the plan it receives.
+ * @param planner - Records the run's operations and warnings into the recorder it is given as
+ *   `Plan`.
  * @returns The plan and what the planner returned.
  */
-export async function runPlan<Result>(
+export function runPlan<A, E, R>(
   apply: boolean,
-  planner: (plan: Plan) => Promise<Result>
-): Promise<PlannedRun<Result>> {
-  const plan = newPlan();
-  const result = await planner(plan);
-  await meetRequirements(plan);
-  if (apply) {
-    await performPlan(plan);
-  }
-  return { plan, result };
+  planner: Effect.Effect<A, E, R>
+): Effect.Effect<PlannedRun<A>, E | PluginError, Exclude<R, Plan>> {
+  return Effect.gen(function* () {
+    const plan = newPlan();
+    const result = yield* Effect.provideService(planner, Plan, plan);
+    yield* meetRequirements(plan);
+    if (apply) {
+      yield* performPlan(plan);
+    }
+    return { plan, result };
+  });
 }

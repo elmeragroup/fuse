@@ -21,8 +21,8 @@ import type {
   SizeSpec,
   VariableRef,
 } from "../../src/components/kit-spec.ts";
-import { change, changeTogether, create } from "./plan.ts";
-import type { Plan, Target } from "./plan.ts";
+import { change, changeTogether } from "./plan.ts";
+import type { PlanRecorder } from "./plan.ts";
 import type { KitVariables } from "./variables.ts";
 
 /**
@@ -32,7 +32,7 @@ import type { KitVariables } from "./variables.ts";
 export type Run = {
   readonly figma: PluginAPI;
   readonly variables: KitVariables;
-  readonly plan: Plan;
+  readonly plan: PlanRecorder;
   readonly glyphFont: GlyphFontSpec;
 };
 
@@ -44,28 +44,8 @@ export type Run = {
  * @param plan - The plan the nested planner records into.
  * @returns The nested planner's run.
  */
-export function withPlan(run: Run, plan: Plan): Run {
+export function withPlan(run: Run, plan: PlanRecorder): Run {
   return { figma: run.figma, variables: run.variables, plan, glyphFont: run.glyphFont };
-}
-
-/**
- * Record the creation of a node, as `create` does, for a planner that takes a run.
- *
- * @param run - The run.
- * @param label - Where the node goes.
- * @param description - What gets created.
- * @param make - Creates the node and gives it its key.
- * @param configure - Plans the new node's fields with the run of its contents.
- * @returns The node, for later operations to read once this one has run.
- */
-export function createIn<Node>(
-  run: Run,
-  label: string,
-  description: string,
-  make: () => Node,
-  configure: (node: Node, inner: Run) => void | Promise<void>
-): Target<Node> {
-  return create(run.plan, label, description, make, (node, plan) => configure(node, withPlan(run, plan)));
 }
 
 /**

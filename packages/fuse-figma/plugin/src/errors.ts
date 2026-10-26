@@ -3,8 +3,10 @@
  * Each error keeps the message the plugin UI shows. The errors extend `Data.TaggedError`, because the
  * plugin bundle imports no `Schema`.
  *
- * The planning engine still throws. `attempt` runs it and keeps these errors as typed failures,
- * so any other throw stays a defect.
+ * The structural walk fails with these errors in its error channel. The leaf planners stay
+ * synchronous and throw them, and `failOnThrown` turns such a throw back into a typed failure.
+ * `attempt` does the same for promise-based code, such as the snapshot export. Any other throw
+ * stays a defect.
  */
 
 import { Data, Effect } from "effect";
@@ -89,5 +91,19 @@ function isPluginError(thrown: unknown): thrown is PluginError {
 export function attempt<A>(run: () => Promise<A>): Effect.Effect<A, PluginError> {
   return Effect.tryPromise({ try: run, catch: (thrown) => thrown }).pipe(
     Effect.catchIf(isPluginError, Effect.fail, Effect.die)
+  );
+}
+
+/**
+ * Report a failure a planner threw as a typed error. The leaf planners stay synchronous and throw
+ * the failures a designer can fix, such as a variable the file lacks, which an Effect sees as a
+ * defect. This turns such a defect back into its error and leaves every other defect a defect.
+ *
+ * @param effect - The run.
+ * @returns The run, failing with each plugin error a planner threw.
+ */
+export function failOnThrown<A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E | PluginError, R> {
+  return Effect.catchDefect(effect, (defect) =>
+    isPluginError(defect) ? Effect.fail(defect) : Effect.die(defect)
   );
 }

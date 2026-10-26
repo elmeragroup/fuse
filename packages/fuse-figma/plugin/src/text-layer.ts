@@ -26,7 +26,7 @@ import {
 import type { Held, Run } from "./fields.ts";
 import { fontFor, requireFont } from "./fonts.ts";
 import { baseCharacters, planGlyphRanges } from "./glyph-font.ts";
-import { change } from "./plan.ts";
+import { change, watchLeaf } from "./plan.ts";
 
 /** The text fields that pick a font's style, which the spec sets as a literal. */
 const STYLE_FIELDS: readonly VariableBindableTextField[] = ["fontStyle", "fontWeight"];
@@ -158,9 +158,10 @@ export function planText(
     text.fills = paints;
   });
 
-  const start = run.plan.operations.length;
-  planTypography(run, text, label, spec, propertyIds, parent, replaced);
-  if (!replaced && run.plan.operations.length > start) {
+  const [, typeset] = watchLeaf(run.plan, () =>
+    planTypography(run, text, label, spec, propertyIds, parent, replaced)
+  );
+  if (!replaced && typeset) {
     for (const font of [...held, fontName]) {
       requireFont(run, label, font);
     }

@@ -4,10 +4,12 @@
  * synced or was synced from an older Fuse.
  */
 
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 
 import type { ModeRef, VariableRef } from "../../src/components/kit-spec.ts";
+import { kitCollections } from "./check-kit.ts";
 import { DuplicateCollections, FileNotSynced } from "./errors.ts";
+import { FigmaPlugin, FileVariables, Kit } from "./services.ts";
 
 /** A mode of a local collection. */
 export type ResolvedMode = {
@@ -102,3 +104,16 @@ export const loadKitVariables = Effect.fnUntraced(function* (figma: PluginAPI, n
   };
   return lookups;
 });
+
+/**
+ * Read the collections the kit names from the file. Each build reads the file again, so a run that
+ * follows an Apply sees what the Apply wrote.
+ */
+export const kitVariablesLayer = Layer.effect(
+  FileVariables,
+  Effect.gen(function* () {
+    const figma = yield* FigmaPlugin;
+    const kit = yield* Kit;
+    return yield* loadKitVariables(figma, kitCollections(kit));
+  })
+);

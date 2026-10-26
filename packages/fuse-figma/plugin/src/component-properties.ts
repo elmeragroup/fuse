@@ -6,7 +6,7 @@
  */
 
 import { change } from "./plan.ts";
-import type { Plan } from "./plan.ts";
+import type { PlanRecorder } from "./plan.ts";
 
 /**
  * The name a property id carries.
@@ -64,7 +64,7 @@ export type SetProperty = {
  * @param ids - The set's property ids by name.
  */
 export function planSetProperty(
-  plan: Plan,
+  plan: PlanRecorder,
   set: ComponentSetNode,
   label: string,
   property: SetProperty,

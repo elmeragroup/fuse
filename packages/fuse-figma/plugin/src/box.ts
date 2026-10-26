@@ -19,7 +19,7 @@ import {
   planShadows,
 } from "./fields.ts";
 import type { Held, NumberField, Run } from "./fields.ts";
-import { change } from "./plan.ts";
+import { change, watchLeaf } from "./plan.ts";
 
 /** A node that holds a box's layers: a variant component, or a frame layer below it. */
 export type LayerParent = ComponentNode | FrameNode;
@@ -138,61 +138,61 @@ export type BoxPlace = { readonly kind: "root" } | { readonly kind: "frame"; rea
  */
 export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpec, place: BoxPlace): Held {
   const { direction, sizing } = spec;
-  const before = run.plan.operations.length;
-  planScalar(run, label, "layoutMode", node.layoutMode, direction, () => {
-    node.layoutMode = direction;
-  });
-  planScalar(run, label, "primaryAxisAlignItems", node.primaryAxisAlignItems, spec.primaryAlign, () => {
-    node.primaryAxisAlignItems = spec.primaryAlign;
-  });
-  planScalar(run, label, "counterAxisAlignItems", node.counterAxisAlignItems, spec.counterAlign, () => {
-    node.counterAxisAlignItems = spec.counterAlign;
-  });
+  const [, laidOut] = watchLeaf(run.plan, () => {
+    planScalar(run, label, "layoutMode", node.layoutMode, direction, () => {
+      node.layoutMode = direction;
+    });
+    planScalar(run, label, "primaryAxisAlignItems", node.primaryAxisAlignItems, spec.primaryAlign, () => {
+      node.primaryAxisAlignItems = spec.primaryAlign;
+    });
+    planScalar(run, label, "counterAxisAlignItems", node.counterAxisAlignItems, spec.counterAlign, () => {
+      node.counterAxisAlignItems = spec.counterAlign;
+    });
 
-  planLayoutSizing(
-    run,
-    node,
-    label,
-    {
-      direction,
-      sizing: {
-        horizontal: LAYOUT_SIZING[sizing.horizontal.kind],
-        vertical: LAYOUT_SIZING[sizing.vertical.kind],
+    planLayoutSizing(
+      run,
+      node,
+      label,
+      {
+        direction,
+        sizing: {
+          horizontal: LAYOUT_SIZING[sizing.horizontal.kind],
+          vertical: LAYOUT_SIZING[sizing.vertical.kind],
+        },
       },
-    },
-    place.kind === "frame" ? place.parent : "read",
-    (group, lengths) => {
-      planLength(group, node, label, "width", sizing.horizontal, lengths, (value) =>
-        node.resize(value, node.height)
-      );
-      planLength(group, node, label, "height", sizing.vertical, lengths, (value) =>
-        node.resize(node.width, value)
-      );
+      place.kind === "frame" ? place.parent : "read",
+      (group, lengths) => {
+        planLength(group, node, label, "width", sizing.horizontal, lengths, (value) =>
+          node.resize(value, node.height)
+        );
+        planLength(group, node, label, "height", sizing.vertical, lengths, (value) =>
+          node.resize(node.width, value)
+        );
+      }
+    );
+    for (const name of LIMITS) {
+      planLimit(run, node, label, name, spec.limits[name]);
     }
-  );
-  for (const name of LIMITS) {
-    planLimit(run, node, label, name, spec.limits[name]);
-  }
 
-  planNumber(run, node, label, paddingField(node, "Top"), spec.paddingTop);
-  planNumber(run, node, label, paddingField(node, "Right"), spec.paddingRight);
-  planNumber(run, node, label, paddingField(node, "Bottom"), spec.paddingBottom);
-  planNumber(run, node, label, paddingField(node, "Left"), spec.paddingLeft);
-  planNumber(
-    run,
-    node,
-    label,
-    {
-      name: "itemSpacing",
-      bindings: ["itemSpacing"],
-      matches: (value) => near(node.itemSpacing, value),
-      write: (value) => {
-        node.itemSpacing = value;
+    planNumber(run, node, label, paddingField(node, "Top"), spec.paddingTop);
+    planNumber(run, node, label, paddingField(node, "Right"), spec.paddingRight);
+    planNumber(run, node, label, paddingField(node, "Bottom"), spec.paddingBottom);
+    planNumber(run, node, label, paddingField(node, "Left"), spec.paddingLeft);
+    planNumber(
+      run,
+      node,
+      label,
+      {
+        name: "itemSpacing",
+        bindings: ["itemSpacing"],
+        matches: (value) => near(node.itemSpacing, value),
+        write: (value) => {
+          node.itemSpacing = value;
+        },
       },
-    },
-    spec.itemSpacing
-  );
-  const laidOut = run.plan.operations.length > before;
+      spec.itemSpacing
+    );
+  });
   planNumber(run, node, label, cornerField(node), spec.cornerRadius);
 
   // Figma paints a later layer above an earlier one, and the first on top with the field true (PZ2).
@@ -216,26 +216,27 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
   // from a CSS outline takes no room, so it stays out of the layout and overlaps the box's layers,
   // as the typings' `strokesIncludedInLayout` false draws. A border on some sides writes each side's
   // weight and counts in the layout, where each side takes room on its own side (N9, PS).
-  const stroked = run.plan.operations.length;
   const { stroke } = spec;
-  planPaints(run, label, "stroke", node.strokes, stroke?.color, (paints) => {
-    node.strokes = paints;
-  });
-  if (stroke !== undefined) {
-    if ("sides" in stroke) {
-      planStrokeSides(run, node, label, stroke.sides);
-    } else {
-      planNumber(run, node, label, strokeWeightField(node), stroke.weight);
+  const [, stroked] = watchLeaf(run.plan, () => {
+    planPaints(run, label, "stroke", node.strokes, stroke?.color, (paints) => {
+      node.strokes = paints;
+    });
+    if (stroke !== undefined) {
+      if ("sides" in stroke) {
+        planStrokeSides(run, node, label, stroke.sides);
+      } else {
+        planNumber(run, node, label, strokeWeightField(node), stroke.weight);
+      }
+      planScalar(run, label, "strokeAlign", node.strokeAlign, "INSIDE", () => {
+        node.strokeAlign = "INSIDE";
+      });
+      const included = "sides" in stroke || stroke.inLayout !== false;
+      planScalar(run, label, "strokesIncludedInLayout", node.strokesIncludedInLayout, included, () => {
+        node.strokesIncludedInLayout = included;
+      });
     }
-    planScalar(run, label, "strokeAlign", node.strokeAlign, "INSIDE", () => {
-      node.strokeAlign = "INSIDE";
-    });
-    const included = "sides" in stroke || stroke.inLayout !== false;
-    planScalar(run, label, "strokesIncludedInLayout", node.strokesIncludedInLayout, included, () => {
-      node.strokesIncludedInLayout = included;
-    });
-  }
-  const resizes = laidOut || run.plan.operations.length > stroked;
+  });
+  const resizes = laidOut || stroked;
   if (stroke !== undefined) {
     planDashPattern(run, node, label, "sides" in stroke ? [] : (stroke.dashPattern ?? []));
   }
