@@ -450,6 +450,35 @@
  *    characters whose family is the base style's, and the base style. The probe bound `fontSize`
  *    alone, and the fake treats `lineHeight`, `fontStyle` and `fontWeight` the same. It left open
  *    whether Figma tells the characters apart by their family or by the family binding they lost.
+ * 56. An instance its modes give another size than its main holds its lengths. On 2026-10-26 a row
+ *    404 wide, hugging a height its padding bound to `row-py`, read 404 × 32, and its instances in a
+ *    frame pinned Comfortable read 404 × 36 and listed `height` and `width` among their overrides
+ *    (G13). Once read, an instance kept 404 when the main went to 366, and the instances first read
+ *    after that kept 366 when the main went to 300. Only a width write moved one: `resize(366,
+ *    height)` and a HUG down gave 366 × 36, which then held. A width bound to a FLOAT variable, 100
+ *    in the main's mode and 140 in the frame's, read 140 on the instance, bound and listed the same
+ *    way, and followed a new value of the variable (G14). When the main unbound its width and went to
+ *    90, the instance kept its last length unbound. A new binding on the main bound it again, as did
+ *    `setBoundVariable("width", v)` on the instance itself (G15). The fake holds an instance's lengths
+ *    at its first read where they differ from its main's, as rule 32 holds a resized one, and shows
+ *    the binding its main holds on a width or height the instance binds none of its own, its length
+ *    following the variable in the instance's modes. The fake does not lay out padding, so its tests
+ *    make the height differ through a bound row the main hugs (rule 32). An instance in a frame whose
+ *    modes match its main's read the main's width binding too, at the main's 100 × 32, and listed no
+ *    overrides (G16). A held instance at 404 × 36, unbound, that `swapComponent` pointed at a variant
+ *    366 wide read 366 × 36 and still listed `width` and `height`, and a fresh instance in a matching
+ *    mode read 366 × 32 after the same swap, with no overrides (G17). So a swap gives an instance its
+ *    modes hold the new component's size in those modes and keeps the lengths listed. An instance of a
+ *    16 × 16 component resized to 12 × 12 read 12 × 12 after a swap to another 16 × 16 component, with
+ *    `width` and `height` still listed, in a plain frame, in an auto layout row and inside a component
+ *    (G18). So an instance resized itself keeps its lengths through a swap, as an icon resized to 12
+ *    keeps them through a swap to a rebuilt icon library. One reading fits G17 and G18 together: a
+ *    swap keeps a length that differs from the old main's and takes the new main's where it equals
+ *    it, as G17's held 404 equalled the old variant's width and its 36 did not. No probe tells that
+ *    reading apart from the fake's split by `heldByModes`. The probes left open a FILL axis, a value change
+ *    seen by an instance whose main is unbound, and an instance that unbinds its own length, which
+ *    the fake leaves at its length with no binding until a new one. A HUG write drops the length
+ *    from the overrides as rule 32 says, where G13 still listed it.
  *
  * An instance's sublayers show the layers of its main component, and a nested instance's sublayers
  * the sublayers its main layer shows. An override, such as the color an icon layer gives its glyph,
@@ -690,6 +719,13 @@ type NodeState = {
    * nested instance swapped apart from its main layer.
    */
   readonly overridden: Set<string>;
+  /**
+   * Whether an instance holds its lengths because its modes gave it another size than its main,
+   * rather than through a resize of its own, so a swap gives it the new component's size (rule 56).
+   */
+  heldByModes: boolean;
+  /** The lengths an instance unbound itself, which no longer show its source's binding (rule 56). */
+  readonly unboundLengths: Set<"width" | "height">;
   characters: string;
   /** The style of each character, or of the one a text layer without characters types in. */
   styles: readonly CharacterStyle[];
@@ -1452,6 +1488,7 @@ function ownSize(state: NodeState): void {
   if (state.type === "INSTANCE") {
     state.overridden.add("width");
     state.overridden.add("height");
+    state.heldByModes = false;
   }
 }
 
@@ -1499,7 +1536,8 @@ function fills(state: NodeState, axis: Axis): boolean {
  * Give an instance the size of what it shows, as a read of it does (rule 32): its main component's,
  * or for a nested instance seen through an outer instance, its main layer's as that stands. An
  * instance resized or rescaled itself keeps its own length on each axis it does not hug again, and
- * any other node reads as it stands.
+ * any other node reads as it stands. A length its main binds follows the variable in the instance's
+ * modes, a held one included (rule 56).
  *
  * @returns The node.
  */
@@ -1508,16 +1546,29 @@ function settled(state: NodeState): NodeState {
   if (state.type !== "INSTANCE" || source === undefined) {
     return state;
   }
+  const held = (axis: Axis): boolean => state.overridden.has(lengthOverride(axis));
+  const free = !held("HORIZONTAL") && !held("VERTICAL");
   for (const axis of ["HORIZONTAL", "VERTICAL"] as const) {
-    if (!state.overridden.has(lengthOverride(axis))) {
-      const length =
-        boundThrough(source, state, axis) ?? ownHug(state, source, axis) ?? lengthOn(source, axis);
+    const bound = state.unboundLengths.has(lengthOverride(axis))
+      ? undefined
+      : boundThrough(source, state, axis);
+    if (bound !== undefined || !held(axis)) {
+      const length = bound ?? ownHug(state, source, axis) ?? lengthOn(source, axis);
       if (axis === "HORIZONTAL") {
         state.width = length;
       } else {
         state.height = length;
       }
     }
+  }
+  // An instance its modes give another size than its main holds its lengths from then on (rule 56).
+  if (
+    free &&
+    state.mirrorOf === undefined &&
+    (state.width !== lengthOn(source, "HORIZONTAL") || state.height !== lengthOn(source, "VERTICAL"))
+  ) {
+    ownSize(state);
+    state.heldByModes = true;
   }
   return state;
 }
@@ -1961,9 +2012,13 @@ function isTextField(field: BindableField): field is VariableBindableTextField {
 /** Bind or unbind a field of a layer that is not text. */
 function bindNodeField(state: NodeState, field: VariableBindableNodeField, variable: Variable | null): void {
   const targets = bindingTargets(field);
+  const length = state.type === "INSTANCE" && (field === "width" || field === "height") ? field : undefined;
   if (variable === null) {
     for (const target of targets) {
       state.bindings.delete(target);
+    }
+    if (length !== undefined) {
+      state.unboundLengths.add(length);
     }
     if (targets.some((target) => CORNERS.has(target))) {
       noteOverride(state, "radii");
@@ -1973,6 +2028,9 @@ function bindNodeField(state: NodeState, field: VariableBindableNodeField, varia
   }
   const bound = fileVariable(state.file, variable);
   requireType(bound, "FLOAT", field);
+  if (length !== undefined) {
+    state.unboundLengths.delete(length);
+  }
   const value = resolveNumber(state.file, bound, state);
   for (const target of targets) {
     if (!keepsHug(state, target)) {
@@ -2231,16 +2289,30 @@ function bindTextField(state: NodeState, field: BindableField, variable: Variabl
 
 /**
  * The variable each bound field follows, by id, the corners as the layer shows them: an instance or a
- * sublayer that does not override its corners shows its source's (rule 38).
+ * sublayer that does not override its corners shows its source's (rule 38). An instance that binds no
+ * width or height of its own shows its source's binding there (rule 56).
  */
 function shownBindings(state: NodeState): ReadonlyMap<VariableBindableNodeField, string> {
   const source = sourceOf(state);
-  if (source === undefined || state.overridden.has("radii")) {
+  if (source === undefined) {
     return state.bindings;
   }
+  const inherited = shownBindings(source);
+  const lengths: [VariableBindableNodeField, string][] =
+    state.type === "INSTANCE"
+      ? (["width", "height"] as const).flatMap((field) => {
+          const id = inherited.get(field);
+          return state.bindings.has(field) || state.unboundLengths.has(field) || id === undefined
+            ? []
+            : [[field, id]];
+        })
+      : [];
+  if (state.overridden.has("radii")) {
+    return new Map([...state.bindings, ...lengths]);
+  }
   const own = [...state.bindings].filter(([field]) => !CORNERS.has(field));
-  const corners = [...shownBindings(source)].filter(([field]) => CORNERS.has(field));
-  return new Map([...own, ...corners]);
+  const corners = [...inherited].filter(([field]) => CORNERS.has(field));
+  return new Map([...own, ...lengths, ...corners]);
 }
 
 function nodeBindings(state: NodeState): NonNullable<FrameNode["boundVariables"]> {
@@ -2638,6 +2710,8 @@ type UncopiedField =
   | "loaded"
   | "mirrorOf"
   | "overridden"
+  | "unboundLengths"
+  | "heldByModes"
   | "properties"
   | "propertyValues"
   | "exposedInstance"
@@ -3965,6 +4039,22 @@ function swapTo(state: NodeState, main: NodeState): void {
   mirror(state, main, true);
   restoreNested(state, nested);
   applySwapValues(state);
+  takeSwappedSize(state);
+}
+
+/**
+ * Give an instance its modes hold the size of the component it swapped to, in its own modes, and keep
+ * its lengths listed (rule 56, G17). An instance resized itself keeps its lengths.
+ */
+function takeSwappedSize(state: NodeState): void {
+  if (!state.heldByModes) {
+    return;
+  }
+  state.overridden.delete("width");
+  state.overridden.delete("height");
+  settled(state);
+  ownSize(state);
+  state.heldByModes = true;
 }
 
 /**
@@ -4626,6 +4716,8 @@ function createNode(file: FileState, type: NodeType, name: string, id?: string):
     exposedInstance: false,
     mirrorOf: undefined,
     overridden: new Set(),
+    unboundLengths: new Set(),
+    heldByModes: false,
     characters: "",
     styles: [NEW_TEXT_STYLE],
     baseStyle: NEW_TEXT_STYLE,

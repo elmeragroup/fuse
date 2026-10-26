@@ -4,14 +4,15 @@
  * renders the theme's value.
  */
 
-import type { NumberSpec, PreviewGroupSpec, PreviewSpec } from "../../src/components/kit-spec.ts";
+import { fixedLength } from "../../src/components/kit-spec.ts";
+import type { NumberSpec, PreviewGroupSpec, PreviewSpec, SizingSpec } from "../../src/components/kit-spec.ts";
 import type { PlannedSet } from "./component-set.ts";
-import { near, planLayoutSizing, planNumber, planPaints, planScalar } from "./fields.ts";
-import type { Run } from "./fields.ts";
+import { LAYOUT_SIZING, near, planLayoutSizing, planNumber, planPaints, planScalar } from "./fields.ts";
+import type { Held, NumberField, Run } from "./fields.ts";
 import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
 import type { Siblings } from "./identity.ts";
 import type { PlannedPage } from "./pages.ts";
-import { change, create, existing } from "./plan.ts";
+import { change, changeTogether, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { settleInstances } from "./settle.ts";
 
@@ -153,8 +154,63 @@ function planModes(run: Run, frame: FrameNode, label: string, spec: PreviewSpec)
 }
 
 /**
+ * Plan a preview instance's fixed lengths against its variant root's, as one operation. An instance
+ * whose preview's modes give it another size than its main holds its literal lengths and stops
+ * following the main's (G13), so a literal length is compared and written: a resize keeps the other
+ * axis's length and turns it fixed (rule 5), so the operation writes the hug back after. A bound
+ * length follows its variable (G14), so only the binding is compared, and an instance that lost it is
+ * bound again (G15). A hugging axis is left as the instance reads it.
+ *
+ * @param run - The run.
+ * @param instance - The preview instance.
+ * @param label - The instance's label, for change lines.
+ * @param sizing - The sizing of the variant's root.
+ * @param held - `unknown` when the run points the instance at another variant, whose lengths the
+ *   pass cannot read ahead, so the operation writes them whatever the instance reads now.
+ */
+function planInstanceLengths(
+  run: Run,
+  instance: InstanceNode,
+  label: string,
+  sizing: SizingSpec,
+  held: Held
+): void {
+  const writeSizing = (): void => {
+    instance.layoutSizingHorizontal = LAYOUT_SIZING[sizing.horizontal.kind];
+    instance.layoutSizingVertical = LAYOUT_SIZING[sizing.vertical.kind];
+  };
+  changeTogether(
+    run.plan,
+    label,
+    (plan) => {
+      for (const [name, size] of [
+        ["width", sizing.horizontal],
+        ["height", sizing.vertical],
+      ] as const) {
+        const length = fixedLength(size);
+        if (length === undefined) {
+          continue;
+        }
+        const field: NumberField = {
+          name,
+          bindings: [name],
+          matches: (value) => near(instance[name], value),
+          write: (value) =>
+            name === "width"
+              ? instance.resize(value, instance.height)
+              : instance.resize(instance.width, value),
+        };
+        planNumber({ ...run, plan }, instance, label, field, length, held);
+      }
+    },
+    writeSizing
+  );
+}
+
+/**
  * Plan a group's instances. Each instance's key is the preview's key, `/` and the variant's key,
- * which starts with the set's key, so it nests under the group's key too.
+ * which starts with the set's key, so it nests under the group's key too. Each instance's fixed
+ * lengths are planned against its variant's root, a new instance's included (`planInstanceLengths`).
  */
 async function planInstances(
   run: Run,
@@ -173,21 +229,29 @@ async function planInstances(
     children,
     async ({ key, variant }, siblings) => {
       const component = set.variants.get(variant);
-      if (component === undefined) {
+      const root = set.spec.variants.find((candidate) => candidate.key === variant)?.root;
+      if (component === undefined || root === undefined) {
         throw new Error(`${label} places ${variant}, which ${set.spec.name} does not define.`);
       }
+      const lengthsLabel = `${label} / ${variant}`;
       const found = findOwned(run.plan, siblings, label, key, key, isInstance);
       if (found === undefined) {
-        return create(run.plan, label, `add an instance of ${variant}`, () =>
-          placeOwned(group, component.get().createInstance(), key)
+        return create(
+          run.plan,
+          label,
+          `add an instance of ${variant}`,
+          () => placeOwned(group, component.get().createInstance(), key),
+          (made, plan) => planInstanceLengths({ ...run, plan }, made, lengthsLabel, root.sizing, "read")
         );
       }
       const main = await found.getMainComponentAsync();
-      if (component.existing === undefined || main?.id !== component.existing.id) {
+      const swaps = component.existing === undefined || main?.id !== component.existing.id;
+      if (swaps) {
         change(run.plan, label, `point the instance ${key} at ${variant}`, () =>
           found.swapComponent(component.get())
         );
       }
+      planInstanceLengths(run, found, lengthsLabel, root.sizing, swaps ? "unknown" : "read");
       return existing(found);
     }
   );
