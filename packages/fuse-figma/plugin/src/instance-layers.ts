@@ -757,7 +757,8 @@ const requireHeldLabelFonts = Effect.fnUntraced(function* (
       overriddenFields.includes("textAlignHorizontal") ? [id] : []
     )
   );
-  for (const layer of (yield* heldLayers(instance, label)).values()) {
+  const instanceLayers = yield* heldLayers(instance, label);
+  for (const layer of instanceLayers.values()) {
     const { node } = layer;
     if (node.type === "TEXT" && (keys.has(layer.path.at(-1) ?? "") || aligned.has(node.id))) {
       for (const font of heldFonts(run, node)) {
@@ -774,7 +775,8 @@ const requireHeldLabelFonts = Effect.fnUntraced(function* (
     const at = `${label} / ${nested.path.join(" / ")}`;
     const writes =
       target !== undefined && (replaced || Object.keys(differingNested(target, nested, at)).length > 0);
-    for (const layer of writes ? (yield* heldLayers(target, at)).values() : []) {
+    const writtenLayers = writes ? (yield* heldLayers(target, at)).values() : [];
+    for (const layer of writtenLayers) {
       if (layer.node.type === "TEXT") {
         for (const font of heldFonts(run, layer.node)) {
           requireFont(run, layer.label, font);

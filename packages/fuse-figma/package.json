@@ -36,6 +36,7 @@
     "pixelmatch": "catalog:",
     "playwright": "catalog:",
     "pngjs": "catalog:",
+    "quickjs-emscripten": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "rolldown": "catalog:",

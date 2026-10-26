@@ -5,10 +5,15 @@
  * The oracles are the change lines the one-variant Button kit plans on a file without its set, as
  * `plugin/src/reconcile.test.ts` lists them, and the messages the plugin shows for an unsynced
  * file and an unknown request.
+ *
+ * The bundle also loads in QuickJS, the engine Figma runs the main thread in. V8 compiles syntax
+ * that QuickJS refuses, such as a `yield*` in a `for…of` head, so only QuickJS catches a bundle
+ * Figma cannot start.
  */
 
 import { Effect } from "effect";
 import { Script } from "node:vm";
+import { getQuickJS } from "quickjs-emscripten";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { bundlePlugin } from "../scripts/plugin-bundle.ts";
@@ -167,6 +172,33 @@ describe("the plugin bundle", () => {
   it("loads as a classic script with only Figma's globals and opens the UI", () => {
     const plugin = load(code, fixtures.fixture("Roboto").file);
     expect(plugin.shown).toEqual([{ html: HTML, options: { width: 560, height: 640, themeColors: true } }]);
+  });
+
+  it("loads in QuickJS with only Figma's globals and opens the UI", async () => {
+    const shown: ShowUiCall[] = [];
+    const vm = (await getQuickJS()).newContext();
+    try {
+      const showUI = vm.newFunction("showUI", (html, options) => {
+        // SAFETY: the bundle passes `__html__` and an options object, which the expectation checks.
+        shown.push({ html: vm.dump(html) as string, options: vm.dump(options) as ShowUiOptions });
+      });
+      const install = vm.unwrapResult(
+        vm.evalCode(`(showUI, html) => {
+          globalThis.figma = { showUI, ui: { postMessage() {}, onmessage: undefined } };
+          globalThis.__html__ = html;
+          globalThis.setTimeout = () => 0;
+          globalThis.clearTimeout = () => {};
+          globalThis.console = { log() {}, warn() {}, error() {} };
+        }`)
+      );
+      const html = vm.newString(HTML);
+      vm.unwrapResult(vm.callFunction(install, vm.undefined, showUI, html)).dispose();
+      for (const handle of [html, install, showUI]) handle.dispose();
+      vm.unwrapResult(vm.evalCode(code, "code.js")).dispose();
+    } finally {
+      vm.dispose();
+    }
+    expect(shown).toEqual([{ html: HTML, options: { width: 560, height: 640, themeColors: true } }]);
   });
 
   it("answers a plan request with the kit's change lines", async () => {

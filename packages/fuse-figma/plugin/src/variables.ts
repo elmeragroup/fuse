@@ -66,7 +66,8 @@ export const loadKitVariables = Effect.fnUntraced(function* (figma: PluginAPI, n
   }
 
   const variablesByName = new Map<string, Variable>();
-  for (const variable of yield* Effect.promise(() => figma.variables.getLocalVariablesAsync())) {
+  const localVariables = yield* Effect.promise(() => figma.variables.getLocalVariablesAsync());
+  for (const variable of localVariables) {
     const collection = collections.find((candidate) => candidate.id === variable.variableCollectionId);
     if (collection !== undefined) {
       variablesByName.set(`${collection.name}/${variable.name}`, variable);
