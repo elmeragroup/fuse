@@ -192,6 +192,7 @@ const ROLE_TINTS = [
   ["input", 50],
   ["sidebar-foreground", 70],
   ["foreground", 10],
+  ["muted-foreground", 50],
 ] as const satisfies readonly (readonly [ColorTokenName, number])[];
 
 /** The tokens of the dimension kind. */

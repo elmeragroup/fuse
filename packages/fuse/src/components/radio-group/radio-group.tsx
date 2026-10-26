@@ -16,9 +16,10 @@ import { FieldItem } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
 import { SelectionGroupLayout, SelectionItemGroup } from "../selection-item/selection-item";
 import { selectionGroupOrientationVariants } from "../selection-item/selection-item-variants";
-import { radioIconButtonVariants, radioVariants } from "./radio-group-variants";
+import { radioIconButtonVariants, radioRowVariants, radioVariants } from "./radio-group-variants";
 
 const slots = radioVariants();
+const rowSlots = radioRowVariants();
 
 /**
  * Unlabeled 16px radio over the base-ui primitive. Client component, because base-ui
@@ -203,13 +204,10 @@ export type RadioProps = {
  */
 export function Radio({ value, isDisabled, className, children }: RadioProps): ReactElement {
   return (
-    <FieldItem className={cn("flex", className)}>
-      <FieldPrimitive.Label className="text-sm flex cursor-pointer items-center gap-2 has-disabled:cursor-not-allowed">
+    <FieldItem className={cn(rowSlots.root(), className)}>
+      <FieldPrimitive.Label className={rowSlots.label()}>
         <RadioGroupItem value={value} disabled={isDisabled} />
-        {/* The span keeps the label's flex row for its children, so text and a badge stay
-            8px apart and centered. It dims from the control's `data-disabled` through
-            `peer`, so the control is not dimmed twice. */}
-        <span className="flex items-center gap-2 peer-data-disabled:opacity-50">{children}</span>
+        <span className={rowSlots.content()}>{children}</span>
       </FieldPrimitive.Label>
     </FieldItem>
   );

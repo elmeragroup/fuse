@@ -19,10 +19,12 @@
  * draw those rows from. Command's list shell comes along
  * from `styles/`, since `Command.List` adds it to the list recipe to pad its rows and publish their
  * corner. InputGroup's root chrome comes along from `styles/field-box.ts`, where it sits beside the
- * field box it shares.
+ * field box it shares. The overlay corner close position comes along from `overlay/`, which Dialog
+ * and Sheet add to their close button.
  */
 
 export { accordionVariants } from "./accordion/accordion-variants";
+export { alertDialogVariants } from "./alert-dialog/alert-dialog-variants";
 export { alertVariants } from "./alert/alert-variants";
 export {
   avatarFallbackClass,
@@ -37,9 +39,12 @@ export { checkboxVariants } from "./checkbox/checkbox-variants";
 export { comboboxVariants } from "./combobox/combobox-variants";
 export { commandVariants } from "./command/command-variants";
 export { confirmButtonVariants } from "./confirm-button/confirm-button-variants";
+export { dialogContentVariants, dialogVariants } from "./dialog/dialog-variants";
 export { dropdownMenuVariants } from "./dropdown-menu/dropdown-menu-variants";
 export { emptyMediaVariants, emptyVariants } from "./empty/empty-variants";
 export { fieldVariants } from "./field/field-variants";
+export { fieldFrameVariants } from "./field/field-frame-variants";
+export { fileUploadVariants } from "./file-upload/file-upload-variants";
 export { inputClass } from "./input/input-class";
 export { inputGroupInputControlClass } from "./input-group/input-group-class";
 export { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group/input-group-variants";
@@ -60,9 +65,11 @@ export {
   menuItemIndicatorRoomClass,
   menuSeparatorClass,
 } from "./overlay/menu-row-classes";
+export { numberFieldVariants } from "./number-field/number-field-variants";
+export { overlayCornerCloseClass } from "./overlay/overlay-corner-close-class";
 export { paginationVariants } from "./pagination/pagination-variants";
 export { popoverVariants } from "./popover/popover-variants";
-export { radioIconButtonVariants, radioVariants } from "./radio-group/radio-group-variants";
+export { radioIconButtonVariants, radioRowVariants, radioVariants } from "./radio-group/radio-group-variants";
 export { selectContentVariants, selectTriggerVariants } from "./select/select-variants";
 export { separatorClass } from "./separator/separator-class";
 export {
@@ -89,7 +96,12 @@ export { SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON } from "./sidebar/sidebar-width";
 export { skeletonClass } from "./skeleton/skeleton-class";
 export { switchVariants } from "./switch/switch-variants";
 export { textareaClass } from "./textarea/textarea-class";
+export { textareaFieldVariants } from "./textarea-field/textarea-field-variants";
+export { textFieldVariants } from "./text-field/text-field-variants";
 export { toggleVariants } from "./toggle/toggle-variants";
+export { toggleGroupVariants } from "./toggle-group/toggle-group-variants";
+export { toolbarVariants } from "./toolbar/toolbar-variants";
+export { tooltipVariants } from "./tooltip/tooltip-variants";
 export { cellVariants } from "../styles/calendar";
 export { cn } from "../styles/cn";
 export { commandListShellClass } from "../styles/inner-corner/command";

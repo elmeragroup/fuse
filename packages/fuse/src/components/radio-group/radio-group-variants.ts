@@ -70,3 +70,22 @@ export const radioVariants = tv({
     dot: "absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-foreground",
   },
 });
+
+/**
+ * Runtime-free recipe for `Radio`, the labelled row. Not exported from
+ * `@elmeragroup/fuse/radio-group`; the workspace-only recipe catalog re-exports it for the Figma
+ * component sync.
+ *
+ * - `root` is the row's `Field.Item`.
+ * - `label` is the `Field.Label` around the circle and the content, the whole row's click target.
+ * - `content` keeps the label's flex row for its children, so text and a badge stay 8px apart and
+ *   centred. It dims from the circle's `data-disabled` through `peer`, so the circle, which dims
+ *   itself, is not dimmed twice.
+ */
+export const radioRowVariants = tv({
+  slots: {
+    root: "flex",
+    label: "text-sm flex cursor-pointer items-center gap-2 has-disabled:cursor-not-allowed",
+    content: "flex items-center gap-2 peer-data-disabled:opacity-50",
+  },
+});

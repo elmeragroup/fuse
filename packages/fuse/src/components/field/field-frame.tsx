@@ -3,35 +3,9 @@ import type { ReactElement, ReactNode } from "react";
 import { Check } from "../../icons/generated/check";
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
-import { tv } from "../../styles/tv";
 import { iconCrossfadeHidden, iconCrossfadeShown, iconCrossfadeTransition } from "../../styles/utils";
 import { FieldDescription, FieldError, FieldLabel, FieldLegend, FieldRoot, FieldSet } from "./field";
-
-/**
- * Package-private FieldFrame layout. No axes — the frame
- * has one layout; TextField's public recipe composes these slots under its own
- * names. The class names below are the same slots, resolved once.
- */
-export const fieldFrameVariants = tv({
-  slots: {
-    root: "group flex flex-col gap-1",
-    labelRow: "flex items-center justify-between",
-    label: "",
-    content: "flex flex-col gap-1",
-    description: "text-pretty",
-  },
-  variants: {
-    /**
-     * A legend-mode description sits directly under a visible legend (Figma). The legend gives
-     * up its trailing margin and the description cancels the fieldset's gap above it;
-     * the fieldset gap still separates it from the options. Without a description the
-     * legend keeps its margin, so the label-to-options distance does not change.
-     */
-    legendDescription: {
-      true: { label: "mb-0", description: "-mt-(--surface-gap-md)" },
-    },
-  },
-});
+import { fieldFrameVariants } from "./field-frame-variants";
 
 const fieldFrameSlots = fieldFrameVariants();
 const legendDescriptionSlots = fieldFrameVariants({ legendDescription: true });
