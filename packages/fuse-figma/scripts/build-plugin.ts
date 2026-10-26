@@ -5,6 +5,7 @@
  * under Plugins → Development to run it.
  */
 
+import { Effect } from "effect";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -17,7 +18,7 @@ const specPath = `${distDir}spec.json`;
 const coveragePath = `${distDir}coverage.md`;
 const codePath = `${distDir}code.js`;
 
-const { spec, coverage } = await buildKit();
+const { spec, coverage } = await Effect.runPromise(buildKit());
 mkdirSync(distDir, { recursive: true });
 writeFileSync(specPath, `${JSON.stringify(spec, null, 2)}\n`);
 writeFileSync(coveragePath, renderCoverage(coverage));

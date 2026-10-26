@@ -518,8 +518,8 @@
 import * as Hex from "@elmeragroup/color/hex";
 import { getOrThrow } from "@elmeragroup/color/result";
 
+import { sha1Hex } from "../../src/components/sha1.ts";
 import type { CollectionSpec, VariableValue as SyncedValue } from "../../src/variable-set.ts";
-import { sha1Hex } from "./sha1.ts";
 
 /** What a test sets up the fake file with. */
 export type FakeFigmaOptions = {

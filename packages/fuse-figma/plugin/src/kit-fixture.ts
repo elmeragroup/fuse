@@ -5,8 +5,9 @@
  * lists as it creates the pages and previews. `test/kit-inventory.ts` names the pages, sets and
  * previews.
  */
-import { Result } from "effect";
+import { Effect, Result } from "effect";
 
+import type { KitContradiction } from "../../src/components/kit-check.ts";
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import type { AliasCycle, CollectionSpec, InvalidVariableSet, VariableSet } from "../../src/variable-set.ts";
 import { ICONS_PAGE, KIT_PAGES, previewsOn } from "../../test/kit-inventory.ts";
@@ -24,7 +25,9 @@ import { reconcileKit } from "./reconcile.ts";
 const SPEC_BUILDER = "../../src/components/build-kit.ts";
 const TOKEN_SYNC = "../../src/fuse-variable-set.ts";
 
-type SpecBuilder = { readonly buildKit: () => Promise<{ readonly spec: KitSpec }> };
+type SpecBuilder = {
+  readonly buildKit: () => Effect.Effect<{ readonly spec: KitSpec }, KitContradiction>;
+};
 type TokenSync = {
   readonly fuseVariableSet: () => Result.Result<VariableSet, InvalidVariableSet | AliasCycle>;
 };
@@ -47,7 +50,7 @@ async function load(): Promise<KitFixture> {
   if (Result.isFailure(variableSet)) {
     throw new Error(`the Fuse variable set does not build: ${String(variableSet.failure)}`);
   }
-  const { spec } = await builder.buildKit();
+  const { spec } = await Effect.runPromise(builder.buildKit());
   return { kit: spec, collections: variableSet.success.collections };
 }
 

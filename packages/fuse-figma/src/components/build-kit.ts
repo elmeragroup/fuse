@@ -3,7 +3,7 @@
  * component sets of `kit-registry.ts` and four preview frames, and an `Icons` page holding an
  * icon component for every Fuse icon. It also builds the coverage table of every recipe class.
  */
-import { Result } from "effect";
+import { Effect, Result } from "effect";
 
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
@@ -15,6 +15,7 @@ import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { makeVariableIndex, pinnedIndex, readColor } from "./css-values";
 import type { ModeView, VariableIndex } from "./css-values";
 import { fuseIcons, ICON_SIZE } from "./icon-library";
+import { checkKitSpec } from "./kit-check";
 import { KIT } from "./kit-registry";
 import type { KitPage } from "./kit-registry";
 import { walkLayers } from "./kit-spec";
@@ -180,20 +181,24 @@ export async function buildComponentSets(): Promise<readonly KitComponentSet[]> 
   return buildSets(kitVariables());
 }
 
-/**
- * Build the kit and its coverage.
- *
- * @returns The kit spec the plugin bundles, and one coverage row per distinct outcome of each
- *   recipe declaration.
- * @throws When the variable set does not build, or a preview names a mode it lacks.
- */
-export async function buildKit(): Promise<{
+/** The kit spec the plugin bundles, and the coverage of every recipe declaration. */
+export type BuiltKit = {
   readonly spec: KitSpec;
+  /** One coverage row per distinct outcome of each recipe declaration. */
   readonly coverage: readonly CoverageRow[];
-}> {
+};
+
+/**
+ * Build the kit and its coverage, and check the kit against itself, so a spec the plugin would
+ * refuse fails the build.
+ *
+ * @returns The kit and its coverage, or the `KitContradiction` the check found. The Effect dies
+ *   when the variable set does not build or a preview names a mode it lacks.
+ */
+export const buildKit = Effect.fn("buildKit")(function* () {
   const kitVariableSet = kitVariables();
   const { collections, variables } = kitVariableSet;
-  const built = await buildSets(kitVariableSet);
+  const built = yield* Effect.promise(() => buildSets(kitVariableSet));
   const glyphColor = readColor("var(--foreground)", variables);
   if (glyphColor === undefined) {
     throw new Error("the variable set has no foreground for the icon glyphs");
@@ -204,7 +209,7 @@ export async function buildKit(): Promise<{
     page: ICONS_PAGE.key,
     size: ICON_SIZE,
     color: glyphColor,
-    icons: await fuseIcons(),
+    icons: yield* Effect.promise(() => fuseIcons()),
   };
   for (const { componentSet } of built) {
     checkIconReferences(componentSet, icons);
@@ -241,21 +246,21 @@ export async function buildKit(): Promise<{
     })
   );
 
-  return {
-    spec: {
-      pages: [...componentPages.map(pageSpec), ICONS_PAGE],
-      fonts: [...new Set(built.flatMap((set) => set.fontStyles))].map((style) => ({
-        family: defaultFontFamily(),
-        style,
-      })),
-      glyphFont: GLYPH_FONT,
-      icons,
-      componentSets: built.map((set) => set.componentSet),
-      previews,
-    },
-    coverage: built.flatMap((set) => set.coverage),
+  const spec: KitSpec = {
+    pages: [...componentPages.map(pageSpec), ICONS_PAGE],
+    fonts: [...new Set(built.flatMap((set) => set.fontStyles))].map((style) => ({
+      family: defaultFontFamily(),
+      style,
+    })),
+    glyphFont: GLYPH_FONT,
+    icons,
+    componentSets: built.map((set) => set.componentSet),
+    previews,
   };
-}
+  const checked = yield* Effect.fromResult(checkKitSpec(spec, (text) => Buffer.from(text, "base64")));
+  const kit: BuiltKit = { spec: checked, coverage: built.flatMap((set) => set.coverage) };
+  return kit;
+});
 
 /**
  * Check that every icon a set places, and every icon its swap properties start with, is one of

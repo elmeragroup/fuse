@@ -7,6 +7,7 @@
  * The whole kit's invariants sit here too. A later set's field expectations sit beside its
  * definition, in `<name>-kit.test.ts`, as Checkbox's do.
  */
+import { Effect, Result } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { PHOSPHOR_ICON_NAMES, buttonVariants } from "@elmeragroup/fuse/recipe-catalog";
@@ -31,6 +32,7 @@ import { ICONS_PAGE, KIT_PAGES, pageKey, previewsOn } from "../../test/kit-inven
 import { buildKit, checkIconReferences } from "./build-kit";
 import type { IconSlot } from "./component-spec";
 import type { CoverageRow } from "./coverage";
+import { checkKitSpec, KitContradiction } from "./kit-check";
 import { glyphFonts, iconKey } from "./kit-spec";
 import type { ChildLayerSpec, ColorSpec, ComponentRootSpec, ComponentSetSpec, KitSpec } from "./kit-spec";
 
@@ -38,7 +40,7 @@ let spec: KitSpec;
 let coverage: readonly CoverageRow[];
 
 beforeAll(async () => {
-  ({ spec, coverage } = await buildKit());
+  ({ spec, coverage } = await Effect.runPromise(buildKit()));
 });
 
 const transparent = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0 } } as const;
@@ -905,6 +907,56 @@ describe("the preview frames", () => {
     expect([spec.glyphFont, glyphFonts(spec)]).toEqual([
       { family: "Inter", glyphs: ["\u21E7", "\u2318"] },
       [{ family: "Inter", style: "Regular" }],
+    ]);
+  });
+});
+
+/**
+ * The contradiction the kit check finds in a kit.
+ *
+ * @param kit - The kit.
+ * @returns The check's failure.
+ * @throws When the check passes the kit.
+ */
+function contradictionIn(kit: KitSpec): KitContradiction {
+  const checked = checkKitSpec(kit, (text) => Buffer.from(text, "base64"));
+  if (Result.isSuccess(checked)) {
+    throw new Error("the kit check passed a kit that contradicts itself");
+  }
+  return checked.failure;
+}
+
+describe("the kit check the build runs", () => {
+  it("passes the built kit", () => {
+    expect(Result.isSuccess(checkKitSpec(spec, (text) => Buffer.from(text, "base64")))).toBe(true);
+  });
+
+  it("refuses a kit that lists a page key twice", () => {
+    const [first] = spec.pages;
+    if (first === undefined) {
+      throw new Error("the built kit lists no page");
+    }
+    const failure = contradictionIn({ ...spec, pages: [...spec.pages, first] });
+    expect([failure, failure.message]).toEqual([
+      expect.any(KitContradiction),
+      `The kit lists the page key ${first.key} twice.`,
+    ]);
+  });
+
+  it("refuses a preview that places a variant its set lacks", () => {
+    const [preview, ...others] = spec.previews;
+    const [group, ...rest] = preview?.groups ?? [];
+    if (preview === undefined || group === undefined) {
+      throw new Error("the built kit has no preview group");
+    }
+    const lost = { ...group, variants: [...group.variants, "button/variant=missing"] };
+    const failure = contradictionIn({
+      ...spec,
+      previews: [{ ...preview, groups: [lost, ...rest] }, ...others],
+    });
+    expect([failure, failure.message]).toEqual([
+      expect.any(KitContradiction),
+      `${preview.name} places button/variant=missing, which ${group.name} does not define.`,
     ]);
   });
 });

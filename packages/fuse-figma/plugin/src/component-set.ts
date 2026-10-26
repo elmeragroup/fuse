@@ -5,6 +5,7 @@
  * ids and component keys, and instances in other files keep following them.
  */
 
+import { columnAxisOf, gridCell, variantName } from "../../src/components/kit-check.ts";
 import { walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   AxisSpec,
@@ -57,31 +58,6 @@ type PlannedContents = {
 const isComponentSet = (node: BaseNode): node is ComponentSetNode => node.type === "COMPONENT_SET";
 const isComponent = (node: BaseNode): node is ComponentNode => node.type === "COMPONENT";
 
-/**
- * A variant's Figma name, which is also where Figma reads its variant property values from.
- *
- * @param spec - The component set.
- * @param variant - The variant.
- * @returns `prop=value, prop=value` in the set's axis order.
- */
-function variantName(spec: ComponentSetSpec, variant: VariantSpec): string {
-  return spec.axes
-    .map((axis) => {
-      const value = variant.properties[axis.name];
-      if (value === undefined) {
-        throw new Error(`${spec.name}: the variant ${variant.key} sets no ${axis.name}.`);
-      }
-      return `${axis.name}=${value}`;
-    })
-    .join(", ");
-}
-
-/** A cell of the variant grid, counted from the top left. */
-type GridCell = {
-  readonly row: number;
-  readonly column: number;
-};
-
 /** A variant's place in the grid, and the set's size around the grid. */
 type GridLayout = {
   readonly cells: readonly PlacedVariant[];
@@ -96,77 +72,10 @@ type PlacedVariant = {
   readonly y: number;
 };
 
-function columnAxisOf(spec: ComponentSetSpec): AxisSpec {
-  const columnAxis = spec.axes.find((axis) => axis.name === spec.columnAxis);
-  if (columnAxis === undefined) {
-    throw new Error(`${spec.name}: the column axis ${spec.columnAxis} is not one of the set's axes.`);
-  }
-  return columnAxis;
-}
-
 function rowCount(spec: ComponentSetSpec, columnAxis: AxisSpec): number {
   return spec.axes
     .filter((axis) => axis !== columnAxis)
     .reduce((count, axis) => count * axis.values.length, 1);
-}
-
-/**
- * A variant's cell in the grid. Its column is its value on the column axis, and its row is its
- * position among the combinations of the other axes, in axis order.
- */
-function gridCell(spec: ComponentSetSpec, variant: VariantSpec): GridCell {
-  let row = 0;
-  let column = 0;
-  for (const axis of spec.axes) {
-    const index = axis.values.indexOf(variant.properties[axis.name] ?? "");
-    if (index < 0) {
-      throw new Error(`${spec.name}: the variant ${variant.key} has a ${axis.name} the axis does not list.`);
-    }
-    if (axis.name === spec.columnAxis) {
-      column = index;
-    } else {
-      row = row * axis.values.length + index;
-    }
-  }
-  return { row, column };
-}
-
-/**
- * Check that a component set's spec agrees with itself. Every variant sets a listed value on
- * each axis, the column axis is one of the axes, every text layer links a TEXT property and every
- * frame or instance a BOOLEAN property the set defines, and no two properties share a name, since
- * the plan finds each property's id by its name. The planning pass runs this before it records any
- * write, because an operation that creates a set plans the set's contents when it runs.
- *
- * @param spec - The component set.
- * @throws When the spec contradicts itself.
- */
-export function checkComponentSet(spec: ComponentSetSpec): void {
-  columnAxisOf(spec);
-  const texts = spec.textProperties.map((property) => property.name);
-  const booleans = (spec.booleanProperties ?? []).map((property) => property.name);
-  const names = [...texts, ...booleans, ...spec.swapProperties.map((property) => property.name)];
-  const twice = names.find((name, index) => names.indexOf(name) !== index);
-  if (twice !== undefined) {
-    throw new Error(
-      `${spec.name} names two properties ${twice}, and the plugin finds each property by its name.`
-    );
-  }
-  for (const variant of spec.variants) {
-    variantName(spec, variant);
-    gridCell(spec, variant);
-    for (const layer of walkLayers(variant.root)) {
-      const link =
-        layer.kind === "text"
-          ? { property: layer.textProperty, defined: texts }
-          : { property: layer.visibleProperty, defined: booleans };
-      if (link.property !== undefined && !link.defined.includes(link.property)) {
-        throw new Error(
-          `${spec.name}: the variant ${variant.key} links ${link.property}, which the set does not define.`
-        );
-      }
-    }
-  }
 }
 
 function gridLayout(spec: ComponentSetSpec, nodeOf: (variant: VariantSpec) => ComponentNode): GridLayout {

@@ -16,12 +16,13 @@ import { FigmaPlugin, Kit } from "./services.ts";
  * Plan the Button kit on a file and return the error that stopped the run.
  *
  * @param figma - The plugin API over the file.
+ * @param kit - The kit, the Button kit unless the case names another.
  * @returns The error.
  */
-const failureOn = (figma: PluginAPI) =>
+const failureOn = (figma: PluginAPI, kit = KIT) =>
   reconcile(false).pipe(
     Effect.provideService(FigmaPlugin, figma),
-    Effect.provideService(Kit, KIT),
+    Effect.provideService(Kit, kit),
     Effect.flip
   );
 
@@ -55,6 +56,19 @@ describe("reconcile's failures", () => {
           message:
             "Button / Label needs the font Comic Sans Medium, which Figma cannot load. Install it, then run the plugin again.",
         }
+      );
+    })
+  );
+
+  it.effect("fails with KitContradiction on a kit that lists a page key twice", () =>
+    Effect.gen(function* () {
+      const error = yield* failureOn(fixture("Roboto").file.figma, {
+        ...KIT,
+        pages: [...KIT.pages, ...KIT.pages],
+      });
+      assert.deepStrictEqual(
+        { tag: error._tag, message: error.message },
+        { tag: "KitContradiction", message: "The kit lists the page key page twice." }
       );
     })
   );

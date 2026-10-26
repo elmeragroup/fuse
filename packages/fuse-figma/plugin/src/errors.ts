@@ -9,6 +9,8 @@
 
 import { Data, Effect } from "effect";
 
+import { KitContradiction } from "../../src/components/kit-check.ts";
+
 /** The file lacks a collection, variable or mode the kit binds, or holds one of another type. */
 export class FileNotSynced extends Data.TaggedError("FileNotSynced")<{
   readonly message: string;
@@ -47,6 +49,7 @@ export class UnknownRequest extends Data.TaggedError("UnknownRequest")<{
 
 /** A failure the plugin reports to the designer. */
 export type PluginError =
+  | KitContradiction
   | FileNotSynced
   | DuplicateCollections
   | LayerConflict
@@ -54,7 +57,8 @@ export type PluginError =
   | UnknownRequest;
 
 /**
- * Whether a thrown value is a failure the plugin reports, rather than a bug.
+ * Whether a thrown value is a failure the plugin reports, rather than a bug. A `KitContradiction`
+ * counts, since a hand-written spec can contradict itself.
  *
  * @param thrown - What the planning engine threw.
  * @returns True for one of this module's errors.
@@ -62,6 +66,7 @@ export type PluginError =
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- rejection boundary: this classifies what a promise rejected with, which has no static type
 function isPluginError(thrown: unknown): thrown is PluginError {
   return (
+    thrown instanceof KitContradiction ||
     thrown instanceof FileNotSynced ||
     thrown instanceof DuplicateCollections ||
     thrown instanceof LayerConflict ||
