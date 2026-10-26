@@ -16,6 +16,7 @@ import type {
 } from "../../src/components/kit-spec.ts";
 import { fontLayers, planChildren, requireNewSetFonts, requireNewTextFonts } from "./child-layers.ts";
 import type { LayerLinks, PropertyIds } from "./child-layers.ts";
+import { planSetProperty } from "./component-properties.ts";
 import { near, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import type { PlannedIcon } from "./icons.ts";
@@ -174,22 +175,21 @@ function planValueProperties(
   ids: Map<string, string>
 ): void {
   for (const property of properties) {
-    const found = Object.entries(set.componentPropertyDefinitions).find(
-      ([id, definition]) => definition.type === type && id.split("#")[0] === property.name
+    planSetProperty(
+      run.plan,
+      set,
+      spec.name,
+      {
+        name: property.name,
+        type,
+        addLine: `add the ${KIND_NAMES[type]} property ${property.name}`,
+        add: () => set.addComponentProperty(property.name, type, property.defaultValue),
+        holds: (definition) => definition.defaultValue === property.defaultValue,
+        editLine: `${property.name} default → ${String(property.defaultValue)}`,
+        edit: (id) => set.editComponentProperty(id, { defaultValue: property.defaultValue }),
+      },
+      ids
     );
-    if (found === undefined) {
-      change(run.plan, spec.name, `add the ${KIND_NAMES[type]} property ${property.name}`, () => {
-        ids.set(property.name, set.addComponentProperty(property.name, type, property.defaultValue));
-      });
-      continue;
-    }
-    const [id, definition] = found;
-    ids.set(property.name, id);
-    if (definition.defaultValue !== property.defaultValue) {
-      change(run.plan, spec.name, `${property.name} default → ${String(property.defaultValue)}`, () => {
-        ids.set(property.name, set.editComponentProperty(id, { defaultValue: property.defaultValue }));
-      });
-    }
   }
 }
 
@@ -231,44 +231,31 @@ function planSwapProperties(
         `${spec.name}: the ${property.name} property starts with ${property.defaultIcon}, which the library lacks.`
       );
     }
-    const found = Object.entries(set.componentPropertyDefinitions).find(
-      ([id, definition]) => definition.type === "INSTANCE_SWAP" && id.split("#")[0] === property.name
+    planSetProperty(
+      run.plan,
+      set,
+      spec.name,
+      {
+        name: property.name,
+        type: "INSTANCE_SWAP",
+        addLine: `add the swap property ${property.name}, starting with ${icon.spec.name}`,
+        add: () =>
+          set.addComponentProperty(property.name, "INSTANCE_SWAP", icon.node.get().id, {
+            preferredValues: preferredIcons(icons),
+          }),
+        holds: (definition) =>
+          icon.node.existing !== undefined &&
+          definition.defaultValue === icon.node.existing.id &&
+          offersLibrary(definition, icons),
+        editLine: `${property.name} → ${icon.spec.name} and the ${icons.size} library icons`,
+        edit: (id) =>
+          set.editComponentProperty(id, {
+            defaultValue: icon.node.get().id,
+            preferredValues: preferredIcons(icons),
+          }),
+      },
+      ids
     );
-    if (found === undefined) {
-      change(
-        run.plan,
-        spec.name,
-        `add the swap property ${property.name}, starting with ${icon.spec.name}`,
-        () => {
-          ids.set(
-            property.name,
-            set.addComponentProperty(property.name, "INSTANCE_SWAP", icon.node.get().id, {
-              preferredValues: preferredIcons(icons),
-            })
-          );
-        }
-      );
-      continue;
-    }
-    const [id, definition] = found;
-    ids.set(property.name, id);
-    const starts = icon.node.existing !== undefined && definition.defaultValue === icon.node.existing.id;
-    if (!starts || !offersLibrary(definition, icons)) {
-      change(
-        run.plan,
-        spec.name,
-        `${property.name} → ${icon.spec.name} and the ${icons.size} library icons`,
-        () => {
-          ids.set(
-            property.name,
-            set.editComponentProperty(id, {
-              defaultValue: icon.node.get().id,
-              preferredValues: preferredIcons(icons),
-            })
-          );
-        }
-      );
-    }
   }
 }
 

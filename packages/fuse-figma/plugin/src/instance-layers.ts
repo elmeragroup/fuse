@@ -35,6 +35,7 @@ import type {
   VariantSpec,
 } from "../../src/components/kit-spec.ts";
 import { planAnchoring } from "./anchoring.ts";
+import { findProperty, propertyName } from "./component-properties.ts";
 import type { PlannedSet } from "./component-set.ts";
 import {
   heldFonts,
@@ -177,11 +178,8 @@ function differingProperties(
   icons: ReadonlyMap<string, PlannedIcon>,
   label: string
 ): readonly DesiredProperty[] {
-  const held = Object.entries(instance.componentProperties);
   return desiredProperties(spec, inner, icons, label).filter((desired) => {
-    const found = held.find(
-      ([id, property]) => property.type === desired.type && id.split("#")[0] === desired.name
-    );
+    const found = findProperty(instance.componentProperties, desired.type, desired.name);
     return found === undefined || !desired.holds(found[1].value);
   });
 }
@@ -323,10 +321,9 @@ function differingNested(
   nested: NestedPropertiesSpec,
   label: string
 ): Readonly<Record<string, string>> {
-  const held = Object.entries(target.componentProperties);
   return Object.fromEntries(
     Object.entries(nested.text).flatMap(([name, value]) => {
-      const found = held.find(([id, property]) => property.type === "TEXT" && id.split("#")[0] === name);
+      const found = findProperty(target.componentProperties, "TEXT", name);
       if (found === undefined) {
         throw new Error(`${label}: the nested instance has no TEXT property ${name} to set.`);
       }
@@ -356,7 +353,7 @@ async function planNested(
       continue;
     }
     const described = Object.entries(nested.text)
-      .filter(([name]) => Object.keys(differ).some((id) => id.split("#")[0] === name))
+      .filter(([name]) => Object.keys(differ).some((id) => propertyName(id) === name))
       .map(([name, value]) => `${name} ${JSON.stringify(value)}`)
       .join(", ");
     change(run.plan, at, `properties → ${described}`, async () => {
