@@ -3,9 +3,9 @@
  * check in `kit-check.ts` owns. Each keeps the message the build printed before it had types.
  *
  * The build's own checks return `KitSourceInvalid` as a `Result`, and `buildKit` lifts each where
- * it orchestrates. `runTool` turns a tool's rejection into `KitToolFailed`. `KitUnmappable` is the
- * one the mapping throws: a recipe or a kit definition the mapping cannot draw stops the build as a
- * defect of the kit's own definitions.
+ * it orchestrates. `runTool` turns a tool's rejection into `KitToolFailed`. The mapping throws
+ * `KitUnmappable` from deep inside, and `mapSets` in `build-kit.ts` catches it in one place and
+ * returns it as a `Result`.
  */
 
 import { Data, Effect } from "effect";
@@ -13,10 +13,10 @@ import { Data, Effect } from "effect";
 import type { KitContradiction } from "./kit-check.ts";
 
 /**
- * A recipe or a kit definition asks for a layer, part or property the build cannot map to Figma.
- * The mapping throws it from deep inside the CSS cascade and the part mappers, class constructors
- * and per-cell callbacks among them, where no `Result` can travel, so it reaches `buildKit` as a
- * defect with its message. Fixing it means changing a kit definition or the mapping.
+ * A recipe or a kit definition asks for a layer, part or property the build cannot map to Figma,
+ * such as two labels that give one TEXT property two defaults. The mapping throws it from deep
+ * inside the CSS cascade and the part mappers, class constructors and per-cell callbacks among
+ * them, and `mapSets` in `build-kit.ts` returns it as a `Result`, so `buildKit` fails with it.
  */
 export class KitUnmappable extends Data.TaggedError("KitUnmappable")<{
   readonly message: string;
@@ -41,7 +41,7 @@ export class KitToolFailed extends Data.TaggedError("KitToolFailed")<{
 }> {}
 
 /** A failure `buildKit` reports. */
-export type KitBuildError = KitContradiction | KitSourceInvalid | KitToolFailed;
+export type KitBuildError = KitContradiction | KitUnmappable | KitSourceInvalid | KitToolFailed;
 
 /**
  * Run a tool's promise as an Effect. A `KitSourceInvalid` the tool's callbacks threw keeps its

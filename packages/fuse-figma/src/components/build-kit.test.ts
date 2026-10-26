@@ -28,10 +28,11 @@ import {
   UNLIMITED,
   variantRoot,
 } from "../../test/built-kit";
-import { buildFixture, chip } from "../../test/fixture-sets";
+import { buildFixture, chip, dot } from "../../test/fixture-sets";
 import { ICONS_PAGE, KIT_PAGES, pageKey, previewsOn } from "../../test/kit-inventory";
+import { KitUnmappable } from "./build-errors";
 import { buildKit, checkIconReferences } from "./build-kit";
-import type { IconSlot } from "./component-spec";
+import type { IconSlot, PartDefinition } from "./component-spec";
 import type { CoverageRow } from "./coverage";
 import { checkKitSpec, KitContradiction } from "./kit-check";
 import { KIT } from "./kit-registry";
@@ -928,6 +929,36 @@ function contradictionIn(kit: KitSpec): KitContradiction {
   }
   return checked.failure;
 }
+
+describe("the failures the build reports", () => {
+  it("fails with KitUnmappable for a registry whose labels give one TEXT property two defaults", async () => {
+    const kbd = KIT.find((entry) => entry.definition.key === "kbd");
+    if (kbd === undefined) {
+      throw new Error("the registry has no Kbd entry");
+    }
+    const labelled = (key: string, characters: string): PartDefinition => ({
+      ...dot(""),
+      key,
+      slot: `chip-${key}`,
+      label: { key: "label", name: "label", characters, textProperty: "Label", shownIn: () => true },
+    });
+    const definition = chip("font-sans text-[14px] leading-[20px] text-[#000000] flex", {
+      parts: [labelled("title", "Storage"), labelled("hint", "Used")],
+    });
+    const built = await Effect.runPromise(
+      Effect.result(
+        buildKit([{ definition, page: kbd.page, previewCells: [{ state: "rest" }] }]).pipe(
+          Effect.provide(NodeFileSystem.layer)
+        )
+      )
+    );
+    const failure = Result.isFailure(built) ? built.failure : undefined;
+    expect([failure, failure?.message]).toEqual([
+      expect.any(KitUnmappable),
+      'Chip: the labels chip-title / label and chip-hint / label both set the Label property, one starting as "Storage" and one as "Used". A TEXT property holds one default, so give them one text or a property each.',
+    ]);
+  });
+});
 
 describe("the kit check the build runs", () => {
   it("fails the build of a registry whose preview places a cell its set does not draw", async () => {

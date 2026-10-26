@@ -9,7 +9,7 @@ import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
 import { fuseVariableSet } from "../fuse-variable-set";
 import type { CollectionSpec, VariableSpec } from "../variable-set";
-import { KitSourceInvalid } from "./build-errors";
+import { KitSourceInvalid, KitUnmappable } from "./build-errors";
 import { buildSetsInOrder, definitionClasses, variantKey } from "./component-spec";
 import type { BuiltComponent, OuterDeclaration } from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
@@ -164,6 +164,30 @@ function modeViews(
     });
 }
 
+/**
+ * Map the registry's sets, in order. The mapping throws `KitUnmappable` from deep in the cascade and
+ * the part mappers, where a definition asks for what Figma cannot draw, and this is the one place
+ * that catches it, as `checkKitSpec` catches `KitContradiction`.
+ *
+ * @param registry - The sets to build.
+ * @param context - What the mapping reads.
+ * @returns Each entry and its built set, or the `KitUnmappable` the mapping threw.
+ * @throws Any other error, a defect of the mapping.
+ */
+function mapSets(
+  registry: readonly KitEntry[],
+  context: Parameters<typeof buildSetsInOrder>[1]
+): Result.Result<ReturnType<typeof buildSetsInOrder<KitEntry>>, KitUnmappable> {
+  try {
+    return Result.succeed(buildSetsInOrder(registry, context));
+  } catch (thrown) {
+    if (thrown instanceof KitUnmappable) {
+      return Result.fail(thrown);
+    }
+    throw thrown;
+  }
+}
+
 const buildSets = Effect.fnUntraced(function* (
   { variables, modes }: KitVariables,
   registry: readonly KitEntry[]
@@ -175,13 +199,10 @@ const buildSets = Effect.fnUntraced(function* (
   // Badge sets no border color, so its stroke binds `border`.
   const borderColor = yield* Effect.fromResult(baseBorderColor(compiled));
   const base: readonly OuterDeclaration[] = [{ className: "fuse.css base layer", ...borderColor }];
-  const sets: readonly KitComponentSet[] = buildSetsInOrder(registry, {
-    compiled,
-    variables,
-    page: PAGE,
-    base,
-    modes,
-  }).map(([{ page }, set]) => ({
+  const mapped = yield* Effect.fromResult(
+    mapSets(registry, { compiled, variables, page: PAGE, base, modes })
+  );
+  const sets: readonly KitComponentSet[] = mapped.map(([{ page }, set]) => ({
     ...set,
     componentSet: { ...set.componentSet, page: pageSpec(page).key },
   }));
@@ -192,8 +213,8 @@ const buildSets = Effect.fnUntraced(function* (
  * Build the kit's component sets alone, without the icon library or the previews.
  *
  * @returns Each set of `KIT`, in its order and on its page, with the coverage of the recipe
- *   classes it read and the font styles its text uses. The Effect fails with `KitSourceInvalid` or
- *   `KitToolFailed`, as {@link buildKit} does.
+ *   classes it read and the font styles its text uses. The Effect fails with `KitUnmappable`,
+ *   `KitSourceInvalid` or `KitToolFailed`, as {@link buildKit} does.
  */
 export const buildComponentSets = Effect.fn("buildComponentSets")(function* () {
   return yield* buildSets(yield* Effect.fromResult(kitVariables()), KIT);
@@ -213,10 +234,9 @@ export type BuiltKit = {
  * @param registry - The sets to build, their pages and their preview cells. `figma:plugin` builds
  *   `KIT`.
  * @returns The kit and its coverage. The Effect fails with the `KitContradiction` the check found,
- *   with `KitSourceInvalid` where a Fuse source lacks what the kit needs, such as a mode a preview
- *   pins, and with `KitToolFailed` where Tailwind, rolldown or the temporary directory fails. A
- *   recipe or a definition the mapping cannot draw throws `KitUnmappable`, a defect of the kit's
- *   own definitions.
+ *   with `KitUnmappable` where a recipe or a definition asks for what Figma cannot draw, with
+ *   `KitSourceInvalid` where a Fuse source lacks what the kit needs, such as a mode a preview pins,
+ *   and with `KitToolFailed` where Tailwind, rolldown or the temporary directory fails.
  */
 export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitEntry[] = KIT) {
   const kitVariableSet = yield* Effect.fromResult(kitVariables());
