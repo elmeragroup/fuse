@@ -3,14 +3,13 @@
  * Each error keeps the message the plugin UI shows. The errors extend `Data.TaggedError`, because the
  * plugin bundle imports no `Schema`.
  *
- * The structural walk fails with these errors in its error channel. The leaf planners stay
- * synchronous and throw them, and `failOnThrown` turns such a throw back into a typed failure.
- * Any other throw stays a defect.
+ * Every one reaches a run's error channel as a failure. The kit check returns the file's and the
+ * spec's as a `Result` before any planner reads them, so a throw in a planner is a defect.
  */
 
-import { Data, Effect } from "effect";
+import { Data } from "effect";
 
-import { KitContradiction } from "../../src/components/kit-check.ts";
+import type { KitContradiction } from "../../src/components/kit-check.ts";
 
 /** The file lacks a collection, variable or mode the kit binds, or holds one of another type. */
 export class FileNotSynced extends Data.TaggedError("FileNotSynced")<{
@@ -64,37 +63,3 @@ export type PluginError =
   | FontUnavailable
   | KitNotApplied
   | UnknownRequest;
-
-/**
- * Whether a thrown value is a failure the plugin reports, rather than a bug. A `KitContradiction`
- * counts, since a hand-written spec can contradict itself.
- *
- * @param thrown - What the planning engine threw.
- * @returns True for one of this module's errors.
- */
-// oxlint-disable-next-line anti-slop/no-unknown-parameters -- rejection boundary: this classifies what a promise rejected with, which has no static type
-function isPluginError(thrown: unknown): thrown is PluginError {
-  return (
-    thrown instanceof KitContradiction ||
-    thrown instanceof FileNotSynced ||
-    thrown instanceof DuplicateCollections ||
-    thrown instanceof LayerConflict ||
-    thrown instanceof FontUnavailable ||
-    thrown instanceof KitNotApplied ||
-    thrown instanceof UnknownRequest
-  );
-}
-
-/**
- * Report a failure a planner threw as a typed error. The leaf planners stay synchronous and throw
- * the failures a designer can fix, such as a variable the file lacks, which an Effect sees as a
- * defect. This turns such a defect back into its error and leaves every other defect a defect.
- *
- * @param effect - The run.
- * @returns The run, failing with each plugin error a planner threw.
- */
-export function failOnThrown<A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E | PluginError, R> {
-  return Effect.catchDefect(effect, (defect) =>
-    isPluginError(defect) ? Effect.fail(defect) : Effect.die(defect)
-  );
-}

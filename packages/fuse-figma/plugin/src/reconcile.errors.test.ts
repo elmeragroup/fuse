@@ -72,4 +72,30 @@ describe("reconcile's failures", () => {
       );
     })
   );
+
+  it.effect("fails with FileNotSynced when a new label's family aliases a variable the file lacks", () =>
+    Effect.gen(function* () {
+      // The kit check finds `font-sans` by name. Its alias target is gone when the run follows it to
+      // require the font of a set it creates, as after a designer deletes the brand variable.
+      const { file } = fixture("Roboto", false);
+      const gone = file.variable("Fuse brand", "light/external/private/font-sans").id;
+      const variables: Pick<VariablesAPI, "getVariableByIdAsync"> = {
+        getVariableByIdAsync: (id) =>
+          id === gone ? Promise.resolve(null) : file.figma.variables.getVariableByIdAsync(id),
+      };
+      Reflect.setPrototypeOf(variables, file.figma.variables);
+      const figma = { variables };
+      Reflect.setPrototypeOf(figma, file.figma);
+      // SAFETY: the object holds every member of the fake file through its prototype, with one
+      // variables call that reports the brand variable gone.
+      const error = yield* failureOn(figma as PluginAPI);
+      if (error._tag !== "FileNotSynced") {
+        return assert.fail(`expected FileNotSynced, got ${error._tag}`);
+      }
+      assert.deepStrictEqual(
+        { collection: error.collection, message: error.message },
+        { collection: "Fuse tokens", message: "font-sans aliases a variable the file does not hold." }
+      );
+    })
+  );
 });

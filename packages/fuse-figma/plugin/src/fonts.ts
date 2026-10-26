@@ -15,7 +15,7 @@ import type {
   TextLayerSpec,
   VariantSpec,
 } from "../../src/components/kit-spec.ts";
-import { FontUnavailable } from "./errors.ts";
+import { FileNotSynced, FontUnavailable } from "./errors.ts";
 import type { Run } from "./fields.ts";
 import { requirement } from "./plan.ts";
 import { currentRun } from "./services.ts";
@@ -89,7 +89,9 @@ function isAlias(value: VariableValue): value is VariableAlias {
 /**
  * The value a variable takes in a node that sits on a page and pins no modes. Such a node
  * reads each collection in the mode the page pins for it, or in the collection's default
- * mode, and so does every alias the variable follows.
+ * mode, and so does every alias the variable follows. It fails with `FileNotSynced` where the
+ * file's variables do not resolve: a variable outside any collection, one without a value in the
+ * mode, an alias to a variable the file lacks, or an alias cycle.
  */
 const resolveOnPage = Effect.fnUntraced(function* (
   figma: PluginAPI,
@@ -105,22 +107,34 @@ const resolveOnPage = Effect.fnUntraced(function* (
       figma.variables.getVariableCollectionByIdAsync(variableCollectionId)
     );
     if (collection === null) {
-      throw new Error(`${current.name} belongs to no collection the file holds.`);
+      return yield* new FileNotSynced({
+        message: `${current.name} belongs to no collection the file holds.`,
+        collection: variableCollectionId,
+      });
     }
     const value = current.valuesByMode[pageModes[collection.id] ?? collection.defaultModeId];
     if (value === undefined) {
-      throw new Error(`${current.name} has no value in the mode a new layer reads.`);
+      return yield* new FileNotSynced({
+        message: `${current.name} has no value in the mode a new layer reads.`,
+        collection: collection.name,
+      });
     }
     if (!isAlias(value)) {
       return value;
     }
     const target = yield* Effect.promise(() => figma.variables.getVariableByIdAsync(value.id));
     if (target === null) {
-      throw new Error(`${current.name} aliases a variable the file does not hold.`);
+      return yield* new FileNotSynced({
+        message: `${current.name} aliases a variable the file does not hold.`,
+        collection: collection.name,
+      });
     }
     current = target;
   }
-  throw new Error(`${variable.name} aliases itself.`);
+  return yield* new FileNotSynced({
+    message: `${variable.name} aliases itself.`,
+    collection: variable.variableCollectionId,
+  });
 });
 
 /**

@@ -4,7 +4,7 @@
  * synced or was synced from an older Fuse.
  */
 
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Result } from "effect";
 
 import type { ModeRef, VariableRef } from "../../src/components/kit-spec.ts";
 import { kitCollections } from "./check-kit.ts";
@@ -18,13 +18,33 @@ export type ResolvedMode = {
 };
 
 /**
- * Looks up the variables and modes the kit names. Each lookup throws `FileNotSynced` when the file
- * lacks it.
+ * Looks up the variables and modes the kit names. `findVariable` and `findMode` return
+ * `FileNotSynced` when the file lacks one. The kit check finds every variable and mode the kit
+ * names before a run plans anything, so the planners read them through `variable` and `mode`,
+ * whose failure is a defect.
  */
 export type KitVariables = {
+  readonly findVariable: (ref: VariableRef) => Result.Result<Variable, FileNotSynced>;
+  readonly findMode: (ref: ModeRef) => Result.Result<ResolvedMode, FileNotSynced>;
+  /** The variable, which the kit check found. */
   readonly variable: (ref: VariableRef) => Variable;
+  /** The mode, which the kit check found. */
   readonly mode: (ref: ModeRef) => ResolvedMode;
 };
+
+/**
+ * The value of a lookup the kit check made already.
+ *
+ * @param found - The lookup.
+ * @returns Its value.
+ * @throws A defect when the lookup failed, which the kit check rules out.
+ */
+function checked<A>(found: Result.Result<A, FileNotSynced>): A {
+  if (Result.isFailure(found)) {
+    throw new Error(found.failure.message);
+  }
+  return found.success;
+}
 
 const RUN_SYNC_FIRST = "Run `figma:sync` on this file first.";
 
@@ -67,40 +87,47 @@ export const loadKitVariables = Effect.fnUntraced(function* (figma: PluginAPI, n
     }
   }
 
-  const collectionNamed = (name: string): VariableCollection => {
+  const collectionNamed = (name: string): Result.Result<VariableCollection, FileNotSynced> => {
     const collection = collectionsByName.get(name);
-    if (collection === undefined) {
-      throw new FileNotSynced({
-        message: `The file has no local collection named ${name}. ${RUN_SYNC_FIRST}`,
-        collection: name,
-      });
-    }
-    return collection;
+    return collection === undefined
+      ? Result.fail(
+          new FileNotSynced({
+            message: `The file has no local collection named ${name}. ${RUN_SYNC_FIRST}`,
+            collection: name,
+          })
+        )
+      : Result.succeed(collection);
   };
+  const findVariable = (ref: VariableRef): Result.Result<Variable, FileNotSynced> =>
+    Result.flatMap(collectionNamed(ref.collection), () => {
+      const variable = variablesByName.get(`${ref.collection}/${ref.name}`);
+      return variable === undefined
+        ? Result.fail(
+            new FileNotSynced({
+              message: `The ${ref.collection} collection has no variable named ${ref.name}. ${RUN_SYNC_FIRST}`,
+              collection: ref.collection,
+            })
+          )
+        : Result.succeed(variable);
+    });
+  const findMode = (ref: ModeRef): Result.Result<ResolvedMode, FileNotSynced> =>
+    Result.flatMap(collectionNamed(ref.collection), (collection) => {
+      const mode = collection.modes.find((candidate) => candidate.name === ref.mode);
+      return mode === undefined
+        ? Result.fail(
+            new FileNotSynced({
+              message: `The ${ref.collection} collection has no mode named ${ref.mode}. ${RUN_SYNC_FIRST}`,
+              collection: ref.collection,
+            })
+          )
+        : Result.succeed({ collection, modeId: mode.modeId });
+    });
 
   const lookups: KitVariables = {
-    variable: (ref) => {
-      collectionNamed(ref.collection);
-      const variable = variablesByName.get(`${ref.collection}/${ref.name}`);
-      if (variable === undefined) {
-        throw new FileNotSynced({
-          message: `The ${ref.collection} collection has no variable named ${ref.name}. ${RUN_SYNC_FIRST}`,
-          collection: ref.collection,
-        });
-      }
-      return variable;
-    },
-    mode: (ref) => {
-      const collection = collectionNamed(ref.collection);
-      const mode = collection.modes.find((candidate) => candidate.name === ref.mode);
-      if (mode === undefined) {
-        throw new FileNotSynced({
-          message: `The ${ref.collection} collection has no mode named ${ref.mode}. ${RUN_SYNC_FIRST}`,
-          collection: ref.collection,
-        });
-      }
-      return { collection, modeId: mode.modeId };
-    },
+    findVariable,
+    findMode,
+    variable: (ref) => checked(findVariable(ref)),
+    mode: (ref) => checked(findMode(ref)),
   };
   return lookups;
 });

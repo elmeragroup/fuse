@@ -18,7 +18,6 @@ import type { KitSpec } from "../../src/components/kit-spec.ts";
 import { checkKit } from "./check-kit.ts";
 import { planComponentSet } from "./component-set.ts";
 import type { PlannedSet } from "./component-set.ts";
-import { failOnThrown } from "./errors.ts";
 import type { PluginError } from "./errors.ts";
 import { requireFont } from "./fonts.ts";
 import { planIconLibrary } from "./icons.ts";
@@ -44,7 +43,7 @@ export type ReconcileReport = {
  */
 const startRun = Effect.fnUntraced(function* (kit: KitSpec) {
   const run = yield* currentRun;
-  checkKit(run.figma, run.variables, kit);
+  yield* Effect.fromResult(checkKit(run.figma, run.variables, kit));
   for (const font of [...kit.fonts, ...glyphFonts(kit)]) {
     requireFont(run, "The kit", font);
   }
@@ -154,8 +153,8 @@ const reconcileFile = Effect.fnUntraced(function* (apply: boolean) {
 
 /**
  * Plan or apply the kit on the current file. Each run reads the file's variables again, so the
- * Plan that follows an Apply reads what the Apply wrote. A leaf planner throws the failures a
- * designer can fix, such as a variable the file lacks, and the run reports them as typed errors.
+ * Plan that follows an Apply reads what the Apply wrote. The failures a designer can fix, such as
+ * a variable the file lacks, arrive as typed errors.
  *
  * @param apply - Whether to write the changes or only list them.
  * @returns The changes and the warnings.
@@ -164,7 +163,7 @@ export const reconcile = (apply: boolean) =>
   Effect.gen(function* () {
     const kit = yield* Kit;
     return yield* Effect.provideService(reconcileFile(apply), GlyphFont, kit.glyphFont);
-  }).pipe(Effect.provide(kitVariablesLayer), failOnThrown);
+  }).pipe(Effect.provide(kitVariablesLayer));
 
 /**
  * Plan or apply the kit on the current file, as a promise.

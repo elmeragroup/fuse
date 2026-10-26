@@ -9,6 +9,7 @@
 import { Result } from "effect";
 
 import { checkKitSpec } from "../../src/components/kit-check.ts";
+import type { KitContradiction } from "../../src/components/kit-check.ts";
 import { fixedLength, walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   BoxSpec,
@@ -148,26 +149,39 @@ export function kitCollections(kit: KitSpec): ReadonlySet<string> {
  * @param figma - The plugin API, which decodes the kit's images.
  * @param variables - The file's variables.
  * @param kit - The kit.
- * @throws `KitContradiction` when the spec contradicts itself, and `FileNotSynced` when the file
- *   lacks a variable or mode the kit names or a variable has the wrong type.
+ * @returns Nothing, or `KitContradiction` when the spec contradicts itself, and `FileNotSynced`
+ *   when the file lacks a variable or mode the kit names or a variable has the wrong type.
  */
-export function checkKit(figma: PluginAPI, variables: KitVariables, kit: KitSpec): void {
+export function checkKit(
+  figma: PluginAPI,
+  variables: KitVariables,
+  kit: KitSpec
+): Result.Result<void, KitContradiction | FileNotSynced> {
   const checked = checkKitSpec(kit, (text) => figma.base64Decode(text));
   if (Result.isFailure(checked)) {
-    throw checked.failure;
+    return Result.fail(checked.failure);
   }
   for (const preview of kit.previews) {
     for (const ref of preview.modes) {
-      variables.mode(ref);
+      const mode = variables.findMode(ref);
+      if (Result.isFailure(mode)) {
+        return Result.fail(mode.failure);
+      }
     }
   }
   for (const { ref, type } of boundRefs(kit)) {
-    const variable = variables.variable(ref);
-    if (variable.resolvedType !== type) {
-      throw new FileNotSynced({
-        message: `${variableLabel(ref)} is a ${variable.resolvedType} variable, and the kit binds it to a field that takes a ${type}. Run \`figma:sync\` on this file first.`,
-        collection: ref.collection,
-      });
+    const variable = variables.findVariable(ref);
+    if (Result.isFailure(variable)) {
+      return Result.fail(variable.failure);
+    }
+    if (variable.success.resolvedType !== type) {
+      return Result.fail(
+        new FileNotSynced({
+          message: `${variableLabel(ref)} is a ${variable.success.resolvedType} variable, and the kit binds it to a field that takes a ${type}. Run \`figma:sync\` on this file first.`,
+          collection: ref.collection,
+        })
+      );
     }
   }
+  return Result.succeed(undefined);
 }
