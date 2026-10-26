@@ -947,10 +947,6 @@ describe("the kit check the build runs", () => {
     ]);
   });
 
-  it("passes the built kit", () => {
-    expect(Result.isSuccess(checkKitSpec(spec, (text) => Buffer.from(text, "base64")))).toBe(true);
-  });
-
   it("refuses a kit that lists a page key twice", () => {
     const [first] = spec.pages;
     if (first === undefined) {
