@@ -66,6 +66,7 @@ export const BARE_COMPONENT_ENTRIES = [
   "toggle-group",
   "tooltip",
   // plop:component-entry
+  "file-upload",
   "attachment",
   "aspect-ratio",
   "data-table-filter",

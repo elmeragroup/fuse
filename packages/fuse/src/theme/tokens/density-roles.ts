@@ -222,6 +222,11 @@ export const PART_DENSITY = {
   "field-error": "label",
   "field-input": "control",
 
+  "file-upload": "surface",
+  "file-upload-dropzone": "surface",
+  "file-upload-trigger": "control",
+  "file-upload-description": "label",
+
   form: "layout",
 
   frame: "surface",
