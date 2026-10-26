@@ -11,8 +11,12 @@
  * page the last one opened keeps focus on its item, which Fuse's `focus:` row draws highlighted.
  * A cell draws its highlight only where the page forces it, so the mount then blurs the element a
  * client slot holds focus on, removes every `data-highlighted` in a client slot, and waits a frame,
- * after which the page checks that neither came back. The mount marks `<html>` with {@link MOUNTED}
- * when it is done, or with the reason it failed.
+ * after which the page checks that neither came back.
+ *
+ * Base UI appends U+2060 WORD JOINER to a live region's text on mount, as Combobox's Empty and Status
+ * do, and removes it 200 ms later, so the mount waits until no client slot's text holds the marker
+ * before the page reads its markup. The mount marks `<html>` with {@link MOUNTED} when it is done, or
+ * with the reason it failed.
  *
  * This module runs only in the browser, inside the bundle `client-bundle.ts` builds.
  */
@@ -31,6 +35,12 @@ const AT_DEFAULTS: ReadonlySet<string> = new Set();
 const parseCell = Schema.decodeUnknownSync(
   Schema.fromJsonString(Schema.Record(Schema.String, Schema.String))
 );
+
+/** The character Base UI appends to a live region's text on mount, for 200 ms. */
+const LIVE_REGION_MARKER = "\u2060";
+
+/** About five times the 200 ms Base UI keeps its marker, at 60 frames a second. */
+const LIVE_REGION_MARKER_FRAMES = 60;
 
 function animationFrame(): Promise<void> {
   return new Promise((resolve) => {
@@ -72,6 +82,25 @@ async function mount(renderings: ReadonlyMap<string, ClientCellRendering>): Prom
   await animationFrame();
   settle();
   await animationFrame();
+  await liveRegionsRestored();
+}
+
+/** Wait, a frame at a time, until no client slot's text holds Base UI's live-region marker. */
+async function liveRegionsRestored(): Promise<void> {
+  for (let frame = 0; ; frame++) {
+    const marked = [...document.querySelectorAll<HTMLElement>(CLIENT_HIDDEN)].find((slot) =>
+      slot.textContent.includes(LIVE_REGION_MARKER)
+    );
+    if (marked === undefined) {
+      return;
+    }
+    if (frame >= LIVE_REGION_MARKER_FRAMES) {
+      throw new Error(
+        `the live-region marker stayed in set ${marked.dataset.compareClient ?? ""} for ${LIVE_REGION_MARKER_FRAMES} frames`
+      );
+    }
+    await animationFrame();
+  }
 }
 
 /** Clear the focus and the highlights Base UI set on open inside the client slots. */
