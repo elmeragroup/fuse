@@ -18,8 +18,7 @@
  * draws.
  */
 
-import { Effect, Result } from "effect";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { Effect, FileSystem, Result } from "effect";
 import { join } from "node:path";
 
 import { buildComponentSets } from "../components/build-kit.ts";
@@ -30,6 +29,7 @@ import { SELECT_ITEM } from "../components/select-kit.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { CellRequest } from "./browser-render.ts";
 import { loadRenderers } from "./cell-renderers.ts";
+import { fileFailure, writeText } from "./compare-files.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { PageLayout } from "./preview-page.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
@@ -184,7 +184,7 @@ type Perturbed = { readonly preview: string; readonly variant: string };
  *   not run, and dies when the kit's preview frames place a cell the comparison cannot render.
  */
 export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: CompareOptions) {
-  const build = yield* Effect.fromResult(locateFuseBuild());
+  const build = yield* locateFuseBuild();
   const fillMismatches: string[] = [];
   const variants = KIT.flatMap(({ definition, previewCells }) =>
     previewCells.map((cell) => variantKey(definition, cell))
@@ -291,9 +291,12 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
     scale: DEVICE_SCALE,
     previews,
   };
-  mkdirSync(options.outDir, { recursive: true });
+  const fs = yield* FileSystem.FileSystem;
+  yield* fs
+    .makeDirectory(options.outDir, { recursive: true })
+    .pipe(Effect.mapError(fileFailure("create", options.outDir)));
   const text = JSON.stringify(snapshot);
-  writeFileSync(join(options.outDir, "self-check-snapshot.json"), text);
+  yield* writeText(join(options.outDir, "self-check-snapshot.json"), text);
   const reread = parseSnapshot(text);
   if (Result.isFailure(reread)) {
     throw reread.failure;

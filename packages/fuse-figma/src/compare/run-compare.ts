@@ -6,8 +6,7 @@
  * `client-markup.ts` says. It writes three pictures per cell, `report.json` and `report.html`.
  */
 
-import { Effect, Result } from "effect";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { Effect, FileSystem, Result } from "effect";
 import { join } from "node:path";
 
 import type { KitBuildError } from "../components/build-errors.ts";
@@ -23,6 +22,8 @@ import type { AnyCellRenderer, RendererMissing } from "./cell-renderers.ts";
 import { fallbackInteraction, forcedPseudoClasses, parseCell, restingTwin } from "./cells.ts";
 import type { ClientBundleFailed } from "./client-bundle.ts";
 import { checkClientMarkup } from "./client-markup.ts";
+import { fileFailure, writeText } from "./compare-files.ts";
+import type { CompareFileFailed } from "./compare-files.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { FuseBuildMissing } from "./page-assets.ts";
 import { forcedSelector, measuredSelectors, slotSpan } from "./preview-page.ts";
@@ -120,6 +121,7 @@ class UnsupportedScale extends Error {
 /** Why a run stopped before it compared anything. */
 export type CompareFailure =
   | FuseBuildMissing
+  | CompareFileFailed
   | RendererMissing
   | KitBuildError
   | ClientBundleFailed
@@ -330,7 +332,8 @@ export const compareSnapshot = Effect.fn("compareSnapshot")(function* (
       )
     );
   }
-  const build = yield* Effect.fromResult(locateFuseBuild());
+  const fs = yield* FileSystem.FileSystem;
+  const build = yield* locateFuseBuild();
   // The Fuse build exists by now, so the renderers' imports of it load.
   const renderers = yield* loadRenderers();
   const assets = yield* readPageAssets(build, renderers);
@@ -343,8 +346,12 @@ export const compareSnapshot = Effect.fn("compareSnapshot")(function* (
   yield* Effect.scoped(
     Effect.gen(function* () {
       const browser = yield* CompareBrowser.launch(assets);
-      rmSync(cellsDir, { recursive: true, force: true });
-      mkdirSync(cellsDir, { recursive: true });
+      yield* fs
+        .remove(cellsDir, { recursive: true, force: true })
+        .pipe(Effect.mapError(fileFailure("clear", cellsDir)));
+      yield* fs
+        .makeDirectory(cellsDir, { recursive: true })
+        .pipe(Effect.mapError(fileFailure("create", cellsDir)));
       for (const [previewIndex, preview] of snapshot.previews.entries()) {
         const outcome = yield* comparePreview(
           browser,
@@ -370,8 +377,8 @@ export const compareSnapshot = Effect.fn("compareSnapshot")(function* (
     rows: worstFirst(rows),
     skipped,
   };
-  writeFileSync(join(options.outDir, "report.json"), `${JSON.stringify(report, null, 2)}\n`);
-  writeFileSync(join(options.outDir, "report.html"), renderReportHtml(report));
+  yield* writeText(join(options.outDir, "report.json"), `${JSON.stringify(report, null, 2)}\n`);
+  yield* writeText(join(options.outDir, "report.html"), renderReportHtml(report));
   return report;
 });
 
@@ -390,6 +397,7 @@ const comparePreview = Effect.fnUntraced(function* (
   componentSets: readonly Pick<ComponentSetSpec, "key" | "axes" | "variants">[],
   options: CompareOptions
 ) {
+  const fs = yield* FileSystem.FileSystem;
   const skip = (variant: string, reason: string): SkippedInstance => ({
     preview: preview.key,
     variant,
@@ -437,19 +445,20 @@ const comparePreview = Effect.fnUntraced(function* (
     const stem = `p${String(previewIndex).padStart(2, "0")}-${request.id}`;
     const restsByDesign = request.restsByDesign && cell.state === "missing";
     const compared = compareCell(figmaSide, cell, stateFlags(cell, restsByDesign), background, options);
-    const write = (suffix: string, raster: Raster) => {
+    const write = Effect.fnUntraced(function* (suffix: string, raster: Raster) {
       const path = `cells/${stem}-${suffix}.png`;
-      writeFileSync(join(options.outDir, path), encodePng(raster));
+      const file = join(options.outDir, path);
+      yield* fs.writeFile(file, encodePng(raster)).pipe(Effect.mapError(fileFailure("write", file)));
       return path;
-    };
-    const browserPath = write("browser", compared.browser);
+    });
+    const browserPath = yield* write("browser", compared.browser);
     const { width, height } = compared.browser;
     const pictures =
       compared._tag === "Compared"
         ? {
-            figma: write("figma", compared.figma),
+            figma: yield* write("figma", compared.figma),
             browser: browserPath,
-            diff: write("diff", compared.diff),
+            diff: yield* write("diff", compared.diff),
             width,
             height,
           }

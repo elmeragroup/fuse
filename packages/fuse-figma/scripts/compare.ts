@@ -13,11 +13,11 @@
 
 import { NodeRuntime, NodeServices } from "@effect/platform-node";
 import { Console, Data, Effect, FileSystem, Result, Runtime } from "effect";
-import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
+import { fileFailure } from "../src/compare/compare-files.ts";
 import { PAGE_LAYOUT } from "../src/compare/preview-page.ts";
 import { DEFAULT_THRESHOLD } from "../src/compare/raster.ts";
 import { parseSnapshot } from "../src/compare/read-snapshot.ts";
@@ -62,8 +62,10 @@ const selfCheck = Effect.fn("compare.selfCheck")(function* (options: CompareOpti
 /** Compare a snapshot export and print the summary, the five worst cells and the report path. */
 const compare = Effect.fn("compare.snapshot")(function* (snapshotPath: string, options: CompareOptions) {
   const path = resolve(snapshotPath);
-  const text = yield* Effect.try({ try: () => readFileSync(path, "utf8"), catch: describe }).pipe(
-    Effect.catch((reason) => stop(`Could not read ${path}: ${reason}`))
+  const fs = yield* FileSystem.FileSystem;
+  const text = yield* fs.readFileString(path).pipe(
+    Effect.mapError(fileFailure("read", path)),
+    Effect.catch((failure) => stop(failure.message))
   );
   const snapshot = parseSnapshot(text);
   if (Result.isFailure(snapshot)) {

@@ -27,7 +27,6 @@
 
 import { Effect, Result } from "effect";
 import type { Scope } from "effect";
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 import type { Browser, Page, Route } from "playwright";
@@ -187,7 +186,7 @@ export class CompareBrowser {
 
   async #serve(route: Route, html: string): Promise<void> {
     const { pathname } = new URL(route.request().url());
-    const file = new Map<string, string>([
+    const css = new Map<string, string>([
       [ASSET_PATHS.styles, this.#assets.styles],
       [ASSET_PATHS.themes, this.#assets.themes],
       [ASSET_PATHS.preflight, this.#assets.preflight],
@@ -202,10 +201,10 @@ export class CompareBrowser {
       await route.fulfill({
         path: join(this.#assets.fontDirectory, pathname.slice(ASSET_PATHS.fontFiles.length)),
       });
-    } else if (file === undefined) {
+    } else if (css === undefined) {
       await route.fulfill({ status: 404, body: `${pathname} is not a comparison asset` });
     } else {
-      await route.fulfill({ body: readFileSync(file, "utf8"), contentType: "text/css; charset=utf-8" });
+      await route.fulfill({ body: css, contentType: "text/css; charset=utf-8" });
     }
   }
 
