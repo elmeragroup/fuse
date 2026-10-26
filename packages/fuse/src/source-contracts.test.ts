@@ -588,11 +588,12 @@ describe("runtime listeners and layout motion", () => {
       "components/data-table-filter/data-table-filter-variants.ts",
       // Item.Footer, and so every SelectionItem.SubSection, tweens its grid row and top padding
       // between `hidden` and `visible`.
-      "components/item/item-markup.tsx",
+      "components/item/item-footer-variants.ts",
       "components/meter/meter-variants.ts",
       // Base UI sizes and places the shared popup through its --popup-* and --positioner-* variables.
       "components/navigation-menu/navigation-menu-variants.ts",
-      "components/sidebar/sidebar.tsx",
+      // The panel's gap and container tween their width as the rail collapses.
+      "components/sidebar/sidebar-variants.ts",
       "styles/panel-height.ts",
     ]);
   });
@@ -948,7 +949,7 @@ describe("state faces", () => {
         "hover:bg-warning/90",
       ],
       // Links, which have no disabled state.
-      "components/breadcrumb/breadcrumb.tsx": ["hover:text-foreground"],
+      "components/breadcrumb/breadcrumb-variants.ts": ["hover:text-foreground"],
       "components/dialog/dialog.tsx": ["*:[a]:hover:text-foreground"],
       "components/navigation-menu/navigation-menu-variants.ts": [
         "hover:**:text-accent-foreground",
@@ -959,7 +960,7 @@ describe("state faces", () => {
       // The country trigger adds its hover and press faces only while the field is editable.
       "components/phone-number-field/phone-number-field.tsx": ["active:scale-[0.97]", "hover:bg-muted"],
       // The rail, an aria-hidden resize handle that is never disabled.
-      "components/sidebar/sidebar.tsx": [
+      "components/sidebar/sidebar-class.ts": [
         "hover:after:bg-sidebar-border",
         "hover:group-data-[collapsible=offcanvas]:bg-sidebar",
       ],

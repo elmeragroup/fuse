@@ -1,190 +1,69 @@
 /**
- * `reconcileKit` with a one-variant kit on the in-memory file in `fake-figma.ts`, for a file
- * whose kit page holds a stale preview and no component set. The label's family follows
- * `font-sans`, which aliases a brand variable, so the run resolves it across collections before
- * it writes (rule 8) and needs the font it names (rule 7). The oracles are the change lines Plan
- * lists and the writes the file took.
+ * `reconcileKit` with the one-variant kit of `button-kit-fixture.ts` on the in-memory file in
+ * `fake-figma.ts`, for a file whose kit page holds a stale preview and no component set. The
+ * oracles are the change lines Plan lists and the writes the file took.
  */
 import { describe, expect, it } from "vitest";
 
+import { NO_LIMITS } from "../../src/components/kit-spec.ts";
 import type {
-  ChildLayerSpec,
   FrameLayerSpec,
-  IconLayerSpec,
   KitSpec,
-  NumberSpec,
+  ShadowSpec,
+  StrokeSpec,
   TextLayerSpec,
 } from "../../src/components/kit-spec.ts";
+import {
+  buttonVariant,
+  CHECK,
+  FILL,
+  fixture,
+  frame,
+  KIT,
+  kitWithRoot,
+  LABEL,
+  literal,
+  nestedKit,
+  RELAYOUT,
+} from "./button-kit-fixture.ts";
 import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
-import { aliasOf, childNamed, color, fixtureFile, string } from "./fake-fixtures.ts";
+import {
+  BLUE_PIXEL,
+  childNamed,
+  GLYPH_FONT,
+  JPEG_HEAD,
+  PNG_4097_WIDE,
+  PNG_SIGNATURE,
+  PORTRAIT_HEAD,
+  RED_PIXEL,
+} from "./fake-fixtures.ts";
+import type { ImageFixture } from "./fake-fixtures.ts";
 import { keyOf, setKey } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
 
-const literal = (value: number): NumberSpec => ({ kind: "literal", value });
-
-/** The label of the one Button variant, whose family follows `font-sans`. */
-const LABEL: TextLayerSpec = {
-  kind: "text",
-  key: "button/label",
-  name: "Label",
-  characters: "Button",
-  textProperty: undefined,
-  fontFamily: { kind: "variable", variable: { collection: "Fuse tokens", name: "font-sans" } },
-  fontStyle: "Medium",
-  fontSize: literal(14),
-  lineHeight: literal(20),
+/** A 2px black ring, as a focus ring spreads. */
+const RING: ShadowSpec = {
   color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } },
-  underline: undefined,
+  offsetX: 0,
+  offsetY: 0,
+  radius: literal(0),
+  spread: literal(2),
 };
-
-/** A kit with one Button variant, no icons and no previews, which bundles Roboto Medium. */
-const KIT: KitSpec = {
-  pages: [{ key: "page", name: "Fuse components" }],
-  fonts: [{ family: "Roboto", style: "Medium" }],
-  icons: {
-    key: "icons",
-    page: "page",
-    name: "Icons",
-    size: 16,
-    color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } },
-    icons: [],
-  },
-  componentSets: [
-    {
-      key: "button",
-      page: "page",
-      name: "Button",
-      axes: [{ name: "size", values: ["md"] }],
-      columnAxis: "size",
-      textProperties: [],
-      swapProperties: [],
-      variants: [
-        {
-          key: "button/size=md",
-          properties: { size: "md" },
-          root: {
-            name: "button",
-            width: undefined,
-            height: literal(36),
-            minWidth: undefined,
-            paddingTop: literal(0),
-            paddingRight: literal(16),
-            paddingBottom: literal(0),
-            paddingLeft: literal(16),
-            itemSpacing: literal(8),
-            primaryAlign: "CENTER",
-            counterAlign: "CENTER",
-            cornerRadius: literal(6),
-            fill: undefined,
-            stroke: undefined,
-            shadows: [],
-            opacity: 1,
-            children: [LABEL],
-          },
-        },
-      ],
-    },
-  ],
-  previews: [],
-};
-
-const BLACK = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
-
-/** A frame layer with no padding, gap, corner, paint or ring, centered on both axes. */
-function frame(key: string, name: string, children: readonly ChildLayerSpec[]): FrameLayerSpec {
-  return {
-    kind: "frame",
-    key,
-    name,
-    width: undefined,
-    height: undefined,
-    minWidth: undefined,
-    paddingTop: literal(0),
-    paddingRight: literal(0),
-    paddingBottom: literal(0),
-    paddingLeft: literal(0),
-    itemSpacing: literal(0),
-    primaryAlign: "CENTER",
-    counterAlign: "CENTER",
-    cornerRadius: literal(0),
-    fill: undefined,
-    stroke: undefined,
-    shadows: [],
-    opacity: 1,
-    children,
-  };
-}
-
-/** A fixed Check icon, as a checkbox's indicator shows one. */
-const CHECK: IconLayerSpec = {
-  kind: "icon",
-  key: "button/check",
-  name: "Check",
-  icon: "icon/Check",
-  swapProperty: undefined,
-  size: literal(12),
-  color: BLACK,
-};
-
-/** The Button variant's layers moved two frames down: Control holds Indicator, which holds both. */
-const NESTED_LAYERS = [
-  frame("button/control", "Control", [frame("button/indicator", "Indicator", [CHECK, LABEL])]),
-];
 
 /**
- * `KIT` with the variant's root holding the given layers and a library holding Check. It
- * bundles no font, so only the walks over the variant's layers require the label's font.
+ * A 16px frame that an image covers, as an avatar's `<img>` covers its circle, with the hash the
+ * build would write for its bytes unless the case names another.
  */
-function nestedKit(children: readonly ChildLayerSpec[] = NESTED_LAYERS): KitSpec {
+function imageFrame(image: ImageFixture, hash = image.sha1): FrameLayerSpec {
   return {
-    ...KIT,
-    fonts: [],
-    icons: {
-      ...KIT.icons,
-      icons: [
-        {
-          key: "icon/Check",
-          name: "Check",
-          svg: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M2 8l4 4 8-8"/></svg>',
-        },
-      ],
+    ...frame("button/image", "Image", []),
+    sizing: {
+      horizontal: { kind: "fixed", length: literal(16) },
+      vertical: { kind: "fixed", length: literal(16) },
     },
-    componentSets: KIT.componentSets.map((set) => ({
-      ...set,
-      variants: set.variants.map((variant) => ({ ...variant, root: { ...variant.root, children } })),
-    })),
+    fill: { kind: "image", bytes: image.bytes, hash, scaleMode: "FILL" },
   };
-}
-
-/**
- * A file whose `font-sans` aliases a brand variable that holds `family` in its default mode.
- * The machine cannot load Comic Sans.
- *
- * @param family - The family the brand variable holds.
- * @param withPage - Whether the file holds the kit page, with its stale preview.
- * @returns The file, opened for a new run, and the number of writes its setup made.
- */
-function fixture(family: string, withPage = true) {
-  const file = fixtureFile([
-    color("Fuse tokens", "background", { r: 1, g: 1, b: 1, a: 1 }),
-    aliasOf("Fuse tokens", "font-sans", "STRING", {
-      collection: "Fuse brand",
-      variable: "light/external/private/font-sans",
-    }),
-    string("Fuse brand", "light/external/private/font-sans", family),
-  ]);
-  if (withPage) {
-    const page = file.figma.createPage();
-    page.name = "Fuse components";
-    setKey(page, "page");
-    const stale = file.figma.createFrame();
-    page.appendChild(stale);
-    stale.name = "Old preview";
-    setKey(stale, "preview/old");
-  }
-  file.reopen({ unavailableFonts: [{ family: "Comic Sans" }] });
-  return { file, setup: file.writes.length };
 }
 
 describe("reconcileKit on a file without the component set", () => {
@@ -216,6 +95,18 @@ describe("reconcileKit on a file without the component set", () => {
     expect(file.writes.slice(setup)).toEqual([]);
   });
 });
+
+/** A hugging frame around the label, as Item's actions hold their text. */
+const BOX = frame("button/box", "Box", [LABEL]);
+
+/** A fixed 40 × 40 frame, as Item's image media sets a row's height. */
+const SQUARE: FrameLayerSpec = {
+  ...frame("button/square", "Square", []),
+  sizing: {
+    horizontal: { kind: "fixed", length: literal(40) },
+    vertical: { kind: "fixed", length: literal(40) },
+  },
+};
 
 describe("the kit check", () => {
   const OTHER_PAGE = { key: "page/other", name: "Other" };
@@ -274,10 +165,218 @@ describe("the kit check", () => {
       ]),
       "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a COLOR.",
     ],
+    [
+      "a root that fills its width, which its component set cannot give it",
+      kitWithRoot((root) => ({ ...root, sizing: { ...root.sizing, horizontal: FILL } })),
+      "Button: the variant button/size=md fills its width, and a variant sits in its component set, which has no auto layout. Give it a fixed width.",
+    ],
+    [
+      "a frame that fills the width of a root that hugs it",
+      nestedKit([
+        {
+          ...frame("button/control", "Control", [LABEL]),
+          sizing: { horizontal: FILL, vertical: { kind: "hug" } },
+        },
+      ]),
+      "Button: Control in the variant button/size=md fills the width of a parent that hugs it, so Figma would shrink it to its smallest width.",
+    ],
+    [
+      "a text that fills the width of a frame that hugs it",
+      nestedKit([
+        frame("button/control", "Control", [
+          { ...LABEL, sizing: { horizontal: FILL, vertical: { kind: "hug" } } },
+        ]),
+      ]),
+      "Button: Label in the variant button/size=md fills the width of a parent that hugs it, so Figma would shrink it to its smallest width.",
+    ],
+    [
+      "a frame that fills the height of a row that hugs it, beside no layer that sets a height",
+      nestedKit([
+        frame("button/row", "Row", [{ ...BOX, sizing: { horizontal: { kind: "hug" }, vertical: FILL } }]),
+      ]),
+      "Button: Box in the variant button/size=md fills the height of a parent that hugs it, beside no layer that sets that height, so Figma would shrink it to its smallest height.",
+    ],
+    [
+      "a text whose fixed width binds a string variable",
+      kitWithRoot((root) => ({
+        ...root,
+        children: [
+          {
+            ...LABEL,
+            sizing: {
+              horizontal: {
+                kind: "fixed",
+                length: { kind: "variable", variable: { collection: "Fuse tokens", name: "font-sans" } },
+              },
+              vertical: { kind: "hug" },
+            },
+          },
+        ],
+      })),
+      "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a FLOAT.",
+    ],
+    [
+      "a text whose max width binds a string variable",
+      kitWithRoot((root) => ({
+        ...root,
+        children: [
+          {
+            ...LABEL,
+            maxWidth: { kind: "variable", variable: { collection: "Fuse tokens", name: "font-sans" } },
+          },
+        ],
+      })),
+      "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a FLOAT.",
+    ],
+    [
+      "a limit that binds a string variable",
+      kitWithRoot((root) => ({
+        ...root,
+        limits: {
+          ...root.limits,
+          maxWidth: { kind: "variable", variable: { collection: "Fuse tokens", name: "font-sans" } },
+        },
+      })),
+      "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a FLOAT.",
+    ],
+    [
+      "a root that limits its fixed height",
+      kitWithRoot((root) => ({ ...root, limits: { ...root.limits, minHeight: literal(40) } })),
+      "Button: button in the variant button/size=md sets minHeight on its fixed height. Fold the limit into the height, as CSS resolves a height against its own limits.",
+    ],
+    [
+      "a frame that limits its fixed width",
+      nestedKit([
+        {
+          ...frame("button/control", "Control", [LABEL]),
+          sizing: { horizontal: { kind: "fixed", length: literal(100) }, vertical: { kind: "hug" } },
+          limits: { ...NO_LIMITS, maxWidth: literal(24) },
+        },
+      ]),
+      "Button: Control in the variant button/size=md sets maxWidth on its fixed width. Fold the limit into the width, as CSS resolves a width against its own limits.",
+    ],
+    [
+      "a row that puts its first layer on top, which a real file drew only in a column (PZ2)",
+      kitWithRoot((root) => ({ ...root, firstOnTop: true })),
+      "Button: button in the variant button/size=md puts its first layer on top in a row, and a real file drew that only in a column (PZ2).",
+    ],
+    [
+      "a column that puts its first layer, a fill, above a later layer's ring, which CSS paints above the fill",
+      kitWithRoot((root) => ({
+        ...root,
+        direction: "VERTICAL",
+        firstOnTop: true,
+        children: [
+          {
+            ...frame("button/panel", "Panel", []),
+            fill: { kind: "literal", color: { r: 0, g: 0, b: 1, a: 1 } },
+          },
+          frame("button/header", "Header", [{ ...frame("button/ring", "Ring", []), shadows: [RING] }]),
+        ],
+      })),
+      "Button: button in the variant button/size=md puts its first layer on top, so the fill of Panel would cover the shadow Ring casts, which CSS can paint above that fill.",
+    ],
+    [
+      "a column that puts its first layer, which holds a fill, above a later layer's ring",
+      kitWithRoot((root) => ({
+        ...root,
+        direction: "VERTICAL",
+        firstOnTop: true,
+        children: [
+          frame("button/header", "Header", [
+            {
+              ...frame("button/badge", "Badge", []),
+              fill: { kind: "literal", color: { r: 0, g: 0, b: 1, a: 1 } },
+            },
+          ]),
+          { ...frame("button/footer", "Footer", []), shadows: [RING] },
+        ],
+      })),
+      "Button: button in the variant button/size=md puts its first layer on top, so the fill of Badge would cover the shadow Footer casts, which CSS can paint above that fill.",
+    ],
   ])("stops Plan before any write for %s", async (_, kit, message) => {
     const { file, setup } = fixture("Roboto");
     await expect(reconcileKit(file.figma, kit, false)).rejects.toThrow(message);
     expect(file.writes.slice(setup)).toEqual([]);
+  });
+
+  // Unit under test: the kit check of an image fill. Oracle: the PNG specification's signature and
+  // IHDR chunk (§5.2, §11.2.2), the 4096px limit Figma's `createImage` reference states, P9b, where
+  // a real file refused a PNG signature alone and stored the first 100 bytes of a PNG, and the
+  // SHA-1 `shasum -a 1` gives each fixture.
+  const IMAGE = "Button: Image in the variant button/size=md fills with";
+  it.each([
+    [
+      "a PNG signature alone",
+      imageFrame(PNG_SIGNATURE),
+      `${IMAGE} a PNG whose header stops before a whole IHDR chunk.`,
+    ],
+    [
+      "the start of a JPEG",
+      imageFrame(JPEG_HEAD),
+      `${IMAGE} an image that is no PNG file, the one format the kit ships.`,
+    ],
+    [
+      "a PNG 4097 pixels wide",
+      imageFrame(PNG_4097_WIDE),
+      `${IMAGE} a 4097 × 1 image, and Figma stores images from 1 to 4096 pixels on a side.`,
+    ],
+    [
+      "a hash that is not the SHA-1 of the bytes",
+      imageFrame(RED_PIXEL, BLUE_PIXEL.sha1),
+      `${IMAGE} an image whose bytes hash to ${RED_PIXEL.sha1}, where the kit names ${BLUE_PIXEL.sha1}. Build the plugin again.`,
+    ],
+  ])("stops Plan and Apply before any write for an image fill with %s", async (_, layer, message) => {
+    const { file, setup } = fixture("Roboto");
+    await expect(reconcileKit(file.figma, nestedKit([layer]), false)).rejects.toThrow(message);
+    await expect(reconcileKit(file.figma, nestedKit([layer]), true)).rejects.toThrow(message);
+    expect(file.writes.slice(setup)).toEqual([]);
+  });
+
+  it("passes a PNG cut off after its header, which a real file stored, and Apply converges", async () => {
+    const { file } = fixture("Roboto");
+    const kit = nestedKit([imageFrame(PORTRAIT_HEAD)]);
+    await reconcileKit(file.figma, kit, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+  });
+
+  // Oracle: PF, where a real file stretched a frame that filled down a row hugging its height to the
+  // height of the fixed square beside it, and kept the row hugging (fake rule 29).
+  it("passes a frame that fills the height of a hugging row beside a fixed square, and Apply converges", async () => {
+    const { file } = fixture("Roboto");
+    const kit = nestedKit([
+      frame("button/row", "Row", [
+        SQUARE,
+        { ...BOX, sizing: { horizontal: { kind: "hug" }, vertical: FILL } },
+      ]),
+    ]);
+    await reconcileKit(file.figma, kit, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+    const row = childNamed(await buttonVariant(file), "FRAME", "Row");
+    const box = childNamed(row, "FRAME", "Box");
+    expect([box.layoutSizingVertical, box.height, row.layoutSizingVertical]).toEqual(["FILL", 40, "HUG"]);
+  });
+});
+
+// Oracle: PM, where a real file drew a column that hugs both ways with a `minWidth` of 128, whose
+// sections all fill across, 128 wide with its sections 128 wide.
+describe("a column that hugs its width from a minimum, every layer filling across", () => {
+  it("passes the kit check, and Apply converges", async () => {
+    const { file } = fixture("Roboto");
+    const kit = nestedKit([
+      {
+        ...frame("button/column", "Column", [
+          { ...BOX, sizing: { horizontal: FILL, vertical: { kind: "hug" } } },
+        ]),
+        direction: "VERTICAL",
+        limits: { ...NO_LIMITS, minWidth: literal(128) },
+      },
+    ]);
+    await reconcileKit(file.figma, kit, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
   });
 });
 
@@ -314,6 +413,7 @@ describe("a set that moves to a page pinning other modes", () => {
     ...KIT,
     pages: [page],
     fonts: [],
+    glyphFont: GLYPH_FONT,
     icons: { ...KIT.icons, page: page.key },
     componentSets: [{ ...ringed, page: page.key }],
   });
@@ -364,6 +464,88 @@ describe("a set that moves to a page pinning other modes", () => {
   });
 });
 
+// Unit under test: `reconcileKit` on a file without the set. Oracle: the fake's rules 19 and 20,
+// which follow what a real file read on 2026-10-22 (P3, P4), and an empty second Plan. The value
+// fills a fixed row and ends in an ellipsis after one line, as Input's value does. The hint fills a
+// column that fills the root, and wraps from the top, as a field description does.
+describe("a variant whose two parts each hold a label that fills its part", () => {
+  const FILL_WIDTH = { horizontal: FILL, vertical: { kind: "hug" } } as const;
+  const VALUE: TextLayerSpec = {
+    ...LABEL,
+    key: "field/value",
+    name: "Value",
+    characters: "name@example.com",
+    textProperty: "Value",
+    sizing: FILL_WIDTH,
+    align: { horizontal: "LEFT", vertical: "CENTER" },
+    truncation: { maxLines: 1 },
+  };
+  const HINT: TextLayerSpec = {
+    ...LABEL,
+    key: "field/hint",
+    name: "Hint",
+    characters: "We never share it.",
+    textProperty: "Hint",
+    sizing: FILL_WIDTH,
+  };
+  const ROW: FrameLayerSpec = {
+    ...frame("field/control", "Control", [VALUE]),
+    sizing: {
+      horizontal: { kind: "fixed", length: literal(200) },
+      vertical: { kind: "fixed", length: literal(36) },
+    },
+    paddingLeft: literal(10),
+    paddingRight: literal(10),
+  };
+  const COLUMN: FrameLayerSpec = {
+    ...frame("field/description", "Description", [HINT]),
+    direction: "VERTICAL",
+    sizing: FILL_WIDTH,
+    primaryAlign: "MIN",
+    counterAlign: "MIN",
+  };
+  const withRoot = kitWithRoot((root) => ({
+    ...root,
+    direction: "VERTICAL",
+    sizing: { horizontal: { kind: "fixed", length: literal(240) }, vertical: { kind: "hug" } },
+    primaryAlign: "MIN",
+    counterAlign: "MIN",
+    children: [ROW, COLUMN],
+  }));
+  const fieldKit: KitSpec = {
+    ...withRoot,
+    componentSets: withRoot.componentSets.map((set) => ({
+      ...set,
+      textProperties: [
+        { name: "Value", defaultValue: "name@example.com" },
+        { name: "Hint", defaultValue: "We never share it." },
+      ],
+    })),
+  };
+
+  it("draws both labels in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, fieldKit, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, fieldKit, false)).toEqual({ changes: [], warnings: [] });
+
+    const variant = await buttonVariant(file);
+    const value = childNamed(childNamed(variant, "FRAME", "Control"), "TEXT", "Value");
+    const hint = childNamed(childNamed(variant, "FRAME", "Description"), "TEXT", "Hint");
+    const layout = (text: TextNode) => [
+      text.textAutoResize,
+      text.layoutSizingHorizontal,
+      text.layoutSizingVertical,
+      text.textTruncation,
+      text.maxLines,
+      text.textAlignVertical,
+      text.characters,
+    ];
+    expect(layout(value)).toEqual(["HEIGHT", "FILL", "HUG", "ENDING", 1, "CENTER", "name@example.com"]);
+    expect(layout(hint)).toEqual(["HEIGHT", "FILL", "HUG", "DISABLED", null, "TOP", "We never share it."]);
+  });
+});
+
 /** A layer the plugin keyed, and the layers a frame among them holds. */
 type LayerTree = {
   readonly type: SceneNode["type"];
@@ -380,18 +562,6 @@ function layerTree(parent: ChildrenMixin): LayerTree[] {
   });
 }
 
-/** The Button variant the kit page holds. */
-async function buttonVariant(file: FakeFigma): Promise<ComponentNode> {
-  const page = file.figma.root.children.find((node) => keyOf(node) === "page");
-  await page?.loadAsync();
-  const set = page?.children.find((node) => node.type === "COMPONENT_SET");
-  const variant = set?.type === "COMPONENT_SET" ? set.children[0] : undefined;
-  if (variant?.type !== "COMPONENT") {
-    throw new Error("the kit page holds no Button variant");
-  }
-  return variant;
-}
-
 /** A file the nested kit was applied to, opened for the next run, and its two frames. */
 async function nestedFile(): Promise<{
   readonly file: FakeFigma;
@@ -404,15 +574,6 @@ async function nestedFile(): Promise<{
   const control = childNamed(await buttonVariant(file), "FRAME", "Control");
   return { file, control, indicator: childNamed(control, "FRAME", "Indicator") };
 }
-
-/**
- * The lines a plan that changes anything in the Button set ends with: it lays out the set's grid
- * and the page again.
- */
-const RELAYOUT = [
-  "Button: lay out 1 variants in 1 columns and 1 rows",
-  "Fuse components: place Button and Icons in a row",
-];
 
 describe("a variant whose layers sit in a frame inside a frame", () => {
   it("creates both frames, the icon and the label in one Apply, and the next Plan lists nothing", async () => {
@@ -505,5 +666,343 @@ describe("a variant whose layers sit in a frame inside a frame", () => {
     await expect(reconcileKit(file.figma, nestedKit(), false)).rejects.toThrow(message);
     await expect(reconcileKit(file.figma, nestedKit(), true)).rejects.toThrow(message);
     expect(file.writes.slice(before)).toEqual([]);
+  });
+});
+
+// Unit under test: `reconcileKit` on a variant whose frame fills with an image. Oracle: the fake's
+// rules 22 and 23, which follow what a real file read on 2026-10-22 (P9, P9b): Figma names an image
+// by the SHA-1 of its bytes, an image paint reads back with that hash and Figma's defaults, and
+// storing an image changes the file. The next Plan lists nothing, other bytes plan the one fill
+// write, and Plan stores no image.
+describe("a variant whose frame fills with an image", () => {
+  it("draws the image in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    const kit = nestedKit([imageFrame(RED_PIXEL)]);
+    await reconcileKit(file.figma, kit, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+    expect(childNamed(await buttonVariant(file), "FRAME", "Image").fills).toMatchObject([
+      { type: "IMAGE", scaleMode: "FILL", imageHash: RED_PIXEL.sha1 },
+    ]);
+  });
+
+  it("plans the one fill write when the image's bytes change, stores nothing in Plan, and converges", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, nestedKit([imageFrame(RED_PIXEL)]), true);
+    file.reopen();
+    const blue = nestedKit([imageFrame(BLUE_PIXEL)]);
+    const before = file.writes.length;
+    expect((await reconcileKit(file.figma, blue, false)).changes).toEqual([
+      `Button / size=md / Image: fill → image ${BLUE_PIXEL.sha1.slice(0, 8)} at FILL (holds image ${RED_PIXEL.sha1.slice(0, 8)} at FILL)`,
+      ...RELAYOUT,
+    ]);
+    expect(file.writes.slice(before)).toEqual([]);
+    await reconcileKit(file.figma, blue, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, blue, false)).toEqual({ changes: [], warnings: [] });
+  });
+});
+
+// Unit under test: `reconcileKit` on a variant whose bar holds an absolute fill, as a meter's bar
+// holds its fill. Oracle: the fake's rules 9 and 24, which follow what a real file read on
+// 2026-10-22 (P8), and an empty second Plan. A fill at 85% of a 256px bar is 217.6 wide at the bar's
+// top left, scales across and stretches down, so it keeps 85% of the bar and the bar's height when
+// the bar resizes.
+describe("a variant whose bar holds an absolute fill", () => {
+  const fixedSides = (width: number, height: number) =>
+    ({
+      horizontal: { kind: "fixed", length: literal(width) },
+      vertical: { kind: "fixed", length: literal(height) },
+    }) as const;
+  const FLOWING: FrameLayerSpec = { ...frame("button/fill", "Fill", []), sizing: fixedSides(217.6, 6) };
+  const ABSOLUTE: FrameLayerSpec = {
+    ...FLOWING,
+    absolute: { x: 0, y: 0, constraints: { horizontal: "SCALE", vertical: "STRETCH" } },
+  };
+  const barKit = (fill: FrameLayerSpec, width = 256) =>
+    nestedKit([{ ...frame("button/bar", "Bar", [fill]), sizing: fixedSides(width, 6) }]);
+
+  async function appliedBar(fill: FrameLayerSpec, width = 256) {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, barKit(fill, width), true);
+    file.reopen();
+    const bar = childNamed(await buttonVariant(file), "FRAME", "Bar");
+    return { file, bar, fill: childNamed(bar, "FRAME", "Fill") };
+  }
+
+  // The fake stores numbers as 32-bit floats, as Figma does, so 217.6 reads back a few millionths off.
+  const placement = (node: FrameNode) => [
+    node.layoutPositioning,
+    ...[node.x, node.y, node.width, node.height].map((value) => Math.round(value * 1000) / 1000),
+  ];
+
+  it("places the fill at the bar's top left in one Apply, and the next Plan lists nothing", async () => {
+    const { file, fill } = await appliedBar(ABSOLUTE);
+    expect(await reconcileKit(file.figma, barKit(ABSOLUTE), false)).toEqual({ changes: [], warnings: [] });
+    expect([...placement(fill), fill.constraints]).toEqual([
+      "ABSOLUTE",
+      0,
+      0,
+      217.6,
+      6,
+      { horizontal: "SCALE", vertical: "STRETCH" },
+    ]);
+  });
+
+  it("keeps the fill at 85% of the bar's width and at its height when the bar resizes", async () => {
+    const { bar, fill } = await appliedBar(ABSOLUTE);
+    bar.resize(512, 12);
+    expect(placement(fill)).toEqual(["ABSOLUTE", 0, 0, 435.2, 12]);
+  });
+
+  it("turns a fill the auto layout placed absolute, writing its place whatever it reads, and converges", async () => {
+    const { file } = await appliedBar(FLOWING);
+    expect((await reconcileKit(file.figma, barKit(ABSOLUTE), false)).changes).toEqual([
+      "Button / size=md / Bar / Fill: layoutPositioning → ABSOLUTE, constraints → SCALE STRETCH, x → 0, y → 0",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, barKit(ABSOLUTE), true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, barKit(ABSOLUTE), false)).toEqual({ changes: [], warnings: [] });
+  });
+
+  // The bar's resize runs first and scales the fill it holds to 278.528px (rule 9), so the fill's own
+  // writes must follow whatever the fill read before the run.
+  it("writes the fill's place and size after the run resizes its bar, so one Apply converges", async () => {
+    const { file, fill } = await appliedBar(ABSOLUTE, 200);
+    expect(placement(fill)).toEqual(["ABSOLUTE", 0, 0, 217.6, 6]);
+    await reconcileKit(file.figma, barKit(ABSOLUTE), true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, barKit(ABSOLUTE), false)).toEqual({ changes: [], warnings: [] });
+    expect(placement(fill)).toEqual(["ABSOLUTE", 0, 0, 217.6, 6]);
+  });
+
+  it("stops Plan and Apply before any write when the absolute fill fills the bar's width", async () => {
+    const { file, setup } = fixture("Roboto");
+    const filling = barKit({ ...ABSOLUTE, sizing: { ...ABSOLUTE.sizing, horizontal: FILL } });
+    const message = "Fill in the variant button/size=md is absolute and fills its width";
+    await expect(reconcileKit(file.figma, filling, false)).rejects.toThrow(message);
+    await expect(reconcileKit(file.figma, filling, true)).rejects.toThrow(message);
+    expect(file.writes.slice(setup)).toEqual([]);
+  });
+});
+
+// Unit under test: `reconcileKit` on a variant whose root strokes a dashed border, as the dashed
+// Empty does. Oracle: the fake's rule 27, after what a real file read on 2026-10-22 (PD): a dash
+// pattern sits apart from the stroke's paints, so the color binding the stroke takes keeps it, a new
+// pattern replaces it, and `[]` clears it. The pattern matches only with the same lengths, and the
+// next Plan lists nothing.
+describe("a variant whose root strokes a dashed border", () => {
+  const SOLID_STROKE: StrokeSpec = {
+    color: { kind: "variable", variable: { collection: "Fuse tokens", name: "background" } },
+    weight: literal(1),
+  };
+  const stroked = (stroke: StrokeSpec) => kitWithRoot((root) => ({ ...root, stroke }));
+  const DASHED = stroked({ ...SOLID_STROKE, dashPattern: [3, 2] });
+  const SOLID = stroked(SOLID_STROKE);
+
+  it("draws the dashes over the bound color in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, DASHED, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, DASHED, false)).toEqual({ changes: [], warnings: [] });
+    const root = await buttonVariant(file);
+    expect(root.dashPattern).toEqual([3, 2]);
+    expect(root.strokes).toMatchObject([
+      { type: "SOLID", boundVariables: { color: { id: file.variable("Fuse tokens", "background").id } } },
+    ]);
+  });
+
+  it("plans a pattern a designer changed back to the kit's, and clears it for a solid stroke", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, DASHED, true);
+    file.reopen();
+    (await buttonVariant(file)).dashPattern = [4, 4];
+    expect((await reconcileKit(file.figma, DASHED, false)).changes).toEqual([
+      "Button / size=md: dashPattern → 3, 2 (holds 4, 4)",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, DASHED, true);
+    file.reopen();
+    expect((await reconcileKit(file.figma, SOLID, false)).changes).toEqual([
+      "Button / size=md: dashPattern → none (holds 3, 2)",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, SOLID, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, SOLID, false)).toEqual({ changes: [], warnings: [] });
+    expect((await buttonVariant(file)).dashPattern).toEqual([]);
+  });
+});
+
+// Unit under test: `reconcileKit` on a variant whose root strokes some sides, as the Sidebar
+// container's `border-r` and a sub menu's `border-l` do. Oracle: the fake's rules 46 and 49, after
+// what a real file read on 2026-10-23 and 2026-10-25 (N9, PS, PS2): each side holds its own weight,
+// `strokeWeight` reads mixed, the stroke counts in the layout, each side taking room on its own side,
+// and a first 0 on a new variant's weight sets every side. One Apply writes the sides, the next Plan
+// lists nothing, and a side a designer changed plans the four weights back as one change.
+describe("a variant whose root strokes some sides", () => {
+  const edged = (sides: { top: number; right: number; bottom: number; left: number }) =>
+    kitWithRoot((root) => ({
+      ...root,
+      stroke: {
+        color: { kind: "variable", variable: { collection: "Fuse tokens", name: "background" } },
+        sides,
+      },
+    }));
+  const LEFT_EDGE = edged({ top: 0, right: 0, bottom: 0, left: 1 });
+  const RIGHT_EDGE = edged({ top: 0, right: 1, bottom: 0, left: 0 });
+  const weights = (root: ComponentNode) => [
+    root.strokeTopWeight,
+    root.strokeRightWeight,
+    root.strokeBottomWeight,
+    root.strokeLeftWeight,
+    root.strokeAlign,
+    root.strokesIncludedInLayout,
+  ];
+
+  it.each([
+    ["left", LEFT_EDGE, [0, 0, 0, 1]],
+    ["right", RIGHT_EDGE, [0, 1, 0, 0]],
+  ] as const)(
+    "writes a new variant's %s edge in the layout in one Apply, and the next Plan lists nothing",
+    async (_edge, kit, sides) => {
+      const { file } = fixture("Roboto");
+      await reconcileKit(file.figma, kit, true);
+      file.reopen();
+      expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+      expect(weights(await buttonVariant(file))).toEqual([...sides, "INSIDE", true]);
+    }
+  );
+
+  it("writes the left edge back in one Apply from every side at 0, as the owner's file held it (PS2)", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, LEFT_EDGE, true);
+    file.reopen();
+    (await buttonVariant(file)).strokeLeftWeight = 0;
+    expect((await reconcileKit(file.figma, LEFT_EDGE, false)).changes).toEqual([
+      "Button / size=md: stroke weights → 0 0 0 1",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, LEFT_EDGE, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, LEFT_EDGE, false)).toEqual({ changes: [], warnings: [] });
+    expect(weights(await buttonVariant(file))).toEqual([0, 0, 0, 1, "INSIDE", true]);
+  });
+
+  it("plans a side a designer changed back to the kit's as one change of the four weights", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, RIGHT_EDGE, true);
+    file.reopen();
+    (await buttonVariant(file)).strokeLeftWeight = 2;
+    expect((await reconcileKit(file.figma, RIGHT_EDGE, false)).changes).toEqual([
+      "Button / size=md: stroke weights → 0 1 0 0",
+      ...RELAYOUT,
+    ]);
+  });
+});
+
+// Unit under test: `reconcileKit` on a label with letter spacing, as Empty's title has. Oracle: the
+// fake's rule 28, after what a real file read on 2026-10-23 (PL): a new text holds 0%, and -2.5% reads
+// back as written. The next Plan lists nothing, and a label with no spacing in the spec plans none, so
+// a published label keeps whatever a designer gave it.
+describe("a label with letter spacing", () => {
+  const SPACED = kitWithRoot((root) => ({
+    ...root,
+    children: [{ ...LABEL, letterSpacing: { unit: "PERCENT", value: -2.5 } }],
+  }));
+  const labelOf = async (file: FakeFigma) => childNamed(await buttonVariant(file), "TEXT", "Label");
+
+  it("writes the spacing in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, SPACED, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, SPACED, false)).toEqual({ changes: [], warnings: [] });
+    expect((await labelOf(file)).letterSpacing).toEqual({ unit: "PERCENT", value: -2.5 });
+  });
+
+  it("plans a spacing a designer changed back, and none for a label the spec gives no spacing", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, SPACED, true);
+    file.reopen();
+    await file.figma.loadFontAsync({ family: "Roboto", style: "Medium" });
+    (await labelOf(file)).letterSpacing = { unit: "PIXELS", value: 1 };
+    expect((await reconcileKit(file.figma, SPACED, false)).changes).toEqual([
+      "Button / size=md / Label: letterSpacing → -2.5%",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, SPACED, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, SPACED, false)).toEqual({ changes: [], warnings: [] });
+    expect(await reconcileKit(file.figma, KIT, false)).toEqual({ changes: [], warnings: [] });
+  });
+});
+
+// Unit under test: `reconcileKit` on a label with a percent line height, as Alert's title and body
+// have over the bound `label-text`. Oracle: the fake's rule 30, after what a real file read on
+// 2026-10-23 (PH): a percent line height reads back as written. The next Plan lists nothing, and a
+// line height a designer set in pixels plans the percent back.
+describe("a label with a percent line height", () => {
+  const PERCENT = kitWithRoot((root) => ({
+    ...root,
+    children: [{ ...LABEL, lineHeight: { kind: "percent", value: 137.5 } }],
+  }));
+  const labelOf = async (file: FakeFigma) => childNamed(await buttonVariant(file), "TEXT", "Label");
+
+  it("writes the percent in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, PERCENT, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, PERCENT, false)).toEqual({ changes: [], warnings: [] });
+    expect((await labelOf(file)).lineHeight).toEqual({ unit: "PERCENT", value: 137.5 });
+  });
+
+  it("plans the percent back over a line height in pixels", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, PERCENT, true);
+    file.reopen();
+    await file.figma.loadFontAsync({ family: "Roboto", style: "Medium" });
+    (await labelOf(file)).lineHeight = { unit: "PIXELS", value: 137.5 };
+    expect((await reconcileKit(file.figma, PERCENT, false)).changes).toEqual([
+      "Button / size=md / Label: lineHeight → 137.5%",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, PERCENT, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, PERCENT, false)).toEqual({ changes: [], warnings: [] });
+  });
+});
+
+// Unit under test: `reconcileKit` on a hugging label with a max width, as Empty's title and
+// description wrap under the header's `max-w-sm`. Oracle: the fake's rule 16, after what a real file
+// read on 2026-10-22 (P7): a text in auto layout keeps a `maxWidth`, and `null` clears it. The next
+// Plan lists nothing.
+describe("a label that wraps at a max width", () => {
+  const CAPPED = kitWithRoot((root) => ({
+    ...root,
+    children: [{ ...LABEL, maxWidth: literal(72) }],
+  }));
+  const labelOf = async (file: FakeFigma) => childNamed(await buttonVariant(file), "TEXT", "Label");
+
+  it("writes the max width in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, CAPPED, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, CAPPED, false)).toEqual({ changes: [], warnings: [] });
+    expect((await labelOf(file)).maxWidth).toBe(72);
+  });
+
+  it("clears the max width for a label the spec gives none, and converges", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, CAPPED, true);
+    file.reopen();
+    expect((await reconcileKit(file.figma, KIT, false)).changes).toEqual([
+      "Button / size=md / Label: maxWidth → none",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, KIT, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, KIT, false)).toEqual({ changes: [], warnings: [] });
+    expect((await labelOf(file)).maxWidth).toBeNull();
   });
 });

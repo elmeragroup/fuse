@@ -15,7 +15,7 @@ import { build } from "rolldown";
 
 import { BESPOKE_ICON_NAMES, PHOSPHOR_ICON_NAMES } from "@elmeragroup/fuse/recipe-catalog";
 
-import { iconKey } from "./component-spec";
+import { iconKey } from "./kit-spec";
 import type { IconSpec } from "./kit-spec";
 
 /** The width and height of every icon component, the 16px of Fuse's `size-4` icons. */

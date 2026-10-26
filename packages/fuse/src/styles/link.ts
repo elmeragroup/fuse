@@ -2,7 +2,9 @@
  * Package-private Link recipe in the shared location used by the interim React Aria tier.
  * `default` and `inherit` both resolve to `text-inherit`; `bold` resolves to `font-medium`.
  * Link's status axis uses `error`, and its live focus state composes the shared focus
- * recipe at render time. This text component has no control-box density metrics.
+ * recipe at render time. This text component has no control-box density metrics. No published
+ * entry re-exports the recipe. The workspace-only recipe catalog re-exports it for the Figma kit's
+ * Link.
  */
 import { tv } from "./tv";
 import { typographyFragments } from "./typography-fragments";

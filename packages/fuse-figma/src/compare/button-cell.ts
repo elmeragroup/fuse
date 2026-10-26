@@ -18,15 +18,13 @@ import type { ReactElement } from "react";
 import { Button, buttonVariants } from "../../../fuse/dist/button.js";
 import type { IconButtonSize, LabelButtonSize } from "../../../fuse/dist/button.js";
 import { ArrowRight, Plus } from "../../../fuse/dist/icons.js";
+import { BUTTON_LABEL } from "../components/button-kit.ts";
 import type { Cell } from "../components/component-spec.ts";
 import { ownKey } from "../components/own-key.ts";
 import { markedIcon } from "./cell-renderers.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
 type ButtonVariant = keyof typeof buttonVariants.variants.variant;
-
-/** The label every label cell shows, the kit's `Label` default. */
-const CELL_LABEL = "Button";
 
 function isVariant(value: string | undefined): value is ButtonVariant {
   return ownKey(buttonVariants.variants.variant, value);
@@ -55,11 +53,11 @@ function sharedProps(cell: Cell) {
 function labelChildren(icon: string | undefined): readonly (ReactElement | string)[] {
   switch (icon) {
     case "start":
-      return [markedIcon(Plus, "inline-start"), CELL_LABEL];
+      return [markedIcon(Plus, "inline-start"), BUTTON_LABEL];
     case "end":
-      return [CELL_LABEL, markedIcon(ArrowRight, "inline-end")];
+      return [BUTTON_LABEL, markedIcon(ArrowRight, "inline-end")];
     default:
-      return [CELL_LABEL];
+      return [BUTTON_LABEL];
   }
 }
 
@@ -81,7 +79,7 @@ export const iconButton: CellRendering = {
     }
     return createElement(
       Button,
-      { ...sharedProps(cell), size: cell.size, "aria-label": CELL_LABEL },
+      { ...sharedProps(cell), size: cell.size, "aria-label": BUTTON_LABEL },
       createElement(Plus)
     );
   },

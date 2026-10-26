@@ -2,7 +2,8 @@
  * Compare a snapshot with the real Fuse components, cell by cell. For each preview the run
  * renders every instance's cell on one browser page in the preview's theme and density, lays the
  * Figma PNG and the browser crop over the theme's background on one canvas with their boxes
- * aligned, and diffs them. It writes three pictures per cell, `report.json` and `report.html`.
+ * aligned, and diffs them. It checks each client cell's mounted markup against its definition, as
+ * `client-markup.ts` says. It writes three pictures per cell, `report.json` and `report.html`.
  */
 
 import { Result } from "effect";
@@ -10,24 +11,27 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { buildComponentSets } from "../components/build-kit.ts";
-import type { Cell } from "../components/component-spec.ts";
+import type { Cell, ComponentDefinition } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
+import type { ComponentSetSpec } from "../components/kit-spec.ts";
 import { browserFootprint, coversRenderBounds, figmaFootprint, sharedCanvas } from "./align.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { BrowserUnavailable, CellRequest, FontNotLoaded, RenderedCell } from "./browser-render.ts";
-import { loadRenderers, renderCellHtml } from "./cell-renderers.ts";
-import type { CellRenderer } from "./cell-renderers.ts";
-import { forcedPseudoClasses, parseCell, restingTwin } from "./cells.ts";
+import { forcedAttributesFor, isClientRenderer, loadRenderers, renderCellHtml } from "./cell-renderers.ts";
+import type { AnyCellRenderer } from "./cell-renderers.ts";
+import { fallbackInteraction, forcedPseudoClasses, parseCell, restingTwin } from "./cells.ts";
+import { checkClientMarkup } from "./client-markup.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { FuseBuildMissing } from "./page-assets.ts";
-import type { PageLayout } from "./preview-page.ts";
+import { forcedSelector, measuredSelectors, slotSpan } from "./preview-page.ts";
+import type { CellContent, PageLayout } from "./preview-page.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
 import type { PreviewTheme } from "./preview-theme.ts";
 import { compose, diffRasters, encodePng, parsePng } from "./raster.ts";
 import type { Raster, Rgb } from "./raster.ts";
 import { renderReportHtml } from "./report-html.ts";
 import type { CanvasRect, InstanceSnapshot, KitSnapshot, PreviewSnapshot } from "./snapshot.ts";
-import { unchangedByDesign } from "./unchanged-by-design.ts";
+import { tokenColorsIn, unchangedByDesign } from "./unchanged-by-design.ts";
 import { judgeCell, worstFirst } from "./verdict.ts";
 import type { BoxSize, CellFlag, CellVerdict } from "./verdict.ts";
 
@@ -114,12 +118,29 @@ class UnsupportedScale extends Error {
 /** Why a run stopped before it compared anything. */
 export type CompareFailure = FuseBuildMissing | BrowserUnavailable | FontNotLoaded | UnsupportedScale;
 
-/** The renderers the run loaded from the Fuse build, by the key of the definition each renders. */
-type Renderers = ReadonlyMap<string, CellRenderer>;
+/** A definition the run renders, with its renderer. */
+export type Renderable = ComponentDefinition & { readonly renderer: AnyCellRenderer };
 
-/** A snapshot instance, the cell its variant key names, and the page cell that renders it. */
+/**
+ * The definitions the run renders: each kit definition that has a renderer.
+ *
+ * @param renderers - The kit's renderers, by definition key.
+ * @returns Each definition with its renderer.
+ */
+export function renderables(renderers: ReadonlyMap<string, AnyCellRenderer>): readonly Renderable[] {
+  return KIT.flatMap(({ definition }) => {
+    const renderer = renderers.get(definition.key);
+    return renderer === undefined ? [] : [{ ...definition, renderer }];
+  });
+}
+
+/**
+ * A snapshot instance, the definition and cell its variant key names, and the page cell that renders
+ * it.
+ */
 export type PlannedCell = {
   readonly instance: InstanceSnapshot;
+  readonly definition: Renderable;
   readonly cell: Cell;
   readonly request: CellRequest;
 };
@@ -134,14 +155,18 @@ export type CellPlan = {
  * Plan a preview's page: one request per instance the harness can render.
  *
  * @param instances - The preview's instances.
- * @param renderers - The renderers, by definition key.
+ * @param renderable - The definitions the run renders, with their renderers.
+ * @param unchanged - The variant keys the kit draws as at rest in the preview's theme, from
+ *   `unchangedByDesign`.
+ * @param layout - The page layout, whose slots a cell wider than one spans.
  * @returns The planned cells, and the instances whose variant the harness cannot render.
  */
-export function planCells(instances: readonly InstanceSnapshot[], renderers: Renderers): CellPlan {
-  const renderable = KIT.flatMap(({ definition }) => {
-    const renderer = renderers.get(definition.key);
-    return renderer === undefined ? [] : [{ ...definition, renderer }];
-  });
+export function planCells(
+  instances: readonly InstanceSnapshot[],
+  renderable: readonly Renderable[],
+  unchanged: ReadonlySet<string>,
+  layout: PageLayout
+): CellPlan {
   const planned: PlannedCell[] = [];
   const unsupported: { variant: string; reason: string }[] = [];
   instances.forEach((instance, index) => {
@@ -151,16 +176,36 @@ export function planCells(instances: readonly InstanceSnapshot[], renderers: Ren
       return;
     }
     const { definition, cell } = parsed.success;
-    const forced = forcedPseudoClasses(cell);
+    const { renderer } = definition;
+    if (cell.state === "highlighted" && renderer.highlight === undefined) {
+      unsupported.push({
+        variant: instance.variant,
+        reason: `${instance.variant}: the renderer names no highlight for the page to force`,
+      });
+      return;
+    }
+    const content = (shown: Cell): CellContent =>
+      isClientRenderer(renderer)
+        ? { _tag: "Client", set: definition.key, cell: shown }
+        : { _tag: "Static", html: renderCellHtml(renderer, shown) };
+    const forced = forcedPseudoClasses(cell, renderer.highlight);
+    const forcedAttributes = forcedAttributesFor(renderer, cell);
+    const forces = forced.length > 0 || Object.keys(forcedAttributes).length > 0;
     planned.push({
       instance,
+      definition,
       cell,
       request: {
         id: `c${String(index)}`,
-        html: renderCellHtml(definition.renderer, cell),
-        measured: `[data-slot="${definition.slot}"]`,
+        content: content(cell),
+        measured: measuredSelectors(definition, isClientRenderer(renderer) ? renderer.union : undefined),
+        span: slotSpan(layout, definition.previewWidth),
+        forcedOn: forcedSelector(definition),
         forced,
-        restingHtml: forced.length === 0 ? undefined : renderCellHtml(definition.renderer, restingTwin(cell)),
+        forcedAttributes,
+        resting: forces ? content(restingTwin(cell)) : undefined,
+        fallback: fallbackInteraction(cell),
+        restsByDesign: unchanged.has(instance.variant),
       },
     });
   });
@@ -282,7 +327,8 @@ export async function compareSnapshot(
   // The Fuse build exists by now, so the renderers' imports of it load.
   const renderers = await loadRenderers();
   const assets = await readPageAssets(build.success, renderers);
-  const unchanged = unchangedByDesign((await buildComponentSets()).map((set) => set.componentSet));
+  const renderable = renderables(renderers);
+  const componentSets = (await buildComponentSets()).map((set) => set.componentSet);
   const launched = await CompareBrowser.launch(assets);
   if (Result.isFailure(launched)) {
     return Result.fail(launched.failure);
@@ -296,7 +342,14 @@ export async function compareSnapshot(
   const previews: ReportPreview[] = [];
   try {
     for (const [previewIndex, preview] of snapshot.previews.entries()) {
-      const outcome = await comparePreview(browser, preview, previewIndex, renderers, unchanged, options);
+      const outcome = await comparePreview(
+        browser,
+        preview,
+        previewIndex,
+        renderable,
+        componentSets,
+        options
+      );
       if (Result.isFailure(outcome)) {
         return Result.fail(outcome.failure);
       }
@@ -326,8 +379,8 @@ async function comparePreview(
   browser: CompareBrowser,
   preview: PreviewSnapshot,
   previewIndex: number,
-  renderers: Renderers,
-  unchanged: ReadonlySet<string>,
+  renderable: readonly Renderable[],
+  componentSets: readonly Pick<ComponentSetSpec, "key" | "axes" | "variants">[],
   options: CompareOptions
 ): Promise<
   Result.Result<
@@ -348,7 +401,8 @@ async function comparePreview(
       preview: { key: preview.key, name: preview.name, theme: null, background: null, font: null },
     });
   }
-  const { planned, unsupported } = planCells(preview.instances, renderers);
+  const unchanged = unchangedByDesign(componentSets, tokenColorsIn(theme.success));
+  const { planned, unsupported } = planCells(preview.instances, renderable, unchanged, options.layout);
   const rendered = await browser.renderPreview(
     theme.success,
     planned.map((cell) => cell.request),
@@ -360,10 +414,14 @@ async function comparePreview(
   const { background, cells, font } = rendered.success;
   const rows: ReportRow[] = [];
   const skipped = unsupported.map((entry) => skip(entry.variant, entry.reason));
-  for (const { instance, cell: parsedCell, request } of planned) {
+  for (const { instance, definition, cell: parsedCell, request } of planned) {
     const cell = cells.get(request.id);
     if (cell === undefined) {
       throw new Error(`the page returned no picture for ${request.id}`);
+    }
+    const { renderer } = definition;
+    if (cell.mounted !== undefined && isClientRenderer(renderer)) {
+      checkClientMarkup(definition, renderer.union, parsedCell, request, cell.mounted);
     }
     const png = instance.image === null ? null : parsePng(Buffer.from(instance.image.png, "base64"));
     if (png !== null && Result.isFailure(png)) {
@@ -378,8 +436,8 @@ async function comparePreview(
           : { renderBounds: instance.image.renderBounds, png: png.success },
     };
     const stem = `p${String(previewIndex).padStart(2, "0")}-${request.id}`;
-    const unchangedByDesign = unchanged.has(instance.variant) && cell.state === "missing";
-    const compared = compareCell(figmaSide, cell, stateFlags(cell, unchangedByDesign), background, options);
+    const restsByDesign = request.restsByDesign && cell.state === "missing";
+    const compared = compareCell(figmaSide, cell, stateFlags(cell, restsByDesign), background, options);
     const write = (suffix: string, raster: Raster) => {
       const path = `cells/${stem}-${suffix}.png`;
       writeFileSync(join(options.outDir, path), encodePng(raster));
@@ -406,7 +464,7 @@ async function comparePreview(
       browserBox: cell.box,
       pixels: compared._tag === "Compared" ? { raw: compared.raw, tolerant: compared.tolerant } : null,
       verdict: compared.verdict,
-      unchangedByDesign,
+      unchangedByDesign: restsByDesign,
       images: pictures,
     });
   }

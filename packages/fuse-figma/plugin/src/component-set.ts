@@ -1,14 +1,20 @@
 /**
- * One component set: its variants, its text and swap properties and the grid the variants sit
- * in.
+ * One component set: its variants, its text, boolean and swap properties and the grid the variants
+ * sit in.
  * The plugin edits an existing set in place, so the set and every variant keep their node
  * ids and component keys, and instances in other files keep following them.
  */
 
 import { walkLayers } from "../../src/components/kit-spec.ts";
-import type { AxisSpec, ComponentSetSpec, VariantSpec } from "../../src/components/kit-spec.ts";
-import { planChildren, requireNewSetFonts, requireNewTextFonts } from "./child-layers.ts";
-import type { LayerLinks } from "./child-layers.ts";
+import type {
+  AxisSpec,
+  BooleanPropertySpec,
+  ComponentSetSpec,
+  TextPropertySpec,
+  VariantSpec,
+} from "../../src/components/kit-spec.ts";
+import { fontLayers, planChildren, requireNewSetFonts, requireNewTextFonts } from "./child-layers.ts";
+import type { LayerLinks, PropertyIds } from "./child-layers.ts";
 import { near, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import type { PlannedIcon } from "./icons.ts";
@@ -18,6 +24,7 @@ import type { PlannedPage } from "./pages.ts";
 import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { planBox } from "./root-layer.ts";
+import { settleInstances } from "./settle.ts";
 
 /** The gap between variants in the set's grid, and between the grid and the set's edge. */
 const GRID_GAP = 16;
@@ -28,6 +35,23 @@ export type PlannedSet = {
   readonly spec: ComponentSetSpec;
   readonly node: Target<ComponentSetNode>;
   readonly variants: ReadonlyMap<string, Target<ComponentNode>>;
+  /**
+   * The set's TEXT, BOOLEAN and INSTANCE_SWAP property ids by name. An operation that adds a property
+   * puts its id here when it runs, so an instance layer of a later set reads an id when its own
+   * operation runs, whether or not this run creates the set.
+   */
+  readonly properties: PropertyIds;
+  /**
+   * Whether the run writes to the set, which can resize its variants, and so the instances of them in
+   * later sets and in the previews.
+   */
+  readonly changed: boolean;
+};
+
+/** The set's variants as the plan leaves them, and whether the plan writes to the set. */
+type PlannedContents = {
+  readonly variants: ReadonlyMap<string, Target<ComponentNode>>;
+  readonly changed: boolean;
 };
 
 const isComponentSet = (node: BaseNode): node is ComponentSetNode => node.type === "COMPONENT_SET";
@@ -109,23 +133,36 @@ function gridCell(spec: ComponentSetSpec, variant: VariantSpec): GridCell {
 
 /**
  * Check that a component set's spec agrees with itself. Every variant sets a listed value on
- * each axis, the column axis is one of the axes, and every text layer links a property the
- * set defines. The planning pass runs this before it records any write, because an operation
- * that creates a set plans the set's contents when it runs.
+ * each axis, the column axis is one of the axes, every text layer links a TEXT property and every
+ * frame or instance a BOOLEAN property the set defines, and no two properties share a name, since
+ * the plan finds each property's id by its name. The planning pass runs this before it records any
+ * write, because an operation that creates a set plans the set's contents when it runs.
  *
  * @param spec - The component set.
  * @throws When the spec contradicts itself.
  */
 export function checkComponentSet(spec: ComponentSetSpec): void {
   columnAxisOf(spec);
-  const properties = new Set(spec.textProperties.map((property) => property.name));
+  const texts = spec.textProperties.map((property) => property.name);
+  const booleans = (spec.booleanProperties ?? []).map((property) => property.name);
+  const names = [...texts, ...booleans, ...spec.swapProperties.map((property) => property.name)];
+  const twice = names.find((name, index) => names.indexOf(name) !== index);
+  if (twice !== undefined) {
+    throw new Error(
+      `${spec.name} names two properties ${twice}, and the plugin finds each property by its name.`
+    );
+  }
   for (const variant of spec.variants) {
     variantName(spec, variant);
     gridCell(spec, variant);
     for (const layer of walkLayers(variant.root)) {
-      if (layer.kind === "text" && layer.textProperty !== undefined && !properties.has(layer.textProperty)) {
+      const link =
+        layer.kind === "text"
+          ? { property: layer.textProperty, defined: texts }
+          : { property: layer.visibleProperty, defined: booleans };
+      if (link.property !== undefined && !link.defined.includes(link.property)) {
         throw new Error(
-          `${spec.name}: the variant ${variant.key} links ${layer.textProperty}, which the set does not define.`
+          `${spec.name}: the variant ${variant.key} links ${link.property}, which the set does not define.`
         );
       }
     }
@@ -160,7 +197,9 @@ function gridLayout(spec: ComponentSetSpec, nodeOf: (variant: VariantSpec) => Co
 
 /**
  * Plan the grid. The grid reads the variants' sizes when its operation runs, after the writes
- * that change them, so a plan that changes anything in the set lays the grid out again.
+ * that change them, so a plan that changes anything in the set, or in a set whose variants its
+ * instance layers show, lays the grid out again. It reads the instances inside each variant first,
+ * the deepest first, since a variant sizes from its instances as they stand (`settle.ts`).
  */
 function planGrid(
   run: Run,
@@ -174,7 +213,9 @@ function planGrid(
     if (target === undefined) {
       throw new Error(`${spec.name}: the plan has no variant ${variant.key} to lay out.`);
     }
-    return target.get();
+    const node = target.get();
+    settleInstances(node);
+    return node;
   };
   const settled =
     !changed && spec.variants.every((variant) => variants.get(variant.key)?.existing !== undefined);
@@ -204,26 +245,39 @@ function planGrid(
   );
 }
 
-function planTextProperties(
+/** A set's TEXT or BOOLEAN properties, each a name and the value it starts with. */
+type ValueProperties =
+  | { readonly type: "TEXT"; readonly properties: readonly TextPropertySpec[] }
+  | { readonly type: "BOOLEAN"; readonly properties: readonly BooleanPropertySpec[] };
+
+/** How a change line names each kind of property. */
+const KIND_NAMES = { TEXT: "text", BOOLEAN: "boolean" } as const;
+
+/**
+ * Plan the TEXT or BOOLEAN properties: add each one the set lacks, and give each one it holds the
+ * spec's default. An operation that adds a property puts its id in `ids` when it runs.
+ */
+function planValueProperties(
   run: Run,
   set: ComponentSetNode,
   spec: ComponentSetSpec,
+  { type, properties }: ValueProperties,
   ids: Map<string, string>
 ): void {
-  for (const property of spec.textProperties) {
+  for (const property of properties) {
     const found = Object.entries(set.componentPropertyDefinitions).find(
-      ([id, definition]) => definition.type === "TEXT" && id.split("#")[0] === property.name
+      ([id, definition]) => definition.type === type && id.split("#")[0] === property.name
     );
     if (found === undefined) {
-      change(run.plan, spec.name, `add the text property ${property.name}`, () => {
-        ids.set(property.name, set.addComponentProperty(property.name, "TEXT", property.defaultValue));
+      change(run.plan, spec.name, `add the ${KIND_NAMES[type]} property ${property.name}`, () => {
+        ids.set(property.name, set.addComponentProperty(property.name, type, property.defaultValue));
       });
       continue;
     }
     const [id, definition] = found;
     ids.set(property.name, id);
     if (definition.defaultValue !== property.defaultValue) {
-      change(run.plan, spec.name, `${property.name} default → ${property.defaultValue}`, () => {
+      change(run.plan, spec.name, `${property.name} default → ${String(property.defaultValue)}`, () => {
         ids.set(property.name, set.editComponentProperty(id, { defaultValue: property.defaultValue }));
       });
     }
@@ -320,8 +374,8 @@ async function planVariantFields(
   planScalar(run, label, "name", component.name, name, () => {
     component.name = name;
   });
-  planBox(run, component, label, variant.root, "root");
-  await planChildren(run, component, label, variant.root.children, links);
+  const size = planBox(run, component, label, variant.root, { kind: "root" });
+  await planChildren(run, component, label, variant.root, links, size);
 }
 
 async function planVariant(
@@ -339,7 +393,7 @@ async function planVariant(
     await planVariantFields(run, found, name, label, variant, links);
     return existing(found);
   }
-  requireNewTextFonts(run, set, label, walkLayers(variant.root));
+  requireNewTextFonts(run, set, label, fontLayers(walkLayers(variant.root), links.sets));
   return create(
     run.plan,
     spec.name,
@@ -349,20 +403,45 @@ async function planVariant(
   );
 }
 
+/**
+ * Whether a set holds an instance of a set the run writes to, whose variants can change size, so the
+ * set's own variants, which size from those instances, can too.
+ */
+function holdsChanged(spec: ComponentSetSpec, sets: ReadonlyMap<string, PlannedSet>): boolean {
+  return spec.variants.some((variant) =>
+    walkLayers(variant.root).some(
+      (layer) => layer.kind === "instance" && sets.get(layer.componentSet)?.changed === true
+    )
+  );
+}
+
+/**
+ * Plan a set's name, properties, variants and grid.
+ *
+ * @param properties - The set's property ids by name, which this fills in, at once for a property the
+ *   set holds and when its operation runs for one the run adds.
+ */
 async function planSetContents(
   run: Run,
   set: ComponentSetNode,
   spec: ComponentSetSpec,
-  icons: ReadonlyMap<string, PlannedIcon>
-): Promise<ReadonlyMap<string, Target<ComponentNode>>> {
+  { icons, sets }: Omit<LayerLinks, "properties">,
+  properties: Map<string, string>
+): Promise<PlannedContents> {
   const start = run.plan.operations.length;
   planScalar(run, spec.name, "name", set.name, spec.name, () => {
     set.name = spec.name;
   });
-  const properties = new Map<string, string>();
-  planTextProperties(run, set, spec, properties);
+  planValueProperties(run, set, spec, { type: "TEXT", properties: spec.textProperties }, properties);
+  planValueProperties(
+    run,
+    set,
+    spec,
+    { type: "BOOLEAN", properties: spec.booleanProperties ?? [] },
+    properties
+  );
   planSwapProperties(run, set, spec, icons, properties);
-  const links: LayerLinks = { properties, icons };
+  const links: LayerLinks = { properties, icons, sets };
 
   // The layers panel lists the variants in spec order. Figma keeps each variant property's
   // values in an order of its own: a new value goes last, and moving the variants or renaming a
@@ -374,8 +453,8 @@ async function planSetContents(
     variants.set(variant.key, target);
     return target;
   });
-  planGrid(run, set, spec, variants, run.plan.operations.length > start);
-  return variants;
+  planGrid(run, set, spec, variants, run.plan.operations.length > start || holdsChanged(spec, sets));
+  return { variants, changed: run.plan.operations.length > start };
 }
 
 /**
@@ -387,8 +466,9 @@ function createSet(
   run: Run,
   page: PlannedPage,
   spec: ComponentSetSpec,
-  icons: ReadonlyMap<string, PlannedIcon>
+  links: Omit<LayerLinks, "properties">
 ): PlannedSet {
+  const properties = new Map<string, string>();
   const node = create(
     run.plan,
     page.spec.name,
@@ -404,7 +484,7 @@ function createSet(
       return set;
     },
     async (set, plan) => {
-      await planSetContents({ ...run, plan }, set, spec, icons);
+      await planSetContents({ ...run, plan }, set, spec, links, properties);
     }
   );
   // The set's children, indexed by key the first time a later operation reads a variant.
@@ -425,28 +505,33 @@ function createSet(
       },
     ])
   );
-  return { spec, node, variants };
+  return { spec, node, variants, properties, changed: true };
 }
 
 /**
- * Plan one component set against the spec.
+ * Plan one component set against the spec. The kit lists a set after every set whose variants its
+ * instance layers show, so those are planned first.
  *
  * @param run - The run.
  * @param page - The page the set sits on.
  * @param spec - The component set.
  * @param icons - The kit's icons, by key, which the set's icon layers and swap properties use.
- * @returns The set and its variants, as later operations find them.
+ * @param sets - The sets the run planned before this one, by key, which its instance layers show.
+ * @returns The set, its variants and its property ids, as later operations find them.
  */
 export async function planComponentSet(
   run: Run,
   page: PlannedPage,
   spec: ComponentSetSpec,
-  icons: ReadonlyMap<string, PlannedIcon>
+  icons: ReadonlyMap<string, PlannedIcon>,
+  sets: ReadonlyMap<string, PlannedSet>
 ): Promise<PlannedSet> {
   const found = page.find(spec.key, spec.name, isComponentSet);
   if (found === undefined) {
-    await requireNewSetFonts(run, page.modes, spec);
-    return createSet(run, page, spec, icons);
+    await requireNewSetFonts(run, page.modes, spec, sets);
+    return createSet(run, page, spec, { icons, sets });
   }
-  return { spec, node: existing(found), variants: await planSetContents(run, found, spec, icons) };
+  const properties = new Map<string, string>();
+  const contents = await planSetContents(run, found, spec, { icons, sets }, properties);
+  return { spec, node: existing(found), properties, ...contents };
 }

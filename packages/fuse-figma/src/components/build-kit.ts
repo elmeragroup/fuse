@@ -9,16 +9,24 @@ import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
 import { fuseVariableSet } from "../fuse-variable-set";
 import type { CollectionSpec, VariableSpec } from "../variable-set";
-import { buildComponentSet, definitionClasses, variantKey } from "./component-spec";
+import { buildSetsInOrder, definitionClasses, variantKey } from "./component-spec";
 import type { BuiltComponent, OuterDeclaration } from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
-import { makeVariableIndex, readColor } from "./css-values";
-import type { VariableIndex } from "./css-values";
+import { makeVariableIndex, pinnedIndex, readColor } from "./css-values";
+import type { ModeView, VariableIndex } from "./css-values";
 import { fuseIcons, ICON_SIZE } from "./icon-library";
 import { KIT } from "./kit-registry";
 import type { KitPage } from "./kit-registry";
 import { walkLayers } from "./kit-spec";
-import type { ComponentSetSpec, IconLibrarySpec, KitSpec, ModeRef, PageSpec, PreviewSpec } from "./kit-spec";
+import type {
+  ComponentSetSpec,
+  GlyphFontSpec,
+  IconLibrarySpec,
+  KitSpec,
+  ModeRef,
+  PageSpec,
+  PreviewSpec,
+} from "./kit-spec";
 import { baseBorderColor, compileUtilities } from "./utility-css";
 
 /**
@@ -68,8 +76,15 @@ const PAGE: readonly OuterDeclaration[] = [
   { className: "body font-sans", property: "font-family", value: "var(--font-sans)" },
 ];
 
-/** The variable set the kit binds, and the index its CSS values resolve through. */
-type KitVariables = { readonly collections: readonly CollectionSpec[]; readonly variables: VariableIndex };
+/**
+ * The variable set the kit binds, the index its CSS values resolve through, and each mode of a
+ * collection with more than one, as the index resolves in it.
+ */
+type KitVariables = {
+  readonly collections: readonly CollectionSpec[];
+  readonly variables: VariableIndex;
+  readonly modes: readonly ModeView[];
+};
 
 /** A built component set, placed on its page. */
 export type KitComponentSet = Omit<BuiltComponent, "componentSet"> & {
@@ -82,7 +97,8 @@ function kitVariables(): KitVariables {
     throw new Error(`the Fuse variable set does not build: ${String(variableSet.failure)}`);
   }
   const collections = variableSet.success.collections;
-  const minimumOf = minimums(collections);
+  const minimumOf = extremes(collections, Math.min);
+  const maximumOf = extremes(collections, Math.max);
   const variables = makeVariableIndex(
     collections.flatMap((collection) =>
       collection.variables.flatMap((variable) =>
@@ -93,15 +109,52 @@ function kitVariables(): KitVariables {
                 ref: { collection: collection.name, name: variable.name },
                 webSyntax: variable.webSyntax,
                 minimum: minimumOf(collection.name, variable.name),
+                maximum: maximumOf(collection.name, variable.name),
               },
             ]
       )
     )
   );
-  return { collections, variables };
+  return { collections, variables, modes: modeViews(collections, variables, minimumOf, maximumOf) };
 }
 
-async function buildSets(variables: VariableIndex): Promise<readonly KitComponentSet[]> {
+/**
+ * Each mode of a collection with more than one, named `Collection / Mode`: the collection's
+ * variables hold that mode's value, or the bounds of the variable an alias there names, and every
+ * other variable keeps its bounds across all modes.
+ */
+function modeViews(
+  collections: readonly CollectionSpec[],
+  variables: VariableIndex,
+  minimumOf: (collection: string, name: string) => number | undefined,
+  maximumOf: (collection: string, name: string) => number | undefined
+): readonly ModeView[] {
+  return collections
+    .filter((collection) => collection.modes.length > 1)
+    .flatMap((collection) => {
+      const specs = new Map(collection.variables.map((variable) => [variable.name, variable]));
+      return collection.modes.map((mode) => ({
+        name: `${collection.name} / ${mode}`,
+        variables: pinnedIndex(variables, (ref) => {
+          const value =
+            ref.collection === collection.name ? specs.get(ref.name)?.values.get(mode) : undefined;
+          switch (value?._tag) {
+            case "Float":
+              return { minimum: value.value, maximum: value.value };
+            case "Alias": {
+              const minimum = minimumOf(value.target.collection, value.target.variable);
+              const maximum = maximumOf(value.target.collection, value.target.variable);
+              return minimum === undefined || maximum === undefined ? undefined : { minimum, maximum };
+            }
+            default:
+              return undefined;
+          }
+        }),
+      }));
+    });
+}
+
+async function buildSets({ variables, modes }: KitVariables): Promise<readonly KitComponentSet[]> {
   const classes = new Set(KIT.flatMap(({ definition }) => definitionClasses(definition)));
   const compiled = await compileUtilities([...classes]);
   // The base layer's border color sets the color on each element, so a part does not inherit it
@@ -110,10 +163,10 @@ async function buildSets(variables: VariableIndex): Promise<readonly KitComponen
   const base: readonly OuterDeclaration[] = [
     { className: "fuse.css base layer", ...baseBorderColor(compiled) },
   ];
-  return KIT.map(({ definition, page }) => {
-    const set = buildComponentSet(definition, { compiled, variables, page: PAGE, base });
-    return { ...set, componentSet: { ...set.componentSet, page: pageSpec(page).key } };
-  });
+  return buildSetsInOrder(KIT, { compiled, variables, page: PAGE, base, modes }).map(([{ page }, set]) => ({
+    ...set,
+    componentSet: { ...set.componentSet, page: pageSpec(page).key },
+  }));
 }
 
 /**
@@ -124,7 +177,7 @@ async function buildSets(variables: VariableIndex): Promise<readonly KitComponen
  * @throws When the variable set does not build.
  */
 export async function buildComponentSets(): Promise<readonly KitComponentSet[]> {
-  return buildSets(kitVariables().variables);
+  return buildSets(kitVariables());
 }
 
 /**
@@ -138,8 +191,9 @@ export async function buildKit(): Promise<{
   readonly spec: KitSpec;
   readonly coverage: readonly CoverageRow[];
 }> {
-  const { collections, variables } = kitVariables();
-  const built = await buildSets(variables);
+  const kitVariableSet = kitVariables();
+  const { collections, variables } = kitVariableSet;
+  const built = await buildSets(kitVariableSet);
   const glyphColor = readColor("var(--foreground)", variables);
   if (glyphColor === undefined) {
     throw new Error("the variable set has no foreground for the icon glyphs");
@@ -194,6 +248,7 @@ export async function buildKit(): Promise<{
         family: defaultFontFamily(),
         style,
       })),
+      glyphFont: GLYPH_FONT,
       icons,
       componentSets: built.map((set) => set.componentSet),
       previews,
@@ -238,11 +293,12 @@ export function checkIconReferences(set: Omit<ComponentSetSpec, "page">, library
 }
 
 /**
- * The smallest number each FLOAT variable holds in any mode. An alias can land in any mode of
- * its target, so it counts every value the target holds.
+ * The smallest or the largest number each FLOAT variable holds in any mode, as `pick` chooses among
+ * its values. An alias can land in any mode of its target, so it counts every value the target holds.
  */
-function minimums(
-  collections: readonly CollectionSpec[]
+function extremes(
+  collections: readonly CollectionSpec[],
+  pick: (...values: number[]) => number
 ): (collection: string, name: string) => number | undefined {
   const specs = new Map<string, VariableSpec>(
     collections.flatMap((collection) =>
@@ -250,7 +306,7 @@ function minimums(
     )
   );
   const memo = new Map<string, number | undefined>();
-  const minimumOf = (collection: string, name: string): number | undefined => {
+  const extremeOf = (collection: string, name: string): number | undefined => {
     const key = `${collection}/${name}`;
     if (memo.has(key)) {
       return memo.get(key);
@@ -262,20 +318,26 @@ function minimums(
         case "Float":
           return value.value;
         case "Alias":
-          return minimumOf(value.target.collection, value.target.variable);
+          return extremeOf(value.target.collection, value.target.variable);
         default:
           return undefined;
       }
     });
-    const minimum =
+    const extreme =
       values.length === 0 || values.includes(undefined)
         ? undefined
-        : Math.min(...values.filter((value) => value !== undefined));
-    memo.set(key, minimum);
-    return minimum;
+        : pick(...values.filter((value) => value !== undefined));
+    memo.set(key, extreme);
+    return extreme;
   };
-  return minimumOf;
+  return extremeOf;
 }
+
+/**
+ * The glyphs the kit's text holds that Roboto, the family `font-sans` resolves to, lacks: ⇧ (U+21E7)
+ * and ⌘ (U+2318), in the Dropdown menu shortcuts. Inter draws both, and Figma ships it (G1).
+ */
+const GLYPH_FONT: GlyphFontSpec = { family: "Inter", glyphs: ["\u21E7", "\u2318"] };
 
 /** The family `font-sans` resolves to, which every theme shares. The plugin loads it. */
 function defaultFontFamily(): string {

@@ -52,6 +52,27 @@ describe("compileUtilities", () => {
       inherits: false,
     });
   });
+
+  // Oracle: fuse.css's `@custom-variant item-described` puts the class after a parent context,
+  // `:where(:has( > [data-slot="item-content"] > [data-slot="item-description"])) > .item-described\:…`.
+  // `:where()` weighs nothing (Selectors 4 §17), so the rule weighs (0,1,0), as the bare utility does,
+  // and Tailwind prints a variant's rule after every bare utility's.
+  it("places a class whose rule selects it as the child of a parent context", async () => {
+    const compiled = await compileUtilities(["self-start", "item-described:self-start"]);
+    const bare = compiled.classes.get("self-start");
+    const described = compiled.classes.get("item-described:self-start");
+    expect(described?.specificity).toEqual([0, 1, 0]);
+    expect((described?.order ?? -1) > (bare?.order ?? Number.POSITIVE_INFINITY)).toBe(true);
+  });
+
+  // Oracle: Tailwind compiles `in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner` to
+  // `:where([data-slot="navigation-menu-popup"]) :where(.…)`, a weightless class below a parent
+  // context. Both `:where()`s weigh nothing (Selectors 4 §17), so the rule weighs (0,0,0).
+  it("places a weightless class whose rule selects it below a parent context", async () => {
+    const className = "in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner";
+    const compiled = await compileUtilities([className]);
+    expect(compiled.classes.get(className)?.specificity).toEqual([0, 0, 0]);
+  });
 });
 
 // Unit under test: `baseBorderColor`, which reads the base-layer border color every Fuse part gets

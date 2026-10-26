@@ -246,6 +246,70 @@ describe("fuse-figma resolving Fuse tokens on a frame", () => {
       assert.strictEqual(figma.resolve("Fuse density", "control-h-sm", {}), 32);
     })
   );
+
+  it.effect("resolves an inner corner in the frame's theme and density", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+      const corner = (name: string, modes: Readonly<Record<string, string>>) =>
+        (["Dense", "Comfortable", "Auto"] as const).map((density) =>
+          figma.resolve("Fuse density", `radius-inner/${name}`, { ...modes, "Fuse density": density })
+        );
+
+      // Each corner is max(0px, rung - border - padding), from themes.css and fuse.css. Internal
+      // themes set --radius 0.5rem and step 0px, so every rung is 8px. External themes step 2px:
+      // Fjordkraft sets 0.75rem, so radius-sm, radius-lg and radius-xl are 8, 12 and 16px, and
+      // TrøndelagKraft sets 1rem, so they are 12, 16 and 20px. Elmera sets 0.375rem, so radius-lg
+      // is 6px. --surface-pad-md is 0.75rem dense and 1rem comfortable, and --surface-pad-sm
+      // 0.25rem at both. Auto takes dense in internal themes and comfortable in external ones.
+      // A default Accordion item: radius-sm less 12px or 16px leaves nothing, even at 1rem.
+      assert.deepStrictEqual(corner("sm-pad-md", light("external-tkas-private")), [0, 0, 0]);
+      // radius-lg less 12px or 16px.
+      assert.deepStrictEqual(corner("lg-pad-md", light("internal-fkas-private")), [0, 0, 0]);
+      assert.deepStrictEqual(corner("lg-pad-md", light("external-fkas-private")), [0, 0, 0]);
+      assert.deepStrictEqual(corner("lg-pad-md", light("external-tkas-private")), [4, 0, 0]);
+      // radius-xl less 12px or 16px.
+      assert.deepStrictEqual(corner("xl-pad-md", light("external-fkas-private")), [4, 0, 0]);
+      assert.deepStrictEqual(corner("xl-pad-md", light("external-tkas-private")), [8, 4, 4]);
+      // A card Accordion item takes its 1px border off too.
+      assert.deepStrictEqual(corner("lg-border-pad-md", light("external-tkas-private")), [3, 0, 0]);
+      assert.deepStrictEqual(corner("xl-border-pad-md", light("internal-fkas-private")), [0, 0, 0]);
+      assert.deepStrictEqual(corner("xl-border-pad-md", light("external-fkas-private")), [3, 0, 0]);
+      assert.deepStrictEqual(corner("xl-border-pad-md", dark("external-tkas-company")), [7, 3, 3]);
+      // A floating Sidebar's group: radius-lg less 4px at both densities.
+      assert.deepStrictEqual(corner("lg-pad-sm", light("internal-fkas-private")), [4, 4, 4]);
+      assert.deepStrictEqual(corner("lg-pad-sm", light("external-fkas-private")), [8, 8, 8]);
+      assert.deepStrictEqual(corner("lg-pad-sm", light("external-tkas-private")), [12, 12, 12]);
+      assert.deepStrictEqual(corner("lg-pad-sm", dark("external-elma-company")), [2, 2, 2]);
+      // A DropdownMenu or Combobox row: radius-md less 4px at both densities. Fuse's
+      // concentric-corners browser test measures 4px internal, 6px for Fjordkraft's external
+      // theme, 10px for TrøndelagKraft's and 2px for Gudbrandsdal's. Elmera's radius-md is 4px,
+      // which leaves 0.
+      assert.deepStrictEqual(corner("md-pad-sm", light("internal-fkas-private")), [4, 4, 4]);
+      assert.deepStrictEqual(corner("md-pad-sm", light("external-fkas-private")), [6, 6, 6]);
+      assert.deepStrictEqual(corner("md-pad-sm", dark("external-tkas-company")), [10, 10, 10]);
+      assert.deepStrictEqual(corner("md-pad-sm", light("external-guen-private")), [2, 2, 2]);
+      assert.deepStrictEqual(corner("md-pad-sm", light("external-elma-company")), [0, 0, 0]);
+      // A Command row: radius-xl less --surface-gap-sm, 0.5rem dense and 0.75rem comfortable.
+      assert.deepStrictEqual(corner("xl-gap-sm", light("internal-fkas-private")), [0, 0, 0]);
+      assert.deepStrictEqual(corner("xl-gap-sm", light("external-fkas-private")), [8, 4, 4]);
+      assert.deepStrictEqual(corner("xl-gap-sm", light("external-tkas-private")), [12, 8, 8]);
+
+      assert.deepStrictEqual(
+        figma.aliasChain("Fuse density", "radius-inner/xl-border-pad-md", {
+          ...light("external-tkas-private"),
+          "Fuse density": "Comfortable",
+        }),
+        [
+          "Fuse density/radius-inner/xl-border-pad-md",
+          "Fuse tokens/radius-inner/xl-border-pad-md/comfortable",
+          "Fuse variant/light/radius-inner/xl-border-pad-md/comfortable",
+          "Fuse segment/light/external/radius-inner/xl-border-pad-md/comfortable",
+          "Fuse brand/light/external/private/radius-inner/xl-border-pad-md/comfortable",
+        ]
+      );
+    })
+  );
 });
 
 describe("fuse-figma theme axes", () => {

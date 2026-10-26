@@ -9,9 +9,10 @@ import { stateFocusRingClass, stateFocusRingVisibleClass } from "./utils";
  * `CalendarCell` its render props per date, and the component resolves this recipe once
  * per day while the surrounding slots resolve once per render.
  *
- * Package-private — no entry re-exports it, and the interim tier has no public recipe
- * surface. It lives here rather than beside the component because every RAC entry keeps
- * its recipe in `src/styles/`.
+ * Package-private — no published entry re-exports it, and the interim tier has no public recipe
+ * surface. The workspace-only recipe catalog re-exports it for the Figma kit's day cell. It
+ * lives here rather than beside the component because every RAC entry keeps its recipe in
+ * `src/styles/`.
  */
 export const cellVariants = tv({
   // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- decorative day-cell circle, not a control-box rung

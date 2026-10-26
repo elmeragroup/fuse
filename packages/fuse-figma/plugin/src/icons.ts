@@ -29,10 +29,12 @@ export type PlannedIcon = {
   readonly spec: IconSpec;
   readonly node: Target<ComponentNode>;
   /**
-   * Whether the run draws the icon, which replaces its glyph. An instance's override of the
-   * glyph's fill goes with the old glyph, so an icon layer colors the new glyph after the draw.
+   * Whether the run draws the icon, which replaces its glyph, or paints its glyph. An instance's
+   * override of the glyph's fill goes with a replaced glyph, and an instance whose glyph shows the
+   * component's paint, as one whose override equals it does (NS), takes the new paint. So an icon
+   * layer and an instance layer that show the icon color its glyph once those writes have run.
    */
-  readonly redrawn: boolean;
+  readonly changesGlyph: boolean;
 };
 
 /** The library frame and its icons by key, as later operations find them. */
@@ -152,13 +154,19 @@ function drawIcon(
   component.setSharedPluginData(PLUGIN_DATA_NAMESPACE, GLYPH_BOX, box.join(","));
 }
 
+/**
+ * Plan an icon component: its name, size and clear fill, and its glyph, drawn again where it no
+ * longer holds its markup's drawing, or painted with the library's color.
+ *
+ * @returns Whether the plan draws the glyph or paints it.
+ */
 function planIconComponent(
   run: Run,
   component: ComponentNode,
   label: string,
   library: IconLibrarySpec,
   spec: IconSpec
-): void {
+): boolean {
   planScalar(run, label, "name", component.name, spec.name, () => {
     component.name = spec.name;
   });
@@ -185,11 +193,13 @@ function planIconComponent(
     change(run.plan, label, "draw the icon from its Fuse markup", () =>
       drawIcon(run, component, library, spec, glyphPaint)
     );
-    return;
+    return true;
   }
+  const before = run.plan.operations.length;
   planPaints(run, `${label} / ${ICON_GLYPH}`, "fill", glyph.fills, library.color, (paints) => {
     glyph.fills = paints;
   });
+  return run.plan.operations.length > before;
 }
 
 function planIcon(
@@ -202,18 +212,19 @@ function planIcon(
   const label = `${library.name} / ${spec.name}`;
   const found = findOwned(run.plan, siblings, library.name, spec.key, spec.name, isComponent);
   if (found !== undefined) {
-    const redrawn = !holdsDrawing(found, spec);
-    planIconComponent(run, found, label, library, spec);
-    return { spec, node: existing(found), redrawn };
+    const changesGlyph = planIconComponent(run, found, label, library, spec);
+    return { spec, node: existing(found), changesGlyph };
   }
   const node = create(
     run.plan,
     library.name,
     `create the icon ${spec.name}`,
     () => placeOwned(frame, run.figma.createComponent(), spec.key, spec.name),
-    (made, plan) => planIconComponent({ ...run, plan }, made, label, library, spec)
+    (made, plan) => {
+      planIconComponent({ ...run, plan }, made, label, library, spec);
+    }
   );
-  return { spec, node, redrawn: true };
+  return { spec, node, changesGlyph: true };
 }
 
 async function planLibraryContents(
@@ -267,7 +278,7 @@ export async function planIconLibrary(
       spec.key,
       {
         spec,
-        redrawn: true,
+        changesGlyph: true,
         node: {
           existing: undefined,
           get: () => {

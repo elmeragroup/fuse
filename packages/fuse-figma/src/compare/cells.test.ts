@@ -3,7 +3,13 @@ import { describe, expect, it } from "vitest";
 
 import { variantKey } from "../components/component-spec";
 import { KIT } from "../components/kit-registry";
-import { forcedPseudoClasses, parseCell, restingTwin } from "./cells";
+import {
+  fallbackInteraction,
+  forcedPseudoClasses,
+  highlightAttributes,
+  parseCell,
+  restingTwin,
+} from "./cells";
 
 /** A set the tests declare, so the parser's refusals do not depend on any recipe. */
 const CHIP = {
@@ -61,6 +67,44 @@ describe("forcedPseudoClasses", () => {
   it("forces nothing for a state the markup draws, or a cell with no state", () => {
     expect(forcedPseudoClasses({ state: "disabled" })).toEqual([]);
     expect(forcedPseudoClasses({ variant: "default" })).toEqual([]);
+  });
+
+  // Oracle: Base UI focuses a highlighted Select or Menu item, which Fuse styles with `focus:`, and
+  // marks a highlighted Combobox or Command item `data-highlighted`, which Fuse styles with
+  // `data-highlighted:` (`select.tsx`, `dropdown-menu-variants.ts`, `combobox.tsx`,
+  // `command-variants.ts`).
+  it("forces :focus alone for a row Base UI highlights by focus, and nothing for one it marks", () => {
+    expect(forcedPseudoClasses({ state: "highlighted" }, "focus")).toEqual(["focus"]);
+    expect(forcedPseudoClasses({ state: "highlighted" }, "data-highlighted")).toEqual([]);
+    expect(forcedPseudoClasses({ state: "highlighted" })).toEqual([]);
+    expect(forcedPseudoClasses({ state: "focus" }, "focus")).toEqual(["focus", "focus-visible"]);
+  });
+});
+
+describe("highlightAttributes", () => {
+  it("writes data-highlighted on a highlighted row Base UI marks, and nothing elsewhere", () => {
+    expect(highlightAttributes({ state: "highlighted" }, "data-highlighted")).toEqual({
+      "data-highlighted": "",
+    });
+    expect(highlightAttributes({ state: "highlighted" }, "focus")).toEqual({});
+    expect(highlightAttributes({ state: "rest" }, "data-highlighted")).toEqual({});
+    expect(highlightAttributes({ state: "hover" }, undefined)).toEqual({});
+  });
+});
+
+// Oracle: a real pointer over the element draws its hover face and a real focus its focus face,
+// and neither draws a highlighted row's face alone: a real focus on a menu item adds the keyboard
+// focus ring a highlight does not show.
+describe("fallbackInteraction", () => {
+  it("hovers a hover cell and focuses a focus cell for real", () => {
+    expect(fallbackInteraction({ state: "hover" })).toBe("hover");
+    expect(fallbackInteraction({ state: "focus" })).toBe("focus");
+  });
+
+  it("tries nothing for a highlighted row or a state the markup draws", () => {
+    expect(fallbackInteraction({ state: "highlighted" })).toBe("none");
+    expect(fallbackInteraction({ state: "disabled" })).toBe("none");
+    expect(fallbackInteraction({ variant: "default" })).toBe("none");
   });
 });
 

@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import { compileAst } from "tailwindcss";
 
 import { splitClassName } from "./class-name";
+import { namedClasses, selectorAlternatives } from "./css-selector";
 import { splitTopLevel } from "./css-values";
 import { compareSpecificity, specificityOf } from "./specificity";
 import type { Specificity } from "./specificity";
@@ -51,8 +52,20 @@ export type ClassPlacement = {
 export type CompiledUtilities = {
   /** Each bare utility Tailwind emitted a rule for. A utility it does not know is absent. */
   readonly rules: ReadonlyMap<string, UtilityRule>;
+  /**
+   * Each bare utility whose rule styles every child of the element that carries it but the last, as
+   * Tailwind compiles `space-y-4` to `:where(.space-y-4 > :not(:last-child))`. Such a utility has no
+   * entry in `rules`, since its rule selects no element by the class alone.
+   */
+  readonly exceptLastChildRules: ReadonlyMap<string, UtilityRule>;
   /** Each full class Tailwind emitted a rule for, such as `data-checked:border-primary`. */
   readonly classes: ReadonlyMap<string, ClassPlacement>;
+  /**
+   * The selector of every rule that names a class outside a pseudo-class's parentheses, by that
+   * class, whatever the selector starts with, so a part's presence check reads the `:has()` of an
+   * `item-described:` rule, `:where(:has(…)) > .class`, here.
+   */
+  readonly rulesByClass: ReadonlyMap<string, readonly string[]>;
   /** The theme variables Tailwind emitted on `:root`, such as `--font-weight-medium: 500`. */
   readonly themeValues: ReadonlyMap<string, string>;
   /** Each custom property Tailwind registered with `@property`, such as `--tw-ring-offset-width`. */
@@ -217,21 +230,29 @@ export function baseBorderColor(compiled: CompiledUtilities): UtilityDeclaration
 
 /**
  * Read Tailwind's build output. A rule whose whole selector is one class is that utility's
- * rule. A `@supports` block that tests `color-mix()` overrides the declarations before it,
- * because every browser Fuse supports passes that test. Any other nested block, such as
+ * rule, and so is one that styles every child but the last of the element that carries one class,
+ * as `space-y-*` compiles, which the read keeps apart. A `@supports` block that tests
+ * `color-mix()` overrides the declarations before it, because every browser Fuse supports passes
+ * that test. Any other nested block, such as
  * `@media (forced-colors: active)`, describes a mode Figma does not show and is skipped. The
  * rules of the `base` layer are kept apart, since no class selects them.
  *
  * Every rule whose selector starts with a class places that class, at the top level or inside
- * an at-rule such as the `@media (hover: hover)` around `enabled-hover:`. Its first rule gives
- * its order, and its most specific selector its specificity.
+ * an at-rule such as the `@media (hover: hover)` around `enabled-hover:`, and so does a `*:` rule,
+ * `:is(.class > *)…`, for the class whose children it styles, an `item-described:` rule,
+ * `:where(…) > .class`, for the class it selects in a parent context, and a `[:where(&)]:` rule,
+ * `:where(.class)`, for the class it selects at no specificity. Its first rule gives
+ * its order, and its most specific selector its specificity. Every rule also lists its selector
+ * under each class it names, wherever the class sits in the selector.
  *
  * @param nodes - The syntax tree `build` returns.
  * @returns The utility rules, class placements, theme values and registered properties.
  */
 function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
   const rules = new Map<string, UtilityRule>();
+  const exceptLastChildRules = new Map<string, UtilityRule>();
   const classes = new Map<string, ClassPlacement>();
+  const rulesByClass = new Map<string, string[]>();
   const themeValues = new Map<string, string>();
   const registeredProperties = new Map<string, RegisteredProperty>();
   const baseRules: BaseRule[] = [];
@@ -243,7 +264,19 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
       }
       return;
     }
-    const leading = node.kind === "rule" ? leadingClass(node.selector) : undefined;
+    if (node.kind === "rule") {
+      for (const name of new Set(namedClasses(node.selector))) {
+        rulesByClass.set(name, [...(rulesByClass.get(name) ?? []), node.selector]);
+      }
+    }
+    const leading =
+      node.kind === "rule"
+        ? (leadingClass(node.selector) ??
+          childrenClass(node.selector) ??
+          descendantsClass(node.selector) ??
+          contextClass(node.selector) ??
+          weightlessClass(node.selector))
+        : undefined;
     if (node.kind !== "rule" || leading === undefined) {
       return;
     }
@@ -293,9 +326,27 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
     if (leading?.rest === "") {
       rules.set(leading.name, { utility: leading.name, declarations: effectiveDeclarations(node.nodes) });
     }
+    const spacing = exceptLastChildClass(node.selector);
+    if (spacing !== undefined) {
+      exceptLastChildRules.set(spacing, {
+        utility: spacing,
+        declarations: effectiveDeclarations(node.nodes),
+      });
+    }
   };
   nodes.forEach(visit);
-  return { rules, classes, themeValues, registeredProperties, baseRules };
+  return { rules, exceptLastChildRules, classes, rulesByClass, themeValues, registeredProperties, baseRules };
+}
+
+/**
+ * The class a rule styles every child but the last of, as Tailwind compiles `space-y-4` to
+ * `:where(.space-y-4 > :not(:last-child))`: one `:where()` around the class, the child combinator and
+ * `:not(:last-child)`.
+ */
+function exceptLastChildClass(selector: string): string | undefined {
+  const opening = ":where(";
+  const inner = selector.startsWith(opening) ? leadingClass(selector.slice(opening.length)) : undefined;
+  return inner?.rest === " > :not(:last-child))" ? inner.name : undefined;
 }
 
 /**
@@ -321,6 +372,77 @@ function effectiveDeclarations(nodes: readonly AstNode[]): readonly UtilityDecla
     }
     return declarationsOf([node]);
   });
+}
+
+/**
+ * The class a `*:` rule styles the children of, as Tailwind compiles `*:data-[slot=x]:flex` to
+ * `:is(.\*\:data-\[slot\=x\]\:flex > *)[data-slot="x"]`, which selects each child of the element
+ * that carries the class.
+ */
+function childrenClass(selector: string): { readonly name: string; readonly rest: string } | undefined {
+  const opening = ":is(";
+  const inner = selector.startsWith(opening) ? leadingClass(selector.slice(opening.length)) : undefined;
+  return inner?.rest.startsWith(" > *)") === true ? inner : undefined;
+}
+
+/**
+ * The class a `**:` rule styles every element below, as Tailwind compiles
+ * `data-popup-open:**:text-accent-foreground` to
+ * `:is(.data-popup-open\:\*\*\:text-accent-foreground[data-popup-open] *)`: the class and its
+ * conditions, then the descendant combinator and the universal selector, which select every element
+ * below the element that carries the class.
+ */
+function descendantsClass(selector: string): { readonly name: string; readonly rest: string } | undefined {
+  const opening = ":is(";
+  const inner = selector.startsWith(opening) ? leadingClass(selector.slice(opening.length)) : undefined;
+  return inner?.rest.endsWith(" *)") === true && !inner.rest.endsWith("> *)") ? inner : undefined;
+}
+
+/**
+ * The class a rule selects as the child or a descendant of a context, as fuse.css's `item-described:`
+ * compiles to `:where(:has( > [data-slot="item-content"] > [data-slot="item-description"])) > .item-described\:…`
+ * and Tailwind's `in-data-popup-open:` to `:where([data-popup-open]) .in-data-popup-open\:…`: one
+ * `:where()`, the child or descendant combinator, then the class, which is the rule's subject.
+ */
+function contextClass(selector: string): { readonly name: string; readonly rest: string } | undefined {
+  const [alternative, ...others] = selectorAlternatives(selector);
+  const [context] = alternative ?? [];
+  if (
+    others.length > 0 ||
+    context?.kind !== "pseudo" ||
+    context.name !== "where" ||
+    context.element ||
+    context.argument === undefined
+  ) {
+    return undefined;
+  }
+  const after = selector.slice(`:where(${context.argument})`.length);
+  const combinator = /^(?:\s*>\s*|\s+)/.exec(after);
+  return combinator === null ? undefined : leadingClass(after.slice(combinator[0].length));
+}
+
+/**
+ * The class a rule wraps whole in one `:where()`, as Tailwind compiles `[:where(&)]:rounded-md` to
+ * `:where(.\[\:where\(\&\)\]\:rounded-md)`, which selects the element that carries the class at a
+ * specificity of (0,0,0) (Selectors 4 §17). The `:where()` may hold the class below a parent context,
+ * as `in-data-[slot=…]:[:where(&)]:rounded-inner` compiles to `:where(:where([data-slot="…"]) .…)`,
+ * or select its children, as `[:where(&>*)]:ring-2` compiles to `:where(.… > *)`.
+ */
+function weightlessClass(selector: string): { readonly name: string; readonly rest: string } | undefined {
+  const [alternative, ...others] = selectorAlternatives(selector);
+  const [wrapper, ...after] = alternative ?? [];
+  if (
+    others.length > 0 ||
+    after.length > 0 ||
+    wrapper?.kind !== "pseudo" ||
+    wrapper.name !== "where" ||
+    wrapper.element ||
+    wrapper.argument === undefined
+  ) {
+    return undefined;
+  }
+  const inner = leadingClass(wrapper.argument) ?? contextClass(wrapper.argument);
+  return inner?.rest === "" || inner?.rest === " > *" ? inner : undefined;
 }
 
 /**

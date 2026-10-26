@@ -6,13 +6,15 @@
 
 import type { NumberSpec, PreviewGroupSpec, PreviewSpec } from "../../src/components/kit-spec.ts";
 import type { PlannedSet } from "./component-set.ts";
-import { near, planNumber, planPaints, planScalar, planSizing } from "./fields.ts";
+import { near, planLayoutSizing, planNumber, planPaints, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
 import type { Siblings } from "./identity.ts";
+import { planInstanceSizing } from "./instance-sizing.ts";
 import type { PlannedPage } from "./pages.ts";
 import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
+import { settleInstances } from "./settle.ts";
 
 /** A frame that wraps its children in rows of a fixed width, with even gaps and padding. */
 export type WrapGrid = {
@@ -71,11 +73,14 @@ export function planWrapFrame(run: Run, frame: FrameNode, label: string, grid: W
   planScalar(run, label, "layoutWrap", frame.layoutWrap, "WRAP", () => {
     frame.layoutWrap = "WRAP";
   });
-  planSizing(
+  planLayoutSizing(
     run,
     frame,
     label,
-    (group) =>
+    { direction: "HORIZONTAL", sizing: { horizontal: "FIXED", vertical: "HUG" } },
+    // A preview sits on its page, and a group in a preview that lays it out in rows.
+    "read",
+    (group, lengths) =>
       planNumber(
         group,
         frame,
@@ -86,9 +91,9 @@ export function planWrapFrame(run: Run, frame: FrameNode, label: string, grid: W
           matches: (value) => near(frame.width, value),
           write: (value) => frame.resize(value, frame.height),
         },
-        literal(grid.width)
-      ),
-    { primary: "FIXED", counter: "AUTO" }
+        literal(grid.width),
+        lengths
+      )
   );
   planScalar(run, label, "counterAxisAlignItems", frame.counterAxisAlignItems, "CENTER", () => {
     frame.counterAxisAlignItems = "CENTER";
@@ -151,6 +156,16 @@ function planModes(run: Run, frame: FrameNode, label: string, spec: PreviewSpec)
 /**
  * Plan a group's instances. Each instance's key is the preview's key, `/` and the variant's key,
  * which starts with the set's key, so it nests under the group's key too.
+ *
+ * Each instance's sizing and fixed lengths are planned against its variant's root, a new instance's
+ * included, as an instance layer's are (`planInstanceSizing`). An instance whose preview's modes give
+ * it another size than its main holds its literal lengths and stops following the main's (G13), so a
+ * literal length is compared and written. A bound length follows its variable (G14), so only the
+ * binding is compared, and an instance that lost it is bound again (G15). An instance can hug on an
+ * axis the root fixes while its length or binding reads as the spec's (N4), so that axis is written
+ * FIXED first and its length written after, since a HUG drops a width binding (G19). After a planned
+ * swap the pass cannot read the new variant's lengths ahead, so they are written whatever the
+ * instance reads now.
  */
 async function planInstances(
   run: Run,
@@ -169,21 +184,29 @@ async function planInstances(
     children,
     async ({ key, variant }, siblings) => {
       const component = set.variants.get(variant);
-      if (component === undefined) {
+      const root = set.spec.variants.find((candidate) => candidate.key === variant)?.root;
+      if (component === undefined || root === undefined) {
         throw new Error(`${label} places ${variant}, which ${set.spec.name} does not define.`);
       }
+      const lengthsLabel = `${label} / ${variant}`;
       const found = findOwned(run.plan, siblings, label, key, key, isInstance);
       if (found === undefined) {
-        return create(run.plan, label, `add an instance of ${variant}`, () =>
-          placeOwned(group, component.get().createInstance(), key)
+        return create(
+          run.plan,
+          label,
+          `add an instance of ${variant}`,
+          () => placeOwned(group, component.get().createInstance(), key),
+          (made, plan) => planInstanceSizing({ ...run, plan }, made, lengthsLabel, root.sizing, "read")
         );
       }
       const main = await found.getMainComponentAsync();
-      if (component.existing === undefined || main?.id !== component.existing.id) {
+      const swaps = component.existing === undefined || main?.id !== component.existing.id;
+      if (swaps) {
         change(run.plan, label, `point the instance ${key} at ${variant}`, () =>
           found.swapComponent(component.get())
         );
       }
+      planInstanceSizing(run, found, lengthsLabel, root.sizing, swaps ? "unknown" : "read");
       return existing(found);
     }
   );
@@ -298,7 +321,8 @@ export type RowNode = {
 
 /**
  * The page layout: the row's nodes from where the first one sits, then the previews stacked below
- * the tallest of them, left-aligned with the first node.
+ * the tallest of them, left-aligned with the first node. Each preview's instances, and the instances
+ * nested in them, settle before its height is read (`settle.ts`).
  */
 function pageLayout(row: readonly RowNode[], frames: readonly Target<FrameNode>[]): Placed[] {
   const nodes = row.map((entry) => entry.node.get());
@@ -315,6 +339,7 @@ function pageLayout(row: readonly RowNode[], frames: readonly Target<FrameNode>[
   let y = first.y + Math.max(...nodes.map((node) => node.height)) + PREVIEW_MARGIN;
   for (const target of frames) {
     const frame = target.get();
+    settleInstances(frame);
     placed.push({ node: frame, x: first.x, y });
     y += frame.height + PREVIEW_SPACING;
   }

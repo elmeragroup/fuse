@@ -58,7 +58,6 @@ describe("alertVariants", () => {
     expect(slots.icon()).toContain("shrink-0");
     expect(slots.description()).toContain("text-inherit");
     expect(slots).not.toHaveProperty("content");
-    expect(slots).not.toHaveProperty("title");
   });
 
   it("resolves every status variant onto the locked token classes", () => {

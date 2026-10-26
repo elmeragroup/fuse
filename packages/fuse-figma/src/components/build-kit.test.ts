@@ -14,20 +14,25 @@ import { PHOSPHOR_ICON_NAMES, buttonVariants } from "@elmeragroup/fuse/recipe-ca
 import {
   density,
   ERROR_RING,
+  fixed,
+  fixedSize,
   FOCUS_RING,
+  HUG,
+  HUGGING_LABEL,
   literal,
   paint,
   SHADOW_XS,
   token,
+  UNLIMITED,
   variantRoot,
 } from "../../test/built-kit";
+import { buildFixture, chip } from "../../test/fixture-sets";
+import { ICONS_PAGE, KIT_PAGES, pageKey, previewsOn } from "../../test/kit-inventory";
 import { buildKit, checkIconReferences } from "./build-kit";
-import { buildComponentSet, iconKey } from "./component-spec";
-import type { ComponentDefinition, IconSlot } from "./component-spec";
+import type { IconSlot } from "./component-spec";
 import type { CoverageRow } from "./coverage";
-import { makeVariableIndex } from "./css-values";
+import { glyphFonts, iconKey } from "./kit-spec";
 import type { ChildLayerSpec, ColorSpec, ComponentRootSpec, ComponentSetSpec, KitSpec } from "./kit-spec";
-import { compileUtilities } from "./utility-css";
 
 let spec: KitSpec;
 let coverage: readonly CoverageRow[];
@@ -45,7 +50,7 @@ function find(key: string): ComponentRootSpec {
 /** The color of a root's first layer, a label or an icon in these flat sets. */
 function firstColor(box: ComponentRootSpec): ColorSpec | undefined {
   const [first] = box.children;
-  return first?.kind === "frame" ? undefined : first?.color;
+  return first?.kind === "text" || first?.kind === "icon" ? first.color : undefined;
 }
 
 function root(variant: string, size: string, state: string, icon: string): ComponentRootSpec {
@@ -109,7 +114,7 @@ describe("the Button component set", () => {
 
   it("covers every recipe size across the two sets, except the line-sized icon-inline", () => {
     const sizes = spec.componentSets
-      .filter((set) => set.page === "page/button")
+      .filter((set) => set.key === "button" || set.key === "icon-button")
       .flatMap((set) => set.axes.find((axis) => axis.name === "size")?.values ?? []);
     expect(sizes.toSorted()).toEqual(
       Object.keys(buttonVariants.variants.size)
@@ -121,8 +126,10 @@ describe("the Button component set", () => {
   it("binds the default md button to the control metrics, radius and primary roles", () => {
     expect(root("default", "default", "rest", "none")).toEqual({
       name: "button",
-      height: density("control-h-md"),
-      minWidth: undefined,
+      direction: "HORIZONTAL",
+      sizing: { horizontal: HUG, vertical: fixed(density("control-h-md")) },
+      limits: UNLIMITED,
+      clips: true,
       paddingTop: literal(0),
       paddingRight: density("control-px-button-md"),
       paddingBottom: literal(0),
@@ -147,6 +154,7 @@ describe("the Button component set", () => {
           fontSize: density("control-text"),
           lineHeight: density("control-leading"),
           color: paint("primary-foreground"),
+          ...HUGGING_LABEL,
         },
       ],
     });
@@ -210,7 +218,7 @@ describe("the Button component set", () => {
 
   it("binds xs through its 24px floor, which control-h-xs never falls below", () => {
     const xs = root("default", "xs", "rest", "start");
-    expect(xs.height).toEqual(density("control-h-xs"));
+    expect(xs.sizing.vertical).toEqual(fixed(density("control-h-xs")));
     expect([xs.paddingLeft, xs.paddingRight, xs.itemSpacing]).toEqual([
       density("control-px-button-icon-xs"),
       density("control-px-button-xs"),
@@ -223,8 +231,8 @@ describe("the Button component set", () => {
 
   it("gives lg its own box and md's density type pair", () => {
     const lg = root("default", "lg", "rest", "none");
-    expect([lg.height, lg.paddingLeft, lg.itemSpacing]).toEqual([
-      density("control-h-lg"),
+    expect([lg.sizing.vertical, lg.paddingLeft, lg.itemSpacing]).toEqual([
+      fixed(density("control-h-lg")),
       density("control-px-button-lg"),
       density("control-gap-lg"),
     ]);
@@ -237,7 +245,7 @@ describe("the Button component set", () => {
 
   it("sets sm type in fixed pixels, since only md and lg follow density", () => {
     const small = root("default", "sm", "rest", "none");
-    expect(small.height).toEqual(density("control-h-sm"));
+    expect(small.sizing.vertical).toEqual(fixed(density("control-h-sm")));
     expect(small.paddingLeft).toEqual(density("control-px-button-sm"));
     const label = small.children[0];
     expect(label?.kind === "text" && [label.fontSize, label.lineHeight]).toEqual([literal(14), literal(20)]);
@@ -330,9 +338,8 @@ describe("the Icon button component set", () => {
 
   it("squares each size on its control height around a lone icon", () => {
     const md = square("default", "icon", "rest");
-    expect([md.width, md.height, md.paddingLeft, md.paddingRight]).toEqual([
-      density("control-h-md"),
-      density("control-h-md"),
+    expect([md.sizing, md.paddingLeft, md.paddingRight]).toEqual([
+      fixedSize(density("control-h-md"), density("control-h-md")),
       literal(0),
       literal(0),
     ]);
@@ -348,12 +355,12 @@ describe("the Icon button component set", () => {
       },
     ]);
     const xs = square("outline", "icon-xs", "rest");
-    expect([xs.width, xs.height]).toEqual([density("control-h-xs"), density("control-h-xs")]);
+    expect(xs.sizing).toEqual(fixedSize(density("control-h-xs"), density("control-h-xs")));
     expect(xs.children[0]?.kind === "icon" && [xs.children[0].size, xs.children[0].color]).toEqual([
       literal(12),
       paint("foreground"),
     ]);
-    expect(square("default", "icon-lg", "rest").width).toEqual(density("control-h-lg"));
+    expect(square("default", "icon-lg", "rest").sizing.horizontal).toEqual(fixed(density("control-h-lg")));
   });
 
   it("shows only the spinner while pending, which takes the lone icon's place", () => {
@@ -421,7 +428,7 @@ describe("the Toggle component sets", () => {
 
   it("gives the icon toggle's lone icon the start icon's inset", () => {
     const md = find("icon-toggle/variant=default,size=default,state=rest,pressed=off");
-    expect([md.minWidth, md.paddingLeft, md.paddingRight]).toEqual([
+    expect([md.limits.minWidth, md.paddingLeft, md.paddingRight]).toEqual([
       density("control-h-md"),
       density("control-px-icon-md"),
       density("control-px-md"),
@@ -483,9 +490,10 @@ describe("the Badge component set", () => {
   it("hugs the default badge's label in a primary pill with a transparent hairline and shadow-xs", () => {
     expect(badge("default", "default")).toEqual({
       name: "badge",
-      width: undefined,
-      height: undefined,
-      minWidth: undefined,
+      direction: "HORIZONTAL",
+      sizing: { horizontal: HUG, vertical: HUG },
+      limits: UNLIMITED,
+      clips: true,
       paddingTop: literal(2),
       paddingRight: literal(10),
       paddingBottom: literal(2),
@@ -510,6 +518,7 @@ describe("the Badge component set", () => {
           fontSize: literal(12),
           lineHeight: literal(16),
           color: paint("primary-foreground"),
+          ...HUGGING_LABEL,
         },
       ],
     });
@@ -586,9 +595,10 @@ describe("the Kbd component set", () => {
   it("draws a 20px muted cap with a border hairline around the label", () => {
     expect(kbd("text")).toEqual({
       name: "kbd",
-      width: undefined,
-      height: literal(20),
-      minWidth: literal(20),
+      direction: "HORIZONTAL",
+      sizing: { horizontal: HUG, vertical: fixed(literal(20)) },
+      limits: { ...UNLIMITED, minWidth: literal(20) },
+      clips: true,
       paddingTop: literal(0),
       paddingRight: literal(4),
       paddingBottom: literal(0),
@@ -613,6 +623,7 @@ describe("the Kbd component set", () => {
           fontSize: literal(12),
           lineHeight: literal(16),
           color: paint("muted-foreground"),
+          ...HUGGING_LABEL,
         },
       ],
     });
@@ -634,13 +645,13 @@ describe("the Kbd component set", () => {
     ]);
   });
 
-  it("places both caps in each preview", () => {
+  it("places both caps, then the group's one variant, in each preview", () => {
     const previews = spec.previews.filter((preview) => preview.page === "page/kbd");
     expect(previews).toHaveLength(4);
     for (const preview of previews) {
-      expect(preview.groups.flatMap((group) => group.variants)).toEqual([
-        "kbd/content=text",
-        "kbd/content=icon",
+      expect(preview.groups.map((group) => group.variants)).toEqual([
+        ["kbd/content=text", "kbd/content=icon"],
+        ["kbd-group/keys=2"],
       ]);
     }
   });
@@ -669,8 +680,10 @@ describe("the Radio icon button component set", () => {
   it("draws a square card with an input border around a 16px List icon at the default size", () => {
     expect(radioIconButton("icon", "off", "rest")).toEqual({
       name: "radio-icon-button",
-      width: density("control-h-md"),
-      height: density("control-h-md"),
+      direction: "HORIZONTAL",
+      sizing: fixedSize(density("control-h-md"), density("control-h-md")),
+      limits: UNLIMITED,
+      clips: true,
       paddingTop: literal(0),
       paddingRight: literal(0),
       paddingBottom: literal(0),
@@ -703,10 +716,10 @@ describe("the Radio icon button component set", () => {
     // The xs square keeps its 24px floor, which `control-h-xs` holds at both densities.
     const disabled = radioIconButton("icon-xs", "on", "disabled");
     expect([
-      disabled.width,
+      disabled.sizing.horizontal,
       disabled.opacity,
       disabled.children[0]?.kind === "icon" && disabled.children[0].size,
-    ]).toEqual([density("control-h-xs"), 0.5, literal(14)]);
+    ]).toEqual([fixed(density("control-h-xs")), 0.5, literal(14)]);
     const invalid = radioIconButton("icon", "off", "invalid");
     expect([invalid.stroke?.color, invalid.shadows]).toEqual([paint("error"), [ERROR_RING]]);
     // `[aria-invalid="true"]` adds an attribute to the class, and fuse.css's `data-checked:` wraps
@@ -766,20 +779,6 @@ describe("the icon reference check", () => {
     icon: "Plus",
     swapProperty: "Badge icon",
   };
-  const chip: ComponentDefinition = {
-    key: "chip",
-    name: "Chip",
-    slot: "chip",
-    axes: [{ name: "state", values: ["rest"] }],
-    columnAxis: "state",
-    classesFor: () => "text-[#000000] [&_svg]:size-[16px]",
-    states: {},
-    facts: new Map(),
-    omittedStates: new Set(),
-    label: undefined,
-    iconsFor: () => [badge],
-    swapProperties: [],
-  };
   const library = {
     key: "icons",
     name: "Icons",
@@ -814,12 +813,9 @@ describe("the icon reference check", () => {
   ])(
     "fails the build for an icon layer %s that links a swap property the set does not define",
     async (_, place) => {
-      const { componentSet } = buildComponentSet(chip, {
-        compiled: await compileUtilities(["text-[#000000]", "[&_svg]:size-[16px]"]),
-        variables: makeVariableIndex([]),
-        page: [],
-        base: [],
-      });
+      const { componentSet } = await buildFixture(
+        chip("text-[#000000] [&_svg]:size-[16px]", { iconsFor: () => [badge] })
+      );
       expect(() => checkIconReferences(place(componentSet), library)).toThrow(
         "chip/state=rest: the Badge icon links Badge icon, which Chip does not define"
       );
@@ -855,60 +851,18 @@ describe("the icon library", () => {
 describe("the preview frames", () => {
   it("put each component's sets on its own page, and the icons on a page of their own", () => {
     expect(spec.pages).toEqual([
-      { key: "page/button", name: "Button" },
-      { key: "page/toggle", name: "Toggle" },
-      { key: "page/badge", name: "Badge" },
-      { key: "page/kbd", name: "Kbd" },
-      { key: "page/radio", name: "Radio" },
-      { key: "page/checkbox", name: "Checkbox" },
-      { key: "page/switch", name: "Switch" },
-      { key: "page/separator", name: "Separator" },
-      { key: "page/skeleton", name: "Skeleton" },
-      { key: "page/loader", name: "Loader" },
-      { key: "page/label", name: "Label" },
-      { key: "page/icons", name: "Icons" },
+      ...KIT_PAGES.map((page) => ({ key: pageKey(page), name: page.name })),
+      ICONS_PAGE,
     ]);
-    expect(spec.componentSets.map((set) => [set.key, set.page])).toEqual([
-      ["button", "page/button"],
-      ["icon-button", "page/button"],
-      ["toggle", "page/toggle"],
-      ["icon-toggle", "page/toggle"],
-      ["badge", "page/badge"],
-      ["kbd", "page/kbd"],
-      ["radio-icon-button", "page/radio"],
-      ["radio", "page/radio"],
-      ["checkbox", "page/checkbox"],
-      ["switch", "page/switch"],
-      ["separator", "page/separator"],
-      ["skeleton", "page/skeleton"],
-      ["loader", "page/loader"],
-      ["label", "page/label"],
-    ]);
-    expect(spec.icons.page).toBe("page/icons");
+    expect(spec.componentSets.map((set) => [set.key, set.page])).toEqual(
+      KIT_PAGES.flatMap((page) => page.sets.map((set) => [set.key, pageKey(page)]))
+    );
+    expect(spec.icons.page).toBe(ICONS_PAGE.key);
   });
 
   it("pin four Fjordkraft private themes at Auto density on each component page, each on all five axes", () => {
     expect(spec.previews.map((preview) => [preview.key, preview.page])).toEqual(
-      [
-        "button",
-        "toggle",
-        "badge",
-        "kbd",
-        "radio",
-        "checkbox",
-        "switch",
-        "separator",
-        "skeleton",
-        "loader",
-        "label",
-      ].flatMap((page) =>
-        [
-          "internal-fkas-private-light",
-          "internal-fkas-private-dark",
-          "external-fkas-private-light",
-          "external-fkas-private-dark",
-        ].map((theme) => [`preview/${page}/${theme}`, `page/${page}`])
-      )
+      KIT_PAGES.flatMap((page) => previewsOn(page).map(({ key }) => [key, pageKey(page)]))
     );
     expect(spec.previews[3]?.modes).toEqual([
       { collection: "Fuse tokens", mode: "Dark" },
@@ -920,37 +874,9 @@ describe("the preview frames", () => {
   });
 
   it("give each preview a group per set on its page, each placing variants of its set", () => {
-    const groups = new Map([
-      [
-        "page/button",
-        [
-          ["button", "Button"],
-          ["icon-button", "Icon button"],
-        ],
-      ],
-      [
-        "page/toggle",
-        [
-          ["toggle", "Toggle"],
-          ["icon-toggle", "Icon toggle"],
-        ],
-      ],
-      ["page/badge", [["badge", "Badge"]]],
-      ["page/kbd", [["kbd", "Kbd"]]],
-      [
-        "page/radio",
-        [
-          ["radio-icon-button", "Radio icon button"],
-          ["radio", "Radio"],
-        ],
-      ],
-      ["page/checkbox", [["checkbox", "Checkbox"]]],
-      ["page/switch", [["switch", "Switch"]]],
-      ["page/separator", [["separator", "Separator"]]],
-      ["page/skeleton", [["skeleton", "Skeleton"]]],
-      ["page/loader", [["loader", "Loader"]]],
-      ["page/label", [["label", "Label"]]],
-    ]);
+    const groups = new Map(
+      KIT_PAGES.map((page) => [pageKey(page), page.sets.map((set) => [set.key, set.name] as const)])
+    );
     for (const preview of spec.previews) {
       expect(preview.groups.map((group) => [group.key, group.name])).toEqual(
         groups.get(preview.page)?.map(([key, name]) => [`${preview.key}/${key}`, name])
@@ -964,7 +890,21 @@ describe("the preview frames", () => {
     }
   });
 
-  it("loads Roboto Medium, the font-sans family every theme shares", () => {
-    expect(spec.fonts).toEqual([{ family: "Roboto", style: "Medium" }]);
+  it("loads Roboto Medium and Regular, the font-sans family every theme shares", () => {
+    // The labels of Button and the earlier sets set Medium. Input's text sets no weight and inherits
+    // the page's normal weight, Regular.
+    expect(spec.fonts).toEqual([
+      { family: "Roboto", style: "Medium" },
+      { family: "Roboto", style: "Regular" },
+    ]);
+  });
+
+  it("draws ⇧ and ⌘ in Inter, which Roboto lacks, and loads it at the Regular shortcut's style", () => {
+    // On 2026-10-26 Roboto drew `⇧⌘P` as `P` with two blank advances, and Inter drew both (G1). The
+    // Dropdown menu shortcut sets no weight, so it takes the page's normal weight, Regular.
+    expect([spec.glyphFont, glyphFonts(spec)]).toEqual([
+      { family: "Inter", glyphs: ["\u21E7", "\u2318"] },
+      [{ family: "Inter", style: "Regular" }],
+    ]);
   });
 });

@@ -7,13 +7,13 @@ import type { VariantProps } from "tailwind-variants";
 import { OWN_CLICK_SELECTOR } from "../../internal/own-click";
 import { cn } from "../../styles/cn";
 import { controlMd } from "../../styles/control-size-md";
-import { inputGroupRootClass, readOnlyFillCancelClass } from "../../styles/field-box";
-import { withinStateFaceControlClass } from "../../styles/state-face";
-import { withinFocusRingControlClass } from "../../styles/utils";
+import { inputGroupRootClass } from "../../styles/field-box";
 import { Button } from "../button/button";
-import { Input, inputClass } from "../input/input";
+import { Input } from "../input/input";
 import type { InputProps } from "../input/input";
+import { inputClass } from "../input/input-class";
 import { Textarea } from "../textarea/textarea";
+import { inputGroupControlClass, inputGroupInputControlClass } from "./input-group-class";
 import { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group-variants";
 
 /**
@@ -57,21 +57,6 @@ export type InputGroupButtonProps =
 export type InputGroupTextProps = ComponentProps<"span">;
 export type InputGroupInputProps = InputProps;
 export type InputGroupTextareaProps = ComponentProps<"textarea">;
-
-/**
- * Chrome stripped off the embedded control: the Root owns border, radius, shadow, rings, the
- * disabled dim and the disabled and read-only fills, so the control contributes nothing but
- * its own box. The focus-visible and state-face neutralizations come from the shared within
- * adapters, never a local literal.
- */
-const CONTROL_CHROME = cn(
-  "flex-1 rounded-none border-0 bg-transparent shadow-none ring-0 disabled:bg-transparent",
-  readOnlyFillCancelClass,
-  withinFocusRingControlClass,
-  withinStateFaceControlClass
-);
-
-const INPUT_CONTROL_CHROME = cn(CONTROL_CHROME, "max-h-full");
 
 export function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElement {
   return (
@@ -160,7 +145,7 @@ export function InputGroupInput({ className, ...props }: InputGroupInputProps): 
     <Input
       data-slot="input-group-control"
       data-focus-ring-control=""
-      className={cn(INPUT_CONTROL_CHROME, className)}
+      className={cn(inputGroupInputControlClass, className)}
       {...props}
     />
   );
@@ -176,7 +161,7 @@ export function InputGroupPlainInput({ className, ...props }: ComponentProps<"in
     <input
       data-slot="input-group-control"
       data-focus-ring-control=""
-      className={cn(inputClass, INPUT_CONTROL_CHROME, className)}
+      className={cn(inputClass, inputGroupInputControlClass, className)}
       {...props}
     />
   );
@@ -187,7 +172,7 @@ export function InputGroupTextarea({ className, ...props }: InputGroupTextareaPr
     <Textarea
       data-slot="input-group-control"
       data-focus-ring-control=""
-      className={cn(CONTROL_CHROME, "resize-none py-2", className)}
+      className={cn(inputGroupControlClass, "resize-none py-2", className)}
       {...props}
     />
   );

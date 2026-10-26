@@ -13,7 +13,10 @@ export const meterVariants = tv({
   slots: {
     root: "flex flex-col gap-1",
     labelContainer: "flex justify-between gap-2",
+    label: "text-sm font-medium w-fit",
     labelValue: "text-sm",
+    // Called after `labelValue`, so the value span keeps its class order.
+    value: "tabular-nums",
     icon: "inline-block size-4 align-text-bottom",
     bar: "relative h-1.5 w-full rounded-full bg-muted outline outline-1 -outline-offset-1 outline-transparent",
     barFill:

@@ -4,12 +4,25 @@
  * at device scale 2 and crops each cell with a transparent background.
  *
  * Hover and focus come from Chrome DevTools Protocol `CSS.forcePseudoState`, so every cell of a
- * page shows its state at once and no pointer or focus moves between screenshots. Fuse gates
- * hover behind `@media (hover: hover)` and `:not(<disabled>)`, so the page checks each forced
- * cell against its resting twin: a forced cell whose measured element and descendants have the
- * twin's colors, shadows and underlines did not reach Fuse's `enabled-hover:` or
- * `focus-visible:` rules, and the page then hovers or focuses that element for real before its
- * screenshot.
+ * page shows its state at once and no pointer or focus moves between screenshots. The page forces
+ * them on the measured element, on the part inside it that takes the set's states, as an Accordion
+ * item's trigger, or on the sibling before it whose state it follows, as a Sidebar menu badge's menu
+ * button. Fuse gates hover behind `@media (hover: hover)` and `:not(<disabled>)`, so the page checks
+ * each forced cell against its resting twin: a forced cell whose measured element and descendants
+ * have the twin's colors, shadows and underlines did not reach Fuse's `enabled-hover:` or
+ * `focus-visible:` rules, and the page then hovers or focuses the forced element for real before its
+ * screenshot, unless the request says the kit draws the cell as at rest in the preview's theme. React Aria draws its hover and focus faces from pointer and focus
+ * events only a hydrated page sees, so with the pseudo classes the page writes the attributes the
+ * cell's renderer names on the forced element, through CDP's `DOM.setAttributeValue`, as the
+ * Calendar day's `data-hovered` and its focused class.
+ *
+ * A client cell mounts on the page from the client bundle, open, with its popup in its slot. The
+ * page awaits the mount before it reads any font or style, checks that no client slot holds focus
+ * or a `data-highlighted` Base UI set on open, reads each client cell's mounted HTML for the markup
+ * check before it forces any state, and measures the union of the elements a cell names, so an open
+ * composite's box spans its trigger and its popup. A highlighted row takes
+ * `:focus`, or the `data-highlighted` its renderer names with no pseudo class, through the same
+ * forcing.
  */
 
 import { Result } from "effect";
@@ -18,17 +31,24 @@ import { join } from "node:path";
 import { chromium } from "playwright";
 import type { Browser, Page, Route } from "playwright";
 
-import type { ForcedPseudoClass } from "./cells.ts";
+import { cellClip, clipInsideSlot, measuredBox } from "./cell-measure.ts";
+import type { FallbackInteraction, ForcedPseudoClass } from "./cells.ts";
 import type { PageAssets } from "./page-assets.ts";
 import {
   ASSET_PATHS,
   BACKGROUND_PROBE,
   cellSelector,
+  CLIENT_HIDDEN,
+  fontSweepSelector,
+  MOUNTED,
+  MOUNTED_DONE,
   PAGE_ORIGIN,
   pageViewport,
   previewDocument,
+  slotRect,
+  slotRects,
 } from "./preview-page.ts";
-import type { PageCell, PageLayout } from "./preview-page.ts";
+import type { CellContent, PageCell, PageLayout, PageRect } from "./preview-page.ts";
 import type { PreviewTheme, ThemeStamps } from "./preview-theme.ts";
 import { themeStamps } from "./preview-theme.ts";
 import { crop, decodePng } from "./raster.ts";
@@ -38,18 +58,40 @@ import type { BoxSize } from "./verdict.ts";
 /** Device pixels per CSS pixel, the scale the plugin exports at. */
 export const DEVICE_SCALE = 2;
 
-/** A cell to render: its element's HTML, the state to force, and its resting twin's HTML. */
+/** A cell to render: what its slot holds, the state to force, and its resting twin. */
 export type CellRequest = {
   readonly id: string;
-  readonly html: string;
+  readonly content: CellContent;
   /**
-   * The element the page forces, compares and crops, as a selector for an element inside the
-   * cell's slot, as `cellSelector` reads it. The resting twin's slot uses the same one.
+   * The elements the page compares and crops, as selectors for elements inside the cell's slot, as
+   * `cellSelector` reads them: the measured element, or an open composite's trigger and popup, whose
+   * union is the cell's box. The resting twin's slot uses the same ones.
    */
-  readonly measured: string;
+  readonly measured: readonly string[];
+  /** How many slots the cell spans across, as `slotSpan` gives them. */
+  readonly span: number;
+  /**
+   * The element the page forces the cell's state on: the measured element, or the part inside it
+   * that takes the set's states, as an Accordion item's trigger.
+   */
+  readonly forcedOn: string;
   readonly forced: readonly ForcedPseudoClass[];
-  /** The same element at rest, rendered off to the side to check the forced state. */
-  readonly restingHtml: string | undefined;
+  /**
+   * The attributes the page writes on the forced element with the forced pseudo classes, as React
+   * Aria would while the state holds, or alone, as `data-highlighted` on a highlighted Combobox row.
+   * Empty for a cell whose state CSS draws from the pseudo classes alone.
+   */
+  readonly forcedAttributes: Readonly<Record<string, string>>;
+  /** The same cell at rest, rendered off to the side to check the forced state. */
+  readonly resting: CellContent | undefined;
+  /** The real hover or focus the page tries when forcing changed nothing, or none. */
+  readonly fallback: FallbackInteraction;
+  /**
+   * Whether the kit draws the cell's forced state as it draws the cell at rest in the preview's
+   * theme, as `unchangedByDesign` decides before the page renders. A forced state that changes
+   * nothing is then what the cell should show, so the page hovers or focuses nothing for real.
+   */
+  readonly restsByDesign: boolean;
 };
 
 /**
@@ -69,7 +111,12 @@ export type RenderedCell = {
   /** The measured element's border box in CSS pixels. */
   readonly box: BoxSize;
   readonly state: StateOutcome;
+  /** A client cell's markup as the page mounted it, before any forced state; undefined for a static cell. */
+  readonly mounted: MountedHtml | undefined;
 };
+
+/** A client cell's mounted markup: its slot's inner HTML, and each measured element's outer HTML in order. */
+export type MountedHtml = { readonly slot: string; readonly measured: readonly string[] };
 
 /** One rendered preview. */
 export type RenderedPreview = {
@@ -95,6 +142,11 @@ export class FontNotLoaded extends Error {
 
 /** The computed styles a hover or focus face changes. */
 type StyleSignature = readonly string[];
+
+/** Whether the page forces anything on a cell: pseudo classes, attributes, or both. */
+function forcesState(request: CellRequest): boolean {
+  return request.forced.length > 0 || Object.keys(request.forcedAttributes).length > 0;
+}
 
 const REFERENCE_PREFIX = "rest-";
 
@@ -144,6 +196,8 @@ export class CompareBrowser {
     ]).get(pathname);
     if (pathname === "/preview.html") {
       await route.fulfill({ body: html, contentType: "text/html; charset=utf-8" });
+    } else if (pathname === ASSET_PATHS.client) {
+      await route.fulfill({ body: this.#assets.client, contentType: "text/javascript; charset=utf-8" });
     } else if (pathname === ASSET_PATHS.fonts) {
       await route.fulfill({ body: this.#assets.fontCss, contentType: "text/css; charset=utf-8" });
     } else if (pathname.startsWith(ASSET_PATHS.fontFiles)) {
@@ -171,34 +225,48 @@ export class CompareBrowser {
     layout: PageLayout
   ): Promise<Result.Result<RenderedPreview, FontNotLoaded>> {
     const pageCells: PageCell[] = [
-      ...requests.map((request) => ({ id: request.id, html: request.html })),
-      ...requests.flatMap((request) =>
-        request.restingHtml === undefined
-          ? []
-          : [{ id: `${REFERENCE_PREFIX}${request.id}`, html: request.restingHtml }]
+      ...requests.map(({ id, content, measured, span }) => ({ id, content, measured, span })),
+      ...requests.flatMap(({ id, resting, measured, span }) =>
+        resting === undefined ? [] : [{ id: `${REFERENCE_PREFIX}${id}`, content: resting, measured, span }]
       ),
     ];
+    const rects = slotRects(layout, pageCells);
     const stamps: ThemeStamps = themeStamps(theme);
     const html = previewDocument(stamps, pageCells, layout, this.#assets.hostCss);
     const context = await this.#browser.newContext({
       deviceScaleFactor: DEVICE_SCALE,
-      viewport: pageViewport(layout, pageCells.length),
+      viewport: pageViewport(layout, pageCells),
       colorScheme: theme.scheme,
     });
     try {
       const page = await context.newPage();
       await page.route(`${PAGE_ORIGIN}/**`, (route) => this.#serve(route, html));
       await page.goto(`${PAGE_ORIGIN}/preview.html`);
-      const font = await checkFont(page);
+      if (pageCells.some((cell) => cell.content._tag === "Client")) {
+        await awaitMount(page);
+        await checkSettled(page);
+      }
+      const mounted = await readMounted(page, requests);
+      const font = await checkFont(page, fontSweepSelector(requests));
       if (Result.isFailure(font)) {
         return Result.fail(font.failure);
       }
       const forcedIds = await forceStates(page, requests);
       const cells = new Map<string, RenderedCell>();
-      for (const request of requests) {
-        const state: StateOutcome =
-          request.forced.length === 0 ? "none" : forcedIds.has(request.id) ? "forced" : "missing";
-        cells.set(request.id, await renderCell(page, request, state, layout));
+      for (const [index, request] of requests.entries()) {
+        const state: StateOutcome = !forcesState(request)
+          ? "none"
+          : forcedIds.has(request.id)
+            ? "forced"
+            : "missing";
+        const rendered = await renderCell(
+          page,
+          request,
+          state,
+          layout,
+          rects[index] ?? slotRect(layout, index)
+        );
+        cells.set(request.id, { ...rendered, mounted: mounted.get(request.id) });
       }
       return Result.succeed({ background: await probeBackground(page), font: font.success, cells });
     } finally {
@@ -207,18 +275,83 @@ export class CompareBrowser {
   }
 }
 
+/** Wait for the client bundle to mount the client cells and their popups to settle. */
+async function awaitMount(page: Page): Promise<void> {
+  const root = page.locator(`html[${MOUNTED}]`);
+  await root.waitFor({ state: "attached" });
+  const outcome = await root.getAttribute(MOUNTED);
+  if (outcome !== MOUNTED_DONE) {
+    throw new Error(`the client bundle could not mount the page's client cells: ${String(outcome)}`);
+  }
+}
+
 /**
- * Load the face of every element in a cell that holds text, and check that each one's first
- * font family has a loaded face at its weight. The sweep covers every element with a non-blank
- * text node of its own, whatever the component, so a label in a child span counts too.
+ * Check that no client slot holds focus, or a `data-highlighted` the page did not force, once the
+ * bundle has mounted. Base UI marks a Select's selected item highlighted when it opens, and a cell
+ * draws its highlight only where the page forces it.
+ *
+ * @throws When a slot holds either, naming the cells, since the cell would draw a state it does not
+ *   name.
  */
-async function checkFont(page: Page): Promise<Result.Result<string, FontNotLoaded>> {
-  const report = await page.evaluate(async () => {
-    const styles = [...document.querySelectorAll("[data-compare-cell] *")]
-      .filter((element) =>
-        [...element.childNodes].some(
-          (node) => node.nodeType === Node.TEXT_NODE && (node.textContent ?? "").trim() !== ""
+async function checkSettled(page: Page): Promise<void> {
+  const unsettled = await page.evaluate((client) => {
+    const slots = [...document.querySelectorAll(client)];
+    return slots.flatMap((slot) => {
+      const found = [
+        ...(slot.contains(document.activeElement) ? ["focus"] : []),
+        ...(slot.querySelector("[data-highlighted]") === null ? [] : ["data-highlighted"]),
+      ];
+      return found.length === 0
+        ? []
+        : [`${slot.getAttribute("data-compare-cell") ?? ""} holds ${found.join(" and ")}`];
+    });
+  }, CLIENT_HIDDEN);
+  if (unsettled.length > 0) {
+    throw new Error(`a client cell holds a state its cell does not name: ${unsettled.join("; ")}`);
+  }
+}
+
+/** Each client cell's mounted markup, by cell id, read before the page forces any state. */
+async function readMounted(
+  page: Page,
+  requests: readonly CellRequest[]
+): Promise<ReadonlyMap<string, MountedHtml>> {
+  const mounted = new Map<string, MountedHtml>();
+  for (const request of requests) {
+    if (request.content._tag !== "Client") {
+      continue;
+    }
+    mounted.set(request.id, {
+      slot: await page.locator(`[data-compare-cell="${request.id}"]`).innerHTML(),
+      measured: await Promise.all(
+        request.measured.map((element) =>
+          page.locator(cellSelector(request.id, element)).evaluate((node) => node.outerHTML)
         )
+      ),
+    });
+  }
+  return mounted;
+}
+
+/**
+ * Load the face of every element in the cells' measured elements that holds text, and check that
+ * each one's first font family has a loaded face at its weight. The sweep covers every element with
+ * a non-blank text node of its own, whatever the component, so a label in a child span counts too,
+ * and every `<input>` or `<textarea>` that draws a value or a placeholder, which no text node holds.
+ *
+ * @param selector - The elements to sweep, as {@link fontSweepSelector} names them.
+ */
+async function checkFont(page: Page, selector: string): Promise<Result.Result<string, FontNotLoaded>> {
+  const report = await page.evaluate(async (sweep) => {
+    const swept = sweep === "" ? [] : [...document.querySelectorAll(sweep)];
+    const styles = swept
+      .filter(
+        (element) =>
+          [...element.childNodes].some(
+            (node) => node.nodeType === Node.TEXT_NODE && (node.textContent ?? "").trim() !== ""
+          ) ||
+          ((element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) &&
+            (element.value || element.placeholder).trim() !== "")
       )
       .map((element) => getComputedStyle(element));
     const fonts = new Set(styles.map((style) => `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`));
@@ -234,7 +367,7 @@ async function checkFont(page: Page): Promise<Result.Result<string, FontNotLoade
       }
     });
     return { used: [...used], loaded };
-  });
+  }, selector);
   const loaded = new Set(
     report.loaded.map((entry) => {
       const [weight = "", family = ""] = entry.split("|");
@@ -257,9 +390,12 @@ async function checkFont(page: Page): Promise<Result.Result<string, FontNotLoade
   return Result.succeed(fonts.join(", "));
 }
 
-/** Force each cell's pseudo classes, and return the ids whose styles the forcing changed. */
+/**
+ * Force each cell's pseudo classes and write its forced attributes on its forced element, and
+ * return the ids whose styles that changed.
+ */
 async function forceStates(page: Page, requests: readonly CellRequest[]): Promise<ReadonlySet<string>> {
-  const forcing = requests.filter((request) => request.forced.length > 0);
+  const forcing = requests.filter(forcesState);
   if (forcing.length === 0) {
     return new Set();
   }
@@ -270,9 +406,12 @@ async function forceStates(page: Page, requests: readonly CellRequest[]): Promis
   for (const request of forcing) {
     const { nodeId } = await cdp.send("DOM.querySelector", {
       nodeId: root.nodeId,
-      selector: cellSelector(request.id, request.measured),
+      selector: cellSelector(request.id, request.forcedOn),
     });
     await cdp.send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: [...request.forced] });
+    for (const [name, value] of Object.entries(request.forcedAttributes)) {
+      await cdp.send("DOM.setAttributeValue", { nodeId, name, value });
+    }
   }
   const changed = new Set<string>();
   for (const request of forcing) {
@@ -283,11 +422,13 @@ async function forceStates(page: Page, requests: readonly CellRequest[]): Promis
   return changed;
 }
 
-/** Whether a cell's measured element, or any element inside it, differs from its resting twin's. */
+/** Whether a cell's measured elements, or any element inside them, differ from its resting twin's. */
 async function stateChanged(page: Page, request: CellRequest): Promise<boolean> {
+  const signatures = async (id: string) =>
+    (await Promise.all(request.measured.map((element) => signature(page, cellSelector(id, element))))).flat();
   const [state, rest] = await Promise.all([
-    signature(page, cellSelector(request.id, request.measured)),
-    signature(page, cellSelector(`${REFERENCE_PREFIX}${request.id}`, request.measured)),
+    signatures(request.id),
+    signatures(`${REFERENCE_PREFIX}${request.id}`),
   ]);
   return state.length !== rest.length || state.some((value, index) => value !== rest[index]);
 }
@@ -316,53 +457,54 @@ function signature(page: Page, selector: string): Promise<StyleSignature> {
   );
 }
 
+/** The border box of each of a cell's measured elements. */
+async function measuredBoxes(page: Page, request: CellRequest): Promise<readonly PageRect[]> {
+  return Promise.all(
+    request.measured.map(async (element) => {
+      const box = await page.locator(cellSelector(request.id, element)).boundingBox();
+      if (box === null) {
+        throw new Error(`the page did not lay out ${element} in cell ${request.id}`);
+      }
+      return box;
+    })
+  );
+}
+
 /**
  * Screenshot one cell. A cell whose forced state did not take, `missing` on entry, is hovered or
- * focused for real first, and let go after its screenshot.
+ * focused for real first, as its request's `fallback` says, and let go after its screenshot. A
+ * highlighted row has no real interaction to fall back on.
  */
 async function renderCell(
   page: Page,
   request: CellRequest,
   forcedState: StateOutcome,
-  layout: PageLayout
-): Promise<RenderedCell> {
-  const measured = page.locator(cellSelector(request.id, request.measured));
-  const box = await measured.boundingBox();
-  if (box === null) {
-    throw new Error(`the page did not lay out the measured element of cell ${request.id}`);
+  layout: PageLayout,
+  slot: PageRect
+): Promise<Omit<RenderedCell, "mounted">> {
+  const box = measuredBox(await measuredBoxes(page, request));
+  const clip = cellClip(request.id, slot, box, layout.padding);
+  if (request.content._tag === "Client") {
+    clipInsideSlot(request.id, slot, clip);
   }
-  if (Math.abs(box.x - Math.round(box.x)) > 1 / 64 || Math.abs(box.y - Math.round(box.y)) > 1 / 64) {
-    throw new Error(`the page placed cell ${request.id} at ${box.x},${box.y}, off the pixel grid`);
-  }
-  if (
-    box.width + 2 * layout.padding > layout.slotWidth ||
-    box.height + 2 * layout.padding > layout.slotHeight
-  ) {
-    throw new Error(`cell ${request.id} is ${box.width}×${box.height}, larger than its slot`);
-  }
-  const interact = forcedState === "missing";
-  if (interact && request.forced.includes("hover")) {
-    await measured.hover({ force: true });
+  const interact = forcedState === "missing" && !request.restsByDesign && request.fallback !== "none";
+  const forcedOn = page.locator(cellSelector(request.id, request.forcedOn));
+  if (interact && request.fallback === "hover") {
+    await forcedOn.hover({ force: true });
   } else if (interact) {
-    await measured.focus();
+    await forcedOn.focus();
   }
   const state: StateOutcome = !interact
     ? forcedState
     : (await stateChanged(page, request))
       ? "interaction"
       : "missing";
-  const clip = {
-    x: Math.round(box.x) - layout.padding,
-    y: Math.round(box.y) - layout.padding,
-    width: Math.ceil(box.width) + 2 * layout.padding,
-    height: Math.ceil(box.height) + 2 * layout.padding,
-  };
   const raster = decodePng(
     await page.screenshot({ clip, omitBackground: true, animations: "disabled", caret: "hide" })
   );
   if (interact) {
     await page.mouse.move(0, 0);
-    await measured.blur();
+    await forcedOn.blur();
   }
   return { raster, box: { width: box.width, height: box.height }, state };
 }

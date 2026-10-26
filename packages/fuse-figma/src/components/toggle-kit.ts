@@ -108,6 +108,12 @@ function toggleIcons(cell: Cell): readonly IconSlot[] {
   }
 }
 
+/**
+ * The label every `Toggle` cell shows, the default of the `Label` text property. The compare
+ * renderer renders the same text, and names each icon toggle with it.
+ */
+export const TOGGLE_LABEL = "Toggle";
+
 /** A Toggle with a label, as `<Toggle>Toggle</Toggle>`, and an icon on either side. */
 export const TOGGLE: ComponentDefinition = {
   key: "toggle",
@@ -126,7 +132,13 @@ export const TOGGLE: ComponentDefinition = {
   states: {},
   facts: FACTS,
   omittedStates: OMITTED_STATES,
-  label: { key: "label", name: "label", characters: "Toggle", textProperty: "Label", shownIn: () => true },
+  label: {
+    key: "label",
+    name: "label",
+    characters: TOGGLE_LABEL,
+    textProperty: "Label",
+    shownIn: () => true,
+  },
   iconsFor: toggleIcons,
   swapProperties: swapProperties([START_ICON, END_ICON]),
 };

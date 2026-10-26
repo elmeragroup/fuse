@@ -7,7 +7,7 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { builtKit, literal, paint, token, variantRoot } from "../../test/built-kit";
+import { builtKit, fixedSize, literal, paint, token, UNLIMITED, variantRoot } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
 
 let spec: BuiltSets["spec"];
@@ -19,6 +19,9 @@ beforeAll(async () => {
 /** A block with no padding, gap, shadow or layers. */
 const BLOCK = {
   name: "skeleton",
+  direction: "HORIZONTAL",
+  limits: UNLIMITED,
+  clips: true,
   paddingTop: literal(0),
   paddingRight: literal(0),
   paddingBottom: literal(0),
@@ -44,14 +47,12 @@ describe("the Skeleton component set", () => {
   it("draws a 192 × 16 muted line on the radius-md corner and a 40px muted circle", () => {
     expect(variantRoot(spec, "skeleton/shape=line")).toEqual({
       ...BLOCK,
-      width: literal(192),
-      height: literal(16),
+      sizing: fixedSize(literal(192), literal(16)),
       cornerRadius: token("radius-md"),
     });
     expect(variantRoot(spec, "skeleton/shape=circle")).toEqual({
       ...BLOCK,
-      width: literal(40),
-      height: literal(40),
+      sizing: fixedSize(literal(40), literal(40)),
       cornerRadius: literal(20),
     });
   });

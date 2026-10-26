@@ -326,8 +326,85 @@
   appends the mode and cannot reorder modes, so `Dense` stays the file's default until someone
   does.
 
-## Figma component sync
+## Figma component kit (`packages/fuse-figma`)
 
+Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
+
+- Evaluate an instance's facts against the outer cell, then merge the per-state instance copies:
+  the Input group's 4 carets, the Command item's 2 shortcuts and the Sidebar group's 2 labels. It
+  changes those sets' layer keys, so do it after a real-file run. The merge waited until a second
+  set repeated the pattern, and the Input group (open caret), Command item (shortcut) and Sidebar
+  group (rail label) each repeat it.
+- Move the markup validator from `test/markup-check.ts` into `src` and return diagnostics. The
+  compare CLI reaches it through `src/compare/client-markup.ts` and so loads Vitest's `expect`.
+- Mount each client cell a second time with its default-false BOOLEAN properties on. Today every
+  mount uses the defaults, so the Dropdown menu item's Icon is never checked turned on. Add a
+  negative control that fails when the optional icon is missing.
+- Speed up the kit tests. Each of the 36 files that call `builtKit()` builds the whole kit, about
+  0.8 s each. Build once in a Vitest `globalSetup` and pass the JSON through `provide`/`inject`.
+  `plugin/src/reconcile.fake.test.ts` applies the whole kit in each of its 17 tests: apply once per
+  file and fork the fake. Every `buildFixture` call recompiles Tailwind: keep one compiler per
+  worker.
+- Let `compareSnapshot` take the self-check's prepared renderers, page assets, component sets and
+  browser instead of building them again, and memoize `unchangedByDesign` per theme.
+- Give `dropdownMenuVariants` the `itemIndicator` and `separator` slots its Select and Combobox
+  siblings have, plus a new `checkableItem` slot that holds the item and
+  `menuItemIndicatorRoomClass`. `packages/fuse/src/components/dropdown-menu/dropdown-menu.tsx`,
+  `src/components/dropdown-menu-kit.ts` and, for the separator, `src/components/menu-kit.ts` then
+  read the slots in place of composing `menuItemIndicatorRoomClass` and `menuSeparatorClass` by
+  hand.
+- Share the re-declared test helpers: the plugin suites' single-page kit, `HUG`, apply-and-reopen
+  and set-on-page helpers in `plugin/src/button-kit-fixture.ts`, and `notesOf`, `textOf`, `setOf`,
+  the outline helper, `token` and `FOCUS_RING` in `test/`.
+- Split the Field legend's axis out of `fieldVariants` into a `fieldLegendVariants` recipe, as
+  Empty has `emptyMediaVariants`. The `Pick` in `packages/fuse/src/components/field/field.tsx` and
+  its type test then go.
+- Compute each formula variable's values from its formula through `src/components/css-values.ts`,
+  and derive its `reads`, in place of the hand-written lambda beside it in
+  `src/fuse-variable-set.ts`. Nothing checks that the two agree.
+- Match arbitrary-selector variants such as `[&>svg]` against the compiled selector that
+  `src/components/css-selector.ts` parses, in place of the literal tables in
+  `src/components/state-table.ts`. About 40 such variants appear in Fuse recipes, and the table
+  knows 11.
+- Read absolute placement through one per-axis constraint and inset spec for frames and
+  instances, and write it through one plugin routine. Today `src/components/placement.ts`,
+  `src/components/anchored-part.ts` and the padding gates each read one inset shape, and
+  `planPositioning` and `planAnchoring` write. `Sidebar.MenuAction`, which `absolute right-1`
+  places in `packages/fuse/src/components/sidebar/sidebar.tsx`, fits none of them.
+- Have each padding rewrite in `src/components/box-mapping.ts` (bleed, translate, negative margin)
+  return a per-side delta and sum them with `sumAffine`. Today a `??` chain picks one, so two rules
+  on one box leave the loser unmapped.
+- On a no-change Plan, pass the main component into `heldLayers` instead of looking it up again
+  for each of the 162 instance layers, and return early from `requireHeldLabelFonts` when it has
+  nothing to check.
+- Decide whether `Sidebar.Separator`'s `w-auto` should beat `separatorClass`'s
+  `data-horizontal:w-full`. Today the hairline overshoots by 8px and the content clips it, and the
+  kit draws that look. The fix changes a shipped component.
+- Add the `Sidebar app frame` set and a second Sidebar group set for its `Workspace` row.
+- Remove a nested instance value from the file when the spec stops naming it. Today it stays on
+  the instance (nested instance properties).
+- Stop drawing impossible matrix cells, such as open and disabled.
+- Make `every-child` reach a direct icon or label, or report that it does not. Map a positive
+  `space-x`, which stays unmapped (Avatar group).
+- Probe a deleted main component. The instance key walk in `plugin/src/instance-layers.ts` falls
+  back to the sublayer's own key unprobed.
+- Probe a nonzero side stroke weight written first on a node that never had one. The fake refuses
+  it, and the plugin never writes one.
+- Split the large modules: `src/components/label-layout.ts`, `src/components/cascade.ts`,
+  `src/components/box-sizing.ts`, and `plugin/src/reconcile.test.ts`, whose stroke cases can move
+  to `plugin/src/reconcile.stroke.test.ts`.
+- Fix the compare flakes: the Fuse browser suites timed out on clicks at a load of 5, and
+  `src/compare/kit-markup.test.ts` timed out at a load of 23.
+- Let the Select popup take a width other than 144px. An instance's inner text cannot take a
+  sizing override.
+- Replan per set, in place of the whole kit.
+- Handle height-bound edges.
+- Close the `widthCap` / `NEVER_OVERFLOWS` blind spot.
+- Give Plan lines that share a label a distinguishing name: Empty's buttons, Kbd's caps and the
+  Avatar group's three avatars.
+- Carry a label's text-alignment override through a swap. The fake's text-alignment rule in
+  `plugin/src/fake-figma.ts` drops it there, since no probe swapped an instance with the override.
+- Add the floating Sidebar and the Command dialog.
 - Confirm on a real file that an instance's glyph fill override goes with the glyph when the
   plugin draws an icon again, as `plugin/src/fake-figma.ts` assumes. Change one icon's markup,
   run Apply, and check that the next Plan lists nothing.
@@ -337,21 +414,29 @@
   ancestor that pins other modes, as Figma does. The fake resolves the value once, when the field
   binds, so no fake test shows a moved set's density-bound sizes changing. The two-phase Apply
   covers that case by construction only.
-- Give an overridden declaration a dropped row in `coverage.md`, so every recipe class appears in
-  the coverage table. The build records only the declaration that wins each property, so
-  `aria-pressed:bg-muted` gets no row: `data-pressed:bg-muted` sets the same property later in
+- Give an overridden declaration a dropped row in `plugin/dist/coverage.md`, so every recipe class
+  appears in the coverage table. The build records only the declaration that wins each property,
+  so `aria-pressed:bg-muted` gets no row: `data-pressed:bg-muted` sets the same property later in
   Tailwind's order.
 - Add Attachment and AspectRatio to the kit. Attachment needs its five states, three sizes and
   both orientations, with Button instances for its actions. AspectRatio needs one frame per
   ratio in its seven-ratio set.
-- Add Kbd group to the kit once a kit component can hold instances of another set. The group is
-  the `group` slot of `kbdVariants`, a row of Kbd caps that inherit its corner through
-  `*:data-[slot=kbd]:rounded-[inherit]`.
-- Check on a real file whether Figma clamps a corner radius larger than half the shorter side,
-  as CSS does. Draw a 16px frame with a 100px radius and compare it with one at 8px. The build
-  writes `rounded-full` as the exact half (`readCorner` in `src/components/component-spec.ts`),
-  so it does not depend on the answer. If Figma clamps, a pill corner on a box that hugs a side
-  could write a large radius instead of staying unmapped.
+- Pack a fixed row of fixed-width layers at its start when they leave room beside them, as CSS
+  does. `leavesRoomAtEnd` in `src/components/box-mapping.ts` covers a hugging layer only, so such
+  a row keeps the unset `CENTER` from `readFlow` in `src/components/box-flow.ts`. Finding it needs
+  a sum of the layers' widths. No current set has such a row.
+- Probe the text cases `plugin/src/fake-figma.ts` models without a probe, and align its text rules
+  with what the file reads:
+  - the base style once range writes cover every character, and after a plain `characters` write
+  - a family binding, on a range or the whole text, whose variable's value differs from every
+    character's family
+  - a font write over a bound `fontStyle` or `fontWeight`
+  - the `width` and `height` overrides a range write on an instance's text lists (G6)
+  - an instance at its default following ranges added to its main later (G4). The fake copies the
+    main's styles when it makes the instance.
+- Decide on the Fuse side whether the Combobox popup should span the Input group. Base UI anchors
+  it to the `<input>`, so in `packages/fuse/src/components/combobox/combobox.tsx` the popup stops
+  10px (dense) or 18px (comfortable) short of the group's right edge.
 
 ## Data table
 

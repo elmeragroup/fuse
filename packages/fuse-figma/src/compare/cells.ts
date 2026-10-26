@@ -116,7 +116,7 @@ export function parseCell<Definition extends Pick<ComponentDefinition, "key" | "
   });
 }
 
-/** A pseudo class the page forces on a cell's measured element. */
+/** A pseudo class the page forces on a cell's measured element, or the part of it that takes its states. */
 export type ForcedPseudoClass = "hover" | "focus" | "focus-visible";
 
 /** The `state` values the page forces. Every other state is one the markup draws itself. */
@@ -126,15 +126,59 @@ const FORCED = new Map<string, readonly ForcedPseudoClass[]>([
 ]);
 
 /**
+ * How a set's markup shows its highlighted row. Base UI focuses a highlighted Select or Menu item,
+ * which Fuse styles with `focus:`, and marks a highlighted Combobox or Command item
+ * `data-highlighted`, which Fuse styles with `data-highlighted:`.
+ */
+export type Highlight = "focus" | "data-highlighted";
+
+/**
  * The pseudo classes the page forces for a cell: `:hover` for hover, and `:focus` with
- * `:focus-visible` for focus, as a pointer over the element or a keyboard user on it would.
+ * `:focus-visible` for focus, as a pointer over the element or a keyboard user on it would. A
+ * highlighted row takes `:focus` alone where its set highlights by focus, as Base UI moves focus
+ * along a list without a keyboard focus ring.
  *
  * @param cell - A parsed cell.
+ * @param highlight - How the cell's set shows a highlighted row, undefined for a set with none.
  * @returns The pseudo classes its `state` calls for, none for a state the markup itself draws
  *   or a cell with no `state` axis.
  */
-export function forcedPseudoClasses(cell: Cell): readonly ForcedPseudoClass[] {
+export function forcedPseudoClasses(cell: Cell, highlight?: Highlight): readonly ForcedPseudoClass[] {
+  if (cell.state === "highlighted") {
+    return highlight === "focus" ? ["focus"] : [];
+  }
   return FORCED.get(cell.state ?? "") ?? [];
+}
+
+/**
+ * The attribute the page writes for a highlighted row whose set marks it, as Base UI marks the
+ * highlighted Combobox or Command item.
+ *
+ * @param cell - A parsed cell.
+ * @param highlight - How the cell's set shows a highlighted row, undefined for a set with none.
+ * @returns `data-highlighted` for a highlighted cell of a set that marks it, and nothing otherwise.
+ */
+export function highlightAttributes(
+  cell: Cell,
+  highlight: Highlight | undefined
+): Readonly<Record<string, string>> {
+  return cell.state === "highlighted" && highlight === "data-highlighted" ? { "data-highlighted": "" } : {};
+}
+
+/** The real interaction the page tries for a cell whose forced state changed nothing. */
+export type FallbackInteraction = "hover" | "focus" | "none";
+
+/**
+ * The real interaction the page tries when forcing a cell's state changed nothing: a hover for a
+ * hover cell and a focus for a focus cell. A highlighted row gets none, since a real focus on a
+ * menu item adds the keyboard focus ring its highlight does not show, and a real hover highlights
+ * only once a page hydrates its list.
+ *
+ * @param cell - A parsed cell.
+ * @returns The interaction, or `none` for a cell whose state no real hover or focus alone draws.
+ */
+export function fallbackInteraction(cell: Cell): FallbackInteraction {
+  return cell.state === "hover" || cell.state === "focus" ? cell.state : "none";
 }
 
 /**
