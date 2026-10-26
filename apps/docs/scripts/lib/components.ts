@@ -87,6 +87,7 @@ const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
   ["combobox", ["Combobox", "useComboboxAnchor"]],
   ["kbd", ["Kbd", "KbdGroup"]],
   ["sidebar", ["Sidebar", "useSidebar"]],
+  ["file-upload", ["FileUpload", "useFileUpload"]],
 ]);
 
 function apiExportNamesFor(slug: string): readonly string[] {

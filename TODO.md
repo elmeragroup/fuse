@@ -406,6 +406,18 @@
   with those values and move the palette onto it. A new tier also needs the Figma `Fuse density`
   collection, the studio and CONTEXT.md.
 
+## File upload
+
+- Integrate `FileUpload` with Field, so `Field.Label`, `Field.Description` and `Field.Error` wire
+  to the Trigger the way they wire to an input, and an invalid Field marks the Dropzone.
+- Let `FileUpload.Root` post its files with a native form. It needs a controlled `files` value
+  and a `name`, and it writes that value back into the hidden input through a `DataTransfer`.
+  Chromium and WebKit empty a held `input.files` when the input resets, so the Root has to own
+  the list it posts.
+- Move FileTrigger onto the FileUpload internals, so it shares `accept` checking and the
+  `File[]` payload. Changing what its `onSelect` receives is a
+  breaking change for FileTrigger consumers.
+
 ## Landing stand-ins
 
 The hero window's Dashboard (`apps/docs/src/app/(landing)/landing/app-shell/`), the brand sites

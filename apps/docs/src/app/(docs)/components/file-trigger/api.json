@@ -10,7 +10,7 @@
         "@react-types/shared",
         "react-aria-components"
       ],
-      "forwardedCount": 75,
+      "forwardedCount": 74,
       "props": [
         {
           "name": "className",
@@ -28,6 +28,15 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Disables the visible Button (and picker activation).",
+          "required": false
+        },
+        {
+          "name": "onSelect",
+          "origin": "declared",
+          "type": "((files: FileList | null) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the picked files. The list is the input's own `files`, which Chromium and WebKit empty when the picker opens again, so copy it before storing it: `[...files]`.",
           "required": false
         },
         {
