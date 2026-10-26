@@ -23,7 +23,7 @@
     "test:types": "turbo run test:types",
     "turbo-cache:prune": "node scripts/prune-turbo-cache.ts .turbo/cache .turbo/runs",
     "type-check": "turbo run type-check",
-    "type-check:scripts": "tsc --noEmit -p scripts/tsconfig.json"
+    "type-check:scripts": "tsrs --noEmit -p scripts/tsconfig.json"
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",
@@ -39,6 +39,7 @@
     "oxlint-tsgolint": "catalog:",
     "picomatch": "catalog:",
     "plop": "catalog:",
+    "tsrs": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",

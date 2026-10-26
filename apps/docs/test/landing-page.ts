@@ -62,7 +62,7 @@ export function launchLandingSuite({
         prepare,
         search = suiteSearch,
         hydrated = true,
-      } = {}
+      }: LandingOptions = {}
     ) => {
       const context = await browser().newContext({ viewport, reducedMotion, colorScheme });
       const page = await context.newPage();

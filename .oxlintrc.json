@@ -256,12 +256,6 @@
       }
     },
     {
-      "files": ["packages/fuse/src/react-aria/**/*.{ts,tsx}"],
-      "rules": {
-        "elmera/no-rac-outside-quarantine": "off"
-      }
-    },
-    {
       "files": ["apps/docs/src/**/*.{ts,tsx}"],
       "rules": {
         "elmera/no-primitive-colors": "error",

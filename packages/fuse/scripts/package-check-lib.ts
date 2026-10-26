@@ -5,7 +5,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
-import type { Node, SourceFile } from "typescript/unstable/ast";
+import type { Node, SourceFile } from "typescript/ast";
 import {
   isCallExpression,
   isExportDeclaration,
@@ -14,9 +14,8 @@ import {
   isImportTypeNode,
   isLiteralTypeNode,
   isStringLiteral,
-} from "typescript/unstable/ast/is";
-import { createVirtualFileSystem } from "typescript/unstable/fs";
-import { API } from "typescript/unstable/sync";
+} from "typescript/ast/is";
+import { API } from "typescript/sync";
 
 import { isForbiddenRacSpecifier } from "./forbidden-rac-packages.js";
 import { toPosix } from "./paths";
@@ -140,21 +139,16 @@ type OwnedDeclarationParser = DeclarationParser & {
 };
 
 function createDeclarationParser(): OwnedDeclarationParser {
-  const virtualFs = createVirtualFileSystem({});
-  const writeFile = virtualFs.writeFile;
-  if (writeFile === undefined) {
-    throw new Error("TypeScript virtual filesystem is missing writeFile");
-  }
-  const api = new API({ cwd: process.cwd(), fs: virtualFs });
-  let nextId = 0;
+  const api = new API();
   const parsedFiles = new Map<string, readonly string[]>();
   const specifiers = (declaration: string): string[] => {
-    const fileName = `/declaration-${String(nextId)}.d.ts`;
-    nextId += 1;
-    writeFile(fileName, declaration);
-    const snapshot = api.updateSnapshot({ openFiles: [fileName] });
-    const sourceFile = snapshot.getDefaultProjectForFile(fileName)?.program.getSourceFile(fileName);
-    return sourceFile === undefined ? [] : collectModuleSpecifierNodes(sourceFile);
+    // Parsing needs no program, so the source file is created outside any project.
+    const retained = api.createSourceFile("/declaration.d.ts", declaration);
+    try {
+      return collectModuleSpecifierNodes(retained.sourceFile);
+    } finally {
+      retained.dispose();
+    }
   };
   return {
     specifiers,

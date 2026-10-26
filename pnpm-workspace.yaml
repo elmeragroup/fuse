@@ -6,9 +6,9 @@ packages:
 catalog:
   "@arethetypeswrong/cli": 0.18.5
   "@changesets/cli": 3.0.2
-  "@effect/platform-node": 4.0.2
-  "@effect/vitest": 4.0.2
-  "@elmeragroup/internal": 0.2.0-canary.10
+  "@effect/platform-node": 4.0.6
+  "@effect/vitest": 4.0.6
+  "@elmeragroup/internal": 0.2.0-canary.16
   "@arethetypeswrong/core": 0.18.5
   "@base-ui/react": 1.9.0
   "@figma/plugin-typings": 1.141.0
@@ -37,16 +37,16 @@ catalog:
   axe-core: 4.14.0
   clsx: 2.1.1
   csstype: 3.2.3
-  effect: 4.0.2
+  effect: 4.0.6
   eslint-plugin-turbo: 2.10.12
   fast-check: 4.10.2
   "libphonenumber-js": 1.13.13
   next: 16.4.2
   oxc-parser: 0.148.0
   oxc-transform: 0.148.0
-  oxfmt: 0.68.0
-  oxlint: 1.83.0
-  oxlint-tsgolint: 7.0.2001
+  oxfmt: 0.74.0
+  oxlint: 1.89.0
+  oxlint-tsgolint: 7.0.2004
   picomatch: 4.0.7
   # 8.0.0 is inside the minimum release age; 7.2.0 has the same API for pr-shots.
   pixelmatch: 7.2.0
@@ -54,7 +54,7 @@ catalog:
   plop: 4.0.5
   pngjs: 7.0.0
   publint: 0.3.24
-  rolldown: 1.2.8
+  rolldown: 1.2.15
   "sugar-high": 2.4.1
   react: 19.3.0
   react-aria: 3.52.1
@@ -66,10 +66,13 @@ catalog:
   tailwind-variants: 3.3.1
   tailwindcss: 4.3.3
   tailwindcss-react-aria-components: 2.2.0
-  tsdown: 0.23.0
+  tsdown: 0.23.2
+  # tsrs runs every type-check and Fuse's declaration emit. typescript 7.1 provides the JS API
+  # and the tsc cross-check.
+  tsrs: 0.18.0-ts7.1.0-dev.20260929
   turbo: 2.10.12
   tw-animate-css: 1.4.0
-  typescript: 7.0.2
+  typescript: 7.1.0-beta
   vite: 8.3.0
   vitest: 5.0.0
   yaml: 2.9.1
@@ -79,7 +82,7 @@ autoInstallPeers: true
 overrides:
   # @effect/platform-node declares a caret range here, which resolves to a release whose
   # effect peer is newer than the catalog's effect. Keep the whole Effect family on one version.
-  "@effect/platform-node-shared": 4.0.2
+  "@effect/platform-node-shared": 4.0.6
 
 allowBuilds:
   "@parcel/watcher": true
@@ -87,6 +90,10 @@ allowBuilds:
 minimumReleaseAge: 4320
 
 minimumReleaseAgeExclude:
-  - effect@4.0.2
+  - effect@4.0.6
   # Canary line of the in-house tooling package; each bump names the exact version.
-  - "@elmeragroup/internal@0.2.0-canary.10"
+  - "@elmeragroup/internal@0.2.0-canary.16"
+  # TypeScript 7.1 needs the rolldown-plugin-dts 0.29 beta that this tsdown depends on. Drop the
+  # entry, and its temporary allowance in test/internal-package.test.mjs, once the version ages
+  # past the guard.
+  - tsdown@0.23.2

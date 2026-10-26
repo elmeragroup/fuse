@@ -77,13 +77,23 @@ export type CellRenderSource<TCell> = {
   readonly FlexRender: (props: { readonly cell: NoInfer<TCell> }) => ReactNode;
 };
 
-/** The table members `DataTable.Header` reads. */
-export type HeaderGroupsSource<THeader extends HeaderSource> = {
-  readonly getHeaderGroups: () => ReadonlyArray<{
-    readonly id: string;
-    readonly headers: ReadonlyArray<THeader>;
-  }>;
+/** A header group as `DataTable.Header` reads it: one `<thead>` row of headers. */
+export type HeaderGroupSource = {
+  readonly id: string;
+  readonly headers: ReadonlyArray<HeaderSource>;
 };
+
+/**
+ * The table members `DataTable.Header` reads. It is generic over the header group, not the
+ * header: TypeScript 7.1 infers no header type from a TanStack table when the header sits inside
+ * the group inside the `getHeaderGroups` return type.
+ */
+export type HeaderGroupsSource<TGroup extends HeaderGroupSource> = {
+  readonly getHeaderGroups: () => ReadonlyArray<TGroup>;
+};
+
+/** The header type a header group holds. */
+export type HeaderOf<TGroup extends HeaderGroupSource> = TGroup["headers"][number];
 
 /**
  * The table members `DataTable.Body` reads. The visible leaf columns size the empty row; without
