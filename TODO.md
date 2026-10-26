@@ -405,6 +405,22 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 - Add Attachment and AspectRatio to the kit. Attachment needs its five states, three sizes and
   both orientations, with Button instances for its actions. AspectRatio needs one frame per
   ratio in its seven-ratio set.
+- Pack a fixed row of fixed-width layers at its start when they leave room beside them, as CSS
+  does. `leavesRoomAtEnd` in `src/components/box-mapping.ts` covers a hugging layer only, so such
+  a row keeps the unset `CENTER` from `readFlow` in `src/components/box-flow.ts`. Finding it needs
+  a sum of the layers' widths. No current set has such a row.
+- Probe the text cases `plugin/src/fake-figma.ts` models without a probe, and align its text rules
+  with what the file reads:
+  - the base style once range writes cover every character, and after a plain `characters` write
+  - a family binding, on a range or the whole text, whose variable's value differs from every
+    character's family
+  - a font write over a bound `fontStyle` or `fontWeight`
+  - the `width` and `height` overrides a range write on an instance's text lists (G6)
+  - an instance at its default following ranges added to its main later (G4). The fake copies the
+    main's styles when it makes the instance.
+- Decide on the Fuse side whether the Combobox popup should span the Input group. Base UI anchors
+  it to the `<input>`, so in `packages/fuse/src/components/combobox/combobox.tsx` the popup stops
+  10px (dense) or 18px (comfortable) short of the group's right edge.
 
 ## Data table
 

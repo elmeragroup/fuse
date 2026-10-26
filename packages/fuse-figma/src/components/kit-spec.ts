@@ -764,8 +764,8 @@ export type FontSpec = {
 /**
  * The family the kit draws some symbol glyphs in, where the family a label binds has none. Figma,
  * unlike a browser, falls back to no other font for a glyph its font lacks: on 2026-10-26 a Roboto
- * text `⇧⌘P` drew `P` alone, with a blank 13px advance for each of ⇧ and ⌘, and reported no missing
- * font, where Inter drew both (G1). Each range of a label's characters that holds only these glyphs
+ * text `⇧⌘P` drew `P` alone, with a combined 13px blank advance for the two glyphs, and reported no
+ * missing font, where Inter drew both (G1). Each range of a label's characters that holds only these glyphs
  * takes `family` at the label's own style and binds no family, while its other characters keep the
  * label's family (G2).
  */

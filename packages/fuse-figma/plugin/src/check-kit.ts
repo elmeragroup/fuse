@@ -465,11 +465,13 @@ function checkInstances(kit: KitSpec): void {
 
 /**
  * Refuse a label that shows a glyph the kit's glyph font draws where the plugin cannot draw it so: a
- * glyph that is more than one UTF-16 code unit, a label whose family is a literal, and a nested TEXT
- * value. The plugin draws each glyph range in the glyph font, unbound, and keeps the label's other
- * characters bound to its family variable, `font-sans` in the kit (G2), so a label holds exactly
- * those two families. A literal family would leave two literal fonts that follow no theme, and the
- * plugin plans no ranges on a label a nested value sets.
+ * glyph that is more than one UTF-16 code unit, a label whose family is a literal, a label whose size
+ * or line height binds a variable, and a nested TEXT value. The plugin draws each glyph range in the
+ * glyph font, unbound, and keeps the label's other characters bound to its family variable,
+ * `font-sans` in the kit (G2), so a label holds exactly those two families. A literal family would
+ * leave two literal fonts that follow no theme. A whole size binding gives a glyph range its value
+ * but not the binding (G12b), and no probe shows a Plan over such a label converging. The plugin
+ * plans no ranges on a label a nested value sets.
  */
 function checkGlyphs(kit: KitSpec): void {
   const { glyphFont } = kit;
@@ -480,11 +482,21 @@ function checkGlyphs(kit: KitSpec): void {
     );
   }
   const shows = (characters: string): boolean => glyphRanges(characters, glyphFont).length > 0;
-  const refuseLiteral = (where: string, label: TextLayerSpec): void => {
+  const refuseLabel = (where: string, label: TextLayerSpec): void => {
     if (label.fontFamily.kind !== "variable") {
       throw new Error(
         `${where} shows a glyph the kit draws in ${glyphFont.family}, and its label ${label.name} sets a literal family, where the plugin keeps the other characters bound to a family variable.`
       );
+    }
+    for (const [field, spec] of [
+      ["size", label.fontSize],
+      ["line height", label.lineHeight],
+    ] as const) {
+      if (spec.kind === "variable") {
+        throw new Error(
+          `${where} shows a glyph the kit draws in ${glyphFont.family}, and its label ${label.name} binds its ${field} to a variable, which a whole binding gives the glyph ranges unbound (G12b), and no probe shows a Plan over such a label converging.`
+        );
+      }
     }
   };
   for (const set of kit.componentSets) {
@@ -492,7 +504,7 @@ function checkGlyphs(kit: KitSpec): void {
       for (const layer of walkLayers(variant.root)) {
         const where = `${set.name}: ${layer.name} in the variant ${variant.key}`;
         if (layer.kind === "text" && shows(layer.characters)) {
-          refuseLiteral(where, layer);
+          refuseLabel(where, layer);
         }
         if (layer.kind !== "instance") {
           continue;
@@ -503,7 +515,7 @@ function checkGlyphs(kit: KitSpec): void {
         for (const [name, value] of Object.entries(layer.properties?.text ?? {})) {
           for (const label of inner === undefined || !shows(value) ? [] : walkLayers(inner.root)) {
             if (label.kind === "text" && label.textProperty === name) {
-              refuseLiteral(where, label);
+              refuseLabel(where, label);
             }
           }
         }

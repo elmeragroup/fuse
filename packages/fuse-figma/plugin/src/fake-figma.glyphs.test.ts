@@ -1,7 +1,7 @@
 /**
- * The glyph range rules of the in-memory file in `fake-figma.ts`, rules 50 to 54, on texts such as
+ * The glyph range rules of the in-memory file in `fake-figma.ts`, rules 50 to 55, on texts such as
  * `⇧⌘P` bound to `font-sans` and an instance of the component that holds one. The oracle is what the
- * test file `Elmera Fuse - Import test` read back in the net-zero probes G2 to G10 on 2026-10-26, as
+ * test file `Elmera Fuse - Import test` read back in the net-zero probes G2 to G12 on 2026-10-26, as
  * the fake's header names them. The planners' glyph tests converge against these rules, so a rule that
  * drifts from the real file would let a plan pass that Figma would not keep.
  */
@@ -13,13 +13,15 @@ const INTER = { family: "Inter", style: "Regular" };
 const ROBOTO = { family: "Roboto", style: "Regular" };
 
 /**
- * A component set of one row holding a 20px-line text, `⇧⌘P` unless given, Roboto Regular and bound to
- * `font-sans` as a whole, which resolves to Roboto, and its TEXT property, as each probe began.
+ * A component set of one row holding a 14px text on a 20px line, `⇧⌘P` unless given, Roboto Regular
+ * and bound to `font-sans` as a whole, which resolves to Roboto, and its TEXT property, as each probe
+ * began. The file also holds the STRING `font-symbols`, valued Inter, and the FLOAT `size`, valued 18.
  */
 async function probe(characters = "⇧⌘P") {
   const file = fixtureFile([
     string("Fuse tokens", "font-sans", "Roboto"),
-    float("Fuse density", "label-text", 13),
+    string("Probe", "font-symbols", "Inter"),
+    float("Probe", "size", 18),
   ]);
   const { figma } = file;
   await figma.loadFontAsync(INTER);
@@ -31,6 +33,7 @@ async function probe(characters = "⇧⌘P") {
   text.name = "Keys";
   text.characters = characters;
   text.fontName = ROBOTO;
+  text.fontSize = 14;
   text.lineHeight = { unit: "PIXELS", value: 20 };
   text.setBoundVariable("fontFamily", file.variable("Fuse tokens", "font-sans"));
   row.appendChild(text);
@@ -167,44 +170,81 @@ describe("rules 51 and 52: a reset takes the style the range writes left alone (
   });
 });
 
-describe("rule 51: the base style follows every whole-text write, and no range write (G7, G10)", () => {
-  /** `P⌘` with `⌘` Inter, after `edit`, then linked, as each segment's font, size and family binding. */
-  async function resetAfter(edit: (text: TextNode, file: ReturnType<typeof fixtureFile>) => void) {
-    const { file, text, keys, fontSans } = await probe("P⌘");
-    edit(text, file);
-    text.setRangeFontName(1, 2, INTER);
-    text.componentPropertyReferences = { characters: keys };
-    return text
-      .getStyledTextSegments(["fontName", "boundVariables"])
-      .map((segment) => [
-        segment.characters,
-        text.fontSize,
-        segment.boundVariables?.fontFamily?.id === fontSans,
-      ]);
-  }
+/**
+ * A text's segments as each one's characters, font, size, whether its family binds `font-sans`, and
+ * the id of the variable its size binds.
+ */
+function sized(
+  text: TextNode,
+  fontSans: string
+): readonly (readonly [string, string, number, boolean, string | undefined])[] {
+  return text
+    .getStyledTextSegments(["fontName", "fontSize", "boundVariables"])
+    .map((segment) => [
+      segment.characters,
+      `${segment.fontName.family} ${segment.fontName.style}`,
+      segment.fontSize,
+      segment.boundVariables?.fontFamily?.id === fontSans,
+      segment.boundVariables?.fontSize?.id,
+    ]);
+}
 
-  it("resets to the size a whole-text write gave", async () => {
-    expect(
-      await resetAfter((text) => {
-        text.fontSize = 14;
-      })
-    ).toEqual([["P⌘", 14, true]]);
+describe("rules 51 and 55: a reset takes the base style whole-text writes give, and no range write (G10, G12)", () => {
+  it("resets `⌘K` to Roboto 20/28 bound to font-sans after a whole size and line height over an Inter ⌘ (G12a)", async () => {
+    const { text, keys, fontSans } = await probe("⌘K");
+    text.setRangeFontName(0, 1, INTER);
+    text.fontSize = 20;
+    text.lineHeight = { unit: "PIXELS", value: 28 };
+    const written = [sized(text, fontSans), text.lineHeight];
+    text.componentPropertyReferences = { characters: keys };
+    expect([written, [sized(text, fontSans), text.lineHeight]]).toEqual([
+      [
+        [
+          ["⌘", "Inter Regular", 20, false, undefined],
+          ["K", "Roboto Regular", 20, true, undefined],
+        ],
+        { unit: "PIXELS", value: 28 },
+      ],
+      [[["⌘K", "Roboto Regular", 20, true, undefined]], { unit: "PIXELS", value: 28 }],
+    ]);
   });
 
-  it("resets to the size a whole-text binding gave", async () => {
-    expect(
-      await resetAfter((text, file) => {
-        text.setBoundVariable("fontSize", file.variable("Fuse density", "label-text"));
-      })
-    ).toEqual([["P⌘", 13, true]]);
+  it("gives an Inter ⌘ a whole size binding's value but not the binding, and resets to it bound (G12b)", async () => {
+    const { file, text, keys, fontSans } = await probe("⌘K");
+    const size = file.variable("Probe", "size");
+    text.setRangeFontName(0, 1, INTER);
+    text.setBoundVariable("fontSize", size);
+    const bound = sized(text, fontSans);
+    text.componentPropertyReferences = { characters: keys };
+    expect([bound, sized(text, fontSans)]).toEqual([
+      [
+        ["⌘", "Inter Regular", 18, false, undefined],
+        ["K", "Roboto Regular", 18, true, size.id],
+      ],
+      [["⌘K", "Roboto Regular", 18, true, size.id]],
+    ]);
+  });
+
+  it("resets a range size write on `⌘K` to the 14px it began with (G12c)", async () => {
+    const { text, keys, fontSans } = await probe("⌘K");
+    text.setRangeFontSize(1, 2, 24);
+    const ranged = sized(text, fontSans);
+    text.componentPropertyReferences = { characters: keys };
+    expect([ranged, sized(text, fontSans)]).toEqual([
+      [
+        ["⌘", "Roboto Regular", 14, true, undefined],
+        ["K", "Roboto Regular", 24, true, undefined],
+      ],
+      [["⌘K", "Roboto Regular", 14, true, undefined]],
+    ]);
   });
 
   it("resets to an unbound family after a whole-text unbind, which reaches every character (G10)", async () => {
-    expect(
-      await resetAfter((text) => {
-        text.setBoundVariable("fontFamily", null);
-      })
-    ).toEqual([["P⌘", 12, false]]);
+    const { text, keys, fontSans } = await probe("P⌘");
+    text.setBoundVariable("fontFamily", null);
+    text.setRangeFontName(1, 2, INTER);
+    text.componentPropertyReferences = { characters: keys };
+    expect(sized(text, fontSans)).toEqual([["P⌘", "Roboto Regular", 14, false, undefined]]);
   });
 });
 
@@ -248,6 +288,29 @@ describe("rule 50: a font write keeps a character's binding only where its famil
         ["K", "Roboto Regular", false],
       ],
       [["AK", "Roboto Regular", true]],
+    ]);
+  });
+
+  it("keeps a binding to an Inter-valued variable through an Inter write, until a null range binding (G11)", async () => {
+    const { file, text, fontSans } = await probe("⌘K");
+    const symbols = file.variable("Probe", "font-symbols");
+    text.setRangeFontName(0, 1, INTER);
+    text.setRangeBoundVariable(0, 1, "fontFamily", symbols);
+    const bound = segments(text);
+    text.setRangeFontName(0, 1, INTER);
+    const written = segments(text);
+    text.setRangeBoundVariable(0, 1, "fontFamily", null);
+    const held: readonly (readonly [string, string, string | undefined])[] = [
+      ["⌘", "Inter", symbols.id],
+      ["K", "Roboto", fontSans],
+    ];
+    expect([bound, written, segments(text)]).toEqual([
+      held,
+      held,
+      [
+        ["⌘", "Inter", undefined],
+        ["K", "Roboto", fontSans],
+      ],
     ]);
   });
 

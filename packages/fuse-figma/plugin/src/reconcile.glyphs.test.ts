@@ -1,8 +1,8 @@
 /**
  * `reconcileKit` with a kit whose shortcut row draws `⇧⌘P` and whose popup holds two instances of the
  * row, one at the default and one overridden to `⌘B`, on the in-memory file in `fake-figma.ts`. The
- * oracles are the fake's rules 50 to 54, which follow what a real file did with a glyph range on
- * 2026-10-26 (G2 to G10), the glyph positions in the Dropdown menu shortcuts counted by hand, and a
+ * oracles are the fake's rules 50 to 55, which follow what a real file did with a glyph range on
+ * 2026-10-26 (G2 to G12), the glyph positions in the Dropdown menu shortcuts counted by hand, and a
  * second Plan that lists nothing.
  */
 import { describe, expect, it } from "vitest";
@@ -114,11 +114,15 @@ function kitWith(glyphs: readonly string[]): KitSpec {
 
 const KIT = kitWith(GLYPH_FONT.glyphs);
 
-/** A file whose `font-sans` holds Roboto, with the `background` the kit page's sets sit on. */
+/**
+ * A file whose `font-sans` holds Roboto, with the `background` the kit page's sets sit on, and a
+ * designer's `Brand / font-symbols` that holds Inter.
+ */
 function robotoFile(): FakeFigma {
   return fixtureFile([
     color("Fuse tokens", "background", { r: 1, g: 1, b: 1, a: 1 }),
     string("Fuse tokens", "font-sans", "Roboto"),
+    string("Brand", "font-symbols", "Inter"),
   ]);
 }
 
@@ -202,6 +206,11 @@ describe("the glyph font on a shortcut and on the instances that override it", (
       },
     ],
     [
+      "the unbind a glyph range a designer bound to an Inter-valued variable needs (G11)",
+      (file: FakeFigma, keys: TextNode) =>
+        keys.setRangeBoundVariable(0, 2, "fontFamily", file.variable("Brand", "font-symbols")),
+    ],
+    [
       "the link to the TEXT property a designer removed (G3)",
       (_file: FakeFigma, keys: TextNode) => {
         keys.componentPropertyReferences = null;
@@ -236,6 +245,30 @@ describe("the glyph font on a shortcut and on the instances that override it", (
       "item: keys in the variant item/one shows a glyph the kit draws in Inter, and its label keys sets a literal family, where the plugin keeps the other characters bound to a family variable."
     );
   });
+
+  it.each([
+    [
+      "size",
+      { fontSize: { kind: "variable", variable: { collection: "Fuse density", name: "label-text" } } },
+    ],
+    [
+      "line height",
+      { lineHeight: { kind: "variable", variable: { collection: "Fuse density", name: "label-line" } } },
+    ],
+  ] as const)(
+    "refuses a shortcut whose label binds its %s, where no probe shows a Plan converging (G12b)",
+    async (field, bound) => {
+      const kit = {
+        ...KIT,
+        componentSets: [
+          set("item", [{ name: "Shortcut keys", defaultValue: "⇧⌘P" }], [{ ...KEYS, ...bound }]),
+        ],
+      };
+      await expect(reconcileKit(robotoFile().figma, kit, false)).rejects.toThrow(
+        `item: keys in the variant item/one shows a glyph the kit draws in Inter, and its label keys binds its ${field} to a variable, which a whole binding gives the glyph ranges unbound (G12b), and no probe shows a Plan over such a label converging.`
+      );
+    }
+  );
 
   it("refuses a glyph of more than one UTF-16 code unit, which a range cannot hold alone", async () => {
     await expect(reconcileKit(robotoFile().figma, kitWith(["⌘", "🔑"]), false)).rejects.toThrow(
