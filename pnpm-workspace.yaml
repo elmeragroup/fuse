@@ -6,9 +6,9 @@ packages:
 catalog:
   "@arethetypeswrong/cli": 0.18.5
   "@changesets/cli": 3.0.2
-  "@effect/platform-node": 4.0.2
-  "@effect/vitest": 4.0.2
-  "@elmeragroup/internal": 0.2.0-canary.10
+  "@effect/platform-node": 4.0.3
+  "@effect/vitest": 4.0.3
+  "@elmeragroup/internal": 0.2.0-canary.15
   "@arethetypeswrong/core": 0.18.5
   "@base-ui/react": 1.9.0
   "@figma/plugin-typings": 1.141.0
@@ -37,7 +37,7 @@ catalog:
   axe-core: 4.14.0
   clsx: 2.1.1
   csstype: 3.2.3
-  effect: 4.0.2
+  effect: 4.0.3
   eslint-plugin-turbo: 2.10.12
   fast-check: 4.10.2
   "libphonenumber-js": 1.13.13
@@ -82,7 +82,7 @@ autoInstallPeers: true
 overrides:
   # @effect/platform-node declares a caret range here, which resolves to a release whose
   # effect peer is newer than the catalog's effect. Keep the whole Effect family on one version.
-  "@effect/platform-node-shared": 4.0.2
+  "@effect/platform-node-shared": 4.0.3
 
 allowBuilds:
   "@parcel/watcher": true
@@ -90,9 +90,9 @@ allowBuilds:
 minimumReleaseAge: 4320
 
 minimumReleaseAgeExclude:
-  - effect@4.0.2
+  - effect@4.0.3
   # Canary line of the in-house tooling package; each bump names the exact version.
-  - "@elmeragroup/internal@0.2.0-canary.10"
+  - "@elmeragroup/internal@0.2.0-canary.15"
   # TypeScript 7.1 needs the rolldown-plugin-dts 0.29 beta that this tsdown depends on. Drop the
   # entry, and its temporary allowance in test/internal-package.test.mjs, once the version ages
   # past the guard.
