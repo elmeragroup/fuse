@@ -311,6 +311,15 @@ export default function ThemingPage(): ReactElement {
         <code>400</code>. A <code>className</code> weight on the title replaces the theme&apos;s.
       </p>
       <p>
+        A <code>Text</code>&apos;s line height is themed at three sizes. Without a <code>leading</code> prop,{" "}
+        <code>size=&quot;sm&quot;</code>, the default size and <code>size=&quot;lg&quot;</code> read{" "}
+        <code>--paragraph-leading-sm</code>, <code>--paragraph-leading-base</code> and{" "}
+        <code>--paragraph-leading-lg</code>. External themes set the paragraph styles 14/20, 16/22 and 18/24,
+        and internal themes keep the relaxed 1.625 ratio, 22.75, 26 and 29.25px. The other sizes stay relaxed
+        in every theme. A <code>leading</code> prop or a <code>className</code> leading replaces the role, and{" "}
+        <code>Span</code> keeps its own snug default.
+      </p>
+      <p>
         The modals, <code>Dialog</code>, <code>AlertDialog</code> and <code>Sheet</code>, fill with{" "}
         <code>--dialog</code> and set their text in <code>--dialog-foreground</code>. Internal themes and
         every dark theme alias the popover pair, so a modal looks like the anchored popups. External light

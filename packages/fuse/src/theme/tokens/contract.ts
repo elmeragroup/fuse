@@ -92,6 +92,9 @@ export const TOKEN_NAMES = [
   "radius-step",
   "button-outline-width",
   "selection-title-weight",
+  "paragraph-leading-sm",
+  "paragraph-leading-base",
+  "paragraph-leading-lg",
   "font-sans",
   "font-heading",
 ] as const;
@@ -295,6 +298,9 @@ export const TOKEN_KINDS = {
   "radius-step": "dimension",
   "button-outline-width": "dimension",
   "selection-title-weight": "fontWeight",
+  "paragraph-leading-sm": "dimension",
+  "paragraph-leading-base": "dimension",
+  "paragraph-leading-lg": "dimension",
   "font-sans": "fontFamily",
   "font-heading": "fontFamily",
 } as const satisfies Record<TokenName, TokenKind>;
@@ -578,6 +584,12 @@ export const TOKEN_DESCRIPTIONS = {
     "The border width of the outline Button, which differs between internal and external themes.",
   "selection-title-weight":
     "The font weight of a selection row title, which differs between internal and external themes.",
+  "paragraph-leading-sm":
+    "The line height of a small Text (size sm, 14px). Internal themes keep the relaxed 1.625 ratio, and external themes set the 14/20 paragraph style.",
+  "paragraph-leading-base":
+    "The line height of a default-size Text (16px). Internal themes keep the relaxed 1.625 ratio, and external themes set the 16/22 paragraph style.",
+  "paragraph-leading-lg":
+    "The line height of a large Text (size lg, 18px). Internal themes keep the relaxed 1.625 ratio, and external themes set the 18/24 paragraph style.",
   "font-sans": "The body font stack, with Roboto first.",
   "font-heading":
     "The heading font. It follows font-sans unless the theme sets its own, such as Neo Sans in external Fjordkraft themes.",
@@ -633,6 +645,9 @@ export const EXTERNAL_RESET_KEYS = [
   "radius-step",
   "button-outline-width",
   "selection-title-weight",
+  "paragraph-leading-sm",
+  "paragraph-leading-base",
+  "paragraph-leading-lg",
   "font-heading",
 ] as const;
 
@@ -695,6 +710,9 @@ const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
   "radius-step",
   "button-outline-width",
   "selection-title-weight",
+  "paragraph-leading-sm",
+  "paragraph-leading-base",
+  "paragraph-leading-lg",
   "font-heading",
 ]);
 

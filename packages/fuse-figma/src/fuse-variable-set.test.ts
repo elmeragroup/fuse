@@ -93,6 +93,20 @@ describe("fuseVariableSet", () => {
         px(400)
       );
     }
+    // A paragraph line height syncs as a FLOAT the line height picker offers, kept in both
+    // schemes: the external 16/22 paragraph style and the internal relaxed 1.625 × 16px.
+    expect(spec("Fuse tokens", "paragraph-leading-base")).toMatchObject({
+      type: "FLOAT",
+      scopes: ["LINE_HEIGHT"],
+    });
+    for (const scheme of ["light", "dark"]) {
+      expect(value("Fuse brand", `${scheme}/external/private/paragraph-leading-base`, "Fjordkraft")).toEqual(
+        px(22)
+      );
+      expect(value("Fuse brand", `${scheme}/internal/private/paragraph-leading-base`, "Fjordkraft")).toEqual(
+        px(26)
+      );
+    }
   });
 
   it("syncs each role tint as its role's color at the tint's alpha, with Tailwind's color-mix()", () => {

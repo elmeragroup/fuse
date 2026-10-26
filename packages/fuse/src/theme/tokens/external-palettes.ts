@@ -77,6 +77,11 @@ export const EXTERNAL_VARIANT_LAYER = {
   "radius-step": "2px",
   "button-outline-width": "2px",
   "selection-title-weight": "500",
+  // The external paragraph styles: small 14/20, medium 16/22 and large 18/24, the same on
+  // desktop and mobile.
+  "paragraph-leading-sm": "1.25rem",
+  "paragraph-leading-base": "1.375rem",
+  "paragraph-leading-lg": "1.5rem",
 } as const satisfies TokenLayer;
 
 /**
