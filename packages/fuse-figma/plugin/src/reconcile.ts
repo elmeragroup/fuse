@@ -8,6 +8,7 @@
  * test can hand it a fake file.
  */
 
+import { glyphFonts } from "../../src/components/kit-spec.ts";
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import { checkKit, kitCollections } from "./check-kit.ts";
 import { planComponentSet } from "./component-set.ts";
@@ -98,9 +99,11 @@ async function planKit(run: Run, kit: KitSpec): Promise<Target<PageNode>> {
 export async function reconcileKit(figma: PluginAPI, kit: KitSpec, apply: boolean): Promise<ReconcileReport> {
   const variables = await loadKitVariables(figma, kitCollections(kit));
   const startRun = (plan: Plan): Run => {
-    const run: Run = { figma, variables, plan };
+    const run: Run = { figma, variables, plan, glyphFont: kit.glyphFont };
     checkKit(figma, variables, kit);
-    for (const font of kit.fonts) {
+    // A glyph range write can run in the plan of a node an operation creates, after the run met its
+    // requirements, so the glyph fonts load up front with the kit's own.
+    for (const font of [...kit.fonts, ...glyphFonts(kit)]) {
       requireFont(run, "The kit", font);
     }
     return run;

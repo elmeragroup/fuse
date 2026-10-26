@@ -9,6 +9,7 @@
 import {
   coveredShadow,
   fixedLength,
+  glyphRanges,
   layerAt,
   outOfLayout,
   topLevelSpecs,
@@ -25,6 +26,7 @@ import type {
   KitSpec,
   NumberSpec,
   StringSpec,
+  TextLayerSpec,
   VariableRef,
   VariantSpec,
 } from "../../src/components/kit-spec.ts";
@@ -461,6 +463,62 @@ function checkInstances(kit: KitSpec): void {
   });
 }
 
+/**
+ * Refuse a label that shows a glyph the kit's glyph font draws where the plugin cannot draw it so: a
+ * glyph that is more than one UTF-16 code unit, a label whose family is a literal, and a nested TEXT
+ * value. The plugin draws each glyph range in the glyph font, unbound, and keeps the label's other
+ * characters bound to its family variable, `font-sans` in the kit (G2), so a label holds exactly
+ * those two families. A literal family would leave two literal fonts that follow no theme, and the
+ * plugin plans no ranges on a label a nested value sets.
+ */
+function checkGlyphs(kit: KitSpec): void {
+  const { glyphFont } = kit;
+  const long = glyphFont.glyphs.find((glyph) => glyph.length !== 1);
+  if (long !== undefined) {
+    throw new Error(
+      `The kit draws ${long} in ${glyphFont.family}, and a glyph range holds one UTF-16 code unit.`
+    );
+  }
+  const shows = (characters: string): boolean => glyphRanges(characters, glyphFont).length > 0;
+  const refuseLiteral = (where: string, label: TextLayerSpec): void => {
+    if (label.fontFamily.kind !== "variable") {
+      throw new Error(
+        `${where} shows a glyph the kit draws in ${glyphFont.family}, and its label ${label.name} sets a literal family, where the plugin keeps the other characters bound to a family variable.`
+      );
+    }
+  };
+  for (const set of kit.componentSets) {
+    for (const variant of set.variants) {
+      for (const layer of walkLayers(variant.root)) {
+        const where = `${set.name}: ${layer.name} in the variant ${variant.key}`;
+        if (layer.kind === "text" && shows(layer.characters)) {
+          refuseLiteral(where, layer);
+        }
+        if (layer.kind !== "instance") {
+          continue;
+        }
+        const inner = kit.componentSets
+          .find((candidate) => candidate.key === layer.componentSet)
+          ?.variants.find((candidate) => candidate.key === layer.variant);
+        for (const [name, value] of Object.entries(layer.properties?.text ?? {})) {
+          for (const label of inner === undefined || !shows(value) ? [] : walkLayers(inner.root)) {
+            if (label.kind === "text" && label.textProperty === name) {
+              refuseLiteral(where, label);
+            }
+          }
+        }
+        for (const nested of layer.properties?.nested ?? []) {
+          if (Object.values(nested.text).some(shows)) {
+            throw new Error(
+              `${where} gives a nested value at ${nested.path.join(" / ")} a glyph the kit draws in ${glyphFont.family}, and the plugin draws no glyph range through a nested value.`
+            );
+          }
+        }
+      }
+    }
+  }
+}
+
 /** The signature every PNG file opens with (PNG specification §5.2). */
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
@@ -559,8 +617,8 @@ export function kitCollections(kit: KitSpec): ReadonlySet<string> {
  * @throws When the file lacks a variable or mode the kit names, a variable has the wrong type,
  *   an image fill holds bytes Figma cannot store or a hash that is not their SHA-1, or the spec contradicts itself,
  *   such as a page key listed twice, a node on a page the kit does not list, a preview that places
- *   a set from another page, an instance the plugin cannot plan, or a fill, limit, turn or stacking
- *   Figma cannot draw.
+ *   a set from another page, an instance the plugin cannot plan, a glyph it cannot draw in the glyph
+ *   font, or a fill, limit, turn or stacking Figma cannot draw.
  */
 export function checkKit(figma: PluginAPI, variables: KitVariables, kit: KitSpec): void {
   const pages = new Set<string>();
@@ -583,6 +641,7 @@ export function checkKit(figma: PluginAPI, variables: KitVariables, kit: KitSpec
     checkImages(figma, set);
   }
   checkInstances(kit);
+  checkGlyphs(kit);
   for (const preview of kit.previews) {
     for (const group of preview.groups) {
       const set = kit.componentSets.find((candidate) => candidate.key === group.componentSet);

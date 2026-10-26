@@ -16,7 +16,7 @@ import type {
   TextLayerSpec,
 } from "../../src/components/kit-spec.ts";
 import type { FakeFigma } from "./fake-figma.ts";
-import { aliasOf, color, fixtureFile, string } from "./fake-fixtures.ts";
+import { aliasOf, color, fixtureFile, GLYPH_FONT, string } from "./fake-fixtures.ts";
 import { keyOf, setKey } from "./identity.ts";
 
 /**
@@ -49,6 +49,7 @@ export const LABEL: TextLayerSpec = {
 export const KIT: KitSpec = {
   pages: [{ key: "page", name: "Fuse components" }],
   fonts: [{ family: "Roboto", style: "Medium" }],
+  glyphFont: GLYPH_FONT,
   icons: {
     key: "icons",
     page: "page",
@@ -163,6 +164,7 @@ export function nestedKit(children: readonly ChildLayerSpec[] = NESTED_LAYERS): 
   return {
     ...KIT,
     fonts: [],
+    glyphFont: GLYPH_FONT,
     icons: {
       ...KIT.icons,
       icons: [

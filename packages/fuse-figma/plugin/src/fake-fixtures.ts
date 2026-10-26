@@ -4,6 +4,7 @@
  * in one mode, and the run a planner takes. The suites also share a typed child lookup.
  */
 
+import type { GlyphFontSpec } from "../../src/components/kit-spec.ts";
 import type {
   CollectionSpec,
   Rgba,
@@ -16,6 +17,9 @@ import type { FakeFigma } from "./fake-figma.ts";
 import type { Run } from "./fields.ts";
 import type { Plan } from "./plan.ts";
 import { loadKitVariables } from "./variables.ts";
+
+/** The kit's glyph font: Inter for ⇧ and ⌘, which Roboto lacks (G1). */
+export const GLYPH_FONT: GlyphFontSpec = { family: "Inter", glyphs: ["⇧", "⌘"] };
 
 /** A variable a fixture file holds, with its value in the collection's one mode. */
 export type FixtureVariable = {
@@ -134,7 +138,7 @@ export async function fixtureRun(file: FakeFigma, plan: Plan): Promise<Run> {
     file.figma,
     new Set(collections.map((collection) => collection.name))
   );
-  return { figma: file.figma, variables, plan };
+  return { figma: file.figma, variables, plan, glyphFont: GLYPH_FONT };
 }
 
 /**

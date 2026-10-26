@@ -21,7 +21,8 @@
  *   ends the row with. The kit draws the text filling the room before the shortcut (CSS Flexbox 1
  *   §8.1), the row packed at its start with its 8px gap. The `Icon` property shows the icon, User to
  *   begin with, which the `Icon glyph` swap property picks, and starts false, as the docs Basic demo's rows
- *   show none; the `Shortcut` property shows the shortcut and starts true. A destructive row paints
+ *   show none; the `Shortcut` property shows the shortcut and starts true. The shortcut's ⇧ and ⌘,
+ *   which Roboto lacks, take Inter, and its letters `font-sans` (`GlyphFontSpec`). A destructive row paints
  *   its text, and so its icon, `error`, and its highlight `error/10`. An inset row pads its start by
  *   `row-indicator-room`.
  * - `Dropdown menu checkbox item` and `Dropdown menu radio item` are the checkable rows, checked off

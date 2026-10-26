@@ -18,7 +18,15 @@ import { fuseIcons, ICON_SIZE } from "./icon-library";
 import { KIT } from "./kit-registry";
 import type { KitPage } from "./kit-registry";
 import { walkLayers } from "./kit-spec";
-import type { ComponentSetSpec, IconLibrarySpec, KitSpec, ModeRef, PageSpec, PreviewSpec } from "./kit-spec";
+import type {
+  ComponentSetSpec,
+  GlyphFontSpec,
+  IconLibrarySpec,
+  KitSpec,
+  ModeRef,
+  PageSpec,
+  PreviewSpec,
+} from "./kit-spec";
 import { baseBorderColor, compileUtilities } from "./utility-css";
 
 /**
@@ -240,6 +248,7 @@ export async function buildKit(): Promise<{
         family: defaultFontFamily(),
         style,
       })),
+      glyphFont: GLYPH_FONT,
       icons,
       componentSets: built.map((set) => set.componentSet),
       previews,
@@ -323,6 +332,12 @@ function extremes(
   };
   return extremeOf;
 }
+
+/**
+ * The glyphs the kit's text holds that Roboto, the family `font-sans` resolves to, lacks: ⇧ (U+21E7)
+ * and ⌘ (U+2318), in the Dropdown menu shortcuts. Inter draws both, and Figma ships it (G1).
+ */
+const GLYPH_FONT: GlyphFontSpec = { family: "Inter", glyphs: ["\u21E7", "\u2318"] };
 
 /** The family `font-sans` resolves to, which every theme shares. The plugin loads it. */
 function defaultFontFamily(): string {

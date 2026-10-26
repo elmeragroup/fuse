@@ -50,6 +50,7 @@ import {
   SIZING_MEMBERS,
 } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
+import { planGlyphRanges } from "./glyph-font.ts";
 import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
 import { keyOf } from "./identity.ts";
@@ -589,14 +590,14 @@ function planDroppedOverrides(
  * @throws When the instance holds no layer at a path the spec overrides, which the kit check and the
  *   staging rule out.
  */
-async function planOverrides(
+function planOverrides(
   run: Run,
   instance: InstanceNode,
+  layers: ReadonlyMap<string, HeldLayer>,
   label: string,
   spec: InstanceLayerSpec,
   root: ComponentRootSpec
-): Promise<void> {
-  const layers = await heldLayers(instance, label);
+): void {
   for (const override of spec.overrides ?? []) {
     const layer = layers.get(pathKey(override.path));
     if (layer === undefined) {
@@ -605,6 +606,22 @@ async function planOverrides(
     planOverride(run, layer, writeOf(override));
   }
   planDroppedOverrides(run, instance, layers, spec, root);
+}
+
+/**
+ * Plan the glyph font on the glyph ranges of each label a TEXT property sets, in the characters it
+ * shows. A TEXT write on the instance resets the label to one style, the default value included (G5),
+ * and a range written after holds until the next (G6). A label at its default shows the main's
+ * ranges (G4), so it plans nothing.
+ */
+function planLabelGlyphs(run: Run, layers: ReadonlyMap<string, HeldLayer>, root: ComponentRootSpec): void {
+  for (const layer of layers.values()) {
+    const spec = layerAt(root, layer.path);
+    const linked = spec !== undefined && "kind" in spec && spec.kind === "text" ? spec : undefined;
+    if (layer.node.type === "TEXT" && linked?.textProperty !== undefined) {
+      planGlyphRanges(run, layer.node, layer.label, layer.node.characters, linked.fontStyle, false);
+    }
+  }
 }
 
 /**
@@ -668,8 +685,8 @@ async function planWhenRun(run: Run, stage: (later: Run) => Promise<void>): Prom
 }
 
 /**
- * The last stage: the overrides and the sizing against the sublayers as they stand, the link to the
- * outer set's BOOLEAN property and the exposure.
+ * The last stage: the overrides, the linked labels' glyph ranges and the sizing against the sublayers
+ * as they stand, the link to the outer set's BOOLEAN property and the exposure.
  *
  * @param held - `unknown` when the box that holds the instance turns in this run.
  */
@@ -682,7 +699,9 @@ async function planOverridesAndSizing(
   links: InstanceLinks,
   held: Held
 ): Promise<void> {
-  await planOverrides(run, instance, label, spec, inner.spec.root);
+  const layers = await heldLayers(instance, label);
+  planOverrides(run, instance, layers, label, spec, inner.spec.root);
+  planLabelGlyphs(run, layers, inner.spec.root);
   await planNested(run, instance, label, spec);
   // Figma refuses FILL on an absolute layer (P8), so an instance leaves the flow after its sizing
   // and comes back into it before.

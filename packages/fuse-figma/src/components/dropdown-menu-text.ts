@@ -9,7 +9,10 @@ export const DROPDOWN_MENU_SUB_TRIGGER_TEXT = "Share";
 /** The item's text, the default of its `Label` property: the docs Basic demo's first row. */
 export const DROPDOWN_MENU_ITEM_TEXT = "Profile";
 
-/** The item's shortcut, the default of its `Shortcut keys` property: the docs Basic demo's first. */
+/**
+ * The item's shortcut, the default of its `Shortcut keys` property: the docs Basic demo's first. Its ⇧
+ * and ⌘ are glyphs Roboto lacks, which the kit draws in Inter (`GlyphFontSpec`).
+ */
 export const DROPDOWN_MENU_SHORTCUT_TEXT = "⇧⌘P";
 
 /** The checkbox row's text, the default of its `Label` property: the docs Checkboxes demo's first. */

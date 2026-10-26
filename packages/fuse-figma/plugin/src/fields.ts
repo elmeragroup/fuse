@@ -12,6 +12,7 @@ import type {
   ColorSpec,
   DirectionSpec,
   FillSpec,
+  GlyphFontSpec,
   ImagePaintSpec,
   NumberSpec,
   RgbaSpec,
@@ -23,11 +24,15 @@ import { change, changeTogether, requirement } from "./plan.ts";
 import type { Plan } from "./plan.ts";
 import type { KitVariables } from "./variables.ts";
 
-/** What every planner needs: the plugin API, the file's variables and the run's plan. */
+/**
+ * What every planner needs: the plugin API, the file's variables, the run's plan, and the kit's glyph
+ * font, which a text planner gives its glyph ranges.
+ */
 export type Run = {
   readonly figma: PluginAPI;
   readonly variables: KitVariables;
   readonly plan: Plan;
+  readonly glyphFont: GlyphFontSpec;
 };
 
 /**

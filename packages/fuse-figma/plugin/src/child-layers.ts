@@ -33,6 +33,7 @@ import {
   solidPaint,
 } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
+import { baseCharacters, planGlyphRanges } from "./glyph-font.ts";
 import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
 import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
@@ -268,16 +269,34 @@ export function requireNewTextFonts(
 }
 
 /**
- * Plan the font, and require the fonts the label's later writes need. A font write comes first
+ * Plan the font of the characters outside the glyph ranges, and require the fonts the label's later
+ * writes need. A font write comes first
  * among the label's writes, because Figma needs only the new font to set it. Every later write
  * then needs only that font, so a label whose font the machine lacks can still be repaired.
  * A label that keeps its font needs every font it holds for a write such as its size.
  *
+ * @param rewrites - Whether the run writes or links the label's characters, which then take the
+ *   style of a character a glyph range may hold, so every character counts.
  * @returns Whether the plan replaces the label's font.
  */
-function planFont(run: Run, text: TextNode, label: string, spec: TextLayerSpec, fontName: FontName): boolean {
-  const holds = text.fontName === run.figma.mixed ? undefined : text.fontName;
-  const differs = holds?.family !== fontName.family || holds.style !== fontName.style;
+function planFont(
+  run: Run,
+  text: TextNode,
+  label: string,
+  spec: TextLayerSpec,
+  fontName: FontName,
+  rewrites: boolean
+): boolean {
+  // The glyph ranges take the glyph font, so the label's own font holds the other characters.
+  const holds =
+    text.characters.length > 0
+      ? baseCharacters(run, text, rewrites).map((character) => character.font)
+      : text.fontName === run.figma.mixed
+        ? undefined
+        : [text.fontName];
+  const differs =
+    holds === undefined ||
+    holds.some((font) => font.family !== fontName.family || font.style !== fontName.style);
   // The spec sets the style as a literal, and the family too unless it binds one. A variable
   // that any character binds to one of those fields would override the literal in another
   // theme, so the font write clears it in the same operation.
@@ -317,7 +336,7 @@ function planText(
   parent: Held
 ): void {
   const fontName = fontFor(run, text, spec);
-  const replaced = planFont(run, text, label, spec, fontName);
+  const replaced = planFont(run, text, label, spec, fontName, writesCharacters(text, spec, propertyIds));
   planScalar(run, label, "name", text.name, spec.name, () => {
     text.name = spec.name;
   });
@@ -326,7 +345,7 @@ function planText(
   });
 
   const start = run.plan.operations.length;
-  planTypography(run, text, label, spec, propertyIds, parent);
+  planTypography(run, text, label, spec, propertyIds, parent, replaced);
   if (!replaced && run.plan.operations.length > start) {
     for (const font of [...held, fontName]) {
       requireFont(run, label, font);
@@ -507,18 +526,39 @@ function planTextLayout(run: Run, text: TextNode, label: string, spec: TextLayer
   );
 }
 
+/**
+ * Whether a text's family binds the variable. The glyph ranges bind none (G2), so the other
+ * characters say, or an empty text's node-level binding.
+ */
+function bindsFamily(run: Run, text: TextNode, variable: Variable, rewrites: boolean): boolean {
+  if (text.characters.length > 0) {
+    return baseCharacters(run, text, rewrites).every((character) => character.family === variable.id);
+  }
+  const binding = textBinding(run, text, "fontFamily");
+  return binding !== run.figma.mixed && binding?.id === variable.id;
+}
+
+/**
+ * Plan a text's typography, its characters among them, then the glyph font on its glyph ranges, which
+ * a font write or new or linked characters before it reset (G3, G8). A family binding binds only the
+ * characters already in the variable's family and changes no font (G10), so it comes after the font
+ * write `planFont` plans, and leaves the ranges as they are.
+ *
+ * @param replaced - Whether the plan writes the label's font first.
+ */
 function planTypography(
   run: Run,
   text: TextNode,
   label: string,
   spec: TextLayerSpec,
   propertyIds: PropertyIds,
-  parent: Held
+  parent: Held,
+  replaced: boolean
 ): void {
+  const rewrites = writesCharacters(text, spec, propertyIds);
   if (spec.fontFamily.kind === "variable") {
     const variable = run.variables.variable(spec.fontFamily.variable);
-    const binding = textBinding(run, text, "fontFamily");
-    if (binding === run.figma.mixed || binding?.id !== variable.id) {
+    if (!bindsFamily(run, text, variable, rewrites)) {
       change(run.plan, label, `fontFamily → ${spec.fontFamily.variable.name}`, () =>
         text.setBoundVariable("fontFamily", variable)
       );
@@ -541,6 +581,9 @@ function planTypography(
   // A new text hugs its characters, and an empty one is 0 wide, which a fill never widens (PZ), so
   // the characters go in before the layout.
   planCharacters(run, text, label, spec, propertyIds);
+  // New or linked characters reset the ranges too (G3), and `planFont` then counts the ranges' glyph
+  // font among the label's own, so a text that holds a range gets a font write first.
+  planGlyphRanges(run, text, label, spec.characters, spec.fontStyle, replaced);
   planTextLayout(run, text, label, spec, parent);
   const { horizontal, vertical } = spec.align;
   planScalar(run, label, "textAlignHorizontal", text.textAlignHorizontal, horizontal, () => {
@@ -549,6 +592,15 @@ function planTypography(
   planScalar(run, label, "textAlignVertical", text.textAlignVertical, vertical, () => {
     text.textAlignVertical = vertical;
   });
+}
+
+/** Whether the plan writes a text's characters, or links them to the set's TEXT property. */
+function writesCharacters(text: TextNode, spec: TextLayerSpec, propertyIds: PropertyIds): boolean {
+  if (spec.textProperty === undefined) {
+    return text.characters !== spec.characters;
+  }
+  const linked = propertyIds.get(spec.textProperty);
+  return linked === undefined || text.componentPropertyReferences?.characters !== linked;
 }
 
 /** Plan a text's characters, or the TEXT property of the set that sets them. */
@@ -566,8 +618,7 @@ function planCharacters(
     });
     return;
   }
-  const linked = propertyIds.get(property);
-  if (linked !== undefined && text.componentPropertyReferences?.characters === linked) {
+  if (!writesCharacters(text, spec, propertyIds)) {
     return;
   }
   change(run.plan, label, `characters → the ${property} property`, () => {

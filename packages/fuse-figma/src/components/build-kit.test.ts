@@ -31,7 +31,7 @@ import { ICONS_PAGE, KIT_PAGES, pageKey, previewsOn } from "../../test/kit-inven
 import { buildKit, checkIconReferences } from "./build-kit";
 import type { IconSlot } from "./component-spec";
 import type { CoverageRow } from "./coverage";
-import { iconKey } from "./kit-spec";
+import { glyphFonts, iconKey } from "./kit-spec";
 import type { ChildLayerSpec, ColorSpec, ComponentRootSpec, ComponentSetSpec, KitSpec } from "./kit-spec";
 
 let spec: KitSpec;
@@ -896,6 +896,15 @@ describe("the preview frames", () => {
     expect(spec.fonts).toEqual([
       { family: "Roboto", style: "Medium" },
       { family: "Roboto", style: "Regular" },
+    ]);
+  });
+
+  it("draws ⇧ and ⌘ in Inter, which Roboto lacks, and loads it at the Regular shortcut's style", () => {
+    // On 2026-10-26 Roboto drew `⇧⌘P` as `P` with two blank advances, and Inter drew both (G1). The
+    // Dropdown menu shortcut sets no weight, so it takes the page's normal weight, Regular.
+    expect([spec.glyphFont, glyphFonts(spec)]).toEqual([
+      { family: "Inter", glyphs: ["\u21E7", "\u2318"] },
+      [{ family: "Inter", style: "Regular" }],
     ]);
   });
 });

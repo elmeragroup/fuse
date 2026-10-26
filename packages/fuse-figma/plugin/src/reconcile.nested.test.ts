@@ -18,7 +18,7 @@ import type {
 } from "../../src/components/kit-spec.ts";
 import { literal } from "./button-kit-fixture.ts";
 import type { FakeFigma } from "./fake-figma.ts";
-import { childNamed, color, fixtureFile, float } from "./fake-fixtures.ts";
+import { childNamed, color, fixtureFile, float, GLYPH_FONT } from "./fake-fixtures.ts";
 import { keyOf } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
 
@@ -151,6 +151,7 @@ function kitWith(
   return {
     pages: [{ key: "page", name: "Fuse components" }],
     fonts: [{ family: "Roboto", style: "Medium" }],
+    glyphFont: GLYPH_FONT,
     icons: { key: "icons", page: "page", name: "Icons", size: 16, color: BLACK, icons: [] },
     componentSets: [CAP, GROUP, item, list],
     previews: [],

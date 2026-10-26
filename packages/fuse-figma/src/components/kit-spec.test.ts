@@ -2,15 +2,27 @@
  * `walkLayers` over a hand-built root whose frames hold frames. The oracle is the layer order a
  * designer reads in Figma's layers panel, written out by hand: each layer, then what a frame
  * holds, before the next sibling. `coveredShadow` over hand-built layers, against CSS's painting
- * order.
+ * order. `glyphRanges` over the Dropdown menu shortcuts in `dropdown-menu-text.ts`, against the
+ * positions of ⇧ and ⌘ in them counted by hand, and `glyphFonts` over a hand-built kit.
  */
 import { describe, expect, it } from "vitest";
 
-import { coveredShadow, HUGGING_TEXT, NO_LIMITS, TOP_LEFT, walkLayers } from "./kit-spec";
+import { DROPDOWN_MENU_SHORTCUT_TEXT, DROPDOWN_POPUPS } from "./dropdown-menu-text";
+import {
+  coveredShadow,
+  glyphFonts,
+  glyphRanges,
+  HUGGING_TEXT,
+  NO_LIMITS,
+  TOP_LEFT,
+  walkLayers,
+} from "./kit-spec";
 import type {
   BoxSpec,
   ChildLayerSpec,
+  ComponentSetSpec,
   FrameLayerSpec,
+  GlyphFontSpec,
   IconLayerSpec,
   InstanceLayerSpec,
   TextLayerSpec,
@@ -157,5 +169,63 @@ describe("coveredShadow", () => {
     ],
   ])("finds %s", (_case, layers, covered) => {
     expect(coveredShadow(layers)).toEqual(covered);
+  });
+});
+
+/** The kit's glyph font: Inter for ⇧ and ⌘, which Roboto lacks (G1). */
+const GLYPHS: GlyphFontSpec = { family: "Inter", glyphs: ["⇧", "⌘"] };
+
+describe("glyphRanges", () => {
+  it("gives each run of ⇧ and ⌘ in the docs shortcuts one range, and a label without them none", () => {
+    const [group] = DROPDOWN_POPUPS.basic;
+    const shortcuts = group.children.flatMap((child) => ("shortcut" in child ? [child.shortcut] : []));
+    expect(
+      [DROPDOWN_MENU_SHORTCUT_TEXT, ...shortcuts, "Profile", "P⌘⇧Q⌘"].map((text) => glyphRanges(text, GLYPHS))
+    ).toEqual([
+      [{ start: 0, end: 2 }],
+      [{ start: 0, end: 2 }],
+      [{ start: 0, end: 1 }],
+      [{ start: 0, end: 1 }],
+      [],
+      [
+        { start: 1, end: 3 },
+        { start: 4, end: 5 },
+      ],
+    ]);
+  });
+});
+
+describe("glyphFonts", () => {
+  /** A set of one variant whose root holds `children`, with a `Keys` TEXT property. */
+  function set(key: string, children: readonly ChildLayerSpec[]): ComponentSetSpec {
+    return {
+      key,
+      page: "page",
+      name: key,
+      axes: [],
+      columnAxis: "",
+      textProperties: [{ name: "Keys", defaultValue: "K" }],
+      swapProperties: [],
+      variants: [{ key: `${key}/one`, properties: {}, root: { ...box(children), name: key } }],
+    };
+  }
+
+  const keys: TextLayerSpec = { ...text("keys"), characters: "K", textProperty: "Keys", fontStyle: "Medium" };
+  const shown = (value: string): InstanceLayerSpec => ({
+    ...instance("row"),
+    componentSet: "kbd",
+    variant: "kbd/one",
+    properties: { text: { Keys: value } },
+  });
+
+  it("loads the glyph font at the style of a label an instance's TEXT value gives a glyph", () => {
+    const kit = { glyphFont: GLYPHS, componentSets: [set("kbd", [keys]), set("menu", [shown("⌘K")])] };
+    expect(glyphFonts(kit)).toEqual([{ family: "Inter", style: "Medium" }]);
+  });
+
+  it("loads it at the style of a label whose own characters hold one, and not for a value without", () => {
+    const own = { ...text("caption"), characters: "⇧ to select", fontStyle: "SemiBold" };
+    const kit = { glyphFont: GLYPHS, componentSets: [set("kbd", [keys, own]), set("menu", [shown("K")])] };
+    expect(glyphFonts(kit)).toEqual([{ family: "Inter", style: "SemiBold" }]);
   });
 });

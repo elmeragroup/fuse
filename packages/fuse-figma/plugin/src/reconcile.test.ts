@@ -31,6 +31,7 @@ import type { FakeFigma } from "./fake-figma.ts";
 import {
   BLUE_PIXEL,
   childNamed,
+  GLYPH_FONT,
   JPEG_HEAD,
   PNG_4097_WIDE,
   PNG_SIGNATURE,
@@ -412,6 +413,7 @@ describe("a set that moves to a page pinning other modes", () => {
     ...KIT,
     pages: [page],
     fonts: [],
+    glyphFont: GLYPH_FONT,
     icons: { ...KIT.icons, page: page.key },
     componentSets: [{ ...ringed, page: page.key }],
   });

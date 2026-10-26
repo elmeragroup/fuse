@@ -762,6 +762,85 @@ export type FontSpec = {
 };
 
 /**
+ * The family the kit draws some symbol glyphs in, where the family a label binds has none. Figma,
+ * unlike a browser, falls back to no other font for a glyph its font lacks: on 2026-10-26 a Roboto
+ * text `⇧⌘P` drew `P` alone, with a blank 13px advance for each of ⇧ and ⌘, and reported no missing
+ * font, where Inter drew both (G1). Each range of a label's characters that holds only these glyphs
+ * takes `family` at the label's own style and binds no family, while its other characters keep the
+ * label's family (G2).
+ */
+export type GlyphFontSpec = {
+  /** The family that draws the glyphs, a literal Figma family. */
+  readonly family: string;
+  /** The glyphs, each one UTF-16 code unit, as Figma's range methods count characters. */
+  readonly glyphs: readonly string[];
+};
+
+/** Some characters of a text, from `start` up to but not including `end`, in UTF-16 code units. */
+export type TextRange = {
+  readonly start: number;
+  readonly end: number;
+};
+
+/**
+ * The ranges of some characters the glyph font draws: each run of the font's glyphs, so `⇧⌘P` gives
+ * one range over `⇧⌘`.
+ *
+ * @param characters - The characters a text shows.
+ * @param font - The glyph font.
+ * @returns The ranges, in order, none for characters that hold no glyph.
+ */
+export function glyphRanges(characters: string, font: GlyphFontSpec): readonly TextRange[] {
+  const ranges: TextRange[] = [];
+  let start: number | undefined;
+  for (let index = 0; index <= characters.length; index += 1) {
+    const glyph = index < characters.length && font.glyphs.includes(characters.charAt(index));
+    if (glyph && start === undefined) {
+      start = index;
+    } else if (!glyph && start !== undefined) {
+      ranges.push({ start, end: index });
+      start = undefined;
+    }
+  }
+  return ranges;
+}
+
+/**
+ * The glyph font at each style a label that shows a glyph takes: a label whose own characters hold
+ * one, and a label an instance's TEXT value gives one. The plugin loads them before its first write.
+ *
+ * @param kit - The kit.
+ * @returns The fonts, each once.
+ */
+export function glyphFonts(kit: Pick<KitSpec, "componentSets" | "glyphFont">): readonly FontSpec[] {
+  const { glyphFont } = kit;
+  const shows = (characters: string): boolean => glyphRanges(characters, glyphFont).length > 0;
+  const variants = new Map(
+    kit.componentSets.flatMap((set) => set.variants.map((variant) => [variant.key, variant] as const))
+  );
+  const styles = new Set<string>();
+  for (const layer of kit.componentSets.flatMap((set) =>
+    set.variants.flatMap((variant) => walkLayers(variant.root))
+  )) {
+    if (layer.kind === "text" && shows(layer.characters)) {
+      styles.add(layer.fontStyle);
+    }
+    if (layer.kind !== "instance") {
+      continue;
+    }
+    const inner = variants.get(layer.variant);
+    for (const [name, value] of Object.entries(layer.properties?.text ?? {})) {
+      for (const label of inner === undefined || !shows(value) ? [] : walkLayers(inner.root)) {
+        if (label.kind === "text" && label.textProperty === name) {
+          styles.add(label.fontStyle);
+        }
+      }
+    }
+  }
+  return [...styles].map((style) => ({ family: glyphFont.family, style }));
+}
+
+/**
  * A page of the kit. The plugin finds it by its key alone, so a page a designer gave the same
  * name stays theirs.
  */
@@ -775,6 +854,8 @@ export type KitSpec = {
   /** The kit's pages, in the order the plugin creates them. */
   readonly pages: readonly PageSpec[];
   readonly fonts: readonly FontSpec[];
+  /** The family the kit draws the glyphs `font-sans` lacks in. */
+  readonly glyphFont: GlyphFontSpec;
   readonly icons: IconLibrarySpec;
   readonly componentSets: readonly ComponentSetSpec[];
   readonly previews: readonly PreviewSpec[];

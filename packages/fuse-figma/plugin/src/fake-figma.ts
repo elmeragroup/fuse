@@ -71,7 +71,8 @@
  *    variables or some bind none, while `boundVariables` lists each alias any character binds.
  *    Writing `characters` gives every new character the first character's style. A range
  *    binding or font write restyles only its range, and a layer-wide write or binding every
- *    character. A `fontWeight` binding gives each character of its range the style its
+ *    character, apart from a layer-wide family binding (rule 54). Rule 50 says which family
+ *    bindings a font write keeps. A `fontWeight` binding gives each character of its range the style its
  *    family names for the weight, which needs that font loaded, as Figma's guide to
  *    typography variables says. The fake names the style by `WEIGHT_STYLES`, Thin for 100
  *    up to Black for 900, and throws for another weight or a held style the table lacks.
@@ -391,6 +392,49 @@
  *    (PS2). So the fake spills the first 0 to every side, then writes each side alone, and throws for a
  *    nonzero side written first, which no probe read. A side binding neither spills nor counts as a
  *    write, which no probe read either.
+ * 50. A font write keeps a character's family binding only where its family stays. On 2026-10-26 a
+ *    text `⇧⌘P` whose `fontFamily` bound `font-sans`, resolving to Roboto, took
+ *    `setRangeFontName(0, 2, Inter Regular)`, and `getStyledTextSegments(['fontName',
+ *    'boundVariables'])` read `[0,2)` Inter with no bound `fontFamily` and `[2,3)` Roboto still
+ *    bound, while `fontName` read `figma.mixed` (G2). A whole `fontName` write on a bound `Apple` kept
+ *    the binding with Roboto Medium and dropped it with Inter Regular, and on `⌘K` with `⌘` Inter
+ *    unbound, Roboto Regular left `⌘` Roboto unbound and `K` bound (G8). A range write of Inter on a
+ *    bound `K` unbound it, and Roboto written back left it unbound, while a range write of Roboto on
+ *    a bound `AK` kept both bound (G9, G10). So a font write, on a range or the whole text, keeps a
+ *    character's `fontFamily` binding where the character's family stays, drops it where the family
+ *    changes, and binds no character. No probe wrote a font over a bound `fontStyle` or `fontWeight`,
+ *    so those bindings stay. `getStyledTextSegments` splits the characters where the fields it is
+ *    asked for differ. It reads `fontName` and `boundVariables` alone and throws for another field.
+ * 51. Linking a text's characters resets it to its base style. On 2026-10-26, in a component, writing
+ *    `componentPropertyReferences = { characters: <TEXT property> }` after the range write of rule 50
+ *    left the whole text one segment, Roboto bound to `font-sans`; linking first and writing the
+ *    range after kept both segments (G3). `P⌘` with `⌘` Inter reset to Roboto Regular bound too, so
+ *    the reset takes the style the range writes left alone at either end of the text, not the last
+ *    character's (G7). The fake keeps that base style beside the characters' styles: a text starts
+ *    with the style a new text types in, and each whole-text write or binding, of the font, size or
+ *    line height, changes it as it changes every character, while a range write and a range binding
+ *    leave it. The probes leave open what the base is once a range write covered every character, or
+ *    after a characters write, which the fake leaves as it was.
+ * 52. A TEXT property write resets the linked text of the instance. On 2026-10-26
+ *    `setProperties({ [textProperty]: '⌘B' })` on an instance whose main drew `⇧⌘P` in two segments
+ *    left its text sublayer one segment, Roboto bound to `font-sans`, and so did `'⇧⌘K'` and `'⇧⌘P'`,
+ *    the default (G5), and `'B⌘'` on an instance of `P⌘` (G7). An instance at the default that took no
+ *    write showed the main's segments (G4, G7). So `setProperties` gives each text the TEXT property
+ *    links below the instance its base style (rule 51), which a sublayer takes from its main layer when
+ *    the instance is made, over the characters it then shows, whatever the value.
+ * 53. A range font write on an instance's text holds until the next TEXT write. On 2026-10-26, after
+ *    rule 52's write, `setRangeFontName(0, 1, Inter Regular)` on the instance's text sublayer read
+ *    `[0,1)` Inter unbound and `[1,2)` Roboto bound, `overrides` listed the sublayer with `width` and
+ *    `height` alone, and the next `setProperties` reset it as rule 52 says (G6). So the fake's range
+ *    write on a sublayer restyles the characters it shows and lists no override. It does not measure
+ *    text, so it lists no size either.
+ * 54. A whole-text family binding binds only the characters already in the variable's family, and
+ *    changes no font. On 2026-10-26 `setBoundVariable('fontFamily', font-sans)` changed nothing on
+ *    `⇧⌘P` with `⇧⌘` Inter unbound and `P` bound, nor on `⌘K` likewise. With null it unbound `K` too,
+ *    and `font-sans` then bound `K` again and left `⌘` Inter unbound (G10). A range binding of
+ *    `font-sans` on a `⌘` Roboto unbound bound it (G9). No probe bound a range or a whole text whose
+ *    family differs from the variable's value across every character, so the fake keeps the range
+ *    binding's font change of rule 10 and gives a whole-text binding the rule G10 read.
  *
  * An instance's sublayers show the layers of its main component, and a nested instance's sublayers
  * the sublayers its main layer shows. An override, such as the color an icon layer gives its glyph,
@@ -634,6 +678,11 @@ type NodeState = {
   characters: string;
   /** The style of each character, or of the one a text layer without characters types in. */
   styles: readonly CharacterStyle[];
+  /**
+   * The style the whole-text writes leave, which a link or a TEXT write resets every character to
+   * (rule 51).
+   */
+  baseStyle: CharacterStyle;
   textDecoration: TextDecoration;
   /** The text's letter spacing, one for the whole layer (rule 28). */
   letterSpacing: LetterSpacing;
@@ -646,6 +695,14 @@ type NodeState = {
   /** The lines a truncating text keeps, or null for all of them (rule 20). */
   maxLines: number | null;
   autoRename: boolean;
+};
+
+/** The style a new text layer types in. */
+const NEW_TEXT_STYLE: CharacterStyle = {
+  font: { family: "Inter", style: "Regular" },
+  fontSize: 12,
+  lineHeight: { unit: "AUTO" },
+  bindings: new Map(),
 };
 
 const STATES = new WeakMap<NodeHandle, NodeState>();
@@ -1953,6 +2010,12 @@ function restyle(
   state.styles = state.styles.map((style, index) => (index >= start && index < end ? update(style) : style));
 }
 
+/** Restyle every character and the base style, as a whole-text write does (rules 10 and 51). */
+function restyleWhole(state: NodeState, update: (style: CharacterStyle) => CharacterStyle): void {
+  restyle(state, 0, state.styles.length, update);
+  state.baseStyle = update(state.baseStyle);
+}
+
 function withBinding(
   style: CharacterStyle,
   field: VariableBindableTextField,
@@ -1998,9 +2061,9 @@ function weightedStyle(font: FontName, weight: number): string {
 }
 
 /**
- * Bind or unbind a text field of the characters from `start` to `end` (rules 7 and 10). A
- * family, style or weight binding changes the font of those characters, and a size or line
- * height binding their size or line height.
+ * Bind or unbind a text field of the characters from `start` to `end` (rules 7 and 10), which
+ * leaves the base style (rule 51). A family, style or weight binding changes the font of those
+ * characters, and a size or line height binding their size or line height.
  */
 function bindTextRange(
   state: NodeState,
@@ -2014,6 +2077,57 @@ function bindTextRange(
     write(state, `unbind ${field}`);
     return;
   }
+  const { update, id } = boundUpdate(state, field, variable);
+  const restyled = state.styles.slice(start, end).map(update);
+  for (const font of distinctFonts(restyled)) {
+    requireFont(state, font, field);
+  }
+  restyle(state, start, end, (style) => ({ ...update(style), bindings: withBinding(style, field, id) }));
+  write(state, `bind ${field}`);
+}
+
+/**
+ * Bind or unbind a text field of every character and of the base style (rules 10 and 51). A family
+ * binding binds only the characters whose family is already the variable's value, and changes no font
+ * (rule 54); null unbinds every character.
+ */
+function bindWholeText(state: NodeState, field: VariableBindableTextField, variable: Variable | null): void {
+  if (variable === null) {
+    restyleWhole(state, (style) => ({ ...style, bindings: withBinding(style, field, undefined) }));
+    write(state, `unbind ${field}`);
+    return;
+  }
+  if (field === "fontFamily") {
+    requireHeldFonts(state, field);
+    const bound = fileVariable(state.file, variable);
+    requireType(bound, "STRING", field);
+    const family = resolveString(state.file, bound, state);
+    restyleWhole(state, (style) =>
+      style.font.family === family ? { ...style, bindings: withBinding(style, field, bound.id) } : style
+    );
+    write(state, `bind ${field}`);
+    return;
+  }
+  const { update, id } = boundUpdate(state, field, variable);
+  for (const font of distinctFonts(state.styles.map(update))) {
+    requireFont(state, font, field);
+  }
+  restyleWhole(state, (style) => ({ ...update(style), bindings: withBinding(style, field, id) }));
+  write(state, `bind ${field}`);
+}
+
+/** What a text field binding does to a character's style, and the id of the variable it binds. */
+type TextBinding = {
+  readonly update: (style: CharacterStyle) => CharacterStyle;
+  readonly id: string;
+};
+
+/**
+ * What a binding of a text field does to a character's style, and the bound variable's id. A family,
+ * style or weight binding changes the font, and a size or line height binding the size or line height
+ * (rule 10). It needs the text's fonts loaded (rule 7).
+ */
+function boundUpdate(state: NodeState, field: VariableBindableTextField, variable: Variable): TextBinding {
   requireHeldFonts(state, field);
   const bound = fileVariable(state.file, variable);
   const update = ((): ((style: CharacterStyle) => CharacterStyle) => {
@@ -2050,25 +2164,30 @@ function bindTextRange(
         throw new Error(`The fake Figma file does not model binding ${field}.`);
     }
   })();
-  const restyled = state.styles.slice(start, end).map(update);
-  for (const font of distinctFonts(restyled)) {
-    requireFont(state, font, field);
-  }
-  restyle(state, start, end, (style) => ({
-    ...update(style),
-    bindings: withBinding(style, field, bound.id),
-  }));
-  write(state, `bind ${field}`);
+  return { update, id: bound.id };
+}
+
+/**
+ * A character's style once a font is written over it, which keeps its family binding only where its
+ * family stays (rule 50).
+ */
+function withFont(style: CharacterStyle, font: FontName): CharacterStyle {
+  return {
+    ...style,
+    font: { family: font.family, style: font.style },
+    bindings:
+      style.font.family === font.family ? style.bindings : withBinding(style, "fontFamily", undefined),
+  };
 }
 
 /**
  * Write a font to the characters from `start` to `end`, which needs only that font loaded
- * (rules 7 and 10). `label` names the write in the log.
+ * (rules 7, 10 and 50). `label` names the write in the log.
  */
 function writeFont(state: NodeState, start: number, end: number, font: FontName, label: string): void {
   requireFont(state, font, label);
   write(state, label);
-  restyle(state, start, end, (style) => ({ ...style, font: { family: font.family, style: font.style } }));
+  restyle(state, start, end, (style) => withFont(style, font));
 }
 
 /** The value the characters share, or `figma.mixed` when they differ (rule 10). */
@@ -2087,7 +2206,7 @@ function bindTextField(state: NodeState, field: BindableField, variable: Variabl
     bindNodeField(state, field, variable);
     return;
   }
-  bindTextRange(state, 0, state.styles.length, field, variable);
+  bindWholeText(state, field, variable);
 }
 
 /**
@@ -2206,6 +2325,9 @@ function linkProperties(state: NodeState, references: FrameNode["componentProper
   }
   state.propertyReferences = { ...references };
   write(state, "componentPropertyReferences");
+  if (references.characters !== undefined) {
+    resetStyles(state);
+  }
 }
 
 /**
@@ -2547,6 +2669,7 @@ function copiedFields(source: NodeState): Omit<NodeState, UncopiedField> {
     main: source.main,
     characters: source.characters,
     styles: source.styles,
+    baseStyle: source.baseStyle,
     textDecoration: source.textDecoration,
     letterSpacing: { ...source.letterSpacing },
     textDecorationOffset: source.textDecorationOffset === null ? null : { ...source.textDecorationOffset },
@@ -3940,6 +4063,14 @@ function setProperties(
   } else {
     applySwapValues(state);
   }
+  // Each TEXT write restyles its texts, a value equal to the one they show too (rule 52).
+  for (const [id] of values) {
+    if (owner.properties.get(id)?.type === "TEXT") {
+      for (const text of linkedBelow(state, "characters", id)) {
+        resetStyles(text);
+      }
+    }
+  }
 }
 
 /** A value `setProperties` was given, refusing a variable, which no probe set (rule 34). */
@@ -4014,6 +4145,7 @@ class FakeText extends FakeSceneNode {
       throw new Error("Cannot write figma.mixed as a font.");
     }
     writeFont(state, 0, state.styles.length, font, "fontName");
+    state.baseStyle = withFont(state.baseStyle, font);
   }
 
   get fontSize(): number | PluginAPI["mixed"] {
@@ -4028,7 +4160,7 @@ class FakeText extends FakeSceneNode {
     requireHeldFonts(state, "fontSize");
     write(state, "fontSize");
     const fontSize = f32(value);
-    restyle(state, 0, state.styles.length, (style) => ({ ...style, fontSize }));
+    restyleWhole(state, (style) => ({ ...style, fontSize }));
   }
 
   get lineHeight(): LineHeight | PluginAPI["mixed"] {
@@ -4044,7 +4176,7 @@ class FakeText extends FakeSceneNode {
     write(state, "lineHeight");
     const lineHeight: LineHeight =
       value.unit === "AUTO" ? { unit: "AUTO" } : { unit: value.unit, value: f32(value.value) };
-    restyle(state, 0, state.styles.length, (style) => ({ ...style, lineHeight }));
+    restyleWhole(state, (style) => ({ ...style, lineHeight }));
   }
 
   get letterSpacing(): LetterSpacing | PluginAPI["mixed"] {
@@ -4169,11 +4301,57 @@ class FakeText extends FakeSceneNode {
     return distinctFonts(shownStyles(state).slice(start, end));
   }
 
-  /** The new font needs loading, as for `fontName` (rule 7). */
+  /**
+   * The new font needs loading, as for `fontName` (rule 7), and the range keeps its family binding
+   * only where its family stays (rule 50). On a sublayer it marks no override (rule 53), and it
+   * leaves the base style (rule 51).
+   */
   setRangeFontName(start: number, end: number, font: FontName): void {
     const state = live(this);
     requireRange(state, start, end);
     writeFont(state, start, end, font, `fontName ${start}-${end}`);
+  }
+
+  /** The runs of characters whose `fontName` and `boundVariables` agree (rule 50). */
+  getStyledTextSegments(
+    fields: readonly (keyof Omit<StyledTextSegment, "characters" | "start" | "end">)[],
+    start?: number,
+    end?: number
+  ): Pick<StyledTextSegment, "characters" | "start" | "end" | "fontName" | "boundVariables">[] {
+    const state = live(this);
+    const unmodelled = fields.filter((field) => field !== "fontName" && field !== "boundVariables");
+    if (unmodelled.length > 0) {
+      throw new Error(`The fake Figma file does not model the segment fields ${unmodelled.join(", ")}.`);
+    }
+    const characters = charactersOf(state);
+    const from = start ?? 0;
+    const to = end ?? characters.length;
+    if (from === to) {
+      return [];
+    }
+    requireRange(state, from, to);
+    const styles = shownStyles(state);
+    const segments: { readonly start: number; end: number; readonly style: CharacterStyle }[] = [];
+    for (let index = from; index < to; index += 1) {
+      const style = styles[index];
+      if (style === undefined) {
+        throw new Error(`${state.id} holds no style for its character ${index}.`);
+      }
+      const last = segments.at(-1);
+      if (last !== undefined && segmentKey(last.style, fields) === segmentKey(style, fields)) {
+        last.end = index + 1;
+      } else {
+        segments.push({ start: index, end: index + 1, style });
+      }
+    }
+    // Each segment holds the two modelled fields, the ones asked for among them.
+    return segments.map((segment) => ({
+      characters: characters.slice(segment.start, segment.end),
+      start: segment.start,
+      end: segment.end,
+      fontName: { ...segment.style.font },
+      boundVariables: segmentBindings(segment.style),
+    }));
   }
 
   getRangeBoundVariable(
@@ -4216,14 +4394,42 @@ function requireRange(state: NodeState, start: number, end: number): void {
 
 /**
  * The style of each character a text shows. A sublayer that shows a TEXT property's characters gives
- * each its first character's style, as written characters take it (rules 10 and 34).
+ * each its first character's style, as written characters take it (rules 10 and 34), unless a write
+ * styled each of them (rules 52 and 53).
  */
 function shownStyles(state: NodeState): readonly CharacterStyle[] {
   const shown = charactersOf(state);
   const [first] = state.styles;
-  return shown === state.characters || first === undefined
+  return shown === state.characters ||
+    first === undefined ||
+    state.styles.length === Math.max(1, shown.length)
     ? state.styles
     : Array.from({ length: Math.max(1, shown.length) }, () => first);
+}
+
+/** Give every character a text shows its base style, as a link or a TEXT write does (rules 51, 52). */
+function resetStyles(state: NodeState): void {
+  const base = state.baseStyle;
+  state.styles = Array.from({ length: Math.max(1, charactersOf(state).length) }, () => base);
+}
+
+/** What a segment compares of a character's style: the fields asked for (rule 50). */
+function segmentKey(style: CharacterStyle, fields: readonly string[]): string {
+  return JSON.stringify([
+    fields.includes("fontName") ? fontKey(style.font) : "",
+    fields.includes("boundVariables")
+      ? [...style.bindings].sort(([left], [right]) => left.localeCompare(right))
+      : [],
+  ]);
+}
+
+/** The variable each text field of a character binds, as a segment's `boundVariables` lists them. */
+function segmentBindings(style: CharacterStyle): NonNullable<StyledTextSegment["boundVariables"]> {
+  const bound: { [field in VariableBindableTextField]?: VariableAlias } = {};
+  for (const [field, id] of style.bindings) {
+    bound[field] = alias(id);
+  }
+  return bound;
 }
 
 class FakeVector extends FakeSceneNode {
@@ -4382,14 +4588,8 @@ function createNode(file: FileState, type: NodeType, name: string, id?: string):
     mirrorOf: undefined,
     overridden: new Set(),
     characters: "",
-    styles: [
-      {
-        font: { family: "Inter", style: "Regular" },
-        fontSize: 12,
-        lineHeight: { unit: "AUTO" },
-        bindings: new Map(),
-      },
-    ],
+    styles: [NEW_TEXT_STYLE],
+    baseStyle: NEW_TEXT_STYLE,
     textDecoration: "NONE",
     textDecorationOffset: null,
     letterSpacing: { unit: "PERCENT", value: 0 },
