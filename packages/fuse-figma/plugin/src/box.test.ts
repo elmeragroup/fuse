@@ -20,13 +20,13 @@ import type {
   SizingSpec,
   TextLayerSpec,
 } from "../../src/components/kit-spec.ts";
+import { planBox } from "./box.ts";
+import type { BoxPlace } from "./box.ts";
 import { planChildren } from "./child-layers.ts";
 import { childNamed, color, fixtureFile, fixtureRun, float } from "./fake-fixtures.ts";
 import { setKey } from "./identity.ts";
 import { changeLines, newPlan, performPlan } from "./plan.ts";
 import type { Plan } from "./plan.ts";
-import { planBox } from "./root-layer.ts";
-import type { BoxPlace } from "./root-layer.ts";
 
 const RING: ShadowSpec = {
   color: { kind: "variable", variable: { collection: "Fuse tokens", name: "ring" } },

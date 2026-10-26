@@ -14,18 +14,18 @@ import type {
   TextPropertySpec,
   VariantSpec,
 } from "../../src/components/kit-spec.ts";
+import { planBox } from "./box.ts";
 import { fontLayers, planChildren, requireNewSetFonts, requireNewTextFonts } from "./child-layers.ts";
 import type { LayerLinks, PropertyIds } from "./child-layers.ts";
 import { planSetProperty } from "./component-properties.ts";
-import { near, planScalar } from "./fields.ts";
+import { createIn, near, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import type { PlannedIcon } from "./icons.ts";
 import { indexSiblings, placeOwned, planOwnedChildren, setKey } from "./identity.ts";
 import type { OwnedChild, Siblings } from "./identity.ts";
 import type { PlannedPage } from "./pages.ts";
-import { change, create, existing } from "./plan.ts";
+import { change, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
-import { planBox } from "./root-layer.ts";
 import { settleInstances } from "./settle.ts";
 
 /** The gap between variants in the set's grid, and between the grid and the set's edge. */
@@ -290,7 +290,7 @@ function variantKind(
     description: `create the variant ${name}`,
     make: () => run.figma.createComponent(),
     requireNew: () => requireNewTextFonts(run, set, label, fontLayers(walkLayers(variant.root), links.sets)),
-    plan: (component, plan) => planVariantFields({ ...run, plan }, component, name, label, variant, links),
+    plan: (component, inner) => planVariantFields(inner, component, name, label, variant, links),
   };
 }
 
@@ -338,7 +338,7 @@ async function planSetContents(
   // values in an order of its own: a new value goes last, and moving the variants or renaming a
   // value leaves it where it is, as a real file showed on 2026-10-20. A set the plugin creates
   // lists its values in spec order, but a set that gained values later keeps them last.
-  const planned = await planOwnedChildren(run.plan, set, spec.name, "variant", spec.variants, (variant) =>
+  const planned = await planOwnedChildren(run, set, spec.name, "variant", spec.variants, (variant) =>
     variantKind(run, set, spec, variant, links)
   );
   const variants = new Map(planned.map((child) => [child.spec.key, child.node]));
@@ -358,8 +358,8 @@ function createSet(
   links: Omit<LayerLinks, "properties">
 ): PlannedSet {
   const properties = new Map<string, string>();
-  const node = create(
-    run.plan,
+  const node = createIn(
+    run,
     page.spec.name,
     `create the component set ${spec.name} with ${spec.variants.length} variants`,
     () => {
@@ -372,8 +372,8 @@ function createSet(
       set.name = spec.name;
       return set;
     },
-    async (set, plan) => {
-      await planSetContents({ ...run, plan }, set, spec, links, properties);
+    async (set, inner) => {
+      await planSetContents(inner, set, spec, links, properties);
     }
   );
   // The set's children, indexed by key the first time a later operation reads a variant.

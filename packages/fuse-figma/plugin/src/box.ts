@@ -5,11 +5,14 @@
  */
 
 import { ringFill } from "../../src/components/kit-spec.ts";
-import type { BoxSpec, LimitsSpec, NumberSpec, SideStroke, SizeSpec } from "../../src/components/kit-spec.ts";
+import type { BoxSpec, LimitsSpec, SideStroke } from "../../src/components/kit-spec.ts";
 import {
+  cornerField,
   LAYOUT_SIZING,
   near,
   planLayoutSizing,
+  planLength,
+  planLimit,
   planNumber,
   planPaints,
   planScalar,
@@ -29,24 +32,6 @@ function paddingField(node: LayerParent, side: "Top" | "Right" | "Bottom" | "Lef
     matches: (value) => near(node[name], value),
     write: (value) => {
       node[name] = value;
-    },
-  };
-}
-
-/**
- * The corner radius of a box or an instance, which a spec sets on all four corners at once.
- *
- * @param node - The box, or an instance layer that overrides its corners.
- * @returns The field.
- */
-export function cornerField(node: LayerParent | InstanceNode): NumberField {
-  const corners = ["topLeftRadius", "topRightRadius", "bottomRightRadius", "bottomLeftRadius"] as const;
-  return {
-    name: "cornerRadius",
-    bindings: corners,
-    matches: (value) => corners.every((corner) => near(node[corner], value)),
-    write: (value) => {
-      node.cornerRadius = value;
     },
   };
 }
@@ -95,81 +80,6 @@ function planStrokeSides(run: Run, node: LayerParent, label: string, sides: Side
       node[field] = weight;
     }
   });
-}
-
-/**
- * Plan a fixed width or height, or unbind one the spec lets the box or text hug or fill.
- *
- * @param run - The run.
- * @param node - The box, a text layer or an instance layer.
- * @param label - The node's label, for change lines.
- * @param name - The axis's length.
- * @param spec - The axis's sizing.
- * @param held - Whether to compare a fixed length with what the node holds, or write it whatever it holds.
- * @param write - Writes the fixed length.
- */
-export function planLength(
-  run: Run,
-  node: LayerParent | TextNode | InstanceNode,
-  label: string,
-  name: "width" | "height",
-  spec: SizeSpec,
-  held: Held,
-  write: (value: number) => void
-): void {
-  if (spec.kind !== "fixed") {
-    if (node.boundVariables?.[name] !== undefined) {
-      change(run.plan, label, `${name} → ${spec.kind}`, () => node.setBoundVariable(name, null));
-    }
-    return;
-  }
-  planNumber(
-    run,
-    node,
-    label,
-    { name, bindings: [name], matches: (value) => near(node[name], value), write },
-    spec.length,
-    held
-  );
-}
-
-/**
- * Plan one limit of a box or a text, or remove one the spec drops.
- *
- * @param run - The run.
- * @param node - The box, or a text layer.
- * @param label - The node's label, for change lines.
- * @param name - The limit.
- * @param spec - The length the limit should hold, or undefined for none.
- */
-export function planLimit(
-  run: Run,
-  node: LayerParent | TextNode | InstanceNode,
-  label: string,
-  name: keyof LimitsSpec,
-  spec: NumberSpec | undefined
-): void {
-  if (spec === undefined) {
-    if (node[name] !== null || node.boundVariables?.[name] !== undefined) {
-      change(run.plan, label, `${name} → none`, () => {
-        node.setBoundVariable(name, null);
-        node[name] = null;
-      });
-    }
-    return;
-  }
-  const field: NumberField = {
-    name,
-    bindings: [name],
-    matches: (value) => {
-      const held = node[name];
-      return held !== null && near(held, value);
-    },
-    write: (value) => {
-      node[name] = value;
-    },
-  };
-  planNumber(run, node, label, field, spec);
 }
 
 const LIMITS: readonly (keyof LimitsSpec)[] = ["minWidth", "maxWidth", "minHeight", "maxHeight"];

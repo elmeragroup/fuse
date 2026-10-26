@@ -6,13 +6,13 @@
 
 import type { NumberSpec, PreviewGroupSpec, PreviewSpec } from "../../src/components/kit-spec.ts";
 import type { PlannedSet } from "./component-set.ts";
-import { near, planLayoutSizing, planNumber, planPaints, planScalar } from "./fields.ts";
+import { createIn, near, planLayoutSizing, planNumber, planPaints, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { placeOwned, planOwnedChildren } from "./identity.ts";
 import type { OwnedChild } from "./identity.ts";
 import { planInstanceSizing } from "./instance-sizing.ts";
 import type { PlannedPage } from "./pages.ts";
-import { change, create, existing } from "./plan.ts";
+import { change, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { settleInstances } from "./settle.ts";
 
@@ -176,7 +176,7 @@ async function planInstances(
   set: PlannedSet
 ): Promise<void> {
   const children = spec.variants.map((variant) => ({ key: `${previewKey}/${variant}`, variant }));
-  await planOwnedChildren(run.plan, group, label, "instance", children, ({ key, variant }) => {
+  await planOwnedChildren(run, group, label, "instance", children, ({ key, variant }) => {
     const component = set.variants.get(variant);
     const root = set.spec.variants.find((candidate) => candidate.key === variant)?.root;
     if (component === undefined || root === undefined) {
@@ -189,19 +189,19 @@ async function planInstances(
       accept: isInstance,
       description: `add an instance of ${variant}`,
       make: () => component.get().createInstance(),
-      plan: async (instance, plan, origin) => {
+      plan: async (instance, inner, origin) => {
         if (origin === "new") {
-          planInstanceSizing({ ...run, plan }, instance, lengthsLabel, root.sizing, "read");
+          planInstanceSizing(inner, instance, lengthsLabel, root.sizing, "read");
           return;
         }
         const main = await instance.getMainComponentAsync();
         const swaps = component.existing === undefined || main?.id !== component.existing.id;
         if (swaps) {
-          change(plan, label, `point the instance ${key} at ${variant}`, () =>
+          change(inner.plan, label, `point the instance ${key} at ${variant}`, () =>
             instance.swapComponent(component.get())
           );
         }
-        planInstanceSizing({ ...run, plan }, instance, lengthsLabel, root.sizing, swaps ? "unknown" : "read");
+        planInstanceSizing(inner, instance, lengthsLabel, root.sizing, swaps ? "unknown" : "read");
       },
     } satisfies OwnedChild<InstanceNode, void>;
   });
@@ -246,7 +246,7 @@ function groupKind(
     accept: isFrame,
     description: `create the group ${spec.name}`,
     make: () => run.figma.createFrame(),
-    plan: (group, plan) => planGroupFields({ ...run, plan }, group, label, preview.key, spec, set),
+    plan: (group, inner) => planGroupFields(inner, group, label, preview.key, spec, set),
   };
 }
 
@@ -261,7 +261,7 @@ async function planFrame(
   });
   planWrapFrame(run, frame, spec.name, PREVIEW_GRID);
   planModes(run, frame, spec.name, spec);
-  await planOwnedChildren(run.plan, frame, spec.name, "group", spec.groups, (group) =>
+  await planOwnedChildren(run, frame, spec.name, "group", spec.groups, (group) =>
     groupKind(run, spec, group, sets)
   );
 }
@@ -290,12 +290,12 @@ export async function planPreviews(
       continue;
     }
     frames.push(
-      create(
-        run.plan,
+      createIn(
+        run,
         page.spec.name,
         `create the preview ${spec.name}`,
         () => placeOwned(page.node.get(), run.figma.createFrame(), spec.key, spec.name),
-        (made, plan) => planFrame({ ...run, plan }, made, spec, sets)
+        (made, inner) => planFrame(inner, made, spec, sets)
       )
     );
   }

@@ -8,7 +8,6 @@ import type {
   BoxSpec,
   ChildLayerSpec,
   ComponentSetSpec,
-  DirectionSpec,
   FrameLayerSpec,
   IconLayerSpec,
   LineHeightSpec,
@@ -17,13 +16,18 @@ import type {
   TextLayerSpec,
   TextSizingSpec,
 } from "../../src/components/kit-spec.ts";
+import { planBox } from "./box.ts";
+import type { LayerParent } from "./box.ts";
 import type { PlannedSet } from "./component-set.ts";
 import {
+  changeTogetherIn,
   describeNumber,
   heldFonts,
   heldSizing,
   LAYOUT_SIZING,
   near,
+  planLength,
+  planLimit,
   planNumber,
   planPaints,
   planScalar,
@@ -39,9 +43,7 @@ import type { PlannedIcon } from "./icons.ts";
 import { planOwnedChildren } from "./identity.ts";
 import type { OwnedChild } from "./identity.ts";
 import { innerVariant, linkedLabels, planInstance, planNewInstance } from "./instance-layers.ts";
-import { change, changeTogether } from "./plan.ts";
-import { planBox, planLength, planLimit } from "./root-layer.ts";
-import type { LayerParent } from "./root-layer.ts";
+import { change } from "./plan.ts";
 
 /**
  * The TEXT, BOOLEAN and INSTANCE_SWAP properties of a component set, from the name in the spec to
@@ -78,14 +80,13 @@ export function fontLayers(
 }
 
 /**
- * The box a layer sits in, as the layer's planners need it: the node, the direction the spec lays
- * it out along, which a fill follows, and `held`, which is `unknown` when the box turns in this run.
+ * The box a layer sits in, as the layer's planners need it: the node, and `held`, which is `unknown`
+ * when the box turns in this run.
  * A turn moves a layer's fill to the other axis and can change its size, so the layer's planners
  * write its lengths and sizing whatever it reads now.
  */
 type Holder = {
   readonly node: LayerParent;
-  readonly direction: DirectionSpec;
   readonly held: Held;
   /**
    * `unknown` when the run writes a field that can resize the box or a box above it, which moves an
@@ -474,11 +475,10 @@ function planTextLayout(run: Run, text: TextNode, label: string, spec: TextLayer
     vertical: LAYOUT_SIZING[spec.sizing.vertical.kind],
   };
   const truncation = spec.truncation === undefined ? "DISABLED" : "ENDING";
-  changeTogether(
-    run.plan,
+  changeTogetherIn(
+    run,
     label,
-    (plan) => {
-      const group = { ...run, plan };
+    (group) => {
       // A text that fills across but reads less than a pixel wide stays so whatever FILL and
       // characters it gets, until a positive width lets the fill take over (PZ), as an earlier run
       // that laid a new text out before its characters left every filling text. The run leaves the
@@ -495,11 +495,11 @@ function planTextLayout(run: Run, text: TextNode, label: string, spec: TextLayer
         text.textAutoResize = autoResize;
       });
       if (stuck) {
-        change(plan, label, "width → 1 for the fill to take over", () => text.resize(1, text.height));
+        change(group.plan, label, "width → 1 for the fill to take over", () => text.resize(1, text.height));
       }
       for (const [axis, member] of SIZING_MEMBERS) {
         if (reads?.[axis] !== sizing[axis]) {
-          change(plan, label, `${member} → ${sizing[axis]}`, () => {
+          change(group.plan, label, `${member} → ${sizing[axis]}`, () => {
             text[member] = sizing[axis];
           });
         }
@@ -516,7 +516,7 @@ function planTextLayout(run: Run, text: TextNode, label: string, spec: TextLayer
       });
       const maxLines = spec.truncation?.maxLines;
       if (maxLines !== undefined && (text.textTruncation !== truncation || text.maxLines !== maxLines)) {
-        change(plan, label, `maxLines → ${maxLines}`, () => {
+        change(group.plan, label, `maxLines → ${maxLines}`, () => {
           text.maxLines = maxLines;
         });
       }
@@ -753,12 +753,12 @@ function planPositioning(
   size: Held
 ): void {
   const positioning = absolute === undefined ? "AUTO" : "ABSOLUTE";
-  changeTogether(
-    run.plan,
+  changeTogetherIn(
+    run,
     label,
-    (plan) => {
+    (group) => {
       const rewrite = frame.layoutPositioning !== positioning || size === "unknown";
-      planScalar({ ...run, plan }, label, "layoutPositioning", frame.layoutPositioning, positioning, () => {
+      planScalar(group, label, "layoutPositioning", frame.layoutPositioning, positioning, () => {
         frame.layoutPositioning = positioning;
       });
       if (absolute === undefined) {
@@ -766,17 +766,17 @@ function planPositioning(
       }
       const { horizontal, vertical } = absolute.constraints;
       if (rewrite || frame.constraints.horizontal !== horizontal || frame.constraints.vertical !== vertical) {
-        change(plan, label, `constraints → ${horizontal} ${vertical}`, () => {
+        change(group.plan, label, `constraints → ${horizontal} ${vertical}`, () => {
           frame.constraints = { horizontal, vertical };
         });
       }
       if (rewrite || !near(frame.x, absolute.x)) {
-        change(plan, label, `x → ${absolute.x}`, () => {
+        change(group.plan, label, `x → ${absolute.x}`, () => {
           frame.x = absolute.x;
         });
       }
       if (rewrite || !near(frame.y, absolute.y)) {
-        change(plan, label, `y → ${absolute.y}`, () => {
+        change(group.plan, label, `y → ${absolute.y}`, () => {
           frame.y = absolute.y;
         });
       }
@@ -828,7 +828,7 @@ function childKind(
       description,
       make: () => run.figma.createFrame(),
       requireNew: () => requireNewTextFonts(run, parent, label, fontLayers(walkLayers(spec), links.sets)),
-      plan: (frame, plan) => planFrame({ ...run, plan }, frame, layerLabel, spec, links, holder),
+      plan: (frame, inner) => planFrame(inner, frame, layerLabel, spec, links, holder),
     } satisfies OwnedChild<FrameNode, void>;
   }
   if (spec.kind === "text") {
@@ -838,14 +838,14 @@ function childKind(
       description,
       make: () => run.figma.createText(),
       requireNew: () => requireNewTextFonts(run, parent, label, [spec]),
-      plan: (text, plan, origin) =>
+      plan: (text, inner, origin) =>
         planText(
-          { ...run, plan },
+          inner,
           text,
           layerLabel,
           spec,
           links.properties,
-          origin === "found" ? heldFonts(run, text) : [],
+          origin === "found" ? heldFonts(inner, text) : [],
           holder.held
         ),
     } satisfies OwnedChild<TextNode, void>;
@@ -859,10 +859,10 @@ function childKind(
       accept: isInstance,
       description,
       make: () => inner.node.get().createInstance(),
-      plan: (instance, plan, origin) =>
+      plan: (instance, layerRun, origin) =>
         origin === "found"
-          ? planInstance({ ...run, plan }, instance, layerLabel, spec, inner, links, holder.held)
-          : planNewInstance({ ...run, plan }, instance, layerLabel, spec, inner, links),
+          ? planInstance(layerRun, instance, layerLabel, spec, inner, links, holder.held)
+          : planNewInstance(layerRun, instance, layerLabel, spec, inner, links),
     } satisfies OwnedChild<InstanceNode, void>;
   }
   const icon = links.icons.get(spec.icon);
@@ -874,7 +874,7 @@ function childKind(
     accept: isInstance,
     description,
     make: () => icon.node.get().createInstance(),
-    plan: (instance, plan) => planIcon({ ...run, plan }, instance, layerLabel, spec, links),
+    plan: (instance, inner) => planIcon(inner, instance, layerLabel, spec, links),
   } satisfies OwnedChild<InstanceNode, void>;
 }
 
@@ -904,11 +904,10 @@ export async function planChildren(
 ): Promise<void> {
   const holder: Holder = {
     node: parent,
-    direction: box.direction,
     held: parent.layoutMode === box.direction ? "read" : "unknown",
     size,
   };
-  await planOwnedChildren(run.plan, parent, label, "layer", box.children, (spec) =>
+  await planOwnedChildren(run, parent, label, "layer", box.children, (spec) =>
     childKind(run, holder, label, spec, links)
   );
 }

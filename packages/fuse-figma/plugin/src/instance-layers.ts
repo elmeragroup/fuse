@@ -38,13 +38,16 @@ import { planAnchoring } from "./anchoring.ts";
 import { findProperty, propertyName } from "./component-properties.ts";
 import type { PlannedSet } from "./component-set.ts";
 import {
+  cornerField,
   heldFonts,
+  planLimit,
   planNumber,
   planPaints,
   planScalar,
   planShadows,
   planVisibleLink,
   requireFont,
+  withPlan,
 } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
 import { planGlyphRanges } from "./glyph-font.ts";
@@ -54,7 +57,6 @@ import { keyOf } from "./identity.ts";
 import { planInstanceSizing } from "./instance-sizing.ts";
 import { change, newPlan, performPlan } from "./plan.ts";
 import type { Target } from "./plan.ts";
-import { cornerField, planLimit } from "./root-layer.ts";
 
 /** The inner set and variant an instance layer shows, as the plan leaves them. */
 export type InnerVariant = {
@@ -624,7 +626,7 @@ function planLabelGlyphs(run: Run, layers: ReadonlyMap<string, HeldLayer>, root:
  */
 async function planWhenRun(run: Run, stage: (later: Run) => Promise<void>): Promise<void> {
   const later = newPlan(run.plan);
-  await stage({ ...run, plan: later });
+  await stage(withPlan(run, later));
   await performPlan(later);
 }
 

@@ -14,12 +14,12 @@
 
 import { ICON_GLYPH, PLUGIN_DATA_NAMESPACE } from "../../src/components/kit-spec.ts";
 import type { IconLibrarySpec, IconSpec } from "../../src/components/kit-spec.ts";
-import { near, planNumber, planPaints, planScalar, solidPaint } from "./fields.ts";
+import { createIn, near, planNumber, planPaints, planScalar, solidPaint } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { indexSiblings, placeOwned, planOwnedChildren } from "./identity.ts";
 import type { OwnedChild, Siblings } from "./identity.ts";
 import type { PlannedPage } from "./pages.ts";
-import { change, create, existing } from "./plan.ts";
+import { change, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { planWrapFrame } from "./previews.ts";
 import type { WrapGrid } from "./previews.ts";
@@ -210,7 +210,7 @@ function iconKind(run: Run, library: IconLibrarySpec, spec: IconSpec): OwnedChil
     accept: isComponent,
     description: `create the icon ${spec.name}`,
     make: () => run.figma.createComponent(),
-    plan: (component, plan) => planIconComponent({ ...run, plan }, component, label, library, spec),
+    plan: (component, inner) => planIconComponent(inner, component, label, library, spec),
   };
 }
 
@@ -223,7 +223,7 @@ async function planLibraryContents(
     frame.name = library.name;
   });
   planWrapFrame(run, frame, library.name, ICON_GRID);
-  const planned = await planOwnedChildren(run.plan, frame, library.name, "icon", library.icons, (spec) =>
+  const planned = await planOwnedChildren(run, frame, library.name, "icon", library.icons, (spec) =>
     iconKind(run, library, spec)
   );
   // A new icon draws its glyph when its creation runs.
@@ -249,13 +249,13 @@ export async function planIconLibrary(
   if (found !== undefined) {
     return { frame: existing(found), icons: await planLibraryContents(run, found, library) };
   }
-  const frame = create(
-    run.plan,
+  const frame = createIn(
+    run,
     page.spec.name,
     `create the ${library.name} frame with ${library.icons.length} icons`,
     () => placeOwned(page.node.get(), run.figma.createFrame(), library.key, library.name),
-    async (made, plan) => {
-      await planLibraryContents({ ...run, plan }, made, library);
+    async (made, inner) => {
+      await planLibraryContents(inner, made, library);
     }
   );
   // The frame's children, indexed by key the first time a later operation reads an icon.

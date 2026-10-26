@@ -7,7 +7,9 @@
 
 import { PLUGIN_DATA_KEY, PLUGIN_DATA_NAMESPACE } from "../../src/components/kit-spec.ts";
 import { LayerConflict } from "./errors.ts";
-import { change, create, existing, keepsOrder, warn } from "./plan.ts";
+import { createIn } from "./fields.ts";
+import type { Run } from "./fields.ts";
+import { change, existing, keepsOrder, warn } from "./plan.ts";
 import type { Plan, Target } from "./plan.ts";
 
 /**
@@ -178,14 +180,14 @@ export type OwnedChild<Node extends SceneNode, Fact> = {
    */
   readonly requireNew?: () => void;
   /**
-   * Plans a child into the plan it receives: a found child now, into the run's plan, and a new one
-   * when its creation runs, into the plan of its contents. It is a method so that a walk over
+   * Plans a child with the run it receives: a found child now, with the walk's run, and a new one
+   * when its creation runs, with the run of its contents. It is a method so that a walk over
    * several kinds, such as a frame's layers, can return each kind as one `OwnedChild<SceneNode>`.
    * The walk passes it only a node that `accept` narrowed or `make` made.
    *
    * @returns What planning a found child learned, such as whether it changes an icon's glyph.
    */
-  plan(node: Node, plan: Plan, origin: "found" | "new"): Fact | Promise<Fact>;
+  plan(node: Node, run: Run, origin: "found" | "new"): Fact | Promise<Fact>;
 };
 
 /** One owned child as the plan leaves it. */
@@ -201,7 +203,7 @@ export type PlannedChild<Spec, Node extends SceneNode, Fact> = {
  * find each spec's child by its key or its name and plan it, or create and plan it when the parent
  * lacks it, warn about the children the kit does not own, and restore the spec's order.
  *
- * @param plan - The run's plan.
+ * @param run - The run.
  * @param parent - The parent.
  * @param label - The parent's label, for change lines.
  * @param noun - What a child is, such as `variant`, for change lines.
@@ -212,7 +214,7 @@ export type PlannedChild<Spec, Node extends SceneNode, Fact> = {
  * @returns Each spec's child, in spec order.
  */
 export async function planOwnedChildren<Spec extends { readonly key: string }, Node extends SceneNode, Fact>(
-  plan: Plan,
+  run: Run,
   parent: ChildrenMixin,
   label: string,
   noun: string,
@@ -221,20 +223,20 @@ export async function planOwnedChildren<Spec extends { readonly key: string }, N
 ): Promise<readonly PlannedChild<Spec, Node, Fact>[]> {
   const keep = new Set(specs.map((spec) => spec.key));
   for (const stale of staleOwned(parent.children, keep)) {
-    change(plan, label, `delete the ${noun} ${stale.name}`, () => stale.remove());
+    change(run.plan, label, `delete the ${noun} ${stale.name}`, () => stale.remove());
   }
   const siblings = indexSiblings(parent.children);
   const planned: PlannedChild<Spec, Node, Fact>[] = [];
   for (const spec of specs) {
     const child = kindOf(spec);
-    const found = findOwned(plan, siblings, label, spec.key, child.name, child.accept);
+    const found = findOwned(run.plan, siblings, label, spec.key, child.name, child.accept);
     if (found !== undefined) {
-      planned.push({ spec, node: existing(found), fact: await child.plan(found, plan, "found") });
+      planned.push({ spec, node: existing(found), fact: await child.plan(found, run, "found") });
       continue;
     }
     child.requireNew?.();
-    const node = create(
-      plan,
+    const node = createIn(
+      run,
       label,
       child.description,
       () => placeOwned(parent, child.make(), spec.key, child.keepsName === true ? undefined : child.name),
@@ -246,10 +248,10 @@ export async function planOwnedChildren<Spec extends { readonly key: string }, N
   }
   const owned = planned.map((child) => child.node);
   for (const child of unowned(parent.children, owned)) {
-    warn(plan, label, `keeps the layer ${child.name}, which the kit does not own`);
+    warn(run.plan, label, `keeps the layer ${child.name}, which the kit does not own`);
   }
   if (!keepsOrder(parent.children, owned)) {
-    change(plan, label, `reorder the ${noun}s`, () => {
+    change(run.plan, label, `reorder the ${noun}s`, () => {
       owned.forEach((target, index) => parent.insertChild(index, target.get()));
     });
   }

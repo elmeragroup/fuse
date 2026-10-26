@@ -14,6 +14,7 @@ import type {
   FillSpec,
   GlyphFontSpec,
   ImagePaintSpec,
+  LimitsSpec,
   NumberSpec,
   RgbaSpec,
   ShadowSpec,
@@ -21,8 +22,8 @@ import type {
   VariableRef,
 } from "../../src/components/kit-spec.ts";
 import { FontUnavailable } from "./errors.ts";
-import { change, changeTogether, requirement } from "./plan.ts";
-import type { Plan } from "./plan.ts";
+import { change, changeTogether, create, requirement } from "./plan.ts";
+import type { Plan, Target } from "./plan.ts";
 import type { KitVariables } from "./variables.ts";
 
 /**
@@ -35,6 +36,56 @@ export type Run = {
   readonly plan: Plan;
   readonly glyphFont: GlyphFontSpec;
 };
+
+/**
+ * The run with another plan, such as the plan of a group or of a new node's contents. The run's
+ * other members stay, so a nested planner reads the same file, variables and glyph font.
+ *
+ * @param run - The run.
+ * @param plan - The plan the nested planner records into.
+ * @returns The nested planner's run.
+ */
+export function withPlan(run: Run, plan: Plan): Run {
+  return { figma: run.figma, variables: run.variables, plan, glyphFont: run.glyphFont };
+}
+
+/**
+ * Record the creation of a node, as `create` does, for a planner that takes a run.
+ *
+ * @param run - The run.
+ * @param label - Where the node goes.
+ * @param description - What gets created.
+ * @param make - Creates the node and gives it its key.
+ * @param configure - Plans the new node's fields with the run of its contents.
+ * @returns The node, for later operations to read once this one has run.
+ */
+export function createIn<Node>(
+  run: Run,
+  label: string,
+  description: string,
+  make: () => Node,
+  configure: (node: Node, inner: Run) => void | Promise<void>
+): Target<Node> {
+  return create(run.plan, label, description, make, (node, plan) => configure(node, withPlan(run, plan)));
+}
+
+/**
+ * Record the writes a group plans as one operation, as `changeTogether` does, for a planner that
+ * takes a run.
+ *
+ * @param run - The run.
+ * @param label - The node the group touches.
+ * @param build - Plans the group's writes with the group's run.
+ * @param finish - Runs after the group's writes.
+ */
+export function changeTogetherIn(
+  run: Run,
+  label: string,
+  build: (group: Run) => void,
+  finish: () => void
+): void {
+  changeTogether(run.plan, label, (plan) => build(withPlan(run, plan)), finish);
+}
 
 /**
  * A number field of a node. Some spec fields cover several Figma fields, such as a corner
@@ -713,17 +764,110 @@ export function planLayoutSizing(
     node.layoutSizingHorizontal = sizing.horizontal;
     node.layoutSizingVertical = sizing.vertical;
   };
-  changeTogether(
-    run.plan,
+  changeTogetherIn(
+    run,
     label,
-    (plan) => {
-      planLengths({ ...run, plan }, lengths);
+    (group) => {
+      planLengths(group, lengths);
       for (const [axis, member] of SIZING_MEMBERS) {
         if (reads?.[axis] !== sizing[axis]) {
-          change(plan, label, `${member} → ${sizing[axis]}`, writeSizing);
+          change(group.plan, label, `${member} → ${sizing[axis]}`, writeSizing);
         }
       }
     },
     writeSizing
   );
+}
+
+/**
+ * The corner radius of a box or an instance, which a spec sets on all four corners at once.
+ *
+ * @param node - The box, or an instance layer that overrides its corners.
+ * @returns The field.
+ */
+export function cornerField(node: ComponentNode | FrameNode | InstanceNode): NumberField {
+  const corners = ["topLeftRadius", "topRightRadius", "bottomRightRadius", "bottomLeftRadius"] as const;
+  return {
+    name: "cornerRadius",
+    bindings: corners,
+    matches: (value) => corners.every((corner) => near(node[corner], value)),
+    write: (value) => {
+      node.cornerRadius = value;
+    },
+  };
+}
+
+/**
+ * Plan a fixed width or height, or unbind one the spec lets the box or text hug or fill.
+ *
+ * @param run - The run.
+ * @param node - The box, a text layer or an instance layer.
+ * @param label - The node's label, for change lines.
+ * @param name - The axis's length.
+ * @param spec - The axis's sizing.
+ * @param held - Whether to compare a fixed length with what the node holds, or write it whatever it holds.
+ * @param write - Writes the fixed length.
+ */
+export function planLength(
+  run: Run,
+  node: ComponentNode | FrameNode | TextNode | InstanceNode,
+  label: string,
+  name: "width" | "height",
+  spec: SizeSpec,
+  held: Held,
+  write: (value: number) => void
+): void {
+  if (spec.kind !== "fixed") {
+    if (node.boundVariables?.[name] !== undefined) {
+      change(run.plan, label, `${name} → ${spec.kind}`, () => node.setBoundVariable(name, null));
+    }
+    return;
+  }
+  planNumber(
+    run,
+    node,
+    label,
+    { name, bindings: [name], matches: (value) => near(node[name], value), write },
+    spec.length,
+    held
+  );
+}
+
+/**
+ * Plan one limit of a box or a text, or remove one the spec drops.
+ *
+ * @param run - The run.
+ * @param node - The box, or a text layer.
+ * @param label - The node's label, for change lines.
+ * @param name - The limit.
+ * @param spec - The length the limit should hold, or undefined for none.
+ */
+export function planLimit(
+  run: Run,
+  node: ComponentNode | FrameNode | TextNode | InstanceNode,
+  label: string,
+  name: keyof LimitsSpec,
+  spec: NumberSpec | undefined
+): void {
+  if (spec === undefined) {
+    if (node[name] !== null || node.boundVariables?.[name] !== undefined) {
+      change(run.plan, label, `${name} → none`, () => {
+        node.setBoundVariable(name, null);
+        node[name] = null;
+      });
+    }
+    return;
+  }
+  const field: NumberField = {
+    name,
+    bindings: [name],
+    matches: (value) => {
+      const held = node[name];
+      return held !== null && near(held, value);
+    },
+    write: (value) => {
+      node[name] = value;
+    },
+  };
+  planNumber(run, node, label, field, spec);
 }
