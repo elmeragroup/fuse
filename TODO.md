@@ -153,10 +153,6 @@
   after confirming `data-table.test-d.tsx` fails under tsrs with the TypeScript 7.1 header fix
   in `data-table-source.ts` reverted.
 - Move `typescript` to 7.1 stable when it ships.
-- Bump `@elmeragroup/internal` to its tsrs-based canary once it is on npm. Update its catalog pin
-  and its `minimumReleaseAgeExclude` entry in `pnpm-workspace.yaml`, then run
-  `pnpm --filter docs generate` and review every changed api.json, because TypeScript 7.1 can
-  display types differently.
 - After upstream tooling uses stable Effect 4 and the release-age guard admits it,
   upgrade and remove prerelease exclusions unless another exception is justified.
 - Retire repo-policy workarounds when upstream lint can require disable reasons
