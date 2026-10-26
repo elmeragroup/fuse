@@ -7,6 +7,7 @@
  * The whole kit's invariants sit here too. A later set's field expectations sit beside its
  * definition, in `<name>-kit.test.ts`, as Checkbox's do.
  */
+import { NodeFileSystem } from "@effect/platform-node";
 import { Effect, Result } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -41,7 +42,7 @@ let spec: KitSpec;
 let coverage: readonly CoverageRow[];
 
 beforeAll(async () => {
-  ({ spec, coverage } = await Effect.runPromise(buildKit()));
+  ({ spec, coverage } = await Effect.runPromise(buildKit().pipe(Effect.provide(NodeFileSystem.layer))));
 });
 
 const transparent = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0 } } as const;
@@ -819,7 +820,8 @@ describe("the icon reference check", () => {
       const { componentSet } = await buildFixture(
         chip("text-[#000000] [&_svg]:size-[16px]", { iconsFor: () => [badge] })
       );
-      expect(() => checkIconReferences(place(componentSet), library)).toThrow(
+      const checked = checkIconReferences(place(componentSet), library);
+      expect(Result.isFailure(checked) ? checked.failure.message : undefined).toBe(
         "chip/state=rest: the Badge icon links Badge icon, which Chip does not define"
       );
     }
@@ -934,7 +936,10 @@ describe("the kit check the build runs", () => {
       throw new Error("the registry has no Kbd entry");
     }
     const failure = await Effect.runPromise(
-      buildKit([{ ...kbd, previewCells: [{ content: "text" }, { content: "chord" }] }]).pipe(Effect.flip)
+      buildKit([{ ...kbd, previewCells: [{ content: "text" }, { content: "chord" }] }]).pipe(
+        Effect.provide(NodeFileSystem.layer),
+        Effect.flip
+      )
     );
     expect([failure, failure.message]).toEqual([
       expect.any(KitContradiction),

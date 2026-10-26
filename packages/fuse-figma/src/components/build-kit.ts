@@ -9,7 +9,7 @@ import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
 import { fuseVariableSet } from "../fuse-variable-set";
 import type { CollectionSpec, VariableSpec } from "../variable-set";
-import { failOnThrownBuildErrors, KitSourceInvalid } from "./build-errors";
+import { KitSourceInvalid } from "./build-errors";
 import { buildSetsInOrder, definitionClasses, variantKey } from "./component-spec";
 import type { BuiltComponent, OuterDeclaration } from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
@@ -93,12 +93,14 @@ export type KitComponentSet = Omit<BuiltComponent, "componentSet"> & {
   readonly componentSet: ComponentSetSpec;
 };
 
-function kitVariables(): KitVariables {
+function kitVariables(): Result.Result<KitVariables, KitSourceInvalid> {
   const variableSet = fuseVariableSet();
   if (Result.isFailure(variableSet)) {
-    throw new KitSourceInvalid({
-      message: `the Fuse variable set does not build: ${String(variableSet.failure)}`,
-    });
+    return Result.fail(
+      new KitSourceInvalid({
+        message: `the Fuse variable set does not build: ${String(variableSet.failure)}`,
+      })
+    );
   }
   const collections = variableSet.success.collections;
   const minimumOf = extremes(collections, Math.min);
@@ -119,7 +121,11 @@ function kitVariables(): KitVariables {
       )
     )
   );
-  return { collections, variables, modes: modeViews(collections, variables, minimumOf, maximumOf) };
+  return Result.succeed({
+    collections,
+    variables,
+    modes: modeViews(collections, variables, minimumOf, maximumOf),
+  });
 }
 
 /**
@@ -167,9 +173,8 @@ const buildSets = Effect.fnUntraced(function* (
   // The base layer's border color sets the color on each element, so a part does not inherit it
   // the way it inherits `PAGE`, and any utility that colors the border wins over it. The outline
   // Badge sets no border color, so its stroke binds `border`.
-  const base: readonly OuterDeclaration[] = [
-    { className: "fuse.css base layer", ...baseBorderColor(compiled) },
-  ];
+  const borderColor = yield* Effect.fromResult(baseBorderColor(compiled));
+  const base: readonly OuterDeclaration[] = [{ className: "fuse.css base layer", ...borderColor }];
   const sets: readonly KitComponentSet[] = buildSetsInOrder(registry, {
     compiled,
     variables,
@@ -187,14 +192,12 @@ const buildSets = Effect.fnUntraced(function* (
  * Build the kit's component sets alone, without the icon library or the previews.
  *
  * @returns Each set of `KIT`, in its order and on its page, with the coverage of the recipe
- *   classes it read and the font styles its text uses. The Effect fails with the build's errors,
- *   as {@link buildKit} does.
+ *   classes it read and the font styles its text uses. The Effect fails with `KitSourceInvalid` or
+ *   `KitToolFailed`, as {@link buildKit} does.
  */
-export const buildComponentSets = () =>
-  Effect.suspend(() => buildSets(kitVariables(), KIT)).pipe(
-    Effect.withSpan("buildComponentSets"),
-    failOnThrownBuildErrors
-  );
+export const buildComponentSets = Effect.fn("buildComponentSets")(function* () {
+  return yield* buildSets(yield* Effect.fromResult(kitVariables()), KIT);
+});
 
 /** The kit spec the plugin bundles, and the coverage of every recipe declaration. */
 export type BuiltKit = {
@@ -210,21 +213,18 @@ export type BuiltKit = {
  * @param registry - The sets to build, their pages and their preview cells. `figma:plugin` builds
  *   `KIT`.
  * @returns The kit and its coverage. The Effect fails with the `KitContradiction` the check found,
- *   with `KitUnmappable` where a recipe or a definition asks for what Figma cannot draw, with
- *   `KitSourceInvalid` where a Fuse source lacks what the kit needs, such as a mode a preview pins,
- *   and with `KitToolFailed` where Tailwind or rolldown fails otherwise.
+ *   with `KitSourceInvalid` where a Fuse source lacks what the kit needs, such as a mode a preview
+ *   pins, and with `KitToolFailed` where Tailwind, rolldown or the temporary directory fails. A
+ *   recipe or a definition the mapping cannot draw throws `KitUnmappable`, a defect of the kit's
+ *   own definitions.
  */
-export const buildKit = (registry: readonly KitEntry[] = KIT) =>
-  assembleKit(registry).pipe(failOnThrownBuildErrors);
-
-/** Build and check the kit. A build error a mapping function throws stays thrown here. */
-const assembleKit = Effect.fn("buildKit")(function* (registry: readonly KitEntry[]) {
-  const kitVariableSet = kitVariables();
+export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitEntry[] = KIT) {
+  const kitVariableSet = yield* Effect.fromResult(kitVariables());
   const { collections, variables } = kitVariableSet;
   const built = yield* buildSets(kitVariableSet, registry);
   const glyphColor = readColor("var(--foreground)", variables);
   if (glyphColor === undefined) {
-    throw new KitSourceInvalid({ message: "the variable set has no foreground for the icon glyphs" });
+    return yield* new KitSourceInvalid({ message: "the variable set has no foreground for the icon glyphs" });
   }
   const icons: IconLibrarySpec = {
     key: "icons",
@@ -235,21 +235,22 @@ const assembleKit = Effect.fn("buildKit")(function* (registry: readonly KitEntry
     icons: yield* fuseIcons,
   };
   for (const { componentSet } of built) {
-    checkIconReferences(componentSet, icons);
+    yield* Effect.fromResult(checkIconReferences(componentSet, icons));
   }
 
   const modeNames = new Map(collections.map((collection) => [collection.name, new Set(collection.modes)]));
-  const themes = PREVIEW_THEMES.map((theme) => {
+  const themes: (Omit<(typeof PREVIEW_THEMES)[number], "modes"> & { readonly modes: ModeRef[] })[] = [];
+  for (const theme of PREVIEW_THEMES) {
     const modes: ModeRef[] = Object.entries(theme.modes).map(([collection, mode]) => ({ collection, mode }));
     for (const { collection, mode } of modes) {
       if (modeNames.get(collection)?.has(mode) !== true) {
-        throw new KitSourceInvalid({
+        return yield* new KitSourceInvalid({
           message: `the preview ${theme.key} pins ${collection} / ${mode}, which the variable set lacks`,
         });
       }
     }
-    return { ...theme, modes };
-  });
+    themes.push({ ...theme, modes });
+  }
   const componentPages = [...new Map(registry.map(({ page }) => [page.slug, page])).values()];
   const previews = componentPages.flatMap((page) =>
     themes.map((theme): PreviewSpec => {
@@ -271,12 +272,11 @@ const assembleKit = Effect.fn("buildKit")(function* (registry: readonly KitEntry
     })
   );
 
+  const fontStyles = [...new Set(built.flatMap((set) => set.fontStyles))];
+  const family = fontStyles.length === 0 ? "" : yield* Effect.fromResult(defaultFontFamily());
   const spec: KitSpec = {
     pages: [...componentPages.map(pageSpec), ICONS_PAGE],
-    fonts: [...new Set(built.flatMap((set) => set.fontStyles))].map((style) => ({
-      family: defaultFontFamily(),
-      style,
-    })),
+    fonts: fontStyles.map((style) => ({ family, style })),
     glyphFont: GLYPH_FONT,
     icons,
     componentSets: built.map((set) => set.componentSet),
@@ -293,17 +293,22 @@ const assembleKit = Effect.fn("buildKit")(function* (registry: readonly KitEntry
  *
  * @param set - The built component set.
  * @param library - The icon library the kit ships.
- * @throws `KitSourceInvalid` when the set names an icon the library lacks, or links a property it
- *   does not define.
+ * @returns Nothing, or `KitSourceInvalid` when the set names an icon the library lacks, or links a
+ *   property it does not define.
  */
-export function checkIconReferences(set: Omit<ComponentSetSpec, "page">, library: IconLibrarySpec): void {
+export function checkIconReferences(
+  set: Omit<ComponentSetSpec, "page">,
+  library: IconLibrarySpec
+): Result.Result<void, KitSourceInvalid> {
   const icons = new Set(library.icons.map((icon) => icon.key));
   const properties = new Set(set.swapProperties.map((property) => property.name));
   for (const property of set.swapProperties) {
     if (!icons.has(property.defaultIcon)) {
-      throw new KitSourceInvalid({
-        message: `${set.name}: the ${property.name} property starts with ${property.defaultIcon}, which the library lacks`,
-      });
+      return Result.fail(
+        new KitSourceInvalid({
+          message: `${set.name}: the ${property.name} property starts with ${property.defaultIcon}, which the library lacks`,
+        })
+      );
     }
   }
   for (const variant of set.variants) {
@@ -312,17 +317,22 @@ export function checkIconReferences(set: Omit<ComponentSetSpec, "page">, library
         continue;
       }
       if (!icons.has(layer.icon)) {
-        throw new KitSourceInvalid({
-          message: `${variant.key}: the ${layer.name} shows ${layer.icon}, which the library lacks`,
-        });
+        return Result.fail(
+          new KitSourceInvalid({
+            message: `${variant.key}: the ${layer.name} shows ${layer.icon}, which the library lacks`,
+          })
+        );
       }
       if (layer.swapProperty !== undefined && !properties.has(layer.swapProperty)) {
-        throw new KitSourceInvalid({
-          message: `${variant.key}: the ${layer.name} links ${layer.swapProperty}, which ${set.name} does not define`,
-        });
+        return Result.fail(
+          new KitSourceInvalid({
+            message: `${variant.key}: the ${layer.name} links ${layer.swapProperty}, which ${set.name} does not define`,
+          })
+        );
       }
     }
   }
+  return Result.succeed(undefined);
 }
 
 /**
@@ -373,7 +383,7 @@ function extremes(
 const GLYPH_FONT: GlyphFontSpec = { family: "Inter", glyphs: ["\u21E7", "\u2318"] };
 
 /** The family `font-sans` resolves to, which every theme shares. The plugin loads it. */
-function defaultFontFamily(): string {
+function defaultFontFamily(): Result.Result<string, KitSourceInvalid> {
   const families = new Set(
     resolveThemeCatalog().themes.flatMap((theme) =>
       Object.values(theme.schemes).map((scheme) => scheme.tokens["font-sans"].value)
@@ -381,9 +391,11 @@ function defaultFontFamily(): string {
   );
   const [family, ...others] = families;
   if (family === undefined || others.length > 0) {
-    throw new KitSourceInvalid({ message: `the themes disagree on font-sans: ${[...families].join(", ")}` });
+    return Result.fail(
+      new KitSourceInvalid({ message: `the themes disagree on font-sans: ${[...families].join(", ")}` })
+    );
   }
-  return family;
+  return Result.succeed(family);
 }
 
 const OUTCOME_ORDER: readonly CoverageOutcome[] = ["unmapped", "dropped", "bound", "literal"];

@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Result } from "effect";
 /**
  * Compile recipe classes against `fuse.css` and read back each bare utility's declarations, and
  * where each full class sits in the output and how specific its selector is. The spec builder
@@ -221,24 +221,27 @@ const PART_ARM = ":where(:not(:is(button, input, select, textarea, meter, progre
  *
  * @param compiled - A compile against `fuse.css`.
  * @returns The `border-color` declaration of the base rule whose selector list holds the arm
- *   every part matches.
- * @throws `KitSourceInvalid` when the base layer has no rule with that arm, or the rule sets no
- *   border color.
+ *   every part matches, or `KitSourceInvalid` when the base layer has no rule with that arm, or the
+ *   rule sets no border color.
  */
-export function baseBorderColor(compiled: CompiledUtilities): UtilityDeclaration {
+export function baseBorderColor(
+  compiled: CompiledUtilities
+): Result.Result<UtilityDeclaration, KitSourceInvalid> {
   const rule = compiled.baseRules.find((candidate) =>
     splitTopLevel(candidate.selector, ",").includes(PART_ARM)
   );
   if (rule === undefined) {
-    throw new KitSourceInvalid({ message: `fuse.css's base layer has no rule for ${PART_ARM}` });
+    return Result.fail(
+      new KitSourceInvalid({ message: `fuse.css's base layer has no rule for ${PART_ARM}` })
+    );
   }
   const borderColor = rule.declarations.findLast((declaration) => declaration.property === "border-color");
   if (borderColor === undefined) {
-    throw new KitSourceInvalid({
-      message: `fuse.css's base-layer rule for ${PART_ARM} sets no border-color`,
-    });
+    return Result.fail(
+      new KitSourceInvalid({ message: `fuse.css's base-layer rule for ${PART_ARM} sets no border-color` })
+    );
   }
-  return borderColor;
+  return Result.succeed(borderColor);
 }
 
 /**

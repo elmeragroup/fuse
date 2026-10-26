@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, FileSystem, Result } from "effect";
 /**
  * The icon library the kit builds: one component per icon `@elmeragroup/fuse/icons` publishes
  * that paints only with `currentColor`, drawn from the markup the Fuse icon renders. Those are
@@ -8,15 +8,13 @@ import { Effect } from "effect";
  * artwork with colors of its own, such as the Vipps mark or the Signing illustration, stays out:
  * it is drawn for a colored background or reads as a blot at 16px.
  */
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "rolldown";
 
 import { BESPOKE_ICON_NAMES, PHOSPHOR_ICON_NAMES } from "@elmeragroup/fuse/recipe-catalog";
 
-import { KitSourceInvalid, runTool } from "./build-errors";
+import { KitSourceInvalid, KitToolFailed, runTool } from "./build-errors";
 import type { KitBuildError } from "./build-errors";
 import { iconKey } from "./kit-spec";
 import type { IconSpec } from "./kit-spec";
@@ -74,18 +72,57 @@ function iconSpec(name: string, markup: string): IconSpec | undefined {
 }
 
 /**
+ * Render every icon of the roster, the Phosphor icons then the bespoke ones, and keep those
+ * {@link iconSpec} admits.
+ *
+ * @param markup - The bundled renderer.
+ * @returns The icon specs, in roster order, or `KitSourceInvalid` when the roster names an icon
+ *   `/icons` does not export.
+ */
+function renderIcons(markup: IconMarkup): Result.Result<readonly IconSpec[], KitSourceInvalid> {
+  const icons: IconSpec[] = [];
+  const roster = [
+    ...PHOSPHOR_ICON_NAMES.map((name) => [name, ICON_SIZE] as const),
+    ...BESPOKE_ICON_NAMES.map((name) => [name, undefined] as const),
+  ];
+  for (const [name, size] of roster) {
+    const svg = markup.renderIcon(name, size);
+    if (svg === undefined) {
+      return Result.fail(
+        new KitSourceInvalid({
+          message: `@elmeragroup/fuse/icons exports no ${name}, which the icon roster lists`,
+        })
+      );
+    }
+    const spec = iconSpec(name, svg);
+    if (spec !== undefined) {
+      icons.push(spec);
+    }
+  }
+  return Result.succeed(icons);
+}
+
+/**
  * Render every icon `@elmeragroup/fuse/icons` publishes, the Phosphor roster then the bespoke
  * icons, and keep those {@link iconSpec} admits. Node cannot load the bespoke TSX, so this
- * bundles {@link ICON_MARKUP_SOURCE} with rolldown into a temporary directory, which it removes
- * afterwards, and imports the bundle.
+ * bundles {@link ICON_MARKUP_SOURCE} with rolldown into a temporary directory, which the scope
+ * removes afterwards, and imports the bundle.
  *
  * @returns The icon specs, in roster order. The Effect fails with `KitSourceInvalid` when the
- *   roster names an icon `/icons` does not export, and with `KitToolFailed` when rolldown fails.
+ *   roster names an icon `/icons` does not export, and with `KitToolFailed` when rolldown or the
+ *   temporary directory fails.
  */
-export const fuseIcons: Effect.Effect<readonly IconSpec[], KitBuildError> = Effect.acquireUseRelease(
-  Effect.sync(() => mkdtempSync(join(tmpdir(), "fuse-figma-icons-"))),
-  (outDir) =>
+export const fuseIcons: Effect.Effect<readonly IconSpec[], KitBuildError, FileSystem.FileSystem> =
+  Effect.scoped(
     Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const outDir = yield* fs
+        .makeTempDirectoryScoped({ prefix: "fuse-figma-icons-" })
+        .pipe(
+          Effect.mapError(
+            (error) => new KitToolFailed({ message: error.message, tool: "file system", cause: error })
+          )
+        );
       yield* runTool("rolldown", () =>
         build({
           input: ICON_MARKUP_ID,
@@ -111,28 +148,6 @@ export const fuseIcons: Effect.Effect<readonly IconSpec[], KitBuildError> = Effe
       const markup = (yield* Effect.promise(
         () => import(pathToFileURL(join(outDir, "icon-markup.mjs")).href)
       )) as IconMarkup;
-      const render = (
-        name: string,
-        size: number | undefined
-      ): Effect.Effect<IconSpec[], KitSourceInvalid> => {
-        const svg = markup.renderIcon(name, size);
-        if (svg === undefined) {
-          return Effect.fail(
-            new KitSourceInvalid({
-              message: `@elmeragroup/fuse/icons exports no ${name}, which the icon roster lists`,
-            })
-          );
-        }
-        const spec = iconSpec(name, svg);
-        return Effect.succeed(spec === undefined ? [] : [spec]);
-      };
-      const phosphor = yield* Effect.forEach(PHOSPHOR_ICON_NAMES, (name) => render(name, ICON_SIZE));
-      const bespoke = yield* Effect.forEach(BESPOKE_ICON_NAMES, (name) => render(name, undefined));
-      const icons: readonly IconSpec[] = [...phosphor.flat(), ...bespoke.flat()];
-      return icons;
-    }),
-  (outDir) =>
-    Effect.sync(() => {
-      rmSync(outDir, { recursive: true, force: true });
+      return yield* Effect.fromResult(renderIcons(markup));
     })
-);
+  );

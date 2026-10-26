@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Result } from "effect";
 import { describe, expect, it } from "vitest";
 
 import { baseBorderColor, compileUtilities } from "./utility-css";
@@ -86,7 +86,7 @@ describe("baseBorderColor", () => {
   const PART_ARM = ":where(:not(:is(button, input, select, textarea, meter, progress):not([data-slot])))";
 
   it("reads the border color fuse.css's base layer gives every part", async () => {
-    expect(baseBorderColor(await Effect.runPromise(compileUtilities([])))).toEqual({
+    expect(Result.getOrThrow(baseBorderColor(await Effect.runPromise(compileUtilities([]))))).toEqual({
       property: "border-color",
       value: "var(--border, currentcolor)",
     });
@@ -95,21 +95,27 @@ describe("baseBorderColor", () => {
   it("follows the rule's value, and fails when the rule or its border color is gone", async () => {
     const compiled = await Effect.runPromise(compileUtilities([]));
     const withBase = (baseRules: typeof compiled.baseRules) => ({ ...compiled, baseRules });
+    const failureOf = (read: ReturnType<typeof baseBorderColor>) =>
+      Result.isFailure(read) ? read.failure.message : undefined;
     expect(
-      baseBorderColor(
-        withBase([
-          {
-            selector: `${PART_ARM}, ::after`,
-            declarations: [{ property: "border-color", value: "var(--input)" }],
-          },
-        ])
+      Result.getOrThrow(
+        baseBorderColor(
+          withBase([
+            {
+              selector: `${PART_ARM}, ::after`,
+              declarations: [{ property: "border-color", value: "var(--input)" }],
+            },
+          ])
+        )
       )
     ).toEqual({ property: "border-color", value: "var(--input)" });
-    expect(() => baseBorderColor(withBase([]))).toThrow(/base layer/);
-    expect(() =>
-      baseBorderColor(
-        withBase([{ selector: PART_ARM, declarations: [{ property: "outline-color", value: "red" }] }])
+    expect(failureOf(baseBorderColor(withBase([])))).toMatch(/base layer/);
+    expect(
+      failureOf(
+        baseBorderColor(
+          withBase([{ selector: PART_ARM, declarations: [{ property: "outline-color", value: "red" }] }])
+        )
       )
-    ).toThrow(/border-color/);
+    ).toMatch(/border-color/);
   });
 });
