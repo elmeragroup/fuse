@@ -15,14 +15,16 @@ import type {
   VariantSpec,
 } from "../../src/components/kit-spec.ts";
 import { planBox } from "./box.ts";
-import { fontLayers, planChildren, requireNewSetFonts, requireNewTextFonts } from "./child-layers.ts";
+import { planChildren } from "./child-layers.ts";
 import type { LayerLinks, PropertyIds } from "./child-layers.ts";
 import { planSetProperty } from "./component-properties.ts";
 import { createIn, near, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
+import { fontLayers, requireNewSetFonts, requireNewTextFonts } from "./fonts.ts";
 import type { PlannedIcon } from "./icons.ts";
 import { indexSiblings, placeOwned, planOwnedChildren, setKey } from "./identity.ts";
 import type { OwnedChild, Siblings } from "./identity.ts";
+import { innerSpecs } from "./instance-layers.ts";
 import type { PlannedPage } from "./pages.ts";
 import { change, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
@@ -289,7 +291,8 @@ function variantKind(
     accept: isComponent,
     description: `create the variant ${name}`,
     make: () => run.figma.createComponent(),
-    requireNew: () => requireNewTextFonts(run, set, label, fontLayers(walkLayers(variant.root), links.sets)),
+    requireNew: () =>
+      requireNewTextFonts(run, set, label, fontLayers(walkLayers(variant.root), innerSpecs(links.sets))),
     plan: (component, inner) => planVariantFields(inner, component, name, label, variant, links),
   };
 }
@@ -417,7 +420,7 @@ export async function planComponentSet(
 ): Promise<PlannedSet> {
   const found = page.find(spec.key, spec.name, isComponentSet);
   if (found === undefined) {
-    await requireNewSetFonts(run, page.modes, spec, sets);
+    await requireNewSetFonts(run, page.modes, spec, innerSpecs(sets));
     return createSet(run, page, spec, { icons, sets });
   }
   const properties = new Map<string, string>();

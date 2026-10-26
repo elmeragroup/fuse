@@ -39,17 +39,17 @@ import { findProperty, propertyName } from "./component-properties.ts";
 import type { PlannedSet } from "./component-set.ts";
 import {
   cornerField,
-  heldFonts,
   planLimit,
   planNumber,
   planPaints,
   planScalar,
   planShadows,
   planVisibleLink,
-  requireFont,
   withPlan,
 } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
+import { heldFonts, linkedLabels, requireFont } from "./fonts.ts";
+import type { InnerSpecs } from "./fonts.ts";
 import { planGlyphRanges } from "./glyph-font.ts";
 import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
@@ -98,15 +98,14 @@ export function innerVariant(
 }
 
 /**
- * The labels of a variant that a TEXT property sets, whose fonts a TEXT write on an instance needs.
+ * Find the inner variant of each instance layer among the sets the run planned before this one, as
+ * `fontLayers` reads it.
  *
- * @param variant - The inner variant.
- * @returns The text layers that link a TEXT property.
+ * @param sets - The sets the run planned before this one, by key.
+ * @returns The lookup, which throws as {@link innerVariant} does.
  */
-export function linkedLabels(variant: VariantSpec): readonly TextLayerSpec[] {
-  return walkLayers(variant.root).filter(
-    (layer): layer is TextLayerSpec => layer.kind === "text" && layer.textProperty !== undefined
-  );
+export function innerSpecs(sets: ReadonlyMap<string, PlannedSet>): InnerSpecs {
+  return (layer) => innerVariant(sets, layer, layer.name).spec;
 }
 
 /** A property value the spec asks the instance for, and how a held value matches it. */

@@ -13,8 +13,8 @@
 
 import { glyphRanges } from "../../src/components/kit-spec.ts";
 import type { TextRange } from "../../src/components/kit-spec.ts";
-import { requireFont } from "./fields.ts";
 import type { Run } from "./fields.ts";
+import { requireFont } from "./fonts.ts";
 import { change } from "./plan.ts";
 
 /** One character's font and the id of the variable its family binds, if any. */

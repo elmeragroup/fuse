@@ -21,8 +21,7 @@ import type {
   SizeSpec,
   VariableRef,
 } from "../../src/components/kit-spec.ts";
-import { FontUnavailable } from "./errors.ts";
-import { change, changeTogether, create, requirement } from "./plan.ts";
+import { change, changeTogether, create } from "./plan.ts";
 import type { Plan, Target } from "./plan.ts";
 import type { KitVariables } from "./variables.ts";
 
@@ -97,46 +96,6 @@ export type NumberField = {
   readonly matches: (value: number) => boolean;
   readonly write: (value: number) => void;
 };
-
-/**
- * Require a font before the run's first write. Figma refuses a text write unless the fonts it
- * touches are loaded, and a file can hold a font this machine cannot load. Loading every font
- * first makes such a font stop the run, Plan included, with nothing written.
- *
- * @param run - The run.
- * @param label - The layer that needs the font, for the error.
- * @param font - The font.
- */
-export function requireFont(run: Run, label: string, font: FontName): void {
-  const axes = font.variationSettings === undefined ? "" : ` ${JSON.stringify(font.variationSettings)}`;
-  const key = `font ${font.family} ${font.style}${axes}`;
-  requirement(run.plan, key, async () => {
-    try {
-      await run.figma.loadFontAsync(font);
-    } catch (cause) {
-      throw new FontUnavailable({
-        message: `${label} needs the font ${font.family} ${font.style}, which Figma cannot load. Install it, then run the plugin again.`,
-        font,
-        cause,
-      });
-    }
-  });
-}
-
-/**
- * Every font a text layer's characters use, each range of mixed ones included. An empty layer holds
- * the one font it would type in.
- *
- * @param run - The run.
- * @param text - The text layer.
- * @returns The fonts.
- */
-export function heldFonts(run: Run, text: TextNode): FontName[] {
-  if (text.characters.length > 0) {
-    return text.getRangeAllFontNames(0, text.characters.length);
-  }
-  return text.fontName === run.figma.mixed ? [] : [text.fontName];
-}
 
 /**
  * Whether two numbers agree within what a 32-bit float keeps.
