@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "tsdown";
 
 import { entries } from "./scripts/entries.ts";
@@ -9,7 +10,9 @@ export default defineConfig({
   format: "esm",
   platform: "browser",
   unbundle: true,
-  dts: true,
+  // rolldown-plugin-dts starts tsrs as the API server behind the `typescript` 7.1 client, so
+  // tsrs emits Fuse's declarations.
+  dts: { tsgo: { path: fileURLToPath(new URL("node_modules/.bin/tsrs", import.meta.url)) } },
   clean: true,
   sourcemap: true,
   // Keep validateTheme's runtime NODE_ENV branch.

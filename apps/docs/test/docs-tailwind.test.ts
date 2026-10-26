@@ -2,15 +2,9 @@ import { readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Node } from "typescript/unstable/ast";
-import {
-  isCallExpression,
-  isIdentifier,
-  isStringLiteral,
-  isTemplateExpression,
-} from "typescript/unstable/ast/is";
-import { createVirtualFileSystem } from "typescript/unstable/fs";
-import { API } from "typescript/unstable/sync";
+import type { Node } from "typescript/ast";
+import { isCallExpression, isIdentifier, isStringLiteral, isTemplateExpression } from "typescript/ast/is";
+import { API } from "typescript/sync";
 import { describe, expect, it } from "vitest";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -48,25 +42,12 @@ function srcTsFiles(): string[] {
 
 /** Parse only the supplied sources; no library project or type checking is needed. */
 function recipeSlotFailures(sources: readonly { file: string; source: string }[]): string[] {
-  const root = "/docs-recipe-check";
-  const config = `${root}/tsconfig.json`;
-  const inputs = sources.map((entry, index) => ({ ...entry, virtualFile: `${root}/${String(index)}.tsx` }));
-  const api = new API({
-    cwd: root,
-    fs: createVirtualFileSystem({
-      [config]: JSON.stringify({
-        compilerOptions: { noLib: true, noResolve: true },
-        files: inputs.map(({ virtualFile }) => virtualFile),
-      }),
-      ...Object.fromEntries(inputs.map(({ source, virtualFile }) => [virtualFile, source])),
-    }),
-  });
+  const api = new API();
   try {
-    const project = api.updateSnapshot({ openProjects: [config] }).getProject(config);
-    if (project === undefined) throw new Error("Could not open recipe syntax project");
-    return inputs.flatMap(({ file, source, virtualFile }) => {
-      const parsed = project.program.getSourceFile(virtualFile);
-      if (parsed === undefined) throw new Error(`Could not parse ${file}`);
+    return sources.flatMap(({ file, source }) => {
+      // createSourceFile parses outside any program, so no project, library or resolution runs.
+      const retained = api.createSourceFile("/recipe.tsx", source);
+      const parsed = retained.sourceFile;
       const failures: string[] = [];
       function inspectRecipe(node: Node): void {
         if (isTemplateExpression(node)) failures.push(`${file}: ${source.slice(node.pos, node.end).trim()}`);
@@ -82,7 +63,11 @@ function recipeSlotFailures(sources: readonly { file: string; source: string }[]
         }
         node.forEachChild(visit);
       }
-      visit(parsed);
+      try {
+        visit(parsed);
+      } finally {
+        retained.dispose();
+      }
       return failures;
     });
   } finally {

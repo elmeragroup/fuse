@@ -12,7 +12,9 @@ import { Table } from "../table/table";
 import type {
   CellRenderSource,
   CellSource,
+  HeaderGroupSource,
   HeaderGroupsSource,
+  HeaderOf,
   HeaderRenderSource,
   HeaderSource,
   RowSource,
@@ -35,13 +37,13 @@ function ariaSort(column: HeaderSource["column"]): "ascending" | "descending" | 
 }
 
 /** Header rows over any header renderer. */
-function HeaderRows<THeader extends HeaderSource>({
+function HeaderRows<TGroup extends HeaderGroupSource>({
   headerGroups,
   renderHeader,
   ...props
 }: ComponentProps<"thead"> & {
-  headerGroups: ReturnType<HeaderGroupsSource<THeader>["getHeaderGroups"]>;
-  renderHeader: (header: THeader) => ReactNode;
+  headerGroups: ReadonlyArray<TGroup>;
+  renderHeader: (header: HeaderOf<TGroup>) => ReactNode;
 }): ReactElement {
   return (
     <Table.Header data-slot="data-table-header" {...props}>
@@ -187,7 +189,7 @@ export function RowCells<TCell extends CellSource>({
  * `table.FlexRender` and `DataTable.Row`, the registered `table.Content` passes `table.AppHeader`
  * and `table.Row`. While `loading` the table carries `aria-busy`.
  */
-export function ContentTable<THeader extends HeaderSource, TRow extends { readonly id: string }>({
+export function ContentTable<TGroup extends HeaderGroupSource, TRow extends { readonly id: string }>({
   table,
   loading,
   empty,
@@ -196,8 +198,8 @@ export function ContentTable<THeader extends HeaderSource, TRow extends { readon
   ...props
 }: Omit<ComponentProps<"table">, "children"> &
   BodyState & {
-    table: HeaderGroupsSource<THeader> & RowsSource<TRow>;
-    renderHeader: (header: THeader) => ReactNode;
+    table: HeaderGroupsSource<TGroup> & RowsSource<TRow>;
+    renderHeader: (header: HeaderOf<TGroup>) => ReactNode;
     renderRow: (row: TRow) => ReactNode;
   }): ReactElement {
   return (
@@ -209,20 +211,22 @@ export function ContentTable<THeader extends HeaderSource, TRow extends { readon
 }
 
 /** Props for `DataTable.Header`. */
-export type DataTableHeaderProps<THeader extends HeaderSource> = ComponentProps<"thead"> & {
+export type DataTableHeaderProps<TGroup extends HeaderGroupSource> = ComponentProps<"thead"> & {
   /** The table whose header groups render, typically from `useTable`. */
-  table: HeaderGroupsSource<THeader> & HeaderRenderSource<THeader>;
+  table: HeaderGroupsSource<TGroup> & HeaderRenderSource<HeaderOf<TGroup>>;
 };
 
 /**
  * Every header group of a table as `<thead>` rows. Each `<th>` takes the header's `colSpan`,
  * renders nothing for a placeholder, and carries `aria-sort` (`ascending`, `descending` or `none`)
  * only when its column can sort.
+ *
+ * @template TGroup - The header group type of the table's `getHeaderGroups()`.
  */
-export function DataTableHeader<THeader extends HeaderSource>({
+export function DataTableHeader<TGroup extends HeaderGroupSource>({
   table,
   ...props
-}: DataTableHeaderProps<THeader>): ReactElement {
+}: DataTableHeaderProps<TGroup>): ReactElement {
   return (
     <HeaderRows
       headerGroups={table.getHeaderGroups()}
@@ -265,14 +269,14 @@ export function DataTableBody<TRow extends RowSource<TCell>, TCell extends CellS
 
 /** Props for `DataTable.Content`. */
 export type DataTableContentProps<
-  THeader extends HeaderSource,
+  TGroup extends HeaderGroupSource,
   TRow extends RowSource<TCell>,
   TCell extends CellSource = CellOf<TRow>,
 > = Omit<ComponentProps<"table">, "children"> &
   BodyState & {
     /** The table to render, typically from `useTable`. */
-    table: HeaderGroupsSource<THeader> &
-      HeaderRenderSource<THeader> &
+    table: HeaderGroupsSource<TGroup> &
+      HeaderRenderSource<HeaderOf<TGroup>> &
       RowsSource<TRow> &
       CellRenderSource<TCell>;
     /** Takes over row rendering, for example to render `DataTable.Row` with `onPress`. */
@@ -283,12 +287,16 @@ export type DataTableContentProps<
  * A whole table on Fuse `Table`: the shared content table with `table.FlexRender` headers and
  * `DataTable.Row` rows. While `loading` the table carries `aria-busy`. Pass `children` to render
  * each row yourself.
+ *
+ * @template TGroup - The header group type of the table's `getHeaderGroups()`.
+ * @template TRow - The row type of the table's row model.
+ * @template TCell - The cell type a row's `getAllCells()` returns.
  */
 export function DataTableContent<
-  THeader extends HeaderSource,
+  TGroup extends HeaderGroupSource,
   TRow extends RowSource<TCell>,
   TCell extends CellSource = CellOf<TRow>,
->({ table, loading = false, children, ...props }: DataTableContentProps<THeader, TRow, TCell>): ReactElement {
+>({ table, loading = false, children, ...props }: DataTableContentProps<TGroup, TRow, TCell>): ReactElement {
   return (
     <ContentTable
       table={table}

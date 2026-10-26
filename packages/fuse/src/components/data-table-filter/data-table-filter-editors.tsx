@@ -512,7 +512,9 @@ function DateEditorBody({
 }): ReactElement {
   const { actions, meta } = useFilterInternals("DataTableFilter.DateEditor");
   const { field, filter, draft } = editor;
-  const today = calendarDateIn(new Date(), meta.timeZone);
+  // The clock is read once per open; the zone stays live, so a changed `timeZone` re-resolves today.
+  const [openedAt] = useState(() => new Date());
+  const today = calendarDateIn(openedAt, meta.timeZone);
   const target = targetOf("date", draft.operator) === "range" ? "range" : "single";
   const allowed = allowedOperators(field);
   // A key listed twice shows once, at its first place, so React keys and toggle values stay unique.

@@ -237,7 +237,7 @@ Two flags render a stage the docs page itself never shows. File names and alt te
 - `--densities` stamps `data-density` on the target's demo stage after the theme is set. On the
   docs page a stage always takes the deployment default for its variant: `dense` for internal
   themes, `comfortable` for external ones. A run that passes `--themes external-tkas-company
---densities dense` shows an external theme at a density no deployment uses.
+  --densities dense` shows an external theme at a density no deployment uses.
 - `--color-scheme` sets the color scheme the browser reports. The docs site follows it until a
   visitor picks Light or Dark in the menu, so the page matches what a visitor with that system
   setting sees.

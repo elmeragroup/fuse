@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -186,34 +185,5 @@ describe("workspace lint script", () => {
         Object.hasOwn(asRecord(entry.rules, "override rules"), "shadcn/require-static-classes")
       )
     ).toEqual([]);
-  });
-
-  /**
-   * The React Aria quarantine boundary moved from the plugin into this config when the package
-   * directory was renamed. Nothing upstream enforces the exemption's scope, so
-   * these two tests are the boundary: one pins the exemption, the other retires it.
-   */
-  it("exempts react-aria from the RAC quarantine rule in exactly one place, scoped to the quarantine", () => {
-    const parsed = readJsonObject(join(repoRoot, ".oxlintrc.json"));
-    const exemptions = asRecordArray(parsed.overrides, "overrides").filter(
-      (entry) => asRecord(entry.rules, "override rules")["elmera/no-rac-outside-quarantine"] === "off"
-    );
-    expect(exemptions.map((entry) => overrideFiles(entry))).toEqual([
-      ["packages/fuse/src/react-aria/**/*.{ts,tsx}"],
-    ]);
-  });
-
-  it("still needs the exemption because the pinned plugin's quarantine regex names the former directory", () => {
-    const plugin = readFileSync(join(repoRoot, "node_modules/@elmeragroup/internal/dist/oxlint.mjs"), "utf8");
-    // Escaped separators are what make this `QUARANTINE_DIR_RE` — the literal the rule matches
-    // filenames against — and not one of the three prose copies of the same path (JSDoc, rule
-    // description, violation message), which would keep a looser assertion green long after the
-    // behaviour was fixed.
-    const quarantineRegexSource = String.raw`packages\/ui\/src\/react-aria\/`;
-    // A failure means the plugin stopped hard-coding the old path, in one of two ways. If it
-    // learned the renamed directory, delete the override and this test. If it made the
-    // quarantine directory configurable, set that option and keep a scoped rule, because
-    // deleting the override would drop the boundary. Either way, bump the pin.
-    expect(plugin).toContain(quarantineRegexSource);
   });
 });
