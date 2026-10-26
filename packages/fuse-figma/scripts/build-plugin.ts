@@ -5,11 +5,12 @@
  * under Plugins → Development to run it.
  */
 
-import { Effect } from "effect";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { NodeRuntime, NodeServices } from "@effect/platform-node";
+import { Console, Effect, FileSystem } from "effect";
 import { fileURLToPath } from "node:url";
 
 import { buildKit, renderCoverage } from "../src/components/build-kit.ts";
+import type { BuiltKit } from "../src/components/build-kit.ts";
 import { bundlePlugin } from "./plugin-bundle.ts";
 
 const pluginDir = fileURLToPath(new URL("../plugin/", import.meta.url));
@@ -18,20 +19,32 @@ const specPath = `${distDir}spec.json`;
 const coveragePath = `${distDir}coverage.md`;
 const codePath = `${distDir}code.js`;
 
-const { spec, coverage } = await Effect.runPromise(buildKit());
-mkdirSync(distDir, { recursive: true });
-writeFileSync(specPath, `${JSON.stringify(spec, null, 2)}\n`);
-writeFileSync(coveragePath, renderCoverage(coverage));
-writeFileSync(codePath, await bundlePlugin(spec));
-
-const totals = new Map<string, number>();
-for (const row of coverage) {
-  totals.set(row.outcome, (totals.get(row.outcome) ?? 0) + 1);
+/** The lines `figma:plugin` prints: where each file went, and what the spec and coverage hold. */
+function summary({ spec, coverage }: BuiltKit): readonly string[] {
+  const totals = new Map<string, number>();
+  for (const row of coverage) {
+    totals.set(row.outcome, (totals.get(row.outcome) ?? 0) + 1);
+  }
+  const outcomes = [...totals].map(([outcome, count]) => `${count} ${outcome}`).join(", ");
+  const variants = spec.componentSets.reduce((sum, set) => sum + set.variants.length, 0);
+  return [
+    `Plugin: ${codePath}`,
+    `Spec: ${specPath} (${spec.componentSets.length} component sets, ${variants} variants)`,
+    `Coverage: ${coveragePath} (${outcomes})`,
+    `Manifest: ${pluginDir}manifest.json`,
+  ];
 }
-const summary = [...totals].map(([outcome, count]) => `${count} ${outcome}`).join(", ");
-const variants = spec.componentSets.reduce((sum, set) => sum + set.variants.length, 0);
 
-console.log(`Plugin: ${codePath}`);
-console.log(`Spec: ${specPath} (${spec.componentSets.length} component sets, ${variants} variants)`);
-console.log(`Coverage: ${coveragePath} (${summary})`);
-console.log(`Manifest: ${pluginDir}manifest.json`);
+const program = Effect.gen(function* () {
+  const fs = yield* FileSystem.FileSystem;
+  const kit = yield* buildKit();
+  yield* fs.makeDirectory(distDir, { recursive: true });
+  yield* fs.writeFileString(specPath, `${JSON.stringify(kit.spec, null, 2)}\n`);
+  yield* fs.writeFileString(coveragePath, renderCoverage(kit.coverage));
+  yield* fs.writeFileString(codePath, yield* bundlePlugin(kit.spec));
+  for (const line of summary(kit)) {
+    yield* Console.log(line);
+  }
+});
+
+program.pipe(Effect.provide(NodeServices.layer), NodeRuntime.runMain);

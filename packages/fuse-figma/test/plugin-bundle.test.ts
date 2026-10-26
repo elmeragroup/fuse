@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 /**
  * The bundle `figma:plugin` writes for the plugin's main thread, loaded the way Figma loads it:
  * as one classic script whose only globals are the ones Figma provides. The in-memory file in
@@ -129,7 +130,7 @@ describe("the plugin bundle", () => {
     // SAFETY: as above.
     const fake = (await import(FAKE_FIGMA)) as FakeFigmaModule;
     fixtures = { ...buttonKit, ...fake };
-    code = await bundlePlugin(buttonKit.KIT);
+    code = await Effect.runPromise(bundlePlugin(buttonKit.KIT));
   });
 
   it("loads as a classic script with only Figma's globals and opens the UI", () => {
