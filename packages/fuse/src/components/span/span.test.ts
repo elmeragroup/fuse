@@ -25,6 +25,22 @@ describe("spanVariants", () => {
     expect(resolved).toContain("leading-snug");
     expect(resolved).toContain("font-normal");
     expect(resolved).not.toContain("leading-relaxed");
+    expect(resolved).not.toContain("--paragraph-leading");
+  });
+
+  it.each(["sm", "default", "lg"] as const)("replaces size %s's paragraph leading role with snug", (size) => {
+    const leadingClasses = spanVariants({ size })
+      .split(/\s+/)
+      .filter((name) => name.startsWith("leading-"));
+    expect(leadingClasses).toEqual(["leading-snug"]);
+  });
+
+  it("resolves a size onto Text's classes at Span's snug leading", () => {
+    // Oracle: the parent Text recipe at the same size and leading, pinned in its own tests.
+    const tokens = (classes: string) => new Set(classes.split(/\s+/));
+    expect(tokens(spanVariants({ size: "sm" }))).toEqual(
+      tokens(textVariants({ size: "sm", leading: "snug" }))
+    );
   });
 
   it.each(VARIANTS)("resolves variant %s onto Text's class", (variant) => {

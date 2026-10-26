@@ -9,6 +9,10 @@
  * - `destructive` keeps its ref value name for consumer compat, but the class is
  *   `text-error` — no `destructive` class appears in library source.
  * - `size` is a type-scale axis, not a density control-box rung: it does not read `--control-*`.
+ * - The recipe knows no level. `Heading` merges the theme's `--heading-1-*` to `--heading-3-*`
+ *   roles over the default `size` and `font` arms for levels 1 to 3, so `headingVariants()` on
+ *   its own keeps the level-free scale: `text-base leading-snug font-medium` unless a size or
+ *   font is given.
  */
 import { tv } from "../../styles/tv";
 import { typographyFragments } from "../../styles/typography-fragments";

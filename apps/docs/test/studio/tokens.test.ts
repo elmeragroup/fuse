@@ -45,7 +45,23 @@ describe("TOKEN_TABLE", () => {
       "radius-step",
       "button-outline-width",
     ]);
-    expect(sectionTokens("typography")).toEqual(["selection-title-weight", "font-sans", "font-heading"]);
+    expect(sectionTokens("typography")).toEqual([
+      "selection-title-weight",
+      "paragraph-leading-sm",
+      "paragraph-leading-base",
+      "paragraph-leading-lg",
+      "heading-1-size",
+      "heading-1-leading",
+      "heading-1-weight",
+      "heading-2-size",
+      "heading-2-leading",
+      "heading-2-weight",
+      "heading-3-size",
+      "heading-3-leading",
+      "heading-3-weight",
+      "font-sans",
+      "font-heading",
+    ]);
     expect(sectionTokens("variant")).toEqual([
       "card-border",
       "card-section-divider",
@@ -83,6 +99,18 @@ describe("LIGHT_ONLY_TOKENS", () => {
         "radius-step",
         "button-outline-width",
         "selection-title-weight",
+        "paragraph-leading-sm",
+        "paragraph-leading-base",
+        "paragraph-leading-lg",
+        "heading-1-size",
+        "heading-1-leading",
+        "heading-1-weight",
+        "heading-2-size",
+        "heading-2-leading",
+        "heading-2-weight",
+        "heading-3-size",
+        "heading-3-leading",
+        "heading-3-weight",
         "font-heading",
       ].toSorted()
     );

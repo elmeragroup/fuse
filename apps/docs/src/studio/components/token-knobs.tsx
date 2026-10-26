@@ -440,6 +440,18 @@ const LENGTH_KNOBS = {
   "radius-button": { max: 40, step: 1, unit: "rem" },
   "radius-field": { max: 40, step: 1, unit: "rem" },
   "button-outline-width": { max: 4, step: 0.5, unit: "px" },
+  // A quarter-pixel step reaches the internal relaxed heights, 22.75 and 29.25px.
+  "paragraph-leading-sm": { max: 48, step: 0.25, unit: "rem" },
+  "paragraph-leading-base": { max: 48, step: 0.25, unit: "rem" },
+  "paragraph-leading-lg": { max: 48, step: 0.25, unit: "rem" },
+  // The heading scale: whole-pixel sizes, and line heights in quarter pixels for the internal
+  // snug 24.75px h2.
+  "heading-1-size": { max: 64, step: 1, unit: "rem" },
+  "heading-1-leading": { max: 64, step: 0.25, unit: "rem" },
+  "heading-2-size": { max: 64, step: 1, unit: "rem" },
+  "heading-2-leading": { max: 64, step: 0.25, unit: "rem" },
+  "heading-3-size": { max: 64, step: 1, unit: "rem" },
+  "heading-3-leading": { max: 64, step: 0.25, unit: "rem" },
 } as const satisfies Partial<Record<TokenName, { max: number; step: number; unit: "px" | "rem" }>>;
 
 type LengthToken = keyof typeof LENGTH_KNOBS;

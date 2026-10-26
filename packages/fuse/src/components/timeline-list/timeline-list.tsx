@@ -10,7 +10,16 @@ const { root, item, dot, title, time, description } = timelineListVariants();
 
 export type TimelineListRootProps = ComponentProps<"ol">;
 export type TimelineListItemProps = ComponentProps<"li">;
-export type TimelineListTitleProps = Omit<ComponentPropsWithoutRef<typeof Heading>, "noMargin">;
+type HeadingProps = ComponentPropsWithoutRef<typeof Heading>;
+
+export type TimelineListTitleProps = Omit<HeadingProps, "noMargin" | "level"> & {
+  /**
+   * Document-outline level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `3`. The title
+   * keeps Heading's scale from before the theme roles in every theme: 24/33 at level 1, 18/24.75
+   * at level 2 and 16/22 from level 3 down, all at 500, unless `size` or `font` replaces it.
+   */
+  level?: HeadingProps["level"];
+};
 export type TimelineListTimeProps = Omit<ComponentProps<"time">, "dateTime"> & {
   /**
    * The event's date or instant. An HTML date or date-time string passes through unchanged onto
@@ -39,13 +48,42 @@ function TimelineListItem({ className, children, ...props }: TimelineListItemPro
   );
 }
 
-function TimelineListTitle({ className, level = 3, ...props }: TimelineListTitleProps): ReactElement {
+/**
+ * The size Heading gave each level before the theme roles: `2xl` at level 1, `lg` at level 2 and
+ * the default size from level 3 down.
+ */
+function levelSize(level: NonNullable<HeadingProps["level"]>): NonNullable<HeadingProps["size"]> {
+  switch (level) {
+    case 1:
+      return "2xl";
+    case 2:
+      return "lg";
+    default:
+      return "default";
+  }
+}
+
+/**
+ * An item's title, a level 3 Heading by default. It is not a document section heading, so it
+ * keeps Heading's scale from before the theme roles at 500 in every theme instead of reading the
+ * level's roles; a `size` or `font` prop still replaces either. The resolved size and font are
+ * passed after the rest props, so a forwarded `undefined` cannot erase them.
+ */
+function TimelineListTitle({
+  className,
+  level = 3,
+  size,
+  font,
+  ...props
+}: TimelineListTitleProps): ReactElement {
   return (
     <Heading
       data-slot="timeline-list-title"
       className={cn(title(), className)}
       level={level}
       {...props}
+      size={size ?? levelSize(level)}
+      font={font ?? "default"}
       noMargin
     />
   );

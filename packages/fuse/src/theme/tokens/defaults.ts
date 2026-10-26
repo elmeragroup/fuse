@@ -153,6 +153,25 @@ export const LAYER_DEFAULTS = {
   // the regular weight the internal row was ported with, and the external variant layer sets
   // the customer-facing radio card's medium title.
   "selection-title-weight": "400",
+  // The line height of a Text at sm, default and lg size (`text-variants.ts`). Internal themes
+  // keep the relaxed ratio each size had before the roles, 1.625 × 14, 16 and 18px, and the
+  // external variant layer sets the customer-facing paragraph styles.
+  "paragraph-leading-sm": "1.421875rem",
+  "paragraph-leading-base": "1.625rem",
+  "paragraph-leading-lg": "1.828125rem",
+  // The size, line height and weight of a level 1 to 3 Heading without a size or font prop
+  // (`heading.tsx`). Internal themes keep the scale those levels had before the roles: h1
+  // text-2xl, h2 text-lg and h3 text-base, each at the snug 1.375 ratio as a length, and the
+  // medium weight. The external variant layer sets the customer-facing heading styles.
+  "heading-1-size": "1.5rem",
+  "heading-1-leading": "2.0625rem",
+  "heading-1-weight": "500",
+  "heading-2-size": "1.125rem",
+  "heading-2-leading": "1.546875rem",
+  "heading-2-weight": "500",
+  "heading-3-size": "1rem",
+  "heading-3-leading": "1.375rem",
+  "heading-3-weight": "500",
   "font-sans": "Roboto, ui-sans-serif, system-ui, sans-serif",
   "font-heading": "var(--font-sans)",
 } as const satisfies LayerTokens;

@@ -338,6 +338,18 @@ describe("theme contract", () => {
         "selection-disabled-foreground",
         "button-outline-width",
         "selection-title-weight",
+        "paragraph-leading-sm",
+        "paragraph-leading-base",
+        "paragraph-leading-lg",
+        "heading-1-size",
+        "heading-1-leading",
+        "heading-1-weight",
+        "heading-2-size",
+        "heading-2-leading",
+        "heading-2-weight",
+        "heading-3-size",
+        "heading-3-leading",
+        "heading-3-weight",
         "font-sans",
         "font-heading",
       ] as const) {
@@ -524,7 +536,7 @@ describe("derived roles", () => {
 describe("external variant layer roles", () => {
   const rules = parseStyleRules(generateThemesCss());
 
-  it("sets the radius step, the transparent card edge and shadow, the page-tinted card section divider, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows, the card-filled unstriped disabled row with its muted text and the medium selection row title once for the external variant", () => {
+  it("sets the radius step, the transparent card edge and shadow, the page-tinted card section divider, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows, the card-filled unstriped disabled row with its muted text, the medium selection row title, the 14/20, 16/22 and 18/24 paragraph line heights and the bold 24/32 h1 and 20/32 h2 and h3 once for the external variant", () => {
     const external = {
       "radius-step": "2px",
       "card-border": "oklch(0 0 0 / 0)",
@@ -540,6 +552,18 @@ describe("external variant layer roles", () => {
       "selection-disabled-hatch": "oklch(0 0 0 / 0)",
       "selection-disabled-foreground": "var(--muted-foreground)",
       "selection-title-weight": "500",
+      "paragraph-leading-sm": "1.25rem",
+      "paragraph-leading-base": "1.375rem",
+      "paragraph-leading-lg": "1.5rem",
+      "heading-1-size": "1.5rem",
+      "heading-1-leading": "2rem",
+      "heading-1-weight": "700",
+      "heading-2-size": "1.25rem",
+      "heading-2-leading": "2rem",
+      "heading-2-weight": "700",
+      "heading-3-size": "1.25rem",
+      "heading-3-leading": "2rem",
+      "heading-3-weight": "700",
     } as const;
     for (const [brand, palette] of Object.entries(EXTERNAL_PALETTES)) {
       for (const key of Object.keys(external)) {
@@ -562,7 +586,9 @@ describe("external variant layer roles", () => {
     // shadow, the 1px border hairline,
     // the border-coloured selection row edge, the primary checked-row edge, dividers that follow
     // those edges, the muted disabled row striped in black at 2% with foreground text, the
-    // regular selection row title and round fields with --radius.
+    // regular selection row title, the relaxed 1.625 paragraph line heights at 14, 16 and 18px,
+    // the 500-weight h1 at 24px, h2 at 18px and h3 at 16px with snug 1.375 line heights, 33,
+    // 24.75 and 22px, and round fields with --radius.
     for (const selector of [":root", '[data-theme-variant="internal"]']) {
       expect(declaration(rules, selector, "card-border"), selector).toBe("var(--border)");
       expect(declaration(rules, selector, "card-section-divider"), selector).toBe("var(--border)");
@@ -581,6 +607,22 @@ describe("external variant layer roles", () => {
       );
       expect(declaration(rules, selector, "button-outline-width"), selector).toBe("1px");
       expect(declaration(rules, selector, "selection-title-weight"), selector).toBe("400");
+      expect(declaration(rules, selector, "paragraph-leading-sm"), selector).toBe("1.421875rem");
+      expect(declaration(rules, selector, "paragraph-leading-base"), selector).toBe("1.625rem");
+      expect(declaration(rules, selector, "paragraph-leading-lg"), selector).toBe("1.828125rem");
+      for (const [key, value] of [
+        ["heading-1-size", "1.5rem"],
+        ["heading-1-leading", "2.0625rem"],
+        ["heading-1-weight", "500"],
+        ["heading-2-size", "1.125rem"],
+        ["heading-2-leading", "1.546875rem"],
+        ["heading-2-weight", "500"],
+        ["heading-3-size", "1rem"],
+        ["heading-3-leading", "1.375rem"],
+        ["heading-3-weight", "500"],
+      ] as const) {
+        expect(declaration(rules, selector, key), `${selector} ${key}`).toBe(value);
+      }
       expect(declaration(rules, selector, "radius-field"), selector).toBe("var(--radius)");
     }
   });

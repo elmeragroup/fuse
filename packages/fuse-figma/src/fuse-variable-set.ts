@@ -506,6 +506,15 @@ const DIMENSION_SCOPES = {
   "radius-field": ["CORNER_RADIUS"],
   "radius-step": [],
   "button-outline-width": ["STROKE_FLOAT"],
+  "paragraph-leading-sm": ["LINE_HEIGHT"],
+  "paragraph-leading-base": ["LINE_HEIGHT"],
+  "paragraph-leading-lg": ["LINE_HEIGHT"],
+  "heading-1-size": ["FONT_SIZE"],
+  "heading-1-leading": ["LINE_HEIGHT"],
+  "heading-2-size": ["FONT_SIZE"],
+  "heading-2-leading": ["LINE_HEIGHT"],
+  "heading-3-size": ["FONT_SIZE"],
+  "heading-3-leading": ["LINE_HEIGHT"],
 } as const satisfies Record<DimensionTokenName, readonly VariableScope[]>;
 
 /**

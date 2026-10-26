@@ -77,6 +77,22 @@ export const EXTERNAL_VARIANT_LAYER = {
   "radius-step": "2px",
   "button-outline-width": "2px",
   "selection-title-weight": "500",
+  // The external paragraph styles: small 14/20, medium 16/22 and large 18/24, the same on
+  // desktop and mobile.
+  "paragraph-leading-sm": "1.25rem",
+  "paragraph-leading-base": "1.375rem",
+  "paragraph-leading-lg": "1.5rem",
+  // The external desktop heading styles: h1 is heading small, 24/32, and h2 and h3 are heading
+  // xsmall, 20/32, all bold. h4 to h6 have no role and keep Heading's plain default.
+  "heading-1-size": "1.5rem",
+  "heading-1-leading": "2rem",
+  "heading-1-weight": "700",
+  "heading-2-size": "1.25rem",
+  "heading-2-leading": "2rem",
+  "heading-2-weight": "700",
+  "heading-3-size": "1.25rem",
+  "heading-3-leading": "2rem",
+  "heading-3-weight": "700",
 } as const satisfies TokenLayer;
 
 /**

@@ -26,13 +26,51 @@ const SIZE_TOKEN = {
 } as const;
 
 describe("textVariants", () => {
-  it("defaults to variant/size default, leading relaxed, and weight normal", () => {
-    const resolved = textVariants();
-    expect(resolved).toContain("font-sans");
-    expect(resolved).toContain("text-inherit");
-    expect(resolved).toContain("text-base");
-    expect(resolved).toContain("leading-relaxed");
-    expect(resolved).toContain("font-normal");
+  it("defaults to variant/size default, the base paragraph leading role, and weight normal", () => {
+    const classes = textVariants().split(/\s+/);
+    expect(classes).toContain("font-sans");
+    expect(classes).toContain("text-inherit");
+    expect(classes).toContain("text-base");
+    expect(classes).toContain("leading-(--paragraph-leading-base,1.625rem)");
+    expect(classes).not.toContain("leading-relaxed");
+    expect(classes).toContain("font-normal");
+  });
+
+  describe("default line height per size", () => {
+    it.each([
+      ["sm", "leading-(--paragraph-leading-sm,1.421875rem)"],
+      ["default", "leading-(--paragraph-leading-base,1.625rem)"],
+      ["lg", "leading-(--paragraph-leading-lg,1.828125rem)"],
+      ["xs", "leading-relaxed"],
+      ["xl", "leading-relaxed"],
+      ["2xl", "leading-relaxed"],
+    ] as const)("sets size %s's line height with %s", (size, leading) => {
+      // The resolved string keeps the leading class only when it follows the arm's
+      // text-<size>: tailwind-merge drops a leading class that a later font size follows.
+      const leadingClasses = textVariants({ size })
+        .split(/\s+/)
+        .filter((name) => name.startsWith("leading-"));
+      expect(leadingClasses).toEqual([leading]);
+    });
+
+    it.each(SIZES)("lets an explicit leading replace size %s's default", (size) => {
+      const leadingClasses = textVariants({ size, leading: "snug" })
+        .split(/\s+/)
+        .filter((name) => name.startsWith("leading-"));
+      expect(leadingClasses).toEqual(["leading-snug"]);
+    });
+
+    it("lets a className leading replace the role", () => {
+      const leadingClasses = textVariants({ size: "lg", className: "leading-tight" })
+        .split(/\s+/)
+        .filter((name) => name.startsWith("leading-"));
+      expect(leadingClasses).toEqual(["leading-tight"]);
+    });
+
+    it("drops the role when a className sets the size", () => {
+      const classes = textVariants({ className: "text-lg" }).split(/\s+/);
+      expect(classes.filter((name) => name.startsWith("leading-"))).toEqual([]);
+    });
   });
 
   it.each(FRAGMENT_VARIANTS)("resolves variant %s onto the shared fragment class", (variant) => {
@@ -43,19 +81,29 @@ describe("textVariants", () => {
     expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
   });
 
-  it("cascades each type-scale size onto the host and descendants", () => {
+  it("sizes the host with the full size class and descendants with font size alone", () => {
     for (const size of SIZES) {
       const token = SIZE_TOKEN[size];
-      const resolved = textVariants({ size });
-      expect(resolved, size).toContain(`text-${token}`);
-      expect(resolved, size).toContain(`*:text-${token}`);
-      expect(resolved, size).toContain(`**:text-${token}`);
-      expect(resolved, size).not.toContain("--control-");
-      expect(resolved, size).not.toContain("data-density");
+      const classes = textVariants({ size }).split(/\s+/);
+      expect(classes, size).toContain(`text-${token}`);
+      expect(classes, size).toContain(`*:text-(length:--text-${token})`);
+      expect(classes, size).toContain(`**:text-(length:--text-${token})`);
+      // The plain descendant form would also reset each descendant's line height.
+      expect(classes, size).not.toContain(`*:text-${token}`);
+      expect(classes, size).not.toContain(`**:text-${token}`);
+      expect(classes.join(" "), size).not.toContain("--control-");
+      expect(classes.join(" "), size).not.toContain("data-density");
     }
-    expect(textVariants({ size: "sm" })).toContain("text-sm");
-    expect(textVariants({ size: "sm" })).toContain("*:text-sm");
-    expect(textVariants({ size: "sm" })).toContain("**:text-sm");
+  });
+
+  it.each([
+    ["a child size", "*:text-lg", "*:text-(length:--text-base)"],
+    ["a descendant size", "**:text-sm", "**:text-(length:--text-base)"],
+    ["the host size", "text-lg", "text-base"],
+  ])("lets a className replace %s", (_row, className, replaced) => {
+    const classes = textVariants({ className }).split(/\s+/);
+    expect(classes).toContain(className);
+    expect(classes).not.toContain(replaced);
   });
 
   it.each<
@@ -65,7 +113,7 @@ describe("textVariants", () => {
     ["weight bold", { weight: "bold" }, { has: "font-medium", lacksText: "font-bold" }],
     ["weight medium", { weight: "medium" }, { has: "font-medium" }],
     ["weight normal", { weight: "normal" }, { has: "font-normal" }],
-    ["default leading", undefined, { has: "leading-relaxed" }],
+    ["leading relaxed", { leading: "relaxed" }, { has: "leading-relaxed" }],
     ["leading none", { leading: "none" }, { has: "leading-none" }],
     ["leading tight", { leading: "tight" }, { has: "leading-tight" }],
     ["leading snug", { leading: "snug" }, { has: "leading-snug" }],

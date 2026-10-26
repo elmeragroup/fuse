@@ -123,6 +123,18 @@
   --radius-step: 0px;
   --button-outline-width: 1px;
   --selection-title-weight: 400;
+  --paragraph-leading-sm: 1.421875rem;
+  --paragraph-leading-base: 1.625rem;
+  --paragraph-leading-lg: 1.828125rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2.0625rem;
+  --heading-1-weight: 500;
+  --heading-2-size: 1.125rem;
+  --heading-2-leading: 1.546875rem;
+  --heading-2-weight: 500;
+  --heading-3-size: 1rem;
+  --heading-3-leading: 1.375rem;
+  --heading-3-weight: 500;
   --font-sans: Roboto, ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
 }
@@ -220,6 +232,18 @@
   --radius-step: 0px;
   --button-outline-width: 1px;
   --selection-title-weight: 400;
+  --paragraph-leading-sm: 1.421875rem;
+  --paragraph-leading-base: 1.625rem;
+  --paragraph-leading-lg: 1.828125rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2.0625rem;
+  --heading-1-weight: 500;
+  --heading-2-size: 1.125rem;
+  --heading-2-leading: 1.546875rem;
+  --heading-2-weight: 500;
+  --heading-3-size: 1rem;
+  --heading-3-leading: 1.375rem;
+  --heading-3-weight: 500;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -268,6 +292,18 @@
   --radius-step: 2px;
   --button-outline-width: 2px;
   --selection-title-weight: 500;
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: light;
 }
@@ -336,6 +372,18 @@
   --radius-step: 2px;
   --button-outline-width: 2px;
   --selection-title-weight: 500;
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -384,6 +432,18 @@
   --radius-step: 2px;
   --button-outline-width: 2px;
   --selection-title-weight: 500;
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -432,6 +492,18 @@
   --radius-step: 2px;
   --button-outline-width: 2px;
   --selection-title-weight: 500;
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: light;
 }
@@ -480,6 +552,18 @@
   --radius-step: 2px;
   --button-outline-width: 2px;
   --selection-title-weight: 500;
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -528,6 +612,18 @@
   --radius-step: 2px;
   --button-outline-width: 2px;
   --selection-title-weight: 500;
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -576,6 +672,18 @@
   --radius-step: 2px;
   --button-outline-width: 2px;
   --selection-title-weight: 500;
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -671,6 +779,18 @@
   --radius-step: 0px;
   --button-outline-width: 1px;
   --selection-title-weight: 400;
+  --paragraph-leading-sm: 1.421875rem;
+  --paragraph-leading-base: 1.625rem;
+  --paragraph-leading-lg: 1.828125rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2.0625rem;
+  --heading-1-weight: 500;
+  --heading-2-size: 1.125rem;
+  --heading-2-leading: 1.546875rem;
+  --heading-2-weight: 500;
+  --heading-3-size: 1rem;
+  --heading-3-leading: 1.375rem;
+  --heading-3-weight: 500;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }
@@ -808,6 +928,18 @@
   --radius-step: 2px;
   --button-outline-width: 2px;
   --selection-title-weight: 500;
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: dark;
 }
@@ -909,6 +1041,18 @@
   --radius-step: 2px;
   --button-outline-width: 2px;
   --selection-title-weight: 500;
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: dark;
 }
@@ -1010,6 +1154,18 @@
   --radius-step: 2px;
   --button-outline-width: 2px;
   --selection-title-weight: 500;
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }
@@ -1111,6 +1267,18 @@
   --radius-step: 2px;
   --button-outline-width: 2px;
   --selection-title-weight: 500;
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }
@@ -1212,6 +1380,18 @@
   --radius-step: 2px;
   --button-outline-width: 2px;
   --selection-title-weight: 500;
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: dark;
 }
@@ -1313,6 +1493,18 @@
   --radius-step: 2px;
   --button-outline-width: 2px;
   --selection-title-weight: 500;
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }
@@ -1414,6 +1606,18 @@
   --radius-step: 2px;
   --button-outline-width: 2px;
   --selection-title-weight: 500;
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }
@@ -1515,6 +1719,18 @@
   --radius-step: 2px;
   --button-outline-width: 2px;
   --selection-title-weight: 500;
+  --paragraph-leading-sm: 1.25rem;
+  --paragraph-leading-base: 1.375rem;
+  --paragraph-leading-lg: 1.5rem;
+  --heading-1-size: 1.5rem;
+  --heading-1-leading: 2rem;
+  --heading-1-weight: 700;
+  --heading-2-size: 1.25rem;
+  --heading-2-leading: 2rem;
+  --heading-2-weight: 700;
+  --heading-3-size: 1.25rem;
+  --heading-3-leading: 2rem;
+  --heading-3-weight: 700;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }
