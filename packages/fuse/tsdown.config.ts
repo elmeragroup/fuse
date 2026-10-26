@@ -6,8 +6,8 @@ import { defineConfig } from "tsdown";
 import { entries } from "./scripts/entries.ts";
 
 /**
- * The tsrs launcher that the tsrs package's `bin` field names. rolldown-plugin-dts picks its
- * generator from the installed `typescript` and only recognizes 7.0, so the config names tsrs.
+ * The tsrs launcher that the tsrs package's `bin` field names. rolldown-plugin-dts starts it as
+ * the API server behind the `typescript` 7.1 client, so tsrs emits Fuse's declarations.
  */
 function tsrsExecutable(): string {
   const manifestPath = createRequire(import.meta.url).resolve("tsrs/package.json");
@@ -26,7 +26,7 @@ export default defineConfig({
   format: "esm",
   platform: "browser",
   unbundle: true,
-  dts: { generator: "tsgo", tsgo: { path: tsrsExecutable() } },
+  dts: { tsgo: { path: tsrsExecutable() } },
   clean: true,
   sourcemap: true,
   // Keep validateTheme's runtime NODE_ENV branch.

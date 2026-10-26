@@ -57,9 +57,14 @@ describe("@elmeragroup/internal", () => {
 });
 
 describe("minimumReleaseAgeExclude", () => {
-  it("holds exactly the catalog-pinned permanent versions", () => {
+  it("holds exactly the catalog-pinned permanent and temporary versions", () => {
     // A malformed extra entry fails the equality rather than being filtered away.
-    const permanent = ["effect", "@elmeragroup/internal"].map((name) => `${name}@${catalogEntry(name)}`);
-    expect(workspace.minimumReleaseAgeExclude).toEqual(permanent);
+    const permanent = ["effect", "@elmeragroup/internal"];
+    // tsdown 0.23.2 is younger than the release-age guard until 2026-10-26T12:51Z. Remove it here
+    // and in pnpm-workspace.yaml once it ages past the guard.
+    const temporary = ["tsdown"];
+    expect(workspace.minimumReleaseAgeExclude).toEqual(
+      [...permanent, ...temporary].map((name) => `${name}@${catalogEntry(name)}`)
+    );
   });
 });

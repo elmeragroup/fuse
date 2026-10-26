@@ -54,7 +54,7 @@ catalog:
   plop: 4.0.5
   pngjs: 7.0.0
   publint: 0.3.24
-  rolldown: 1.2.8
+  rolldown: 1.2.15
   "sugar-high": 2.4.1
   react: 19.3.0
   react-aria: 3.52.1
@@ -66,7 +66,7 @@ catalog:
   tailwind-variants: 3.3.1
   tailwindcss: 4.3.3
   tailwindcss-react-aria-components: 2.2.0
-  tsdown: 0.23.0
+  tsdown: 0.23.2
   # tsrs runs every type-check and Fuse's declaration emit. typescript 7.1 provides the JS API
   # and the tsc cross-check.
   tsrs: 0.18.0-ts7.1.0-dev.20260929
@@ -93,3 +93,7 @@ minimumReleaseAgeExclude:
   - effect@4.0.2
   # Canary line of the in-house tooling package; each bump names the exact version.
   - "@elmeragroup/internal@0.2.0-canary.10"
+  # TypeScript 7.1 needs the rolldown-plugin-dts 0.29 beta that this tsdown depends on. Drop the
+  # entry, and its temporary allowance in test/internal-package.test.mjs, once the version ages
+  # past the guard.
+  - tsdown@0.23.2
