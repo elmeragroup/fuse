@@ -1,7 +1,7 @@
 /**
  * The fake file's state: the node, variable and collection records behind every exposed object, the
  * handles that map an exposed node to its record, the write log, the field tables the other modules
- * share, and the maker of public nodes the node classes install.
+ * share, and the type of the maker of public nodes each file holds.
  */
 
 export type NodeType =
@@ -92,6 +92,11 @@ export type FileState = {
    * `figma.skipInvisibleInstanceChildren` (rule 25). Each run starts with false.
    */
   skipInvisibleInstanceChildren: boolean;
+  /**
+   * Makes the public node of a type. `createFakeFigma` supplies the node classes' maker, so the code
+   * below the classes creates nodes without importing them.
+   */
+  readonly makeNode: (type: NodeType) => Made;
 };
 
 /**
@@ -399,27 +404,6 @@ export type Made = {
   readonly target: NodeTarget;
   readonly exposed: Exposed;
 };
-
-/** Makes the public node of a type. The node classes install it as they load. */
-let nodeMaker: ((type: NodeType) => Made) | undefined;
-
-/**
- * Install the maker of public nodes. The node classes install theirs when their module loads, so
- * the code below them can create nodes without importing them.
- *
- * @param maker - Makes the public node of a type.
- */
-export function installNodeMaker(maker: (type: NodeType) => Made): void {
-  nodeMaker = maker;
-}
-
-/** The public node for a node type, from the installed maker. */
-export function madeNode(type: NodeType): Made {
-  if (nodeMaker === undefined) {
-    throw new Error("The fake Figma file's node classes have not loaded.");
-  }
-  return nodeMaker(type);
-}
 
 export const WHITE: SolidPaint = {
   type: "SOLID",

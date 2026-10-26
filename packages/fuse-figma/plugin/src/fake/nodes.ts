@@ -1,6 +1,6 @@
 /**
  * The node classes the fake exposes, from the document down to vectors, and the maker of their
- * public nodes, which `fake-figma.ts` installs for the modules below.
+ * public nodes, which `fake-figma.ts` gives the file for the modules below.
  */
 
 import { guard } from "./guard.ts";

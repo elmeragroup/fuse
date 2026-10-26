@@ -3,7 +3,7 @@
  * component, and how the file creates, copies, inserts and removes a node.
  */
 
-import { BLACK, madeNode, NEW_TEXT_STYLE, sourceOf, STATES, WHITE, write } from "./state.ts";
+import { BLACK, NEW_TEXT_STYLE, sourceOf, STATES, WHITE, write } from "./state.ts";
 import type { FileState, NodeState, NodeType, UncopiedField } from "./state.ts";
 
 /** The children a node shows, an instance's sublayers included. */
@@ -210,7 +210,7 @@ export function sharedDataOf(state: NodeState, entry: string): string {
 }
 
 export function createNode(file: FileState, type: NodeType, name: string, id?: string): NodeState {
-  const { target, exposed } = madeNode(type);
+  const { target, exposed } = file.makeNode(type);
   file.nextNode += 1;
   const state: NodeState = {
     file,

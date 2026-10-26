@@ -61,15 +61,12 @@ import {
   createImage,
   exposeImage,
 } from "./fake/paints.ts";
-import { componentOf, installNodeMaker, live, MIXED, pageOf, write } from "./fake/state.ts";
+import { componentOf, live, MIXED, pageOf, write } from "./fake/state.ts";
 import type { FileState, NodeState } from "./fake/state.ts";
 import { drawSvg, flatten } from "./fake/svg.ts";
 import { fontKey, fontUnavailable } from "./fake/text.ts";
 import { createNode, placeOnCurrentPage } from "./fake/tree.ts";
 import { exposeCollection, exposeVariable, seedVariables } from "./fake/variables.ts";
-
-// The modules below the node classes create nodes through the maker the classes provide.
-installNodeMaker(makeNode);
 
 export { drawsShadowSpread, paintsAbove } from "./fake/paints.ts";
 
@@ -123,6 +120,7 @@ export function createFakeFigma(options: FakeFigmaOptions): FakeFigma {
     variables: seeded.variables,
     images: new Set(),
     skipInvisibleInstanceChildren: false,
+    makeNode,
   };
   const document = createNode(file, "DOCUMENT", "Document", "0:0");
   const firstPage = createNode(file, "PAGE", "Page 1", "0:1");
