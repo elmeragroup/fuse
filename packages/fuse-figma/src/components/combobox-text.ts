@@ -1,5 +1,5 @@
 /**
- * The docs Combobox demos' text and the kit's anchor width, which `combobox-kit.ts` draws and
+ * The docs Combobox demos' text and the width of the kit's Input group, which `combobox-kit.ts` draws and
  * `combobox-cell.ts` renders. It imports only the import-free `kit-lengths.ts`, so the compare page's
  * browser bundle can take it without the kit's builder.
  */
@@ -25,7 +25,8 @@ export const COMBOBOX_GROUPS = [
 export const COMBOBOX_EMPTY_TEXT = "No results.";
 
 /**
- * The input's width, which Base UI publishes on the popup as `--anchor-width`: the Input group set's
- * preview width, which the open composite's input takes.
+ * The width of `Combobox.Input`'s Input group: the Input group set's preview width, which the open
+ * composite's input takes and the compare renderer's host gives the group's `w-auto`. Base UI anchors
+ * the popup to the `<input>` inside the group, which `combobox-kit.ts` derives from this width.
  */
-export const COMBOBOX_ANCHOR_WIDTH = FIELD_BOX_PREVIEW_WIDTH;
+export const COMBOBOX_INPUT_GROUP_WIDTH = FIELD_BOX_PREVIEW_WIDTH;

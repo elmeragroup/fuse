@@ -2,8 +2,13 @@
  * Unit under test: the Combobox sets `Combobox item`, `Combobox empty`, `Combobox popup` and
  * `Combobox (open)` as the build produces them. Oracle: the Figma field each cell must carry, read by hand from
  * `combobox-variants.ts`, `menu-row-classes.ts`, `overlay-classes.ts` and `inner-corner/listbox.ts`,
- * and the widths Chromium measured on the compare page on 2026-10-25 under a 384px input: every popup
- * 412px wide, every row 404px.
+ * and the widths Chromium measured on the compare page on 2026-10-26 at dense under a 384px Input
+ * group: every popup 374px wide, every row 366px, and the open Combobox 384px wide with its popup
+ * inside. Fuse's classes give the same: Base UI anchors the popup to the `<input>`, which is the
+ * group's 384px less its 1px borders and the caret addon, the `icon-sm` button's 32px
+ * `control-h-sm` and the addon's 8px `control-px-icon-md` less its 4px `-mr-1`: 346px. The popup's
+ * `min-w-[calc(var(--anchor-width)+--spacing(7))]` adds 28px, and the list's `surface-pad-sm` takes
+ * 4px from each side of a row. The kit draws these dense widths at both densities.
  *
  * - A row is `w-full` in its list, at least `row-h` tall, inset by `row-py` and `row-px` with
  *   `row-px + 1.5rem` at its end, `gap-2`, rounded with the list's inner corner, `radius-md` less
@@ -19,7 +24,8 @@
  *   pads `surface-pad-sm` and caps at `min(--spacing(72) - --spacing(9), …)`, 252px, scrolling past
  *   it; an empty list pads nothing, so it is 0 tall.
  * - The open Combobox is Base UI's placement: the popup `side="bottom"`, `sideOffset={6}`,
- *   `align="start"` in `combobox.tsx`, below the input that `w-auto` stretches across its 384px host.
+ *   `align="start"` in `combobox.tsx`, below the Input group that `w-auto` stretches across its 384px
+ *   host.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -74,7 +80,7 @@ describe("the Combobox item component set", () => {
     const root = variantRoot(spec, "combobox-item/selected=off,state=rest");
     expect(root).toMatchObject({
       direction: "HORIZONTAL",
-      sizing: { horizontal: fixed(literal(404)), vertical: HUG },
+      sizing: { horizontal: fixed(literal(366)), vertical: HUG },
       limits: { minHeight: density("row-h") },
       paddingTop: density("row-py"),
       paddingRight: density("row-indicator-room"),
@@ -129,7 +135,7 @@ describe("the Combobox empty component set", () => {
   it("centers the message across the popup, padded as a row, in muted-foreground", () => {
     const root = variantRoot(spec, "combobox-empty/content=empty");
     expect(root).toMatchObject({
-      sizing: { horizontal: fixed(literal(412)), vertical: HUG },
+      sizing: { horizontal: fixed(literal(374)), vertical: HUG },
       paddingTop: density("row-py"),
       paddingRight: density("row-px"),
       paddingBottom: density("row-py"),
@@ -150,7 +156,7 @@ describe("the Combobox empty component set", () => {
 });
 
 describe("the Combobox popup component set", () => {
-  it("draws the popup surface as wide as the input plus 28px, its list padding the rows", () => {
+  it("draws the popup surface as wide as the dense <input> plus 28px, its list padding the rows", () => {
     const popup = set("combobox-popup");
     expect([popup?.name, popup?.page, popup?.axes]).toEqual([
       "Combobox popup",
@@ -161,7 +167,7 @@ describe("the Combobox popup component set", () => {
     expect(root).toMatchObject({
       name: "combobox-content",
       direction: "VERTICAL",
-      sizing: { horizontal: fixed(literal(412)), vertical: HUG },
+      sizing: { horizontal: fixed(literal(374)), vertical: HUG },
       paddingTop: literal(0),
       paddingRight: literal(0),
       paddingBottom: literal(0),
@@ -255,7 +261,7 @@ describe("the Combobox popup component set", () => {
 });
 
 describe("the Combobox (open) component set", () => {
-  it("stacks the open input 6px above the popup, aligned to its start, the popup 28px wider", () => {
+  it("stacks the open Input group 6px above the popup, aligned to its start, the popup ending inside it", () => {
     const root = variantRoot(spec, "combobox-open/placement=below");
     expect(root).toMatchObject({
       direction: "VERTICAL",
@@ -263,7 +269,7 @@ describe("the Combobox (open) component set", () => {
       itemSpacing: literal(6),
       counterAlign: "MIN",
       fill: undefined,
-      // The popup reaches past the column's end, and its shadow past the column.
+      // The popup's shadow reaches past the column.
       clips: false,
     });
     expect(outline(root.children)).toEqual([
@@ -272,6 +278,6 @@ describe("the Combobox (open) component set", () => {
     ]);
     expect(
       root.children.map((layer) => (layer.kind === "instance" ? layer.sizing.horizontal : undefined))
-    ).toEqual([FILL, fixed(literal(412))]);
+    ).toEqual([FILL, fixed(literal(374))]);
   });
 });

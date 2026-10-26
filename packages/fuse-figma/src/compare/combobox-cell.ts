@@ -11,8 +11,9 @@
  *   nothing selected, measured as the popup.
  * - `comboboxOpen`: the input and the popup with the Basic demo's rows, measured together.
  *
- * Every cell renders `Combobox.Input` in a host as wide as the kit's anchor, which the input's
- * `w-auto` fills, so each popup is the anchor's width plus 28px, as the kit draws it. The popup
+ * Every cell renders `Combobox.Input` in a host as wide as the kit's Input group, which the group's
+ * `w-auto` fills. Base UI anchors the popup to the `<input>` inside the group, so each popup is the
+ * `<input>`'s width plus 28px, which follows density as the kit's dense width cannot. The popup
  * aligns to the input's start, so it starts on the slot's pixel grid and inside the slot. Combobox
  * reads its labels from `LocaleProvider`, which throws without one, so every cell renders in
  * `en-US`, the locale the docs set.
@@ -27,7 +28,7 @@ import type { ReactElement } from "react";
 import { Combobox } from "../../../fuse/dist/combobox.js";
 import { LocaleProvider } from "../../../fuse/dist/theme.js";
 import {
-  COMBOBOX_ANCHOR_WIDTH,
+  COMBOBOX_INPUT_GROUP_WIDTH,
   COMBOBOX_BASIC_ROWS,
   COMBOBOX_GROUPS,
   COMBOBOX_ITEM_TEXT,
@@ -36,8 +37,8 @@ import type { Cell } from "../components/component-spec.ts";
 import { INPUT_GROUP_TEXT } from "../components/input-group-text.ts";
 import type { ClientCellRendering } from "./cell-renderers.ts";
 
-/** A host as wide as the kit's anchor, which the input fills. */
-const HOST = { style: { width: `${COMBOBOX_ANCHOR_WIDTH}px` } };
+/** A host as wide as the kit's Input group, which the group fills. */
+const HOST = { style: { width: `${COMBOBOX_INPUT_GROUP_WIDTH}px` } };
 
 /** What an open Combobox lists: its items, the value it holds, and the popup's children. */
 type Listing = {

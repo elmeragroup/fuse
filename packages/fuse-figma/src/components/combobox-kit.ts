@@ -19,23 +19,29 @@
  * - `Combobox popup` is the open popup, `content` flat, grouped and empty: 3 cells, the docs Basic and
  *   Groups demos' rows as instances, a fixed sample with nothing selected, and the empty message with
  *   no rows. The popup is the shared surface: `bg-popover`, `shadow-md` and a 1px `foreground/10` ring,
- *   rounded `radius-md`, clipping, padding nothing, as wide as its anchor plus 28px. Its list pads the
- *   rows by `surface-pad-sm` and scrolls past 252px, which the kit draws as a list that clips at that
+ *   rounded `radius-md`, clipping, padding nothing, as wide as its anchor plus 28px. Its anchor is
+ *   the `<input>` inside `Combobox.Input`'s Input group, not the group. Its list pads the rows by
+ *   `surface-pad-sm` and scrolls past 252px, which the kit draws as a list that clips at that
  *   height. A separator between the groups cancels the list's padding across.
  * - `Combobox (open)` is the Input group of `Combobox.Input` while its popup is open, and the popup
  *   below it holding the Basic demo's rows, 1 cell. The input is the Input group set's
  *   `form=caret open`, whose caret draws the open trigger turned half a turn as CaretUp. Base UI places
- *   the popup 6px below the input, aligned to its start, and as wide as the input plus 28px, so the
- *   composite is a column as wide as the input, holding the input's instance and the popup's, which
- *   reaches 28px past the column's end. The column clips nothing, so the popup and its shadow show.
+ *   the popup 6px below the Input group, aligned to its start, and as wide as the `<input>` plus 28px,
+ *   so the composite is a column as wide as the group, holding the group's instance and the popup's,
+ *   which ends 10px before the column's end. The column clips nothing, so the popup's shadow shows.
  *
- * The anchor is the Input group set's preview width, 384px, so every popup is 412px wide and every row
- * 404px.
+ * The Input group is the Input group set's preview width, 384px. The `<input>` is that less the group's
+ * borders and the caret addon, whose lengths follow density: 346px dense and 338px comfortable. A Figma
+ * width cannot follow density without a synced variable that bakes in the 384px sample, so the kit
+ * draws the dense widths at both densities: every popup 374px wide and every row 366px. In the
+ * browser, the comfortable popup and rows are 8px narrower.
  */
 import { comboboxVariants } from "@elmeragroup/fuse/recipe-catalog";
+import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
+import type { DensityMetricName } from "@elmeragroup/fuse/theme-catalog";
 
 import {
-  COMBOBOX_ANCHOR_WIDTH,
+  COMBOBOX_INPUT_GROUP_WIDTH,
   COMBOBOX_BASIC_ROWS,
   COMBOBOX_EMPTY_TEXT,
   COMBOBOX_GROUPS,
@@ -57,20 +63,45 @@ import { always, never, openPopupFacts } from "./popup-facts";
 
 const { content, list, item, itemIndicator, empty } = comboboxVariants();
 
-/** The popup's width, its `min-w-[calc(var(--anchor-width)+--spacing(7))]`: the anchor's plus 28px. */
-const COMBOBOX_POPUP_WIDTH = COMBOBOX_ANCHOR_WIDTH + 28;
+/**
+ * A density metric's pixels at dense, the density whose widths the kit draws.
+ *
+ * @throws Error when the theme catalog lacks the metric, a defect in Fuse's density metrics.
+ */
+function denseMetric(name: DensityMetricName): number {
+  const metric = resolveThemeCatalog().density.find((entry) => entry.name === name);
+  if (metric === undefined) {
+    throw new Error(`The theme catalog has no density metric ${name}, a defect in Fuse's density metrics.`);
+  }
+  return metric.px.dense;
+}
+
+/**
+ * The caret addon's outer width at dense: the `icon-sm` button's `size-(--control-h-sm)`, the
+ * addon's `pr-(--control-px-icon-md)`, less the 4px its `has-[>button]:-mr-1` takes back.
+ */
+const CARET_ADDON_WIDTH = denseMetric("control-h-sm") + denseMetric("control-px-icon-md") - 4;
+
+/**
+ * The `<input>`'s width at dense, which Base UI anchors the popup to: the Input group's width less its
+ * 1px border on each side and the caret addon, which the input's `flex-1` leaves it.
+ */
+const COMBOBOX_INPUT_WIDTH = COMBOBOX_INPUT_GROUP_WIDTH - 2 - CARET_ADDON_WIDTH;
+
+/** The popup's width, its `min-w-[calc(var(--anchor-width)+--spacing(7))]`: the `<input>`'s plus 28px. */
+const COMBOBOX_POPUP_WIDTH = COMBOBOX_INPUT_WIDTH + 28;
 
 /** The width the list gives a row: the popup's, less `surface-pad-sm`, 4px at both densities, on each side. */
 const COMBOBOX_ROW_WIDTH = COMBOBOX_POPUP_WIDTH - 2 * SURFACE_PAD_SM;
 
 /**
- * The input's width, which Base UI's positioner publishes as `--anchor-width` and the popup's width
- * reads. The kit publishes the Input group set's width, which gives the popup a definite width.
+ * The `<input>`'s width, which Base UI's positioner publishes as `--anchor-width` and the popup's width
+ * reads. The kit publishes the dense width, which gives the popup a definite width.
  */
 const ANCHOR_WIDTH: OuterDeclaration = {
   className: "Base UI's positioner, which publishes the input's width",
   property: "--anchor-width",
-  value: `${COMBOBOX_ANCHOR_WIDTH}px`,
+  value: `${COMBOBOX_INPUT_WIDTH}px`,
 };
 
 /**
@@ -261,8 +292,8 @@ export const COMBOBOX_POPUP: ComponentDefinition = {
 /**
  * The open Combobox: `Combobox.Input`'s Input group, its popup open, and the popup below it holding
  * the Basic demo's rows. The composite has no element of its own: the column draws Base UI's
- * placement, the popup 6px below the input, aligned to its start, and reaching 28px past the column's
- * end.
+ * placement, the popup 6px below the Input group, aligned to its start, and ending 10px before the
+ * column's end.
  */
 export const COMBOBOX_OPEN: ComponentDefinition = {
   key: "combobox-open",
@@ -271,9 +302,9 @@ export const COMBOBOX_OPEN: ComponentDefinition = {
   axes: [{ name: "placement", values: ["below"] }],
   columnAxis: "placement",
   classesFor: () => "flex flex-col gap-1.5",
-  previewWidth: COMBOBOX_ANCHOR_WIDTH,
+  previewWidth: COMBOBOX_INPUT_GROUP_WIDTH,
   inheritedFor: () => [ANCHOR_WIDTH],
-  // The popup reaches 28px past the column's end, and its shadow past the column below and beside it.
+  // The popup's shadow reaches past the column below it and beside its start.
   rootOverflow: "visible",
   states: {},
   facts: new Map(),
