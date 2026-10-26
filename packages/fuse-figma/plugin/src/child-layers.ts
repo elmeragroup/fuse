@@ -36,11 +36,10 @@ import type { Held, Run } from "./fields.ts";
 import { baseCharacters, planGlyphRanges } from "./glyph-font.ts";
 import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
-import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
-import type { Siblings } from "./identity.ts";
+import { planOwnedChildren } from "./identity.ts";
+import type { OwnedChild } from "./identity.ts";
 import { innerVariant, linkedLabels, planInstance, planNewInstance } from "./instance-layers.ts";
-import { change, changeTogether, create, existing } from "./plan.ts";
-import type { Target } from "./plan.ts";
+import { change, changeTogether } from "./plan.ts";
 import { planBox, planLength, planLimit } from "./root-layer.ts";
 import type { LayerParent } from "./root-layer.ts";
 
@@ -811,80 +810,72 @@ async function planFrame(
   await planChildren(run, frame, label, spec, links, holder.size === "unknown" ? "unknown" : size);
 }
 
-async function planChild(
+/** How to find, create and plan one layer of a variant or of a frame layer. */
+function childKind(
   run: Run,
   holder: Holder,
-  siblings: Siblings,
   label: string,
   spec: ChildLayerSpec,
   links: LayerLinks
-): Promise<Target<SceneNode>> {
+): OwnedChild<SceneNode, void> {
   const parent = holder.node;
   const layerLabel = `${label} / ${spec.name}`;
   const description = `create the ${spec.kind} layer ${spec.name}`;
   if (spec.kind === "frame") {
-    const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isFrame);
-    if (found !== undefined) {
-      await planFrame(run, found, layerLabel, spec, links, holder);
-      return existing(found);
-    }
-    requireNewTextFonts(run, parent, label, fontLayers(walkLayers(spec), links.sets));
-    return create(
-      run.plan,
-      label,
+    return {
+      name: spec.name,
+      accept: isFrame,
       description,
-      () => placeOwned(parent, run.figma.createFrame(), spec.key, spec.name),
-      (made, plan) => planFrame({ ...run, plan }, made, layerLabel, spec, links, holder)
-    );
+      make: () => run.figma.createFrame(),
+      requireNew: () => requireNewTextFonts(run, parent, label, fontLayers(walkLayers(spec), links.sets)),
+      plan: (frame, plan) => planFrame({ ...run, plan }, frame, layerLabel, spec, links, holder),
+    } satisfies OwnedChild<FrameNode, void>;
   }
   if (spec.kind === "text") {
-    const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isText);
-    if (found !== undefined) {
-      planText(run, found, layerLabel, spec, links.properties, heldFonts(run, found), holder.held);
-      return existing(found);
-    }
-    requireNewTextFonts(run, parent, label, [spec]);
-    return create(
-      run.plan,
-      label,
+    return {
+      name: spec.name,
+      accept: isText,
       description,
-      () => placeOwned(parent, run.figma.createText(), spec.key, spec.name),
-      (made, plan) => planText({ ...run, plan }, made, layerLabel, spec, links.properties, [], holder.held)
-    );
+      make: () => run.figma.createText(),
+      requireNew: () => requireNewTextFonts(run, parent, label, [spec]),
+      plan: (text, plan, origin) =>
+        planText(
+          { ...run, plan },
+          text,
+          layerLabel,
+          spec,
+          links.properties,
+          origin === "found" ? heldFonts(run, text) : [],
+          holder.held
+        ),
+    } satisfies OwnedChild<TextNode, void>;
   }
   if (spec.kind === "instance") {
     const inner = innerVariant(links.sets, spec, layerLabel);
     // A TEXT property writes the inner labels' characters, which needs their fonts (rule 34).
     requireNewTextFonts(run, parent, label, linkedLabels(inner.spec));
-    const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isInstance);
-    if (found !== undefined) {
-      await planInstance(run, found, layerLabel, spec, inner, links, holder.held);
-      return existing(found);
-    }
-    return create(
-      run.plan,
-      label,
+    return {
+      name: spec.name,
+      accept: isInstance,
       description,
-      () => placeOwned(parent, inner.node.get().createInstance(), spec.key, spec.name),
-      (made, plan) => planNewInstance({ ...run, plan }, made, layerLabel, spec, inner, links)
-    );
-  }
-  const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isInstance);
-  if (found !== undefined) {
-    await planIcon(run, found, layerLabel, spec, links);
-    return existing(found);
+      make: () => inner.node.get().createInstance(),
+      plan: (instance, plan, origin) =>
+        origin === "found"
+          ? planInstance({ ...run, plan }, instance, layerLabel, spec, inner, links, holder.held)
+          : planNewInstance({ ...run, plan }, instance, layerLabel, spec, inner, links),
+    } satisfies OwnedChild<InstanceNode, void>;
   }
   const icon = links.icons.get(spec.icon);
   if (icon === undefined) {
     throw new Error(`${layerLabel} shows ${spec.icon}, which the kit's icon library lacks.`);
   }
-  return create(
-    run.plan,
-    label,
+  return {
+    name: spec.name,
+    accept: isInstance,
     description,
-    () => placeOwned(parent, icon.node.get().createInstance(), spec.key, spec.name),
-    (made, plan) => planIcon({ ...run, plan }, made, layerLabel, spec, links)
-  );
+    make: () => icon.node.get().createInstance(),
+    plan: (instance, plan) => planIcon({ ...run, plan }, instance, layerLabel, spec, links),
+  } satisfies OwnedChild<InstanceNode, void>;
 }
 
 /**
@@ -917,7 +908,7 @@ export async function planChildren(
     held: parent.layoutMode === box.direction ? "read" : "unknown",
     size,
   };
-  await planOwnedChildren(run.plan, parent, label, "layer", box.children, (spec, siblings) =>
-    planChild(run, holder, siblings, label, spec, links)
+  await planOwnedChildren(run.plan, parent, label, "layer", box.children, (spec) =>
+    childKind(run, holder, label, spec, links)
   );
 }

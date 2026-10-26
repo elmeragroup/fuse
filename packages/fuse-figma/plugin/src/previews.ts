@@ -8,8 +8,8 @@ import type { NumberSpec, PreviewGroupSpec, PreviewSpec } from "../../src/compon
 import type { PlannedSet } from "./component-set.ts";
 import { near, planLayoutSizing, planNumber, planPaints, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
-import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
-import type { Siblings } from "./identity.ts";
+import { placeOwned, planOwnedChildren } from "./identity.ts";
+import type { OwnedChild } from "./identity.ts";
 import { planInstanceSizing } from "./instance-sizing.ts";
 import type { PlannedPage } from "./pages.ts";
 import { change, create, existing } from "./plan.ts";
@@ -176,40 +176,35 @@ async function planInstances(
   set: PlannedSet
 ): Promise<void> {
   const children = spec.variants.map((variant) => ({ key: `${previewKey}/${variant}`, variant }));
-  await planOwnedChildren(
-    run.plan,
-    group,
-    label,
-    "instance",
-    children,
-    async ({ key, variant }, siblings) => {
-      const component = set.variants.get(variant);
-      const root = set.spec.variants.find((candidate) => candidate.key === variant)?.root;
-      if (component === undefined || root === undefined) {
-        throw new Error(`${label} places ${variant}, which ${set.spec.name} does not define.`);
-      }
-      const lengthsLabel = `${label} / ${variant}`;
-      const found = findOwned(run.plan, siblings, label, key, key, isInstance);
-      if (found === undefined) {
-        return create(
-          run.plan,
-          label,
-          `add an instance of ${variant}`,
-          () => placeOwned(group, component.get().createInstance(), key),
-          (made, plan) => planInstanceSizing({ ...run, plan }, made, lengthsLabel, root.sizing, "read")
-        );
-      }
-      const main = await found.getMainComponentAsync();
-      const swaps = component.existing === undefined || main?.id !== component.existing.id;
-      if (swaps) {
-        change(run.plan, label, `point the instance ${key} at ${variant}`, () =>
-          found.swapComponent(component.get())
-        );
-      }
-      planInstanceSizing(run, found, lengthsLabel, root.sizing, swaps ? "unknown" : "read");
-      return existing(found);
+  await planOwnedChildren(run.plan, group, label, "instance", children, ({ key, variant }) => {
+    const component = set.variants.get(variant);
+    const root = set.spec.variants.find((candidate) => candidate.key === variant)?.root;
+    if (component === undefined || root === undefined) {
+      throw new Error(`${label} places ${variant}, which ${set.spec.name} does not define.`);
     }
-  );
+    const lengthsLabel = `${label} / ${variant}`;
+    return {
+      name: key,
+      keepsName: true,
+      accept: isInstance,
+      description: `add an instance of ${variant}`,
+      make: () => component.get().createInstance(),
+      plan: async (instance, plan, origin) => {
+        if (origin === "new") {
+          planInstanceSizing({ ...run, plan }, instance, lengthsLabel, root.sizing, "read");
+          return;
+        }
+        const main = await instance.getMainComponentAsync();
+        const swaps = component.existing === undefined || main?.id !== component.existing.id;
+        if (swaps) {
+          change(plan, label, `point the instance ${key} at ${variant}`, () =>
+            instance.swapComponent(component.get())
+          );
+        }
+        planInstanceSizing({ ...run, plan }, instance, lengthsLabel, root.sizing, swaps ? "unknown" : "read");
+      },
+    } satisfies OwnedChild<InstanceNode, void>;
+  });
 }
 
 async function planGroupFields(
@@ -232,14 +227,13 @@ async function planGroupFields(
   await planInstances(run, group, label, previewKey, spec, set);
 }
 
-async function planGroup(
+/** How to find, create and plan one group of a preview frame, which places one set's variants. */
+function groupKind(
   run: Run,
-  frame: FrameNode,
-  siblings: Siblings,
   preview: PreviewSpec,
   spec: PreviewGroupSpec,
   sets: ReadonlyMap<string, PlannedSet>
-): Promise<Target<FrameNode>> {
+): OwnedChild<FrameNode, void> {
   const set = sets.get(spec.componentSet);
   if (set === undefined) {
     throw new Error(
@@ -247,18 +241,13 @@ async function planGroup(
     );
   }
   const label = `${preview.name} / ${spec.name}`;
-  const found = findOwned(run.plan, siblings, preview.name, spec.key, spec.name, isFrame);
-  if (found !== undefined) {
-    await planGroupFields(run, found, label, preview.key, spec, set);
-    return existing(found);
-  }
-  return create(
-    run.plan,
-    preview.name,
-    `create the group ${spec.name}`,
-    () => placeOwned(frame, run.figma.createFrame(), spec.key, spec.name),
-    (made, plan) => planGroupFields({ ...run, plan }, made, label, preview.key, spec, set)
-  );
+  return {
+    name: spec.name,
+    accept: isFrame,
+    description: `create the group ${spec.name}`,
+    make: () => run.figma.createFrame(),
+    plan: (group, plan) => planGroupFields({ ...run, plan }, group, label, preview.key, spec, set),
+  };
 }
 
 async function planFrame(
@@ -272,8 +261,8 @@ async function planFrame(
   });
   planWrapFrame(run, frame, spec.name, PREVIEW_GRID);
   planModes(run, frame, spec.name, spec);
-  await planOwnedChildren(run.plan, frame, spec.name, "group", spec.groups, (group, siblings) =>
-    planGroup(run, frame, siblings, spec, group, sets)
+  await planOwnedChildren(run.plan, frame, spec.name, "group", spec.groups, (group) =>
+    groupKind(run, spec, group, sets)
   );
 }
 
