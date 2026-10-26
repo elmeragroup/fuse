@@ -464,6 +464,9 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   - Snapshot export in Effect (`plugin/src/snapshots.ts`, pending): export snapshots from an
     applied file and check that the UI counts the progress up while the export runs. Run the export
     through `figma:compare` and compare its report with the baseline's.
+  - Comparison tooling in Effect (`scripts/compare.ts`, pending): run `figma:compare` on the baseline
+    snapshot export and compare the report with the baseline's. The self-check report matched the
+    one from before the change on 2026-10-26, but no real snapshot was at hand.
 
 ## Data table
 

@@ -197,9 +197,20 @@ export async function runSelfCheck(
   const painted: Perturbed = { preview: PREVIEWS[0].key, variant: firstInState("hover") };
   const grown: Perturbed = { preview: PREVIEWS[1].key, variant: firstInState("focus") };
   const renderers = await loadRenderers();
-  const renderable = renderables(renderers);
-  const componentSets = (await Effect.runPromise(buildComponentSets())).map((set) => set.componentSet);
-  const launched = await CompareBrowser.launch(await readPageAssets(build.success, renderers));
+  if (Result.isFailure(renderers)) {
+    return Result.fail(renderers.failure);
+  }
+  const renderable = renderables(renderers.success);
+  const sets = await Effect.runPromise(Effect.result(buildComponentSets()));
+  if (Result.isFailure(sets)) {
+    return Result.fail(sets.failure);
+  }
+  const componentSets = sets.success.map((set) => set.componentSet);
+  const assets = await readPageAssets(build.success, renderers.success);
+  if (Result.isFailure(assets)) {
+    return Result.fail(assets.failure);
+  }
+  const launched = await CompareBrowser.launch(assets.success);
   if (Result.isFailure(launched)) {
     return Result.fail(launched.failure);
   }

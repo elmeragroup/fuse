@@ -1,3 +1,6 @@
+import { createElement } from "react";
+import type { ReactElement } from "react";
+
 /**
  * Every definition the kit builds has a renderer, and each cell its preview frames place renders
  * one root part for the page to measure: the page measures, forces and crops the one element in
@@ -55,9 +58,7 @@
  * `test/markup-variants.ts` the variant tables. This suite runs them on every kit definition and on
  * hand-written fixtures.
  */
-import { createElement } from "react";
-import type { ReactElement } from "react";
-
+import { Result } from "effect";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -146,7 +147,11 @@ describe("each kit definition against the markup of its component", () => {
   );
 
   it("renders one measured element per cell, holds each attribute condition exactly where it carries it, and places its parts, icons and label", async () => {
-    const renderers = await loadRenderers();
+    const loaded = await loadRenderers();
+    if (Result.isFailure(loaded)) {
+      throw loaded.failure;
+    }
+    const renderers = loaded.success;
     // No KIT key lacks a renderer.
     expect(
       KIT.filter(({ definition }) => renderers.has(definition.key)).map(({ definition }) => definition.key)

@@ -10,6 +10,7 @@ import { Effect, Result } from "effect";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import type { KitBuildError } from "../components/build-errors.ts";
 import { buildComponentSets } from "../components/build-kit.ts";
 import type { Cell, ComponentDefinition } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
@@ -18,8 +19,9 @@ import { browserFootprint, coversRenderBounds, figmaFootprint, sharedCanvas } fr
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { BrowserUnavailable, CellRequest, FontNotLoaded, RenderedCell } from "./browser-render.ts";
 import { forcedAttributesFor, isClientRenderer, loadRenderers, renderCellHtml } from "./cell-renderers.ts";
-import type { AnyCellRenderer } from "./cell-renderers.ts";
+import type { AnyCellRenderer, RendererMissing } from "./cell-renderers.ts";
 import { fallbackInteraction, forcedPseudoClasses, parseCell, restingTwin } from "./cells.ts";
+import type { ClientBundleFailed } from "./client-bundle.ts";
 import { checkClientMarkup } from "./client-markup.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { FuseBuildMissing } from "./page-assets.ts";
@@ -116,7 +118,14 @@ class UnsupportedScale extends Error {
 }
 
 /** Why a run stopped before it compared anything. */
-export type CompareFailure = FuseBuildMissing | BrowserUnavailable | FontNotLoaded | UnsupportedScale;
+export type CompareFailure =
+  | FuseBuildMissing
+  | RendererMissing
+  | KitBuildError
+  | ClientBundleFailed
+  | BrowserUnavailable
+  | FontNotLoaded
+  | UnsupportedScale;
 
 /** A definition the run renders, with its renderer. */
 export type Renderable = ComponentDefinition & { readonly renderer: AnyCellRenderer };
@@ -326,10 +335,20 @@ export async function compareSnapshot(
   }
   // The Fuse build exists by now, so the renderers' imports of it load.
   const renderers = await loadRenderers();
-  const assets = await readPageAssets(build.success, renderers);
-  const renderable = renderables(renderers);
-  const componentSets = (await Effect.runPromise(buildComponentSets())).map((set) => set.componentSet);
-  const launched = await CompareBrowser.launch(assets);
+  if (Result.isFailure(renderers)) {
+    return Result.fail(renderers.failure);
+  }
+  const assets = await readPageAssets(build.success, renderers.success);
+  if (Result.isFailure(assets)) {
+    return Result.fail(assets.failure);
+  }
+  const renderable = renderables(renderers.success);
+  const sets = await Effect.runPromise(Effect.result(buildComponentSets()));
+  if (Result.isFailure(sets)) {
+    return Result.fail(sets.failure);
+  }
+  const componentSets = sets.success.map((set) => set.componentSet);
+  const launched = await CompareBrowser.launch(assets.success);
   if (Result.isFailure(launched)) {
     return Result.fail(launched.failure);
   }
@@ -365,7 +384,7 @@ export async function compareSnapshot(
     generatedAt: new Date().toISOString(),
     threshold: options.threshold,
     fuseBuildStale: build.success.stale,
-    fontPackage: assets.fontPackage,
+    fontPackage: assets.success.fontPackage,
     previews,
     rows: worstFirst(rows),
     skipped,

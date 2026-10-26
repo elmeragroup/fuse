@@ -28,6 +28,7 @@
 import { createElement } from "react";
 import type { ComponentType, ReactElement } from "react";
 
+import { Result } from "effect";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import type { ElmeraIconProps } from "../../../fuse/dist/icons.js";
@@ -107,6 +108,11 @@ export type ClientCellRenderer = Pick<CellRenderer, "set" | "entry"> &
 
 /** A renderer of either kind. */
 export type AnyCellRenderer = CellRenderer | ClientCellRenderer;
+
+/** A renderer's source names a rendering its module does not export. */
+export class RendererMissing extends Error {
+  readonly _tag = "RendererMissing" as const;
+}
 
 /**
  * Whether a renderer's cells hydrate on the page.
@@ -525,19 +531,29 @@ export const RENDERER_ENTRIES: readonly string[] = SOURCES.map((source) => sourc
  * Load every renderer. Each one imports the Fuse build, so call this only after
  * `locateFuseBuild` found it.
  *
- * @returns Each renderer, by the key of the definition it renders.
+ * @returns Each renderer, by the key of the definition it renders, or `RendererMissing` for a source
+ *   whose module lacks the rendering it names.
  */
-export async function loadRenderers(): Promise<ReadonlyMap<string, AnyCellRenderer>> {
-  const renderers = await Promise.all(
-    SOURCES.map(async (source): Promise<AnyCellRenderer> => {
+export async function loadRenderers(): Promise<
+  Result.Result<ReadonlyMap<string, AnyCellRenderer>, RendererMissing>
+> {
+  const loaded = await Promise.all(
+    SOURCES.map(async (source): Promise<Result.Result<AnyCellRenderer, RendererMissing>> => {
       if ("module" in source) {
         return loadClientRenderer(source);
       }
       const { load, ...named } = source;
-      return { ...named, ...(await load()) };
+      return Result.succeed({ ...named, ...(await load()) });
     })
   );
-  return new Map(renderers.map((renderer) => [renderer.set, renderer]));
+  const renderers: AnyCellRenderer[] = [];
+  for (const renderer of loaded) {
+    if (Result.isFailure(renderer)) {
+      return Result.fail(renderer.failure);
+    }
+    renderers.push(renderer.success);
+  }
+  return Result.succeed(new Map(renderers.map((renderer) => [renderer.set, renderer])));
 }
 
 /**
@@ -545,10 +561,12 @@ export async function loadRenderers(): Promise<ReadonlyMap<string, AnyCellRender
  * only after `locateFuseBuild` found it.
  *
  * @param source - The renderer's set, build entry and module.
- * @returns The renderer.
- * @throws When the module has no export by the source's name, which the source must fix.
+ * @returns The renderer, or `RendererMissing` when the module has no export by the source's name,
+ *   which the source must fix.
  */
-async function loadClientRenderer(source: ClientSource): Promise<ClientCellRenderer> {
+async function loadClientRenderer(
+  source: ClientSource
+): Promise<Result.Result<ClientCellRenderer, RendererMissing>> {
   // SAFETY: a client renderer's module exports a ClientCellRendering under each name a source
   // lists, as `select-cell.ts` does. The page's bundle imports the same name, and rolldown
   // refuses a name the module does not export, so a wrong name fails both loads.
@@ -557,9 +575,11 @@ async function loadClientRenderer(source: ClientSource): Promise<ClientCellRende
   >;
   const rendering = renderings[source.module.name];
   if (rendering === undefined) {
-    throw new Error(`${source.module.url.pathname} exports no rendering ${source.module.name}`);
+    return Result.fail(
+      new RendererMissing(`${source.module.url.pathname} exports no rendering ${source.module.name}`)
+    );
   }
-  return { ...source, ...rendering };
+  return Result.succeed({ ...source, ...rendering });
 }
 
 /**

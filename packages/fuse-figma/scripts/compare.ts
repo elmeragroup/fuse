@@ -11,8 +11,9 @@
  * with two cells changed, and checks that the comparison reports exactly those two.
  */
 
-import { Result } from "effect";
-import { mkdirSync, readFileSync } from "node:fs";
+import { NodeRuntime, NodeServices } from "@effect/platform-node";
+import { Console, Data, Effect, FileSystem, Result, Runtime } from "effect";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -29,81 +30,102 @@ const DEFAULT_OUT = fileURLToPath(new URL("../.cache/figma-compare/", import.met
 const USAGE =
   "Usage: figma:compare <snapshot.json> [--out <dir>] [--threshold <0..1>]\n       figma:compare --self-check [--out <dir>]";
 
-function exit(message: string): never {
-  console.error(message);
-  process.exit(1);
+/**
+ * The run stopped, and what it printed says why. The runtime exits 1 and prints nothing more, as
+ * `cli.ts`'s reported failure does.
+ */
+class CompareStopped extends Data.TaggedError("CompareStopped") {
+  override readonly [Runtime.errorReported] = false;
+  override readonly [Runtime.errorExitCode] = 1;
 }
 
-const { values, positionals } = (() => {
-  try {
-    return parseArgs({
-      allowPositionals: true,
-      options: {
-        out: { type: "string" },
-        threshold: { type: "string" },
-        "self-check": { type: "boolean", default: false },
-      },
-    });
-  } catch (error) {
-    return exit(`${error instanceof Error ? error.message : String(error)}\n${USAGE}`);
-  }
-})();
+/** Print why the run stops, on stderr, and stop it. */
+const stop = (message: string) =>
+  Console.error(message).pipe(Effect.andThen(Effect.fail(new CompareStopped())));
 
-const threshold = values.threshold === undefined ? DEFAULT_THRESHOLD : Number(values.threshold);
-if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) {
-  exit(`--threshold takes a number from 0 to 1, not ${values.threshold ?? ""}`);
-}
-const selfCheck = values["self-check"];
-const outDir = resolve(values.out ?? (selfCheck ? `${DEFAULT_OUT}self-check/` : DEFAULT_OUT));
-const options: CompareOptions = { outDir, threshold, layout: PAGE_LAYOUT };
-mkdirSync(outDir, { recursive: true });
+/** The text of a thrown value, for a message. */
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- throw boundary: Node's parser and file reads throw values with no static type
+const describe = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
-if (selfCheck) {
-  const result = await runSelfCheck(options);
+/** Run the self-check, print its lines and the report path, and stop when it failed. */
+const selfCheck = Effect.fn("compare.selfCheck")(function* (options: CompareOptions) {
+  const result = yield* Effect.promise(() => runSelfCheck(options));
   if (Result.isFailure(result)) {
-    exit(result.failure.message);
+    return yield* stop(result.failure.message);
   }
   for (const line of result.success.lines) {
-    console.log(line);
+    yield* Console.log(line);
   }
-  console.log(`Report: ${resolve(outDir, "report.html")}`);
-  process.exit(result.success.passed ? 0 : 1);
-}
+  yield* Console.log(`Report: ${resolve(options.outDir, "report.html")}`);
+  if (!result.success.passed) {
+    return yield* new CompareStopped();
+  }
+});
 
-const [snapshotPath, ...extra] = positionals;
-if (snapshotPath === undefined || extra.length > 0) {
-  exit(USAGE);
-}
-const text = (() => {
-  try {
-    return readFileSync(resolve(snapshotPath), "utf8");
-  } catch (error) {
-    return exit(
-      `Could not read ${resolve(snapshotPath)}: ${error instanceof Error ? error.message : String(error)}`
+/** Compare a snapshot export and print the summary, the five worst cells and the report path. */
+const compare = Effect.fn("compare.snapshot")(function* (snapshotPath: string, options: CompareOptions) {
+  const path = resolve(snapshotPath);
+  const text = yield* Effect.try({ try: () => readFileSync(path, "utf8"), catch: describe }).pipe(
+    Effect.catch((reason) => stop(`Could not read ${path}: ${reason}`))
+  );
+  const snapshot = parseSnapshot(text);
+  if (Result.isFailure(snapshot)) {
+    return yield* stop(snapshot.failure.message);
+  }
+  const result = yield* Effect.promise(() => compareSnapshot(snapshot.success, options));
+  if (Result.isFailure(result)) {
+    return yield* stop(result.failure.message);
+  }
+  const report = result.success;
+  const sized = report.rows.filter((row) => row.verdict.flags.includes("size")).length;
+  yield* Console.log(
+    `Compared ${String(report.rows.length)} cells from ${String(report.previews.length)} previews; ${String(sized)} differ in box size, ${String(report.skipped.length)} skipped.`
+  );
+  for (const row of report.rows.slice(0, 5)) {
+    yield* Console.log(
+      `  ${row.verdict.tolerantPercent.toFixed(2)}% tolerant, ${row.verdict.rawPercent.toFixed(2)}% raw  ${row.variant}  (${row.previewName})${row.verdict.flags.length === 0 ? "" : ` [${row.verdict.flags.join(", ")}]`}`
     );
   }
-})();
-const snapshot = parseSnapshot(text);
-if (Result.isFailure(snapshot)) {
-  exit(snapshot.failure.message);
-}
-const result = await compareSnapshot(snapshot.success, options);
-if (Result.isFailure(result)) {
-  exit(result.failure.message);
-}
-const report = result.success;
-const sized = report.rows.filter((row) => row.verdict.flags.includes("size")).length;
-console.log(
-  `Compared ${String(report.rows.length)} cells from ${String(report.previews.length)} previews; ${String(sized)} differ in box size, ${String(report.skipped.length)} skipped.`
-);
-for (const row of report.rows.slice(0, 5)) {
-  console.log(
-    `  ${row.verdict.tolerantPercent.toFixed(2)}% tolerant, ${row.verdict.rawPercent.toFixed(2)}% raw  ${row.variant}  (${row.previewName})${row.verdict.flags.length === 0 ? "" : ` [${row.verdict.flags.join(", ")}]`}`
-  );
-}
-if (report.fuseBuildStale) {
-  console.warn(
-    "Fuse's sources changed after its build. Run pnpm --filter @elmeragroup/fuse build and compare again."
-  );
-}
-console.log(`Report: ${resolve(outDir, "report.html")}`);
+  if (report.fuseBuildStale) {
+    yield* Console.warn(
+      "Fuse's sources changed after its build. Run pnpm --filter @elmeragroup/fuse build and compare again."
+    );
+  }
+  yield* Console.log(`Report: ${resolve(options.outDir, "report.html")}`);
+});
+
+const program = Effect.gen(function* () {
+  const args = yield* Effect.try({
+    try: () =>
+      parseArgs({
+        args: process.argv.slice(2),
+        allowPositionals: true,
+        options: {
+          out: { type: "string" },
+          threshold: { type: "string" },
+          "self-check": { type: "boolean", default: false },
+        },
+      }),
+    catch: describe,
+  }).pipe(Effect.catch((reason) => stop(`${reason}\n${USAGE}`)));
+  const { values, positionals } = args;
+  const threshold = values.threshold === undefined ? DEFAULT_THRESHOLD : Number(values.threshold);
+  if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) {
+    return yield* stop(`--threshold takes a number from 0 to 1, not ${values.threshold ?? ""}`);
+  }
+  const isSelfCheck = values["self-check"];
+  const outDir = resolve(values.out ?? (isSelfCheck ? `${DEFAULT_OUT}self-check/` : DEFAULT_OUT));
+  const options: CompareOptions = { outDir, threshold, layout: PAGE_LAYOUT };
+  const fs = yield* FileSystem.FileSystem;
+  yield* fs.makeDirectory(outDir, { recursive: true });
+  if (isSelfCheck) {
+    return yield* selfCheck(options);
+  }
+  const [snapshotPath, ...extra] = positionals;
+  if (snapshotPath === undefined || extra.length > 0) {
+    return yield* stop(USAGE);
+  }
+  return yield* compare(snapshotPath, options);
+});
+
+program.pipe(Effect.provide(NodeServices.layer), NodeRuntime.runMain);
