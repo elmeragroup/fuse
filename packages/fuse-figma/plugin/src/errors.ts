@@ -5,8 +5,7 @@
  *
  * The structural walk fails with these errors in its error channel. The leaf planners stay
  * synchronous and throw them, and `failOnThrown` turns such a throw back into a typed failure.
- * `attempt` does the same for promise-based code, such as the snapshot export. Any other throw
- * stays a defect.
+ * Any other throw stays a defect.
  */
 
 import { Data, Effect } from "effect";
@@ -44,6 +43,13 @@ export class FontUnavailable extends Data.TaggedError("FontUnavailable")<{
   readonly cause: unknown;
 }> {}
 
+/** The file lacks a kit page a request reads, such as a snapshot export before the first Apply. */
+export class KitNotApplied extends Data.TaggedError("KitNotApplied")<{
+  readonly message: string;
+  /** The page key the file lacks. */
+  readonly key: string;
+}> {}
+
 /** The plugin UI posted a message the main thread does not handle. */
 export class UnknownRequest extends Data.TaggedError("UnknownRequest")<{
   readonly message: string;
@@ -56,6 +62,7 @@ export type PluginError =
   | DuplicateCollections
   | LayerConflict
   | FontUnavailable
+  | KitNotApplied
   | UnknownRequest;
 
 /**
@@ -73,24 +80,8 @@ function isPluginError(thrown: unknown): thrown is PluginError {
     thrown instanceof DuplicateCollections ||
     thrown instanceof LayerConflict ||
     thrown instanceof FontUnavailable ||
+    thrown instanceof KitNotApplied ||
     thrown instanceof UnknownRequest
-  );
-}
-
-/**
- * Run promise-based plugin code as an Effect. A rejection with one of this module's errors fails
- * the Effect with it, and any other rejection is a defect.
- *
- * `run` takes no argument on purpose. Effect makes an `AbortController` for a callback that declares
- * a parameter, and the plugin does not count on Figma's main thread to provide one. The bundle load
- * test runs without it.
- *
- * @param run - Starts the work.
- * @returns The work as an Effect.
- */
-export function attempt<A>(run: () => Promise<A>): Effect.Effect<A, PluginError> {
-  return Effect.tryPromise({ try: run, catch: (thrown) => thrown }).pipe(
-    Effect.catchIf(isPluginError, Effect.fail, Effect.die)
   );
 }
 

@@ -13,7 +13,6 @@
 import { Cause, Effect } from "effect";
 
 import type { KitSpec } from "../../src/components/kit-spec.ts";
-import { attempt } from "./errors.ts";
 import { parseRequest } from "./protocol.ts";
 import type { Request, UiMessage } from "./protocol.ts";
 import { reconcile } from "./reconcile.ts";
@@ -58,14 +57,12 @@ const respond = (request: Request) =>
     }
     const plugin = yield* FigmaPlugin;
     const { pages } = yield* Kit;
-    const snapshot = yield* attempt(() =>
-      exportSnapshots(
-        plugin,
-        pages.map((page) => page.key),
-        (done, total) => {
+    const snapshot = yield* exportSnapshots(
+      pages.map((page) => page.key),
+      (done, total) =>
+        Effect.sync(() => {
           plugin.ui.postMessage({ kind: "progress", done, total } satisfies UiMessage);
-        }
-      )
+        })
     );
     yield* post({ kind: "snapshots", snapshot });
   });

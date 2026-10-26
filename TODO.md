@@ -461,6 +461,9 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
     Cmd+Z must still undo a whole Apply, and the Figma UI must not redraw partway through a run.
     Time one Plan and one Apply against the baseline. On the in-memory file the full kit's Apply
     went from 520 ms to 580 ms and the Plan of an applied file from 147 ms to 165 ms, about 12%.
+  - Snapshot export in Effect (`plugin/src/snapshots.ts`, pending): export snapshots from an
+    applied file and check that the UI counts the progress up while the export runs. Run the export
+    through `figma:compare` and compare its report with the baseline's.
 
 ## Data table
 

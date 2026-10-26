@@ -61,9 +61,13 @@ type LoadedPlugin = {
    * Post a request as the UI does, and wait for the next message the main thread posts back.
    *
    * @param request - What the UI asks for.
+   * @param kind - The kind of message to wait for, such as the export's last one. Without it, the
+   *   next message of any kind.
    * @returns The message, cloned as Figma clones what crosses to the UI.
    */
-  readonly ask: (request: string) => Promise<PostedMessage>;
+  readonly ask: (request: string, kind?: string) => Promise<PostedMessage>;
+  /** Every message the main thread posted, in order. */
+  readonly posted: readonly PostedMessage[];
   /** How many times the bundle has called `setTimeout`, each a turn Figma could redraw or edit in. */
   readonly timers: () => number;
 };
@@ -79,11 +83,19 @@ type LoadedPlugin = {
  */
 function load(code: string, file: FakeFile): LoadedPlugin {
   const shown: ShowUiCall[] = [];
-  const replies: ((message: PostedMessage) => void)[] = [];
+  const posted: PostedMessage[] = [];
+  const waiting: { readonly kind: string | undefined; readonly resolve: (message: PostedMessage) => void }[] =
+    [];
   let onmessage: ((request: string) => void) | undefined;
   const ui = {
     postMessage: (message: PostedMessage) => {
-      replies.shift()?.(structuredClone(message));
+      const clone = structuredClone(message);
+      posted.push(clone);
+      const [next] = waiting;
+      if (next !== undefined && (next.kind === undefined || next.kind === clone.kind)) {
+        waiting.shift();
+        next.resolve(clone);
+      }
     },
     get onmessage() {
       return onmessage;
@@ -116,13 +128,14 @@ function load(code: string, file: FakeFile): LoadedPlugin {
   return {
     timers: () => timers,
     shown,
-    ask: (request) =>
+    posted,
+    ask: (request, kind) =>
       new Promise((resolve, reject) => {
         if (onmessage === undefined) {
           reject(new Error("the plugin set no figma.ui.onmessage handler"));
           return;
         }
-        replies.push(resolve);
+        waiting.push({ kind, resolve });
         onmessage(request);
       }),
   };
@@ -175,7 +188,9 @@ describe("the plugin bundle", () => {
   // the middle of a run. The run awaits only the fake's settled promises, which resolve without one.
   // The whole kit runs long enough between awaits to reach that budget, where the one-variant kit
   // does not: without the reference, its Apply and Plan took 145 turns on 2026-10-26.
-  it("plans and applies the whole kit without handing the thread back to Figma", async () => {
+  // The snapshot export hands the thread back once after each preview frame, so the progress it
+  // posted reaches the UI while it runs.
+  it("plans and applies the whole kit without handing the thread back, and exports with a turn per preview", async () => {
     // SAFETY: the path names kit-fixture.ts, whose `kitFixture` resolves to the built kit and the
     // collections the token sync writes.
     const { kitFixture } = (await import(KIT_FIXTURE)) as KitFixtureModule;
@@ -187,6 +202,18 @@ describe("the plugin bundle", () => {
     expect((await plugin.ask("apply")).kind).toBe("applied");
     expect((await plugin.ask("plan")).kind).toBe("plan");
     expect(plugin.timers()).toBe(0);
+
+    const before = plugin.posted.length;
+    expect((await plugin.ask("snapshots", "snapshots")).kind).toBe("snapshots");
+    const total = kit.previews.reduce(
+      (sum, preview) => sum + preview.groups.reduce((count, group) => count + group.variants.length, 0),
+      0
+    );
+    expect(plugin.posted.slice(before)).toEqual([
+      ...Array.from({ length: total }, (_, index) => ({ kind: "progress", done: index + 1, total })),
+      expect.objectContaining({ kind: "snapshots" }),
+    ]);
+    expect(plugin.timers()).toBe(kit.previews.length);
   });
 
   it("answers a request it does not know with an error", async () => {
