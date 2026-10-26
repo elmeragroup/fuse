@@ -25,7 +25,8 @@
  * forcing.
  */
 
-import { Result } from "effect";
+import { Effect, Result } from "effect";
+import type { Scope } from "effect";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
@@ -165,26 +166,23 @@ export class CompareBrowser {
   }
 
   /**
-   * Start Chromium.
+   * Start Chromium for the scope, which stops it when it closes.
    *
    * @param assets - The files the page loads.
-   * @returns The browser, or `BrowserUnavailable` when Playwright's Chromium is not installed.
+   * @returns The browser. The Effect fails with `BrowserUnavailable` when Playwright's Chromium is
+   *   not installed.
    */
-  static async launch(assets: PageAssets): Promise<Result.Result<CompareBrowser, BrowserUnavailable>> {
-    try {
-      return Result.succeed(new CompareBrowser(await chromium.launch(), assets));
-    } catch (error) {
-      return Result.fail(
-        new BrowserUnavailable(
-          `Playwright could not start Chromium. Install it with \`pnpm --filter @elmeragroup/fuse-figma exec playwright install chromium\`. ${String(error)}`
-        )
-      );
-    }
-  }
-
-  /** Stop Chromium. */
-  async close(): Promise<void> {
-    await this.#browser.close();
+  static launch(assets: PageAssets): Effect.Effect<CompareBrowser, BrowserUnavailable, Scope.Scope> {
+    return Effect.acquireRelease(
+      Effect.tryPromise({
+        try: () => chromium.launch(),
+        catch: (error) =>
+          new BrowserUnavailable(
+            `Playwright could not start Chromium. Install it with \`pnpm --filter @elmeragroup/fuse-figma exec playwright install chromium\`. ${String(error)}`
+          ),
+      }).pipe(Effect.map((browser) => new CompareBrowser(browser, assets))),
+      (browser) => Effect.promise(() => browser.#browser.close())
+    );
   }
 
   async #serve(route: Route, html: string): Promise<void> {
@@ -217,9 +215,21 @@ export class CompareBrowser {
    * @param theme - The preview's theme.
    * @param requests - The cells.
    * @param layout - The page layout.
-   * @returns The crops, boxes and state outcomes by cell id, or `FontNotLoaded`.
+   * @returns The crops, boxes and state outcomes by cell id. The Effect fails with `FontNotLoaded`.
    */
-  async renderPreview(
+  renderPreview(
+    theme: PreviewTheme,
+    requests: readonly CellRequest[],
+    layout: PageLayout
+  ): Effect.Effect<RenderedPreview, FontNotLoaded> {
+    return Effect.flatMap(
+      Effect.promise(() => this.#renderPreview(theme, requests, layout)),
+      Effect.fromResult
+    );
+  }
+
+  /** Playwright's side of {@link renderPreview}, which awaits the page. */
+  async #renderPreview(
     theme: PreviewTheme,
     requests: readonly CellRequest[],
     layout: PageLayout

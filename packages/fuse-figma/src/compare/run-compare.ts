@@ -7,7 +7,6 @@
  */
 
 import { Effect, Result } from "effect";
-import type { Scope } from "effect";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -18,20 +17,14 @@ import { KIT } from "../components/kit-registry.ts";
 import type { ComponentSetSpec } from "../components/kit-spec.ts";
 import { browserFootprint, coversRenderBounds, figmaFootprint, sharedCanvas } from "./align.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
-import type {
-  BrowserUnavailable,
-  CellRequest,
-  FontNotLoaded,
-  RenderedCell,
-  RenderedPreview,
-} from "./browser-render.ts";
+import type { BrowserUnavailable, CellRequest, FontNotLoaded, RenderedCell } from "./browser-render.ts";
 import { forcedAttributesFor, isClientRenderer, loadRenderers, renderCellHtml } from "./cell-renderers.ts";
 import type { AnyCellRenderer, RendererMissing } from "./cell-renderers.ts";
 import { fallbackInteraction, forcedPseudoClasses, parseCell, restingTwin } from "./cells.ts";
 import type { ClientBundleFailed } from "./client-bundle.ts";
 import { checkClientMarkup } from "./client-markup.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
-import type { FuseBuildMissing, PageAssets } from "./page-assets.ts";
+import type { FuseBuildMissing } from "./page-assets.ts";
 import { forcedSelector, measuredSelectors, slotSpan } from "./preview-page.ts";
 import type { CellContent, PageLayout } from "./preview-page.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
@@ -319,39 +312,6 @@ function compareCell(
 }
 
 /**
- * Launch Chromium for the run, closed when the scope closes.
- *
- * @param assets - What the page loads.
- * @returns The browser. The Effect fails with `BrowserUnavailable` when Chromium does not start.
- */
-export function launchBrowser(
-  assets: PageAssets
-): Effect.Effect<CompareBrowser, BrowserUnavailable, Scope.Scope> {
-  return Effect.acquireRelease(
-    Effect.flatMap(
-      Effect.promise(() => CompareBrowser.launch(assets)),
-      Effect.fromResult
-    ),
-    (browser) => Effect.promise(() => browser.close())
-  );
-}
-
-/**
- * Render a preview's cells in the browser.
- *
- * @returns The rendered preview. The Effect fails with `FontNotLoaded` when the page lacks a font.
- */
-export function renderPreview(
-  browser: CompareBrowser,
-  ...request: Parameters<CompareBrowser["renderPreview"]>
-): Effect.Effect<RenderedPreview, FontNotLoaded> {
-  return Effect.flatMap(
-    Effect.promise(() => browser.renderPreview(...request)),
-    Effect.fromResult
-  );
-}
-
-/**
  * Compare every instance of a snapshot with the browser.
  *
  * @param snapshot - The parsed snapshot.
@@ -382,7 +342,7 @@ export const compareSnapshot = Effect.fn("compareSnapshot")(function* (
   const previews: ReportPreview[] = [];
   yield* Effect.scoped(
     Effect.gen(function* () {
-      const browser = yield* launchBrowser(assets);
+      const browser = yield* CompareBrowser.launch(assets);
       rmSync(cellsDir, { recursive: true, force: true });
       mkdirSync(cellsDir, { recursive: true });
       for (const [previewIndex, preview] of snapshot.previews.entries()) {
@@ -446,8 +406,7 @@ const comparePreview = Effect.fnUntraced(function* (
   }
   const unchanged = unchangedByDesign(componentSets, tokenColorsIn(theme.success));
   const { planned, unsupported } = planCells(preview.instances, renderable, unchanged, options.layout);
-  const { background, cells, font } = yield* renderPreview(
-    browser,
+  const { background, cells, font } = yield* browser.renderPreview(
     theme.success,
     planned.map((cell) => cell.request),
     options.layout

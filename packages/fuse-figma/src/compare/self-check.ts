@@ -27,7 +27,7 @@ import { variantKey } from "../components/component-spec.ts";
 import type { Cell } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
 import { SELECT_ITEM } from "../components/select-kit.ts";
-import { DEVICE_SCALE } from "./browser-render.ts";
+import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { CellRequest } from "./browser-render.ts";
 import { loadRenderers } from "./cell-renderers.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
@@ -36,7 +36,7 @@ import { parsePreviewTheme } from "./preview-theme.ts";
 import { crop, encodePng } from "./raster.ts";
 import type { Raster } from "./raster.ts";
 import { parseSnapshot } from "./read-snapshot.ts";
-import { compareSnapshot, launchBrowser, planCells, renderables, renderPreview } from "./run-compare.ts";
+import { compareSnapshot, planCells, renderables } from "./run-compare.ts";
 import type { CompareOptions, CompareReport } from "./run-compare.ts";
 import { SNAPSHOT_FORMAT, SNAPSHOT_VERSION } from "./snapshot.ts";
 import type { InstanceSnapshot, KitSnapshot, PreviewSnapshot } from "./snapshot.ts";
@@ -198,7 +198,7 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
   const previews: PreviewSnapshot[] = [];
   yield* Effect.scoped(
     Effect.gen(function* () {
-      const browser = yield* launchBrowser(assets);
+      const browser = yield* CompareBrowser.launch(assets);
       for (const preview of PREVIEWS) {
         const modes = Object.entries(preview.modes).map(([collection, mode]) => ({ collection, mode }));
         const theme = parsePreviewTheme(modes);
@@ -218,8 +218,7 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
             `the comparison cannot render these cells of the kit: ${unsupported.map((entry) => entry.reason).join("; ")}`
           );
         }
-        const rendered = yield* renderPreview(
-          browser,
+        const rendered = yield* browser.renderPreview(
           theme.success,
           planned.map((cell) => cell.request),
           options.layout
