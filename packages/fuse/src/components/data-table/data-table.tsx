@@ -13,6 +13,7 @@ import type {
   CellRenderSource,
   CellSource,
   HeaderGroupsSource,
+  HeaderOf,
   HeaderRenderSource,
   HeaderSource,
   RowSource,
@@ -218,13 +219,15 @@ export type DataTableHeaderProps<THeader extends HeaderSource> = ComponentProps<
  * Every header group of a table as `<thead>` rows. Each `<th>` takes the header's `colSpan`,
  * renders nothing for a placeholder, and carries `aria-sort` (`ascending`, `descending` or `none`)
  * only when its column can sort.
+ *
+ * @template TTable - The table type, from which the header type is read.
  */
-export function DataTableHeader<THeader extends HeaderSource>({
+export function DataTableHeader<TTable extends HeaderGroupsSource<HeaderSource>>({
   table,
   ...props
-}: DataTableHeaderProps<THeader>): ReactElement {
+}: DataTableHeaderProps<HeaderOf<TTable>> & { table: TTable }): ReactElement {
   return (
-    <HeaderRows
+    <HeaderRows<HeaderOf<TTable>>
       headerGroups={table.getHeaderGroups()}
       renderHeader={(header) => <table.FlexRender header={header} />}
       {...props}
@@ -283,14 +286,23 @@ export type DataTableContentProps<
  * A whole table on Fuse `Table`: the shared content table with `table.FlexRender` headers and
  * `DataTable.Row` rows. While `loading` the table carries `aria-busy`. Pass `children` to render
  * each row yourself.
+ *
+ * @template TTable - The table type, from which the header type is read.
+ * @template TRow - The row type of the table's row model.
+ * @template TCell - The cell type a row's `getAllCells()` returns.
  */
 export function DataTableContent<
-  THeader extends HeaderSource,
+  TTable extends HeaderGroupsSource<HeaderSource>,
   TRow extends RowSource<TCell>,
   TCell extends CellSource = CellOf<TRow>,
->({ table, loading = false, children, ...props }: DataTableContentProps<THeader, TRow, TCell>): ReactElement {
+>({
+  table,
+  loading = false,
+  children,
+  ...props
+}: DataTableContentProps<HeaderOf<TTable>, TRow, TCell> & { table: TTable }): ReactElement {
   return (
-    <ContentTable
+    <ContentTable<HeaderOf<TTable>, TRow>
       table={table}
       loading={loading}
       renderHeader={(header) => <table.FlexRender header={header} />}

@@ -66,6 +66,7 @@ test("a slice-typed plain part accepts an app table with extra features and reje
         <DataTable.ColumnToggle table={table} />
         <DataTable.SelectAll table={table} />
         <DataTable.Content table={table} />
+        <DataTable.Header table={table} />
       </>
     );
   }
@@ -80,14 +81,43 @@ test("a slice-typed plain part accepts an app table with extra features and reje
         <DataTable.ColumnToggle table={table} />
         {/* @ts-expect-error -- SelectAll reads rowSelectionFeature members the core table lacks */}
         <DataTable.SelectAll table={table} />
-        {/* Content reads only core members, so the core table is enough. */}
+        {/* Content and Header read only core members, so the core table is enough. */}
         <DataTable.Content table={table} />
+        <DataTable.Header table={table} />
       </>
     );
   }
 
   expectTypeOf(WithEveryFeature).toBeFunction();
   expectTypeOf(WithoutFeatures).toBeFunction();
+});
+
+test("a header part rejects a table whose FlexRender takes another header type than its header groups hold", () => {
+  type Header = {
+    readonly id: string;
+    readonly colSpan: number;
+    readonly isPlaceholder: boolean;
+    readonly column: { readonly id: string };
+  };
+  const header: Header = { id: "customer", colSpan: 1, isPlaceholder: false, column: { id: "customer" } };
+  const groups = { getHeaderGroups: () => [{ id: "group", headers: [header] }] };
+  const matching = { ...groups, FlexRender: (_props: { readonly header: Header }) => null };
+  const mismatched = {
+    ...groups,
+    FlexRender: (_props: { readonly header: Header & { readonly depth: number } }) => null,
+  };
+
+  function Headers(): ReactElement {
+    return (
+      <>
+        <DataTable.Header table={matching} />
+        {/* @ts-expect-error -- FlexRender needs a depth the header groups' headers lack */}
+        <DataTable.Header table={mismatched} />
+      </>
+    );
+  }
+
+  expectTypeOf(Headers).toBeFunction();
 });
 
 test("a plain part's column and row props follow the same feature slices", () => {

@@ -1,7 +1,7 @@
 /**
  * The docs generation pass.
  *
- * Runs before `next build`, `next dev` and `tsc`. The site's component pages are
+ * Runs before `next build`, `next dev` and `tsrs`. The site's component pages are
  * hand-authored `page.mdx` route files compiled by `@next/mdx`; this pass discovers
  * them by globbing the components route group, reads each page as *data* — its frontmatter,
  * its headings, the `<Demo>` elements it renders — and writes the artifacts that no page

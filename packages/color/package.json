@@ -34,11 +34,12 @@
   },
   "scripts": {
     "test": "vitest run",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsrs --noEmit"
   },
   "devDependencies": {
     "@elmeragroup/typescript-config": "workspace:*",
     "fast-check": "catalog:",
+    "tsrs": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

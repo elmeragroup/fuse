@@ -26,6 +26,7 @@ An electrical fuse connects the name to Elmera's energy business. To fuse means 
 
 - **Node**: `>=24.13 <25` — the version in [`.node-version`](.node-version) (`24.13.0`). The build, codegen and docs scripts run TypeScript directly through Node's type-stripping flags, so an older major fails.
 - **pnpm 11** — `packageManager` pins the exact version; use Corepack.
+- **macOS on Apple silicon, or Linux on x64 or arm64.** tsrs runs every type-check and builds Fuse's declarations, and tsrs 0.18 ships binaries for those platforms only. On Windows or an Intel Mac, `pnpm type-check`, `pnpm test:types` and `pnpm build` fail.
 - `.ref/` reference checkouts are needed only to lift new reference implementations or artwork. They are not needed to build, test, or run the repo.
 
 ```sh
@@ -51,12 +52,12 @@ Root scripts fan out through turbo unless noted.
 | `pnpm test:e2e`           | End-to-end suites against a built docs app (`next start`) and the `pnpm shots` tool                                   |
 | `pnpm test:types`         | Type-level tests (`*.test-d.tsx`)                                                                                     |
 | `pnpm test:repo-policy`   | Root-only vitest project in [`test/`](test) — merge-workflow shape, lint script, README claims                        |
-| `pnpm type-check`         | `tsc --noEmit` per package                                                                                            |
+| `pnpm type-check`         | `tsrs --noEmit` per package                                                                                           |
 | `pnpm gen`                | plop scaffolder — new component (source, entry facade, tests, demos)                                                  |
 | `pnpm changeset`          | Adds a changeset; see [Contribution flow](#contribution-flow)                                                         |
 | `pnpm release:version`    | `changeset version` + lockfile refresh; the Version Packages PR script                                                |
 | `pnpm release`            | Release-engine CLI: `check-pr` validates a Version Packages PR; `publish <commit>` and `retry <record-tag>` run in CI |
-| `pnpm type-check:scripts` | `tsc --noEmit` for the root release scripts                                                                           |
+| `pnpm type-check:scripts` | `tsrs --noEmit` for the root release scripts                                                                          |
 | `pnpm check`              | The local gate: `oxfmt --check` then `turbo run check`, `ci:checks` minus the e2e and packed-artifact tier            |
 | `pnpm ci:checks`          | The full merge gate locally: `oxfmt --check` then `turbo run ci:checks`                                               |
 

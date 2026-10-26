@@ -86,6 +86,15 @@ export type HeaderGroupsSource<THeader extends HeaderSource> = {
 };
 
 /**
+ * The header type a table's header groups hold, read from the whole table type. TypeScript 7.1
+ * infers no header type from a TanStack table for {@link HeaderGroupsSource}, because the headers
+ * sit three generic instantiations deep, so the header parts infer the table and index into it.
+ */
+export type HeaderOf<TTable extends HeaderGroupsSource<HeaderSource>> = ReturnType<
+  TTable["getHeaderGroups"]
+>[number]["headers"][number];
+
+/**
  * The table members `DataTable.Body` reads. The visible leaf columns size the empty row; without
  * `columnVisibilityFeature` every leaf column is visible. The page size sizes the loading state;
  * without `rowPaginationFeature` it shows a fixed number of skeleton rows.

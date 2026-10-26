@@ -37,7 +37,7 @@ describe("release wiring", () => {
     expect(loader, "release must preload the package loader").toBeGreaterThan(0);
     expect(tokens[loader + 1]).toBe("./packages/fuse/scripts/ts-resolve.mjs");
     const typeCheck = asString(scripts["type-check:scripts"], "scripts.type-check:scripts").split(/\s+/);
-    expect(typeCheck[0], "script checking must run tsc").toBe("tsc");
+    expect(typeCheck[0], "script checking must run tsrs").toBe("tsrs");
     expect(typeCheck, "script checking must not emit").toContain("--noEmit");
     expect(typeCheck[typeCheck.indexOf("-p") + 1], "script checking must use the scripts config").toBe(
       "scripts/tsconfig.json"
@@ -74,7 +74,7 @@ describe("release wiring", () => {
     // The program's import closure must stay inside those inputs; a new packages/fuse/src import in
     // an adapter file would move a gate input outside the cache key.
     const listed = execFileSync(
-      join(repoRoot, "node_modules/.bin/tsc"),
+      join(repoRoot, "node_modules/.bin/tsrs"),
       ["--noEmit", "--listFiles", "-p", "scripts/tsconfig.json"],
       { cwd: repoRoot, encoding: "utf8", maxBuffer: 32 * 1024 * 1024, timeout: 60_000 }
     );

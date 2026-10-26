@@ -41,7 +41,7 @@
         {
           "name": "table",
           "origin": "declared",
-          "type": "HeaderGroupsSource<THeader> & HeaderRenderSource<THeader> & RowsSource<TRow> & CellRenderSource<TCell>",
+          "type": "HeaderGroupsSource<HeaderOf<TTable>> & HeaderRenderSource<HeaderOf<TTable>> & RowsSource<TRow> & CellRenderSource<TCell> & TTable",
           "shortType": "Union",
           "defaultValue": null,
           "description": "The table to render, typically from `useTable`.",
@@ -61,7 +61,7 @@
         {
           "name": "table",
           "origin": "declared",
-          "type": "HeaderGroupsSource<THeader> & HeaderRenderSource<THeader>",
+          "type": "HeaderGroupsSource<HeaderOf<TTable>> & HeaderRenderSource<HeaderOf<TTable>> & TTable",
           "shortType": "Union",
           "defaultValue": null,
           "description": "The table whose header groups render, typically from `useTable`.",

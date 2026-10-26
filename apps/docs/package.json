@@ -11,7 +11,7 @@
     "start": "next start --port 3000",
     "test": "vitest run --project unit",
     "test:e2e": "vitest run --project browser",
-    "type-check": "next typegen && tsc --noEmit"
+    "type-check": "next typegen && tsrs --noEmit"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
@@ -48,6 +48,7 @@
     "remark-gfm": "catalog:",
     "sugar-high": "catalog:",
     "tailwindcss": "catalog:",
+    "tsrs": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

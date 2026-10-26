@@ -6,6 +6,7 @@ export default defineConfig({
     include: ["src/**/*.test-d.tsx"],
     typecheck: {
       enabled: true,
+      checker: "tsrs",
       include: ["src/**/*.test-d.tsx"],
       tsconfig: "./tsconfig.json",
     },

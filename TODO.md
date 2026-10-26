@@ -146,6 +146,14 @@
 - After the first stable release, decide whether a new component, public API or public
   behavior change needs an issue with a code-owner-agreed scope before work starts, and
   add that rule to [CONTRIBUTING.md](CONTRIBUTING.md).
+- Bump tsrs to 0.19 once it is on npm. It targets TypeScript 7.1 beta exactly and adds Windows
+  and Intel macOS binaries, so drop the platform note in the
+  [README prerequisites](README.md#prerequisites) in the same change.
+- Move `typescript` to 7.1 stable when it ships.
+- Bump `@elmeragroup/internal` to its tsrs-based canary once it is on npm. Update its catalog pin
+  and its `minimumReleaseAgeExclude` entry in `pnpm-workspace.yaml`, then run
+  `pnpm --filter docs generate` and review every changed api.json, because TypeScript 7.1 can
+  display types differently.
 - After upstream tooling uses stable Effect 4 and the release-age guard admits it,
   upgrade and remove prerelease exclusions unless another exception is justified.
 - Retire repo-policy workarounds when upstream lint can require disable reasons
