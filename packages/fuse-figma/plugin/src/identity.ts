@@ -6,6 +6,7 @@
  */
 
 import { PLUGIN_DATA_KEY, PLUGIN_DATA_NAMESPACE } from "../../src/components/kit-spec.ts";
+import { LayerConflict } from "./errors.ts";
 import { change, keepsOrder, warn } from "./plan.ts";
 import type { Plan, Target } from "./plan.ts";
 
@@ -108,16 +109,18 @@ export function findOwned<Node extends BaseNode>(
 ): Node | undefined {
   const keyed = siblings.byKey.get(key) ?? [];
   if (keyed.length > 1) {
-    throw new Error(
-      `${where} holds ${keyed.length} layers with the key ${key}. Delete the copies, then run the plugin again.`
-    );
+    throw new LayerConflict({
+      message: `${where} holds ${keyed.length} layers with the key ${key}. Delete the copies, then run the plugin again.`,
+      key,
+    });
   }
   const [match] = keyed;
   if (match !== undefined) {
     if (!accept(match)) {
-      throw new Error(
-        `${where}: the layer with the key ${key} is a ${match.type}. Delete it, then run the plugin again.`
-      );
+      throw new LayerConflict({
+        message: `${where}: the layer with the key ${key} is a ${match.type}. Delete it, then run the plugin again.`,
+        key,
+      });
     }
     return match;
   }

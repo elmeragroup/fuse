@@ -31,6 +31,7 @@ import type {
   VariantSpec,
 } from "../../src/components/kit-spec.ts";
 import { checkComponentSet } from "./component-set.ts";
+import { FileNotSynced } from "./errors.ts";
 import { variableLabel } from "./fields.ts";
 import { PREVIEW_BACKGROUND } from "./previews.ts";
 import { sha1Hex } from "./sha1.ts";
@@ -679,9 +680,10 @@ export function checkKit(figma: PluginAPI, variables: KitVariables, kit: KitSpec
   for (const { ref, type } of boundRefs(kit)) {
     const variable = variables.variable(ref);
     if (variable.resolvedType !== type) {
-      throw new Error(
-        `${variableLabel(ref)} is a ${variable.resolvedType} variable, and the kit binds it to a field that takes a ${type}. Run \`figma:sync\` on this file first.`
-      );
+      throw new FileNotSynced({
+        message: `${variableLabel(ref)} is a ${variable.resolvedType} variable, and the kit binds it to a field that takes a ${type}. Run \`figma:sync\` on this file first.`,
+        collection: ref.collection,
+      });
     }
   }
 }

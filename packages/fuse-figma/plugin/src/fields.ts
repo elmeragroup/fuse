@@ -20,6 +20,7 @@ import type {
   SizeSpec,
   VariableRef,
 } from "../../src/components/kit-spec.ts";
+import { FontUnavailable } from "./errors.ts";
 import { change, changeTogether, requirement } from "./plan.ts";
 import type { Plan } from "./plan.ts";
 import type { KitVariables } from "./variables.ts";
@@ -62,10 +63,11 @@ export function requireFont(run: Run, label: string, font: FontName): void {
     try {
       await run.figma.loadFontAsync(font);
     } catch (cause) {
-      throw new Error(
-        `${label} needs the font ${font.family} ${font.style}, which Figma cannot load. Install it, then run the plugin again.`,
-        { cause }
-      );
+      throw new FontUnavailable({
+        message: `${label} needs the font ${font.family} ${font.style}, which Figma cannot load. Install it, then run the plugin again.`,
+        font,
+        cause,
+      });
     }
   });
 }

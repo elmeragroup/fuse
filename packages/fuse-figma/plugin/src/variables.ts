@@ -4,7 +4,10 @@
  * synced or was synced from an older Fuse.
  */
 
+import { Effect } from "effect";
+
 import type { ModeRef, VariableRef } from "../../src/components/kit-spec.ts";
+import { DuplicateCollections, FileNotSynced } from "./errors.ts";
 
 /** A mode of a local collection. */
 export type ResolvedMode = {
@@ -12,7 +15,10 @@ export type ResolvedMode = {
   readonly modeId: string;
 };
 
-/** Looks up the variables and modes the kit names. Each lookup throws when the file lacks it. */
+/**
+ * Looks up the variables and modes the kit names. Each lookup throws `FileNotSynced` when the file
+ * lacks it.
+ */
 export type KitVariables = {
   readonly variable: (ref: VariableRef) => Variable;
   readonly mode: (ref: ModeRef) => ResolvedMode;
@@ -27,11 +33,11 @@ const RUN_SYNC_FIRST = "Run `figma:sync` on this file first.";
  *
  * @param figma - The plugin API.
  * @param names - The collections the kit's variable and mode references name.
- * @returns The lookups for the kit's variable and mode references.
- * @throws When the file has two local collections with a name the kit uses.
+ * @returns The lookups for the kit's variable and mode references, or `DuplicateCollections` when
+ *   the file has two local collections with a name the kit uses.
  */
-export async function loadKitVariables(figma: PluginAPI, names: ReadonlySet<string>): Promise<KitVariables> {
-  const allCollections = await figma.variables.getLocalVariableCollectionsAsync();
+export const loadKitVariables = Effect.fnUntraced(function* (figma: PluginAPI, names: ReadonlySet<string>) {
+  const allCollections = yield* Effect.promise(() => figma.variables.getLocalVariableCollectionsAsync());
   const collections = allCollections.filter(
     (collection) => !collection.remote && !collection.isExtension && names.has(collection.name)
   );
@@ -39,9 +45,11 @@ export async function loadKitVariables(figma: PluginAPI, names: ReadonlySet<stri
   for (const name of names) {
     const named = collections.filter((collection) => collection.name === name);
     if (named.length > 1) {
-      throw new Error(
-        `The file has ${named.length} local collections named ${name}. Rename or delete all but one, then run the plugin again.`
-      );
+      return yield* new DuplicateCollections({
+        message: `The file has ${named.length} local collections named ${name}. Rename or delete all but one, then run the plugin again.`,
+        collection: name,
+        count: named.length,
+      });
     }
     const [collection] = named;
     if (collection !== undefined) {
@@ -50,7 +58,7 @@ export async function loadKitVariables(figma: PluginAPI, names: ReadonlySet<stri
   }
 
   const variablesByName = new Map<string, Variable>();
-  for (const variable of await figma.variables.getLocalVariablesAsync()) {
+  for (const variable of yield* Effect.promise(() => figma.variables.getLocalVariablesAsync())) {
     const collection = collections.find((candidate) => candidate.id === variable.variableCollectionId);
     if (collection !== undefined) {
       variablesByName.set(`${collection.name}/${variable.name}`, variable);
@@ -60,19 +68,23 @@ export async function loadKitVariables(figma: PluginAPI, names: ReadonlySet<stri
   const collectionNamed = (name: string): VariableCollection => {
     const collection = collectionsByName.get(name);
     if (collection === undefined) {
-      throw new Error(`The file has no local collection named ${name}. ${RUN_SYNC_FIRST}`);
+      throw new FileNotSynced({
+        message: `The file has no local collection named ${name}. ${RUN_SYNC_FIRST}`,
+        collection: name,
+      });
     }
     return collection;
   };
 
-  return {
+  const lookups: KitVariables = {
     variable: (ref) => {
       collectionNamed(ref.collection);
       const variable = variablesByName.get(`${ref.collection}/${ref.name}`);
       if (variable === undefined) {
-        throw new Error(
-          `The ${ref.collection} collection has no variable named ${ref.name}. ${RUN_SYNC_FIRST}`
-        );
+        throw new FileNotSynced({
+          message: `The ${ref.collection} collection has no variable named ${ref.name}. ${RUN_SYNC_FIRST}`,
+          collection: ref.collection,
+        });
       }
       return variable;
     },
@@ -80,9 +92,13 @@ export async function loadKitVariables(figma: PluginAPI, names: ReadonlySet<stri
       const collection = collectionNamed(ref.collection);
       const mode = collection.modes.find((candidate) => candidate.name === ref.mode);
       if (mode === undefined) {
-        throw new Error(`The ${ref.collection} collection has no mode named ${ref.mode}. ${RUN_SYNC_FIRST}`);
+        throw new FileNotSynced({
+          message: `The ${ref.collection} collection has no mode named ${ref.mode}. ${RUN_SYNC_FIRST}`,
+          collection: ref.collection,
+        });
       }
       return { collection, modeId: mode.modeId };
     },
   };
-}
+  return lookups;
+});

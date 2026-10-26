@@ -4,6 +4,8 @@
  * in one mode, and the run a planner takes. The suites also share a typed child lookup.
  */
 
+import { Effect } from "effect";
+
 import type { GlyphFontSpec } from "../../src/components/kit-spec.ts";
 import type {
   CollectionSpec,
@@ -134,9 +136,8 @@ export function fixtureFile(variables: readonly FixtureVariable[]): FakeFigma {
  */
 export async function fixtureRun(file: FakeFigma, plan: Plan): Promise<Run> {
   const collections = await file.figma.variables.getLocalVariableCollectionsAsync();
-  const variables = await loadKitVariables(
-    file.figma,
-    new Set(collections.map((collection) => collection.name))
+  const variables = await Effect.runPromise(
+    loadKitVariables(file.figma, new Set(collections.map((collection) => collection.name)))
   );
   return { figma: file.figma, variables, plan, glyphFont: GLYPH_FONT };
 }

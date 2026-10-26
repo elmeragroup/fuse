@@ -3,7 +3,8 @@
  * as one classic script whose only globals are the ones Figma provides. The in-memory file in
  * `plugin/src/fake-figma.ts` stands in for the document, and the UI is a channel the test drives.
  * The oracles are the change lines the one-variant Button kit plans on a file without its set, as
- * `plugin/src/reconcile.test.ts` lists them, and the sync hint the plugin shows on an unsynced file.
+ * `plugin/src/reconcile.test.ts` lists them, and the messages the plugin shows for an unsynced
+ * file and an unknown request.
  */
 import { Script } from "node:vm";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -109,6 +110,14 @@ function load(code: string, file: FakeFile): LoadedPlugin {
   };
 }
 
+/** What the kit changes on the fixture's file, which holds a stale preview and no Button set. */
+const CHANGES = [
+  "Fuse components: delete Old preview",
+  "Fuse components: create the Icons frame with 0 icons",
+  "Fuse components: create the component set Button with 1 variants",
+  "Fuse components: place Button and Icons in a row",
+];
+
 describe("the plugin bundle", () => {
   let fixtures: ButtonKitFixture & FakeFigmaModule;
   let code: string;
@@ -130,15 +139,24 @@ describe("the plugin bundle", () => {
 
   it("answers a plan request with the kit's change lines", async () => {
     const plugin = load(code, fixtures.fixture("Roboto").file);
-    expect(await plugin.ask("plan")).toEqual({
-      kind: "plan",
-      changes: [
-        "Fuse components: delete Old preview",
-        "Fuse components: create the Icons frame with 0 icons",
-        "Fuse components: create the component set Button with 1 variants",
-        "Fuse components: place Button and Icons in a row",
-      ],
+    expect(await plugin.ask("plan")).toEqual({ kind: "plan", changes: CHANGES, warnings: [] });
+  });
+
+  it("answers an apply request with the lines it applied and none remaining", async () => {
+    const plugin = load(code, fixtures.fixture("Roboto").file);
+    expect(await plugin.ask("apply")).toEqual({
+      kind: "applied",
+      changes: CHANGES,
+      remaining: [],
       warnings: [],
+    });
+  });
+
+  it("answers a request it does not know with an error", async () => {
+    const plugin = load(code, fixtures.fixture("Roboto").file);
+    expect(await plugin.ask("undo")).toEqual({
+      kind: "error",
+      message: "The plugin UI sent an unknown request: undo",
     });
   });
 

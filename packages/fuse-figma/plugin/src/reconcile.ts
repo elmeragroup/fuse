@@ -4,15 +4,18 @@
  * operations in order, so the change list a plan returns is what an apply does. A run that
  * moves nodes between pages is the exception: Apply moves them first and plans the rest again.
  *
- * The run takes the plugin API as an argument rather than reading the `figma` global, so a
- * test can hand it a fake file.
+ * The run reads the plugin API, the kit and the file's variables as services, so a test can
+ * hand it a fake file. `reconcileKit` runs it as a promise for callers outside Effect.
  */
+
+import { Effect } from "effect";
 
 import { glyphFonts } from "../../src/components/kit-spec.ts";
 import type { KitSpec } from "../../src/components/kit-spec.ts";
-import { checkKit, kitCollections } from "./check-kit.ts";
+import { checkKit } from "./check-kit.ts";
 import { planComponentSet } from "./component-set.ts";
 import type { PlannedSet } from "./component-set.ts";
+import { attempt } from "./errors.ts";
 import { requireFont } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { planIconLibrary } from "./icons.ts";
@@ -21,7 +24,8 @@ import type { PlannedPage } from "./pages.ts";
 import { changeLines, performPlan, runPlan } from "./plan.ts";
 import type { Plan, Target } from "./plan.ts";
 import { placePageContents, planPreviews } from "./previews.ts";
-import { loadKitVariables } from "./variables.ts";
+import { FigmaPlugin, FileVariables, Kit, runPlugin } from "./services.ts";
+import type { KitVariables } from "./variables.ts";
 
 /** What a run changed, or would change, and what it could not represent. */
 export type ReconcileReport = {
@@ -89,15 +93,20 @@ async function planKit(run: Run, kit: KitSpec): Promise<Target<PageNode>> {
 }
 
 /**
- * Plan or apply the kit on the current file.
+ * Plan or apply the kit on the current file, with its variables already read.
  *
  * @param figma - The plugin API.
- * @param kit - The kit the spec builder wrote.
+ * @param variables - The file's variables.
+ * @param kit - The kit.
  * @param apply - Whether to write the changes or only list them.
  * @returns The changes and the warnings.
  */
-export async function reconcileKit(figma: PluginAPI, kit: KitSpec, apply: boolean): Promise<ReconcileReport> {
-  const variables = await loadKitVariables(figma, kitCollections(kit));
+async function reconcileFile(
+  figma: PluginAPI,
+  variables: KitVariables,
+  kit: KitSpec,
+  apply: boolean
+): Promise<ReconcileReport> {
   const startRun = (plan: Plan): Run => {
     const run: Run = { figma, variables, plan, glyphFont: kit.glyphFont };
     checkKit(figma, variables, kit);
@@ -136,4 +145,31 @@ export async function reconcileKit(figma: PluginAPI, kit: KitSpec, apply: boolea
     await figma.setCurrentPageAsync(page.get());
   }
   return { changes: changeLines(plan), warnings: plan.warnings };
+}
+
+/**
+ * Plan or apply the kit on the current file. Each run reads the file's variables again, so the
+ * Plan that follows an Apply reads what the Apply wrote.
+ *
+ * @param apply - Whether to write the changes or only list them.
+ * @returns The changes and the warnings.
+ */
+export const reconcile = (apply: boolean) =>
+  Effect.gen(function* () {
+    const figma = yield* FigmaPlugin;
+    const kit = yield* Kit;
+    const variables = yield* FileVariables;
+    return yield* attempt(() => reconcileFile(figma, variables, kit, apply));
+  }).pipe(Effect.provide(FileVariables.layer));
+
+/**
+ * Plan or apply the kit on the current file, as a promise.
+ *
+ * @param figma - The plugin API.
+ * @param kit - The kit the spec builder wrote.
+ * @param apply - Whether to write the changes or only list them.
+ * @returns The changes and the warnings. The promise rejects with the error that stopped the run.
+ */
+export function reconcileKit(figma: PluginAPI, kit: KitSpec, apply: boolean): Promise<ReconcileReport> {
+  return runPlugin(reconcile(apply), figma, kit);
 }

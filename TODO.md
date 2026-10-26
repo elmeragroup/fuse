@@ -450,6 +450,13 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   Each migration step that changes the plugin lists its real-file checks below. Run them against
   this baseline before that step's PR merges.
 
+  - Effect at the plugin edge (`plugin/src/services.ts`, pending): check that the plugin loads,
+    since Effect calls `BigInt` at load and writes a `globalThis` key per fiber step. Check that
+    Plan and Apply list the baseline's lines in about the baseline's time, that one Cmd+Z still
+    undoes an Apply, and that a snapshot export still shows its progress. On a file the token sync
+    never wrote, Plan must still show "The file has no local collection named Fuse tokens" with the
+    hint to run `figma:sync`.
+
 ## Data table
 
 - The docs API reference lists only `value` and `className` for the default cells: the generator
