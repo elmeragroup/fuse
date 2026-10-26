@@ -1,10 +1,11 @@
 /**
  * `reconcileKit` with a preview frame pinned to a density mode that makes its Item instance taller
  * than the Item variant, on the in-memory file in `fake-figma.ts`. The oracles are the fake's rule 56,
- * after what a real file did on 2026-10-26 (G13 to G15): such an instance holds its literal width when
- * the variant's changes, and follows a bound width while it reads the binding. The owner's file showed
- * the first: after 531ea20d narrowed the Combobox sets, the comfortable previews kept the old widths
- * and Plan read clean.
+ * after what a real file did on 2026-10-26 (G13 to G15, G19): such an instance holds its literal width
+ * when the variant's changes, follows a bound width while it reads the binding, and keeps its length
+ * once it unbinds its own width. A real instance also hugged an axis its main fixes (N4). The owner's
+ * file showed the first: after 531ea20d narrowed the Combobox sets, the comfortable previews kept the
+ * old widths and Plan read clean.
  */
 import { describe, expect, it } from "vitest";
 
@@ -245,7 +246,7 @@ describe("a preview instance its modes make taller than its variant", () => {
     );
     expect([instance.width, instance.boundVariables?.width?.id]).toEqual([140, itemW?.id]);
 
-    // A designer detaches the width, which then stays at 140 whatever `item-w` holds.
+    // A designer detaches the width, which then stays at 140 whatever `item-w` holds (G19).
     instance.setBoundVariable("width", null);
     file.reopen();
     expect(instance.boundVariables?.width).toBeUndefined();
@@ -259,5 +260,27 @@ describe("a preview instance its modes make taller than its variant", () => {
     expect([instance.width, instance.boundVariables?.width?.id]).toEqual([140, itemW?.id]);
     expect([instance.layoutSizingHorizontal, instance.layoutSizingVertical]).toEqual(["FIXED", "HUG"]);
     expect(await reconcileKit(file.figma, kitWith(ITEM_W), false)).toEqual({ changes: [], warnings: [] });
+  });
+
+  // N4: a real instance hugged its height at 26px while the height bound `row-h`, so its length read
+  // as the spec's while it hugged. Here the Item is as wide as the Row it hugs, so a hugging instance
+  // reads the spec's 40.
+  it("fixes an axis the variant fixes on an instance that hugs it at the spec's length", async () => {
+    const file = await applied(literal(40));
+    const { instance } = await itemNodes(file);
+    instance.layoutSizingHorizontal = "HUG";
+    file.reopen();
+    expect([instance.width, instance.layoutSizingHorizontal]).toEqual([40, "HUG"]);
+
+    const kit = kitWith(literal(40));
+    expect((await reconcileKit(file.figma, kit, false)).changes).toEqual([
+      "Comfortable / Item / item/state=rest: layoutSizingHorizontal → FIXED, width → 40",
+      "Fuse components: place Row, Item and Icons in a row and stack 1 previews below them",
+    ]);
+    await reconcileKit(file.figma, kit, true);
+    file.reopen();
+    expect([instance.width, instance.height]).toEqual([40, 36]);
+    expect([instance.layoutSizingHorizontal, instance.layoutSizingVertical]).toEqual(["FIXED", "HUG"]);
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
   });
 });

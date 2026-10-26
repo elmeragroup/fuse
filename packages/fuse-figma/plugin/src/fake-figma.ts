@@ -290,7 +290,8 @@
  *    the instance's `name` (NS), so a fill, stroke, effects or corner the fake stores equal to what
  *    the layer's source shows clears that override, and the field follows the source again.
  *    `removeOverrides` exists (N3), and the fake follows the typings' "removes all direct
- *    overrides": it clears what `overrides` lists and keeps the property values.
+ *    overrides": it clears what `overrides` lists and keeps the property values, apart from the
+ *    lengths of an instance its modes hold (rule 56).
  * 38. An instance and its sublayers show their main component's fills, strokes, effects and corners,
  *    and its corner bindings, until they override them. On 2026-10-23 a padding change and a fill
  *    rebound to `destructive` on the inner variant reached the nested instance, which kept its `Retry`
@@ -475,10 +476,19 @@
  *    keeps them through a swap to a rebuilt icon library. One reading fits G17 and G18 together: a
  *    swap keeps a length that differs from the old main's and takes the new main's where it equals
  *    it, as G17's held 404 equalled the old variant's width and its 36 did not. No probe tells that
- *    reading apart from the fake's split by `heldByModes`. The probes left open a FILL axis, a value change
- *    seen by an instance whose main is unbound, and an instance that unbinds its own length, which
- *    the fake leaves at its length with no binding until a new one. A HUG write drops the length
- *    from the overrides as rule 32 says, where G13 still listed it.
+ *    reading apart from the fake's split by `heldByModes`. `resetOverrides()` left a held instance at
+ *    366 × 36 against a main at 300, still listing `width` and `height` (G13), so the fake's
+ *    `removeOverrides`, which the typings name its replacement, keeps a held instance's lengths
+ *    listed. An instance's own `setBoundVariable("width", null)` on a main bound to 100 in mode A
+ *    and 140 in mode B kept 100 in a matching mode and 140 in mode B, read unbound, and listed
+ *    `boundVariables`, `height` and `width`. It kept those lengths when the variable's values went
+ *    to 120 and 180, and followed them once bound again (G19). The fake has no `setValueForMode`, so
+ *    it holds both lengths from the unbind on, as it holds a resized instance's, until a binding
+ *    comes back. A HUG on such an instance in mode B gave 36 × 36 and listed `primaryAxisSizingMode`
+ *    too (G19), which the fake does not model. The probes left open a FILL axis, a value change seen
+ *    by an instance whose main is unbound, what `removeOverrides` does to an own unbind, which the
+ *    fake reverts, and the order of the listed fields. A HUG write drops the length from the
+ *    overrides as rule 32 says, where G13 still listed it.
  *
  * An instance's sublayers show the layers of its main component, and a nested instance's sublayers
  * the sublayers its main layer shows. An override, such as the color an icon layer gives its glyph,
@@ -2014,11 +2024,18 @@ function bindNodeField(state: NodeState, field: VariableBindableNodeField, varia
   const targets = bindingTargets(field);
   const length = state.type === "INSTANCE" && (field === "width" || field === "height") ? field : undefined;
   if (variable === null) {
+    if (length !== undefined) {
+      // An instance's own unbind keeps the length it shows, from then on (rule 56, G19).
+      settled(state);
+    }
     for (const target of targets) {
       state.bindings.delete(target);
     }
     if (length !== undefined) {
       state.unboundLengths.add(length);
+      for (const field of ["width", "height", "boundVariables"]) {
+        state.overridden.add(field);
+      }
     }
     if (targets.some((target) => CORNERS.has(target))) {
       noteOverride(state, "radii");
@@ -3912,7 +3929,10 @@ class FakeInstance extends FakeFrameLikeNode {
     return entries;
   }
 
-  /** Rule 37: the typings' "removes all direct overrides", which keeps the property values. */
+  /**
+   * Rule 37: the typings' "removes all direct overrides", which keeps the property values. An instance
+   * its modes hold keeps its lengths, listed, as `resetOverrides()` kept one in G13 (rule 56).
+   */
   removeOverrides(): void {
     const state = live(this);
     write(state, "remove overrides");
@@ -3921,8 +3941,14 @@ class FakeInstance extends FakeFrameLikeNode {
       if (layer.overridden.has("name") && source !== undefined) {
         layer.name = source.name;
       }
+      if (layer.overridden.has("boundVariables")) {
+        layer.unboundLengths.clear();
+      }
+      const kept: ReadonlySet<string> = layer.heldByModes ? new Set(["width", "height"]) : new Set();
       for (const field of OVERRIDE_FIELDS.keys()) {
-        layer.overridden.delete(field);
+        if (!kept.has(field)) {
+          layer.overridden.delete(field);
+        }
       }
       for (const child of childrenOf(layer)) {
         clear(child);
@@ -3935,7 +3961,8 @@ class FakeInstance extends FakeFrameLikeNode {
 /**
  * The fields `overrides` lists for each override the fake notes (rule 37): N1 listed an instance's
  * `name`, `width` and `height`, and N3 its `fills`, `effects` and "the corner fields", which the fake
- * takes as the four corners the typings name and `cornerRadius`, and a sublayer's `fills`.
+ * takes as the four corners the typings name and `cornerRadius`, and a sublayer's `fills`. G19 listed
+ * `boundVariables` after an instance's own unbind of its width (rule 56).
  */
 const OVERRIDE_FIELDS: ReadonlyMap<string, readonly NodeChangeProperty[]> = new Map<
   string,
@@ -3948,6 +3975,9 @@ const OVERRIDE_FIELDS: ReadonlyMap<string, readonly NodeChangeProperty[]> = new 
   ["strokes", ["strokes"]],
   ["effects", ["effects"]],
   ["radii", ["cornerRadius", "topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius"]],
+  // SAFETY: G19 read `boundVariables` among an instance's overridden fields, which the typings'
+  // NodeChangeProperty does not name.
+  ["boundVariables", ["boundVariables" as NodeChangeProperty]],
   ["characters", ["characters"]],
   ["textAlignHorizontal", ["textAlignHorizontal"]],
   ["minWidth", ["minWidth"]],

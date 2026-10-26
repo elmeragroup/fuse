@@ -31,7 +31,6 @@ import type {
   NestedPropertiesSpec,
   NumberSpec,
   ShadowSpec,
-  SizingSpec,
   TextLayerSpec,
   VariantSpec,
 } from "../../src/components/kit-spec.ts";
@@ -39,24 +38,22 @@ import { planAnchoring } from "./anchoring.ts";
 import type { PlannedSet } from "./component-set.ts";
 import {
   heldFonts,
-  heldSizing,
-  LAYOUT_SIZING,
   planNumber,
   planPaints,
   planScalar,
   planShadows,
   planVisibleLink,
   requireFont,
-  SIZING_MEMBERS,
 } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
 import { planGlyphRanges } from "./glyph-font.ts";
 import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
 import { keyOf } from "./identity.ts";
-import { change, changeTogether, newPlan, performPlan } from "./plan.ts";
+import { planInstanceSizing } from "./instance-sizing.ts";
+import { change, newPlan, performPlan } from "./plan.ts";
 import type { Target } from "./plan.ts";
-import { cornerField, planLength, planLimit } from "./root-layer.ts";
+import { cornerField, planLimit } from "./root-layer.ts";
 
 /** The inner set and variant an instance layer shows, as the plan leaves them. */
 export type InnerVariant = {
@@ -625,56 +622,6 @@ function planLabelGlyphs(run: Run, layers: ReadonlyMap<string, HeldLayer>, root:
 }
 
 /**
- * Plan how the instance sizes in its parent's auto layout, as one operation. An axis the spec fixes is
- * written FIXED first, since a real file kept a hugging instance's height when its height bound a
- * variable (N4). The lengths follow, written whatever they read on an axis that turns FIXED, then both
- * axes' sizing, since a resize turns a filling axis fixed (P2).
- *
- * @param held - `unknown` when the box that holds the instance turns in this run, which moves a fill
- *   to the other axis, so the sizing and lengths are written whatever they read now.
- */
-function planSizing(run: Run, instance: InstanceNode, label: string, sizing: SizingSpec, held: Held): void {
-  const desired = {
-    horizontal: LAYOUT_SIZING[sizing.horizontal.kind],
-    vertical: LAYOUT_SIZING[sizing.vertical.kind],
-  };
-  const reads = held === "read" ? heldSizing(instance) : undefined;
-  const writeSizing = (): void => {
-    instance.layoutSizingHorizontal = desired.horizontal;
-    instance.layoutSizingVertical = desired.vertical;
-  };
-  changeTogether(
-    run.plan,
-    label,
-    (plan) => {
-      const group = { ...run, plan };
-      for (const [axis, member] of SIZING_MEMBERS) {
-        if (sizing[axis].kind === "fixed" && reads?.[axis] !== "FIXED") {
-          change(plan, label, `${member} → FIXED`, () => {
-            instance[member] = "FIXED";
-          });
-        }
-      }
-      // An axis that turns FIXED holds the length it hugged or filled, a binding included (N4), so
-      // its length is written whatever it reads now.
-      const lengths = (axis: keyof SizingSpec): Held => (reads?.[axis] === "FIXED" ? "read" : "unknown");
-      planLength(group, instance, label, "width", sizing.horizontal, lengths("horizontal"), (value) =>
-        instance.resize(value, instance.height)
-      );
-      planLength(group, instance, label, "height", sizing.vertical, lengths("vertical"), (value) =>
-        instance.resize(instance.width, value)
-      );
-      for (const [axis, member] of SIZING_MEMBERS) {
-        if (sizing[axis].kind !== "fixed" && reads?.[axis] !== desired[axis]) {
-          change(plan, label, `${member} → ${desired[axis]}`, writeSizing);
-        }
-      }
-    },
-    writeSizing
-  );
-}
-
-/**
  * Plan, when an operation runs, what it then reads: the writes `stage` records into a plan of their
  * own, performed at once, as `create` plans a new node's contents.
  */
@@ -708,7 +655,7 @@ async function planOverridesAndSizing(
   if (spec.absolute === undefined) {
     planAnchoring(run, instance, label, undefined, held);
   }
-  planSizing(run, instance, label, spec.sizing, held);
+  planInstanceSizing(run, instance, label, spec.sizing, held);
   if (spec.absolute !== undefined) {
     planAnchoring(run, instance, label, spec.absolute, held);
   }
