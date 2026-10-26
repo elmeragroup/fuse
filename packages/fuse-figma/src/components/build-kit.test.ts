@@ -33,6 +33,7 @@ import { buildKit, checkIconReferences } from "./build-kit";
 import type { IconSlot } from "./component-spec";
 import type { CoverageRow } from "./coverage";
 import { checkKitSpec, KitContradiction } from "./kit-check";
+import { KIT } from "./kit-registry";
 import { glyphFonts, iconKey } from "./kit-spec";
 import type { ChildLayerSpec, ColorSpec, ComponentRootSpec, ComponentSetSpec, KitSpec } from "./kit-spec";
 
@@ -927,6 +928,20 @@ function contradictionIn(kit: KitSpec): KitContradiction {
 }
 
 describe("the kit check the build runs", () => {
+  it("fails the build of a registry whose preview places a cell its set does not draw", async () => {
+    const kbd = KIT.find((entry) => entry.definition.key === "kbd");
+    if (kbd === undefined) {
+      throw new Error("the registry has no Kbd entry");
+    }
+    const failure = await Effect.runPromise(
+      buildKit([{ ...kbd, previewCells: [{ content: "text" }, { content: "chord" }] }]).pipe(Effect.flip)
+    );
+    expect([failure, failure.message]).toEqual([
+      expect.any(KitContradiction),
+      "Kbd / Fjordkraft internal private, light places kbd/content=chord, which Kbd does not define.",
+    ]);
+  });
+
   it("passes the built kit", () => {
     expect(Result.isSuccess(checkKitSpec(spec, (text) => Buffer.from(text, "base64")))).toBe(true);
   });

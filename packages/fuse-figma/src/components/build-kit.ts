@@ -17,7 +17,7 @@ import type { ModeView, VariableIndex } from "./css-values";
 import { fuseIcons, ICON_SIZE } from "./icon-library";
 import { checkKitSpec } from "./kit-check";
 import { KIT } from "./kit-registry";
-import type { KitPage } from "./kit-registry";
+import type { KitEntry, KitPage } from "./kit-registry";
 import { walkLayers } from "./kit-spec";
 import type {
   ComponentSetSpec,
@@ -155,8 +155,11 @@ function modeViews(
     });
 }
 
-async function buildSets({ variables, modes }: KitVariables): Promise<readonly KitComponentSet[]> {
-  const classes = new Set(KIT.flatMap(({ definition }) => definitionClasses(definition)));
+async function buildSets(
+  { variables, modes }: KitVariables,
+  registry: readonly KitEntry[]
+): Promise<readonly KitComponentSet[]> {
+  const classes = new Set(registry.flatMap(({ definition }) => definitionClasses(definition)));
   const compiled = await compileUtilities([...classes]);
   // The base layer's border color sets the color on each element, so a part does not inherit it
   // the way it inherits `PAGE`, and any utility that colors the border wins over it. The outline
@@ -164,10 +167,12 @@ async function buildSets({ variables, modes }: KitVariables): Promise<readonly K
   const base: readonly OuterDeclaration[] = [
     { className: "fuse.css base layer", ...baseBorderColor(compiled) },
   ];
-  return buildSetsInOrder(KIT, { compiled, variables, page: PAGE, base, modes }).map(([{ page }, set]) => ({
-    ...set,
-    componentSet: { ...set.componentSet, page: pageSpec(page).key },
-  }));
+  return buildSetsInOrder(registry, { compiled, variables, page: PAGE, base, modes }).map(
+    ([{ page }, set]) => ({
+      ...set,
+      componentSet: { ...set.componentSet, page: pageSpec(page).key },
+    })
+  );
 }
 
 /**
@@ -178,7 +183,7 @@ async function buildSets({ variables, modes }: KitVariables): Promise<readonly K
  * @throws When the variable set does not build.
  */
 export async function buildComponentSets(): Promise<readonly KitComponentSet[]> {
-  return buildSets(kitVariables());
+  return buildSets(kitVariables(), KIT);
 }
 
 /** The kit spec the plugin bundles, and the coverage of every recipe declaration. */
@@ -192,13 +197,15 @@ export type BuiltKit = {
  * Build the kit and its coverage, and check the kit against itself, so a spec the plugin would
  * refuse fails the build.
  *
+ * @param registry - The sets to build, their pages and their preview cells. `figma:plugin` builds
+ *   `KIT`.
  * @returns The kit and its coverage, or the `KitContradiction` the check found. The Effect dies
  *   when the variable set does not build or a preview names a mode it lacks.
  */
-export const buildKit = Effect.fn("buildKit")(function* () {
+export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitEntry[] = KIT) {
   const kitVariableSet = kitVariables();
   const { collections, variables } = kitVariableSet;
-  const built = yield* Effect.promise(() => buildSets(kitVariableSet));
+  const built = yield* Effect.promise(() => buildSets(kitVariableSet, registry));
   const glyphColor = readColor("var(--foreground)", variables);
   if (glyphColor === undefined) {
     throw new Error("the variable set has no foreground for the icon glyphs");
@@ -227,7 +234,7 @@ export const buildKit = Effect.fn("buildKit")(function* () {
     }
     return { ...theme, modes };
   });
-  const componentPages = [...new Map(KIT.map(({ page }) => [page.slug, page])).values()];
+  const componentPages = [...new Map(registry.map(({ page }) => [page.slug, page])).values()];
   const previews = componentPages.flatMap((page) =>
     themes.map((theme): PreviewSpec => {
       const key = `preview/${page.slug}/${theme.key}`;
@@ -236,12 +243,14 @@ export const buildKit = Effect.fn("buildKit")(function* () {
         name: `${page.name} / ${theme.name}`,
         page: pageSpec(page).key,
         modes: theme.modes,
-        groups: KIT.filter((entry) => entry.page.slug === page.slug).map(({ definition, previewCells }) => ({
-          key: `${key}/${definition.key}`,
-          name: definition.name,
-          componentSet: definition.key,
-          variants: previewCells.map((cell) => variantKey(definition, cell)),
-        })),
+        groups: registry
+          .filter((entry) => entry.page.slug === page.slug)
+          .map(({ definition, previewCells }) => ({
+            key: `${key}/${definition.key}`,
+            name: definition.name,
+            componentSet: definition.key,
+            variants: previewCells.map((cell) => variantKey(definition, cell)),
+          })),
       };
     })
   );
