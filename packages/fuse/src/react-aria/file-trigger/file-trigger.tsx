@@ -33,7 +33,12 @@ export type FileTriggerProps = {
   ref?: Ref<HTMLInputElement>;
   /** Merged onto the visible Button. */
   className?: string;
-} & FileTriggerPrimitiveProps &
+  /**
+   * Called with the picked files. The list is the input's own `files`, which Chromium and WebKit
+   * empty when the picker opens again, so copy it before storing it: `[...files]`.
+   */
+  onSelect?: FileTriggerPrimitiveProps["onSelect"];
+} & Omit<FileTriggerPrimitiveProps, "onSelect"> &
   VariantProps<typeof buttonVariants>;
 
 export function FileTrigger({

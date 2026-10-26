@@ -166,6 +166,7 @@ const EXPECTED_ENTRIES = {
   toggle: { inRootBarrel: true, runtimeExports: ["Toggle", "toggleVariants"] },
   "toggle-group": { inRootBarrel: true, runtimeExports: ["ToggleGroup"] },
   tooltip: { inRootBarrel: true, runtimeExports: ["Tooltip"] },
+  "file-upload": { inRootBarrel: true, runtimeExports: ["FileUpload", "useFileUpload"] },
   attachment: { inRootBarrel: true, runtimeExports: ["Attachment"] },
   "aspect-ratio": { inRootBarrel: true, runtimeExports: ["AspectRatio"] },
   // Subpath-only: its types read the optional @tanstack/react-table peer.

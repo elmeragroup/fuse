@@ -1,0 +1,89 @@
+---
+lede: >
+  An area that takes files from the picker, a drop or a paste, and checks them against `accept`.
+---
+
+import { FileUploadCompact } from "./demos/file-upload-compact";
+import { FileUploadLimits } from "./demos/file-upload-limits";
+import { FileUploadPicker } from "./demos/file-upload-picker";
+import { FileUploadFolders } from "./demos/file-upload-folders";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("file-upload");
+
+<ComponentIntro slug="file-upload" />
+
+<Prose>
+
+`FileUpload.Root` holds the hidden file input and the rules: `accept`, `multiple` and `directory`. `FileUpload.Dropzone` is the area files drop on, `FileUpload.Trigger` opens the picker, and `FileUpload.Description` is the hint that describes the Trigger. Every source ends in the same check. `onSelect` receives the files that pass, in a new array that is yours to keep. `onReject` receives the rest, each with a `reason`: `"type"` for a file that fails `accept`, `"count"` when a Root without `multiple` gets more than one file, `"directory"` for a folder while `directory` is off, and `"unreadable"` for a file in a dropped folder that the browser could not read.
+
+</Prose>
+
+<Demo slug="file-upload" id="compact" title="Compact drop zone" file="file-upload-compact.tsx">
+  <FileUploadCompact />
+</Demo>
+
+<Prose>
+
+## Drop zone
+
+A drag over the Dropzone sets `data-drop-target`, which turns its dashed border solid on the soft primary fill. When the drop is certain to fail, because a single-file Root gets several files or every file's type misses `accept`, the zone shows the not-allowed cursor and stays as it is. Safari hides the files until the drop, so there the check waits for the drop. A click on the Dropzone's empty surface opens the picker as well. That path is for the pointer only, so keep a Trigger inside the zone for the keyboard. Render the Trigger as a Fuse button with `render={<Button size="sm" />}`.
+
+While any Root is mounted, a file dropped outside every Dropzone does nothing, so a missed drop never opens the file in the tab.
+
+## Limits
+
+FileUpload checks `accept` and `multiple`. Limits such as a file count or a size are the app's own, so check them in `onSelect` before you keep a file. This demo keeps up to 3 files of 5 MB each, shows each as an [Attachment](/components/attachment), and builds one alert from `onReject` and its own limits. An image previews through an object URL, which removing the file revokes.
+
+</Prose>
+
+<Demo slug="file-upload" id="attachment-limits" title="Attachments with limits" file="file-upload-limits.tsx">
+  <FileUploadLimits />
+</Demo>
+
+<Prose>
+
+## Without a Dropzone
+
+Without a Dropzone, the Trigger and the Description are a plain picker. A paste still works while focus is inside the Root.
+
+</Prose>
+
+<Demo slug="file-upload" id="picker-only" title="Picker only" file="file-upload-picker.tsx">
+  <FileUploadPicker />
+</Demo>
+
+<Prose>
+
+## Folder uploads
+
+`directory` makes the picker choose folders, and a dropped folder expands into the files inside it, at any depth. Each file's `webkitRelativePath` holds its path inside the folder, such as `photos/2024/meter.jpg`, for a dropped folder as for a picked one.
+
+</Prose>
+
+<Demo slug="file-upload" id="folders" title="Folders" file="file-upload-folders.tsx">
+  <FileUploadFolders />
+</Demo>
+
+<Prose>
+
+## Paste
+
+A paste adds its files while focus is anywhere inside the Root, such as on the Trigger. A text field inside the Root keeps its own paste.
+
+## Custom sources
+
+`useFileUpload()` gives a part inside the Root its `state`, with `dragging` and `disabled`, and its `actions`. `actions.open()` opens the picker from a click or another user gesture. `actions.add(files)` sends files from another source through the same check as a pick.
+
+## Accessibility
+
+- **Keep a Trigger.** The Dropzone's drop and click work by pointer only. The Trigger is the keyboard path to the picker.
+- **Describe the limits.** Put what the Root takes in `FileUpload.Description`, such as "Images or PDFs, up to 3 files of 5 MB each". It describes every Trigger in the Root.
+- **Say what was rejected.** `onReject` reports each file and the reason. Show it in words, for example in an [Alert](/components/alert), which announces itself.
+
+</Prose>
+
+<ApiReference slug="file-upload" />
+
+<ComponentTokens slug="file-upload" />
