@@ -1,8 +1,11 @@
 /**
  * Small synced files for the plugin's unit tests, on the in-memory file in `fake-figma.ts`. A
  * test names the few variables its planner binds, and gets a file whose collections hold them
- * in one mode, and the run a planner takes. The suites also share a typed child lookup.
+ * in one mode, and the run a field planner takes or the services a structural planner reads. The
+ * suites also share a typed child lookup.
  */
+
+import { Context, Effect } from "effect";
 
 import type { GlyphFontSpec } from "../../src/components/kit-spec.ts";
 import type {
@@ -12,11 +15,14 @@ import type {
   VariableType,
   VariableValue,
 } from "../../src/variable-set.ts";
+import type { DuplicateCollections } from "./errors.ts";
 import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import type { Run } from "./fields.ts";
-import type { Plan } from "./plan.ts";
+import type { PlanRecorder } from "./plan.ts";
+import { FigmaPlugin, FileVariables, GlyphFont } from "./services.ts";
 import { loadKitVariables } from "./variables.ts";
+import type { KitVariables } from "./variables.ts";
 
 /** The kit's glyph font: Inter for ⇧ and ⌘, which Roboto lacks (G1). */
 export const GLYPH_FONT: GlyphFontSpec = { family: "Inter", glyphs: ["⇧", "⌘"] };
@@ -132,13 +138,45 @@ export function fixtureFile(variables: readonly FixtureVariable[]): FakeFigma {
  * @param plan - The plan the planner records into.
  * @returns The run.
  */
-export async function fixtureRun(file: FakeFigma, plan: Plan): Promise<Run> {
-  const collections = await file.figma.variables.getLocalVariableCollectionsAsync();
-  const variables = await loadKitVariables(
-    file.figma,
-    new Set(collections.map((collection) => collection.name))
-  );
-  return { figma: file.figma, variables, plan, glyphFont: GLYPH_FONT };
+export async function fixtureRun(file: FakeFigma, plan: PlanRecorder): Promise<Run> {
+  return {
+    figma: file.figma,
+    variables: await Effect.runPromise(fixtureVariables(file)),
+    plan,
+    glyphFont: GLYPH_FONT,
+  };
+}
+
+/** The file's variables, with every collection the file holds as one the kit names. */
+const fixtureVariables = Effect.fnUntraced(function* (
+  file: FakeFigma
+): Effect.fn.Return<KitVariables, DuplicateCollections> {
+  const collections = yield* Effect.promise(() => file.figma.variables.getLocalVariableCollectionsAsync());
+  return yield* loadKitVariables(file.figma, new Set(collections.map((collection) => collection.name)));
+});
+
+/**
+ * Provide the services a structural planner reads on a fixture file: the file, its variables, with
+ * every collection as one the kit names, and the kit's glyph font. The planner's `Plan` stays for
+ * the caller to provide, such as through `runPlan`.
+ *
+ * @param file - The file.
+ * @returns A function that provides the services to an effect.
+ */
+export function onFixture(
+  file: FakeFigma
+): <A, E, R>(
+  effect: Effect.Effect<A, E, R>
+) => Effect.Effect<A, E | DuplicateCollections, Exclude<R, FigmaPlugin | FileVariables | GlyphFont>> {
+  return (effect) =>
+    Effect.gen(function* () {
+      const variables = yield* fixtureVariables(file);
+      const context = Context.make(FigmaPlugin, file.figma).pipe(
+        Context.add(FileVariables, variables),
+        Context.add(GlyphFont, GLYPH_FONT)
+      );
+      return yield* Effect.provideContext(effect, context);
+    });
 }
 
 /**

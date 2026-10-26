@@ -11,6 +11,7 @@
  * `:where([data-orientation="horizontal"])`, and `w-64` is 64 steps of the `--spacing: 0.25rem`
  * that `fuse.css` declares in its `@theme inline` block, which Tailwind writes out in place.
  */
+import { Effect } from "effect";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
@@ -67,7 +68,7 @@ describe("the preview page's stylesheets", () => {
   });
 
   it("puts the host's own classes in the utilities layer after Fuse's styles.css and themes.css", async () => {
-    const lines = styleLines(await compileHostUtilities(["data-horizontal:w-64"]));
+    const lines = styleLines(await Effect.runPromise(compileHostUtilities(["data-horizontal:w-64"])));
     const themes = lines.indexOf(`@import url("${ASSET_PATHS.themes}");`);
     const host = lines.indexOf("@layer utilities {");
     expect(themes).toBeGreaterThan(lines.indexOf(`@import url("${ASSET_PATHS.styles}");`));

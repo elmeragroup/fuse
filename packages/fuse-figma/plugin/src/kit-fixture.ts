@@ -5,8 +5,10 @@
  * lists as it creates the pages and previews. `test/kit-inventory.ts` names the pages, sets and
  * previews.
  */
-import { Result } from "effect";
+import { Effect, Result } from "effect";
+import type { FileSystem, Layer } from "effect";
 
+import type { KitBuildError } from "../../src/components/build-errors.ts";
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import type { AliasCycle, CollectionSpec, InvalidVariableSet, VariableSet } from "../../src/variable-set.ts";
 import { ICONS_PAGE, KIT_PAGES, previewsOn } from "../../test/kit-inventory.ts";
@@ -23,8 +25,13 @@ import { reconcileKit } from "./reconcile.ts";
  */
 const SPEC_BUILDER = "../../src/components/build-kit.ts";
 const TOKEN_SYNC = "../../src/fuse-variable-set.ts";
+/** Node's file system for Effect, which the icon library's temporary directory needs. */
+const NODE_PLATFORM = "@effect/platform-node";
 
-type SpecBuilder = { readonly buildKit: () => Promise<{ readonly spec: KitSpec }> };
+type SpecBuilder = {
+  readonly buildKit: () => Effect.Effect<{ readonly spec: KitSpec }, KitBuildError, FileSystem.FileSystem>;
+};
+type NodePlatform = { readonly NodeFileSystem: { readonly layer: Layer.Layer<FileSystem.FileSystem> } };
 type TokenSync = {
   readonly fuseVariableSet: () => Result.Result<VariableSet, InvalidVariableSet | AliasCycle>;
 };
@@ -47,7 +54,11 @@ async function load(): Promise<KitFixture> {
   if (Result.isFailure(variableSet)) {
     throw new Error(`the Fuse variable set does not build: ${String(variableSet.failure)}`);
   }
-  const { spec } = await builder.buildKit();
+  // SAFETY: the path names @effect/platform-node, whose NodeFileSystem.layer provides FileSystem.
+  const platform = (await import(NODE_PLATFORM)) as NodePlatform;
+  const { spec } = await Effect.runPromise(
+    builder.buildKit().pipe(Effect.provide(platform.NodeFileSystem.layer))
+  );
   return { kit: spec, collections: variableSet.success.collections };
 }
 

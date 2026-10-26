@@ -6,6 +6,7 @@
  */
 import { createHash } from "node:crypto";
 
+import { KitUnmappable } from "./build-errors";
 import type { CoverageNote, LayerStyle } from "./cascade";
 import {
   describeNumber,
@@ -151,9 +152,9 @@ function describeFill(fill: ColorSpec | typeof NO_FILL): CoverageNote {
  */
 function readImage(reader: LayerStyle, image: () => Uint8Array, variant: string): ImagePaintSpec | undefined {
   if (!reader.has("object-fit")) {
-    throw new Error(
-      `${variant}: a box that shows an image needs object-fit: cover, which an image paint at FILL draws`
-    );
+    throw new KitUnmappable({
+      message: `${variant}: a box that shows an image needs object-fit: cover, which an image paint at FILL draws`,
+    });
   }
   const scaleMode = reader.read(
     "object-fit",

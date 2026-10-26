@@ -5,10 +5,9 @@
  */
 
 import type { SizingSpec } from "../../src/components/kit-spec.ts";
-import { heldSizing, LAYOUT_SIZING, SIZING_MEMBERS } from "./fields.ts";
+import { changeTogetherIn, heldSizing, LAYOUT_SIZING, planLength, SIZING_MEMBERS } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
-import { change, changeTogether } from "./plan.ts";
-import { planLength } from "./root-layer.ts";
+import { change } from "./plan.ts";
 
 /**
  * Plan how an instance sizes in its parent's auto layout, as one operation: an instance layer inside
@@ -40,14 +39,13 @@ export function planInstanceSizing(
     instance.layoutSizingHorizontal = desired.horizontal;
     instance.layoutSizingVertical = desired.vertical;
   };
-  changeTogether(
-    run.plan,
+  changeTogetherIn(
+    run,
     label,
-    (plan) => {
-      const group = { ...run, plan };
+    (group) => {
       for (const [axis, member] of SIZING_MEMBERS) {
         if (sizing[axis].kind === "fixed" && reads?.[axis] !== "FIXED") {
-          change(plan, label, `${member} → FIXED`, () => {
+          change(group.plan, label, `${member} → FIXED`, () => {
             instance[member] = "FIXED";
           });
         }
@@ -63,7 +61,7 @@ export function planInstanceSizing(
       );
       for (const [axis, member] of SIZING_MEMBERS) {
         if (sizing[axis].kind !== "fixed" && reads?.[axis] !== desired[axis]) {
-          change(plan, label, `${member} → ${desired[axis]}`, writeSizing);
+          change(group.plan, label, `${member} → ${desired[axis]}`, writeSizing);
         }
       }
     },

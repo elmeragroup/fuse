@@ -18,8 +18,7 @@
  * draws.
  */
 
-import { Result } from "effect";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { Effect, Result } from "effect";
 import { join } from "node:path";
 
 import { buildComponentSets } from "../components/build-kit.ts";
@@ -30,6 +29,7 @@ import { SELECT_ITEM } from "../components/select-kit.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { CellRequest } from "./browser-render.ts";
 import { loadRenderers } from "./cell-renderers.ts";
+import { makeDirectory, writeText } from "./compare-files.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { PageLayout } from "./preview-page.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
@@ -37,7 +37,7 @@ import { crop, encodePng } from "./raster.ts";
 import type { Raster } from "./raster.ts";
 import { parseSnapshot } from "./read-snapshot.ts";
 import { compareSnapshot, planCells, renderables } from "./run-compare.ts";
-import type { CompareFailure, CompareOptions, CompareReport } from "./run-compare.ts";
+import type { CompareOptions, CompareReport } from "./run-compare.ts";
 import { SNAPSHOT_FORMAT, SNAPSHOT_VERSION } from "./snapshot.ts";
 import type { InstanceSnapshot, KitSnapshot, PreviewSnapshot } from "./snapshot.ts";
 import { tokenColorsIn, unchangedByDesign } from "./unchanged-by-design.ts";
@@ -180,119 +180,109 @@ type Perturbed = { readonly preview: string; readonly variant: string };
  * Run the self-check.
  *
  * @param options - Where to write the fake snapshot and the report, and the diff settings.
- * @returns Whether the harness found exactly the changed cells, or why it could not run.
- * @throws When the kit's preview frames place a cell the comparison cannot render.
+ * @returns Whether the harness found exactly the changed cells. The Effect fails with why it could
+ *   not run, and dies when the kit's preview frames place a cell the comparison cannot render.
  */
-export async function runSelfCheck(
-  options: CompareOptions
-): Promise<Result.Result<SelfCheckResult, CompareFailure>> {
-  const build = locateFuseBuild();
-  if (Result.isFailure(build)) {
-    return Result.fail(build.failure);
-  }
+export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: CompareOptions) {
+  const build = yield* locateFuseBuild();
   const fillMismatches: string[] = [];
   const variants = KIT.flatMap(({ definition, previewCells }) =>
     previewCells.map((cell) => variantKey(definition, cell))
   );
   const painted: Perturbed = { preview: PREVIEWS[0].key, variant: firstInState("hover") };
   const grown: Perturbed = { preview: PREVIEWS[1].key, variant: firstInState("focus") };
-  const renderers = await loadRenderers();
+  const renderers = yield* loadRenderers();
   const renderable = renderables(renderers);
-  const componentSets = (await buildComponentSets()).map((set) => set.componentSet);
-  const launched = await CompareBrowser.launch(await readPageAssets(build.success, renderers));
-  if (Result.isFailure(launched)) {
-    return Result.fail(launched.failure);
-  }
+  const componentSets = (yield* buildComponentSets()).map((set) => set.componentSet);
+  const assets = yield* readPageAssets(build, renderers);
   const previews: PreviewSnapshot[] = [];
-  try {
-    for (const preview of PREVIEWS) {
-      const modes = Object.entries(preview.modes).map(([collection, mode]) => ({ collection, mode }));
-      const theme = parsePreviewTheme(modes);
-      if (Result.isFailure(theme)) {
-        throw theme.failure;
-      }
-      const placeholders: InstanceSnapshot[] = variants.map((variant) => ({
-        key: `${preview.key}/${variant}`,
-        variant,
-        box: { x: 0, y: 0, width: 0, height: 0 },
-        image: null,
-      }));
-      const unchanged = unchangedByDesign(componentSets, tokenColorsIn(theme.success));
-      const { planned, unsupported } = planCells(placeholders, renderable, unchanged, options.layout);
-      if (unsupported.length > 0) {
-        throw new Error(
-          `the comparison cannot render these cells of the kit: ${unsupported.map((entry) => entry.reason).join("; ")}`
+  yield* Effect.scoped(
+    Effect.gen(function* () {
+      const browser = yield* CompareBrowser.launch(assets);
+      for (const preview of PREVIEWS) {
+        const modes = Object.entries(preview.modes).map(([collection, mode]) => ({ collection, mode }));
+        const theme = parsePreviewTheme(modes);
+        if (Result.isFailure(theme)) {
+          throw theme.failure;
+        }
+        const placeholders: InstanceSnapshot[] = variants.map((variant) => ({
+          key: `${preview.key}/${variant}`,
+          variant,
+          box: { x: 0, y: 0, width: 0, height: 0 },
+          image: null,
+        }));
+        const unchanged = unchangedByDesign(componentSets, tokenColorsIn(theme.success));
+        const { planned, unsupported } = planCells(placeholders, renderable, unchanged, options.layout);
+        if (unsupported.length > 0) {
+          throw new Error(
+            `the comparison cannot render these cells of the kit: ${unsupported.map((entry) => entry.reason).join("; ")}`
+          );
+        }
+        const rendered = yield* browser.renderPreview(
+          theme.success,
+          planned.map((cell) => cell.request),
+          options.layout
         );
-      }
-      const rendered = await launched.success.renderPreview(
-        theme.success,
-        planned.map((cell) => cell.request),
-        options.layout
-      );
-      if (Result.isFailure(rendered)) {
-        return Result.fail(rendered.failure);
-      }
-      const colorOf = tokenColorsIn(theme.success);
-      for (const { instance, cell, definition, request } of planned) {
-        const fill = definition.key === SELECT_ITEM.key ? selectItemFill(cell) : undefined;
-        const raster = rendered.success.cells.get(request.id)?.raster;
-        const mismatch =
-          fill === undefined || raster === undefined
-            ? undefined
-            : fillMismatch(
-                raster,
-                options.layout.padding,
-                fill,
-                colorOf,
-                `${preview.key} ${instance.variant}`
-              );
-        if (mismatch !== undefined) {
-          fillMismatches.push(mismatch);
-        }
-      }
-      const instances = planned.map(({ instance, request }, index): InstanceSnapshot => {
-        const cell = rendered.success.cells.get(request.id);
-        if (cell === undefined) {
-          throw new Error(`the page returned no picture for ${request.id}`);
-        }
-        const box = {
-          x: 100.5 + (index % 6) * 300,
-          y: 40.25 + Math.floor(index / 6) * 120,
-          width:
-            cell.box.width + (preview.key === grown.preview && instance.variant === grown.variant ? 1 : 0),
-          height: cell.box.height,
-        };
-        const margin = renderMargin(request, options.layout);
-        const renderBounds = {
-          x: box.x - margin,
-          y: box.y - margin,
-          width: cell.box.width + 2 * margin,
-          height: cell.box.height + 2 * margin,
-        };
-        const inset = (options.layout.padding - margin) * DEVICE_SCALE;
-        // The PNG takes every device pixel the render bounds touch. Select trigger's 3px invalid ring
-        // ends 0.09 device pixels into a column past a 110.546875px box, which a rounded width drops.
-        const cut = crop(
-          cell.raster,
-          { x: inset, y: inset },
-          {
-            width: Math.ceil(renderBounds.width * DEVICE_SCALE),
-            height: Math.ceil(renderBounds.height * DEVICE_SCALE),
+        const colorOf = tokenColorsIn(theme.success);
+        for (const { instance, cell, definition, request } of planned) {
+          const fill = definition.key === SELECT_ITEM.key ? selectItemFill(cell) : undefined;
+          const raster = rendered.cells.get(request.id)?.raster;
+          const mismatch =
+            fill === undefined || raster === undefined
+              ? undefined
+              : fillMismatch(
+                  raster,
+                  options.layout.padding,
+                  fill,
+                  colorOf,
+                  `${preview.key} ${instance.variant}`
+                );
+          if (mismatch !== undefined) {
+            fillMismatches.push(mismatch);
           }
-        );
-        const png =
-          preview.key === painted.preview && instance.variant === painted.variant ? paintSquare(cut) : cut;
-        return {
-          ...instance,
-          box,
-          image: { renderBounds, png: Buffer.from(encodePng(png)).toString("base64") },
-        };
-      });
-      previews.push({ key: preview.key, name: preview.key, modes, instances });
-    }
-  } finally {
-    await launched.success.close();
-  }
+        }
+        const instances = planned.map(({ instance, request }, index): InstanceSnapshot => {
+          const cell = rendered.cells.get(request.id);
+          if (cell === undefined) {
+            throw new Error(`the page returned no picture for ${request.id}`);
+          }
+          const box = {
+            x: 100.5 + (index % 6) * 300,
+            y: 40.25 + Math.floor(index / 6) * 120,
+            width:
+              cell.box.width + (preview.key === grown.preview && instance.variant === grown.variant ? 1 : 0),
+            height: cell.box.height,
+          };
+          const margin = renderMargin(request, options.layout);
+          const renderBounds = {
+            x: box.x - margin,
+            y: box.y - margin,
+            width: cell.box.width + 2 * margin,
+            height: cell.box.height + 2 * margin,
+          };
+          const inset = (options.layout.padding - margin) * DEVICE_SCALE;
+          // The PNG takes every device pixel the render bounds touch. Select trigger's 3px invalid ring
+          // ends 0.09 device pixels into a column past a 110.546875px box, which a rounded width drops.
+          const cut = crop(
+            cell.raster,
+            { x: inset, y: inset },
+            {
+              width: Math.ceil(renderBounds.width * DEVICE_SCALE),
+              height: Math.ceil(renderBounds.height * DEVICE_SCALE),
+            }
+          );
+          const png =
+            preview.key === painted.preview && instance.variant === painted.variant ? paintSquare(cut) : cut;
+          return {
+            ...instance,
+            box,
+            image: { renderBounds, png: Buffer.from(encodePng(png)).toString("base64") },
+          };
+        });
+        previews.push({ key: preview.key, name: preview.key, modes, instances });
+      }
+    })
+  );
   const snapshot: KitSnapshot = {
     format: SNAPSHOT_FORMAT,
     version: SNAPSHOT_VERSION,
@@ -301,16 +291,16 @@ export async function runSelfCheck(
     scale: DEVICE_SCALE,
     previews,
   };
-  mkdirSync(options.outDir, { recursive: true });
+  yield* makeDirectory(options.outDir);
   const text = JSON.stringify(snapshot);
-  writeFileSync(join(options.outDir, "self-check-snapshot.json"), text);
+  yield* writeText(join(options.outDir, "self-check-snapshot.json"), text);
   const reread = parseSnapshot(text);
   if (Result.isFailure(reread)) {
     throw reread.failure;
   }
-  const compared = await compareSnapshot(reread.success, options);
-  return Result.map(compared, (report) => judgeSelfCheck(report, [grown, painted], fillMismatches));
-}
+  const report = yield* compareSnapshot(reread.success, options);
+  return judgeSelfCheck(report, [grown, painted], fillMismatches);
+});
 
 function judgeSelfCheck(
   report: CompareReport,

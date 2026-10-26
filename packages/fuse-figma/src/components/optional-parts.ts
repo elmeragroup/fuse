@@ -4,6 +4,7 @@
  * layer inside it, while a selector that reads a part's presence restyles its own box once the part
  * is gone, which a BOOLEAN property cannot do.
  */
+import { KitUnmappable } from "./build-errors";
 import { slotReadsOf } from "./css-selector";
 import type { SlotReads } from "./css-selector";
 import type { BooleanPropertySpec } from "./kit-spec";
@@ -48,9 +49,9 @@ export function booleanPropertiesOf(
     if (first === undefined) {
       named.set(property.name, { defaultValue: property.defaultValue, part: name });
     } else if (first.defaultValue !== property.defaultValue) {
-      throw new Error(
-        `${set}: the parts ${first.part} and ${name} both hide behind the ${property.name} property, one starting ${String(first.defaultValue)} and one ${String(property.defaultValue)}. A BOOLEAN property holds one default, so give them one default or a property each.`
-      );
+      throw new KitUnmappable({
+        message: `${set}: the parts ${first.part} and ${name} both hide behind the ${property.name} property, one starting ${String(first.defaultValue)} and one ${String(property.defaultValue)}. A BOOLEAN property holds one default, so give them one default or a property each.`,
+      });
     }
   }
   return [...named].map(([name, { defaultValue }]) => ({ name, defaultValue }));
@@ -94,9 +95,9 @@ export function refusePresenceReads(
       for (const selector of rulesByClass.get(className) ?? []) {
         const read = readsOf(selector);
         if (read.kind === "unreadable") {
-          throw new Error(
-            `${set}: ${hides}, since the build cannot tell which parts \`${className}\` reads: ${read.reason}.`
-          );
+          throw new KitUnmappable({
+            message: `${set}: ${hides}, since the build cannot tell which parts \`${className}\` reads: ${read.reason}.`,
+          });
         }
         const test =
           read.tests.find(({ slot }) => part.slots.includes(slot)) ??
@@ -104,9 +105,9 @@ export function refusePresenceReads(
         if (test !== undefined) {
           const found = "slot" in test ? test.slot : part.name;
           const what = found === part.name ? "it" : `${found}, which ${holder} holds,`;
-          throw new Error(
-            `${set}: ${hides}, since \`${className}\` reads whether ${what} is there through \`${test.clause}\`. A BOOLEAN property hides a layer and cannot restyle the box that reads it, so give the part's presence a variant axis instead.`
-          );
+          throw new KitUnmappable({
+            message: `${set}: ${hides}, since \`${className}\` reads whether ${what} is there through \`${test.clause}\`. A BOOLEAN property hides a layer and cannot restyle the box that reads it, so give the part's presence a variant axis instead.`,
+          });
         }
       }
     }

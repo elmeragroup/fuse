@@ -7,6 +7,7 @@
  * attributes its own states render, facts for its own variants, and its own omissions.
  * {@link readVariants} reads a class's variants through the table for one cell.
  */
+import { KitUnmappable } from "./build-errors";
 import type { CoverageNote } from "./cascade";
 import type { Cell, ComponentDefinition, IconSlot, RootKind } from "./component-spec";
 import { axisValues } from "./kit-spec";
@@ -244,7 +245,7 @@ export function makeStateTable(
     sharedStates.set("disabled", DISABLED_BY_ROOT[definition.rootKind]);
     sharedStates.set("invalid", INVALID_BY_ROOT[definition.rootKind]);
   } else if (stateValues.includes("disabled")) {
-    throw new Error(`${definition.name} has a disabled state and names no root kind`);
+    throw new KitUnmappable({ message: `${definition.name} has a disabled state and names no root kind` });
   }
   const omittedElements = definition.omittedPseudoElements ?? new Map<string, string>();
   const omittedCompositions = definition.omittedCompositions ?? new Map<string, string>();
@@ -273,7 +274,7 @@ export function makeStateTable(
         source.shared.has(variant) ||
         sources.some((other) => other !== source && other.variants.has(variant))
       ) {
-        throw new Error(`${definition.name} gives \`${variant}\` a second meaning`);
+        throw new KitUnmappable({ message: `${definition.name} gives \`${variant}\` a second meaning` });
       }
     }
   }
@@ -380,7 +381,9 @@ export function withInPlaceFacts(
   };
   for (const variant of facts.keys()) {
     if (!admits(variant)) {
-      throw new Error(`an instance of ${inner.name} gives \`${variant}\` a second meaning`);
+      throw new KitUnmappable({
+        message: `an instance of ${inner.name} gives \`${variant}\` a second meaning`,
+      });
     }
   }
   return (variant) => {
@@ -406,7 +409,7 @@ export function withPartFacts(
 ): StateTable {
   for (const variant of facts.keys()) {
     if (meaningOf(variant).kind === "condition") {
-      throw new Error(`the part ${part} gives \`${variant}\` a second meaning`);
+      throw new KitUnmappable({ message: `the part ${part} gives \`${variant}\` a second meaning` });
     }
   }
   return (variant) => {

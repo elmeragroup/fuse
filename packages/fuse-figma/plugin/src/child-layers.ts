@@ -1,48 +1,44 @@
 /**
- * The text, icon, frame and instance layers inside a variant's root, and the layers each frame holds.
+ * The layers inside a variant's root, and the layers each frame holds. The walk finds or creates
+ * each layer and plans it by its kind: a text layer through `text-layer.ts`, an instance through
+ * `instance-layers.ts`, and an icon or a frame here. `fonts.ts` requires the fonts a new layer needs.
  */
+
+import { Effect } from "effect";
 
 import { walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   AbsoluteSpec,
   BoxSpec,
   ChildLayerSpec,
-  ComponentSetSpec,
-  DirectionSpec,
   FrameLayerSpec,
   IconLayerSpec,
-  LineHeightSpec,
-  NumberSpec,
   RotationSpec,
-  TextLayerSpec,
-  TextSizingSpec,
 } from "../../src/components/kit-spec.ts";
+import { planBox } from "./box.ts";
+import type { LayerParent } from "./box.ts";
 import type { PlannedSet } from "./component-set.ts";
+import type { PluginError } from "./errors.ts";
 import {
-  describeNumber,
-  heldFonts,
-  heldSizing,
-  LAYOUT_SIZING,
+  changeTogetherIn,
   near,
   planNumber,
   planPaints,
   planScalar,
   planVisibleLink,
-  requireFont,
-  SIZING_MEMBERS,
   solidPaint,
 } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
-import { baseCharacters, planGlyphRanges } from "./glyph-font.ts";
+import { fontLayers, heldFonts, linkedLabels, requireNewTextFonts } from "./fonts.ts";
 import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
-import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
-import type { Siblings } from "./identity.ts";
-import { innerVariant, linkedLabels, planInstance, planNewInstance } from "./instance-layers.ts";
-import { change, changeTogether, create, existing } from "./plan.ts";
-import type { Target } from "./plan.ts";
-import { planBox, planLength, planLimit } from "./root-layer.ts";
-import type { LayerParent } from "./root-layer.ts";
+import { planOwnedChildren } from "./identity.ts";
+import type { OwnedChild } from "./identity.ts";
+import { innerSpecs, innerVariant, planInstance, planNewInstance } from "./instance-layers.ts";
+import { change } from "./plan.ts";
+import { currentRun } from "./services.ts";
+import type { PlanServices } from "./services.ts";
+import { planText } from "./text-layer.ts";
 
 /**
  * The TEXT, BOOLEAN and INSTANCE_SWAP properties of a component set, from the name in the spec to
@@ -62,31 +58,13 @@ export type LayerLinks = {
 };
 
 /**
- * The layers whose fonts a new node's writes need: its text layers, and the labels of each inner
- * variant whose TEXT property an instance layer among them sets.
- *
- * @param layers - The layers the new node brings, such as `walkLayers` lists below a box.
- * @param sets - The sets the run planned before this one.
- * @returns The layers to require fonts for.
- */
-export function fontLayers(
-  layers: readonly ChildLayerSpec[],
-  sets: ReadonlyMap<string, PlannedSet>
-): readonly ChildLayerSpec[] {
-  return layers.flatMap((layer): readonly ChildLayerSpec[] =>
-    layer.kind === "instance" ? linkedLabels(innerVariant(sets, layer, layer.name).spec) : [layer]
-  );
-}
-
-/**
- * The box a layer sits in, as the layer's planners need it: the node, the direction the spec lays
- * it out along, which a fill follows, and `held`, which is `unknown` when the box turns in this run.
+ * The box a layer sits in, as the layer's planners need it: the node, and `held`, which is `unknown`
+ * when the box turns in this run.
  * A turn moves a layer's fill to the other axis and can change its size, so the layer's planners
  * write its lengths and sizing whatever it reads now.
  */
 type Holder = {
   readonly node: LayerParent;
-  readonly direction: DirectionSpec;
   readonly held: Held;
   /**
    * `unknown` when the run writes a field that can resize the box or a box above it, which moves an
@@ -95,541 +73,6 @@ type Holder = {
    */
   readonly size: Held;
 };
-
-/** The text fields that pick a font's style, which the spec sets as a literal. */
-const STYLE_FIELDS: readonly VariableBindableTextField[] = ["fontStyle", "fontWeight"];
-
-/**
- * The variable a text field binds across the whole layer. `boundVariables` lists the aliases
- * the characters bind and says nothing of characters that bind none, so the range read is
- * what shows a layer that one character left.
- *
- * @returns The alias when every character binds it, null when no character binds a variable,
- *   or `figma.mixed` when the characters differ.
- */
-function textBinding(
-  run: Run,
-  text: TextNode,
-  field: VariableBindableTextField
-): VariableAlias | null | PluginAPI["mixed"] {
-  if (text.characters.length > 0) {
-    return text.getRangeBoundVariable(0, text.characters.length, field);
-  }
-  // An empty layer has no range to read, so its node-level bindings speak for it.
-  const [first, ...rest] = text.boundVariables?.[field] ?? [];
-  if (first === undefined) {
-    return null;
-  }
-  return rest.every((alias) => alias.id === first.id) ? first : run.figma.mixed;
-}
-
-function planTextNumber(
-  run: Run,
-  text: TextNode,
-  label: string,
-  name: "fontSize" | "lineHeight",
-  spec: NumberSpec,
-  matches: (value: number) => boolean,
-  write: (value: number) => void
-): void {
-  const binding = textBinding(run, text, name);
-  if (spec.kind === "variable") {
-    const variable = run.variables.variable(spec.variable);
-    if (binding !== run.figma.mixed && binding?.id === variable.id) {
-      return;
-    }
-    change(run.plan, label, `${name} → ${spec.variable.name}`, () => text.setBoundVariable(name, variable));
-    return;
-  }
-  if (binding === null && matches(spec.value)) {
-    return;
-  }
-  change(run.plan, label, `${name} → ${describeNumber(spec)}`, () => {
-    text.setBoundVariable(name, null);
-    write(spec.value);
-  });
-}
-
-/**
- * The font a text layer should render in. A bound family resolves through the modes of
- * `consumer`, which is the layer itself, or the existing node a new layer lands in and takes
- * its modes from. The kit check has already confirmed that the variable holds a string.
- */
-function fontFor(run: Run, consumer: SceneNode, spec: TextLayerSpec): FontName {
-  if (spec.fontFamily.kind === "literal") {
-    return { family: spec.fontFamily.value, style: spec.fontStyle };
-  }
-  const resolved = run.variables.variable(spec.fontFamily.variable).resolveForConsumer(consumer);
-  // SAFETY: the kit check confirmed the font family variable is a STRING variable, which
-  // resolves to a string.
-  return { family: resolved.value as string, style: spec.fontStyle };
-}
-
-function isAlias(value: VariableValue): value is VariableAlias {
-  // SAFETY: a string, number or boolean has no `type` field, so the read yields undefined, and
-  // only an alias carries VARIABLE_ALIAS.
-  return (value as Partial<VariableAlias>).type === "VARIABLE_ALIAS";
-}
-
-/**
- * The value a variable takes in a node that sits on a page and pins no modes. Such a node
- * reads each collection in the mode the page pins for it, or in the collection's default
- * mode, and so does every alias the variable follows.
- */
-async function resolveOnPage(
-  run: Run,
-  variable: Variable,
-  pageModes: PageNode["explicitVariableModes"]
-): Promise<VariableValue> {
-  const seen = new Set<string>();
-  let current = variable;
-  while (!seen.has(current.id)) {
-    seen.add(current.id);
-    const collection = await run.figma.variables.getVariableCollectionByIdAsync(current.variableCollectionId);
-    if (collection === null) {
-      throw new Error(`${current.name} belongs to no collection the file holds.`);
-    }
-    const value = current.valuesByMode[pageModes[collection.id] ?? collection.defaultModeId];
-    if (value === undefined) {
-      throw new Error(`${current.name} has no value in the mode a new layer reads.`);
-    }
-    if (!isAlias(value)) {
-      return value;
-    }
-    const target = await run.figma.variables.getVariableByIdAsync(value.id);
-    if (target === null) {
-      throw new Error(`${current.name} aliases a variable the file does not hold.`);
-    }
-    current = target;
-  }
-  throw new Error(`${variable.name} aliases itself.`);
-}
-
-/**
- * Require the fonts of the text layers in a component set the run creates. A new set sits
- * on the page, which is no scene node, so no existing node can resolve its labels' family
- * through `resolveForConsumer`. The plan follows the family variable through the modes the
- * set will read instead, which is what Figma renders once the set exists.
- *
- * @param run - The run.
- * @param pageModes - The modes the page pins. A page the run creates pins none.
- * @param set - The component set.
- * @param sets - The sets the run planned before this one, whose labels its instance layers set.
- */
-export async function requireNewSetFonts(
-  run: Run,
-  pageModes: PageNode["explicitVariableModes"],
-  set: ComponentSetSpec,
-  sets: ReadonlyMap<string, PlannedSet>
-): Promise<void> {
-  const families = new Map<string, string>();
-  for (const variant of set.variants) {
-    for (const layer of fontLayers(walkLayers(variant.root), sets)) {
-      if (layer.kind !== "text") {
-        continue;
-      }
-      let family = layer.fontFamily.kind === "literal" ? layer.fontFamily.value : undefined;
-      if (layer.fontFamily.kind === "variable") {
-        const variable = run.variables.variable(layer.fontFamily.variable);
-        family = families.get(variable.id);
-        if (family === undefined) {
-          // SAFETY: the kit check confirmed the font family variable is a STRING variable,
-          // and an alias keeps its variable's type, so the value is a string.
-          family = (await resolveOnPage(run, variable, pageModes)) as string;
-          families.set(variable.id, family);
-        }
-      }
-      if (family !== undefined) {
-        requireFont(run, `${set.name} / ${layer.name}`, { family, style: layer.fontStyle });
-      }
-    }
-  }
-}
-
-/**
- * Require the fonts of the text layers a new node gets, resolved through the existing node it
- * lands in.
- *
- * @param run - The run.
- * @param consumer - The existing node whose modes the new layers take.
- * @param label - The new node's label, for errors.
- * @param layers - Every layer the new node brings, such as `walkLayers` lists below a box.
- */
-export function requireNewTextFonts(
-  run: Run,
-  consumer: SceneNode,
-  label: string,
-  layers: readonly ChildLayerSpec[]
-): void {
-  for (const layer of layers) {
-    if (layer.kind === "text") {
-      requireFont(run, `${label} / ${layer.name}`, fontFor(run, consumer, layer));
-    }
-  }
-}
-
-/**
- * Plan the font of the characters outside the glyph ranges, and require the fonts the label's later
- * writes need. A font write comes first
- * among the label's writes, because Figma needs only the new font to set it. Every later write
- * then needs only that font, so a label whose font the machine lacks can still be repaired.
- * A label that keeps its font needs every font it holds for a write such as its size.
- *
- * @param rewrites - Whether the run writes or links the label's characters, which then take the
- *   style of a character a glyph range may hold, so every character counts.
- * @returns Whether the plan replaces the label's font.
- */
-function planFont(
-  run: Run,
-  text: TextNode,
-  label: string,
-  spec: TextLayerSpec,
-  fontName: FontName,
-  rewrites: boolean
-): boolean {
-  // The glyph ranges take the glyph font, so the label's own font holds the other characters.
-  const holds =
-    text.characters.length > 0
-      ? baseCharacters(run, text, rewrites).map((character) => character.font)
-      : text.fontName === run.figma.mixed
-        ? undefined
-        : [text.fontName];
-  const differs =
-    holds === undefined ||
-    holds.some((font) => font.family !== fontName.family || font.style !== fontName.style);
-  // The spec sets the style as a literal, and the family too unless it binds one. A variable
-  // that any character binds to one of those fields would override the literal in another
-  // theme, so the font write clears it in the same operation.
-  const literalFields: readonly VariableBindableTextField[] =
-    spec.fontFamily.kind === "literal" ? ["fontFamily", ...STYLE_FIELDS] : STYLE_FIELDS;
-  const unbind = literalFields.filter((field) => textBinding(run, text, field) !== null);
-  if (!differs && unbind.length === 0) {
-    return false;
-  }
-  change(run.plan, label, `font → ${fontName.family} ${fontName.style}`, () => {
-    for (const field of unbind) {
-      text.setBoundVariable(field, null);
-    }
-    text.fontName = fontName;
-  });
-  requireFont(run, label, fontName);
-  return true;
-}
-
-/**
- * Plan a text layer. The font comes first, then the writes that need no font, then the
- * typography. The layer's operations only write, because the run loads every font before its
- * first write.
- *
- * @param held - The fonts the layer holds now. A layer the run creates passes none, because
- *   its first font is unknown until it exists, and the font write that a new layer gets
- *   needs only the new font.
- * @param parent - `unknown` when the box that holds the layer turns in this run.
- */
-function planText(
-  run: Run,
-  text: TextNode,
-  label: string,
-  spec: TextLayerSpec,
-  propertyIds: PropertyIds,
-  held: readonly FontName[],
-  parent: Held
-): void {
-  const fontName = fontFor(run, text, spec);
-  const replaced = planFont(run, text, label, spec, fontName, writesCharacters(text, spec, propertyIds));
-  planScalar(run, label, "name", text.name, spec.name, () => {
-    text.name = spec.name;
-  });
-  planPaints(run, label, "text color", text.fills, spec.color, (paints) => {
-    text.fills = paints;
-  });
-
-  const start = run.plan.operations.length;
-  planTypography(run, text, label, spec, propertyIds, parent, replaced);
-  if (!replaced && run.plan.operations.length > start) {
-    for (const font of [...held, fontName]) {
-      requireFont(run, label, font);
-    }
-  }
-}
-
-/** Whether a layer's underline offset is the one the spec asks for. */
-function offsetMatches(current: TextDecorationOffset | null, desired: TextDecorationOffset): boolean {
-  if (current === null || current.unit !== desired.unit) {
-    return false;
-  }
-  return current.unit !== "AUTO" && desired.unit !== "AUTO" ? near(current.value, desired.value) : true;
-}
-
-/**
- * Plan a text's line height: in pixels or bound to a variable as a number field, or a percent of the
- * font size, which follows a font size a variable sets per mode, as a real file did on 2026-10-23
- * (PH). A percent clears a binding the layer held.
- */
-function planLineHeight(run: Run, text: TextNode, label: string, spec: LineHeightSpec): void {
-  if (spec.kind !== "percent") {
-    planTextNumber(
-      run,
-      text,
-      label,
-      "lineHeight",
-      spec,
-      (value) =>
-        text.lineHeight !== run.figma.mixed &&
-        text.lineHeight.unit === "PIXELS" &&
-        near(text.lineHeight.value, value),
-      (value) => {
-        text.lineHeight = { unit: "PIXELS", value };
-      }
-    );
-    return;
-  }
-  const held = text.lineHeight;
-  if (
-    textBinding(run, text, "lineHeight") === null &&
-    held !== run.figma.mixed &&
-    held.unit === "PERCENT" &&
-    near(held.value, spec.value)
-  ) {
-    return;
-  }
-  change(run.plan, label, `lineHeight → ${spec.value}%`, () => {
-    text.setBoundVariable("lineHeight", null);
-    text.lineHeight = { unit: "PERCENT", value: spec.value };
-  });
-}
-
-/**
- * Plan a label's letter spacing, a percent of its font size (PL). A label the spec gives no spacing
- * plans none, so a published label keeps whatever spacing it holds.
- */
-function planLetterSpacing(run: Run, text: TextNode, label: string, spec: TextLayerSpec): void {
-  const desired = spec.letterSpacing;
-  const held = text.letterSpacing;
-  if (
-    desired === undefined ||
-    (held !== run.figma.mixed && held.unit === desired.unit && near(held.value, desired.value))
-  ) {
-    return;
-  }
-  change(run.plan, label, `letterSpacing → ${desired.value}%`, () => {
-    text.letterSpacing = { unit: desired.unit, value: desired.value };
-  });
-}
-
-/**
- * Plan the underline as one operation, because Figma holds an underline offset only while the
- * layer is underlined.
- */
-function planUnderline(run: Run, text: TextNode, label: string, spec: TextLayerSpec): void {
-  const underline = spec.underline;
-  if (underline === undefined) {
-    if (text.textDecoration !== "NONE") {
-      change(run.plan, label, "textDecoration → NONE", () => {
-        text.textDecoration = "NONE";
-      });
-    }
-    return;
-  }
-  const offset: TextDecorationOffset =
-    underline.offset === undefined ? { unit: "AUTO" } : { unit: "PIXELS", value: underline.offset };
-  const held = text.textDecorationOffset === run.figma.mixed ? null : text.textDecorationOffset;
-  if (text.textDecoration === "UNDERLINE" && offsetMatches(held, offset)) {
-    return;
-  }
-  const description = underline.offset === undefined ? "UNDERLINE" : `UNDERLINE, offset ${underline.offset}`;
-  change(run.plan, label, `textDecoration → ${description}`, () => {
-    text.textDecoration = "UNDERLINE";
-    text.textDecorationOffset = offset;
-  });
-}
-
-/**
- * The auto resize a text's sizing takes: both sides hug its characters, its width is set and its
- * height follows its lines, or both sides are fixed.
- */
-function autoResizeOf(sizing: TextSizingSpec): "WIDTH_AND_HEIGHT" | "HEIGHT" | "NONE" {
-  if (sizing.vertical.kind === "fixed") {
-    return "NONE";
-  }
-  return sizing.horizontal.kind === "hug" ? "WIDTH_AND_HEIGHT" : "HEIGHT";
-}
-
-/**
- * Plan how a text sizes and truncates as one operation, in the order its writes depend on each
- * other. The auto resize comes first, since it moves the text's hug: on a real file on 2026-10-22
- * a fill across a hugging text turned it to a fixed width with an auto height (P3). A filling text
- * that reads less than a pixel wide, and that the spec gives characters, gets a 1px width next,
- * since a fill never widens a 0-wide text and any positive width lets it take over (PZ). The sizing
- * on each axis follows, then a fixed width or height, which the auto resize must already keep, then
- * the truncation, and last the maximum lines, which a text keeps only while it truncates (P4).
- *
- * @param held - `unknown` when the text's box turns in this run, which moves its fill to the other
- *   axis, so the operation writes its sizing and lengths whatever it reads now, as it does after a
- *   new auto resize.
- */
-function planTextLayout(run: Run, text: TextNode, label: string, spec: TextLayerSpec, held: Held): void {
-  const autoResize = autoResizeOf(spec.sizing);
-  const sizing = {
-    horizontal: LAYOUT_SIZING[spec.sizing.horizontal.kind],
-    vertical: LAYOUT_SIZING[spec.sizing.vertical.kind],
-  };
-  const truncation = spec.truncation === undefined ? "DISABLED" : "ENDING";
-  changeTogether(
-    run.plan,
-    label,
-    (plan) => {
-      const group = { ...run, plan };
-      // A text that fills across but reads less than a pixel wide stays so whatever FILL and
-      // characters it gets, until a positive width lets the fill take over (PZ), as an earlier run
-      // that laid a new text out before its characters left every filling text. The run leaves the
-      // text holding the spec's characters, which `planCharacters` writes or links before this, so
-      // they decide, whatever it holds now, and a text the spec leaves empty gets no width.
-      const stuck = spec.sizing.horizontal.kind === "fill" && text.width < 1 && spec.characters.length > 0;
-      // A new auto resize moves the text's hug, and a hugging text's size follows its characters and
-      // its font, which the run can change first, so the sizing and the lengths after a new auto
-      // resize, or after the repair, are written whatever the text reads now.
-      const lengths: Held =
-        !stuck && held === "read" && text.textAutoResize === autoResize ? "read" : "unknown";
-      const reads = lengths === "read" ? heldSizing(text) : undefined;
-      planScalar(group, label, "textAutoResize", text.textAutoResize, autoResize, () => {
-        text.textAutoResize = autoResize;
-      });
-      if (stuck) {
-        change(plan, label, "width → 1 for the fill to take over", () => text.resize(1, text.height));
-      }
-      for (const [axis, member] of SIZING_MEMBERS) {
-        if (reads?.[axis] !== sizing[axis]) {
-          change(plan, label, `${member} → ${sizing[axis]}`, () => {
-            text[member] = sizing[axis];
-          });
-        }
-      }
-      planLength(group, text, label, "width", spec.sizing.horizontal, lengths, (value) =>
-        text.resize(value, text.height)
-      );
-      planLength(group, text, label, "height", spec.sizing.vertical, lengths, (value) =>
-        text.resize(text.width, value)
-      );
-      planLimit(group, text, label, "maxWidth", spec.maxWidth);
-      planScalar(group, label, "textTruncation", text.textTruncation, truncation, () => {
-        text.textTruncation = truncation;
-      });
-      const maxLines = spec.truncation?.maxLines;
-      if (maxLines !== undefined && (text.textTruncation !== truncation || text.maxLines !== maxLines)) {
-        change(plan, label, `maxLines → ${maxLines}`, () => {
-          text.maxLines = maxLines;
-        });
-      }
-    },
-    () => undefined
-  );
-}
-
-/**
- * Whether a text's family binds the variable. The glyph ranges bind none (G2), so the other
- * characters say, or an empty text's node-level binding.
- */
-function bindsFamily(run: Run, text: TextNode, variable: Variable, rewrites: boolean): boolean {
-  if (text.characters.length > 0) {
-    return baseCharacters(run, text, rewrites).every((character) => character.family === variable.id);
-  }
-  const binding = textBinding(run, text, "fontFamily");
-  return binding !== run.figma.mixed && binding?.id === variable.id;
-}
-
-/**
- * Plan a text's typography, its characters among them, then the glyph font on its glyph ranges, which
- * a font write or new or linked characters before it reset (G3, G8). A family binding binds only the
- * characters already in the variable's family and changes no font (G10), so it comes after the font
- * write `planFont` plans, and leaves the ranges as they are.
- *
- * @param replaced - Whether the plan writes the label's font first.
- */
-function planTypography(
-  run: Run,
-  text: TextNode,
-  label: string,
-  spec: TextLayerSpec,
-  propertyIds: PropertyIds,
-  parent: Held,
-  replaced: boolean
-): void {
-  const rewrites = writesCharacters(text, spec, propertyIds);
-  if (spec.fontFamily.kind === "variable") {
-    const variable = run.variables.variable(spec.fontFamily.variable);
-    if (!bindsFamily(run, text, variable, rewrites)) {
-      change(run.plan, label, `fontFamily → ${spec.fontFamily.variable.name}`, () =>
-        text.setBoundVariable("fontFamily", variable)
-      );
-    }
-  }
-  planTextNumber(
-    run,
-    text,
-    label,
-    "fontSize",
-    spec.fontSize,
-    (value) => text.fontSize !== run.figma.mixed && near(text.fontSize, value),
-    (value) => {
-      text.fontSize = value;
-    }
-  );
-  planLineHeight(run, text, label, spec.lineHeight);
-  planLetterSpacing(run, text, label, spec);
-  planUnderline(run, text, label, spec);
-  // A new text hugs its characters, and an empty one is 0 wide, which a fill never widens (PZ), so
-  // the characters go in before the layout.
-  planCharacters(run, text, label, spec, propertyIds);
-  // New or linked characters reset the ranges too (G3), and `planFont` then counts the ranges' glyph
-  // font among the label's own, so a text that holds a range gets a font write first.
-  planGlyphRanges(run, text, label, spec.characters, spec.fontStyle, replaced);
-  planTextLayout(run, text, label, spec, parent);
-  const { horizontal, vertical } = spec.align;
-  planScalar(run, label, "textAlignHorizontal", text.textAlignHorizontal, horizontal, () => {
-    text.textAlignHorizontal = horizontal;
-  });
-  planScalar(run, label, "textAlignVertical", text.textAlignVertical, vertical, () => {
-    text.textAlignVertical = vertical;
-  });
-}
-
-/** Whether the plan writes a text's characters, or links them to the set's TEXT property. */
-function writesCharacters(text: TextNode, spec: TextLayerSpec, propertyIds: PropertyIds): boolean {
-  if (spec.textProperty === undefined) {
-    return text.characters !== spec.characters;
-  }
-  const linked = propertyIds.get(spec.textProperty);
-  return linked === undefined || text.componentPropertyReferences?.characters !== linked;
-}
-
-/** Plan a text's characters, or the TEXT property of the set that sets them. */
-function planCharacters(
-  run: Run,
-  text: TextNode,
-  label: string,
-  spec: TextLayerSpec,
-  propertyIds: PropertyIds
-): void {
-  const property = spec.textProperty;
-  if (property === undefined) {
-    planScalar(run, label, "characters", text.characters, spec.characters, () => {
-      text.characters = spec.characters;
-    });
-    return;
-  }
-  if (!writesCharacters(text, spec, propertyIds)) {
-    return;
-  }
-  change(run.plan, label, `characters → the ${property} property`, () => {
-    const propertyId = propertyIds.get(property);
-    if (propertyId === undefined) {
-      throw new Error(`${label}: the ${property} property has no id when the layer links to it.`);
-    }
-    text.characters = spec.characters;
-    text.componentPropertyReferences = { characters: propertyId };
-  });
-}
 
 /**
  * Plan a layer's turn. Figma reads a rotation from -180 to 180, so two that differ by whole turns
@@ -659,21 +102,18 @@ function planRotation(
  * swap property when it has one, sized and turned by the cell, its visibility linked to the set's
  * BOOLEAN property when it hides behind one (PI2), and with its glyph in the label's color.
  */
-async function planIcon(
-  run: Run,
+const planIcon = Effect.fnUntraced(function* (
   instance: InstanceNode,
   label: string,
   spec: IconLayerSpec,
+  icon: PlannedIcon,
   links: LayerLinks
-): Promise<void> {
+) {
+  const run = yield* currentRun;
   planScalar(run, label, "name", instance.name, spec.name, () => {
     instance.name = spec.name;
   });
-  const icon = links.icons.get(spec.icon);
-  if (icon === undefined) {
-    throw new Error(`${label} shows ${spec.icon}, which the kit's icon library lacks.`);
-  }
-  const main = await instance.getMainComponentAsync();
+  const main = yield* Effect.promise(() => instance.getMainComponentAsync());
   const swapped = icon.node.existing === undefined || main?.id !== icon.node.existing.id;
   if (swapped) {
     change(run.plan, label, `show ${icon.spec.name}`, () => instance.swapComponent(icon.node.get()));
@@ -730,7 +170,7 @@ async function planIcon(
   planPaints(run, `${label} / glyph`, "fill", glyph.fills, spec.color, (paints) => {
     glyph.fills = paints;
   });
-}
+});
 
 const isText = (node: BaseNode): node is TextNode => node.type === "TEXT";
 const isInstance = (node: BaseNode): node is InstanceNode => node.type === "INSTANCE";
@@ -754,50 +194,45 @@ function planPositioning(
   size: Held
 ): void {
   const positioning = absolute === undefined ? "AUTO" : "ABSOLUTE";
-  changeTogether(
-    run.plan,
-    label,
-    (plan) => {
-      const rewrite = frame.layoutPositioning !== positioning || size === "unknown";
-      planScalar({ ...run, plan }, label, "layoutPositioning", frame.layoutPositioning, positioning, () => {
-        frame.layoutPositioning = positioning;
+  changeTogetherIn(run, label, (group) => {
+    const rewrite = frame.layoutPositioning !== positioning || size === "unknown";
+    planScalar(group, label, "layoutPositioning", frame.layoutPositioning, positioning, () => {
+      frame.layoutPositioning = positioning;
+    });
+    if (absolute === undefined) {
+      return;
+    }
+    const { horizontal, vertical } = absolute.constraints;
+    if (rewrite || frame.constraints.horizontal !== horizontal || frame.constraints.vertical !== vertical) {
+      change(group.plan, label, `constraints → ${horizontal} ${vertical}`, () => {
+        frame.constraints = { horizontal, vertical };
       });
-      if (absolute === undefined) {
-        return;
-      }
-      const { horizontal, vertical } = absolute.constraints;
-      if (rewrite || frame.constraints.horizontal !== horizontal || frame.constraints.vertical !== vertical) {
-        change(plan, label, `constraints → ${horizontal} ${vertical}`, () => {
-          frame.constraints = { horizontal, vertical };
-        });
-      }
-      if (rewrite || !near(frame.x, absolute.x)) {
-        change(plan, label, `x → ${absolute.x}`, () => {
-          frame.x = absolute.x;
-        });
-      }
-      if (rewrite || !near(frame.y, absolute.y)) {
-        change(plan, label, `y → ${absolute.y}`, () => {
-          frame.y = absolute.y;
-        });
-      }
-    },
-    () => undefined
-  );
+    }
+    if (rewrite || !near(frame.x, absolute.x)) {
+      change(group.plan, label, `x → ${absolute.x}`, () => {
+        frame.x = absolute.x;
+      });
+    }
+    if (rewrite || !near(frame.y, absolute.y)) {
+      change(group.plan, label, `y → ${absolute.y}`, () => {
+        frame.y = absolute.y;
+      });
+    }
+  });
 }
 
 /**
  * Plan a frame layer: its name, where it sits, its box, the property that shows or hides it and its
  * turn, then the layers it holds.
  */
-async function planFrame(
-  run: Run,
+const planFrame = Effect.fnUntraced(function* (
   frame: FrameNode,
   label: string,
   spec: FrameLayerSpec,
   links: LayerLinks,
   holder: Holder
-): Promise<void> {
+) {
+  const run = yield* currentRun;
   planScalar(run, label, "name", frame.name, spec.name, () => {
     frame.name = spec.name;
   });
@@ -808,83 +243,78 @@ async function planFrame(
   const size = planBox(run, frame, label, spec, { kind: "frame", parent: moved });
   planVisibleLink(run, frame, label, spec.visibleProperty, links.properties);
   planRotation(run, frame, label, spec.rotation);
-  await planChildren(run, frame, label, spec, links, holder.size === "unknown" ? "unknown" : size);
-}
+  yield* planChildren(frame, label, spec, links, holder.size === "unknown" ? "unknown" : size);
+});
 
-async function planChild(
+/** How to find, create and plan one layer of a variant or of a frame layer. */
+function childKind(
   run: Run,
   holder: Holder,
-  siblings: Siblings,
   label: string,
   spec: ChildLayerSpec,
   links: LayerLinks
-): Promise<Target<SceneNode>> {
+): OwnedChild<SceneNode, void> {
   const parent = holder.node;
   const layerLabel = `${label} / ${spec.name}`;
   const description = `create the ${spec.kind} layer ${spec.name}`;
   if (spec.kind === "frame") {
-    const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isFrame);
-    if (found !== undefined) {
-      await planFrame(run, found, layerLabel, spec, links, holder);
-      return existing(found);
-    }
-    requireNewTextFonts(run, parent, label, fontLayers(walkLayers(spec), links.sets));
-    return create(
-      run.plan,
-      label,
+    return {
+      name: spec.name,
+      accept: isFrame,
       description,
-      () => placeOwned(parent, run.figma.createFrame(), spec.key, spec.name),
-      (made, plan) => planFrame({ ...run, plan }, made, layerLabel, spec, links, holder)
-    );
+      make: () => run.figma.createFrame(),
+      requireNew: () =>
+        requireNewTextFonts(run, parent, label, fontLayers(walkLayers(spec), innerSpecs(links.sets))),
+      plan: (frame) => planFrame(frame, layerLabel, spec, links, holder),
+    } satisfies OwnedChild<FrameNode, void>;
   }
   if (spec.kind === "text") {
-    const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isText);
-    if (found !== undefined) {
-      planText(run, found, layerLabel, spec, links.properties, heldFonts(run, found), holder.held);
-      return existing(found);
-    }
-    requireNewTextFonts(run, parent, label, [spec]);
-    return create(
-      run.plan,
-      label,
+    return {
+      name: spec.name,
+      accept: isText,
       description,
-      () => placeOwned(parent, run.figma.createText(), spec.key, spec.name),
-      (made, plan) => planText({ ...run, plan }, made, layerLabel, spec, links.properties, [], holder.held)
-    );
+      make: () => run.figma.createText(),
+      requireNew: () => requireNewTextFonts(run, parent, label, [spec]),
+      plan: (text, origin) =>
+        Effect.map(currentRun, (inner) =>
+          planText(
+            inner,
+            text,
+            layerLabel,
+            spec,
+            links.properties,
+            origin === "found" ? heldFonts(inner, text) : [],
+            holder.held
+          )
+        ),
+    } satisfies OwnedChild<TextNode, void>;
   }
   if (spec.kind === "instance") {
     const inner = innerVariant(links.sets, spec, layerLabel);
     // A TEXT property writes the inner labels' characters, which needs their fonts (rule 34).
     requireNewTextFonts(run, parent, label, linkedLabels(inner.spec));
-    const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isInstance);
-    if (found !== undefined) {
-      await planInstance(run, found, layerLabel, spec, inner, links, holder.held);
-      return existing(found);
-    }
-    return create(
-      run.plan,
-      label,
+    return {
+      name: spec.name,
+      accept: isInstance,
       description,
-      () => placeOwned(parent, inner.node.get().createInstance(), spec.key, spec.name),
-      (made, plan) => planNewInstance({ ...run, plan }, made, layerLabel, spec, inner, links)
-    );
-  }
-  const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isInstance);
-  if (found !== undefined) {
-    await planIcon(run, found, layerLabel, spec, links);
-    return existing(found);
+      make: () => inner.node.get().createInstance(),
+      plan: (instance, origin) =>
+        origin === "found"
+          ? planInstance(instance, layerLabel, spec, inner, links, holder.held)
+          : planNewInstance(instance, layerLabel, spec, inner, links),
+    } satisfies OwnedChild<InstanceNode, void>;
   }
   const icon = links.icons.get(spec.icon);
   if (icon === undefined) {
     throw new Error(`${layerLabel} shows ${spec.icon}, which the kit's icon library lacks.`);
   }
-  return create(
-    run.plan,
-    label,
+  return {
+    name: spec.name,
+    accept: isInstance,
     description,
-    () => placeOwned(parent, icon.node.get().createInstance(), spec.key, spec.name),
-    (made, plan) => planIcon({ ...run, plan }, made, layerLabel, spec, links)
-  );
+    make: () => icon.node.get().createInstance(),
+    plan: (instance) => planIcon(instance, layerLabel, spec, icon, links),
+  } satisfies OwnedChild<InstanceNode, void>;
 }
 
 /**
@@ -892,7 +322,6 @@ async function planChild(
  * update the rest, delete the kit's layers the spec dropped and restore the spec's order. A
  * frame layer plans its own layers the same way, so a key is unique among its siblings alone.
  *
- * @param run - The run.
  * @param parent - The variant component, or a frame layer below it.
  * @param label - The parent's label, for change lines.
  * @param box - The parent's spec: its layers, in order, and the direction it lays them out along.
@@ -903,21 +332,20 @@ async function planChild(
  *   as {@link planBox} returns for the parent, so the parent's absolute layers are planned to be
  *   written again after the resize.
  */
-export async function planChildren(
-  run: Run,
+export const planChildren = Effect.fnUntraced(function* (
   parent: LayerParent,
   label: string,
   box: Pick<BoxSpec, "direction" | "children">,
   links: LayerLinks,
   size: Held
-): Promise<void> {
+): Effect.fn.Return<void, PluginError, PlanServices> {
+  const run = yield* currentRun;
   const holder: Holder = {
     node: parent,
-    direction: box.direction,
     held: parent.layoutMode === box.direction ? "read" : "unknown",
     size,
   };
-  await planOwnedChildren(run.plan, parent, label, "layer", box.children, (spec, siblings) =>
-    planChild(run, holder, siblings, label, spec, links)
+  yield* planOwnedChildren(parent, label, "layer", box.children, (spec) =>
+    childKind(run, holder, label, spec, links)
   );
-}
+});

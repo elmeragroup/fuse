@@ -54,6 +54,7 @@ catalog:
   plop: 4.0.5
   pngjs: 7.0.0
   publint: 0.3.24
+  quickjs-emscripten: 0.31.0
   rolldown: 1.2.15
   "sugar-high": 2.4.1
   react: 19.3.0

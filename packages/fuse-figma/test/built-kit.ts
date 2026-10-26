@@ -2,6 +2,8 @@
  * The kit's built component sets, shared by the suites that check them against hand-written
  * expectations, and the Figma field values those expectations name.
  */
+import { Effect } from "effect";
+
 import { buildComponentSets } from "../src/components/build-kit.ts";
 import type { CoverageRow } from "../src/components/coverage.ts";
 import type { ComponentRootSpec, KitSpec } from "../src/components/kit-spec.ts";
@@ -15,7 +17,7 @@ export type BuiltSets = {
 let built: Promise<BuiltSets> | undefined;
 
 async function buildSets(): Promise<BuiltSets> {
-  const sets = await buildComponentSets();
+  const sets = await Effect.runPromise(buildComponentSets());
   return {
     spec: { componentSets: sets.map((set) => set.componentSet) },
     coverage: sets.flatMap((set) => set.coverage),

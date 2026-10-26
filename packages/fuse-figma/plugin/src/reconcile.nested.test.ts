@@ -16,7 +16,7 @@ import type {
   NestedPropertiesSpec,
   TextLayerSpec,
 } from "../../src/components/kit-spec.ts";
-import { literal } from "./button-kit-fixture.ts";
+import { applyTo, literal } from "./button-kit-fixture.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed, color, fixtureFile, float, GLYPH_FONT } from "./fake-fixtures.ts";
 import { keyOf } from "./identity.ts";
@@ -166,14 +166,6 @@ function tokenFile(): FakeFigma {
   ]);
 }
 
-/** A file the kit was applied to, opened again for the next run. */
-async function appliedFile(kit: KitSpec): Promise<FakeFigma> {
-  const file = tokenFile();
-  await reconcileKit(file.figma, kit, true);
-  file.reopen();
-  return file;
-}
-
 /** The row instance in the list's variant, and what its caps show through exposure. */
 async function listRow(file: FakeFigma) {
   const page = file.figma.root.children.find((node) => keyOf(node) === "page");
@@ -201,7 +193,7 @@ describe("TEXT values of instances exposed inside an instance", () => {
   });
 
   it("plans a line for each nested instance whose values differ", async () => {
-    const file = await appliedFile(kitWith("false", []));
+    const file = await applyTo(tokenFile(), kitWith("false", []));
     expect((await listRow(file)).caps).toEqual(["Ctrl", "K"]);
     expect((await reconcileKit(file.figma, kitWith("false"), false)).changes).toEqual([
       'list / content=grouped / item / item/shortcut / group/first: properties → Label "Alt"',
@@ -213,7 +205,7 @@ describe("TEXT values of instances exposed inside an instance", () => {
 
   // A TEXT write changes the cap's characters, which needs every font its label holds (rule 7).
   it("loads the font a designer gave a cap's label before it writes the cap, and converges", async () => {
-    const file = await appliedFile(kitWith("false", []));
+    const file = await applyTo(tokenFile(), kitWith("false", []));
     const bold = { family: "Roboto", style: "Bold" };
     await file.figma.loadFontAsync(bold);
     const [first] = (await listRow(file)).held.exposedInstances.filter((exposed) => exposed.name === "cap");
@@ -244,13 +236,13 @@ describe("TEXT values of instances exposed inside an instance", () => {
 
   // A run loads a font only for a label it writes, so a font it does not need never stops it.
   it("plans nothing where the caps hold their values, though a cap's font is unavailable", async () => {
-    const file = await appliedFile(kitWith("false"));
+    const file = await applyTo(tokenFile(), kitWith("false"));
     await boldFirstCapUnavailable(file);
     expect(await reconcileKit(file.figma, kitWith("false"), false)).toEqual({ changes: [], warnings: [] });
   });
 
   it("stops Plan on the unavailable font of a cap it writes", async () => {
-    const file = await appliedFile(kitWith("false", []));
+    const file = await applyTo(tokenFile(), kitWith("false", []));
     await boldFirstCapUnavailable(file);
     await expect(reconcileKit(file.figma, kitWith("false"), false)).rejects.toThrow(
       "needs the font Roboto Bold, which Figma cannot load"
@@ -258,7 +250,7 @@ describe("TEXT values of instances exposed inside an instance", () => {
   });
 
   it("keeps the values through a switch of the row's variant, in one Apply", async () => {
-    const file = await appliedFile(kitWith("false"));
+    const file = await applyTo(tokenFile(), kitWith("false"));
     const highlighted = kitWith("true");
     await reconcileKit(file.figma, highlighted, true);
     file.reopen();

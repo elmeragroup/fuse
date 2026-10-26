@@ -6,10 +6,10 @@
  * `client-markup.ts` says. It writes three pictures per cell, `report.json` and `report.html`.
  */
 
-import { Result } from "effect";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { Effect, FileSystem, Result } from "effect";
 import { join } from "node:path";
 
+import type { KitBuildError } from "../components/build-errors.ts";
 import { buildComponentSets } from "../components/build-kit.ts";
 import type { Cell, ComponentDefinition } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
@@ -18,9 +18,11 @@ import { browserFootprint, coversRenderBounds, figmaFootprint, sharedCanvas } fr
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { BrowserUnavailable, CellRequest, FontNotLoaded, RenderedCell } from "./browser-render.ts";
 import { forcedAttributesFor, isClientRenderer, loadRenderers, renderCellHtml } from "./cell-renderers.ts";
-import type { AnyCellRenderer } from "./cell-renderers.ts";
+import type { AnyCellRenderer, RendererMissing } from "./cell-renderers.ts";
 import { fallbackInteraction, forcedPseudoClasses, parseCell, restingTwin } from "./cells.ts";
 import { checkClientMarkup } from "./client-markup.ts";
+import { fileFailure, makeDirectory, writeBytes, writeText } from "./compare-files.ts";
+import type { CompareFileFailed } from "./compare-files.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { FuseBuildMissing } from "./page-assets.ts";
 import { forcedSelector, measuredSelectors, slotSpan } from "./preview-page.ts";
@@ -116,7 +118,14 @@ class UnsupportedScale extends Error {
 }
 
 /** Why a run stopped before it compared anything. */
-export type CompareFailure = FuseBuildMissing | BrowserUnavailable | FontNotLoaded | UnsupportedScale;
+export type CompareFailure =
+  | FuseBuildMissing
+  | CompareFileFailed
+  | RendererMissing
+  | KitBuildError
+  | BrowserUnavailable
+  | FontNotLoaded
+  | UnsupportedScale;
 
 /** A definition the run renders, with its renderer. */
 export type Renderable = ComponentDefinition & { readonly renderer: AnyCellRenderer };
@@ -307,87 +316,83 @@ function compareCell(
  *
  * @param snapshot - The parsed snapshot.
  * @param options - Where to write, the diff threshold and the page layout.
- * @returns The report, already written to `options.outDir`, or why the run could not start.
+ * @returns The report, already written to `options.outDir`. The Effect fails with why the run
+ *   could not start.
  */
-export async function compareSnapshot(
+export const compareSnapshot = Effect.fn("compareSnapshot")(function* (
   snapshot: KitSnapshot,
   options: CompareOptions
-): Promise<Result.Result<CompareReport, CompareFailure>> {
+) {
   if (snapshot.scale !== DEVICE_SCALE) {
-    return Result.fail(
+    return yield* Effect.fail(
       new UnsupportedScale(
         `The snapshot was exported at ${String(snapshot.scale)}x, and the browser renders at ${String(DEVICE_SCALE)}x.`
       )
     );
   }
-  const build = locateFuseBuild();
-  if (Result.isFailure(build)) {
-    return Result.fail(build.failure);
-  }
+  const fs = yield* FileSystem.FileSystem;
+  const build = yield* locateFuseBuild();
   // The Fuse build exists by now, so the renderers' imports of it load.
-  const renderers = await loadRenderers();
-  const assets = await readPageAssets(build.success, renderers);
+  const renderers = yield* loadRenderers();
+  const assets = yield* readPageAssets(build, renderers);
   const renderable = renderables(renderers);
-  const componentSets = (await buildComponentSets()).map((set) => set.componentSet);
-  const launched = await CompareBrowser.launch(assets);
-  if (Result.isFailure(launched)) {
-    return Result.fail(launched.failure);
-  }
-  const browser = launched.success;
+  const componentSets = (yield* buildComponentSets()).map((set) => set.componentSet);
   const cellsDir = join(options.outDir, "cells");
-  rmSync(cellsDir, { recursive: true, force: true });
-  mkdirSync(cellsDir, { recursive: true });
   const rows: ReportRow[] = [];
   const skipped: SkippedInstance[] = [];
   const previews: ReportPreview[] = [];
-  try {
-    for (const [previewIndex, preview] of snapshot.previews.entries()) {
-      const outcome = await comparePreview(
-        browser,
-        preview,
-        previewIndex,
-        renderable,
-        componentSets,
-        options
-      );
-      if (Result.isFailure(outcome)) {
-        return Result.fail(outcome.failure);
+  yield* Effect.scoped(
+    Effect.gen(function* () {
+      const browser = yield* CompareBrowser.launch(assets);
+      yield* fs
+        .remove(cellsDir, { recursive: true, force: true })
+        .pipe(Effect.mapError(fileFailure("clear", cellsDir)));
+      yield* makeDirectory(cellsDir);
+      for (const [previewIndex, preview] of snapshot.previews.entries()) {
+        const outcome = yield* comparePreview(
+          browser,
+          preview,
+          previewIndex,
+          renderable,
+          componentSets,
+          options
+        );
+        rows.push(...outcome.rows);
+        skipped.push(...outcome.skipped);
+        previews.push(outcome.preview);
       }
-      rows.push(...outcome.success.rows);
-      skipped.push(...outcome.success.skipped);
-      previews.push(outcome.success.preview);
-    }
-  } finally {
-    await browser.close();
-  }
+    })
+  );
   const report: CompareReport = {
     snapshot: { file: snapshot.file, exportedAt: snapshot.exportedAt, scale: snapshot.scale },
     generatedAt: new Date().toISOString(),
     threshold: options.threshold,
-    fuseBuildStale: build.success.stale,
+    fuseBuildStale: build.stale,
     fontPackage: assets.fontPackage,
     previews,
     rows: worstFirst(rows),
     skipped,
   };
-  writeFileSync(join(options.outDir, "report.json"), `${JSON.stringify(report, null, 2)}\n`);
-  writeFileSync(join(options.outDir, "report.html"), renderReportHtml(report));
-  return Result.succeed(report);
-}
+  yield* writeText(join(options.outDir, "report.json"), `${JSON.stringify(report, null, 2)}\n`);
+  yield* writeText(join(options.outDir, "report.html"), renderReportHtml(report));
+  return report;
+});
 
-async function comparePreview(
+/** What one preview adds to the report. */
+type PreviewOutcome = {
+  readonly rows: ReportRow[];
+  readonly skipped: SkippedInstance[];
+  readonly preview: ReportPreview;
+};
+
+const comparePreview = Effect.fnUntraced(function* (
   browser: CompareBrowser,
   preview: PreviewSnapshot,
   previewIndex: number,
   renderable: readonly Renderable[],
   componentSets: readonly Pick<ComponentSetSpec, "key" | "axes" | "variants">[],
   options: CompareOptions
-): Promise<
-  Result.Result<
-    { readonly rows: ReportRow[]; readonly skipped: SkippedInstance[]; readonly preview: ReportPreview },
-    FontNotLoaded
-  >
-> {
+) {
   const skip = (variant: string, reason: string): SkippedInstance => ({
     preview: preview.key,
     variant,
@@ -395,23 +400,20 @@ async function comparePreview(
   });
   const theme = parsePreviewTheme(preview.modes);
   if (Result.isFailure(theme)) {
-    return Result.succeed({
+    const outcome: PreviewOutcome = {
       rows: [],
       skipped: preview.instances.map((instance) => skip(instance.variant, theme.failure.message)),
       preview: { key: preview.key, name: preview.name, theme: null, background: null, font: null },
-    });
+    };
+    return outcome;
   }
   const unchanged = unchangedByDesign(componentSets, tokenColorsIn(theme.success));
   const { planned, unsupported } = planCells(preview.instances, renderable, unchanged, options.layout);
-  const rendered = await browser.renderPreview(
+  const { background, cells, font } = yield* browser.renderPreview(
     theme.success,
     planned.map((cell) => cell.request),
     options.layout
   );
-  if (Result.isFailure(rendered)) {
-    return Result.fail(rendered.failure);
-  }
-  const { background, cells, font } = rendered.success;
   const rows: ReportRow[] = [];
   const skipped = unsupported.map((entry) => skip(entry.variant, entry.reason));
   for (const { instance, definition, cell: parsedCell, request } of planned) {
@@ -438,19 +440,20 @@ async function comparePreview(
     const stem = `p${String(previewIndex).padStart(2, "0")}-${request.id}`;
     const restsByDesign = request.restsByDesign && cell.state === "missing";
     const compared = compareCell(figmaSide, cell, stateFlags(cell, restsByDesign), background, options);
-    const write = (suffix: string, raster: Raster) => {
+    const write = Effect.fnUntraced(function* (suffix: string, raster: Raster) {
       const path = `cells/${stem}-${suffix}.png`;
-      writeFileSync(join(options.outDir, path), encodePng(raster));
+      const file = join(options.outDir, path);
+      yield* writeBytes(file, encodePng(raster));
       return path;
-    };
-    const browserPath = write("browser", compared.browser);
+    });
+    const browserPath = yield* write("browser", compared.browser);
     const { width, height } = compared.browser;
     const pictures =
       compared._tag === "Compared"
         ? {
-            figma: write("figma", compared.figma),
+            figma: yield* write("figma", compared.figma),
             browser: browserPath,
-            diff: write("diff", compared.diff),
+            diff: yield* write("diff", compared.diff),
             width,
             height,
           }
@@ -468,7 +471,7 @@ async function comparePreview(
       images: pictures,
     });
   }
-  return Result.succeed({
+  const outcome: PreviewOutcome = {
     rows,
     skipped,
     preview: {
@@ -478,5 +481,6 @@ async function comparePreview(
       background: rgbText(background),
       font,
     },
-  });
-}
+  };
+  return outcome;
+});

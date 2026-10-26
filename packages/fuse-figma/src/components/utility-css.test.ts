@@ -1,17 +1,20 @@
+import { Effect, Result } from "effect";
 import { describe, expect, it } from "vitest";
 
 import { baseBorderColor, compileUtilities } from "./utility-css";
 
 describe("compileUtilities", () => {
   it("reads each utility's declarations from Tailwind's build of fuse.css", async () => {
-    const compiled = await compileUtilities([
-      "bg-primary/80",
-      "px-(--control-px-button-md)",
-      "rounded-(--radius-button)",
-      "border-[length:var(--button-outline-width,1px)]",
-      "size-4",
-      "no-such-utility",
-    ]);
+    const compiled = await Effect.runPromise(
+      compileUtilities([
+        "bg-primary/80",
+        "px-(--control-px-button-md)",
+        "rounded-(--radius-button)",
+        "border-[length:var(--button-outline-width,1px)]",
+        "size-4",
+        "no-such-utility",
+      ])
+    );
     const declarations = (utility: string) =>
       compiled.rules
         .get(utility)
@@ -41,7 +44,7 @@ describe("compileUtilities", () => {
   // Oracle: Tailwind's utilities.css registers `@property --tw-ring-offset-width { syntax:
   // "<length>"; inherits: false; initial-value: 0px }`, and the other ring and shadow layers alike.
   it("reads the theme values and the registered properties the utilities use", async () => {
-    const compiled = await compileUtilities(["font-medium", "ring-2", "size-4"]);
+    const compiled = await Effect.runPromise(compileUtilities(["font-medium", "ring-2", "size-4"]));
     expect(compiled.themeValues.get("--font-weight-medium")).toBe("500");
     expect(compiled.registeredProperties.get("--tw-ring-offset-width")).toEqual({
       initialValue: "0px",
@@ -58,7 +61,7 @@ describe("compileUtilities", () => {
   // `:where()` weighs nothing (Selectors 4 §17), so the rule weighs (0,1,0), as the bare utility does,
   // and Tailwind prints a variant's rule after every bare utility's.
   it("places a class whose rule selects it as the child of a parent context", async () => {
-    const compiled = await compileUtilities(["self-start", "item-described:self-start"]);
+    const compiled = await Effect.runPromise(compileUtilities(["self-start", "item-described:self-start"]));
     const bare = compiled.classes.get("self-start");
     const described = compiled.classes.get("item-described:self-start");
     expect(described?.specificity).toEqual([0, 1, 0]);
@@ -70,7 +73,7 @@ describe("compileUtilities", () => {
   // context. Both `:where()`s weigh nothing (Selectors 4 §17), so the rule weighs (0,0,0).
   it("places a weightless class whose rule selects it below a parent context", async () => {
     const className = "in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner";
-    const compiled = await compileUtilities([className]);
+    const compiled = await Effect.runPromise(compileUtilities([className]));
     expect(compiled.classes.get(className)?.specificity).toEqual([0, 0, 0]);
   });
 });
@@ -83,30 +86,36 @@ describe("baseBorderColor", () => {
   const PART_ARM = ":where(:not(:is(button, input, select, textarea, meter, progress):not([data-slot])))";
 
   it("reads the border color fuse.css's base layer gives every part", async () => {
-    expect(baseBorderColor(await compileUtilities([]))).toEqual({
+    expect(Result.getOrThrow(baseBorderColor(await Effect.runPromise(compileUtilities([]))))).toEqual({
       property: "border-color",
       value: "var(--border, currentcolor)",
     });
   });
 
   it("follows the rule's value, and fails when the rule or its border color is gone", async () => {
-    const compiled = await compileUtilities([]);
+    const compiled = await Effect.runPromise(compileUtilities([]));
     const withBase = (baseRules: typeof compiled.baseRules) => ({ ...compiled, baseRules });
+    const failureOf = (read: ReturnType<typeof baseBorderColor>) =>
+      Result.isFailure(read) ? read.failure.message : undefined;
     expect(
-      baseBorderColor(
-        withBase([
-          {
-            selector: `${PART_ARM}, ::after`,
-            declarations: [{ property: "border-color", value: "var(--input)" }],
-          },
-        ])
+      Result.getOrThrow(
+        baseBorderColor(
+          withBase([
+            {
+              selector: `${PART_ARM}, ::after`,
+              declarations: [{ property: "border-color", value: "var(--input)" }],
+            },
+          ])
+        )
       )
     ).toEqual({ property: "border-color", value: "var(--input)" });
-    expect(() => baseBorderColor(withBase([]))).toThrow(/base layer/);
-    expect(() =>
-      baseBorderColor(
-        withBase([{ selector: PART_ARM, declarations: [{ property: "outline-color", value: "red" }] }])
+    expect(failureOf(baseBorderColor(withBase([])))).toMatch(/base layer/);
+    expect(
+      failureOf(
+        baseBorderColor(
+          withBase([{ selector: PART_ARM, declarations: [{ property: "outline-color", value: "red" }] }])
+        )
       )
-    ).toThrow(/border-color/);
+    ).toMatch(/border-color/);
   });
 });
