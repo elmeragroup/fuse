@@ -7,6 +7,7 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { walkLayers } from "../../src/components/kit-spec.ts";
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import type { CollectionSpec } from "../../src/variable-set.ts";
 import { ICONS_PAGE, inventoryPage, KIT_PAGES, pageKey } from "../../test/kit-inventory.ts";
@@ -168,19 +169,40 @@ describe("a file with Label on the page it used to sit on alone", () => {
   const LABEL = { key: "label", name: "Label", variants: 2, previewed: 2 };
   /** The page Label sat on alone, with its own four previews. */
   const LABEL_PAGE: InventoryPage = { slug: "label", name: "Label", sets: [LABEL] };
+  const TEXTAREA = inventoryPage("textarea");
+  /** The Textarea page's set that shows Field description and Field error, which came after them. */
+  const TEXTAREA_FIELD = { key: "textarea-field", name: "Textarea field", variants: 5, previewed: 5 };
 
   /**
    * The kit as the plugin wrote it before the Field page: Label alone on its own page, previewed
-   * there, and none of the sets that joined it on the Field page.
+   * there, and none of the sets that joined it on the Field page, nor a later set that shows one of
+   * them, as Textarea field shows Field description.
    */
   function labelPageKit(): KitSpec {
     const field = pageKey(FIELD);
     const label = { key: pageKey(LABEL_PAGE), name: LABEL_PAGE.name };
     const previewKey = (key: string) => key.replace(`preview/${FIELD.slug}/`, `preview/${LABEL_PAGE.slug}/`);
+    const joined = new Set(
+      kit.componentSets.filter((set) => set.page === field && set.key !== LABEL.key).map((set) => set.key)
+    );
+    const later = new Set(
+      kit.componentSets
+        .filter((set) =>
+          set.variants.some((variant) =>
+            walkLayers(variant.root).some(
+              (layer) => layer.kind === "instance" && joined.has(layer.componentSet)
+            )
+          )
+        )
+        .map((set) => set.key)
+    );
     return {
       ...kit,
       pages: kit.pages.map((page) => (page.key === field ? label : page)),
       componentSets: kit.componentSets.flatMap((set) => {
+        if (later.has(set.key)) {
+          return [];
+        }
         if (set.page !== field) {
           return [set];
         }
@@ -197,7 +219,10 @@ describe("a file with Label on the page it used to sit on alone", () => {
                 .filter((group) => group.componentSet === LABEL.key)
                 .map((group) => ({ ...group, key: previewKey(group.key) })),
             }
-          : preview
+          : {
+              ...preview,
+              groups: preview.groups.filter((group) => !later.has(group.componentSet)),
+            }
       ),
     };
   }
@@ -229,8 +254,11 @@ describe("a file with Label on the page it used to sit on alone", () => {
         ...FIELD.sets
           .filter((set) => set.key !== LABEL.key)
           .map((set) => `${FIELD.name}: create the component set ${set.name} with ${set.variants} variants`),
+        `${TEXTAREA.name}: create the component set ${TEXTAREA_FIELD.name} with ${TEXTAREA_FIELD.variants} variants`,
         ...previewNames(FIELD).map((name) => `${FIELD.name}: create the preview ${name}`),
         `${FIELD.name}: place ${listed(FIELD.sets.map((set) => set.name))} in a row and stack 4 previews below them`,
+        ...previewNames(TEXTAREA).map((name) => `${name}: create the group ${TEXTAREA_FIELD.name}`),
+        `${TEXTAREA.name}: place ${listed(TEXTAREA.sets.map((set) => set.name))} in a row and stack 4 previews below them`,
         `Document: delete the page ${LABEL_PAGE.name}`,
       ],
       warnings: [],

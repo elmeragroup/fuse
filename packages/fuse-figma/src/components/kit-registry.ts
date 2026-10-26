@@ -76,6 +76,7 @@ import {
 } from "./sidebar-section-kit";
 import { SKELETON } from "./skeleton-kit";
 import { SWITCH } from "./switch-kit";
+import { TEXTAREA_FIELD } from "./textarea-field-kit";
 import { TEXTAREA } from "./textarea-kit";
 import { ICON_TOGGLE, TOGGLE } from "./toggle-kit";
 
@@ -127,7 +128,7 @@ const FIELD_PAGE: KitPage = { slug: "field", name: "Field" };
 /** The page of Input and the Input group that Combobox and Command render. */
 const INPUT_PAGE: KitPage = { slug: "input", name: "Input" };
 
-/** The page Textarea sits on alone. */
+/** The page of Textarea and the labelled Textarea field. */
 const TEXTAREA_PAGE: KitPage = { slug: "textarea", name: "Textarea" };
 
 /** The page of Avatar and the group that stacks avatars. */
@@ -287,6 +288,7 @@ export const KIT: readonly KitEntry[] = [
   { definition: INPUT, page: INPUT_PAGE, previewCells: matrixCells(INPUT.axes) },
   { definition: INPUT_GROUP, page: INPUT_PAGE, previewCells: matrixCells(INPUT_GROUP.axes) },
   { definition: TEXTAREA, page: TEXTAREA_PAGE, previewCells: matrixCells(TEXTAREA.axes) },
+  { definition: TEXTAREA_FIELD, page: TEXTAREA_PAGE, previewCells: matrixCells(TEXTAREA_FIELD.axes) },
   { definition: AVATAR, page: AVATAR_PAGE, previewCells: matrixCells(AVATAR.axes) },
   { definition: AVATAR_GROUP, page: AVATAR_PAGE, previewCells: matrixCells(AVATAR_GROUP.axes) },
   { definition: METER, page: METER_PAGE, previewCells: matrixCells(METER.axes) },

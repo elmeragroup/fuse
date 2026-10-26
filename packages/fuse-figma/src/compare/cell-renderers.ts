@@ -248,6 +248,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./textarea-cell.ts")).textarea,
   },
   {
+    set: "textarea-field",
+    entry: "dist/textarea-field.js",
+    load: async () => (await import("./textarea-field-cell.ts")).textareaField,
+  },
+  {
     set: "avatar",
     entry: "dist/avatar.js",
     load: async () => (await import("./avatar-cell.ts")).avatar,

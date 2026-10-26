@@ -121,11 +121,15 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "input-group", name: "Input group", variants: 16, previewed: 16 },
     ],
   },
-  // Placeholder and value in 5 states.
   {
     slug: "textarea",
     name: "Textarea",
-    sets: [{ key: "textarea", name: "Textarea", variants: 10, previewed: 10 }],
+    sets: [
+      // Placeholder and value in 5 states.
+      { key: "textarea", name: "Textarea", variants: 10, previewed: 10 },
+      // The labelled textarea in 5 states.
+      { key: "textarea-field", name: "Textarea field", variants: 5, previewed: 5 },
+    ],
   },
   // The fallback and the image at 4 sizes.
   {
