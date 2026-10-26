@@ -8,7 +8,6 @@ import { Effect } from "effect";
 
 import type { NumberSpec, PreviewGroupSpec, PreviewSpec } from "../../src/components/kit-spec.ts";
 import type { PlannedSet } from "./component-set.ts";
-import type { PluginError } from "./errors.ts";
 import { near, planLayoutSizing, planNumber, planPaints, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { placeOwned, planOwnedChildren } from "./identity.ts";
@@ -18,7 +17,6 @@ import type { PlannedPage } from "./pages.ts";
 import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { currentRun } from "./services.ts";
-import type { PlanServices } from "./services.ts";
 import { settleInstances } from "./settle.ts";
 
 /** A frame that wraps its children in rows of a fixed width, with even gaps and padding. */
@@ -178,7 +176,7 @@ function planInstances(
   previewKey: string,
   spec: PreviewGroupSpec,
   set: PlannedSet
-): Effect.Effect<void, PluginError, PlanServices> {
+) {
   const children = spec.variants.map((variant) => ({ key: `${previewKey}/${variant}`, variant }));
   return planOwnedChildren(group, label, "instance", children, ({ key, variant }) => {
     const component = set.variants.get(variant);
@@ -210,7 +208,7 @@ function planInstances(
           planInstanceSizing(inner, instance, lengthsLabel, root.sizing, swaps ? "unknown" : "read");
         }),
     } satisfies OwnedChild<InstanceNode, void>;
-  }).pipe(Effect.asVoid);
+  });
 }
 
 const planGroupFields = Effect.fnUntraced(function* (

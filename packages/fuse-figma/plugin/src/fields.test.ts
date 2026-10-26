@@ -1,4 +1,3 @@
-import { Effect } from "effect";
 /**
  * Field planners on the in-memory file in `fake-figma.ts`, each against the Figma rule it
  * exists for: `resize` turns a hugging axis of an auto layout frame fixed (rules 5 and 14), a
@@ -7,6 +6,8 @@ import { Effect } from "effect";
  * The oracle is the end state the spec asks for, the write log, and a second plan over that state,
  * which must list nothing.
  */
+
+import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 
 import type { ImagePaintSpec } from "../../src/components/kit-spec.ts";

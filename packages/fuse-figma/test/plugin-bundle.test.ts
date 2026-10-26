@@ -1,4 +1,3 @@
-import { Effect } from "effect";
 /**
  * The bundle `figma:plugin` writes for the plugin's main thread, loaded the way Figma loads it:
  * as one classic script whose only globals are the ones Figma provides. The in-memory file in
@@ -7,6 +6,8 @@ import { Effect } from "effect";
  * `plugin/src/reconcile.test.ts` lists them, and the messages the plugin shows for an unsynced
  * file and an unknown request.
  */
+
+import { Effect } from "effect";
 import { Script } from "node:vm";
 import { beforeAll, describe, expect, it } from "vitest";
 

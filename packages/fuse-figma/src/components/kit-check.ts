@@ -647,12 +647,12 @@ function checkPreviews(kit: KitSpec): void {
  * @param kit - The kit.
  * @param decodeBase64 - Decodes an image fill's bytes. The plugin passes `figma.base64Decode`, and
  *   the build passes Node's decoder.
- * @returns The kit, or the first contradiction the check finds.
+ * @returns Nothing, or the first contradiction the check finds.
  */
 export function checkKitSpec(
   kit: KitSpec,
   decodeBase64: (text: string) => Uint8Array
-): Result.Result<KitSpec, KitContradiction> {
+): Result.Result<void, KitContradiction> {
   try {
     const pages = new Set<string>();
     for (const page of kit.pages) {
@@ -676,7 +676,7 @@ export function checkKitSpec(
     checkInstances(kit);
     checkGlyphs(kit);
     checkPreviews(kit);
-    return Result.succeed(kit);
+    return Result.succeed(undefined);
   } catch (thrown) {
     if (thrown instanceof KitContradiction) {
       return Result.fail(thrown);

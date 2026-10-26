@@ -20,9 +20,8 @@ import type { BrowserUnavailable, CellRequest, FontNotLoaded, RenderedCell } fro
 import { forcedAttributesFor, isClientRenderer, loadRenderers, renderCellHtml } from "./cell-renderers.ts";
 import type { AnyCellRenderer, RendererMissing } from "./cell-renderers.ts";
 import { fallbackInteraction, forcedPseudoClasses, parseCell, restingTwin } from "./cells.ts";
-import type { ClientBundleFailed } from "./client-bundle.ts";
 import { checkClientMarkup } from "./client-markup.ts";
-import { fileFailure, writeText } from "./compare-files.ts";
+import { fileFailure, makeDirectory, writeBytes, writeText } from "./compare-files.ts";
 import type { CompareFileFailed } from "./compare-files.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { FuseBuildMissing } from "./page-assets.ts";
@@ -124,7 +123,6 @@ export type CompareFailure =
   | CompareFileFailed
   | RendererMissing
   | KitBuildError
-  | ClientBundleFailed
   | BrowserUnavailable
   | FontNotLoaded
   | UnsupportedScale;
@@ -349,9 +347,7 @@ export const compareSnapshot = Effect.fn("compareSnapshot")(function* (
       yield* fs
         .remove(cellsDir, { recursive: true, force: true })
         .pipe(Effect.mapError(fileFailure("clear", cellsDir)));
-      yield* fs
-        .makeDirectory(cellsDir, { recursive: true })
-        .pipe(Effect.mapError(fileFailure("create", cellsDir)));
+      yield* makeDirectory(cellsDir);
       for (const [previewIndex, preview] of snapshot.previews.entries()) {
         const outcome = yield* comparePreview(
           browser,
@@ -397,7 +393,6 @@ const comparePreview = Effect.fnUntraced(function* (
   componentSets: readonly Pick<ComponentSetSpec, "key" | "axes" | "variants">[],
   options: CompareOptions
 ) {
-  const fs = yield* FileSystem.FileSystem;
   const skip = (variant: string, reason: string): SkippedInstance => ({
     preview: preview.key,
     variant,
@@ -448,7 +443,7 @@ const comparePreview = Effect.fnUntraced(function* (
     const write = Effect.fnUntraced(function* (suffix: string, raster: Raster) {
       const path = `cells/${stem}-${suffix}.png`;
       const file = join(options.outDir, path);
-      yield* fs.writeFile(file, encodePng(raster)).pipe(Effect.mapError(fileFailure("write", file)));
+      yield* writeBytes(file, encodePng(raster));
       return path;
     });
     const browserPath = yield* write("browser", compared.browser);

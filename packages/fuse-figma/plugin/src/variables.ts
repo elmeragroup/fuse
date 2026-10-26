@@ -32,20 +32,6 @@ export type KitVariables = {
   readonly mode: (ref: ModeRef) => ResolvedMode;
 };
 
-/**
- * The value of a lookup the kit check made already.
- *
- * @param found - The lookup.
- * @returns Its value.
- * @throws A defect when the lookup failed, which the kit check rules out.
- */
-function checked<A>(found: Result.Result<A, FileNotSynced>): A {
-  if (Result.isFailure(found)) {
-    throw new Error(found.failure.message);
-  }
-  return found.success;
-}
-
 const RUN_SYNC_FIRST = "Run `figma:sync` on this file first.";
 
 /**
@@ -126,8 +112,8 @@ export const loadKitVariables = Effect.fnUntraced(function* (figma: PluginAPI, n
   const lookups: KitVariables = {
     findVariable,
     findMode,
-    variable: (ref) => checked(findVariable(ref)),
-    mode: (ref) => checked(findMode(ref)),
+    variable: (ref) => Result.getOrThrowWith(findVariable(ref), (failure) => new Error(failure.message)),
+    mode: (ref) => Result.getOrThrowWith(findMode(ref), (failure) => new Error(failure.message)),
   };
   return lookups;
 });

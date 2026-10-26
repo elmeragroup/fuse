@@ -157,31 +157,23 @@ export function checkKit(
   variables: KitVariables,
   kit: KitSpec
 ): Result.Result<void, KitContradiction | FileNotSynced> {
-  const checked = checkKitSpec(kit, (text) => figma.base64Decode(text));
-  if (Result.isFailure(checked)) {
-    return Result.fail(checked.failure);
-  }
-  for (const preview of kit.previews) {
-    for (const ref of preview.modes) {
-      const mode = variables.findMode(ref);
-      if (Result.isFailure(mode)) {
-        return Result.fail(mode.failure);
+  return Result.gen(function* () {
+    yield* checkKitSpec(kit, (text) => figma.base64Decode(text));
+    for (const preview of kit.previews) {
+      for (const ref of preview.modes) {
+        yield* variables.findMode(ref);
       }
     }
-  }
-  for (const { ref, type } of boundRefs(kit)) {
-    const variable = variables.findVariable(ref);
-    if (Result.isFailure(variable)) {
-      return Result.fail(variable.failure);
+    for (const { ref, type } of boundRefs(kit)) {
+      const variable = yield* variables.findVariable(ref);
+      if (variable.resolvedType !== type) {
+        return yield* Result.fail(
+          new FileNotSynced({
+            message: `${variableLabel(ref)} is a ${variable.resolvedType} variable, and the kit binds it to a field that takes a ${type}. Run \`figma:sync\` on this file first.`,
+            collection: ref.collection,
+          })
+        );
+      }
     }
-    if (variable.success.resolvedType !== type) {
-      return Result.fail(
-        new FileNotSynced({
-          message: `${variableLabel(ref)} is a ${variable.success.resolvedType} variable, and the kit binds it to a field that takes a ${type}. Run \`figma:sync\` on this file first.`,
-          collection: ref.collection,
-        })
-      );
-    }
-  }
-  return Result.succeed(undefined);
+  });
 }

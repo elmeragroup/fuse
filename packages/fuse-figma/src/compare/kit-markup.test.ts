@@ -1,6 +1,3 @@
-import { createElement } from "react";
-import type { ReactElement } from "react";
-
 /**
  * Every definition the kit builds has a renderer, and each cell its preview frames place renders
  * one root part for the page to measure: the page measures, forces and crops the one element in
@@ -58,6 +55,10 @@ import type { ReactElement } from "react";
  * `test/markup-variants.ts` the variant tables. This suite runs them on every kit definition and on
  * hand-written fixtures.
  */
+
+import { createElement } from "react";
+import type { ReactElement } from "react";
+
 import { Effect } from "effect";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";

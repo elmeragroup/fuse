@@ -1,5 +1,3 @@
-import { hugsUncapped, listNames, UNREAD_SHARE, widthCapInside } from "./box-sizing";
-import type { Holder, WidthCap } from "./box-sizing";
 /**
  * A box's label: the box's own text, mapped from the box's style. This module owns the label's
  * typography, how it sizes and truncates in the box, where it sets its lines, where a native
@@ -7,6 +5,9 @@ import type { Holder, WidthCap } from "./box-sizing";
  * layers, and asks this module for the label, for the line clamp the box's display reads, for that
  * gap, and to settle the text declarations of a box that shows no label.
  */
+
+import { hugsUncapped, listNames, UNREAD_SHARE, widthCapInside } from "./box-sizing";
+import type { Holder, WidthCap } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
 import type { CoverageNote, LayerStyle } from "./cascade";
 import type { Cell, LabelDefinition, TextPlacement } from "./component-spec";

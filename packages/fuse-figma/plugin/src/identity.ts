@@ -244,7 +244,7 @@ export const planOwnedChildren = Effect.fnUntraced(function* <
       label,
       child.description,
       () => placeOwned(parent, child.make(), spec.key, child.keepsName === true ? undefined : child.name),
-      (made) => Effect.asVoid(child.plan(made, "new"))
+      (made) => child.plan(made, "new")
     );
     planned.push({ spec, node, fact: undefined });
   }

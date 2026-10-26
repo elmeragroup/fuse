@@ -28,7 +28,7 @@ import { indexSiblings, placeOwned, planOwnedChildren, setKey } from "./identity
 import type { OwnedChild, Siblings } from "./identity.ts";
 import { innerSpecs } from "./instance-layers.ts";
 import type { PlannedPage } from "./pages.ts";
-import { change, create, existing, Plan, watchLeaf } from "./plan.ts";
+import { change, create, existing, Plan, recordsAny } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { currentRun } from "./services.ts";
 import { settleInstances } from "./settle.ts";
@@ -350,7 +350,7 @@ const planSetContents = Effect.fnUntraced(function* (
     return new Map(planned.map((child) => [child.spec.key, child.node]));
   });
   const [variants, recorded] = yield* Plan.watch(planVariants);
-  const [, gridded] = watchLeaf(run.plan, () =>
+  const gridded = recordsAny(run.plan, () =>
     planGrid(run, set, spec, variants, recorded || holdsChanged(spec, sets))
   );
   const contents: PlannedContents = { variants, changed: recorded || gridded };
@@ -382,7 +382,7 @@ const createSet = Effect.fnUntraced(function* (
       set.name = spec.name;
       return set;
     },
-    (set) => Effect.asVoid(planSetContents(set, spec, links, properties))
+    (set) => planSetContents(set, spec, links, properties)
   );
   // The set's children, indexed by key the first time a later operation reads a variant.
   let made: Siblings | undefined;

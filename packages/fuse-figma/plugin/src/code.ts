@@ -55,14 +55,10 @@ const respond = (request: Request) =>
       });
       return;
     }
-    const plugin = yield* FigmaPlugin;
     const { pages } = yield* Kit;
     const snapshot = yield* exportSnapshots(
       pages.map((page) => page.key),
-      (done, total) =>
-        Effect.sync(() => {
-          plugin.ui.postMessage({ kind: "progress", done, total } satisfies UiMessage);
-        })
+      (done, total) => post({ kind: "progress", done, total })
     );
     yield* post({ kind: "snapshots", snapshot });
   });

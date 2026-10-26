@@ -19,7 +19,7 @@ import {
   planShadows,
 } from "./fields.ts";
 import type { Held, NumberField, Run } from "./fields.ts";
-import { change, watchLeaf } from "./plan.ts";
+import { change, recordsAny } from "./plan.ts";
 
 /** A node that holds a box's layers: a variant component, or a frame layer below it. */
 export type LayerParent = ComponentNode | FrameNode;
@@ -138,7 +138,7 @@ export type BoxPlace = { readonly kind: "root" } | { readonly kind: "frame"; rea
  */
 export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpec, place: BoxPlace): Held {
   const { direction, sizing } = spec;
-  const [, laidOut] = watchLeaf(run.plan, () => {
+  const laidOut = recordsAny(run.plan, () => {
     planScalar(run, label, "layoutMode", node.layoutMode, direction, () => {
       node.layoutMode = direction;
     });
@@ -217,7 +217,7 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
   // as the typings' `strokesIncludedInLayout` false draws. A border on some sides writes each side's
   // weight and counts in the layout, where each side takes room on its own side (N9, PS).
   const { stroke } = spec;
-  const [, stroked] = watchLeaf(run.plan, () => {
+  const stroked = recordsAny(run.plan, () => {
     planPaints(run, label, "stroke", node.strokes, stroke?.color, (paints) => {
       node.strokes = paints;
     });

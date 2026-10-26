@@ -2,10 +2,9 @@
  * A one-variant Button kit on the in-memory file in `fake-figma.ts`, shared by the suites that run
  * `reconcileKit` on a single set: the kit and the builders that change its variant, a file whose
  * kit page holds a stale preview and no set, and the set and variant an Apply leaves there. Small
- * kits of their own build their sets from `bareRoot` and `oneVariant` and apply them with `applyTo`.
- * The
- * label's family follows `font-sans`, which aliases a brand variable, so a run resolves it across
- * collections before it writes (rule 8) and needs the font it names (rule 7).
+ * kits of their own build their sets from `bareRoot` and `oneVariant` and apply them with
+ * `applyTo`. The label's family follows `font-sans`, which aliases a brand variable, so a run
+ * resolves it across collections before it writes (rule 8) and needs the font it names (rule 7).
  */
 import { HUGGING_TEXT, NO_LIMITS, TOP_LEFT } from "../../src/components/kit-spec.ts";
 import type {

@@ -51,3 +51,37 @@ export const writeText = Effect.fnUntraced(function* (path: string, text: string
   const fs = yield* FileSystem.FileSystem;
   yield* fs.writeFileString(path, text).pipe(Effect.mapError(fileFailure("write", path)));
 });
+
+/**
+ * Write a binary file, such as a cell's picture.
+ *
+ * @param path - The file.
+ * @param bytes - Its bytes.
+ * @returns The Effect that writes it, failing with `CompareFileFailed`.
+ */
+export const writeBytes = Effect.fnUntraced(function* (path: string, bytes: Uint8Array) {
+  const fs = yield* FileSystem.FileSystem;
+  yield* fs.writeFile(path, bytes).pipe(Effect.mapError(fileFailure("write", path)));
+});
+
+/**
+ * Read a text file, such as a font's CSS or the snapshot.
+ *
+ * @param path - The file.
+ * @returns The Effect that reads its text, failing with `CompareFileFailed`.
+ */
+export const readText = Effect.fnUntraced(function* (path: string) {
+  const fs = yield* FileSystem.FileSystem;
+  return yield* fs.readFileString(path).pipe(Effect.mapError(fileFailure("read", path)));
+});
+
+/**
+ * Create a directory and any parent it lacks, such as the report's.
+ *
+ * @param path - The directory.
+ * @returns The Effect that creates it, failing with `CompareFileFailed`.
+ */
+export const makeDirectory = Effect.fnUntraced(function* (path: string) {
+  const fs = yield* FileSystem.FileSystem;
+  yield* fs.makeDirectory(path, { recursive: true }).pipe(Effect.mapError(fileFailure("create", path)));
+});

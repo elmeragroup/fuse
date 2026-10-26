@@ -1,4 +1,3 @@
-import { Effect, Result } from "effect";
 /**
  * Compile recipe classes against `fuse.css` and read back each bare utility's declarations, and
  * where each full class sits in the output and how specific its selector is. The spec builder
@@ -9,12 +8,14 @@ import { Effect, Result } from "effect";
  * compiler's own syntax tree. The same compile gives the comparison page the CSS of the classes a
  * host app compiles itself.
  */
+
+import { Effect, Result } from "effect";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { compileAst } from "tailwindcss";
 
 import { KitSourceInvalid, runTool } from "./build-errors";
-import type { KitBuildError } from "./build-errors";
+import type { KitToolFailed } from "./build-errors";
 import { splitClassName } from "./class-name";
 import { namedClasses, selectorAlternatives } from "./css-selector";
 import { splitTopLevel } from "./css-values";
@@ -115,7 +116,7 @@ function consumerEntry(): AstNode[] {
  */
 export function compileUtilities(
   classes: readonly string[]
-): Effect.Effect<CompiledUtilities, KitBuildError> {
+): Effect.Effect<CompiledUtilities, KitSourceInvalid | KitToolFailed> {
   const candidates = new Set(classes.flatMap((className) => [className, splitClassName(className).utility]));
   return Effect.map(buildConsumerCss([...candidates]), readCompiledUtilities);
 }
@@ -129,7 +130,9 @@ export function compileUtilities(
  *   such as `@media (hover: hover)`. The rest of the compile, which Fuse's own `styles.css`
  *   already holds, stays out. The Effect fails as {@link compileUtilities} does.
  */
-export function compileHostUtilities(classes: readonly string[]): Effect.Effect<string, KitBuildError> {
+export function compileHostUtilities(
+  classes: readonly string[]
+): Effect.Effect<string, KitSourceInvalid | KitToolFailed> {
   const wanted = new Set(classes);
   const select = (node: AstNode): AstNode[] => {
     if (node.kind === "rule") {
@@ -176,7 +179,9 @@ function toCss(node: AstNode): string {
 }
 
 /** Build the candidates against the standalone consumer entry and `fuse.css`. */
-function buildConsumerCss(candidates: readonly string[]): Effect.Effect<AstNode[], KitBuildError> {
+function buildConsumerCss(
+  candidates: readonly string[]
+): Effect.Effect<AstNode[], KitSourceInvalid | KitToolFailed> {
   const stylesheets = new Map<string, string>([
     ["tailwindcss/theme.css", fileURLToPath(import.meta.resolve("tailwindcss/theme.css"))],
     ["tailwindcss/utilities.css", fileURLToPath(import.meta.resolve("tailwindcss/utilities.css"))],

@@ -1,4 +1,3 @@
-import { Effect, FileSystem, Result } from "effect";
 /**
  * The icon library the kit builds: one component per icon `@elmeragroup/fuse/icons` publishes
  * that paints only with `currentColor`, drawn from the markup the Fuse icon renders. Those are
@@ -8,6 +7,8 @@ import { Effect, FileSystem, Result } from "effect";
  * artwork with colors of its own, such as the Vipps mark or the Signing illustration, stays out:
  * it is drawn for a colored background or reads as a blot at 16px.
  */
+
+import { Effect, FileSystem, Result } from "effect";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "rolldown";
@@ -15,7 +16,6 @@ import { build } from "rolldown";
 import { BESPOKE_ICON_NAMES, PHOSPHOR_ICON_NAMES } from "@elmeragroup/fuse/recipe-catalog";
 
 import { KitSourceInvalid, KitToolFailed, runTool } from "./build-errors";
-import type { KitBuildError } from "./build-errors";
 import { iconKey } from "./kit-spec";
 import type { IconSpec } from "./kit-spec";
 
@@ -112,42 +112,45 @@ function renderIcons(markup: IconMarkup): Result.Result<readonly IconSpec[], Kit
  *   roster names an icon `/icons` does not export, and with `KitToolFailed` when rolldown or the
  *   temporary directory fails.
  */
-export const fuseIcons: Effect.Effect<readonly IconSpec[], KitBuildError, FileSystem.FileSystem> =
-  Effect.scoped(
-    Effect.gen(function* () {
-      const fs = yield* FileSystem.FileSystem;
-      const outDir = yield* fs
-        .makeTempDirectoryScoped({ prefix: "fuse-figma-icons-" })
-        .pipe(
-          Effect.mapError(
-            (error) => new KitToolFailed({ message: error.message, tool: "file system", cause: error })
-          )
-        );
-      yield* runTool("rolldown", () =>
-        build({
-          input: ICON_MARKUP_ID,
-          // The bundle's imports resolve from this package, which depends on Fuse and React.
-          cwd: fileURLToPath(new URL("../..", import.meta.url)),
-          plugins: [
-            {
-              name: "fuse-icon-markup",
-              resolveId: (id) => (id === ICON_MARKUP_ID ? id : undefined),
-              load: (id) => (id === ICON_MARKUP_ID ? ICON_MARKUP_SOURCE : undefined),
-            },
-          ],
-          platform: "node",
-          logLevel: "silent",
-          transform: {
-            jsx: { runtime: "automatic" },
-            define: { "process.env.NODE_ENV": JSON.stringify("production") },
-          },
-          output: { dir: outDir, format: "esm", entryFileNames: "icon-markup.mjs" },
-        })
+export const fuseIcons: Effect.Effect<
+  readonly IconSpec[],
+  KitSourceInvalid | KitToolFailed,
+  FileSystem.FileSystem
+> = Effect.scoped(
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const outDir = yield* fs
+      .makeTempDirectoryScoped({ prefix: "fuse-figma-icons-" })
+      .pipe(
+        Effect.mapError(
+          (error) => new KitToolFailed({ message: error.message, tool: "file system", cause: error })
+        )
       );
-      // SAFETY: the bundle is ICON_MARKUP_SOURCE, whose one export is `renderIcon`.
-      const markup = (yield* Effect.promise(
-        () => import(pathToFileURL(join(outDir, "icon-markup.mjs")).href)
-      )) as IconMarkup;
-      return yield* Effect.fromResult(renderIcons(markup));
-    })
-  );
+    yield* runTool("rolldown", () =>
+      build({
+        input: ICON_MARKUP_ID,
+        // The bundle's imports resolve from this package, which depends on Fuse and React.
+        cwd: fileURLToPath(new URL("../..", import.meta.url)),
+        plugins: [
+          {
+            name: "fuse-icon-markup",
+            resolveId: (id) => (id === ICON_MARKUP_ID ? id : undefined),
+            load: (id) => (id === ICON_MARKUP_ID ? ICON_MARKUP_SOURCE : undefined),
+          },
+        ],
+        platform: "node",
+        logLevel: "silent",
+        transform: {
+          jsx: { runtime: "automatic" },
+          define: { "process.env.NODE_ENV": JSON.stringify("production") },
+        },
+        output: { dir: outDir, format: "esm", entryFileNames: "icon-markup.mjs" },
+      })
+    );
+    // SAFETY: the bundle is ICON_MARKUP_SOURCE, whose one export is `renderIcon`.
+    const markup = (yield* Effect.promise(
+      () => import(pathToFileURL(join(outDir, "icon-markup.mjs")).href)
+    )) as IconMarkup;
+    return yield* Effect.fromResult(renderIcons(markup));
+  })
+);

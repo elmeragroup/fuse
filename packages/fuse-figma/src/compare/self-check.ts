@@ -18,7 +18,7 @@
  * draws.
  */
 
-import { Effect, FileSystem, Result } from "effect";
+import { Effect, Result } from "effect";
 import { join } from "node:path";
 
 import { buildComponentSets } from "../components/build-kit.ts";
@@ -29,7 +29,7 @@ import { SELECT_ITEM } from "../components/select-kit.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { CellRequest } from "./browser-render.ts";
 import { loadRenderers } from "./cell-renderers.ts";
-import { fileFailure, writeText } from "./compare-files.ts";
+import { makeDirectory, writeText } from "./compare-files.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { PageLayout } from "./preview-page.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
@@ -291,10 +291,7 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
     scale: DEVICE_SCALE,
     previews,
   };
-  const fs = yield* FileSystem.FileSystem;
-  yield* fs
-    .makeDirectory(options.outDir, { recursive: true })
-    .pipe(Effect.mapError(fileFailure("create", options.outDir)));
+  yield* makeDirectory(options.outDir);
   const text = JSON.stringify(snapshot);
   yield* writeText(join(options.outDir, "self-check-snapshot.json"), text);
   const reread = parseSnapshot(text);

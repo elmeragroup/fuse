@@ -44,7 +44,7 @@ export type Run = {
  * @param plan - The plan the nested planner records into.
  * @returns The nested planner's run.
  */
-export function withPlan(run: Run, plan: PlanRecorder): Run {
+function withPlan(run: Run, plan: PlanRecorder): Run {
   return { figma: run.figma, variables: run.variables, plan, glyphFont: run.glyphFont };
 }
 
@@ -55,13 +55,13 @@ export function withPlan(run: Run, plan: PlanRecorder): Run {
  * @param run - The run.
  * @param label - The node the group touches.
  * @param build - Plans the group's writes with the group's run.
- * @param finish - Runs after the group's writes.
+ * @param finish - Runs after the group's writes, where the group needs it.
  */
 export function changeTogetherIn(
   run: Run,
   label: string,
   build: (group: Run) => void,
-  finish: () => void
+  finish?: () => void
 ): void {
   changeTogether(run.plan, label, (plan) => build(withPlan(run, plan)), finish);
 }

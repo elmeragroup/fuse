@@ -18,7 +18,7 @@ import { compileHostUtilities } from "../components/utility-css.ts";
 import { isClientRenderer, RENDERER_ENTRIES } from "./cell-renderers.ts";
 import type { AnyCellRenderer } from "./cell-renderers.ts";
 import { buildClientBundle } from "./client-bundle.ts";
-import { fileFailure } from "./compare-files.ts";
+import { fileFailure, readText } from "./compare-files.ts";
 import { ASSET_PATHS } from "./preview-page.ts";
 
 /** The Fuse package, next to this one in the workspace. */
@@ -134,10 +134,8 @@ export const readPageAssets = Effect.fnUntraced(function* (
   renderers: ReadonlyMap<string, AnyCellRenderer>
 ) {
   const fontPackage = dirname(fileURLToPath(import.meta.resolve("@fontsource/roboto/400.css")));
-  const fs = yield* FileSystem.FileSystem;
-  const read = (path: string) => fs.readFileString(path).pipe(Effect.mapError(fileFailure("read", path)));
   const fonts = yield* Effect.forEach(FONT_WEIGHTS, (weight) =>
-    read(join(fontPackage, `${String(weight)}.css`))
+    readText(join(fontPackage, `${String(weight)}.css`))
   );
   const fontCss = fonts
     .map((css) => css.replaceAll("url(./files/", `url(${ASSET_PATHS.fontFiles}`))
@@ -147,9 +145,9 @@ export const readPageAssets = Effect.fnUntraced(function* (
   );
   const client = yield* buildClientBundle([...renderers.values()].filter(isClientRenderer));
   const assets: PageAssets = {
-    styles: yield* read(join(build.root, "dist/styles.css")),
-    themes: yield* read(join(build.root, "dist/themes.css")),
-    preflight: yield* read(fileURLToPath(import.meta.resolve("tailwindcss/preflight.css"))),
+    styles: yield* readText(join(build.root, "dist/styles.css")),
+    themes: yield* readText(join(build.root, "dist/themes.css")),
+    preflight: yield* readText(fileURLToPath(import.meta.resolve("tailwindcss/preflight.css"))),
     fontCss,
     fontDirectory: join(fontPackage, "files"),
     fontPackage,

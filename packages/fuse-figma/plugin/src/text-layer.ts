@@ -26,7 +26,7 @@ import {
 import type { Held, Run } from "./fields.ts";
 import { fontFor, requireFont } from "./fonts.ts";
 import { baseCharacters, planGlyphRanges } from "./glyph-font.ts";
-import { change, watchLeaf } from "./plan.ts";
+import { change, recordsAny } from "./plan.ts";
 
 /** The text fields that pick a font's style, which the spec sets as a literal. */
 const STYLE_FIELDS: readonly VariableBindableTextField[] = ["fontStyle", "fontWeight"];
@@ -158,7 +158,7 @@ export function planText(
     text.fills = paints;
   });
 
-  const [, typeset] = watchLeaf(run.plan, () =>
+  const typeset = recordsAny(run.plan, () =>
     planTypography(run, text, label, spec, propertyIds, parent, replaced)
   );
   if (!replaced && typeset) {
@@ -290,54 +290,49 @@ function planTextLayout(run: Run, text: TextNode, label: string, spec: TextLayer
     vertical: LAYOUT_SIZING[spec.sizing.vertical.kind],
   };
   const truncation = spec.truncation === undefined ? "DISABLED" : "ENDING";
-  changeTogetherIn(
-    run,
-    label,
-    (group) => {
-      // A text that fills across but reads less than a pixel wide stays so whatever FILL and
-      // characters it gets, until a positive width lets the fill take over (PZ), as an earlier run
-      // that laid a new text out before its characters left every filling text. The run leaves the
-      // text holding the spec's characters, which `planCharacters` writes or links before this, so
-      // they decide, whatever it holds now, and a text the spec leaves empty gets no width.
-      const stuck = spec.sizing.horizontal.kind === "fill" && text.width < 1 && spec.characters.length > 0;
-      // A new auto resize moves the text's hug, and a hugging text's size follows its characters and
-      // its font, which the run can change first, so the sizing and the lengths after a new auto
-      // resize, or after the repair, are written whatever the text reads now.
-      const lengths: Held =
-        !stuck && held === "read" && text.textAutoResize === autoResize ? "read" : "unknown";
-      const reads = lengths === "read" ? heldSizing(text) : undefined;
-      planScalar(group, label, "textAutoResize", text.textAutoResize, autoResize, () => {
-        text.textAutoResize = autoResize;
-      });
-      if (stuck) {
-        change(group.plan, label, "width → 1 for the fill to take over", () => text.resize(1, text.height));
-      }
-      for (const [axis, member] of SIZING_MEMBERS) {
-        if (reads?.[axis] !== sizing[axis]) {
-          change(group.plan, label, `${member} → ${sizing[axis]}`, () => {
-            text[member] = sizing[axis];
-          });
-        }
-      }
-      planLength(group, text, label, "width", spec.sizing.horizontal, lengths, (value) =>
-        text.resize(value, text.height)
-      );
-      planLength(group, text, label, "height", spec.sizing.vertical, lengths, (value) =>
-        text.resize(text.width, value)
-      );
-      planLimit(group, text, label, "maxWidth", spec.maxWidth);
-      planScalar(group, label, "textTruncation", text.textTruncation, truncation, () => {
-        text.textTruncation = truncation;
-      });
-      const maxLines = spec.truncation?.maxLines;
-      if (maxLines !== undefined && (text.textTruncation !== truncation || text.maxLines !== maxLines)) {
-        change(group.plan, label, `maxLines → ${maxLines}`, () => {
-          text.maxLines = maxLines;
+  changeTogetherIn(run, label, (group) => {
+    // A text that fills across but reads less than a pixel wide stays so whatever FILL and
+    // characters it gets, until a positive width lets the fill take over (PZ), as an earlier run
+    // that laid a new text out before its characters left every filling text. The run leaves the
+    // text holding the spec's characters, which `planCharacters` writes or links before this, so
+    // they decide, whatever it holds now, and a text the spec leaves empty gets no width.
+    const stuck = spec.sizing.horizontal.kind === "fill" && text.width < 1 && spec.characters.length > 0;
+    // A new auto resize moves the text's hug, and a hugging text's size follows its characters and
+    // its font, which the run can change first, so the sizing and the lengths after a new auto
+    // resize, or after the repair, are written whatever the text reads now.
+    const lengths: Held =
+      !stuck && held === "read" && text.textAutoResize === autoResize ? "read" : "unknown";
+    const reads = lengths === "read" ? heldSizing(text) : undefined;
+    planScalar(group, label, "textAutoResize", text.textAutoResize, autoResize, () => {
+      text.textAutoResize = autoResize;
+    });
+    if (stuck) {
+      change(group.plan, label, "width → 1 for the fill to take over", () => text.resize(1, text.height));
+    }
+    for (const [axis, member] of SIZING_MEMBERS) {
+      if (reads?.[axis] !== sizing[axis]) {
+        change(group.plan, label, `${member} → ${sizing[axis]}`, () => {
+          text[member] = sizing[axis];
         });
       }
-    },
-    () => undefined
-  );
+    }
+    planLength(group, text, label, "width", spec.sizing.horizontal, lengths, (value) =>
+      text.resize(value, text.height)
+    );
+    planLength(group, text, label, "height", spec.sizing.vertical, lengths, (value) =>
+      text.resize(text.width, value)
+    );
+    planLimit(group, text, label, "maxWidth", spec.maxWidth);
+    planScalar(group, label, "textTruncation", text.textTruncation, truncation, () => {
+      text.textTruncation = truncation;
+    });
+    const maxLines = spec.truncation?.maxLines;
+    if (maxLines !== undefined && (text.textTruncation !== truncation || text.maxLines !== maxLines)) {
+      change(group.plan, label, `maxLines → ${maxLines}`, () => {
+        text.maxLines = maxLines;
+      });
+    }
+  });
 }
 
 /**

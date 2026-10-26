@@ -21,7 +21,7 @@ import type { Run } from "./fields.ts";
 import { indexSiblings, placeOwned, planOwnedChildren } from "./identity.ts";
 import type { OwnedChild, Siblings } from "./identity.ts";
 import type { PlannedPage } from "./pages.ts";
-import { change, create, existing, watchLeaf } from "./plan.ts";
+import { change, create, existing, recordsAny } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { planWrapFrame } from "./previews.ts";
 import type { WrapGrid } from "./previews.ts";
@@ -198,7 +198,7 @@ function planIconComponent(
     );
     return true;
   }
-  const [, paints] = watchLeaf(run.plan, () =>
+  const paints = recordsAny(run.plan, () =>
     planPaints(run, `${label} / ${ICON_GLYPH}`, "fill", glyph.fills, library.color, (paints) => {
       glyph.fills = paints;
     })
@@ -256,7 +256,7 @@ export const planIconLibrary = Effect.fnUntraced(function* (page: PlannedPage, l
     page.spec.name,
     `create the ${library.name} frame with ${library.icons.length} icons`,
     () => placeOwned(page.node.get(), run.figma.createFrame(), library.key, library.name),
-    (made) => Effect.asVoid(planLibraryContents(made, library))
+    (made) => planLibraryContents(made, library)
   );
   // The frame's children, indexed by key the first time a later operation reads an icon.
   let made: Siblings | undefined;

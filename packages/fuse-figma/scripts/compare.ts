@@ -12,12 +12,12 @@
  */
 
 import { NodeRuntime, NodeServices } from "@effect/platform-node";
-import { Console, Data, Effect, FileSystem, Result, Runtime } from "effect";
+import { Console, Data, Effect, Result, Runtime } from "effect";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-import { fileFailure } from "../src/compare/compare-files.ts";
+import { makeDirectory, readText } from "../src/compare/compare-files.ts";
 import { PAGE_LAYOUT } from "../src/compare/preview-page.ts";
 import { DEFAULT_THRESHOLD } from "../src/compare/raster.ts";
 import { parseSnapshot } from "../src/compare/read-snapshot.ts";
@@ -39,9 +39,8 @@ class CompareStopped extends Data.TaggedError("CompareStopped") {
   override readonly [Runtime.errorExitCode] = 1;
 }
 
-/** Print why the run stops, on stderr, and stop it. */
-const stop = (message: string) =>
-  Console.error(message).pipe(Effect.andThen(Effect.fail(new CompareStopped())));
+/** The command line asks for something the script does not run, such as a threshold above 1. */
+class ArgumentsInvalid extends Data.TaggedError("ArgumentsInvalid")<{ readonly message: string }> {}
 
 /** The text of a thrown value, for a message. */
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- throw boundary: Node's parser and file reads throw values with no static type
@@ -49,7 +48,7 @@ const describe = (error: unknown): string => (error instanceof Error ? error.mes
 
 /** Run the self-check, print its lines and the report path, and stop when it failed. */
 const selfCheck = Effect.fn("compare.selfCheck")(function* (options: CompareOptions) {
-  const result = yield* runSelfCheck(options).pipe(Effect.catch((failure) => stop(failure.message)));
+  const result = yield* runSelfCheck(options);
   for (const line of result.lines) {
     yield* Console.log(line);
   }
@@ -62,18 +61,11 @@ const selfCheck = Effect.fn("compare.selfCheck")(function* (options: CompareOpti
 /** Compare a snapshot export and print the summary, the five worst cells and the report path. */
 const compare = Effect.fn("compare.snapshot")(function* (snapshotPath: string, options: CompareOptions) {
   const path = resolve(snapshotPath);
-  const fs = yield* FileSystem.FileSystem;
-  const text = yield* fs.readFileString(path).pipe(
-    Effect.mapError(fileFailure("read", path)),
-    Effect.catch((failure) => stop(failure.message))
-  );
-  const snapshot = parseSnapshot(text);
+  const snapshot = parseSnapshot(yield* readText(path));
   if (Result.isFailure(snapshot)) {
-    return yield* stop(snapshot.failure.message);
+    return yield* Effect.fail(snapshot.failure);
   }
-  const report = yield* compareSnapshot(snapshot.success, options).pipe(
-    Effect.catch((failure) => stop(failure.message))
-  );
+  const report = yield* compareSnapshot(snapshot.success, options);
   const sized = report.rows.filter((row) => row.verdict.flags.includes("size")).length;
   yield* Console.log(
     `Compared ${String(report.rows.length)} cells from ${String(report.previews.length)} previews; ${String(sized)} differ in box size, ${String(report.skipped.length)} skipped.`
@@ -103,26 +95,34 @@ const program = Effect.gen(function* () {
           "self-check": { type: "boolean", default: false },
         },
       }),
-    catch: describe,
-  }).pipe(Effect.catch((reason) => stop(`${reason}\n${USAGE}`)));
+    catch: (error) => new ArgumentsInvalid({ message: `${describe(error)}\n${USAGE}` }),
+  });
   const { values, positionals } = args;
   const threshold = values.threshold === undefined ? DEFAULT_THRESHOLD : Number(values.threshold);
   if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) {
-    return yield* stop(`--threshold takes a number from 0 to 1, not ${values.threshold ?? ""}`);
+    return yield* new ArgumentsInvalid({
+      message: `--threshold takes a number from 0 to 1, not ${values.threshold ?? ""}`,
+    });
   }
   const isSelfCheck = values["self-check"];
   const outDir = resolve(values.out ?? (isSelfCheck ? `${DEFAULT_OUT}self-check/` : DEFAULT_OUT));
   const options: CompareOptions = { outDir, threshold, layout: PAGE_LAYOUT };
-  const fs = yield* FileSystem.FileSystem;
-  yield* fs.makeDirectory(outDir, { recursive: true });
+  yield* makeDirectory(outDir);
   if (isSelfCheck) {
     return yield* selfCheck(options);
   }
   const [snapshotPath, ...extra] = positionals;
   if (snapshotPath === undefined || extra.length > 0) {
-    return yield* stop(USAGE);
+    return yield* new ArgumentsInvalid({ message: USAGE });
   }
   return yield* compare(snapshotPath, options);
-});
+}).pipe(
+  // Print why the run stopped, on stderr, once. A failed self-check has printed its own lines.
+  Effect.catch((failure) =>
+    failure instanceof CompareStopped
+      ? Effect.fail(failure)
+      : Console.error(failure.message).pipe(Effect.andThen(Effect.fail(new CompareStopped())))
+  )
+);
 
 program.pipe(Effect.provide(NodeServices.layer), NodeRuntime.runMain);

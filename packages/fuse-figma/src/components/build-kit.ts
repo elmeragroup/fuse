@@ -302,8 +302,8 @@ export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitE
     componentSets: built.map((set) => set.componentSet),
     previews,
   };
-  const checked = yield* Effect.fromResult(checkKitSpec(spec, (text) => Buffer.from(text, "base64")));
-  const kit: BuiltKit = { spec: checked, coverage: built.flatMap((set) => set.coverage) };
+  yield* Effect.fromResult(checkKitSpec(spec, (text) => Buffer.from(text, "base64")));
+  const kit: BuiltKit = { spec, coverage: built.flatMap((set) => set.coverage) };
   return kit;
 });
 

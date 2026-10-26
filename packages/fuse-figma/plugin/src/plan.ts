@@ -73,12 +73,12 @@ export class Plan extends Context.Service<Plan, PlanRecorder>()("@elmeragroup/fu
  *
  * @param plan - The recorder the planner records into.
  * @param planner - The planning to watch.
- * @returns What the planner returned, and whether it recorded an operation.
+ * @returns Whether the planner recorded an operation.
  */
-export function watchLeaf<A>(plan: PlanRecorder, planner: () => A): readonly [A, boolean] {
+export function recordsAny(plan: PlanRecorder, planner: () => void): boolean {
   const start = plan.operations.length;
-  const result = planner();
-  return [result, plan.operations.length > start];
+  planner();
+  return plan.operations.length > start;
 }
 
 /**
@@ -204,14 +204,14 @@ export const changeLater = Effect.fnUntraced(function* <R>(
  * @param plan - The plan.
  * @param label - The node the group touches.
  * @param build - Plans the group's writes into the plan it receives.
- * @param finish - Runs after the group's writes, such as a write that undoes a side effect of
- *   an earlier one.
+ * @param finish - Runs after the group's writes, where the group needs it, such as a write that
+ *   undoes a side effect of an earlier one.
  */
 export function changeTogether(
   plan: PlanRecorder,
   label: string,
   build: (group: PlanRecorder) => void,
-  finish: () => void
+  finish?: () => void
 ): void {
   const group = newPlan(plan);
   build(group);
@@ -219,7 +219,13 @@ export function changeTogether(
     return;
   }
   const description = group.operations.map((operation) => operation.description).join(", ");
-  changeWith(plan, label, description, Effect.andThen(performPlan(group), Effect.sync(finish)));
+  const perform = performPlan(group);
+  changeWith(
+    plan,
+    label,
+    description,
+    finish === undefined ? perform : Effect.andThen(perform, Effect.sync(finish))
+  );
 }
 
 /**
@@ -242,7 +248,7 @@ export function existing<Node>(node: Node): Target<Node> {
  * @returns The Effect that plans and performs the writes.
  */
 export const planWhenRun = Effect.fnUntraced(function* <E, R>(
-  stage: Effect.Effect<void, E, R>
+  stage: Effect.Effect<unknown, E, R>
 ): Effect.fn.Return<void, E | PluginError, Exclude<R, Plan> | Plan> {
   const later = newPlan(yield* Plan);
   yield* Effect.provideService(stage, Plan, later);
@@ -270,7 +276,7 @@ export const create = Effect.fnUntraced(function* <Node, R = never>(
   label: string,
   description: string,
   make: () => Node,
-  configure?: (node: Node) => Effect.Effect<void, PluginError, R>
+  configure?: (node: Node) => Effect.Effect<unknown, PluginError, R>
 ): Effect.fn.Return<Target<Node>, never, Exclude<R, Plan> | Plan> {
   let made: Node | undefined;
   const perform = Effect.gen(function* () {

@@ -1,13 +1,14 @@
-import { mapBox, NO_VALUES, partName } from "./box-mapping";
-import type { MapScope } from "./box-mapping";
-import { readBackdrop } from "./box-paint";
-import { rootRoom } from "./box-sizing";
 /**
  * Turn a recipe into a Figma component set. For every cell of the variant matrix the builder
  * asks `cascade.ts` for the computed style of the root, each part and each icon, and
  * `box-mapping.ts` maps it onto Figma fields. Every declaration it reads lands in the coverage
  * table with what became of it. This module holds the definition types and assembles the set.
  */
+
+import { mapBox, NO_VALUES, partName } from "./box-mapping";
+import type { MapScope } from "./box-mapping";
+import { readBackdrop } from "./box-paint";
+import { rootRoom } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
 import { SetCascade, splitClasses } from "./cascade";
 import type { LayerStyle } from "./cascade";

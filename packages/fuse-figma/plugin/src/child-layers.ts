@@ -106,16 +106,13 @@ const planIcon = Effect.fnUntraced(function* (
   instance: InstanceNode,
   label: string,
   spec: IconLayerSpec,
+  icon: PlannedIcon,
   links: LayerLinks
 ) {
   const run = yield* currentRun;
   planScalar(run, label, "name", instance.name, spec.name, () => {
     instance.name = spec.name;
   });
-  const icon = links.icons.get(spec.icon);
-  if (icon === undefined) {
-    throw new Error(`${label} shows ${spec.icon}, which the kit's icon library lacks.`);
-  }
   const main = yield* Effect.promise(() => instance.getMainComponentAsync());
   const swapped = icon.node.existing === undefined || main?.id !== icon.node.existing.id;
   if (swapped) {
@@ -197,36 +194,31 @@ function planPositioning(
   size: Held
 ): void {
   const positioning = absolute === undefined ? "AUTO" : "ABSOLUTE";
-  changeTogetherIn(
-    run,
-    label,
-    (group) => {
-      const rewrite = frame.layoutPositioning !== positioning || size === "unknown";
-      planScalar(group, label, "layoutPositioning", frame.layoutPositioning, positioning, () => {
-        frame.layoutPositioning = positioning;
+  changeTogetherIn(run, label, (group) => {
+    const rewrite = frame.layoutPositioning !== positioning || size === "unknown";
+    planScalar(group, label, "layoutPositioning", frame.layoutPositioning, positioning, () => {
+      frame.layoutPositioning = positioning;
+    });
+    if (absolute === undefined) {
+      return;
+    }
+    const { horizontal, vertical } = absolute.constraints;
+    if (rewrite || frame.constraints.horizontal !== horizontal || frame.constraints.vertical !== vertical) {
+      change(group.plan, label, `constraints → ${horizontal} ${vertical}`, () => {
+        frame.constraints = { horizontal, vertical };
       });
-      if (absolute === undefined) {
-        return;
-      }
-      const { horizontal, vertical } = absolute.constraints;
-      if (rewrite || frame.constraints.horizontal !== horizontal || frame.constraints.vertical !== vertical) {
-        change(group.plan, label, `constraints → ${horizontal} ${vertical}`, () => {
-          frame.constraints = { horizontal, vertical };
-        });
-      }
-      if (rewrite || !near(frame.x, absolute.x)) {
-        change(group.plan, label, `x → ${absolute.x}`, () => {
-          frame.x = absolute.x;
-        });
-      }
-      if (rewrite || !near(frame.y, absolute.y)) {
-        change(group.plan, label, `y → ${absolute.y}`, () => {
-          frame.y = absolute.y;
-        });
-      }
-    },
-    () => undefined
-  );
+    }
+    if (rewrite || !near(frame.x, absolute.x)) {
+      change(group.plan, label, `x → ${absolute.x}`, () => {
+        frame.x = absolute.x;
+      });
+    }
+    if (rewrite || !near(frame.y, absolute.y)) {
+      change(group.plan, label, `y → ${absolute.y}`, () => {
+        frame.y = absolute.y;
+      });
+    }
+  });
 }
 
 /**
@@ -321,7 +313,7 @@ function childKind(
     accept: isInstance,
     description,
     make: () => icon.node.get().createInstance(),
-    plan: (instance) => planIcon(instance, layerLabel, spec, links),
+    plan: (instance) => planIcon(instance, layerLabel, spec, icon, links),
   } satisfies OwnedChild<InstanceNode, void>;
 }
 

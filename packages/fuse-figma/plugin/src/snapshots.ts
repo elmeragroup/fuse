@@ -29,7 +29,7 @@ const SCALE = 2;
 const PREVIEW_PREFIX = "preview/";
 
 /** Reports how many instances the export has written so far, such as by posting it to the UI. */
-export type SnapshotProgress = (done: number, total: number) => Effect.Effect<void>;
+export type SnapshotProgress = (done: number, total: number) => Effect.Effect<void, never, FigmaPlugin>;
 
 const isFrame = (node: BaseNode): node is FrameNode => node.type === "FRAME";
 const isInstance = (node: BaseNode): node is InstanceNode => node.type === "INSTANCE";
