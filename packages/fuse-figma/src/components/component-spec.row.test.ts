@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { FILL } from "../../test/built-kit";
+import { FILL, HUG } from "../../test/built-kit";
 import { buildFixture, chip, dot, frameOf, ICON } from "../../test/fixture-sets";
 import { heightBounds } from "./box-sizing";
 import type { PartDefinition } from "./component-spec";
@@ -495,5 +495,46 @@ describe("a negative margin across a row on a box that paints nothing", () => {
   ])("leaves the margin unmapped on %s", async (_name, definition, minimum) => {
     const { coverage } = await buildFixture(definition, { variables: variablesWith(minimum) });
     expect(notesOf(coverage, "-mr-1").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+  });
+});
+
+// Oracle: CSS Box Alignment 3 §5.3. `justify-content: normal`, which a row with no `justify-content`
+// takes, behaves as `flex-start` in a flex container, so the row packs its layers at its start
+// wherever it has room beside them, as Select's item text sets "Apple" at the start of a 144px row.
+// A set `justify-content` places them where it says.
+describe("a fixed row's layer that fills it and hugs a narrower label", () => {
+  const FONT_SANS = makeVariableIndex([
+    { ref: { collection: "Fuse tokens", name: "font-sans" }, webSyntax: "var(--font-sans)" },
+  ]);
+  const row = (justify: string) =>
+    chip("flex w-[144px] items-center", {
+      parts: [
+        {
+          ...dot(
+            `flex flex-1 gap-2 whitespace-nowrap font-sans text-[14px]/[20px] text-[#000000] ${justify}`
+          ),
+          label: {
+            key: "label",
+            name: "label",
+            characters: "Apple",
+            textProperty: undefined,
+            shownIn: () => true,
+          },
+        },
+      ],
+    });
+
+  it.each([
+    ["no `justify-content`", "", "MIN"],
+    ["`justify-center`", "justify-center", "CENTER"],
+    ["`justify-end`", "justify-end", "MAX"],
+  ])("places the label where %s packs it", async (_name, justify, align) => {
+    const { variant } = await buildFixture(row(justify), { variables: FONT_SANS });
+    const text = frameOf(variant?.root);
+    expect([
+      text?.sizing.horizontal,
+      text?.children.map((child) => ("sizing" in child ? child.sizing.horizontal : undefined)),
+    ]).toEqual([FILL, [HUG]]);
+    expect(text?.primaryAlign).toBe(align);
   });
 });

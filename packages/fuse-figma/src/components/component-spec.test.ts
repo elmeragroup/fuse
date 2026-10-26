@@ -779,12 +779,14 @@ describe("a flex column", () => {
     expect(rowsOf("flex")).toEqual([["display", "literal", "a vertical auto layout"]]);
   });
 
-  it("keeps a row horizontal and centered, with each part at its own width", async () => {
+  // A row with no `justify-content` packs its layers at its start (CSS Box Alignment 3 §5.3), and its
+  // 100px leave room beside them.
+  it("keeps a row horizontal and packed at its start, with each part at its own width", async () => {
     const { variant, coverage } = await buildFixture(
       chip("flex flex-row w-[100px] h-[20px]", { parts: PARTS })
     );
     expect(variant?.root).toEqual(
-      expect.objectContaining({ direction: "HORIZONTAL", primaryAlign: "CENTER", counterAlign: "CENTER" })
+      expect.objectContaining({ direction: "HORIZONTAL", primaryAlign: "MIN", counterAlign: "CENTER" })
     );
     expect(widths(variant?.root)).toEqual([HUG, fixed(literal(20)), HUG]);
     expect(coverage.filter((row) => row.className === "flex-row").map((row) => row.outcome)).toEqual([

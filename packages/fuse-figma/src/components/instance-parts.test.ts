@@ -207,11 +207,15 @@ describe("an instance part", () => {
 
   describe("sizes itself", () => {
     // Oracle: CSS Flexbox 1 §9.4 step 11, under which a column with an unset `align-items` stretches
-    // a layer that sets no width across its definite width, which Figma's fill draws.
+    // a layer that sets no width across its definite width, which Figma's fill draws. The stretched
+    // badge sets no `justify-content`, so it packs its label at its start (CSS Box Alignment 3 §5.3),
+    // where the badge's own variant hugs it, and an instance cannot carry the alignment.
     it("to fill the width a column stretches it across", async () => {
       const { chip: built, layer } = await buildBoth(holding(badgePart(), "flex flex-col w-[200px]"));
       expect(layer).toEqual({ ...PLAIN, sizing: { horizontal: FILL, vertical: HUG } });
-      expect(unmappedOf(built.coverage)).toEqual([]);
+      expect(unmappedOf(built.coverage).map((row) => [row.part, row.property, row.value])).toEqual([
+        ["badge", "primaryAlign", '"MIN"'],
+      ]);
     });
 
     // Oracle: CSS Flexbox 1 §9.2, under which a flex item that sets no width sizes to its content in a

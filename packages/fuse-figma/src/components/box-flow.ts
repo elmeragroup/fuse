@@ -74,17 +74,18 @@ const DIRECTIONS = new Map<string, { readonly direction: DirectionSpec; readonly
 ]);
 
 /**
- * Read the direction and alignments a box lays out its layers by, before its layers map, since
- * they decide how much room each layer has. A flex box is an auto layout along its
- * `flex-direction`, a row unless a column is set, that places its layers by `align-items` and
- * `justify-content`. In a row an unset alignment stays centered, as every published row was drawn.
- * CSS packs a row's layers at the start and stretches them, which shows only where a row has room
- * to spare or layers of unequal height. A column takes CSS's start on both axes, and its unset
- * `align-items` stretches its layers across it, which {@link roomInside} gives them. A grid that puts
- * every item in one column, as {@link placesInOneColumn} says, is such a column. Any other grid places
- * its layers by `place-content`, which {@link readDisplay} reads, so its alignments stay unread.
- * `line-clamp-*` makes a `-webkit-box` column, which sets its text from the top left. A row whose
- * parts set their own `align-self` aligns as {@link readSelfAlignment} says. A block box that
+ * Read the direction and alignments a box lays out its layers by, before its layers map, since they
+ * decide how much room each layer has. A flex box is an auto layout along its `flex-direction`, a row
+ * unless a column is set, that places its layers by `align-items` and `justify-content`. In a row an
+ * unset alignment stays centered, as every published row was drawn. CSS packs a row's layers at the
+ * start and stretches them, which shows only where a row has room to spare or layers of unequal
+ * height. A fixed or filling row with room beside a hugging layer packs at its start once its layers
+ * map, as `leavesRoomAtEnd` in `box-mapping.ts` decides. A column takes CSS's start on both axes, and
+ * its unset `align-items` stretches its layers across it, which {@link roomInside} gives them. A grid
+ * that puts every item in one column, as {@link placesInOneColumn} says, is such a column. Any other
+ * grid places its layers by `place-content`, which {@link readDisplay} reads, so its alignments stay
+ * unread. `line-clamp-*` makes a `-webkit-box` column, which sets its text from the top left. A row
+ * whose parts set their own `align-self` aligns as {@link readSelfAlignment} says. A block box that
  * {@link stacksBlocks} is a column from the top left, where alignments do not apply.
  *
  * @param flow - The parts in the box's flow, and its icons and label, which set no

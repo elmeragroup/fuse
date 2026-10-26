@@ -46,7 +46,7 @@ import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
 import { readBleed, sectioned } from "./full-bleed";
 import { holdsWidthRow, namedMinimum, rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
 import type { CascadedInstance, InstanceParts } from "./instance-parts";
-import { castsSpread, fixedLength, iconKey, ringFill, ZERO } from "./kit-spec";
+import { castsSpread, fixedLength, iconKey, outOfLayout, ringFill, ZERO } from "./kit-spec";
 import type {
   BoxSpec,
   ChildLayerSpec,
@@ -56,6 +56,7 @@ import type {
   InstanceLayerSpec,
   LimitsSpec,
   NumberSpec,
+  PrimaryAlignSpec,
   SizeSpec,
   SizingSpec,
 } from "./kit-spec";
@@ -700,7 +701,11 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     paddingLeft: sections === undefined ? paddingLeft : ZERO,
     itemSpacing,
     // A native control's placement of its label wins over the box's own alignment.
-    primaryAlign: placed?.primaryAlign ?? (packsAtStart ? "MIN" : placement.primaryAlign),
+    primaryAlign:
+      placed?.primaryAlign ??
+      (packsAtStart || leavesRoomAtEnd(layout, sizing, placement.primaryAlign, children)
+        ? "MIN"
+        : placement.primaryAlign),
     counterAlign,
     cornerRadius: readCorner(reader, sizing, context) ?? ZERO,
     ...paint,
@@ -713,6 +718,39 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     paints,
   }));
   return layout.blocks && stacksFirstOnTop(reader, stacks) ? { ...mappedBox, firstOnTop: true } : mappedBox;
+}
+
+/**
+ * Whether a flex row with no `justify-content` has room beside its layers, so CSS packs them at its
+ * start (CSS Box Alignment 3 §5.3: `normal` acts as `flex-start` in a flex container), where the
+ * unset alignment {@link readFlow} gives a row centers them. Such a row is a fixed length or fills
+ * its parent, no layer in its flow fills the row, and one hugs its content, as Select's item text
+ * hugs its label. A row that hugs its layers or holds one that fills it draws alike at either
+ * alignment, and so may a row of fixed layers, as a Radio's 16px indicator fills its 16px circle, so
+ * those keep their own.
+ *
+ * @param layout - The row's layout.
+ * @param sizing - The row's sizing.
+ * @param aligned - The alignment the row's placement gives it, which a translate may have moved.
+ * @param children - The row's layers.
+ * @returns True where the row packs its layers at its start.
+ */
+function leavesRoomAtEnd(
+  layout: Layout,
+  sizing: SizingSpec,
+  aligned: PrimaryAlignSpec,
+  children: readonly ChildLayerSpec[]
+): boolean {
+  const flowing = children.filter((child) => !outOfLayout(child));
+  return (
+    layout.flex &&
+    layout.direction === "HORIZONTAL" &&
+    layout.justify === "unset" &&
+    aligned === layout.primaryAlign &&
+    sizing.horizontal.kind !== "hug" &&
+    flowing.every((child) => child.kind === "icon" || child.sizing.horizontal.kind !== "fill") &&
+    flowing.some((child) => child.kind !== "icon" && child.sizing.horizontal.kind === "hug")
+  );
 }
 
 /**
