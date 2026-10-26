@@ -437,24 +437,13 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 - Decide on the Fuse side whether the Combobox popup should span the Input group. Base UI anchors
   it to the `<input>`, so in `packages/fuse/src/components/combobox/combobox.tsx` the popup stops
   10px (dense) or 18px (comfortable) short of the group's right edge.
-- Finish the real-file checks for the plugin's move to Effect (#410, merged 2026-10-26). On
-  2026-10-26 builds of #410 loaded in Figma, Plan on `Elmera Fuse - Import test` matched the kit,
-  and deleting its Meter page drifted it to seven Plan lines that one Apply cleared. A fresh file
-  took all 31 pages and the Icons frame in one Apply of 260 changes, then matched. Two snapshot
-  exports compared like the run at cfaccd22, from before Effect: 3,508 cells, 580 size flags,
-  about 1,995 at 0% and one at 5.43%, the Item link's focus cell. Still unchecked:
-  - the time of one Plan and one Apply against a `figma:plugin` build from 51add90f. On the
-    in-memory file the full kit's Apply went from 520 ms to 580 ms and the Plan of an applied file
-    from 147 ms to 165 ms.
-  - that one Cmd+Z undoes a whole Apply, and that the Figma UI does not redraw partway through a
-    run
-  - that the UI counts the progress up while a snapshot export runs
-  - that Plan on a file the token sync never wrote shows "The file has no local collection named
-    Fuse tokens" with the hint to run `figma:sync`
-- Find why the `fuse-design-tokens-sync` export of 2026-10-26 draws some icons in the Fjordkraft
-  external private light previews in `#5C1900` where the browser and the Import test export draw
-  the foreground: the Sidebar's Home icon and the destructive Dropdown menu popup's Profile icon.
-  Plan matched the kit on that file, so read the glyph's bound variable and resolved color there.
+- Finish the real-file checks for the plugin's move to Effect (#410):
+  - Time one Plan and one Apply against a `figma:plugin` build from 51add90f.
+  - Check that one Cmd+Z undoes a whole Apply and that Figma does not redraw partway through a run.
+  - Check that the UI counts up while a snapshot export runs.
+  - Check that Plan on a file without the Fuse tokens collection says to run `figma:sync`.
+- Find why the `fuse-design-tokens-sync` file draws some Fjordkraft external private light icons in
+  `#5C1900` in place of the foreground, such as the Sidebar's Home icon.
 
 ## Data table
 
