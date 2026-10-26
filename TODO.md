@@ -353,8 +353,8 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   `src/components/dropdown-menu-kit.ts` and, for the separator, `src/components/menu-kit.ts` then
   read the slots in place of composing `menuItemIndicatorRoomClass` and `menuSeparatorClass` by
   hand.
-- Share the re-declared test helpers: the plugin suites' single-page kit, `HUG`, apply-and-reopen
-  and set-on-page helpers in `plugin/src/button-kit-fixture.ts`, and `notesOf`, `textOf`, `setOf`,
+- Share the re-declared test helpers: the plugin suites' single-page kit, `HUG` and set-on-page
+  helpers in `plugin/src/button-kit-fixture.ts`, and `notesOf`, `textOf`, `setOf`,
   the outline helper, `token` and `FOCUS_RING` in `test/`.
 - Split the Field legend's axis out of `fieldVariants` into a `fieldLegendVariants` recipe, as
   Empty has `emptyMediaVariants`. The `Pick` in `packages/fuse/src/components/field/field.tsx` and
