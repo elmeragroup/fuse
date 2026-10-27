@@ -55,7 +55,7 @@ import {
 } from "./css-values";
 import type { Viewport } from "./css-values";
 import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
-import { fixedPlace, placeCentredFixed } from "./fixed-placement";
+import { fixedPlace, placeCentredFixed, refuseFixedPlace } from "./fixed-placement";
 import { joinFlushLayers } from "./flush-layers";
 import { readBleed, sectioned } from "./full-bleed";
 import { holdsWidthRow, namedMinimum, rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
@@ -995,12 +995,14 @@ function mapPart(
     );
     const { layer: built, painted } = scope.instances.map(
       part,
-      fixed === undefined
-        ? room
-        : rootRoom(NO_PREVIEW, part.cascade.style, scope.context.variables, fixed.viewport)
+      fixed?._tag === "placed"
+        ? rootRoom(NO_PREVIEW, part.cascade.style, scope.context.variables, fixed.viewport)
+        : room
     );
-    if (fixed !== undefined) {
+    if (fixed?._tag === "placed") {
       placeCentredFixed(part.cascade.style, fixed.at);
+    } else if (fixed?._tag === "refused") {
+      refuseFixedPlace(part.cascade.style);
     }
     const drawn = minimum === undefined ? built : { ...built, minWidth: minimum };
     const { layer, instance } = wrapInstanceMargins(

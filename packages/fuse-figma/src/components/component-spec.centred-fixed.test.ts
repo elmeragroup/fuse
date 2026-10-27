@@ -45,6 +45,16 @@ function scrim(align: string): ComponentDefinition {
 const popupRows = (coverage: readonly CoverageRow[], property: string) =>
   coverage.filter((row) => row.part === "popup" && row.property === property).map((row) => [row.outcome]);
 
+/** The reason a refused fixed popup's place stays unmapped, as the instance's coverage row names it. */
+const NOT_AS_DRAWN =
+  "in the popup instance, a fixed popup the composite places only where it sits as the composite draws it";
+
+/** The popup's `position` rows with their reasons. */
+const positionNotes = (coverage: readonly CoverageRow[]) =>
+  coverage
+    .filter((row) => row.part === "popup" && row.property === "position")
+    .map((row) => [row.outcome, row.detail]);
+
 describe("a fixed popup instance its composite centres in the viewport", () => {
   it("sizes against the viewport in place and reads its centring as the composite's", async () => {
     const [, built] = await buildFixtures([POPUP, scrim("items-center justify-center")]);
@@ -62,6 +72,41 @@ describe("a fixed popup instance its composite centres in the viewport", () => {
   it("leaves the place unmapped where the composite does not centre the popup", async () => {
     const [, built] = await buildFixtures([POPUP, scrim("items-start justify-start")]);
     expect(popupRows(built?.coverage ?? [], "position")).toEqual([["unmapped"]]);
+  });
+
+  // CSS centres the fixed popup on the viewport, at (270, 204) for a 100 × 40 box in 640 × 448, while
+  // a Figma frame centres it in its own box: a 200 × 100 scrim would draw it at (50, 30).
+  it("leaves the place unmapped where the centring composite is smaller than the viewport", async () => {
+    const [, built] = await buildFixtures([POPUP, scrim("w-[200px] h-[100px] items-center justify-center")]);
+    expect(positionNotes(built?.coverage ?? [])).toEqual([["unmapped", NOT_AS_DRAWN]]);
+  });
+
+  // The same where a 200 × 100 frame inside a scrim as large as the viewport centres the popup.
+  it("leaves the place unmapped where a frame below the composite's root centres the popup", async () => {
+    const nested = chip("fixed inset-0 flex items-start justify-start bg-[#000000]", {
+      key: "scrim",
+      name: "Scrim",
+      slot: "scrim",
+      viewport: VIEWPORT,
+      parts: [
+        {
+          ...dot("flex w-[200px] h-[100px] items-center justify-center"),
+          key: "centring",
+          slot: "centring",
+          parts: [
+            {
+              kind: "instance",
+              key: "popup",
+              of: POPUP,
+              cell: () => ({ state: "rest" }),
+              shownIn: () => true,
+            },
+          ],
+        },
+      ],
+    });
+    const [, built] = await buildFixtures([POPUP, nested]);
+    expect(positionNotes(built?.coverage ?? [])).toEqual([["unmapped", NOT_AS_DRAWN]]);
   });
 
   // CSS centres the fixed popup in the viewport whatever the scrim pads, while a Figma frame centres

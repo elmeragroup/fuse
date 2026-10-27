@@ -6,7 +6,14 @@
  * the first while it maps the part and the second once the part's room is known.
  */
 import type { LayerStyle } from "./cascade";
-import { evaluateLength, evaluatePercentage, inViewport, normalizeCss, splitTopLevel } from "./css-values";
+import {
+  evaluateLength,
+  evaluateLengthOf,
+  evaluatePercentage,
+  inViewport,
+  normalizeCss,
+  splitTopLevel,
+} from "./css-values";
 import type { Viewport } from "./css-values";
 import type { Layout } from "./placement";
 
@@ -63,12 +70,7 @@ export function placeCentredFixed(style: LayerStyle, at: FixedAt): void {
         []
       );
     } else {
-      style.mark(
-        property,
-        "unmapped",
-        "a fixed popup the composite places only where it sits as the composite draws it",
-        []
-      );
+      style.mark(property, "unmapped", NOT_AS_DRAWN, []);
     }
   }
   style.read(
@@ -84,20 +86,52 @@ export function placeCentredFixed(style: LayerStyle, at: FixedAt): void {
 }
 
 /**
- * Where an instance part is fixed in the viewport its composite draws, as `placeCentredFixed` reads
- * its place: centred on both axes, or a length below the top and centred across.
+ * What `fixedPlace` makes of an instance part fixed in the viewport its composite draws: placed where
+ * `placeCentredFixed` reads it, centred on both axes or a length below the top and centred across, or
+ * refused, where the composite does not draw it where CSS puts it, which `refuseFixedPlace` records.
  */
-export type FixedPlace = { readonly viewport: Viewport; readonly at: FixedAt };
+export type FixedPlace =
+  | { readonly _tag: "placed"; readonly viewport: Viewport; readonly at: FixedAt }
+  | { readonly _tag: "refused" };
+
+/** Why a fixed instance's place stays unmapped where its composite does not draw it as CSS places it. */
+const NOT_AS_DRAWN = "a fixed popup the composite places only where it sits as the composite draws it";
+
+/**
+ * Whether a box is the composite's root and its box is the viewport: fixed at the viewport's top left,
+ * as large as it, by `inset-0` or by its width and height. Only there does a Figma frame centring its
+ * layers centre them where CSS centres a fixed box, on the viewport (CSS 2.1 §10.3.7, §10.6.4). A root
+ * of another size, or a frame below the root, centres the part in its own box instead.
+ *
+ * @param box - The style of the box that holds the part.
+ * @param viewport - The declared viewport.
+ * @returns True where the box is the viewport.
+ */
+function coversViewport(box: LayerStyle, viewport: Viewport): boolean {
+  const length = (property: string, of: number): number | undefined =>
+    evaluateLengthOf(inViewport(box.resolved(property) ?? "auto", viewport), of);
+  const spans = (size: string, end: string, of: number): boolean =>
+    normalizeCss(box.resolved(size) ?? "auto") === "auto" ? length(end, of) === 0 : length(size, of) === of;
+  return (
+    box.path.length === 0 &&
+    normalizeCss(box.resolved("position") ?? "") === "fixed" &&
+    length("top", viewport.height) === 0 &&
+    length("left", viewport.width) === 0 &&
+    spans("width", "right", viewport.width) &&
+    spans("height", "bottom", viewport.height)
+  );
+}
 
 /**
  * Where an instance part sits fixed in its composite's viewport, where the composite draws it there:
  * the inner set's root is `position: fixed` in the viewport its definition declares, and the
- * composite's root declares the same viewport. Then either the part's parent is a flex box that
+ * composite's root declares the same viewport. The part's parent must be the composite's root, and that
+ * root's box the viewport, as {@link coversViewport} says. Then either the root is a flex box that
  * centres its layers on both axes, as Alert dialog's open example, the scrim over the viewport,
  * centres the popup, or the parent is a flex column that centres its layers across and starts them at
  * its top, the part is its first layer, and the part's `top`, read in the viewport, equals the
  * column's top padding, as Command dialog's open example pads its top by the palette's
- * `max(1rem, 12dvh)`. The composite pads nothing on an axis it centres the part on, since CSS centres
+ * `max(1rem, 12dvh)`. Any other such part is refused. The composite pads nothing on an axis it centres the part on, since CSS centres
  * a fixed box in the viewport whatever the composite pads, while a Figma frame centres its layers in
  * the room its padding leaves. The inner root then takes the viewport as its containing block in place, as its
  * own set does, and `placeCentredFixed` reads its place. Undefined for any other part.
@@ -106,7 +140,8 @@ export type FixedPlace = { readonly viewport: Viewport; readonly at: FixedAt };
  * @param layout - The parent's layout.
  * @param parent - The parent's style.
  * @param first - Whether the part is the parent's first part, out of flow as a fixed part is.
- * @returns Where the composite draws the part, or undefined.
+ * @returns Where the composite draws the part, its refusal, or undefined for a part that is not
+ *   fixed in the composite's viewport.
  */
 export function fixedPlace(
   part: FixedPart,
@@ -120,10 +155,12 @@ export function fixedPlace(
     composite === undefined ||
     own.width !== composite.width ||
     own.height !== composite.height ||
-    normalizeCss(style.raw("position") ?? "") !== "fixed" ||
-    !layout.flex
+    normalizeCss(style.raw("position") ?? "") !== "fixed"
   ) {
     return undefined;
+  }
+  if (!layout.flex || !coversViewport(parent, own)) {
+    return REFUSED;
   }
   // CSS centres the fixed box in the viewport whatever the composite pads, while a Figma frame
   // centres its layers in the room its padding leaves, so a centred axis must pad nothing.
@@ -132,8 +169,8 @@ export function fixedPlace(
   const across = unpadded(["padding-left", "padding-right"]);
   if (layout.primaryAlign === "CENTER" && layout.counterAlign === "CENTER") {
     return across && unpadded(["padding-top", "padding-bottom"])
-      ? { viewport: own, at: "centre" }
-      : undefined;
+      ? { _tag: "placed", viewport: own, at: "centre" }
+      : REFUSED;
   }
   const top = evaluateLength(inViewport(style.resolved("top") ?? "", own));
   const padding = evaluateLength(parent.resolved("padding-top") ?? "0px");
@@ -145,5 +182,18 @@ export function fixedPlace(
     first &&
     top !== undefined &&
     top === padding;
-  return startsAtTop ? { viewport: own, at: { top } } : undefined;
+  return startsAtTop ? { _tag: "placed", viewport: own, at: { top } } : REFUSED;
+}
+
+const REFUSED: FixedPlace = { _tag: "refused" };
+
+/**
+ * Record a refused fixed instance's place as unmapped, with the reason, where `fixedPlace` refused it.
+ *
+ * @param style - The inner root's style in place.
+ */
+export function refuseFixedPlace(style: LayerStyle): void {
+  for (const property of ["position", "top", "left", "translate"]) {
+    style.mark(property, "unmapped", NOT_AS_DRAWN, []);
+  }
 }
