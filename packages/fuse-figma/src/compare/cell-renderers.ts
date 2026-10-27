@@ -595,6 +595,16 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/alert-dialog.js",
     module: { url: new URL("alert-dialog-cell.ts", import.meta.url), name: "alertDialogOpen" },
   },
+  {
+    set: "dialog-content",
+    entry: "dist/dialog.js",
+    module: { url: new URL("dialog-cell.ts", import.meta.url), name: "dialogContent" },
+  },
+  {
+    set: "dialog-open",
+    entry: "dist/dialog.js",
+    module: { url: new URL("dialog-cell.ts", import.meta.url), name: "dialogOpen" },
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

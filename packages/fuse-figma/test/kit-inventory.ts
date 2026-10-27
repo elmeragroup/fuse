@@ -381,6 +381,16 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "alert-dialog-open", name: "Alert dialog (open)", variants: 1, previewed: 1 },
     ],
   },
+  {
+    slug: "dialog",
+    name: "Dialog",
+    sets: [
+      // The popup: the Basic demo's and the Footer close demo's.
+      { key: "dialog-content", name: "Dialog content", variants: 2, previewed: 2 },
+      // The Basic popup over the scrim.
+      { key: "dialog-open", name: "Dialog (open)", variants: 1, previewed: 1 },
+    ],
+  },
 ];
 
 /**

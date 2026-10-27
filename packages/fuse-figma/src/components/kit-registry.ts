@@ -28,6 +28,7 @@ import { COMMAND_ITEM, COMMAND_LIST } from "./command-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
 import { CONFIRM_BUTTON } from "./confirm-button-kit";
+import { DIALOG_CONTENT, DIALOG_OPEN } from "./dialog-kit";
 import {
   DROPDOWN_MENU_CHECKBOX_ITEM,
   DROPDOWN_MENU_ITEM,
@@ -143,6 +144,9 @@ const TEXTAREA_PAGE: KitPage = { slug: "textarea", name: "Textarea" };
 
 /** The page of Alert dialog. */
 const ALERT_DIALOG_PAGE: KitPage = { slug: "alert-dialog", name: "Alert dialog" };
+
+/** The page of Dialog. */
+const DIALOG_PAGE: KitPage = { slug: "dialog", name: "Dialog" };
 
 /** The page of Tooltip. */
 const TOOLTIP_PAGE: KitPage = { slug: "tooltip", name: "Tooltip" };
@@ -488,4 +492,6 @@ export const KIT: readonly KitEntry[] = [
     page: ALERT_DIALOG_PAGE,
     previewCells: matrixCells(ALERT_DIALOG_OPEN.axes),
   },
+  { definition: DIALOG_CONTENT, page: DIALOG_PAGE, previewCells: matrixCells(DIALOG_CONTENT.axes) },
+  { definition: DIALOG_OPEN, page: DIALOG_PAGE, previewCells: matrixCells(DIALOG_OPEN.axes) },
 ];

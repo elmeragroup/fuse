@@ -121,6 +121,8 @@ const CHECKED_ON_THE_MOUNTED_PAGE: readonly string[] = [
   "tooltip-open",
   "alert-dialog-content",
   "alert-dialog-open",
+  "dialog-content",
+  "dialog-open",
 ];
 
 describe("each kit definition against the markup of its component", () => {

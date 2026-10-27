@@ -48,8 +48,9 @@ const waitsForButton = (label: string) => `${label} / button: plan again once Bu
  * What any change to the Button set makes Plan list for the sets that hold Button instances, in kit
  * order: the open Popover's trigger, the open Dropdown menu's trigger, Empty's two actions in each of its
  * 3 variants, Alert's action in each of its 10, the File upload dropzone's trigger in each of its 5,
- * Toolbar's three buttons in each of its 2, and the Alert dialog popup's Cancel and action in each of
- * its 3, whose open example plans again after the popup. Each
+ * Toolbar's three buttons in each of its 2, the Alert dialog popup's Cancel and action in each of its
+ * 3 and the Dialog popup's two footer actions in each of its 2, whose open examples plan again after
+ * their popups. Each
  * instance plans again once Button's changes land, and each set's grid, which reads the instances'
  * sizes, lays out again after them.
  */
@@ -89,6 +90,13 @@ const AFTER_BUTTON = [
   // The open example holds the popup, whose own Buttons wait, so it plans again after the popup.
   "Alert dialog (open) / placement=centered / dialog-content: plan again once Alert dialog content's changes land",
   "Alert dialog (open): lay out 1 variants in 1 columns and 1 rows",
+  ...["basic", "footer-close"].flatMap((content) => [
+    waitsForButton(`Dialog content / content=${content} / dialog-footer`),
+    waitsForButton(`Dialog content / content=${content} / dialog-footer`),
+  ]),
+  "Dialog content: lay out 2 variants in 2 columns and 1 rows",
+  "Dialog (open) / placement=centered / dialog-content: plan again once Dialog content's changes land",
+  "Dialog (open): lay out 1 variants in 1 columns and 1 rows",
 ];
 
 /** The pages of the sets that hold Button instances, which place their sets and previews again after them. */
@@ -100,6 +108,7 @@ const PLACE_AFTER_BUTTON = [
   "File upload: place File upload dropzone in a row and stack 4 previews below them",
   "Toolbar: place Toolbar in a row and stack 4 previews below them",
   "Alert dialog: place Alert dialog content and Alert dialog (open) in a row and stack 4 previews below them",
+  "Dialog: place Dialog content and Dialog (open) in a row and stack 4 previews below them",
 ];
 
 /** The component sets a run creates, in the order the kit builds them. */
