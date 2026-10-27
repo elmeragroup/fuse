@@ -47,6 +47,7 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
       "components/attachment/attachment-trigger.tsx",
     ],
   ],
+  ["autocomplete", ["components/autocomplete/autocomplete.tsx"]],
   ["avatar", ["components/avatar/avatar.tsx"]],
   ["breadcrumb", ["components/breadcrumb/breadcrumb.tsx"]],
   ["button", ["components/button/button.tsx"]],
@@ -377,6 +378,7 @@ describe("RSC classification", () => {
     ["accordion", "Accordion"],
     ["alert-dialog", "AlertDialog"],
     ["attachment", "Attachment"],
+    ["autocomplete", "Autocomplete"],
     ["avatar", "Avatar"],
     ["breadcrumb", "Breadcrumb"],
     ["button-group", "ButtonGroup"],
@@ -1039,6 +1041,11 @@ function wiringPartSpreads(relativePath: string, source: string, parts: Readonly
  * the Sheet and Command.Content popups (dialog ARIA), keyed by the module that renders each one.
  */
 const WIRING_PARTS = {
+  "components/autocomplete/autocomplete.tsx": [
+    "AutocompletePrimitive.Trigger",
+    "AutocompletePrimitive.Clear",
+    "AutocompletePrimitive.Input",
+  ],
   "components/button/button.tsx": ["ButtonPrimitive"],
   "components/checkbox-card/checkbox-card.tsx": ["FieldPrimitive.Label", "CheckboxPrimitive.Root"],
   "components/checkbox/checkbox.tsx": ["CheckboxPrimitive.Root", "CheckboxGroupPrimitive"],
@@ -1110,6 +1117,9 @@ describe("Base UI prop wiring", () => {
         .filter(([, sites]) => sites.length > 0)
     );
     expect(flagged).toEqual({
+      "components/autocomplete/autocomplete.tsx": [
+        "AutocompletePrimitive.Clear > InputGroupButton aria-label",
+      ],
       "components/combobox/combobox.tsx": [
         "ComboboxPrimitive.Clear > InputGroupButton aria-label",
         "ComboboxPrimitive.ChipRemove > Button aria-label",

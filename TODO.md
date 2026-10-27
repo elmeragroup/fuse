@@ -436,7 +436,16 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
     main's styles when it makes the instance.
 - Decide on the Fuse side whether the Combobox popup should span the Input group. Base UI anchors
   it to the `<input>`, so in `packages/fuse/src/components/combobox/combobox.tsx` the popup stops
-  10px (dense) or 18px (comfortable) short of the group's right edge.
+  10px (dense) or 18px (comfortable) short of the group's right edge. `Autocomplete.Input` renders
+  its InputGroup through Base UI's `InputGroup` part, which Base UI anchors the popup to, so its
+  popup is the group's width. `Combobox.Input` could do the same and drop the `+28px` minimum.
+
+## Autocomplete
+
+- A mouse press that starts outside an item and releases on the highlighted item makes Base UI
+  commit the item on `mouseup` (`combobox/item/ComboboxItem.js`), so the input fills but
+  `Autocomplete.Item`'s `onClick` does not run. A reliable picked-item callback needs Base UI to
+  pass the item with `onValueChange`'s `item-press` reason.
 
 ## Data table
 

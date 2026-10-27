@@ -23,6 +23,7 @@ import { Alert } from "@elmeragroup/fuse/alert";
 import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
 import { AspectRatio } from "@elmeragroup/fuse/aspect-ratio";
 import { Attachment } from "@elmeragroup/fuse/attachment";
+import { Autocomplete } from "@elmeragroup/fuse/autocomplete";
 import { Avatar } from "@elmeragroup/fuse/avatar";
 import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
 import { ButtonGroup } from "@elmeragroup/fuse/button-group";
@@ -135,6 +136,21 @@ function namespaceElements(): ReactElement[] {
     ...renderNamespace("Attachment", Attachment, ["Root", "Group", "Action", "Trigger"], {
       server: ["Media", "AspectRatio", "Content", "Title", "Description", "Actions"],
     }),
+    ...renderNamespace("Autocomplete", Autocomplete, [
+      "Root",
+      "Input",
+      "Trigger",
+      "Clear",
+      "Content",
+      "List",
+      "Item",
+      "Group",
+      "Label",
+      "Collection",
+      "Empty",
+      "Status",
+      "Separator",
+    ]),
     ...renderNamespace("Avatar", Avatar, ["Root", "Group", "Image", "Fallback"]),
     ...renderNamespace("Breadcrumb", Breadcrumb, [
       "Root",

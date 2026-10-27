@@ -50,6 +50,16 @@
       "attachment-upload.tsx"
     ]
   },
+  "autocomplete": {
+    "title": "Autocomplete",
+    "rsc": "client",
+    "demos": [
+      "autocomplete-basic.tsx",
+      "autocomplete-caret.tsx",
+      "autocomplete-groups.tsx",
+      "autocomplete-company-search.tsx"
+    ]
+  },
   "avatar": {
     "title": "Avatar",
     "rsc": "client",

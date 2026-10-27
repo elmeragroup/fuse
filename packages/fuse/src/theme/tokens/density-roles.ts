@@ -118,6 +118,18 @@ export const PART_DENSITY = {
   "combobox-chip-input": "layout",
   "input-group-button": "control",
 
+  "autocomplete-trigger": "fixed",
+  "autocomplete-clear": "control",
+  "autocomplete-content": "layout",
+  "autocomplete-list": "surface",
+  "autocomplete-empty": "row",
+  "autocomplete-empty:empty": "layout",
+  "autocomplete-status": "fixed",
+  "autocomplete-group": "layout",
+  "autocomplete-label": "row",
+  "autocomplete-item": "row",
+  "autocomplete-separator": "fixed",
+
   "command-trigger": "control",
   "command-content": "layout",
   "command-input": "control",
