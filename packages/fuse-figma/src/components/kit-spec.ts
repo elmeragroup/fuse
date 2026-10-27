@@ -533,7 +533,11 @@ export type CounterAlignSpec = "MIN" | "CENTER" | "MAX";
  */
 export type PrimaryAlignSpec = CounterAlignSpec | "SPACE_BETWEEN";
 
-/** The axis along which an auto layout box places its children: a row or a column. */
+/**
+ * The axis along which an auto layout box places its children: a row or a column. No box is without
+ * auto layout, which an absolute MAX instance needs to keep its end inset as density resizes it
+ * (W5-P14b); `anchored-instances.test.ts` pins that.
+ */
 export type DirectionSpec = "HORIZONTAL" | "VERTICAL";
 
 /**

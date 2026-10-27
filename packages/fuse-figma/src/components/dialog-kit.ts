@@ -12,8 +12,9 @@
  *     close demo's default Cancel contract and the outline Close `showCloseButton` appends;
  *   - the corner close, `Dialog.Close` rendering the ghost `icon-sm` Icon button with X at
  *     `absolute top-4 right-4`, 16px from the popup's end and 16px below its top, which MAX across
- *     and MIN down keep (U10, W5-P12). Its `hit-area-1` grows its hit target with an invisible
- *     `::before`, which draws nothing.
+ *     and MIN down keep (U10, W5-P12), also in the open composite's popup instance and through a
+ *     density switch, since the Icon button's main is auto layout (W5-P14, W5-P14b). Its
+ *     `hit-area-1` grows its hit target with an invisible `::before`, which draws nothing.
  *   The copy differs by cell, so no TEXT property sets the title or the description.
  * - `Dialog (open)` is the Basic popup over the scrim, `Dialog.Backdrop`'s `fixed inset-0` overlay,
  *   which fills the viewport with `black/10` and blurs what lies behind it, centring the popup's

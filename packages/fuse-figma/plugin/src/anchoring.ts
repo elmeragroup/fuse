@@ -8,7 +8,14 @@
  * a real file kept a 32px close instance at MAX across and MIN down 16px from a 400px popup's end and
  * 16px below its top as the popup's text and density grew it, as the popup widened to 480 and as the
  * close itself widened, and an instance of the popup resized to 300 put it at 252, the close listing
- * only `layoutPositioning` as overridden (W5-P12). So the plugin writes the positioning
+ * only `layoutPositioning` as overridden (W5-P12). On 2026-10-27 a real file kept the Dialog's corner
+ * close at the popup's end and 16px below its top in the main, in an instance pinned Comfortable and
+ * in the open composite's centred popup instance, its top 16px as a longer description grew the popup,
+ * again listing only `layoutPositioning` (W5-P14). The end inset survives a density switch that
+ * resizes the instance only because its main is auto layout, which resizes it in place: the Icon
+ * button moved from x 400 to 396, while a plain frame whose bound size changed kept its x and drifted
+ * to a 12px end inset (W5-P14b). Every box the kit builds is auto layout, which
+ * `anchored-instances.test.ts` pins. So the plugin writes the positioning
  * and the constraints, places the instance once, from its size and its parent's as they settle, and
  * compares the end inset and the centre offset or top inset, never `x` and `y`, which follow sizes the
  * run does not set.

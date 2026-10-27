@@ -13,7 +13,11 @@
  * `border-top + top + height / 2 − parent height / 2` must leave no variable in it. A `top` that is
  * itself one length in every mode, beside a top border that is one too, keeps the instance's top that
  * far below the padding edge whatever the parent's height, which Figma's MIN keeps from the frame's top
- * edge, so the build reads `border-top + top` as MIN's inset before it tries the centre.
+ * edge, so the build reads `border-top + top` as MIN's inset before it tries the centre. A real file
+ * kept MIN's inset and MAX's end inset through a density switch, also in a popup instance a composite
+ * centres (W5-P14), but MAX keeps the end inset only for an instance whose main is auto layout: a plain
+ * frame whose size changes by mode keeps its x instead (W5-P14b). Every box the kit builds is auto
+ * layout, as `DirectionSpec` holds and `anchored-instances.test.ts` pins.
  */
 import type { LayerStyle } from "./cascade";
 import { affineLength, constantOf, normalizeCss, scaleAffine, sumAffine } from "./css-values";
