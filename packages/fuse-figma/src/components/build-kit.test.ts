@@ -400,15 +400,22 @@ describe("the Toggle component sets", () => {
     expect(square?.swapProperties).toEqual([{ name: "Icon", defaultIcon: "icon/Star" }]);
   });
 
-  it("fills with muted while pressed or hovered, and with nothing at rest", () => {
+  it("fills with primary while pressed, with muted on hover, and with nothing at rest", () => {
     // bg-transparent paints nothing, so the root has no fill, as a ghost Button has none.
     expect(toggle("default", "default", "rest", "off").fill).toBeUndefined();
-    expect(toggle("default", "default", "hover", "off").fill).toEqual(paint("muted"));
-    // aria-pressed:bg-muted and enabled-hover:bg-muted agree, so pressed looks the same on hover.
-    expect(toggle("default", "default", "rest", "on").fill).toEqual(paint("muted"));
-    expect(toggle("default", "default", "hover", "on").fill).toEqual(paint("muted"));
+    const hover = toggle("default", "default", "hover", "off");
+    expect([hover.fill, firstColor(hover)]).toEqual([paint("muted"), paint("foreground")]);
+    // aria-pressed:bg-primary outranks enabled-hover:bg-muted, which adds no specificity, so a
+    // pressed Toggle keeps its face on hover.
+    for (const state of ["rest", "hover"]) {
+      const pressed = toggle("default", "default", state, "on");
+      expect([pressed.fill, firstColor(pressed)], state).toEqual([
+        paint("primary"),
+        paint("primary-foreground"),
+      ]);
+    }
     const disabled = toggle("outline", "default", "disabled", "on");
-    expect([disabled.fill, disabled.opacity]).toEqual([paint("muted"), 0.5]);
+    expect([disabled.fill, disabled.opacity]).toEqual([paint("primary"), 0.5]);
   });
 
   it("rounds xs with the compact corner and the other sizes with radius-md", () => {
