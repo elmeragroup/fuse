@@ -328,7 +328,8 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   the Input group's 4 carets, the Command item's 2 shortcuts and the Sidebar group's 2 labels. It
   changes those sets' layer keys, so do it after a real-file run. The merge waited until a second
   set repeated the pattern, and the Input group (open caret), Command item (shortcut) and Sidebar
-  group (rail label) each repeat it.
+  group (rail label) each repeat it. Toolbar repeats it too: it holds one Button instance set per
+  orientation, because an instance's facts read the inner cell.
 - Move the markup validator from `test/markup-check.ts` into `src` and return diagnostics. The
   compare CLI reaches it through `src/compare/client-markup.ts` and so loads Vitest's `expect`.
 - Mount each client cell a second time with its default-false BOOLEAN properties on. Today every
@@ -440,6 +441,25 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   - Check that Plan on a file without the Fuse tokens collection says to run `figma:sync`.
 - Find why the `fuse-design-tokens-sync` file draws some Fjordkraft external private light icons in
   `#5C1900` in place of the foreground, such as the Sidebar's Home icon.
+- Draw the Text field's inline variant. Its input width comes from the `size` attribute and the
+  font's metrics, which no Figma field holds. The card variant waits for a Card set.
+- Write a background blur through an instance's shadow override. The override in
+  `plugin/src/instance-layers.ts` writes shadows only, so an instance of a blurring main that
+  overrides its shadows would lose the blur. The scrim casts no shadow, so no set hits this today.
+- Find why the compare page's Number field stepper cell needs `!important` on its group-clearing
+  classes in `src/compare/number-field-cell.ts`.
+- Resolve media queries and `dvh` against the declared viewport on the compare page. The viewport
+  host in `src/compare/viewport-host.ts` sizes a fixed root's containing block, but media queries
+  and `dvh` still read the real window. The Command dialog cell restates its `dvh` lengths by hand.
+- Find why one `figma:compare --self-check` run flagged 1% of the open Command dialog (dark,
+  comfortable) over the input and first rows, under the scrim's background blur. The next two runs
+  matched exactly.
+- Make the Number field denomination's `px-2` a control metric in
+  `packages/fuse/src/components/number-field/number-field-variants.ts`. It changes the look, so it needs a patch
+  changeset.
+- Check a disabled Toolbar button for a hydration mismatch. The server markup has `disabled=""` and
+  a client render only `aria-disabled="true"`
+  (`packages/fuse/src/components/toolbar/toolbar.tsx`).
 
 ## Autocomplete
 
