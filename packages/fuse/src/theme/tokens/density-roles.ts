@@ -487,7 +487,6 @@ export const PART_DENSITY = {
   "data-table-filter-bar": "layout",
   "data-table-filter-bar-row": "surface",
   "data-table-filter-trigger": "control",
-  "data-table-filter-trigger-count": "fixed",
   "data-table-filter-chips": "surface",
   "data-table-filter-chip": "control",
   "data-table-filter-subject": "layout",

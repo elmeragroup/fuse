@@ -28,7 +28,6 @@ import { X } from "../../icons/generated/x";
 import { XCircle } from "../../icons/generated/x-circle";
 import { definedProps } from "../../internal/defined-props";
 import { isHTMLElement, isNode } from "../../internal/dom-node";
-import { numberFormat } from "../../internal/intl-cache";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Button } from "../button/button";
@@ -103,7 +102,7 @@ export type DataTableFilterBarProps = ComponentProps<typeof ToolbarPrimitive.Roo
  * The filter bar, a toolbar that is one Tab stop with arrow-key roving. Without children it
  * renders the Trigger, the chips and Clear on one line, so its height never grows with the
  * filters. It is named "Filters" unless `aria-label` says otherwise. Below a 36rem container
- * width a container query hides the Trigger's and Clear's labels behind their icons.
+ * width a container query hides Clear's label behind its icon.
  */
 export function DataTableFilterBar({ className, children, ...props }: DataTableFilterBarProps): ReactElement {
   const { state, meta } = useFilterInternals("DataTableFilter.Bar");
@@ -140,9 +139,8 @@ export type DataTableFilterTriggerProps = Omit<
 
 /**
  * Opens the add menu, `DataTableFilter.Content`. It sits first in the bar, so a chip added under
- * the open menu never moves it. Without children it shows the number of applied filters after its
- * label, hidden from assistive technology, since the toolbar announces the chips. Its label is
- * visually hidden in a narrow bar, the count stays, and its name is "Filter" throughout.
+ * the open menu never moves it. Without children it is a square icon button named "Filter" at
+ * every width. Children replace the icon and render it as a labelled button.
  */
 export function DataTableFilterTrigger({
   className,
@@ -154,10 +152,7 @@ export function DataTableFilterTrigger({
 }: DataTableFilterTriggerProps): ReactElement {
   const { state, actions, meta } = useFilterInternals("DataTableFilter.Trigger");
   const triggerRef = useMergedRefs(ref, actions.registerTrigger);
-  // The count matches the chips a person can see and remove: a ghost's filter is already gone from
-  // the table, and a filter whose field is not configured has no chip, so neither counts.
-  // `state.filters.length` would count the second.
-  const count = state.chips.filter((chip) => !chip.ghost).length;
+  const label = props["aria-label"] ?? meta.format("filter");
   return (
     <ToolbarPrimitive.Button
       ref={triggerRef}
@@ -167,7 +162,15 @@ export function DataTableFilterTrigger({
       render={
         <MenuPrimitive.Trigger
           handle={meta.menuHandle}
-          render={render ?? <Button variant="outline" size="sm" />}
+          render={
+            render ??
+            // An icon Button requires its own name, and its props win in Base UI's merge.
+            (children === undefined ? (
+              <Button variant="outline" size="icon-sm" aria-label={label} />
+            ) : (
+              <Button variant="outline" size="sm" />
+            ))
+          }
         />
       }
       className={mergeClassName(className, slots.trigger())}
@@ -175,17 +178,7 @@ export function DataTableFilterTrigger({
         assertOverlay("DataTableFilter.Trigger", meta.hasContent(), "no-content");
       }, onClick)}
       {...definedProps(props)}>
-      {children ?? (
-        <>
-          <Funnel data-icon="inline-start" aria-hidden />
-          <span className={slots.triggerLabel()}>{meta.format("filter")}</span>
-          {count === 0 ? null : (
-            <span aria-hidden data-slot="data-table-filter-trigger-count" className={slots.triggerCount()}>
-              {numberFormat(meta.locale).format(count)}
-            </span>
-          )}
-        </>
-      )}
+      {children ?? <Funnel aria-hidden />}
     </ToolbarPrimitive.Button>
   );
 }
@@ -580,7 +573,7 @@ export function DataTableFilterClear({
       onClick={handleClick}
       {...definedProps(props)}>
       <XCircle aria-hidden className={slots.clearIcon()} />
-      <span className={slots.triggerLabel()}>{label}</span>
+      <span className={slots.clearLabel()}>{label}</span>
     </ToolbarPrimitive.Button>
   ) : (
     <Button

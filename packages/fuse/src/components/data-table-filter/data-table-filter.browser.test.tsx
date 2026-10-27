@@ -1234,56 +1234,39 @@ describe("DataTableFilter motion and layout", () => {
     expect(widths.some((width) => between(width, wide, 288))).toBe(true);
   });
 
-  it("hides the Trigger's label in a narrow bar, keeps its name and count, and squares it without filters", () => {
-    const view = renderThemed(
+  it.each([1280, 320])("draws the Trigger as a square icon named Filter in a %ipx bar", async (width) => {
+    await page.viewport(1400, 720);
+    renderThemed(
       withLocale(
         "en-US",
-        <div style={{ width: 320 }}>
+        <div style={{ width }}>
           <Orders initial={[...STATUS_THREE, ...CUSTOMER_NORD]} />
         </div>
       )
     );
     const trigger = roleNamed("button", "Filter");
-    const label = page.elementLocator(trigger).getByText("Filter", { exact: true });
-    const count = page.elementLocator(trigger).getByText("2", { exact: true });
-    expect(label.element().getBoundingClientRect().width).toBeLessThanOrEqual(1);
-    expect(count.element().getBoundingClientRect().width).toBeGreaterThan(0);
-    const { width, height } = trigger.getBoundingClientRect();
-    expect(width).toBeGreaterThan(height);
+    expect(trigger.textContent).toBe("");
+    const box = trigger.getBoundingClientRect();
+    expect(box.width).toBeCloseTo(box.height, 0);
     expect(roleNamed("button", "Clear filters")).toBeTruthy();
-
-    view.unmount();
-    renderThemed(
-      withLocale(
-        "en-US",
-        <div style={{ width: 320 }}>
-          <Orders initial={[]} />
-        </div>
-      )
-    );
-    const empty = roleNamed("button", "Filter").getBoundingClientRect();
-    expect(empty.width).toBeCloseTo(empty.height, 0);
   });
 
-  it("shows the filter count after the Trigger's label in a wide bar, outside its name", async () => {
+  it("draws a Trigger with children as a labelled button", async () => {
     await page.viewport(1280, 720);
-    renderOrders({ initial: [...STATUS_THREE, ...CUSTOMER_NORD] });
-    const trigger = roleNamed("button", "Filter");
-    const label = page.elementLocator(trigger).getByText("Filter", { exact: true }).element();
-    const count = page.elementLocator(trigger).getByText("2", { exact: true }).element();
-    expect(count.getBoundingClientRect().left).toBeGreaterThan(label.getBoundingClientRect().right);
-  });
-
-  it("counts an emptied chip's filter out while its ghost stays", async () => {
-    await page.viewport(1280, 720);
-    renderOrders({ initial: [...STATUS_THREE, ...CUSTOMER_NORD] });
-    const trigger = roleNamed("button", "Filter");
-    await userEvent.click(roleNamed("button", "Paid, Pending +1"));
-    for (const option of ["Paid", "Pending", "Overdue"]) {
-      await userEvent.click(roleNamed("option", option));
-    }
-    await expect.poll(() => roleNamed("group", "Status filter").hasAttribute("data-ghost")).toBe(true);
-    expect(page.elementLocator(trigger).getByText("1", { exact: true }).query()).not.toBeNull();
+    renderOrders({
+      initial: STATUS_THREE,
+      children: (
+        <>
+          <DataTableFilter.Bar>
+            <DataTableFilter.Trigger>Add filter</DataTableFilter.Trigger>
+            <DataTableFilter.Chips />
+          </DataTableFilter.Bar>
+          <DataTableFilter.Content />
+        </>
+      ),
+    });
+    const box = roleNamed("button", "Add filter").getBoundingClientRect();
+    expect(box.width).toBeGreaterThan(box.height);
   });
 
   it.each(SUPPORTED_LOCALES)("names the chip's parts in %s", (locale) => {

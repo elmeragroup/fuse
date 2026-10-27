@@ -17,8 +17,8 @@ root barrel.
   open in place. `ValueContent` is the popover a chip's value opens.
 - The bar stays one line high at every width. Its chips sit in one strip that scrolls sideways,
   also under a vertical mouse wheel, and an end of the strip fades only while chips hide past it.
-  The Trigger shows the number of filters after its label. Below a 36rem bar width the Trigger and
-  Clear show only their icons and the count, and keep their accessible names.
+  The Trigger is a square icon button named "Filter" at every width. Below a 36rem bar width Clear
+  shows only its icon and keeps its accessible name.
 - A list of values shows its first 50 matches and asks for more typing.
 - A `boolean` field kind filters `true` and `false`. `toggle: true` makes it an on/off scope with a
   checkbox row in the add menu and a chip that is its name and Remove.

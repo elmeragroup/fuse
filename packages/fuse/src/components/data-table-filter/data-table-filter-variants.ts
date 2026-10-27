@@ -14,21 +14,12 @@ export const dataTableFilterVariants = tv({
     bar: "@container/dtf-bar min-w-0 flex-1",
     /** surface. One line that never wraps, so the bar keeps its height whatever the filter count. */
     barRow: "flex min-w-0 items-start gap-(--surface-gap-sm)",
-    /**
-     * control. An icon, label and filter count at full width. In a narrow bar the label hides,
-     * leaving the icon and the count, or a centred square without filters. The `has-data-[icon]`
-     * arm beats Button's own icon-side padding, which sorts earlier at the same weight.
-     */
-    trigger:
-      "shrink-0 @max-[36rem]/dtf-bar:not-has-data-[slot=data-table-filter-trigger-count]:aspect-square @max-[36rem]/dtf-bar:not-has-data-[slot=data-table-filter-trigger-count]:px-0 @max-[36rem]/dtf-bar:not-has-data-[slot=data-table-filter-trigger-count]:has-data-[icon=inline-start]:pl-0",
-    /** The Trigger's and Clear's labels, visually hidden in a narrow bar. Their names never change. */
-    triggerLabel: "@max-[36rem]/dtf-bar:sr-only",
-    /** fixed. The Trigger's filter count, a small filled tag that stays when the label hides. */
-    triggerCount:
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- a fixed count tag inside the control, not a control-box rung
-      "text-xs font-medium inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-sm bg-primary px-1 text-primary-foreground tabular-nums",
+    /** control. A square icon button at every width, or a consumer's labelled one. */
+    trigger: "shrink-0",
     /** control. A label at full width, a square icon button after the strip in a narrow bar. */
     clear: "shrink-0 @max-[36rem]/dtf-bar:aspect-square @max-[36rem]/dtf-bar:px-0",
+    /** Clear's label, visually hidden in a narrow bar. Its name never changes. */
+    clearLabel: "@max-[36rem]/dtf-bar:sr-only",
     /** Clear's icon, shown only in a narrow bar. */
     clearIcon: "hidden @max-[36rem]/dtf-bar:block",
     /**
