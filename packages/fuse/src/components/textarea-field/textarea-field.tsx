@@ -101,6 +101,7 @@ export function TextareaField({
 
   return (
     <FieldFrame
+      spacing="part"
       invalid={isInvalid}
       disabled={isDisabled}
       label={label}

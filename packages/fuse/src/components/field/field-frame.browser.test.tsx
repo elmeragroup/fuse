@@ -45,9 +45,9 @@ const LEGEND_MARGIN_PX = 12;
 const groupGap = (density: Density) => metricPx("surface-gap-md", density);
 // A pending RadioGroup without a label keeps a heading row for its spinner, and the
 // fieldset's group gap separates that row from the description.
-// TextField's label sits on the Field.Root's `gap-1` stack, at 4px from its control. SelectField
-// shares this part spacing through FieldFrame's `spacing="part"`, and a hand-built field through
-// `Field.Root`'s.
+// TextField's label sits on the Field.Root's `gap-1` stack, at 4px from its control. The other
+// labeled composites share this part spacing through FieldFrame's `spacing="part"`, and a
+// hand-built field through `Field.Root`'s.
 const TEXT_FIELD_LABEL_TO_CONTROL_PX = 4;
 
 const PART_SPACED_FIELDS: ReadonlyArray<{
@@ -71,6 +71,12 @@ const PART_SPACED_FIELDS: ReadonlyArray<{
       </SelectField>
     ),
     control: () => roleNamed("combobox", "Plan"),
+  },
+  {
+    name: "TextareaField",
+    label: "Notes",
+    render: () => <TextareaField label="Notes" maxLength={200} />,
+    control: () => textboxNamed("Notes"),
   },
   {
     name: 'Field.Root with spacing="part"',
