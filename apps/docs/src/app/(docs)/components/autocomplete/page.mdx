@@ -6,6 +6,7 @@ lede: >
 import { AutocompleteBasic } from "./demos/autocomplete-basic";
 import { AutocompleteCaret } from "./demos/autocomplete-caret";
 import { AutocompleteCompanySearch } from "./demos/autocomplete-company-search";
+import { AutocompleteCustomLayout } from "./demos/autocomplete-custom-layout";
 import { AutocompleteGroups } from "./demos/autocomplete-groups";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -18,7 +19,7 @@ export const metadata = componentMetadata("autocomplete");
 
 Autocomplete is Base UI's Autocomplete with [Combobox](/components/combobox)'s look. The two differ in their value. A Combobox submits the option the user selected, and editing its text never replaces that selection. An Autocomplete submits the text in its input, and its list only suggests: picking an item fills the input with the item's text, and the user can go on editing it. Text that matches no item is kept on blur and submitted as it is. Use Autocomplete when any text is a valid answer, and Combobox when the answer must be one of the options.
 
-`Autocomplete.Root` holds the state and renders no element. `value`, `defaultValue` and `onValueChange` hold the text, and the input carries `name`, so the form submits the text under it. Inside a `Field.Root`, the field's name, label, description and `Form` errors reach the input, as they do a Combobox. Set `id` on the Root rather than on the input, so the `Field.Label` points at it, and `spacing="part"` on the `Field.Root`, so the label sits 4px from the input, as in a `TextField`. Base UI filters `items` against the text in the locale of `LocaleProvider`. Place `Autocomplete.Empty` beside `Autocomplete.List` for the list that matches nothing. It needs `items` on the Root, since it shows only while the Root's filtered items are empty.
+`AutocompleteField` lays out a labeled autocomplete as the other labeled fields do: the label 4px from the input, the input filling the field's width, then the error ahead of the description. `value`, `defaultValue` and `onValueChange` hold the text, and the form submits it under `name`. Inside a `Form`, the field shows the error `Form` holds under its `name` until the user edits the text. Base UI filters `items` against the text in the locale of `LocaleProvider`. Pass the popup's content as children: an `Autocomplete.List` that renders each item as an `Autocomplete.Item`, and an `Autocomplete.Empty` beside it for the list that matches nothing. The Empty needs `items`, since it shows only while the filtered items are empty. The props the field does not name itself go to `Autocomplete.Root`, and a `ref` goes to the input.
 
 </Prose>
 
@@ -30,7 +31,7 @@ Autocomplete is Base UI's Autocomplete with [Combobox](/components/combobox)'s l
 
 ## Caret and clear button
 
-The list opens as the user types, so the field has no caret. `showTrigger` adds one, which opens the whole list for browsing. `showClear` adds a button that empties the input while it holds text, and the caret hides while it shows. Their names come from the locale dictionary, and `triggerLabel` and `clearLabel` replace them.
+The list opens as the user types, so the field has no caret. `showTrigger` adds one, which opens the whole list for browsing. `showClear` adds a button that empties the input while it holds text, and the caret hides while it shows. Their names come from the locale dictionary.
 
 </Prose>
 
@@ -54,7 +55,7 @@ Pass groups as `items`, each with a `value` and its own `items`. `itemToStringVa
 
 ## Search on a server
 
-For a search that runs elsewhere, such as a register lookup, pass `filter={null}` and the results as `items`: the list then shows them as given. Keep the request and its state in your component, and pass the empty list's states, such as loading, an error or no results, as `Autocomplete.Empty`'s children. Base UI keeps the Empty mounted as a polite live region, so screen readers hear those states. `Autocomplete.Status` is a visually hidden live region for the rest, such as the number of results. Place it beside `Autocomplete.Input`, outside `Autocomplete.Content`, so it stays mounted while the popup opens and closes, and render the message as its children.
+For a search that runs elsewhere, such as a register lookup, pass `filter={null}` and the results as `items`: the list then shows them as given. Keep the request and its state in your component, and pass the empty list's states, such as loading, an error or no results, as `Autocomplete.Empty`'s children. Base UI keeps the Empty mounted as a polite live region, so screen readers hear those states. Pass the rest, such as the number of results, as `status`. The field renders it in a visually hidden live region beside the input, which stays mounted while the popup opens and closes.
 
 `onValueChange` receives only the text. To use the picked item itself, capture it in `Autocomplete.Item`'s `onClick`, which runs on a click and on Enter while the item is highlighted. With object items, `itemToStringValue` gives the text that fills the input and submits. In this demo, picking a company fills in its organization number. A company the search does not find is typed in full, and its number entered by hand.
 
@@ -66,6 +67,18 @@ For a search that runs elsewhere, such as a register lookup, pass `filter={null}
   title="Search on a server"
   file="autocomplete-company-search.tsx">
   <AutocompleteCompanySearch />
+</Demo>
+
+<Prose>
+
+## Custom layouts
+
+For a layout of your own, such as a label row with an info button or a horizontal field, compose `Field.Root` and the `Autocomplete` parts. `Autocomplete.Root` holds the state and renders no element, and the input carries the field's name. Set `id` on the Root rather than on the input, so the `Field.Label` points at it, and `spacing="part"` on the `Field.Root`, so the label sits 4px from the input, as in `AutocompleteField`. `Autocomplete.Input` takes `showTrigger` and `showClear`, and `triggerLabel` and `clearLabel` replace the buttons' names. Place `Autocomplete.Status` beside `Autocomplete.Input`, outside `Autocomplete.Content`, so it stays mounted while the popup opens and closes.
+
+</Prose>
+
+<Demo slug="autocomplete" id="custom-layout" title="Custom layout" file="autocomplete-custom-layout.tsx">
+  <AutocompleteCustomLayout />
 </Demo>
 
 <ApiReference slug="autocomplete" />

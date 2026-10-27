@@ -214,7 +214,15 @@ describe("committed api.json", () => {
       "RadioItemGroup",
       "RadioIconButton",
     ]);
-    expect(resolveComponentPaths("combobox").apiExportNames).toEqual(["Combobox", "useComboboxAnchor"]);
+    expect(resolveComponentPaths("combobox").apiExportNames).toEqual([
+      "ComboboxField",
+      "Combobox",
+      "useComboboxAnchor",
+    ]);
+    expect(resolveComponentPaths("autocomplete").apiExportNames).toEqual([
+      "AutocompleteField",
+      "Autocomplete",
+    ]);
     // KbdGroup has its own props type, so its table guards it against drift too.
     expect(resolveComponentPaths("kbd").apiExportNames).toEqual(["Kbd", "KbdGroup"]);
     expect(resolveComponentPaths("button").apiExportNames).toEqual(["Button"]);

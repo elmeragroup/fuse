@@ -1,7 +1,6 @@
 "use client";
 
-import { Autocomplete } from "@elmeragroup/fuse/autocomplete";
-import { Field } from "@elmeragroup/fuse/field";
+import { Autocomplete, AutocompleteField } from "@elmeragroup/fuse/autocomplete";
 
 const municipalities = [
   "Bergen",
@@ -17,22 +16,22 @@ const municipalities = [
 
 export function AutocompleteBasic() {
   return (
-    <Field.Root name="municipality" spacing="part" className="max-w-xs">
-      <Field.Label>Municipality</Field.Label>
-      <Autocomplete.Root id="municipality" items={municipalities}>
-        <Autocomplete.Input placeholder="Type a municipality…" showClear />
-        <Autocomplete.Content>
-          <Autocomplete.Empty>No suggestions. The text you typed is kept.</Autocomplete.Empty>
-          <Autocomplete.List>
-            {(municipality: string) => (
-              <Autocomplete.Item key={municipality} value={municipality}>
-                {municipality}
-              </Autocomplete.Item>
-            )}
-          </Autocomplete.List>
-        </Autocomplete.Content>
-      </Autocomplete.Root>
-      <Field.Description>Pick a suggestion or type the name yourself.</Field.Description>
-    </Field.Root>
+    <AutocompleteField
+      label="Municipality"
+      name="municipality"
+      description="Pick a suggestion or type the name yourself."
+      items={municipalities}
+      placeholder="Type a municipality…"
+      showClear
+      className="max-w-xs">
+      <Autocomplete.Empty>No suggestions. The text you typed is kept.</Autocomplete.Empty>
+      <Autocomplete.List>
+        {(municipality: string) => (
+          <Autocomplete.Item key={municipality} value={municipality}>
+            {municipality}
+          </Autocomplete.Item>
+        )}
+      </Autocomplete.List>
+    </AutocompleteField>
   );
 }

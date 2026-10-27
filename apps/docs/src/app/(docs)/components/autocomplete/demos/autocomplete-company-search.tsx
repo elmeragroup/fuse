@@ -3,9 +3,8 @@
 import { useRef, useState, useTransition } from "react";
 import type { FormEvent, ReactNode } from "react";
 
-import { Autocomplete } from "@elmeragroup/fuse/autocomplete";
+import { Autocomplete, AutocompleteField } from "@elmeragroup/fuse/autocomplete";
 import { Button } from "@elmeragroup/fuse/button";
-import { Field } from "@elmeragroup/fuse/field";
 import { SpinnerGap } from "@elmeragroup/fuse/icons";
 import { loaderVariants } from "@elmeragroup/fuse/loader";
 import { TextField } from "@elmeragroup/fuse/text-field";
@@ -129,43 +128,39 @@ export function AutocompleteCompanySearch() {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-sm flex w-full flex-col gap-4">
-      <Field.Root name="company" spacing="part">
-        <Field.Label>Company name</Field.Label>
-        <Autocomplete.Root
-          id="company"
-          items={results}
-          filter={null}
-          value={name}
-          onValueChange={search}
-          itemToStringValue={(company) => company.name}>
-          <Autocomplete.Input placeholder="Name or organization number…" />
-          <Autocomplete.Status>
-            {!pending && results.length > 0
-              ? `${String(results.length)} ${results.length === 1 ? "company" : "companies"} found`
-              : null}
-          </Autocomplete.Status>
-          <Autocomplete.Content aria-busy={pending || undefined}>
-            <Autocomplete.Empty>{emptyState()}</Autocomplete.Empty>
-            <Autocomplete.List>
-              {(company: Company) => (
-                <Autocomplete.Item
-                  key={company.orgNumber}
-                  value={company}
-                  onClick={() => {
-                    setOrgNumber(company.orgNumber);
-                  }}>
-                  <span className="flex flex-col">
-                    <span>{company.name}</span>
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      Org. no. {company.orgNumber}
-                    </span>
-                  </span>
-                </Autocomplete.Item>
-              )}
-            </Autocomplete.List>
-          </Autocomplete.Content>
-        </Autocomplete.Root>
-      </Field.Root>
+      <AutocompleteField
+        label="Company name"
+        name="company"
+        items={results}
+        filter={null}
+        value={name}
+        onValueChange={search}
+        itemToStringValue={(company) => company.name}
+        placeholder="Name or organization number…"
+        status={
+          !pending && results.length > 0
+            ? `${String(results.length)} ${results.length === 1 ? "company" : "companies"} found`
+            : null
+        }>
+        <Autocomplete.Empty>{emptyState()}</Autocomplete.Empty>
+        <Autocomplete.List>
+          {(company: Company) => (
+            <Autocomplete.Item
+              key={company.orgNumber}
+              value={company}
+              onClick={() => {
+                setOrgNumber(company.orgNumber);
+              }}>
+              <span className="flex flex-col">
+                <span>{company.name}</span>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  Org. no. {company.orgNumber}
+                </span>
+              </span>
+            </Autocomplete.Item>
+          )}
+        </Autocomplete.List>
+      </AutocompleteField>
       <TextField
         name="orgNumber"
         label="Organization number"

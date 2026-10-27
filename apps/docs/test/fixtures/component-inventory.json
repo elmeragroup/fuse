@@ -57,7 +57,8 @@
       "autocomplete-basic.tsx",
       "autocomplete-caret.tsx",
       "autocomplete-groups.tsx",
-      "autocomplete-company-search.tsx"
+      "autocomplete-company-search.tsx",
+      "autocomplete-custom-layout.tsx"
     ]
   },
   "avatar": {
@@ -166,6 +167,7 @@
     "title": "Combobox",
     "rsc": "client",
     "demos": [
+      "combobox-field-basic.tsx",
       "combobox-basic.tsx",
       "combobox-groups.tsx",
       "combobox-multi-chips.tsx",

@@ -1,7 +1,6 @@
 "use client";
 
-import { Autocomplete } from "@elmeragroup/fuse/autocomplete";
-import { Field } from "@elmeragroup/fuse/field";
+import { Autocomplete, AutocompleteField } from "@elmeragroup/fuse/autocomplete";
 
 const reasons = [
   "Moving house",
@@ -13,21 +12,21 @@ const reasons = [
 
 export function AutocompleteCaret() {
   return (
-    <Field.Root name="reason" spacing="part" className="max-w-xs">
-      <Field.Label>Reason for contact</Field.Label>
-      <Autocomplete.Root id="reason" items={reasons}>
-        <Autocomplete.Input placeholder="Describe it in a few words…" showTrigger />
-        <Autocomplete.Content>
-          <Autocomplete.Empty />
-          <Autocomplete.List>
-            {(reason: string) => (
-              <Autocomplete.Item key={reason} value={reason}>
-                {reason}
-              </Autocomplete.Item>
-            )}
-          </Autocomplete.List>
-        </Autocomplete.Content>
-      </Autocomplete.Root>
-    </Field.Root>
+    <AutocompleteField
+      label="Reason for contact"
+      name="reason"
+      items={reasons}
+      placeholder="Describe it in a few words…"
+      showTrigger
+      className="max-w-xs">
+      <Autocomplete.Empty />
+      <Autocomplete.List>
+        {(reason: string) => (
+          <Autocomplete.Item key={reason} value={reason}>
+            {reason}
+          </Autocomplete.Item>
+        )}
+      </Autocomplete.List>
+    </AutocompleteField>
   );
 }
