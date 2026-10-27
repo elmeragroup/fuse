@@ -117,6 +117,8 @@ const CHECKED_ON_THE_MOUNTED_PAGE: readonly string[] = [
   "command-item",
   "command-list",
   "navigation-menu-popup",
+  "tooltip-content",
+  "tooltip-open",
 ];
 
 describe("each kit definition against the markup of its component", () => {

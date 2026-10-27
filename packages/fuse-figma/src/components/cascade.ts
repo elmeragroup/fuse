@@ -85,6 +85,9 @@ const NO_FIGMA_FORM = new Map([
     "forced-color-adjust",
     "the kit draws the normal colors, not the system colors a forced-colors mode paints",
   ],
+  // `fill` paints SVG shapes (SVG 2 §13.2), as a Tooltip arrow's `fill-foreground` would paint the
+  // `<svg>` Base UI's arrow holds where a consumer renders one; the kit's arrow is a `<div>`.
+  ["fill", "`fill` paints only an SVG shape, and no layer that reads it here draws one"],
   // The plugin typings expose a text layer's `openTypeFeatures` as read-only, with no setter.
   ["font-variant-numeric", "the plugin API can read a text layer's OpenType features but not set them"],
 ]);

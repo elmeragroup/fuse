@@ -567,6 +567,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       clamp,
       variant,
       path: [...cascade.path, shown.key],
+      fitsOneLine: box.fitsOneLine,
     };
     // A TEXT value gave the label other characters in place, so its layout follows its variant's.
     return shown === box.label || box.label === undefined
@@ -666,6 +667,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       layout,
       layers: holder.layers.length,
       size: { width, stroke: paint.stroke, paddingLeft, paddingRight },
+      positionedBy: box.positionedBy,
     },
     parts,
     endInFlow

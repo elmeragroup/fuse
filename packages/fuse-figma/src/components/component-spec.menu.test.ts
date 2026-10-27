@@ -712,8 +712,9 @@ describe("a separator's margins above and below it", () => {
 });
 
 // Oracle: CSS Overflow 3 §3, where a box's initial `overflow: visible` draws its content's shadows past
-// its edges, as an open Select's column shows its popup's. A root that paints draws a spread ring only
-// while it clips (PR2), so the build refuses to leave one unclipped.
+// its edges, as an open Select's column shows its popup's. A root draws its own shadow's spread only
+// while it clips (PR2), so the build refuses to leave one that casts a shadow unclipped; a fill draws
+// the same either way, as a Tooltip popup's does around the arrow below it.
 describe("a composite root that leaves its layers unclipped", () => {
   const SHADOWED = { ...dot("w-[100px] h-[20px] shadow-[0_4px_6px_#000000]"), key: "popup", slot: "popup" };
 
@@ -725,12 +726,21 @@ describe("a composite root that leaves its layers unclipped", () => {
     expect(variant?.root.clips).toBe(false);
   });
 
-  it("refuses a root that paints", async () => {
+  it("clips nothing where it fills and casts no shadow", async () => {
+    const { variant } = await buildFixture(
+      chip("flex flex-col bg-[#ffffff]", { parts: [SHADOWED], rootOverflow: "visible" }),
+      { variables: SYNCED }
+    );
+    expect(variant?.root.clips).toBe(false);
+  });
+
+  it("refuses a root that casts a shadow", async () => {
     await expect(
-      buildFixture(chip("flex flex-col bg-[#ffffff]", { parts: [SHADOWED], rootOverflow: "visible" }), {
-        variables: SYNCED,
-      })
-    ).rejects.toThrow("a root that leaves its layers unclipped must paint nothing");
+      buildFixture(
+        chip("flex flex-col shadow-[0_4px_6px_#000000]", { parts: [SHADOWED], rootOverflow: "visible" }),
+        { variables: SYNCED }
+      )
+    ).rejects.toThrow("a root that leaves its layers unclipped must cast no shadow");
   });
 });
 

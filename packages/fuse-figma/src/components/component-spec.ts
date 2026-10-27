@@ -229,12 +229,21 @@ export type BoxDefinition = {
    */
   readonly elementDefaults?: readonly OuterDeclaration[];
   /**
+   * The positioned element around the box that is the containing block of the box's absolute parts,
+   * where the box's own classes leave it static, and that has the box's border box, as Base UI's
+   * tooltip positioner holds its popup. The placement of an absolute part reads the box as its
+   * containing block there. Undefined for a box whose own `position` decides.
+   */
+  readonly positionedBy?: string;
+  /**
    * Why a wrapping row lays its layers out on one line in every cell, for a row whose `flex-wrap:
    * wrap` no rule reads, since what fits depends on its text: a measurement, as Chromium measured
    * Radio group's three horizontal rows end at 201px dense and 217px comfortable in its 384px.
    * Figma's row never wraps, so the row draws as one line, and `figma:compare` shows a cell where
-   * the measurement no longer holds. Undefined for a row whose wrapping a rule reads or that leaves it
-   * unmapped.
+   * the measurement no longer holds. It also says a hugging box's own wrapping label fits on one line
+   * under a `max-width` the build cannot read in pixels as the label's room, as Tooltip's popup holds
+   * its text far inside 320px less a density padding, so the label hugs on one line. Undefined for a
+   * box whose wrapping a rule reads or that leaves it unmapped.
    */
   readonly fitsOneLine?: string;
 };
@@ -276,6 +285,13 @@ export type ElementSelector = {
 export type InlineDeclaration = {
   readonly property: string;
   readonly value: string;
+  /**
+   * Why the markup's value is one the component computes from the layout at run time, which `value`
+   * stands for in the kit's cells, as Base UI writes a Tooltip arrow's `left` from the trigger's
+   * centre. The markup check then holds the property present with any value. Undefined for a value
+   * the markup writes as it is.
+   */
+  readonly measured?: string;
 };
 
 /**
@@ -542,10 +558,12 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly previewHeight?: number;
   /**
-   * `visible` for a composite root that paints nothing of its own and holds layers whose shadows
-   * reach past it, as the open Select's popup casts its shadow below and beside the column that holds
-   * it, so the root leaves them unclipped. Undefined for every other root, which clips, as a spread
-   * ring on the root needs (PR2). The build stops on a root that is `visible` and paints.
+   * `visible` for a root whose layers reach past it, as the open Select's popup casts its shadow
+   * below and beside the column that holds it, and a Tooltip's arrow hangs below its popup, so the
+   * root leaves them unclipped. Undefined for every other root, which clips, as a spread ring on the
+   * root needs, since Figma draws a frame's own shadow spread only where the frame clips (PR2). The
+   * build stops on a root that is `visible` and casts a shadow; a fill or a stroke draws the same
+   * either way.
    */
   readonly rootOverflow?: "visible";
   /**
@@ -770,12 +788,9 @@ export function buildComponentSet(
     const behind = box.fill === undefined ? cellCascade.backdrop() : undefined;
     const backdrop = behind && readBackdrop(behind, rootCascade.style, context.variables);
     const mapped = backdrop === undefined ? box : { ...box, fill: backdrop };
-    if (
-      definition.rootOverflow === "visible" &&
-      (mapped.fill !== undefined || mapped.stroke !== undefined || mapped.shadows.length > 0)
-    ) {
+    if (definition.rootOverflow === "visible" && mapped.shadows.length > 0) {
       throw new KitUnmappable({
-        message: `${definition.name}: a root that leaves its layers unclipped must paint nothing, and ${variantKey(definition, cell)} paints`,
+        message: `${definition.name}: a root that leaves its layers unclipped must cast no shadow, and ${variantKey(definition, cell)} casts one`,
       });
     }
     const root: ComponentRootSpec = {

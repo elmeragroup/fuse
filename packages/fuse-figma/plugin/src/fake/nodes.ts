@@ -383,11 +383,6 @@ class FakeSceneNode extends FakeBaseNode {
 
   set constraints(value: Constraints) {
     const state = live(this);
-    if (value.horizontal === "CENTER" || value.vertical === "MAX") {
-      throw new Error(
-        `The fake Figma file does not model ${value.horizontal} across and ${value.vertical} down on ${state.id}.`
-      );
-    }
     write(state, "constraints");
     markOverride(state, "constraints");
     const held = {

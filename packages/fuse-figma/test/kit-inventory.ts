@@ -361,6 +361,16 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "toolbar", name: "Toolbar", variants: 2, previewed: 2 },
     ],
   },
+  {
+    slug: "tooltip",
+    name: "Tooltip",
+    sets: [
+      // The Basic demo's popup.
+      { key: "tooltip-content", name: "Tooltip content", variants: 1, previewed: 1 },
+      // The popup open above its ghost icon Button trigger.
+      { key: "tooltip-open", name: "Tooltip (open)", variants: 1, previewed: 1 },
+    ],
+  },
 ];
 
 /**

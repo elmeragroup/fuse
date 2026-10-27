@@ -181,16 +181,50 @@ export function expectedLabel(box: BoxDefinition, cell: Cell): MarkupLabel {
     : { text: "", attribute: [attribute, characters] };
 }
 
+/** What a measured declaration's value reads as in a comparison, which holds any value the markup writes. */
+const MEASURED = "<measured>";
+
 /**
- * The `style` attribute a root's or a part's markup carries in a cell, as React writes it from a
- * `style` prop: each declaration as `property:value`, in order, joined by `;`. A box without
+ * A `style` attribute's declarations as property and value pairs, in order, as React writes them
+ * (`a:b;c:d`) or a browser serializes them (`a: b; c: d;`), or undefined for no attribute.
+ */
+function declarationsOf(style: string | undefined): readonly (readonly [string, string])[] | undefined {
+  return style
+    ?.split(";")
+    .map((declaration) => declaration.trim())
+    .filter((declaration) => declaration !== "")
+    .map((declaration) => {
+      const colon = declaration.indexOf(":");
+      return [declaration.slice(0, colon).trim(), declaration.slice(colon + 1).trim()] as const;
+    });
+}
+
+/**
+ * Check the `style` attribute a root's or a part's markup carries in a cell against its `styleFor`:
+ * the same declarations in the same order. A declaration whose value the definition marks `measured`,
+ * as Base UI writes a Tooltip arrow's `left` from the layout, holds with any value. A box without
  * `styleFor` carries none.
  */
-function expectedStyle(box: Pick<ComponentDefinition, "styleFor">, cell: Cell): string | undefined {
-  return box
-    .styleFor?.(cell)
-    .map(({ property, value }) => `${property}:${value}`)
-    .join(";");
+function checkStyle(
+  box: Pick<ComponentDefinition, "styleFor">,
+  cell: Cell,
+  element: MarkupElement | undefined,
+  where: string
+): void {
+  const declared = box.styleFor?.(cell);
+  const measured = new Set(
+    (declared ?? [])
+      .filter((declaration) => declaration.measured !== undefined)
+      .map(({ property }) => property)
+  );
+  const markup = declarationsOf(element?.attributes.get("style"))?.map(
+    ([property, value]) => [property, measured.has(property) ? MEASURED : value] as const
+  );
+  expect(markup, where).toEqual(
+    declared?.map(
+      ({ property, value, measured: why }) => [property, why === undefined ? value : MEASURED] as const
+    )
+  );
 }
 
 /**
@@ -519,9 +553,7 @@ function checkRendering(
     // A root whose definition names no `styleFor` makes no claim, as Base UI writes its own inline
     // styles on some roots, a stepper's `user-select: none` among them.
     if (definition.styleFor !== undefined) {
-      expect(root.attributes.get("style"), `${key}: the style on the root`).toEqual(
-        expectedStyle(definition, cell)
-      );
+      checkStyle(definition, cell, root, `${key}: the style on the root`);
     }
     if (stateTaker.attributes.has("data-rac")) {
       const hovered = Object.hasOwn(forcedAttributes, "data-hovered");
@@ -653,9 +685,7 @@ function checkRendering(
       ).toEqual(partLabel);
       expect(markupImage(element), `${key}: the image on ${path}`).toEqual(expectedImage(part));
       checkElementChildren(part, cell, turnedOn, elements, index, `${key}: the element children on ${path}`);
-      expect(element?.attributes.get("style"), `${key}: the style on ${path}`).toEqual(
-        expectedStyle(part, cell)
-      );
+      checkStyle(part, cell, element, `${key}: the style on ${path}`);
       // A part's own facts hold on its element, as a Sidebar separator's `data-orientation` does.
       const holdsOnPart = (variant: string) => part.facts?.get(variant)?.(cell) ?? holdsIn(variant);
       for (const variant of attributeConditions(part, cell)) {

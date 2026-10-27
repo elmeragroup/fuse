@@ -575,6 +575,16 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/toggle-group.js",
     load: async () => (await import("./toggle-group-cell.ts")).toggleGroup,
   },
+  {
+    set: "tooltip-content",
+    entry: "dist/tooltip.js",
+    module: { url: new URL("tooltip-cell.ts", import.meta.url), name: "tooltipContent" },
+  },
+  {
+    set: "tooltip-open",
+    entry: "dist/tooltip.js",
+    module: { url: new URL("tooltip-cell.ts", import.meta.url), name: "tooltipOpen" },
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

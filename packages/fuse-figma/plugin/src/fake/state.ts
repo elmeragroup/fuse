@@ -124,11 +124,11 @@ export type NodeState = {
   opacity: number;
   constraints: Constraints;
   /**
-   * What MAX and CENTER keep of an absolute layer's place (rule 47): the pixels from its end to its
-   * parent's, and from its parent's centre down to its own, from which `x` and `y` read. Undefined on
-   * an axis whose constraint keeps `x` or `y` as written.
+   * What MAX and CENTER keep of an absolute layer's place on each axis (rules 47, 59): under MAX the
+   * pixels from its end to its parent's, under CENTER the pixels from its parent's centre to its own,
+   * from which `x` or `y` reads. Undefined on an axis whose constraint keeps `x` or `y` as written.
    */
-  anchors: { end: number | undefined; centre: number | undefined };
+  anchors: { horizontal: number | undefined; vertical: number | undefined };
   fills: readonly Paint[];
   strokes: readonly Paint[];
   strokeWeights: Sides;

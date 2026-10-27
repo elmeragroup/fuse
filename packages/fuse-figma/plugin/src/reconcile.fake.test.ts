@@ -883,6 +883,74 @@ describe("Number field's steppers on an applied file", () => {
   });
 });
 
+// Unit under test: the Tooltip content set's arrow as Apply writes it. Oracle: Chromium on 2026-10-27
+// centred Tooltip's turned arrow at (W/2, H - 2) in a W × H popup, at 92 × 28 dense and 100 × 32
+// comfortable, and Figma's transform at a turn r is [[cos r, sin r, x], [-sin r, cos r, y]] (PQ), so
+// the centre of the 10px square is its origin moved by that transform's image of (5, 5). The arrow's
+// constraints keep the centre as the popup's size changes with the density (fake rule 59, unprobed).
+describe("Tooltip's arrow on an applied file", () => {
+  const TOOLTIP_PAGE = pageKey(inventoryPage("tooltip"));
+
+  /** The arrow's centre, and its parent's centre across and bottom edge, as the transform places them. */
+  function arrowPlace(root: ComponentNode | InstanceNode) {
+    const arrow = childNamed(root, "FRAME", "arrow");
+    const radians = (arrow.rotation * Math.PI) / 180;
+    const half = arrow.width / 2;
+    const centre = {
+      x: arrow.x + Math.cos(radians) * half + Math.sin(radians) * half,
+      y: arrow.y - Math.sin(radians) * half + Math.cos(radians) * half,
+    };
+    return {
+      rotation: arrow.rotation,
+      constraints: arrow.constraints,
+      positioning: arrow.layoutPositioning,
+      fromCentre: Math.round((centre.x - root.width / 2) * 1000) / 1000,
+      aboveBottom: Math.round((root.height - centre.y) * 1000) / 1000,
+    };
+  }
+
+  it("turns the arrow -45 and centres it on the popup, 2px above its bottom edge (W5 U9)", async () => {
+    const page = await kitPage(await appliedFile(), TOOLTIP_PAGE);
+    const main = setOn(page, "Tooltip content").children[0];
+    expect(main?.type === "COMPONENT" ? arrowPlace(main) : undefined).toEqual({
+      rotation: -45,
+      constraints: { horizontal: "CENTER", vertical: "MAX" },
+      positioning: "ABSOLUTE",
+      fromCentre: 0,
+      aboveBottom: 2,
+    });
+  });
+
+  // The fake lays out no hugging main, so the popup takes Chromium's sizes by a resize, which moves
+  // an absolute layer by its constraints (fake rules 9, 59), as a density switch resizes it in Figma.
+  it("keeps the arrow's centre as the popup takes its dense and comfortable sizes, in the main and an instance", async () => {
+    const page = await kitPage(await appliedFile(), TOOLTIP_PAGE);
+    const main = setOn(page, "Tooltip content").children[0];
+    expect(main?.type).toBe("COMPONENT");
+    if (main?.type !== "COMPONENT") {
+      return;
+    }
+    const instance = main.createInstance();
+    const at = (width: number, height: number) => {
+      main.resize(width, height);
+      return [arrowPlace(main), arrowPlace(instance)].map(({ fromCentre, aboveBottom }) => [
+        fromCentre,
+        aboveBottom,
+      ]);
+    };
+    expect([at(92, 28), at(100, 32)]).toEqual([
+      [
+        [0, 2],
+        [0, 2],
+      ],
+      [
+        [0, 2],
+        [0, 2],
+      ],
+    ]);
+  });
+});
+
 describe("a file whose label font the machine cannot load", () => {
   it("fails Plan, and stops Apply before any write", async () => {
     const file = syncedFile(collections, [{ family: "Roboto", style: "Medium" }]);

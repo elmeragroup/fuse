@@ -286,7 +286,8 @@ export class InstanceParts {
     const root: ComponentRootSpec = {
       name: part.of.slot,
       ...mapBox(part.of, cascade, scope, room),
-      clips: true,
+      // The inner root clips in place as its own set draws it.
+      clips: part.of.rootOverflow !== "visible",
     };
     const diff = diffInstance(root, variant.root);
     visit.diffs.push(diff);

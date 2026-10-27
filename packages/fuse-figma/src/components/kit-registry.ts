@@ -87,6 +87,7 @@ import { TEXTAREA } from "./textarea-kit";
 import { TOGGLE_GROUP } from "./toggle-group-kit";
 import { ICON_TOGGLE, TOGGLE } from "./toggle-kit";
 import { TOOLBAR } from "./toolbar-kit";
+import { TOOLTIP_CONTENT, TOOLTIP_OPEN } from "./tooltip-kit";
 
 /**
  * A page of the kit: one component and its close variants, such as Button and Icon button.
@@ -138,6 +139,9 @@ const INPUT_PAGE: KitPage = { slug: "input", name: "Input" };
 
 /** The page of Textarea and the labelled Textarea field. */
 const TEXTAREA_PAGE: KitPage = { slug: "textarea", name: "Textarea" };
+
+/** The page of Tooltip. */
+const TOOLTIP_PAGE: KitPage = { slug: "tooltip", name: "Tooltip" };
 
 /** The page of Toolbar. */
 const TOOLBAR_PAGE: KitPage = { slug: "toolbar", name: "Toolbar" };
@@ -468,4 +472,6 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(FILE_UPLOAD_DROPZONE.axes),
   },
   { definition: TOOLBAR, page: TOOLBAR_PAGE, previewCells: matrixCells(TOOLBAR.axes) },
+  { definition: TOOLTIP_CONTENT, page: TOOLTIP_PAGE, previewCells: matrixCells(TOOLTIP_CONTENT.axes) },
+  { definition: TOOLTIP_OPEN, page: TOOLTIP_PAGE, previewCells: matrixCells(TOOLTIP_OPEN.axes) },
 ];

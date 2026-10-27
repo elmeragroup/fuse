@@ -230,7 +230,7 @@ export function createNode(file: FileState, type: NodeType, name: string, id?: s
     rotation: 0,
     opacity: 1,
     constraints: { horizontal: "MIN", vertical: "MIN" },
-    anchors: { end: undefined, centre: undefined },
+    anchors: { horizontal: undefined, vertical: undefined },
     fills: type === "TEXT" ? [BLACK] : type === "VECTOR" || type === "INSTANCE" ? [] : [WHITE],
     strokes: [],
     strokeWeights: { top: 1, right: 1, bottom: 1, left: 1 },
