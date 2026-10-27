@@ -129,6 +129,11 @@ export type NodeState = {
    * from which `x` or `y` reads. Undefined on an axis whose constraint keeps `x` or `y` as written.
    */
   anchors: { horizontal: number | undefined; vertical: number | undefined };
+  /**
+   * The layer's length and its parent's on each axis when its anchor was written, from which a CENTER
+   * read tells whether the shift since is a whole pixel (rule 59, W5-P11b).
+   */
+  anchoredAt: { horizontal: Lengths | undefined; vertical: Lengths | undefined };
   fills: readonly Paint[];
   strokes: readonly Paint[];
   strokeWeights: Sides;

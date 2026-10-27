@@ -8,6 +8,8 @@
  * - The group is `h-(--control-h-md)`, 36px dense and 44px comfortable, with a 1px border. Each stepper
  *   is `w-[max(var(--control-h-xs),24px)]` and `h-full`, 24×34 dense and 32×42 comfortable, with a 1px
  *   start border, `border-0 border-s`. The input fills the room the denomination and steppers leave.
+ *   The standalone stepper's `h-full` takes that field box's content height, `control-h-md` less the
+ *   two 1px borders, which `field-box-content-h` holds in each density.
  * - The field's parts sit 4px apart, FieldFrame's part spacing.
  */
 import { beforeAll, describe, expect, it } from "vitest";
@@ -45,7 +47,7 @@ describe("the Number field stepper component set", () => {
     // Centred both ways and unpadded, so Figma centres the glyph in the content box the left stroke
     // leaves, at x 4.5 dense and 8.5 comfortable, as CSS does (W5-P7).
     expect(stepper("rest")).toMatchObject({
-      sizing: { horizontal: fixed(density("control-h-xs")), vertical: fixed(literal(34)) },
+      sizing: { horizontal: fixed(density("control-h-xs")), vertical: fixed(density("field-box-content-h")) },
       primaryAlign: "CENTER",
       counterAlign: "CENTER",
       paddingLeft: literal(0),

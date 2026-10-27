@@ -1029,8 +1029,8 @@ describe("an empty part", () => {
   });
   // A part whose only content is its own text, as `Command.Empty` holds its message only while no
   // row matches, holds nothing in a cell that hides the text.
-  const message = (shown: boolean): PartDefinition => ({
-    ...dot("p-0 font-sans text-[14px]/[20px] text-[#000000]"),
+  const message = (shown: boolean, classes = ""): PartDefinition => ({
+    ...dot(`p-0 font-sans text-[14px]/[20px] text-[#000000] ${classes}`),
     key: "list",
     slot: "list",
     label: {
@@ -1041,14 +1041,25 @@ describe("an empty part", () => {
       shownIn: () => shown,
     },
   });
-  const withMessage = (shown: boolean) =>
+  const withMessage = (shown: boolean, classes = "") =>
     chip("flex flex-col w-[200px] bg-[#ffffff]", {
-      parts: [{ ...dot("h-[20px]"), key: "header", slot: "header" }, message(shown)],
+      parts: [{ ...dot("h-[20px]"), key: "header", slot: "header" }, message(shown, classes)],
     });
 
   it("draws no layer for a part whose own text shows in no cell here", async () => {
     const { variant } = await buildFixture(withMessage(false), { variables: SYNCED });
     expect(layerNames(variant?.root)).toEqual(["header"]);
+  });
+
+  // Oracle: CSS Backgrounds 3 §4, where `border` sets a 1px width on every side, so the empty box is
+  // 200 × 2 and paints its red edges, and `border-x` paints its 1px inline edges, whichever property
+  // sets the width.
+  it.each([
+    ["the `border` shorthand", "border border-solid border-[#ff0000]"],
+    ["a logical inline width", "border-x border-solid border-[#ff0000]"],
+  ])("draws a part whose own text is hidden but that paints %s", async (_why, classes) => {
+    const { variant } = await buildFixture(withMessage(false, classes), { variables: SYNCED });
+    expect(layerNames(variant?.root)).toEqual(["header", "list"]);
   });
 
   it("draws a part whose own text shows", async () => {

@@ -11,6 +11,12 @@ import type { ModeView, VariableIndex, Viewport } from "./css-values";
 import type { AxisSpec, BooleanPropertySpec, ComponentSetSpec, SwapPropertySpec } from "./kit-spec";
 import type { CompiledUtilities } from "./utility-css";
 
+/**
+ * A preview length: its pixels in the file's default mode, and its CSS length where it changes by
+ * mode, which a whole `100%` then binds as that length binds.
+ */
+export type PreviewLength = { readonly pixels: number; readonly css?: string | undefined };
+
 /** One cell of a variant matrix: a value for each axis. */
 export type Cell = Readonly<Record<string, string>>;
 
@@ -534,9 +540,12 @@ export type ComponentDefinition = BoxDefinition & {
   /**
    * The height in pixels the root's containing block gives it, which a root's percentage height
    * takes, as the Sidebar demo frame's `h-[28rem]` gives the container's `h-full`. Without it, a
-   * root's percentage height stays unmapped. The compare renderer draws the same block around it.
+   * root's percentage height stays unmapped. The compare renderer draws the same block around it. A
+   * height that changes by density names its CSS length beside its dense pixels, as a Number field
+   * stepper's field box content height, `calc(var(--control-h-md) - 2px)`, so the root's `100%` binds
+   * what that length binds.
    */
-  readonly previewHeight?: number;
+  readonly previewHeight?: PreviewLength;
   /**
    * The viewport a `position: fixed` root sits in, in pixels, as a Dialog's popup, a Command palette
    * and an overlay's scrim sit in the browser window. A fixed box's containing block is the viewport

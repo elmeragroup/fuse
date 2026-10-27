@@ -462,6 +462,15 @@ const FORMULA_VARIABLES = [
       "The padding on the outer side of an Input group addon that holds a button, such as the caret of a Combobox: control-px-icon-md less the 4px that the negative margin of the addon takes back. Figma variables cannot compute, so the sync writes the result for each density.",
   },
   {
+    name: "field-box-content-h",
+    reads: "density",
+    formula: "calc(var(--control-h-md) - 2px)",
+    length: (metric) => metric("control-h-md") - 2,
+    scopes: ["WIDTH_HEIGHT"],
+    description:
+      "The height inside the 1px borders of the md field box, control-h-md less 2px, which the h-full of a Number field stepper fills. Figma variables cannot compute, so the sync writes the result for each density.",
+  },
+  {
     name: "command-text-px",
     reads: "density",
     formula: "calc(var(--surface-gap-sm) + var(--row-px))",

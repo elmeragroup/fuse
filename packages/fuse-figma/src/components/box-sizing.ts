@@ -137,7 +137,10 @@ export const BLOCK_LEVEL: ReadonlySet<string> = new Set(["block", "list-item", "
  * @returns The root's room.
  */
 export function rootRoom(
-  preview: { readonly width: number | undefined; readonly height: number | undefined },
+  preview: {
+    readonly width: number | undefined;
+    readonly height: { readonly pixels: number; readonly css?: string | undefined } | undefined;
+  },
   style: LayerStyle,
   variables: VariableIndex,
   viewport: Viewport | undefined
@@ -166,7 +169,9 @@ export function rootRoom(
     },
     vertical: {
       percent:
-        previewHeight === undefined ? NO_BASIS : { kind: "length", value: previewHeight, of: "the preview" },
+        previewHeight === undefined
+          ? NO_BASIS
+          : { kind: "length", value: previewHeight.pixels, of: "the preview", css: previewHeight.css },
       auto: HUG,
       siblings: [],
       length: undefined,

@@ -97,7 +97,9 @@ export type FixedPlace = { readonly viewport: Viewport; readonly at: FixedAt };
  * centres the popup, or the parent is a flex column that centres its layers across and starts them at
  * its top, the part is its first layer, and the part's `top`, read in the viewport, equals the
  * column's top padding, as Command dialog's open example pads its top by the palette's
- * `max(1rem, 12dvh)`. The inner root then takes the viewport as its containing block in place, as its
+ * `max(1rem, 12dvh)`. The composite pads nothing on an axis it centres the part on, since CSS centres
+ * a fixed box in the viewport whatever the composite pads, while a Figma frame centres its layers in
+ * the room its padding leaves. The inner root then takes the viewport as its containing block in place, as its
  * own set does, and `placeCentredFixed` reads its place. Undefined for any other part.
  *
  * @param part - The instance part's viewports and style in place.
@@ -123,12 +125,20 @@ export function fixedPlace(
   ) {
     return undefined;
   }
+  // CSS centres the fixed box in the viewport whatever the composite pads, while a Figma frame
+  // centres its layers in the room its padding leaves, so a centred axis must pad nothing.
+  const unpadded = (sides: readonly string[]) =>
+    sides.every((side) => evaluateLength(parent.resolved(side) ?? "0px") === 0);
+  const across = unpadded(["padding-left", "padding-right"]);
   if (layout.primaryAlign === "CENTER" && layout.counterAlign === "CENTER") {
-    return { viewport: own, at: "centre" };
+    return across && unpadded(["padding-top", "padding-bottom"])
+      ? { viewport: own, at: "centre" }
+      : undefined;
   }
   const top = evaluateLength(inViewport(style.resolved("top") ?? "", own));
   const padding = evaluateLength(parent.resolved("padding-top") ?? "0px");
   const startsAtTop =
+    across &&
     layout.direction === "VERTICAL" &&
     layout.primaryAlign === "MIN" &&
     layout.counterAlign === "CENTER" &&

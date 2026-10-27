@@ -51,15 +51,15 @@ describe("fuse-figma sync", () => {
       // checkbox and field box corners and 1 inner corner, which make 132, plus the Auto, Dense
       // and Comfortable values behind each of the 9 inner corners in `Fuse density`.
       assert.strictEqual(figma.variableNames("Fuse tokens").length, 132 + 9 * 3);
-      // Those 159 per scheme, plus 39 density metrics and 6 formulas over them.
-      assert.strictEqual(figma.variableNames("Fuse variant").length, 318 + 39 + 6);
+      // Those 159 per scheme, plus 39 density metrics and 7 formulas over them.
+      assert.strictEqual(figma.variableNames("Fuse variant").length, 318 + 39 + 7);
       // Per scheme and variant, then per scheme, variant and segment.
       assert.strictEqual(figma.variableNames("Fuse segment").length, 636);
       assert.strictEqual(figma.variableNames("Fuse brand").length, 1272);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 25);
-      // 26 control metrics, 4 row, 2 label, 3 surface padding and 4 surface gap metrics, 6
+      // 26 control metrics, 4 row, 2 label, 3 surface padding and 4 surface gap metrics, 7
       // formulas over metrics and 9 inner corners, which read tokens and metrics.
-      assert.strictEqual(figma.variableNames("Fuse density").length, 39 + 6 + 9);
+      assert.strictEqual(figma.variableNames("Fuse density").length, 39 + 7 + 9);
       assert.strictEqual(writes(figma), 1);
       assert.include(yield* output, "reading it back matches the tokens");
     })
@@ -549,10 +549,10 @@ describe("fuse-figma check", () => {
       assert.include(printed, "Fuse brand: create variable ×1272");
       assert.notInclude(printed, "Fuse brand: create variable light/external/private/primary");
       assert.include(printed, "Fuse segment: create variable ×636");
-      assert.include(printed, "Fuse variant: create variable ×363");
+      assert.include(printed, "Fuse variant: create variable ×364");
       assert.include(printed, "Fuse density: create mode Auto");
       assert.include(printed, "Fuse density: create mode Comfortable");
-      assert.include(printed, "Fuse density: create variable ×54");
+      assert.include(printed, "Fuse density: create variable ×55");
     })
   );
 

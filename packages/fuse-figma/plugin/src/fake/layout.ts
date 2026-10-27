@@ -206,8 +206,9 @@
  *    were written before the turn or after it, and it followed a density switch from 32 to 36 tall and
  *    text-driven widths of 101, 161 and 229, in the main and in an instance with no overrides (W5-P11,
  *    W5-P11b). Figma keeps a CENTER shift whole: an instance narrowed by an odd number of pixels put
- *    the centre 0.5px off (42 wide, 20.5). The fake keeps the exact half, since no kit cell resizes such
- *    an instance by an odd width.
+ *    the centre 0.5px off (229 to 42 wide, 20.5 where the exact half is 21). That one reading cannot
+ *    tell which way Figma rounds, so the fake refuses a read whose CENTER shift since the place was
+ *    written is half a pixel, rather than approve a place the real file does not keep.
  */
 
 import { hiddenByProperty, markOverride, noteOverride } from "./overrides.ts";
@@ -342,11 +343,13 @@ function anchoredOn(state: NodeState, axis: Axis): "end" | "centre" | undefined 
  * 221 with no override (N11).
  */
 function anchorOf(state: NodeState, axis: Axis): number | undefined {
+  return anchorSource(state, axis).anchors[axis === "HORIZONTAL" ? "horizontal" : "vertical"];
+}
+
+/** The layer whose written place holds the anchor {@link anchorOf} reads: the layer, or its source. */
+function anchorSource(state: NodeState, axis: Axis): NodeState {
   const written = state.overridden.has(axis === "HORIZONTAL" ? "x" : "y");
-  if (state.mirrorOf !== undefined && !written) {
-    return anchorOf(state.mirrorOf, axis);
-  }
-  return axis === "HORIZONTAL" ? state.anchors.horizontal : state.anchors.vertical;
+  return state.mirrorOf !== undefined && !written ? anchorSource(state.mirrorOf, axis) : state;
 }
 
 /** A layer's length and its parent's on an axis, each as a read gives it (rules 32, 47). */
@@ -370,7 +373,30 @@ export function anchoredPlace(state: NodeState, axis: Axis): number | undefined 
     return undefined;
   }
   const { own, outer } = lengthsOn(state, parent, axis);
+  if (kind === "centre") {
+    refuseHalfShift(anchorSource(state, axis).anchoredAt[axis === "HORIZONTAL" ? "horizontal" : "vertical"], {
+      own,
+      outer,
+    });
+  }
   return f32(kind === "end" ? outer - anchor - own : outer / 2 + anchor - own / 2);
+}
+
+/**
+ * Refuse a CENTER place whose shift since its anchor was written is no whole pixel: the real file kept
+ * a CENTER shift whole and put the centre 0.5px off when an instance narrowed by an odd 187px, and one
+ * reading cannot tell which way Figma rounds (rule 59, W5-P11b).
+ */
+function refuseHalfShift(at: Lengths | undefined, now: Lengths): void {
+  if (at === undefined) {
+    return;
+  }
+  const shift = (now.outer - at.outer - (now.own - at.own)) / 2;
+  if (!Number.isInteger(shift)) {
+    throw new Error(
+      `The fake Figma file does not model a CENTER constraint shifting a layer ${String(shift)}px, half a pixel: Figma keeps the shift whole and W5-P11b does not pin which way it rounds.`
+    );
+  }
 }
 
 /** Write a layer's place on an axis: an anchor where its constraint keeps one (rules 47, 59), else `x` or `y`. */
@@ -386,9 +412,11 @@ export function place(state: NodeState, axis: Axis, value: number): void {
         : value + lengths.own / 2 - lengths.outer / 2;
   if (axis === "HORIZONTAL") {
     state.anchors.horizontal = anchor;
+    state.anchoredAt.horizontal = lengths;
     state.x = value;
   } else {
     state.anchors.vertical = anchor;
+    state.anchoredAt.vertical = lengths;
     state.y = value;
   }
 }

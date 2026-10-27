@@ -62,8 +62,11 @@ export const NUMBER_FIELD_DENOMINATION_PROPERTY = "Denomination";
 
 const frame = fieldFrameVariants();
 
-/** A stepper's height in a dense field: the md control height, 36px, less the group's 1px borders. */
-const STEPPER_PREVIEW_HEIGHT = 34;
+/**
+ * A stepper's height in its field: the md control height less the group's 1px borders, 34px dense and
+ * 42px comfortable, which `field-box-content-h` holds.
+ */
+const STEPPER_PREVIEW_HEIGHT = { css: "calc(var(--control-h-md) - 2px)", pixels: 34 } as const;
 
 const slots = (cell: Cell) =>
   numberFieldVariants({ isMuted: cell.state === "disabled" || cell.state === "readonly" });

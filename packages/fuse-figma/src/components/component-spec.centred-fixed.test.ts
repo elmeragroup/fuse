@@ -63,6 +63,13 @@ describe("a fixed popup instance its composite centres in the viewport", () => {
     const [, built] = await buildFixtures([POPUP, scrim("items-start justify-start")]);
     expect(popupRows(built?.coverage ?? [], "position")).toEqual([["unmapped"]]);
   });
+
+  // CSS centres the fixed popup in the viewport whatever the scrim pads, while a Figma frame centres
+  // its layers in the room its padding leaves, which would move the popup 20px down here.
+  it("leaves the place unmapped where the composite pads around the centred popup", async () => {
+    const [, built] = await buildFixtures([POPUP, scrim("items-center justify-center pt-[40px]")]);
+    expect(popupRows(built?.coverage ?? [], "position")).toEqual([["unmapped"]]);
+  });
 });
 
 /**
