@@ -88,6 +88,8 @@ const NO_FIGMA_FORM = new Map([
   // `fill` paints SVG shapes (SVG 2 §13.2), as a Tooltip arrow's `fill-foreground` would paint the
   // `<svg>` Base UI's arrow holds where a consumer renders one; the kit's arrow is a `<div>`.
   ["fill", "`fill` paints only an SVG shape, and no layer that reads it here draws one"],
+  // `isolate` starts a stacking context (CSS Compositing 1 §3.3), as the overlay scrim's does.
+  ["isolation", "a stacking context orders the box's own layers, which Figma draws in layer order already"],
   // The plugin typings expose a text layer's `openTypeFeatures` as read-only, with no setter.
   ["font-variant-numeric", "the plugin API can read a text layer's OpenType features but not set them"],
 ]);

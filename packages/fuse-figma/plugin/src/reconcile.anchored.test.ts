@@ -257,8 +257,8 @@ function cornerOf(variant: ComponentNode | InstanceNode, badge: InstanceNode): r
 
 // Oracle: CSS 2.1 §10.3.7 and §10.6.4, where `top` keeps the box's top that far below its containing
 // block's padding edge whatever the block's height, which MIN keeps, and the fake's rules 9 and 47:
-// MIN keeps `y` as written, and MAX keeps the end inset as the parent resizes (N11). No probe has read
-// MAX × MIN yet (U10 "Probe needed").
+// MIN keeps `y` as written, and MAX keeps the end inset as the parent resizes (N11), as a real file kept
+// a close instance at MAX × MIN through parent and instance resizes (W5-P12).
 describe("a variant that holds an instance at MAX × MIN", () => {
   it("places the instance in one Apply, and the next Plan lists nothing", async () => {
     const file = densityFile();

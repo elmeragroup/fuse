@@ -157,6 +157,9 @@ function describeHeldPaint(paint: Paint): string {
 }
 
 function describeHeldEffect(effect: Effect): string {
+  if (effect.type === "BACKGROUND_BLUR") {
+    return `background blur ${effect.radius}`;
+  }
   if (effect.type !== "DROP_SHADOW") {
     return effect.type;
   }
@@ -564,32 +567,56 @@ function describeShadow(spec: ShadowSpec): string {
   return `${describeColor(spec.color)} ${spec.offsetX} ${spec.offsetY} ${describeNumber(spec.radius)} ${describeNumber(spec.spread)}`;
 }
 
+/** A background blur of a radius, as the plugin writes it after a node's shadows. */
+function backgroundBlur(run: Run, node: SceneNode, radius: NumberSpec): BlurEffect {
+  return { type: "BACKGROUND_BLUR", blurType: "NORMAL", radius: lengthIn(run, radius, node), visible: true };
+}
+
+function blurMatches(run: Run, node: SceneNode, effect: Effect, radius: NumberSpec): boolean {
+  return (
+    effect.type === "BACKGROUND_BLUR" &&
+    effect.visible &&
+    effect.blurType === "NORMAL" &&
+    near(effect.radius, lengthIn(run, radius, node))
+  );
+}
+
 /**
- * Plan a node's effects as the spec's drop shadows.
+ * Plan a node's effects as the spec's drop shadows, then the background blur it draws behind it,
+ * where it draws one, as an overlay scrim blurs the page.
  *
  * @param run - The run.
  * @param node - The node.
  * @param label - The node's label, for change lines.
  * @param specs - The shadows the spec asks for, in order.
+ * @param blur - The radius of the background blur the spec asks for, or undefined for none.
  */
 export function planShadows(
   run: Run,
   node: SceneNode & BlendMixin,
   label: string,
-  specs: readonly ShadowSpec[]
+  specs: readonly ShadowSpec[],
+  blur: NumberSpec | undefined
 ): void {
   const current = node.effects;
+  const blurs = blur === undefined ? 0 : 1;
+  const trailing = current[specs.length];
   const same =
-    current.length === specs.length &&
+    current.length === specs.length + blurs &&
     specs.every((spec, index) => {
       const effect = current[index];
       return effect !== undefined && shadowMatches(run, node, effect, spec);
-    });
+    }) &&
+    (blur === undefined || (trailing !== undefined && blurMatches(run, node, trailing, blur)));
   if (same) {
     return;
   }
-  const description = specs.length === 0 ? "none" : specs.map(describeShadow).join(", ");
-  const effects = specs.map((spec) => dropShadow(run, node, spec));
+  const shadows = specs.length === 0 ? "none" : specs.map(describeShadow).join(", ");
+  const description = blur === undefined ? shadows : `${shadows}, background blur ${describeNumber(blur)}`;
+  const effects: Effect[] = [
+    ...specs.map((spec) => dropShadow(run, node, spec)),
+    ...(blur === undefined ? [] : [backgroundBlur(run, node, blur)]),
+  ];
   const held = describeHeld(current, describeHeldEffect);
   change(run.plan, label, `shadows → ${description} (holds ${held})`, () => {
     node.effects = effects;

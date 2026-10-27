@@ -604,6 +604,11 @@ export type BoxSpec = {
    * reverse of `box-shadow`'s, whose first shadow CSS paints on top.
    */
   readonly shadows: readonly ShadowSpec[];
+  /**
+   * The radius of the background blur Figma draws behind the box, as CSS's `backdrop-filter: blur()`
+   * blurs what lies behind it, absent for a box that blurs nothing behind it.
+   */
+  readonly backgroundBlur?: NumberSpec;
   /** The layer opacity, from 0 to 1. */
   readonly opacity: number;
   /**

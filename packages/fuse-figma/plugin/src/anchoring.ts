@@ -4,8 +4,11 @@
  * parent's top, as an overlay's corner close sits in its popup's top right. On 2026-10-25 a real file
  * kept such an instance's end inset as the instance widened with its own text and as its parent
  * widened, and kept its centre's offset from the parent's centre through height changes and density
- * switches, in the main and in an outer instance, with MAX across and CENTER down (N11). MIN down keeps
- * `y` as written, which no probe has read beside MAX across yet. So the plugin writes the positioning
+ * switches, in the main and in an outer instance, with MAX across and CENTER down (N11). On 2026-10-27
+ * a real file kept a 32px close instance at MAX across and MIN down 16px from a 400px popup's end and
+ * 16px below its top as the popup's text and density grew it, as the popup widened to 480 and as the
+ * close itself widened, and an instance of the popup resized to 300 put it at 252, the close listing
+ * only `layoutPositioning` as overridden (W5-P12). So the plugin writes the positioning
  * and the constraints, places the instance once, from its size and its parent's as they settle, and
  * compares the end inset and the centre offset or top inset, never `x` and `y`, which follow sizes the
  * run does not set.

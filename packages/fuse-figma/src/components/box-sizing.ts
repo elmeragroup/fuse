@@ -12,12 +12,14 @@ import {
   affineLength,
   describeNumber,
   evaluateLength,
+  evaluateLengthOf,
   evaluatePercentage,
+  inViewport,
   normalizeCss,
   readNumber,
   readSize,
 } from "./css-values";
-import type { PercentBasis, VariableIndex } from "./css-values";
+import type { PercentBasis, VariableIndex, Viewport } from "./css-values";
 import { outOfLayout, strokeRoom } from "./kit-spec";
 import type {
   BoxSpec,
@@ -130,13 +132,19 @@ export const BLOCK_LEVEL: ReadonlySet<string> = new Set(["block", "list-item", "
  * @param style - The root's style, whose `display` says whether the root is block-level and whose
  *   `position` whether it sits in its container's flow.
  * @param variables - The synced variables a margin can read, with the values they hold in each mode.
+ * @param viewport - The viewport the definition declares, which a fixed root's percentages, `dvh`
+ *   and `dvw` take, and whose size its opposing zero insets give it, or undefined for none.
  * @returns The root's room.
  */
 export function rootRoom(
   preview: { readonly width: number | undefined; readonly height: number | undefined },
   style: LayerStyle,
-  variables: VariableIndex
+  variables: VariableIndex,
+  viewport: Viewport | undefined
 ): Room {
+  if (viewport !== undefined && normalizeCss(style.raw("position") ?? "") === "fixed") {
+    return viewportRoom(style, viewport);
+  }
   const { width: previewWidth, height: previewHeight } = preview;
   const blockLevel = BLOCK_LEVEL.has(normalizeCss(style.raw("display") ?? ""));
   const fills = previewWidth !== undefined && blockLevel;
@@ -165,6 +173,36 @@ export function rootRoom(
     },
     widthCap: NO_CAP,
     unbounded: inFlow && previewWidth === undefined,
+  };
+}
+
+/**
+ * The room of a fixed root in a declared viewport, its containing block (CSS 2.1 §10.1): its
+ * percentages take the viewport's width and height, and its `dvh` and `dvw` the viewport. Where both
+ * insets of an axis are literal lengths and the root sets no size there, they size it to the viewport
+ * less the insets (CSS 2.1 §10.3.7, §10.6.4), as a scrim's `inset-0` fills the window; otherwise the
+ * root shrinks to fit, as an absolute box does.
+ */
+function viewportRoom(style: LayerStyle, viewport: Viewport): Room {
+  const axis = (length: number, size: string, insets: readonly [string, string]): AxisRoom => {
+    const offsets = insets.map((property) => evaluateLength(style.resolved(property) ?? ""));
+    const automatic = normalizeCss(style.resolved(size) ?? "auto") === "auto";
+    const [start, end] = offsets;
+    return {
+      percent: { kind: "length", value: length, of: "the viewport", viewport },
+      auto:
+        automatic && start !== undefined && end !== undefined
+          ? { kind: "fixed", length: { kind: "literal", value: length - start - end } }
+          : HUG,
+      siblings: [],
+      length: undefined,
+    };
+  };
+  return {
+    horizontal: axis(viewport.width, "width", ["left", "right"]),
+    vertical: axis(viewport.height, "height", ["top", "bottom"]),
+    widthCap: NO_CAP,
+    unbounded: false,
   };
 }
 
@@ -1178,6 +1216,21 @@ function capsAtParent(
 }
 
 /**
+ * Read a `min-*` or `max-*` as a length: a synced variable or a literal, or, against a declared
+ * viewport, a `calc()`, `min()` or `max()` that mixes percentages with lengths, its `dvh` and `dvw`
+ * read against that viewport, as Dialog's `max-h-[calc(100%-2rem)]` resolves in
+ * its viewport.
+ */
+function readLimit(value: string, variables: VariableIndex, percent: PercentBasis): NumberSpec | undefined {
+  const own = readNumber(value, variables);
+  if (own !== undefined || percent.kind !== "length" || percent.viewport === undefined) {
+    return own;
+  }
+  const resolved = evaluateLengthOf(inViewport(value, percent.viewport), percent.value);
+  return resolved === undefined ? undefined : { kind: "literal", value: resolved };
+}
+
+/**
  * Read one axis: its length through {@link readLength}, an unset length as the room gives it, and
  * its limits as {@link resolveLimits} decides. Each read fills the sizing of the layers inside too,
  * as `inside` names it. Where the parent is at least as long as each layer it holds (`roomy`), a
@@ -1234,7 +1287,7 @@ function readAxis(
     const value = reader.resolved(property);
     return value === undefined || (side === "max" && inertMaximum)
       ? []
-      : [{ side, property, value: readNumber(value, variables) }];
+      : [{ side, property, value: readLimit(value, variables, room.percent) }];
   });
   const limited = resolveLimits(size, bounds, axis);
   // Each note was decided from the value the read substitutes, so the read only records it.

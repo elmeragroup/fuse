@@ -26,7 +26,7 @@ import {
   splitTopLevel,
   sumAffine,
 } from "./css-values";
-import type { AffineLength, VariableIndex } from "./css-values";
+import type { AffineLength, VariableIndex, Viewport } from "./css-values";
 import { fixedLength, NO_LIMITS, strokeRoom, ZERO } from "./kit-spec";
 import type {
   AbsoluteSpec,
@@ -234,17 +234,20 @@ function alignAlongRow(parent: ParentBox, parts: readonly PlacedPart[]): Primary
  *   takes the preview width.
  * @param variables - The synced variables a margin can read, with the values they hold in each mode.
  * @param layers - The root's layers, as mapped.
+ * @param viewport - The viewport the definition declares for a fixed root, or undefined for none.
  */
 export function placeRoot(
   style: LayerStyle,
   room: Room,
   variables: VariableIndex,
-  layers: readonly ChildLayerSpec[]
+  layers: readonly ChildLayerSpec[],
+  viewport: Viewport | undefined
 ): void {
   const width = normalizeCss(style.resolved("width") ?? "auto");
-  const widthFromContainer = room.horizontal.auto.kind !== "hug" && width === "auto";
+  const fixedInViewport = viewport !== undefined && normalizeCss(style.raw("position") ?? "") === "fixed";
+  const widthFromContainer = !fixedInViewport && room.horizontal.auto.kind !== "hug" && width === "auto";
   if (outOfFlow(style)) {
-    placeAbsoluteRoot(style, widthFromContainer);
+    placeAbsoluteRoot(style, widthFromContainer, fixedInViewport);
   } else {
     readPosition(style, "other", anchoredConstraints(layers));
   }
@@ -335,10 +338,14 @@ const INSET_AXES = [
  * root from its containing block (CSS 2.1 §10.3.7, §10.6.4), so they and the position stay unmapped.
  *
  * @param style - The root's style.
+ * A fixed root in a declared viewport is the exception: there its opposing insets size it to the
+ * viewport less the insets, as `viewportRoom` in `box-sizing.ts` reads them, so they read as its size.
+ *
  * @param widthFromContainer - Whether the root's width is the preview width, which an absolute box
  *   with no width of its own does not take.
+ * @param fixedInViewport - Whether the root is fixed in a viewport its definition declares.
  */
-function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean): void {
+function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean, fixedInViewport: boolean): void {
   if (widthFromContainer) {
     style.mark(
       "position",
@@ -350,7 +357,25 @@ function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean): void
   }
   const given = (property: string): boolean => normalizeCss(style.resolved(property) ?? "auto") !== "auto";
   const sizing = INSET_AXES.find(({ size, insets }) => !given(size) && insets.every(given));
-  if (sizing !== undefined) {
+  const sized = fixedInViewport
+    ? INSET_AXES.filter(({ size, insets }) => !given(size) && insets.every(given))
+    : [];
+  const sizedInsets = new Set<string>(sized.flatMap(({ insets }) => insets));
+  if (fixedInViewport) {
+    for (const { size, insets } of sized) {
+      for (const property of insets) {
+        style.read(
+          property,
+          (value) => value,
+          () => ({
+            outcome: "literal",
+            detail: `with an automatic ${size}, the opposing insets size the fixed root to the viewport its definition declares, less the insets`,
+          }),
+          style.feed("sizing")
+        );
+      }
+    }
+  } else if (sizing !== undefined) {
     for (const property of ["position", ...sizing.insets]) {
       style.mark(
         property,
@@ -361,7 +386,7 @@ function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean): void
     }
     return;
   }
-  for (const property of ["position", ...INSETS]) {
+  for (const property of ["position", ...INSETS].filter((name) => !sizedInsets.has(name))) {
     style.read(
       property,
       (value) => value,

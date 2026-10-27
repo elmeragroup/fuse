@@ -63,6 +63,7 @@ function boxRefs(box: BoxSpec): BoundRef[] {
       box.cornerRadius,
       box.stroke !== undefined && "weight" in box.stroke ? box.stroke.weight : undefined,
       ...box.shadows.flatMap((shadow) => [shadow.radius, shadow.spread]),
+      box.backgroundBlur,
     ].flatMap(boundNumber),
     ...[box.fill, box.stroke?.color, ...box.shadows.map((shadow) => shadow.color)].flatMap(boundColor),
   ];

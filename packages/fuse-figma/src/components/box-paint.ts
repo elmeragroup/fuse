@@ -44,8 +44,42 @@ export function describeColor(spec: ColorSpec): CoverageNote {
   };
 }
 
-/** A box's paint: its fill, its stroke and its drop shadows. */
-export type BoxPaint = Pick<BoxSpec, "fill" | "stroke" | "shadows">;
+/** A box's paint: its fill, its stroke, its drop shadows and the blur it draws behind it. */
+export type BoxPaint = Pick<BoxSpec, "fill" | "stroke" | "shadows" | "backgroundBlur">;
+
+/**
+ * Read a `backdrop-filter` that blurs what lies behind the box, `blur(Npx)` and nothing else, as the
+ * overlay scrim's `backdrop-blur-xs` writes `blur(4px)` among Tailwind's empty filter slots, as a
+ * Figma background blur. CSS's `blur()` takes the Gaussian's standard deviation (Filter Effects 1
+ * §12.2) and Figma's blur radius counts twice that, so the radius is twice the length: a real file's
+ * BACKGROUND_BLUR of radius 8 blurred a black and white step to a Gaussian of σ about 3.45 with tails
+ * near ±8px, as CSS's `blur(4px)` does at σ 4, and read the effect back exactly (W5-P13).
+ * `-webkit-backdrop-filter`, Safari's prefixed name, carries the same blur. Any other filter stays
+ * unmapped.
+ *
+ * @returns The radius, or undefined where the box blurs nothing behind it.
+ */
+function readBackgroundBlur(reader: LayerStyle): NumberSpec | undefined {
+  const radius = reader.read(
+    "backdrop-filter",
+    (value) => {
+      const length = /^blur\((\d*\.?\d+)px\)$/.exec(normalizeCss(value))?.[1];
+      return length === undefined ? undefined : ({ kind: "literal", value: Number(length) * 2 } as const);
+    },
+    (spec) => ({
+      outcome: "literal",
+      detail: `a background blur of ${spec.value}, twice the CSS blur's ${spec.value / 2}px standard deviation, as Figma's blur radius counts it (W5-P13)`,
+    }),
+    reader.feed("backgroundBlur")
+  );
+  reader.read(
+    "-webkit-backdrop-filter",
+    (value) => (radius === undefined ? undefined : value),
+    () => ({ outcome: "literal", detail: "the same blur under Safari's prefixed name" }),
+    []
+  );
+  return radius;
+}
 
 /**
  * Read how a box paints. A box that shows a picture fills with it, and any other box with its
@@ -85,7 +119,9 @@ export function readPaint(
           reader.feed("fill")
         )
       : readImage(reader, image, variant);
-  return { fill: fill === NO_FILL ? undefined : fill, stroke, shadows };
+  const paint = { fill: fill === NO_FILL ? undefined : fill, stroke, shadows };
+  const backgroundBlur = readBackgroundBlur(reader);
+  return backgroundBlur === undefined ? paint : { ...paint, backgroundBlur };
 }
 
 /**

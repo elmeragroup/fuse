@@ -16,7 +16,7 @@ import { clippedShadows } from "./clipped-shadows";
 import type { ClippedShadow } from "./clipped-shadows";
 import type { CoverageRow } from "./coverage";
 import { normalizeCss } from "./css-values";
-import type { ModeView, VariableIndex } from "./css-values";
+import type { ModeView, VariableIndex, Viewport } from "./css-values";
 import { allPartsOf, framePartsOf, instancePartsOf, partsOf, renderedSlots } from "./definition-parts";
 import { checkInstanceOrder, InstanceParts } from "./instance-parts";
 import type { InnerSet } from "./instance-parts";
@@ -558,6 +558,15 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly previewHeight?: number;
   /**
+   * The viewport a `position: fixed` root sits in, in pixels, as a Dialog's popup, a Command palette
+   * and an overlay's scrim sit in the browser window. A fixed box's containing block is the viewport
+   * (CSS 2.1 §10.1), so the root's percentages take it, its `dvh` and `dvw` read against it (CSS
+   * Values 4 §6.1.2), and `inset-0` with no size of its own makes it the viewport's size (CSS 2.1
+   * §10.3.7, §10.6.4). The compare renderer draws the same viewport around the root. Undefined for a
+   * root that sits in none, whose fixed lengths that read one stay unmapped.
+   */
+  readonly viewport?: Viewport;
+  /**
    * `visible` for a root whose layers reach past it, as the open Select's popup casts its shadow
    * below and beside the column that holds it, and a Tooltip's arrow hangs below its popup, so the
    * root leaves them unclipped. Undefined for every other root, which clips, as a spread ring on the
@@ -782,7 +791,8 @@ export function buildComponentSet(
     const room = rootRoom(
       { width: previewWidthIn(definition, cell), height: definition.previewHeight },
       rootCascade.style,
-      context.variables
+      context.variables,
+      definition.viewport
     );
     const box = mapBox(definition, rootCascade, scope, room);
     const behind = box.fill === undefined ? cellCascade.backdrop() : undefined;
@@ -798,7 +808,7 @@ export function buildComponentSet(
       ...mapped,
       clips: definition.rootOverflow !== "visible",
     };
-    placeRoot(rootCascade.style, room, context.variables, root.children);
+    placeRoot(rootCascade.style, room, context.variables, root.children, definition.viewport);
     if (root.clips && !clipsInCss(rootCascade.style)) {
       const shadowsOf = (layer: InstanceLayerSpec): readonly ShadowSpec[] =>
         rootEffects(layer) ??

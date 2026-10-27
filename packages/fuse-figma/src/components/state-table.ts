@@ -198,6 +198,15 @@ const TRANSITION_FRAMES = new Map([
  */
 const DESKTOP_BREAKPOINTS = new Set(["sm", "md"]);
 
+/**
+ * The `supports-*` feature queries the kit's drawing meets: Tailwind compiles
+ * `supports-backdrop-filter:` to `@supports (backdrop-filter: var(--tw))`, which the compare page's
+ * Chromium meets (CSS Conditional 3 §6), and Figma draws a background blur, so every cell draws the
+ * arm, as the overlay scrim's `backdrop-blur-xs`. Any other query stays unmodelled until a set needs
+ * one.
+ */
+const SUPPORTED_FEATURES = new Set(["supports-backdrop-filter"]);
+
 /** The variants whose meaning is fixed here, which a definition's own states cannot render. */
 const FIXED_VARIANTS = new Set([
   DESCENDANTS,
@@ -210,6 +219,7 @@ const FIXED_VARIANTS = new Set([
   EVERY_CHILD,
   ...SHARED_OMISSIONS,
   ...DESKTOP_BREAKPOINTS,
+  ...SUPPORTED_FEATURES,
 ]);
 
 /**
@@ -316,7 +326,7 @@ export function makeStateTable(
     if (states !== undefined) {
       return { kind: "condition", holds: (cell) => states.has(cell.state ?? "") };
     }
-    if (DESKTOP_BREAKPOINTS.has(variant)) {
+    if (DESKTOP_BREAKPOINTS.has(variant) || SUPPORTED_FEATURES.has(variant)) {
       return { kind: "condition", holds: () => true };
     }
     const dataIcon = ICON_EDGES.get(variant);

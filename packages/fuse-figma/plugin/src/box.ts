@@ -244,7 +244,7 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
   if (stroke !== undefined) {
     planDashPattern(run, node, label, "sides" in stroke ? [] : (stroke.dashPattern ?? []));
   }
-  planShadows(run, node, label, spec.shadows);
+  planShadows(run, node, label, spec.shadows, spec.backgroundBlur);
   planNumber(
     run,
     node,

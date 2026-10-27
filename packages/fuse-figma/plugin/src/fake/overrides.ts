@@ -131,6 +131,9 @@ function paintKey(paint: Paint): readonly KeyPart[] {
 
 /** A stored effect's fields in a fixed order. */
 function effectKey(effect: Effect): readonly KeyPart[] {
+  if (effect.type === "BACKGROUND_BLUR" || effect.type === "LAYER_BLUR") {
+    return [effect.type, effect.visible, effect.radius];
+  }
   if (effect.type !== "DROP_SHADOW" && effect.type !== "INNER_SHADOW") {
     return [effect.type, effect.visible];
   }
