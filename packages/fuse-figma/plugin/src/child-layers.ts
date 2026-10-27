@@ -252,7 +252,18 @@ const planFrame = Effect.fnUntraced(function* (
   planVisibleLink(run, frame, label, spec.visibleProperty, links.properties);
   const turns = planRotation(run, frame, label, spec.rotation);
   if (spec.pivot !== undefined) {
-    planPivotPlace(run, frame, label, spec.pivot, spec.rotation, repositions || turns, holder.size);
+    // A size write moves the frame's centre about its origin, so the place is written after it, from
+    // the size it leaves, whatever the centre reads now.
+    const resizes = size === "unknown";
+    planPivotPlace(
+      run,
+      frame,
+      label,
+      spec.pivot,
+      spec.rotation,
+      repositions || turns || resizes,
+      holder.size
+    );
   }
   yield* planChildren(frame, label, spec, links, holder.size === "unknown" ? "unknown" : size);
 });
