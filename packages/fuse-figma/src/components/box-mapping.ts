@@ -51,11 +51,11 @@ import {
   isInfiniteLength,
   normalizeCss,
   readColor,
-  inViewport,
   readNumber,
 } from "./css-values";
 import type { Viewport } from "./css-values";
 import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
+import { fixedPlace, placeCentredFixed } from "./fixed-placement";
 import { joinFlushLayers } from "./flush-layers";
 import { readBleed, sectioned } from "./full-bleed";
 import { holdsWidthRow, namedMinimum, rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
@@ -92,12 +92,11 @@ import {
   endsInFlow,
   huggedWidth,
   padToOffset,
-  placeCentredFixed,
   placeParts,
   readRotation,
   slotAroundDot,
 } from "./placement";
-import type { FixedAt, Layout } from "./placement";
+import type { Layout } from "./placement";
 import { stacksFirstOnTop } from "./stacking";
 import type { PaintedInstances } from "./stacking";
 import { foldTranslate, sharedTranslate } from "./translate-fold";
@@ -976,57 +975,6 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
 /** No preview width or height, which a fixed root in a viewport does not read. */
 const NO_PREVIEW = { width: undefined, height: undefined } as const;
 
-/**
- * Where an instance part is fixed in the viewport its composite draws, as `placeCentredFixed` reads
- * its place: centred on both axes, or a length below the top and centred across.
- */
-type FixedPlace = { readonly viewport: Viewport; readonly at: FixedAt };
-
-/**
- * Where an instance part sits fixed in its composite's viewport, where the composite draws it there:
- * the inner set's root is `position: fixed` in the viewport its definition declares, and the
- * composite's root declares the same viewport. Then either the part's parent is a flex box that
- * centres its layers on both axes, as Alert dialog's open example, the scrim over the viewport,
- * centres the popup, or the parent is a flex column that centres its layers across and starts them at
- * its top, the part is its first layer, and the part's `top`, read in the viewport, equals the
- * column's top padding, as Command dialog's open example pads its top by the palette's
- * `max(1rem, 12dvh)`. The inner root then takes the viewport as its containing block in place, as its
- * own set does, and `placeCentredFixed` reads its place. Undefined for any other part.
- */
-function fixedPlace(
-  part: Extract<ShownPart, { readonly kind: "instance" }>,
-  layout: Layout,
-  scope: MapScope,
-  parent: LayerStyle,
-  first: boolean
-): FixedPlace | undefined {
-  const own = part.visit.part.of.viewport;
-  const style = part.cascade.style;
-  if (
-    own === undefined ||
-    scope.viewport === undefined ||
-    own.width !== scope.viewport.width ||
-    own.height !== scope.viewport.height ||
-    normalizeCss(style.raw("position") ?? "") !== "fixed" ||
-    !layout.flex
-  ) {
-    return undefined;
-  }
-  if (layout.primaryAlign === "CENTER" && layout.counterAlign === "CENTER") {
-    return { viewport: own, at: "centre" };
-  }
-  const top = evaluateLength(inViewport(style.resolved("top") ?? "", own));
-  const padding = evaluateLength(parent.resolved("padding-top") ?? "0px");
-  const startsAtTop =
-    layout.direction === "VERTICAL" &&
-    layout.primaryAlign === "MIN" &&
-    layout.counterAlign === "CENTER" &&
-    first &&
-    top !== undefined &&
-    top === padding;
-  return startsAtTop ? { viewport: own, at: { top } } : undefined;
-}
-
 function mapPart(
   part: ShownPart,
   room: Room,
@@ -1039,7 +987,12 @@ function mapPart(
   // The row that sets a popup's width keeps the popup's minimum, which no class of its own sets.
   const minimum = namedMinimum(part.kind === "instance" ? part.visit.part : part.child, scope.cell, room);
   if (part.kind === "instance") {
-    const fixed = fixedPlace(part, layout, scope, parent, first);
+    const fixed = fixedPlace(
+      { own: part.visit.part.of.viewport, composite: scope.viewport, style: part.cascade.style },
+      layout,
+      parent,
+      first
+    );
     const { layer: built, painted } = scope.instances.map(
       part,
       fixed === undefined

@@ -37,13 +37,13 @@ import type {
   FrameLayerSpec,
   InstanceLayerSpec,
   NumberSpec,
-  PivotSpec,
   PrimaryAlignSpec,
   RotationSpec,
   SizeSpec,
   StrokeSpec,
 } from "./kit-spec";
 import { MARGINS, VERTICAL_MARGINS } from "./margin-box";
+import { readPivot } from "./pivot-part";
 import type { CompiledUtilities } from "./utility-css";
 
 /** How a box lays out its layers, as the box mapping read it. */
@@ -415,72 +415,6 @@ function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean, fixed
   );
 }
 
-/** Where a fixed instance sits in its composite's viewport: centred, or a length below the top and centred across. */
-export type FixedAt = "centre" | { readonly top: number };
-
-/**
- * Read the place of an instance part's inner root that is fixed in the viewport its composite draws,
- * as `fixedPlace` in `box-mapping.ts` found it.
- *
- * - Centred, as Dialog's `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2` puts its popup at
- *   the viewport's centre: the box's top left on the centre, then moved back by half its own size
- *   (CSS 2.1 §10.3.7, §10.6.4, CSS Transforms 2), which the composite draws by centring the instance.
- * - A length below the top and centred across, as Command's `fixed top-[max(--spacing(4),12dvh)]
- *   left-1/2 -translate-x-1/2` puts its palette, which the composite draws as a column that pads its
- *   top by that length and centres the instance across.
- *
- * Its place then reads as literal there, and `z-index`, which orders it above the page, drops. Any
- * other place stays unmapped.
- *
- * @param style - The inner root's style in place.
- * @param at - Where the composite draws it.
- */
-export function placeCentredFixed(style: LayerStyle, at: FixedAt): void {
-  const translate = splitTopLevel(normalizeCss(style.resolved("translate") ?? ""), " ").map(
-    evaluatePercentage
-  );
-  const [across, down = 0] = translate;
-  const centredAcross = evaluatePercentage(style.resolved("left") ?? "") === 0.5 && across === -0.5;
-  const placed =
-    !style.has("right") &&
-    !style.has("bottom") &&
-    centredAcross &&
-    (at === "centre"
-      ? evaluatePercentage(style.resolved("top") ?? "") === 0.5 && down === -0.5 && translate.length === 2
-      : down === 0);
-  const detail =
-    at === "centre"
-      ? "Base UI fixes the popup at the viewport's centre, which the composite, as large as that viewport, draws by centring the popup"
-      : `Base UI fixes the popup ${String(at.top)}px below the viewport's top and centres it across, which the composite, as large as that viewport, draws by padding its top by that length and centring the popup across`;
-  for (const property of ["position", "top", "left", "translate"]) {
-    if (placed) {
-      style.read(
-        property,
-        (value) => value,
-        () => ({ outcome: "literal", detail }),
-        []
-      );
-    } else {
-      style.mark(
-        property,
-        "unmapped",
-        "a fixed popup the composite places only where it sits as the composite draws it",
-        []
-      );
-    }
-  }
-  style.read(
-    "z-index",
-    (value) => value,
-    () => ({
-      outcome: "dropped",
-      detail:
-        "the stacking level orders the popup above the page, which the composite draws below it already",
-    }),
-    []
-  );
-}
-
 /**
  * The parts whose classes set `scale` in some cell of the matrix, under any variant. Each draws as
  * a slot around a dot in every cell, so every cell has the same layer tree. The build asks once per
@@ -847,83 +781,6 @@ function readAbsoluteStart(style: LayerStyle, layer: FrameLayerSpec, parent: Lay
   return bounds.length === 0
     ? { kind: "absolute", at: { x: 0, y: 0, constraints: { horizontal: "SCALE", vertical: "STRETCH" } } }
     : { kind: "refused" };
-}
-
-/**
- * Read an absolute part that hangs from its containing block's bottom edge, centred across it, as a
- * Tooltip's arrow does: `left` half the containing block's width plus a length, `bottom` a length, a
- * translate that moves it down only, and a fixed literal size, with no `top`, `right` or margin. CSS
- * offsets the part's box from its containing block's padding box (CSS 2.1 §10.3.7, §10.6.4), then
- * `translate` moves it, a percentage taking the part's own size, and `rotate` turns it about its centre,
- * which stays where it was (CSS Transforms 2 §6). So its centre sits a fixed distance from the
- * containing block's horizontal centre and from its bottom edge whatever the containing block's size,
- * which CENTER across and MAX down keep, and the plugin places the part from that centre. The parent
- * must be the containing block: positioned itself, or static inside the positioned element its
- * definition names in `positionedBy`, with the box's border box, and it sets no border, so its padding
- * box is the frame Figma places the layer in. A real file drew such a part at -45 centred at
- * (W/2, H - 2) from the plugin's centre, and kept it there through density and text-driven resizes,
- * in the main and in an instance (W5-P11, W5-P11b). Every other part leaves its place to the other
- * readers.
- *
- * @param style - The part's style.
- * @param layer - The part, mapped.
- * @param parent - The box that holds it.
- * @returns The part's centre, or undefined where the pattern does not hold.
- */
-function readPivot(style: LayerStyle, layer: FrameLayerSpec, parent: ParentBox): PivotSpec | undefined {
-  const width = fixedLength(layer.sizing.horizontal);
-  const height = fixedLength(layer.sizing.vertical);
-  const left = style.resolved("left") ?? "";
-  const bottom = evaluateLength(style.resolved("bottom") ?? "");
-  const [moveX = "0px", moveY = "0px"] = splitTopLevel(
-    normalizeCss(style.resolved("translate") ?? "0px"),
-    " "
-  ).filter((part) => part !== "none");
-  const contains =
-    !["", "static"].includes(normalizeCss(parent.style.resolved("position") ?? "")) ||
-    parent.positionedBy !== undefined;
-  if (
-    normalizeCss(style.resolved("position") ?? "") !== "absolute" ||
-    !contains ||
-    (parent.style.has("border-width") && evaluateLength(parent.style.resolved("border-width") ?? "") !== 0) ||
-    style.has("top") ||
-    style.has("right") ||
-    MARGINS.some((property) => style.has(property) && evaluateLength(style.resolved(property) ?? "") !== 0) ||
-    width?.kind !== "literal" ||
-    height?.kind !== "literal" ||
-    bottom === undefined
-  ) {
-    return undefined;
-  }
-  // `left` is a share of the containing block's width plus a length: the share must be a half.
-  const start = evaluateLengthOf(left, 0);
-  const share = evaluateLengthOf(left, 100);
-  const across = evaluateLengthOf(moveX, width.value);
-  const down = evaluateLengthOf(moveY, height.value);
-  if (
-    start === undefined ||
-    share === undefined ||
-    share - start !== 50 ||
-    across !== 0 ||
-    down === undefined
-  ) {
-    return undefined;
-  }
-  const centerOffset = start + width.value / 2;
-  const bottomInset = bottom + height.value / 2 - down;
-  const note: CoverageNote = {
-    outcome: "literal",
-    detail: `the layer's centre sits ${centerOffset}px from its containing block's horizontal centre and ${bottomInset}px above its bottom edge, where the plugin places it by its centre, and CENTER across and MAX down keep it there`,
-  };
-  for (const property of ["position", "left", "bottom", "translate"]) {
-    style.read(
-      property,
-      () => note,
-      (decided) => decided,
-      style.feed("pivot")
-    );
-  }
-  return { constraints: { horizontal: "CENTER", vertical: "MAX" }, centerOffset, bottomInset };
 }
 
 /**
