@@ -33,6 +33,9 @@ import type { Browser, Page, Route } from "playwright";
 
 import { cellClip, clipInsideSlot, measuredBox } from "./cell-measure.ts";
 import type { FallbackInteraction, ForcedPseudoClass } from "./cells.ts";
+import { checkUsedFonts } from "./font-check.ts";
+import type { FontNotLoaded } from "./font-check.ts";
+import { LICENSED_FAMILIES } from "./page-assets.ts";
 import type { PageAssets } from "./page-assets.ts";
 import {
   ASSET_PATHS,
@@ -138,9 +141,7 @@ export class BrowserUnavailable extends Error {
 }
 
 /** The page did not load a font its text uses, so the text would come from a fallback. */
-export class FontNotLoaded extends Error {
-  readonly _tag = "FontNotLoaded" as const;
-}
+export { FontNotLoaded } from "./font-check.ts";
 
 /** The computed styles a hover or focus face changes. */
 type StyleSignature = readonly string[];
@@ -151,10 +152,6 @@ function forcesState(request: CellRequest): boolean {
 }
 
 const REFERENCE_PREFIX = "rest-";
-
-function unquote(family: string): string {
-  return family.trim().replaceAll(/^["']|["']$/g, "");
-}
 
 /** A Chromium instance that renders preview pages. */
 export class CompareBrowser {
@@ -348,7 +345,7 @@ async function readMounted(
 
 /**
  * Load the face of every element in the cells' measured elements that holds text, and check that
- * each one's first font family has a loaded face at its weight. The sweep covers every element with
+ * each one's first font family has a loaded face at its weight, as `checkUsedFonts` decides. The sweep covers every element with
  * a non-blank text node of its own, whatever the component, so a label in a child span counts too,
  * and every `<input>` or `<textarea>` that draws a value or a placeholder, which no text node holds.
  *
@@ -370,37 +367,23 @@ async function checkFont(page: Page, selector: string): Promise<Result.Result<st
     const fonts = new Set(styles.map((style) => `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`));
     await Promise.all([...fonts].map((font) => document.fonts.load(font)));
     await document.fonts.ready;
-    const used = new Set(
-      styles.map((style) => `${style.fontWeight}|${style.fontFamily.split(",")[0] ?? ""}`)
-    );
+    const used = [
+      ...new Map(
+        styles.map((style) => [
+          `${style.fontWeight}|${style.fontFamily}`,
+          { weight: style.fontWeight, families: style.fontFamily.split(",") },
+        ])
+      ).values(),
+    ];
     const loaded: string[] = [];
     document.fonts.forEach((face) => {
       if (face.status === "loaded") {
         loaded.push(`${face.weight}|${face.family}`);
       }
     });
-    return { used: [...used], loaded };
+    return { used, loaded };
   }, selector);
-  const loaded = new Set(
-    report.loaded.map((entry) => {
-      const [weight = "", family = ""] = entry.split("|");
-      return `${weight}|${unquote(family)}`;
-    })
-  );
-  const fonts: string[] = [];
-  for (const entry of report.used) {
-    const [weight = "", family = ""] = entry.split("|");
-    const key = `${weight}|${unquote(family)}`;
-    if (!loaded.has(key)) {
-      return Result.fail(
-        new FontNotLoaded(
-          `The cells' text uses ${unquote(family)} at weight ${weight}, and the page has no loaded face for it. The comparison loads only @fontsource/roboto, so a theme whose --font-sans starts with another family needs that family added to page-assets.ts.`
-        )
-      );
-    }
-    fonts.push(`${weight} ${unquote(family)}`);
-  }
-  return Result.succeed(fonts.join(", "));
+  return checkUsedFonts(report.used, report.loaded, LICENSED_FAMILIES);
 }
 
 /**

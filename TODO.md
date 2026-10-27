@@ -400,6 +400,10 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 - Carry a label's text-alignment override through a swap. The fake's text-alignment rule in
   `plugin/src/fake-figma.ts` drops it there, since no probe swapped an instance with the override.
 - Add the floating Sidebar.
+- Add Neo Sans to the org's Figma fonts. The real file has no Neo Sans, so the external Fjordkraft
+  headings, such as the Alert dialog and Dialog titles, draw a fallback there. The compare can check
+  Neo Sans only once it can load the face, until then it compares the Roboto fallback
+  (`LICENSED_FAMILIES` in `packages/fuse-figma/src/compare/page-assets.ts`).
 - Confirm on a real file that an instance's glyph fill override goes with the glyph when the
   plugin draws an icon again, as `plugin/src/fake-figma.ts` assumes. Change one icon's markup,
   run Apply, and check that the next Plan lists nothing.
