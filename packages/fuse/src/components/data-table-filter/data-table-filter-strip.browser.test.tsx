@@ -164,7 +164,12 @@ describe("DataTableFilter chip strip fades", () => {
       await scrollTo(element, range(element) / 2);
       expect(fades(element), "midway").toEqual({ toward, start: FADE, end: FADE });
       await scrollTo(element, range(element));
-      expect(fades(element), "at the end").toEqual({ toward, start: FADE, end: 0 });
+      // A right-to-left box snaps `scrollLeft` to whole pixels, so its end can stop short of a
+      // fractional scroll range by under a pixel.
+      const end = fades(element);
+      expect(end.toward, "at the end").toBe(toward);
+      expect(end.start, "at the end").toBe(FADE);
+      expect(end.end, "at the end").toBeLessThanOrEqual(1);
     }
   );
 

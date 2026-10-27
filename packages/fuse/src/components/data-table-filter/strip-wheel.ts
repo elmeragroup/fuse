@@ -4,8 +4,12 @@
  */
 const LINE_PX = 40;
 
-/** Below this many pixels from an end, the strip counts as at that end, since `scrollLeft` is fractional. */
-const END_TOLERANCE_PX = 1;
+/**
+ * Below this many pixels from an end, the strip counts as at that end. `scrollWidth` and
+ * `clientWidth` round a fractional box, and a right-to-left box snaps `scrollLeft` to whole
+ * pixels, so its end can sit a pixel short of the range they give.
+ */
+const END_TOLERANCE_PX = 2;
 
 /** The strip's scroll state along its inline axis. */
 type InlineScroll = {
