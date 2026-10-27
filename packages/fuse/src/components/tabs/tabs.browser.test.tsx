@@ -11,11 +11,11 @@ import {
   assertFocusRingOnKeyboardAbsentOnMouse,
   assertKeyboardFocusRingAtBothDensities,
 } from "../../../test/assert-focus-ring";
-import { guenExternal } from "../../../test/theme-fixtures";
 import {
   CONTROL_MD,
   cssVarColor,
   fkasExternal,
+  guenExternal,
   px,
   renderThemed,
   stampDensity,
