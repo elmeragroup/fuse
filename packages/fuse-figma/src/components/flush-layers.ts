@@ -3,7 +3,9 @@
  * is exactly the column's gap, which cancels the gap above it (CSS Box Alignment 3 §8, CSS Flexbox 1
  * §4.2, where a flex item's margins add to the gap and never collapse), as FieldFrame's legend-mode
  * description sits right under its legend. A Figma auto layout spaces every layer by one gap, so the
- * column draws the layer and the one before it in a frame with no gap, which takes their place.
+ * column draws the layer and the one before it in a frame with no gap, which takes their place. A
+ * real file drew the description flush under the legend and the next layer one `surface-gap-md`
+ * below the frame, 12px at Dense and 16px at Comfortable (W5-P5).
  */
 import type { LayerStyle } from "./cascade";
 import { normalizeCss } from "./css-values";

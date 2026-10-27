@@ -191,7 +191,7 @@ function partSlot(part: PartDefinition | InstanceDefinition): string | undefined
 
 /** The selector of a part's element, undefined for one its `data-slot` or its place names. */
 function partElement(part: PartDefinition | InstanceDefinition): ElementSelector | undefined {
-  return "kind" in part ? part.of.element : part.element;
+  return "kind" in part ? (part.element ?? part.of.element) : part.element;
 }
 
 /**

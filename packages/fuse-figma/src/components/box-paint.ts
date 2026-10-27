@@ -64,12 +64,14 @@ export function readPaint(
   variables: VariableIndex,
   variant: string
 ): BoxPaint {
-  const border = reader.has("border-width")
-    ? readStroke(reader, variables)
-    : readSideStroke(reader, variables);
+  const sided = BORDER_SIDES.some((side) => setsSide(reader, side));
+  const border =
+    reader.has("border-width") && !(sided && zeroesEverySide(reader, variables))
+      ? readStroke(reader, variables)
+      : readSideStroke(reader, variables);
   const cleared = readClearOutline(reader, variables);
   // A box holds one stroke, so its border keeps it.
-  const bordered = reader.has("border-width") || BORDER_SIDES.some((side) => reader.has(sideWidth(side)));
+  const bordered = reader.has("border-width") || sided;
   const stroke = bordered || cleared ? border : readInsideOutline(reader, variables);
   // CSS paints the first shadow of `box-shadow` on top (CSS Backgrounds 3 §7.1), and Figma paints a
   // later effect above an earlier one (PE2), so the spec lists the shadows in Figma's order.
@@ -325,33 +327,75 @@ const BORDER_SIDES = ["top", "right", "bottom", "left"] as const;
 
 type BorderSide = (typeof BORDER_SIDES)[number];
 
+/**
+ * The logical name of each side, which Tailwind's `border-s` and `border-e` compile to. The kit draws
+ * a left-to-right page in horizontal writing, where the inline start is the left and the block start
+ * the top (CSS Logical Properties 1 §4), so each logical side reads as its physical side.
+ */
+const LOGICAL_SIDE = {
+  top: "block-start",
+  right: "inline-end",
+  bottom: "block-end",
+  left: "inline-start",
+} as const satisfies Record<BorderSide, string>;
+
+/** Whether a box sets a border width on a side of its own, by its physical or its logical name. */
+function setsSide(root: LayerStyle, side: BorderSide): boolean {
+  return root.has(sideWidth(side)) || root.has(`border-${LOGICAL_SIDE[side]}-width`);
+}
+
+/** Whether a box's `border-width` is a literal zero, as `border-0` writes it. */
+function zeroesEverySide(root: LayerStyle, variables: VariableIndex): boolean {
+  const width = readNumber(root.resolved("border-width") ?? "", variables);
+  return width?.kind === "literal" && width.value === 0;
+}
+
+/** The name a box's border on a side goes by: its physical name, or its logical one where it sets that. */
+const sideName = (root: LayerStyle, side: BorderSide): string =>
+  root.has(`border-${side}-width`) ? side : LOGICAL_SIDE[side];
+
 const sideWidth = (side: BorderSide) => `border-${side}-width`;
 
 /**
  * A CSS border on some sides becomes a solid stroke with a weight on each side, as `border-r` draws
- * the Sidebar container's edge, and each side's weight takes room on that side (PS). Each side's literal width counts, and a side the box sets no
- * width on draws nothing, since Tailwind preflight's `border: 0 solid` leaves it 0. A box that also
- * sets `border-width` takes the stroke {@link readStroke} reads, and its sides stay unread, and so
- * unmapped. A side's width that is no literal, a style other than solid, or no color leaves the
+ * the Sidebar container's edge and `border-s` a Number field stepper's start edge, and each side's weight takes room on that side (PS). Each side's literal width counts, and a side the box sets no
+ * width on draws nothing, since Tailwind preflight's `border: 0 solid` leaves it 0, or a `border-0`
+ * before the side's own width does. A box that also sets a `border-width` other than 0 takes the
+ * stroke {@link readStroke} reads, and its sides stay unread, and so unmapped. A side's width that is no literal, a style other than solid, or no color leaves the
  * stroke out, with the sides that do not map unmapped.
  */
 function readSideStroke(root: LayerStyle, variables: VariableIndex): SideStroke | undefined {
-  const given = BORDER_SIDES.filter((side) => root.has(sideWidth(side)));
+  const given = BORDER_SIDES.filter((side) => setsSide(root, side));
   const [first] = given;
   if (first === undefined) {
     return undefined;
   }
+  // `border-0` before a side's own width, as a Number field stepper's `border-0 border-s`, zeroes the
+  // sides the box sets no width on; Tailwind writes the side's utility after it, so the side wins.
+  root.read(
+    "border-width",
+    (value) => value,
+    () => ({ outcome: "literal", detail: "no stroke on the sides the box sets no width of its own on" }),
+    root.feed("stroke")
+  );
+  root.mark(
+    "border-style",
+    "dropped",
+    "each side the box sets a width of its own on reads its own style",
+    []
+  );
   root.missing(
     "border-color",
-    sideWidth(first),
+    `border-${sideName(root, first)}-width`,
     "no class or base rule colors the border, so the stroke is left out"
   );
   const stroke = root.feed("stroke");
   const sides = { top: 0, right: 0, bottom: 0, left: 0 };
   let complete = true;
   for (const side of given) {
+    const name = sideName(root, side);
     const width = root.read(
-      sideWidth(side),
+      `border-${name}-width`,
       (value) => {
         const read = readNumber(value, variables);
         return read?.kind === "literal" && read.value >= 0 ? read.value : undefined;
@@ -363,7 +407,7 @@ function readSideStroke(root: LayerStyle, variables: VariableIndex): SideStroke 
       stroke
     );
     const solid = root.read(
-      `border-${side}-style`,
+      `border-${name}-style`,
       (value) => (normalizeCss(value) === "solid" ? value : undefined),
       () => ({ outcome: "literal", detail: "a solid stroke" }),
       stroke

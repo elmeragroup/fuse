@@ -550,6 +550,16 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/navigation-menu.js",
     module: { url: new URL("navigation-menu-popup-cell.ts", import.meta.url), name: "navigationMenuPopup" },
   },
+  {
+    set: "number-field-stepper",
+    entry: "dist/number-field.js",
+    load: async () => (await import("./number-field-cell.ts")).numberFieldStepper,
+  },
+  {
+    set: "number-field",
+    entry: "dist/number-field.js",
+    load: async () => (await import("./number-field-cell.ts")).numberField,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

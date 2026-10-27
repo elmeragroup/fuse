@@ -53,6 +53,7 @@ import {
   NAVIGATION_MENU_VERTICAL_TRIGGER,
 } from "./navigation-menu-kit";
 import { NAVIGATION_MENU_POPUP } from "./navigation-menu-popup-kit";
+import { NUMBER_FIELD, NUMBER_FIELD_STEPPER } from "./number-field-kit";
 import { PAGINATION_EDGE, PAGINATION_ELLIPSIS, PAGINATION_LINK, PAGINATION_ROW } from "./pagination-kit";
 import { POPOVER_CONTENT, POPOVER_OPEN } from "./popover-kit";
 import { RADIO_GROUP } from "./radio-group-kit";
@@ -134,6 +135,9 @@ const INPUT_PAGE: KitPage = { slug: "input", name: "Input" };
 
 /** The page of Textarea and the labelled Textarea field. */
 const TEXTAREA_PAGE: KitPage = { slug: "textarea", name: "Textarea" };
+
+/** The page of Number field and its stepper. */
+const NUMBER_FIELD_PAGE: KitPage = { slug: "number-field", name: "Number field" };
 
 /** The page of Avatar and the group that stacks avatars. */
 const AVATAR_PAGE: KitPage = { slug: "avatar", name: "Avatar" };
@@ -441,4 +445,10 @@ export const KIT: readonly KitEntry[] = [
     page: NAVIGATION_MENU_PAGE,
     previewCells: matrixCells(NAVIGATION_MENU_POPUP.axes),
   },
+  {
+    definition: NUMBER_FIELD_STEPPER,
+    page: NUMBER_FIELD_PAGE,
+    previewCells: matrixCells(NUMBER_FIELD_STEPPER.axes),
+  },
+  { definition: NUMBER_FIELD, page: NUMBER_FIELD_PAGE, previewCells: matrixCells(NUMBER_FIELD.axes) },
 ];

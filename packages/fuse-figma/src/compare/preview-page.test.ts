@@ -144,6 +144,15 @@ describe("the element a cell forces its state on", () => {
     );
   });
 
+  it("is the part the definition's statePartElement names by tag and attributes inside the measured element", () => {
+    expect(
+      forcedSelector({
+        slot: "field",
+        statePartElement: { tag: "input", attributes: { "data-focus-ring-control": true } },
+      })
+    ).toBe('[data-slot="field"] input[data-focus-ring-control]');
+  });
+
   // Selectors 4 §4.5 and §16.4: `:has(~ x)` matches an element that some later sibling `x` follows,
   // which is the peer a `peer-*` variant of `x` reads.
   it("is the sibling before the measured element that the definition's statePeer names", () => {

@@ -387,6 +387,13 @@ export type InstanceDefinition = {
    */
   readonly slot?: string;
   /**
+   * The element the outer component renders the inner root as, where it differs from the one the
+   * inner set's `element` names, as Number field's decrease stepper is the `<button
+   * aria-label="Decrease">` where the stepper set names its increase stepper. `figma:compare`'s markup
+   * check places the instance there. Undefined where the inner set's own element names it.
+   */
+  readonly element?: ElementSelector;
+  /**
    * The classes the outer component passes the inner one as its `className`, which the inner
    * component merges after its own with `cn`, as Alert passes its tone's `button` slot. Undefined for
    * none.
@@ -471,6 +478,13 @@ export type ComponentDefinition = BoxDefinition & {
    * check reads the state's attributes there. Undefined for a root that takes its states itself.
    */
   readonly statePart?: string;
+  /**
+   * The element of the part that takes the set's `state` axis, for such a part that carries no
+   * `data-slot`, as Number field's `<input>` does, named as {@link ComponentDefinition.element} names
+   * a root. `figma:compare` forces hover and focus on it, and its markup check reads the state's
+   * attributes there. A definition names it or `statePart`, not both.
+   */
+  readonly statePartElement?: ElementSelector;
   /**
    * The `data-slot` of the sibling before the root whose state the set's `state` axis follows, for a
    * root that reads it through `peer-*` variants, as a Sidebar menu badge reads its menu button's

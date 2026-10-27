@@ -60,7 +60,7 @@ import {
   REACT_ARIA_HOVER,
   TAG_VARIANTS,
 } from "./markup-variants.ts";
-import { elementsOf } from "./static-markup.ts";
+import { elementsOf, selects } from "./static-markup.ts";
 import type { MarkupElement } from "./static-markup.ts";
 
 /** Whether an element's own classes name a variant. */
@@ -79,14 +79,17 @@ function statePartOf(
   elements: readonly MarkupElement[],
   measured: number
 ): MarkupElement | undefined {
-  if (definition.statePart === undefined) {
+  const { statePart, statePartElement } = definition;
+  if (statePart === undefined && statePartElement === undefined) {
     return undefined;
   }
   const found = elements.filter(
     (element, index) =>
-      element.attributes.get("data-slot") === definition.statePart && inside(elements, index, measured)
+      (statePartElement === undefined
+        ? element.attributes.get("data-slot") === statePart
+        : selects(statePartElement, element)) && inside(elements, index, measured)
   );
-  expect(found, `the ${definition.statePart} part that takes the states`).toHaveLength(1);
+  expect(found, `the ${statePart ?? statePartElement?.tag ?? ""} part that takes the states`).toHaveLength(1);
   return found[0];
 }
 

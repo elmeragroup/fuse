@@ -333,9 +333,18 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "navigation-menu-popup", name: "Navigation menu popup", variants: 2, previewed: 2 },
     ],
   },
+  {
+    slug: "number-field",
+    name: "Number field",
+    sets: [
+      // The increase stepper at rest, hovered, disabled and read-only.
+      { key: "number-field-stepper", name: "Number field stepper", variants: 4, previewed: 4 },
+      // The labelled field in 5 states.
+      { key: "number-field", name: "Number field", variants: 5, previewed: 5 },
+    ],
+  },
 ];
 
-/** The page that holds the icon library alone, after the component pages. */
 /**
  * The sets the kit builds after the Field page's sets, since Radio group shows Field's legend,
  * description and error and Radio row comes before it, though their page comes before Field's. The
@@ -357,6 +366,7 @@ export function setsInBuildOrder(): readonly { readonly page: InventoryPage; rea
     .flatMap((entry) => (entry.set.key === "field-title" ? [entry, ...later] : [entry]));
 }
 
+/** The page that holds the icon library alone, after the component pages. */
 export const ICONS_PAGE = { key: "page/icons", name: "Icons" } as const;
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */

@@ -14,7 +14,7 @@
  * every animation and transition, so a pending spinner stays at 0°.
  */
 
-import type { Cell, ComponentDefinition } from "../components/component-spec.ts";
+import type { Cell, ComponentDefinition, ElementSelector } from "../components/component-spec.ts";
 import type { ThemeStamps } from "./preview-theme.ts";
 
 /** The origin the browser loads the page and its assets from, served by request interception. */
@@ -208,11 +208,14 @@ export function fontSweepSelector(
  * @returns A selector for an element anywhere inside a cell's slot, as {@link cellSelector} takes it.
  */
 export function forcedSelector(
-  definition: Pick<ComponentDefinition, "slot" | "element" | "statePart" | "statePeer">
+  definition: Pick<ComponentDefinition, "slot" | "element" | "statePart" | "statePartElement" | "statePeer">
 ): string {
   const measured = measuredSelector(definition);
   if (definition.statePeer !== undefined) {
     return `[data-slot="${definition.statePeer}"]:has(~ ${measured})`;
+  }
+  if (definition.statePartElement !== undefined) {
+    return `${measured} ${elementSelector(definition.statePartElement)}`;
   }
   return definition.statePart === undefined ? measured : `${measured} [data-slot="${definition.statePart}"]`;
 }
@@ -228,9 +231,11 @@ export function forcedSelector(
  */
 export function measuredSelector(definition: Pick<ComponentDefinition, "slot" | "element">): string {
   const { element } = definition;
-  if (element === undefined) {
-    return `[data-slot="${definition.slot}"]`;
-  }
+  return element === undefined ? `[data-slot="${definition.slot}"]` : elementSelector(element);
+}
+
+/** The CSS form of an element selector: its tag, then each attribute, prefix and suffix it names. */
+function elementSelector(element: ElementSelector): string {
   const attributes = Object.entries(element.attributes).map(([name, value]) =>
     value === true ? `[${name}]` : `[${name}=${cssString(value)}]`
   );

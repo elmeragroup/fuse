@@ -9,7 +9,7 @@
  * - The heading row is FieldFrame's label row holding a `Field legend` instance at its `label`
  *   variant, `Contract`. A described legend gives up its bottom margin.
  * - The description, a `Field description` instance, sits under the legend, its negative top margin
- *   cancelling the fieldset's gap above it.
+ *   cancelling the fieldset's gap above it, in a gapless frame with the legend row (W5-P5).
  * - The group primitive, `<div data-slot="radio-group">`, stacks the rows `surface-gap-sm` apart when
  *   vertical and lays them in a row `surface-gap-lg` apart when horizontal. Each row is a `Radio row`
  *   instance in the cell's state, the first checked.
@@ -121,7 +121,7 @@ const GROUP: PartDefinition = {
   shownIn: always,
   classesFor: (cell) => selectionGroupOrientationVariants({ orientation: orientationFor(cell) }).group(),
   fitsOneLine:
-    "Chromium measured the three rows of a horizontal group end at 201px dense and 217px comfortable in its 384px on 2026-10-27, so they never wrap",
+    "Chromium measured the three rows of a horizontal group end at 201px dense and 217px comfortable in its 384px on 2026-10-27, so they never wrap, and a real file drew them packed left, surface-gap-lg apart, with no wrap (W5-P6)",
   label: undefined,
   iconsFor: () => [],
   parts: RADIO_GROUP_OPTIONS.map(row),

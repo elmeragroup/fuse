@@ -24,6 +24,8 @@ function isActive(element: MarkupElement): boolean {
 export const ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => boolean>([
   ["disabled", (element) => element.attributes.has("disabled")],
   ["data-disabled", (element) => element.attributes.has("data-disabled")],
+  // Base UI marks a read-only NumberField's steppers, which it leaves enabled.
+  ["data-readonly", (element) => element.attributes.has("data-readonly")],
   ["aria-disabled", (element) => element.attributes.get("aria-disabled") === "true"],
   ["aria-pressed", (element) => element.attributes.get("aria-pressed") === "true"],
   ["data-pressed", (element) => element.attributes.has("data-pressed")],

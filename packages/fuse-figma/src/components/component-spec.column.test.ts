@@ -18,7 +18,8 @@ const part = (key: string, classes: string) => ({ ...dot(classes), key, slot: `c
 // Oracle: CSS Box Alignment 3 §8 and CSS Flexbox 1 §4.2. A flex item's margins add to the gap and
 // never collapse, so a top margin of exactly minus the gap puts the item flush under the one before
 // it. Chromium measured FieldFrame's legend-mode description flush under its legend, with the group
-// a full gap below, at both densities on 2026-10-27.
+// a full gap below, at both densities on 2026-10-27, and a real file drew the gapless frame the same
+// way, the next layer 12px below at Dense and 16px at Comfortable (W5-P5).
 describe("a flex column layer whose top margin cancels the column's gap", () => {
   it("joins the layer before it in a frame with no gap, which the column spaces as one layer", async () => {
     const { variant, coverage } = await buildFixture(
@@ -96,5 +97,16 @@ describe("a preview width a definition gives per cell", () => {
       HUG,
       { kind: "fixed", length: { kind: "literal", value: 200 } },
     ]);
+  });
+});
+
+// Oracle: CSS Logical Properties 1 §4 and CSS Cascade 4 §6.4. In left-to-right horizontal writing the
+// inline start is the left side, and `border-0` before a side's own width zeroes the other sides while
+// the side's width, written after it, wins on that side, as a Number field stepper's `border-0
+// border-s` draws its start edge alone. Chromium drew the stepper's 1px edge on its left on 2026-10-27.
+describe("a box that zeroes its border and sets a width on its inline start", () => {
+  it("draws a stroke on its left side alone", async () => {
+    const { variant } = await buildFixture(chip("flex size-[24px] border-0 border-s border-[#000000]"));
+    expect(variant?.root.stroke).toMatchObject({ sides: { top: 0, right: 0, bottom: 0, left: 1 } });
   });
 });
