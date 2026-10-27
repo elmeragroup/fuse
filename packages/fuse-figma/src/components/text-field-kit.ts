@@ -99,6 +99,8 @@ const CONTENT: PartDefinition = {
  */
 export const TEXT_FIELD: ComponentDefinition = {
   key: "text-field",
+  // CSS leaves the root unclipped, so a ring a layer draws at its edge shows past it (compare-real-1).
+  rootOverflow: "visible",
   name: "Text field",
   slot: "field",
   // The input takes the states, and Base UI mirrors them on the Field root as data attributes.

@@ -76,6 +76,8 @@ const TRIGGER: InstanceDefinition = {
  */
 export const SELECT_FIELD: ComponentDefinition = {
   key: "select-field",
+  // CSS leaves the root unclipped, so a ring a layer draws at its edge shows past it (compare-real-1).
+  rootOverflow: "visible",
   name: "Select field",
   slot: "field",
   // The trigger takes the states, and Base UI mirrors them on the Field root as data attributes.

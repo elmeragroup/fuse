@@ -455,9 +455,16 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 - Resolve media queries and `dvh` against the declared viewport on the compare page. The viewport
   host in `src/compare/viewport-host.ts` sizes a fixed root's containing block, but media queries
   and `dvh` still read the real window. The Command dialog cell restates its `dvh` lengths by hand.
-- Find why one `figma:compare --self-check` run flagged 1% of the open Command dialog (dark,
-  comfortable) over the input and first rows, under the scrim's background blur. The next two runs
-  matched exactly.
+- Find why `figma:compare --self-check` sometimes flags one raster tile of an open dialog cell
+  under the scrim's background blur, such as 1% of the open Command dialog (dark, comfortable).
+  Reruns match exactly. The compare page waits one frame after clearing focus and highlights, which
+  may be too short for the blur.
+- Record a ring that crosses a root's start or end edge in the clipped-ring coverage rows. The
+  build knows layer heights per mode but not widths, so it records only a ring past the top or
+  bottom: Radio row's focus ring was cut at its left edge with no row.
+- Draw Input group's 1px invalid band past its caret. The root draws the field's own ring, which
+  Figma draws only on a clipping frame, so the root keeps clipping and its coverage rows list the
+  cut band.
 - Make the Number field denomination's `px-2` a control metric in
   `packages/fuse/src/components/number-field/number-field-variants.ts`. It changes the look, so it needs a patch
   changeset.

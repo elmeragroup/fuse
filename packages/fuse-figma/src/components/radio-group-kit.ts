@@ -149,6 +149,8 @@ const FIELD_SET: PartDefinition = {
  */
 export const RADIO_GROUP: ComponentDefinition = {
   key: "radio-group",
+  // CSS leaves the root unclipped, so a ring a layer draws at its edge shows past it (compare-real-1).
+  rootOverflow: "visible",
   name: "Radio group",
   slot: "field",
   // The radios take the states, and Base UI mirrors them on the Field root as data attributes.

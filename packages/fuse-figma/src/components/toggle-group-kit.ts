@@ -85,6 +85,8 @@ function item(entry: (typeof TOGGLE_GROUP_ITEMS)[number], index: number): Instan
 /** A spaced toggle group, as the docs Multiple demo's `<ToggleGroup.Root multiple variant size>`. */
 export const TOGGLE_GROUP: ComponentDefinition = {
   key: "toggle-group",
+  // CSS leaves the root unclipped, so a ring a layer draws at its edge shows past it (compare-real-1).
+  rootOverflow: "visible",
   name: "Toggle group",
   slot: "toggle-group",
   axes: TOGGLE.axes.filter((axis) => axis.name === "variant" || axis.name === "size"),

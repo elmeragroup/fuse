@@ -219,6 +219,8 @@ const NUMBER_ROOT: PartDefinition = {
 /** A number field, as `<NumberField label description defaultValue denomination?>`, read-only, disabled or invalid. */
 export const NUMBER_FIELD: ComponentDefinition = {
   key: "number-field",
+  // CSS leaves the root unclipped, so a ring a layer draws at its edge shows past it (compare-real-1).
+  rootOverflow: "visible",
   name: "Number field",
   slot: "field",
   // The input takes the states, and Base UI mirrors them on the Field root as data attributes.

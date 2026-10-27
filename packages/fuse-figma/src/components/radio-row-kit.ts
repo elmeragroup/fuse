@@ -119,6 +119,8 @@ const LABEL: PartDefinition = {
 /** A row, as `<Radio value>Fixed</Radio>` in a `RadioGroup`, disabled or in an invalid group. */
 export const RADIO_ROW: ComponentDefinition = {
   key: "radio-row",
+  // CSS leaves the root unclipped, so a ring a layer draws at its edge shows past it (compare-real-1).
+  rootOverflow: "visible",
   name: "Radio row",
   slot: "field-item",
   // The radio takes the states, as Base UI stamps them on its `<span>`.

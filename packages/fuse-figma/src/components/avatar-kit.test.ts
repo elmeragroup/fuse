@@ -222,7 +222,8 @@ describe("the Avatar group component set", () => {
       ...CENTERED,
       itemSpacing: literal(-8),
       sizing: { horizontal: HUG, vertical: HUG },
-      clips: true,
+      // CSS leaves the group unclipped, so each avatar's ring shows past its edges.
+      clips: false,
       cornerRadius: literal(0),
       children: [
         member("al"),
