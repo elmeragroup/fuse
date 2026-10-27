@@ -83,6 +83,9 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  // 2026-10-26: new entry, measured at 76887. Base UI's Autocomplete shares the Combobox internals,
+  // and the parts render InputGroup and the shared overlay portal.
+  { name: "autocomplete", entryFile: "autocomplete.js", measuredGzip: 76887 },
   // 2026-10-23: new entry, measured at 25337. Base UI's useRender and mergeProps, the shared focus
   // ring and state face, and the pure accept, split and read modules.
   { name: "file-upload", entryFile: "file-upload.js", measuredGzip: 25337 },

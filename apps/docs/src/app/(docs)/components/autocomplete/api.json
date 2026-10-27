@@ -1,0 +1,1139 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "autocomplete",
+  "parts": [
+    {
+      "name": "Autocomplete.Root",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/autocomplete/autocomplete.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 1,
+      "props": [
+        {
+          "name": "actionsRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "RefObject<AutocompleteRootActions | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to imperative actions. - `unmount`: Ends the closing phase of the autocomplete after an externally controlled closing animation finishes. Call `preventUnmountOnClose()` in `onOpenChange` first, otherwise the autocomplete completes closing on its own. Whether it leaves the DOM is decided by `keepMounted` on the portal. - `close`: Closes the autocomplete imperatively when called.",
+          "required": false
+        },
+        {
+          "name": "autoHighlight",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "\"always\" | boolean | undefined",
+          "shortType": "Union",
+          "defaultValue": "false",
+          "description": "Whether the first matching item is highlighted automatically. - `true`: highlight after the user types and keep the highlight while the query changes. - `'always'`: always highlight the first item.",
+          "required": false
+        },
+        {
+          "name": "defaultOpen",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the popup is initially open. To render a controlled popup, use the `open` prop instead.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | number | readonly string[] | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The uncontrolled input value of the autocomplete when it's initially rendered. To render a controlled autocomplete, use the `value` prop instead.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "filter",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((item: ItemValue, query: string, itemToString?: ((item: ItemValue) => string) | undefined) => boolean) | null | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Filter function used to match items against the input query.",
+          "required": false
+        },
+        {
+          "name": "filteredItems",
+          "origin": "declared",
+          "type": "(Filtered & NoInfer<AutocompleteRootItems<Filtered, ItemValue>>) | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Filtered items to display in the list. When given, the list shows these instead of filtering `items` itself. With `items` also given, this array keeps its flat or grouped structure. Nullish entries are not supported, as in `items`. Use it to filter outside the list, such as with Base UI's `useFilter()` hook.",
+          "required": false
+        },
+        {
+          "name": "form",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Identifies the form that owns the internal input. Useful when the autocomplete is rendered outside the form.",
+          "required": false
+        },
+        {
+          "name": "grid",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether list items are presented in a grid layout. When enabled, arrow keys navigate across rows and columns inferred from DOM rows.",
+          "required": false
+        },
+        {
+          "name": "highlightItemOnHover",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether moving the pointer over items should highlight them. Disabling this prop allows CSS `:hover` to be differentiated from the `:focus` (`data-highlighted`) state.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The id of the component.",
+          "required": false
+        },
+        {
+          "name": "inline",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the list is rendered inline without using the component's own popup. Specify `open` unconditionally in conjunction with this prop so the list is considered visible: `<Autocomplete.Root inline open>`",
+          "required": false
+        },
+        {
+          "name": "inputRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Ref<HTMLInputElement> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to the hidden input element.",
+          "required": false
+        },
+        {
+          "name": "itemToStringValue",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((itemValue: ItemValue) => string) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "When the item values are objects (`<Autocomplete.Item value={object}>`), this function converts the object value to a string representation for both display in the input and form submission. If the shape of the object is `{ value, label }`, the label will be used automatically without needing to specify this prop.",
+          "required": false
+        },
+        {
+          "name": "items",
+          "origin": "declared",
+          "type": "(Items & NoInfer<AutocompleteRootItems<Items, ItemValue>>) | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The items to suggest: a flat array, or an array of groups that each carry their own `items`. Nullish entries are not supported.",
+          "required": false
+        },
+        {
+          "name": "keepHighlight",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the highlighted item should be preserved when the pointer leaves the list.",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "-1",
+          "description": "The maximum number of items to display in the list.",
+          "required": false
+        },
+        {
+          "name": "loopFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether to loop keyboard focus back to the input when the end of the list is reached while using the arrow keys. The first item can then be reached by pressing <kbd>ArrowDown</kbd> again from the input, or the last item can be reached by pressing <kbd>ArrowUp</kbd> from the input. The input is always included in the focus loop per [ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/). When disabled, focus does not move when on the last element and the user presses <kbd>ArrowDown</kbd>, or when on the first element and the user presses <kbd>ArrowUp</kbd>.",
+          "required": false
+        },
+        {
+          "name": "modal",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Determines if the popup enters a modal state when open. - `true`: user interaction is limited to the popup: document page scroll is locked and pointer interactions on outside elements are disabled. - `false`: user interaction with the rest of the document is allowed. On touch devices, a `true` modal blocks outside taps but leaves the page scrollable unless the popup spans nearly the full viewport width, matching native iOS behavior.",
+          "required": false
+        },
+        {
+          "name": "mode",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "\"both\" | \"inline\" | \"list\" | \"none\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "'list'",
+          "description": "Controls how the autocomplete behaves with respect to list filtering and inline autocompletion. - `list` (default): items are dynamically filtered based on the input value. The input value does not change based on the active item. - `both`: items are dynamically filtered based on the input value, which will temporarily change based on the active item (inline autocompletion). - `inline`: items are static (not filtered), and the input value will temporarily change based on the active item (inline autocompletion). - `none`: items are static (not filtered), and the input value will not change based on the active item.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Identifies the field when a form is submitted.",
+          "required": false
+        },
+        {
+          "name": "onItemHighlighted",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((highlightedValue: ItemValue | undefined, eventDetails: HighlightEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Callback fired when an item is highlighted or unhighlighted. Receives the highlighted item value (or `undefined` if no item is highlighted) and event details with a `reason` property describing why the highlight changed. The `reason` can be: - `'keyboard'`: the highlight changed due to keyboard navigation. - `'pointer'`: the highlight changed due to pointer hovering. The event may be a `MouseEvent` rather than a `PointerEvent`. - `'none'`: the highlight changed for another reason, such as typing, `autoHighlight`, the item list changing, or the popup opening or closing.",
+          "required": false
+        },
+        {
+          "name": "onOpenChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((open: boolean, eventDetails: AutocompleteRootOpenChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the popup is opened or closed.",
+          "required": false
+        },
+        {
+          "name": "onOpenChangeComplete",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((open: boolean) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called after any animations complete when the popup is opened or closed.",
+          "required": false
+        },
+        {
+          "name": "onValueChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((value: string, eventDetails: AutocompleteRootChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the input value of the autocomplete changes.",
+          "required": false
+        },
+        {
+          "name": "open",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the popup is currently open. Use when controlled.",
+          "required": false
+        },
+        {
+          "name": "openOnInputClick",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the popup opens when clicking the input.",
+          "required": false
+        },
+        {
+          "name": "readOnly",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the user should be unable to choose a different option from the popup.",
+          "required": false
+        },
+        {
+          "name": "required",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the user must choose a value before submitting a form.",
+          "required": false
+        },
+        {
+          "name": "submitOnItemClick",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether clicking an item should submit the autocomplete's owning form. By default, clicking an item via a pointer or <kbd>Enter</kbd> key does not submit the owning form. Useful when the autocomplete is used as a single-field form search input.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | number | readonly string[] | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The input value of the autocomplete. Use when controlled.",
+          "required": false
+        },
+        {
+          "name": "virtualized",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the items are being externally virtualized.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.Input",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/autocomplete/autocomplete.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 302,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Rendered inside the InputGroup after the addon, such as an `InputGroup.Addon` of your own.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, applied to the outer InputGroup (`w-auto`), not the input element.",
+          "required": false
+        },
+        {
+          "name": "clearLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the auto-rendered Clear button when `showClear`. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction. Disables the input and the trigger/clear buttons. Combines with `disabled` on `Autocomplete.Root` and `Field.Root`: any of the three disables the input.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The input's id. Inside a `Field`, set `id` on `Autocomplete.Root` instead: the Root's id is the one `Field.Label` points at, so an id here leaves the label's `for` unmatched.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ComboboxInputState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "showClear",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Renders `Autocomplete.Clear` in the inline-end addon.",
+          "required": false
+        },
+        {
+          "name": "showTrigger",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Renders the caret trigger button in the inline-end addon. The list opens as the user types, so the field has none by default. Hidden at runtime whenever a clear button is present in the group.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ComboboxInputState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "triggerLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the auto-rendered caret trigger when `showTrigger`. Defaults to the locale dictionary.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/autocomplete/autocomplete.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 284,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: AutocompleteTriggerState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, AutocompleteTriggerState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: AutocompleteTriggerState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.Clear",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/autocomplete/autocomplete.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 284,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ComboboxClearState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "keepMounted",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should remain mounted in the DOM when not visible.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the icon-only clear button. An explicit `aria-label` wins over it; both default to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ComboboxClearState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ComboboxClearState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.Content",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/autocomplete/autocomplete.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "align",
+          "origin": "declared",
+          "type": "Align | undefined",
+          "shortType": null,
+          "defaultValue": "\"start\"",
+          "description": "How the popup aligns to the trigger on the cross axis.",
+          "required": false
+        },
+        {
+          "name": "alignOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "0",
+          "description": "Offset along the alignment axis, in pixels.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ComboboxPopupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
+          "required": false
+        },
+        {
+          "name": "finalFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the popup is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "initialFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((openType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the popup is opened. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (first tabbable element or popup). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ComboboxPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": "\"bottom\"",
+          "description": "Which side of the trigger the popup is placed on.",
+          "required": false
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "6",
+          "description": "Distance from the trigger, in pixels.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ComboboxPopupState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.List",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/autocomplete/autocomplete.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ComboboxListState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ComboboxListState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ComboboxListState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.Item",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/autocomplete/autocomplete.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 273,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: AutocompleteItemState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "index",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The index of the item in the list. Improves performance when specified by avoiding the need to calculate the index automatically from the DOM.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `true` if the rendered element is a native button.",
+          "required": false
+        },
+        {
+          "name": "onClick",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((event: BaseUIEvent<MouseEvent<HTMLDivElement, MouseEvent>>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "An optional click handler for the item when selected. It fires when clicking the item with the pointer, as well as when pressing `Enter` with the keyboard if the item is highlighted when the `Input` or `List` element has focus.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, AutocompleteItemState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: AutocompleteItemState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "any",
+          "shortType": null,
+          "defaultValue": "null",
+          "description": "A unique value that identifies this item.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.Group",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/autocomplete/autocomplete.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ComboboxGroupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "items",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "readonly any[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Items to be rendered within this group. When provided, child `Collection` components will use these items.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ComboboxGroupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ComboboxGroupState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.Label",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/autocomplete/autocomplete.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ComboboxGroupLabelState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ComboboxGroupLabelState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ComboboxGroupLabelState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.Collection",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/autocomplete/autocomplete.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 1,
+      "props": []
+    },
+    {
+      "name": "Autocomplete.Empty",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/autocomplete/autocomplete.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ComboboxEmptyState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ComboboxEmptyState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ComboboxEmptyState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.Status",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/autocomplete/autocomplete.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ComboboxStatusState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ComboboxStatusState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ComboboxStatusState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.Separator",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/autocomplete/autocomplete.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: AutocompleteSeparatorState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Orientation | undefined",
+          "shortType": null,
+          "defaultValue": "'horizontal'",
+          "description": "The orientation of the separator.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, AutocompleteSeparatorState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: AutocompleteSeparatorState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

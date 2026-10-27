@@ -1,0 +1,73 @@
+---
+lede: >
+  A text field that suggests values as the user types. Its value is the text, typed or picked.
+---
+
+import { AutocompleteBasic } from "./demos/autocomplete-basic";
+import { AutocompleteCaret } from "./demos/autocomplete-caret";
+import { AutocompleteCompanySearch } from "./demos/autocomplete-company-search";
+import { AutocompleteGroups } from "./demos/autocomplete-groups";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("autocomplete");
+
+<ComponentIntro slug="autocomplete" />
+
+<Prose>
+
+Autocomplete is Base UI's Autocomplete with [Combobox](/components/combobox)'s look. The two differ in their value. A Combobox submits the option the user selected, and editing its text never replaces that selection. An Autocomplete submits the text in its input, and its list only suggests: picking an item fills the input with the item's text, and the user can go on editing it. Text that matches no item is kept on blur and submitted as it is. Use Autocomplete when any text is a valid answer, and Combobox when the answer must be one of the options.
+
+`Autocomplete.Root` holds the state and renders no element. `value`, `defaultValue` and `onValueChange` hold the text, and the input carries `name`, so the form submits the text under it. Inside a `Field.Root`, the field's name, label, description and `Form` errors reach the input, as they do a Combobox. Set `id` on the Root rather than on the input, so the `Field.Label` points at it. Base UI filters `items` against the text in the locale of `LocaleProvider`. Place `Autocomplete.Empty` beside `Autocomplete.List` for the list that matches nothing. It needs `items` on the Root, since it shows only while the Root's filtered items are empty.
+
+</Prose>
+
+<Demo slug="autocomplete" id="basic" title="Suggestions" file="autocomplete-basic.tsx">
+  <AutocompleteBasic />
+</Demo>
+
+<Prose>
+
+## Caret and clear button
+
+The list opens as the user types, so the field has no caret. `showTrigger` adds one, which opens the whole list for browsing. `showClear` adds a button that empties the input while it holds text, and the caret hides while it shows. Their names come from the locale dictionary, and `triggerLabel` and `clearLabel` replace them.
+
+</Prose>
+
+<Demo slug="autocomplete" id="caret" title="Caret" file="autocomplete-caret.tsx">
+  <AutocompleteCaret />
+</Demo>
+
+<Prose>
+
+## Groups
+
+Pass groups as `items`, each with a `value` and its own `items`. `itemToStringValue` then receives one item of a group, not the group. Render each group through `Autocomplete.Collection` inside `Autocomplete.List`, as an `Autocomplete.Group` that takes the group's `items`, with an `Autocomplete.Label` that names it and a second `Autocomplete.Collection` for its rows. An `Autocomplete.Separator` draws the rule between groups. A group whose items all fail to match the text hides with them.
+
+</Prose>
+
+<Demo slug="autocomplete" id="groups" title="Groups" file="autocomplete-groups.tsx">
+  <AutocompleteGroups />
+</Demo>
+
+<Prose>
+
+## Search on a server
+
+For a search that runs elsewhere, such as a register lookup, pass `filter={null}` and the results as `items`: the list then shows them as given. Keep the request and its state in your component, and pass the empty list's states, such as loading, an error or no results, as `Autocomplete.Empty`'s children. Base UI keeps the Empty mounted as a polite live region, so screen readers hear those states. `Autocomplete.Status` is a visually hidden live region for the rest, such as the number of results. Place it beside `Autocomplete.Input`, outside `Autocomplete.Content`, so it stays mounted while the popup opens and closes, and render the message as its children.
+
+`onValueChange` receives only the text. To use the picked item itself, capture it in `Autocomplete.Item`'s `onClick`, which runs on a click and on Enter while the item is highlighted. With object items, `itemToStringValue` gives the text that fills the input and submits. In this demo, picking a company fills in its organization number. A company the search does not find is typed in full, and its number entered by hand.
+
+</Prose>
+
+<Demo
+  slug="autocomplete"
+  id="company-search"
+  title="Search on a server"
+  file="autocomplete-company-search.tsx">
+  <AutocompleteCompanySearch />
+</Demo>
+
+<ApiReference slug="autocomplete" />
+
+<ComponentTokens slug="autocomplete" />

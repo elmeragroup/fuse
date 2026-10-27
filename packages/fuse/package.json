@@ -54,6 +54,10 @@
       "types": "./src/attachment.ts",
       "import": "./src/attachment.ts"
     },
+    "./autocomplete": {
+      "types": "./src/autocomplete.ts",
+      "import": "./src/autocomplete.ts"
+    },
     "./avatar": {
       "types": "./src/avatar.ts",
       "import": "./src/avatar.ts"

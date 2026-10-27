@@ -10,6 +10,7 @@ export * from "./alert";
 export * from "./alert-dialog";
 export * from "./aspect-ratio";
 export * from "./attachment";
+export * from "./autocomplete";
 export * from "./avatar";
 export * from "./badge";
 export * from "./breadcrumb";
