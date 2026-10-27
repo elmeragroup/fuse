@@ -398,7 +398,7 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   Avatar group's three avatars.
 - Carry a label's text-alignment override through a swap. The fake's text-alignment rule in
   `plugin/src/fake-figma.ts` drops it there, since no probe swapped an instance with the override.
-- Add the floating Sidebar and the Command dialog.
+- Add the floating Sidebar.
 - Confirm on a real file that an instance's glyph fill override goes with the glyph when the
   plugin draws an icon again, as `plugin/src/fake-figma.ts` assumes. Change one icon's markup,
   run Apply, and check that the next Plan lists nothing.

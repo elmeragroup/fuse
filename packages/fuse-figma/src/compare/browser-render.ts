@@ -70,6 +70,8 @@ export type CellRequest = {
   readonly measured: readonly string[];
   /** How many slots the cell spans across, as `slotSpan` gives them. */
   readonly span: number;
+  /** The height of the viewport the cell's root sits in, or undefined, as `slotRects` reads it. */
+  readonly height: number | undefined;
   /**
    * The element the page forces the cell's state on: the measured element, or the part inside it
    * that takes the set's states, as an Accordion item's trigger.
@@ -234,9 +236,11 @@ export class CompareBrowser {
     layout: PageLayout
   ): Promise<Result.Result<RenderedPreview, FontNotLoaded>> {
     const pageCells: PageCell[] = [
-      ...requests.map(({ id, content, measured, span }) => ({ id, content, measured, span })),
-      ...requests.flatMap(({ id, resting, measured, span }) =>
-        resting === undefined ? [] : [{ id: `${REFERENCE_PREFIX}${id}`, content: resting, measured, span }]
+      ...requests.map(({ id, content, measured, span, height }) => ({ id, content, measured, span, height })),
+      ...requests.flatMap(({ id, resting, measured, span, height }) =>
+        resting === undefined
+          ? []
+          : [{ id: `${REFERENCE_PREFIX}${id}`, content: resting, measured, span, height }]
       ),
     ];
     const rects = slotRects(layout, pageCells);

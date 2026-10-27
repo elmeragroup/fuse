@@ -415,44 +415,56 @@ function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean, fixed
   );
 }
 
-/** How the coverage table names the place of a fixed popup its composite centres in the viewport. */
-const CENTRED_FIXED =
-  "Base UI fixes the popup at the viewport's centre, which the composite, as large as that viewport, draws by centring the popup";
+/** Where a fixed instance sits in its composite's viewport: centred, or a length below the top and centred across. */
+export type FixedAt = "centre" | { readonly top: number };
 
 /**
- * Read the place of an instance part's inner root that is fixed at the centre of the viewport its
- * composite draws, as Dialog's `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2` puts its
- * popup at the viewport's centre: the box's top left on the centre, then moved back by half its own
- * size (CSS 2.1 §10.3.7, §10.6.4, CSS Transforms 2). The composite centres the instance in a flex box
- * as large as the viewport, which `centredFixed` in `box-mapping.ts` checks, so the place reads as
- * literal there. Any other place stays unmapped, and `z-index`, which orders the popup above the page,
- * drops.
+ * Read the place of an instance part's inner root that is fixed in the viewport its composite draws,
+ * as `fixedPlace` in `box-mapping.ts` found it.
+ *
+ * - Centred, as Dialog's `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2` puts its popup at
+ *   the viewport's centre: the box's top left on the centre, then moved back by half its own size
+ *   (CSS 2.1 §10.3.7, §10.6.4, CSS Transforms 2), which the composite draws by centring the instance.
+ * - A length below the top and centred across, as Command's `fixed top-[max(--spacing(4),12dvh)]
+ *   left-1/2 -translate-x-1/2` puts its palette, which the composite draws as a column that pads its
+ *   top by that length and centres the instance across.
+ *
+ * Its place then reads as literal there, and `z-index`, which orders it above the page, drops. Any
+ * other place stays unmapped.
  *
  * @param style - The inner root's style in place.
+ * @param at - Where the composite draws it.
  */
-export function placeCentredFixed(style: LayerStyle): void {
+export function placeCentredFixed(style: LayerStyle, at: FixedAt): void {
   const translate = splitTopLevel(normalizeCss(style.resolved("translate") ?? ""), " ").map(
     evaluatePercentage
   );
-  const centred =
-    ["top", "left"].every((property) => evaluatePercentage(style.resolved(property) ?? "") === 0.5) &&
+  const [across, down = 0] = translate;
+  const centredAcross = evaluatePercentage(style.resolved("left") ?? "") === 0.5 && across === -0.5;
+  const placed =
     !style.has("right") &&
     !style.has("bottom") &&
-    translate.length === 2 &&
-    translate.every((share) => share === -0.5);
+    centredAcross &&
+    (at === "centre"
+      ? evaluatePercentage(style.resolved("top") ?? "") === 0.5 && down === -0.5 && translate.length === 2
+      : down === 0);
+  const detail =
+    at === "centre"
+      ? "Base UI fixes the popup at the viewport's centre, which the composite, as large as that viewport, draws by centring the popup"
+      : `Base UI fixes the popup ${String(at.top)}px below the viewport's top and centres it across, which the composite, as large as that viewport, draws by padding its top by that length and centring the popup across`;
   for (const property of ["position", "top", "left", "translate"]) {
-    if (centred) {
+    if (placed) {
       style.read(
         property,
         (value) => value,
-        () => ({ outcome: "literal", detail: CENTRED_FIXED }),
+        () => ({ outcome: "literal", detail }),
         []
       );
     } else {
       style.mark(
         property,
         "unmapped",
-        "a fixed popup the composite centres only where it sits at the viewport's centre",
+        "a fixed popup the composite places only where it sits as the composite draws it",
         []
       );
     }

@@ -79,6 +79,11 @@ export type PageCell = {
   readonly measured: readonly string[];
   /** How many slots the cell spans across, as {@link slotSpan} gives them, 1 where absent. */
   readonly span?: number;
+  /**
+   * The height the definition gives the cell's root, as the viewport a fixed root sits in, or
+   * undefined for none. A cell taller than a slot with its padding takes a row of its own that tall.
+   */
+  readonly height?: number | undefined;
 };
 
 /** A point in CSS pixels. */
@@ -121,30 +126,39 @@ export function slotSpan(layout: PageLayout, width: number | undefined): number 
 
 /**
  * Each cell's slot. A cell of one slot takes the place {@link slotRect} gives it among the other
- * cells of one slot, so a wide cell moves no other cell. Each wide cell takes a row of its own below
- * the grid, as wide as its span.
+ * cells of one slot, so a wide or tall cell moves no other cell. Each wide or tall cell takes a row
+ * of its own below the grid, as wide as its span and as tall as a slot or its height with the padding
+ * on both sides, whichever is more, as the Command dialog's 500px viewport needs 516px.
  *
  * @param layout - The page layout.
  * @param cells - The cells, in page order.
  * @returns The slots, in the cells' order.
  */
-export function slotRects(layout: PageLayout, cells: readonly Pick<PageCell, "span">[]): readonly PageRect[] {
-  const narrow = cells.filter(({ span }) => (span ?? 1) === 1).length;
+export function slotRects(
+  layout: PageLayout,
+  cells: readonly Pick<PageCell, "span" | "height">[]
+): readonly PageRect[] {
+  const rowHeight = (height: number | undefined) =>
+    Math.max(layout.slotHeight, (height ?? 0) + 2 * layout.padding);
+  const own = ({ span = 1, height }: Pick<PageCell, "span" | "height">) =>
+    span > 1 || rowHeight(height) > layout.slotHeight;
+  const narrow = cells.filter((cell) => !own(cell)).length;
   const rows = Math.max(1, Math.ceil(narrow / layout.columns));
   let placed = 0;
-  let wide = 0;
-  return cells.map(({ span = 1 }) => {
-    if (span === 1) {
+  let below = layout.top + rows * layout.slotHeight;
+  return cells.map((cell) => {
+    if (!own(cell)) {
       placed += 1;
       return slotRect(layout, placed - 1);
     }
-    wide += 1;
-    return {
+    const rect = {
       x: 0,
-      y: layout.top + (rows + wide - 1) * layout.slotHeight,
-      width: span * layout.slotWidth,
-      height: layout.slotHeight,
+      y: below,
+      width: (cell.span ?? 1) * layout.slotWidth,
+      height: rowHeight(cell.height),
     };
+    below += rect.height;
+    return rect;
   });
 }
 
@@ -155,7 +169,10 @@ export function slotRects(layout: PageLayout, cells: readonly Pick<PageCell, "sp
  * @param cells - The cells, in page order.
  * @returns The viewport size in CSS pixels.
  */
-export function pageViewport(layout: PageLayout, cells: readonly Pick<PageCell, "span">[]): PageSize {
+export function pageViewport(
+  layout: PageLayout,
+  cells: readonly Pick<PageCell, "span" | "height">[]
+): PageSize {
   const rects = slotRects(layout, cells);
   return {
     width: Math.max(layout.columns * layout.slotWidth, ...rects.map((rect) => rect.x + rect.width)),

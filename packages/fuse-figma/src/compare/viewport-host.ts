@@ -4,8 +4,10 @@
  * `contain: layout` makes it the containing block of every fixed box inside it (CSS Containment 2
  * §3.2), so `fixed inset-0`, `top-1/2` and percentages resolve against it as they do against the
  * window. The overlay portals into it through the ref its content receives. Media queries still read
- * the page's window, 2400px wide, as the kit draws the desktop arm, and so do `dvh` and `dvw`, so a set
- * whose fixed root reads those needs more than this host.
+ * the page's window, 2400px wide, as the kit draws the desktop arm, and so do `dvh` and `dvw`. A set
+ * whose fixed root reads those passes the rules that restate them against the viewport, which the host
+ * puts in a `<style>` of its own, as the Command palette's `12dvh` top becomes 60px in its 500px
+ * viewport. The rules are `!important`, so they win over the utilities they restate.
  *
  * It imports only React, so the compare page's client bundle can take it.
  */
@@ -16,13 +18,17 @@ import type { ReactElement, ReactNode, RefObject } from "react";
 /** A viewport a definition declares, in pixels. */
 export type HostViewport = { readonly width: number; readonly height: number };
 
-/** The host's props: the viewport, and the content, given the ref of the host it portals into. */
+/**
+ * The host's props: the viewport, the content, given the ref of the host it portals into, and the
+ * rules that restate the content's `dvh` and `dvw` lengths against the viewport, or undefined.
+ */
 type ViewportHostProps = {
   readonly viewport: HostViewport;
   readonly content: (host: RefObject<HTMLDivElement | null>) => ReactNode;
+  readonly css: string | undefined;
 };
 
-function ViewportHost({ viewport, content }: ViewportHostProps): ReactElement {
+function ViewportHost({ viewport, content, css }: ViewportHostProps): ReactElement {
   const host = useRef<HTMLDivElement>(null);
   return createElement(
     "div",
@@ -31,6 +37,7 @@ function ViewportHost({ viewport, content }: ViewportHostProps): ReactElement {
       "data-compare-viewport": "",
       style: { position: "relative", width: viewport.width, height: viewport.height, contain: "layout" },
     },
+    css === undefined ? undefined : createElement("style", { key: "viewport" }, css),
     content(host)
   );
 }
@@ -40,11 +47,14 @@ function ViewportHost({ viewport, content }: ViewportHostProps): ReactElement {
  *
  * @param viewport - The viewport the definition declares.
  * @param content - The overlay, given the host's ref as its portal container.
+ * @param css - The rules that restate the overlay's `dvh` and `dvw` lengths against the viewport, or
+ *   undefined where it reads none.
  * @returns The host element.
  */
 export function viewportHost(
   viewport: HostViewport,
-  content: (host: RefObject<HTMLDivElement | null>) => ReactNode
+  content: (host: RefObject<HTMLDivElement | null>) => ReactNode,
+  css?: string
 ): ReactElement {
-  return createElement(ViewportHost, { viewport, content });
+  return createElement(ViewportHost, { viewport, content, css });
 }

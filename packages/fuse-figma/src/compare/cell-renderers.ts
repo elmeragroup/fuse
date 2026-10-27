@@ -441,6 +441,16 @@ const SOURCES: readonly RendererSource[] = [
     module: { url: new URL("command-cell.ts", import.meta.url), name: "commandList" },
   },
   {
+    set: "command-palette",
+    entry: "dist/command.js",
+    module: { url: new URL("command-dialog-cell.ts", import.meta.url), name: "commandPalette" },
+  },
+  {
+    set: "command-dialog-open",
+    entry: "dist/command.js",
+    module: { url: new URL("command-dialog-cell.ts", import.meta.url), name: "commandDialogOpen" },
+  },
+  {
     set: "empty",
     entry: "dist/empty.js",
     load: async () => (await import("./empty-cell.ts")).empty,

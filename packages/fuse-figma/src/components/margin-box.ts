@@ -140,7 +140,9 @@ export function wrapInstanceMargins(
  *
  * A part that fills a column across draws its margins above and below it in a frame that fills
  * across and hugs down, as a menu separator's `my-1` sets it 4px from the rows around it. Its margins
- * across stay with the part, for the column's separator rule to read (`full-bleed.ts`). A block
+ * across stay with the part, for the column's separator rule to read (`full-bleed.ts`), unless the part
+ * sets no width of its own and none of them is negative: then the column stretches it to its width less
+ * those margins, which the frame draws as its padding across too. A block
  * column's vertical margins collapse where they adjoin another margin (CSS 2.1 §8.3.1), so there the
  * frame draws them only where `collapses` says no margin adjoins them.
  *
@@ -169,11 +171,23 @@ function drawMargins(
   const across =
     !stretched && parent.direction === "VERTICAL" && horizontal.kind === "fill" && vertical.kind !== "fill";
   const overshoots = across && clipped && overshootsEnd(style, zero, variables);
+  // A part with no width of its own that the column stretches across spans the column less its
+  // margins (CSS 2.1 §10.3.3, CSS Flexbox 1 §9.4 step 11), so a margin across that is no negative
+  // length insets it, as the palette's input sits `surface-gap-sm` in from its edges. A negative one
+  // stays with the column's separator rule (`full-bleed.ts`).
+  const insetAcross =
+    across &&
+    !overshoots &&
+    normalizeCss(style.resolved("width") ?? "auto") === "auto" &&
+    ["margin-left", "margin-right"].every((property) => {
+      const spec = readNumber(style.resolved(property) ?? "0px", variables);
+      return spec !== undefined && (spec.kind !== "literal" || spec.value >= 0);
+    });
   const set = MARGINS.filter(
     (property) =>
       style.has(property) &&
       !zero(property) &&
-      (!across || VERTICAL_MARGINS.has(property) || (overshoots && property === "margin-left"))
+      (!across || VERTICAL_MARGINS.has(property) || insetAcross || (overshoots && property === "margin-left"))
   );
   const fixedOrHugs = horizontal.kind !== "fill" && vertical.kind !== "fill";
   const length = (value: string): NumberSpec | undefined => {

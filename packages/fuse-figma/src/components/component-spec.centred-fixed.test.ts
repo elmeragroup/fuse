@@ -64,3 +64,43 @@ describe("a fixed popup instance its composite centres in the viewport", () => {
     expect(popupRows(built?.coverage ?? [], "position")).toEqual([["unmapped"]]);
   });
 });
+
+/**
+ * A popup as the Command palette fixes it: 60px below the viewport's top, centred across by
+ * `left-1/2 -translate-x-1/2` (CSS 2.1 §10.3.7, §10.6.4, CSS Transforms 2), which a column as large as
+ * the viewport draws by padding its top 60px and centring the popup across.
+ */
+const TOP_POPUP = chip("fixed top-[60px] left-1/2 flex w-[400px] -translate-x-1/2 p-[16px] bg-[#ffffff]", {
+  key: "top-popup",
+  name: "Top popup",
+  slot: "popup",
+  viewport: VIEWPORT,
+  parts: [{ ...dot("h-[40px] w-[40px]"), key: "body", slot: "chip-body" }],
+});
+
+/** A scrim over the same viewport, a column padding its top by the given length. */
+function topScrim(top: string): ComponentDefinition {
+  return chip(`fixed inset-0 flex flex-col items-center pt-[${top}] bg-[#000000]`, {
+    key: "top-scrim",
+    name: "Top scrim",
+    slot: "scrim",
+    viewport: VIEWPORT,
+    parts: [
+      { kind: "instance", key: "popup", of: TOP_POPUP, cell: () => ({ state: "rest" }), shownIn: () => true },
+    ],
+  });
+}
+
+describe("a fixed popup instance its composite places at a top inset", () => {
+  it("reads its place as the composite's padding above it and its centring across", async () => {
+    const [, built] = await buildFixtures([TOP_POPUP, topScrim("60px")]);
+    const root = built?.componentSet.variants[0]?.root;
+    expect(root).toMatchObject({ paddingTop: literal(60), counterAlign: "CENTER" });
+    expect((built?.coverage ?? []).filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
+
+  it("leaves the place unmapped where the composite's padding is not the popup's top", async () => {
+    const [, built] = await buildFixtures([TOP_POPUP, topScrim("40px")]);
+    expect(popupRows(built?.coverage ?? [], "position")).toEqual([["unmapped"]]);
+  });
+});

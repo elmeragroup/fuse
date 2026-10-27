@@ -211,6 +211,8 @@ export function planCells(
         measured: measuredSelectors(definition, isClientRenderer(renderer) ? renderer.union : undefined),
         // A fixed root in a declared viewport takes a host as wide as the viewport.
         span: slotSpan(layout, previewWidthIn(definition, cell) ?? definition.viewport?.width),
+        // and a row as tall as the viewport where that is taller than a slot.
+        height: definition.viewport?.height,
         forcedOn: forcedSelector(definition, cell),
         forced,
         forcedAttributes,

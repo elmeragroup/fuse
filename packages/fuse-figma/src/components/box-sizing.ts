@@ -790,7 +790,11 @@ export function unstretched(holder: Holder, parts: readonly LayerStyle[]): Missi
  * @returns The place in `parts` of the part that fills the box along its direction, or undefined
  *   for none.
  */
-export function readGrowth(holder: Holder, parts: readonly LayerStyle[]): number | undefined {
+export function readGrowth(
+  holder: Holder,
+  parts: readonly LayerStyle[],
+  underMaxHeight: string | undefined
+): number | undefined {
   const { layout, sizing, style } = holder;
   const horizontal = layout.direction === "HORIZONTAL";
   const along = horizontal ? sizing.horizontal : sizing.vertical;
@@ -816,16 +820,20 @@ export function readGrowth(holder: Holder, parts: readonly LayerStyle[]): number
     );
     return fills === undefined ? undefined : parts.indexOf(only);
   }
-  // A zero minimum never lengthens the box, and any other limit along the axis can.
-  const limited =
-    style.has(axis.max) || (style.has(axis.min) && evaluateLength(style.resolved(axis.min) ?? "") !== 0);
+  // A zero minimum never lengthens the box, and any other limit along the axis can. A maximum the
+  // definition's measurement says the content stays under never limits the box at all.
+  const capped = style.has(axis.max) && !(axis === HEIGHT && underMaxHeight !== undefined);
+  const limited = capped || (style.has(axis.min) && evaluateLength(style.resolved(axis.min) ?? "") !== 0);
   if (!limited) {
     only.read(
       "flex",
       one,
       () => ({
         outcome: "dropped",
-        detail: `the ${axis.flow} hugs its layers, so the one layer that grows has no room to grow into`,
+        detail:
+          style.has(axis.max) && underMaxHeight !== undefined
+            ? `the ${axis.flow} hugs its layers under its max-height, ${underMaxHeight}, so the one layer that grows has no room to grow into`
+            : `the ${axis.flow} hugs its layers, so the one layer that grows has no room to grow into`,
       }),
       []
     );

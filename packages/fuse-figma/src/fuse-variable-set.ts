@@ -461,6 +461,15 @@ const FORMULA_VARIABLES = [
     description:
       "The padding on the outer side of an Input group addon that holds a button, such as the caret of a Combobox: control-px-icon-md less the 4px that the negative margin of the addon takes back. Figma variables cannot compute, so the sync writes the result for each density.",
   },
+  {
+    name: "command-text-px",
+    reads: "density",
+    formula: "calc(var(--surface-gap-sm) + var(--row-px))",
+    length: (metric) => metric("surface-gap-sm") + metric("row-px"),
+    scopes: ["GAP"],
+    description:
+      "The padding across the footer of a Command palette, which lines its hints up with the text of the rows above: surface-gap-sm plus row-px. Figma variables cannot compute, so the sync writes the result for each density.",
+  },
 ] as const satisfies readonly FormulaVariable[];
 
 /**

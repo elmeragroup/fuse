@@ -253,6 +253,10 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "command-item", name: "Command item", variants: 9, previewed: 9 },
       // The docs Groups demo's list.
       { key: "command-list", name: "Command list", variants: 1, previewed: 1 },
+      // The docs Dialog demo's palette, open.
+      { key: "command-palette", name: "Command palette", variants: 1, previewed: 1 },
+      // The palette over the scrim, near the top of the viewport.
+      { key: "command-dialog-open", name: "Command dialog (open)", variants: 1, previewed: 1 },
     ],
   },
   // The default, outline and dashed outline frames.

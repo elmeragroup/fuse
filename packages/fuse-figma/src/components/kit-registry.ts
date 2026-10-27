@@ -24,6 +24,7 @@ import { BUTTON, ICON_BUTTON } from "./button-kit";
 import { CALENDAR_DAY } from "./calendar-day-kit";
 import { CHECKBOX } from "./checkbox-kit";
 import { COMBOBOX_EMPTY, COMBOBOX_ITEM, COMBOBOX_OPEN, COMBOBOX_POPUP } from "./combobox-kit";
+import { COMMAND_DIALOG_OPEN, COMMAND_PALETTE } from "./command-dialog-kit";
 import { COMMAND_ITEM, COMMAND_LIST } from "./command-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
@@ -410,6 +411,13 @@ export const KIT: readonly KitEntry[] = [
   { definition: COMBOBOX_OPEN, page: COMBOBOX_PAGE, previewCells: matrixCells(COMBOBOX_OPEN.axes) },
   { definition: COMMAND_ITEM, page: COMMAND_PAGE, previewCells: matrixCells(COMMAND_ITEM.axes) },
   { definition: COMMAND_LIST, page: COMMAND_PAGE, previewCells: matrixCells(COMMAND_LIST.axes) },
+  // The palette and its open example, drawn from the Input group, Kbd and Command item sets above.
+  { definition: COMMAND_PALETTE, page: COMMAND_PAGE, previewCells: matrixCells(COMMAND_PALETTE.axes) },
+  {
+    definition: COMMAND_DIALOG_OPEN,
+    page: COMMAND_PAGE,
+    previewCells: matrixCells(COMMAND_DIALOG_OPEN.axes),
+  },
   { definition: EMPTY, page: EMPTY_PAGE, previewCells: matrixCells(EMPTY.axes) },
   { definition: CALENDAR_DAY, page: CALENDAR_PAGE, previewCells: matrixCells(CALENDAR_DAY.axes) },
   { definition: LINK, page: LINK_PAGE, previewCells: matrixCells(LINK.axes) },

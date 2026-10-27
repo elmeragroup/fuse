@@ -51,6 +51,7 @@ import {
   isInfiniteLength,
   normalizeCss,
   readColor,
+  inViewport,
   readNumber,
 } from "./css-values";
 import type { Viewport } from "./css-values";
@@ -96,7 +97,7 @@ import {
   readRotation,
   slotAroundDot,
 } from "./placement";
-import type { Layout } from "./placement";
+import type { FixedAt, Layout } from "./placement";
 import { stacksFirstOnTop } from "./stacking";
 import type { PaintedInstances } from "./stacking";
 import { foldTranslate, sharedTranslate } from "./translate-fold";
@@ -513,7 +514,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   };
   const growing = readGrowth(
     holder,
-    flowing.map((part) => part.cascade.style)
+    flowing.map((part) => part.cascade.style),
+    box.underMaxHeight
   );
   // An absolute part that ends the row draws in flow there where the row's end padding keeps its room.
   const last = shown.at(-1);
@@ -556,7 +558,16 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         ? absoluteRoom(holder)
         : selfStretchedRoom(holder, part.cascade.style, lessMargins(inFlow(), part.cascade.style));
     const styles = flowing.map((each) => each.cascade.style);
-    return mapPart(part, room, layout, partScope, layout.blocks && adjoinsMargin(styles, index));
+    return mapPart(
+      part,
+      room,
+      layout,
+      partScope,
+      layout.blocks && adjoinsMargin(styles, index),
+      reader,
+      // A fixed part sits out of the flow, so it is first where no part shows before it.
+      shown.indexOf(part) === 0
+    );
   });
   const parts = settledParts(reader, flow, mapped, scope);
   const missing = unstretched(
@@ -695,6 +706,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     spaced ??
     (layout.oneColumnGrid === true ? number("row-gap", "itemSpacing") : undefined) ??
     number("gap", "itemSpacing") ??
+    // A row spaces its layers by `column-gap` (CSS Box Alignment 3 §8.1), as `gap-x-4` does.
+    (layout.flex && layout.direction === "HORIZONTAL" ? number("column-gap", "itemSpacing") : undefined) ??
     ZERO;
   const counterAlign =
     placed?.counterAlign ?? (textBlock ? blockLineAlign(layout, sizing, limits) : layout.counterAlign);
@@ -845,7 +858,8 @@ function spacesNothingOut(
  * - A row its definition measured to fit its layers on one line in every cell drops it with that
  *   measurement, as {@link BoxDefinition.fitsOneLine} says.
  *
- * Elsewhere it stays unread, so it lands unmapped.
+ * Elsewhere it stays unread, so it lands unmapped. Where it drops, so does the `row-gap` beside it,
+ * which spaces lines the row never breaks into.
  *
  * @param holder - The box.
  * @param growing - The place of the box's layer that grows, as `readGrowth` found it.
@@ -856,29 +870,35 @@ function readWraps(holder: Holder, growing: number | undefined, fitsOneLine: str
   if (!layout.flex || layout.direction !== "HORIZONTAL") {
     return;
   }
-  if (growing === undefined && !hugsUncapped(holder)) {
-    if (fitsOneLine !== undefined) {
-      style.read(
-        "flex-wrap",
-        (value) => (normalizeCss(value) === "wrap" ? value : undefined),
-        () => ({ outcome: "dropped", detail: fitsOneLine }),
-        []
-      );
-    }
+  const detail =
+    growing === undefined && !hugsUncapped(holder)
+      ? fitsOneLine
+      : growing === undefined
+        ? "the row hugs its layers and nothing bounds the width CSS gives it, so it never runs out of room to break a line, and a Figma row never wraps"
+        : "the one layer that grows takes what the row's other layers leave, so the row breaks no line until they overflow it, and a Figma row never wraps";
+  if (detail === undefined) {
     return;
   }
+  const wraps = style.has("flex-wrap");
   style.read(
     "flex-wrap",
     (value) => (normalizeCss(value) === "wrap" ? value : undefined),
-    () => ({
-      outcome: "dropped",
-      detail:
-        growing === undefined
-          ? "the row hugs its layers and nothing bounds the width CSS gives it, so it never runs out of room to break a line, and a Figma row never wraps"
-          : "the one layer that grows takes what the row's other layers leave, so the row breaks no line until they overflow it, and a Figma row never wraps",
-    }),
+    () => ({ outcome: "dropped", detail }),
     []
   );
+  // `row-gap` spaces the lines a wrapping row breaks into (CSS Box Alignment 3 §8.1), so a row on one
+  // line leaves it nothing to space.
+  if (wraps) {
+    style.read(
+      "row-gap",
+      (value) => value,
+      () => ({
+        outcome: "dropped",
+        detail: `the row sets its layers on one line, as ${detail}, so no gap between lines shows`,
+      }),
+      []
+    );
+  }
 }
 
 /** A width a box's blocks fill, as a popup's rows fill it where `rowsAcross` sizes them. */
@@ -957,27 +977,54 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
 const NO_PREVIEW = { width: undefined, height: undefined } as const;
 
 /**
- * The viewport an instance part is fixed in where its composite draws it there: the inner set's root
- * is `position: fixed` in the viewport its definition declares, the composite's root declares the same
- * viewport, and the part's parent is a flex box that centres its layers on both axes, as Alert
- * dialog's open example, the scrim over the viewport, centres the popup. The inner root then takes the
- * viewport as its containing block in place, as its own set does, and {@link placeCentredFixed} reads
- * its place. Undefined for any other part.
+ * Where an instance part is fixed in the viewport its composite draws, as `placeCentredFixed` reads
+ * its place: centred on both axes, or a length below the top and centred across.
  */
-function centredFixed(
+type FixedPlace = { readonly viewport: Viewport; readonly at: FixedAt };
+
+/**
+ * Where an instance part sits fixed in its composite's viewport, where the composite draws it there:
+ * the inner set's root is `position: fixed` in the viewport its definition declares, and the
+ * composite's root declares the same viewport. Then either the part's parent is a flex box that
+ * centres its layers on both axes, as Alert dialog's open example, the scrim over the viewport,
+ * centres the popup, or the parent is a flex column that centres its layers across and starts them at
+ * its top, the part is its first layer, and the part's `top`, read in the viewport, equals the
+ * column's top padding, as Command dialog's open example pads its top by the palette's
+ * `max(1rem, 12dvh)`. The inner root then takes the viewport as its containing block in place, as its
+ * own set does, and `placeCentredFixed` reads its place. Undefined for any other part.
+ */
+function fixedPlace(
   part: Extract<ShownPart, { readonly kind: "instance" }>,
   layout: Layout,
-  scope: MapScope
-): Viewport | undefined {
+  scope: MapScope,
+  parent: LayerStyle,
+  first: boolean
+): FixedPlace | undefined {
   const own = part.visit.part.of.viewport;
-  const same =
-    own !== undefined &&
-    scope.viewport !== undefined &&
-    own.width === scope.viewport.width &&
-    own.height === scope.viewport.height;
-  const centres = layout.flex && layout.primaryAlign === "CENTER" && layout.counterAlign === "CENTER";
-  const fixed = normalizeCss(part.cascade.style.raw("position") ?? "") === "fixed";
-  return same && centres && fixed ? own : undefined;
+  const style = part.cascade.style;
+  if (
+    own === undefined ||
+    scope.viewport === undefined ||
+    own.width !== scope.viewport.width ||
+    own.height !== scope.viewport.height ||
+    normalizeCss(style.raw("position") ?? "") !== "fixed" ||
+    !layout.flex
+  ) {
+    return undefined;
+  }
+  if (layout.primaryAlign === "CENTER" && layout.counterAlign === "CENTER") {
+    return { viewport: own, at: "centre" };
+  }
+  const top = evaluateLength(inViewport(style.resolved("top") ?? "", own));
+  const padding = evaluateLength(parent.resolved("padding-top") ?? "0px");
+  const startsAtTop =
+    layout.direction === "VERTICAL" &&
+    layout.primaryAlign === "MIN" &&
+    layout.counterAlign === "CENTER" &&
+    first &&
+    top !== undefined &&
+    top === padding;
+  return startsAtTop ? { viewport: own, at: { top } } : undefined;
 }
 
 function mapPart(
@@ -985,20 +1032,22 @@ function mapPart(
   room: Room,
   layout: Layout,
   scope: MapScope,
-  collapses: boolean
+  collapses: boolean,
+  parent: LayerStyle,
+  first: boolean
 ): MappedPart {
   // The row that sets a popup's width keeps the popup's minimum, which no class of its own sets.
   const minimum = namedMinimum(part.kind === "instance" ? part.visit.part : part.child, scope.cell, room);
   if (part.kind === "instance") {
-    const centred = centredFixed(part, layout, scope);
+    const fixed = fixedPlace(part, layout, scope, parent, first);
     const { layer: built, painted } = scope.instances.map(
       part,
-      centred === undefined
+      fixed === undefined
         ? room
-        : rootRoom(NO_PREVIEW, part.cascade.style, scope.context.variables, centred)
+        : rootRoom(NO_PREVIEW, part.cascade.style, scope.context.variables, fixed.viewport)
     );
-    if (centred !== undefined) {
-      placeCentredFixed(part.cascade.style);
+    if (fixed !== undefined) {
+      placeCentredFixed(part.cascade.style, fixed.at);
     }
     const drawn = minimum === undefined ? built : { ...built, minWidth: minimum };
     const { layer, instance } = wrapInstanceMargins(

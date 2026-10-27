@@ -246,6 +246,14 @@ export type BoxDefinition = {
    * box whose wrapping a rule reads or that leaves it unmapped.
    */
   readonly fitsOneLine?: string;
+  /**
+   * Why the box's content stays under its `max-height` in every cell, a measurement, as Chromium
+   * measured the Command palette's rows, input and footer 289px dense and 341px comfortable under its
+   * 380px cap. A box that hugs its height under a cap it never reaches is as tall as its layers, so a
+   * layer that grows, as the palette's `flex-1` list, has no room to grow into. Undefined for a box
+   * whose growth a rule reads or that leaves it unmapped.
+   */
+  readonly underMaxHeight?: string;
 };
 
 /**

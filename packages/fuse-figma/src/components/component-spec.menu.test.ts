@@ -1027,6 +1027,34 @@ describe("an empty part", () => {
     });
     expect(layerNames(variant?.root)).toEqual(["header", "list"]);
   });
+  // A part whose only content is its own text, as `Command.Empty` holds its message only while no
+  // row matches, holds nothing in a cell that hides the text.
+  const message = (shown: boolean): PartDefinition => ({
+    ...dot("p-0 font-sans text-[14px]/[20px] text-[#000000]"),
+    key: "list",
+    slot: "list",
+    label: {
+      key: "text",
+      name: "text",
+      characters: "No results.",
+      textProperty: undefined,
+      shownIn: () => shown,
+    },
+  });
+  const withMessage = (shown: boolean) =>
+    chip("flex flex-col w-[200px] bg-[#ffffff]", {
+      parts: [{ ...dot("h-[20px]"), key: "header", slot: "header" }, message(shown)],
+    });
+
+  it("draws no layer for a part whose own text shows in no cell here", async () => {
+    const { variant } = await buildFixture(withMessage(false), { variables: SYNCED });
+    expect(layerNames(variant?.root)).toEqual(["header"]);
+  });
+
+  it("draws a part whose own text shows", async () => {
+    const { variant } = await buildFixture(withMessage(true), { variables: SYNCED });
+    expect(layerNames(variant?.root)).toEqual(["header", "list"]);
+  });
 });
 
 // Figma takes a text layer's sizing from the main component and only its characters from the TEXT

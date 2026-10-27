@@ -16,9 +16,10 @@
  * come along, with the rail widths the Provider sets as `--sidebar-width` and
  * `--sidebar-width-icon`; its mobile Sheet's classes stay in `sidebar.tsx`. The menu families'
  * recipes come along with the shared group label, indicator and separator classes the menu kits
- * draw those rows from. Command's list shell comes along
- * from `styles/`, since `Command.List` adds it to the list recipe to pad its rows and publish their
- * corner. InputGroup's root chrome comes along from `styles/field-box.ts`, where it sits beside the
+ * draw those rows from. Command's list and palette shells come along
+ * from `styles/`, since `Command.List` adds the list's to the list recipe to pad its rows and publish
+ * their corner, and `Command.Content` adds the palette's after the modal popup face, which comes along
+ * from `overlay/`. InputGroup's root chrome comes along from `styles/field-box.ts`, where it sits beside the
  * field box it shares. The overlay corner close position comes along from `overlay/`, which Dialog
  * and Sheet add to their close button.
  */
@@ -66,6 +67,7 @@ export {
   menuSeparatorClass,
 } from "./overlay/menu-row-classes";
 export { numberFieldVariants } from "./number-field/number-field-variants";
+export { overlayModalPopupClass } from "./overlay/overlay-classes";
 export { overlayCornerCloseClass } from "./overlay/overlay-corner-close-class";
 export { paginationVariants } from "./pagination/pagination-variants";
 export { popoverVariants } from "./popover/popover-variants";
@@ -105,7 +107,7 @@ export { toolbarVariants } from "./toolbar/toolbar-variants";
 export { tooltipVariants } from "./tooltip/tooltip-variants";
 export { cellVariants } from "../styles/calendar";
 export { cn } from "../styles/cn";
-export { commandListShellClass } from "../styles/inner-corner/command";
+export { commandContentShellClass, commandListShellClass } from "../styles/inner-corner/command";
 export { inputGroupRootClass } from "../styles/field-box";
 export { linkVariants } from "../styles/link";
 export { racDisabledStateFaceClass } from "../styles/state-face";

@@ -319,7 +319,7 @@ function conditionHolds(
  * markup at and around the element shows. A group variant holds where the element or one around it is
  * the group in that state, a peer variant where a sibling before it is the peer, and a tag variant
  * on the element itself. Each fact the part declares for the inner root in place holds exactly where
- * the element carries its attribute. The markup inside the element stays the inner set's.
+ * the element, or the inner set's state taker inside it, carries its attribute. The markup inside the element stays the inner set's.
  *
  * @param part - The instance part.
  * @param inner - The inner cell the part names.
@@ -336,9 +336,9 @@ function checkInnerCell(
 ): void {
   const { of } = part;
   const holds = conditionHolds(of, inner, part.facts, part.stamps);
-  checkAttributeStates(of, { cell: inner, variant: holds }, elements, index, where);
+  const stateTaker = checkAttributeStates(of, { cell: inner, variant: holds }, elements, index, where);
   const element = elements[index];
-  if (element === undefined) {
+  if (element === undefined || stateTaker === undefined) {
     return;
   }
   const around = [element, ...ancestorsOf(elements, index)];
@@ -369,8 +369,10 @@ function checkInnerCell(
     const within = IN_VARIANTS.get(variant);
     const group = GROUP_VARIANTS.get(variant);
     const position = POSITION_VARIANTS.get(variant);
+    // An attribute holds where the inner set's state taker carries it, as `checkAttributeStates` reads
+    // it, as the Command palette's Input group carries `data-pressed` on its control.
     const markup =
-      carries?.(element) ??
+      carries?.(stateTaker) ??
       has?.(elements, index) ??
       position?.(elements, index) ??
       (within === undefined ? undefined : ancestorsOf(elements, index).some(within)) ??

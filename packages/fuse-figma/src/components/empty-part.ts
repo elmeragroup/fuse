@@ -49,9 +49,10 @@ const COLUMN_LENGTHS = [
 ] as const;
 
 /**
- * Whether a part that holds parts holds no layer in a cell: none of its parts, and no label or icon,
- * shows there. A part that holds no parts in its definition is a box the definition draws by its own
- * lengths, as a dot is, and stays drawn.
+ * Whether a part that holds parts or a label holds no layer in a cell: none of its parts, and no label
+ * or icon, shows there, as `Command.Empty` holds its message only while no row matches. A part that
+ * holds neither in its definition is a box the definition draws by its own lengths, as a dot is, and
+ * stays drawn.
  *
  * @param part - The part's definition.
  * @param cell - The cell.
@@ -60,7 +61,7 @@ const COLUMN_LENGTHS = [
 function holdsNothing(part: PartDefinition, cell: Cell): boolean {
   const parts = part.parts ?? [];
   return (
-    parts.length > 0 &&
+    (parts.length > 0 || part.label !== undefined) &&
     parts.every((child) => !child.shownIn(cell)) &&
     (part.label === undefined || !part.label.shownIn(cell)) &&
     part.iconsFor(cell).length === 0
