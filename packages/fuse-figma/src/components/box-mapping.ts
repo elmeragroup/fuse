@@ -27,6 +27,7 @@ import {
   readGrowth,
   readSizing,
   roomInside,
+  rootRoom,
   selfStretchedRoom,
   UNREAD_SHARE,
   unstretched,
@@ -52,6 +53,7 @@ import {
   readColor,
   readNumber,
 } from "./css-values";
+import type { Viewport } from "./css-values";
 import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
 import { joinFlushLayers } from "./flush-layers";
 import { readBleed, sectioned } from "./full-bleed";
@@ -89,6 +91,7 @@ import {
   endsInFlow,
   huggedWidth,
   padToOffset,
+  placeCentredFixed,
   placeParts,
   readRotation,
   slotAroundDot,
@@ -291,6 +294,12 @@ export type MapScope = {
   readonly clipsAround?: true;
   /** Whether the box is a flex item in a row, where a negative margin across can fold. Absent for a root. */
   readonly inFlexRow?: true;
+  /**
+   * The viewport the set's root is fixed in, as its definition declares it, which an instance part
+   * fixed in the same viewport takes as its containing block in place. Absent for a root that declares
+   * none.
+   */
+  readonly viewport?: Viewport;
 };
 
 /** A box's paddings across, which a part that fills it spans inside. */
@@ -944,6 +953,33 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
  *   {@link adjoinsMargin} says.
  * @returns The part as mapped.
  */
+/** No preview width or height, which a fixed root in a viewport does not read. */
+const NO_PREVIEW = { width: undefined, height: undefined } as const;
+
+/**
+ * The viewport an instance part is fixed in where its composite draws it there: the inner set's root
+ * is `position: fixed` in the viewport its definition declares, the composite's root declares the same
+ * viewport, and the part's parent is a flex box that centres its layers on both axes, as Alert
+ * dialog's open example, the scrim over the viewport, centres the popup. The inner root then takes the
+ * viewport as its containing block in place, as its own set does, and {@link placeCentredFixed} reads
+ * its place. Undefined for any other part.
+ */
+function centredFixed(
+  part: Extract<ShownPart, { readonly kind: "instance" }>,
+  layout: Layout,
+  scope: MapScope
+): Viewport | undefined {
+  const own = part.visit.part.of.viewport;
+  const same =
+    own !== undefined &&
+    scope.viewport !== undefined &&
+    own.width === scope.viewport.width &&
+    own.height === scope.viewport.height;
+  const centres = layout.flex && layout.primaryAlign === "CENTER" && layout.counterAlign === "CENTER";
+  const fixed = normalizeCss(part.cascade.style.raw("position") ?? "") === "fixed";
+  return same && centres && fixed ? own : undefined;
+}
+
 function mapPart(
   part: ShownPart,
   room: Room,
@@ -954,7 +990,16 @@ function mapPart(
   // The row that sets a popup's width keeps the popup's minimum, which no class of its own sets.
   const minimum = namedMinimum(part.kind === "instance" ? part.visit.part : part.child, scope.cell, room);
   if (part.kind === "instance") {
-    const { layer: built, painted } = scope.instances.map(part, room);
+    const centred = centredFixed(part, layout, scope);
+    const { layer: built, painted } = scope.instances.map(
+      part,
+      centred === undefined
+        ? room
+        : rootRoom(NO_PREVIEW, part.cascade.style, scope.context.variables, centred)
+    );
+    if (centred !== undefined) {
+      placeCentredFixed(part.cascade.style);
+    }
     const drawn = minimum === undefined ? built : { ...built, minWidth: minimum };
     const { layer, instance } = wrapInstanceMargins(
       part.cascade.style,

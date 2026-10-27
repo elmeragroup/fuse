@@ -371,6 +371,16 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "tooltip-open", name: "Tooltip (open)", variants: 1, previewed: 1 },
     ],
   },
+  {
+    slug: "alert-dialog",
+    name: "Alert dialog",
+    sets: [
+      // The popup: destructive, neutral and pending.
+      { key: "alert-dialog-content", name: "Alert dialog content", variants: 3, previewed: 3 },
+      // The destructive popup over the scrim.
+      { key: "alert-dialog-open", name: "Alert dialog (open)", variants: 1, previewed: 1 },
+    ],
+  },
 ];
 
 /**

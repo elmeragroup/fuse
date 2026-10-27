@@ -767,7 +767,7 @@ export function buildComponentSet(
   const scaling = partsThatScale(partsOf(definition), cells, context.compiled);
   const variants = cells.map((cell): VariantSpec => {
     const cellCascade = cascade.cell(cell);
-    const scope: MapScope = {
+    const plain: MapScope = {
       variant: variantKey(definition, cell),
       cell,
       context,
@@ -777,6 +777,8 @@ export function buildComponentSet(
       painted: new PaintedInstances(),
       translates: new WeakMap(),
     };
+    const scope: MapScope =
+      definition.viewport === undefined ? plain : { ...plain, viewport: definition.viewport };
     const rootCascade = cellCascade.root(definition.classesFor(cell), definition.slot, {
       declarations: definition.inheritedFor?.(cell) ?? [],
       ancestors: definition.ancestorsFor?.(cell) ?? [],

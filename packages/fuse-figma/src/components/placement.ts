@@ -152,7 +152,12 @@ export function placeParts(
       return layer;
     }
     if (layer.kind === "instance") {
-      if (normalizeCss(style.resolved("position") ?? "") !== "absolute") {
+      const position = normalizeCss(style.resolved("position") ?? "");
+      // A fixed instance's place is `placeCentredFixed`'s to read, and stays unmapped where it reads none.
+      if (position === "fixed") {
+        return layer;
+      }
+      if (position !== "absolute") {
         readPosition(style, "other", undefined);
         return layer;
       }
@@ -405,6 +410,60 @@ function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean, fixed
       outcome: "dropped",
       detail:
         "the component's root sits alone in its component set, so its stacking level orders it among nothing the set draws",
+    }),
+    []
+  );
+}
+
+/** How the coverage table names the place of a fixed popup its composite centres in the viewport. */
+const CENTRED_FIXED =
+  "Base UI fixes the popup at the viewport's centre, which the composite, as large as that viewport, draws by centring the popup";
+
+/**
+ * Read the place of an instance part's inner root that is fixed at the centre of the viewport its
+ * composite draws, as Dialog's `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2` puts its
+ * popup at the viewport's centre: the box's top left on the centre, then moved back by half its own
+ * size (CSS 2.1 §10.3.7, §10.6.4, CSS Transforms 2). The composite centres the instance in a flex box
+ * as large as the viewport, which `centredFixed` in `box-mapping.ts` checks, so the place reads as
+ * literal there. Any other place stays unmapped, and `z-index`, which orders the popup above the page,
+ * drops.
+ *
+ * @param style - The inner root's style in place.
+ */
+export function placeCentredFixed(style: LayerStyle): void {
+  const translate = splitTopLevel(normalizeCss(style.resolved("translate") ?? ""), " ").map(
+    evaluatePercentage
+  );
+  const centred =
+    ["top", "left"].every((property) => evaluatePercentage(style.resolved(property) ?? "") === 0.5) &&
+    !style.has("right") &&
+    !style.has("bottom") &&
+    translate.length === 2 &&
+    translate.every((share) => share === -0.5);
+  for (const property of ["position", "top", "left", "translate"]) {
+    if (centred) {
+      style.read(
+        property,
+        (value) => value,
+        () => ({ outcome: "literal", detail: CENTRED_FIXED }),
+        []
+      );
+    } else {
+      style.mark(
+        property,
+        "unmapped",
+        "a fixed popup the composite centres only where it sits at the viewport's centre",
+        []
+      );
+    }
+  }
+  style.read(
+    "z-index",
+    (value) => value,
+    () => ({
+      outcome: "dropped",
+      detail:
+        "the stacking level orders the popup above the page, which the composite draws below it already",
     }),
     []
   );

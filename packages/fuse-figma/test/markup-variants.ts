@@ -377,6 +377,8 @@ export const NOT_ATTRIBUTES = new Set([
   "has-[[data-focus-ring-control]:focus-visible]",
   // A File upload dropzone rings while its trigger has keyboard focus, which the page forces there.
   "has-focus-visible",
+  // The page's browser meets `@supports (backdrop-filter: …)`, which the overlay scrim's blur reads.
+  "supports-backdrop-filter",
   "peer-hover/menu-button",
   // The page writes `data-highlighted` on a highlighted Combobox or Command row when it forces the
   // state, and a Command row's trailing part reads it from the row.

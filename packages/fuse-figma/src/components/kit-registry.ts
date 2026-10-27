@@ -9,6 +9,7 @@
  * through `buildComponentSets()`.
  */
 import { ACCORDION_ITEM } from "./accordion-kit";
+import { ALERT_DIALOG_CONTENT, ALERT_DIALOG_OPEN } from "./alert-dialog-kit";
 import { ALERT } from "./alert-kit";
 import { AVATAR, AVATAR_GROUP } from "./avatar-kit";
 import { BADGE } from "./badge-kit";
@@ -139,6 +140,9 @@ const INPUT_PAGE: KitPage = { slug: "input", name: "Input" };
 
 /** The page of Textarea and the labelled Textarea field. */
 const TEXTAREA_PAGE: KitPage = { slug: "textarea", name: "Textarea" };
+
+/** The page of Alert dialog. */
+const ALERT_DIALOG_PAGE: KitPage = { slug: "alert-dialog", name: "Alert dialog" };
 
 /** The page of Tooltip. */
 const TOOLTIP_PAGE: KitPage = { slug: "tooltip", name: "Tooltip" };
@@ -474,4 +478,14 @@ export const KIT: readonly KitEntry[] = [
   { definition: TOOLBAR, page: TOOLBAR_PAGE, previewCells: matrixCells(TOOLBAR.axes) },
   { definition: TOOLTIP_CONTENT, page: TOOLTIP_PAGE, previewCells: matrixCells(TOOLTIP_CONTENT.axes) },
   { definition: TOOLTIP_OPEN, page: TOOLTIP_PAGE, previewCells: matrixCells(TOOLTIP_OPEN.axes) },
+  {
+    definition: ALERT_DIALOG_CONTENT,
+    page: ALERT_DIALOG_PAGE,
+    previewCells: matrixCells(ALERT_DIALOG_CONTENT.axes),
+  },
+  {
+    definition: ALERT_DIALOG_OPEN,
+    page: ALERT_DIALOG_PAGE,
+    previewCells: matrixCells(ALERT_DIALOG_OPEN.axes),
+  },
 ];

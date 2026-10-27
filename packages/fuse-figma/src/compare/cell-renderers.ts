@@ -585,6 +585,16 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/tooltip.js",
     module: { url: new URL("tooltip-cell.ts", import.meta.url), name: "tooltipOpen" },
   },
+  {
+    set: "alert-dialog-content",
+    entry: "dist/alert-dialog.js",
+    module: { url: new URL("alert-dialog-cell.ts", import.meta.url), name: "alertDialogContent" },
+  },
+  {
+    set: "alert-dialog-open",
+    entry: "dist/alert-dialog.js",
+    module: { url: new URL("alert-dialog-cell.ts", import.meta.url), name: "alertDialogOpen" },
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */
