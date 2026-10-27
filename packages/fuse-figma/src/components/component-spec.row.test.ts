@@ -601,3 +601,66 @@ describe("a `justify-between` row of fixed width that holds one layer", () => {
     ]);
   });
 });
+
+// Oracle: CSS 2.1 §9.2.2 and §10.3.9. An inline-block as wide as its block container sits alone on
+// the container's one line and spans it. Chromium measured TextField's `relative` container exactly
+// as tall and wide as its 36px and 44px `<input>` at both densities on 2026-10-27, its 16px `normal`
+// strut fitting inside the input's line, so the container draws as a column the input fills.
+describe("a block box whose one layer is an inline-block as wide as it", () => {
+  const input = (classes: string) => ({
+    ...dot(classes),
+    elementDefaults: [
+      { className: "user agent style sheet, input", property: "display", value: "inline-block" },
+    ],
+  });
+
+  it("stacks the layer as a block that fills it", async () => {
+    const { variant } = await buildFixture(
+      chip("block w-[200px]", {
+        elementDefaults: [{ className: "user agent style sheet, div", property: "display", value: "block" }],
+        parts: [input("w-full h-[36px]")],
+      })
+    );
+    expect([variant?.root.direction, variant?.root.sizing.vertical, frameOf(variant?.root)?.sizing]).toEqual([
+      "VERTICAL",
+      HUG,
+      { horizontal: FILL, vertical: { kind: "fixed", length: { kind: "literal", value: 36 } } },
+    ]);
+  });
+});
+
+// Oracle: CSS Display 3 §2.1. An inline-block's inside is a block container, so one that holds only
+// its own text lays it out as a block box does, as an `<input>`'s user agent `inline-block` holds its
+// value.
+describe("an inline-block that holds only its own text", () => {
+  it("reads its display as the block box inside it", async () => {
+    // The fixture's page binds no font family, so the type comes from the synced `font-sans`.
+    const variables = makeVariableIndex([
+      { ref: { collection: "Fuse tokens", name: "font-sans" }, webSyntax: "var(--font-sans)" },
+    ]);
+    const { coverage } = await buildFixture(
+      chip("w-[200px] font-sans text-[14px] leading-[20px] text-[#000000]", {
+        elementDefaults: [
+          { className: "user agent style sheet, input", property: "display", value: "inline-block" },
+        ],
+        rootKind: "native-control",
+        label: {
+          key: "text",
+          name: "text",
+          characters: "Hi",
+          textProperty: undefined,
+          shownIn: () => true,
+          placement: { horizontal: "start", vertical: "center", lines: "single" },
+        },
+      }),
+      { variables }
+    );
+    expect(notesOf(coverage, "user agent style sheet, input")).toEqual([
+      [
+        "chip",
+        "literal",
+        "an inline-block that holds only its own text, which it lays out inside as a block box does (CSS Display 3 §2.1), as an `<input>` holds its value",
+      ],
+    ]);
+  });
+});

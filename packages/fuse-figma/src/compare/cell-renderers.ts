@@ -243,6 +243,12 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./input-group-cell.ts")).inputGroup,
   },
   {
+    set: "text-field",
+    entry: "dist/text-field.js",
+    load: async () => (await import("./text-field-cell.ts")).textField,
+  },
+
+  {
     set: "textarea",
     entry: "dist/textarea.js",
     load: async () => (await import("./textarea-cell.ts")).textarea,

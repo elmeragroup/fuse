@@ -373,8 +373,28 @@ function stacksBlocks(reader: LayerStyle, flow: FlowLayers): boolean {
     BLOCK_CONTAINERS.has(normalizeCss(reader.raw("display") ?? "")) &&
     flow.parts.length > 0 &&
     flow.others.length === 0 &&
-    flow.parts.every(({ style }) => BLOCK_LEVEL.has(normalizeCss(style.raw("display") ?? ""))) &&
+    (flow.parts.every(({ style }) => BLOCK_LEVEL.has(normalizeCss(style.raw("display") ?? ""))) ||
+      spansItsLine(flow)) &&
     GAPS.every((property) => !reader.has(property))
+  );
+}
+
+/**
+ * Whether a block container's one layer is an inline-block as wide as the container, with a fixed
+ * height, as TextField's `relative` container holds its `<input>`. The layer sits alone on the
+ * container's one line and spans it (CSS 2.1 §9.2.2, §10.3.9), so it lays out as a block would.
+ * The line box takes the layer's height where the container's strut fits inside it: Chromium
+ * measured the container exactly as tall and wide as its 36px and 44px input at both densities, in
+ * a 16px `normal` line, on 2026-10-27.
+ */
+function spansItsLine(flow: FlowLayers): boolean {
+  const [only, ...rest] = flow.parts;
+  return (
+    only !== undefined &&
+    rest.length === 0 &&
+    normalizeCss(only.style.raw("display") ?? "") === "inline-block" &&
+    normalizeCss(only.style.resolved("width") ?? "") === "100%" &&
+    only.style.has("height")
   );
 }
 

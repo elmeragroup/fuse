@@ -73,6 +73,8 @@ export function frameLabelRow(
   return {
     key: "label-row",
     slot: undefined,
+    // A bare `<div>`, found by its classes, since a composite's content wrapper is one too.
+    element: { tag: "div", attributes: { class: classes } },
     shownIn: always,
     classesFor: () => classes,
     label: undefined,

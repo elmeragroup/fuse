@@ -119,6 +119,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "input", name: "Input", variants: 10, previewed: 10 },
       // Combobox's caret and clear forms, Command's search form and Combobox's open caret form, in 4 states.
       { key: "input-group", name: "Input group", variants: 16, previewed: 16 },
+      // The labelled input, placeholder and value in 5 states.
+      { key: "text-field", name: "Text field", variants: 10, previewed: 10 },
     ],
   },
   {

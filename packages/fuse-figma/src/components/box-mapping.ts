@@ -205,19 +205,24 @@ function readDisplay(
           ["list-item"],
           "a vertical auto layout, its block-level parts stacked down it as in a block box, since Tailwind preflight's `list-style: none` on the list leaves the item no marker"
         )
-      : display === "block" && (layers.length === 0 || ownText || stacked)
+      : display === "inline-block" && ownText
         ? literalLayout(
-            ["block"],
-            stacked
-              ? "a vertical auto layout, its block-level parts stacked down it, each as wide as the box"
-              : ownText
-                ? "a block box that sets its own text in lines"
-                : "a frame with no layers to lay out"
+            ["inline-block"],
+            "an inline-block that holds only its own text, which it lays out inside as a block box does (CSS Display 3 §2.1), as an `<input>` holds its value"
           )
-        : literalLayout(
-            ["inline-flex", "flex"],
-            layout.direction === "VERTICAL" ? "a vertical auto layout" : "a horizontal auto layout"
-          );
+        : display === "block" && (layers.length === 0 || ownText || stacked)
+          ? literalLayout(
+              ["block"],
+              stacked
+                ? "a vertical auto layout, its block-level parts stacked down it, each as wide as the box"
+                : ownText
+                  ? "a block box that sets its own text in lines"
+                  : "a frame with no layers to lay out"
+            )
+          : literalLayout(
+              ["inline-flex", "flex"],
+              layout.direction === "VERTICAL" ? "a vertical auto layout" : "a horizontal auto layout"
+            );
   reader.read("display", flow.map, flow.describe, lays);
   return display === "block" && ownText;
 }

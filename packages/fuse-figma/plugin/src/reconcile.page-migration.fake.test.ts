@@ -175,6 +175,11 @@ describe("a file with Label on the page it used to sit on alone", () => {
    */
   const LATER = [
     {
+      page: inventoryPage("input"),
+      set: { name: "Text field", variants: 10 },
+      reorders: false,
+    },
+    {
       page: inventoryPage("textarea"),
       set: { name: "Textarea field", variants: 5 },
       reorders: false,
@@ -189,7 +194,7 @@ describe("a file with Label on the page it used to sit on alone", () => {
   /**
    * The kit as the plugin wrote it before the Field page: Label alone on its own page, previewed
    * there, and none of the sets that joined it on the Field page, nor a later set that shows one of
-   * them, as Textarea field and Select field show Field description.
+   * them, as Text field, Textarea field and Select field show Field description.
    */
   function labelPageKit(): KitSpec {
     const field = pageKey(FIELD);
