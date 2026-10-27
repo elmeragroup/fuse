@@ -16,7 +16,7 @@ import { selfFocusRingClass } from "../../styles/utils";
 // recipe's `min-square`, so a toggle is never narrower than it is tall.
 export const toggleVariants = tv({
   base: cn(
-    "group/toggle font-medium inline-flex items-center justify-center rounded-md whitespace-nowrap transition-[color,box-shadow,scale] aria-pressed:bg-primary aria-pressed:text-primary-foreground data-pressed:bg-primary data-pressed:text-primary-foreground enabled-hover:bg-muted enabled-hover:text-foreground enabled-active:scale-[0.96] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    "group/toggle font-medium inline-flex items-center justify-center rounded-md whitespace-nowrap transition-[color,background-color,box-shadow,scale] aria-pressed:bg-primary aria-pressed:text-primary-foreground data-pressed:bg-primary data-pressed:text-primary-foreground enabled-hover:bg-muted enabled-hover:text-foreground enabled-active:scale-[0.96] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     selfFocusRingClass,
     nativeStateFaceClass,
     dataStateFaceClass
