@@ -60,11 +60,24 @@ describe("minimumReleaseAgeExclude", () => {
   it("holds exactly the catalog-pinned permanent and temporary versions", () => {
     // A malformed extra entry fails the equality rather than being filtered away.
     const permanent = ["effect", "@elmeragroup/internal"];
-    // tsdown 0.23.2 is younger than the release-age guard until 2026-10-26T12:51Z. Remove it here
-    // and in pnpm-workspace.yaml once it ages past the guard.
-    const temporary = ["tsdown"];
-    expect(workspace.minimumReleaseAgeExclude).toEqual(
-      [...permanent, ...temporary].map((name) => `${name}@${catalogEntry(name)}`)
-    );
+    // tsrs 0.20.0 and its platform binaries are younger than the release-age guard until
+    // 2026-10-29T11:47Z. Remove them here and in pnpm-workspace.yaml once they age past the guard.
+    const tsrsPlatforms = [
+      "darwin-arm64",
+      "darwin-x64",
+      "linux-arm64-gnu",
+      "linux-arm64-musl",
+      "linux-x64-gnu",
+      "linux-x64-musl",
+      "win32-x64",
+    ];
+    const temporary = [
+      `tsrs@${catalogEntry("tsrs")}`,
+      ...tsrsPlatforms.map((platform) => `@tsrs/${platform}@${catalogEntry("tsrs")}`),
+    ];
+    expect(workspace.minimumReleaseAgeExclude).toEqual([
+      ...permanent.map((name) => `${name}@${catalogEntry(name)}`),
+      ...temporary,
+    ]);
   });
 });

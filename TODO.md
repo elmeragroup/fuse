@@ -146,12 +146,6 @@
 - After the first stable release, decide whether a new component, public API or public
   behavior change needs an issue with a code-owner-agreed scope before work starts, and
   add that rule to [CONTRIBUTING.md](CONTRIBUTING.md).
-- Bump tsrs to 0.19 once it is on npm. It targets TypeScript 7.1 beta exactly and adds Windows
-  and Intel macOS binaries, so drop the platform note in the
-  [README prerequisites](README.md#prerequisites) in the same change.
-  Move the Fuse type tests (`packages/fuse/vitest.types.config.ts`) to the tsrs checker only
-  after confirming `data-table.test-d.tsx` fails under tsrs with the TypeScript 7.1 header fix
-  in `data-table-source.ts` reverted.
 - Move `typescript` to 7.1 stable when it ships.
 - After upstream tooling uses stable Effect 4 and the release-age guard admits it,
   upgrade and remove prerelease exclusions unless another exception is justified.
