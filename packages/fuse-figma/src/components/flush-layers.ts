@@ -64,24 +64,24 @@ export function joinFlushLayers(
   }
   const joined: ChildLayerSpec[] = [];
   const moved = new Map<string, string>();
+  // The frame this call made for the run the last layer belongs to. A layer's name is its part's
+  // slot, so only identity tells the frame from a part's own.
+  let wrapper: FrameLayerSpec | undefined;
   for (const child of children) {
     const previous = joined.at(-1);
     if (!flush.has(child.key) || previous === undefined) {
       joined.push(child);
+      wrapper = undefined;
       continue;
     }
-    const frame =
-      previous.kind === "frame" && previous.name === "flush" ? previous : flushFrame(previous, counterAlign);
+    const frame = previous === wrapper ? wrapper : flushFrame(previous, counterAlign);
     if (frame !== previous) {
       moved.set(previous.key, frame.key);
     }
     moved.set(child.key, frame.key);
     const members = [...frame.children, child];
-    joined[joined.length - 1] = {
-      ...frame,
-      sizing: { ...frame.sizing, horizontal: widthAround(members) },
-      children: members,
-    };
+    wrapper = { ...frame, sizing: { ...frame.sizing, horizontal: widthAround(members) }, children: members };
+    joined[joined.length - 1] = wrapper;
   }
   moveIntoFrames(column, moved);
   return joined;

@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { FILL, HUG } from "../../test/built-kit";
 import { buildFixture, chip, dot } from "../../test/fixture-sets";
 import type { CoverageRow } from "./coverage";
+import type { ChildLayerSpec } from "./kit-spec";
 
 /** The part, outcome and detail of each coverage row of one class. */
 const notesOf = (coverage: readonly CoverageRow[], className: string) =>
@@ -55,6 +56,34 @@ describe("a flex column layer whose top margin cancels the column's gap", () => 
       })
     );
     expect(variant?.root.children.map((child) => child.key)).not.toContain("head-flush");
+  });
+  // A layer takes its part's slot as its name, so a part may be named `flush` too. Its frame is the
+  // part's own, painted and laid out as its classes say, which the next layer must not join.
+  it("wraps a part slotted `flush` as it wraps one slotted `heading`", async () => {
+    const column = (slot: string) =>
+      buildFixture(
+        chip("flex w-[200px] flex-col gap-[12px]", {
+          parts: [
+            {
+              ...dot("flex h-[20px] gap-[3px] p-[2px] bg-[#ff0000]"),
+              key: "first",
+              slot,
+              parts: [part("inside", "h-[10px] w-[10px]")],
+            },
+            part("next", "h-[20px] -mt-[12px]"),
+          ],
+        })
+      );
+    const [flush, heading] = await Promise.all([column("flush"), column("heading")]);
+    // The first part's own layer differs only by the name its slot gives it.
+    const named = (layers: readonly ChildLayerSpec[] = []): readonly ChildLayerSpec[] =>
+      layers.map((layer): ChildLayerSpec =>
+        layer.kind === "frame"
+          ? { ...layer, name: layer.key === "first" ? "part" : layer.name, children: named(layer.children) }
+          : layer
+      );
+    expect(named(flush.variant?.root.children)).toEqual(named(heading.variant?.root.children));
+    expect(heading.variant?.root.children.map((child) => child.key)).toEqual(["first-flush"]);
   });
 });
 
