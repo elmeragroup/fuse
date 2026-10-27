@@ -1,6 +1,6 @@
 /**
- * The forced-state cells the kit draws exactly as at rest. A pressed Toggle fills with `muted`
- * through `aria-pressed:` and on hover through `enabled-hover:`, so its hover cell looks like its
+ * The forced-state cells the kit draws exactly as at rest. A pressed Toggle fills with `primary`
+ * through `aria-pressed:`, which outranks the `muted` hover tint, so its hover cell looks like its
  * resting twin in Figma and in the browser alike. A hovered Sidebar menu badge paints
  * `sidebar-accent-foreground` where its resting twin paints `sidebar-foreground`, and a theme that
  * gives both one color draws the two cells alike. The page then reaches no change by forcing, which
