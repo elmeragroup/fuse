@@ -228,6 +228,15 @@ export type BoxDefinition = {
    * `<span>` or an `<a>` is.
    */
   readonly elementDefaults?: readonly OuterDeclaration[];
+  /**
+   * Why a wrapping row lays its layers out on one line in every cell, for a row whose `flex-wrap:
+   * wrap` no rule reads, since what fits depends on its text: a measurement, as Chromium measured
+   * Radio group's three horizontal rows end at 201px dense and 217px comfortable in its 384px.
+   * Figma's row never wraps, so the row draws as one line, and `figma:compare` shows a cell where
+   * the measurement no longer holds. Undefined for a row whose wrapping a rule reads or that leaves it
+   * unmapped.
+   */
+  readonly fitsOneLine?: string;
 };
 
 /**
@@ -477,6 +486,13 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly previewWidth?: number;
   /**
+   * The width each cell's container gives the root, for a set whose cells differ, as a Radio row fills
+   * the width of a vertical group and hugs in a horizontal one, where its container gives it none:
+   * undefined for such a cell. A definition names it or {@link ComponentDefinition.previewWidth}, not
+   * both.
+   */
+  readonly previewWidthFor?: (cell: Cell) => number | undefined;
+  /**
    * The height in pixels the root's containing block gives it, which a root's percentage height
    * takes, as the Sidebar demo frame's `h-[28rem]` gives the container's `h-full`. Without it, a
    * root's percentage height stays unmapped. The compare renderer draws the same block around it.
@@ -702,7 +718,7 @@ export function buildComponentSet(
     // every child sits inside its padding, except a child's shadow at the root's edge, which a
     // root that paints nothing leaves unclipped through `rootOverflow`.
     const room = rootRoom(
-      { width: definition.previewWidth, height: definition.previewHeight },
+      { width: previewWidthIn(definition, cell), height: definition.previewHeight },
       rootCascade.style,
       context.variables
     );
@@ -802,6 +818,23 @@ function clipsInCss(style: LayerStyle): boolean {
 function clippedDetail(variant: string, { reach, edges, modes }: ClippedShadow): string {
   const where = modes === undefined ? "" : ` at ${modes.join(" and ")}`;
   return `in ${variant} the shadow reaches ${reach}px past the root's ${edges}${where}, which CSS paints, since the root does not clip, while the root of every Figma variant clips so it can draw its own ring (PR2)`;
+}
+
+/**
+ * The width a cell's container gives the root, as {@link ComponentDefinition.previewWidthFor} or
+ * {@link ComponentDefinition.previewWidth} says.
+ *
+ * @param definition - The component.
+ * @param cell - The cell.
+ * @returns The width in pixels, or undefined where the container gives the root none.
+ */
+export function previewWidthIn(
+  definition: Pick<ComponentDefinition, "previewWidth" | "previewWidthFor">,
+  cell: Cell
+): number | undefined {
+  return definition.previewWidthFor === undefined
+    ? definition.previewWidth
+    : definition.previewWidthFor(cell);
 }
 
 /**

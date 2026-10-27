@@ -10,7 +10,8 @@
  *   holds the input's `relative` container, the error in an invalid Field and the description.
  * - The container is a bare `<div>`, a block box, around the `<input>`, an inline-block as wide as
  *   it, so the input spans the container's one line and the container draws as a column the input
- *   fills, as `box-flow.ts` says.
+ *   fills, as `box-flow.ts` says. A real file drew the container exactly as tall as the Input instance
+ *   at both densities (W5-P4).
  * - The control is an `Input` instance in the cell's content and state, holding the docs Basic
  *   demo's placeholder. The value cells type the same text, as Input's do.
  * - The label, the error and the description, and the states Base UI stamps on them, come from

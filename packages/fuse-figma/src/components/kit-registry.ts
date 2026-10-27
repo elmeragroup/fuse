@@ -55,8 +55,10 @@ import {
 import { NAVIGATION_MENU_POPUP } from "./navigation-menu-popup-kit";
 import { PAGINATION_EDGE, PAGINATION_ELLIPSIS, PAGINATION_LINK, PAGINATION_ROW } from "./pagination-kit";
 import { POPOVER_CONTENT, POPOVER_OPEN } from "./popover-kit";
+import { RADIO_GROUP } from "./radio-group-kit";
 import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
 import { RADIO } from "./radio-kit";
+import { RADIO_ROW } from "./radio-row-kit";
 import { SELECT_FIELD } from "./select-field-kit";
 import { SELECT_ITEM, SELECT_OPEN, SELECT_POPUP } from "./select-kit";
 import { SELECT_TRIGGER } from "./select-trigger-kit";
@@ -287,6 +289,9 @@ export const KIT: readonly KitEntry[] = [
   { definition: FIELD_ERROR, page: FIELD_PAGE, previewCells: matrixCells(FIELD_ERROR.axes) },
   { definition: FIELD_LEGEND, page: FIELD_PAGE, previewCells: matrixCells(FIELD_LEGEND.axes) },
   { definition: FIELD_TITLE, page: FIELD_PAGE, previewCells: matrixCells(FIELD_TITLE.axes) },
+  // The labelled radio rows and the group, which show Field's legend, description and error.
+  { definition: RADIO_ROW, page: RADIO_PAGE, previewCells: matrixCells(RADIO_ROW.axes) },
+  { definition: RADIO_GROUP, page: RADIO_PAGE, previewCells: matrixCells(RADIO_GROUP.axes) },
   { definition: INPUT, page: INPUT_PAGE, previewCells: matrixCells(INPUT.axes) },
   { definition: INPUT_GROUP, page: INPUT_PAGE, previewCells: matrixCells(INPUT_GROUP.axes) },
   { definition: TEXT_FIELD, page: INPUT_PAGE, previewCells: matrixCells(TEXT_FIELD.axes) },

@@ -71,6 +71,7 @@ export { paginationVariants } from "./pagination/pagination-variants";
 export { popoverVariants } from "./popover/popover-variants";
 export { radioIconButtonVariants, radioRowVariants, radioVariants } from "./radio-group/radio-group-variants";
 export { selectContentVariants, selectTriggerVariants } from "./select/select-variants";
+export { selectionGroupOrientationVariants } from "./selection-item/selection-item-variants";
 export { separatorClass } from "./separator/separator-class";
 export {
   sidebarContentClass,

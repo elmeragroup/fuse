@@ -385,7 +385,8 @@ function stacksBlocks(reader: LayerStyle, flow: FlowLayers): boolean {
  * container's one line and spans it (CSS 2.1 §9.2.2, §10.3.9), so it lays out as a block would.
  * The line box takes the layer's height where the container's strut fits inside it: Chromium
  * measured the container exactly as tall and wide as its 36px and 44px input at both densities, in
- * a 16px `normal` line, on 2026-10-27.
+ * a 16px `normal` line, on 2026-10-27, and a real file drew the container 384×36 at Dense and 384×44
+ * at Comfortable around the Input set's instance (W5-P4).
  */
 function spansItsLine(flow: FlowLayers): boolean {
   const [only, ...rest] = flow.parts;

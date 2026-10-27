@@ -10,7 +10,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { walkLayers } from "../../src/components/kit-spec.ts";
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import type { CollectionSpec } from "../../src/variable-set.ts";
-import { ICONS_PAGE, inventoryPage, KIT_PAGES, pageKey } from "../../test/kit-inventory.ts";
+import { ICONS_PAGE, inventoryPage, KIT_PAGES, pageKey, setsInBuildOrder } from "../../test/kit-inventory.ts";
 import type { InventoryPage } from "../../test/kit-inventory.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { keyOf } from "./identity.ts";
@@ -80,8 +80,8 @@ describe("a file the plugin laid out on one page", () => {
       ...CREATE_PAGES,
       ...KIT_PAGES.flatMap(previewNames).map((name) => `Fuse components: delete ${name}`),
       "Fuse components: move Icons to the Icons page",
-      ...KIT_PAGES.flatMap((page) =>
-        page.sets.map((set) => `Fuse components: move ${set.name} to the ${page.name} page`)
+      ...setsInBuildOrder().map(
+        ({ page, set }) => `Fuse components: move ${set.name} to the ${page.name} page`
       ),
     ];
     // The icon library and every set move.
@@ -175,6 +175,11 @@ describe("a file with Label on the page it used to sit on alone", () => {
    */
   const LATER = [
     {
+      page: inventoryPage("radio"),
+      set: { name: "Radio group", variants: 6 },
+      reorders: false,
+    },
+    {
       page: inventoryPage("input"),
       set: { name: "Text field", variants: 10 },
       reorders: false,
@@ -194,7 +199,7 @@ describe("a file with Label on the page it used to sit on alone", () => {
   /**
    * The kit as the plugin wrote it before the Field page: Label alone on its own page, previewed
    * there, and none of the sets that joined it on the Field page, nor a later set that shows one of
-   * them, as Text field, Textarea field and Select field show Field description.
+   * them, as Radio group, Text field, Textarea field and Select field show Field description.
    */
   function labelPageKit(): KitSpec {
     const field = pageKey(FIELD);
@@ -276,15 +281,21 @@ describe("a file with Label on the page it used to sit on alone", () => {
           ({ page, set }) =>
             `${page.name}: create the component set ${set.name} with ${set.variants} variants`
         ),
-        ...previewNames(FIELD).map((name) => `${FIELD.name}: create the preview ${name}`),
-        `${FIELD.name}: place ${listed(FIELD.sets.map((set) => set.name))} in a row and stack 4 previews below them`,
-        ...LATER.flatMap(({ page, set, reorders }) => [
-          ...previewNames(page).flatMap((name) => [
-            `${name}: create the group ${set.name}`,
-            ...(reorders ? [`${name}: reorder the groups`] : []),
-          ]),
-          `${page.name}: place ${listed(page.sets.map((each) => each.name))} in a row and stack 4 previews below them`,
-        ]),
+        // The previews lay out page by page, in page order.
+        ...KIT_PAGES.flatMap((page) =>
+          page === FIELD
+            ? [
+                ...previewNames(FIELD).map((name) => `${FIELD.name}: create the preview ${name}`),
+                `${FIELD.name}: place ${listed(FIELD.sets.map((set) => set.name))} in a row and stack 4 previews below them`,
+              ]
+            : LATER.filter((later) => later.page.slug === page.slug).flatMap(({ set, reorders }) => [
+                ...previewNames(page).flatMap((name) => [
+                  `${name}: create the group ${set.name}`,
+                  ...(reorders ? [`${name}: reorder the groups`] : []),
+                ]),
+                `${page.name}: place ${listed(page.sets.map((each) => each.name))} in a row and stack 4 previews below them`,
+              ])
+        ),
         `Document: delete the page ${LABEL_PAGE.name}`,
       ],
       warnings: [],

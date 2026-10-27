@@ -52,6 +52,7 @@ import {
   readNumber,
 } from "./css-values";
 import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
+import { joinFlushLayers } from "./flush-layers";
 import { readBleed, sectioned } from "./full-bleed";
 import { holdsWidthRow, namedMinimum, rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
 import type { CascadedInstance, InstanceParts } from "./instance-parts";
@@ -520,7 +521,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     )
       ? last.cascade.style
       : undefined;
-  readWraps(holder, growing);
+  readWraps(holder, growing, box.fitsOneLine);
   const flush = SIDE_PADDINGS.every((property) => evaluateLength(reader.resolved(property) ?? "0px") === 0);
   const { clipsAround: _parent, inFlexRow: _row, ...own } = scope;
   const clipped: MapScope = clips && flush ? { ...own, clipsAround: true } : own;
@@ -685,7 +686,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // The parts before the label sit first, sectioned where separators cancel the box's padding, and
   // the parts after the label last.
   const first = placement.layers.slice(0, before.length);
-  const children: readonly ChildLayerSpec[] = [
+  const laid: readonly ChildLayerSpec[] = [
     ...(sections === undefined
       ? first
       : sectioned(reader, first, sections, {
@@ -698,6 +699,13 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     ...after,
     ...placement.layers.slice(before.length),
   ];
+  const children = joinFlushLayers(
+    reader,
+    layout,
+    flowing.map((part) => ({ key: part.key, style: part.cascade.style })),
+    laid,
+    counterAlign
+  );
   reader.read(
     "aspect-ratio",
     (value) => (width !== undefined && height !== undefined ? value : undefined),
@@ -819,14 +827,29 @@ function spacesNothingOut(
  * - A row that hugs its width with nothing bounding the width CSS gives it lays its layers out on one
  *   line, so it never runs out of room, as {@link hugsUncapped} says.
  *
+ * - A row its definition measured to fit its layers on one line in every cell drops it with that
+ *   measurement, as {@link BoxDefinition.fitsOneLine} says.
+ *
  * Elsewhere it stays unread, so it lands unmapped.
  *
  * @param holder - The box.
  * @param growing - The place of the box's layer that grows, as `readGrowth` found it.
+ * @param fitsOneLine - The measurement that the row's layers fit on one line, or undefined.
  */
-function readWraps(holder: Holder, growing: number | undefined): void {
+function readWraps(holder: Holder, growing: number | undefined, fitsOneLine: string | undefined): void {
   const { style, layout } = holder;
-  if (!layout.flex || layout.direction !== "HORIZONTAL" || (growing === undefined && !hugsUncapped(holder))) {
+  if (!layout.flex || layout.direction !== "HORIZONTAL") {
+    return;
+  }
+  if (growing === undefined && !hugsUncapped(holder)) {
+    if (fitsOneLine !== undefined) {
+      style.read(
+        "flex-wrap",
+        (value) => (normalizeCss(value) === "wrap" ? value : undefined),
+        () => ({ outcome: "dropped", detail: fitsOneLine }),
+        []
+      );
+    }
     return;
   }
   style.read(

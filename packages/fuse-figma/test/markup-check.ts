@@ -575,11 +575,16 @@ function checkRendering(
         );
       }
     }
-    // A peer variant holds exactly where a sibling before the root is the peer in that state, and
-    // the sibling a definition's `statePeer` names, which the page forces, sits there once.
+    // A peer variant holds exactly where a sibling before the element that names it is the peer in
+    // that state: the root, or a part below it, as a Radio row's content reads the radio before it.
+    // Where no element below the root names it, the root's own siblings decide. The sibling a
+    // definition's `statePeer` names, which the page forces, sits before the root once.
     const before = siblingsBefore(elements, measured);
     for (const [variant, matches] of PEER_VARIANTS) {
-      expect(holdsIn(variant), `${key}: ${variant}`).toBe(before.some(matches));
+      const naming = elementsNaming(elements, measured, variant, instances);
+      for (const index of naming.length === 0 ? [measured] : naming) {
+        expect(holdsIn(variant), `${key}: ${variant}`).toBe(siblingsBefore(elements, index).some(matches));
+      }
     }
     if (definition.statePeer !== undefined) {
       expect(

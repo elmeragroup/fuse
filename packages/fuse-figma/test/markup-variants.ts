@@ -207,11 +207,30 @@ export const HAS_VARIANTS = new Map<string, (elements: readonly MarkupElement[],
       // A Combobox popup that holds a search field as its own child.
       ["has-[>[data-slot=input-group]]", (child) => child.attributes.get("data-slot") === "input-group"],
       ["has-[>svg]", (child) => child.name === "svg"],
+      // A Field.Set that holds a radio group as its own child, and a group that holds selection cards.
+      ["has-[>[data-slot=radio-group]]", (child) => child.attributes.get("data-slot") === "radio-group"],
+      [
+        "has-[>[data-slot=checkbox-group]]",
+        (child) => child.attributes.get("data-slot") === "checkbox-group",
+      ],
+      ["has-[>[data-selection-item]]", (child) => child.attributes.has("data-selection-item")],
     ] as const satisfies readonly (readonly [string, (child: MarkupElement) => boolean])[]
   ).map(([variant, matches]): [string, (elements: readonly MarkupElement[], index: number) => boolean] => [
     variant,
     (elements, index) => childrenOf(elements, index).some(matches),
   ]),
+  // `has-disabled:` compiles to `:has(:disabled)`: a disabled form control at any depth, as a Radio
+  // row's label holds its radio's hidden `<input>`.
+  [
+    "has-disabled",
+    (elements, index) =>
+      elements.some(
+        (element, at) =>
+          ["input", "button", "select", "textarea"].includes(element.name) &&
+          element.attributes.has("disabled") &&
+          below(elements, at, index)
+      ),
+  ],
   [
     "has-data-[variant=inset]",
     (elements, index) =>
@@ -254,6 +273,8 @@ export const GROUP_HAS_VARIANTS = new Map<
  */
 export const PEER_VARIANTS = new Map<string, (sibling: MarkupElement) => boolean>([
   ["peer-data-active/menu-button", (sibling) => marks(sibling, "peer/menu-button") && isActive(sibling)],
+  // A Radio row's content reads the radio before it, which carries the plain `peer` marker.
+  ["peer-data-disabled", (sibling) => marks(sibling, "peer") && sibling.attributes.has("data-disabled")],
 ]);
 
 /**

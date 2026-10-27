@@ -353,6 +353,7 @@ describe("exports map", () => {
       "radioVariants",
       "selectContentVariants",
       "selectTriggerVariants",
+      "selectionGroupOrientationVariants",
       "separatorClass",
       "sidebarContentClass",
       "sidebarGroupClass",

@@ -11,7 +11,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { walkLayers } from "../../src/components/kit-spec.ts";
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import type { CollectionSpec } from "../../src/variable-set.ts";
-import { ICONS_PAGE, inventoryPage, KIT_PAGES, pageKey } from "../../test/kit-inventory.ts";
+import { ICONS_PAGE, inventoryPage, KIT_PAGES, pageKey, setsInBuildOrder } from "../../test/kit-inventory.ts";
 import { drawsShadowSpread, paintsAbove } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed, RED_PIXEL } from "./fake-fixtures.ts";
@@ -79,9 +79,9 @@ const PLACE_AFTER_BUTTON = [
   "Alert: place Alert in a row and stack 4 previews below them",
 ];
 
-/** The component sets a run creates, page by page. */
-const CREATE_SETS = KIT_PAGES.flatMap((page) =>
-  page.sets.map((set) => `${page.name}: create the component set ${set.name} with ${set.variants} variants`)
+/** The component sets a run creates, in the order the kit builds them. */
+const CREATE_SETS = setsInBuildOrder().map(
+  ({ page, set }) => `${page.name}: create the component set ${set.name} with ${set.variants} variants`
 );
 
 /** The gray `ring` holds in Fjordkraft's internal private light theme, the file's default modes. */

@@ -11,6 +11,7 @@ import { join } from "node:path";
 
 import type { KitBuildError } from "../components/build-errors.ts";
 import { buildComponentSets } from "../components/build-kit.ts";
+import { previewWidthIn } from "../components/component-spec.ts";
 import type { Cell, ComponentDefinition } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
 import type { ComponentSetSpec } from "../components/kit-spec.ts";
@@ -208,7 +209,7 @@ export function planCells(
         id: `c${String(index)}`,
         content: content(cell),
         measured: measuredSelectors(definition, isClientRenderer(renderer) ? renderer.union : undefined),
-        span: slotSpan(layout, definition.previewWidth),
+        span: slotSpan(layout, previewWidthIn(definition, cell)),
         forcedOn: forcedSelector(definition),
         forced,
         forcedAttributes,

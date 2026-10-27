@@ -183,6 +183,17 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./radio-cell.ts")).radio,
   },
   {
+    set: "radio-row",
+    entry: "dist/radio-group.js",
+    load: async () => (await import("./radio-row-cell.ts")).radioRow,
+  },
+  {
+    set: "radio-group",
+    entry: "dist/radio-group.js",
+    load: async () => (await import("./radio-group-cell.ts")).radioGroup,
+  },
+
+  {
     set: "checkbox",
     entry: "dist/checkbox.js",
     load: async () => (await import("./checkbox-cell.ts")).checkbox,

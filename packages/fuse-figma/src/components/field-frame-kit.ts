@@ -109,14 +109,14 @@ function stampOf(cell: Cell): DescriptionStamp {
   return cell.state === "disabled" || cell.state === "invalid" ? cell.state : "none";
 }
 
-/** The description for one stamp, with FieldFrame's `text-pretty`. */
-function frameDescription(text: string, stamp: DescriptionStamp): InstanceDefinition {
+/** The description for one stamp, with the classes FieldFrame gives it. */
+function frameDescription(text: string, stamp: DescriptionStamp, classes: string): InstanceDefinition {
   return {
     kind: "instance",
     key: stamp === "none" ? "description" : `description-${stamp}`,
     of: FIELD_DESCRIPTION,
     cell: () => ({ state: "rest" }),
-    classesFor: () => frame.description(),
+    classesFor: () => classes,
     properties: () => ({ text: { Text: text } }),
     facts: new Map([
       ["data-disabled", () => stamp === "disabled"],
@@ -128,16 +128,20 @@ function frameDescription(text: string, stamp: DescriptionStamp): InstanceDefini
 }
 
 /**
- * The description that closes the column, a `Field description` instance per stamp.
+ * The description, a `Field description` instance per stamp: after the control, or under a legend.
  *
  * @param text - The description's characters, set through the instance's `Text` property.
+ * @param classes - The classes FieldFrame gives it, its `text-pretty` after a control by default.
  * @returns The instance parts, one of which each cell shows.
  */
-export function frameDescriptions(text: string): readonly InstanceDefinition[] {
+export function frameDescriptions(
+  text: string,
+  classes: string = frame.description()
+): readonly InstanceDefinition[] {
   return [
-    frameDescription(text, "none"),
-    frameDescription(text, "disabled"),
-    frameDescription(text, "invalid"),
+    frameDescription(text, "none", classes),
+    frameDescription(text, "disabled", classes),
+    frameDescription(text, "invalid", classes),
   ];
 }
 

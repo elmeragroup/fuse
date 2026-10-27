@@ -605,7 +605,8 @@ describe("a `justify-between` row of fixed width that holds one layer", () => {
 // Oracle: CSS 2.1 §9.2.2 and §10.3.9. An inline-block as wide as its block container sits alone on
 // the container's one line and spans it. Chromium measured TextField's `relative` container exactly
 // as tall and wide as its 36px and 44px `<input>` at both densities on 2026-10-27, its 16px `normal`
-// strut fitting inside the input's line, so the container draws as a column the input fills.
+// strut fitting inside the input's line, so the container draws as a column the input fills. A real
+// file drew that column 384×36 at Dense and 384×44 at Comfortable around the Input set (W5-P4).
 describe("a block box whose one layer is an inline-block as wide as it", () => {
   const input = (classes: string) => ({
     ...dot(classes),
