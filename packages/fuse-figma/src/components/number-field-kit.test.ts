@@ -42,8 +42,14 @@ describe("the Number field stepper component set", () => {
 
   it("draws a control-h-xs column with a 1px input start edge, muted on hover and when disabled", () => {
     const stepper = (state: string) => variantRoot(spec, `number-field-stepper/state=${state}`);
+    // Centred both ways and unpadded, so Figma centres the glyph in the content box the left stroke
+    // leaves, at x 4.5 dense and 8.5 comfortable, as CSS does (W5-P7).
     expect(stepper("rest")).toMatchObject({
       sizing: { horizontal: fixed(density("control-h-xs")), vertical: fixed(literal(34)) },
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
+      paddingLeft: literal(0),
+      paddingRight: literal(0),
       fill: paint("background"),
       stroke: { color: paint("input"), sides: { top: 0, right: 0, bottom: 0, left: 1 } },
     });

@@ -824,6 +824,57 @@ describe("Avatar's image fills on an applied file", () => {
   });
 });
 
+// Unit under test: the Number field stepper and Number field as Apply writes them. Oracle: probes
+// W5-P7 and W5-P8 in Figma. A stepper centred both ways with no padding and a 1px left stroke that
+// counts in layout centres its 16px glyph in the 23px or 31px content box, at x 4.5 dense and 8.5
+// comfortable, as CSS's border box does; the fake places no layer in a flow, so the test pins the
+// fields that placement follows from. The decrease stepper's swapped glyph reads Minus in the main and
+// in an instance of it.
+describe("Number field's steppers on an applied file", () => {
+  const NUMBER_FIELD_PAGE = pageKey(inventoryPage("number-field"));
+
+  it("writes the stepper centred, unpadded, with a left stroke alone that counts in layout (W5-P7)", async () => {
+    const page = await kitPage(await appliedFile(), NUMBER_FIELD_PAGE);
+    const stepper = setOn(page, "Number field stepper").children[0];
+    expect(
+      stepper?.type === "COMPONENT"
+        ? [
+            stepper.primaryAxisAlignItems,
+            stepper.counterAxisAlignItems,
+            [stepper.paddingLeft, stepper.paddingRight],
+            [
+              stepper.strokeTopWeight,
+              stepper.strokeRightWeight,
+              stepper.strokeBottomWeight,
+              stepper.strokeLeftWeight,
+            ],
+            stepper.strokesIncludedInLayout,
+          ]
+        : []
+    ).toEqual(["CENTER", "CENTER", [0, 0], [0, 0, 0, 1], true]);
+  });
+
+  it("shows Minus on the decrease stepper and Plus on the increase one, in the main and an instance (W5-P8)", async () => {
+    const page = await kitPage(await appliedFile(), NUMBER_FIELD_PAGE);
+    const main = setOn(page, "Number field").children.find((node) => node.name === "state=rest");
+    // The name of each `Icon` instance's main component, in layer order.
+    const glyphs = async (node: SceneNode): Promise<readonly (string | undefined)[]> => {
+      const own =
+        node.type === "INSTANCE" && node.name === "Icon" ? [(await node.getMainComponentAsync())?.name] : [];
+      const below = "children" in node ? await Promise.all(node.children.map(glyphs)) : [];
+      return [...own, ...below.flat()];
+    };
+    expect(main?.type).toBe("COMPONENT");
+    if (main?.type !== "COMPONENT") {
+      return;
+    }
+    expect([await glyphs(main), await glyphs(main.createInstance())]).toEqual([
+      ["Minus", "Plus"],
+      ["Minus", "Plus"],
+    ]);
+  });
+});
+
 describe("a file whose label font the machine cannot load", () => {
   it("fails Plan, and stops Apply before any write", async () => {
     const file = syncedFile(collections, [{ family: "Roboto", style: "Medium" }]);

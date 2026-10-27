@@ -80,7 +80,14 @@ const GLYPH: IconSlot = {
   classes: "size-4",
 };
 
-/** The increase stepper, as `<NumberField>` renders it, at rest, hovered or disabled at its bound. */
+/**
+ * The increase stepper, as `<NumberField>` renders it, at rest, hovered or disabled at its bound.
+ *
+ * In Figma, the left stroke alone counts in layout and adds no width: a stepper instance stays 24 or
+ * 32 wide, fills the field box's height and centres its glyph in the 23px or 31px content box, at x 4.5
+ * or 8.5, as CSS's border box does (W5-P7). The decrease instance's `Icon` swap to Minus holds in
+ * Number field's main and in an instance of it (W5-P8).
+ */
 export const NUMBER_FIELD_STEPPER: ComponentDefinition = {
   key: "number-field-stepper",
   name: "Number field stepper",

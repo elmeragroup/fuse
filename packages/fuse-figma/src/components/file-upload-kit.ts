@@ -72,7 +72,12 @@ function isDropTarget(cell: Cell): boolean {
   return cell.state === "drop-target";
 }
 
-/** A dropzone, as the Compact demo's `<FileUpload.Dropzone>` in a `FileUpload.Root`, disabled or not. */
+/**
+ * A dropzone, as the Compact demo's `<FileUpload.Dropzone>` in a `FileUpload.Root`, disabled or not.
+ * Its hover and focus strokes are dashed and bound to the `muted-foreground/50` tint; in Figma a dashed
+ * stroke bound to an alpha tint keeps its `[3, 2]` pattern and takes the variable's alpha, in either
+ * write order (W5-P9).
+ */
 export const FILE_UPLOAD_DROPZONE: ComponentDefinition = {
   key: "file-upload-dropzone",
   name: "File upload dropzone",
