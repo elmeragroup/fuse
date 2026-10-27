@@ -4,13 +4,17 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+// Role tokens live in themes.css only; the tinted-page fills below read them per theme.
+import "../../../dist/themes.css";
 import {
   assertFocusRingAtBothDensities,
   assertFocusRingOnKeyboardAbsentOnMouse,
   assertKeyboardFocusRingAtBothDensities,
 } from "../../../test/assert-focus-ring";
+import { guenExternal } from "../../../test/theme-fixtures";
 import {
   CONTROL_MD,
+  cssVarColor,
   fkasExternal,
   px,
   renderThemed,
@@ -41,6 +45,12 @@ function htmlPanel(name: string): HTMLElement {
     throw new Error(`Expected a tabpanel named ${name}`);
   }
   return element;
+}
+
+async function settledFill(name: string): Promise<string> {
+  const tab = htmlTab(name);
+  await Promise.all(tab.getAnimations().map((animation) => animation.finished));
+  return getComputedStyle(tab).backgroundColor;
 }
 
 function htmlControl(name: string): HTMLElement {
@@ -203,12 +213,42 @@ describe("Tabs", () => {
     await assertFocusRingOnKeyboardAbsentOnMouse(htmlTab("Account"), htmlPanel("Account"));
   });
 
-  it("emits data-variant=line and does not apply bg-background on the active trigger", () => {
+  it("emits data-variant=line and leaves the active trigger unfilled", () => {
     renderThemed(<AccountPassword variant="line" />);
 
     expect(htmlTablist().getAttribute("data-variant")).toBe("line");
     expect(getComputedStyle(htmlTab("Account")).backgroundColor).toBe("rgba(0, 0, 0, 0)");
   });
+
+  it.each([
+    ["fkas private light", fkasExternal, "light"],
+    ["fkas private dark", fkasExternal, "dark"],
+    ["guen light", guenExternal, "light"],
+    ["guen dark", guenExternal, "dark"],
+  ] as const)(
+    "fills the active default trigger with the card on its muted list, %s",
+    async (_name, theme, scheme) => {
+      // Unit under test: the active trigger's fill. Oracle: the scope's own `--card` and
+      // `--muted`. These external themes tint the page darker than `--muted` in light.
+      const tabs = (
+        <ThemeScope theme={theme}>
+          <AccountPassword />
+        </ThemeScope>
+      );
+      renderThemed(scheme === "dark" ? <div data-theme="dark">{tabs}</div> : tabs);
+      const list = htmlTablist();
+      const card = cssVarColor(list, "--card");
+      // Oracle sanity: the page tint differs from the card, so a trigger on the page fill fails.
+      expect(cssVarColor(list, "--background")).not.toBe(card);
+      expect(getComputedStyle(list).backgroundColor).toBe(cssVarColor(list, "--muted"));
+      expect(await settledFill("Account")).toBe(card);
+      expect(await settledFill("Billing")).toBe("rgba(0, 0, 0, 0)");
+
+      await userEvent.click(page.getByRole("tab", { name: "Billing", exact: true }));
+      expect(await settledFill("Billing")).toBe(card);
+      expect(await settledFill("Account")).toBe("rgba(0, 0, 0, 0)");
+    }
+  );
 
   it("matches signed md list height when horizontal and stays content-sized when vertical", () => {
     const { rerender } = renderThemed(
