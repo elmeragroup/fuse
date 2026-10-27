@@ -13,7 +13,7 @@ const reasons = [
 
 export function AutocompleteCaret() {
   return (
-    <Field.Root name="reason" className="max-w-xs">
+    <Field.Root name="reason" spacing="part" className="max-w-xs">
       <Field.Label>Reason for contact</Field.Label>
       <Autocomplete.Root id="reason" items={reasons}>
         <Autocomplete.Input placeholder="Describe it in a few words…" showTrigger />

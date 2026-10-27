@@ -99,6 +99,15 @@
           "required": false
         },
         {
+          "name": "spacing",
+          "origin": "recipe-axis",
+          "type": "\"group\" | \"part\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"group\"",
+          "description": "",
+          "required": false
+        },
+        {
           "name": "style",
           "origin": {
             "packageName": "@base-ui/react"

@@ -7,8 +7,8 @@ import { Autocomplete } from "@elmeragroup/fuse/autocomplete";
 import { Button } from "@elmeragroup/fuse/button";
 import { Field } from "@elmeragroup/fuse/field";
 import { SpinnerGap } from "@elmeragroup/fuse/icons";
-import { Input } from "@elmeragroup/fuse/input";
 import { loaderVariants } from "@elmeragroup/fuse/loader";
+import { TextField } from "@elmeragroup/fuse/text-field";
 
 type Company = { readonly name: string; readonly orgNumber: string };
 
@@ -129,7 +129,7 @@ export function AutocompleteCompanySearch() {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-sm flex w-full flex-col gap-4">
-      <Field.Root name="company">
+      <Field.Root name="company" spacing="part">
         <Field.Label>Company name</Field.Label>
         <Autocomplete.Root
           id="company"
@@ -166,18 +166,15 @@ export function AutocompleteCompanySearch() {
           </Autocomplete.Content>
         </Autocomplete.Root>
       </Field.Root>
-      <Field.Root name="orgNumber">
-        <Field.Label>Organization number</Field.Label>
-        <Input
-          filter="numeric"
-          maxLength={9}
-          value={orgNumber}
-          onChange={(event) => {
-            setOrgNumber(event.currentTarget.value);
-          }}
-        />
-        <Field.Description>Filled in when you pick a company.</Field.Description>
-      </Field.Root>
+      <TextField
+        name="orgNumber"
+        label="Organization number"
+        description="Filled in when you pick a company."
+        filter="numeric"
+        maxLength={9}
+        value={orgNumber}
+        onChange={setOrgNumber}
+      />
       <Button type="submit" className="self-start">
         Continue
       </Button>

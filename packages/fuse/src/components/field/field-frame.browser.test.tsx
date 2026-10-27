@@ -33,6 +33,7 @@ import { Select } from "../select";
 import { SelectField } from "../select-field/select-field";
 import { TextField } from "../text-field/text-field";
 import { TextareaField } from "../textarea-field/textarea-field";
+import { FieldLabel, FieldRoot } from "./field";
 import { FieldFrame } from "./field-frame";
 
 // Figma (funnel nodes 9160:36033 and 9160:36034): a group's description sits directly
@@ -45,7 +46,8 @@ const groupGap = (density: Density) => metricPx("surface-gap-md", density);
 // A pending RadioGroup without a label keeps a heading row for its spinner, and the
 // fieldset's group gap separates that row from the description.
 // TextField's label sits on the Field.Root's `gap-1` stack, at 4px from its control. SelectField
-// shares this part spacing through FieldFrame's `spacing="part"`.
+// shares this part spacing through FieldFrame's `spacing="part"`, and a hand-built field through
+// `Field.Root`'s.
 const TEXT_FIELD_LABEL_TO_CONTROL_PX = 4;
 
 const PART_SPACED_FIELDS: ReadonlyArray<{
@@ -69,6 +71,17 @@ const PART_SPACED_FIELDS: ReadonlyArray<{
       </SelectField>
     ),
     control: () => roleNamed("combobox", "Plan"),
+  },
+  {
+    name: 'Field.Root with spacing="part"',
+    label: "Company",
+    render: () => (
+      <FieldRoot spacing="part">
+        <FieldLabel>Company</FieldLabel>
+        <Input />
+      </FieldRoot>
+    ),
+    control: () => textboxNamed("Company"),
   },
 ];
 
@@ -558,6 +571,20 @@ describe("FieldFrame", () => {
         expect(verticalGap(textNamed(label), control())).toBeCloseTo(TEXT_FIELD_LABEL_TO_CONTROL_PX, 0);
       }
     );
+
+    it("keeps a bare Field.Root's label-to-control gap at the group gap", () => {
+      stampDensity(density);
+      renderThemed(
+        <>
+          {preflightBoxReset}
+          <FieldRoot>
+            <FieldLabel>Company</FieldLabel>
+            <Input />
+          </FieldRoot>
+        </>
+      );
+      expect(verticalGap(textNamed("Company"), textboxNamed("Company"))).toBeCloseTo(groupGap(density), 0);
+    });
   });
 });
 

@@ -1,7 +1,7 @@
 /**
  * Runtime-free Field recipes. Not exported from the public entry, since there is no proven
  * recipe-borrowing use; the workspace-only recipe catalog re-exports them for the Figma component
- * sync. `orientation` is the Root axis and `variant` the Legend's. The Title and the Label share
+ * sync. `orientation` and `spacing` are the Root's axes and `variant` the Legend's. The Title and the Label share
  * their heading classes: `title` puts its centering before them, and `label` its composition arms.
  * `description`, `error` and `legend` are the other text parts. `field.tsx` resolves the slots of the
  * parts without an axis once at module scope. The headings, the description and the error read the
@@ -51,6 +51,12 @@ export const fieldVariants = tv({
         root: "@md/field-group:flex-row @md/field-group:items-center @md/field-group:[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-field-heading:flex-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px flex-col [&>.sr-only]:w-auto [&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full",
       },
     },
+    // `group` keeps the root's `--surface-gap-md`, which follows density. `part` is the labeled
+    // composites' compact stack, the label 4px from its control at both densities.
+    spacing: {
+      group: {},
+      part: { root: "gap-1" },
+    },
     // `legend` titles a fieldset at a fixed 16/24px, and `label` reads the label type pair to match a
     // `Field.Label`.
     variant: {
@@ -60,6 +66,7 @@ export const fieldVariants = tv({
   },
   defaultVariants: {
     orientation: "vertical",
+    spacing: "group",
     variant: "legend",
   },
 });

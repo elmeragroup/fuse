@@ -17,7 +17,7 @@ const municipalities = [
 
 export function AutocompleteBasic() {
   return (
-    <Field.Root name="municipality" className="max-w-xs">
+    <Field.Root name="municipality" spacing="part" className="max-w-xs">
       <Field.Label>Municipality</Field.Label>
       <Autocomplete.Root id="municipality" items={municipalities}>
         <Autocomplete.Input placeholder="Type a municipality…" showClear />

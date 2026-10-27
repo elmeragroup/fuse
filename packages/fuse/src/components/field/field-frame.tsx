@@ -108,7 +108,7 @@ export type FieldFrameProps = {
    */
   isDescriptionBeside?: boolean;
   /**
-   * The spacing of the frame's root, written as `data-spacing`. `"part"` is a compact stack whose
+   * The spacing of the frame's root, forwarded to `Field.Root`. `"part"` is a compact stack whose
    * label sits 4px from its control, fixed part spacing that does not follow density; `"group"`
    * (default) keeps the `Field.Root` gap, which follows density, or the caller's own layout.
    */
@@ -246,7 +246,7 @@ export function FieldFrame({
 
   return (
     <FieldRoot
-      data-spacing={spacing}
+      spacing={spacing}
       name={name}
       invalid={invalid}
       disabled={disabled}

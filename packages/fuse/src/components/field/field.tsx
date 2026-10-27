@@ -32,18 +32,25 @@ const DescriptionOwnerContext = createContext<DescriptionOwner | null>(null);
 
 const fieldDescriptionOwner: DescriptionOwner = { _tag: "field" };
 
+/**
+ * `spacing="part"` sets the label 4px from its control at both densities, as `FieldFrame`'s
+ * part-spaced composites do, so a hand-built field matches a `TextField` beside it.
+ * `data-spacing` declares that fixed stack to the density-role contract.
+ */
 export function FieldRoot({
   className,
   orientation = "vertical",
+  spacing = "group",
   ...props
 }: ComponentProps<typeof FieldPrimitive.Root> &
-  Pick<VariantProps<typeof fieldVariants>, "orientation">): ReactElement {
+  Pick<VariantProps<typeof fieldVariants>, "orientation" | "spacing">): ReactElement {
   return (
     <DescriptionOwnerContext.Provider value={fieldDescriptionOwner}>
       <FieldPrimitive.Root
         data-slot="field"
         data-orientation={orientation}
-        className={mergeClassName(className, fieldVariants({ orientation }).root())}
+        data-spacing={spacing}
+        className={mergeClassName(className, fieldVariants({ orientation, spacing }).root())}
         {...props}
       />
     </DescriptionOwnerContext.Provider>

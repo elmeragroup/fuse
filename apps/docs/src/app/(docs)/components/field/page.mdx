@@ -7,6 +7,7 @@ import { FieldBasic } from "./demos/field-basic";
 import { FieldErrorDemo } from "./demos/field-error";
 import { FieldValidationDemo } from "./demos/field-validation";
 import { FieldOrientations } from "./demos/field-orientations";
+import { FieldSpacing } from "./demos/field-spacing";
 import { FieldSetDemo } from "./demos/field-set";
 import { FieldSetDescriptionDemo } from "./demos/field-set-description";
 import { FieldGridSetDemo } from "./demos/field-grid-set";
@@ -47,6 +48,16 @@ Put `Field.Error` directly after the control, ahead of any `Field.Description`, 
 
 <Demo slug="field" id="orientations" title="Orientations" file="field-orientations.tsx">
   <FieldOrientations />
+</Demo>
+
+<Prose>
+
+`Field.Root` spaces its label, control and description with the field gap, which follows density. `TextField`, `SelectField`, `NumberField`, `PhoneNumberField` and `Slider` set their label 4px from the control at both densities. For a field built from parts that sits among them, such as one around an `InputGroup` or an `Autocomplete`, set `spacing="part"` on `Field.Root` so its label sits as close to its control as theirs.
+
+</Prose>
+
+<Demo slug="field" id="spacing" title="Part spacing" file="field-spacing.tsx">
+  <FieldSpacing />
 </Demo>
 
 <Demo slug="field" id="set" title="Field set" file="field-set.tsx">

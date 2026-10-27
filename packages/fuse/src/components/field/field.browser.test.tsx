@@ -355,14 +355,14 @@ describe("Field", () => {
     expect(plainLabel.cursor).not.toBe("pointer");
   });
 
-  it("reflects orientation and legend variant as data attributes", () => {
+  it("reflects orientation, spacing and legend variant as data attributes", () => {
     renderThemed(
       <Field.Group>
         <Field.Root orientation="horizontal">
           <Field.Label>Name</Field.Label>
           <Field.Control render={<input />} />
         </Field.Root>
-        <Field.Root orientation="responsive">
+        <Field.Root orientation="responsive" spacing="part">
           <Field.Label>City</Field.Label>
           <Field.Control render={<input />} />
         </Field.Root>
@@ -372,7 +372,9 @@ describe("Field", () => {
       </Field.Group>
     );
     expect(fieldRootFrom("Name").getAttribute("data-orientation")).toBe("horizontal");
+    expect(fieldRootFrom("Name").getAttribute("data-spacing")).toBe("group");
     expect(fieldRootFrom("City").getAttribute("data-orientation")).toBe("responsive");
+    expect(fieldRootFrom("City").getAttribute("data-spacing")).toBe("part");
     expect(textNamed("Options").getAttribute("data-variant")).toBe("label");
   });
 
