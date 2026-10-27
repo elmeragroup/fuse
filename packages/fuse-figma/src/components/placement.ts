@@ -153,7 +153,7 @@ export function placeParts(
     }
     if (layer.kind === "instance") {
       if (normalizeCss(style.resolved("position") ?? "") !== "absolute") {
-        readPosition(style, "other", false);
+        readPosition(style, "other", undefined);
         return layer;
       }
       const anchored = readAnchored(style, parent.style, flow, parent.layers);
@@ -170,7 +170,7 @@ export function placeParts(
       case "refused":
         return layer;
       case "other":
-        readPosition(style, centering, anchorsInstance(layer.children));
+        readPosition(style, centering, anchoredConstraints(layer.children));
         return layer;
     }
   });
@@ -246,7 +246,7 @@ export function placeRoot(
   if (outOfFlow(style)) {
     placeAbsoluteRoot(style, widthFromContainer);
   } else {
-    readPosition(style, "other", anchorsInstance(layers));
+    readPosition(style, "other", anchoredConstraints(layers));
   }
   style.read(
     "translate",
@@ -463,9 +463,17 @@ export function slotAroundDot(style: LayerStyle, box: BoxSpec): BoxSpec {
  */
 type ParentLayout = "centers-its-one-layer" | "other";
 
-/** Whether a box holds an instance its constraints place, as a Sidebar menu item holds its badge. */
-function anchorsInstance(layers: readonly ChildLayerSpec[]): boolean {
-  return layers.some((layer) => layer.kind === "instance" && layer.absolute !== undefined);
+/**
+ * The constraints of the instance a box holds and places by them, as a Sidebar menu item holds its
+ * badge, or undefined for a box that holds none.
+ */
+function anchoredConstraints(layers: readonly ChildLayerSpec[]): string | undefined {
+  for (const layer of layers) {
+    if (layer.kind === "instance" && layer.absolute !== undefined) {
+      return `${layer.absolute.constraints.horizontal} × ${layer.absolute.constraints.vertical}`;
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -479,10 +487,10 @@ function anchorsInstance(layers: readonly ChildLayerSpec[]): boolean {
  *
  * @param reader - The box's style.
  * @param parent - How the box's parent lays it out. The root passes `other`.
- * @param anchors - Whether the box holds an instance its constraints place. An instance part passes
- *   false, since its own layers are its set's.
+ * @param anchors - The constraints of the instance the box holds and places by them, or undefined
+ *   for none. An instance part passes none, since its own layers are its set's.
  */
-function readPosition(reader: LayerStyle, parent: ParentLayout, anchors: boolean): void {
+function readPosition(reader: LayerStyle, parent: ParentLayout, anchors: string | undefined): void {
   const translate = splitTopLevel(normalizeCss(reader.resolved("translate") ?? ""), " ").map(
     evaluatePercentage
   );
@@ -511,9 +519,12 @@ function readPosition(reader: LayerStyle, parent: ParentLayout, anchors: boolean
     (value) => (normalizeCss(value) === "relative" ? value : undefined),
     () => ({
       outcome: "dropped",
-      detail: anchors
-        ? "it anchors the absolute instance it holds, whose MAX × CENTER constraints place it against this frame (N11)"
-        : "it only anchors positioned descendants, which auto layout does not need",
+      detail:
+        anchors === undefined
+          ? "it only anchors positioned descendants, which auto layout does not need"
+          : anchors === "MAX × CENTER"
+            ? "it anchors the absolute instance it holds, whose MAX × CENTER constraints place it against this frame (N11)"
+            : `it anchors the absolute instance it holds, whose ${anchors} constraints place it against this frame`,
     }),
     []
   );

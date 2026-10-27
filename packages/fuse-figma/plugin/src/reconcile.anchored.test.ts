@@ -242,3 +242,82 @@ describe("a variant that holds an instance at MAX × CENTER", () => {
     expect(file.writes.slice(before)).toEqual([]);
   });
 });
+
+/** 4px from the item's end and 6px below its top, as an overlay's corner close sits in its popup. */
+const AT_CORNER: AnchoredSpec = {
+  constraints: { horizontal: "MAX", vertical: "MIN" },
+  endInset: 4,
+  topInset: 6,
+};
+
+/** The badge's end inset and top inset, as a designer measures them. */
+function cornerOf(variant: ComponentNode | InstanceNode, badge: InstanceNode): readonly [number, number] {
+  return [variant.width - badge.x - badge.width, badge.y];
+}
+
+// Oracle: CSS 2.1 §10.3.7 and §10.6.4, where `top` keeps the box's top that far below its containing
+// block's padding edge whatever the block's height, which MIN keeps, and the fake's rules 9 and 47:
+// MIN keeps `y` as written, and MAX keeps the end inset as the parent resizes (N11). No probe has read
+// MAX × MIN yet (U10 "Probe needed").
+describe("a variant that holds an instance at MAX × MIN", () => {
+  it("places the instance in one Apply, and the next Plan lists nothing", async () => {
+    const file = densityFile();
+    await reconcileKit(file.figma, kitWith(itemSet(AT_CORNER)), true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, kitWith(itemSet(AT_CORNER)), false)).toEqual({
+      changes: [],
+      warnings: [],
+    });
+    const { variant, badge } = await itemLayers(file);
+    expect([badge.layoutPositioning, badge.constraints, cornerOf(variant, badge)]).toEqual([
+      "ABSOLUTE",
+      { horizontal: "MAX", vertical: "MIN" },
+      [4, 6],
+    ]);
+  });
+
+  it("keeps the corner in an outer instance a density switch makes taller and a resize makes wider", async () => {
+    const file = densityFile();
+    await reconcileKit(file.figma, kitWith(itemSet(AT_CORNER)), true);
+    file.reopen();
+    const { variant } = await itemLayers(file);
+    const density = (await file.figma.variables.getLocalVariableCollectionsAsync()).find(
+      (collection) => collection.name === "Fuse density"
+    );
+    if (density === undefined) {
+      throw new Error("the file holds no density collection");
+    }
+    const outer = variant.createInstance();
+    outer.setExplicitVariableModeForCollection(density, density.modes[1]?.modeId ?? "");
+    const badge = childNamed(outer, "INSTANCE", "badge");
+    const taller = [outer.height, ...cornerOf(outer, badge)];
+    outer.resize(300, outer.height);
+    expect([taller, [outer.width, ...cornerOf(outer, badge)]]).toEqual([
+      [36, 4, 6],
+      [300, 4, 6],
+    ]);
+    expect(await reconcileKit(file.figma, kitWith(itemSet(AT_CORNER)), false)).toEqual({
+      changes: [],
+      warnings: [],
+    });
+  });
+
+  it("plans an instance a designer moved back to its corner, in one line", async () => {
+    const file = densityFile();
+    await reconcileKit(file.figma, kitWith(itemSet(AT_CORNER)), true);
+    file.reopen();
+    const { badge } = await itemLayers(file);
+    badge.y += 3;
+    expect((await reconcileKit(file.figma, kitWith(itemSet(AT_CORNER)), false)).changes).toEqual([
+      "Item / state=rest / badge: place → 4px from the end, its top 6px below the top",
+      "Item: lay out 1 variants in 1 columns and 1 rows",
+      "Fuse components: place Row, Badge, Item and Icons in a row",
+    ]);
+    await reconcileKit(file.figma, kitWith(itemSet(AT_CORNER)), true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, kitWith(itemSet(AT_CORNER)), false)).toEqual({
+      changes: [],
+      warnings: [],
+    });
+  });
+});

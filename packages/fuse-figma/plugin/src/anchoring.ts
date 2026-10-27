@@ -1,12 +1,14 @@
 /**
- * Where an instance sits outside its parent's auto layout, at the parent's end and centred down it,
- * as a Sidebar menu badge sits over the end of its row. On 2026-10-25 a real file kept such an
- * instance's end inset as the instance widened with its own text and as its parent widened, and kept
- * its centre's offset from the parent's centre through height changes and density switches, in the
- * main and in an outer instance, with MAX across and CENTER down (N11). So the plugin writes the
- * positioning and the constraints, places the instance once, from its size and its parent's as they
- * settle, and compares the inset and the offset, never `x` and `y`, which follow sizes the run does
- * not set.
+ * Where an instance sits outside its parent's auto layout, at the parent's end, and down either
+ * centred, as a Sidebar menu badge sits over the end of its row, or a fixed distance below the
+ * parent's top, as an overlay's corner close sits in its popup's top right. On 2026-10-25 a real file
+ * kept such an instance's end inset as the instance widened with its own text and as its parent
+ * widened, and kept its centre's offset from the parent's centre through height changes and density
+ * switches, in the main and in an outer instance, with MAX across and CENTER down (N11). MIN down keeps
+ * `y` as written, which no probe has read beside MAX across yet. So the plugin writes the positioning
+ * and the constraints, places the instance once, from its size and its parent's as they settle, and
+ * compares the end inset and the centre offset or top inset, never `x` and `y`, which follow sizes the
+ * run does not set.
  */
 import type { AnchoredSpec } from "../../src/components/kit-spec.ts";
 import { near, planScalar } from "./fields.ts";
@@ -30,15 +32,29 @@ function holderOf(instance: InstanceNode, label: string): Holder {
 }
 
 /**
- * The instance's end inset and centre offset as they stand, read after the instances inside its
- * parent, the instance among them, settle (PI).
+ * Whether the instance sits where the spec places it, read after the instances inside its parent, the
+ * instance among them, settle (PI): its end inset, and its centre's offset from the parent's centre or
+ * its top's inset below the parent's top, as the spec's vertical constraint keeps.
  */
-function heldPlace(instance: InstanceNode, holder: Holder): Pick<AnchoredSpec, "endInset" | "centerOffset"> {
+function heldAt(instance: InstanceNode, holder: Holder, spec: AnchoredSpec): boolean {
   settleInstances(holder);
-  return {
-    endInset: holder.width - instance.x - instance.width,
-    centerOffset: instance.y + instance.height / 2 - holder.height / 2,
-  };
+  const down =
+    "centerOffset" in spec
+      ? near(instance.y + instance.height / 2 - holder.height / 2, spec.centerOffset)
+      : near(instance.y, spec.topInset);
+  return near(holder.width - instance.x - instance.width, spec.endInset) && down;
+}
+
+/** The `y` the spec places the instance at, from its height and its parent's as they stand. */
+function placedY(instance: InstanceNode, holder: Holder, spec: AnchoredSpec): number {
+  return "centerOffset" in spec ? holder.height / 2 + spec.centerOffset - instance.height / 2 : spec.topInset;
+}
+
+/** How a change line names the spec's place down. */
+function downOf(spec: AnchoredSpec): string {
+  return "centerOffset" in spec
+    ? `its centre ${spec.centerOffset}px from the centre`
+    : `its top ${spec.topInset}px below the top`;
 }
 
 /**
@@ -77,18 +93,13 @@ export function planAnchoring(
     });
   }
   const holder = holderOf(instance, label);
-  const now = turns || !constrained || held === "unknown" ? undefined : heldPlace(instance, holder);
-  if (now !== undefined && near(now.endInset, spec.endInset) && near(now.centerOffset, spec.centerOffset)) {
+  const unchanged = !turns && constrained && held !== "unknown" && heldAt(instance, holder, spec);
+  if (unchanged) {
     return;
   }
-  change(
-    run.plan,
-    label,
-    `place → ${spec.endInset}px from the end, its centre ${spec.centerOffset}px from the centre`,
-    () => {
-      settleInstances(holder);
-      instance.x = holder.width - spec.endInset - instance.width;
-      instance.y = holder.height / 2 + spec.centerOffset - instance.height / 2;
-    }
-  );
+  change(run.plan, label, `place → ${spec.endInset}px from the end, ${downOf(spec)}`, () => {
+    settleInstances(holder);
+    instance.x = holder.width - spec.endInset - instance.width;
+    instance.y = placedY(instance, holder, spec);
+  });
 }

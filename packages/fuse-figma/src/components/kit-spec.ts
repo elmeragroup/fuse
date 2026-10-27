@@ -350,18 +350,27 @@ export type AbsoluteSpec = {
 };
 
 /**
- * An instance outside its parent's auto layout at the parent's end and centred down it, as a Sidebar
- * menu badge sits over the end of its row. The instance hugs its content, so its `x` and `y` follow
- * a width only Figma knows: the spec holds what MAX and CENTER keep instead, and the plugin places the
- * instance from them once its size and its parent's have settled.
+ * An instance outside its parent's auto layout at the parent's end, and down either centred, as a
+ * Sidebar menu badge sits over the end of its row, or a fixed distance below the parent's top, as an
+ * overlay's corner close sits in its popup's top right. The instance hugs its content, so its `x` and
+ * `y` follow a width only Figma knows: the spec holds what MAX and CENTER or MIN keep instead, and the
+ * plugin places the instance from them once its size and its parent's have settled.
  */
 export type AnchoredSpec = {
-  readonly constraints: { readonly horizontal: "MAX"; readonly vertical: "CENTER" };
   /** The pixels from the instance's end to its parent's, which MAX keeps. */
   readonly endInset: number;
-  /** The pixels from the parent's centre down to the instance's centre, which CENTER keeps. */
-  readonly centerOffset: number;
-};
+} & (
+  | {
+      readonly constraints: { readonly horizontal: "MAX"; readonly vertical: "CENTER" };
+      /** The pixels from the parent's centre down to the instance's centre, which CENTER keeps. */
+      readonly centerOffset: number;
+    }
+  | {
+      readonly constraints: { readonly horizontal: "MAX"; readonly vertical: "MIN" };
+      /** The pixels from the parent's top edge down to the instance's top, which MIN keeps. */
+      readonly topInset: number;
+    }
+);
 
 /**
  * A frame outside its parent's auto layout placed by its centre: across, a fixed distance from the
