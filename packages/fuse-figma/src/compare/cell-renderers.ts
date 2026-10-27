@@ -560,6 +560,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/number-field.js",
     load: async () => (await import("./number-field-cell.ts")).numberField,
   },
+  {
+    set: "file-upload-dropzone",
+    entry: "dist/file-upload.js",
+    load: async () => (await import("./file-upload-cell.ts")).fileUploadDropzone,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

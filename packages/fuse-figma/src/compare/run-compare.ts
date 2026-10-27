@@ -210,7 +210,7 @@ export function planCells(
         content: content(cell),
         measured: measuredSelectors(definition, isClientRenderer(renderer) ? renderer.union : undefined),
         span: slotSpan(layout, previewWidthIn(definition, cell)),
-        forcedOn: forcedSelector(definition),
+        forcedOn: forcedSelector(definition, cell),
         forced,
         forcedAttributes,
         resting: forces ? content(restingTwin(cell)) : undefined,

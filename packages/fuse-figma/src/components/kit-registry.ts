@@ -36,6 +36,7 @@ import {
 import { DROPDOWN_MENU_OPEN, DROPDOWN_MENU_POPUP, DROPDOWN_MENU_SUB_CONTENT } from "./dropdown-popup-kit";
 import { EMPTY } from "./empty-kit";
 import { FIELD_DESCRIPTION, FIELD_ERROR, FIELD_LEGEND, FIELD_TITLE } from "./field-text-kit";
+import { FILE_UPLOAD_DROPZONE } from "./file-upload-kit";
 import { INPUT_GROUP } from "./input-group-kit";
 import { INPUT } from "./input-kit";
 import { ITEM, ITEM_LINK } from "./item-kit";
@@ -135,6 +136,9 @@ const INPUT_PAGE: KitPage = { slug: "input", name: "Input" };
 
 /** The page of Textarea and the labelled Textarea field. */
 const TEXTAREA_PAGE: KitPage = { slug: "textarea", name: "Textarea" };
+
+/** The page of File upload's dropzone. */
+const FILE_UPLOAD_PAGE: KitPage = { slug: "file-upload", name: "File upload" };
 
 /** The page of Number field and its stepper. */
 const NUMBER_FIELD_PAGE: KitPage = { slug: "number-field", name: "Number field" };
@@ -451,4 +455,9 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(NUMBER_FIELD_STEPPER.axes),
   },
   { definition: NUMBER_FIELD, page: NUMBER_FIELD_PAGE, previewCells: matrixCells(NUMBER_FIELD.axes) },
+  {
+    definition: FILE_UPLOAD_DROPZONE,
+    page: FILE_UPLOAD_PAGE,
+    previewCells: matrixCells(FILE_UPLOAD_DROPZONE.axes),
+  },
 ];

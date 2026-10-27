@@ -493,6 +493,13 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly statePeer?: string;
   /**
+   * The `data-slot` of the part a keyboard focuses, for a root a pointer hovers that takes focus only
+   * through a part inside it, which it reads through `has-focus-visible:`, as File upload's dropzone
+   * holds its trigger. `figma:compare` forces a focus cell's focus on that part and a hover cell's
+   * hover on the root. Undefined for a root whose focus cells force focus where they force hover.
+   */
+  readonly focusPart?: string;
+  /**
    * The width in pixels the root's container gives it, which a root's percentage width takes and a
    * block-level root with no width fills, as the Figma preview and the compare host draw it. A
    * variant root sits in its component set, which has no auto layout, so the width is fixed. Without

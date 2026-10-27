@@ -60,6 +60,8 @@ export const ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => bo
   ["data-placeholder", (element) => element.attributes.has("data-placeholder")],
   // Base UI stamps `data-popup-open` on a Select or Navigation menu trigger while its popup is open.
   ["data-popup-open", (element) => element.attributes.has("data-popup-open")],
+  // A File upload dropzone carries `data-drop-target` while a file drag that could drop is over it.
+  ["data-drop-target", (element) => element.attributes.has("data-drop-target")],
   // fuse.css defines `data-active:` on `[data-state="active"]` and on a `data-active` that is not
   // `"false"`, which a Sidebar row's `useRender` stamps while it is the current item.
   ["data-active", isActive],
@@ -338,6 +340,8 @@ export const NOT_ATTRIBUTES = new Set([
   "focus",
   // Input group rings while its control has keyboard focus, which the page forces on the control.
   "has-[[data-focus-ring-control]:focus-visible]",
+  // A File upload dropzone rings while its trigger has keyboard focus, which the page forces there.
+  "has-focus-visible",
   "peer-hover/menu-button",
   // The page writes `data-highlighted` on a highlighted Combobox or Command row when it forces the
   // state, and a Command row's trailing part reads it from the row.

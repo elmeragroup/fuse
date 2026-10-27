@@ -198,19 +198,28 @@ export function fontSweepSelector(
 }
 
 /**
- * The selector of the element a definition's cells force hover and focus on: the part its
- * `statePart` names inside the measured element, as an Accordion item's trigger, the sibling before
- * the measured element its `statePeer` names, as a Sidebar menu badge's menu button, or the measured
- * element itself.
+ * The selector of the element a definition's cell forces hover or focus on: for a focus cell, the
+ * part its `focusPart` names inside the measured element, as File upload's trigger; otherwise the part
+ * its `statePart` names inside the measured element, as an Accordion item's trigger, the sibling
+ * before the measured element its `statePeer` names, as a Sidebar menu badge's menu button, or the
+ * measured element itself.
  *
- * @param definition - The root's slot and element, and the part or sibling that takes the set's
+ * @param definition - The root's slot and element, and the parts or sibling that take the set's
  *   states.
+ * @param cell - The cell, whose `state` picks the focus part for a focus cell.
  * @returns A selector for an element anywhere inside a cell's slot, as {@link cellSelector} takes it.
  */
 export function forcedSelector(
-  definition: Pick<ComponentDefinition, "slot" | "element" | "statePart" | "statePartElement" | "statePeer">
+  definition: Pick<
+    ComponentDefinition,
+    "slot" | "element" | "statePart" | "statePartElement" | "statePeer" | "focusPart"
+  >,
+  cell: Cell
 ): string {
   const measured = measuredSelector(definition);
+  if (cell.state === "focus" && definition.focusPart !== undefined) {
+    return `${measured} [data-slot="${definition.focusPart}"]`;
+  }
   if (definition.statePeer !== undefined) {
     return `[data-slot="${definition.statePeer}"]:has(~ ${measured})`;
   }

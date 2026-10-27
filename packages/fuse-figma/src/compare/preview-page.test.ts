@@ -132,31 +132,50 @@ describe("the element a cell measures", () => {
 // Unit under test: `forcedSelector`, the element the page forces hover and focus on in a cell's slot.
 // Oracle: the rule on `ComponentDefinition.statePart`, that a part which takes the set's states takes
 // the forced pseudo classes, and CSS's descendant combinator, which matches that part at any depth
-// inside the measured element. A root that takes its states takes them itself.
+// inside the measured element. A root that takes its states takes them itself. A root with a
+// `focusPart` reads its focus through `has-focus-visible:`, `:has(*:focus-visible)` (Selectors 4 §4.5),
+// which only a focused descendant matches, so a focus cell forces focus on that part and a hover cell
+// forces hover on the root, which `:hover` reads on the root itself.
 describe("the element a cell forces its state on", () => {
+  const AT_REST = { state: "rest" };
+
+  it("is the focus part inside the measured element for a focus cell, and the root for a hover cell", () => {
+    const dropzone = { slot: "file-upload-dropzone", focusPart: "file-upload-trigger" };
+    expect([
+      forcedSelector(dropzone, { state: "focus" }),
+      forcedSelector(dropzone, { state: "hover" }),
+    ]).toEqual([
+      '[data-slot="file-upload-dropzone"] [data-slot="file-upload-trigger"]',
+      '[data-slot="file-upload-dropzone"]',
+    ]);
+  });
+
   it("is the measured element of a root that takes its states", () => {
-    expect(forcedSelector({ slot: "button" })).toBe('[data-slot="button"]');
+    expect(forcedSelector({ slot: "button" }, AT_REST)).toBe('[data-slot="button"]');
   });
 
   it("is the part the definition's statePart names inside the measured element", () => {
-    expect(forcedSelector({ slot: "accordion-item", statePart: "accordion-trigger" })).toBe(
+    expect(forcedSelector({ slot: "accordion-item", statePart: "accordion-trigger" }, AT_REST)).toBe(
       '[data-slot="accordion-item"] [data-slot="accordion-trigger"]'
     );
   });
 
   it("is the part the definition's statePartElement names by tag and attributes inside the measured element", () => {
     expect(
-      forcedSelector({
-        slot: "field",
-        statePartElement: { tag: "input", attributes: { "data-focus-ring-control": true } },
-      })
+      forcedSelector(
+        {
+          slot: "field",
+          statePartElement: { tag: "input", attributes: { "data-focus-ring-control": true } },
+        },
+        AT_REST
+      )
     ).toBe('[data-slot="field"] input[data-focus-ring-control]');
   });
 
   // Selectors 4 §4.5 and §16.4: `:has(~ x)` matches an element that some later sibling `x` follows,
   // which is the peer a `peer-*` variant of `x` reads.
   it("is the sibling before the measured element that the definition's statePeer names", () => {
-    expect(forcedSelector({ slot: "sidebar-menu-badge", statePeer: "sidebar-menu-button" })).toBe(
+    expect(forcedSelector({ slot: "sidebar-menu-badge", statePeer: "sidebar-menu-button" }, AT_REST)).toBe(
       '[data-slot="sidebar-menu-button"]:has(~ [data-slot="sidebar-menu-badge"])'
     );
   });

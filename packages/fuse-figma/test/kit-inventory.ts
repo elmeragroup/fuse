@@ -343,6 +343,14 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "number-field", name: "Number field", variants: 5, previewed: 5 },
     ],
   },
+  {
+    slug: "file-upload",
+    name: "File upload",
+    sets: [
+      // The Compact demo's dropzone at rest, hovered, focused, as a drop target and disabled.
+      { key: "file-upload-dropzone", name: "File upload dropzone", variants: 5, previewed: 5 },
+    ],
+  },
 ];
 
 /**
