@@ -339,6 +339,15 @@ export function fieldRootFrom(name: string): HTMLElement {
   return root;
 }
 
+/** The field box around an input, the InputGroup that names itself a group. */
+export function fieldBoxOf(input: HTMLElement): HTMLElement {
+  const group = input.closest('[role="group"]');
+  if (!(group instanceof HTMLElement)) {
+    throw new Error("expected an input group around the input");
+  }
+  return group;
+}
+
 /**
  * The computed colour a role token resolves to, read where `host` sits in the cascade.
  *

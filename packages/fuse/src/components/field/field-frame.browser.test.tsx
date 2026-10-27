@@ -11,6 +11,7 @@ import {
 } from "../../../test/assert-group-label-hidden";
 import { withLocale } from "../../../test/locale-matrix";
 import {
+  fieldBoxOf,
   fieldRootFrom,
   metricPx,
   renderThemed,
@@ -21,8 +22,12 @@ import {
 } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
 import type { Density } from "../../theme/density";
+import { Autocomplete } from "../autocomplete";
+import { AutocompleteField } from "../autocomplete/autocomplete-field";
 import { CheckboxGroup, CheckboxItemGroup } from "../checkbox/checkbox";
 import { CheckboxItem } from "../checkbox/checkbox-item";
+import { Combobox } from "../combobox";
+import { ComboboxField } from "../combobox/combobox-field";
 import { Form } from "../form/form";
 import { Input } from "../input/input";
 import { NumberField } from "../number-field/number-field";
@@ -77,6 +82,30 @@ const PART_SPACED_FIELDS: ReadonlyArray<{
     label: "Notes",
     render: () => <TextareaField label="Notes" maxLength={200} />,
     control: () => textboxNamed("Notes"),
+  },
+  {
+    name: "AutocompleteField",
+    label: "Company",
+    render: () =>
+      withLocale(
+        "en-US",
+        <AutocompleteField label="Company" items={["Fjellkraft AS"]}>
+          <Autocomplete.Empty />
+        </AutocompleteField>
+      ),
+    control: () => fieldBoxOf(roleNamed("combobox", "Company")),
+  },
+  {
+    name: "ComboboxField",
+    label: "Fruit",
+    render: () =>
+      withLocale(
+        "en-US",
+        <ComboboxField label="Fruit" items={["Apple"]}>
+          <Combobox.Empty />
+        </ComboboxField>
+      ),
+    control: () => fieldBoxOf(roleNamed("combobox", "Fruit")),
   },
   {
     name: 'Field.Root with spacing="part"',
@@ -462,6 +491,8 @@ describe("FieldFrame", () => {
           <SelectField label="Plan" items={{ a: "Plan member" }}>
             <Select.Item value="a">Plan member</Select.Item>
           </SelectField>
+          <AutocompleteField label="Company" items={["Fjellkraft AS"]} />
+          <ComboboxField label="Fruit" items={["Apple"]} />
         </>
       )
     );
@@ -474,6 +505,8 @@ describe("FieldFrame", () => {
       roleNamed("group", "Checks").closest("[data-orientation]"),
       roleNamed("radiogroup", "Radios").closest("[data-orientation]"),
       roleNamed("combobox", "Plan").closest("[data-orientation]"),
+      roleNamed("combobox", "Company").closest("[data-orientation]"),
+      roleNamed("combobox", "Fruit").closest("[data-orientation]"),
     ];
     for (const root of named) {
       if (!(root instanceof HTMLElement)) {
@@ -481,7 +514,7 @@ describe("FieldFrame", () => {
       }
       expect(nestedOrientationStamps(root)).toHaveLength(0);
     }
-    expect(host.querySelectorAll("[data-orientation]")).toHaveLength(7);
+    expect(host.querySelectorAll("[data-orientation]")).toHaveLength(9);
   });
 
   describe.each(DENSITIES)("group spacing at %s density", (density) => {

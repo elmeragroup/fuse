@@ -245,6 +245,10 @@
   `SelectField` takes no `isReadOnly` until the trigger has one, and
   `TextField variant="card"` still paints the borderless input's disabled band across the card
   (`components/text-field/text-field-variants.ts`) where the read-only fill now paints the card.
+- `SelectField` forwards `name` to `Select.Root`, which hands it to `Field.Root` only in an
+  effect, so the error a server-rendered `Form` holds under that name is missing from the first
+  HTML until hydration. `AutocompleteField` and `ComboboxField` forward `name` to `Field.Root`,
+  whose name the Base UI controls read; `SelectField` could do the same.
 - `Item.Root hidden` stays visible in a host without Tailwind's preflight. The user-agent rule
   `[hidden] { display: none }` loses to the item's `flex` class; preflight makes `[hidden]`
   `display: none !important`. Decide whether `Item.Root`, and the other parts whose root sets
@@ -453,10 +457,6 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   commit the item on `mouseup` (`combobox/item/ComboboxItem.js`), so the input fills but
   `Autocomplete.Item`'s `onClick` does not run. A reliable picked-item callback needs Base UI to
   pass the item with `onValueChange`'s `item-press` reason.
-- No labeled composite yet, like `SelectField`, so a labeled field is built from `Field` parts
-  and needs `spacing="part"` on `Field.Root` to sit its label 4px from the input, as
-  `TextField`'s does. `Combobox` is the same. #413 proposes `AutocompleteField` and
-  `ComboboxField` together.
 
 ## Data table
 

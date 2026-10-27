@@ -77,7 +77,7 @@ const EXPECTED_ENTRIES = {
   "checkbox-card": { inRootBarrel: true, runtimeExports: ["CheckboxCard"] },
   code: { inRootBarrel: true, runtimeExports: ["Code"] },
   collapsible: { inRootBarrel: true, runtimeExports: ["Collapsible"] },
-  combobox: { inRootBarrel: true, runtimeExports: ["Combobox", "useComboboxAnchor"] },
+  combobox: { inRootBarrel: true, runtimeExports: ["Combobox", "useComboboxAnchor", "ComboboxField"] },
   "confirm-button": { inRootBarrel: true, runtimeExports: ["ConfirmButton"] },
   // Subpath-only: it imports the optional @tanstack/react-table peer.
   "data-table": {
@@ -166,7 +166,7 @@ const EXPECTED_ENTRIES = {
   toggle: { inRootBarrel: true, runtimeExports: ["Toggle", "toggleVariants"] },
   "toggle-group": { inRootBarrel: true, runtimeExports: ["ToggleGroup"] },
   tooltip: { inRootBarrel: true, runtimeExports: ["Tooltip"] },
-  autocomplete: { inRootBarrel: true, runtimeExports: ["Autocomplete"] },
+  autocomplete: { inRootBarrel: true, runtimeExports: ["Autocomplete", "AutocompleteField"] },
   "file-upload": { inRootBarrel: true, runtimeExports: ["FileUpload", "useFileUpload"] },
   attachment: { inRootBarrel: true, runtimeExports: ["Attachment"] },
   "aspect-ratio": { inRootBarrel: true, runtimeExports: ["AspectRatio"] },

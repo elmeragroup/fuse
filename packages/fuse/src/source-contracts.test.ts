@@ -161,9 +161,12 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
 const SERVER_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["alert", ["components/alert/alert.tsx"]],
   ["aspect-ratio", ["components/aspect-ratio/aspect-ratio.tsx"]],
+  // The labeled composites in the autocomplete and combobox entries own no state, as SelectField.
+  ["autocomplete-field", ["components/autocomplete/autocomplete-field.tsx"]],
   ["badge", ["components/badge/badge.tsx"]],
   ["card", ["components/card/card.tsx"]],
   ["code", ["components/code/code.tsx"]],
+  ["combobox-field", ["components/combobox/combobox-field.tsx"]],
   ["description-list", ["components/description-list/description-list.tsx"]],
   ["emoji", ["components/emoji/emoji.tsx"]],
   ["empty", ["components/empty/empty.tsx"]],
@@ -332,8 +335,9 @@ describe("RSC classification", () => {
     // owns client state and carries the directive; Dialog, Sheet and Sidebar were already
     // client modules.
     ["components/overlay/overlay-close-button.tsx", "client"],
-    // FieldFrame holds no state. Its other consumers are client modules already, and SelectField
-    // is a server component that runs it, so a directive would only widen the client graph.
+    // FieldFrame holds no state. Its other consumers are client modules already, and SelectField,
+    // AutocompleteField and ComboboxField are server components that run it, so a directive would
+    // only widen the client graph.
     ["components/field/field-frame.tsx", "server"],
     // Alert's documented server render uses the Item markup. Item.Root stays in the client
     // module because it calls useRender.

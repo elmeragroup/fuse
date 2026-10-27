@@ -4,6 +4,7 @@
 // or src/index.ts. No public recipe — all styling is inline per part.
 export { Combobox } from "./components/combobox";
 export { useComboboxAnchor } from "./components/combobox/combobox";
+export { ComboboxField } from "./components/combobox/combobox-field";
 export type {
   ComboboxChipProps,
   ComboboxClearProps,
@@ -11,3 +12,4 @@ export type {
   ComboboxInputProps,
   ComboboxRootProps,
 } from "./components/combobox/combobox";
+export type { ComboboxFieldProps } from "./components/combobox/combobox-field";
