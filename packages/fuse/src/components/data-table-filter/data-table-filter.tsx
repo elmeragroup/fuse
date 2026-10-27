@@ -731,8 +731,8 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
    * new editor takes focus: through the popover's `initialFocus` on an opening, and through a focus
    * request when the open popover moves to another chip, since Base UI does not run initial focus
    * again for a new trigger. A press opens or moves the popover through Base UI. From code, the
-   * chip scrolls into view first, because the popover anchors to it and a narrow bar's strip may
-   * hide it, and then the handle opens on it. `handle.open(id)` throws for a trigger id nothing
+   * chip scrolls into view first, because the popover anchors to it and the bar's strip may hide
+   * it, and then the handle opens on it. `handle.open(id)` throws for a trigger id nothing
    * registered (`popupHandle.ts`), so code enters only a chip whose Value is mounted.
    */
   const enterEditor = (fieldId: string, via: "press" | "code") => {

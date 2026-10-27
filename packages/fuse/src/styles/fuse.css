@@ -573,6 +573,81 @@
   }
 }
 
+/* A sideways scroll box whose ends fade only while content hides past them, such as
+   DataTableFilter's chip strip. Two animations on the box's own inline scroll timeline set the
+   fade widths the mask reads: the start fade grows over the first --scroll-fade-size of scroll,
+   and the end fade shrinks over the last. A box that does not overflow has an inactive timeline,
+   so both widths stay at their registered 0px and the mask hides nothing. Start and end follow
+   the inline direction, as the timeline does. The fade tracks the scroll position and is not
+   motion, so the reduced-motion block below leaves it on. A browser without scroll timelines
+   keeps a static end fade, so a strip there pads its end by the fade to scroll its last item
+   clear. */
+@property --scroll-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --scroll-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@keyframes scroll-fade-start {
+  from {
+    --scroll-fade-start: 0px;
+  }
+  to {
+    --scroll-fade-start: var(--scroll-fade-size);
+  }
+}
+@keyframes scroll-fade-end {
+  from {
+    --scroll-fade-end: var(--scroll-fade-size);
+  }
+  to {
+    --scroll-fade-end: 0px;
+  }
+}
+/* The fade points along the box's own direction, which :dir() reads from the nearest dir.
+   Tailwind's rtl variant matches any right-to-left ancestor, so it decides only in Chromium
+   before 120, which drops the :dir() rules; Tailwind's floor is Chrome 111. */
+@utility scroll-fade-inline {
+  --scroll-fade-size: 1.5rem;
+  --scroll-fade-toward: right;
+  @variant rtl {
+    --scroll-fade-toward: left;
+  }
+  &:dir(ltr) {
+    --scroll-fade-toward: right;
+  }
+  &:dir(rtl) {
+    --scroll-fade-toward: left;
+  }
+  @supports (animation-timeline: scroll()) {
+    mask-image: linear-gradient(
+      to var(--scroll-fade-toward),
+      transparent,
+      black var(--scroll-fade-start),
+      black calc(100% - var(--scroll-fade-end)),
+      transparent
+    );
+    animation:
+      scroll-fade-start auto linear both,
+      scroll-fade-end auto linear both;
+    animation-timeline: scroll(self inline), scroll(self inline);
+    animation-range:
+      0 var(--scroll-fade-size),
+      calc(100% - var(--scroll-fade-size)) 100%;
+  }
+  @supports not (animation-timeline: scroll()) {
+    mask-image: linear-gradient(
+      to var(--scroll-fade-toward),
+      black calc(100% - var(--scroll-fade-size)),
+      transparent
+    );
+  }
+}
+
 /* Transform/layout motion off; opacity fades and color transitions stay. */
 @media (prefers-reduced-motion: reduce) {
   *,

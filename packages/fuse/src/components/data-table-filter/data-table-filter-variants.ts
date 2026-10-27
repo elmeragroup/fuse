@@ -12,31 +12,38 @@ export const dataTableFilterVariants = tv({
      * surface. It is the container the narrow layout queries.
      */
     bar: "@container/dtf-bar min-w-0 flex-1",
-    /** surface. Never wraps. Only the chips do, so the Trigger and Clear stay on the first line. */
+    /** surface. One line that never wraps, so the bar keeps its height whatever the filter count. */
     barRow: "flex min-w-0 items-start gap-(--surface-gap-sm)",
     /**
-     * control. An icon and label at full width, a centred square in a narrow bar. The
-     * `has-data-[icon]` arm beats Button's own icon-side padding, which sorts earlier at the same
-     * weight.
+     * control. An icon, label and filter count at full width. In a narrow bar the label hides,
+     * leaving the icon and the count, or a centred square without filters. The `has-data-[icon]`
+     * arm beats Button's own icon-side padding, which sorts earlier at the same weight.
      */
     trigger:
-      "shrink-0 @max-[36rem]/dtf-bar:aspect-square @max-[36rem]/dtf-bar:px-0 @max-[36rem]/dtf-bar:has-data-[icon=inline-start]:pl-0",
+      "shrink-0 @max-[36rem]/dtf-bar:not-has-data-[slot=data-table-filter-trigger-count]:aspect-square @max-[36rem]/dtf-bar:not-has-data-[slot=data-table-filter-trigger-count]:px-0 @max-[36rem]/dtf-bar:not-has-data-[slot=data-table-filter-trigger-count]:has-data-[icon=inline-start]:pl-0",
     /** The Trigger's and Clear's labels, visually hidden in a narrow bar. Their names never change. */
     triggerLabel: "@max-[36rem]/dtf-bar:sr-only",
-    /** control. A label at full width, a square icon button at the strip's end in a narrow bar. */
+    /** fixed. The Trigger's filter count, a small filled tag that stays when the label hides. */
+    triggerCount:
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- a fixed count tag inside the control, not a control-box rung
+      "text-xs font-medium inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-sm bg-primary px-1 text-primary-foreground tabular-nums",
+    /** control. A label at full width, a square icon button after the strip in a narrow bar. */
     clear: "shrink-0 @max-[36rem]/dtf-bar:aspect-square @max-[36rem]/dtf-bar:px-0",
     /** Clear's icon, shown only in a narrow bar. */
     clearIcon: "hidden @max-[36rem]/dtf-bar:block",
     /**
-     * surface. At full width, a wrapping box between the Trigger and Clear. In a narrow bar, one
-     * strip that scrolls sideways under an end fade. The end scroll padding, 2rem, is wider than
-     * the 1.5rem fade, and the 2px block padding gives the focus ring room inside the scroll box.
-     * Under a coarse pointer the block padding grows to half the gap between a chip and 44px, with
-     * a matching negative margin, because the scroll box clips on both axes and would cut each
-     * segment's 44px reach. No snapping, which would pull a focused segment back under the fade.
+     * surface. One strip between the Trigger and Clear that scrolls sideways at every width. It
+     * shrinks but never grows, so Clear follows the last chip until the chips overflow. Its ends
+     * fade only while chips hide past them. Both scroll paddings, 2rem, are wider than the 1.5rem
+     * fade, so a segment scrolled into view never lands under it. The 2px padding gives the focus
+     * ring room inside the scroll box, and the matching negative margin keeps the chips where they
+     * would sit without it. Where the end fade is static, the end padding widens to the fade.
+     * Under a coarse pointer the block padding grows to half the gap between a chip and 44px,
+     * because the scroll box clips on both axes and would cut each segment's 44px reach. No
+     * snapping, which would pull a focused segment back under a fade.
      */
     chips:
-      "flex min-w-0 flex-wrap gap-(--surface-gap-sm) @max-[36rem]/dtf-bar:-my-0.5 @max-[36rem]/dtf-bar:flex-1 @max-[36rem]/dtf-bar:scroll-ps-2 @max-[36rem]/dtf-bar:scroll-pe-8 @max-[36rem]/dtf-bar:[scrollbar-width:none] @max-[36rem]/dtf-bar:flex-nowrap @max-[36rem]/dtf-bar:overflow-x-auto @max-[36rem]/dtf-bar:overscroll-x-contain @max-[36rem]/dtf-bar:[mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)] @max-[36rem]/dtf-bar:py-0.5 @max-[36rem]/dtf-bar:pe-6 @max-[36rem]/dtf-bar:pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))] @max-[36rem]/dtf-bar:pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]",
+      "-m-0.5 flex min-w-0 flex-[0_1_auto] scroll-fade-inline scroll-px-8 [scrollbar-width:none] flex-nowrap gap-(--surface-gap-sm) overflow-x-auto overscroll-x-contain p-0.5 not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size) pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))] pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]",
     /**
      * layout. A sentence of segments in one hairline border at the `rounded-md` rung. It never
      * clips, so a segment's focus ring stays whole. A ghost chip is dashed and muted.

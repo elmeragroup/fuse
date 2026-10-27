@@ -13,13 +13,15 @@ import { shotOptions } from "./parse-argv.ts";
 
 /**
  * The fixture pages: a demo stage holding a textbox, a 2000px page with no demo stage, a page
- * whose target needs a theme, and controls that open popups outside their own box.
+ * whose target needs a theme, controls that open popups outside their own box, and a scrolled
+ * strip whose edges fade on its scroll timeline.
  */
 const pages = new Map([
   ["/demo", await readFile(path.join(import.meta.dirname, "fixture/demo.html"))],
   ["/page", await readFile(path.join(import.meta.dirname, "fixture/page.html"))],
   ["/themed", await readFile(path.join(import.meta.dirname, "fixture/themed.html"))],
   ["/popup", await readFile(path.join(import.meta.dirname, "fixture/popup.html"))],
+  ["/scroll-fade", await readFile(path.join(import.meta.dirname, "fixture/scroll-fade.html"))],
 ]);
 
 let server: Server;
@@ -541,6 +543,30 @@ describe("Capture", () => {
         failure.message,
         '--click step 2 of 2: No button named "Nope" at index 0: nothing matched (/popup on fixture)'
       );
+    }).pipe(Effect.provide(Capture.layer))
+  );
+
+  it.live("keeps the frame a scroll-linked animation shows, such as a strip's edge fades", () =>
+    Effect.gen(function* () {
+      const { png } = yield* shoot([
+        "fixture",
+        "--route",
+        "/scroll-fade",
+        "--target",
+        "region:Strip",
+        "--pad",
+        "0",
+        "--scale",
+        "1",
+      ]);
+      // The 300px strip is scrolled to the middle of its red content, so both ends fade over
+      // 24px to the white page behind it. Without the animations the mask hides nothing.
+      assert.deepStrictEqual(pngSize(png), { width: 300, height: 40 });
+      assert.deepStrictEqual(pixelAt(png, 150, 20), [255, 0, 0], "the middle");
+      for (const x of [1, 298]) {
+        const [, green = 0] = pixelAt(png, x, 20);
+        assert.isAbove(green, 200, `the edge pixel at x ${String(x)} fades toward white`);
+      }
     }).pipe(Effect.provide(Capture.layer))
   );
 

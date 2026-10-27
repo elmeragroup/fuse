@@ -15,6 +15,10 @@ root barrel.
 - `Bar` holds the Trigger, a chip per filter and Clear. `Content` is the add menu, with a field
   search, value submenus, quick search across option values, and text, number and date editors that
   open in place. `ValueContent` is the popover a chip's value opens.
+- The bar stays one line high at every width. Its chips sit in one strip that scrolls sideways,
+  also under a vertical mouse wheel, and an end of the strip fades only while chips hide past it.
+  The Trigger shows the number of filters after its label. Below a 36rem bar width the Trigger and
+  Clear show only their icons and the count, and keep their accessible names.
 - A list of values shows its first 50 matches and asks for more typing.
 - A `boolean` field kind filters `true` and `false`. `toggle: true` makes it an on/off scope with a
   checkbox row in the add menu and a chip that is its name and Remove.

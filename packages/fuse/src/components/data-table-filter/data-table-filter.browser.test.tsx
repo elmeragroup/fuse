@@ -1120,7 +1120,7 @@ describe("DataTableFilter motion and layout", () => {
    * stands taller than the text editor.
    */
   async function switchChips(): Promise<{ readonly frames: GlideFrame[]; readonly end: GlideFrame }> {
-    // Wide enough that the chips wrap in place: a narrow bar scrolls its strip to the chip.
+    // Wide enough that both chips fit in the strip, so the press never scrolls it to the chip.
     await page.viewport(1280, 720);
     renderOrders({ initial: [...STATUS_THREE, ...CUSTOMER_NORD] });
     await userEvent.click(roleNamed("button", "Paid, Pending +1"));
@@ -1234,8 +1234,8 @@ describe("DataTableFilter motion and layout", () => {
     expect(widths.some((width) => between(width, wide, 288))).toBe(true);
   });
 
-  it("hides the Trigger's label in a narrow bar and keeps its name", () => {
-    renderThemed(
+  it("hides the Trigger's label in a narrow bar, keeps its name and count, and squares it without filters", () => {
+    const view = renderThemed(
       withLocale(
         "en-US",
         <div style={{ width: 320 }}>
@@ -1244,9 +1244,46 @@ describe("DataTableFilter motion and layout", () => {
       )
     );
     const trigger = roleNamed("button", "Filter");
+    const label = page.elementLocator(trigger).getByText("Filter", { exact: true });
+    const count = page.elementLocator(trigger).getByText("2", { exact: true });
+    expect(label.element().getBoundingClientRect().width).toBeLessThanOrEqual(1);
+    expect(count.element().getBoundingClientRect().width).toBeGreaterThan(0);
     const { width, height } = trigger.getBoundingClientRect();
-    expect(width).toBeCloseTo(height, 0);
+    expect(width).toBeGreaterThan(height);
     expect(roleNamed("button", "Clear filters")).toBeTruthy();
+
+    view.unmount();
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div style={{ width: 320 }}>
+          <Orders initial={[]} />
+        </div>
+      )
+    );
+    const empty = roleNamed("button", "Filter").getBoundingClientRect();
+    expect(empty.width).toBeCloseTo(empty.height, 0);
+  });
+
+  it("shows the filter count after the Trigger's label in a wide bar, outside its name", async () => {
+    await page.viewport(1280, 720);
+    renderOrders({ initial: [...STATUS_THREE, ...CUSTOMER_NORD] });
+    const trigger = roleNamed("button", "Filter");
+    const label = page.elementLocator(trigger).getByText("Filter", { exact: true }).element();
+    const count = page.elementLocator(trigger).getByText("2", { exact: true }).element();
+    expect(count.getBoundingClientRect().left).toBeGreaterThan(label.getBoundingClientRect().right);
+  });
+
+  it("counts an emptied chip's filter out while its ghost stays", async () => {
+    await page.viewport(1280, 720);
+    renderOrders({ initial: [...STATUS_THREE, ...CUSTOMER_NORD] });
+    const trigger = roleNamed("button", "Filter");
+    await userEvent.click(roleNamed("button", "Paid, Pending +1"));
+    for (const option of ["Paid", "Pending", "Overdue"]) {
+      await userEvent.click(roleNamed("option", option));
+    }
+    await expect.poll(() => roleNamed("group", "Status filter").hasAttribute("data-ghost")).toBe(true);
+    expect(page.elementLocator(trigger).getByText("1", { exact: true }).query()).not.toBeNull();
   });
 
   it.each(SUPPORTED_LOCALES)("names the chip's parts in %s", (locale) => {

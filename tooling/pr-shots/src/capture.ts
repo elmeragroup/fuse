@@ -497,14 +497,20 @@ const takeShot = Effect.fn("Capture.takeShot")(function* (
         await settle(page);
       }, fail);
     }
-    yield* attempt(() => page.screenshot({ path: file, fullPage: shot.frame === "page", ...still }), fail);
+    yield* attempt(async () => {
+      await pinScrollLinkedStyles(page);
+      await page.screenshot({ path: file, fullPage: shot.frame === "page", ...still });
+    }, fail);
     return;
   }
   const clip = yield* attempt(() => paddedClip(page, element, options.pad), fail);
   if (clip === null) {
     return yield* fail("The frame has no layout box");
   }
-  yield* attempt(() => page.screenshot({ path: file, clip, fullPage: true, ...still }), fail);
+  yield* attempt(async () => {
+    await pinScrollLinkedStyles(page);
+    await page.screenshot({ path: file, clip, fullPage: true, ...still });
+  }, fail);
 }, Effect.scoped);
 
 /** A theme the run picks. */
@@ -742,11 +748,44 @@ async function settle(page: Page): Promise<void> {
   await page.evaluate(async () => {
     await document.fonts.ready;
     for (const animation of document.getAnimations()) {
-      if (animation.effect?.getComputedTiming().endTime !== Infinity) {
+      // A scroll-linked animation follows its scroll position, so finishing it would move it off.
+      if (
+        animation.timeline instanceof DocumentTimeline &&
+        animation.effect?.getComputedTiming().endTime !== Infinity
+      ) {
         animation.finish();
       }
     }
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  });
+}
+
+/**
+ * Commits each scroll-linked animation's current style inline on its element, then cancels it.
+ * The screenshot's disabled animations cancel every animation without a finite end, and a
+ * scroll-linked one has none, so its element would otherwise show its unanimated style, such as
+ * a scroll fade's solid edges. An animation on an inactive timeline, such as a box that does not
+ * overflow, shows nothing to commit. `commitStyles()` throws on an element that is not rendered;
+ * a CSS animation, the only kind the docs put on a scroll timeline, ends when its element stops
+ * rendering. Each shot's page closes after it, so nothing restores the committed styles.
+ */
+async function pinScrollLinkedStyles(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    for (const animation of document.getAnimations()) {
+      if (animation.timeline === null || animation.timeline instanceof DocumentTimeline) {
+        continue;
+      }
+      const effect = animation.effect;
+      if (
+        animation.currentTime !== null &&
+        effect instanceof KeyframeEffect &&
+        effect.target !== null &&
+        effect.pseudoElement === null
+      ) {
+        animation.commitStyles();
+      }
+      animation.cancel();
+    }
   });
 }
 

@@ -9,13 +9,16 @@ import { runCommandAsync } from "./run-command";
 /**
  * Compiled rules that only compile when the shipped classes, `tw-animate-css` and
  * `tailwindcss-react-aria-components` all work at the floor: the 4.1 wrap utilities, the
- * animation plugin's keyframes, and a variant only the React Aria plugin defines.
+ * animation plugin's keyframes, a variant only the React Aria plugin defines, and Fuse's own
+ * scroll-linked fade, a utility with nested `@supports` blocks that reads a registered property.
  */
 const FLOOR_MARKERS = [
   { source: "the wrap-anywhere utility", rule: "overflow-wrap: anywhere" },
   { source: "the wrap-break-word utility", rule: "overflow-wrap: break-word" },
   { source: "tw-animate-css", rule: "@keyframes enter" },
   { source: "tailwindcss-react-aria-components", rule: "[data-outside-month]" },
+  { source: "the scroll-fade-inline utility", rule: "animation-timeline: scroll(self inline)" },
+  { source: "the scroll fade's registered property", rule: "@property --scroll-fade-start" },
 ] as const;
 
 /**
