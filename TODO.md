@@ -353,8 +353,8 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   `src/components/dropdown-menu-kit.ts` and, for the separator, `src/components/menu-kit.ts` then
   read the slots in place of composing `menuItemIndicatorRoomClass` and `menuSeparatorClass` by
   hand.
-- Share the re-declared test helpers: the plugin suites' single-page kit, `HUG`, apply-and-reopen
-  and set-on-page helpers in `plugin/src/button-kit-fixture.ts`, and `notesOf`, `textOf`, `setOf`,
+- Share the re-declared test helpers: the plugin suites' single-page kit, `HUG` and set-on-page
+  helpers in `plugin/src/button-kit-fixture.ts`, and `notesOf`, `textOf`, `setOf`,
   the outline helper, `token` and `FOCUS_RING` in `test/`.
 - Split the Field legend's axis out of `fieldVariants` into a `fieldLegendVariants` recipe, as
   Empty has `emptyMediaVariants`. The `Pick` in `packages/fuse/src/components/field/field.tsx` and
@@ -439,6 +439,13 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   10px (dense) or 18px (comfortable) short of the group's right edge. `Autocomplete.Input` renders
   its InputGroup through Base UI's `InputGroup` part, which Base UI anchors the popup to, so its
   popup is the group's width. `Combobox.Input` could do the same and drop the `+28px` minimum.
+- Finish the real-file checks for the plugin's move to Effect (#410):
+  - Time one Plan and one Apply against a `figma:plugin` build from 51add90f.
+  - Check that one Cmd+Z undoes a whole Apply and that Figma does not redraw partway through a run.
+  - Check that the UI counts up while a snapshot export runs.
+  - Check that Plan on a file without the Fuse tokens collection says to run `figma:sync`.
+- Find why the `fuse-design-tokens-sync` file draws some Fjordkraft external private light icons in
+  `#5C1900` in place of the foreground, such as the Sidebar's Home icon.
 
 ## Autocomplete
 

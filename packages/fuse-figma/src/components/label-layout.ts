@@ -5,8 +5,10 @@
  * layers, and asks this module for the label, for the line clamp the box's display reads, for that
  * gap, and to settle the text declarations of a box that shows no label.
  */
+
 import { hugsUncapped, listNames, UNREAD_SHARE, widthCapInside } from "./box-sizing";
 import type { Holder, WidthCap } from "./box-sizing";
+import { KitUnmappable } from "./build-errors";
 import type { CoverageNote, LayerStyle } from "./cascade";
 import type { Cell, LabelDefinition, TextPlacement } from "./component-spec";
 import { describeNumber, evaluateLength, evaluateNumber, normalizeCss, readNumber } from "./css-values";
@@ -364,7 +366,9 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
   const underline = readUnderline(style, path);
   const letterSpacing = readLetterSpacing(style, path);
   if (fontFamily === undefined || fontSize === undefined || lineHeight === undefined || color === undefined) {
-    throw new Error(`${scope.variant}: the label needs a font family, size, line height and color`);
+    throw new KitUnmappable({
+      message: `${scope.variant}: the label needs a font family, size, line height and color`,
+    });
   }
   const lines = label.placement?.lines;
   const characters = labelCharacters(label, scope.cell);
@@ -541,7 +545,9 @@ function readNativeLines(
   path: readonly string[]
 ): Pick<TextLayerSpec, "sizing" | "truncation"> {
   if (holder.sizing.horizontal.kind === "hug") {
-    throw new Error(`${variant}: ${NATIVE_LINES[lines]}, so its box needs a fixed or filling width`);
+    throw new KitUnmappable({
+      message: `${variant}: ${NATIVE_LINES[lines]}, so its box needs a fixed or filling width`,
+    });
   }
   if (lines === "wrap") {
     holder.style.read(
@@ -809,14 +815,14 @@ function readLabelLayout(
       ? widthCapInside(holder, holder.layers.indexOf(label.name))
       : { kind: "none" };
   if (cap.kind === "unread" && holder.limits.maxWidth === undefined) {
-    throw new Error(
-      `${variant}: a box around ${label.name} caps its width, and the build cannot read in pixels the room the label has under it`
-    );
+    throw new KitUnmappable({
+      message: `${variant}: a box around ${label.name} caps its width, and the build cannot read in pixels the room the label has under it`,
+    });
   }
   if (cap.kind === "pixels" && cap.value <= 0) {
-    throw new Error(
-      `${variant}: a box around ${label.name} caps its width at ${cap.value}px, and Figma takes only a positive max width`
-    );
+    throw new KitUnmappable({
+      message: `${variant}: a box around ${label.name} caps its width at ${cap.value}px, and Figma takes only a positive max width`,
+    });
   }
   const capped =
     !definite &&
@@ -1007,9 +1013,9 @@ export function spaceBeforeLabel(
   }
   const advance = ROBOTO_SPACE.get(layer.fontStyle);
   if (holder.layers.length !== 2 || layer.fontSize.kind !== "literal" || advance === undefined) {
-    throw new Error(
-      `${variant}: the space before ${label.name} draws as its box's gap only between one start icon and the label, at a literal size in Roboto ${[...ROBOTO_SPACE.keys()].join(" or ")}`
-    );
+    throw new KitUnmappable({
+      message: `${variant}: the space before ${label.name} draws as its box's gap only between one start icon and the label, at a literal size in Roboto ${[...ROBOTO_SPACE.keys()].join(" or ")}`,
+    });
   }
   return { kind: "literal", value: (advance / ROBOTO_UNITS_PER_EM) * layer.fontSize.value };
 }

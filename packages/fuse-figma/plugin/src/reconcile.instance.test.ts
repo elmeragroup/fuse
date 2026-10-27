@@ -17,7 +17,7 @@ import type {
   KitSpec,
   TextLayerSpec,
 } from "../../src/components/kit-spec.ts";
-import { FILL, frame, literal } from "./button-kit-fixture.ts";
+import { applyTo, FILL, frame, literal } from "./button-kit-fixture.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed, color, fixtureFile, float, GLYPH_FONT } from "./fake-fixtures.ts";
 import { keyOf } from "./identity.ts";
@@ -236,14 +236,6 @@ function tokenFile(): FakeFigma {
   ]);
 }
 
-/** A file the kit was applied to, opened again for the next run. */
-async function appliedFile(kit: KitSpec = KIT): Promise<FakeFigma> {
-  const file = tokenFile();
-  await reconcileKit(file.figma, kit, true);
-  file.reopen();
-  return file;
-}
-
 /** A component set of the kit page by its key. */
 async function setOf(file: FakeFigma, key: string): Promise<ComponentSetNode> {
   const page = file.figma.root.children.find((node) => keyOf(node) === "page");
@@ -385,7 +377,7 @@ describe("the kit check of instance layers", () => {
 
 describe("a set that holds an instance of an earlier set's variant", () => {
   it("converges in one Apply, and the action shows its variant, properties, overrides and sizing", async () => {
-    const file = await appliedFile();
+    const file = await applyTo(tokenFile(), KIT);
     expect(await reconcileKit(file.figma, KIT, false)).toEqual({ changes: [], warnings: [] });
     const { action } = await alertAction(file);
     expect(await shownBy(file, action)).toEqual({
@@ -400,7 +392,7 @@ describe("a set that holds an instance of an earlier set's variant", () => {
   });
 
   it("keeps the action's node, properties and overrides through an in-place edit of its variant, in one Apply", async () => {
-    const file = await appliedFile();
+    const file = await applyTo(tokenFile(), KIT);
     const before = (await alertAction(file)).action.id;
     const edited = kitWith(
       buttonSet((variant) =>
@@ -430,7 +422,7 @@ describe("a set that holds an instance of an earlier set's variant", () => {
   });
 
   it("swaps the action to another variant without creating it again, in one Apply", async () => {
-    const file = await appliedFile();
+    const file = await applyTo(tokenFile(), KIT);
     const before = (await alertAction(file)).action.id;
     const outline = kitWith(BUTTON, { ...ACTION, variant: "button/variant=outline" });
     expect((await reconcileKit(file.figma, outline, false)).changes).toEqual([
@@ -453,7 +445,7 @@ describe("a set that holds an instance of an earlier set's variant", () => {
 
   // NS: an override equal to the main's value is no override, so the fill follows the main again.
   it("puts a property and an override the spec drops back to the variant's own, which then follows the variant, in one Apply each", async () => {
-    const file = await appliedFile();
+    const file = await applyTo(tokenFile(), KIT);
     const plain = {
       ...ACTION,
       properties: { text: { Label: "Retry" } },
@@ -492,7 +484,7 @@ describe("a set that holds an instance of an earlier set's variant", () => {
       ...ACTION,
       overrides: [ROOT_FILL, LABEL_COLOR, GLYPH_COLOR],
     });
-    const file = await appliedFile(colored);
+    const file = await applyTo(tokenFile(), colored);
     expect(await reconcileKit(file.figma, colored, false)).toEqual({ changes: [], warnings: [] });
     const glyph = childNamed(
       childNamed(childNamed((await alertAction(file)).action, "FRAME", "Adornment"), "INSTANCE", "Glyph"),
@@ -553,7 +545,7 @@ describe("a set that holds an instance of an earlier set's variant", () => {
       },
     ],
   ])("converges in one Apply on %s", async (_, before, after, holds) => {
-    const file = await appliedFile(before);
+    const file = await applyTo(tokenFile(), before);
     await reconcileKit(file.figma, after, true);
     file.reopen();
     expect([await reconcileKit(file.figma, after, false), await holds(file)]).toEqual([
@@ -563,7 +555,7 @@ describe("a set that holds an instance of an earlier set's variant", () => {
   });
 
   it("overrides a layer the Button gains in the same run once that layer exists, in one Apply", async () => {
-    const file = await appliedFile();
+    const file = await applyTo(tokenFile(), KIT);
     const badge = { ...frame("button/badge", "Badge", []), fill: token("primary") };
     const gained = kitWith(
       buttonSet((variant) => {
@@ -592,7 +584,7 @@ describe("a set that holds an instance of an earlier set's variant", () => {
 
   // N4: a height bound while the instance hugs it keeps the hug height, so the height is fixed first.
   it("fixes the action's height before it binds row-h, so the action takes row-h's length, and converges", async () => {
-    const file = await appliedFile();
+    const file = await applyTo(tokenFile(), KIT);
     const rowH = { kind: "variable", variable: { collection: "Fuse density", name: "row-h" } } as const;
     const bound = kitWith(BUTTON, {
       ...ACTION,
@@ -612,7 +604,7 @@ describe("a set that holds an instance of an earlier set's variant", () => {
   // N2: a component reads its old size until the instance nested in it is read, so the Alert's grid and
   // the previews read the Button instances first, and lay out again whenever the Button set changes.
   it("moves the Alert's grid and the previews when the Button shrinks, in one Apply", async () => {
-    const file = await appliedFile();
+    const file = await applyTo(tokenFile(), KIT);
     const shorter = kitWith(
       buttonSet((variant) => buttonRoot(token(variant === "default" ? "primary" : "background"), 28))
     );
@@ -628,7 +620,7 @@ describe("a set that holds an instance of an earlier set's variant", () => {
       ...ACTION,
       sizing: { horizontal: { kind: "fixed", length: literal(200) }, vertical: HUG },
     } as const;
-    const file = await appliedFile(kitWith(BUTTON, wide));
+    const file = await applyTo(tokenFile(), kitWith(BUTTON, wide));
     const shorter = kitWith(
       buttonSet((variant) => buttonRoot(token(variant === "default" ? "primary" : "background"), 28)),
       wide
@@ -646,7 +638,7 @@ describe("a set that holds an instance of an earlier set's variant", () => {
 
   // N4: a height bound while the instance hugs it stays at the hug height until the height is fixed.
   it("writes row-h again when the action's height turns fixed, though its height already binds row-h", async () => {
-    const file = await appliedFile();
+    const file = await applyTo(tokenFile(), KIT);
     const rowH = file.variable("Fuse density", "row-h");
     (await alertAction(file)).action.setBoundVariable("height", rowH);
     file.reopen();
@@ -675,7 +667,7 @@ describe("a set that holds an instance of an earlier set's variant", () => {
   // drops the override.
   it("centers the action's label with its override, keeps it through an in-place Button edit, and puts back the variant's own, each converging", async () => {
     const centered = { ...ACTION, overrides: [ROOT_FILL, LABEL_COLOR, LABEL_CENTER] };
-    const file = await appliedFile(kitWith(BUTTON, centered));
+    const file = await applyTo(tokenFile(), kitWith(BUTTON, centered));
     const label = async () => childNamed((await alertAction(file)).action, "TEXT", "Label");
     expect([
       await reconcileKit(file.figma, kitWith(BUTTON, centered), false),
@@ -705,7 +697,7 @@ describe("a set that holds an instance of an earlier set's variant", () => {
 
   // Rule 21: an alignment write needs every font the label holds, as a TEXT write does.
   it("loads the font a designer gave the action's label before it aligns the label, and converges", async () => {
-    const file = await appliedFile();
+    const file = await applyTo(tokenFile(), KIT);
     const bold = { family: "Roboto", style: "Bold" };
     await file.figma.loadFontAsync(bold);
     childNamed((await alertAction(file)).action, "TEXT", "Label").fontName = bold;
@@ -721,7 +713,7 @@ describe("a set that holds an instance of an earlier set's variant", () => {
 
   // A TEXT write changes the label's characters, which needs every font the label holds.
   it("loads the font a designer gave the action's label before it writes the label, and converges", async () => {
-    const file = await appliedFile();
+    const file = await applyTo(tokenFile(), KIT);
     const bold = { family: "Roboto", style: "Bold" };
     await file.figma.loadFontAsync(bold);
     childNamed((await alertAction(file)).action, "TEXT", "Label").fontName = bold;
@@ -743,7 +735,7 @@ describe("a set that holds an instance of an earlier set's variant", () => {
   it("keeps the action's glyph black when the library recolors its glyphs, in one Apply", async () => {
     const black = { ...GLYPH_COLOR, color: BLACK };
     const action = { ...ACTION, overrides: [ROOT_FILL, LABEL_COLOR, black] };
-    const file = await appliedFile(kitWith(BUTTON, action));
+    const file = await applyTo(tokenFile(), kitWith(BUTTON, action));
     const recolored = kitWith(BUTTON, action, PLUS, token("primary"));
     await reconcileKit(file.figma, recolored, true);
     file.reopen();
@@ -780,7 +772,7 @@ describe("an icon that hides behind a BOOLEAN property and swaps through another
   const kit = kitWith(button, action);
 
   it("links the icon's visibility and glyph in one Apply, and a second Plan lists nothing", async () => {
-    const file = await appliedFile(kit);
+    const file = await applyTo(tokenFile(), kit);
     expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
     const set = await setOf(file, "button");
     const [variant] = set.children;
@@ -799,7 +791,7 @@ describe("an icon that hides behind a BOOLEAN property and swaps through another
   });
 
   it("shows the action's icon as Plus, swapped through the property, and keeps it in a second run", async () => {
-    const file = await appliedFile(kit);
+    const file = await applyTo(tokenFile(), kit);
     await reconcileKit(file.figma, kit, true);
     file.reopen();
     expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
@@ -821,7 +813,7 @@ describe("an instance that hugs across from a minimum width", () => {
   const kit = kitWith(BUTTON, action);
 
   it("writes the minimum in one Apply, and a second Plan lists nothing", async () => {
-    const file = await appliedFile(kit);
+    const file = await applyTo(tokenFile(), kit);
     expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
     const { action: held } = await alertAction(file);
     expect([held.minWidth, held.layoutSizingHorizontal]).toEqual([88, "HUG"]);
@@ -839,7 +831,7 @@ describe("an instance that hugs across from a minimum width", () => {
   });
 
   it("takes the minimum back to none when the spec drops it, and converges", async () => {
-    const file = await appliedFile(kit);
+    const file = await applyTo(tokenFile(), kit);
     const { minWidth: _dropped, ...plain } = action;
     const kitWithout = kitWith(BUTTON, plain);
     expect((await reconcileKit(file.figma, kitWithout, false)).changes).toContain(

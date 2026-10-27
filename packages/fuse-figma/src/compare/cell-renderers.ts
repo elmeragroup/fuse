@@ -28,6 +28,7 @@
 import { createElement } from "react";
 import type { ComponentType, ReactElement } from "react";
 
+import { Effect } from "effect";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import type { ElmeraIconProps } from "../../../fuse/dist/icons.js";
@@ -107,6 +108,11 @@ export type ClientCellRenderer = Pick<CellRenderer, "set" | "entry"> &
 
 /** A renderer of either kind. */
 export type AnyCellRenderer = CellRenderer | ClientCellRenderer;
+
+/** A renderer's source names a rendering its module does not export. */
+export class RendererMissing extends Error {
+  readonly _tag = "RendererMissing" as const;
+}
 
 /**
  * Whether a renderer's cells hydrate on the page.
@@ -525,42 +531,51 @@ export const RENDERER_ENTRIES: readonly string[] = SOURCES.map((source) => sourc
  * Load every renderer. Each one imports the Fuse build, so call this only after
  * `locateFuseBuild` found it.
  *
- * @returns Each renderer, by the key of the definition it renders.
+ * @returns Each renderer, by the key of the definition it renders. The Effect fails with
+ *   `RendererMissing` for a source whose module lacks the rendering it names.
  */
-export async function loadRenderers(): Promise<ReadonlyMap<string, AnyCellRenderer>> {
-  const renderers = await Promise.all(
-    SOURCES.map(async (source): Promise<AnyCellRenderer> => {
+export const loadRenderers = Effect.fnUntraced(function* () {
+  const renderers = yield* Effect.forEach(
+    SOURCES,
+    (source): Effect.Effect<AnyCellRenderer, RendererMissing> => {
       if ("module" in source) {
         return loadClientRenderer(source);
       }
       const { load, ...named } = source;
-      return { ...named, ...(await load()) };
-    })
+      return Effect.map(Effect.promise(load), (rendering): AnyCellRenderer => ({ ...named, ...rendering }));
+    },
+    { concurrency: "unbounded" }
   );
-  return new Map(renderers.map((renderer) => [renderer.set, renderer]));
-}
+  const loaded: ReadonlyMap<string, AnyCellRenderer> = new Map(
+    renderers.map((renderer) => [renderer.set, renderer])
+  );
+  return loaded;
+});
 
 /**
  * Load a client renderer from the module its source names. It imports the Fuse build, so call this
  * only after `locateFuseBuild` found it.
  *
  * @param source - The renderer's set, build entry and module.
- * @returns The renderer.
- * @throws When the module has no export by the source's name, which the source must fix.
+ * @returns The renderer. The Effect fails with `RendererMissing` when the module has no export by
+ *   the source's name, which the source must fix.
  */
-async function loadClientRenderer(source: ClientSource): Promise<ClientCellRenderer> {
+const loadClientRenderer = Effect.fnUntraced(function* (source: ClientSource) {
   // SAFETY: a client renderer's module exports a ClientCellRendering under each name a source
   // lists, as `select-cell.ts` does. The page's bundle imports the same name, and rolldown
   // refuses a name the module does not export, so a wrong name fails both loads.
-  const renderings = (await import(source.module.url.href)) as Readonly<
+  const renderings = (yield* Effect.promise(() => import(source.module.url.href))) as Readonly<
     Record<string, ClientCellRendering | undefined>
   >;
   const rendering = renderings[source.module.name];
   if (rendering === undefined) {
-    throw new Error(`${source.module.url.pathname} exports no rendering ${source.module.name}`);
+    return yield* Effect.fail(
+      new RendererMissing(`${source.module.url.pathname} exports no rendering ${source.module.name}`)
+    );
   }
-  return { ...source, ...rendering };
-}
+  const renderer: ClientCellRenderer = { ...source, ...rendering };
+  return renderer;
+});
 
 /**
  * An icon with the `data-icon` marker a recipe reads to move the padding on its side.

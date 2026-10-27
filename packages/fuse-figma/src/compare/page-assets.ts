@@ -10,8 +10,7 @@
  * system font.
  */
 
-import { Result } from "effect";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { Effect, FileSystem, Option } from "effect";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -19,6 +18,7 @@ import { compileHostUtilities } from "../components/utility-css.ts";
 import { isClientRenderer, RENDERER_ENTRIES } from "./cell-renderers.ts";
 import type { AnyCellRenderer } from "./cell-renderers.ts";
 import { buildClientBundle } from "./client-bundle.ts";
+import { fileFailure, readText } from "./compare-files.ts";
 import { ASSET_PATHS } from "./preview-page.ts";
 
 /** The Fuse package, next to this one in the workspace. */
@@ -37,10 +37,13 @@ export class FuseBuildMissing extends Error {
   readonly _tag = "FuseBuildMissing" as const;
 }
 
-/** What the page loads, as paths on disk and CSS text. */
+/** What the page loads, as CSS text and the font directory on disk. */
 export type PageAssets = {
+  /** Fuse's built `styles.css`. */
   readonly styles: string;
+  /** Fuse's built `themes.css`. */
   readonly themes: string;
+  /** Tailwind's preflight. */
   readonly preflight: string;
   /** `@font-face` rules whose sources point at {@link ASSET_PATHS.fontFiles}. */
   readonly fontCss: string;
@@ -61,36 +64,60 @@ export type FuseBuild = {
   readonly stale: boolean;
 };
 
-function newestModification(directory: string): number {
-  return readdirSync(directory, { recursive: true, withFileTypes: true })
-    .filter((entry) => entry.isFile())
-    .reduce((newest, entry) => Math.max(newest, statSync(join(entry.parentPath, entry.name)).mtimeMs), 0);
+/** The modification time of a file, or 0 for a file system that keeps none. */
+function modified(info: FileSystem.File.Info): number {
+  return Option.match(info.mtime, { onNone: () => 0, onSome: (date) => date.getTime() });
 }
+
+/** The latest modification of any file below a directory. */
+const newestModification = Effect.fnUntraced(function* (directory: string) {
+  const fs = yield* FileSystem.FileSystem;
+  const entries = yield* fs
+    .readDirectory(directory, { recursive: true })
+    .pipe(Effect.mapError(fileFailure("read", directory)));
+  const times = yield* Effect.forEach(
+    entries,
+    (entry) => {
+      const path = join(directory, entry);
+      return fs.stat(path).pipe(
+        Effect.map((info) => (info.type === "File" ? modified(info) : 0)),
+        Effect.mapError(fileFailure("read", path))
+      );
+    },
+    { concurrency: 16 }
+  );
+  return times.reduce((newest, time) => Math.max(newest, time), 0);
+});
 
 /**
  * Find the Fuse build.
  *
- * @returns The build, or `FuseBuildMissing` naming the first output that does not exist.
+ * @returns The build. The Effect fails with `FuseBuildMissing` naming the first output that does
+ *   not exist, and with `CompareFileFailed` when the sources cannot be read.
  */
-export function locateFuseBuild(): Result.Result<FuseBuild, FuseBuildMissing> {
+export const locateFuseBuild = Effect.fnUntraced(function* () {
+  const fs = yield* FileSystem.FileSystem;
   const times: number[] = [];
   for (const output of BUILD_OUTPUTS) {
     const path = join(FUSE_ROOT, output);
-    try {
-      times.push(statSync(path).mtimeMs);
-    } catch {
-      return Result.fail(
-        new FuseBuildMissing(
-          `${path} does not exist. Build Fuse first: pnpm --filter @elmeragroup/fuse build`
+    const info = yield* fs
+      .stat(path)
+      .pipe(
+        Effect.mapError(
+          () =>
+            new FuseBuildMissing(
+              `${path} does not exist. Build Fuse first: pnpm --filter @elmeragroup/fuse build`
+            )
         )
       );
-    }
+    times.push(modified(info));
   }
-  return Result.succeed({
+  const build: FuseBuild = {
     root: FUSE_ROOT,
-    stale: newestModification(join(FUSE_ROOT, "src")) > Math.min(...times),
-  });
-}
+    stale: (yield* newestModification(join(FUSE_ROOT, "src"))) > Math.min(...times),
+  };
+  return build;
+});
 
 /**
  * Read the page's assets.
@@ -98,29 +125,34 @@ export function locateFuseBuild(): Result.Result<FuseBuild, FuseBuildMissing> {
  * @param build - The Fuse build.
  * @param renderers - The renderers, whose host classes the page compiles and whose client
  *   renderers it bundles.
- * @returns The paths, the font CSS, the host's CSS and the client bundle.
+ * @returns The stylesheets, the font CSS, the host's CSS and the client bundle. The Effect fails
+ *   with `CompareFileFailed` for a file it cannot read, and with why the host's CSS or the bundle
+ *   did not build.
  */
-export async function readPageAssets(
+export const readPageAssets = Effect.fnUntraced(function* (
   build: FuseBuild,
   renderers: ReadonlyMap<string, AnyCellRenderer>
-): Promise<PageAssets> {
+) {
   const fontPackage = dirname(fileURLToPath(import.meta.resolve("@fontsource/roboto/400.css")));
-  const fontCss = FONT_WEIGHTS.map((weight) =>
-    readFileSync(join(fontPackage, `${String(weight)}.css`), "utf8").replaceAll(
-      "url(./files/",
-      `url(${ASSET_PATHS.fontFiles}`
-    )
-  ).join("\n");
-  return {
-    styles: join(build.root, "dist/styles.css"),
-    themes: join(build.root, "dist/themes.css"),
-    preflight: fileURLToPath(import.meta.resolve("tailwindcss/preflight.css")),
+  const fonts = yield* Effect.forEach(FONT_WEIGHTS, (weight) =>
+    readText(join(fontPackage, `${String(weight)}.css`))
+  );
+  const fontCss = fonts
+    .map((css) => css.replaceAll("url(./files/", `url(${ASSET_PATHS.fontFiles}`))
+    .join("\n");
+  const hostCss = yield* compileHostUtilities(
+    [...renderers.values()].flatMap((renderer) => renderer.hostClasses ?? [])
+  );
+  const client = yield* buildClientBundle([...renderers.values()].filter(isClientRenderer));
+  const assets: PageAssets = {
+    styles: yield* readText(join(build.root, "dist/styles.css")),
+    themes: yield* readText(join(build.root, "dist/themes.css")),
+    preflight: yield* readText(fileURLToPath(import.meta.resolve("tailwindcss/preflight.css"))),
     fontCss,
     fontDirectory: join(fontPackage, "files"),
     fontPackage,
-    hostCss: await compileHostUtilities(
-      [...renderers.values()].flatMap((renderer) => renderer.hostClasses ?? [])
-    ),
-    client: await buildClientBundle([...renderers.values()].filter(isClientRenderer)),
+    hostCss,
+    client,
   };
-}
+  return assets;
+});

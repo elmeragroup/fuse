@@ -12,17 +12,20 @@
  * changed or whose glyph a designer moved, scaled or unpinned from its component.
  */
 
+import { Effect } from "effect";
+
 import { ICON_GLYPH, PLUGIN_DATA_NAMESPACE } from "../../src/components/kit-spec.ts";
 import type { IconLibrarySpec, IconSpec } from "../../src/components/kit-spec.ts";
 import { near, planNumber, planPaints, planScalar, solidPaint } from "./fields.ts";
 import type { Run } from "./fields.ts";
-import { findOwned, indexSiblings, placeOwned, planOwnedChildren } from "./identity.ts";
-import type { Siblings } from "./identity.ts";
+import { indexSiblings, placeOwned, planOwnedChildren } from "./identity.ts";
+import type { OwnedChild, Siblings } from "./identity.ts";
 import type { PlannedPage } from "./pages.ts";
-import { change, create, existing } from "./plan.ts";
+import { change, create, existing, recordsAny } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { planWrapFrame } from "./previews.ts";
 import type { WrapGrid } from "./previews.ts";
+import { currentRun } from "./services.ts";
 
 /** An icon component as the plan leaves it, with the spec it draws. */
 export type PlannedIcon = {
@@ -195,81 +198,65 @@ function planIconComponent(
     );
     return true;
   }
-  const before = run.plan.operations.length;
-  planPaints(run, `${label} / ${ICON_GLYPH}`, "fill", glyph.fills, library.color, (paints) => {
-    glyph.fills = paints;
-  });
-  return run.plan.operations.length > before;
-}
-
-function planIcon(
-  run: Run,
-  frame: FrameNode,
-  siblings: Siblings,
-  library: IconLibrarySpec,
-  spec: IconSpec
-): PlannedIcon {
-  const label = `${library.name} / ${spec.name}`;
-  const found = findOwned(run.plan, siblings, library.name, spec.key, spec.name, isComponent);
-  if (found !== undefined) {
-    const changesGlyph = planIconComponent(run, found, label, library, spec);
-    return { spec, node: existing(found), changesGlyph };
-  }
-  const node = create(
-    run.plan,
-    library.name,
-    `create the icon ${spec.name}`,
-    () => placeOwned(frame, run.figma.createComponent(), spec.key, spec.name),
-    (made, plan) => {
-      planIconComponent({ ...run, plan }, made, label, library, spec);
-    }
+  const paints = recordsAny(run.plan, () =>
+    planPaints(run, `${label} / ${ICON_GLYPH}`, "fill", glyph.fills, library.color, (paints) => {
+      glyph.fills = paints;
+    })
   );
-  return { spec, node, changesGlyph: true };
+  return paints;
 }
 
-async function planLibraryContents(
-  run: Run,
-  frame: FrameNode,
-  library: IconLibrarySpec
-): Promise<ReadonlyMap<string, PlannedIcon>> {
+/** How to find, create and plan one icon component of the library. */
+function iconKind(run: Run, library: IconLibrarySpec, spec: IconSpec): OwnedChild<ComponentNode, boolean> {
+  const label = `${library.name} / ${spec.name}`;
+  return {
+    name: spec.name,
+    accept: isComponent,
+    description: `create the icon ${spec.name}`,
+    make: () => run.figma.createComponent(),
+    plan: (component) =>
+      Effect.map(currentRun, (inner) => planIconComponent(inner, component, label, library, spec)),
+  };
+}
+
+const planLibraryContents = Effect.fnUntraced(function* (frame: FrameNode, library: IconLibrarySpec) {
+  const run = yield* currentRun;
   planScalar(run, library.name, "name", frame.name, library.name, () => {
     frame.name = library.name;
   });
   planWrapFrame(run, frame, library.name, ICON_GRID);
-  const icons = new Map<string, PlannedIcon>();
-  await planOwnedChildren(run.plan, frame, library.name, "icon", library.icons, (spec, siblings) => {
-    const icon = planIcon(run, frame, siblings, library, spec);
-    icons.set(spec.key, icon);
-    return icon.node;
-  });
+  const planned = yield* planOwnedChildren(frame, library.name, "icon", library.icons, (spec) =>
+    iconKind(run, library, spec)
+  );
+  // A new icon draws its glyph when its creation runs.
+  const icons: ReadonlyMap<string, PlannedIcon> = new Map(
+    planned.map(({ spec, node, fact }) => [spec.key, { spec, node, changesGlyph: fact ?? true }] as const)
+  );
   return icons;
-}
+});
 
 /**
  * Plan the icon library against the spec.
  *
- * @param run - The run.
  * @param page - The page the library sits on.
  * @param library - The icon library.
  * @returns The frame and its icons, as later operations find them.
  */
-export async function planIconLibrary(
-  run: Run,
-  page: PlannedPage,
-  library: IconLibrarySpec
-): Promise<PlannedIcons> {
-  const found = page.find(library.key, library.name, isFrame);
+export const planIconLibrary = Effect.fnUntraced(function* (page: PlannedPage, library: IconLibrarySpec) {
+  const run = yield* currentRun;
+  const found = yield* page.find(library.key, library.name, isFrame);
   if (found !== undefined) {
-    return { frame: existing(found), icons: await planLibraryContents(run, found, library) };
+    const planned: PlannedIcons = {
+      frame: existing(found),
+      icons: yield* planLibraryContents(found, library),
+    };
+    return planned;
   }
-  const frame = create(
-    run.plan,
+  const frame = yield* create(
     page.spec.name,
     `create the ${library.name} frame with ${library.icons.length} icons`,
     () => placeOwned(page.node.get(), run.figma.createFrame(), library.key, library.name),
-    async (made, plan) => {
-      await planLibraryContents({ ...run, plan }, made, library);
-    }
+    (made) => planLibraryContents(made, library)
   );
   // The frame's children, indexed by key the first time a later operation reads an icon.
   let made: Siblings | undefined;
@@ -293,5 +280,6 @@ export async function planIconLibrary(
       },
     ])
   );
-  return { frame, icons };
-}
+  const planned: PlannedIcons = { frame, icons };
+  return planned;
+});

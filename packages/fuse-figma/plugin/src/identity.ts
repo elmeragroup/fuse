@@ -5,9 +5,14 @@
  * not list belongs to the kit and may be deleted. A node without a key is never deleted.
  */
 
+import { Effect } from "effect";
+
 import { PLUGIN_DATA_KEY, PLUGIN_DATA_NAMESPACE } from "../../src/components/kit-spec.ts";
-import { change, keepsOrder, warn } from "./plan.ts";
-import type { Plan, Target } from "./plan.ts";
+import { LayerConflict } from "./errors.ts";
+import type { PluginError } from "./errors.ts";
+import { change, create, existing, keepsOrder, Plan, warn } from "./plan.ts";
+import type { Target } from "./plan.ts";
+import type { PlanServices } from "./services.ts";
 
 /**
  * The key a node carries.
@@ -90,43 +95,45 @@ export function indexSiblings(children: ReadonlyArray<BaseNode>): Siblings {
  * it, so the match survives a later rename. Two children with the same key stop the run,
  * because the plugin cannot tell which one a designer meant to keep.
  *
- * @param plan - The run's plan, which records the key it writes onto a name match.
  * @param siblings - The children to search, indexed.
  * @param where - The parent's label, for messages.
  * @param key - The key from the spec.
  * @param name - The name to fall back on.
  * @param accept - Narrows a match to the node type the spec needs.
- * @returns The child, or undefined when the parent has none.
+ * @returns The child, or undefined when the parent has none. The Effect records the key it writes
+ *   onto a name match, and fails with `LayerConflict` for copies of the key or a keyed node of
+ *   another type.
  */
-export function findOwned<Node extends BaseNode>(
-  plan: Plan,
+export const findOwned = Effect.fnUntraced(function* <Node extends BaseNode>(
   siblings: Siblings,
   where: string,
   key: string,
   name: string,
   accept: (node: BaseNode) => node is Node
-): Node | undefined {
+): Effect.fn.Return<Node | undefined, LayerConflict, Plan> {
   const keyed = siblings.byKey.get(key) ?? [];
   if (keyed.length > 1) {
-    throw new Error(
-      `${where} holds ${keyed.length} layers with the key ${key}. Delete the copies, then run the plugin again.`
-    );
+    return yield* new LayerConflict({
+      message: `${where} holds ${keyed.length} layers with the key ${key}. Delete the copies, then run the plugin again.`,
+      key,
+    });
   }
   const [match] = keyed;
   if (match !== undefined) {
     if (!accept(match)) {
-      throw new Error(
-        `${where}: the layer with the key ${key} is a ${match.type}. Delete it, then run the plugin again.`
-      );
+      return yield* new LayerConflict({
+        message: `${where}: the layer with the key ${key} is a ${match.type}. Delete it, then run the plugin again.`,
+        key,
+      });
     }
     return match;
   }
   const named = siblings.unkeyedByName.get(name)?.find((node): node is Node => accept(node));
   if (named !== undefined) {
-    change(plan, where, `adopt the layer named ${name} as ${key}`, () => setKey(named, key));
+    change(yield* Plan, where, `adopt the layer named ${name} as ${key}`, () => setKey(named, key));
   }
   return named;
-}
+});
 
 /**
  * The kit's children that the spec no longer lists.
@@ -156,35 +163,92 @@ function unowned(siblings: ReadonlyArray<SceneNode>, owned: ReadonlyArray<Target
 }
 
 /**
+ * How to find, create and plan one owned child of a kind, such as a text layer or a variant.
+ */
+export type OwnedChild<Node extends SceneNode, Fact> = {
+  /** The name a child without a key matches by. A new child takes it unless `keepsName` is set. */
+  readonly name: string;
+  /** Whether a new child keeps the name Figma gives it, as a preview's instance does. */
+  readonly keepsName?: boolean;
+  /** Narrows a match to the node type the spec needs. */
+  readonly accept: (node: BaseNode) => node is Node;
+  /** The change line for creating the child, such as `create the text layer Label`. */
+  readonly description: string;
+  /** Creates the child when its operation runs. The walk puts it into the parent and keys it. */
+  readonly make: () => Node;
+  /**
+   * Runs at planning time for a child the run creates, before the walk records its creation, such
+   * as to require the fonts its text needs.
+   */
+  readonly requireNew?: () => void;
+  /**
+   * Plans a child: a found child now, into the walk's recorder, and a new one when its creation
+   * runs, into the recorder of its contents. It reads the run through `currentRun`. It is a method
+   * so that a walk over several kinds, such as a frame's layers, can return each kind as one
+   * `OwnedChild<SceneNode>`. The walk passes it only a node that `accept` narrowed or `make` made.
+   *
+   * @returns What planning a found child learned, such as whether it changes an icon's glyph.
+   */
+  plan(node: Node, origin: "found" | "new"): Effect.Effect<Fact, PluginError, PlanServices>;
+};
+
+/** One owned child as the plan leaves it. */
+export type PlannedChild<Spec, Node extends SceneNode, Fact> = {
+  readonly spec: Spec;
+  readonly node: Target<Node>;
+  /** What `plan` returned for a found child, or undefined for one the run creates. */
+  readonly fact: Fact | undefined;
+};
+
+/**
  * Plan a parent's owned children against the spec: delete the kit's children the spec dropped,
- * plan each spec's child, warn about the children the kit does not own, and restore the spec's
- * order.
+ * find each spec's child by its key or its name and plan it, or create and plan it when the parent
+ * lacks it, warn about the children the kit does not own, and restore the spec's order.
  *
- * @param plan - The run's plan.
  * @param parent - The parent.
  * @param label - The parent's label, for change lines.
  * @param noun - What a child is, such as `variant`, for change lines.
  * @param specs - The children's specs, in order.
- * @param planOne - Plans one spec's child and returns it. It finds the child among the
- *   parent's children, which the walk indexes once.
+ * @param kindOf - Describes how to find, create and plan one spec's child. It runs at planning time,
+ *   before the walk looks the child up, so it can check the spec or require what every child of
+ *   the kind needs.
+ * @returns Each spec's child, in spec order.
  */
-export async function planOwnedChildren<Spec extends { readonly key: string }, Node extends SceneNode>(
-  plan: Plan,
+export const planOwnedChildren = Effect.fnUntraced(function* <
+  Spec extends { readonly key: string },
+  Node extends SceneNode,
+  Fact,
+>(
   parent: ChildrenMixin,
   label: string,
   noun: string,
   specs: readonly Spec[],
-  planOne: (spec: Spec, siblings: Siblings) => Target<Node> | Promise<Target<Node>>
-): Promise<void> {
+  kindOf: (spec: Spec) => OwnedChild<Node, Fact>
+): Effect.fn.Return<readonly PlannedChild<Spec, Node, Fact>[], PluginError, PlanServices> {
+  const plan = yield* Plan;
   const keep = new Set(specs.map((spec) => spec.key));
   for (const stale of staleOwned(parent.children, keep)) {
     change(plan, label, `delete the ${noun} ${stale.name}`, () => stale.remove());
   }
   const siblings = indexSiblings(parent.children);
-  const owned: Target<Node>[] = [];
+  const planned: PlannedChild<Spec, Node, Fact>[] = [];
   for (const spec of specs) {
-    owned.push(await planOne(spec, siblings));
+    const child = kindOf(spec);
+    const found = yield* findOwned(siblings, label, spec.key, child.name, child.accept);
+    if (found !== undefined) {
+      planned.push({ spec, node: existing(found), fact: yield* child.plan(found, "found") });
+      continue;
+    }
+    child.requireNew?.();
+    const node = yield* create(
+      label,
+      child.description,
+      () => placeOwned(parent, child.make(), spec.key, child.keepsName === true ? undefined : child.name),
+      (made) => child.plan(made, "new")
+    );
+    planned.push({ spec, node, fact: undefined });
   }
+  const owned = planned.map((child) => child.node);
   for (const child of unowned(parent.children, owned)) {
     warn(plan, label, `keeps the layer ${child.name}, which the kit does not own`);
   }
@@ -193,4 +257,5 @@ export async function planOwnedChildren<Spec extends { readonly key: string }, N
       owned.forEach((target, index) => parent.insertChild(index, target.get()));
     });
   }
-}
+  return planned;
+});

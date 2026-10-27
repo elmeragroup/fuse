@@ -23,6 +23,7 @@ import { cn } from "@elmeragroup/fuse/recipe-catalog";
 import { mapBox } from "./box-mapping";
 import type { MapScope, PropertyValues } from "./box-mapping";
 import type { Room } from "./box-sizing";
+import { KitUnmappable } from "./build-errors";
 import { splitClasses } from "./cascade";
 import type { BoxCascade, Declaration, Feed, FeedTarget, InPlace, Recorder, SpecField } from "./cascade";
 import type {
@@ -193,16 +194,18 @@ export class InstanceParts {
     const { of } = part;
     const set = this.#sets.get(of.key);
     if (set === undefined) {
-      throw new Error(
-        `${part.key} shows ${of.name}, whose set the build has not made yet, so build ${of.name} before the set that holds it`
-      );
+      throw new KitUnmappable({
+        message: `${part.key} shows ${of.name}, whose set the build has not made yet, so build ${of.name} before the set that holds it`,
+      });
     }
     const cell = part.cell(outer);
     const variant = set.variants.find((candidate) =>
       of.axes.every((axis) => candidate.properties[axis.name] === cell[axis.name])
     );
     if (variant === undefined) {
-      throw new Error(`${part.key} shows ${of.name} at ${JSON.stringify(cell)}, a cell its set lacks`);
+      throw new KitUnmappable({
+        message: `${part.key} shows ${of.name} at ${JSON.stringify(cell)}, a cell its set lacks`,
+      });
     }
     const record = this.#recordOf(part, set);
     const given = new Set(splitClasses(part.classesFor?.(outer) ?? ""));
@@ -493,9 +496,9 @@ function refuseUndefined(
 ): void {
   const unknown = given.find((name) => !defined.includes(name));
   if (unknown !== undefined) {
-    throw new Error(
-      `${where} gives ${set.name} the ${type} property ${unknown}, which ${set.name} does not define`
-    );
+    throw new KitUnmappable({
+      message: `${where} gives ${set.name} the ${type} property ${unknown}, which ${set.name} does not define`,
+    });
   }
 }
 
@@ -593,9 +596,9 @@ function checkNested(nested: readonly NestedProperties[], of: ComponentDefinitio
     for (const key of path) {
       const part = instancePartsOf(at).find((candidate) => candidate.key === key);
       if (part === undefined) {
-        throw new Error(
-          `${where} gives a nested value at ${path.join(" / ")}, and ${at.name} holds no instance part ${key}`
-        );
+        throw new KitUnmappable({
+          message: `${where} gives a nested value at ${path.join(" / ")}, and ${at.name} holds no instance part ${key}`,
+        });
       }
       at = part.of;
     }
@@ -615,9 +618,9 @@ export function checkInstanceOrder(definitions: readonly ComponentDefinition[]):
     const cycle = cycleFrom([definition]);
     if (cycle !== undefined) {
       const holds = cycle.slice(1).map((inner, index) => `${cycle[index]?.name ?? ""} holds ${inner.name}`);
-      throw new Error(
-        `the instance parts form a cycle, ${holds.join(", ")}, so none of their sets can build first`
-      );
+      throw new KitUnmappable({
+        message: `the instance parts form a cycle, ${holds.join(", ")}, so none of their sets can build first`,
+      });
     }
   }
   const order = new Map(definitions.map((definition, index) => [definition.key, index]));
@@ -625,14 +628,14 @@ export function checkInstanceOrder(definitions: readonly ComponentDefinition[]):
     for (const part of instancePartsOf(definition)) {
       const at = order.get(part.of.key);
       if (at === undefined) {
-        throw new Error(
-          `${definition.name} holds ${part.of.name} as ${part.key}, whose set the build does not make`
-        );
+        throw new KitUnmappable({
+          message: `${definition.name} holds ${part.of.name} as ${part.key}, whose set the build does not make`,
+        });
       }
       if (at > index) {
-        throw new Error(
-          `${definition.name} holds ${part.of.name} as ${part.key}, whose set the build makes after it, so list ${part.of.name} first`
-        );
+        throw new KitUnmappable({
+          message: `${definition.name} holds ${part.of.name} as ${part.key}, whose set the build makes after it, so list ${part.of.name} first`,
+        });
       }
     }
   });

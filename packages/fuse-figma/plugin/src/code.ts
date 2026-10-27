@@ -4,12 +4,19 @@
  * of line with the kit shows it at once. A snapshot export reads the preview frames for
  * `figma:compare` and writes nothing.
  *
+ * Each request runs as one Effect program. Any failure or defect reaches the UI as an error
+ * message.
+ *
  * `figma:plugin` replaces `__FUSE_KIT__` with the spec it builds from the Fuse recipes.
  */
 
-import type { KitSnapshot } from "../../src/compare/snapshot.ts";
+import { Cause, Effect } from "effect";
+
 import type { KitSpec } from "../../src/components/kit-spec.ts";
-import { reconcileKit } from "./reconcile.ts";
+import { parseRequest } from "./protocol.ts";
+import type { Request, UiMessage } from "./protocol.ts";
+import { reconcile } from "./reconcile.ts";
+import { FigmaPlugin, Kit, runPlugin } from "./services.ts";
 import { exportSnapshots } from "./snapshots.ts";
 
 declare const __FUSE_KIT__: KitSpec;
@@ -17,34 +24,30 @@ declare const __FUSE_KIT__: KitSpec;
 /** The kit, inlined once by the build. */
 const kit: KitSpec = __FUSE_KIT__;
 
-/** A message to the UI. */
-type UiMessage =
-  | { readonly kind: "plan"; readonly changes: readonly string[]; readonly warnings: readonly string[] }
-  | {
-      readonly kind: "applied";
-      readonly changes: readonly string[];
-      readonly remaining: readonly string[];
-      readonly warnings: readonly string[];
-    }
-  | { readonly kind: "progress"; readonly done: number; readonly total: number }
-  | { readonly kind: "snapshots"; readonly snapshot: KitSnapshot }
-  | { readonly kind: "error"; readonly message: string };
+/** Post a message to the UI. */
+const post = (message: UiMessage) =>
+  FigmaPlugin.useSync((plugin) => {
+    plugin.ui.postMessage(message);
+  });
 
-function post(message: UiMessage): void {
-  figma.ui.postMessage(message);
+/** The message an error shows, or the thrown value as text when it is no `Error`. */
+function messageOf(cause: Cause.Cause<unknown>): string {
+  const error = Cause.squash(cause);
+  return error instanceof Error ? error.message : String(error);
 }
 
-async function respond(request: string): Promise<void> {
-  try {
+/** Answer one request, and post the answer to the UI. */
+const respond = (request: Request) =>
+  Effect.gen(function* () {
     if (request === "plan") {
-      const plan = await reconcileKit(figma, kit, false);
-      post({ kind: "plan", changes: plan.changes, warnings: plan.warnings });
+      const plan = yield* reconcile(false);
+      yield* post({ kind: "plan", changes: plan.changes, warnings: plan.warnings });
       return;
     }
     if (request === "apply") {
-      const applied = await reconcileKit(figma, kit, true);
-      const remaining = await reconcileKit(figma, kit, false);
-      post({
+      const applied = yield* reconcile(true);
+      const remaining = yield* reconcile(false);
+      yield* post({
         kind: "applied",
         changes: applied.changes,
         remaining: remaining.changes,
@@ -52,26 +55,20 @@ async function respond(request: string): Promise<void> {
       });
       return;
     }
-    if (request === "snapshots") {
-      const snapshot = await exportSnapshots(
-        figma,
-        kit.pages.map((page) => page.key),
-        (done, total) => {
-          post({ kind: "progress", done, total });
-        }
-      );
-      post({ kind: "snapshots", snapshot });
-      return;
-    }
-    throw new Error(`The plugin UI sent an unknown request: ${request}`);
-  } catch (error) {
-    post({ kind: "error", message: error instanceof Error ? error.message : String(error) });
-  }
-}
+    const { pages } = yield* Kit;
+    const snapshot = yield* exportSnapshots(
+      pages.map((page) => page.key),
+      (done, total) => post({ kind: "progress", done, total })
+    );
+    yield* post({ kind: "snapshots", snapshot });
+  });
 
 figma.showUI(__html__, { width: 560, height: 640, themeColors: true });
-// The UI is this plugin's own `ui.html`, which posts only the strings "plan", "apply" and
-// "snapshots".
-figma.ui.onmessage = (request: string) => {
-  void respond(request);
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- UI message boundary: Figma's handler receives whatever the UI posted, and `parseRequest` parses it
+figma.ui.onmessage = (message: unknown) => {
+  const program = Effect.fromResult(parseRequest(message)).pipe(
+    Effect.flatMap(respond),
+    Effect.catchCause((cause) => post({ kind: "error", message: messageOf(cause) }))
+  );
+  void runPlugin(program, figma, kit);
 };

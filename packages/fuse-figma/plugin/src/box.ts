@@ -5,18 +5,21 @@
  */
 
 import { ringFill } from "../../src/components/kit-spec.ts";
-import type { BoxSpec, LimitsSpec, NumberSpec, SideStroke, SizeSpec } from "../../src/components/kit-spec.ts";
+import type { BoxSpec, LimitsSpec, SideStroke } from "../../src/components/kit-spec.ts";
 import {
+  cornerField,
   LAYOUT_SIZING,
   near,
   planLayoutSizing,
+  planLength,
+  planLimit,
   planNumber,
   planPaints,
   planScalar,
   planShadows,
 } from "./fields.ts";
 import type { Held, NumberField, Run } from "./fields.ts";
-import { change } from "./plan.ts";
+import { change, recordsAny } from "./plan.ts";
 
 /** A node that holds a box's layers: a variant component, or a frame layer below it. */
 export type LayerParent = ComponentNode | FrameNode;
@@ -29,24 +32,6 @@ function paddingField(node: LayerParent, side: "Top" | "Right" | "Bottom" | "Lef
     matches: (value) => near(node[name], value),
     write: (value) => {
       node[name] = value;
-    },
-  };
-}
-
-/**
- * The corner radius of a box or an instance, which a spec sets on all four corners at once.
- *
- * @param node - The box, or an instance layer that overrides its corners.
- * @returns The field.
- */
-export function cornerField(node: LayerParent | InstanceNode): NumberField {
-  const corners = ["topLeftRadius", "topRightRadius", "bottomRightRadius", "bottomLeftRadius"] as const;
-  return {
-    name: "cornerRadius",
-    bindings: corners,
-    matches: (value) => corners.every((corner) => near(node[corner], value)),
-    write: (value) => {
-      node.cornerRadius = value;
     },
   };
 }
@@ -95,81 +80,6 @@ function planStrokeSides(run: Run, node: LayerParent, label: string, sides: Side
       node[field] = weight;
     }
   });
-}
-
-/**
- * Plan a fixed width or height, or unbind one the spec lets the box or text hug or fill.
- *
- * @param run - The run.
- * @param node - The box, a text layer or an instance layer.
- * @param label - The node's label, for change lines.
- * @param name - The axis's length.
- * @param spec - The axis's sizing.
- * @param held - Whether to compare a fixed length with what the node holds, or write it whatever it holds.
- * @param write - Writes the fixed length.
- */
-export function planLength(
-  run: Run,
-  node: LayerParent | TextNode | InstanceNode,
-  label: string,
-  name: "width" | "height",
-  spec: SizeSpec,
-  held: Held,
-  write: (value: number) => void
-): void {
-  if (spec.kind !== "fixed") {
-    if (node.boundVariables?.[name] !== undefined) {
-      change(run.plan, label, `${name} → ${spec.kind}`, () => node.setBoundVariable(name, null));
-    }
-    return;
-  }
-  planNumber(
-    run,
-    node,
-    label,
-    { name, bindings: [name], matches: (value) => near(node[name], value), write },
-    spec.length,
-    held
-  );
-}
-
-/**
- * Plan one limit of a box or a text, or remove one the spec drops.
- *
- * @param run - The run.
- * @param node - The box, or a text layer.
- * @param label - The node's label, for change lines.
- * @param name - The limit.
- * @param spec - The length the limit should hold, or undefined for none.
- */
-export function planLimit(
-  run: Run,
-  node: LayerParent | TextNode | InstanceNode,
-  label: string,
-  name: keyof LimitsSpec,
-  spec: NumberSpec | undefined
-): void {
-  if (spec === undefined) {
-    if (node[name] !== null || node.boundVariables?.[name] !== undefined) {
-      change(run.plan, label, `${name} → none`, () => {
-        node.setBoundVariable(name, null);
-        node[name] = null;
-      });
-    }
-    return;
-  }
-  const field: NumberField = {
-    name,
-    bindings: [name],
-    matches: (value) => {
-      const held = node[name];
-      return held !== null && near(held, value);
-    },
-    write: (value) => {
-      node[name] = value;
-    },
-  };
-  planNumber(run, node, label, field, spec);
 }
 
 const LIMITS: readonly (keyof LimitsSpec)[] = ["minWidth", "maxWidth", "minHeight", "maxHeight"];
@@ -228,61 +138,61 @@ export type BoxPlace = { readonly kind: "root" } | { readonly kind: "frame"; rea
  */
 export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpec, place: BoxPlace): Held {
   const { direction, sizing } = spec;
-  const before = run.plan.operations.length;
-  planScalar(run, label, "layoutMode", node.layoutMode, direction, () => {
-    node.layoutMode = direction;
-  });
-  planScalar(run, label, "primaryAxisAlignItems", node.primaryAxisAlignItems, spec.primaryAlign, () => {
-    node.primaryAxisAlignItems = spec.primaryAlign;
-  });
-  planScalar(run, label, "counterAxisAlignItems", node.counterAxisAlignItems, spec.counterAlign, () => {
-    node.counterAxisAlignItems = spec.counterAlign;
-  });
+  const laidOut = recordsAny(run.plan, () => {
+    planScalar(run, label, "layoutMode", node.layoutMode, direction, () => {
+      node.layoutMode = direction;
+    });
+    planScalar(run, label, "primaryAxisAlignItems", node.primaryAxisAlignItems, spec.primaryAlign, () => {
+      node.primaryAxisAlignItems = spec.primaryAlign;
+    });
+    planScalar(run, label, "counterAxisAlignItems", node.counterAxisAlignItems, spec.counterAlign, () => {
+      node.counterAxisAlignItems = spec.counterAlign;
+    });
 
-  planLayoutSizing(
-    run,
-    node,
-    label,
-    {
-      direction,
-      sizing: {
-        horizontal: LAYOUT_SIZING[sizing.horizontal.kind],
-        vertical: LAYOUT_SIZING[sizing.vertical.kind],
+    planLayoutSizing(
+      run,
+      node,
+      label,
+      {
+        direction,
+        sizing: {
+          horizontal: LAYOUT_SIZING[sizing.horizontal.kind],
+          vertical: LAYOUT_SIZING[sizing.vertical.kind],
+        },
       },
-    },
-    place.kind === "frame" ? place.parent : "read",
-    (group, lengths) => {
-      planLength(group, node, label, "width", sizing.horizontal, lengths, (value) =>
-        node.resize(value, node.height)
-      );
-      planLength(group, node, label, "height", sizing.vertical, lengths, (value) =>
-        node.resize(node.width, value)
-      );
+      place.kind === "frame" ? place.parent : "read",
+      (group, lengths) => {
+        planLength(group, node, label, "width", sizing.horizontal, lengths, (value) =>
+          node.resize(value, node.height)
+        );
+        planLength(group, node, label, "height", sizing.vertical, lengths, (value) =>
+          node.resize(node.width, value)
+        );
+      }
+    );
+    for (const name of LIMITS) {
+      planLimit(run, node, label, name, spec.limits[name]);
     }
-  );
-  for (const name of LIMITS) {
-    planLimit(run, node, label, name, spec.limits[name]);
-  }
 
-  planNumber(run, node, label, paddingField(node, "Top"), spec.paddingTop);
-  planNumber(run, node, label, paddingField(node, "Right"), spec.paddingRight);
-  planNumber(run, node, label, paddingField(node, "Bottom"), spec.paddingBottom);
-  planNumber(run, node, label, paddingField(node, "Left"), spec.paddingLeft);
-  planNumber(
-    run,
-    node,
-    label,
-    {
-      name: "itemSpacing",
-      bindings: ["itemSpacing"],
-      matches: (value) => near(node.itemSpacing, value),
-      write: (value) => {
-        node.itemSpacing = value;
+    planNumber(run, node, label, paddingField(node, "Top"), spec.paddingTop);
+    planNumber(run, node, label, paddingField(node, "Right"), spec.paddingRight);
+    planNumber(run, node, label, paddingField(node, "Bottom"), spec.paddingBottom);
+    planNumber(run, node, label, paddingField(node, "Left"), spec.paddingLeft);
+    planNumber(
+      run,
+      node,
+      label,
+      {
+        name: "itemSpacing",
+        bindings: ["itemSpacing"],
+        matches: (value) => near(node.itemSpacing, value),
+        write: (value) => {
+          node.itemSpacing = value;
+        },
       },
-    },
-    spec.itemSpacing
-  );
-  const laidOut = run.plan.operations.length > before;
+      spec.itemSpacing
+    );
+  });
   planNumber(run, node, label, cornerField(node), spec.cornerRadius);
 
   // Figma paints a later layer above an earlier one, and the first on top with the field true (PZ2).
@@ -305,27 +215,32 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
   // Button hugged to 64px, a 42px label, 10px of padding a side and two 1px sides. A stroke drawn
   // from a CSS outline takes no room, so it stays out of the layout and overlaps the box's layers,
   // as the typings' `strokesIncludedInLayout` false draws. A border on some sides writes each side's
-  // weight and counts in the layout, where each side takes room on its own side (N9, PS).
-  const stroked = run.plan.operations.length;
+  // weight and counts in the layout, where each side takes room on its own side (N9, PS). The
+  // layoutMode write above turns a box without auto layout into one that includes its strokes (PS3),
+  // so such a box holds true once that write runs.
   const { stroke } = spec;
-  planPaints(run, label, "stroke", node.strokes, stroke?.color, (paints) => {
-    node.strokes = paints;
-  });
-  if (stroke !== undefined) {
-    if ("sides" in stroke) {
-      planStrokeSides(run, node, label, stroke.sides);
-    } else {
-      planNumber(run, node, label, strokeWeightField(node), stroke.weight);
+  const turnsOn = node.layoutMode === "NONE";
+  const stroked = recordsAny(run.plan, () => {
+    planPaints(run, label, "stroke", node.strokes, stroke?.color, (paints) => {
+      node.strokes = paints;
+    });
+    if (stroke !== undefined) {
+      if ("sides" in stroke) {
+        planStrokeSides(run, node, label, stroke.sides);
+      } else {
+        planNumber(run, node, label, strokeWeightField(node), stroke.weight);
+      }
+      planScalar(run, label, "strokeAlign", node.strokeAlign, "INSIDE", () => {
+        node.strokeAlign = "INSIDE";
+      });
+      const included = "sides" in stroke || stroke.inLayout !== false;
+      const held = turnsOn || node.strokesIncludedInLayout;
+      planScalar(run, label, "strokesIncludedInLayout", held, included, () => {
+        node.strokesIncludedInLayout = included;
+      });
     }
-    planScalar(run, label, "strokeAlign", node.strokeAlign, "INSIDE", () => {
-      node.strokeAlign = "INSIDE";
-    });
-    const included = "sides" in stroke || stroke.inLayout !== false;
-    planScalar(run, label, "strokesIncludedInLayout", node.strokesIncludedInLayout, included, () => {
-      node.strokesIncludedInLayout = included;
-    });
-  }
-  const resizes = laidOut || run.plan.operations.length > stroked;
+  });
+  const resizes = laidOut || stroked;
   if (stroke !== undefined) {
     planDashPattern(run, node, label, "sides" in stroke ? [] : (stroke.dashPattern ?? []));
   }

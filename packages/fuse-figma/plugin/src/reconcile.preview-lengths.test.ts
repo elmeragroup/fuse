@@ -9,16 +9,14 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { NO_LIMITS } from "../../src/components/kit-spec.ts";
 import type {
   ColorSpec,
-  ComponentRootSpec,
   ComponentSetSpec,
   InstanceLayerSpec,
   KitSpec,
   NumberSpec,
 } from "../../src/components/kit-spec.ts";
-import { literal } from "./button-kit-fixture.ts";
+import { applyTo, bareRoot, literal, oneVariant } from "./button-kit-fixture.ts";
 import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { GLYPH_FONT } from "./fake-fixtures.ts";
@@ -29,45 +27,6 @@ const BLACK: ColorSpec = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } };
 const HUG = { kind: "hug" } as const;
 const ROW_H = { kind: "variable", variable: { collection: "Fuse density", name: "row-h" } } as const;
 const ITEM_W = { kind: "variable", variable: { collection: "Fuse density", name: "item-w" } } as const;
-
-/** A root with no paint, padding or layers, sized as given. */
-function bareRoot(name: string, sizing: ComponentRootSpec["sizing"]): ComponentRootSpec {
-  return {
-    name,
-    direction: "HORIZONTAL",
-    sizing,
-    limits: NO_LIMITS,
-    clips: true,
-    paddingTop: literal(0),
-    paddingRight: literal(0),
-    paddingBottom: literal(0),
-    paddingLeft: literal(0),
-    itemSpacing: literal(0),
-    primaryAlign: "MIN",
-    counterAlign: "CENTER",
-    cornerRadius: literal(0),
-    fill: undefined,
-    stroke: undefined,
-    shadows: [],
-    opacity: 1,
-    children: [],
-  };
-}
-
-/** A set of one variant, `state=rest`, around a root. */
-function oneVariant(key: string, name: string, root: ComponentRootSpec): ComponentSetSpec {
-  return {
-    key,
-    page: "page",
-    name,
-    axes: [{ name: "state", values: ["rest"] }],
-    columnAxis: "state",
-    textProperties: [],
-    booleanProperties: [],
-    swapProperties: [],
-    variants: [{ key: `${key}/state=rest`, properties: { state: "rest" }, root }],
-  };
-}
 
 /** The row: as tall as `row-h`, 40px wide. */
 const ROW = oneVariant(
@@ -187,11 +146,8 @@ async function itemNodes(file: FakeFigma): Promise<{ variant: ComponentNode; ins
   return { variant, instance };
 }
 
-async function applied(width: NumberSpec): Promise<FakeFigma> {
-  const file = densityFile();
-  await reconcileKit(file.figma, kitWith(width), true);
-  file.reopen();
-  return file;
+function applied(width: NumberSpec): Promise<FakeFigma> {
+  return applyTo(densityFile(), kitWith(width));
 }
 
 describe("a preview instance its modes make taller than its variant", () => {

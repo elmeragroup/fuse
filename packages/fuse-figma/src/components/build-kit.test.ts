@@ -7,6 +7,8 @@
  * The whole kit's invariants sit here too. A later set's field expectations sit beside its
  * definition, in `<name>-kit.test.ts`, as Checkbox's do.
  */
+import { NodeFileSystem } from "@effect/platform-node";
+import { Effect, Result } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { PHOSPHOR_ICON_NAMES, buttonVariants } from "@elmeragroup/fuse/recipe-catalog";
@@ -26,11 +28,14 @@ import {
   UNLIMITED,
   variantRoot,
 } from "../../test/built-kit";
-import { buildFixture, chip } from "../../test/fixture-sets";
+import { buildFixture, chip, dot } from "../../test/fixture-sets";
 import { ICONS_PAGE, KIT_PAGES, pageKey, previewsOn } from "../../test/kit-inventory";
+import { KitUnmappable } from "./build-errors";
 import { buildKit, checkIconReferences } from "./build-kit";
-import type { IconSlot } from "./component-spec";
+import type { IconSlot, PartDefinition } from "./component-spec";
 import type { CoverageRow } from "./coverage";
+import { checkKitSpec, KitContradiction } from "./kit-check";
+import { KIT } from "./kit-registry";
 import { glyphFonts, iconKey } from "./kit-spec";
 import type { ChildLayerSpec, ColorSpec, ComponentRootSpec, ComponentSetSpec, KitSpec } from "./kit-spec";
 
@@ -38,7 +43,7 @@ let spec: KitSpec;
 let coverage: readonly CoverageRow[];
 
 beforeAll(async () => {
-  ({ spec, coverage } = await buildKit());
+  ({ spec, coverage } = await Effect.runPromise(buildKit().pipe(Effect.provide(NodeFileSystem.layer))));
 });
 
 const transparent = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0 } } as const;
@@ -816,7 +821,8 @@ describe("the icon reference check", () => {
       const { componentSet } = await buildFixture(
         chip("text-[#000000] [&_svg]:size-[16px]", { iconsFor: () => [badge] })
       );
-      expect(() => checkIconReferences(place(componentSet), library)).toThrow(
+      const checked = checkIconReferences(place(componentSet), library);
+      expect(Result.isFailure(checked) ? checked.failure.message : undefined).toBe(
         "chip/state=rest: the Badge icon links Badge icon, which Chip does not define"
       );
     }
@@ -905,6 +911,99 @@ describe("the preview frames", () => {
     expect([spec.glyphFont, glyphFonts(spec)]).toEqual([
       { family: "Inter", glyphs: ["\u21E7", "\u2318"] },
       [{ family: "Inter", style: "Regular" }],
+    ]);
+  });
+});
+
+/**
+ * The contradiction the kit check finds in a kit.
+ *
+ * @param kit - The kit.
+ * @returns The check's failure.
+ * @throws When the check passes the kit.
+ */
+function contradictionIn(kit: KitSpec): KitContradiction {
+  const checked = checkKitSpec(kit, (text) => Buffer.from(text, "base64"));
+  if (Result.isSuccess(checked)) {
+    throw new Error("the kit check passed a kit that contradicts itself");
+  }
+  return checked.failure;
+}
+
+describe("the failures the build reports", () => {
+  it("fails with KitUnmappable for a registry whose labels give one TEXT property two defaults", async () => {
+    const kbd = KIT.find((entry) => entry.definition.key === "kbd");
+    if (kbd === undefined) {
+      throw new Error("the registry has no Kbd entry");
+    }
+    const labelled = (key: string, characters: string): PartDefinition => ({
+      ...dot(""),
+      key,
+      slot: `chip-${key}`,
+      label: { key: "label", name: "label", characters, textProperty: "Label", shownIn: () => true },
+    });
+    const definition = chip("font-sans text-[14px] leading-[20px] text-[#000000] flex", {
+      parts: [labelled("title", "Storage"), labelled("hint", "Used")],
+    });
+    const built = await Effect.runPromise(
+      Effect.result(
+        buildKit([{ definition, page: kbd.page, previewCells: [{ state: "rest" }] }]).pipe(
+          Effect.provide(NodeFileSystem.layer)
+        )
+      )
+    );
+    const failure = Result.isFailure(built) ? built.failure : undefined;
+    expect([failure, failure?.message]).toEqual([
+      expect.any(KitUnmappable),
+      'Chip: the labels chip-title / label and chip-hint / label both set the Label property, one starting as "Storage" and one as "Used". A TEXT property holds one default, so give them one text or a property each.',
+    ]);
+  });
+});
+
+describe("the kit check the build runs", () => {
+  it("fails the build of a registry whose preview places a cell its set does not draw", async () => {
+    const kbd = KIT.find((entry) => entry.definition.key === "kbd");
+    if (kbd === undefined) {
+      throw new Error("the registry has no Kbd entry");
+    }
+    const failure = await Effect.runPromise(
+      buildKit([{ ...kbd, previewCells: [{ content: "text" }, { content: "chord" }] }]).pipe(
+        Effect.provide(NodeFileSystem.layer),
+        Effect.flip
+      )
+    );
+    expect([failure, failure.message]).toEqual([
+      expect.any(KitContradiction),
+      "Kbd / Fjordkraft internal private, light places kbd/content=chord, which Kbd does not define.",
+    ]);
+  });
+
+  it("refuses a kit that lists a page key twice", () => {
+    const [first] = spec.pages;
+    if (first === undefined) {
+      throw new Error("the built kit lists no page");
+    }
+    const failure = contradictionIn({ ...spec, pages: [...spec.pages, first] });
+    expect([failure, failure.message]).toEqual([
+      expect.any(KitContradiction),
+      `The kit lists the page key ${first.key} twice.`,
+    ]);
+  });
+
+  it("refuses a preview that places a variant its set lacks", () => {
+    const [preview, ...others] = spec.previews;
+    const [group, ...rest] = preview?.groups ?? [];
+    if (preview === undefined || group === undefined) {
+      throw new Error("the built kit has no preview group");
+    }
+    const lost = { ...group, variants: [...group.variants, "button/variant=missing"] };
+    const failure = contradictionIn({
+      ...spec,
+      previews: [{ ...preview, groups: [lost, ...rest] }, ...others],
+    });
+    expect([failure, failure.message]).toEqual([
+      expect.any(KitContradiction),
+      `${preview.name} places button/variant=missing, which ${group.name} does not define.`,
     ]);
   });
 });

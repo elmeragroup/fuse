@@ -4,13 +4,23 @@
  * previews and the instance count of each from the cells its sets place, in `test/kit-inventory.ts`,
  * and the modes each preview pins.
  */
+import { Effect } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import { inventoryPage, KIT_PAGES, pageKey, previewedOn, previewsOn } from "../../test/kit-inventory.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { appliedFile, kitFixture, kitPage } from "./kit-fixture.ts";
+import { FigmaPlugin } from "./services.ts";
 import { exportSnapshots } from "./snapshots.ts";
+import type { SnapshotProgress } from "./snapshots.ts";
+
+/** Export the snapshots of a file's pages, as the plugin does over the file it runs on. */
+function exportFrom(file: FakeFigma, pageKeys: readonly string[], progress: SnapshotProgress) {
+  return Effect.runPromise(
+    Effect.provideService(exportSnapshots(pageKeys, progress), FigmaPlugin, file.figma)
+  );
+}
 
 const BADGE = inventoryPage("badge");
 const KBD = inventoryPage("kbd");
@@ -26,12 +36,13 @@ describe("Export snapshots from an applied file", () => {
 
   it("exports every instance of the four previews, with the snapshot's fields", async () => {
     let progress: readonly [number, number] | undefined;
-    const snapshot = await exportSnapshots(
-      file.figma,
+    const snapshot = await exportFrom(
+      file,
       kit.pages.map((page) => page.key),
-      (done, total) => {
-        progress = [done, total];
-      }
+      (done, total) =>
+        Effect.sync(() => {
+          progress = [done, total];
+        })
     );
     expect(new Set(Object.keys(snapshot))).toEqual(
       new Set(["format", "version", "exportedAt", "file", "scale", "previews"])
@@ -66,7 +77,7 @@ describe("Export snapshots from an applied file", () => {
   });
 
   it("exports the density a Badge or Kbd preview pins, though none of their layers binds density", async () => {
-    const snapshot = await exportSnapshots(file.figma, [pageKey(BADGE), pageKey(KBD)], () => undefined);
+    const snapshot = await exportFrom(file, [pageKey(BADGE), pageKey(KBD)], () => Effect.void);
     // The collections the real file's first Badge preview resolved on 2026-10-21 (rule 11): no
     // density, which the preview pins and no Badge layer binds.
     const names = new Map(

@@ -1,14 +1,16 @@
 /**
  * A one-variant Button kit on the in-memory file in `fake-figma.ts`, shared by the suites that run
  * `reconcileKit` on a single set: the kit and the builders that change its variant, a file whose
- * kit page holds a stale preview and no set, and the set and variant an Apply leaves there. The
- * label's family follows `font-sans`, which aliases a brand variable, so a run resolves it across
- * collections before it writes (rule 8) and needs the font it names (rule 7).
+ * kit page holds a stale preview and no set, and the set and variant an Apply leaves there. Small
+ * kits of their own build their sets from `bareRoot` and `oneVariant` and apply them with
+ * `applyTo`. The label's family follows `font-sans`, which aliases a brand variable, so a run
+ * resolves it across collections before it writes (rule 8) and needs the font it names (rule 7).
  */
 import { HUGGING_TEXT, NO_LIMITS, TOP_LEFT } from "../../src/components/kit-spec.ts";
 import type {
   ChildLayerSpec,
   ComponentRootSpec,
+  ComponentSetSpec,
   FrameLayerSpec,
   IconLayerSpec,
   KitSpec,
@@ -18,6 +20,7 @@ import type {
 import type { FakeFigma } from "./fake-figma.ts";
 import { aliasOf, color, fixtureFile, GLYPH_FONT, string } from "./fake-fixtures.ts";
 import { keyOf, setKey } from "./identity.ts";
+import { reconcileKit } from "./reconcile.ts";
 
 /**
  * A literal number field.
@@ -268,3 +271,74 @@ export const RELAYOUT = [
   "Button: lay out 1 variants in 1 columns and 1 rows",
   "Fuse components: place Button and Icons in a row",
 ];
+
+/**
+ * A root with no paint, padding or layers.
+ *
+ * @param name - The root's name.
+ * @param sizing - The root's sizing.
+ * @returns The root.
+ */
+export function bareRoot(name: string, sizing: ComponentRootSpec["sizing"]): ComponentRootSpec {
+  return {
+    name,
+    direction: "HORIZONTAL",
+    sizing,
+    limits: NO_LIMITS,
+    clips: true,
+    paddingTop: literal(0),
+    paddingRight: literal(0),
+    paddingBottom: literal(0),
+    paddingLeft: literal(0),
+    itemSpacing: literal(0),
+    primaryAlign: "MIN",
+    counterAlign: "CENTER",
+    cornerRadius: literal(0),
+    fill: undefined,
+    stroke: undefined,
+    shadows: [],
+    opacity: 1,
+    children: [],
+  };
+}
+
+/**
+ * A set of one variant, `state=rest`, around a root.
+ *
+ * @param key - The set's key.
+ * @param name - The set's name.
+ * @param root - The variant's root.
+ * @param text - Whether the set defines a `Count` TEXT property, `24` by default.
+ * @returns The set, on the kit page.
+ */
+export function oneVariant(
+  key: string,
+  name: string,
+  root: ComponentRootSpec,
+  text = false
+): ComponentSetSpec {
+  return {
+    key,
+    page: "page",
+    name,
+    axes: [{ name: "state", values: ["rest"] }],
+    columnAxis: "state",
+    textProperties: text ? [{ name: "Count", defaultValue: "24" }] : [],
+    booleanProperties: [],
+    swapProperties: [],
+    variants: [{ key: `${key}/state=rest`, properties: { state: "rest" }, root }],
+  };
+}
+
+/**
+ * Apply a kit to a file and open the file again for the next run.
+ *
+ * @param file - The file.
+ * @param kit - The kit.
+ * @returns The same file.
+ */
+export async function applyTo(file: FakeFigma, kit: KitSpec): Promise<FakeFigma> {
+  await reconcileKit(file.figma, kit, true);
+  file.reopen();
+  return file;
+}

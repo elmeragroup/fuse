@@ -14,14 +14,15 @@ import type {
   FillSpec,
   GlyphFontSpec,
   ImagePaintSpec,
+  LimitsSpec,
   NumberSpec,
   RgbaSpec,
   ShadowSpec,
   SizeSpec,
   VariableRef,
 } from "../../src/components/kit-spec.ts";
-import { change, changeTogether, requirement } from "./plan.ts";
-import type { Plan } from "./plan.ts";
+import { change, changeTogether } from "./plan.ts";
+import type { PlanRecorder } from "./plan.ts";
 import type { KitVariables } from "./variables.ts";
 
 /**
@@ -31,9 +32,39 @@ import type { KitVariables } from "./variables.ts";
 export type Run = {
   readonly figma: PluginAPI;
   readonly variables: KitVariables;
-  readonly plan: Plan;
+  readonly plan: PlanRecorder;
   readonly glyphFont: GlyphFontSpec;
 };
+
+/**
+ * The run with another plan, such as the plan of a group or of a new node's contents. The run's
+ * other members stay, so a nested planner reads the same file, variables and glyph font.
+ *
+ * @param run - The run.
+ * @param plan - The plan the nested planner records into.
+ * @returns The nested planner's run.
+ */
+function withPlan(run: Run, plan: PlanRecorder): Run {
+  return { figma: run.figma, variables: run.variables, plan, glyphFont: run.glyphFont };
+}
+
+/**
+ * Record the writes a group plans as one operation, as `changeTogether` does, for a planner that
+ * takes a run.
+ *
+ * @param run - The run.
+ * @param label - The node the group touches.
+ * @param build - Plans the group's writes with the group's run.
+ * @param finish - Runs after the group's writes, where the group needs it.
+ */
+export function changeTogetherIn(
+  run: Run,
+  label: string,
+  build: (group: Run) => void,
+  finish?: () => void
+): void {
+  changeTogether(run.plan, label, (plan) => build(withPlan(run, plan)), finish);
+}
 
 /**
  * A number field of a node. Some spec fields cover several Figma fields, such as a corner
@@ -45,45 +76,6 @@ export type NumberField = {
   readonly matches: (value: number) => boolean;
   readonly write: (value: number) => void;
 };
-
-/**
- * Require a font before the run's first write. Figma refuses a text write unless the fonts it
- * touches are loaded, and a file can hold a font this machine cannot load. Loading every font
- * first makes such a font stop the run, Plan included, with nothing written.
- *
- * @param run - The run.
- * @param label - The layer that needs the font, for the error.
- * @param font - The font.
- */
-export function requireFont(run: Run, label: string, font: FontName): void {
-  const axes = font.variationSettings === undefined ? "" : ` ${JSON.stringify(font.variationSettings)}`;
-  const key = `font ${font.family} ${font.style}${axes}`;
-  requirement(run.plan, key, async () => {
-    try {
-      await run.figma.loadFontAsync(font);
-    } catch (cause) {
-      throw new Error(
-        `${label} needs the font ${font.family} ${font.style}, which Figma cannot load. Install it, then run the plugin again.`,
-        { cause }
-      );
-    }
-  });
-}
-
-/**
- * Every font a text layer's characters use, each range of mixed ones included. An empty layer holds
- * the one font it would type in.
- *
- * @param run - The run.
- * @param text - The text layer.
- * @returns The fonts.
- */
-export function heldFonts(run: Run, text: TextNode): FontName[] {
-  if (text.characters.length > 0) {
-    return text.getRangeAllFontNames(0, text.characters.length);
-  }
-  return text.fontName === run.figma.mixed ? [] : [text.fontName];
-}
 
 /**
  * Whether two numbers agree within what a 32-bit float keeps.
@@ -711,17 +703,110 @@ export function planLayoutSizing(
     node.layoutSizingHorizontal = sizing.horizontal;
     node.layoutSizingVertical = sizing.vertical;
   };
-  changeTogether(
-    run.plan,
+  changeTogetherIn(
+    run,
     label,
-    (plan) => {
-      planLengths({ ...run, plan }, lengths);
+    (group) => {
+      planLengths(group, lengths);
       for (const [axis, member] of SIZING_MEMBERS) {
         if (reads?.[axis] !== sizing[axis]) {
-          change(plan, label, `${member} → ${sizing[axis]}`, writeSizing);
+          change(group.plan, label, `${member} → ${sizing[axis]}`, writeSizing);
         }
       }
     },
     writeSizing
   );
+}
+
+/**
+ * The corner radius of a box or an instance, which a spec sets on all four corners at once.
+ *
+ * @param node - The box, or an instance layer that overrides its corners.
+ * @returns The field.
+ */
+export function cornerField(node: ComponentNode | FrameNode | InstanceNode): NumberField {
+  const corners = ["topLeftRadius", "topRightRadius", "bottomRightRadius", "bottomLeftRadius"] as const;
+  return {
+    name: "cornerRadius",
+    bindings: corners,
+    matches: (value) => corners.every((corner) => near(node[corner], value)),
+    write: (value) => {
+      node.cornerRadius = value;
+    },
+  };
+}
+
+/**
+ * Plan a fixed width or height, or unbind one the spec lets the box or text hug or fill.
+ *
+ * @param run - The run.
+ * @param node - The box, a text layer or an instance layer.
+ * @param label - The node's label, for change lines.
+ * @param name - The axis's length.
+ * @param spec - The axis's sizing.
+ * @param held - Whether to compare a fixed length with what the node holds, or write it whatever it holds.
+ * @param write - Writes the fixed length.
+ */
+export function planLength(
+  run: Run,
+  node: ComponentNode | FrameNode | TextNode | InstanceNode,
+  label: string,
+  name: "width" | "height",
+  spec: SizeSpec,
+  held: Held,
+  write: (value: number) => void
+): void {
+  if (spec.kind !== "fixed") {
+    if (node.boundVariables?.[name] !== undefined) {
+      change(run.plan, label, `${name} → ${spec.kind}`, () => node.setBoundVariable(name, null));
+    }
+    return;
+  }
+  planNumber(
+    run,
+    node,
+    label,
+    { name, bindings: [name], matches: (value) => near(node[name], value), write },
+    spec.length,
+    held
+  );
+}
+
+/**
+ * Plan one limit of a box or a text, or remove one the spec drops.
+ *
+ * @param run - The run.
+ * @param node - The box, or a text layer.
+ * @param label - The node's label, for change lines.
+ * @param name - The limit.
+ * @param spec - The length the limit should hold, or undefined for none.
+ */
+export function planLimit(
+  run: Run,
+  node: ComponentNode | FrameNode | TextNode | InstanceNode,
+  label: string,
+  name: keyof LimitsSpec,
+  spec: NumberSpec | undefined
+): void {
+  if (spec === undefined) {
+    if (node[name] !== null || node.boundVariables?.[name] !== undefined) {
+      change(run.plan, label, `${name} → none`, () => {
+        node.setBoundVariable(name, null);
+        node[name] = null;
+      });
+    }
+    return;
+  }
+  const field: NumberField = {
+    name,
+    bindings: [name],
+    matches: (value) => {
+      const held = node[name];
+      return held !== null && near(held, value);
+    },
+    write: (value) => {
+      node[name] = value;
+    },
+  };
+  planNumber(run, node, label, field, spec);
 }

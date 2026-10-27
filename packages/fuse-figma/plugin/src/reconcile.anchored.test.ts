@@ -8,16 +8,15 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { HUGGING_TEXT, NO_LIMITS, TOP_LEFT } from "../../src/components/kit-spec.ts";
+import { HUGGING_TEXT, TOP_LEFT } from "../../src/components/kit-spec.ts";
 import type {
   AnchoredSpec,
   ColorSpec,
-  ComponentRootSpec,
   ComponentSetSpec,
   InstanceLayerSpec,
   KitSpec,
 } from "../../src/components/kit-spec.ts";
-import { FILL, literal } from "./button-kit-fixture.ts";
+import { bareRoot, FILL, literal, oneVariant } from "./button-kit-fixture.ts";
 import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed, GLYPH_FONT } from "./fake-fixtures.ts";
@@ -27,45 +26,6 @@ import { reconcileKit } from "./reconcile.ts";
 const BLACK: ColorSpec = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } };
 const HUG = { kind: "hug" } as const;
 const ROW_H = { kind: "variable", variable: { collection: "Fuse density", name: "row-h" } } as const;
-
-/** A root with no paint, padding or layers, sized as given. */
-function bareRoot(name: string, sizing: ComponentRootSpec["sizing"]): ComponentRootSpec {
-  return {
-    name,
-    direction: "HORIZONTAL",
-    sizing,
-    limits: NO_LIMITS,
-    clips: true,
-    paddingTop: literal(0),
-    paddingRight: literal(0),
-    paddingBottom: literal(0),
-    paddingLeft: literal(0),
-    itemSpacing: literal(0),
-    primaryAlign: "MIN",
-    counterAlign: "CENTER",
-    cornerRadius: literal(0),
-    fill: undefined,
-    stroke: undefined,
-    shadows: [],
-    opacity: 1,
-    children: [],
-  };
-}
-
-/** A set of one variant, `state=rest`, around a root. */
-function oneVariant(key: string, name: string, root: ComponentRootSpec, text = false): ComponentSetSpec {
-  return {
-    key,
-    page: "page",
-    name,
-    axes: [{ name: "state", values: ["rest"] }],
-    columnAxis: "state",
-    textProperties: text ? [{ name: "Count", defaultValue: "24" }] : [],
-    booleanProperties: [],
-    swapProperties: [],
-    variants: [{ key: `${key}/state=rest`, properties: { state: "rest" }, root }],
-  };
-}
 
 /** The row: as tall as `row-h`, hugging across. */
 const ROW = oneVariant(
