@@ -464,6 +464,12 @@ export type InstanceDefinition = {
 export type ComponentDefinition = BoxDefinition & {
   readonly key: string;
   readonly name: string;
+  /**
+   * The declarations of the root's `style` attribute in a cell, in the attribute's order, which
+   * cascade above every class, as a part's {@link PartDefinition.styleFor} do, as ToggleGroup writes
+   * `--gap` from its `spacing`. Undefined for a root whose markup carries no `style`.
+   */
+  readonly styleFor?: (cell: Cell) => readonly InlineDeclaration[];
   /** The root layer's name, and the root element's `data-slot` unless `element` names the element. */
   readonly slot: string;
   /**
@@ -748,6 +754,7 @@ export function buildComponentSet(
       declarations: definition.inheritedFor?.(cell) ?? [],
       ancestors: definition.ancestorsFor?.(cell) ?? [],
       defaults: definition.elementDefaults ?? [],
+      inline: definition.styleFor?.(cell) ?? [],
     });
     // A root clips its content, because Figma draws a drop shadow's spread only from a frame
     // that clips, and a focus ring is a spread shadow. The first run on a real file stored the

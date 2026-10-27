@@ -56,6 +56,7 @@ import {
   HAS_VARIANTS,
   IN_VARIANTS,
   PARENT_VARIANTS,
+  POSITION_VARIANTS,
   PEER_VARIANTS,
   REACT_ARIA_HOVER,
   TAG_VARIANTS,
@@ -181,12 +182,12 @@ export function expectedLabel(box: BoxDefinition, cell: Cell): MarkupLabel {
 }
 
 /**
- * The `style` attribute a part's markup carries in a cell, as React writes it from a `style` prop:
- * each declaration as `property:value`, in order, joined by `;`. A part without `styleFor` carries
- * none.
+ * The `style` attribute a root's or a part's markup carries in a cell, as React writes it from a
+ * `style` prop: each declaration as `property:value`, in order, joined by `;`. A box without
+ * `styleFor` carries none.
  */
-function expectedStyle(part: PartDefinition, cell: Cell): string | undefined {
-  return part
+function expectedStyle(box: Pick<ComponentDefinition, "styleFor">, cell: Cell): string | undefined {
+  return box
     .styleFor?.(cell)
     .map(({ property, value }) => `${property}:${value}`)
     .join(";");
@@ -333,9 +334,11 @@ function checkInnerCell(
     const groupHas = GROUP_HAS_VARIANTS.get(variant);
     const within = IN_VARIANTS.get(variant);
     const group = GROUP_VARIANTS.get(variant);
+    const position = POSITION_VARIANTS.get(variant);
     const markup =
       carries?.(element) ??
       has?.(elements, index) ??
+      position?.(elements, index) ??
       (within === undefined ? undefined : ancestorsOf(elements, index).some(within)) ??
       (group === undefined ? undefined : around.some(group)) ??
       (groupHas === undefined
@@ -513,6 +516,13 @@ function checkRendering(
     );
     const stateTaker =
       checkAttributeStates(definition, { cell, variant: holdsIn }, elements, measured, key) ?? root;
+    // A root whose definition names no `styleFor` makes no claim, as Base UI writes its own inline
+    // styles on some roots, a stepper's `user-select: none` among them.
+    if (definition.styleFor !== undefined) {
+      expect(root.attributes.get("style"), `${key}: the style on the root`).toEqual(
+        expectedStyle(definition, cell)
+      );
+    }
     if (stateTaker.attributes.has("data-rac")) {
       const hovered = Object.hasOwn(forcedAttributes, "data-hovered");
       for (const variant of REACT_ARIA_HOVER) {

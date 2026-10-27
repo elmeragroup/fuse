@@ -138,6 +138,17 @@ export const GROUP_VARIANTS = new Map<string, (ancestor: MarkupElement) => boole
     `group-data-[side=${side}]`,
     (ancestor) => marks(ancestor, "group") && ancestor.attributes.get("data-side") === side,
   ]),
+  // A ToggleGroup root carries the `group/toggle-group` marker, its orientation in `data-orientation`
+  // and its spacing in `data-spacing`, which its items read.
+  ...["horizontal", "vertical"].map((orientation): [string, (ancestor: MarkupElement) => boolean] => [
+    `group-data-${orientation}/toggle-group`,
+    (ancestor) =>
+      marks(ancestor, "group/toggle-group") && ancestor.attributes.get("data-orientation") === orientation,
+  ]),
+  [
+    "group-data-[spacing=0]/toggle-group",
+    (ancestor) => marks(ancestor, "group/toggle-group") && ancestor.attributes.get("data-spacing") === "0",
+  ],
 ]);
 
 /**
@@ -172,6 +183,30 @@ export const NAMED_ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement)
   ["data-inset", (element) => element.attributes.has("data-inset")],
   ["data-[variant=destructive]", (element) => element.attributes.get("data-variant") === "destructive"],
   ["not-data-[variant=destructive]", (element) => element.attributes.get("data-variant") !== "destructive"],
+  // ToggleGroup stamps its variant and spacing on each item.
+  ["data-[variant=outline]", (element) => element.attributes.get("data-variant") === "outline"],
+  ["data-[spacing=0]", (element) => element.attributes.get("data-spacing") === "0"],
+]);
+
+/**
+ * Whether an element holds each structural pseudo-class among its element siblings: `first:` is
+ * `:first-child` and `last:` is `:last-child` (Selectors 4 §14.3), as a ToggleGroup item reads its place
+ * in the row.
+ */
+export const POSITION_VARIANTS = new Map<
+  string,
+  (elements: readonly MarkupElement[], index: number) => boolean
+>([
+  [
+    "first",
+    (elements, index) =>
+      !elements.some((element, at) => at < index && element.parent === elements[index]?.parent),
+  ],
+  [
+    "last",
+    (elements, index) =>
+      !elements.some((element, at) => at > index && element.parent === elements[index]?.parent),
+  ],
 ]);
 
 /** The children of an element in the markup. */

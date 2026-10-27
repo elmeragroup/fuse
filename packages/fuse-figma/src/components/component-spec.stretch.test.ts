@@ -7,7 +7,8 @@
  * its margins, and its margins never collapse. Chromium measured Toolbar's separator so on 2026-10-27:
  * 1×24 at y 9 in a dense bar whose items are 32 tall at y 5 (a 4px margin above and below), and 88.3×1
  * at x 9 in a vertical bar whose widest item is 96.3 at x 5. A Figma layer that fills a hugging frame
- * across stretches to the length the frame's other layers set (PF).
+ * across stretches to the length the frame's other layers set (PF), and a real file drew Toolbar's
+ * separator instance so, filling its padded frame whatever its main's length (W5-P10).
  */
 import { describe, expect, it } from "vitest";
 

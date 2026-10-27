@@ -570,6 +570,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/toolbar.js",
     load: async () => (await import("./toolbar-cell.ts")).toolbar,
   },
+  {
+    set: "toggle-group",
+    entry: "dist/toggle-group.js",
+    load: async () => (await import("./toggle-group-cell.ts")).toggleGroup,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

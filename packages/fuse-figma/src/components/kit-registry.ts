@@ -84,6 +84,7 @@ import { SWITCH } from "./switch-kit";
 import { TEXT_FIELD } from "./text-field-kit";
 import { TEXTAREA_FIELD } from "./textarea-field-kit";
 import { TEXTAREA } from "./textarea-kit";
+import { TOGGLE_GROUP } from "./toggle-group-kit";
 import { ICON_TOGGLE, TOGGLE } from "./toggle-kit";
 import { TOOLBAR } from "./toolbar-kit";
 
@@ -285,6 +286,8 @@ export const KIT: readonly KitEntry[] = [
     page: TOGGLE_PAGE,
     previewCells: previewCells(ICON_TOGGLE, "default", {}, ["pressed"]),
   },
+  // A spaced Toggle group has no state, so its previews place every cell of its matrix.
+  { definition: TOGGLE_GROUP, page: TOGGLE_PAGE, previewCells: matrixCells(TOGGLE_GROUP.axes) },
   // A Badge has no state, so its previews place every cell of its matrix.
   { definition: BADGE, page: BADGE_PAGE, previewCells: matrixCells(BADGE.axes) },
   { definition: KBD, page: KBD_PAGE, previewCells: matrixCells(KBD.axes) },

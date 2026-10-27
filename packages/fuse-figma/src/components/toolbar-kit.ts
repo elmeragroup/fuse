@@ -11,7 +11,10 @@
  *   Download and Copy.
  * - The separator is a `Separator` instance across the bar, perpendicular to it: vertical in a
  *   horizontal bar and horizontal in a vertical one. It stretches across the bar, 4px short of the
- *   items' edges at each end, which its margins set.
+ *   items' edges at each end, which its margins set. In Figma the separator instance fills its padded
+ *   frame across the hugging bar whatever its main's own length: 1×24 Dense and 1×28 Comfortable in a
+ *   horizontal bar, and in a vertical one as wide as the widest button less 8, the bar hugging the
+ *   buttons and not the main's 256px (W5-P10).
  * - The last button, `Delete`, is disabled. Base UI's toolbar button marks it `aria-disabled="true"`
  *   and `data-disabled`, and Fuse's Button disables it natively, so the instance is the Button set's
  *   disabled variant.

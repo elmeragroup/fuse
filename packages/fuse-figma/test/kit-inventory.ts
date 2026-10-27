@@ -49,6 +49,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "toggle", name: "Toggle", variants: 192, previewed: 26 },
       // The same without the icons.
       { key: "icon-toggle", name: "Icon toggle", variants: 64, previewed: 22 },
+      // The spaced group at 2 variants and 4 sizes.
+      { key: "toggle-group", name: "Toggle group", variants: 8, previewed: 8 },
     ],
   },
   // 19 variants at 3 sizes.

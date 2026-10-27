@@ -638,8 +638,9 @@ export class CellCascade {
    * @param classes - The root's class string for the cell.
    * @param part - The root's layer name, which the coverage table names.
    * @param around - The declarations the host sets around the root in the cell, the ancestors
-   *   named by their classes, outermost first, and the declarations the browser's default style
-   *   sheet gives the root's element, which apply on the root below everything else.
+   *   named by their classes, outermost first, the declarations the browser's default style sheet
+   *   gives the root's element, which apply on the root below everything else, and the root's own
+   *   `style` attribute, which applies above every class.
    * @returns The root's cascade.
    */
   root(
@@ -649,11 +650,21 @@ export class CellCascade {
       readonly declarations: readonly OuterDeclaration[];
       readonly ancestors: readonly AncestorDefinition[];
       readonly defaults: readonly OuterDeclaration[];
+      readonly inline: readonly InlineDeclaration[];
     }
   ): BoxCascade {
     const { context, origin } = this.#ledger.scope;
     const page = outerApplied(cascadeOwn(context.page), part, -2, origin);
-    const defaults = outerApplied(around.defaults, part, ELEMENT_DEFAULT_RANK, origin);
+    // The root's own style attribute applies on it as a part's does, above every class.
+    const defaults = [
+      ...outerApplied(around.defaults, part, ELEMENT_DEFAULT_RANK, origin),
+      ...outerApplied(
+        around.inline.map((declaration) => ({ className: INLINE_STYLE, ...declaration })),
+        part,
+        INLINE_RANK,
+        origin
+      ),
+    ];
     if (around.declarations.length === 0 && around.ancestors.length === 0) {
       // The page's declarations apply on the root as declarations the root inherits, each computed
       // on the page, so the root's own custom properties reach none of them, and the coverage table
