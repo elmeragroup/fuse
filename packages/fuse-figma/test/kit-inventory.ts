@@ -351,6 +351,14 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "file-upload-dropzone", name: "File upload dropzone", variants: 5, previewed: 5 },
     ],
   },
+  {
+    slug: "toolbar",
+    name: "Toolbar",
+    sets: [
+      // The Basic demo's bar, horizontal and vertical.
+      { key: "toolbar", name: "Toolbar", variants: 2, previewed: 2 },
+    ],
+  },
 ];
 
 /**

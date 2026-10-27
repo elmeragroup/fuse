@@ -373,6 +373,30 @@ describe("the facts an instance part declares in place", () => {
     );
   });
 
+  // Oracle: Base UI keeps a disabled toolbar button focusable and stamps `aria-disabled="true"` on it,
+  // which Button's recipe reads, though the Button set renders `aria-disabled` only in its pending
+  // cell. A stamped fact holds over that meaning; a fact that is not stamped, or a stamp on a variant
+  // the set gives no state, stays refused.
+  it("hold a stamped fact over the meaning a state gives its variant, and refuse it unstamped", () => {
+    const pending = definition({
+      axes: [{ name: "state", values: ["rest", "disabled", "pending"] }],
+      states: { pending: ["data-disabled", "aria-disabled"] },
+    });
+    const focusable = new Map([["aria-disabled", (cell: Cell) => cell.state === "disabled"]]);
+    const meaning = withInPlaceFacts(pending, focusable, new Set(["aria-disabled"]))("aria-disabled");
+    expect(
+      meaning.kind === "condition"
+        ? ["rest", "disabled", "pending"].filter((state) => meaning.holds({ state }))
+        : []
+    ).toEqual(["disabled"]);
+    expect(() => withInPlaceFacts(pending, focusable)).toThrow(
+      "an instance of Chip gives `aria-disabled` a second meaning"
+    );
+    expect(() => withInPlaceFacts(states, expanded, new Set(["aria-expanded"]))).toThrow(
+      "an instance of Chip gives `aria-expanded` a second meaning"
+    );
+  });
+
   it("refuse a state's variant, which the set gives a meaning", () => {
     expect(() => withInPlaceFacts(states, new Map([["disabled", () => true]]))).toThrow(
       "an instance of Chip gives `disabled` a second meaning"

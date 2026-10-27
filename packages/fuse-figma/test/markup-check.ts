@@ -267,10 +267,11 @@ function checkAttributeStates(
 function conditionHolds(
   definition: ComponentDefinition,
   cell: Cell,
-  inPlace?: ReadonlyMap<string, (cell: Cell) => boolean>
+  inPlace?: ReadonlyMap<string, (cell: Cell) => boolean>,
+  stamps?: ReadonlySet<string>
 ): (variant: string) => boolean {
   const meaningOf =
-    inPlace === undefined ? makeStateTable(definition) : withInPlaceFacts(definition, inPlace);
+    inPlace === undefined ? makeStateTable(definition) : withInPlaceFacts(definition, inPlace, stamps);
   return (variant) => {
     const meaning = meaningOf(variant);
     return meaning.kind === "condition" && meaning.holds(cell);
@@ -299,7 +300,7 @@ function checkInnerCell(
   where: string
 ): void {
   const { of } = part;
-  const holds = conditionHolds(of, inner, part.facts);
+  const holds = conditionHolds(of, inner, part.facts, part.stamps);
   checkAttributeStates(of, { cell: inner, variant: holds }, elements, index, where);
   const element = elements[index];
   if (element === undefined) {
@@ -362,7 +363,7 @@ function checkInstance(
 ): void {
   const element = index === undefined ? undefined : elements[index];
   const inner = part.cell(cell);
-  const merged = cn(part.of.classesFor(inner), part.classesFor?.(cell) ?? "");
+  const merged = cn(part.ownClassesFor?.(inner) ?? part.of.classesFor(inner), part.classesFor?.(cell) ?? "");
   expect(splitClasses(element?.attributes.get("class") ?? "").toSorted(), `${where}: the class`).toEqual(
     splitClasses(merged).toSorted()
   );

@@ -340,6 +340,45 @@ export function lessMargins(room: Room, style: LayerStyle): Room {
   };
 }
 
+/** How the coverage table names an `align-self: stretch` that {@link selfStretchedRoom} draws. */
+const SELF_STRETCH =
+  "the item stretches across the counter axis to the flex line less its margins, as a layer that fills that axis does";
+
+/**
+ * The room of a flex item that its own `align-self: stretch` stretches across its parent's direction,
+ * as Toolbar's separator stretches across the bar. Where the item's length across is unset or `auto`
+ * and no margin across is `auto`, it is as long as the flex line less its margins (CSS Flexbox 1 §9.4
+ * step 11), which a layer that fills the axis draws, its margin box carrying the margins. That holds
+ * only in a single-line flex box, whose one line is the box's content length across (§9.4 step 15).
+ * Every other room stays as it was, and the `align-self` stays unread.
+ *
+ * @param holder - The item's parent.
+ * @param style - The item's style.
+ * @param room - The room the parent gives the item.
+ * @returns The room, filling across where the item stretches.
+ */
+export function selfStretchedRoom(holder: Holder, style: LayerStyle, room: Room): Room {
+  const across = holder.layout.direction === "HORIZONTAL" ? "vertical" : "horizontal";
+  const length = across === "vertical" ? "height" : "width";
+  const margins = across === "vertical" ? ["margin-top", "margin-bottom"] : ["margin-left", "margin-right"];
+  const stretches =
+    holder.layout.flex &&
+    normalizeCss(holder.style.resolved("flex-wrap") ?? "nowrap") === "nowrap" &&
+    normalizeCss(style.resolved("align-self") ?? "auto") === "stretch" &&
+    normalizeCss(style.resolved(length) ?? "auto") === "auto" &&
+    margins.every((margin) => normalizeCss(style.resolved(margin) ?? "0px") !== "auto");
+  if (!stretches) {
+    return room;
+  }
+  style.read(
+    "align-self",
+    (read) => read,
+    () => ({ outcome: "literal", detail: SELF_STRETCH }),
+    style.feed("sizing")
+  );
+  return { ...room, [across]: { ...room[across], auto: FILL } };
+}
+
 /**
  * Whether a box sits out of its parent's flow, as `position: absolute` and `fixed` take it, so it
  * shares no line with the parent's other layers.

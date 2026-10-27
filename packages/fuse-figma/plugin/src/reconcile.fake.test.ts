@@ -47,7 +47,8 @@ const waitsForButton = (label: string) => `${label} / button: plan again once Bu
 /**
  * What any change to the Button set makes Plan list for the sets that hold Button instances, in kit
  * order: the open Popover's trigger, the open Dropdown menu's trigger, Empty's two actions in each of its
- * 3 variants, Alert's action in each of its 10 and the File upload dropzone's trigger in each of its 5. Each
+ * 3 variants, Alert's action in each of its 10, the File upload dropzone's trigger in each of its 5 and
+ * Toolbar's three buttons in each of its 2. Each
  * instance plans again once Button's changes land, and each set's grid, which reads the instances'
  * sizes, lays out again after them.
  */
@@ -73,6 +74,12 @@ const AFTER_BUTTON = [
     waitsForButton(`File upload dropzone / state=${state}`)
   ),
   "File upload dropzone: lay out 5 variants in 5 columns and 1 rows",
+  ...["horizontal", "vertical"].flatMap((orientation) => [
+    waitsForButton(`Toolbar / orientation=${orientation} / toolbar-group`),
+    waitsForButton(`Toolbar / orientation=${orientation} / toolbar-group`),
+    waitsForButton(`Toolbar / orientation=${orientation}`),
+  ]),
+  "Toolbar: lay out 2 variants in 2 columns and 1 rows",
 ];
 
 /** The pages of the sets that hold Button instances, which place their sets and previews again after them. */
@@ -82,6 +89,7 @@ const PLACE_AFTER_BUTTON = [
   "Empty: place Empty in a row and stack 4 previews below them",
   "Alert: place Alert in a row and stack 4 previews below them",
   "File upload: place File upload dropzone in a row and stack 4 previews below them",
+  "Toolbar: place Toolbar in a row and stack 4 previews below them",
 ];
 
 /** The component sets a run creates, in the order the kit builds them. */

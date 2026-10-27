@@ -565,6 +565,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/file-upload.js",
     load: async () => (await import("./file-upload-cell.ts")).fileUploadDropzone,
   },
+  {
+    set: "toolbar",
+    entry: "dist/toolbar.js",
+    load: async () => (await import("./toolbar-cell.ts")).toolbar,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */

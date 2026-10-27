@@ -400,6 +400,14 @@ export type InstanceDefinition = {
    */
   readonly classesFor?: (outer: Cell) => string;
   /**
+   * The classes the inner root carries of its own in place of the inner set's, for an outer component
+   * that renders the inner markup without the consumer classes the inner set's cells pass, as
+   * Toolbar's separator draws Separator's hairline with none of the lengths the Separator set takes
+   * from its docs demos. The outer classes merge after them as after the set's. Undefined where the
+   * inner set's own classes hold.
+   */
+  readonly ownClassesFor?: (inner: Cell) => string;
+  /**
    * The values the outer cell gives the inner set's properties, undefined where every property keeps
    * its default.
    */
@@ -442,6 +450,14 @@ export type InstanceDefinition = {
    * the diff carries what they paint as overrides. Undefined for none.
    */
   readonly facts?: ReadonlyMap<string, (cell: Cell) => boolean>;
+  /**
+   * The facts among `facts` that name a variant the inner set renders through one of its states,
+   * which the outer component stamps on the inner root outside that state, as Base UI marks a
+   * disabled toolbar button `aria-disabled`, which the Button set renders only in its pending cell.
+   * The in-place cascade reads them over that meaning, and the diff carries what they paint as
+   * overrides. Undefined for none.
+   */
+  readonly stamps?: ReadonlySet<string>;
 };
 
 /** A component the builder can turn into a component set. Its own box is the root. */

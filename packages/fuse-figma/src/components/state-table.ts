@@ -348,6 +348,9 @@ export function makeStateTable(
   };
 }
 
+/** No stamped facts, for an instance part whose facts all name variants the inner set leaves free. */
+const NO_STAMPS: ReadonlySet<string> = new Set();
+
 /**
  * The state table an instance part's in-place cascade reads: the inner set's, extended with the facts
  * the part declares for the inner root in place, as an open popup's trigger is `aria-expanded`. A fact
@@ -358,19 +361,28 @@ export function makeStateTable(
  * keeps that meaning, as Input's `invalid` state renders `aria-invalid` and `data-invalid`, which every
  * set without an invalid state drops.
  *
+ * A fact the part also names among its `stamps` may name a variant the inner set renders through a
+ * state, as Base UI marks a disabled toolbar button `aria-disabled`, which the Button set renders
+ * only while pending; the fact then holds over that meaning.
+ *
  * @param inner - The inner set's definition.
  * @param facts - The instance part's facts, by variant.
+ * @param stamps - The facts that hold over a meaning the inner set gives their variant.
  * @returns The table the in-place cascade reads.
  * @throws When a fact names a variant the inner table gives another meaning, a defect in the
  *   definition.
  */
 export function withInPlaceFacts(
   inner: Parameters<typeof makeStateTable>[0],
-  facts: ReadonlyMap<string, (cell: Cell) => boolean>
+  facts: ReadonlyMap<string, (cell: Cell) => boolean>,
+  stamps: ReadonlySet<string> = NO_STAMPS
 ): StateTable {
   const meaningOf = makeStateTable(inner);
   const admits = (variant: string): boolean => {
     const { kind } = meaningOf(variant);
+    if (stamps.has(variant)) {
+      return kind === "condition";
+    }
     // A composition the inner set omits is the context the composite draws around it. Its other
     // reasoned omissions, a pseudo-element, a media condition or a transition frame, draw nothing.
     return (

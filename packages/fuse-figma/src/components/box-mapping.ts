@@ -27,6 +27,7 @@ import {
   readGrowth,
   readSizing,
   roomInside,
+  selfStretchedRoom,
   UNREAD_SHARE,
   unstretched,
 } from "./box-sizing";
@@ -541,7 +542,10 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       const room = rowRoom(inside, across?.[index], minimum);
       return index === growing ? growingRoom(holder, layerIndex(index), room) : room;
     };
-    const room = index === -1 ? absoluteRoom(holder) : lessMargins(inFlow(), part.cascade.style);
+    const room =
+      index === -1
+        ? absoluteRoom(holder)
+        : selfStretchedRoom(holder, part.cascade.style, lessMargins(inFlow(), part.cascade.style));
     const styles = flowing.map((each) => each.cascade.style);
     return mapPart(part, room, layout, partScope, layout.blocks && adjoinsMargin(styles, index));
   });

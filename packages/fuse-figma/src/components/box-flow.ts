@@ -558,7 +558,8 @@ function stretchesAlike(style: LayerStyle, own: CounterAlignSpec): boolean {
  */
 function readSelfAlignment(reader: LayerStyle, { parts, others }: FlowLayers): SelfAlignment | undefined {
   const selfOf = (style: LayerStyle) => normalizeCss(style.resolved("align-self") ?? "auto");
-  const setters = parts.filter((part) => selfOf(part.style) !== "auto");
+  // A stretch sizes the part across the row, which `selfStretchedRoom` in `box-sizing.ts` reads.
+  const setters = parts.filter((part) => !["auto", "stretch"].includes(selfOf(part.style)));
   const values = new Set(setters.map((part) => selfOf(part.style)));
   const [value] = values;
   const self = values.size === 1 && value !== undefined ? ALIGNMENTS.get(value) : undefined;

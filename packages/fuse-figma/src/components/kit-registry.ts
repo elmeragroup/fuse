@@ -85,6 +85,7 @@ import { TEXT_FIELD } from "./text-field-kit";
 import { TEXTAREA_FIELD } from "./textarea-field-kit";
 import { TEXTAREA } from "./textarea-kit";
 import { ICON_TOGGLE, TOGGLE } from "./toggle-kit";
+import { TOOLBAR } from "./toolbar-kit";
 
 /**
  * A page of the kit: one component and its close variants, such as Button and Icon button.
@@ -136,6 +137,9 @@ const INPUT_PAGE: KitPage = { slug: "input", name: "Input" };
 
 /** The page of Textarea and the labelled Textarea field. */
 const TEXTAREA_PAGE: KitPage = { slug: "textarea", name: "Textarea" };
+
+/** The page of Toolbar. */
+const TOOLBAR_PAGE: KitPage = { slug: "toolbar", name: "Toolbar" };
 
 /** The page of File upload's dropzone. */
 const FILE_UPLOAD_PAGE: KitPage = { slug: "file-upload", name: "File upload" };
@@ -460,4 +464,5 @@ export const KIT: readonly KitEntry[] = [
     page: FILE_UPLOAD_PAGE,
     previewCells: matrixCells(FILE_UPLOAD_DROPZONE.axes),
   },
+  { definition: TOOLBAR, page: TOOLBAR_PAGE, previewCells: matrixCells(TOOLBAR.axes) },
 ];
