@@ -8,7 +8,7 @@
 import { Context, Effect, Layer, Schema } from "effect";
 import path from "node:path";
 import { chromium, firefox, webkit } from "playwright";
-import type { Browser, BrowserType, Locator, Page } from "playwright";
+import type { Browser, BrowserType, Locator, Page, PageScreenshotOptions } from "playwright";
 
 import { segmentLabel, variantLabel } from "./options.ts";
 import type {
@@ -484,7 +484,12 @@ const takeShot = Effect.fn("Capture.takeShot")(function* (
     fail
   );
   const file = path.join(outDir, shot.file);
-  const still = { animations: "disabled", caret: "hide" } as const;
+  // Pins the scroll-linked styles, which `animations: "disabled"` would drop, then shoots.
+  const shoot = (framing: PageScreenshotOptions) =>
+    attempt(async () => {
+      await pinScrollLinkedStyles(page);
+      await page.screenshot({ path: file, animations: "disabled", caret: "hide", ...framing });
+    }, fail);
   if (element === null) {
     // The window at the top of the page, whatever typing into the target scrolled. After click
     // steps the window stays where they and the fill left it: clicking scrolls each element into
@@ -497,20 +502,14 @@ const takeShot = Effect.fn("Capture.takeShot")(function* (
         await settle(page);
       }, fail);
     }
-    yield* attempt(async () => {
-      await pinScrollLinkedStyles(page);
-      await page.screenshot({ path: file, fullPage: shot.frame === "page", ...still });
-    }, fail);
+    yield* shoot({ fullPage: shot.frame === "page" });
     return;
   }
   const clip = yield* attempt(() => paddedClip(page, element, options.pad), fail);
   if (clip === null) {
     return yield* fail("The frame has no layout box");
   }
-  yield* attempt(async () => {
-    await pinScrollLinkedStyles(page);
-    await page.screenshot({ path: file, clip, fullPage: true, ...still });
-  }, fail);
+  yield* shoot({ clip, fullPage: true });
 }, Effect.scoped);
 
 /** A theme the run picks. */

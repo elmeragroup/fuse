@@ -34,7 +34,7 @@ export const dataTableFilterVariants = tv({
      * snapping, which would pull a focused segment back under a fade.
      */
     chips:
-      "-m-0.5 flex min-w-0 flex-[0_1_auto] scroll-fade-inline scroll-px-8 [scrollbar-width:none] flex-nowrap gap-(--surface-gap-sm) overflow-x-auto overscroll-x-contain p-0.5 not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size) pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))] pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]",
+      "-m-0.5 no-scrollbar flex scroll-fade-inline scroll-px-8 gap-(--surface-gap-sm) overflow-x-auto overscroll-x-contain p-0.5 not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size) pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))] pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]",
     /**
      * layout. A sentence of segments in one hairline border at the `rounded-md` rung. It never
      * clips, so a segment's focus ring stays whole. A ghost chip is dashed and muted.

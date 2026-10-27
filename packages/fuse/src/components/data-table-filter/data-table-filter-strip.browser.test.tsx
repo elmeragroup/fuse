@@ -5,7 +5,7 @@
 import type { ReactNode } from "react";
 
 import type { ColumnFiltersState } from "@tanstack/react-table";
-import { afterEach, describe, expect, it, onTestFinished } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -36,6 +36,10 @@ const FIVE: ColumnFiltersState = [
 
 /** The fade at each end, 1.5rem at the 16px root. */
 const FADE = 24;
+
+beforeEach(async () => {
+  await page.viewport(1280, 720);
+});
 
 afterEach(async () => {
   await page.viewport(414, 896);
@@ -83,6 +87,13 @@ async function scrollTo(element: HTMLElement, position: number): Promise<void> {
   await nextFrames(2);
 }
 
+/** Dispatches a cancelable wheel turn that bubbles, as a real one does, and returns it. */
+function turnWheel(target: HTMLElement, init: WheelEventInit): WheelEvent {
+  const turn = new WheelEvent("wheel", { ...init, bubbles: true, cancelable: true });
+  target.dispatchEvent(turn);
+  return turn;
+}
+
 /** The fixture with a tall page below it, so a wheel turn the strip leaves scrolls the page. */
 function renderScrollable(initial: ColumnFiltersState, dir: "ltr" | "rtl", bar?: ReactNode): void {
   renderThemed(
@@ -101,8 +112,7 @@ function renderScrollable(initial: ColumnFiltersState, dir: "ltr" | "rtl", bar?:
 }
 
 describe("DataTableFilter chip strip layout", () => {
-  it("keeps every chip on one row in a wide bar, at one chip's height, and scrolls the rest", async () => {
-    await page.viewport(1280, 720);
+  it("keeps every chip on one row in a wide bar, at one chip's height, and scrolls the rest", () => {
     const one = renderOrders({ initial: STATUS_THREE });
     const oneChipHeight = roleNamed("toolbar", "Filters").getBoundingClientRect().height;
     one.unmount();
@@ -121,8 +131,7 @@ describe("DataTableFilter chip strip layout", () => {
     expect(strip().scrollWidth).toBeGreaterThan(strip().clientWidth);
   });
 
-  it("puts Clear right after the last chip while the chips fit, one surface gap away", async () => {
-    await page.viewport(1280, 720);
+  it("puts Clear right after the last chip while the chips fit, one surface gap away", () => {
     renderOrders({ initial: [...STATUS_THREE, ...CUSTOMER_NORD] });
     const last = roleNamed("group", "Customer filter").getBoundingClientRect();
     const clear = roleNamed("button", "Clear filters").getBoundingClientRect();
@@ -130,8 +139,7 @@ describe("DataTableFilter chip strip layout", () => {
     expect(clear.top).toBe(last.top);
   });
 
-  it("puts Clear at the bar's end when the chips overflow", async () => {
-    await page.viewport(1280, 720);
+  it("puts Clear at the bar's end when the chips overflow", () => {
     renderOrders({ initial: FIVE });
     const bar = roleNamed("toolbar", "Filters").getBoundingClientRect();
     const clear = roleNamed("button", "Clear filters").getBoundingClientRect();
@@ -141,7 +149,6 @@ describe("DataTableFilter chip strip layout", () => {
 
 describe("DataTableFilter chip strip fades", () => {
   it("shows no fade while the chips fit", async () => {
-    await page.viewport(1280, 720);
     renderOrders({ initial: STATUS_THREE });
     await nextFrames(2);
     expect(range(strip())).toBe(0);
@@ -154,7 +161,6 @@ describe("DataTableFilter chip strip fades", () => {
   ] as const)(
     "fades only the ends with hidden chips, toward the inline end, in $dir",
     async ({ dir, toward }) => {
-      await page.viewport(1280, 720);
       renderScrollable(FIVE, dir);
       const element = strip();
       await nextFrames(2);
@@ -174,7 +180,6 @@ describe("DataTableFilter chip strip fades", () => {
   );
 
   it("follows the strip's own direction, not an outer right-to-left container's", async () => {
-    await page.viewport(1280, 720);
     renderThemed(
       withLocale(
         "en-US",
@@ -195,7 +200,6 @@ describe("DataTableFilter chip strip fades", () => {
   it("keeps the fades under reduced motion, since they follow the scroll position", async () => {
     await emulateReducedMotion("reduce");
     onTestFinished(() => emulateReducedMotion("no-preference"));
-    await page.viewport(1280, 720);
     renderOrders({ initial: FIVE });
     const element = strip();
     await nextFrames(2);
@@ -212,7 +216,6 @@ describe("DataTableFilter chip strip wheel", () => {
   ] as const)(
     "scrolls an overflowing strip toward its inline end on a downward wheel in $dir",
     async ({ dir, sign }) => {
-      await page.viewport(1280, 720);
       renderScrollable(FIVE, dir);
       const element = strip();
       await userEvent.wheel(element, { delta: { y: 100 } });
@@ -223,7 +226,6 @@ describe("DataTableFilter chip strip wheel", () => {
   );
 
   it.each(["ltr", "rtl"] as const)("leaves the wheel to the page at the strip's end in %s", async (dir) => {
-    await page.viewport(1280, 720);
     renderScrollable(FIVE, dir);
     const element = strip();
     await scrollTo(element, range(element));
@@ -234,7 +236,6 @@ describe("DataTableFilter chip strip wheel", () => {
   });
 
   it("leaves the wheel to the page while the chips fit", async () => {
-    await page.viewport(1280, 720);
     renderScrollable(STATUS_THREE, "ltr");
     await userEvent.wheel(strip(), { delta: { y: 100 } });
     await expect.poll(() => window.scrollY).toBeGreaterThan(0);
@@ -245,16 +246,12 @@ describe("DataTableFilter chip strip wheel", () => {
     { turn: "a sideways swipe", init: { deltaX: 40, deltaY: 10 }, prevented: false },
     { turn: "an upward turn at the start", init: { deltaY: -100 }, prevented: false },
     { turn: "a downward turn", init: { deltaY: 100 }, prevented: true },
-  ])("prevents the page's scroll for $turn: $prevented", async ({ init, prevented }) => {
-    await page.viewport(1280, 720);
+  ])("prevents the page's scroll for $turn: $prevented", ({ init, prevented }) => {
     renderOrders({ initial: FIVE });
-    const turn = new WheelEvent("wheel", { ...init, bubbles: true, cancelable: true });
-    strip().dispatchEvent(turn);
-    expect(turn.defaultPrevented).toBe(prevented);
+    expect(turnWheel(strip(), init).defaultPrevented).toBe(prevented);
   });
 
-  it("leaves a turn a chip's own listener cancelled, without scrolling", async () => {
-    await page.viewport(1280, 720);
+  it("leaves a turn a chip's own listener cancelled, without scrolling", () => {
     renderOrders({ initial: FIVE });
     const element = strip();
     const chip = roleNamed("group", "Status filter");
@@ -265,27 +262,18 @@ describe("DataTableFilter chip strip wheel", () => {
     onTestFinished(() => {
       chip.removeEventListener("wheel", cancel);
     });
-    chip.dispatchEvent(new WheelEvent("wheel", { deltaY: 100, bubbles: true, cancelable: true }));
+    turnWheel(chip, { deltaY: 100 });
     expect(element.scrollLeft).toBe(0);
   });
 
-  it("scrolls more than the delta for a line-mode turn", async () => {
-    await page.viewport(1280, 720);
+  it("scrolls more than the delta for a line-mode turn", () => {
     renderOrders({ initial: FIVE });
     const element = strip();
-    element.dispatchEvent(
-      new WheelEvent("wheel", {
-        deltaY: 3,
-        deltaMode: WheelEvent.DOM_DELTA_LINE,
-        bubbles: true,
-        cancelable: true,
-      })
-    );
+    turnWheel(element, { deltaY: 3, deltaMode: WheelEvent.DOM_DELTA_LINE });
     expect(element.scrollLeft).toBeGreaterThan(3);
   });
 
-  it("scrolls exactly one strip width for a page-mode turn", async () => {
-    await page.viewport(1280, 720);
+  it("scrolls exactly one strip width for a page-mode turn", () => {
     renderThemed(
       withLocale(
         "en-US",
@@ -297,19 +285,11 @@ describe("DataTableFilter chip strip wheel", () => {
     const element = strip();
     // More than a page left to scroll, so the browser's clamp cannot hide a wrong page size.
     expect(range(element)).toBeGreaterThan(element.clientWidth);
-    element.dispatchEvent(
-      new WheelEvent("wheel", {
-        deltaY: 1,
-        deltaMode: WheelEvent.DOM_DELTA_PAGE,
-        bubbles: true,
-        cancelable: true,
-      })
-    );
+    turnWheel(element, { deltaY: 1, deltaMode: WheelEvent.DOM_DELTA_PAGE });
     expect(element.scrollLeft).toBe(element.clientWidth);
   });
 
   it("keeps the consumer's ref on Chips", async () => {
-    await page.viewport(1280, 720);
     let received: HTMLDivElement | null = null;
     renderScrollable(
       FIVE,

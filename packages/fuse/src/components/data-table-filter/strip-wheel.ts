@@ -34,15 +34,19 @@ function pixelsPerDelta(deltaMode: number, page: number): number {
 }
 
 /**
- * How far a wheel turn moves the strip, as a change of `scrollLeft`, or `null` to leave the turn to
- * the page. Only a vertical turn moves it, since a sideways one scrolls the strip natively, and
- * only while the strip can still move that way. A turn with Ctrl held is a pinch zoom. Down moves
- * toward the inline end, which is to the left in a right-to-left strip.
+ * Whether a wheel turn is one the strip may take: a vertical one, since a sideways one scrolls the
+ * strip natively, and not one with Ctrl held, which is a pinch zoom.
+ */
+function turnsVertically(wheel: WheelEvent): boolean {
+  return !wheel.ctrlKey && Math.abs(wheel.deltaY) > Math.abs(wheel.deltaX);
+}
+
+/**
+ * How far a vertical wheel turn moves the strip, as a change of `scrollLeft`, or `null` to leave
+ * the turn to the page, once the strip cannot move that way. Down moves toward the inline end,
+ * which is to the left in a right-to-left strip.
  */
 function wheelScrollLeft(wheel: WheelEvent, scroll: InlineScroll): number | null {
-  if (wheel.ctrlKey || Math.abs(wheel.deltaY) <= Math.abs(wheel.deltaX) || scroll.range < END_TOLERANCE_PX) {
-    return null;
-  }
   const towardEnd = wheel.deltaY * pixelsPerDelta(wheel.deltaMode, scroll.page);
   const room = towardEnd > 0 ? scroll.range - scroll.position : scroll.position;
   if (room < END_TOLERANCE_PX) {
@@ -76,7 +80,8 @@ export function scrollStripOnWheel(strip: HTMLElement | null): (() => void) | un
     return undefined;
   }
   const onWheel = (event: WheelEvent) => {
-    if (event.defaultPrevented) {
+    // The cheap checks go first, so a pinch or a sideways turn never reads the computed style.
+    if (event.defaultPrevented || !turnsVertically(event)) {
       return;
     }
     const left = wheelScrollLeft(event, inlineScrollOf(strip));

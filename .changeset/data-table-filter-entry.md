@@ -17,7 +17,8 @@ root barrel.
   open in place. `ValueContent` is the popover a chip's value opens.
 - The bar stays one line high at every width. Its chips sit in one strip that scrolls sideways,
   also under a vertical mouse wheel, and an end of the strip fades only while chips hide past it.
-  The Trigger is a square icon button named "Filter" at every width. Below a 36rem bar width Clear
+  The fades are scroll-linked animations that never finish, so a test helper that waits for
+  animations should wait only for those on the document timeline. The Trigger is a square icon button named "Filter" at every width. Below a 36rem bar width Clear
   shows only its icon and keeps its accessible name.
 - A list of values shows its first 50 matches and asks for more typing.
 - A `boolean` field kind filters `true` and `false`. `toggle: true` makes it an on/off scope with a

@@ -207,8 +207,7 @@ const ROWS: readonly Row[] = [
   {
     part: "Chips",
     handler: "onFocus",
-    // Three chips in a bar wider than 36rem, where the Trigger keeps its label: the strip still
-    // scrolls sideways.
+    // Three chips in a 640px bar: the strip still scrolls sideways.
     setup: { initial: [...CUSTOMER_NORD, ...STATUS_THREE, ...AMOUNT], width: 640 },
     act: async () => {
       // Without the browser's own scroll, so only the part's scrolls the segment into view.

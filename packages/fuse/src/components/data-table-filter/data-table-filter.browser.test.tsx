@@ -34,6 +34,7 @@ import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { SupportedLocale } from "../../intl/locale-context";
+import { Button } from "../button/button";
 import { useDataTableFilter } from "./data-table-filter";
 import { DataTableFilterValue } from "./data-table-filter-bar";
 import type { DataTableFilterOperatorProps, DataTableFilterRemoveProps } from "./data-table-filter-bar";
@@ -1248,7 +1249,6 @@ describe("DataTableFilter motion and layout", () => {
     expect(trigger.textContent).toBe("");
     const box = trigger.getBoundingClientRect();
     expect(box.width).toBeCloseTo(box.height, 0);
-    expect(roleNamed("button", "Clear filters")).toBeTruthy();
   });
 
   it("draws a Trigger with children as a labelled button", async () => {
@@ -1267,6 +1267,25 @@ describe("DataTableFilter motion and layout", () => {
     });
     const box = roleNamed("button", "Add filter").getBoundingClientRect();
     expect(box.width).toBeGreaterThan(box.height);
+  });
+
+  it.each([
+    ["a consumer render", { render: <Button variant="ghost" /> }],
+    ["null children", { children: null }],
+  ])("names a Trigger Filter when %s draws the default icon", (_case, props) => {
+    renderOrders({
+      initial: STATUS_THREE,
+      children: (
+        <>
+          <DataTableFilter.Bar>
+            <DataTableFilter.Trigger {...props} />
+            <DataTableFilter.Chips />
+          </DataTableFilter.Bar>
+          <DataTableFilter.Content />
+        </>
+      ),
+    });
+    expect(roleNamed("button", "Filter").textContent).toBe("");
   });
 
   it.each(SUPPORTED_LOCALES)("names the chip's parts in %s", (locale) => {

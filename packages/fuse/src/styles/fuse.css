@@ -608,9 +608,10 @@
     --scroll-fade-end: 0px;
   }
 }
-/* The fade points along the box's own direction, which :dir() reads from the nearest dir.
-   Tailwind's rtl variant matches any right-to-left ancestor, so it decides only in Chromium
-   before 120, which drops the :dir() rules; Tailwind's floor is Chrome 111. */
+/* The fade points along the box's own direction. Tailwind's rtl variant matches the box under
+   any right-to-left ancestor, so :dir(ltr), which reads the nearest dir, outranks it to turn a
+   left-to-right box inside one back. Chromium before 120 drops the :dir() rule and keeps the
+   variant's answer; Tailwind's floor is Chrome 111. */
 @utility scroll-fade-inline {
   --scroll-fade-size: 1.5rem;
   --scroll-fade-toward: right;
@@ -620,17 +621,14 @@
   &:dir(ltr) {
     --scroll-fade-toward: right;
   }
-  &:dir(rtl) {
-    --scroll-fade-toward: left;
-  }
+  mask-image: linear-gradient(
+    to var(--scroll-fade-toward),
+    transparent,
+    black var(--scroll-fade-start),
+    black calc(100% - var(--scroll-fade-end)),
+    transparent
+  );
   @supports (animation-timeline: scroll()) {
-    mask-image: linear-gradient(
-      to var(--scroll-fade-toward),
-      transparent,
-      black var(--scroll-fade-start),
-      black calc(100% - var(--scroll-fade-end)),
-      transparent
-    );
     animation:
       scroll-fade-start auto linear both,
       scroll-fade-end auto linear both;
@@ -639,12 +637,9 @@
       0 var(--scroll-fade-size),
       calc(100% - var(--scroll-fade-size)) 100%;
   }
+  /* The start width stays at its registered 0px, so the mask draws a static end fade. */
   @supports not (animation-timeline: scroll()) {
-    mask-image: linear-gradient(
-      to var(--scroll-fade-toward),
-      black calc(100% - var(--scroll-fade-size)),
-      transparent
-    );
+    --scroll-fade-end: var(--scroll-fade-size);
   }
 }
 

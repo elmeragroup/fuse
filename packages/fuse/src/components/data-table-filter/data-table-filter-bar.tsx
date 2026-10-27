@@ -139,8 +139,9 @@ export type DataTableFilterTriggerProps = Omit<
 
 /**
  * Opens the add menu, `DataTableFilter.Content`. It sits first in the bar, so a chip added under
- * the open menu never moves it. Without children it is a square icon button named "Filter" at
- * every width. Children replace the icon and render it as a labelled button.
+ * the open menu never moves it. Without children it draws the icon, named "Filter" unless
+ * `aria-label` says otherwise, as a square icon button at every width or in the `render`
+ * element. Children replace the icon and render it as a labelled button.
  */
 export function DataTableFilterTrigger({
   className,
@@ -153,19 +154,22 @@ export function DataTableFilterTrigger({
   const { state, actions, meta } = useFilterInternals("DataTableFilter.Trigger");
   const triggerRef = useMergedRefs(ref, actions.registerTrigger);
   const label = props["aria-label"] ?? meta.format("filter");
+  const iconOnly = children == null;
   return (
     <ToolbarPrimitive.Button
       ref={triggerRef}
       id={meta.triggerId}
       data-slot="data-table-filter-trigger"
       data-empty={state.filters.length === 0 || undefined}
+      // The hidden icon names nothing, so a consumer `render` without its own name takes the label.
+      {...(iconOnly ? { "aria-label": label } : null)}
       render={
         <MenuPrimitive.Trigger
           handle={meta.menuHandle}
           render={
             render ??
             // An icon Button requires its own name, and its props win in Base UI's merge.
-            (children === undefined ? (
+            (iconOnly ? (
               <Button variant="outline" size="icon-sm" aria-label={label} />
             ) : (
               <Button variant="outline" size="sm" />
@@ -178,7 +182,7 @@ export function DataTableFilterTrigger({
         assertOverlay("DataTableFilter.Trigger", meta.hasContent(), "no-content");
       }, onClick)}
       {...definedProps(props)}>
-      {children ?? <Funnel aria-hidden />}
+      {iconOnly ? <Funnel aria-hidden /> : children}
     </ToolbarPrimitive.Button>
   );
 }
