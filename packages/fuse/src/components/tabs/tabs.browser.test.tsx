@@ -12,6 +12,7 @@ import {
   assertKeyboardFocusRingAtBothDensities,
 } from "../../../test/assert-focus-ring";
 import {
+  computedOklch,
   CONTROL_MD,
   cssVarColor,
   fkasExternal,
@@ -47,10 +48,11 @@ function htmlPanel(name: string): HTMLElement {
   return element;
 }
 
-async function settledFill(name: string): Promise<string> {
+async function settledFace(name: string): Promise<{ fill: string; text: string }> {
   const tab = htmlTab(name);
   await Promise.all(tab.getAnimations().map((animation) => animation.finished));
-  return getComputedStyle(tab).backgroundColor;
+  const style = getComputedStyle(tab);
+  return { fill: style.backgroundColor, text: style.color };
 }
 
 function htmlControl(name: string): HTMLElement {
@@ -213,11 +215,21 @@ describe("Tabs", () => {
     await assertFocusRingOnKeyboardAbsentOnMouse(htmlTab("Account"), htmlPanel("Account"));
   });
 
-  it("emits data-variant=line and leaves the active trigger unfilled", () => {
-    renderThemed(<AccountPassword variant="line" />);
+  it("emits data-variant=line and leaves the active trigger unfilled, in page text", async () => {
+    renderThemed(
+      <ThemeScope theme={fkasExternal}>
+        <AccountPassword variant="line" />
+      </ThemeScope>
+    );
+    const list = htmlTablist();
+    // Oracle sanity: fkas external light sets card text apart from page text.
+    expect(cssVarColor(list, "--card-foreground")).not.toBe(cssVarColor(list, "--foreground"));
 
-    expect(htmlTablist().getAttribute("data-variant")).toBe("line");
-    expect(getComputedStyle(htmlTab("Account")).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    expect(list.getAttribute("data-variant")).toBe("line");
+    expect(await settledFace("Account")).toEqual({
+      fill: "rgba(0, 0, 0, 0)",
+      text: cssVarColor(list, "--foreground"),
+    });
   });
 
   it.each([
@@ -228,8 +240,9 @@ describe("Tabs", () => {
   ] as const)(
     "fills the active default trigger with the card on its muted list, %s",
     async (_name, theme, scheme) => {
-      // Unit under test: the active trigger's fill. Oracle: the scope's own `--card` and
-      // `--muted`. These external themes tint the page darker than `--muted` in light.
+      // Unit under test: the active trigger's fill and text. Oracle: the scope's own `--card`,
+      // `--card-foreground` and `--muted`. These external themes tint the page darker than
+      // `--muted` in light.
       const tabs = (
         <ThemeScope theme={theme}>
           <AccountPassword />
@@ -237,16 +250,38 @@ describe("Tabs", () => {
       );
       renderThemed(scheme === "dark" ? <div data-theme="dark">{tabs}</div> : tabs);
       const list = htmlTablist();
-      const card = cssVarColor(list, "--card");
+      const active = { fill: cssVarColor(list, "--card"), text: cssVarColor(list, "--card-foreground") };
       // Oracle sanity: the page tint differs from the card, so a trigger on the page fill fails.
-      expect(cssVarColor(list, "--background")).not.toBe(card);
+      expect(cssVarColor(list, "--background")).not.toBe(active.fill);
       expect(getComputedStyle(list).backgroundColor).toBe(cssVarColor(list, "--muted"));
-      expect(await settledFill("Account")).toBe(card);
-      expect(await settledFill("Billing")).toBe("rgba(0, 0, 0, 0)");
+      expect(await settledFace("Account")).toEqual(active);
+      expect((await settledFace("Billing")).fill).toBe("rgba(0, 0, 0, 0)");
 
+      // The pointer stays on Billing after the click, so this also reads the hovered active face.
       await userEvent.click(page.getByRole("tab", { name: "Billing", exact: true }));
-      expect(await settledFill("Billing")).toBe(card);
-      expect(await settledFill("Account")).toBe("rgba(0, 0, 0, 0)");
+      expect(htmlTab("Billing").matches(":hover")).toBe(true);
+      expect(await settledFace("Billing")).toEqual(active);
+      expect((await settledFace("Account")).fill).toBe("rgba(0, 0, 0, 0)");
+    }
+  );
+
+  it.each([
+    ["fkas private", fkasExternal],
+    ["guen", guenExternal],
+  ] as const)(
+    "lifts the active default trigger above its list on a tinted light page, %s",
+    async (_name, theme) => {
+      // #418's symptom: on these pages the active tab sat darker than its list. Oracle: a raised
+      // tab reads lighter than the list it sits in, whichever token fills it.
+      renderThemed(
+        <ThemeScope theme={theme}>
+          <AccountPassword />
+        </ThemeScope>
+      );
+      const list = computedOklch(getComputedStyle(htmlTablist()).backgroundColor);
+      const active = computedOklch((await settledFace("Account")).fill);
+
+      expect(active.l).toBeGreaterThan(list.l);
     }
   );
 

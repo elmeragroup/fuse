@@ -152,8 +152,10 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
   },
   {
     // `hover:bg-muted` over a card, popover or modal, such as a ghost Button in a Dialog, with
-    // the same 1.1:1 floor as the menu row. Dark only: light muted is the shadcn 0.97 on a white
-    // card, 1.09:1, a design value this floor does not yet override.
+    // the same 1.1:1 floor as the menu row. The active default Tabs trigger fills with `card` on
+    // its `muted` list, so in dark this floor is also all that separates the selected tab from the
+    // list. Dark only: light muted is the shadcn 0.97 on a white card, 1.09:1, a design value this
+    // floor does not yet override.
     schemes: ["dark"],
     matches: () => true,
     pairs: [
