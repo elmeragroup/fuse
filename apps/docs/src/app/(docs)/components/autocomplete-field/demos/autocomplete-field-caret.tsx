@@ -1,6 +1,7 @@
 "use client";
 
-import { Autocomplete, AutocompleteField } from "@elmeragroup/fuse/autocomplete";
+import { Autocomplete } from "@elmeragroup/fuse/autocomplete";
+import { AutocompleteField } from "@elmeragroup/fuse/autocomplete-field";
 
 const reasons = [
   "Moving house",
@@ -10,7 +11,7 @@ const reasons = [
   "Power outage",
 ];
 
-export function AutocompleteCaret() {
+export function AutocompleteFieldCaret() {
   return (
     <AutocompleteField
       label="Reason for contact"

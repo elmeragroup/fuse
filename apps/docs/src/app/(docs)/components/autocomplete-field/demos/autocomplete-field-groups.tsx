@@ -2,7 +2,8 @@
 
 import { Fragment } from "react";
 
-import { Autocomplete, AutocompleteField } from "@elmeragroup/fuse/autocomplete";
+import { Autocomplete } from "@elmeragroup/fuse/autocomplete";
+import { AutocompleteField } from "@elmeragroup/fuse/autocomplete-field";
 
 type PowerPlant = { readonly name: string; readonly municipality: string };
 
@@ -32,7 +33,7 @@ const counties: readonly County[] = [
   },
 ];
 
-export function AutocompleteGroups() {
+export function AutocompleteFieldGroups() {
   return (
     <AutocompleteField
       label="Power plant"

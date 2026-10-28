@@ -3,7 +3,8 @@
 import { useRef, useState, useTransition } from "react";
 import type { FormEvent, ReactNode } from "react";
 
-import { Autocomplete, AutocompleteField } from "@elmeragroup/fuse/autocomplete";
+import { Autocomplete } from "@elmeragroup/fuse/autocomplete";
+import { AutocompleteField } from "@elmeragroup/fuse/autocomplete-field";
 import { Button } from "@elmeragroup/fuse/button";
 import { SpinnerGap } from "@elmeragroup/fuse/icons";
 import { loaderVariants } from "@elmeragroup/fuse/loader";
@@ -64,7 +65,7 @@ function textOf(entry: FormDataEntryValue | null): string {
  * organization number. A company the search does not find is typed in full, and its number
  * entered by hand.
  */
-export function AutocompleteCompanySearch() {
+export function AutocompleteFieldCompanySearch() {
   const [name, setName] = useState("");
   const [orgNumber, setOrgNumber] = useState("");
   const [results, setResults] = useState<readonly Company[]>([]);
@@ -104,7 +105,11 @@ export function AutocompleteCompanySearch() {
     });
   }
 
-  /** What the popup shows while the list is empty. */
+  /**
+   * What the popup shows while the list is empty. `Autocomplete.Empty` is a polite live region, so
+   * screen readers hear each state. The popup takes no `aria-busy` while the search runs, which
+   * would let them hold back the searching state until it ends.
+   */
   function emptyState(): ReactNode {
     if (pending) {
       return (

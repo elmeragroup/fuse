@@ -53,12 +53,16 @@
   "autocomplete": {
     "title": "Autocomplete",
     "rsc": "client",
+    "demos": ["autocomplete-custom-layout.tsx"]
+  },
+  "autocomplete-field": {
+    "title": "Autocomplete Field",
+    "rsc": "server",
     "demos": [
-      "autocomplete-basic.tsx",
-      "autocomplete-caret.tsx",
-      "autocomplete-groups.tsx",
-      "autocomplete-company-search.tsx",
-      "autocomplete-custom-layout.tsx"
+      "autocomplete-field-basic.tsx",
+      "autocomplete-field-caret.tsx",
+      "autocomplete-field-groups.tsx",
+      "autocomplete-field-company-search.tsx"
     ]
   },
   "avatar": {
@@ -167,12 +171,16 @@
     "title": "Combobox",
     "rsc": "client",
     "demos": [
-      "combobox-field-basic.tsx",
       "combobox-basic.tsx",
       "combobox-groups.tsx",
       "combobox-multi-chips.tsx",
       "combobox-input-group-anchor.tsx"
     ]
+  },
+  "combobox-field": {
+    "title": "Combobox Field",
+    "rsc": "server",
+    "demos": ["combobox-field-basic.tsx", "combobox-field-form.tsx"]
   },
   "command": {
     "title": "Command",

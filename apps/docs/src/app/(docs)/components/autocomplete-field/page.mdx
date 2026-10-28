@@ -1,0 +1,79 @@
+---
+lede: >
+  A labeled text field that suggests values as the user types, laid out like the other labeled fields.
+---
+
+import { AutocompleteFieldBasic } from "./demos/autocomplete-field-basic";
+import { AutocompleteFieldCaret } from "./demos/autocomplete-field-caret";
+import { AutocompleteFieldCompanySearch } from "./demos/autocomplete-field-company-search";
+import { AutocompleteFieldGroups } from "./demos/autocomplete-field-groups";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("autocomplete-field");
+
+<ComponentIntro slug="autocomplete-field" />
+
+<Prose>
+
+`AutocompleteField` puts a label, the error and a description around [Autocomplete](/components/autocomplete)'s input and suggestions, in the order `TextField` uses: the label 4px from the input, then the error under the input, ahead of the description. The input fills the field's width. Its value is the text, typed or picked: `value`, `defaultValue` and `onValueChange` hold it, and the form submits it under `name`. Inside a `Form`, the field shows the error `Form` holds under its `name` until the user edits the text, also in the first HTML a server renders.
+
+Base UI filters `items` against the text in the locale of `LocaleProvider`. Pass the popup's content as children: an `Autocomplete.List` that renders each item as an `Autocomplete.Item`, and an `Autocomplete.Empty` beside it for the list that matches nothing. The Empty needs `items`, since it shows only while the filtered items are empty. The props the field does not name itself go to `Autocomplete.Root`, and a `ref` goes to the input.
+
+</Prose>
+
+<Demo slug="autocomplete-field" id="basic" title="Suggestions" file="autocomplete-field-basic.tsx">
+  <AutocompleteFieldBasic />
+</Demo>
+
+<Prose>
+
+## Caret and clear button
+
+The list opens as the user types, so the field has no caret. `showTrigger` adds one, which opens the whole list for browsing. `showClear` adds a button that empties the input while it holds text, and the caret hides while it shows. Their names come from the locale dictionary.
+
+</Prose>
+
+<Demo slug="autocomplete-field" id="caret" title="Caret" file="autocomplete-field-caret.tsx">
+  <AutocompleteFieldCaret />
+</Demo>
+
+<Prose>
+
+## Groups
+
+Pass groups as `items`, each with a `value` and its own `items`. `itemToStringValue` then receives one item of a group, not the group. Render each group through `Autocomplete.Collection` inside `Autocomplete.List`, as an `Autocomplete.Group` that takes the group's `items`, with an `Autocomplete.Label` that names it and a second `Autocomplete.Collection` for its rows. An `Autocomplete.Separator` draws the rule between groups. A group whose items all fail to match the text hides with them.
+
+</Prose>
+
+<Demo slug="autocomplete-field" id="groups" title="Groups" file="autocomplete-field-groups.tsx">
+  <AutocompleteFieldGroups />
+</Demo>
+
+<Prose>
+
+## Search on a server
+
+For a search that runs elsewhere, such as a register lookup, pass `filter={null}` and the results as `items`: the list then shows them as given. Keep the request and its state in your component, and pass the empty list's states, such as loading, an error or no results, as `Autocomplete.Empty`'s children. Base UI keeps the Empty mounted as a polite live region, so screen readers hear those states. Pass the rest, such as the number of results, as `status`. The field renders it in a visually hidden live region beside the input, which stays mounted while the popup opens and closes.
+
+`onValueChange` receives only the text. To use the picked item itself, capture it in `Autocomplete.Item`'s `onClick`, which runs on a click and on Enter while the item is highlighted. With object items, `itemToStringValue` gives the text that fills the input and submits. In this demo, picking a company fills in its organization number. A company the search does not find is typed in full, and its number entered by hand.
+
+</Prose>
+
+<Demo
+  slug="autocomplete-field"
+  id="company-search"
+  title="Search on a server"
+  file="autocomplete-field-company-search.tsx">
+  <AutocompleteFieldCompanySearch />
+</Demo>
+
+<Prose>
+
+For a layout of your own, such as a label row with an info button or a horizontal field, compose `Field.Root` and the `Autocomplete` parts.
+
+</Prose>
+
+<ApiReference slug="autocomplete-field" />
+
+<ComponentTokens slug="autocomplete-field" />

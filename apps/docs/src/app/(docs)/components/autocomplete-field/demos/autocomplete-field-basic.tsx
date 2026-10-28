@@ -1,6 +1,7 @@
 "use client";
 
-import { Autocomplete, AutocompleteField } from "@elmeragroup/fuse/autocomplete";
+import { Autocomplete } from "@elmeragroup/fuse/autocomplete";
+import { AutocompleteField } from "@elmeragroup/fuse/autocomplete-field";
 
 const municipalities = [
   "Bergen",
@@ -14,7 +15,7 @@ const municipalities = [
   "Trondheim",
 ];
 
-export function AutocompleteBasic() {
+export function AutocompleteFieldBasic() {
   return (
     <AutocompleteField
       label="Municipality"

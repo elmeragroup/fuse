@@ -1,6 +1,7 @@
 "use client";
 
-import { Combobox, ComboboxField } from "@elmeragroup/fuse/combobox";
+import { Combobox } from "@elmeragroup/fuse/combobox";
+import { ComboboxField } from "@elmeragroup/fuse/combobox-field";
 
 const countries = ["Denmark", "Finland", "Iceland", "Norway", "Sweden"];
 

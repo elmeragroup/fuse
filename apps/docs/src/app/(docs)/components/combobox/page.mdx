@@ -4,7 +4,6 @@ lede: >
 ---
 
 import { ComboboxBasic } from "./demos/combobox-basic";
-import { ComboboxFieldBasic } from "./demos/combobox-field-basic";
 import { ComboboxGroups } from "./demos/combobox-groups";
 import { ComboboxMultiChips } from "./demos/combobox-multi-chips";
 import { ComboboxInputGroupAnchor } from "./demos/combobox-input-group-anchor";
@@ -17,21 +16,7 @@ export const metadata = componentMetadata("combobox");
 
 <Prose>
 
-A Combobox submits the option the user selected, and editing its text never replaces that selection. Use it when the answer must be one of the options, and [Autocomplete](/components/autocomplete) when any text is a valid answer.
-
-`ComboboxField` lays out a labeled combobox as the other labeled fields do: the label 4px from the input, the input filling the field's width, then the error ahead of the description. It takes one selection, which `value`, `defaultValue` and `onValueChange` hold and the form submits under `name`. Inside a `Form`, the field shows the error `Form` holds under its `name` until the selection changes. Pass `items` and the popup's content as children: a `Combobox.List` that renders each item as a `Combobox.Item`, and a `Combobox.Empty` beside it for the list that matches nothing. With object items, `items` gives `itemToStringLabel` and `itemToStringValue` the item type. The props the field does not name itself go to `Combobox.Root`, and a `ref` goes to the input.
-
-</Prose>
-
-<Demo slug="combobox" id="field" title="Labeled field" file="combobox-field-basic.tsx">
-  <ComboboxFieldBasic />
-</Demo>
-
-<Prose>
-
-## Custom layouts
-
-For multiple selection, chips or a layout of your own, such as a label row with an info button or a horizontal field, compose the `Combobox` parts. `Combobox.Root` holds the state and renders no element. Inside a `Field.Root`, set `id` on the Root rather than on the input, so the `Field.Label` points at it, and `spacing="part"` on the `Field.Root`, so the label sits 4px from the input, as in `ComboboxField`. The demos below name their inputs with `aria-label` instead.
+For a labeled combobox in a form, use `ComboboxField`, which lays out the label, error and description as the other labeled fields do. Compose `Field.Root` and these parts for multiple selection or a layout of your own.
 
 </Prose>
 
