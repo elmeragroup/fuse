@@ -10,7 +10,7 @@ const frame = fieldFrameVariants();
 /**
  * PUBLIC slot recipe. Layout slots compose FieldFrame
  * recipe slots so the documented names stay stable while the frame owns the defaults.
- * No size axis — the inner Input pins the md field-box rung. The ref's unused textarea
+ * No size axis — TextField's `size` goes to the inner Input, whose field box writes it. The ref's unused textarea
  * slot is omitted.
  */
 export const textFieldVariants = tv({

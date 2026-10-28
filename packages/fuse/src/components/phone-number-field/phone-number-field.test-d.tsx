@@ -37,7 +37,7 @@ test("PhoneNumberFieldProps is the closed composite face", () => {
   expectTypeOf<PhoneNumberFieldProps>().toHaveProperty("autoFocus");
   expectTypeOf<PhoneNumberFieldProps>().toHaveProperty("id");
   expectTypeOf<PhoneNumberFieldProps>().not.toHaveProperty("locale");
-  expectTypeOf<PhoneNumberFieldProps>().not.toHaveProperty("size");
+  expectTypeOf<PhoneNumberFieldProps["size"]>().toEqualTypeOf<"sm" | "default" | undefined>();
   expectTypeOf<PhoneNumberFieldProps>().not.toHaveProperty("as");
   expectTypeOf<PhoneNumberFieldProps>().not.toHaveProperty("variant");
   expectTypeOf<PhoneNumberFieldProps>().not.toHaveProperty("disabled");

@@ -17,12 +17,10 @@ import { definedProps } from "../../internal/defined-props";
 import { isTextValueNode } from "../../internal/is-text-node";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
-import { controlMd } from "../../styles/control-size-md";
-import { fieldBoxShellClass } from "../../styles/inner-corner/field";
-import { chipRemoveShellClass, chipShellClass, chipsShellClass } from "../../styles/inner-corner/listbox";
+import { chipRemoveShellClass } from "../../styles/inner-corner/listbox";
 import { mergeClassName } from "../../styles/merge-class-name";
-import { withinStateFaceClass, withinStateFaceControlClass } from "../../styles/state-face";
-import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
+import { withinStateFaceControlClass } from "../../styles/state-face";
+import { withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import {
   InputGroupAddon,
@@ -33,7 +31,7 @@ import {
 import { overlayPositionerClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
-import { comboboxVariants } from "./combobox-variants";
+import { comboboxChipsVariants, comboboxVariants } from "./combobox-variants";
 import {
   ChipIndexCommit,
   ChipIndexContext,
@@ -43,6 +41,8 @@ import {
 import { comboboxStrings } from "./intl";
 
 const comboboxSlots = comboboxVariants();
+/** The chip slot, which no size changes. */
+const chipsSlots = comboboxChipsVariants();
 
 type ComboboxItemLabelFn = (itemValue: ReactNode) => string;
 
@@ -125,8 +125,15 @@ export function ComboboxClear({
 
 export type ComboboxInputProps = Omit<
   ComponentProps<typeof ComboboxPrimitive.Input>,
-  "children" | "className"
+  "children" | "className" | "size"
 > & {
+  /**
+   * Control size of the field box, the outer InputGroup. Emitted as `data-size`. `"default"`
+   * maps to the `md` control size; `"sm"` maps to the `sm` control size. It replaces the native
+   * numeric `size` attribute; set the width with a class instead.
+   * @default "default"
+   */
+  size?: "sm" | "default";
   /**
    * The input's id. Inside a `Field`, set `id` on `Combobox.Root` instead: the Root's id is the
    * one `Field.Label` points at, so an id here leaves the label's `for` unmatched.
@@ -177,11 +184,12 @@ export function ComboboxInput({
   showClear = false,
   clearLabel,
   triggerLabel,
+  size = "default",
   ...props
 }: ComboboxInputProps): ReactElement {
   const strings = useLocalizedStrings(comboboxStrings);
   return (
-    <InputGroupRoot className={cn("w-auto", className)}>
+    <InputGroupRoot size={size} className={cn("w-auto", className)}>
       <ComboboxPrimitive.Input
         disabled={disabled}
         render={<InputGroupPlainInput />}
@@ -341,14 +349,22 @@ export function ComboboxSeparator({
   );
 }
 
+export type ComboboxChipsProps = ComponentProps<typeof ComboboxPrimitive.Chips> & {
+  /**
+   * Control size of the chips field box. Emitted as `data-size`. `"default"` maps to the `md`
+   * control size; `"sm"` maps to the `sm` control size. The box's minimum height, inset, gap and
+   * text follow it, and a row of chips still fits the sm height. More chips than one row holds
+   * grow the box at both sizes.
+   * @default "default"
+   */
+  size?: "sm" | "default";
+};
+
 /**
  * The chips field box. It publishes `--inner-corner`, the field corner less its border and padding,
  * for the chips inside it.
  */
-export function ComboboxChips({
-  className,
-  ...props
-}: ComponentProps<typeof ComboboxPrimitive.Chips>): ReactElement {
+export function ComboboxChips({ className, size = "default", ...props }: ComboboxChipsProps): ReactElement {
   const [registry] = useState(createChipIndexRegistry);
   return (
     <ChipIndexContext.Provider value={registry}>
@@ -357,18 +373,8 @@ export function ComboboxChips({
       </ComboboxPrimitive.Value>
       <ComboboxPrimitive.Chips
         data-slot="combobox-chips"
-        className={mergeClassName(
-          className,
-          controlMd.minHeight(),
-          controlMd.inset(),
-          controlMd.type(),
-          controlMd.gap(),
-          "shadow-xs flex flex-wrap items-center border border-input bg-transparent bg-clip-padding transition-[color,box-shadow]",
-          fieldBoxShellClass,
-          chipsShellClass,
-          withinFocusRingClass,
-          withinStateFaceClass
-        )}
+        data-size={size}
+        className={mergeClassName(className, comboboxChipsVariants({ size }).chips())}
         {...props}
       />
     </ChipIndexContext.Provider>
@@ -429,11 +435,7 @@ export function ComboboxChip({
     <ComboboxPrimitive.Chip
       ref={mergedRef}
       data-slot="combobox-chip"
-      className={mergeClassName(
-        className,
-        "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 bg-muted px-1.5 whitespace-nowrap text-foreground",
-        chipShellClass
-      )}
+      className={mergeClassName(className, chipsSlots.chip())}
       {...props}>
       {children}
       {showRemove ? (
@@ -507,11 +509,14 @@ export function ComboboxChipsInput({
       // its own ring, so only the chips box paints the face.
       className={mergeClassName(
         className,
+        // No UA border, padding or fill, and the box's leading rather than the UA `normal`, in a
+        // preflight-free host, where they would make the input taller than an sm chips box.
         // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared within adapter
-        "min-w-16 flex-1 outline-none",
-        // The text-entry 16px floor under `entry-floor` (see `controlMdInsetTypeClass`), over the
+        "min-w-16 flex-1 border-0 bg-transparent p-0 outline-none",
+        // The text-entry 16px floor under `entry-floor` (see `entryType` in `field-size.ts`), over the
         // chips box's 14px. In `font-size`, `1em` is the inherited size.
-        "entry-floor:[--entry-text:max(16px,1em)] text-[length:var(--entry-text,1em)]",
+        // The leading follows the font size so tailwind-merge keeps it after the font-size class.
+        "entry-floor:[--entry-text:max(16px,1em)] text-[length:var(--entry-text,1em)] leading-[inherit]",
         withinFocusRingControlClass,
         withinStateFaceControlClass
       )}

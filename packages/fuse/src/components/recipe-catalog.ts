@@ -46,9 +46,13 @@ export { emptyMediaVariants, emptyVariants } from "./empty/empty-variants";
 export { fieldVariants } from "./field/field-variants";
 export { fieldFrameVariants } from "./field/field-frame-variants";
 export { fileUploadVariants } from "./file-upload/file-upload-variants";
-export { inputClass } from "./input/input-class";
+export { inputClass, inputVariants } from "./input/input-class";
 export { inputGroupInputControlClass } from "./input-group/input-group-class";
-export { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group/input-group-variants";
+export {
+  inputGroupAddonVariants,
+  inputGroupButtonVariants,
+  inputGroupRootVariants,
+} from "./input-group/input-group-variants";
 export { itemActionsClass, itemContentClass, itemDescriptionClass } from "./item/item-class";
 export { ITEM_DESCRIPTION_CLASSES } from "./item/item-description-classes";
 export { itemMediaVariants } from "./item/item-media-variants";
@@ -98,7 +102,7 @@ export {
 export { SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON } from "./sidebar/sidebar-width";
 export { skeletonClass } from "./skeleton/skeleton-class";
 export { switchVariants } from "./switch/switch-variants";
-export { textareaClass } from "./textarea/textarea-class";
+export { textareaClass, textareaVariants } from "./textarea/textarea-class";
 export { textareaFieldVariants } from "./textarea-field/textarea-field-variants";
 export { textFieldVariants } from "./text-field/text-field-variants";
 export { toggleVariants } from "./toggle/toggle-variants";

@@ -13,8 +13,8 @@ import {
 } from "react-aria-components";
 
 import { cn } from "../../styles/cn";
-import { controlMdInsetTypeClass } from "../../styles/control-size-md";
 import { fieldBoxChromeClass } from "../../styles/field-box";
+import { fieldSize } from "../../styles/field-size";
 import { labelTypeClass } from "../../styles/label-type";
 import { racDisabledStateFaceClass, racInvalidStateFaceClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
@@ -25,9 +25,14 @@ import {
 } from "../../styles/utils";
 import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
 
+/** The field-size reads of the field group and the parts inside it. */
+const fieldReads = fieldSize();
+
 /**
- * Package-private field chrome for the interim React Aria tier. FieldGroup pins the md
- * control height without adding a size axis. Its shared `fieldBoxChromeClass` matches
+ * Package-private field chrome for the interim React Aria tier. Its `size` axis writes the field
+ * size (`field-size.ts`) on the box, `"default"` the md control size and `"sm"` the sm one, and
+ * the box reads its height from it, as the input, the segment rows and the inner buttons inside
+ * it read theirs. Its shared `fieldBoxChromeClass` matches
  * Input's border, fill, radius, and shadow in mixed forms. The RAC Group is not focusable,
  * so it uses the shared state focus constants and receives disabled/invalid state through
  * render props, which the rac-target state face turns into the shared disabled and invalid
@@ -38,10 +43,15 @@ import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
 export const fieldGroupVariants = tv({
   base: cn(
     fieldBoxChromeClass,
-    "group flex h-(--control-h-md) items-center overflow-hidden text-foreground",
+    fieldReads.height(),
+    "group flex items-center overflow-hidden text-foreground",
     stateFocusRingClass
   ),
   variants: {
+    size: {
+      default: fieldSize({ size: "default" }).box(),
+      sm: fieldSize({ size: "sm" }).box(),
+    },
     isFocusVisible: {
       true: stateFocusRingVisibleClass,
       false: "",
@@ -67,6 +77,7 @@ export const fieldGroupVariants = tv({
     },
   ],
   defaultVariants: {
+    size: "default",
     isFocusVisible: false,
     isInvalid: false,
     isDisabled: false,
@@ -77,16 +88,21 @@ export const fieldGroupVariants = tv({
 /** Descendant segment rows borrow this group's field surface. */
 export const FieldGroupSurfaceContext = createContext(false);
 
-export type FieldGroupProps = ComponentProps<typeof AriaGroup>;
+export type FieldGroupProps = ComponentProps<typeof AriaGroup> & {
+  /** The field size the box writes, emitted as `data-size`. */
+  size?: "sm" | "default";
+};
 
-export function FieldGroup({ className, ...props }: FieldGroupProps): ReactElement {
+export function FieldGroup({ className, size = "default", ...props }: FieldGroupProps): ReactElement {
   return (
     <FieldGroupSurfaceContext.Provider value={true}>
       <AriaGroup
         data-slot="field-group"
+        data-size={size}
         className={composeRenderProps(className, (resolved: string | undefined, renderProps) =>
           cn(
             fieldGroupVariants({
+              size,
               isFocusVisible: renderProps.isFocusVisible,
               isInvalid: renderProps.isInvalid,
               isDisabled: renderProps.isDisabled,
@@ -125,7 +141,8 @@ export function Input({ className, ...props }: InputProps): ReactElement {
         // paints a second one — that is what keeps the read-only `bg-muted` fill honest.
         cn(
           "min-w-0 flex-1 bg-transparent",
-          controlMdInsetTypeClass,
+          fieldReads.inset(),
+          fieldReads.entryType(),
           // oxlint-disable-next-line elmera/no-local-focus-ring -- within-adapter control outline
           "text-foreground outline-none placeholder:text-muted-foreground disabled:text-muted-foreground"
         )

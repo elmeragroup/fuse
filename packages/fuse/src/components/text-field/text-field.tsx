@@ -55,11 +55,18 @@ export type TextFieldProps = {
   filter?: InputProps["filter"];
   /** `card` composes `cardVariants`; `inline` restyles the input chrome. Unset is the plain Input. */
   variant?: "card" | "inline";
+  /**
+   * Control size of the inner Input's field box, forwarded to `Input`. `"default"` maps to the
+   * `md` control size; `"sm"` maps to the `sm` control size. It replaces the native numeric `size`
+   * attribute.
+   * @default "default"
+   */
+  size?: InputProps["size"];
   /** Extra classes, merged onto the root via `cn`. */
   className?: string;
 } & Omit<
   ComponentProps<"input">,
-  "value" | "defaultValue" | "onChange" | "name" | "className" | "disabled" | "readOnly" | "required"
+  "value" | "defaultValue" | "onChange" | "name" | "className" | "disabled" | "readOnly" | "required" | "size"
 >;
 
 /**

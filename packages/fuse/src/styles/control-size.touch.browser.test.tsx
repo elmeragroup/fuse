@@ -4,6 +4,7 @@ import "../../dist/styles.css";
 import { withLocale } from "../../test/locale-matrix";
 import {
   CONTROL_MD,
+  CONTROL_SM,
   FIXED_CONTROL_TYPE,
   normalLineHeightOf,
   px,
@@ -178,6 +179,68 @@ describe("control size: the text-entry touch floor", () => {
       document.documentElement.style.removeProperty("font-size");
     }
   });
+
+  it.each(CASES)(
+    "floors the sm text of every sm text-entry box at %s with a %s pointer",
+    async (density, pointer) => {
+      stampDensity(density);
+      await emulatePointer(pointer);
+      renderThemed(
+        withLocale(
+          "en-US",
+          <UiProviders locale="en-US" navigate={() => undefined}>
+            <Input size="sm" aria-label="sm input" />
+            <Textarea size="sm" aria-label="sm textarea" />
+            <InputGroup.Root size="sm">
+              <InputGroup.Input aria-label="sm group input" />
+            </InputGroup.Root>
+            <NumberField size="sm" label="sm number" />
+            <SearchField size="sm" label="sm search" />
+            <DateField size="sm" label="sm date" />
+            <Input size="sm" aria-label="sm large input" className="text-lg" />
+            <Combobox.Root items={["Apple"]} multiple defaultValue={["Apple"]}>
+              <Combobox.Chips size="sm">
+                <Combobox.Chip removeLabel="Remove sm Apple">Apple</Combobox.Chip>
+                <Combobox.ChipsInput aria-label="sm chips input" />
+              </Combobox.Chips>
+            </Combobox.Root>
+          </UiProviders>
+        )
+      );
+      // The sm text is a fixed 14px, under the 16px floor, so a coarse pointer lifts it.
+      const sm = FIXED_CONTROL_TYPE.sm;
+      const font = pointer === "coarse" ? Math.max(IOS_NO_ZOOM_FONT, sm.font) : sm.font;
+      for (const element of [
+        roleNamed("textbox", "sm input"),
+        roleNamed("textbox", "sm textarea"),
+        roleNamed("textbox", "sm group input"),
+        roleNamed("textbox", "sm number"),
+        roleNamed("searchbox", "sm search"),
+        firstSegmentOf("sm date"),
+        roleNamed("combobox", "sm chips input"),
+      ]) {
+        const label = `${density} ${pointer} ${element.getAttribute("aria-label") ?? element.id}`;
+        const style = getComputedStyle(element);
+        expect(px(style.fontSize), `${label} font`).toBe(font);
+        // Only the font size moves: the sm leading stays 20px, so the taller glyphs fit the box.
+        expect(px(style.lineHeight), `${label} leading`).toBe(sm.leading);
+      }
+      // The boxes keep the sm rung under the floor, a single row of chips included.
+      expect(
+        px(getComputedStyle(roleNamed("textbox", "sm input")).height),
+        `${density} ${pointer} sm input height`
+      ).toBe(CONTROL_SM[density].height);
+      const chipsBox = roleNamed("combobox", "sm chips input").parentElement;
+      if (chipsBox === null) {
+        throw new Error("expected the sm chips box around its input");
+      }
+      expect(chipsBox.getBoundingClientRect().height, `${density} ${pointer} sm chips height`).toBe(
+        CONTROL_SM[density].height
+      );
+      // A consumer `text-lg` (18px) replaces the floored sm text on every pointer.
+      expect(px(getComputedStyle(roleNamed("textbox", "sm large input")).fontSize)).toBe(18);
+    }
+  );
 
   it.each(CASES)(
     "lets a consumer font-size class replace the floor at %s with a %s pointer",

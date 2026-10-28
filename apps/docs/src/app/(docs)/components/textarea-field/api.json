@@ -102,6 +102,15 @@
           "required": false
         },
         {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Control size of the inner Textarea's field box, forwarded to `Textarea`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size.",
+          "required": false
+        },
+        {
           "name": "textareaClassName",
           "origin": "declared",
           "type": "string | undefined",

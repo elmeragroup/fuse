@@ -15,7 +15,7 @@ test("dateFieldVariants and RAC types are not public exports", () => {
   type _NoAria = DateFieldApi.AriaDateFieldProps;
 });
 
-test("the elements take the public props and reject DateInput children and a size axis", () => {
+test("the elements take the public props and reject DateInput children and an md size name", () => {
   const _nodeError = <DateField label="Invoice date" errorMessage={<span>Required</span>} isInvalid />;
   const _functionError = (
     <DateField
@@ -48,6 +48,6 @@ test("the elements take the public props and reject DateInput children and a siz
 
   // @ts-expect-error DateInput always renders segments and omits children
   const _noChildren = <DateInput>{() => null}</DateInput>;
-  // @ts-expect-error no size axis
+  // @ts-expect-error the field size is `"default"` or `"sm"`; it has no md name
   const _noSize = <DateField size="md" />;
 });

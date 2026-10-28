@@ -4,6 +4,7 @@ lede: >
 ---
 
 import { TextFieldBasic } from "./demos/text-field-basic";
+import { TextFieldSizes } from "./demos/text-field-sizes";
 import { TextFieldError } from "./demos/text-field-error";
 import { TextFieldStates } from "./demos/text-field-states";
 import { TextFieldPendingSuccess } from "./demos/text-field-pending-success";
@@ -20,6 +21,10 @@ export const metadata = componentMetadata("text-field");
 
 <Demo slug="text-field" id="basic" title="Basic" file="text-field-basic.tsx">
   <TextFieldBasic />
+</Demo>
+
+<Demo slug="text-field" id="sizes" title="Sizes" file="text-field-sizes.tsx">
+  <TextFieldSizes />
 </Demo>
 
 <Demo slug="text-field" id="error" title="Error" file="text-field-error.tsx">

@@ -331,7 +331,7 @@ describe("Switch", () => {
     renderThemed(
       <>
         <Switch aria-label="Taller" className="h-7" />
-        <Switch aria-label="Narrower" className="w-6" />
+        <Switch aria-label="Narrower" className="w-5" />
         <Switch aria-label="Wider" className="max-w-xs w-72" />
       </>
     );
@@ -339,8 +339,8 @@ describe("Switch", () => {
     const taller = measureSwitch("Taller");
     expect([taller.height, taller.width], "h-7").toEqual([28, 32]);
     const narrower = measureSwitch("Narrower");
-    expect(narrower.width, "w-6 width").toBe(24);
-    expect(narrower.height, "w-6 height").toBeCloseTo(18.4, 1);
+    expect(narrower.width, "w-5 width").toBe(20);
+    expect(narrower.height, "w-5 height").toBeCloseTo(18.4, 1);
     expect(measureSwitch("Wider").width, "w-72 max-w-xs").toBe(288);
   });
 

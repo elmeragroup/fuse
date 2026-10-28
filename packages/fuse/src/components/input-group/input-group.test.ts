@@ -14,7 +14,8 @@ describe("inputGroupAddonVariants", () => {
   it("defaults to the inline-start rail and resolves every align value with the shared rail base", () => {
     expect(inputGroupAddonVariants()).toContain("order-first");
     expect(inputGroupAddonVariants()).toContain("pl-(--control-px-icon-md)");
-    expect(inputGroupAddonVariants()).toContain("text-(length:--control-text)");
+    // The addon text is the group's field text, md density type unless the group is sm.
+    expect(inputGroupAddonVariants()).toContain("text-[length:var(--field-text,var(--control-text))]");
     for (const align of ALIGNMENTS) {
       const resolved = inputGroupAddonVariants({ align });
       expect(resolved, align).toContain("cursor-text");
@@ -29,19 +30,21 @@ describe("inputGroupAddonVariants", () => {
 });
 
 describe("inputGroupButtonVariants", () => {
-  it("defaults to the xs rung, squares the icon values on the xs and sm rungs, and keeps Button's md box for sm", () => {
+  it("defaults to the xs rung, squares icon-xs on the xs rung and icon-sm on the field's inner square, and gives sm the field height", () => {
     expect(tokens(inputGroupButtonVariants())).toContain("h-[max(var(--control-h-xs),24px)]");
 
     expect(tokens(inputGroupButtonVariants({ size: "icon-xs" }))).toEqual(
       expect.arrayContaining(["size-[max(var(--control-h-xs),24px)]", "p-0"])
     );
     expect(tokens(inputGroupButtonVariants({ size: "icon-sm" }))).toEqual(
-      expect.arrayContaining(["size-(--control-h-sm)", "p-0"])
+      // `--field-inner`: the sm square in a default group, the floored xs square in an sm one.
+      expect.arrayContaining(["size-[var(--field-inner,var(--control-h-sm))]", "p-0"])
     );
 
-    for (const token of tokens(inputGroupButtonVariants({ size: "sm" }))) {
-      expect(token, token).not.toMatch(/^(?:h|size)-/);
-    }
+    // sm keeps Button's md label but takes the group's field height, md outside an sm group.
+    expect(
+      tokens(inputGroupButtonVariants({ size: "sm" })).filter((token) => /^(?:h|size)-/.test(token))
+    ).toEqual(["h-[var(--field-h,var(--control-h-md))]"]);
   });
 
   it("pads every addon with the md control icon edge and sm with the md inset, not Button's own", () => {
@@ -57,12 +60,13 @@ describe("inputGroupButtonVariants", () => {
     );
   });
 
-  it("reads only existing rungs below the field's md box, and no density variants", () => {
-    // Every size keeps the field's md icon edge. The box reads the xs rung, or the sm square for
-    // icon-sm, and sm keeps the md inset.
+  it("reads only existing rungs and the field height, and no density variants", () => {
+    // Every size keeps the field's md icon edge. The box reads the xs rung, or the field's inner
+    // square with its sm fallback for icon-sm, and sm keeps the md inset and reads the field height
+    // with its md fallback.
     const expected = {
       xs: ["--control-gap-xs", "--control-h-xs", "--control-px-icon-md", "--control-px-icon-xs"],
-      sm: ["--control-px-icon-md", "--control-px-md"],
+      sm: ["--control-h-md", "--control-px-icon-md", "--control-px-md"],
       "icon-xs": ["--control-h-xs", "--control-px-icon-md"],
       "icon-sm": ["--control-h-sm", "--control-px-icon-md"],
     } as const satisfies Record<(typeof BUTTON_SIZES)[number], readonly string[]>;

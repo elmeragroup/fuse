@@ -1,8 +1,8 @@
 /**
  * Input group, as one component set limited to the forms Combobox and Command render: four forms in
  * four states, 16 cells. The root is `InputGroup.Root`'s `<div data-slot="input-group">` with
- * `inputGroupRootClass`. It holds the control, `<input data-slot="input-group-control">`, and one
- * inline addon.
+ * `inputGroupRootVariants()` at the default field size. It holds the control,
+ * `<input data-slot="input-group-control">`, and one inline addon.
  *
  * - `form=caret` is `Combobox.Input`: a trailing addon holding the caret trigger, an `Icon button`
  *   instance with CaretDown.
@@ -32,7 +32,7 @@ import {
   inputGroupAddonVariants,
   inputGroupButtonVariants,
   inputGroupInputControlClass,
-  inputGroupRootClass,
+  inputGroupRootVariants,
   inputClass,
 } from "@elmeragroup/fuse/recipe-catalog";
 
@@ -202,7 +202,7 @@ export const INPUT_GROUP: ComponentDefinition = {
     { name: "state", values: ["rest", "focus", "disabled", "invalid"] },
   ],
   columnAxis: "state",
-  classesFor: () => inputGroupRootClass,
+  classesFor: () => inputGroupRootVariants(),
   ancestorsFor: (cell) => (cell.state === "invalid" ? [FIELD_ROOT] : []),
   states: {},
   facts: new Map([

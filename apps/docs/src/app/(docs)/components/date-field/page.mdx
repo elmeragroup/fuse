@@ -4,6 +4,7 @@ lede: >
 ---
 
 import { DateFieldBasic } from "./demos/date-field-basic";
+import { DateFieldSizes } from "./demos/date-field-sizes";
 import { DateFieldValidation } from "./demos/date-field-validation";
 import { DateFieldGranularity } from "./demos/date-field-granularity";
 import { DateFieldStates } from "./demos/date-field-states";
@@ -27,6 +28,10 @@ Wrap locale-dependent usage in `UiProviders` so it follows the app locale.
 
 <Demo slug="date-field" id="basic" title="Basic" file="date-field-basic.tsx">
   <DateFieldBasic />
+</Demo>
+
+<Demo slug="date-field" id="sizes" title="Sizes" file="date-field-sizes.tsx">
+  <DateFieldSizes />
 </Demo>
 
 <Demo slug="date-field" id="validation" title="Validation" file="date-field-validation.tsx">

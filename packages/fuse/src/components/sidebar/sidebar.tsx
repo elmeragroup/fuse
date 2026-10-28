@@ -29,7 +29,8 @@ import { nativeStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import type { ButtonProps } from "../button/button";
-import { Input } from "../input/input";
+import { InputControl } from "../input/input";
+import { inputVariants } from "../input/input-class";
 import { OverlayCloseButton } from "../overlay/overlay-close-button";
 import { Separator } from "../separator/separator";
 import type { SeparatorProps } from "../separator/separator";
@@ -482,13 +483,20 @@ export function SidebarInset({ className, ...props }: SidebarInsetProps): ReactE
 /**
  * Typed as `ComponentProps<"input">` (string `className`) rather than the base-ui Input's
  * props, whose `className` can be a render-prop function `cn` cannot merge.
- * Composes the library Input so the shared `focusRing` ships with the field box. It is a row of
- * the sidebar, so it is `--row-h` tall.
+ * Composes the library Input's control so the shared `focusRing` ships with the field box, and
+ * keeps the native numeric `size` attribute. It is a row of the sidebar, so it is `--row-h` tall
+ * and takes no field size prop; it writes the default one, so its inset and type are md.
  */
 export type SidebarInputProps = ComponentProps<"input">;
 
 export function SidebarInput({ className, ...props }: SidebarInputProps): ReactElement {
-  return <Input data-slot="sidebar-input" className={cn(sidebarInputClass, className)} {...props} />;
+  return (
+    <InputControl
+      data-slot="sidebar-input"
+      className={cn(inputVariants(), sidebarInputClass, className)}
+      {...props}
+    />
+  );
 }
 
 export type SidebarHeaderProps = ComponentProps<"div">;

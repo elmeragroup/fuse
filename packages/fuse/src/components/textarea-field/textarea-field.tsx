@@ -8,6 +8,7 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { FieldControl } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
 import { Textarea } from "../textarea/textarea";
+import type { TextareaProps } from "../textarea/textarea";
 import { textareaFieldVariants } from "./textarea-field-variants";
 
 const slots = textareaFieldVariants();
@@ -40,9 +41,15 @@ export type TextareaFieldProps = {
   className?: string;
   /** Extra classes, merged onto the inner `Textarea`. */
   textareaClassName?: string;
+  /**
+   * Control size of the inner Textarea's field box, forwarded to `Textarea`. `"default"` maps to
+   * the `md` control size; `"sm"` maps to the `sm` control size.
+   * @default "default"
+   */
+  size?: TextareaProps["size"];
 } & Omit<
   ComponentProps<typeof Textarea>,
-  "value" | "defaultValue" | "onChange" | "disabled" | "required" | "className"
+  "value" | "defaultValue" | "onChange" | "disabled" | "required" | "className" | "size"
 >;
 
 /**
@@ -63,6 +70,7 @@ export function TextareaField({
   isDisabled = false,
   className,
   textareaClassName,
+  size = "default",
   ref,
   ...props
 }: TextareaFieldProps): ReactElement {
@@ -127,7 +135,7 @@ export function TextareaField({
         required={isRequired}
         disabled={isDisabled}
         {...controlProps}
-        render={<Textarea ref={mergedRef} className={textareaClassName} />}
+        render={<Textarea ref={mergedRef} size={size} className={textareaClassName} />}
       />
     </FieldFrame>
   );

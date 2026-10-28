@@ -6,6 +6,7 @@ import {
   inputGroupRootClass,
   numberFieldGroupClass,
 } from "../../styles/field-box";
+import { fieldSize } from "../../styles/field-size";
 import { checkboxVariants } from "./checkbox";
 import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
 import { fieldGroupVariants } from "./field";
@@ -58,8 +59,15 @@ describe("composeTailwindRenderProps", () => {
 });
 
 describe("fieldGroupVariants", () => {
-  it("does not grow a size axis for density (conventions ruling 2)", () => {
-    expect(fieldGroupVariants.variantKeys).not.toContain("size");
+  it.each(["default", "sm"] as const)("writes the %s field size on the box", (size) => {
+    // Oracle: the box writes, which field-size.test.ts pins by hand.
+    expect(fieldGroupVariants({ size }).split(" ")).toEqual(
+      expect.arrayContaining(fieldSize({ size }).box().split(" "))
+    );
+  });
+
+  it("reads the box height from the field size", () => {
+    expect(fieldGroupVariants().split(" ")).toContain(fieldSize().height());
   });
 });
 

@@ -78,6 +78,15 @@
           "required": false
         },
         {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Control size of the field box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. The segment rows and the calendar trigger follow it.",
+          "required": false
+        },
+        {
           "name": "triggerPlacement",
           "origin": "declared",
           "type": "\"end\" | \"start\" | undefined",

@@ -207,11 +207,14 @@ export function substituteVars(
     if (own !== undefined) {
       read.add(call.name);
     }
-    if (own?.computed === true && own.value !== undefined) {
-      result += own.value;
+    // A custom property set to the CSS-wide `initial` holds the guaranteed-invalid value (§2.2),
+    // as a Fuse field box resets the field size, so the reading `var()` takes its fallback.
+    const ownValue = own?.value?.trim() === "initial" ? undefined : own?.value;
+    if (own?.computed === true && ownValue !== undefined) {
+      result += ownValue;
       continue;
     }
-    const replacement = own?.value ?? call.fallback;
+    const replacement = ownValue ?? call.fallback;
     if (replacement === undefined) {
       return undefined;
     }

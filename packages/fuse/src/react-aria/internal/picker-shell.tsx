@@ -44,6 +44,8 @@ export type PickerShellProps = {
   description?: string;
   /** Error copy, rendered as `FieldError` when the picker is invalid. */
   errorMessage?: ReactNode | ((validation: ValidationResult) => ReactNode);
+  /** The field size the field box writes, `"default"` (md) or `"sm"`. */
+  size?: "sm" | "default";
   /** Paints the read-only fill on the field box — the only place it is painted. */
   isReadOnly?: boolean;
   /** Portal target for the popover, forwarded to the private RAC `Popover`. */
@@ -75,6 +77,7 @@ export function PickerShell({
   label,
   popover,
   range,
+  size = "default",
   triggerPlacement = "end",
 }: PickerShellProps): ReactElement {
   // Throw for a missing LocaleProvider when the picker mounts. Nothing else in a closed
@@ -93,7 +96,7 @@ export function PickerShell({
   return (
     <>
       {label ? <Label>{label}</Label> : null}
-      <FieldGroup className={group()} isReadOnly={isReadOnly}>
+      <FieldGroup className={group()} size={size} isReadOnly={isReadOnly}>
         {triggerPlacement === "start" ? button : null}
         {children}
         {triggerPlacement === "end" ? button : null}

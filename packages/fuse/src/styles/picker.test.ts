@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../test/raw-palette";
-import { controlMdInsetTypeClass } from "./control-size-md";
+import { fieldSize } from "./field-size";
 import { pickerVariants } from "./picker";
 
 /** Every class the recipe can emit, across every face of both axes. */
@@ -57,11 +57,20 @@ describe("pickerVariants shared slots", () => {
     }
   });
 
-  it("keeps the segment row on the md rung's padding and type pair at both densities", () => {
+  it("sizes the trigger to the field's inner square at both sizes", () => {
+    for (const range of [false, true]) {
+      expect(pickerVariants({ range }).trigger().split(" ")).toContain(fieldSize().inner());
+    }
+  });
+
+  it("keeps the segment row on the field's inset and text-entry type at both sizes", () => {
+    const reads = fieldSize();
     for (const range of [false, true]) {
       const input = pickerVariants({ range }).input();
-      // Oracle: the text-entry inset-and-type pair, which control-size.test.ts pins by hand.
-      expect(input.split(" ")).toEqual(expect.arrayContaining(controlMdInsetTypeClass.split(" ")));
+      // Oracle: the field-size reads, which field-size.test.ts pins by hand.
+      expect(input.split(" ")).toEqual(
+        expect.arrayContaining([...reads.inset().split(" "), ...reads.entryType().split(" ")])
+      );
       expect(input).not.toContain("py-");
       expect(input).not.toContain("text-sm");
       expect(input).not.toContain("px-2");
@@ -73,13 +82,13 @@ describe("pickerVariants shared slots", () => {
     expect(everyEmittedClass()).not.toMatch(RAW_PALETTE_RE);
   });
 
-  // FieldGroup owns the md control height (`fieldGroupVariants` in
-  // react-aria/internal/field.tsx), the surface, border, focus ring and the read-only fill.
+  // FieldGroup owns the field height (`fieldGroupVariants` in
+  // react-aria/internal/field.tsx, which writes the field size), the surface, border, focus ring and the read-only fill.
   // The recipe may opt the narrow two-row box out of the height with `h-auto`, but naming
   // any of these here would make it a second owner. The read-only fill used to be painted
   // twice here, on `group` and again on `icon`, while DateField already routed the state
   // through FieldGroup's `isReadOnly` axis.
-  it.each(["--control-h-", "bg-card", "border-input", "ring-ring", "shadow-md", "bg-muted"])(
+  it.each(["--field-h", "--control-h-md", "bg-card", "border-input", "ring-ring", "shadow-md", "bg-muted"])(
     "emits no %s on any slot — FieldGroup owns it",
     (fragment) => {
       expect(everyEmittedClass()).not.toContain(fragment);

@@ -6,15 +6,18 @@ import type { VariantProps } from "tailwind-variants";
 
 import { OWN_CLICK_SELECTOR } from "../../internal/own-click";
 import { cn } from "../../styles/cn";
-import { controlMd } from "../../styles/control-size-md";
-import { inputGroupRootClass } from "../../styles/field-box";
+import { fieldSize } from "../../styles/field-size";
 import { Button } from "../button/button";
-import { Input } from "../input/input";
-import type { InputProps } from "../input/input";
+import { InputControl } from "../input/input";
+import type { InputControlProps } from "../input/input";
 import { inputClass } from "../input/input-class";
-import { Textarea } from "../textarea/textarea";
+import { textareaClass } from "../textarea/textarea-class";
 import { inputGroupControlClass, inputGroupInputControlClass } from "./input-group-class";
-import { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group-variants";
+import {
+  inputGroupAddonVariants,
+  inputGroupButtonVariants,
+  inputGroupRootVariants,
+} from "./input-group-variants";
 
 /**
  * Group chrome follows the disabled, read-only and invalid state of its own input or textarea,
@@ -22,7 +25,15 @@ import { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group
  * child of the root: the group reads its state from that child only, so a field nested in an
  * addon, such as a NumberField, keeps its state to itself.
  */
-export type InputGroupRootProps = ComponentProps<"div">;
+export type InputGroupRootProps = ComponentProps<"div"> & {
+  /**
+   * Control size of the field box. Emitted as `data-size`. `"default"` maps to the `md` control
+   * size; `"sm"` maps to the `sm` control size. The group's input, addon text and `icon-sm`
+   * buttons follow it.
+   * @default "default"
+   */
+  size?: "sm" | "default";
+};
 export type InputGroupAddonProps = ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>;
 
 type InputGroupButtonSize = NonNullable<VariantProps<typeof inputGroupButtonVariants>["size"]>;
@@ -55,12 +66,25 @@ export type InputGroupButtonProps =
       "aria-label": string;
     });
 export type InputGroupTextProps = ComponentProps<"span">;
-export type InputGroupInputProps = InputProps;
+/**
+ * `Input`'s props without its field size: the group's input reads the size of the group around it,
+ * and keeps the native numeric `size` attribute.
+ */
+export type InputGroupInputProps = InputControlProps;
 export type InputGroupTextareaProps = ComponentProps<"textarea">;
 
-export function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElement {
+/** The field-size reads of the parts inside the group. */
+const fieldReads = fieldSize();
+
+export function InputGroupRoot({ className, size = "default", ...props }: InputGroupRootProps): ReactElement {
   return (
-    <div data-slot="input-group" role="group" className={cn(inputGroupRootClass, className)} {...props} />
+    <div
+      data-slot="input-group"
+      role="group"
+      data-size={size}
+      className={cn(inputGroupRootVariants({ size }), className)}
+      {...props}
+    />
   );
 }
 
@@ -131,7 +155,7 @@ export function InputGroupText({ className, ...props }: InputGroupTextProps): Re
       // ButtonGroup `[data-slot]` child-selector contract.
       data-slot="input-group-text"
       className={cn(
-        controlMd.type(),
+        fieldReads.type(),
         "flex items-center gap-2 text-muted-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
         className
       )}
@@ -142,10 +166,10 @@ export function InputGroupText({ className, ...props }: InputGroupTextProps): Re
 
 export function InputGroupInput({ className, ...props }: InputGroupInputProps): ReactElement {
   return (
-    <Input
+    <InputControl
       data-slot="input-group-control"
       data-focus-ring-control=""
-      className={cn(inputGroupInputControlClass, className)}
+      className={cn(inputClass, inputGroupInputControlClass, className)}
       {...props}
     />
   );
@@ -167,12 +191,15 @@ export function InputGroupPlainInput({ className, ...props }: ComponentProps<"in
   );
 }
 
+/**
+ * A textarea with Textarea's look and no field size of its own, so it reads the group's size.
+ */
 export function InputGroupTextarea({ className, ...props }: InputGroupTextareaProps): ReactElement {
   return (
-    <Textarea
+    <textarea
       data-slot="input-group-control"
       data-focus-ring-control=""
-      className={cn(inputGroupControlClass, "resize-none py-2", className)}
+      className={cn(textareaClass, inputGroupControlClass, "resize-none py-2", className)}
       {...props}
     />
   );
