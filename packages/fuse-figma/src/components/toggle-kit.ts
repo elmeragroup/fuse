@@ -5,10 +5,12 @@
  * label, 64 cells.
  *
  * - Both variants rest with no fill. `outline` draws an `input` border and casts `shadow-xs`.
- * - A pressed Toggle fills with `primary` and sets its label in `primary-foreground` through
- *   `aria-pressed:` and `data-pressed:`, which Base UI's Toggle stamps while it is pressed. Hover
- *   paints `muted` on an unpressed Toggle only: the pressed face outranks it, so a pressed Toggle
- *   looks the same at rest and on hover.
+ * - A pressed Toggle fills with `toggle-pressed` and sets its label in
+ *   `toggle-pressed-foreground` through `aria-pressed:` and `data-pressed:`, which Base UI's
+ *   Toggle stamps while it is pressed. Internal themes point the pair at `muted` and
+ *   `foreground`, and external themes at `primary` and `primary-foreground`. Hover paints `muted`
+ *   on an unpressed Toggle only: the pressed face outranks it, so a pressed Toggle looks the same
+ *   at rest and on hover.
  * - Each size is the control size's `min-square` fit. xs rounds with the compact corner, the
  *   synced `radius-compact`, and the other sizes with `radius-md`.
  * - `state-table.ts` gives hover, focus and disabled their variants and the icon edge its

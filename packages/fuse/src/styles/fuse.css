@@ -159,6 +159,8 @@
   --color-selection-disabled-background: var(--selection-disabled-background, var(--muted));
   --color-selection-disabled-hatch: var(--selection-disabled-hatch, oklch(0 0 0 / 0.02));
   --color-selection-disabled-foreground: var(--selection-disabled-foreground, var(--foreground));
+  --color-toggle-pressed: var(--toggle-pressed, var(--muted));
+  --color-toggle-pressed-foreground: var(--toggle-pressed-foreground, var(--foreground));
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-accent: var(--sidebar-accent);

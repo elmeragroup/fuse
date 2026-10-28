@@ -400,22 +400,23 @@ describe("the Toggle component sets", () => {
     expect(square?.swapProperties).toEqual([{ name: "Icon", defaultIcon: "icon/Star" }]);
   });
 
-  it("fills with primary while pressed, with muted on hover, and with nothing at rest", () => {
+  it("fills with toggle-pressed while pressed, with muted on hover, and with nothing at rest", () => {
     // bg-transparent paints nothing, so the root has no fill, as a ghost Button has none.
     expect(toggle("default", "default", "rest", "off").fill).toBeUndefined();
     const hover = toggle("default", "default", "hover", "off");
     expect([hover.fill, firstColor(hover)]).toEqual([paint("muted"), paint("foreground")]);
-    // aria-pressed:bg-primary outranks enabled-hover:bg-muted, which adds no specificity, so a
-    // pressed Toggle keeps its face on hover.
+    // aria-pressed:bg-toggle-pressed outranks enabled-hover:bg-muted, which adds no specificity,
+    // so a pressed Toggle keeps its face on hover. The kit binds the pair itself, so each Figma
+    // theme mode resolves it: muted in internal themes, primary in external ones.
     for (const state of ["rest", "hover"]) {
       const pressed = toggle("default", "default", state, "on");
       expect([pressed.fill, firstColor(pressed)], state).toEqual([
-        paint("primary"),
-        paint("primary-foreground"),
+        paint("toggle-pressed"),
+        paint("toggle-pressed-foreground"),
       ]);
     }
     const disabled = toggle("outline", "default", "disabled", "on");
-    expect([disabled.fill, disabled.opacity]).toEqual([paint("primary"), 0.5]);
+    expect([disabled.fill, disabled.opacity]).toEqual([paint("toggle-pressed"), 0.5]);
   });
 
   it("rounds xs with the compact corner and the other sizes with radius-md", () => {

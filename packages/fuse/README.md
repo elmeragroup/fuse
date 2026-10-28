@@ -98,6 +98,15 @@ The checked row's tint and the disabled fill win over a background class on the 
 }
 ```
 
+A pressed `Toggle` or `ToggleGroup.Item` fills with `--toggle-pressed` and sets its label in `--toggle-pressed-foreground`. Without them it takes your `--muted` with `--foreground` text, as internal themes do. For the external themes' face, which stands apart from a tinted page, set:
+
+```css
+:root {
+  --toggle-pressed: var(--primary);
+  --toggle-pressed-foreground: var(--primary-foreground);
+}
+```
+
 `RadioItem` and `CheckboxItem` row titles read `--selection-title-weight`. Without it they are 400, as internal themes set them. For the external themes' medium title, which matches the group legend and `CheckboxCard` titles, set:
 
 ```css

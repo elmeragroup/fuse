@@ -305,6 +305,16 @@ export default function ThemingPage(): ReactElement {
         itself to change the fill under a plain wrapper.
       </p>
       <p>
+        A pressed <code>Toggle</code> or <code>ToggleGroup.Item</code> fills with{" "}
+        <code>--toggle-pressed</code> and sets its label in <code>--toggle-pressed-foreground</code>. Internal
+        themes keep the quiet <code>var(--muted)</code> face with <code>var(--foreground)</code> text on their
+        neutral page. External themes fill it with <code>var(--primary)</code> and{" "}
+        <code>var(--primary-foreground)</code>, because <code>muted</code> barely shows on a tinted brand page
+        and is also the hover tint. Both pairs are aliases, so a dark scheme resolves them against its own
+        roles. A pressed toggle keeps its face under the pointer. To change it, override the two roles on the
+        element that carries the theme attributes, or on any element around the toggles.
+      </p>
+      <p>
         The weight of a <code>RadioItem</code> or <code>CheckboxItem</code> row title is themed too. It, which
         reads <code>--selection-title-weight</code>. External themes set it to <code>500</code>, the weight of
         the group legend and a <code>CheckboxCard</code> title, and internal themes keep the regular{" "}

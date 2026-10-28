@@ -74,6 +74,8 @@ describe("TOKEN_TABLE", () => {
       "selection-disabled-background",
       "selection-disabled-hatch",
       "selection-disabled-foreground",
+      "toggle-pressed",
+      "toggle-pressed-foreground",
     ]);
   });
 });
@@ -93,6 +95,8 @@ describe("LIGHT_ONLY_TOKENS", () => {
         "selection-disabled-background",
         "selection-disabled-hatch",
         "selection-disabled-foreground",
+        "toggle-pressed",
+        "toggle-pressed-foreground",
         "radius",
         "radius-button",
         "radius-field",
@@ -148,6 +152,7 @@ describe("FOREGROUND_PAIRS", () => {
       { surface: "warning", foreground: "warning-foreground" },
       { surface: "warning-soft", foreground: "warning-soft-foreground" },
       { surface: "destructive", foreground: "destructive-foreground" },
+      { surface: "toggle-pressed", foreground: "toggle-pressed-foreground" },
       { surface: "sidebar", foreground: "sidebar-foreground" },
       { surface: "sidebar-accent", foreground: "sidebar-accent-foreground" },
       { surface: "sidebar-brand", foreground: "sidebar-brand-foreground" },

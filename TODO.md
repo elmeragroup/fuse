@@ -427,8 +427,8 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   covers that case by construction only.
 - Give an overridden declaration a dropped row in `plugin/dist/coverage.md`, so every recipe class
   appears in the coverage table. The build records only the declaration that wins each property,
-  so `aria-pressed:bg-primary` gets no row: `data-pressed:bg-primary` sets the same property later in
-  Tailwind's order.
+  so `aria-pressed:bg-toggle-pressed` gets no row: `data-pressed:bg-toggle-pressed` sets the same
+  property later in Tailwind's order.
 - Add Attachment and AspectRatio to the kit. Attachment needs its five states, three sizes and
   both orientations, with Button instances for its actions. AspectRatio needs one frame per
   ratio in its seven-ratio set.

@@ -74,6 +74,8 @@ export const EXTERNAL_VARIANT_LAYER = {
   "selection-disabled-background": "var(--card)",
   "selection-disabled-hatch": "oklch(0 0 0 / 0)",
   "selection-disabled-foreground": "var(--muted-foreground)",
+  "toggle-pressed": "var(--primary)",
+  "toggle-pressed-foreground": "var(--primary-foreground)",
   "radius-step": "2px",
   "button-outline-width": "2px",
   "selection-title-weight": "500",

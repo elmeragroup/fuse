@@ -6,7 +6,13 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 // Role tokens live in themes.css only; the faces below read them per scheme.
 import "../../../dist/themes.css";
-import { cssVarColor, fkasExternal, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import {
+  cssVarColor,
+  fkasExternal,
+  fkasPrivate,
+  renderThemed,
+  roleNamed,
+} from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
 import { ToggleGroup } from "../toggle-group";
 import { Toggle } from "./toggle";
@@ -37,9 +43,31 @@ const LAYOUTS = {
   ),
 };
 
-const CASES = (["standalone", "joined", "spaced"] as const).flatMap((layout) =>
-  (["default", "outline"] as const).flatMap((variant) =>
-    (["light", "dark"] as const).map((scheme) => [layout, variant, scheme] as const)
+/**
+ * The role pair each theme variant fills a pressed toggle with, and the pair the other variant
+ * uses. Internal themes keep the quiet muted face on their neutral page; external themes fill
+ * with primary, since muted barely clears their tinted brand pages.
+ */
+const PRESSED_ROLES = {
+  internal: {
+    theme: fkasPrivate,
+    fill: "--muted",
+    text: "--foreground",
+    otherFill: "--primary",
+  },
+  external: {
+    theme: fkasExternal,
+    fill: "--primary",
+    text: "--primary-foreground",
+    otherFill: "--muted",
+  },
+} as const;
+
+const CASES = (["internal", "external"] as const).flatMap((themeVariant) =>
+  (["standalone", "joined", "spaced"] as const).flatMap((layout) =>
+    (["default", "outline"] as const).flatMap((variant) =>
+      (["light", "dark"] as const).map((scheme) => [themeVariant, layout, variant, scheme] as const)
+    )
   )
 );
 
@@ -53,23 +81,21 @@ async function faceOf(name: string): Promise<{ fill: string; text: string }> {
 
 describe("Toggle pressed face", () => {
   it.each(CASES)(
-    "fills a pressed %s %s toggle with primary, apart from the hover tint, in %s",
-    async (layout, variant, scheme) => {
+    "fills a pressed %s %s %s toggle with its variant's pressed pair, in %s",
+    async (themeVariant, layout, variant, scheme) => {
       // Unit under test: the pressed and hover faces `toggleVariants` gives Toggle and
-      // ToggleGroup.Item. Oracle: the scope's own `--primary`, `--primary-foreground`,
-      // `--muted` and `--foreground`, on the fkas private page, whose tint the muted hover
-      // barely clears.
-      const toggles = <ThemeScope theme={fkasExternal}>{LAYOUTS[layout](variant)}</ThemeScope>;
+      // ToggleGroup.Item. Oracle: the scope's own role values, on the fkas private page: its
+      // `--muted` and `--foreground` for an internal pressed toggle, its `--primary` and
+      // `--primary-foreground` for an external one, and `--muted` and `--foreground` on hover.
+      const roles = PRESSED_ROLES[themeVariant];
+      const toggles = <ThemeScope theme={roles.theme}>{LAYOUTS[layout](variant)}</ThemeScope>;
       renderThemed(scheme === "dark" ? <div data-theme="dark">{toggles}</div> : toggles);
       const host = roleNamed("button", "Pressed");
-      const pressed = {
-        fill: cssVarColor(host, "--primary"),
-        text: cssVarColor(host, "--primary-foreground"),
-      };
+      const pressed = { fill: cssVarColor(host, roles.fill), text: cssVarColor(host, roles.text) };
       const hovered = { fill: cssVarColor(host, "--muted"), text: cssVarColor(host, "--foreground") };
-      // Oracle sanity: the hover tint differs from the pressed fill, so a pressed face that
-      // kept the tint fails.
-      expect(hovered.fill).not.toBe(pressed.fill);
+      // Oracle sanity: the other variant's pressed fill differs in this scope, so a recipe that
+      // painted the wrong variant's pair fails.
+      expect(cssVarColor(host, roles.otherFill)).not.toBe(pressed.fill);
 
       expect(await faceOf("Pressed")).toEqual(pressed);
       expect((await faceOf("Unpressed")).fill).toBe("rgba(0, 0, 0, 0)");
@@ -83,4 +109,16 @@ describe("Toggle pressed face", () => {
       expect((await faceOf("Unpressed")).fill).toBe("rgba(0, 0, 0, 0)");
     }
   );
+
+  it("follows a host override of the pressed pair", async () => {
+    // Unit under test: the `toggle-pressed` utilities. Oracle: literal colours the host sets on
+    // an internal scope, which no theme declares.
+    renderThemed(
+      <div
+        style={{ "--toggle-pressed": "rgb(1, 2, 3)", "--toggle-pressed-foreground": "rgb(250, 251, 252)" }}>
+        <Toggle defaultPressed>Pressed</Toggle>
+      </div>
+    );
+    expect(await faceOf("Pressed")).toEqual({ fill: "rgb(1, 2, 3)", text: "rgb(250, 251, 252)" });
+  });
 });
