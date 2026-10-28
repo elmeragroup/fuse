@@ -58,6 +58,10 @@
       "types": "./src/autocomplete.ts",
       "import": "./src/autocomplete.ts"
     },
+    "./autocomplete-field": {
+      "types": "./src/autocomplete-field.ts",
+      "import": "./src/autocomplete-field.ts"
+    },
     "./avatar": {
       "types": "./src/avatar.ts",
       "import": "./src/avatar.ts"
@@ -101,6 +105,10 @@
     "./combobox": {
       "types": "./src/combobox.ts",
       "import": "./src/combobox.ts"
+    },
+    "./combobox-field": {
+      "types": "./src/combobox-field.ts",
+      "import": "./src/combobox-field.ts"
     },
     "./command": {
       "types": "./src/command.ts",

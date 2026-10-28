@@ -23,11 +23,11 @@ import {
 import { DENSITIES } from "../../theme/density";
 import type { Density } from "../../theme/density";
 import { Autocomplete } from "../autocomplete";
-import { AutocompleteField } from "../autocomplete/autocomplete-field";
+import { AutocompleteField } from "../autocomplete-field/autocomplete-field";
 import { CheckboxGroup, CheckboxItemGroup } from "../checkbox/checkbox";
 import { CheckboxItem } from "../checkbox/checkbox-item";
 import { Combobox } from "../combobox";
-import { ComboboxField } from "../combobox/combobox-field";
+import { ComboboxField } from "../combobox-field/combobox-field";
 import { Form } from "../form/form";
 import { Input } from "../input/input";
 import { NumberField } from "../number-field/number-field";

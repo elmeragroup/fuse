@@ -3,8 +3,9 @@ import type { ReactNode } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import { Autocomplete, AutocompleteField } from "@elmeragroup/fuse/autocomplete";
-import type { AutocompleteFieldProps } from "@elmeragroup/fuse/autocomplete";
+import { Autocomplete } from "@elmeragroup/fuse/autocomplete";
+import { AutocompleteField } from "@elmeragroup/fuse/autocomplete-field";
+import type { AutocompleteFieldProps } from "@elmeragroup/fuse/autocomplete-field";
 
 type Company = { name: string; orgNumber: string };
 const companies: Company[] = [{ name: "Fjellkraft AS", orgNumber: "998877665" }];

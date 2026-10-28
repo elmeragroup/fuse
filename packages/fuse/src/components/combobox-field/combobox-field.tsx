@@ -2,9 +2,9 @@ import type { ReactElement, ReactNode, Ref } from "react";
 
 import { definedProps } from "../../internal/defined-props";
 import type { ListItemOf, ListItems } from "../../internal/list-items";
+import { ComboboxContent, ComboboxInput, ComboboxRoot } from "../combobox/combobox";
+import type { ComboboxRootProps } from "../combobox/combobox";
 import { FieldFrame } from "../field/field-frame";
-import { ComboboxContent, ComboboxInput, ComboboxRoot } from "./combobox";
-import type { ComboboxRootProps } from "./combobox";
 
 /**
  * The Root props the field names itself (`items`, `filteredItems`, `name`, `disabled` as

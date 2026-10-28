@@ -3,8 +3,9 @@ import type { ReactNode } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import { Combobox, ComboboxField } from "@elmeragroup/fuse/combobox";
-import type { ComboboxFieldProps } from "@elmeragroup/fuse/combobox";
+import { Combobox } from "@elmeragroup/fuse/combobox";
+import { ComboboxField } from "@elmeragroup/fuse/combobox-field";
+import type { ComboboxFieldProps } from "@elmeragroup/fuse/combobox-field";
 
 type Company = { name: string; orgNumber: string };
 const companies: Company[] = [{ name: "Fjellkraft AS", orgNumber: "998877665" }];

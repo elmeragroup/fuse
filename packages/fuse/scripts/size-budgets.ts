@@ -83,12 +83,13 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  // 2026-10-28: new entries. AutocompleteField and ComboboxField put the Autocomplete and Combobox
+  // parts in the FieldFrame that SelectField wears.
+  { name: "autocomplete-field", entryFile: "autocomplete-field.js", measuredGzip: 80251 },
+  { name: "combobox-field", entryFile: "combobox-field.js", measuredGzip: 79490 },
   // 2026-10-26: new entry, measured at 76887. Base UI's Autocomplete shares the Combobox internals,
   // and the parts render InputGroup and the shared overlay portal.
-  // 2026-10-27: autocomplete measured 83098 once AutocompleteField brought Field and FieldFrame into
-  // the entry. Main re-measured 76886 the same day, so the change adds 6212 and the ceiling rises by
-  // that delta, from 115331.
-  { name: "autocomplete", entryFile: "autocomplete.js", measuredGzip: 83098, ceilingGzip: 121543 },
+  { name: "autocomplete", entryFile: "autocomplete.js", measuredGzip: 76887 },
   // 2026-10-23: new entry, measured at 25337. Base UI's useRender and mergeProps, the shared focus
   // ring and state face, and the pure accept, split and read modules.
   { name: "file-upload", entryFile: "file-upload.js", measuredGzip: 25337 },
@@ -132,10 +133,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
     measuredGzip: 61411,
     ceilingGzip: 90792,
   },
-  // 2026-10-27: combobox measured 84777 once ComboboxField brought Field and FieldFrame into the
-  // entry. Main, whose row still records 75479, re-measured 78979 the same day, so the change adds
-  // 5798 and the ceiling rises by that delta, from 109703.
-  { name: "combobox", entryFile: "combobox.js", measuredGzip: 84777, ceilingGzip: 115501 },
+  { name: "combobox", entryFile: "combobox.js", measuredGzip: 75479, ceilingGzip: 109703 },
   { name: "toggle-group", entryFile: "toggle-group.js", measuredGzip: 29541, ceilingGzip: 43413 },
   { name: "checkbox-card", entryFile: "checkbox-card.js", measuredGzip: 30303, ceilingGzip: 45285 },
   { name: "radio-group", entryFile: "radio-group.js", measuredGzip: 41712, ceilingGzip: 60297 },

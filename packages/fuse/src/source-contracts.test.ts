@@ -161,12 +161,11 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
 const SERVER_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["alert", ["components/alert/alert.tsx"]],
   ["aspect-ratio", ["components/aspect-ratio/aspect-ratio.tsx"]],
-  // The labeled composites in the autocomplete and combobox entries own no state, as SelectField.
-  ["autocomplete-field", ["components/autocomplete/autocomplete-field.tsx"]],
+  ["autocomplete-field", ["components/autocomplete-field/autocomplete-field.tsx"]],
   ["badge", ["components/badge/badge.tsx"]],
   ["card", ["components/card/card.tsx"]],
   ["code", ["components/code/code.tsx"]],
-  ["combobox-field", ["components/combobox/combobox-field.tsx"]],
+  ["combobox-field", ["components/combobox-field/combobox-field.tsx"]],
   ["description-list", ["components/description-list/description-list.tsx"]],
   ["emoji", ["components/emoji/emoji.tsx"]],
   ["empty", ["components/empty/empty.tsx"]],

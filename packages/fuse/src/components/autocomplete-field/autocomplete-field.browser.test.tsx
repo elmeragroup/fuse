@@ -13,25 +13,25 @@ import {
   roleNamed,
   textNamed,
 } from "../../../test/themed-browser-render";
+import { Autocomplete } from "../autocomplete";
 import { Form } from "../form/form";
-import { ComboboxField } from "./combobox-field";
-import type { ComboboxFieldProps } from "./combobox-field";
-import { Combobox } from "./index";
+import { AutocompleteField } from "./autocomplete-field";
+import type { AutocompleteFieldProps } from "./autocomplete-field";
 
 const FRUITS = ["Apple", "Banana", "Cherry"];
 
-function Fruit(props: ComboboxFieldProps<string[]>) {
+function Fruit(props: AutocompleteFieldProps<string[]>) {
   return (
-    <ComboboxField label="Fruit" name="fruit" items={FRUITS} {...props}>
-      <Combobox.Empty />
-      <Combobox.List>
+    <AutocompleteField label="Fruit" name="fruit" items={FRUITS} {...props}>
+      <Autocomplete.Empty />
+      <Autocomplete.List>
         {(fruit: string) => (
-          <Combobox.Item key={fruit} value={fruit}>
+          <Autocomplete.Item key={fruit} value={fruit}>
             {fruit}
-          </Combobox.Item>
+          </Autocomplete.Item>
         )}
-      </Combobox.List>
-    </ComboboxField>
+      </Autocomplete.List>
+    </AutocompleteField>
   );
 }
 
@@ -47,26 +47,19 @@ function formEntries(name: string): [string, FormDataEntryValue][] {
   return [...new FormData(formNamed(name)).entries()];
 }
 
-async function choose(option: string) {
-  await userEvent.click(roleNamed("button", "Toggle options"));
-  await expect.element(page.getByRole("listbox")).toBeInTheDocument();
-  await userEvent.click(roleNamed("option", option));
-  await expect.poll(() => page.getByRole("listbox").query()).toBeNull();
-}
-
-describe("ComboboxField", () => {
+describe("AutocompleteField", () => {
   it("names the input from its label, which points at the Root's id, describes it with its error, then its description, and hands it the ref", () => {
     const ref = createRef<HTMLInputElement>();
     renderThemed(
       withLocale(
         "en-US",
-        <Fruit ref={ref} id="fruit" description="Pick one fruit." errorMessage="Pick a fruit." />
+        <Fruit ref={ref} id="fruit" description="Any fruit will do." errorMessage="Pick a fruit." />
       )
     );
     expect(ref.current).toBe(input());
     expect(input().id).toBe("fruit");
     expect(textNamed("Fruit").getAttribute("for")).toBe("fruit");
-    expect(describedTextsFor(input())).toEqual(["Pick a fruit.", "Pick one fruit."]);
+    expect(describedTextsFor(input())).toEqual(["Pick a fruit.", "Any fruit will do."]);
   });
 
   it("fills the field's width with its input box", () => {
@@ -81,7 +74,7 @@ describe("ComboboxField", () => {
     expect(fieldBoxOf(input()).getBoundingClientRect().width).toBe(320);
   });
 
-  it("shows a Form error under its name, marks the input invalid, and clears it when the selection changes", async () => {
+  it("shows a Form error under its name, marks the input invalid, and clears it when the user edits the text", async () => {
     renderThemed(
       withLocale(
         "en-US",
@@ -93,12 +86,12 @@ describe("ComboboxField", () => {
     expect(input().getAttribute("aria-invalid")).toBe("true");
     expect(describedTextsFor(input())).toEqual(["We are out of that fruit."]);
 
-    await choose("Cherry");
+    await userEvent.type(input(), "K");
     expect(input().getAttribute("aria-invalid")).toBeNull();
     expect(page.getByText("We are out of that fruit.", { exact: true }).query()).toBeNull();
   });
 
-  it("submits the selected value once under its name", async () => {
+  it("submits the typed text once under its name, and the text of a picked suggestion", async () => {
     renderThemed(
       withLocale(
         "en-US",
@@ -107,8 +100,13 @@ describe("ComboboxField", () => {
         </form>
       )
     );
-    await choose("Banana");
-    expect(input().value).toBe("Banana");
+    await userEvent.fill(input(), "Kiwi");
+    expect(formEntries("Order")).toEqual([["fruit", "Kiwi"]]);
+
+    await userEvent.fill(input(), "Ban");
+    await expect.element(page.getByRole("listbox")).toBeInTheDocument();
+    await userEvent.click(roleNamed("option", "Banana"));
+    await expect.poll(() => page.getByRole("listbox").query()).toBeNull();
     expect(formEntries("Order")).toEqual([["fruit", "Banana"]]);
   });
 
@@ -118,19 +116,35 @@ describe("ComboboxField", () => {
       withLocale(
         "en-US",
         <>
-          <Fruit isDisabled />
+          <Fruit isDisabled showTrigger />
           <Fruit label="Snack" isDisabled showClear defaultValue="Apple" />
         </>
       )
     );
     expect(input()).toBeDisabled();
     expect(input("Snack")).toBeDisabled();
-    expect(roleNamed("button", "Toggle options")).toBeDisabled();
-    expect(roleNamed("button", "Clear selection")).toBeDisabled();
+    expect(roleNamed("button", "Toggle suggestions")).toBeDisabled();
+    expect(roleNamed("button", "Clear text")).toBeDisabled();
   });
 
   it("marks the input required with isRequired", () => {
     renderThemed(withLocale("en-US", <Fruit isRequired />));
     expect(input()).toBeRequired();
+  });
+
+  it("announces status from one live region beside the input, outside the popup", async () => {
+    const { rerender } = renderThemed(withLocale("en-US", <Fruit status={null} />));
+    const status = page.getByRole("status").element();
+    expect(status.textContent).toBe("");
+
+    await userEvent.fill(input(), "a");
+    await expect.element(page.getByRole("listbox")).toBeInTheDocument();
+    rerender(withLocale("en-US", <Fruit status="3 fruits" />));
+    await expect.poll(() => status.textContent).toBe("3 fruits");
+
+    // The popup's Empty is a live region of its own while it is open, so check after it closes.
+    await userEvent.keyboard("{Escape}");
+    await expect.poll(() => page.getByRole("listbox").query()).toBeNull();
+    expect(page.getByRole("status").elements()).toEqual([status]);
   });
 });

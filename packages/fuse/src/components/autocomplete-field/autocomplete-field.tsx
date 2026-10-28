@@ -2,9 +2,14 @@ import type { ReactElement, ReactNode, Ref } from "react";
 
 import { definedProps } from "../../internal/defined-props";
 import type { ListItemOf, ListItems } from "../../internal/list-items";
+import {
+  AutocompleteContent,
+  AutocompleteInput,
+  AutocompleteRoot,
+  AutocompleteStatus,
+} from "../autocomplete/autocomplete";
+import type { AutocompleteRootProps } from "../autocomplete/autocomplete";
 import { FieldFrame } from "../field/field-frame";
-import { AutocompleteContent, AutocompleteInput, AutocompleteRoot, AutocompleteStatus } from "./autocomplete";
-import type { AutocompleteRootProps } from "./autocomplete";
 
 /**
  * The Root props the field names itself (`items`, `filteredItems`, `name`, `disabled` as

@@ -6,9 +6,9 @@ Add `AutocompleteField` and `ComboboxField`, labeled fields laid out like `TextF
 `SelectField`: the label 4px from the input at both densities, the input filling the field's width,
 then the error ahead of the description.
 
-- `AutocompleteField`, from `@elmeragroup/fuse/autocomplete`, submits the text in its input.
-  `ComboboxField`, from `@elmeragroup/fuse/combobox`, submits the option the user selected and takes
-  one selection. Both are in the root barrel and render on the server, since they own no state.
+- `AutocompleteField`, from `@elmeragroup/fuse/autocomplete-field`, submits the text in its input.
+  `ComboboxField`, from `@elmeragroup/fuse/combobox-field`, submits the option the user selected and
+  takes one selection. Both are in the root barrel and render on the server, since they own no state.
 - Both take `label`, `description`, `errorMessage`, `isInvalid`, `isRequired`, `isDisabled` and
   `name`, the input's `placeholder`, `showTrigger` and `showClear`, `inputClassName`, and a `ref`
   to the input. The props they do not name themselves go to the Root, such as `value`,
