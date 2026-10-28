@@ -129,7 +129,7 @@ export function AutocompleteCompanySearch() {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-sm flex w-full flex-col gap-4">
-      <Field.Root name="company" spacing="part">
+      <Field.Root name="company">
         <Field.Label>Company name</Field.Label>
         <Autocomplete.Root
           id="company"

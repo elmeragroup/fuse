@@ -1,7 +1,7 @@
 /**
  * Runtime-free Field recipes. Not exported from the public entry, since there is no proven
  * recipe-borrowing use; the workspace-only recipe catalog re-exports them for the Figma component
- * sync. `orientation` and `spacing` are the Root's axes and `variant` the Legend's. The Title and the Label share
+ * sync. `orientation` is the Root axis and `variant` the Legend's. The Title and the Label share
  * their heading classes: `title` puts its centering before them, and `label` its composition arms.
  * `description`, `error` and `legend` are the other text parts. `set` stacks a `Field.Set`'s parts, closer
  * around a checkbox or radio group. `field.tsx` resolves the slots of the
@@ -17,7 +17,7 @@ const headingClass = cn(labelTypeClass, "font-medium flex w-fit gap-2 group-data
 
 export const fieldVariants = tv({
   slots: {
-    root: "group/field flex w-full gap-(--surface-gap-md) data-invalid:text-error",
+    root: "group/field flex w-full data-invalid:text-error",
     title: ["items-center", headingClass],
     label: [
       fieldLabelCardShellClass,
@@ -35,29 +35,27 @@ export const fieldVariants = tv({
     set: "flex flex-col gap-(--surface-gap-xl) has-[>[data-slot=checkbox-group]]:gap-(--surface-gap-md) has-[>[data-slot=radio-group]]:gap-(--surface-gap-md)",
   },
   variants: {
+    // A vertical root is the labeled composites' stack, its label 4px from its control at both
+    // densities, so a field built from parts looks like a `TextField`. A horizontal root sets a
+    // control beside its label `--surface-gap-md` apart, which follows density. The responsive
+    // root is the vertical one below the field group's md width and the horizontal one past it.
     orientation: {
       // A vertical root stretches its children to its width, except a Checkbox or Switch, which keep
       // their own size. Stretched in a root that sized to its content, they shrank to their border
       // or thumb. `:where()` keeps the selector at the specificity of one class.
       vertical: {
-        root: "flex-col [&>.sr-only]:w-auto [&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full",
+        root: "flex-col gap-1 [&>.sr-only]:w-auto [&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full",
       },
       horizontal: {
-        root: "flex-row items-center has-[>[data-slot=field-content]]:items-start *:data-field-heading:flex-auto has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
+        root: "flex-row items-center gap-(--surface-gap-md) has-[>[data-slot=field-content]]:items-start *:data-field-heading:flex-auto has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
       },
       // The md row resets the stretch through the stretch's own child selector, so it leaves a
       // Checkbox or Switch at its size, as the horizontal orientation does. Tailwind emits that
       // reset after the stretch, since it adds a variant to the same selector, and it wins at equal
       // specificity. A `*:` reset sorts before the stretch and loses.
       responsive: {
-        root: "@md/field-group:flex-row @md/field-group:items-center @md/field-group:[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-field-heading:flex-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px flex-col [&>.sr-only]:w-auto [&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full",
+        root: "@md/field-group:flex-row @md/field-group:items-center @md/field-group:gap-(--surface-gap-md) @md/field-group:[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-field-heading:flex-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px flex-col gap-1 [&>.sr-only]:w-auto [&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full",
       },
-    },
-    // `group` keeps the root's `--surface-gap-md`, which follows density. `part` is the labeled
-    // composites' compact stack, the label 4px from its control at both densities.
-    spacing: {
-      group: {},
-      part: { root: "gap-1" },
     },
     // `legend` titles a fieldset at a fixed 16/24px, and `label` reads the label type pair to match a
     // `Field.Label`.
@@ -68,7 +66,6 @@ export const fieldVariants = tv({
   },
   defaultVariants: {
     orientation: "vertical",
-    spacing: "group",
     variant: "legend",
   },
 });

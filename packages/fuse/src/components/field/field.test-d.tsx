@@ -2,15 +2,10 @@ import { test } from "vitest";
 
 import { Field } from "@elmeragroup/fuse/field";
 
-test("Root takes the three-value orientation axis and the two-value spacing axis, Legend the two-value variant axis, and parts useRender's render prop but never a polymorphic as prop", () => {
+test("Root takes the three-value orientation axis, Legend the two-value variant axis, and parts useRender's render prop but never a polymorphic as prop", () => {
   const _vertical = <Field.Root orientation="vertical" />;
   const _horizontal = <Field.Root orientation="horizontal" />;
   const _responsive = <Field.Root orientation="responsive" />;
-  const _partSpacing = <Field.Root spacing="part" />;
-  const _groupSpacing = <Field.Root spacing="group" />;
-
-  // @ts-expect-error spacing is part | group, not a gap size
-  const _badSpacing = <Field.Root spacing="sm" />;
   const _legend = <Field.Legend variant="label" />;
   const _legendDefault = <Field.Legend variant="legend" />;
 

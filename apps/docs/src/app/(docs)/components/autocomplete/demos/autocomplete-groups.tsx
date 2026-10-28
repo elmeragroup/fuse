@@ -35,7 +35,7 @@ const counties: readonly County[] = [
 
 export function AutocompleteGroups() {
   return (
-    <Field.Root name="powerPlant" spacing="part" className="max-w-xs">
+    <Field.Root name="powerPlant" className="max-w-xs">
       <Field.Label>Power plant</Field.Label>
       <Autocomplete.Root id="power-plant" items={counties} itemToStringValue={(plant) => plant.name}>
         <Autocomplete.Input placeholder="Type a power plant…" showClear />

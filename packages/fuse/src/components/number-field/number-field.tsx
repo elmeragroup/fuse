@@ -129,7 +129,6 @@ export function NumberField({
 
   return (
     <FieldFrame
-      spacing="part"
       className={className}
       invalid={isInvalid}
       disabled={isDisabled}

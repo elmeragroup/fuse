@@ -1,7 +1,7 @@
 /**
  * Textarea field, as one component set on the Textarea page: the docs Basic demo's labelled
  * textarea in five states, 5 cells. The root is `TextareaField`'s `Field.Root`, Base UI's `<div
- * data-slot="field">` with the `root` slot of `fieldVariants`, a column `surface-gap-md` apart.
+ * data-slot="field">` with the `root` slot of `fieldVariants`, a column 4px apart.
  *
  * - The heading row is FieldFrame's label row with TextareaField's 8px gap: a `Label` instance and,
  *   behind the `Counter` BOOLEAN property, the character counter at the row's end in 12px

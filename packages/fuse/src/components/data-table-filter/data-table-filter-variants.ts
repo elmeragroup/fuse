@@ -195,8 +195,7 @@ export const dataTableFilterVariants = tv({
     /** Two date inputs side by side. */
     dateFields: "grid grid-cols-2 gap-(--surface-gap-sm)",
     /** A date input's Field, its label above the input in the popup's small type. */
-    dateField:
-      "*:data-[slot=field-label]:text-xs gap-(--surface-pad-sm) *:data-[slot=field-label]:text-muted-foreground",
+    dateField: "*:data-[slot=field-label]:text-xs *:data-[slot=field-label]:text-muted-foreground",
     /** Number fields stack, since a formatted amount and two steppers need the full width. */
     numberStack: "flex flex-col gap-(--surface-gap-sm)",
     /** layout. The option editor: its search, list and status. */

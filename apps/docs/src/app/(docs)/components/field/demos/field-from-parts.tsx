@@ -4,11 +4,11 @@ import { Field } from "@elmeragroup/fuse/field";
 import { InputGroup } from "@elmeragroup/fuse/input-group";
 import { TextField } from "@elmeragroup/fuse/text-field";
 
-export function FieldSpacing() {
+export function FieldFromParts() {
   return (
     <div className="sm:grid-cols-2 grid w-full gap-4">
       <TextField label="Meter number" description="Printed on the meter." filter="numeric" />
-      <Field.Root spacing="part">
+      <Field.Root>
         <Field.Label>Annual usage</Field.Label>
         <InputGroup.Root>
           <InputGroup.Input filter="numeric" />

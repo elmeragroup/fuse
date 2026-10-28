@@ -391,7 +391,6 @@ export function PhoneNumberField({
   return (
     <>
       <FieldFrame
-        spacing="part"
         className={className}
         name={name}
         invalid={isInvalid}
