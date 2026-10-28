@@ -115,7 +115,7 @@ function OptionEditorBody({
       data-slot="data-table-filter-option-editor"
       className={cn(slots.optionEditor(), className)}
       {...props}>
-      <ComboboxRoot<FilterOption, true>
+      <ComboboxRoot
         inline
         open
         multiple

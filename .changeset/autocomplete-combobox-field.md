@@ -15,7 +15,7 @@ then the error ahead of the description.
   `defaultValue`, `onValueChange`, `itemToStringValue`, `filter` and `id`, which the label points
   at.
 - `items`, flat or grouped, gives `itemToStringValue` and the other callbacks the item type, as
-  `Autocomplete.Root` does, and `filteredItems` does without `items`. For `ComboboxField`, the item
+  `Autocomplete.Root` and `Combobox.Root` do, and `filteredItems` does without `items`. For `ComboboxField`, the item
   type is also the selected value's type.
 - Inside a `Form`, the field shows the error `Form` holds under its `name`, also in the first
   server-rendered HTML, until the user edits the text or changes the selection.

@@ -142,7 +142,7 @@ export function ComboboxField<
       label={label}
       description={description}
       errorMessage={errorMessage}>
-      <ComboboxRoot<Value> {...definedProps(props)} required={isRequired} disabled={isDisabled}>
+      <ComboboxRoot<Items, Filtered, Value> {...definedProps(props)} required={isRequired} disabled={isDisabled}>
         <ComboboxInput
           ref={ref}
           {...definedProps({ placeholder, className: inputClassName })}

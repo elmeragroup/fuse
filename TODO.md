@@ -447,11 +447,6 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   10px (dense) or 18px (comfortable) short of the group's right edge. `Autocomplete.Input` renders
   its InputGroup through Base UI's `InputGroup` part, which Base UI anchors the popup to, so its
   popup is the group's width. `Combobox.Input` could do the same and drop the `+28px` minimum.
-- Move the item-type inference from `ComboboxField` to `Combobox.Root`. `ComboboxField` infers the
-  item type from `items`, so `itemToStringValue` receives one item, but `Combobox.Root` takes
-  Base UI's `items: any[]`, so the same props on the compound do not type from `items`.
-  `Autocomplete.Root` owns its inference. Adding type parameters ahead of `Multiple` changes
-  `Combobox.Root`'s public generics.
 - Finish the real-file checks for the plugin's move to Effect (#410):
   - Time one Plan and one Apply against a `figma:plugin` build from 51add90f.
   - Check that one Cmd+Z undoes a whole Apply and that Figma does not redraw partway through a run.
