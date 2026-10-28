@@ -3,8 +3,8 @@ import { cn } from "./cn";
 /**
  * The open/close height transition shared by `Collapsible.Content` and `Accordion.Content`.
  * One constant because the only difference between the two is which Base UI variable
- * carries the measured panel height, which each call site appends as
- * `h-(--…-panel-height)`.
+ * carries the measured panel height, which each call site appends as a height utility
+ * reading `--accordion-panel-height` or `--collapsible-panel-height`.
  *
  * It keys the collapsed state on `data-starting-style` / `data-ending-style`, never on
  * `data-open`. Base UI takes `data-open` straight from the `open` state, while the ending
