@@ -31,7 +31,6 @@ test("NumberFieldProps is the closed composite face", () => {
   expectTypeOf<NumberFieldProps>().toHaveProperty("autoFocus");
   expectTypeOf<NumberFieldProps>().toHaveProperty("id");
   expectTypeOf<NumberFieldProps>().not.toHaveProperty("locale");
-  expectTypeOf<NumberFieldProps["size"]>().toEqualTypeOf<"sm" | "default" | undefined>();
   expectTypeOf<NumberFieldProps>().not.toHaveProperty("as");
   expectTypeOf<NumberFieldProps>().not.toHaveProperty("format");
   expectTypeOf<NumberFieldProps>().not.toHaveProperty("min");

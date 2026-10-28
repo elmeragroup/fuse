@@ -20,6 +20,7 @@ import {
   InputGroupPlainInput,
   InputGroupRoot,
 } from "../input-group/input-group";
+import type { InputGroupRootProps } from "../input-group/input-group";
 import { overlayPositionerClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
@@ -165,7 +166,7 @@ export type AutocompleteInputProps = Omit<
    * numeric `size` attribute; set the width with a class instead.
    * @default "default"
    */
-  size?: "sm" | "default";
+  size?: InputGroupRootProps["size"];
   /**
    * The input's id. Inside a `Field`, set `id` on `Autocomplete.Root` instead: the Root's id is
    * the one `Field.Label` points at, so an id here leaves the label's `for` unmatched.

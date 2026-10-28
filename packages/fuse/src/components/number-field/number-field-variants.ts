@@ -1,6 +1,6 @@
 import { cn } from "../../styles/cn";
 import { numberFieldGroupClass } from "../../styles/field-box";
-import { fieldSize } from "../../styles/field-size";
+import { fieldEntryClass, fieldSize } from "../../styles/field-size";
 import { withinStateFaceControlClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
 import { withinFocusRingControlClass } from "../../styles/utils";
@@ -26,16 +26,12 @@ import { withinFocusRingControlClass } from "../../styles/utils";
  *   target meets the 24px floor at both densities (stacked steppers cannot fit two 24px targets
  *   in the dense control height).
  */
-/** The field-size reads of the input inside the group. */
-const fieldReads = fieldSize();
-
 export const numberFieldVariants = tv({
   slots: {
     group: numberFieldGroupClass,
     input: cn(
       "box-border h-full w-full min-w-0 flex-1 border-0 bg-transparent py-0 tabular-nums",
-      fieldReads.inset(),
-      fieldReads.entryType(),
+      fieldEntryClass,
       withinFocusRingControlClass,
       withinStateFaceControlClass
     ),

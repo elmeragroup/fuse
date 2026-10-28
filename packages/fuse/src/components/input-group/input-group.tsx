@@ -6,7 +6,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { OWN_CLICK_SELECTOR } from "../../internal/own-click";
 import { cn } from "../../styles/cn";
-import { fieldSize } from "../../styles/field-size";
+import { fieldReads } from "../../styles/field-size";
 import { Button } from "../button/button";
 import { InputControl } from "../input/input";
 import type { InputControlProps } from "../input/input";
@@ -72,9 +72,6 @@ export type InputGroupTextProps = ComponentProps<"span">;
  */
 export type InputGroupInputProps = InputControlProps;
 export type InputGroupTextareaProps = ComponentProps<"textarea">;
-
-/** The field-size reads of the parts inside the group. */
-const fieldReads = fieldSize();
 
 export function InputGroupRoot({ className, size = "default", ...props }: InputGroupRootProps): ReactElement {
   return (

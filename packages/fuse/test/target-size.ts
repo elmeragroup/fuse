@@ -1,7 +1,7 @@
 import { expect } from "vitest";
 
 /** WCAG 2.5.8's minimum target, a 24px square around the target's centre. */
-export const TARGET_SIZE = 24;
+const TARGET_SIZE = 24;
 
 /**
  * The geometric checks' tolerance: layout rounds lengths to 1/64px, so two targets whose squares
@@ -33,7 +33,7 @@ function lengthOf(value: string): number {
  * @param target - The control.
  * @returns The hit area's rect.
  */
-export function hitAreaOf(target: Element): DOMRect {
+function hitAreaOf(target: Element): DOMRect {
   const rect = target.getBoundingClientRect();
   const before = getComputedStyle(target, "::before");
   if (before.content === "none" || before.position !== "absolute") {
@@ -47,56 +47,52 @@ export function hitAreaOf(target: Element): DOMRect {
 }
 
 /**
- * Assert that a target's hit area is at least 24px on each side.
+ * Assert that a hit area is at least 24px on each side.
  *
- * @param target - The control.
+ * @param area - The target's hit area.
  * @param label - The assertion label.
  */
-export function expectTargetSize(target: Element, label: string): void {
-  const area = hitAreaOf(target);
+function expectTargetSize(area: DOMRect, label: string): void {
   expect(area.width, `${label} target width`).toBeGreaterThanOrEqual(TARGET_SIZE - EPSILON);
   expect(area.height, `${label} target height`).toBeGreaterThanOrEqual(TARGET_SIZE - EPSILON);
 }
 
-/** The 24px square centred on a target's hit area. */
-function squareOf(target: Element): DOMRect {
-  const area = hitAreaOf(target);
+/** The 24px square centred on a hit area. */
+function squareOf(area: DOMRect): DOMRect {
   const centreX = area.left + area.width / 2;
   const centreY = area.top + area.height / 2;
   return new DOMRect(centreX - TARGET_SIZE / 2, centreY - TARGET_SIZE / 2, TARGET_SIZE, TARGET_SIZE);
 }
 
 /**
- * Assert that no two targets' 24px squares, each centred on its target, overlap. Squares whose
- * edges touch exactly pass.
+ * Assert that no two targets' 24px squares overlap. Squares whose edges touch exactly pass.
  *
- * @param targets - Neighbouring controls.
+ * @param squares - Each neighbouring target's square, centred on it, with the target's name.
  * @param label - The assertion label.
  */
-export function expectTargetsApart(targets: readonly Element[], label: string): void {
-  for (const [index, first] of targets.entries()) {
-    for (const second of targets.slice(index + 1)) {
-      const a = squareOf(first);
-      const b = squareOf(second);
+function expectTargetsApart(squares: readonly (readonly [string, DOMRect])[], label: string): void {
+  for (const [index, [firstName, a]] of squares.entries()) {
+    for (const [secondName, b] of squares.slice(index + 1)) {
       const overlapX = Math.min(a.right, b.right) - Math.max(a.left, b.left);
       const overlapY = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
-      const names = `${first.getAttribute("aria-label") ?? first.textContent} and ${second.getAttribute("aria-label") ?? second.textContent}`;
-      expect(overlapX > EPSILON && overlapY > EPSILON, `${label} ${names} overlap`).toBe(false);
+      expect(
+        overlapX > EPSILON && overlapY > EPSILON,
+        `${label} ${firstName} and ${secondName} overlap`
+      ).toBe(false);
     }
   }
 }
 
 /**
- * Assert that the pointer reaches the target at every corner of the 24px square around its centre,
- * a pixel inside it (see {@link REACH}): no ancestor clips the target there and no later sibling
- * covers it. The target must be in the viewport, where `elementFromPoint` hit-tests.
+ * Assert that the pointer reaches the target at every corner of its 24px square, a pixel inside it
+ * (see {@link REACH}): no ancestor clips the target there and no later sibling covers it. The
+ * target must be in the viewport, where `elementFromPoint` hit-tests.
  *
  * @param target - The control whose target is checked.
+ * @param square - The 24px square centred on its hit area.
  * @param label - The assertion label.
- * @returns The square's rect, for a caller that also checks where it sits.
  */
-export function expectTargetSquare(target: Element, label: string): DOMRect {
-  const square = squareOf(target);
+function expectTargetSquare(target: Element, square: DOMRect, label: string): void {
   const centreX = square.left + TARGET_SIZE / 2;
   const centreY = square.top + TARGET_SIZE / 2;
   for (const [dx, dy] of [
@@ -108,7 +104,6 @@ export function expectTargetSquare(target: Element, label: string): DOMRect {
     const hit = document.elementFromPoint(centreX + dx, centreY + dy);
     expect(hit !== null && target.contains(hit), `${label} target ${dx},${dy}`).toBe(true);
   }
-  return square;
 }
 
 /**
@@ -119,13 +114,16 @@ export function expectTargetSquare(target: Element, label: string): DOMRect {
  * @returns Each target's 24px square, in order.
  */
 export function expectTargets(targets: readonly Element[], label: string): DOMRect[] {
-  const squares = targets.map((target) => {
-    const name = `${label} ${target.getAttribute("aria-label") ?? target.textContent}`;
-    expectTargetSize(target, name);
-    return expectTargetSquare(target, name);
+  const named = targets.map((target) => {
+    const name = target.getAttribute("aria-label") ?? target.textContent;
+    const area = hitAreaOf(target);
+    const square = squareOf(area);
+    expectTargetSize(area, `${label} ${name}`);
+    expectTargetSquare(target, square, `${label} ${name}`);
+    return [name, square] as const;
   });
-  expectTargetsApart(targets, label);
-  return squares;
+  expectTargetsApart(named, label);
+  return named.map(([, square]) => square);
 }
 
 /**

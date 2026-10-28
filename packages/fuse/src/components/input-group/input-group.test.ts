@@ -47,23 +47,24 @@ describe("inputGroupButtonVariants", () => {
     ).toEqual(["h-[var(--field-h,var(--control-h-md))]"]);
   });
 
-  it("pads every addon with the md control icon edge and sm with the md inset, not Button's own", () => {
-    // Unit under test: the addon padding. Oracle: the md control parts the field box and
-    // Button's md label share, which the addon forwards whole.
+  it("pads every addon with the md control icon edge and sm with the field inset, not Button's own", () => {
+    // Unit under test: the addon padding. Oracle: the md control icon edge the field box and
+    // Button's md label share, which the addon forwards whole, and the field inset with its md
+    // fallback.
     for (const size of BUTTON_SIZES) {
       const resolved = tokens(inputGroupButtonVariants({ size }));
       expect(resolved, size).toEqual(expect.arrayContaining(tokens(controlMd.iconEdge())));
       expect(resolved.join(" "), size).not.toContain("--control-px-button");
     }
     expect(tokens(inputGroupButtonVariants({ size: "sm" }))).toEqual(
-      expect.arrayContaining(tokens(controlMd.inset()))
+      expect.arrayContaining(["px-[var(--field-px,var(--control-px-md))]"])
     );
   });
 
   it("reads only existing rungs and the field height, and no density variants", () => {
     // Every size keeps the field's md icon edge. The box reads the xs rung, or the field's inner
-    // square with its sm fallback for icon-sm, and sm keeps the md inset and reads the field height
-    // with its md fallback.
+    // square with its sm fallback for icon-sm, and sm reads the field height and inset with their
+    // md fallbacks.
     const expected = {
       xs: ["--control-gap-xs", "--control-h-xs", "--control-px-icon-md", "--control-px-icon-xs"],
       sm: ["--control-h-md", "--control-px-icon-md", "--control-px-md"],

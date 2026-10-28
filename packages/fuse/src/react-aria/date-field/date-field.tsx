@@ -18,6 +18,7 @@ import type {
   ValidationResult,
 } from "react-aria-components";
 
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { dateFieldVariants } from "../../styles/date-field";
 import { composeTailwindRenderProps } from "../internal/compose-tailwind-render-props";
@@ -110,23 +111,15 @@ export type DateInputProps = {
   size?: "sm" | "default";
 } & Omit<AriaDateInputProps, "children" | "slot" | "className">;
 
-/** The `data-size` a DateInput writes when it paints its own field box. */
-type DateInputSizeAttribute = { "data-size"?: NonNullable<DateInputProps["size"]> };
-
 export function DateInput({ className, size = "default", ...props }: DateInputProps): ReactElement {
   const state = useContext(DateFieldStateContext);
   const hasGroupSurface = useContext(FieldGroupSurfaceContext);
   const { input, segment } = dateFieldVariants({ surface: hasGroupSurface ? "group" : "own" });
-  // Only a row that paints its own box writes a size; in a picker the picker's box owns it.
-  const sizeAttributes: DateInputSizeAttribute = {};
-  if (!hasGroupSurface) {
-    sizeAttributes["data-size"] = size;
-  }
-
   return (
     <AriaDateInput
       {...props}
-      {...sizeAttributes}
+      // Only a row that paints its own box writes a size; in a picker the picker's box owns it.
+      {...definedProps({ "data-size": hasGroupSurface ? undefined : size })}
       className={composeRenderProps(className, (resolved, renderProps) =>
         cn(
           hasGroupSurface

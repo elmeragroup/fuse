@@ -10,7 +10,6 @@ import type { DateFieldProps, DateInputProps } from "@elmeragroup/fuse/react-ari
 import type { DatePickerProps } from "@elmeragroup/fuse/react-aria/date-picker";
 import type { DateRangePickerProps } from "@elmeragroup/fuse/react-aria/date-range-picker";
 import type { SearchFieldProps } from "@elmeragroup/fuse/react-aria/search-field";
-import type { SelectTriggerProps } from "@elmeragroup/fuse/select";
 import type { SelectFieldProps } from "@elmeragroup/fuse/select-field";
 import type { TextFieldProps } from "@elmeragroup/fuse/text-field";
 import type { TextareaProps } from "@elmeragroup/fuse/textarea";
@@ -36,8 +35,6 @@ test("every text-entry field box takes the field size", () => {
   expectTypeOf<ComboboxInputProps["size"]>().toEqualTypeOf<FieldSize>();
   expectTypeOf<ComboboxChipsProps["size"]>().toEqualTypeOf<FieldSize>();
   expectTypeOf<AutocompleteInputProps["size"]>().toEqualTypeOf<FieldSize>();
-  // The model the fields copy.
-  expectTypeOf<SelectTriggerProps["size"]>().toEqualTypeOf<FieldSize>();
 });
 
 test("the group's input is no field box, so it keeps the native numeric size attribute", () => {

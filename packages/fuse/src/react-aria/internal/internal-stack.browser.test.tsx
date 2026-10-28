@@ -59,7 +59,7 @@ describe("the internal field chrome", () => {
     renderThemed(
       <>
         <Label id="from-label">From</Label>
-        <FieldGroup aria-labelledby="from-label">
+        <FieldGroup aria-labelledby="from-label" size="default">
           <Input aria-label="From" />
         </FieldGroup>
       </>

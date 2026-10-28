@@ -14,7 +14,8 @@ import {
 
 import { cn } from "../../styles/cn";
 import { fieldBoxChromeClass } from "../../styles/field-box";
-import { fieldSize } from "../../styles/field-size";
+import { fieldEntryClass, fieldReads, fieldSize } from "../../styles/field-size";
+import type { FieldSize } from "../../styles/field-size";
 import { labelTypeClass } from "../../styles/label-type";
 import { racDisabledStateFaceClass, racInvalidStateFaceClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
@@ -24,9 +25,6 @@ import {
   stateInvalidFocusRingVisibleClass,
 } from "../../styles/utils";
 import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
-
-/** The field-size reads of the field group and the parts inside it. */
-const fieldReads = fieldSize();
 
 /**
  * Package-private field chrome for the interim React Aria tier. Its `size` axis writes the field
@@ -90,10 +88,10 @@ export const FieldGroupSurfaceContext = createContext(false);
 
 export type FieldGroupProps = ComponentProps<typeof AriaGroup> & {
   /** The field size the box writes, emitted as `data-size`. */
-  size?: "sm" | "default";
+  size: FieldSize;
 };
 
-export function FieldGroup({ className, size = "default", ...props }: FieldGroupProps): ReactElement {
+export function FieldGroup({ className, size, ...props }: FieldGroupProps): ReactElement {
   return (
     <FieldGroupSurfaceContext.Provider value={true}>
       <AriaGroup
@@ -141,8 +139,7 @@ export function Input({ className, ...props }: InputProps): ReactElement {
         // paints a second one — that is what keeps the read-only `bg-muted` fill honest.
         cn(
           "min-w-0 flex-1 bg-transparent",
-          fieldReads.inset(),
-          fieldReads.entryType(),
+          fieldEntryClass,
           // oxlint-disable-next-line elmera/no-local-focus-ring -- within-adapter control outline
           "text-foreground outline-none placeholder:text-muted-foreground disabled:text-muted-foreground"
         )

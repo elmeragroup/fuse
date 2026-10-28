@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../test/raw-palette";
-import { fieldSize } from "./field-size";
+import { fieldEntryClass, fieldReads } from "./field-size";
 import { pickerVariants } from "./picker";
 
 /** Every class the recipe can emit, across every face of both axes. */
@@ -59,18 +59,15 @@ describe("pickerVariants shared slots", () => {
 
   it("sizes the trigger to the field's inner square at both sizes", () => {
     for (const range of [false, true]) {
-      expect(pickerVariants({ range }).trigger().split(" ")).toContain(fieldSize().inner());
+      expect(pickerVariants({ range }).trigger().split(" ")).toContain(fieldReads.inner());
     }
   });
 
   it("keeps the segment row on the field's inset and text-entry type at both sizes", () => {
-    const reads = fieldSize();
     for (const range of [false, true]) {
       const input = pickerVariants({ range }).input();
-      // Oracle: the field-size reads, which field-size.test.ts pins by hand.
-      expect(input.split(" ")).toEqual(
-        expect.arrayContaining([...reads.inset().split(" "), ...reads.entryType().split(" ")])
-      );
+      // Oracle: the field-size entry class, which field-size.test.ts pins by hand.
+      expect(input.split(" ")).toEqual(expect.arrayContaining(fieldEntryClass.split(" ")));
       expect(input).not.toContain("py-");
       expect(input).not.toContain("text-sm");
       expect(input).not.toContain("px-2");

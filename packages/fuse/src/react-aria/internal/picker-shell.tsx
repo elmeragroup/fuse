@@ -7,6 +7,7 @@ import type { ValidationResult } from "react-aria-components";
 import type { OverlayContainerProps } from "../../components/overlay/overlay-props";
 import { CalendarBlank } from "../../icons/generated/calendar-blank";
 import { useLocale } from "../../intl/locale-context";
+import type { FieldSize } from "../../styles/field-size";
 import { pickerVariants } from "../../styles/picker";
 import { Button } from "./button";
 import { Dialog } from "./dialog";
@@ -45,7 +46,7 @@ export type PickerShellProps = {
   /** Error copy, rendered as `FieldError` when the picker is invalid. */
   errorMessage?: ReactNode | ((validation: ValidationResult) => ReactNode);
   /** The field size the field box writes, `"default"` (md) or `"sm"`. */
-  size?: "sm" | "default";
+  size: FieldSize;
   /** Paints the read-only fill on the field box — the only place it is painted. */
   isReadOnly?: boolean;
   /** Portal target for the popover, forwarded to the private RAC `Popover`. */
@@ -77,7 +78,7 @@ export function PickerShell({
   label,
   popover,
   range,
-  size = "default",
+  size,
   triggerPlacement = "end",
 }: PickerShellProps): ReactElement {
   // Throw for a missing LocaleProvider when the picker mounts. Nothing else in a closed

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { cn } from "./cn";
-import { fieldSize } from "./field-size";
+import { fieldEntryClass, fieldReads, fieldSize } from "./field-size";
 
 /**
  * The field-size recipe against hand-written classes: what each size writes on the box, what
@@ -42,13 +42,12 @@ describe("fieldSize: the box writes", () => {
 
 describe("fieldSize: the reads", () => {
   it("falls back to the md metrics in every read", () => {
-    const reads = fieldSize();
-    expect(reads.height()).toBe("h-[var(--field-h,var(--control-h-md))]");
-    expect(reads.minHeight()).toBe("min-h-[var(--field-h,var(--control-h-md))]");
-    expect(reads.inset()).toBe("px-[var(--field-px,var(--control-px-md))]");
-    expect(reads.gap()).toBe("gap-[var(--field-gap,var(--control-gap-md))]");
-    expect(reads.inner()).toBe("size-[var(--field-inner,var(--control-h-sm))]");
-    expect(classSet(reads.type())).toEqual(
+    expect(fieldReads.height()).toBe("h-[var(--field-h,var(--control-h-md))]");
+    expect(fieldReads.minHeight()).toBe("min-h-[var(--field-h,var(--control-h-md))]");
+    expect(fieldReads.inset()).toBe("px-[var(--field-px,var(--control-px-md))]");
+    expect(fieldReads.gap()).toBe("gap-[var(--field-gap,var(--control-gap-md))]");
+    expect(fieldReads.inner()).toBe("size-[var(--field-inner,var(--control-h-sm))]");
+    expect(classSet(fieldReads.type())).toEqual(
       classSet(`text-[length:var(--field-text,var(--control-text))] ${LEADING}`)
     );
   });
@@ -60,17 +59,21 @@ describe("fieldSize: the reads", () => {
       );
     }
   });
+
+  it("pairs the field inset with the text-entry type in the entry class", () => {
+    expect(classSet(fieldEntryClass)).toEqual(
+      classSet(`px-[var(--field-px,var(--control-px-md))] ${FLOORED_TYPE} ${FLOOR} ${LEADING}`)
+    );
+  });
 });
 
 describe("fieldSize: consumer utilities replace the reads", () => {
-  const reads = fieldSize();
-
   it.each([
-    ["h-12", reads.height()],
-    ["min-h-12", reads.minHeight()],
-    ["px-3", reads.inset()],
-    ["gap-1", reads.gap()],
-    ["size-6", reads.inner()],
+    ["h-12", fieldReads.height()],
+    ["min-h-12", fieldReads.minHeight()],
+    ["px-3", fieldReads.inset()],
+    ["gap-1", fieldReads.gap()],
+    ["size-6", fieldReads.inner()],
   ])("lets a consumer %s replace its read", (consumer, read) => {
     expect(cn(read, consumer)).toBe(consumer);
   });
@@ -79,12 +82,12 @@ describe("fieldSize: consumer utilities replace the reads", () => {
     "lets a consumer %s replace the text-entry type on every pointer",
     (consumer) => {
       // Only the inert floor variable stays: no font-size class but the consumer's reads it.
-      expect(classSet(cn(reads.entryType(), consumer))).toEqual(classSet(`${FLOOR} ${consumer}`));
+      expect(classSet(cn(fieldReads.entryType(), consumer))).toEqual(classSet(`${FLOOR} ${consumer}`));
     }
   );
 
   it("keeps the floored type under a consumer leading-* class", () => {
-    expect(classSet(cn(reads.entryType(), "leading-5"))).toEqual(
+    expect(classSet(cn(fieldReads.entryType(), "leading-5"))).toEqual(
       classSet(`${FLOORED_TYPE} ${FLOOR} leading-5`)
     );
   });

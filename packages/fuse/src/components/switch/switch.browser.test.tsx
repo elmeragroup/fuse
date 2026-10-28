@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import * as CssColor from "@elmeragroup/color/css-color";
@@ -9,6 +9,7 @@ import { getOrThrow } from "@elmeragroup/color/result";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
+import { consumerCss } from "../../../test/tailwind-consumer-build";
 import {
   computedContrast,
   cssVarColor,
@@ -71,6 +72,18 @@ afterEach(() => {
 });
 
 describe("Switch", () => {
+  beforeAll(async () => {
+    // A Tailwind-source consumer's own utilities for the className overrides, so they need not be
+    // ones Fuse spells. They go first in the head: only a recipe class dropped from the element lets
+    // the consumer's apply.
+    const style = document.createElement("style");
+    style.textContent = await consumerCss(
+      '@import "tailwindcss/theme.css" theme(reference);\n@import "tailwindcss/utilities.css" source(none);',
+      ["h-7", "w-6", "max-w-xs", "w-72"]
+    );
+    document.head.prepend(style);
+  });
+
   it("renders a switch whose aria-checked reflects state, controlled by checked or uncontrolled from defaultChecked", async () => {
     const { unmount: unmountDefaults } = renderThemed(
       <>
@@ -327,11 +340,10 @@ describe("Switch", () => {
   });
 
   it("takes a height or a narrower width from className, and a wider width with its max-w-*", () => {
-    // The standalone sheet holds only the utilities Fuse spells, so the overrides are ones it has.
     renderThemed(
       <>
         <Switch aria-label="Taller" className="h-7" />
-        <Switch aria-label="Narrower" className="w-5" />
+        <Switch aria-label="Narrower" className="w-6" />
         <Switch aria-label="Wider" className="max-w-xs w-72" />
       </>
     );
@@ -339,8 +351,8 @@ describe("Switch", () => {
     const taller = measureSwitch("Taller");
     expect([taller.height, taller.width], "h-7").toEqual([28, 32]);
     const narrower = measureSwitch("Narrower");
-    expect(narrower.width, "w-5 width").toBe(20);
-    expect(narrower.height, "w-5 height").toBeCloseTo(18.4, 1);
+    expect(narrower.width, "w-6 width").toBe(24);
+    expect(narrower.height, "w-6 height").toBeCloseTo(18.4, 1);
     expect(measureSwitch("Wider").width, "w-72 max-w-xs").toBe(288);
   });
 

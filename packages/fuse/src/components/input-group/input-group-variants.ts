@@ -2,16 +2,13 @@ import { cn } from "../../styles/cn";
 import { controlMetrics } from "../../styles/control-size";
 import { controlMd } from "../../styles/control-size-md";
 import { inputGroupRootClass } from "../../styles/field-box";
-import { fieldSize } from "../../styles/field-size";
+import { fieldReads, fieldSize } from "../../styles/field-size";
 import {
   addonBlockShellClass,
   addonEndShellClass,
   addonStartShellClass,
 } from "../../styles/inner-corner/input-group";
 import { tv } from "../../styles/tv";
-
-/** The field-size reads of the parts inside the group. */
-const fieldReads = fieldSize();
 
 /**
  * Module-private recipe for the group's root, the field box: {@link inputGroupRootClass} plus the
@@ -79,7 +76,7 @@ const xsButton = controlMetrics({ size: "xs" });
  * group's field height, so it is the md height in a default group and the sm height in an sm one.
  * Every size swaps Button's own icon edge back to the
  * md control icon edge, and `sm` also swaps Button's inset
- * back to the md control inset, the field's own padding, so Button's wider comfortable inset
+ * for the group's field inset, `--field-px`, so Button's wider comfortable inset
  * and icon edge never reach a field. An addon button sits inside the field box, so it pads like
  * the field chrome and rounds with its addon's inner corner, never Button's `--radius-button`.
  */
@@ -88,7 +85,7 @@ export const inputGroupButtonVariants = tv({
   variants: {
     size: {
       xs: [xsButton.height(), xsButton.gap(), xsButton.iconInset(), "[&>svg:not([class*='size-'])]:size-3.5"],
-      sm: [fieldReads.height(), controlMd.inset()],
+      sm: [fieldReads.height(), fieldReads.inset()],
       "icon-xs": [xsButton.square(), "p-0 has-[>svg]:p-0"],
       "icon-sm": [fieldReads.inner(), "p-0 has-[>svg]:p-0"],
     },

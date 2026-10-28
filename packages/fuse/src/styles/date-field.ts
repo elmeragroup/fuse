@@ -1,10 +1,7 @@
 import { cn } from "./cn";
-import { fieldSize } from "./field-size";
+import { fieldEntryClass } from "./field-size";
 import { dateInputShellClass } from "./inner-corner/date-field";
 import { tv } from "./tv";
-
-/** The field-size reads of the segment row. */
-const fieldReads = fieldSize();
 
 /**
  * DateField's slotted recipe. Package-private: no entry re-exports it. Every RAC entry
@@ -21,7 +18,7 @@ export const dateFieldVariants = tv({
     // An invalid field paints its label in the error colour, as `Field.Root` does; every
     // other part sets its own colour.
     base: "flex flex-col gap-1 data-invalid:text-error",
-    input: cn(fieldReads.inset(), fieldReads.entryType(), dateInputShellClass),
+    input: cn(fieldEntryClass, dateInputShellClass),
     segment: cn(
       "inline rounded-inner p-0.5 text-foreground caret-transparent outline outline-0 forced-color-adjust-none forced-colors:text-[ButtonText] type-literal:px-0"
     ),

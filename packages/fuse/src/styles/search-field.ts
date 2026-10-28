@@ -1,5 +1,5 @@
 import { cn } from "./cn";
-import { fieldSize } from "./field-size";
+import { fieldReads } from "./field-size";
 import { searchBoxShellClass, searchClearShellClass } from "./inner-corner/search-field";
 import { tv } from "./tv";
 
@@ -24,7 +24,7 @@ export const searchFieldVariants = tv({
     group: searchBoxShellClass,
     // The clear button sits inside the field box, so it takes the box's inner square and inner
     // corner instead of Button's square and `--radius-button`.
-    button: cn(fieldSize().inner(), "px-0 group-data-[empty]:invisible", searchClearShellClass),
+    button: cn(fieldReads.inner(), "px-0 group-data-[empty]:invisible", searchClearShellClass),
     buttonIcon: "size-4 text-foreground",
   },
 });

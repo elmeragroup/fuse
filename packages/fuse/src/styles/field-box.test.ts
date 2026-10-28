@@ -5,11 +5,11 @@ import { describe, expect, it } from "vitest";
 
 import { inputGroupRootVariants } from "../components/input-group/input-group-variants";
 import { Input } from "../components/input/input";
-import { inputClass, inputVariants } from "../components/input/input-class";
+import { inputClass } from "../components/input/input-class";
 import { numberFieldVariants } from "../components/number-field/number-field-variants";
 import { textFieldVariants } from "../components/text-field/text-field-variants";
 import { Textarea } from "../components/textarea/textarea";
-import { textareaClass, textareaVariants } from "../components/textarea/textarea-class";
+import { textareaClass } from "../components/textarea/textarea-class";
 import { cn } from "./cn";
 import {
   fieldBox,
@@ -18,7 +18,7 @@ import {
   readOnlyFillCancelClass,
   readOnlyFillClass,
 } from "./field-box";
-import { fieldSize } from "./field-size";
+import { fieldEntryClass, fieldSize } from "./field-size";
 import { selfFocusRingClass } from "./utils";
 
 function tokens(classes: string): string[] {
@@ -82,9 +82,8 @@ describe("fieldBox recipe", () => {
       expect(classes).toContain(token);
     }
     expect(classes).not.toContain("transition-[color,box-shadow,border-color]");
-    // Oracle: the field-size inset and text-entry type, which field-size.test.ts pins by hand.
-    const reads = fieldSize();
-    expect(classes).toEqual(expect.arrayContaining(tokens(cn(reads.inset(), reads.entryType()))));
+    // Oracle: the field-size entry class, which field-size.test.ts pins by hand.
+    expect(classes).toEqual(expect.arrayContaining(tokens(fieldEntryClass)));
     // Oracle: the shared focus recipe, which utils.test.ts pins by hand.
     for (const token of selfFocusRingClass.split(" ")) {
       expect(classes).toContain(token);
@@ -145,8 +144,6 @@ describe("fieldBox recipe", () => {
       // Oracle: the box writes, which field-size.test.ts pins by hand.
       const writes = tokens(fieldSize({ size }).box());
       for (const [recipe, classes] of [
-        ["inputVariants", inputVariants({ size })],
-        ["textareaVariants", textareaVariants({ size })],
         ["inputGroupRootVariants", inputGroupRootVariants({ size })],
         ["numberFieldVariants group", numberFieldVariants({ size }).group()],
       ] as const) {

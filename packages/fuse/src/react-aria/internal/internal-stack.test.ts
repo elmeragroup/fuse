@@ -6,7 +6,7 @@ import {
   inputGroupRootClass,
   numberFieldGroupClass,
 } from "../../styles/field-box";
-import { fieldSize } from "../../styles/field-size";
+import { fieldReads, fieldSize } from "../../styles/field-size";
 import { checkboxVariants } from "./checkbox";
 import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
 import { fieldGroupVariants } from "./field";
@@ -67,7 +67,7 @@ describe("fieldGroupVariants", () => {
   });
 
   it("reads the box height from the field size", () => {
-    expect(fieldGroupVariants().split(" ")).toContain(fieldSize().height());
+    expect(fieldGroupVariants().split(" ")).toContain(fieldReads.height());
   });
 });
 

@@ -1,4 +1,4 @@
-import { fieldSize } from "../../styles/field-size";
+import { fieldReads, fieldSize } from "../../styles/field-size";
 import { fieldBoxShellClass } from "../../styles/inner-corner/field";
 import {
   chipShellClass,
@@ -70,9 +70,6 @@ export const comboboxVariants = tv({
       "text-sm hidden w-full justify-center px-(--row-px) py-(--row-py) text-center text-muted-foreground group-data-empty/combobox-content:flex",
   },
 });
-
-/** The field-size reads of the chips box. */
-const fieldReads = fieldSize();
 
 /**
  * The module-private recipe for the chips field, `Combobox.Chips`, and the chips in it.

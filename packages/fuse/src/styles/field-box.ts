@@ -1,12 +1,9 @@
 import { cn } from "./cn";
-import { fieldSize } from "./field-size";
+import { fieldEntryClass, fieldReads } from "./field-size";
 import { fieldBoxShellClass } from "./inner-corner/field";
 import { ariaStateFaceClass, nativeStateFaceClass, withinStateFaceClass } from "./state-face";
 import { tv } from "./tv";
 import { selfFocusRingClass, withinFocusRingClass } from "./utils";
-
-/** The field-size reads every field box here binds; each box's component writes its size. */
-const fieldReads = fieldSize();
 
 /**
  * The field box chrome: elevation, the field corner, hairline border, fill and the transition
@@ -95,8 +92,7 @@ export const fieldBox = tv({
   base: cn(
     fieldBoxChromeClass,
     "w-full",
-    fieldReads.inset(),
-    fieldReads.entryType(),
+    fieldEntryClass,
     "placeholder:text-muted-foreground disabled:bg-input/50",
     readOnlyFillClass,
     nativeStateFaceClass,

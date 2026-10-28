@@ -112,7 +112,6 @@ function warnIfNotNumeric(prop: "value" | "defaultValue", value: InputControlPro
  * group's size to its own.
  */
 export function InputControl({
-  className,
   type,
   filter,
   inputMode,
@@ -147,7 +146,6 @@ export function InputControl({
     <InputPrimitive
       type={type}
       data-slot="input"
-      className={className}
       {...definedProps({
         ...props,
         ref: inputRef,

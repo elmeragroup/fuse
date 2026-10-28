@@ -18,7 +18,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
-import { fieldSize } from "../../styles/field-size";
+import { fieldReads } from "../../styles/field-size";
 import { selfFocusRingClass } from "../../styles/utils";
 import { ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList } from "../combobox/combobox";
 import { FieldFrame } from "../field/field-frame";
@@ -28,6 +28,7 @@ import {
   InputGroupPlainInput,
   InputGroupRoot,
 } from "../input-group/input-group";
+import type { InputGroupRootProps } from "../input-group/input-group";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { countryNameResolver, sortByCountryName } from "./country-names";
 import { Flag } from "./flag";
@@ -154,7 +155,7 @@ export type PhoneNumberFieldProps = {
    * control size. The country picker's search box in the popup keeps the default size.
    * @default "default"
    */
-  size?: "sm" | "default";
+  size?: InputGroupRootProps["size"];
   /** Extra classes, merged onto the root via `cn`. */
   className?: string;
   /** Explicit override for the built-in `selectCountry` dictionary key. */
@@ -196,9 +197,6 @@ export type PhoneNumberFieldProps = {
    */
   "aria-required"?: ComponentProps<"input">["aria-required"];
 };
-
-/** The field's text-entry type, which the dial code reads from the field box around it. */
-const fieldEntryTypeClass = fieldSize().entryType();
 
 /** Props of the country picker's trigger. */
 type CountryTriggerProps = {
@@ -393,7 +391,7 @@ export function PhoneNumberField({
       {/* The input's font size, touch floor included, so both runs of digits have one size.
           Leading is `normal` because a text input centres its text on the font's normal
           metrics whatever its line-height; the dial code centres the same way. */}
-      <span className={cn(fieldEntryTypeClass, "font-medium min-w-6 leading-[normal] tabular-nums")}>
+      <span className={cn(fieldReads.entryType(), "font-medium min-w-6 leading-[normal] tabular-nums")}>
         {phone.country.dialCode}
       </span>
     </div>

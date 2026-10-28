@@ -1,10 +1,7 @@
 import { cn } from "./cn";
-import { fieldSize } from "./field-size";
+import { fieldEntryClass, fieldReads } from "./field-size";
 import { pickerDialogShellClass } from "./inner-corner/picker";
 import { tv } from "./tv";
-
-/** The field-size reads of the parts inside the picker's field box. */
-const fieldReads = fieldSize();
 
 /**
  * Shared layout recipe for the two date pickers. The `range` axis selects one segment
@@ -26,7 +23,7 @@ export const pickerVariants = tv({
     /** The private FieldGroup around the segment row(s) and the trigger. */
     group: "w-auto",
     /** A public DateInput inside the field box. */
-    input: cn(fieldReads.inset(), fieldReads.entryType()),
+    input: fieldEntryClass,
     /**
      * The en-dash between a range's two rows: decorative, `aria-hidden`, and the only slot
      * with a colour of its own. It uses role tokens; the forced-colors fallbacks are kept verbatim so the

@@ -1,3 +1,6 @@
+import type { VariantProps } from "tailwind-variants";
+
+import { cn } from "./cn";
 import { tv } from "./tv";
 
 /**
@@ -17,19 +20,14 @@ import { tv } from "./tv";
  * md. The md metrics are spelled once, in those fallbacks, rather than once more as default
  * writes, and the sm metrics once, in the sm writes.
  *
- * The sm box height has a 26px floor, a 24px target and the two 1px borders, so every part inside
- * an sm box keeps the 24px target size under a small host root, as the xs control size floors its
- * own height at 24px. The default size needs none: dense `--control-h-md` stays above 26px down to
- * an 11.6px root.
- *
  * The sm type is the fixed 14px / 20px of Tailwind's `text-sm`, as Select's sm trigger and the
  * sm control size (`control-size.ts`) have it; it does not follow density. The md type is the
  * density pair `--control-text` / `--control-leading`. Both leadings are lengths: Tailwind's
  * `--text-sm--line-height` is a ratio, so the sm leading multiplies it by the sm text into 20px,
  * which a floored 16px font keeps, as the md leading does.
  *
- * Each read is a typed arbitrary-value utility (`h-[…]`, `px-[…]`, `text-[length:…]`,
- * `leading-[…]`), so tailwind-merge groups it with the consumer's `h-12`, `px-3`, `text-lg` or
+ * Each read is a typed arbitrary-value height, inline-padding, font-size or line-height utility,
+ * so tailwind-merge groups it with the consumer's `h-12`, `px-3`, `text-lg` or
  * `leading-5` and `cn` keeps only the consumer's class (see `control-size-md.ts` for why the
  * removal, not the cascade, is what lets the consumer win).
  *
@@ -88,3 +86,15 @@ export const fieldSize = tv({
     size: "default",
   },
 });
+
+/** The field size a text-entry field box takes, from the recipe's `size` axis. */
+export type FieldSize = NonNullable<VariantProps<typeof fieldSize>["size"]>;
+
+/**
+ * The read slots, resolved once at module scope as `controlMd` is. The reads do not depend on
+ * the size; only `box` writes it.
+ */
+export const fieldReads = fieldSize();
+
+/** The inner entry's inline inset and text-entry type, the pair every entry row reads. */
+export const fieldEntryClass = cn(fieldReads.inset(), fieldReads.entryType());
