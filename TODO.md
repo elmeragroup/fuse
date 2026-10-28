@@ -239,10 +239,6 @@
   `SelectField` takes no `isReadOnly` until the trigger has one, and
   `TextField variant="card"` still paints the borderless input's disabled band across the card
   (`components/text-field/text-field-variants.ts`) where the read-only fill now paints the card.
-- `SelectField` forwards `name` to `Select.Root`, which hands it to `Field.Root` only in an
-  effect, so the error a server-rendered `Form` holds under that name is missing from the first
-  HTML until hydration. `AutocompleteField` and `ComboboxField` forward `name` to `Field.Root`,
-  whose name the Base UI controls read; `SelectField` could do the same.
 - `Item.Root hidden` stays visible in a host without Tailwind's preflight. The user-agent rule
   `[hidden] { display: none }` loses to the item's `flex` class; preflight makes `[hidden]`
   `display: none !important`. Decide whether `Item.Root`, and the other parts whose root sets

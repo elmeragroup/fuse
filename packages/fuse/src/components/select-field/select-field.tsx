@@ -27,7 +27,10 @@ export type SelectFieldProps<Value = unknown> = {
   isRequired?: boolean;
   /** Forwards `disabled` to `Field.Root` and `Select.Root`. */
   isDisabled?: boolean;
-  /** Native `name` the selection submits under, forwarded to `Select.Root`. */
+  /**
+   * Native `name` the selection submits under, forwarded to `Field.Root`. A `Form` error under it
+   * shows below the trigger until the selection changes.
+   */
   name?: string;
   /** The `id` of the form the selection submits with, forwarded to `Select.Root`. */
   form?: string;
@@ -92,6 +95,7 @@ export function SelectField<Value = unknown>({
   return (
     <FieldFrame
       className={className}
+      name={name}
       invalid={isInvalid}
       disabled={isDisabled}
       label={label}
@@ -99,7 +103,6 @@ export function SelectField<Value = unknown>({
       errorMessage={errorMessage}>
       <SelectRoot<Value>
         {...definedProps({
-          name,
           form,
           value,
           defaultValue,
