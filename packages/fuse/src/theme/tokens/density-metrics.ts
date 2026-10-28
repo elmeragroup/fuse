@@ -178,7 +178,7 @@ const SURFACE_GAP_TIERS = ["sm", "md", "lg", "xl"] as const;
 /** What each surface gap tier spaces. */
 const SURFACE_GAP_DESCRIPTIONS = {
   sm: "The gap between the options of a stack.",
-  md: "The gap between a control and the label beside it, or between a group's legend and its options.",
+  md: "The gap between a control and the label beside it, or between the legend of a group and its options.",
   lg: "The gap between option rows laid out in a line, or between nested groups.",
   xl: "The gap between the fields of a set.",
 } as const satisfies Record<(typeof SURFACE_GAP_TIERS)[number], string>;
