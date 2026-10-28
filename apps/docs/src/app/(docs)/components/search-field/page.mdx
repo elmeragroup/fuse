@@ -4,6 +4,7 @@ lede: >
 ---
 
 import { SearchFieldBasic } from "./demos/search-field-basic";
+import { SearchFieldSizes } from "./demos/search-field-sizes";
 import { SearchFieldValidation } from "./demos/search-field-validation";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -14,6 +15,10 @@ export const metadata = componentMetadata("search-field");
 
 <Demo slug="search-field" id="basic" title="Basic" file="search-field-basic.tsx">
   <SearchFieldBasic />
+</Demo>
+
+<Demo slug="search-field" id="sizes" title="Sizes" file="search-field-sizes.tsx">
+  <SearchFieldSizes />
 </Demo>
 
 <Demo slug="search-field" id="validation" title="Validation" file="search-field-validation.tsx">

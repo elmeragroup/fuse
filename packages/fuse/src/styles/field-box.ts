@@ -1,5 +1,5 @@
 import { cn } from "./cn";
-import { controlMdInsetTypeClass } from "./control-size-md";
+import { fieldEntryClass, fieldReads } from "./field-size";
 import { fieldBoxShellClass } from "./inner-corner/field";
 import { ariaStateFaceClass, nativeStateFaceClass, withinStateFaceClass } from "./state-face";
 import { tv } from "./tv";
@@ -41,7 +41,8 @@ export const readOnlyFillClass = cn("[&[readonly]:not(:disabled)]:bg-muted");
 export const readOnlyFillCancelClass = cn("[&[readonly]:not(:disabled)]:bg-transparent");
 
 /**
- * NumberField group chrome — same elevation as Input, `within` focus. The group box is the
+ * NumberField group chrome — same elevation as Input, `within` focus. It reads its height from
+ * the field size (`field-size.ts`), which NumberField writes from its `size`. The group box is the
  * control, so it takes the within-target state face: it dims once and shows the
  * `not-allowed` cursor when its own `data-focus-ring-control` input, a direct child, is
  * disabled, and the input and steppers inside inherit that dim rather than painting their
@@ -50,7 +51,8 @@ export const readOnlyFillCancelClass = cn("[&[readonly]:not(:disabled)]:bg-trans
  */
 export const numberFieldGroupClass = cn(
   fieldBoxChromeClass,
-  "flex h-(--control-h-md) w-full min-w-0 items-center overflow-hidden",
+  fieldReads.height(),
+  "flex w-full min-w-0 items-center overflow-hidden",
   withinStateFaceClass,
   ariaStateFaceClass,
   withinFocusRingClass
@@ -58,14 +60,16 @@ export const numberFieldGroupClass = cn(
 
 /**
  * InputGroup root chrome — the whole field box around a stripped `InputGroup.Input` or
- * `InputGroup.Textarea`, so it paints the shared chrome, fill included, once. It pins the md
- * control rung, and block addons and textareas grow it instead. Like NumberField's group it
+ * `InputGroup.Textarea`, so it paints the shared chrome, fill included, once. It reads its
+ * height from the field size (`field-size.ts`), which `InputGroup.Root` writes from its `size`,
+ * and block addons and textareas grow it instead. Like NumberField's group it
  * takes the within-target state face from its own `data-focus-ring-control` control, a direct
  * child, plus that control's disabled and read-only fills.
  */
 export const inputGroupRootClass = cn(
   fieldBoxChromeClass,
-  "group/input-group relative flex h-(--control-h-md) w-full min-w-0 items-center",
+  fieldReads.height(),
+  "group/input-group relative flex w-full min-w-0 items-center",
   "has-[>[data-focus-ring-control]:disabled]:bg-input/50",
   "has-[>[data-focus-ring-control][readonly]:not(:disabled)]:bg-muted",
   withinStateFaceClass,
@@ -76,8 +80,10 @@ export const inputGroupRootClass = cn(
 
 /**
  * Package-private field-box chrome shared by Input and Textarea. Hosts add only
- * per-control deltas. The `box` axis picks the height model: `control` pins the
- * md control rung, `content` grows with its content — no host may cancel a
+ * per-control deltas. It reads the field inset and text-entry type from the field size
+ * (`field-size.ts`); Input and Textarea write the size from their `size` prop, and the
+ * controls inside InputGroup read their group's. The `box` axis picks the height model:
+ * `control` reads the field height, `content` grows with its content — no host may cancel a
  * recipe class via twMerge. The disabled and invalid looks are the native-target state
  * face, whose `aria-disabled` arm dims an `aria-disabled` box as the gate stills it; the box
  * adds only its disabled fill and {@link readOnlyFillClass}.
@@ -86,7 +92,7 @@ export const fieldBox = tv({
   base: cn(
     fieldBoxChromeClass,
     "w-full",
-    controlMdInsetTypeClass,
+    fieldEntryClass,
     "placeholder:text-muted-foreground disabled:bg-input/50",
     readOnlyFillClass,
     nativeStateFaceClass,
@@ -94,7 +100,7 @@ export const fieldBox = tv({
   ),
   variants: {
     box: {
-      control: "h-(--control-h-md) py-0",
+      control: [fieldReads.height(), "py-0"],
       content: "min-h-16 py-2",
     },
   },

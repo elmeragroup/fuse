@@ -298,6 +298,9 @@
   `styles/inner-corner/picker.ts`. It never renders: the only shipped consumer, `PickerShell`,
   overrides it with `pickerDialogShellClass`'s `p-0`, and the Calendar and presets inside pad
   with the small surface tier themselves.
+- The Figma component kit draws the Input, Textarea and InputGroup field boxes at the default
+  size only. Add their `size` axis (`"default"`, `"sm"`) once the owner wants the sm fields in
+  Figma.
 - Checkbox, Radio and Switch build their hit target from rem `after:-inset-*` offsets, so it
   scales with the root font size and has no fixed-px 24px floor. At a 14px root, Checkbox and
   Radio targets are 26px tall and the small Switch 33px. Checkbox and Radio drop below 24px only

@@ -334,6 +334,15 @@
           "required": false
         },
         {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Control size of the field box, the InputGroup around the country picker and the number. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. The country picker's search box in the popup keeps the default size.",
+          "required": false
+        },
+        {
           "name": "value",
           "origin": "declared",
           "type": "string | undefined",

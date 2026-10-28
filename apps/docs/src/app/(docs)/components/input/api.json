@@ -9,7 +9,7 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 310,
+      "forwardedCount": 309,
       "props": [
         {
           "name": "filter",
@@ -18,6 +18,15 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Digits-only guard. Non-digit characters are stripped from every path — typing, paste, autofill — before `onChange` and Field validation read the value. `maxLength` counts digits where the filter runs first: a cancelable `beforeinput` on an input type with a selection API (`text`, `tel`, `search`, `url`, `password`), so a pasted `912 34 567` fits `maxLength={8}` whole. Other paths keep the browser's own length handling and are stripped afterwards: `type=\"email\"`, or autofill that sends no cancelable `beforeinput`, is cut to `maxLength` first. The filter is meant for text-like types: under `type=\"number\"` it also strips the sign and the decimal separator. Sets `inputMode=\"numeric\"` unless the caller passes `inputMode` explicitly. An uncontrolled numeric input restores its `defaultValue` on native form reset without calling `onChange`.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Control size of the field box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. It replaces the native numeric `size` attribute; set the width with a class instead.",
           "required": false
         }
       ]

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { parseScopedDeclarations } from "../../test/css-rules";
 import { consumerBuild } from "../../test/tailwind-consumer-build";
-import { controlMd } from "./control-size-md";
+import { fieldReads } from "./field-size";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const compiledCssPath = join(here, "../../dist/styles.css");
@@ -16,8 +16,8 @@ const IOS_WEBKIT = "@supports (-webkit-touch-callout: none)";
 /** One floor rule per site. */
 const FLOOR_SITES = 2;
 
-/** The classes of the two floor sites: the text-entry type slot and `Combobox.ChipsInput`. */
-const FLOOR_CANDIDATES = [...controlMd.entryType().split(" "), "entry-floor:[--entry-text:max(16px,1em)]"];
+/** The classes of the two floor sites: the field text-entry type slot and `Combobox.ChipsInput`. */
+const FLOOR_CANDIDATES = [...fieldReads.entryType().split(" "), "entry-floor:[--entry-text:max(16px,1em)]"];
 
 /** Each condition `--entry-text` is declared under, mapped to its selectors and their values. */
 function floorsByCondition(css: string): Map<string, Map<string, string>> {

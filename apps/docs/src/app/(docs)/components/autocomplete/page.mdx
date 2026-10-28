@@ -4,6 +4,7 @@ lede: >
 ---
 
 import { AutocompleteCustomLayout } from "./demos/autocomplete-custom-layout";
+import { AutocompleteSizes } from "./demos/autocomplete-sizes";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -22,6 +23,10 @@ Autocomplete is Base UI's Autocomplete with [Combobox](/components/combobox)'s l
 `Autocomplete.Input` has no caret by default, since the list opens as the user types. `showTrigger` and `showClear` add the caret and a clear button, and `triggerLabel` and `clearLabel` replace their names from the locale dictionary. Place `Autocomplete.Status`, a visually hidden live region for the state of a search, beside `Autocomplete.Input` and outside `Autocomplete.Content`, so it stays mounted while the popup opens and closes. The `AutocompleteField` page shows groups and a search that runs on a server, which render these parts inside the field.
 
 </Prose>
+
+<Demo slug="autocomplete" id="sizes" title="Sizes" file="autocomplete-sizes.tsx">
+  <AutocompleteSizes />
+</Demo>
 
 <Demo
   slug="autocomplete"

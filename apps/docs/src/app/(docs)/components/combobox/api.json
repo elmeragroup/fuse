@@ -413,7 +413,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 302,
+      "forwardedCount": 301,
       "props": [
         {
           "name": "children",
@@ -487,6 +487,15 @@
           "shortType": null,
           "defaultValue": "true",
           "description": "Renders the caret trigger button in the inline-end addon. Hidden at runtime whenever a clear button is present in the group.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Control size of the field box, the outer InputGroup. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. It replaces the native numeric `size` attribute; set the width with a class instead.",
           "required": false
         },
         {
@@ -1173,6 +1182,15 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Control size of the chips field box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. The box's minimum height, inset, gap and text follow it, and a row of chips still fits the sm height. More chips than one row holds grow the box at both sizes.",
           "required": false
         },
         {

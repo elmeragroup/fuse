@@ -79,6 +79,13 @@ export type DatePickerProps<T extends DateValue> = {
    * @default "end"
    */
   triggerPlacement?: "start" | "end";
+  /**
+   * Control size of the field box. Emitted as `data-size`. `"default"` maps to the `md` control
+   * size; `"sm"` maps to the `sm` control size. The segment rows and the calendar trigger follow
+   * it.
+   * @default "default"
+   */
+  size?: "sm" | "default";
 } & Omit<AriaDatePickerProps<T>, "defaultValue" | "shouldForceLeadingZeros">;
 
 /**
@@ -105,6 +112,7 @@ export function DatePicker<T extends DateValue>({
   onChange,
   presetGroup,
   shouldForceLeadingZeros = true,
+  size = "default",
   triggerPlacement = "end",
   ...props
 }: DatePickerProps<T>): ReactElement {
@@ -123,6 +131,7 @@ export function DatePicker<T extends DateValue>({
         className={composeTailwindRenderProps(className, base())}>
         <PickerShell
           container={container}
+          size={size}
           description={description}
           errorMessage={errorMessage}
           isReadOnly={isReadOnly}

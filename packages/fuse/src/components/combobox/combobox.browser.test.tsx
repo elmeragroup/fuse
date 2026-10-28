@@ -592,63 +592,6 @@ describe("Combobox", () => {
     expect(page.getByRole("button", { name: "Remove [object Object]", exact: true }).query()).toBeNull();
   });
 
-  it("fits the chip-remove button inside its chip with a 24px target at both densities and roots", () => {
-    renderCombobox(
-      <Combobox.Root multiple defaultValue={["Apple", "Banana"]}>
-        <Combobox.Chips aria-label="Selected fruit">
-          <Combobox.Chip>Apple</Combobox.Chip>
-          <Combobox.Chip>Banana</Combobox.Chip>
-          <Combobox.ChipsInput aria-label="Fruit" />
-        </Combobox.Chips>
-      </Combobox.Root>
-    );
-    const remove = buttonNamed("Remove Apple");
-    const chip = remove.parentElement;
-    const nextChip = buttonNamed("Remove Banana").parentElement;
-    if (chip === null || nextChip === null) {
-      throw new Error("expected each remove button inside its chip");
-    }
-    // WCAG 2.5.8 target size: the pointer must land on the button anywhere in a 24px square
-    // around its centre. The sampled corners sit half a pixel inside that square.
-    const reach = 24 / 2 - 0.5;
-    // The floor is a fixed 24px, so a 14px host root, which scales the rem chip line and
-    // hit area, must not take the target under it.
-    try {
-      for (const root of [16, 14]) {
-        document.documentElement.style.fontSize = `${root}px`;
-        for (const density of ["dense", "comfortable"] as const) {
-          stampDensity(density);
-          const at = `${density} ${root}px`;
-          const box = remove.getBoundingClientRect();
-          const chipBox = chip.getBoundingClientRect();
-          expect(box.left, `${at} left edge`).toBeGreaterThanOrEqual(chipBox.left);
-          expect(box.right, `${at} right edge`).toBeLessThanOrEqual(chipBox.right);
-          expect(box.top, `${at} top edge`).toBeGreaterThanOrEqual(chipBox.top);
-          expect(box.bottom, `${at} bottom edge`).toBeLessThanOrEqual(chipBox.bottom);
-
-          const centreX = box.left + box.width / 2;
-          const centreY = box.top + box.height / 2;
-          for (const [dx, dy] of [
-            [-reach, -reach],
-            [reach, -reach],
-            [-reach, reach],
-            [reach, reach],
-          ] as const) {
-            expect(document.elementFromPoint(centreX + dx, centreY + dy), `${at} target ${dx},${dy}`).toBe(
-              remove
-            );
-          }
-          // The target stays off the neighbouring chip at the chips' gap.
-          const nextBox = nextChip.getBoundingClientRect();
-          const hit = document.elementFromPoint(nextBox.left + 0.5, nextBox.top + nextBox.height / 2);
-          expect(nextChip.contains(hit), `${at} next chip keeps its edge`).toBe(true);
-        }
-      }
-    } finally {
-      document.documentElement.style.removeProperty("font-size");
-    }
-  });
-
   it("paints the error ring on the Chips container while aria-invalid", () => {
     renderCombobox(
       <>

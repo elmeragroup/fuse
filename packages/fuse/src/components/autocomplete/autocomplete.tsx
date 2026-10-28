@@ -21,6 +21,7 @@ import {
   InputGroupPlainInput,
   InputGroupRoot,
 } from "../input-group/input-group";
+import type { InputGroupRootProps } from "../input-group/input-group";
 import { overlayPositionerClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
@@ -140,8 +141,15 @@ export function AutocompleteClear({
 
 export type AutocompleteInputProps = Omit<
   ComponentProps<typeof AutocompletePrimitive.Input>,
-  "children" | "className"
+  "children" | "className" | "size"
 > & {
+  /**
+   * Control size of the field box, the outer InputGroup. Emitted as `data-size`. `"default"`
+   * maps to the `md` control size; `"sm"` maps to the `sm` control size. It replaces the native
+   * numeric `size` attribute; set the width with a class instead.
+   * @default "default"
+   */
+  size?: InputGroupRootProps["size"];
   /**
    * The input's id. Inside a `Field`, set `id` on `Autocomplete.Root` instead: the Root's id is
    * the one `Field.Label` points at, so an id here leaves the label's `for` unmatched.
@@ -197,13 +205,14 @@ export function AutocompleteInput({
   showClear = false,
   clearLabel,
   triggerLabel,
+  size = "default",
   ...props
 }: AutocompleteInputProps): ReactElement {
   const strings = useLocalizedStrings(autocompleteStrings);
   return (
     // Base UI's InputGroup anchors the popup to the whole field box, not the input inside it.
     <AutocompletePrimitive.InputGroup
-      render={<InputGroupRoot className={cn("w-auto", className)} />}
+      render={<InputGroupRoot size={size} className={cn("w-auto", className)} />}
       // A press on the field box outside a control opens the popup under `openOnInputClick`.
       // Base UI skips that only for a disabled Root or Field, so skip it for this Input too.
       onMouseDown={(event) => {

@@ -1,7 +1,8 @@
 /**
  * Unit under test: the Input group component set as the build produces it. Oracle: the Fuse variable
- * or literal each Figma field of a cell must carry, read by hand from `inputGroupRootClass` and the
- * field box chrome in `field-box.ts`, the addon and button recipes in `input-group-variants.ts`, the
+ * or literal each Figma field of a cell must carry, read by hand from `inputGroupRootVariants` at the
+ * default field size and the addon and button recipes in `input-group-variants.ts`, the field box
+ * chrome in `field-box.ts`, the
  * addon shells in `inner-corner/input-group.ts`, the control chrome in `input-group-class.ts`,
  * `inputClass`, `state-face.ts`, the focus ring in `styles/utils.ts`, Tailwind's spacing (0.25rem) and
  * `shadow-xs`, and from CSS: a flex row lays out its items in order-modified document order, a
@@ -213,7 +214,7 @@ describe("the Input group component set", () => {
   );
 
   // The dense group is 36px and the caret 32px, centred, so the caret's 3px ring reaches 1px past the
-  // group's top and bottom, which CSS paints, since `inputGroupRootClass` sets no `overflow`. The
+  // group's top and bottom, which CSS paints, since `inputGroupRootVariants` sets no `overflow`. The
   // comfortable group is 44px against a 36px caret, so the ring stays 1px inside.
   it("records the invalid caret's ring past the group's top and bottom at the dense density only", () => {
     expect(

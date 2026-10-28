@@ -77,7 +77,7 @@ test("the elements take the public props and reject an invented axis", () => {
   const _leading = <DatePicker label="Start-up date" triggerPlacement="start" />;
   const _trailing = <DatePicker label="Start-up date" triggerPlacement="end" />;
 
-  // @ts-expect-error no size axis
+  // @ts-expect-error the field size is `"default"` or `"sm"`; it has no md name
   const _noSize = <DatePicker label="Invoice date" size="md" />;
   // @ts-expect-error the preset group's label is copy, not a node
   const _noNodeLabel = <DatePickerPresetGroup label={<span>Presets</span>} />;

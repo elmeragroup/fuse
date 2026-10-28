@@ -1,4 +1,5 @@
 import { cn } from "./cn";
+import { fieldReads } from "./field-size";
 import { searchBoxShellClass, searchClearShellClass } from "./inner-corner/search-field";
 import { tv } from "./tv";
 
@@ -8,9 +9,9 @@ import { tv } from "./tv";
  * the component because every RAC entry keeps its recipe in `src/styles/`
  *
  * The field box itself is not this recipe's business: `FieldGroup` runs the shared
- * `fieldGroupVariants`, which is what pins the `md` control rung for the whole field
- * family. So there is no `size` axis here, no `--control-*`
- * variable is read, and no box metric is restated.
+ * `fieldGroupVariants`, whose `size` axis writes the field size for the whole field family.
+ * So there is no `size` axis here and no box metric is restated: the clear button reads the
+ * box's inner square, `--field-inner` (`field-size.ts`).
  */
 export const searchFieldVariants = tv({
   slots: {
@@ -21,9 +22,9 @@ export const searchFieldVariants = tv({
     input: "[&::-webkit-search-cancel-button]:hidden",
     /** The field box, which publishes the corner its clear button rounds with. */
     group: searchBoxShellClass,
-    // The clear button sits inside the field box, so it takes the box's inner corner instead
-    // of Button's `--radius-button`.
-    button: cn("w-6 px-0 group-data-[empty]:invisible", searchClearShellClass),
+    // The clear button sits inside the field box, so it takes the box's inner square and inner
+    // corner instead of Button's square and `--radius-button`.
+    button: cn(fieldReads.inner(), "px-0 group-data-[empty]:invisible", searchClearShellClass),
     buttonIcon: "size-4 text-foreground",
   },
 });

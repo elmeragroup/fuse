@@ -3,11 +3,14 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { inputGroupRootVariants } from "../components/input-group/input-group-variants";
 import { Input } from "../components/input/input";
+import { inputClass } from "../components/input/input-class";
+import { numberFieldVariants } from "../components/number-field/number-field-variants";
 import { textFieldVariants } from "../components/text-field/text-field-variants";
 import { Textarea } from "../components/textarea/textarea";
+import { textareaClass } from "../components/textarea/textarea-class";
 import { cn } from "./cn";
-import { controlMdInsetTypeClass } from "./control-size-md";
 import {
   fieldBox,
   fieldBoxChromeClass,
@@ -15,6 +18,7 @@ import {
   readOnlyFillCancelClass,
   readOnlyFillClass,
 } from "./field-box";
+import { fieldEntryClass, fieldSize } from "./field-size";
 import { selfFocusRingClass } from "./utils";
 
 function tokens(classes: string): string[] {
@@ -68,7 +72,7 @@ describe("fieldBox recipe", () => {
     for (const token of [
       "bg-card",
       "border-input",
-      "h-(--control-h-md)",
+      "h-[var(--field-h,var(--control-h-md))]",
       "placeholder:text-muted-foreground",
       "disabled:bg-input/50",
       // The read-only fill keys off the attribute: `:read-only` also matches disabled and file inputs.
@@ -78,24 +82,24 @@ describe("fieldBox recipe", () => {
       expect(classes).toContain(token);
     }
     expect(classes).not.toContain("transition-[color,box-shadow,border-color]");
-    // Oracle: the text-entry inset-and-type pair, which control-size.test.ts pins by hand.
-    expect(classes).toEqual(expect.arrayContaining(tokens(controlMdInsetTypeClass)));
+    // Oracle: the field-size entry class, which field-size.test.ts pins by hand.
+    expect(classes).toEqual(expect.arrayContaining(tokens(fieldEntryClass)));
     // Oracle: the shared focus recipe, which utils.test.ts pins by hand.
     for (const token of selfFocusRingClass.split(" ")) {
       expect(classes).toContain(token);
     }
   });
 
-  it("pins the control rung by default and swaps to content sizing on the box axis", () => {
+  it("reads the field height by default and swaps to content sizing on the box axis", () => {
     const control = tokens(fieldBox());
-    expect(control).toContain("h-(--control-h-md)");
+    expect(control).toContain("h-[var(--field-h,var(--control-h-md))]");
     expect(control).not.toContain("min-h-16");
     expect(control).not.toContain("py-2");
 
     const content = tokens(fieldBox({ box: "content" }));
     expect(content).toContain("min-h-16");
     expect(content).toContain("py-2");
-    expect(content).not.toContain("h-(--control-h-md)");
+    expect(content).not.toContain("h-[var(--field-h,var(--control-h-md))]");
     expect(content).not.toContain("h-auto");
   });
 
@@ -122,6 +126,49 @@ describe("fieldBox recipe", () => {
     const textarea = renderedClasses(createElement(Textarea));
     for (const token of tokens(fieldBox({ box: "content" }))) {
       expect(textarea, "Textarea").toContain(token);
+    }
+  });
+
+  it.each(["default", "sm"] as const)("writes the %s field size on both hosts", (size) => {
+    // Oracle: the box writes, which field-size.test.ts pins by hand.
+    const writes = tokens(fieldSize({ size }).box());
+    expect(renderedClasses(createElement(Input, { size })), "Input").toEqual(expect.arrayContaining(writes));
+    expect(renderedClasses(createElement(Textarea, { size })), "Textarea").toEqual(
+      expect.arrayContaining(writes)
+    );
+  });
+
+  it.each(["default", "sm"] as const)(
+    "writes the %s field size from each field box recipe's size axis",
+    (size) => {
+      // Oracle: the box writes, which field-size.test.ts pins by hand.
+      const writes = tokens(fieldSize({ size }).box());
+      for (const [recipe, classes] of [
+        ["inputGroupRootVariants", inputGroupRootVariants({ size })],
+        ["numberFieldVariants group", numberFieldVariants({ size }).group()],
+      ] as const) {
+        expect(tokens(classes), recipe).toEqual(expect.arrayContaining(writes));
+      }
+    }
+  );
+
+  it("leaves the size out of the classes a control inside InputGroup.Root takes", () => {
+    // InputGroup.Input and InputGroup.Textarea read the group's size, so they write none.
+    const variables = [
+      "--field-h",
+      "--field-px",
+      "--field-gap",
+      "--field-inner",
+      "--field-text",
+      "--field-leading",
+    ];
+    for (const classes of [inputClass, textareaClass]) {
+      for (const token of tokens(classes)) {
+        expect(
+          variables.some((variable) => token.startsWith(`[${variable}:`)),
+          token
+        ).toBe(false);
+      }
     }
   });
 });

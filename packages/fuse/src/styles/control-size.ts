@@ -8,7 +8,8 @@ import { tv } from "./tv";
  * Toggle and ToggleGroup, and RadioIconButton take their size classes from
  * {@link controlSize}. Select's trigger takes its label from {@link controlLabel}, and a
  * segmented ToggleGroup item takes its inset from the {@link controlMetrics} slots. Controls
- * without a size axis take the md parts from `control-size-md.ts`.
+ * without a size axis take the md parts from `control-size-md.ts`, and the text-entry field
+ * boxes take their `"default"` and `"sm"` sizes from `field-size.ts`.
  *
  * Two rules live here and nowhere else. xs and sm set a fixed `text-xs` / `text-sm` that
  * does not follow density, while md and lg bind the density's `--control-text` /

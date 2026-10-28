@@ -83,7 +83,7 @@ test("the elements take the public props and reject an invented axis", () => {
   const _guardedPresets = <DateRangePicker label="Period" presetGroup={false} />;
   const _container = <DateRangePicker container={document.body} label="Delivery window" />;
 
-  // @ts-expect-error no size axis
+  // @ts-expect-error the field size is `"default"` or `"sm"`; it has no md name
   const _noSize = <DateRangePicker label="Delivery window" size="md" />;
   // @ts-expect-error the preset group's label is copy, not a node
   const _noNodeLabel = <DateRangePickerPresetGroup label={<span>Presets</span>} />;

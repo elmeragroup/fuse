@@ -1,7 +1,8 @@
 /**
  * Input, as one component set: a placeholder and a typed value, in five states: 10 cells. The root
- * is Base UI's `<input data-slot="input">`, a native control, with `inputClass`. It shares its
- * matrix, states, text colors and omissions with Textarea through `field-box-kit.ts`.
+ * is Base UI's `<input data-slot="input">`, a native control, with `inputVariants()` at the default
+ * field size. It shares its matrix, states, text colors and omissions with Textarea through
+ * `field-box-kit.ts`.
  *
  * - The box draws the field box: the field corner `radius-field-box`, a 1px `input` border, a `card`
  *   fill and `shadow-xs`, at the md control height and inline padding.
@@ -10,7 +11,7 @@
  *   classes say, so the label fills the row between the paddings and ends in an ellipsis.
  * - `file:` styles the button of a file input, which the kit does not draw.
  */
-import { inputClass } from "@elmeragroup/fuse/recipe-catalog";
+import { inputVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { ComponentDefinition } from "./component-spec";
 import { userAgentDisplay } from "./element-defaults";
@@ -28,7 +29,7 @@ export const INPUT: ComponentDefinition = {
   key: "input",
   name: "Input",
   slot: "input",
-  classesFor: () => inputClass,
+  classesFor: () => inputVariants(),
   // An `<input>` is inline-block, which a block container around it, as TextField's, lays out.
   elementDefaults: userAgentDisplay("input"),
   // Only an invalid cell wraps the input in a Field root, the one source Base UI reads the input's
