@@ -1,7 +1,7 @@
 /**
- * The add menu on a 390px phone under a coarse pointer: submenus below their rows, 44px rows,
- * and 44px reach on Back and the header operator. Touch emulation is page-wide, so this file runs
- * in the `browser-touch` project.
+ * The filter under a coarse pointer: each chip segment's 44px reach inside the strip at any width,
+ * and on a 390px phone, submenus below their rows, 44px rows, and 44px reach on Back and the header
+ * operator. Touch emulation is page-wide, so this file runs in the `browser-touch` project.
  */
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -43,9 +43,13 @@ afterEach(async () => {
   await page.viewport(414, 896);
 });
 
-describe("DataTableFilter narrow chip strip under a coarse pointer", () => {
-  it("keeps each segment's 44px band inside the strip, top and bottom", async () => {
-    await page.viewport(390, 844);
+describe("DataTableFilter chip strip under a coarse pointer", () => {
+  // The strip clips at every width: a phone's narrow bar and a tablet's wide one.
+  it.each([
+    [390, 844],
+    [1280, 800],
+  ])("keeps each segment's 44px band inside the strip, top and bottom, at %ipx", async (width, height) => {
+    await page.viewport(width, height);
     await emulatePointer("coarse");
     // Room above the bar, so every band lies inside the viewport.
     renderThemed(

@@ -6,7 +6,8 @@
  */
 import { Effect } from "effect";
 
-import { buildComponentSet, buildSetsInOrder, definitionClasses } from "../src/components/component-spec.ts";
+import { buildComponentSet, buildSetsInOrder } from "../src/components/component-builder.ts";
+import { definitionClasses } from "../src/components/component-spec.ts";
 import type {
   BuildContext,
   BuiltComponent,

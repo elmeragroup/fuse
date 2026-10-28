@@ -6,7 +6,14 @@ import { Effect } from "effect";
 
 import { buildComponentSets } from "../src/components/build-kit.ts";
 import type { CoverageRow } from "../src/components/coverage.ts";
-import type { ComponentRootSpec, KitSpec } from "../src/components/kit-spec.ts";
+import { layerAt } from "../src/components/kit-spec.ts";
+import type {
+  BoxSpec,
+  ChildLayerSpec,
+  ComponentRootSpec,
+  FrameLayerSpec,
+  KitSpec,
+} from "../src/components/kit-spec.ts";
 
 /** The parts of the built kit a per-set suite reads. */
 export type BuiltSets = {
@@ -51,6 +58,47 @@ export function variantRoot(spec: Pick<KitSpec, "componentSets">, key: string): 
     throw new Error(`the kit has no ${key}`);
   }
   return found.root;
+}
+
+/**
+ * The frame layer at a key path below a box, as `layerAt` finds it.
+ *
+ * @param box - A variant's root.
+ * @param path - The keys from the box down.
+ * @returns The frame, or undefined where the box holds no frame at the path.
+ */
+export function frameLayerAt(box: BoxSpec, path: readonly string[]): FrameLayerSpec | undefined {
+  const layer = layerAt(box, path);
+  return layer !== undefined && "kind" in layer && layer.kind === "frame" ? layer : undefined;
+}
+
+/**
+ * Each layer's key, and the variant it shows where it is an instance, depth first, indented two
+ * spaces per level.
+ *
+ * @param layers - The layers.
+ * @param depth - The level of these layers.
+ * @returns One line per layer.
+ */
+export function outline(layers: readonly ChildLayerSpec[], depth = 0): readonly string[] {
+  return layers.flatMap((layer) => [
+    `${"  ".repeat(depth)}${layer.key}${layer.kind === "instance" ? ` -> ${layer.variant}` : ""}`,
+    ...(layer.kind === "frame" ? outline(layer.children, depth + 1) : []),
+  ]);
+}
+
+/**
+ * Every instance layer at or below some layers, depth first.
+ *
+ * @param layers - The layers.
+ * @returns The instance layers.
+ */
+export function instancesIn(
+  layers: readonly ChildLayerSpec[]
+): readonly Extract<ChildLayerSpec, { kind: "instance" }>[] {
+  return layers.flatMap((layer) =>
+    layer.kind === "instance" ? [layer] : layer.kind === "frame" ? instancesIn(layer.children) : []
+  );
 }
 
 /** A field bound to a `Fuse tokens` variable. */

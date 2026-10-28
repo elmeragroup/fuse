@@ -8,6 +8,9 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { FieldControl } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
 import { Textarea } from "../textarea/textarea";
+import { textareaFieldVariants } from "./textarea-field-variants";
+
+const slots = textareaFieldVariants();
 
 export type TextareaFieldProps = {
   /** Visible label, rendered as `Field.Label`. */
@@ -101,15 +104,14 @@ export function TextareaField({
 
   return (
     <FieldFrame
-      spacing="part"
       invalid={isInvalid}
       disabled={isDisabled}
       label={label}
       className={className}
-      classNames={{ labelRow: "gap-2" }}
+      classNames={{ labelRow: slots.labelRow() }}
       status={
         maxLength === undefined ? undefined : (
-          <span className="text-xs text-muted-foreground">
+          <span className={slots.counter()}>
             {currentLength}/{maxLength}
           </span>
         )

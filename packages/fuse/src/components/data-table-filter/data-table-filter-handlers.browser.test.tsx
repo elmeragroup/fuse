@@ -207,8 +207,8 @@ const ROWS: readonly Row[] = [
   {
     part: "Chips",
     handler: "onFocus",
-    // Three chips in a narrow bar: the strip scrolls sideways.
-    setup: { initial: [...CUSTOMER_NORD, ...STATUS_THREE, ...AMOUNT], width: 360 },
+    // Three chips in a 640px bar: the strip still scrolls sideways.
+    setup: { initial: [...CUSTOMER_NORD, ...STATUS_THREE, ...AMOUNT], width: 640 },
     act: async () => {
       // Without the browser's own scroll, so only the part's scrolls the segment into view.
       roleNamed("button", "Remove Amount filter").focus({ preventScroll: true });
@@ -217,10 +217,12 @@ const ROWS: readonly Row[] = [
     works: async () => {
       await nextFrames(3);
       // DOM audit: the strip is a layout box with no role; its scroll position is the behaviour.
-      const strip = roleNamed("button", "Remove Amount filter").closest(
-        "[data-slot=data-table-filter-chips]"
-      );
+      const remove = roleNamed("button", "Remove Amount filter");
+      const strip = remove.closest("[data-slot=data-table-filter-chips]");
       expect(strip?.scrollLeft ?? 0).toBeGreaterThan(0);
+      expect(remove.getBoundingClientRect().right).toBeLessThanOrEqual(
+        strip?.getBoundingClientRect().right ?? 0
+      );
     },
   },
   {

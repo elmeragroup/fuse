@@ -18,7 +18,8 @@ import {
   overlaySizeVariants,
   overlayTitleClass,
 } from "../overlay/overlay-classes";
-import { OverlayCloseButton, overlayCornerCloseClass } from "../overlay/overlay-close-button";
+import { OverlayCloseButton } from "../overlay/overlay-close-button";
+import { overlayCornerCloseClass } from "../overlay/overlay-corner-close-class";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 

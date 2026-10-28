@@ -56,11 +56,12 @@ import {
   HAS_VARIANTS,
   IN_VARIANTS,
   PARENT_VARIANTS,
+  POSITION_VARIANTS,
   PEER_VARIANTS,
   REACT_ARIA_HOVER,
   TAG_VARIANTS,
 } from "./markup-variants.ts";
-import { elementsOf } from "./static-markup.ts";
+import { elementsOf, selects } from "./static-markup.ts";
 import type { MarkupElement } from "./static-markup.ts";
 
 /** Whether an element's own classes name a variant. */
@@ -79,14 +80,17 @@ function statePartOf(
   elements: readonly MarkupElement[],
   measured: number
 ): MarkupElement | undefined {
-  if (definition.statePart === undefined) {
+  const { statePart, statePartElement } = definition;
+  if (statePart === undefined && statePartElement === undefined) {
     return undefined;
   }
   const found = elements.filter(
     (element, index) =>
-      element.attributes.get("data-slot") === definition.statePart && inside(elements, index, measured)
+      (statePartElement === undefined
+        ? element.attributes.get("data-slot") === statePart
+        : selects(statePartElement, element)) && inside(elements, index, measured)
   );
-  expect(found, `the ${definition.statePart} part that takes the states`).toHaveLength(1);
+  expect(found, `the ${statePart ?? statePartElement?.tag ?? ""} part that takes the states`).toHaveLength(1);
   return found[0];
 }
 
@@ -177,16 +181,50 @@ export function expectedLabel(box: BoxDefinition, cell: Cell): MarkupLabel {
     : { text: "", attribute: [attribute, characters] };
 }
 
+/** What a measured declaration's value reads as in a comparison, which holds any value the markup writes. */
+const MEASURED = "<measured>";
+
 /**
- * The `style` attribute a part's markup carries in a cell, as React writes it from a `style` prop:
- * each declaration as `property:value`, in order, joined by `;`. A part without `styleFor` carries
- * none.
+ * A `style` attribute's declarations as property and value pairs, in order, as React writes them
+ * (`a:b;c:d`) or a browser serializes them (`a: b; c: d;`), or undefined for no attribute.
  */
-function expectedStyle(part: PartDefinition, cell: Cell): string | undefined {
-  return part
-    .styleFor?.(cell)
-    .map(({ property, value }) => `${property}:${value}`)
-    .join(";");
+function declarationsOf(style: string | undefined): readonly (readonly [string, string])[] | undefined {
+  return style
+    ?.split(";")
+    .map((declaration) => declaration.trim())
+    .filter((declaration) => declaration !== "")
+    .map((declaration) => {
+      const colon = declaration.indexOf(":");
+      return [declaration.slice(0, colon).trim(), declaration.slice(colon + 1).trim()] as const;
+    });
+}
+
+/**
+ * Check the `style` attribute a root's or a part's markup carries in a cell against its `styleFor`:
+ * the same declarations in the same order. A declaration whose value the definition marks `measured`,
+ * as Base UI writes a Tooltip arrow's `left` from the layout, holds with any value. A box without
+ * `styleFor` carries none.
+ */
+function checkStyle(
+  box: Pick<ComponentDefinition, "styleFor">,
+  cell: Cell,
+  element: MarkupElement | undefined,
+  where: string
+): void {
+  const declared = box.styleFor?.(cell);
+  const measured = new Set(
+    (declared ?? [])
+      .filter((declaration) => declaration.measured !== undefined)
+      .map(({ property }) => property)
+  );
+  const markup = declarationsOf(element?.attributes.get("style"))?.map(
+    ([property, value]) => [property, measured.has(property) ? MEASURED : value] as const
+  );
+  expect(markup, where).toEqual(
+    declared?.map(
+      ({ property, value, measured: why }) => [property, why === undefined ? value : MEASURED] as const
+    )
+  );
 }
 
 /**
@@ -264,10 +302,11 @@ function checkAttributeStates(
 function conditionHolds(
   definition: ComponentDefinition,
   cell: Cell,
-  inPlace?: ReadonlyMap<string, (cell: Cell) => boolean>
+  inPlace?: ReadonlyMap<string, (cell: Cell) => boolean>,
+  stamps?: ReadonlySet<string>
 ): (variant: string) => boolean {
   const meaningOf =
-    inPlace === undefined ? makeStateTable(definition) : withInPlaceFacts(definition, inPlace);
+    inPlace === undefined ? makeStateTable(definition) : withInPlaceFacts(definition, inPlace, stamps);
   return (variant) => {
     const meaning = meaningOf(variant);
     return meaning.kind === "condition" && meaning.holds(cell);
@@ -280,7 +319,7 @@ function conditionHolds(
  * markup at and around the element shows. A group variant holds where the element or one around it is
  * the group in that state, a peer variant where a sibling before it is the peer, and a tag variant
  * on the element itself. Each fact the part declares for the inner root in place holds exactly where
- * the element carries its attribute. The markup inside the element stays the inner set's.
+ * the element, or the inner set's state taker inside it, carries its attribute. The markup inside the element stays the inner set's.
  *
  * @param part - The instance part.
  * @param inner - The inner cell the part names.
@@ -296,10 +335,10 @@ function checkInnerCell(
   where: string
 ): void {
   const { of } = part;
-  const holds = conditionHolds(of, inner, part.facts);
-  checkAttributeStates(of, { cell: inner, variant: holds }, elements, index, where);
+  const holds = conditionHolds(of, inner, part.facts, part.stamps);
+  const stateTaker = checkAttributeStates(of, { cell: inner, variant: holds }, elements, index, where);
   const element = elements[index];
-  if (element === undefined) {
+  if (element === undefined || stateTaker === undefined) {
     return;
   }
   const around = [element, ...ancestorsOf(elements, index)];
@@ -329,9 +368,13 @@ function checkInnerCell(
     const groupHas = GROUP_HAS_VARIANTS.get(variant);
     const within = IN_VARIANTS.get(variant);
     const group = GROUP_VARIANTS.get(variant);
+    const position = POSITION_VARIANTS.get(variant);
+    // An attribute holds where the inner set's state taker carries it, as `checkAttributeStates` reads
+    // it, as the Command palette's Input group carries `data-pressed` on its control.
     const markup =
-      carries?.(element) ??
+      carries?.(stateTaker) ??
       has?.(elements, index) ??
+      position?.(elements, index) ??
       (within === undefined ? undefined : ancestorsOf(elements, index).some(within)) ??
       (group === undefined ? undefined : around.some(group)) ??
       (groupHas === undefined
@@ -359,7 +402,7 @@ function checkInstance(
 ): void {
   const element = index === undefined ? undefined : elements[index];
   const inner = part.cell(cell);
-  const merged = cn(part.of.classesFor(inner), part.classesFor?.(cell) ?? "");
+  const merged = cn(part.ownClassesFor?.(inner) ?? part.of.classesFor(inner), part.classesFor?.(cell) ?? "");
   expect(splitClasses(element?.attributes.get("class") ?? "").toSorted(), `${where}: the class`).toEqual(
     splitClasses(merged).toSorted()
   );
@@ -509,6 +552,11 @@ function checkRendering(
     );
     const stateTaker =
       checkAttributeStates(definition, { cell, variant: holdsIn }, elements, measured, key) ?? root;
+    // A root whose definition names no `styleFor` makes no claim, as Base UI writes its own inline
+    // styles on some roots, a stepper's `user-select: none` among them.
+    if (definition.styleFor !== undefined) {
+      checkStyle(definition, cell, root, `${key}: the style on the root`);
+    }
     if (stateTaker.attributes.has("data-rac")) {
       const hovered = Object.hasOwn(forcedAttributes, "data-hovered");
       for (const variant of REACT_ARIA_HOVER) {
@@ -575,11 +623,16 @@ function checkRendering(
         );
       }
     }
-    // A peer variant holds exactly where a sibling before the root is the peer in that state, and
-    // the sibling a definition's `statePeer` names, which the page forces, sits there once.
+    // A peer variant holds exactly where a sibling before the element that names it is the peer in
+    // that state: the root, or a part below it, as a Radio row's content reads the radio before it.
+    // Where no element below the root names it, the root's own siblings decide. The sibling a
+    // definition's `statePeer` names, which the page forces, sits before the root once.
     const before = siblingsBefore(elements, measured);
     for (const [variant, matches] of PEER_VARIANTS) {
-      expect(holdsIn(variant), `${key}: ${variant}`).toBe(before.some(matches));
+      const naming = elementsNaming(elements, measured, variant, instances);
+      for (const index of naming.length === 0 ? [measured] : naming) {
+        expect(holdsIn(variant), `${key}: ${variant}`).toBe(siblingsBefore(elements, index).some(matches));
+      }
     }
     if (definition.statePeer !== undefined) {
       expect(
@@ -634,9 +687,7 @@ function checkRendering(
       ).toEqual(partLabel);
       expect(markupImage(element), `${key}: the image on ${path}`).toEqual(expectedImage(part));
       checkElementChildren(part, cell, turnedOn, elements, index, `${key}: the element children on ${path}`);
-      expect(element?.attributes.get("style"), `${key}: the style on ${path}`).toEqual(
-        expectedStyle(part, cell)
-      );
+      checkStyle(part, cell, element, `${key}: the style on ${path}`);
       // A part's own facts hold on its element, as a Sidebar separator's `data-orientation` does.
       const holdsOnPart = (variant: string) => part.facts?.get(variant)?.(cell) ?? holdsIn(variant);
       for (const variant of attributeConditions(part, cell)) {

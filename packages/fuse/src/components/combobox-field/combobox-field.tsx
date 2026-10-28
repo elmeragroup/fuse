@@ -135,7 +135,6 @@ export function ComboboxField<
 }: ComboboxFieldProps<Items, Filtered, Value>): ReactElement {
   return (
     <FieldFrame
-      spacing="part"
       className={className}
       name={name}
       invalid={isInvalid}

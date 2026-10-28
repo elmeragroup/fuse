@@ -9,7 +9,9 @@ import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
 import { toggleVariants } from "../toggle/toggle-variants";
-import { segmentedItemInset } from "./toggle-group-variants";
+import { segmentedItemInset, toggleGroupVariants } from "./toggle-group-variants";
+
+const slots = toggleGroupVariants();
 
 type ToggleGroupContextValue = VariantProps<typeof toggleVariants> & {
   spacing?: number;
@@ -68,10 +70,7 @@ export function ToggleGroupRoot({
       data-spacing={spacing}
       data-orientation={orientation}
       style={{ "--gap": spacing, ...style }}
-      className={cn(
-        "group/toggle-group data-[spacing=0]:data-[variant=outline]:shadow-xs flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-md data-vertical:flex-col data-vertical:items-stretch",
-        className
-      )}
+      className={cn(slots.root(), className)}
       orientation={orientation}
       {...props}>
       <ToggleGroupContext.Provider value={contextValue}>{children}</ToggleGroupContext.Provider>
@@ -101,7 +100,7 @@ export function ToggleGroupItem({
       data-size={resolvedSize ?? "default"}
       data-spacing={context.spacing}
       className={cn(
-        "shrink-0 group-data-[spacing=0]/toggle-group:rounded-none group-data-[spacing=0]/toggle-group:shadow-none focus:z-10 focus-visible:z-10 group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-l-md group-data-vertical/toggle-group:data-[spacing=0]:first:rounded-t-md group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-r-md group-data-vertical/toggle-group:data-[spacing=0]:last:rounded-b-md group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:border-l-0 group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:border-t-0 group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-l group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-t group-data-[spacing=0]/toggle-group:enabled-active:scale-100",
+        slots.item(),
         toggleVariants({
           variant: resolvedVariant,
           size: resolvedSize,

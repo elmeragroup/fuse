@@ -586,10 +586,17 @@ export function focusIs(role: Parameters<typeof page.getByRole>[0], name: string
 
 /**
  * Waits for every running animation and transition, such as an overlay's open zoom. A cancelled
- * one, such as a transition a newer one replaced, counts as settled.
+ * one, such as a transition a newer one replaced, counts as settled. A scroll-linked animation,
+ * such as the chip strip's fades, follows its scroll position and never finishes, so only
+ * animations on a document's clock count.
  */
 export async function settled(): Promise<void> {
-  await Promise.allSettled(document.getAnimations().map((animation) => animation.finished));
+  await Promise.allSettled(
+    document
+      .getAnimations()
+      .filter((animation) => animation.timeline instanceof DocumentTimeline)
+      .map((animation) => animation.finished)
+  );
 }
 
 /** One painted frame of a popup: its side and its bottom edge in whole pixels. */

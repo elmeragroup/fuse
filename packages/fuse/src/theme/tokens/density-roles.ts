@@ -217,8 +217,13 @@ export const PART_DENSITY = {
   "empty-description": "fixed",
   "empty-content": "layout",
 
-  field: "surface",
-  "field[data-spacing=part]": "layout",
+  // A vertical root stacks its parts 4px apart. A horizontal one, and a responsive one past the
+  // field group's md width, line the control up `--surface-gap-md` from its label. TextField's card
+  // root pads as a card.
+  field: "layout",
+  "field[data-orientation=horizontal]": "surface",
+  "field[data-orientation=responsive]": "surface",
+  "field[data-variant=card]": "surface",
   "field-set": "surface",
   "field-legend": "label",
   "field-legend[data-variant=legend]": "fixed",

@@ -14,9 +14,8 @@
  *    distance to both edges, so its size grows by what the parent's grows. A child that changes
  *    size resizes its own children the same way. An auto layout frame places the children in its
  *    flow by its layout instead, which the fake leaves as they are, and constrains only its
- *    absolute children (rule 24). `MAX` across and `CENTER` down keep the anchors rule 47 names, so
- *    the child's `x` and `y` follow the new size. The fake throws for `CENTER` across and `MAX`
- *    down, which no probe read. `resizeWithoutConstraints` leaves the children as they are. Figma's reference pages
+ *    absolute children (rule 24). `MAX` and `CENTER` keep the anchors rules 47 and 59 name, so
+ *    the child's `x` and `y` follow the new size. `resizeWithoutConstraints` leaves the children as they are. Figma's reference pages
  *    for `resize` and `resizeWithoutConstraints` say so, and the icon components rely on it to
  *    bring a glyph back with its component.
  * 12. `layoutSizingHorizontal` and `layoutSizingVertical` read as a projection of other fields,
@@ -199,6 +198,17 @@
  * 58. `strokesIncludedInLayout` takes a write only in auto layout. On the same frames a write while
  *    `layoutMode` was NONE threw `in set_strokesIncludedInLayout: Can only set
  *    strokesIncludedInLayout on nodes with layoutMode !== NONE` (PS3).
+ * 59. CENTER across and MAX down keep a place as rule 47's MAX across and CENTER down do: CENTER the
+ *    offset of the layer's centre from its parent's, MAX the inset from its end to its parent's, each
+ *    on its own axis, so `x` and `y` follow the parent's size. On 2026-10-27 a real file kept a 10px
+ *    frame at -45, ABSOLUTE in a 120px popup at CENTER and MAX, centred at (W/2, H - 2): its
+ *    `relativeTransform` read `[[0.7071, -0.7071, 60], [0.7071, 0.7071, 22.9297]]` whether `x` and `y`
+ *    were written before the turn or after it, and it followed a density switch from 32 to 36 tall and
+ *    text-driven widths of 101, 161 and 229, in the main and in an instance with no overrides (W5-P11,
+ *    W5-P11b). Figma keeps a CENTER shift whole: an instance narrowed by an odd number of pixels put
+ *    the centre 0.5px off (229 to 42 wide, 20.5 where the exact half is 21). That one reading cannot
+ *    tell which way Figma rounds, so the fake refuses a read whose CENTER shift since the place was
+ *    written is half a pixel, rather than approve a place the real file does not keep.
  */
 
 import { hiddenByProperty, markOverride, noteOverride } from "./overrides.ts";
@@ -318,10 +328,13 @@ export function constraintsOf(state: NodeState): Constraints {
     : constraintsOf(state.mirrorOf);
 }
 
-/** Whether a layer's constraint on an axis keeps an anchor (rule 47): MAX across, CENTER down. */
-function anchoredOn(state: NodeState, axis: Axis): boolean {
-  const constraints = constraintsOf(state);
-  return axis === "HORIZONTAL" ? constraints.horizontal === "MAX" : constraints.vertical === "CENTER";
+/**
+ * The anchor a layer's constraint on an axis keeps (rules 47, 59): its end inset under MAX, its
+ * centre's offset under CENTER, or none under any other.
+ */
+function anchoredOn(state: NodeState, axis: Axis): "end" | "centre" | undefined {
+  const constraint = axis === "HORIZONTAL" ? constraintsOf(state).horizontal : constraintsOf(state).vertical;
+  return constraint === "MAX" ? "end" : constraint === "CENTER" ? "centre" : undefined;
 }
 
 /**
@@ -330,11 +343,13 @@ function anchoredOn(state: NodeState, axis: Axis): boolean {
  * 221 with no override (N11).
  */
 function anchorOf(state: NodeState, axis: Axis): number | undefined {
+  return anchorSource(state, axis).anchors[axis === "HORIZONTAL" ? "horizontal" : "vertical"];
+}
+
+/** The layer whose written place holds the anchor {@link anchorOf} reads: the layer, or its source. */
+function anchorSource(state: NodeState, axis: Axis): NodeState {
   const written = state.overridden.has(axis === "HORIZONTAL" ? "x" : "y");
-  if (state.mirrorOf !== undefined && !written) {
-    return anchorOf(state.mirrorOf, axis);
-  }
-  return axis === "HORIZONTAL" ? state.anchors.end : state.anchors.centre;
+  return state.mirrorOf !== undefined && !written ? anchorSource(state.mirrorOf, axis) : state;
 }
 
 /** A layer's length and its parent's on an axis, each as a read gives it (rules 32, 47). */
@@ -343,31 +358,65 @@ function lengthsOn(state: NodeState, parent: NodeState, axis: Axis): Lengths {
 }
 
 /**
- * Where an anchored layer sits on an axis (rule 47): its parent's length less its end inset and its
- * own length across, and its parent's centre moved by its centre offset down.
+ * Where an anchored layer sits on an axis (rules 47, 59): under MAX its parent's length less its end
+ * inset and its own length, under CENTER its parent's centre moved by its centre offset. The place is
+ * the layer's `x` or `y`, the origin of a turned layer's transform, which moves with the parent's
+ * length as the unturned box's would.
  *
  * @returns The `x` or `y`, or undefined for a layer that keeps the one written.
  */
 export function anchoredPlace(state: NodeState, axis: Axis): number | undefined {
   const anchor = anchorOf(state, axis);
   const parent = state.parent;
-  if (anchor === undefined || parent === undefined || !anchoredOn(state, axis)) {
+  const kind = anchoredOn(state, axis);
+  if (anchor === undefined || parent === undefined || kind === undefined) {
     return undefined;
   }
   const { own, outer } = lengthsOn(state, parent, axis);
-  return f32(axis === "HORIZONTAL" ? outer - anchor - own : outer / 2 + anchor - own / 2);
+  if (kind === "centre") {
+    refuseHalfShift(anchorSource(state, axis).anchoredAt[axis === "HORIZONTAL" ? "horizontal" : "vertical"], {
+      own,
+      outer,
+    });
+  }
+  return f32(kind === "end" ? outer - anchor - own : outer / 2 + anchor - own / 2);
 }
 
-/** Write a layer's place on an axis: an anchor where its constraint keeps one (rule 47), else `x` or `y`. */
+/**
+ * Refuse a CENTER place whose shift since its anchor was written is no whole pixel: the real file kept
+ * a CENTER shift whole and put the centre 0.5px off when an instance narrowed by an odd 187px, and one
+ * reading cannot tell which way Figma rounds (rule 59, W5-P11b).
+ */
+function refuseHalfShift(at: Lengths | undefined, now: Lengths): void {
+  if (at === undefined) {
+    return;
+  }
+  const shift = (now.outer - at.outer - (now.own - at.own)) / 2;
+  if (!Number.isInteger(shift)) {
+    throw new Error(
+      `The fake Figma file does not model a CENTER constraint shifting a layer ${String(shift)}px, half a pixel: Figma keeps the shift whole and W5-P11b does not pin which way it rounds.`
+    );
+  }
+}
+
+/** Write a layer's place on an axis: an anchor where its constraint keeps one (rules 47, 59), else `x` or `y`. */
 export function place(state: NodeState, axis: Axis, value: number): void {
   const parent = state.parent;
-  const anchored = parent !== undefined && anchoredOn(state, axis);
-  const lengths = anchored ? lengthsOn(state, parent, axis) : undefined;
+  const kind = parent === undefined ? undefined : anchoredOn(state, axis);
+  const lengths = parent === undefined || kind === undefined ? undefined : lengthsOn(state, parent, axis);
+  const anchor =
+    lengths === undefined
+      ? undefined
+      : kind === "end"
+        ? lengths.outer - value - lengths.own
+        : value + lengths.own / 2 - lengths.outer / 2;
   if (axis === "HORIZONTAL") {
-    state.anchors.end = lengths === undefined ? undefined : lengths.outer - value - lengths.own;
+    state.anchors.horizontal = anchor;
+    state.anchoredAt.horizontal = lengths;
     state.x = value;
   } else {
-    state.anchors.centre = lengths === undefined ? undefined : value + lengths.own / 2 - lengths.outer / 2;
+    state.anchors.vertical = anchor;
+    state.anchoredAt.vertical = lengths;
     state.y = value;
   }
 }

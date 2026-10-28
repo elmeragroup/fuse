@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>pr-shots fixture</title>
+    <style>
+      body {
+        margin: 0;
+        background: #fff;
+      }
+      main {
+        padding: 40px;
+      }
+      /* Fade widths that two animations on the strip's own scroll timeline set, as Fuse's
+         scroll-fade-inline does: 24px at an end with content past it, 0px at an end without. */
+      @property --fade-start {
+        syntax: "<length>";
+        inherits: false;
+        initial-value: 0px;
+      }
+      @property --fade-end {
+        syntax: "<length>";
+        inherits: false;
+        initial-value: 0px;
+      }
+      @keyframes fade-start {
+        from {
+          --fade-start: 0px;
+        }
+        to {
+          --fade-start: 24px;
+        }
+      }
+      @keyframes fade-end {
+        from {
+          --fade-end: 24px;
+        }
+        to {
+          --fade-end: 0px;
+        }
+      }
+      [role="region"] {
+        width: 300px;
+        height: 40px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        mask-image: linear-gradient(
+          to right,
+          transparent,
+          black var(--fade-start),
+          black calc(100% - var(--fade-end)),
+          transparent
+        );
+        animation:
+          fade-start auto linear both,
+          fade-end auto linear both;
+        animation-timeline: scroll(self inline), scroll(self inline);
+        animation-range:
+          0 24px,
+          calc(100% - 24px) 100%;
+      }
+      [role="region"] div {
+        width: 1000px;
+        height: 40px;
+        background: #f00;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div role="region" aria-label="Strip"><div></div></div>
+    </main>
+    <script>
+      document.querySelector('[role="region"]').scrollLeft = 300;
+    </script>
+  </body>
+</html>

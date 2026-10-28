@@ -3,7 +3,8 @@
  * it belongs to and a value for each of its axes. A key such as
  * `button/variant=ghost,size=sm,state=hover,icon=end` names the component set, then each
  * variant property. `variantKey` in `component-spec.ts` writes these keys, and this module reads
- * them back against the kit's definitions. The parser accepts only the axes and values a
+ * them back against the kit's definitions. A key leaves out an axis the set added later at its first
+ * value, which the parser fills back in. The parser accepts only the axes and values a
  * definition declares, so a new axis in a snapshot shows up as an unsupported cell, not as a
  * cell rendered without it.
  *
@@ -82,7 +83,7 @@ export type ParsedCell<Definition> = {
  * @returns The definition and the cell, or `UnsupportedVariant` for a set no definition has, an
  *   axis the definition lacks or misses, or a value its axis does not declare.
  */
-export function parseCell<Definition extends Pick<ComponentDefinition, "key" | "axes">>(
+export function parseCell<Definition extends Pick<ComponentDefinition, "key" | "axes" | "addedAxes">>(
   key: string,
   definitions: readonly Definition[]
 ): Result.Result<ParsedCell<Definition>, UnsupportedVariant> {
@@ -101,7 +102,10 @@ export function parseCell<Definition extends Pick<ComponentDefinition, "key" | "
     }
     const cell: Record<string, string> = {};
     for (const axis of definition.axes) {
-      const value = properties.get(axis.name);
+      // `variantKey` leaves an axis the set added later out of the key at its first value.
+      const value =
+        properties.get(axis.name) ??
+        (definition.addedAxes?.has(axis.name) === true ? axis.values[0] : undefined);
       if (value === undefined) {
         return yield* Result.fail(new UnsupportedVariant(key, `the key has no ${axis.name}`));
       }

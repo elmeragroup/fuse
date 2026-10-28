@@ -32,6 +32,18 @@ const BUILD_OUTPUTS: readonly string[] = [
 /** The font weights the page can load, every upright cut the package ships. */
 const FONT_WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900] as const;
 
+/**
+ * Licensed families neither the compare page nor the real file ships, by name, with why. Where a
+ * cell's text names one first, both sides draw the next family in its stack, so the font check
+ * accepts it when that family has a loaded face (`font-check.ts`).
+ */
+export const LICENSED_FAMILIES: ReadonlyMap<string, string> = new Map([
+  [
+    "Neo Sans",
+    "the external Fjordkraft themes' --font-heading. On 2026-10-27 the real file's external Dialog title bound font-heading to Neo Sans Medium with hasMissingFont true, listAvailableFontsAsync held no Neo Sans, and its export drew the title in Roboto Medium, as the page's CSS stack falls back to Roboto",
+  ],
+]);
+
 /** The Fuse build is missing. */
 export class FuseBuildMissing extends Error {
   readonly _tag = "FuseBuildMissing" as const;

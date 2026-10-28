@@ -40,6 +40,7 @@ import { isToggleOn } from "./filter-model";
 import type { FilterOperator } from "./filter-model";
 import { summarize } from "./filter-summary";
 import { OperatorOptions, useOperatorItems } from "./operator-options";
+import { scrollStripOnWheel } from "./strip-wheel";
 
 /**
  * Runs the consumer's handler, then the part's bookkeeping whatever the consumer did with the
@@ -99,9 +100,9 @@ export type DataTableFilterBarProps = ComponentProps<typeof ToolbarPrimitive.Roo
 
 /**
  * The filter bar, a toolbar that is one Tab stop with arrow-key roving. Without children it
- * renders the Trigger, the chips and Clear. It is named "Filters" unless `aria-label` says
- * otherwise. Below a 36rem container width a container query hides the Trigger's label and turns
- * the chips into one row that scrolls sideways.
+ * renders the Trigger, the chips and Clear on one line, so its height never grows with the
+ * filters. It is named "Filters" unless `aria-label` says otherwise. Below a 36rem container
+ * width a container query hides Clear's label behind its icon.
  */
 export function DataTableFilterBar({ className, children, ...props }: DataTableFilterBarProps): ReactElement {
   const { state, meta } = useFilterInternals("DataTableFilter.Bar");
@@ -138,8 +139,9 @@ export type DataTableFilterTriggerProps = Omit<
 
 /**
  * Opens the add menu, `DataTableFilter.Content`. It sits first in the bar, so a chip added under
- * the open menu never moves it. Its label is visually hidden in a narrow bar, and its name never
- * changes.
+ * the open menu never moves it. Without children it draws the icon, named "Filter" unless
+ * `aria-label` says otherwise, as a square icon button at every width or in the `render`
+ * element. Children replace the icon and render it as a labelled button.
  */
 export function DataTableFilterTrigger({
   className,
@@ -151,16 +153,28 @@ export function DataTableFilterTrigger({
 }: DataTableFilterTriggerProps): ReactElement {
   const { state, actions, meta } = useFilterInternals("DataTableFilter.Trigger");
   const triggerRef = useMergedRefs(ref, actions.registerTrigger);
+  const label = props["aria-label"] ?? meta.format("filter");
+  const iconOnly = children == null;
   return (
     <ToolbarPrimitive.Button
       ref={triggerRef}
       id={meta.triggerId}
       data-slot="data-table-filter-trigger"
       data-empty={state.filters.length === 0 || undefined}
+      // The hidden icon names nothing, so a consumer `render` without its own name takes the label.
+      {...(iconOnly ? { "aria-label": label } : null)}
       render={
         <MenuPrimitive.Trigger
           handle={meta.menuHandle}
-          render={render ?? <Button variant="outline" size="sm" />}
+          render={
+            render ??
+            // An icon Button requires its own name, and its props win in Base UI's merge.
+            (iconOnly ? (
+              <Button variant="outline" size="icon-sm" aria-label={label} />
+            ) : (
+              <Button variant="outline" size="sm" />
+            ))
+          }
         />
       }
       className={mergeClassName(className, slots.trigger())}
@@ -168,12 +182,7 @@ export function DataTableFilterTrigger({
         assertOverlay("DataTableFilter.Trigger", meta.hasContent(), "no-content");
       }, onClick)}
       {...definedProps(props)}>
-      {children ?? (
-        <>
-          <Funnel data-icon="inline-start" aria-hidden />
-          <span className={slots.triggerLabel()}>{meta.format("filter")}</span>
-        </>
-      )}
+      {iconOnly ? <Funnel aria-hidden /> : children}
     </ToolbarPrimitive.Button>
   );
 }
@@ -189,19 +198,23 @@ export type DataTableFilterChipsProps = Omit<ComponentProps<"div">, "children"> 
 };
 
 /**
- * One chip context per filter, keyed by field id, with no element per chip. A focused segment
- * scrolls into the narrow strip's view, since `focus()` leaves a partly visible element where it
- * is.
+ * One chip context per filter, keyed by field id, with no element per chip, in one strip that
+ * scrolls sideways at every width. Its ends fade while chips hide past them. A focused segment
+ * scrolls into view, since `focus()` leaves a partly visible element where it is, and a vertical
+ * mouse wheel scrolls the strip until it reaches an end.
  */
 export function DataTableFilterChips({
   className,
   children,
   onFocus,
+  ref,
   ...props
 }: DataTableFilterChipsProps): ReactElement {
   const { state } = useFilterInternals("DataTableFilter.Chips");
+  const stripRef = useMergedRefs(ref, scrollStripOnWheel);
   return (
     <div
+      ref={stripRef}
       data-slot="data-table-filter-chips"
       className={cn(slots.chips(), className)}
       onFocus={chain((event: FocusEvent<HTMLDivElement>) => {
@@ -564,7 +577,7 @@ export function DataTableFilterClear({
       onClick={handleClick}
       {...definedProps(props)}>
       <XCircle aria-hidden className={slots.clearIcon()} />
-      <span className={slots.triggerLabel()}>{label}</span>
+      <span className={slots.clearLabel()}>{label}</span>
     </ToolbarPrimitive.Button>
   ) : (
     <Button

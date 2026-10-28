@@ -18,9 +18,6 @@ import { overlayCloseStrings } from "./intl";
  * `<Dialog.Close render={<OverlayCloseButton />} />`.
  */
 
-/** Positions the close button in the popup's top-right corner. */
-export const overlayCornerCloseClass = cn("absolute top-4 right-4");
-
 export type OverlayCloseButtonProps = Omit<ButtonProps, "aria-label" | "children" | "variant" | "size"> & {
   /**
    * Accessible name override. Defaults to the shared `close` row for the active locale,

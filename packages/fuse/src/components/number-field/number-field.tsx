@@ -10,13 +10,9 @@ import { useResetRemount } from "../../hooks/use-reset-remount";
 import { Minus } from "../../icons/generated/minus";
 import { Plus } from "../../icons/generated/plus";
 import { useLocale } from "../../intl/locale-context";
-import { cn } from "../../styles/cn";
-import { controlMdInsetTypeClass } from "../../styles/control-size-md";
-import { numberFieldGroupClass } from "../../styles/field-box";
-import { withinStateFaceControlClass } from "../../styles/state-face";
-import { withinFocusRingControlClass } from "../../styles/utils";
 import { FieldFrame } from "../field/field-frame";
 import { numberFieldStrings } from "./intl";
+import { numberFieldVariants } from "./number-field-variants";
 
 export type NumberFieldProps = {
   /** Visible label, rendered as `Field.Label`. */
@@ -90,17 +86,6 @@ export type NumberFieldProps = {
   id?: string;
 };
 
-// A stepper is a part of the NumberField control, not a whole control: the group's
-// within-target state face dims the disabled field once, steppers included. A stepper
-// disabled on its own at a bound keeps the part look, a muted fill and glyph with the
-// `not-allowed` cursor, and its hover fill sits behind the `enabled-hover:` gate.
-// Each stepper is a full-height column `--control-h-xs` wide, floored at 24px for a host
-// root below 16px, so its target meets the 24px floor at both densities (stacked steppers
-// cannot fit two 24px targets in the dense control height).
-const stepperButton = cn(
-  "box-border flex h-full w-[max(var(--control-h-xs),24px)] shrink-0 cursor-default items-center justify-center border-0 border-s border-input bg-background p-0 text-foreground transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground enabled-hover:bg-muted"
-);
-
 /**
  * Labeled number field composite over Field + base-ui NumberField.
  * Client — it owns the reset remount and change handler, and reads locale
@@ -140,10 +125,10 @@ export function NumberField({
   // base-ui does not observe native form reset; the hook remounts the primitive instead.
   const reset = useResetRemount(numberInputRef, !isControlled);
   const controlledValue = value === undefined ? undefined : Number.isNaN(value) ? null : value;
+  const slots = numberFieldVariants({ isMuted: isDisabled || isReadOnly });
 
   return (
     <FieldFrame
-      spacing="part"
       className={className}
       invalid={isInvalid}
       disabled={isDisabled}
@@ -171,11 +156,7 @@ export function NumberField({
         readOnly={isReadOnly}
         required={isRequired}
         id={id}>
-        <NumberFieldPrimitive.Group
-          aria-invalid={isInvalid || undefined}
-          className={cn(numberFieldGroupClass, {
-            "bg-muted": isDisabled || isReadOnly,
-          })}>
+        <NumberFieldPrimitive.Group aria-invalid={isInvalid || undefined} className={slots.group()}>
           <NumberFieldPrimitive.Input
             // The reset hook needs the visible control; Root's `inputRef` prop is the
             // validation input, not this one.
@@ -185,24 +166,17 @@ export function NumberField({
             aria-roledescription={strings.format("roleDescription")}
             autoFocus={autoFocus && reset.isInitialMount}
             data-focus-ring-control=""
-            className={cn(
-              "box-border h-full w-full min-w-0 flex-1 border-0 bg-transparent py-0 tabular-nums",
-              controlMdInsetTypeClass,
-              withinFocusRingControlClass,
-              withinStateFaceControlClass
-            )}
+            className={slots.input()}
           />
-          {denomination ? (
-            <div className="text-sm px-2 py-1 text-muted-foreground">{denomination}</div>
-          ) : null}
-          <div className="flex h-full">
+          {denomination ? <div className={slots.denomination()}>{denomination}</div> : null}
+          <div className={slots.steppers()}>
             <NumberFieldPrimitive.Decrement
-              className={stepperButton}
+              className={slots.stepper()}
               aria-label={decreaseLabel ?? strings.format("decrease")}>
               <Minus aria-hidden className="size-4" />
             </NumberFieldPrimitive.Decrement>
             <NumberFieldPrimitive.Increment
-              className={stepperButton}
+              className={slots.stepper()}
               aria-label={increaseLabel ?? strings.format("increase")}>
               <Plus aria-hidden className="size-4" />
             </NumberFieldPrimitive.Increment>

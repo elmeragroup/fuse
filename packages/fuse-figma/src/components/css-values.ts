@@ -467,11 +467,41 @@ export function describeNumber(spec: NumberSpec): Pick<CoverageRow, "outcome" | 
  */
 export type PercentBasis =
   | { readonly kind: "parent" }
-  | { readonly kind: "length"; readonly value: number; readonly of: string }
+  | {
+      readonly kind: "length";
+      readonly value: number;
+      readonly of: string;
+      /** The viewport a fixed root's `dvh` and `dvw` take, where the length is that viewport's. */
+      readonly viewport?: Viewport;
+      /** The length's CSS, where it changes by mode, which a whole `100%` reads as its own value. */
+      readonly css?: string | undefined;
+    }
   | { readonly kind: "hugging" }
   | { readonly kind: "auto" }
   | { readonly kind: "unset" }
   | { readonly kind: "none" };
+
+/** The viewport a definition declares for a fixed root, in pixels. */
+export type Viewport = { readonly width: number; readonly height: number };
+
+/**
+ * A value with its dynamic viewport units written as pixels: `1dvh` is a hundredth of the viewport's
+ * height and `1dvw` of its width (CSS Values 4 §6.1.2), which a static frame holds still.
+ *
+ * @param value - A compiled value.
+ * @param viewport - The viewport, or undefined for none, which leaves the value as it is.
+ * @returns The value.
+ */
+export function inViewport(value: string, viewport: Viewport | undefined): string {
+  if (viewport === undefined) {
+    return value;
+  }
+  return value.replaceAll(
+    /(\d*\.?\d+)(dvh|dvw)\b/g,
+    (_whole, amount: string, unit: string) =>
+      `${(Number(amount) * (unit === "dvh" ? viewport.height : viewport.width)) / 100}px`
+  );
+}
 
 /**
  * Read a `width` or `height` as the sizing of its axis. A length is fixed. `fit-content` is the size
@@ -481,31 +511,49 @@ export type PercentBasis =
  * a frame that hugs a hugging text draws, so it hugs. A percentage takes
  * the basis: against a length in pixels any share is that share of it, against a parent's auto
  * layout only the whole fills, since a fill takes no share, where the whole is the box's unset
- * width only the whole hugs, as that width does, and where it computes to `auto` any share hugs. Any
- * other percentage stays unread, as {@link readNumber} leaves it.
+ * width only the whole hugs, as that width does, and where it computes to `auto` any share hugs.
+ * Against a declared viewport a `calc()`, `min()` or `max()` that mixes percentages with lengths
+ * resolves too, as `calc(100% - 2rem)` or `min(28rem, 90%)` do, its `dvh` and `dvw` read against that
+ * viewport; against the preview width such a length stays unread. Any other percentage stays unread, as {@link readNumber}
+ * leaves it.
  *
  * @param value - A compiled value with Tailwind's variables already substituted.
  * @param index - The synced variables.
  * @param basis - What `100%` stands for on the axis.
  * @returns The sizing, or undefined for a value no sizing holds.
  */
-export function readSize(value: string, index: VariableIndex, basis: PercentBasis): SizeSpec | undefined {
-  if (["fit-content", "max-content"].includes(normalizeCss(value))) {
+export function readSize(written: string, index: VariableIndex, basis: PercentBasis): SizeSpec | undefined {
+  if (["fit-content", "max-content"].includes(normalizeCss(written))) {
     return { kind: "hug" };
   }
+  const value = basis.kind === "length" ? inViewport(written, basis.viewport) : written;
   const length = readNumber(value, index);
   if (length !== undefined) {
     return { kind: "fixed", length };
   }
   const share = evaluatePercentage(value);
   if (share === undefined) {
-    return undefined;
+    // Only a declared viewport resolves a mixed length: against the preview width it stays unread.
+    const resolved =
+      basis.kind === "length" && basis.viewport !== undefined
+        ? evaluateLengthOf(value, basis.value)
+        : undefined;
+    return resolved === undefined
+      ? undefined
+      : { kind: "fixed", length: { kind: "literal", value: resolved } };
   }
   switch (basis.kind) {
     case "parent":
       return share === 1 ? { kind: "fill" } : undefined;
     case "length":
-      return { kind: "fixed", length: { kind: "literal", value: share * basis.value } };
+      // The whole of a length that changes by mode is that length, bound as its CSS binds.
+      return {
+        kind: "fixed",
+        length: (share === 1 && basis.css !== undefined ? readNumber(basis.css, index) : undefined) ?? {
+          kind: "literal",
+          value: share * basis.value,
+        },
+      };
     case "unset":
       return share === 1 ? { kind: "hug" } : undefined;
     case "auto":

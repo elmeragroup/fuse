@@ -233,7 +233,13 @@ export const SELECT_OPEN: ComponentDefinition = {
       kind: "instance",
       key: "trigger",
       of: SELECT_TRIGGER,
-      cell: (outer) => ({ size: outer.size ?? "", state: "rest", content: "placeholder", open: "on" }),
+      cell: (outer) => ({
+        width: "hug",
+        size: outer.size ?? "",
+        state: "rest",
+        content: "placeholder",
+        open: "on",
+      }),
       shownIn: always,
     },
     {

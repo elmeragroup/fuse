@@ -24,6 +24,8 @@ function isActive(element: MarkupElement): boolean {
 export const ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => boolean>([
   ["disabled", (element) => element.attributes.has("disabled")],
   ["data-disabled", (element) => element.attributes.has("data-disabled")],
+  // Base UI marks a read-only NumberField's steppers, which it leaves enabled.
+  ["data-readonly", (element) => element.attributes.has("data-readonly")],
   ["aria-disabled", (element) => element.attributes.get("aria-disabled") === "true"],
   ["aria-pressed", (element) => element.attributes.get("aria-pressed") === "true"],
   ["data-pressed", (element) => element.attributes.has("data-pressed")],
@@ -58,6 +60,8 @@ export const ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => bo
   ["data-placeholder", (element) => element.attributes.has("data-placeholder")],
   // Base UI stamps `data-popup-open` on a Select or Navigation menu trigger while its popup is open.
   ["data-popup-open", (element) => element.attributes.has("data-popup-open")],
+  // A File upload dropzone carries `data-drop-target` while a file drag that could drop is over it.
+  ["data-drop-target", (element) => element.attributes.has("data-drop-target")],
   // fuse.css defines `data-active:` on `[data-state="active"]` and on a `data-active` that is not
   // `"false"`, which a Sidebar row's `useRender` stamps while it is the current item.
   ["data-active", isActive],
@@ -134,6 +138,17 @@ export const GROUP_VARIANTS = new Map<string, (ancestor: MarkupElement) => boole
     `group-data-[side=${side}]`,
     (ancestor) => marks(ancestor, "group") && ancestor.attributes.get("data-side") === side,
   ]),
+  // A ToggleGroup root carries the `group/toggle-group` marker, its orientation in `data-orientation`
+  // and its spacing in `data-spacing`, which its items read.
+  ...["horizontal", "vertical"].map((orientation): [string, (ancestor: MarkupElement) => boolean] => [
+    `group-data-${orientation}/toggle-group`,
+    (ancestor) =>
+      marks(ancestor, "group/toggle-group") && ancestor.attributes.get("data-orientation") === orientation,
+  ]),
+  [
+    "group-data-[spacing=0]/toggle-group",
+    (ancestor) => marks(ancestor, "group/toggle-group") && ancestor.attributes.get("data-spacing") === "0",
+  ],
 ]);
 
 /**
@@ -168,6 +183,30 @@ export const NAMED_ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement)
   ["data-inset", (element) => element.attributes.has("data-inset")],
   ["data-[variant=destructive]", (element) => element.attributes.get("data-variant") === "destructive"],
   ["not-data-[variant=destructive]", (element) => element.attributes.get("data-variant") !== "destructive"],
+  // ToggleGroup stamps its variant and spacing on each item.
+  ["data-[variant=outline]", (element) => element.attributes.get("data-variant") === "outline"],
+  ["data-[spacing=0]", (element) => element.attributes.get("data-spacing") === "0"],
+]);
+
+/**
+ * Whether an element holds each structural pseudo-class among its element siblings: `first:` is
+ * `:first-child` and `last:` is `:last-child` (Selectors 4 §14.3), as a ToggleGroup item reads its place
+ * in the row.
+ */
+export const POSITION_VARIANTS = new Map<
+  string,
+  (elements: readonly MarkupElement[], index: number) => boolean
+>([
+  [
+    "first",
+    (elements, index) =>
+      !elements.some((element, at) => at < index && element.parent === elements[index]?.parent),
+  ],
+  [
+    "last",
+    (elements, index) =>
+      !elements.some((element, at) => at > index && element.parent === elements[index]?.parent),
+  ],
 ]);
 
 /** The children of an element in the markup. */
@@ -207,11 +246,30 @@ export const HAS_VARIANTS = new Map<string, (elements: readonly MarkupElement[],
       // A Combobox popup that holds a search field as its own child.
       ["has-[>[data-slot=input-group]]", (child) => child.attributes.get("data-slot") === "input-group"],
       ["has-[>svg]", (child) => child.name === "svg"],
+      // A Field.Set that holds a radio group as its own child, and a group that holds selection cards.
+      ["has-[>[data-slot=radio-group]]", (child) => child.attributes.get("data-slot") === "radio-group"],
+      [
+        "has-[>[data-slot=checkbox-group]]",
+        (child) => child.attributes.get("data-slot") === "checkbox-group",
+      ],
+      ["has-[>[data-selection-item]]", (child) => child.attributes.has("data-selection-item")],
     ] as const satisfies readonly (readonly [string, (child: MarkupElement) => boolean])[]
   ).map(([variant, matches]): [string, (elements: readonly MarkupElement[], index: number) => boolean] => [
     variant,
     (elements, index) => childrenOf(elements, index).some(matches),
   ]),
+  // `has-disabled:` compiles to `:has(:disabled)`: a disabled form control at any depth, as a Radio
+  // row's label holds its radio's hidden `<input>`.
+  [
+    "has-disabled",
+    (elements, index) =>
+      elements.some(
+        (element, at) =>
+          ["input", "button", "select", "textarea"].includes(element.name) &&
+          element.attributes.has("disabled") &&
+          below(elements, at, index)
+      ),
+  ],
   [
     "has-data-[variant=inset]",
     (elements, index) =>
@@ -254,6 +312,8 @@ export const GROUP_HAS_VARIANTS = new Map<
  */
 export const PEER_VARIANTS = new Map<string, (sibling: MarkupElement) => boolean>([
   ["peer-data-active/menu-button", (sibling) => marks(sibling, "peer/menu-button") && isActive(sibling)],
+  // A Radio row's content reads the radio before it, which carries the plain `peer` marker.
+  ["peer-data-disabled", (sibling) => marks(sibling, "peer") && sibling.attributes.has("data-disabled")],
 ]);
 
 /**
@@ -315,6 +375,10 @@ export const NOT_ATTRIBUTES = new Set([
   "focus",
   // Input group rings while its control has keyboard focus, which the page forces on the control.
   "has-[[data-focus-ring-control]:focus-visible]",
+  // A File upload dropzone rings while its trigger has keyboard focus, which the page forces there.
+  "has-focus-visible",
+  // The page's browser meets `@supports (backdrop-filter: …)`, which the overlay scrim's blur reads.
+  "supports-backdrop-filter",
   "peer-hover/menu-button",
   // The page writes `data-highlighted` on a highlighted Combobox or Command row when it forces the
   // state, and a Command row's trailing part reads it from the row.

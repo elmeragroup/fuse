@@ -8,7 +8,7 @@ const operators = ["Elvia", "BKK Nett", "Lede", "Tensio", "Glitre Nett", "Arva"]
 
 export function AutocompleteCustomLayout() {
   return (
-    <Field.Root name="gridOperator" spacing="part" className="max-w-xs">
+    <Field.Root name="gridOperator" className="max-w-xs">
       <Field.Label>
         Grid operator
         <PopoverInfoButton>

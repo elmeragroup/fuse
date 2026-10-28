@@ -146,12 +146,6 @@
 - After the first stable release, decide whether a new component, public API or public
   behavior change needs an issue with a code-owner-agreed scope before work starts, and
   add that rule to [CONTRIBUTING.md](CONTRIBUTING.md).
-- Bump tsrs to 0.19 once it is on npm. It targets TypeScript 7.1 beta exactly and adds Windows
-  and Intel macOS binaries, so drop the platform note in the
-  [README prerequisites](README.md#prerequisites) in the same change.
-  Move the Fuse type tests (`packages/fuse/vitest.types.config.ts`) to the tsrs checker only
-  after confirming `data-table.test-d.tsx` fails under tsrs with the TypeScript 7.1 header fix
-  in `data-table-source.ts` reverted.
 - Move `typescript` to 7.1 stable when it ships.
 - After upstream tooling uses stable Effect 4 and the release-age guard admits it,
   upgrade and remove prerelease exclusions unless another exception is justified.
@@ -338,7 +332,17 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   the Input group's 4 carets, the Command item's 2 shortcuts and the Sidebar group's 2 labels. It
   changes those sets' layer keys, so do it after a real-file run. The merge waited until a second
   set repeated the pattern, and the Input group (open caret), Command item (shortcut) and Sidebar
-  group (rail label) each repeat it.
+  group (rail label) each repeat it. Toolbar repeats it too: it holds one Button instance set per
+  orientation, because an instance's facts read the inner cell. The largest copies are in
+  `field-frame-kit.ts`, whose five Field composites (Textarea field, Select field, Text field,
+  Number field, Radio group) each hold the label twice and the description three times, and in
+  Number field, which holds each stepper twice.
+- Derive a root's clip in the builder instead of setting `rootOverflow: "visible"` by hand: clip
+  where CSS clips the root or where a variant's root casts a shadow, since Figma draws a frame's
+  own spread shadow only on a clipping frame (PR2), and read an instance part's clip from its
+  inner variant. Nine kit modules set the flag by hand, and a new set that needs it cuts its rings
+  at the root's edge until a real-file compare catches it. The change flips `clipsContent` on
+  earlier sets whose roots cast no shadow, so plan it with a real-file run.
 - Move the markup validator from `test/markup-check.ts` into `src` and return diagnostics. The
   compare CLI reaches it through `src/compare/client-markup.ts` and so loads Vitest's `expect`.
 - Mount each client cell a second time with its default-false BOOLEAN properties on. Today every
@@ -408,7 +412,11 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   Avatar group's three avatars.
 - Carry a label's text-alignment override through a swap. The fake's text-alignment rule in
   `plugin/src/fake-figma.ts` drops it there, since no probe swapped an instance with the override.
-- Add the floating Sidebar and the Command dialog.
+- Add the floating Sidebar.
+- Add Neo Sans to the org's Figma fonts. The real file has no Neo Sans, so the external Fjordkraft
+  headings, such as the Alert dialog and Dialog titles, draw a fallback there. The compare can check
+  Neo Sans only once it can load the face, until then it compares the Roboto fallback
+  (`LICENSED_FAMILIES` in `packages/fuse-figma/src/compare/page-assets.ts`).
 - Confirm on a real file that an instance's glyph fill override goes with the glyph when the
   plugin draws an icon again, as `plugin/src/fake-figma.ts` assumes. Change one icon's markup,
   run Apply, and check that the next Plan lists nothing.
@@ -455,6 +463,32 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   - Check that Plan on a file without the Fuse tokens collection says to run `figma:sync`.
 - Find why the `fuse-design-tokens-sync` file draws some Fjordkraft external private light icons in
   `#5C1900` in place of the foreground, such as the Sidebar's Home icon.
+- Draw the Text field's inline variant. Its input width comes from the `size` attribute and the
+  font's metrics, which no Figma field holds. The card variant waits for a Card set.
+- Write a background blur through an instance's shadow override. The override in
+  `plugin/src/instance-layers.ts` writes shadows only, so an instance of a blurring main that
+  overrides its shadows would lose the blur. The scrim casts no shadow, so no set hits this today.
+- Find why the compare page's Number field stepper cell needs `!important` on its group-clearing
+  classes in `src/compare/number-field-cell.ts`.
+- Resolve media queries and `dvh` against the declared viewport on the compare page. The viewport
+  host in `src/compare/viewport-host.ts` sizes a fixed root's containing block, but media queries
+  and `dvh` still read the real window. The Command dialog cell restates its `dvh` lengths by hand.
+- Find why `figma:compare --self-check` sometimes flags one raster tile of an open dialog cell
+  under the scrim's background blur, such as 1% of the open Command dialog (dark, comfortable).
+  Reruns match exactly. The compare page waits one frame after clearing focus and highlights, which
+  may be too short for the blur.
+- Record a ring that crosses a root's start or end edge in the clipped-ring coverage rows. The
+  build knows layer heights per mode but not widths, so it records only a ring past the top or
+  bottom: Radio row's focus ring was cut at its left edge with no row.
+- Draw Input group's 1px invalid band past its caret. The root draws the field's own ring, which
+  Figma draws only on a clipping frame, so the root keeps clipping and its coverage rows list the
+  cut band.
+- Make the Number field denomination's `px-2` a control metric in
+  `packages/fuse/src/components/number-field/number-field-variants.ts`. It changes the look, so it needs a patch
+  changeset.
+- Check a disabled Toolbar button for a hydration mismatch. The server markup has `disabled=""` and
+  a client render only `aria-disabled="true"`
+  (`packages/fuse/src/components/toolbar/toolbar.tsx`).
 
 ## Autocomplete
 
@@ -491,12 +525,12 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 - The add menu and the value popover open and close with the shared overlay keyframes, which
   cannot be interrupted (`packages/fuse/src/components/overlay/overlay-classes.ts`). Make them
   interruptible in the overlay owner, for every overlay at once.
-- In a narrow bar, a move of the value popover from one chip to another shows it clamped at the
-  viewport's 8px edge for two frames. The chip strip scrolls the new chip into view while the
-  popover still anchors to the old one, which has scrolled away. To reproduce, open Status's
-  value popover at 414px wide with Status and Customer chips, press Customer's value, and sample
-  the positioner's `left` each frame: 40, 8, 8, then 110. Anchor the move after the strip
-  scrolls, or keep the old anchor in view until it does.
+- When the filter bar's chips overflow, at any width, a move of the value popover from one chip to
+  another that scrolls the chip strip shows the popover clamped at the viewport's 8px edge for two
+  frames. The strip scrolls the new chip into view while the popover still anchors to the old one,
+  which has scrolled away. To reproduce, open Status's value popover at 414px wide with Status and
+  Customer chips, press Customer's value, and sample the positioner's `left` each frame: 40, 8, 8,
+  then 110. Anchor the move after the strip scrolls, or keep the old anchor in view until it does.
 - Base UI's menu filtering parts are a preview API. When they leave preview, rename them in
   `searchable-menu.ts`, the one module that reads them.
 - Add `endsWith` and an exact-match text `is` when a consumer needs them. Make both opt-in like

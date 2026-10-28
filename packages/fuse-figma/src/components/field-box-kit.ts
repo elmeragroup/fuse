@@ -32,6 +32,43 @@ export function showsPlaceholder(cell: Cell): boolean {
 }
 
 /**
+ * The widths a set's `width` axis draws its control at: hugging its content, then filling the
+ * preview width, as a Field or a vertical group stretches it.
+ */
+export const HUG_OR_FILL = ["hug", "fill"] as const;
+
+/**
+ * Whether a cell's control fills its container's width.
+ *
+ * @param cell - A cell of a set with a `width` axis of {@link HUG_OR_FILL}.
+ * @returns True at `width=fill`.
+ */
+export function fillsWidth(cell: Cell): boolean {
+  return cell.width === "fill";
+}
+
+/**
+ * The variants a group around a field-box control reads from the control, as Fuse's
+ * `withinStateFaceClass` and `withinFocusRingClass` draw it: focus, disabled and invalid, each in
+ * the cell of that state.
+ */
+export const WITHIN_CONTROL_FACTS: ReadonlyMap<string, (cell: Cell) => boolean> = new Map([
+  ["has-[[data-focus-ring-control]:focus-visible]", (cell: Cell) => cell.state === "focus"],
+  ["has-[>[data-focus-ring-control]:disabled]", (cell: Cell) => cell.state === "disabled"],
+  ["has-[>[data-focus-ring-control][aria-invalid=true]]", (cell: Cell) => cell.state === "invalid"],
+]);
+
+/**
+ * The variants of a group around a field-box control that no cell draws: a disabled control is
+ * natively disabled and never `aria-disabled`, and the invalid focus ring needs invalid and focus
+ * at once.
+ */
+export const WITHIN_CONTROL_OMISSIONS = [
+  "has-[>[data-focus-ring-control][aria-disabled=true]]",
+  "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]",
+] as const;
+
+/**
  * `Field.Root` around the control, at its default vertical orientation. Its `data-invalid:text-error`
  * holds where the cell is invalid, and the control inherits it, as preflight gives a form control
  * `color: inherit`. Select trigger names it around an invalid trigger too.

@@ -32,11 +32,17 @@ const CELL_LABEL = "Option";
  *
  * @param cell - The cell.
  * @param value - The item's value, which the group starts with at `checked=on`.
- * @param item - The item, a `RadioGroupItem` or a `RadioIconButton`.
+ * @param item - The item, a `RadioGroupItem`, a `RadioIconButton` or a `Radio` row.
+ * @param props - More of the group's props, such as its orientation.
  * @returns The group around the item.
  */
-export function inRadioGroup(cell: Cell, value: string, item: ReactElement): ReactElement {
-  const group: RadioGroupProps = { isInvalid: cell.state === "invalid" };
+export function inRadioGroup(
+  cell: Cell,
+  value: string,
+  item: ReactElement,
+  props: Partial<RadioGroupProps> = {}
+): ReactElement {
+  const group: RadioGroupProps = { ...props, isInvalid: cell.state === "invalid" };
   if (cell.checked === "on") {
     group.defaultValue = value;
   }

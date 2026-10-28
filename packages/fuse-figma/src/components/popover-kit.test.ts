@@ -9,7 +9,7 @@
  *   `surface-pad-md`, `w-72` and `flex flex-col gap-4`, clipping as a variant root does.
  * - The header is `flex flex-col gap-1` at `text-sm`; the title is `font-medium`, the description
  *   `text-muted-foreground`.
- * - A vertical Field is `flex flex-col gap-(--surface-gap-md)`; its label sets the label type pair at
+ * - A vertical Field is `flex flex-col gap-1`; its label sets the label type pair at
  *   Medium; its input is `w-full` at the md control height.
  * - The open trigger is the outline Button, `aria-expanded:bg-muted aria-expanded:text-foreground`.
  */
@@ -22,12 +22,12 @@ import {
   fixed,
   HUG,
   literal,
+  outline,
   paint,
   token,
   variantRoot,
 } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
-import type { ChildLayerSpec } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
 
@@ -37,14 +37,6 @@ beforeAll(async () => {
 
 function set(key: string) {
   return spec.componentSets.find((candidate) => candidate.key === key);
-}
-
-/** Each layer's key, and the variant it shows where it is an instance, depth first. */
-function outline(layers: readonly ChildLayerSpec[], depth = 0): readonly string[] {
-  return layers.flatMap((layer) => [
-    `${"  ".repeat(depth)}${layer.key}${layer.kind === "instance" ? ` -> ${layer.variant}` : ""}`,
-    ...(layer.kind === "frame" ? outline(layer.children, depth + 1) : []),
-  ]);
 }
 
 describe("the Popover content component set", () => {
@@ -154,7 +146,7 @@ describe("the Popover content component set", () => {
       })
     ).toEqual(
       ["Width", "Height"].map((characters): readonly unknown[] => [
-        density("surface-gap-md"),
+        literal(4),
         { horizontal: FILL, vertical: HUG },
         expect.objectContaining({
           characters,

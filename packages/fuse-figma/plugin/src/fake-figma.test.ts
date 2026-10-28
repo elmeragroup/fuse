@@ -1133,6 +1133,45 @@ describe("rule 30: a text's percent line height", () => {
   });
 });
 
+describe("rule 59: CENTER keeps a centre offset only through a whole-pixel shift (W5-P11b)", () => {
+  /**
+   * W5-P11b's popup: a 229px component holding a 10px arrow, ABSOLUTE at CENTER × MAX, its centre at
+   * x 114.5, and an instance of it resized. The real file put the centre 0.5px off when the instance
+   * narrowed by an odd 187px (42 wide, 20.5 where an exact half gives 21). One reading cannot tell
+   * which way Figma rounds, so the fake refuses that read rather than approve a placement.
+   */
+  function arrowInPopup() {
+    const api = createFakeFigma({ collections: [] }).figma;
+    const popup = api.createComponent();
+    popup.resize(229, 34);
+    const arrow = api.createFrame();
+    popup.appendChild(arrow);
+    arrow.resize(10, 10);
+    arrow.constraints = { horizontal: "CENTER", vertical: "MAX" };
+    arrow.x = 114.5 - 5;
+    arrow.y = 34 - 10;
+    api.combineAsVariants([popup], api.currentPage);
+    const instance = popup.createInstance();
+    const [placed] = instance.children;
+    if (placed?.type !== "FRAME") {
+      throw new Error("the instance shows the arrow frame");
+    }
+    return { instance, placed };
+  }
+
+  it("keeps the exact centre where the instance's width changes by an even number of pixels", () => {
+    const { instance, placed } = arrowInPopup();
+    instance.resize(41, 34);
+    expect(placed.x + placed.width / 2).toBe(20.5);
+  });
+
+  it("refuses the place where the width changes by an odd number of pixels", () => {
+    const { instance, placed } = arrowInPopup();
+    instance.resize(42, 34);
+    expect(() => placed.x).toThrow("W5-P11b");
+  });
+});
+
 describe("rule 47: an absolute instance at MAX × CENTER keeps its end inset and its centre offset", () => {
   /**
    * N11's item: a 200px component that hugs its height around a row instance whose height binds

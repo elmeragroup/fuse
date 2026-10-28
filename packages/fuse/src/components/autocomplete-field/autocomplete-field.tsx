@@ -145,7 +145,6 @@ export function AutocompleteField<
 }: AutocompleteFieldProps<Items, Filtered, ItemValue>): ReactElement {
   return (
     <FieldFrame
-      spacing="part"
       className={className}
       name={name}
       invalid={isInvalid}
