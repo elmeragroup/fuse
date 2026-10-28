@@ -39,7 +39,7 @@ const densityOverlays = tv({
     bar: "shadow-lg absolute top-3 left-3 z-30 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-1 rounded-lg border border-border bg-popover p-1 text-popover-foreground",
     legend: "flex flex-wrap items-center gap-1",
     chip: "gap-1.5",
-    swatch: "size-2.5 shrink-0 rounded-full",
+    swatch: "size-2.5 shrink-0 rounded-full ring-1 ring-current",
   },
   // One tint per density role, from the status roles and the chrome's primary and muted text:
   // a brand's chart roles can be one hue ramp, too close to tell six roles apart.
