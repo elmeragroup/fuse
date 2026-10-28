@@ -10,6 +10,7 @@ import { nextFrames } from "../../../test/animation-frames";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
   ROW,
+  fieldBoxOf,
   formNamed,
   px,
   renderThemed,
@@ -61,15 +62,6 @@ function autocompleteNamed(name: string): HTMLInputElement {
     throw new Error(`expected an <input> combobox named ${name}`);
   }
   return element;
-}
-
-/** The field box around the input, the InputGroup that names itself a group. */
-function fieldBoxOf(input: HTMLElement): HTMLElement {
-  const group = input.closest('[role="group"]');
-  if (!(group instanceof HTMLElement)) {
-    throw new Error("expected an input group around the input");
-  }
-  return group;
 }
 
 /** Base UI mounts the popup a frame or more after the opening event, so wait for it. */

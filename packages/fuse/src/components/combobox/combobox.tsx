@@ -15,6 +15,7 @@ import { Check } from "../../icons/generated/check";
 import { X } from "../../icons/generated/x";
 import { definedProps } from "../../internal/defined-props";
 import { isTextValueNode } from "../../internal/is-text-node";
+import type { ListItemOf, ListItems } from "../../internal/list-items";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { chipRemoveShellClass } from "../../styles/inner-corner/listbox";
@@ -49,16 +50,61 @@ type ComboboxItemLabelFn = (itemValue: ReactNode) => string;
 
 const ComboboxItemToStringLabelContext = createContext<ComboboxItemLabelFn | undefined>(undefined);
 
+/**
+ * `Combobox.Root` takes Base UI Combobox Root's props, without `locale`.
+ *
+ * @template Value - One item of `items`, which is the selected value and what the callbacks receive.
+ * @template Multiple - Whether the user can select more than one item.
+ */
 export type ComboboxRootProps<Value = unknown, Multiple extends boolean | undefined = false> = Omit<
   ComboboxRootType.Props<Value, Multiple>,
   "locale"
 >;
 
-export function ComboboxRoot<Value = unknown, Multiple extends boolean | undefined = false>(
-  props: ComboboxRootProps<Value, Multiple>
+/**
+ * The combobox's state, which renders no element. Its value is the selected item, or an array of
+ * them with `multiple`.
+ *
+ * `items` is a flat array, or an array of groups that each carry their own `items`; with groups,
+ * the value and the callbacks take one item of a group.
+ *
+ * @template Items - The `items` array, flat or of groups.
+ * @template Filtered - The `filteredItems` array, flat or of groups.
+ * @template Value - One item of `items`, which is the selected value and what the callbacks
+ * receive. `items` decides it; without `items`, `filteredItems` does; when neither is given,
+ * `value`, `defaultValue` or an annotated callback sets it.
+ * @template Multiple - Whether the user can select more than one item, which `multiple` sets.
+ */
+export function ComboboxRoot<
+  Items extends readonly unknown[] = readonly never[],
+  Filtered extends readonly unknown[] = readonly never[],
+  Value = ListItemOf<Items extends readonly never[] ? Filtered : Items>,
+  Multiple extends boolean | undefined = false,
+>(
+  // `NoInfer` checks `items` and `filteredItems` against `Value` without inferring it from either,
+  // so `Value` takes its default from the array that decides it.
+  props: Omit<ComboboxRootProps<Value, Multiple>, "items" | "filteredItems"> & {
+    /**
+     * The items to select from: a flat array, or an array of groups that each carry their own
+     * `items`. Nullish entries are not supported.
+     */
+    items?: (Items & NoInfer<ListItems<Items, Value>>) | undefined;
+    /**
+     * Filtered items to display in the list. When given, the list shows these instead of
+     * filtering `items` itself. With `items` also given, this array keeps its flat or grouped
+     * structure. Nullish entries are not supported, as in `items`. Use it to filter outside the
+     * list, such as with Base UI's `useFilter()` hook.
+     */
+    filteredItems?: (Filtered & NoInfer<ListItems<Filtered, Value>>) | undefined;
+  }
 ): ReactElement {
   const { locale } = useLocale();
-  const itemToStringLabel = props.itemToStringLabel;
+  // SAFETY: `Value` is one item of `items` (flat, or of a group), or of `filteredItems` without
+  // `items`, which is the value Base UI selects and passes each callback. TypeScript cannot match
+  // the `items` and `filteredItems` intersections to Base UI's `items` while the type parameters
+  // are generic, so this erases them.
+  const rootProps = props as ComboboxRootProps<Value, Multiple>;
+  const itemToStringLabel = rootProps.itemToStringLabel;
   return (
     <ComboboxItemToStringLabelContext.Provider
       value={
@@ -70,7 +116,7 @@ export function ComboboxRoot<Value = unknown, Multiple extends boolean | undefin
               return itemToStringLabel(itemValue as Value);
             }
       }>
-      <ComboboxPrimitive.Root {...props} locale={locale} />
+      <ComboboxPrimitive.Root {...rootProps} locale={locale} />
     </ComboboxItemToStringLabelContext.Provider>
   );
 }

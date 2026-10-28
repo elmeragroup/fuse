@@ -1,0 +1,469 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "combobox-field",
+  "parts": [
+    {
+      "name": "ComboboxField",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/combobox-field/combobox-field.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "actionsRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "RefObject<Actions | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to imperative actions. - `unmount`: Ends the closing phase of the combobox after an externally controlled closing animation finishes. Call `preventUnmountOnClose()` in `onOpenChange` first, otherwise the combobox completes closing on its own. Whether it leaves the DOM is decided by `keepMounted` on the portal. - `close`: Closes the combobox imperatively when called.",
+          "required": false
+        },
+        {
+          "name": "autoComplete",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Provides a hint to the browser for autofill.",
+          "required": false
+        },
+        {
+          "name": "autoHighlight",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the first matching item is highlighted automatically while filtering.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The popup's content, such as `Combobox.Empty` and `Combobox.List`, rendered inside `Combobox.Content`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the root via `cn`.",
+          "required": false
+        },
+        {
+          "name": "defaultInputValue",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | number | readonly string[] | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The uncontrolled input value when initially rendered. To render a controlled input, use the `inputValue` prop instead.",
+          "required": false
+        },
+        {
+          "name": "defaultOpen",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the popup is initially open. To render a controlled popup, use the `open` prop instead.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Value | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The uncontrolled selected value of the combobox when it's initially rendered. To render a controlled combobox, use the `value` prop instead.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy, rendered as `Field.Description`.",
+          "required": false
+        },
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows its own validation error instead, such as an error `Form` holds under its `name` or the required message.",
+          "required": false
+        },
+        {
+          "name": "filter",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((item: Value, query: string, itemToString?: ((item: Value) => string) | undefined) => boolean) | null | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Filter function used to match items vs input query. Receives the source item, which is the derived value's item when `items` is a `createItems()` collection, and the item itself otherwise.",
+          "required": false
+        },
+        {
+          "name": "filteredItems",
+          "origin": "declared",
+          "type": "(Filtered & NoInfer<ListItems<Filtered, Value>>) | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Filtered options to display in the list. When given, the list shows these instead of filtering `items` itself. With `items` also given, this array keeps its flat or grouped structure. Nullish entries are not supported, as in `items`. Use it to filter outside the list, such as with Base UI's `useFilter()` hook.",
+          "required": false
+        },
+        {
+          "name": "form",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Identifies the form that owns the internal input. Useful when the combobox is rendered outside the form.",
+          "required": false
+        },
+        {
+          "name": "grid",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether list items are presented in a grid layout. When enabled, arrow keys navigate across rows and columns inferred from DOM rows.",
+          "required": false
+        },
+        {
+          "name": "highlightItemOnHover",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether moving the pointer over items should highlight them. Disabling this prop allows CSS `:hover` to be differentiated from the `:focus` (`data-highlighted`) state.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The id of the component.",
+          "required": false
+        },
+        {
+          "name": "inputClassName",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the input's field box, which fills the field's width.",
+          "required": false
+        },
+        {
+          "name": "inputRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Ref<HTMLInputElement> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to the hidden input element.",
+          "required": false
+        },
+        {
+          "name": "inputValue",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | number | readonly string[] | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The input value of the combobox. Use when controlled.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `disabled` to `Field.Root` and `Combobox.Root`, which disable the input and its buttons.",
+          "required": false
+        },
+        {
+          "name": "isInvalid",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `invalid` to `Field.Root`.",
+          "required": false
+        },
+        {
+          "name": "isItemEqualToValue",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((itemValue: Value, value: Value) => boolean) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Custom comparison logic used to determine if a combobox item value matches the current selected value. Useful when item values are objects without matching referentially. With a `createItems()` collection, both arguments are derived values. Defaults to `Object.is` comparison.",
+          "required": false
+        },
+        {
+          "name": "isRequired",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `required` to `Combobox.Root`, which marks the input required.",
+          "required": false
+        },
+        {
+          "name": "itemToStringLabel",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((itemValue: Value) => string) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "When the item values are objects (`<Combobox.Item value={object}>`), this function converts the object value to a string representation for display in the input. If the shape of the object is `{ value, label }`, the label will be used automatically without needing to specify this prop. With a `createItems()` collection, this receives the derived value, and the collection's `getLabel` takes precedence for values it can resolve.",
+          "required": false
+        },
+        {
+          "name": "itemToStringValue",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((itemValue: Value) => string) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "When the item values are objects (`<Combobox.Item value={object}>`), this function converts the object value to a string representation for form submission. If the shape of the object is `{ value, label }`, the value will be used automatically without needing to specify this prop. With a `createItems()` collection, this receives the derived value.",
+          "required": false
+        },
+        {
+          "name": "items",
+          "origin": "declared",
+          "type": "(Items & NoInfer<ListItems<Items, Value>>) | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The options: a flat array, or an array of groups that each carry their own `items`. Nullish entries are not supported.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible label, rendered as `Field.Label`. It names the input.",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "-1",
+          "description": "The maximum number of items to display in the list.",
+          "required": false
+        },
+        {
+          "name": "loopFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether to loop keyboard focus back to the input when the end of the list is reached while using the arrow keys. The first item can then be reached by pressing <kbd>ArrowDown</kbd> again from the input, or the last item can be reached by pressing <kbd>ArrowUp</kbd> from the input. The input is always included in the focus loop per [ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/). When disabled, focus does not move when on the last element and the user presses <kbd>ArrowDown</kbd>, or when on the first element and the user presses <kbd>ArrowUp</kbd>.",
+          "required": false
+        },
+        {
+          "name": "modal",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Determines if the popup enters a modal state when open. - `true`: user interaction is limited to the popup: document page scroll is locked and pointer interactions on outside elements are disabled. - `false`: user interaction with the rest of the document is allowed. On touch devices, a `true` modal blocks outside taps but leaves the page scrollable unless the popup spans nearly the full viewport width, matching native iOS behavior.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Native `name` the selected value submits under, forwarded to `Field.Root`. A `Form` error under it shows below the input until the selection changes.",
+          "required": false
+        },
+        {
+          "name": "onInputValueChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((inputValue: string, eventDetails: ChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the input value changes.",
+          "required": false
+        },
+        {
+          "name": "onItemHighlighted",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((highlightedValue: Value | undefined, eventDetails: HighlightEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Callback fired when an item is highlighted or unhighlighted. Receives the highlighted item value (or `undefined` if no item is highlighted) and event details with a `reason` property describing why the highlight changed. The `reason` can be: - `'keyboard'`: the highlight changed due to keyboard navigation. - `'pointer'`: the highlight changed due to pointer hovering. The event may be a `MouseEvent` rather than a `PointerEvent`. - `'none'`: the highlight changed for another reason, such as typing, `autoHighlight`, the item list changing, or the popup opening or closing.",
+          "required": false
+        },
+        {
+          "name": "onOpenChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((open: boolean, eventDetails: OpenChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the popup is opened or closed.",
+          "required": false
+        },
+        {
+          "name": "onOpenChangeComplete",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((open: boolean) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called after any animations complete when the popup is opened or closed.",
+          "required": false
+        },
+        {
+          "name": "onValueChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((value: Value | null, eventDetails: ChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the selected value of the combobox changes.",
+          "required": false
+        },
+        {
+          "name": "open",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the popup is currently open. Use when controlled.",
+          "required": false
+        },
+        {
+          "name": "openOnInputClick",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the popup opens when clicking the input.",
+          "required": false
+        },
+        {
+          "name": "placeholder",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Shown in the empty input, forwarded to `Combobox.Input`.",
+          "required": false
+        },
+        {
+          "name": "ref",
+          "origin": "declared",
+          "type": "Ref<HTMLInputElement> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The input the user types in. `inputRef` is the Root's hidden input.",
+          "required": false
+        },
+        {
+          "name": "showClear",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Renders a button that clears the selection while there is one.",
+          "required": false
+        },
+        {
+          "name": "showTrigger",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Renders the caret button that opens the list. It hides while the clear button shows.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Value | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The selected value of the combobox. Use when controlled.",
+          "required": false
+        },
+        {
+          "name": "virtualized",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the items are being externally virtualized.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

@@ -490,8 +490,6 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   commit the item on `mouseup` (`combobox/item/ComboboxItem.js`), so the input fills but
   `Autocomplete.Item`'s `onClick` does not run. A reliable picked-item callback needs Base UI to
   pass the item with `onValueChange`'s `item-press` reason.
-- No labeled composite yet, like `SelectField`, so a labeled field is built from `Field` parts.
-  `Combobox` is the same. #413 proposes `AutocompleteField` and `ComboboxField` together.
 
 ## Data table
 

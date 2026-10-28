@@ -1,0 +1,43 @@
+---
+lede: >
+  A labeled searchable select for one option, laid out like the other labeled fields.
+---
+
+import { ComboboxFieldBasic } from "./demos/combobox-field-basic";
+import { ComboboxFieldForm } from "./demos/combobox-field-form";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("combobox-field");
+
+<ComponentIntro slug="combobox-field" />
+
+<Prose>
+
+`ComboboxField` puts a label, the error and a description around [Combobox](/components/combobox)'s input and options, in the order `TextField` uses: the label 4px from the input, then the error under the input, ahead of the description. The input fills the field's width. It takes one selection, which `value`, `defaultValue` and `onValueChange` hold. Pass `items` and the popup's content as children: a `Combobox.List` that renders each item as a `Combobox.Item`, and a `Combobox.Empty` beside it for the list that matches nothing. With object items, `items` gives `itemToStringLabel`, `itemToStringValue` and the value the item type. The props the field does not name itself go to `Combobox.Root`, and a `ref` goes to the input.
+
+</Prose>
+
+<Demo slug="combobox-field" id="basic" title="Basic" file="combobox-field-basic.tsx">
+  <ComboboxFieldBasic />
+</Demo>
+
+<Prose>
+
+Inside a `Form`, the field shows the error `Form` holds under its `name` when it gets no `errorMessage`, also in the first HTML a server renders. Choosing another option clears it, and a new `errors` object shows it again. The selection submits under `name`, once, and `isRequired` blocks an empty submit with the required message.
+
+</Prose>
+
+<Demo slug="combobox-field" id="form" title="In a form" file="combobox-field-form.tsx">
+  <ComboboxFieldForm />
+</Demo>
+
+<Prose>
+
+`ComboboxField` takes one selection. For multiple selection, chips or a layout of your own, such as a label row with an info button or a label beside the input, compose `Field.Root` and the `Combobox` parts.
+
+</Prose>
+
+<ApiReference slug="combobox-field" />
+
+<ComponentTokens slug="combobox-field" />

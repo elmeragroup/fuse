@@ -4,8 +4,8 @@ import { useRef, useState, useTransition } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import { Autocomplete } from "@elmeragroup/fuse/autocomplete";
+import { AutocompleteField } from "@elmeragroup/fuse/autocomplete-field";
 import { Button } from "@elmeragroup/fuse/button";
-import { Field } from "@elmeragroup/fuse/field";
 import { SpinnerGap } from "@elmeragroup/fuse/icons";
 import { loaderVariants } from "@elmeragroup/fuse/loader";
 import { TextField } from "@elmeragroup/fuse/text-field";
@@ -65,7 +65,7 @@ function textOf(entry: FormDataEntryValue | null): string {
  * organization number. A company the search does not find is typed in full, and its number
  * entered by hand.
  */
-export function AutocompleteCompanySearch() {
+export function AutocompleteFieldCompanySearch() {
   const [name, setName] = useState("");
   const [orgNumber, setOrgNumber] = useState("");
   const [results, setResults] = useState<readonly Company[]>([]);
@@ -105,7 +105,11 @@ export function AutocompleteCompanySearch() {
     });
   }
 
-  /** What the popup shows while the list is empty. */
+  /**
+   * What the popup shows while the list is empty. `Autocomplete.Empty` is a polite live region, so
+   * screen readers hear each state. The popup takes no `aria-busy` while the search runs, which
+   * would let them hold back the searching state until it ends.
+   */
   function emptyState(): ReactNode {
     if (pending) {
       return (
@@ -129,43 +133,39 @@ export function AutocompleteCompanySearch() {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-sm flex w-full flex-col gap-4">
-      <Field.Root name="company">
-        <Field.Label>Company name</Field.Label>
-        <Autocomplete.Root
-          id="company"
-          items={results}
-          filter={null}
-          value={name}
-          onValueChange={search}
-          itemToStringValue={(company) => company.name}>
-          <Autocomplete.Input placeholder="Name or organization number…" />
-          <Autocomplete.Status>
-            {!pending && results.length > 0
-              ? `${String(results.length)} ${results.length === 1 ? "company" : "companies"} found`
-              : null}
-          </Autocomplete.Status>
-          <Autocomplete.Content aria-busy={pending || undefined}>
-            <Autocomplete.Empty>{emptyState()}</Autocomplete.Empty>
-            <Autocomplete.List>
-              {(company: Company) => (
-                <Autocomplete.Item
-                  key={company.orgNumber}
-                  value={company}
-                  onClick={() => {
-                    setOrgNumber(company.orgNumber);
-                  }}>
-                  <span className="flex flex-col">
-                    <span>{company.name}</span>
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      Org. no. {company.orgNumber}
-                    </span>
-                  </span>
-                </Autocomplete.Item>
-              )}
-            </Autocomplete.List>
-          </Autocomplete.Content>
-        </Autocomplete.Root>
-      </Field.Root>
+      <AutocompleteField
+        label="Company name"
+        name="company"
+        items={results}
+        filter={null}
+        value={name}
+        onValueChange={search}
+        itemToStringValue={(company) => company.name}
+        placeholder="Name or organization number…"
+        status={
+          !pending && results.length > 0
+            ? `${String(results.length)} ${results.length === 1 ? "company" : "companies"} found`
+            : null
+        }>
+        <Autocomplete.Empty>{emptyState()}</Autocomplete.Empty>
+        <Autocomplete.List>
+          {(company: Company) => (
+            <Autocomplete.Item
+              key={company.orgNumber}
+              value={company}
+              onClick={() => {
+                setOrgNumber(company.orgNumber);
+              }}>
+              <span className="flex flex-col">
+                <span>{company.name}</span>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  Org. no. {company.orgNumber}
+                </span>
+              </span>
+            </Autocomplete.Item>
+          )}
+        </Autocomplete.List>
+      </AutocompleteField>
       <TextField
         name="orgNumber"
         label="Organization number"

@@ -80,7 +80,7 @@
         {
           "name": "filteredItems",
           "origin": "declared",
-          "type": "(Filtered & NoInfer<AutocompleteRootItems<Filtered, ItemValue>>) | undefined",
+          "type": "(Filtered & NoInfer<ListItems<Filtered, ItemValue>>) | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "Filtered items to display in the list. When given, the list shows these instead of filtering `items` itself. With `items` also given, this array keeps its flat or grouped structure. Nullish entries are not supported, as in `items`. Use it to filter outside the list, such as with Base UI's `useFilter()` hook.",
@@ -166,7 +166,7 @@
         {
           "name": "items",
           "origin": "declared",
-          "type": "(Items & NoInfer<AutocompleteRootItems<Items, ItemValue>>) | undefined",
+          "type": "(Items & NoInfer<ListItems<Items, ItemValue>>) | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "The items to suggest: a flat array, or an array of groups that each carry their own `items`. Nullish entries are not supported.",

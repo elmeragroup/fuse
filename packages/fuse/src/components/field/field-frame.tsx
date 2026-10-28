@@ -110,9 +110,9 @@ export type FieldFrameProps = {
  * RadioGroup used to rebuild beside this module.
  *
  * It is not exported through `package.json#exports` and has no client directive. It owns
- * no state. Most consumers are client modules, but SelectField is a server component that
- * renders it, so FieldFrame must stay hook-free, and a directive would only widen the client
- * graph. `source-contracts.test.ts` keeps it directive-free.
+ * no state. Most consumers are client modules, but SelectField, AutocompleteField and
+ * ComboboxField are server components that render it, so FieldFrame must stay hook-free, and a
+ * directive would only widen the client graph. `source-contracts.test.ts` keeps it directive-free.
  *
  * Keep exactly one `Field.Root` per composite so a nested root cannot break label wiring.
  */

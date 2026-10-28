@@ -11,6 +11,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { CaretDown } from "../../icons/generated/caret-down";
 import { X } from "../../icons/generated/x";
 import { definedProps } from "../../internal/defined-props";
+import type { ListItemOf, ListItems } from "../../internal/list-items";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
@@ -40,22 +41,6 @@ export type AutocompleteRootProps<ItemValue = unknown> = Omit<
 >;
 
 /**
- * One item of `items`: an entry of a flat array, or an item of a group when each entry carries
- * its own `items`. Base UI's Root reads groups first the same way, through its grouped overload.
- * Fuse keeps one signature, since the API reference describes one props contract.
- */
-type AutocompleteItemOf<Items extends readonly unknown[]> = Items extends readonly {
-  readonly items: readonly (infer Item)[];
-}[]
-  ? Item
-  : Items[number];
-
-/** The array `items` or `filteredItems` takes: flat, or of groups, whose items are `ItemValue`. */
-type AutocompleteRootItems<Items extends readonly unknown[], ItemValue> =
-  | readonly ItemValue[]
-  | readonly (Items[number] & { readonly items: readonly ItemValue[] })[];
-
-/**
  * The field's state, which renders no element. Its value is the text in the input, a string,
  * whether the user typed it or picked a suggestion. `value`, `defaultValue` and `onValueChange`
  * hold that text, and the form submits it under the enclosing `Field.Root`'s name, or under
@@ -78,25 +63,23 @@ type AutocompleteRootItems<Items extends readonly unknown[], ItemValue> =
 export function AutocompleteRoot<
   Items extends readonly unknown[] = readonly never[],
   Filtered extends readonly unknown[] = readonly never[],
-  ItemValue = AutocompleteItemOf<Items extends readonly never[] ? Filtered : Items>,
+  ItemValue = ListItemOf<Items extends readonly never[] ? Filtered : Items>,
 >(
   // `NoInfer` checks `items` and `filteredItems` against `ItemValue` without inferring it from
-  // either, so `ItemValue` takes its default from the array that decides it. A group keeps its own
-  // keys through `Items[number]` (or `Filtered[number]`), or an inline group literal's `value`
-  // would fail the excess property check.
+  // either, so `ItemValue` takes its default from the array that decides it.
   props: Omit<AutocompleteRootProps<ItemValue>, "items" | "filteredItems"> & {
     /**
      * The items to suggest: a flat array, or an array of groups that each carry their own
      * `items`. Nullish entries are not supported.
      */
-    items?: (Items & NoInfer<AutocompleteRootItems<Items, ItemValue>>) | undefined;
+    items?: (Items & NoInfer<ListItems<Items, ItemValue>>) | undefined;
     /**
      * Filtered items to display in the list. When given, the list shows these instead of
      * filtering `items` itself. With `items` also given, this array keeps its flat or grouped
      * structure. Nullish entries are not supported, as in `items`. Use it to filter outside the
      * list, such as with Base UI's `useFilter()` hook.
      */
-    filteredItems?: (Filtered & NoInfer<AutocompleteRootItems<Filtered, ItemValue>>) | undefined;
+    filteredItems?: (Filtered & NoInfer<ListItems<Filtered, ItemValue>>) | undefined;
   }
 ): ReactElement {
   const { locale } = useLocale();

@@ -1,6 +1,7 @@
 /**
  * Server module. Renders every public namespace part of the compound components whose
- * implementation is `"use client"`, plus Alert, SelectField and AspectRatio.
+ * implementation is `"use client"`, plus Alert, SelectField, AutocompleteField, ComboboxField and
+ * AspectRatio.
  *
  * The part lists are the public namespace shape. They are not read from the
  * implementation: a missing or renamed part fails here even if the source still parses.
@@ -24,6 +25,7 @@ import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
 import { AspectRatio } from "@elmeragroup/fuse/aspect-ratio";
 import { Attachment } from "@elmeragroup/fuse/attachment";
 import { Autocomplete } from "@elmeragroup/fuse/autocomplete";
+import { AutocompleteField } from "@elmeragroup/fuse/autocomplete-field";
 import { Avatar } from "@elmeragroup/fuse/avatar";
 import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
 import { ButtonGroup } from "@elmeragroup/fuse/button-group";
@@ -31,6 +33,7 @@ import { Card } from "@elmeragroup/fuse/card";
 import { CheckboxItem } from "@elmeragroup/fuse/checkbox";
 import { Collapsible } from "@elmeragroup/fuse/collapsible";
 import { Combobox } from "@elmeragroup/fuse/combobox";
+import { ComboboxField } from "@elmeragroup/fuse/combobox-field";
 import { Command } from "@elmeragroup/fuse/command";
 import { CommandVirtual } from "@elmeragroup/fuse/command-virtual";
 import { DataTable } from "@elmeragroup/fuse/data-table";
@@ -503,6 +506,47 @@ function selectFieldTree(): ReactElement {
   );
 }
 
+const AUTOCOMPLETE_FIELD_PLACEHOLDER = "Type a company";
+const COMBOBOX_FIELD_PLACEHOLDER = "Search fruit";
+
+/**
+ * AutocompleteField and ComboboxField own no state either, so a server form runs them and hands
+ * their popup content to the client parts, as a hand-composed `Field.Root` would.
+ */
+function labeledComboboxTrees(): ReactElement {
+  for (const [name, part] of [
+    ["AutocompleteField", AutocompleteField],
+    ["ComboboxField", ComboboxField],
+  ] as const) {
+    if (isClientReference(part)) {
+      throw new Error(`${name} is a client reference; the server must run it`);
+    }
+  }
+  return createElement(
+    "section",
+    { "data-fixture": "labeled-comboboxes" },
+    createElement(
+      AutocompleteField,
+      {
+        label: "Company",
+        name: "company",
+        items: ["Fjellkraft AS"],
+        placeholder: AUTOCOMPLETE_FIELD_PLACEHOLDER,
+      },
+      createElement(
+        Autocomplete.List,
+        null,
+        createElement(Autocomplete.Item, { value: "Fjellkraft AS" }, "Fjellkraft AS")
+      )
+    ),
+    createElement(
+      ComboboxField,
+      { label: "Fruit", name: "fruit", items: ["Apple"], placeholder: COMBOBOX_FIELD_PLACEHOLDER },
+      createElement(Combobox.List, null, createElement(Combobox.Item, { value: "Apple" }, "Apple"))
+    )
+  );
+}
+
 /** A value in a Flight model row, which is JSON. */
 type FlightJson = string | number | boolean | null | readonly FlightJson[] | FlightObject;
 
@@ -566,6 +610,7 @@ function Fixture(): ReactElement {
     alertTree(),
     selectionItemTrees(),
     selectFieldTree(),
+    labeledComboboxTrees(),
     attachmentTree()
   );
 }
@@ -653,6 +698,14 @@ for (const text of ["Fixed price", "Locked for 12 months.", "Spot price"]) {
 
 if (!payload.includes(SELECT_FIELD_PLACEHOLDER)) {
   throw new Error(`SelectField's placeholder is missing from the server payload:\n${payload.slice(0, 1500)}`);
+}
+
+for (const placeholder of [AUTOCOMPLETE_FIELD_PLACEHOLDER, COMBOBOX_FIELD_PLACEHOLDER]) {
+  if (!payload.includes(placeholder)) {
+    throw new Error(
+      `A labeled combobox's placeholder is missing from the server payload:\n${payload.slice(0, 1500)}`
+    );
+  }
 }
 
 if (!payload.includes("meter.jpg")) {

@@ -144,7 +144,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Native `name` the selection submits under, forwarded to `Select.Root`.",
+          "description": "Native `name` the selection submits under, forwarded to `Field.Root`. A `Form` error under it shows below the trigger until the selection changes.",
           "required": false
         },
         {

@@ -83,6 +83,10 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  // 2026-10-28: new entries. AutocompleteField and ComboboxField put the Autocomplete and Combobox
+  // parts in the FieldFrame that SelectField wears.
+  { name: "autocomplete-field", entryFile: "autocomplete-field.js", measuredGzip: 80251 },
+  { name: "combobox-field", entryFile: "combobox-field.js", measuredGzip: 79490 },
   // 2026-10-26: new entry, measured at 76887. Base UI's Autocomplete shares the Combobox internals,
   // and the parts render InputGroup and the shared overlay portal.
   { name: "autocomplete", entryFile: "autocomplete.js", measuredGzip: 76887 },

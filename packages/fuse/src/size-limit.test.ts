@@ -55,6 +55,8 @@ describe("size-limit harness", () => {
       "input-group",
       "textarea",
       "flags",
+      "autocomplete-field",
+      "combobox-field",
       "autocomplete",
       "file-upload",
       "attachment",

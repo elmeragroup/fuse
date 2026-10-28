@@ -166,6 +166,8 @@ const EXPECTED_ENTRIES = {
   toggle: { inRootBarrel: true, runtimeExports: ["Toggle", "toggleVariants"] },
   "toggle-group": { inRootBarrel: true, runtimeExports: ["ToggleGroup"] },
   tooltip: { inRootBarrel: true, runtimeExports: ["Tooltip"] },
+  "autocomplete-field": { inRootBarrel: true, runtimeExports: ["AutocompleteField"] },
+  "combobox-field": { inRootBarrel: true, runtimeExports: ["ComboboxField"] },
   autocomplete: { inRootBarrel: true, runtimeExports: ["Autocomplete"] },
   "file-upload": { inRootBarrel: true, runtimeExports: ["FileUpload", "useFileUpload"] },
   attachment: { inRootBarrel: true, runtimeExports: ["Attachment"] },

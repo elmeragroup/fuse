@@ -76,30 +76,94 @@ test("Portal, Positioner and Popup stay off the public namespace, Input, Content
   const _noAs = <Combobox.Input as="div" />;
 });
 
-test("Root forwards Value and Multiple so value callbacks stay inferred", () => {
-  type Fruit = "apple" | "banana";
-  const singleValue: Fruit = "apple";
-  const multipleValue: Fruit[] = ["apple"];
+test("items give the value and the callbacks the item type, with one selection or with multiple", () => {
+  type Company = { name: string; orgNumber: string };
+  const companies: Company[] = [{ name: "Fjellkraft AS", orgNumber: "998877665" }];
 
   const _single = (
-    <Combobox.Root<Fruit>
-      value={singleValue}
+    <Combobox.Root
+      items={companies}
+      itemToStringValue={(company) => {
+        expectTypeOf(company).toEqualTypeOf<Company>();
+        return company.orgNumber;
+      }}
       onValueChange={(value) => {
-        expectTypeOf(value).toEqualTypeOf<Fruit | null>();
+        expectTypeOf(value).toEqualTypeOf<Company | null>();
       }}
     />
   );
 
   const _multiple = (
-    <Combobox.Root<Fruit, true>
+    <Combobox.Root
+      items={companies}
       multiple
-      value={multipleValue}
+      value={companies}
       onValueChange={(value) => {
-        expectTypeOf(value).toEqualTypeOf<Fruit[]>();
+        expectTypeOf(value).toEqualTypeOf<Company[]>();
       }}
     />
   );
 
   // @ts-expect-error multiple value is array-shaped
-  const _scalarWhenMultiple = <Combobox.Root<Fruit, true> multiple value="apple" />;
+  const _scalarWhenMultiple = <Combobox.Root items={companies} multiple value={companies[0]} />;
+});
+
+test("with grouped items, the value and the callbacks take one item of a group, not the group", () => {
+  type Company = { name: string; orgNumber: string };
+  const companies: Company[] = [{ name: "Fjellkraft AS", orgNumber: "998877665" }];
+
+  const groups = [{ value: "Hydro", items: companies }];
+  const _grouped = (
+    <Combobox.Root
+      items={groups}
+      itemToStringValue={(company) => {
+        expectTypeOf(company).toEqualTypeOf<Company>();
+        return company.orgNumber;
+      }}
+    />
+  );
+
+  const _inlineGroups = (
+    <Combobox.Root
+      items={[{ value: "Hydro", items: companies }]}
+      onValueChange={(company) => {
+        expectTypeOf(company).toEqualTypeOf<Company | null>();
+      }}
+    />
+  );
+});
+
+test("without items, filteredItems or the value props set the value type", () => {
+  type Company = { name: string; orgNumber: string };
+  const companies: Company[] = [{ name: "Fjellkraft AS", orgNumber: "998877665" }];
+
+  const _filtered = (
+    <Combobox.Root
+      filteredItems={companies}
+      itemToStringValue={(company) => {
+        expectTypeOf(company).toEqualTypeOf<Company>();
+        return company.orgNumber;
+      }}
+    />
+  );
+
+  const _valued = (
+    <Combobox.Root
+      defaultValue={2}
+      onValueChange={(value) => {
+        expectTypeOf(value).toEqualTypeOf<number | null>();
+      }}
+    />
+  );
+});
+
+test("items decide the value type, so a callback annotated to another type is an error", () => {
+  type Company = { name: string; orgNumber: string };
+  type Person = { fullName: string };
+  const companies: Company[] = [{ name: "Fjellkraft AS", orgNumber: "998877665" }];
+
+  const _mismatch = (
+    // @ts-expect-error the callback must take the item type of items
+    <Combobox.Root items={companies} itemToStringValue={(person: Person) => person.fullName} />
+  );
 });

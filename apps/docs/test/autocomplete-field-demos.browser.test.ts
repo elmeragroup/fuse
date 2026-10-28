@@ -13,10 +13,10 @@ function submitted(demo: Locator): Promise<string | null> {
     .textContent();
 }
 
-describe("Autocomplete demos", () => {
+describe("AutocompleteField demos", () => {
   it("fills the organization number from a company the search finds, and submits both", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
-    const demo = await openDemo(page, "autocomplete", "Search on a server");
+    const demo = await openDemo(page, "autocomplete-field", "Search on a server");
     const company = demo.getByRole("combobox", { name: "Company name", exact: true });
     await company.fill("kraft");
     await demo.getByRole("option", { name: /^Fjellkraft Nett AS/u }).click();
@@ -33,7 +33,7 @@ describe("Autocomplete demos", () => {
 
   it("keeps a company the search does not find, and submits it with the number typed by hand", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
-    const demo = await openDemo(page, "autocomplete", "Search on a server");
+    const demo = await openDemo(page, "autocomplete-field", "Search on a server");
     const company = demo.getByRole("combobox", { name: "Company name", exact: true });
     await company.fill("Solberg Rør AS");
     await expect.poll(() => demo.getByText(/^No company found\./u).count()).toBe(1);
