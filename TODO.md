@@ -118,6 +118,16 @@
   `bg-card` (`oklch(0.205 0 0)`). In external light every brand's steppers draw the tinted page
   `--background` (guen `oklch(0.95469 0.01887 279.53)`) inside a white `--card` field box. Only
   internal light matches. Is that intended, or should the steppers follow the field-box fill?
+- Decide, with design, the fill of the other parts that paint the page fill, `bg-background`, the
+  way #423 moved the outline Button and the Alert action to `card`. Inside a white Card on an
+  external light page each paints the page tint. They are `Frame` (`frame/frame.tsx`), the Table
+  container and its cells inside a Frame (`table/table.tsx`), the DataTableFilter chip
+  (`data-table-filter/data-table-filter-variants.ts`), the `inline` TextField's hover, focus and
+  invalid fill (`text-field/text-field-variants.ts`), the checked Switch thumb
+  (`switch/switch-variants.ts`), the outline Sidebar menu button and the Sidebar input
+  (`sidebar/sidebar-variants.ts`, `sidebar/sidebar-class.ts`), the default Alert's own box
+  (`alert/alert-variants.ts`) and the NumberField steppers above. Each needs a decision, not
+  necessarily a change.
 - Decide with design whether `Item` gets an unclamped description variant. `Item.Description`
   clamps to two lines, matching shadcn, and funnel needed an unclamped one for full instructions.
   `shadcn(no-restyle)` rejects `line-clamp-*` on `ItemDescription` and points to a variant in

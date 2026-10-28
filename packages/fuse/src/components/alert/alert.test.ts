@@ -13,7 +13,7 @@ const VARIANT_SLOTS = {
   default: {
     base: ["bg-background", "text-foreground"],
     icon: ["text-foreground"],
-    button: ["bg-background", "text-foreground"],
+    button: ["bg-card", "text-foreground"],
   },
   destructive: {
     base: ["border-error", "bg-error/5", "text-error"],

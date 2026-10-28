@@ -78,7 +78,7 @@ function only(box: { readonly children: readonly ChildLayerSpec[] }): ChildLayer
 
 /** Each tone's action fill and label color, from its `button` slot. */
 const ACTIONS = [
-  ["default", "background", "foreground"],
+  ["default", "card", "foreground"],
   ["destructive", "error", "error-foreground"],
   ["warning", "warning", "warning-foreground"],
   ["success", "success", "success-foreground"],

@@ -37,6 +37,11 @@ import { selfFocusRingClass } from "../../styles/utils";
 // a consumer still places by hand is not doubled. A trailing `data-icon="inline-end"` icon
 // stays, as its marker keeps the end inset tight either way, and text stays. With
 // `pendingIndicator={null}` the attribute is absent and nothing hides.
+// The outline rests on `card`, not the page fill. External light themes tint the page, and on
+// fkas private and guen the tint is darker than `muted`, so a page-filled outline lightened on
+// hover there and showed the page through a Card. `card` is white in every light theme, so the
+// `muted` hover darkens it on every brand and it matches a Card around it. In dark, `card` sits
+// between the page and `muted`, so hover still lightens it, one step less, as on Tabs.
 // The outline border reads the theme's `--button-outline` at `--button-outline-width`: a 1px
 // `--border` hairline in internal themes and the reference's 2px ring in the text color in
 // external ones. A host without themes.css declares neither, so both fall back to the 1px
@@ -62,7 +67,7 @@ export const buttonVariants = tv({
     variant: {
       default: "bg-primary text-primary-foreground enabled-hover:bg-primary/80",
       outline:
-        "border-[length:var(--button-outline-width,1px)] border-button-outline bg-background shadow-[0_1px_max(0px,4px-2*var(--button-outline-width,1px))_min(0px,2px-2*var(--button-outline-width,1px))_rgb(0_0_0/0.05)] aria-expanded:bg-muted aria-expanded:text-foreground enabled-hover:bg-muted enabled-hover:text-foreground",
+        "border-[length:var(--button-outline-width,1px)] border-button-outline bg-card shadow-[0_1px_max(0px,4px-2*var(--button-outline-width,1px))_min(0px,2px-2*var(--button-outline-width,1px))_rgb(0_0_0/0.05)] aria-expanded:bg-muted aria-expanded:text-foreground enabled-hover:bg-muted enabled-hover:text-foreground",
       secondary:
         "bg-secondary text-secondary-foreground aria-expanded:bg-secondary aria-expanded:text-secondary-foreground enabled-hover:bg-secondary-hover",
       ghost:

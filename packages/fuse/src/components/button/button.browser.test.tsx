@@ -17,11 +17,13 @@ import {
   fkasExternal,
   fkasPrivate,
   computedOklch,
+  guenExternal,
   px,
   renderThemed,
   roleNamed,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
+import { Card } from "../card/card";
 import { Tooltip } from "../tooltip";
 import { Button } from "./button";
 
@@ -824,5 +826,58 @@ describe("Button", () => {
     const fill = pixel(Math.round(4 * devicePixelRatio));
     expect(fill).not.toBe("255,255,255,255");
     expect(pixel(0), "outermost border pixel").toBe(fill);
+  });
+});
+
+describe("outline Button fill", () => {
+  const TINTED = [
+    ["fkas private", fkasExternal],
+    ["guen", guenExternal],
+  ] as const;
+
+  it.each(TINTED)("darkens on hover on a tinted light page, %s", async (_name, theme) => {
+    // #423: these pages tint the page darker than `--muted`, so an outline resting on the page fill
+    // lightened on hover. Oracle: a hover reads darker than the rest it leaves, whichever tokens
+    // fill them.
+    renderThemed(
+      <ThemeScope theme={theme}>
+        <Button variant="outline" className="transition-none">
+          Download invoice
+        </Button>
+      </ThemeScope>
+    );
+    const button = roleNamed("button", "Download invoice");
+    // Oracle sanity: the page tint is darker than `--muted` here.
+    expect(computedOklch(cssVarColor(button, "--background")).l).toBeLessThan(
+      computedOklch(cssVarColor(button, "--muted")).l
+    );
+    const rest = computedOklch(getComputedStyle(button).backgroundColor);
+
+    await userEvent.hover(button);
+    expect(computedOklch(getComputedStyle(button).backgroundColor).l).toBeLessThan(rest.l);
+  });
+
+  it.each(TINTED)("rests in the fill of a Card around it, %s", (_name, theme) => {
+    // #423: on these pages a page-filled outline showed the page tint inside a white Card. Oracle:
+    // the Card's own computed fill.
+    renderThemed(
+      <ThemeScope theme={theme}>
+        <Card.Root>
+          <Card.Content>
+            <Button variant="outline" className="transition-none">
+              Download PDF
+            </Button>
+          </Card.Content>
+        </Card.Root>
+      </ThemeScope>
+    );
+    const button = roleNamed("button", "Download PDF");
+    const card = button.closest<HTMLElement>('[data-slot="card"]');
+    if (card === null) {
+      throw new Error("Expected the button inside a Card");
+    }
+    // Oracle sanity: the Card's fill differs from the page tint.
+    expect(getComputedStyle(card).backgroundColor).not.toBe(cssVarColor(button, "--background"));
+    expect(getComputedStyle(button).backgroundColor).toBe(getComputedStyle(card).backgroundColor);
   });
 });

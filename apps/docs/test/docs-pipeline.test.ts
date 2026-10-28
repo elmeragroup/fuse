@@ -209,7 +209,7 @@ describe("token extraction", () => {
         "--secondary",
         "--secondary-foreground",
         "--muted",
-        "--background",
+        "--card",
         "--foreground",
         "--button-outline",
         "--button-outline-width",
