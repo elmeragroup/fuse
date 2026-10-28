@@ -18,8 +18,8 @@ describe("toggleVariants", () => {
 
   it("keeps the doubled pressed selectors and composes the shared self focus ring", () => {
     const classes = toggleVariants();
-    expect(classes).toContain("aria-pressed:bg-muted");
-    expect(classes).toContain("data-pressed:bg-muted");
+    expect(classes).toContain("aria-pressed:bg-primary");
+    expect(classes).toContain("data-pressed:bg-primary");
     // Oracle: the shared focus recipe, which utils.test.ts pins by hand.
     for (const token of selfFocusRingClass.split(" ")) {
       expect(classes).toContain(token);

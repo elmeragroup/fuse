@@ -43,7 +43,7 @@ const themeChipPicker = tv({
     // `items-stretch` beats the group's `items-center`, so a two-line name never shortens its
     // neighbours.
     tiles: "grid w-full grid-cols-3 items-stretch gap-2",
-    tile: "text-xs h-auto min-h-16 flex-col gap-2 px-1 py-3 whitespace-normal data-pressed:border-foreground data-pressed:bg-foreground/12",
+    tile: "text-xs h-auto min-h-16 flex-col gap-2 px-1 py-3 whitespace-normal data-pressed:border-foreground data-pressed:bg-foreground/12 data-pressed:text-foreground",
     tileMark: "h-5",
   },
 });
@@ -54,8 +54,9 @@ const styles = themeChipPicker();
 const axisToggle = tv({
   slots: {
     group: "w-full",
-    // Fuse's outline toggle marks the pressed option with `muted`, which sits one step off a
-    // dark popover; the picker's options carry a foreground tint that reads in either scheme.
+    // The brand tiles and the axis rows give the pressed option their own quiet face: a
+    // foreground tint with foreground text. They set the two together, since Fuse's pressed text
+    // colour would otherwise land on the tint.
     item: "flex-1 gap-1.5 aria-disabled:bg-transparent data-pressed:bg-foreground/12 data-pressed:text-foreground",
   },
 });
