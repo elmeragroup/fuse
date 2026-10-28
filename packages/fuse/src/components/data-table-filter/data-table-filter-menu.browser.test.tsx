@@ -1166,12 +1166,15 @@ describe("DataTableFilter in-place editor overflow", () => {
     // The wheel turns over the editor's first preset, which sits in view at the top of its body.
     await glidePointerTo(roleNamed("button", "Today"));
     await turnWheel(2000);
-    await settled();
     const october = roleNamed("button", "October");
+    // The last control scrolled into the popup's box. The wheel scrolls smoothly, and no
+    // transition need outlast it, so wait for the scroll itself.
+    await expect
+      .poll(() => october.getBoundingClientRect().bottom <= popup.getBoundingClientRect().bottom)
+      .toBe(true);
+    await settled();
     const box = october.getBoundingClientRect();
-    const frame = popup.getBoundingClientRect();
-    // The last control scrolled into the popup's box, and a press there reaches it.
-    expect(box.bottom).toBeLessThanOrEqual(frame.bottom);
+    // A press there reaches it.
     expect(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)).toBe(october);
     expect(back.getBoundingClientRect().top).toBe(backTop);
     expect(window.scrollY).toBe(before);

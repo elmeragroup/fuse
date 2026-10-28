@@ -166,6 +166,7 @@ Field boxes round with your `--radius`, as cards and the themes' fields do. For 
 ```
 
 The standalone stylesheet includes library utilities without Tailwind preflight, plus the base-layer border-colour default described above, which leaves host native form widgets and their native look untouched.
+Fuse's own buttons, links and lists, the elements that carry a `data-slot`, take Tailwind preflight's resets for those elements from the standalone stylesheet's base layer, so they look as they do with preflight: no browser button face, border, padding or font, no link colour or underline, and no list markers or indent. Every utility and your app's own reset win over them.
 Keep your app's reset and import `themes.css` in either mode.
 
 ## JavaScript

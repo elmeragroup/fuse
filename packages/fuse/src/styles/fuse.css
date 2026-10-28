@@ -295,6 +295,41 @@
   }
 }
 
+/* Fuse ships no preflight, so its own native buttons, links and lists, the ones that carry a
+   `data-slot`, take preflight's resets for those elements here. On the standalone sheet they
+   would otherwise keep the browser's grey button face, outset border, padding and button font,
+   link blue and underline, and list markers and indent. The declarations copy Tailwind's
+   preflight. They sit in the base layer, so every utility, a `render` element's own classes and
+   the host's own reset win over them, and under preflight they change nothing. A host element
+   without a `data-slot` keeps its native look. */
+@layer base {
+  :where(button[data-slot]) {
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    border-style: solid;
+    border-radius: 0;
+    background-color: transparent;
+    color: inherit;
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    opacity: 1;
+  }
+
+  :where(a[data-slot]) {
+    color: inherit;
+    text-decoration: inherit;
+  }
+
+  :where(ol[data-slot], ul[data-slot], menu[data-slot]) {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}
+
 @custom-variant data-open {
   &:where([data-state="open"]),
   &:where([data-open]:not([data-open="false"])) {
