@@ -155,6 +155,8 @@ function memberOf(initials: string): InstanceDefinition {
  */
 export const AVATAR_GROUP: ComponentDefinition = {
   key: "avatar-group",
+  // CSS leaves the root unclipped, so a ring a layer draws at its edge shows past it (compare-real-1).
+  rootOverflow: "visible",
   name: "Avatar group",
   slot: "avatar-group",
   axes: [{ name: "avatars", values: [String(AVATAR_GROUP_INITIALS.length)] }],

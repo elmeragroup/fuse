@@ -6,12 +6,14 @@ import type { ComponentProps, ReactElement } from "react";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
-import { tooltipShellClass } from "../../styles/inner-corner/tooltip";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
-import { overlayPopupMotionClass, overlayPositionerClass } from "../overlay/overlay-classes";
+import { overlayPositionerClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
+import { tooltipVariants } from "./tooltip-variants";
+
+const slots = tooltipVariants();
 
 /** Shared popup id so the trigger's `aria-describedby` points at the tooltip. */
 type TooltipDescription = {
@@ -135,19 +137,10 @@ export function TooltipContent({
           ref={mergedRef}
           id={tooltipId ?? undefined}
           role="tooltip"
-          // Tooltip takes the shared motion set but neither the composed popup surface
-          // nor the timing rung: it inverts the fill and flies frameless,
-          // and `ring-0` could not subtract the surface's `ring-foreground/10` — width and
-          // colour are separate tailwind-merge conflict groups. Untimed is deliberate.
-          className={mergeClassName(
-            className,
-            overlayPopupMotionClass,
-            tooltipShellClass,
-            "max-w-xs text-xs inline-flex w-fit items-center gap-1.5 bg-foreground text-pretty text-background"
-          )}
+          className={mergeClassName(className, slots.popup())}
           {...props}>
           {children}
-          <TooltipPrimitive.Arrow className="size-2.5 translate-y-[calc(-50%-2px)] rotate-45 rounded-[2px] bg-foreground fill-foreground data-[side=bottom]:top-1 data-[side=inline-end]:top-1/2! data-[side=inline-end]:-left-1 data-[side=inline-end]:-translate-y-1/2 data-[side=inline-start]:top-1/2! data-[side=inline-start]:-right-1 data-[side=inline-start]:-translate-y-1/2 data-[side=left]:top-1/2! data-[side=left]:-right-1 data-[side=left]:-translate-y-1/2 data-[side=right]:top-1/2! data-[side=right]:-left-1 data-[side=right]:-translate-y-1/2 data-[side=top]:-bottom-2.5" />
+          <TooltipPrimitive.Arrow className={slots.arrow()} />
         </TooltipPrimitive.Popup>
       </TooltipPrimitive.Positioner>
     </OverlayPortal>

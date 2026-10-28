@@ -9,6 +9,7 @@
  * through `buildComponentSets()`.
  */
 import { ACCORDION_ITEM } from "./accordion-kit";
+import { ALERT_DIALOG_CONTENT, ALERT_DIALOG_OPEN } from "./alert-dialog-kit";
 import { ALERT } from "./alert-kit";
 import { AVATAR, AVATAR_GROUP } from "./avatar-kit";
 import { BADGE } from "./badge-kit";
@@ -23,10 +24,12 @@ import { BUTTON, ICON_BUTTON } from "./button-kit";
 import { CALENDAR_DAY } from "./calendar-day-kit";
 import { CHECKBOX } from "./checkbox-kit";
 import { COMBOBOX_EMPTY, COMBOBOX_ITEM, COMBOBOX_OPEN, COMBOBOX_POPUP } from "./combobox-kit";
+import { COMMAND_DIALOG_OPEN, COMMAND_PALETTE } from "./command-dialog-kit";
 import { COMMAND_ITEM, COMMAND_LIST } from "./command-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
 import { CONFIRM_BUTTON } from "./confirm-button-kit";
+import { DIALOG_CONTENT, DIALOG_OPEN } from "./dialog-kit";
 import {
   DROPDOWN_MENU_CHECKBOX_ITEM,
   DROPDOWN_MENU_ITEM,
@@ -36,6 +39,7 @@ import {
 import { DROPDOWN_MENU_OPEN, DROPDOWN_MENU_POPUP, DROPDOWN_MENU_SUB_CONTENT } from "./dropdown-popup-kit";
 import { EMPTY } from "./empty-kit";
 import { FIELD_DESCRIPTION, FIELD_ERROR, FIELD_LEGEND, FIELD_TITLE } from "./field-text-kit";
+import { FILE_UPLOAD_DROPZONE } from "./file-upload-kit";
 import { INPUT_GROUP } from "./input-group-kit";
 import { INPUT } from "./input-kit";
 import { ITEM, ITEM_LINK } from "./item-kit";
@@ -53,10 +57,14 @@ import {
   NAVIGATION_MENU_VERTICAL_TRIGGER,
 } from "./navigation-menu-kit";
 import { NAVIGATION_MENU_POPUP } from "./navigation-menu-popup-kit";
+import { NUMBER_FIELD, NUMBER_FIELD_STEPPER } from "./number-field-kit";
 import { PAGINATION_EDGE, PAGINATION_ELLIPSIS, PAGINATION_LINK, PAGINATION_ROW } from "./pagination-kit";
 import { POPOVER_CONTENT, POPOVER_OPEN } from "./popover-kit";
+import { RADIO_GROUP } from "./radio-group-kit";
 import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
 import { RADIO } from "./radio-kit";
+import { RADIO_ROW } from "./radio-row-kit";
+import { SELECT_FIELD } from "./select-field-kit";
 import { SELECT_ITEM, SELECT_OPEN, SELECT_POPUP } from "./select-kit";
 import { SELECT_TRIGGER } from "./select-trigger-kit";
 import { SEPARATOR } from "./separator-kit";
@@ -76,8 +84,13 @@ import {
 } from "./sidebar-section-kit";
 import { SKELETON } from "./skeleton-kit";
 import { SWITCH } from "./switch-kit";
+import { TEXT_FIELD } from "./text-field-kit";
+import { TEXTAREA_FIELD } from "./textarea-field-kit";
 import { TEXTAREA } from "./textarea-kit";
+import { TOGGLE_GROUP } from "./toggle-group-kit";
 import { ICON_TOGGLE, TOGGLE } from "./toggle-kit";
+import { TOOLBAR } from "./toolbar-kit";
+import { TOOLTIP_CONTENT, TOOLTIP_OPEN } from "./tooltip-kit";
 
 /**
  * A page of the kit: one component and its close variants, such as Button and Icon button.
@@ -124,11 +137,29 @@ const LOADER_PAGE: KitPage = { slug: "loader", name: "Loader" };
  */
 const FIELD_PAGE: KitPage = { slug: "field", name: "Field" };
 
-/** The page of Input and the Input group that Combobox and Command render. */
+/** The page of Input, the Input group that Combobox and Command render, and the labelled Text field. */
 const INPUT_PAGE: KitPage = { slug: "input", name: "Input" };
 
-/** The page Textarea sits on alone. */
+/** The page of Textarea and the labelled Textarea field. */
 const TEXTAREA_PAGE: KitPage = { slug: "textarea", name: "Textarea" };
+
+/** The page of Alert dialog. */
+const ALERT_DIALOG_PAGE: KitPage = { slug: "alert-dialog", name: "Alert dialog" };
+
+/** The page of Dialog. */
+const DIALOG_PAGE: KitPage = { slug: "dialog", name: "Dialog" };
+
+/** The page of Tooltip. */
+const TOOLTIP_PAGE: KitPage = { slug: "tooltip", name: "Tooltip" };
+
+/** The page of Toolbar. */
+const TOOLBAR_PAGE: KitPage = { slug: "toolbar", name: "Toolbar" };
+
+/** The page of File upload's dropzone. */
+const FILE_UPLOAD_PAGE: KitPage = { slug: "file-upload", name: "File upload" };
+
+/** The page of Number field and its stepper. */
+const NUMBER_FIELD_PAGE: KitPage = { slug: "number-field", name: "Number field" };
 
 /** The page of Avatar and the group that stacks avatars. */
 const AVATAR_PAGE: KitPage = { slug: "avatar", name: "Avatar" };
@@ -268,6 +299,8 @@ export const KIT: readonly KitEntry[] = [
     page: TOGGLE_PAGE,
     previewCells: previewCells(ICON_TOGGLE, "default", {}, ["pressed"]),
   },
+  // A spaced Toggle group has no state, so its previews place every cell of its matrix.
+  { definition: TOGGLE_GROUP, page: TOGGLE_PAGE, previewCells: matrixCells(TOGGLE_GROUP.axes) },
   // A Badge has no state, so its previews place every cell of its matrix.
   { definition: BADGE, page: BADGE_PAGE, previewCells: matrixCells(BADGE.axes) },
   { definition: KBD, page: KBD_PAGE, previewCells: matrixCells(KBD.axes) },
@@ -284,9 +317,14 @@ export const KIT: readonly KitEntry[] = [
   { definition: FIELD_ERROR, page: FIELD_PAGE, previewCells: matrixCells(FIELD_ERROR.axes) },
   { definition: FIELD_LEGEND, page: FIELD_PAGE, previewCells: matrixCells(FIELD_LEGEND.axes) },
   { definition: FIELD_TITLE, page: FIELD_PAGE, previewCells: matrixCells(FIELD_TITLE.axes) },
+  // The labelled radio rows and the group, which show Field's legend, description and error.
+  { definition: RADIO_ROW, page: RADIO_PAGE, previewCells: matrixCells(RADIO_ROW.axes) },
+  { definition: RADIO_GROUP, page: RADIO_PAGE, previewCells: matrixCells(RADIO_GROUP.axes) },
   { definition: INPUT, page: INPUT_PAGE, previewCells: matrixCells(INPUT.axes) },
   { definition: INPUT_GROUP, page: INPUT_PAGE, previewCells: matrixCells(INPUT_GROUP.axes) },
+  { definition: TEXT_FIELD, page: INPUT_PAGE, previewCells: matrixCells(TEXT_FIELD.axes) },
   { definition: TEXTAREA, page: TEXTAREA_PAGE, previewCells: matrixCells(TEXTAREA.axes) },
+  { definition: TEXTAREA_FIELD, page: TEXTAREA_PAGE, previewCells: matrixCells(TEXTAREA_FIELD.axes) },
   { definition: AVATAR, page: AVATAR_PAGE, previewCells: matrixCells(AVATAR.axes) },
   { definition: AVATAR_GROUP, page: AVATAR_PAGE, previewCells: matrixCells(AVATAR_GROUP.axes) },
   { definition: METER, page: METER_PAGE, previewCells: matrixCells(METER.axes) },
@@ -324,6 +362,7 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(BREADCRUMB_TRAIL.axes),
   },
   { definition: SELECT_TRIGGER, page: SELECT_PAGE, previewCells: matrixCells(SELECT_TRIGGER.axes) },
+  { definition: SELECT_FIELD, page: SELECT_PAGE, previewCells: matrixCells(SELECT_FIELD.axes) },
   { definition: MENU_GROUP_LABEL, page: SELECT_PAGE, previewCells: matrixCells(MENU_GROUP_LABEL.axes) },
   { definition: MENU_SEPARATOR, page: SELECT_PAGE, previewCells: matrixCells(MENU_SEPARATOR.axes) },
   { definition: SELECT_ITEM, page: SELECT_PAGE, previewCells: matrixCells(SELECT_ITEM.axes) },
@@ -372,6 +411,13 @@ export const KIT: readonly KitEntry[] = [
   { definition: COMBOBOX_OPEN, page: COMBOBOX_PAGE, previewCells: matrixCells(COMBOBOX_OPEN.axes) },
   { definition: COMMAND_ITEM, page: COMMAND_PAGE, previewCells: matrixCells(COMMAND_ITEM.axes) },
   { definition: COMMAND_LIST, page: COMMAND_PAGE, previewCells: matrixCells(COMMAND_LIST.axes) },
+  // The palette and its open example, drawn from the Input group, Kbd and Command item sets above.
+  { definition: COMMAND_PALETTE, page: COMMAND_PAGE, previewCells: matrixCells(COMMAND_PALETTE.axes) },
+  {
+    definition: COMMAND_DIALOG_OPEN,
+    page: COMMAND_PAGE,
+    previewCells: matrixCells(COMMAND_DIALOG_OPEN.axes),
+  },
   { definition: EMPTY, page: EMPTY_PAGE, previewCells: matrixCells(EMPTY.axes) },
   { definition: CALENDAR_DAY, page: CALENDAR_PAGE, previewCells: matrixCells(CALENDAR_DAY.axes) },
   { definition: LINK, page: LINK_PAGE, previewCells: matrixCells(LINK.axes) },
@@ -430,4 +476,30 @@ export const KIT: readonly KitEntry[] = [
     page: NAVIGATION_MENU_PAGE,
     previewCells: matrixCells(NAVIGATION_MENU_POPUP.axes),
   },
+  {
+    definition: NUMBER_FIELD_STEPPER,
+    page: NUMBER_FIELD_PAGE,
+    previewCells: matrixCells(NUMBER_FIELD_STEPPER.axes),
+  },
+  { definition: NUMBER_FIELD, page: NUMBER_FIELD_PAGE, previewCells: matrixCells(NUMBER_FIELD.axes) },
+  {
+    definition: FILE_UPLOAD_DROPZONE,
+    page: FILE_UPLOAD_PAGE,
+    previewCells: matrixCells(FILE_UPLOAD_DROPZONE.axes),
+  },
+  { definition: TOOLBAR, page: TOOLBAR_PAGE, previewCells: matrixCells(TOOLBAR.axes) },
+  { definition: TOOLTIP_CONTENT, page: TOOLTIP_PAGE, previewCells: matrixCells(TOOLTIP_CONTENT.axes) },
+  { definition: TOOLTIP_OPEN, page: TOOLTIP_PAGE, previewCells: matrixCells(TOOLTIP_OPEN.axes) },
+  {
+    definition: ALERT_DIALOG_CONTENT,
+    page: ALERT_DIALOG_PAGE,
+    previewCells: matrixCells(ALERT_DIALOG_CONTENT.axes),
+  },
+  {
+    definition: ALERT_DIALOG_OPEN,
+    page: ALERT_DIALOG_PAGE,
+    previewCells: matrixCells(ALERT_DIALOG_OPEN.axes),
+  },
+  { definition: DIALOG_CONTENT, page: DIALOG_PAGE, previewCells: matrixCells(DIALOG_CONTENT.axes) },
+  { definition: DIALOG_OPEN, page: DIALOG_PAGE, previewCells: matrixCells(DIALOG_OPEN.axes) },
 ];

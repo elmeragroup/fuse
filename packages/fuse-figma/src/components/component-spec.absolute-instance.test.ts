@@ -5,7 +5,10 @@
  * an absolute box with `right` set and `left` auto ends `right` from its containing block's padding
  * edge, and `top` places its top that far below the padding edge, and probe N11, where Figma keeps a
  * MAX instance's end inset and a CENTER instance's offset from its parent's centre as the instance
- * and the parent resize, a density switch included.
+ * and the parent resize, a density switch included. A `top` that is one length in every mode keeps the
+ * instance's top that far below the padding edge whatever the parent's height, which Figma's MIN keeps,
+ * measured from the frame's top edge, so across the parent's top border too, as an overlay's corner
+ * close sits 16px in from its popup's top right (`absolute top-4 right-4`).
  */
 import { describe, expect, it } from "vitest";
 
@@ -102,13 +105,13 @@ describe("an absolute instance part", () => {
     expect(itemPosition(coverage)).toEqual([["dropped", ANCHORS]]);
   });
 
-  // A top that puts the badge's centre 2px below the row's in one mode and 4px in another, as a fixed
-  // `top-[6px]` does on a row that `row-h` makes 32 or 36 tall, keeps no one offset from the centre.
-  it("stays unmapped where its top keeps no one offset from the item's centre", async () => {
-    const { root, coverage } = await buildItem(badge("right-1 top-[6px]"));
+  // A top that is a quarter of `row-h`, 8px or 9px, keeps no one length below the item's top, and puts
+  // the badge's centre 8px or 9px above the row's centre, so it keeps no one offset from the centre.
+  it("stays unmapped where its top keeps neither one length nor one offset from the item's centre", async () => {
+    const { root, coverage } = await buildItem(badge("right-1 top-[calc(var(--row-h)/4)]"));
     const [, placed] = root?.children ?? [];
     const detail =
-      "the absolute instance's top keeps no one offset from its parent's centre in every mode, which CENTER keeps";
+      "the absolute instance's top keeps neither one length below its parent's top nor one offset from its parent's centre in every mode, which MIN or CENTER keeps";
     expect(placed?.kind === "instance" ? placed.absolute : "not an instance").toBeUndefined();
     expect(badgeRows(coverage)).toEqual([
       ["position", "unmapped", `in the badge instance, ${detail}`],
@@ -118,6 +121,40 @@ describe("an absolute instance part", () => {
     expect(itemPosition(coverage)).toEqual([
       ["dropped", "it only anchors positioned descendants, which auto layout does not need"],
     ]);
+  });
+
+  // `top-4 right-4` puts the instance 16px from the item's end and its top 16px below the item's top
+  // whatever the item's height, as the overlay corner close sits in its popup.
+  it("ends 16px from its item's end and sits 16px below its top in every mode, MAX × MIN", async () => {
+    const { root, coverage } = await buildItem(badge("right-4 top-4"));
+    const [, placed] = root?.children ?? [];
+    expect(placed?.kind === "instance" ? placed.absolute : undefined).toEqual({
+      constraints: { horizontal: "MAX", vertical: "MIN" },
+      endInset: 16,
+      topInset: 16,
+    });
+    expect(badgeRows(coverage)).toEqual([]);
+    expect(itemPosition(coverage)).toEqual([
+      [
+        "dropped",
+        "it anchors the absolute instance it holds, whose MAX × MIN constraints place it against this frame",
+      ],
+    ]);
+  });
+
+  // CSS offsets an absolute box from its containing block's padding edge, inside the border, and Figma
+  // places a layer from its frame's top edge, so the inset counts the item's 2px top border.
+  it("counts its item's top border into the top inset", async () => {
+    const { root } = await buildItem(
+      badge("right-4 top-4"),
+      "relative w-[240px] border-t-2 border-[#000000]"
+    );
+    const [, placed] = root?.children ?? [];
+    expect(placed?.kind === "instance" ? placed.absolute : undefined).toEqual({
+      constraints: { horizontal: "MAX", vertical: "MIN" },
+      endInset: 16,
+      topInset: 18,
+    });
   });
 
   // The box around the item stacks its blocks, so its stacking reads what every instance below it

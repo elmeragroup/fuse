@@ -85,7 +85,6 @@ describe("a part as wide as its clipping column past a start margin", () => {
     ["a column that pads across", "flex flex-col w-[100px] px-[4px] overflow-hidden", "w-full mx-2"],
     ["a bound start margin", "flex flex-col w-[100px] overflow-hidden", "w-full mx-(--row-px)"],
     ["a negative start margin", "flex flex-col w-[100px] overflow-hidden", "w-full -ml-2"],
-    ["a part with no 100% width", "flex flex-col w-[100px] overflow-hidden", "mx-2"],
   ])("leaves the margins unmapped with %s", async (_case, column, classes) => {
     const { coverage } = await buildFixture(chip(column, { parts: [line(classes)] }), {
       variables: VARIABLES,
@@ -93,5 +92,17 @@ describe("a part as wide as its clipping column past a start margin", () => {
     expect(coverage.filter((row) => row.property === "margin-left").map((row) => row.outcome)).toEqual([
       "unmapped",
     ]);
+  });
+
+  // A part with no width of its own spans the column less both margins (CSS 2.1 §10.3.3), so it never
+  // reaches past the column's end, and both margins pad the frame around it.
+  it("insets a part with no 100% width by both margins in place of the overshoot", async () => {
+    const { variant } = await buildFixture(
+      chip("flex flex-col w-[100px] overflow-hidden", { parts: [line("mx-2")] })
+    );
+    expect(across(variant?.root.children[0])).toMatchObject({
+      width: FILL,
+      padding: [literal(8), literal(8)],
+    });
   });
 });

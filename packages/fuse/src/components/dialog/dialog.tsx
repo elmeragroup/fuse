@@ -7,46 +7,16 @@ import type { VariantProps } from "tailwind-variants";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { cn } from "../../styles/cn";
-import { dialogShellClass } from "../../styles/inner-corner/dialog";
 import { mergeClassName } from "../../styles/merge-class-name";
-import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayCloseStrings } from "../overlay/intl";
-import {
-  overlayFooterClass,
-  overlayLayer,
-  overlayModalFillClass,
-  overlayModalPopupClass,
-  overlayScrimClass,
-  overlaySizeVariants,
-  overlayTitleClass,
-} from "../overlay/overlay-classes";
-import {
-  OverlayCloseButton,
-  OverlayFooterCloseButton,
-  overlayCornerCloseClass,
-} from "../overlay/overlay-close-button";
+import { OverlayCloseButton, OverlayFooterCloseButton } from "../overlay/overlay-close-button";
+import { overlayCornerCloseClass } from "../overlay/overlay-corner-close-class";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
+import { dialogContentVariants, dialogVariants } from "./dialog-variants";
 
-const dialogContentVariants = tv({
-  // Dialog's modal fill and inner-corner shell come after the modal face, so the fill replaces the
-  // face's popover fill and the shell's `rounded-xl` overrides the face's `rounded-md`. The shell
-  // publishes the corner inside its padding.
-  base: cn(
-    overlayModalPopupClass,
-    overlayModalFillClass,
-    dialogShellClass,
-    "text-sm fixed top-1/2 left-1/2 grid max-h-[calc(100%-2rem)] w-full max-w-(--overlay-width) -translate-x-1/2 -translate-y-1/2 gap-6 overflow-y-auto"
-  ),
-  variants: {
-    // The 13-value overlay width axis, shared with Sheet.
-    size: overlaySizeVariants.variants.size,
-  },
-  defaultVariants: {
-    size: "md",
-  },
-});
+const slots = dialogVariants();
 
 export function DialogRoot(props: ComponentProps<typeof DialogPrimitive.Root>): ReactElement {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -89,12 +59,7 @@ export function DialogOverlay({
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
-      className={mergeClassName(
-        className,
-        overlayScrimClass,
-        "fixed inset-0 isolate duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
-        overlayLayer
-      )}
+      className={mergeClassName(className, slots.overlay())}
       {...props}
     />
   );
@@ -148,7 +113,7 @@ export function DialogContent({
 }
 
 export function DialogHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
-  return <div data-slot="dialog-header" className={cn("flex flex-col gap-2", className)} {...props} />;
+  return <div data-slot="dialog-header" className={cn(slots.header(), className)} {...props} />;
 }
 
 export type DialogFooterProps = ComponentProps<"div"> & {
@@ -172,7 +137,7 @@ export function DialogFooter({
   const label = closeLabel ?? strings.format("close");
 
   return (
-    <div data-slot="dialog-footer" className={cn(overlayFooterClass, className)} {...props}>
+    <div data-slot="dialog-footer" className={cn(slots.footer(), className)} {...props}>
       {children}
       {showCloseButton ? <DialogPrimitive.Close render={<OverlayFooterCloseButton label={label} />} /> : null}
     </div>
@@ -198,7 +163,7 @@ export function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={mergeClassName(className, overlayTitleClass, isFocusable && selfFocusRingClass)}
+      className={mergeClassName(className, dialogVariants({ isFocusable }).title())}
       {...props}
       // isFocusable owns the tab stop when set; otherwise the caller's tabIndex stands.
       tabIndex={isFocusable ? -1 : tabIndex}
@@ -213,10 +178,7 @@ export function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={mergeClassName(
-        className,
-        "text-sm text-pretty text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground"
-      )}
+      className={mergeClassName(className, slots.description())}
       {...props}
     />
   );

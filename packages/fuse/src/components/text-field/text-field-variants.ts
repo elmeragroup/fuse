@@ -3,7 +3,7 @@ import { readOnlyFillCancelClass } from "../../styles/field-box";
 import { textFieldCardShellClass } from "../../styles/inner-corner/card";
 import { tv } from "../../styles/tv";
 import { cardVariants } from "../card/card-variants";
-import { fieldFrameVariants } from "../field/field-frame";
+import { fieldFrameVariants } from "../field/field-frame-variants";
 
 const frame = fieldFrameVariants();
 

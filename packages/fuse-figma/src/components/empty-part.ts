@@ -26,14 +26,25 @@ export const EMPTY_PART =
 export const NO_TRACE =
   "the part paints nothing at opacity 0, and its top margin takes back its height, so it takes no room in its column";
 
-/** The properties whose value paints a box: its background, its border and its shadows. */
+/**
+ * The properties whose value paints a box: its background, its border and its shadows. A border width
+ * paints whichever property sets it, the shorthand, a physical side or a logical one, as `border`
+ * sets `border-width` and `border-x` sets `border-inline-width`.
+ */
 const PAINTS = [
   "background-color",
   "background-image",
+  "border-width",
   "border-top-width",
   "border-right-width",
   "border-bottom-width",
   "border-left-width",
+  "border-inline-width",
+  "border-inline-start-width",
+  "border-inline-end-width",
+  "border-block-width",
+  "border-block-start-width",
+  "border-block-end-width",
   "box-shadow",
   "outline-width",
 ] as const;
@@ -49,9 +60,10 @@ const COLUMN_LENGTHS = [
 ] as const;
 
 /**
- * Whether a part that holds parts holds no layer in a cell: none of its parts, and no label or icon,
- * shows there. A part that holds no parts in its definition is a box the definition draws by its own
- * lengths, as a dot is, and stays drawn.
+ * Whether a part that holds parts or a label holds no layer in a cell: none of its parts, and no label
+ * or icon, shows there, as `Command.Empty` holds its message only while no row matches. A part that
+ * holds neither in its definition is a box the definition draws by its own lengths, as a dot is, and
+ * stays drawn.
  *
  * @param part - The part's definition.
  * @param cell - The cell.
@@ -60,7 +72,7 @@ const COLUMN_LENGTHS = [
 function holdsNothing(part: PartDefinition, cell: Cell): boolean {
   const parts = part.parts ?? [];
   return (
-    parts.length > 0 &&
+    (parts.length > 0 || part.label !== undefined) &&
     parts.every((child) => !child.shownIn(cell)) &&
     (part.label === undefined || !part.label.shownIn(cell)) &&
     part.iconsFor(cell).length === 0

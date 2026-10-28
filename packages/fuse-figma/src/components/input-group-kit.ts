@@ -44,7 +44,13 @@ import type {
   InstanceDefinition,
   PartDefinition,
 } from "./component-spec";
-import { FIELD_ROOT, FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH } from "./field-box-kit";
+import {
+  FIELD_ROOT,
+  FIELD_ROOT_SR_ONLY,
+  FIELD_ROOT_STRETCH,
+  WITHIN_CONTROL_FACTS,
+  WITHIN_CONTROL_OMISSIONS,
+} from "./field-box-kit";
 import { INPUT_GROUP_TEXT } from "./input-group-text";
 import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always, never } from "./popup-facts";
@@ -200,9 +206,7 @@ export const INPUT_GROUP: ComponentDefinition = {
   ancestorsFor: (cell) => (cell.state === "invalid" ? [FIELD_ROOT] : []),
   states: {},
   facts: new Map([
-    ["has-[[data-focus-ring-control]:focus-visible]", (cell: Cell) => cell.state === "focus"],
-    ["has-[>[data-focus-ring-control]:disabled]", (cell: Cell) => cell.state === "disabled"],
-    ["has-[>[data-focus-ring-control][aria-invalid=true]]", (cell: Cell) => cell.state === "invalid"],
+    ...WITHIN_CONTROL_FACTS,
     ["has-[>[data-align=inline-start]]", (cell: Cell) => cell.form === "search"],
     ["has-[>[data-align=inline-end]]", trails],
     // Only the trailing addon holds a button.
@@ -218,8 +222,7 @@ export const INPUT_GROUP: ComponentDefinition = {
     "[&[readonly]:not(:disabled)]",
     "entry-floor",
     "has-[>[data-focus-ring-control][readonly]:not(:disabled)]",
-    "has-[>[data-focus-ring-control][aria-disabled=true]]",
-    "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]",
+    ...WITHIN_CONTROL_OMISSIONS,
   ]),
   omittedPseudoElements: new Map([["file", "the button of a file input, which the kit does not draw"]]),
   omittedCompositions: new Map([

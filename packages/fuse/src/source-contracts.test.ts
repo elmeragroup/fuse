@@ -955,7 +955,7 @@ describe("state faces", () => {
       ],
       // Links, which have no disabled state.
       "components/breadcrumb/breadcrumb-variants.ts": ["hover:text-foreground"],
-      "components/dialog/dialog.tsx": ["*:[a]:hover:text-foreground"],
+      "components/dialog/dialog-variants.ts": ["*:[a]:hover:text-foreground"],
       "components/navigation-menu/navigation-menu-variants.ts": [
         "hover:**:text-accent-foreground",
         "hover:bg-accent",

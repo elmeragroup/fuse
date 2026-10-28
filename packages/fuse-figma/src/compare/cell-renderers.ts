@@ -183,6 +183,17 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./radio-cell.ts")).radio,
   },
   {
+    set: "radio-row",
+    entry: "dist/radio-group.js",
+    load: async () => (await import("./radio-row-cell.ts")).radioRow,
+  },
+  {
+    set: "radio-group",
+    entry: "dist/radio-group.js",
+    load: async () => (await import("./radio-group-cell.ts")).radioGroup,
+  },
+
+  {
     set: "checkbox",
     entry: "dist/checkbox.js",
     load: async () => (await import("./checkbox-cell.ts")).checkbox,
@@ -243,9 +254,20 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./input-group-cell.ts")).inputGroup,
   },
   {
+    set: "text-field",
+    entry: "dist/text-field.js",
+    load: async () => (await import("./text-field-cell.ts")).textField,
+  },
+
+  {
     set: "textarea",
     entry: "dist/textarea.js",
     load: async () => (await import("./textarea-cell.ts")).textarea,
+  },
+  {
+    set: "textarea-field",
+    entry: "dist/textarea-field.js",
+    load: async () => (await import("./textarea-field-cell.ts")).textareaField,
   },
   {
     set: "avatar",
@@ -312,6 +334,12 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/select.js",
     load: async () => (await import("./select-trigger-cell.ts")).selectTrigger,
   },
+  {
+    set: "select-field",
+    entry: "dist/select-field.js",
+    load: async () => (await import("./select-field-cell.ts")).selectField,
+  },
+
   {
     set: "menu-group-label",
     entry: "dist/dropdown-menu.js",
@@ -411,6 +439,16 @@ const SOURCES: readonly RendererSource[] = [
     set: "command-list",
     entry: "dist/command.js",
     module: { url: new URL("command-cell.ts", import.meta.url), name: "commandList" },
+  },
+  {
+    set: "command-palette",
+    entry: "dist/command.js",
+    module: { url: new URL("command-dialog-cell.ts", import.meta.url), name: "commandPalette" },
+  },
+  {
+    set: "command-dialog-open",
+    entry: "dist/command.js",
+    module: { url: new URL("command-dialog-cell.ts", import.meta.url), name: "commandDialogOpen" },
   },
   {
     set: "empty",
@@ -521,6 +559,61 @@ const SOURCES: readonly RendererSource[] = [
     set: "navigation-menu-popup",
     entry: "dist/navigation-menu.js",
     module: { url: new URL("navigation-menu-popup-cell.ts", import.meta.url), name: "navigationMenuPopup" },
+  },
+  {
+    set: "number-field-stepper",
+    entry: "dist/number-field.js",
+    load: async () => (await import("./number-field-cell.ts")).numberFieldStepper,
+  },
+  {
+    set: "number-field",
+    entry: "dist/number-field.js",
+    load: async () => (await import("./number-field-cell.ts")).numberField,
+  },
+  {
+    set: "file-upload-dropzone",
+    entry: "dist/file-upload.js",
+    load: async () => (await import("./file-upload-cell.ts")).fileUploadDropzone,
+  },
+  {
+    set: "toolbar",
+    entry: "dist/toolbar.js",
+    load: async () => (await import("./toolbar-cell.ts")).toolbar,
+  },
+  {
+    set: "toggle-group",
+    entry: "dist/toggle-group.js",
+    load: async () => (await import("./toggle-group-cell.ts")).toggleGroup,
+  },
+  {
+    set: "tooltip-content",
+    entry: "dist/tooltip.js",
+    module: { url: new URL("tooltip-cell.ts", import.meta.url), name: "tooltipContent" },
+  },
+  {
+    set: "tooltip-open",
+    entry: "dist/tooltip.js",
+    module: { url: new URL("tooltip-cell.ts", import.meta.url), name: "tooltipOpen" },
+  },
+  {
+    set: "alert-dialog-content",
+    entry: "dist/alert-dialog.js",
+    module: { url: new URL("alert-dialog-cell.ts", import.meta.url), name: "alertDialogContent" },
+  },
+  {
+    set: "alert-dialog-open",
+    entry: "dist/alert-dialog.js",
+    module: { url: new URL("alert-dialog-cell.ts", import.meta.url), name: "alertDialogOpen" },
+  },
+  {
+    set: "dialog-content",
+    entry: "dist/dialog.js",
+    module: { url: new URL("dialog-cell.ts", import.meta.url), name: "dialogContent" },
+  },
+  {
+    set: "dialog-open",
+    entry: "dist/dialog.js",
+    module: { url: new URL("dialog-cell.ts", import.meta.url), name: "dialogOpen" },
   },
 ];
 

@@ -46,7 +46,7 @@ import {
   planNumber,
   planPaints,
   planScalar,
-  planShadows,
+  planEffects,
   planVisibleLink,
 } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
@@ -461,7 +461,9 @@ function planOverride(run: Run, layer: HeldLayer, write: OverrideWrite): void {
       return;
     }
     case "effects":
-      planShadows(run, boxOf(layer, write.field), label, write.shadows);
+      // An instance's shadow override holds no background blur: no kit instance whose main blurs
+      // what lies behind it overrides its shadows.
+      planEffects(run, boxOf(layer, write.field), label, write.shadows, undefined);
   }
 }
 

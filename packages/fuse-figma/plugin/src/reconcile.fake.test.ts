@@ -11,7 +11,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { walkLayers } from "../../src/components/kit-spec.ts";
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import type { CollectionSpec } from "../../src/variable-set.ts";
-import { ICONS_PAGE, inventoryPage, KIT_PAGES, pageKey } from "../../test/kit-inventory.ts";
+import { ICONS_PAGE, inventoryPage, KIT_PAGES, pageKey, setsInBuildOrder } from "../../test/kit-inventory.ts";
 import { drawsShadowSpread, paintsAbove } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed, RED_PIXEL } from "./fake-fixtures.ts";
@@ -47,7 +47,10 @@ const waitsForButton = (label: string) => `${label} / button: plan again once Bu
 /**
  * What any change to the Button set makes Plan list for the sets that hold Button instances, in kit
  * order: the open Popover's trigger, the open Dropdown menu's trigger, Empty's two actions in each of its
- * 3 variants and Alert's action in each of its 10. Each
+ * 3 variants, Alert's action in each of its 10, the File upload dropzone's trigger in each of its 5,
+ * Toolbar's three buttons in each of its 2, the Alert dialog popup's Cancel and action in each of its
+ * 3 and the Dialog popup's two footer actions in each of its 2, whose open examples plan again after
+ * their popups. Each
  * instance plans again once Button's changes land, and each set's grid, which reads the instances'
  * sizes, lays out again after them.
  */
@@ -69,6 +72,31 @@ const AFTER_BUTTON = [
     )
   ),
   "Alert: lay out 10 variants in 2 columns and 5 rows",
+  ...["rest", "hover", "focus", "drop-target", "disabled"].map((state) =>
+    waitsForButton(`File upload dropzone / state=${state}`)
+  ),
+  "File upload dropzone: lay out 5 variants in 5 columns and 1 rows",
+  ...["horizontal", "vertical"].flatMap((orientation) => [
+    waitsForButton(`Toolbar / orientation=${orientation} / toolbar-group`),
+    waitsForButton(`Toolbar / orientation=${orientation} / toolbar-group`),
+    waitsForButton(`Toolbar / orientation=${orientation}`),
+  ]),
+  "Toolbar: lay out 2 variants in 2 columns and 1 rows",
+  ...["destructive", "neutral", "pending"].flatMap((variant) => [
+    waitsForButton(`Alert dialog content / variant=${variant} / dialog-footer`),
+    waitsForButton(`Alert dialog content / variant=${variant} / dialog-footer`),
+  ]),
+  "Alert dialog content: lay out 3 variants in 3 columns and 1 rows",
+  // The open example holds the popup, whose own Buttons wait, so it plans again after the popup.
+  "Alert dialog (open) / placement=centered / dialog-content: plan again once Alert dialog content's changes land",
+  "Alert dialog (open): lay out 1 variants in 1 columns and 1 rows",
+  ...["basic", "footer-close"].flatMap((content) => [
+    waitsForButton(`Dialog content / content=${content} / dialog-footer`),
+    waitsForButton(`Dialog content / content=${content} / dialog-footer`),
+  ]),
+  "Dialog content: lay out 2 variants in 2 columns and 1 rows",
+  "Dialog (open) / placement=centered / dialog-content: plan again once Dialog content's changes land",
+  "Dialog (open): lay out 1 variants in 1 columns and 1 rows",
 ];
 
 /** The pages of the sets that hold Button instances, which place their sets and previews again after them. */
@@ -77,11 +105,15 @@ const PLACE_AFTER_BUTTON = [
   "Dropdown menu: place Dropdown menu item, Dropdown menu checkbox item, Dropdown menu radio item, Dropdown menu sub trigger, Dropdown menu popup, Dropdown menu sub content and Dropdown menu (open) in a row and stack 4 previews below them",
   "Empty: place Empty in a row and stack 4 previews below them",
   "Alert: place Alert in a row and stack 4 previews below them",
+  "File upload: place File upload dropzone in a row and stack 4 previews below them",
+  "Toolbar: place Toolbar in a row and stack 4 previews below them",
+  "Alert dialog: place Alert dialog content and Alert dialog (open) in a row and stack 4 previews below them",
+  "Dialog: place Dialog content and Dialog (open) in a row and stack 4 previews below them",
 ];
 
-/** The component sets a run creates, page by page. */
-const CREATE_SETS = KIT_PAGES.flatMap((page) =>
-  page.sets.map((set) => `${page.name}: create the component set ${set.name} with ${set.variants} variants`)
+/** The component sets a run creates, in the order the kit builds them. */
+const CREATE_SETS = setsInBuildOrder().map(
+  ({ page, set }) => `${page.name}: create the component set ${set.name} with ${set.variants} variants`
 );
 
 /** The gray `ring` holds in Fjordkraft's internal private light theme, the file's default modes. */
@@ -156,6 +188,24 @@ function property(set: ComponentSetNode, name: string): ComponentPropertyDefinit
     throw new Error(`${set.name} has no property ${name}`);
   }
   return found[1];
+}
+
+/** The arrow's centre, and its parent's centre across and bottom edge, as the transform places them. */
+function arrowPlace(root: ComponentNode | InstanceNode) {
+  const arrow = childNamed(root, "FRAME", "arrow");
+  const radians = (arrow.rotation * Math.PI) / 180;
+  const half = arrow.width / 2;
+  const centre = {
+    x: arrow.x + Math.cos(radians) * half + Math.sin(radians) * half,
+    y: arrow.y - Math.sin(radians) * half + Math.cos(radians) * half,
+  };
+  return {
+    rotation: arrow.rotation,
+    constraints: arrow.constraints,
+    positioning: arrow.layoutPositioning,
+    fromCentre: Math.round((centre.x - root.width / 2) * 1000) / 1000,
+    aboveBottom: Math.round((root.height - centre.y) * 1000) / 1000,
+  };
 }
 
 describe("Apply on a synced file without the kit pages", () => {
@@ -399,6 +449,45 @@ describe("Apply on a synced file without the kit pages", () => {
     // icon that follows the label's color.
     expect(icons.children.map((node) => node.name)).not.toContain("Vipps");
     expect(icons.children.map((node) => node.name)).not.toContain("Signing");
+  });
+
+  // Oracle: probe W5-P7 in Figma. A stepper centred both ways with no padding and a 1px left stroke
+  // that counts in layout centres its 16px glyph in the 23px or 31px content box, at x 4.5 dense and
+  // 8.5 comfortable, as CSS's border box does; the fake places no layer in a flow, so the test pins
+  // the fields that placement follows from.
+  it("writes the stepper centred, unpadded, with a left stroke alone that counts in layout (W5-P7)", async () => {
+    const page = await kitPage(file, pageKey(inventoryPage("number-field")));
+    const stepper = setOn(page, "Number field stepper").children[0];
+    expect(
+      stepper?.type === "COMPONENT"
+        ? [
+            stepper.primaryAxisAlignItems,
+            stepper.counterAxisAlignItems,
+            [stepper.paddingLeft, stepper.paddingRight],
+            [
+              stepper.strokeTopWeight,
+              stepper.strokeRightWeight,
+              stepper.strokeBottomWeight,
+              stepper.strokeLeftWeight,
+            ],
+            stepper.strokesIncludedInLayout,
+          ]
+        : []
+    ).toEqual(["CENTER", "CENTER", [0, 0], [0, 0, 0, 1], true]);
+  });
+
+  // Oracle: Chromium on 2026-10-27 centred Tooltip's turned arrow at (W/2, H - 2) in a W × H popup,
+  // and Figma's transform at a turn r is [[cos r, sin r, x], [-sin r, cos r, y]] (PQ).
+  it("turns the arrow -45 and centres it on the popup, 2px above its bottom edge (W5 U9)", async () => {
+    const page = await kitPage(file, pageKey(inventoryPage("tooltip")));
+    const main = setOn(page, "Tooltip content").children[0];
+    expect(main?.type === "COMPONENT" ? arrowPlace(main) : undefined).toEqual({
+      rotation: -45,
+      constraints: { horizontal: "CENTER", vertical: "MAX" },
+      positioning: "ABSOLUTE",
+      fromCentre: 0,
+      aboveBottom: 2,
+    });
   });
 });
 
@@ -816,6 +905,70 @@ describe("Avatar's image fills on an applied file", () => {
     await reconcileKit(file.figma, kit, true);
     file.reopen();
     expect(await changes(file)).toEqual([]);
+  });
+});
+
+// Unit under test: the Number field as Apply writes it. Oracle: probe W5-P8 in Figma. The decrease
+// stepper's swapped glyph reads Minus in the main and in an instance of it.
+describe("Number field's steppers on an applied file", () => {
+  const NUMBER_FIELD_PAGE = pageKey(inventoryPage("number-field"));
+
+  it("shows Minus on the decrease stepper and Plus on the increase one, in the main and an instance (W5-P8)", async () => {
+    const page = await kitPage(await appliedFile(), NUMBER_FIELD_PAGE);
+    const main = setOn(page, "Number field").children.find((node) => node.name === "state=rest");
+    // The name of each `Icon` instance's main component, in layer order.
+    const glyphs = async (node: SceneNode): Promise<readonly (string | undefined)[]> => {
+      const own =
+        node.type === "INSTANCE" && node.name === "Icon" ? [(await node.getMainComponentAsync())?.name] : [];
+      const below = "children" in node ? await Promise.all(node.children.map(glyphs)) : [];
+      return [...own, ...below.flat()];
+    };
+    expect(main?.type).toBe("COMPONENT");
+    if (main?.type !== "COMPONENT") {
+      return;
+    }
+    expect([await glyphs(main), await glyphs(main.createInstance())]).toEqual([
+      ["Minus", "Plus"],
+      ["Minus", "Plus"],
+    ]);
+  });
+});
+
+// Unit under test: the Tooltip content set's arrow as Apply writes it. Oracle: Chromium on 2026-10-27
+// centred Tooltip's turned arrow at (W/2, H - 2) in a W × H popup, at 92 × 28 dense and 100 × 32
+// comfortable, and Figma's transform at a turn r is [[cos r, sin r, x], [-sin r, cos r, y]] (PQ), so
+// the centre of the 10px square is its origin moved by that transform's image of (5, 5). The arrow's
+// constraints keep the centre as the popup's size changes with the density (fake rule 59, unprobed).
+describe("Tooltip's arrow on an applied file", () => {
+  const TOOLTIP_PAGE = pageKey(inventoryPage("tooltip"));
+
+  // The fake lays out no hugging main, so the popup takes Chromium's sizes by a resize, which moves
+  // an absolute layer by its constraints (fake rules 9, 59), as a density switch resizes it in Figma.
+  it("keeps the arrow's centre as the popup takes its dense and comfortable sizes, in the main and an instance", async () => {
+    const page = await kitPage(await appliedFile(), TOOLTIP_PAGE);
+    const main = setOn(page, "Tooltip content").children[0];
+    expect(main?.type).toBe("COMPONENT");
+    if (main?.type !== "COMPONENT") {
+      return;
+    }
+    const instance = main.createInstance();
+    const at = (width: number, height: number) => {
+      main.resize(width, height);
+      return [arrowPlace(main), arrowPlace(instance)].map(({ fromCentre, aboveBottom }) => [
+        fromCentre,
+        aboveBottom,
+      ]);
+    };
+    expect([at(92, 28), at(100, 32)]).toEqual([
+      [
+        [0, 2],
+        [0, 2],
+      ],
+      [
+        [0, 2],
+        [0, 2],
+      ],
+    ]);
   });
 });
 

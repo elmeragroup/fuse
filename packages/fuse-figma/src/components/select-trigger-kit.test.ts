@@ -18,6 +18,10 @@
  * - The caret computes `rotate: 180deg` while the trigger carries `data-popup-open`, disabled too,
  *   and `none` otherwise.
  * - Disabled dims the trigger to 50% on its card fill.
+ * - `width=fill` merges `w-full` over the recipe's `w-fit`, as SelectField passes it, so the trigger
+ *   takes the 384px the kit gives a field box. The value's `flex flex-1` takes the room the caret and
+ *   the gap leave, so `justify-between` has no free space and the caret sits at the end, and the
+ *   value's own unset `justify-content` packs its text at its start.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -25,6 +29,7 @@ import {
   builtKit,
   density,
   ERROR_RING,
+  FILL,
   fixed,
   FOCUS_RING,
   HUG,
@@ -58,8 +63,19 @@ const CELLS = SIZES.flatMap((size) =>
   )
 );
 
-function trigger(size: string, state: string, content: string, open: string): ComponentRootSpec {
-  return variantRoot(spec, `select-trigger/size=${size},state=${state},content=${content},open=${open}`);
+function trigger(
+  size: string,
+  state: string,
+  content: string,
+  open: string,
+  width = "hug"
+): ComponentRootSpec {
+  // A hugging cell keeps the key it held before the width axis came (W5-P2).
+  const keyed = width === "hug" ? "" : `width=${width},`;
+  return variantRoot(
+    spec,
+    `select-trigger/${keyed}size=${size},state=${state},content=${content},open=${open}`
+  );
 }
 
 /** The value's text, the one layer of the value frame, the trigger's first layer. */
@@ -86,17 +102,18 @@ const CARET = {
 } as const;
 
 describe("the Select trigger component set", () => {
-  it("holds 2 sizes in 4 states, placeholder and value, closed and open, on the Select page with one Value property", () => {
+  it("holds 2 widths and 2 sizes in 4 states, placeholder and value, closed and open, on the Select page with one Value property", () => {
     const set = spec.componentSets.find((candidate) => candidate.key === "select-trigger");
     expect([set?.name, set?.page]).toEqual(["Select trigger", "page/select"]);
     expect(set?.axes).toEqual([
+      { name: "width", values: ["hug", "fill"] },
       { name: "size", values: SIZES },
       { name: "state", values: STATES },
       { name: "content", values: CONTENTS },
       { name: "open", values: OPENS },
     ]);
     expect(set?.columnAxis).toBe("state");
-    expect(new Set(set?.variants.map((cell) => cell.key)).size).toBe(32);
+    expect(new Set(set?.variants.map((cell) => cell.key)).size).toBe(64);
     // The docs Basic demo's placeholder.
     expect([set?.textProperties, set?.swapProperties]).toEqual([
       [{ name: "Value", defaultValue: "Pick a fruit" }],
@@ -171,6 +188,24 @@ describe("the Select trigger component set", () => {
     });
   });
 
+  it("fills the 384px field width at width=fill, its value growing and its caret at the end", () => {
+    const fill = trigger("default", "rest", "value", "off", "fill");
+    const [value, caret] = fill.children;
+    expect({
+      sizing: fill.sizing,
+      primaryAlign: fill.primaryAlign,
+      itemSpacing: fill.itemSpacing,
+      value: value?.kind === "frame" ? [value.sizing, value.primaryAlign] : undefined,
+      caret,
+    }).toEqual({
+      sizing: { horizontal: fixed(literal(384)), vertical: fixed(density("control-h-md")) },
+      primaryAlign: "MIN",
+      itemSpacing: density("control-gap-md"),
+      value: [{ horizontal: FILL, vertical: HUG }, "MIN"],
+      caret: CARET,
+    });
+  });
+
   it("draws sm at the sm height, inset and gap, with its value in fixed 14/20 type", () => {
     const small = trigger("sm", "rest", "placeholder", "off");
     expect([small.sizing.vertical, small.paddingLeft, small.paddingRight, small.itemSpacing]).toEqual([
@@ -221,7 +256,7 @@ describe("the Select trigger component set", () => {
     }
   });
 
-  it("drops the value's grow and line clamp, the shell's custom properties and the Field's stretch, each with its reason", () => {
+  it("reads the value's grow where the trigger fills, and drops it where it hugs, the line clamp, the shell's custom properties and the Field's stretch, each with its reason", () => {
     const reasons = (part: string, match: (className: string) => boolean) =>
       new Set(
         coverage
@@ -229,7 +264,10 @@ describe("the Select trigger component set", () => {
           .map((row) => `${row.property} ${row.outcome}: ${row.detail}`)
       );
     expect(reasons("select-value", (className) => className === "flex-1")).toEqual(
-      new Set(["flex dropped: the row hugs its layers, so the one layer that grows has no room to grow into"])
+      new Set([
+        "flex dropped: the row hugs its layers, so the one layer that grows has no room to grow into",
+        "flex literal: the one layer that grows fills the room the row's other layers leave",
+      ])
     );
     expect(
       reasons("select-trigger", (className) => className === "*:data-[slot=select-value]:line-clamp-1")
@@ -255,7 +293,7 @@ describe("the Select trigger component set", () => {
     );
     expect(reasons("field", (className) => className.startsWith("[&>:where("))).toEqual(
       new Set([
-        "width dropped: the Field stretches the trigger across its own width, which the set does not draw, and the trigger hugs its value as it does outside a Field",
+        "width dropped: the Field stretches the trigger across its own width, which the set does not draw, and the trigger takes the width its `width` axis gives it, as it does outside a Field",
       ])
     );
   });

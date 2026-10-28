@@ -133,9 +133,16 @@ export function wrapInstanceMargins(
  * margin beside a fill takes room from it. Where any of them does not map, none does, so no frame
  * draws part of a margin.
  *
+ * A flex item that its own `align-self: stretch` fills across its parent's direction draws every
+ * margin in a frame that fills across in the parent's direction and hugs the item along it, which
+ * fills the frame across: the item spans the flex line less its margins (CSS Flexbox 1 §9.4 step 11),
+ * as Toolbar's separator sits 4px short of the bar's items at each end.
+ *
  * A part that fills a column across draws its margins above and below it in a frame that fills
  * across and hugs down, as a menu separator's `my-1` sets it 4px from the rows around it. Its margins
- * across stay with the part, for the column's separator rule to read (`full-bleed.ts`). A block
+ * across stay with the part, for the column's separator rule to read (`full-bleed.ts`), unless the part
+ * sets no width of its own and none of them is negative: then the column stretches it to its width less
+ * those margins, which the frame draws as its padding across too. A block
  * column's vertical margins collapse where they adjoin another margin (CSS 2.1 §8.3.1), so there the
  * frame draws them only where `collapses` says no margin adjoins them.
  *
@@ -155,13 +162,32 @@ function drawMargins(
 ): FrameLayerSpec | undefined {
   const zero = dropZeroMargins(style);
   const { horizontal, vertical } = layer.sizing;
-  const across = parent.direction === "VERTICAL" && horizontal.kind === "fill" && vertical.kind !== "fill";
+  // A flex item that its own `align-self: stretch` fills across its parent's direction.
+  const stretched =
+    parent.flex &&
+    normalizeCss(style.resolved("align-self") ?? "auto") === "stretch" &&
+    layer.sizing[parent.direction === "HORIZONTAL" ? "vertical" : "horizontal"].kind === "fill" &&
+    layer.sizing[parent.direction === "HORIZONTAL" ? "horizontal" : "vertical"].kind !== "fill";
+  const across =
+    !stretched && parent.direction === "VERTICAL" && horizontal.kind === "fill" && vertical.kind !== "fill";
   const overshoots = across && clipped && overshootsEnd(style, zero, variables);
+  // A part with no width of its own that the column stretches across spans the column less its
+  // margins (CSS 2.1 §10.3.3, CSS Flexbox 1 §9.4 step 11), so a margin across that is no negative
+  // length insets it, as the palette's input sits `surface-gap-sm` in from its edges. A negative one
+  // stays with the column's separator rule (`full-bleed.ts`).
+  const insetAcross =
+    across &&
+    !overshoots &&
+    normalizeCss(style.resolved("width") ?? "auto") === "auto" &&
+    ["margin-left", "margin-right"].every((property) => {
+      const spec = readNumber(style.resolved(property) ?? "0px", variables);
+      return spec !== undefined && (spec.kind !== "literal" || spec.value >= 0);
+    });
   const set = MARGINS.filter(
     (property) =>
       style.has(property) &&
       !zero(property) &&
-      (!across || VERTICAL_MARGINS.has(property) || (overshoots && property === "margin-left"))
+      (!across || VERTICAL_MARGINS.has(property) || insetAcross || (overshoots && property === "margin-left"))
   );
   const fixedOrHugs = horizontal.kind !== "fill" && vertical.kind !== "fill";
   const length = (value: string): NumberSpec | undefined => {
@@ -170,7 +196,7 @@ function drawMargins(
   };
   const maps = set.every((property) => length(style.resolved(property) ?? "") !== undefined);
   const flows = parent.flex || (parent.blocks && !collapses);
-  if (set.length === 0 || !flows || outOfFlow(style) || !(fixedOrHugs || across) || !maps) {
+  if (set.length === 0 || !flows || outOfFlow(style) || !(fixedOrHugs || across || stretched) || !maps) {
     return undefined;
   }
   if (overshoots && style.has("margin-right") && !zero("margin-right")) {
@@ -205,10 +231,12 @@ function drawMargins(
     kind: "frame",
     key: layer.key,
     name: layer.name,
-    direction: across ? "VERTICAL" : "HORIZONTAL",
-    sizing: across
-      ? { horizontal: { kind: "fill" }, vertical: { kind: "hug" } }
-      : { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
+    direction: across ? "VERTICAL" : stretched ? parent.direction : "HORIZONTAL",
+    sizing: stretched
+      ? stretchedFrame(parent.direction)
+      : across
+        ? { horizontal: { kind: "fill" }, vertical: { kind: "hug" } }
+        : { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
     limits: NO_LIMITS,
     clips: false,
     paddingTop: margin("margin-top"),
@@ -216,8 +244,8 @@ function drawMargins(
     paddingBottom: margin("margin-bottom"),
     paddingLeft: margin("margin-left"),
     itemSpacing: ZERO,
-    primaryAlign: across ? "MIN" : "CENTER",
-    counterAlign: across ? "MIN" : "CENTER",
+    primaryAlign: across || stretched ? "MIN" : "CENTER",
+    counterAlign: across || stretched ? "MIN" : "CENTER",
     cornerRadius: ZERO,
     fill: undefined,
     stroke: undefined,
@@ -226,6 +254,16 @@ function drawMargins(
     children: [],
   };
   return layer.visibleProperty === undefined ? frame : { ...frame, visibleProperty: layer.visibleProperty };
+}
+
+/**
+ * The sizing of the frame around a stretched flex item: it fills across its parent's direction, as
+ * the item's margin box spans the flex line (CSS Flexbox 1 §9.4 step 11), and hugs the item along it.
+ */
+function stretchedFrame(direction: Layout["direction"]): FrameLayerSpec["sizing"] {
+  return direction === "HORIZONTAL"
+    ? { horizontal: { kind: "hug" }, vertical: { kind: "fill" } }
+    : { horizontal: { kind: "fill" }, vertical: { kind: "hug" } };
 }
 
 /** Why the end margin of a part that overshoots its clipping column drops. */

@@ -18,7 +18,7 @@ import {
   DialogTrigger,
 } from "../dialog/dialog";
 import type { DialogContentProps } from "../dialog/dialog";
-import { overlayTitleLineClass } from "../overlay/overlay-classes";
+import { alertDialogVariants } from "./alert-dialog-variants";
 import { alertDialogStrings } from "./intl";
 
 /**
@@ -119,11 +119,12 @@ export function AlertDialogContent({
   const actionRef = useRef<HTMLButtonElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const fallbackFocus = variant === "destructive" || isActionDisabled ? cancelRef : actionRef;
+  const slots = alertDialogVariants({ variant });
   const fallbackIcon =
     variant === "destructive" ? (
-      <WarningOctagon className="size-5 shrink-0 text-error" />
+      <WarningOctagon className={slots.icon()} />
     ) : (
-      <Info className="size-5 shrink-0" />
+      <Info className={slots.icon()} />
     );
 
   const actionButton = (
@@ -146,10 +147,9 @@ export function AlertDialogContent({
       {...props}
       role="alertdialog"
       showCloseButton={false}>
-      <DialogHeader className="flex-row items-start justify-between gap-4">
-        <DialogTitle className="text-balance">{title}</DialogTitle>
-        {/* The icon sits on the title's first line, as Alert centres its media on its title. */}
-        <div className={overlayTitleLineClass}>{icon ?? fallbackIcon}</div>
+      <DialogHeader className={slots.header()}>
+        <DialogTitle className={slots.title()}>{title}</DialogTitle>
+        <div className={slots.titleLine()}>{icon ?? fallbackIcon}</div>
       </DialogHeader>
       <DialogDescription>{children}</DialogDescription>
       <DialogFooter>

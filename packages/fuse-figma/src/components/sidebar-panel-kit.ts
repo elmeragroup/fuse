@@ -135,7 +135,7 @@ export const SIDEBAR: ComponentDefinition = {
     { name: "collapsed", values: ["off", "on"] },
   ],
   columnAxis: "collapsed",
-  previewHeight: SIDEBAR_PANEL_HEIGHT,
+  previewHeight: { pixels: SIDEBAR_PANEL_HEIGHT },
   inheritedFor: () => WIDTHS,
   ancestorsFor: () => [WRAPPER, ROOT],
   classesFor: (cell) =>

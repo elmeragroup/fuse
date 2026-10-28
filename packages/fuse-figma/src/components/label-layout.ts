@@ -53,6 +53,13 @@ export type LabelScope = {
    * own.
    */
   readonly variantCharacters?: string;
+  /**
+   * The measurement that the box's wrapping label fits on one line under the box's cap, as its
+   * definition's `fitsOneLine` gives it, or undefined. A cap the build cannot read in pixels, as a
+   * literal `max-width` less a padding that binds a variable, then leaves the label hugging on one
+   * line, which the measurement says CSS draws.
+   */
+  readonly fitsOneLine: string | undefined;
 };
 
 /** The Figma style of each Roboto weight a recipe reaches. */
@@ -380,7 +387,8 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
           { shown: characters, built: scope.variantCharacters },
           scope.clamp,
           scope.variant,
-          path
+          path,
+          scope.fitsOneLine
         )
       : { ...readNativeLines(holder, lines, scope.variant, path), maxWidth: undefined, packsAtStart: false };
   const fills = layout.sizing.horizontal.kind !== "hug";
@@ -796,7 +804,8 @@ function readLabelLayout(
   characters: { readonly shown: string; readonly built: string | undefined },
   lines: number | undefined,
   variant: string,
-  path: readonly string[]
+  path: readonly string[],
+  fitsOneLine: string | undefined
 ): LabelLayout {
   const { style, sizing } = holder;
   const value = (property: string): string => normalizeCss(style.resolved(property) ?? "");
@@ -824,10 +833,15 @@ function readLabelLayout(
       message: `${variant}: a box around ${label.name} caps its width at ${cap.value}px, and Figma takes only a positive max width`,
     });
   }
+  // A measurement that the label fits on one line under a cap the build cannot read keeps it hugging.
+  const measured = cap.kind === "unread" && fitsOneLine !== undefined;
+  const oneLine = measured
+    ? `the box hugs the label on one line: ${fitsOneLine}`
+    : "the box hugs the label on one line";
   const capped =
     !definite &&
     holder.limits.maxWidth !== undefined &&
-    (ellipsis || lines !== undefined || cap.kind === "unread");
+    (ellipsis || lines !== undefined || (cap.kind === "unread" && !measured));
   const maxWidth = cap.kind === "pixels" ? cap.value : undefined;
   const across = linesAcross(style, label.placement);
   const placed =
@@ -904,7 +918,7 @@ function readLabelLayout(
       }
       return {
         outcome: "literal",
-        detail: fills ? "the label wraps at the box's width" : "the box hugs the label on one line",
+        detail: fills ? "the label wraps at the box's width" : oneLine,
       };
     },
     style.feed("sizing", path)
@@ -929,9 +943,7 @@ function readLabelLayout(
       }
       return {
         outcome: "dropped",
-        detail: ownWidth
-          ? "the text never wraps, so the label keeps its own width"
-          : "the box hugs the label on one line",
+        detail: ownWidth ? "the text never wraps, so the label keeps its own width" : oneLine,
       };
     },
     []
