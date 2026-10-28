@@ -49,6 +49,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "toggle", name: "Toggle", variants: 192, previewed: 26 },
       // The same without the icons.
       { key: "icon-toggle", name: "Icon toggle", variants: 64, previewed: 22 },
+      // The spaced group at 2 variants and 4 sizes.
+      { key: "toggle-group", name: "Toggle group", variants: 8, previewed: 8 },
     ],
   },
   // 19 variants at 3 sizes.
@@ -71,6 +73,10 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "radio-icon-button", name: "Radio icon button", variants: 50, previewed: 50 },
       // Off and on, in 4 states.
       { key: "radio", name: "Radio", variants: 8, previewed: 8 },
+      // The labelled row, hugging and filling, off and on, in 4 states.
+      { key: "radio-row", name: "Radio row", variants: 16, previewed: 16 },
+      // The labelled group, vertical and horizontal, at rest, disabled and invalid.
+      { key: "radio-group", name: "Radio group", variants: 6, previewed: 6 },
     ],
   },
   // Off, on and mixed, in 4 states.
@@ -119,13 +125,19 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "input", name: "Input", variants: 10, previewed: 10 },
       // Combobox's caret and clear forms, Command's search form and Combobox's open caret form, in 4 states.
       { key: "input-group", name: "Input group", variants: 16, previewed: 16 },
+      // The labelled input, placeholder and value in 5 states.
+      { key: "text-field", name: "Text field", variants: 10, previewed: 10 },
     ],
   },
-  // Placeholder and value in 5 states.
   {
     slug: "textarea",
     name: "Textarea",
-    sets: [{ key: "textarea", name: "Textarea", variants: 10, previewed: 10 }],
+    sets: [
+      // Placeholder and value in 5 states.
+      { key: "textarea", name: "Textarea", variants: 10, previewed: 10 },
+      // The labelled textarea in 5 states.
+      { key: "textarea-field", name: "Textarea field", variants: 5, previewed: 5 },
+    ],
   },
   // The fallback and the image at 4 sizes.
   {
@@ -174,8 +186,10 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     slug: "select",
     name: "Select",
     sets: [
-      // 2 sizes in 4 states, holding the placeholder or a value, closed and open.
-      { key: "select-trigger", name: "Select trigger", variants: 32, previewed: 32 },
+      // Hugging and filling, 2 sizes in 4 states, holding the placeholder or a value, closed and open.
+      { key: "select-trigger", name: "Select trigger", variants: 64, previewed: 64 },
+      // The labelled select in 4 states, holding the placeholder or a value.
+      { key: "select-field", name: "Select field", variants: 8, previewed: 8 },
       // The plain caption, and Dropdown menu's Medium caption, plain and inset.
       { key: "menu-group-label", name: "Menu group label", variants: 3, previewed: 3 },
       // The hairline between groups.
@@ -239,6 +253,10 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "command-item", name: "Command item", variants: 9, previewed: 9 },
       // The docs Groups demo's list.
       { key: "command-list", name: "Command list", variants: 1, previewed: 1 },
+      // The docs Dialog demo's palette, open.
+      { key: "command-palette", name: "Command palette", variants: 1, previewed: 1 },
+      // The palette over the scrim, near the top of the viewport.
+      { key: "command-dialog-open", name: "Command dialog (open)", variants: 1, previewed: 1 },
     ],
   },
   // The default, outline and dashed outline frames.
@@ -321,7 +339,84 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "navigation-menu-popup", name: "Navigation menu popup", variants: 2, previewed: 2 },
     ],
   },
+  {
+    slug: "number-field",
+    name: "Number field",
+    sets: [
+      // The increase stepper at rest, hovered, disabled and read-only.
+      { key: "number-field-stepper", name: "Number field stepper", variants: 4, previewed: 4 },
+      // The labelled field in 5 states.
+      { key: "number-field", name: "Number field", variants: 5, previewed: 5 },
+    ],
+  },
+  {
+    slug: "file-upload",
+    name: "File upload",
+    sets: [
+      // The Compact demo's dropzone at rest, hovered, focused, as a drop target and disabled.
+      { key: "file-upload-dropzone", name: "File upload dropzone", variants: 5, previewed: 5 },
+    ],
+  },
+  {
+    slug: "toolbar",
+    name: "Toolbar",
+    sets: [
+      // The Basic demo's bar, horizontal and vertical.
+      { key: "toolbar", name: "Toolbar", variants: 2, previewed: 2 },
+    ],
+  },
+  {
+    slug: "tooltip",
+    name: "Tooltip",
+    sets: [
+      // The Basic demo's popup.
+      { key: "tooltip-content", name: "Tooltip content", variants: 1, previewed: 1 },
+      // The popup open above its ghost icon Button trigger.
+      { key: "tooltip-open", name: "Tooltip (open)", variants: 1, previewed: 1 },
+    ],
+  },
+  {
+    slug: "alert-dialog",
+    name: "Alert dialog",
+    sets: [
+      // The popup: destructive, neutral and pending.
+      { key: "alert-dialog-content", name: "Alert dialog content", variants: 3, previewed: 3 },
+      // The destructive popup over the scrim.
+      { key: "alert-dialog-open", name: "Alert dialog (open)", variants: 1, previewed: 1 },
+    ],
+  },
+  {
+    slug: "dialog",
+    name: "Dialog",
+    sets: [
+      // The popup: the Basic demo's and the Footer close demo's.
+      { key: "dialog-content", name: "Dialog content", variants: 2, previewed: 2 },
+      // The Basic popup over the scrim.
+      { key: "dialog-open", name: "Dialog (open)", variants: 1, previewed: 1 },
+    ],
+  },
 ];
+
+/**
+ * The sets the kit builds after the Field page's sets, since Radio group shows Field's legend,
+ * description and error and Radio row comes before it, though their page comes before Field's. The
+ * plugin creates and moves sets in build order and lays out pages in page order.
+ */
+const BUILT_AFTER_FIELD: ReadonlySet<string> = new Set(["radio-row", "radio-group"]);
+
+/**
+ * Every set with its page, in the order the kit builds them: each page's sets in page order, with the
+ * sets built after Field's last set, Field title, placed right after it.
+ *
+ * @returns The sets and their pages.
+ */
+export function setsInBuildOrder(): readonly { readonly page: InventoryPage; readonly set: InventorySet }[] {
+  const all = KIT_PAGES.flatMap((page) => page.sets.map((set) => ({ page, set })));
+  const later = all.filter(({ set }) => BUILT_AFTER_FIELD.has(set.key));
+  return all
+    .filter(({ set }) => !BUILT_AFTER_FIELD.has(set.key))
+    .flatMap((entry) => (entry.set.key === "field-title" ? [entry, ...later] : [entry]));
+}
 
 /** The page that holds the icon library alone, after the component pages. */
 export const ICONS_PAGE = { key: "page/icons", name: "Icons" } as const;

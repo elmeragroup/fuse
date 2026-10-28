@@ -3,7 +3,8 @@
  * recipe-borrowing use; the workspace-only recipe catalog re-exports them for the Figma component
  * sync. `orientation` and `spacing` are the Root's axes and `variant` the Legend's. The Title and the Label share
  * their heading classes: `title` puts its centering before them, and `label` its composition arms.
- * `description`, `error` and `legend` are the other text parts. `field.tsx` resolves the slots of the
+ * `description`, `error` and `legend` are the other text parts. `set` stacks a `Field.Set`'s parts, closer
+ * around a checkbox or radio group. `field.tsx` resolves the slots of the
  * parts without an axis once at module scope. The headings, the description and the error read the
  * label type pair, as a label-variant legend does.
  */
@@ -31,6 +32,7 @@ export const fieldVariants = tv({
     ],
     error: [labelTypeClass, "font-normal text-error"],
     legend: "font-medium mb-3 text-balance",
+    set: "flex flex-col gap-(--surface-gap-xl) has-[>[data-slot=checkbox-group]]:gap-(--surface-gap-md) has-[>[data-slot=radio-group]]:gap-(--surface-gap-md)",
   },
   variants: {
     orientation: {

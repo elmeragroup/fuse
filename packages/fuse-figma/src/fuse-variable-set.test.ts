@@ -178,9 +178,9 @@ describe("fuseVariableSet", () => {
   // role's pickers, and the role's own color in every theme at the tint's share of its alpha. The
   // compiled rule's last declaration of the property is the `color-mix()` in its `@supports`
   // block, which wins over the fallback before it.
-  it("syncs the tints the soft Badges, the muted Item, the Alerts, the Sidebar group label and the popups paint with", async () => {
-    // TOKEN_PAINTS: warning, info, error, success and foreground are surfaces, inks and lines,
-    // muted is a surface and a line, and sidebar-foreground is an ink.
+  it("syncs the tints the soft Badges, the muted Item, the Alerts, the Sidebar group label, the popups and the File upload dropzone paint with", async () => {
+    // TOKEN_PAINTS: warning, info, error, success, foreground and muted-foreground are surfaces,
+    // inks and lines, muted is a surface and a line, and sidebar-foreground is an ink.
     const strokes = ["ALL_FILLS", "STROKE_COLOR"] as const;
     const tints = [
       { utility: "border-warning/20", role: "warning", tint: "warning/20", share: 0.2, scopes: strokes },
@@ -207,6 +207,14 @@ describe("fuseVariableSet", () => {
         role: "foreground",
         tint: "foreground/10",
         share: 0.1,
+        scopes: strokes,
+      },
+      // The File upload dropzone's border on hover and while a control inside has keyboard focus.
+      {
+        utility: "border-muted-foreground/50",
+        role: "muted-foreground",
+        tint: "muted-foreground/50",
+        share: 0.5,
         scopes: strokes,
       },
     ] as const;

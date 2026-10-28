@@ -29,7 +29,7 @@ import {
   variantRoot,
 } from "../../test/built-kit";
 import { buildFixture, chip, dot } from "../../test/fixture-sets";
-import { ICONS_PAGE, KIT_PAGES, pageKey, previewsOn } from "../../test/kit-inventory";
+import { ICONS_PAGE, KIT_PAGES, pageKey, previewsOn, setsInBuildOrder } from "../../test/kit-inventory";
 import { KitUnmappable } from "./build-errors";
 import { buildKit, checkIconReferences } from "./build-kit";
 import type { IconSlot, PartDefinition } from "./component-spec";
@@ -861,7 +861,7 @@ describe("the preview frames", () => {
       ICONS_PAGE,
     ]);
     expect(spec.componentSets.map((set) => [set.key, set.page])).toEqual(
-      KIT_PAGES.flatMap((page) => page.sets.map((set) => [set.key, pageKey(page)]))
+      setsInBuildOrder().map(({ page, set }) => [set.key, pageKey(page)])
     );
     expect(spec.icons.page).toBe(ICONS_PAGE.key);
   });

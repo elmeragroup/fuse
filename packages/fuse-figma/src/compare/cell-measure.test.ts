@@ -60,6 +60,18 @@ describe("slotRects", () => {
     expect(rects[1]).toEqual({ x: 0, y: 944, width: 1056, height: 464 });
     expect(pageViewport(PAGE_LAYOUT, cells)).toEqual({ width: 3168, height: 1408 });
   });
+
+  // Worked by hand: the Command dialog's 500px viewport plus 2 × 8px is 516px, past a 464px slot, so
+  // its row is 516px tall, and the wide cell after it starts 516px lower, at 16 + 464 + 516 = 996.
+  it("makes the row of a cell taller than a slot as tall as the cell and its padding", () => {
+    const cells = [{ span: 1 }, { span: 2, height: 500 }, { span: 2, height: 448 }];
+    expect(slotRects(PAGE_LAYOUT, cells)).toEqual([
+      slotRect(PAGE_LAYOUT, 0),
+      { x: 0, y: 480, width: 1056, height: 516 },
+      { x: 0, y: 996, width: 1056, height: 464 },
+    ]);
+    expect(pageViewport(PAGE_LAYOUT, cells).height).toBe(1460);
+  });
 });
 
 describe("cellClip", () => {

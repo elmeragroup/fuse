@@ -44,6 +44,30 @@ describe("parseCell", () => {
     expect(Result.isFailure(result) ? result.failure.message : undefined).toBe(`${key}: ${reason}`);
   });
 
+  // A set that gained `width` after a file held it keeps its old keys for the first value (W5-P2), so
+  // a key without the axis reads it at that value, and a key with it at the value it names.
+  it("reads an axis the set added later at its first value where the key leaves it out", () => {
+    const grown = {
+      ...CHIP,
+      addedAxes: new Set(["width"]),
+      axes: [{ name: "width", values: ["hug", "fill"] }, ...CHIP.axes],
+    };
+    expect(
+      ["chip/tone=loud,state=hover", "chip/width=fill,tone=loud,state=hover"].map(
+        (key) => Result.getOrThrow(parseCell(key, [grown])).cell
+      )
+    ).toEqual([
+      { width: "hug", tone: "loud", state: "hover" },
+      { width: "fill", tone: "loud", state: "hover" },
+    ]);
+    expect(
+      [
+        { width: "hug", tone: "loud", state: "hover" },
+        { width: "fill", tone: "loud", state: "hover" },
+      ].map((cell) => variantKey(grown, cell))
+    ).toEqual(["chip/tone=loud,state=hover", "chip/width=fill,tone=loud,state=hover"]);
+  });
+
   // Unit under test: parseCell, the reader. Oracle: variantKey, the writer that names every
   // variant the plugin builds, over each cell the kit's preview frames place.
   it("reads back every key the kit's preview frames write", () => {

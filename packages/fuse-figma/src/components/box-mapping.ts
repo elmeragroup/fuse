@@ -6,8 +6,15 @@
  * assembles a set from the root of each cell.
  */
 
-import { negativeRowSpacing, orderModified, readFlow, settleFlow, stretchedLayer } from "./box-flow";
-import type { Flow } from "./box-flow";
+import {
+  negativeRowSpacing,
+  orderModified,
+  readFlow,
+  readSpaceBetween,
+  settleFlow,
+  stretchedLayer,
+} from "./box-flow";
+import type { Flow, UnspacedReason } from "./box-flow";
 import { describeColor, readPaint } from "./box-paint";
 import type { BoxPaint } from "./box-paint";
 import {
@@ -20,8 +27,10 @@ import {
   readGrowth,
   readSizing,
   roomInside,
+  selfStretchedRoom,
   UNREAD_SHARE,
   unstretched,
+  viewportRoom,
 } from "./box-sizing";
 import type { Holder, Room, RowShare } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
@@ -44,7 +53,10 @@ import {
   readColor,
   readNumber,
 } from "./css-values";
+import type { Viewport } from "./css-values";
 import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
+import { fixedPlace, placeCentredFixed, refuseFixedPlace } from "./fixed-placement";
+import { joinFlushLayers } from "./flush-layers";
 import { readBleed, sectioned } from "./full-bleed";
 import { holdsWidthRow, namedMinimum, rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
 import type { CascadedInstance, InstanceParts } from "./instance-parts";
@@ -198,19 +210,24 @@ function readDisplay(
           ["list-item"],
           "a vertical auto layout, its block-level parts stacked down it as in a block box, since Tailwind preflight's `list-style: none` on the list leaves the item no marker"
         )
-      : display === "block" && (layers.length === 0 || ownText || stacked)
+      : display === "inline-block" && ownText
         ? literalLayout(
-            ["block"],
-            stacked
-              ? "a vertical auto layout, its block-level parts stacked down it, each as wide as the box"
-              : ownText
-                ? "a block box that sets its own text in lines"
-                : "a frame with no layers to lay out"
+            ["inline-block"],
+            "an inline-block that holds only its own text, which it lays out inside as a block box does (CSS Display 3 §2.1), as an `<input>` holds its value"
           )
-        : literalLayout(
-            ["inline-flex", "flex"],
-            layout.direction === "VERTICAL" ? "a vertical auto layout" : "a horizontal auto layout"
-          );
+        : display === "block" && (layers.length === 0 || ownText || stacked)
+          ? literalLayout(
+              ["block"],
+              stacked
+                ? "a vertical auto layout, its block-level parts stacked down it, each as wide as the box"
+                : ownText
+                  ? "a block box that sets its own text in lines"
+                  : "a frame with no layers to lay out"
+            )
+          : literalLayout(
+              ["inline-flex", "flex"],
+              layout.direction === "VERTICAL" ? "a vertical auto layout" : "a horizontal auto layout"
+            );
   reader.read("display", flow.map, flow.describe, lays);
   return display === "block" && ownText;
 }
@@ -277,6 +294,12 @@ export type MapScope = {
   readonly clipsAround?: true;
   /** Whether the box is a flex item in a row, where a negative margin across can fold. Absent for a root. */
   readonly inFlexRow?: true;
+  /**
+   * The viewport the set's root is fixed in, as its definition declares it, which an instance part
+   * fixed in the same viewport takes as its containing block in place. Absent for a root that declares
+   * none.
+   */
+  readonly viewport?: Viewport;
 };
 
 /** A box's paddings across, which a part that fills it spans inside. */
@@ -490,7 +513,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   };
   const growing = readGrowth(
     holder,
-    flowing.map((part) => part.cascade.style)
+    flowing.map((part) => part.cascade.style),
+    box.underMaxHeight
   );
   // An absolute part that ends the row draws in flow there where the row's end padding keeps its room.
   const last = shown.at(-1);
@@ -508,7 +532,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     )
       ? last.cascade.style
       : undefined;
-  readWraps(holder, growing);
+  readWraps(holder, growing, box.fitsOneLine);
   const flush = SIDE_PADDINGS.every((property) => evaluateLength(reader.resolved(property) ?? "0px") === 0);
   const { clipsAround: _parent, inFlexRow: _row, ...own } = scope;
   const clipped: MapScope = clips && flush ? { ...own, clipsAround: true } : own;
@@ -528,9 +552,21 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       const room = rowRoom(inside, across?.[index], minimum);
       return index === growing ? growingRoom(holder, layerIndex(index), room) : room;
     };
-    const room = index === -1 ? absoluteRoom(holder) : lessMargins(inFlow(), part.cascade.style);
+    const room =
+      index === -1
+        ? absoluteRoom(holder)
+        : selfStretchedRoom(holder, part.cascade.style, lessMargins(inFlow(), part.cascade.style));
     const styles = flowing.map((each) => each.cascade.style);
-    return mapPart(part, room, layout, partScope, layout.blocks && adjoinsMargin(styles, index));
+    return mapPart(
+      part,
+      room,
+      layout,
+      partScope,
+      layout.blocks && adjoinsMargin(styles, index),
+      reader,
+      // A fixed part sits out of the flow, so it is first where no part shows before it.
+      shown.indexOf(part) === 0
+    );
   });
   const parts = settledParts(reader, flow, mapped, scope);
   const missing = unstretched(
@@ -550,6 +586,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       clamp,
       variant,
       path: [...cascade.path, shown.key],
+      fitsOneLine: box.fitsOneLine,
     };
     // A TEXT value gave the label other characters in place, so its layout follows its variant's.
     return shown === box.label || box.label === undefined
@@ -649,6 +686,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       layout,
       layers: holder.layers.length,
       size: { width, stroke: paint.stroke, paddingLeft, paddingRight },
+      positionedBy: box.positionedBy,
     },
     parts,
     endInFlow
@@ -667,13 +705,15 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     spaced ??
     (layout.oneColumnGrid === true ? number("row-gap", "itemSpacing") : undefined) ??
     number("gap", "itemSpacing") ??
+    // A row spaces its layers by `column-gap` (CSS Box Alignment 3 §8.1), as `gap-x-4` does.
+    (layout.flex && layout.direction === "HORIZONTAL" ? number("column-gap", "itemSpacing") : undefined) ??
     ZERO;
   const counterAlign =
     placed?.counterAlign ?? (textBlock ? blockLineAlign(layout, sizing, limits) : layout.counterAlign);
   // The parts before the label sit first, sectioned where separators cancel the box's padding, and
   // the parts after the label last.
   const first = placement.layers.slice(0, before.length);
-  const children: readonly ChildLayerSpec[] = [
+  const laid: readonly ChildLayerSpec[] = [
     ...(sections === undefined
       ? first
       : sectioned(reader, first, sections, {
@@ -686,12 +726,23 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     ...after,
     ...placement.layers.slice(before.length),
   ];
+  const children = joinFlushLayers(
+    reader,
+    layout,
+    flowing.map((part) => ({ key: part.key, style: part.cascade.style })),
+    laid,
+    counterAlign
+  );
   reader.read(
     "aspect-ratio",
     (value) => (width !== undefined && height !== undefined ? value : undefined),
     () => ({ outcome: "dropped", detail: "both sides are fixed, so the ratio sizes neither" }),
     []
   );
+  const unspaced = spacesNothingOut(layout, placement.primaryAlign, children);
+  if (layout.spaceBetweenUnread === true) {
+    readSpaceBetween(reader, unspaced);
+  }
   const mappedBox: BoxSpec = {
     direction: layout.direction,
     sizing,
@@ -705,7 +756,9 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     // A native control's placement of its label wins over the box's own alignment.
     primaryAlign:
       placed?.primaryAlign ??
-      (packsAtStart || leavesRoomAtEnd(layout, sizing, placement.primaryAlign, children)
+      (packsAtStart ||
+      leavesRoomAtEnd(layout, sizing, placement.primaryAlign, children) ||
+      unspaced !== undefined
         ? "MIN"
         : placement.primaryAlign),
     counterAlign,
@@ -756,6 +809,43 @@ function leavesRoomAtEnd(
 }
 
 /**
+ * Whether a flex box that spaces its layers out between its ends has no free space to share out
+ * between two layers, so `space-between` packs its layers at the start with the gap between them
+ * (CSS Box Alignment 3 §5.3, §8):
+ *
+ * - It holds one layer in its flow, which `space-between` places as `flex-start` does, as Select
+ *   field's heading row holds its lone label.
+ * - It holds a layer that fills it along its direction, which takes the free space (CSS Flexbox 1
+ *   §9.7), as Select field's filling trigger packs its growing value and its caret. Figma's
+ *   SPACE_BETWEEN would drop the gap beside a filling layer (PV), so the box draws MIN with its gap.
+ *
+ * A layer a BOOLEAN hides stays in the flow here, since the property shows it again, and SPACE_BETWEEN
+ * packs the lone visible layer at the start while it is hidden (W5-P1).
+ *
+ * @param layout - The box's layout.
+ * @param aligned - The alignment the box's placement gives it.
+ * @param children - The box's layers.
+ * @returns Why the box packs its layers at its start, or undefined where it spaces them out.
+ */
+function spacesNothingOut(
+  layout: Layout,
+  aligned: PrimaryAlignSpec,
+  children: readonly ChildLayerSpec[]
+): UnspacedReason | undefined {
+  if (!layout.flex || aligned !== "SPACE_BETWEEN") {
+    return undefined;
+  }
+  const along = layout.direction === "HORIZONTAL" ? "horizontal" : "vertical";
+  const flowing = children.filter((child) => !outOfLayout(child));
+  if (flowing.length < 2) {
+    return "lone";
+  }
+  return flowing.some((child) => child.kind !== "icon" && child.sizing[along].kind === "fill")
+    ? "grows"
+    : undefined;
+}
+
+/**
  * Read a flex row's `flex-wrap` where the row never breaks a line. A wrapping row breaks a line only
  * where its layers overflow it (CSS Flexbox 1 §9.3), while a Figma row never wraps.
  *
@@ -764,28 +854,50 @@ function leavesRoomAtEnd(
  * - A row that hugs its width with nothing bounding the width CSS gives it lays its layers out on one
  *   line, so it never runs out of room, as {@link hugsUncapped} says.
  *
- * Elsewhere it stays unread, so it lands unmapped.
+ * - A row its definition measured to fit its layers on one line in every cell drops it with that
+ *   measurement, as {@link BoxDefinition.fitsOneLine} says.
+ *
+ * Elsewhere it stays unread, so it lands unmapped. Where it drops, so does the `row-gap` beside it,
+ * which spaces lines the row never breaks into.
  *
  * @param holder - The box.
  * @param growing - The place of the box's layer that grows, as `readGrowth` found it.
+ * @param fitsOneLine - The measurement that the row's layers fit on one line, or undefined.
  */
-function readWraps(holder: Holder, growing: number | undefined): void {
+function readWraps(holder: Holder, growing: number | undefined, fitsOneLine: string | undefined): void {
   const { style, layout } = holder;
-  if (!layout.flex || layout.direction !== "HORIZONTAL" || (growing === undefined && !hugsUncapped(holder))) {
+  if (!layout.flex || layout.direction !== "HORIZONTAL") {
     return;
   }
+  const detail =
+    growing === undefined && !hugsUncapped(holder)
+      ? fitsOneLine
+      : growing === undefined
+        ? "the row hugs its layers and nothing bounds the width CSS gives it, so it never runs out of room to break a line, and a Figma row never wraps"
+        : "the one layer that grows takes what the row's other layers leave, so the row breaks no line until they overflow it, and a Figma row never wraps";
+  if (detail === undefined) {
+    return;
+  }
+  const wraps = style.has("flex-wrap");
   style.read(
     "flex-wrap",
     (value) => (normalizeCss(value) === "wrap" ? value : undefined),
-    () => ({
-      outcome: "dropped",
-      detail:
-        growing === undefined
-          ? "the row hugs its layers and nothing bounds the width CSS gives it, so it never runs out of room to break a line, and a Figma row never wraps"
-          : "the one layer that grows takes what the row's other layers leave, so the row breaks no line until they overflow it, and a Figma row never wraps",
-    }),
+    () => ({ outcome: "dropped", detail }),
     []
   );
+  // `row-gap` spaces the lines a wrapping row breaks into (CSS Box Alignment 3 §8.1), so a row on one
+  // line leaves it nothing to space.
+  if (wraps) {
+    style.read(
+      "row-gap",
+      (value) => value,
+      () => ({
+        outcome: "dropped",
+        detail: `the row sets its layers on one line, as ${detail}, so no gap between lines shows`,
+      }),
+      []
+    );
+  }
 }
 
 /** A width a box's blocks fill, as a popup's rows fill it where `rowsAcross` sizes them. */
@@ -858,6 +970,8 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
  * @param scope - The cell, the build context, the parts that scale and the instance parts.
  * @param collapses - Whether a vertical margin of the part adjoins another margin in a block box, as
  *   {@link adjoinsMargin} says.
+ * @param parent - The box's style, which a fixed instance part's place reads.
+ * @param first - Whether the part is the box's first part.
  * @returns The part as mapped.
  */
 function mapPart(
@@ -865,12 +979,28 @@ function mapPart(
   room: Room,
   layout: Layout,
   scope: MapScope,
-  collapses: boolean
+  collapses: boolean,
+  parent: LayerStyle,
+  first: boolean
 ): MappedPart {
   // The row that sets a popup's width keeps the popup's minimum, which no class of its own sets.
   const minimum = namedMinimum(part.kind === "instance" ? part.visit.part : part.child, scope.cell, room);
   if (part.kind === "instance") {
-    const { layer: built, painted } = scope.instances.map(part, room);
+    const fixed = fixedPlace(
+      { own: part.visit.part.of.viewport, composite: scope.viewport, style: part.cascade.style },
+      layout,
+      parent,
+      first
+    );
+    const { layer: built, painted } = scope.instances.map(
+      part,
+      fixed?._tag === "placed" ? viewportRoom(part.cascade.style, fixed.viewport) : room
+    );
+    if (fixed?._tag === "placed") {
+      placeCentredFixed(part.cascade.style, fixed.at);
+    } else if (fixed?._tag === "refused") {
+      refuseFixedPlace(part.cascade.style);
+    }
     const drawn = minimum === undefined ? built : { ...built, minWidth: minimum };
     const { layer, instance } = wrapInstanceMargins(
       part.cascade.style,

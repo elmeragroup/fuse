@@ -209,7 +209,7 @@ export class InstanceParts {
     }
     const record = this.#recordOf(part, set);
     const given = new Set(splitClasses(part.classesFor?.(outer) ?? ""));
-    const merged = splitClasses(cn(of.classesFor(cell), [...given].join(" ")));
+    const merged = splitClasses(cn(part.ownClassesFor?.(cell) ?? of.classesFor(cell), [...given].join(" ")));
     const values = withGiven(part.properties?.(outer) ?? {}, this.#given, part.key);
     checkNested(values.nested ?? [], part.of, part.key);
     const innerRows: Row[] = [];
@@ -286,7 +286,8 @@ export class InstanceParts {
     const root: ComponentRootSpec = {
       name: part.of.slot,
       ...mapBox(part.of, cascade, scope, room),
-      clips: true,
+      // The inner root clips in place as its own set draws it.
+      clips: part.of.rootOverflow !== "visible",
     };
     const diff = diffInstance(root, variant.root);
     visit.diffs.push(diff);
@@ -361,7 +362,10 @@ export class InstanceParts {
       return known;
     }
     const made: PartRecord = {
-      meaningOf: part.facts === undefined ? makeStateTable(part.of) : withInPlaceFacts(part.of, part.facts),
+      meaningOf:
+        part.facts === undefined
+          ? makeStateTable(part.of)
+          : withInPlaceFacts(part.of, part.facts, part.stamps),
       logs: new CascadeLogs(),
       passed: { origin: { record: this.#emit }, logs: new CascadeLogs() },
       scaling: partsThatScale(

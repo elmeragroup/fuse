@@ -1,43 +1,21 @@
 /**
- * Turn a recipe into a Figma component set. For every cell of the variant matrix the builder
- * asks `cascade.ts` for the computed style of the root, each part and each icon, and
- * `box-mapping.ts` maps it onto Figma fields. Every declaration it reads lands in the coverage
- * table with what became of it. This module holds the definition types and assembles the set.
+ * The component definition: what a kit definition says about a recipe's component set, its axes,
+ * parts, instances, labels, icons and facts, and what a build takes and returns. It also holds the
+ * pure utilities over definitions, such as the variant matrix and the classes a definition uses.
+ * `component-builder.ts` turns a definition into a Figma component set.
  */
 
-import { mapBox, NO_VALUES, partName } from "./box-mapping";
-import type { MapScope } from "./box-mapping";
-import { readBackdrop } from "./box-paint";
-import { rootRoom } from "./box-sizing";
-import { KitUnmappable } from "./build-errors";
-import { SetCascade, splitClasses } from "./cascade";
-import type { LayerStyle } from "./cascade";
-import { clippedShadows } from "./clipped-shadows";
-import type { ClippedShadow } from "./clipped-shadows";
+import { splitClasses } from "./cascade";
 import type { CoverageRow } from "./coverage";
-import { normalizeCss } from "./css-values";
-import type { ModeView, VariableIndex } from "./css-values";
-import { allPartsOf, framePartsOf, instancePartsOf, partsOf, renderedSlots } from "./definition-parts";
-import { checkInstanceOrder, InstanceParts } from "./instance-parts";
-import type { InnerSet } from "./instance-parts";
-import { iconKey, walkLayers } from "./kit-spec";
-import type {
-  AxisSpec,
-  BooleanPropertySpec,
-  ComponentRootSpec,
-  ComponentSetSpec,
-  InstanceLayerSpec,
-  ShadowSpec,
-  SwapPropertySpec,
-  TextPropertySpec,
-  VariantSpec,
-} from "./kit-spec";
-import { booleanPropertiesOf, refusePresenceReads } from "./optional-parts";
-import type { OptionalPart } from "./optional-parts";
-import { partsThatScale, placeRoot } from "./placement";
-import { PaintedInstances } from "./stacking";
-import { makeStateTable } from "./state-table";
+import type { ModeView, VariableIndex, Viewport } from "./css-values";
+import type { AxisSpec, BooleanPropertySpec, ComponentSetSpec, SwapPropertySpec } from "./kit-spec";
 import type { CompiledUtilities } from "./utility-css";
+
+/**
+ * A preview length: its pixels in the file's default mode, and its CSS length where it changes by
+ * mode, which a whole `100%` then binds as that length binds.
+ */
+export type PreviewLength = { readonly pixels: number; readonly css?: string | undefined };
 
 /** One cell of a variant matrix: a value for each axis. */
 export type Cell = Readonly<Record<string, string>>;
@@ -228,6 +206,32 @@ export type BoxDefinition = {
    * `<span>` or an `<a>` is.
    */
   readonly elementDefaults?: readonly OuterDeclaration[];
+  /**
+   * The positioned element around the box that is the containing block of the box's absolute parts,
+   * where the box's own classes leave it static, and that has the box's border box, as Base UI's
+   * tooltip positioner holds its popup. The placement of an absolute part reads the box as its
+   * containing block there. Undefined for a box whose own `position` decides.
+   */
+  readonly positionedBy?: string;
+  /**
+   * Why a wrapping row lays its layers out on one line in every cell, for a row whose `flex-wrap:
+   * wrap` no rule reads, since what fits depends on its text: a measurement, as Chromium measured
+   * Radio group's three horizontal rows end at 201px dense and 217px comfortable in its 384px.
+   * Figma's row never wraps, so the row draws as one line, and `figma:compare` shows a cell where
+   * the measurement no longer holds. It also says a hugging box's own wrapping label fits on one line
+   * under a `max-width` the build cannot read in pixels as the label's room, as Tooltip's popup holds
+   * its text far inside 320px less a density padding, so the label hugs on one line. Undefined for a
+   * box whose wrapping a rule reads or that leaves it unmapped.
+   */
+  readonly fitsOneLine?: string;
+  /**
+   * Why the box's content stays under its `max-height` in every cell, a measurement, as Chromium
+   * measured the Command palette's rows, input and footer 289px dense and 341px comfortable under its
+   * 380px cap. A box that hugs its height under a cap it never reaches is as tall as its layers, so a
+   * layer that grows, as the palette's `flex-1` list, has no room to grow into. Undefined for a box
+   * whose growth a rule reads or that leaves it unmapped.
+   */
+  readonly underMaxHeight?: string;
 };
 
 /**
@@ -267,6 +271,13 @@ export type ElementSelector = {
 export type InlineDeclaration = {
   readonly property: string;
   readonly value: string;
+  /**
+   * Why the markup's value is one the component computes from the layout at run time, which `value`
+   * stands for in the kit's cells, as Base UI writes a Tooltip arrow's `left` from the trigger's
+   * centre. The markup check then holds the property present with any value. Undefined for a value
+   * the markup writes as it is.
+   */
+  readonly measured?: string;
 };
 
 /**
@@ -378,11 +389,26 @@ export type InstanceDefinition = {
    */
   readonly slot?: string;
   /**
+   * The element the outer component renders the inner root as, where it differs from the one the
+   * inner set's `element` names, as Number field's decrease stepper is the `<button
+   * aria-label="Decrease">` where the stepper set names its increase stepper. `figma:compare`'s markup
+   * check places the instance there. Undefined where the inner set's own element names it.
+   */
+  readonly element?: ElementSelector;
+  /**
    * The classes the outer component passes the inner one as its `className`, which the inner
    * component merges after its own with `cn`, as Alert passes its tone's `button` slot. Undefined for
    * none.
    */
   readonly classesFor?: (outer: Cell) => string;
+  /**
+   * The classes the inner root carries of its own in place of the inner set's, for an outer component
+   * that renders the inner markup without the consumer classes the inner set's cells pass, as
+   * Toolbar's separator draws Separator's hairline with none of the lengths the Separator set takes
+   * from its docs demos. The outer classes merge after them as after the set's. Undefined where the
+   * inner set's own classes hold.
+   */
+  readonly ownClassesFor?: (inner: Cell) => string;
   /**
    * The values the outer cell gives the inner set's properties, undefined where every property keeps
    * its default.
@@ -426,12 +452,26 @@ export type InstanceDefinition = {
    * the diff carries what they paint as overrides. Undefined for none.
    */
   readonly facts?: ReadonlyMap<string, (cell: Cell) => boolean>;
+  /**
+   * The facts among `facts` that name a variant the inner set renders through one of its states,
+   * which the outer component stamps on the inner root outside that state, as Base UI marks a
+   * disabled toolbar button `aria-disabled`, which the Button set renders only in its pending cell.
+   * The in-place cascade reads them over that meaning, and the diff carries what they paint as
+   * overrides. Undefined for none.
+   */
+  readonly stamps?: ReadonlySet<string>;
 };
 
 /** A component the builder can turn into a component set. Its own box is the root. */
 export type ComponentDefinition = BoxDefinition & {
   readonly key: string;
   readonly name: string;
+  /**
+   * The declarations of the root's `style` attribute in a cell, in the attribute's order, which
+   * cascade above every class, as a part's {@link PartDefinition.styleFor} do, as ToggleGroup writes
+   * `--gap` from its `spacing`. Undefined for a root whose markup carries no `style`.
+   */
+  readonly styleFor?: (cell: Cell) => readonly InlineDeclaration[];
   /** The root layer's name, and the root element's `data-slot` unless `element` names the element. */
   readonly slot: string;
   /**
@@ -463,12 +503,26 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly statePart?: string;
   /**
+   * The element of the part that takes the set's `state` axis, for such a part that carries no
+   * `data-slot`, as Number field's `<input>` does, named as {@link ComponentDefinition.element} names
+   * a root. `figma:compare` forces hover and focus on it, and its markup check reads the state's
+   * attributes there. A definition names it or `statePart`, not both.
+   */
+  readonly statePartElement?: ElementSelector;
+  /**
    * The `data-slot` of the sibling before the root whose state the set's `state` axis follows, for a
    * root that reads it through `peer-*` variants, as a Sidebar menu badge reads its menu button's
    * hover through `peer-hover/menu-button:`. `figma:compare` forces hover and focus on that sibling.
    * A definition names it or `statePart`, not both. Undefined for a root that takes its states itself.
    */
   readonly statePeer?: string;
+  /**
+   * The `data-slot` of the part a keyboard focuses, for a root a pointer hovers that takes focus only
+   * through a part inside it, which it reads through `has-focus-visible:`, as File upload's dropzone
+   * holds its trigger. `figma:compare` forces a focus cell's focus on that part and a hover cell's
+   * hover on the root. Undefined for a root whose focus cells force focus where they force hover.
+   */
+  readonly focusPart?: string;
   /**
    * The width in pixels the root's container gives it, which a root's percentage width takes and a
    * block-level root with no width fills, as the Figma preview and the compare host draw it. A
@@ -477,16 +531,37 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly previewWidth?: number;
   /**
+   * The width each cell's container gives the root, for a set whose cells differ, as a Radio row fills
+   * the width of a vertical group and hugs in a horizontal one, where its container gives it none:
+   * undefined for such a cell. A definition names it or {@link ComponentDefinition.previewWidth}, not
+   * both.
+   */
+  readonly previewWidthFor?: (cell: Cell) => number | undefined;
+  /**
    * The height in pixels the root's containing block gives it, which a root's percentage height
    * takes, as the Sidebar demo frame's `h-[28rem]` gives the container's `h-full`. Without it, a
-   * root's percentage height stays unmapped. The compare renderer draws the same block around it.
+   * root's percentage height stays unmapped. The compare renderer draws the same block around it. A
+   * height that changes by density names its CSS length beside its dense pixels, as a Number field
+   * stepper's field box content height, `calc(var(--control-h-md) - 2px)`, so the root's `100%` binds
+   * what that length binds.
    */
-  readonly previewHeight?: number;
+  readonly previewHeight?: PreviewLength;
   /**
-   * `visible` for a composite root that paints nothing of its own and holds layers whose shadows
-   * reach past it, as the open Select's popup casts its shadow below and beside the column that holds
-   * it, so the root leaves them unclipped. Undefined for every other root, which clips, as a spread
-   * ring on the root needs (PR2). The build stops on a root that is `visible` and paints.
+   * The viewport a `position: fixed` root sits in, in pixels, as a Dialog's popup, a Command palette
+   * and an overlay's scrim sit in the browser window. A fixed box's containing block is the viewport
+   * (CSS 2.1 §10.1), so the root's percentages take it, its `dvh` and `dvw` read against it (CSS
+   * Values 4 §6.1.2), and `inset-0` with no size of its own makes it the viewport's size (CSS 2.1
+   * §10.3.7, §10.6.4). The compare renderer draws the same viewport around the root. Undefined for a
+   * root that sits in none, whose fixed lengths that read one stay unmapped.
+   */
+  readonly viewport?: Viewport;
+  /**
+   * `visible` for a root whose layers reach past it, as the open Select's popup casts its shadow
+   * below and beside the column that holds it, and a Tooltip's arrow hangs below its popup, so the
+   * root leaves them unclipped. Undefined for every other root, which clips, as a spread ring on the
+   * root needs, since Figma draws a frame's own shadow spread only where the frame clips (PR2). The
+   * build stops on a root that is `visible` and casts a shadow; a fill or a stroke draws the same
+   * either way.
    */
   readonly rootOverflow?: "visible";
   /**
@@ -506,6 +581,15 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly ancestorsFor?: (cell: Cell) => readonly AncestorDefinition[];
   readonly axes: readonly AxisSpec[];
+  /**
+   * The axes added to the set after a file first held it, as Select trigger gained `width`. Each
+   * leaves its first value out of the variant key, so the variants the set held before keep their
+   * keys and the plugin renames them in place to name the new axis. A real file kept each renamed
+   * variant's id and a designer's instance of it linked, reading the new axis at its first value
+   * (W5-P2), where a new key would delete the variant and orphan those instances. The variant name
+   * still lists every axis. Undefined for a set whose axes it has held from the start.
+   */
+  readonly addedAxes?: ReadonlySet<string>;
   readonly columnAxis: string;
   /**
    * The variants each of the component's own states renders, beyond the ones `state-table.ts`
@@ -608,202 +692,38 @@ export type BuiltComponent = {
 };
 
 /**
- * Build the component sets of a list of definitions in its order, each with the sets before it at
- * hand, so a set builds after the sets its instance parts show.
- *
- * @template Entry - What the list holds for each set, its definition among it.
- * @param entries - The definitions, each set after the sets it holds instances of.
- * @param context - The compiled utilities and the synced variables.
- * @returns Each entry with its built set, in the list's order.
- * @throws When an instance part shows a set the list puts later or lacks, or the instance parts form
- *   a cycle, as {@link checkInstanceOrder} says, or a set does not build.
- */
-export function buildSetsInOrder<Entry extends { readonly definition: ComponentDefinition }>(
-  entries: readonly Entry[],
-  context: BuildContext
-): readonly (readonly [Entry, BuiltComponent])[] {
-  checkInstanceOrder(entries.map(({ definition }) => definition));
-  const built = new Map<string, InnerSet>();
-  return entries.map((entry) => {
-    const set = buildComponentSet(entry.definition, context, built);
-    built.set(entry.definition.key, set.componentSet);
-    return [entry, set] as const;
-  });
-}
-
-/**
- * Build the component set for every cell of the definition's matrix.
+ * The width a cell's container gives the root, as {@link ComponentDefinition.previewWidthFor} or
+ * {@link ComponentDefinition.previewWidth} says.
  *
  * @param definition - The component.
- * @param context - The compiled utilities and the synced variables.
- * @param inner - The sets built before this one, by key, which its instance parts show.
- * @returns The component set, its coverage and the font styles its text uses.
- * @throws When an instance part shows a set `inner` lacks, or a cell does not build.
+ * @param cell - The cell.
+ * @returns The width in pixels, or undefined where the container gives the root none.
  */
-export function buildComponentSet(
-  definition: ComponentDefinition,
-  context: BuildContext,
-  inner: ReadonlyMap<string, InnerSet> = new Map()
-): BuiltComponent {
-  const coverage = new Map<string, CoverageRow>();
-  const fontStyles = new Set<string>();
-  const record = (row: Omit<CoverageRow, "component">): void => {
-    const full = { component: definition.name, ...row };
-    coverage.set(
-      JSON.stringify([full.part, full.className, full.property, full.value, full.outcome, full.detail]),
-      full
-    );
-  };
-  const cells = matrixCells(definition.axes);
-  const optional = optionalParts(definition, cells, undefined);
-  const booleans = booleanPropertiesOf(definition.name, optional);
-  // The inner sets list their own optional parts' properties, but a class of this set can read them.
-  const presence = [...optional, ...innerOptionalParts(definition, cells, [], new Set([definition]))];
-  if (presence.length > 0) {
-    refusePresenceReads(
-      definition.name,
-      presence,
-      new Set(definitionClasses(definition)),
-      context.compiled.rulesByClass
-    );
-  }
-  const cascade = new SetCascade(makeStateTable(definition), context, record);
-  const instances = new InstanceParts(context, inner, record);
-  const scaling = partsThatScale(partsOf(definition), cells, context.compiled);
-  const variants = cells.map((cell): VariantSpec => {
-    const cellCascade = cascade.cell(cell);
-    const scope: MapScope = {
-      variant: variantKey(definition, cell),
-      cell,
-      context,
-      scaling,
-      instances,
-      values: NO_VALUES,
-      painted: new PaintedInstances(),
-      translates: new WeakMap(),
-    };
-    const rootCascade = cellCascade.root(definition.classesFor(cell), definition.slot, {
-      declarations: definition.inheritedFor?.(cell) ?? [],
-      ancestors: definition.ancestorsFor?.(cell) ?? [],
-      defaults: definition.elementDefaults ?? [],
-    });
-    // A root clips its content, because Figma draws a drop shadow's spread only from a frame
-    // that clips, and a focus ring is a spread shadow. The first run on a real file stored the
-    // ring's 2px spread as 0 on a root that did not clip. Clipping costs a root nothing, since
-    // every child sits inside its padding, except a child's shadow at the root's edge, which a
-    // root that paints nothing leaves unclipped through `rootOverflow`.
-    const room = rootRoom(
-      { width: definition.previewWidth, height: definition.previewHeight },
-      rootCascade.style,
-      context.variables
-    );
-    const box = mapBox(definition, rootCascade, scope, room);
-    const behind = box.fill === undefined ? cellCascade.backdrop() : undefined;
-    const backdrop = behind && readBackdrop(behind, rootCascade.style, context.variables);
-    const mapped = backdrop === undefined ? box : { ...box, fill: backdrop };
-    if (
-      definition.rootOverflow === "visible" &&
-      (mapped.fill !== undefined || mapped.stroke !== undefined || mapped.shadows.length > 0)
-    ) {
-      throw new KitUnmappable({
-        message: `${definition.name}: a root that leaves its layers unclipped must paint nothing, and ${variantKey(definition, cell)} paints`,
-      });
-    }
-    const root: ComponentRootSpec = {
-      name: definition.slot,
-      ...mapped,
-      clips: definition.rootOverflow !== "visible",
-    };
-    placeRoot(rootCascade.style, room, context.variables, root.children);
-    if (root.clips && !clipsInCss(rootCascade.style)) {
-      const shadowsOf = (layer: InstanceLayerSpec): readonly ShadowSpec[] =>
-        rootEffects(layer) ??
-        inner.get(layer.componentSet)?.variants.find((variant) => variant.key === layer.variant)?.root
-          .shadows ??
-        [];
-      for (const clipped of clippedShadows(root, shadowsOf, context.variables, context.modes ?? [])) {
-        record({
-          part: clipped.part,
-          className: "",
-          property: "effects",
-          value: `${clipped.reach}px`,
-          outcome: "dropped",
-          detail: clippedDetail(variantKey(definition, cell), clipped),
-        });
-      }
-    }
-    cellCascade.settle();
-    instances.settle();
-    for (const layer of walkLayers(root)) {
-      if (layer.kind === "text") {
-        fontStyles.add(layer.fontStyle);
-      }
-    }
-    return { key: variantKey(definition, cell), properties: cell, root };
-  });
-  cascade.finish();
-  instances.finish();
-  const componentSet: BuiltComponent["componentSet"] = {
-    key: definition.key,
-    name: definition.name,
-    axes: definition.axes,
-    columnAxis: definition.columnAxis,
-    textProperties: textProperties(definition),
-    swapProperties: definition.swapProperties.map((property) => ({
-      name: property.name,
-      defaultIcon: iconKey(property.defaultIcon),
-    })),
-    variants,
-  };
-  return {
-    // A set without an optional part leaves the field out, so a set built before it keeps its spec.
-    componentSet: booleans.length === 0 ? componentSet : { ...componentSet, booleanProperties: booleans },
-    coverage: [...coverage.values()],
-    fontStyles: [...fontStyles],
-  };
-}
-
-/** The shadows an instance overrides on its root, or undefined where it draws its variant's own. */
-function rootEffects(layer: InstanceLayerSpec): readonly ShadowSpec[] | undefined {
-  for (const override of layer.overrides ?? []) {
-    if (override.field === "effects" && override.path.length === 0) {
-      return override.shadows;
-    }
-  }
-  return undefined;
-}
-
-/** The `overflow` values that clip a box's content in CSS (CSS Overflow 3 §3). */
-const CSS_CLIPS: ReadonlySet<string> = new Set(["hidden", "clip", "auto", "scroll"]);
-
-/**
- * Whether a box clips its content down in CSS, through `overflow` or `overflow-y`, as Tailwind
- * compiles `overflow-hidden` to the shorthand. A `visible` axis beside one that clips computes to
- * `auto` (CSS Overflow 3 §3), so either one clipping clips both.
- */
-function clipsInCss(style: LayerStyle): boolean {
-  return ["overflow", "overflow-x", "overflow-y"].some((property) =>
-    normalizeCss(style.resolved(property) ?? "")
-      .split(" ")
-      .some((value) => CSS_CLIPS.has(value))
-  );
-}
-
-/** Why a coverage row lists a shadow that reaches past a variant's root, which the root's clip cuts. */
-function clippedDetail(variant: string, { reach, edges, modes }: ClippedShadow): string {
-  const where = modes === undefined ? "" : ` at ${modes.join(" and ")}`;
-  return `in ${variant} the shadow reaches ${reach}px past the root's ${edges}${where}, which CSS paints, since the root does not clip, while the root of every Figma variant clips so it can draw its own ring (PR2)`;
+export function previewWidthIn(
+  definition: Pick<ComponentDefinition, "previewWidth" | "previewWidthFor">,
+  cell: Cell
+): number | undefined {
+  return definition.previewWidthFor === undefined
+    ? definition.previewWidth
+    : definition.previewWidthFor(cell);
 }
 
 /**
- * The key of one variant, such as `button/variant=default,size=sm,state=rest,icon=none`.
+ * The key of one variant, such as `button/variant=default,size=sm,state=rest,icon=none`. An axis the
+ * definition added later is left out at its first value, as `addedAxes` says.
  *
  * @param definition - The component.
  * @param cell - The cell.
  * @returns The key.
  */
-export function variantKey(definition: Pick<ComponentDefinition, "key" | "axes">, cell: Cell): string {
-  return `${definition.key}/${definition.axes.map((axis) => `${axis.name}=${cell[axis.name] ?? ""}`).join(",")}`;
+export function variantKey(
+  definition: Pick<ComponentDefinition, "key" | "axes" | "addedAxes">,
+  cell: Cell
+): string {
+  const keyed = definition.axes.filter(
+    (axis) => definition.addedAxes?.has(axis.name) !== true || cell[axis.name] !== axis.values[0]
+  );
+  return `${definition.key}/${keyed.map((axis) => `${axis.name}=${cell[axis.name] ?? ""}`).join(",")}`;
 }
 
 /**
@@ -838,120 +758,6 @@ function boxClasses(box: BoxDefinition, cell: Cell): readonly string[] {
           : []
         : boxClasses(part, cell)
     ),
-  ];
-}
-
-/**
- * The TEXT properties a set's labels name, each once, in the order the boxes first name them. One
- * property holds one default, so two labels that name it must start with the same characters.
- *
- * @throws When two labels name one property with different characters, naming both labels.
- */
-function textProperties(definition: ComponentDefinition): readonly TextPropertySpec[] {
-  const named = new Map<string, { readonly defaultValue: string; readonly label: string }>();
-  for (const { box, label } of labelsOf(definition, definition.slot)) {
-    if (label.textProperty === undefined) {
-      continue;
-    }
-    const where = `${box} / ${label.name}`;
-    const first = named.get(label.textProperty);
-    if (first === undefined) {
-      named.set(label.textProperty, { defaultValue: label.characters, label: where });
-    } else if (first.defaultValue !== label.characters) {
-      throw new KitUnmappable({
-        message: `${definition.name}: the labels ${first.label} and ${where} both set the ${label.textProperty} property, one starting as "${first.defaultValue}" and one as "${label.characters}". A TEXT property holds one default, so give them one text or a property each.`,
-      });
-    }
-  }
-  return [...named].map(([name, { defaultValue }]) => ({ name, defaultValue }));
-}
-
-/**
- * A definition's optional parts, depth first, each with every `data-slot` that hiding it hides, as the
- * markup renders them in the cells given: its own and those of the elements inside it, through the
- * instances it holds, whose inner roots and parts the DOM holds too.
- *
- * @param definition - The definition.
- * @param cells - Its cells, or the inner cells an instance of it shows.
- * @param inside - The instance that holds the definition's root, for an inner set's parts.
- * @returns The parts.
- */
-function optionalParts(
-  definition: ComponentDefinition,
-  cells: readonly Cell[],
-  inside: OptionalPart["inside"]
-): readonly OptionalPart[] {
-  const parts = allPartsOf(definition).flatMap((part): OptionalPart[] =>
-    part.optional === undefined
-      ? []
-      : [
-          {
-            name: "kind" in part ? part.of.slot : partName(part),
-            property: part.optional,
-            slots: renderedSlots(part, cells),
-            elements: [],
-            inside,
-          },
-        ]
-  );
-  // An icon is an `<svg>` with no slot, listed once by its key however many cells show it.
-  const icons = new Map(
-    [definition, ...partsOf(definition)].flatMap((box) =>
-      cells.flatMap((cell) => box.iconsFor(cell).map((slot) => [slot.key, slot] as const))
-    )
-  );
-  return [
-    ...parts,
-    ...[...icons.values()].flatMap((slot): OptionalPart[] =>
-      slot.optional === undefined
-        ? []
-        : [{ name: slot.name, property: slot.optional, slots: [], elements: ["svg"], inside }]
-    ),
-  ];
-}
-
-/**
- * The optional parts of the inner sets a box's instance parts show, in the inner cells each instance
- * shows, through the instances those sets hold in turn. A definition the walk is already inside adds
- * nothing again.
- *
- * @param box - The definition whose instance parts the walk starts at.
- * @param cells - The cells of the definition, or the inner cells an instance of it shows.
- * @param path - The keys of the instance parts from the set down to the box.
- * @param inside - The definitions the walk is inside.
- * @returns The parts, each with the instance that holds it and its set.
- */
-function innerOptionalParts(
-  box: ComponentDefinition,
-  cells: readonly Cell[],
-  path: readonly string[],
-  inside: ReadonlySet<ComponentDefinition>
-): readonly OptionalPart[] {
-  return instancePartsOf(box).flatMap((part) => {
-    const { of } = part;
-    if (inside.has(of)) {
-      return [];
-    }
-    const shown = cells.filter((cell) => part.shownIn(cell)).map((cell) => part.cell(cell));
-    const keys = [...path, part.key];
-    return [
-      ...optionalParts(of, shown, { instance: keys.join(" / "), set: of.name }),
-      ...innerOptionalParts(of, shown, keys, new Set([...inside, of])),
-    ];
-  });
-}
-
-/**
- * The label of a box and of every frame part below it, depth first, with the layer name of its box.
- * An instance part's labels belong to its inner set.
- */
-function labelsOf(
-  box: BoxDefinition,
-  name: string
-): readonly { readonly box: string; readonly label: LabelDefinition }[] {
-  return [
-    ...(box.label === undefined ? [] : [{ box: name, label: box.label }]),
-    ...framePartsOf(box).flatMap((part) => labelsOf(part, partName(part))),
   ];
 }
 

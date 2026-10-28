@@ -430,7 +430,7 @@ describe("a border on some sides", () => {
 describe("a root's 100% height", () => {
   it("takes the preview height the definition names", async () => {
     const { variant, coverage } = await buildFixture(
-      chip("flex flex-col w-[256px] h-full", { previewHeight: 448 })
+      chip("flex flex-col w-[256px] h-full", { previewHeight: { pixels: 448 } })
     );
     expect(variant?.root.sizing.vertical).toEqual(fixed(literal(448)));
     expect(rowsOf(coverage, "h-full")).toEqual([

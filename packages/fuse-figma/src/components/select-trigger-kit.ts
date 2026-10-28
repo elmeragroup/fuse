@@ -1,18 +1,24 @@
 /**
- * Select's trigger, as one component set: both sizes in four states, holding the placeholder or a
- * value, closed and open, 32 cells. The root is Base UI's `<button data-slot="select-trigger">`, a
+ * Select's trigger, as one component set: hugging its value or filling its container, both sizes in
+ * four states, holding the placeholder or a value, closed and open, 64 cells. The root is Base UI's `<button data-slot="select-trigger">`, a
  * native control, with the `trigger` slot of `selectTriggerVariants`. The popup and its rows wait
  * for the overlay sets.
  *
  * - The box draws the field box chrome: the field corner `radius-field-box`, a 1px `input` border,
- *   a `card` fill and `shadow-xs`, at the size's control height, inset and gap. It hugs the value and
- *   the caret, so its `justify-between` has no room to spread and packs them at its start, the gap
- *   between them.
+ *   a `card` fill and `shadow-xs`, at the size's control height, inset and gap.
+ * - `width=hug` is the recipe's `w-fit`: the trigger hugs the value and the caret, so its
+ *   `justify-between` has no room to spread and packs them at its start, the gap between them.
+ *   `width=fill` merges `w-full`, as SelectField passes it: the trigger fills the 384px preview width
+ *   the kit gives a field box, the value's `flex-1` grows into the room, and the caret sits at the
+ *   end. A composite that fills its trigger, such as Select field, shows this variant, since an
+ *   instance cannot change its inner root's packing or its parts' sizing. The set gained the axis after
+ *   its first release, so a hugging cell keeps the key it had, and the plugin renames the variant in
+ *   place (W5-P2).
  * - The value is `Select.Value`'s `<span data-slot="select-value">`, a part that holds the text, one
  *   TEXT property, `Value`, that starts as the docs Basic demo's placeholder in every cell. The
  *   trigger's `*:data-[slot=select-value]:` classes make it a clipping flex row, whose `display: flex`
- *   replaces the `-webkit-box` of the `line-clamp-1` before it, so no line clamp applies. The trigger
- *   hugs the value, which then has no room to grow into or to cut its text off in.
+ *   replaces the `-webkit-box` of the `line-clamp-1` before it, so no line clamp applies. A hugging
+ *   trigger hugs the value, which then has no room to grow into or to cut its text off in.
  * - `content=placeholder` holds `data-placeholder`, which Base UI stamps on the trigger while nothing
  *   is selected, so the text paints `muted-foreground`. A value inherits the page's `foreground`, or
  *   the `error` an invalid Field root passes down through its `data-invalid:text-error`.
@@ -23,10 +29,18 @@
  *   50% on the card fill. A disabled trigger is natively disabled, and Base UI never marks it
  *   `aria-disabled`, so no cell shows the state faces' `aria-disabled:` arms.
  */
-import { selectTriggerVariants } from "@elmeragroup/fuse/recipe-catalog";
+import { cn, selectTriggerVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { Cell, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
-import { FIELD_ROOT, FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH, showsPlaceholder } from "./field-box-kit";
+import {
+  FIELD_ROOT,
+  FIELD_ROOT_SR_ONLY,
+  FIELD_ROOT_STRETCH,
+  fillsWidth,
+  HUG_OR_FILL,
+  showsPlaceholder,
+} from "./field-box-kit";
+import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always } from "./popup-facts";
 
 /** The text every cell shows, the default of the `Value` property: the docs Basic demo's placeholder. */
@@ -108,14 +122,22 @@ export const SELECT_TRIGGER: ComponentDefinition = {
   name: "Select trigger",
   slot: "select-trigger",
   rootKind: "native-control",
+  // The width a filling trigger takes. A hugging trigger's `w-fit` reads none of it.
+  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
+  // The width axis comes first, so the hugging cells keep the rows they held before it. It came
+  // after the set's first release, so a hugging cell keeps the key it had then (W5-P2).
+  addedAxes: new Set(["width"]),
   axes: [
+    // The recipe's own `w-fit` hugs, and `w-full` merged over it fills, as SelectField's trigger does.
+    { name: "width", values: HUG_OR_FILL },
     { name: "size", values: SIZES },
     { name: "state", values: ["rest", "focus", "disabled", "invalid"] },
     { name: "content", values: ["placeholder", "value"] },
     { name: "open", values: ["off", "on"] },
   ],
   columnAxis: "state",
-  classesFor: (cell) => slotsFor(cell).trigger(),
+  classesFor: (cell) =>
+    fillsWidth(cell) ? cn(slotsFor(cell).trigger(), "w-full") : slotsFor(cell).trigger(),
   // Only an invalid cell puts the trigger in a Field root, the one source Base UI reads the trigger's
   // validity from.
   ancestorsFor: (cell) => (cell.state === "invalid" ? [FIELD_ROOT] : []),
@@ -133,7 +155,7 @@ export const SELECT_TRIGGER: ComponentDefinition = {
     FIELD_ROOT_SR_ONLY,
     [
       FIELD_ROOT_STRETCH,
-      "the Field stretches the trigger across its own width, which the set does not draw, and the trigger hugs its value as it does outside a Field",
+      "the Field stretches the trigger across its own width, which the set does not draw, and the trigger takes the width its `width` axis gives it, as it does outside a Field",
     ],
   ]),
   label: undefined,

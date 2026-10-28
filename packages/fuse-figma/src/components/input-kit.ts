@@ -13,6 +13,7 @@
 import { inputClass } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { ComponentDefinition } from "./component-spec";
+import { userAgentDisplay } from "./element-defaults";
 import { FIELD_BOX_SET, FIELD_ROOT, showsPlaceholder } from "./field-box-kit";
 
 /** The text every cell shows, the default of the `Text` property: the docs' basic placeholder. */
@@ -28,6 +29,8 @@ export const INPUT: ComponentDefinition = {
   name: "Input",
   slot: "input",
   classesFor: () => inputClass,
+  // An `<input>` is inline-block, which a block container around it, as TextField's, lays out.
+  elementDefaults: userAgentDisplay("input"),
   // Only an invalid cell wraps the input in a Field root, the one source Base UI reads the input's
   // validity from.
   ancestorsFor: (cell) => (cell.state === "invalid" ? [FIELD_ROOT] : []),

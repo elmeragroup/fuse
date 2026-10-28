@@ -608,7 +608,8 @@ describe("DataTableFilter draft ownership", () => {
               }}
             />
           </section>
-          <section aria-label="Second orders">
+          {/* Below the first bar's value popover, so the press reaches this bar's Clear. */}
+          <section aria-label="Second orders" style={{ paddingTop: 320 }}>
             <Orders
               initial={STATUS_PAID}
               onColumnFiltersChange={() => {

@@ -35,6 +35,7 @@ import type { PlannedIcon } from "./icons.ts";
 import { planOwnedChildren } from "./identity.ts";
 import type { OwnedChild } from "./identity.ts";
 import { innerSpecs, innerVariant, planInstance, planNewInstance } from "./instance-layers.ts";
+import { planPivotPlace, planPivotPositioning } from "./pivot.ts";
 import { change } from "./plan.ts";
 import { currentRun } from "./services.ts";
 import type { PlanServices } from "./services.ts";
@@ -80,21 +81,23 @@ type Holder = {
  * as a real file did on 2026-10-22 (PR), so the plan compares the rotation alone.
  *
  * @param rotation - The turn the spec asks for, or undefined for none.
+ * @returns Whether the turn changes in this run.
  */
 function planRotation(
   run: Run,
   node: FrameNode | InstanceNode,
   label: string,
   rotation: RotationSpec | undefined
-): void {
+): boolean {
   const desired = rotation ?? 0;
   const off = (((node.rotation - desired) % 360) + 360) % 360;
   if (near(off, 0) || near(off, 360)) {
-    return;
+    return false;
   }
   change(run.plan, label, `rotation → ${desired}`, () => {
     node.rotation = desired;
   });
+  return true;
 }
 
 /**
@@ -236,13 +239,32 @@ const planFrame = Effect.fnUntraced(function* (
   planScalar(run, label, "name", frame.name, spec.name, () => {
     frame.name = spec.name;
   });
-  planPositioning(run, frame, label, spec.absolute, holder.size);
+  // A frame placed by its centre turns absolute first, and its place comes last, after its turn.
+  if (spec.pivot === undefined) {
+    planPositioning(run, frame, label, spec.absolute, holder.size);
+  }
+  const repositions = spec.pivot !== undefined && planPivotPositioning(run, frame, label, spec.pivot);
   // A resize of the parent moves an absolute layer's size by its constraints after the plan read it,
   // as a turn of the parent moves a fill, so the layer's lengths are written whatever they read.
-  const moved = spec.absolute !== undefined && holder.size === "unknown" ? "unknown" : holder.held;
+  const outside = spec.absolute !== undefined || spec.pivot !== undefined;
+  const moved = outside && holder.size === "unknown" ? "unknown" : holder.held;
   const size = planBox(run, frame, label, spec, { kind: "frame", parent: moved });
   planVisibleLink(run, frame, label, spec.visibleProperty, links.properties);
-  planRotation(run, frame, label, spec.rotation);
+  const turns = planRotation(run, frame, label, spec.rotation);
+  if (spec.pivot !== undefined) {
+    // A size write moves the frame's centre about its origin, so the place is written after it, from
+    // the size it leaves, whatever the centre reads now.
+    const resizes = size === "unknown";
+    planPivotPlace(
+      run,
+      frame,
+      label,
+      spec.pivot,
+      spec.rotation,
+      repositions || turns || resizes,
+      holder.size
+    );
+  }
   yield* planChildren(frame, label, spec, links, holder.size === "unknown" ? "unknown" : size);
 });
 

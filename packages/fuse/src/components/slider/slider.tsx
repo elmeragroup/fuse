@@ -11,7 +11,8 @@ import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { FieldLabel } from "../field/field";
-import { FieldFrame, fieldFrameVariants } from "../field/field-frame";
+import { FieldFrame } from "../field/field-frame";
+import { fieldFrameVariants } from "../field/field-frame-variants";
 import { sliderStrings } from "./intl";
 import { sliderVariants } from "./slider-variants";
 

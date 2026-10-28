@@ -11,18 +11,20 @@ import { join } from "node:path";
 
 import type { KitBuildError } from "../components/build-errors.ts";
 import { buildComponentSets } from "../components/build-kit.ts";
+import { previewWidthIn } from "../components/component-spec.ts";
 import type { Cell, ComponentDefinition } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
 import type { ComponentSetSpec } from "../components/kit-spec.ts";
 import { browserFootprint, coversRenderBounds, figmaFootprint, sharedCanvas } from "./align.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
-import type { BrowserUnavailable, CellRequest, FontNotLoaded, RenderedCell } from "./browser-render.ts";
+import type { BrowserUnavailable, CellRequest, RenderedCell } from "./browser-render.ts";
 import { forcedAttributesFor, isClientRenderer, loadRenderers, renderCellHtml } from "./cell-renderers.ts";
 import type { AnyCellRenderer, RendererMissing } from "./cell-renderers.ts";
 import { fallbackInteraction, forcedPseudoClasses, parseCell, restingTwin } from "./cells.ts";
 import { checkClientMarkup } from "./client-markup.ts";
 import { fileFailure, makeDirectory, writeBytes, writeText } from "./compare-files.ts";
 import type { CompareFileFailed } from "./compare-files.ts";
+import type { FontNotLoaded } from "./font-check.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { FuseBuildMissing } from "./page-assets.ts";
 import { forcedSelector, measuredSelectors, slotSpan } from "./preview-page.ts";
@@ -208,8 +210,11 @@ export function planCells(
         id: `c${String(index)}`,
         content: content(cell),
         measured: measuredSelectors(definition, isClientRenderer(renderer) ? renderer.union : undefined),
-        span: slotSpan(layout, definition.previewWidth),
-        forcedOn: forcedSelector(definition),
+        // A fixed root in a declared viewport takes a host as wide as the viewport.
+        span: slotSpan(layout, previewWidthIn(definition, cell) ?? definition.viewport?.width),
+        // and a row as tall as the viewport where that is taller than a slot.
+        height: definition.viewport?.height,
+        forcedOn: forcedSelector(definition, cell),
         forced,
         forcedAttributes,
         resting: forces ? content(restingTwin(cell)) : undefined,

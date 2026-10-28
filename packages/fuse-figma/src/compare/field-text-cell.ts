@@ -30,8 +30,13 @@ import {
 import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
-/** A Field part in a host as wide as the Field the kit draws. */
-function inFieldWidth(part: ReactElement): ReactElement {
+/**
+ * A Field part, or a Field composite, in a host as wide as the Field the kit draws.
+ *
+ * @param part - The element to hold.
+ * @returns The host around it.
+ */
+export function inFieldWidth(part: ReactElement): ReactElement {
   return createElement("div", { style: { width: `${FIELD_BOX_PREVIEW_WIDTH}px` } }, part);
 }
 

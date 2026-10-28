@@ -255,7 +255,9 @@ function squareSides(layer: Exclude<ChildLayerSpec, { readonly kind: "text" }>):
  * half-turned layer's box in its auto layout slot (PR), and a 20 × 10 frame at -90 made its hugging
  * row 10 × 20 (PQ). So the kit takes a half turn on any layer and a quarter turn only on a layer
  * with two equal fixed sides, whose box the turn keeps. The plugin places an absolute layer by its
- * `x` and `y`, which a turn moves (PR), so an absolute frame cannot turn.
+ * `x` and `y`, which a turn moves (PR), so an absolute frame cannot turn. A frame placed by its
+ * centre (`pivot`) can take any turn: it sits outside the flow, and the plugin writes its turn before
+ * its place, which it reads from the turned box's centre.
  */
 function checkRotations(set: ComponentSetSpec): void {
   for (const variant of set.variants) {
@@ -265,6 +267,11 @@ function checkRotations(set: ComponentSetSpec): void {
       }
       const { rotation } = layer;
       const where = `${set.name}: ${layer.name} in the variant ${variant.key}`;
+      // A frame placed by its centre sits outside the flow, so its turned box takes no room, and the
+      // plugin places it after the turn, from its centre.
+      if (layer.kind === "frame" && layer.pivot !== undefined) {
+        continue;
+      }
       if (rotation % 90 !== 0) {
         throw contradiction(
           `${where} has a rotation of ${rotation}, and the kit draws only half and quarter turns.`

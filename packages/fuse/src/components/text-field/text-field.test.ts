@@ -4,7 +4,7 @@ import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { fieldBox, readOnlyFillCancelClass, readOnlyFillClass } from "../../styles/field-box";
 import { cardVariants } from "../card/card-variants";
-import { fieldFrameVariants } from "../field/field-frame";
+import { fieldFrameVariants } from "../field/field-frame-variants";
 import { textFieldVariants } from "./text-field-variants";
 
 describe("textFieldVariants", () => {

@@ -116,7 +116,15 @@ const CHECKED_ON_THE_MOUNTED_PAGE: readonly string[] = [
   "combobox-open",
   "command-item",
   "command-list",
+  "command-palette",
+  "command-dialog-open",
   "navigation-menu-popup",
+  "tooltip-content",
+  "tooltip-open",
+  "alert-dialog-content",
+  "alert-dialog-open",
+  "dialog-content",
+  "dialog-open",
 ];
 
 describe("each kit definition against the markup of its component", () => {
@@ -621,6 +629,52 @@ describe("the markup check of an instance part", () => {
   it("fails an instance root whose state attributes differ from the inner cell the part names", () => {
     expect(() => checkMarkup(OPEN_TRIGGER, CELLS, trigger({}))).toThrow(
       "chip/state=rest: the instance on /(trigger): data-popup-open"
+    );
+  });
+
+  // A group whose control takes its states, as the Input group's `statePart`, in a composite that
+  // declares the control open in place, as the Command palette's input: Base UI stamps
+  // `data-pressed` on the control, not on the group around it.
+  const GROUP = chip("flex", {
+    key: "group",
+    name: "Group",
+    slot: "group",
+    statePart: "group-control",
+    // The group draws its control at rest; only the composite presses it.
+    facts: new Map([["data-pressed", () => false]]),
+    parts: [{ ...dot("flex"), key: "control", slot: "group-control" }],
+  });
+  const PRESSED_GROUP = chip("flex", {
+    parts: [
+      {
+        kind: "instance",
+        key: "group",
+        of: GROUP,
+        cell: () => ({ state: "rest" }),
+        facts: new Map([["data-pressed", () => true]]),
+        stamps: new Set(["data-pressed"]),
+        shownIn: () => true,
+      },
+    ],
+  });
+  const group = (attributes: Readonly<Record<string, string>>): CellRendering =>
+    chipMarkup(
+      createElement(
+        "span",
+        { "data-slot": "group", className: "flex" },
+        createElement("span", { "data-slot": "group-control", className: "flex", ...attributes })
+      )
+    );
+
+  // Oracle: Base UI's `data-pressed` on the control, the part the inner set's `statePart` names, which
+  // the instance's attribute states read there.
+  it("reads an in-place attribute fact on the inner set's state part", () => {
+    expect(() => checkMarkup(PRESSED_GROUP, CELLS, group({ "data-pressed": "" }))).not.toThrow();
+  });
+
+  it("fails an in-place attribute fact the state part does not carry", () => {
+    expect(() => checkMarkup(PRESSED_GROUP, CELLS, group({}))).toThrow(
+      "chip/state=rest: the instance on /(group): data-pressed"
     );
   });
 

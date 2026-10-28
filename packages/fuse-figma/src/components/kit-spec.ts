@@ -350,17 +350,43 @@ export type AbsoluteSpec = {
 };
 
 /**
- * An instance outside its parent's auto layout at the parent's end and centred down it, as a Sidebar
- * menu badge sits over the end of its row. The instance hugs its content, so its `x` and `y` follow
- * a width only Figma knows: the spec holds what MAX and CENTER keep instead, and the plugin places the
- * instance from them once its size and its parent's have settled.
+ * An instance outside its parent's auto layout at the parent's end, and down either centred, as a
+ * Sidebar menu badge sits over the end of its row, or a fixed distance below the parent's top, as an
+ * overlay's corner close sits in its popup's top right. The instance hugs its content, so its `x` and
+ * `y` follow a width only Figma knows: the spec holds what MAX and CENTER or MIN keep instead, and the
+ * plugin places the instance from them once its size and its parent's have settled.
  */
 export type AnchoredSpec = {
-  readonly constraints: { readonly horizontal: "MAX"; readonly vertical: "CENTER" };
   /** The pixels from the instance's end to its parent's, which MAX keeps. */
   readonly endInset: number;
-  /** The pixels from the parent's centre down to the instance's centre, which CENTER keeps. */
+} & (
+  | {
+      readonly constraints: { readonly horizontal: "MAX"; readonly vertical: "CENTER" };
+      /** The pixels from the parent's centre down to the instance's centre, which CENTER keeps. */
+      readonly centerOffset: number;
+    }
+  | {
+      readonly constraints: { readonly horizontal: "MAX"; readonly vertical: "MIN" };
+      /** The pixels from the parent's top edge down to the instance's top, which MIN keeps. */
+      readonly topInset: number;
+    }
+);
+
+/**
+ * A frame outside its parent's auto layout placed by its centre: across, a fixed distance from the
+ * parent's horizontal centre, and down, a fixed distance above the parent's bottom edge, as a
+ * Tooltip's arrow hangs from its popup, turned 45°. CSS turns a box about its centre and leaves the
+ * centre where it was, while Figma's `x` and `y` are the turned box's origin, which follow the turn and
+ * the parent's size, so the spec holds the centre, and the plugin places the layer from it once its
+ * turn is written and its parent's size has settled. CENTER across and MAX down keep the place as the
+ * parent resizes.
+ */
+export type PivotSpec = {
+  readonly constraints: { readonly horizontal: "CENTER"; readonly vertical: "MAX" };
+  /** The pixels from the parent's horizontal centre to the layer's centre, rightward. */
   readonly centerOffset: number;
+  /** The pixels from the layer's centre down to the parent's bottom edge. */
+  readonly bottomInset: number;
 };
 
 /**
@@ -373,6 +399,11 @@ export type FrameLayerSpec = BoxSpec & {
   readonly name: string;
   /** Where the layer sits outside its parent's auto layout, absent for a layer the auto layout places. */
   readonly absolute?: AbsoluteSpec;
+  /**
+   * Where a layer outside its parent's auto layout sits by its centre, as a Tooltip's arrow does,
+   * absent for every other layer. A layer holds `absolute` or `pivot`, never both.
+   */
+  readonly pivot?: PivotSpec;
   /**
    * The BOOLEAN property of the set that shows or hides the layer, which links its `visible`, absent
    * for a layer that shows wherever its variant holds it.
@@ -476,14 +507,17 @@ export type InstanceLayerSpec = {
 export type ChildLayerSpec = TextLayerSpec | IconLayerSpec | FrameLayerSpec | InstanceLayerSpec;
 
 /**
- * Whether a layer sits outside its parent's auto layout: an absolute frame or instance, which takes no
- * room in the flow and counts toward no hug (P8).
+ * Whether a layer sits outside its parent's auto layout: an absolute frame or instance, or a frame
+ * placed by its centre, which takes no room in the flow and counts toward no hug (P8).
  *
  * @param layer - The layer.
  * @returns True for an absolute layer.
  */
 export function outOfLayout(layer: ChildLayerSpec): boolean {
-  return (layer.kind === "frame" || layer.kind === "instance") && layer.absolute !== undefined;
+  return (
+    ((layer.kind === "frame" || layer.kind === "instance") && layer.absolute !== undefined) ||
+    (layer.kind === "frame" && layer.pivot !== undefined)
+  );
 }
 
 /**
@@ -499,7 +533,11 @@ export type CounterAlignSpec = "MIN" | "CENTER" | "MAX";
  */
 export type PrimaryAlignSpec = CounterAlignSpec | "SPACE_BETWEEN";
 
-/** The axis along which an auto layout box places its children: a row or a column. */
+/**
+ * The axis along which an auto layout box places its children: a row or a column. No box is without
+ * auto layout, which an absolute MAX instance needs to keep its end inset as density resizes it
+ * (W5-P14b); `anchored-instances.test.ts` pins that.
+ */
 export type DirectionSpec = "HORIZONTAL" | "VERTICAL";
 
 /**
@@ -570,6 +608,11 @@ export type BoxSpec = {
    * reverse of `box-shadow`'s, whose first shadow CSS paints on top.
    */
   readonly shadows: readonly ShadowSpec[];
+  /**
+   * The radius of the background blur Figma draws behind the box, as CSS's `backdrop-filter: blur()`
+   * blurs what lies behind it, absent for a box that blurs nothing behind it.
+   */
+  readonly backgroundBlur?: NumberSpec;
   /** The layer opacity, from 0 to 1. */
   readonly opacity: number;
   /**

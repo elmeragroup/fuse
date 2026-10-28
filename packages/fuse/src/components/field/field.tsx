@@ -109,10 +109,7 @@ export function FieldSet({
       <FieldsetPrimitive.Root
         ref={mergedRef}
         data-slot="field-set"
-        className={mergeClassName(
-          className,
-          "flex flex-col gap-(--surface-gap-xl) has-[>[data-slot=checkbox-group]]:gap-(--surface-gap-md) has-[>[data-slot=radio-group]]:gap-(--surface-gap-md)"
-        )}
+        className={mergeClassName(className, fieldSetClassName)}
         {...definedProps({ ...props, "aria-describedby": describedBy || undefined })}
       />
     </DescriptionOwnerContext.Provider>
@@ -162,6 +159,8 @@ export function FieldContent({ className, ...props }: ComponentProps<"div">): Re
     />
   );
 }
+
+const fieldSetClassName = fieldVariants().set();
 
 const fieldTitleClassName = fieldVariants().title();
 

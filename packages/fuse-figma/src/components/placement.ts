@@ -26,7 +26,7 @@ import {
   splitTopLevel,
   sumAffine,
 } from "./css-values";
-import type { AffineLength, VariableIndex } from "./css-values";
+import type { AffineLength, VariableIndex, Viewport } from "./css-values";
 import { fixedLength, NO_LIMITS, strokeRoom, ZERO } from "./kit-spec";
 import type {
   AbsoluteSpec,
@@ -43,6 +43,7 @@ import type {
   StrokeSpec,
 } from "./kit-spec";
 import { MARGINS, VERTICAL_MARGINS } from "./margin-box";
+import { readPivot } from "./pivot-part";
 import type { CompiledUtilities } from "./utility-css";
 
 /** How a box lays out its layers, as the box mapping read it. */
@@ -74,6 +75,12 @@ export type Layout = {
    * reads it, which the box draws as a flex column. Absent elsewhere.
    */
   readonly oneColumnGrid?: true;
+  /**
+   * True for a flex box of fixed or filling length whose `justify-content: space-between` the flow
+   * leaves unread, since whether it spaces anything out depends on the layers it maps. The box mapping
+   * reads it once they map, through `readSpaceBetween` in `box-flow.ts`. Absent elsewhere.
+   */
+  readonly spaceBetweenUnread?: true;
 };
 
 /** The lengths of a row that place a part along it. The width is undefined where the row hugs it. */
@@ -100,6 +107,11 @@ export type ParentBox = {
    */
   readonly layers: number;
   readonly size: RowSize;
+  /**
+   * The positioned element around the box that is its parts' containing block where the box's own
+   * classes leave it static, as {@link BoxDefinition.positionedBy} names it, or undefined.
+   */
+  readonly positionedBy: string | undefined;
 };
 
 /** Where a box places its parts: its primary alignment, and each part's layer, absolute where it sits outside the flow. */
@@ -140,12 +152,21 @@ export function placeParts(
       return layer;
     }
     if (layer.kind === "instance") {
-      if (normalizeCss(style.resolved("position") ?? "") !== "absolute") {
-        readPosition(style, "other", false);
+      const position = normalizeCss(style.resolved("position") ?? "");
+      // A fixed instance's place is `placeCentredFixed`'s to read, and stays unmapped where it reads none.
+      if (position === "fixed") {
+        return layer;
+      }
+      if (position !== "absolute") {
+        readPosition(style, "other", undefined);
         return layer;
       }
       const anchored = readAnchored(style, parent.style, flow, parent.layers);
       return anchored === undefined ? layer : { ...layer, absolute: anchored };
+    }
+    const pivot = readPivot(style, layer, parent);
+    if (pivot !== undefined) {
+      return { ...layer, pivot };
     }
     const absolute = readAbsoluteStart(style, layer, parent.style);
     switch (absolute.kind) {
@@ -154,7 +175,7 @@ export function placeParts(
       case "refused":
         return layer;
       case "other":
-        readPosition(style, centering, anchorsInstance(layer.children));
+        readPosition(style, centering, anchoredConstraints(layer.children));
         return layer;
     }
   });
@@ -218,19 +239,22 @@ function alignAlongRow(parent: ParentBox, parts: readonly PlacedPart[]): Primary
  *   takes the preview width.
  * @param variables - The synced variables a margin can read, with the values they hold in each mode.
  * @param layers - The root's layers, as mapped.
+ * @param viewport - The viewport the definition declares for a fixed root, or undefined for none.
  */
 export function placeRoot(
   style: LayerStyle,
   room: Room,
   variables: VariableIndex,
-  layers: readonly ChildLayerSpec[]
+  layers: readonly ChildLayerSpec[],
+  viewport: Viewport | undefined
 ): void {
   const width = normalizeCss(style.resolved("width") ?? "auto");
-  const widthFromContainer = room.horizontal.auto.kind !== "hug" && width === "auto";
+  const fixedInViewport = viewport !== undefined && normalizeCss(style.raw("position") ?? "") === "fixed";
+  const widthFromContainer = !fixedInViewport && room.horizontal.auto.kind !== "hug" && width === "auto";
   if (outOfFlow(style)) {
-    placeAbsoluteRoot(style, widthFromContainer);
+    placeAbsoluteRoot(style, widthFromContainer, fixedInViewport);
   } else {
-    readPosition(style, "other", anchorsInstance(layers));
+    readPosition(style, "other", anchoredConstraints(layers));
   }
   style.read(
     "translate",
@@ -317,12 +341,15 @@ const INSET_AXES = [
  * position stays unmapped, since an absolute box with no width shrinks to fit its content. Where
  * both insets of an axis are set and the root's size on that axis is automatic, the insets size the
  * root from its containing block (CSS 2.1 §10.3.7, §10.6.4), so they and the position stay unmapped.
+ * A fixed root in a declared viewport is the exception: there its opposing insets size it to the
+ * viewport less the insets, as `viewportRoom` in `box-sizing.ts` reads them, so they read as its size.
  *
  * @param style - The root's style.
  * @param widthFromContainer - Whether the root's width is the preview width, which an absolute box
  *   with no width of its own does not take.
+ * @param fixedInViewport - Whether the root is fixed in a viewport its definition declares.
  */
-function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean): void {
+function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean, fixedInViewport: boolean): void {
   if (widthFromContainer) {
     style.mark(
       "position",
@@ -333,8 +360,25 @@ function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean): void
     return;
   }
   const given = (property: string): boolean => normalizeCss(style.resolved(property) ?? "auto") !== "auto";
-  const sizing = INSET_AXES.find(({ size, insets }) => !given(size) && insets.every(given));
-  if (sizing !== undefined) {
+  const insetSized = INSET_AXES.filter(({ size, insets }) => !given(size) && insets.every(given));
+  const [sizing] = insetSized;
+  const sized = fixedInViewport ? insetSized : [];
+  const sizedInsets = new Set<string>(sized.flatMap(({ insets }) => insets));
+  if (fixedInViewport) {
+    for (const { size, insets } of sized) {
+      for (const property of insets) {
+        style.read(
+          property,
+          (value) => value,
+          () => ({
+            outcome: "literal",
+            detail: `with an automatic ${size}, the opposing insets size the fixed root to the viewport its definition declares, less the insets`,
+          }),
+          style.feed("sizing")
+        );
+      }
+    }
+  } else if (sizing !== undefined) {
     for (const property of ["position", ...sizing.insets]) {
       style.mark(
         property,
@@ -345,7 +389,7 @@ function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean): void
     }
     return;
   }
-  for (const property of ["position", ...INSETS]) {
+  for (const property of ["position", ...INSETS].filter((name) => !sizedInsets.has(name))) {
     style.read(
       property,
       (value) => value,
@@ -447,9 +491,28 @@ export function slotAroundDot(style: LayerStyle, box: BoxSpec): BoxSpec {
  */
 type ParentLayout = "centers-its-one-layer" | "other";
 
-/** Whether a box holds an instance its constraints place, as a Sidebar menu item holds its badge. */
-function anchorsInstance(layers: readonly ChildLayerSpec[]): boolean {
-  return layers.some((layer) => layer.kind === "instance" && layer.absolute !== undefined);
+/**
+ * The constraints of the instance a box holds and places by them, as a Sidebar menu item holds its
+ * badge, or undefined for a box that holds none.
+ */
+function anchoredConstraints(layers: readonly ChildLayerSpec[]): string | undefined {
+  for (const layer of layers) {
+    if (layer.kind === "instance" && layer.absolute !== undefined) {
+      return `${layer.absolute.constraints.horizontal} × ${layer.absolute.constraints.vertical}`;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * A box's `translate` as shares of its own size, as `-translate-x-1/2` moves it back by half its
+ * width: one per axis it names, each undefined where it is no percentage.
+ *
+ * @param style - The box's style.
+ * @returns The shares across, then down.
+ */
+export function translateShares(style: LayerStyle): readonly (number | undefined)[] {
+  return splitTopLevel(normalizeCss(style.resolved("translate") ?? ""), " ").map(evaluatePercentage);
 }
 
 /**
@@ -463,13 +526,11 @@ function anchorsInstance(layers: readonly ChildLayerSpec[]): boolean {
  *
  * @param reader - The box's style.
  * @param parent - How the box's parent lays it out. The root passes `other`.
- * @param anchors - Whether the box holds an instance its constraints place. An instance part passes
- *   false, since its own layers are its set's.
+ * @param anchors - The constraints of the instance the box holds and places by them, or undefined
+ *   for none. An instance part passes none, since its own layers are its set's.
  */
-function readPosition(reader: LayerStyle, parent: ParentLayout, anchors: boolean): void {
-  const translate = splitTopLevel(normalizeCss(reader.resolved("translate") ?? ""), " ").map(
-    evaluatePercentage
-  );
+function readPosition(reader: LayerStyle, parent: ParentLayout, anchors: string | undefined): void {
+  const translate = translateShares(reader);
   const centered =
     parent === "centers-its-one-layer" &&
     normalizeCss(reader.raw("position") ?? "") === "absolute" &&
@@ -495,9 +556,10 @@ function readPosition(reader: LayerStyle, parent: ParentLayout, anchors: boolean
     (value) => (normalizeCss(value) === "relative" ? value : undefined),
     () => ({
       outcome: "dropped",
-      detail: anchors
-        ? "it anchors the absolute instance it holds, whose MAX × CENTER constraints place it against this frame (N11)"
-        : "it only anchors positioned descendants, which auto layout does not need",
+      detail:
+        anchors === undefined
+          ? "it only anchors positioned descendants, which auto layout does not need"
+          : `it anchors the absolute instance it holds, whose ${anchors} constraints place it against this frame${anchors === "MAX × CENTER" ? " (N11)" : ""}`,
     }),
     []
   );

@@ -712,8 +712,9 @@ describe("a separator's margins above and below it", () => {
 });
 
 // Oracle: CSS Overflow 3 §3, where a box's initial `overflow: visible` draws its content's shadows past
-// its edges, as an open Select's column shows its popup's. A root that paints draws a spread ring only
-// while it clips (PR2), so the build refuses to leave one unclipped.
+// its edges, as an open Select's column shows its popup's. A root draws its own shadow's spread only
+// while it clips (PR2), so the build refuses to leave one that casts a shadow unclipped; a fill draws
+// the same either way, as a Tooltip popup's does around the arrow below it.
 describe("a composite root that leaves its layers unclipped", () => {
   const SHADOWED = { ...dot("w-[100px] h-[20px] shadow-[0_4px_6px_#000000]"), key: "popup", slot: "popup" };
 
@@ -725,12 +726,21 @@ describe("a composite root that leaves its layers unclipped", () => {
     expect(variant?.root.clips).toBe(false);
   });
 
-  it("refuses a root that paints", async () => {
+  it("clips nothing where it fills and casts no shadow", async () => {
+    const { variant } = await buildFixture(
+      chip("flex flex-col bg-[#ffffff]", { parts: [SHADOWED], rootOverflow: "visible" }),
+      { variables: SYNCED }
+    );
+    expect(variant?.root.clips).toBe(false);
+  });
+
+  it("refuses a root that casts a shadow", async () => {
     await expect(
-      buildFixture(chip("flex flex-col bg-[#ffffff]", { parts: [SHADOWED], rootOverflow: "visible" }), {
-        variables: SYNCED,
-      })
-    ).rejects.toThrow("a root that leaves its layers unclipped must paint nothing");
+      buildFixture(
+        chip("flex flex-col shadow-[0_4px_6px_#000000]", { parts: [SHADOWED], rootOverflow: "visible" }),
+        { variables: SYNCED }
+      )
+    ).rejects.toThrow("a root that leaves its layers unclipped must cast no shadow");
   });
 });
 
@@ -1015,6 +1025,45 @@ describe("an empty part", () => {
     const { variant } = await buildFixture(popup("p-0", [{ ...ROW, shownIn: () => true }]), {
       variables: SYNCED,
     });
+    expect(layerNames(variant?.root)).toEqual(["header", "list"]);
+  });
+  // A part whose only content is its own text, as `Command.Empty` holds its message only while no
+  // row matches, holds nothing in a cell that hides the text.
+  const message = (shown: boolean, classes = ""): PartDefinition => ({
+    ...dot(`p-0 font-sans text-[14px]/[20px] text-[#000000] ${classes}`),
+    key: "list",
+    slot: "list",
+    label: {
+      key: "text",
+      name: "text",
+      characters: "No results.",
+      textProperty: undefined,
+      shownIn: () => shown,
+    },
+  });
+  const withMessage = (shown: boolean, classes = "") =>
+    chip("flex flex-col w-[200px] bg-[#ffffff]", {
+      parts: [{ ...dot("h-[20px]"), key: "header", slot: "header" }, message(shown, classes)],
+    });
+
+  it("draws no layer for a part whose own text shows in no cell here", async () => {
+    const { variant } = await buildFixture(withMessage(false), { variables: SYNCED });
+    expect(layerNames(variant?.root)).toEqual(["header"]);
+  });
+
+  // Oracle: CSS Backgrounds 3 §4, where `border` sets a 1px width on every side, so the empty box is
+  // 200 × 2 and paints its red edges, and `border-x` paints its 1px inline edges, whichever property
+  // sets the width.
+  it.each([
+    ["the `border` shorthand", "border border-solid border-[#ff0000]"],
+    ["a logical inline width", "border-x border-solid border-[#ff0000]"],
+  ])("draws a part whose own text is hidden but that paints %s", async (_why, classes) => {
+    const { variant } = await buildFixture(withMessage(false, classes), { variables: SYNCED });
+    expect(layerNames(variant?.root)).toEqual(["header", "list"]);
+  });
+
+  it("draws a part whose own text shows", async () => {
+    const { variant } = await buildFixture(withMessage(true), { variables: SYNCED });
     expect(layerNames(variant?.root)).toEqual(["header", "list"]);
   });
 });

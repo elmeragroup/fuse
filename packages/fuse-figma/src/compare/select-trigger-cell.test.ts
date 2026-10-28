@@ -8,7 +8,8 @@
  * `aria-invalid="true"` and `data-invalid` inside an invalid `Field.Root`. The markup check in
  * `kit-markup.test.ts` reads the attributes the kit's variants select, so it cannot tell an open
  * cell that renders the popup from one that does not, a trigger stamped open by hand from one Base
- * UI opened, or a trigger at the wrong size.
+ * UI opened, or a trigger at the wrong size. A filling cell passes `w-full`, as SelectField does,
+ * which `Select.Trigger` merges over its own `w-fit`, in a host 384px wide, the width the kit draws.
  */
 import { describe, expect, it } from "vitest";
 
@@ -54,7 +55,7 @@ function render(cell: Readonly<Record<string, string>>) {
   };
 }
 
-const REST = { size: "default", state: "rest", content: "placeholder", open: "off" };
+const REST = { width: "hug", size: "default", state: "rest", content: "placeholder", open: "off" };
 
 describe("the Select trigger renderer", () => {
   it("renders a closed trigger holding the placeholder, its value and its caret", () => {
@@ -92,6 +93,21 @@ describe("the Select trigger renderer", () => {
     const { trigger, value } = render({ ...REST, content: "value" });
     expect(attributesOf(trigger)).toEqual({ "data-size": "default", "aria-expanded": "false" });
     expect(value?.text).toBe("Pick a fruit");
+  });
+
+  it("renders a hugging trigger with no host, and a filling one with w-full in a host 384px wide", () => {
+    const hug = render(REST);
+    expect([hug.parentOf(hug.trigger), hug.trigger?.attributes.get("class")?.split(" ")]).toEqual([
+      undefined,
+      expect.arrayContaining(["w-fit"]),
+    ]);
+    const fill = render({ ...REST, width: "fill" });
+    const classes = fill.trigger?.attributes.get("class")?.split(" ") ?? [];
+    expect([
+      fill.parentOf(fill.trigger)?.attributes.get("style"),
+      classes.includes("w-full"),
+      classes.includes("w-fit"),
+    ]).toEqual(["width:384px", true, false]);
   });
 
   it("renders the sm size, a disabled trigger, and an invalid one inside an invalid Field root", () => {

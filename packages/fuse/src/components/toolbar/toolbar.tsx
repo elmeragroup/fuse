@@ -4,10 +4,10 @@ import type { ComponentProps, ReactElement } from "react";
 
 import { Toolbar as ToolbarPrimitive } from "@base-ui/react/toolbar";
 
-import { toolbarShellClass } from "../../styles/inner-corner/toolbar";
 import { mergeClassName } from "../../styles/merge-class-name";
-import { overlayPopupFillClass } from "../overlay/overlay-classes";
-import { separatorClass } from "../separator/separator-class";
+import { toolbarVariants } from "./toolbar-variants";
+
+const slots = toolbarVariants();
 
 /** The props of `Toolbar.Root`: Base UI's toolbar root, with `orientation`, `loopFocus` and `disabled`. */
 export type ToolbarRootProps = ComponentProps<typeof ToolbarPrimitive.Root>;
@@ -38,12 +38,7 @@ export function ToolbarRoot({ className, ...props }: ToolbarRootProps): ReactEle
   return (
     <ToolbarPrimitive.Root
       data-slot="toolbar"
-      className={mergeClassName(
-        className,
-        toolbarShellClass,
-        overlayPopupFillClass,
-        "flex w-fit items-center gap-1 border-border data-vertical:flex-col"
-      )}
+      className={mergeClassName(className, slots.root())}
       {...props}
     />
   );
@@ -82,7 +77,7 @@ export function ToolbarGroup({ className, ...props }: ToolbarGroupProps): ReactE
   return (
     <ToolbarPrimitive.Group
       data-slot="toolbar-group"
-      className={mergeClassName(className, "flex items-center gap-1 data-vertical:flex-col")}
+      className={mergeClassName(className, slots.group())}
       {...props}
     />
   );
@@ -96,11 +91,7 @@ export function ToolbarSeparator({ className, ...props }: ToolbarSeparatorProps)
   return (
     <ToolbarPrimitive.Separator
       data-slot="toolbar-separator"
-      className={mergeClassName(
-        className,
-        separatorClass,
-        "data-horizontal:mx-1 data-horizontal:w-auto data-horizontal:self-stretch data-vertical:my-1"
-      )}
+      className={mergeClassName(className, slots.separator())}
       {...props}
     />
   );

@@ -539,6 +539,9 @@ describe("runtime listeners and layout motion", () => {
   // say the list is complete. Each owner's browser test covers its own cleanup.
   it("installs event listeners only from the reviewed owners", () => {
     expect(filesContainingCode(".addEventListener(").toSorted()).toEqual([
+      // Native non-passive `wheel` on the chip strip: React's `onWheel` is passive, so it cannot
+      // keep the page from scrolling while a vertical wheel scrolls the strip sideways.
+      "components/data-table-filter/strip-wheel.ts",
       // Document `dragover` and `drop`, ref-counted across Roots: a file dropped outside every
       // zone would otherwise open in the tab and replace the page.
       "components/file-upload/document-drop-guard.ts",
@@ -952,7 +955,7 @@ describe("state faces", () => {
       ],
       // Links, which have no disabled state.
       "components/breadcrumb/breadcrumb-variants.ts": ["hover:text-foreground"],
-      "components/dialog/dialog.tsx": ["*:[a]:hover:text-foreground"],
+      "components/dialog/dialog-variants.ts": ["*:[a]:hover:text-foreground"],
       "components/navigation-menu/navigation-menu-variants.ts": [
         "hover:**:text-accent-foreground",
         "hover:bg-accent",

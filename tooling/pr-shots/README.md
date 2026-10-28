@@ -61,7 +61,8 @@ Each shot prepares the page in one order: theme, click steps, density override, 
 shot the run waits for network idle and `document.fonts.ready`. On a Next page it also waits for
 hydration, as the landing tests do, and after a theme picker closes it waits for the page's scroll
 lock to be released. It finishes running animations and takes the shot with reduced
-motion, animations stopped and the caret hidden.
+motion, animations stopped and the caret hidden. Stopping cancels a scroll-linked animation, such as
+a scroll fade, so the run first commits the styles it shows onto its element and the shot keeps them.
 
 ## Output
 
@@ -306,7 +307,7 @@ services. `options.ts` holds the schemas that decode each flag, `shot-plan.ts` n
 `*.browser.test.ts`, so it needs no Playwright browser. `pnpm test:e2e` runs
 `capture.browser.test.ts`, which captures fixture pages in Chromium and checks each PNG's pixel
 size against the fixture's fixed geometry, including the clip of a control and the portaled popup
-it opened.
+it opened, and reads the edge pixels of a scrolled strip to check that its scroll fade survives.
 
 - `docs-server.test.ts` runs a fake `next dev` with a launcher and a worker. It checks that an
   interrupt stops both and restores `next-env.d.ts`, and covers a failed spawn, a server that never
