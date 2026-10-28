@@ -37,9 +37,11 @@ export const dataTableFilterVariants = tv({
       "-m-0.5 no-scrollbar flex scroll-fade-inline scroll-px-8 gap-(--surface-gap-sm) overflow-x-auto overscroll-x-contain p-0.5 not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size) pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))] pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]",
     /**
      * layout. A sentence of segments in one hairline border at the `rounded-md` rung. It never
-     * clips, so a segment's focus ring stays whole. A ghost chip is dashed and muted.
+     * clips, so a segment's focus ring stays whole. A ghost chip is dashed and muted. It rests on
+     * `card`, as the outline Trigger beside it does, so its segments' `muted` hover darkens it on
+     * every light brand, and it matches a Card around it.
      */
-    chip: "text-sm shadow-xs flex h-(--control-h-sm) shrink-0 items-stretch rounded-md border border-border bg-background data-ghost:border-dashed data-ghost:text-muted-foreground",
+    chip: "text-sm shadow-xs flex h-(--control-h-sm) shrink-0 items-stretch rounded-md border border-border bg-card data-ghost:border-dashed data-ghost:text-muted-foreground",
     /**
      * control. A chip's button: square inside, the last one rounding its end with the chip's
      * corner less the 1px border, a hairline before each, and raised while focused so its ring

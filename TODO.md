@@ -119,15 +119,18 @@
   `--background` (guen `oklch(0.95469 0.01887 279.53)`) inside a white `--card` field box. Only
   internal light matches. Is that intended, or should the steppers follow the field-box fill?
 - Decide, with design, the fill of the other parts that paint the page fill, `bg-background`, the
-  way #423 moved the outline Button and the Alert action to `card`. Inside a white Card on an
-  external light page each paints the page tint. They are `Frame` (`frame/frame.tsx`), the Table
-  container and its cells inside a Frame (`table/table.tsx`), the DataTableFilter chip
-  (`data-table-filter/data-table-filter-variants.ts`), the `inline` TextField's hover, focus and
-  invalid fill (`text-field/text-field-variants.ts`), the checked Switch thumb
-  (`switch/switch-variants.ts`), the outline Sidebar menu button and the Sidebar input
+  way #423 moved the outline Button, the Alert action and the DataTableFilter chip to `card`.
+  Inside a white Card on an external light page each paints the page tint. They are `Frame`
+  (`frame/frame.tsx`), the Table container and its cells inside a Frame (`table/table.tsx`), the
+  `inline` TextField's hover, focus and invalid fill (`text-field/text-field-variants.ts`), the
+  checked Switch thumb (`switch/switch-variants.ts`), the Slider thumb
+  (`slider/slider-variants.ts`), the `Field.Separator` label, which masks its rule with the page
+  fill (`field/field.tsx`), the outline Sidebar menu button and the Sidebar input
   (`sidebar/sidebar-variants.ts`, `sidebar/sidebar-class.ts`), the default Alert's own box
   (`alert/alert-variants.ts`) and the NumberField steppers above. Each needs a decision, not
-  necessarily a change.
+  necessarily a change. A part that rests on the page and hovers to `muted`, such as the ghost
+  Button and the steppers, still lightens on hover on fkas private and guen, where the outline
+  Button now darkens.
 - Decide with design whether `Item` gets an unclamped description variant. `Item.Description`
   clamps to two lines, matching shadcn, and funnel needed an unclamped one for full instructions.
   `shadcn(no-restyle)` rejects `line-clamp-*` on `ItemDescription` and points to a variant in
@@ -595,9 +598,11 @@ each stand-in once Fuse ships the part.
   `app-shell/order-detail.tsx` add `contain-inline-size` to their scrolled content.
 - Add a Fjordkraft Företag logo to Fuse. Until then the landing's `brand-wordmark.tsx` draws
   that brand from a mask of `public/landing/logos/fkab.svg`.
-- Give the outline `Button` the ink of the `background` it paints. It inherits the text colour,
-  so on a block filled with `primary` its label is light on light. The promo hero in
+- Give the outline `Button` a label that stays legible on the `card` it paints. It inherits the
+  text colour, so on a block filled with `primary` its label is light on light. The promo hero in
   `brand-site/site-hero.tsx` passes `quiet="ghost"` for its second action instead.
+  `card-foreground` would fix the contrast but part the label from the external ring, which is
+  drawn in `foreground`, so decide the two together.
 - Let `Sidebar.Inset` render an element other than `<main>`. A page that already has a `main`
   landmark cannot use it, so `app-shell/dashboard-main.tsx` copies its inset classes onto a `div`
   next to the `inset` rail.

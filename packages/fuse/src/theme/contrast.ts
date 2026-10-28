@@ -13,6 +13,7 @@ import type { ThemeSlug } from "./tokens/themes";
 
 export const TEXT_GRADE_PAIRS = [
   ["foreground", "background"],
+  ["foreground", "card"],
   ["foreground", "muted"],
   ["card-foreground", "card"],
   ["card-soft-foreground", "card-soft"],
