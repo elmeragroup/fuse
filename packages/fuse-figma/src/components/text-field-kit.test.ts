@@ -15,9 +15,19 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { builtKit, density, FILL, fixed, HUG, literal, paint, variantRoot } from "../../test/built-kit";
+import {
+  builtKit,
+  density,
+  FILL,
+  fixed,
+  HUG,
+  literal,
+  outline,
+  paint,
+  variantRoot,
+} from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
-import type { ChildLayerSpec } from "./kit-spec";
+import { layerAt } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
 
@@ -25,24 +35,9 @@ beforeAll(async () => {
   ({ spec } = await builtKit());
 });
 
-/** Each layer's key, and the variant it shows where it is an instance, depth first. */
-function outline(layers: readonly ChildLayerSpec[], depth = 0): readonly string[] {
-  return layers.flatMap((layer) => [
-    `${"  ".repeat(depth)}${layer.key}${layer.kind === "instance" ? ` -> ${layer.variant}` : ""}`,
-    ...(layer.kind === "frame" ? outline(layer.children, depth + 1) : []),
-  ]);
-}
-
 /** A variant's root, by its content and state. */
 function cell(content: string, state: string) {
   return variantRoot(spec, `text-field/content=${content},state=${state}`);
-}
-
-/** The layer at a path of keys below a root. */
-function at(layers: readonly ChildLayerSpec[], ...keys: readonly string[]): ChildLayerSpec | undefined {
-  const [key, ...rest] = keys;
-  const layer = layers.find((candidate) => candidate.key === key);
-  return rest.length === 0 || layer?.kind !== "frame" ? layer : at(layer.children, ...rest);
 }
 
 describe("the Text field component set", () => {
@@ -76,7 +71,7 @@ describe("the Text field component set", () => {
       "    input -> input/content=placeholder,state=rest",
       "  description -> field-description/state=rest",
     ]);
-    expect(at(root.children, "label-row")).toMatchObject({
+    expect(layerAt(root, ["label-row"])).toMatchObject({
       sizing: { horizontal: FILL, vertical: HUG },
       primaryAlign: "MIN",
     });
@@ -84,16 +79,16 @@ describe("the Text field component set", () => {
 
   it("fills the content column 4px apart with the input's container, which the input fills at the control height", () => {
     const root = cell("placeholder", "rest");
-    expect(at(root.children, "content")).toMatchObject({
+    expect(layerAt(root, ["content"])).toMatchObject({
       direction: "VERTICAL",
       sizing: { horizontal: FILL, vertical: HUG },
       itemSpacing: literal(4),
     });
-    expect(at(root.children, "content", "input-container")).toMatchObject({
+    expect(layerAt(root, ["content", "input-container"])).toMatchObject({
       direction: "VERTICAL",
       sizing: { horizontal: FILL, vertical: HUG },
     });
-    expect(at(root.children, "content", "input-container", "input")).toMatchObject({
+    expect(layerAt(root, ["content", "input-container", "input"])).toMatchObject({
       kind: "instance",
       sizing: { horizontal: FILL, vertical: fixed(density("control-h-md")) },
       exposed: true,
@@ -128,7 +123,7 @@ describe("the Text field component set", () => {
       "  error -> field-error/state=invalid",
       "  description-invalid -> field-description/state=rest",
     ]);
-    expect(at(root.children, "label-row", "label-invalid")).toMatchObject({
+    expect(layerAt(root, ["label-row", "label-invalid"])).toMatchObject({
       overrides: [{ path: ["label"], field: "textColor", color: paint("error") }],
     });
   });

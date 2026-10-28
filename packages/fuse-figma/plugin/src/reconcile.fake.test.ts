@@ -190,6 +190,24 @@ function property(set: ComponentSetNode, name: string): ComponentPropertyDefinit
   return found[1];
 }
 
+/** The arrow's centre, and its parent's centre across and bottom edge, as the transform places them. */
+function arrowPlace(root: ComponentNode | InstanceNode) {
+  const arrow = childNamed(root, "FRAME", "arrow");
+  const radians = (arrow.rotation * Math.PI) / 180;
+  const half = arrow.width / 2;
+  const centre = {
+    x: arrow.x + Math.cos(radians) * half + Math.sin(radians) * half,
+    y: arrow.y - Math.sin(radians) * half + Math.cos(radians) * half,
+  };
+  return {
+    rotation: arrow.rotation,
+    constraints: arrow.constraints,
+    positioning: arrow.layoutPositioning,
+    fromCentre: Math.round((centre.x - root.width / 2) * 1000) / 1000,
+    aboveBottom: Math.round((root.height - centre.y) * 1000) / 1000,
+  };
+}
+
 describe("Apply on a synced file without the kit pages", () => {
   let file: FakeFigma;
   let applied: Awaited<ReturnType<typeof reconcileKit>>;
@@ -431,6 +449,45 @@ describe("Apply on a synced file without the kit pages", () => {
     // icon that follows the label's color.
     expect(icons.children.map((node) => node.name)).not.toContain("Vipps");
     expect(icons.children.map((node) => node.name)).not.toContain("Signing");
+  });
+
+  // Oracle: probe W5-P7 in Figma. A stepper centred both ways with no padding and a 1px left stroke
+  // that counts in layout centres its 16px glyph in the 23px or 31px content box, at x 4.5 dense and
+  // 8.5 comfortable, as CSS's border box does; the fake places no layer in a flow, so the test pins
+  // the fields that placement follows from.
+  it("writes the stepper centred, unpadded, with a left stroke alone that counts in layout (W5-P7)", async () => {
+    const page = await kitPage(file, pageKey(inventoryPage("number-field")));
+    const stepper = setOn(page, "Number field stepper").children[0];
+    expect(
+      stepper?.type === "COMPONENT"
+        ? [
+            stepper.primaryAxisAlignItems,
+            stepper.counterAxisAlignItems,
+            [stepper.paddingLeft, stepper.paddingRight],
+            [
+              stepper.strokeTopWeight,
+              stepper.strokeRightWeight,
+              stepper.strokeBottomWeight,
+              stepper.strokeLeftWeight,
+            ],
+            stepper.strokesIncludedInLayout,
+          ]
+        : []
+    ).toEqual(["CENTER", "CENTER", [0, 0], [0, 0, 0, 1], true]);
+  });
+
+  // Oracle: Chromium on 2026-10-27 centred Tooltip's turned arrow at (W/2, H - 2) in a W × H popup,
+  // and Figma's transform at a turn r is [[cos r, sin r, x], [-sin r, cos r, y]] (PQ).
+  it("turns the arrow -45 and centres it on the popup, 2px above its bottom edge (W5 U9)", async () => {
+    const page = await kitPage(file, pageKey(inventoryPage("tooltip")));
+    const main = setOn(page, "Tooltip content").children[0];
+    expect(main?.type === "COMPONENT" ? arrowPlace(main) : undefined).toEqual({
+      rotation: -45,
+      constraints: { horizontal: "CENTER", vertical: "MAX" },
+      positioning: "ABSOLUTE",
+      fromCentre: 0,
+      aboveBottom: 2,
+    });
   });
 });
 
@@ -851,35 +908,10 @@ describe("Avatar's image fills on an applied file", () => {
   });
 });
 
-// Unit under test: the Number field stepper and Number field as Apply writes them. Oracle: probes
-// W5-P7 and W5-P8 in Figma. A stepper centred both ways with no padding and a 1px left stroke that
-// counts in layout centres its 16px glyph in the 23px or 31px content box, at x 4.5 dense and 8.5
-// comfortable, as CSS's border box does; the fake places no layer in a flow, so the test pins the
-// fields that placement follows from. The decrease stepper's swapped glyph reads Minus in the main and
-// in an instance of it.
+// Unit under test: the Number field as Apply writes it. Oracle: probe W5-P8 in Figma. The decrease
+// stepper's swapped glyph reads Minus in the main and in an instance of it.
 describe("Number field's steppers on an applied file", () => {
   const NUMBER_FIELD_PAGE = pageKey(inventoryPage("number-field"));
-
-  it("writes the stepper centred, unpadded, with a left stroke alone that counts in layout (W5-P7)", async () => {
-    const page = await kitPage(await appliedFile(), NUMBER_FIELD_PAGE);
-    const stepper = setOn(page, "Number field stepper").children[0];
-    expect(
-      stepper?.type === "COMPONENT"
-        ? [
-            stepper.primaryAxisAlignItems,
-            stepper.counterAxisAlignItems,
-            [stepper.paddingLeft, stepper.paddingRight],
-            [
-              stepper.strokeTopWeight,
-              stepper.strokeRightWeight,
-              stepper.strokeBottomWeight,
-              stepper.strokeLeftWeight,
-            ],
-            stepper.strokesIncludedInLayout,
-          ]
-        : []
-    ).toEqual(["CENTER", "CENTER", [0, 0], [0, 0, 0, 1], true]);
-  });
 
   it("shows Minus on the decrease stepper and Plus on the increase one, in the main and an instance (W5-P8)", async () => {
     const page = await kitPage(await appliedFile(), NUMBER_FIELD_PAGE);
@@ -909,36 +941,6 @@ describe("Number field's steppers on an applied file", () => {
 // constraints keep the centre as the popup's size changes with the density (fake rule 59, unprobed).
 describe("Tooltip's arrow on an applied file", () => {
   const TOOLTIP_PAGE = pageKey(inventoryPage("tooltip"));
-
-  /** The arrow's centre, and its parent's centre across and bottom edge, as the transform places them. */
-  function arrowPlace(root: ComponentNode | InstanceNode) {
-    const arrow = childNamed(root, "FRAME", "arrow");
-    const radians = (arrow.rotation * Math.PI) / 180;
-    const half = arrow.width / 2;
-    const centre = {
-      x: arrow.x + Math.cos(radians) * half + Math.sin(radians) * half,
-      y: arrow.y - Math.sin(radians) * half + Math.cos(radians) * half,
-    };
-    return {
-      rotation: arrow.rotation,
-      constraints: arrow.constraints,
-      positioning: arrow.layoutPositioning,
-      fromCentre: Math.round((centre.x - root.width / 2) * 1000) / 1000,
-      aboveBottom: Math.round((root.height - centre.y) * 1000) / 1000,
-    };
-  }
-
-  it("turns the arrow -45 and centres it on the popup, 2px above its bottom edge (W5 U9)", async () => {
-    const page = await kitPage(await appliedFile(), TOOLTIP_PAGE);
-    const main = setOn(page, "Tooltip content").children[0];
-    expect(main?.type === "COMPONENT" ? arrowPlace(main) : undefined).toEqual({
-      rotation: -45,
-      constraints: { horizontal: "CENTER", vertical: "MAX" },
-      positioning: "ABSOLUTE",
-      fromCentre: 0,
-      aboveBottom: 2,
-    });
-  });
 
   // The fake lays out no hugging main, so the popup takes Chromium's sizes by a resize, which moves
   // an absolute layer by its constraints (fake rules 9, 59), as a density switch resizes it in Figma.

@@ -10,25 +10,12 @@
  * plan compares the centre, never `x` and `y`, which follow the turn and sizes the run does not set.
  */
 import type { PivotSpec, RotationSpec } from "../../src/components/kit-spec.ts";
+import { holderOf, planConstraints } from "./anchoring.ts";
+import type { Holder } from "./anchoring.ts";
 import { near, planScalar } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
 import { change } from "./plan.ts";
 import { settleInstances } from "./settle.ts";
-
-/** The box that holds the frame: a variant or a frame below it. */
-type Holder = SceneNode & DimensionAndPositionMixin & ChildrenMixin;
-
-/** The variant or frame the layer sits in. */
-function holderOf(frame: FrameNode, label: string): Holder {
-  const parent = frame.parent;
-  if (
-    parent === null ||
-    (parent.type !== "COMPONENT" && parent.type !== "FRAME" && parent.type !== "INSTANCE")
-  ) {
-    throw new Error(`${label} sits in no frame the kit draws, so nothing places it.`);
-  }
-  return parent;
-}
 
 /** The cosine and sine of a turn in degrees, counterclockwise as Figma counts it. */
 function turnOf(degrees: number) {
@@ -41,7 +28,7 @@ function turnOf(degrees: number) {
  * turn `r` is `[[cos r, sin r, x], [-sin r, cos r, y]]`, so the centre of a `w` × `h` box is the origin
  * moved by `(cos r · w/2 + sin r · h/2, -sin r · w/2 + cos r · h/2)`.
  */
-export function originFor(
+function originFor(
   centre: { readonly x: number; readonly y: number },
   size: { readonly width: number; readonly height: number },
   rotation: number
@@ -77,13 +64,7 @@ export function planPivotPositioning(run: Run, frame: FrameNode, label: string, 
   planScalar(run, label, "layoutPositioning", frame.layoutPositioning, "ABSOLUTE", () => {
     frame.layoutPositioning = "ABSOLUTE";
   });
-  const { horizontal, vertical } = spec.constraints;
-  const constrained = frame.constraints.horizontal === horizontal && frame.constraints.vertical === vertical;
-  if (!constrained) {
-    change(run.plan, label, `constraints → ${horizontal} ${vertical}`, () => {
-      frame.constraints = { horizontal, vertical };
-    });
-  }
+  const constrained = planConstraints(run, frame, label, spec.constraints);
   return turns || !constrained;
 }
 

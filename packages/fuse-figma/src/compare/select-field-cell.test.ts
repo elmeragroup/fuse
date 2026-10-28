@@ -11,34 +11,23 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
-import type { MarkupElement } from "../../test/static-markup";
+import { attributesNamed, bySlot, elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { selectField } from "./select-field-cell";
 
 /** The attributes that tell the cells apart, on the element that carries them. */
 const READ = ["data-placeholder", "disabled", "data-disabled", "aria-invalid", "data-invalid"];
 
-function attributesOf(element: MarkupElement | undefined): Readonly<Record<string, string>> {
-  return Object.fromEntries(
-    READ.flatMap((name) => {
-      const value = element?.attributes.get(name);
-      return value === undefined ? [] : [[name, value]];
-    })
-  );
-}
-
 /** Each element as its tag, its parent's index, its `data-slot` and its text, and the root's and trigger's state. */
 function outline(state: string, content: string) {
   const elements = elementsOf(renderCellHtml(selectField, { state, content }));
-  const bySlot = (slot: string) => elements.find((element) => element.attributes.get("data-slot") === slot);
   return {
     tree: elements
       .filter((element) => element.name !== "svg" && element.name !== "path")
       .map((element) => [element.name, element.parent, element.attributes.get("data-slot"), element.text]),
-    field: attributesOf(bySlot("field")),
-    trigger: attributesOf(bySlot("select-trigger")),
-    fills: bySlot("select-trigger")?.attributes.get("class")?.split(" ").includes("w-full"),
+    field: attributesNamed(bySlot(elements, "field"), READ),
+    trigger: attributesNamed(bySlot(elements, "select-trigger"), READ),
+    fills: bySlot(elements, "select-trigger")?.attributes.get("class")?.split(" ").includes("w-full"),
   };
 }
 

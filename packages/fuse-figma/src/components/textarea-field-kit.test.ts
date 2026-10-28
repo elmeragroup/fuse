@@ -13,9 +13,19 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { builtKit, density, FILL, fixed, HUG, literal, paint, variantRoot } from "../../test/built-kit";
+import {
+  builtKit,
+  density,
+  FILL,
+  fixed,
+  HUG,
+  instancesIn,
+  literal,
+  outline,
+  paint,
+  variantRoot,
+} from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
-import type { ChildLayerSpec } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
 
@@ -23,24 +33,9 @@ beforeAll(async () => {
   ({ spec } = await builtKit());
 });
 
-/** Each layer's key, and the variant it shows where it is an instance, depth first. */
-function outline(layers: readonly ChildLayerSpec[], depth = 0): readonly string[] {
-  return layers.flatMap((layer) => [
-    `${"  ".repeat(depth)}${layer.key}${layer.kind === "instance" ? ` -> ${layer.variant}` : ""}`,
-    ...(layer.kind === "frame" ? outline(layer.children, depth + 1) : []),
-  ]);
-}
-
 /** A variant's root, by its state. */
 function cell(state: string) {
   return variantRoot(spec, `textarea-field/state=${state}`);
-}
-
-/** The instance layers below a root, depth first. */
-function instances(layers: readonly ChildLayerSpec[]): readonly ChildLayerSpec[] {
-  return layers.flatMap((layer) =>
-    layer.kind === "instance" ? [layer] : layer.kind === "frame" ? instances(layer.children) : []
-  );
 }
 
 describe("the Textarea field component set", () => {
@@ -96,9 +91,12 @@ describe("the Textarea field component set", () => {
 
   it("fills the column with the textarea and the description, and gives each instance the demo's copy", () => {
     expect(
-      instances(cell("rest").children).map((layer) =>
-        layer.kind === "instance" ? [layer.key, layer.sizing.horizontal, layer.properties, layer.exposed] : []
-      )
+      instancesIn(cell("rest").children).map((layer) => [
+        layer.key,
+        layer.sizing.horizontal,
+        layer.properties,
+        layer.exposed,
+      ])
     ).toEqual([
       ["label", HUG, { text: { Label: "Bio" } }, true],
       ["textarea", FILL, { text: { Text: "Write a short bio." } }, true],
@@ -109,7 +107,7 @@ describe("the Textarea field component set", () => {
   it("shows each state on the textarea, and dims the label only in a disabled Field", () => {
     expect(
       ["rest", "focus", "disabled", "readonly"].map((state) =>
-        instances(cell(state).children).map((layer) => (layer.kind === "instance" ? layer.variant : ""))
+        instancesIn(cell(state).children).map((layer) => layer.variant)
       )
     ).toEqual([
       ["label/state=rest", "textarea/content=placeholder,state=rest", "field-description/state=rest"],
@@ -130,7 +128,7 @@ describe("the Textarea field component set", () => {
       "error -> field-error/state=invalid",
       "description-invalid -> field-description/state=rest",
     ]);
-    const [label, , error] = instances(root.children);
+    const [label, , error] = instancesIn(root.children);
     expect(label).toMatchObject({
       overrides: [{ path: ["label"], field: "textColor", color: paint("error") }],
     });

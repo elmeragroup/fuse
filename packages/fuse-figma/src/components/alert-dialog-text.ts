@@ -6,21 +6,21 @@
  */
 
 /** The copy of one Alert dialog cell. */
-export type AlertDialogCopy = {
+type AlertDialogCopy = {
   readonly title: string;
   readonly description: string;
   readonly action: string;
 };
 
 /** The Destructive demo's copy. */
-export const DESTRUCTIVE_COPY: AlertDialogCopy = {
+const DESTRUCTIVE_COPY: AlertDialogCopy = {
   title: "Delete order?",
   description: "This permanently removes the order and cannot be undone.",
   action: "Delete",
 };
 
 /** The Neutral demo's copy. */
-export const NEUTRAL_COPY: AlertDialogCopy = {
+const NEUTRAL_COPY: AlertDialogCopy = {
   title: "Archive this meter?",
   description: "Readings stay in history. The meter leaves the active list.",
   action: "Archive",

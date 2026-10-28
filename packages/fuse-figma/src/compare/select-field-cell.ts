@@ -20,7 +20,6 @@ import { SelectField } from "../../../fuse/dist/select-field.js";
 import { Select } from "../../../fuse/dist/select.js";
 import type { Cell } from "../components/component-spec.ts";
 import { showsPlaceholder } from "../components/field-box-kit.ts";
-import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
 import {
   SELECT_FIELD_DESCRIPTION,
   SELECT_FIELD_ERROR,
@@ -29,6 +28,7 @@ import {
   SELECT_FIELD_VALUE,
 } from "../components/select-field-kit.ts";
 import type { CellRendering } from "./cell-renderers.ts";
+import { inFieldWidth } from "./field-text-cell.ts";
 
 /** The docs demos' plans, the selected one labelled as the kit draws it. */
 const PLANS = { basic: "Basic", plus: "Plus", pro: SELECT_FIELD_VALUE } as const;
@@ -50,9 +50,7 @@ export const selectField: CellRendering = {
     if (cell.state === "invalid") {
       props.errorMessage = SELECT_FIELD_ERROR;
     }
-    return createElement(
-      "div",
-      { style: { width: `${FIELD_BOX_PREVIEW_WIDTH}px` } },
+    return inFieldWidth(
       createElement(
         SelectField,
         props,

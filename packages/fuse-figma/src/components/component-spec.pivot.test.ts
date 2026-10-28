@@ -87,4 +87,21 @@ describe("a turned absolute part on its containing block's bottom edge", () => {
       ["left", "unmapped"],
     ]);
   });
+
+  // A 2px bottom border moves the padding box's bottom edge, and so the arrow's centre, 2px above the
+  // frame's bottom: CSS centres it 4px up, where the frame's edge would put it 2px up.
+  it.each([
+    ["a physical bottom border", "border-b-2"],
+    ["a logical block-end border", "[border-block-end-width:2px]"],
+  ])("leaves the place unmapped in a containing block with %s", async (_, border) => {
+    const { variant, coverage } = await buildFixture(
+      chip(`relative flex w-[92px] h-[28px] bg-[#111111] border-solid ${border}`, {
+        parts: [arrow("calc(50% - 5px)")],
+      })
+    );
+    expect(variant?.root.children[0]).not.toHaveProperty("pivot");
+    expect(notesOf(coverage, "-bottom-[10px]").map(([property, outcome]) => [property, outcome])).toEqual([
+      ["bottom", "unmapped"],
+    ]);
+  });
 });

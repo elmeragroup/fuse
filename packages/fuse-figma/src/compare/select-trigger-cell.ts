@@ -25,8 +25,9 @@ import { createElement } from "react";
 import { Field } from "../../../fuse/dist/field.js";
 import { Select } from "../../../fuse/dist/select.js";
 import type { Cell } from "../components/component-spec.ts";
+import { fillsWidth } from "../components/field-box-kit.ts";
 import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
-import { fills, SELECT_TRIGGER_TEXT, showsOpen, sizeFor } from "../components/select-trigger-kit.ts";
+import { SELECT_TRIGGER_TEXT, showsOpen, sizeFor } from "../components/select-trigger-kit.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
 /** The value of the root's one item, whose label is the text the kit draws. */
@@ -45,12 +46,12 @@ export const selectTrigger: CellRendering = {
       },
       createElement(
         Select.Trigger,
-        fills(cell) ? { size: sizeFor(cell), className: "w-full" } : { size: sizeFor(cell) },
+        fillsWidth(cell) ? { size: sizeFor(cell), className: "w-full" } : { size: sizeFor(cell) },
         createElement(Select.Value, { placeholder: SELECT_TRIGGER_TEXT })
       )
     );
     const field = cell.state === "invalid" ? createElement(Field.Root, { invalid: true }, root) : root;
-    return fills(cell)
+    return fillsWidth(cell)
       ? createElement("div", { style: { width: `${FIELD_BOX_PREVIEW_WIDTH}px` } }, field)
       : field;
   },

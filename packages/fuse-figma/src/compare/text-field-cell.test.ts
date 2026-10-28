@@ -10,8 +10,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
-import type { MarkupElement } from "../../test/static-markup";
+import { attributesNamed, bySlot, elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { textField } from "./text-field-cell";
 
@@ -26,19 +25,9 @@ const READ = [
   "data-invalid",
 ];
 
-function attributesOf(element: MarkupElement | undefined): Readonly<Record<string, string>> {
-  return Object.fromEntries(
-    READ.flatMap((name) => {
-      const value = element?.attributes.get(name);
-      return value === undefined ? [] : [[name, value]];
-    })
-  );
-}
-
 /** Each element as its tag, its parent's index, its `data-slot` and its text, and the root's and input's state. */
 function outline(content: string, state: string) {
   const elements = elementsOf(renderCellHtml(textField, { content, state }));
-  const bySlot = (slot: string) => elements.find((element) => element.attributes.get("data-slot") === slot);
   return {
     tree: elements.map((element) => [
       element.name,
@@ -46,8 +35,8 @@ function outline(content: string, state: string) {
       element.attributes.get("data-slot"),
       element.text,
     ]),
-    field: attributesOf(bySlot("field")),
-    input: attributesOf(bySlot("input")),
+    field: attributesNamed(bySlot(elements, "field"), READ),
+    input: attributesNamed(bySlot(elements, "input"), READ),
   };
 }
 

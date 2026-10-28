@@ -341,11 +341,10 @@ const INSET_AXES = [
  * position stays unmapped, since an absolute box with no width shrinks to fit its content. Where
  * both insets of an axis are set and the root's size on that axis is automatic, the insets size the
  * root from its containing block (CSS 2.1 §10.3.7, §10.6.4), so they and the position stay unmapped.
- *
- * @param style - The root's style.
  * A fixed root in a declared viewport is the exception: there its opposing insets size it to the
  * viewport less the insets, as `viewportRoom` in `box-sizing.ts` reads them, so they read as its size.
  *
+ * @param style - The root's style.
  * @param widthFromContainer - Whether the root's width is the preview width, which an absolute box
  *   with no width of its own does not take.
  * @param fixedInViewport - Whether the root is fixed in a viewport its definition declares.
@@ -361,10 +360,9 @@ function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean, fixed
     return;
   }
   const given = (property: string): boolean => normalizeCss(style.resolved(property) ?? "auto") !== "auto";
-  const sizing = INSET_AXES.find(({ size, insets }) => !given(size) && insets.every(given));
-  const sized = fixedInViewport
-    ? INSET_AXES.filter(({ size, insets }) => !given(size) && insets.every(given))
-    : [];
+  const insetSized = INSET_AXES.filter(({ size, insets }) => !given(size) && insets.every(given));
+  const [sizing] = insetSized;
+  const sized = fixedInViewport ? insetSized : [];
   const sizedInsets = new Set<string>(sized.flatMap(({ insets }) => insets));
   if (fixedInViewport) {
     for (const { size, insets } of sized) {
@@ -507,6 +505,17 @@ function anchoredConstraints(layers: readonly ChildLayerSpec[]): string | undefi
 }
 
 /**
+ * A box's `translate` as shares of its own size, as `-translate-x-1/2` moves it back by half its
+ * width: one per axis it names, each undefined where it is no percentage.
+ *
+ * @param style - The box's style.
+ * @returns The shares across, then down.
+ */
+export function translateShares(style: LayerStyle): readonly (number | undefined)[] {
+  return splitTopLevel(normalizeCss(style.resolved("translate") ?? ""), " ").map(evaluatePercentage);
+}
+
+/**
  * Read where a box sits. A `relative` box stays where the flow puts it and only anchors positioned
  * descendants, so it drops. Where it anchors an instance placed by its constraints, the coverage
  * table says so, since Figma places that instance against the frame without it. `absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2` puts
@@ -521,9 +530,7 @@ function anchoredConstraints(layers: readonly ChildLayerSpec[]): string | undefi
  *   for none. An instance part passes none, since its own layers are its set's.
  */
 function readPosition(reader: LayerStyle, parent: ParentLayout, anchors: string | undefined): void {
-  const translate = splitTopLevel(normalizeCss(reader.resolved("translate") ?? ""), " ").map(
-    evaluatePercentage
-  );
+  const translate = translateShares(reader);
   const centered =
     parent === "centers-its-one-layer" &&
     normalizeCss(reader.raw("position") ?? "") === "absolute" &&
@@ -552,9 +559,7 @@ function readPosition(reader: LayerStyle, parent: ParentLayout, anchors: string 
       detail:
         anchors === undefined
           ? "it only anchors positioned descendants, which auto layout does not need"
-          : anchors === "MAX × CENTER"
-            ? "it anchors the absolute instance it holds, whose MAX × CENTER constraints place it against this frame (N11)"
-            : `it anchors the absolute instance it holds, whose ${anchors} constraints place it against this frame`,
+          : `it anchors the absolute instance it holds, whose ${anchors} constraints place it against this frame${anchors === "MAX × CENTER" ? " (N11)" : ""}`,
     }),
     []
   );

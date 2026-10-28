@@ -24,12 +24,11 @@ import type { Cell, ComponentDefinition, InstanceDefinition } from "./component-
 import { showsPlaceholder } from "./field-box-kit";
 import {
   FIELD_FRAME_DISABLED,
-  FIELD_FRAME_OMISSIONS,
+  FIELD_FRAME_SET,
   frameDescriptions,
   frameError,
   frameLabelRow,
 } from "./field-frame-kit";
-import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always } from "./popup-facts";
 import { SELECT_TRIGGER } from "./select-trigger-kit";
 
@@ -75,33 +74,24 @@ const TRIGGER: InstanceDefinition = {
  * or invalid with an error message.
  */
 export const SELECT_FIELD: ComponentDefinition = {
+  ...FIELD_FRAME_SET,
   key: "select-field",
-  // CSS leaves the root unclipped, so a ring a layer draws at its edge shows past it (compare-real-1).
-  rootOverflow: "visible",
   name: "Select field",
-  slot: "field",
   // The trigger takes the states, and Base UI mirrors them on the Field root as data attributes.
   rootKind: "native-control",
   statePart: "select-trigger",
-  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
   axes: [
     { name: "state", values: ["rest", "focus", "disabled", "invalid"] },
     { name: "content", values: ["placeholder", "value"] },
   ],
-  columnAxis: "state",
   classesFor: () => cn(fieldVariants().root(), frame.root()),
   states: { disabled: FIELD_FRAME_DISABLED },
   // Base UI stamps the trigger while nothing is selected.
   facts: new Map([["data-placeholder", (cell: Cell) => showsPlaceholder(cell)]]),
-  omittedStates: new Set(),
-  omittedCompositions: FIELD_FRAME_OMISSIONS,
-  label: undefined,
-  iconsFor: () => [],
   parts: [
     frameLabelRow(SELECT_FIELD_LABEL, frame.labelRow()),
     TRIGGER,
     frameError(SELECT_FIELD_ERROR),
     ...frameDescriptions(SELECT_FIELD_DESCRIPTION),
   ],
-  swapProperties: [],
 };

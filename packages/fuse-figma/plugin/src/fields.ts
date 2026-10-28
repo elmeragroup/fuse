@@ -591,7 +591,7 @@ function blurMatches(run: Run, node: SceneNode, effect: Effect, radius: NumberSp
  * @param specs - The shadows the spec asks for, in order.
  * @param blur - The radius of the background blur the spec asks for, or undefined for none.
  */
-export function planShadows(
+export function planEffects(
   run: Run,
   node: SceneNode & BlendMixin,
   label: string,

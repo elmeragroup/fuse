@@ -9,12 +9,11 @@
 import { describe, expect, it } from "vitest";
 
 import type { ComponentSetSpec, FrameLayerSpec, KitSpec, PivotSpec } from "../../src/components/kit-spec.ts";
-import { bareRoot, fixture, frame, literal, oneVariant } from "./button-kit-fixture.ts";
+import { bareRoot, BLACK, buttonVariant, fixture, frame, literal, oneVariant } from "./button-kit-fixture.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed, GLYPH_FONT } from "./fake-fixtures.ts";
 import { reconcileKit } from "./reconcile.ts";
 
-const BLACK = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
 const fixed = (value: number) => ({ kind: "fixed", length: literal(value) }) as const;
 
 /** The popup's size and the arrow's place: centred across, its centre 2px above the bottom. */
@@ -48,15 +47,9 @@ function kitWith(size: number): KitSpec {
   };
 }
 
-/** The arrow frame in the file's one popup variant. */
-function arrowIn(file: FakeFigma): FrameNode {
-  const page = file.figma.root.children.find((node) => node.name === "Fuse components");
-  const set = page?.children.find((node) => node.type === "COMPONENT_SET");
-  const [variant] = set?.type === "COMPONENT_SET" ? set.children : [];
-  if (variant?.type !== "COMPONENT") {
-    throw new Error("the kit holds the popup variant");
-  }
-  return childNamed(variant, "FRAME", "arrow");
+/** The arrow frame in the file's one popup variant, which `buttonVariant` finds as the kit page's first. */
+async function arrowIn(file: FakeFigma): Promise<FrameNode> {
+  return childNamed(await buttonVariant(file), "FRAME", "arrow");
 }
 
 /** The linear part of a layer's `relativeTransform`: `[[a, b], [c, d]]`. */
@@ -95,13 +88,14 @@ describe("an arrow placed by its centre whose size changes in the run", () => {
     const { file } = fixture("Roboto");
     await reconcileKit(file.figma, kitWith(10), true);
     file.reopen();
-    resizeAboutCentre(arrowIn(file), 14);
-    expect(placeOf(arrowIn(file)).centerOffset).toBeCloseTo(0, 4);
+    resizeAboutCentre(await arrowIn(file), 14);
+    expect(placeOf(await arrowIn(file)).centerOffset).toBeCloseTo(0, 4);
     await reconcileKit(file.figma, kitWith(10), true);
     file.reopen();
-    const placed = placeOf(arrowIn(file));
+    const arrowLayer = await arrowIn(file);
+    const placed = placeOf(arrowLayer);
     expect(
-      [arrowIn(file).width, placed.centerOffset, placed.bottomInset].map((n) => Number(n.toFixed(4)))
+      [arrowLayer.width, placed.centerOffset, placed.bottomInset].map((n) => Number(n.toFixed(4)))
     ).toEqual([10, 0, 2]);
     expect(await reconcileKit(file.figma, kitWith(10), false)).toEqual({ changes: [], warnings: [] });
   });
@@ -112,9 +106,10 @@ describe("an arrow placed by its centre whose size changes in the run", () => {
     file.reopen();
     await reconcileKit(file.figma, kitWith(14), true);
     file.reopen();
-    const placed = placeOf(arrowIn(file));
+    const arrowLayer = await arrowIn(file);
+    const placed = placeOf(arrowLayer);
     expect(
-      [arrowIn(file).width, placed.centerOffset, placed.bottomInset].map((n) => Number(n.toFixed(4)))
+      [arrowLayer.width, placed.centerOffset, placed.bottomInset].map((n) => Number(n.toFixed(4)))
     ).toEqual([14, 0, 2]);
     expect(await reconcileKit(file.figma, kitWith(14), false)).toEqual({ changes: [], warnings: [] });
   });

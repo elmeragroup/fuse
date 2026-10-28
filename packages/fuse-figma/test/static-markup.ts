@@ -102,6 +102,36 @@ export function elementsOf(html: string): readonly MarkupElement[] {
 }
 
 /**
+ * The first element whose `data-slot` names a slot.
+ *
+ * @param elements - Elements, as {@link elementsOf} lists them.
+ * @param slot - The slot.
+ * @returns The element, or undefined where none carries the slot.
+ */
+export function bySlot(elements: readonly MarkupElement[], slot: string): MarkupElement | undefined {
+  return elements.find((element) => element.attributes.get("data-slot") === slot);
+}
+
+/**
+ * The attributes of an element among some names, each with its value.
+ *
+ * @param element - The element, or undefined for none.
+ * @param names - The attribute names to read.
+ * @returns Each named attribute the element sets, by name; none for a missing element.
+ */
+export function attributesNamed(
+  element: MarkupElement | undefined,
+  names: readonly string[]
+): Readonly<Record<string, string>> {
+  return Object.fromEntries(
+    names.flatMap((name) => {
+      const value = element?.attributes.get(name);
+      return value === undefined ? [] : [[name, value]];
+    })
+  );
+}
+
+/**
  * Whether an element is the one a definition's selector names: it has the selector's tag, or any
  * tag where the selector names `*`, each attribute the selector lists with that exact value or, for
  * `true`, any value, each attribute its `prefixes` list with a value that starts with a prefix that

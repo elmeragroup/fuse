@@ -44,7 +44,7 @@ import type { ComponentDefinition, InstanceDefinition, PartDefinition } from "./
 import { DIV_BLOCK } from "./element-defaults";
 import { INPUT_GROUP } from "./input-group-kit";
 import { KBD } from "./kbd-kit";
-import { always, never } from "./popup-facts";
+import { OPEN_FACTS, always, never } from "./popup-facts";
 
 const { content, input, empty, list, footer, hint } = commandVariants();
 
@@ -169,8 +169,7 @@ export const COMMAND_PALETTE: ComponentDefinition = {
   underMaxHeight: "Chromium measured the palette 289px tall dense and 341px comfortable, under its 380px cap",
   states: {},
   facts: new Map([
-    ["data-open", always],
-    ["data-closed", never],
+    ...OPEN_FACTS,
     // Rows match, so Base UI marks neither the list nor the palette empty.
     ["data-empty", never],
   ]),
@@ -197,10 +196,7 @@ export const COMMAND_DIALOG_OPEN: ComponentDefinition = {
     cn(dialogVariants().overlay(), `flex flex-col items-center pt-[${String(COMMAND_DIALOG_TOP)}px]`),
   viewport: COMMAND_DIALOG_VIEWPORT,
   states: {},
-  facts: new Map([
-    ["data-open", always],
-    ["data-closed", never],
-  ]),
+  facts: OPEN_FACTS,
   omittedStates: new Set(),
   label: undefined,
   iconsFor: () => [],

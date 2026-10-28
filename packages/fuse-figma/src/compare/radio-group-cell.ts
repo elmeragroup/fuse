@@ -16,7 +16,6 @@ import { createElement } from "react";
 import { Radio, RadioGroup } from "../../../fuse/dist/radio-group.js";
 import type { RadioGroupProps } from "../../../fuse/dist/radio-group.js";
 import type { Cell } from "../components/component-spec.ts";
-import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
 import {
   orientationFor,
   RADIO_GROUP_DESCRIPTION,
@@ -25,6 +24,7 @@ import {
   RADIO_GROUP_OPTIONS,
 } from "../components/radio-group-kit.ts";
 import type { CellRendering } from "./cell-renderers.ts";
+import { inFieldWidth } from "./field-text-cell.ts";
 
 /** A `radio-group` cell: the labelled group in its orientation, disabled or invalid. */
 export const radioGroup: CellRendering = {
@@ -40,9 +40,7 @@ export const radioGroup: CellRendering = {
     if (cell.state === "invalid") {
       props.errorMessage = RADIO_GROUP_ERROR;
     }
-    return createElement(
-      "div",
-      { style: { width: `${FIELD_BOX_PREVIEW_WIDTH}px` } },
+    return inFieldWidth(
       createElement(
         RadioGroup,
         props,

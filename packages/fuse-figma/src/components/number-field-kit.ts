@@ -32,14 +32,15 @@ import type {
 } from "./component-spec";
 import { swapProperties } from "./component-spec";
 import { userAgentDisplay } from "./element-defaults";
+import { WITHIN_CONTROL_FACTS, WITHIN_CONTROL_OMISSIONS } from "./field-box-kit";
 import {
   FIELD_FRAME_DISABLED,
-  FIELD_FRAME_OMISSIONS,
+  FIELD_FRAME_SET,
   frameDescriptions,
   frameError,
   frameLabelRow,
+  isInvalid,
 } from "./field-frame-kit";
-import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always } from "./popup-facts";
 
 /** The label: the docs Basic demo's. */
@@ -131,7 +132,7 @@ function stepper(direction: "decrease" | "increase", invalid: boolean): Instance
     }),
     properties: () => ({ swap: { Icon: direction === "decrease" ? "Minus" : "Plus" } }),
     facts: new Map([["data-invalid", () => invalid]]),
-    shownIn: (cell) => (cell.state === "invalid") === invalid,
+    shownIn: (cell) => isInvalid(cell) === invalid,
   };
 }
 
@@ -218,17 +219,13 @@ const NUMBER_ROOT: PartDefinition = {
 
 /** A number field, as `<NumberField label description defaultValue denomination?>`, read-only, disabled or invalid. */
 export const NUMBER_FIELD: ComponentDefinition = {
+  ...FIELD_FRAME_SET,
   key: "number-field",
-  // CSS leaves the root unclipped, so a ring a layer draws at its edge shows past it (compare-real-1).
-  rootOverflow: "visible",
   name: "Number field",
-  slot: "field",
   // The input takes the states, and Base UI mirrors them on the Field root as data attributes.
   rootKind: "native-control",
   statePartElement: INPUT_ELEMENT,
-  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
   axes: [{ name: "state", values: ["rest", "focus", "disabled", "readonly", "invalid"] }],
-  columnAxis: "state",
   classesFor: () => cn(fieldVariants().root(), frame.root()),
   states: {
     disabled: FIELD_FRAME_DISABLED,
@@ -236,28 +233,15 @@ export const NUMBER_FIELD: ComponentDefinition = {
     readonly: ["[&[readonly]:not(:disabled)]", "data-readonly"],
   },
   // The group reads its input's states through `has-` variants, as Input group's root does.
-  facts: new Map([
-    ["has-[[data-focus-ring-control]:focus-visible]", (cell: Cell) => cell.state === "focus"],
-    ["has-[>[data-focus-ring-control]:disabled]", (cell: Cell) => cell.state === "disabled"],
-    ["has-[>[data-focus-ring-control][aria-invalid=true]]", (cell: Cell) => cell.state === "invalid"],
-  ]),
+  facts: WITHIN_CONTROL_FACTS,
   // A disabled input is natively disabled and never `aria-disabled`, the recipe's invalid focus ring
   // needs invalid and focus at once, which no cell draws, and `entry-floor:` raises the text for a
   // coarse pointer, where the kit draws a desktop.
-  omittedStates: new Set([
-    "aria-disabled",
-    "entry-floor",
-    "has-[>[data-focus-ring-control][aria-disabled=true]]",
-    "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]",
-  ]),
-  omittedCompositions: FIELD_FRAME_OMISSIONS,
-  label: undefined,
-  iconsFor: () => [],
+  omittedStates: new Set(["aria-disabled", "entry-floor", ...WITHIN_CONTROL_OMISSIONS]),
   parts: [
     frameLabelRow(NUMBER_FIELD_LABEL, frame.labelRow()),
     NUMBER_ROOT,
     frameError(NUMBER_FIELD_ERROR),
     ...frameDescriptions(NUMBER_FIELD_DESCRIPTION),
   ],
-  swapProperties: [],
 };

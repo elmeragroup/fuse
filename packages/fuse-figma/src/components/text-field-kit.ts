@@ -29,13 +29,12 @@ import { userAgentDisplay } from "./element-defaults";
 import { showsPlaceholder } from "./field-box-kit";
 import {
   FIELD_FRAME_DISABLED,
-  FIELD_FRAME_OMISSIONS,
+  FIELD_FRAME_SET,
   frameDescriptions,
   frameError,
   frameLabelRow,
 } from "./field-frame-kit";
 import { INPUT } from "./input-kit";
-import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always } from "./popup-facts";
 
 /** The label: the docs Basic demo's. */
@@ -98,30 +97,21 @@ const CONTENT: PartDefinition = {
  * or invalid with an error message.
  */
 export const TEXT_FIELD: ComponentDefinition = {
+  ...FIELD_FRAME_SET,
   key: "text-field",
-  // CSS leaves the root unclipped, so a ring a layer draws at its edge shows past it (compare-real-1).
-  rootOverflow: "visible",
   name: "Text field",
-  slot: "field",
   // The input takes the states, and Base UI mirrors them on the Field root as data attributes.
   rootKind: "native-control",
   statePart: "input",
-  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
   axes: [
     { name: "content", values: ["placeholder", "value"] },
     { name: "state", values: ["rest", "focus", "disabled", "readonly", "invalid"] },
   ],
-  columnAxis: "state",
   classesFor: () => cn(fieldVariants().root(), frame.root(), slots.base()),
   states: {
     disabled: FIELD_FRAME_DISABLED,
     readonly: ["[&[readonly]:not(:disabled)]"],
   },
   facts: new Map([["placeholder", showsPlaceholder]]),
-  omittedStates: new Set(),
-  omittedCompositions: FIELD_FRAME_OMISSIONS,
-  label: undefined,
-  iconsFor: () => [],
   parts: [frameLabelRow(TEXT_FIELD_LABEL, frame.labelRow()), CONTENT],
-  swapProperties: [],
 };

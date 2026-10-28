@@ -26,12 +26,19 @@ import type { Held, Run } from "./fields.ts";
 import { change } from "./plan.ts";
 import { settleInstances } from "./settle.ts";
 
-/** The box that holds an instance layer, a variant or a frame below it. */
-type Holder = SceneNode & DimensionAndPositionMixin & ChildrenMixin;
+/** The box that holds a layer placed outside its auto layout, a variant or a frame below it. */
+export type Holder = SceneNode & DimensionAndPositionMixin & ChildrenMixin;
 
-/** The variant or frame an instance layer sits in. */
-function holderOf(instance: InstanceNode, label: string): Holder {
-  const parent = instance.parent;
+/**
+ * The variant or frame a layer placed outside its auto layout sits in.
+ *
+ * @param layer - The layer.
+ * @param label - The layer's label, for the error.
+ * @returns The layer's parent.
+ * @throws When the layer sits in no variant, frame or instance.
+ */
+export function holderOf(layer: SceneNode, label: string): Holder {
+  const parent = layer.parent;
   if (
     parent === null ||
     (parent.type !== "COMPONENT" && parent.type !== "FRAME" && parent.type !== "INSTANCE")
@@ -68,6 +75,30 @@ function downOf(spec: AnchoredSpec): string {
 }
 
 /**
+ * Plan a placed layer's constraints, which keep its place as its parent resizes.
+ *
+ * @param run - The run.
+ * @param layer - The layer.
+ * @param label - The layer's label, for change lines.
+ * @param constraints - The constraints the spec asks for.
+ * @returns Whether the layer holds them already.
+ */
+export function planConstraints(
+  run: Run,
+  layer: SceneNode & ConstraintMixin,
+  label: string,
+  { horizontal, vertical }: Constraints
+): boolean {
+  const constrained = layer.constraints.horizontal === horizontal && layer.constraints.vertical === vertical;
+  if (!constrained) {
+    change(run.plan, label, `constraints → ${horizontal} ${vertical}`, () => {
+      layer.constraints = { horizontal, vertical };
+    });
+  }
+  return constrained;
+}
+
+/**
  * Plan where an instance sits: in its parent's auto layout, or absolute at the spec's end inset and
  * centre offset. Turning an instance absolute takes it out of the flow, and the constraints keep its
  * place from then on (N11).
@@ -94,14 +125,7 @@ export function planAnchoring(
   if (spec === undefined) {
     return;
   }
-  const { horizontal, vertical } = spec.constraints;
-  const constrained =
-    instance.constraints.horizontal === horizontal && instance.constraints.vertical === vertical;
-  if (!constrained) {
-    change(run.plan, label, `constraints → ${horizontal} ${vertical}`, () => {
-      instance.constraints = { horizontal, vertical };
-    });
-  }
+  const constrained = planConstraints(run, instance, label, spec.constraints);
   const holder = holderOf(instance, label);
   const unchanged = !turns && constrained && held !== "unknown" && heldAt(instance, holder, spec);
   if (unchanged) {

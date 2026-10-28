@@ -13,9 +13,9 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { builtKit, density, fixed, HUG, literal, variantRoot } from "../../test/built-kit";
+import { builtKit, density, frameLayerAt, fixed, HUG, literal, variantRoot } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
-import type { ChildLayerSpec } from "./kit-spec";
+import { layerAt } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
 
@@ -24,10 +24,6 @@ beforeAll(async () => {
 });
 
 const popup = (content: string) => variantRoot(spec, `dialog-content/content=${content}`);
-
-/** The layer of a key among a root's layers. */
-const layer = (layers: readonly ChildLayerSpec[], key: string) =>
-  layers.find((candidate) => candidate.key === key);
 
 describe("the Dialog content component set", () => {
   it("sits on its own page, basic and with the footer close", () => {
@@ -46,17 +42,14 @@ describe("the Dialog content component set", () => {
       paddingTop: density("surface-pad-lg"),
       itemSpacing: literal(24),
     });
-    expect(layer(popup("basic").children, "header")).toMatchObject({
+    expect(layerAt(popup("basic"), ["header"])).toMatchObject({
       direction: "VERTICAL",
       itemSpacing: literal(8),
     });
   });
 
   it("places the corner close 16px from the popup's end and 16px below its top, MAX × MIN", () => {
-    expect([
-      layer(popup("basic").children, "close"),
-      layer(popup("footer-close").children, "close"),
-    ]).toMatchObject([
+    expect([layerAt(popup("basic"), ["close"]), layerAt(popup("footer-close"), ["close"])]).toMatchObject([
       {
         kind: "instance",
         variant: "icon-button/variant=ghost,size=icon-sm,state=rest",
@@ -69,7 +62,7 @@ describe("the Dialog content component set", () => {
 
   it("ends the footer with each demo's actions in order", () => {
     const actions = (content: string) => {
-      const footer = layer(popup(content).children, "footer");
+      const footer = frameLayerAt(popup(content), ["footer"]);
       return footer?.kind === "frame"
         ? footer.children.map((child) => (child.kind === "instance" ? [child.variant, child.properties] : []))
         : [];

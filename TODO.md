@@ -329,7 +329,16 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   changes those sets' layer keys, so do it after a real-file run. The merge waited until a second
   set repeated the pattern, and the Input group (open caret), Command item (shortcut) and Sidebar
   group (rail label) each repeat it. Toolbar repeats it too: it holds one Button instance set per
-  orientation, because an instance's facts read the inner cell.
+  orientation, because an instance's facts read the inner cell. The largest copies are in
+  `field-frame-kit.ts`, whose five Field composites (Textarea field, Select field, Text field,
+  Number field, Radio group) each hold the label twice and the description three times, and in
+  Number field, which holds each stepper twice.
+- Derive a root's clip in the builder instead of setting `rootOverflow: "visible"` by hand: clip
+  where CSS clips the root or where a variant's root casts a shadow, since Figma draws a frame's
+  own spread shadow only on a clipping frame (PR2), and read an instance part's clip from its
+  inner variant. Nine kit modules set the flag by hand, and a new set that needs it cuts its rings
+  at the root's edge until a real-file compare catches it. The change flips `clipsContent` on
+  earlier sets whose roots cast no shadow, so plan it with a real-file run.
 - Move the markup validator from `test/markup-check.ts` into `src` and return diagnostics. The
   compare CLI reaches it through `src/compare/client-markup.ts` and so loads Vitest's `expect`.
 - Mount each client cell a second time with its default-false BOOLEAN properties on. Today every

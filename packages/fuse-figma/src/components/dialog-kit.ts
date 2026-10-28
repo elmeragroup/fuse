@@ -20,15 +20,11 @@
  *   which fills the viewport with `black/10` and blurs what lies behind it, centring the popup's
  *   instance where Base UI's fixed centring puts it.
  */
-import {
-  cn,
-  dialogContentVariants,
-  dialogVariants,
-  overlayCornerCloseClass,
-} from "@elmeragroup/fuse/recipe-catalog";
+import { cn, dialogVariants, overlayCornerCloseClass } from "@elmeragroup/fuse/recipe-catalog";
 
 import { BUTTON, ICON_BUTTON } from "./button-kit";
 import type { ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
+import { DIALOG_CONTENT_SET, dialogDescription, dialogFooter, dialogTitle } from "./dialog-frame-kit";
 import {
   BASIC_COPY,
   CORNER_CLOSE_LABEL,
@@ -37,42 +33,9 @@ import {
   dialogCopy,
 } from "./dialog-text";
 import type { DialogCopy } from "./dialog-text";
-import { userAgentDisplay } from "./element-defaults";
-import { always, never } from "./popup-facts";
+import { OPEN_FACTS, always } from "./popup-facts";
 
 const dialog = dialogVariants();
-
-/** The title, Base UI's `<h2>`. */
-const TITLE: PartDefinition = {
-  key: "title",
-  slot: "dialog-title",
-  shownIn: always,
-  classesFor: () => dialog.title(),
-  elementDefaults: userAgentDisplay("h2"),
-  label: {
-    key: "text",
-    name: "text",
-    charactersFor: (cell) => dialogCopy(cell.content).title,
-    shownIn: always,
-  },
-  iconsFor: () => [],
-};
-
-/** The description, Base UI's `<p>`. */
-const DESCRIPTION: PartDefinition = {
-  key: "description",
-  slot: "dialog-description",
-  shownIn: always,
-  classesFor: () => dialog.description(),
-  elementDefaults: userAgentDisplay("p"),
-  label: {
-    key: "text",
-    name: "text",
-    charactersFor: (cell) => dialogCopy(cell.content).description,
-    shownIn: always,
-  },
-  iconsFor: () => [],
-};
 
 /** The header, the title over the description. */
 const HEADER: PartDefinition = {
@@ -82,9 +45,11 @@ const HEADER: PartDefinition = {
   classesFor: () => dialog.header(),
   label: undefined,
   iconsFor: () => [],
-  parts: [TITLE, DESCRIPTION],
+  parts: [
+    dialogTitle((cell) => dialogCopy(cell.content).title),
+    dialogDescription((cell) => dialogCopy(cell.content).description),
+  ],
 };
-
 /**
  * One footer action of a demo, shown in that demo's cell: the Basic demo's `Dialog.Close` outline
  * Cancel carries the `dialog-close` slot, and every other action Button's own `button` slot.
@@ -111,25 +76,12 @@ const [CANCEL, MOVE] = BASIC_COPY.actions;
 const [CANCEL_CONTRACT, CLOSE] = FOOTER_CLOSE_COPY.actions;
 
 /** The footer row of the demo's actions. */
-const FOOTER: PartDefinition = {
-  key: "footer",
-  slot: "dialog-footer",
-  shownIn: always,
-  classesFor: () => dialog.footer(),
-  label: undefined,
-  iconsFor: () => [],
-  parts: [
-    ...(CANCEL === undefined || MOVE === undefined
-      ? []
-      : [footerAction("basic", CANCEL, "dialog-close"), footerAction("basic", MOVE, undefined)]),
-    ...(CANCEL_CONTRACT === undefined || CLOSE === undefined
-      ? []
-      : [
-          footerAction("footer-close", CANCEL_CONTRACT, undefined),
-          footerAction("footer-close", CLOSE, undefined),
-        ]),
-  ],
-};
+const FOOTER = dialogFooter([
+  footerAction("basic", CANCEL, "dialog-close"),
+  footerAction("basic", MOVE, undefined),
+  footerAction("footer-close", CANCEL_CONTRACT, undefined),
+  footerAction("footer-close", CLOSE, undefined),
+]);
 
 /** The corner close, the ghost `icon-sm` Icon button with X, `Dialog.Close` at the popup's top right. */
 const CORNER_CLOSE: InstanceDefinition = {
@@ -147,29 +99,14 @@ const CORNER_CLOSE: InstanceDefinition = {
 
 /** The open popup, as `<Dialog.Content>` in the docs Basic and Footer close demos. */
 export const DIALOG_CONTENT: ComponentDefinition = {
+  ...DIALOG_CONTENT_SET,
   key: "dialog-content",
   name: "Dialog content",
-  slot: "dialog-content",
   axes: [{ name: "content", values: ["basic", "footer-close"] }],
   columnAxis: "content",
-  classesFor: () => dialogContentVariants({ size: "md" }),
   // Its width and height cap read the viewport it is fixed in.
   viewport: DIALOG_VIEWPORT,
-  states: {},
-  // Base UI stamps an open popup `data-open`.
-  facts: new Map([
-    ["data-open", always],
-    ["data-closed", never],
-  ]),
-  // The popup takes focus only while a keyboard user lands on it, and the kit draws it at rest.
-  omittedStates: new Set(["focus-visible"]),
-  omittedCompositions: new Map([
-    ["*", "`*:[a]:` underlines and darkens a link inside the description, and the demos' copy holds none"],
-  ]),
-  label: undefined,
-  iconsFor: () => [],
   parts: [HEADER, FOOTER, CORNER_CLOSE],
-  swapProperties: [],
 };
 
 /**
@@ -185,10 +122,7 @@ export const DIALOG_OPEN: ComponentDefinition = {
   classesFor: () => cn(dialog.overlay(), "flex items-center justify-center"),
   viewport: DIALOG_VIEWPORT,
   states: {},
-  facts: new Map([
-    ["data-open", always],
-    ["data-closed", never],
-  ]),
+  facts: OPEN_FACTS,
   omittedStates: new Set(),
   label: undefined,
   iconsFor: () => [],

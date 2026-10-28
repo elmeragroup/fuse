@@ -14,22 +14,25 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { builtKit, density, FILL, fixed, HUG, literal, paint, variantRoot } from "../../test/built-kit";
+import {
+  builtKit,
+  density,
+  frameLayerAt,
+  FILL,
+  fixed,
+  HUG,
+  literal,
+  paint,
+  variantRoot,
+} from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
-import type { ChildLayerSpec } from "./kit-spec";
+import { layerAt } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
 
 beforeAll(async () => {
   ({ spec } = await builtKit());
 });
-
-/** The layer at a path of keys below a root. */
-function at(layers: readonly ChildLayerSpec[], ...keys: readonly string[]): ChildLayerSpec | undefined {
-  const [key, ...rest] = keys;
-  const layer = layers.find((candidate) => candidate.key === key);
-  return rest.length === 0 || layer?.kind !== "frame" ? layer : at(layer.children, ...rest);
-}
 
 describe("the Number field stepper component set", () => {
   it("sits on the Number field page at rest, hovered, disabled and read-only, with a swappable glyph", () => {
@@ -84,7 +87,7 @@ describe("the Number field component set", () => {
       { horizontal: fixed(literal(384)), vertical: HUG },
       literal(4),
     ]);
-    const group = at(root.children, "number-field", "group");
+    const group = frameLayerAt(root, ["number-field", "group"]);
     expect(group).toMatchObject({
       direction: "HORIZONTAL",
       sizing: { horizontal: FILL, vertical: fixed(density("control-h-md")) },
@@ -95,13 +98,13 @@ describe("the Number field component set", () => {
       "denomination",
       "steppers",
     ]);
-    expect(at(root.children, "number-field", "group", "input")).toMatchObject({
+    expect(layerAt(root, ["number-field", "group", "input"])).toMatchObject({
       sizing: { horizontal: FILL },
     });
-    expect(at(root.children, "number-field", "group", "denomination")).toMatchObject({
+    expect(layerAt(root, ["number-field", "group", "denomination"])).toMatchObject({
       visibleProperty: "Denomination",
     });
-    const steppers = at(root.children, "number-field", "group", "steppers");
+    const steppers = frameLayerAt(root, ["number-field", "group", "steppers"]);
     expect(
       steppers?.kind === "frame"
         ? steppers.children.map((child) =>
@@ -118,14 +121,13 @@ describe("the Number field component set", () => {
 
   it("fills a disabled or read-only group muted and gives its steppers the matching state", () => {
     const group = (state: string) =>
-      at(variantRoot(spec, `number-field/state=${state}`).children, "number-field", "group");
+      frameLayerAt(variantRoot(spec, `number-field/state=${state}`), ["number-field", "group"]);
     const variants = (state: string) => {
-      const steppers = at(
-        variantRoot(spec, `number-field/state=${state}`).children,
+      const steppers = frameLayerAt(variantRoot(spec, `number-field/state=${state}`), [
         "number-field",
         "group",
-        "steppers"
-      );
+        "steppers",
+      ]);
       return steppers?.kind === "frame"
         ? steppers.children.map((child) => (child.kind === "instance" ? child.variant : ""))
         : [];

@@ -26,16 +26,10 @@ import {
 } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
-import {
-  FIELD_FRAME_DISABLED,
-  FIELD_FRAME_OMISSIONS,
-  frameDescriptions,
-  frameError,
-} from "./field-frame-kit";
+import { FIELD_FRAME_DISABLED, FIELD_FRAME_SET, frameDescriptions, frameError } from "./field-frame-kit";
 import { FIELD_LEGEND } from "./field-text-kit";
-import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
-import { always } from "./popup-facts";
-import { RADIO_ROW } from "./radio-row-kit";
+import { always, never } from "./popup-facts";
+import { RADIO_FIELDSET_FACTS, RADIO_ROW } from "./radio-row-kit";
 
 /** The legend: the docs Basic demo's. */
 export const RADIO_GROUP_LEGEND = "Contract";
@@ -148,34 +142,21 @@ const FIELD_SET: PartDefinition = {
  * `<Radio>` rows, disabled, or invalid with an error message.
  */
 export const RADIO_GROUP: ComponentDefinition = {
+  ...FIELD_FRAME_SET,
   key: "radio-group",
-  // CSS leaves the root unclipped, so a ring a layer draws at its edge shows past it (compare-real-1).
-  rootOverflow: "visible",
   name: "Radio group",
-  slot: "field",
   // The radios take the states, and Base UI mirrors them on the Field root as data attributes.
   rootKind: "base-ui-field-part",
-  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
   axes: [
     { name: "orientation", values: ORIENTATIONS },
     { name: "state", values: ["rest", "disabled", "invalid"] },
   ],
-  columnAxis: "state",
-  classesFor: () => fieldVariants().root(),
   states: { disabled: FIELD_FRAME_DISABLED },
   facts: new Map([
     // The Field root is vertical in every cell, whatever the group's own orientation.
     ["data-vertical", always],
-    ["data-horizontal", () => false],
-    // The fieldset holds the radio group, which holds rows, no selection cards.
-    ["has-[>[data-slot=radio-group]]", always],
-    ["has-[>[data-slot=checkbox-group]]", () => false],
-    ["has-[>[data-selection-item]]", () => false],
+    ["data-horizontal", never],
+    ...RADIO_FIELDSET_FACTS,
   ]),
-  omittedStates: new Set(),
-  omittedCompositions: FIELD_FRAME_OMISSIONS,
-  label: undefined,
-  iconsFor: () => [],
   parts: [FIELD_SET],
-  swapProperties: [],
 };

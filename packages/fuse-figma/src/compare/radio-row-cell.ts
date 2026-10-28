@@ -12,12 +12,13 @@
 
 import { createElement } from "react";
 
-import { Radio, RadioGroup } from "../../../fuse/dist/radio-group.js";
-import type { RadioGroupProps } from "../../../fuse/dist/radio-group.js";
+import { Radio } from "../../../fuse/dist/radio-group.js";
 import type { Cell } from "../components/component-spec.ts";
-import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
-import { fillsRow, RADIO_ROW_TEXT } from "../components/radio-row-kit.ts";
+import { fillsWidth } from "../components/field-box-kit.ts";
+import { RADIO_ROW_TEXT } from "../components/radio-row-kit.ts";
 import type { CellRendering } from "./cell-renderers.ts";
+import { inFieldWidth } from "./field-text-cell.ts";
+import { inRadioGroup } from "./radio-cell.ts";
 
 /** The row's value. */
 const VALUE = "fixed";
@@ -25,21 +26,13 @@ const VALUE = "fixed";
 /** A `radio-row` cell: the labelled row, checked or not, disabled or in an invalid group. */
 export const radioRow: CellRendering = {
   element: (cell: Cell) => {
-    const fill = fillsRow(cell);
-    const group: RadioGroupProps = {
-      isInvalid: cell.state === "invalid",
-      orientation: fill ? "vertical" : "horizontal",
-    };
-    if (cell.checked === "on") {
-      group.defaultValue = VALUE;
-    }
-    const radioGroup = createElement(
-      RadioGroup,
-      group,
-      createElement(Radio, { value: VALUE, isDisabled: cell.state === "disabled" }, RADIO_ROW_TEXT)
+    const fill = fillsWidth(cell);
+    const radioGroup = inRadioGroup(
+      cell,
+      VALUE,
+      createElement(Radio, { value: VALUE, isDisabled: cell.state === "disabled" }, RADIO_ROW_TEXT),
+      { orientation: fill ? "vertical" : "horizontal" }
     );
-    return fill
-      ? createElement("div", { style: { width: `${FIELD_BOX_PREVIEW_WIDTH}px` } }, radioGroup)
-      : radioGroup;
+    return fill ? inFieldWidth(radioGroup) : radioGroup;
   },
 };

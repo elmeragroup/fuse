@@ -11,6 +11,15 @@ export const always = (): boolean => true;
 /** A predicate that holds in no cell. */
 export const never = (): boolean => false;
 
+/**
+ * The variants Base UI stamps on an open popup that no anchor places, such as a dialog's popup or its
+ * scrim: `data-open`, never `data-closed`.
+ */
+export const OPEN_FACTS: ReadonlyMap<string, (cell: Cell) => boolean> = new Map([
+  ["data-open", always],
+  ["data-closed", never],
+]);
+
 /** The sides Base UI can place a popup on, each of which it stamps as `data-side`. */
 const SIDES = ["top", "bottom", "left", "right", "inline-start", "inline-end"] as const;
 

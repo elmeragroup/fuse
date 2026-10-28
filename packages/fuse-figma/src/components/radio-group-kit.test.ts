@@ -16,9 +16,20 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { builtKit, density, FILL, fixed, HUG, literal, paint, variantRoot } from "../../test/built-kit";
+import {
+  builtKit,
+  density,
+  FILL,
+  fixed,
+  frameLayerAt,
+  HUG,
+  literal,
+  outline,
+  paint,
+  variantRoot,
+} from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
-import type { ChildLayerSpec } from "./kit-spec";
+import { layerAt } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
 
@@ -26,23 +37,8 @@ beforeAll(async () => {
   ({ spec } = await builtKit());
 });
 
-/** Each layer's key, and the variant it shows where it is an instance, depth first. */
-function outline(layers: readonly ChildLayerSpec[], depth = 0): readonly string[] {
-  return layers.flatMap((layer) => [
-    `${"  ".repeat(depth)}${layer.key}${layer.kind === "instance" ? ` -> ${layer.variant}` : ""}`,
-    ...(layer.kind === "frame" ? outline(layer.children, depth + 1) : []),
-  ]);
-}
-
 function cell(orientation: string, state: string) {
   return variantRoot(spec, `radio-group/orientation=${orientation},state=${state}`);
-}
-
-/** The layer at a path of keys below a root. */
-function at(layers: readonly ChildLayerSpec[], ...keys: readonly string[]): ChildLayerSpec | undefined {
-  const [key, ...rest] = keys;
-  const layer = layers.find((candidate) => candidate.key === key);
-  return rest.length === 0 || layer?.kind !== "frame" ? layer : at(layer.children, ...rest);
 }
 
 describe("the Radio group component set", () => {
@@ -72,15 +68,15 @@ describe("the Radio group component set", () => {
       "    row-2 -> radio-row/width=fill,checked=off,state=rest",
       "    row-3 -> radio-row/width=fill,checked=off,state=rest",
     ]);
-    expect(at(root.children, "field-set")).toMatchObject({ itemSpacing: density("surface-gap-md") });
-    expect(at(root.children, "field-set", "legend-row-flush")).toMatchObject({
+    expect(layerAt(root, ["field-set"])).toMatchObject({ itemSpacing: density("surface-gap-md") });
+    expect(layerAt(root, ["field-set", "legend-row-flush"])).toMatchObject({
       itemSpacing: literal(0),
       sizing: { horizontal: FILL, vertical: HUG },
     });
   });
 
   it("stacks filling rows surface-gap-sm apart, or lays hugging rows surface-gap-lg apart in a row", () => {
-    const group = (orientation: string) => at(cell(orientation, "rest").children, "field-set", "group");
+    const group = (orientation: string) => frameLayerAt(cell(orientation, "rest"), ["field-set", "group"]);
     const rows = (orientation: string) => {
       const layer = group(orientation);
       const children = layer?.kind === "frame" ? layer.children : [];
@@ -121,7 +117,7 @@ describe("the Radio group component set", () => {
       "  group",
       "  error -> field-error/state=invalid",
     ]);
-    expect(at(invalid.children, "field-set", "legend-row-flush", "legend-row", "legend")).toMatchObject({
+    expect(layerAt(invalid, ["field-set", "legend-row-flush", "legend-row", "legend"])).toMatchObject({
       overrides: [{ path: ["text"], field: "textColor", color: paint("error") }],
     });
   });

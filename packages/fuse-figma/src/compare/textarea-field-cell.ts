@@ -21,7 +21,6 @@ import type { ComponentProps } from "react";
 
 import { TextareaField } from "../../../fuse/dist/textarea-field.js";
 import type { Cell } from "../components/component-spec.ts";
-import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
 import {
   TEXTAREA_FIELD_COUNTER_PROPERTY,
   TEXTAREA_FIELD_DESCRIPTION,
@@ -31,6 +30,7 @@ import {
   TEXTAREA_FIELD_PLACEHOLDER,
 } from "../components/textarea-field-kit.ts";
 import type { CellRendering } from "./cell-renderers.ts";
+import { inFieldWidth } from "./field-text-cell.ts";
 
 /** A `textarea-field` cell: the labelled textarea read-only, disabled or invalid, with or without its counter. */
 export const textareaField: CellRendering = {
@@ -49,10 +49,6 @@ export const textareaField: CellRendering = {
     if (turnedOn.has(TEXTAREA_FIELD_COUNTER_PROPERTY)) {
       props.maxLength = TEXTAREA_FIELD_MAX_LENGTH;
     }
-    return createElement(
-      "div",
-      { style: { width: `${FIELD_BOX_PREVIEW_WIDTH}px` } },
-      createElement(TextareaField, props)
-    );
+    return inFieldWidth(createElement(TextareaField, props));
   },
 };

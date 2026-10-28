@@ -9,24 +9,14 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { builtKit, variantRoot } from "../../test/built-kit";
+import { builtKit, instancesIn, variantRoot } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
-import type { ChildLayerSpec } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
 
 beforeAll(async () => {
   ({ spec } = await builtKit());
 });
-
-/** Every instance layer at or below these layers. */
-function instancesIn(
-  layers: readonly ChildLayerSpec[]
-): readonly Extract<ChildLayerSpec, { kind: "instance" }>[] {
-  return layers.flatMap((layer) =>
-    layer.kind === "instance" ? [layer] : layer.kind === "frame" ? instancesIn(layer.children) : []
-  );
-}
 
 describe("absolute MAX × MIN instances", () => {
   it("show only mains with auto layout, which keep the end inset as density resizes them (W5-P14b)", () => {

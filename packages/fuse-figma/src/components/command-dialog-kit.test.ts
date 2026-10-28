@@ -27,7 +27,8 @@ import {
   variantRoot,
 } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
-import type { ChildLayerSpec } from "./kit-spec";
+import { layerAt } from "./kit-spec";
+import type { BoxSpec, ChildLayerSpec } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
 
@@ -37,12 +38,9 @@ beforeAll(async () => {
 
 const palette = () => variantRoot(spec, "command-palette/content=commands");
 
-/** The layer of a key among a root's layers. */
-const layer = (layers: readonly ChildLayerSpec[], key: string) =>
-  layers.find((candidate) => candidate.key === key);
-
-/** The layers of a frame, or none. */
-const childrenOf = (frame: ChildLayerSpec | undefined) => (frame?.kind === "frame" ? frame.children : []);
+/** The layers of a box or a frame, or none. */
+const childrenOf = (frame: BoxSpec | ChildLayerSpec | undefined) =>
+  frame !== undefined && "children" in frame ? frame.children : [];
 
 describe("the Command palette component set", () => {
   it("sits on the Command page, one cell", () => {
@@ -66,7 +64,7 @@ describe("the Command palette component set", () => {
   });
 
   it("insets the search Input group by surface-gap-sm above and across", () => {
-    const input = layer(palette().children, "input");
+    const input = layerAt(palette(), ["input"]);
     expect(input).toMatchObject({
       sizing: { horizontal: FILL, vertical: HUG },
       paddingTop: density("surface-gap-sm"),
@@ -81,7 +79,7 @@ describe("the Command palette component set", () => {
 
   // The Command item set's own label is the first command, `New customer`, so its row sets none.
   it("lists the demo's six commands at rest", () => {
-    const rows = childrenOf(layer(palette().children, "list")).map((row) =>
+    const rows = childrenOf(layerAt(palette(), ["list"])).map((row) =>
       row.kind === "instance" ? [row.variant, row.properties] : []
     );
     expect(rows).toEqual([
@@ -95,7 +93,7 @@ describe("the Command palette component set", () => {
   });
 
   it("sets the footer's hints on one line, 16px apart, their keys as Kbd instances", () => {
-    const footer = layer(palette().children, "footer");
+    const footer = layerAt(palette(), ["footer"]);
     expect(footer).toMatchObject({
       direction: "HORIZONTAL",
       itemSpacing: literal(16),

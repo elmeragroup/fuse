@@ -5,11 +5,14 @@
 
 import { ALERT_DIALOG_VIEWPORT } from "./alert-dialog-text";
 
-/** The copy of one Dialog cell: the title, the description and the footer's actions in order. */
+/** One footer action: its label and its Button variant. */
+type DialogAction = { readonly label: string; readonly variant: "outline" | "default" };
+
+/** The copy of one Dialog cell: the title, the description and the footer's two actions in order. */
 export type DialogCopy = {
   readonly title: string;
   readonly description: string;
-  readonly actions: readonly { readonly label: string; readonly variant: "outline" | "default" }[];
+  readonly actions: readonly [DialogAction, DialogAction];
 };
 
 /** The Basic demo's copy: an outline Cancel, `Dialog.Close`, then the default action. */

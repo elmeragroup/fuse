@@ -13,7 +13,7 @@ export class FontNotLoaded extends Error {
 export type UsedFont = { readonly weight: string; readonly families: readonly string[] };
 
 /** A family as CSS names it, without its quotes. */
-export function unquote(family: string): string {
+function unquote(family: string): string {
   return family.trim().replaceAll(/^["']|["']$/g, "");
 }
 

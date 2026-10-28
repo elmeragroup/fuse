@@ -34,23 +34,20 @@ import type {
   InstanceDefinition,
   PartDefinition,
 } from "./component-spec";
-import { FIELD_ROOT, FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH } from "./field-box-kit";
+import { FIELD_ROOT, FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH, fillsWidth, HUG_OR_FILL } from "./field-box-kit";
 import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
-import { always } from "./popup-facts";
+import { always, never } from "./popup-facts";
 import { RADIO } from "./radio-kit";
 
-/** The widths a row takes, as a horizontal group hugs its rows and a vertical one stretches them. */
-const WIDTHS = ["hug", "fill"] as const;
-
 /**
- * Whether a cell's row fills its group's width, as a vertical group stretches it.
- *
- * @param cell - A `radio-row` cell.
- * @returns True at `width=fill`.
+ * The facts of the fieldset around a radio group: it holds the radio group, and the group holds
+ * rows, no selection cards.
  */
-export function fillsRow(cell: Cell): boolean {
-  return cell.width === "fill";
-}
+export const RADIO_FIELDSET_FACTS: ReadonlyMap<string, (cell: Cell) => boolean> = new Map([
+  ["has-[>[data-slot=radio-group]]", always],
+  ["has-[>[data-slot=checkbox-group]]", never],
+  ["has-[>[data-selection-item]]", never],
+]);
 
 /**
  * The elements a `RadioGroup` puts around a row, outermost first: the `Field.Root`, the `Field.Set`
@@ -60,7 +57,7 @@ export function fillsRow(cell: Cell): boolean {
  * @param cell - A `radio-row` cell.
  * @returns The ancestors.
  */
-export function radioGroupAround(cell: Cell): readonly AncestorDefinition[] {
+function radioGroupAround(cell: Cell): readonly AncestorDefinition[] {
   return [
     FIELD_ROOT,
     {
@@ -72,7 +69,7 @@ export function radioGroupAround(cell: Cell): readonly AncestorDefinition[] {
     {
       slot: "radio-group",
       classes: selectionGroupOrientationVariants({
-        orientation: fillsRow(cell) ? "vertical" : "horizontal",
+        orientation: fillsWidth(cell) ? "vertical" : "horizontal",
       }).group(),
       undrawn: "the group primitive lays out the rows, which the row set draws one at a time",
     },
@@ -127,7 +124,8 @@ export const RADIO_ROW: ComponentDefinition = {
   rootKind: "base-ui-span",
   statePart: "radio-group-item",
   axes: [
-    { name: "width", values: WIDTHS },
+    // A horizontal group hugs its rows, and a vertical one stretches them.
+    { name: "width", values: HUG_OR_FILL },
     { name: "checked", values: ["off", "on"] },
     { name: "state", values: ["rest", "focus", "disabled", "invalid"] },
   ],
@@ -136,17 +134,15 @@ export const RADIO_ROW: ComponentDefinition = {
   ancestorsFor: radioGroupAround,
   // A vertical group stretches a row across its width, here the kit's field width; a horizontal one
   // gives it none, so it hugs.
-  previewWidthFor: (cell) => (fillsRow(cell) ? FIELD_BOX_PREVIEW_WIDTH : undefined),
+  previewWidthFor: (cell) => (fillsWidth(cell) ? FIELD_BOX_PREVIEW_WIDTH : undefined),
   states: {
     // The content reads the radio's `data-disabled`, and the label its hidden input's `:disabled`.
     disabled: ["peer-data-disabled", "has-disabled"],
   },
   facts: new Map([
     ...BASE_UI_CHECKED_FACTS,
-    // The fieldset around the row holds the radio group, and the group holds rows, no selection cards.
-    ["has-[>[data-slot=radio-group]]", always],
-    ["has-[>[data-slot=checkbox-group]]", () => false],
-    ["has-[>[data-selection-item]]", () => false],
+    // The fieldset around the row.
+    ...RADIO_FIELDSET_FACTS,
   ]),
   omittedStates: new Set(),
   omittedCompositions: new Map([

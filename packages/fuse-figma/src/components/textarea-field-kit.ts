@@ -16,22 +16,16 @@
  * - The label, the error and the description, and the states Base UI stamps on them, come from
  *   `field-frame-kit.ts`.
  */
-import {
-  cn,
-  fieldFrameVariants,
-  fieldVariants,
-  textareaFieldVariants,
-} from "@elmeragroup/fuse/recipe-catalog";
+import { cn, fieldFrameVariants, textareaFieldVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
 import {
   FIELD_FRAME_DISABLED,
-  FIELD_FRAME_OMISSIONS,
+  FIELD_FRAME_SET,
   frameDescriptions,
   frameError,
   frameLabelRow,
 } from "./field-frame-kit";
-import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always } from "./popup-facts";
 import { TEXTAREA } from "./textarea-kit";
 
@@ -51,7 +45,7 @@ export const TEXTAREA_FIELD_ERROR = "Keep it under 120 characters.";
 export const TEXTAREA_FIELD_MAX_LENGTH = 120;
 
 /** The counter over the empty textarea: no characters of {@link TEXTAREA_FIELD_MAX_LENGTH}. */
-export const TEXTAREA_FIELD_COUNTER = `0/${TEXTAREA_FIELD_MAX_LENGTH}`;
+const TEXTAREA_FIELD_COUNTER = `0/${TEXTAREA_FIELD_MAX_LENGTH}`;
 
 /** The BOOLEAN property that shows the counter. */
 export const TEXTAREA_FIELD_COUNTER_PROPERTY = "Counter";
@@ -97,18 +91,13 @@ const CONTROL: InstanceDefinition = {
  * disabled or invalid with an error message.
  */
 export const TEXTAREA_FIELD: ComponentDefinition = {
+  ...FIELD_FRAME_SET,
   key: "textarea-field",
-  // CSS leaves the root unclipped, so a ring a layer draws at its edge shows past it (compare-real-1).
-  rootOverflow: "visible",
   name: "Textarea field",
-  slot: "field",
   // The textarea takes the states, and Base UI mirrors them on the Field root as data attributes.
   rootKind: "native-control",
   statePart: "field-control",
-  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
   axes: [{ name: "state", values: ["rest", "focus", "disabled", "readonly", "invalid"] }],
-  columnAxis: "state",
-  classesFor: () => fieldVariants().root(),
   // The root is the `group/field` a disabled Field marks `data-disabled`, which the label reads.
   states: {
     disabled: FIELD_FRAME_DISABLED,
@@ -117,15 +106,10 @@ export const TEXTAREA_FIELD: ComponentDefinition = {
   },
   // The textarea holds no value, so it shows its placeholder.
   facts: new Map([["placeholder", always]]),
-  omittedStates: new Set(),
-  omittedCompositions: FIELD_FRAME_OMISSIONS,
-  label: undefined,
-  iconsFor: () => [],
   parts: [
     LABEL_ROW,
     CONTROL,
     frameError(TEXTAREA_FIELD_ERROR),
     ...frameDescriptions(TEXTAREA_FIELD_DESCRIPTION),
   ],
-  swapProperties: [],
 };

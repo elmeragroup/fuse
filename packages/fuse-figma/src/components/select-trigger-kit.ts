@@ -32,25 +32,19 @@
 import { cn, selectTriggerVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { Cell, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
-import { FIELD_ROOT, FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH, showsPlaceholder } from "./field-box-kit";
+import {
+  FIELD_ROOT,
+  FIELD_ROOT_SR_ONLY,
+  FIELD_ROOT_STRETCH,
+  fillsWidth,
+  HUG_OR_FILL,
+  showsPlaceholder,
+} from "./field-box-kit";
 import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always } from "./popup-facts";
 
 /** The text every cell shows, the default of the `Value` property: the docs Basic demo's placeholder. */
 export const SELECT_TRIGGER_TEXT = "Pick a fruit";
-
-/** How the trigger takes its width: the recipe's own `w-fit` first, then `w-full` merged over it. */
-const WIDTHS = ["hug", "fill"] as const;
-
-/**
- * Whether a cell's trigger fills its container, as SelectField's does.
- *
- * @param cell - A `select-trigger` cell.
- * @returns True at `width=fill`.
- */
-export function fills(cell: Cell): boolean {
-  return cell.width === "fill";
-}
 
 /** The sizes `selectTriggerVariants` declares, its default first. */
 const SIZES = ["default", "sm"] as const;
@@ -134,14 +128,16 @@ export const SELECT_TRIGGER: ComponentDefinition = {
   // after the set's first release, so a hugging cell keeps the key it had then (W5-P2).
   addedAxes: new Set(["width"]),
   axes: [
-    { name: "width", values: WIDTHS },
+    // The recipe's own `w-fit` hugs, and `w-full` merged over it fills, as SelectField's trigger does.
+    { name: "width", values: HUG_OR_FILL },
     { name: "size", values: SIZES },
     { name: "state", values: ["rest", "focus", "disabled", "invalid"] },
     { name: "content", values: ["placeholder", "value"] },
     { name: "open", values: ["off", "on"] },
   ],
   columnAxis: "state",
-  classesFor: (cell) => (fills(cell) ? cn(slotsFor(cell).trigger(), "w-full") : slotsFor(cell).trigger()),
+  classesFor: (cell) =>
+    fillsWidth(cell) ? cn(slotsFor(cell).trigger(), "w-full") : slotsFor(cell).trigger(),
   // Only an invalid cell puts the trigger in a Field root, the one source Base UI reads the trigger's
   // validity from.
   ancestorsFor: (cell) => (cell.state === "invalid" ? [FIELD_ROOT] : []),

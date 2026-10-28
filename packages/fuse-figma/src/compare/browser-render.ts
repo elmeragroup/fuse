@@ -140,9 +140,6 @@ export class BrowserUnavailable extends Error {
   readonly _tag = "BrowserUnavailable" as const;
 }
 
-/** The page did not load a font its text uses, so the text would come from a fallback. */
-export { FontNotLoaded } from "./font-check.ts";
-
 /** The computed styles a hover or focus face changes. */
 type StyleSignature = readonly string[];
 

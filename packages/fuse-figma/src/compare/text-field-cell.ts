@@ -18,7 +18,6 @@ import type { ComponentProps } from "react";
 import { TextField } from "../../../fuse/dist/text-field.js";
 import type { Cell } from "../components/component-spec.ts";
 import { showsPlaceholder } from "../components/field-box-kit.ts";
-import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
 import {
   TEXT_FIELD_DESCRIPTION,
   TEXT_FIELD_ERROR,
@@ -26,6 +25,7 @@ import {
   TEXT_FIELD_PLACEHOLDER,
 } from "../components/text-field-kit.ts";
 import type { CellRendering } from "./cell-renderers.ts";
+import { inFieldWidth } from "./field-text-cell.ts";
 
 /** A `text-field` cell: the labelled input holding the placeholder or a value, read-only, disabled or invalid. */
 export const textField: CellRendering = {
@@ -45,10 +45,6 @@ export const textField: CellRendering = {
     if (cell.state === "invalid") {
       props.errorMessage = TEXT_FIELD_ERROR;
     }
-    return createElement(
-      "div",
-      { style: { width: `${FIELD_BOX_PREVIEW_WIDTH}px` } },
-      createElement(TextField, props)
-    );
+    return inFieldWidth(createElement(TextField, props));
   },
 };

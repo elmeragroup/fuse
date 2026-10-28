@@ -16,9 +16,19 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { builtKit, density, fixed, HUG, literal, paint, token, variantRoot } from "../../test/built-kit";
+import {
+  builtKit,
+  density,
+  frameLayerAt,
+  fixed,
+  HUG,
+  literal,
+  paint,
+  token,
+  variantRoot,
+} from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
-import type { ChildLayerSpec } from "./kit-spec";
+import { layerAt } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
 
@@ -27,13 +37,6 @@ beforeAll(async () => {
 });
 
 const popup = (variant: string) => variantRoot(spec, `alert-dialog-content/variant=${variant}`);
-
-/** The layer at a path of keys below a root. */
-function at(layers: readonly ChildLayerSpec[], ...keys: readonly string[]): ChildLayerSpec | undefined {
-  const [key, ...rest] = keys;
-  const layer = layers.find((candidate) => candidate.key === key);
-  return rest.length === 0 || layer?.kind !== "frame" ? layer : at(layer.children, ...rest);
-}
 
 describe("the Alert dialog content component set", () => {
   it("sits on its own page, destructive, neutral and pending", () => {
@@ -59,16 +62,16 @@ describe("the Alert dialog content component set", () => {
   });
 
   it("holds the title and the title line's icon, WarningOctagon in error or Info", () => {
-    const header = (variant: string) => at(popup(variant).children, "header");
+    const header = (variant: string) => layerAt(popup(variant), ["header"]);
     expect(header("destructive")).toMatchObject({ primaryAlign: "SPACE_BETWEEN", itemSpacing: literal(16) });
-    expect(at(popup("destructive").children, "header", "title-line")).toMatchObject({
+    expect(layerAt(popup("destructive"), ["header", "title-line"])).toMatchObject({
       sizing: { horizontal: HUG, vertical: fixed(literal(28)) },
       children: [{ kind: "icon", icon: "icon/WarningOctagon", size: literal(20), color: paint("error") }],
     });
-    expect(at(popup("neutral").children, "header", "title-line")).toMatchObject({
+    expect(layerAt(popup("neutral"), ["header", "title-line"])).toMatchObject({
       children: [{ kind: "icon", icon: "icon/Info" }],
     });
-    expect(at(popup("neutral").children, "header", "title", "text")).toMatchObject({
+    expect(layerAt(popup("neutral"), ["header", "title", "text"])).toMatchObject({
       characters: "Archive this meter?",
       fontSize: literal(20),
       lineHeight: literal(28),
@@ -77,12 +80,12 @@ describe("the Alert dialog content component set", () => {
 
   it("ends the footer with the ghost Cancel and the action, pending in the pending cell", () => {
     const buttons = (variant: string) => {
-      const footer = at(popup(variant).children, "footer");
+      const footer = frameLayerAt(popup(variant), ["footer"]);
       return footer?.kind === "frame"
         ? footer.children.map((child) => (child.kind === "instance" ? [child.variant, child.properties] : []))
         : [];
     };
-    expect(at(popup("destructive").children, "footer")).toMatchObject({
+    expect(layerAt(popup("destructive"), ["footer"])).toMatchObject({
       primaryAlign: "MAX",
       itemSpacing: literal(8),
     });

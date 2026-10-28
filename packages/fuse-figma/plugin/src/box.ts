@@ -16,7 +16,7 @@ import {
   planNumber,
   planPaints,
   planScalar,
-  planShadows,
+  planEffects,
 } from "./fields.ts";
 import type { Held, NumberField, Run } from "./fields.ts";
 import { change, recordsAny } from "./plan.ts";
@@ -244,7 +244,7 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
   if (stroke !== undefined) {
     planDashPattern(run, node, label, "sides" in stroke ? [] : (stroke.dashPattern ?? []));
   }
-  planShadows(run, node, label, spec.shadows, spec.backgroundBlur);
+  planEffects(run, node, label, spec.shadows, spec.backgroundBlur);
   planNumber(
     run,
     node,

@@ -8,6 +8,7 @@
  * the same holder.
  */
 import type { CoverageNote, Feed, LayerStyle } from "./cascade";
+import type { PreviewLength } from "./component-spec";
 import {
   affineLength,
   describeNumber,
@@ -139,7 +140,7 @@ export const BLOCK_LEVEL: ReadonlySet<string> = new Set(["block", "list-item", "
 export function rootRoom(
   preview: {
     readonly width: number | undefined;
-    readonly height: { readonly pixels: number; readonly css?: string | undefined } | undefined;
+    readonly height: PreviewLength | undefined;
   },
   style: LayerStyle,
   variables: VariableIndex,
@@ -187,8 +188,12 @@ export function rootRoom(
  * insets of an axis are literal lengths and the root sets no size there, they size it to the viewport
  * less the insets (CSS 2.1 §10.3.7, §10.6.4), as a scrim's `inset-0` fills the window; otherwise the
  * root shrinks to fit, as an absolute box does.
+ *
+ * @param style - The fixed root's style.
+ * @param viewport - The viewport its definition declares.
+ * @returns The root's room.
  */
-function viewportRoom(style: LayerStyle, viewport: Viewport): Room {
+export function viewportRoom(style: LayerStyle, viewport: Viewport): Room {
   const axis = (length: number, size: string, insets: readonly [string, string]): AxisRoom => {
     const offsets = insets.map((property) => evaluateLength(style.resolved(property) ?? ""));
     const automatic = normalizeCss(style.resolved(size) ?? "auto") === "auto";

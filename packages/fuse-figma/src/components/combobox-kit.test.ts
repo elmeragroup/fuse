@@ -36,12 +36,12 @@ import {
   fixed,
   HUG,
   literal,
+  outline,
   paint,
   token,
   variantRoot,
 } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
-import type { ChildLayerSpec } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
 
@@ -51,14 +51,6 @@ beforeAll(async () => {
 
 function set(key: string) {
   return spec.componentSets.find((candidate) => candidate.key === key);
-}
-
-/** Each layer's key, its kind, and the variant it shows where it is an instance, depth first. */
-function outline(layers: readonly ChildLayerSpec[], depth = 0): readonly string[] {
-  return layers.flatMap((layer) => [
-    `${"  ".repeat(depth)}${layer.key}${layer.kind === "instance" ? ` -> ${layer.variant}` : ""}`,
-    ...(layer.kind === "frame" ? outline(layer.children, depth + 1) : []),
-  ]);
 }
 
 describe("the Combobox item component set", () => {

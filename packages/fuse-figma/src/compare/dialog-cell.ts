@@ -29,7 +29,7 @@ function footer(content: string | undefined) {
     return createElement(Dialog.Footer, {
       key: "footer",
       showCloseButton: true,
-      children: createElement(Button, { children: first?.label }),
+      children: createElement(Button, { children: first.label }),
     });
   }
   return createElement(Dialog.Footer, {
@@ -38,9 +38,9 @@ function footer(content: string | undefined) {
       createElement(Dialog.Close, {
         key: "cancel",
         render: createElement(Button, { variant: "outline" }),
-        children: first?.label,
+        children: first.label,
       }),
-      createElement(Button, { key: "action", children: second?.label }),
+      createElement(Button, { key: "action", children: second.label }),
     ],
   });
 }

@@ -15,9 +15,18 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { builtKit, FILL, fixed, HUG, literal, paint, variantRoot } from "../../test/built-kit";
+import {
+  builtKit,
+  FILL,
+  fixed,
+  HUG,
+  instancesIn,
+  literal,
+  outline,
+  paint,
+  variantRoot,
+} from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
-import type { ChildLayerSpec } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
 
@@ -25,24 +34,9 @@ beforeAll(async () => {
   ({ spec } = await builtKit());
 });
 
-/** Each layer's key, and the variant it shows where it is an instance, depth first. */
-function outline(layers: readonly ChildLayerSpec[], depth = 0): readonly string[] {
-  return layers.flatMap((layer) => [
-    `${"  ".repeat(depth)}${layer.key}${layer.kind === "instance" ? ` -> ${layer.variant}` : ""}`,
-    ...(layer.kind === "frame" ? outline(layer.children, depth + 1) : []),
-  ]);
-}
-
 /** A variant's root, by its state and content. */
 function cell(state: string, content: string) {
   return variantRoot(spec, `select-field/state=${state},content=${content}`);
-}
-
-/** The instance layers below a root, depth first. */
-function instances(layers: readonly ChildLayerSpec[]): readonly ChildLayerSpec[] {
-  return layers.flatMap((layer) =>
-    layer.kind === "instance" ? [layer] : layer.kind === "frame" ? instances(layer.children) : []
-  );
 }
 
 describe("the Select field component set", () => {
@@ -85,11 +79,12 @@ describe("the Select field component set", () => {
   it("gives the trigger the placeholder or the selected plan, and each instance the demo's copy", () => {
     expect(
       ["placeholder", "value"].map((content) =>
-        instances(cell("rest", content).children).map((layer) =>
-          layer.kind === "instance"
-            ? [layer.key, layer.sizing.horizontal, layer.properties, layer.exposed]
-            : []
-        )
+        instancesIn(cell("rest", content).children).map((layer) => [
+          layer.key,
+          layer.sizing.horizontal,
+          layer.properties,
+          layer.exposed,
+        ])
       )
     ).toEqual([
       [
@@ -108,9 +103,7 @@ describe("the Select field component set", () => {
   it("shows each state on the trigger, and dims the label only in a disabled Field", () => {
     expect(
       ["rest", "focus", "disabled"].map((state) =>
-        instances(cell(state, "value").children).map((layer) =>
-          layer.kind === "instance" ? layer.variant : ""
-        )
+        instancesIn(cell(state, "value").children).map((layer) => layer.variant)
       )
     ).toEqual([
       [
@@ -140,7 +133,7 @@ describe("the Select field component set", () => {
       "error -> field-error/state=invalid",
       "description-invalid -> field-description/state=rest",
     ]);
-    const [label, , error] = instances(root.children);
+    const [label, , error] = instancesIn(root.children);
     expect(label).toMatchObject({
       overrides: [{ path: ["label"], field: "textColor", color: paint("error") }],
     });

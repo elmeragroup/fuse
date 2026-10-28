@@ -8,7 +8,7 @@
  * below the frame, 12px at Dense and 16px at Comfortable (W5-P5).
  */
 import type { LayerStyle } from "./cascade";
-import { normalizeCss } from "./css-values";
+import { affineLength, constantOf, sumAffine } from "./css-values";
 import { NO_LIMITS, ZERO } from "./kit-spec";
 import type { ChildLayerSpec, CounterAlignSpec, FrameLayerSpec } from "./kit-spec";
 import type { Layout } from "./placement";
@@ -38,15 +38,23 @@ export function joinFlushLayers(
   children: readonly ChildLayerSpec[],
   counterAlign: CounterAlignSpec
 ): readonly ChildLayerSpec[] {
-  const gap = column.resolved("gap") ?? column.resolved("row-gap");
-  if (!layout.flex || layout.direction !== "VERTICAL" || gap === undefined) {
+  if (!layout.flex || layout.direction !== "VERTICAL") {
     return children;
   }
-  const cancelling = normalizeCss(`calc(${gap} * -1)`);
+  const gap = affineLength(column.resolved("gap") ?? column.resolved("row-gap") ?? "");
+  // A zero gap leaves nothing to cancel, though a zero margin sums with it to zero.
+  if (gap === undefined || constantOf(gap) === 0) {
+    return children;
+  }
+  // The margin cancels the gap where the two sum to zero wherever their variables take a value.
+  const cancels = (style: LayerStyle): boolean => {
+    const margin = affineLength(style.resolved("margin-top") ?? "");
+    return margin !== undefined && constantOf(sumAffine([margin, gap])) === 0;
+  };
   const flush = new Set(
     parts
       .slice(1)
-      .filter(({ style }) => normalizeCss(style.resolved("margin-top") ?? "") === cancelling)
+      .filter(({ style }) => cancels(style))
       .map(({ key }) => key)
   );
   if (flush.size === 0) {

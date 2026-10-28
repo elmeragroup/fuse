@@ -6,15 +6,9 @@
  * the first while it maps the part and the second once the part's room is known.
  */
 import type { LayerStyle } from "./cascade";
-import {
-  evaluateLength,
-  evaluateLengthOf,
-  evaluatePercentage,
-  inViewport,
-  normalizeCss,
-  splitTopLevel,
-} from "./css-values";
+import { evaluateLength, evaluateLengthOf, evaluatePercentage, inViewport, normalizeCss } from "./css-values";
 import type { Viewport } from "./css-values";
+import { translateShares } from "./placement";
 import type { Layout } from "./placement";
 
 /** The instance part as `fixedPlace` reads it: its inner root's viewport, its composite's, and its style in place. */
@@ -45,9 +39,7 @@ export type FixedAt = "centre" | { readonly top: number };
  * @param at - Where the composite draws it.
  */
 export function placeCentredFixed(style: LayerStyle, at: FixedAt): void {
-  const translate = splitTopLevel(normalizeCss(style.resolved("translate") ?? ""), " ").map(
-    evaluatePercentage
-  );
+  const translate = translateShares(style);
   const [across, down = 0] = translate;
   const centredAcross = evaluatePercentage(style.resolved("left") ?? "") === 0.5 && across === -0.5;
   const placed =
@@ -61,17 +53,17 @@ export function placeCentredFixed(style: LayerStyle, at: FixedAt): void {
     at === "centre"
       ? "Base UI fixes the popup at the viewport's centre, which the composite, as large as that viewport, draws by centring the popup"
       : `Base UI fixes the popup ${String(at.top)}px below the viewport's top and centres it across, which the composite, as large as that viewport, draws by padding its top by that length and centring the popup across`;
-  for (const property of ["position", "top", "left", "translate"]) {
-    if (placed) {
+  if (placed) {
+    for (const property of FIXED_PLACE_PROPERTIES) {
       style.read(
         property,
         (value) => value,
         () => ({ outcome: "literal", detail }),
         []
       );
-    } else {
-      style.mark(property, "unmapped", NOT_AS_DRAWN, []);
     }
+  } else {
+    refuseFixedPlace(style);
   }
   style.read(
     "z-index",
@@ -93,6 +85,9 @@ export function placeCentredFixed(style: LayerStyle, at: FixedAt): void {
 export type FixedPlace =
   | { readonly _tag: "placed"; readonly viewport: Viewport; readonly at: FixedAt }
   | { readonly _tag: "refused" };
+
+/** The properties that place a fixed instance, which read together as placed or stay unmapped. */
+const FIXED_PLACE_PROPERTIES = ["position", "top", "left", "translate"] as const;
 
 /** Why a fixed instance's place stays unmapped where its composite does not draw it as CSS places it. */
 const NOT_AS_DRAWN = "a fixed popup the composite places only where it sits as the composite draws it";
@@ -193,7 +188,7 @@ const REFUSED: FixedPlace = { _tag: "refused" };
  * @param style - The inner root's style in place.
  */
 export function refuseFixedPlace(style: LayerStyle): void {
-  for (const property of ["position", "top", "left", "translate"]) {
+  for (const property of FIXED_PLACE_PROPERTIES) {
     style.mark(property, "unmapped", NOT_AS_DRAWN, []);
   }
 }

@@ -23,7 +23,6 @@ import type { ComponentProps, ReactElement } from "react";
 import { NumberField } from "../../../fuse/dist/number-field.js";
 import { LocaleProvider } from "../../../fuse/dist/theme.js";
 import type { Cell } from "../components/component-spec.ts";
-import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
 import {
   NUMBER_FIELD_DENOMINATION,
   NUMBER_FIELD_DENOMINATION_PROPERTY,
@@ -33,6 +32,7 @@ import {
   NUMBER_FIELD_VALUE,
 } from "../components/number-field-kit.ts";
 import type { CellRendering } from "./cell-renderers.ts";
+import { inFieldWidth } from "./field-text-cell.ts";
 
 /** A field in the locale the kit draws. */
 function inLocale(field: ReactElement): ReactElement {
@@ -91,10 +91,6 @@ export const numberField: CellRendering = {
     if (turnedOn.has(NUMBER_FIELD_DENOMINATION_PROPERTY)) {
       props.denomination = NUMBER_FIELD_DENOMINATION;
     }
-    return createElement(
-      "div",
-      { style: { width: `${FIELD_BOX_PREVIEW_WIDTH}px` } },
-      inLocale(createElement(NumberField, props))
-    );
+    return inFieldWidth(inLocale(createElement(NumberField, props)));
   },
 };

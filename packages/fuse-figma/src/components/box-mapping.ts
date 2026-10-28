@@ -27,10 +27,10 @@ import {
   readGrowth,
   readSizing,
   roomInside,
-  rootRoom,
   selfStretchedRoom,
   UNREAD_SHARE,
   unstretched,
+  viewportRoom,
 } from "./box-sizing";
 import type { Holder, Room, RowShare } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
@@ -970,11 +970,10 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
  * @param scope - The cell, the build context, the parts that scale and the instance parts.
  * @param collapses - Whether a vertical margin of the part adjoins another margin in a block box, as
  *   {@link adjoinsMargin} says.
+ * @param parent - The box's style, which a fixed instance part's place reads.
+ * @param first - Whether the part is the box's first part.
  * @returns The part as mapped.
  */
-/** No preview width or height, which a fixed root in a viewport does not read. */
-const NO_PREVIEW = { width: undefined, height: undefined } as const;
-
 function mapPart(
   part: ShownPart,
   room: Room,
@@ -995,9 +994,7 @@ function mapPart(
     );
     const { layer: built, painted } = scope.instances.map(
       part,
-      fixed?._tag === "placed"
-        ? rootRoom(NO_PREVIEW, part.cascade.style, scope.context.variables, fixed.viewport)
-        : room
+      fixed?._tag === "placed" ? viewportRoom(part.cascade.style, fixed.viewport) : room
     );
     if (fixed?._tag === "placed") {
       placeCentredFixed(part.cascade.style, fixed.at);

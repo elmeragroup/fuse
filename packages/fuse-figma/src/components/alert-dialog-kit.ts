@@ -22,12 +22,7 @@
  *   Base UI centres the fixed popup in the viewport (`top-1/2 left-1/2` and the translates), so the
  *   composite is the scrim, centring the popup's instance.
  */
-import {
-  alertDialogVariants,
-  cn,
-  dialogContentVariants,
-  dialogVariants,
-} from "@elmeragroup/fuse/recipe-catalog";
+import { alertDialogVariants, cn, dialogVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import { CANCEL_LABEL, ALERT_DIALOG_VIEWPORT, alertDialogCopy } from "./alert-dialog-text";
 import { BUTTON } from "./button-kit";
@@ -38,8 +33,8 @@ import type {
   InstanceDefinition,
   PartDefinition,
 } from "./component-spec";
-import { userAgentDisplay } from "./element-defaults";
-import { always, never } from "./popup-facts";
+import { DIALOG_CONTENT_SET, dialogDescription, dialogFooter, dialogTitle } from "./dialog-frame-kit";
+import { OPEN_FACTS, always, never } from "./popup-facts";
 
 const dialog = dialogVariants();
 
@@ -61,21 +56,11 @@ function titleIcon(cell: Cell): IconSlot {
   };
 }
 
-/** The title, Base UI's `<h2>`. */
-const TITLE: PartDefinition = {
-  key: "title",
-  slot: "dialog-title",
-  shownIn: always,
-  classesFor: (cell) => cn(dialog.title(), alertSlots(cell).title()),
-  elementDefaults: userAgentDisplay("h2"),
-  label: {
-    key: "text",
-    name: "text",
-    charactersFor: (cell) => alertDialogCopy(cell.variant).title,
-    shownIn: always,
-  },
-  iconsFor: () => [],
-};
+/** The title, in the alert dialog's look for the cell. */
+const TITLE = dialogTitle(
+  (cell) => alertDialogCopy(cell.variant).title,
+  (cell) => cn(dialog.title(), alertSlots(cell).title())
+);
 
 /** The title line beside the title, one title line tall, around the icon. */
 const TITLE_LINE: PartDefinition = {
@@ -101,21 +86,8 @@ const HEADER: PartDefinition = {
   parts: [TITLE, TITLE_LINE],
 };
 
-/** The description, Base UI's `<p>`. */
-const DESCRIPTION: PartDefinition = {
-  key: "description",
-  slot: "dialog-description",
-  shownIn: always,
-  classesFor: () => dialog.description(),
-  elementDefaults: userAgentDisplay("p"),
-  label: {
-    key: "text",
-    name: "text",
-    charactersFor: (cell) => alertDialogCopy(cell.variant).description,
-    shownIn: always,
-  },
-  iconsFor: () => [],
-};
+/** The description. */
+const DESCRIPTION = dialogDescription((cell) => alertDialogCopy(cell.variant).description);
 
 /** The ghost small Cancel, `AlertDialog.Close` rendering a Button. */
 const CANCEL: InstanceDefinition = {
@@ -147,41 +119,18 @@ const ACTION: InstanceDefinition = {
 };
 
 /** The footer row: Cancel, then the action. */
-const FOOTER: PartDefinition = {
-  key: "footer",
-  slot: "dialog-footer",
-  shownIn: always,
-  classesFor: () => dialog.footer(),
-  label: undefined,
-  iconsFor: () => [],
-  parts: [CANCEL, ACTION],
-};
+const FOOTER = dialogFooter([CANCEL, ACTION]);
 
 /** The open popup, as `<AlertDialog.Content>` in the docs Destructive and Neutral demos, and pending. */
 export const ALERT_DIALOG_CONTENT: ComponentDefinition = {
+  ...DIALOG_CONTENT_SET,
   key: "alert-dialog-content",
   name: "Alert dialog content",
-  slot: "dialog-content",
   axes: [{ name: "variant", values: ["destructive", "neutral", "pending"] }],
   columnAxis: "variant",
-  classesFor: () => dialogContentVariants({ size: "md" }),
   // Its width and height cap read the viewport it is fixed in.
   viewport: ALERT_DIALOG_VIEWPORT,
-  states: {},
-  // Base UI stamps an open popup `data-open`.
-  facts: new Map([
-    ["data-open", always],
-    ["data-closed", never],
-  ]),
-  // The popup takes focus only while a keyboard user lands on it, and the kit draws it at rest.
-  omittedStates: new Set(["focus-visible"]),
-  omittedCompositions: new Map([
-    ["*", "`*:[a]:` underlines and darkens a link inside the description, and the demos' copy holds none"],
-  ]),
-  label: undefined,
-  iconsFor: () => [],
   parts: [HEADER, DESCRIPTION, FOOTER],
-  swapProperties: [],
 };
 
 /**
@@ -197,10 +146,7 @@ export const ALERT_DIALOG_OPEN: ComponentDefinition = {
   classesFor: () => cn(dialog.overlay(), "flex items-center justify-center"),
   viewport: ALERT_DIALOG_VIEWPORT,
   states: {},
-  facts: new Map([
-    ["data-open", always],
-    ["data-closed", never],
-  ]),
+  facts: OPEN_FACTS,
   omittedStates: new Set(),
   label: undefined,
   iconsFor: () => [],

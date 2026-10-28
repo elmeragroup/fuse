@@ -57,6 +57,24 @@ describe("a flex column layer whose top margin cancels the column's gap", () => 
     );
     expect(variant?.root.children.map((child) => child.key)).not.toContain("head-flush");
   });
+
+  it("joins a layer whose margin cancels the gap written another way, -mt-3 under gap-3", async () => {
+    const { variant } = await buildFixture(
+      chip("flex w-[200px] flex-col gap-3", {
+        parts: [part("head", "h-[20px]"), part("note", "h-[20px] -mt-3")],
+      })
+    );
+    expect(variant?.root.children.map((child) => child.key)).toEqual(["head-flush"]);
+  });
+
+  it("leaves a zero top margin in a column with no gap where it was", async () => {
+    const { variant } = await buildFixture(
+      chip("flex w-[200px] flex-col gap-0", {
+        parts: [part("head", "h-[20px]"), part("note", "h-[20px] mt-0")],
+      })
+    );
+    expect(variant?.root.children.map((child) => child.key)).toEqual(["head", "note"]);
+  });
   // A layer takes its part's slot as its name, so a part may be named `flush` too. Its frame is the
   // part's own, painted and laid out as its classes say, which the next layer must not join.
   it("wraps a part slotted `flush` as it wraps one slotted `heading`", async () => {

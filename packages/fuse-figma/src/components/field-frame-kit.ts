@@ -15,11 +15,12 @@
  * - The Field stretches each child to its width. The column's stretch gives them that width
  *   already, so the stretch is omitted.
  */
-import { fieldFrameVariants } from "@elmeragroup/fuse/recipe-catalog";
+import { fieldFrameVariants, fieldVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { Cell, InstanceDefinition, PartDefinition } from "./component-spec";
+import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
 import { FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH } from "./field-box-kit";
 import { FIELD_DESCRIPTION, FIELD_ERROR } from "./field-text-kit";
+import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { LABEL } from "./label-kit";
 import { always } from "./popup-facts";
 
@@ -159,3 +160,34 @@ export const FIELD_FRAME_OMISSIONS: ReadonlyMap<string, string> = new Map([
     "the Field stretches each child to its width, which the column's stretch already gives them",
   ],
 ]);
+
+/**
+ * The fields every Field composite spreads: the `Field.Root` column, as wide as the field box's
+ * preview, its states in columns, and no label, icon or swap of its own. A composite sets its own
+ * `rootKind`, axes, states, facts and parts, and its own classes where it merges more onto the root's.
+ */
+export const FIELD_FRAME_SET: Pick<
+  ComponentDefinition,
+  | "rootOverflow"
+  | "slot"
+  | "previewWidth"
+  | "columnAxis"
+  | "classesFor"
+  | "omittedStates"
+  | "omittedCompositions"
+  | "label"
+  | "iconsFor"
+  | "swapProperties"
+> = {
+  // CSS leaves the root unclipped, so a ring a layer draws at its edge shows past it (compare-real-1).
+  rootOverflow: "visible",
+  slot: "field",
+  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
+  columnAxis: "state",
+  classesFor: () => fieldVariants().root(),
+  omittedStates: new Set(),
+  omittedCompositions: FIELD_FRAME_OMISSIONS,
+  label: undefined,
+  iconsFor: () => [],
+  swapProperties: [],
+};

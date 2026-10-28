@@ -9,21 +9,20 @@
  * puts in a `<style>` of its own, as the Command palette's `12dvh` top becomes 60px in its 500px
  * viewport. The rules are `!important`, so they win over the utilities they restate.
  *
- * It imports only React, so the compare page's client bundle can take it.
+ * It imports only React at run time, so the compare page's client bundle can take it.
  */
 
 import { createElement, useRef } from "react";
 import type { ReactElement, ReactNode, RefObject } from "react";
 
-/** A viewport a definition declares, in pixels. */
-export type HostViewport = { readonly width: number; readonly height: number };
+import type { Viewport } from "../components/css-values.ts";
 
 /**
  * The host's props: the viewport, the content, given the ref of the host it portals into, and the
  * rules that restate the content's `dvh` and `dvw` lengths against the viewport, or undefined.
  */
 type ViewportHostProps = {
-  readonly viewport: HostViewport;
+  readonly viewport: Viewport;
   readonly content: (host: RefObject<HTMLDivElement | null>) => ReactNode;
   readonly css: string | undefined;
 };
@@ -52,7 +51,7 @@ function ViewportHost({ viewport, content, css }: ViewportHostProps): ReactEleme
  * @returns The host element.
  */
 export function viewportHost(
-  viewport: HostViewport,
+  viewport: Viewport,
   content: (host: RefObject<HTMLDivElement | null>) => ReactNode,
   css?: string
 ): ReactElement {

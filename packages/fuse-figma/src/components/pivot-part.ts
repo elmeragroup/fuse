@@ -11,6 +11,24 @@ import { MARGINS } from "./margin-box";
 import type { ParentBox } from "./placement";
 
 /**
+ * Every property that sets a width on one or more of a box's border sides, physical and logical, so
+ * that a border on any side keeps the pivot from reading the padding box as the frame's edge.
+ */
+const BORDER_WIDTHS = [
+  "border-width",
+  "border-top-width",
+  "border-right-width",
+  "border-bottom-width",
+  "border-left-width",
+  "border-inline-width",
+  "border-block-width",
+  "border-inline-start-width",
+  "border-inline-end-width",
+  "border-block-start-width",
+  "border-block-end-width",
+];
+
+/**
  * Read an absolute part that hangs from its containing block's bottom edge, centred across it, as a
  * Tooltip's arrow does: `left` half the containing block's width plus a length, `bottom` a length, a
  * translate that moves it down only, and a fixed literal size, with no `top`, `right` or margin. CSS
@@ -20,7 +38,7 @@ import type { ParentBox } from "./placement";
  * containing block's horizontal centre and from its bottom edge whatever the containing block's size,
  * which CENTER across and MAX down keep, and the plugin places the part from that centre. The parent
  * must be the containing block: positioned itself, or static inside the positioned element its
- * definition names in `positionedBy`, with the box's border box, and it sets no border, so its padding
+ * definition names in `positionedBy`, with the box's border box, and it sets no border on any side, so its padding
  * box is the frame Figma places the layer in. A real file drew such a part at -45 centred at
  * (W/2, H - 2) from the plugin's centre, and kept it there through density and text-driven resizes,
  * in the main and in an instance (W5-P11, W5-P11b). Every other part leaves its place to the other
@@ -50,7 +68,9 @@ export function readPivot(
   if (
     normalizeCss(style.resolved("position") ?? "") !== "absolute" ||
     !contains ||
-    (parent.style.has("border-width") && evaluateLength(parent.style.resolved("border-width") ?? "") !== 0) ||
+    BORDER_WIDTHS.some(
+      (property) => parent.style.has(property) && evaluateLength(parent.style.resolved(property) ?? "") !== 0
+    ) ||
     style.has("top") ||
     style.has("right") ||
     MARGINS.some((property) => style.has(property) && evaluateLength(style.resolved(property) ?? "") !== 0) ||

@@ -18,7 +18,7 @@
 import { toggleGroupVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { Cell, ComponentDefinition, InstanceDefinition } from "./component-spec";
-import { always } from "./popup-facts";
+import { always, never } from "./popup-facts";
 import { TOGGLE } from "./toggle-kit";
 
 /** The group's items: the docs Multiple demo's labels, and whether each starts pressed. */
@@ -29,7 +29,7 @@ export const TOGGLE_GROUP_ITEMS = [
 ] as const;
 
 /** The spacing ToggleGroup gives its items by default, in Tailwind spacing units. */
-export const TOGGLE_GROUP_SPACING = 2;
+const TOGGLE_GROUP_SPACING = 2;
 
 /** Why the segmented group stays out of the set. */
 const SEGMENTED =
@@ -48,15 +48,15 @@ const slots = toggleGroupVariants();
  */
 function itemFacts(index: number): ReadonlyMap<string, (cell: Cell) => boolean> {
   return new Map([
-    ["group-data-horizontal/toggle-group", () => true],
-    ["group-data-vertical/toggle-group", () => false],
-    ["group-data-[spacing=0]/toggle-group", () => false],
+    ["group-data-horizontal/toggle-group", always],
+    ["group-data-vertical/toggle-group", never],
+    ["group-data-[spacing=0]/toggle-group", never],
     // Base UI stamps the group's spacing and variant on each item too.
-    ["data-[spacing=0]", () => false],
+    ["data-[spacing=0]", never],
     ["data-[variant=outline]", (cell: Cell) => cell.variant === "outline"],
     ["first", () => index === 0],
     ["last", () => index === TOGGLE_GROUP_ITEMS.length - 1],
-    ["focus", () => false],
+    ["focus", never],
   ]);
 }
 
@@ -98,10 +98,10 @@ export const TOGGLE_GROUP: ComponentDefinition = {
   // Base UI stamps the group's orientation on its root as `data-orientation`, which its items read
   // through the root's `group/toggle-group` marker.
   facts: new Map([
-    ["data-horizontal", () => true],
-    ["data-vertical", () => false],
-    ["group-data-horizontal/toggle-group", () => true],
-    ["group-data-vertical/toggle-group", () => false],
+    ["data-horizontal", always],
+    ["data-vertical", never],
+    ["group-data-horizontal/toggle-group", always],
+    ["group-data-vertical/toggle-group", never],
     // ToggleGroup stamps its variant on the root as `data-variant`.
     ["data-[variant=outline]", (cell: Cell) => cell.variant === "outline"],
   ]),
