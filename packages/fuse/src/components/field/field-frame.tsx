@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { Check } from "../../icons/generated/check";
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { iconCrossfadeHidden, iconCrossfadeShown, iconCrossfadeTransition } from "../../styles/utils";
 import { FieldDescription, FieldError, FieldLabel, FieldLegend, FieldRoot, FieldSet } from "./field";
@@ -10,7 +11,10 @@ import { fieldFrameVariants } from "./field-frame-variants";
 const fieldFrameSlots = fieldFrameVariants();
 const legendDescriptionSlots = fieldFrameVariants({ legendDescription: true });
 
-/** The `Field.Root` stack of a `spacing="part"` frame: the label 4px from its control. */
+/**
+ * A label frame's root class. Its 4px stack restates the vertical `Field.Root`'s, since TextField's
+ * public recipe composes this slot as its `base`.
+ */
 const fieldFrameRootClass = fieldFrameSlots.root();
 
 /**
@@ -82,11 +86,10 @@ export type FieldFrameProps = {
    */
   isDescriptionBeside?: boolean;
   /**
-   * The spacing of the frame's root, written as `data-spacing`. `"part"` is a compact stack whose
-   * label sits 4px from its control, fixed part spacing that does not follow density; `"group"`
-   * (default) keeps the `Field.Root` gap, which follows density, or the caller's own layout.
+   * The composite's variant, written as `data-variant` on `Field.Root`. TextField's card root is
+   * the card, which pads with the surface metrics, so the density-role table keys it on this.
    */
-  spacing?: "part" | "group";
+  variant?: "card" | "inline";
   /** Forwarded to `Field.Root`. */
   invalid?: boolean;
   /** Forwarded to `Field.Root`. */
@@ -114,7 +117,6 @@ export type FieldFrameProps = {
  * Keep exactly one `Field.Root` per composite so a nested root cannot break label wiring.
  */
 export function FieldFrame({
-  spacing = "group",
   heading = "label",
   label,
   isLabelHidden = false,
@@ -124,6 +126,7 @@ export function FieldFrame({
   description,
   errorMessage,
   isDescriptionBeside = false,
+  variant,
   invalid,
   disabled,
   name,
@@ -220,11 +223,11 @@ export function FieldFrame({
 
   return (
     <FieldRoot
-      data-spacing={spacing}
+      {...definedProps({ "data-variant": variant })}
       name={name}
       invalid={invalid}
       disabled={disabled}
-      className={cn(spacing === "part" ? fieldFrameRootClass : null, className)}>
+      className={cn(heading === "label" ? fieldFrameRootClass : null, className)}>
       {heading === "legend" ? <FieldSet>{framed}</FieldSet> : framed}
     </FieldRoot>
   );

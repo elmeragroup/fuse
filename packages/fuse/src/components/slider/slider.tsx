@@ -205,7 +205,6 @@ export function Slider<Value extends SliderValue = number>({
 
   return (
     <FieldFrame
-      spacing="part"
       className={cn(slots.frame(), className)}
       invalid={isInvalid}
       disabled={isDisabled}

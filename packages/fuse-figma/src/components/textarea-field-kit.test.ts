@@ -4,7 +4,7 @@
  * `field-frame-variants.ts`, `textarea-field-variants.ts` and `field-frame.tsx`, and the copy of the
  * docs TextareaField Basic, Counter and Error demos.
  *
- * - The Field root is `flex flex-col gap-(--surface-gap-md) w-full`, 384px in the preview, and passes
+ * - The Field root is `flex flex-col gap-1 w-full`, 384px in the preview, and passes
  *   `data-invalid:text-error` to the children that set no color of their own.
  * - The heading row is `flex items-center justify-between gap-2`. The counter is `text-xs
  *   text-muted-foreground`, 12/16px, and shows `current/max`, `0/120` over the empty textarea.
@@ -15,7 +15,6 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import {
   builtKit,
-  density,
   FILL,
   fixed,
   HUG,
@@ -50,12 +49,12 @@ describe("the Textarea field component set", () => {
     ]);
   });
 
-  it("stacks the heading row, the textarea and the description surface-gap-md apart, 384px wide", () => {
+  it("stacks the heading row, the textarea and the description 4px apart, 384px wide", () => {
     const root = cell("rest");
     expect(root).toMatchObject({
       direction: "VERTICAL",
       sizing: { horizontal: fixed(literal(384)), vertical: HUG },
-      itemSpacing: density("surface-gap-md"),
+      itemSpacing: literal(4),
     });
     expect(root.fill).toBeUndefined();
     expect(outline(root.children)).toEqual([

@@ -308,6 +308,7 @@
       "field-error.tsx",
       "field-validation.tsx",
       "field-orientations.tsx",
+      "field-from-parts.tsx",
       "field-set.tsx",
       "field-set-description.tsx",
       "field-grid-set.tsx",

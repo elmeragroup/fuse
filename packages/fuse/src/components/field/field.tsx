@@ -32,6 +32,10 @@ const DescriptionOwnerContext = createContext<DescriptionOwner | null>(null);
 
 const fieldDescriptionOwner: DescriptionOwner = { _tag: "field" };
 
+/**
+ * A vertical root sets its label 4px from its control at both densities, the stack every labeled
+ * composite renders, so a field built from parts lines up with a `TextField` beside it.
+ */
 export function FieldRoot({
   className,
   orientation = "vertical",

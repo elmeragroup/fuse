@@ -91,7 +91,6 @@ export function SelectField<Value = unknown>({
 }: SelectFieldProps<Value>): ReactElement {
   return (
     <FieldFrame
-      spacing="part"
       className={className}
       invalid={isInvalid}
       disabled={isDisabled}

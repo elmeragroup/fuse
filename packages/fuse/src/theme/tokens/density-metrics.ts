@@ -169,16 +169,16 @@ const SURFACE_PAD_DESCRIPTIONS = {
 
 /**
  * The surface gap tiers, in `fuse.css` order: the space between the parts a stack groups, such
- * as options (`sm`), a field's label and control (`md`), option rows laid out in a line or
+ * as options (`sm`), a control and the label beside it (`md`), option rows laid out in a line or
  * nested groups (`lg`), and the fields of a set (`xl`). Gaps of 6px or less between one part's
- * own pieces are part spacing and stay fixed.
+ * own pieces, such as a label and the control under it, are part spacing and stay fixed.
  */
 const SURFACE_GAP_TIERS = ["sm", "md", "lg", "xl"] as const;
 
 /** What each surface gap tier spaces. */
 const SURFACE_GAP_DESCRIPTIONS = {
   sm: "The gap between the options of a stack.",
-  md: "The gap between the parts of a field, such as its label and control.",
+  md: "The gap between a control and the label beside it, or between the legend of a group and its options.",
   lg: "The gap between option rows laid out in a line, or between nested groups.",
   xl: "The gap between the fields of a set.",
 } as const satisfies Record<(typeof SURFACE_GAP_TIERS)[number], string>;

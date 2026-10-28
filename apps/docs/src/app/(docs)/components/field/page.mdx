@@ -7,6 +7,7 @@ import { FieldBasic } from "./demos/field-basic";
 import { FieldErrorDemo } from "./demos/field-error";
 import { FieldValidationDemo } from "./demos/field-validation";
 import { FieldOrientations } from "./demos/field-orientations";
+import { FieldFromParts } from "./demos/field-from-parts";
 import { FieldSetDemo } from "./demos/field-set";
 import { FieldSetDescriptionDemo } from "./demos/field-set-description";
 import { FieldGridSetDemo } from "./demos/field-grid-set";
@@ -47,6 +48,16 @@ Put `Field.Error` directly after the control, ahead of any `Field.Description`, 
 
 <Demo slug="field" id="orientations" title="Orientations" file="field-orientations.tsx">
   <FieldOrientations />
+</Demo>
+
+<Prose>
+
+A vertical `Field.Root` stacks its label, control, error and description 4px apart at both densities, as the labeled composites do, so a field built from parts, such as one around an `InputGroup` or an `Autocomplete`, lines up with a `TextField` or a `SelectField` beside it. A horizontal `Field.Root` sets its control beside its label by the field gap, which follows density.
+
+</Prose>
+
+<Demo slug="field" id="from-parts" title="Built from parts" file="field-from-parts.tsx">
+  <FieldFromParts />
 </Demo>
 
 <Demo slug="field" id="set" title="Field set" file="field-set.tsx">

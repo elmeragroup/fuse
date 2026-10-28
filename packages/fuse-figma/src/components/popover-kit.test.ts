@@ -9,7 +9,7 @@
  *   `surface-pad-md`, `w-72` and `flex flex-col gap-4`, clipping as a variant root does.
  * - The header is `flex flex-col gap-1` at `text-sm`; the title is `font-medium`, the description
  *   `text-muted-foreground`.
- * - A vertical Field is `flex flex-col gap-(--surface-gap-md)`; its label sets the label type pair at
+ * - A vertical Field is `flex flex-col gap-1`; its label sets the label type pair at
  *   Medium; its input is `w-full` at the md control height.
  * - The open trigger is the outline Button, `aria-expanded:bg-muted aria-expanded:text-foreground`.
  */
@@ -146,7 +146,7 @@ describe("the Popover content component set", () => {
       })
     ).toEqual(
       ["Width", "Height"].map((characters): readonly unknown[] => [
-        density("surface-gap-md"),
+        literal(4),
         { horizontal: FILL, vertical: HUG },
         expect.objectContaining({
           characters,

@@ -50,12 +50,12 @@ What now follows density:
     `selection-item-title` and `selection-item-description` slots in place of `item-title` and
     `item-description`.
 - **Group gaps.**
-  - `Field.Root` uses `--surface-gap-md`. `Field.Set` and `Field.Group` use `--surface-gap-xl`,
-    with `md` or `lg` around nested groups.
+  - A horizontal `Field.Root` uses `--surface-gap-md`. `Field.Set` and `Field.Group` use
+    `--surface-gap-xl`, with `md` or `lg` around nested groups.
   - Checkbox, Radio and selection-item option groups stack by `--surface-gap-sm` and line up by
     `--surface-gap-lg`.
   - `Item.Group` uses `--surface-gap-lg`, or `--surface-gap-sm` for `sm` and `xs` rows.
-  - FieldFrame's 4px between a label and its control stays fixed part spacing.
+  - A vertical `Field.Root`'s 4px between a label and its control stays fixed part spacing.
 - **Sheet.**
   - The header, body and footer pad with `--surface-pad-lg` and stack by `--surface-gap-lg`.
   - Body blocks are spaced by `--surface-gap-xl`.
@@ -82,9 +82,6 @@ Other changes:
 - `Button` writes its `size` as `data-size`.
 - `Card`'s root, header, content and footer write their `direction` as `data-direction`, and so do
   `CheckboxGroup`, `RadioGroup` and the selection-item list, from their `orientation`.
-- TextField, NumberField and PhoneNumberField roots write `data-spacing="part"`, and the other
-  labeled composites `data-spacing="group"`: the first stack their label 4px above the control at
-  either density.
 - `Sidebar.MenuButton` reserves the menu action's square plus 8px at its end, so a truncated
   label stops before the action at either density.
 - `Item.Group`'s `sm` and `xs` row gaps now match only its Item rows, not a Button of that size

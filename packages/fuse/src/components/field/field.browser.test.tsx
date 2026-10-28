@@ -552,18 +552,18 @@ describe("Field group gaps follow density", () => {
     document.documentElement.removeAttribute("data-density");
   });
 
-  /** The row gap of the closest element around `text` that carries `slot`. */
-  function gapAround(text: string, slot: string): number {
+  /** The row or column gap of the closest element around `text` that carries `slot`. */
+  function gapAround(text: string, slot: string, gap: "rowGap" | "columnGap" = "rowGap"): number {
     // DOM audit: Field.Set, Field.Group and Field.Root have no role, so they are found by their public slot.
     const element = textNamed(text).closest(`[data-slot="${slot}"]`);
     if (!(element instanceof HTMLElement)) {
       throw new Error(`expected a ${slot} around ${text}`);
     }
-    return px(getComputedStyle(element).rowGap);
+    return px(getComputedStyle(element)[gap]);
   }
 
   it.each(DENSITIES)(
-    "gaps a field, a field set, a field group and their nested groups by the surface tiers at %s",
+    "gaps a horizontal field, a field set, a field group and their nested groups by the surface tiers, and stacks a vertical field 4px apart, at %s",
     (density) => {
       stampDensity(density);
       renderThemed(
@@ -574,6 +574,10 @@ describe("Field group gaps follow density", () => {
               <Field.Label>Root label</Field.Label>
               <input aria-label="Root input" />
             </Field.Root>
+            <Field.Root orientation="horizontal">
+              <Checkbox />
+              <Field.Label>Row label</Field.Label>
+            </Field.Root>
             <Field.Group>
               <Field.Root>
                 <Field.Label>Nested label</Field.Label>
@@ -582,7 +586,11 @@ describe("Field group gaps follow density", () => {
           </Field.Group>
         </Field.Set>
       );
-      expect(gapAround("Root label", "field"), "field").toBe(metricPx("surface-gap-md", density));
+      // The labeled composites' stack, fixed at both densities.
+      expect(gapAround("Root label", "field"), "vertical field").toBe(4);
+      expect(gapAround("Row label", "field", "columnGap"), "horizontal field").toBe(
+        metricPx("surface-gap-md", density)
+      );
       expect(gapAround("Contact", "field-set"), "field set").toBe(metricPx("surface-gap-xl", density));
       // DOM audit: the outer Field.Group has no role, so it is the group around the inner one.
       const outer = textNamed("Nested label")
@@ -621,6 +629,37 @@ describe("Field group gaps follow density", () => {
       );
       expect(box("Inline b").left - box("Inline a").right, "inline").toBe(
         metricPx("surface-gap-lg", density)
+      );
+    }
+  );
+
+  it.each(DENSITIES)(
+    "stacks a responsive field 4px apart in a narrow field group and lines it up by the field gap past the md width at %s",
+    (density) => {
+      // Unit under test: the responsive orientation's gaps. Oracle: a vertical field's fixed 4px
+      // stack below the md container width of 28rem, and a horizontal field's
+      // `--surface-gap-md` past it.
+      stampDensity(density);
+      renderThemed(
+        <>
+          <Field.Group style={{ width: 320 }}>
+            <Field.Root orientation="responsive">
+              <Field.Label>Narrow</Field.Label>
+              <Field.Control render={<input />} />
+            </Field.Root>
+          </Field.Group>
+          <Field.Group style={{ width: 480 }}>
+            <Field.Root orientation="responsive">
+              <Field.Label>Wide</Field.Label>
+              <Field.Control render={<input />} />
+            </Field.Root>
+          </Field.Group>
+        </>
+      );
+      const box = (element: Element) => element.getBoundingClientRect();
+      expect(box(textboxNamed("Narrow")).top - box(textNamed("Narrow")).bottom, "stacked").toBe(4);
+      expect(box(textboxNamed("Wide")).left - box(textNamed("Wide")).right, "in a row").toBe(
+        metricPx("surface-gap-md", density)
       );
     }
   );
