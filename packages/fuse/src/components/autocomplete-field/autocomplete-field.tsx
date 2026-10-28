@@ -94,7 +94,8 @@ export type AutocompleteFieldProps<
   /**
    * Filtered items to display in the list. When given, the list shows these instead of
    * filtering `items` itself. With `items` also given, this array keeps its flat or grouped
-   * structure. Nullish entries are not supported, as in `items`.
+   * structure. Nullish entries are not supported, as in `items`. Use it to filter outside the
+   * list, such as with Base UI's `useFilter()` hook.
    */
   filteredItems?: (Filtered & NoInfer<ListItems<Filtered, ItemValue>>) | undefined;
   /**
