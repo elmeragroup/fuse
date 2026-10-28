@@ -143,6 +143,15 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     floor: 4.5,
   },
   {
+    // A pressed Toggle's label on its fill: foreground on muted in internal themes, the primary
+    // pair in external ones. The fill itself has no floor against the page: internal muted is
+    // the quiet 1.09:1 face on white by design.
+    schemes: ["light", "dark"],
+    matches: () => true,
+    pairs: [["toggle-pressed-foreground", "toggle-pressed"]],
+    floor: 4.5,
+  },
+  {
     // A menu row's hover tint over its popup. It is not a text pair, but a tint equal to the
     // popup hides which row is highlighted; 1.1:1 sits under the light default's 1.12:1.
     schemes: ["light", "dark"],

@@ -44,9 +44,9 @@ const SLUGS = [
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
 // `radius-field` field corner, the card edge, section divider and shadow, the two outline Button roles, the resting and
 // checked selection row borders and dividers, the disabled selection row fill, stripe and text,
-// the selection row title weight, the three paragraph line heights, the size, line height and
-// weight of h1 to h3 and the modal fill and text.
-const TOKEN_COUNT = 107;
+// the pressed Toggle fill and label, the selection row title weight, the three paragraph line
+// heights, the size, line height and weight of h1 to h3 and the modal fill and text.
+const TOKEN_COUNT = 109;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;
@@ -346,6 +346,48 @@ describe("resolveThemeCatalog", () => {
           value: { r: 0, g: 0, b: 0, alpha: 0.02 },
         }
       );
+    }
+  });
+
+  it("resolves the pressed Toggle pair to the muted pair in internal themes and the primary pair in external ones, in both schemes", () => {
+    // LAYER_DEFAULTS aliases the pair to `--muted` and `--foreground`, and EXTERNAL_VARIANT_LAYER
+    // to `--primary` and `--primary-foreground`. The pair is light-only, so a dark scheme keeps the
+    // alias and resolves it against its own dark role. Each colour is the literal its source table
+    // writes for that role: internal light from LAYER_DEFAULTS, internal dark from
+    // INTERNAL_DARK_PALETTE, external fkas from its light palette and its dark sheet (#FFEEE6 on
+    // black).
+    for (const [slug, scheme, fill, text] of [
+      [
+        "internal-fkas-private",
+        "light",
+        ["muted", "oklch(0.97 0.0013 106.42)"],
+        ["foreground", "oklch(0.15 0.0041 49.31)"],
+      ],
+      ["internal-fkas-private", "dark", ["muted", "oklch(0.269 0 0)"], ["foreground", "oklch(0.985 0 0)"]],
+      [
+        "external-fkas-private",
+        "light",
+        ["primary", "oklch(0.3209 0.10325 38.8)"],
+        ["primary-foreground", "oklch(1 0 0)"],
+      ],
+      [
+        "external-fkas-private",
+        "dark",
+        ["primary", "oklch(0.9604175 0.0214022 46.9889)"],
+        ["primary-foreground", "oklch(0 0 0)"],
+      ],
+    ] as const) {
+      const tokens = theme(slug).schemes[scheme].tokens;
+      for (const [token, [role, literal]] of [
+        ["toggle-pressed", fill],
+        ["toggle-pressed-foreground", text],
+      ] as const) {
+        expect(tokens[token], `${slug} ${scheme} ${token}`).toMatchObject({
+          css: `var(--${role})`,
+          reference: { space: "token", name: role },
+          value: Oklch.toSrgb(getOrThrow(Oklch.parse(literal))),
+        });
+      }
     }
   });
 

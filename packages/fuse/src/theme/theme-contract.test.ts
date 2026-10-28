@@ -336,6 +336,8 @@ describe("theme contract", () => {
         "selection-disabled-background",
         "selection-disabled-hatch",
         "selection-disabled-foreground",
+        "toggle-pressed",
+        "toggle-pressed-foreground",
         "button-outline-width",
         "selection-title-weight",
         "paragraph-leading-sm",
@@ -536,7 +538,7 @@ describe("derived roles", () => {
 describe("external variant layer roles", () => {
   const rules = parseStyleRules(generateThemesCss());
 
-  it("sets the radius step, the transparent card edge and shadow, the page-tinted card section divider, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows, the card-filled unstriped disabled row with its muted text, the medium selection row title, the 14/20, 16/22 and 18/24 paragraph line heights and the bold 24/32 h1 and 20/32 h2 and h3 once for the external variant", () => {
+  it("sets the radius step, the transparent card edge and shadow, the page-tinted card section divider, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows, the card-filled unstriped disabled row with its muted text, the primary pressed toggle, the medium selection row title, the 14/20, 16/22 and 18/24 paragraph line heights and the bold 24/32 h1 and 20/32 h2 and h3 once for the external variant", () => {
     const external = {
       "radius-step": "2px",
       "card-border": "oklch(0 0 0 / 0)",
@@ -551,6 +553,8 @@ describe("external variant layer roles", () => {
       "selection-disabled-background": "var(--card)",
       "selection-disabled-hatch": "oklch(0 0 0 / 0)",
       "selection-disabled-foreground": "var(--muted-foreground)",
+      "toggle-pressed": "var(--primary)",
+      "toggle-pressed-foreground": "var(--primary-foreground)",
       "selection-title-weight": "500",
       "paragraph-leading-sm": "1.25rem",
       "paragraph-leading-base": "1.375rem",
@@ -586,7 +590,7 @@ describe("external variant layer roles", () => {
     // shadow, the 1px border hairline,
     // the border-coloured selection row edge, the primary checked-row edge, dividers that follow
     // those edges, the muted disabled row striped in black at 2% with foreground text, the
-    // regular selection row title, the relaxed 1.625 paragraph line heights at 14, 16 and 18px,
+    // muted pressed toggle with foreground text, the regular selection row title, the relaxed 1.625 paragraph line heights at 14, 16 and 18px,
     // the 500-weight h1 at 24px, h2 at 18px and h3 at 16px with snug 1.375 line heights, 33,
     // 24.75 and 22px, and round fields with --radius.
     for (const selector of [":root", '[data-theme-variant="internal"]']) {
@@ -605,6 +609,8 @@ describe("external variant layer roles", () => {
       expect(declaration(rules, selector, "selection-disabled-foreground"), selector).toBe(
         "var(--foreground)"
       );
+      expect(declaration(rules, selector, "toggle-pressed"), selector).toBe("var(--muted)");
+      expect(declaration(rules, selector, "toggle-pressed-foreground"), selector).toBe("var(--foreground)");
       expect(declaration(rules, selector, "button-outline-width"), selector).toBe("1px");
       expect(declaration(rules, selector, "selection-title-weight"), selector).toBe("400");
       expect(declaration(rules, selector, "paragraph-leading-sm"), selector).toBe("1.421875rem");

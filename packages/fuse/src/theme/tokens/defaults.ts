@@ -110,6 +110,11 @@ export const LAYER_DEFAULTS = {
   // `card-foreground` in both schemes, so an internal disabled title keeps its colour. The
   // external variant layer greys it to the muted foreground. It is not a text-grade role.
   "selection-disabled-foreground": "var(--foreground)",
+  // The fill and label of a pressed Toggle and ToggleGroup item. Internal themes keep the quiet
+  // muted face on the neutral page, and the external variant layer fills with the primary
+  // pair, since muted barely clears the tinted brand pages.
+  "toggle-pressed": "var(--muted)",
+  "toggle-pressed-foreground": "var(--foreground)",
   sidebar: "oklch(0.9851 0 0)",
   "sidebar-foreground": NEUTRAL_950,
   "sidebar-accent": NEUTRAL_LINE,

@@ -59,6 +59,8 @@ export const TOKEN_NAMES = [
   "selection-disabled-background",
   "selection-disabled-hatch",
   "selection-disabled-foreground",
+  "toggle-pressed",
+  "toggle-pressed-foreground",
   "sidebar",
   "sidebar-foreground",
   "sidebar-accent",
@@ -274,6 +276,8 @@ export const TOKEN_KINDS = {
   "selection-disabled-background": "color",
   "selection-disabled-hatch": "color",
   "selection-disabled-foreground": "color",
+  "toggle-pressed": "color",
+  "toggle-pressed-foreground": "color",
   sidebar: "color",
   "sidebar-foreground": "color",
   "sidebar-accent": "color",
@@ -411,6 +415,8 @@ export const TOKEN_PAINTS = {
   // The stripes are 8px bands of a background gradient, not hairlines.
   "selection-disabled-hatch": ["surface"],
   "selection-disabled-foreground": ["ink"],
+  "toggle-pressed": ["surface"],
+  "toggle-pressed-foreground": ["ink"],
   sidebar: ["surface"],
   "sidebar-foreground": ["ink"],
   // The outline Sidebar button draws a 1px shadow ring in it on hover, which the paint
@@ -560,6 +566,10 @@ export const TOKEN_DESCRIPTIONS = {
     "The stripe color of the hatch on a disabled selection row. Internal themes stripe it in a faint black, and external themes make it transparent.",
   "selection-disabled-foreground":
     "The label text of a disabled selection row. It is not text-grade. Internal themes set it in foreground, and external themes in muted-foreground.",
+  "toggle-pressed":
+    "The fill of a pressed Toggle and ToggleGroup item. Internal themes fill it with muted, and external themes with primary, so it stands apart from the tinted page. Set text on it in toggle-pressed-foreground.",
+  "toggle-pressed-foreground":
+    "The label text and icons of a pressed Toggle and ToggleGroup item, text-grade on toggle-pressed. Internal themes set it in foreground, and external themes in primary-foreground.",
   sidebar: "The fill of the Sidebar. Set text on it in sidebar-foreground.",
   "sidebar-foreground": "Text and icons on the Sidebar.",
   "sidebar-accent":
@@ -674,6 +684,8 @@ export const EXTERNAL_RESET_KEYS = [
   "selection-disabled-background",
   "selection-disabled-hatch",
   "selection-disabled-foreground",
+  "toggle-pressed",
+  "toggle-pressed-foreground",
   "sidebar-ring",
   "radius",
   "radius-button",
@@ -731,7 +743,8 @@ export const MUST_OVERRIDE_INTERNAL = ["brand", "brand-foreground"] as const;
 /**
  * What a dark palette keeps from the light composition: geometry, typography, a Card's edge,
  * section divider and shadow colors, the outline Button's border color, a selection row's resting and checked border and
- * divider colors and a disabled selection row's fill, stripe and label text colors. Each color is
+ * divider colors, a disabled selection row's fill, stripe and label text colors and a pressed
+ * Toggle's fill and label colors. Each color is
  * either an alias, such as `var(--border)`, `var(--muted)` or `var(--foreground)`, so it follows
  * the dark role it names, or a value that does not depend on the scheme, such as the external
  * card and row edges' zero alpha, the card shadow's black at 5% or the disabled row's black
@@ -749,6 +762,8 @@ const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
   "selection-disabled-background",
   "selection-disabled-hatch",
   "selection-disabled-foreground",
+  "toggle-pressed",
+  "toggle-pressed-foreground",
   "radius",
   "radius-button",
   "radius-field",
