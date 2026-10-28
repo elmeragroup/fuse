@@ -70,6 +70,13 @@ export type DateRangePickerProps<T extends DateValue> = {
    * wins.
    */
   container?: OverlayContainerProps["container"];
+  /**
+   * Control size of the field box. Emitted as `data-size`. `"default"` maps to the `md` control
+   * size; `"sm"` maps to the `sm` control size. The segment rows and the calendar trigger follow
+   * it.
+   * @default "default"
+   */
+  size?: "sm" | "default";
 } & Omit<AriaDateRangePickerProps<T>, "shouldForceLeadingZeros">;
 
 /**
@@ -104,6 +111,7 @@ export function DateRangePicker<T extends DateValue>({
   onChange,
   presetGroup,
   shouldForceLeadingZeros = true,
+  size = "default",
   ...props
 }: DateRangePickerProps<T>): ReactElement {
   const hasPresets = isRenderableNode(presetGroup);
@@ -123,6 +131,7 @@ export function DateRangePicker<T extends DateValue>({
         className={composeTailwindRenderProps(className, base())}>
         <PickerShell
           container={container}
+          size={size}
           description={description}
           errorMessage={errorMessage}
           isReadOnly={isReadOnly}

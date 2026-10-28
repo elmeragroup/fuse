@@ -19,7 +19,7 @@ test("searchFieldVariants and RAC types are not public exports", () => {
   type _NoContext = SearchFieldApi.SearchFieldContext;
 });
 
-test("the element takes the public props, forwards a ref to the input, and rejects a size axis", () => {
+test("the element takes the public props, forwards a ref to the input, and rejects an md size name", () => {
   const _nodeError = <SearchField label="Meter search" errorMessage={<span>Required</span>} isInvalid />;
   const _functionError = (
     <SearchField
@@ -65,6 +65,6 @@ test("the element takes the public props, forwards a ref to the input, and rejec
   const _refObject: Ref<HTMLInputElement> = null;
   const _refProp = <SearchField ref={_refObject} label="Meter search" />;
 
-  // @ts-expect-error no size axis
+  // @ts-expect-error the field size is `"default"` or `"sm"`; it has no md name
   const _noSize = <SearchField size="md" />;
 });

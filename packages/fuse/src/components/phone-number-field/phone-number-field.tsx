@@ -18,7 +18,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
-import { controlMd } from "../../styles/control-size-md";
+import { fieldReads } from "../../styles/field-size";
 import { selfFocusRingClass } from "../../styles/utils";
 import { ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList } from "../combobox/combobox";
 import { FieldFrame } from "../field/field-frame";
@@ -28,6 +28,7 @@ import {
   InputGroupPlainInput,
   InputGroupRoot,
 } from "../input-group/input-group";
+import type { InputGroupRootProps } from "../input-group/input-group";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { countryNameResolver, sortByCountryName } from "./country-names";
 import { Flag } from "./flag";
@@ -148,6 +149,13 @@ export type PhoneNumberFieldProps = {
    * `outputFormat`.
    */
   name?: string;
+  /**
+   * Control size of the field box, the InputGroup around the country picker and the number.
+   * Emitted as `data-size`. `"default"` maps to the `md` control size; `"sm"` maps to the `sm`
+   * control size. The country picker's search box in the popup keeps the default size.
+   * @default "default"
+   */
+  size?: InputGroupRootProps["size"];
   /** Extra classes, merged onto the root via `cn`. */
   className?: string;
   /** Explicit override for the built-in `selectCountry` dictionary key. */
@@ -212,7 +220,7 @@ function CountryTrigger({ label, description, isEditable, children }: CountryTri
           safeguard that keeps aria-label the name. Don't "simplify" either without updating the
           browser tests. The min height is 1.5rem, floored at the fixed 24px target for a host
           root below 16px. The trigger renders a <button>, so the inline addon drops its block
-          padding and the trigger fits the field's fixed md box at both densities. */}
+          padding and the trigger fits the field box at both sizes and densities. */}
       {/* The name stays the action; the description says which country and dial code the number
           goes with, which the visible "+47" alone does not tell a screen reader. The server's Intl
           data can name a country differently from the browser's (Hong Kong), so the text may keep
@@ -269,6 +277,7 @@ export function PhoneNumberField({
   isReadOnly = false,
   isRequired,
   name,
+  size = "default",
   className,
   selectCountryLabel,
   searchCountriesLabel,
@@ -382,7 +391,7 @@ export function PhoneNumberField({
       {/* The input's font size, touch floor included, so both runs of digits have one size.
           Leading is `normal` because a text input centres its text on the font's normal
           metrics whatever its line-height; the dial code centres the same way. */}
-      <span className={cn(controlMd.entryType(), "font-medium min-w-6 leading-[normal] tabular-nums")}>
+      <span className={cn(fieldReads.entryType(), "font-medium min-w-6 leading-[normal] tabular-nums")}>
         {phone.country.dialCode}
       </span>
     </div>
@@ -398,7 +407,7 @@ export function PhoneNumberField({
         label={label}
         description={description}
         errorMessage={errorMessage}>
-        <InputGroupRoot ref={inputGroupRef} aria-invalid={isInvalid || undefined}>
+        <InputGroupRoot ref={inputGroupRef} size={size} aria-invalid={isInvalid || undefined}>
           {phone.countries.length === 1 ? (
             <InputGroupAddon className="text-foreground" align="inline-start">
               {/* One country leaves nothing to pick, so its flag and dial code are context: no

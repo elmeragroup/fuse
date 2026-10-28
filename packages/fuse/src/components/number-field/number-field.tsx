@@ -36,6 +36,13 @@ export type NumberFieldProps = {
   isReadOnly?: boolean;
   /** Forwards `required` to `NumberField.Root`. */
   isRequired?: boolean;
+  /**
+   * Control size of the field box, the group around the input and the steppers. Emitted as
+   * `data-size`. `"default"` maps to the `md` control size; `"sm"` maps to the `sm` control size.
+   * The steppers fill the box's height at both sizes.
+   * @default "default"
+   */
+  size?: "sm" | "default";
   /** Unit suffix rendered between the input and the steppers (visual only). */
   denomination?: string;
   /**
@@ -101,6 +108,7 @@ export function NumberField({
   isDisabled = false,
   isReadOnly = false,
   isRequired = false,
+  size = "default",
   denomination,
   value,
   defaultValue,
@@ -125,7 +133,7 @@ export function NumberField({
   // base-ui does not observe native form reset; the hook remounts the primitive instead.
   const reset = useResetRemount(numberInputRef, !isControlled);
   const controlledValue = value === undefined ? undefined : Number.isNaN(value) ? null : value;
-  const slots = numberFieldVariants({ isMuted: isDisabled || isReadOnly });
+  const slots = numberFieldVariants({ size, isMuted: isDisabled || isReadOnly });
 
   return (
     <FieldFrame
@@ -156,7 +164,10 @@ export function NumberField({
         readOnly={isReadOnly}
         required={isRequired}
         id={id}>
-        <NumberFieldPrimitive.Group aria-invalid={isInvalid || undefined} className={slots.group()}>
+        <NumberFieldPrimitive.Group
+          aria-invalid={isInvalid || undefined}
+          data-size={size}
+          className={slots.group()}>
           <NumberFieldPrimitive.Input
             // The reset hook needs the visible control; Root's `inputRef` prop is the
             // validation input, not this one.

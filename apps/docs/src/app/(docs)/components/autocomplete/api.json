@@ -369,7 +369,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 302,
+      "forwardedCount": 301,
       "props": [
         {
           "name": "children",
@@ -443,6 +443,15 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Renders the caret trigger button in the inline-end addon. The list opens as the user types, so the field has none by default. Hidden at runtime whenever a clear button is present in the group.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Control size of the field box, the outer InputGroup. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. It replaces the native numeric `size` attribute; set the width with a class instead.",
           "required": false
         },
         {

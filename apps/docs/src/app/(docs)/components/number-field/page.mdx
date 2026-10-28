@@ -4,6 +4,7 @@ lede: >
 ---
 
 import { NumberFieldBasic } from "./demos/number-field-basic";
+import { NumberFieldSizes } from "./demos/number-field-sizes";
 import { NumberFieldCommit } from "./demos/number-field-commit";
 import { NumberFieldDenomination } from "./demos/number-field-denomination";
 import { NumberFieldFormat } from "./demos/number-field-format";
@@ -19,6 +20,10 @@ export const metadata = componentMetadata("number-field");
 
 <Demo slug="number-field" id="basic" title="Basic" file="number-field-basic.tsx">
   <NumberFieldBasic />
+</Demo>
+
+<Demo slug="number-field" id="sizes" title="Sizes" file="number-field-sizes.tsx">
+  <NumberFieldSizes />
 </Demo>
 
 <Demo slug="number-field" id="denomination" title="Denomination" file="number-field-denomination.tsx">

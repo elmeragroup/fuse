@@ -9,9 +9,13 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { isThemeDevelopment } from "../../theme/validate-theme";
-import { inputClass } from "./input-class";
+import { inputVariants } from "./input-class";
 
-export type InputProps = ComponentProps<"input"> & {
+/**
+ * The props of {@link InputControl}: the native input attributes, the native numeric `size`
+ * included, plus the digits-only guard.
+ */
+export type InputControlProps = ComponentProps<"input"> & {
   /**
    * Digits-only guard. Non-digit characters are stripped from every path — typing, paste,
    * autofill — before `onChange` and Field validation read the value.
@@ -92,7 +96,7 @@ function listenForMixedInsertions(input: HTMLInputElement | null): (() => void) 
   };
 }
 
-function warnIfNotNumeric(prop: "value" | "defaultValue", value: InputProps["value"]): void {
+function warnIfNotNumeric(prop: "value" | "defaultValue", value: InputControlProps["value"]): void {
   if (!isThemeDevelopment()) {
     return;
   }
@@ -101,15 +105,20 @@ function warnIfNotNumeric(prop: "value" | "defaultValue", value: InputProps["val
   }
 }
 
-export function Input({
-  className,
+/**
+ * Input's control: the numeric filter, with the classes its caller passes. Package-private.
+ * `Input` passes `inputVariants`, a field box that writes its size, and `InputGroup.Input` passes
+ * `inputClass` inside `InputGroup.Root`, whose size it reads, so the group's input never resets the
+ * group's size to its own.
+ */
+export function InputControl({
   type,
   filter,
   inputMode,
   onChange,
   ref,
   ...props
-}: InputProps): ReactElement {
+}: InputControlProps): ReactElement {
   const isNumeric = filter === "numeric";
   const inputRef = useMergedRefs(ref, isNumeric ? listenForMixedInsertions : null);
 
@@ -137,7 +146,6 @@ export function Input({
     <InputPrimitive
       type={type}
       data-slot="input"
-      className={cn(inputClass, className)}
       {...definedProps({
         ...props,
         ref: inputRef,
@@ -148,4 +156,19 @@ export function Input({
   );
 }
 
+export type InputProps = Omit<InputControlProps, "size"> & {
+  /**
+   * Control size of the field box. Emitted as `data-size`. `"default"` maps to the `md` control
+   * size; `"sm"` maps to the `sm` control size. It replaces the native numeric `size` attribute;
+   * set the width with a class instead.
+   * @default "default"
+   */
+  size?: "sm" | "default";
+};
+
+export function Input({ className, size = "default", ...props }: InputProps): ReactElement {
+  return <InputControl data-size={size} className={cn(inputVariants({ size }), className)} {...props} />;
+}
+
+InputControl.displayName = "InputControl";
 Input.displayName = "Input";

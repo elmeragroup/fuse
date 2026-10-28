@@ -55,6 +55,15 @@ describe("substituteVars", () => {
   it("reports a variable with no value and no fallback", () => {
     expect(substituteVars("var(--unset)", () => undefined, index.owns, new Set())).toBeUndefined();
   });
+
+  it.each([false, true] as const)(
+    "reads a variable set to initial as guaranteed-invalid and takes the fallback (computed: %s)",
+    (computed) => {
+      const initial = () => ({ value: " initial", computed });
+      expect(substituteVars("var(--field-h,2.25rem)", initial, index.owns, new Set())).toBe("2.25rem");
+      expect(substituteVars("var(--field-h)", initial, index.owns, new Set())).toBeUndefined();
+    }
+  );
 });
 
 describe("evaluateNumber", () => {

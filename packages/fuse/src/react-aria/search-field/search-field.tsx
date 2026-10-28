@@ -41,6 +41,12 @@ export type SearchFieldProps = {
    * row of the locale dictionary; an explicit string wins.
    */
   clearLabel?: string;
+  /**
+   * Control size of the field box. Emitted as `data-size`. `"default"` maps to the `md` control
+   * size; `"sm"` maps to the `sm` control size. The clear button follows it.
+   * @default "default"
+   */
+  size?: "sm" | "default";
 } & AriaSearchFieldProps;
 
 export function SearchField({
@@ -49,6 +55,7 @@ export function SearchField({
   errorMessage,
   placeholder,
   clearLabel,
+  size = "default",
   className,
   onChange,
   ref,
@@ -65,7 +72,7 @@ export function SearchField({
         onChange={clearingOnChange}
         className={composeTailwindRenderProps(className, base())}>
         {label ? <Label>{label}</Label> : null}
-        <FieldGroup isReadOnly={props.isReadOnly} className={group()}>
+        <FieldGroup isReadOnly={props.isReadOnly} size={size} className={group()}>
           <MagnifyingGlass aria-hidden className={icon()} />
           <Input className={input()} placeholder={placeholder} ref={ref} />
           <Button

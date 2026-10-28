@@ -1,5 +1,5 @@
 import { cn } from "./cn";
-import { controlMdInsetTypeClass } from "./control-size-md";
+import { fieldEntryClass } from "./field-size";
 import { dateInputShellClass } from "./inner-corner/date-field";
 import { tv } from "./tv";
 
@@ -8,17 +8,17 @@ import { tv } from "./tv";
  * keeps its recipe in `src/styles/`.
  *
  * `DateInput` hands the `input` slot to the shared `fieldGroupVariants` as `class`, and
- * that recipe pins the md control height, so this recipe has no `size` axis. The `input`
- * slot carries the md inset so the segment row lines up with Input at both densities. It
- * sets no `py-*` and no display, because the field group owns the box height and its flex
- * layout.
+ * that recipe's `size` axis writes the field size, so this recipe has no `size` axis. The
+ * `input` slot reads the field inset and text-entry type of the box it sits in, its own or a
+ * picker's, so the segment row lines up with Input at both sizes and densities. It sets no
+ * `py-*` and no display, because the field group owns the box height and its flex layout.
  */
 export const dateFieldVariants = tv({
   slots: {
     // An invalid field paints its label in the error colour, as `Field.Root` does; every
     // other part sets its own colour.
     base: "flex flex-col gap-1 data-invalid:text-error",
-    input: cn(controlMdInsetTypeClass, dateInputShellClass),
+    input: cn(fieldEntryClass, dateInputShellClass),
     segment: cn(
       "inline rounded-inner p-0.5 text-foreground caret-transparent outline outline-0 forced-color-adjust-none forced-colors:text-[ButtonText] type-literal:px-0"
     ),

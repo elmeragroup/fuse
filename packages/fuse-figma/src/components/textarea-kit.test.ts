@@ -1,7 +1,8 @@
 /**
  * Unit under test: the Textarea component set as the build produces it. Oracle: the Fuse variable or
- * literal each Figma field of a cell must carry, read by hand from `textareaClass` in
- * `textarea-class.ts` (`fieldBox({ box: "content" })` with `flex field-sizing-content`), `fieldBox` in
+ * literal each Figma field of a cell must carry, read by hand from `textareaVariants` at the default
+ * field size in `textarea-class.ts` (`fieldBox({ box: "content" })` with `flex field-sizing-content`
+ * and the default size's writes from `field-size.ts`), `fieldBox` in
  * `field-box.ts`, `fieldCornerClass` in `corner-radius.ts`, `control-size-md.ts`, `state-face.ts`, the
  * focus ring in `styles/utils.ts` and Tailwind's `shadow-xs` and `min-h-16`, and from the browser's
  * rendering of `<textarea>` in `research/input-textarea.md`: the box is 384px wide, the preview

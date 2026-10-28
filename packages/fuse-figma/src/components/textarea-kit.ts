@@ -1,7 +1,8 @@
 /**
  * Textarea, as one component set: a placeholder and a typed value, in five states: 10 cells. The
- * root is Fuse's `<textarea data-slot="textarea">`, a native control, with `textareaClass`. It shares
- * its matrix, states, text colors and omissions with Input through `field-box-kit.ts`.
+ * root is Fuse's `<textarea data-slot="textarea">`, a native control, with `textareaVariants()` at
+ * the default field size. It shares its matrix, states, text colors and omissions with Input
+ * through `field-box-kit.ts`.
  *
  * - The box draws the field box with Input's corner, border, fill and shadow, at the md inline
  *   padding and 8px block padding. `field-sizing-content` makes its height hug its text, and
@@ -12,7 +13,7 @@
  *   its lines, with no ellipsis.
  * - A `<textarea>` holds its placeholder in `placeholder` and its value as its own text.
  */
-import { textareaClass } from "@elmeragroup/fuse/recipe-catalog";
+import { textareaVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { ComponentDefinition } from "./component-spec";
 import { FIELD_BOX_SET, FIELD_ROOT, showsPlaceholder } from "./field-box-kit";
@@ -29,7 +30,7 @@ export const TEXTAREA: ComponentDefinition = {
   key: "textarea",
   name: "Textarea",
   slot: "textarea",
-  classesFor: () => textareaClass,
+  classesFor: () => textareaVariants(),
   // Every cell renders the textarea through `Field.Control` inside a Field root, as the docs' Field
   // demo does, and only an invalid cell's root is invalid.
   ancestorsFor: () => [FIELD_ROOT],

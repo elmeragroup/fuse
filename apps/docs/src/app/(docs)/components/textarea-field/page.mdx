@@ -4,6 +4,7 @@ lede: >
 ---
 
 import { TextareaFieldBasic } from "./demos/textarea-field-basic";
+import { TextareaFieldSizes } from "./demos/textarea-field-sizes";
 import { TextareaFieldCounter } from "./demos/textarea-field-counter";
 import { TextareaFieldUncontrolled } from "./demos/textarea-field-uncontrolled";
 import { TextareaFieldError } from "./demos/textarea-field-error";
@@ -17,6 +18,10 @@ export const metadata = componentMetadata("textarea-field");
 
 <Demo slug="textarea-field" id="basic" title="Basic" file="textarea-field-basic.tsx">
   <TextareaFieldBasic />
+</Demo>
+
+<Demo slug="textarea-field" id="sizes" title="Sizes" file="textarea-field-sizes.tsx">
+  <TextareaFieldSizes />
 </Demo>
 
 <Demo slug="textarea-field" id="counter" title="Counter" file="textarea-field-counter.tsx">

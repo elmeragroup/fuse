@@ -4,6 +4,7 @@ lede: >
 ---
 
 import { SelectFieldBasic } from "./demos/select-field-basic";
+import { SelectFieldSizes } from "./demos/select-field-sizes";
 import { SelectFieldStates } from "./demos/select-field-states";
 import { SelectFieldForm } from "./demos/select-field-form";
 
@@ -21,6 +22,10 @@ export const metadata = componentMetadata("select-field");
 
 <Demo slug="select-field" id="basic" title="Basic" file="select-field-basic.tsx">
   <SelectFieldBasic />
+</Demo>
+
+<Demo slug="select-field" id="sizes" title="Sizes" file="select-field-sizes.tsx">
+  <SelectFieldSizes />
 </Demo>
 
 <Demo slug="select-field" id="states" title="Invalid and disabled" file="select-field-states.tsx">

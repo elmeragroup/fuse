@@ -1,6 +1,6 @@
 import { cn } from "../../styles/cn";
-import { controlMdInsetTypeClass } from "../../styles/control-size-md";
 import { numberFieldGroupClass } from "../../styles/field-box";
+import { fieldEntryClass, fieldSize } from "../../styles/field-size";
 import { withinStateFaceControlClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
 import { withinFocusRingControlClass } from "../../styles/utils";
@@ -10,9 +10,12 @@ import { withinFocusRingControlClass } from "../../styles/utils";
  * `@elmeragroup/fuse/number-field`, and the workspace-only recipe catalog re-exports it for the
  * Figma component sync.
  *
- * - `group` is the field box around the input, the denomination and the steppers. `isMuted`
- *   gives it the muted fill of a disabled or read-only field.
- * - `input` fills the group's height and the width the denomination and steppers leave.
+ * - `group` is the field box around the input, the denomination and the steppers. `size` writes
+ *   the field size on it (`field-size.ts`), `"default"` the md control size and `"sm"` the sm one,
+ *   and the box reads its height from it. `isMuted` gives it the muted fill of a disabled or
+ *   read-only field.
+ * - `input` fills the group's height and the width the denomination and steppers leave, with the
+ *   field's inset and text-entry type.
  * - `denomination` is the muted unit suffix between the input and the steppers.
  * - `steppers` is the full-height row that holds the two steppers.
  * - `stepper` is one stepper. It is a part of the control, not a whole control: the group's
@@ -28,7 +31,7 @@ export const numberFieldVariants = tv({
     group: numberFieldGroupClass,
     input: cn(
       "box-border h-full w-full min-w-0 flex-1 border-0 bg-transparent py-0 tabular-nums",
-      controlMdInsetTypeClass,
+      fieldEntryClass,
       withinFocusRingControlClass,
       withinStateFaceControlClass
     ),
@@ -39,11 +42,16 @@ export const numberFieldVariants = tv({
       "box-border flex h-full w-[max(var(--control-h-xs),24px)] shrink-0 cursor-default items-center justify-center border-0 border-s border-input bg-background p-0 text-foreground transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground enabled-hover:bg-muted",
   },
   variants: {
+    size: {
+      default: { group: fieldSize({ size: "default" }).box() },
+      sm: { group: fieldSize({ size: "sm" }).box() },
+    },
     isMuted: {
       true: { group: "bg-muted" },
     },
   },
   defaultVariants: {
+    size: "default",
     isMuted: false,
   },
 });

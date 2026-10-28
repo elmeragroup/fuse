@@ -55,6 +55,7 @@
     "rsc": "client",
     "demos": [
       "autocomplete-basic.tsx",
+      "autocomplete-sizes.tsx",
       "autocomplete-caret.tsx",
       "autocomplete-groups.tsx",
       "autocomplete-company-search.tsx"
@@ -167,6 +168,7 @@
     "rsc": "client",
     "demos": [
       "combobox-basic.tsx",
+      "combobox-sizes.tsx",
       "combobox-groups.tsx",
       "combobox-multi-chips.tsx",
       "combobox-input-group-anchor.tsx"
@@ -217,6 +219,7 @@
     "rsc": "client",
     "demos": [
       "date-field-basic.tsx",
+      "date-field-sizes.tsx",
       "date-field-validation.tsx",
       "date-field-granularity.tsx",
       "date-field-states.tsx",
@@ -228,6 +231,7 @@
     "rsc": "client",
     "demos": [
       "date-picker-basic.tsx",
+      "date-picker-sizes.tsx",
       "date-picker-controlled.tsx",
       "date-picker-presets.tsx",
       "date-picker-trigger-start.tsx",
@@ -241,6 +245,7 @@
     "rsc": "client",
     "demos": [
       "date-range-picker-basic.tsx",
+      "date-range-picker-sizes.tsx",
       "date-range-picker-controlled.tsx",
       "date-range-picker-presets.tsx",
       "date-range-picker-validation.tsx",
@@ -361,6 +366,7 @@
     "rsc": "client",
     "demos": [
       "input-basic.tsx",
+      "input-sizes.tsx",
       "input-types.tsx",
       "input-states.tsx",
       "input-in-field.tsx",
@@ -372,6 +378,7 @@
     "rsc": "client",
     "demos": [
       "input-group-icons.tsx",
+      "input-group-sizes.tsx",
       "input-group-buttons.tsx",
       "input-group-block.tsx",
       "input-group-textarea.tsx",
@@ -439,6 +446,7 @@
     "rsc": "client",
     "demos": [
       "number-field-basic.tsx",
+      "number-field-sizes.tsx",
       "number-field-denomination.tsx",
       "number-field-format.tsx",
       "number-field-error.tsx",
@@ -457,6 +465,7 @@
     "rsc": "client",
     "demos": [
       "phone-number-field-basic.tsx",
+      "phone-number-field-sizes.tsx",
       "phone-number-field-international.tsx",
       "phone-number-field-detect.tsx",
       "phone-number-field-countries.tsx",
@@ -523,7 +532,7 @@
   "search-field": {
     "title": "Search Field",
     "rsc": "client",
-    "demos": ["search-field-basic.tsx", "search-field-validation.tsx"]
+    "demos": ["search-field-basic.tsx", "search-field-sizes.tsx", "search-field-validation.tsx"]
   },
   "select": {
     "title": "Select",
@@ -539,7 +548,12 @@
   "select-field": {
     "title": "Select Field",
     "rsc": "server",
-    "demos": ["select-field-basic.tsx", "select-field-states.tsx", "select-field-form.tsx"]
+    "demos": [
+      "select-field-basic.tsx",
+      "select-field-sizes.tsx",
+      "select-field-states.tsx",
+      "select-field-form.tsx"
+    ]
   },
   "selection-item": {
     "title": "Selection Item",
@@ -663,6 +677,7 @@
     "rsc": "client",
     "demos": [
       "text-field-basic.tsx",
+      "text-field-sizes.tsx",
       "text-field-error.tsx",
       "text-field-states.tsx",
       "text-field-pending-success.tsx",
@@ -675,13 +690,14 @@
   "textarea": {
     "title": "Textarea",
     "rsc": "server",
-    "demos": ["textarea-basic.tsx", "textarea-states.tsx", "textarea-in-field.tsx"]
+    "demos": ["textarea-basic.tsx", "textarea-sizes.tsx", "textarea-states.tsx", "textarea-in-field.tsx"]
   },
   "textarea-field": {
     "title": "Textarea Field",
     "rsc": "client",
     "demos": [
       "textarea-field-basic.tsx",
+      "textarea-field-sizes.tsx",
       "textarea-field-counter.tsx",
       "textarea-field-uncontrolled.tsx",
       "textarea-field-error.tsx",

@@ -217,6 +217,15 @@
           "required": false
         },
         {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Control size of the field box, the group around the input and the steppers. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. The steppers fill the box's height at both sizes.",
+          "required": false
+        },
+        {
           "name": "step",
           "origin": "declared",
           "type": "number | undefined",

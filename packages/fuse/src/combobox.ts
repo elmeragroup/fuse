@@ -6,6 +6,7 @@ export { Combobox } from "./components/combobox";
 export { useComboboxAnchor } from "./components/combobox/combobox";
 export type {
   ComboboxChipProps,
+  ComboboxChipsProps,
   ComboboxClearProps,
   ComboboxContentProps,
   ComboboxInputProps,

@@ -9,7 +9,7 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 300,
+      "forwardedCount": 299,
       "props": [
         {
           "name": "className",
@@ -162,6 +162,15 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Native `placeholder` forwarded to the inner input.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Control size of the inner Input's field box, forwarded to `Input`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. It replaces the native numeric `size` attribute.",
           "required": false
         },
         {

@@ -1,14 +1,16 @@
-import { controlMdInsetTypeClass } from "./control-size-md";
+import { cn } from "./cn";
+import { fieldEntryClass, fieldReads } from "./field-size";
 import { pickerDialogShellClass } from "./inner-corner/picker";
 import { tv } from "./tv";
 
 /**
  * Shared layout recipe for the two date pickers. The `range` axis selects one segment
  * row or two; both variants borrow their field box, popup, and grid surfaces from the
- * composed components. FieldGroup owns the read-only fill and the md control height —
- * this recipe emits no control-height rung. A narrow range stacks two content-sized
- * rows; this recipe adds no size axis or glyph background. The input inset keeps
- * segmented rows aligned with Input at both densities.
+ * composed components. FieldGroup owns the read-only fill and writes the field size the
+ * picker passes it — this recipe emits no control-height rung. A narrow range stacks two
+ * content-sized rows; this recipe adds no size axis or glyph background. The input reads the
+ * field inset and type, which keeps segmented rows aligned with Input at both sizes and
+ * densities, and the trigger reads the field's inner square.
  */
 export const pickerVariants = tv({
   slots: {
@@ -21,7 +23,7 @@ export const pickerVariants = tv({
     /** The private FieldGroup around the segment row(s) and the trigger. */
     group: "w-auto",
     /** A public DateInput inside the field box. */
-    input: controlMdInsetTypeClass,
+    input: fieldEntryClass,
     /**
      * The en-dash between a range's two rows: decorative, `aria-hidden`, and the only slot
      * with a colour of its own. It uses role tokens; the forced-colors fallbacks are kept verbatim so the
@@ -40,9 +42,10 @@ export const pickerVariants = tv({
      * model, and only the column template and the separator toggle at 24rem, so the
      * range arm's placements are live at every width. The trigger sits flush against the
      * field box's border, so it reads the box's inner corner instead of Button's
-     * `--radius-button`.
+     * `--radius-button`, and it takes the field's inner square, `--field-inner`, over
+     * Button's `icon-sm` square.
      */
-    trigger: "rounded-inner",
+    trigger: cn("rounded-inner", fieldReads.inner()),
     /**
      * The styled Dialog inside the popover. Both padding utilities are needed: the dialog
      * recipe sets `p-6` on its base and `p-4` under `[data-placement]`, which is exactly the

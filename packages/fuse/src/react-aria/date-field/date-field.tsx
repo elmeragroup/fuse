@@ -18,6 +18,7 @@ import type {
   ValidationResult,
 } from "react-aria-components";
 
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { dateFieldVariants } from "../../styles/date-field";
 import { composeTailwindRenderProps } from "../internal/compose-tailwind-render-props";
@@ -51,6 +52,12 @@ export type DateFieldProps<T extends DateValue> = {
    * @default true
    */
   shouldForceLeadingZeros?: boolean;
+  /**
+   * Control size of the field box, forwarded to `DateInput`. `"default"` maps to the `md`
+   * control size; `"sm"` maps to the `sm` control size.
+   * @default "default"
+   */
+  size?: DateInputProps["size"];
 } & Omit<AriaDateFieldProps<T>, "shouldForceLeadingZeros">;
 
 export function DateField<T extends DateValue>({
@@ -58,6 +65,7 @@ export function DateField<T extends DateValue>({
   description,
   errorMessage,
   shouldForceLeadingZeros = true,
+  size = "default",
   className,
   onChange,
   ...props
@@ -73,7 +81,7 @@ export function DateField<T extends DateValue>({
         shouldForceLeadingZeros={shouldForceLeadingZeros}
         className={composeTailwindRenderProps(className, base())}>
         {label ? <Label>{label}</Label> : null}
-        <DateInput />
+        <DateInput size={size} />
         <FieldError>{errorMessage}</FieldError>
         {description ? <Description>{description}</Description> : null}
       </AriaDateField>
@@ -94,21 +102,30 @@ export type DateInputProps = {
    * surface. Inside a field group, the group owns the surface. A function may compute the class from DateInput render props.
    */
   className?: AriaDateInputProps["className"];
+  /**
+   * Control size of the field box the row paints when it stands alone. Emitted as `data-size`.
+   * `"default"` maps to the `md` control size; `"sm"` maps to the `sm` control size. Inside a
+   * date picker the picker's field box owns the size, and the row reads it from there.
+   * @default "default"
+   */
+  size?: "sm" | "default";
 } & Omit<AriaDateInputProps, "children" | "slot" | "className">;
 
-export function DateInput({ className, ...props }: DateInputProps): ReactElement {
+export function DateInput({ className, size = "default", ...props }: DateInputProps): ReactElement {
   const state = useContext(DateFieldStateContext);
   const hasGroupSurface = useContext(FieldGroupSurfaceContext);
   const { input, segment } = dateFieldVariants({ surface: hasGroupSurface ? "group" : "own" });
-
   return (
     <AriaDateInput
       {...props}
+      // Only a row that paints its own box writes a size; in a picker the picker's box owns it.
+      {...definedProps({ "data-size": hasGroupSurface ? undefined : size })}
       className={composeRenderProps(className, (resolved, renderProps) =>
         cn(
           hasGroupSurface
             ? input()
             : fieldGroupVariants({
+                size,
                 isFocusVisible: renderProps.isFocusVisible,
                 isInvalid: renderProps.isInvalid,
                 isDisabled: renderProps.isDisabled,

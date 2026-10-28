@@ -19,8 +19,7 @@
  * draw those rows from. Command's list and palette shells come along
  * from `styles/`, since `Command.List` adds the list's to the list recipe to pad its rows and publish
  * their corner, and `Command.Content` adds the palette's after the modal popup face, which comes along
- * from `overlay/`. InputGroup's root chrome comes along from `styles/field-box.ts`, where it sits beside the
- * field box it shares. The overlay corner close position comes along from `overlay/`, which Dialog
+ * from `overlay/`. The overlay corner close position comes along from `overlay/`, which Dialog
  * and Sheet add to their close button.
  */
 
@@ -46,9 +45,13 @@ export { emptyMediaVariants, emptyVariants } from "./empty/empty-variants";
 export { fieldVariants } from "./field/field-variants";
 export { fieldFrameVariants } from "./field/field-frame-variants";
 export { fileUploadVariants } from "./file-upload/file-upload-variants";
-export { inputClass } from "./input/input-class";
+export { inputClass, inputVariants } from "./input/input-class";
 export { inputGroupInputControlClass } from "./input-group/input-group-class";
-export { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group/input-group-variants";
+export {
+  inputGroupAddonVariants,
+  inputGroupButtonVariants,
+  inputGroupRootVariants,
+} from "./input-group/input-group-variants";
 export { itemActionsClass, itemContentClass, itemDescriptionClass } from "./item/item-class";
 export { ITEM_DESCRIPTION_CLASSES } from "./item/item-description-classes";
 export { itemMediaVariants } from "./item/item-media-variants";
@@ -98,7 +101,7 @@ export {
 export { SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON } from "./sidebar/sidebar-width";
 export { skeletonClass } from "./skeleton/skeleton-class";
 export { switchVariants } from "./switch/switch-variants";
-export { textareaClass } from "./textarea/textarea-class";
+export { textareaVariants } from "./textarea/textarea-class";
 export { textareaFieldVariants } from "./textarea-field/textarea-field-variants";
 export { textFieldVariants } from "./text-field/text-field-variants";
 export { toggleVariants } from "./toggle/toggle-variants";
@@ -108,7 +111,6 @@ export { tooltipVariants } from "./tooltip/tooltip-variants";
 export { cellVariants } from "../styles/calendar";
 export { cn } from "../styles/cn";
 export { commandContentShellClass, commandListShellClass } from "../styles/inner-corner/command";
-export { inputGroupRootClass } from "../styles/field-box";
 export { linkVariants } from "../styles/link";
 export { racDisabledStateFaceClass } from "../styles/state-face";
 export { focusRing } from "../styles/utils";

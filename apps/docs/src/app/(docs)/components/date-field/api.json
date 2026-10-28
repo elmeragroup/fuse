@@ -49,6 +49,15 @@
           "defaultValue": "true",
           "description": "Pads day and month segments with a leading zero. The reference flips RAC's locale-dependent default; this port keeps that flip.",
           "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Control size of the field box, forwarded to `DateInput`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size.",
+          "required": false
         }
       ]
     },
@@ -69,6 +78,15 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Extra classes, composed with the segment row and its standalone field surface. Inside a field group, the group owns the surface. A function may compute the class from DateInput render props.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Control size of the field box the row paints when it stands alone. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. Inside a date picker the picker's field box owns the size, and the row reads it from there.",
           "required": false
         },
         {

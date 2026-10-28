@@ -480,9 +480,8 @@
     }
   }
 }
-/* The text-entry font-size floor's condition (see controlMdInsetTypeClass in
-   control-size-md.ts): a coarse primary pointer, or iOS-family WebKit. iPhone and iPad
-   report a coarse pointer; the @supports arm catches the WebKit paths on iOS that report
+/* The text-entry font-size floor's condition (see `entryType` in field-size.ts): a coarse
+   primary pointer, or iOS-family WebKit. iPhone and iPad report a coarse pointer; the @supports arm catches the WebKit paths on iOS that report
    a fine one, since only iOS WebKit supports -webkit-touch-callout. `any-pointer` stays
    out: touch laptops and Chromebooks report a fine primary pointer and never zoom on focus,
    so they keep dense 14px text. Plain CSS cannot OR @media with @supports, so this emits
