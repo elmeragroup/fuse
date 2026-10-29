@@ -101,9 +101,6 @@ export function describeDemoCoverage(fileUrl: string): void {
 const PARTLESS_PAGES = new Set([
   // The interim React Aria Link renders its anchor without a `data-slot`.
   "link",
-  // React Aria's Focusable clones its child with its own focus props alone, so the `data-slot`
-  // Tooltip.Trigger merges onto it never reaches the span, and the sweep finds no tooltip opener.
-  "focusable",
 ]);
 
 function describeDensityCoverage(slugs: readonly string[], measured: readonly Instance[]): void {

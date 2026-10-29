@@ -11,6 +11,7 @@ import * as Wcag from "@elmeragroup/color/wcag";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { ringLayers, settleTransitions } from "../../../test/assert-invalid-ring";
+import { declaredRole } from "../../../test/declared-role";
 import { HOSTS, centreY, firstLineCentreY, hostCss } from "../../../test/first-line";
 import {
   computedContrast,
@@ -27,7 +28,6 @@ import {
   textNamed,
 } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
-import { PART_DENSITY } from "../../theme/tokens/density-roles";
 import { LEGAL_THEMES, themeSlug } from "../../theme/tokens/themes";
 import { Badge } from "../badge/badge";
 import { Item } from "../item";
@@ -608,21 +608,6 @@ describe("Alert", () => {
     }
   });
 });
-
-/**
- * A rendered part's `PART_DENSITY` role: the first override key of its slot, in table order, that
- * the part matches (the slot followed by a selector suffix starting with `[` or `:`), else the
- * slot's own key.
- */
-function declaredRole(element: Element): string | undefined {
-  const slot = element.getAttribute("data-slot") ?? "";
-  const entries = Object.entries(PART_DENSITY);
-  const override = entries.find(([key]) => {
-    const suffix = key.slice(slot.length);
-    return key.startsWith(slot) && /^[[:]/u.test(suffix) && element.matches(`[data-slot="${slot}"]${suffix}`);
-  });
-  return (override ?? entries.find(([key]) => key === slot))?.[1];
-}
 
 describe("Alert text size", () => {
   it("sets the title and body in the label text at each density, the title medium and the body regular", () => {
