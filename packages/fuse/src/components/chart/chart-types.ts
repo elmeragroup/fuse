@@ -459,7 +459,7 @@ export type ChartStyleVars = {
   /**
    * A series' or category's paint, which wins over its config role. Fuse only reads it. ASCII
    * letters, digits and `-` in a key stay as they are, and every other character becomes `_`, its
-   * code point in lowercase hexadecimal, and `_`, so `net_rent` reads `--chart-color-net_5f_rent`.
+   * code point in lower case hexadecimal, and `_`, so `net_rent` reads `--chart-color-net_5f_rent`.
    */
   readonly [key: `--chart-color-${string}`]: string;
 };

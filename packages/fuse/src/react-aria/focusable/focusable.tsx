@@ -5,7 +5,7 @@ import { Children, cloneElement } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import type { FocusableOptions } from "react-aria";
-import { useFocusable } from "react-aria";
+import { useFocusable as useRacFocusable } from "react-aria";
 import type { FocusableElement } from "react-aria-components";
 import { Focusable as FocusablePrimitive } from "react-aria-components";
 
@@ -62,11 +62,16 @@ export function Focusable({ children, ...props }: FocusableProps): ReactElement 
 }
 
 /**
- * RAC `useFocusable` re-export. Migration debt: dies with the react-aria interim tier.
- * Base-ui overlay triggers accept arbitrary render targets, which removes the need for a
- * focus-cloning wrapper.
+ * React Aria's `useFocusable`, the same function under Fuse's entry. It makes an element
+ * focusable and wires its focus and keyboard handlers. Migration debt: dies with the react-aria
+ * interim tier.
+ *
+ * @param props - The focus options, such as `autoFocus`, `excludeFromTabOrder` and the focus and
+ * keyboard handlers.
+ * @param domRef - The ref of the element to make focusable.
+ * @returns The props to spread on the element.
  */
-export { useFocusable };
+export const useFocusable: typeof useRacFocusable = useRacFocusable;
 
 /**
  * RAC `FocusableOptions` re-export. Migration debt: dies with the react-aria

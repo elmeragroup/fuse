@@ -83,7 +83,44 @@
   "bar-chart": {
     "title": "Bar Chart",
     "rsc": "client",
-    "demos": ["bar-chart-year-over-year.tsx"]
+    "demos": [
+      "bar-chart-basic.tsx",
+      "bar-chart-blocks.tsx",
+      "bar-chart-buffer.tsx",
+      "bar-chart-capacity-step.tsx",
+      "bar-chart-config.tsx",
+      "bar-chart-dst-days.tsx",
+      "bar-chart-emphasis.tsx",
+      "bar-chart-entrance.tsx",
+      "bar-chart-expandable.tsx",
+      "bar-chart-glowing.tsx",
+      "bar-chart-gradient-colors.tsx",
+      "bar-chart-horizontal.tsx",
+      "bar-chart-hourly-groups.tsx",
+      "bar-chart-hover-highlight.tsx",
+      "bar-chart-hover-trace.tsx",
+      "bar-chart-icons.tsx",
+      "bar-chart-isometric.tsx",
+      "bar-chart-loading.tsx",
+      "bar-chart-monospace.tsx",
+      "bar-chart-month-to-date.tsx",
+      "bar-chart-month-vs-last-year.tsx",
+      "bar-chart-percent.tsx",
+      "bar-chart-price-levels.tsx",
+      "bar-chart-price-spike.tsx",
+      "bar-chart-server.tsx",
+      "bar-chart-stacked.tsx",
+      "bar-chart-streamed.tsx",
+      "bar-chart-update.tsx",
+      "bar-chart-variant-default.tsx",
+      "bar-chart-variant-duotone-reverse.tsx",
+      "bar-chart-variant-duotone.tsx",
+      "bar-chart-variant-gradient.tsx",
+      "bar-chart-variant-hatched.tsx",
+      "bar-chart-variant-striped.tsx",
+      "bar-chart-year-over-year.tsx",
+      "bar-chart-year-vs-last-year.tsx"
+    ]
   },
   "breadcrumb": {
     "title": "Breadcrumb",
@@ -148,7 +185,22 @@
   "chart": {
     "title": "Chart",
     "rsc": "client",
-    "demos": ["chart-usage-and-price.tsx"]
+    "demos": [
+      "chart-axis-titles.tsx",
+      "chart-background.tsx",
+      "chart-crosshair.tsx",
+      "chart-empty.tsx",
+      "chart-headline.tsx",
+      "chart-hourly-usage.tsx",
+      "chart-legend-toggles.tsx",
+      "chart-reference-area.tsx",
+      "chart-reference-line.tsx",
+      "chart-table.tsx",
+      "chart-tick-dot.tsx",
+      "chart-tooltip-anchor.tsx",
+      "chart-tooltip-default.tsx",
+      "chart-tooltip-frosted.tsx"
+    ]
   },
   "checkbox": {
     "title": "Checkbox",

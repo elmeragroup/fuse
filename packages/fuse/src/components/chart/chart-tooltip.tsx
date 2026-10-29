@@ -1,8 +1,39 @@
 "use client";
 
+import { use, useMemo, useRef } from "react";
 import type { ReactElement, ReactNode } from "react";
 
+import { mergeProps } from "@base-ui/react/merge-props";
+import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
+import { useRender } from "@base-ui/react/use-render";
+
+import { cn } from "../../styles/cn";
+import { tooltipShellClass } from "../../styles/inner-corner/tooltip";
+import { tv } from "../../styles/tv";
+import {
+  overlayPopupMotionClass,
+  overlayPopupSurfaceClass,
+  overlayPositionerClass,
+} from "../overlay/overlay-classes";
+import { OverlayPortal } from "../overlay/overlay-portal";
+import { ChartPendingRootContext, useChartRoot } from "./chart-context";
+import {
+  ChartLiveContext,
+  ChartRowContext,
+  readingText,
+  shareDigits,
+  shareText,
+  slotShares,
+  useActivePoint,
+  useReadoutKey,
+} from "./chart-readout";
+import { ChartSeriesLabel, ChartSwatch } from "./chart-series";
+import { pointerSlot } from "./chart-surface";
+import { slotLabel } from "./chart-text";
+import { ChartTooltipTotal } from "./chart-tooltip-total";
 import type { ChartDomProps, ChartLayerProps, ChartShareFormat, ValueFormat, XFormat } from "./chart-types";
+import { slotCentre, valueTop } from "./layout/plot-geometry";
+import { tooltipSideOffset } from "./layout/tooltip-place";
 
 /**
  * Props for `Chart.Tooltip`, a closed part.
@@ -64,13 +95,221 @@ export type ChartTooltipShareProps = ChartDomProps<"span"> & {
 };
 
 /**
- * The popup over the active slot, which a pointer can move into and pin. It is hidden from screen
+ * The popup's corner and padding, and its fill per variant. Frosted glass lets the plot show through a translucent popover
+ * fill and blurs it. It sits on the utilities layer with the overlay fill it replaces, so the
+ * class merge drops the opaque fill.
+ */
+const tooltipPopup = tv({
+  // DESIGN-NOTES "Tooltips" gives the chart popup an 8 px radius and 8 px of block padding. The
+  // popup is never taller than the room Base UI measures on its side, and scrolls past it.
+  base: "max-h-[calc(100dvh-16px)] overflow-y-auto rounded-lg py-2 [--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-md))] data-[input=touch]:pointer-events-none",
+  variants: {
+    variant: {
+      default: "",
+      frosted: "supports-backdrop-filter:backdrop-blur-md bg-popover/70",
+    },
+  },
+});
+
+/** A virtual anchor over the active slot, measured from the plot surface at position time. */
+type Anchor = { getBoundingClientRect: () => DOMRect };
+
+/**
+ * The popup over the active slot, which a pointer can move into and pin. It sits on the active
+ * slot's own column, above the slot and centred, and flips below the plot when the viewport has no
+ * room above. On a horizontal chart it sits above or below the active row. When neither side has
+ * room, it sits beside the column, and when no side has room, it overlays the plot. It touches its
+ * anchor and stays inside the viewport, scrolling when its content is taller. It may leave the chart. A pointer
+ * that moves straight up or down stays on the slot, so it reaches the popup with the content
+ * unchanged. The popup stays while the pointer is on the plot or inside the popup and while the
+ * option has focus. Escape closes it and keeps the reader's place. It is hidden from screen
  * readers, which read the same values from the plot's option.
  *
  * @beta
  */
-export function ChartTooltip(_props: ChartTooltipProps): ReactElement {
-  return <></>;
+export function ChartTooltip(props: ChartTooltipProps): ReactElement {
+  return use(ChartPendingRootContext) ? <></> : <ChartTooltipBody {...props} />;
+}
+
+function ChartTooltipBody({
+  variant = "default",
+  anchor = "point",
+  className,
+  style,
+  children,
+}: ChartTooltipProps): ReactElement {
+  const context = useChartRoot("Chart.Tooltip");
+  const { store, model, id, xScale, orientation } = context;
+  const point = useActivePoint(context, true);
+  const window = model.window;
+  const open = point.slot !== null;
+  const slot = point.slot;
+  const virtual = useMemo((): Anchor | null => {
+    if (slot === null || window === null) return null;
+    const at = slotCentre(window, slot, xScale);
+    const extents = model.series.flatMap(({ extents: list }) => {
+      const extent = list[slot];
+      return extent ? [extent[1]] : [];
+    });
+    const top =
+      anchor === "top" || extents.length === 0 ? 0 : valueTop(model.y.domain, Math.max(...extents)) / 100;
+    const span = 1 / (window.last - window.first + 1);
+    return {
+      getBoundingClientRect: () => {
+        const surface = document.getElementById(`${id}-surface`)?.getBoundingClientRect();
+        if (surface === undefined) return new DOMRect();
+        if (orientation === "horizontal") {
+          // The anchor is the drawn bar row, the band less the gap the bars leave around it, so
+          // the popup's edge meets the bars as it meets a vertical column.
+          const band = surface.height * span;
+          const gap = bandGap(document.getElementById(`${id}-surface`)) * band;
+          return new DOMRect(
+            surface.left,
+            surface.top + surface.height * (at - span / 2) + gap / 2,
+            surface.width,
+            band - gap
+          );
+        }
+        // The anchor is the active column from its value top down to the plot's bottom. The popup
+        // sits above it or flips below the plot, so it never covers the column it reads.
+        const width = xScale === "band" ? surface.width * span : 0;
+        return new DOMRect(
+          surface.left + surface.width * at - width / 2,
+          surface.top + surface.height * top,
+          width,
+          surface.height * (1 - top)
+        );
+      },
+    };
+  }, [slot, window, xScale, model, anchor, id, orientation]);
+  // Whether the pointer entered the popup by moving straight toward it from the active slot. Only
+  // that entry freezes the slot, as CONTRACT section 9.5's safe triangle does for polar charts, so
+  // a scrub that crosses the popup keeps following x. The surface records the last plot position.
+  const frozen = useRef(false);
+  const pick = (clientX: number, clientY: number) => {
+    const surface = document.getElementById(`${id}-surface`);
+    return surface === null ? null : pointerSlot(context, surface.getBoundingClientRect(), clientX, clientY);
+  };
+  // The input that last moved the active slot, read on each render the slot change causes.
+  const touchInput = ["touch", "pen"].includes(store.pointer()?.type ?? "");
+  const content = children ?? <DefaultTooltip />;
+  return (
+    <TooltipPrimitive.Root
+      open={open}
+      onOpenChange={(next, details) => {
+        if (next) return;
+        // A press on the chart itself picks or pins a slot. Every other dismissal Base UI reports,
+        // such as a press outside the chart or Escape with focus elsewhere, takes the one dismissal.
+        const target = details.event.target;
+        if (
+          details.reason === "outside-press" &&
+          target instanceof Node &&
+          context.root()?.contains(target) === true
+        )
+          return;
+        store.dismiss();
+      }}>
+      <OverlayPortal portal={TooltipPrimitive.Portal}>
+        <TooltipPrimitive.Positioner
+          anchor={virtual}
+          side="top"
+          align="center"
+          // The popup flips above or below the column, or the row of a horizontal chart, so it
+          // stays off a sideways scrub. When neither holds its content, as at 400 % zoom, it sits
+          // beside the column, and when no side does, it overlays the plot, per CONTRACT section
+          // 9.5. It touches its anchor, so a pointer that crosses to it never leaves both. Its
+          // height stops at the viewport's, where it scrolls.
+          collisionAvoidance={{ side: "flip", align: "shift", fallbackAxisSide: "end" }}
+          // Base UI's flip adds 1 px to the collision padding, and 1 px more on the side opposite
+          // the preferred top, so these paddings make every flip test read TOOLTIP_EDGE, 8 px,
+          // the same inset the overlay offset tests.
+          collisionPadding={{ top: 7, right: 7, bottom: 6, left: 7 }}
+          sideOffset={({ side, positioner }) =>
+            virtual === null
+              ? 0
+              : tooltipSideOffset(side, virtual.getBoundingClientRect(), positioner, {
+                  width: document.documentElement.clientWidth,
+                  height: document.documentElement.clientHeight,
+                })
+          }
+          data-slot="chart-tooltip-positioner"
+          className={overlayPositionerClass}>
+          <TooltipPrimitive.Popup
+            data-slot="chart-tooltip"
+            data-variant={variant}
+            data-input={touchInput ? "touch" : undefined}
+            aria-hidden="true"
+            className={cn(
+              overlayPopupSurfaceClass,
+              tooltipShellClass,
+              overlayPopupMotionClass,
+              tooltipPopup({ variant }),
+              className
+            )}
+            style={style}
+            onPointerEnter={(event) => {
+              const from = store.pointer();
+              // The pointer must come from the active slot and move along the axis that leads to
+              // the popup, up or down to a popup above or below and across to one beside a row.
+              const start = from === null ? null : pick(from.x, from.y);
+              const dx = Math.abs(from === null ? 0 : event.clientX - from.x);
+              const dy = Math.abs(from === null ? 0 : event.clientY - from.y);
+              const side = event.currentTarget.getAttribute("data-side");
+              const toward = side === "top" || side === "bottom" ? dy > dx : dx > dy;
+              frozen.current = start !== null && start.slot === store.get().active && toward;
+            }}
+            onPointerMove={(event) => {
+              const snapshot = store.get();
+              if (frozen.current || snapshot.pinned || snapshot.source === "keyboard") return;
+              const next = pick(event.clientX, event.clientY);
+              if (next !== null && next.slot !== snapshot.active)
+                store.set({ active: next.slot, source: "pointer", near: next.near });
+            }}
+            onPointerLeave={(event) => {
+              const surface = document.getElementById(`${id}-surface`);
+              if (
+                surface !== null &&
+                event.relatedTarget instanceof Node &&
+                surface.contains(event.relatedTarget)
+              )
+                return;
+              if (store.get().source === "pointer" && !store.get().pinned)
+                store.set({ active: null, source: null, near: null });
+            }}>
+            <ChartLiveContext value={true}>{content}</ChartLiveContext>
+          </TooltipPrimitive.Popup>
+        </TooltipPrimitive.Positioner>
+      </OverlayPortal>
+    </TooltipPrimitive.Root>
+  );
+}
+
+/**
+ * The share of a slot band that bars leave empty, from the `--chart-band-gap` the theme or the
+ * consumer sets, a percentage. A value that is no percentage counts as no gap.
+ */
+function bandGap(element: Element | null): number {
+  const value = element === null ? "" : getComputedStyle(element).getPropertyValue("--chart-band-gap").trim();
+  const share = value.endsWith("%") ? Number.parseFloat(value) / 100 : 0;
+  return Number.isFinite(share) ? Math.min(Math.max(share, 0), 1) : 0;
+}
+
+/** The default popup content: the slot label, one row per config key and one total per stack. */
+function DefaultTooltip(): ReactElement {
+  const { model } = useChartRoot("Chart.Tooltip");
+  return (
+    <>
+      <ChartTooltipLabel />
+      <ChartTooltipItems>
+        <ChartSwatch />
+        <ChartSeriesLabel />
+        <ChartTooltipValue />
+      </ChartTooltipItems>
+      {model.stacks.map(({ id }) => (
+        <ChartTooltipTotal key={id} stack={id} />
+      ))}
+    </>
+  );
 }
 
 /**
@@ -78,18 +317,63 @@ export function ChartTooltip(_props: ChartTooltipProps): ReactElement {
  *
  * @beta
  */
-export function ChartTooltipLabel(_props: ChartTooltipLabelProps): ReactElement {
-  return <></>;
+export function ChartTooltipLabel(props: ChartTooltipLabelProps): ReactElement {
+  return use(ChartPendingRootContext) ? <></> : <ChartTooltipLabelBody {...props} />;
+}
+
+function ChartTooltipLabelBody({
+  format,
+  render,
+  className,
+  ...props
+}: ChartTooltipLabelProps): ReactElement {
+  const context = useChartRoot("Chart.TooltipLabel");
+  const { slot } = useActivePoint(context);
+  return useRender({
+    defaultTagName: "span",
+    render,
+    props: {
+      "data-slot": "chart-tooltip-label",
+      ...mergeProps<"span">(
+        { className, children: slot === null ? null : slotLabel(context, slot, format).text },
+        props
+      ),
+    },
+  });
 }
 
 /**
  * A row template, rendered once per config key at the active point, or once for the active slice
- * or ring.
+ * or ring. Each row carries `data-series`, and `data-dimmed` while another series is selected.
  *
  * @beta
  */
-export function ChartTooltipItems(_props: ChartTooltipItemsProps): ReactElement {
-  return <></>;
+export function ChartTooltipItems(props: ChartTooltipItemsProps): ReactElement {
+  return use(ChartPendingRootContext) ? <></> : <ChartTooltipItemsBody {...props} />;
+}
+
+function ChartTooltipItemsBody({
+  render,
+  className,
+  children,
+  ...props
+}: ChartTooltipItemsProps): ReactElement {
+  const context = useChartRoot("Chart.TooltipItems");
+  const rows = context.model.series.map(({ key, seriesIndex }) => (
+    <ChartRowContext key={key} value={key}>
+      <div
+        data-slot="chart-tooltip-item"
+        data-series={seriesIndex}
+        data-dimmed={context.selectedKey !== null && context.selectedKey !== key ? "" : undefined}>
+        {children}
+      </div>
+    </ChartRowContext>
+  ));
+  return useRender({
+    defaultTagName: "div",
+    render,
+    props: { "data-slot": "chart-tooltip-items", ...mergeProps<"div">({ className, children: rows }, props) },
+  });
 }
 
 /**
@@ -98,8 +382,29 @@ export function ChartTooltipItems(_props: ChartTooltipItemsProps): ReactElement 
  *
  * @beta
  */
-export function ChartTooltipValue(_props: ChartTooltipValueProps): ReactElement {
-  return <></>;
+export function ChartTooltipValue(props: ChartTooltipValueProps): ReactElement {
+  return use(ChartPendingRootContext) ? <></> : <ChartTooltipValueBody {...props} />;
+}
+
+function ChartTooltipValueBody({
+  dataKey,
+  format,
+  render,
+  className,
+  ...props
+}: ChartTooltipValueProps): ReactElement {
+  const context = useChartRoot("Chart.TooltipValue");
+  const point = useActivePoint(context);
+  const key = useReadoutKey("Chart.TooltipValue", context, dataKey, point.key);
+  const text = key === null || point.slot === null ? null : readingText(context, key, point.slot, format);
+  return useRender({
+    defaultTagName: "span",
+    render,
+    props: {
+      "data-slot": "chart-tooltip-value",
+      ...mergeProps<"span">({ className, children: text }, props),
+    },
+  });
 }
 
 /**
@@ -113,8 +418,32 @@ export function ChartTooltipValue(_props: ChartTooltipValueProps): ReactElement 
  *
  * @beta
  */
-export function ChartTooltipShare(_props: ChartTooltipShareProps): ReactElement {
-  return <></>;
+export function ChartTooltipShare(props: ChartTooltipShareProps): ReactElement {
+  return use(ChartPendingRootContext) ? <></> : <ChartTooltipShareBody {...props} />;
+}
+
+function ChartTooltipShareBody({
+  dataKey,
+  format,
+  render,
+  className,
+  ...props
+}: ChartTooltipShareProps): ReactElement {
+  const context = useChartRoot("Chart.TooltipShare");
+  const point = useActivePoint(context);
+  const key = useReadoutKey("Chart.TooltipShare", context, dataKey, point.key);
+  const text =
+    key === null || point.slot === null
+      ? null
+      : shareText(context, slotShares(context, point.slot, shareDigits(format)).get(key) ?? null, format);
+  return useRender({
+    defaultTagName: "span",
+    render,
+    props: {
+      "data-slot": "chart-tooltip-share",
+      ...mergeProps<"span">({ className, children: text }, props),
+    },
+  });
 }
 
 Object.assign(ChartTooltip, { displayName: "Chart.Tooltip" });

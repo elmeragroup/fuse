@@ -1,5 +1,5 @@
 /**
- * Unit under test: `slotStart` and the `formatSlot` error. Oracle: slot starts worked out by hand
+ * Unit under test: `slotStart`, `nextSlotStart` and the `formatSlot` error. Oracle: slot starts worked out by hand
  * from the EU summer-time rule, where Oslo is UTC+2 from the last Sunday of March at 01:00 UTC to
  * the last Sunday of October at 01:00 UTC and UTC+1 otherwise, ISO 8601 weeks that start on Monday,
  * and the error the contract names. The labels of these slots run in every engine as the shared
@@ -8,7 +8,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { FormattedText } from "./formatted-text";
-import { formatSlot, slotStart } from "./time-format";
+import { formatSlot, nextSlotStart, slotStart } from "./time-format";
 import type { Interval } from "./time-format";
 
 const OSLO = "Europe/Oslo";
@@ -75,5 +75,18 @@ describe("formatSlot with the time-seconds preset", () => {
     const format = (): FormattedText => formatSlot("nb-NO", OSLO, 0, "second", "time-seconds", "full");
     expect(format).toThrowError(RangeError);
     expect(format).toThrowError("The time-seconds preset has no recipe yet");
+  });
+});
+
+describe("nextSlotStart in Europe/Oslo", () => {
+  it.each<readonly [string, Interval, string, string]>([
+    ["a second", "second", "2026-10-17T15:30:59Z", "2026-10-17T15:31:00Z"],
+    ["a minute", "minute", "2026-10-17T15:30:00Z", "2026-10-17T15:31:00Z"],
+    ["an hour", "hour", "2026-10-17T15:00:00Z", "2026-10-17T16:00:00Z"],
+    // The week of 20 October 2025 starts at 00:00 CEST and the next at 00:00 CET, 7 days and 1 hour on.
+    ["the week across the fall-back Sunday", "week", "2025-10-19T22:00:00Z", "2025-10-26T23:00:00Z"],
+    ["a month", "month", "2025-09-30T22:00:00Z", "2025-10-31T23:00:00Z"],
+  ])("ends %s at the next slot's start", (_, interval, start, next) => {
+    expect(nextSlotStart(Date.parse(start), interval, OSLO)).toBe(Date.parse(next));
   });
 });

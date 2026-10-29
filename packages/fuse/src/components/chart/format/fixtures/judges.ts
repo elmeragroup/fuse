@@ -18,7 +18,7 @@ import { presetJudgements, publicValueJudgements, wordJudgements } from "./value
 export const JUDGES = [
   ["hourly and quarter-hour slots", slotJudgements],
   ["days, months and ISO weeks", calendarJudgements],
-  ["frozen fall-back price rows", marketJudgements],
+  ["fall-back day rows", marketJudgements],
   ["time preset literals", timeLiteralJudgements],
   ["slot labels across zone changes", () => publicSlotJudgements(SLOT_START_CASES)],
   ["slot labels and their default presets", () => publicSlotJudgements(SLOT_LABEL_CASES)],

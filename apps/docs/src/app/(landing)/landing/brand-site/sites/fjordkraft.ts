@@ -131,6 +131,10 @@ export const FJORDKRAFT_SITE = {
       label: "Velg prisområde",
       placeholder: "Velg prisområde",
       unit: "øre/kWh",
+      timeZone: "Europe/Oslo",
+      currency: "NOK",
+      vat: "included",
+      dayStart: "2026-10-17T00:00:00+02:00",
       labels: {
         average: "Snitt i dag",
         low: "Lavest",

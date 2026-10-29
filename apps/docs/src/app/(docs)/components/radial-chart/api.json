@@ -1429,8 +1429,8 @@
           "origin": "declared",
           "type": "ChartBackgroundPattern | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "The pattern drawn behind the marks.",
+          "defaultValue": "\"dots\"",
+          "description": "The pattern drawn behind the marks. \"dots\" by default.",
           "required": false
         }
       ]

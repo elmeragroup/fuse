@@ -7,12 +7,12 @@
  */
 
 import { readdirSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
-import { readRscStatus } from "../scripts/lib/docs-inspection.ts";
+import { readRscStatus, SERVER_DEMOS } from "../scripts/lib/docs-inspection.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
 import type { ComponentPageSource } from "../scripts/lib/page-source.ts";
 import { repoRelative, repoRoot } from "../scripts/lib/paths.ts";
@@ -91,13 +91,24 @@ describe("component page manifest", () => {
       for (const demo of authored.parsed.demos) {
         const file = join(resolveComponentPaths(entry.slug).demosDir, demo.file);
         const source = readFileSync(file, "utf8");
-        // Authored in the file, not grafted on in transit.
-        expect(source.startsWith('"use client";'), demo.file).toBe(true);
+        // Authored in the file, not grafted on in transit. Only a reviewed server demo omits it.
+        expect(source.startsWith('"use client";'), demo.file).toBe(!SERVER_DEMOS.has(repoRelative(file)));
         expect(authored.text, demo.file).toContain(`from "./demos/${demo.file.replace(/\.tsx$/, "")}"`);
         // And the endpoint embeds the very bytes of that file, under its own path.
         expect(markdown, demo.file).toContain(source.trimEnd());
         expect(markdown, demo.file).toContain(`Source: \`${repoRelative(file)}\``);
       }
+    }
+  });
+
+  it("renders every reviewed server demo on its page, so the carve-out cannot go stale", () => {
+    expect(SERVER_DEMOS.size).toBeGreaterThan(0);
+    for (const demo of SERVER_DEMOS) {
+      const slug = /\/components\/([^/]+)\/demos\//u.exec(demo)?.[1] ?? "";
+      expect(
+        authoredPage(slug).parsed.demos.map(({ file }) => file),
+        demo
+      ).toContain(basename(demo));
     }
   });
 

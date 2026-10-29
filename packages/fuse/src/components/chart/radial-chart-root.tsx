@@ -3,6 +3,7 @@
 import type { ReactElement, ReactNode } from "react";
 
 import { definedProps } from "../../internal/defined-props";
+import { ChartPendingRootContext } from "./chart-pending-root";
 import type {
   ChartAccessibleName,
   ChartCategoryConfigCheck,
@@ -116,9 +117,11 @@ export function RadialChartRoot<
     children,
     ...figure
   } = props;
+  // Until the polar layer gives this Root a readout of its own, the shared parts inside it render
+  // nothing, and every other child renders as written.
   return (
     <figure data-slot="radial-chart" {...definedProps(figure)}>
-      {children}
+      <ChartPendingRootContext value>{children}</ChartPendingRootContext>
     </figure>
   );
 }

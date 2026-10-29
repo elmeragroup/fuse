@@ -8,9 +8,9 @@
  * their `@param` text and its return value with its `@returns` text.
  */
 
-import { SyntaxKind } from "typescript/unstable/ast";
-import { API, NodeBuilderFlags, SignatureKind, SymbolFlags } from "typescript/unstable/sync";
-import type { Checker, Emitter, Signature, Symbol as TsSymbol, Type } from "typescript/unstable/sync";
+import { SyntaxKind } from "typescript/ast";
+import { API, NodeBuilderFlags, SignatureKind, SymbolFlags, TypeFormatFlags } from "typescript/sync";
+import type { Checker, Printer, Signature, Symbol as TsSymbol, Type } from "typescript/sync";
 
 import type { ApiFunction } from "../../src/lib/docs-model.ts";
 import type { DocsApiComponent } from "./docs-inspection.ts";
@@ -23,9 +23,7 @@ import { fuseTsconfig, repoRoot } from "./paths.ts";
 const COMPONENT_RETURN = /^(?:ReactElement|ReactNode|ReactPortal|JSX\.Element|Element)\b/u;
 
 function printed(checker: Checker, type: Type | undefined): string {
-  return type === undefined
-    ? "unknown"
-    : checker.typeToString(type, undefined, NodeBuilderFlags.NoTruncation);
+  return type === undefined ? "unknown" : checker.typeToString(type, undefined, TypeFormatFlags.NoTruncation);
 }
 
 /**
@@ -35,7 +33,7 @@ function printed(checker: Checker, type: Type | undefined): string {
  */
 function signatureText(
   checker: Checker,
-  emitter: Emitter,
+  printer: Printer,
   name: string,
   signature: Signature
 ): string | undefined {
@@ -46,7 +44,7 @@ function signatureText(
     NodeBuilderFlags.NoTruncation
   );
   if (declaration === undefined) return undefined;
-  return emitter
+  return printer
     .printNode(declaration)
     .replace(/^function\s*/u, name)
     .replace(/;\s*$/u, "")
@@ -80,7 +78,6 @@ type PartSymbol = { readonly name: string; readonly symbol: TsSymbol };
 function partSymbols(checker: Checker, exported: TsSymbol): PartSymbol[] {
   const symbol = resolved(checker, exported);
   const type = checker.getTypeOfSymbol(symbol);
-  if (type === undefined) return [];
   if (checker.getSignaturesOfType(type, SignatureKind.Call).length > 0) {
     return [{ name: exported.name, symbol }];
   }
@@ -93,12 +90,12 @@ function partSymbols(checker: Checker, exported: TsSymbol): PartSymbol[] {
 /** The function reference of one part, or `undefined` when the part is a component. */
 function describeFunction(
   checker: Checker,
-  emitter: Emitter,
+  printer: Printer,
   part: PartSymbol,
   warnings: string[]
 ): ApiFunction | undefined {
   const type = checker.getTypeOfSymbol(part.symbol);
-  const [signature] = type === undefined ? [] : checker.getSignaturesOfType(type, SignatureKind.Call);
+  const [signature] = checker.getSignaturesOfType(type, SignatureKind.Call);
   if (signature === undefined) return undefined;
   const returnType = printed(checker, checker.getReturnTypeOfSignature(signature));
   if (COMPONENT_RETURN.test(returnType)) return undefined;
@@ -106,7 +103,7 @@ function describeFunction(
   // the JSDoc when the property has none.
   const documented =
     checker.getDocumentationCommentOfSymbol(part.symbol).trim() === ""
-      ? (type?.getSymbol() ?? part.symbol)
+      ? (type.getSymbol() ?? part.symbol)
       : part.symbol;
   const tags = checker.getJsDocTagsOfSymbol(documented);
   const description = paragraphs(checker.getDocumentationCommentOfSymbol(documented));
@@ -135,7 +132,7 @@ function describeFunction(
     };
   });
   const returns = tagText(tags.find((tag) => tag.name === "returns")?.text ?? "");
-  const printedSignature = signatureText(checker, emitter, part.name, signature);
+  const printedSignature = signatureText(checker, printer, part.name, signature);
   if (printedSignature === undefined) {
     throw new Error(`${part.name}: the compiler printed no declaration for its call signature`);
   }
@@ -167,11 +164,12 @@ export type FunctionReferences = {
 export function functionReferences(inventory: readonly DocsApiComponent[]): FunctionReferences {
   const api = new API({ cwd: repoRoot });
   try {
-    const project = api.updateSnapshot({ openProjects: [fuseTsconfig] }).getProject(fuseTsconfig);
+    const project = api.createSnapshot({ openProjects: [fuseTsconfig] }).getConfiguredProject(fuseTsconfig);
     if (project === undefined) {
       throw new Error(`Could not open the project at ${fuseTsconfig}`);
     }
-    const { checker, emitter, program } = project;
+    const { checker, program } = project;
+    const { printer } = api;
     const warnings: string[] = [];
     const pages = new Map<string, ReadonlyMap<string, ApiFunction>>();
     for (const page of inventory) {
@@ -183,7 +181,7 @@ export function functionReferences(inventory: readonly DocsApiComponent[]): Func
       for (const exportName of page.exportNames) {
         const exported = exports.find((candidate) => candidate.name === exportName);
         for (const part of exported === undefined ? [] : partSymbols(checker, exported)) {
-          const described = describeFunction(checker, emitter, part, warnings);
+          const described = describeFunction(checker, printer, part, warnings);
           if (described !== undefined) functions.set(part.name, described);
         }
       }

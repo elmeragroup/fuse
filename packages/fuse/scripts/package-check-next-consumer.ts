@@ -77,15 +77,18 @@ async function checkServerHtml(url: string): Promise<void> {
     ['data-theme-brand="fkas"', "the server HTML lacks the theme brand attribute"],
     ['data-density="comfortable"', "the server HTML lacks the density attribute"],
     ['aria-label="Orders"', "the server HTML lacks the data-table client island"],
-    [
-      '<figure data-slot="chart" id="chart-default" aria-label="Empty chart">',
-      "a server page rendered no Chart.Root figure",
-    ],
     ['data-slot="sparkline"', "a server page rendered no Sparkline"],
     ["1,78\u00a0kr/kWh\u00a0inkl.\u00a0mva", "formatChartValue printed different text on the server"],
   ] as const) {
     assert.ok(html.includes(marker), `Next consumer: ${meaning}`);
   }
+  // Root writes its orientation and scale beside the consumer's attributes, so the figure is
+  // matched by its slot, id and name in any attribute order.
+  assert.match(
+    html,
+    /<figure data-slot="chart"(?=[^>]*\sid="chart-default")(?=[^>]*\saria-label="Empty chart")[^>]*>/u,
+    "Next consumer: a server page rendered no Chart.Root figure"
+  );
 }
 
 /**

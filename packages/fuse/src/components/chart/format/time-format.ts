@@ -1,3 +1,4 @@
+import { dateTimeFormat } from "../../../internal/intl-cache";
 /**
  * Time labels for chart axes, tooltips, aria text and tables.
  * A slot is a period named by its start instant and interval. Every label reads that instant in an
@@ -5,7 +6,6 @@
  * same text. Fuse reads the zone rules through Intl and ships no zone database of its own.
  */
 import { formatDateTime } from "../../../intl/date-time-join";
-import { dateTimeFormat } from "../../../intl/intl-formatters";
 import type { SupportedLocale } from "../../../intl/locale-context";
 import { makeFormattedText } from "./formatted-text";
 import type { FormattedText, LabelRole } from "./formatted-text";
@@ -66,7 +66,7 @@ export const LABEL_PRESETS = {
 } as const satisfies Record<Interval, TimePreset>;
 
 /** The wall-clock fields of an instant in one zone. `hour` reaches 24 only at a range end. */
-type WallClock = {
+export type WallClock = {
   readonly year: number;
   readonly month: number;
   readonly day: number;
@@ -133,7 +133,7 @@ function part(parts: readonly Intl.DateTimeFormatPart[], type: Intl.DateTimeForm
 }
 
 /** Read the wall clock of an instant in a zone through Intl. */
-function wallClock(instant: number, timeZone: string): WallClock {
+export function wallClock(instant: number, timeZone: string): WallClock {
   const parts = dateTimeFormat("en-US", {
     timeZone,
     year: "numeric",
@@ -461,4 +461,42 @@ export function formatSlot(
   }
   const text = formatDateTime(locale, { ...format, timeZone }, start);
   return makeFormattedText(text, text);
+}
+
+/**
+ * The start of the slot that follows the slot starting at `start`. A sub-day slot ends after its
+ * fixed length or at the next day's start, whichever comes first, so a 25-hour day lists 25 hours
+ * and a 23.5-hour day ends its last hour early. A longer slot ends at the start of its next local
+ * day, ISO week, month or year.
+ *
+ * @param start - A slot start, as `slotStart` returns it.
+ * @param interval - The slot length.
+ * @param timeZone - The IANA zone of the data's market.
+ * @returns The next slot's start instant in epoch milliseconds.
+ */
+export function nextSlotStart(start: number, interval: Interval, timeZone: string): number {
+  const date = localDate(start, timeZone);
+  switch (interval) {
+    case "second":
+    case "minute":
+    case "quarter-hour":
+    case "hour":
+      return Math.min(start + SUB_DAY_MS[interval], dayStart(date + DAY, timeZone));
+    case "day":
+      return dayStart(date + DAY, timeZone);
+    case "week":
+      return dayStart(date + 7 * DAY, timeZone);
+    case "month":
+    case "year": {
+      const next = new Date(date);
+      next.setUTCDate(1);
+      if (interval === "year") {
+        next.setUTCMonth(0);
+        next.setUTCFullYear(next.getUTCFullYear() + 1);
+      } else {
+        next.setUTCMonth(next.getUTCMonth() + 1);
+      }
+      return dayStart(next.getTime(), timeZone);
+    }
+  }
 }

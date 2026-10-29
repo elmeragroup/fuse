@@ -1,0 +1,102 @@
+{
+ "source": "Elhub Energy Data API, dataset CONSUMPTION_PER_GROUP_MBA_HOUR, price area NO1, https://api.elhub.no, household, each Oslo month's sum of quantityKwh over meteringPointCount. 2026-10 runs to 16 October.",
+ "licence": "CC BY 4.0",
+ "months": [
+  {
+   "month": "2024-11",
+   "kwh": 1425.25
+  },
+  {
+   "month": "2024-12",
+   "kwh": 1646.62
+  },
+  {
+   "month": "2025-01",
+   "kwh": 1837.12
+  },
+  {
+   "month": "2025-02",
+   "kwh": 1603.55
+  },
+  {
+   "month": "2025-03",
+   "kwh": 1398.42
+  },
+  {
+   "month": "2025-04",
+   "kwh": 1004.97
+  },
+  {
+   "month": "2025-05",
+   "kwh": 863.99
+  },
+  {
+   "month": "2025-06",
+   "kwh": 715.08
+  },
+  {
+   "month": "2025-07",
+   "kwh": 592.65
+  },
+  {
+   "month": "2025-08",
+   "kwh": 683.19
+  },
+  {
+   "month": "2025-09",
+   "kwh": 781.47
+  },
+  {
+   "month": "2025-10",
+   "kwh": 1125.71
+  },
+  {
+   "month": "2025-11",
+   "kwh": 1413.92
+  },
+  {
+   "month": "2025-12",
+   "kwh": 1582.73
+  },
+  {
+   "month": "2026-01",
+   "kwh": 2091.35
+  },
+  {
+   "month": "2026-02",
+   "kwh": 1892.3
+  },
+  {
+   "month": "2026-03",
+   "kwh": 1480.73
+  },
+  {
+   "month": "2026-04",
+   "kwh": 1128.18
+  },
+  {
+   "month": "2026-05",
+   "kwh": 927.42
+  },
+  {
+   "month": "2026-06",
+   "kwh": 716.2
+  },
+  {
+   "month": "2026-07",
+   "kwh": 622.97
+  },
+  {
+   "month": "2026-08",
+   "kwh": 701.11
+  },
+  {
+   "month": "2026-09",
+   "kwh": 801.92
+  },
+  {
+   "month": "2026-10",
+   "kwh": 552.63
+  }
+ ]
+}

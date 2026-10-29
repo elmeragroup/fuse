@@ -591,8 +591,8 @@ Four sign-off, time and locale tasks remain.
   `packages/fuse/src/components/chart/format/words.ts`. They are the ISO week labels `uke 43`,
   `v. 43`, `vko 43` and `W43`, their spoken forms `uke 43`, `vecka 43`, `viikko 43` and `week 43`,
   whether week 1 reads `W1` or `W01`, the subunits `øre`, `öre`, `äyri`, `snt`, `cent` and `c`, the
-  VAT bases and the spoken unit, sign and clock words. When a week word changes, regenerate the slot
-  oracle and `fixtures/slots.json`.
+  VAT bases, the spoken unit, sign and clock words, and the `, ` that joins a date to an hour. When
+  a week word changes, regenerate the slot oracle and `fixtures/slots.json`.
 - The owner or the content owner signs off the drafted chart dictionary, beside the week words
   above. It holds about 40 strings in all four locales, such as `Vis som tabell`, `Skjul tabell`,
   `Laster diagram`, `Ingen data for perioden`, `ingen data ennå`, `mangler`, `estimert`, `Annet` and
@@ -607,6 +607,16 @@ Four sign-off, time and locale tasks remain.
 - The `test:mutation` scripts run StrykerJS through its command runner, which starts Vitest once
   per mutant, because `@stryker-mutator/vitest-runner` 10.0.0 activates no mutant under Vitest 5. Move back to
   the plugin once it supports Vitest 5, so each mutant runs only the tests that cover it.
+
+Two layer 05 follow-ups remain.
+
+- The chart demo baselines under `apps/docs/test/visual/chart/` run only by hand. Start the browser
+  server with `pnpm --filter docs visual:server`, then run `test/chart-visual.browser.test.ts`
+  with `CHART_VISUAL_ENDPOINT` set to the address it prints. CI has no job that starts the server,
+  so the suite skips there. Add the job, or run the suite in the Playwright image on CI.
+- The Fjordkraft Företag price card's muted figure labels measure 4.48:1 on its white card, under
+  the 4.5:1 text floor. axe reports it after an area pick, so the landing test audits the chart
+  alone until the brand's muted foreground or the card fill changes.
 
 Every later chart change follows the growth rule. A new capability becomes a new part, a variant
 or datum-selector value, a `config` field, a Root prop that describes the data's shape or a Panel

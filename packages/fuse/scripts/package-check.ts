@@ -2,7 +2,11 @@ import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { CSS_ENTRY_NAMES, discoverEntries } from "./entries";
-import { checkPackedChartBundles, checkPackedGrowthRule } from "./package-check-chart";
+import {
+  checkPackedChartBundles,
+  checkPackedEvilchartsNotice,
+  checkPackedGrowthRule,
+} from "./package-check-chart";
 import {
   checkPackedBareEntryRacDeclarations,
   checkPackedBootstrap,
@@ -114,6 +118,7 @@ function runInProcessChecks(extracted: string): void {
   checkValidateThemeEnv(extracted);
   checkPackedBootstrap(consumerRoot, exported[importSpecifier("theme")]);
   checkPackedGrowthRule(extracted);
+  checkPackedEvilchartsNotice(extracted);
 }
 
 console.log("package:check passed");

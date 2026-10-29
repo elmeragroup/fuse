@@ -26,12 +26,16 @@ export type ChartRevealProps = ChartLayerProps & {
 
 /**
  * Wraps marks and glows their drawn layer, so the glow follows the mark's curve, group slot and
- * shape.
+ * shape. Each series casts a halo of its own colour at half alpha, after evilcharts' glowing bars.
  *
  * @beta
  */
-export function ChartGlow(_props: ChartGlowProps): ReactElement {
-  return <></>;
+export function ChartGlow({ className, style, children }: ChartGlowProps): ReactElement {
+  return (
+    <div data-slot="chart-glow" aria-hidden="true" className={className} style={style}>
+      {children}
+    </div>
+  );
 }
 
 /**

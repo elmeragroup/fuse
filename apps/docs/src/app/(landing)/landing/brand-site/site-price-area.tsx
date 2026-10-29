@@ -5,6 +5,8 @@ import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
+import { BarChart } from "@elmeragroup/fuse/chart";
+import type { ChartConfig } from "@elmeragroup/fuse/chart";
 import { Field } from "@elmeragroup/fuse/field";
 import { ShieldCheck } from "@elmeragroup/fuse/icons";
 import { Select } from "@elmeragroup/fuse/select";
@@ -20,6 +22,7 @@ const sitePriceArea = tv({
     // their card colour, so the card steps down to the page there.
     card: "shadow-sm @3xl:col-span-3 landing-dark:in-data-filled:bg-background flex flex-col gap-6 rounded-xl bg-card p-6 text-card-foreground",
     result: "flex min-h-52 flex-col gap-5 border-t border-border pt-6",
+    live: "flex flex-col",
     waiting: "relative flex flex-1 flex-col justify-end",
     empty: "text-sm absolute inset-x-0 top-1/3 text-center text-pretty text-muted-foreground",
     // The day's shape in muted ink, so the card shows what a pick will fill in.
@@ -32,12 +35,17 @@ const sitePriceArea = tv({
     range: "text-sm m-0 flex gap-6",
     rangeValue: "font-semibold m-0 tabular-nums",
     chart: "flex flex-col gap-1.5",
+    // The chart keeps the 6rem box the hand-drawn bars had.
+    plot: "[--chart-plot-height:6rem]",
     bars: "h-24 w-full text-primary",
-    hours: "text-2xs grid grid-cols-4 text-muted-foreground tabular-nums",
     note: "@3xl:col-span-2 @3xl:pt-6 flex flex-col items-start gap-3",
     noteIcon: "size-10 opacity-90",
     noteTitle: "text-lg font-semibold",
     noteText: "text-sm text-pretty opacity-85",
+  },
+  variants: {
+    // While no area is picked, the live region fills the result so the silhouette sits at its foot.
+    waiting: { true: { live: "flex-1" } },
   },
 });
 
@@ -55,23 +63,23 @@ const HOURLY_PROFILE = [
 
 const BAR_PITCH = 10;
 
+/** One area's price at each hour of the section's day, from the area's low to its high. */
+function hourlyPrices(area: SitePriceAreaConfig, dayStart: string) {
+  const start = Date.parse(dayStart);
+  return HOURLY_PROFILE.map((share, hour) => ({
+    start: new Date(start + hour * 3_600_000),
+    price: area.low + share * (area.high - area.low),
+  }));
+}
+
 /**
- * The hourly prices as bars in a 240 × 100 box, on one scale for every area: `ceiling`, the
- * highest price of any area, fills the box, so a cheap area's day reads as cheap beside the rest.
+ * The day's shape in a 240 × 100 box, drawn while no area is picked. It is decoration, so it stays
+ * a private SVG until the chart entry's sparkline bars land.
  */
-function HourlyBars({
-  area,
-  ceiling,
-  label,
-}: {
-  area: SitePriceAreaConfig;
-  ceiling: number;
-  /** Names the chart; a chart without one is decoration. */
-  label?: string;
-}): ReactElement {
+function HourlySilhouette({ area, ceiling }: { area: SitePriceAreaConfig; ceiling: number }): ReactElement {
   return (
     <svg
-      {...(label === undefined ? { "aria-hidden": true } : { role: "img", "aria-label": label })}
+      aria-hidden
       viewBox={`0 0 ${String(HOURLY_PROFILE.length * BAR_PITCH)} 100`}
       preserveAspectRatio="none"
       className={styles.bars()}>
@@ -92,6 +100,44 @@ function HourlyBars({
         );
       })}
     </svg>
+  );
+}
+
+/**
+ * The hourly prices as a bar chart on one scale for every area: `ceiling`, the highest price of
+ * any area, reaches the value axis through `yInclude`, so a cheap area's day reads as cheap beside
+ * the rest. The lowest and highest bars are the figures printed above the chart.
+ */
+function HourlyPrices({
+  section,
+  area,
+  ceiling,
+}: {
+  section: PriceAreaSection;
+  area: SitePriceAreaConfig;
+  ceiling: number;
+}): ReactElement {
+  const config = {
+    price: {
+      label: section.labels.chart,
+      color: "chart-seq",
+      format: { preset: "unit-price", currency: section.currency, minor: true, vat: section.vat },
+    },
+  } as const satisfies ChartConfig;
+  return (
+    <BarChart.Root
+      data={hourlyPrices(area, section.dayStart)}
+      config={config}
+      xKey="start"
+      interval="hour"
+      timeZone={section.timeZone}
+      yInclude={[ceiling]}
+      className={styles.plot()}
+      aria-label={`${section.labels.chart} ${area.code}`}>
+      <BarChart.XAxis />
+      <BarChart.Bar dataKey="price" />
+      <BarChart.Tooltip />
+    </BarChart.Root>
   );
 }
 
@@ -135,44 +181,43 @@ export function SitePriceArea({
             </Select.Content>
           </Select.Root>
         </Field.Root>
-        <div className={styles.result()} aria-live="polite">
-          {area === undefined ? (
-            <div className={styles.waiting()}>
-              <p className={styles.empty()}>{section.labels.empty}</p>
-              <span aria-hidden className={styles.silhouette()}>
-                <HourlyBars area={section.areas[0]} ceiling={ceiling} />
-              </span>
-            </div>
-          ) : (
-            <div key={area.code} className={styles.figures()}>
-              <p className={styles.average()}>
-                <span className={styles.figureLabel()}>{section.labels.average}</span>
-                <span className={styles.averageValue()}>
-                  {price.format(area.average)}
-                  <span className={styles.unit()}>{section.unit}</span>
+        <div className={styles.result()}>
+          {/* One polite region stays mounted from the waiting state through every pick, so each
+              pick changes its text and a screen reader announces the new figures. The chart sits
+              outside it, and only the figures inside remount to replay their swap. */}
+          <div className={styles.live({ waiting: area === undefined })} aria-live="polite">
+            {area === undefined ? (
+              <div className={styles.waiting()}>
+                <p className={styles.empty()}>{section.labels.empty}</p>
+                <span aria-hidden className={styles.silhouette()}>
+                  <HourlySilhouette area={section.areas[0]} ceiling={ceiling} />
                 </span>
-              </p>
-              <dl className={styles.range()}>
-                <div>
-                  <dt className={styles.figureLabel()}>{section.labels.low}</dt>
-                  <dd className={styles.rangeValue()}>{`${price.format(area.low)} ${section.unit}`}</dd>
-                </div>
-                <div>
-                  <dt className={styles.figureLabel()}>{section.labels.high}</dt>
-                  <dd className={styles.rangeValue()}>{`${price.format(area.high)} ${section.unit}`}</dd>
-                </div>
-              </dl>
-            </div>
-          )}
+              </div>
+            ) : (
+              <div key={area.code} className={styles.figures()}>
+                <p className={styles.average()}>
+                  <span className={styles.figureLabel()}>{section.labels.average}</span>
+                  <span className={styles.averageValue()}>
+                    {price.format(area.average)}
+                    <span className={styles.unit()}>{section.unit}</span>
+                  </span>
+                </p>
+                <dl className={styles.range()}>
+                  <div>
+                    <dt className={styles.figureLabel()}>{section.labels.low}</dt>
+                    <dd className={styles.rangeValue()}>{`${price.format(area.low)} ${section.unit}`}</dd>
+                  </div>
+                  <div>
+                    <dt className={styles.figureLabel()}>{section.labels.high}</dt>
+                    <dd className={styles.rangeValue()}>{`${price.format(area.high)} ${section.unit}`}</dd>
+                  </div>
+                </dl>
+              </div>
+            )}
+          </div>
           {area === undefined ? null : (
             <div key={`${area.code}-chart`} className={styles.chart()}>
-              <HourlyBars area={area} ceiling={ceiling} label={`${section.labels.chart} ${area.code}`} />
-              <span aria-hidden className={styles.hours()}>
-                <span>00</span>
-                <span>06</span>
-                <span>12</span>
-                <span>18</span>
-              </span>
+              <HourlyPrices section={section} area={area} ceiling={ceiling} />
             </div>
           )}
         </div>

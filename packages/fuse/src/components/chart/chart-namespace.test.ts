@@ -84,15 +84,21 @@ describe("chart namespaces", () => {
     ]);
   });
 
-  it("make the three aliases the Chart object itself", () => {
-    expect(AreaChart).toBe(Chart);
-    expect(BarChart).toBe(Chart);
-    expect(LineChart).toBe(Chart);
+  it("give the three aliases Chart's keys, each the same component", () => {
+    // Each alias is an ES module namespace of its own, so it is a different object with the same
+    // members, and every member is Chart's own component.
+    const chart: Readonly<Record<string, Part>> = Chart;
+    for (const alias of [AreaChart, BarChart, LineChart] as const) {
+      const members: Readonly<Record<string, Part>> = alias;
+      expect(Object.keys(members).sort()).toEqual(Object.keys(chart).sort());
+      for (const [key, part] of Object.entries(members)) expect(part, key).toBe(chart[key]);
+    }
   });
 
   it.each(SHARED_KEYS)("share %s as one component under every namespace", (key) => {
+    const chart: Readonly<Record<string, Part>> = Chart;
     for (const [, namespace] of NAMESPACES) {
-      expect(namespace[key]).toBe(Chart[key]);
+      expect(namespace[key]).toBe(chart[key]);
     }
   });
 

@@ -41,6 +41,18 @@ export function readRscStatus(source: string): RscStatus {
   return "server";
 }
 
+/**
+ * Reviewed demos written as Server Components, by repository path. Each starts with no
+ * `"use client"` line, and every other demo must start with one, because a demo that imports a
+ * hook or passes a function prop only works as a client module. Review a new entry here rather
+ * than deriving it from the demo files.
+ */
+export const SERVER_DEMOS: ReadonlySet<string> = new Set([
+  // The chart contract promises that a server component renders a chart from plain data, and this
+  // demo shows that path on the bar-chart page.
+  "apps/docs/src/app/(docs)/components/bar-chart/demos/bar-chart-server.tsx",
+]);
+
 /** One component the API generator extracts: its slug plus the entry surface to walk. */
 export type DocsApiComponent = {
   readonly slug: string;
@@ -83,7 +95,7 @@ export function docsApiInventory(components: readonly ResolvedComponent[]): read
     seen.add(slug);
     return {
       slug,
-      entryFile: paths.entryFile,
+      entryFile: paths.apiEntryFile ?? paths.entryFile,
       exportNames: paths.apiExportNames,
       sourceFile: paths.sourceFile,
       apiFile: paths.apiFile,
@@ -135,7 +147,12 @@ export function inspectComponentDemos(
       continue;
     }
     const raw = readFileSync(absolute, "utf8");
-    if (readRscStatus(raw) !== "client") {
+    const status = readRscStatus(raw);
+    if (SERVER_DEMOS.has(relative)) {
+      if (status !== "server") {
+        problems.add(`${relative}: a reviewed server demo must not start with a "use client" directive`);
+      }
+    } else if (status !== "client") {
       problems.add(`${relative}: a demo must start with a "use client" directive`);
     }
     demos.push({

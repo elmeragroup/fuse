@@ -3,7 +3,42 @@ lede: >
   Preview. Bars over a category or time axis, side by side or stacked.
 ---
 
+import { BarChartBasic } from "./demos/bar-chart-basic";
+import { BarChartBlocks } from "./demos/bar-chart-blocks";
+import { BarChartBuffer } from "./demos/bar-chart-buffer";
+import { BarChartCapacityStep } from "./demos/bar-chart-capacity-step";
+import { BarChartConfig } from "./demos/bar-chart-config";
+import { BarChartDstDays } from "./demos/bar-chart-dst-days";
+import { BarChartEmphasis } from "./demos/bar-chart-emphasis";
+import { BarChartEntrance } from "./demos/bar-chart-entrance";
+import { BarChartExpandable } from "./demos/bar-chart-expandable";
+import { BarChartGlowing } from "./demos/bar-chart-glowing";
+import { BarChartGradientColors } from "./demos/bar-chart-gradient-colors";
+import { BarChartHorizontal } from "./demos/bar-chart-horizontal";
+import { BarChartHourlyGroups } from "./demos/bar-chart-hourly-groups";
+import { BarChartHoverHighlight } from "./demos/bar-chart-hover-highlight";
+import { BarChartHoverTrace } from "./demos/bar-chart-hover-trace";
+import { BarChartIcons } from "./demos/bar-chart-icons";
+import { BarChartIsometric } from "./demos/bar-chart-isometric";
+import { BarChartLoading } from "./demos/bar-chart-loading";
+import { BarChartMonospace } from "./demos/bar-chart-monospace";
+import { BarChartMonthToDate } from "./demos/bar-chart-month-to-date";
+import { BarChartMonthVsLastYear } from "./demos/bar-chart-month-vs-last-year";
+import { BarChartPercent } from "./demos/bar-chart-percent";
+import { BarChartPriceLevels } from "./demos/bar-chart-price-levels";
+import { BarChartPriceSpike } from "./demos/bar-chart-price-spike";
+import { BarChartServer } from "./demos/bar-chart-server";
+import { BarChartStacked } from "./demos/bar-chart-stacked";
+import { BarChartStreamed } from "./demos/bar-chart-streamed";
+import { BarChartUpdate } from "./demos/bar-chart-update";
+import { BarChartVariantDefault } from "./demos/bar-chart-variant-default";
+import { BarChartVariantDuotone } from "./demos/bar-chart-variant-duotone";
+import { BarChartVariantDuotoneReverse } from "./demos/bar-chart-variant-duotone-reverse";
+import { BarChartVariantGradient } from "./demos/bar-chart-variant-gradient";
+import { BarChartVariantHatched } from "./demos/bar-chart-variant-hatched";
+import { BarChartVariantStriped } from "./demos/bar-chart-variant-striped";
 import { BarChartYearOverYear } from "./demos/bar-chart-year-over-year";
+import { BarChartYearVsLastYear } from "./demos/bar-chart-year-vs-last-year";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -13,12 +48,233 @@ export const metadata = componentMetadata("bar-chart");
 
 <Prose>
 
-The chart entry is a preview. Its parts render no marks yet, and names and props can change until Fuse's first stable release.
+The chart entry is a preview. Its names and props can change until Fuse's first stable release. `BarChart` is the same component as `Chart`. A bar fills its band less a 25 % gap, series that share a `stack` id stack in one column, and `BarChart.BarGroup` sets series side by side. Every bar is an HTML box up to 100 slots, and above that each series draws one path.
 
 </Prose>
+
+## Hourly consumption
+
+<Demo slug="bar-chart" id="hourly-groups" title="Consumption per group" file="bar-chart-hourly-groups.tsx">
+  <BarChartHourlyGroups />
+</Demo>
+
+<Demo slug="bar-chart" id="dst-days" title="Daylight saving days" file="bar-chart-dst-days.tsx">
+  <BarChartDstDays />
+</Demo>
+
+## Server components
+
+<Prose>
+
+A chart whose props are all plain data needs no `"use client"` line. This demo is a server component, so the server writes the figure and its table into the page's HTML, and the browser loads only the chart's own parts. A demo that reads a hook or passes a function, such as the capacity step's tooltip, stays a client module.
+
+</Prose>
+
+<Demo slug="bar-chart" id="server-component" title="Server component" file="bar-chart-server.tsx">
+  <BarChartServer />
+</Demo>
+
+## Readings and quality
+
+<Demo slug="bar-chart" id="month-to-date" title="Month to date" file="bar-chart-month-to-date.tsx">
+  <BarChartMonthToDate />
+</Demo>
+
+<Prose>
+
+An estimated day draws a dashed outline over a lighter fill, a missing day draws a short dashed tick at the baseline, and days still to come keep their cells empty. The option and the table add the quality word after the value.
+
+</Prose>
+
+<Demo
+  slug="bar-chart"
+  id="month-vs-last-year"
+  title="Month against last year"
+  file="bar-chart-month-vs-last-year.tsx">
+  <BarChartMonthVsLastYear />
+</Demo>
+
+<Demo
+  slug="bar-chart"
+  id="year-vs-last-year"
+  title="Year against last year"
+  file="bar-chart-year-vs-last-year.tsx">
+  <BarChartYearVsLastYear />
+</Demo>
 
 <Demo slug="bar-chart" id="year-over-year" title="Year over year" file="bar-chart-year-over-year.tsx">
   <BarChartYearOverYear />
 </Demo>
+
+<Demo slug="bar-chart" id="capacity-step" title="Capacity step" file="bar-chart-capacity-step.tsx">
+  <BarChartCapacityStep />
+</Demo>
+
+## Prices
+
+<Demo slug="bar-chart" id="price-levels" title="Price levels" file="bar-chart-price-levels.tsx">
+  <BarChartPriceLevels />
+</Demo>
+
+<Prose>
+
+The diverging scale bins each value into 7 steps around 0, so a negative quarter takes a mirrored step below the solid zero line.
+
+</Prose>
+
+<Demo slug="bar-chart" id="price-spike" title="Price spike" file="bar-chart-price-spike.tsx">
+  <BarChartPriceSpike />
+</Demo>
+
+## Updates
+
+<Demo slug="bar-chart" id="update" title="Data updates" file="bar-chart-update.tsx">
+  <BarChartUpdate />
+</Demo>
+
+<Prose>
+
+A data update moves each bar that stays to its new geometry over 480 ms, fades in the bars it adds and drops the bars that leave. A change of `xRange` alone snaps, and reduced motion snaps every update.
+
+</Prose>
+
+<Demo slug="bar-chart" id="entrance" title="Entrance origins" file="bar-chart-entrance.tsx">
+  <BarChartEntrance />
+</Demo>
+
+<Demo slug="bar-chart" id="streamed" title="Streamed series" file="bar-chart-streamed.tsx">
+  <BarChartStreamed />
+</Demo>
+
+<Prose>
+
+A Bar can wait behind its own Suspense boundary. When the server streams it in, it hydrates in place. When it mounts in the browser after the chart, it snaps to its geometry and skips the entrance.
+
+</Prose>
+
+## Emphasis
+
+<Demo slug="bar-chart" id="highest-total" title="Highest total" file="bar-chart-emphasis.tsx">
+  <BarChartEmphasis />
+</Demo>
+
+<Demo slug="bar-chart" id="expandable" title="Expandable" file="bar-chart-expandable.tsx">
+  <BarChartExpandable />
+</Demo>
+
+## Layouts
+
+<Demo slug="bar-chart" id="basic" title="Grouped" file="bar-chart-basic.tsx">
+  <BarChartBasic />
+</Demo>
+
+<Demo slug="bar-chart" id="stacked" title="Stacked" file="bar-chart-stacked.tsx">
+  <BarChartStacked />
+</Demo>
+
+<Demo slug="bar-chart" id="percent" title="Expanded" file="bar-chart-percent.tsx">
+  <BarChartPercent />
+</Demo>
+
+<Demo slug="bar-chart" id="horizontal" title="Horizontal" file="bar-chart-horizontal.tsx">
+  <BarChartHorizontal />
+</Demo>
+
+## Variants
+
+<Demo slug="bar-chart" id="variant-default" title="Default" file="bar-chart-variant-default.tsx">
+  <BarChartVariantDefault />
+</Demo>
+
+<Demo slug="bar-chart" id="variant-hatched" title="Hatched" file="bar-chart-variant-hatched.tsx">
+  <BarChartVariantHatched />
+</Demo>
+
+<Demo slug="bar-chart" id="variant-duotone" title="Duotone" file="bar-chart-variant-duotone.tsx">
+  <BarChartVariantDuotone />
+</Demo>
+
+<Demo
+  slug="bar-chart"
+  id="variant-duotone-reverse"
+  title="Duotone reverse"
+  file="bar-chart-variant-duotone-reverse.tsx">
+  <BarChartVariantDuotoneReverse />
+</Demo>
+
+<Demo slug="bar-chart" id="variant-gradient" title="Gradient" file="bar-chart-variant-gradient.tsx">
+  <BarChartVariantGradient />
+</Demo>
+
+<Demo slug="bar-chart" id="variant-striped" title="Striped" file="bar-chart-variant-striped.tsx">
+  <BarChartVariantStriped />
+</Demo>
+
+<Demo slug="bar-chart" id="blocks" title="Blocks" file="bar-chart-blocks.tsx">
+  <BarChartBlocks />
+</Demo>
+
+<Demo slug="bar-chart" id="isometric" title="Isometric" file="bar-chart-isometric.tsx">
+  <BarChartIsometric />
+</Demo>
+
+## Paint and parts
+
+<Demo slug="bar-chart" id="config" title="Labels and colours" file="bar-chart-config.tsx">
+  <BarChartConfig />
+</Demo>
+
+<Demo slug="bar-chart" id="icons" title="Series icons" file="bar-chart-icons.tsx">
+  <BarChartIcons />
+</Demo>
+
+<Demo slug="bar-chart" id="gradient-colors" title="Colour lists" file="bar-chart-gradient-colors.tsx">
+  <BarChartGradientColors />
+</Demo>
+
+<Demo slug="bar-chart" id="glowing" title="Glow" file="bar-chart-glowing.tsx">
+  <BarChartGlowing />
+</Demo>
+
+<Demo slug="bar-chart" id="buffer" title="Projection" file="bar-chart-buffer.tsx">
+  <BarChartBuffer />
+</Demo>
+
+<Demo slug="bar-chart" id="hover-highlight" title="Hover dim" file="bar-chart-hover-highlight.tsx">
+  <BarChartHoverHighlight />
+</Demo>
+
+<Prose>
+
+Marks outside the active column dim to `--chart-hover-dim`, 0.45 by default, and `[--chart-hover-dim:1]` on the Root turns the dim off.
+
+</Prose>
+
+<Demo slug="bar-chart" id="hover-trace" title="Hover trace" file="bar-chart-hover-trace.tsx">
+  <BarChartHoverTrace />
+</Demo>
+
+<Demo slug="bar-chart" id="monospace" title="Monospace" file="bar-chart-monospace.tsx">
+  <BarChartMonospace />
+</Demo>
+
+<Demo slug="bar-chart" id="loading" title="Loading" file="bar-chart-loading.tsx">
+  <BarChartLoading />
+</Demo>
+
+## Keyboard
+
+<Prose>
+
+The plot is one tab stop. The legend toggle group and the table's button add one each.
+
+| Where               | Keys                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Chart               | ArrowRight and ArrowLeft move one slot. PageDown and PageUp move a tenth of the window's slots, at least one. Home and End go to the window's first and last slot. ArrowDown and ArrowUp move the series focus. Enter and Space select the focused series while a legend toggle group is mounted, and pin the tooltip otherwise. Escape hides the tooltip and keeps focus, and a second Escape passes on. |
+| Horizontal bars     | ArrowDown and ArrowUp move between categories, and ArrowRight and ArrowLeft move the series focus.                                                                                                                                                                                                                                                                                                        |
+| Legend toggle group | Tab enters at the pressed toggle or the first. The arrows move, and Enter or Space presses a toggle. Pressing the pressed toggle clears the selection.                                                                                                                                                                                                                                                    |
+| Table               | The table's button and the page buttons are native buttons. The button moves focus to the table, which never joins the Tab order.                                                                                                                                                                                                                                                                         |
+
+</Prose>
 
 <ApiReference slug="bar-chart" />

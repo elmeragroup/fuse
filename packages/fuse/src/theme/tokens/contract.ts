@@ -500,6 +500,32 @@ export const TOKEN_PAINTS = {
   "chart-6": ["surface"],
   "chart-7": ["surface"],
   "chart-8": ["surface"],
+  "chart-1-foreground": ["ink"],
+  "chart-2-foreground": ["ink"],
+  "chart-3-foreground": ["ink"],
+  "chart-4-foreground": ["ink"],
+  "chart-5-foreground": ["ink"],
+  "chart-6-foreground": ["ink"],
+  "chart-7-foreground": ["ink"],
+  "chart-8-foreground": ["ink"],
+  "chart-other": ["surface"],
+  "chart-other-foreground": ["ink"],
+  "chart-seq-1": ["surface"],
+  "chart-seq-2": ["surface"],
+  "chart-seq-3": ["surface"],
+  "chart-seq-4": ["surface"],
+  "chart-seq-5": ["surface"],
+  "chart-seq-6": ["surface"],
+  "chart-seq-7": ["surface"],
+  "chart-diverging-1": ["surface"],
+  "chart-diverging-2": ["surface"],
+  "chart-diverging-3": ["surface"],
+  "chart-diverging-4": ["surface"],
+  "chart-diverging-5": ["surface"],
+  "chart-diverging-6": ["surface"],
+  "chart-diverging-7": ["surface"],
+  "chart-sentiment-positive": ["surface"],
+  "chart-sentiment-negative": ["surface"],
   "sh-identifier": ["ink"],
   "sh-keyword": ["ink"],
   "sh-string": ["ink"],
@@ -646,14 +672,64 @@ export const TOKEN_DESCRIPTIONS = {
     "Text and icons on a sidebar-brand fill, text-grade on it. Fuse computes it, so no theme sets it.",
   "right-panel": "The fill of a right-hand app panel. No Fuse component reads it.",
   "right-panel-foreground": "Text and icons on right-panel. No Fuse component reads it.",
-  "chart-1": "The first chart series color. No Fuse component reads it yet.",
-  "chart-2": "The second chart series color. No Fuse component reads it yet.",
-  "chart-3": "The third chart series color. No Fuse component reads it yet.",
-  "chart-4": "The fourth chart series color. No Fuse component reads it yet.",
-  "chart-5": "The fifth chart series color. No Fuse component reads it yet.",
-  "chart-6": "The sixth chart series color. No Fuse component reads it yet.",
-  "chart-7": "The seventh chart series color. No Fuse component reads it yet.",
-  "chart-8": "The eighth chart series color. No Fuse component reads it yet.",
+  "chart-1":
+    "The first categorical chart slot, which gives a series its identity. Series take the slots in a fixed cyclic order.",
+  "chart-2":
+    "The second categorical chart slot, which gives a series its identity. Series take the slots in a fixed cyclic order.",
+  "chart-3":
+    "The third categorical chart slot, which gives a series its identity. Series take the slots in a fixed cyclic order.",
+  "chart-4":
+    "The fourth categorical chart slot, which gives a series its identity. Series take the slots in a fixed cyclic order.",
+  "chart-5":
+    "The fifth categorical chart slot, which gives a series its identity. Series take the slots in a fixed cyclic order.",
+  "chart-6":
+    "The sixth categorical chart slot, which gives a series its identity. Series take the slots in a fixed cyclic order.",
+  "chart-7":
+    "The seventh categorical chart slot, which gives a series its identity. Series take the slots in a fixed cyclic order.",
+  "chart-8":
+    "The eighth categorical chart slot, which gives a series its identity. Series take the slots in a fixed cyclic order.",
+  "chart-1-foreground": "The text color of a direct chart label on chart-1.",
+  "chart-2-foreground": "The text color of a direct chart label on chart-2.",
+  "chart-3-foreground": "The text color of a direct chart label on chart-3.",
+  "chart-4-foreground": "The text color of a direct chart label on chart-4.",
+  "chart-5-foreground": "The text color of a direct chart label on chart-5.",
+  "chart-6-foreground": "The text color of a direct chart label on chart-6.",
+  "chart-7-foreground": "The text color of a direct chart label on chart-7.",
+  "chart-8-foreground": "The text color of a direct chart label on chart-8.",
+  "chart-other": "The grey of the series a chart folds together past its eight categorical slots.",
+  "chart-other-foreground": "The text color of a direct chart label on chart-other.",
+  "chart-seq-1":
+    "Step 1 of the sequential chart ramp, which encodes magnitude in one hue. Step 1 is the least.",
+  "chart-seq-2":
+    "Step 2 of the sequential chart ramp, which encodes magnitude in one hue. Step 1 is the least.",
+  "chart-seq-3":
+    "Step 3 of the sequential chart ramp, which encodes magnitude in one hue. Step 1 is the least.",
+  "chart-seq-4":
+    "Step 4 of the sequential chart ramp, which encodes magnitude in one hue. Step 1 is the least.",
+  "chart-seq-5":
+    "Step 5 of the sequential chart ramp, which encodes magnitude in one hue. Step 1 is the least.",
+  "chart-seq-6":
+    "Step 6 of the sequential chart ramp, which encodes magnitude in one hue. Step 1 is the least.",
+  "chart-seq-7":
+    "Step 7 of the sequential chart ramp, which encodes magnitude in one hue. Step 1 is the least.",
+  "chart-diverging-1":
+    "Step 1 of the diverging chart scale for values that cross zero. Step 4 is the grey midpoint at zero.",
+  "chart-diverging-2":
+    "Step 2 of the diverging chart scale for values that cross zero. Step 4 is the grey midpoint at zero.",
+  "chart-diverging-3":
+    "Step 3 of the diverging chart scale for values that cross zero. Step 4 is the grey midpoint at zero.",
+  "chart-diverging-4":
+    "Step 4 of the diverging chart scale for values that cross zero. Step 4 is the grey midpoint at zero.",
+  "chart-diverging-5":
+    "Step 5 of the diverging chart scale for values that cross zero. Step 4 is the grey midpoint at zero.",
+  "chart-diverging-6":
+    "Step 6 of the diverging chart scale for values that cross zero. Step 4 is the grey midpoint at zero.",
+  "chart-diverging-7":
+    "Step 7 of the diverging chart scale for values that cross zero. Step 4 is the grey midpoint at zero.",
+  "chart-sentiment-positive":
+    "The chart color of a value that favours the reader, such as a low price. It never encodes the sign of a value.",
+  "chart-sentiment-negative":
+    "The chart color of a value that is unfavourable to the reader, such as a high price. It never encodes the sign of a value.",
   "sh-identifier": "The color of identifiers in the syntax highlighting of Code.",
   "sh-keyword": "The color of keywords in the syntax highlighting of Code.",
   "sh-string": "The color of strings in the syntax highlighting of Code.",

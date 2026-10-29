@@ -2,7 +2,7 @@
  * Value labels for chart axes, tooltips, aria text and tables. A format is plain data, either Intl
  * number options or a named preset, so a server component can pass it to a client chart.
  */
-import { numberFormat, pluralRules } from "../../../intl/intl-formatters";
+import { numberFormat, pluralRules } from "../../../internal/intl-cache";
 import type { SupportedLocale } from "../../../intl/locale-context";
 import { makeFormattedText } from "./formatted-text";
 import type { FormattedText, LabelRole } from "./formatted-text";
@@ -206,4 +206,108 @@ export function formatValue(
     visualNumber(locale, value, options),
     spokenNumber(locale, words, value, spokenOptions(options))
   );
+}
+
+/**
+ * The number options a unitless table cell prints with: a preset's digits, or Intl options with
+ * their currency or unit dropped and the currency's fraction digits kept.
+ */
+function unitlessOptions(format: ValueFormat): Intl.NumberFormatOptions {
+  if (format.preset === "energy" || format.preset === "power")
+    return { ...digits(format, 2), signDisplay: "negative" };
+  if (format.preset === "unit-price") {
+    const fraction = format.minor === true ? digits(format, 1) : digits(format, 2);
+    return {
+      ...fraction,
+      minimumFractionDigits:
+        format.minor === true ? fraction.minimumFractionDigits : (fraction.minimumFractionDigits ?? 2),
+      signDisplay: "negative",
+    };
+  }
+  if (format.style !== "currency" && format.style !== "unit")
+    return { ...format, signDisplay: format.signDisplay ?? "negative" };
+  const {
+    style: _style,
+    currency: _currency,
+    currencyDisplay: _display,
+    unit: _unit,
+    unitDisplay: _unitDisplay,
+    ...rest
+  } = format;
+  if (format.style !== "currency") return { ...rest, signDisplay: format.signDisplay ?? "negative" };
+  // Dropping the currency style drops its digits too, so the currency's digits fill whichever
+  // bound the format leaves open, kept on the right side of the bound it sets.
+  const currency = numberFormat("en-US", {
+    style: "currency",
+    currency: format.currency ?? "NOK",
+  }).resolvedOptions();
+  const maximum =
+    rest.maximumFractionDigits ??
+    Math.max(currency.maximumFractionDigits ?? 2, rest.minimumFractionDigits ?? 0);
+  return {
+    ...rest,
+    minimumFractionDigits:
+      rest.minimumFractionDigits ?? Math.min(currency.minimumFractionDigits ?? 2, maximum),
+    maximumFractionDigits: maximum,
+    signDisplay: format.signDisplay ?? "negative",
+  };
+}
+
+/**
+ * A value as a table cell prints it, the number without its unit, because the column header
+ * carries the unit once. Private to the chart Table, after CONTRACT section 9.6, and to the
+ * description, which states the unit once per series, after section 9.3.
+ *
+ * @param locale - The active supported locale.
+ * @param value - The value.
+ * @param format - The series' format.
+ * @returns The visual and spoken number, with canonical spaces.
+ */
+export function formatUnitless(locale: SupportedLocale, value: number, format: ValueFormat): FormattedText {
+  const options = unitlessOptions(format);
+  return makeFormattedText(
+    visualNumber(locale, value, options),
+    spokenNumber(locale, CHART_WORDS[locale], value, options)
+  );
+}
+
+/** The part of a formatted 2 that names a currency or a unit, such as `kr` or `kilowattimer`. */
+function unitPart(locale: SupportedLocale, options: Intl.NumberFormatOptions): string {
+  return numberFormat(locale, options)
+    .formatToParts(2)
+    .filter((part) => part.type === "currency" || part.type === "unit")
+    .map((part) => part.value)
+    .join("");
+}
+
+/**
+ * The unit a table column header names after the series label, such as `kWh` or
+ * `øre/kWh inkl. mva`, or null when the format carries none.
+ *
+ * @param locale - The active supported locale.
+ * @param format - The series' format.
+ * @returns The visual and spoken unit, or null.
+ */
+export function formatUnitLabel(locale: SupportedLocale, format: ValueFormat): FormattedText | null {
+  const words = CHART_WORDS[locale];
+  if (format.preset === "energy" || format.preset === "power") {
+    return makeFormattedText(format.unit, words.unitNames[format.unit].other);
+  }
+  if (format.preset === "unit-price") {
+    const vat = ` ${words.vat[format.vat]}`;
+    const spokenVat = ` ${words.spokenVat[format.vat]}`;
+    if (format.minor === true) {
+      return makeFormattedText(
+        `${words.minorSymbol[format.currency]}/kWh${vat}`,
+        `${words.minorName[format.currency].other} ${words.spokenPerKilowattHour}${spokenVat}`
+      );
+    }
+    const symbol = unitPart(locale, { style: "currency", currency: format.currency });
+    const name = unitPart(locale, { style: "currency", currency: format.currency, currencyDisplay: "name" });
+    return makeFormattedText(`${symbol}/kWh${vat}`, `${name} ${words.spokenPerKilowattHour}${spokenVat}`);
+  }
+  if (format.style === "currency" || format.style === "unit") {
+    return makeFormattedText(unitPart(locale, format), unitPart(locale, spokenOptions(format)));
+  }
+  return null;
 }

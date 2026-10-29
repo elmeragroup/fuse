@@ -1,7 +1,1668 @@
 @layer theme, base, components, utilities;
 
+/*
+  Fuse's chart styles. Every rule is keyed on data-slot and the data attributes of CONTRACT
+  section 11, and no chart module writes a utility class of its own. Only opacity and colour sit
+  in the base transition lists, and movement goes under prefers-reduced-motion: no-preference.
+
+  Interaction state reaches CSS in two places. Root carries data-active, data-near and
+  data-pinned, which change on enter and leave. The data-follow elements carry the numbers that
+  change per slot, such as --chart-active-col and --chart-y-<n>, so a pointer move restyles no mark.
+*/
+
 @layer components {
+  /* A chart has no width of its own, so it fills its container even as a flex or grid item. */
   [data-slot="chart"] {
     display: grid;
+    width: 100%;
+    margin: 0;
+    min-width: 0;
+    --chart-row-height: 2rem;
+    --chart-band-gap: 25%;
+    --chart-bar-gap: 2px;
+    --chart-bar-seam: 2px;
+    --chart-bar-radius: var(--radius-xs, 0.125rem);
+    --chart-hover-dim: 0.45;
+    --chart-ease: cubic-bezier(0, 0.7, 0.5, 1);
+    --chart-update: 480ms;
+    --chart-stagger: 16ms;
+  }
+
+  [data-slot="chart"]:not([data-orientation="horizontal"]) {
+    --chart-plot-height: 12.5rem;
+  }
+
+  /* Visually hidden, still in the accessibility tree. */
+  [data-slot="chart-description"],
+  [data-slot="chart-instructions"],
+  [data-slot="chart-status"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /*
+    The frame is a grid of named areas, one per part position, so Root never has to place its
+    children. An area with no part has no height.
+  */
+  [data-slot="chart-frame"] {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    min-width: 0;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--muted-foreground);
+    grid-template-columns:
+      [legend-start] auto [start] auto [plot] minmax(0, 1fr)
+      [end] auto [legend-end] auto;
+    grid-template-rows:
+      auto auto auto auto auto var(--chart-plot-height, calc(var(--chart-slots) * var(--chart-row-height)))
+      auto auto auto auto auto;
+    grid-template-areas:
+      "headline headline headline headline headline"
+      "takeaway takeaway takeaway takeaway takeaway"
+      "legend-top legend-top legend-top legend-top legend-top"
+      "toggles-top toggles-top toggles-top toggles-top toggles-top"
+      ". over-start over over-end ."
+      "legend-start start plot end legend-end"
+      ". under-start under under-end ."
+      "legend-bottom legend-bottom legend-bottom legend-bottom legend-bottom"
+      "toggles-bottom toggles-bottom toggles-bottom toggles-bottom toggles-bottom"
+      "brush brush brush brush brush"
+      "table table table table table";
+  }
+
+  [data-slot="chart-plot"],
+  [data-slot="chart-surface"],
+  [data-slot="chart-bar-series"],
+  [data-slot="chart-bar-group"],
+  [data-slot="chart-grid"],
+  [data-slot="chart-crosshair"],
+  [data-slot="chart-reference-line"],
+  [data-slot="chart-reference-area"],
+  [data-slot="chart-active-value-line"] {
+    grid-area: plot;
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  /* The plot's one pointer target and tab stop sits above every mark. */
+  [data-slot="chart-surface"] {
+    z-index: 1;
+    touch-action: pan-y;
+    border-radius: var(--radius-xs);
+  }
+
+  /* The single option lies over the active slot's band, where a touch reader's double tap lands. */
+  [data-slot="chart-point"] {
+    position: absolute;
+    inset-block: 0;
+    left: calc((var(--chart-col, 1) - 1) * 100% / var(--chart-slots, 1));
+    width: calc(100% / var(--chart-slots, 1));
+    outline: none;
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-point"] {
+    inset-inline: 0;
+    left: 0;
+    width: auto;
+    top: calc((var(--chart-col, 1) - 1) * 100% / var(--chart-slots, 1));
+    height: calc(100% / var(--chart-slots, 1));
+  }
+
+  /*
+    Bars. Each bar is an absolutely positioned box, so a data update moves it by transitioning its
+    own offsets and size, and a moving bar lays out itself alone. Fuse writes plain numbers in
+    plot percent: --chart-bar-x and the series' --chart-bar-w along the category axis, and
+    --chart-bar-top from the value maximum and --chart-bar-height toward the minimum. The series is
+    a size container, so a variant can anchor a pattern to the plot in container units.
+  */
+  [data-slot="chart-bar-series"],
+  [data-slot="chart-bar-group"] {
+    pointer-events: none;
+  }
+
+  [data-slot="chart-bar-group"] {
+    grid-area: plot;
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  [data-slot="chart-bar-group"] > [data-slot="chart-bar-series"] {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* The bar width and its offset in the band hold for every bar of a series, so they compute once. */
+  [data-slot="chart-bar-series"] {
+    container-type: size;
+    --_size: calc(
+      (
+          var(--chart-bar-w) * (100% - var(--chart-band-gap)) / 100 - (var(--chart-sub-count, 1) - 1) *
+            var(--chart-bar-gap)
+        ) /
+        var(--chart-sub-count, 1)
+    );
+    --_offset: calc(
+      var(--chart-bar-w) * var(--chart-band-gap) / 200 + var(--chart-sub-index, 0) *
+        (var(--_size) + var(--chart-bar-gap))
+    );
+  }
+
+  [data-slot="chart-bar-series"] > svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  [data-slot="chart-bar"],
+  [data-slot="chart-bar-active"],
+  [data-slot="chart-bar-emphasis"],
+  [data-slot="chart-bar-missing"] {
+    --_paint: var(--chart-bar-paint, var(--chart-series-paint));
+    --_start: calc(var(--chart-bar-x) * 1% + var(--_offset));
+    --_cut: calc(var(--chart-bar-seam) * var(--_seamed, 0));
+    --_upper: calc(var(--chart-bar-top) * 1% + var(--_cut) * (1 - var(--chart-bar-neg, 0)));
+    --_length: calc(var(--chart-bar-height) * 1% - var(--_cut));
+    --_base: calc((var(--chart-bar-top) + var(--chart-bar-height) * (1 - var(--chart-bar-neg, 0))) * 1%);
+    --_far: calc(var(--chart-bar-radius) * var(--chart-bar-round, 1) * (1 - var(--chart-bar-neg, 0)));
+    --_near: calc(var(--chart-bar-radius) * var(--chart-bar-round, 1) * var(--chart-bar-neg, 0));
+    position: absolute;
+    left: var(--_start);
+    width: var(--_size);
+    top: var(--_upper);
+    height: var(--_length);
+    background: var(--_paint);
+    border-radius: var(--_far) var(--_far) var(--_near) var(--_near);
+    print-color-adjust: exact;
+    transition:
+      opacity 150ms ease,
+      background-color 150ms ease;
+  }
+
+  /* A stack's inner segment ends a seam short of the next one and takes no rounded end. */
+  [data-slot="chart-bar"]:not([data-stack-top]) {
+    --chart-bar-round: 0;
+    --_seamed: 1;
+  }
+
+  /* Horizontal bars run the category axis down the plot and the value axis to the right. */
+  [data-orientation="horizontal"]
+    :is(
+      [data-slot="chart-bar"],
+      [data-slot="chart-bar-active"],
+      [data-slot="chart-bar-emphasis"],
+      [data-slot="chart-bar-missing"]
+    ) {
+    left: auto;
+    right: var(--_upper);
+    top: var(--_start);
+    width: var(--_length);
+    height: var(--_size);
+    border-radius: var(--_near) var(--_far) var(--_far) var(--_near);
+  }
+
+  /*
+    A role list paints each bar from its tip, the list's first role, to its base, after evilcharts'
+    colour gradient. The angle turns with the bar, so a negative bar keeps its tip end first.
+  */
+  :where([data-slot="chart-bar-series"][data-list][data-variant="default"])
+    :is([data-slot="chart-bar"], [data-slot="chart-bar-active"]) {
+    background: linear-gradient(calc(180deg - 180deg * var(--chart-bar-neg, 0)), var(--chart-series-stops));
+  }
+
+  :where([data-orientation="horizontal"] [data-slot="chart-bar-series"][data-list][data-variant="default"])
+    :is([data-slot="chart-bar"], [data-slot="chart-bar-active"]) {
+    background: linear-gradient(calc(270deg - 180deg * var(--chart-bar-neg, 0)), var(--chart-series-stops));
+  }
+
+  /* The past slots dim under data-fade="past", through a filter so the hover dim still applies. */
+  [data-slot="chart"][data-fade="past"] [data-slot="chart-bar"][data-time="past"] {
+    filter: opacity(0.4);
+  }
+
+  /* The active bar is one overlay box per series, placed by the custom properties Root paints. */
+  [data-slot="chart-bar-active"] {
+    --chart-bar-x: calc((var(--chart-active-col, 1) - 1) * var(--chart-bar-w));
+    opacity: 0;
+  }
+
+  [data-slot="chart"][data-active] [data-slot="chart-bar-active"] {
+    opacity: var(--chart-has-value);
+  }
+
+  [data-slot="chart"][data-active] :is([data-slot="chart-bar"], [data-slot="chart-bar-series"] > svg) {
+    opacity: var(--chart-hover-dim);
+  }
+
+  /*
+    A series with emphasis greys the rest of its bars a quarter of the way toward the muted text
+    role and paints the emphasised ones in full. The grey keeps each bar at 3:1 or more against
+    every chart surface, and two neighbouring roles 15 or more apart in ΔE, as
+    .scratch/charts-v1/tools/l05-dim/dim-check.ts measures.
+  */
+  [data-slot="chart-bar-series"][data-emphasis] [data-slot="chart-bar"]:not([data-emphasis]) {
+    --_paint: color-mix(
+      in oklab,
+      var(--chart-bar-paint, var(--chart-series-paint)) 75%,
+      var(--muted-foreground)
+    );
+  }
+
+  /*
+    An emphasised bar in the current slot also draws a 2 px ring in the foreground role inside its
+    box. Its paint alone can sit close to its greyed neighbours, as a diverging role's middle does,
+    so the ring marks it apart from them by more than colour. An estimated bar keeps its dashed
+    outline instead.
+  */
+  [data-slot="chart-bar-series"][data-emphasis]
+    [data-slot="chart-bar"][data-emphasis][data-time="current"]:not([data-quality="estimated"]) {
+    outline: 2px solid var(--foreground);
+    outline-offset: -2px;
+  }
+
+  /*
+    An estimated reading draws a dashed outline in the series colour over a lighter fill, and keeps
+    the rounded far end of every bar, since an outline follows the border radius. The active
+    overlay takes the active reading's quality, so hovering keeps the encoding, with a heavier
+    outline and fill for the active state.
+  */
+  :is([data-slot="chart-bar"], [data-slot="chart-bar-active"])[data-quality="estimated"] {
+    background: color-mix(in oklab, var(--_paint) 35%, transparent);
+    outline: 1px dashed var(--_paint);
+    outline-offset: -1px;
+  }
+
+  [data-slot="chart-bar-active"][data-quality="estimated"] {
+    background: color-mix(in oklab, var(--_paint) 55%, transparent);
+    outline-width: 2px;
+    outline-offset: -2px;
+  }
+
+  /* A missing reading draws a short dashed tick across its cell at the baseline. */
+  [data-slot="chart-bar-missing"] {
+    top: calc(var(--chart-bar-top) * 1% - 1px);
+    height: 2px;
+    border-radius: 0;
+    background: repeating-linear-gradient(90deg in srgb, var(--muted-foreground) 0 3px, transparent 3px 6px);
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-bar-missing"] {
+    right: calc(var(--chart-bar-top) * 1% - 1px);
+    width: 2px;
+    background: repeating-linear-gradient(180deg in srgb, var(--muted-foreground) 0 3px, transparent 3px 6px);
+  }
+
+  /*
+    A projected reading draws hatched, as evilcharts' buffer bar does, and so does its overlay.
+    Its 1 px edge in the full paint keeps the bar's outline at 3:1, as the tinted variants' does.
+  */
+  :is([data-slot="chart-bar"], [data-slot="chart-bar-active"])[data-projected] {
+    background: repeating-linear-gradient(
+      45deg in srgb,
+      var(--_paint) 0 1px,
+      color-mix(in oklab, var(--_paint) 20%, transparent) 1px 5px
+    );
+    box-shadow: inset 0 0 0 1px var(--_paint);
+  }
+
+  /*
+    The path form paints one fill per path: a scale step, a role list's gradient or the series
+    role. Projected readings draw lighter in their own path, estimated ones as dashed outlines.
+  */
+  [data-slot="chart-bar-path"] {
+    fill: var(--chart-bar-paint, var(--chart-bar-fill, var(--chart-series-paint)));
+    print-color-adjust: exact;
+  }
+
+  [data-slot="chart-bar-series"] stop {
+    stop-color: var(--chart-stop);
+  }
+
+  [data-slot="chart-bar-series"] mask {
+    mask-type: alpha;
+  }
+
+  [data-slot="chart-bar-path"][data-projected] {
+    fill: color-mix(in oklab, var(--chart-series-paint) 35%, transparent);
+    stroke: var(--chart-series-paint);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  [data-slot="chart-bar-path"][data-quality="estimated"] {
+    fill: color-mix(in oklab, var(--chart-series-paint) 35%, transparent);
+    stroke: var(--chart-series-paint);
+    stroke-width: 1px;
+    stroke-dasharray: 3 3;
+    vector-effect: non-scaling-stroke;
+  }
+
+  [data-slot="chart-bar-path"][data-quality="missing"] {
+    fill: none;
+    stroke: var(--muted-foreground);
+    stroke-width: 2px;
+    stroke-dasharray: 3 3;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /*
+    The variants of CONTRACT section 6, after evilcharts' bar patterns. The tinted and hatched ones
+    draw a 1 px edge in the full paint, so each bar's outline keeps 3:1 against the surface.
+  */
+  :is(
+      [data-variant="hatched"],
+      [data-variant="striped"],
+      [data-variant="gradient"],
+      [data-variant="duotone"],
+      [data-variant="duotone-reverse"]
+    )[data-slot="chart-bar-series"]
+    [data-slot="chart-bar"] {
+    box-shadow: inset 0 0 0 1px var(--_paint);
+  }
+
+  [data-slot="chart-bar-series"][data-variant="hatched"] [data-slot="chart-bar"] {
+    background: repeating-linear-gradient(
+      45deg in srgb,
+      var(--_paint) 0 1.5px,
+      color-mix(in oklab, var(--_paint) 30%, transparent) 1.5px 5px
+    );
+  }
+
+  /* The gradient runs over the plot's height, as evilcharts' user-space mask does. */
+  [data-slot="chart-bar-series"][data-variant="gradient"] [data-slot="chart-bar"] {
+    background: linear-gradient(to bottom, var(--_paint) 20%, transparent 90%) 0
+      calc(var(--chart-bar-top) * -1cqh) / 100% 100cqh no-repeat;
+  }
+
+  [data-orientation="horizontal"]
+    [data-slot="chart-bar-series"][data-variant="gradient"]
+    [data-slot="chart-bar"] {
+    background: linear-gradient(to left, var(--_paint) 20%, transparent 90%)
+      calc(var(--chart-bar-top) * 1cqw + var(--_length) - 100cqw) 0 / 100cqw 100% no-repeat;
+  }
+
+  /* The striped variant is a 20 % body under a solid 2 px cap that sits 2 px beyond the far end. */
+  [data-slot="chart-bar-series"][data-variant="striped"] [data-slot="chart-bar"] {
+    background: color-mix(in oklab, var(--_paint) 20%, transparent);
+  }
+
+  [data-slot="chart-bar-series"][data-variant="striped"] [data-slot="chart-bar"]::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: -4px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--_paint);
+  }
+
+  [data-orientation="horizontal"]
+    [data-slot="chart-bar-series"][data-variant="striped"]
+    [data-slot="chart-bar"]::before {
+    inset-inline: auto;
+    inset-block: 0;
+    top: 0;
+    right: -4px;
+    width: 2px;
+    height: auto;
+  }
+
+  /* Duotone paints the bar's first half at 40 % and its second half solid, and reverse swaps them. */
+  [data-slot="chart-bar-series"][data-variant="duotone"] [data-slot="chart-bar"] {
+    background: linear-gradient(
+      to right,
+      color-mix(in oklab, var(--_paint) 40%, transparent) 50%,
+      var(--_paint) 50%
+    );
+  }
+
+  [data-slot="chart-bar-series"][data-variant="duotone-reverse"] [data-slot="chart-bar"] {
+    background: linear-gradient(
+      to right,
+      var(--_paint) 50%,
+      color-mix(in oklab, var(--_paint) 40%, transparent) 50%
+    );
+  }
+
+  /*
+    Blocks stack 10 px squares 2 px apart from the baseline, centred in the bar, over a faint track
+    of the same squares, after evilcharts' grid block. The bar holds whole squares only, at least
+    one, so its far end sits at the last square's top, as the block draws it.
+  */
+  [data-slot="chart-bar-series"][data-variant="blocks"] [data-slot="chart-bar"] {
+    --_blocks: max(10px, calc(round(down, var(--_length), 12px) - 2px));
+    top: calc(var(--_upper) + var(--_length) - var(--_blocks));
+    height: var(--_blocks);
+    border-radius: 0;
+    background: repeating-linear-gradient(to top in srgb, var(--_paint) 0 10px, transparent 10px 12px) center
+      bottom / min(10px, max(2px, 100% - 2px)) 100% no-repeat;
+  }
+
+  [data-slot="chart-bar-series"][data-variant="blocks"] [data-slot="chart-bar"]::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: -1;
+    height: calc((var(--chart-bar-top) + var(--chart-bar-height)) * 1cqh);
+    background: inherit;
+    opacity: 0.1;
+  }
+
+  /* Expandable bars rest as a strip of 12 % of the bar, and the active overlay draws the full bar. */
+  [data-slot="chart-bar-series"][data-variant="expandable"] [data-slot="chart-bar"] {
+    left: calc(var(--_start) + var(--_size) * 0.44);
+    width: calc(var(--_size) * 0.12);
+  }
+
+  /* Isometric bars add a top face and a side face 10 px deep, after evilcharts' isometric block. */
+  [data-slot="chart-bar-series"][data-variant="isometric"] [data-slot="chart-bar"] {
+    --chart-bar-round: 0;
+    --_face: var(--chart-bar-paint, var(--chart-series-paint));
+  }
+
+  [data-slot="chart-bar-series"][data-variant="isometric"][data-emphasis]
+    [data-slot="chart-bar"]:not([data-emphasis]) {
+    --_face: var(--_paint);
+  }
+
+  [data-slot="chart-bar-series"][data-variant="isometric"] [data-slot="chart-bar"]::before,
+  [data-slot="chart-bar-series"][data-variant="isometric"] [data-slot="chart-bar"]::after {
+    content: "";
+    position: absolute;
+  }
+
+  [data-slot="chart-bar-series"][data-variant="isometric"] [data-slot="chart-bar"]::before {
+    left: 0;
+    bottom: 100%;
+    width: calc(100% + 10px);
+    height: 10px;
+    background: color-mix(in oklab, var(--_face) 55%, var(--background));
+    clip-path: polygon(0 100%, calc(100% - 10px) 100%, 100% 0, 10px 0);
+  }
+
+  [data-slot="chart-bar-series"][data-variant="isometric"] [data-slot="chart-bar"]::after {
+    left: 100%;
+    top: -10px;
+    width: 10px;
+    height: 100%;
+    background: color-mix(in oklab, var(--_face) 38%, var(--background));
+    clip-path: polygon(0 10px, 100% 0, 100% calc(100% - 10px), 0 100%);
+  }
+
+  /* The background pattern sits behind every mark, wherever it sits among Root's children. */
+  [data-slot="chart-background"] {
+    grid-area: plot;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    color: var(--border);
+    pointer-events: none;
+  }
+
+  /* The plot cell stretches the Fuse Empty inside it over the plot. */
+  [data-slot="chart-empty"] {
+    display: grid;
+    grid-area: plot;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  /*
+    Glow casts each wrapped series' own colour at half alpha, after evilcharts' SVG glow of
+    stdDeviation 8 at 0.5 alpha. A drop-shadow length is the Gaussian's standard deviation, and
+    ticket 05's E10 measured an 8 px length's halo within 0.5 px of the evilcharts shot.
+  */
+  [data-slot="chart-glow"] {
+    grid-area: plot;
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    pointer-events: none;
+  }
+
+  [data-slot="chart-glow"] > :is([data-slot="chart-bar-series"], [data-slot="chart-bar-group"]) {
+    position: absolute;
+    inset: 0;
+  }
+
+  [data-slot="chart-glow"] [data-slot="chart-bar-series"] {
+    filter: drop-shadow(0 0 8px color-mix(in oklab, var(--chart-series-paint) 50%, transparent));
+  }
+
+  /* The skeleton sketches 12 bars over the default plot height, with the loader in its middle. */
+  [data-slot="chart-skeleton"] {
+    position: relative;
+    display: grid;
+    width: 100%;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    align-items: end;
+    height: var(--chart-plot-height, 12.5rem);
+    --chart-band-gap: 25%;
+  }
+
+  [data-slot="chart-skeleton-mark"] {
+    height: var(--chart-skeleton-height, 100%);
+    margin-inline: calc(var(--chart-band-gap) / 2);
+    border-radius: var(--radius-xs, 0.125rem) var(--radius-xs, 0.125rem) 0 0;
+  }
+
+  [data-slot="chart-skeleton"][data-variant="line"] [data-slot="chart-skeleton-mark"],
+  [data-slot="chart-skeleton"][data-variant="area"] [data-slot="chart-skeleton-mark"] {
+    margin-inline: 0;
+    border-radius: var(--radius-xs, 0.125rem);
+  }
+
+  [data-slot="chart-skeleton"] > [data-slot="loader"] {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+  }
+
+  /*
+    The table sits under the chart behind its toggle. Collapsed, its parts stay in the
+    accessibility tree, visually hidden. Its text keeps Fuse Table's own type and row metrics.
+  */
+  [data-slot="chart-table"] {
+    grid-area: table;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    min-width: 0;
+    padding-block-start: 0.75rem;
+  }
+
+  [data-slot="chart-table"] > [data-slot="table-container"] {
+    width: 100%;
+  }
+
+  [data-slot="chart-table-content"] [data-quality] {
+    color: var(--muted-foreground);
+  }
+
+  [data-slot="chart-table-content"] > caption {
+    text-align: start;
+  }
+
+  [data-slot="chart-table-pagination"] {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  /* Grid lines sit at the value ticks, and the zero line always draws solid. */
+  [data-slot="chart-grid"],
+  [data-slot="chart-crosshair"],
+  [data-slot="chart-reference-line"],
+  [data-slot="chart-reference-area"],
+  [data-slot="chart-active-value-line"] {
+    pointer-events: none;
+  }
+
+  [data-slot="chart-grid-line"] {
+    position: absolute;
+    border-color: color-mix(in oklab, var(--border) 80%, transparent);
+    border-style: solid;
+    border-width: 0;
+  }
+
+  [data-slot="chart-grid"][data-variant="dashed"] [data-slot="chart-grid-line"] {
+    border-style: dashed;
+  }
+
+  [data-slot="chart-grid-line"][data-axis="value"] {
+    inset-inline: 0;
+    top: var(--chart-at);
+    border-top-width: 1px;
+  }
+
+  [data-slot="chart-grid-line"][data-axis="slot"] {
+    inset-block: 0;
+    left: var(--chart-at);
+    border-left-width: 1px;
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-grid-line"][data-axis="value"] {
+    inset-inline: auto;
+    inset-block: 0;
+    top: 0;
+    left: calc(100% - var(--chart-at));
+    border-top-width: 0;
+    border-left-width: 1px;
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-grid-line"][data-axis="slot"] {
+    inset-block: auto;
+    inset-inline: 0;
+    left: 0;
+    top: var(--chart-at);
+    border-left-width: 0;
+    border-top-width: 1px;
+  }
+
+  [data-slot="chart-grid-line"][data-zero] {
+    border-style: solid;
+    border-color: var(--muted-foreground);
+  }
+
+  /*
+    The x axis is its own size container, so each label hides below the narrowest width that
+    holds its stride. The server estimated every label's width, so no label is measured here.
+    The widths are rem, a 16 px root's TICK_BUCKETS, so a larger text size widens each bucket
+    with the labels it holds.
+  */
+  [data-slot="chart-x-axis"] {
+    grid-area: under;
+    position: relative;
+    container: chart-x-axis / inline-size;
+    height: calc(1rem + 0.5rem);
+    font-variant-numeric: tabular-nums;
+  }
+
+  [data-slot="chart-x-tick"] {
+    position: absolute;
+    top: 0.5rem;
+    left: calc(var(--chart-at) * 100%);
+    white-space: nowrap;
+    translate: clamp(calc(var(--chart-at) * -100cqw), -50%, calc((1 - var(--chart-at)) * 100cqw - 100%)) 0;
+  }
+
+  /*
+    A tick dot sits on its band centre in the muted text role, which holds 3:1 as a graphical
+    object. The label may shift to stay inside the axis, so the dot undoes the same clamp and keeps
+    to the tick's anchor.
+  */
+  [data-slot="chart-x-axis"][data-tick="dot"] [data-slot="chart-x-tick"]::before {
+    content: "";
+    position: absolute;
+    top: -0.375rem;
+    left: calc(
+      -1 * clamp(calc(var(--chart-at) * -100cqw), -50%, calc((1 - var(--chart-at)) * 100cqw - 100%))
+    );
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--muted-foreground);
+    translate: -50% 0;
+  }
+
+  @container chart-x-axis (width < 7.5rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="120"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 10rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="160"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 12.5rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="200"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 15rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="240"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 17.5rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="280"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 20rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="320"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 22.5rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="360"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 25rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="400"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 27.5rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="440"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 30rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="480"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 35rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="560"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 40rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="640"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 45rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="720"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 50rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="800"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 55rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="880"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 60rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="960"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 65rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="1040"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 70rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="1120"] {
+      display: none;
+    }
+  }
+
+  @container chart-x-axis (width < 75rem) {
+    :is([data-slot="chart-x-tick"], [data-slot="chart-y-tick"])[data-min="1200"] {
+      display: none;
+    }
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-x-axis"] {
+    grid-area: start;
+    container: none;
+    height: auto;
+    min-width: 0;
+    padding-inline-end: 0.5rem;
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-x-tick"] {
+    position: absolute;
+    inset-inline-end: 0.5rem;
+    left: auto;
+    top: calc(var(--chart-at) * 100%);
+    translate: 0 -50%;
+  }
+
+  [data-slot="chart-y-axis"] {
+    grid-area: start;
+    position: relative;
+    padding-inline-end: 0.5rem;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  [data-slot="chart-y-axis"][data-side="end"] {
+    grid-area: end;
+    padding-inline: 0.5rem 0;
+    text-align: start;
+  }
+
+  [data-slot="chart-axis-sizer"] {
+    display: flex;
+    flex-direction: column;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    white-space: nowrap;
+  }
+
+  [data-slot="chart-y-tick"] {
+    position: absolute;
+    inset-inline-end: 0.5rem;
+    top: var(--chart-at);
+    white-space: nowrap;
+    translate: 0 -50%;
+  }
+
+  [data-slot="chart-y-axis"][data-side="end"] [data-slot="chart-y-tick"] {
+    inset-inline: 0.5rem auto;
+  }
+
+  /*
+    Under horizontal bars the value axis runs along the inline edge, so it takes the x axis's
+    container name, and its labels thin by the same width buckets.
+  */
+  [data-orientation="horizontal"] [data-slot="chart-y-axis"] {
+    container: chart-x-axis / inline-size;
+    grid-area: under;
+    height: calc(1rem + 0.5rem);
+    padding: 0;
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-y-axis"][data-side="end"] {
+    grid-area: over;
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-y-tick"] {
+    top: 0.5rem;
+    inset-inline: auto;
+    left: calc(100% - var(--chart-at));
+    translate: -50% 0;
+  }
+
+  /* The domain's ends align their labels inward, so the last value label stays inside the root. */
+  [data-orientation="horizontal"] [data-slot="chart-y-tick"][data-edge="end"] {
+    translate: -100% 0;
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-y-tick"][data-edge="start"] {
+    translate: 0 0;
+  }
+
+  /* An axis title sits beside its tick labels and never over them. */
+  [data-slot="chart-axis-label"] {
+    display: block;
+    color: var(--muted-foreground);
+    white-space: nowrap;
+  }
+
+  /* Below or above the plot, the title takes a line of its own past the tick line. */
+  [data-slot="chart"]:not([data-orientation="horizontal"])
+    [data-slot="chart-x-axis"]:has(> [data-slot="chart-axis-label"]),
+  [data-orientation="horizontal"] [data-slot="chart-y-axis"]:has(> [data-slot="chart-axis-label"]) {
+    height: auto;
+    padding-top: 1.5rem;
+  }
+
+  [data-slot="chart"]:not([data-orientation="horizontal"])
+    [data-slot="chart-x-axis"]
+    > [data-slot="chart-axis-label"],
+  [data-orientation="horizontal"] [data-slot="chart-y-axis"] > [data-slot="chart-axis-label"] {
+    text-align: center;
+  }
+
+  /*
+    Beside the plot, the title runs along the axis on the outer edge, so the tick labels keep
+    their own column.
+  */
+  [data-slot="chart"]:not([data-orientation="horizontal"])
+    [data-slot="chart-y-axis"]:has(> [data-slot="chart-axis-label"]),
+  [data-orientation="horizontal"] [data-slot="chart-x-axis"]:has(> [data-slot="chart-axis-label"]) {
+    display: flex;
+    column-gap: 0.25rem;
+  }
+
+  [data-slot="chart"]:not([data-orientation="horizontal"])
+    [data-slot="chart-y-axis"]
+    > [data-slot="chart-axis-label"],
+  [data-orientation="horizontal"] [data-slot="chart-x-axis"] > [data-slot="chart-axis-label"] {
+    order: -1;
+    text-align: center;
+    writing-mode: vertical-rl;
+    rotate: 180deg;
+  }
+
+  [data-slot="chart"]:not([data-orientation="horizontal"])
+    [data-slot="chart-y-axis"][data-side="end"]
+    > [data-slot="chart-axis-label"] {
+    order: 1;
+    margin-inline: auto 0;
+    rotate: none;
+  }
+
+  /* The crosshair follows Root's per-move custom properties. */
+  [data-slot="chart-crosshair"] {
+    opacity: 0;
+  }
+
+  [data-slot="chart"][data-active] [data-slot="chart-crosshair"] {
+    opacity: 1;
+  }
+
+  [data-slot="chart-crosshair"]::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+  }
+
+  [data-slot="chart-crosshair"][data-variant="band"]::before {
+    left: calc((var(--chart-active-col, 1) - 1) * 100% / var(--chart-slots, 1));
+    width: calc(100% / var(--chart-slots, 1));
+    background: color-mix(in oklab, var(--muted-foreground) 12%, transparent);
+  }
+
+  [data-slot="chart-crosshair"][data-variant="line"]::before {
+    left: calc(var(--chart-active-at, 0) * 100%);
+    width: 1px;
+    background: var(--muted-foreground);
+  }
+
+  /* Tooltip. The positioner lets the pointer through, and the popup takes it, for WCAG 1.4.13. */
+  [data-slot="chart-tooltip-positioner"] {
+    pointer-events: none;
+  }
+
+  [data-slot="chart-tooltip"] {
+    pointer-events: auto;
+    display: grid;
+    gap: 0.25rem;
+    min-width: 8rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--popover-foreground);
+  }
+
+  [data-slot="chart-tooltip-label"] {
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  [data-slot="chart-tooltip-items"] {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  [data-slot="chart-tooltip-item"],
+  [data-slot="chart-tooltip-total"] {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  /* Values read SemiBold, as Figma's paragraph mini/bold sets them in DESIGN-NOTES "Tooltips". */
+  [data-slot="chart-tooltip-value"],
+  [data-slot="chart-tooltip-share"],
+  [data-slot="chart-tooltip-total"] > span:last-child {
+    margin-inline-start: auto;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  [data-slot="chart-tooltip-total"] {
+    padding-block-start: 0.25rem;
+    border-block-start: 1px solid var(--border);
+    font-weight: 500;
+  }
+
+  /* Swatches carry the series paint, and forced colours keep it. */
+  /* A hatched series draws its legend swatch hatched too, so the legend tells the series apart. */
+  [data-slot="chart"]:has([data-slot="chart-bar-series"][data-variant="hatched"][data-series="0"])
+    [data-slot="chart-swatch"][data-series="0"],
+  [data-slot="chart"]:has([data-slot="chart-bar-series"][data-variant="hatched"][data-series="1"])
+    [data-slot="chart-swatch"][data-series="1"],
+  [data-slot="chart"]:has([data-slot="chart-bar-series"][data-variant="hatched"][data-series="2"])
+    [data-slot="chart-swatch"][data-series="2"],
+  [data-slot="chart"]:has([data-slot="chart-bar-series"][data-variant="hatched"][data-series="3"])
+    [data-slot="chart-swatch"][data-series="3"],
+  [data-slot="chart"]:has([data-slot="chart-bar-series"][data-variant="hatched"][data-series="4"])
+    [data-slot="chart-swatch"][data-series="4"],
+  [data-slot="chart"]:has([data-slot="chart-bar-series"][data-variant="hatched"][data-series="5"])
+    [data-slot="chart-swatch"][data-series="5"],
+  [data-slot="chart"]:has([data-slot="chart-bar-series"][data-variant="hatched"][data-series="6"])
+    [data-slot="chart-swatch"][data-series="6"],
+  [data-slot="chart"]:has([data-slot="chart-bar-series"][data-variant="hatched"][data-series="7"])
+    [data-slot="chart-swatch"][data-series="7"] {
+    background: repeating-linear-gradient(
+      45deg in srgb,
+      var(--chart-swatch-paint) 0 1px,
+      color-mix(in oklab, var(--chart-swatch-paint) 30%, transparent) 1px 3px
+    );
+    box-shadow: inset 0 0 0 1px var(--chart-swatch-paint);
+  }
+
+  /* Figma's Legend draws an 8 px swatch with a 2 px radius and a 4 px gap to its label. */
+  [data-slot="chart-swatch"] {
+    display: inline-block;
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 2px;
+    background: var(--chart-swatch-paint);
+    forced-color-adjust: none;
+  }
+
+  [data-slot="chart-swatch"][data-variant="circle"],
+  [data-slot="chart-swatch"][data-variant="circle-outline"] {
+    border-radius: 50%;
+  }
+
+  [data-slot="chart-swatch"][data-variant="square-outline"],
+  [data-slot="chart-swatch"][data-variant="circle-outline"] {
+    border: 2px solid transparent;
+    background:
+      linear-gradient(var(--background), var(--background)) padding-box,
+      var(--chart-swatch-paint) border-box;
+  }
+
+  [data-slot="chart-swatch"][data-variant="line"] {
+    width: 0.75rem;
+    height: 2px;
+  }
+
+  [data-slot="chart-swatch"][data-variant="bar"] {
+    width: 0.25rem;
+    height: 0.75rem;
+  }
+
+  [data-slot="chart-series-icon"] {
+    display: inline-flex;
+  }
+
+  /* Legends. Selection and highlight dim through opacity only. */
+  [data-slot="chart-legend"],
+  [data-slot="chart-legend-toggle-group"] {
+    grid-area: legend-bottom;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem 1rem;
+    margin: 0;
+    padding: 0.5rem 0 0;
+    list-style: none;
+    color: var(--foreground);
+  }
+
+  [data-slot="chart-legend-toggle-group"] {
+    grid-area: toggles-bottom;
+    justify-self: center;
+    gap: 0.25rem;
+  }
+
+  [data-slot="chart-legend"][data-side="top"] {
+    grid-area: legend-top;
+    padding: 0 0 0.5rem;
+  }
+
+  [data-slot="chart-legend-toggle-group"][data-side="top"] {
+    grid-area: toggles-top;
+    padding: 0 0 0.5rem;
+  }
+
+  [data-slot="chart-legend"][data-side="start"] {
+    grid-area: legend-start;
+    flex-direction: column;
+    padding: 0 0.5rem 0 0;
+  }
+
+  [data-slot="chart-legend"][data-side="end"] {
+    grid-area: legend-end;
+    flex-direction: column;
+    padding: 0 0 0 0.5rem;
+  }
+
+  [data-slot="chart-legend-toggle-group"][data-side="start"] {
+    grid-area: legend-start;
+    flex-direction: column;
+  }
+
+  [data-slot="chart-legend-toggle-group"][data-side="end"] {
+    grid-area: legend-end;
+    flex-direction: column;
+  }
+
+  [data-slot="chart-legend-item"] {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: opacity 150ms ease;
+  }
+
+  [data-slot="chart-legend-value"],
+  [data-slot="chart-legend-share"] {
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+  }
+
+  [data-slot="chart-legend-toggle"] {
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    transition: opacity 150ms ease;
+  }
+
+  /* Pressed shows as an outline too, because forced colours drop the muted background. */
+  [data-slot="chart-legend-toggle"][data-pressed] {
+    outline: 1px solid var(--foreground);
+    outline-offset: -1px;
+  }
+
+  [data-slot="chart-tooltip-item"][data-dimmed],
+  [data-slot="chart-legend-item"][data-dimmed] {
+    opacity: var(--chart-hover-dim);
+  }
+
+  /*
+    A selected or highlighted series keeps full opacity, and the rest dim. The ordinals compare
+    through min and max, so |a - b| clamped to 1 is 0 for the match and 1 for the rest.
+  */
+  [data-slot="chart"][data-selected] [data-slot="chart-bar-series"] {
+    --chart-other: min(
+      1,
+      max(var(--chart-series, 0) - var(--chart-selected), var(--chart-selected) - var(--chart-series, 0))
+    );
+  }
+
+  [data-slot="chart"][data-highlight] [data-slot="chart-bar-series"] {
+    --chart-other: min(
+      1,
+      max(var(--chart-series, 0) - var(--chart-highlight), var(--chart-highlight) - var(--chart-series, 0))
+    );
+  }
+
+  [data-slot="chart"][data-selected] [data-slot="chart-bar-series"],
+  [data-slot="chart"][data-highlight] [data-slot="chart-bar-series"] {
+    opacity: calc(1 - (1 - var(--chart-hover-dim)) * var(--chart-other, 0));
+    transition: opacity 150ms ease;
+  }
+
+  /* Headline and Takeaway follow the Figma Spotpris card's key figure and caption. */
+  [data-slot="chart-headline"] {
+    grid-area: headline;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-block-end: 0.75rem;
+    font-family: var(--font-heading, var(--font-sans));
+    font-size: var(--text-3xl, 1.875rem);
+    font-weight: var(--font-weight-semibold, 600);
+    line-height: 1;
+    letter-spacing: var(--tracking-tight, -0.025em);
+    color: var(--foreground);
+  }
+
+  [data-slot="chart-headline"] > :not(:first-child) {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: var(--font-weight-normal, 400);
+    line-height: var(--text-sm--line-height, calc(1.25 / 0.875));
+    letter-spacing: normal;
+    color: var(--muted-foreground);
+  }
+
+  [data-slot="chart-takeaway"] {
+    grid-area: takeaway;
+    margin: 0;
+    padding-block-end: 0.75rem;
+    font-size: var(--text-base, 1rem);
+    line-height: var(--text-base--line-height, 1.5);
+    color: var(--foreground);
+    text-wrap: pretty;
+  }
+
+  [data-slot="chart-active-value"] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Placed directly in Root, the active value sits above its bar's far end, as a direct label. */
+  [data-slot="chart-frame"] > [data-slot="chart-active-value"] {
+    grid-area: plot;
+    align-self: start;
+    justify-self: start;
+    position: relative;
+    left: calc(var(--chart-value-at) * 100%);
+    top: var(--chart-value-top);
+    translate: -50% calc(-100% - 0.25rem);
+    white-space: nowrap;
+    color: var(--foreground);
+    pointer-events: none;
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-frame"] > [data-slot="chart-active-value"] {
+    left: calc(100% - var(--chart-value-top));
+    top: calc(var(--chart-value-at) * 100%);
+    translate: 0.25rem -50%;
+  }
+
+  /* The active value line and its pill follow Root's per-move custom properties. */
+  [data-slot="chart-active-value-line"] {
+    opacity: 0;
+  }
+
+  [data-slot="chart"][data-active] [data-slot="chart-active-value-line"] {
+    opacity: var(--chart-has-value, 0);
+  }
+
+  [data-slot="chart-active-value-line"]::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: var(--chart-line-top);
+    border-top: 1px dashed var(--muted-foreground);
+  }
+
+  [data-slot="chart-active-value-line"] [data-slot="chart-value-label"] {
+    position: absolute;
+    left: 0;
+    top: var(--chart-line-top);
+    translate: calc(-100% - 0.25rem) -50%;
+  }
+
+  /*
+    The pill sits over a start value axis, beside the plot. With no start axis there is no gutter
+    beside the plot, so the pill sits just inside the plot's start edge and never leaves the root.
+  */
+  [data-slot="chart"]:not([data-orientation="horizontal"])
+    [data-slot="chart-frame"]:not(:has(> [data-slot="chart-y-axis"]:not([data-side="end"])))
+    [data-slot="chart-active-value-line"]
+    [data-slot="chart-value-label"] {
+    z-index: 1;
+    translate: 0.25rem -50%;
+  }
+
+  [data-slot="chart-value-label"] {
+    padding-inline: 0.375rem;
+    border-radius: 9999px;
+    background: var(--foreground);
+    color: var(--background);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* References draw aria-hidden lines and bands, and speak one visually hidden sentence. */
+  [data-slot="chart-reference-line"],
+  [data-slot="chart-reference-area"] {
+    --chart-tone: var(--muted-foreground);
+  }
+
+  [data-slot^="chart-reference"][data-tone="muted"] {
+    --chart-tone: color-mix(in oklab, var(--muted-foreground) 60%, transparent);
+  }
+
+  [data-slot^="chart-reference"][data-tone="error"] {
+    --chart-tone: var(--error);
+  }
+
+  [data-slot="chart-reference-line"]::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: var(--chart-at);
+    border-top: 1px solid var(--chart-tone);
+  }
+
+  [data-slot="chart-reference-line"][data-variant="dashed"]::before {
+    border-top-style: dashed;
+  }
+
+  [data-slot="chart-reference-line"][data-axis="slot"]::before {
+    inset-inline: auto;
+    inset-block: 0;
+    top: 0;
+    left: var(--chart-at);
+    border-top: 0;
+    border-left: 1px solid var(--chart-tone);
+  }
+
+  [data-slot="chart-reference-area"]::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: var(--chart-from);
+    bottom: calc(100% - var(--chart-to));
+    background: color-mix(in oklab, var(--chart-tone) 12%, transparent);
+  }
+
+  [data-slot="chart-reference-area"][data-axis="slot"]::before {
+    inset-block: 0;
+    inset-inline: auto;
+    top: 0;
+    bottom: 0;
+    left: var(--chart-from);
+    right: calc(100% - var(--chart-to));
+  }
+
+  /*
+    A label paints above the marks with a halo in the background colour, so a bar under a value
+    label leaves it readable. A muted label keeps the full muted text colour, because only the
+    line and the band take the muted tone's reduced alpha.
+  */
+  [data-slot="chart-reference-label"] {
+    position: absolute;
+    z-index: 1;
+    inset-inline-end: 0;
+    top: var(--chart-at, var(--chart-from));
+    translate: 0 -100%;
+    color: var(--chart-tone);
+    white-space: nowrap;
+    text-shadow:
+      0 0 2px var(--background),
+      0 0 2px var(--background),
+      0 0 3px var(--background);
+  }
+
+  [data-slot^="chart-reference"][data-tone="muted"] > [data-slot="chart-reference-label"] {
+    color: var(--muted-foreground);
+  }
+
+  [data-slot="chart-reference-area"][data-clipped]:not([data-axis="slot"])
+    > [data-slot="chart-reference-label"]:not([data-stack]) {
+    translate: 0 0.25rem;
+  }
+
+  /*
+    A value label on a vertical chart sits at the bottom edge Root's store gives it, which stacks it
+    below any label above it, so no two labels overlap.
+  */
+  [data-slot="chart-reference-label"][data-stack] {
+    top: var(--chart-label-bottom);
+  }
+
+  /* A row of slot labels above the plot keeps every value label below the plot's top. */
+  [data-slot="chart"]:not([data-orientation="horizontal"])
+    [data-slot="chart-frame"]:has(
+      [data-slot^="chart-reference"][data-axis="slot"]:not([data-outside])
+        > [data-slot="chart-reference-label"]:not(:empty)
+    ) {
+    --chart-label-floor: 1;
+  }
+
+  /*
+    On a vertical chart a slot reference labels its line or band from a row above the plot, where
+    no bar reaches. A line's label centres on the line and a band's starts at the band, and either
+    shifts inward at the plot's edges.
+  */
+  [data-slot="chart"]:not([data-orientation="horizontal"])
+    [data-slot="chart-frame"]:has(
+      [data-slot^="chart-reference"][data-axis="slot"]:not([data-outside])
+        > [data-slot="chart-reference-label"]:not(:empty)
+    )::before {
+    content: "";
+    grid-area: over;
+    height: 1.25rem;
+  }
+
+  [data-slot="chart"]:not([data-orientation="horizontal"]) [data-slot^="chart-reference"][data-axis="slot"] {
+    container-type: inline-size;
+  }
+
+  [data-slot="chart"]:not([data-orientation="horizontal"])
+    [data-slot="chart-reference-line"][data-axis="slot"]
+    > [data-slot="chart-reference-label"] {
+    inset-inline-end: auto;
+    top: 0;
+    left: var(--chart-at);
+    translate: clamp(calc(var(--chart-x) * -100cqw), -50%, calc((1 - var(--chart-x)) * 100cqw - 100%))
+      calc(-100% - 0.25rem);
+  }
+
+  [data-slot="chart"]:not([data-orientation="horizontal"])
+    [data-slot="chart-reference-area"][data-axis="slot"]
+    > [data-slot="chart-reference-label"] {
+    inset-inline-end: auto;
+    top: 0;
+    left: var(--chart-from);
+    translate: min(0px, calc((1 - var(--chart-x)) * 100cqw - 100%)) calc(-100% - 0.25rem);
+  }
+
+  /* A reference outside the plot draws nothing, and its sentence stays. */
+  [data-slot^="chart-reference"][data-outside]::before,
+  [data-slot^="chart-reference"][data-outside] > [data-slot="chart-reference-label"] {
+    display: none;
+  }
+
+  /*
+    Horizontal charts run the value axis to the right and the categories down the plot, so every
+    guide and follower turns with the bars. A value at a top offset of p sits p from the right.
+  */
+  [data-orientation="horizontal"] [data-slot="chart-crosshair"]::before {
+    inset-block: auto;
+    inset-inline: 0;
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-crosshair"][data-variant="band"]::before {
+    left: 0;
+    width: auto;
+    top: calc((var(--chart-active-col, 1) - 1) * 100% / var(--chart-slots, 1));
+    height: calc(100% / var(--chart-slots, 1));
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-crosshair"][data-variant="line"]::before {
+    left: 0;
+    width: auto;
+    top: calc(var(--chart-active-at, 0) * 100%);
+    height: 1px;
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-reference-line"]:not([data-axis="slot"])::before {
+    inset-inline: auto;
+    inset-block: 0;
+    top: 0;
+    left: calc(100% - var(--chart-at));
+    border-top: 0;
+    border-left: 1px solid var(--chart-tone);
+  }
+
+  [data-orientation="horizontal"]
+    [data-slot="chart-reference-line"][data-variant="dashed"]:not([data-axis="slot"])::before {
+    border-left-style: dashed;
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-reference-line"][data-axis="slot"]::before {
+    inset-block: auto;
+    inset-inline: 0;
+    left: 0;
+    top: var(--chart-at);
+    border-left: 0;
+    border-top: 1px solid var(--chart-tone);
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-reference-area"]:not([data-axis="slot"])::before {
+    inset-inline: auto;
+    inset-block: 0;
+    top: 0;
+    bottom: 0;
+    left: calc(100% - var(--chart-to));
+    right: var(--chart-from);
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-reference-area"][data-axis="slot"]::before {
+    inset-inline: 0;
+    inset-block: auto;
+    left: 0;
+    right: 0;
+    top: var(--chart-from);
+    bottom: calc(100% - var(--chart-to));
+  }
+
+  [data-orientation="horizontal"]
+    [data-slot^="chart-reference"]:not([data-axis="slot"])
+    > [data-slot="chart-reference-label"] {
+    inset-inline-end: auto;
+    top: 0;
+    left: calc(100% - var(--chart-at, var(--chart-from)));
+    translate: 0.25rem 0;
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-active-value-line"]::before {
+    inset-inline: auto;
+    inset-block: 0;
+    top: 0;
+    left: calc(100% - var(--chart-line-top));
+    border-top: 0;
+    border-left: 1px dashed var(--muted-foreground);
+  }
+
+  [data-orientation="horizontal"] [data-slot="chart-active-value-line"] [data-slot="chart-value-label"] {
+    top: 100%;
+    left: calc(100% - var(--chart-line-top));
+    translate: -50% 0.25rem;
+  }
+
+  [data-slot="chart-reference-text"],
+  [data-slot="chart-active-value"] > [data-spoken] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /*
+    Motion, after .scratch/charts-v1/reviews/motion-decision.md. A data update moves each bar that
+    stays through its own offsets and size, and the references and the bar-attached values move
+    with it. Root
+    sets --chart-update to 0s for a commit that changes xRange alone, so a range step snaps, and
+    the tokens match layout/motion.ts. Ticks, grid lines and labels never transition.
+  */
+  @media (prefers-reduced-motion: no-preference) {
+    [data-slot="chart-bar"],
+    [data-slot="chart-bar-missing"] {
+      transition:
+        opacity 150ms ease,
+        background-color 150ms ease,
+        left var(--chart-update) var(--chart-ease),
+        right var(--chart-update) var(--chart-ease),
+        top var(--chart-update) var(--chart-ease),
+        width var(--chart-update) var(--chart-ease),
+        height var(--chart-update) var(--chart-ease);
+      transition-delay: 0s, 0s, var(--_delay), var(--_delay), var(--_delay), var(--_delay), var(--_delay);
+      --_delay: calc(var(--chart-bar-step, 0) * var(--chart-stagger));
+    }
+
+    [data-slot="chart-reference-line"]::before,
+    [data-slot="chart-reference-label"],
+    [data-slot="chart-reference-area"]::before {
+      transition-property: top, bottom, left, right;
+      transition-duration: var(--chart-update);
+      transition-timing-function: var(--chart-ease);
+    }
+
+    [data-slot="chart-active-value-line"]::before,
+    [data-slot="chart-active-value-line"] [data-slot="chart-value-label"],
+    [data-slot="chart-frame"] > [data-slot="chart-active-value"] {
+      transition-property: top, left;
+      transition-duration: var(--chart-update);
+      transition-timing-function: var(--chart-ease);
+    }
+
+    /*
+      The entrance grows each bar from zero, once, when Root first mounts in the browser. Root writes
+      data-entrance only then, so server HTML and a hydrated chart start no motion.
+    */
+    @starting-style {
+      [data-slot="chart"][data-entrance] [data-slot="chart-bar"]:not([data-intro]) {
+        top: var(--_base);
+        height: 0;
+      }
+
+      [data-slot="chart"][data-orientation="horizontal"][data-entrance]
+        [data-slot="chart-bar"]:not([data-intro]) {
+        top: var(--_start);
+        right: var(--_base);
+        width: 0;
+        height: var(--_size);
+      }
+    }
+
+    /* The path form grows the whole series from the zero line, once, on the same first mount. */
+    [data-slot="chart-bar-series"] > svg[data-entering] {
+      transform-origin: 0 calc(var(--chart-zero) * 1%);
+      transition: transform var(--chart-update) var(--chart-ease);
+    }
+
+    @starting-style {
+      [data-slot="chart"][data-entrance] [data-slot="chart-bar-series"] > svg[data-entering] {
+        transform: scaleY(0);
+      }
+    }
+
+    /* A bar that a data update adds fades in through opacity only. */
+    [data-slot="chart-bar"][data-intro="fade"] {
+      animation: chart-fade-in var(--chart-update) var(--chart-ease);
+    }
+  }
+
+  @keyframes chart-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (forced-colors: active) {
+    [data-slot="chart-bar"],
+    [data-slot="chart-bar-active"],
+    [data-slot="chart-bar-path"],
+    [data-slot="chart-swatch"] {
+      forced-color-adjust: none;
+    }
+
+    [data-slot="chart-grid-line"],
+    [data-slot="chart-grid-line"][data-zero] {
+      border-color: CanvasText;
+    }
+
+    [data-slot="chart-frame"] {
+      color: CanvasText;
+    }
+
+    [data-slot="chart-legend-toggle"][data-pressed] {
+      outline-color: Highlight;
+    }
+
+    [data-slot="chart-x-axis"][data-tick="dot"] [data-slot="chart-x-tick"]::before {
+      background: CanvasText;
+    }
+
+    /*
+      Forced colours drop a reference band's pale fill, so the band draws a 1 px border in the text
+      colour. Its label needs no rule, because forced colours already paint text in CanvasText.
+    */
+    [data-slot="chart-reference-area"]::before {
+      border: 1px solid CanvasText;
+    }
+
+    /* A missing reading keeps its dashed tick, in the text colour, so it never reads as a gap. */
+    [data-slot="chart-bar-missing"] {
+      forced-color-adjust: none;
+      background: repeating-linear-gradient(90deg in srgb, CanvasText 0 3px, transparent 3px 6px);
+    }
+
+    [data-orientation="horizontal"] [data-slot="chart-bar-missing"] {
+      background: repeating-linear-gradient(180deg in srgb, CanvasText 0 3px, transparent 3px 6px);
+    }
   }
 }

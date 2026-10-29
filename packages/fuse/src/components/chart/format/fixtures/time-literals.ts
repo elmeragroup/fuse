@@ -62,6 +62,180 @@ export const TIME_CASES: readonly TimeCase[] = [
     },
   },
   {
+    // Written by hand from CLDR 48 for layer 05's screen-reader judges: the second 02:00 hour of
+    // the Oslo fall-back day, in the hour-range preset, with CLDR's long standard-time zone names.
+    name: "second repeated hour",
+    zone: "Europe/Oslo",
+    start: "2025-10-26T01:00:00Z",
+    interval: "hour",
+    preset: "hour-range",
+    role: "full",
+    text: {
+      "nb-NO": "02\u201303\u00a0(CET)",
+      "sv-SE": "02\u201303\u00a0(CET)",
+      "fi-FI": "02\u201303\u00a0(UTC+1)",
+      "en-US": "2\u00a0\u2013\u00a03\u00a0AM\u00a0(GMT+1)",
+    },
+    spoken: {
+      "nb-NO": "kl.\u00a002\u00a0til\u00a003,\u00a0sentraleuropeisk\u00a0normaltid",
+      "sv-SE": "kl.\u00a002\u00a0till\u00a003,\u00a0centraleuropeisk\u00a0normaltid",
+      "fi-FI": "klo\u00a002\u00a0ja\u00a003\u00a0välillä,\u00a0Keski-Euroopan\u00a0normaaliaika",
+      "en-US": "2\u00a0AM\u00a0to\u00a03\u00a0AM,\u00a0Central\u00a0European\u00a0Standard\u00a0Time",
+    },
+  },
+  {
+    // Written by hand from CLDR 48: the date that heads the description of the fall-back day.
+    name: "fall-back day date",
+    zone: "Europe/Oslo",
+    start: "2025-10-25T22:00:00Z",
+    interval: "day",
+    preset: "date",
+    role: "full",
+    text: {
+      "nb-NO": "søndag\u00a026.\u00a0oktober",
+      "sv-SE": "söndag\u00a026\u00a0oktober",
+      "fi-FI": "sunnuntai\u00a026.\u00a0lokakuuta",
+      "en-US": "Sunday,\u00a0October\u00a026",
+    },
+    spoken: {
+      "nb-NO": "søndag\u00a026.\u00a0oktober",
+      "sv-SE": "söndag\u00a026\u00a0oktober",
+      "fi-FI": "sunnuntai\u00a026.\u00a0lokakuuta",
+      "en-US": "Sunday,\u00a0October\u00a026",
+    },
+  },
+  {
+    // Written by hand from CLDR 48 for layer 05's spoken arrays. 1 October 2025 is a Wednesday,
+    // and Oslo keeps summer time until 26 October.
+    name: "S07 missing day date",
+    zone: "Europe/Oslo",
+    start: "2025-10-04T22:00:00Z",
+    interval: "day",
+    preset: "date",
+    role: "full",
+    text: {
+      "nb-NO": "søndag\u00a05.\u00a0oktober",
+      "sv-SE": "söndag\u00a05\u00a0oktober",
+      "fi-FI": "sunnuntai\u00a05.\u00a0lokakuuta",
+      "en-US": "Sunday,\u00a0October\u00a05",
+    },
+    spoken: {
+      "nb-NO": "søndag\u00a05.\u00a0oktober",
+      "sv-SE": "söndag\u00a05\u00a0oktober",
+      "fi-FI": "sunnuntai\u00a05.\u00a0lokakuuta",
+      "en-US": "Sunday,\u00a0October\u00a05",
+    },
+  },
+  {
+    // Written by hand from CLDR 48 for layer 05's spoken arrays. 1 October 2025 is a Wednesday,
+    // and Oslo keeps summer time until 26 October.
+    name: "S07 corrected day date",
+    zone: "Europe/Oslo",
+    start: "2025-10-08T22:00:00Z",
+    interval: "day",
+    preset: "date",
+    role: "full",
+    text: {
+      "nb-NO": "torsdag\u00a09.\u00a0oktober",
+      "sv-SE": "torsdag\u00a09\u00a0oktober",
+      "fi-FI": "torstai\u00a09.\u00a0lokakuuta",
+      "en-US": "Thursday,\u00a0October\u00a09",
+    },
+    spoken: {
+      "nb-NO": "torsdag\u00a09.\u00a0oktober",
+      "sv-SE": "torsdag\u00a09\u00a0oktober",
+      "fi-FI": "torstai\u00a09.\u00a0lokakuuta",
+      "en-US": "Thursday,\u00a0October\u00a09",
+    },
+  },
+  {
+    // Written by hand from CLDR 48 for layer 05's spoken arrays. 1 October 2025 is a Wednesday,
+    // and Oslo keeps summer time until 26 October.
+    name: "S07 estimated day date",
+    zone: "Europe/Oslo",
+    start: "2025-10-15T22:00:00Z",
+    interval: "day",
+    preset: "date",
+    role: "full",
+    text: {
+      "nb-NO": "torsdag\u00a016.\u00a0oktober",
+      "sv-SE": "torsdag\u00a016\u00a0oktober",
+      "fi-FI": "torstai\u00a016.\u00a0lokakuuta",
+      "en-US": "Thursday,\u00a0October\u00a016",
+    },
+    spoken: {
+      "nb-NO": "torsdag\u00a016.\u00a0oktober",
+      "sv-SE": "torsdag\u00a016\u00a0oktober",
+      "fi-FI": "torstai\u00a016.\u00a0lokakuuta",
+      "en-US": "Thursday,\u00a0October\u00a016",
+    },
+  },
+  {
+    // Written by hand from CLDR 48 for layer 05's spoken arrays. 1 October 2025 is a Wednesday,
+    // and Oslo keeps summer time until 26 October.
+    name: "S07 pending day date",
+    zone: "Europe/Oslo",
+    start: "2025-10-19T22:00:00Z",
+    interval: "day",
+    preset: "date",
+    role: "full",
+    text: {
+      "nb-NO": "mandag\u00a020.\u00a0oktober",
+      "sv-SE": "måndag\u00a020\u00a0oktober",
+      "fi-FI": "maanantai\u00a020.\u00a0lokakuuta",
+      "en-US": "Monday,\u00a0October\u00a020",
+    },
+    spoken: {
+      "nb-NO": "mandag\u00a020.\u00a0oktober",
+      "sv-SE": "måndag\u00a020\u00a0oktober",
+      "fi-FI": "maanantai\u00a020.\u00a0lokakuuta",
+      "en-US": "Monday,\u00a0October\u00a020",
+    },
+  },
+  {
+    // Written by hand from CLDR 48 for layer 05's spoken arrays. 1 October 2025 is a Wednesday,
+    // and Oslo keeps summer time until 26 October.
+    name: "S14 last day date",
+    zone: "Europe/Oslo",
+    start: "2025-10-30T23:00:00Z",
+    interval: "day",
+    preset: "date",
+    role: "full",
+    text: {
+      "nb-NO": "fredag\u00a031.\u00a0oktober",
+      "sv-SE": "fredag\u00a031\u00a0oktober",
+      "fi-FI": "perjantai\u00a031.\u00a0lokakuuta",
+      "en-US": "Friday,\u00a0October\u00a031",
+    },
+    spoken: {
+      "nb-NO": "fredag\u00a031.\u00a0oktober",
+      "sv-SE": "fredag\u00a031\u00a0oktober",
+      "fi-FI": "perjantai\u00a031.\u00a0lokakuuta",
+      "en-US": "Friday,\u00a0October\u00a031",
+    },
+  },
+  {
+    // Written by hand from CLDR 48: the date that heads S06's description.
+    name: "S06 day date",
+    zone: "Europe/Oslo",
+    start: "2026-10-15T22:00:00Z",
+    interval: "day",
+    preset: "date",
+    role: "full",
+    text: {
+      "nb-NO": "fredag\u00a016.\u00a0oktober",
+      "sv-SE": "fredag\u00a016\u00a0oktober",
+      "fi-FI": "perjantai\u00a016.\u00a0lokakuuta",
+      "en-US": "Friday,\u00a0October\u00a016",
+    },
+    spoken: {
+      "nb-NO": "fredag\u00a016.\u00a0oktober",
+      "sv-SE": "fredag\u00a016\u00a0oktober",
+      "fi-FI": "perjantai\u00a016.\u00a0lokakuuta",
+      "en-US": "Friday,\u00a0October\u00a016",
+    },
+  },
+  {
     name: "repeated hour with the hour preset",
     zone: "Europe/Oslo",
     start: "2025-10-26T01:00:00Z",
@@ -708,4 +882,97 @@ export const DATE_TIME_CASES: readonly DateTimeCase[] = [
     spoken: "18/10\u00a012:30",
   },
   WEEKDAY_TIME_CASE,
+];
+
+/** A slot of a time domain whose first and last slot starts the case names. */
+export type DatedSlotCase = {
+  readonly name: string;
+  readonly locale: SupportedLocale;
+  readonly interval: Interval;
+  /** The domain's first and last slot starts, in UTC. */
+  readonly first: string;
+  readonly last: string;
+  /** The labelled slot, by index. */
+  readonly slot: number;
+  readonly text: string;
+  readonly spoken: string;
+};
+
+/**
+ * Slot labels on domains of more than one local date in Oslo, after CONTRACT section 9.4's date
+ * rule, written by hand. The dates follow CLDR 48's long weekday, numeric day and long month,
+ * with the year after them, the clock ranges are the hour-range literals above, and the joiner is
+ * the drafted dictionary's `, `. Every space inside a formatted half is U+00A0.
+ */
+export const DATED_SLOT_CASES: readonly DatedSlotCase[] = [
+  {
+    name: "an hour on a two-day domain in en-US",
+    locale: "en-US",
+    interval: "hour",
+    first: "2025-09-30T22:00:00Z",
+    last: "2025-10-02T21:00:00Z",
+    slot: 0,
+    text: "Wednesday, October 1, 12 – 1 AM",
+    spoken: "Wednesday, October 1, 12 AM to 1 AM",
+  },
+  {
+    name: "an hour on a two-day domain in nb-NO",
+    locale: "nb-NO",
+    interval: "hour",
+    first: "2025-09-30T22:00:00Z",
+    last: "2025-10-02T21:00:00Z",
+    slot: 0,
+    text: "onsdag 1. oktober, 00–01",
+    spoken: "onsdag 1. oktober, kl. 00 til 01",
+  },
+  {
+    name: "an hour on a two-day domain in sv-SE",
+    locale: "sv-SE",
+    interval: "hour",
+    first: "2025-09-30T22:00:00Z",
+    last: "2025-10-02T21:00:00Z",
+    slot: 0,
+    text: "onsdag\u00a01\u00a0oktober, 00\u201301",
+    spoken: "onsdag\u00a01\u00a0oktober, kl.\u00a000\u00a0till\u00a001",
+  },
+  {
+    name: "an hour on a two-day domain in fi-FI",
+    locale: "fi-FI",
+    interval: "hour",
+    first: "2025-09-30T22:00:00Z",
+    last: "2025-10-02T21:00:00Z",
+    slot: 0,
+    text: "keskiviikko\u00a01.\u00a0lokakuuta, 00\u201301",
+    spoken: "keskiviikko\u00a01.\u00a0lokakuuta, klo\u00a000\u00a0ja\u00a001\u00a0välillä",
+  },
+  {
+    name: "New Year's Eve's last hour on a domain into 2026, in en-US",
+    locale: "en-US",
+    interval: "hour",
+    first: "2025-12-31T22:00:00Z",
+    last: "2025-12-31T23:00:00Z",
+    slot: 0,
+    text: "Wednesday, December 31, 2025, 11 PM – 12 AM",
+    spoken: "Wednesday, December 31, 2025, 11 PM to 12 AM",
+  },
+  {
+    name: "New Year's Eve's last hour on a domain into 2026, in nb-NO",
+    locale: "nb-NO",
+    interval: "hour",
+    first: "2025-12-31T22:00:00Z",
+    last: "2025-12-31T23:00:00Z",
+    slot: 0,
+    text: "onsdag 31. desember 2025, 23–24",
+    spoken: "onsdag 31. desember 2025, kl. 23 til 24",
+  },
+  {
+    name: "a day on a domain into 2026, in nb-NO",
+    locale: "nb-NO",
+    interval: "day",
+    first: "2025-12-30T23:00:00Z",
+    last: "2025-12-31T23:00:00Z",
+    slot: 0,
+    text: "onsdag 31. desember 2025",
+    spoken: "onsdag 31. desember 2025",
+  },
 ];

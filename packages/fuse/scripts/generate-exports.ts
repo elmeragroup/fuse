@@ -279,9 +279,13 @@ export function writePublishManifest(packageRoot: string, release?: ReleaseStamp
   const discovered = discoverEntries(packageRoot);
   const workspace = readWorkspaceManifest(join(packageRoot, "package.json"));
   const licensePath = join(packageRoot, "LICENSE");
+  // Chart.Background ports evilcharts' pattern paths, so its MIT notice ships beside our own.
+  const evilchartsLicensePath = join(packageRoot, "LICENSE-evilcharts");
   const readmePath = join(packageRoot, "README.md");
-  if (!existsSync(licensePath)) {
-    throw new Error("packages/fuse/LICENSE is required in the published package");
+  for (const path of [licensePath, evilchartsLicensePath]) {
+    if (!existsSync(path)) {
+      throw new Error(`${path} is required in the published package`);
+    }
   }
 
   const published: PublishManifest = {
@@ -303,6 +307,7 @@ export function writePublishManifest(packageRoot: string, release?: ReleaseStamp
 
   writePublishPackageJson(join(packageRoot, "dist/package.json"), published);
   copyFileSync(licensePath, join(packageRoot, "dist/LICENSE"));
+  copyFileSync(evilchartsLicensePath, join(packageRoot, "dist/LICENSE-evilcharts"));
   copyTwemojiNotices(packageRoot, join(packageRoot, "dist"));
   if (existsSync(readmePath)) {
     copyFileSync(readmePath, join(packageRoot, "dist/README.md"));

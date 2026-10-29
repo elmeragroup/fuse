@@ -52,6 +52,8 @@ export type ComponentPaths = {
   /** The committed, generated API artifact next to the page. */
   apiFile: string;
   entryFile: string;
+  /** The module the API extractor reads, when it differs from `entryFile`. */
+  apiEntryFile: string | undefined;
   entry: string;
   /**
    * Facade value exports the API generator walks. Explicit names —
@@ -106,6 +108,13 @@ export const SHARED_ENTRY_PAGES = new Map<string, { readonly entry: string; read
   ["sparkline", { entry: "chart", source: "sparkline" }],
 ]);
 
+/**
+ * The module the API extractor reads for the chart entry's pages. `@elmeragroup/internal` cannot
+ * model an ES module namespace's type, so it reads the plain objects of
+ * `packages/fuse/test/chart/api-facade.ts`, which hold the same parts under the same keys.
+ */
+const CHART_API_FACADE = path.join(fuseSrc, "..", "test", "chart", "api-facade.ts");
+
 function apiExportNamesFor(slug: string): readonly string[] {
   return EXTRA_API_EXPORT_NAMES.get(slug) ?? [pascalCase(slug)];
 }
@@ -125,6 +134,7 @@ export function resolveComponentPaths(slug: string): ComponentPaths {
     title: displayName(slug),
     apiFile: path.join(routeDir, "api.json"),
     entryFile: isRac ? racFacade : path.join(fuseSrc, `${entrySlug}.ts`),
+    apiEntryFile: shared?.entry === "chart" ? CHART_API_FACADE : undefined,
     entry: isRac ? `@elmeragroup/fuse/react-aria/${slug}` : `@elmeragroup/fuse/${entrySlug}`,
     apiExportNames: apiExportNamesFor(slug),
     sourceFile: path.join(componentDir, `${shared?.source ?? slug}.tsx`),

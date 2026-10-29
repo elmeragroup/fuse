@@ -21,14 +21,14 @@ const COLUMNS = columns.columns([
   }),
 ]);
 
-// NO1 day-ahead prices from hvakosterstrommen.no for the first hours of 26 October 2025, when
-// Norway left summer time and 02:00 came twice. The rows hold UTC instants and no zone.
+// Invented spot prices for the first hours of 26 October 2025, when Norway left summer time and
+// 02:00 came twice. The rows hold UTC instants and no zone.
 const PRICES: SpotPrice[] = [
-  { starts: new Date("2025-10-25T22:00:00Z"), price: 0.09423 },
-  { starts: new Date("2025-10-25T23:00:00Z"), price: 0.04833 },
-  { starts: new Date("2025-10-26T00:00:00Z"), price: 0.04032 },
-  { starts: new Date("2025-10-26T01:00:00Z"), price: 0.03695 },
-  { starts: new Date("2025-10-26T02:00:00Z"), price: 0.05379 },
+  { starts: new Date("2025-10-25T22:00:00Z"), price: 0.412 },
+  { starts: new Date("2025-10-25T23:00:00Z"), price: 0.385 },
+  { starts: new Date("2025-10-26T00:00:00Z"), price: 0.356 },
+  { starts: new Date("2025-10-26T01:00:00Z"), price: 0.341 },
+  { starts: new Date("2025-10-26T02:00:00Z"), price: 0.367 },
 ];
 
 function SpotPrices() {

@@ -3,7 +3,20 @@ lede: >
   Preview. Cartesian charts over a category or time axis, with Panels for composed charts.
 ---
 
-import { ChartUsageAndPrice } from "./demos/chart-usage-and-price";
+import { ChartAxisLabels } from "./demos/chart-axis-titles";
+import { ChartBackgroundPatterns } from "./demos/chart-background";
+import { ChartCrosshairBand } from "./demos/chart-crosshair";
+import { ChartEmptyState } from "./demos/chart-empty";
+import { ChartHeadlineFigure } from "./demos/chart-headline";
+import { ChartHourlyUsage } from "./demos/chart-hourly-usage";
+import { ChartReferenceAreas } from "./demos/chart-reference-area";
+import { ChartReferenceLines } from "./demos/chart-reference-line";
+import { ChartSeriesToggles } from "./demos/chart-legend-toggles";
+import { ChartTablePages } from "./demos/chart-table";
+import { ChartTickDots } from "./demos/chart-tick-dot";
+import { ChartTooltipDefault } from "./demos/chart-tooltip-default";
+import { ChartTooltipFrosted } from "./demos/chart-tooltip-frosted";
+import { ChartTooltipTop } from "./demos/chart-tooltip-anchor";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -13,12 +26,96 @@ export const metadata = componentMetadata("chart");
 
 <Prose>
 
-The chart entry is a preview. Its parts render no marks yet, and names and props can change until Fuse's first stable release. Import `@elmeragroup/fuse/chart.css` once, beside Fuse's own stylesheet. `Chart.Root` reads every series from `config` and never inspects its children, so a server component can compose the parts.
+The chart entry is a preview. Its names and props can change until Fuse's first stable release. Import `@elmeragroup/fuse/chart.css` once, beside Fuse's own stylesheet. `Chart.Root` reads every series from `config` and never inspects its children, so a server component can compose the parts.
 
 </Prose>
 
-<Demo slug="chart" id="usage-and-price" title="Usage and price" file="chart-usage-and-price.tsx">
-  <ChartUsageAndPrice />
+<Demo slug="chart" id="hourly-usage" title="Hourly usage" file="chart-hourly-usage.tsx">
+  <ChartHourlyUsage />
+</Demo>
+
+## Headline
+
+<Demo slug="chart" id="headline-and-takeaway" title="Headline and takeaway" file="chart-headline.tsx">
+  <ChartHeadlineFigure />
+</Demo>
+
+## Tooltip
+
+<Demo slug="chart" id="tooltip-default" title="Default" file="chart-tooltip-default.tsx">
+  <ChartTooltipDefault />
+</Demo>
+
+<Demo slug="chart" id="tooltip-frosted" title="Frosted" file="chart-tooltip-frosted.tsx">
+  <ChartTooltipFrosted />
+</Demo>
+
+<Demo slug="chart" id="tooltip-top" title="Pinned to the plot top" file="chart-tooltip-anchor.tsx">
+  <ChartTooltipTop />
+</Demo>
+
+<Prose>
+
+The tooltip stays open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap dismisses it.
+
+</Prose>
+
+## Legend toggles
+
+<Demo slug="chart" id="series-toggles" title="Series toggles" file="chart-legend-toggles.tsx">
+  <ChartSeriesToggles />
+</Demo>
+
+## Guides
+
+<Demo slug="chart" id="crosshair" title="Crosshair" file="chart-crosshair.tsx">
+  <ChartCrosshairBand />
+</Demo>
+
+<Demo slug="chart" id="reference-lines" title="Reference lines" file="chart-reference-line.tsx">
+  <ChartReferenceLines />
+</Demo>
+
+<Demo slug="chart" id="reference-areas" title="Reference areas" file="chart-reference-area.tsx">
+  <ChartReferenceAreas />
+</Demo>
+
+<Prose>
+
+Root never reads its children, so a reference outside the data reaches the axis only through `yInclude`.
+
+</Prose>
+
+## Axes
+
+<Demo slug="chart" id="axis-labels" title="Axis labels" file="chart-axis-titles.tsx">
+  <ChartAxisLabels />
+</Demo>
+
+<Demo slug="chart" id="tick-dots" title="Tick dots" file="chart-tick-dot.tsx">
+  <ChartTickDots />
+</Demo>
+
+## Background
+
+<Demo slug="chart" id="background-patterns" title="Background patterns" file="chart-background.tsx">
+  <ChartBackgroundPatterns />
+</Demo>
+
+## Table and empty state
+
+<Demo slug="chart" id="table" title="A year of hours" file="chart-table.tsx">
+  <ChartTablePages />
+</Demo>
+
+<Prose>
+
+The table stays in the accessibility tree while it is collapsed. Past 500 rows it pages by calendar period, so a year of hours reads as 53 ISO weeks.
+
+</Prose>
+
+<Demo slug="chart" id="empty" title="No data yet" file="chart-empty.tsx">
+  <ChartEmptyState />
 </Demo>
 
 <ApiReference slug="chart" />

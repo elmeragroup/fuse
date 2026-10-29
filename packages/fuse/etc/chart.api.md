@@ -11,59 +11,152 @@ import { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { useRender } from '@base-ui/react/use-render';
 
-// @beta
-export const AreaChart: typeof Chart;
+declare namespace AreaChart {
+    export {
+        ChartActiveDot as ActiveDot,
+        ChartActiveValue as ActiveValue,
+        ChartActiveValueLine as ActiveValueLine,
+        ChartArea as Area,
+        ChartBackground as Background,
+        ChartBar as Bar,
+        ChartBarGroup as BarGroup,
+        ChartBrush as Brush,
+        ChartBrushPreview as BrushPreview,
+        ChartCrosshair as Crosshair,
+        ChartDots as Dots,
+        ChartEmpty as Empty,
+        ChartGlow as Glow,
+        ChartGrid as Grid,
+        ChartHeadline as Headline,
+        ChartLegend as Legend,
+        ChartLegendItem as LegendItem,
+        ChartLegendShare as LegendShare,
+        ChartLegendToggle as LegendToggle,
+        ChartLegendToggleGroup as LegendToggleGroup,
+        ChartLegendValue as LegendValue,
+        ChartLine as Line,
+        ChartMarker as Marker,
+        ChartPanel as Panel,
+        ChartReferenceArea as ReferenceArea,
+        ChartReferenceLine as ReferenceLine,
+        ChartReveal as Reveal,
+        ChartRoot as Root,
+        ChartSeriesIcon as SeriesIcon,
+        ChartSeriesLabel as SeriesLabel,
+        ChartSkeleton as Skeleton,
+        ChartSwatch as Swatch,
+        ChartTable as Table,
+        ChartTableColumn as TableColumn,
+        ChartTakeaway as Takeaway,
+        ChartTooltip as Tooltip,
+        ChartTooltipItems as TooltipItems,
+        ChartTooltipLabel as TooltipLabel,
+        ChartTooltipShare as TooltipShare,
+        ChartTooltipTotal as TooltipTotal,
+        ChartTooltipValue as TooltipValue,
+        ChartValueLabel as ValueLabel,
+        ChartXAxis as XAxis,
+        ChartYAxis as YAxis
+    }
+}
 
-// @beta
-export const BarChart: typeof Chart;
+declare namespace BarChart {
+    export {
+        ChartActiveDot as ActiveDot,
+        ChartActiveValue as ActiveValue,
+        ChartActiveValueLine as ActiveValueLine,
+        ChartArea as Area,
+        ChartBackground as Background,
+        ChartBar as Bar,
+        ChartBarGroup as BarGroup,
+        ChartBrush as Brush,
+        ChartBrushPreview as BrushPreview,
+        ChartCrosshair as Crosshair,
+        ChartDots as Dots,
+        ChartEmpty as Empty,
+        ChartGlow as Glow,
+        ChartGrid as Grid,
+        ChartHeadline as Headline,
+        ChartLegend as Legend,
+        ChartLegendItem as LegendItem,
+        ChartLegendShare as LegendShare,
+        ChartLegendToggle as LegendToggle,
+        ChartLegendToggleGroup as LegendToggleGroup,
+        ChartLegendValue as LegendValue,
+        ChartLine as Line,
+        ChartMarker as Marker,
+        ChartPanel as Panel,
+        ChartReferenceArea as ReferenceArea,
+        ChartReferenceLine as ReferenceLine,
+        ChartReveal as Reveal,
+        ChartRoot as Root,
+        ChartSeriesIcon as SeriesIcon,
+        ChartSeriesLabel as SeriesLabel,
+        ChartSkeleton as Skeleton,
+        ChartSwatch as Swatch,
+        ChartTable as Table,
+        ChartTableColumn as TableColumn,
+        ChartTakeaway as Takeaway,
+        ChartTooltip as Tooltip,
+        ChartTooltipItems as TooltipItems,
+        ChartTooltipLabel as TooltipLabel,
+        ChartTooltipShare as TooltipShare,
+        ChartTooltipTotal as TooltipTotal,
+        ChartTooltipValue as TooltipValue,
+        ChartValueLabel as ValueLabel,
+        ChartXAxis as XAxis,
+        ChartYAxis as YAxis
+    }
+}
 
-// @beta
-export const Chart: {
-    readonly Root: typeof ChartRoot;
-    readonly Panel: typeof ChartPanel;
-    readonly Grid: typeof ChartGrid;
-    readonly XAxis: typeof ChartXAxis;
-    readonly YAxis: typeof ChartYAxis;
-    readonly Bar: typeof ChartBar;
-    readonly BarGroup: typeof ChartBarGroup;
-    readonly Line: typeof ChartLine;
-    readonly Area: typeof ChartArea;
-    readonly Dots: typeof ChartDots;
-    readonly ActiveDot: typeof ChartActiveDot;
-    readonly Marker: typeof ChartMarker;
-    readonly ValueLabel: typeof ChartValueLabel;
-    readonly Crosshair: typeof ChartCrosshair;
-    readonly ReferenceLine: typeof ChartReferenceLine;
-    readonly ReferenceArea: typeof ChartReferenceArea;
-    readonly ActiveValue: typeof ChartActiveValue;
-    readonly ActiveValueLine: typeof ChartActiveValueLine;
-    readonly TooltipTotal: typeof ChartTooltipTotal;
-    readonly Glow: typeof ChartGlow;
-    readonly Reveal: typeof ChartReveal;
-    readonly Brush: typeof ChartBrush;
-    readonly BrushPreview: typeof ChartBrushPreview;
-    readonly Skeleton: typeof ChartSkeleton;
-    readonly Headline: typeof ChartHeadline;
-    readonly Takeaway: typeof ChartTakeaway;
-    readonly Tooltip: typeof ChartTooltip;
-    readonly TooltipLabel: typeof ChartTooltipLabel;
-    readonly TooltipItems: typeof ChartTooltipItems;
-    readonly TooltipValue: typeof ChartTooltipValue;
-    readonly TooltipShare: typeof ChartTooltipShare;
-    readonly Swatch: typeof ChartSwatch;
-    readonly SeriesLabel: typeof ChartSeriesLabel;
-    readonly SeriesIcon: typeof ChartSeriesIcon;
-    readonly Legend: typeof ChartLegend;
-    readonly LegendItem: typeof ChartLegendItem;
-    readonly LegendValue: typeof ChartLegendValue;
-    readonly LegendShare: typeof ChartLegendShare;
-    readonly LegendToggleGroup: typeof ChartLegendToggleGroup;
-    readonly LegendToggle: typeof ChartLegendToggle;
-    readonly Table: typeof ChartTable;
-    readonly TableColumn: typeof ChartTableColumn;
-    readonly Empty: typeof ChartEmpty;
-    readonly Background: typeof ChartBackground;
-};
+declare namespace Chart {
+    export {
+        ChartActiveDot as ActiveDot,
+        ChartActiveValue as ActiveValue,
+        ChartActiveValueLine as ActiveValueLine,
+        ChartArea as Area,
+        ChartBackground as Background,
+        ChartBar as Bar,
+        ChartBarGroup as BarGroup,
+        ChartBrush as Brush,
+        ChartBrushPreview as BrushPreview,
+        ChartCrosshair as Crosshair,
+        ChartDots as Dots,
+        ChartEmpty as Empty,
+        ChartGlow as Glow,
+        ChartGrid as Grid,
+        ChartHeadline as Headline,
+        ChartLegend as Legend,
+        ChartLegendItem as LegendItem,
+        ChartLegendShare as LegendShare,
+        ChartLegendToggle as LegendToggle,
+        ChartLegendToggleGroup as LegendToggleGroup,
+        ChartLegendValue as LegendValue,
+        ChartLine as Line,
+        ChartMarker as Marker,
+        ChartPanel as Panel,
+        ChartReferenceArea as ReferenceArea,
+        ChartReferenceLine as ReferenceLine,
+        ChartReveal as Reveal,
+        ChartRoot as Root,
+        ChartSeriesIcon as SeriesIcon,
+        ChartSeriesLabel as SeriesLabel,
+        ChartSkeleton as Skeleton,
+        ChartSwatch as Swatch,
+        ChartTable as Table,
+        ChartTableColumn as TableColumn,
+        ChartTakeaway as Takeaway,
+        ChartTooltip as Tooltip,
+        ChartTooltipItems as TooltipItems,
+        ChartTooltipLabel as TooltipLabel,
+        ChartTooltipShare as TooltipShare,
+        ChartTooltipTotal as TooltipTotal,
+        ChartTooltipValue as TooltipValue,
+        ChartValueLabel as ValueLabel,
+        ChartXAxis as XAxis,
+        ChartYAxis as YAxis
+    }
+}
 
 // @beta
 export type ChartAccessibleName = {
@@ -84,10 +177,10 @@ export type ChartActiveDotProps = ChartLayerProps & {
 };
 
 // @beta
-function ChartActiveValue(_props: ChartActiveValueProps): ReactElement;
+function ChartActiveValue(input: ChartActiveValueProps): ReactElement;
 
 // @beta
-function ChartActiveValueLine(_props: ChartActiveValueLineProps): ReactElement;
+function ChartActiveValueLine(input: ChartActiveValueLineProps): ReactElement;
 
 // @beta
 export type ChartActiveValueLineProps = ChartLayerProps & {
@@ -113,7 +206,7 @@ export type ChartAreaProps = ChartLayerProps & {
 };
 
 // @beta
-function ChartBackground(_props: ChartBackgroundProps): ReactElement;
+function ChartBackground(input: ChartBackgroundProps): ReactElement;
 
 // @beta
 export type ChartBackgroundPattern = "dots" | "grid" | "cross-hatch" | "diagonal-lines" | "plus" | "falling-triangles" | "4-pointed-star" | "tiny-checkers" | "overlapping-circles" | "wiggle-lines" | "bubbles";
@@ -124,10 +217,10 @@ export type ChartBackgroundProps = ChartLayerProps & {
 };
 
 // @beta
-function ChartBar(_props: ChartBarProps): ReactElement;
+function ChartBar(input: ChartBarProps): ReactElement;
 
 // @beta
-function ChartBarGroup(_props: ChartBarGroupProps): ReactElement;
+function ChartBarGroup(input: ChartBarGroupProps): ReactElement;
 
 // @beta
 export type ChartBarGroupProps = ChartLayerProps & {
@@ -191,7 +284,7 @@ export type ChartConfig = {
 };
 
 // @beta
-function ChartCrosshair(_props: ChartCrosshairProps): ReactElement;
+function ChartCrosshair(input: ChartCrosshairProps): ReactElement;
 
 // @beta
 export type ChartCrosshairProps = ChartLayerProps & {
@@ -224,7 +317,7 @@ export type ChartDotsProps = ChartLayerProps & {
 };
 
 // @beta
-function ChartEmpty(_props: ChartEmptyProps): ReactElement;
+function ChartEmpty(props: ChartEmptyProps): ReactElement;
 
 // @beta
 export type ChartEmptyProps = ChartDomProps<"div">;
@@ -244,7 +337,7 @@ export type ChartFractionDigits = {
 };
 
 // @beta
-function ChartGlow(_props: ChartGlowProps): ReactElement;
+function ChartGlow(input: ChartGlowProps): ReactElement;
 
 // @beta
 export type ChartGlowProps = ChartLayerProps & {
@@ -252,7 +345,7 @@ export type ChartGlowProps = ChartLayerProps & {
 };
 
 // @beta
-function ChartGrid(_props: ChartGridProps): ReactElement;
+function ChartGrid(input: ChartGridProps): ReactElement;
 
 // @beta
 export type ChartGridProps = ChartLayerProps & {
@@ -264,7 +357,7 @@ export type ChartGridProps = ChartLayerProps & {
 export type ChartHasFiveKeys<U> = [U] extends [never] ? false : string extends U ? false : [ChartWithoutOne<ChartWithoutOne<ChartWithoutOne<ChartWithoutOne<U>>>>] extends [never] ? false : true;
 
 // @beta
-function ChartHeadline(_props: ChartHeadlineProps): ReactElement;
+function ChartHeadline(input: ChartHeadlineProps): ReactElement;
 
 // @beta
 export type ChartHeadlineProps = ChartDomProps<"div">;
@@ -285,10 +378,10 @@ export type ChartLayerProps = {
 };
 
 // @beta
-function ChartLegend(_props: ChartLegendProps): ReactElement;
+function ChartLegend(props: ChartLegendProps): ReactElement;
 
 // @beta
-function ChartLegendItem(_props: ChartLegendItemProps): ReactElement;
+function ChartLegendItem(props: ChartLegendItemProps): ReactElement;
 
 // @beta
 export type ChartLegendItemProps = ChartDomProps<"li"> & {
@@ -301,7 +394,7 @@ export type ChartLegendProps = ChartDomProps<"ul"> & {
 };
 
 // @beta
-function ChartLegendShare(_props: ChartLegendShareProps): ReactElement;
+function ChartLegendShare(props: ChartLegendShareProps): ReactElement;
 
 // @beta
 export type ChartLegendShareProps = ChartDomProps<"span"> & {
@@ -310,10 +403,10 @@ export type ChartLegendShareProps = ChartDomProps<"span"> & {
 };
 
 // @beta
-function ChartLegendToggle(_props: ChartLegendToggleProps): ReactElement;
+function ChartLegendToggle(props: ChartLegendToggleProps): ReactElement;
 
 // @beta
-function ChartLegendToggleGroup(_props: ChartLegendToggleGroupProps): ReactElement;
+function ChartLegendToggleGroup(props: ChartLegendToggleGroupProps): ReactElement;
 
 // @beta
 export type ChartLegendToggleGroupProps = ChartLayerProps & {
@@ -329,7 +422,7 @@ export type ChartLegendToggleProps = ChartLayerProps & {
 };
 
 // @beta
-function ChartLegendValue(_props: ChartLegendValueProps): ReactElement;
+function ChartLegendValue(props: ChartLegendValueProps): ReactElement;
 
 // @beta
 export type ChartLegendValueProps = ChartDomProps<"span"> & {
@@ -435,7 +528,7 @@ export type ChartRadarFieldCheck<TConfig> = string extends keyof TConfig ? unkno
     } : unknown; };
 
 // @beta
-function ChartReferenceArea(_props: ChartReferenceAreaProps): ReactElement;
+function ChartReferenceArea(input: ChartReferenceAreaProps): ReactElement;
 
 // @beta
 export type ChartReferenceAreaProps = ChartLayerProps & ({
@@ -456,7 +549,7 @@ export type ChartReferenceAreaProps = ChartLayerProps & ({
 };
 
 // @beta
-function ChartReferenceLine(_props: ChartReferenceLineProps): ReactElement;
+function ChartReferenceLine(input: ChartReferenceLineProps): ReactElement;
 
 // @beta
 export type ChartReferenceLineProps = ChartLayerProps & ({
@@ -485,7 +578,7 @@ export type ChartRevealProps = ChartLayerProps & {
 export type ChartRole = ChartCategoricalRole | ChartSequentialRole | ChartDivergingRole | ChartSentimentRole | "chart-other";
 
 // @beta
-function ChartRoot<TRow extends ChartRowOf<TRow>, const TConfig extends ChartConfig, TXKey extends ChartXKey<TRow>>(props: ChartRootProps<TRow, TConfig, TXKey>): ReactElement;
+function ChartRoot<TRow extends ChartRowOf<TRow>, const TConfig extends ChartConfig, TXKey extends ChartXKey<TRow>>(input: ChartRootProps<TRow, TConfig, TXKey>): ReactElement;
 
 // @beta
 export type ChartRootProps<TRow extends ChartRowOf<TRow> = ChartRow, TConfig extends ChartConfig = ChartConfig, TXKey extends ChartXKey<TRow> = ChartXKey<TRow>> = ChartAccessibleName & ChartFigureProps & ChartSelectionProps<keyof TConfig & string> & ChartTimeAxisProps<TRow[TXKey]> & {
@@ -561,7 +654,7 @@ export type ChartSeriesConfigCheck<TConfig, TRow> = string extends keyof TConfig
     }; };
 
 // @beta
-function ChartSeriesIcon(_props: ChartSeriesIconProps): ReactElement;
+function ChartSeriesIcon(props: ChartSeriesIconProps): ReactElement;
 
 // @beta
 export type ChartSeriesIconProps = ChartDomProps<"span"> & {
@@ -572,7 +665,7 @@ export type ChartSeriesIconProps = ChartDomProps<"span"> & {
 export type ChartSeriesKey<TRow> = ChartKeyOf<TRow, number | null | undefined>;
 
 // @beta
-function ChartSeriesLabel(_props: ChartSeriesLabelProps): ReactElement;
+function ChartSeriesLabel(props: ChartSeriesLabelProps): ReactElement;
 
 // @beta
 export type ChartSeriesLabelProps = ChartDomProps<"span"> & {
@@ -583,7 +676,7 @@ export type ChartSeriesLabelProps = ChartDomProps<"span"> & {
 export type ChartShareFormat = ChartFractionDigits;
 
 // @beta
-function ChartSkeleton(_props: ChartSkeletonProps): ReactElement;
+function ChartSkeleton(input: ChartSkeletonProps): ReactElement;
 
 // @beta
 export type ChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "render"> & {
@@ -616,7 +709,7 @@ export type ChartStyleVars = {
 };
 
 // @beta
-function ChartSwatch(_props: ChartSwatchProps): ReactElement;
+function ChartSwatch(props: ChartSwatchProps): ReactElement;
 
 // @beta
 export type ChartSwatchProps = ChartDomProps<"span"> & {
@@ -625,10 +718,10 @@ export type ChartSwatchProps = ChartDomProps<"span"> & {
 };
 
 // @beta
-function ChartTable(_props: ChartTableProps): ReactElement;
+function ChartTable(props: ChartTableProps): ReactElement;
 
 // @beta
-function ChartTableColumn(_props: ChartTableColumnProps): ReactElement;
+function ChartTableColumn(props: ChartTableColumnProps): ReactElement;
 
 // @beta
 export type ChartTableColumnProps = ChartLayerProps & {
@@ -647,7 +740,7 @@ export type ChartTableProps = ChartLayerProps & {
 };
 
 // @beta
-function ChartTakeaway(_props: ChartTakeawayProps): ReactElement;
+function ChartTakeaway(input: ChartTakeawayProps): ReactElement;
 
 // @beta
 export type ChartTakeawayProps = Omit<ChartDomProps<"p">, "children"> & {
@@ -679,16 +772,16 @@ export type ChartTimeFields = {
 export type ChartTone = "default" | "muted" | "error";
 
 // @beta
-function ChartTooltip(_props: ChartTooltipProps): ReactElement;
+function ChartTooltip(props: ChartTooltipProps): ReactElement;
 
 // @beta
-function ChartTooltipItems(_props: ChartTooltipItemsProps): ReactElement;
+function ChartTooltipItems(props: ChartTooltipItemsProps): ReactElement;
 
 // @beta
 export type ChartTooltipItemsProps = ChartDomProps<"div">;
 
 // @beta
-function ChartTooltipLabel(_props: ChartTooltipLabelProps): ReactElement;
+function ChartTooltipLabel(props: ChartTooltipLabelProps): ReactElement;
 
 // @beta
 export type ChartTooltipLabelProps = ChartDomProps<"span"> & {
@@ -703,7 +796,7 @@ export type ChartTooltipProps = ChartLayerProps & {
 };
 
 // @beta
-function ChartTooltipShare(_props: ChartTooltipShareProps): ReactElement;
+function ChartTooltipShare(props: ChartTooltipShareProps): ReactElement;
 
 // @beta
 export type ChartTooltipShareProps = ChartDomProps<"span"> & {
@@ -712,7 +805,7 @@ export type ChartTooltipShareProps = ChartDomProps<"span"> & {
 };
 
 // @beta
-function ChartTooltipTotal(_props: ChartTooltipTotalProps): ReactElement;
+function ChartTooltipTotal(input: ChartTooltipTotalProps): ReactElement;
 
 // @beta
 export type ChartTooltipTotalProps = ChartDomProps<"div"> & {
@@ -722,7 +815,7 @@ export type ChartTooltipTotalProps = ChartDomProps<"div"> & {
 };
 
 // @beta
-function ChartTooltipValue(_props: ChartTooltipValueProps): ReactElement;
+function ChartTooltipValue(props: ChartTooltipValueProps): ReactElement;
 
 // @beta
 export type ChartTooltipValueProps = ChartDomProps<"span"> & {
@@ -731,7 +824,7 @@ export type ChartTooltipValueProps = ChartDomProps<"span"> & {
 };
 
 // @beta
-function ChartValueLabel(_props: ChartValueLabelProps): ReactElement;
+function ChartValueLabel(input: ChartValueLabelProps): ReactElement;
 
 // @beta
 export type ChartValueLabelProps = ChartLayerProps & {
@@ -745,7 +838,7 @@ export type ChartWithoutOne<U> = Exclude<U, ((U extends unknown ? (pick: () => U
 export type ChartX = string | number | Date;
 
 // @beta
-function ChartXAxis(_props: ChartXAxisProps): ReactElement;
+function ChartXAxis(input: ChartXAxisProps): ReactElement;
 
 // @beta
 export type ChartXAxisProps = ChartLayerProps & {
@@ -770,7 +863,7 @@ export type ChartXRangeChangeReason = "drag" | "keyboard" | "track-press" | "inp
 export type ChartXValue<TX> = [TX] extends [string] ? TX : [TX] extends [ChartInstant] ? ChartInstant : ChartX;
 
 // @beta
-function ChartYAxis(_props: ChartYAxisProps): ReactElement;
+function ChartYAxis(input: ChartYAxisProps): ReactElement;
 
 // @beta
 export type ChartYAxisProps = ChartLayerProps & {
@@ -800,43 +893,90 @@ export type FormattedText = {
 // @beta
 export type Interval = "second" | "minute" | "quarter-hour" | "hour" | "day" | "week" | "month" | "year";
 
-// @beta
-export const LineChart: typeof Chart;
+declare namespace LineChart {
+    export {
+        ChartActiveDot as ActiveDot,
+        ChartActiveValue as ActiveValue,
+        ChartActiveValueLine as ActiveValueLine,
+        ChartArea as Area,
+        ChartBackground as Background,
+        ChartBar as Bar,
+        ChartBarGroup as BarGroup,
+        ChartBrush as Brush,
+        ChartBrushPreview as BrushPreview,
+        ChartCrosshair as Crosshair,
+        ChartDots as Dots,
+        ChartEmpty as Empty,
+        ChartGlow as Glow,
+        ChartGrid as Grid,
+        ChartHeadline as Headline,
+        ChartLegend as Legend,
+        ChartLegendItem as LegendItem,
+        ChartLegendShare as LegendShare,
+        ChartLegendToggle as LegendToggle,
+        ChartLegendToggleGroup as LegendToggleGroup,
+        ChartLegendValue as LegendValue,
+        ChartLine as Line,
+        ChartMarker as Marker,
+        ChartPanel as Panel,
+        ChartReferenceArea as ReferenceArea,
+        ChartReferenceLine as ReferenceLine,
+        ChartReveal as Reveal,
+        ChartRoot as Root,
+        ChartSeriesIcon as SeriesIcon,
+        ChartSeriesLabel as SeriesLabel,
+        ChartSkeleton as Skeleton,
+        ChartSwatch as Swatch,
+        ChartTable as Table,
+        ChartTableColumn as TableColumn,
+        ChartTakeaway as Takeaway,
+        ChartTooltip as Tooltip,
+        ChartTooltipItems as TooltipItems,
+        ChartTooltipLabel as TooltipLabel,
+        ChartTooltipShare as TooltipShare,
+        ChartTooltipTotal as TooltipTotal,
+        ChartTooltipValue as TooltipValue,
+        ChartValueLabel as ValueLabel,
+        ChartXAxis as XAxis,
+        ChartYAxis as YAxis
+    }
+}
 
-// @beta
-export const PieChart: {
-    readonly Root: typeof PieChartRoot;
-    readonly Pie: typeof PieChartPie;
-    readonly Labels: typeof PieChartLabels;
-    readonly Track: typeof PieChartTrack;
-    readonly Center: typeof PieChartCenter;
-    readonly CenterValue: typeof PieChartCenterValue;
-    readonly CenterShare: typeof PieChartCenterShare;
-    readonly CenterMax: typeof PieChartCenterMax;
-    readonly CenterLabel: typeof PieChartCenterLabel;
-    readonly Glow: typeof PieChartGlow;
-    readonly Skeleton: typeof PieChartSkeleton;
-    readonly Headline: typeof ChartHeadline;
-    readonly Takeaway: typeof ChartTakeaway;
-    readonly Tooltip: typeof ChartTooltip;
-    readonly TooltipLabel: typeof ChartTooltipLabel;
-    readonly TooltipItems: typeof ChartTooltipItems;
-    readonly TooltipValue: typeof ChartTooltipValue;
-    readonly TooltipShare: typeof ChartTooltipShare;
-    readonly Swatch: typeof ChartSwatch;
-    readonly SeriesLabel: typeof ChartSeriesLabel;
-    readonly SeriesIcon: typeof ChartSeriesIcon;
-    readonly Legend: typeof ChartLegend;
-    readonly LegendItem: typeof ChartLegendItem;
-    readonly LegendValue: typeof ChartLegendValue;
-    readonly LegendShare: typeof ChartLegendShare;
-    readonly LegendToggleGroup: typeof ChartLegendToggleGroup;
-    readonly LegendToggle: typeof ChartLegendToggle;
-    readonly Table: typeof ChartTable;
-    readonly TableColumn: typeof ChartTableColumn;
-    readonly Empty: typeof ChartEmpty;
-    readonly Background: typeof ChartBackground;
-};
+declare namespace PieChart {
+    export {
+        ChartBackground as Background,
+        PieChartCenter as Center,
+        PieChartCenterLabel as CenterLabel,
+        PieChartCenterMax as CenterMax,
+        PieChartCenterShare as CenterShare,
+        PieChartCenterValue as CenterValue,
+        ChartEmpty as Empty,
+        PieChartGlow as Glow,
+        ChartHeadline as Headline,
+        PieChartLabels as Labels,
+        ChartLegend as Legend,
+        ChartLegendItem as LegendItem,
+        ChartLegendShare as LegendShare,
+        ChartLegendToggle as LegendToggle,
+        ChartLegendToggleGroup as LegendToggleGroup,
+        ChartLegendValue as LegendValue,
+        PieChartPie as Pie,
+        PieChartRoot as Root,
+        ChartSeriesIcon as SeriesIcon,
+        ChartSeriesLabel as SeriesLabel,
+        PieChartSkeleton as Skeleton,
+        ChartSwatch as Swatch,
+        ChartTable as Table,
+        ChartTableColumn as TableColumn,
+        ChartTakeaway as Takeaway,
+        ChartTooltip as Tooltip,
+        ChartTooltipItems as TooltipItems,
+        ChartTooltipLabel as TooltipLabel,
+        ChartTooltipShare as TooltipShare,
+        ChartTooltipValue as TooltipValue,
+        PieChartTrack as Track
+    }
+}
 
 // @beta
 function PieChartCenter(_props: PieChartCenterProps): ReactElement;
@@ -942,39 +1082,40 @@ function PieChartTrack(_props: PieChartTrackProps): ReactElement;
 // @beta
 export type PieChartTrackProps = ChartLayerProps;
 
-// @beta
-export const RadarChart: {
-    readonly Root: typeof RadarChartRoot;
-    readonly Grid: typeof RadarChartGrid;
-    readonly AngleAxis: typeof RadarChartAngleAxis;
-    readonly RadiusAxis: typeof RadarChartRadiusAxis;
-    readonly Area: typeof RadarChartArea;
-    readonly Line: typeof RadarChartLine;
-    readonly Dots: typeof RadarChartDots;
-    readonly ActiveDot: typeof RadarChartActiveDot;
-    readonly Glow: typeof RadarChartGlow;
-    readonly Skeleton: typeof RadarChartSkeleton;
-    readonly Headline: typeof ChartHeadline;
-    readonly Takeaway: typeof ChartTakeaway;
-    readonly Tooltip: typeof ChartTooltip;
-    readonly TooltipLabel: typeof ChartTooltipLabel;
-    readonly TooltipItems: typeof ChartTooltipItems;
-    readonly TooltipValue: typeof ChartTooltipValue;
-    readonly TooltipShare: typeof ChartTooltipShare;
-    readonly Swatch: typeof ChartSwatch;
-    readonly SeriesLabel: typeof ChartSeriesLabel;
-    readonly SeriesIcon: typeof ChartSeriesIcon;
-    readonly Legend: typeof ChartLegend;
-    readonly LegendItem: typeof ChartLegendItem;
-    readonly LegendValue: typeof ChartLegendValue;
-    readonly LegendShare: typeof ChartLegendShare;
-    readonly LegendToggleGroup: typeof ChartLegendToggleGroup;
-    readonly LegendToggle: typeof ChartLegendToggle;
-    readonly Table: typeof ChartTable;
-    readonly TableColumn: typeof ChartTableColumn;
-    readonly Empty: typeof ChartEmpty;
-    readonly Background: typeof ChartBackground;
-};
+declare namespace RadarChart {
+    export {
+        RadarChartActiveDot as ActiveDot,
+        RadarChartAngleAxis as AngleAxis,
+        RadarChartArea as Area,
+        ChartBackground as Background,
+        RadarChartDots as Dots,
+        ChartEmpty as Empty,
+        RadarChartGlow as Glow,
+        RadarChartGrid as Grid,
+        ChartHeadline as Headline,
+        ChartLegend as Legend,
+        ChartLegendItem as LegendItem,
+        ChartLegendShare as LegendShare,
+        ChartLegendToggle as LegendToggle,
+        ChartLegendToggleGroup as LegendToggleGroup,
+        ChartLegendValue as LegendValue,
+        RadarChartLine as Line,
+        RadarChartRadiusAxis as RadiusAxis,
+        RadarChartRoot as Root,
+        ChartSeriesIcon as SeriesIcon,
+        ChartSeriesLabel as SeriesLabel,
+        RadarChartSkeleton as Skeleton,
+        ChartSwatch as Swatch,
+        ChartTable as Table,
+        ChartTableColumn as TableColumn,
+        ChartTakeaway as Takeaway,
+        ChartTooltip as Tooltip,
+        ChartTooltipItems as TooltipItems,
+        ChartTooltipLabel as TooltipLabel,
+        ChartTooltipShare as TooltipShare,
+        ChartTooltipValue as TooltipValue
+    }
+}
 
 // @beta
 function RadarChartActiveDot(_props: RadarChartActiveDotProps): ReactElement;
@@ -1063,39 +1204,40 @@ export type RadarChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "r
     label?: string;
 };
 
-// @beta
-export const RadialChart: {
-    readonly Root: typeof RadialChartRoot;
-    readonly Bar: typeof RadialChartBar;
-    readonly Track: typeof PieChartTrack;
-    readonly Center: typeof PieChartCenter;
-    readonly CenterValue: typeof PieChartCenterValue;
-    readonly CenterShare: typeof PieChartCenterShare;
-    readonly CenterMax: typeof PieChartCenterMax;
-    readonly CenterLabel: typeof PieChartCenterLabel;
-    readonly Glow: typeof PieChartGlow;
-    readonly Skeleton: typeof RadialChartSkeleton;
-    readonly Headline: typeof ChartHeadline;
-    readonly Takeaway: typeof ChartTakeaway;
-    readonly Tooltip: typeof ChartTooltip;
-    readonly TooltipLabel: typeof ChartTooltipLabel;
-    readonly TooltipItems: typeof ChartTooltipItems;
-    readonly TooltipValue: typeof ChartTooltipValue;
-    readonly TooltipShare: typeof ChartTooltipShare;
-    readonly Swatch: typeof ChartSwatch;
-    readonly SeriesLabel: typeof ChartSeriesLabel;
-    readonly SeriesIcon: typeof ChartSeriesIcon;
-    readonly Legend: typeof ChartLegend;
-    readonly LegendItem: typeof ChartLegendItem;
-    readonly LegendValue: typeof ChartLegendValue;
-    readonly LegendShare: typeof ChartLegendShare;
-    readonly LegendToggleGroup: typeof ChartLegendToggleGroup;
-    readonly LegendToggle: typeof ChartLegendToggle;
-    readonly Table: typeof ChartTable;
-    readonly TableColumn: typeof ChartTableColumn;
-    readonly Empty: typeof ChartEmpty;
-    readonly Background: typeof ChartBackground;
-};
+declare namespace RadialChart {
+    export {
+        ChartBackground as Background,
+        RadialChartBar as Bar,
+        PieChartCenter as Center,
+        PieChartCenterLabel as CenterLabel,
+        PieChartCenterMax as CenterMax,
+        PieChartCenterShare as CenterShare,
+        PieChartCenterValue as CenterValue,
+        ChartEmpty as Empty,
+        PieChartGlow as Glow,
+        ChartHeadline as Headline,
+        ChartLegend as Legend,
+        ChartLegendItem as LegendItem,
+        ChartLegendShare as LegendShare,
+        ChartLegendToggle as LegendToggle,
+        ChartLegendToggleGroup as LegendToggleGroup,
+        ChartLegendValue as LegendValue,
+        RadialChartRoot as Root,
+        ChartSeriesIcon as SeriesIcon,
+        ChartSeriesLabel as SeriesLabel,
+        RadialChartSkeleton as Skeleton,
+        ChartSwatch as Swatch,
+        ChartTable as Table,
+        ChartTableColumn as TableColumn,
+        ChartTakeaway as Takeaway,
+        ChartTooltip as Tooltip,
+        ChartTooltipItems as TooltipItems,
+        ChartTooltipLabel as TooltipLabel,
+        ChartTooltipShare as TooltipShare,
+        ChartTooltipValue as TooltipValue,
+        PieChartTrack as Track
+    }
+}
 
 // @beta
 function RadialChartBar(_props: RadialChartBarProps): ReactElement;

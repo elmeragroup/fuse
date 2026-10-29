@@ -5,7 +5,7 @@
  * formats each half through Intl and joins them with CLDR 48's pattern, as it already owns the
  * range separator.
  */
-import { dateTimeFormat } from "./intl-formatters";
+import { dateTimeFormat } from "../internal/intl-cache";
 
 /** The four lengths of a CLDR date-time join. */
 type JoinLength = "full" | "long" | "medium" | "short";

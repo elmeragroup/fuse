@@ -150,11 +150,14 @@ export const LAYER_DEFAULTS = {
   "chart-seq-6": SEQ_6,
   "chart-seq-7": "oklch(0.3158 0.0963 255.07)",
   // The diverging scale, negative to positive. Steps 1 to 3 are ramp steps 6, 4 and 2, step 4 is
-  // the neutral midpoint at zero, and steps 5 to 7 are an orange ramp at hue 50.
+  // the neutral midpoint at zero, and steps 5 to 7 are an orange ramp at hue 50. The midpoint
+  // paints every value near zero, so it is a mark and holds 3:1 on every chart surface. In both
+  // schemes that sets it further from the surface than steps 3 and 5, so lightness alone no
+  // longer orders the scale outward from zero. The grey midpoint stays apart from them by chroma.
   "chart-diverging-1": SEQ_6,
   "chart-diverging-2": SEQ_4,
   "chart-diverging-3": SEQ_2,
-  "chart-diverging-4": "oklch(0.9 0 0)",
+  "chart-diverging-4": "oklch(0.62 0 0)",
   "chart-diverging-5": "oklch(0.675 0.15 50.03)",
   "chart-diverging-6": "oklch(0.5302 0.1291 49.8)",
   "chart-diverging-7": "oklch(0.3872 0.0948 49.92)",

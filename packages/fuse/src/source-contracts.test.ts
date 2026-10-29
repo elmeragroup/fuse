@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import { OPTIONAL_PEER_ENTRIES, walkImportedSourceFiles } from "../scripts/entries";
 import { classTokens, colorRolePaints, splitVariants, tokenAssignments } from "../test/class-tokens";
 import { writtenSlots } from "../test/written-slots";
+import { CHART_STAGGER_MS, CHART_UPDATE_EASE, CHART_UPDATE_MS } from "./components/chart/layout/motion";
 import { overlayLayer, toastLayer } from "./components/overlay/overlay-classes";
 import { TOKEN_PAINTS } from "./theme/tokens/contract";
 import type { ColorTokenName, TokenPaint } from "./theme/tokens/contract";
@@ -414,6 +415,161 @@ describe("RSC classification", () => {
     const file = `components/${slug}/index.ts`;
     expectRsc(file, "server");
     expect(exportedNames(file), file).toEqual([namespace]);
+  });
+});
+
+describe("chart module directives", () => {
+  // Why not a lint rule: which chart module a server component may evaluate is a per-module
+  // placement decision. A `"use client"` namespace makes `Chart.Root` an opaque client reference,
+  // and a part without the directive breaks the server build at its first hook, and lint sees
+  // neither module graph.
+  const CHART_DIR = "components/chart/";
+  const SERVER_CHART_MODULES = [
+    "components/chart/chart-namespace.ts",
+    "components/chart/pie-chart-namespace.ts",
+    "components/chart/radial-chart-namespace.ts",
+    "components/chart/radar-chart-namespace.ts",
+    // Each namespace is an ES module namespace over its parts module, so the parts modules stay
+    // directive-free too, and a server component still dots into client references.
+    "components/chart/chart-parts.ts",
+    "components/chart/area-chart-parts.ts",
+    "components/chart/bar-chart-parts.ts",
+    "components/chart/line-chart-parts.ts",
+    "components/chart/pie-chart-parts.ts",
+    "components/chart/radial-chart-parts.ts",
+    "components/chart/radar-chart-parts.ts",
+    "components/chart/sparkline.tsx",
+    "components/chart/chart-types.ts",
+    "components/chart/chart-format.ts",
+    // The paint model is pure, so a directive-free module may read it on the server too.
+    "components/chart/chart-paint.ts",
+  ];
+  const chartModules = [...SOURCE_TREE.values()]
+    .map((record) => record.relative)
+    .filter((file) => file.startsWith(CHART_DIR))
+    .sort();
+
+  // The table derives from the folder, so a new chart module is classified the moment it exists.
+  const cases = chartModules.map((file): readonly [string, "client" | "server"] => [
+    file,
+    SERVER_CHART_MODULES.includes(file) ||
+    file.startsWith(`${CHART_DIR}format/`) ||
+    file.startsWith(`${CHART_DIR}layout/`)
+      ? "server"
+      : "client",
+  ]);
+
+  it("classifies the folder's own modules, the Roots among the client ones", () => {
+    expect(cases).toContainEqual(["components/chart/chart-root.tsx", "client"]);
+    expect(cases).toContainEqual(["components/chart/format/time-format.ts", "server"]);
+    // Layer 06's directive-free Sparkline calls the same scales on the server, so layout/ stays pure.
+    expect(cases).toContainEqual(["components/chart/layout/band-scale.ts", "server"]);
+  });
+
+  it.each(cases)("keeps %s %s", (file, rsc) => {
+    expectRsc(file, rsc);
+  });
+
+  it.each([
+    ["chart-namespace.ts", ["Chart", "AreaChart", "BarChart", "LineChart"]],
+    ["pie-chart-namespace.ts", ["PieChart"]],
+    ["radial-chart-namespace.ts", ["RadialChart"]],
+    ["radar-chart-namespace.ts", ["RadarChart"]],
+  ] as const)("%s exports only its namespace objects", (file, names) => {
+    expect(exportedNames(`${CHART_DIR}${file}`)).toEqual(names);
+  });
+});
+
+describe("chart display names", () => {
+  // Why not a lint rule: the owner is the API report, not the syntax. `Part.displayName = …` makes
+  // TypeScript emit an untagged `declare namespace Part` beside each `@beta` part in the `.d.ts`,
+  // which api-extractor rejects as a missing and a different release tag. `Object.assign` sets the
+  // same runtime name and emits no namespace. Fuse's other components keep the plain assignment.
+  const partModules = [...SOURCE_TREE.values()].filter(
+    (record) => record.relative.startsWith("components/chart/") && record.relative.endsWith(".tsx")
+  );
+
+  it("sets every chart part's displayName through Object.assign", () => {
+    expect(partModules.length).toBeGreaterThan(0);
+    expect(
+      partModules
+        .filter((record) => /^\w+\.displayName\s*=/mu.test(record.code))
+        .map((record) => record.relative)
+    ).toEqual([]);
+    expect(
+      partModules
+        .filter(
+          (record) => /^export function \w+/mu.test(record.code) && !record.code.includes("Object.assign(")
+        )
+        .map((record) => record.relative)
+    ).toEqual([]);
+  });
+});
+
+describe("chart colour namespace", () => {
+  // Why not a lint rule: lint cannot read custom-property names inside style objects or CSS files.
+  // `--color-*` is Tailwind 4's theme namespace, so a chart that wrote `--color-<key>` for a config
+  // key named `primary` would repaint every Fuse component inside it. Charts read
+  // `--chart-color-<key>` instead.
+  const WRITES_THEME_COLOR = /--color-[\w${}.-]*["'`]?\]?\s*:/u;
+
+  it("recognizes a written theme colour property and not a read one", () => {
+    expect(WRITES_THEME_COLOR.test('style={{ "--color-price": "red" }}')).toBe(true);
+    expect(WRITES_THEME_COLOR.test("[`--color-${key}`]: value")).toBe(true);
+    expect(WRITES_THEME_COLOR.test("[data-slot=chart] { --color-primary: red; }")).toBe(true);
+    expect(WRITES_THEME_COLOR.test("fill: var(--color-primary);")).toBe(false);
+    expect(WRITES_THEME_COLOR.test('style={{ "--chart-color-price": "red" }}')).toBe(false);
+  });
+
+  it("writes no --color- custom property from a chart module or chart.css", () => {
+    const writers = [...SOURCE_TREE.values()]
+      .filter((record) => record.relative.startsWith("components/chart/"))
+      .filter((record) => WRITES_THEME_COLOR.test(record.code))
+      .map((record) => record.relative);
+    const css = readFileSync(join(SRC_ROOT, "components/chart/chart.css"), "utf8").replace(
+      /\/\*[\s\S]*?\*\//gu,
+      ""
+    );
+    expect(writers).toEqual([]);
+    expect(WRITES_THEME_COLOR.test(css)).toBe(false);
+  });
+});
+
+describe("chart motion tokens", () => {
+  // Why not a lint rule: the tokens live in two languages. chart.css transitions the bars, and the
+  // path tween of later layers reads layout/motion.ts, so the two must name one curve and one
+  // duration. Unit under test: chart.css's Root declarations. Oracle: layout/motion.ts.
+  const css = readFileSync(join(SRC_ROOT, "components/chart/chart.css"), "utf8");
+  const declared = (name: string): string | undefined =>
+    new RegExp(`${name}:\\s*([^;]+);`, "u").exec(css)?.[1]?.trim();
+
+  it("declares the update duration, the easing and the stagger that layout/motion.ts exports", () => {
+    expect(declared("--chart-update")).toBe(`${String(CHART_UPDATE_MS)}ms`);
+    expect(declared("--chart-ease")).toBe(CHART_UPDATE_EASE);
+    expect(declared("--chart-stagger")).toBe(`${String(CHART_STAGGER_MS)}ms`);
+  });
+});
+
+describe("chart styles a user can override", () => {
+  // Why not a lint rule: oxlint reads no CSS, and a colour literal in a style object is a string
+  // no rule types. Chartability heuristic 43 in CONTRACT.md section 9.11 asks that a user style
+  // sheet and forced colours reach every mark, so chart.css holds no !important and the chart
+  // modules paint through custom properties, never through a colour literal.
+  it("keeps !important out of chart.css", () => {
+    const css = readFileSync(join(SRC_ROOT, "components/chart/chart.css"), "utf8");
+    expect(css.match(/!important/gu) ?? []).toEqual([]);
+  });
+
+  it("writes no colour literal in a chart module", () => {
+    const literal = /#[\da-f]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab|lab|lch)\(/iu;
+    const offenders = [...SOURCE_TREE.values()]
+      .filter(
+        ({ relative }) =>
+          relative.startsWith("components/chart/") && !/\.test(-d)?\.tsx?$|test\./u.test(relative)
+      )
+      .filter(({ relative, code }) => /\.tsx?$/u.test(relative) && literal.test(code))
+      .map(({ relative }) => relative);
+    expect(offenders).toEqual([]);
   });
 });
 

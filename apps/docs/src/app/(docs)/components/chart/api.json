@@ -71,7 +71,7 @@
           "type": "ChartIntro | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The entrance wipe origin, physical under `dir=\"rtl\"` too. \"none\" turns the entrance off. The entrance runs once, when Root mounts. A mark that mounts later, after a data update or a brush step, snaps into place.",
+          "description": "The entrance wipe origin, physical under `dir=\"rtl\"` too. \"none\" turns the entrance off. The entrance runs once, when Root first mounts in the browser, and a server-rendered chart that hydrates starts none. A bar that a data update adds writes `data-intro=\"fade\"` on itself and fades in. A bar that an `xRange` change, a brush step or a pan adds writes `data-intro=\"none\"` and takes its place at once.",
           "required": false
         },
         {
@@ -160,7 +160,7 @@
           "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"vertical\"",
           "description": "\"horizontal\" draws the x column down the left edge and values left to right, for horizontal bars. Axes keep their data roles in both orientations, so `XAxis` is always the `xKey` axis and `YAxis` always the value axis. Each category row is `--chart-row-height` tall.",
           "required": false
         },
@@ -187,7 +187,7 @@
           "origin": "declared",
           "type": "\"diverging\" | \"expand\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"diverging\"",
           "description": "\"diverging\" by default, so negative values stack below zero.",
           "required": false
         },
@@ -241,7 +241,7 @@
           "origin": "declared",
           "type": "\"band\" | \"point\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"band\"",
           "description": "\"band\" by default. Line and area charts usually pass \"point\".",
           "required": false
         },
@@ -250,7 +250,7 @@
           "origin": "declared",
           "type": "\"none\" | \"zero\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"zero\"",
           "description": "\"zero\" by default. \"none\" lets a Line-only layout leave 0 out, and Bar and Area throw under it. It governs the default layout only. Each Panel takes its own.",
           "required": false
         },
@@ -367,7 +367,7 @@
           "origin": "declared",
           "type": "\"dashed\" | \"solid\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"solid\"",
           "description": "The line style. \"solid\" by default, as the Figma `Chart` component draws.",
           "required": false
         }
@@ -421,7 +421,7 @@
           "origin": "declared",
           "type": "\"dot\" | \"none\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"none\"",
           "description": "The tick mark. \"none\" by default.",
           "required": false
         }
@@ -466,7 +466,7 @@
           "origin": "declared",
           "type": "\"end\" | \"start\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"start\"",
           "description": "\"start\" draws the axis at the left edge, or at the bottom under `orientation=\"horizontal\"`. \"end\" draws it at the opposite edge. \"start\" by default.",
           "required": false
         },
@@ -512,7 +512,7 @@
           "type": "ChartDatum | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The slots to emphasise. `\"now\"` selects the slot of this series that contains Root's `now`, so an hourly bar on a quarter-hour chart emphasises its whole hour. An x string on a time axis throws `x-type-mismatch`.",
+          "description": "The slots to emphasise. `\"now\"` selects the slot of this series that contains Root's `now`, so an hourly bar on a quarter-hour chart emphasises its whole hour. `\"max\"` and `\"min\"` compare the drawn value, the stack total for a stacked bar, and select every tied slot. An x string on a time axis throws `x-type-mismatch`.",
           "required": false
         },
         {
@@ -538,8 +538,8 @@
           "origin": "declared",
           "type": "\"blocks\" | \"default\" | \"duotone\" | \"duotone-reverse\" | \"expandable\" | \"gradient\" | \"hatched\" | \"isometric\" | \"striped\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "The bar's look. \"default\" by default.",
+          "defaultValue": "\"default\"",
+          "description": "The bar's look. \"default\" by default. \"blocks\", \"isometric\" and \"expandable\" draw in the HTML form only, so above 100 slots they draw the default look and warn `bar-variant-needs-html` in development, and so do \"hatched\", \"striped\", \"duotone\" and \"duotone-reverse\". The tinted looks, which are \"hatched\", \"striped\", \"gradient\", \"duotone\" and \"duotone-reverse\", fill most of a bar with a pale tint of the series colour, so a series relies on the bar's 1 px edge in the full colour and on the legend for its identity. Pair them with a Legend or a Table.",
           "required": false
         }
       ]
@@ -1123,7 +1123,7 @@
           "origin": "declared",
           "type": "ChartFallback | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "\"last\"",
           "description": "The datum to print when nothing is active. \"last\" by default.",
           "required": false
         },
@@ -1481,7 +1481,7 @@
           "origin": "declared",
           "type": "\"area\" | \"bar\" | \"line\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"bar\"",
           "description": "The mark the placeholder sketches. \"bar\" by default.",
           "required": false
         }
@@ -2397,8 +2397,8 @@
           "origin": "declared",
           "type": "ChartBackgroundPattern | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "The pattern drawn behind the marks.",
+          "defaultValue": "\"dots\"",
+          "description": "The pattern drawn behind the marks. \"dots\" by default.",
           "required": false
         }
       ]

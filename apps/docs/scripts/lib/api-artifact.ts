@@ -20,7 +20,7 @@ import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/
 import { API_REGEN_COMMAND } from "../../src/lib/docs-model.ts";
 import type { DocsApiComponent } from "./docs-inspection.ts";
 import { DocsGenerationError } from "./errors.ts";
-import { repoRoot, fuseTsconfig } from "./paths.ts";
+import { repoRelative, repoRoot, fuseTsconfig } from "./paths.ts";
 
 /**
  * The warning codes the docs accept. `unsupported-type-fallback` is the package default. The

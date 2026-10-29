@@ -11,7 +11,8 @@
     "start": "next start --port 3000",
     "test": "vitest run --project unit",
     "test:e2e": "vitest run --project browser",
-    "type-check": "next typegen && tsrs --noEmit"
+    "type-check": "next typegen && tsrs --noEmit",
+    "visual:server": "node scripts/visual-server.ts"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
@@ -31,6 +32,7 @@
     "tailwind-variants": "catalog:"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:",
     "@elmeragroup/color": "workspace:*",
     "@elmeragroup/internal": "catalog:",
     "@elmeragroup/typescript-config": "workspace:*",

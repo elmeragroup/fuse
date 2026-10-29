@@ -1,44 +1,9 @@
 /**
  * Server-visible namespace for `Chart` and its aliases `AreaChart`, `BarChart` and `LineChart`.
  * This module has no directive, so a server component reads each part as a client reference
- * instead of dotting into a client module. Each part is an explicit property, which keeps tree
- * shaking per family.
+ * instead of dotting into a client module. Each namespace is an ES module namespace over the
+ * family's parts module, which a bundler shakes part by part.
  */
-import { ChartActiveValue, ChartActiveValueLine } from "./chart-active-value";
-import { ChartArea } from "./chart-area";
-import { ChartXAxis, ChartYAxis } from "./chart-axis";
-import { ChartBackground } from "./chart-background";
-import { ChartBar, ChartBarGroup } from "./chart-bar";
-import { ChartBrush, ChartBrushPreview } from "./chart-brush";
-import { ChartCrosshair } from "./chart-crosshair";
-import { ChartActiveDot, ChartDots, ChartMarker, ChartValueLabel } from "./chart-dots";
-import { ChartGlow, ChartReveal } from "./chart-effects";
-import { ChartEmpty } from "./chart-empty";
-import { ChartGrid } from "./chart-grid";
-import { ChartHeadline, ChartTakeaway } from "./chart-headline";
-import {
-  ChartLegend,
-  ChartLegendItem,
-  ChartLegendShare,
-  ChartLegendToggle,
-  ChartLegendToggleGroup,
-  ChartLegendValue,
-} from "./chart-legend";
-import { ChartLine } from "./chart-line";
-import { ChartPanel } from "./chart-panel";
-import { ChartReferenceArea, ChartReferenceLine } from "./chart-reference";
-import { ChartRoot } from "./chart-root";
-import { ChartSeriesIcon, ChartSeriesLabel, ChartSwatch } from "./chart-series";
-import { ChartSkeleton } from "./chart-skeleton";
-import { ChartTable, ChartTableColumn } from "./chart-table";
-import {
-  ChartTooltip,
-  ChartTooltipItems,
-  ChartTooltipLabel,
-  ChartTooltipShare,
-  ChartTooltipValue,
-} from "./chart-tooltip";
-import { ChartTooltipTotal } from "./chart-tooltip-total";
 
 /**
  * Cartesian charts. Bars, lines and areas over a category or time axis, with Panels for composed
@@ -57,52 +22,7 @@ import { ChartTooltipTotal } from "./chart-tooltip-total";
  *
  * @beta
  */
-export const Chart = {
-  Root: ChartRoot,
-  Panel: ChartPanel,
-  Grid: ChartGrid,
-  XAxis: ChartXAxis,
-  YAxis: ChartYAxis,
-  Bar: ChartBar,
-  BarGroup: ChartBarGroup,
-  Line: ChartLine,
-  Area: ChartArea,
-  Dots: ChartDots,
-  ActiveDot: ChartActiveDot,
-  Marker: ChartMarker,
-  ValueLabel: ChartValueLabel,
-  Crosshair: ChartCrosshair,
-  ReferenceLine: ChartReferenceLine,
-  ReferenceArea: ChartReferenceArea,
-  ActiveValue: ChartActiveValue,
-  ActiveValueLine: ChartActiveValueLine,
-  TooltipTotal: ChartTooltipTotal,
-  Glow: ChartGlow,
-  Reveal: ChartReveal,
-  Brush: ChartBrush,
-  BrushPreview: ChartBrushPreview,
-  Skeleton: ChartSkeleton,
-  Headline: ChartHeadline,
-  Takeaway: ChartTakeaway,
-  Tooltip: ChartTooltip,
-  TooltipLabel: ChartTooltipLabel,
-  TooltipItems: ChartTooltipItems,
-  TooltipValue: ChartTooltipValue,
-  TooltipShare: ChartTooltipShare,
-  Swatch: ChartSwatch,
-  SeriesLabel: ChartSeriesLabel,
-  SeriesIcon: ChartSeriesIcon,
-  Legend: ChartLegend,
-  LegendItem: ChartLegendItem,
-  LegendValue: ChartLegendValue,
-  LegendShare: ChartLegendShare,
-  LegendToggleGroup: ChartLegendToggleGroup,
-  LegendToggle: ChartLegendToggle,
-  Table: ChartTable,
-  TableColumn: ChartTableColumn,
-  Empty: ChartEmpty,
-  Background: ChartBackground,
-} as const;
+export * as Chart from "./chart-parts";
 
 /**
  * `Chart` under the name area-chart readers search for. Every part is the same component.
@@ -119,7 +39,7 @@ export const Chart = {
  *
  * @beta
  */
-export const AreaChart: typeof Chart = Chart;
+export * as AreaChart from "./area-chart-parts";
 
 /**
  * `Chart` under the name bar-chart readers search for. Every part is the same component.
@@ -136,7 +56,7 @@ export const AreaChart: typeof Chart = Chart;
  *
  * @beta
  */
-export const BarChart: typeof Chart = Chart;
+export * as BarChart from "./bar-chart-parts";
 
 /**
  * `Chart` under the name line-chart readers search for. Every part is the same component.
@@ -153,4 +73,4 @@ export const BarChart: typeof Chart = Chart;
  *
  * @beta
  */
-export const LineChart: typeof Chart = Chart;
+export * as LineChart from "./line-chart-parts";

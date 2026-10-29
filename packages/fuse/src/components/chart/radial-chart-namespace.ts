@@ -1,41 +1,9 @@
 /**
  * Server-visible namespace for `RadialChart`.
  * This module has no directive, so a server component reads each part as a client reference
- * instead of dotting into a client module. Each part is an explicit property, which keeps tree
- * shaking per family.
+ * instead of dotting into a client module. Each namespace is an ES module namespace over the
+ * family's parts module, which a bundler shakes part by part.
  */
-import { ChartBackground } from "./chart-background";
-import { ChartEmpty } from "./chart-empty";
-import { ChartHeadline, ChartTakeaway } from "./chart-headline";
-import {
-  ChartLegend,
-  ChartLegendItem,
-  ChartLegendShare,
-  ChartLegendToggle,
-  ChartLegendToggleGroup,
-  ChartLegendValue,
-} from "./chart-legend";
-import { ChartSeriesIcon, ChartSeriesLabel, ChartSwatch } from "./chart-series";
-import { ChartTable, ChartTableColumn } from "./chart-table";
-import {
-  ChartTooltip,
-  ChartTooltipItems,
-  ChartTooltipLabel,
-  ChartTooltipShare,
-  ChartTooltipValue,
-} from "./chart-tooltip";
-import {
-  PieChartCenter,
-  PieChartCenterLabel,
-  PieChartCenterMax,
-  PieChartCenterShare,
-  PieChartCenterValue,
-  PieChartTrack,
-} from "./pie-chart-center";
-import { PieChartGlow } from "./pie-chart-glow";
-import { RadialChartBar } from "./radial-chart-bar";
-import { RadialChartRoot } from "./radial-chart-root";
-import { RadialChartSkeleton } from "./radial-chart-skeleton";
 
 /**
  * Radial bar charts, one ring per row filled against its maximum. The centre and track parts are
@@ -53,35 +21,4 @@ import { RadialChartSkeleton } from "./radial-chart-skeleton";
  *
  * @beta
  */
-export const RadialChart = {
-  Root: RadialChartRoot,
-  Bar: RadialChartBar,
-  Track: PieChartTrack,
-  Center: PieChartCenter,
-  CenterValue: PieChartCenterValue,
-  CenterShare: PieChartCenterShare,
-  CenterMax: PieChartCenterMax,
-  CenterLabel: PieChartCenterLabel,
-  Glow: PieChartGlow,
-  Skeleton: RadialChartSkeleton,
-  Headline: ChartHeadline,
-  Takeaway: ChartTakeaway,
-  Tooltip: ChartTooltip,
-  TooltipLabel: ChartTooltipLabel,
-  TooltipItems: ChartTooltipItems,
-  TooltipValue: ChartTooltipValue,
-  TooltipShare: ChartTooltipShare,
-  Swatch: ChartSwatch,
-  SeriesLabel: ChartSeriesLabel,
-  SeriesIcon: ChartSeriesIcon,
-  Legend: ChartLegend,
-  LegendItem: ChartLegendItem,
-  LegendValue: ChartLegendValue,
-  LegendShare: ChartLegendShare,
-  LegendToggleGroup: ChartLegendToggleGroup,
-  LegendToggle: ChartLegendToggle,
-  Table: ChartTable,
-  TableColumn: ChartTableColumn,
-  Empty: ChartEmpty,
-  Background: ChartBackground,
-} as const;
+export * as RadialChart from "./radial-chart-parts";

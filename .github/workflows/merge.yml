@@ -169,7 +169,8 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-chromium-firefox-webkit-${{ runner.os }}-${{ steps.playwright.outputs.version }}
 
-      # The `browser-engines` project and the docs time-zone hydration suite run in all three.
+      # The `browser-engines` and `browser-keyboard` projects and the docs time-zone hydration
+      # suite run in all three.
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium firefox webkit

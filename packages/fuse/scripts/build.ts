@@ -1,4 +1,4 @@
-import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
+import { copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { buildCss } from "./build-css";
@@ -7,8 +7,26 @@ import type { ReleaseStamp } from "./generate-exports";
 import { packageRootFromScript } from "./paths";
 import { runCommand } from "./run-command";
 
+/**
+ * Writes each chart namespace module's declarations from its source, which holds only JSDoc and
+ * `export * as` lines. The declaration bundler drops the namespaces' JSDoc, which carries the
+ * preview label and the growth rule, so the source text becomes the declaration, with each parts
+ * specifier pointing at its emitted sibling.
+ */
+function writeChartNamespaceDeclarations(packageRoot: string): void {
+  const source = join(packageRoot, "src/components/chart");
+  for (const name of readdirSync(source).filter((file) => file.endsWith("-namespace.ts"))) {
+    const text = readFileSync(join(source, name), "utf8").replaceAll(
+      /(from "\.\/[a-z-]+-parts)";$/gmu,
+      '$1.js";'
+    );
+    writeFileSync(join(packageRoot, "dist/components/chart", name.replace(/\.ts$/u, ".d.ts")), text);
+  }
+}
+
 export function buildPackage(packageRoot: string, release?: ReleaseStamp): void {
   runCommand("pnpm", ["exec", "tsdown"], packageRoot);
+  writeChartNamespaceDeclarations(packageRoot);
 
   buildCss(packageRoot);
 

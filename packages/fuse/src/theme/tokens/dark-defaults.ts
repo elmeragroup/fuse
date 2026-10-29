@@ -54,7 +54,7 @@ export const DARK_DEFAULTS = {
   "chart-diverging-1": SEQ_6, // #AED0FB
   "chart-diverging-2": SEQ_4, // #569DF6
   "chart-diverging-3": SEQ_2, // #236CC1
-  "chart-diverging-4": "oklch(0.37 0 0)", // #404040
+  "chart-diverging-4": "oklch(0.62 0 0)", // #868686
   "chart-diverging-5": "oklch(0.5426 0.1317 50.03)", // #AA5418
   "chart-diverging-6": "oklch(0.6947 0.1503 49.87)", // #E57D3C
   "chart-diverging-7": "oklch(0.8488 0.0841 50.35)", // #FBBE9C

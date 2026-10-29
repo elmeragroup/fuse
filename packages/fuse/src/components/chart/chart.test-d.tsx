@@ -542,10 +542,14 @@ test("as const satisfies keeps a literal qualityKey, so the Root check runs", ()
   expectTypeOf(live).toExtend<ReactElement>();
 });
 
-test("the aliases are Chart, and every shared part is one type across the four namespaces", () => {
-  expectTypeOf(BarChart).toEqualTypeOf<typeof Chart>();
-  expectTypeOf(AreaChart).toEqualTypeOf<typeof Chart>();
-  expectTypeOf(LineChart).toEqualTypeOf<typeof Chart>();
+/** A namespace's members as a plain object type, so two ES module namespaces compare by member. */
+type Members<T> = { readonly [K in keyof T]: T[K] };
+
+test("the aliases hold Chart's parts, and every shared part is one type across the four namespaces", () => {
+  // Each alias is an ES module namespace of its own, so the check compares members, not modules.
+  expectTypeOf<Members<typeof BarChart>>().toEqualTypeOf<Members<typeof Chart>>();
+  expectTypeOf<Members<typeof AreaChart>>().toEqualTypeOf<Members<typeof Chart>>();
+  expectTypeOf<Members<typeof LineChart>>().toEqualTypeOf<Members<typeof Chart>>();
   expectTypeOf(PieChart.Tooltip).toEqualTypeOf(Chart.Tooltip);
   expectTypeOf(RadialChart.Legend).toEqualTypeOf(Chart.Legend);
   expectTypeOf(RadarChart.Table).toEqualTypeOf(Chart.Table);

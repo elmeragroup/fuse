@@ -143,6 +143,9 @@ export const runtimeDependencies = [
   "@internationalized/string",
   "sugar-high",
   "libphonenumber-js",
+  // The chart layouts.
+  "d3-array",
+  "d3-shape",
   // Only OPTIONAL_PEER_ENTRIES import these optional peers.
   "@tanstack/react-table",
   "@tanstack/react-virtual",

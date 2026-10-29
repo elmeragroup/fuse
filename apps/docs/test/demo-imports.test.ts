@@ -23,6 +23,8 @@ const CONSUMER_SPECIFIERS = [
  */
 const CARVE_OUTS = new Map<string, readonly string[]>([
   ["calendar/demos/calendar-rtl.tsx", ["react-aria-components"]],
+  // A year of hours would fill the demo's printed source, so it reads one data module.
+  ["chart/demos/chart-table.tsx", ["./data/hourly-year"]],
   ["date-field/demos/date-field-date-input.tsx", ["react-aria-components"]],
   // The router-link demo shows `render` composing the docs app's own router link.
   ["navigation-menu/demos/navigation-menu-router-link.tsx", ["next/link"]],

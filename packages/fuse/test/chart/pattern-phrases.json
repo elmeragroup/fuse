@@ -1,0 +1,91 @@
+{
+  "generator": ".scratch/charts-v1/tools/l05-oracles/pattern_phrases.py",
+  "s06": {
+    "nb-NO": {
+      "labels": ["Husholdning", "Hytte"],
+      "log": [
+        "button, før",
+        "option, kl. 00 til 01: Husholdning 1,34 kilowattimer, Hytte 0,66 kilowattimer, Fredag 16. oktober, 24 timer. Husholdning i kilowattimer: lavest 1,14 kl. 04 til 05, høyest 1,8 kl. 19 til 20. Hytte i kilowattimer: lavest 0,65 kl. 03 til 04, høyest 0,94 kl. 20 til 21. Bruk venstre og høyre pil for å gå mellom punktene, og opp og ned for å velge serie., not selected, position 1, set size 24",
+        "option, kl. 01 til 02: Husholdning 1,24 kilowattimer, Hytte 0,65 kilowattimer, not selected, position 2, set size 24",
+        "option, kl. 02 til 03: Husholdning 1,18 kilowattimer, Hytte 0,65 kilowattimer, not selected, position 3, set size 24",
+        "option, kl. 04 til 05: Husholdning 1,14 kilowattimer, Hytte 0,65 kilowattimer, not selected, position 5, set size 24",
+        "option, kl. 23 til 24: Husholdning 1,63 kilowattimer, Hytte 0,91 kilowattimer, not selected, position 24, set size 24",
+        "option, kl. 00 til 01: Husholdning 1,34 kilowattimer, Hytte 0,66 kilowattimer, not selected, position 1, set size 24",
+        "option, Husholdning 1,34 kilowattimer, kl. 00 til 01, not selected, position 1, set size 24",
+        "option, Hytte 0,66 kilowattimer, kl. 00 til 01, not selected, position 1, set size 24",
+        "option, Husholdning 1,34 kilowattimer, kl. 00 til 01, not selected, position 1, set size 24",
+        "button, før"
+      ]
+    },
+    "en-US": {
+      "labels": ["Household", "Cabin"],
+      "log": [
+        "button, før",
+        "option, 12 AM to 1 AM: Household 1.34 kilowatt-hours, Cabin 0.66 kilowatt-hours, Friday, October 16, 24 hours. Household in kilowatt-hours: lowest 1.14 4 AM to 5 AM, highest 1.8 7 PM to 8 PM. Cabin in kilowatt-hours: lowest 0.65 3 AM to 4 AM, highest 0.94 8 PM to 9 PM. Use the left and right arrows to move between points, and up and down to choose a series., not selected, position 1, set size 24",
+        "option, 1 AM to 2 AM: Household 1.24 kilowatt-hours, Cabin 0.65 kilowatt-hours, not selected, position 2, set size 24",
+        "option, 2 AM to 3 AM: Household 1.18 kilowatt-hours, Cabin 0.65 kilowatt-hours, not selected, position 3, set size 24",
+        "option, 4 AM to 5 AM: Household 1.14 kilowatt-hours, Cabin 0.65 kilowatt-hours, not selected, position 5, set size 24",
+        "option, 11 PM to 12 AM: Household 1.63 kilowatt-hours, Cabin 0.91 kilowatt-hours, not selected, position 24, set size 24",
+        "option, 12 AM to 1 AM: Household 1.34 kilowatt-hours, Cabin 0.66 kilowatt-hours, not selected, position 1, set size 24",
+        "option, Household 1.34 kilowatt-hours, 12 AM to 1 AM, not selected, position 1, set size 24",
+        "option, Cabin 0.66 kilowatt-hours, 12 AM to 1 AM, not selected, position 1, set size 24",
+        "option, Household 1.34 kilowatt-hours, 12 AM to 1 AM, not selected, position 1, set size 24",
+        "button, før"
+      ]
+    }
+  },
+  "fallBack": {
+    "nb-NO": {
+      "labels": ["Forbruk"],
+      "log": [
+        "button, før",
+        "option, kl. 00 til 01: Forbruk 1,41 kilowattimer, Søndag 26. oktober, 25 timer. Forbruk i kilowattimer: lavest 1,23 kl. 04 til 05, høyest 1,9 kl. 18 til 19. Bruk venstre og høyre pil for å gå mellom punktene, og opp og ned for å velge serie., not selected, position 1, set size 25",
+        "option, kl. 01 til 02: Forbruk 1,33 kilowattimer, not selected, position 2, set size 25",
+        "option, kl. 02 til 03, sentraleuropeisk sommertid: Forbruk 1,28 kilowattimer, not selected, position 3, set size 25",
+        "option, kl. 04 til 05: Forbruk 1,23 kilowattimer, not selected, position 6, set size 25",
+        "option, kl. 23 til 24: Forbruk 1,59 kilowattimer, not selected, position 25, set size 25",
+        "option, kl. 00 til 01: Forbruk 1,41 kilowattimer, not selected, position 1, set size 25",
+        "button, før"
+      ]
+    },
+    "sv-SE": {
+      "labels": ["Förbrukning"],
+      "log": [
+        "button, før",
+        "option, kl. 00 till 01: Förbrukning 1,41 kilowattimmar, Söndag 26 oktober, 25 timmar. Förbrukning i kilowattimmar: lägst 1,23 kl. 04 till 05, högst 1,9 kl. 18 till 19. Använd vänster- och högerpil för att gå mellan punkterna, och upp och ner för att välja serie., not selected, position 1, set size 25",
+        "option, kl. 01 till 02: Förbrukning 1,33 kilowattimmar, not selected, position 2, set size 25",
+        "option, kl. 02 till 03, centraleuropeisk sommartid: Förbrukning 1,28 kilowattimmar, not selected, position 3, set size 25",
+        "option, kl. 04 till 05: Förbrukning 1,23 kilowattimmar, not selected, position 6, set size 25",
+        "option, kl. 23 till 24: Förbrukning 1,59 kilowattimmar, not selected, position 25, set size 25",
+        "option, kl. 00 till 01: Förbrukning 1,41 kilowattimmar, not selected, position 1, set size 25",
+        "button, før"
+      ]
+    },
+    "fi-FI": {
+      "labels": ["Kulutus"],
+      "log": [
+        "button, før",
+        "option, klo 00 ja 01 välillä: Kulutus 1,41 kilowattituntia, Sunnuntai 26. lokakuuta, 25 tuntia. Kulutus, kilowattituntia: alin 1,23 klo 04 ja 05 välillä, korkein 1,9 klo 18 ja 19 välillä. Siirry pisteestä toiseen vasemmalla ja oikealla nuolella. Valitse sarja ylä- ja alanuolella., not selected, position 1, set size 25",
+        "option, klo 01 ja 02 välillä: Kulutus 1,33 kilowattituntia, not selected, position 2, set size 25",
+        "option, klo 02 ja 03 välillä, Keski-Euroopan kesäaika: Kulutus 1,28 kilowattituntia, not selected, position 3, set size 25",
+        "option, klo 04 ja 05 välillä: Kulutus 1,23 kilowattituntia, not selected, position 6, set size 25",
+        "option, klo 23 ja 24 välillä: Kulutus 1,59 kilowattituntia, not selected, position 25, set size 25",
+        "option, klo 00 ja 01 välillä: Kulutus 1,41 kilowattituntia, not selected, position 1, set size 25",
+        "button, før"
+      ]
+    },
+    "en-US": {
+      "labels": ["Consumption"],
+      "log": [
+        "button, før",
+        "option, 12 AM to 1 AM: Consumption 1.41 kilowatt-hours, Sunday, October 26, 25 hours. Consumption in kilowatt-hours: lowest 1.23 4 AM to 5 AM, highest 1.9 6 PM to 7 PM. Use the left and right arrows to move between points, and up and down to choose a series., not selected, position 1, set size 25",
+        "option, 1 AM to 2 AM: Consumption 1.33 kilowatt-hours, not selected, position 2, set size 25",
+        "option, 2 AM to 3 AM, Central European Summer Time: Consumption 1.28 kilowatt-hours, not selected, position 3, set size 25",
+        "option, 4 AM to 5 AM: Consumption 1.23 kilowatt-hours, not selected, position 6, set size 25",
+        "option, 11 PM to 12 AM: Consumption 1.59 kilowatt-hours, not selected, position 25, set size 25",
+        "option, 12 AM to 1 AM: Consumption 1.41 kilowatt-hours, not selected, position 1, set size 25",
+        "button, før"
+      ]
+    }
+  }
+}

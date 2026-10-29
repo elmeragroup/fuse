@@ -22,6 +22,11 @@ export type NamedImportBudget = {
   name: string;
   entryFile: string;
   exportName: string;
+  /**
+   * The namespace members a route reads, such as `["Root", "Bar"]`. Without it the row keeps the
+   * whole export.
+   */
+  members?: readonly string[];
   measuredGzip: number;
   ceilingGzip: number;
 };
@@ -103,7 +108,16 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   { name: "data-table-filter", entryFile: "data-table-filter.js", measuredGzip: 154062, ceilingGzip: 231093 },
   // 2026-10-18: new preview entry, measured at 4787 as stubs with real types and no rendering.
   // Each chart layer re-measures this row and its named-import rows and gives the reason here.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 4787 },
+  // 2026-10-18, layer 05: re-measured at 94290 with the cartesian Root, every Bar form and the
+  // shared parts. Most of the weight is the Fuse parts the chart renders through, which are Base
+  // UI's ToggleGroup, Tooltip and Button, Fuse Table, Skeleton, Loader and Empty, plus d3-array and
+  // d3-shape. The parts are on one namespace object, so a bundler keeps them all.
+  // 2026-10-18, layer 05 fix pass: re-measured at 97044 after the review fixes, which added the
+  // path-form paint, the reference and tooltip rules and the calendar tick fallback. The
+  // namespaces became ES module namespaces, which takes the whole entry from 97233 as const
+  // objects to 97044 and lets a route keep only the parts it names, as the chart/Chart.Root rows
+  // measure.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -239,25 +253,65 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
 ] satisfies readonly Measured<JsEntryBudget>[]);
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
-  // 2026-10-18: the chart stubs. BarChart judges every alias, because AreaChart and LineChart are
-  // the same object. It measures 2 bytes over Chart for its own export binding, and
-  // checkPackedChartBundles in package-check-chart.ts proves the BarChart.Root and Chart.Root
-  // routes byte-identical.
+  // 2026-10-18: the chart stubs. BarChart judges every alias, because AreaChart, BarChart and
+  // LineChart hold the same parts.
   // The two format rows judge that a server headline pulls in no Root or part module.
-  { name: "chart/Chart", entryFile: "chart.js", exportName: "Chart", measuredGzip: 1112 },
-  { name: "chart/BarChart", entryFile: "chart.js", exportName: "BarChart", measuredGzip: 1114 },
-  { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 874 },
-  { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 849 },
-  { name: "chart/RadarChart", entryFile: "chart.js", exportName: "RadarChart", measuredGzip: 803 },
+  // 2026-10-18, layer 05: Chart and BarChart re-measured at 93290 and 93292 with the rendering
+  // cartesian Root and every Bar form. PieChart, RadialChart and RadarChart re-measured at 76434,
+  // 76408 and 76370, because their namespaces hold the shared Tooltip, Legend, Table and Empty,
+  // which now render through Fuse and Base UI parts. useChartPoint re-measured at 3635, because it
+  // now reads Root's store. Sparkline is unchanged.
+  // 2026-10-18, layer 05 fix pass: each namespace is an ES module namespace over its parts module,
+  // and each alias has a parts module of its own. A row that imports a whole namespace keeps every
+  // part, so Chart and BarChart re-measure at 95987 and 95989, 2 bytes apart for the alias's own
+  // module, and PieChart, RadialChart and RadarChart at 79885, 79858 and 79820, all for the review
+  // fixes. The three route rows are new and read namespace members, as an app does. Chart.Root
+  // measures 41019 against 96221 as a const object, the bar route of Root, Grid, both axes and Bar
+  // 48267 against 96236, and PieChart.Root 404 against 80188, because no route reaches a part it
+  // does not name. checkPackedChartBundles proves which modules each route leaves out.
+  // 2026-10-19, layer 05 recheck: the dated slot labels, the narrow tick buckets and the touch and
+  // tooltip fixes grow the chart rows within their ceilings, to 97502 for the entry, 41341 for
+  // Chart.Root, 48630 for the bar route and 3891 for useChartPoint, which now reads the date
+  // rule. The recorded measurements stand.
+  { name: "chart/Chart", entryFile: "chart.js", exportName: "Chart", measuredGzip: 95987 },
+  { name: "chart/BarChart", entryFile: "chart.js", exportName: "BarChart", measuredGzip: 95989 },
+  { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
+  { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 79858 },
+  { name: "chart/RadarChart", entryFile: "chart.js", exportName: "RadarChart", measuredGzip: 79820 },
+  {
+    name: "chart/Chart.Root",
+    entryFile: "chart.js",
+    exportName: "Chart",
+    members: ["Root"],
+    measuredGzip: 41019,
+  },
+  {
+    name: "chart/Chart bar route",
+    entryFile: "chart.js",
+    exportName: "Chart",
+    members: ["Root", "Grid", "XAxis", "YAxis", "Bar"],
+    measuredGzip: 48267,
+  },
+  {
+    name: "chart/PieChart.Root",
+    entryFile: "chart.js",
+    exportName: "PieChart",
+    members: ["Root"],
+    measuredGzip: 404,
+  },
   { name: "chart/Sparkline", entryFile: "chart.js", exportName: "Sparkline", measuredGzip: 246 },
-  { name: "chart/useChartPoint", entryFile: "chart.js", exportName: "useChartPoint", measuredGzip: 72 },
+  // 2026-10-18, layer 05 fix pass: useChartPoint, Sparkline and formatChartSlot re-measured
+  // unchanged. formatChartValue re-measured at 1681, 4 bytes under.
+  { name: "chart/useChartPoint", entryFile: "chart.js", exportName: "useChartPoint", measuredGzip: 3635 },
   {
     name: "chart/formatChartValue",
     entryFile: "chart.js",
     exportName: "formatChartValue",
-    measuredGzip: 1685,
+    measuredGzip: 1681,
   },
-  { name: "chart/formatChartSlot", entryFile: "chart.js", exportName: "formatChartSlot", measuredGzip: 2403 },
+  // 2026-10-18, layer 05: formatChartSlot re-measured at 3048 after time-format.ts, which it
+  // bundles, grew for the cartesian model's slot ends.
+  { name: "chart/formatChartSlot", entryFile: "chart.js", exportName: "formatChartSlot", measuredGzip: 3048 },
   {
     name: "icons/Check",
     entryFile: "icons.js",
@@ -293,10 +347,18 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // 2026-10-06: main measured 24451, 15 bytes under that ceiling. The field corner classes,
   // which read `--radius-field` (+142), take styles.css to 24593, over it, so the shared entry
   // recalibrates to measured × 1.5, as a code owner approved.
-  { name: "themes.css", file: "themes.css", measuredGzip: 4472, ceilingGzip: 6416 },
+  // 2026-10-29: measured 6734 after the charts branch rebased onto main. Main's new roles and the
+  // 26 chart roles each fit under the standing 6416 alone and not together, so the entry
+  // recalibrates to measured × 1.5, as a code owner approved.
+  { name: "themes.css", file: "themes.css", measuredGzip: 6734 },
   { name: "styles.css", file: "styles.css", measuredGzip: 24593 },
   // 2026-10-18: new entry, measured at 115. It holds the layer statement and one rule.
-  { name: "chart.css", file: "chart.css", measuredGzip: 115 },
+  // 2026-10-18, layer 05: re-measured at 8155 with the rules for every cartesian part and Bar form,
+  // their forced-colours and print rules and the update motion. styles.css stays at 29356.
+  // 2026-10-18, layer 05 fix pass: re-measured at 10089 with the review fixes' rules, which are
+  // the path-form paint, the guides of horizontal charts, the reference label row, the variant
+  // edges, the forced-colours missing tick and the tooltip metrics.
+  { name: "chart.css", file: "chart.css", measuredGzip: 10089 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

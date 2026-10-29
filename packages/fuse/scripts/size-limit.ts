@@ -47,11 +47,15 @@ function reportBudget(name: string, bytes: number, ceiling: number, unit: string
   }
 }
 
-/** One bundle measurement: a packed entry, or one named export of it when `exportName` is set. */
+/**
+ * One bundle measurement: a packed entry, one named export of it when `exportName` is set, or the
+ * namespace members a route reads when `members` is set too.
+ */
 type BundleBudget = {
   readonly name: string;
   readonly entryFile: string;
   readonly exportName?: string;
+  readonly members?: readonly string[];
   readonly ceilingGzip: number;
 };
 
@@ -72,7 +76,13 @@ async function measure(extracted: string, work: string, budget: BundleBudget): P
   let input = entry;
   if (budget.exportName !== undefined) {
     input = join(work, `${workStem(budget.name)}.fixture.js`);
-    writeFileSync(input, `export { ${budget.exportName} } from ${JSON.stringify(entry)};\n`);
+    const { exportName, members } = budget;
+    writeFileSync(
+      input,
+      members === undefined
+        ? `export { ${exportName} } from ${JSON.stringify(entry)};\n`
+        : `import { ${exportName} } from ${JSON.stringify(entry)};\nexport const parts = [${members.map((member) => `${exportName}.${member}`).join(", ")}];\n`
+    );
   }
   let bundle: RolldownBuild | undefined;
   try {

@@ -130,7 +130,7 @@
   --chart-diverging-1: oklch(0.3856 0.1167 254.88);
   --chart-diverging-2: oklch(0.5255 0.1496 254.78);
   --chart-diverging-3: oklch(0.6647 0.1497 255.01);
-  --chart-diverging-4: oklch(0.9 0 0);
+  --chart-diverging-4: oklch(0.62 0 0);
   --chart-diverging-5: oklch(0.675 0.15 50.03);
   --chart-diverging-6: oklch(0.5302 0.1291 49.8);
   --chart-diverging-7: oklch(0.3872 0.0948 49.92);
@@ -830,7 +830,7 @@
   --chart-diverging-1: oklch(0.8476 0.0705 254.48);
   --chart-diverging-2: oklch(0.6902 0.1501 255.12);
   --chart-diverging-3: oklch(0.5328 0.1506 255.06);
-  --chart-diverging-4: oklch(0.37 0 0);
+  --chart-diverging-4: oklch(0.62 0 0);
   --chart-diverging-5: oklch(0.5426 0.1317 50.03);
   --chart-diverging-6: oklch(0.6947 0.1503 49.87);
   --chart-diverging-7: oklch(0.8488 0.0841 50.35);
@@ -1007,7 +1007,7 @@
   --chart-diverging-1: oklch(0.8476 0.0705 254.48);
   --chart-diverging-2: oklch(0.6902 0.1501 255.12);
   --chart-diverging-3: oklch(0.5328 0.1506 255.06);
-  --chart-diverging-4: oklch(0.37 0 0);
+  --chart-diverging-4: oklch(0.62 0 0);
   --chart-diverging-5: oklch(0.5426 0.1317 50.03);
   --chart-diverging-6: oklch(0.6947 0.1503 49.87);
   --chart-diverging-7: oklch(0.8488 0.0841 50.35);
@@ -1148,7 +1148,7 @@
   --chart-diverging-1: oklch(0.8476 0.0705 254.48);
   --chart-diverging-2: oklch(0.6902 0.1501 255.12);
   --chart-diverging-3: oklch(0.5328 0.1506 255.06);
-  --chart-diverging-4: oklch(0.37 0 0);
+  --chart-diverging-4: oklch(0.62 0 0);
   --chart-diverging-5: oklch(0.5426 0.1317 50.03);
   --chart-diverging-6: oklch(0.6947 0.1503 49.87);
   --chart-diverging-7: oklch(0.8488 0.0841 50.35);
@@ -1289,7 +1289,7 @@
   --chart-diverging-1: oklch(0.8476 0.0705 254.48);
   --chart-diverging-2: oklch(0.6902 0.1501 255.12);
   --chart-diverging-3: oklch(0.5328 0.1506 255.06);
-  --chart-diverging-4: oklch(0.37 0 0);
+  --chart-diverging-4: oklch(0.62 0 0);
   --chart-diverging-5: oklch(0.5426 0.1317 50.03);
   --chart-diverging-6: oklch(0.6947 0.1503 49.87);
   --chart-diverging-7: oklch(0.8488 0.0841 50.35);
@@ -1430,7 +1430,7 @@
   --chart-diverging-1: oklch(0.8476 0.0705 254.48);
   --chart-diverging-2: oklch(0.6902 0.1501 255.12);
   --chart-diverging-3: oklch(0.5328 0.1506 255.06);
-  --chart-diverging-4: oklch(0.37 0 0);
+  --chart-diverging-4: oklch(0.62 0 0);
   --chart-diverging-5: oklch(0.5426 0.1317 50.03);
   --chart-diverging-6: oklch(0.6947 0.1503 49.87);
   --chart-diverging-7: oklch(0.8488 0.0841 50.35);
@@ -1571,7 +1571,7 @@
   --chart-diverging-1: oklch(0.8476 0.0705 254.48);
   --chart-diverging-2: oklch(0.6902 0.1501 255.12);
   --chart-diverging-3: oklch(0.5328 0.1506 255.06);
-  --chart-diverging-4: oklch(0.37 0 0);
+  --chart-diverging-4: oklch(0.62 0 0);
   --chart-diverging-5: oklch(0.5426 0.1317 50.03);
   --chart-diverging-6: oklch(0.6947 0.1503 49.87);
   --chart-diverging-7: oklch(0.8488 0.0841 50.35);
@@ -1712,7 +1712,7 @@
   --chart-diverging-1: oklch(0.8476 0.0705 254.48);
   --chart-diverging-2: oklch(0.6902 0.1501 255.12);
   --chart-diverging-3: oklch(0.5328 0.1506 255.06);
-  --chart-diverging-4: oklch(0.37 0 0);
+  --chart-diverging-4: oklch(0.62 0 0);
   --chart-diverging-5: oklch(0.5426 0.1317 50.03);
   --chart-diverging-6: oklch(0.6947 0.1503 49.87);
   --chart-diverging-7: oklch(0.8488 0.0841 50.35);
@@ -1853,7 +1853,7 @@
   --chart-diverging-1: oklch(0.8476 0.0705 254.48);
   --chart-diverging-2: oklch(0.6902 0.1501 255.12);
   --chart-diverging-3: oklch(0.5328 0.1506 255.06);
-  --chart-diverging-4: oklch(0.37 0 0);
+  --chart-diverging-4: oklch(0.62 0 0);
   --chart-diverging-5: oklch(0.5426 0.1317 50.03);
   --chart-diverging-6: oklch(0.6947 0.1503 49.87);
   --chart-diverging-7: oklch(0.8488 0.0841 50.35);
@@ -1994,7 +1994,7 @@
   --chart-diverging-1: oklch(0.8476 0.0705 254.48);
   --chart-diverging-2: oklch(0.6902 0.1501 255.12);
   --chart-diverging-3: oklch(0.5328 0.1506 255.06);
-  --chart-diverging-4: oklch(0.37 0 0);
+  --chart-diverging-4: oklch(0.62 0 0);
   --chart-diverging-5: oklch(0.5426 0.1317 50.03);
   --chart-diverging-6: oklch(0.6947 0.1503 49.87);
   --chart-diverging-7: oklch(0.8488 0.0841 50.35);

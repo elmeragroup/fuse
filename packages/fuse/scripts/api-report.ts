@@ -3,27 +3,24 @@
  * and compares the result with the committed `etc/chart.api.md`, so a public type change that the
  * report does not show fails. `--local` rewrites the report instead.
  *
- * The namespaces type their parts as `typeof ChartBar`, and the entry exports only the namespaces,
- * so api-extractor flags every part function as a forgotten export. The message callback collects
- * each flag by the symbol name the extractor gives it. The check parses the report's declarations
- * and allows only the `typeof` targets of the four namespace objects' own members, so a context,
- * store or helper type that leaks into the public types fails here by name, even when a props type
- * names it through `typeof`. TypeScript 7 parses through its snapshot API, because it has no
- * standalone `createSourceFile`.
+ * The entry exports only the namespaces, so a type the parts reference but the entry does not export
+ * is a forgotten export. The message callback collects each flag by the symbol name the extractor
+ * gives it. The check parses the report's declarations and allows only the four namespaces' own
+ * members, so a context, store or helper type that leaks into the public types fails here by name.
  */
 import { Extractor, ExtractorConfig, ExtractorLogLevel, ExtractorMessageId } from "@microsoft/api-extractor";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import type { Node } from "typescript/unstable/ast";
+import type { Node } from "typescript/ast";
 import {
+  isExportDeclaration,
+  isExportSpecifier,
   isIdentifier,
-  isPropertySignatureDeclaration,
-  isTypeLiteralNode,
-  isTypeQueryNode,
-  isVariableStatement,
-} from "typescript/unstable/ast/is";
-import { createVirtualFileSystem } from "typescript/unstable/fs";
-import { API } from "typescript/unstable/sync";
+  isModuleBlock,
+  isModuleDeclaration,
+  isNamedExports,
+} from "typescript/ast/is";
+import { API } from "typescript/sync";
 
 import { buildPackage } from "./build.ts";
 import { packageRootFromScript, toPosix } from "./paths.ts";
@@ -31,7 +28,7 @@ import { packageRootFromScript, toPosix } from "./paths.ts";
 /** The symbol a forgotten-export message names. */
 const FORGOTTEN_SYMBOL = /^The symbol "([^"]+)" needs to be exported/u;
 
-/** The namespace objects whose direct members are the chart's part components. */
+/** The ES module namespaces whose direct members are the chart's part components. */
 const NAMESPACES: ReadonlySet<string> = new Set(["Chart", "PieChart", "RadialChart", "RadarChart"]);
 
 /** The declarations block of an API report, its first `ts` code fence. api-extractor writes CRLF. */
@@ -39,30 +36,25 @@ function declarationBlock(report: string): string {
   return /```ts\r?\n([\s\S]*?)```/u.exec(report)?.[1] ?? "";
 }
 
-/** Each top-level statement of TypeScript source, parsed by TypeScript 7's snapshot API. */
+/** Each top-level statement of TypeScript source. Parsing needs no program, so no project loads. */
 function parseStatements<T>(source: string, read: (statements: readonly Node[]) => T): T {
-  const virtualFs = createVirtualFileSystem({});
-  const fileName = "/chart.api.d.ts";
-  virtualFs.writeFile?.(fileName, source);
-  const api = new API({ cwd: "/", fs: virtualFs });
+  const api = new API();
   try {
-    const sourceFile = api
-      .updateSnapshot({ openFiles: [fileName] })
-      .getDefaultProjectForFile(fileName)
-      ?.program.getSourceFile(fileName);
-    if (sourceFile === undefined) {
-      throw new Error("TypeScript could not parse the API report's declarations");
+    const retained = api.createSourceFile("/chart.api.d.ts", source);
+    try {
+      return read(retained.sourceFile.statements);
+    } finally {
+      retained.dispose();
     }
-    return read(sourceFile.statements);
   } finally {
     api.close();
   }
 }
 
 /**
- * The part components a report lists as direct members of the four namespace objects, read from
- * the `typeof` target of each member of their type literals. Any other `typeof`, such as one in a
- * props type, names no part.
+ * The part components a report lists as direct members of the four namespaces. api-extractor
+ * writes an ES module namespace as `declare namespace Chart { export { ChartBar as Bar } }`, so a
+ * part is the local name each export specifier re-exports. No other declaration names a part.
  *
  * @param report - The API report's text.
  * @returns The sorted, distinct part names.
@@ -71,25 +63,16 @@ export function namespaceParts(report: string): string[] {
   return parseStatements(declarationBlock(report), (statements) => {
     const parts = new Set<string>();
     for (const statement of statements) {
-      if (!isVariableStatement(statement)) continue;
-      for (const declaration of statement.declarationList.declarations) {
-        const { name, type } = declaration;
-        if (
-          !isIdentifier(name) ||
-          !NAMESPACES.has(name.text) ||
-          type === undefined ||
-          !isTypeLiteralNode(type)
-        ) {
-          continue;
-        }
-        for (const member of type.members) {
-          if (
-            isPropertySignatureDeclaration(member) &&
-            isTypeQueryNode(member.type) &&
-            isIdentifier(member.type.exprName)
-          ) {
-            parts.add(member.type.exprName.text);
-          }
+      if (!isModuleDeclaration(statement) || !isIdentifier(statement.name)) continue;
+      if (!NAMESPACES.has(statement.name.text) || statement.body === undefined) continue;
+      if (!isModuleBlock(statement.body)) continue;
+      for (const member of statement.body.statements) {
+        if (!isExportDeclaration(member) || member.exportClause === undefined) continue;
+        if (!isNamedExports(member.exportClause)) continue;
+        for (const specifier of member.exportClause.elements) {
+          if (!isExportSpecifier(specifier)) continue;
+          const local = specifier.propertyName ?? specifier.name;
+          if (isIdentifier(local)) parts.add(local.text);
         }
       }
     }

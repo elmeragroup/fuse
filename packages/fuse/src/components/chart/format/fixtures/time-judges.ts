@@ -9,10 +9,11 @@ import type { SupportedLocale } from "../../../../intl/locale-context";
 import { formatChartSlot } from "../../chart-format";
 import { formatTime } from "../time-format";
 import type { Interval, TimePreset } from "../time-format";
-import se3 from "./elprisetjustnu/2025-10-26_SE3.json" with { type: "json" };
-import no1 from "./hvakosterstrommen/2025-10-26_NO1.json" with { type: "json" };
+import consumption from "./elhub/no1-consumption-2025-10-26.json" with { type: "json" };
+import production from "./elhub/no1-production-15min-2025-10-26.json" with { type: "json" };
 import { LOCALES, ZONES, labelJudgement, literalJudgements } from "./judgement";
 import type { Judgement, Zone } from "./judgement";
+import fallBack from "./prices/fall-back-2025-10-26-quarter.json" with { type: "json" };
 import slots from "./slots.json" with { type: "json" };
 import { TIME_CASES } from "./time-literals";
 import type { SlotLabelCase } from "./time-literals";
@@ -168,26 +169,30 @@ export function calendarJudgements(): Judgement[] {
 }
 
 /**
- * The two price sources' fall-back days, placed by each row's `time_start` plus the interval.
- * Both sources mislabel one `time_end` on this day, so a parser that read the ends would differ.
+ * Three fall-back day sources, each row placed by its start plus the interval. The hand-written
+ * price day ends its 02:45+02:00 quarter at 03:00+01:00, a 75-minute span, as the real price
+ * source does, so a parser that read the ends would differ. Elhub ends every row correctly, so its
+ * hourly consumption and quarter-hour production cross-check the slot list.
  */
 export function marketJudgements(): Judgement[] {
+  const household = consumption.rows.filter((row) => row.consumptionGroup === "household");
   const sources = [
-    ["elprisetjustnu SE3", se3, "Europe/Stockholm", "quarter-hour"],
-    ["hvakosterstrommen NO1", no1, "Europe/Oslo", "hour"],
+    ["hand-written fall-back day", fallBack.map((row) => row.time_start), "Europe/Stockholm", "quarter-hour"],
+    ["Elhub NO1 household consumption", household.map((row) => row.startTime), "Europe/Oslo", "hour"],
+    [
+      "Elhub NO1 hydro production",
+      production.rows.map((row) => row.startTime),
+      "Europe/Oslo",
+      "quarter-hour",
+    ],
   ] as const;
-  return sources.flatMap(([name, rows, zone, interval]) =>
+  return sources.flatMap(([name, starts, zone, interval]) =>
     LOCALES.map((locale) => ({
       name: `${name} ${locale}`,
-      actual: rows.map(
-        (row) =>
-          formatTime(
-            locale,
-            zone,
-            { start: Date.parse(row.time_start), interval },
-            RANGE_PRESET[interval],
-            "full"
-          ).text
+      actual: starts.map(
+        (start) =>
+          formatTime(locale, zone, { start: Date.parse(start), interval }, RANGE_PRESET[interval], "full")
+            .text
       ),
       expected: FIXTURE[interval][zone]["2025-10-26"]?.labels_canonical[locale] ?? [],
     }))

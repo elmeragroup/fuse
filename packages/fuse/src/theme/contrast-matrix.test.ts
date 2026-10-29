@@ -217,6 +217,14 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     floor: 3,
   },
   {
+    // The diverging midpoint paints every value near zero, such as a quarter-hour price just
+    // below or above it, so it is a graphical object (WCAG 1.4.11) at 3:1 on every surface.
+    schemes: ["light", "dark"],
+    matches: () => true,
+    pairs: roleOnSurfaces(["chart-diverging-4"]),
+    floor: 3,
+  },
+  {
     // The step of an ordinal scale nearest the surface still has to read as a mark, at 2:1: the
     // ramp's least step and each diverging arm's step beside the midpoint. The steps beyond them
     // contrast more.

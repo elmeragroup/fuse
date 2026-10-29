@@ -10,7 +10,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -38,7 +38,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -66,7 +66,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -94,7 +94,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -122,7 +122,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -150,7 +150,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -178,7 +178,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -206,7 +206,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -234,7 +234,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -262,7 +262,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -290,7 +290,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -318,7 +318,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -346,7 +346,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -374,7 +374,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -402,7 +402,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -430,7 +430,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -458,7 +458,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -486,7 +486,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -514,7 +514,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -542,7 +542,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -570,7 +570,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -598,7 +598,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -626,7 +626,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -654,7 +654,7 @@
     "diverging": {
       "equalStepCvd": 12.9,
       "equalStepNormal": 15.1,
-      "midpointNormal": 21.7,
+      "midpointNormal": 15.3,
       "smallestStep": 0.152,
     },
     "other": {
@@ -682,7 +682,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -710,7 +710,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -738,7 +738,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -766,7 +766,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -794,7 +794,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -822,7 +822,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -850,7 +850,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -878,7 +878,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -906,7 +906,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -934,7 +934,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -962,7 +962,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -990,7 +990,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -1018,7 +1018,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -1046,7 +1046,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -1074,7 +1074,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -1102,7 +1102,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -1130,7 +1130,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -1158,7 +1158,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -1186,7 +1186,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -1214,7 +1214,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -1242,7 +1242,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -1270,7 +1270,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -1298,7 +1298,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {
@@ -1326,7 +1326,7 @@
     "diverging": {
       "equalStepCvd": 18.3,
       "equalStepNormal": 20.7,
-      "midpointNormal": 27,
+      "midpointNormal": 15.6,
       "smallestStep": 0.139,
     },
     "other": {

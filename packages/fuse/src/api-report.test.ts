@@ -28,25 +28,28 @@ describe("the chart API report's forgotten-export filter", () => {
     expect(parts).not.toContain("Sparkline");
   });
 
-  it("reads the namespace objects' own members and no other typeof", () => {
+  it("reads the namespaces' own members and nothing else", () => {
     const report = [
       "```ts",
-      "export const Chart: {",
-      "    readonly Root: typeof ChartRoot;",
-      "    readonly Bar: typeof ChartBar;",
-      "};",
-      "export const BarChart: typeof Chart;",
+      "declare namespace Chart {",
+      "    export {",
+      "        ChartRoot as Root,",
+      "        ChartBar as Bar",
+      "    }",
+      "}",
+      "declare namespace Helpers {",
+      "    export {",
+      "        chartStore as store",
+      "    }",
+      "}",
       "export type ChartRootProps = {",
       "    readonly context: typeof internalContext;",
-      "};",
-      "export const Helpers: {",
-      "    readonly store: typeof chartStore;",
       "};",
       "```",
     ].join("\n");
     const parts = namespaceParts(report);
     expect(parts).toEqual(["ChartBar", "ChartRoot"]);
-    // A private helper a props type or another object names through `typeof` fails by name.
+    // A private helper a props type or another namespace names fails by name.
     expect(leakedSymbols(["ChartRoot", "internalContext", "chartStore"], parts)).toEqual([
       "chartStore",
       "internalContext",
