@@ -21,7 +21,7 @@ describe("DataTableFilter bar surface", () => {
     ["guen external light", guenExternal, "light"],
     ["fkas private external dark", fkasExternal, "dark"],
     ["internal dark", fkasPrivate, "dark"],
-  ] as const)("rests each chip in the fill of the Trigger beside it, %s", (_name, theme, scheme) => {
+  ] as const)("rests the chip in the fill of the Trigger beside it, %s", (_name, theme, scheme) => {
     // Unit under test: the chip's fill. Oracle: the Trigger, an outline Button, which sits beside
     // the chips in the same strip and rests on `card`. #423 moved the outline Button off the page
     // fill, which external light pages tint, so a chip left on the page fill no longer matched it.

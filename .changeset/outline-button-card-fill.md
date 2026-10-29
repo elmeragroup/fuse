@@ -13,7 +13,8 @@ outline Trigger.
 - Inside a Card on an external light page, an outline Button no longer shows the page tint through
   the card. It matches the card.
 - The parts that render the outline variant follow: the current Pagination page, the Toast action,
-  the Dialog and Sheet footer Close, and the DataTableFilter Trigger and its Clear outside the bar.
+  the Dialog and Sheet footer Close, the DataTable pagination moves and column toggle, and the
+  DataTableFilter Trigger and its Clear outside the bar.
 - In dark, `card` sits between the page and `muted`, so an outline Button rests one step lighter
   than the page, and its hover still lightens it, one step less than before. Tabs made the same
   trade-off.
