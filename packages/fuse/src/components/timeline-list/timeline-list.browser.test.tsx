@@ -56,7 +56,7 @@ function renderBasicList() {
 }
 
 describe("TimelineList", () => {
-  it("renders one list containing the expected listitems and heading/text content", () => {
+  it("renders one list of listitems with heading and text content, hiding each decorative dot", () => {
     renderBasicList();
     expect(page.getByRole("list").elements()).toHaveLength(1);
     expect(page.getByRole("listitem").elements()).toHaveLength(3);
@@ -65,10 +65,7 @@ describe("TimelineList", () => {
     expect(page.getByText("Confirmed at checkout.").element()).toBeDefined();
     expect(page.getByText("3 March 2024").element()).toBeDefined();
     expect(listRoot().tagName).toBe("OL");
-  });
-
-  it("hides the decorative dot from the accessibility tree", () => {
-    renderBasicList();
+    // The decorative dot stays out of the accessibility tree.
     const dots = decorativeDots();
     expect(dots).toHaveLength(3);
     for (const dot of dots) {

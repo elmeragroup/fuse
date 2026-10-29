@@ -12,7 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { writePublishManifest, writeSourceExports } from "../scripts/generate-exports";
 import { packTarball } from "../scripts/pack";
@@ -23,7 +23,7 @@ const channel = "canary";
 
 const scratchDirs: string[] = [];
 
-afterEach(() => {
+afterAll(() => {
   for (const dir of scratchDirs.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -69,8 +69,6 @@ type ManifestFields = {
   sideEffects?: string[];
   funding?: string;
   dependencies?: Record<string, string>;
-  peerDependencies?: Record<string, string>;
-  peerDependenciesMeta?: Record<string, { optional: boolean }>;
   exports?: Record<string, string | { types: string; import: string }>;
   publishConfig?: { access: string; directory?: string; linkDirectory?: boolean };
   elmeraRelease?: { commit: string; channel: string };
@@ -85,80 +83,47 @@ function readManifestFields(path: string): ManifestFields {
   return parsed as ManifestFields;
 }
 
-describe("publish manifest", () => {
-  it("stamps the release version and elmeraRelease identity into the publish manifest", () => {
-    const root = scratchPackageRoot();
-    writePublishManifest(root, { version: "0.2.0-canary.1", commit, channel });
+describe("publish manifest and packed tarball", () => {
+  // One scratch root, written stamped and then unstamped; every test below only reads it.
+  let root = "";
+  let stamped: ManifestFields;
+  let unstamped: ManifestFields;
 
-    const manifest = readManifestFields(join(root, "dist/package.json"));
-    expect(manifest.name).toBe("@elmeragroup/fuse");
-    expect(manifest.version).toBe("0.2.0-canary.1");
-    expect(manifest.elmeraRelease).toEqual({ commit, channel });
-    expect(manifest.publishConfig).toEqual({ access: "public" });
-  }, 20_000);
-
-  it("carries the bug tracker, the CSS side effects and exactly the workspace dependencies", () => {
-    const root = scratchPackageRoot();
-    writePublishManifest(root);
-
-    const manifest = readManifestFields(join(root, "dist/package.json"));
-    expect(manifest.bugs).toEqual({ url: "https://github.com/elmeragroup/fuse/issues" });
-    expect(manifest.sideEffects).toEqual(["**/*.css"]);
-
-    const published = Object.keys(manifest.dependencies ?? {});
-    const workspace = Object.keys(readManifestFields(join(packageRoot, "package.json")).dependencies ?? {});
-    expect(workspace).not.toEqual([]);
-    expect(published.toSorted()).toEqual(workspace.toSorted());
-  }, 20_000);
-
-  it("publishes @tanstack/react-table as an optional peer, never a dependency", () => {
-    const root = scratchPackageRoot();
-    writePublishManifest(root);
-
-    const manifest = readManifestFields(join(root, "dist/package.json"));
-    expect(manifest.peerDependencies?.["@tanstack/react-table"]).toBe("^9.2");
-    expect(manifest.peerDependenciesMeta?.["@tanstack/react-table"]).toEqual({ optional: true });
-    expect(manifest.dependencies).not.toHaveProperty("@tanstack/react-table");
-    expect(manifest.exports?.["./data-table"]).toEqual({
-      types: "./data-table.d.ts",
-      import: "./data-table.js",
-    });
-  }, 20_000);
-
-  it("publishes @tanstack/react-virtual as an optional peer, never a dependency", () => {
-    const root = scratchPackageRoot();
-    writePublishManifest(root);
-
-    const manifest = readManifestFields(join(root, "dist/package.json"));
-    expect(manifest.peerDependencies?.["@tanstack/react-virtual"]).toBe("^3.14");
-    expect(manifest.peerDependenciesMeta?.["@tanstack/react-virtual"]).toEqual({ optional: true });
-    expect(manifest.dependencies).not.toHaveProperty("@tanstack/react-virtual");
-    expect(manifest.exports?.["./command-virtual"]).toEqual({
-      types: "./command-virtual.d.ts",
-      import: "./command-virtual.js",
-    });
-  }, 20_000);
-
-  it("an unstamped write never carries a stale release identity", () => {
-    const root = scratchPackageRoot();
-    writePublishManifest(root, { version: "0.2.0-canary.1", commit, channel });
-    writePublishManifest(root);
-
-    const manifest = readManifestFields(join(root, "dist/package.json"));
-    const workspace = readManifestFields(join(packageRoot, "package.json"));
-    expect(manifest.version).toBe(workspace.version);
-    expect(manifest.elmeraRelease).toBeUndefined();
-  }, 20_000);
-});
-
-describe("packed tarball", () => {
-  it("leaves the docs-only demo-stage stylesheet out of the tarball", () => {
-    const root = scratchPackageRoot();
+  beforeAll(() => {
+    root = scratchPackageRoot();
     for (const file of ["themes.css", "demo-stage-density.css"]) {
       writeFileSync(join(root, "dist", file), ":root {}\n");
     }
+    writePublishManifest(root, { version: "0.2.0-canary.1", commit, channel });
+    stamped = readManifestFields(join(root, "dist/package.json"));
     writePublishManifest(root);
+    unstamped = readManifestFields(join(root, "dist/package.json"));
+  }, 30_000);
 
+  it("stamps the release version and elmeraRelease identity into the publish manifest", () => {
+    expect(stamped.name).toBe("@elmeragroup/fuse");
+    expect(stamped.version).toBe("0.2.0-canary.1");
+    expect(stamped.elmeraRelease).toEqual({ commit, channel });
+    expect(stamped.publishConfig).toEqual({ access: "public" });
+  });
+
+  it("carries the bug tracker, the CSS side effects and exactly the workspace dependencies", () => {
+    expect(unstamped.bugs).toEqual({ url: "https://github.com/elmeragroup/fuse/issues" });
+    expect(unstamped.sideEffects).toEqual(["**/*.css"]);
+
+    const published = Object.keys(unstamped.dependencies ?? {});
+    const workspace = Object.keys(readManifestFields(join(packageRoot, "package.json")).dependencies ?? {});
+    expect(workspace).not.toEqual([]);
+    expect(published.toSorted()).toEqual(workspace.toSorted());
+  });
+
+  it("an unstamped write never carries a stale release identity", () => {
+    const workspace = readManifestFields(join(packageRoot, "package.json"));
+    expect(unstamped.version).toBe(workspace.version);
+    expect(unstamped.elmeraRelease).toBeUndefined();
+  });
+
+  it("leaves the docs-only demo-stage stylesheet out of the tarball", () => {
     const listing = spawnSync("tar", ["-tzf", packTarball(root)], { encoding: "utf8" });
     expect(listing.status).toBe(0);
     const files = listing.stdout.split("\n");

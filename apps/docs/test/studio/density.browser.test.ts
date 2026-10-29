@@ -350,19 +350,6 @@ describe("studio density page", () => {
     }
   });
 
-  it("labels the hovered Button's height with the measure overlay", async () => {
-    const { context, page, errors } = await openDensity();
-    try {
-      await page.keyboard.press("m");
-      await button(page, COMFORTABLE_TWIN, "Medium").hover();
-      const label = page.locator('[data-density-overlay] [data-measure="height"]');
-      await expect.poll(() => label.textContent()).toBe("44");
-      expect(errors).toEqual([]);
-    } finally {
-      await context.close();
-    }
-  });
-
   it("keeps the Density section and the overlay bar at the 24px target floor", async () => {
     const { context, page, errors } = await openDensity();
     try {
@@ -388,21 +375,6 @@ describe("studio density page", () => {
       const barAudit = await auditTargets(bar.locator(".."));
       expect(barAudit.targets).toBeGreaterThan(0);
       expect(barAudit.misses).toEqual([]);
-      expect(errors).toEqual([]);
-    } finally {
-      await context.close();
-    }
-  });
-
-  it("exports metric edits as a document-root rule for their density", async () => {
-    const { context, page, errors } = await openDensity();
-    try {
-      await setMetric(page, "control-h-md", "comfortable", 56);
-      await expect.poll(() => height(button(page, COMFORTABLE_TWIN, "Medium"))).toBe(56);
-      await page.getByRole("banner").getByRole("button", { name: "Export", exact: true }).click();
-      const dialog = page.getByRole("dialog", { name: "Export CSS" });
-      const css = (await dialog.getByRole("region", { name: "Exported CSS" }).textContent()) ?? "";
-      expect(css).toContain(':root[data-density="comfortable"] {\n  --control-h-md: 56px;\n}');
       expect(errors).toEqual([]);
     } finally {
       await context.close();
@@ -438,7 +410,7 @@ describe("studio density page", () => {
     }
   });
 
-  it("toggles Measure once while M is held", async () => {
+  it("toggles Measure once while M is held, and labels the hovered Button's height", async () => {
     const { context, page, errors } = await openDensity();
     try {
       const measure = page.getByRole("button", { name: "Measure (M)", exact: true });
@@ -449,6 +421,11 @@ describe("studio density page", () => {
       await page.keyboard.up("m");
       await frames(page, 2);
       expect(await measure.getAttribute("aria-pressed")).toBe("true");
+
+      // On, it labels the hovered Button's height.
+      await button(page, COMFORTABLE_TWIN, "Medium").hover();
+      const label = page.locator('[data-density-overlay] [data-measure="height"]');
+      await expect.poll(() => label.textContent()).toBe("44");
       expect(errors).toEqual([]);
     } finally {
       await context.close();

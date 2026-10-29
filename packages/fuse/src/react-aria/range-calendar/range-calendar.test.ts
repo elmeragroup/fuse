@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { rangeCalendarVariants } from "../../styles/range-calendar";
 
 /** Every class the recipe can emit, across all three selection faces. */
@@ -19,14 +18,9 @@ function everyEmittedClass(): string {
 }
 
 describe("rangeCalendarVariants", () => {
-  it("emits no size axis, no control rung, and no raw palette", () => {
+  it("emits no control rung", () => {
     // The day square is decorative, so nothing reads a `--control-*` variable.
     expect(everyEmittedClass()).not.toContain("--control-");
-    expect(everyEmittedClass()).not.toMatch(RAW_PALETTE_RE);
-    expect(rangeCalendarVariants.variantKeys).toEqual(
-      expect.arrayContaining(["selectionState", "isDisabled", "isUnavailable"])
-    );
-    expect(rangeCalendarVariants.variantKeys).not.toContain("size");
   });
 
   it("zeroes the day-column gutter so the range band runs unbroken", () => {

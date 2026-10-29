@@ -9,7 +9,7 @@ import {
   assertFocusRingOnKeyboardAbsentOnMouse,
   assertKeyboardFocusRingAtBothDensities,
 } from "../../../test/assert-focus-ring";
-import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { withLocale } from "../../../test/locale-matrix";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
   ContextProbe,
@@ -61,6 +61,17 @@ async function pressB(
   target.dispatchEvent(event);
   await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   return event;
+}
+
+/**
+ * For suites whose contract is state, not motion: with the shell's width tween off, the
+ * Trigger in the Inset stops moving as soon as the rail toggles, so a click needs no wait for
+ * it to settle. The fixture's afterEach releases the emulation.
+ */
+function withoutShellMotion(): void {
+  beforeEach(async () => {
+    await emulateReducedMotion("reduce");
+  });
 }
 
 describe("Sidebar toggle paths", () => {
@@ -165,6 +176,8 @@ describe("Sidebar toggle paths", () => {
 });
 
 describe("Sidebar callback stability", () => {
+  withoutShellMotion();
+
   it("keeps setOpen and toggleSidebar referentially stable across toggles", async () => {
     const seen: SidebarContextValue[] = [];
     renderThemed(<Frame probe={<ContextProbe onValue={(value) => seen.push(value)} />} />);
@@ -226,17 +239,17 @@ describe("Sidebar callback stability", () => {
 });
 
 describe("Sidebar locale copy", () => {
-  for (const locale of SUPPORTED_LOCALES) {
-    it(`titles and describes the mobile Sheet from the ${locale} dictionary`, async () => {
-      await page.viewport(MOBILE.width, MOBILE.height);
-      renderThemed(<Frame locale={locale} />);
-      await userEvent.click(roleNamed("button", TOGGLE_COPY[locale]));
-      await expect.element(page.getByRole("dialog", { name: TITLE_COPY[locale] })).toBeVisible();
-      const dialog = roleNamed("dialog", TITLE_COPY[locale]);
-      const description = page.getByText(DESCRIPTION_COPY[locale], { exact: true }).element();
-      expect(dialog.getAttribute("aria-describedby")).toBe(description.id);
-    });
-  }
+  // The unit suite holds every locale's rows against the dictionary; one non-default locale
+  // proves the Provider reads it for the Trigger and the mobile Sheet's title and description.
+  it("titles and describes the mobile Sheet from the nb-NO dictionary", async () => {
+    await page.viewport(MOBILE.width, MOBILE.height);
+    renderThemed(<Frame locale="nb-NO" />);
+    await userEvent.click(roleNamed("button", TOGGLE_COPY["nb-NO"]));
+    await expect.element(page.getByRole("dialog", { name: TITLE_COPY["nb-NO"] })).toBeVisible();
+    const dialog = roleNamed("dialog", TITLE_COPY["nb-NO"]);
+    const description = page.getByText(DESCRIPTION_COPY["nb-NO"], { exact: true }).element();
+    expect(dialog.getAttribute("aria-describedby")).toBe(description.id);
+  });
 
   it("lets Provider labels override every dictionary row", async () => {
     renderThemed(
@@ -253,6 +266,8 @@ describe("Sidebar locale copy", () => {
 });
 
 describe("Sidebar cookie persistence", () => {
+  withoutShellMotion();
+
   it("writes sidebar:state with path and seven-day max-age on every toggle", async () => {
     renderThemed(<Frame />);
     const writes = await captureCookieWrites(async () => {
@@ -279,6 +294,8 @@ describe("Sidebar cookie persistence", () => {
 });
 
 describe("Sidebar controlled and uncontrolled state", () => {
+  withoutShellMotion();
+
   it("starts collapsed from defaultOpen={false} and reports state through useSidebar", () => {
     let latest: SidebarContextValue | undefined;
     renderThemed(
@@ -597,6 +614,8 @@ describe("Sidebar.Root branches", () => {
   });
 
   it("renders the mobile Sheet branch below 768px with the caller className on the dialog", async () => {
+    // The Sheet owns its slide; with it off, opening and closing settle without waiting it out.
+    await emulateReducedMotion("reduce");
     await page.viewport(MOBILE.width, MOBILE.height);
     let latest: SidebarContextValue | undefined;
     renderThemed(
@@ -699,7 +718,7 @@ describe("Sidebar.Root branches", () => {
 });
 
 describe("Sidebar.MenuButton", () => {
-  it("emits data-active, data-size and the recipe classes, and positions actions and badges by size", () => {
+  it("emits data-active and data-size, weights the active row, and lets pointer events pass through the badge", () => {
     renderThemed(
       <Frame>
         <Sidebar.MenuItem>
@@ -723,24 +742,17 @@ describe("Sidebar.MenuButton", () => {
     expect(active.getAttribute("data-active")).toBe("");
     expect(active.getAttribute("data-size")).toBe("default");
     expect(active.getAttribute("data-slot")).toBe("sidebar-menu-button");
-    expect(active.classList.contains("bg-background")).toBe(true);
     expect(getComputedStyle(active).fontWeight).toBe("500");
     expect(roleNamed("button", "Large").getAttribute("data-size")).toBe("lg");
     expect(roleNamed("button", "Small").getAttribute("data-size")).toBe("sm");
     expect(roleNamed("button", "Large").hasAttribute("data-active")).toBe(false);
 
-    // The 24px action is centred on the dense 32px default row and the 28px sm row, and shares
-    // the badge's middle, 20px down, on the 48px lg row.
-    expect(px(getComputedStyle(roleNamed("button", "Default action")).top)).toBe(4);
-    expect(px(getComputedStyle(roleNamed("button", "Large action")).top)).toBe(8);
-    expect(px(getComputedStyle(roleNamed("button", "Small action")).top)).toBe(2);
+    // Where the actions and the badge sit at each size is the density suite's geometry.
     const badge = page.getByText("3", { exact: true }).element();
     if (!(badge instanceof HTMLElement)) {
       throw new Error("expected a menu badge");
     }
-    expect(px(getComputedStyle(badge).top)).toBe(6);
     expect(getComputedStyle(badge).pointerEvents).toBe("none");
-    expect(px(getComputedStyle(active).paddingRight), "pr-8 while a MenuAction is present").toBe(32);
   });
 
   it("threads render polymorphism: an anchor keeps its href and the button's state attributes", () => {

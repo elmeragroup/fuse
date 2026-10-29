@@ -1,7 +1,14 @@
 import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
-import { DESKTOP_VIEWPORT, expectInside, launchSuiteBrowser, openDemo } from "./demo-page";
+import {
+  DESKTOP_VIEWPORT,
+  expectInside,
+  launchSuiteBrowser,
+  openDemo,
+  shareDemoPage,
+  sharedDemo,
+} from "./demo-page";
 
 const browser = launchSuiteBrowser();
 
@@ -91,17 +98,16 @@ describe("DataTableFilter demos", () => {
     "3,000 options",
     "Full composition with a calendar",
   ];
-  for (const width of [390, 1280]) {
-    for (const name of DEMOS) {
-      it(`keeps the ${name} demo's bar and table inside its stage at ${width}px`, async () => {
-        const page = await browser().newPage({ viewport: { width, height: 844 } });
-        const demo = await openDemo(page, "data-table-filter", name);
-        // DOM audit: the stage and the table's scroll container have no landmark role of their own.
-        const stage = demo.locator("[data-demo-stage]");
-        await expectInside(demo.getByRole("toolbar", { name: "Order filters", exact: true }), stage);
-        await expectInside(demo.locator('[data-slot="table-container"]'), stage);
-        await page.close();
-      });
-    }
-  }
+  // Read-only checks, so each width loads the page once for every demo.
+  describe.each([390, 1280])("at %ipx", (width) => {
+    const sharedPage = shareDemoPage(browser, "data-table-filter", { width, height: 844 });
+
+    it.each(DEMOS)("keeps the %s demo's bar and table inside its stage", async (name) => {
+      const demo = await sharedDemo(sharedPage(), name);
+      // DOM audit: the stage and the table's scroll container have no landmark role of their own.
+      const stage = demo.locator("[data-demo-stage]");
+      await expectInside(demo.getByRole("toolbar", { name: "Order filters", exact: true }), stage);
+      await expectInside(demo.locator('[data-slot="table-container"]'), stage);
+    });
+  });
 });

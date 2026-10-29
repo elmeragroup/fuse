@@ -18,50 +18,6 @@ function spanNamed(name: string): HTMLElement {
 }
 
 describe("Span", () => {
-  it("renders a span with data-slot=span and no widget role", () => {
-    renderThemed(<Span>4 of 12</Span>);
-    const span = spanNamed("4 of 12");
-    expect(span.tagName).toBe("SPAN");
-    expect(span.getAttribute("data-slot")).toBe("span");
-    expect(span.textContent).toBe("4 of 12");
-    expect(span.getAttribute("role")).toBeNull();
-    expect(span.getAttribute("tabindex")).toBeNull();
-    for (const role of WIDGET_ROLES) {
-      expect(page.getByRole(role).query(), role).toBeNull();
-    }
-  });
-
-  it("resolves destructive onto text-error, success onto text-success, and bold onto font-medium", () => {
-    renderThemed(
-      <>
-        <Span variant="destructive">Cancelled</Span>
-        <Span variant="success">Delivered</Span>
-        <Span weight="bold">Medium cap</Span>
-        <Span weight="normal">Normal cap</Span>
-      </>
-    );
-    const cancelled = spanNamed("Cancelled");
-    expect(getComputedStyle(cancelled).color).toBe(cssVarColor(cancelled, "--error"));
-    expect(getComputedStyle(spanNamed("Delivered")).color).toBe(
-      cssVarColor(spanNamed("Delivered"), "--success")
-    );
-    expect(Number.parseInt(getComputedStyle(spanNamed("Medium cap")).fontWeight, 10)).toBeGreaterThan(
-      Number.parseInt(getComputedStyle(spanNamed("Normal cap")).fontWeight, 10)
-    );
-  });
-
-  it("cascades size=xs onto the host and descendants", () => {
-    renderThemed(
-      <>
-        <Span size="xs">Tiny count</Span>
-        <Span size="lg">Large count</Span>
-      </>
-    );
-    expect(px(getComputedStyle(spanNamed("Tiny count")).fontSize)).toBeLessThan(
-      px(getComputedStyle(spanNamed("Large count")).fontSize)
-    );
-  });
-
   it("adds truncate and lets a className override win over the recipe", () => {
     renderThemed(
       <>
@@ -76,12 +32,23 @@ describe("Span", () => {
     expect(getComputedStyle(override).color).toBe(cssVarColor(override, "--muted-foreground"));
   });
 
-  it("renders the provided render element with merged recipe classes", () => {
+  it("renders a span with data-slot=span and no widget role, or the render element with merged recipe classes", () => {
     renderThemed(
-      <Span variant="muted" size="sm" render={<strong />}>
-        Continue as strong
-      </Span>
+      <>
+        <Span>4 of 12</Span>
+        <Span variant="muted" size="sm" render={<strong />}>
+          Continue as strong
+        </Span>
+      </>
     );
+    const span = spanNamed("4 of 12");
+    expect(span.tagName).toBe("SPAN");
+    expect(span.getAttribute("data-slot")).toBe("span");
+    expect(span.getAttribute("role")).toBeNull();
+    expect(span.getAttribute("tabindex")).toBeNull();
+    for (const role of WIDGET_ROLES) {
+      expect(page.getByRole(role).query(), role).toBeNull();
+    }
     const strong = spanNamed("Continue as strong");
     expect(strong.tagName).toBe("STRONG");
     expect(strong.getAttribute("data-slot")).toBe("span");

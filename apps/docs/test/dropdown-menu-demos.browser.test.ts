@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DESKTOP_VIEWPORT, launchSuiteBrowser, openDemo } from "./demo-page";
+import { DESKTOP_VIEWPORT, launchSuiteBrowser, shareDemoPage, sharedDemo } from "./demo-page";
 
 const browser = launchSuiteBrowser();
 
@@ -20,9 +20,11 @@ const demos = [
 ] as const;
 
 describe("DropdownMenu demos", () => {
+  const sharedPage = shareDemoPage(browser, "dropdown-menu", DESKTOP_VIEWPORT);
+
   it.each(demos)("opens the $title demo's menu", async ({ title, trigger, group, firstItem }) => {
-    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
-    const demo = await openDemo(page, "dropdown-menu", title);
+    const page = sharedPage();
+    const demo = await sharedDemo(page, title);
 
     await demo.getByRole("button", { name: trigger, exact: true }).click();
     const menu = demo.getByRole("menu");
@@ -34,6 +36,5 @@ describe("DropdownMenu demos", () => {
 
     await page.keyboard.press("Escape");
     await expect.poll(async () => menu.count()).toBe(0);
-    await page.close();
   });
 });

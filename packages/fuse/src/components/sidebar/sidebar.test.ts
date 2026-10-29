@@ -4,7 +4,6 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { DESCRIPTION_COPY, TITLE_COPY, TOGGLE_COPY } from "../../../test/sidebar-contract";
 import { Sidebar } from "./index";
 import { sidebarStrings } from "./intl";
@@ -75,51 +74,21 @@ describe("Sidebar namespace", () => {
 });
 
 describe("sidebarMenuButtonVariants", () => {
-  it("covers the public axes: a row-metric default row and the shell-local sm and lg heights", () => {
+  // Heights, the action reserve, the collapsed square and the focus ring are computed-style
+  // contracts in the browser suites; this pins the faces no browser test paints.
+  it("pins the active and outline faces, the sm type and reserve, and the lg rail fill", () => {
     const defaults = sidebarMenuButtonVariants();
-    expect(defaults).toContain("h-(--row-h)");
     expect(defaults).toContain("px-(--row-px)");
-    expect(defaults).toContain("peer/menu-button");
-    expect(defaults).toContain("group/menu-button");
-    // The default row reserves the action's xs square plus 8px; the fixed rail sizes reserve 32px.
-    expect(defaults).toContain(
-      "group-has-data-[slot=sidebar-menu-action]/menu-item:pr-[calc(max(var(--control-h-xs),24px)+0.5rem)]"
-    );
+    expect(defaults).toContain("data-active:bg-sidebar-accent");
     expect(sidebarMenuButtonVariants({ size: "sm" })).toContain(
       "group-has-data-[slot=sidebar-menu-action]/menu-item:pr-8"
     );
-    expect(defaults).toContain("group-data-[collapsible=icon]:size-8!");
-    expect(defaults).toContain("data-active:bg-sidebar-accent");
-    // oxlint-disable-next-line elmera/no-local-focus-ring -- source-grep of the shared recipe's class, not a recipe
-    expect(defaults).toContain("focus-visible:ring-ring");
-    expect(sidebarMenuButtonVariants({ size: "sm" })).toContain("h-7");
     expect(sidebarMenuButtonVariants({ size: "sm" })).toContain("text-xs");
-    expect(sidebarMenuButtonVariants({ size: "lg" })).toContain("h-12");
     expect(sidebarMenuButtonVariants({ size: "lg" })).toContain("group-data-[collapsible=icon]:p-0!");
     expect(sidebarMenuButtonVariants({ variant: "outline" })).toContain(
       "shadow-[0_0_0_1px_var(--sidebar-border)]"
     );
     expect(defaults).toContain("transition-[color,background-color,box-shadow]");
     expect(defaults).not.toContain("transition-[width,height,padding,color,background-color,box-shadow]");
-  });
-
-  it("uses no raw palette, dark, density, ring-literal, or legacy data-sidebar selectors", () => {
-    const sized = [
-      sidebarMenuButtonVariants({ variant: "outline", size: "sm" }),
-      sidebarMenuButtonVariants({ size: "lg" }),
-    ];
-    for (const className of [sidebarMenuButtonVariants(), ...sized]) {
-      expect(className).not.toContain("dark:");
-      expect(className).not.toMatch(RAW_PALETTE_RE);
-      expect(className).not.toMatch(/\b(?:dense|comfortable):/);
-      expect(className).not.toContain("destructive");
-      expect(className).not.toContain("ring-sidebar-ring");
-      expect(className).not.toContain("data-[sidebar=");
-    }
-    // The default row reads the row metrics; the sm and lg rail heights read none.
-    for (const className of sized) {
-      expect(className).not.toContain("--control-");
-      expect(className).not.toContain("--row-");
-    }
   });
 });

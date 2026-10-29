@@ -1,5 +1,5 @@
 import type { Locator, Page } from "playwright";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { BRANDS } from "@elmeragroup/fuse/theme";
 
@@ -67,38 +67,106 @@ async function zoomLabel(page: Page): Promise<string> {
 }
 
 describe("theme studio", () => {
-  it("renders the chrome and the five artboards", async () => {
-    const { page, errors } = await openStudio();
-    expect(await page.getByRole("banner").getByText("Theme studio", { exact: true }).isVisible()).toBe(true);
-    expect(await layers(page).isVisible()).toBe(true);
-    expect(await inspector(page).getByRole("heading", { name: "Base theme" }).isVisible()).toBe(true);
-    for (const name of ARTBOARDS) {
-      expect(await artboard(page, name).isVisible(), name).toBe(true);
-      expect(await layers(page).getByRole("button", { name, exact: true }).isVisible(), name).toBe(true);
-    }
-    // The toolbar's tools and zoom are real buttons with names.
-    for (const name of ["Select", "Hand", "Zoom out", "Zoom in"]) {
-      expect(await canvas(page).getByRole("button", { name, exact: true }).count(), name).toBe(1);
-    }
-    expect(errors).toEqual([]);
-    await page.close();
-  });
+  /**
+   * The checks of the opening chrome share one page. They tab, select an artboard and navigate, so
+   * they run in declaration order, each leaving the next its start: none focuses before the skip
+   * link, and only the last navigates.
+   */
+  describe("on one opened page", () => {
+    let opened: StudioPage | undefined;
+    beforeAll(async () => {
+      opened = await openStudio();
+    });
+    afterAll(async () => {
+      await opened?.context.close();
+    });
+    const chrome = (): StudioPage => {
+      if (opened === undefined) {
+        throw new Error("The shared studio page opens in beforeAll.");
+      }
+      return opened;
+    };
 
-  it("frames every artboard inside the canvas on Shift+1", async () => {
-    const { page } = await openStudio();
-    const frame = await box(canvas(page));
-    // Pan far away first, so the fit has work to do.
-    await page.mouse.move(frame.x + frame.width / 2, frame.y + frame.height / 2);
-    await page.mouse.wheel(4000, 3000);
-    await expect.poll(async () => inside(await box(artboard(page, ARTBOARDS[0])), frame)).toBe(false);
+    it("renders the chrome and the five artboards", async () => {
+      const { page, errors } = chrome();
+      expect(await page.getByRole("banner").getByText("Theme studio", { exact: true }).isVisible()).toBe(
+        true
+      );
+      expect(await layers(page).isVisible()).toBe(true);
+      expect(await inspector(page).getByRole("heading", { name: "Base theme" }).isVisible()).toBe(true);
+      for (const name of ARTBOARDS) {
+        expect(await artboard(page, name).isVisible(), name).toBe(true);
+        expect(await layers(page).getByRole("button", { name, exact: true }).isVisible(), name).toBe(true);
+      }
+      // The toolbar's tools and zoom are real buttons with names.
+      for (const name of ["Select", "Hand", "Zoom out", "Zoom in"]) {
+        expect(await canvas(page).getByRole("button", { name, exact: true }).count(), name).toBe(1);
+      }
+      expect(errors).toEqual([]);
+    });
 
-    await page.keyboard.press("Shift+Digit1");
-    for (const name of ARTBOARDS) {
-      await expect
-        .poll(async () => inside(await box(artboard(page, name)), frame), { message: name })
-        .toBe(true);
-    }
-    await page.close();
+    it("truncates a long layer name inside the panel, keeping the whole name as its accessible name", async () => {
+      const { page } = chrome();
+      const row = layers(page).getByRole("button", { name: ARTBOARDS[0], exact: true });
+      expect(inside(await box(row), await box(layers(page)))).toBe(true);
+      const label = await row.evaluate((element) => {
+        const text = element.querySelector("span");
+        return text === null
+          ? undefined
+          : { clipped: text.scrollWidth > text.clientWidth, overflow: getComputedStyle(text).textOverflow };
+      });
+      expect(label).toEqual({ clipped: true, overflow: "ellipsis" });
+    });
+
+    it("skips from the page start to the inspector without touching the share link", async () => {
+      const { page } = chrome();
+      const hash = new URL(page.url()).hash;
+      await page.keyboard.press("Tab");
+      expect(await isFocused(page.getByRole("link", { name: "Skip to canvas", exact: true }))).toBe(true);
+      await page.keyboard.press("Tab");
+      expect(await isFocused(page.getByRole("link", { name: "Skip to inspector", exact: true }))).toBe(true);
+
+      await page.keyboard.press("Enter");
+      await expect.poll(async () => holdsFocus(inspector(page))).toBe(true);
+      expect(new URL(page.url()).hash).toBe(hash);
+    });
+
+    it("keeps every chrome control at the 24px target floor", async () => {
+      const { page } = chrome();
+      // A selection gives the inspector its controls.
+      await layers(page).getByRole("button", { name: ARTBOARDS[0], exact: true }).click();
+      for (const region of [page.getByRole("banner"), layers(page), inspector(page)]) {
+        const audit = await auditTargets(region);
+        expect(audit.targets).toBeGreaterThan(0);
+        expect(audit.misses).toEqual([]);
+      }
+    });
+
+    it("announces the pages as links, marking the current one", async () => {
+      const { page } = chrome();
+      const pages = layers(page).getByRole("region", { name: "Pages", exact: true });
+      expect(await pages.getByRole("link").allTextContents()).toEqual([
+        "Overview",
+        "Density",
+        "Shape",
+        "Color",
+        "Type",
+        "Screens",
+      ]);
+      expect(await pages.getByRole("button").count()).toBe(0);
+      const current = async () =>
+        pages.getByRole("link").evaluateAll((links) =>
+          links.flatMap((link) => {
+            const mark = link.getAttribute("aria-current");
+            return mark === null ? [] : [[link.textContent, mark]];
+          })
+        );
+      expect(await current()).toEqual([["Overview", "page"]]);
+
+      await pages.getByRole("link", { name: "Shape", exact: true }).click();
+      await page.waitForURL(/\/studio\/shape$/u);
+      await expect.poll(current).toEqual([["Shape", "page"]]);
+    });
   });
 
   it("zooms around the cursor on ctrl + wheel, keeping the artboard edge under it", async () => {
@@ -209,33 +277,6 @@ describe("theme studio", () => {
     await page.close();
   });
 
-  it("announces the pages as links, marking the current one", async () => {
-    const { page } = await openStudio();
-    const pages = layers(page).getByRole("region", { name: "Pages", exact: true });
-    expect(await pages.getByRole("link").allTextContents()).toEqual([
-      "Overview",
-      "Density",
-      "Shape",
-      "Color",
-      "Type",
-      "Screens",
-    ]);
-    expect(await pages.getByRole("button").count()).toBe(0);
-    const current = async () =>
-      pages.getByRole("link").evaluateAll((links) =>
-        links.flatMap((link) => {
-          const mark = link.getAttribute("aria-current");
-          return mark === null ? [] : [[link.textContent, mark]];
-        })
-      );
-    expect(await current()).toEqual([["Overview", "page"]]);
-
-    await pages.getByRole("link", { name: "Shape", exact: true }).click();
-    await page.waitForURL(/\/studio\/shape$/u);
-    await expect.poll(current).toEqual([["Shape", "page"]]);
-    await page.close();
-  });
-
   it("keeps a visited page current while hidden, and shows it with its input on Back", async () => {
     const { page, errors } = await openStudio();
     const field = artboard(page, ARTBOARDS[0]).getByRole("textbox", { name: "Full name" });
@@ -265,20 +306,6 @@ describe("theme studio", () => {
     }
     expect(await field.inputValue()).toBe("Kari Nordmann");
     expect(errors).toEqual([]);
-    await page.close();
-  });
-
-  it("truncates a long layer name inside the panel, keeping the whole name as its accessible name", async () => {
-    const { page } = await openStudio();
-    const row = layers(page).getByRole("button", { name: ARTBOARDS[0], exact: true });
-    expect(inside(await box(row), await box(layers(page)))).toBe(true);
-    const label = await row.evaluate((element) => {
-      const text = element.querySelector("span");
-      return text === null
-        ? undefined
-        : { clipped: text.scrollWidth > text.clientWidth, overflow: getComputedStyle(text).textOverflow };
-    });
-    expect(label).toEqual({ clipped: true, overflow: "ellipsis" });
     await page.close();
   });
 
@@ -327,36 +354,6 @@ describe("theme studio", () => {
     await page.close();
   });
 
-  it("opens a menu and the dialog inside their artboard, and Escape closes them", async () => {
-    const { page } = await openStudio();
-    const name = ARTBOARDS[0];
-    await layers(page).getByRole("button", { name, exact: true }).click();
-    const target = artboard(page, name);
-
-    await target.getByRole("button", { name: "More actions" }).click();
-    const menu = target.getByRole("menu");
-    await expect.poll(async () => menu.count()).toBe(1);
-    expect(await menu.getByRole("menuitem", { name: "Rename" }).isVisible()).toBe(true);
-    await page.keyboard.press("Escape");
-    await expect.poll(async () => menu.count()).toBe(0);
-
-    await target.getByRole("button", { name: "Share access" }).click();
-    const dialog = target.getByRole("dialog", { name: "Share access" });
-    await dialog.waitFor({ state: "visible" });
-    expect(inside(await box(dialog), await box(target))).toBe(true);
-    await page.keyboard.press("Escape");
-    await expect.poll(async () => dialog.count()).toBe(0);
-
-    await target.getByRole("combobox", { name: "Language" }).click();
-    const listbox = target.getByRole("listbox");
-    await expect.poll(async () => listbox.count()).toBe(1);
-    await listbox.getByRole("option", { name: "Svenska" }).click();
-    await expect
-      .poll(async () => target.getByRole("combobox", { name: "Language" }).textContent())
-      .toContain("Svenska");
-    await page.close();
-  });
-
   it("ignores the canvas shortcuts while typing in an artboard's field", async () => {
     const { page } = await openStudio();
     const zoom = await zoomLabel(page);
@@ -371,18 +368,6 @@ describe("theme studio", () => {
       await canvas(page).getByRole("button", { name: "Select", exact: true }).getAttribute("aria-pressed")
     ).toBe("true");
     expect(await zoomLabel(page)).toBe(zoom);
-    await page.close();
-  });
-
-  it("keeps every chrome control at the 24px target floor", async () => {
-    const { page } = await openStudio();
-    // A selection gives the inspector its controls.
-    await layers(page).getByRole("button", { name: ARTBOARDS[0], exact: true }).click();
-    for (const region of [page.getByRole("banner"), layers(page), inspector(page)]) {
-      const audit = await auditTargets(region);
-      expect(audit.targets).toBeGreaterThan(0);
-      expect(audit.misses).toEqual([]);
-    }
     await page.close();
   });
 
@@ -406,20 +391,6 @@ describe("theme studio", () => {
     await entry.waitFor({ state: "visible" });
     expect(await entry.getAttribute("href")).toBe("/studio");
     await context.close();
-  });
-
-  it("skips from the page start to the inspector without touching the share link", async () => {
-    const { page } = await openStudio();
-    const hash = new URL(page.url()).hash;
-    await page.keyboard.press("Tab");
-    expect(await isFocused(page.getByRole("link", { name: "Skip to canvas", exact: true }))).toBe(true);
-    await page.keyboard.press("Tab");
-    expect(await isFocused(page.getByRole("link", { name: "Skip to inspector", exact: true }))).toBe(true);
-
-    await page.keyboard.press("Enter");
-    await expect.poll(async () => holdsFocus(inspector(page))).toBe(true);
-    expect(new URL(page.url()).hash).toBe(hash);
-    await page.close();
   });
 
   it("cycles focus through the regions with F6, back with Shift+F6, and leaves F6 to a text field", async () => {
@@ -531,31 +502,7 @@ describe("theme studio", () => {
     await page.close();
   });
 
-  it("pans a clipped control into view as Tab reaches it at 400%", async () => {
-    const { page } = await openStudio();
-    const name = ARTBOARDS[0];
-    const frame = await box(canvas(page));
-    await layers(page).getByRole("button", { name, exact: true }).focus();
-    await page.keyboard.press("Enter");
-    for (let step = 0; step < 8; step++) {
-      await page.keyboard.press("ControlOrMeta+Equal");
-    }
-    expect(await zoomLabel(page)).toBe("400%");
-
-    // The artboard covers the canvas, so only its controls can be clipped. The tab panel, a tab
-    // stop larger than the canvas, shows from its start.
-    for (let step = 0; step < 4; step++) {
-      await page.keyboard.press("Tab");
-      expect(await holdsFocus(artboard(page, name))).toBe(true);
-      const focused = page.locator(":focus");
-      await expect.poll(async () => shown(await box(focused), frame)).toBe(true);
-    }
-    expect(await zoomLabel(page)).toBe("400%");
-    expect(await canvas(page).evaluate((element) => [element.scrollLeft, element.scrollTop])).toEqual([0, 0]);
-    await page.close();
-  });
-
-  it("reveals a clipped control below the theme toolbar pinned to the canvas's top at 400%", async () => {
+  it("pans a clipped control into view below the theme toolbar pinned to the canvas's top as Tab reaches it at 400%", async () => {
     const { page } = await openStudio();
     const name = ARTBOARDS[0];
     const frame = await box(canvas(page));
@@ -575,6 +522,9 @@ describe("theme studio", () => {
       await expect.poll(async () => clearBelow(await box(focused), bar)).toBe(true);
       expect(shown(await box(focused), frame)).toBe(true);
     }
+    // Only the camera pans: the zoom holds, and focus never scrolls the canvas natively.
+    expect(await zoomLabel(page)).toBe("400%");
+    expect(await canvas(page).evaluate((element) => [element.scrollLeft, element.scrollTop])).toEqual([0, 0]);
     await page.close();
   });
 

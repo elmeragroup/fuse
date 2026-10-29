@@ -258,25 +258,6 @@ describe("site palette on the docs", () => {
     await closeContext(context);
   });
 
-  // The drill-in case above resets through the palette's own `show()`, which puts the stack back
-  // on the first page. This one stays on the first page with an empty query, so nothing the
-  // palette controls changes, and only Command's own fresh start can move the highlight back.
-  it("highlights the first row again when ⌘K reopens it mid-close after the arrows moved it", async () => {
-    const { context, page } = await openSlowDocs("/components/button");
-    const dialog = palette(page);
-    const first = dialog.getByRole("option").first();
-
-    await page.keyboard.press("Meta+k");
-    await expect.poll(() => focusedName(page)).toBe("Search the site");
-    await expect.poll(() => isHighlighted(first)).toBe(true);
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("ArrowDown");
-    await expect.poll(() => isHighlighted(first)).toBe(false);
-    await interruptClose(dialog, "Meta+k");
-    await expectFreshFirstPage(dialog);
-    await closeContext(context);
-  });
-
   it("opens a component from the Components page", async () => {
     const context = await newDocsContext();
     const page = await openDocs(context, "/handbook/theming");

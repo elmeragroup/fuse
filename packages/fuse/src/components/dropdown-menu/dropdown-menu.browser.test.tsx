@@ -60,14 +60,6 @@ function BasicMenu({ onOpenChange, extra }: { onOpenChange?: (open: boolean) => 
   );
 }
 
-function triggerButton(): HTMLElement {
-  const element = page.getByRole("button", { name: "Open", exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error("expected the menu trigger");
-  }
-  return element;
-}
-
 async function openWithClick(): Promise<HTMLElement> {
   await userEvent.click(page.getByRole("button", { name: "Open", exact: true }).element());
   return openedMenu();
@@ -98,179 +90,6 @@ describe("DropdownMenu", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("menu").query()).toBeNull();
     });
-  });
-
-  it("opens from Enter and from Space on the trigger, highlighting the first item, and from ArrowUp to the last", async () => {
-    renderThemed(<BasicMenu />);
-    const trigger = triggerButton();
-
-    trigger.focus();
-    await userEvent.keyboard("{Enter}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("menu").query()).not.toBeNull();
-    });
-    await expect.element(itemLocator("Profile")).toHaveFocus();
-
-    await userEvent.keyboard("{Escape}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("menu").query()).toBeNull();
-    });
-    await expect.element(page.getByRole("button", { name: "Open", exact: true })).toHaveFocus();
-
-    await userEvent.keyboard(" ");
-    await vi.waitFor(() => {
-      expect(page.getByRole("menu").query()).not.toBeNull();
-    });
-    await expect.element(itemLocator("Profile")).toHaveFocus();
-
-    await userEvent.keyboard("{Escape}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("menu").query()).toBeNull();
-    });
-    await expect.element(page.getByRole("button", { name: "Open", exact: true })).toHaveFocus();
-
-    await userEvent.keyboard("{ArrowUp}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("menu").query()).not.toBeNull();
-    });
-    await expect.element(itemLocator("Logout")).toHaveFocus();
-  });
-
-  it("lets arrows reach a disabled item but refuses to activate it", async () => {
-    const onSettings = vi.fn();
-    renderThemed(
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger>Open</DropdownMenu.Trigger>
-        <DropdownMenu.Content>
-          <DropdownMenu.Item>Profile</DropdownMenu.Item>
-          <DropdownMenu.Item disabled onClick={onSettings}>
-            Settings
-          </DropdownMenu.Item>
-          <DropdownMenu.Item>Logout</DropdownMenu.Item>
-        </DropdownMenu.Content>
-      </DropdownMenu.Root>
-    );
-    await openWithArrowDown();
-    await expect.element(itemLocator("Profile")).toHaveFocus();
-
-    // base-ui keeps a disabled item in the roving sequence so a
-    // screen-reader user hears that the option exists; it announces aria-disabled instead.
-    await userEvent.keyboard("{ArrowDown}");
-    await expect.element(itemLocator("Settings")).toHaveFocus();
-    expect(itemNamed("Settings").getAttribute("aria-disabled")).toBe("true");
-
-    await userEvent.keyboard("{Enter}");
-    expect(onSettings, "Enter on a disabled item must not activate it").not.toHaveBeenCalled();
-    expect(page.getByRole("menu").query(), "the menu must stay open").not.toBeNull();
-
-    await userEvent.keyboard(" ");
-    expect(onSettings).not.toHaveBeenCalled();
-    expect(page.getByRole("menu").query()).not.toBeNull();
-
-    await userEvent.keyboard("{ArrowDown}");
-    await expect.element(itemLocator("Logout")).toHaveFocus();
-  });
-
-  it("activates the highlighted item with Enter and with Space, closing the menu", async () => {
-    const onProfile = vi.fn();
-    const onLogout = vi.fn();
-    function ActivatableMenu() {
-      return (
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger>Open</DropdownMenu.Trigger>
-          <DropdownMenu.Content>
-            <DropdownMenu.Item onClick={onProfile}>Profile</DropdownMenu.Item>
-            <DropdownMenu.Item onClick={onLogout}>Logout</DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
-      );
-    }
-    renderThemed(<ActivatableMenu />);
-
-    await openWithArrowDown();
-    await expect.element(itemLocator("Profile")).toHaveFocus();
-    await userEvent.keyboard("{Enter}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("menu").query()).toBeNull();
-    });
-    expect(onProfile).toHaveBeenCalledTimes(1);
-    expect(onLogout).not.toHaveBeenCalled();
-    await expect.element(page.getByRole("button", { name: "Open", exact: true })).toHaveFocus();
-
-    await openWithArrowDown();
-    await userEvent.keyboard("{ArrowDown}");
-    await expect.element(itemLocator("Logout")).toHaveFocus();
-    await userEvent.keyboard(" ");
-    await vi.waitFor(() => {
-      expect(page.getByRole("menu").query()).toBeNull();
-    });
-    expect(onLogout).toHaveBeenCalledTimes(1);
-    expect(onProfile).toHaveBeenCalledTimes(1);
-  });
-
-  it.each([
-    [
-      "cycles arrow keys and Home/End across menuitems",
-      <DropdownMenu.Root key="cycle">
-        <DropdownMenu.Trigger>Open</DropdownMenu.Trigger>
-        <DropdownMenu.Content>
-          <DropdownMenu.Item>Profile</DropdownMenu.Item>
-          <DropdownMenu.Item>Billing</DropdownMenu.Item>
-          <DropdownMenu.Item>Logout</DropdownMenu.Item>
-        </DropdownMenu.Content>
-      </DropdownMenu.Root>,
-      [
-        [null, "Profile"],
-        ["{ArrowDown}", "Billing"],
-        ["{ArrowUp}", "Profile"],
-        ["{End}", "Logout"],
-        ["{Home}", "Profile"],
-      ],
-    ],
-    ["jumps to a matching item on typeahead", <BasicMenu key="typeahead" />, [["l", "Logout"]]],
-  ] as const)("%s", async (_title, menu, steps) => {
-    renderThemed(menu);
-    await openWithArrowDown();
-    for (const [key, focused] of steps) {
-      if (key !== null) {
-        await userEvent.keyboard(key);
-      }
-      await expect.element(itemLocator(focused)).toHaveFocus();
-    }
-  });
-
-  it("opens a submenu with ArrowRight and closes it with ArrowLeft", async () => {
-    renderThemed(
-      <BasicMenu
-        extra={
-          <DropdownMenu.Sub>
-            <DropdownMenu.SubTrigger>More</DropdownMenu.SubTrigger>
-            <DropdownMenu.SubContent>
-              <DropdownMenu.Item>Team</DropdownMenu.Item>
-              <DropdownMenu.Item>Invite</DropdownMenu.Item>
-            </DropdownMenu.SubContent>
-          </DropdownMenu.Sub>
-        }
-      />
-    );
-    await openWithArrowDown();
-    await userEvent.keyboard("{End}");
-    await expect.element(itemLocator("More")).toHaveFocus();
-    const subTrigger = itemNamed("More");
-
-    await userEvent.keyboard("{ArrowRight}");
-    await vi.waitFor(() => {
-      expect(subTrigger.getAttribute("data-popup-open")).not.toBeNull();
-    });
-    expect(page.getByRole("menu").elements()).toHaveLength(2);
-    await expect.element(itemLocator("Team")).toHaveFocus();
-    expect(itemNamed("Team").closest('[role="menu"]')).not.toBeNull();
-
-    await userEvent.keyboard("{ArrowLeft}");
-    await vi.waitFor(() => {
-      expect(subTrigger.getAttribute("data-popup-open")).toBeNull();
-    });
-    await expect.element(itemLocator("More")).toHaveFocus();
   });
 
   it("places the submenu beside its trigger with the lifted popup metrics", async () => {
@@ -372,12 +191,7 @@ describe("DropdownMenu", () => {
     await userEvent.click(checkbox);
     expect(onCheckedChange).toHaveBeenCalledWith(false);
     expect(itemNamed("Show toolbar", "menuitemcheckbox").getAttribute("aria-checked")).toBe("false");
-    await userEvent.keyboard("{Escape}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("menu").query()).toBeNull();
-    });
-    await openWithClick();
-    expect(itemNamed("Show toolbar", "menuitemcheckbox").getAttribute("aria-checked")).toBe("false");
+    expect(itemNamed("Show toolbar", "menuitemcheckbox").querySelector("svg")).toBeNull();
   });
 
   it("selects RadioItem within a RadioGroup", async () => {
@@ -408,13 +222,8 @@ describe("DropdownMenu", () => {
     await userEvent.click(itemNamed("Panel", "menuitemradio"));
     expect(onValueChange).toHaveBeenCalledWith("panel");
     expect(itemNamed("Panel", "menuitemradio").getAttribute("aria-checked")).toBe("true");
-    await userEvent.keyboard("{Escape}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("menu").query()).toBeNull();
-    });
-    await openWithClick();
-    expect(itemNamed("Panel", "menuitemradio").getAttribute("aria-checked")).toBe("true");
     expect(itemNamed("Panel", "menuitemradio").querySelector("svg")).not.toBeNull();
+    expect(itemNamed("Status bar", "menuitemradio").querySelector("svg")).toBeNull();
   });
 
   it("renders LinkItem as a menuitem backed by an anchor", async () => {

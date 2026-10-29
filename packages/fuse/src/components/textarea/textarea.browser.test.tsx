@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertKeyboardFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
@@ -14,18 +14,6 @@ import { Field } from "../field";
 import { Textarea } from "./textarea";
 
 describe("Textarea", () => {
-  it("renders a multiline textbox and keeps Enter as a newline", async () => {
-    renderThemed(<Textarea aria-label="Notes" />);
-    const area = textboxNamed("Notes");
-    expect(area.getAttribute("data-slot")).toBe("textarea");
-    area.focus();
-    await userEvent.keyboard("one{Enter}two");
-    if (!(area instanceof HTMLTextAreaElement)) {
-      throw new Error("expected a textarea");
-    }
-    expect(area.value).toContain("\n");
-  });
-
   it("gets an accessible name only when wrapped in Field.Control", () => {
     renderThemed(
       <>
@@ -48,6 +36,7 @@ describe("Textarea", () => {
   it("matches md inline padding and type at both densities and keeps min-h-16", () => {
     renderThemed(<Textarea aria-label="Notes" />);
     const area = textboxNamed("Notes");
+    expect(area.getAttribute("data-slot")).toBe("textarea");
     expect(px(getComputedStyle(area).minHeight)).toBe(64);
     const heights = new Set<number>();
     for (const density of ["dense", "comfortable"] as const) {

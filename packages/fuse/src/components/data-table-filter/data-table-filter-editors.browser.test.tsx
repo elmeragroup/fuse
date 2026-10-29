@@ -18,13 +18,13 @@ import {
   columnFilters,
   CUSTOMER_NORD,
   FIELDS,
+  finishMotion,
   focusIs,
   menuOpen,
   Orders,
   popoverOpen,
   renderCounted,
   renderOrders,
-  settled,
   visibleOrders,
 } from "../../../test/data-table-filter-fixture";
 import type { CountedRender } from "../../../test/data-table-filter-fixture";
@@ -37,7 +37,7 @@ import { parseColumnFilters } from "./filter-parse";
 import { DataTableFilter } from "./index";
 
 afterEach(async () => {
-  await settled();
+  await finishMotion();
 });
 
 /** Moves focus to an element, which blurs the one that had it. */
@@ -51,9 +51,10 @@ function focusOn(element: Element): void {
 /** Status is paid. */
 const STATUS_PAID = [{ id: "status", value: { kind: "option", operator: "is", values: ["paid"] } }];
 
-/** Picks an option once the Select's popup has rendered it. */
+/** Picks an option once the Select's popup has rendered it and finished its open zoom. */
 async function pickOption(name: string): Promise<void> {
   await expect.poll(() => page.getByRole("option", { name, exact: true }).query()).not.toBeNull();
+  await finishMotion();
   await userEvent.click(roleNamed("option", name));
 }
 
@@ -89,15 +90,15 @@ describe("DataTableFilter draft ownership", () => {
     const counted = renderDrafts([...CUSTOMER_NORD, ...STATUS_PAID]);
     await userEvent.click(roleNamed("button", "“nord”"));
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
-    await settled();
+    await finishMotion();
     return counted;
   }
 
   /** Waits out the overlays' animations, then runs the clock past the typing pause. */
   async function outlast(): Promise<void> {
-    await settled();
+    await finishMotion();
     await vi.advanceTimersByTimeAsync(1000);
-    await settled();
+    await finishMotion();
   }
 
   type Exit = readonly [name: string, exit: () => Promise<void>, dismissed: () => boolean];
@@ -134,7 +135,7 @@ describe("DataTableFilter draft ownership", () => {
       expect(writes()).toBe(0);
       await exit();
       await expect.poll(dismissed).toBe(true);
-      await settled();
+      await finishMotion();
       expect(writes()).toBe(1);
       // Aurora Bakeri's order is paid: order 1.
       await expect.poll(visibleOrders).toBe("1");
@@ -159,7 +160,7 @@ describe("DataTableFilter draft ownership", () => {
   async function draftInMenu(): Promise<CountedRender> {
     const counted = renderDrafts([...CUSTOMER_NORD, ...STATUS_PAID]);
     await userEvent.click(roleNamed("button", "Filter"));
-    await settled();
+    await finishMotion();
     await userEvent.click(roleNamed("menuitem", "Customer"));
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
     await userEvent.fill(roleNamed("textbox", "Customer"), "kafe");
@@ -173,8 +174,9 @@ describe("DataTableFilter draft ownership", () => {
     return counted;
   }
 
-  /** A pointer press, or a click with no pointer at all, as assistive technology sends. */
-  const PRESSES = [
+  // The same Clear and Remove from the value popover, each under a consumer's capture handler, are
+  // rows of the consumer-handler suite.
+  it.each([
     ["a pointer press", (button: HTMLElement) => userEvent.click(button)],
     [
       "a click without a pointer",
@@ -183,38 +185,20 @@ describe("DataTableFilter draft ownership", () => {
         await Promise.resolve();
       },
     ],
-  ] as const;
-  const DRAFTS = [
-    ["the menu's in-place editor", draftInMenu],
-    ["the value popover", draftInPopover],
-  ] as const;
-  const CLEARS = DRAFTS.flatMap(([place, draft]) =>
-    PRESSES.map(([press, act]) => [place, press, draft, act] as const)
-  );
-
-  it.each(CLEARS)(
-    "clears in one write while %s holds unapplied text, on %s",
-    async (_place, _press, draft, press) => {
-      const { writes } = await draft();
+  ] as const)(
+    "clears in one write while the menu's in-place editor holds unapplied text, on %s",
+    async (_press, press) => {
+      const { writes } = await draftInMenu();
       expect(writes()).toBe(0);
       await press(roleNamed("button", "Clear filters"));
       await outlast();
       expect(writes()).toBe(1);
       expect(columnFilters()).toEqual([]);
       expect(visibleOrders()).toBe("1 2 3 4 5 6");
-      // The Clear closed whichever overlay held the draft.
+      // The Clear closed the menu that held the draft.
       expect(menuOpen()).toBe(false);
-      expect(popoverOpen("Customer")).toBe(false);
     }
   );
-
-  it.each(PRESSES)("removes the edited chip in one write on %s", async (_press, press) => {
-    const { writes } = await draftInPopover();
-    await press(roleNamed("button", "Remove Customer filter"));
-    await outlast();
-    expect(writes()).toBe(1);
-    expect(columnFilters()).toEqual(STATUS_PAID);
-  });
 
   it("applies the edited chip's text and removes another chip on a press on its Remove", async () => {
     const { writes } = await draftInPopover();
@@ -230,6 +214,7 @@ describe("DataTableFilter draft ownership", () => {
     const { writes } = await draftInPopover();
     await glidePointerTo(roleNamed("button", "Clear filters"));
     await whilePointerPressed(async () => {
+      await finishMotion();
       await expect.poll(() => popoverOpen("Customer")).toBe(false);
       await glidePointerTo(roleNamed("status", "Visible orders"));
     });
@@ -242,6 +227,7 @@ describe("DataTableFilter draft ownership", () => {
     const { writes, unmount } = await draftInPopover();
     await glidePointerTo(roleNamed("button", "Clear filters"));
     await whilePointerPressed(async () => {
+      await finishMotion();
       await expect.poll(() => popoverOpen("Customer")).toBe(false);
       unmount();
     });
@@ -257,7 +243,7 @@ describe("DataTableFilter draft ownership", () => {
     }
     await userEvent.click(value);
     await expect.poll(() => popoverOpen(dialog)).toBe(true);
-    await settled();
+    await finishMotion();
   }
 
   const AMOUNT_RANGE = { id: "amount", value: { kind: "number", operator: "isBetween", values: [120, 950] } };
@@ -298,7 +284,7 @@ describe("DataTableFilter draft ownership", () => {
     act().edit("amount");
     await expect.poll(() => popoverOpen("Amount")).toBe(true);
     await expect.poll(() => focusIs("textbox", "Minimum")).toBe(true);
-    await settled();
+    await finishMotion();
     expect(focusIs("textbox", "Minimum")).toBe(true);
   });
 
@@ -351,10 +337,11 @@ describe("DataTableFilter draft ownership", () => {
     ));
     await userEvent.click(roleNamed("button", "“nord”"));
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
-    await settled();
+    await finishMotion();
     await userEvent.fill(roleNamed("textbox", "Customer"), "aurora");
     await userEvent.keyboard("{Tab}");
     await expect.poll(() => focusIs("button", "Reset")).toBe(true);
+    await finishMotion();
     await expect.poll(() => popoverOpen("Customer")).toBe(false);
     await outlast();
     expect(writes()).toBe(1);
@@ -385,7 +372,7 @@ describe("DataTableFilter draft ownership", () => {
     ));
     await userEvent.click(roleNamed("button", "“nord”"));
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
-    await settled();
+    await finishMotion();
     await userEvent.fill(roleNamed("textbox", "Customer"), "aurora");
     await vi.advanceTimersByTimeAsync(250);
     expect(writes()).toBe(0);
@@ -423,7 +410,7 @@ describe("DataTableFilter draft ownership", () => {
     const counted = renderDrafts([...CUSTOMER_NORD, ...STATUS_PAID], bar);
     await userEvent.click(roleNamed("button", "“nord”"));
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
-    await settled();
+    await finishMotion();
     await userEvent.fill(roleNamed("textbox", "Customer"), "aurora");
     return counted;
   }
@@ -459,6 +446,7 @@ describe("DataTableFilter draft ownership", () => {
   it("closes the editor without a write when a consumer stops Clear's click", async () => {
     const { writes } = await draftWithBar(stopClick);
     roleNamed("button", "Clear filters").click();
+    await finishMotion();
     await expect.poll(() => popoverOpen("Customer")).toBe(false);
     await outlast();
     expect(writes()).toBe(0);
@@ -471,6 +459,7 @@ describe("DataTableFilter draft ownership", () => {
     roleNamed("button", "Clear filters").dispatchEvent(
       new PointerEvent("pointerdown", { bubbles: true, cancelable: true, pointerType: "mouse", button: 0 })
     );
+    await finishMotion();
     await expect.poll(() => popoverOpen("Customer")).toBe(false);
     await outlast();
     expect(writes()).toBe(0);
@@ -483,6 +472,7 @@ describe("DataTableFilter draft ownership", () => {
     await userEvent.fill(roleNamed("textbox", "Minimum"), "300");
     await userEvent.click(roleNamed("button", "Clear filters"));
     await userEvent.keyboard("{Tab}");
+    await finishMotion();
     await expect.poll(() => popoverOpen("Amount")).toBe(false);
     await outlast();
     expect(writes()).toBe(0);
@@ -493,6 +483,7 @@ describe("DataTableFilter draft ownership", () => {
     const { writes } = renderDrafts([CREATED_RANGE, ...STATUS_PAID], stopClick);
     await openChip("Created filter", "Created");
     await userEvent.click(roleNamed("button", "Clear filters"));
+    await finishMotion();
     await expect.poll(() => popoverOpen("Created")).toBe(false);
     await outlast();
     expect(writes()).toBe(0);
@@ -512,6 +503,7 @@ describe("DataTableFilter draft ownership", () => {
     await userEvent.click(
       page.getByRole("group", { name: "Status filter" }).getByText("Status", { exact: true })
     );
+    await finishMotion();
     await expect.poll(() => popoverOpen("Customer")).toBe(false);
     await outlast();
     expect(writes()).toBe(1);
@@ -586,6 +578,7 @@ describe("DataTableFilter draft ownership", () => {
       const { writes } = await draftThenDisable(parts, press);
       expect(popoverOpen("Customer")).toBe(true);
       await userEvent.click(roleNamed("button", press), { force: true });
+      await finishMotion();
       await expect.poll(() => popoverOpen("Customer")).toBe(false);
       await outlast();
       expect(writes()).toBe(1);
@@ -624,7 +617,7 @@ describe("DataTableFilter draft ownership", () => {
     const two = page.elementLocator(roleNamed("region", "Second orders"));
     await userEvent.click(one.getByRole("button", { name: "“nord”" }).element());
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
-    await settled();
+    await finishMotion();
     await userEvent.fill(roleNamed("textbox", "Customer"), "aurora");
     await userEvent.click(two.getByRole("button", { name: "Clear filters" }).element());
     await outlast();
@@ -641,13 +634,13 @@ describe("DataTableFilter draft ownership", () => {
   it("opens a fresh editor when edit() reopens the menu during a Clear's close", async () => {
     const { writes } = renderDrafts(STATUS_PAID);
     await userEvent.click(roleNamed("button", "Filter"));
-    await settled();
+    await finishMotion();
     await userEvent.click(roleNamed("menuitem", "Customer"));
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
     await userEvent.click(roleNamed("button", "Clear filters"));
     act().edit("customer");
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
-    await settled();
+    await finishMotion();
     await userEvent.fill(roleNamed("textbox", "Customer"), "kafe");
     const dialog = page.elementLocator(roleNamed("dialog", "Add filter"));
     await userEvent.click(dialog.getByRole("combobox", { name: "Customer operator" }).element());
@@ -682,7 +675,7 @@ describe("DataTableFilter draft ownership", () => {
   it("writes nothing for two operator changes on an untouched number draft", async () => {
     const { writes } = renderDrafts([]);
     await userEvent.click(roleNamed("button", "Filter"));
-    await settled();
+    await finishMotion();
     await userEvent.click(roleNamed("menuitem", "Amount"));
     await expect.poll(() => focusIs("textbox", "Minimum")).toBe(true);
     const dialog = page.elementLocator(roleNamed("dialog", "Add filter"));
@@ -709,7 +702,7 @@ describe("DataTableFilter date range drafts", () => {
   it("keeps a To date typed first in To, and applies once From is set", async () => {
     renderOrders({ initial: [] });
     await userEvent.click(roleNamed("button", "Filter"));
-    await settled();
+    await finishMotion();
     await userEvent.click(roleNamed("menuitem", "Created"));
     await expect.poll(() => roleNamed("dialog", "Add filter").getAttribute("data-step")).toBe("editor");
     const dialog = page.elementLocator(roleNamed("dialog", "Add filter"));
@@ -719,7 +712,7 @@ describe("DataTableFilter date range drafts", () => {
     // Moving focus to From blurs To and keeps focus in the editor. Tab inside a date input moves
     // between its own segments.
     focusOn(from.element());
-    await settled();
+    await finishMotion();
     expect(to.element()).toHaveProperty("value", "2026-10-10");
     expect(from.element()).toHaveProperty("value", "");
     expect(columnFilters()).toEqual([]);
@@ -779,7 +772,7 @@ describe("DataTableFilter value popover height", () => {
     }
     await userEvent.click(value);
     await expect.poll(() => popoverOpen("Created")).toBe(true);
-    await settled();
+    await finishMotion();
     const popup = roleNamed("dialog", "Created");
     const frame = popup.getBoundingClientRect();
     expect(frame.top).toBeGreaterThanOrEqual(0);
@@ -792,7 +785,7 @@ describe("DataTableFilter value popover height", () => {
     await expect
       .poll(() => october.getBoundingClientRect().bottom <= popup.getBoundingClientRect().bottom)
       .toBe(true);
-    await settled();
+    await finishMotion();
     const box = october.getBoundingClientRect();
     expect(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)).toBe(october);
     expect(window.scrollY).toBe(before);
@@ -830,21 +823,21 @@ describe("DataTableFilter IME composition", () => {
     input.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "x" }));
     keydown(input, "Enter", false);
     expect(columnFilters()).toEqual(CUSTOMER_NORD);
-    await settled();
+    await finishMotion();
     expect(popoverOpen("Customer")).toBe(true);
   });
 
   it("keeps the menu's in-place editor on an Escape that ends a composition", async () => {
     renderOrders({ initial: [] });
     await userEvent.click(roleNamed("button", "Filter"));
-    await settled();
+    await finishMotion();
     await userEvent.click(roleNamed("menuitem", "Customer"));
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
     const input = roleNamed("textbox", "Customer");
     input.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
     input.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "k" }));
     keydown(input, "Escape", false);
-    await settled();
+    await finishMotion();
     expect(roleNamed("dialog", "Add filter").getAttribute("data-step")).toBe("editor");
   });
 
@@ -880,7 +873,7 @@ describe("DataTableFilter number and date drafts", () => {
   it("applies a field whose first operator takes one value, on blur, on Enter and on a stepper press", async () => {
     renderOrders({ initial: [], fields });
     await userEvent.click(roleNamed("button", "Filter"));
-    await settled();
+    await finishMotion();
     await userEvent.click(roleNamed("menuitem", "Amount"));
     await expect.poll(() => focusIs("textbox", "Amount")).toBe(true);
     await userEvent.fill(roleNamed("textbox", "Amount"), "500");
@@ -907,13 +900,13 @@ describe("DataTableFilter number and date drafts", () => {
     // Server mode without facets: no known range, so both fields start empty.
     renderOrders({ initial: [], manual: true });
     await userEvent.click(roleNamed("button", "Filter"));
-    await settled();
+    await finishMotion();
     await userEvent.click(roleNamed("menuitem", "Amount"));
     await expect.poll(() => focusIs("textbox", "Minimum")).toBe(true);
     await userEvent.fill(roleNamed("textbox", "Maximum"), "500");
     // Shift+Tab blurs Maximum and keeps focus in the editor, on Minimum.
     await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
-    await settled();
+    await finishMotion();
     expect(roleNamed("textbox", "Minimum")).toHaveProperty("value", "");
     expect(roleNamed("textbox", "Maximum")).toHaveProperty("value", "500");
     expect(columnFilters()).toEqual([]);
@@ -1061,22 +1054,6 @@ describe("DataTableFilter operators a field allows", () => {
     expect(parseColumnFilters(columnFilters(), fields)).toEqual(expected);
   });
 
-  it("offers only Today, as is, on a date field without isBetween", async () => {
-    renderOrders({ initial: [], fields: RESTRICTED });
-    await userEvent.click(roleNamed("button", "Filter"));
-    await settled();
-    await userEvent.click(roleNamed("menuitem", "Created"));
-    await expect.poll(() => roleNamed("dialog", "Add filter").getAttribute("data-step")).toBe("editor");
-    expect(page.getByRole("button", { name: "Last 7 days" }).query()).toBeNull();
-    expect(page.getByRole("button", { name: "This year" }).query()).toBeNull();
-    await userEvent.click(roleNamed("button", "Today"));
-    // The fixture compares calendar days in UTC.
-    const today = new Date().toISOString().slice(0, 10);
-    const expected = [{ id: "created", value: { kind: "date", operator: "is", values: [today] } }];
-    await expect.poll(columnFilters).toEqual(expected);
-    expect(parseColumnFilters(columnFilters(), RESTRICTED)).toEqual(expected);
-  });
-
   it("matches a text field from its start when the field lists startsWith", async () => {
     const PREFIX: FilterFieldMap = {
       ...FIELDS,
@@ -1084,7 +1061,7 @@ describe("DataTableFilter operators a field allows", () => {
     };
     renderOrders({ initial: [], fields: PREFIX });
     await userEvent.click(roleNamed("button", "Filter"));
-    await settled();
+    await finishMotion();
     await userEvent.click(roleNamed("menuitem", "Customer"));
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
     await userEvent.fill(roleNamed("textbox", "Customer"), "nord");

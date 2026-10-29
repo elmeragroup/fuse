@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 
+import { PUBLISH_GATES } from "../packages/fuse/scripts/release-pack.ts";
 import { asRecord, asString } from "./json-object.mjs";
 import {
   jobMatrixEntries,
@@ -72,11 +73,17 @@ const AGGREGATE_ANCHORS = new Set(["@elmeragroup/fuse#ci:checks", "@elmeragroup/
 /** @type {{ leg: string, args: string[], tasks: Record<string, unknown>[] }[] | undefined} */
 let browserGraphs;
 
-/** Each browser leg's command and resolved graph, including task passthrough arguments. */
+/**
+ * Each browser leg's command, including task passthrough arguments, and resolved graph. Turbo
+ * forwards what follows `--` to the tasks without changing the graph, so the docs shards resolve
+ * one graph between them.
+ */
 function browserLegs() {
   browserGraphs ??= jobMatrixEntries(readWorkflow("merge"), "browser").map((entry) => {
     const args = requestedArgs("browser", entry);
-    return { leg: asString(entry.leg, "browser leg"), args, tasks: turboTasks(["run", ...args]) };
+    const separator = args.indexOf("--");
+    const graphArgs = separator === -1 ? args : args.slice(0, separator);
+    return { leg: asString(entry.leg, "browser leg"), args, tasks: resolvedTasks(["run", ...graphArgs]) };
   });
   return browserGraphs;
 }
@@ -123,6 +130,18 @@ it("splits the ci:checks aggregate exactly between the checks and browser jobs",
     ...browserLegs().flatMap((leg) => leg.tasks),
   ]);
   expect([...new Set(scheduled)].sort()).toEqual([...new Set(aggregate)].sort());
+}, 30_000);
+
+it("schedules every publish gate through the ci:checks aggregate", () => {
+  // The release engine runs these gates before it publishes. A local `pnpm ci:checks` fans out
+  // to them directly or through the `check` gate it includes.
+  expect([...PUBLISH_GATES]).toEqual(["package:check", "size-limit", "test:packed-consumer"]);
+  const scheduled = executableTaskIds(resolvedTasks(["run", "ci:checks"]));
+  for (const gate of PUBLISH_GATES) {
+    expect(scheduled, `${gate} must also run in the ci:checks aggregate`).toContain(
+      `@elmeragroup/fuse#${gate}`
+    );
+  }
 }, 30_000);
 
 it("the local check gate is ci:checks without the e2e and packed-artifact tier", () => {

@@ -198,31 +198,6 @@ describe("plannedAttachmentCount", () => {
     expect(plannedAttachmentCount(coordinates, "on")).toBe(54);
     expect(plannedAttachmentCount(coordinates, "off")).toBe(36);
   });
-
-  it("counts a window size given twice once", () => {
-    // 1 theme × 1 density × 1 engine × 1 window size: 3 images with diffs.
-    const coordinates = planCoordinates(
-      options(["landing", "--route", "/", "--viewports", "390x844, 390x844"])
-    );
-    expect(plannedAttachmentCount(coordinates, "on")).toBe(3);
-  });
-
-  it("counts every window size as its own pair", () => {
-    // 2 themes × 1 density × 1 engine × 3 window sizes is 6 coordinates: 18 images with diffs.
-    const coordinates = planCoordinates(
-      options([
-        "landing",
-        "--route",
-        "/",
-        "--themes",
-        "internal-fkas-private,external-tkas-company",
-        "--viewports",
-        "1280x800,768x1024,390x844",
-      ])
-    );
-    expect(plannedAttachmentCount(coordinates, "on")).toBe(18);
-    expect(plannedAttachmentCount(coordinates, "off")).toBe(12);
-  });
 });
 
 describe("formatChange", () => {

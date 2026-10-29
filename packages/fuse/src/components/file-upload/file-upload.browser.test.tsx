@@ -265,18 +265,7 @@ describe("FileUpload.Description", () => {
     rerender(tree(false));
     await nextFrames(2);
     expect(trigger.element().getAttribute("aria-describedby")).toBe("limits");
-  });
-
-  it("keeps a consumer id on the Description and describes the Trigger with it", async () => {
-    renderThemed(
-      <FileUpload.Root>
-        <FileUpload.Trigger>Add files</FileUpload.Trigger>
-        <FileUpload.Description id="limits">Up to 3 files.</FileUpload.Description>
-      </FileUpload.Root>
-    );
-    const trigger = page.getByRole("button", { name: "Add files", exact: true });
     await expect.element(trigger).toHaveAccessibleDescription("Up to 3 files.");
-    expect(trigger.element().getAttribute("aria-describedby")).toBe("limits");
   });
 });
 

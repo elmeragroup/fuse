@@ -43,7 +43,7 @@ describe("Form", () => {
     expect(ref.current).toBe(form);
   });
 
-  it("shows each error under its control's name, through Field.Error and TextField", () => {
+  it("shows each error under its control's name, through Field.Error and TextField", async () => {
     renderThemed(
       <Form
         aria-label="Signup"
@@ -57,6 +57,8 @@ describe("Form", () => {
     expect(email.getAttribute("aria-invalid")).toBe("true");
     expect(phone.getAttribute("aria-invalid")).toBe("true");
     expect(errorTexts()).toEqual(["Already registered.", "Too short.Digits only."]);
+    expect(page.getByRole("alert").first().element().getAttribute("data-slot")).toBe("field-error");
+    await expect.element(email).toHaveAccessibleDescription("Already registered.");
     // Several messages under one name render as a list.
     const phoneErrors = page
       .getByRole("alert")
@@ -82,6 +84,10 @@ describe("Form", () => {
     await userEvent.type(page.getByRole("textbox", { name: "Email", exact: true }), "a");
     expect(inputNamed("Email").getAttribute("aria-invalid")).toBeNull();
     expect(errorTexts()).toEqual(["Too short."]);
+    // Phone is a TextField, whose error renders through its own frame rather than a bare Field.
+    await userEvent.type(page.getByRole("textbox", { name: "Phone", exact: true }), "1");
+    expect(inputNamed("Phone").getAttribute("aria-invalid")).toBeNull();
+    expect(errorTexts()).toEqual([]);
 
     // A second response with the same messages is a new object, as a server action returns.
     rerender(<Fixture errors={{ email: "Already registered.", phone: "Too short." }} />);

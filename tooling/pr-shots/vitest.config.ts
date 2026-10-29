@@ -15,9 +15,11 @@ export default defineConfig({
       },
       {
         // Launches Playwright's Chromium, which only the merge workflow's browser job installs.
+        // A concurrent suite runs at most three browsers at once.
         test: {
           name: "browser",
           include: ["test/**/*.browser.test.ts"],
+          maxConcurrency: 3,
           ...shared,
         },
       },

@@ -11,7 +11,7 @@ import type { ChildLayerSpec, ComponentSetSpec, KitSpec } from "../../src/compon
 import type { CollectionSpec } from "../../src/variable-set.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { keyOf } from "./identity.ts";
-import { kitFixture, kitPage, setOn, syncedFile } from "./kit-fixture.ts";
+import { kitFixture, kitOn, kitPage, setOn, syncedFile } from "./kit-fixture.ts";
 import { reconcileKit } from "./reconcile.ts";
 
 let kit: KitSpec;
@@ -19,7 +19,10 @@ const current = () => kit;
 let collections: readonly CollectionSpec[];
 
 beforeAll(async () => {
-  ({ kit, collections } = await kitFixture());
+  let whole: KitSpec;
+  ({ kit: whole, collections } = await kitFixture());
+  // The Select page and the pages its sets show are all the migration reads.
+  kit = kitOn(whole, ["page/select"]);
 }, 60_000);
 
 /** The Select trigger's key, and the set that shows its filling variants. */

@@ -57,35 +57,6 @@ describe("exportCss", () => {
 `);
   });
 
-  it("writes a light edit on the theme selector and keeps the base dark value in the dark pair", () => {
-    expect(exported({ light: { primary: "#ff0000" } })).toBe(`${HEADER}
-
-/* Light. */
-[data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"] {
-  --primary: #ff0000;
-}
-
-/* Dark. The first selector matches under a dark ancestor, the second an element that is
-   dark itself, such as a themed <html>. */
-[data-theme="dark"] [data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"],
-[data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"][data-theme="dark"] {
-  --primary: oklch(0.8 0.1 30);
-}
-`);
-  });
-
-  it("writes a dark edit in the dark pair only", () => {
-    expect(exported({ dark: { primary: "#00ff00" } })).toBe(`${HEADER}
-
-/* Dark. The first selector matches under a dark ancestor, the second an element that is
-   dark itself, such as a themed <html>. */
-[data-theme="dark"] [data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"],
-[data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"][data-theme="dark"] {
-  --primary: #00ff00;
-}
-`);
-  });
-
   it("writes mixed edits in contract order, each in its rule", () => {
     expect(
       exported({

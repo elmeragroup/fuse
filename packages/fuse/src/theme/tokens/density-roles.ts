@@ -485,6 +485,9 @@ export const PART_DENSITY = {
   "tooltip-provider": "layout",
   tooltip: "layout",
   "tooltip-trigger": "control",
+  // A trigger rendered through `Focusable`, which gives inline text a tab stop, reads no control
+  // metric. A trigger styled as a control, such as a Button on an anchor, keeps `control`.
+  "tooltip-trigger[data-focusable-child]": "fixed",
   "tooltip-content": "surface",
 
   "date-picker-preset-group": "surface",

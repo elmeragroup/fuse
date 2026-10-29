@@ -95,16 +95,6 @@ describe("NumberField", () => {
     expect(textboxNamed("Amount").getAttribute("aria-roledescription")).toBe("Number field");
   });
 
-  it("describes the input's role in the provider locale", () => {
-    for (const locale of SUPPORTED_LOCALES) {
-      const { unmount } = renderField(<NumberField label="Amount" />, locale);
-      expect(textboxNamed("Amount").getAttribute("aria-roledescription"), locale).toBe(
-        ROLE_DESCRIPTION_COPY[locale]
-      );
-      unmount();
-    }
-  });
-
   it("disables the input inside a disabled Field.Set", () => {
     renderField(
       <Field.Set disabled>
@@ -138,8 +128,10 @@ describe("NumberField", () => {
     expect(onChange).toHaveBeenLastCalledWith(0);
   });
 
-  it("steps from the empty basic example via the increment and decrement buttons", async () => {
+  it("steps from empty with the buttons and the arrows, reporting each step and committing it once", async () => {
     const onChange = vi.fn();
+    // The oracle is the list of commits written out by hand: one entry per finished step.
+    const commits: number[] = [];
     renderField(
       <NumberField
         label="Quantity"
@@ -148,6 +140,7 @@ describe("NumberField", () => {
         maxValue={20}
         step={1}
         onChange={onChange}
+        onValueCommitted={(value) => commits.push(value)}
       />
     );
     const input = page.getByRole("textbox", { name: "Quantity", exact: true });
@@ -163,6 +156,11 @@ describe("NumberField", () => {
     await userEvent.click(decrease);
     expect(onChange).toHaveBeenLastCalledWith(0);
     await expect.element(input).toHaveValue("0");
+    expect(commits).toEqual([0, 1, 0]);
+
+    textboxNamed("Quantity").focus();
+    await userEvent.keyboard("{ArrowUp}{ArrowUp}{ArrowDown}");
+    expect(commits).toEqual([0, 1, 0, 1, 2, 1]);
   });
 
   it("stays controlled from a NaN empty state: only the parent moves the value", async () => {
@@ -456,9 +454,12 @@ describe("NumberField", () => {
     expectNoFocusRing(groupFrom("Quantity"), "mouse focus on a stepper must not paint the group ring");
   });
 
-  it("names the steppers from the provider locale, updates them on locale rerender, and lets increaseLabel and decreaseLabel override independently", () => {
+  it("names the steppers and describes the input's role from the provider locale, updates them on locale rerender, and lets increaseLabel and decreaseLabel override independently", () => {
     for (const locale of SUPPORTED_LOCALES) {
       const { unmount } = renderField(<NumberField label="Quantity" defaultValue={2} />, locale);
+      expect(textboxNamed("Quantity").getAttribute("aria-roledescription"), locale).toBe(
+        ROLE_DESCRIPTION_COPY[locale]
+      );
       expect(
         page.getByRole("button", { name: INCREASE_COPY[locale], exact: true }).query(),
         locale
@@ -510,7 +511,7 @@ describe("NumberField", () => {
     expect(page.getByRole("button", { name: DECREASE_COPY["sv-SE"], exact: true }).query()).toBeTruthy();
   });
 
-  it("paints stepper dividers with the field-box border color", () => {
+  it("draws one 1px stepper divider in the field-box border color and no bottom edge", () => {
     // Dark, where the field-box `--input` and the divider-default `--border` differ.
     render(
       <div data-theme="dark">
@@ -528,14 +529,10 @@ describe("NumberField", () => {
         getComputedStyle(stepperIn("Quantity", name)).borderInlineStartColor,
         `${name} divider color`
       ).toBe(input);
-    }
-  });
-
-  it("draws one 1px stepper divider and no bottom edge", () => {
-    renderField(<NumberField label="Quantity" defaultValue={1} />);
-    for (const name of ["Decrease", "Increase"] as const) {
-      const stepper = getComputedStyle(stepperIn("Quantity", name));
-      expect(stepper.borderInlineStartWidth, `${name} divider width`).toBe("1px");
+      expect(
+        getComputedStyle(stepperIn("Quantity", name)).borderInlineStartWidth,
+        `${name} divider width`
+      ).toBe("1px");
     }
     expect(getComputedStyle(stepperIn("Quantity", "Increase")).borderBottomWidth).toBe("0px");
   });
@@ -558,28 +555,6 @@ describe("NumberField onValueCommitted", () => {
     expect(commits).toEqual([]);
     await userEvent.tab();
     expect(commits).toEqual([42]);
-  });
-
-  it("commits once per stepper press", async () => {
-    const commits: number[] = [];
-    renderField(
-      <NumberField label="Quantity" defaultValue={5} onValueCommitted={(value) => commits.push(value)} />
-    );
-    await userEvent.click(page.getByRole("button", { name: "Increase", exact: true }));
-    expect(commits).toEqual([6]);
-    await userEvent.click(page.getByRole("button", { name: "Decrease", exact: true }));
-    await userEvent.click(page.getByRole("button", { name: "Decrease", exact: true }));
-    expect(commits).toEqual([6, 5, 4]);
-  });
-
-  it("commits each arrow step as it happens", async () => {
-    const commits: number[] = [];
-    renderField(
-      <NumberField label="Quantity" defaultValue={5} onValueCommitted={(value) => commits.push(value)} />
-    );
-    textboxNamed("Quantity").focus();
-    await userEvent.keyboard("{ArrowUp}{ArrowUp}{ArrowDown}");
-    expect(commits).toEqual([6, 7, 6]);
   });
 
   it("commits NaN when a cleared input blurs", async () => {

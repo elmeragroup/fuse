@@ -9,7 +9,6 @@ import {
   cornerSum,
   insetOf,
   insetRedline,
-  innerCorner,
   packLabels,
   paintsFill,
   rungFormula,
@@ -18,16 +17,6 @@ import {
 
 // Every expected value below is worked out by hand from the formulas in CONTEXT.md ("Radius
 // rung", "Inner corner") and fuse.css, never computed with the module under test.
-
-describe("innerCorner", () => {
-  it("subtracts the inset from the outer corner", () => {
-    expect(innerCorner(16, 13)).toBe(3);
-  });
-
-  it("clamps at 0 when the inset is deeper than the corner", () => {
-    expect(innerCorner(8, 13)).toBe(0);
-  });
-});
 
 describe("rungFormula", () => {
   it("writes each rung's distance from --radius in steps", () => {
@@ -43,65 +32,78 @@ describe("rungFormula", () => {
 });
 
 describe("insetOf", () => {
-  it("adds the corner box's border and padding", () => {
-    expect(insetOf([{ border: 1, padding: 12, margin: 0 }])).toEqual({ border: 1, padding: 12 });
-  });
-
-  it("adds every box between the corner and the part, margins included", () => {
-    // An InputGroup: the 1px field border, then an addon padded 8px and pulled back 4px.
-    expect(
-      insetOf([
+  it.each([
+    [
+      "adds the corner box's border and padding",
+      [{ border: 1, padding: 12, margin: 0 }],
+      { border: 1, padding: 12 },
+    ],
+    [
+      // An InputGroup: the 1px field border, then an addon padded 8px and pulled back 4px.
+      "adds every box between the corner and the part, margins included",
+      [
         { border: 1, padding: 0, margin: 0 },
         { border: 0, padding: 8, margin: -4 },
-      ])
-    ).toEqual({ border: 1, padding: 4 });
-  });
-
-  it("ignores the corner box's own margin, which lies outside its corner", () => {
-    expect(insetOf([{ border: 1, padding: 24, margin: 16 }])).toEqual({ border: 1, padding: 24 });
+      ],
+      { border: 1, padding: 4 },
+    ],
+    [
+      "ignores the corner box's own margin, which lies outside its corner",
+      [{ border: 1, padding: 24, margin: 16 }],
+      { border: 1, padding: 24 },
+    ],
+  ])("%s", (_case, chain, inset) => {
+    expect(insetOf(chain)).toEqual(inset);
   });
 });
 
 describe("checkCorner", () => {
-  it("passes a part that rounds with the outer corner less the inset", () => {
-    expect(checkCorner({ outer: 20, border: 1, padding: 16, inner: 3 })).toEqual({
-      expected: 3,
-      clamped: false,
-      mismatch: false,
-    });
-  });
-
-  it("marks the clamped case when the inset reaches past the corner", () => {
-    expect(checkCorner({ outer: 4, border: 1, padding: 8, inner: 0 })).toEqual({
-      expected: 0,
-      clamped: true,
-      mismatch: false,
-    });
-  });
-
-  it("tolerates half a pixel of rounding", () => {
-    expect(checkCorner({ outer: 20, border: 1, padding: 16, inner: 3.4 }).mismatch).toBe(false);
-  });
-
-  it("flags a part more than half a pixel off the formula", () => {
-    // A naive part that keeps the outer corner.
-    expect(checkCorner({ outer: 20, border: 1, padding: 16, inner: 20 }).mismatch).toBe(true);
+  it.each([
+    [
+      "passes a part that rounds with the outer corner less the inset",
+      { outer: 20, border: 1, padding: 16, inner: 3 },
+      { expected: 3, clamped: false, mismatch: false },
+    ],
+    [
+      "marks the clamped case when the inset reaches past the corner",
+      { outer: 4, border: 1, padding: 8, inner: 0 },
+      { expected: 0, clamped: true, mismatch: false },
+    ],
+    [
+      "tolerates half a pixel of rounding",
+      { outer: 20, border: 1, padding: 16, inner: 3.4 },
+      { expected: 3, clamped: false, mismatch: false },
+    ],
+    [
+      // A naive part that keeps the outer corner.
+      "flags a part more than half a pixel off the formula",
+      { outer: 20, border: 1, padding: 16, inner: 20 },
+      { expected: 3, clamped: false, mismatch: true },
+    ],
+  ])("%s", (_case, reading, check) => {
+    expect(checkCorner(reading)).toEqual(check);
   });
 });
 
 describe("cornerEquation", () => {
-  it("writes the formula with the measured numbers", () => {
-    expect(cornerEquation({ outer: 16, border: 1, padding: 12 })).toBe("max(0, 16 − 1 − 12) = 3px");
-  });
-
-  it("keeps fractional px to two places", () => {
-    expect(cornerEquation({ outer: 10.5, border: 1, padding: 2.125 })).toBe(
-      "max(0, 10.5 − 1 − 2.13) = 7.38px"
-    );
-  });
-
-  it("writes the clamp's 0 when the inset is deeper", () => {
-    expect(cornerEquation({ outer: 4, border: 1, padding: 8 })).toBe("max(0, 4 − 1 − 8) = 0px");
+  it.each([
+    [
+      "writes the formula with the measured numbers",
+      { outer: 16, border: 1, padding: 12 },
+      "max(0, 16 − 1 − 12) = 3px",
+    ],
+    [
+      "keeps fractional px to two places",
+      { outer: 10.5, border: 1, padding: 2.125 },
+      "max(0, 10.5 − 1 − 2.13) = 7.38px",
+    ],
+    [
+      "writes the clamp's 0 when the inset is deeper",
+      { outer: 4, border: 1, padding: 8 },
+      "max(0, 4 − 1 − 8) = 0px",
+    ],
+  ])("%s", (_case, inset, text) => {
+    expect(cornerEquation(inset)).toBe(text);
   });
 });
 
@@ -113,20 +115,23 @@ describe("cornerSum", () => {
 });
 
 describe("arcPath", () => {
-  it("draws a top-left quarter circle from the left edge to the top edge", () => {
-    expect(arcPath(10, 20, 8)).toBe("M 10 28 A 8 8 0 0 1 18 20");
-  });
-
-  it("draws a square corner as two short ticks", () => {
-    expect(arcPath(10, 20, 0)).toBe("M 10 26 L 10 20 L 16 20");
-  });
-
-  it("mirrors to a top-right corner from the top edge to the right edge", () => {
-    expect(arcPath(100, 20, 8, "end")).toBe("M 92 20 A 8 8 0 0 1 100 28");
-  });
-
-  it("mirrors a square top-right corner's ticks", () => {
-    expect(arcPath(100, 20, 0, "end")).toBe("M 94 20 L 100 20 L 100 26");
+  it.each([
+    [
+      "draws a top-left quarter circle from the left edge to the top edge",
+      8,
+      "start",
+      "M 10 28 A 8 8 0 0 1 18 20",
+    ],
+    ["draws a square corner as two short ticks", 0, "start", "M 10 26 L 10 20 L 16 20"],
+    [
+      "mirrors to a top-right corner from the top edge to the right edge",
+      8,
+      "end",
+      "M 92 20 A 8 8 0 0 1 100 28",
+    ],
+    ["mirrors a square top-right corner's ticks", 0, "end", "M 94 20 L 100 20 L 100 26"],
+  ] as const)("%s", (_case, r, side, path) => {
+    expect(arcPath(side === "start" ? 10 : 100, 20, r, side)).toBe(path);
   });
 });
 
@@ -156,34 +161,29 @@ describe("insetRedline", () => {
 });
 
 describe("usedRadii", () => {
-  it("keeps radii that fit their box", () => {
-    expect(usedRadii(100, 80, { topLeft: 36, topRight: 36, bottomRight: 36, bottomLeft: 36 })).toEqual({
-      topLeft: 36,
-      topRight: 36,
-      bottomRight: 36,
-      bottomLeft: 36,
-    });
-  });
+  const even = (r: number) => ({ topLeft: r, topRight: r, bottomRight: r, bottomLeft: r });
 
-  it("scales a short, wide Tabs trigger's 36px corners at --radius: 40px down to its height", () => {
+  it.each([
+    ["keeps radii that fit their box", 100, 80, even(36), even(36)],
     // 40 − 4px of list padding = 36px each. The 28px side holds 36 + 36 = 72px of radii, so
     // f = 28 / 72 and every corner is 36 × 28 / 72 = 14px.
-    expect(usedRadii(100, 28, { topLeft: 36, topRight: 36, bottomRight: 36, bottomLeft: 36 })).toEqual({
-      topLeft: 14,
-      topRight: 14,
-      bottomRight: 14,
-      bottomLeft: 14,
-    });
-  });
-
-  it("scales every corner by the tightest side's factor", () => {
+    [
+      "scales a short, wide Tabs trigger's 36px corners at --radius: 40px down to its height",
+      100,
+      28,
+      even(36),
+      even(14),
+    ],
     // The top side is the tightest: 50 / (40 + 10) = 1; the left: 30 / (40 + 20) = 0.5.
-    expect(usedRadii(50, 30, { topLeft: 40, topRight: 10, bottomRight: 0, bottomLeft: 20 })).toEqual({
-      topLeft: 20,
-      topRight: 5,
-      bottomRight: 0,
-      bottomLeft: 10,
-    });
+    [
+      "scales every corner by the tightest side's factor",
+      50,
+      30,
+      { topLeft: 40, topRight: 10, bottomRight: 0, bottomLeft: 20 },
+      { topLeft: 20, topRight: 5, bottomRight: 0, bottomLeft: 10 },
+    ],
+  ])("%s", (_case, width, height, radii, used) => {
+    expect(usedRadii(width, height, radii)).toEqual(used);
   });
 });
 
@@ -276,14 +276,13 @@ describe("packLabels", () => {
 });
 
 describe("paintsFill", () => {
-  it("counts a background with any alpha as a fill", () => {
-    expect(paintsFill("rgb(255, 255, 255)")).toBe(true);
-    expect(paintsFill("oklch(0.5 0.1 200 / 0.02)")).toBe(true);
-  });
-
-  it("does not count a zero-alpha background as a fill, whatever its notation", () => {
-    expect(paintsFill("rgba(0, 0, 0, 0)")).toBe(false);
-    expect(paintsFill("oklch(0.5 0.1 200 / 0)")).toBe(false);
-    expect(paintsFill("lab(50 20 -10 / 0)")).toBe(false);
+  it.each([
+    ["rgb(255, 255, 255)", true],
+    ["oklch(0.5 0.1 200 / 0.02)", true],
+    ["rgba(0, 0, 0, 0)", false],
+    ["oklch(0.5 0.1 200 / 0)", false],
+    ["lab(50 20 -10 / 0)", false],
+  ])("counts %s as a fill: %s", (backgroundColor, fill) => {
+    expect(paintsFill(backgroundColor)).toBe(fill);
   });
 });

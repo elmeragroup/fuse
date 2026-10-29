@@ -1,20 +1,54 @@
+import { createRef } from "react";
+
 import type { FocusableOptions as RacFocusableOptions } from "react-aria";
 // oxlint-disable-next-line typescript/consistent-type-imports -- typeof identity needs a value binding
 import { useFocusable as useRacFocusable } from "react-aria";
-// oxlint-disable-next-line typescript/consistent-type-imports -- typeof identity needs a value binding
-import { Focusable as RacFocusable } from "react-aria-components";
 import { expectTypeOf, test } from "vitest";
 
 import type * as FocusableApi from "@elmeragroup/fuse/react-aria/focusable";
 import type { FocusableOptions } from "@elmeragroup/fuse/react-aria/focusable";
 import { Focusable, useFocusable } from "@elmeragroup/fuse/react-aria/focusable";
 
-test("the re-exports keep the RAC names as functions and FocusableOptions as the RAC type", () => {
+test("useFocusable and FocusableOptions keep the RAC types, and Focusable is a function", () => {
   expectTypeOf(Focusable).toBeFunction();
   expectTypeOf(useFocusable).toBeFunction();
-  expectTypeOf(Focusable).toEqualTypeOf<typeof RacFocusable>();
   expectTypeOf(useFocusable).toEqualTypeOf<typeof useRacFocusable>();
   expectTypeOf<FocusableOptions>().toEqualTypeOf<RacFocusableOptions>();
+});
+
+test("Focusable takes the focus options, a ref and the DOM props a trigger passes its render element", () => {
+  const _focusable = (
+    <Focusable
+      ref={createRef<HTMLElement>()}
+      isDisabled={false}
+      excludeFromTabOrder
+      onFocusChange={() => undefined}
+      onKeyDown={() => undefined}
+      id="meter"
+      className="cursor-help"
+      data-slot="tooltip-trigger"
+      aria-describedby="meter-hint"
+      onPointerEnter={() => undefined}>
+      <span role="button">Closed meter</span>
+    </Focusable>
+  );
+  // @ts-expect-error the child is one element, not text
+  const _text = <Focusable>Closed meter</Focusable>;
+  const _children = (
+    // @ts-expect-error the child is one element, not several
+    <Focusable>
+      <span role="button">Closed</span>
+      <span role="button">meter</span>
+    </Focusable>
+  );
+});
+
+test("Focusable takes an SVG ref and an SVG child, as RAC Focusable does", () => {
+  const _svg = (
+    <Focusable ref={createRef<SVGSVGElement>()}>
+      <svg role="img" aria-label="Meter" />
+    </Focusable>
+  );
 });
 
 test("RAC-only names stay off the public surface", () => {

@@ -74,31 +74,20 @@ describe("Meter", () => {
     expect(slot("meter-value", root)).toBeTruthy();
   });
 
-  it("spot-checks each tone column of bar-fill classes on the live fill", () => {
+  it("wires each mode through to the live fill's tone class", () => {
     const cases: Array<{
       mode: MeterMode;
       value: number;
       maxValue?: number;
       fill: string;
     }> = [
-      { mode: "default", value: 50, fill: "bg-success" },
+      // One cell per mode reaches the live fill; meter.test.ts proves the whole matrix.
       { mode: "default", value: 85, fill: "bg-warning" },
-      { mode: "default", value: 100, fill: "bg-error" },
       { mode: "default", value: 150, maxValue: 120, fill: "bg-error" },
       { mode: "inverted", value: 50, fill: "bg-error" },
-      { mode: "inverted", value: 85, fill: "bg-warning" },
-      { mode: "inverted", value: 100, fill: "bg-success" },
-      { mode: "inverted", value: 150, maxValue: 120, fill: "bg-error" },
-      { mode: "inverted", value: 150, fill: "bg-error" },
-      { mode: "success-only-when-full", value: 50, fill: "bg-error" },
       { mode: "success-only-when-full", value: 85, fill: "bg-error" },
       { mode: "success-only-when-full", value: 100, fill: "bg-success" },
-      { mode: "success-only-when-full", value: 150, maxValue: 120, fill: "bg-error" },
-      { mode: "success-only-when-full", value: 150, fill: "bg-error" },
-      { mode: "neutral", value: 50, fill: "bg-primary" },
       { mode: "neutral", value: 85, fill: "bg-primary" },
-      { mode: "neutral", value: 100, fill: "bg-primary" },
-      { mode: "neutral", value: 150, maxValue: 120, fill: "bg-primary" },
     ];
 
     for (const row of cases) {

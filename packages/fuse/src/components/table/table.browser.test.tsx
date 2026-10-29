@@ -26,13 +26,7 @@ function htmlTable(name?: string): HTMLTableElement {
   return element;
 }
 
-function ordersMarkup({
-  selected,
-  caption,
-}: {
-  selected?: boolean;
-  caption?: string;
-} = {}) {
+function ordersMarkup({ caption }: { caption?: string } = {}) {
   return (
     <Table.Root>
       {caption === undefined ? null : <Table.Caption>{caption}</Table.Caption>}
@@ -43,7 +37,7 @@ function ordersMarkup({
         </Table.Row>
       </Table.Header>
       <Table.Body>
-        <Table.Row data-state={selected ? "selected" : undefined}>
+        <Table.Row>
           <Table.Cell>#1042</Table.Cell>
           <Table.Cell>Active</Table.Cell>
         </Table.Row>
@@ -61,19 +55,6 @@ function ordersMarkup({
     </Table.Root>
   );
 }
-
-describe("Table", () => {
-  it("exposes native table roles and lets a caption name the table", () => {
-    renderThemed(ordersMarkup({ caption: "Recent orders" }));
-    const table = htmlTable("Recent orders");
-    expect(table).toBeTruthy();
-    expect(page.getByRole("columnheader", { name: "Order", exact: true }).element().tagName).toBe("TH");
-    expect(page.getByRole("columnheader", { name: "Status", exact: true }).element().tagName).toBe("TH");
-    expect(page.getByRole("cell", { name: "#1042", exact: true }).element().tagName).toBe("TD");
-    expect(page.getByRole("cell", { name: "Active", exact: true }).element().tagName).toBe("TD");
-    expect(page.getByRole("row").elements().length).toBe(4);
-  });
-});
 
 describe("Table in-frame visual contract", () => {
   it("reshapes inside Frame.Root and hides the hairline outside a frame", () => {

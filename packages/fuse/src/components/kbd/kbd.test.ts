@@ -14,13 +14,13 @@ describe("kbdVariants", () => {
     for (const slot of [styles.cap(), styles.group()]) {
       expect(slot).not.toMatch(/--(?:control|row|surface|label)-/u);
     }
-    expect(tokens(styles.cap())).toEqual(expect.arrayContaining(["h-5", "min-w-5", "px-1", "text-xs"]));
+    // kbd.browser.test.tsx measures the 20px height and 12px text; the width floor shows only here.
+    expect(tokens(styles.cap())).toEqual(expect.arrayContaining(["min-w-5", "px-1"]));
   });
 
   it("paints the cap from the muted and border role pairs only", () => {
-    expect(tokens(styles.cap())).toEqual(
-      expect.arrayContaining(["bg-muted", "text-muted-foreground", "border", "border-border"])
-    );
+    // kbd.browser.test.tsx reads the muted pair off the live cap.
+    expect(tokens(styles.cap())).toEqual(expect.arrayContaining(["border", "border-border"]));
     expect(styles.cap()).not.toMatch(RAW_PALETTE_RE);
     expect(styles.cap()).not.toContain("dark:");
   });

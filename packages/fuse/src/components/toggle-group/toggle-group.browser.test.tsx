@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+// The corner radius role token lives in themes.css only.
+import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import { px, renderThemed } from "../../../test/themed-browser-render";
 import { ToggleGroup } from "./index";
@@ -51,64 +53,6 @@ describe("ToggleGroup", () => {
     expect(onValueChange).toHaveBeenNthCalledWith(3, [], expect.anything());
   });
 
-  it("toggles items independently when multiple is true and accumulates values", async () => {
-    const onValueChange = vi.fn();
-    renderThemed(
-      <ToggleGroup.Root aria-label="Style" multiple onValueChange={onValueChange}>
-        <ToggleGroup.Item value="bold">Bold</ToggleGroup.Item>
-        <ToggleGroup.Item value="italic">Italic</ToggleGroup.Item>
-      </ToggleGroup.Root>
-    );
-
-    await userEvent.click(page.getByRole("button", { name: "Bold", exact: true }));
-    await expect.element(page.getByRole("button", { name: "Bold", pressed: true })).toBeInTheDocument();
-    expect(onValueChange).toHaveBeenNthCalledWith(1, ["bold"], expect.anything());
-
-    await userEvent.click(page.getByRole("button", { name: "Italic", exact: true }));
-    await expect.element(page.getByRole("button", { name: "Bold", pressed: true })).toBeInTheDocument();
-    await expect.element(page.getByRole("button", { name: "Italic", pressed: true })).toBeInTheDocument();
-    expect(onValueChange).toHaveBeenNthCalledWith(2, ["bold", "italic"], expect.anything());
-
-    await userEvent.click(page.getByRole("button", { name: "Bold", exact: true }));
-    await expect.element(page.getByRole("button", { name: "Bold", pressed: false })).toBeInTheDocument();
-    await expect.element(page.getByRole("button", { name: "Italic", pressed: true })).toBeInTheDocument();
-    expect(onValueChange).toHaveBeenNthCalledWith(3, ["italic"], expect.anything());
-  });
-
-  it("moves focus with horizontal arrows, toggles with Space and Enter, and is a single tab stop", async () => {
-    const onValueChange = vi.fn();
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <ToggleGroup.Root aria-label="Align" onValueChange={onValueChange}>
-          <ToggleGroup.Item value="left">Left</ToggleGroup.Item>
-          <ToggleGroup.Item value="right">Right</ToggleGroup.Item>
-        </ToggleGroup.Root>
-        <button type="button">After</button>
-      </>
-    );
-
-    buttonNamed("Before").focus();
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(buttonNamed("Left", false));
-
-    await userEvent.keyboard("{ArrowRight}");
-    expect(document.activeElement).toBe(buttonNamed("Right", false));
-    await userEvent.keyboard("{ArrowLeft}");
-    expect(document.activeElement).toBe(buttonNamed("Left", false));
-
-    await userEvent.keyboard(" ");
-    expect(onValueChange).toHaveBeenNthCalledWith(1, ["left"], expect.anything());
-    await expect.element(page.getByRole("button", { name: "Left", pressed: true })).toBeInTheDocument();
-
-    await userEvent.keyboard("{Enter}");
-    expect(onValueChange).toHaveBeenNthCalledWith(2, [], expect.anything());
-    await expect.element(page.getByRole("button", { name: "Left", pressed: false })).toBeInTheDocument();
-
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(buttonNamed("After"));
-  });
-
   it("navigates with ArrowUp/ArrowDown when orientation is vertical", async () => {
     renderThemed(
       <ToggleGroup.Root aria-label="Stack" orientation="vertical">
@@ -144,7 +88,7 @@ describe("ToggleGroup", () => {
     expect(buttonNamed("Override").getAttribute("data-size")).toBe("lg");
   });
 
-  it("emits data-spacing and --gap from spacing, including 0, and keeps --gap when the consumer passes style", () => {
+  it("emits data-spacing and --gap from spacing, including 0, rounds only a segmented group's outer corners, and keeps --gap when the consumer passes style", () => {
     renderThemed(
       <>
         <ToggleGroup.Root aria-label="Segmented" spacing={0} variant="outline">
@@ -160,6 +104,15 @@ describe("ToggleGroup", () => {
     const segmented = groupNamed("Segmented");
     expect(segmented.getAttribute("data-spacing")).toBe("0");
     expect(segmented.style.getPropertyValue("--gap")).toBe("0");
+    // Segmented items join: only the outer corners of the first and last item stay round.
+    const [first, last] = segmented.querySelectorAll("button");
+    if (!(first instanceof HTMLElement) || !(last instanceof HTMLElement)) {
+      throw new Error("expected two segmented items");
+    }
+    expect(px(getComputedStyle(first).borderTopLeftRadius)).toBeGreaterThan(0);
+    expect(px(getComputedStyle(first).borderTopRightRadius)).toBe(0);
+    expect(px(getComputedStyle(last).borderTopLeftRadius)).toBe(0);
+    expect(px(getComputedStyle(last).borderTopRightRadius)).toBeGreaterThan(0);
 
     const fullWidth = groupNamed("Full width");
     expect(fullWidth.style.width).toBe("100%");

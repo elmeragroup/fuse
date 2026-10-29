@@ -74,12 +74,7 @@ export function componentInspections(): readonly ComponentInspection[] {
  * writes for, in production order. The pass and the `api.json` drift check both
  * extract from this list.
  */
-export function docsApiInventory(
-  components: readonly ResolvedComponent[] = componentSlugs().map((slug) => ({
-    slug,
-    paths: resolveComponentPaths(slug),
-  }))
-): readonly DocsApiComponent[] {
+export function docsApiInventory(components: readonly ResolvedComponent[]): readonly DocsApiComponent[] {
   const seen = new Set<string>();
   return components.map(({ slug, paths }) => {
     if (seen.has(slug)) {

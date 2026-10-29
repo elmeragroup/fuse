@@ -164,9 +164,9 @@ describe("the shots command line", () => {
     })
   );
 
-  it.effect("captures a repeated list entry once", () =>
+  it.effect("captures a repeated list entry once, also when spaces set it apart", () =>
     Effect.gen(function* () {
-      const parsed = yield* parseArgv([...REQUIRED, "--densities", "dense,,dense"]);
+      const parsed = yield* parseArgv([...REQUIRED, "--densities", "dense,, dense"]);
       assert.deepStrictEqual(parsed.densities, [{ _tag: "override", density: "dense" }]);
     })
   );

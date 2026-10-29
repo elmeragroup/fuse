@@ -54,8 +54,11 @@
     "test": {
       "dependsOn": ["build"]
     },
+    // DOCS_E2E_SITE=skip leaves out the studio and landing files (vitest.config.ts), so it keys
+    // the cache: a skipped run must not replay for a full one.
     "test:e2e": {
-      "dependsOn": ["build:e2e"]
+      "dependsOn": ["build:e2e"],
+      "env": ["DOCS_E2E_SITE"]
     }
   }
 }

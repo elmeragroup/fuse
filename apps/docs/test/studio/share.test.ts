@@ -126,61 +126,27 @@ describe("decodeShare", () => {
     expect(decodeShare(text)).toBeUndefined();
   });
 
+  // The decoder's per-value check is `parseTokenValue`'s, whose own suite holds each refusal and
+  // each accepted form. These rows prove the wiring: a refused value in a scheme group and in the
+  // shared group, and the cycle check against the base theme, for an alias and for a formula.
   it.each([
     ["a color that is not a CSS color", lightEdit("primary", "garbage")],
-    ["an alias to an unknown property", lightEdit("primary", "var(--nope)")],
-    ["an alias to a token of another kind", lightEdit("primary", "var(--radius)")],
-    ["an alias to itself", lightEdit("primary", "var(--primary)")],
     // Every theme declares destructive: var(--error), so this edit closes a cycle.
     ["an alias that closes a cycle through the base theme", lightEdit("error", "var(--destructive)")],
     ["a radius step other than 0px or 2px", sharedEdit("radius-step", "1px")],
-    ["a dimension in another unit", sharedEdit("radius", "1em")],
-    ["a dimension with no digit after its point", sharedEdit("radius", "1.px")],
-    ["a dimension with no number", sharedEdit("radius", ".px")],
-    ["a dimension with an empty exponent", sharedEdit("radius", "1e")],
-    ["a font name that is not an identifier", lightEdit("font-sans", "123, serif")],
-    [
-      "a color formula that reads an unknown token",
-      lightEdit("secondary-hover", "color-mix(in oklch, var(--nope), #ffffff)"),
-    ],
     // Every theme declares secondary-hover from --secondary, so this formula closes a cycle.
     [
       "a color formula that closes a cycle",
       lightEdit("secondary", "color-mix(in oklch, var(--secondary-hover), #ffffff)"),
     ],
-    ["a color-mix() with one color", lightEdit("secondary-hover", "color-mix(in oklch, var(--secondary))")],
-    [
-      "a color-mix() that reads currentcolor",
-      lightEdit("primary", "color-mix(in srgb, var(--secondary), currentcolor)"),
-    ],
-    ["relative color syntax", lightEdit("border", "oklch(from var(--primary) l c h / 0.5)")],
-    ["a negative dimension", sharedEdit("radius", "-4px")],
-    ["a font stack with a function in it", lightEdit("font-sans", "url(x), serif")],
-    ["a font stack with an unquoted CSS-wide keyword", lightEdit("font-sans", "inherit, serif")],
-    ["a font weight above 1000", sharedEdit("selection-title-weight", "1001")],
-    ["a font weight below 1", sharedEdit("selection-title-weight", "0")],
-    ["a value longer than the limit", lightEdit("font-sans", `a${", b".repeat(MAX_VALUE_LENGTH)}`)],
-    ["a quoted family with a form feed", lightEdit("font-sans", '"a\fb", serif')],
   ])("reads %s as no state", (_label, text) => {
     expect(decodeShare(text)).toBeUndefined();
   });
 
   it.each([
     ["a hex color", lightEdit("primary", "#ff0000")],
-    ["an oklch() color with alpha", lightEdit("border", "oklch(1 0 0 / 0.1)")],
     ["a lab() color, the studio's canonical form", lightEdit("primary", "lab(54.29 80.8198 69.8997)")],
-    ["an alias to a color token", lightEdit("primary", "var(--secondary)")],
-    ["an alias to a primitive", lightEdit("primary", "var(--neutral-500)")],
-    ["a rem dimension", sharedEdit("radius", "0.75rem")],
-    ["a 2px radius step", sharedEdit("radius-step", "2px")],
-    ["a font stack with a quoted family", lightEdit("font-sans", '"Søk Sans", ui-serif, serif')],
-    ["a font stack with a quoted CSS-wide keyword", lightEdit("font-sans", '"inherit", serif')],
     ["an alias to a font family token", sharedEdit("font-heading", "var(--font-sans)")],
-    ["a font weight of 650", sharedEdit("selection-title-weight", "650")],
-    [
-      "a live color formula",
-      lightEdit("secondary-hover", "color-mix(in oklch, var(--secondary), var(--foreground) 10%)"),
-    ],
   ])("reads %s", (_label, text) => {
     expect(decodeShare(text)).toBeDefined();
   });

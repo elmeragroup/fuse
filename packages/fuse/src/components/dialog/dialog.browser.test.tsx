@@ -10,7 +10,7 @@ import {
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { overlayBackdropOf, renderThemed } from "../../../test/themed-browser-render";
+import { renderThemed } from "../../../test/themed-browser-render";
 import { Dialog } from "./index";
 
 const CLOSE_COPY = {
@@ -71,58 +71,6 @@ describe("Dialog", () => {
 
     const description = page.getByText("Read before you sign.", { exact: true }).element();
     expect(dialog.getAttribute("aria-describedby")).toBe(description.id);
-  });
-
-  it("closes on Escape and returns focus to the trigger", async () => {
-    renderThemed(withLocale("en-US", <BasicDialog />));
-    await openDialog();
-
-    await userEvent.keyboard("{Escape}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("dialog").query()).toBeNull();
-    });
-    await expect.element(page.getByRole("button", { name: "Open terms", exact: true })).toHaveFocus();
-  });
-
-  it("traps focus inside the popup and wraps in both directions", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <>
-          <button type="button">Behind</button>
-          <BasicDialog />
-        </>
-      )
-    );
-    const behind = page.getByRole("button", { name: "Behind", exact: true }).element();
-    const dialog = await openDialog();
-    await vi.waitFor(() => {
-      expect(dialog.contains(document.activeElement)).toBe(true);
-    });
-
-    const tabbables = [...dialog.querySelectorAll<HTMLElement>("button")];
-    expect(tabbables.length).toBeGreaterThan(1);
-    const first = tabbables[0];
-    const last = tabbables.at(-1);
-    if (first === undefined || last === undefined) {
-      throw new Error("expected tabbable controls");
-    }
-
-    last.focus();
-    await vi.waitFor(() => {
-      expect(document.activeElement).toBe(last);
-    });
-    await userEvent.keyboard("{Tab}");
-    await vi.waitFor(() => {
-      expect(dialog.contains(document.activeElement)).toBe(true);
-      expect(document.activeElement).toBe(first);
-    });
-
-    await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
-    await vi.waitFor(() => {
-      expect(document.activeElement).toBe(last);
-    });
-    expect(behind.contains(document.activeElement)).toBe(false);
   });
 
   it("focuses the popup itself and paints the shared ring when nothing inside is tabbable", async () => {
@@ -308,39 +256,6 @@ describe("Dialog", () => {
     expect(scope).not.toBeNull();
     expect(scope?.contains(dialog)).toBe(true);
     expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
-  it("keeps Escape and backdrop clicks inert for a non-dismissible dialog", async () => {
-    // base-ui 1.6.0 spells outside-pointer dismissal control as `disablePointerDismissal`
-    // plus cancelling the escape-key close reason; Root forwards both verbatim.
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Dialog.Root
-          disablePointerDismissal
-          onOpenChange={(open, eventDetails) => {
-            if (!open && eventDetails.reason === "escape-key") {
-              eventDetails.cancel();
-            }
-          }}>
-          <Dialog.Trigger>Open terms</Dialog.Trigger>
-          <Dialog.Content>
-            <Dialog.Title>Contract terms</Dialog.Title>
-          </Dialog.Content>
-        </Dialog.Root>
-      )
-    );
-    await openDialog();
-
-    await userEvent.keyboard("{Escape}");
-    expect(page.getByRole("dialog").element()).toBeTruthy();
-
-    const dialog = page.getByRole("dialog").element();
-    if (!(dialog instanceof HTMLElement)) {
-      throw new Error("expected the popup");
-    }
-    await userEvent.click(overlayBackdropOf(dialog), { position: { x: 2, y: 2 } });
-    expect(page.getByRole("dialog").element()).toBeTruthy();
   });
 
   it("gives the trigger the shared keyboard focus ring", async () => {

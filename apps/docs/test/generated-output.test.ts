@@ -38,9 +38,9 @@ function authoredPage(slug: string): AuthoredPage {
 
 /** The component's committed API artifact — the one source of its API data. */
 function api(slug: string): ComponentApiArtifact {
-  // SAFETY: every api.json is written by one serialiser from `ComponentApiArtifact`, and the
-  // drift check (`api-artifact.test.ts`) regenerates and byte-compares each committed file, so
-  // a shape that disagrees with the type fails there before this read can see it.
+  // SAFETY: every api.json is written by one serialiser from `ComponentApiArtifact`; generation
+  // rewrites a committed file that disagrees, and the drift check (`api-artifact.test.ts`)
+  // fails on that rewrite.
   return JSON.parse(readFileSync(resolveComponentPaths(slug).apiFile, "utf8")) as ComponentApiArtifact;
 }
 
@@ -184,6 +184,20 @@ describe("component outlines", () => {
         expect(demo.id, `${outline.slug}.${demo.id}`).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
         expect(demo.title.trim(), `${outline.slug}.${demo.id}`).not.toBe("");
       }
+    }
+  });
+
+  it("gives no demo the anchor ID of a heading on its page", () => {
+    // Unit under test: each page's demo IDs. Oracle: a document's IDs are unique, so a demo
+    // frame's heading never shares its ID with a prose heading; a shared one breaks the anchor
+    // and the frame's hydration marker.
+    for (const outline of COMPONENT_OUTLINES) {
+      const authored = authoredPage(outline.slug).parsed;
+      const headingIds = new Set(authored.headings.map((heading) => heading.id));
+      expect(
+        authored.demos.map((demo) => demo.id).filter((id) => headingIds.has(id)),
+        outline.slug
+      ).toEqual([]);
     }
   });
 

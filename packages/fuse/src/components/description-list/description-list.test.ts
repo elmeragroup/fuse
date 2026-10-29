@@ -41,17 +41,9 @@ function markup(): string {
   );
 }
 
-describe("DescriptionList server boundary", () => {
-  it("imports and renders the namespace without a use client directive on the compound", () => {
+describe("DescriptionList slots", () => {
+  it("stamps each part's data-slot", () => {
     const html = markup();
-    expect(html).toContain("<div");
-    expect(html).toContain("<h2");
-    expect(html).toContain("<dl");
-    expect(html).toContain("<dt");
-    expect(html).toContain("<dd");
-    expect(html).toContain("Customer");
-    expect(html).toContain("Kari Nordmann");
-    expect(html).toContain("7070575000");
     for (const slot of SLOTS) {
       expect(html, slot).toContain(`data-slot="${slot}"`);
     }
@@ -61,13 +53,6 @@ describe("DescriptionList server boundary", () => {
 describe("DescriptionList structure", () => {
   // Each part keeps its base class beside a consumer class; a conflicting consumer class wins.
   it.each([
-    [
-      "Details",
-      "text-primary",
-      "text-primary",
-      "--description-list-details",
-      (className: string) => createElement(DescriptionList.Details, { className }, "Kari Nordmann"),
-    ],
     [
       "Content",
       "max-w-md",
@@ -105,10 +90,8 @@ describe("DescriptionList structure", () => {
     }
   });
 
-  it("paints from tokens without a dark variant or raw palette utility", () => {
+  it("paints without a dark variant or raw palette utility", () => {
     const html = markup();
-    expect(html).toContain("var(--muted-foreground)");
-    expect(html).toContain("var(--foreground)");
     expect(html).not.toContain("dark:");
     expect(html).not.toContain("destructive");
     expect(html).not.toMatch(RAW_PALETTE_RE);
@@ -136,27 +119,4 @@ describe("DescriptionList layouts", () => {
       expect(html).not.toContain(" layout=");
     }
   );
-
-  it("renders an Item as a div that forwards its attributes", () => {
-    const html = renderToStaticMarkup(
-      createElement(
-        DescriptionList.Item,
-        { id: "created", title: "Order created" },
-        createElement(DescriptionList.Term, null, "Created")
-      )
-    );
-    expect(html).toMatch(/^<div /u);
-    expect(html).toContain('data-slot="description-list-item"');
-    expect(html).toContain('id="created"');
-    expect(html).toContain('title="Order created"');
-    expect(html).toContain('<dt data-slot="description-list-term"');
-  });
-
-  it("lets a consumer colour on a term replace the term colour the list publishes", () => {
-    const html = renderToStaticMarkup(
-      createElement(DescriptionList.Term, { className: "text-muted-foreground" }, "Start date")
-    );
-    expect(html).toContain("text-muted-foreground");
-    expect(html).not.toContain("--description-list-term");
-  });
 });

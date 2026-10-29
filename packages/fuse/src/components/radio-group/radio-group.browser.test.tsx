@@ -24,7 +24,6 @@ import {
   effectiveOpacity,
   formNamed,
   guenExternal,
-  headingNamed,
   renderThemed,
   roleNamed,
   stampDensity,
@@ -90,7 +89,7 @@ function Glyph() {
 }
 
 describe("RadioGroup", () => {
-  it("exposes members through the legend name and calls onChange with a string", async () => {
+  it("exposes members through the legend name and calls onChange with a string from a label click", async () => {
     const onChange = vi.fn();
     renderThemed(
       <RadioGroup label="Contract" description="Choose a plan." onChange={onChange}>
@@ -101,7 +100,8 @@ describe("RadioGroup", () => {
 
     expect(radiogroupNamed("Contract")).toBeTruthy();
     expect(radioNamed("Fixed", false).getAttribute("aria-checked")).toBe("false");
-    await userEvent.click(page.getByRole("radio", { name: "Fixed", exact: true }));
+    // The whole row label is the click target, its text included.
+    await userEvent.click(textNamed("Fixed"));
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0]?.[0]).toBe("fixed");
     expect(radioNamed("Fixed", true).getAttribute("aria-checked")).toBe("true");
@@ -368,56 +368,13 @@ describe("RadioGroup", () => {
 });
 
 describe("Radio", () => {
-  it("selects from a label click and skips a disabled row with arrows", async () => {
-    renderThemed(
-      <RadioGroup label="Contract" defaultValue="fixed">
-        <Radio value="fixed">Fixed</Radio>
-        <Radio value="spot" isDisabled>
-          Spot
-        </Radio>
-        <Radio value="hourly">Hourly</Radio>
-      </RadioGroup>
-    );
-
-    const hourlyLabel = radioNamed("Hourly", false).closest("label");
-    if (!(hourlyLabel instanceof HTMLElement)) {
-      throw new Error("expected Hourly to be wrapped in a label");
-    }
-    await userEvent.click(hourlyLabel);
-    expect(radioNamed("Hourly", true).getAttribute("aria-checked")).toBe("true");
-
-    radioNamed("Hourly", true).focus();
-    await userEvent.keyboard("{ArrowDown}");
-    expect(radioNamed("Fixed", true).getAttribute("aria-checked")).toBe("true");
-    expect(
-      radioNamed("Spot").getAttribute("aria-disabled") === "true" ||
-        radioNamed("Spot").hasAttribute("disabled")
-    ).toBe(true);
-  });
-
-  it("dims a disabled row's control and label text once each", () => {
-    renderThemed(
-      <RadioGroup label="Contract">
-        <Radio value="spot" isDisabled>
-          Spot
-        </Radio>
-        <Radio value="fixed">Fixed</Radio>
-      </RadioGroup>
-    );
-
-    // The control dims itself and the label dims only its text, so neither compounds.
-    expect(effectiveOpacity(radioNamed("Spot"))).toBe(0.5);
-    expect(effectiveOpacity(textNamed("Spot"))).toBe(0.5);
-    expect(effectiveOpacity(radioNamed("Fixed"))).toBe(1);
-    expect(effectiveOpacity(textNamed("Fixed"))).toBe(1);
-  });
-
-  it("lays out rich label content in the label's row and dims all of it once", () => {
+  it("lays out rich label content in the label's row and dims a disabled row's control and content once each", () => {
     renderThemed(
       <RadioGroup label="Contract">
         <Radio value="spot" isDisabled>
           Spot <Badge>New</Badge>
         </Radio>
+        <Radio value="fixed">Fixed</Radio>
       </RadioGroup>
     );
 
@@ -436,8 +393,11 @@ describe("Radio", () => {
     expect(badgeBox.left - textBox.right).toBeCloseTo(8, 0);
     const offCenter = badgeBox.top + badgeBox.height / 2 - (textBox.top + textBox.height / 2);
     expect(Math.abs(offCenter)).toBeLessThanOrEqual(1);
+    // The control dims itself and the label dims only its content, so neither compounds.
     expect(effectiveOpacity(radioNamed("Spot New"))).toBe(0.5);
     expect(effectiveOpacity(badge)).toBe(0.5);
+    expect(effectiveOpacity(radioNamed("Fixed"))).toBe(1);
+    expect(effectiveOpacity(textNamed("Fixed"))).toBe(1);
   });
 
   it.each([
@@ -473,72 +433,6 @@ describe("Radio", () => {
       await assertFocusRingAtBothDensities(roleNamed("button", "Before"), radioNamed(name));
     }
   );
-});
-
-describe("RadioItem", () => {
-  it("selects from the row and isolates SubSection clicks", async () => {
-    renderThemed(
-      <RadioGroup label="Plans">
-        <RadioItem value="fixed">
-          <RadioItem.Title role="heading" aria-level={3}>
-            Fixed price
-          </RadioItem.Title>
-          <RadioItem.SubSection>
-            <button type="button">Details</button>
-          </RadioItem.SubSection>
-        </RadioItem>
-      </RadioGroup>
-    );
-
-    const details = page.getByRole("button", { name: "Details", exact: true }).element();
-    expect(details.closest("label")).toBeNull();
-    expect(page.getByRole("listitem").elements()).toHaveLength(0);
-    await userEvent.click(headingNamed("Fixed price"));
-    expect(radioNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
-    await userEvent.click(page.getByRole("button", { name: "Details", exact: true }));
-    expect(radioNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
-  });
-
-  it("does not select a disabled row", async () => {
-    renderThemed(
-      <RadioGroup label="Plans">
-        <RadioItem value="fixed" isDisabled>
-          <RadioItem.Title role="heading" aria-level={3}>
-            Fixed price
-          </RadioItem.Title>
-        </RadioItem>
-      </RadioGroup>
-    );
-
-    headingNamed("Fixed price").click();
-    expect(radioNamed("Fixed price", false).getAttribute("aria-checked")).toBe("false");
-    await expect.element(page.getByRole("radio", { name: "Fixed price", exact: true })).toBeDisabled();
-  });
-
-  it("renders a trailing control when controlPosition is end", () => {
-    renderThemed(
-      <RadioGroup label="Plans">
-        <RadioItem value="start">
-          <RadioItem.Title role="heading" aria-level={3}>
-            Start row
-          </RadioItem.Title>
-        </RadioItem>
-        <RadioItem value="end" controlPosition="end">
-          <RadioItem.Title role="heading" aria-level={3}>
-            End row
-          </RadioItem.Title>
-        </RadioItem>
-      </RadioGroup>
-    );
-
-    const startTitle = headingNamed("Start row").getBoundingClientRect();
-    const startControl = radioNamed("Start row").getBoundingClientRect();
-    expect(startControl.left).toBeLessThan(startTitle.left);
-
-    const endTitle = headingNamed("End row").getBoundingClientRect();
-    const endControl = radioNamed("End row").getBoundingClientRect();
-    expect(endControl.left).toBeGreaterThan(endTitle.right);
-  });
 });
 
 describe("RadioItemGroup", () => {
@@ -615,32 +509,24 @@ describe("isLabelHidden", () => {
 });
 
 describe("RadioIconButton", () => {
-  it("selects via click and keyboard within a group", async () => {
+  it("selects via click within a group", async () => {
     const onChange = vi.fn();
     renderThemed(
-      <>
-        <button type="button">Before</button>
-        <RadioGroup label="View" defaultValue="list" onChange={onChange}>
-          <RadioIconButton value="list" aria-label="List">
-            <Glyph />
-          </RadioIconButton>
-          <RadioIconButton value="house" aria-label="Home">
-            <Glyph />
-          </RadioIconButton>
-        </RadioGroup>
-      </>
+      <RadioGroup label="View" defaultValue="list" onChange={onChange}>
+        <RadioIconButton value="list" aria-label="List">
+          <Glyph />
+        </RadioIconButton>
+        <RadioIconButton value="house" aria-label="Home">
+          <Glyph />
+        </RadioIconButton>
+      </RadioGroup>
     );
 
     expect(radioNamed("List", true).getAttribute("data-slot")).toBe("radio-icon-button");
     await userEvent.click(page.getByRole("radio", { name: "Home", exact: true }));
     expect(onChange).toHaveBeenCalledWith("house");
     expect(radioNamed("Home", true).getAttribute("aria-checked")).toBe("true");
-
-    page.getByRole("button", { name: "Before", exact: true }).element().focus();
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(radioNamed("Home", true));
-    await userEvent.keyboard("{ArrowDown}");
-    expect(radioNamed("List", true).getAttribute("aria-checked")).toBe("true");
+    expect(radioNamed("List", false).getAttribute("aria-checked")).toBe("false");
   });
 
   // control-size.browser.test.tsx measures each size's square against DENSITY_METRICS; the

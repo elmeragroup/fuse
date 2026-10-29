@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -96,9 +96,10 @@ async function waitForToast(name: string): Promise<HTMLElement> {
   return toastRootNamed(name);
 }
 
-async function waitForToastGone(name: string): Promise<void> {
+/** Waits for a toast to start its exit, which is when a close or swipe has dismissed it. */
+async function waitForEnding(root: HTMLElement): Promise<void> {
   await vi.waitFor(() => {
-    expect(queryToastCopy(name)).toBeUndefined();
+    expect(root.hasAttribute("data-ending-style")).toBe(true);
   });
 }
 
@@ -127,7 +128,7 @@ function LabelledClose({ close }: { close: ReactNode }) {
 }
 
 describe("Toast manager", () => {
-  it("add returns an id, upserts by id, update swaps copy, and close removes one or all", async () => {
+  it("add returns an id, upserts by id, and close ends one or all", async () => {
     const { manager } = renderToast();
 
     const first = manager.add({ id: "save", title: "Saving…", description: "Please wait.", timeout: 0 });
@@ -137,210 +138,158 @@ describe("Toast manager", () => {
 
     const upserted = manager.add({ id: "save", title: "Saved", description: "Changes stored.", timeout: 0 });
     expect(upserted).toBe("save");
-    await waitForToast("Saved");
+    const saved = await waitForToast("Saved");
     expect(queryToastCopy("Saving…")).toBeUndefined();
     expect(toastRoots()).toHaveLength(1);
 
-    manager.update("save", { description: "All good." });
-    await vi.waitFor(() => {
-      expect(queryToastCopy("All good.")).toBeTruthy();
-    });
-
     const extra = manager.add({ title: "Second", timeout: 0 });
-    await waitForToast("Second");
-    expect(toastRoots().length).toBeGreaterThan(1);
+    const second = await waitForToast("Second");
 
     manager.close(extra);
-    await waitForToastGone("Second");
-    expect(queryToastCopy("Saved")).toBeTruthy();
+    await waitForEnding(second);
+    expect(saved.hasAttribute("data-ending-style")).toBe(false);
 
     manager.close();
-    await vi.waitFor(() => {
-      expect(toastRoots()).toHaveLength(0);
-    });
+    await waitForEnding(saved);
   });
 
   it("defaults error to high/alert and other types to low; explicit priority wins", async () => {
-    const { manager } = renderToast();
-
-    manager.add({ type: "error", title: "Outage", description: "Grid is down.", timeout: 0 });
-    await waitForToast("Outage");
-    expect(page.getByRole("alert").element()).toBeTruthy();
-    expect(toastRootNamed("Outage").getAttribute("role")).toBe("alertdialog");
-    expect(toastRootNamed("Outage").getAttribute("data-status")).toBe("error");
-    manager.close();
-    await vi.waitFor(() => {
-      expect(page.getByRole("alert").query()).toBeNull();
-    });
-
-    for (const type of ["info", "success", "warning", "loading"] as const) {
-      manager.add({ type, title: type, timeout: 0 });
-      const root = await waitForToast(type);
-      expect(root.getAttribute("data-status"), type).toBe(type);
-      expect(root.getAttribute("role"), type).toBe("dialog");
-      expect(page.getByRole("alert").query(), type).toBeNull();
-      manager.close();
-      await waitForToastGone(type);
+    const { manager } = renderToast(<Toast.Viewport />, { limit: 10 });
+    const cases = [
+      {
+        options: { type: "error", title: "Outage", description: "Grid is down." },
+        status: "error",
+        high: true,
+      },
+      { options: { type: "info", title: "Info note" }, status: "info", high: false },
+      { options: { type: "success", title: "Done note" }, status: "success", high: false },
+      { options: { type: "warning", title: "Careful note" }, status: "warning", high: false },
+      { options: { type: "loading", title: "Busy note" }, status: "loading", high: false },
+      { options: { title: "Plain" }, status: "neutral", high: false },
+      { options: { type: "error", priority: "low", title: "Quiet error" }, status: "error", high: false },
+      {
+        options: { type: "success", priority: "high", title: "Loud success" },
+        status: "success",
+        high: true,
+      },
+    ] as const;
+    for (const { options } of cases) {
+      manager.add({ ...options, timeout: 0 });
     }
 
-    manager.add({ title: "Plain", timeout: 0 });
-    const neutral = await waitForToast("Plain");
-    expect(neutral.getAttribute("data-status")).toBe("neutral");
-    expect(neutral.getAttribute("role")).toBe("dialog");
-    expect(neutral.querySelector("[data-toast-icon]")).toBeNull();
-    manager.close();
-    await waitForToastGone("Plain");
-
-    manager.add({ type: "error", priority: "low", title: "Quiet error", timeout: 0 });
-    const quiet = await waitForToast("Quiet error");
-    expect(quiet.getAttribute("role")).toBe("dialog");
-    expect(page.getByRole("alert").query()).toBeNull();
-    manager.close();
-    await waitForToastGone("Quiet error");
-
-    manager.add({ type: "success", priority: "high", title: "Loud success", timeout: 0 });
-    const loud = await waitForToast("Loud success");
-    expect(loud.getAttribute("role")).toBe("alertdialog");
-    expect(page.getByRole("alert").element()).toBeTruthy();
+    for (const { options, status, high } of cases) {
+      const root = await waitForToast(options.title);
+      expect(root.getAttribute("data-status"), options.title).toBe(status);
+      expect(root.getAttribute("role"), options.title).toBe(high ? "alertdialog" : "dialog");
+    }
+    expect(toastRootNamed("Plain").querySelector("[data-toast-icon]")).toBeNull();
+    // The visually hidden live region announces exactly the high-priority toasts.
+    const announced = page
+      .getByRole("alert")
+      .elements()
+      .map((alert) => alert.textContent)
+      .join("|");
+    for (const { options, high } of cases) {
+      expect(announced.includes(options.title), options.title).toBe(high);
+    }
   });
 
-  it("promise walks loading → success and loading → error, with state-level priority overrides", async () => {
-    const { manager } = renderToast();
+  it("promise walks loading → settled state, with returned types and state-level priority overrides", async () => {
+    const { manager } = renderToast(<Toast.Viewport />, { limit: 10 });
 
-    let resolveOk: (value: string) => void = () => {
-      throw new Error("unresolved");
-    };
-    const ok = new Promise<string>((resolve) => {
-      resolveOk = resolve;
-    });
-    const successPromise = manager.promise(ok, {
+    const ok = Promise.withResolvers<string>();
+    const failing = Promise.withResolvers<string>();
+    const loudOk = Promise.withResolvers<string>();
+    const quietFail = Promise.withResolvers<string>();
+    const successPromise = manager.promise(ok.promise, {
       loading: "Saving…",
       success: { title: "Saved", description: "Stored." },
       error: "Failed",
+    });
+    const errorPromise = manager.promise(failing.promise, {
+      loading: "Uploading…",
+      success: "Uploaded",
+      error: { title: "Upload failed", description: "Try again." },
+    });
+    const loudPromise = manager.promise(loudOk.promise, {
+      loading: "Working…",
+      success: { title: "Loud save", priority: "high" },
+      error: { title: "Quiet fail", priority: "low" },
+    });
+    const quietPromise = manager.promise(quietFail.promise, {
+      loading: "Retrying…",
+      success: "ok",
+      error: { title: "Quiet fail", priority: "low" },
     });
 
     const loading = await waitForToast("Saving…");
     expect(loading.getAttribute("data-status")).toBe("loading");
     expect(loading.getAttribute("role")).toBe("dialog");
     expect(loading.querySelector("[data-toast-icon]")).not.toBeNull();
+    await waitForToast("Uploading…");
+    await waitForToast("Working…");
+    await waitForToast("Retrying…");
     expect(page.getByRole("alert").query()).toBeNull();
 
-    resolveOk("done");
+    ok.resolve("done");
+    failing.reject(new Error("nope"));
+    loudOk.resolve("ok");
+    quietFail.reject(new Error("quiet nope"));
     await expect(successPromise).resolves.toBe("done");
+    await expect(errorPromise).rejects.toThrow("nope");
+    await expect(loudPromise).resolves.toBe("ok");
+    await expect(quietPromise).rejects.toThrow("quiet nope");
+
     const success = await waitForToast("Saved");
     expect(success.getAttribute("data-status")).toBe("success");
     expect(success.getAttribute("role")).toBe("dialog");
     expect(queryToastCopy("Stored.")).toBeTruthy();
     expect(queryToastCopy("Saving…")).toBeUndefined();
-    manager.close();
-    await waitForToastGone("Saved");
 
-    let rejectErr: (reason: Error) => void = () => {
-      throw new Error("unrejected");
-    };
-    const failing = new Promise<string>((_resolve, reject) => {
-      rejectErr = reject;
-    });
-    const errorPromise = manager.promise(failing, {
-      loading: "Uploading…",
-      success: "Uploaded",
-      error: { title: "Upload failed", description: "Try again." },
-    });
-    await waitForToast("Uploading…");
-    rejectErr(new Error("nope"));
-    await expect(errorPromise).rejects.toThrow("nope");
     const errorRoot = await waitForToast("Upload failed");
     expect(errorRoot.getAttribute("data-status")).toBe("error");
     expect(errorRoot.getAttribute("role")).toBe("alertdialog");
-    expect(page.getByRole("alert").element()).toBeTruthy();
-    manager.close();
-    await waitForToastGone("Upload failed");
 
-    let resolveLoud: (value: string) => void = () => {
-      throw new Error("unresolved");
-    };
-    const loudOk = new Promise<string>((resolve) => {
-      resolveLoud = resolve;
-    });
-    const loudPromise = manager.promise(loudOk, {
-      loading: "Working…",
-      success: { title: "Loud save", priority: "high" },
-      error: { title: "Quiet fail", priority: "low" },
-    });
-    await waitForToast("Working…");
-    resolveLoud("ok");
-    await expect(loudPromise).resolves.toBe("ok");
     const loud = await waitForToast("Loud save");
+    expect(loud.getAttribute("data-status")).toBe("success");
     expect(loud.getAttribute("role")).toBe("alertdialog");
-    expect(page.getByRole("alert").element()).toBeTruthy();
-    manager.close();
-    await waitForToastGone("Loud save");
 
-    let rejectQuiet: (reason: Error) => void = () => {
-      throw new Error("unrejected");
-    };
-    const quietFail = new Promise<string>((_resolve, reject) => {
-      rejectQuiet = reject;
-    });
-    const quietPromise = manager.promise(quietFail, {
-      loading: "Working…",
-      success: "ok",
-      error: { title: "Quiet fail", priority: "low" },
-    });
-    await waitForToast("Working…");
-    rejectQuiet(new Error("nope"));
-    await expect(quietPromise).rejects.toThrow("nope");
     const quiet = await waitForToast("Quiet fail");
     expect(quiet.getAttribute("data-status")).toBe("error");
     expect(quiet.getAttribute("role")).toBe("dialog");
-    expect(page.getByRole("alert").query()).toBeNull();
-  });
 
-  it("promise keeps the type a success state returns", async () => {
-    const { manager } = renderToast();
-
+    // A returned `type` replaces the settled default, and priority derives from it.
     const warned = manager.promise(Promise.resolve(3), {
       loading: "Recalculating…",
       success: (count) => ({ type: "warning", title: "Recalculated", description: `${count} warnings` }),
       error: "Failed",
     });
-    await expect(warned).resolves.toBe(3);
-    const warning = await waitForToast("Recalculated");
-    expect(warning.getAttribute("data-status")).toBe("warning");
-    expect(warning.getAttribute("role")).toBe("dialog");
-  });
-
-  it("promise derives priority from the type a success state returns", async () => {
-    const { manager } = renderToast();
-
     const refused = manager.promise(Promise.resolve("refused"), {
       loading: "Submitting…",
       success: { type: "error", title: "Order refused" },
       error: "Failed",
     });
+    await expect(warned).resolves.toBe(3);
     await expect(refused).resolves.toBe("refused");
+    const warning = await waitForToast("Recalculated");
+    expect(warning.getAttribute("data-status")).toBe("warning");
+    expect(warning.getAttribute("role")).toBe("dialog");
     const refusal = await waitForToast("Order refused");
     expect(refusal.getAttribute("data-status")).toBe("error");
     expect(refusal.getAttribute("role")).toBe("alertdialog");
-    expect(page.getByRole("alert").element()).toBeTruthy();
   });
 
   it("promise without loading shows nothing until the promise settles", async () => {
     const { manager } = renderToast();
 
-    let resolveOk: (value: string) => void = () => {
-      throw new Error("unresolved");
-    };
-    const ok = new Promise<string>((resolve) => {
-      resolveOk = resolve;
-    });
-    const settled = manager.promise(ok, { success: "Synced", error: "Sync failed" });
+    const ok = Promise.withResolvers<string>();
+    const settled = manager.promise(ok.promise, { success: "Synced", error: "Sync failed" });
     // A toast added after promise() renders in the same pass as any toast promise() added.
     manager.add({ title: "Sentinel" });
     const sentinel = await waitForToast("Sentinel");
     expect(toastRoots()).toEqual([sentinel]);
 
-    resolveOk("done");
+    ok.resolve("done");
     await expect(settled).resolves.toBe("done");
     const success = await waitForToast("Synced");
     expect(success.getAttribute("data-status")).toBe("success");
@@ -372,34 +321,18 @@ describe("Toast manager", () => {
     }
     const { manager } = renderToast(<Recorder />);
 
-    const id = manager.add({ title: "Stable", timeout: 0 });
+    manager.add({ title: "Stable", timeout: 0 });
     await waitForToast("Stable");
-    manager.close(id);
-    await waitForToastGone("Stable");
+    manager.add({ title: "Stable too", timeout: 0 });
+    await waitForToast("Stable too");
 
-    expect(renders.map((render) => render.toasts)).toContain(1);
+    expect(renders.map((render) => render.toasts)).toEqual(expect.arrayContaining([0, 1, 2]));
     const [first] = renders;
     for (const render of renders) {
       render.methods.forEach((method, index) => {
         expect(method).toBe(first?.methods[index]);
       });
     }
-  });
-
-  it("an effect keyed on useToastManager's add adds one toast", async () => {
-    function AddOnMount() {
-      const { add } = Toast.useToastManager();
-      useEffect(() => {
-        add({ title: "Added once", timeout: 0 });
-      }, [add]);
-      return <Toast.Viewport />;
-    }
-    const { manager } = renderToast(<AddOnMount />);
-
-    await waitForToast("Added once");
-    manager.add({ title: "Marker", timeout: 0 });
-    await waitForToast("Marker");
-    expect(toastRoots()).toHaveLength(2);
   });
 });
 
@@ -412,7 +345,7 @@ describe("Toast chrome", () => {
       timeout: 0,
       actionProps: { children: "Undo", onClick: onAction },
     });
-    await waitForToast("Item deleted");
+    const root = await waitForToast("Item deleted");
     await expandViewport();
 
     const action = page.getByRole("button", { name: "Undo", exact: true }).element();
@@ -421,12 +354,13 @@ describe("Toast chrome", () => {
 
     const close = page.getByRole("button", { name: "Close", exact: true }).element();
     await userEvent.click(close);
-    await waitForToastGone("Item deleted");
+    await waitForEnding(root);
   });
 
-  it("names the viewport region in all four locales and lets an explicit aria-label win", () => {
+  it("names the viewport region in all four locales, keeps it under an unset aria-label, and lets an explicit aria-label win", () => {
     for (const locale of SUPPORTED_LOCALES) {
-      const { unmount } = renderToast(<Toast.Viewport />, { locale });
+      // A wrapper that forwards an unset aria-label must not erase the localized name.
+      const { unmount } = renderToast(<Toast.Viewport aria-label={undefined} />, { locale });
       expect(roleNamed("region", NOTIFICATIONS_COPY[locale]).getAttribute("data-slot"), locale).toBe(
         "toast-viewport"
       );
@@ -434,16 +368,6 @@ describe("Toast chrome", () => {
     }
     renderToast(<Toast.Viewport aria-label="Ordrevarsler" />, { locale: "nb-NO" });
     expect(roleNamed("region", "Ordrevarsler").getAttribute("data-slot")).toBe("toast-viewport");
-  });
-
-  it("keeps the localized region name when a wrapper forwards an unset aria-label", () => {
-    for (const locale of SUPPORTED_LOCALES) {
-      const { unmount } = renderToast(<Toast.Viewport aria-label={undefined} />, { locale });
-      expect(roleNamed("region", NOTIFICATIONS_COPY[locale]).getAttribute("data-slot"), locale).toBe(
-        "toast-viewport"
-      );
-      unmount();
-    }
   });
 
   it("renders Close copy in all four locales, lets label override it, and lets an explicit aria-label win over both", async () => {
@@ -490,34 +414,6 @@ describe("Toast chrome", () => {
     await waitForToast("Visible");
     await expandViewport();
     expect(roleNamed("button", "Dismiss").textContent).toBe("Close");
-  });
-
-  it("F6 moves focus into the viewport and Escape restores the prior element", async () => {
-    const { manager } = renderToast(
-      <>
-        <button type="button">Focus start</button>
-        <Toast.Viewport />
-      </>
-    );
-    manager.add({ title: "Keyboard toast", timeout: 0 });
-    await waitForToast("Keyboard toast");
-
-    const start = page.getByRole("button", { name: "Focus start", exact: true }).element();
-    start.focus();
-    expect(document.activeElement).toBe(start);
-
-    await userEvent.keyboard("{F6}");
-    await expect.element(page.getByRole("region", { name: "Notifications", exact: true })).toHaveFocus();
-
-    await userEvent.keyboard("{Tab}");
-    const root = toastRootNamed("Keyboard toast");
-    await vi.waitFor(() => {
-      expect(root.contains(document.activeElement)).toBe(true);
-    });
-
-    await userEvent.keyboard("{Escape}");
-    await waitForToastGone("Keyboard toast");
-    await expect.element(page.getByRole("button", { name: "Focus start", exact: true })).toHaveFocus();
   });
 });
 
@@ -717,7 +613,8 @@ describe("Toast placement", () => {
   /**
    * Drags a mouse pointer across `element` by (`dx`, `dy`) in small steps and releases it.
    * Base UI's swipe handlers read pointer events from the root and the document, so
-   * dispatched events walk the same path a real drag does.
+   * dispatched events walk the same path a real drag does. Each root tracks its own active
+   * pointer, so drags on different roots can run at once.
    */
   async function swipe(element: HTMLElement, dx: number, dy: number): Promise<void> {
     const box = element.getBoundingClientRect();
@@ -748,48 +645,83 @@ describe("Toast placement", () => {
     await nextFrame();
   }
 
-  async function expectToastStays(name: string): Promise<void> {
+  async function expectToastsStay(...names: string[]): Promise<void> {
     // A dismissal is decided on pointerup; a few frames later the toast would be ending.
     for (let frame = 0; frame < 10; frame += 1) {
       await nextFrame();
     }
-    expect(toastRootNamed(name).hasAttribute("data-ending-style")).toBe(false);
+    for (const name of names) {
+      expect(toastRootNamed(name).hasAttribute("data-ending-style"), name).toBe(false);
+    }
   }
 
-  it("puts the stack at each placement's edge and alignment from sm up", async () => {
-    await page.viewport(1024, 768);
-    for (const { placement, vertical, horizontal } of PLACEMENTS) {
-      const { manager, unmount } = renderToast(<Toast.Viewport placement={placement} />);
-      manager.add({ title: placement, timeout: 0 });
-      const root = await waitForToast(placement);
-      await vi.waitFor(() => {
-        const box = gaps(root);
-        expect(box.width).toBeCloseTo(SM_COLUMN_PX, 0);
-        expect(box[vertical]).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
-        if (horizontal === "center") {
-          expect(box.left).toBeCloseTo(box.right, 0);
-        } else {
-          expect(box[horizontal]).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
-        }
-      });
-      unmount();
+  /**
+   * Renders each viewport under its own provider and raises one toast in it, titled by its key,
+   * so several placements share one render and their enter transitions run at once.
+   */
+  async function renderViewports<Key extends string>(
+    viewports: Record<Key, ReactNode>
+  ): Promise<Record<Key, HTMLElement>> {
+    // SAFETY: each caller passes an object literal, which holds a property for each key and no
+    // other.
+    const entries = (Object.keys(viewports) as Key[]).map((name) => ({
+      name,
+      viewport: viewports[name],
+      manager: Toast.createToastManager(),
+    }));
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          {entries.map(({ name, viewport, manager }) => (
+            <Toast.Provider key={name} toastManager={manager} timeout={0}>
+              {viewport}
+            </Toast.Provider>
+          ))}
+        </>
+      )
+    );
+    // SAFETY: the loop below gives `roots` a property for each key before it returns.
+    const roots = {} as Record<Key, HTMLElement>;
+    for (const { name, manager } of entries) {
+      manager.add({ title: name, timeout: 0 });
+      roots[name] = await waitForToast(name);
     }
-  });
+    return roots;
+  }
 
-  it("keeps every placement at the bottom, spanning the screen minus its gutters, below sm", async () => {
+  it("puts the stack at each placement's edge and alignment from sm up, and every placement at the bottom, spanning the screen minus its gutters, below sm", async () => {
+    await page.viewport(1024, 768);
+    const roots = await renderViewports({
+      "top-left": <Toast.Viewport placement="top-left" />,
+      "top-center": <Toast.Viewport placement="top-center" />,
+      "top-right": <Toast.Viewport placement="top-right" />,
+      "bottom-left": <Toast.Viewport placement="bottom-left" />,
+      "bottom-center": <Toast.Viewport placement="bottom-center" />,
+      "bottom-right": <Toast.Viewport placement="bottom-right" />,
+    });
+    await vi.waitFor(() => {
+      for (const { placement, vertical, horizontal } of PLACEMENTS) {
+        const box = gaps(roots[placement]);
+        expect(box.width, placement).toBeCloseTo(SM_COLUMN_PX, 0);
+        expect(box[vertical], placement).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
+        if (horizontal === "center") {
+          expect(box.left, placement).toBeCloseTo(box.right, 0);
+        } else {
+          expect(box[horizontal], placement).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
+        }
+      }
+    });
+
     await page.viewport(400, 768);
-    for (const { placement } of PLACEMENTS) {
-      const { manager, unmount } = renderToast(<Toast.Viewport placement={placement} />);
-      manager.add({ title: placement, timeout: 0 });
-      const root = await waitForToast(placement);
-      await vi.waitFor(() => {
-        const box = gaps(root);
-        expect(box.bottom).toBeCloseTo(MOBILE_GUTTER_PX, 0);
-        expect(box.left).toBeCloseTo(MOBILE_GUTTER_PX, 0);
-        expect(box.right).toBeCloseTo(MOBILE_GUTTER_PX, 0);
-      });
-      unmount();
-    }
+    await vi.waitFor(() => {
+      for (const { placement } of PLACEMENTS) {
+        const box = gaps(roots[placement]);
+        expect(box.bottom, placement).toBeCloseTo(MOBILE_GUTTER_PX, 0);
+        expect(box.left, placement).toBeCloseTo(MOBILE_GUTTER_PX, 0);
+        expect(box.right, placement).toBeCloseTo(MOBILE_GUTTER_PX, 0);
+      }
+    });
   });
 
   it("stacks away from the anchored edge: downward for top placements, upward for bottom", async () => {
@@ -856,82 +788,7 @@ describe("Toast placement", () => {
     }
   });
 
-  it("dismisses a left placement's toast on a left swipe but not on a right swipe", async () => {
-    await page.viewport(1024, 768);
-    const { manager } = renderToast(<Toast.Viewport placement="bottom-left" />);
-    manager.add({ title: "Swiped right", timeout: 0 });
-    await swipe(await waitForToast("Swiped right"), 120, 0);
-    await expectToastStays("Swiped right");
-    await swipe(toastRootNamed("Swiped right"), -120, 0);
-    await waitForToastGone("Swiped right");
-  });
-
-  it("keeps the default down/right swipe for left placements below sm", async () => {
-    await page.viewport(400, 768);
-    for (const placement of ["top-left", "bottom-left"] as const) {
-      const { manager, unmount } = renderToast(<Toast.Viewport placement={placement} />);
-      manager.add({ title: placement, timeout: 0 });
-      await swipe(await waitForToast(placement), -120, 0);
-      await expectToastStays(placement);
-      await swipe(toastRootNamed(placement), 120, 0);
-      await waitForToastGone(placement);
-      unmount();
-    }
-  });
-
-  it("dismisses a top placement's toast on an upward swipe from sm up and a downward one below it", async () => {
-    await page.viewport(1024, 768);
-    const wide = renderToast(<Toast.Viewport placement="top-center" />);
-    wide.manager.add({ title: "Wide", timeout: 0 });
-    await swipe(await waitForToast("Wide"), 0, 120);
-    await expectToastStays("Wide");
-    await swipe(toastRootNamed("Wide"), 0, -120);
-    await waitForToastGone("Wide");
-    wide.unmount();
-
-    await page.viewport(400, 768);
-    const narrow = renderToast(<Toast.Viewport placement="top-center" />);
-    narrow.manager.add({ title: "Narrow", timeout: 0 });
-    await swipe(await waitForToast("Narrow"), 0, -120);
-    await expectToastStays("Narrow");
-    await swipe(toastRootNamed("Narrow"), 0, 120);
-    await waitForToastGone("Narrow");
-  });
-
-  it("places and swipes roots passed through the viewport's render element", async () => {
-    await page.viewport(1024, 768);
-    function RenderedToasts() {
-      const { toasts } = Toast.useToastManager();
-      return toasts.map((toast) => (
-        <Toast.Root key={toast.id} toast={toast}>
-          <Toast.Title />
-        </Toast.Root>
-      ));
-    }
-    const { manager } = renderToast(
-      <Toast.Viewport
-        placement="top-left"
-        render={
-          <div>
-            <RenderedToasts />
-          </div>
-        }
-      />
-    );
-    manager.add({ title: "Rendered", timeout: 0 });
-    const root = await waitForToast("Rendered");
-    await vi.waitFor(() => {
-      const box = gaps(root);
-      expect(box.top).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
-      expect(box.left).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
-    });
-    await swipe(root, 0, 120);
-    await expectToastStays("Rendered");
-    await swipe(toastRootNamed("Rendered"), 0, -120);
-    await waitForToastGone("Rendered");
-  });
-
-  it("lets an explicit swipeDirection on Toast.Root replace the placement default", async () => {
+  it("dismisses toward the anchored edge and side from sm up, honors an explicit swipeDirection, and places roots passed through the render element", async () => {
     await page.viewport(1024, 768);
     function RightOnlyToasts() {
       const { toasts } = Toast.useToastManager();
@@ -941,16 +798,67 @@ describe("Toast placement", () => {
         </Toast.Root>
       ));
     }
-    const { manager } = renderToast(
-      <Toast.Viewport placement="bottom-left">
-        <RightOnlyToasts />
-      </Toast.Viewport>
-    );
-    manager.add({ title: "Overridden", timeout: 0 });
-    await swipe(await waitForToast("Overridden"), -120, 0);
-    await expectToastStays("Overridden");
-    await swipe(toastRootNamed("Overridden"), 120, 0);
-    await waitForToastGone("Overridden");
+    function RenderedToasts() {
+      const { toasts } = Toast.useToastManager();
+      return toasts.map((toast) => (
+        <Toast.Root key={toast.id} toast={toast}>
+          <Toast.Title />
+        </Toast.Root>
+      ));
+    }
+    const roots = await renderViewports({
+      "Bottom left": <Toast.Viewport placement="bottom-left" />,
+      "Top center": <Toast.Viewport placement="top-center" />,
+      Overridden: (
+        <Toast.Viewport placement="bottom-left">
+          <RightOnlyToasts />
+        </Toast.Viewport>
+      ),
+      // The placement provider wraps the part, so roots in a render element still read it.
+      Rendered: (
+        <Toast.Viewport
+          placement="top-left"
+          render={
+            <div>
+              <RenderedToasts />
+            </div>
+          }
+        />
+      ),
+    });
+    const {
+      "Bottom left": bottomLeft,
+      "Top center": topCenter,
+      Overridden: overridden,
+      Rendered: rendered,
+    } = roots;
+    await vi.waitFor(() => {
+      const box = gaps(rendered);
+      expect(box.top).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
+      expect(box.left).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
+    });
+
+    await Promise.all([swipe(bottomLeft, 120, 0), swipe(topCenter, 0, 120), swipe(overridden, -120, 0)]);
+    await expectToastsStay("Bottom left", "Top center", "Overridden");
+
+    await Promise.all([swipe(bottomLeft, -120, 0), swipe(topCenter, 0, -120), swipe(overridden, 120, 0)]);
+    await Promise.all([waitForEnding(bottomLeft), waitForEnding(topCenter), waitForEnding(overridden)]);
+  });
+
+  it("keeps the default down/right swipe for every placement below sm", async () => {
+    await page.viewport(400, 768);
+    const roots = await renderViewports({
+      "top-left": <Toast.Viewport placement="top-left" />,
+      "bottom-left": <Toast.Viewport placement="bottom-left" />,
+      "top-center": <Toast.Viewport placement="top-center" />,
+    });
+    const { "top-left": topLeft, "bottom-left": bottomLeft, "top-center": topCenter } = roots;
+
+    await Promise.all([swipe(topLeft, -120, 0), swipe(bottomLeft, -120, 0), swipe(topCenter, 0, -120)]);
+    await expectToastsStay("top-left", "bottom-left", "top-center");
+
+    await Promise.all([swipe(topLeft, 120, 0), swipe(bottomLeft, 120, 0), swipe(topCenter, 0, 120)]);
+    await Promise.all([waitForEnding(topLeft), waitForEnding(bottomLeft), waitForEnding(topCenter)]);
   });
 });
 

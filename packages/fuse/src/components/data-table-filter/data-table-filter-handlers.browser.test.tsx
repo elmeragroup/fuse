@@ -14,19 +14,19 @@ import { nextFrames } from "../../../test/animation-frames";
 import {
   columnFilters,
   CUSTOMER_NORD,
+  finishMotion,
   focusIs,
   menuOpen,
   Orders,
   popoverOpen,
   renderCounted,
-  settled,
   STATUS_THREE,
 } from "../../../test/data-table-filter-fixture";
 import { roleNamed } from "../../../test/themed-browser-render";
 import { DataTableFilter } from "./index";
 
 afterEach(async () => {
-  await settled();
+  await finishMotion();
 });
 
 /** The consumer's handler under test. */
@@ -92,7 +92,7 @@ function renderWith(part: string, handler: string, spy: Spy, setup: Setup): () =
 async function openCustomer(): Promise<void> {
   await userEvent.click(roleNamed("button", "“nord”"));
   await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
-  await settled();
+  await finishMotion();
 }
 
 /** Opens Customer's popover and types text the pause has not applied yet. */
@@ -103,10 +103,10 @@ async function dirtyCustomer(): Promise<void> {
 
 async function drillCustomer(): Promise<void> {
   await userEvent.click(roleNamed("button", "Filter"));
-  await settled();
+  await finishMotion();
   await userEvent.click(roleNamed("menuitem", "Customer"));
   await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
-  await settled();
+  await finishMotion();
 }
 
 type Row = {
@@ -122,7 +122,12 @@ type Row = {
   readonly works: (writes: () => number) => Promise<void>;
 };
 
-/** A destructive press with a dirty editor: one write, the destructive one, and the editor closes. */
+/**
+ * A destructive press while the edited chip holds unapplied text, beside a Status chip: one write,
+ * the destructive one, and the editor closes. Clear empties the filters, and the edited chip's
+ * Remove leaves Status. A pointer press and a click without a pointer, as assistive technology
+ * sends, each reach both parts.
+ */
 function destructive(
   part: "Remove" | "Clear",
   handler: string,
@@ -132,15 +137,17 @@ function destructive(
   return {
     part,
     handler,
+    setup: { initial: [...CUSTOMER_NORD, ...STATUS_THREE] },
     frozenClock: true,
     act: async () => {
       await dirtyCustomer();
       await press(roleNamed("button", name));
     },
     works: async (writes) => {
+      await finishMotion();
       await expect.poll(() => popoverOpen("Customer")).toBe(false);
-      await expect.poll(columnFilters).toEqual([]);
-      await settled();
+      await expect.poll(columnFilters).toEqual(part === "Clear" ? [] : STATUS_THREE);
+      await finishMotion();
       expect(writes()).toBe(1);
     },
   };
@@ -251,7 +258,7 @@ const ROWS: readonly Row[] = [
     },
     // The toolbar never takes the key: focus stays in the menu's search.
     works: async () => {
-      await settled();
+      await finishMotion();
       expect(focusIs("searchbox", "Search fields")).toBe(true);
       expect(menuOpen()).toBe(true);
     },
@@ -261,9 +268,9 @@ const ROWS: readonly Row[] = [
     handler: "onTransitionEnd",
     act: async () => {
       await userEvent.click(roleNamed("button", "Filter"));
-      await settled();
+      await finishMotion();
       await userEvent.click(roleNamed("menuitem", "Customer"));
-      await settled();
+      await finishMotion();
     },
     // The drill's height morph hands the height back to the content when it ends.
     works: () => expect.poll(() => roleNamed("dialog", "Add filter").style.height).toBe(""),
@@ -291,7 +298,7 @@ const ROWS: readonly Row[] = [
     },
     // An Enter while a composition is open neither applies nor closes.
     works: async (writes) => {
-      await settled();
+      await finishMotion();
       expect(popoverOpen("Customer")).toBe(true);
       expect(writes()).toBe(0);
     },
@@ -312,6 +319,7 @@ const ROWS: readonly Row[] = [
     },
     // Enter after the composition still applies and closes.
     works: async () => {
+      await finishMotion();
       await expect.poll(() => popoverOpen("Customer")).toBe(false);
       expect(columnFilters()).toEqual([
         { id: "customer", value: { kind: "text", operator: "contains", values: ["aurora"] } },

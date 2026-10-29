@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
+import "../../../dist/themes.css";
+import { cssVarColor, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { Empty } from "./empty";
 
 describe("Empty", () => {
@@ -19,6 +20,9 @@ describe("Empty", () => {
     expect(textNamed("No orders yet").tagName).toBe("DIV");
     expect(page.getByRole("heading").elements()).toHaveLength(0);
     expect(textNamed("Orders you create will show up here.").tagName).toBe("P");
+    expect(textNamed("Orders you create will show up here.").getAttribute("data-slot")).toBe(
+      "empty-description"
+    );
     expect(textNamed("Create order").tagName).toBe("DIV");
   });
 
@@ -53,7 +57,7 @@ describe("Empty", () => {
     expect(getComputedStyle(textNamed("Dashed")).borderTopStyle).toBe("dashed");
   });
 
-  it("keeps an inline description link focusable with the styled hooks", async () => {
+  it("keeps an inline description link focusable, underlined and primary on hover", async () => {
     renderThemed(
       <Empty.Root>
         <Empty.Header>
@@ -67,6 +71,11 @@ describe("Empty", () => {
     expect(link.tagName).toBe("A");
     expect(link.parentElement).toBe(textNamed("Read the help article to get started."));
     expect(getComputedStyle(link).textDecorationLine).toContain("underline");
+    expect(getComputedStyle(link).textUnderlineOffset).toBe("4px");
+    const primary = cssVarColor(link, "--primary");
+    expect(getComputedStyle(link).color, "precondition: the resting link is not primary").not.toBe(primary);
+    await userEvent.hover(link);
+    expect(getComputedStyle(link).color).toBe(primary);
     await userEvent.tab();
     expect(document.activeElement).toBe(link);
   });

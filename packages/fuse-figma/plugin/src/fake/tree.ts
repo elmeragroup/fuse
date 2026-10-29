@@ -289,3 +289,94 @@ export function createNode(file: FileState, type: NodeType, name: string, id?: s
   file.nodes.set(state.id, state);
   return state;
 }
+
+/**
+ * A copy of a whole file as it stands, whose nodes, variables and logs change apart from the
+ * source's, for suites that each change one applied file. Every node keeps its id, its place in the
+ * node table and every field, so the copy reads as the source would until one of them changes.
+ */
+export function forkFile(source: FileState): FileState {
+  const collections = new Map(
+    source.collections.map((collection) => [
+      collection,
+      { ...collection, variableIds: [...collection.variableIds], exposed: undefined },
+    ])
+  );
+  const variables = new Map(
+    [...source.variables].map(([id, variable]) => {
+      const collection = collections.get(variable.collection);
+      if (collection === undefined) {
+        throw new Error(`The variable ${variable.name} sits in a collection the file does not hold.`);
+      }
+      return [id, { ...variable, collection, exposed: undefined }];
+    })
+  );
+  const file: FileState = {
+    ...source,
+    writes: [...source.writes],
+    nodes: new Map(),
+    document: undefined,
+    current: undefined,
+    loadedFonts: new Set(source.loadedFonts),
+    collections: [...collections.values()],
+    variables,
+    images: new Set(source.images),
+  };
+  // A removed layer an instance replaced can still be the parent, main or main layer a record
+  // names, so the copy takes every record the file's records reach, and the node table only the
+  // ones it holds, in its order.
+  const copies = new Map<NodeState, NodeState>();
+  const reached: (NodeState | undefined)[] = [...source.nodes.values(), source.document, source.current];
+  while (reached.length > 0) {
+    const state = reached.pop();
+    if (state === undefined || copies.has(state)) {
+      continue;
+    }
+    const { target, exposed } = file.makeNode(state.type);
+    const copy: NodeState = {
+      ...copiedFields(state),
+      file,
+      id: state.id,
+      type: state.type,
+      exposed,
+      parent: undefined,
+      children: [],
+      removed: state.removed,
+      sharedData: new Map(state.sharedData),
+      loaded: state.loaded,
+      mirrorOf: undefined,
+      overridden: new Set(state.overridden),
+      unboundLengths: new Set(state.unboundLengths),
+      heldByModes: state.heldByModes,
+      properties: new Map(state.properties),
+      propertyValues: new Map(state.propertyValues),
+      exposedInstance: state.exposedInstance,
+      variantOrder: new Map([...state.variantOrder].map(([property, values]) => [property, [...values]])),
+    };
+    copies.set(state, copy);
+    STATES.set(target, copy);
+    STATES.set(exposed, copy);
+    reached.push(state.parent, ...state.children, state.main, state.mirrorOf);
+  }
+  const copied = (state: NodeState): NodeState => {
+    const copy = copies.get(state);
+    if (copy === undefined) {
+      throw new Error(`The fork of the fake Figma file missed the node ${state.id}.`);
+    }
+    return copy;
+  };
+  const copyOf = (state: NodeState | undefined): NodeState | undefined =>
+    state === undefined ? undefined : copied(state);
+  for (const [state, copy] of copies) {
+    copy.parent = copyOf(state.parent);
+    copy.children = state.children.map(copied);
+    copy.main = copyOf(state.main);
+    copy.mirrorOf = copyOf(state.mirrorOf);
+  }
+  for (const [id, state] of source.nodes) {
+    file.nodes.set(id, copied(state));
+  }
+  file.document = copyOf(source.document);
+  file.current = copyOf(source.current);
+  return file;
+}

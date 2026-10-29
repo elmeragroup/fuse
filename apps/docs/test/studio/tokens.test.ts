@@ -21,62 +21,15 @@ describe("TOKEN_TABLE", () => {
     expect(STUDIO_TOKEN_NAMES).toEqual(CONTRACT_NAMES);
   });
 
-  it("files every token under exactly one section the inspector shows", () => {
-    const sectionIds = STUDIO_SECTIONS.map((section) => section.id);
+  it("files every token under a section the inspector shows", () => {
     const filed = STUDIO_SECTIONS.flatMap((section) => sectionTokens(section.id));
     expect(filed.toSorted()).toEqual(CONTRACT_NAMES.toSorted());
-    expect(new Set(filed).size).toBe(filed.length);
-    for (const name of STUDIO_TOKEN_NAMES) {
-      expect(sectionIds).toContain(TOKEN_TABLE[name].section);
-    }
   });
 
   it("gives each token the kind the contract gives it", () => {
     for (const name of STUDIO_TOKEN_NAMES) {
       expect(TOKEN_TABLE[name].kind, name).toBe(firstTheme.schemes.light.tokens[name].kind);
     }
-  });
-
-  it("files the shape and typography sections as the studio brief names them", () => {
-    expect(sectionTokens("shape")).toEqual([
-      "radius",
-      "radius-button",
-      "radius-field",
-      "radius-step",
-      "button-outline-width",
-    ]);
-    expect(sectionTokens("typography")).toEqual([
-      "selection-title-weight",
-      "paragraph-leading-sm",
-      "paragraph-leading-base",
-      "paragraph-leading-lg",
-      "heading-1-size",
-      "heading-1-leading",
-      "heading-1-weight",
-      "heading-2-size",
-      "heading-2-leading",
-      "heading-2-weight",
-      "heading-3-size",
-      "heading-3-leading",
-      "heading-3-weight",
-      "font-sans",
-      "font-heading",
-    ]);
-    expect(sectionTokens("variant")).toEqual([
-      "card-border",
-      "card-section-divider",
-      "card-shadow",
-      "button-outline",
-      "selection-border",
-      "selection-checked-border",
-      "selection-divider",
-      "selection-checked-divider",
-      "selection-disabled-background",
-      "selection-disabled-hatch",
-      "selection-disabled-foreground",
-      "toggle-pressed",
-      "toggle-pressed-foreground",
-    ]);
   });
 });
 

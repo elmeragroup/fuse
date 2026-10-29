@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { typographyFragments } from "../../styles/typography-fragments";
 import { headingVariants } from "./heading-variants";
 
@@ -27,13 +26,11 @@ describe("headingVariants", () => {
     expect(resolved).toContain("font-medium");
   });
 
-  it("resolves each variant class; destructive is text-error and never a destructive class", () => {
+  it("forwards each variant's shared fragment; destructive is text-error and never a destructive class", () => {
     for (const variant of VARIANTS) {
       const resolved = headingVariants({ variant });
       // Oracle: the shared fragment, which typography-fragments.test.ts pins by hand.
       expect(resolved, variant).toContain(typographyFragments({ variant }));
-      expect(resolved, variant).not.toContain("dark:");
-      expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
     }
     const destructive = headingVariants({ variant: "destructive" });
     expect(destructive).toContain("text-error");

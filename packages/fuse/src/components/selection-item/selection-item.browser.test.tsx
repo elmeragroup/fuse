@@ -27,7 +27,6 @@ import {
 import { ThemeScope } from "../../theme";
 import { DENSITIES } from "../../theme/density";
 import { Badge } from "../badge/badge";
-import { CheckboxCard } from "../checkbox-card/checkbox-card";
 import { Checkbox as UiCheckbox, CheckboxGroup, CheckboxItemGroup } from "../checkbox/checkbox";
 import { CheckboxItem } from "../checkbox/checkbox-item";
 import { Field } from "../field";
@@ -127,6 +126,24 @@ async function clickShellAt(shell: HTMLElement, x: (width: number) => number, y:
   await userEvent.click(shell, { position: { x: x(shell.clientWidth), y: y - top } });
 }
 
+/**
+ * Whether a click at the point `clickShellAt` takes would land in the row's label, the click
+ * target whose activation toggles the control. It reads the browser's own hit test, which honours
+ * the label's `::before` and every `pointer-events` rule, so a probe needs no real click; each
+ * test that probes this way still toggles its row through one real click. Every probed point is
+ * padding or a band, never a focusable element in the label, which would keep its own click.
+ */
+function labelTakesClickAt(shell: HTMLElement, x: (width: number) => number, y: number): boolean {
+  const left = shell.getBoundingClientRect().left + shell.clientLeft + x(shell.clientWidth);
+  // Outside the viewport the hit test finds nothing, and a negative probe would pass for that.
+  if (left < 0 || left >= window.innerWidth || y < 0 || y >= window.innerHeight) {
+    throw new Error(`probe (${left}, ${y}) lies outside the viewport`);
+  }
+  const label = shell.querySelector(":scope > label");
+  const hit = document.elementFromPoint(left, y);
+  return label !== null && hit !== null && label.contains(hit);
+}
+
 function PressCounter() {
   const [presses, setPresses] = useState(0);
   return (
@@ -178,19 +195,25 @@ describe("SelectionItem", () => {
     expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
   });
 
-  it.each([
-    { edge: "left", x: () => 4 },
-    { edge: "right", x: (width: number) => width - 4 },
-  ] as const)("selects a RadioItem from 4px inside the $edge edge", async ({ x }) => {
+  it("selects a RadioItem from 4px inside either edge", async () => {
     renderThemed(
-      <RadioItemGroup label="Radio cards">
-        <RadioItem value="a">
-          <RowTitle>Radio card</RowTitle>
-        </RadioItem>
-      </RadioItemGroup>
+      // Narrower than the viewport, so the hit test reaches both edges.
+      <div style={{ width: 320 }}>
+        <RadioItemGroup label="Radio cards">
+          <RadioItem value="a">
+            <RowTitle>Radio card</RowTitle>
+          </RadioItem>
+        </RadioItemGroup>
+      </div>
     );
 
-    await clickShellAt(shellFrom("Radio card"), x, labelRowCentre(headingNamed("Radio card")));
+    const shell = shellFrom("Radio card");
+    const row = labelRowCentre(headingNamed("Radio card"));
+    expect(
+      labelTakesClickAt(shell, (width) => width - 4, row),
+      "right edge"
+    ).toBe(true);
+    await clickShellAt(shell, () => 4, row);
     expect(roleNamed("radio", "Radio card").getAttribute("aria-checked")).toBe("true");
   });
 
@@ -241,10 +264,10 @@ describe("SelectionItem", () => {
     }
   );
 
-  it("keeps clicks beside the card, level with its label row, outside the click target", async () => {
+  it("keeps clicks beside the card, level with its label row, outside the click target", () => {
     renderThemed(
       // The test CSS only holds the package's own utilities, so the frame pads itself inline.
-      <div data-testid="frame" style={{ paddingInline: 32 }}>
+      <div style={{ paddingInline: 32, width: 320 }}>
         <CheckboxItemGroup label="Cards">
           <CheckboxItem value="a">
             <RowTitle>Fixed price</RowTitle>
@@ -253,32 +276,39 @@ describe("SelectionItem", () => {
       </div>
     );
 
-    const frame = page.getByTestId("frame").element();
-    const checkbox = checkboxNamed("Fixed price");
-    for (const x of [(shell: DOMRect) => shell.left - 2, (shell: DOMRect) => shell.right + 2]) {
-      // Both boxes move together if a click scrolls the page, so the offset holds.
-      const box = frame.getBoundingClientRect();
-      const shell = shellFrom("Fixed price").getBoundingClientRect();
-      await userEvent.click(frame, {
-        position: { x: x(shell) - box.left, y: labelRowCentre(headingNamed("Fixed price")) - box.top },
-      });
-      expect(checkbox.getAttribute("aria-checked")).toBe("false");
-    }
+    const shell = shellFrom("Fixed price");
+    const row = labelRowCentre(headingNamed("Fixed price"));
+    // 2px outside the border box, in the frame's padding.
+    expect(
+      labelTakesClickAt(shell, () => -shell.clientLeft - 2, row),
+      "left of the card"
+    ).toBe(false);
+    expect(
+      labelTakesClickAt(shell, (width) => width + shell.clientLeft + 2, row),
+      "right of the card"
+    ).toBe(false);
+    // Oracle sanity: the same row is the label's just inside the border.
+    expect(
+      labelTakesClickAt(shell, () => 1, row),
+      "inside the card"
+    ).toBe(true);
   });
 
   it("keeps the sub-section side padding outside the click target and an action's click its own", async () => {
     renderThemed(
-      <CheckboxItemGroup label="Cards">
-        <CheckboxItem value="a">
-          <RowTitle>Fixed price</RowTitle>
-          <SelectionItem.Actions>
-            <PressCounter />
-          </SelectionItem.Actions>
-          <SelectionItem.SubSection role="region" aria-label="Price details">
-            Price details
-          </SelectionItem.SubSection>
-        </CheckboxItem>
-      </CheckboxItemGroup>
+      <div style={{ width: 320 }}>
+        <CheckboxItemGroup label="Cards">
+          <CheckboxItem value="a">
+            <RowTitle>Fixed price</RowTitle>
+            <SelectionItem.Actions>
+              <PressCounter />
+            </SelectionItem.Actions>
+            <SelectionItem.SubSection role="region" aria-label="Price details">
+              Price details
+            </SelectionItem.SubSection>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+      </div>
     );
 
     const shell = shellFrom("Fixed price");
@@ -286,10 +316,14 @@ describe("SelectionItem", () => {
     const detailsCentre = details.top + details.height / 2;
     // The label also names the checkbox by the action text, so match the one checkbox by role.
     const checkbox = page.getByRole("checkbox").element();
-    await clickShellAt(shell, () => 4, detailsCentre);
-    expect(checkbox.getAttribute("aria-checked")).toBe("false");
-    await clickShellAt(shell, (width) => width - 4, detailsCentre);
-    expect(checkbox.getAttribute("aria-checked")).toBe("false");
+    expect(
+      labelTakesClickAt(shell, () => 4, detailsCentre),
+      "left padding"
+    ).toBe(false);
+    expect(
+      labelTakesClickAt(shell, (width) => width - 4, detailsCentre),
+      "right padding"
+    ).toBe(false);
 
     await userEvent.click(roleNamed("button", "Pressed 0 times"));
     expect(roleNamed("button", "Pressed 1 times")).toBeTruthy();
@@ -310,15 +344,15 @@ describe("SelectionItem", () => {
     );
 
     const shell = shellFrom("Fixed price");
-    const checkbox = checkboxNamed("Fixed price");
-    let checked = false;
+    const bottom = shell.getBoundingClientRect().bottom - shell.clientTop;
     for (const offset of [3, 7, 10, 13]) {
-      // Read the edge before each click: a click can scroll the page.
-      const bottom = shell.getBoundingClientRect().bottom - shell.clientTop;
-      await clickShellAt(shell, (width) => width / 2, bottom - offset);
-      checked = !checked;
-      expect(checkbox.getAttribute("aria-checked"), `${offset}px above the bottom`).toBe(String(checked));
+      expect(
+        labelTakesClickAt(shell, (width) => width / 2, bottom - offset),
+        `${offset}px above the bottom`
+      ).toBe(true);
     }
+    await clickShellAt(shell, (width) => width / 2, bottom - 7);
+    expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("true");
   });
 
   it("gives a revealed SubSection's bottom inset back to the band once it shows", async () => {
@@ -342,20 +376,19 @@ describe("SelectionItem", () => {
 
     const shell = shellFrom("Fixed price");
     const checkbox = checkboxNamed("Fixed price");
-    const clickBottomInset = async () => {
-      const bottom = shell.getBoundingClientRect().bottom - shell.clientTop;
-      await clickShellAt(shell, (width) => width / 2, bottom - 7);
-    };
-
-    await clickBottomInset();
+    await clickShellAt(
+      shell,
+      (width) => width / 2,
+      shell.getBoundingClientRect().bottom - shell.clientTop - 7
+    );
     expect(checkbox.getAttribute("aria-checked")).toBe("true");
     const details = roleNamed("region", "Price details");
     await settled(details);
     expect(details.getBoundingClientRect().height).toBeGreaterThan(0);
 
     // The shown band sits under the bottom inset now, so the click stays the band's.
-    await clickBottomInset();
-    expect(checkbox.getAttribute("aria-checked")).toBe("true");
+    const bottom = shell.getBoundingClientRect().bottom - shell.clientTop;
+    expect(labelTakesClickAt(shell, (width) => width / 2, bottom - 7)).toBe(false);
     await userEvent.click(headingNamed("Fixed price"));
     expect(checkbox.getAttribute("aria-checked")).toBe("false");
   });
@@ -559,14 +592,16 @@ describe("SelectionItem", () => {
     { inset: 0, className: "px-0", density: "comfortable" },
   ] as const)(
     "insets the row content $inset px for className $className at $density and toggles from the label row's edges",
-    async ({ inset, className, density }) => {
+    ({ inset, className, density }) => {
       stampDensity(density);
       renderThemed(
-        <CheckboxItemGroup label="Cards">
-          <CheckboxItem value="a" className={className}>
-            <RowTitle>Fixed price</RowTitle>
-          </CheckboxItem>
-        </CheckboxItemGroup>
+        <div style={{ width: 320 }}>
+          <CheckboxItemGroup label="Cards">
+            <CheckboxItem value="a" className={className}>
+              <RowTitle>Fixed price</RowTitle>
+            </CheckboxItem>
+          </CheckboxItemGroup>
+        </div>
       );
 
       const shell = shellFrom("Fixed price");
@@ -581,12 +616,15 @@ describe("SelectionItem", () => {
       expect(controlSlot(shell).getBoundingClientRect().left - (inner.left + border)).toBeCloseTo(inset, 0);
       expect(inner.right - border - rowCluster.getBoundingClientRect().right).toBeCloseTo(inset, 0);
 
-      const checkbox = checkboxNamed("Fixed price");
-      // Read the row centre before each click: a click can scroll the page.
-      await clickShellAt(shell, () => 1, labelRowCentre(headingNamed("Fixed price")));
-      expect(checkbox.getAttribute("aria-checked")).toBe("true");
-      await clickShellAt(shell, (width) => width - 1, labelRowCentre(headingNamed("Fixed price")));
-      expect(checkbox.getAttribute("aria-checked")).toBe("false");
+      const row = labelRowCentre(headingNamed("Fixed price"));
+      expect(
+        labelTakesClickAt(shell, () => 1, row),
+        "left edge"
+      ).toBe(true);
+      expect(
+        labelTakesClickAt(shell, (width) => width - 1, row),
+        "right edge"
+      ).toBe(true);
     }
   );
 
@@ -680,8 +718,8 @@ describe("SelectionItem", () => {
         </SelectionItem.Shell>
       </Field.Root>
     );
-    expect(page.getByRole("region").query()).toBeNull();
-    expect(page.getByRole("region", { name: "Hidden extra", exact: true }).query()).toBeNull();
+    // DOM audit: the band and Item.Footer carry no role; their slots show whether they rendered.
+    expect(document.querySelector("[data-slot=item-footer]")).toBeNull();
   });
 
   it("passes mode through to Item.Footer: hidden renders the band inert, visible does not", () => {
@@ -923,57 +961,6 @@ describe("SelectionItem", () => {
     expect(getComputedStyle(external).marginTop).toBe("0px");
   });
 
-  it("fills rows with the theme's card, like CheckboxCard, where the card and page background differ", async () => {
-    renderThemed(
-      <ThemeScope theme={fkasExternal}>
-        <CheckboxItemGroup label="Add-ons">
-          <CheckboxItem value="router">
-            <RowTitle>Router</RowTitle>
-          </CheckboxItem>
-          <CheckboxItem value="sim">
-            <RowTitle>SIM card</RowTitle>
-          </CheckboxItem>
-        </CheckboxItemGroup>
-        <RadioItemGroup label="Plan">
-          <RadioItem value="fixed">
-            <RowTitle>Fixed price</RowTitle>
-          </RadioItem>
-          <RadioItem value="spot" className="bg-background">
-            <RowTitle>See-through row</RowTitle>
-          </RadioItem>
-        </RadioItemGroup>
-        <CheckboxGroup label="Cards">
-          <CheckboxCard value="card" title="Card beside" description="Filled like the rows." />
-        </CheckboxGroup>
-      </ThemeScope>
-    );
-
-    const router = shellFrom("Router");
-    // The oracle is the theme's own --card, read where the rows sit; the external theme
-    // tints --background, so a row painting the page surface would show a different colour.
-    const card = cssVarColor(router, "--card");
-    const background = cssVarColor(router, "--background");
-    expect(card).not.toBe(background);
-    expect(getComputedStyle(router).backgroundColor).toBe(card);
-    expect(getComputedStyle(shellFrom("Fixed price")).backgroundColor).toBe(card);
-    // DOM audit: the CheckboxCard fill is on Card.Root, which exposes its `card` slot.
-    const cardRoot = textNamed("Card beside").closest("[data-slot=card]");
-    if (!(cardRoot instanceof HTMLElement)) {
-      throw new Error("expected the CheckboxCard's card root");
-    }
-    expect(getComputedStyle(cardRoot).backgroundColor).toBe(card);
-
-    // Checked steps from the card to muted, so selection reads as a tint of the card.
-    await userEvent.click(headingNamed("SIM card"));
-    await settled(shellFrom("SIM card"));
-    const checked = getComputedStyle(shellFrom("SIM card")).backgroundColor;
-    expect(checked).toBe(cssVarColor(router, "--muted"));
-    expect(checked).not.toBe(card);
-
-    // A background class merges after the fill, for a list that should show its surface.
-    expect(getComputedStyle(shellFrom("See-through row")).backgroundColor).toBe(background);
-  });
-
   it("shows every line of a long title and description on a phone-width row", () => {
     const title = "Mobile broadband with a fixed monthly price and no binding period";
     const description = "We send you a SIM card by post. You can easily insert it in your phone.";
@@ -1042,29 +1029,6 @@ describe("SelectionItem", () => {
       expect(roleNamed(role, "Fixed price").getAttribute("aria-checked")).toBe("true");
     }
   );
-
-  it("toggles from the keyboard on the plugged-in control", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <Field.Root>
-          <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />}>
-            <RowTitle>Fixed price</RowTitle>
-          </SelectionItem.Shell>
-        </Field.Root>
-      </>
-    );
-
-    const before = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(before instanceof HTMLElement)) {
-      throw new Error("expected before button");
-    }
-    before.focus();
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(checkboxNamed("Fixed price"));
-    await userEvent.keyboard(" ");
-    expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
-  });
 });
 
 /**

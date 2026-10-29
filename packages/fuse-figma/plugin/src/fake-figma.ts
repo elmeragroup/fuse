@@ -66,7 +66,7 @@ import { componentOf, live, MIXED, pageOf, write } from "./fake/state.ts";
 import type { FileState, NodeState } from "./fake/state.ts";
 import { drawSvg, flatten } from "./fake/svg.ts";
 import { fontKey, fontUnavailable } from "./fake/text.ts";
-import { createNode, placeOnCurrentPage } from "./fake/tree.ts";
+import { createNode, forkFile, placeOnCurrentPage } from "./fake/tree.ts";
 import { exposeCollection, exposeVariable, seedVariables } from "./fake/variables.ts";
 
 export { drawsShadowSpread, paintsAbove } from "./fake/paints.ts";
@@ -97,6 +97,11 @@ export type FakeFigma = {
    * @throws When the file holds no such variable.
    */
   readonly variable: (collection: string, name: string) => Variable;
+  /**
+   * A copy of the file as it stands, with the same ids, that changes apart from this one, so the
+   * suites that each change an applied file apply the kit once.
+   */
+  readonly fork: () => FakeFigma;
 };
 
 /**
@@ -129,6 +134,15 @@ export function createFakeFigma(options: FakeFigmaOptions): FakeFigma {
   firstPage.parent = document;
   file.document = document;
   file.current = firstPage;
+  return open(file);
+}
+
+/** The Plugin API over a file's records, and what a test reads beside it. */
+function open(file: FileState): FakeFigma {
+  const document = file.document;
+  if (document === undefined) {
+    throw new Error("The fake Figma file has no document.");
+  }
 
   const stateOfParent = (parent: (BaseNode & ChildrenMixin) | undefined): NodeState => {
     if (parent !== undefined) {
@@ -324,5 +338,6 @@ export function createFakeFigma(options: FakeFigmaOptions): FakeFigma {
       }
       return exposeVariable(file, found);
     },
+    fork: () => open(forkFile(file)),
   };
 }

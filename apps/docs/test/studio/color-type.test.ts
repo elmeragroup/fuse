@@ -56,42 +56,39 @@ describe("ROLE_TILES", () => {
 });
 
 describe("pairMark", () => {
-  it("passes a text-grade pair at exactly 4.5:1", () => {
-    expect(pairMark("text", 4.5)).toEqual({ state: "pass", label: "AA 4.50:1" });
-  });
-
-  it("fails a text-grade pair just under 4.5:1", () => {
-    expect(pairMark("text", 4.49)).toEqual({ state: "fail", label: "Fail 4.49:1" });
-  });
-
-  it("never fails a decorative pair, however low its ratio", () => {
-    expect(pairMark("decorative", 1)).toEqual({ state: "decorative", label: "Decorative 1.00:1" });
-  });
-
-  it("asks for a backdrop when the surface is translucent", () => {
-    expect(pairMark("text", "translucent")).toEqual({
-      state: "translucent",
-      label: "Needs an opaque backdrop",
-    });
+  it.each([
+    ["passes a text-grade pair at exactly 4.5:1", "text", 4.5, { state: "pass", label: "AA 4.50:1" }],
+    ["fails a text-grade pair just under 4.5:1", "text", 4.49, { state: "fail", label: "Fail 4.49:1" }],
+    [
+      "never fails a decorative pair, however low its ratio",
+      "decorative",
+      1,
+      { state: "decorative", label: "Decorative 1.00:1" },
+    ],
+    [
+      "asks for a backdrop when the surface is translucent",
+      "text",
+      "translucent",
+      { state: "translucent", label: "Needs an opaque backdrop" },
+    ],
+  ] as const)("%s", (_case, grade, contrast, mark) => {
+    expect(pairMark(grade, contrast)).toEqual(mark);
   });
 });
 
 describe("niceCeiling", () => {
-  it("rounds up to 1, 2 or 5 times a power of ten", () => {
-    expect(niceCeiling(87)).toBe(100);
-    expect(niceCeiling(42)).toBe(50);
-    expect(niceCeiling(120)).toBe(200);
-    expect(niceCeiling(3.2)).toBe(5);
-    expect(niceCeiling(0.07)).toBe(0.1);
-  });
-
-  it("keeps a value already on the scale", () => {
-    expect(niceCeiling(50)).toBe(50);
-    expect(niceCeiling(1)).toBe(1);
-  });
-
-  it("gives an empty or zero series a unit axis", () => {
-    expect(niceCeiling(0)).toBe(1);
+  // Up to 1, 2 or 5 times a power of ten; a value on the scale stays; zero gets a unit axis.
+  it.each([
+    [87, 100],
+    [42, 50],
+    [120, 200],
+    [3.2, 5],
+    [0.07, 0.1],
+    [50, 50],
+    [1, 1],
+    [0, 1],
+  ])("rounds %s up to %s", (value, ceiling) => {
+    expect(niceCeiling(value)).toBe(ceiling);
   });
 });
 
@@ -111,19 +108,12 @@ describe("shareOf", () => {
 });
 
 describe("formatTypePair", () => {
-  it("writes size over leading in whole px", () => {
-    expect(formatTypePair("14px", "20px")).toBe("14 / 20 px");
-  });
-
-  it("keeps up to two decimals and drops trailing zeros", () => {
-    expect(formatTypePair("15.5px", "22.125px")).toBe("15.5 / 22.13 px");
-  });
-
-  it("shows a dash for a value it cannot read", () => {
-    expect(formatTypePair("16px", "normal")).toBe("16 / – px");
-  });
-
-  it("shows a dash for a length in another unit", () => {
-    expect(formatTypePair("1rem", "24px")).toBe("– / 24 px");
+  it.each([
+    ["writes size over leading in whole px", "14px", "20px", "14 / 20 px"],
+    ["keeps up to two decimals and drops trailing zeros", "15.5px", "22.125px", "15.5 / 22.13 px"],
+    ["shows a dash for a value it cannot read", "16px", "normal", "16 / – px"],
+    ["shows a dash for a length in another unit", "1rem", "24px", "– / 24 px"],
+  ])("%s", (_case, fontSize, lineHeight, text) => {
+    expect(formatTypePair(fontSize, lineHeight)).toBe(text);
   });
 });

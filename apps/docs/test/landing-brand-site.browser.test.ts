@@ -272,59 +272,6 @@ async function paintedLogo(site: Locator, name: string): Promise<PaintedLogo> {
 }
 
 describe("landing hero window, External side", () => {
-  it.each(ALL_SITES)(
-    "states $site's language, logo, hero, checklist and section headings, and gives every image an alt text and its intrinsic size",
-    async (facts) => {
-      const { page, site } = await openSite(facts, DESKTOP_VIEWPORT);
-      expect(await site.getAttribute("lang")).toBe(facts.lang);
-      expect(await windowCaption(page)).toContain(facts.domain);
-      await site.getByRole("img", { name: facts.logo, exact: true }).first().waitFor();
-      expect(await site.getByRole("heading", { level: 1 }).textContent()).toBe(facts.heading);
-      // The site sits inside the landing's main, so it draws no main of its own.
-      expect(await page.getByRole("main").count()).toBe(1);
-      expect(await site.getByRole("heading", { level: 2 }).allTextContents()).toEqual(facts.sections);
-      for (const name of facts.labelled) {
-        expect(await site.getByRole("region", { name, exact: true }).count(), name).toBe(1);
-      }
-      if ("checklist" in facts) {
-        const checklist = site.getByRole("list", { name: "Fordeler" });
-        expect(await checklist.getByRole("listitem").allTextContents()).toEqual(facts.checklist);
-      }
-
-      // Last, since it makes every image load eagerly.
-      if (facts.photos > 0) {
-        const images = await site.locator("img").evaluateAll(async (elements) =>
-          Promise.all(
-            elements.map(async (element) => {
-              if (!(element instanceof HTMLImageElement)) {
-                return { src: "not an img" };
-              }
-              element.loading = "eager";
-              await element.decode().catch(() => undefined);
-              return {
-                src: element.getAttribute("src"),
-                alt: element.alt,
-                width: Number(element.getAttribute("width")),
-                height: Number(element.getAttribute("height")),
-                naturalWidth: element.naturalWidth,
-                naturalHeight: element.naturalHeight,
-              };
-            })
-          )
-        );
-        expect(images).toHaveLength(facts.photos);
-        for (const image of images) {
-          expect(image.alt, String(image.src)).not.toBe("");
-          expect([image.width, image.height], String(image.src)).toEqual([
-            image.naturalWidth,
-            image.naturalHeight,
-          ]);
-        }
-      }
-      await page.context().close();
-    }
-  );
-
   it("re-themes the landing from a brand card on Elmera Group's site and moves focus into the new site", async () => {
     const { page, site } = await openSite(ELMERA, DESKTOP_VIEWPORT);
     const brands = site.getByRole("list", { name: "Our brands" });
@@ -407,35 +354,107 @@ describe("landing hero window, External side", () => {
   );
 
   // The window's frame stops growing at 1248px, so 1280 is the widest viewport a header meets.
-  it.each(
-    ALL_SITES.flatMap((facts) => [1024, 1280].map((width) => ({ facts, viewport: { width, height: 900 } })))
-  )(
-    "fits every header control of $facts.site inside the window at $viewport.width px in a wide fallback font",
-    async ({ facts, viewport }) => {
-      const { page, site } = await openSite(facts, viewport, { prepare: wideFallbackFont });
+  // The site's statements read the same in any font, so they share the header's load.
+  it.each(ALL_SITES)(
+    "states $site's language, logo, hero, checklist and section headings, fits every header control inside the window at 1280px and after a resize to 1024px in a wide fallback font, and gives every image an alt text and its intrinsic size",
+    async (facts) => {
+      const { page, site } = await openSite(
+        facts,
+        { width: 1280, height: 900 },
+        { prepare: wideFallbackFont }
+      );
       // DOM audit: the header sits inside the site's region, where it is not a banner landmark.
       const header = site.locator("header");
       const scroller = site.locator("[data-site-scroller]");
       expect(await header.locator(":is(a, button)").count()).toBeGreaterThan(0);
-      expect(await outsideScroller(scroller, "header :is(a, button)")).toEqual([]);
+      expect(await outsideScroller(scroller, "header :is(a, button)"), "1280px").toEqual([]);
+      // Below the window's `@5xl` width the rows hide whatever the header measured at 1280px.
+      await page.setViewportSize({ width: 1024, height: 900 });
+      await settleFrames(page);
+      expect(await outsideScroller(scroller, "header :is(a, button)"), "1024px").toEqual([]);
+
+      expect(await site.getAttribute("lang")).toBe(facts.lang);
+      expect(await windowCaption(page)).toContain(facts.domain);
+      await site.getByRole("img", { name: facts.logo, exact: true }).first().waitFor();
+      expect(await site.getByRole("heading", { level: 1 }).textContent()).toBe(facts.heading);
+      // The site sits inside the landing's main, so it draws no main of its own.
+      expect(await page.getByRole("main").count()).toBe(1);
+      expect(await site.getByRole("heading", { level: 2 }).allTextContents()).toEqual(facts.sections);
+      for (const name of facts.labelled) {
+        expect(await site.getByRole("region", { name, exact: true }).count(), name).toBe(1);
+      }
+      if ("checklist" in facts) {
+        const checklist = site.getByRole("list", { name: "Fordeler" });
+        expect(await checklist.getByRole("listitem").allTextContents()).toEqual(facts.checklist);
+      }
+
+      // Last, since it makes every image load eagerly.
+      if (facts.photos > 0) {
+        const images = await site.locator("img").evaluateAll(async (elements) =>
+          Promise.all(
+            elements.map(async (element) => {
+              if (!(element instanceof HTMLImageElement)) {
+                return { src: "not an img" };
+              }
+              element.loading = "eager";
+              await element.decode().catch(() => undefined);
+              return {
+                src: element.getAttribute("src"),
+                alt: element.alt,
+                width: Number(element.getAttribute("width")),
+                height: Number(element.getAttribute("height")),
+                naturalWidth: element.naturalWidth,
+                naturalHeight: element.naturalHeight,
+              };
+            })
+          )
+        );
+        expect(images).toHaveLength(facts.photos);
+        for (const image of images) {
+          expect(image.alt, String(image.src)).not.toBe("");
+          expect([image.width, image.height], String(image.src)).toEqual([
+            image.naturalWidth,
+            image.naturalHeight,
+          ]);
+        }
+      }
       await page.context().close();
     }
   );
 
-  it.each(ALL_SITES)("keeps the header of $site expanded at 1280px in a font it fits", async (facts) => {
-    const { page, site } = await openSite(facts, { width: 1280, height: 900 }, { prepare: narrowFont });
-    // The header measures its rows in a layout effect and again on resize; let both settle.
-    await settleFrames(page);
-    expect(await site.getByRole("navigation", { name: facts.nav }).isVisible()).toBe(true);
-    expect(await site.getByRole("button", { name: facts.menuButton, exact: true }).isVisible()).toBe(false);
-    await page.context().close();
-  });
-
   it.each(ALL_SITES)(
-    "keeps $site's hero, bands and header logo readable on dark surfaces in dark mode",
+    "keeps $site's header expanded at 1280px in a font it fits, its dimmed footer and utility text readable on its bands in light mode, and its hero, bands and header logo readable on dark surfaces in dark mode",
     async (facts) => {
-      const { page, site } = await openSite(facts, WIDE_VIEWPORT, { colorScheme: "dark" });
-      expect(await page.locator("html").getAttribute("data-theme")).toBe("dark");
+      // A font the header fits keeps it expanded, so the utility row shows.
+      const { page, site } = await openSite(
+        facts,
+        { width: 1280, height: 900 },
+        {
+          colorScheme: "light",
+          prepare: narrowFont,
+        }
+      );
+      // The header measures its rows in a layout effect and again on resize; let both settle.
+      await settleFrames(page);
+      expect(await site.getByRole("navigation", { name: facts.nav }).isVisible()).toBe(true);
+      expect(await site.getByRole("button", { name: facts.menuButton, exact: true }).isVisible()).toBe(false);
+      const lines = await paintedLines(site);
+      // The footer's domain and copyright lines dim, and every utility link is read, so a pass
+      // cannot come from reading none.
+      const footer = lines.filter((line) => line.where === "footer" && line.ink.alpha < 1);
+      expect(footer.length).toBeGreaterThanOrEqual(2);
+      const utility = lines.filter((line) => line.where === "utility").map((line) => line.name);
+      expect(utility).toEqual(expect.arrayContaining([...facts.utility]));
+      for (const line of lines) {
+        // Unit under test: the line's computed paint, composited over its band. Oracle: WCAG
+        // contrast from @elmeragroup/color against the 4.5:1 text floor.
+        const ratio = contrastRatio(Srgb.compositeOver(line.ink, line.surface), line.surface);
+        expect.soft(ratio._tag === "ok" ? ratio.value : 0, line.name).toBeGreaterThanOrEqual(4.5);
+      }
+
+      // The landing follows the device scheme as it changes, so dark mode needs no second load.
+      await page.emulateMedia({ colorScheme: "dark" });
+      await expect.poll(async () => page.locator("html").getAttribute("data-theme")).toBe("dark");
       // The hero's block, every band below it and the footer, each with the text a visitor reads first on it.
       const bands = await paintedBands(site);
       expect(bands.length).toBeGreaterThan(1);
@@ -456,32 +475,6 @@ describe("landing hero window, External side", () => {
         expect(ratio._tag === "ok" ? ratio.value : 0, Hex.formatOpaque(ink)).toBeGreaterThanOrEqual(
           GRAPHIC_CONTRAST
         );
-      }
-      await page.context().close();
-    }
-  );
-
-  it.each(ALL_SITES)(
-    "keeps $site's dimmed footer and utility text readable on its bands in light mode",
-    async (facts) => {
-      // A font the header fits keeps it expanded, so the utility row shows.
-      const { page, site } = await openSite(facts, WIDE_VIEWPORT, {
-        colorScheme: "light",
-        prepare: narrowFont,
-      });
-      await settleFrames(page);
-      const lines = await paintedLines(site);
-      // The footer's domain and copyright lines dim, and every utility link is read, so a pass
-      // cannot come from reading none.
-      const footer = lines.filter((line) => line.where === "footer" && line.ink.alpha < 1);
-      expect(footer.length).toBeGreaterThanOrEqual(2);
-      const utility = lines.filter((line) => line.where === "utility").map((line) => line.name);
-      expect(utility).toEqual(expect.arrayContaining([...facts.utility]));
-      for (const line of lines) {
-        // Unit under test: the line's computed paint, composited over its band. Oracle: WCAG
-        // contrast from @elmeragroup/color against the 4.5:1 text floor.
-        const ratio = contrastRatio(Srgb.compositeOver(line.ink, line.surface), line.surface);
-        expect.soft(ratio._tag === "ok" ? ratio.value : 0, line.name).toBeGreaterThanOrEqual(4.5);
       }
       await page.context().close();
     }

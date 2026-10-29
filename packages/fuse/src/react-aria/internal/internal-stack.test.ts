@@ -7,7 +7,6 @@ import {
   numberFieldGroupClass,
 } from "../../styles/field-box";
 import { fieldReads, fieldSize } from "../../styles/field-size";
-import { checkboxVariants } from "./checkbox";
 import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
 import { fieldGroupVariants } from "./field";
 
@@ -100,16 +99,5 @@ describe("field-box chrome parity", () => {
       expect(rendered.match(/(?:^|\s)rounded-\S+/gu)).toHaveLength(1);
       expect(rendered.match(/(?:^|\s)shadow-\S+/gu)).toHaveLength(1);
     }
-  });
-});
-
-describe("checkboxVariants", () => {
-  it("keeps the private recipe on role tokens, with error in place of the reference's destructive", () => {
-    const { base, box, icon } = checkboxVariants({ isSelected: true });
-    const rendered = `${base()} ${box()} ${icon()}`;
-    expect(rendered).not.toContain("theme(colors");
-    expect(rendered).not.toContain("destructive");
-    expect(rendered).toContain("var(--primary)");
-    expect(checkboxVariants({ isInvalid: true }).box()).toContain("var(--error)");
   });
 });

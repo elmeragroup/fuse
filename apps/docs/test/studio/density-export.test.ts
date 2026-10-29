@@ -30,19 +30,7 @@ describe("exportCss density section", () => {
 `);
   });
 
-  it("lists metrics in fuse.css order, whatever order they were edited in", () => {
-    expect(exported({ density: { comfortable: { "surface-gap-xl": 40, "row-h": 40, "control-h-sm": 40 } } }))
-      .toBe(`${DENSITY_HEADER}
-
-:root[data-density="comfortable"] {
-  --control-h-sm: 40px;
-  --row-h: 40px;
-  --surface-gap-xl: 40px;
-}
-`);
-  });
-
-  it("lists label metrics before surface metrics, as fuse.css declares them", () => {
+  it("lists metrics in fuse.css order, label metrics before surface metrics, whatever order they were edited in", () => {
     expect(
       exported({
         density: { dense: { "surface-pad-md": 20, "label-text": 15, "row-h": 30, "control-h-sm": 30 } },

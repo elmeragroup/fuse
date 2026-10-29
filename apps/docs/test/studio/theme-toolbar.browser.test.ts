@@ -204,9 +204,13 @@ describe("the studio's theme toolbar", () => {
       const bar = await selectBoard(page, LIGHT_BOARD);
       // Opening moves no focus: the Layers press still hands it to the artboard.
       expect(await isFocused(artboard(page, LIGHT_BOARD))).toBe(true);
-      // Centred across the artboard the press framed, room above it and all (next test).
+      // Centred across the artboard the press framed, with room above it for the bar, which clears
+      // the artboard's label.
       await expect.poll(async () => (await placement(page, LIGHT_BOARD)).gap).toBeCloseTo(ARTBOARD_GAP, 0);
       expect(Math.abs((await placement(page, LIGHT_BOARD)).offset)).toBeLessThanOrEqual(1);
+      const label = await box(canvas(page).getByRole("button", { name: LIGHT_BOARD, exact: true }));
+      const placed = await box(bar);
+      expect(placed.y + placed.height).toBeLessThanOrEqual(label.y);
 
       await layer(page, LIGHT_BOARD).click();
       await bar.waitFor({ state: "detached" });
@@ -219,18 +223,13 @@ describe("the studio's theme toolbar", () => {
     }
   });
 
-  it.each([
-    { theme: "the base theme's brand", brand: undefined },
-    // Its name widens the Brand select until the bar wraps onto a second row.
-    { theme: "a brand whose long name wraps the bar", brand: "Nordic Green Energy" },
-  ])("frames an artboard picked in Layers with room above it for its bar, in $theme", async ({ brand }) => {
+  it("frames an artboard picked in Layers with room above it for its bar, in a brand whose long name wraps the bar", async () => {
     const { context, page } = await openStudio(browser());
     try {
-      if (brand !== undefined) {
-        await pickBrand(page, await selectBoard(page, LIGHT_BOARD), brand);
-        // Another artboard's bar is the last one measured, so the pick below meets a taller bar.
-        await selectBoard(page, DARK_BOARD);
-      }
+      // Its name widens the Brand select until the bar wraps onto a second row.
+      await pickBrand(page, await selectBoard(page, LIGHT_BOARD), "Nordic Green Energy");
+      // Another artboard's bar is the last one measured, so the pick below meets a taller bar.
+      await selectBoard(page, DARK_BOARD);
       await selectBoard(page, LIGHT_BOARD);
       await expect.poll(async () => (await placement(page, LIGHT_BOARD)).gap).toBeCloseTo(ARTBOARD_GAP, 0);
       const label = await box(canvas(page).getByRole("button", { name: LIGHT_BOARD, exact: true }));
@@ -610,7 +609,7 @@ describe("the studio's theme toolbar", () => {
     }
   });
 
-  it("opens a menu taller than the room below the bar under the bar, scrolling, with the other menus in reach", async () => {
+  it("opens a menu taller than the room under the bar, scrolling, and keeps it there through a zoom out and a window resize", async () => {
     const { context, page } = await openStudio(browser());
     try {
       const bar = await selectBoard(page, LIGHT_BOARD);
@@ -618,28 +617,10 @@ describe("the studio's theme toolbar", () => {
       const color = page.getByRole("dialog", { name: "Color", exact: true });
       await color.waitFor({ state: "visible" });
       await settleFrames(page);
-      const below = await box(color);
-      const above = await box(bar);
-      expect(below.y).toBeGreaterThanOrEqual(above.y + above.height);
-      expect(inside(below, await box(canvas(page)))).toBe(true);
-      // Its knobs run on past the room, inside the popup.
+      // Taller than the room below the bar, it opens under the bar, inside the canvas, and its knobs
+      // run on past the room inside the popup.
+      expect(await menuClear(page, color, bar, "below")).toBe(true);
       expect(await color.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
-
-      await menuButton(bar, "Shape").click();
-      await page.getByRole("dialog", { name: "Shape", exact: true }).waitFor({ state: "visible" });
-      await color.waitFor({ state: "detached" });
-    } finally {
-      await context.close();
-    }
-  });
-
-  it("keeps an open menu below the bar and inside the canvas through a zoom out and a window resize", async () => {
-    const { context, page } = await openStudio(browser());
-    try {
-      const bar = await selectBoard(page, LIGHT_BOARD);
-      await menuButton(bar, "Color").click();
-      const color = page.getByRole("dialog", { name: "Color", exact: true });
-      await color.waitFor({ state: "visible" });
 
       // A wheel zoom out over the empty canvas, clear of the menu, moves the bar. The menu's
       // place is read once the artboard has shrunk, so it is the one after the camera move.
@@ -656,8 +637,10 @@ describe("the studio's theme toolbar", () => {
 
       await page.setViewportSize({ width: 1440, height: 600 });
       await expect.poll(async () => menuClear(page, color, bar, "below")).toBe(true);
+      // The other menus stay in reach: Shape replaces it.
       await menuButton(bar, "Shape").click();
       await page.getByRole("dialog", { name: "Shape", exact: true }).waitFor({ state: "visible" });
+      await color.waitFor({ state: "detached" });
     } finally {
       await context.close();
     }

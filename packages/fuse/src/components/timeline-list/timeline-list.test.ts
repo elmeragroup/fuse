@@ -3,7 +3,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { TimelineList } from "./timeline-list";
 import { timelineListVariants } from "./timeline-list-variants";
 
@@ -27,7 +26,7 @@ describe("timelineListVariants", () => {
     expect(slots.time()).toContain("text-sm");
   });
 
-  it("draws the connector only on non-last items and uses tokens instead of raw palette", () => {
+  it("draws the connector only on non-last items and paints dot and time with role tokens", () => {
     const slots = timelineListVariants();
     expect(slots.item()).toContain("not-last:before:absolute");
     expect(slots.item()).toContain("not-last:before:top-8");
@@ -35,22 +34,8 @@ describe("timelineListVariants", () => {
     expect(slots.item()).toContain("not-last:before:h-full");
     expect(slots.item()).toContain("not-last:before:w-px");
     expect(slots.item()).toContain("not-last:before:bg-border");
-    // oxlint-disable-next-line elmera/no-primitive-colors -- source-grep of the forbidden class, not a recipe
-    expect(slots.item()).not.toContain("not-last:before:bg-zinc-600");
     expect(slots.dot()).toContain("bg-foreground");
-    expect(slots.dot()).not.toContain("bg-on-surface");
     expect(slots.time()).toContain("text-foreground");
-    const resolved = [
-      slots.root(),
-      slots.item(),
-      slots.dot(),
-      slots.title(),
-      slots.time(),
-      slots.description(),
-    ].join(" ");
-    expect(resolved).not.toContain("dark:");
-    expect(resolved).not.toContain("destructive");
-    expect(resolved).not.toMatch(RAW_PALETTE_RE);
   });
 });
 

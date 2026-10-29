@@ -72,27 +72,23 @@ describe("Link client-side navigation", () => {
 });
 
 describe("Link styling", () => {
-  it("paints the error variant with the status token", () => {
+  it("paints the error variant with the status token, and merges a caller className last", () => {
     renderThemed(
-      <Link href="/orders/1042" variant="error">
-        Invoice 1042
-      </Link>
+      <>
+        <Link href="/orders/1042" variant="error">
+          Invoice 1042
+        </Link>
+        <Link href="/orders/1043" variant="error" className="text-brand underline">
+          Invoice 1043
+        </Link>
+      </>
     );
 
-    const link = linkNamed("Invoice 1042");
-    expect(getComputedStyle(link).color).toBe(cssVarColor(link, "--error"));
-  });
-
-  it("merges a caller className last, so it wins the conflicting utility", () => {
-    renderThemed(
-      <Link href="/orders/1042" variant="error" className="text-brand underline">
-        Invoice 1042
-      </Link>
-    );
-
-    const link = linkNamed("Invoice 1042");
-    expect(getComputedStyle(link).color).not.toBe(cssVarColor(link, "--error"));
-    expect(getComputedStyle(link).textDecorationLine).toContain("underline");
+    const plain = linkNamed("Invoice 1042");
+    const overridden = linkNamed("Invoice 1043");
+    expect(getComputedStyle(plain).color).toBe(cssVarColor(plain, "--error"));
+    expect(getComputedStyle(overridden).color).toBe(cssVarColor(overridden, "--brand"));
+    expect(getComputedStyle(overridden).textDecorationLine).toContain("underline");
   });
 
   it("paints the shared state ring on keyboard focus only, at both densities", async () => {

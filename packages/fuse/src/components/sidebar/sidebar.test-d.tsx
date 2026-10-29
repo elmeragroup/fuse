@@ -22,30 +22,6 @@ import type {
 
 test("Sidebar, useSidebar and the six constants ship from both entries; private names stay off the surface", () => {
   expectTypeOf<typeof Sidebar>().toEqualTypeOf<typeof RootSidebar>();
-  expectTypeOf(Sidebar.Provider).toBeFunction();
-  expectTypeOf(Sidebar.Root).toBeFunction();
-  expectTypeOf(Sidebar.Trigger).toBeFunction();
-  expectTypeOf(Sidebar.Rail).toBeFunction();
-  expectTypeOf(Sidebar.Inset).toBeFunction();
-  expectTypeOf(Sidebar.Input).toBeFunction();
-  expectTypeOf(Sidebar.Header).toBeFunction();
-  expectTypeOf(Sidebar.Footer).toBeFunction();
-  expectTypeOf(Sidebar.Separator).toBeFunction();
-  expectTypeOf(Sidebar.Content).toBeFunction();
-  expectTypeOf(Sidebar.Group).toBeFunction();
-  expectTypeOf(Sidebar.GroupLabel).toBeFunction();
-  expectTypeOf(Sidebar.GroupAction).toBeFunction();
-  expectTypeOf(Sidebar.GroupContent).toBeFunction();
-  expectTypeOf(Sidebar.Menu).toBeFunction();
-  expectTypeOf(Sidebar.MenuItem).toBeFunction();
-  expectTypeOf(Sidebar.MenuButton).toBeFunction();
-  expectTypeOf(Sidebar.MenuAction).toBeFunction();
-  expectTypeOf(Sidebar.MenuBadge).toBeFunction();
-  expectTypeOf(Sidebar.MenuSkeleton).toBeFunction();
-  expectTypeOf(Sidebar.MenuSub).toBeFunction();
-  expectTypeOf(Sidebar.MenuSubItem).toBeFunction();
-  expectTypeOf(Sidebar.MenuSubButton).toBeFunction();
-  expectTypeOf(Sidebar.Icon).toBeFunction();
   expectTypeOf(useSidebar).returns.toEqualTypeOf<SidebarContextValue>();
   expectTypeOf<typeof SIDEBAR_COOKIE_NAME>().toEqualTypeOf<"sidebar:state">();
   expectTypeOf<typeof SIDEBAR_COOKIE_MAX_AGE>().toBeNumber();

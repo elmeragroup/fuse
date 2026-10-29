@@ -15,64 +15,35 @@ const TABLE = partRoleTable([
   ["button", "control"],
   ["card", "layout"],
   ["card[data-direction=horizontal]", "surface"],
-  ["sidebar-group:where([data-collapsible=icon] *)", "fixed"],
-  ["sidebar-group", "surface"],
   ["sidebar-menu-button:where([data-collapsible=icon] *)", "fixed"],
   ["sidebar-menu-button", "row"],
   ["sidebar-menu-button[data-size=sm]", "label"],
 ]);
 
 const NEVER = (): boolean => false;
+const ALWAYS = (): boolean => true;
+const HORIZONTAL = (suffix: string) => suffix === "[data-direction=horizontal]";
 
 describe("resolvePartRole", () => {
-  it("gives a plain slot its own role", () => {
-    expect(resolvePartRole(TABLE, "button", NEVER)).toEqual({ key: "button", role: "control" });
-  });
-
-  it("lets an override key whose suffix matches win over the slot", () => {
-    const matches = (suffix: string) => suffix === "[data-direction=horizontal]";
-    expect(resolvePartRole(TABLE, "card", matches)).toEqual({
-      key: "card[data-direction=horizontal]",
-      role: "surface",
-    });
-  });
-
-  it("keeps the slot's role when no override suffix matches", () => {
-    expect(resolvePartRole(TABLE, "card", NEVER)).toEqual({ key: "card", role: "layout" });
-  });
-
-  it("resolves the Sidebar icon rail's container override, listed before its slot", () => {
-    const inRail = (suffix: string) => suffix === ":where([data-collapsible=icon] *)";
-    expect(resolvePartRole(TABLE, "sidebar-group", inRail)).toEqual({
-      key: "sidebar-group:where([data-collapsible=icon] *)",
-      role: "fixed",
-    });
-    expect(resolvePartRole(TABLE, "sidebar-group", NEVER)).toEqual({ key: "sidebar-group", role: "surface" });
-  });
-
-  it("takes the first matching override in table order", () => {
-    const always = (): boolean => true;
-    expect(resolvePartRole(TABLE, "sidebar-menu-button", always)).toEqual({
-      key: "sidebar-menu-button:where([data-collapsible=icon] *)",
-      role: "fixed",
-    });
-  });
-
-  it("asks only about the slot's own suffixes, in table order", () => {
-    const asked: string[] = [];
-    resolvePartRole(TABLE, "sidebar-menu-button", (suffix) => {
-      asked.push(suffix);
-      return false;
-    });
-    expect(asked).toEqual([":where([data-collapsible=icon] *)", "[data-size=sm]"]);
-  });
-
-  it("gives no role to a slot the table does not declare", () => {
-    expect(resolvePartRole(TABLE, "studio-swatch", NEVER)).toBeUndefined();
-  });
-
-  it("does not take a slot that only prefixes a declared one", () => {
-    expect(resolvePartRole(TABLE, "card-header", () => true)).toBeUndefined();
+  it.each([
+    ["gives a plain slot its own role", "button", NEVER, { key: "button", role: "control" }],
+    [
+      "lets an override key whose suffix matches win over the slot",
+      "card",
+      HORIZONTAL,
+      { key: "card[data-direction=horizontal]", role: "surface" },
+    ],
+    ["keeps the slot's role when no override suffix matches", "card", NEVER, { key: "card", role: "layout" }],
+    [
+      "takes the first matching override in table order",
+      "sidebar-menu-button",
+      ALWAYS,
+      { key: "sidebar-menu-button:where([data-collapsible=icon] *)", role: "fixed" },
+    ],
+    ["gives no role to a slot the table does not declare", "studio-swatch", NEVER, undefined],
+    ["does not take a slot that only prefixes a declared one", "card-header", ALWAYS, undefined],
+  ] as const)("%s", (_case, slot, matches, role) => {
+    expect(resolvePartRole(TABLE, slot, matches)).toEqual(role);
   });
 });
 

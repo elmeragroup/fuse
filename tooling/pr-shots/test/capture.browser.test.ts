@@ -26,7 +26,8 @@ const pages = new Map([
 
 let server: Server;
 let origin: URL;
-let outDir: string;
+/** Holds one directory per shot, since shots of different tests can share a file name. */
+let outRoot: string;
 
 beforeAll(async () => {
   server = createServer((request, response) => {
@@ -43,12 +44,12 @@ beforeAll(async () => {
     throw new Error("The fixture server reported no port");
   }
   origin = new URL(`http://127.0.0.1:${String(address.port)}`);
-  outDir = await mkdtemp(path.join(tmpdir(), "pr-shots-"));
+  outRoot = await mkdtemp(path.join(tmpdir(), "pr-shots-"));
 });
 
 afterAll(async () => {
   await new Promise((resolve) => server.close(resolve));
-  await rm(outDir, { recursive: true, force: true });
+  await rm(outRoot, { recursive: true, force: true });
 });
 
 /** A PNG's width and height, read from its IHDR chunk. */
@@ -88,6 +89,7 @@ function shoot(argv: readonly string[]) {
     if (row === undefined) {
       return yield* Effect.die("The run planned no shots");
     }
+    const outDir = yield* Effect.promise(() => mkdtemp(path.join(outRoot, "shot-")));
     yield* capture.capture({ origin, sourceLabel: "fixture", options, shots: [row.after], outDir });
     const png = yield* Effect.promise(() => readFile(path.join(outDir, row.after.file)));
     return { frame, file: row.after.file, png };
@@ -103,13 +105,60 @@ function failedShot(argv: readonly string[], frame: "stage" | "target" | "viewpo
     if (row === undefined) {
       return yield* Effect.die("The run planned no shots");
     }
+    const outDir = yield* Effect.promise(() => mkdtemp(path.join(outRoot, "shot-")));
     return yield* Effect.flip(
       capture.capture({ origin, sourceLabel: "fixture", options, shots: [row.after], outDir })
     );
   });
 }
 
-describe("Capture", () => {
+describe.concurrent("Capture", () => {
+  // These two wait out the 15 s lookup timeout, so they start first and the other shots run
+  // beside them.
+  it.live("names the click step whose control never opens what it claims to", () =>
+    Effect.gen(function* () {
+      const failure = yield* failedShot(
+        ["fixture", "--route", "/popup", "--click", "button:Stuck"],
+        "viewport"
+      );
+      assert.strictEqual(failure._tag, "CaptureFailed");
+      assert.include(
+        failure.message,
+        '--click step 1 of 1: button "Stuck" did not open: no popup it holds open shows (/popup on fixture)'
+      );
+    }).pipe(Effect.provide(Capture.layer))
+  );
+
+  it.live(
+    "names the click step, the element and the route when a step finds nothing while auto resolves",
+    () =>
+      Effect.gen(function* () {
+        const capture = yield* Capture;
+        const failure = yield* Effect.flip(
+          capture.resolveFrame({
+            origin,
+            sourceLabel: "fixture",
+            options: shotOptions([
+              "fixture",
+              "--route",
+              "/popup",
+              "--click",
+              "button:Internal",
+              "--click",
+              "button:Nope",
+              "--target",
+              "button:Internal",
+            ]),
+          })
+        );
+        assert.strictEqual(failure._tag, "CaptureFailed");
+        assert.include(
+          failure.message,
+          'resolving --frame auto: --click step 2 of 2: No button named "Nope" at index 0: nothing matched (/popup on fixture)'
+        );
+      }).pipe(Effect.provide(Capture.layer))
+  );
+
   it.live("resolves auto to stage for a target in a demo stage, and clips the stage plus padding", () =>
     Effect.gen(function* () {
       const { frame, file, png } = yield* shoot([
@@ -152,13 +201,15 @@ describe("Capture", () => {
   );
 
   it.live(
-    "resolves auto to viewport without a target, and shoots the window at its size times the scale",
+    "resolves auto to viewport without a target, shoots the window at its size times the scale, and stamps a density override on the document root of a page without a density scope",
     () =>
       Effect.gen(function* () {
         const { frame, file, png } = yield* shoot([
           "fixture",
           "--route",
           "/page",
+          "--densities",
+          "dense",
           "--viewports",
           "640x480",
           "--scale",
@@ -167,6 +218,8 @@ describe("Capture", () => {
         assert.strictEqual(frame, "viewport");
         assert.isTrue(file.endsWith("-640x480-viewport.png"));
         assert.deepStrictEqual(pngSize(png), { width: 640 * 2, height: 480 * 2 });
+        // The swatch, at (40, 110) to (80, 150) CSS px, turns red under `data-density="dense"`.
+        assert.deepStrictEqual(pixelAt(png, 60 * 2, 132 * 2), [255, 0, 0]);
       }).pipe(Effect.provide(Capture.layer))
   );
 
@@ -207,24 +260,6 @@ describe("Capture", () => {
       assert.strictEqual(frame, "page");
       // The fixture's document is 2000 CSS px tall, taller than the 480 px window.
       assert.deepStrictEqual(pngSize(png), { width: 640, height: 2000 });
-    }).pipe(Effect.provide(Capture.layer))
-  );
-
-  it.live("stamps a density override on the document root of a page without a density scope", () =>
-    Effect.gen(function* () {
-      const { png } = yield* shoot([
-        "fixture",
-        "--route",
-        "/page",
-        "--densities",
-        "dense",
-        "--viewports",
-        "640x480",
-        "--scale",
-        "1",
-      ]);
-      // The swatch, at (40, 110) to (80, 150), turns red under `data-density="dense"`.
-      assert.deepStrictEqual(pixelAt(png, 60, 132), [255, 0, 0]);
     }).pipe(Effect.provide(Capture.layer))
   );
 
@@ -498,20 +533,6 @@ describe("Capture", () => {
     }).pipe(Effect.provide(Capture.layer))
   );
 
-  it.live("names the click step whose control never opens what it claims to", () =>
-    Effect.gen(function* () {
-      const failure = yield* failedShot(
-        ["fixture", "--route", "/popup", "--click", "button:Stuck"],
-        "viewport"
-      );
-      assert.strictEqual(failure._tag, "CaptureFailed");
-      assert.include(
-        failure.message,
-        '--click step 1 of 1: button "Stuck" did not open: no popup it holds open shows (/popup on fixture)'
-      );
-    }).pipe(Effect.provide(Capture.layer))
-  );
-
   it.live("keeps the scroll position the clicks left for a window shot", () =>
     Effect.gen(function* () {
       const { frame, png } = yield* shoot([
@@ -529,20 +550,6 @@ describe("Capture", () => {
       // The list opens at y 1640, below the first 480px window, so it shows only if the shot
       // stays where clicking Far scrolled the page.
       assert.isTrue(hasRed(png));
-    }).pipe(Effect.provide(Capture.layer))
-  );
-
-  it.live("names the click step, the element and the route when a step finds nothing", () =>
-    Effect.gen(function* () {
-      const failure = yield* failedShot(
-        ["fixture", "--route", "/popup", "--click", "button:Internal", "--click", "button:Nope"],
-        "viewport"
-      );
-      assert.strictEqual(failure._tag, "CaptureFailed");
-      assert.include(
-        failure.message,
-        '--click step 2 of 2: No button named "Nope" at index 0: nothing matched (/popup on fixture)'
-      );
     }).pipe(Effect.provide(Capture.layer))
   );
 

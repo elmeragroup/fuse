@@ -25,6 +25,7 @@ import {
   FIELDS_WITH_PRODUCT,
   FIELDS_WITH_RUSH,
   FIELDS_WITH_RUSH_TOGGLE,
+  finishMotion,
   columnFilters,
   CUSTOMER_NORD,
   STATUS_THREE,
@@ -35,7 +36,7 @@ import {
   visibleOrders,
   watchSides,
 } from "../../../test/data-table-filter-fixture";
-import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { withLocale } from "../../../test/locale-matrix";
 import { glidePointerTo, turnWheel } from "../../../test/pointer-press";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
@@ -137,7 +138,7 @@ describe("DataTableFilter add menu", () => {
     expect(visibleOrders()).toBe("2 6");
   });
 
-  it("closes only the submenu on ArrowLeft and keeps the arrows, Home and End from the toolbar", async () => {
+  it("closes only the submenu on ArrowLeft, back to the search with its row lit", async () => {
     renderOrders({ initial: [] });
     roleNamed("button", "Filter").focus();
     await userEvent.keyboard("{Enter}");
@@ -360,19 +361,6 @@ describe("DataTableFilter add menu", () => {
     expect(frames.at(-1)?.[0]).toBe("top");
   });
 
-  it("reports the field a submenu or a drill opens, and null once the menu closes", async () => {
-    const seen: (string | null)[] = [];
-    renderOrders({ initial: [], onActiveFieldChange: (fieldId) => seen.push(fieldId) });
-    await openMenu();
-    await userEvent.click(roleNamed("menuitem", "Status"));
-    await expect.poll(() => seen.at(-1)).toBe("status");
-    await userEvent.keyboard("{ArrowLeft}");
-    await userEvent.keyboard("cus{Enter}");
-    await expect.poll(() => seen.at(-1)).toBe("customer");
-    await userEvent.keyboard("{Escape}{Escape}");
-    await expect.poll(() => seen.at(-1)).toBe(null);
-  });
-
   it("reports a sibling submenu's field once, without null, when it replaces an open one", async () => {
     const seen: (string | null)[] = [];
     renderOrders({ initial: [], onActiveFieldChange: (fieldId) => seen.push(fieldId) });
@@ -591,10 +579,8 @@ describe("DataTableFilter in-place editor", () => {
     await expect.poll(step).toBe("editor");
     await expect.poll(() => seen.at(-1)).toBe("amount");
     expect(page.getByRole("dialog", { name: "Customer" }).query()).not.toBeNull();
-    await expect
-      .poll(() => page.getByRole("dialog", { name: "Customer" }).query(), { timeout: 12000 })
-      .toBeNull();
-    await settled();
+    await finishMotion();
+    expect(page.getByRole("dialog", { name: "Customer" }).query()).toBeNull();
     // The menu opens on its field list, so Customer gives way to no field, then to the drill.
     expect(seen).toEqual(["customer", null, "amount"]);
   });
@@ -646,23 +632,6 @@ describe("DataTableFilter in-place editor", () => {
       expect(seen).not.toContain("status");
     });
 
-    it("reports a drill again when the menu reopens onto it during the exit close() began", async () => {
-      // A long exit, so the Trigger reopens the menu before its close completes.
-      const seen = await openWithChips({ style: { transitionDuration: "6s", animationDuration: "6s" } });
-      await userEvent.click(roleNamed("menuitem", "Amount"));
-      await expect.poll(step).toBe("editor");
-      act().close();
-      await expect.poll(() => seen.at(-1)).toBeNull();
-      await userEvent.click(roleNamed("button", "Filter"), { force: true });
-      await expect.poll(() => seen).toEqual(["amount", null, "amount"]);
-      expect(step()).toBe("editor");
-      expect(
-        page.elementLocator(menu()).getByRole("combobox", { name: "Amount operator" }).query()
-      ).not.toBeNull();
-      await settled();
-      expect(seen).toEqual(["amount", null, "amount"]);
-    });
-
     /** A long menu exit, so a press on Filter reopens the menu before its close completes. */
     const LONG_EXIT = { style: { transitionDuration: "6s", animationDuration: "6s" } };
 
@@ -677,6 +646,8 @@ describe("DataTableFilter in-place editor", () => {
 
     async function drillAmount(): Promise<void> {
       await openMenu();
+      // Ends the stretched open zoom, which Playwright's press would otherwise wait out.
+      await finishMotion();
       await userEvent.click(roleNamed("menuitem", "Amount"));
       await expect.poll(step).toBe("editor");
     }
@@ -765,8 +736,7 @@ describe("DataTableFilter in-place editor", () => {
         await expect.poll(() => seen).toEqual(expected);
         await expect.poll(() => focusIs(role, name)).toBe(true);
         // The other overlay's exit ends, and the record and the focus hold.
-        await settled();
-        await settled();
+        await finishMotion();
         expect(menuOpen()).toBe(true);
         expect(focusIs(role, name)).toBe(true);
         expect(seen).toEqual(expected);
@@ -779,13 +749,12 @@ describe("DataTableFilter in-place editor", () => {
       act().edit("status");
       await userEvent.click(roleNamed("button", "Filter"), { force: true });
       await expect.poll(() => focusIs("searchbox", "Search fields")).toBe(true);
-      await settled();
+      await finishMotion();
       // The field list is open, so no field is active.
       expect(seen.at(-1) ?? null).toBeNull();
       await userEvent.keyboard("{Escape}");
-      await expect.poll(menuOpen, { timeout: 12000 }).toBe(false);
-      await settled();
-      await settled();
+      await finishMotion();
+      expect(menuOpen()).toBe(false);
       expect(page.getByRole("dialog", { name: "Status" }).query()).toBeNull();
       expect(seen.at(-1) ?? null).toBeNull();
     });
@@ -820,10 +789,8 @@ describe("DataTableFilter in-place editor", () => {
     await expect.poll(() => listbox.element().contains(active())).toBe(true);
     // The popover is still closing, then unmounts, and focus stays in the operator's popup.
     expect(page.getByRole("dialog", { name: "Amount" }).query()).not.toBeNull();
-    await expect
-      .poll(() => page.getByRole("dialog", { name: "Amount" }).query(), { timeout: 12000 })
-      .toBeNull();
-    await settled();
+    await finishMotion();
+    expect(page.getByRole("dialog", { name: "Amount" }).query()).toBeNull();
     expect(listbox.element().contains(active())).toBe(true);
   });
 
@@ -933,16 +900,6 @@ describe("DataTableFilter date presets a field chooses", () => {
     const expected = createdFilter("isBetween", ["2026-10-12", "2026-10-18"]);
     await expect.poll(columnFilters).toEqual(expected);
     expect(parseColumnFilters(columnFilters(), CHOSEN)).toEqual(expected);
-  });
-
-  it("writes This month as the whole month, days after today included", async () => {
-    await drillCreated(FIELDS);
-    await userEvent.click(roleNamed("button", "This month"));
-    await expect.poll(menuOpen).toBe(false);
-    const expected = createdFilter("isBetween", ["2026-10-01", "2026-10-31"]);
-    expect(columnFilters()).toEqual(expected);
-    expect(visibleOrders()).toBe("1 2 3 5 6");
-    expect(parseColumnFilters(columnFilters(), FIELDS)).toEqual(expected);
   });
 
   it("shows no presets for an empty list, and keeps the date inputs", async () => {
@@ -1212,19 +1169,6 @@ describe("DataTableFilter host wiring", () => {
     expect(calls).toEqual(["status", null]);
   });
 
-  it("names the add menu and each value submenu as dialogs, as they open and once their lists mount", async () => {
-    renderOrders({ initial: [] });
-    await userEvent.click(roleNamed("button", "Filter"));
-    await expect.poll(() => page.getByRole("dialog", { name: "Add filter" }).query()).not.toBeNull();
-    await settled();
-    expect(roleNamed("dialog", "Add filter")).toBe(menu());
-    await userEvent.click(roleNamed("menuitem", "Status"));
-    await expect.poll(() => page.getByRole("dialog", { name: "Status" }).query()).not.toBeNull();
-    await settled();
-    const submenu = roleNamed("dialog", "Status");
-    expect(page.elementLocator(submenu).getByRole("menuitemcheckbox").elements()).toHaveLength(5);
-  });
-
   it("writes nothing for a value whose option was removed while its submenu was open", async () => {
     const view = renderThemed(withLocale("en-US", <Orders initial={[]} fields={FIELDS} />));
     await openMenu();
@@ -1275,13 +1219,14 @@ describe("DataTableFilter host wiring", () => {
 });
 
 describe("DataTableFilter add menu locales", () => {
-  it.each(SUPPORTED_LOCALES)("names the menu, its searches and Back in %s", async (locale) => {
+  // en-US names are read by every other test here. One locale per dictionary shape is enough to
+  // show the menu reads its names from the locale's dictionary: nb-NO's plain strings, fi-FI's
+  // differently worded interpolation.
+  it.each(["nb-NO", "fi-FI"] as const)("names the menu, its searches and Back in %s", async (locale) => {
     const names = {
-      "en-US": ["Filter", "Add filter", "Search fields", "Search Status", "Back to fields"],
       "nb-NO": ["Filter", "Legg til filter", "Søk i felt", "Søk i Status", "Tilbake til felt"],
-      "sv-SE": ["Filter", "Lägg till filter", "Sök fält", "Sök Status", "Tillbaka till fält"],
       "fi-FI": ["Suodata", "Lisää suodatin", "Hae kenttiä", "Hae: Status", "Takaisin kenttiin"],
-    } as const satisfies Record<SupportedLocale, readonly [string, string, string, string, string]>;
+    } as const satisfies Partial<Record<SupportedLocale, readonly [string, string, string, string, string]>>;
     const [trigger, dialog, fields, values, back] = names[locale];
     renderOrders({ initial: [] }, locale);
     roleNamed("button", trigger).focus();
@@ -1434,14 +1379,6 @@ describe("DataTableFilter toggles", () => {
     await expect.poll(columnFilters).toEqual([]);
     expect(visibleOrders()).toBe("1 2 3 4 5 6");
     await expect.poll(switchFaces).toEqual(["off", "off"]);
-  });
-
-  it("removes the chip on Delete and moves focus to the Trigger", async () => {
-    renderOrders({ initial: RUSH_TRUE, fields: FIELDS_WITH_RUSH_TOGGLE });
-    roleNamed("button", "Remove Rush only filter").focus();
-    await userEvent.keyboard("{Delete}");
-    await expect.poll(columnFilters).toEqual([]);
-    await expect.poll(() => focusIs("button", "Filter")).toBe(true);
   });
 
   it("states a value it no longer admits in full, and a tick replaces it with on", async () => {

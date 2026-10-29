@@ -172,24 +172,6 @@ describe("the studio's Shape page", () => {
     }
   });
 
-  it("relabels every rung with the radius the browser computes after the edit", async () => {
-    const { context, page, errors } = await openStudio(browser(), { route: CORNERS_PAGE });
-    try {
-      await setRadius(page, 20);
-      // fuse.css's rungs at a 20px radius: every one 20px at the internal 0px step, and whole
-      // 2px steps from 20px at the external step (CONTEXT.md, "Radius rung").
-      await expect
-        .poll(() => cornerValues(page, "Radius rungs · Internal"))
-        .toMatchObject({ xs: "20px", sm: "20px", md: "20px", lg: "20px", xl: "20px", popover: "20px" });
-      await expect
-        .poll(() => cornerValues(page, "Radius rungs · External"))
-        .toMatchObject({ xs: "14px", sm: "16px", md: "18px", lg: "20px", xl: "24px", popover: "12px" });
-      expect(errors).toEqual([]);
-    } finally {
-      await context.close();
-    }
-  });
-
   it("wears a --radius-step edit on every board in the base theme's variant, in any brand", async () => {
     const { context, page, errors } = await openStudio(browser(), { route: CORNERS_PAGE });
     try {
@@ -227,7 +209,7 @@ describe("the studio's Shape page", () => {
     }
   });
 
-  it("draws one X-ray label per inner part, none mismatched on the stock theme", async () => {
+  it("draws one X-ray label per inner part, none mismatched on the stock theme, at a deep radius or a denser artboard", async () => {
     const { context, page, errors } = await openStudio(browser(), { route: CORNERS_PAGE });
     try {
       const toggle = page.getByRole("button", { name: "Corner X-ray", exact: true });
@@ -244,6 +226,19 @@ describe("the studio's Shape page", () => {
       await setRadius(page, 40);
       await expect.poll(() => xrayLabels(page).filter({ hasText: "= 23px" }).count()).toBe(4);
       await expect.poll(() => xrayLabels(page).filter({ hasText: "= 15px" }).count()).toBe(2);
+      expect(await xrayLabels(page).and(page.locator('[data-mismatch="true"]')).count()).toBe(0);
+
+      // A denser artboard relabels: dense, the md surface tier pads 12px and the lg tier 16px
+      // (fuse's tokens/density-metrics.ts), so the Card rows and the Accordion panel round at
+      // 40 − 1 − 12 = 27px and the Frame rows at 40 − 1 − 16 = 23px, with no stale 15px left.
+      await canvas(page).getByRole("button", { name: SHELLS, exact: true }).click();
+      await inspector(page)
+        .getByRole("group", { name: "Density", exact: true })
+        .getByRole("button", { name: "Dense", exact: true })
+        .click();
+      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 27px" }).count()).toBe(4);
+      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 23px" }).count()).toBe(2);
+      expect(await xrayLabels(page).filter({ hasText: "= 15px" }).count()).toBe(0);
       expect(await xrayLabels(page).and(page.locator('[data-mismatch="true"]')).count()).toBe(0);
 
       // An opened menu's rows are inner parts of its popup.
@@ -286,54 +281,47 @@ describe("the studio's Shape page", () => {
   it.each([
     ["internal", hashOf('{"t":"internal-elma-private"}')],
     ["external", ""],
-  ])("rounds each pinned variant with its own role corners over a %s base theme", async (_base, hash) => {
-    const { context, page, errors } = await openStudio(browser(), { route: CORNERS_PAGE, hash });
-    try {
-      await setRadius(page, 20);
-      // The internal variant aliases both role corners to --radius (fuse's tokens/defaults.ts).
-      await expect
-        .poll(() => cornerValues(page, "Radius rungs · Internal"))
-        .toMatchObject({ lg: "20px", button: "20px", field: "20px" });
-      // External elma keeps its own 0.375rem button (tokens/external-palettes.ts) whatever the
-      // radius, and its field aliases the radius in every variant (tokens/defaults.ts).
-      await expect
-        .poll(() => cornerValues(page, "Radius rungs · External"))
-        .toMatchObject({ lg: "20px", button: "6px", field: "20px" });
-      expect(errors).toEqual([]);
-    } finally {
-      await context.close();
+  ])(
+    "labels each pinned variant's rungs and role corners as the browser computes them over a %s base theme",
+    async (_base, hash) => {
+      const { context, page, errors } = await openStudio(browser(), { route: CORNERS_PAGE, hash });
+      try {
+        await setRadius(page, 20);
+        // fuse.css's rungs at a 20px radius: every one 20px at the internal 0px step, and whole
+        // 2px steps from 20px at the external step (CONTEXT.md, "Radius rung"). The internal variant
+        // aliases both role corners to --radius (fuse's tokens/defaults.ts).
+        await expect
+          .poll(() => cornerValues(page, "Radius rungs · Internal"))
+          .toMatchObject({
+            xs: "20px",
+            sm: "20px",
+            md: "20px",
+            lg: "20px",
+            xl: "20px",
+            popover: "20px",
+            button: "20px",
+            field: "20px",
+          });
+        // External elma keeps its own 0.375rem button (tokens/external-palettes.ts) whatever the
+        // radius, and its field aliases the radius in every variant (tokens/defaults.ts).
+        await expect
+          .poll(() => cornerValues(page, "Radius rungs · External"))
+          .toMatchObject({
+            xs: "14px",
+            sm: "16px",
+            md: "18px",
+            lg: "20px",
+            xl: "24px",
+            popover: "12px",
+            button: "6px",
+            field: "20px",
+          });
+        expect(errors).toEqual([]);
+      } finally {
+        await context.close();
+      }
     }
-  });
-
-  it("relabels the X-ray with the inner corners a denser artboard computes", async () => {
-    const { context, page, errors } = await openStudio(browser(), { route: CORNERS_PAGE });
-    try {
-      await setRadius(page, 40);
-      await showXray(page, CLOSED_MENU_PARTS);
-      // Comfortable, inside the 40px corner, the Card rows and the card Accordion item's panel
-      // sit 1px of border and the medium tier's 16px of padding, and the Frame rows 1px of
-      // border and the large tier's 24px.
-      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 23px" }).count()).toBe(4);
-      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 15px" }).count()).toBe(2);
-
-      await canvas(page).getByRole("button", { name: SHELLS, exact: true }).click();
-      await inspector(page)
-        .getByRole("group", { name: "Density", exact: true })
-        .getByRole("button", { name: "Dense", exact: true })
-        .click();
-      // Dense, the md surface tier pads 12px and the lg tier 16px (fuse's
-      // tokens/density-metrics.ts), so the Card rows and the Accordion panel round at
-      // 40 − 1 − 12 = 27px and the Frame rows at 40 − 1 − 16 = 23px, and the labels follow
-      // without a stale 15px left.
-      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 27px" }).count()).toBe(4);
-      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 23px" }).count()).toBe(2);
-      expect(await xrayLabels(page).filter({ hasText: "= 15px" }).count()).toBe(0);
-      expect(await xrayLabels(page).and(page.locator('[data-mismatch="true"]')).count()).toBe(0);
-      expect(errors).toEqual([]);
-    } finally {
-      await context.close();
-    }
-  });
+  );
 
   it("reads no styles while idle or panning, and follows a pan with the measured corners", async () => {
     const { context, page, errors } = await openStudio(browser(), {

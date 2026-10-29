@@ -89,10 +89,17 @@ export function sentinelLengths(
   return Object.fromEntries(metrics.map(({ name, px }) => [`--${name}`, `${String(px.dense * 1.5 + 3)}px`]));
 }
 
+/**
+ * Every part in the page's demo stages; every part that appeared on the page since the last probe;
+ * every part that appeared inside a stage since the stages read, such as a delayed fallback; or the
+ * parts the last `unseen` or `late` probe read, again, as they are read at the next density.
+ */
+export type ProbeScope = "stages" | "unseen" | "late" | "opened";
+
 /** What a probe of one stage reads. */
 export type ProbeOptions = {
-  /** Every part in the stage, or every part that appeared on the page since the last probe. */
-  readonly scope: "stage" | "unseen";
+  /** The parts the probe reads. */
+  readonly scope: ProbeScope;
   /** Each density custom property and its sentinel length. */
   readonly sentinels: Readonly<Record<string, string>>;
   /** The properties to read, `PROBED_PROPERTIES`. */
@@ -118,9 +125,9 @@ declare global {
 
 /**
  * Starts one density pass in the page: stamps `data-density` on the document root and on every
- * demo stage, and counts every part visible now as seen: a stage probe still measures its own
- * parts, and a popup read takes only what an opener reveals, never the docs chrome or a stage
- * not yet probed. A part mounted hidden stays unseen until it shows. It runs in the browser
+ * demo stage, and counts every part visible now as seen: a stages probe still measures the
+ * stages' parts, and a popup read takes only what an opener reveals, never the docs chrome. A
+ * part mounted hidden stays unseen until it shows. It runs in the browser
  * through `page.evaluate`, so it references nothing outside its own body.
  *
  * @param density - The density to stamp.
@@ -142,14 +149,31 @@ export function startDensityPass(density: string): void {
 }
 
 /**
- * Whether the page shows a part no probe has measured yet: an opened popup or disclosure. It
- * runs in the browser through `page.waitForFunction`, so it references nothing outside itself.
+ * Stamps `data-density` on the document root and on every demo stage, so the next probe reads
+ * the parts at `density` without remounting them. It runs in the browser through
+ * `page.evaluate`, so it references nothing outside its own body.
  *
+ * @param density - The density to stamp.
+ */
+export function stampDensity(density: string): void {
+  document.documentElement.setAttribute("data-density", density);
+  for (const stage of document.querySelectorAll("[data-demo-stage]")) {
+    stage.setAttribute("data-density", density);
+  }
+}
+
+/**
+ * Whether the page shows a part no probe has measured yet: an opened popup or disclosure, or,
+ * among the stages' parts, a part a demo mounted after its stage read. It runs in the browser
+ * through `page.waitForFunction` or `page.evaluate`, so it references nothing outside itself.
+ *
+ * @param selector - The parts to look among: `[data-slot]`, or the stages' `[data-demo-stage]
+ *   [data-slot]`.
  * @returns `true` once a visible, unmeasured part is on the page.
  */
-export function showsUnmeasuredPart(): boolean {
+export function showsUnmeasuredPart(selector: string): boolean {
   const seen = globalThis.densitySeen;
-  return [...document.querySelectorAll("[data-slot]")].some((element) => {
+  return [...document.querySelectorAll(selector)].some((element) => {
     if (seen?.has(element) === true) {
       return false;
     }
@@ -159,30 +183,40 @@ export function showsUnmeasuredPart(): boolean {
 }
 
 /**
- * Probes the parts of one demo stage in the page. It runs in the browser through
- * `locator.evaluate`, so it references nothing outside its own body.
+ * Probes the parts of the page's demo stages, or of what an opener revealed. It runs in the
+ * browser through `page.evaluate`, so it references nothing outside its own body. One read takes
+ * every stage at once: each read restyles the whole document, so a read per stage would pay that
+ * once per stage.
  *
- * Transitions and animations are off for the probe, so a read never catches a value mid-way.
+ * An `unseen` read first waits two frames, so a popup that has just started to mount has
+ * finished; every other read follows a density stamp or a settled page, which style recalculation
+ * alone answers. Transitions and animations are off for the probe, so a read never catches a
+ * value mid-way.
  * The sentinels go inline on the document root and on every demo stage, because a stage rescopes
  * the density metrics and a popup portals out of the stage to the root.
  *
- * @param stage - The demo stage.
  * @param options - What to read and the sentinel lengths.
  * @returns One reading per rendered part, in document order.
  */
-export async function probeParts(stage: Element, options: ProbeOptions): Promise<PartReading[]> {
-  await new Promise<void>((resolve) => {
-    requestAnimationFrame(() => {
+export async function probeParts(options: ProbeOptions): Promise<PartReading[]> {
+  if (options.scope === "unseen") {
+    await new Promise<void>((resolve) => {
       requestAnimationFrame(() => {
-        resolve();
+        requestAnimationFrame(() => {
+          resolve();
+        });
       });
     });
-  });
+  }
   const seen = (globalThis.densitySeen ??= new WeakSet<Element>());
-  const found =
-    options.scope === "stage"
-      ? [...stage.querySelectorAll("[data-slot]")]
-      : [...document.querySelectorAll("[data-slot]")].filter((element) => !seen.has(element));
+  const readers = {
+    stages: () => [...document.querySelectorAll("[data-demo-stage] [data-slot]")],
+    unseen: () => [...document.querySelectorAll("[data-slot]")].filter((element) => !seen.has(element)),
+    late: () =>
+      [...document.querySelectorAll("[data-demo-stage] [data-slot]")].filter((element) => !seen.has(element)),
+    opened: () => [...(globalThis.densityOpened ?? [])],
+  } satisfies Record<ProbeOptions["scope"], () => Element[]>;
+  const found = readers[options.scope]();
   // Only a part that is visible now is measured, and only a measured part counts as seen, so a
   // mounted but hidden part, such as a closed `hiddenUntilFound` panel, is measured once it opens.
   const parts = found.filter((element) => {
@@ -192,8 +226,10 @@ export async function probeParts(stage: Element, options: ProbeOptions): Promise
   for (const element of parts) {
     seen.add(element);
   }
-  // Only a popup read's parts are waited on to leave; a stage's stay.
-  globalThis.densityOpened = options.scope === "unseen" ? parts : [];
+  // Only a reveal's parts are waited on to leave and re-read; a stage's stay. A re-read keeps them.
+  if (options.scope !== "opened") {
+    globalThis.densityOpened = options.scope === "stages" ? [] : parts;
+  }
 
   const freeze = document.createElement("style");
   freeze.textContent = "*, *::before, *::after { transition: none !important; animation: none !important; }";

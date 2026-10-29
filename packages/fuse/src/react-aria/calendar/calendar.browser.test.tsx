@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 
 import { CalendarDate } from "@internationalized/date";
 import { I18nProvider } from "react-aria-components";
-import { describe, expect, it, vi } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { describe, expect, it } from "vitest";
+import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
@@ -119,8 +119,8 @@ describe("Calendar", () => {
     expect(style.fontWeight).toBe("500");
   });
 
-  it("lays out RTL columns and mirrors navigation and keyboard date movement", async () => {
-    const onChange = vi.fn();
+  it("lays out RTL columns and mirrors the navigation glyphs", async () => {
+    // Arrow keys follow the locale inside React Aria's own grid; the glyphs and `dir` are Fuse's.
     renderCalendar(
       <>
         <span role="img" aria-label="CaretLeft glyph">
@@ -130,7 +130,7 @@ describe("Calendar", () => {
           <CaretRight aria-hidden />
         </span>
         <I18nProvider locale="ar-EG">
-          <Calendar defaultValue={july14} onChange={onChange} />
+          <Calendar defaultValue={july14} />
         </I18nProvider>
       </>
     );
@@ -150,13 +150,6 @@ describe("Calendar", () => {
     expect(headers[0]?.getBoundingClientRect().left).toBeGreaterThan(
       headers[6]?.getBoundingClientRect().left ?? 0
     );
-    // The selected cell's button receives ArrowLeft, which must advance one day in RTL.
-    const selected = cells().find((cell) => cell.getAttribute("aria-selected") === "true");
-    const day = selected?.querySelector('[role="button"]');
-    if (!(day instanceof HTMLElement)) throw new Error("Expected the selected day button");
-    day.focus();
-    await userEvent.keyboard("{ArrowLeft}{Enter}");
-    expect(onChange).toHaveBeenLastCalledWith(july14.add({ days: 1 }));
   });
 
   it("renders a ReactNode error and references it through aria-describedby when invalid", async () => {

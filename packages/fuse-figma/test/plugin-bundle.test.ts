@@ -247,7 +247,9 @@ describe("the plugin bundle", () => {
       expect.objectContaining({ kind: "snapshots" }),
     ]);
     expect(plugin.timers()).toBe(kit.previews.length);
-  });
+    // The whole kit applies, plans and exports through the bundle: about 4 s alone, and several
+    // times that on a CI runner shared with the other workspaces' suites.
+  }, 120_000);
 
   it("answers a request it does not know with an error", async () => {
     const plugin = load(code, fixtures.fixture("Roboto").file);

@@ -5,13 +5,10 @@ import { describe, expect, it } from "vitest";
 
 import { Skeleton } from "./skeleton";
 
-describe("Skeleton classes", () => {
-  it("paints the pulse and muted surface on a hidden placeholder div", () => {
-    const html = renderToStaticMarkup(createElement(Skeleton, null));
-    expect(html).toContain("animate-pulse");
-    expect(html).toContain("rounded-md");
-    expect(html).toContain("bg-muted");
-    expect(html).toContain('data-slot="skeleton"');
-    expect(html).toContain('aria-hidden="true"');
+describe("Skeleton markup", () => {
+  it("renders a hidden placeholder div with no role or tab stop, painting the pulse and muted surface", () => {
+    expect(renderToStaticMarkup(createElement(Skeleton, null))).toBe(
+      '<div data-slot="skeleton" aria-hidden="true" class="animate-pulse rounded-md bg-muted"></div>'
+    );
   });
 });

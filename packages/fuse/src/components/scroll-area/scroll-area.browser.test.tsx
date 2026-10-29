@@ -20,6 +20,8 @@ function render(node: ReactNode) {
   styles.textContent = [
     "html, body { margin: 0; height: 100%; overflow: hidden; }",
     '[data-slot="scroll-area-viewport"] { width: 100%; height: 100%; box-sizing: border-box; }',
+    // Visibility, not the fade, is the contract, so a hover bar reaches its end opacity at once.
+    '[data-slot="scroll-area-scrollbar"] { transition: none; }',
   ].join("");
   document.head.append(styles);
   return renderThemed(node);
@@ -98,7 +100,7 @@ describe("ScrollArea", () => {
     expect(horizontalBars[0]?.getAttribute("data-orientation")).toBe("horizontal");
   });
 
-  it("maps type to keepMounted visibility classes", async () => {
+  it("keeps an always bar visible and reveals a hover bar only while its own area is hovered", async () => {
     render(
       <>
         <ScrollArea.Root type="always" style={{ height: 128 }}>
@@ -126,6 +128,10 @@ describe("ScrollArea", () => {
     await userEvent.hover(labeledText("Always on"));
     await expect.poll(() => Number.parseFloat(getComputedStyle(hover).opacity)).toBe(0);
     expect(getComputedStyle(hover).pointerEvents).toBe("none");
+
+    await userEvent.hover(labeledText("Hover gated"));
+    await expect.poll(() => Number.parseFloat(getComputedStyle(hover).opacity)).toBe(1);
+    expect(getComputedStyle(hover).pointerEvents).toBe("auto");
   });
 
   it("keeps ArrowDown and PageDown on a focused overflow viewport as native scroll", async () => {

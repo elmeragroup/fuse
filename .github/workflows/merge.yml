@@ -133,6 +133,7 @@ jobs:
       TURBO_CACHE_KEY: turbo-browser-${{ matrix.leg }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       # The browser gate reads no git history; only the checks job needs it (changeset status --since).
+      # The docs legs fetch the PR's base commit alone to compare its tree.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -190,12 +191,29 @@ jobs:
             turbo-browser-${{ matrix.leg }}-${{ github.sha }}-
             turbo-browser-${{ matrix.leg }}-
 
+      # The studio and landing e2e files guard the docs site's own apps, not Fuse, so a PR runs
+      # them only when it changes apps/docs or the lockfile. A push to main or a dispatch carries no
+      # base commit and runs them all. The repository is public, so the fetch needs no credentials.
+      - name: Choose the docs e2e files
+        id: docs-e2e
+        if: startsWith(matrix.leg, 'docs')
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          site=run
+          if [ -n "$BASE_SHA" ]; then
+            git fetch --no-tags --depth=1 origin "$BASE_SHA"
+            if git diff --quiet FETCH_HEAD HEAD -- apps/docs pnpm-lock.yaml; then site=skip; fi
+          fi
+          echo "site=$site" >> "$GITHUB_OUTPUT"
+
       - name: turbo browser checks
         id: turbo-gate
         # The matrix arguments are literals in this file, so they can be part of the command.
         run: pnpm exec turbo run ${{ matrix.turbo-args }}
         env:
           TURBO_RUN_SUMMARY: "true"
+          DOCS_E2E_SITE: ${{ steps.docs-e2e.outputs.site }}
 
       # Turbo never evicts, so keep only the entries this run used before the cache saves. A
       # red gate still saves, so its successful tasks replay on the next attempt; a run whose

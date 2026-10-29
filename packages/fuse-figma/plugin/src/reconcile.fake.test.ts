@@ -15,14 +15,19 @@ import { ICONS_PAGE, inventoryPage, KIT_PAGES, pageKey, setsInBuildOrder } from 
 import { drawsShadowSpread, paintsAbove } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed, RED_PIXEL } from "./fake-fixtures.ts";
+import { stateOf } from "./fake/state.ts";
+import type { NodeState } from "./fake/state.ts";
 import { keyOf, setKey } from "./identity.ts";
 import {
   appliedFile,
+  appliedKit,
+  appliedKitOn,
   componentSet,
   CREATE_AND_PLACE_PREVIEWS,
   CREATE_PAGES,
   iconLibrary,
   kitFixture,
+  kitOn,
   kitPage,
   previewNames,
   setOn,
@@ -119,8 +124,19 @@ const CREATE_SETS = setsInBuildOrder().map(
 /** The gray `ring` holds in Fjordkraft's internal private light theme, the file's default modes. */
 const RING_GRAY = 0.502;
 
-async function changes(file: FakeFigma): Promise<readonly string[]> {
-  return (await reconcileKit(file.figma, kit, false)).changes;
+/** Plan a kit, the whole kit unless given, and return its change lines. */
+async function changes(file: FakeFigma, planned = kit): Promise<readonly string[]> {
+  return (await reconcileKit(file.figma, planned, false)).changes;
+}
+
+/**
+ * Apply a kit, the whole kit unless given, and return its change lines. Plan and Apply run one
+ * planning pass, and Apply reports the plan it performed (`reconcile.ts`), so the lines are what a
+ * Plan would list. The Avatar suite and the duplicate-variant case keep a Plan of their own, for
+ * the writes it must not make.
+ */
+async function applies(file: FakeFigma, planned = kit): Promise<readonly string[]> {
+  return (await reconcileKit(file.figma, planned, true)).changes;
 }
 
 /** The modes a frame pins, as collection and mode names. */
@@ -213,9 +229,7 @@ describe("Apply on a synced file without the kit pages", () => {
   let applied: Awaited<ReturnType<typeof reconcileKit>>;
 
   beforeAll(async () => {
-    file = syncedFile(collections);
-    applied = await reconcileKit(file.figma, kit, true);
-    file.reopen();
+    ({ file, applied } = await appliedKit());
   }, 60_000);
 
   it("creates each page and each node on it once, and a second Plan lists nothing", async () => {
@@ -521,10 +535,9 @@ describe("a later run on an applied file", () => {
     stale.characters = held0(characters);
     expect([stale.width, stale.componentPropertyReferences?.characters]).toEqual([0, undefined]);
 
-    expect(await changes(file)).toContainEqual(
+    expect(await applies(file)).toContainEqual(
       expect.stringContaining(`${name}: width → 1 for the fill to take over, layoutSizingHorizontal → FILL`)
     );
-    await reconcileKit(file.figma, kit, true);
     expect([stale.layoutSizingHorizontal, stale.width >= 1, stale.characters]).toEqual([
       "FILL",
       true,
@@ -557,7 +570,7 @@ describe("a later run on an applied file", () => {
     variant.name = "Primary";
     label.name = "Title";
 
-    expect(await changes(file)).toEqual([
+    expect(await applies(file)).toEqual([
       `Button / ${DEFAULT_BUTTON}: name → ${DEFAULT_BUTTON}`,
       `Button / ${DEFAULT_BUTTON} / label: name → label`,
       LAY_OUT_BUTTONS,
@@ -565,7 +578,6 @@ describe("a later run on an applied file", () => {
       PLACE,
       ...PLACE_AFTER_BUTTON,
     ]);
-    await reconcileKit(file.figma, kit, true);
     expect(variant.name).toBe(DEFAULT_BUTTON);
     expect(label.name).toBe("label");
     expect(await changes(file)).toEqual([]);
@@ -590,7 +602,7 @@ describe("a later run on an applied file", () => {
     const name = "variant=outline, size=xs, state=hover, icon=end";
     variantNamed(button, name).remove();
 
-    expect(await changes(file)).toEqual([
+    expect(await applies(file)).toEqual([
       `Button: create the variant ${name}`,
       "Button: reorder the variants",
       LAY_OUT_BUTTONS,
@@ -598,7 +610,6 @@ describe("a later run on an applied file", () => {
       PLACE,
       ...PLACE_AFTER_BUTTON,
     ]);
-    await reconcileKit(file.figma, kit, true);
     expect(await changes(file)).toEqual([]);
     // Variant 1 of 7, size 1 of 4, state 1 of 5 and icon 2 of 3, counted from 0, with the icon
     // varying fastest: ((1 × 4 + 1) × 5 + 1) × 3 + 2.
@@ -611,14 +622,13 @@ describe("a later run on an applied file", () => {
     button.appendChild(variantNamed(button, DEFAULT_BUTTON));
     expect(property(button, "icon").variantOptions).toEqual(["none", "start", "end"]);
 
-    expect(await changes(file)).toEqual([
+    expect(await applies(file)).toEqual([
       "Button: reorder the variants",
       LAY_OUT_BUTTONS,
       ...AFTER_BUTTON,
       PLACE,
       ...PLACE_AFTER_BUTTON,
     ]);
-    await reconcileKit(file.figma, kit, true);
     expect(await changes(file)).toEqual([]);
     expect(button.children[0]?.name).toBe(DEFAULT_BUTTON);
     expect(property(button, "icon").variantOptions).toEqual(["none", "start", "end"]);
@@ -634,7 +644,7 @@ describe("a later run on an applied file", () => {
     icon.swapComponent(childNamed(await iconLibrary(file), "COMPONENT", "ArrowLeft"));
 
     const label = "Button / variant=default, size=default, state=rest, icon=start / Start icon";
-    expect(await changes(file)).toEqual([
+    expect(await applies(file)).toEqual([
       `${label}: show Plus`,
       `${label}: glyph fill → primary-foreground`,
       LAY_OUT_BUTTONS,
@@ -642,7 +652,6 @@ describe("a later run on an applied file", () => {
       PLACE,
       ...PLACE_AFTER_BUTTON,
     ]);
-    await reconcileKit(file.figma, kit, true);
     expect(await changes(file)).toEqual([]);
     expect((await icon.getMainComponentAsync())?.name).toBe("Plus");
   });
@@ -651,13 +660,11 @@ describe("a later run on an applied file", () => {
     const file = await appliedFile();
     (await iconLibrary(file)).remove();
 
-    const plan = await changes(file);
-    expect(plan.slice(0, 3)).toEqual([
+    expect((await applies(file)).slice(0, 3)).toEqual([
       "Icons: create the Icons frame with 135 icons",
       "Button: Start icon → Plus and the 135 library icons",
       "Button: End icon → ArrowRight and the 135 library icons",
     ]);
-    await reconcileKit(file.figma, kit, true);
     expect(await changes(file)).toEqual([]);
     const plus = childNamed(await iconLibrary(file), "COMPONENT", "Plus");
     const variant = variantNamed(
@@ -695,39 +702,6 @@ describe("a later run on an applied file", () => {
     );
   });
 
-  it("unclips a preview group a designer set to clip, in one Apply", async () => {
-    const file = await appliedFile();
-    const preview = childNamed(await kitPage(file), "FRAME", "Button / Fjordkraft internal private, light");
-    const group = childNamed(preview, "FRAME", "Button");
-    group.clipsContent = true;
-
-    expect(await changes(file)).toEqual([
-      "Button / Fjordkraft internal private, light / Button: clipsContent → false",
-      PLACE,
-    ]);
-    await reconcileKit(file.figma, kit, true);
-    expect(group.clipsContent).toBe(false);
-    expect(await changes(file)).toEqual([]);
-  });
-
-  it("warns about a layer a designer dropped into a preview, and keeps it", async () => {
-    const file = await appliedFile();
-    const preview = childNamed(await kitPage(file), "FRAME", "Button / Fjordkraft internal private, light");
-    const note = file.figma.createFrame();
-    note.name = "Note";
-    preview.appendChild(note);
-
-    const { changes: planned, warnings } = await reconcileKit(file.figma, kit, false);
-    // The note makes the preview, which hugs its height, taller, so the previews below it move down
-    // (rule 32).
-    expect(planned).toEqual([PLACE]);
-    expect(warnings).toEqual([
-      "Button / Fjordkraft internal private, light: keeps the layer Note, which the kit does not own",
-    ]);
-    await reconcileKit(file.figma, kit, true);
-    expect(preview.children).toContain(note);
-  });
-
   it("brings an icon a designer scaled back to 16px with its glyph, in one Apply", async () => {
     const file = await appliedFile();
     const plus = childNamed(await iconLibrary(file), "COMPONENT", "Plus");
@@ -750,8 +724,7 @@ describe("a later run on an applied file", () => {
     const box = [drawn.x, drawn.y, drawn.width, drawn.height];
     edit(drawn);
 
-    expect(await changes(file)).toContain("Icons / Plus: draw the icon from its Fuse markup");
-    await reconcileKit(file.figma, kit, true);
+    expect(await applies(file)).toContain("Icons / Plus: draw the icon from its Fuse markup");
     const glyph = childNamed(plus, "VECTOR", "glyph");
     expect([glyph.x, glyph.y, glyph.width, glyph.height]).toEqual(box);
     expect(await changes(file)).toEqual([]);
@@ -764,14 +737,13 @@ describe("a later run on an applied file", () => {
     focus.effects = [{ ...onlyShadow(focus), color: { r: 0, g: 0, b: 0, a: 1 } }];
     expect(onlyShadow(focus).color).toEqual({ r: 0, g: 0, b: 0, a: 1 });
 
-    expect(await changes(file)).toEqual([
+    expect(await applies(file)).toEqual([
       "Button / variant=default, size=default, state=focus, icon=none: shadows → ring 0 0 0 2 (holds variable, stored #000000 at 100%, 0 0 0 2)",
       LAY_OUT_BUTTONS,
       ...AFTER_BUTTON,
       PLACE,
       ...PLACE_AFTER_BUTTON,
     ]);
-    await reconcileKit(file.figma, kit, true);
     expect(await changes(file)).toEqual([]);
     expect(onlyShadow(focus).color.r).toBeCloseTo(RING_GRAY, 2);
   });
@@ -857,33 +829,85 @@ describe("a later run on an applied file", () => {
   });
 });
 
+// Unit under test: `reconcileKit` on the Button page's previews, with the kit cut down to the Button
+// page (`kitOn`). Oracle: the change lines `test/kit-inventory.ts` gives the Button page, which name
+// no other page, so the cut kit plans what the whole kit would.
+describe("the Button page's previews on an applied file", () => {
+  const BUTTON_PAGE = [pageKey(inventoryPage("button"))];
+  let buttonKit: KitSpec;
+
+  beforeAll(() => {
+    buttonKit = kitOn(kit, BUTTON_PAGE);
+  });
+
+  it("unclips a preview group a designer set to clip, in one Apply", async () => {
+    const { file } = await appliedKitOn(BUTTON_PAGE);
+    const preview = childNamed(await kitPage(file), "FRAME", "Button / Fjordkraft internal private, light");
+    const group = childNamed(preview, "FRAME", "Button");
+    group.clipsContent = true;
+
+    expect(await applies(file, buttonKit)).toEqual([
+      "Button / Fjordkraft internal private, light / Button: clipsContent → false",
+      PLACE,
+    ]);
+    expect(group.clipsContent).toBe(false);
+    expect(await changes(file, buttonKit)).toEqual([]);
+  });
+
+  it("warns about a layer a designer dropped into a preview, and keeps it", async () => {
+    const { file } = await appliedKitOn(BUTTON_PAGE);
+    const preview = childNamed(await kitPage(file), "FRAME", "Button / Fjordkraft internal private, light");
+    const note = file.figma.createFrame();
+    note.name = "Note";
+    preview.appendChild(note);
+
+    // The note makes the preview, which hugs its height, taller, so the previews below it move down
+    // (rule 32).
+    expect(await reconcileKit(file.figma, buttonKit, true)).toEqual({
+      changes: [PLACE],
+      warnings: [
+        "Button / Fjordkraft internal private, light: keeps the layer Note, which the kit does not own",
+      ],
+    });
+    expect(preview.children).toContain(note);
+  });
+});
+
 // Unit under test: `reconcileKit` on Avatar's image fills. Oracle: the hash a real file gave the
 // portrait, `1e57f3da…`, the SHA-1 of its bytes (P9b), the fake's rule 22, which logs storing an
-// image as a write, and the change lines `test/kit-inventory.ts` gives the Avatar page. Avatar
-// group's three avatars are instances of Avatar, so each plans again once Avatar's changes land, and
-// the group's grid lays out again after them.
+// image as a write, and the change lines `test/kit-inventory.ts` gives the Avatar page, which name
+// no other page, so the suite runs the kit cut down to that page (`kitOn`). Avatar group's three
+// avatars are instances of Avatar, so each plans again once Avatar's changes land, and the group's
+// grid lays out again after them.
 describe("Avatar's image fills on an applied file", () => {
   const PORTRAIT_SHA1 = "1e57f3da2ad606fcd410ba17f62d2fc032aa669c";
   const AVATAR_PAGE = pageKey(inventoryPage("avatar"));
+  let avatarKit: KitSpec;
+
+  beforeAll(() => {
+    avatarKit = kitOn(kit, [AVATAR_PAGE]);
+  });
 
   it("stores no image when Plan finds the Avatar set missing, and Apply stores each image cell's", async () => {
-    const file = await appliedFile();
+    const { file } = await appliedKitOn([AVATAR_PAGE]);
     setOn(await kitPage(file, AVATAR_PAGE), "Avatar").remove();
     file.reopen();
     const before = file.writes.length;
-    expect(await changes(file)).toContain("Avatar: create the component set Avatar with 8 variants");
+    expect(await changes(file, avatarKit)).toContain(
+      "Avatar: create the component set Avatar with 8 variants"
+    );
     expect(file.writes.slice(before)).toEqual([]);
 
-    await reconcileKit(file.figma, kit, true);
+    await reconcileKit(file.figma, avatarKit, true);
     expect(file.writes.slice(before).filter((line) => line.startsWith("store the image"))).toEqual(
       Array.from({ length: 4 }, () => `store the image ${PORTRAIT_SHA1}`)
     );
     file.reopen();
-    expect(await changes(file)).toEqual([]);
+    expect(await changes(file, avatarKit)).toEqual([]);
   });
 
   it("lists the one fill change and stores nothing when Plan finds an Avatar holding other bytes", async () => {
-    const file = await appliedFile();
+    const { file } = await appliedKitOn([AVATAR_PAGE]);
     const avatar = setOn(await kitPage(file, AVATAR_PAGE), "Avatar");
     const image = childNamed(variantNamed(avatar, "content=image, size=32"), "FRAME", "avatar-image");
     file.figma.createImage(file.figma.base64Decode(RED_PIXEL.bytes));
@@ -891,7 +915,7 @@ describe("Avatar's image fills on an applied file", () => {
     file.reopen();
     const before = file.writes.length;
 
-    expect(await changes(file)).toEqual([
+    expect(await changes(file, avatarKit)).toEqual([
       `Avatar / content=image, size=32 / avatar-image: fill → image ${PORTRAIT_SHA1.slice(0, 8)} at FILL (holds image ${RED_PIXEL.sha1.slice(0, 8)} at FILL)`,
       "Avatar: lay out 8 variants in 4 columns and 2 rows",
       ...Array.from(
@@ -902,9 +926,9 @@ describe("Avatar's image fills on an applied file", () => {
       "Avatar: place Avatar and Avatar group in a row and stack 4 previews below them",
     ]);
     expect(file.writes.slice(before)).toEqual([]);
-    await reconcileKit(file.figma, kit, true);
+    await reconcileKit(file.figma, avatarKit, true);
     file.reopen();
-    expect(await changes(file)).toEqual([]);
+    expect(await changes(file, avatarKit)).toEqual([]);
   });
 });
 
@@ -979,5 +1003,133 @@ describe("a file whose label font the machine cannot load", () => {
     await expect(reconcileKit(file.figma, kit, false)).rejects.toThrow(message);
     await expect(reconcileKit(file.figma, kit, true)).rejects.toThrow(message);
     expect(file.writes).toEqual([]);
+  });
+});
+
+/**
+ * Every node record a fake file reaches from its node table, in walk order, with its label: its id
+ * for a record the table holds, and its id and place in the walk for one only another record
+ * reaches, such as a sublayer a swap replaced.
+ */
+function reached(fake: FakeFigma): Map<NodeState, string> {
+  const file = stateOf(fake.figma.root).file;
+  const labels = new Map<NodeState, string>();
+  const walk: (NodeState | undefined)[] = [...file.nodes.values()];
+  for (let index = 0; index < walk.length; index += 1) {
+    const state = walk[index];
+    if (state === undefined || labels.has(state)) {
+      continue;
+    }
+    labels.set(
+      state,
+      file.nodes.get(state.id) === state ? state.id : `${state.id} off the table at ${index}`
+    );
+    walk.push(state.parent, ...state.children, state.main, state.mirrorOf);
+  }
+  return labels;
+}
+
+/**
+ * The parts of a fake file a run changes in place: the file's write log, font, image and node
+ * tables, and each record's own maps, sets and list of children. The paints, effects and styles a
+ * record holds are read-only and replaced whole, so two files may share them.
+ */
+function changingParts(fake: FakeFigma): Set<unknown> {
+  const file = stateOf(fake.figma.root).file;
+  const parts = new Set<unknown>([file.writes, file.loadedFonts, file.images, file.nodes]);
+  for (const state of reached(fake).keys()) {
+    parts.add(state);
+    parts.add(state.children);
+    for (const value of Object.values(state)) {
+      if (value instanceof Map || value instanceof Set) {
+        parts.add(value);
+      }
+    }
+  }
+  return parts;
+}
+
+/**
+ * Where two fake files first differ, or undefined where they hold the same records: the file's
+ * counters, write log, loaded fonts, images, collections and variables, and each node record
+ * `reached` finds, with every field, in the same walk order and under the same label. A node a field
+ * names must be the record of the same label in the other file, and each record's public node must
+ * lead back to it. Fields compare by name, whatever order made them.
+ */
+function fileDifference(left: FakeFigma, right: FakeFigma): string | undefined {
+  const files = [stateOf(left.figma.root).file, stateOf(right.figma.root).file] as const;
+  const walks = [reached(left), reached(right)] as const;
+  // A field names a node by its record, and any other object a lookup is handed finds no label.
+  const labels: readonly [ReadonlyMap<object, string>, ReadonlyMap<object, string>] = walks;
+  const own = ([key]: readonly [string, unknown]) => key !== "file" && key !== "exposed";
+  const differ = <Value>(one: Value, other: Value, path: string): string | undefined => {
+    if (!(one instanceof Object) || !(other instanceof Object)) {
+      return Object.is(one, other) ? undefined : `${path}: ${String(one)} against ${String(other)}`;
+    }
+    const [label, otherLabel] = [labels[0].get(one), labels[1].get(other)];
+    if (label !== undefined || otherLabel !== undefined) {
+      return label === otherLabel
+        ? undefined
+        : `${path}: node ${String(label)} against node ${String(otherLabel)}`;
+    }
+    if (one instanceof Map || one instanceof Set) {
+      return (other instanceof Map || other instanceof Set) && one.constructor === other.constructor
+        ? differ([...one], [...other], path)
+        : `${path}: a ${one.constructor.name} against another kind`;
+    }
+    if (Array.isArray(one) !== Array.isArray(other)) {
+      return `${path}: an array against another kind`;
+    }
+    const fields = Object.entries(one).filter(own);
+    const otherFields = new Map(Object.entries(other).filter(own));
+    if (fields.length !== otherFields.size || fields.some(([key]) => !otherFields.has(key))) {
+      return `${path}: fields ${fields.map(([key]) => key).join(",")} against ${[...otherFields.keys()].join(",")}`;
+    }
+    for (const [key, value] of fields) {
+      const found = differ(value, otherFields.get(key), `${path}.${key}`);
+      if (found !== undefined) {
+        return found;
+      }
+    }
+    return undefined;
+  };
+  const [records, otherRecords] = walks.map((walk) => [...walk]);
+  const order = differ(
+    records?.map(([, label]) => label),
+    otherRecords?.map(([, label]) => label),
+    "walk"
+  );
+  const strays = files.map((file) =>
+    [...file.variables.values()].filter((variable) => !file.collections.includes(variable.collection))
+  );
+  return (
+    order ??
+    (strays.some((stray) => stray.length > 0) ? "a variable outside the file's collections" : undefined) ??
+    differ({ ...files[0], makeNode: undefined }, { ...files[1], makeNode: undefined }, "file") ??
+    records?.reduce<string | undefined>((found, [state, label], index) => {
+      const other = otherRecords?.[index]?.[0];
+      return (
+        found ??
+        (stateOf(state.exposed) === state && stateOf(other?.exposed ?? state.exposed) === other
+          ? differ({ ...state }, { ...other }, label)
+          : `${label}: a public node that leads to another record`)
+      );
+    }, undefined)
+  );
+}
+
+// Unit under test: the fork `appliedFile()` hands each test, of the file the kit fixture applied the
+// kit to once. Oracle: a synced file the kit is applied to afresh and opened again, as `appliedFile()`
+// built one for each test before it forked. The suite runs last in the file, after every test above
+// changed its own fork, and two forks share no part a run changes in place.
+describe("the applied file each test forks", () => {
+  it("holds every record, field, write, font, image and variable a freshly applied file holds, and shares nothing a run changes", async () => {
+    const fresh = syncedFile(collections);
+    await reconcileKit(fresh.figma, kit, true);
+    fresh.reopen();
+    const fork = await appliedFile();
+    expect(fileDifference(fork, fresh)).toBeUndefined();
+    const other = changingParts(await appliedFile());
+    expect([...changingParts(fork)].filter((part) => other.has(part))).toEqual([]);
   });
 });

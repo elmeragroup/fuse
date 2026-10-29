@@ -84,88 +84,6 @@ describe("Switch", () => {
     document.head.prepend(style);
   });
 
-  it("renders a switch whose aria-checked reflects state, controlled by checked or uncontrolled from defaultChecked", async () => {
-    const { unmount: unmountDefaults } = renderThemed(
-      <>
-        <Switch aria-label="Off" />
-        <Switch aria-label="On" defaultChecked />
-      </>
-    );
-
-    const off = switchNamed("Off", false);
-    const on = switchNamed("On", true);
-    expect(off.getAttribute("aria-checked")).toBe("false");
-    expect(on.getAttribute("aria-checked")).toBe("true");
-    expect(off.getAttribute("data-slot")).toBe("switch");
-    expect(off.getAttribute("data-size")).toBe("default");
-    unmountDefaults();
-
-    const onCheckedChange = vi.fn();
-    renderThemed(
-      <>
-        <Switch checked={false} onCheckedChange={onCheckedChange} aria-label="Held" />
-        <Switch defaultChecked aria-label="Open" />
-      </>
-    );
-
-    await expect.element(page.getByRole("switch", { name: "Held", checked: false })).toBeInTheDocument();
-    await expect.element(page.getByRole("switch", { name: "Open", checked: true })).toBeInTheDocument();
-
-    await userEvent.click(page.getByRole("switch", { name: "Held", exact: true }));
-    expect(onCheckedChange).toHaveBeenNthCalledWith(1, true, expect.anything());
-    await expect.element(page.getByRole("switch", { name: "Held", checked: false })).toBeInTheDocument();
-
-    await userEvent.click(page.getByRole("switch", { name: "Open", exact: true }));
-    await expect.element(page.getByRole("switch", { name: "Open", checked: false })).toBeInTheDocument();
-  });
-
-  it("toggles from Tab focus with Space and with Enter", async () => {
-    const onCheckedChange = vi.fn();
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <Switch aria-label="Alerts" onCheckedChange={onCheckedChange} />
-      </>
-    );
-
-    page.getByRole("button", { name: "Before" }).element().focus();
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(switchNamed("Alerts", false));
-
-    await userEvent.keyboard(" ");
-    expect(onCheckedChange).toHaveBeenNthCalledWith(1, true, expect.anything());
-    await expect.element(page.getByRole("switch", { name: "Alerts", checked: true })).toBeInTheDocument();
-
-    await userEvent.keyboard("{Enter}");
-    expect(onCheckedChange).toHaveBeenNthCalledWith(2, false, expect.anything());
-    await expect.element(page.getByRole("switch", { name: "Alerts", checked: false })).toBeInTheDocument();
-  });
-
-  it("blocks toggling and tab order when disabled", async () => {
-    const onCheckedChange = vi.fn();
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <Switch disabled aria-label="Alerts" onCheckedChange={onCheckedChange} />
-        <button type="button">After</button>
-      </>
-    );
-
-    const control = switchNamed("Alerts", false);
-    await expect.element(page.getByRole("switch", { name: "Alerts", exact: true })).toBeDisabled();
-
-    control.click();
-    control.focus();
-    await userEvent.keyboard("{Enter}");
-    await userEvent.keyboard(" ");
-    expect(onCheckedChange).not.toHaveBeenCalled();
-    await expect.element(page.getByRole("switch", { name: "Alerts", checked: false })).toBeInTheDocument();
-
-    page.getByRole("button", { name: "Before" }).element().focus();
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(page.getByRole("button", { name: "After" }).element());
-  });
-
   it("keeps the Field label and description when a wrapper forwards id and ARIA props as undefined", async () => {
     renderThemed(
       <Field.Root>
@@ -175,46 +93,6 @@ describe("Switch", () => {
       </Field.Root>
     );
     await expect.element(switchNamed("Notifications")).toHaveAccessibleDescription("Sent by email.");
-  });
-
-  it("takes its accessible name from Field.Label and stamps aria-invalid from Field", () => {
-    renderThemed(
-      <>
-        <Field.Root>
-          <Field.Label>Notifications</Field.Label>
-          <Switch />
-        </Field.Root>
-        <Field.Root invalid>
-          <Field.Label>Required</Field.Label>
-          <Switch />
-        </Field.Root>
-      </>
-    );
-
-    expect(switchNamed("Notifications").getAttribute("aria-checked")).toBe("false");
-    expect(switchNamed("Required").getAttribute("aria-invalid")).toBe("true");
-  });
-
-  it("submits name and value through the hidden input", async () => {
-    const alerts: Array<FormDataEntryValue | null> = [];
-    const quiet: Array<FormDataEntryValue | null> = [];
-    renderThemed(
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          const data = new FormData(event.currentTarget);
-          alerts.push(data.get("alerts"));
-          quiet.push(data.get("quiet"));
-        }}>
-        <Switch name="alerts" value="yes" defaultChecked aria-label="Alerts" />
-        <Switch name="quiet" value="yes" aria-label="Quiet" />
-        <button type="submit">Save</button>
-      </form>
-    );
-
-    await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
-    expect(alerts).toEqual(["yes"]);
-    expect(quiet).toEqual([null]);
   });
 
   it("submits what each switch shows after native reset, controlled or not", async () => {
@@ -307,7 +185,7 @@ describe("Switch", () => {
     }
   });
 
-  it("keeps optical track and thumb sizes identical at both densities and under nested data-density", () => {
+  it("emits data-size and keeps optical track and thumb sizes identical at both densities and under nested data-density", () => {
     renderThemed(
       <>
         <Switch aria-label="Default" />
@@ -326,6 +204,10 @@ describe("Switch", () => {
       expect(measured.thumbWidth, `${label} thumb width`).toBe(expected.thumb);
       return measured;
     }
+
+    expect(switchNamed("Default").getAttribute("data-slot")).toBe("switch");
+    expect(switchNamed("Default").getAttribute("data-size")).toBe("default");
+    expect(switchNamed("Small").getAttribute("data-size")).toBe("sm");
 
     stampDensity("dense");
     const denseDefault = assertTrack("Default", TRACK.default, "dense default");

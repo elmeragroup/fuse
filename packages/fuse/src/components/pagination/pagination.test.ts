@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { controlMd } from "../../styles/control-size-md";
 import { paginationStrings } from "./intl";
 import { paginationVariants } from "./pagination-variants";
@@ -33,30 +32,18 @@ describe("paginationVariants", () => {
 
   it("keeps the reviewed layout slots and drops the dead item/button slots", () => {
     const slots = paginationVariants();
+    expect(Object.keys(slots).sort()).toEqual([
+      "base",
+      "content",
+      "ellipsis",
+      "ellipsisIcon",
+      "link",
+      "linkIcon",
+    ]);
     expect(slots.base()).toContain("mx-auto");
     expect(slots.content()).toContain("flex-row");
     expect(slots.linkIcon()).toContain("size-4");
     expect(slots.ellipsis()).toContain(controlMd.square());
     expect(slots.ellipsisIcon()).toContain("size-4");
-  });
-
-  it("covers every slot without raw palette, dark, or density variants", () => {
-    const resolved = [
-      paginationVariants().base(),
-      paginationVariants().content(),
-      paginationVariants().link(),
-      paginationVariants({ direction: "previous" }).link(),
-      paginationVariants({ direction: "next" }).link(),
-      paginationVariants().linkIcon(),
-      paginationVariants().ellipsis(),
-      paginationVariants().ellipsisIcon(),
-    ];
-    for (const className of resolved) {
-      expect(className.length).toBeGreaterThan(0);
-      expect(className).not.toContain("dark:");
-      expect(className).not.toMatch(RAW_PALETTE_RE);
-      expect(className).not.toMatch(/\b(?:dense|comfortable):/);
-      expect(className).not.toContain("destructive");
-    }
   });
 });

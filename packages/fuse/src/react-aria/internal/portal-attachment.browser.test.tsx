@@ -74,9 +74,17 @@ describe("portal attachment", () => {
       <ThemeScope theme={theme}>
         <Calendar container={{ current: null }} />
         <Popup container={{ current: null }} />
+        <Popover.Root defaultOpen>
+          <Popover.Trigger>Control</Popover.Trigger>
+          <Popover.Content>
+            <Popover.Title>Control popup</Popover.Title>
+          </Popover.Content>
+        </Popover.Root>
       </ThemeScope>
     );
-    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+    // The control popup portals into the scope, so the two pending ones had their chance too.
+    await expect.element(page.getByRole("dialog", { name: "Control popup" })).toBeVisible();
+    expect(page.getByRole("dialog").elements()).toHaveLength(1);
   });
 
   it("renders into an already attached explicit element", async () => {

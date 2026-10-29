@@ -14,6 +14,7 @@ import type {
   FrameLayerSpec,
   KitSpec,
 } from "../src/components/kit-spec.ts";
+import { deepFrozen } from "./frozen.ts";
 
 /** The parts of the built kit a per-set suite reads. */
 export type BuiltSets = {
@@ -25,17 +26,17 @@ let built: Promise<BuiltSets> | undefined;
 
 async function buildSets(): Promise<BuiltSets> {
   const sets = await Effect.runPromise(buildComponentSets());
-  return {
+  return deepFrozen({
     spec: { componentSets: sets.map((set) => set.componentSet) },
     coverage: sets.flatMap((set) => set.coverage),
-  };
+  });
 }
 
 /**
- * Build the kit's component sets and their coverage on the first call, without the icon library
- * or the previews. Vitest gives each test file its own module registry, so a file that calls
- * this from several suites builds the sets once. The whole-kit invariants in `build-kit.test.ts`
- * build the full kit instead.
+ * Build the kit's component sets and their coverage on the first call, deep frozen, without the
+ * icon library or the previews. The suites a Vitest worker runs share one module registry
+ * (`vitest.config.ts`), so each worker builds the sets once. The whole-kit invariants in
+ * `build-kit.test.ts` build the full kit instead.
  *
  * @returns The component sets, as the kit spec holds them, and their coverage rows.
  */
