@@ -882,7 +882,8 @@ describe("outline Button fill", () => {
       </ThemeScope>
     );
     render(scheme === "dark" ? <div data-theme="dark">{scope}</div> : scope);
-    const pageSurface = page.getByTestId("page").element() as HTMLElement;
+    const pageSurface = page.getByTestId("page").element();
+    if (!(pageSurface instanceof HTMLElement)) throw new Error("expected the page surface");
     const pageButton = roleNamed("button", "Download invoice");
     const cardButton = roleNamed("button", "Download PDF");
     // An earlier test can leave the pointer where this one renders a button, which would hover it.
