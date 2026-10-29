@@ -42,6 +42,13 @@ type Collected<Reading> = {
   readonly probed: Located<Reading>[];
 };
 
+/**
+ * What keeps a reveal open across a restamp: a restamp moves and resizes the parts, so a tooltip
+ * opened by hovering its trigger can find its trigger no longer under the pointer, and closes.
+ * It throws when the reveal cannot be held open at the density just stamped.
+ */
+type Hold = (density: Density) => Promise<void>;
+
 /** The steps run on each reveal: the density probe first, then the further probe. */
 type Steps<Reading> = { readonly discover: DemoProbe<PartReading>; readonly probe: DemoProbe<Reading> };
 
@@ -71,13 +78,15 @@ const CONCURRENT_PAGES = 4;
 /**
  * Runs the density probe, then the further probe, at each density in turn, and files each reading
  * under its step. A reveal's first read takes the parts no probe has measured (`unseen` or
- * `late`); the later densities re-read those same parts (`opened`).
+ * `late`); the later densities re-read those same parts (`opened`). `hold` runs after each
+ * restamp, before that density's reads.
  */
 async function runProbes<Reading extends object>(
   page: Page,
   { discover, probe }: Steps<Reading>,
   collected: Collected<Reading>,
-  scope: FirstScope
+  scope: FirstScope,
+  hold?: Hold
 ): Promise<void> {
   const pageName = new URL(page.url()).pathname;
   for (const [index, density] of DENSITIES.entries()) {
@@ -85,6 +94,7 @@ async function runProbes<Reading extends object>(
       readings.map((reading) => ({ ...reading, page: pageName, density }));
     const read: ProbeScope = scope !== "stages" && index > 0 ? "opened" : scope;
     await page.evaluate(stampDensity, density);
+    await hold?.(density);
     collected.discovered.push(...located(await discover(page, read)));
     collected.probed.push(...located(await probe(page, read)));
   }
@@ -99,7 +109,7 @@ async function runProbes<Reading extends object>(
 async function readOpenedParts(
   page: Page,
   stage: Locator,
-  probe: (scope: FirstScope) => Promise<void>
+  probe: (scope: FirstScope, hold?: Hold) => Promise<void>
 ): Promise<void> {
   const shows = (wait: { readonly timeout: number }): Promise<boolean> =>
     page.waitForFunction(showsUnmeasuredPart, "[data-slot]", wait).then(
@@ -107,14 +117,14 @@ async function readOpenedParts(
       () => false
     );
   // A clicked opener that stays collapsed past `COLLAPSED_WAIT` revealed nothing.
-  const revealed = async (clicked?: ElementHandle): Promise<void> => {
+  const revealed = async (clicked?: ElementHandle, hold?: Hold): Promise<void> => {
     let shown = await shows(clicked === undefined ? POPUP_WAIT : COLLAPSED_WAIT);
     if (!shown && clicked !== undefined) {
       const expanded = await clicked.getAttribute("aria-expanded").catch(() => null);
       shown = expanded !== "false" && (await shows({ timeout: POPUP_WAIT.timeout - COLLAPSED_WAIT.timeout }));
     }
     if (shown) {
-      await probe("unseen");
+      await probe("unseen", hold);
     }
   };
   const closed = async (opener: ElementHandle): Promise<void> => {
@@ -166,7 +176,40 @@ async function readOpenedParts(
       // A disabled, covered or scrolled-away opener.
       return;
     }
-    await revealed(action === "click" ? opener : undefined);
+    // A hovered trigger the restamp moves out from under the pointer closes its tooltip before
+    // the later densities re-read it, so the pointer follows the trigger to its new box. The
+    // move skips `hover`'s stability wait, which would give the pointer's leave a frame to land.
+    // A leave that lands first still starts the close, so the read waits for the trigger to say
+    // its popup is open again. A reveal that stays closed would leave the probes an empty popup,
+    // so the sweep stops there.
+    const follow: Hold = async (density) => {
+      const missed = async (why: string): Promise<Error> => {
+        const label = await opener.getAttribute("aria-label").catch(() => null);
+        const trigger = label ?? (await opener.textContent().catch(() => null))?.trim() ?? "";
+        return new Error(
+          `${new URL(page.url()).pathname} at ${density}: tooltip trigger "${trigger}" ${why}`
+        );
+      };
+      const box = await opener.boundingBox().catch(() => null);
+      if (box === null) {
+        throw await missed("has no box after the restamp");
+      }
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      const reopened = await page
+        .waitForFunction(
+          (trigger) => trigger instanceof Element && trigger.hasAttribute("data-popup-open"),
+          opener,
+          POPUP_WAIT
+        )
+        .then(
+          () => true,
+          () => false
+        );
+      if (!reopened) {
+        throw await missed("did not hold its tooltip open after the restamp");
+      }
+    };
+    await (action === "click" ? revealed(opener) : revealed(undefined, follow));
     // A popup that mounts its own search input, such as `ComboboxInputGroupAnchor` or the phone
     // country picker, only shows its empty state for a query typed into that input. Stages are
     // portal containers, so the open popup, not the stage, scopes the search.
@@ -211,7 +254,8 @@ async function readComponentPage<Reading extends object>(
   // Every read runs at each density: a rule that only one density's stamp activates, such as a
   // comfortable-only literal override, shows up in that density's attribution.
   await page.evaluate(startDensityPass, DENSITIES[0]);
-  const probe = (scope: FirstScope): Promise<void> => runProbes(page, steps, collected, scope);
+  const probe = (scope: FirstScope, hold?: Hold): Promise<void> =>
+    runProbes(page, steps, collected, scope, hold);
   await probe("stages");
   for (const stage of all) {
     await stage.scrollIntoViewIfNeeded();
