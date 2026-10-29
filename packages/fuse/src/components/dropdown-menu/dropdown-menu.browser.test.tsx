@@ -311,8 +311,10 @@ describe("DropdownMenu", () => {
     expect(submenuBox.right).toBeGreaterThan(parentBox.right);
     // alignOffset={-3}: its first item lines up a hair above the trigger.
     expect(submenuBox.top).toBeLessThan(subTrigger.getBoundingClientRect().top);
-    // min-w-[96px] and the deeper elevation the nested popup carries.
-    expect(submenuBox.width).toBeGreaterThanOrEqual(96);
+    // min-w-[96px] and the deeper elevation the nested popup carries. The popup takes
+    // preflight's `border-box` on every host, so the minimum is its whole layout box, read
+    // through `offsetWidth`: the bounding box still carries the opening zoom's scale.
+    expect(submenu.offsetWidth).toBeGreaterThanOrEqual(96);
     expect(getComputedStyle(submenu).boxShadow).not.toBe("none");
   });
 

@@ -787,10 +787,13 @@ describe("DataTableFilter value popover height", () => {
     const before = window.scrollY;
     await glidePointerTo(roleNamed("button", "Today"));
     await turnWheel(2000);
-    await settled();
     const october = roleNamed("button", "October");
+    // The wheel scrolls smoothly, and no transition need outlast it, so wait for the scroll itself.
+    await expect
+      .poll(() => october.getBoundingClientRect().bottom <= popup.getBoundingClientRect().bottom)
+      .toBe(true);
+    await settled();
     const box = october.getBoundingClientRect();
-    expect(box.bottom).toBeLessThanOrEqual(popup.getBoundingClientRect().bottom);
     expect(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)).toBe(october);
     expect(window.scrollY).toBe(before);
     await userEvent.click(october);

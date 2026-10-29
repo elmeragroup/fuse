@@ -46,7 +46,7 @@ function declarationsIn(statements: readonly string[]): CssDeclaration[] {
 }
 
 /** A block with the preludes of the blocks around it, outermost first. */
-type ScopedBlock = {
+export type ScopedBlock = {
   block: CssBlock;
   ancestors: readonly string[];
 };
@@ -95,6 +95,18 @@ function readScopedBlocks(css: string): ScopedBlock[] {
  */
 export function parseCssBlocks(css: string): CssBlock[] {
   return readScopedBlocks(css).map(({ block }) => block);
+}
+
+/**
+ * Read every block of declarations with the preludes of the blocks around it, so two rules with
+ * the same selector stay apart and a rule inside `@supports` reports its condition.
+ *
+ * @param css - A stylesheet.
+ * @returns The blocks in the order their preludes appear, each with its ancestors' preludes,
+ *   outermost first.
+ */
+export function parseScopedBlocks(css: string): ScopedBlock[] {
+  return readScopedBlocks(css);
 }
 
 /** A declaration with the preludes of every block around it, outermost first. */

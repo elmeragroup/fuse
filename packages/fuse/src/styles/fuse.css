@@ -297,6 +297,245 @@
   }
 }
 
+/* Fuse ships no preflight, so its own elements, the ones that carry a `data-slot`, take
+   Tailwind's preflight here: every element rule of `tailwindcss/preflight.css`, in its order, with
+   its declarations, each selector scoped to `[data-slot]`. On the standalone sheet a Fuse element
+   would otherwise keep the browser's defaults: a button's grey face, outset border, padding and
+   control font, a heading's size, weight and margins (an Accordion header is an `h3`), a
+   paragraph's, list's or `pre`'s block margins, link blue and underline, list markers and indent,
+   a table's separated borders, a fieldset's frame, a textarea's two-way resize, and a `hidden`
+   attribute that loses to a part's `display` class. Every Fuse element sizes with
+   `box-sizing: border-box`. The rules sit in the base layer and weigh nothing, so every utility, a
+   `render` element's own classes and the host's own unlayered reset win over them, except
+   `hidden`, which preflight makes `display: none !important` so it beats a part's display class.
+   Under preflight they change nothing. A host element without a `data-slot` keeps its native look.
+   Two departures from preflight's text: the reset of every border writes `border-width` and
+   `border-style`, not preflight's `border: 0 solid`, whose implied `currentcolor` would undo the
+   border-role default above in this layer; and preflight's `html, :host` rule is left out, since
+   it sets the document's type, which the host owns.
+   `preflight-mirror.test.ts` holds the copy to preflight. */
+@layer base {
+  :where([data-slot]),
+  :where([data-slot])::after,
+  :where([data-slot])::before,
+  :where([data-slot])::backdrop,
+  :where([data-slot])::file-selector-button {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    border-style: solid;
+  }
+
+  :where(hr[data-slot]) {
+    height: 0;
+    color: inherit;
+    border-top-width: 1px;
+  }
+
+  :where(abbr:where([title])[data-slot]) {
+    -webkit-text-decoration: underline dotted;
+    text-decoration: underline dotted;
+  }
+
+  :where(h1[data-slot]),
+  :where(h2[data-slot]),
+  :where(h3[data-slot]),
+  :where(h4[data-slot]),
+  :where(h5[data-slot]),
+  :where(h6[data-slot]) {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  :where(a[data-slot]) {
+    color: inherit;
+    -webkit-text-decoration: inherit;
+    text-decoration: inherit;
+  }
+
+  :where(b[data-slot]),
+  :where(strong[data-slot]) {
+    font-weight: bolder;
+  }
+
+  :where(code[data-slot]),
+  :where(kbd[data-slot]),
+  :where(samp[data-slot]),
+  :where(pre[data-slot]) {
+    font-family: --theme(
+      --default-mono-font-family,
+      ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      Monaco,
+      Consolas,
+      "Liberation Mono",
+      "Courier New",
+      monospace
+    );
+    font-feature-settings: --theme(--default-mono-font-feature-settings, normal);
+    font-variation-settings: --theme(--default-mono-font-variation-settings, normal);
+    font-size: 1em;
+  }
+
+  :where(small[data-slot]) {
+    font-size: 80%;
+  }
+
+  :where(sub[data-slot]),
+  :where(sup[data-slot]) {
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+  }
+
+  :where(sub[data-slot]) {
+    bottom: -0.25em;
+  }
+
+  :where(sup[data-slot]) {
+    top: -0.5em;
+  }
+
+  :where(table[data-slot]) {
+    text-indent: 0;
+    border-color: inherit;
+    border-collapse: collapse;
+  }
+
+  :where(:-moz-focusring:where(:not(iframe))[data-slot]) {
+    outline: auto;
+  }
+
+  :where(progress[data-slot]) {
+    vertical-align: baseline;
+  }
+
+  :where(summary[data-slot]) {
+    display: list-item;
+  }
+
+  :where(ol[data-slot]),
+  :where(ul[data-slot]),
+  :where(menu[data-slot]) {
+    list-style: none;
+  }
+
+  :where(img[data-slot]),
+  :where(svg[data-slot]),
+  :where(video[data-slot]),
+  :where(canvas[data-slot]),
+  :where(audio[data-slot]),
+  :where(iframe[data-slot]),
+  :where(embed[data-slot]),
+  :where(object[data-slot]) {
+    display: block;
+    vertical-align: middle;
+  }
+
+  :where(img[data-slot]),
+  :where(video[data-slot]) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  :where(button[data-slot]),
+  :where(input[data-slot]),
+  :where(select[data-slot]),
+  :where(optgroup[data-slot]),
+  :where(textarea[data-slot]),
+  :where([data-slot])::file-selector-button {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    border-radius: 0;
+    background-color: transparent;
+    opacity: 1;
+  }
+
+  :where(:where(select:is([multiple], [size])) optgroup[data-slot]) {
+    font-weight: bolder;
+  }
+
+  :where(:where(select:is([multiple], [size])) optgroup option[data-slot]) {
+    padding-inline-start: 20px;
+  }
+
+  :where([data-slot])::file-selector-button {
+    margin-inline-end: 4px;
+  }
+
+  :where([data-slot])::placeholder {
+    opacity: 1;
+  }
+
+  @supports (not (-webkit-appearance: -apple-pay-button)) or (contain-intrinsic-size: 1px) {
+    :where([data-slot])::placeholder {
+      color: color-mix(in oklab, currentcolor 50%, transparent);
+    }
+  }
+
+  :where(textarea[data-slot]) {
+    resize: vertical;
+  }
+
+  :where([data-slot])::-webkit-search-decoration {
+    -webkit-appearance: none;
+  }
+
+  :where([data-slot])::-webkit-date-and-time-value {
+    min-height: 1lh;
+    text-align: inherit;
+  }
+
+  :where([data-slot])::-webkit-datetime-edit {
+    display: inline-flex;
+  }
+
+  :where([data-slot])::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+  }
+
+  :where([data-slot])::-webkit-datetime-edit,
+  :where([data-slot])::-webkit-datetime-edit-year-field,
+  :where([data-slot])::-webkit-datetime-edit-month-field,
+  :where([data-slot])::-webkit-datetime-edit-day-field,
+  :where([data-slot])::-webkit-datetime-edit-hour-field,
+  :where([data-slot])::-webkit-datetime-edit-minute-field,
+  :where([data-slot])::-webkit-datetime-edit-second-field,
+  :where([data-slot])::-webkit-datetime-edit-millisecond-field,
+  :where([data-slot])::-webkit-datetime-edit-meridiem-field {
+    padding-block: 0;
+  }
+
+  :where([data-slot])::-webkit-calendar-picker-indicator {
+    line-height: 1;
+  }
+
+  :where(:-moz-ui-invalid[data-slot]) {
+    box-shadow: none;
+  }
+
+  :where(button[data-slot]),
+  :where(input:where([type="button"], [type="reset"], [type="submit"])[data-slot]),
+  :where([data-slot])::file-selector-button {
+    appearance: button;
+  }
+
+  :where([data-slot])::-webkit-inner-spin-button,
+  :where([data-slot])::-webkit-outer-spin-button {
+    height: auto;
+  }
+
+  :where([hidden]:where(:not([hidden="until-found"]))[data-slot]) {
+    display: none !important;
+  }
+}
+
 @custom-variant data-open {
   &:where([data-state="open"]),
   &:where([data-open]:not([data-open="false"])) {

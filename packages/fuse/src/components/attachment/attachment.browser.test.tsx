@@ -259,9 +259,18 @@ describe("Attachment.Action", () => {
     const secondary = paint("Secondary button");
     const ghost = paint("Ghost button");
     expect(secondary).not.toEqual(ghost);
+    // A ghost Button sets its text in the colour around it, so a ghost action's oracle is the plain
+    // ghost Button's fill with the colour of the box the action sits in.
+    const ghostIn = (name: string): readonly [string, string] => {
+      const box = roleNamed("button", name).parentElement;
+      if (box === null) {
+        throw new Error(`Expected ${name} to sit in a box`);
+      }
+      return [ghost[0], getComputedStyle(box).color];
+    };
     expect(paint("Remove tile")).toEqual(secondary);
-    expect(paint("Ghost on tile")).toEqual(ghost);
-    expect(paint("Remove row")).toEqual(ghost);
+    expect(paint("Ghost on tile")).toEqual(ghostIn("Ghost on tile"));
+    expect(paint("Remove row")).toEqual(ghostIn("Remove row"));
     expect(paint("Secondary in row")).toEqual(secondary);
   });
 

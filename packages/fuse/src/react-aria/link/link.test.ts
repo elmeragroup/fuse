@@ -18,7 +18,7 @@ describe("linkVariants", () => {
   it("renders the base plus the default variant and weight, and nothing else", () => {
     // The hover face is left out: state-face.browser.test.tsx owns the Link hover gate.
     const rendered = classes(linkVariants()).filter((token) => !token.includes("hover:"));
-    expect(rendered).toEqual(classes("font-sans transition-opacity text-inherit font-normal"));
+    expect(rendered).toEqual(classes("font-sans no-underline transition-opacity text-inherit font-normal"));
   });
 
   it("maps every value of the variant, leading, align, truncate and weight axes onto its class, recorded quirks included", () => {

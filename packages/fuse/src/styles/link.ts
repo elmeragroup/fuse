@@ -19,7 +19,9 @@ import { typographyFragments } from "./typography-fragments";
 const { destructive: errorColorClass, ...linkColorClasses } = typographyFragments.variants.variant;
 
 export const linkVariants = tv({
-  base: "font-sans transition-opacity enabled-hover:opacity-80",
+  // React Aria writes no `data-slot`, so the base-layer link reset in `fuse.css` misses this
+  // anchor: it clears the browser's underline itself, and a consumer's `underline` still wins.
+  base: "font-sans no-underline transition-opacity enabled-hover:opacity-80",
   variants: {
     variant: {
       ...linkColorClasses,

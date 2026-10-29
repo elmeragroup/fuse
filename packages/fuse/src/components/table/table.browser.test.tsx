@@ -184,10 +184,12 @@ describe("Table rows follow density", () => {
       expect(cellHeight("columnheader", `${label} order`), `${label} head`).toBe(row.headerHeight);
       expect(cellHeight("cell", `${label} #1042`), `${label} one-line row`).toBe(row.height);
       // An icon-sm button is the sm control square, and the row pads it on the block axis. A
-      // framed cell also draws its 1px bottom rule.
+      // framed cell also draws its 1px bottom rule. A loose table collapses its borders, as under
+      // preflight, so the cell carries half of the 1px row divider above it.
       const actions = page.getByRole("cell", { name: `${label} #1043`, exact: true }).element();
+      const rule = label === "Framed" ? px(getComputedStyle(actions).borderBottomWidth) : 0.5;
       expect(cellHeight("cell", `${label} #1043`), `${label} actions row`).toBe(
-        CONTROL_SM[density].height + 2 * row.py + px(getComputedStyle(actions).borderBottomWidth)
+        CONTROL_SM[density].height + 2 * row.py + rule
       );
     }
     const loose = getComputedStyle(page.getByRole("cell", { name: "Loose active", exact: true }).element());
