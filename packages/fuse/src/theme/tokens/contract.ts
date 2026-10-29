@@ -465,8 +465,8 @@ export const TOKEN_DESCRIPTIONS = {
   background:
     "The page fill. External light themes tint it with the brand, so a card stands out on it by its fill.",
   foreground:
-    "Body text and icons on the page, text-grade on background, card and muted. Tooltips fill with it and set their text in background.",
-  card: "The fill of Card, a card Accordion item, selection rows, checkboxes, field boxes, the active Tabs trigger and raised controls such as a resting outline Button. Set text on it in card-foreground. foreground and muted-foreground also stay text-grade on it.",
+    "Body text and icons on the page, text-grade on background and muted. Tooltips fill with it and set their text in background.",
+  card: "The fill of Card, a card Accordion item, selection rows, checkboxes, field boxes and the active Tabs trigger. Set text on it in card-foreground.",
   "card-foreground": "Text and icons on card, text-grade on it.",
   "card-soft":
     "A softer card fill. Set text on it in card-soft-foreground, and muted-foreground also stays text-grade on it.",

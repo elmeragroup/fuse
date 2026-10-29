@@ -23,7 +23,7 @@ describe("DataTableFilter bar surface", () => {
     ["internal dark", fkasPrivate, "dark"],
   ] as const)("rests the chip in the fill of the Trigger beside it, %s", (_name, theme, scheme) => {
     // Unit under test: the chip's fill. Oracle: the Trigger, an outline Button, which sits beside
-    // the chips in the same strip and rests on `card`. #423 moved the outline Button off the page
+    // the chips in the same strip and rests transparent. #423 moved the outline Button off the page
     // fill, which external light pages tint, so a chip left on the page fill no longer matched it.
     const scope = (
       <ThemeScope theme={theme}>

@@ -38,9 +38,9 @@ export const alertVariants = tv({
         icon: "text-foreground",
         // Replaces Button's `enabled-hover:bg-primary/80`, which tailwind-merge keeps beside a
         // plain `bg-*` because the modifier differs, and which puts `text-foreground` on a
-        // primary fill. `foreground` on `muted` is a gated text-grade pair. It rests on `card`, as
-        // the outline Button does, so its `muted` hover darkens it on every light brand.
-        button: "bg-card text-foreground enabled-hover:bg-muted",
+        // primary fill. `foreground` on `muted` is a gated text-grade pair. It rests transparent on
+        // the Alert's own fill, as the outline Button does on its surface.
+        button: "bg-transparent text-foreground enabled-hover:bg-muted",
       },
       destructive: {
         // `error` text on the 5% `error` tint over the page, card or card-soft is a gated pair

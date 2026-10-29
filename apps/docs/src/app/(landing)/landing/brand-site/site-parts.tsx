@@ -57,7 +57,8 @@ export function SiteActionRow({
   primary?: ButtonVariant;
   /**
    * The second action's variant. On a block filled with `primary` or `secondary` pass `ghost`: an
-   * outline button paints `card` but keeps the block's light text (see TODO.md).
+   * outline button keeps the block's light text but draws its external ring in `foreground` (see
+   * TODO.md).
    */
   quiet?: ButtonVariant;
   size?: ButtonSize;

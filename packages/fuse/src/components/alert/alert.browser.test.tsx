@@ -14,10 +14,7 @@ import { ringLayers, settleTransitions } from "../../../test/assert-invalid-ring
 import { HOSTS, centreY, firstLineCentreY, hostCss } from "../../../test/first-line";
 import {
   computedContrast,
-  computedOklch,
   cssVarColor,
-  fkasExternal,
-  guenExternal,
   headingNamed,
   LABEL,
   px,
@@ -30,7 +27,6 @@ import {
   textNamed,
 } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
-import { ThemeScope } from "../../theme/theme-scope";
 import { PART_DENSITY } from "../../theme/tokens/density-roles";
 import { LEGAL_THEMES, themeSlug } from "../../theme/tokens/themes";
 import { Badge } from "../badge/badge";
@@ -561,33 +557,6 @@ describe("Alert", () => {
     expect(getComputedStyle(action).backgroundColor).not.toBe(restFill);
     expect(actionContrast(action, alertNamed("default"))).toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
   });
-
-  it.each([
-    ["fkas private", fkasExternal],
-    ["guen", guenExternal],
-  ] as const)(
-    "rests the default action on the card and darkens it on hover, %s light",
-    async (_name, theme) => {
-      // #423: the action copied the outline Button's page fill, which these pages tint darker than
-      // `--muted`, so it lightened on hover. Oracle: the scope's `--card` at rest, and a hover that
-      // reads darker than the rest it leaves.
-      renderThemed(
-        <ThemeScope theme={theme}>
-          <Alert.Root onAction={vi.fn()} actionLabel="Open report">
-            <Alert.Title>Report ready</Alert.Title>
-          </Alert.Root>
-        </ThemeScope>
-      );
-      const action = roleNamed("button", "Open report");
-      await settled(action);
-      expect(getComputedStyle(action).backgroundColor).toBe(cssVarColor(action, "--card"));
-      const rest = computedOklch(getComputedStyle(action).backgroundColor);
-
-      await userEvent.hover(action);
-      await settled(action);
-      expect(computedOklch(getComputedStyle(action).backgroundColor).l).toBeLessThan(rest.l);
-    }
-  );
 
   it("hovers the info action to its 90% tint with the label at 4.5:1 in every theme and scheme", async () => {
     const restoreDocumentTheme = snapshotDocumentTheme();

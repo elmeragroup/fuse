@@ -181,13 +181,13 @@ describe("the Popover (open) component set", () => {
     ]).toEqual([{ text: { Label: "Details" } }, fixed(literal(288))]);
   });
 
-  // `bg-muted` replaces the rest face's `card`; the rest face's text already inherits the page's
+  // `bg-muted` fills the transparent rest face; the rest face's text already inherits the page's
   // `foreground`, so only the fill differs.
   it("paints the open trigger's expanded face as a fill override", () => {
     const [trigger] = variantRoot(spec, "popover-open/placement=below").children;
     const rest = variantRoot(spec, "button/variant=outline,size=default,state=rest,icon=none");
     expect([rest.fill, rest.children[0]]).toEqual([
-      paint("card"),
+      undefined,
       expect.objectContaining({ color: paint("foreground") }),
     ]);
     expect(trigger?.kind === "instance" ? trigger.overrides : undefined).toEqual([

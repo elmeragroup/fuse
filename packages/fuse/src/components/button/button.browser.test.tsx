@@ -830,54 +830,69 @@ describe("Button", () => {
 });
 
 describe("outline Button fill", () => {
-  const TINTED = [
-    ["fkas private", fkasExternal],
-    ["guen", guenExternal],
-  ] as const;
+  /**
+   * The rendered pixel in the button's start padding, and the pixel of the surface 8px before its
+   * start edge, clear of the border and the internal hairline shadow.
+   */
+  async function insideAndBeside(surface: HTMLElement, button: HTMLElement) {
+    const base64 = await page.elementLocator(surface).screenshot({ save: false });
+    const image = new Image();
+    image.src = `data:image/png;base64,${base64}`;
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext("2d");
+    if (context === null) throw new Error("expected a 2d canvas");
+    context.drawImage(image, 0, 0);
+    const outer = surface.getBoundingClientRect();
+    const inner = button.getBoundingClientRect();
+    const border = Number.parseFloat(getComputedStyle(button).borderLeftWidth);
+    const y = Math.round((inner.top - outer.top + inner.height / 2) * devicePixelRatio);
+    const pixel = (x: number) =>
+      [...context.getImageData(Math.round(x * devicePixelRatio), y, 1, 1).data].join(",");
+    return {
+      inside: pixel(inner.left - outer.left + border + 4),
+      beside: pixel(inner.left - outer.left - 8),
+    };
+  }
 
-  it.each(TINTED)("darkens on hover on a tinted light page, %s", async (_name, theme) => {
-    // #423: these pages tint the page darker than `--muted`, so an outline resting on the page fill
-    // lightened on hover. Oracle: a hover reads darker than the rest it leaves, whichever tokens
-    // fill them.
-    renderThemed(
+  it.each([
+    ["fkas private external light", fkasExternal, "light"],
+    ["guen external light", guenExternal, "light"],
+    ["internal dark", fkasPrivate, "dark"],
+  ] as const)("shows the page and a Card beneath it, %s", async (_name, theme, scheme) => {
+    // #423: a page-filled outline painted the page tint inside a Card wherever the page and the
+    // card differ, which is external light and dark. Oracle: the rendered surface beside the
+    // button, on the page and inside a Card.
+    const scope = (
       <ThemeScope theme={theme}>
-        <Button variant="outline" className="transition-none">
-          Download invoice
-        </Button>
+        <div data-testid="page" style={{ background: "var(--background)", padding: 16 }}>
+          <Button variant="outline" className="transition-none">
+            Download invoice
+          </Button>
+          <Card.Root>
+            <Card.Content>
+              <Button variant="outline" className="transition-none">
+                Download PDF
+              </Button>
+            </Card.Content>
+          </Card.Root>
+        </div>
       </ThemeScope>
     );
-    const button = roleNamed("button", "Download invoice");
-    // Oracle sanity: the page tint is darker than `--muted` here.
-    expect(computedOklch(cssVarColor(button, "--background")).l).toBeLessThan(
-      computedOklch(cssVarColor(button, "--muted")).l
-    );
-    const rest = computedOklch(getComputedStyle(button).backgroundColor);
-
-    await userEvent.hover(button);
-    expect(computedOklch(getComputedStyle(button).backgroundColor).l).toBeLessThan(rest.l);
-  });
-
-  it.each(TINTED)("rests in the fill of a Card around it, %s", (_name, theme) => {
-    // #423: on these pages a page-filled outline showed the page tint inside a white Card. Oracle:
-    // the Card's own computed fill.
-    renderThemed(
-      <ThemeScope theme={theme}>
-        <Card.Root>
-          <Card.Content>
-            <Button variant="outline" className="transition-none">
-              Download PDF
-            </Button>
-          </Card.Content>
-        </Card.Root>
-      </ThemeScope>
-    );
-    const button = roleNamed("button", "Download PDF");
-    const card = button.closest<HTMLElement>('[data-slot="card"]');
-    if (card === null) {
-      throw new Error("Expected the button inside a Card");
-    }
-    // Oracle sanity: the Card's fill differs from the page tint.
-    expect(getComputedStyle(card).backgroundColor).not.toBe(cssVarColor(button, "--background"));
-    expect(getComputedStyle(button).backgroundColor).toBe(getComputedStyle(card).backgroundColor);
+    render(scheme === "dark" ? <div data-theme="dark">{scope}</div> : scope);
+    const pageSurface = page.getByTestId("page").element() as HTMLElement;
+    const pageButton = roleNamed("button", "Download invoice");
+    const cardButton = roleNamed("button", "Download PDF");
+    // An earlier test can leave the pointer where this one renders a button, which would hover it.
+    await userEvent.unhover(pageButton);
+    await userEvent.unhover(cardButton);
+    const onPage = await insideAndBeside(pageSurface, pageButton);
+    const inCard = await insideAndBeside(pageSurface, cardButton);
+    // Oracle sanity: the Card and the page paint differently here, so one fill cannot match both.
+    expect(inCard.beside).not.toBe(onPage.beside);
+    expect(onPage.inside, "on the page").toBe(onPage.beside);
+    expect(inCard.inside, "inside a Card").toBe(inCard.beside);
   });
 });

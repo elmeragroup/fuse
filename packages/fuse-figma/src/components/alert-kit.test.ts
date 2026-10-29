@@ -76,9 +76,9 @@ function only(box: { readonly children: readonly ChildLayerSpec[] }): ChildLayer
   return box.children[0];
 }
 
-/** Each tone's action fill and label color, from its `button` slot. */
+/** Each tone's action fill and label color, from its `button` slot. The default action is transparent. */
 const ACTIONS = [
-  ["default", "card", "foreground"],
+  ["default", "none", "foreground"],
   ["destructive", "error", "error-foreground"],
   ["warning", "warning", "warning-foreground"],
   ["success", "success", "success-foreground"],
@@ -225,7 +225,7 @@ describe("the Alert component set", () => {
             sizing: { horizontal: HUG, vertical: fixed(density("control-h-sm")) },
             properties: { text: { Label: "Retry" } },
             overrides: [
-              { path: [], field: "fill", color: paint(fill) },
+              { path: [], field: "fill", color: fill === "none" ? undefined : paint(fill) },
               { path: ["label"], field: "textColor", color: paint(text) },
             ],
             exposed: true,
