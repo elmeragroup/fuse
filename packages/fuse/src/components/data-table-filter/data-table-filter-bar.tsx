@@ -32,6 +32,7 @@ import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Button } from "../button/button";
 import { SelectRoot } from "../select/select";
+import { chain } from "./chain-handlers";
 import {
   assertOverlay,
   BarContext,
@@ -86,19 +87,6 @@ function useSegmentRef(fieldId: string, ref: Ref<HTMLElement> | undefined): RefC
     [registerSegment, fieldId]
   );
   return useMergedRefs(ref, register);
-}
-
-/** Runs the part's own handler after the consumer's, unless the consumer prevented it. */
-function chain<E extends { readonly defaultPrevented: boolean }>(
-  own: (event: E) => void,
-  theirs: ((event: E) => void) | undefined
-): (event: E) => void {
-  return (event) => {
-    theirs?.(event);
-    if (!event.defaultPrevented) {
-      own(event);
-    }
-  };
 }
 
 /** The props of `DataTableFilter.Bar`: Base UI Toolbar Root's. */

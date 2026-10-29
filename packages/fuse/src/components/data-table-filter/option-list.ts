@@ -128,8 +128,9 @@ export function snapshotOrder(
   picked: readonly string[],
   counts: ReadonlyMap<string, number> | undefined
 ): OptionOrder {
-  const pinned = source.options.filter((option) => picked.includes(option.value));
-  const rest = source.options.filter((option) => !picked.includes(option.value));
+  const pickedSet = new Set(picked);
+  const pinned = source.options.filter((option) => pickedSet.has(option.value));
+  const rest = source.options.filter((option) => !pickedSet.has(option.value));
   if (source.order !== "count" || counts === undefined) {
     return { pinned, rest };
   }
@@ -242,12 +243,14 @@ export function unpickedMatches(
 ): readonly FilterOption[] {
   const needle = query.trim();
   const found: FilterOption[] = [];
-  for (const option of [...order.pinned, ...order.rest]) {
-    if (found.length === limit) {
-      break;
-    }
-    if (!picked.has(option.value) && labelMatches(option, needle, contains)) {
-      found.push(option);
+  for (const list of [order.pinned, order.rest]) {
+    for (const option of list) {
+      if (found.length === limit) {
+        return found;
+      }
+      if (!picked.has(option.value) && labelMatches(option, needle, contains)) {
+        found.push(option);
+      }
     }
   }
   return found;

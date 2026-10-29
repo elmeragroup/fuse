@@ -31,10 +31,9 @@ import { Kbd } from "../kbd/kbd";
 import { NumberField } from "../number-field/number-field";
 import { Slider } from "../slider/slider";
 import { ToggleGroupItem, ToggleGroupRoot } from "../toggle-group/toggle-group";
-import { useFilterInternals, useFocusRequest } from "./data-table-filter-context";
+import { useFilterInternals, useFocusRequest, ValueListContext } from "./data-table-filter-context";
 import type { DraftValues, EditorContextValue } from "./data-table-filter-editor-context";
 import { useKindEditor } from "./data-table-filter-editor-context";
-import { ValueListProvider } from "./data-table-filter-values-footer";
 import { dataTableFilterSlots as slots } from "./data-table-filter-variants";
 import { DEFAULT_DATE_PRESETS, datePresetRange, isOneDayPreset } from "./date-presets";
 import type { DatePresetKey } from "./date-presets";
@@ -113,7 +112,8 @@ function OptionEditorBody({
     ...(matches.pinned.length > 0 ? [{ value: "pinned" as const, items: matches.pinned }] : []),
     ...(matches.rest.length > 0 ? [{ value: "rest" as const, items: matches.rest }] : []),
   ];
-  const selected = source.options.filter((option) => picked.includes(option.value));
+  const pickedSet = new Set(picked);
+  const selected = source.options.filter((option) => pickedSet.has(option.value));
   const searchLabel = meta.format("searchValues", { field: field.label });
   return (
     <div
@@ -140,7 +140,7 @@ function OptionEditorBody({
         onValueChange={(next) => {
           const after = new Set(next.map((option) => option.value));
           const changed =
-            next.find((option) => !picked.includes(option.value)) ??
+            next.find((option) => !pickedSet.has(option.value)) ??
             selected.find((option) => !after.has(option.value));
           if (changed !== undefined) {
             actions.toggle(fieldId, changed.value);
@@ -193,11 +193,7 @@ function OptionEditorBody({
       <p role="status" data-slot="data-table-filter-narrow" className={slots.editorNarrowHint()}>
         {matches.more ? meta.format("narrowHint") : null}
       </p>
-      {children == null ? null : (
-        <ValueListProvider fieldId={fieldId} field={field} order={order} query={query} contains={contains}>
-          {children}
-        </ValueListProvider>
-      )}
+      <ValueListContext value={{ fieldId, field, order, query, contains }}>{children}</ValueListContext>
     </div>
   );
 }

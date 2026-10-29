@@ -34,11 +34,15 @@ import {
 import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import { switchVariants } from "../switch/switch-variants";
-import { EditorTargetContext, useFilterInternals, useOverlayRef } from "./data-table-filter-context";
+import {
+  EditorTargetContext,
+  useFilterInternals,
+  useOverlayRef,
+  ValueListContext,
+} from "./data-table-filter-context";
 import type { EditorTarget } from "./data-table-filter-context";
 import { OptionCount } from "./data-table-filter-editors";
 import { DefaultEditor } from "./data-table-filter-value-content";
-import { ValueListProvider } from "./data-table-filter-values-footer";
 import { dataTableFilterSlots as slots } from "./data-table-filter-variants";
 import type { BooleanFilterField, FilterField, FilterFieldOfKind, FilterOption } from "./filter-fields";
 import { findFilter, isToggleOn } from "./filter-model";
@@ -655,11 +659,7 @@ function OptionMenuBody({
       <p role="status" data-slot="data-table-filter-narrow" className={slots.narrowHint()}>
         {matches.more ? meta.format("narrowHint") : null}
       </p>
-      {children == null ? null : (
-        <ValueListProvider fieldId={fieldId} field={field} order={order} query={query} contains={contains}>
-          {children}
-        </ValueListProvider>
-      )}
+      <ValueListContext value={{ fieldId, field, order, query, contains }}>{children}</ValueListContext>
     </>
   );
 }

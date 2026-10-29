@@ -297,6 +297,16 @@ export type OperatorPolicy = {
 };
 
 /**
+ * The values a field offers as options.
+ *
+ * @param field - The field.
+ * @returns Its option values, empty for a field without options.
+ */
+function optionValues(field: OperatorPolicy): ReadonlySet<string> {
+  return new Set((field.options ?? []).map((option) => option.value));
+}
+
+/**
  * Whether a field admits a filter value: the kinds match, the field allows the operator, an
  * option value is one of the field's options, and a toggle's value is `true`. The parse and every
  * reducer read this one rule, so a value an action writes is one the Root shows as a chip.
@@ -315,7 +325,7 @@ export function fieldAdmits(field: OperatorPolicy, value: FilterValue): boolean 
   if (value.kind !== "option" && value.kind !== "multiOption") {
     return true;
   }
-  const known = new Set((field.options ?? []).map((option) => option.value));
+  const known = optionValues(field);
   return value.values.every((item) => known.has(item));
 }
 
@@ -653,12 +663,12 @@ export function toggleOption(
 }
 
 /**
- * Sets an option or multi-option filter's values in one write, as a list's Select all or Clear
- * all does. Values the field does not offer and repeats drop out. The operator then follows the
- * count from the current one, or from `start` for a new filter, as a tick's does: `is` becomes
- * `isAnyOf`, a negated operator stays negated, and `includesAllOf` stays itself. An empty list
- * removes the filter, and a count no allowed operator holds, such as two values on a single-select
- * field, leaves the state as it was.
+ * Sets an option or multi-option filter's values in one write, as a list's Select all does. Values
+ * the field does not offer and repeats drop out. The operator then follows the count from the
+ * current one, or from `start` for a new filter, as a tick's does: `is` becomes `isAnyOf`, a
+ * negated operator stays negated, and `includesAllOf` stays itself. An empty list removes the
+ * filter, and a count no allowed operator holds, such as two values on a single-select field,
+ * leaves the state as it was.
  *
  * @param state - The filter state.
  * @param id - The column id.
@@ -674,7 +684,7 @@ export function setOptionValues(
   values: readonly string[],
   start: FilterOperator
 ): DataTableFilterEntry[] {
-  const known = new Set((field.options ?? []).map((option) => option.value));
+  const known = optionValues(field);
   const next = [...new Set(values)].filter((value) => known.has(value));
   if (next.length === 0) {
     return removeFilter(state, id);
@@ -701,26 +711,27 @@ function optionOperatorFor(
 }
 
 /**
- * Whether `setOptionValues` can write a filter of `count` values under the field's current
- * operator, or `start` for a new filter. An empty list always can, since it removes the filter.
- * Under `isNot` on a field that allows `isAnyOf` but not `isNoneOf`, two values cannot, though the
- * same field can hold them under `is`. A list's Select all asks this before it offers a press.
+ * Whether `setOptionValues` can write the filter's admitted values plus `added` new ones, under
+ * the field's current operator, or `start` for a new filter. Under `isNot` on a field that allows
+ * `isAnyOf` but not `isNoneOf`, a second value cannot be added, though the same field can hold it
+ * under `is`. A list's Select all asks this before it offers a press.
  *
  * @param state - The filter state.
  * @param id - The column id.
- * @param field - The field's kind, `option` or `multiOption`, and its operators.
- * @param count - How many values the write would hold.
+ * @param field - The field's kind, `option` or `multiOption`, its operators and its options.
+ * @param added - How many values the write would add, none of them picked yet.
  * @param start - The operator a new filter starts from, the field's first.
  * @returns Whether some allowed operator holds that many values.
  */
-export function canSetOptionCount(
+export function canAddOptionValues(
   state: DataTableFilterState,
   id: string,
   field: OperatorPolicy & { readonly kind: "option" | "multiOption" },
-  count: number,
+  added: number,
   start: FilterOperator
 ): boolean {
-  return count === 0 || optionOperatorFor(state, id, field, count, start) !== undefined;
+  const count = (admittedPart(field, findFilter(state, id))?.values.length ?? 0) + added;
+  return optionOperatorFor(state, id, field, count, start) !== undefined;
 }
 
 /**
@@ -893,7 +904,7 @@ function admittedPart(field: OperatorPolicy, current: FilterValue | undefined): 
   if (current?.kind !== field.kind) {
     return undefined;
   }
-  const known = new Set((field.options ?? []).map((option) => option.value));
+  const known = optionValues(field);
   const values =
     current.kind === "option" || current.kind === "multiOption"
       ? current.values.filter((value) => known.has(value))

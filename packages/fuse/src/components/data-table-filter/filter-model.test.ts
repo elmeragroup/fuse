@@ -12,7 +12,7 @@ import { matchesFilter } from "./filter-match";
 import {
   allowedOperators,
   allowsManyValues,
-  canSetOptionCount,
+  canAddOptionValues,
   fieldAdmits,
   filterValuesEqual,
   isIsoDate,
@@ -638,17 +638,17 @@ describe("asymmetric operator configs", () => {
     name: string,
     field: typeof NO_NONE_OF | typeof NO_ANY_OF,
     state: DataTableFilterState,
-    count: number,
+    added: number,
     can: boolean,
     write: DataTableFilterState,
   ];
   const ROWS: readonly Row[] = [
-    ["isNot cannot grow without isNoneOf", NO_NONE_OF, under("isNot"), 2, false, under("isNot")],
+    ["isNot cannot grow without isNoneOf", NO_NONE_OF, under("isNot"), 1, false, under("isNot")],
     [
       "is grows to isAnyOf on the same field",
       NO_NONE_OF,
       under("is"),
-      2,
+      1,
       true,
       [{ id: "x", value: { kind: "option", operator: "isAnyOf", values: ["paid", "pending"] } }],
     ],
@@ -660,30 +660,36 @@ describe("asymmetric operator configs", () => {
       true,
       [{ id: "x", value: { kind: "option", operator: "isAnyOf", values: ["paid", "pending"] } }],
     ],
-    ["the mirror: is cannot grow without isAnyOf", NO_ANY_OF, under("is"), 2, false, under("is")],
+    ["the mirror: is cannot grow without isAnyOf", NO_ANY_OF, under("is"), 1, false, under("is")],
     [
       "the mirror: isNot grows to isNoneOf",
       NO_ANY_OF,
       under("isNot"),
-      2,
+      1,
       true,
       [{ id: "x", value: { kind: "option", operator: "isNoneOf", values: ["paid", "pending"] } }],
     ],
     ["a new filter on the mirror cannot start at two", NO_ANY_OF, [], 2, false, []],
   ];
 
-  it.each(ROWS)("%s, and the write agrees", (_name, field, state, count, can, write) => {
-    expect(canSetOptionCount(state, "x", field, count, "is")).toBe(can);
-    const values = ["paid", "pending", "draft"].slice(0, count);
+  it.each(ROWS)("%s, and the write agrees", (_name, field, state, added, can, write) => {
+    expect(canAddOptionValues(state, "x", field, added, "is")).toBe(can);
+    // Each state holds at most one value, "paid", so the write keeps it and adds the next ones.
+    const values = ["paid", "pending", "draft"].slice(0, state.length + added);
     expect(setOptionValues(state, "x", field, values, "is")).toEqual(write);
   });
 
   it.each([
-    ["one value under isNot", NO_NONE_OF, under("isNot"), 1],
-    ["no values, which removes the filter", NO_NONE_OF, under("isNot"), 0],
-    ["one value under is on the mirror", NO_ANY_OF, under("is"), 1],
-  ] as const)("can always set %s", (_name, field, state, count) => {
-    expect(canSetOptionCount(state, "x", field, count, "is")).toBe(true);
+    ["a first value to a new filter", NO_NONE_OF, [], 1],
+    ["a first value to a new filter on the mirror", NO_ANY_OF, [], 1],
+    [
+      "a value beside one the field no longer offers, under isNot",
+      NO_NONE_OF,
+      [{ id: "x", value: { kind: "option", operator: "isNot", values: ["gone"] } }],
+      1,
+    ],
+  ] as const)("can add %s", (_name, field, state, added) => {
+    expect(canAddOptionValues(state, "x", field, added, "is")).toBe(true);
   });
 });
 

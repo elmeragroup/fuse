@@ -19,6 +19,7 @@ import type { FilterField, FilterFieldMap } from "./filter-fields";
 import { resolveFocusTarget } from "./filter-focus";
 import type { DataTableFilterState, FilterKind, FilterOperator, FilterValue } from "./filter-model";
 import type { DataTableFilterStringKey } from "./intl";
+import type { ListField, OptionOrder } from "./option-list";
 
 export type { FacetReader } from "./filter-facets";
 
@@ -364,6 +365,41 @@ export function useFocusRequest<T extends HTMLElement>(key: string) {
     }
   }, [mounted, focusRequest, key]);
   return ref;
+}
+
+/**
+ * The value list a footer part sits in. The add menu's value submenu and the chip's option editor
+ * each provide it around the consumer's footer, with their own order and query, so the parts read
+ * the list and write through the Root.
+ */
+export type ValueList = {
+  /** The listed field's column id. */
+  readonly fieldId: string;
+  /** The listed field. */
+  readonly field: ListField;
+  /** The list's order, taken as it opened. */
+  readonly order: OptionOrder;
+  /** The list's search. */
+  readonly query: string;
+  /** The locale's matcher, the one the list filters its rows with. */
+  readonly contains: (text: string, query: string) => boolean;
+};
+
+/** Provided by each value list for the footer the consumer renders after it. */
+export const ValueListContext = createContext<ValueList | null>(null);
+
+/**
+ * The value list a footer part sits in.
+ *
+ * @param part - The part's name, for the error.
+ * @returns The list.
+ */
+export function useValueList(part: string): ValueList {
+  const list = use(ValueListContext);
+  if (list === null) {
+    throw new DataTableFilterCompositionError(part, "outside-value-list");
+  }
+  return list;
 }
 
 /** The overlays whose focus return asks `focusMovedElsewhere`: the add menu and the value popover. */
