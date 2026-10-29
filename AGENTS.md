@@ -59,7 +59,8 @@ existing gate cannot enforce them.
 While editing, run `vitest related <files> --run --project unit` in the owning package
 (drop `--project` where none exist). Direct Vitest skips the Fuse build and dist tripwires.
 Before review, run the touched turbo tasks with `--affected`, then `pnpm check`, the
-local gate. CI also runs the e2e and packed-artifact tier on every PR.
+local gate. CI also runs the e2e and packed-artifact tier on every PR. A PR that leaves
+`apps/docs` unchanged skips its studio and landing e2e files, which every push to `main` runs.
 When a change touches docs-app behavior (landing, studio, search, theme picker), run
 `pnpm exec turbo run build:e2e --filter=docs`, which builds Fuse and generates docs first
 and writes the e2e build to `.cache/next-e2e`, then run the affected e2e files with
