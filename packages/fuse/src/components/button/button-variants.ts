@@ -37,6 +37,10 @@ import { selfFocusRingClass } from "../../styles/utils";
 // a consumer still places by hand is not doubled. A trailing `data-icon="inline-end"` icon
 // stays, as its marker keeps the end inset tight either way, and text stays. With
 // `pendingIndicator={null}` the attribute is absent and nothing hides.
+// The outline rests transparent, so it shows the surface beneath it: the page, a Card, a Dialog
+// or a Popover. A page fill showed the page through a Card wherever the two differ, which is
+// external light and every dark theme. `bg-transparent` is explicit, so a preflight-free host
+// does not show the native button face.
 // The outline border reads the theme's `--button-outline` at `--button-outline-width`: a 1px
 // `--border` hairline in internal themes and the reference's 2px ring in the text color in
 // external ones. A host without themes.css declares neither, so both fall back to the 1px
@@ -62,7 +66,7 @@ export const buttonVariants = tv({
     variant: {
       default: "bg-primary text-primary-foreground enabled-hover:bg-primary/80",
       outline:
-        "border-[length:var(--button-outline-width,1px)] border-button-outline bg-background shadow-[0_1px_max(0px,4px-2*var(--button-outline-width,1px))_min(0px,2px-2*var(--button-outline-width,1px))_rgb(0_0_0/0.05)] aria-expanded:bg-muted aria-expanded:text-foreground enabled-hover:bg-muted enabled-hover:text-foreground",
+        "border-[length:var(--button-outline-width,1px)] border-button-outline bg-transparent shadow-[0_1px_max(0px,4px-2*var(--button-outline-width,1px))_min(0px,2px-2*var(--button-outline-width,1px))_rgb(0_0_0/0.05)] aria-expanded:bg-muted aria-expanded:text-foreground enabled-hover:bg-muted enabled-hover:text-foreground",
       secondary:
         "bg-secondary text-secondary-foreground aria-expanded:bg-secondary aria-expanded:text-secondary-foreground enabled-hover:bg-secondary-hover",
       ghost:

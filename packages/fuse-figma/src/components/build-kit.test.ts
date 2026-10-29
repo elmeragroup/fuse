@@ -258,7 +258,7 @@ describe("the Button component set", () => {
 
   it("strokes the outline button with the outline role and width, and inherits the page text color", () => {
     const outline = root("outline", "default", "rest", "none");
-    expect(outline.fill).toEqual(paint("background"));
+    expect(outline.fill).toBeUndefined();
     expect(outline.stroke).toEqual({ color: paint("button-outline"), weight: token("button-outline-width") });
     expect(firstColor(outline)).toEqual(paint("foreground"));
     // Tailwind's shadow-xs, 0 1px 2px at 5% black, as formulas over the outline width.

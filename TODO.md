@@ -30,7 +30,8 @@
   The shared 0.97 on a white surface measures 1.09:1 on every light theme, so
   `contrast-matrix.test.ts` holds `muted` to that floor in dark only. External light modals fill
   with the page tint (`--dialog`), where the same tint, such as the corner close button's hover,
-  measures 1.03–1.04:1.
+  measures 1.03–1.04:1. On the fkas private and guen pages the tint is darker than `muted`, so a
+  transparent outline or ghost Button there lightens on hover, by 1.03:1 and 1.04:1 (#423).
 - Ask design how edgeless selection rows should stand out in a dark Dialog or Sheet. Dark modals
   keep `--dialog` on the popover, which every dark palette sets equal to `card`, the row fill, and
   external rows draw no outer edge, so a `RadioItem` or `CheckboxItem` group in a dark modal has
@@ -118,6 +119,17 @@
   `bg-card` (`oklch(0.205 0 0)`). In external light every brand's steppers draw the tinted page
   `--background` (guen `oklch(0.95469 0.01887 279.53)`) inside a white `--card` field box. Only
   internal light matches. Is that intended, or should the steppers follow the field-box fill?
+- Decide, with design, the fill of the other parts that paint the page fill, `bg-background`, the
+  way #423 made the outline Button, the Alert action and the DataTableFilter chip transparent.
+  Inside a white Card on an external light page each paints the page tint. They are `Frame`
+  (`frame/frame.tsx`), the Table container and its cells inside a Frame (`table/table.tsx`), the
+  `inline` TextField's hover, focus and invalid fill (`text-field/text-field-variants.ts`), the
+  checked Switch thumb (`switch/switch-variants.ts`), the Slider thumb
+  (`slider/slider-variants.ts`), the `Field.Separator` label, which masks its rule with the page
+  fill (`field/field.tsx`), the outline Sidebar menu button and the Sidebar input
+  (`sidebar/sidebar-variants.ts`, `sidebar/sidebar-class.ts`), the default Alert's own box
+  (`alert/alert-variants.ts`) and the NumberField steppers above. Each needs a decision, not
+  necessarily a change.
 - Decide with design whether `Item` gets an unclamped description variant. `Item.Description`
   clamps to two lines, matching shadcn, and funnel needed an unclamped one for full instructions.
   `shadcn(no-restyle)` rejects `line-clamp-*` on `ItemDescription` and points to a variant in
@@ -579,8 +591,9 @@ each stand-in once Fuse ships the part.
   `app-shell/order-detail.tsx` add `contain-inline-size` to their scrolled content.
 - Add a Fjordkraft Företag logo to Fuse. Until then the landing's `brand-wordmark.tsx` draws
   that brand from a mask of `public/landing/logos/fkab.svg`.
-- Give the outline `Button` the ink of the `background` it paints. It inherits the text colour,
-  so on a block filled with `primary` its label is light on light. The promo hero in
+- Decide the outline `Button` on a block filled with `primary` or `secondary`. It rests transparent
+  and inherits the block's light text, but external themes draw its ring in `--button-outline`,
+  which is `foreground`, so the ring does not follow the text. The promo hero in
   `brand-site/site-hero.tsx` passes `quiet="ghost"` for its second action instead.
 - Let `Sidebar.Inset` render an element other than `<main>`. A page that already has a `main`
   landmark cannot use it, so `app-shell/dashboard-main.tsx` copies its inset classes onto a `div`
