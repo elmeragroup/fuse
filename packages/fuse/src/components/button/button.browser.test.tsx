@@ -63,6 +63,27 @@ function paintsOutsideBorderBox({ x, y, blur, spread }: ShadowLengths): boolean 
   return spread + blur + Math.max(Math.abs(x), Math.abs(y)) > 0;
 }
 
+/**
+ * Screenshot an element once and read its rendered pixels: the reader takes CSS-pixel coordinates
+ * relative to the element's border box and returns the RGBA there.
+ */
+async function screenshotPixels(element: HTMLElement): Promise<(x: number, y: number) => string> {
+  const base64 = await page.elementLocator(element).screenshot({ save: false });
+  const image = new Image();
+  image.src = `data:image/png;base64,${base64}`;
+  await image.decode();
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+  const context = canvas.getContext("2d");
+  if (context === null) throw new Error("expected a 2d canvas");
+  context.drawImage(image, 0, 0);
+  return (x, y) =>
+    [
+      ...context.getImageData(Math.round(x * devicePixelRatio), Math.round(y * devicePixelRatio), 1, 1).data,
+    ].join(",");
+}
+
 describe("Button", () => {
   it("activates once on click, Enter, and Space", async () => {
     const onClick = vi.fn();
@@ -809,51 +830,34 @@ describe("Button", () => {
     );
     const button = roleNamed("button", "Filled");
     expect(getComputedStyle(button).borderLeftWidth).toBe("1px");
-    const base64 = await page.elementLocator(button).screenshot({ save: false });
-    const image = new Image();
-    image.src = `data:image/png;base64,${base64}`;
-    await image.decode();
-    const canvas = document.createElement("canvas");
-    canvas.width = image.naturalWidth;
-    canvas.height = image.naturalHeight;
-    const context = canvas.getContext("2d");
-    if (context === null) throw new Error("expected a 2d canvas");
-    context.drawImage(image, 0, 0);
-    const middle = Math.floor(canvas.height / 2);
-    const pixel = (x: number) => [...context.getImageData(x, middle, 1, 1).data].join(",");
+    const pixel = await screenshotPixels(button);
+    const middle = button.getBoundingClientRect().height / 2;
     // The fill is sampled in the start padding, clear of the label. The page is white and the
     // fill is not, so a page-coloured edge cannot pass for the fill.
-    const fill = pixel(Math.round(4 * devicePixelRatio));
+    const fill = pixel(4, middle);
     expect(fill).not.toBe("255,255,255,255");
-    expect(pixel(0), "outermost border pixel").toBe(fill);
+    expect(pixel(0, middle), "outermost border pixel").toBe(fill);
   });
 });
 
 describe("outline Button fill", () => {
   /**
-   * The rendered pixel in the button's start padding, and the pixel of the surface 8px before its
-   * start edge, clear of the border and the internal hairline shadow.
+   * The rendered pixel in a button's start padding, and the pixel of the surface 8px before its
+   * start edge, clear of the border and the internal hairline shadow, both read from one
+   * screenshot of the surface.
    */
-  async function insideAndBeside(surface: HTMLElement, button: HTMLElement) {
-    const base64 = await page.elementLocator(surface).screenshot({ save: false });
-    const image = new Image();
-    image.src = `data:image/png;base64,${base64}`;
-    await image.decode();
-    const canvas = document.createElement("canvas");
-    canvas.width = image.naturalWidth;
-    canvas.height = image.naturalHeight;
-    const context = canvas.getContext("2d");
-    if (context === null) throw new Error("expected a 2d canvas");
-    context.drawImage(image, 0, 0);
+  function insideAndBeside(
+    pixel: (x: number, y: number) => string,
+    surface: HTMLElement,
+    button: HTMLElement
+  ) {
     const outer = surface.getBoundingClientRect();
     const inner = button.getBoundingClientRect();
     const border = Number.parseFloat(getComputedStyle(button).borderLeftWidth);
-    const y = Math.round((inner.top - outer.top + inner.height / 2) * devicePixelRatio);
-    const pixel = (x: number) =>
-      [...context.getImageData(Math.round(x * devicePixelRatio), y, 1, 1).data].join(",");
+    const y = inner.top - outer.top + inner.height / 2;
     return {
-      inside: pixel(inner.left - outer.left + border + 4),
-      beside: pixel(inner.left - outer.left - 8),
+      inside: pixel(inner.left - outer.left + border + 4, y),
+      beside: pixel(inner.left - outer.left - 8, y),
     };
   }
 
@@ -889,8 +893,9 @@ describe("outline Button fill", () => {
     // An earlier test can leave the pointer where this one renders a button, which would hover it.
     await userEvent.unhover(pageButton);
     await userEvent.unhover(cardButton);
-    const onPage = await insideAndBeside(pageSurface, pageButton);
-    const inCard = await insideAndBeside(pageSurface, cardButton);
+    const pixel = await screenshotPixels(pageSurface);
+    const onPage = insideAndBeside(pixel, pageSurface, pageButton);
+    const inCard = insideAndBeside(pixel, pageSurface, cardButton);
     // Oracle sanity: the Card and the page paint differently here, so one fill cannot match both.
     expect(inCard.beside).not.toBe(onPage.beside);
     expect(onPage.inside, "on the page").toBe(onPage.beside);

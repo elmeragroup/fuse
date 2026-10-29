@@ -24,9 +24,10 @@
  * - The action is `alert.tsx`'s `<Button size="sm">` in `Item.Actions`, whose `flex items-center
  *   gap-2` row centers it on the alert's row. Its label is the docs Action demo's `Retry`. The tone's
  *   `button` slot replaces the default Button's `bg-primary` and `text-primary-foreground`: default
- *   `bg-background text-foreground`, destructive `bg-error text-error-foreground`, warning
- *   `bg-warning text-warning-foreground`, success `bg-success text-success-foreground` and info
- *   `bg-info text-info-foreground`, each compiling to the token's `var()`. A docs alert without
+ *   `bg-transparent text-foreground`, which paints no fill, destructive `bg-error
+ *   text-error-foreground`, warning `bg-warning text-warning-foreground`, success `bg-success
+ *   text-success-foreground` and info `bg-info text-info-foreground`, each but the default
+ *   compiling to the token's `var()`. A docs alert without
  *   `onAction` renders no action, so the `Action` property starts false, which hides the actions in
  *   every cell (PQ). Beside a description the media and the content top-align, so the actions
  *   stretch down the row to stay centered: the Button is at most 36px tall (`control-h-sm`, 32px dense
@@ -78,7 +79,7 @@ function only(box: { readonly children: readonly ChildLayerSpec[] }): ChildLayer
 
 /** Each tone's action fill and label color, from its `button` slot. The default action is transparent. */
 const ACTIONS = [
-  ["default", "none", "foreground"],
+  ["default", undefined, "foreground"],
   ["destructive", "error", "error-foreground"],
   ["warning", "warning", "warning-foreground"],
   ["success", "success", "success-foreground"],
@@ -204,7 +205,7 @@ describe("the Alert component set", () => {
   });
 
   it.each(ACTIONS)(
-    "holds the %s action, a small Button filled with %s, its Retry label in %s, behind the Action property",
+    "holds the %s action, a small Button with fill %s, its Retry label in %s, behind the Action property",
     (variant, fill, text) => {
       for (const described of ["off", "on"]) {
         const root = alert(variant, described);
@@ -225,7 +226,7 @@ describe("the Alert component set", () => {
             sizing: { horizontal: HUG, vertical: fixed(density("control-h-sm")) },
             properties: { text: { Label: "Retry" } },
             overrides: [
-              { path: [], field: "fill", color: fill === "none" ? undefined : paint(fill) },
+              { path: [], field: "fill", color: fill === undefined ? undefined : paint(fill) },
               { path: ["label"], field: "textColor", color: paint(text) },
             ],
             exposed: true,
