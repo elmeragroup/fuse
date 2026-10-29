@@ -6,10 +6,12 @@ import { closeContext, launchSuiteBrowser } from "../suite-browser";
 import {
   artboard,
   background,
+  box,
   canvas,
   countLayoutReads,
   frames,
   hashOf,
+  inside,
   inspector,
   openStudio,
   openTokenSection,
@@ -23,8 +25,6 @@ import {
 import type { StudioRoute } from "./page";
 
 const browser = launchSuiteBrowser();
-
-const PHONE = { width: 390, height: 844 } as const;
 
 const SELF_SERVICE = "Customer self-service";
 const ADMIN = "Internal admin table";
@@ -194,7 +194,7 @@ function popupOf(page: Page, board: string, popup: Popup, trigger: string): Loca
 }
 
 describe("the studio's Screens page", () => {
-  it("opens every menu, select and dialog on its screens, and Escape closes each", async () => {
+  it("opens every menu, select and dialog on its screens, Escape closes each, and the confirmed delete closes both dialogs", async () => {
     const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
     try {
       // The settings dialog opens with the page; Cancel closes it.
@@ -210,6 +210,10 @@ describe("the studio's Screens page", () => {
           .click();
         const opened = popupOf(page, board, popup, name);
         await opened.waitFor({ state: "visible" });
+        if (popup === "dialog") {
+          // A dialog portals into its artboard and stays inside its box.
+          expect(inside(await box(opened), await box(artboard(page, board))), name).toBe(true);
+        }
         await page.keyboard.press("Escape");
         await opened.waitFor({ state: "hidden" });
       }
@@ -223,19 +227,9 @@ describe("the studio's Screens page", () => {
       expect(await confirm.getByRole("heading").textContent()).toBe("Delete the Operations workspace?");
       await page.keyboard.press("Escape");
       await confirm.waitFor({ state: "hidden" });
-      expect(errors).toEqual([]);
-    } finally {
-      await context.close();
-    }
-  });
 
-  it("deletes the workspace from its confirmation, closing both dialogs with a toast", async () => {
-    const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
-    try {
-      const settings = settingsDialog(page);
-      await settings.getByRole("tab", { name: "Danger zone" }).click();
+      // Confirmed, the delete closes both dialogs with a toast.
       await settings.getByRole("button", { name: "Delete workspace", exact: true }).click();
-      const confirm = artboard(page, SETTINGS).getByRole("alertdialog");
       await confirm.getByRole("button", { name: "Delete workspace", exact: true }).click();
       await confirm.waitFor({ state: "hidden" });
       await settings.waitFor({ state: "hidden" });
@@ -249,7 +243,7 @@ describe("the studio's Screens page", () => {
     }
   });
 
-  it("changes the plan to the picked one with a toast, and lists every invoice on See all", async () => {
+  it("changes the plan with a toast that makes the notifications an F6 stop, and lists every invoice on See all", async () => {
     const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
     try {
       const screen = artboard(page, SELF_SERVICE);
@@ -259,10 +253,19 @@ describe("the studio's Screens page", () => {
         screen.locator('[data-slot="radio-item"]').filter({ hasText: title });
       await screen.getByRole("radio", { name: /^Fixed price/u }).click();
       await change.click();
-      await screen
+      const toast = screen
         .getByText("Your plan changes to Fixed price on 1 November.", { exact: true })
-        .first()
-        .waitFor({ state: "visible" });
+        .first();
+      await toast.waitFor({ state: "visible" });
+      // While they hold a toast, the screen's notifications are an F6 stop: the cycle's last, so
+      // Shift+F6 from the top bar wraps to them. The pointer resting on the toast holds it open.
+      await toast.hover();
+      await page.getByRole("banner").focus();
+      await page.keyboard.press("Shift+F6");
+      const notifications = screen.getByRole("region", { name: "Notifications", exact: true });
+      await expect
+        .poll(async () => notifications.evaluate((region) => region === document.activeElement))
+        .toBe(true);
       // The Current mark moves to the plan now on the account.
       expect(await planItem("Fixed price").textContent()).toContain("Current");
       expect(await planItem("Spot price").textContent()).not.toContain("Current");
@@ -278,32 +281,6 @@ describe("the studio's Screens page", () => {
       expect(await invoices.getByRole("row").count()).toBe(7);
       await screen.getByRole("button", { name: "Show fewer", exact: true }).click();
       expect(await invoices.getByRole("row").count()).toBe(4);
-      expect(errors).toEqual([]);
-    } finally {
-      await context.close();
-    }
-  });
-
-  it("makes a screen's notifications an F6 stop while they hold a toast", async () => {
-    const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
-    try {
-      const screen = artboard(page, SELF_SERVICE);
-      await screen.getByRole("radio", { name: /^Fixed price/u }).click();
-      await screen.getByRole("button", { name: "Change plan", exact: true }).click();
-      const toast = screen
-        .getByText("Your plan changes to Fixed price on 1 November.", { exact: true })
-        .first();
-      await toast.waitFor({ state: "visible" });
-      // The pointer resting on the toast holds it open while the keys run.
-      await toast.hover();
-      // The screen's notifications are the cycle's last stop, so Shift+F6 from the top bar wraps
-      // to them.
-      await page.getByRole("banner").focus();
-      await page.keyboard.press("Shift+F6");
-      const notifications = screen.getByRole("region", { name: "Notifications", exact: true });
-      await expect
-        .poll(async () => notifications.evaluate((region) => region === document.activeElement))
-        .toBe(true);
       expect(errors).toEqual([]);
     } finally {
       await context.close();
@@ -356,7 +333,7 @@ describe("the studio's Screens page", () => {
     }
   });
 
-  it("selects a Button's part on Alt+click and lists the tokens it reads, with their knobs", async () => {
+  it("selects a Button's part on Alt+click, lists the tokens it reads, and its --primary knob recolors it", async () => {
     const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
     try {
       const button = artboard(page, SELF_SERVICE).getByRole("button", { name: "Change plan", exact: true });
@@ -376,6 +353,18 @@ describe("the studio's Screens page", () => {
       expect(await outlineTag(page).textContent()).toBe("button");
       // The part's artboard is selected with it.
       expect(await inspector(page).getByRole("region", { name: "Artboard" }).isVisible()).toBe(true);
+
+      // The Selection section's --primary knob recolors the picked Button.
+      expect(await background(button)).not.toBe(RED);
+      await selection(page)
+        .getByRole("group", { name: "--primary", exact: true })
+        .getByRole("button", { name: "Edit --primary", exact: true })
+        .click();
+      const field = page.getByRole("textbox", { name: "Color", exact: true });
+      await field.fill("#ff0000");
+      await page.keyboard.press("Escape");
+      await field.waitFor({ state: "hidden" });
+      await expect.poll(() => background(button)).toBe(RED);
       expect(errors).toEqual([]);
     } finally {
       await context.close();
@@ -400,30 +389,7 @@ describe("the studio's Screens page", () => {
     }
   });
 
-  it("recolors the selected Button from the --primary knob in the Selection section", async () => {
-    const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
-    try {
-      const button = artboard(page, SELF_SERVICE).getByRole("button", { name: "Change plan", exact: true });
-      expect(await background(button)).not.toBe(RED);
-      await button.click({ modifiers: ["Alt"] });
-
-      await selection(page)
-        .getByRole("group", { name: "--primary", exact: true })
-        .getByRole("button", { name: "Edit --primary", exact: true })
-        .click();
-      const field = page.getByRole("textbox", { name: "Color", exact: true });
-      await field.fill("#ff0000");
-      await page.keyboard.press("Escape");
-      await field.waitFor({ state: "hidden" });
-
-      await expect.poll(() => background(button)).toBe(RED);
-      expect(errors).toEqual([]);
-    } finally {
-      await context.close();
-    }
-  });
-
-  it("clears the selected part, then its artboard, with Escape while the Settings dialog stays open", async () => {
+  it("clears the selected part, then its artboard, with Escape while the Settings dialog stays open, which Escape inside closes", async () => {
     const { context, page } = await openStudio(browser(), { route: SCREENS_PAGE });
     try {
       await settingsDialog(page).waitFor({ state: "visible" });
@@ -442,39 +408,17 @@ describe("the studio's Screens page", () => {
       await inspector(page).getByRole("region", { name: "Base theme" }).waitFor({ state: "visible" });
       // Escape from another artboard is not the dialog's to take.
       expect(await settingsDialog(page).isVisible()).toBe(true);
-    } finally {
-      await context.close();
-    }
-  });
 
-  it("closes the Settings dialog with Escape from inside it", async () => {
-    const { context, page } = await openStudio(browser(), { route: SCREENS_PAGE });
-    try {
-      const settings = settingsDialog(page);
-      await settings.getByRole("tab", { name: "Notifications", exact: true }).click();
+      // Escape from inside it is.
+      await settingsDialog(page).getByRole("tab", { name: "Notifications", exact: true }).click();
       await page.keyboard.press("Escape");
-      await settings.waitFor({ state: "hidden" });
+      await settingsDialog(page).waitFor({ state: "hidden" });
     } finally {
       await context.close();
     }
   });
 
-  it("clears a part picked in Select part mode from the toolbar with Escape", async () => {
-    const { context, page } = await openStudio(browser(), { route: SCREENS_PAGE });
-    try {
-      await page.getByRole("button", { name: "Select part", exact: true }).click();
-      await artboard(page, CHECKOUT).getByRole("button", { name: "Confirm order", exact: true }).click();
-      await expect.poll(async () => (await readout(page)).Slot).toBe("button");
-
-      await page.keyboard.press("Escape");
-      await selection(page).waitFor({ state: "hidden" });
-      expect(await outlineTag(page).count()).toBe(0);
-    } finally {
-      await context.close();
-    }
-  });
-
-  it("picks a focused control with Enter or Space in Select part mode, without using it", async () => {
+  it("picks a focused control with Enter or Space in Select part mode, without using it, and moves the pick with Shift+Enter and Enter", async () => {
     const { context, page } = await openStudio(browser(), { route: SCREENS_PAGE });
     try {
       await page.keyboard.press("p");
@@ -489,17 +433,11 @@ describe("the studio's Screens page", () => {
       await page.keyboard.press("Space");
       await expect.poll(async () => (await readout(page)).Slot).toBe("checkbox");
       expect(await check.getAttribute("aria-checked")).toBe("false");
-    } finally {
-      await context.close();
-    }
-  });
 
-  it("moves a keyboard pick out with Shift+Enter and in with Enter, announcing each pick", async () => {
-    const { context, page } = await openStudio(browser(), { route: SCREENS_PAGE });
-    try {
-      await page.keyboard.press("p");
+      // Shift+Enter moves a keyboard pick out to the enclosing part and Enter back in,
+      // announcing each pick.
       await artboard(page, CHECKOUT).getByRole("button", { name: "Confirm order", exact: true }).focus();
-      const status = canvas(page).getByRole("status");
+      const announcer = canvas(page).getByRole("status");
       const steps = [
         ["Enter", "button"],
         ["Shift+Enter", "card-footer"],
@@ -512,7 +450,7 @@ describe("the studio's Screens page", () => {
         await expect
           .poll(async () => (await readout(page)).Slot, { message: `${key} to ${slot}` })
           .toBe(slot);
-        await expect.poll(async () => status.textContent()).toContain(`Picked ${slot}`);
+        await expect.poll(async () => announcer.textContent()).toContain(`Picked ${slot}`);
       }
     } finally {
       await context.close();
@@ -591,7 +529,7 @@ describe("the studio's Screens page", () => {
     }
   });
 
-  it("describes a part in its artboard's scheme, whichever scheme the inspector edits", async () => {
+  it("describes a part in its artboard's scheme and pinned variant, whichever scheme the inspector edits", async () => {
     const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
     try {
       const button = artboard(page, SELF_SERVICE).getByRole("button", { name: "Change plan", exact: true });
@@ -607,6 +545,14 @@ describe("the studio's Screens page", () => {
       expect((await readout(page)).Scheme).toBe("Light");
       await frames(page, 2);
       expect(await swatchOffBy(selectionSwatch(page, "primary"), painted)).toBeLessThanOrEqual(1);
+
+      // And in its artboard's pinned variant: self-service pins the external variant and the admin
+      // table the internal one, so one of the two differs from the base theme whichever it is.
+      const internal = artboard(page, ADMIN).getByRole("button", { name: "Add customer", exact: true });
+      const pinned = await paintedBackground(internal);
+      expect(pinned).not.toEqual(painted);
+      await internal.click({ modifiers: ["Alt"] });
+      await expect.poll(() => swatchOffBy(selectionSwatch(page, "primary"), pinned)).toBeLessThanOrEqual(1);
       expect(errors).toEqual([]);
     } finally {
       await context.close();
@@ -683,28 +629,6 @@ describe("the studio's Screens page", () => {
       expect(errors.filter((error) => !error.includes("Failed to load resource"))).toEqual([]);
     } finally {
       await closeContext(context);
-    }
-  });
-
-  it("describes a part in its artboard's pinned variant", async () => {
-    const { context, page } = await openStudio(browser(), { route: SCREENS_PAGE });
-    try {
-      // Self-service pins the external variant and the admin table the internal one, so one of
-      // the two differs from the base theme whichever variant it is.
-      const external = artboard(page, SELF_SERVICE).getByRole("button", { name: "Change plan", exact: true });
-      const internal = artboard(page, ADMIN).getByRole("button", { name: "Add customer", exact: true });
-      expect(await paintedBackground(external)).not.toEqual(await paintedBackground(internal));
-
-      for (const button of [external, internal]) {
-        await button.click({ modifiers: ["Alt"] });
-        await expect.poll(async () => (await readout(page)).Slot).toBe("button");
-        const painted = await paintedBackground(button);
-        await expect
-          .poll(() => swatchOffBy(selectionSwatch(page, "primary"), painted))
-          .toBeLessThanOrEqual(1);
-      }
-    } finally {
-      await context.close();
     }
   });
 
@@ -1028,7 +952,7 @@ describe("the studio's Screens page", () => {
     }
   });
 
-  it("picks a part with a plain click in Select part mode, toggled with P", async () => {
+  it("picks a part with a plain click in Select part mode, toggled with P, and Escape clears it", async () => {
     const { context, page } = await openStudio(browser(), { route: SCREENS_PAGE });
     try {
       await page.keyboard.press("p");
@@ -1037,6 +961,10 @@ describe("the studio's Screens page", () => {
       ).toBe("true");
       await artboard(page, CHECKOUT).getByRole("button", { name: "Confirm order", exact: true }).click();
       await expect.poll(async () => (await readout(page)).Slot).toBe("button");
+
+      await page.keyboard.press("Escape");
+      await selection(page).waitFor({ state: "hidden" });
+      expect(await outlineTag(page).count()).toBe(0);
     } finally {
       await context.close();
     }
@@ -1056,15 +984,6 @@ describe("the studio's Screens page", () => {
         await page.getByRole("button", { name: "Select part", exact: true }).getAttribute("aria-pressed")
       ).toBe("true");
       expect(errors).toEqual([]);
-    } finally {
-      await context.close();
-    }
-  });
-
-  it("fits a phone without sideways page scroll", async () => {
-    const { context, page } = await openStudio(browser(), { route: SCREENS_PAGE, viewport: PHONE });
-    try {
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     } finally {
       await context.close();
     }

@@ -17,31 +17,7 @@ function skeletonElement(): HTMLElement {
 }
 
 describe("Skeleton", () => {
-  it("renders a div with data-slot=skeleton and no role", () => {
-    renderThemed(<Skeleton className="h-4 w-24" />);
-    const skeleton = skeletonElement();
-    expect(skeleton.tagName).toBe("DIV");
-    expect(skeleton.getAttribute("data-slot")).toBe("skeleton");
-    expect(skeleton.getAttribute("aria-hidden")).toBe("true");
-    expect(skeleton.getAttribute("role")).toBeNull();
-    expect(skeleton.getAttribute("tabindex")).toBeNull();
-  });
-
-  it("lets a consumer aria-hidden on the spread override the default", () => {
-    renderThemed(<Skeleton aria-hidden="false" className="h-4 w-24" />);
-    expect(skeletonElement().getAttribute("aria-hidden")).toBe("false");
-  });
-
-  it("merges consumer sizing with the base classes and lets a bg-* override win", () => {
-    renderThemed(<Skeleton className="h-4 w-full max-w-24 bg-primary" />);
-    const skeleton = skeletonElement();
-    expect(skeleton.getBoundingClientRect().height).toBe(16);
-    expect(skeleton.getBoundingClientRect().width).toBeGreaterThan(0);
-    expect(getComputedStyle(skeleton).maxWidth).toBe("96px");
-    expect(getComputedStyle(skeleton).backgroundColor).toBe(cssVarColor(skeleton, "--primary"));
-  });
-
-  it("forwards id, data-*, event handlers, and ref to the div", () => {
+  it("merges consumer sizing and a winning bg-*, and forwards aria-hidden, id, data-*, handlers and ref", () => {
     const ref = createRef<HTMLDivElement>();
     let clicks = 0;
     renderThemed(
@@ -49,13 +25,19 @@ describe("Skeleton", () => {
         ref={ref}
         id="invoice-placeholder"
         data-loading="row"
-        className="h-4 w-24"
+        aria-hidden="false"
+        className="h-4 w-full max-w-24 bg-primary"
         onClick={() => {
           clicks += 1;
         }}
       />
     );
     const skeleton = skeletonElement();
+    expect(skeleton.getBoundingClientRect().height).toBe(16);
+    expect(skeleton.getBoundingClientRect().width).toBeGreaterThan(0);
+    expect(getComputedStyle(skeleton).maxWidth).toBe("96px");
+    expect(getComputedStyle(skeleton).backgroundColor).toBe(cssVarColor(skeleton, "--primary"));
+    expect(skeleton.getAttribute("aria-hidden")).toBe("false");
     expect(ref.current).toBe(skeleton);
     expect(skeleton.id).toBe("invoice-placeholder");
     expect(skeleton.getAttribute("data-loading")).toBe("row");

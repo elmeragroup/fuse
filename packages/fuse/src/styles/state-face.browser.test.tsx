@@ -263,33 +263,26 @@ describe("state face at dense density", () => {
     stampDensity("dense");
   });
 
-  it("keeps every disabled control's paint and position still under hover and press", async () => {
+  it("keeps every disabled control's paint still under hover and press, dims it once and shows the not-allowed cursor", async () => {
     renderStateFaces(<DisabledControls />);
+    // Every resting paint is read once with the pointer away, before any control is hovered,
+    // so a group hovered earlier cannot leak a face into a nested control's resting read.
+    await moveAway();
+    const resting = DISABLED_CONTROLS.map(([, find]) => pointerPaint(find()));
 
-    for (const [label, find] of DISABLED_CONTROLS) {
+    for (const [index, [label, find]] of DISABLED_CONTROLS.entries()) {
       const control = find();
-      await moveAway();
-      const resting = pointerPaint(control);
+      // A control inside a group (an input, a stepper) is dimmed by the group, so it paints
+      // at the group's 0.5 rather than a doubled 0.25.
+      expect.soft(effectiveOpacity(control), `${label} opacity`).toBe(0.5);
 
       // `force` skips Playwright's hit-target wait, so a control that drops pointer
       // events is still reached and its failure is the paint, not a timeout.
       await userEvent.hover(page.elementLocator(control), { force: true });
-      expect.soft(pointerPaint(control), `${label} while hovered`).toEqual(resting);
+      expect.soft(pointerPaint(control), `${label} while hovered`).toEqual(resting[index]);
+      expect.soft(getComputedStyle(control).cursor, `${label} cursor`).toBe("not-allowed");
       const pressed = await whilePointerPressed(() => pointerPaint(control));
-      expect.soft(pressed, `${label} while pressed`).toEqual(resting);
-    }
-  });
-
-  it("dims every disabled control to half opacity once and shows the not-allowed cursor", async () => {
-    renderStateFaces(<DisabledControls />);
-
-    for (const [label, find] of DISABLED_CONTROLS) {
-      const control = find();
-      // A control inside a group (an input, a stepper) is dimmed by the group, so it paints
-      // at the group's 0.5 rather than a doubled 0.25.
-      expect.soft(effectiveOpacity(control), label).toBe(0.5);
-      await userEvent.hover(page.elementLocator(control), { force: true });
-      expect.soft(getComputedStyle(control).cursor, label).toBe("not-allowed");
+      expect.soft(pressed, `${label} while pressed`).toEqual(resting[index]);
     }
   });
 
@@ -437,7 +430,7 @@ describe("state face at dense density", () => {
       </>
     );
 
-    for (const [label, control] of [
+    const enabled = [
       ["button", roleNamed("button", "Enabled button")],
       ["aria-disabled=false button", roleNamed("button", "Explicitly enabled button")],
       ["toggle", roleNamed("button", "Enabled toggle")],
@@ -447,11 +440,12 @@ describe("state face at dense density", () => {
       ["accordion trigger", roleNamed("button", "Enabled section")],
       ["link", roleNamed("link", "Enabled link")],
       ["inline text field", roleNamed("textbox", "Enabled inline field")],
-    ] as const) {
-      await moveAway();
-      const resting = pointerPaint(control);
+    ] as const;
+    await moveAway();
+    const resting = enabled.map(([, control]) => pointerPaint(control));
+    for (const [index, [label, control]] of enabled.entries()) {
       await userEvent.hover(page.elementLocator(control));
-      expect(pointerPaint(control), `${label} while hovered`).not.toEqual(resting);
+      expect(pointerPaint(control), `${label} while hovered`).not.toEqual(resting[index]);
     }
   });
 

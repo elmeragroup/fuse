@@ -495,19 +495,20 @@ describe("density roles", () => {
     ).toEqual(["a", "b", "c", "d"]);
   });
 
+  // Parsed once: both directions of the inventory read the same slots.
+  const slotsByFile = [...SOURCE_TREE.values()].map(
+    (record) => [record.relative, writtenSlots(record.relative, record.source)] as const
+  );
+
   it("declares a density role for every data-slot the package writes", () => {
-    const undeclared = [...SOURCE_TREE.values()].flatMap((record) =>
-      writtenSlots(record.relative, record.source)
-        .filter((slot) => !Object.hasOwn(PART_DENSITY, slot))
-        .map((slot) => `${record.relative}: ${slot}`)
+    const undeclared = slotsByFile.flatMap(([file, slots]) =>
+      slots.filter((slot) => !Object.hasOwn(PART_DENSITY, slot)).map((slot) => `${file}: ${slot}`)
     );
     expect(undeclared).toEqual([]);
   });
 
   it("declares no part the package does not write", () => {
-    const written = new Set(
-      [...SOURCE_TREE.values()].flatMap((record) => writtenSlots(record.relative, record.source))
-    );
+    const written = new Set(slotsByFile.flatMap(([, slots]) => slots));
     const stale = Object.keys(PART_DENSITY).filter(
       (part) => !written.has(/^[a-z0-9-]+/u.exec(part)?.[0] ?? part)
     );
@@ -851,14 +852,23 @@ describe("token paints", () => {
   // token that is itself routed into a second token does not pass on the second token's paints.
   // `test/class-tokens.ts` owns the class parsing and names the routes it cannot follow.
   it("paints every color role only where its paints allow", () => {
+    // Scanned once per file: the drawn table and the per-file check read the same paints.
+    const paintsByCode = new Map<string, ReturnType<typeof colorRolePaints>>();
+    const paintsOf = (code: string) => {
+      const cached = paintsByCode.get(code);
+      if (cached !== undefined) return cached;
+      const paints = colorRolePaints(code);
+      paintsByCode.set(code, paints);
+      return paints;
+    };
     const drawn = new Map<ColorTokenName, Set<TokenPaint>>();
     for (const record of SOURCE_TREE.values()) {
-      for (const { role, paint } of colorRolePaints(record.code)) {
+      for (const { role, paint } of paintsOf(record.code)) {
         drawn.set(role, new Set([...(drawn.get(role) ?? []), paint]));
       }
     }
     const outside = (code: string) => [
-      ...colorRolePaints(code)
+      ...paintsOf(code)
         .filter(({ role, paint }) => !allowedPaints(role).includes(paint))
         .map(({ role, paint, token }) => `${token} paints ${role} as ${paint}`),
       ...tokenAssignments(code).flatMap(({ target, role, token }) =>

@@ -4,6 +4,12 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
+  BARE_COMPONENT_ENTRIES,
+  DEFERRED_ENTRIES,
+  NON_COMPONENT_JS_ENTRIES,
+  RAC_ENTRIES,
+} from "../scripts/entries";
+import {
   budgetFailure,
   ceilingFromMeasured,
   CSS_BUDGETS,
@@ -33,98 +39,16 @@ describe("size-limit harness", () => {
     expect(budgetFailure("button", 21, 20)).toBe("button 21 bytes exceeds ceiling 20");
   });
 
-  it("covers the current packed JS entries plus the named-import rows and flags", () => {
-    const names = [
-      ...JS_ENTRY_BUDGETS.map((budget) => budget.name),
-      ...NAMED_IMPORT_BUDGETS.map((budget) => budget.name),
+  it("budgets every published JS entry, with icons measured through one named import", () => {
+    // Oracle: the entry allowlists that decide what is published. A new entry fails here until
+    // it gets a reviewed budget row.
+    const published = [
+      ...NON_COMPONENT_JS_ENTRIES.filter((entry) => entry !== "icons"),
+      ...BARE_COMPONENT_ENTRIES.filter((entry) => !DEFERRED_ENTRIES.some((deferred) => deferred === entry)),
+      ...RAC_ENTRIES.map((entry) => `react-aria/${entry}`),
     ];
-    expect(names).toEqual([
-      ".",
-      "theme",
-      "badge",
-      "button",
-      "card",
-      "dialog",
-      "popover",
-      "scroll-area",
-      "illustrations",
-      "separator",
-      "field",
-      "item",
-      "input",
-      "input-group",
-      "textarea",
-      "flags",
-      "autocomplete-field",
-      "combobox-field",
-      "autocomplete",
-      "file-upload",
-      "attachment",
-      "aspect-ratio",
-      "data-table-filter",
-      "toolbar",
-      "command",
-      "command-virtual",
-      "kbd",
-      "select-field",
-      "slider",
-      "form",
-      "navigation-menu",
-      "data-table",
-      "sidebar",
-      "toast",
-      "phone-number-field",
-      "popover-info-button",
-      "combobox",
-      "toggle-group",
-      "checkbox-card",
-      "radio-group",
-      "checkbox",
-      "selection-item",
-      "switch",
-      "button-group",
-      "accordion",
-      "description-list",
-      "emoji",
-      "avatar",
-      "alert-dialog",
-      "dropdown-menu",
-      "collapsible",
-      "select",
-      "show",
-      "loader",
-      "empty",
-      "frame",
-      "code",
-      "span",
-      "timeline-list",
-      "sheet",
-      "text-field",
-      "tooltip",
-      "heading",
-      "text",
-      "toggle",
-      "skeleton",
-      "number-field",
-      "meter",
-      "tabs",
-      "confirm-button",
-      "table",
-      "textarea-field",
-      "pagination",
-      "breadcrumb",
-      "alert",
-      "react-aria/ui-providers",
-      "react-aria/date-field",
-      "react-aria/calendar",
-      "react-aria/range-calendar",
-      "react-aria/date-picker",
-      "react-aria/date-range-picker",
-      "react-aria/link",
-      "react-aria/search-field",
-      "react-aria/grid-list",
-      "react-aria/focusable",
-      "react-aria/file-trigger",
+    expect(JS_ENTRY_BUDGETS.map((budget) => budget.name).toSorted()).toEqual(published.toSorted());
+    expect(NAMED_IMPORT_BUDGETS.map((budget) => budget.name)).toEqual([
       "icons/Check",
       "Button from the root barrel",
     ]);
@@ -141,7 +65,5 @@ describe("size-limit harness", () => {
       measuredGzip: 1000,
       ceilingGzip: 1200,
     });
-    // Ticket-46 standing ceilings may sit slightly above a fresh ×1.5 (badge, date-picker).
-    expect(withDerivedCeiling({ measuredGzip: 15658, ceilingGzip: 23493 }).ceilingGzip).toBe(23493);
   });
 });

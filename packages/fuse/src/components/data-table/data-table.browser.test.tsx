@@ -108,9 +108,11 @@ function columnHeader(name: string): HTMLElement {
 }
 
 describe("DataTable sorting", () => {
-  it("toggles aria-sort on the sortable <th> and leaves an unsortable one without it", async () => {
+  it("renders header.SortButton and cell.NumberCell definitions, and toggles aria-sort on the sortable <th> only", async () => {
     renderInEnglish(<RegisteredTable />);
 
+    expect(roleNamed("button", "Customer").closest("th")).toBe(columnHeader("Customer"));
+    expect(roleNamed("cell", "1,234.5")).toBeInstanceOf(HTMLTableCellElement);
     expect(columnHeader("Customer").getAttribute("aria-sort")).toBe("none");
     expect(columnHeader("Amount").hasAttribute("aria-sort")).toBe(false);
 
@@ -125,14 +127,6 @@ describe("DataTable sorting", () => {
       .element(page.getByRole("columnheader", { name: "Customer" }))
       .toHaveAttribute("aria-sort", "descending");
     expect(page.getByRole("row").elements()[1]?.textContent).toContain("Oslo");
-  });
-
-  it("renders header.SortButton and cell.NumberCell column definitions through table.Content", () => {
-    renderInEnglish(<RegisteredTable />);
-
-    expect(roleNamed("button", "Customer").closest("th")).toBe(columnHeader("Customer"));
-    expect(roleNamed("cell", "1,234.5")).toBeInstanceOf(HTMLTableCellElement);
-    expect(roleNamed("cell", "Bergen")).toBeInstanceOf(HTMLTableCellElement);
   });
 });
 
@@ -211,14 +205,17 @@ function pageStatusRegion(): HTMLElement {
 }
 
 describe("DataTable pagination", () => {
-  it("navigates a known total and disables the moves its position rules out", async () => {
+  it("navigates a known total, announces it through one persistent status region, and disables the moves its position rules out", async () => {
     renderInEnglish(<ClientPagedTable data={ORDERS_25} />);
 
-    expect(page.getByText("Page 1 of 3", { exact: true }).element()).toBeTruthy();
+    const region = pageStatusRegion();
+    expect(region.textContent).toBe("Page 1 of 3");
     expect(disabledMoves()).toEqual([true, true, false, false]);
 
     await userEvent.click(pageButtons().next);
     await expect.element(page.getByText("Page 2 of 3", { exact: true })).toBeVisible();
+    expect(pageStatusRegion()).toBe(region);
+    expect(region.textContent).toBe("Page 2 of 3");
     expect(roleNamed("cell", "Customer 11")).toBeInstanceOf(HTMLTableCellElement);
 
     await userEvent.click(pageButtons().last);
@@ -245,18 +242,6 @@ describe("DataTable pagination", () => {
     // Activating the unavailable move again changes nothing.
     await userEvent.keyboard("{Enter}");
     expect(pageStatusRegion().textContent).toBe("Page 3 of 3");
-  });
-
-  it("announces the page through one persistent status region", async () => {
-    renderInEnglish(<ClientPagedTable data={ORDERS_25} />);
-
-    const region = pageStatusRegion();
-    expect(region.textContent).toBe("Page 1 of 3");
-
-    await userEvent.click(pageButtons().next);
-    await expect.element(page.getByText("Page 2 of 3", { exact: true })).toBeVisible();
-    expect(pageStatusRegion()).toBe(region);
-    expect(region.textContent).toBe("Page 2 of 3");
   });
 
   it("shows an empty known total as page 1 of 1 with every move disabled", () => {
@@ -809,15 +794,11 @@ describe("DataTable row actions", () => {
     );
   }
 
-  it("gives every trigger its own name", () => {
+  it("names every trigger after its row, and the actions header without visible text, with no sort or hide control", async () => {
     renderInEnglish(<ActionsTable />);
 
     const triggers = ["Bergen", "Alta", "Oslo"].map((name) => roleNamed("button", `Actions for ${name}`));
     expect(new Set(triggers).size).toBe(3);
-  });
-
-  it("names the actions header without visible text and offers no sort or hide control", async () => {
-    renderInEnglish(<ActionsTable />);
 
     const header = columnHeader("Actions");
     const name = header.firstElementChild;

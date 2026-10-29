@@ -38,9 +38,9 @@ function authoredPage(slug: string): AuthoredPage {
 
 /** The component's committed API artifact — the one source of its API data. */
 function api(slug: string): ComponentApiArtifact {
-  // SAFETY: every api.json is written by one serialiser from `ComponentApiArtifact`, and the
-  // drift check (`api-artifact.test.ts`) regenerates and byte-compares each committed file, so
-  // a shape that disagrees with the type fails there before this read can see it.
+  // SAFETY: every api.json is written by one serialiser from `ComponentApiArtifact`; generation
+  // rewrites a committed file that disagrees, and the drift check (`api-artifact.test.ts`)
+  // fails on that rewrite.
   return JSON.parse(readFileSync(resolveComponentPaths(slug).apiFile, "utf8")) as ComponentApiArtifact;
 }
 

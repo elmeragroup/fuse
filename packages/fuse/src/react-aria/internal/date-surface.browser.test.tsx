@@ -1,5 +1,5 @@
 import { CalendarDate } from "@internationalized/date";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -14,37 +14,35 @@ import { UiProviders } from "../ui-providers/ui-providers";
 
 const date = new CalendarDate(2026, 7, 14);
 
+// Escape-to-dismiss and the arrow-key edits are React Aria's; the pickers' own suites drive
+// them, so this suite reads only the surface the composites paint.
 describe("date field surface ownership", () => {
   for (const kind of ["picker", "range"] as const) {
-    for (const density of DENSITIES) {
-      it(`${kind} has one border and keyboard ring at ${density} density`, async () => {
+    it(`${kind} has one border and keyboard ring at both densities`, async () => {
+      const { host } = renderThemed(
+        <UiProviders locale="en-US" navigate={() => undefined}>
+          <button>Before</button>
+          <div style={{ width: 480 }}>
+            {kind === "picker" ? (
+              <DatePicker label="Date" defaultValue={date} />
+            ) : (
+              <DateRangePicker label="Date" defaultValue={{ start: date, end: date.add({ days: 7 }) }} />
+            )}
+          </div>
+        </UiProviders>
+      );
+      const surface = page.getByRole("group", { name: "Date", exact: true }).element();
+      if (!(surface instanceof HTMLElement)) throw new Error("Missing field surface");
+      const segments = Array.from(host.querySelectorAll('[role="spinbutton"]'));
+      const rows = Array.from(new Set(segments.map((element) => element.parentElement)));
+      expect(rows).toHaveLength(kind === "range" ? 2 : 1);
+      for (const density of DENSITIES) {
         stampDensity(density);
-        const onChange = vi.fn();
-        const { host } = renderThemed(
-          <UiProviders locale="en-US" navigate={() => undefined}>
-            <button>Before</button>
-            <div style={{ width: 480 }}>
-              {kind === "picker" ? (
-                <DatePicker label="Date" defaultValue={date} onChange={onChange} />
-              ) : (
-                <DateRangePicker
-                  label="Date"
-                  defaultValue={{ start: date, end: date.add({ days: 7 }) }}
-                  onChange={onChange}
-                />
-              )}
-            </div>
-          </UiProviders>
-        );
         await userEvent.click(page.getByRole("button", { name: "Before" }));
         await userEvent.keyboard("{Tab}");
-        const segments = Array.from(host.querySelectorAll('[role="spinbutton"]'));
-        const rows = Array.from(new Set(segments.map((element) => element.parentElement)));
-        const surface = page.getByRole("group", { name: "Date", exact: true }).element();
-        if (!(surface instanceof HTMLElement)) throw new Error("Missing field surface");
-        expect(surface.getBoundingClientRect().height).toBe(density === "dense" ? 36 : 44);
+        expect(surface.getBoundingClientRect().height, density).toBe(density === "dense" ? 36 : 44);
         expect(getComputedStyle(surface).borderTopWidth).toBe("1px");
-        expectFocusRing(surface, "the field surface owns the keyboard ring");
+        expectFocusRing(surface, `the field surface owns the keyboard ring at ${density}`);
         for (const row of rows) {
           if (!(row instanceof HTMLElement)) throw new Error("Missing segment row");
           const style = getComputedStyle(row);
@@ -56,27 +54,8 @@ describe("date field surface ownership", () => {
             surface.getBoundingClientRect().height - 2
           );
         }
-        await userEvent.keyboard("{ArrowUp}");
-        expect(onChange).toHaveBeenCalled();
-        if (kind === "range") {
-          const separator = Array.from(surface.querySelectorAll('span[aria-hidden="true"]')).find(
-            (element) => element.textContent === "–"
-          );
-          if (!(separator instanceof HTMLElement) || rows.length !== 2)
-            throw new Error("Missing range layout");
-          expect(rows[0]?.getBoundingClientRect().right).toBeLessThanOrEqual(
-            separator.getBoundingClientRect().left
-          );
-          expect(separator.getBoundingClientRect().right).toBeLessThanOrEqual(
-            rows[1]?.getBoundingClientRect().left ?? 0
-          );
-        }
-        await userEvent.click(page.getByRole("button", { name: /^calendar/i }));
-        await expect.element(page.getByRole("dialog", { name: /calendar/i })).toBeVisible();
-        await userEvent.keyboard("{Escape}");
-        await expect.element(page.getByRole("dialog", { name: /calendar/i })).not.toBeInTheDocument();
-      });
-    }
+      }
+    });
   }
 
   for (const kind of ["field", "picker"] as const) {

@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { DENSITIES } from "@elmeragroup/fuse/theme";
 import { PART_DENSITY, resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { DensityPart } from "@elmeragroup/fuse/theme-catalog";
 
@@ -76,6 +77,27 @@ beforeAll(async () => {
 }, 900_000);
 
 describe("density coverage", () => {
+  // The later densities re-read the parts the first one found, so a page whose parts one density
+  // misses lost a reveal or a restamp, and its role checks pass on nothing. A virtualized list
+  // mounts fewer of its taller rows, so the check compares which parts each density read.
+  it("reads every swept page's parts at every density", () => {
+    const slots = new Map<string, Set<string>[]>();
+    for (const { page, density, slot } of measured) {
+      const perDensity = slots.get(page) ?? DENSITIES.map(() => new Set<string>());
+      perDensity[DENSITIES.indexOf(density)]?.add(slot);
+      slots.set(page, perDensity);
+    }
+    const uneven = [...slots].flatMap(([page, perDensity]) => {
+      const all = new Set(perDensity.flatMap((read) => [...read]));
+      return DENSITIES.flatMap((density, index) => {
+        const missed = [...all].filter((slot) => perDensity[index]?.has(slot) !== true);
+        return missed.length === 0 ? [] : [`${page} at ${density} misses ${missed.sort().join(", ")}`];
+      });
+    });
+    expect(slots.size).toBeGreaterThan(0);
+    expect(uneven).toEqual([]);
+  });
+
   it("finds a declared role for every rendered part", () => {
     const undeclared = new Set(
       measured.filter((instance) => partOf(instance) === undefined).map(({ slot }) => slot)

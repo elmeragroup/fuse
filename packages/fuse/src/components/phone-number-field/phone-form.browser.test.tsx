@@ -73,9 +73,12 @@ describe("PhoneNumberField in a Form", () => {
     render(<Signup errors={{ phone: "Enter a Swedish number" }} phone={{ defaultValue: "+4741234567" }} />);
     await openPicker();
     await userEvent.fill(countrySearch(), "swe");
+    await vi.waitFor(() => {
+      expect(page.getByRole("option", { name: "Sweden", exact: false }).query()).not.toBeNull();
+    });
     expect(alertTexts()).toEqual(["Enter a Swedish number"]);
-    await userEvent.keyboard("{Escape}");
-    await selectCountry("Sweden");
+    // The same open picker commits the filtered row, which changes the number.
+    await userEvent.keyboard("{ArrowDown}{Enter}");
     await expect.poll(alertTexts).toEqual([]);
   });
 

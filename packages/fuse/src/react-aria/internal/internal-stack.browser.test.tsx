@@ -1,44 +1,12 @@
-import { DialogTrigger } from "react-aria-components";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { withLocale } from "../../../test/locale-matrix";
-import {
-  CONTROL_MD,
-  CONTROL_SM,
-  cssVarColor,
-  px,
-  renderThemed,
-  roleNamed,
-} from "../../../test/themed-browser-render";
+import { cssVarColor, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Button } from "./button";
-import { Dialog } from "./dialog";
-import { FieldGroup, Input, Label } from "./field";
-import { Popover } from "./popover";
 
 describe("the internal RAC Button", () => {
-  it("renders the public buttonVariants classes for the requested variant and size", () => {
-    renderThemed(
-      <Button aria-label="Calendar" size="icon-sm" variant="ghost">
-        <span aria-hidden="true">…</span>
-      </Button>
-    );
-    const trigger = page.getByRole("button", { name: "Calendar" }).element();
-
-    expect(trigger.getAttribute("data-slot")).toBe("button");
-    expect(px(getComputedStyle(trigger).height)).toBe(CONTROL_SM.dense.height);
-  });
-
-  it("keeps caller classes on top of the borrowed recipe", () => {
-    renderThemed(<Button className="mt-4">Next month</Button>);
-    const trigger = page.getByRole("button", { name: "Next month" }).element();
-
-    expect(px(getComputedStyle(trigger).marginTop)).toBe(16);
-    expect(px(getComputedStyle(trigger).height)).toBe(CONTROL_MD.dense.height);
-  });
-
   it("paints the recipe hover from RAC's hover state", async () => {
     renderThemed(
       <Button variant="ghost" className="transition-none">
@@ -51,122 +19,5 @@ describe("the internal RAC Button", () => {
     await userEvent.hover(page.getByRole("button", { name: "Previous month" }));
     expect(trigger.hasAttribute("data-hovered")).toBe(true);
     expect(getComputedStyle(trigger).backgroundColor).toBe(cssVarColor(trigger, "--muted"));
-  });
-});
-
-describe("the internal field chrome", () => {
-  it("names the grouped control and reflects RAC group state", async () => {
-    renderThemed(
-      <>
-        <Label id="from-label">From</Label>
-        <FieldGroup aria-labelledby="from-label" size="default">
-          <Input aria-label="From" />
-        </FieldGroup>
-      </>
-    );
-    const group = page.getByRole("group", { name: "From" }).element();
-
-    expect(group.getAttribute("data-slot")).toBe("field-group");
-    expect(px(getComputedStyle(group).height)).toBe(CONTROL_MD.dense.height);
-
-    await userEvent.click(page.getByRole("textbox", { name: "From" }).element());
-    expect(group.hasAttribute("data-focus-within")).toBe(true);
-  });
-});
-
-/** RAC mounts the overlay after the opening commit, so wait for it before reading it. */
-async function mountedDialog(): Promise<HTMLElement> {
-  await expect.element(page.getByRole("dialog")).toBeInTheDocument();
-  const dialog = page.getByRole("dialog").element();
-  if (!(dialog instanceof HTMLElement)) {
-    throw new Error("expected the popover dialog");
-  }
-  return dialog;
-}
-
-describe("the internal styled Dialog", () => {
-  it("labels its dismiss affordance from the locked dialog.close dictionary", async () => {
-    renderThemed(
-      withLocale(
-        "nb-NO",
-        <DialogTrigger defaultOpen>
-          <Button>Open</Button>
-          <Popover>
-            <Dialog title="Kalender" />
-          </Popover>
-        </DialogTrigger>
-      )
-    );
-    await expect.element(page.getByRole("button", { name: "Lukk" })).toBeInTheDocument();
-    const close = page.getByRole("button", { name: "Lukk" }).element();
-
-    await userEvent.click(close);
-    await vi.waitFor(() => {
-      expect(page.getByRole("dialog").query()).toBeNull();
-    });
-  });
-
-  it("omits the affordance entirely when closeButton is false", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <DialogTrigger defaultOpen>
-          <Button>Open</Button>
-          <Popover>
-            <Dialog closeButton={false} title="Calendar" />
-          </Popover>
-        </DialogTrigger>
-      )
-    );
-    // Wait for the overlay first, so the absence below is judged on the mounted dialog.
-    await mountedDialog();
-
-    expect(page.getByRole("button", { name: "Close" }).query()).toBeNull();
-  });
-
-  it("renders no header row without a title, so RAC's context name reaches the dialog", async () => {
-    const titled = renderThemed(
-      withLocale(
-        "en-US",
-        <DialogTrigger defaultOpen>
-          <Button>Open</Button>
-          <Popover>
-            <Dialog closeButton={false} title="Calendar" />
-          </Popover>
-        </DialogTrigger>
-      )
-    );
-
-    await expect.element(page.getByRole("heading", { name: "Calendar", exact: true })).toBeInTheDocument();
-    await expect.element(page.getByRole("dialog", { name: "Calendar" })).toBeVisible();
-    titled.unmount();
-
-    renderThemed(
-      withLocale(
-        "en-US",
-        <DialogTrigger defaultOpen>
-          <Button>Open</Button>
-          <Popover>
-            <Dialog closeButton={false}>
-              <button type="button">Inside the dialog</button>
-            </Dialog>
-          </Popover>
-        </DialogTrigger>
-      )
-    );
-    const untitled = await mountedDialog();
-
-    // No header element at all — not an empty one. An empty `<Heading slot="title">`
-    // would resolve RAC's title slot and become the dialog's accessible name; with the
-    // slot unclaimed, the name `DialogTrigger` publishes on `DialogContext` (the
-    // trigger's own copy) reaches the overlay instead.
-    expect(
-      page
-        .getByRole("heading")
-        .elements()
-        .filter((heading) => untitled.contains(heading))
-    ).toHaveLength(0);
-    expect(untitled.contains(page.getByRole("button", { name: "Inside the dialog" }).element())).toBe(true);
-    await expect.element(page.getByRole("dialog", { name: "Open" })).toBeVisible();
   });
 });

@@ -57,12 +57,20 @@ function singlePageKit(): KitSpec {
   };
 }
 
-/** A synced file the plugin applied the single-page kit to, opened again for the next run. */
+let singlePage: Promise<FakeFigma> | undefined;
+
+/**
+ * A synced file the plugin applied the single-page kit to, opened again for the next run. The suite
+ * applies it once and hands each call a fork, which changes apart from the others.
+ */
 async function singlePageFile(): Promise<FakeFigma> {
-  const file = syncedFile(collections);
-  await reconcileKit(file.figma, singlePageKit(), true);
-  file.reopen();
-  return file;
+  singlePage ??= (async () => {
+    const file = syncedFile(collections);
+    await reconcileKit(file.figma, singlePageKit(), true);
+    file.reopen();
+    return file;
+  })();
+  return (await singlePage).fork();
 }
 
 /** Each child's id, by its name. */

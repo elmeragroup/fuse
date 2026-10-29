@@ -24,7 +24,6 @@ import {
   phoneSubmission,
   selectCountry,
 } from "../../../test/phone-browser-queries";
-import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../../test/phone-picker-contract";
 import {
   CONTROL_MD,
   fieldRootFrom,
@@ -161,18 +160,7 @@ describe("PhoneNumberField", () => {
     await expect.element(textboxNamed("Mobile")).toHaveAccessibleDescription("Used for delivery updates.");
   });
 
-  it("names the country search independently of the Field label and opts it out of autofill", async () => {
-    renderField(<PhoneNumberField label="Mobile" />);
-    await openPicker();
-    const search = countrySearch();
-    expect(search).toBeInstanceOf(HTMLInputElement);
-    expect(search.getAttribute("aria-labelledby")).toBeFalsy();
-    expect(search.getAttribute("autocomplete")).toBe("one-time-code");
-    expect(page.getByRole("combobox", { name: "Search countries", exact: true }).query()).not.toBeNull();
-    expect(page.getByRole("combobox", { name: "Mobile", exact: true }).query()).toBeNull();
-  });
-
-  it("keeps the picker's ids and descriptions apart from the number input's", async () => {
+  it("keeps the picker's search, ids and descriptions apart from the number input's, insets the search and clamps the list", async () => {
     renderField(
       <PhoneNumberField label="Mobile" description="We text a code." isInvalid errorMessage="Bad number." />
     );
@@ -181,44 +169,14 @@ describe("PhoneNumberField", () => {
     // error sits directly under the control, ahead of the description, and is read first.
     await expect.element(textboxNamed("Mobile")).toHaveAccessibleDescription("Bad number. We text a code.");
     await expect.element(trigger).toHaveAccessibleDescription("Country: Norway +47");
-    await openPicker();
-    const ids = [trigger.id, countrySearch().id, textboxNamed("Mobile").id];
-    expect(new Set(ids).size, JSON.stringify(ids)).toBe(3);
-  });
-
-  it("describes the trigger with the selected country and its dial code in each locale", async () => {
-    const described = {
-      "nb-NO": "Land: Norge +47",
-      "sv-SE": "Land: Norge +47",
-      "en-US": "Country: Norway +47",
-      "fi-FI": "Maa: Norja +47",
-    } as const;
-    for (const locale of SUPPORTED_LOCALES) {
-      const { unmount } = renderField(<PhoneNumberField label="Mobile" />, locale);
-      await expect
-        .element(roleNamed("button", SELECT_COUNTRY_COPY[locale]))
-        .toHaveAccessibleDescription(described[locale]);
-      unmount();
-    }
-
-    renderField(<PhoneNumberField label="Mobile" />);
-    await selectCountry("Sweden");
-    await expect
-      .element(roleNamed("button", "Select country"))
-      .toHaveAccessibleDescription("Country: Sweden +46");
-  });
-
-  it("puts no aria-readonly on the read-only trigger, which the button role does not support", async () => {
-    const { host } = renderField(<PhoneNumberField label="Mobile" isReadOnly />);
-    expect(roleNamed("button", "Select country").hasAttribute("aria-readonly")).toBe(false);
-    // The trigger's name leaves out its visible dial code (WCAG 2.5.3); the open-work list records it.
-    await assertNoAxeViolations(host, ["label-content-name-mismatch"]);
-  });
-
-  it("insets the country search from the popup edge", async () => {
-    renderField(<PhoneNumberField label="Mobile" />);
-    await openPicker();
+    const list = await openPicker();
     const search = countrySearch();
+    expect(search.getAttribute("aria-labelledby")).toBeFalsy();
+    expect(search.getAttribute("autocomplete")).toBe("one-time-code");
+    expect(page.getByRole("combobox", { name: "Mobile", exact: true }).query()).toBeNull();
+    const ids = [trigger.id, search.id, textboxNamed("Mobile").id];
+    expect(new Set(ids).size, JSON.stringify(ids)).toBe(3);
+
     // DOM audit: popup chrome has no role; inset is the search group's box against the content slot.
     const group = search.closest("[data-slot=input-group]");
     const popup = group?.closest("[data-slot=combobox-content]");
@@ -227,19 +185,23 @@ describe("PhoneNumberField", () => {
     }
     const groupBox = group.getBoundingClientRect();
     const popupBox = popup.getBoundingClientRect();
-    const styles = getComputedStyle(group);
-    const observed = {
-      slot: group.getAttribute("data-slot"),
-      margin: [styles.marginTop, styles.marginRight, styles.marginBottom, styles.marginLeft],
-      inset: {
-        top: groupBox.top - popupBox.top,
-        left: groupBox.left - popupBox.left,
-        right: popupBox.right - groupBox.right,
-      },
-    };
-    expect(observed.inset.top, JSON.stringify(observed)).toBeGreaterThan(0);
-    expect(observed.inset.left, JSON.stringify(observed)).toBeGreaterThan(0);
-    expect(observed.inset.right, JSON.stringify(observed)).toBeGreaterThan(0);
+    expect(groupBox.top - popupBox.top, "search inset top").toBeGreaterThan(0);
+    expect(groupBox.left - popupBox.left, "search inset left").toBeGreaterThan(0);
+    expect(popupBox.right - groupBox.right, "search inset right").toBeGreaterThan(0);
+
+    // Before the picker composed `Combobox.List`, its own clamp was written
+    // `max-h-[min(300px,calc(var(--available-height)-2.75rem))]`, and CSS `calc` requires
+    // whitespace around `-`: the whole `min()` was invalid, the declaration was dropped, the
+    // list never scrolled, and the popup grew to the height of every country row
+    expect(list.scrollHeight).toBeGreaterThan(list.clientHeight);
+    expect(list.clientHeight).toBeLessThan(window.innerHeight);
+  });
+
+  it("puts no aria-readonly on the read-only trigger, which the button role does not support", async () => {
+    const { host } = renderField(<PhoneNumberField label="Mobile" isReadOnly />);
+    expect(roleNamed("button", "Select country").hasAttribute("aria-readonly")).toBe(false);
+    // The trigger's name leaves out its visible dial code (WCAG 2.5.3); the open-work list records it.
+    await assertNoAxeViolations(host, ["label-content-name-mismatch"]);
   });
 
   it("names only the selected country through Intl.DisplayNames until the country popup opens", async () => {
@@ -276,6 +238,9 @@ describe("PhoneNumberField", () => {
     expect(roleNamed("button", "Select country").textContent).toContain("+47");
     await selectCountry("Sweden");
     expect(roleNamed("button", "Select country").textContent).toContain("+46");
+    await expect
+      .element(roleNamed("button", "Select country"))
+      .toHaveAccessibleDescription("Country: Sweden +46");
     // Focus moves to the number input as the picker closes, which can land a frame later.
     await expect.element(page.getByRole("textbox", { name: "Mobile", exact: true })).toHaveFocus();
   });
@@ -395,12 +360,18 @@ describe("PhoneNumberField", () => {
     expect(locked).toHaveProperty("value", "41234567");
   });
 
-  it("renders dictionary defaults in all four locales and lets override props win", async () => {
+  it("renders dictionary defaults in all four locales, describes the trigger's country in each, and lets override props win", async () => {
+    const described = {
+      "nb-NO": "Land: Norge +47",
+      "sv-SE": "Land: Norge +47",
+      "en-US": "Country: Norway +47",
+      "fi-FI": "Maa: Norja +47",
+    } as const;
     for (const locale of SUPPORTED_LOCALES) {
       const { unmount } = renderField(<PhoneNumberField label="Mobile" />, locale);
-      expect(
-        page.getByRole("button", { name: SELECT_COUNTRY_COPY[locale], exact: true }).query()
-      ).not.toBeNull();
+      await expect
+        .element(roleNamed("button", SELECT_COUNTRY_COPY[locale]))
+        .toHaveAccessibleDescription(described[locale]);
       await userEvent.click(page.getByRole("button", { name: SELECT_COUNTRY_COPY[locale], exact: true }));
       await vi.waitFor(() => {
         expect(page.getByRole("listbox").query()).not.toBeNull();
@@ -432,7 +403,7 @@ describe("PhoneNumberField", () => {
     });
   });
 
-  it("renders packaged flag images for NO/SE/FI with empty alt and lazy-image attributes", () => {
+  it("renders the packaged flag image on the trigger with empty alt and lazy-image attributes", () => {
     renderField(<PhoneNumberField label="Norway" defaultCountryCode="NO" />);
     const img = triggerFlagImg();
     expect(img.getAttribute("alt")).toBe("");
@@ -445,34 +416,6 @@ describe("PhoneNumberField", () => {
     expect(img.getAttribute("src")).toBe(flagAssets.NO);
     expect(flagCodeFromSrc(img.getAttribute("src") ?? "")).toBe("NO");
     expect(img.getAttribute("src")).not.toContain("flagcdn.com");
-  });
-
-  it("never lists AC, BQ, EH, TA or excluded product countries in the picker", async () => {
-    renderField(<PhoneNumberField label="Mobile" />);
-    await openPicker();
-    const codes = optionFlagCodes();
-    expect(codes.length).toBeGreaterThan(10);
-    for (const code of FLAG_GAP_COUNTRY_CODES) {
-      expect(codes, code).not.toContain(code);
-    }
-    for (const code of EXCLUDED_PRODUCT_COUNTRY_CODES) {
-      expect(codes, code).not.toContain(code);
-    }
-    for (const code of codes) {
-      expect(Object.hasOwn(flagAssets, code), code).toBe(true);
-    }
-  });
-
-  it("falls back from an untyped unresolved defaultCountryCode to NO", () => {
-    renderField(
-      <PhoneNumberField
-        label="Mobile"
-        // @ts-expect-error AC has no packaged flag; runtime falls back to NO.
-        defaultCountryCode="AC"
-      />
-    );
-    expect(roleNamed("button", "Select country").textContent).toContain("+47");
-    expect(triggerFlagImg().getAttribute("src")).toBe(flagAssets.NO);
   });
 
   it("portals the picker into an explicit container element", async () => {
@@ -489,17 +432,6 @@ describe("PhoneNumberField", () => {
     await openPicker();
     const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
     expect(island.contains(countryListbox())).toBe(true);
-  });
-
-  it("keeps the list clamped inside the popup instead of growing it to the full country list", async () => {
-    renderField(<PhoneNumberField label="Mobile" />);
-    const list = await openPicker();
-    // Before the picker composed `Combobox.List`, its own clamp was written
-    // `max-h-[min(300px,calc(var(--available-height)-2.75rem))]`, and CSS `calc` requires
-    // whitespace around `-`: the whole `min()` was invalid, the declaration was dropped, the
-    // list never scrolled, and the popup grew to the height of every country row
-    expect(list.scrollHeight).toBeGreaterThan(list.clientHeight);
-    expect(list.clientHeight).toBeLessThan(window.innerHeight);
   });
 
   it("paints the within ring on the group for keyboard focus at both densities, and not for mouse focus on the trigger", async () => {

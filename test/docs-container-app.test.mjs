@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -13,10 +13,28 @@ import { asRecord, asString } from "./json-object.mjs";
 const script = fileURLToPath(new URL("../.github/scripts/docs-container-app.sh", import.meta.url));
 
 /**
+ * Runs the script to completion without blocking the worker, so the cases run side by side.
+ * @param {string[]} args
+ * @param {{ env: Record<string, string | undefined>, timeout: number }} options
+ * @returns {Promise<{ status: number | null, stdout: string, stderr: string }>}
+ */
+function bash(args, options) {
+  return new Promise((resolve, reject) => {
+    const child = spawn("bash", args, options);
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8").on("data", (chunk) => (stdout += chunk));
+    child.stderr.setEncoding("utf8").on("data", (chunk) => (stderr += chunk));
+    child.on("error", reject);
+    child.on("close", (status) => resolve({ status, stdout, stderr }));
+  });
+}
+
+/**
  * @param {string} mode
  * @param {Record<string, { stdout?: string, stderr?: string, status?: number }[]>} replies
  */
-function deploy(mode, replies = {}) {
+async function deploy(mode, replies = {}) {
   const directory = mkdtempSync(join(tmpdir(), "fuse-docs-deploy-"));
   const app = mode === "prod" ? "p-fuse-docs-ca" : "t-fuse-docs-ca";
   const output = join(directory, "output");
@@ -60,8 +78,7 @@ process.exit(response.status ?? 0);
     { mode: 0o755 }
   );
   try {
-    const result = spawnSync("bash", [script, mode], {
-      encoding: "utf8",
+    const result = await bash([script, mode], {
       timeout: 5_000,
       env: {
         ...process.env,
@@ -105,14 +122,14 @@ function value(args, flag) {
   return args[index + 1];
 }
 
-describe("docs Container App deployment", () => {
+describe.concurrent("docs Container App deployment", () => {
   it.each([
     ["prod", "single", "1", "r-9001-1", "pfusecr.azurecr.io", "/identities/prod"],
     ["preview", "multiple", "0", "bootstrap", "tfusecr.azurecr.io", "/identities/preview"],
   ])(
     "creates a missing %s app with its runtime identity and scaling",
-    (mode, revisionMode, minimum, suffix, registry, identity) => {
-      const result = deploy(mode, { "containerapp list": [{ stdout: "" }] });
+    async (mode, revisionMode, minimum, suffix, registry, identity) => {
+      const result = await deploy(mode, { "containerapp list": [{ stdout: "" }] });
       expect(result.status, result.stderr).toBe(0);
       const creates = invocations(result.calls, "containerapp create");
       expect(creates).toHaveLength(1);
@@ -149,8 +166,8 @@ describe("docs Container App deployment", () => {
     }
   );
 
-  it("updates existing production without trying to recreate it", () => {
-    const result = deploy("prod");
+  it("updates existing production without trying to recreate it", async () => {
+    const result = await deploy("prod");
     expect(result.status, result.stderr).toBe(0);
     expect(invocations(result.calls, "containerapp create")).toHaveLength(0);
     const update = invocations(result.calls, "containerapp update")[0];
@@ -158,16 +175,16 @@ describe("docs Container App deployment", () => {
     expect(value(update, "--revision-suffix")).toBe("r-9001-1");
   });
 
-  it("can redeploy an existing production app after a failed rollout", () => {
-    const result = deploy("prod", {
+  it("can redeploy an existing production app after a failed rollout", async () => {
+    const result = await deploy("prod", {
       "containerapp show properties.provisioningState": [{ stdout: "Failed" }],
     });
     expect(result.status, result.stderr).toBe(0);
     expect(invocations(result.calls, "containerapp update")).toHaveLength(1);
   });
 
-  it("moves the preview label before retiring only older revisions of that PR", () => {
-    const result = deploy("preview", {
+  it("moves the preview label before retiring only older revisions of that PR", async () => {
+    const result = await deploy("preview", {
       "containerapp revision list": [
         {
           stdout:
@@ -185,8 +202,8 @@ describe("docs Container App deployment", () => {
     expect(result.calls.indexOf(label)).toBeLessThan(result.calls.indexOf(retired[0]));
   });
 
-  it("recovers when another PR creates the shared app first", () => {
-    const result = deploy("preview", {
+  it("recovers when another PR creates the shared app first", async () => {
+    const result = await deploy("preview", {
       "containerapp list": [{ stdout: "" }, { stdout: "t-fuse-docs-ca" }],
       "containerapp create": [{ status: 1, stderr: "App already exists" }],
     });
@@ -212,8 +229,8 @@ describe("docs Container App deployment", () => {
       },
     ],
     ["label failure", { "containerapp revision label add": [{ status: 1, stderr: "Revision not ready" }] }],
-  ])("fails closed on %s without retiring a working preview", (_name, replies) => {
-    const result = deploy("preview", replies);
+  ])("fails closed on %s without retiring a working preview", async (_name, replies) => {
+    const result = await deploy("preview", replies);
     expect(result.status).not.toBe(0);
     expect(invocations(result.calls, "containerapp revision deactivate")).toHaveLength(0);
     expect(result.output).toBe("");
@@ -222,14 +239,14 @@ describe("docs Container App deployment", () => {
     }
   });
 
-  it("makes teardown a no-op if no app was ever created", () => {
-    const result = deploy("teardown", { "containerapp list": [{ stdout: "" }] });
+  it("makes teardown a no-op if no app was ever created", async () => {
+    const result = await deploy("teardown", { "containerapp list": [{ stdout: "" }] });
     expect(result.status, result.stderr).toBe(0);
     expect(result.calls).toHaveLength(1);
   });
 
-  it.each(["pr-38", ""])("removes only the closed PR's revisions when its label is '%s'", (label) => {
-    const result = deploy("teardown", {
+  it.each(["pr-38", ""])("removes only the closed PR's revisions when its label is '%s'", async (label) => {
+    const result = await deploy("teardown", {
       "containerapp show properties.configuration.ingress.traffic[?label == 'pr-38'].label": [
         { stdout: label },
       ],

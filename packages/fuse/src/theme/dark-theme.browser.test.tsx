@@ -43,6 +43,16 @@ function expectedElement(
   return element;
 }
 
+/** The native color scheme and every role token an element computes. */
+function computedTokens(element: HTMLElement): Record<string, string> {
+  const style = getComputedStyle(element);
+  const entries: Array<readonly [string, string]> = [
+    ["color-scheme", style.colorScheme],
+    ...TOKEN_NAMES.map((key) => [key, style.getPropertyValue(`--${key}`).trim()] as const),
+  ];
+  return Object.fromEntries(entries);
+}
+
 function expectTokens(actual: HTMLElement, expected: HTMLElement, label: string): void {
   const actualStyle = getComputedStyle(actual);
   const expectedStyle = getComputedStyle(expected);
@@ -84,10 +94,17 @@ describe("dark CSS", () => {
 
     for (const colorScheme of ["light", "dark", "light"] as const) {
       document.documentElement.setAttribute("data-theme", colorScheme);
+      // The oracle depends only on the inner theme and the scheme, so it is read once per pair.
+      const expectedByInner = new Map(
+        LEGAL_THEMES.map((inner) => {
+          const expected = expectedElement(host, inner, colorScheme);
+          const tokens = computedTokens(expected);
+          expected.remove();
+          return [inner, tokens] as const;
+        })
+      );
       for (const { innerElement, inner, label } of scopes) {
-        const expected = expectedElement(host, inner, colorScheme);
-        expectTokens(innerElement, expected, `${colorScheme} ${label}`);
-        expected.remove();
+        expect(computedTokens(innerElement), `${colorScheme} ${label}`).toEqual(expectedByInner.get(inner));
       }
     }
   });

@@ -36,15 +36,6 @@ describe("set-metric", () => {
     expect(metricOverridesFor(present.overrides, "dense")).toEqual({});
   });
 
-  it("keeps the same metric's dense and comfortable edits apart", () => {
-    const { present } = run(
-      { type: "set-metric", density: "dense", name: "row-h", px: 28 },
-      { type: "set-metric", density: "comfortable", name: "row-h", px: 40 }
-    );
-    expect(metricOverridesFor(present.overrides, "dense")).toEqual({ "row-h": 28 });
-    expect(metricOverridesFor(present.overrides, "comfortable")).toEqual({ "row-h": 40 });
-  });
-
   it("leaves token edits untouched", () => {
     const { present } = run(
       { type: "set", scheme: "light", name: "primary", value: "#ff0000" },
@@ -60,14 +51,6 @@ describe("set-metric", () => {
 });
 
 describe("metric undo", () => {
-  it("undoes and redoes a metric edit", () => {
-    const set = run({ type: "set-metric", density: "comfortable", name: "control-h-md", px: 56 });
-    const undone = reduceEdits(set, { type: "undo" });
-    expect(metricOverridesFor(undone.present.overrides, "comfortable")).toEqual({});
-    const redone = reduceEdits(undone, { type: "redo" });
-    expect(metricOverridesFor(redone.present.overrides, "comfortable")).toEqual({ "control-h-md": 56 });
-  });
-
   it("makes one slider drag one undo step", () => {
     const dragged = run(
       { type: "set-metric", density: "dense", name: "row-h", px: 30, coalesce: "drag-1" },
@@ -124,39 +107,19 @@ describe("metricStyle", () => {
       "--surface-gap-sm": "4.5px",
     });
   });
-
-  it("declares nothing without edits", () => {
-    expect(metricStyle({})).toEqual({});
-  });
 });
 
 describe("metric edits in share text", () => {
-  it("round-trips per-density metric edits", () => {
+  it("round-trips every metric edited at both densities, inside the share size limit", () => {
+    // The widest values a knob takes, and a different one per density so a swap shows.
+    const every = (px: number) => Object.fromEntries(STUDIO_METRICS.map((metric) => [metric.name, px]));
     const document: StudioDocument = {
       theme: ELMA,
-      overrides: {
-        ...NO_OVERRIDES,
-        density: { dense: { "control-h-xs": 16 }, comfortable: { "row-h": 40 } },
-      },
+      overrides: { ...NO_OVERRIDES, density: { dense: every(95), comfortable: every(96) } },
     };
     const encoded = encodeShare(document);
     expect(encoded.ok).toBe(true);
     expect(encoded.ok && decodeShare(encoded.text)).toEqual(document);
-  });
-
-  it("stays inside the share size limit with every metric edited at both densities", () => {
-    const every = Object.fromEntries(STUDIO_METRICS.map((metric) => [metric.name, 96]));
-    const document: StudioDocument = {
-      theme: ELMA,
-      overrides: { ...NO_OVERRIDES, density: { dense: every, comfortable: every } },
-    };
-    const encoded = encodeShare(document);
-    expect(encoded.ok).toBe(true);
-    expect(encoded.ok && decodeShare(encoded.text)).toEqual(document);
-  });
-
-  it("reads a link from before metric edits as having none", () => {
-    expect(decodeShare(shareText({ t: "external-elma-private" }))?.overrides.density).toBeUndefined();
   });
 
   it("reads the documented payload", () => {

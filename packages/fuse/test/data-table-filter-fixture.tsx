@@ -38,6 +38,7 @@ import { createDataTableFilterFn } from "../src/components/data-table-filter/fil
 import { definedProps } from "../src/internal/defined-props";
 import type { SupportedLocale } from "../src/intl/locale-context";
 import { ThemeScope } from "../src/theme/theme-scope";
+import { nextFrames } from "./animation-frames";
 import { withLocale } from "./locale-matrix";
 import { fkasPrivate, renderThemed, roleNamed } from "./themed-browser-render";
 
@@ -599,6 +600,32 @@ export async function settled(): Promise<void> {
   );
 }
 
+/**
+ * Ends every running animation and transition on the document's clock at once, such as an
+ * overlay's open zoom or a stretched exit, and repeats for any the ends start. Base UI unmounts a
+ * closed popup when its animations' `finished` promises resolve, so a finished exit runs the same
+ * path as one waited out. Use {@link settled} instead where a test samples the motion itself.
+ */
+export async function finishMotion(): Promise<void> {
+  for (let round = 0; round < 5; round += 1) {
+    await nextFrames(2);
+    const running = document
+      .getAnimations()
+      .filter(
+        (animation) =>
+          animation.timeline instanceof DocumentTimeline &&
+          animation.playState !== "finished" &&
+          animation.effect?.getComputedTiming().endTime !== Infinity
+      );
+    if (running.length === 0) {
+      return;
+    }
+    for (const animation of running) {
+      animation.finish();
+    }
+    await settled();
+  }
+}
 /** One painted frame of a popup: its side and its bottom edge in whole pixels. */
 export type SideFrame = readonly [side: string | null, bottom: number];
 

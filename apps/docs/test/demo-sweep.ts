@@ -5,24 +5,35 @@ import type { Density } from "@elmeragroup/fuse/theme";
 
 import { COMPONENT_INVENTORY } from "./component-inventory";
 import { DESKTOP_VIEWPORT } from "./demo-page";
-import { showsUnmeasuredPart, startDensityPass } from "./density-attribution";
+import { showsUnmeasuredPart, stampDensity, startDensityPass } from "./density-attribution";
 import type { PartReading } from "./density-attribution";
 import { docsBaseUrl } from "./docs-server";
 
 /**
- * The demo sweep: one walk over every component page's demos, at both densities, that runs the
- * density probe and then one further in-page probe on each stage and on each popup, disclosure and
- * tooltip a demo opens. Suites that read the rendered demos share one walk, so a further read costs
+ * The demo sweep: one walk over every component page's demos that runs the density probe and then
+ * one further in-page probe on each stage and on each popup, disclosure and tooltip a demo opens,
+ * at both densities. Suites that read the rendered demos share one walk, so a further read costs
  * its own reads, not another pass over the pages. A caller that needs several reads combines them
  * into that one probe.
+ *
+ * Each stage and each reveal is read at every density in turn: the walk restamps `data-density`
+ * between reads instead of opening every popup once per density, since opening and closing is
+ * where the walk spends its time.
  *
  * The density probe discovers each reveal: it records the parts an opener revealed
  * (`densityOpened`), which the walk waits on to close and the further probe scopes by. So it is a
  * fixed first step.
  */
 
-/** Every part in the stage, or every part that appeared on the page since the last probe. */
-export type ProbeScope = "stage" | "unseen";
+/**
+ * Every part in the stage; every part that appeared on the page since the last probe; every part
+ * that appeared inside a stage since its stage read; or the parts the last `unseen` or `late` read
+ * took, read again at the next density.
+ */
+export type ProbeScope = "stage" | "unseen" | "late" | "opened";
+
+/** The scope of a reading's first density; the later densities re-read the same parts. */
+type FirstScope = Exclude<ProbeScope, "opened">;
 
 /** An in-page probe of one demo stage, run once per stage and once per opened popup. */
 export type StageProbe<Reading> = (stage: Locator, scope: ProbeScope) => Promise<readonly Reading[]>;
@@ -46,26 +57,43 @@ const OPENERS = '[aria-haspopup]:not([aria-haspopup="false"]), [aria-expanded="f
 const POPUP_WAIT = { timeout: 2000 } as const;
 
 /**
+ * How long a clicked opener that still says `aria-expanded="false"` gets to reveal a part before
+ * the walk moves on, such as an autocomplete input, which opens on typing, not on a click. An
+ * opener that opens says so in the click's own commit.
+ */
+const COLLAPSED_WAIT = { timeout: 300 } as const;
+
+/** How old a page is, from its navigation, before the walk reads the parts its demos mounted late. */
+const LATE_MOUNT_MS = 1000;
+
+/**
  * Component pages probed at once, each in its own context. A page spends most of its pass
  * waiting for popups to mount or leave, so a few side by side cut the wall time without
  * contending for the CPU.
  */
 const CONCURRENT_PAGES = 4;
 
-/** Runs the density probe, then the further probe, and files each reading under its step. */
+/**
+ * Runs the density probe, then the further probe, at each density in turn, and files each reading
+ * under its step. A reveal's first read takes the parts no probe has measured (`unseen` or
+ * `late`); the later densities re-read those same parts (`opened`).
+ */
 async function runProbes<Reading extends object>(
   page: Page,
   { discover, probe }: Steps<Reading>,
   collected: Collected<Reading>,
   stage: Locator,
-  scope: ProbeScope,
-  density: Density
+  scope: FirstScope
 ): Promise<void> {
   const pageName = new URL(page.url()).pathname;
-  const located = <Read extends object>(readings: readonly Read[]): Located<Read>[] =>
-    readings.map((reading) => ({ ...reading, page: pageName, density }));
-  collected.discovered.push(...located(await discover(stage, scope)));
-  collected.probed.push(...located(await probe(stage, scope)));
+  for (const [index, density] of DENSITIES.entries()) {
+    const located = <Read extends object>(readings: readonly Read[]): Located<Read>[] =>
+      readings.map((reading) => ({ ...reading, page: pageName, density }));
+    const read: ProbeScope = scope !== "stage" && index > 0 ? "opened" : scope;
+    await page.evaluate(stampDensity, density);
+    collected.discovered.push(...located(await discover(stage, read)));
+    collected.probed.push(...located(await probe(stage, read)));
+  }
 }
 
 /**
@@ -77,14 +105,21 @@ async function runProbes<Reading extends object>(
 async function readOpenedParts(
   page: Page,
   stage: Locator,
-  probe: (scope: ProbeScope) => Promise<void>
+  probe: (scope: FirstScope) => Promise<void>
 ): Promise<void> {
-  const revealed = async (): Promise<void> => {
-    const shows = await page
-      .waitForFunction(showsUnmeasuredPart, undefined, POPUP_WAIT)
-      .then(() => true)
-      .catch(() => false);
-    if (shows) {
+  const shows = (wait: { readonly timeout: number }): Promise<boolean> =>
+    page.waitForFunction(showsUnmeasuredPart, "[data-slot]", wait).then(
+      () => true,
+      () => false
+    );
+  // A clicked opener that stays collapsed past `COLLAPSED_WAIT` revealed nothing.
+  const revealed = async (clicked?: ElementHandle): Promise<void> => {
+    let shown = await shows(clicked === undefined ? POPUP_WAIT : COLLAPSED_WAIT);
+    if (!shown && clicked !== undefined) {
+      const expanded = await clicked.getAttribute("aria-expanded").catch(() => null);
+      shown = expanded !== "false" && (await shows({ timeout: POPUP_WAIT.timeout - COLLAPSED_WAIT.timeout }));
+    }
+    if (shown) {
       await probe("unseen");
     }
   };
@@ -123,6 +158,11 @@ async function readOpenedParts(
   const tooltips = await stage.locator("[data-slot=tooltip-trigger]").elementHandles();
   const queries = await stage.locator('input[role="combobox"]').elementHandles();
   const open = async (opener: ElementHandle, action: "click" | "hover"): Promise<void> => {
+    // An opener already expanded, such as an inline command list's input, reveals nothing new;
+    // clicking it would only wait out the reveal.
+    if ((await opener.getAttribute("aria-expanded").catch(() => null)) === "true") {
+      return;
+    }
     const opened = await (
       action === "click" ? opener.click({ timeout: 1000 }) : opener.hover({ timeout: 1000 })
     )
@@ -132,7 +172,7 @@ async function readOpenedParts(
       // A disabled, covered or scrolled-away opener.
       return;
     }
-    await revealed();
+    await revealed(action === "click" ? opener : undefined);
     // A popup that mounts its own search input, such as `ComboboxInputGroupAnchor` or the phone
     // country picker, only shows its empty state for a query typed into that input. Stages are
     // portal containers, so the open popup, not the stage, scopes the search.
@@ -163,17 +203,20 @@ async function readComponentPage<Reading extends object>(
   await page.goto(`${docsBaseUrl()}/components/${slug}`, { waitUntil: "load" });
   const stages = page.locator("[data-demo-stage]");
   await stages.first().waitFor();
-  // One full pass per density: a rule that only one density's stamp activates, such as a
-  // comfortable-only literal override, shows up in that pass's attribution.
-  for (const density of DENSITIES) {
-    await page.evaluate(startDensityPass, density);
-    for (const stage of await stages.all()) {
-      await stage.scrollIntoViewIfNeeded();
-      const probe = (scope: ProbeScope): Promise<void> =>
-        runProbes(page, steps, collected, stage, scope, density);
-      await probe("stage");
-      await readOpenedParts(page, stage, probe);
-    }
+  // Every read runs at each density: a rule that only one density's stamp activates, such as a
+  // comfortable-only literal override, shows up in that density's attribution.
+  await page.evaluate(startDensityPass, DENSITIES[0]);
+  for (const stage of await stages.all()) {
+    await stage.scrollIntoViewIfNeeded();
+    const probe = (scope: FirstScope): Promise<void> => runProbes(page, steps, collected, stage, scope);
+    await probe("stage");
+    await readOpenedParts(page, stage, probe);
+  }
+  // A part a demo mounts after its stage read, such as an avatar fallback's 400ms delay, is read
+  // once the walk is done with the page and the page is at least `LATE_MOUNT_MS` old.
+  await page.waitForFunction((age) => performance.now() >= age, LATE_MOUNT_MS);
+  if (await page.evaluate(showsUnmeasuredPart, "[data-demo-stage] [data-slot]")) {
+    await runProbes(page, steps, collected, stages.first(), "late");
   }
 }
 

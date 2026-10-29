@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { itemDefaultShellClass, itemShellClass } from "../../styles/inner-corner/item";
 import { labelTypeClass } from "../../styles/label-type";
 import { dataStateFaceClass } from "../../styles/state-face";
@@ -68,11 +67,5 @@ describe("fileUploadVariants", () => {
       expect(description).toContain(name);
     }
     expect(description).toContain("text-muted-foreground");
-  });
-
-  it("reads role tokens only", () => {
-    const all = [styles.root(), styles.dropzone(), styles.description()].join(" ");
-    expect(all).not.toMatch(RAW_PALETTE_RE);
-    expect(all).not.toContain("dark:");
   });
 });

@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
   ContextProbe,
   Frame,
@@ -99,6 +100,9 @@ describe("Sidebar collapsed focus containment", () => {
   }
 
   it("blurs a focused menu control on collapse and returns it after reopen from the Trigger", async () => {
+    // The contract is where focus goes, not the slide; without the width tween the Trigger is
+    // still when it is clicked. The fixture's afterEach releases the emulation.
+    await emulateReducedMotion("reduce");
     let latest: SidebarContextValue | undefined;
     renderThemed(
       <Frame

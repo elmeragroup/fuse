@@ -431,29 +431,31 @@ describe("concentric inner corners", () => {
     document.documentElement.style.removeProperty("font-size");
   });
 
-  for (const density of DENSITIES) {
-    for (const [variant, theme, documentTheme] of CASES) {
-      describe(`${variant}, ${density}`, () => {
-        it.each(FAMILY_NAMES)("rounds a %s row inside its shell", async (family) => {
-          stampDocumentTheme(documentTheme, "light");
+  // Density is a document-root stamp, so each family renders once per theme and is measured at
+  // every density by restamping the root.
+  for (const [variant, theme, documentTheme] of CASES) {
+    describe(variant, () => {
+      it.each(FAMILY_NAMES)("rounds a %s row inside its shell at every density", async (family) => {
+        stampDocumentTheme(documentTheme, "light");
+        render(<ThemeScope theme={theme}>{FAMILIES[family].tree}</ThemeScope>);
+        const specimen = await openFamily(family);
+        for (const density of DENSITIES) {
           stampDensity(density);
-          render(<ThemeScope theme={theme}>{FAMILIES[family].tree}</ThemeScope>);
-          const specimen = await openFamily(family);
           const measured = cornerRadius(specimen.row);
 
           // Unit under test: the row's `rounded-inner` corner. Oracle: the concentric rule
           // max(0, outer − inset), applied to the shell's measured corner and the padding and
           // border measured between the shell and the row.
           const outer = cornerRadius(specimen.shell);
-          expect(measured, `${family} against its shell`).toBeCloseTo(
+          expect(measured, `${family} ${density} against its shell`).toBeCloseTo(
             Math.max(0, outer - insetOf(specimen)),
             1
           );
           // Independent oracle: the hand-computed corner for this theme.
-          expect(measured, `${family} by hand`).toBeCloseTo(EXPECTED[variant][family], 1);
-        });
+          expect(measured, `${family} ${density} by hand`).toBeCloseTo(EXPECTED[variant][family], 1);
+        }
       });
-    }
+    });
   }
 
   it.each(CASES)(

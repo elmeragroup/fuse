@@ -7,7 +7,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { withLocale } from "../../../test/locale-matrix";
 import { describedTextsFor } from "../../../test/rac-calendar-testing";
 import {
   CONTROL_MD,
@@ -180,20 +180,13 @@ describe("SearchField", () => {
     }
   });
 
-  it("names the clear button from the dictionary in every shipped locale, below an explicit label", async () => {
-    const expected = {
-      "nb-NO": "Tøm søket",
-      "sv-SE": "Rensa sökningen",
-      "en-US": "Clear search",
-      "fi-FI": "Tyhjennä haku",
-    } as const;
-    for (const locale of SUPPORTED_LOCALES) {
-      const { unmount } = renderThemed(
-        withLocale(locale, <SearchField label="Meter search" defaultValue="735999123" />)
-      );
-      await expect.element(page.getByRole("button", { name: expected[locale] })).toBeVisible();
-      unmount();
-    }
+  it("names the clear button from the locale dictionary, below an explicit label", async () => {
+    // search-field.test.ts pins every locale's row; one non-default locale proves the button reads it.
+    const { unmount } = renderThemed(
+      withLocale("nb-NO", <SearchField label="Meter search" defaultValue="735999123" />)
+    );
+    await expect.element(page.getByRole("button", { name: "Tøm søket" })).toBeVisible();
+    unmount();
 
     renderThemed(
       withLocale(

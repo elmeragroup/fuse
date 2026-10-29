@@ -109,9 +109,9 @@ export function currentColorReport(
  * Probes the borders of one demo stage in the page. It runs in the browser through
  * `locator.evaluate`, so it references nothing outside its own body.
  *
- * The stage scope reads every element inside the stage. The unseen scope reads the subtrees of the
- * parts the density probe just read (`densityOpened`), so it throws when no density pass has
- * started, and a popup's elements are read once, when it opens. An element counts with a non-empty
+ * The stage scope reads every element inside the stage. The other scopes read the subtrees of the
+ * parts the density probe just read (`densityOpened`), so they throw when no density pass has
+ * started, and a popup's elements are read once per density, while it is open. An element counts with a non-empty
  * box; a generated `::before` or `::after` counts on its own, so a `display: contents` host's
  * positioned pseudo-element is read, unless it or an ancestor is `display: none` or it is
  * `visibility: hidden`. Transitions and animations are off for the read, so a colour is never
@@ -126,10 +126,10 @@ export function currentColorReport(
  * @param scope - The stage's elements, or the ones an opener just revealed.
  * @returns One reading per element or pseudo-element with a border width, in document order.
  */
-export function probeBorders(stage: Element, scope: "stage" | "unseen"): BorderReading[] {
+export function probeBorders(stage: Element, scope: "stage" | "unseen" | "late" | "opened"): BorderReading[] {
   const sides = ["top", "right", "bottom", "left"] as const;
   const opened = globalThis.densityOpened;
-  if (scope === "unseen" && opened === undefined) {
+  if (scope !== "stage" && opened === undefined) {
     throw new Error("The unseen border scope reads densityOpened, which no density pass has set.");
   }
   const roots = scope === "stage" ? [...stage.children] : [...(opened ?? [])];

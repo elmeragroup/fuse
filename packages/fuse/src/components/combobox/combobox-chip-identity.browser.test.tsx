@@ -31,10 +31,10 @@ function RefreshingChip({ item, removeLabel }: { item: Option; removeLabel?: str
 const MemoRefreshingChip = memo(RefreshingChip);
 
 describe("Combobox chip item identity", () => {
+  // The plain and the StrictMode + memoized corners. The memoized-only path is the memoized
+  // Chips owner case below, and the StrictMode-only path the uncontrolled StrictMode case.
   it.each([
     [false, false],
-    [true, false],
-    [false, true],
     [true, true],
   ])(
     "pairs object labels and removal after isolated rerender and reorder, StrictMode: %s, memoized: %s",

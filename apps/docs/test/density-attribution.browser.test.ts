@@ -145,10 +145,10 @@ describe("density attribution in the browser", () => {
       before.map(({ slot }) => slot),
       "the hidden panel is not measured"
     ).toEqual(["trigger"]);
-    expect(await page.evaluate(showsUnmeasuredPart), "nothing new shows yet").toBe(false);
+    expect(await page.evaluate(showsUnmeasuredPart, "[data-slot]"), "nothing new shows yet").toBe(false);
 
     await page.evaluate(() => document.querySelector("[data-slot=panel]")?.removeAttribute("hidden"));
-    expect(await page.evaluate(showsUnmeasuredPart), "the opened panel shows").toBe(true);
+    expect(await page.evaluate(showsUnmeasuredPart, "[data-slot]"), "the opened panel shows").toBe(true);
     const unseen: ProbeOptions = { ...options, scope: "unseen" };
     const opened = await stage.evaluate(probeParts, unseen);
     await page.close();

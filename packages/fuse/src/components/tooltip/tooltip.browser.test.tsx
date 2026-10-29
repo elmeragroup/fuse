@@ -53,94 +53,40 @@ describe("Tooltip", () => {
     });
   });
 
-  it("opens instantly on keyboard focus, closes on blur, and closes immediately on Escape", async () => {
+  it("hands the open delay to a grouped neighbor but not to a Root with its own delay", async () => {
     renderThemed(
       <>
         <button type="button">Before</button>
-        <Tooltip.Provider delay={400}>
+        {/* A delay no test waits out: only the group hand-off can open a neighbor in time. */}
+        <Tooltip.Provider delay={60_000}>
           <Tooltip.Root>
-            <Tooltip.Trigger>Hint</Tooltip.Trigger>
-            <Tooltip.Content>Add to library</Tooltip.Content>
+            <Tooltip.Trigger>First</Tooltip.Trigger>
+            <Tooltip.Content>First tip</Tooltip.Content>
+          </Tooltip.Root>
+          <Tooltip.Root>
+            <Tooltip.Trigger>Second</Tooltip.Trigger>
+            <Tooltip.Content>Second tip</Tooltip.Content>
+          </Tooltip.Root>
+          <Tooltip.Root delay={400}>
+            <Tooltip.Trigger>Scoped</Tooltip.Trigger>
+            <Tooltip.Content>Scoped tip</Tooltip.Content>
           </Tooltip.Root>
         </Tooltip.Provider>
-        <button type="button">After</button>
       </>
     );
-    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(previous instanceof HTMLElement)) {
-      throw new Error("expected before button");
-    }
 
-    await userEvent.click(previous);
+    // Keyboard focus opens a tooltip at once, whatever the delay.
+    await userEvent.click(roleNamed("button", "Before"));
     await userEvent.keyboard("{Tab}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("tooltip", { name: "Add to library", exact: true }).query()).not.toBeNull();
-    });
+    await expect.element(page.getByRole("tooltip", { name: "First tip", exact: true })).toBeInTheDocument();
 
-    await userEvent.keyboard("{Escape}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("tooltip").query()).toBeNull();
-    });
-    expect(document.activeElement).toBe(roleNamed("button", "Hint"));
+    await hoverOpen("Second", "Second tip");
 
-    await userEvent.click(previous);
-    await userEvent.keyboard("{Tab}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("tooltip", { name: "Add to library", exact: true }).query()).not.toBeNull();
-    });
-
-    await userEvent.keyboard("{Tab}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("tooltip").query()).toBeNull();
-    });
-  });
-
-  it("opens a neighbor without re-waiting the delay inside one Provider group", async () => {
-    const delay = 1000;
-    renderThemed(
-      <Tooltip.Provider delay={delay}>
-        <Tooltip.Root>
-          <Tooltip.Trigger>First</Tooltip.Trigger>
-          <Tooltip.Content>First tip</Tooltip.Content>
-        </Tooltip.Root>
-        <Tooltip.Root>
-          <Tooltip.Trigger>Second</Tooltip.Trigger>
-          <Tooltip.Content>Second tip</Tooltip.Content>
-        </Tooltip.Root>
-      </Tooltip.Provider>
-    );
-
-    await hoverOpen("First", "First tip", delay * 2);
-    const started = performance.now();
-    await userEvent.hover(roleNamed("button", "Second"));
-    await vi.waitFor(() => {
-      expect(page.getByRole("tooltip", { name: "Second tip", exact: true }).query()).not.toBeNull();
-    });
-    // A grouped neighbor skips the provider delay, so it opens in less than one provider delay.
-    expect(performance.now() - started).toBeLessThan(delay);
-  });
-
-  it("does not open a per-tooltip delay Root before the delay, even after a grouped sibling", async () => {
-    renderThemed(
-      <Tooltip.Provider delay={0}>
-        <Tooltip.Root>
-          <Tooltip.Trigger>Grouped</Tooltip.Trigger>
-          <Tooltip.Content>Grouped tip</Tooltip.Content>
-        </Tooltip.Root>
-        <Tooltip.Root delay={400}>
-          <Tooltip.Trigger>Scoped</Tooltip.Trigger>
-          <Tooltip.Content>Scoped tip</Tooltip.Content>
-        </Tooltip.Root>
-      </Tooltip.Provider>
-    );
-
-    await hoverOpen("Grouped", "Grouped tip");
     await userEvent.hover(roleNamed("button", "Scoped"));
     await vi.waitFor(() => {
-      expect(page.getByRole("tooltip", { name: "Grouped tip", exact: true }).query()).toBeNull();
+      expect(page.getByRole("tooltip", { name: "Second tip", exact: true }).query()).toBeNull();
     });
     expect(page.getByRole("tooltip", { name: "Scoped tip", exact: true }).query()).toBeNull();
-
     await vi.waitFor(
       () => {
         expect(page.getByRole("tooltip", { name: "Scoped tip", exact: true }).query()).not.toBeNull();

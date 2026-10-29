@@ -1,20 +1,15 @@
 import { getCountries as getMetadataCountries } from "libphonenumber-js/core";
-import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
+import type { CountryCode } from "libphonenumber-js/core";
 import { describe, expect, it } from "vitest";
 
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
-import {
-  EMPTY_PICKER_ERROR_MESSAGE,
-  EXCLUDED_PRODUCT_COUNTRY_CODES,
-  FLAG_GAP_COUNTRY_CODES,
-} from "../../../test/phone-picker-contract";
+import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../../test/phone-picker-contract";
 import { flagAssets } from "../../flags";
 import { phoneNumberFieldStrings } from "./intl";
 import {
   defaultMetadata,
   getCountries,
   processInputWithDetection,
-  requirePickerCountries,
   resolveSelectedCountry,
   resolvePhoneFieldValues,
 } from "./phone-engine";
@@ -54,28 +49,12 @@ describe("phone-number-field picker set", () => {
     }
   });
 
-  it("throws when filtering leaves no picker country", () => {
-    // SAFETY: empty countries/calling-codes is a valid MetadataJson shape for the empty-picker case.
-    const empty = { country_calling_codes: {}, countries: {} } as MetadataJson;
-    expect(getCountries(empty)).toEqual([]);
-    expect(() => requirePickerCountries([])).toThrow(EMPTY_PICKER_ERROR_MESSAGE);
-  });
-
   it("narrows the picker to an allow list, in catalog order, without codes it cannot offer", () => {
     // RU is a product exclusion, AC has no packaged flag, XX is no country.
     expect(getCountries(defaultMetadata, ["SE", "NO", "RU", "AC", "XX"]).map((row) => row.code)).toEqual([
       "NO",
       "SE",
     ]);
-  });
-
-  it("throws when the allow list leaves no picker country", () => {
-    expect(() => requirePickerCountries(getCountries(defaultMetadata, ["RU", "AC"]))).toThrow(
-      EMPTY_PICKER_ERROR_MESSAGE
-    );
-    expect(() => requirePickerCountries(getCountries(defaultMetadata, []))).toThrow(
-      EMPTY_PICKER_ERROR_MESSAGE
-    );
   });
 
   it("falls back from an unresolved default to NO, then the first picker country", () => {

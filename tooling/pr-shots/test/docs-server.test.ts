@@ -31,7 +31,8 @@ function fakeServer(
     }),
     restoredFile: path.join(cwd, "next-env.d.ts"),
     readyTimeout: Duration.seconds(20),
-    forceKillAfter: Duration.seconds(1),
+    // The fake launcher ignores SIGTERM, so every stop waits this long before its SIGKILL.
+    forceKillAfter: Duration.millis(100),
     lockFile: path.join(cwd, "cache/pr-shots.lock"),
     ...config,
   }).pipe(Layer.provide(NodeServices.layer));
@@ -136,24 +137,33 @@ function startOnce(layer: ReturnType<typeof fakeServer>) {
 }
 
 describe("DocsServer", () => {
-  it.live("stops the whole process group and restores next-env.d.ts when the run is interrupted", () =>
-    Effect.gen(function* () {
-      const cwd = yield* checkout;
-      const { fiber, origin } = yield* startAndHold(fakeServer(cwd));
-      assert.isTrue(yield* answers(origin));
-      assert.strictEqual(yield* readText(path.join(cwd, "next-env.d.ts")), REWRITTEN);
-      const pids = yield* loggedPids(cwd);
-      assert.deepStrictEqual(
-        pids.map(({ role }) => role),
-        ["launcher", "worker"]
-      );
+  it.live(
+    "records the process group and the snapshot while it runs, then stops the whole group, restores next-env.d.ts and removes the record when the run is interrupted",
+    () =>
+      Effect.gen(function* () {
+        const cwd = yield* checkout;
+        const recordFile = path.join(cwd, "cache/pr-shots.lock.server.json");
+        const { fiber, origin } = yield* startAndHold(fakeServer(cwd));
+        assert.isTrue(yield* answers(origin));
+        assert.strictEqual(yield* readText(path.join(cwd, "next-env.d.ts")), REWRITTEN);
+        const pids = yield* loggedPids(cwd);
+        assert.deepStrictEqual(
+          pids.map(({ role }) => role),
+          ["launcher", "worker"]
+        );
+        assert.deepStrictEqual(JSON.parse(yield* readText(recordFile)), {
+          group: pids[0]?.pid,
+          file: path.join(cwd, "next-env.d.ts"),
+          snapshot: { _tag: "content", content: ORIGINAL },
+        });
 
-      yield* Fiber.interrupt(fiber);
+        yield* Fiber.interrupt(fiber);
 
-      assert.deepStrictEqual(yield* survivors(pids.map(({ pid }) => pid)), []);
-      assert.isFalse(yield* answers(origin));
-      assert.strictEqual(yield* readText(path.join(cwd, "next-env.d.ts")), ORIGINAL);
-    }).pipe(Effect.scoped)
+        assert.deepStrictEqual(yield* survivors(pids.map(({ pid }) => pid)), []);
+        assert.isFalse(yield* answers(origin));
+        assert.strictEqual(yield* readText(path.join(cwd, "next-env.d.ts")), ORIGINAL);
+        assert.isFalse(yield* exists(recordFile));
+      }).pipe(Effect.scoped)
   );
 
   for (const mode of ["exit-code", "exit-signal"] as const) {
@@ -247,31 +257,7 @@ describe("DocsServer", () => {
 
       yield* Fiber.interrupt(fiber);
       assert.strictEqual(yield* readText(path.join(cwd, "next-env.d.ts")), ORIGINAL);
-
-      // With the first run gone, the lock is free again.
-      const { fiber: third } = yield* startAndHold(fakeServer(cwd));
-      yield* Fiber.interrupt(third);
-      assert.strictEqual(yield* readText(path.join(cwd, "next-env.d.ts")), ORIGINAL);
     }).pipe(Effect.scoped)
-  );
-
-  it.live(
-    "records the server's process group and the snapshot while it runs, and removes the record on stop",
-    () =>
-      Effect.gen(function* () {
-        const cwd = yield* checkout;
-        const { fiber } = yield* startAndHold(fakeServer(cwd));
-        const [launcher] = yield* loggedPids(cwd);
-        const record = yield* readText(path.join(cwd, "cache/pr-shots.lock.server.json"));
-        assert.deepStrictEqual(JSON.parse(record), {
-          group: launcher?.pid,
-          file: path.join(cwd, "next-env.d.ts"),
-          snapshot: { _tag: "content", content: ORIGINAL },
-        });
-
-        yield* Fiber.interrupt(fiber);
-        assert.isFalse(yield* exists(path.join(cwd, "cache/pr-shots.lock.server.json")));
-      }).pipe(Effect.scoped)
   );
 
   it.live(
@@ -374,24 +360,6 @@ describe("DocsServer", () => {
       yield* Fiber.interrupt(next);
       assert.strictEqual(yield* readText(nextEnv), ORIGINAL);
       assert.isFalse(yield* exists(recordFile));
-    }).pipe(Effect.scoped)
-  );
-
-  it.live("reclaims a lock whose owner is no longer running", () =>
-    Effect.gen(function* () {
-      const cwd = yield* checkout;
-      const finished = spawnSync(process.execPath, ["-e", ""]);
-      yield* Effect.promise(async () => {
-        await mkdir(path.join(cwd, "cache"), { recursive: true });
-        await writeFile(
-          path.join(cwd, "cache/pr-shots.lock"),
-          JSON.stringify({ pid: finished.pid, token: "a-finished-run" })
-        );
-      });
-
-      const { fiber } = yield* startAndHold(fakeServer(cwd));
-      yield* Fiber.interrupt(fiber);
-      assert.strictEqual(yield* readText(path.join(cwd, "next-env.d.ts")), ORIGINAL);
     }).pipe(Effect.scoped)
   );
 });

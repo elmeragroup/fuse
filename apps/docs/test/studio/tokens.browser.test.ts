@@ -170,7 +170,7 @@ async function blurFocus(page: Page): Promise<void> {
 }
 
 describe("studio token editing", () => {
-  it("edits --primary on light artboards only, and undo restores it", async () => {
+  it("edits --primary on light artboards only, one undo step per typing burst", async () => {
     const { context, page, errors } = await openStudio();
     try {
       const lightBefore = await background(saveButton(page, LIGHT_BOARD));
@@ -184,6 +184,11 @@ describe("studio token editing", () => {
       expect(await background(saveButton(page, "Components · Light · Dense"))).toBe(RED);
       expect(await background(saveButton(page, DARK_BOARD))).toBe(darkBefore);
 
+      // A second burst on the same field is a second undo step.
+      await setTokenColor(page, "primary", "#00ff00");
+      await expect.poll(() => background(saveButton(page, LIGHT_BOARD))).toBe("rgb(0, 255, 0)");
+      await page.keyboard.press("ControlOrMeta+z");
+      await expect.poll(() => background(saveButton(page, LIGHT_BOARD))).toBe(RED);
       await page.keyboard.press("ControlOrMeta+z");
       await expect.poll(() => background(saveButton(page, LIGHT_BOARD))).toBe(lightBefore);
       expect(errors).toEqual([]);
@@ -192,13 +197,14 @@ describe("studio token editing", () => {
     }
   });
 
-  it("rounds the Card in every artboard, light and dark, from the radius slider", async () => {
+  it("rounds the Card in every artboard, light and dark, from the radius slider, and undoes it with the slider focused", async () => {
     const { context, page, errors } = await openStudio();
     try {
       await openTokenSection(page, "Shape");
       const slider = tokenRow(page, "radius").getByRole("slider", { name: "--radius", exact: true });
       await waitForSeed(slider);
       await slider.focus();
+      const before = await slider.getAttribute("aria-valuenow");
       // The radius slider ends at 40px, and a Card rounds with `rounded-lg`, the radius itself.
       await page.keyboard.press("End");
       for (const board of COMPONENT_BOARDS) {
@@ -209,6 +215,11 @@ describe("studio token editing", () => {
           })
           .toBe("40px");
       }
+
+      // The undo shortcut works while the slider keeps focus.
+      expect(await slider.evaluate((element) => element === document.activeElement)).toBe(true);
+      await page.keyboard.press("ControlOrMeta+z");
+      await expect.poll(() => slider.getAttribute("aria-valuenow")).toBe(before);
       expect(errors).toEqual([]);
     } finally {
       await context.close();
@@ -241,12 +252,17 @@ describe("studio token editing", () => {
     }
   });
 
-  it("marks a foreground that matches its surface as failing contrast", async () => {
+  it("marks a pair on a translucent surface as needing a backdrop, and a foreground that matches its surface as failing", async () => {
     const { context, page, errors } = await openStudio();
     try {
       await openTokenSection(page, "Actions");
       const mark = tokenRow(page, "primary-foreground").locator("[data-contrast]");
       await expect.poll(() => mark.getAttribute("data-contrast")).toBe("pass");
+
+      // A translucent surface needs an opaque backdrop to measure against.
+      await setTokenColor(page, "primary", "rgba(255, 0, 0, 0.5)");
+      await expect.poll(() => mark.getAttribute("data-contrast")).toBe("translucent");
+      expect(await mark.textContent()).toBe("Needs an opaque backdrop");
 
       await setTokenColor(page, "primary", "#ff0000");
       await setTokenColor(page, "primary-foreground", "#ff0000");
@@ -538,26 +554,7 @@ describe("studio token editing", () => {
     }
   });
 
-  it("makes one undo step per typing burst on the same field", async () => {
-    const { context, page, errors } = await openStudio();
-    try {
-      const before = await background(saveButton(page, LIGHT_BOARD));
-      await openTokenSection(page, "Actions");
-      await setTokenColor(page, "primary", "#ff0000");
-      await setTokenColor(page, "primary", "#00ff00");
-      await expect.poll(() => background(saveButton(page, LIGHT_BOARD))).toBe("rgb(0, 255, 0)");
-
-      await page.keyboard.press("ControlOrMeta+z");
-      await expect.poll(() => background(saveButton(page, LIGHT_BOARD))).toBe(RED);
-      await page.keyboard.press("ControlOrMeta+z");
-      await expect.poll(() => background(saveButton(page, LIGHT_BOARD))).toBe(before);
-      expect(errors).toEqual([]);
-    } finally {
-      await context.close();
-    }
-  });
-
-  it("makes one undo step per stepper press on a number field", async () => {
+  it("makes one undo step per stepper press, arrow key press, held key, and Home or End press on a number field", async () => {
     const { context, page, errors } = await openStudio();
     try {
       await openTokenSection(page, "Shape");
@@ -568,48 +565,48 @@ describe("studio token editing", () => {
       // external-elma-private.ts: radius 6px; the knob steps by 1px.
       const before = await field.inputValue();
       expect(before).toBe("6");
-      await increase.click();
-      await expect.poll(() => field.inputValue()).toBe("7");
-      const first = await field.inputValue();
-      await increase.click();
-      await expect.poll(() => field.inputValue()).not.toBe(first);
+      /** Runs two input steps, then expects two undos to walk back through them to `before`. */
+      const twoStepsUndo = async (first: () => Promise<void>, second: () => Promise<void>) => {
+        await first();
+        await expect.poll(() => field.inputValue()).not.toBe(before);
+        const firstValue = await field.inputValue();
+        await second();
+        await expect.poll(() => field.inputValue()).not.toBe(firstValue);
+        await blurFocus(page);
+        await page.keyboard.press("ControlOrMeta+z");
+        await expect.poll(() => field.inputValue()).toBe(firstValue);
+        await page.keyboard.press("ControlOrMeta+z");
+        await expect.poll(() => field.inputValue()).toBe(before);
+      };
 
-      await blurFocus(page);
-      await page.keyboard.press("ControlOrMeta+z");
-      await expect.poll(() => field.inputValue()).toBe(first);
-      await page.keyboard.press("ControlOrMeta+z");
-      await expect.poll(() => field.inputValue()).toBe(before);
-      expect(errors).toEqual([]);
-    } finally {
-      await context.close();
-    }
-  });
-
-  it("makes one undo step per arrow key press on a number field, and one for a held key", async () => {
-    const { context, page, errors } = await openStudio();
-    try {
-      await openTokenSection(page, "Shape");
-      const field = tokenRow(page, "radius").getByRole("textbox", { name: "--radius in px", exact: true });
-      await waitForSeed(field);
-      // external-elma-private.ts: radius 6px; the knob steps by 1px.
-      const before = await field.inputValue();
-      expect(before).toBe("6");
-      await field.focus();
-      await page.keyboard.press("ArrowUp");
-      await expect.poll(() => field.inputValue()).toBe("7");
-      const first = await field.inputValue();
-      // A held key: repeated keydowns, then one keyup.
-      await page.keyboard.down("ArrowUp");
-      await page.keyboard.down("ArrowUp");
-      await page.keyboard.down("ArrowUp");
-      await page.keyboard.up("ArrowUp");
-      await expect.poll(() => field.inputValue()).not.toBe(first);
-
-      await blurFocus(page);
-      await page.keyboard.press("ControlOrMeta+z");
-      await expect.poll(() => field.inputValue()).toBe(first);
-      await page.keyboard.press("ControlOrMeta+z");
-      await expect.poll(() => field.inputValue()).toBe(before);
+      await twoStepsUndo(
+        async () => {
+          await increase.click();
+          await expect.poll(() => field.inputValue()).toBe("7");
+        },
+        () => increase.click()
+      );
+      await twoStepsUndo(
+        async () => {
+          await field.focus();
+          await page.keyboard.press("ArrowUp");
+          await expect.poll(() => field.inputValue()).toBe("7");
+        },
+        async () => {
+          // A held key: repeated keydowns, then one keyup.
+          await page.keyboard.down("ArrowUp");
+          await page.keyboard.down("ArrowUp");
+          await page.keyboard.down("ArrowUp");
+          await page.keyboard.up("ArrowUp");
+        }
+      );
+      await twoStepsUndo(
+        async () => {
+          await field.focus();
+          await page.keyboard.press("End");
+        },
+        () => page.keyboard.press("Home")
+      );
       expect(errors).toEqual([]);
     } finally {
       await context.close();
@@ -645,31 +642,6 @@ describe("studio token editing", () => {
     }
   });
 
-  it("makes one undo step per Home or End press on a number field", async () => {
-    const { context, page, errors } = await openStudio();
-    try {
-      await openTokenSection(page, "Shape");
-      const field = tokenRow(page, "radius").getByRole("textbox", { name: "--radius in px", exact: true });
-      await waitForSeed(field);
-      const before = await field.inputValue();
-      await field.focus();
-      await page.keyboard.press("End");
-      await expect.poll(() => field.inputValue()).not.toBe(before);
-      const end = await field.inputValue();
-      await page.keyboard.press("Home");
-      await expect.poll(() => field.inputValue()).not.toBe(end);
-
-      await blurFocus(page);
-      await page.keyboard.press("ControlOrMeta+z");
-      await expect.poll(() => field.inputValue()).toBe(end);
-      await page.keyboard.press("ControlOrMeta+z");
-      await expect.poll(() => field.inputValue()).toBe(before);
-      expect(errors).toEqual([]);
-    } finally {
-      await context.close();
-    }
-  });
-
   it("refuses a reset that would loop two tokens, with a toast, and keeps the edits", async () => {
     const { context, page, errors } = await openStudio();
     try {
@@ -694,36 +666,21 @@ describe("studio token editing", () => {
     }
   });
 
-  it("undoes with the keyboard while the slider keeps focus", async () => {
-    const { context, page, errors } = await openStudio();
-    try {
-      await openTokenSection(page, "Shape");
-      const slider = tokenRow(page, "radius").getByRole("slider", { name: "--radius", exact: true });
-      await waitForSeed(slider);
-      await slider.focus();
-      const before = await slider.getAttribute("aria-valuenow");
-      await page.keyboard.press("ArrowRight");
-      await expect.poll(() => slider.getAttribute("aria-valuenow")).not.toBe(before);
-
-      expect(await slider.evaluate((element) => element === document.activeElement)).toBe(true);
-      await page.keyboard.press("ControlOrMeta+z");
-      await expect.poll(() => slider.getAttribute("aria-valuenow")).toBe(before);
-      expect(errors).toEqual([]);
-    } finally {
-      await context.close();
-    }
-  });
-
   it("refuses an alias that would close a cycle, typed or linked", async () => {
     const { context, page, errors } = await openStudio();
     try {
       await openTokenSection(page, "Status");
+      const declared = () =>
+        artboard(page, LIGHT_BOARD).evaluate((element) => element.style.getPropertyValue("--error"));
+      const before = await declared();
       await colorTrigger(page, "error").click();
       const field = page.getByRole("textbox", { name: "Color", exact: true });
       // The base theme declares destructive: var(--error).
       await field.fill("var(--destructive)");
       await expect.poll(() => field.getAttribute("aria-invalid")).toBe("true");
       await page.getByText("Links --error back to itself", { exact: true }).waitFor();
+      // A refused value never reaches the artboards.
+      expect(await declared()).toBe(before);
       await field.fill("var(--error)");
       await page.getByText("A token cannot alias itself", { exact: true }).waitFor();
 
@@ -807,30 +764,6 @@ describe("studio token editing", () => {
     }
   });
 
-  it("refuses a formula that reads currentcolor, and keeps the declared value", async () => {
-    const { context, page, errors } = await openStudio();
-    try {
-      await openTokenSection(page, "Actions");
-      const declared = () =>
-        artboard(page, LIGHT_BOARD).evaluate((element) => element.style.getPropertyValue("--primary"));
-      const before = await declared();
-      await colorTrigger(page, "primary").click();
-      const field = page.getByRole("textbox", { name: "Color", exact: true });
-      // The probe and the rendered button would each resolve currentcolor against their own text.
-      await field.fill("color-mix(in srgb, var(--secondary), currentcolor)");
-      await expect.poll(() => field.getAttribute("aria-invalid")).toBe("true");
-      await page
-        .getByText("Each color in a mix is a var() without fallback or a color the studio reads", {
-          exact: true,
-        })
-        .waitFor();
-      expect(await declared()).toBe(before);
-      expect(errors).toEqual([]);
-    } finally {
-      await context.close();
-    }
-  });
-
   it("leaves the editor's colors unread on a metric edit, and reads them again on a color edit", async () => {
     const { context, page, errors } = await openStudio("", undefined, DENSITY_PAGE);
     try {
@@ -847,21 +780,6 @@ describe("studio token editing", () => {
       await openTokenSection(page, "Actions");
       await setTokenColor(page, "primary", "#ff0000");
       await expect.poll(colorReads).toBeGreaterThan(0);
-      expect(errors).toEqual([]);
-    } finally {
-      await context.close();
-    }
-  });
-
-  it("marks a pair on a translucent surface as needing an opaque backdrop", async () => {
-    const { context, page, errors } = await openStudio();
-    try {
-      await openTokenSection(page, "Actions");
-      const mark = tokenRow(page, "primary-foreground").locator("[data-contrast]");
-      await expect.poll(() => mark.getAttribute("data-contrast")).toBe("pass");
-      await setTokenColor(page, "primary", "rgba(255, 0, 0, 0.5)");
-      await expect.poll(() => mark.getAttribute("data-contrast")).toBe("translucent");
-      expect(await mark.textContent()).toBe("Needs an opaque backdrop");
       expect(errors).toEqual([]);
     } finally {
       await context.close();

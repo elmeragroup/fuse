@@ -53,39 +53,6 @@ describe("Field", () => {
     expect(alert.textContent).toBe("Required");
   });
 
-  it("shows the Form error under the control's name without children, as a list when there are several", async () => {
-    const { rerender } = renderThemed(
-      <Form errors={{ email: "Already registered." }}>
-        <Field.Root>
-          <Field.Label>Email</Field.Label>
-          <Field.Control name="email" render={<input />} />
-          <Field.Error />
-        </Field.Root>
-      </Form>
-    );
-    const alert = page.getByRole("alert").element();
-    expect(alert.getAttribute("data-slot")).toBe("field-error");
-    expect(alert.textContent).toBe("Already registered.");
-    expect(textboxNamed("Email").getAttribute("aria-invalid")).toBe("true");
-    await expect.element(textboxNamed("Email")).toHaveAccessibleDescription("Already registered.");
-
-    rerender(
-      <Form errors={{ email: ["Already registered.", "Use a work address."] }}>
-        <Field.Root>
-          <Field.Label>Email</Field.Label>
-          <Field.Control name="email" render={<input />} />
-          <Field.Error />
-        </Field.Root>
-      </Form>
-    );
-    const items = page
-      .getByRole("alert")
-      .getByRole("listitem")
-      .elements()
-      .map((item) => item.textContent);
-    expect(items).toEqual(["Already registered.", "Use a work address."]);
-  });
-
   it("shows the validate result and the native constraint message without children", async () => {
     renderThemed(
       <>

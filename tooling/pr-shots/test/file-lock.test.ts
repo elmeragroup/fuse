@@ -8,22 +8,27 @@ import path from "node:path";
 
 import { holdLock } from "../src/file-lock.ts";
 
-/**
- * How many times each race runs, since one lucky interleaving proves nothing. A lock without a
- * safe reclaim let both runs win within the first 250 rounds of the reclaim race.
- */
+/** How many times the same-instant race runs, since one lucky interleaving proves nothing. */
 const ROUNDS = 200;
+
+/**
+ * How many times the reclaim race runs. Each round waits out a reclaim mutex poll, so it costs
+ * about 50 ms. The tests below pin the two interleavings a broken reclaim loses on, the recheck
+ * (the named pipe) and the mutex (a reclaim parked under it); these rounds keep a run that finds
+ * the mutex taken waiting for it instead of failing.
+ */
+const RECLAIM_ROUNDS = 20;
 
 const tempDir = Effect.acquireRelease(
   Effect.promise(() => mkdtemp(path.join(tmpdir(), "pr-shots-lock-"))),
   (dir) => Effect.promise(() => rm(dir, { recursive: true, force: true }))
 );
 
-/** A pid that belonged to a process that has already exited. */
-function deadPid(): number {
-  const finished = spawnSync(process.execPath, ["-e", ""]);
-  return finished.pid;
-}
+/**
+ * A pid that belonged to a process that has already exited. One is enough for every stale record
+ * here: spawning a process per round of a race would cost more than the race.
+ */
+const deadPid = spawnSync(process.execPath, ["-e", ""]).pid;
 
 /**
  * Two runs racing for the lock. A winner holds the lock until the other run's attempt has
@@ -82,9 +87,9 @@ describe("holdLock", () => {
     () =>
       Effect.gen(function* () {
         const dir = yield* tempDir;
-        for (let round = 0; round < ROUNDS; round += 1) {
+        for (let round = 0; round < RECLAIM_ROUNDS; round += 1) {
           const file = path.join(dir, `round-${String(round)}.lock`);
-          const stale = JSON.stringify({ pid: deadPid(), token: "stale" });
+          const stale = JSON.stringify({ pid: deadPid, token: "stale" });
           yield* Effect.promise(() => writeFile(file, stale));
           const results = yield* race(file);
           assert.deepStrictEqual(
@@ -116,12 +121,53 @@ describe("holdLock", () => {
       const reclaimer = yield* Effect.forkChild(attempt(file));
       // Opening the pipe for writing returns once the run has opened it for reading.
       const writer = yield* Effect.promise(() => open(file, "w"));
-      yield* Effect.promise(() => writer.write(JSON.stringify({ pid: deadPid(), token: "stale" })));
+      yield* Effect.promise(() => writer.write(JSON.stringify({ pid: deadPid, token: "stale" })));
       yield* Effect.promise(() => rename(freshFile, file));
       yield* Effect.promise(() => writer.close());
 
       assert.strictEqual((yield* Fiber.join(reclaimer))._tag, "held");
       assert.strictEqual(yield* Effect.promise(() => readFile(file, "utf8")), fresh);
+    }).pipe(Effect.scoped, Effect.provide(NodeServices.layer))
+  );
+
+  // The mutex race made deterministic. Run A parks inside its reclaim, holding the mutex with the
+  // stale record still at the path. Run B finds the same stale record and must wait for the mutex,
+  // then find A's fresh lock and step back. Without the mutex, B removes the stale record and
+  // wins while A is parked, and A's reclaim then removes B's lock.
+  it.live("keeps a second run waiting while another reclaims the same stale lock", () =>
+    Effect.gen(function* () {
+      const dir = yield* tempDir;
+      const file = path.join(dir, "run.lock");
+      const stale = JSON.stringify({ pid: deadPid, token: "stale" });
+      yield* Effect.promise(() => writeFile(file, stale));
+      const parked = yield* Deferred.make<void>();
+      const release = yield* Deferred.make<void>();
+      const secondDone = yield* Deferred.make<void>();
+
+      const first = yield* Effect.forkChild(
+        Effect.scoped(
+          Effect.gen(function* () {
+            yield* holdLock(file, "the test resource", {
+              beforeReclaim: Deferred.succeed(parked, undefined).pipe(
+                Effect.andThen(Deferred.await(release))
+              ),
+            });
+            const record = yield* Effect.promise(() => readFile(file, "utf8"));
+            yield* Deferred.await(secondDone);
+            return record;
+          })
+        )
+      );
+      yield* Deferred.await(parked);
+      const second = yield* Effect.forkChild(
+        attempt(file).pipe(Effect.ensuring(Deferred.succeed(secondDone, undefined)))
+      );
+      // Long enough for an unguarded reclaim to finish, well inside the mutex wait.
+      yield* Effect.sleep(Duration.millis(200));
+      yield* Deferred.succeed(release, undefined);
+
+      assert.strictEqual((yield* Fiber.join(second))._tag, "held");
+      assert.notStrictEqual(yield* Fiber.join(first), stale);
     }).pipe(Effect.scoped, Effect.provide(NodeServices.layer))
   );
 

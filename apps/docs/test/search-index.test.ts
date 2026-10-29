@@ -36,8 +36,8 @@ describe("search index", () => {
       const paths = resolveComponentPaths(component.slug);
       expect(entry?.keywords).toContain(paths.entry);
       // Oracle: the committed api.json, which owns the part names.
-      // SAFETY: the drift check (`api-artifact.test.ts`) regenerates and byte-compares each
-      // committed api.json, so a shape that disagrees with the type fails there first.
+      // SAFETY: generation rewrites any committed api.json that disagrees with its serialiser, and
+      // the drift check (`api-artifact.test.ts`) fails on that rewrite.
       const api = JSON.parse(readFileSync(paths.apiFile, "utf8")) as ComponentApiArtifact;
       for (const name of api.parts.map((part) => part.name)) {
         expect(entry?.keywords, name).toContain(name);

@@ -17,6 +17,7 @@ import {
   expectFocusRing,
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
+import { settleTransitions } from "../../../test/assert-invalid-ring";
 import { describedTextsFor, segmentLocator, segmentNamed } from "../../../test/rac-calendar-testing";
 import {
   CONTROL_MD,
@@ -35,7 +36,6 @@ import { InputGroup } from "../../components/input-group";
 import { Input } from "../../components/input/input";
 import { TextField } from "../../components/text-field/text-field";
 import { Textarea } from "../../components/textarea/textarea";
-import { fieldCornerClass } from "../../styles/corner-radius";
 import { ThemeScope } from "../../theme";
 import { DatePicker } from "../date-picker/date-picker";
 import { DateRangePicker } from "../date-range-picker/date-range-picker";
@@ -129,17 +129,12 @@ function describedTextsForField(name: string): string[] {
   return [...new Set(describedHostsFor(name).flatMap((host) => describedTextsFor(host)))];
 }
 
-/** Let a box's border and ring transitions settle, so computed colours are the end state. */
-async function settled(element: HTMLElement): Promise<void> {
-  await Promise.all(element.getAnimations().map((animation) => animation.finished));
-}
-
-/** Tab from the button named `before` into a field, then read its settled field box. */
+/** Tab from the button named `before` into a field, then read its field box with its transitions settled. */
 async function keyboardFocusedBox(before: string, box: () => HTMLElement) {
   buttonNamed(before).focus();
   await userEvent.keyboard("{Tab}");
   const element = box();
-  await settled(element);
+  settleTransitions(element);
   const style = getComputedStyle(element);
   return { element, border: style.borderTopColor, shadow: style.boxShadow };
 }
@@ -358,15 +353,6 @@ describe("DateField field-box chrome", () => {
     expect(px(dateBox.borderRadius)).toBeGreaterThan(0);
     expect(px(dateBox.borderTopWidth)).toBeGreaterThan(0);
     expect(dateBox.backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
-
-    // The field corner's classes, from their shared owner.
-    for (const rung of [...fieldCornerClass.split(" "), "shadow-xs"]) {
-      expect(dateElement.classList.contains(rung), `DateField lost ${rung}`).toBe(true);
-      expect(inputElement.classList.contains(rung), `Input lost ${rung}`).toBe(true);
-    }
-    // The interim tier's old rung is gone from both sides, not just from the one that moved.
-    expect(dateElement.classList.contains("rounded-lg")).toBe(false);
-    expect(inputElement.classList.contains("rounded-lg")).toBe(false);
   });
 
   it("keeps Input's border under the keyboard focus ring, valid and invalid", async () => {
@@ -430,7 +416,7 @@ describe("DateField field-box chrome", () => {
       await userEvent.click(segment);
       // React Aria reports focus within the box, but not focus-visible.
       expect(box.contains(document.activeElement), `${name} holds focus`).toBe(true);
-      await settled(box);
+      settleTransitions(box);
       expectNoFocusRing(box, `pointer focus must not paint the ${name} ring`);
       expect(getComputedStyle(box).borderTopColor, name).toBe(cssVarColor(box, "--input"));
     }

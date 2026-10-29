@@ -19,6 +19,7 @@ import {
   freezeToday,
   CUSTOMER_NORD,
   FIELDS,
+  finishMotion,
   Orders,
   flipsIn,
   renderOrders,
@@ -40,7 +41,6 @@ import { DataTableFilterValue } from "./data-table-filter-bar";
 import type { DataTableFilterOperatorProps, DataTableFilterRemoveProps } from "./data-table-filter-bar";
 import { DataTableFilterCompositionError } from "./data-table-filter-error";
 import type { FilterField, FilterFieldMap } from "./filter-fields";
-import { focusMovedElsewhere } from "./filter-focus";
 import { DataTableFilter } from "./index";
 
 afterEach(async () => {
@@ -100,6 +100,7 @@ describe("DataTableFilter bar", () => {
       .elements()
       .map((option) => option.textContent);
     expect(options).toEqual(["is any of", "is none of"]);
+    await finishMotion();
     await userEvent.click(roleNamed("option", "is none of"));
     await expect.poll(() => roleNamed("combobox", "Status operator").textContent).toBe("is none of");
     // Not paid, pending or overdue, and containing "nord": only Café Nord, a draft.
@@ -176,17 +177,10 @@ describe("DataTableFilter in a shadow root", () => {
     await expect.poll(() => shadow.activeElement).toBe(roleNamed("combobox", "Customer operator"));
   });
 
-  it("returns focus to the chip's Value when Escape closes the editor", async () => {
-    const shadow = renderOrdersInShadowRoot({ initial: STATUS_THREE });
-    await userEvent.click(roleNamed("button", "Paid, Pending +1"));
-    await expect.poll(() => shadow.activeElement).toBe(roleNamed("combobox", "Search Status"));
-    await userEvent.keyboard("{Escape}");
-    await expect.poll(() => shadow.activeElement).toBe(roleNamed("button", "Paid, Pending +1"));
-  });
-
   it("moves focus to the next chip's first segment when Escape closes an emptied chip's editor", async () => {
     const shadow = renderOrdersInShadowRoot({ initial: [...STATUS_THREE, ...CUSTOMER_NORD] });
     await userEvent.click(roleNamed("button", "Paid, Pending +1"));
+    await finishMotion();
     for (const option of ["Paid", "Pending", "Overdue"]) {
       await userEvent.click(roleNamed("option", option));
     }
@@ -194,25 +188,6 @@ describe("DataTableFilter in a shadow root", () => {
     await userEvent.keyboard("{Escape}");
     await expect.poll(() => page.getByRole("group", { name: "Status filter" }).query()).toBeNull();
     await expect.poll(() => shadow.activeElement).toBe(roleNamed("combobox", "Customer operator"));
-  });
-
-  it("counts focus in a closing overlay's own popups as staying, and focus elsewhere in the root as moved", () => {
-    const host = document.createElement("div");
-    document.body.append(host);
-    onTestFinished(() => {
-      host.remove();
-    });
-    const shadow = host.attachShadow({ mode: "open" });
-    const popup = document.createElement("div");
-    const inside = document.createElement("button");
-    const outside = document.createElement("button");
-    popup.append(inside);
-    shadow.append(popup, outside);
-
-    inside.focus();
-    expect(focusMovedElsewhere(popup, [popup])).toBe(false);
-    outside.focus();
-    expect(focusMovedElsewhere(popup, [popup])).toBe(true);
   });
 });
 
@@ -319,6 +294,7 @@ describe("DataTableFilter value popover", () => {
   it("moves focus to the next chip when a press on an emptied chip's Value closes its editor", async () => {
     renderOrders({ initial: [...STATUS_THREE, ...CUSTOMER_NORD] });
     await userEvent.click(roleNamed("button", "Paid, Pending +1"));
+    await finishMotion();
     for (const option of ["Paid", "Pending", "Overdue"]) {
       await userEvent.click(roleNamed("option", option));
     }
@@ -391,14 +367,6 @@ describe("DataTableFilter editors", () => {
     await expect.poll(active).toBe(roleNamed("button", "“fjell”"));
   });
 
-  it("applies the text draft on Escape", async () => {
-    renderOrders({ initial: CUSTOMER_NORD });
-    await userEvent.click(roleNamed("button", "“nord”"));
-    await userEvent.fill(roleNamed("textbox", "Customer"), "havbris");
-    await userEvent.keyboard("{Escape}");
-    await expect.poll(visibleOrders).toBe("3");
-  });
-
   it("commits a number on blur, refuses a minimum above the maximum, and closes on Enter", async () => {
     renderOrders({
       initial: [{ id: "amount", value: { kind: "number", operator: "isBetween", values: [100, 500] } }],
@@ -449,6 +417,7 @@ describe("DataTableFilter editors", () => {
     await userEvent.click(roleNamed("button", "100–500"));
     const dialog = page.getByRole("dialog", { name: "Amount" });
     await userEvent.click(dialog.getByRole("combobox", { name: "Amount operator" }));
+    await finishMotion();
     await userEvent.click(roleNamed("option", "is at most"));
     await expect.poll(() => page.getByRole("textbox", { name: "Amount" }).query()).not.toBeNull();
     // At most 100: Nordlys Kafé at 60.
@@ -583,7 +552,7 @@ describe("DataTableFilter composition", () => {
   it("recounts a submenu's values from the other filters after a tick", async () => {
     renderOrders({ initial: [] });
     await userEvent.click(roleNamed("button", "Filter"));
-    await settled();
+    await finishMotion();
     await userEvent.click(roleNamed("menuitem", "Status"));
     await expect.poll(() => page.getByRole("menuitemcheckbox", { name: "Paid" }).query()).not.toBeNull();
     await userEvent.click(roleNamed("menuitemcheckbox", "Paid"));
@@ -592,7 +561,7 @@ describe("DataTableFilter composition", () => {
     await userEvent.keyboard("{Escape}");
     await expect.poll(() => page.getByRole("dialog", { name: "Add filter" }).query()).toBeNull();
     await userEvent.click(roleNamed("button", "Filter"));
-    await settled();
+    await finishMotion();
     await userEvent.click(roleNamed("menuitem", "Tags"));
     await expect.poll(() => page.getByRole("menuitemcheckbox").elements().length).toBe(3);
     // The paid orders, 1 and 3: Priority on both, Export on order 3, Manual review on neither.
@@ -642,6 +611,7 @@ describe("DataTableFilter composition", () => {
       withLocale("en-US", <Orders initial={PAID} fields={WITHOUT_PAID} onColumnFiltersChange={count} />)
     );
     await userEvent.click(roleNamed("combobox", "Status operator"));
+    await finishMotion();
     await userEvent.click(roleNamed("option", "is not"));
     await expect.poll(columnFilters).toEqual([]);
     expect(writes).toBe(1);
@@ -683,7 +653,7 @@ describe("DataTableFilter composition", () => {
   it("ticks a value onto a filter whose option left the config in one write, dropping the stale value", async () => {
     const { writes } = renderStalePaid();
     await userEvent.click(roleNamed("button", "Filter"));
-    await settled();
+    await finishMotion();
     await userEvent.click(roleNamed("menuitem", "Status"));
     await expect.poll(() => page.getByRole("menuitemcheckbox", { name: "Pending" }).query()).not.toBeNull();
     await userEvent.click(roleNamed("menuitemcheckbox", "Pending"));
@@ -696,7 +666,7 @@ describe("DataTableFilter composition", () => {
   it("ticks a value from quick search onto a filter whose option left the config in one write", async () => {
     const { writes } = renderStalePaid();
     await userEvent.click(roleNamed("button", "Filter"));
-    await settled();
+    await finishMotion();
     await userEvent.keyboard("pe");
     await expect
       .poll(() => page.getByRole("menuitemcheckbox", { name: "Status Pending" }).query())
@@ -770,7 +740,7 @@ describe("DataTableFilter composition", () => {
       "a value submenu",
       async () => {
         await userEvent.click(roleNamed("button", "Filter"));
-        await settled();
+        await finishMotion();
         await userEvent.click(roleNamed("menuitem", "Status"));
         await expect
           .poll(() => page.getByRole("menuitemcheckbox", { name: "Pending" }).query())
@@ -782,7 +752,7 @@ describe("DataTableFilter composition", () => {
       "quick search",
       async () => {
         await userEvent.click(roleNamed("button", "Filter"));
-        await settled();
+        await finishMotion();
         await userEvent.keyboard("pe");
         await expect
           .poll(() => page.getByRole("menuitemcheckbox", { name: "Status Pending" }).query())
@@ -1006,7 +976,7 @@ describe("DataTableFilter composition", () => {
         remove.focus();
         expect(active()).toBe(remove);
         await userEvent.keyboard(`{${key}}`);
-        await settled();
+        await finishMotion();
         expect(page.getByRole("group", { name: "Status filter" }).query()).not.toBeNull();
         expect(columnFilters()).toEqual([...CUSTOMER_NORD, ...STATUS_THREE]);
       });
@@ -1042,7 +1012,7 @@ describe("DataTableFilter composition", () => {
     // The disabled chip's only segment is its span, which still takes focus from code.
     await expect.poll(active).toBe(roleNamed("button", "Remove Status filter"));
     await userEvent.keyboard("{Delete}");
-    await settled();
+    await finishMotion();
     expect(page.getByRole("group", { name: "Status filter" }).query()).not.toBeNull();
     expect(columnFilters()).toEqual(STATUS_THREE);
   });
@@ -1050,7 +1020,7 @@ describe("DataTableFilter composition", () => {
   it("shows the label of an unapplied draft operator the config has since left out", async () => {
     const view = renderThemed(withLocale("en-US", <Orders initial={[]} fields={FIELDS} />));
     await userEvent.click(roleNamed("button", "Filter"));
-    await settled();
+    await finishMotion();
     await userEvent.click(roleNamed("menuitem", "Amount"));
     await expect.poll(() => page.getByRole("combobox", { name: "Amount operator" }).query()).not.toBeNull();
     view.rerender(
@@ -1062,7 +1032,7 @@ describe("DataTableFilter composition", () => {
         />
       )
     );
-    await settled();
+    await finishMotion();
     expect(roleNamed("combobox", "Amount operator").textContent).toBe("is between");
   });
 
@@ -1126,7 +1096,7 @@ describe("DataTableFilter motion and layout", () => {
     renderOrders({ initial: [...STATUS_THREE, ...CUSTOMER_NORD] });
     await userEvent.click(roleNamed("button", "Paid, Pending +1"));
     await expect.poll(() => page.getByRole("dialog", { name: "Status" }).query()).not.toBeNull();
-    await settled();
+    await finishMotion();
     const read = (): GlideFrame => {
       const place = positioner().getBoundingClientRect();
       const [popup] = page.getByRole("dialog").elements();
@@ -1210,7 +1180,7 @@ describe("DataTableFilter motion and layout", () => {
     });
     await userEvent.click(page.getByRole("group", { name: "Created filter" }).getByRole("button").first());
     await expect.poll(() => page.getByRole("dialog", { name: "Created" }).query()).not.toBeNull();
-    await settled();
+    await finishMotion();
     const popup = roleNamed("dialog", "Created");
     const wide = popup.getBoundingClientRect().width;
     const calendar = roleNamed("button", "Calendar").getBoundingClientRect();

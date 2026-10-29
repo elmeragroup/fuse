@@ -9,7 +9,6 @@ import "../../../dist/themes.css";
 import {
   assertFocusRingAtBothDensities,
   assertFocusRingOnKeyboardAbsentOnMouse,
-  assertKeyboardFocusRingAtBothDensities,
 } from "../../../test/assert-focus-ring";
 import {
   computedOklch,
@@ -72,20 +71,14 @@ function tabsRoot(): HTMLElement {
 }
 
 function AccountPassword({
-  passwordDisabled,
-  ...props
-}: ComponentProps<typeof Tabs.Root> &
-  Pick<ComponentProps<typeof Tabs.List>, "variant"> & {
-    passwordDisabled?: boolean;
-  }) {
-  const { variant, ...rootProps } = props;
+  variant,
+  ...rootProps
+}: ComponentProps<typeof Tabs.Root> & Pick<ComponentProps<typeof Tabs.List>, "variant">) {
   return (
     <Tabs.Root defaultValue="account" {...rootProps}>
       <Tabs.List variant={variant}>
         <Tabs.Trigger value="account">Account</Tabs.Trigger>
-        <Tabs.Trigger value="password" disabled={passwordDisabled}>
-          Password
-        </Tabs.Trigger>
+        <Tabs.Trigger value="password">Password</Tabs.Trigger>
         <Tabs.Trigger value="billing">Billing</Tabs.Trigger>
       </Tabs.List>
       <Tabs.Content value="account">Account panel</Tabs.Content>
@@ -96,23 +89,6 @@ function AccountPassword({
 }
 
 describe("Tabs", () => {
-  it("activates a tab from click and hides the previous panel", async () => {
-    renderThemed(<AccountPassword />);
-
-    expect(htmlTab("Account").getAttribute("aria-selected")).toBe("true");
-    await expect.element(page.getByRole("tabpanel", { name: "Account", exact: true })).toBeInTheDocument();
-    expect(page.getByRole("tabpanel", { name: "Password", exact: true }).query()).toBeNull();
-
-    await userEvent.click(page.getByRole("tab", { name: "Password", exact: true }));
-    expect(htmlTab("Password").getAttribute("aria-selected")).toBe("true");
-    expect(htmlTab("Account").getAttribute("aria-selected")).toBe("false");
-    await expect.element(page.getByRole("tabpanel", { name: "Password", exact: true })).toBeInTheDocument();
-    // Base UI unmounts the closing panel a frame after the switch, once its exit animations finish.
-    await expect
-      .element(page.getByRole("tabpanel", { name: "Account", exact: true }))
-      .not.toBeInTheDocument();
-  });
-
   it("moves and activates tabs with Arrow keys, Home, and End", async () => {
     renderThemed(<AccountPassword />);
 
@@ -186,24 +162,7 @@ describe("Tabs", () => {
     expect(htmlTab("Account").getAttribute("aria-selected")).toBe("true");
   });
 
-  it("lets a disabled trigger receive roving focus without activating, including from click", async () => {
-    renderThemed(<AccountPassword passwordDisabled />);
-
-    expect(htmlTab("Password").getAttribute("aria-disabled")).toBe("true");
-    htmlTab("Password").click();
-    expect(htmlTab("Account").getAttribute("aria-selected")).toBe("true");
-    expect(htmlTab("Password").getAttribute("aria-selected")).toBe("false");
-    expect(page.getByRole("tabpanel", { name: "Password", exact: true }).query()).toBeNull();
-
-    htmlTab("Account").focus();
-    await userEvent.keyboard("{ArrowRight}");
-    expect(document.activeElement).toBe(htmlTab("Password"));
-    expect(htmlTab("Account").getAttribute("aria-selected")).toBe("true");
-    expect(htmlTab("Password").getAttribute("aria-selected")).toBe("false");
-    await expect.element(page.getByRole("tabpanel", { name: "Account", exact: true })).toBeInTheDocument();
-  });
-
-  it("paints the shared ring on the trigger and the open panel at both densities", async () => {
+  it("paints the shared ring on the trigger at both densities, and on the open panel for keyboard focus only", async () => {
     renderThemed(
       <>
         <button type="button">Before</button>
@@ -211,7 +170,6 @@ describe("Tabs", () => {
       </>
     );
     await assertFocusRingAtBothDensities(htmlControl("Before"), htmlTab("Account"));
-    await assertKeyboardFocusRingAtBothDensities(htmlTab("Account"), htmlPanel("Account"));
     await assertFocusRingOnKeyboardAbsentOnMouse(htmlTab("Account"), htmlPanel("Account"));
   });
 

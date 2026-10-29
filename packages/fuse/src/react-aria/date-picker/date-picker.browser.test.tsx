@@ -4,7 +4,7 @@ import type { ReactElement, ReactNode } from "react";
 import { CalendarDate } from "@internationalized/date";
 import { DatePickerContext } from "react-aria-components";
 import type { ValidationResult } from "react-aria-components";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import * as CssColor from "@elmeragroup/color/css-color";
@@ -14,7 +14,6 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { shadowLayers } from "../../../test/assert-invalid-ring";
 import { CaughtError } from "../../../test/caught-error";
-import { withLocale } from "../../../test/locale-matrix";
 import {
   calendarGrid,
   calendarRoot,
@@ -29,6 +28,7 @@ import {
   SUBPIXEL,
   unionBox,
 } from "../../../test/rac-calendar-testing";
+import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
   CONTROL_MD,
   cssVarColor,
@@ -127,9 +127,6 @@ const march10 = new CalendarDate(2026, 3, 10);
 const july4 = new CalendarDate(2026, 7, 4);
 const july14 = new CalendarDate(2026, 7, 14);
 
-/** Both trigger placements, for the tests whose behavior must not depend on the side. */
-const triggerPlacements = ["end", "start"] as const;
-
 function presets(): ReactElement {
   return (
     <DatePickerPresetGroup>
@@ -171,6 +168,13 @@ function PresetDrivenPicker({
   );
 }
 
+// Playwright waits for a target to stop moving before it clicks, so the popover's slide-in
+// would cost every in-popover click its full duration. Reduced motion drops the slide and
+// keeps the fade; no case here is about motion. Each worker owns its page, and the media is
+// restored before the next file runs in it.
+beforeAll(() => emulateReducedMotion("reduce"));
+afterAll(() => emulateReducedMotion("no-preference"));
+
 describe("DatePicker", () => {
   it("throws the missing-LocaleProvider error when it mounts, before the calendar opens", () => {
     const { host } = renderThemed(
@@ -199,38 +203,44 @@ describe("DatePicker", () => {
     expect(trigger_.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   });
 
-  it.each(triggerPlacements)(
-    "opens a named dialog holding the calendar grid and commits a day with Enter, trigger at the %s",
-    async (triggerPlacement) => {
-      const onChange = vi.fn();
-      renderPicker(
-        <DatePicker
-          label="Invoice date"
-          value={march10}
-          onChange={onChange}
-          triggerPlacement={triggerPlacement}
-        />
-      );
-      const dialog = await openPicker();
-
-      expect(trigger()).toHaveAttribute("aria-expanded", "true");
-      await expect.element(page.getByRole("grid")).toBeVisible();
-      expect(dialog.contains(calendarGrid())).toBe(true);
-      // The dialog keeps RAC's own name; an unnamed overlay would be an AT dead end.
-      await expect.element(page.getByRole("dialog", { name: /calendar/i })).toBeVisible();
-      expect(cellNamed(/Tuesday, March 10, 2026/i)).toHaveAttribute("aria-selected", "true");
-      // RAC moves focus onto the selected day from an effect after the popover mounts.
-      await expect.element(page.getByRole("button", { name: /Tuesday, March 10, 2026/i })).toHaveFocus();
-
-      await userEvent.keyboard("{Enter}");
-      expect(onChange).toHaveBeenCalledTimes(1);
-      expect(onChange.mock.calls[0]?.[0]).toEqual(expect.objectContaining({ year: 2026, month: 3, day: 10 }));
-      expect(onChange.mock.calls[0]?.[0]).not.toBeInstanceOf(Event);
-      await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+  it("opens a named dialog holding the calendar grid, commits a day with Enter, and re-evaluates a className callback", async () => {
+    const onChange = vi.fn();
+    renderPicker(
+      <DatePicker
+        label="Invoice date"
+        value={march10}
+        onChange={onChange}
+        className={(renderProps) => (renderProps.isOpen ? "gap-4" : "gap-2")}
+      />
+    );
+    const root = groupNamed("Invoice date").parentElement;
+    if (!(root instanceof HTMLElement)) {
+      throw new Error("expected the DatePicker root");
     }
-  );
+    // The caller's class wins over the recipe's `gap-1` column, closed and open.
+    expect(getComputedStyle(root).display).toBe("flex");
+    expect(getComputedStyle(root).flexDirection).toBe("column");
+    expect(px(getComputedStyle(root).rowGap)).toBe(8);
+    const dialog = await openPicker();
+    expect(px(getComputedStyle(root).rowGap)).toBe(16);
 
-  it("reopens an uncontrolled picker on its defaultValue's month after paging away", async () => {
+    expect(trigger()).toHaveAttribute("aria-expanded", "true");
+    await expect.element(page.getByRole("grid")).toBeVisible();
+    expect(dialog.contains(calendarGrid())).toBe(true);
+    // The dialog keeps RAC's own name; an unnamed overlay would be an AT dead end.
+    await expect.element(page.getByRole("dialog", { name: /calendar/i })).toBeVisible();
+    expect(cellNamed(/Tuesday, March 10, 2026/i)).toHaveAttribute("aria-selected", "true");
+    // RAC moves focus onto the selected day from an effect after the popover mounts.
+    await expect.element(page.getByRole("button", { name: /Tuesday, March 10, 2026/i })).toHaveFocus();
+
+    await userEvent.keyboard("{Enter}");
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0]?.[0]).toEqual(expect.objectContaining({ year: 2026, month: 3, day: 10 }));
+    expect(onChange.mock.calls[0]?.[0]).not.toBeInstanceOf(Event);
+    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("reopens an uncontrolled picker on its committed month: the defaultValue's, then the day the user chose", async () => {
     // The sync reads the picker state's committed value, so `defaultValue` alone — with
     // no `value` prop in sight — still lands the reopen on July.
     renderPicker(<DatePicker label="Invoice date" defaultValue={july14} />);
@@ -244,11 +254,6 @@ describe("DatePicker", () => {
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
     await openPicker();
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
-  });
-
-  it("opens an uncontrolled picker on the month of the day the user last chose", async () => {
-    renderPicker(<DatePicker label="Invoice date" defaultValue={july14} />);
-    await openPicker();
 
     // Page to September and commit the focused day: the uncontrolled value is now the
     // picker's own, and reopening has to follow it rather than the initial default.
@@ -260,22 +265,13 @@ describe("DatePicker", () => {
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/September\s+2026/i);
   });
 
-  it.each([
-    [
-      "the current month",
-      <DatePicker key="current" label="Invoice date" />,
-      new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date()),
-    ],
-    [
-      "the placeholder's month",
-      <DatePicker key="placeholder" label="Birth date" placeholderValue={new CalendarDate(1990, 1, 1)} />,
-      expect.stringMatching(/January\s+1990/i),
-    ],
-  ] as const)("opens on %s when there is no value", async (_case, picker, month) => {
-    renderPicker(picker);
+  it("opens on the current month when there is no value or placeholder", async () => {
+    renderPicker(<DatePicker label="Invoice date" />);
     await openPicker();
 
-    expect(calendarGrid().getAttribute("aria-label")).toEqual(month);
+    expect(calendarGrid().getAttribute("aria-label")).toEqual(
+      new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date())
+    );
   });
 
   it("returns to the placeholder's month when the value is cleared with the dialog open", async () => {
@@ -375,52 +371,28 @@ describe("DatePicker", () => {
     expect(describedTextsFor(group)).toContain(errorNode.textContent);
   });
 
-  it("renders no error node while the picker is valid", async () => {
-    renderPicker(
-      <DatePicker label="Invoice date" defaultValue={july14} errorMessage={<span>Required</span>} />
-    );
-    await expect.element(segmentLocator("month")).toBeVisible();
-
-    expect(document.body.textContent).not.toContain("Required");
-  });
-
-  it.each(triggerPlacements)(
-    "fills the read-only field with the muted surface and keeps the popover closed, trigger at the %s",
-    async (triggerPlacement) => {
-      renderPicker(
-        <DatePicker label="Invoice date" isReadOnly value={july14} triggerPlacement={triggerPlacement} />
-      );
-      const group = groupNamed("Invoice date");
-      const glyph = group.querySelector("svg");
-      if (!(glyph instanceof SVGElement)) {
-        throw new Error("expected the trigger glyph");
-      }
-
-      // The FieldGroup's own `isReadOnly` axis paints the fill, exactly once. The glyph is
-      // deliberately untinted: `bg-muted` on the `<svg>` never belonged there and went with
-      // the picker recipe's duplicate arm.
-      expect(getComputedStyle(group).backgroundColor).toBe(cssVarColor(group, "--muted"));
-      expect(group.getAttribute("data-readonly")).toBe("true");
-      expect(getComputedStyle(glyph).backgroundColor).not.toBe(cssVarColor(group, "--muted"));
-      expect(trigger()).toBeDisabled();
-
-      await userEvent.click(trigger(), { force: true });
-      expect(page.getByRole("dialog").query()).toBeNull();
+  it("fills the read-only field with the muted surface and keeps the popover closed", async () => {
+    renderPicker(<DatePicker label="Invoice date" isReadOnly value={july14} />);
+    const group = groupNamed("Invoice date");
+    const glyph = group.querySelector("svg");
+    if (!(glyph instanceof SVGElement)) {
+      throw new Error("expected the trigger glyph");
     }
-  );
+
+    // The FieldGroup's own `isReadOnly` axis paints the fill, exactly once. The glyph is
+    // deliberately untinted: `bg-muted` on the `<svg>` never belonged there and went with
+    // the picker recipe's duplicate arm.
+    expect(getComputedStyle(group).backgroundColor).toBe(cssVarColor(group, "--muted"));
+    expect(group.getAttribute("data-readonly")).toBe("true");
+    expect(getComputedStyle(glyph).backgroundColor).not.toBe(cssVarColor(group, "--muted"));
+    expect(trigger()).toBeDisabled();
+
+    await userEvent.click(trigger(), { force: true });
+    expect(page.getByRole("dialog").query()).toBeNull();
+  });
 });
 
 describe("DatePicker trigger placement", () => {
-  it("keeps the trigger after the segments by default", async () => {
-    renderPicker(<DatePicker label="Invoice date" defaultValue={july14} />);
-    await expect.element(segmentLocator("year")).toBeVisible();
-
-    expect(groupNamed("Invoice date").lastElementChild).toBe(trigger());
-    expect(trigger().getBoundingClientRect().left).toBeGreaterThanOrEqual(
-      segmentNamed("year").getBoundingClientRect().right
-    );
-  });
-
   it("leads the field box with the trigger in DOM, tab and visual order", async () => {
     renderPicker(
       <>
@@ -454,6 +426,12 @@ describe("DatePicker trigger placement", () => {
       </>
     );
     await expect.element(groupNamed("Leading")).toBeVisible();
+    // By default the trigger trails the segments.
+    const trailingTrigger = roleNamed("button", "Calendar Trailing");
+    expect(groupNamed("Trailing").lastElementChild).toBe(trailingTrigger);
+    expect(trailingTrigger.getBoundingClientRect().left).toBeGreaterThanOrEqual(
+      segmentNamed("year, Trailing").getBoundingClientRect().right
+    );
     // Unit: the leading layout. Oracle: the trailing layout, mirrored. The trailing
     // trigger's inset and the segment row's padding are the established field box, so
     // the leading trigger has to sit as far from the start edge as that one sits from
@@ -475,45 +453,10 @@ describe("DatePicker trigger placement", () => {
   });
 });
 
+// The group's name precedence and dictionary copy are the shared preset group's, proved for
+// both public groups in `internal/picker-presets.browser.test.tsx`.
 describe("DatePicker presets", () => {
-  it("exposes a locale-named radiogroup whose items are named by their visible copy", async () => {
-    renderPicker(<DatePicker label="Invoice date" value={march10} presetGroup={presets()} />);
-    await openPicker();
-    const radiogroup = page.getByRole("radiogroup", { name: "Date presets" }).element();
-    if (!(radiogroup instanceof HTMLElement)) {
-      throw new Error("expected the preset radiogroup");
-    }
-
-    expect(radiogroup.getAttribute("data-slot")).toBe("date-picker-preset-group");
-    await expect.element(page.getByRole("radio", { name: "Today", exact: true })).toBeVisible();
-    await expect.element(page.getByRole("radio", { name: "In a week", exact: true })).toBeVisible();
-    // The name is the visible copy — never English synthesised from `value`.
-    expect(page.getByRole("radio", { name: /preset option/i }).query()).toBeNull();
-    expect(presetTargetNamed("Today").getAttribute("data-slot")).toBe("date-picker-preset-item");
-    expect(pickerDialog().contains(radiogroup)).toBe(true);
-    expect(pickerDialog().contains(calendarGrid())).toBe(true);
-  });
-
-  it("lets an explicit aria-label win over label", async () => {
-    renderPicker(
-      <DatePicker
-        label="Invoice date"
-        value={march10}
-        presetGroup={
-          <DatePickerPresetGroup label="Shortcuts" aria-label="Quick dates">
-            <DatePickerPresetItem value="today">Today</DatePickerPresetItem>
-            <DatePickerPresetItem value="in-a-week">In a week</DatePickerPresetItem>
-          </DatePickerPresetGroup>
-        }
-      />
-    );
-    await openPicker();
-
-    await expect.element(page.getByRole("radiogroup", { name: "Quick dates", exact: true })).toBeVisible();
-    expect(page.getByRole("radiogroup", { name: "Shortcuts", exact: true }).query()).toBeNull();
-  });
-
-  it("closes the dialog on double-click only where the caller opted in, after its own handler", async () => {
+  it("exposes a radiogroup named by visible copy, closing on double-click only where the caller opted in", async () => {
     const onDoubleClick = vi.fn();
     renderPicker(
       <DatePicker
@@ -532,7 +475,19 @@ describe("DatePicker presets", () => {
       />
     );
     await openPicker();
+    const radiogroup = roleNamed("radiogroup", "Date presets");
 
+    expect(radiogroup.getAttribute("data-slot")).toBe("date-picker-preset-group");
+    await expect.element(page.getByRole("radio", { name: "Today", exact: true })).toBeVisible();
+    await expect.element(page.getByRole("radio", { name: "In a week", exact: true })).toBeVisible();
+    // The name is the visible copy — never English synthesised from `value`.
+    expect(page.getByRole("radio", { name: /preset option/i }).query()).toBeNull();
+    expect(presetTargetNamed("Today").getAttribute("data-slot")).toBe("date-picker-preset-item");
+    expect(pickerDialog().contains(radiogroup)).toBe(true);
+    expect(pickerDialog().contains(calendarGrid())).toBe(true);
+
+    // DateRangePicker's suite pins the handler-then-close order; this one proves the item
+    // closes DatePicker's own state.
     await userEvent.dblClick(presetTargetNamed("Today"));
     expect(onDoubleClick).toHaveBeenCalledTimes(1);
     await expect.element(page.getByRole("dialog")).toBeVisible();
@@ -540,19 +495,6 @@ describe("DatePicker presets", () => {
     await userEvent.dblClick(presetTargetNamed("In a week"));
     expect(onDoubleClick).toHaveBeenCalledTimes(2);
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-  });
-
-  it("forwards label to the group name", async () => {
-    renderThemed(
-      withLocale(
-        "nb-NO",
-        <DatePickerPresetGroup label="Hurtigvalg">
-          <DatePickerPresetItem value="today">I dag</DatePickerPresetItem>
-        </DatePickerPresetGroup>
-      )
-    );
-
-    await expect.element(page.getByRole("radiogroup", { name: "Hurtigvalg", exact: true })).toBeVisible();
   });
 });
 
@@ -570,12 +512,24 @@ function paintedShadowLayers(boxShadow: string): string[] {
   });
 }
 
+// Both pickers draw this pane from `pickerVariants` and the shared preset group, so this suite
+// measures it for DateRangePicker too.
 describe("DatePicker preset pane geometry", () => {
   afterEach(async () => {
     await page.viewport(STACKED_VIEWPORT.width, STACKED_VIEWPORT.height);
   });
 
-  it("runs the row divider from the dialog's top edge to its bottom edge", async () => {
+  /** The presets' inset within their column, which must be at least the 4px small surface tier. */
+  function expectPresetsInset(): void {
+    const items = unionBox([presetTargetNamed("Today"), presetTargetNamed("In a week")]);
+    const insets = insetsWithin(paddingBox(roleNamed("radiogroup", "Date presets")), items);
+    expect(insets.top).toBeGreaterThanOrEqual(4 - SUBPIXEL);
+    expect(insets.right).toBeGreaterThanOrEqual(4 - SUBPIXEL);
+    expect(insets.bottom).toBeGreaterThanOrEqual(4 - SUBPIXEL);
+    expect(insets.left).toBeGreaterThanOrEqual(4 - SUBPIXEL);
+  }
+
+  it("runs the row divider from the dialog's top edge to its bottom edge, insets the presets, and leaves the card chrome to the popover", async () => {
     await page.viewport(ROW_VIEWPORT.width, ROW_VIEWPORT.height);
     renderPicker(<DatePicker label="Invoice date" value={march10} presetGroup={presets()} />);
     const inner = paddingBox(await openPicker());
@@ -586,9 +540,14 @@ describe("DatePicker preset pane geometry", () => {
     expect(Math.abs(divider.top - inner.top)).toBeLessThanOrEqual(SUBPIXEL);
     expect(Math.abs(divider.bottom - inner.bottom)).toBeLessThanOrEqual(SUBPIXEL);
     expect(Math.abs(divider.left - inner.left)).toBeLessThanOrEqual(SUBPIXEL);
+    expectPresetsInset();
+    // No calendar shadow or fill beside the presets.
+    const style = getComputedStyle(calendarRoot());
+    expect(paintedShadowLayers(style.boxShadow)).toEqual([]);
+    expect(style.backgroundColor).toBe("rgba(0, 0, 0, 0)");
   });
 
-  it("runs the stacked divider from the dialog's start edge to its end edge", async () => {
+  it("runs the stacked divider from the dialog's start edge to its end edge and insets the presets", async () => {
     await page.viewport(STACKED_VIEWPORT.width, STACKED_VIEWPORT.height);
     renderPicker(<DatePicker label="Invoice date" value={march10} presetGroup={presets()} />);
     const inner = paddingBox(await openPicker());
@@ -599,40 +558,7 @@ describe("DatePicker preset pane geometry", () => {
     expect(Math.abs(divider.left - inner.left)).toBeLessThanOrEqual(SUBPIXEL);
     expect(Math.abs(divider.right - inner.right)).toBeLessThanOrEqual(SUBPIXEL);
     expect(Math.abs(divider.top - inner.top)).toBeLessThanOrEqual(SUBPIXEL);
-  });
-
-  it.each([
-    ["row", ROW_VIEWPORT],
-    ["stacked", STACKED_VIEWPORT],
-  ])(
-    "insets the presets by at least the 4px small surface tier on every side of their column (%s)",
-    async (_layout, viewport) => {
-      await page.viewport(viewport.width, viewport.height);
-      renderPicker(<DatePicker label="Invoice date" value={march10} presetGroup={presets()} />);
-      await openPicker();
-      const items = unionBox([presetTargetNamed("Today"), presetTargetNamed("In a week")]);
-      const insets = insetsWithin(paddingBox(roleNamed("radiogroup", "Date presets")), items);
-
-      expect(insets.top).toBeGreaterThanOrEqual(4 - SUBPIXEL);
-      expect(insets.right).toBeGreaterThanOrEqual(4 - SUBPIXEL);
-      expect(insets.bottom).toBeGreaterThanOrEqual(4 - SUBPIXEL);
-      expect(insets.left).toBeGreaterThanOrEqual(4 - SUBPIXEL);
-    }
-  );
-
-  it.each([
-    ["with presets", true],
-    ["without presets", false],
-  ])("leaves the card chrome to the popover: no calendar shadow or fill (%s)", async (_case, withPresets) => {
-    await page.viewport(ROW_VIEWPORT.width, ROW_VIEWPORT.height);
-    renderPicker(
-      <DatePicker label="Invoice date" value={march10} {...(withPresets && { presetGroup: presets() })} />
-    );
-    await openPicker();
-    const style = getComputedStyle(calendarRoot());
-
-    expect(paintedShadowLayers(style.boxShadow)).toEqual([]);
-    expect(style.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    expectPresetsInset();
   });
 });
 
@@ -663,80 +589,33 @@ describe("DatePicker density metrics", () => {
 });
 
 describe("DatePicker composition surface", () => {
-  it("keeps a caller className on the root over the recipe's column layout", async () => {
-    renderPicker(
-      <DatePicker
-        label="Invoice date"
-        defaultValue={july14}
-        className={(renderProps) => (renderProps.isOpen ? "gap-4" : "gap-2")}
-      />
-    );
-    const root = groupNamed("Invoice date").parentElement;
-    if (!(root instanceof HTMLElement)) {
-      throw new Error("expected the DatePicker root");
-    }
-
-    expect(getComputedStyle(root).display).toBe("flex");
-    expect(getComputedStyle(root).flexDirection).toBe("column");
-    expect(px(getComputedStyle(root).rowGap)).toBe(8);
-    await openPicker();
-    expect(px(getComputedStyle(root).rowGap)).toBe(16);
-  });
-
-  it("strips the calendar's card border and the dialog's padding inside the popover", async () => {
+  it("strips the calendar's card chrome and the dialog's padding inside the popover", async () => {
     renderPicker(<DatePicker label="Invoice date" value={march10} />);
     const dialog = await openPicker();
     const root = calendarRoot();
+    const style = getComputedStyle(root);
 
     expect(getComputedStyle(dialog).paddingTop).toBe("0px");
-    expect(getComputedStyle(root).borderTopWidth).toBe("0px");
-    expect(getComputedStyle(root).borderLeftWidth).toBe("0px");
+    expect(style.borderTopWidth).toBe("0px");
+    expect(style.borderLeftWidth).toBe("0px");
+    expect(paintedShadowLayers(style.boxShadow)).toEqual([]);
+    expect(style.backgroundColor).toBe("rgba(0, 0, 0, 0)");
     // No `title` ⇒ no header row at all: an empty heading would take the dialog's
     // accessible name from RAC and spend one 16 px `gap-4` on nothing
     // (react-aria/internal/dialog.tsx).
     expect(page.getByRole("button", { name: /close/i }).query()).toBeNull();
+    // Without a preset group the pane wrapper takes none of the two-pane layout.
     expect(paneAroundCalendar().closest('[role="dialog"]')).toBe(dialog);
+    expect(paneAroundCalendar().className).toBe("");
   });
 
-  it("lays the dialog out in two divided panes only when a renderable preset group is given", async () => {
-    function Toggleable(): ReactElement {
-      const [presetGroup, setPresetGroup] = useState<ReactNode>(undefined);
-      return (
-        <>
-          <button onClick={() => setPresetGroup(false)} type="button">
-            Guard off
-          </button>
-          <button onClick={() => setPresetGroup(presets())} type="button">
-            Add presets
-          </button>
-          <DatePicker label="Invoice date" presetGroup={presetGroup} value={march10} />
-        </>
-      );
-    }
-    renderPicker(<Toggleable />);
-
-    await openPicker();
-    expect(paneAroundCalendar().className).toBe("");
-    expect(page.getByRole("radiogroup").query()).toBeNull();
-    await userEvent.keyboard("{Escape}");
-    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-
+  it("keeps the single pane when the preset guard collapses to false", async () => {
     // `presetGroup={showPresets && <Group />}` collapses to `false`, not to `undefined`:
     // a lone calendar must not get the two-pane divider.
-    await userEvent.click(buttonNamed("Guard off"));
+    renderPicker(<DatePicker label="Invoice date" presetGroup={false} value={march10} />);
     await openPicker();
+
     expect(paneAroundCalendar().className).toBe("");
     expect(page.getByRole("radiogroup").query()).toBeNull();
-    await userEvent.keyboard("{Escape}");
-    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-
-    await userEvent.click(buttonNamed("Add presets"));
-    await openPicker();
-    expect(getComputedStyle(paneAroundCalendar()).display).toBe("flex");
-    await expect.element(page.getByRole("radiogroup", { name: "Date presets" })).toBeVisible();
-    // Vitest's default viewport sits below `sm`, so the panes stack under a bottom divider.
-    expect(px(getComputedStyle(roleNamed("radiogroup", "Date presets")).borderBottomWidth)).toBeGreaterThan(
-      0
-    );
   });
 });

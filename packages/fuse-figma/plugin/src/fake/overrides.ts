@@ -48,10 +48,26 @@ import type { NodeState } from "./state.ts";
 /** The fields an instance or a sublayer shows from its source until it overrides them (rule 38). */
 type ShownField = "fills" | "strokes" | "effects" | "radii";
 
-/** A field as a layer shows it: its own where it overrides it or has no source, else its source's (rule 38). */
+/**
+ * A field as a layer shows it: its own where it overrides it or has no source, else its source's
+ * (rule 38). Figma hands out frozen paints and effects, and a fork shares these values with the
+ * file it came from, so the fake freezes what it hands out.
+ */
 export function shown<Field extends ShownField>(state: NodeState, field: Field): NodeState[Field] {
   const source = sourceOf(state);
-  return source === undefined || state.overridden.has(field) ? state[field] : shown(source, field);
+  return source === undefined || state.overridden.has(field)
+    ? deepFreeze(state[field])
+    : shown(source, field);
+}
+
+function deepFreeze<Value>(value: Value): Value {
+  if (value instanceof Object && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const inner of Object.values(value)) {
+      deepFreeze(inner);
+    }
+  }
+  return value;
 }
 
 /** Note an override of a field on an instance or a sublayer (rule 37); any other layer has none. */

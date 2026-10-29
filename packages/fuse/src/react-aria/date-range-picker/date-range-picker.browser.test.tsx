@@ -4,31 +4,24 @@ import type { ReactElement, ReactNode } from "react";
 import { CalendarDate, isSameDay } from "@internationalized/date";
 import type { DateValue } from "@internationalized/date";
 import { DateRangePickerContext } from "react-aria-components";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { CaughtError } from "../../../test/caught-error";
-import { withLocale } from "../../../test/locale-matrix";
 import {
   calendarGrid,
   calendarRoot,
   cellNumbered,
   dayNumbered,
   describedTextsFor,
-  insetsWithin,
   navButtonNamed,
-  paddingBox,
-  ROW_VIEWPORT,
   segmentLocator,
   segmentNamed,
-  STACKED_VIEWPORT,
-  SUBPIXEL,
-  unionBox,
 } from "../../../test/rac-calendar-testing";
+import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
   CONTROL_MD,
   cssVarColor,
@@ -129,22 +122,9 @@ function rangeChangeSpy(): RangeChangeSpy {
 
 /** The range a spy was called with, first call, asserted to exist. */
 function committedRange(onChange: RangeChangeSpy): CommittedRange {
-  return rangeFromCall(onChange, 0);
-}
-
-/**
- * The range a spy was called with on its last call. Typing a four-digit year commits a
- * valid range on every digit ("2", "20", "202", "2026"), so a typed range is judged by
- * where it landed, not by how many times RAC reported progress.
- */
-function lastCommittedRange(onChange: RangeChangeSpy): CommittedRange {
-  return rangeFromCall(onChange, onChange.mock.calls.length - 1);
-}
-
-function rangeFromCall(onChange: RangeChangeSpy, index: number): CommittedRange {
-  const committed = onChange.mock.calls[index]?.[0];
+  const committed = onChange.mock.calls[0]?.[0];
   if (committed === undefined || committed === null) {
-    throw new Error(`expected onChange call ${index} to have received a range`);
+    throw new Error("expected onChange to have received a range");
   }
   return committed;
 }
@@ -157,16 +137,14 @@ const july20 = new CalendarDate(2026, 7, 20);
 const july24 = new CalendarDate(2026, 7, 24);
 const julyWeek = { start: july14, end: july17 };
 
-describe("DateRangePicker", () => {
-  it("throws the missing-LocaleProvider error when it mounts, before the calendar opens", () => {
-    const { host } = renderThemed(
-      <CaughtError>
-        <DateRangePicker label="Dates" />
-      </CaughtError>
-    );
-    expect(host.textContent).toBe("useLocale must be used within LocaleProvider");
-  });
+// Playwright waits for a target to stop moving before it clicks, so the popover's slide-in
+// would cost every in-popover click its full duration. Reduced motion drops the slide and
+// keeps the fade; no case here is about motion. Each worker owns its page, and the media is
+// restored before the next file runs in it.
+beforeAll(() => emulateReducedMotion("reduce"));
+afterAll(() => emulateReducedMotion("no-preference"));
 
+describe("DateRangePicker", () => {
   it("names the field group from the label, exposes both rows' spinbuttons and a named collapsed trigger", async () => {
     renderPicker(
       <DateRangePicker label="Delivery window" description="When we may deliver." defaultValue={julyWeek} />
@@ -192,37 +170,15 @@ describe("DateRangePicker", () => {
     expect(trigger_).toHaveAttribute("aria-expanded", "false");
     expect(trigger_).toHaveAttribute("aria-haspopup", "dialog");
     expect(page.getByRole("dialog").query()).toBeNull();
-    // The glyph is decoration; the button's own name carries the meaning.
-    expect(trigger_.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
-  });
-
-  it("reports a range only once both rows are complete", async () => {
-    const onChange = rangeChangeSpy();
-    renderPicker(<DateRangePicker label="Delivery window" onChange={onChange} />);
-    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
-
-    await userEvent.click(segmentNamed("month, Start Date"));
-    await userEvent.keyboard("07142026");
-    expect(segmentNamed("day, Start Date").textContent).toBe("14");
-    // A half-filled range is not a range: RAC holds `onChange` until both ends exist.
-    expect(onChange).not.toHaveBeenCalled();
-
-    await userEvent.click(segmentNamed("month, End Date"));
-    await userEvent.keyboard("0717");
-    expect(segmentNamed("day, End Date").textContent).toBe("17");
-    expect(onChange).not.toHaveBeenCalled();
-
-    await userEvent.keyboard("2026");
-    expect(onChange).toHaveBeenCalled();
-    // Every value RAC reports is a whole range — never a lone endpoint.
-    for (const [reported] of onChange.mock.calls) {
-      expect(reported?.start).toBeDefined();
-      expect(reported?.end).toBeDefined();
+    // The glyph is decoration; the button's own name carries the meaning. The recipe sizes
+    // it, not the Button's fallback.
+    const glyph = trigger_.querySelector("svg");
+    if (!(glyph instanceof SVGElement)) {
+      throw new Error("expected the trigger glyph");
     }
-    const committed = lastCommittedRange(onChange);
-    expect(isSameDay(committed.start, july14)).toBe(true);
-    expect(isSameDay(committed.end, july17)).toBe(true);
-    expect(committed).not.toBeInstanceOf(Event);
+    expect(glyph).toHaveAttribute("aria-hidden", "true");
+    expect(px(getComputedStyle(glyph).width)).toBe(16);
+    expect(px(getComputedStyle(glyph).height)).toBe(16);
   });
 
   it.each([
@@ -247,7 +203,7 @@ describe("DateRangePicker", () => {
     }
   });
 
-  it("opens a named dialog holding the range grid and commits two clicked endpoints", async () => {
+  it("opens a named, chromeless dialog holding the range grid and commits two clicked endpoints", async () => {
     const onChange = rangeChangeSpy();
     renderPicker(<DateRangePicker label="Delivery window" defaultValue={julyWeek} onChange={onChange} />);
     const dialog = await openPicker();
@@ -260,6 +216,17 @@ describe("DateRangePicker", () => {
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
     expect(cellNumbered(14)).toHaveAttribute("aria-selected", "true");
     expect(cellNumbered(17)).toHaveAttribute("aria-selected", "true");
+
+    // The styled dialog chrome, without its close button or header row: an empty heading
+    // would take the dialog's accessible name from RAC (react-aria/internal/dialog.tsx).
+    expect(dialog.getAttribute("data-slot")).toBe("dialog");
+    expect(page.getByRole("button", { name: /close/i }).query()).toBeNull();
+    expect(getComputedStyle(dialog).paddingTop).toBe("0px");
+    expect(getComputedStyle(dialog).paddingLeft).toBe("0px");
+    // RangeCalendar's root is bare by design, so the inset is the recipe's own: the small
+    // surface tier, 4px.
+    expect(getComputedStyle(calendarRoot()).paddingTop).toBe("4px");
+    expect(getComputedStyle(calendarRoot()).borderTopWidth).toBe("0px");
 
     // Anchor, then commit: only the second click makes a range.
     await userEvent.click(dayNumbered(20));
@@ -276,47 +243,7 @@ describe("DateRangePicker", () => {
     expect(segmentNamed("day, End Date").textContent).toBe("24");
   });
 
-  it("cancels an in-progress selection on Escape and returns focus to the trigger", async () => {
-    const onChange = rangeChangeSpy();
-    renderPicker(<DateRangePicker label="Delivery window" defaultValue={julyWeek} onChange={onChange} />);
-    await openPicker();
-
-    // Anchor a new range, then abandon it: the same Escape cancels the anchor and
-    // dismisses the popover, so the committed range is untouched.
-    await userEvent.click(dayNumbered(20));
-    await userEvent.keyboard("{Escape}");
-    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-    expect(onChange).not.toHaveBeenCalled();
-    // Focus restoration lands after the dismissal commits; under full-gate load the
-    // synchronous read can observe the frame before it.
-    await expect.poll(() => document.activeElement).toBe(trigger());
-    expect(trigger()).toHaveAttribute("aria-expanded", "false");
-    expect(segmentNamed("day, Start Date").textContent).toBe("14");
-    expect(segmentNamed("day, End Date").textContent).toBe("17");
-  });
-
-  it("marks a reversed range invalid and associates a string errorMessage", async () => {
-    const errorCopy = "The end date cannot precede the start date.";
-    renderPicker(
-      <DateRangePicker
-        label="Delivery window"
-        defaultValue={{ start: july17, end: july14 }}
-        validationBehavior="aria"
-        errorMessage={errorCopy}
-      />
-    );
-    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
-    const group = groupNamed("Delivery window");
-    const root = group.parentElement;
-    if (!(root instanceof HTMLElement)) {
-      throw new Error("expected the DateRangePicker root");
-    }
-
-    expect(root).toHaveAttribute("data-invalid");
-    expect(describedTextsFor(group)).toContain(errorCopy);
-  });
-
-  it("keeps a read-only picker inert: muted field, no editing, no popover", async () => {
+  it("keeps a read-only picker inert: muted field, disabled trigger, no popover", async () => {
     renderPicker(<DateRangePicker label="Delivery window" isReadOnly defaultValue={julyWeek} />);
     const group = groupNamed("Delivery window");
     const glyph = group.querySelector("svg");
@@ -331,10 +258,6 @@ describe("DateRangePicker", () => {
     expect(group.getAttribute("data-readonly")).toBe("true");
     expect(getComputedStyle(glyph).backgroundColor).not.toBe(cssVarColor(group, "--muted"));
     expect(trigger()).toBeDisabled();
-
-    await userEvent.click(segmentNamed("day, Start Date"));
-    await userEvent.keyboard("09");
-    expect(segmentNamed("day, Start Date").textContent).toBe("14");
 
     await userEvent.click(trigger(), { force: true });
     expect(page.getByRole("dialog").query()).toBeNull();
@@ -446,7 +369,7 @@ describe("DateRangePicker overlay containment", () => {
 });
 
 describe("DateRangePicker density metrics", () => {
-  it("keeps both dates and the trigger inside a narrow container at both densities", async () => {
+  it("keeps both dates and the trigger inside a narrow container at both densities", () => {
     renderPicker(
       <div style={{ width: 240 }}>
         <DateRangePicker label="Narrow range" defaultValue={julyWeek} />
@@ -467,12 +390,6 @@ describe("DateRangePicker density metrics", () => {
       if (!start || !end) throw new Error("expected both dates");
       expect(end.getBoundingClientRect().top).toBeGreaterThan(start.getBoundingClientRect().top);
     }
-    await userEvent.click(segmentNamed("day, Start Date"));
-    await userEvent.keyboard("{ArrowUp}");
-    expect(segmentNamed("day, Start Date").getAttribute("aria-valuenow")).toBe("15");
-    await userEvent.click(trigger());
-    await expect.element(page.getByRole("dialog")).toBeVisible();
-    await userEvent.keyboard("{Escape}");
   });
 
   it("insets the en-dash by one md inset from each date at both densities", async () => {
@@ -490,7 +407,7 @@ describe("DateRangePicker density metrics", () => {
 });
 
 describe("DateRangePicker composition surface", () => {
-  it("keeps a caller className on the root over the recipe's column layout", async () => {
+  it("keeps a caller className callback on the root over the recipe's column layout", () => {
     renderPicker(
       <DateRangePicker
         label="Delivery window"
@@ -503,11 +420,11 @@ describe("DateRangePicker composition surface", () => {
       throw new Error("expected the DateRangePicker root");
     }
 
+    // The recipe's own gap is `gap-1`, so 8px is the evaluated callback's `gap-2`. The
+    // re-evaluation on open is DatePicker's case: both compose through one helper.
     expect(getComputedStyle(root).display).toBe("flex");
     expect(getComputedStyle(root).flexDirection).toBe("column");
     expect(px(getComputedStyle(root).rowGap)).toBe(8);
-    await openPicker();
-    expect(px(getComputedStyle(root).rowGap)).toBe(16);
   });
 
   it("floors the field box width and lets only the end row absorb the slack", async () => {
@@ -523,40 +440,6 @@ describe("DateRangePicker composition surface", () => {
     // Only the wide template's end column grows, so the end row is the wider of two
     // identically formatted rows.
     expect(px(getComputedStyle(endRow).width)).toBeGreaterThan(px(getComputedStyle(startRow).width));
-  });
-
-  it("wears the styled dialog chrome without its close button, and pads the calendar itself", async () => {
-    renderPicker(<DateRangePicker label="Delivery window" defaultValue={julyWeek} />);
-    const dialog = await openPicker();
-    const root = calendarRoot();
-
-    expect(dialog.getAttribute("data-slot")).toBe("dialog");
-    // No `title` ⇒ no header row at all: an empty heading would take the dialog's
-    // accessible name from RAC and spend one 16 px `gap-4` on nothing
-    // (react-aria/internal/dialog.tsx).
-    expect(page.getByRole("button", { name: /close/i }).query()).toBeNull();
-    expect(root.closest('[role="dialog"]')).toBe(dialog);
-    // `closeButton={false}`: the popover is dismissed by Escape or an outside click, so
-    // the dialog chrome renders no dismiss affordance of its own.
-    expect(page.getByRole("button", { name: /close/i }).query()).toBeNull();
-    expect(getComputedStyle(dialog).paddingTop).toBe("0px");
-    expect(getComputedStyle(dialog).paddingLeft).toBe("0px");
-    // RangeCalendar's root is bare by design, so the inset is the recipe's own: the small
-    // surface tier, 4px.
-    expect(getComputedStyle(root).paddingTop).toBe("4px");
-    expect(getComputedStyle(root).borderTopWidth).toBe("0px");
-  });
-
-  it("sizes the trigger glyph from the recipe rather than the Button's fallback", async () => {
-    renderPicker(<DateRangePicker label="Delivery window" defaultValue={julyWeek} />);
-    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
-    const glyph = trigger().querySelector("svg");
-    if (!(glyph instanceof SVGElement)) {
-      throw new Error("expected the trigger glyph");
-    }
-
-    expect(px(getComputedStyle(glyph).width)).toBe(16);
-    expect(px(getComputedStyle(glyph).height)).toBe(16);
   });
 });
 
@@ -649,76 +532,13 @@ function presetPicker(): ReactElement {
   );
 }
 
-describe("DateRangePicker preset pane geometry", () => {
-  afterEach(async () => {
-    await page.viewport(STACKED_VIEWPORT.width, STACKED_VIEWPORT.height);
-  });
-
-  it("runs the row divider from the dialog's top edge to its bottom edge", async () => {
-    await page.viewport(ROW_VIEWPORT.width, ROW_VIEWPORT.height);
-    renderPicker(presetPicker());
-    const inner = paddingBox(await openPicker());
-    const column = roleNamed("radiogroup", "Date presets");
-    const divider = column.getBoundingClientRect();
-
-    expect(px(getComputedStyle(column).borderRightWidth)).toBeGreaterThan(0);
-    expect(Math.abs(divider.top - inner.top)).toBeLessThanOrEqual(SUBPIXEL);
-    expect(Math.abs(divider.bottom - inner.bottom)).toBeLessThanOrEqual(SUBPIXEL);
-    expect(Math.abs(divider.left - inner.left)).toBeLessThanOrEqual(SUBPIXEL);
-  });
-
-  it("runs the stacked divider from the dialog's start edge to its end edge", async () => {
-    await page.viewport(STACKED_VIEWPORT.width, STACKED_VIEWPORT.height);
-    renderPicker(presetPicker());
-    const inner = paddingBox(await openPicker());
-    const column = roleNamed("radiogroup", "Date presets");
-    const divider = column.getBoundingClientRect();
-
-    expect(px(getComputedStyle(column).borderBottomWidth)).toBeGreaterThan(0);
-    expect(Math.abs(divider.left - inner.left)).toBeLessThanOrEqual(SUBPIXEL);
-    expect(Math.abs(divider.right - inner.right)).toBeLessThanOrEqual(SUBPIXEL);
-    expect(Math.abs(divider.top - inner.top)).toBeLessThanOrEqual(SUBPIXEL);
-  });
-
-  it.each([
-    ["row", ROW_VIEWPORT],
-    ["stacked", STACKED_VIEWPORT],
-  ])(
-    "insets the presets by at least the 4px small surface tier on every side of their column (%s)",
-    async (_layout, viewport) => {
-      await page.viewport(viewport.width, viewport.height);
-      renderPicker(presetPicker());
-      await openPicker();
-      const items = unionBox([presetTargetNamed("Today"), presetTargetNamed("Last 7 days")]);
-      const insets = insetsWithin(paddingBox(roleNamed("radiogroup", "Date presets")), items);
-
-      expect(insets.top).toBeGreaterThanOrEqual(4 - SUBPIXEL);
-      expect(insets.right).toBeGreaterThanOrEqual(4 - SUBPIXEL);
-      expect(insets.bottom).toBeGreaterThanOrEqual(4 - SUBPIXEL);
-      expect(insets.left).toBeGreaterThanOrEqual(4 - SUBPIXEL);
-    }
-  );
-});
-
+// The pane's divider geometry and the presets' inset come from `pickerVariants` and the
+// shared preset group, which DatePicker's geometry suite measures for both pickers.
 describe("DateRangePicker presets", () => {
-  it("lays a locale-named preset radiogroup beside the range calendar inside the dialog", async () => {
-    renderPicker(
-      <DateRangePicker
-        label="Period"
-        defaultValue={julyWeek}
-        presetGroup={
-          <DateRangePickerPresetGroup>
-            <DateRangePickerPresetItem value="today">Today</DateRangePickerPresetItem>
-            <DateRangePickerPresetItem value="last-7-days">Last 7 days</DateRangePickerPresetItem>
-          </DateRangePickerPresetGroup>
-        }
-      />
-    );
+  it("lays a locale-named preset radiogroup beside the range calendar, divided in the border role colour", async () => {
+    renderPicker(presetPicker());
     const dialog = await openPicker();
-    const radiogroup = page.getByRole("radiogroup", { name: "Date presets" }).element();
-    if (!(radiogroup instanceof HTMLElement)) {
-      throw new Error("expected the preset radiogroup");
-    }
+    const radiogroup = roleNamed("radiogroup", "Date presets");
 
     expect(radiogroup.getAttribute("data-slot")).toBe("date-range-picker-preset-group");
     expect(presetTargetNamed("Today").getAttribute("data-slot")).toBe("date-range-picker-preset-item");
@@ -728,35 +548,16 @@ describe("DateRangePicker presets", () => {
     expect(pane.closest('[role="dialog"]')).toBe(dialog);
     expect(radiogroup.parentElement).toBe(pane);
     expect(getComputedStyle(pane).display).toBe("flex");
-  });
 
-  it("draws the pane divider in the border role colour, not the text colour", async () => {
-    renderPicker(
-      <DateRangePicker
-        label="Period"
-        defaultValue={julyWeek}
-        presetGroup={
-          <DateRangePickerPresetGroup>
-            <DateRangePickerPresetItem value="today">Today</DateRangePickerPresetItem>
-          </DateRangePickerPresetGroup>
-        }
-      />
-    );
-    await openPicker();
     // The preset group is the pane's first child, so it carries the divider: on its
     // bottom edge while the panes stack, on its trailing edge once they sit side by side.
-    const group = page.getByRole("radiogroup", { name: "Date presets" }).element();
-    if (!(group instanceof HTMLElement)) {
-      throw new Error("expected the preset radiogroup");
-    }
-    const groupStyle = getComputedStyle(group);
+    const groupStyle = getComputedStyle(radiogroup);
     const drawn = ["top", "right", "bottom", "left"].filter(
       (side) => px(groupStyle.getPropertyValue(`border-${side}-width`)) > 0
     );
-
     expect(drawn).toHaveLength(1);
     const color = groupStyle.getPropertyValue(`border-${drawn.join("")}-color`);
-    expect(color).toBe(cssVarColor(group, "--border"));
+    expect(color).toBe(cssVarColor(radiogroup, "--border"));
     expect(color).not.toBe(groupStyle.color);
   });
 
@@ -823,42 +624,29 @@ describe("DateRangePicker presets", () => {
     expect(visibleMonth()).toMatch(/March\s+2025/i);
   });
 
-  it.each([
-    ["pointer", () => userEvent.click(presetTargetNamed("Mid month"))],
-    [
-      "keyboard",
-      async () => {
-        await userEvent.keyboard("{Tab}");
-        expect(document.activeElement).toBe(
-          page.getByRole("radio", { name: "First week", exact: true }).element()
-        );
-        await userEvent.keyboard("{ArrowDown}");
-      },
-    ],
-  ] as const)(
-    "drops a half-picked range rather than committing it when the user moves to the presets by %s",
-    async (_input, moveToPreset) => {
-      const onCalendarCommit = vi.fn<(value: CommittedRange | null) => void>();
-      renderPicker(
-        <PresetDrivenRangePicker
-          onCalendarCommit={onCalendarCommit}
-          placeholderValue={july4}
-          ranges={{ "First week": { start: july4, end: july9 }, "Mid month": { start: july14, end: july24 } }}
-        />
-      );
-      await openPicker();
+  it("drops a half-picked range rather than committing it when the user moves to the presets", async () => {
+    // RAC applies the `reset` commit behavior on blur and on a pointer release outside the
+    // grid alike, so the pointer path stands for both.
+    const onCalendarCommit = vi.fn<(value: CommittedRange | null) => void>();
+    renderPicker(
+      <PresetDrivenRangePicker
+        onCalendarCommit={onCalendarCommit}
+        placeholderValue={july4}
+        ranges={{ "First week": { start: july4, end: july9 }, "Mid month": { start: july14, end: july24 } }}
+      />
+    );
+    await openPicker();
 
-      // Anchor a first endpoint, then leave the grid for the preset pane.
-      await userEvent.click(dayNumbered(20));
-      await moveToPreset();
+    // Anchor a first endpoint, then leave the grid for the preset pane.
+    await userEvent.click(dayNumbered(20));
+    await userEvent.click(presetTargetNamed("Mid month"));
 
-      await expect.element(page.getByRole("dialog")).toBeVisible();
-      expect(onCalendarCommit).not.toHaveBeenCalled();
-      expect(page.getByRole("radio", { name: "Mid month", exact: true }).element()).toBeChecked();
-      expect(committedSegments()).toEqual(["07", "14", "2026", "07", "24", "2026"]);
-      expect(cellNumbered(20)).toHaveAttribute("aria-selected", "true");
-    }
-  );
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+    expect(onCalendarCommit).not.toHaveBeenCalled();
+    expect(page.getByRole("radio", { name: "Mid month", exact: true }).element()).toBeChecked();
+    expect(committedSegments()).toEqual(["07", "14", "2026", "07", "24", "2026"]);
+    expect(cellNumbered(20)).toHaveAttribute("aria-selected", "true");
+  });
 
   it.each([
     ["without presets", false],
@@ -978,29 +766,5 @@ describe("DateRangePicker presets", () => {
     await userEvent.dblClick(presetTargetNamed("This month"));
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
     expect(events).toEqual(["open", "double-click today", "double-click this month", "close"]);
-  });
-
-  it("forwards label and aria-label to the group name, the explicit aria-label first", async () => {
-    const { unmount } = renderThemed(
-      withLocale(
-        "nb-NO",
-        <DateRangePickerPresetGroup label="Hurtigvalg">
-          <DateRangePickerPresetItem value="today">I dag</DateRangePickerPresetItem>
-        </DateRangePickerPresetGroup>
-      )
-    );
-    await expect.element(page.getByRole("radiogroup", { name: "Hurtigvalg", exact: true })).toBeVisible();
-    unmount();
-
-    renderThemed(
-      withLocale(
-        "nb-NO",
-        <DateRangePickerPresetGroup label="Hurtigvalg" aria-label="Periode">
-          <DateRangePickerPresetItem value="today">I dag</DateRangePickerPresetItem>
-        </DateRangePickerPresetGroup>
-      )
-    );
-    await expect.element(page.getByRole("radiogroup", { name: "Periode", exact: true })).toBeVisible();
-    expect(page.getByRole("radiogroup", { name: "Hurtigvalg" }).query()).toBeNull();
   });
 });

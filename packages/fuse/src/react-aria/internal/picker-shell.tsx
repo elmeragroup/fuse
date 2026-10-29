@@ -33,10 +33,9 @@ import { Popover } from "./popover";
  *    plus the field label); a local label would shadow it. That was two identical lint
  *    disables at two call sites and is now one.
  *
- * The dialog is the styled private `Dialog` with `closeButton={false}` and no `title`,
- * which supplies the accessible name: an untitled styled Dialog renders no heading,
- * so the name RAC publishes on `DialogContext` reaches the overlay unopposed. See
- * `internal/dialog.tsx` for why a rendered-but-empty heading would take that name instead.
+ * The dialog is the styled private `Dialog`, which renders no heading, so the name RAC
+ * publishes on `DialogContext` reaches the overlay unopposed. See `internal/dialog.tsx` for
+ * why a heading would take that name instead.
  */
 export type PickerShellProps = {
   /** Visible label, rendered as the private RAC `Label`. Omitted when absent. */
@@ -105,9 +104,7 @@ export function PickerShell({
       <FieldError>{errorMessage}</FieldError>
       {description ? <Description>{description}</Description> : null}
       <Popover container={container} placement="bottom right">
-        <Dialog className={dialog()} closeButton={false}>
-          {popover}
-        </Dialog>
+        <Dialog className={dialog()}>{popover}</Dialog>
       </Popover>
     </>
   );

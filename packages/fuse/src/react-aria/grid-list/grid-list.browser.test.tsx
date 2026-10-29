@@ -6,7 +6,6 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
 import {
   CONTROL_SM,
   ROW,
@@ -15,17 +14,16 @@ import {
   roleNamed,
   stampDensity,
 } from "../../../test/themed-browser-render";
+import type { SupportedLocale } from "../../intl/locale-context";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { GridList, GridListItem } from "./grid-list";
 
 const DRAG_COPY = {
   "nb-NO": "Dra for å endre rekkefølge",
-  "sv-SE": "Dra för att ändra ordning",
   "en-US": "Drag to reorder",
-  "fi-FI": "Vedä järjestääksesi",
 } as const;
 
-function renderList(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] = "en-US") {
+function renderList(node: ReactNode, locale: SupportedLocale = "en-US") {
   return renderThemed(
     <UiProviders locale={locale} navigate={() => undefined}>
       {node}
@@ -57,13 +55,6 @@ function gridNamed(name: string): HTMLElement {
     throw new Error(`expected grid ${name}`);
   }
   return element;
-}
-
-function rows(): HTMLElement[] {
-  return page
-    .getByRole("row")
-    .elements()
-    .filter((element): element is HTMLElement => element instanceof HTMLElement);
 }
 
 function rowNamed(name: string | RegExp): HTMLElement {
@@ -99,54 +90,30 @@ function lastSelection(calls: unknown[][]): "all" | Set<unknown> {
   throw new Error("expected a RAC Selection");
 }
 
-function selectAllChord(): string {
-  return navigator.platform.includes("Mac") ? "{Meta>}a{/Meta}" : "{Control>}a{/Control}";
-}
-
 describe("GridList", () => {
-  it("renders a grid and rows from static children", async () => {
-    renderList(
-      <GridList aria-label="Meters">
-        <GridListItem>Oslo</GridListItem>
-        <GridListItem>Bergen</GridListItem>
-      </GridList>
-    );
-
-    await expect.element(page.getByRole("grid", { name: "Meters" })).toBeVisible();
-    expect(rows().map((row) => row.textContent)).toEqual(["Oslo", "Bergen"]);
-  });
-
-  it("shows row checkboxes in multiple toggle mode, toggles with Space, and selects all", async () => {
+  it("shows row checkboxes in multiple toggle mode and toggles a row with Space", async () => {
     const onSelectionChange = vi.fn();
     renderList(
       <GridList
         aria-label="Meters"
         selectionMode="multiple"
         selectionBehavior="toggle"
-        onSelectionChange={onSelectionChange}
-        disabledKeys={["trondheim"]}>
+        onSelectionChange={onSelectionChange}>
         <GridListItem id="oslo">Oslo</GridListItem>
         <GridListItem id="bergen">Bergen</GridListItem>
-        <GridListItem id="trondheim">Trondheim</GridListItem>
       </GridList>
     );
 
-    expect(checkboxes()).toHaveLength(3);
+    expect(checkboxes()).toHaveLength(2);
 
     rowNamed("Oslo").focus();
     await userEvent.keyboard(" ");
     expect(selectionKeys(lastSelection(onSelectionChange.mock.calls))).toEqual(["oslo"]);
-
-    await userEvent.keyboard(selectAllChord());
-    const allKeys = selectionKeys(lastSelection(onSelectionChange.mock.calls));
-    if (allKeys[0] === "all") {
-      expect(allKeys).toEqual(["all"]);
-    } else {
-      expect(allKeys).toEqual(["bergen", "oslo"]);
-    }
   });
 
-  it("moves row focus with arrows and typeahead", async () => {
+  // GridListItem hands RAC a render function, so RAC cannot read a string child's text itself;
+  // typeahead finds a row only through the textValue GridListItem derives.
+  it("moves row focus by typeahead on a string child", async () => {
     renderList(
       <GridList aria-label="Meters">
         <GridListItem>Oslo</GridListItem>
@@ -156,14 +123,6 @@ describe("GridList", () => {
     );
 
     rowNamed("Oslo").focus();
-    expect(document.activeElement).toBe(rowNamed("Oslo"));
-
-    await userEvent.keyboard("{ArrowDown}");
-    expect(document.activeElement).toBe(rowNamed("Bergen"));
-
-    await userEvent.keyboard("{ArrowUp}");
-    expect(document.activeElement).toBe(rowNamed("Oslo"));
-
     await userEvent.keyboard("t");
     expect(document.activeElement).toBe(rowNamed("Trondheim"));
   });
@@ -188,15 +147,11 @@ describe("GridList", () => {
     expect(getComputedStyle(grid).justifyContent).toBe("center");
   });
 
-  it("names the drag handle in every locale and paints the shared focus ring", async () => {
-    for (const locale of SUPPORTED_LOCALES) {
-      const { unmount } = renderList(<DraggableMeters />, locale);
-      const handle = page.getByRole("button", { name: DRAG_COPY[locale], exact: true }).element();
-      if (!(handle instanceof HTMLElement)) {
-        throw new Error(`expected drag handle in ${locale}`);
-      }
-      unmount();
-    }
+  it("names the drag handle from the locale dictionary and paints the shared focus ring", async () => {
+    // grid-list.test.ts pins every locale's row; one non-default locale proves the handle reads it.
+    const { unmount } = renderList(<DraggableMeters />, "nb-NO");
+    await expect.element(page.getByRole("button", { name: DRAG_COPY["nb-NO"], exact: true })).toBeVisible();
+    unmount();
 
     // Default GridList Tab exits the collection (keyboardNavigationBehavior="arrow").
     // "tab" lets Tab from the row land on the slot="drag" handle so the shared

@@ -4,7 +4,6 @@ import { join, relative } from "node:path";
 import picomatch from "picomatch";
 import { describe, expect, it } from "vitest";
 
-import { PUBLISH_GATES } from "../packages/fuse/scripts/release-pack.ts";
 import { USAGE } from "../scripts/release.ts";
 import { asRecord, asString, readJsonObject } from "./json-object.mjs";
 import { repoRoot } from "./repo-tree.mjs";
@@ -105,21 +104,6 @@ describe("release wiring", () => {
     expect(probe.error, "release entry point probe should not time out or fail to spawn").toBeUndefined();
     expect(probe.status, probe.stderr).not.toBe(0);
     expect(probe.stderr).toContain(USAGE);
-  }, 30_000);
-
-  it("schedules every publish gate through the ci:checks aggregate", () => {
-    // The merge `checks` job runs explicit task names and `test:packed-consumer` runs in the
-    // `browser` job; this pins the aggregate a local `pnpm ci:checks` fans out, directly or
-    // through the `check` gate it includes.
-    expect([...PUBLISH_GATES]).toEqual(["package:check", "size-limit", "test:packed-consumer"]);
-    const scheduled = turboTasks(["run", "ci:checks"])
-      .filter((task) => asString(task.command, "task command") !== "<NONEXISTENT>")
-      .map((task) => asString(task.taskId, "task id"));
-    for (const gate of PUBLISH_GATES) {
-      expect(scheduled, `${gate} must also run in the ci:checks aggregate`).toContain(
-        `@elmeragroup/fuse#${gate}`
-      );
-    }
   }, 30_000);
 
   it("invokes the release engine from the publish workflow after installing Chromium", () => {

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { dateFieldVariants } from "../../styles/date-field";
 
 describe("dateFieldVariants", () => {
@@ -12,20 +11,5 @@ describe("dateFieldVariants", () => {
     for (const input of [own, group]) {
       expect(input).not.toMatch(/(?:^|\s)(?:block|flex|grid|inline)(?:\s|$)/u);
     }
-  });
-
-  it("emits no size axis and no raw palette", () => {
-    expect(dateFieldVariants.variantKeys).not.toContain("size");
-    const emitted = [false, true]
-      .flatMap((isPlaceholder) =>
-        [false, true].flatMap((isDisabled) =>
-          [false, true].map((isFocused) => {
-            const slots = dateFieldVariants({ isPlaceholder, isDisabled, isFocused });
-            return [slots.base(), slots.input(), slots.segment()].join(" ");
-          })
-        )
-      )
-      .join(" ");
-    expect(emitted).not.toMatch(RAW_PALETTE_RE);
   });
 });

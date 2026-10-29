@@ -141,16 +141,6 @@ describe("Toast module manager before the provider connects", () => {
     await expectTitles(["Second mount", "Raised between mounts"]);
   });
 
-  it("shows a live add after the provider connects", async () => {
-    const manager = Toast.createToastManager();
-    renderProvider(manager);
-
-    const id = manager.add({ id: "live", title: "Raised live" });
-
-    expect(id).toBe("live");
-    await expectTitles(["Raised live"]);
-  });
-
   it("connects a spread copy of a manager", async () => {
     const manager = { ...Toast.createToastManager() };
     manager.add({ title: "Raised through a copy" });

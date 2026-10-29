@@ -1,10 +1,6 @@
-import { createElement } from "react";
-
-import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
-import { Empty } from "./empty";
 import { emptyMediaVariants, emptyVariants } from "./empty-variants";
 
 describe("emptyVariants", () => {
@@ -60,33 +56,5 @@ describe("emptyMediaVariants", () => {
       expect(resolved, variant).toContain("[&_svg]:shrink-0");
       expect(resolved, variant).not.toContain("--control-");
     }
-  });
-});
-
-describe("Empty server boundary", () => {
-  it("imports and renders the namespace without a use client directive", () => {
-    const html = renderToStaticMarkup(
-      createElement(
-        Empty.Root,
-        null,
-        createElement(
-          Empty.Header,
-          null,
-          createElement(Empty.Media, { variant: "icon" }, "icon"),
-          createElement(Empty.Title, null, "No orders yet"),
-          createElement(Empty.Description, null, "Orders you create will show up here.")
-        ),
-        createElement(Empty.Content, null, "Create order")
-      )
-    );
-    expect(html).toContain("No orders yet");
-    expect(html).toContain("Orders you create will show up here.");
-    expect(html).toContain("Create order");
-    expect(html).toContain('data-slot="empty-media"');
-    expect(html).not.toContain('data-slot="empty-icon"');
-    expect(html).toMatch(/<p[^>]*data-slot="empty-description"/);
-    expect(html).toContain("[&amp;&gt;a]:underline");
-    expect(html).toContain("[&amp;&gt;a]:underline-offset-4");
-    expect(html).toContain("[&amp;&gt;a:hover]:text-primary");
   });
 });

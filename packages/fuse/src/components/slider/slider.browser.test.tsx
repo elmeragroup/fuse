@@ -14,6 +14,7 @@ import {
   CONTROL_MD,
   cssVarColor,
   effectiveOpacity,
+  formNamed,
   px,
   renderThemed,
   roleNamed,
@@ -22,6 +23,7 @@ import {
 import type { SupportedLocale } from "../../intl/locale-context";
 import { DENSITIES } from "../../theme";
 import { Slider } from "./slider";
+import type { SliderValue } from "./slider";
 
 /** The range thumbs' default names per locale, written by hand for a slider labelled "Pris". */
 const RANGE_NAMES = {
@@ -72,16 +74,6 @@ function controlOf(name: string): HTMLElement {
     throw new Error(`expected a control around ${name}`);
   }
   return control;
-}
-
-/** The track beside the thumbs in the control: the control's child that holds no thumb. */
-function trackOf(name: string): HTMLElement {
-  const thumb = thumbOf(name);
-  const track = [...controlOf(name).children].find((child) => child !== thumb);
-  if (!(track instanceof HTMLElement)) {
-    throw new Error(`expected a track beside ${name}`);
-  }
-  return track;
 }
 
 /** Every slider reads the provider locale, so each suite render supplies one. */
@@ -154,30 +146,18 @@ describe("Slider", () => {
     }
   });
 
-  it("changes the value when the thumb is dragged along the track", async () => {
-    const onChange = vi.fn();
-    renderSlider(
-      <div style={{ width: 400 }}>
-        <Slider label="Drag" defaultValue={0} onChange={onChange} />
-      </div>
-    );
-    const control = controlOf("Drag");
-    const box = control.getBoundingClientRect();
-    await userEvent.dragAndDrop(page.elementLocator(thumbOf("Drag")), page.elementLocator(control), {
-      targetPosition: { x: box.width * 0.75, y: box.height / 2 },
-    });
-    // The thumb centres on the control edges, so 75% of the control's width is 75.
-    expect(valueNow("Drag")).toBeGreaterThanOrEqual(73);
-    expect(valueNow("Drag")).toBeLessThanOrEqual(77);
-    expect(onChange).toHaveBeenLastCalledWith(valueNow("Drag"));
-  });
-
-  it("round-trips a controlled value through onChange, and holds when the parent ignores it", async () => {
+  it("round-trips a controlled value through onChange and onValueCommitted, and holds when the parent ignores it", async () => {
+    const commits: number[] = [];
     function Controlled() {
       const [value, setValue] = useState(40);
       return (
         <>
-          <Slider label="Controlled" value={value} onChange={setValue} />
+          <Slider
+            label="Controlled"
+            value={value}
+            onChange={setValue}
+            onValueCommitted={(next) => commits.push(next)}
+          />
           <Slider label="Pinned" value={10} onChange={vi.fn()} />
           <p>Parent {value}</p>
         </>
@@ -188,31 +168,42 @@ describe("Slider", () => {
     await userEvent.keyboard("{ArrowRight}{ArrowRight}");
     expect(valueNow("Controlled")).toBe(42);
     expect(page.getByText("Parent 42", { exact: true }).query()).toBeTruthy();
+    expect(commits).toEqual([41, 42]);
 
     sliderNamed("Pinned").focus();
     await userEvent.keyboard("{ArrowRight}");
     expect(valueNow("Pinned")).toBe(10);
   });
 
-  it.each(SUPPORTED_LOCALES)("names each range thumb on its own in %s", async (locale) => {
-    const onChange = vi.fn();
-    renderSlider(<Slider label="Pris" defaultValue={[20, 80]} onChange={onChange} />, locale);
-    const [startName, endName] = RANGE_NAMES[locale];
-    expect(valueNow(startName)).toBe(20);
-    expect(valueNow(endName)).toBe(80);
+  it.each(SUPPORTED_LOCALES)(
+    "names each range thumb on its own and announces its formatted value alone in %s, reporting the range's shape",
+    async (locale) => {
+      const onChange = vi.fn();
+      const commits: (readonly number[])[] = [];
+      renderSlider(
+        <Slider
+          label="Pris"
+          defaultValue={[0.5, 2.5]}
+          maxValue={5}
+          step={0.5}
+          onChange={onChange}
+          onValueCommitted={(value) => commits.push(value)}
+        />,
+        locale
+      );
+      const [startName, endName] = RANGE_NAMES[locale];
+      const [startText, endText] = RANGE_VALUE_TEXT[locale];
+      expect(valueNow(startName)).toBe(0.5);
+      expect(valueNow(endName)).toBe(2.5);
+      expect(sliderNamed(startName).getAttribute("aria-valuetext")).toBe(startText);
+      expect(sliderNamed(endName).getAttribute("aria-valuetext")).toBe(endText);
 
-    sliderNamed(endName).focus();
-    await userEvent.keyboard("{ArrowLeft}");
-    expect(onChange).toHaveBeenLastCalledWith([20, 79]);
-  });
-
-  it.each(SUPPORTED_LOCALES)("announces each range thumb's formatted value alone in %s", (locale) => {
-    renderSlider(<Slider label="Pris" defaultValue={[0.5, 2.5]} maxValue={5} step={0.5} />, locale);
-    const [startName, endName] = RANGE_NAMES[locale];
-    const [startText, endText] = RANGE_VALUE_TEXT[locale];
-    expect(sliderNamed(startName).getAttribute("aria-valuetext")).toBe(startText);
-    expect(sliderNamed(endName).getAttribute("aria-valuetext")).toBe(endText);
-  });
+      sliderNamed(endName).focus();
+      await userEvent.keyboard("{ArrowLeft}");
+      expect(onChange).toHaveBeenLastCalledWith([0.5, 2]);
+      expect(commits).toEqual([[0.5, 2]]);
+    }
+  );
 
   it("keeps an uncontrolled range's thumbs and values when defaultValue changes after mount", () => {
     const { rerender } = renderSlider(<Slider label="Pris" defaultValue={[20, 80]} />);
@@ -324,27 +315,15 @@ describe("Slider", () => {
     }
   });
 
-  it("paints the unfilled track in the field-border tone", () => {
-    renderSlider(<Slider label="Track" defaultValue={50} />);
-    const track = trackOf("Track");
-    expect(getComputedStyle(track).backgroundColor).toBe(cssVarColor(track, "--input"));
-  });
-
-  it("wires isInvalid and errorMessage through the Field", () => {
-    renderSlider(<Slider label="Budget" isInvalid errorMessage="Too high." defaultValue={90} />);
-    const input = sliderNamed("Budget");
-    expect(input.getAttribute("aria-invalid")).toBe("true");
-    expect(describedByText(input)).toContain("Too high.");
-    expectInvalidRing("thumb", thumbOf("Budget"));
-  });
-
-  it("draws a solid error line inside the halo on an invalid thumb for keyboard focus, and the halo alone at rest", async () => {
+  it("wires isInvalid and errorMessage through the Field, with a solid error line inside the halo for keyboard focus and the halo alone at rest", async () => {
     renderSlider(
       <>
         <button type="button">Before</button>
-        <Slider label="Invalid budget" isInvalid defaultValue={30} />
+        <Slider label="Invalid budget" isInvalid errorMessage="Too high." defaultValue={30} />
       </>
     );
+    expect(sliderNamed("Invalid budget").getAttribute("aria-invalid")).toBe("true");
+    expect(describedByText(sliderNamed("Invalid budget"))).toContain("Too high.");
     roleNamed("button", "Before").focus();
     await userEvent.keyboard("{Tab}");
     expect(sliderNamed("Invalid budget").matches(":focus-visible")).toBe(true);
@@ -370,7 +349,7 @@ describe("Slider", () => {
 });
 
 describe("Slider onValueCommitted", () => {
-  it("commits once when a thumb drag ends, not while it moves", async () => {
+  it("changes the value along a thumb drag and commits once when it ends, not while it moves", async () => {
     const commits: number[] = [];
     const onChange = vi.fn();
     renderSlider(
@@ -400,6 +379,7 @@ describe("Slider onValueCommitted", () => {
     expect(commits[0]).toBeGreaterThanOrEqual(73);
     expect(commits[0]).toBeLessThanOrEqual(77);
     expect(commits[0]).toBe(valueNow("Drag"));
+    expect(onChange).toHaveBeenLastCalledWith(valueNow("Drag"));
   });
 
   it("commits the starting value once when a drag moves away and comes back", async () => {
@@ -475,36 +455,6 @@ describe("Slider onValueCommitted", () => {
     sliderNamed("Size").focus();
     await userEvent.keyboard("{ArrowRight}{ArrowRight}{Home}");
     expect(commits).toEqual([51, 52, 0]);
-  });
-
-  it("commits a range in its own shape", async () => {
-    const commits: (readonly number[])[] = [];
-    renderSlider(
-      <Slider label="Pris" defaultValue={[20, 80]} onValueCommitted={(value) => commits.push(value)} />
-    );
-    sliderNamed("Pris, maximum").focus();
-    await userEvent.keyboard("{ArrowLeft}");
-    expect(commits).toEqual([[20, 79]]);
-  });
-
-  it("commits from a controlled slider, which the parent then shows", async () => {
-    const commits: number[] = [];
-    function Controlled() {
-      const [value, setValue] = useState(40);
-      return (
-        <Slider
-          label="Controlled"
-          value={value}
-          onChange={setValue}
-          onValueCommitted={(next) => commits.push(next)}
-        />
-      );
-    }
-    renderSlider(<Controlled />);
-    sliderNamed("Controlled").focus();
-    await userEvent.keyboard("{ArrowRight}");
-    expect(commits).toEqual([41]);
-    expect(valueNow("Controlled")).toBe(41);
   });
 });
 
@@ -591,4 +541,133 @@ describe("Slider density", () => {
       }
     }
   );
+});
+
+/**
+ * The reset listener's plumbing is proved in `use-form-reset.browser.test.tsx`. Slider
+ * remounts its base-ui root on reset, as NumberField does, so these cases prove the remount
+ * restores the uncontrolled value and what the form submits, and keeps focus on its thumb.
+ */
+describe("Slider native form reset", () => {
+  it("restores an uncontrolled value on native reset, and submits it", async () => {
+    const onChange = vi.fn();
+    renderThemed(
+      withLocale(
+        "en-US",
+        <form aria-label="Volume form">
+          <Slider label="Volume" name="volume" defaultValue={30} onChange={onChange} />
+        </form>
+      )
+    );
+    roleNamed("slider", "Volume").focus();
+    await userEvent.keyboard("{ArrowRight}{ArrowRight}");
+    expect(valueNow("Volume")).toBe(32);
+    const edits = onChange.mock.calls.length;
+
+    formNamed("Volume form").reset();
+
+    await expect.poll(() => valueNow("Volume")).toBe(30);
+    expect(document.activeElement, "the remount keeps focus on the thumb").toBe(
+      roleNamed("slider", "Volume")
+    );
+    expect(onChange, "native reset does not call onChange").toHaveBeenCalledTimes(edits);
+    expect(new FormData(formNamed("Volume form")).getAll("volume")).toEqual(["30"]);
+  });
+
+  it("restores an uncontrolled range on native reset, and keeps focus on the thumb that held it", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <form aria-label="Price form">
+          <Slider label="Price" name="price" defaultValue={[20, 80]} />
+        </form>
+      )
+    );
+    roleNamed("slider", "Price, maximum").focus();
+    await userEvent.keyboard("{ArrowLeft}{ArrowLeft}{ArrowLeft}");
+    expect(valueNow("Price, maximum")).toBe(77);
+
+    formNamed("Price form").reset();
+
+    await expect.poll(() => valueNow("Price, maximum")).toBe(80);
+    expect(valueNow("Price, minimum")).toBe(20);
+    expect(document.activeElement).toBe(roleNamed("slider", "Price, maximum"));
+    expect(new FormData(formNamed("Price form")).getAll("price")).toEqual(["20", "80"]);
+  });
+
+  it("keeps a controlled value parent-owned through native reset", async () => {
+    function ControlledVolume() {
+      const [current, setCurrent] = useState(30);
+      return (
+        <form aria-label="Volume form">
+          <Slider label="Volume" name="volume" value={current} onChange={setCurrent} />
+          <Slider label="Balance" defaultValue={50} />
+        </form>
+      );
+    }
+    renderThemed(withLocale("en-US", <ControlledVolume />));
+    roleNamed("slider", "Volume").focus();
+    await userEvent.keyboard("{ArrowRight}{ArrowRight}");
+    expect(valueNow("Volume")).toBe(32);
+    roleNamed("slider", "Balance").focus();
+    await userEvent.keyboard("{ArrowRight}");
+
+    formNamed("Volume form").reset();
+    // The uncontrolled sibling resets in the same task a controlled remount would, so once it
+    // is back the controlled slider has had its chance to reset.
+    await expect.poll(() => valueNow("Balance")).toBe(50);
+
+    expect(valueNow("Volume")).toBe(32);
+    expect(new FormData(formNamed("Volume form")).getAll("volume")).toEqual(["32"]);
+  });
+
+  it("keeps focus on the surviving thumb when a reset shrinks the range, and resets again", async () => {
+    const price = (defaultValue: SliderValue) =>
+      withLocale(
+        "en-US",
+        <form aria-label="Price form">
+          <Slider label="Price" name="price" defaultValue={defaultValue} />
+        </form>
+      );
+    const { rerender } = renderThemed(price([20, 80]));
+    roleNamed("slider", "Price, maximum").focus();
+    rerender(price(50));
+
+    formNamed("Price form").reset();
+
+    await expect.poll(() => valueNow("Price")).toBe(50);
+    expect(document.activeElement, "focus moves to the one thumb left").toBe(roleNamed("slider", "Price"));
+
+    await userEvent.keyboard("{ArrowRight}");
+    expect(valueNow("Price")).toBe(51);
+    formNamed("Price form").reset();
+
+    await expect.poll(() => valueNow("Price")).toBe(50);
+    expect(document.activeElement).toBe(roleNamed("slider", "Price"));
+    expect(new FormData(formNamed("Price form")).getAll("price")).toEqual(["50"]);
+  });
+});
+
+/**
+ * Attribute writes on a thumb's range input while the value moves: Fuse marks the input once
+ * when it attaches, so moving the thumb writes nothing to it.
+ */
+describe("Slider thumb input attributes", () => {
+  it("marks each thumb input once, not on every value change", async () => {
+    renderThemed(withLocale("en-US", <Slider label="Size" defaultValue={10} />));
+    const input = roleNamed("slider", "Size");
+    expect(input.hasAttribute("data-focus-ring-control")).toBe(true);
+    const records: MutationRecord[] = [];
+    const observer = new MutationObserver((delivered) => {
+      records.push(...delivered);
+    });
+    observer.observe(input, { attributes: true, attributeFilter: ["data-focus-ring-control"] });
+
+    input.focus();
+    await userEvent.keyboard("{ArrowRight}".repeat(10));
+    expect(input.getAttribute("aria-valuenow")).toBe("20");
+    records.push(...observer.takeRecords());
+    observer.disconnect();
+    expect(records).toHaveLength(0);
+  });
 });

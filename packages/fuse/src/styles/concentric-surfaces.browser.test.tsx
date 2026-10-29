@@ -266,15 +266,15 @@ const FIND = {
  * inset measured between their boxes, plus the hand-computed corner for the theme.
  */
 function expectConcentric(
-  name: PairName,
+  label: `${PairName} ${Density}`,
   { part, shell, edge, corner = shell }: Pair,
   expected: number
 ): void {
-  expect(shell.contains(part), `${name} inside its shell`).toBe(true);
+  expect(shell.contains(part), `${label} inside its shell`).toBe(true);
   const measured = cornerRadius(part);
   const outer = cornerRadius(corner);
-  expect(measured, `${name} against its shell`).toBeCloseTo(floor(outer - edgeInset(part, shell, edge)), 1);
-  expect(measured, `${name} by hand`).toBeCloseTo(expected, 1);
+  expect(measured, `${label} against its shell`).toBeCloseTo(floor(outer - edgeInset(part, shell, edge)), 1);
+  expect(measured, `${label} by hand`).toBeCloseTo(expected, 1);
 }
 
 function FloatingSidebar({
@@ -342,115 +342,116 @@ describe("concentric inner corners on fields and surfaces", () => {
     document.documentElement.style.removeProperty("font-size");
   });
 
-  for (const density of DENSITIES) {
-    describe(density, () => {
-      it.each(CASES)(
-        "rounds field and surface parts inside their shells (%s)",
-        (variant, theme, documentTheme) => {
-          stampDocumentTheme(documentTheme, "light");
-          stampDensity(density);
-          render(
-            withLocale(
-              "en-US",
-              <UiProviders locale="en-US" navigate={() => undefined}>
-                <ThemeScope theme={theme}>
-                  <FieldParts />
-                  <SurfaceParts />
-                </ThemeScope>
-              </UiProviders>
-            )
-          );
-          for (const name of BOX_PAIRS) {
-            expectConcentric(name, FIND[name](), expectedFor(name, variant, density));
-          }
-        }
-      );
-
-      it.each(CASES)(
-        "rounds floating Sidebar rows inside the surface (%s)",
-        (variant, theme, documentTheme) => {
-          stampDocumentTheme(documentTheme, "light");
-          stampDensity(density);
-          render(
+  // Density is a document-root stamp, so each tree renders once per theme and is measured at
+  // every density by restamping the root.
+  it.each(CASES)(
+    "rounds field and surface parts inside their shells (%s)",
+    (variant, theme, documentTheme) => {
+      stampDocumentTheme(documentTheme, "light");
+      render(
+        withLocale(
+          "en-US",
+          <UiProviders locale="en-US" navigate={() => undefined}>
             <ThemeScope theme={theme}>
-              <FloatingSidebar variant="floating" />
+              <FieldParts />
+              <SurfaceParts />
             </ThemeScope>
-          );
-          const pairs = sidebarPairs();
-          for (const name of SIDEBAR_PAIRS) {
-            expectConcentric(name, pairs[name], expectedFor(name, variant, density));
-          }
-        }
+          </UiProviders>
+        )
       );
-
-      it.each(CASES)(
-        "rounds a preset inside the picker popover (%s)",
-        async (variant, theme, documentTheme) => {
-          stampDocumentTheme(documentTheme, "light");
-          stampDensity(density);
-          render(
-            withLocale(
-              "en-US",
-              <UiProviders locale="en-US" navigate={() => undefined}>
-                <ThemeScope theme={theme}>
-                  <DatePicker
-                    label="Due"
-                    defaultOpen
-                    presetGroup={
-                      <DatePickerPresetGroup aria-label="Presets">
-                        <DatePickerPresetItem value="today">Today</DatePickerPresetItem>
-                      </DatePickerPresetGroup>
-                    }
-                  />
-                </ThemeScope>
-              </UiProviders>
-            )
-          );
-          const preset = await vi.waitFor(() => roleNamed("radio", "Today").closest("label"));
-          if (!(preset instanceof HTMLElement)) {
-            throw new Error("expected the preset label");
-          }
-          // DOM audit: React Aria's popover has no role of its own; it carries the placement.
-          const popover = preset.closest("[data-placement]");
-          if (!(popover instanceof HTMLElement)) {
-            throw new Error("expected the picker popover around the preset");
-          }
-          await waitForAnimations(popover);
-          expectConcentric(
-            "preset",
-            { part: preset, shell: popover, edge: "start" },
-            expectedFor("preset", variant, density)
-          );
-        }
-      );
-
-      it.each(CASES)("rounds a custom block inside a Dialog (%s)", async (variant, theme, documentTheme) => {
-        stampDocumentTheme(documentTheme, "light");
+      for (const density of DENSITIES) {
         stampDensity(density);
-        render(
-          withLocale(
-            "en-US",
-            <ThemeScope theme={theme}>
-              <Dialog.Root defaultOpen>
-                <Dialog.Content>
-                  <Dialog.Title>Terms</Dialog.Title>
-                  <div role="group" aria-label="Dialog block" className="rounded-inner" />
-                </Dialog.Content>
-              </Dialog.Root>
-            </ThemeScope>
-          )
-        );
-        const block = await vi.waitFor(() => roleNamed("group", "Dialog block"));
-        const dialog = slotShell("dialog-content", block);
-        await waitForAnimations(dialog);
-        expectConcentric(
-          "dialog block",
-          { part: block, shell: dialog, edge: "start" },
-          expectedFor("dialog block", variant, density)
-        );
-      });
-    });
-  }
+        for (const name of BOX_PAIRS) {
+          expectConcentric(`${name} ${density}`, FIND[name](), expectedFor(name, variant, density));
+        }
+      }
+    }
+  );
+
+  it.each(CASES)("rounds floating Sidebar rows inside the surface (%s)", (variant, theme, documentTheme) => {
+    stampDocumentTheme(documentTheme, "light");
+    render(
+      <ThemeScope theme={theme}>
+        <FloatingSidebar variant="floating" />
+      </ThemeScope>
+    );
+    for (const density of DENSITIES) {
+      stampDensity(density);
+      const pairs = sidebarPairs();
+      for (const name of SIDEBAR_PAIRS) {
+        expectConcentric(`${name} ${density}`, pairs[name], expectedFor(name, variant, density));
+      }
+    }
+  });
+
+  it.each(CASES)("rounds a preset inside the picker popover (%s)", async (variant, theme, documentTheme) => {
+    stampDocumentTheme(documentTheme, "light");
+    render(
+      withLocale(
+        "en-US",
+        <UiProviders locale="en-US" navigate={() => undefined}>
+          <ThemeScope theme={theme}>
+            <DatePicker
+              label="Due"
+              defaultOpen
+              presetGroup={
+                <DatePickerPresetGroup aria-label="Presets">
+                  <DatePickerPresetItem value="today">Today</DatePickerPresetItem>
+                </DatePickerPresetGroup>
+              }
+            />
+          </ThemeScope>
+        </UiProviders>
+      )
+    );
+    const preset = await vi.waitFor(() => roleNamed("radio", "Today").closest("label"));
+    if (!(preset instanceof HTMLElement)) {
+      throw new Error("expected the preset label");
+    }
+    // DOM audit: React Aria's popover has no role of its own; it carries the placement.
+    const popover = preset.closest("[data-placement]");
+    if (!(popover instanceof HTMLElement)) {
+      throw new Error("expected the picker popover around the preset");
+    }
+    for (const density of DENSITIES) {
+      stampDensity(density);
+      await waitForAnimations(popover);
+      expectConcentric(
+        `preset ${density}`,
+        { part: preset, shell: popover, edge: "start" },
+        expectedFor("preset", variant, density)
+      );
+    }
+  });
+
+  it.each(CASES)("rounds a custom block inside a Dialog (%s)", async (variant, theme, documentTheme) => {
+    stampDocumentTheme(documentTheme, "light");
+    render(
+      withLocale(
+        "en-US",
+        <ThemeScope theme={theme}>
+          <Dialog.Root defaultOpen>
+            <Dialog.Content>
+              <Dialog.Title>Terms</Dialog.Title>
+              <div role="group" aria-label="Dialog block" className="rounded-inner" />
+            </Dialog.Content>
+          </Dialog.Root>
+        </ThemeScope>
+      )
+    );
+    const block = await vi.waitFor(() => roleNamed("group", "Dialog block"));
+    const dialog = slotShell("dialog-content", block);
+    for (const density of DENSITIES) {
+      stampDensity(density);
+      // The restamp can start a padding transition; settle it before measuring the inset.
+      await waitForAnimations(dialog);
+      expectConcentric(
+        `dialog block ${density}`,
+        { part: block, shell: dialog, edge: "start" },
+        expectedFor("dialog block", variant, density)
+      );
+    }
+  });
 
   it.each(CASES)(
     "keeps the outer rounded-md corner on a non-floating Sidebar's rows (%s)",

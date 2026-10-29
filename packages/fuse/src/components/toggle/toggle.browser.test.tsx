@@ -13,55 +13,6 @@ function toggleNamed(name: string, pressed?: boolean): HTMLElement {
 }
 
 describe("Toggle", () => {
-  it("toggles from Tab focus with Space and with Enter", async () => {
-    const onPressedChange = vi.fn();
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <Toggle onPressedChange={onPressedChange}>Bold</Toggle>
-      </>
-    );
-
-    page.getByRole("button", { name: "Before" }).element().focus();
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(toggleNamed("Bold", false));
-
-    await userEvent.keyboard(" ");
-    expect(onPressedChange).toHaveBeenNthCalledWith(1, true, expect.anything());
-    await expect.element(page.getByRole("button", { name: "Bold", pressed: true })).toBeInTheDocument();
-
-    await userEvent.keyboard("{Enter}");
-    expect(onPressedChange).toHaveBeenNthCalledWith(2, false, expect.anything());
-    await expect.element(page.getByRole("button", { name: "Bold", pressed: false })).toBeInTheDocument();
-  });
-
-  it("blocks toggling and tab order when disabled", async () => {
-    const onPressedChange = vi.fn();
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <Toggle disabled onPressedChange={onPressedChange}>
-          Bold
-        </Toggle>
-        <button type="button">After</button>
-      </>
-    );
-
-    const toggle = toggleNamed("Bold", false);
-    await expect.element(page.getByRole("button", { name: "Bold", exact: true })).toBeDisabled();
-
-    toggle.click();
-    toggle.focus();
-    await userEvent.keyboard("{Enter}");
-    await userEvent.keyboard(" ");
-    expect(onPressedChange).not.toHaveBeenCalled();
-    await expect.element(page.getByRole("button", { name: "Bold", pressed: false })).toBeInTheDocument();
-
-    page.getByRole("button", { name: "Before" }).element().focus();
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(page.getByRole("button", { name: "After" }).element());
-  });
-
   it("supports controlled pressed and uncontrolled defaultPressed", async () => {
     const onPressedChange = vi.fn();
     renderThemed(

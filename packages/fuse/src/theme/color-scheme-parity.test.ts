@@ -34,37 +34,31 @@ function connectRuntime(
   return runtime;
 }
 
-type Fixture = {
+type HostFixture = Pick<MemoryPlatformInit, "prefersDark" | "storage" | "media"> & {
   stored: string | undefined;
-  prefersDark: boolean;
-  enableSystem: boolean;
-  defaultColorScheme: ColorScheme;
-  forcedColorScheme: ColorScheme | undefined;
-  storage: "available" | "blocked";
-  media: "modern" | "missing" | "throwing";
 };
 
-function fixtures(): Fixture[] {
-  const rows: Fixture[] = [];
+/** Every option combination the bootstrap and the runtime both normalize. */
+function optionRows(): ColorSchemeOptions[] {
+  const rows: ColorSchemeOptions[] = [];
+  for (const enableSystem of [true, false]) {
+    for (const defaultColorScheme of ["light", "dark", "system"] as const) {
+      for (const forcedColorScheme of [undefined, "light", "dark", "system"] as const) {
+        rows.push({ enableSystem, defaultColorScheme, forcedColorScheme });
+      }
+    }
+  }
+  return rows;
+}
+
+/** Every stored value, OS preference and platform fault the two sides read. */
+function hostRows(): HostFixture[] {
+  const rows: HostFixture[] = [];
   for (const stored of [undefined, "light", "dark", "system", "sepia"]) {
     for (const prefersDark of [false, true]) {
-      for (const enableSystem of [true, false]) {
-        for (const defaultColorScheme of ["light", "dark", "system"] as const) {
-          for (const forcedColorScheme of [undefined, "light", "dark", "system"] as const) {
-            for (const storage of ["available", "blocked"] as const) {
-              for (const media of ["modern", "missing", "throwing"] as const) {
-                rows.push({
-                  stored,
-                  prefersDark,
-                  enableSystem,
-                  defaultColorScheme,
-                  forcedColorScheme,
-                  storage,
-                  media,
-                });
-              }
-            }
-          }
+      for (const storage of ["available", "blocked"] as const) {
+        for (const media of ["modern", "missing", "throwing"] as const) {
+          rows.push({ stored, prefersDark, storage, media });
         }
       }
     }
@@ -72,19 +66,7 @@ function fixtures(): Fixture[] {
   return rows;
 }
 
-function describeFixture(fixture: Fixture): string {
-  return [
-    `stored=${fixture.stored ?? "none"}`,
-    `dark=${String(fixture.prefersDark)}`,
-    `system=${String(fixture.enableSystem)}`,
-    `default=${fixture.defaultColorScheme}`,
-    `forced=${fixture.forcedColorScheme ?? "none"}`,
-    `storage=${fixture.storage}`,
-    `media=${fixture.media}`,
-  ].join(" ");
-}
-
-function platformInit(fixture: Fixture): MemoryPlatformInit {
+function platformInit(fixture: HostFixture): MemoryPlatformInit {
   return {
     stored: fixture.stored === undefined ? {} : { [DEFAULT_KEY]: fixture.stored },
     prefersDark: fixture.prefersDark,
@@ -93,29 +75,25 @@ function platformInit(fixture: Fixture): MemoryPlatformInit {
   };
 }
 
-function fixtureOptions(fixture: Fixture): ColorSchemeOptions {
-  return {
-    enableSystem: fixture.enableSystem,
-    defaultColorScheme: fixture.defaultColorScheme,
-    forcedColorScheme: fixture.forcedColorScheme,
-  };
-}
+const HOST_ROWS = hostRows();
 
-describe.each(fixtures().map((fixture) => [describeFixture(fixture), fixture] as const))(
-  "bootstrap and runtime parity: %s",
-  (_name, fixture) => {
-    const options = fixtureOptions(fixture);
-    const source = colorSchemeScriptSource(options);
+// One test per option row, looping the host rows, so the full product runs without a Vitest
+// test per cell. A failure names every disagreeing host row.
+describe("bootstrap and runtime parity", () => {
+  it.each(optionRows())(
+    "agrees through the browser adapter over the same host: system=$enableSystem default=$defaultColorScheme forced=$forcedColorScheme",
+    (options) => {
+      const source = colorSchemeScriptSource(options);
+      const disagreements = HOST_ROWS.flatMap((fixture) => {
+        const shared = runColorSchemeBootstrap(source, platformInit(fixture));
+        connectRuntime(options, createBrowserColorSchemePlatform(shared.host));
+        return shared.state.rootWrites.length === 1 ? [] : [{ ...fixture, writes: shared.state.rootWrites }];
+      });
 
-    it("agrees through the browser adapter over the same host", () => {
-      const shared = runColorSchemeBootstrap(source, platformInit(fixture));
-
-      connectRuntime(options, createBrowserColorSchemePlatform(shared.host));
-
-      expect(shared.state.rootWrites).toHaveLength(1);
-    });
-  }
-);
+      expect(disagreements).toEqual([]);
+    }
+  );
+});
 
 const ANCHORS: Array<{
   name: string;

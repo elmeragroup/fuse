@@ -10,6 +10,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
 import { panelControlledBy } from "../../../test/panel-transition";
+import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
   CONTROL_MD,
   computedContrast,
@@ -241,6 +242,17 @@ describe("NavigationMenu", () => {
 });
 
 describe("nested NavigationMenu", () => {
+  // The contracts here are placement, swapping, focus and paint. Without the popup's resize and
+  // the positioner's glide, a row inside the popup is still when it is clicked or hovered, so
+  // no step waits for the motion to finish. The opacity and colour transitions stay on.
+  beforeEach(async () => {
+    await emulateReducedMotion("reduce");
+  });
+
+  afterEach(async () => {
+    await emulateReducedMotion("no-preference");
+  });
+
   function NestedMenu() {
     return (
       <NavigationMenu.Root aria-label="Site">
@@ -272,6 +284,12 @@ describe("nested NavigationMenu", () => {
     await userEvent.click(outerTrigger);
     await openedLink("Electricity");
 
+    // The nested Root renders a <div>, so the page keeps one named navigation landmark.
+    // DOM audit: a nested Root has no role of its own, so it is found by its slot.
+    const nestedRoot = roleNamed("button", "Business").closest("[data-slot='navigation-menu']");
+    expect(nestedRoot?.tagName).toBe("DIV");
+    expect(page.getByRole("navigation", { name: "Site", exact: true }).all()).toHaveLength(1);
+
     const nestedTrigger = roleNamed("button", "Business");
     await userEvent.click(nestedTrigger);
     const nestedLink = await openedLink("Power contracts");
@@ -291,17 +309,6 @@ describe("nested NavigationMenu", () => {
     });
     expect(outerTrigger.getAttribute("aria-expanded")).toBe("true");
     await expect.element(page.getByRole("link", { name: "Electricity", exact: true })).toBeVisible();
-  });
-
-  it("renders the nested Root as a <div>, so the page keeps one named navigation landmark", async () => {
-    renderThemed(<NestedMenu />);
-    await userEvent.click(roleNamed("button", "Products"));
-    await openedLink("Electricity");
-
-    // DOM audit: a nested Root has no role of its own, so it is found by its slot.
-    const nestedRoot = roleNamed("button", "Business").closest("[data-slot='navigation-menu']");
-    expect(nestedRoot?.tagName).toBe("DIV");
-    expect(page.getByRole("navigation", { name: "Site", exact: true }).all()).toHaveLength(1);
   });
 
   it("holds muted descriptions in a hovered link row and an open vertical trigger to 4.5:1 on the row's accent", async () => {
@@ -390,7 +397,7 @@ describe("nested NavigationMenu", () => {
     );
   }
 
-  it("shows an inline Root's default content inside the Viewport placed in the outer content, not in a popup of its own", async () => {
+  it("shows an inline Root's default content inside the Viewport placed in the outer content, and swaps it on a click", async () => {
     renderThemed(<InlineMenu />);
     const outerTrigger = roleNamed("button", "Audiences");
     await userEvent.click(outerTrigger);
@@ -410,17 +417,13 @@ describe("nested NavigationMenu", () => {
     for (const landmark of page.getByRole("navigation").elements()) {
       expect([roleNamed("navigation", "Site"), outerPopup]).toContain(landmark);
     }
-  });
-
-  it("swaps the inline Viewport's content when another inline trigger is activated", async () => {
-    renderThemed(<InlineMenu />);
-    await userEvent.click(roleNamed("button", "Audiences"));
-    // DOM audit: the viewport has no role, so it is found by its slot.
-    const viewport = (await openedLink("Spot price")).closest("[data-slot='navigation-menu-viewport']");
+    // An inline trigger's content is already beside its list, so it renders no caret.
+    expect(roleNamed("button", "Homes").querySelector("svg")).toBeNull();
+    expect(outerTrigger.querySelector("svg")).not.toBeNull();
 
     await userEvent.click(roleNamed("button", "Businesses"));
     const fixed = await openedLink("Fixed price");
-    expect(viewport?.contains(fixed)).toBe(true);
+    expect(viewport.contains(fixed)).toBe(true);
     await vi.waitFor(() => {
       expect(page.getByRole("link", { name: "Spot price", exact: true }).query()).toBeNull();
     });
@@ -484,15 +487,6 @@ describe("nested NavigationMenu", () => {
         expect(computedOklch(getComputedStyle(spot).backgroundColor)).not.toEqual(computedOklch(popupColor));
       });
     });
-  });
-
-  it("renders no caret on an inline Root's trigger, whose content is already beside its list", async () => {
-    renderThemed(<InlineMenu />);
-    await userEvent.click(roleNamed("button", "Audiences"));
-    await openedLink("Spot price");
-
-    expect(roleNamed("button", "Homes").querySelector("svg")).toBeNull();
-    expect(roleNamed("button", "Audiences").querySelector("svg")).not.toBeNull();
   });
 
   it("styles a horizontal Root inside a vertical inline Root's content as a bar, not as its vertical ancestor", async () => {
@@ -576,18 +570,7 @@ describe("NavigationMenu trigger density metrics", () => {
     );
   }
 
-  it("resolves the md control rung at both density stamps", () => {
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      renderThemed(<Single label={`md ${density}`} />);
-
-      const box = measure(`md ${density}`);
-      expect(box.height, `${density} md height`).toBe(CONTROL_MD[density].height);
-      expect(box.px, `${density} md padding`).toBe(CONTROL_MD[density].px);
-    }
-  });
-
-  it("renders a link in the bar at the trigger's md box at both density stamps", () => {
+  it("renders a bar trigger and a link in the bar at the md control box at both density stamps", () => {
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
       renderThemed(
@@ -611,6 +594,9 @@ describe("NavigationMenu trigger density metrics", () => {
         CONTROL_MD[density].height
       );
       expect(px(getComputedStyle(link).paddingInlineStart), `${density} link padding`).toBe(
+        CONTROL_MD[density].px
+      );
+      expect(px(getComputedStyle(trigger).paddingInlineStart), `${density} trigger padding`).toBe(
         CONTROL_MD[density].px
       );
       expect(px(getComputedStyle(link).columnGap), `${density} link gap`).toBe(CONTROL_MD[density].gap);
@@ -849,19 +835,6 @@ describe("NavigationMenu trigger density metrics", () => {
     } finally {
       await page.viewport(initial.width, initial.height);
     }
-  });
-
-  it("turns a bar trigger's caret from down to up while its panel is open", async () => {
-    renderThemed(<SiteMenu />);
-    const trigger = roleNamed("button", "Products");
-    const caret = caretOf(trigger);
-    expect(getComputedStyle(caret).rotate).toBe("none");
-
-    await userEvent.click(trigger);
-    await openedLink("Electricity");
-    await vi.waitFor(() => {
-      expect(getComputedStyle(caret).rotate).toBe("180deg");
-    });
   });
 
   it("does not rescope metrics from a nested data-density or ThemeScope variant change", () => {

@@ -407,29 +407,26 @@ describe("landing hero window, External side", () => {
   );
 
   // The window's frame stops growing at 1248px, so 1280 is the widest viewport a header meets.
-  it.each(
-    ALL_SITES.flatMap((facts) => [1024, 1280].map((width) => ({ facts, viewport: { width, height: 900 } })))
-  )(
-    "fits every header control of $facts.site inside the window at $viewport.width px in a wide fallback font",
-    async ({ facts, viewport }) => {
-      const { page, site } = await openSite(facts, viewport, { prepare: wideFallbackFont });
+  it.each(ALL_SITES)(
+    "fits every header control of $site inside the window at 1280px, and after a resize to 1024px, in a wide fallback font",
+    async (facts) => {
+      const { page, site } = await openSite(
+        facts,
+        { width: 1280, height: 900 },
+        { prepare: wideFallbackFont }
+      );
       // DOM audit: the header sits inside the site's region, where it is not a banner landmark.
       const header = site.locator("header");
       const scroller = site.locator("[data-site-scroller]");
       expect(await header.locator(":is(a, button)").count()).toBeGreaterThan(0);
-      expect(await outsideScroller(scroller, "header :is(a, button)")).toEqual([]);
+      expect(await outsideScroller(scroller, "header :is(a, button)"), "1280px").toEqual([]);
+      // Below the window's `@5xl` width the rows hide whatever the header measured at 1280px.
+      await page.setViewportSize({ width: 1024, height: 900 });
+      await settleFrames(page);
+      expect(await outsideScroller(scroller, "header :is(a, button)"), "1024px").toEqual([]);
       await page.context().close();
     }
   );
-
-  it.each(ALL_SITES)("keeps the header of $site expanded at 1280px in a font it fits", async (facts) => {
-    const { page, site } = await openSite(facts, { width: 1280, height: 900 }, { prepare: narrowFont });
-    // The header measures its rows in a layout effect and again on resize; let both settle.
-    await settleFrames(page);
-    expect(await site.getByRole("navigation", { name: facts.nav }).isVisible()).toBe(true);
-    expect(await site.getByRole("button", { name: facts.menuButton, exact: true }).isVisible()).toBe(false);
-    await page.context().close();
-  });
 
   it.each(ALL_SITES)(
     "keeps $site's hero, bands and header logo readable on dark surfaces in dark mode",
@@ -462,14 +459,21 @@ describe("landing hero window, External side", () => {
   );
 
   it.each(ALL_SITES)(
-    "keeps $site's dimmed footer and utility text readable on its bands in light mode",
+    "keeps $site's header expanded at 1280px in a font it fits, and its dimmed footer and utility text readable on its bands in light mode",
     async (facts) => {
       // A font the header fits keeps it expanded, so the utility row shows.
-      const { page, site } = await openSite(facts, WIDE_VIEWPORT, {
-        colorScheme: "light",
-        prepare: narrowFont,
-      });
+      const { page, site } = await openSite(
+        facts,
+        { width: 1280, height: 900 },
+        {
+          colorScheme: "light",
+          prepare: narrowFont,
+        }
+      );
+      // The header measures its rows in a layout effect and again on resize; let both settle.
       await settleFrames(page);
+      expect(await site.getByRole("navigation", { name: facts.nav }).isVisible()).toBe(true);
+      expect(await site.getByRole("button", { name: facts.menuButton, exact: true }).isVisible()).toBe(false);
       const lines = await paintedLines(site);
       // The footer's domain and copyright lines dim, and every utility link is read, so a pass
       // cannot come from reading none.

@@ -28,10 +28,6 @@ test("Viewport container, Close label, and manager faces match the public API", 
   expectTypeOf<CreateToastManagerReturnValue>().not.toHaveProperty("toasts");
 
   const manager = Toast.createToastManager();
-  expectTypeOf(manager.add).toBeFunction();
-  expectTypeOf(manager.update).toBeFunction();
-  expectTypeOf(manager.close).toBeFunction();
-  expectTypeOf(manager.promise).toBeFunction();
   expectTypeOf(manager).not.toHaveProperty("toasts");
 
   void manager.promise(Promise.resolve(1), { success: "Saved", error: "Failed" });

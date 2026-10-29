@@ -136,8 +136,10 @@ export function nodeBindings(state: NodeState): NonNullable<FrameNode["boundVari
     nodeFields[field] = alias(id);
   }
   const textFields: { [field in VariableBindableTextField]?: VariableAlias[] } = {};
+  // Characters typed in one style share its record, so each distinct style is read once.
+  const styles = [...new Set(state.styles)];
   for (const field of TEXT_FIELDS) {
-    const ids = new Set(state.styles.flatMap((style) => style.bindings.get(field) ?? []));
+    const ids = new Set(styles.flatMap((style) => style.bindings.get(field) ?? []));
     if (ids.size > 0) {
       textFields[field] = [...ids].map(alias);
     }

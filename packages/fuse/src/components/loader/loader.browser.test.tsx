@@ -104,6 +104,7 @@ describe("Loader", () => {
     for (const size of SIZES) {
       const loader = statusElement(size);
       expect(getComputedStyle(loader).display).toBe("flex");
+      expect(loader.classList.contains("bg-muted"), `${size} consumer className`).toBe(true);
       const icon = statusIcon(loader);
       expect(px(getComputedStyle(icon).width)).toBe(ICON_SIZE_PX[size]);
       expect(getComputedStyle(icon).animationName, size).not.toBe("none");

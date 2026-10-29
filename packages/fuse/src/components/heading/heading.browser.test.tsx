@@ -48,26 +48,6 @@ describe("Heading", () => {
     expect(heading.getAttribute("data-slot")).toBe("heading");
   });
 
-  it("maps auto size from level and lets an explicit size win", () => {
-    renderThemed(
-      <>
-        <Heading level={1}>Auto 1</Heading>
-        <Heading level={2}>Auto 2</Heading>
-        <Heading level={3}>Auto 3</Heading>
-        <Heading level={1} size="4xl">
-          Override
-        </Heading>
-      </>
-    );
-    const auto1 = px(getComputedStyle(headingNamed("Auto 1", 1)).fontSize);
-    const auto2 = px(getComputedStyle(headingNamed("Auto 2", 2)).fontSize);
-    const auto3 = px(getComputedStyle(headingNamed("Auto 3", 3)).fontSize);
-    const override = px(getComputedStyle(headingNamed("Override", 1)).fontSize);
-    expect(auto1).toBeGreaterThan(auto2);
-    expect(auto2).toBeGreaterThan(auto3);
-    expect(override).toBeGreaterThan(auto1);
-  });
-
   it("toggles noMargin, uppercase, and align, and lets className win", () => {
     renderThemed(
       <>

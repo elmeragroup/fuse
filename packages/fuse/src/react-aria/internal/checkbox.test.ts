@@ -20,6 +20,12 @@ describe("GridList selection checkbox box", () => {
     ]);
   });
 
+  it("fills a selected box from the primary role and an invalid one from the error role", () => {
+    const { box } = checkboxVariants();
+    expect(box({ isSelected: true })).toContain("[--checkbox-color:var(--primary)]");
+    expect(box({ isInvalid: true })).toContain("[--checkbox-color:var(--error)]");
+  });
+
   it("keeps the 3px error halo at rest and the plain ring on a valid focused box", () => {
     const { box } = checkboxVariants();
     expect(ringClasses(box({ isInvalid: true }))).toEqual(["ring-3", "ring-error/20"]);

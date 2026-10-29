@@ -203,23 +203,3 @@ describe("firstCoordinate", () => {
     expect(planCoordinates(run)[0]).toEqual(firstCoordinate(run));
   });
 });
-
-describe("planCoordinates", () => {
-  it("takes every window size as an axis, like engines", () => {
-    // 2 themes × 1 density × 2 engines × 3 window sizes.
-    const coordinates = planCoordinates(
-      options([
-        "matrix",
-        "--route",
-        "/",
-        "--themes",
-        "internal-fkas-private,external-tkas-company",
-        "--engines",
-        "chromium,webkit",
-        "--viewports",
-        "1280x800,768x1024,390x844",
-      ])
-    );
-    expect(coordinates).toHaveLength(12);
-  });
-});

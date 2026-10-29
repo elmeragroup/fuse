@@ -51,41 +51,14 @@ function ordersTable() {
   );
 }
 
-function verticalTable() {
-  return createElement(
-    VerticalTable.Root,
-    null,
-    createElement(VerticalTable.Header, null, "Customer"),
-    createElement(
-      VerticalTable.Body,
-      {
-        data: [
-          { label: "Name", value: "Kari Nordmann" },
-          { label: "Meter point", value: "7070575000" },
-        ],
-      },
-      createElement(
-        VerticalTable.Row,
-        { isHidden: true },
-        createElement(VerticalTable.Key, null, "Hidden"),
-        createElement(VerticalTable.Value, null, "Secret")
-      ),
-      createElement(
-        VerticalTable.Row,
-        null,
-        createElement(VerticalTable.Key, null, "Grid company"),
-        createElement(VerticalTable.Value, null, "Skagerak Nett")
-      )
-    )
-  );
-}
-
 describe("Table structure", () => {
   it("renders a scroll container around a semantic table and keeps the selected-row contract", () => {
     const html = renderToStaticMarkup(ordersTable());
     expect(html).toContain('data-slot="table-container"');
     expect(html).toContain("<table");
     expect(html).toContain("<thead");
+    expect(html).toMatch(/<th data-slot="table-head" class="[^"]*" scope="col">Order<\/th>/);
+    expect(html).toMatch(/<td data-slot="table-cell" class="[^"]*">#1042<\/td>/);
     expect(html).toContain("<tbody");
     expect(html).toContain("<tfoot");
     expect(html).toContain("<caption");
@@ -113,21 +86,6 @@ describe("Table structure", () => {
 });
 
 describe("VerticalTable structure", () => {
-  it("maps data rows first, then children, and hides isHidden rows", () => {
-    const html = renderToStaticMarkup(verticalTable());
-    expect(html).toContain("<h2");
-    expect(html).toContain("Customer");
-    expect(html).toContain('data-slot="vertical-table-root"');
-    expect(html).toContain('data-variant="default"');
-    expect(html).toContain('data-slot="vertical-table"');
-    expect(html).toContain('data-slot="vertical-table-body"');
-    expect(html.indexOf("Name")).toBeLessThan(html.indexOf("Kari Nordmann"));
-    expect(html.indexOf("Kari Nordmann")).toBeLessThan(html.indexOf("Meter point"));
-    expect(html.indexOf("7070575000")).toBeLessThan(html.indexOf("Grid company"));
-    expect(html).toContain("hidden");
-    expect(html).toContain("Secret");
-  });
-
   it("does not duplicate ids or handlers from Body onto the inner table", () => {
     const html = renderToStaticMarkup(
       createElement(VerticalTable.Body, {

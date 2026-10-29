@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { cellNamed, describedTextsFor, segmentNamed } from "../../../test/rac-calendar-testing";
+import { cellNamed, describedTextsFor } from "../../../test/rac-calendar-testing";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Form } from "../../components/form/form";
 import type { FormProps } from "../../components/form/form";
@@ -84,6 +84,13 @@ function fieldStates() {
   };
 }
 
+/** Types `digits` into the date segments, starting at the month segment named exactly `month`. */
+async function typeDate(month: string, digits: string) {
+  await userEvent.click(page.getByRole("spinbutton", { name: month, exact: true }));
+  await userEvent.keyboard(digits);
+}
+
+/** Commits a day from the field's calendar, the edit React Aria hides its own error copy on. */
 async function pickDay(field: string, day: RegExp) {
   await userEvent.click(page.getByRole("button", { name: new RegExp(`^calendar.*${field}`, "i") }));
   await userEvent.click(cellNamed(day));
@@ -114,7 +121,7 @@ describe("Form errors on the interim React Aria fields", () => {
     }
     render(<Fixture />);
 
-    await pickDay("Start date", /Tuesday, June 9, 2026/);
+    await typeDate("month, Start date", "06092026");
     await expect.poll(() => fieldStates().startDate).toEqual({ invalid: false, texts: [] });
     expect(fieldStates().email.texts).toEqual(["Enter a work address."]);
     expect(fieldStates().dueDate.texts).toEqual(["Pick a due date."]);
@@ -127,15 +134,9 @@ describe("Form errors on the interim React Aria fields", () => {
     await userEvent.type(roleNamed("searchbox", "Search"), "x");
     await expect.poll(() => fieldStates().query).toEqual({ invalid: false, texts: [] });
 
-    await userEvent.click(segmentNamed("month, Due date"));
-    await userEvent.keyboard("07142026");
+    // The range test below clears the Stay endpoints the same way.
+    await typeDate("month, Due date", "07142026");
     await expect.poll(() => fieldStates().dueDate).toEqual({ invalid: false, texts: [] });
-
-    await userEvent.click(segmentNamed("month, Start Date, Stay"));
-    await userEvent.keyboard("07142026");
-    await userEvent.click(segmentNamed("month, End Date, Stay"));
-    await userEvent.keyboard("07172026");
-    await expect.poll(() => fieldStates().stay).toEqual({ invalid: false, texts: [] });
     expect(fieldStates().startDate).toEqual({ invalid: false, texts: [] });
 
     await userEvent.click(roleNamed("button", "Resubmit"));
@@ -195,10 +196,8 @@ describe("Form errors on the interim React Aria fields", () => {
     render(<Fixture />);
     expect(errorTexts(roleNamed("group", "Stay"))).toEqual(["Arrive later. Leave earlier."]);
 
-    await userEvent.click(segmentNamed("month, Start Date, Stay"));
-    await userEvent.keyboard("07142026");
-    await userEvent.click(segmentNamed("month, End Date, Stay"));
-    await userEvent.keyboard("07172026");
+    await typeDate("month, Start Date, Stay", "07142026");
+    await typeDate("month, End Date, Stay", "07172026");
     await expect.poll(() => errorTexts(roleNamed("group", "Stay"))).toEqual([]);
     // Clearing the email error makes a new errors object; the range's cleared keys stay cleared.
     await userEvent.fill(roleNamed("textbox", "Email"), "kari@example.com");

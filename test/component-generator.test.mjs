@@ -129,8 +129,13 @@ describe("component generator", () => {
     expect(snapshot(directory)).toEqual(before);
   }, 30000);
 
-  it("rejects existing, reserved, quarantined, deferred and invalid names without writes", () => {
+  it("rejects existing, reserved, quarantined, deferred and invalid names, existing docs and a missing registration marker without writes", () => {
     const directory = fixture();
+    // An existing docs page blocks its name, and a missing marker blocks every valid name. Name
+    // checks run before the marker check, so each name below fails for its own reason.
+    mkdirSync(join(directory, "apps/docs/src/app/(docs)/components/status-light"), { recursive: true });
+    const budget = join(directory, "packages/fuse/scripts/size-budgets.ts");
+    writeFileSync(budget, readFileSync(budget, "utf8").replace("// plop:js-entry-budget", ""));
     const before = snapshot(directory);
     const result = generate(directory, [
       "button",
@@ -142,25 +147,21 @@ describe("component generator", () => {
       "../outside",
       "BadName",
       " spaced ",
+      "status-light",
+      "new-component",
     ]);
     expect(result.status).toBe(1);
     const output = result.stdout + result.stderr;
-    for (const reason of ["registered", "quarantined", "deferred", "kebab-case"]) {
+    for (const reason of [
+      "registered",
+      "quarantined",
+      "deferred",
+      "kebab-case",
+      "already has source or documentation",
+      "Expected one // plop:js-entry-budget",
+    ]) {
       expect(output).toContain(reason);
     }
     expect(snapshot(directory)).toEqual(before);
-  }, 30000);
-
-  it("checks existing docs and registration markers before creating source files", () => {
-    const directory = fixture();
-    mkdirSync(join(directory, "apps/docs/src/app/(docs)/components/status-light"), { recursive: true });
-    const before = snapshot(directory);
-    expect(generate(directory, "status-light").stdout).toContain("already has source or documentation");
-    expect(snapshot(directory)).toEqual(before);
-    const budget = join(directory, "packages/fuse/scripts/size-budgets.ts");
-    writeFileSync(budget, readFileSync(budget, "utf8").replace("// plop:js-entry-budget", ""));
-    const missingMarker = snapshot(directory);
-    expect(generate(directory, "new-component").stdout).toContain("Expected one // plop:js-entry-budget");
-    expect(snapshot(directory)).toEqual(missingMarker);
   }, 30000);
 });

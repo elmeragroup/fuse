@@ -362,7 +362,7 @@ async function main(): Promise<void> {
 
   // Extraction writes the committed api.json files itself, only where the bytes change,
   // and throws a DocsGenerationError on any extraction problem.
-  const generated = await generateDocsApiArtifacts("write", docsApiInventory(inspections));
+  const generated = await generateDocsApiArtifacts(docsApiInventory(inspections));
   reportDiagnostics(generated.diagnostics);
   const components = inspected.map(({ inspection, demos }) => {
     const api = generated.artifacts.get(inspection.slug);

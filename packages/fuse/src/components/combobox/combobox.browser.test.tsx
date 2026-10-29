@@ -10,7 +10,7 @@ import {
   assertWithinKeyboardFocusRingAtBothDensities,
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
-import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { withLocale } from "../../../test/locale-matrix";
 import {
   ROW,
   cssVarColor,
@@ -20,6 +20,7 @@ import {
   roleNamed,
   stampDensity,
 } from "../../../test/themed-browser-render";
+import type { SupportedLocale } from "../../intl/locale-context";
 import { DENSITIES } from "../../theme/density";
 import { Field } from "../field";
 import { InputGroup } from "../input-group";
@@ -56,7 +57,7 @@ const TOGGLE_COPY = {
   "fi-FI": "Näytä tai piilota vaihtoehdot",
 } as const;
 
-function renderCombobox(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] = "en-US") {
+function renderCombobox(node: ReactNode, locale: SupportedLocale = "en-US") {
   return renderThemed(withLocale(locale, node));
 }
 
@@ -199,14 +200,28 @@ async function openWithArrowDown(name = "Fruit"): Promise<HTMLElement> {
 }
 
 describe("Combobox", () => {
-  it("opens from the input click and exposes a listbox of options", async () => {
-    renderCombobox(<FruitCombobox />);
-    await openWithClick();
+  it("opens from the input click into the enclosing ThemeScope, flush, with the list at the menu-family inset", async () => {
+    const { host } = renderCombobox(<FruitCombobox />);
+    const scope = host.querySelector("[data-theme-brand]");
+    const list = await openWithClick();
     const content = comboboxContent();
     expect(content.getAttribute("data-slot")).toBe("combobox-content");
     expect(content.getAttribute("data-external-anchor")).toBe("false");
     expect(optionNamed("Apple")).toBeTruthy();
     expect(optionNamed("Banana")).toBeTruthy();
+
+    // Content portals into the enclosing ThemeScope instead of the document body.
+    expect(scope).not.toBeNull();
+    expect(scope?.contains(list)).toBe(true);
+    expect([...document.body.children].includes(list)).toBe(false);
+
+    // A search-group-less popup stays flush. Menu-family rows sit in a single p-1 list box;
+    // popup padding must not double it.
+    const contentStyles = getComputedStyle(content);
+    expect(px(contentStyles.paddingLeft)).toBe(0);
+    expect(px(contentStyles.paddingTop)).toBe(0);
+    expect(px(getComputedStyle(list).paddingLeft)).toBe(4);
+    expect(px(getComputedStyle(list).paddingTop)).toBe(4);
   });
 
   it("closes the popup on Escape and keeps focus on the input", async () => {
@@ -246,14 +261,22 @@ describe("Combobox", () => {
     expect(optionNamed("Apple")).toBeTruthy();
   });
 
-  it.each(DENSITIES)("pads the empty state with the row metrics at %s", async (density) => {
-    stampDensity(density);
+  it("pads the empty state with the row metrics at both densities", async () => {
     renderCombobox(<FruitCombobox />);
     await userEvent.fill(comboboxNamed("Fruit"), "zzzz");
     const empty = await vi.waitFor(() => page.getByText("No results.", { exact: true }).element());
-    const style = getComputedStyle(empty);
-    expect([style.paddingTop, style.paddingLeft].map(px)).toEqual([ROW[density].py, ROW[density].px]);
-    document.documentElement.removeAttribute("data-density");
+    try {
+      for (const density of DENSITIES) {
+        stampDensity(density);
+        const style = getComputedStyle(empty);
+        expect([style.paddingTop, style.paddingLeft].map(px), density).toEqual([
+          ROW[density].py,
+          ROW[density].px,
+        ]);
+      }
+    } finally {
+      document.documentElement.removeAttribute("data-density");
+    }
   });
 
   it("selects with ArrowDown + Enter, closes, fills the input, and fires onValueChange", async () => {
@@ -626,40 +649,7 @@ describe("Combobox", () => {
     ).not.toBe(getComputedStyle(valid).boxShadow);
   });
 
-  it("sets data-external-anchor=true and positions against a useComboboxAnchor ref", async () => {
-    function Anchored() {
-      const anchor = useComboboxAnchor();
-      return (
-        <Combobox.Root items={[...FRUITS]} multiple>
-          <Combobox.Chips ref={anchor} aria-label="Selected fruit">
-            <Combobox.ChipsInput aria-label="Fruit" />
-          </Combobox.Chips>
-          <Combobox.Content anchor={anchor}>
-            <Combobox.List>
-              <Combobox.Item value="Apple">Apple</Combobox.Item>
-            </Combobox.List>
-          </Combobox.Content>
-        </Combobox.Root>
-      );
-    }
-    renderCombobox(<Anchored />);
-    await openWithClick();
-    expect(comboboxContent().getAttribute("data-external-anchor")).toBe("true");
-  });
-
-  it("keeps a search-group-less popup flush and the list at the menu-family inset", async () => {
-    renderCombobox(<FruitCombobox />);
-    const list = await openWithClick();
-    const content = comboboxContent();
-    const contentStyles = getComputedStyle(content);
-    expect(px(contentStyles.paddingLeft)).toBe(0);
-    expect(px(contentStyles.paddingTop)).toBe(0);
-    // Menu-family rows sit in a single p-1 list box; popup padding must not double it.
-    expect(px(getComputedStyle(list).paddingLeft)).toBe(4);
-    expect(px(getComputedStyle(list).paddingTop)).toBe(4);
-  });
-
-  it("insets a popup that owns a search group without letting the group overflow it", async () => {
+  it("sets data-external-anchor=true against a useComboboxAnchor ref, and insets a popup that owns a search group without letting the group overflow it", async () => {
     function AnchoredSearch() {
       const anchor = useComboboxAnchor();
       return (
@@ -681,6 +671,7 @@ describe("Combobox", () => {
     await openWithClick();
 
     const content = comboboxContent();
+    expect(content.getAttribute("data-external-anchor")).toBe("true");
     const search = comboboxNamed("Filter fruit");
     const group = search.closest('[role="group"]');
     if (!(group instanceof HTMLElement)) {
@@ -696,15 +687,6 @@ describe("Combobox", () => {
     expect(group.offsetParent).toBe(content);
     expect(group.offsetLeft).toBe(4);
     expect(content.clientWidth - group.offsetLeft - group.offsetWidth).toBe(4);
-  });
-
-  it("portals Content into the enclosing ThemeScope instead of the document body", async () => {
-    const { host } = renderCombobox(<FruitCombobox />);
-    const scope = host.querySelector("[data-theme-brand]");
-    const listbox = await openWithClick();
-    expect(scope).not.toBeNull();
-    expect(scope?.contains(listbox)).toBe(true);
-    expect([...document.body.children].includes(listbox)).toBe(false);
   });
 
   it("portals Content into an explicit container element", async () => {
@@ -733,132 +715,95 @@ describe("Combobox", () => {
     expect([...document.body.children].includes(listbox)).toBe(false);
   });
 
-  it("renders Empty, Clear, chip-remove and caret-trigger defaults in all four locales and honors copy overrides", async () => {
-    // The caret trigger keeps its dictionary name beside a Field.Label.
-    for (const locale of SUPPORTED_LOCALES) {
-      const { unmount } = renderCombobox(
+  // The dictionary's copy in every locale is pinned once in `combobox.test.ts`. One non-default
+  // locale proves each part reads its default from the provider's locale and the right key.
+  it("renders the Empty, Clear, chip-remove and caret-trigger defaults in the provider locale", async () => {
+    renderCombobox(
+      <>
+        {/* The caret trigger keeps its dictionary name beside a Field.Label. */}
         <Field.Root>
           <Field.Label>Fruit</Field.Label>
           <FruitCombobox />
-        </Field.Root>,
-        locale
-      );
-      expect(
-        page.getByRole("button", { name: TOGGLE_COPY[locale], exact: true }).query(),
-        locale
-      ).not.toBeNull();
-      unmount();
-    }
-
-    for (const locale of SUPPORTED_LOCALES) {
-      const { unmount } = renderCombobox(
+        </Field.Root>
         <Combobox.Root items={[...FRUITS]} defaultValue="Apple" defaultInputValue="Apple">
-          <Combobox.Input aria-label="Fruit" showClear showTrigger={false} />
-          <Combobox.Content>
-            <Combobox.Empty />
-            <Combobox.List>
-              <Combobox.Item value="Apple">Apple</Combobox.Item>
-            </Combobox.List>
-          </Combobox.Content>
-        </Combobox.Root>,
-        locale
-      );
-      expect(page.getByRole("button", { name: CLEAR_COPY[locale], exact: true }).query()).not.toBeNull();
-      unmount();
-    }
-
-    for (const locale of SUPPORTED_LOCALES) {
-      const { unmount } = renderCombobox(
+          <Combobox.Input aria-label="Picked" showClear showTrigger={false} />
+        </Combobox.Root>
         <Combobox.Root items={["Apple"]} multiple defaultValue={["Apple"]}>
           <Combobox.Chips>
             <Combobox.Chip>Apple</Combobox.Chip>
-            <Combobox.ChipsInput aria-label="Fruit" />
+            <Combobox.ChipsInput aria-label="Basket" />
           </Combobox.Chips>
-        </Combobox.Root>,
-        locale
-      );
-      expect(
-        page.getByRole("button", { name: REMOVE_APPLE_COPY[locale], exact: true }).query()
-      ).not.toBeNull();
-      unmount();
-    }
-
-    for (const locale of SUPPORTED_LOCALES) {
-      const { unmount } = renderCombobox(
+        </Combobox.Root>
         <Combobox.Root items={["Apple"]}>
-          <Combobox.Input aria-label="Fruit" />
+          <Combobox.Input aria-label="Search" showTrigger={false} />
           <Combobox.Content>
             <Combobox.Empty />
             <Combobox.List>
               <Combobox.Item value="Apple">Apple</Combobox.Item>
             </Combobox.List>
           </Combobox.Content>
-        </Combobox.Root>,
-        locale
-      );
-      await userEvent.fill(comboboxNamed("Fruit"), "zzzz");
-      await vi.waitFor(() => {
-        expect(page.getByText(EMPTY_COPY[locale], { exact: true }).query()).not.toBeNull();
-      });
-      unmount();
-    }
+        </Combobox.Root>
+      </>,
+      "nb-NO"
+    );
+    expect(page.getByRole("button", { name: TOGGLE_COPY["nb-NO"], exact: true }).query()).not.toBeNull();
+    expect(page.getByRole("button", { name: CLEAR_COPY["nb-NO"], exact: true }).query()).not.toBeNull();
+    expect(
+      page.getByRole("button", { name: REMOVE_APPLE_COPY["nb-NO"], exact: true }).query()
+    ).not.toBeNull();
+    await userEvent.fill(comboboxNamed("Search"), "zzzz");
+    await vi.waitFor(() => {
+      expect(page.getByText(EMPTY_COPY["nb-NO"], { exact: true }).query()).not.toBeNull();
+    });
+  });
 
+  it("lets explicit copy win over the Empty, Clear, chip-remove and caret-trigger defaults", async () => {
     renderCombobox(
-      <Combobox.Root items={["Apple"]} defaultValue="Apple" defaultInputValue="Apple">
-        <Combobox.Input aria-label="Fruit" showClear showTrigger={false} clearLabel="Wipe it" />
-        <Combobox.Content>
-          <Combobox.Empty>Nothing here.</Combobox.Empty>
-          <Combobox.List>
-            <Combobox.Item value="Apple">Apple</Combobox.Item>
-          </Combobox.List>
-        </Combobox.Content>
-      </Combobox.Root>
+      <>
+        <Combobox.Root items={["Apple"]} defaultValue="Apple" defaultInputValue="Apple">
+          <Combobox.Input aria-label="Fruit" showClear showTrigger={false} clearLabel="Wipe it" />
+          <Combobox.Content>
+            <Combobox.Empty>Nothing here.</Combobox.Empty>
+            <Combobox.List>
+              <Combobox.Item value="Apple">Apple</Combobox.Item>
+            </Combobox.List>
+          </Combobox.Content>
+        </Combobox.Root>
+        <Combobox.Root items={["Apple"]} multiple defaultValue={["Apple"]}>
+          <Combobox.Chips>
+            <Combobox.Chip removeLabel="Drop Apple">Apple</Combobox.Chip>
+            <Combobox.ChipsInput aria-label="Basket" />
+          </Combobox.Chips>
+        </Combobox.Root>
+        <Combobox.Root items={["Apple"]} defaultValue="Apple" defaultInputValue="Apple">
+          <Combobox.Input aria-label="Picked" showTrigger={false} />
+          <Combobox.Clear aria-label="Clear fruit" />
+        </Combobox.Root>
+        {/* An explicit aria-label wins over label. */}
+        <Combobox.Root items={["Apple"]} defaultValue="Apple" defaultInputValue="Apple">
+          <Combobox.Input aria-label="Chosen" showTrigger={false} />
+          <Combobox.Clear label="Wipe" aria-label="Empty fruit" />
+        </Combobox.Root>
+        <Combobox.Root items={["Apple"]}>
+          <Combobox.Input aria-label="Shown" triggerLabel="Show fruit" />
+        </Combobox.Root>
+      </>
     );
     expect(page.getByRole("button", { name: "Wipe it", exact: true }).query()).not.toBeNull();
+    expect(page.getByRole("button", { name: "Drop Apple", exact: true }).query()).not.toBeNull();
+    expect(page.getByRole("button", { name: "Clear fruit", exact: true }).query()).not.toBeNull();
+    expect(page.getByRole("button", { name: "Empty fruit", exact: true }).query()).not.toBeNull();
+    expect(page.getByRole("button", { name: "Wipe", exact: true }).query()).toBeNull();
+    expect(page.getByRole("button", { name: "Show fruit", exact: true }).query()).not.toBeNull();
+    // No part fell back to its default beside the explicit copy.
+    for (const fallback of [CLEAR_COPY["en-US"], TOGGLE_COPY["en-US"], "Remove Apple"]) {
+      expect(page.getByRole("button", { name: fallback, exact: true }).query(), fallback).toBeNull();
+    }
     await userEvent.fill(comboboxNamed("Fruit"), "zzzz");
     await vi.waitFor(() => {
       expect(page.getByText("Nothing here.", { exact: true }).query()).not.toBeNull();
     });
-
-    const { unmount } = renderCombobox(
-      <Combobox.Root items={["Apple"]} multiple defaultValue={["Apple"]}>
-        <Combobox.Chips>
-          <Combobox.Chip removeLabel="Drop Apple">Apple</Combobox.Chip>
-          <Combobox.ChipsInput aria-label="Fruit" />
-        </Combobox.Chips>
-      </Combobox.Root>
-    );
-    expect(page.getByRole("button", { name: "Drop Apple", exact: true }).query()).not.toBeNull();
-    unmount();
-
-    const explicitClear = renderCombobox(
-      <Combobox.Root items={["Apple"]} defaultValue="Apple" defaultInputValue="Apple">
-        <Combobox.Input aria-label="Fruit" showTrigger={false} />
-        <Combobox.Clear aria-label="Clear fruit" />
-      </Combobox.Root>
-    );
-    expect(page.getByRole("button", { name: "Clear fruit", exact: true }).query()).not.toBeNull();
-    expect(page.getByRole("button", { name: CLEAR_COPY["en-US"], exact: true }).query()).toBeNull();
-    explicitClear.unmount();
-
-    const ariaLabelOverLabel = renderCombobox(
-      <Combobox.Root items={["Apple"]} defaultValue="Apple" defaultInputValue="Apple">
-        <Combobox.Input aria-label="Fruit" showTrigger={false} />
-        <Combobox.Clear label="Wipe" aria-label="Clear fruit" />
-      </Combobox.Root>
-    );
-    expect(page.getByRole("button", { name: "Clear fruit", exact: true }).query()).not.toBeNull();
-    expect(page.getByRole("button", { name: "Wipe", exact: true }).query()).toBeNull();
-    ariaLabelOverLabel.unmount();
-
-    const triggerOverride = renderCombobox(
-      <Combobox.Root items={["Apple"]}>
-        <Combobox.Input aria-label="Fruit" triggerLabel="Show fruit" />
-      </Combobox.Root>
-    );
-    expect(page.getByRole("button", { name: "Show fruit", exact: true }).query()).not.toBeNull();
-    expect(page.getByRole("button", { name: TOGGLE_COPY["en-US"], exact: true }).query()).toBeNull();
-    triggerOverride.unmount();
+    expect(page.getByText(EMPTY_COPY["en-US"], { exact: true }).query()).toBeNull();
   });
 
   it("paints the InputGroup within ring on keyboard focus and not on an addon button", async () => {

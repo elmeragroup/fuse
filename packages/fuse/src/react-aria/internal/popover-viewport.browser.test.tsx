@@ -40,9 +40,11 @@ function ViewportScope() {
 describe("react-aria popover in a viewport-sized clipping scope", () => {
   // React Aria and Fuse both answer the resize, and which of them runs first varies from one
   // mount to the next. When React Aria runs first it limits the popover's height to the little
-  // room below the field before Fuse measures, so each round mounts the picker afresh.
+  // room below the field before Fuse measures, so each round mounts the picker afresh. Sizing
+  // from the popover's clamped height, or dropping React Aria's gutter from the fit check, goes
+  // red in the first round, so a second round is enough to sample another mount.
   it("moves the open calendar to the side with room as the viewport shrinks and grows", async () => {
-    for (let round = 0; round < 5; round += 1) {
+    for (let round = 0; round < 2; round += 1) {
       await page.viewport(800, 1000);
       const { unmount } = render(<ViewportScope />);
       await userEvent.click(page.getByRole("button", { name: /^calendar/i }));
@@ -77,8 +79,8 @@ describe("react-aria popover in a viewport-sized clipping scope", () => {
         expect(lastWeekDay.getBoundingClientRect().bottom).toBeLessThanOrEqual(box.bottom);
       };
       await vi.waitFor(() => expectWholeAboveField(700));
-      // The resize observers measure again on later frames; the calendar must stay whole.
-      await animationFrames(10);
+      // The resize observers measure again on the next frames; the calendar must stay whole.
+      await animationFrames(3);
       expectWholeAboveField(700);
 
       // 950px leaves about 390px below the field, room for the whole calendar, so the open
@@ -93,7 +95,7 @@ describe("react-aria popover in a viewport-sized clipping scope", () => {
         expect(lastWeekDay.getBoundingClientRect().bottom).toBeLessThanOrEqual(box.bottom);
       };
       await vi.waitFor(expectWholeBelowField);
-      await animationFrames(10);
+      await animationFrames(3);
       expectWholeBelowField();
 
       // 898px leaves 338px below the field: room for the dense calendar's 328px and the 8px
@@ -101,7 +103,7 @@ describe("react-aria popover in a viewport-sized clipping scope", () => {
       // there.
       await page.viewport(800, 898);
       await vi.waitFor(() => expectWholeAboveField(898));
-      await animationFrames(10);
+      await animationFrames(3);
       expectWholeAboveField(898);
       unmount();
     }

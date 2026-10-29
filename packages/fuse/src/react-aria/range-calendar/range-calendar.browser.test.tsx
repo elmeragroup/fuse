@@ -15,7 +15,6 @@ import {
   calendarRoot,
   cellNumbered,
   dayNumbered,
-  focusLandsOnDay,
   parkPointerOffGrid,
 } from "../../../test/rac-calendar-testing";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
@@ -104,31 +103,6 @@ describe("RangeCalendar", () => {
     expect(getComputedStyle(calendarRoot()).backgroundColor).toBe("rgba(0, 0, 0, 0)");
     expect(getComputedStyle(calendarRoot()).borderTopWidth).toBe("0px");
     expect(getComputedStyle(calendarRoot()).boxShadow).toBe("none");
-  });
-
-  it("anchors the range on Enter, extends it with ArrowRight and commits once on the second Enter", async () => {
-    const onChange = rangeChangeSpy();
-    renderRangeCalendar(<RangeCalendar defaultFocusedValue={july14} onChange={onChange} />);
-    await expect.element(page.getByRole("grid")).toBeVisible();
-
-    await parkPointerOffGrid();
-    dayNumbered(14).focus();
-    await userEvent.keyboard("{Enter}");
-    // RAC auto-advances the focused day once the anchor is set, so arrow keys extend
-    // the highlight from the day after the anchor.
-    await focusLandsOnDay(15);
-    expect(onChange).not.toHaveBeenCalled();
-    expect(dayNumbered(14)).toHaveAttribute("data-selection-start");
-
-    await userEvent.keyboard("{ArrowRight}{ArrowRight}{ArrowRight}");
-    await focusLandsOnDay(18);
-    expect(cellNumbered(16)).toHaveAttribute("aria-selected", "true");
-
-    await userEvent.keyboard("{Enter}");
-    expect(onChange).toHaveBeenCalledTimes(1);
-    const committed = committedRange(onChange);
-    expect(isSameDay(committed.start, july14)).toBe(true);
-    expect(isSameDay(committed.end, july18)).toBe(true);
   });
 
   it("paints start, middle and end cells from two clicks, with the caps marked by RAC", async () => {

@@ -1,11 +1,10 @@
 import type { ReactNode } from "react";
 
-import { DateField, DateInput, DateSegment, Label, Link, useLocale } from "react-aria-components";
+import { Link, useLocale } from "react-aria-components";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { segmentLocator } from "../../../test/rac-calendar-testing";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { Pagination } from "../../components/pagination";
 import { UiProviders } from "./ui-providers";
@@ -29,15 +28,6 @@ function navNamed(name: string): HTMLElement {
 function RacLocale() {
   const { locale } = useLocale();
   return <output aria-label="RAC locale">{locale}</output>;
-}
-
-function InvoiceDate() {
-  return (
-    <DateField>
-      <Label>Invoice date</Label>
-      <DateInput>{(segment) => <DateSegment segment={segment} />}</DateInput>
-    </DateField>
-  );
 }
 
 function Pages() {
@@ -118,19 +108,10 @@ describe("UiProviders", () => {
       get: () => "en-US",
     });
     try {
-      renderProviders(
-        <>
-          <RacLocale />
-          <InvoiceDate />
-        </>,
-        "nb-NO"
-      );
+      renderProviders(<RacLocale />, "nb-NO");
 
+      // Oracle: RAC's own locale hook. How RAC's parts then localize is RAC's behavior.
       await expect.element(page.getByRole("status", { name: "RAC locale" })).toHaveTextContent("nb-NO");
-      await expect.element(segmentLocator("måned")).toBeVisible();
-      await expect.element(segmentLocator("dag")).toBeVisible();
-      await expect.element(segmentLocator("år")).toBeVisible();
-      expect(segmentLocator("month").query()).toBeNull();
       expect(window.navigator.language).toBe("en-US");
     } finally {
       if (navigatorLanguage === undefined) {
