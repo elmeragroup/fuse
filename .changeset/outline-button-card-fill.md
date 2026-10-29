@@ -18,3 +18,6 @@ outline Trigger.
 - In dark, `card` sits between the page and `muted`, so an outline Button rests one step lighter
   than the page, and its hover still lightens it, one step less than before. Tabs made the same
   trade-off.
+- Internal dark paints `card-soft` and `muted` the same tone, so on a `card-soft` panel an outline
+  Button rests darker than the panel and its hover matches the panel. It rested darker there
+  before too, on the page fill.
