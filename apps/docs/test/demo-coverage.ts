@@ -89,16 +89,29 @@ export function describeDemoCoverage(fileUrl: string): void {
   }, 900_000);
 
   describe(`demo coverage, group ${String(group)} of ${String(SWEEP_GROUPS)}`, () => {
-    describeDensityCoverage(measured);
+    describeDensityCoverage(slugs, measured);
     describeBorderCoverage(bordered);
   });
 }
 
-function describeDensityCoverage(measured: readonly Instance[]): void {
+/**
+ * The swept pages that render no part at either density, each with why. The parity check names
+ * any other requested page that reads no part.
+ */
+const PARTLESS_PAGES = new Set([
+  // The interim React Aria Link renders its anchor without a `data-slot`.
+  "link",
+  // React Aria's Focusable clones its child with its own focus props alone, so the `data-slot`
+  // Tooltip.Trigger merges onto it never reaches the span, and the sweep finds no tooltip opener.
+  "focusable",
+]);
+
+function describeDensityCoverage(slugs: readonly string[], measured: readonly Instance[]): void {
   describe("density coverage", () => {
     // The later densities re-read the parts the first one found, so a page whose parts one density
     // misses lost a reveal or a restamp, and its role checks pass on nothing. A virtualized list
-    // mounts fewer of its taller rows, so the check compares which parts each density read.
+    // mounts fewer of its taller rows, so the check compares which parts each density read. A
+    // requested page with no readings at all is unswept, and is named as such.
     it("reads every swept page's parts at every density", () => {
       const slots = new Map<string, Set<string>[]>();
       for (const { page, density, slot } of measured) {
@@ -113,7 +126,8 @@ function describeDensityCoverage(measured: readonly Instance[]): void {
           return missed.length === 0 ? [] : [`${page} at ${density} misses ${missed.sort().join(", ")}`];
         });
       });
-      expect(slots.size).toBeGreaterThan(0);
+      const unswept = slugs.filter((slug) => !PARTLESS_PAGES.has(slug) && !slots.has(`/components/${slug}`));
+      expect(unswept.map((slug) => `/components/${slug} reads no part`)).toEqual([]);
       expect(uneven).toEqual([]);
     });
 

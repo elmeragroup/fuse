@@ -385,6 +385,17 @@ describe("rules 37 and 38: overrides stay through the main's edits, and the rest
     ]);
   });
 
+  it("binds a main's corner after its instance read it, and the instance shows the bound corner", async () => {
+    const { a1, file, instance } = await nested();
+    expect([a1.cornerRadius, instance.topLeftRadius]).toEqual([0, 0]);
+    a1.setBoundVariable("topLeftRadius", file.variable("Fuse density", "row-h"));
+    expect([a1.topLeftRadius, instance.topLeftRadius, a1.boundVariables?.topLeftRadius?.id]).toEqual([
+      32,
+      32,
+      file.variable("Fuse density", "row-h").id,
+    ]);
+  });
+
   // The typings: `removeOverrides` removes every direct override. N3 showed only that it exists.
   it("removes every listed override and keeps the property values, as the typings say", async () => {
     const { file, instance, label, ids } = await overridden();

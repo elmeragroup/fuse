@@ -15,9 +15,7 @@ export const DESKTOP_VIEWPORT = { width: 1280, height: 720 } as const;
 export async function openDemo(page: Page, slug: string, name: string): Promise<Locator> {
   page.setDefaultTimeout(5000);
   await page.goto(`${docsBaseUrl()}/components/${slug}`, { waitUntil: "load" });
-  const demo = page.getByRole("region", { name, exact: true });
-  await waitForDemoHydration(demo);
-  return demo;
+  return sharedDemo(page, name);
 }
 
 /**

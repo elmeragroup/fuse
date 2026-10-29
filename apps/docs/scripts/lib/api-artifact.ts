@@ -19,7 +19,6 @@ import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/
 
 import { API_REGEN_COMMAND } from "../../src/lib/docs-model.ts";
 import type { DocsApiComponent } from "./docs-inspection.ts";
-import { docsApiInventory } from "./docs-inspection.ts";
 import { DocsGenerationError } from "./errors.ts";
 import { repoRoot, fuseTsconfig } from "./paths.ts";
 
@@ -45,7 +44,7 @@ type GeneratedApi = {
  * `DocsGenerationError`.
  */
 export async function generateDocsApiArtifacts(
-  inventory: readonly DocsApiComponent[] = docsApiInventory()
+  inventory: readonly DocsApiComponent[]
 ): Promise<GeneratedApi> {
   const artifacts = new Map<string, GeneratedApiComponent>();
   let diagnostics: readonly ApiArtifactDiagnostic[] = [];

@@ -54,14 +54,7 @@ function computedTokens(element: HTMLElement): Record<string, string> {
 }
 
 function expectTokens(actual: HTMLElement, expected: HTMLElement, label: string): void {
-  const actualStyle = getComputedStyle(actual);
-  const expectedStyle = getComputedStyle(expected);
-  expect(actualStyle.colorScheme, `${label} native controls`).toBe(expectedStyle.colorScheme);
-  for (const key of TOKEN_NAMES) {
-    expect(actualStyle.getPropertyValue(`--${key}`).trim(), `${label} ${key}`).toBe(
-      expectedStyle.getPropertyValue(`--${key}`).trim()
-    );
-  }
+  expect(computedTokens(actual), label).toEqual(computedTokens(expected));
 }
 
 describe("dark CSS", () => {

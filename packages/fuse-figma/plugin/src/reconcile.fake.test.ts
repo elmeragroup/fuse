@@ -21,11 +21,13 @@ import { keyOf, setKey } from "./identity.ts";
 import {
   appliedFile,
   appliedKit,
+  appliedKitOn,
   componentSet,
   CREATE_AND_PLACE_PREVIEWS,
   CREATE_PAGES,
   iconLibrary,
   kitFixture,
+  kitOn,
   kitPage,
   previewNames,
   setOn,
@@ -122,18 +124,19 @@ const CREATE_SETS = setsInBuildOrder().map(
 /** The gray `ring` holds in Fjordkraft's internal private light theme, the file's default modes. */
 const RING_GRAY = 0.502;
 
-async function changes(file: FakeFigma): Promise<readonly string[]> {
-  return (await reconcileKit(file.figma, kit, false)).changes;
+/** Plan a kit, the whole kit unless given, and return its change lines. */
+async function changes(file: FakeFigma, planned = kit): Promise<readonly string[]> {
+  return (await reconcileKit(file.figma, planned, false)).changes;
 }
 
 /**
- * Apply the kit and return its change lines. Plan and Apply run one planning pass, and Apply
- * reports the plan it performed (`reconcile.ts`), so the lines are what a Plan would list. The
- * Avatar suite and the duplicate-variant case keep a Plan of their own, for the writes it must
- * not make.
+ * Apply a kit, the whole kit unless given, and return its change lines. Plan and Apply run one
+ * planning pass, and Apply reports the plan it performed (`reconcile.ts`), so the lines are what a
+ * Plan would list. The Avatar suite and the duplicate-variant case keep a Plan of their own, for
+ * the writes it must not make.
  */
-async function applies(file: FakeFigma): Promise<readonly string[]> {
-  return (await reconcileKit(file.figma, kit, true)).changes;
+async function applies(file: FakeFigma, planned = kit): Promise<readonly string[]> {
+  return (await reconcileKit(file.figma, planned, true)).changes;
 }
 
 /** The modes a frame pins, as collection and mode names. */
@@ -699,38 +702,6 @@ describe("a later run on an applied file", () => {
     );
   });
 
-  it("unclips a preview group a designer set to clip, in one Apply", async () => {
-    const file = await appliedFile();
-    const preview = childNamed(await kitPage(file), "FRAME", "Button / Fjordkraft internal private, light");
-    const group = childNamed(preview, "FRAME", "Button");
-    group.clipsContent = true;
-
-    expect(await applies(file)).toEqual([
-      "Button / Fjordkraft internal private, light / Button: clipsContent → false",
-      PLACE,
-    ]);
-    expect(group.clipsContent).toBe(false);
-    expect(await changes(file)).toEqual([]);
-  });
-
-  it("warns about a layer a designer dropped into a preview, and keeps it", async () => {
-    const file = await appliedFile();
-    const preview = childNamed(await kitPage(file), "FRAME", "Button / Fjordkraft internal private, light");
-    const note = file.figma.createFrame();
-    note.name = "Note";
-    preview.appendChild(note);
-
-    // The note makes the preview, which hugs its height, taller, so the previews below it move down
-    // (rule 32).
-    expect(await reconcileKit(file.figma, kit, true)).toEqual({
-      changes: [PLACE],
-      warnings: [
-        "Button / Fjordkraft internal private, light: keeps the layer Note, which the kit does not own",
-      ],
-    });
-    expect(preview.children).toContain(note);
-  });
-
   it("brings an icon a designer scaled back to 16px with its glyph, in one Apply", async () => {
     const file = await appliedFile();
     const plus = childNamed(await iconLibrary(file), "COMPONENT", "Plus");
@@ -858,33 +829,85 @@ describe("a later run on an applied file", () => {
   });
 });
 
+// Unit under test: `reconcileKit` on the Button page's previews, with the kit cut down to the Button
+// page (`kitOn`). Oracle: the change lines `test/kit-inventory.ts` gives the Button page, which name
+// no other page, so the cut kit plans what the whole kit would.
+describe("the Button page's previews on an applied file", () => {
+  const BUTTON_PAGE = [pageKey(inventoryPage("button"))];
+  let buttonKit: KitSpec;
+
+  beforeAll(() => {
+    buttonKit = kitOn(kit, BUTTON_PAGE);
+  });
+
+  it("unclips a preview group a designer set to clip, in one Apply", async () => {
+    const { file } = await appliedKitOn(BUTTON_PAGE);
+    const preview = childNamed(await kitPage(file), "FRAME", "Button / Fjordkraft internal private, light");
+    const group = childNamed(preview, "FRAME", "Button");
+    group.clipsContent = true;
+
+    expect(await applies(file, buttonKit)).toEqual([
+      "Button / Fjordkraft internal private, light / Button: clipsContent → false",
+      PLACE,
+    ]);
+    expect(group.clipsContent).toBe(false);
+    expect(await changes(file, buttonKit)).toEqual([]);
+  });
+
+  it("warns about a layer a designer dropped into a preview, and keeps it", async () => {
+    const { file } = await appliedKitOn(BUTTON_PAGE);
+    const preview = childNamed(await kitPage(file), "FRAME", "Button / Fjordkraft internal private, light");
+    const note = file.figma.createFrame();
+    note.name = "Note";
+    preview.appendChild(note);
+
+    // The note makes the preview, which hugs its height, taller, so the previews below it move down
+    // (rule 32).
+    expect(await reconcileKit(file.figma, buttonKit, true)).toEqual({
+      changes: [PLACE],
+      warnings: [
+        "Button / Fjordkraft internal private, light: keeps the layer Note, which the kit does not own",
+      ],
+    });
+    expect(preview.children).toContain(note);
+  });
+});
+
 // Unit under test: `reconcileKit` on Avatar's image fills. Oracle: the hash a real file gave the
 // portrait, `1e57f3da…`, the SHA-1 of its bytes (P9b), the fake's rule 22, which logs storing an
-// image as a write, and the change lines `test/kit-inventory.ts` gives the Avatar page. Avatar
-// group's three avatars are instances of Avatar, so each plans again once Avatar's changes land, and
-// the group's grid lays out again after them.
+// image as a write, and the change lines `test/kit-inventory.ts` gives the Avatar page, which name
+// no other page, so the suite runs the kit cut down to that page (`kitOn`). Avatar group's three
+// avatars are instances of Avatar, so each plans again once Avatar's changes land, and the group's
+// grid lays out again after them.
 describe("Avatar's image fills on an applied file", () => {
   const PORTRAIT_SHA1 = "1e57f3da2ad606fcd410ba17f62d2fc032aa669c";
   const AVATAR_PAGE = pageKey(inventoryPage("avatar"));
+  let avatarKit: KitSpec;
+
+  beforeAll(() => {
+    avatarKit = kitOn(kit, [AVATAR_PAGE]);
+  });
 
   it("stores no image when Plan finds the Avatar set missing, and Apply stores each image cell's", async () => {
-    const file = await appliedFile();
+    const { file } = await appliedKitOn([AVATAR_PAGE]);
     setOn(await kitPage(file, AVATAR_PAGE), "Avatar").remove();
     file.reopen();
     const before = file.writes.length;
-    expect(await changes(file)).toContain("Avatar: create the component set Avatar with 8 variants");
+    expect(await changes(file, avatarKit)).toContain(
+      "Avatar: create the component set Avatar with 8 variants"
+    );
     expect(file.writes.slice(before)).toEqual([]);
 
-    await reconcileKit(file.figma, kit, true);
+    await reconcileKit(file.figma, avatarKit, true);
     expect(file.writes.slice(before).filter((line) => line.startsWith("store the image"))).toEqual(
       Array.from({ length: 4 }, () => `store the image ${PORTRAIT_SHA1}`)
     );
     file.reopen();
-    expect(await changes(file)).toEqual([]);
+    expect(await changes(file, avatarKit)).toEqual([]);
   });
 
   it("lists the one fill change and stores nothing when Plan finds an Avatar holding other bytes", async () => {
-    const file = await appliedFile();
+    const { file } = await appliedKitOn([AVATAR_PAGE]);
     const avatar = setOn(await kitPage(file, AVATAR_PAGE), "Avatar");
     const image = childNamed(variantNamed(avatar, "content=image, size=32"), "FRAME", "avatar-image");
     file.figma.createImage(file.figma.base64Decode(RED_PIXEL.bytes));
@@ -892,7 +915,7 @@ describe("Avatar's image fills on an applied file", () => {
     file.reopen();
     const before = file.writes.length;
 
-    expect(await changes(file)).toEqual([
+    expect(await changes(file, avatarKit)).toEqual([
       `Avatar / content=image, size=32 / avatar-image: fill → image ${PORTRAIT_SHA1.slice(0, 8)} at FILL (holds image ${RED_PIXEL.sha1.slice(0, 8)} at FILL)`,
       "Avatar: lay out 8 variants in 4 columns and 2 rows",
       ...Array.from(
@@ -903,9 +926,9 @@ describe("Avatar's image fills on an applied file", () => {
       "Avatar: place Avatar and Avatar group in a row and stack 4 previews below them",
     ]);
     expect(file.writes.slice(before)).toEqual([]);
-    await reconcileKit(file.figma, kit, true);
+    await reconcileKit(file.figma, avatarKit, true);
     file.reopen();
-    expect(await changes(file)).toEqual([]);
+    expect(await changes(file, avatarKit)).toEqual([]);
   });
 });
 

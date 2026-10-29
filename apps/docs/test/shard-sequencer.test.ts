@@ -2,13 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { pinCoverageGroups } from "./shard-sequencer";
 
-const GROUPS = [1, 2, 3, 4].map(
-  (group) => `/repo/apps/docs/test/demo-coverage-${String(group)}.browser.test.ts`
-);
-const OTHERS = Array.from(
-  { length: 33 },
-  (_, index) => `/repo/apps/docs/test/suite-${String(index)}.browser.test.ts`
-);
+const GROUPS = [1, 2, 3, 4].map((group) => ({
+  moduleId: `/repo/apps/docs/test/demo-coverage-${String(group)}.browser.test.ts`,
+}));
+const OTHERS = Array.from({ length: 33 }, (_, index) => ({
+  moduleId: `/repo/apps/docs/test/suite-${String(index)}.browser.test.ts`,
+}));
 
 describe("pinCoverageGroups", () => {
   it("runs demo coverage group N on shard N and leaves every other file to Vitest's sharding", () => {

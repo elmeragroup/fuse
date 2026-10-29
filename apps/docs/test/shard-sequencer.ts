@@ -10,12 +10,15 @@ type Shard = { readonly index: number; readonly count: number };
  * Splits a shard's files into the demo coverage groups it runs, group N on shard N (wrapping past
  * the shard count), and every other file, which Vitest shards as usual.
  *
- * @param files - Every file the run selected, by module id.
+ * @param files - Every file the run selected.
  * @param shard - The shard this run is.
  * @returns The groups this shard runs, and the files left to shard.
  */
-export function pinCoverageGroups(files: readonly string[], shard: Shard) {
-  const groupOf = (file: string) => GROUP_FILE.exec(file)?.groups?.group;
+export function pinCoverageGroups<File extends { readonly moduleId: string }>(
+  files: readonly File[],
+  shard: Shard
+) {
+  const groupOf = (file: File) => GROUP_FILE.exec(file.moduleId)?.groups?.group;
   return {
     pinned: files.filter((file) => {
       const group = groupOf(file);
@@ -36,11 +39,7 @@ export class DocsShardSequencer extends BaseSequencer {
     if (shard === undefined) {
       return files;
     }
-    const { pinned, rest } = pinCoverageGroups(
-      files.map((file) => file.moduleId),
-      shard
-    );
-    const pick = (ids: readonly string[]) => files.filter((file) => ids.includes(file.moduleId));
-    return [...pick(pinned), ...(await super.shard(pick(rest)))];
+    const { pinned, rest } = pinCoverageGroups(files, shard);
+    return [...pinned, ...(await super.shard(rest))];
   }
 }

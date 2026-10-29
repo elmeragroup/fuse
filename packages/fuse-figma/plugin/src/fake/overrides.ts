@@ -42,30 +42,30 @@
  * component replaces that layer, which is the fake's reading of how Figma ties overrides to layers.
  */
 
+import { deepFrozen } from "../../../test/frozen.ts";
 import { CORNERS, EFFECT_FIELD_TYPES, sourceOf } from "./state.ts";
 import type { NodeState } from "./state.ts";
 
 /** The fields an instance or a sublayer shows from its source until it overrides them (rule 38). */
 type ShownField = "fills" | "strokes" | "effects" | "radii";
 
+/** The paints and effects `shown` has deep frozen, so a value read again skips the walk. */
+const frozenShown = new WeakSet<object>();
+
 /**
  * A field as a layer shows it: its own where it overrides it or has no source, else its source's
  * (rule 38). Figma hands out frozen paints and effects, and a fork shares these values with the
- * file it came from, so the fake freezes what it hands out.
+ * file it came from, so the fake freezes what it hands out. Corners stay open: each layer holds its
+ * own copy, the corner getters hand out numbers, and a corner write or binding sets them in place.
  */
 export function shown<Field extends ShownField>(state: NodeState, field: Field): NodeState[Field] {
   const source = sourceOf(state);
-  return source === undefined || state.overridden.has(field)
-    ? deepFreeze(state[field])
-    : shown(source, field);
-}
-
-function deepFreeze<Value>(value: Value): Value {
-  if (value instanceof Object && !Object.isFrozen(value)) {
-    Object.freeze(value);
-    for (const inner of Object.values(value)) {
-      deepFreeze(inner);
-    }
+  if (source !== undefined && !state.overridden.has(field)) {
+    return shown(source, field);
+  }
+  const value = state[field];
+  if (field !== "radii" && !frozenShown.has(value)) {
+    frozenShown.add(deepFrozen(value));
   }
   return value;
 }

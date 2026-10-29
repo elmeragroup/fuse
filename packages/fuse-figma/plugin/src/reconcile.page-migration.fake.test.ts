@@ -15,17 +15,20 @@ import type { InventoryPage } from "../../test/kit-inventory.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { keyOf } from "./identity.ts";
 import {
+  applyTo,
   componentSet,
   CREATE_AND_PLACE_PREVIEWS,
   CREATE_PAGES,
   iconLibrary,
   kitFixture,
+  kitOn,
   kitPage,
   listed,
   previewNames,
   setOn,
   syncedFile,
 } from "./kit-fixture.ts";
+import type { AppliedKit } from "./kit-fixture.ts";
 import { reconcileKit } from "./reconcile.ts";
 
 let kit: KitSpec;
@@ -57,20 +60,15 @@ function singlePageKit(): KitSpec {
   };
 }
 
-let singlePage: Promise<FakeFigma> | undefined;
+let singlePage: Promise<AppliedKit> | undefined;
 
 /**
  * A synced file the plugin applied the single-page kit to, opened again for the next run. The suite
  * applies it once and hands each call a fork, which changes apart from the others.
  */
 async function singlePageFile(): Promise<FakeFigma> {
-  singlePage ??= (async () => {
-    const file = syncedFile(collections);
-    await reconcileKit(file.figma, singlePageKit(), true);
-    file.reopen();
-    return file;
-  })();
-  return (await singlePage).fork();
+  singlePage ??= applyTo(syncedFile(collections), singlePageKit());
+  return (await singlePage).file.fork();
 }
 
 /** Each child's id, by its name. */
@@ -141,6 +139,10 @@ describe("a file the plugin laid out on one page", () => {
   });
 
   it("leaves pages named Button and Icons that it does not own alone, and creates its own", async () => {
+    // The Button page's sets show the icons alone, so the kit cut down to it keeps the Button and
+    // Icons pages.
+    const BUTTON = inventoryPage("button");
+    const buttonKit = kitOn(kit, [pageKey(BUTTON)]);
     const file = syncedFile(collections);
     const imported = ["Button", "Icons"].map((name) => {
       const page = file.figma.createPage();
@@ -152,13 +154,17 @@ describe("a file the plugin laid out on one page", () => {
     });
     file.reopen();
 
-    const applied = await reconcileKit(file.figma, kit, true);
-    expect(applied.changes.slice(0, CREATE_PAGES.length)).toEqual(CREATE_PAGES);
+    const applied = await reconcileKit(file.figma, buttonKit, true);
+    expect(applied.changes.slice(0, 2)).toEqual([
+      `Document: create the page ${BUTTON.name}`,
+      `Document: create the page ${ICONS_PAGE.name}`,
+    ]);
     expect(file.figma.root.children.map((page) => page.name)).toEqual([
       "Page 1",
       "Button",
       "Icons",
-      ...[...KIT_PAGES, ICONS_PAGE].map((page) => page.name),
+      BUTTON.name,
+      ICONS_PAGE.name,
     ]);
     for (const { page, frame } of imported) {
       await page.loadAsync();
@@ -208,6 +214,18 @@ describe("a file with Label on the page it used to sit on alone", () => {
       reorders: false,
     },
   ] as const;
+  /**
+   * The pages the suite runs, in kit order: the Field page, the pages of the later sets, the Button
+   * page, as Input group's clear form holds an Icon button, and the Icons page after them.
+   */
+  const PAGES = ["button", "radio", "field", "input", "textarea", "select", "number-field"].map(
+    inventoryPage
+  );
+  let fieldKit: KitSpec;
+
+  beforeAll(() => {
+    fieldKit = kitOn(kit, PAGES.map(pageKey));
+  });
 
   /**
    * The kit as the plugin wrote it before the Field page: Label alone on its own page, previewed
@@ -215,15 +233,15 @@ describe("a file with Label on the page it used to sit on alone", () => {
    * them, as Radio group, Text field, Textarea field, Select field and Number field show Field
    * description.
    */
-  function labelPageKit(): KitSpec {
+  function labelPageKit(base: KitSpec): KitSpec {
     const field = pageKey(FIELD);
     const label = { key: pageKey(LABEL_PAGE), name: LABEL_PAGE.name };
     const previewKey = (key: string) => key.replace(`preview/${FIELD.slug}/`, `preview/${LABEL_PAGE.slug}/`);
     const joined = new Set(
-      kit.componentSets.filter((set) => set.page === field && set.key !== LABEL.key).map((set) => set.key)
+      base.componentSets.filter((set) => set.page === field && set.key !== LABEL.key).map((set) => set.key)
     );
     const later = new Set(
-      kit.componentSets
+      base.componentSets
         .filter((set) =>
           set.variants.some((variant) =>
             walkLayers(variant.root).some(
@@ -234,9 +252,9 @@ describe("a file with Label on the page it used to sit on alone", () => {
         .map((set) => set.key)
     );
     return {
-      ...kit,
-      pages: kit.pages.map((page) => (page.key === field ? label : page)),
-      componentSets: kit.componentSets.flatMap((set) => {
+      ...base,
+      pages: base.pages.map((page) => (page.key === field ? label : page)),
+      componentSets: base.componentSets.flatMap((set) => {
         if (later.has(set.key)) {
           return [];
         }
@@ -245,7 +263,7 @@ describe("a file with Label on the page it used to sit on alone", () => {
         }
         return set.key === LABEL.key ? [{ ...set, page: label.key }] : [];
       }),
-      previews: kit.previews.map((preview) =>
+      previews: base.previews.map((preview) =>
         preview.page === field
           ? {
               ...preview,
@@ -265,9 +283,7 @@ describe("a file with Label on the page it used to sit on alone", () => {
   }
 
   it("moves Label to the Field page with its ids, then deletes the Label page, in one Apply", async () => {
-    const file = syncedFile(collections);
-    await reconcileKit(file.figma, labelPageKit(), true);
-    file.reopen();
+    const { file } = await applyTo(syncedFile(collections), labelPageKit(fieldKit));
     const old = await kitPage(file, pageKey(LABEL_PAGE));
     const label = setOn(old, LABEL.name);
     const before = {
@@ -281,11 +297,11 @@ describe("a file with Label on the page it used to sit on alone", () => {
       `${LABEL_PAGE.name}: move ${LABEL.name} to the ${FIELD.name} page`,
     ];
 
-    expect(await reconcileKit(file.figma, kit, false)).toEqual({
+    expect(await reconcileKit(file.figma, fieldKit, false)).toEqual({
       changes: [...pagePhase, "Document: plan the rest of the kit again once the move lands"],
       warnings: [],
     });
-    expect(await reconcileKit(file.figma, kit, true)).toEqual({
+    expect(await reconcileKit(file.figma, fieldKit, true)).toEqual({
       changes: [
         ...pagePhase,
         ...FIELD.sets
@@ -296,7 +312,7 @@ describe("a file with Label on the page it used to sit on alone", () => {
             `${page.name}: create the component set ${set.name} with ${set.variants} variants`
         ),
         // The previews lay out page by page, in page order.
-        ...KIT_PAGES.flatMap((page) =>
+        ...PAGES.flatMap((page) =>
           page === FIELD
             ? [
                 ...previewNames(FIELD).map((name) => `${FIELD.name}: create the preview ${name}`),
@@ -315,13 +331,13 @@ describe("a file with Label on the page it used to sit on alone", () => {
       warnings: [],
     });
     file.reopen();
-    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+    expect(await reconcileKit(file.figma, fieldKit, false)).toEqual({ changes: [], warnings: [] });
 
     expect(old.removed).toBe(true);
     // The plugin creates a missing page after the last one and never reorders pages.
     expect(file.figma.root.children.map((page) => page.name)).toEqual([
       "Page 1",
-      ...[...KIT_PAGES.filter((page) => page !== FIELD), ICONS_PAGE, FIELD].map((page) => page.name),
+      ...[...PAGES.filter((page) => page !== FIELD), ICONS_PAGE, FIELD].map((page) => page.name),
     ]);
     const page = await kitPage(file, pageKey(FIELD));
     expect(page.children.map((node) => node.name)).toEqual([

@@ -68,8 +68,9 @@ async function zoomLabel(page: Page): Promise<string> {
 
 describe("theme studio", () => {
   /**
-   * Read-only checks of the opening chrome share one page. Each leaves the next its start: none
-   * focuses before the skip link, and only the last navigates.
+   * The checks of the opening chrome share one page. They tab, select an artboard and navigate, so
+   * they run in declaration order, each leaving the next its start: none focuses before the skip
+   * link, and only the last navigates.
    */
   describe("on one opened page", () => {
     let opened: StudioPage | undefined;

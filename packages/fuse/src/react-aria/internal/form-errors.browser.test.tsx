@@ -86,7 +86,7 @@ function fieldStates() {
 
 /** Types `digits` into the date segments, starting at the month segment named exactly `month`. */
 async function typeDate(month: string, digits: string) {
-  await userEvent.click(page.getByRole("spinbutton", { name: month, exact: true }));
+  await userEvent.click(roleNamed("spinbutton", month));
   await userEvent.keyboard(digits);
 }
 

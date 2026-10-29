@@ -89,15 +89,17 @@ export function sentinelLengths(
   return Object.fromEntries(metrics.map(({ name, px }) => [`--${name}`, `${String(px.dense * 1.5 + 3)}px`]));
 }
 
+/**
+ * Every part in the page's demo stages; every part that appeared on the page since the last probe;
+ * every part that appeared inside a stage since the stages read, such as a delayed fallback; or the
+ * parts the last `unseen` or `late` probe read, again, as they are read at the next density.
+ */
+export type ProbeScope = "stages" | "unseen" | "late" | "opened";
+
 /** What a probe of one stage reads. */
 export type ProbeOptions = {
-  /**
-   * Every part in the page's demo stages; every part that appeared on the page since the last
-   * probe; every part that appeared inside a stage since the stages read, such as a delayed
-   * fallback; or the parts the last `unseen` or `late` probe read, again, as they are read at the
-   * next density.
-   */
-  readonly scope: "stages" | "unseen" | "late" | "opened";
+  /** The parts the probe reads. */
+  readonly scope: ProbeScope;
   /** Each density custom property and its sentinel length. */
   readonly sentinels: Readonly<Record<string, string>>;
   /** The properties to read, `PROBED_PROPERTIES`. */

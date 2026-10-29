@@ -9,6 +9,8 @@
  * rule or an inline one, cannot be judged, so it is reported as blocking the sentinel.
  */
 
+import type { ProbeScope } from "./density-attribution";
+
 /** The sentinel `color`, as the browser computes it. `probeBorders` writes the same literal. */
 export const SENTINEL_COLOR = "rgb(1, 2, 3)";
 
@@ -125,7 +127,7 @@ export function currentColorReport(
  * @param scope - The stages' elements, or the ones an opener just revealed.
  * @returns One reading per element or pseudo-element with a border width, in document order.
  */
-export function probeBorders(scope: "stages" | "unseen" | "late" | "opened"): BorderReading[] {
+export function probeBorders(scope: ProbeScope): BorderReading[] {
   const sides = ["top", "right", "bottom", "left"] as const;
   const opened = globalThis.densityOpened;
   if (scope !== "stages" && opened === undefined) {

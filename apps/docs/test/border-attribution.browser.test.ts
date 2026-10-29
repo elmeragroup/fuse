@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { currentColorReport, currentColorSides, probeBorders } from "./border-attribution";
-import type { ProbeScope } from "./demo-sweep";
+import type { ProbeScope } from "./density-attribution";
 import { launchSuiteBrowser } from "./suite-browser";
 
 /**

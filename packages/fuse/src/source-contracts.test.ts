@@ -853,17 +853,13 @@ describe("token paints", () => {
   // `test/class-tokens.ts` owns the class parsing and names the routes it cannot follow.
   it("paints every color role only where its paints allow", () => {
     // Scanned once per file: the drawn table and the per-file check read the same paints.
-    const paintsByCode = new Map<string, ReturnType<typeof colorRolePaints>>();
-    const paintsOf = (code: string) => {
-      const cached = paintsByCode.get(code);
-      if (cached !== undefined) return cached;
-      const paints = colorRolePaints(code);
-      paintsByCode.set(code, paints);
-      return paints;
-    };
+    const paintsByCode = new Map(
+      [...SOURCE_TREE.values()].map(({ code }) => [code, colorRolePaints(code)] as const)
+    );
+    const paintsOf = (code: string) => paintsByCode.get(code) ?? [];
     const drawn = new Map<ColorTokenName, Set<TokenPaint>>();
-    for (const record of SOURCE_TREE.values()) {
-      for (const { role, paint } of paintsOf(record.code)) {
+    for (const paints of paintsByCode.values()) {
+      for (const { role, paint } of paints) {
         drawn.set(role, new Set([...(drawn.get(role) ?? []), paint]));
       }
     }

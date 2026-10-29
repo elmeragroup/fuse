@@ -103,20 +103,6 @@ async function waitForEnding(root: HTMLElement): Promise<void> {
   });
 }
 
-function deferred<Value>() {
-  let resolve: (value: Value) => void = () => {
-    throw new Error("unresolved");
-  };
-  let reject: (reason: Error) => void = () => {
-    throw new Error("unrejected");
-  };
-  const promise = new Promise<Value>((onResolve, onReject) => {
-    resolve = onResolve;
-    reject = onReject;
-  });
-  return { promise, resolve, reject };
-}
-
 /** Moves focus into the viewport region, named by the render's locale (English by default). */
 async function expandViewport(name: string = NOTIFICATIONS_COPY["en-US"]): Promise<HTMLElement> {
   const viewport = page.getByRole("region", { name, exact: true }).element();
@@ -211,10 +197,10 @@ describe("Toast manager", () => {
   it("promise walks loading → settled state, with returned types and state-level priority overrides", async () => {
     const { manager } = renderToast(<Toast.Viewport />, { limit: 10 });
 
-    const ok = deferred<string>();
-    const failing = deferred<string>();
-    const loudOk = deferred<string>();
-    const quietFail = deferred<string>();
+    const ok = Promise.withResolvers<string>();
+    const failing = Promise.withResolvers<string>();
+    const loudOk = Promise.withResolvers<string>();
+    const quietFail = Promise.withResolvers<string>();
     const successPromise = manager.promise(ok.promise, {
       loading: "Saving…",
       success: { title: "Saved", description: "Stored." },
@@ -296,7 +282,7 @@ describe("Toast manager", () => {
   it("promise without loading shows nothing until the promise settles", async () => {
     const { manager } = renderToast();
 
-    const ok = deferred<string>();
+    const ok = Promise.withResolvers<string>();
     const settled = manager.promise(ok.promise, { success: "Synced", error: "Sync failed" });
     // A toast added after promise() renders in the same pass as any toast promise() added.
     manager.add({ title: "Sentinel" });
@@ -673,10 +659,14 @@ describe("Toast placement", () => {
    * Renders each viewport under its own provider and raises one toast in it, titled by its key,
    * so several placements share one render and their enter transitions run at once.
    */
-  async function renderViewports(viewports: Record<string, ReactNode>): Promise<Record<string, HTMLElement>> {
-    const entries = Object.entries(viewports).map(([name, viewport]) => ({
+  async function renderViewports<Key extends string>(
+    viewports: Record<Key, ReactNode>
+  ): Promise<Record<Key, HTMLElement>> {
+    // SAFETY: each caller passes an object literal, which holds a property for each key and no
+    // other.
+    const entries = (Object.keys(viewports) as Key[]).map((name) => ({
       name,
-      viewport,
+      viewport: viewports[name],
       manager: Toast.createToastManager(),
     }));
     renderThemed(
@@ -691,7 +681,8 @@ describe("Toast placement", () => {
         </>
       )
     );
-    const roots: Record<string, HTMLElement> = {};
+    // SAFETY: the loop below gives `roots` a property for each key before it returns.
+    const roots = {} as Record<Key, HTMLElement>;
     for (const { name, manager } of entries) {
       manager.add({ title: name, timeout: 0 });
       roots[name] = await waitForToast(name);
@@ -701,17 +692,17 @@ describe("Toast placement", () => {
 
   it("puts the stack at each placement's edge and alignment from sm up, and every placement at the bottom, spanning the screen minus its gutters, below sm", async () => {
     await page.viewport(1024, 768);
-    const roots = await renderViewports(
-      Object.fromEntries(
-        PLACEMENTS.map(({ placement }) => [
-          placement,
-          <Toast.Viewport key={placement} placement={placement} />,
-        ])
-      )
-    );
+    const roots = await renderViewports({
+      "top-left": <Toast.Viewport placement="top-left" />,
+      "top-center": <Toast.Viewport placement="top-center" />,
+      "top-right": <Toast.Viewport placement="top-right" />,
+      "bottom-left": <Toast.Viewport placement="bottom-left" />,
+      "bottom-center": <Toast.Viewport placement="bottom-center" />,
+      "bottom-right": <Toast.Viewport placement="bottom-right" />,
+    });
     await vi.waitFor(() => {
       for (const { placement, vertical, horizontal } of PLACEMENTS) {
-        const box = gaps(roots[placement] ?? document.body);
+        const box = gaps(roots[placement]);
         expect(box.width, placement).toBeCloseTo(SM_COLUMN_PX, 0);
         expect(box[vertical], placement).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
         if (horizontal === "center") {
@@ -725,7 +716,7 @@ describe("Toast placement", () => {
     await page.viewport(400, 768);
     await vi.waitFor(() => {
       for (const { placement } of PLACEMENTS) {
-        const box = gaps(roots[placement] ?? document.body);
+        const box = gaps(roots[placement]);
         expect(box.bottom, placement).toBeCloseTo(MOBILE_GUTTER_PX, 0);
         expect(box.left, placement).toBeCloseTo(MOBILE_GUTTER_PX, 0);
         expect(box.right, placement).toBeCloseTo(MOBILE_GUTTER_PX, 0);
@@ -841,9 +832,6 @@ describe("Toast placement", () => {
       Overridden: overridden,
       Rendered: rendered,
     } = roots;
-    if (!bottomLeft || !topCenter || !overridden || !rendered) {
-      throw new Error("expected every toast");
-    }
     await vi.waitFor(() => {
       const box = gaps(rendered);
       expect(box.top).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
@@ -865,9 +853,6 @@ describe("Toast placement", () => {
       "top-center": <Toast.Viewport placement="top-center" />,
     });
     const { "top-left": topLeft, "bottom-left": bottomLeft, "top-center": topCenter } = roots;
-    if (!topLeft || !bottomLeft || !topCenter) {
-      throw new Error("expected every toast");
-    }
 
     await Promise.all([swipe(topLeft, -120, 0), swipe(bottomLeft, -120, 0), swipe(topCenter, 0, -120)]);
     await expectToastsStay("top-left", "bottom-left", "top-center");

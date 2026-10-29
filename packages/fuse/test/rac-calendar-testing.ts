@@ -1,4 +1,3 @@
-import { expect, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import type { Locator } from "vitest/browser";
 
@@ -166,22 +165,6 @@ export function cellNumbered(day: number): HTMLElement {
     throw new Error(`expected a gridcell around day ${day}`);
   }
   return cell;
-}
-
-/**
- * Settle on RAC's focused day before the next keystroke is sent.
- *
- * `useCalendarCell` moves DOM focus from an effect that runs after the focused-date state
- * has committed, and the anchoring Enter reaches RAC through `usePress`' document-level
- * `keyup` listener — outside React's event system, so that commit is batched instead of
- * flushed with the key. A key sent before the move lands is still handled by the grid
- * handler of the previous render, whose `focusNextDay` counts from the stale day, and the
- * range ends up a day short.
- */
-export async function focusLandsOnDay(day: number): Promise<void> {
-  await vi.waitFor(() => {
-    expect(document.activeElement).toBe(dayNumbered(day));
-  });
 }
 
 /**

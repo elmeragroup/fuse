@@ -12,6 +12,7 @@ import {
   inputNamed,
   px,
   renderThemed,
+  roleNamed,
   stampDensity,
   textboxNamed,
   textNamed,
@@ -262,11 +263,11 @@ describe("TextField", () => {
     await userEvent.click(page.getByText("Email", { exact: true }));
     expect(document.activeElement).toBe(textboxNamed("Email"));
 
-    page.getByRole("button", { name: "Before", exact: true }).element().focus();
+    roleNamed("button", "Before").focus();
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement).toBe(textboxNamed("Email"));
     await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(page.getByRole("button", { name: "After", exact: true }).element());
+    expect(document.activeElement).toBe(roleNamed("button", "After"));
   });
 });
 
@@ -278,11 +279,8 @@ describe("TextField inline focus chrome", () => {
         <TextField label="Inline" variant="inline" />
       </>
     );
-    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
+    const previous = roleNamed("button", "Before");
     const input = textboxNamed("Inline");
-    if (!(previous instanceof HTMLElement)) {
-      throw new Error("expected before");
-    }
 
     // Browser suites load styles.css without themes.css, so `--ring` is otherwise
     // unset and `border-color: var(--ring)` would be ignored as invalid.

@@ -551,15 +551,12 @@ describe("Slider density", () => {
 describe("Slider native form reset", () => {
   it("restores an uncontrolled value on native reset, and submits it", async () => {
     const onChange = vi.fn();
-    renderThemed(
-      withLocale(
-        "en-US",
-        <form aria-label="Volume form">
-          <Slider label="Volume" name="volume" defaultValue={30} onChange={onChange} />
-        </form>
-      )
+    renderSlider(
+      <form aria-label="Volume form">
+        <Slider label="Volume" name="volume" defaultValue={30} onChange={onChange} />
+      </form>
     );
-    roleNamed("slider", "Volume").focus();
+    sliderNamed("Volume").focus();
     await userEvent.keyboard("{ArrowRight}{ArrowRight}");
     expect(valueNow("Volume")).toBe(32);
     const edits = onChange.mock.calls.length;
@@ -567,23 +564,18 @@ describe("Slider native form reset", () => {
     formNamed("Volume form").reset();
 
     await expect.poll(() => valueNow("Volume")).toBe(30);
-    expect(document.activeElement, "the remount keeps focus on the thumb").toBe(
-      roleNamed("slider", "Volume")
-    );
+    expect(document.activeElement, "the remount keeps focus on the thumb").toBe(sliderNamed("Volume"));
     expect(onChange, "native reset does not call onChange").toHaveBeenCalledTimes(edits);
     expect(new FormData(formNamed("Volume form")).getAll("volume")).toEqual(["30"]);
   });
 
   it("restores an uncontrolled range on native reset, and keeps focus on the thumb that held it", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <form aria-label="Price form">
-          <Slider label="Price" name="price" defaultValue={[20, 80]} />
-        </form>
-      )
+    renderSlider(
+      <form aria-label="Price form">
+        <Slider label="Price" name="price" defaultValue={[20, 80]} />
+      </form>
     );
-    roleNamed("slider", "Price, maximum").focus();
+    sliderNamed("Price, maximum").focus();
     await userEvent.keyboard("{ArrowLeft}{ArrowLeft}{ArrowLeft}");
     expect(valueNow("Price, maximum")).toBe(77);
 
@@ -591,7 +583,7 @@ describe("Slider native form reset", () => {
 
     await expect.poll(() => valueNow("Price, maximum")).toBe(80);
     expect(valueNow("Price, minimum")).toBe(20);
-    expect(document.activeElement).toBe(roleNamed("slider", "Price, maximum"));
+    expect(document.activeElement).toBe(sliderNamed("Price, maximum"));
     expect(new FormData(formNamed("Price form")).getAll("price")).toEqual(["20", "80"]);
   });
 
@@ -605,11 +597,11 @@ describe("Slider native form reset", () => {
         </form>
       );
     }
-    renderThemed(withLocale("en-US", <ControlledVolume />));
-    roleNamed("slider", "Volume").focus();
+    renderSlider(<ControlledVolume />);
+    sliderNamed("Volume").focus();
     await userEvent.keyboard("{ArrowRight}{ArrowRight}");
     expect(valueNow("Volume")).toBe(32);
-    roleNamed("slider", "Balance").focus();
+    sliderNamed("Balance").focus();
     await userEvent.keyboard("{ArrowRight}");
 
     formNamed("Volume form").reset();
@@ -630,20 +622,20 @@ describe("Slider native form reset", () => {
         </form>
       );
     const { rerender } = renderThemed(price([20, 80]));
-    roleNamed("slider", "Price, maximum").focus();
+    sliderNamed("Price, maximum").focus();
     rerender(price(50));
 
     formNamed("Price form").reset();
 
     await expect.poll(() => valueNow("Price")).toBe(50);
-    expect(document.activeElement, "focus moves to the one thumb left").toBe(roleNamed("slider", "Price"));
+    expect(document.activeElement, "focus moves to the one thumb left").toBe(sliderNamed("Price"));
 
     await userEvent.keyboard("{ArrowRight}");
     expect(valueNow("Price")).toBe(51);
     formNamed("Price form").reset();
 
     await expect.poll(() => valueNow("Price")).toBe(50);
-    expect(document.activeElement).toBe(roleNamed("slider", "Price"));
+    expect(document.activeElement).toBe(sliderNamed("Price"));
     expect(new FormData(formNamed("Price form")).getAll("price")).toEqual(["50"]);
   });
 });
@@ -654,8 +646,8 @@ describe("Slider native form reset", () => {
  */
 describe("Slider thumb input attributes", () => {
   it("marks each thumb input once, not on every value change", async () => {
-    renderThemed(withLocale("en-US", <Slider label="Size" defaultValue={10} />));
-    const input = roleNamed("slider", "Size");
+    renderSlider(<Slider label="Size" defaultValue={10} />);
+    const input = sliderNamed("Size");
     expect(input.hasAttribute("data-focus-ring-control")).toBe(true);
     const records: MutationRecord[] = [];
     const observer = new MutationObserver((delivered) => {

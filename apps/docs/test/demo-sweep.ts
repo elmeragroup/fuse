@@ -6,7 +6,7 @@ import type { Density } from "@elmeragroup/fuse/theme";
 import { COMPONENT_INVENTORY } from "./component-inventory";
 import { DESKTOP_VIEWPORT } from "./demo-page";
 import { showsUnmeasuredPart, stampDensity, startDensityPass } from "./density-attribution";
-import type { PartReading } from "./density-attribution";
+import type { PartReading, ProbeScope } from "./density-attribution";
 import { docsBaseUrl } from "./docs-server";
 
 /**
@@ -26,13 +26,6 @@ import { docsBaseUrl } from "./docs-server";
  * (`densityOpened`), which the walk waits on to close and the further probe scopes by. So it is a
  * fixed first step.
  */
-
-/**
- * Every part in the page's demo stages; every part that appeared on the page since the last probe;
- * every part that appeared inside a stage since the stages read; or the parts the last `unseen` or
- * `late` read took, read again at the next density.
- */
-export type ProbeScope = "stages" | "unseen" | "late" | "opened";
 
 /** The scope of a reading's first density; the later densities re-read the same parts. */
 type FirstScope = Exclude<ProbeScope, "opened">;

@@ -125,14 +125,36 @@ export function syncedFile(
 
 /** A synced file the plugin applied the kit to, and the report of that Apply. */
 export type AppliedKit = {
-  /** A fork of the file, opened again for the next run, which changes apart from every other. */
+  /**
+   * The file, opened again for the next run. The fixtures hand each call a fork of it, which
+   * changes apart from every other.
+   */
   readonly file: FakeFigma;
   /** What the Apply that laid the kit out on the synced file reported. */
   readonly applied: ReconcileReport;
 };
 
+/**
+ * Apply a kit to a file and open the file again for the next run.
+ *
+ * @param file - A synced file.
+ * @param kit - The kit.
+ * @returns The file and the Apply's report, deep frozen.
+ */
+export async function applyTo(file: FakeFigma, kit: KitSpec): Promise<AppliedKit> {
+  const report = deepFrozen(await reconcileKit(file.figma, kit, true));
+  file.reopen();
+  return { file, applied: report };
+}
+
+/** A fork of an applied file, with the report of the Apply it copies. */
+async function forkOf(base: Promise<AppliedKit>): Promise<AppliedKit> {
+  const { file, applied } = await base;
+  return { file: file.fork(), applied };
+}
+
 /** The applied file every fork copies, which no test reads or changes itself. */
-let applied: Promise<{ readonly file: FakeFigma; readonly applied: ReconcileReport }> | undefined;
+let applied: Promise<AppliedKit> | undefined;
 
 /**
  * Apply the kit to a synced file on the first call, and hand each call a fork of that file, so a
@@ -141,16 +163,28 @@ let applied: Promise<{ readonly file: FakeFigma; readonly applied: ReconcileRepo
  *
  * @returns The forked file and the Apply's report.
  */
-export async function appliedKit(): Promise<AppliedKit> {
-  applied ??= (async () => {
-    const { kit, collections } = await kitFixture();
-    const file = syncedFile(collections);
-    const report = deepFrozen(await reconcileKit(file.figma, kit, true));
-    file.reopen();
-    return { file, applied: report };
-  })();
-  const base = await applied;
-  return { file: base.file.fork(), applied: base.applied };
+export function appliedKit(): Promise<AppliedKit> {
+  applied ??= kitFixture().then(({ kit, collections }) => applyTo(syncedFile(collections), kit));
+  return forkOf(applied);
+}
+
+/** The applied files of the cut kits, by their page keys. */
+const appliedCuts = new Map<string, Promise<AppliedKit>>();
+
+/**
+ * Apply the kit cut down to some pages (`kitOn`) to a synced file on the first call for those
+ * pages, and hand each call a fork of that file, as `appliedKit()` does for the whole kit.
+ *
+ * @param pageKeys - The pages the suite reads.
+ * @returns The forked file and the Apply's report.
+ */
+export function appliedKitOn(pageKeys: readonly string[]): Promise<AppliedKit> {
+  const key = pageKeys.join(" ");
+  const base =
+    appliedCuts.get(key) ??
+    kitFixture().then(({ kit, collections }) => applyTo(syncedFile(collections), kitOn(kit, pageKeys)));
+  appliedCuts.set(key, base);
+  return forkOf(base);
 }
 
 /**
