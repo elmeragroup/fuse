@@ -53,10 +53,12 @@ export function summarize(
   switch (value.kind) {
     case "option":
     case "multiOption": {
-      const options = optionsOf(field);
-      const labels = value.values.map(
-        (item) => options.find((option) => option.value === item)?.label ?? item
-      );
+      // First option wins on a repeated value, as the chip's icon lookup does.
+      const labelOf = new Map<string, string>();
+      for (const option of optionsOf(field)) {
+        if (!labelOf.has(option.value)) labelOf.set(option.value, option.label);
+      }
+      const labels = value.values.map((item) => labelOf.get(item) ?? item);
       const list = listFormat(locale, { type: "unit", style: "short" });
       const shown = labels.slice(0, VISIBLE_OPTIONS);
       const rest = labels.length - shown.length;

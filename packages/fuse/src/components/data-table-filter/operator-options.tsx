@@ -7,7 +7,7 @@ import type { ReactElement } from "react";
 
 import type { SelectContentProps } from "../select/select";
 import { SelectContent, SelectItem } from "../select/select";
-import { useFilterInternals } from "./data-table-filter";
+import { useFilterInternals } from "./data-table-filter-context";
 import type { FilterField } from "./filter-fields";
 import type { FilterOperator, FilterValue } from "./filter-model";
 import { operatorChoices } from "./filter-model";

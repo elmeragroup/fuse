@@ -31,7 +31,7 @@ import type { CountedRender } from "../../../test/data-table-filter-fixture";
 import { withLocale } from "../../../test/locale-matrix";
 import { glidePointerTo, turnWheel, whilePointerPressed } from "../../../test/pointer-press";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
-import type { DataTableFilterContextValue } from "./data-table-filter";
+import type { DataTableFilterContextValue } from "./data-table-filter-context";
 import type { FilterFieldMap } from "./filter-fields";
 import { parseColumnFilters } from "./filter-parse";
 import { DataTableFilter } from "./index";

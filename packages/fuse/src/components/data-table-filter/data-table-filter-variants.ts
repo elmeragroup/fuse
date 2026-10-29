@@ -95,8 +95,8 @@ export const dataTableFilterVariants = tv({
     /** The empty state of a menu list. */
     empty: "text-sm px-(--row-px) py-2 text-muted-foreground",
     /**
-     * The status under a menu list that shows only its first matches. A status, so a screen
-     * reader hears it appear, and outside the list, so it is never an item.
+     * surface. The status under a menu list that shows only its first matches. A status, so a
+     * screen reader hears it appear, and outside the list, so it is never an item.
      */
     narrowHint:
       "text-xs -mx-(--surface-pad-sm) mt-1 shrink-0 border-t border-border px-[calc(var(--row-px)+var(--surface-pad-sm))] pt-1.5 pb-0.5 text-muted-foreground empty:hidden",
@@ -150,9 +150,11 @@ export const dataTableFilterVariants = tv({
       "flex min-h-0 w-72 max-w-full flex-col has-data-[presets=beside]:w-max has-data-[presets=beside]:min-w-72",
     /**
      * layout. The editor's body: the kind editors. It scrolls inside the popup when a tall one,
-     * such as a calendar, meets the height cap, and the header stays put above it.
+     * such as a calendar, meets the height cap, and the header stays put above it. An option editor
+     * with a values footer shrinks in it instead, so its list scrolls and the footer stays in view.
      */
-    editorBody: "min-h-0 flex-1 overflow-y-auto overscroll-contain",
+    editorBody:
+      "min-h-0 flex-1 overflow-y-auto overscroll-contain has-data-[slot=data-table-filter-values-footer]:flex has-data-[slot=data-table-filter-values-footer]:flex-col",
     /**
      * surface. The editor's header, the title and the operator. Under a coarse pointer its padding
      * grows to half the gap between a small control and 44px, so the 44px reach of Back and the
@@ -198,8 +200,13 @@ export const dataTableFilterVariants = tv({
     dateField: "*:data-[slot=field-label]:text-xs *:data-[slot=field-label]:text-muted-foreground",
     /** Number fields stack, since a formatted amount and two steppers need the full width. */
     numberStack: "flex flex-col gap-(--surface-gap-sm)",
-    /** layout. The option editor: its search, list and status. */
-    optionEditor: "group/combobox-content flex flex-col",
+    /**
+     * layout. The option editor: its search, list, status and the consumer's values footer. With
+     * a footer it shrinks to the popup's height cap, where its list scrolls, a scroll container
+     * whose minimum height is 0, and the footer stays below it.
+     */
+    optionEditor:
+      "group/combobox-content flex flex-col has-data-[slot=data-table-filter-values-footer]:min-h-0",
     /** The option editor's search, 4px inside the popover. */
     editorSearch: "px-(--surface-pad-sm) pt-(--surface-pad-sm)",
     /** row. An option editor row. A count of 0 mutes its label too. */
@@ -207,11 +214,21 @@ export const dataTableFilterVariants = tv({
     /** The option editor's empty state. */
     editorEmpty: "flex empty:hidden",
     /**
-     * The status under a list that shows only its first matches. A status, so a screen reader
-     * hears it appear, and outside the list, so it is never an option.
+     * surface. The status under a list that shows only its first matches. A status, so a screen
+     * reader hears it appear, and outside the list, so it is never an option.
      */
     editorNarrowHint:
       "text-xs shrink-0 border-t border-border px-(--surface-pad-md) pt-1.5 pb-2 text-muted-foreground empty:hidden",
+    /**
+     * surface. The values footer under a value list: its actions in one row behind a hairline that
+     * matches the menu separator, outside the scrolling list, so it stays in view at the popup's
+     * height cap. In a value submenu it reaches across the menu shell's padding and sits on the
+     * shell's bottom padding. In the value popover, which has no padding, it pads itself.
+     */
+    valuesFooter:
+      "-mx-(--surface-pad-sm) mt-1 flex shrink-0 items-center gap-(--surface-gap-sm) border-t border-border px-(--surface-pad-sm) pt-(--surface-pad-sm) in-data-[slot=data-table-filter-option-editor]:mx-0 in-data-[slot=data-table-filter-option-editor]:pb-(--surface-pad-sm)",
+    /** control. Done, the footer's last action, at its inline end. */
+    done: "ms-auto",
   },
 });
 

@@ -23,6 +23,12 @@ import {
   DataTableFilterTextEditor,
 } from "./data-table-filter-editors";
 import { DataTableFilterEditor, DataTableFilterValueContent } from "./data-table-filter-value-content";
+import {
+  DataTableFilterClearValues,
+  DataTableFilterDone,
+  DataTableFilterSelectAllValues,
+  DataTableFilterValuesFooter,
+} from "./data-table-filter-values-footer";
 
 export const DataTableFilter = {
   Root: DataTableFilterRoot,
@@ -43,4 +49,8 @@ export const DataTableFilter = {
   TextEditor: DataTableFilterTextEditor,
   NumberEditor: DataTableFilterNumberEditor,
   DateEditor: DataTableFilterDateEditor,
+  ValuesFooter: DataTableFilterValuesFooter,
+  SelectAllValues: DataTableFilterSelectAllValues,
+  ClearValues: DataTableFilterClearValues,
+  Done: DataTableFilterDone,
 };

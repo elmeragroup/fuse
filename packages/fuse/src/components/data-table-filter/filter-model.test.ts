@@ -11,6 +11,8 @@ import { createDataTableFilterFn } from "./filter-fn";
 import { matchesFilter } from "./filter-match";
 import {
   allowedOperators,
+  allowsManyValues,
+  canAddOptionValues,
   fieldAdmits,
   filterValuesEqual,
   isIsoDate,
@@ -19,6 +21,7 @@ import {
   operatorChoices,
   setFilterOperator,
   setFilterValues,
+  setOptionValues,
   toFilterValue,
   toggleBoolean,
   toggleOption,
@@ -493,6 +496,213 @@ describe("reducers", () => {
     ];
     expect(setFilterValues(state, "customer", TEXT, "contains", [])).toEqual([]);
     expect(setFilterValues(state, "customer", TEXT, "isBetween", ["a", "b"])).toEqual(state);
+  });
+});
+
+describe("setOptionValues", () => {
+  const STATUS = {
+    kind: "option",
+    options: [{ value: "paid" }, { value: "pending" }, { value: "draft" }],
+  } as const;
+  const TAGS = { kind: "multiOption", options: [{ value: "a" }, { value: "b" }, { value: "c" }] } as const;
+  const SINGLE = { ...STATUS, operators: ["is", "isNot"] } as const;
+  const entry = (kind: "option" | "multiOption", operator: string, values: readonly string[]) => {
+    // SAFETY: each call below pairs a list kind with one of its operators and a count it takes.
+    const value = { kind, operator, values } as FilterValue;
+    return { id: "x", value };
+  };
+  const OTHER = { id: "customer", value: { kind: "text", operator: "contains", values: ["nord"] } } as const;
+
+  type Row = readonly [
+    name: string,
+    field: typeof STATUS | typeof TAGS | typeof SINGLE,
+    state: DataTableFilterState,
+    values: readonly string[],
+    start: FilterOperator,
+    expected: DataTableFilterState,
+  ];
+  const ROWS: readonly Row[] = [
+    [
+      "a new filter of many values starts at isAnyOf",
+      STATUS,
+      [],
+      ["paid", "draft"],
+      "is",
+      [entry("option", "isAnyOf", ["paid", "draft"])],
+    ],
+    [
+      "a new filter of one value starts at is",
+      STATUS,
+      [],
+      ["pending"],
+      "is",
+      [entry("option", "is", ["pending"])],
+    ],
+    [
+      "is grows to isAnyOf",
+      STATUS,
+      [entry("option", "is", ["paid"])],
+      ["paid", "pending", "draft"],
+      "is",
+      [entry("option", "isAnyOf", ["paid", "pending", "draft"])],
+    ],
+    [
+      "isNot grows to isNoneOf, still negated",
+      STATUS,
+      [entry("option", "isNot", ["paid"])],
+      ["paid", "pending"],
+      "is",
+      [entry("option", "isNoneOf", ["paid", "pending"])],
+    ],
+    [
+      "isNoneOf stays negated at three",
+      STATUS,
+      [entry("option", "isNoneOf", ["paid", "pending"])],
+      ["paid", "pending", "draft"],
+      "is",
+      [entry("option", "isNoneOf", ["paid", "pending", "draft"])],
+    ],
+    [
+      "includesAllOf stays itself",
+      TAGS,
+      [entry("multiOption", "includesAllOf", ["a", "b"])],
+      ["a", "b", "c"],
+      "includes",
+      [entry("multiOption", "includesAllOf", ["a", "b", "c"])],
+    ],
+    [
+      "excludes grows to excludesAnyOf",
+      TAGS,
+      [entry("multiOption", "excludes", ["a"])],
+      ["a", "c"],
+      "includes",
+      [entry("multiOption", "excludesAnyOf", ["a", "c"])],
+    ],
+    [
+      "an empty list removes the filter and keeps the others",
+      STATUS,
+      [OTHER, entry("option", "isAnyOf", ["paid", "pending"])],
+      [],
+      "is",
+      [OTHER],
+    ],
+    ["an empty list with no filter changes nothing", STATUS, [OTHER], [], "is", [OTHER]],
+    [
+      "values the field does not offer and repeats drop out",
+      STATUS,
+      [],
+      ["paid", "void", "paid", "draft"],
+      "is",
+      [entry("option", "isAnyOf", ["paid", "draft"])],
+    ],
+    [
+      "only values the field does not offer remove the filter",
+      STATUS,
+      [entry("option", "is", ["paid"])],
+      ["void"],
+      "is",
+      [],
+    ],
+    [
+      "two values on a single-select field write nothing",
+      SINGLE,
+      [entry("option", "is", ["paid"])],
+      ["paid", "pending"],
+      "is",
+      [entry("option", "is", ["paid"])],
+    ],
+    [
+      "a changed filter keeps its place",
+      STATUS,
+      [entry("option", "is", ["paid"]), OTHER],
+      ["paid", "draft"],
+      "is",
+      [entry("option", "isAnyOf", ["paid", "draft"]), OTHER],
+    ],
+  ];
+
+  it.each(ROWS)("%s", (_name, field, state, values, start, expected) => {
+    expect(setOptionValues(state, "x", field, values, start)).toEqual(expected);
+  });
+});
+
+describe("asymmetric operator configs", () => {
+  const OPTIONS = [{ value: "paid" }, { value: "pending" }, { value: "draft" }] as const;
+  const NO_NONE_OF = { kind: "option", options: OPTIONS, operators: ["is", "isNot", "isAnyOf"] } as const;
+  const NO_ANY_OF = { kind: "option", options: OPTIONS, operators: ["is", "isNot", "isNoneOf"] } as const;
+  const under = (operator: "is" | "isNot"): DataTableFilterState => [
+    { id: "x", value: { kind: "option", operator, values: ["paid"] } },
+  ];
+
+  type Row = readonly [
+    name: string,
+    field: typeof NO_NONE_OF | typeof NO_ANY_OF,
+    state: DataTableFilterState,
+    added: number,
+    can: boolean,
+    write: DataTableFilterState,
+  ];
+  const ROWS: readonly Row[] = [
+    ["isNot cannot grow without isNoneOf", NO_NONE_OF, under("isNot"), 1, false, under("isNot")],
+    [
+      "is grows to isAnyOf on the same field",
+      NO_NONE_OF,
+      under("is"),
+      1,
+      true,
+      [{ id: "x", value: { kind: "option", operator: "isAnyOf", values: ["paid", "pending"] } }],
+    ],
+    [
+      "a new filter starts at is and grows to isAnyOf",
+      NO_NONE_OF,
+      [],
+      2,
+      true,
+      [{ id: "x", value: { kind: "option", operator: "isAnyOf", values: ["paid", "pending"] } }],
+    ],
+    ["the mirror: is cannot grow without isAnyOf", NO_ANY_OF, under("is"), 1, false, under("is")],
+    [
+      "the mirror: isNot grows to isNoneOf",
+      NO_ANY_OF,
+      under("isNot"),
+      1,
+      true,
+      [{ id: "x", value: { kind: "option", operator: "isNoneOf", values: ["paid", "pending"] } }],
+    ],
+    ["a new filter on the mirror cannot start at two", NO_ANY_OF, [], 2, false, []],
+  ];
+
+  it.each(ROWS)("%s, and the write agrees", (_name, field, state, added, can, write) => {
+    expect(canAddOptionValues(state, "x", field, added, "is")).toBe(can);
+    // Each state holds at most one value, "paid", so the write keeps it and adds the next ones.
+    const values = ["paid", "pending", "draft"].slice(0, state.length + added);
+    expect(setOptionValues(state, "x", field, values, "is")).toEqual(write);
+  });
+
+  it.each([
+    ["a first value to a new filter", NO_NONE_OF, [], 1],
+    ["a first value to a new filter on the mirror", NO_ANY_OF, [], 1],
+    [
+      "a value beside one the field no longer offers, under isNot",
+      NO_NONE_OF,
+      [{ id: "x", value: { kind: "option", operator: "isNot", values: ["gone"] } }],
+      1,
+    ],
+  ] as const)("can add %s", (_name, field, state, added) => {
+    expect(canAddOptionValues(state, "x", field, added, "is")).toBe(true);
+  });
+});
+
+describe("allowsManyValues", () => {
+  it.each([
+    ["an option field with its default operators", { kind: "option" }, true],
+    ["a single-select option field", { kind: "option", operators: ["is", "isNot"] }, false],
+    ["an option field that lists only isNoneOf", { kind: "option", operators: ["isNoneOf"] }, true],
+    ["a multi-option field", { kind: "multiOption" }, true],
+    ["a boolean field", { kind: "boolean" }, false],
+    ["a boolean field with isNot", { kind: "boolean", operators: ["is", "isNot"] }, false],
+  ] as const)("says %s allows many values: %s", (_name, field, expected) => {
+    expect(allowsManyValues(field)).toBe(expected);
   });
 });
 

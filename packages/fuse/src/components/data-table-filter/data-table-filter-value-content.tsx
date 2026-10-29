@@ -30,8 +30,8 @@ import {
   EditorTargetContext,
   useFilterInternals,
   useOverlayRef,
-} from "./data-table-filter";
-import type { EditorTarget, OverlayKind } from "./data-table-filter";
+} from "./data-table-filter-context";
+import type { EditorTarget, OverlayKind } from "./data-table-filter-context";
 import { EditorContext, useCompositionGuard } from "./data-table-filter-editor-context";
 import type { EditorContextValue } from "./data-table-filter-editor-context";
 import {

@@ -10,6 +10,10 @@ const MESSAGES = {
   "outside-overlay":
     "must be used within DataTableFilter.Content or DataTableFilter.ValueContent. Render it in either overlay.",
   "outside-editor": "must be used within DataTableFilter.Editor. Render it in the editor of either overlay.",
+  "outside-value-list":
+    "must be used within a value list. Render it in DataTableFilter.FieldList's or DataTableFilter.OptionEditor's children.",
+  "unknown-field":
+    "lists a field id that DataTableFilter.Root's fields do not have. List only ids of the fields map.",
   "no-content":
     "opens DataTableFilter.Content, but this DataTableFilter.Root renders none. Render <DataTableFilter.Content /> beside the Bar.",
   "no-value-content":

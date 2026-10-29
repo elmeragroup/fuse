@@ -27,11 +27,9 @@ import { page } from "vitest/browser";
 import stylesCss from "../dist/styles.css?raw";
 import themesCss from "../dist/themes.css?raw";
 import { DataTableFilter } from "../src/components/data-table-filter";
-import { useDataTableFilter } from "../src/components/data-table-filter/data-table-filter";
-import type {
-  DataTableFilterContextValue,
-  DataTableFilterRootProps,
-} from "../src/components/data-table-filter/data-table-filter";
+import type { DataTableFilterRootProps } from "../src/components/data-table-filter/data-table-filter";
+import { useDataTableFilter } from "../src/components/data-table-filter/data-table-filter-context";
+import type { DataTableFilterContextValue } from "../src/components/data-table-filter/data-table-filter-context";
 import { defineFilterFields } from "../src/components/data-table-filter/filter-fields";
 import type { FilterFacets, FilterFieldMap } from "../src/components/data-table-filter/filter-fields";
 import { createDataTableFilterFn } from "../src/components/data-table-filter/filter-fn";

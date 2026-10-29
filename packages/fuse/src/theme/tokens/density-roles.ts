@@ -501,7 +501,7 @@ export const PART_DENSITY = {
   "data-table-filter-trigger": "control",
   "data-table-filter-chips": "surface",
   "data-table-filter-chip": "control",
-  "data-table-filter-subject": "layout",
+  "data-table-filter-subject": "control",
   "data-table-filter-operator": "control",
   "data-table-filter-value": "control",
   "data-table-filter-remove": "control",
@@ -511,11 +511,11 @@ export const PART_DENSITY = {
   "data-table-filter-viewport": "layout",
   "data-table-filter-editor": "layout",
   "data-table-filter-editor-body": "layout",
-  "data-table-filter-header": "layout",
+  "data-table-filter-header": "surface",
   "data-table-filter-editor-operator": "control",
   "data-table-filter-option-editor": "layout",
   "data-table-filter-count": "fixed",
-  "data-table-filter-narrow": "layout",
+  "data-table-filter-narrow": "surface",
   "data-table-filter-text": "layout",
   "data-table-filter-number": "layout",
   "data-table-filter-date": "layout",
@@ -531,6 +531,10 @@ export const PART_DENSITY = {
   "data-table-filter-options": "surface",
   "data-table-filter-option": "row",
   "data-table-filter-back": "control",
+  "data-table-filter-values-footer": "surface",
+  "data-table-filter-select-all": "control",
+  "data-table-filter-clear-values": "control",
+  "data-table-filter-done": "control",
   // plop:density-part
 } as const satisfies Readonly<Record<string, DensityRole>>;
 

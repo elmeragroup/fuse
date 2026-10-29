@@ -26,13 +26,16 @@ export type {
 } from "./components/data-table-filter/data-table-filter-editors";
 export { DataTableFilterCompositionError } from "./components/data-table-filter/data-table-filter-error";
 export type { DataTableFilterCompositionRule } from "./components/data-table-filter/data-table-filter-error";
-export { useDataTableFilter, useDataTableFilterChip } from "./components/data-table-filter/data-table-filter";
+export type { DataTableFilterRootProps } from "./components/data-table-filter/data-table-filter";
+export {
+  useDataTableFilter,
+  useDataTableFilterChip,
+} from "./components/data-table-filter/data-table-filter-context";
 export type {
   ChipFilter,
   DataTableFilterContextValue,
-  DataTableFilterRootProps,
   FacetReader,
-} from "./components/data-table-filter/data-table-filter";
+} from "./components/data-table-filter/data-table-filter-context";
 export type {
   ColumnFiltersAtomSource,
   FilterColumnSource,
@@ -42,6 +45,10 @@ export type {
   DataTableFilterEditorProps,
   DataTableFilterValueContentProps,
 } from "./components/data-table-filter/data-table-filter-value-content";
+export type {
+  DataTableFilterValuesActionProps,
+  DataTableFilterValuesFooterProps,
+} from "./components/data-table-filter/data-table-filter-values-footer";
 export type { DatePresetKey } from "./components/data-table-filter/date-presets";
 export { defineFilterFields } from "./components/data-table-filter/filter-fields";
 export type {

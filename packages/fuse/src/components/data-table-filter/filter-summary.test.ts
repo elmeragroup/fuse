@@ -48,6 +48,20 @@ describe("summarize", () => {
     ).toEqual({ text: "Paid, Pending +1", full: "Paid, Pending, Overdue" });
   });
 
+  it("names a repeated option value by its first label", () => {
+    const repeated: OptionFilterField = {
+      kind: "option",
+      label: "Status",
+      options: [
+        { value: "paid", label: "Paid" },
+        { value: "paid", label: "Settled" },
+      ],
+    };
+    expect(
+      summarize({ kind: "option", operator: "is", values: ["paid"] }, repeated, "en-US", plain).text
+    ).toBe("Paid");
+  });
+
   it("quotes text and formats number and date ranges in the locale", () => {
     expect(
       summarize({ kind: "text", operator: "contains", values: ["nord"] }, STATUS, "en-US", plain).text

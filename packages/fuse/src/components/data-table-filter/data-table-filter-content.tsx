@@ -34,8 +34,13 @@ import {
 import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import { switchVariants } from "../switch/switch-variants";
-import { EditorTargetContext, useFilterInternals, useOverlayRef } from "./data-table-filter";
-import type { EditorTarget } from "./data-table-filter";
+import {
+  EditorTargetContext,
+  useFilterInternals,
+  useOverlayRef,
+  ValueListContext,
+} from "./data-table-filter-context";
+import type { EditorTarget } from "./data-table-filter-context";
 import { OptionCount } from "./data-table-filter-editors";
 import { DefaultEditor } from "./data-table-filter-value-content";
 import { dataTableFilterSlots as slots } from "./data-table-filter-variants";
@@ -320,15 +325,22 @@ function MenuSearch({
 }
 
 /** The props of `DataTableFilter.FieldList`. */
-export type DataTableFilterFieldListProps = Record<never, never>;
+export type DataTableFilterFieldListProps = {
+  /**
+   * Rendered at the foot of every value submenu, below its list, such as a
+   * `DataTableFilter.ValuesFooter`. Its `fields` picks the fields whose submenus show it.
+   */
+  children?: ReactNode;
+};
 
 /**
  * The add menu's field step: the field search, one row per field and, from two characters on, a
  * "Values" group of option values across fields, "Status › Pending". Field rows are menu items,
  * and value rows are `menuitemcheckbox` with `aria-checked`. While a field is drilled into, only
- * its search stays mounted, hidden, so the query and Base UI's highlight survive until Back.
+ * its search stays mounted, hidden, so the query and Base UI's highlight survive until Back. Its
+ * children render at the foot of each value submenu, outside the scrolling list.
  */
-export function DataTableFilterFieldList(_props: DataTableFilterFieldListProps): ReactElement {
+export function DataTableFilterFieldList({ children }: DataTableFilterFieldListProps): ReactElement {
   const { state, actions, meta } = useFilterInternals("DataTableFilter.FieldList");
   const query = use(MenuQueryContext);
   const contains = useContains(meta.locale);
@@ -402,7 +414,9 @@ export function DataTableFilterFieldList(_props: DataTableFilterFieldListProps):
                 return <ToggleItem key={fieldId} fieldId={fieldId} field={field} />;
               }
               return isListField(field) ? (
-                <FieldSubmenu key={fieldId} fieldId={fieldId} field={field} active={active} />
+                <FieldSubmenu key={fieldId} fieldId={fieldId} field={field} active={active}>
+                  {children}
+                </FieldSubmenu>
               ) : (
                 <FieldItem key={fieldId} fieldId={fieldId} field={field} active={active} />
               );
@@ -542,10 +556,13 @@ function FieldSubmenu({
   fieldId,
   field,
   active,
+  children,
 }: {
   readonly fieldId: string;
   readonly field: ListField;
   readonly active: boolean;
+  /** The FieldList's children, at the submenu's foot. */
+  readonly children: ReactNode;
 }): ReactElement {
   const { actions, meta } = useFilterInternals("DataTableFilter.FieldList");
   const [query, setQuery] = useState("");
@@ -586,7 +603,9 @@ function FieldSubmenu({
               aria-label={field.label}
               className={cn(selfFocusRingClass, overlayTimedPopupClass, menuPopupShellClass, slots.menu())}
               onKeyDown={keepKeysFromToolbar}>
-              <OptionMenuBody fieldId={fieldId} field={field} query={query} />
+              <OptionMenuBody fieldId={fieldId} field={field} query={query}>
+                {children}
+              </OptionMenuBody>
             </MenuPrimitive.Popup>
           </MenuPrimitive.Positioner>
         </OverlayPortal>
@@ -598,16 +617,18 @@ function FieldSubmenu({
 /**
  * The submenu's body. Its order is taken as the submenu opens, so a tick never moves a row, and
  * picked values sit first under a separator. Each tick applies at once, and the chip appears in
- * the bar under the open menu.
+ * the bar under the open menu. The FieldList's children follow the list, in its value list context.
  */
 function OptionMenuBody({
   fieldId,
   field,
   query,
+  children,
 }: {
   readonly fieldId: string;
   readonly field: ListField;
   readonly query: string;
+  readonly children: ReactNode;
 }): ReactElement {
   const { state, meta } = useFilterInternals("DataTableFilter.FieldList");
   const picked = pickedValues(field, findFilter(state.filters, fieldId));
@@ -638,6 +659,7 @@ function OptionMenuBody({
       <p role="status" data-slot="data-table-filter-narrow" className={slots.narrowHint()}>
         {matches.more ? meta.format("narrowHint") : null}
       </p>
+      <ValueListContext value={{ fieldId, field, order, query, contains }}>{children}</ValueListContext>
     </>
   );
 }

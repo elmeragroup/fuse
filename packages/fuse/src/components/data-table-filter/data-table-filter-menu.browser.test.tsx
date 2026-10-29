@@ -41,7 +41,7 @@ import { glidePointerTo, turnWheel } from "../../../test/pointer-press";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { SupportedLocale } from "../../intl/locale-context";
-import { useDataTableFilter } from "./data-table-filter";
+import { useDataTableFilter } from "./data-table-filter-context";
 import type { FilterFieldMap } from "./filter-fields";
 import { parseColumnFilters } from "./filter-parse";
 import { DataTableFilter } from "./index";
