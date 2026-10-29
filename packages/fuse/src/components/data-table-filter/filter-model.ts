@@ -653,6 +653,88 @@ export function toggleOption(
 }
 
 /**
+ * Sets an option or multi-option filter's values in one write, as a list's Select all or Clear
+ * all does. Values the field does not offer and repeats drop out. The operator then follows the
+ * count from the current one, or from `start` for a new filter, as a tick's does: `is` becomes
+ * `isAnyOf`, a negated operator stays negated, and `includesAllOf` stays itself. An empty list
+ * removes the filter, and a count no allowed operator holds, such as two values on a single-select
+ * field, leaves the state as it was.
+ *
+ * @param state - The filter state.
+ * @param id - The column id.
+ * @param field - The field's kind, `option` or `multiOption`, its operators and its options.
+ * @param values - The values the filter holds after the write.
+ * @param start - The operator a new filter starts from, the field's first.
+ * @returns The next state.
+ */
+export function setOptionValues(
+  state: DataTableFilterState,
+  id: string,
+  field: OperatorPolicy & { readonly kind: "option" | "multiOption" },
+  values: readonly string[],
+  start: FilterOperator
+): DataTableFilterEntry[] {
+  const known = new Set((field.options ?? []).map((option) => option.value));
+  const next = [...new Set(values)].filter((value) => known.has(value));
+  if (next.length === 0) {
+    return removeFilter(state, id);
+  }
+  const operator = optionOperatorFor(state, id, field, next.length, start);
+  return operator === undefined
+    ? [...state]
+    : upsertAdmitted(state, id, field, toFilterValue(field.kind, operator, next));
+}
+
+/**
+ * The operator `setOptionValues` writes for a count of values: the count's form of the current
+ * operator, or of `start` for a new filter.
+ */
+function optionOperatorFor(
+  state: DataTableFilterState,
+  id: string,
+  field: OperatorPolicy,
+  count: number,
+  start: FilterOperator
+): FilterOperator | undefined {
+  const base = admittedPart(field, findFilter(state, id))?.operator ?? start;
+  return operatorForCount(field, base, count);
+}
+
+/**
+ * Whether `setOptionValues` can write a filter of `count` values under the field's current
+ * operator, or `start` for a new filter. An empty list always can, since it removes the filter.
+ * Under `isNot` on a field that allows `isAnyOf` but not `isNoneOf`, two values cannot, though the
+ * same field can hold them under `is`. A list's Select all asks this before it offers a press.
+ *
+ * @param state - The filter state.
+ * @param id - The column id.
+ * @param field - The field's kind, `option` or `multiOption`, and its operators.
+ * @param count - How many values the write would hold.
+ * @param start - The operator a new filter starts from, the field's first.
+ * @returns Whether some allowed operator holds that many values.
+ */
+export function canSetOptionCount(
+  state: DataTableFilterState,
+  id: string,
+  field: OperatorPolicy & { readonly kind: "option" | "multiOption" },
+  count: number,
+  start: FilterOperator
+): boolean {
+  return count === 0 || optionOperatorFor(state, id, field, count, start) !== undefined;
+}
+
+/**
+ * Whether a field allows an operator that holds two or more values, so a list of its values can
+ * pick many at once. A single-select option field and every boolean field allow none.
+ *
+ * @param field - The field.
+ * @returns Whether it allows a multi-value operator.
+ */
+export function allowsManyValues(field: OperatorPolicy): boolean {
+  return allowedOperators(field).some((operator) => targetOf(field.kind, operator) === "multiple");
+}
+
+/**
  * Picks `true` or `false` on a boolean field. On a toggle, a pick of `true` turns it off when it
  * is on, and otherwise writes `is` `true`, which also replaces a value the toggle no longer
  * admits. A toggle ignores `false`, since off means no filter. On any other boolean field, a pick

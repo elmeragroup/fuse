@@ -85,6 +85,30 @@ const ORDER_FILTERS = defineFilterFields<Order>()({
   product: { kind: "option", label: "Product", icon: <Package />, options: PRODUCT_OPTIONS, order: "count" },
 });
 
+// Select all, Clear all and Done under Product's list only, in the add menu and in the chip's
+// popover alike. Select all picks every product, or every one the search matches, past the 50
+// rows the list shows.
+function ProductFooter() {
+  return (
+    <DataTableFilter.ValuesFooter fields={["product"]}>
+      <DataTableFilter.SelectAllValues />
+      <DataTableFilter.ClearValues />
+      <DataTableFilter.Done />
+    </DataTableFilter.ValuesFooter>
+  );
+}
+
+function OrderEditor() {
+  return (
+    <DataTableFilter.Editor>
+      <DataTableFilter.OptionEditor>
+        <ProductFooter />
+      </DataTableFilter.OptionEditor>
+      <DataTableFilter.TextEditor />
+    </DataTableFilter.Editor>
+  );
+}
+
 const dataTableFilter = createDataTableFilterFn();
 
 const { useAppTable: useOrdersTable, createAppColumnHelper } = createFuseTableHook({
@@ -124,11 +148,20 @@ const ORDERS: Order[] = Array.from({ length: 200 }, (_, index) => ({
   product: PRODUCT_OPTIONS[(index * 389) % PRODUCT_OPTIONS.length]?.value ?? "oak-shelf-20",
 }));
 
+// The demo opens filtered to the first three orders' products, so the Product chip's popover
+// shows the footer from the start.
+const INITIAL_FILTERS = [
+  {
+    id: "product",
+    value: { kind: "option", operator: "isAnyOf", values: ORDERS.slice(0, 3).map((order) => order.product) },
+  },
+];
+
 export function DataTableFilterHighCardinality() {
   const table = useOrdersTable({
     columns: COLUMNS,
     data: ORDERS,
-    initialState: { pagination: { pageIndex: 0, pageSize: 6 } },
+    initialState: { pagination: { pageIndex: 0, pageSize: 6 }, columnFilters: INITIAL_FILTERS },
   });
 
   return (
@@ -136,8 +169,15 @@ export function DataTableFilterHighCardinality() {
       <DataTableFilter.Root table={table} fields={ORDER_FILTERS}>
         <div className="flex w-full min-w-0 flex-col gap-4">
           <DataTableFilter.Bar aria-label="Order filters" />
-          <DataTableFilter.Content />
-          <DataTableFilter.ValueContent />
+          <DataTableFilter.Content>
+            <DataTableFilter.FieldList>
+              <ProductFooter />
+            </DataTableFilter.FieldList>
+            <OrderEditor />
+          </DataTableFilter.Content>
+          <DataTableFilter.ValueContent>
+            <OrderEditor />
+          </DataTableFilter.ValueContent>
           <table.Content aria-label="Orders" />
           <table.Pagination />
         </div>

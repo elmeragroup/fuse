@@ -31,9 +31,10 @@ import { Kbd } from "../kbd/kbd";
 import { NumberField } from "../number-field/number-field";
 import { Slider } from "../slider/slider";
 import { ToggleGroupItem, ToggleGroupRoot } from "../toggle-group/toggle-group";
-import { useFilterInternals, useFocusRequest } from "./data-table-filter";
+import { useFilterInternals, useFocusRequest } from "./data-table-filter-context";
 import type { DraftValues, EditorContextValue } from "./data-table-filter-editor-context";
 import { useKindEditor } from "./data-table-filter-editor-context";
+import { ValueListProvider } from "./data-table-filter-values-footer";
 import { dataTableFilterSlots as slots } from "./data-table-filter-variants";
 import { DEFAULT_DATE_PRESETS, datePresetRange, isOneDayPreset } from "./date-presets";
 import type { DatePresetKey } from "./date-presets";
@@ -72,7 +73,10 @@ export function OptionCount({ count }: { readonly count: number }): ReactElement
   );
 }
 
-/** Edits an option, multi-option or boolean filter. Renders nothing for other kinds. */
+/**
+ * Edits an option, multi-option or boolean filter. Renders nothing for other kinds. Its children
+ * render below its list, outside the scrolling rows, such as a `DataTableFilter.ValuesFooter`.
+ */
 export function DataTableFilterOptionEditor(props: DataTableFilterKindEditorProps): ReactElement | null {
   const editor = useKindEditor("DataTableFilter.OptionEditor", LIST_KINDS);
   return editor === null ? null : <OptionEditorBody editor={editor} {...props} />;
@@ -83,6 +87,7 @@ type OptionGroup = { readonly value: "pinned" | "rest"; readonly items: readonly
 function OptionEditorBody({
   editor,
   className,
+  children,
   ...props
 }: DataTableFilterKindEditorProps & {
   readonly editor: EditorContextValue & { readonly field: ListField };
@@ -188,6 +193,11 @@ function OptionEditorBody({
       <p role="status" data-slot="data-table-filter-narrow" className={slots.editorNarrowHint()}>
         {matches.more ? meta.format("narrowHint") : null}
       </p>
+      {children == null ? null : (
+        <ValueListProvider fieldId={fieldId} field={field} order={order} query={query} contains={contains}>
+          {children}
+        </ValueListProvider>
+      )}
     </div>
   );
 }

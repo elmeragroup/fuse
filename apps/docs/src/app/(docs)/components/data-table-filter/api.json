@@ -601,7 +601,17 @@
       "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-content.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
-      "props": []
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Rendered at the foot of every value submenu, below its list, such as a `DataTableFilter.ValuesFooter`. Its `fields` picks the fields whose submenus show it.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "DataTableFilter.ValueContent",
@@ -713,6 +723,410 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "Replaces the date inputs, such as with a calendar. The presets and the header stay. On a viewport 40rem wide or more the presets stand in a column beside it, and the popup widens to fit.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTableFilter.ValuesFooter",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-values-footer.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "fields",
+          "origin": "declared",
+          "type": "readonly string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The field ids whose lists show the footer. Without it, every option, multi-option and boolean field's list shows it. Each id must be a key of the Root's `fields`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTableFilter.SelectAllValues",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-values-footer.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 285,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the button should be focusable when disabled.",
+          "required": false
+        },
+        {
+          "name": "isPending",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The in-flight state of an async action. Stamps `data-pending` and `aria-busy`, blocks activation (effective disabled is `disabled || isPending`) and renders the disabled treatment, but keeps the button in the focus order like `focusableWhenDisabled`, so a keyboard user who activated it is still on it when the result arrives. Shows the `pendingIndicator` in the leading icon position meanwhile. An explicit `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending. `aria-busy` announces nothing by itself: say what is happening through the label (\"Saving\") or a `role=\"status\"` region outside the button.",
+          "required": false
+        },
+        {
+          "name": "isVisuallyDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Stamps `aria-disabled` (an explicit consumer value wins), which renders the disabled treatment (`opacity-50`, the `not-allowed` cursor, no hover or press paint), and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work, and a Tooltip on it still opens. For \"looks disabled but explains itself on activation\" flows. The treatment keys off `aria-disabled`, so an explicit `aria-disabled={false}` also turns it off: the button then looks and announces enabled and only the focus-on-press suppression remains.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "onIntent",
+          "origin": "declared",
+          "type": "(() => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Predictive-prefetch callback. Fires once when the pointer's predicted trajectory lands inside the inflated hit rect; browsers without the prediction API fail soft.",
+          "required": false
+        },
+        {
+          "name": "pendingIndicator",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "What the button shows while pending. Omitted: a spinning `SpinnerGap` in the leading icon position, and the button's own leading and bare SVG children hide so the spinner takes their place (a trailing `data-icon=\"inline-end\"` icon stays). A node: rendered in that same place instead of the spinner, as a decorative `aria-hidden` slot; animate it yourself. `null` or `false`: no indicator and nothing hidden, so the call site owns the pending markup, for example a brand button that keeps its logo and centres its own spinner over it.",
+          "required": false
+        },
+        {
+          "name": "predictionZoneSize",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pixels the hit rect is inflated on every side when predicting pointer intent.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "LabelButtonSize | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Recipe size axis. The `icon*` sizes are square and additionally require an `aria-label`.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTableFilter.ClearValues",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-values-footer.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 285,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the button should be focusable when disabled.",
+          "required": false
+        },
+        {
+          "name": "isPending",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The in-flight state of an async action. Stamps `data-pending` and `aria-busy`, blocks activation (effective disabled is `disabled || isPending`) and renders the disabled treatment, but keeps the button in the focus order like `focusableWhenDisabled`, so a keyboard user who activated it is still on it when the result arrives. Shows the `pendingIndicator` in the leading icon position meanwhile. An explicit `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending. `aria-busy` announces nothing by itself: say what is happening through the label (\"Saving\") or a `role=\"status\"` region outside the button.",
+          "required": false
+        },
+        {
+          "name": "isVisuallyDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Stamps `aria-disabled` (an explicit consumer value wins), which renders the disabled treatment (`opacity-50`, the `not-allowed` cursor, no hover or press paint), and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work, and a Tooltip on it still opens. For \"looks disabled but explains itself on activation\" flows. The treatment keys off `aria-disabled`, so an explicit `aria-disabled={false}` also turns it off: the button then looks and announces enabled and only the focus-on-press suppression remains.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "onIntent",
+          "origin": "declared",
+          "type": "(() => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Predictive-prefetch callback. Fires once when the pointer's predicted trajectory lands inside the inflated hit rect; browsers without the prediction API fail soft.",
+          "required": false
+        },
+        {
+          "name": "pendingIndicator",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "What the button shows while pending. Omitted: a spinning `SpinnerGap` in the leading icon position, and the button's own leading and bare SVG children hide so the spinner takes their place (a trailing `data-icon=\"inline-end\"` icon stays). A node: rendered in that same place instead of the spinner, as a decorative `aria-hidden` slot; animate it yourself. `null` or `false`: no indicator and nothing hidden, so the call site owns the pending markup, for example a brand button that keeps its logo and centres its own spinner over it.",
+          "required": false
+        },
+        {
+          "name": "predictionZoneSize",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pixels the hit rect is inflated on every side when predicting pointer intent.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "LabelButtonSize | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Recipe size axis. The `icon*` sizes are square and additionally require an `aria-label`.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTableFilter.Done",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-values-footer.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 285,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the button should be focusable when disabled.",
+          "required": false
+        },
+        {
+          "name": "isPending",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The in-flight state of an async action. Stamps `data-pending` and `aria-busy`, blocks activation (effective disabled is `disabled || isPending`) and renders the disabled treatment, but keeps the button in the focus order like `focusableWhenDisabled`, so a keyboard user who activated it is still on it when the result arrives. Shows the `pendingIndicator` in the leading icon position meanwhile. An explicit `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending. `aria-busy` announces nothing by itself: say what is happening through the label (\"Saving\") or a `role=\"status\"` region outside the button.",
+          "required": false
+        },
+        {
+          "name": "isVisuallyDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Stamps `aria-disabled` (an explicit consumer value wins), which renders the disabled treatment (`opacity-50`, the `not-allowed` cursor, no hover or press paint), and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work, and a Tooltip on it still opens. For \"looks disabled but explains itself on activation\" flows. The treatment keys off `aria-disabled`, so an explicit `aria-disabled={false}` also turns it off: the button then looks and announces enabled and only the focus-on-press suppression remains.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "onIntent",
+          "origin": "declared",
+          "type": "(() => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Predictive-prefetch callback. Fires once when the pointer's predicted trajectory lands inside the inflated hit rect; browsers without the prediction API fail soft.",
+          "required": false
+        },
+        {
+          "name": "pendingIndicator",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "What the button shows while pending. Omitted: a spinning `SpinnerGap` in the leading icon position, and the button's own leading and bare SVG children hide so the spinner takes their place (a trailing `data-icon=\"inline-end\"` icon stays). A node: rendered in that same place instead of the spinner, as a decorative `aria-hidden` slot; animate it yourself. `null` or `false`: no indicator and nothing hidden, so the call site owns the pending markup, for example a brand button that keeps its logo and centres its own spinner over it.",
+          "required": false
+        },
+        {
+          "name": "predictionZoneSize",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pixels the hit rect is inflated on every side when predicting pointer intent.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "LabelButtonSize | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Recipe size axis. The `icon*` sizes are square and additionally require an `aria-label`.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
           "required": false
         }
       ]

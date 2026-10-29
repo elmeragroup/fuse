@@ -32,8 +32,14 @@ import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Button } from "../button/button";
 import { SelectRoot } from "../select/select";
-import { assertOverlay, BarContext, ChipContext, useChip, useFilterInternals } from "./data-table-filter";
-import type { ChipFilter } from "./data-table-filter";
+import {
+  assertOverlay,
+  BarContext,
+  ChipContext,
+  useChip,
+  useFilterInternals,
+} from "./data-table-filter-context";
+import type { ChipFilter } from "./data-table-filter-context";
 import { dataTableFilterSlots as slots } from "./data-table-filter-variants";
 import { optionsOf } from "./filter-fields";
 import { isToggleOn } from "./filter-model";

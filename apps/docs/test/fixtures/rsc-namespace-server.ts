@@ -260,6 +260,10 @@ function namespaceElements(): ReactElement[] {
       "TextEditor",
       "NumberEditor",
       "DateEditor",
+      "ValuesFooter",
+      "SelectAllValues",
+      "ClearValues",
+      "Done",
     ]),
     ...renderNamespace("Dialog", Dialog, [
       "Root",

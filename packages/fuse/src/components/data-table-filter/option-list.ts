@@ -140,6 +140,15 @@ export function snapshotOrder(
   };
 }
 
+/** Whether an option's label contains a trimmed query. An empty query matches every option. */
+function labelMatches(
+  option: FilterOption,
+  needle: string,
+  contains: (text: string, query: string) => boolean
+): boolean {
+  return needle === "" || contains(option.label, needle);
+}
+
 /** The rows a list renders for a query. */
 export type OptionMatches = {
   readonly pinned: readonly FilterOption[];
@@ -173,7 +182,7 @@ export function matchOptions(
     [order.rest, rest],
   ] as const) {
     for (const option of list) {
-      if (needle !== "" && !contains(option.label, needle)) {
+      if (!labelMatches(option, needle, contains)) {
         continue;
       }
       if (shown === limit) {
@@ -184,4 +193,62 @@ export function matchOptions(
     }
   }
   return { pinned, rest, more: false };
+}
+
+/**
+ * A list's order against the field's current options, for an action that must reach every option
+ * while the list stays open. Options that are still offered keep their place, taken as the list
+ * opened, with their current labels. Options offered since then follow the rest in config order,
+ * and options the field no longer offers drop out. The rows the list renders keep the order it
+ * opened with.
+ *
+ * @param order - The list's order, taken as it opened.
+ * @param options - The field's current options.
+ * @returns The order over the current options.
+ */
+export function currentOrder(order: OptionOrder, options: readonly FilterOption[]): OptionOrder {
+  const byValue = new Map(options.map((option) => [option.value, option]));
+  const kept = (list: readonly FilterOption[]) =>
+    list.flatMap((option) => {
+      const current = byValue.get(option.value);
+      return current === undefined ? [] : [current];
+    });
+  const seen = new Set([...order.pinned, ...order.rest].map((option) => option.value));
+  return {
+    pinned: kept(order.pinned),
+    rest: [...kept(order.rest), ...options.filter((option) => !seen.has(option.value))],
+  };
+}
+
+/**
+ * The options a list's Select all adds: every option the query matches that is not picked yet,
+ * in the list's order and past the list's row cap. With an empty query that is every option not
+ * picked yet. A picked value is skipped before its label is matched, and the walk stops at
+ * `limit`, so asking whether any is left costs one match on a large field.
+ *
+ * @param order - The list's order.
+ * @param query - The search text.
+ * @param contains - The locale's matcher.
+ * @param picked - The values picked now.
+ * @param limit - The most options to return.
+ * @returns The options, at most `limit` of them.
+ */
+export function unpickedMatches(
+  order: OptionOrder,
+  query: string,
+  contains: (text: string, query: string) => boolean,
+  picked: ReadonlySet<string>,
+  limit: number
+): readonly FilterOption[] {
+  const needle = query.trim();
+  const found: FilterOption[] = [];
+  for (const option of [...order.pinned, ...order.rest]) {
+    if (found.length === limit) {
+      break;
+    }
+    if (!picked.has(option.value) && labelMatches(option, needle, contains)) {
+      found.push(option);
+    }
+  }
+  return found;
 }

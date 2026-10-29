@@ -4,7 +4,8 @@ import type { ReactElement } from "react";
  * Public type guarantees of `@elmeragroup/fuse/data-table-filter`. Each positive case has a
  * negative control: a field must fit its column's type, a value's operator fixes its kind and
  * arity, facets fit their field's kind, the Root rejects a table without column filtering, and the
- * overlays take no focus routing.
+ * overlays take no focus routing, and the values footer scopes by field ids and composes into both
+ * value lists.
  */
 import { columnFilteringFeature, rowPaginationFeature, tableFeatures, useTable } from "@tanstack/react-table";
 import { expectTypeOf, test } from "vitest";
@@ -12,6 +13,7 @@ import { expectTypeOf, test } from "vitest";
 import { DataTableFilter, defineFilterFields } from "@elmeragroup/fuse/data-table-filter";
 import type {
   DataTableFilterRootProps,
+  DataTableFilterValuesFooterProps,
   DateEditorState,
   DatePresetKey,
   FilterFieldMap,
@@ -196,4 +198,26 @@ test("the overlays leave focus routing to the Root", () => {
     </>
   );
   expectTypeOf(overlays).toBeObject();
+});
+
+test("the values footer takes field ids and composes into both value lists", () => {
+  expectTypeOf<DataTableFilterValuesFooterProps["fields"]>().toEqualTypeOf<readonly string[] | undefined>();
+  const footer = (
+    <DataTableFilter.ValuesFooter fields={["status"] as const}>
+      <DataTableFilter.SelectAllValues />
+      <DataTableFilter.ClearValues>Clear</DataTableFilter.ClearValues>
+      <DataTableFilter.Done variant="outline" />
+    </DataTableFilter.ValuesFooter>
+  );
+  const lists = (
+    <>
+      <DataTableFilter.FieldList>{footer}</DataTableFilter.FieldList>
+      <DataTableFilter.OptionEditor>{footer}</DataTableFilter.OptionEditor>
+      {/* @ts-expect-error -- `fields` lists field ids, not field configs */}
+      <DataTableFilter.ValuesFooter fields={[{ kind: "option" }]} />
+      {/* @ts-expect-error -- a footer action is a label button, never a square icon one */}
+      <DataTableFilter.Done size="icon-sm" />
+    </>
+  );
+  expectTypeOf(lists).toBeObject();
 });

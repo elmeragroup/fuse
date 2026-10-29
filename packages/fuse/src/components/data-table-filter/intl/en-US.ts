@@ -22,6 +22,12 @@ export const enUS = {
   narrowHint: "Type to narrow the list",
   /** The in-place editor's Back button in the add menu. */
   back: "Back to fields",
+  /** A values footer's action that picks every option in its list's scope. */
+  selectAll: "Select all",
+  /** A values footer's action that removes its field's filter. */
+  clearValues: "Clear all",
+  /** A values footer's action that closes the list. */
+  done: "Done",
   chip: (vars: Variables) => `${String(vars?.field)} filter`,
   operatorLabel: (vars: Variables) => `${String(vars?.field)} operator`,
   removeFilter: (vars: Variables) => `Remove ${String(vars?.field)} filter`,
