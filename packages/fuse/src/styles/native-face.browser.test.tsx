@@ -10,11 +10,14 @@ import { Breadcrumb } from "../components/breadcrumb";
 import { Button } from "../components/button/button";
 import { Collapsible } from "../components/collapsible";
 import { Combobox } from "../components/combobox";
+import { Input } from "../components/input/input";
 import { Item } from "../components/item";
 import { Pagination } from "../components/pagination";
 import { Sidebar } from "../components/sidebar";
+import { Textarea } from "../components/textarea/textarea";
 import { Toggle } from "../components/toggle/toggle";
 import { Plus } from "../icons/generated/plus";
+import { Link } from "../react-aria/link/link";
 import { ThemeScope } from "../theme";
 
 // Fuse ships no preflight, and this suite loads only its standalone sheets, as a host without
@@ -55,6 +58,9 @@ function Parts() {
       <Button variant="link">Link</Button>
       <Button variant="outline">Outline</Button>
       <Toggle aria-label="Favourite">F</Toggle>
+      <Input aria-label="Meter number" defaultValue="7070" />
+      <Textarea aria-label="Note" defaultValue="Ring the bell" />
+      <Link href="#terms">Terms of delivery</Link>
       <Collapsible.Root>
         <Collapsible.Trigger>Show details</Collapsible.Trigger>
         <Collapsible.Content>Delivery window and meter point.</Collapsible.Content>
@@ -336,10 +342,35 @@ describe.each(["light", "dark"] as const)("native faces without preflight, %s", 
       ["Attachment link trigger", part("attachment-trigger", "a")],
       ["Sidebar row link", part("sidebar-menu-button", "a")],
       ["Sidebar sub-row link", part("sidebar-menu-sub-button", "a")],
+      ["Link", roleNamed("link", "Terms of delivery")],
     ];
     for (const [name, element] of links) {
       expect.soft(getComputedStyle(element).textDecorationLine, name).toBe("none");
     }
+  });
+
+  it("sets the text fields in the font of the box around them", () => {
+    mount();
+    for (const [name, element] of [
+      ["Input", part("input", "input")],
+      ["Textarea", part("textarea", "textarea")],
+    ] as const) {
+      expect
+        .soft(getComputedStyle(element).fontFamily, name)
+        .toBe(getComputedStyle(parentOf(element)).fontFamily);
+    }
+  });
+
+  it("sets an Accordion trigger in its item's type, under a header with no heading margin", () => {
+    // Base UI renders Accordion.Header as an `h3`. Oracle: under preflight the heading keeps no
+    // size, weight or margin of its own, so the trigger reads its item's.
+    mount();
+    const item = part("accordion-item", "div");
+    const header = part("accordion-header", "h3");
+    const trigger = part("accordion-trigger", "button");
+    expect.soft(getComputedStyle(trigger).fontSize).toBe(getComputedStyle(item).fontSize);
+    expect.soft(getComputedStyle(header).marginBlockStart).toBe("0px");
+    expect.soft(getComputedStyle(header).marginBlockEnd).toBe("0px");
   });
 
   it("draws no border or padding on the buttons that set neither", () => {

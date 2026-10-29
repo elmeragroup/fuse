@@ -295,13 +295,14 @@
   }
 }
 
-/* Fuse ships no preflight, so its own native buttons, links and lists, the ones that carry a
-   `data-slot`, take preflight's resets for those elements here. On the standalone sheet they
-   would otherwise keep the browser's grey button face, outset border, padding and button font,
-   link blue and underline, and list markers and indent. The declarations copy Tailwind's
+/* Fuse ships no preflight, so its own native buttons, headings, text fields, links and lists, the
+   ones that carry a `data-slot`, take preflight's resets for those elements here. On the
+   standalone sheet they would otherwise keep the browser's grey button face, outset border,
+   padding and control font, a heading's size, weight and margins (an Accordion header is an
+   `h3`), link blue and underline, and list markers and indent. The declarations copy Tailwind's
    preflight. They sit in the base layer, so every utility, a `render` element's own classes and
-   the host's own reset win over them, and under preflight they change nothing. A host element
-   without a `data-slot` keeps its native look. */
+   the host's own unlayered reset win over them, and under preflight they change nothing. A host
+   element without a `data-slot` keeps its native look. */
 @layer base {
   :where(button[data-slot]) {
     margin: 0;
@@ -316,6 +317,20 @@
     font-variation-settings: inherit;
     letter-spacing: inherit;
     opacity: 1;
+  }
+
+  :where(h1[data-slot], h2[data-slot], h3[data-slot], h4[data-slot], h5[data-slot], h6[data-slot]) {
+    margin: 0;
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  :where(input[data-slot], select[data-slot], optgroup[data-slot], textarea[data-slot]) {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
   }
 
   :where(a[data-slot]) {
