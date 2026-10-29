@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 type DemoHydrationMarkerProps = {
-  /** Id of the frame's heading; the marker stamps the `[data-demo-frame]` that contains it. */
+  /** Id of the frame's heading; the marker stamps the `[data-demo-frame]` it labels. */
   headingId: string;
 };
 
@@ -20,7 +20,8 @@ type DemoHydrationMarkerProps = {
  */
 export function DemoHydrationMarker({ headingId }: DemoHydrationMarkerProps): null {
   useEffect(() => {
-    const frame = document.getElementById(headingId)?.closest("[data-demo-frame]");
+    // The lookup reads only demo frames, so a prose heading that shares the id cannot take it.
+    const frame = document.querySelector(`[data-demo-frame][aria-labelledby="${CSS.escape(headingId)}"]`);
     frame?.setAttribute("data-demo-hydrated", "");
     return () => frame?.removeAttribute("data-demo-hydrated");
   }, [headingId]);

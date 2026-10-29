@@ -187,6 +187,20 @@ describe("component outlines", () => {
     }
   });
 
+  it("gives no demo the anchor ID of a heading on its page", () => {
+    // Unit under test: each page's demo IDs. Oracle: a document's IDs are unique, so a demo
+    // frame's heading never shares its ID with a prose heading; a shared one breaks the anchor
+    // and the frame's hydration marker.
+    for (const outline of COMPONENT_OUTLINES) {
+      const authored = authoredPage(outline.slug).parsed;
+      const headingIds = new Set(authored.headings.map((heading) => heading.id));
+      expect(
+        authored.demos.map((demo) => demo.id).filter((id) => headingIds.has(id)),
+        outline.slug
+      ).toEqual([]);
+    }
+  });
+
   it("names one TOC anchor per API part, exactly as the committed api.json names them", () => {
     // Unit under test: the outline's part names. Oracle: the committed API artifact.
     for (const outline of COMPONENT_OUTLINES) {
