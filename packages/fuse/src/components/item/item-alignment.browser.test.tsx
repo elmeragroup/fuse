@@ -31,22 +31,24 @@ const WRAPPING_DESCRIPTION = "Consumption doubled overnight across every meterin
 /** Stays on one line, so tall media is taller than the content. */
 const SHORT_DESCRIPTION = "Doubled.";
 
-/** Media beside a title and an optional description, in a 240px column. */
+/** Media beside a title and an optional description, in a 240px column unless `width` widens it. */
 function MediaRow({
   host,
   size,
   media,
   description,
   actions,
+  width = 240,
 }: {
   host: Host;
   size: (typeof ITEM_SIZES)[number];
   media: ReactNode;
   description: string | null;
   actions?: ReactNode;
+  width?: number;
 }) {
   return (
-    <div style={{ width: "240px" }}>
+    <div style={{ width: `${width}px` }}>
       <style>{hostCss(host)}</style>
       <Item.Root size={size} variant="outline">
         {media}
@@ -266,10 +268,14 @@ describe("Item media alignment", () => {
     it("keeps Item.Actions centred on the row beside a description", () => {
       for (const density of DENSITIES) {
         stampDensity(density);
+        // Item.Root takes preflight's `border-box` on every host, so its padding sits inside the
+        // column. 240px then leaves too little beside 64px media for the title and actions, and
+        // the actions wrap under the media, as they would with preflight; 280px keeps one row.
         const { unmount } = renderThemed(
           <MediaRow
             host={host}
             size="default"
+            width={280}
             description={SHORT_DESCRIPTION}
             media={
               <Item.Media>

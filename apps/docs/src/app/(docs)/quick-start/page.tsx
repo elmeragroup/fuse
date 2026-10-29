@@ -86,8 +86,10 @@ export default function QuickStartPage(): ReactElement {
       <p>
         Apps without Tailwind import the prebuilt standalone stylesheet and <code>themes.css</code>. It
         includes the library utilities without Tailwind&apos;s preflight, so keep your own reset. Fuse&apos;s
-        own buttons, headings, text fields, links and lists still take preflight&apos;s resets from a
-        base-layer rule, and every utility and your own unlayered reset win over it.
+        own elements, the ones that carry a <code>data-slot</code>, still take preflight&apos;s element rules
+        from the base layer, and every utility and your own unlayered reset win over them, except{" "}
+        <code>hidden</code>, which preflight makes <code>display: none !important</code> so it beats a
+        part&apos;s display class.
       </p>
       <pre>
         <code>{STYLES_STANDALONE}</code>

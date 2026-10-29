@@ -29,10 +29,12 @@ function initialContainingBlockWidth(): number {
   return document.documentElement.clientWidth;
 }
 
-/** The panel's content box — `max-width` caps that box, and the side border is outside it. */
-function contentWidth(element: HTMLElement): number {
-  const style = getComputedStyle(element);
-  return element.getBoundingClientRect().width - px(style.borderLeftWidth) - px(style.borderRightWidth);
+/**
+ * The panel's border box. The panel takes preflight's `box-sizing: border-box` on every host, so
+ * `max-width` and `w-full` size that box, side border included.
+ */
+function panelWidth(element: HTMLElement): number {
+  return element.getBoundingClientRect().width;
 }
 
 function remToPx(value: string): number {
@@ -291,7 +293,7 @@ describe("Sheet", () => {
       for (const { size, cap } of cases) {
         const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side={side} size={size} />));
         const dialog = await openSheet();
-        expect(contentWidth(dialog), `${side}/${String(size)}`).toBeCloseTo(
+        expect(panelWidth(dialog), `${side}/${String(size)}`).toBeCloseTo(
           Math.min(cap(), initialContainingBlockWidth() * 0.9),
           0
         );
@@ -315,7 +317,7 @@ describe("Sheet", () => {
     const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side="right" size="sm" />));
     const dialog = await openSheet();
     expect(getComputedStyle(dialog).maxWidth).toBe("none");
-    expect(contentWidth(dialog)).toBeCloseTo(initialContainingBlockWidth(), 0);
+    expect(panelWidth(dialog)).toBeCloseTo(initialContainingBlockWidth(), 0);
     unmount();
     await page.viewport(1024, 768);
   });

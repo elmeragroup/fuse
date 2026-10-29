@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
+
 import "../../dist/styles.css";
 import "../../dist/themes.css";
 import { withLocale } from "../../test/locale-matrix";
@@ -8,12 +10,18 @@ import { Accordion } from "../components/accordion";
 import { Attachment } from "../components/attachment";
 import { Breadcrumb } from "../components/breadcrumb";
 import { Button } from "../components/button/button";
+import { Card } from "../components/card/card";
+import { Code } from "../components/code/code";
 import { Collapsible } from "../components/collapsible";
 import { Combobox } from "../components/combobox";
+import { DescriptionList } from "../components/description-list/description-list";
+import { Empty } from "../components/empty/empty";
+import { Field } from "../components/field";
 import { Input } from "../components/input/input";
 import { Item } from "../components/item";
 import { Pagination } from "../components/pagination";
 import { Sidebar } from "../components/sidebar";
+import { Table } from "../components/table/table";
 import { Textarea } from "../components/textarea/textarea";
 import { Toggle } from "../components/toggle/toggle";
 import { Plus } from "../icons/generated/plus";
@@ -21,10 +29,12 @@ import { Link } from "../react-aria/link/link";
 import { ThemeScope } from "../theme";
 
 // Fuse ships no preflight, and this suite loads only its standalone sheets, as a host without
-// preflight does. Unit under test: the base-layer reset in `fuse.css` for Fuse's own buttons,
-// links and lists. Oracle: the face Tailwind's preflight gives those elements, so none of the
-// browser's own: no fill, border, padding, button font, underline or list marker, and the text
-// colour and font of the box around each part.
+// preflight does. Unit under test: the base-layer preflight mirror in `fuse.css` for Fuse's own
+// elements: buttons, links, headings, lists, text fields, paragraphs, description lists, `pre`,
+// tables, fieldsets and the `hidden` attribute. Oracle: the face Tailwind's preflight gives those
+// elements, so none of the browser's own: no fill, border, padding, button font, underline, list
+// marker, block margin, separated table border, fieldset frame or two-way textarea resize, and
+// the text colour and font of the box around each part.
 const TRANSPARENT = "rgba(0, 0, 0, 0)";
 
 /** The `nth` element with this `data-slot` and tag, so a part's button and link rows differ. */
@@ -60,6 +70,7 @@ function Parts() {
       <Toggle aria-label="Favourite">F</Toggle>
       <Input aria-label="Meter number" defaultValue="7070" />
       <Textarea aria-label="Note" defaultValue="Ring the bell" />
+      <PhoneNumberField label="Mobile" />
       <Link href="#terms">Terms of delivery</Link>
       <Collapsible.Root>
         <Collapsible.Trigger>Show details</Collapsible.Trigger>
@@ -216,18 +227,23 @@ describe("native face resets under the classes around them", () => {
         </ThemeScope>
       )
     );
-    // The sub-row sets its own `text-sidebar-foreground`, which predates the reset, so only its
-    // fill and underline are the reset's to yield.
-    for (const href of ["#button", "#item", "#crumb", "#row", "#sub-row"]) {
+    // The sub-row sets its own `text-sidebar-foreground`, which predates the reset and wins over
+    // the render element's `text-error`, so only its fill and underline are the reset's to yield.
+    const rows: [href: string, colour: "--error" | "--sidebar-foreground"][] = [
+      ["#button", "--error"],
+      ["#item", "--error"],
+      ["#crumb", "--error"],
+      ["#row", "--error"],
+      ["#sub-row", "--sidebar-foreground"],
+    ];
+    for (const [href, colour] of rows) {
       const link = document.querySelector<HTMLElement>(`a[href="${href}"]`);
       if (link === null) {
         throw new Error(`Expected the ${href} link`);
       }
       const style = getComputedStyle(link);
       expect.soft(style.backgroundColor, href).toBe(cssVarColor(link, "--primary"));
-      if (href !== "#sub-row") {
-        expect.soft(style.color, href).toBe(cssVarColor(link, "--error"));
-      }
+      expect.soft(style.color, href).toBe(cssVarColor(link, colour));
       expect.soft(style.textDecorationLine, href).toBe("underline");
     }
   });
@@ -280,6 +296,7 @@ describe.each(["light", "dark"] as const)("native faces without preflight, %s", 
       ["Sidebar group action", part("sidebar-group-action", "button")],
       ["Sidebar menu action", part("sidebar-menu-action", "button")],
       ["Sidebar rail", part("sidebar-rail", "button")],
+      ["PhoneNumberField country trigger", part("phone-number-field-country-trigger", "button")],
     ];
   }
 
@@ -405,5 +422,121 @@ describe.each(["light", "dark"] as const)("native faces without preflight, %s", 
       expect.soft(style.marginBlockStart, name).toBe("0px");
     }
     expect(getComputedStyle(part("sidebar-menu-sub", "ul")).listStyleType, "Sidebar sub-menu").toBe("none");
+  });
+});
+
+/** Fuse's block parts whose browser defaults preflight removes: margins, frames and borders. */
+function Blocks() {
+  return (
+    <div>
+      <Table.Root>
+        <Table.Body>
+          <Table.Row>
+            <Table.Cell>Kari Nordmann</Table.Cell>
+          </Table.Row>
+          <Table.Row>
+            <Table.Cell>Ola Nordmann</Table.Cell>
+          </Table.Row>
+        </Table.Body>
+      </Table.Root>
+      <Field.Set>
+        <Field.Legend>Contact</Field.Legend>
+      </Field.Set>
+      <Card.Root>
+        <Card.Header>
+          <Card.Title>Order 1042</Card.Title>
+          <Card.Description>Placed today.</Card.Description>
+        </Card.Header>
+      </Card.Root>
+      <Empty.Root>
+        <Empty.Header>
+          <Empty.Title>No orders</Empty.Title>
+          <Empty.Description>Orders you place show here.</Empty.Description>
+        </Empty.Header>
+      </Empty.Root>
+      <DescriptionList.Root>
+        <DescriptionList.Content>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Meter point</DescriptionList.Term>
+            <DescriptionList.Details>7070575000</DescriptionList.Details>
+          </DescriptionList.Item>
+        </DescriptionList.Content>
+      </DescriptionList.Root>
+      <Code code="pnpm add @elmeragroup/fuse" />
+      <Textarea aria-label="Note" />
+      <Item.Root hidden>
+        <Item.Content>
+          <Item.Title>Archived order</Item.Title>
+        </Item.Content>
+      </Item.Root>
+    </div>
+  );
+}
+
+describe("block resets without preflight", () => {
+  function mount(): void {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <ThemeScope theme={fkasExternal}>
+          <Blocks />
+        </ThemeScope>
+      )
+    );
+  }
+
+  it("collapses a Table outside a Frame, so its row dividers paint", () => {
+    // Oracle: preflight's `border-collapse: collapse`, and the row's `border-b`, which is 1px. The
+    // browser's separated model paints no border on a row at all.
+    mount();
+    expect.soft(getComputedStyle(part("table", "table")).borderCollapse).toBe("collapse");
+    expect.soft(getComputedStyle(part("table-row", "tr")).borderBottomWidth).toBe("1px");
+  });
+
+  it("draws no fieldset frame around a Field.Set", () => {
+    // Oracle: preflight's universal reset, which zeroes the browser's groove border, padding and
+    // margin on a fieldset.
+    mount();
+    const style = getComputedStyle(part("field-set", "fieldset"));
+    expect.soft(style.borderTopWidth).toBe("0px");
+    expect.soft(style.paddingTop).toBe("0px");
+    expect.soft(style.paddingInlineStart).toBe("0px");
+    expect.soft(style.marginInlineStart).toBe("0px");
+  });
+
+  it("keeps no browser block margin on paragraphs, description lists and code blocks", () => {
+    // Oracle: preflight's universal `margin: 0`; the browser gives each a 1em block margin and
+    // a `dd` a 40px inline-start margin.
+    mount();
+    const blocks: [string, HTMLElement][] = [
+      ["Card description", part("card-description", "p")],
+      ["Empty description", part("empty-description", "p")],
+      ["DescriptionList content", part("description-list-content", "dl")],
+      ["Code", part("code", "pre")],
+    ];
+    for (const [name, element] of blocks) {
+      const style = getComputedStyle(element);
+      expect.soft(style.marginBlockStart, name).toBe("0px");
+      expect.soft(style.marginBlockEnd, name).toBe("0px");
+    }
+    expect
+      .soft(
+        getComputedStyle(part("description-list-details", "dd")).marginInlineStart,
+        "DescriptionList details"
+      )
+      .toBe("0px");
+  });
+
+  it("resizes a Textarea only vertically", () => {
+    // Oracle: preflight's `resize: vertical`; the browser's is `both`.
+    mount();
+    expect(getComputedStyle(part("textarea", "textarea")).resize).toBe("vertical");
+  });
+
+  it("hides an Item.Root with the hidden attribute despite its display class", () => {
+    // Oracle: preflight's `[hidden] { display: none !important }`; the browser's own `[hidden]`
+    // rule loses to the item's `flex` class.
+    mount();
+    expect(getComputedStyle(part("item", "div")).display).toBe("none");
   });
 });

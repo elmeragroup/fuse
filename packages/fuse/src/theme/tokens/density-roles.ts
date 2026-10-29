@@ -316,6 +316,10 @@ export const PART_DENSITY = {
   "pagination-next": "control",
   "pagination-ellipsis": "control",
 
+  // The country trigger's height and inset are fixed (`min-h-[max(1.5rem,24px)] px-1`), like
+  // Combobox's trigger.
+  "phone-number-field-country-trigger": "fixed",
+
   popover: "layout",
   "popover-trigger": "control",
   "popover-trigger[data-size=icon-inline]": "fixed",

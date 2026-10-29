@@ -229,6 +229,7 @@ function CountryTrigger({ label, description, isEditable, children }: CountryTri
         {description}
       </span>
       <ComboboxPrimitive.Trigger
+        data-slot="phone-number-field-country-trigger"
         role="button"
         aria-label={label}
         aria-labelledby=""

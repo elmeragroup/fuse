@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseCssBlocks, parseScopedDeclarations, parseStyleRules } from "./css-rules";
+import { parseCssBlocks, parseScopedBlocks, parseScopedDeclarations, parseStyleRules } from "./css-rules";
 
 const SHEET = `
 @import "tw-animate-css";
@@ -73,6 +73,28 @@ describe("parseScopedDeclarations", () => {
     ]);
     expect(parseScopedDeclarations(flattened)).toEqual([
       { name: "x", value: "1", scope: ["@media (pointer: coarse)", ".a"] },
+    ]);
+  });
+});
+
+describe("parseScopedBlocks", () => {
+  it("keeps two rules with one selector apart, each with the conditions around it", () => {
+    const sheet = `@layer base { .a { color: red; } @supports (x: y) { .a { color: blue; } } .a { margin: 0; } }`;
+    expect(parseScopedBlocks(sheet)).toEqual([
+      { block: { prelude: "@layer base", declarations: [] }, ancestors: [] },
+      {
+        block: { prelude: ".a", declarations: [{ name: "color", value: "red" }] },
+        ancestors: ["@layer base"],
+      },
+      { block: { prelude: "@supports (x: y)", declarations: [] }, ancestors: ["@layer base"] },
+      {
+        block: { prelude: ".a", declarations: [{ name: "color", value: "blue" }] },
+        ancestors: ["@layer base", "@supports (x: y)"],
+      },
+      {
+        block: { prelude: ".a", declarations: [{ name: "margin", value: "0" }] },
+        ancestors: ["@layer base"],
+      },
     ]);
   });
 });
