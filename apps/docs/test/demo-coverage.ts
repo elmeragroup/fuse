@@ -7,6 +7,7 @@ import type { DensityPart } from "@elmeragroup/fuse/theme-catalog";
 
 import { currentColorReport, probeBorders } from "./border-attribution";
 import type { BorderReading } from "./border-attribution";
+import { GROUP_FILE } from "./demo-coverage-file";
 import { launchSuiteBrowser } from "./demo-page";
 import { SWEEP_GROUPS, sweepDemos, sweepGroup } from "./demo-sweep";
 import type { DemoProbe, Located } from "./demo-sweep";
@@ -66,9 +67,6 @@ const densityProbe: DemoProbe<PartReading> = (page, scope) => {
 function pagesOf(instances: readonly Instance[]): string {
   return [...new Set(instances.map(({ page }) => page))].join(", ");
 }
-
-/** The suite file name that sweeps a group, `demo-coverage-<group>.browser.test.ts`. */
-export const GROUP_FILE = /(?:^|\/)demo-coverage-(?<group>\d+)\.browser\.test\.ts$/u;
 
 /**
  * Registers the coverage gates for the sweep group a suite file's name gives.

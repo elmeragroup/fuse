@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { COMPONENT_INVENTORY } from "./component-inventory";
-import { GROUP_FILE } from "./demo-coverage";
+import { GROUP_FILE } from "./demo-coverage-file";
 import { SWEEP_GROUPS, sweepGroup } from "./demo-sweep";
 
 /**
