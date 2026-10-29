@@ -1,5 +1,5 @@
-import type { Locator, Page } from "playwright";
-import { expect } from "vitest";
+import type { Browser, Locator, Page } from "playwright";
+import { afterAll, beforeAll, expect } from "vitest";
 
 import { docsBaseUrl } from "./docs-server";
 
@@ -15,6 +15,45 @@ export const DESKTOP_VIEWPORT = { width: 1280, height: 720 } as const;
 export async function openDemo(page: Page, slug: string, name: string): Promise<Locator> {
   page.setDefaultTimeout(5000);
   await page.goto(`${docsBaseUrl()}/components/${slug}`, { waitUntil: "load" });
+  const demo = page.getByRole("region", { name, exact: true });
+  await waitForDemoHydration(demo);
+  return demo;
+}
+
+/**
+ * Opens one component page for a describe's read-only checks before its first test, and closes it
+ * after its last, so the checks share one load. Each check takes its demo with {@link sharedDemo}.
+ *
+ * @param browser - The suite's browser.
+ * @param slug - The component page.
+ * @param viewport - The page's viewport.
+ * @returns The open page, between the describe's first and last test.
+ */
+export function shareDemoPage(
+  browser: () => Browser,
+  slug: string,
+  viewport: { readonly width: number; readonly height: number }
+): () => Page {
+  let shared: Page | undefined;
+  beforeAll(async () => {
+    shared = await browser().newPage({ viewport });
+    shared.setDefaultTimeout(5000);
+    await shared.goto(`${docsBaseUrl()}/components/${slug}`, { waitUntil: "load" });
+  });
+  afterAll(async () => {
+    await shared?.close();
+    shared = undefined;
+  });
+  return () => {
+    if (shared === undefined) {
+      throw new Error("The shared demo page is only open between beforeAll and afterAll.");
+    }
+    return shared;
+  };
+}
+
+/** The region around the demo titled `name` on an open component page, once it has hydrated. */
+export async function sharedDemo(page: Page, name: string): Promise<Locator> {
   const demo = page.getByRole("region", { name, exact: true });
   await waitForDemoHydration(demo);
   return demo;

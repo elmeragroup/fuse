@@ -49,12 +49,12 @@ describe("density attribution in the browser", () => {
     const page = await browser().newPage();
     await page.setContent(FIXTURES);
     const options: ProbeOptions = {
-      scope: "stage",
+      scope: "stages",
       sentinels: SENTINELS,
       properties: PROBED_PROPERTIES,
       overrides: [],
     };
-    const readings = await page.locator("[data-demo-stage]").evaluate(probeParts, options);
+    const readings = await page.evaluate(probeParts, options);
     await page.close();
     const owned = Object.fromEntries(
       readings.map(({ slot, probe }) => [slot, densityOwnedProperties(probe)])
@@ -97,7 +97,7 @@ describe("density attribution in the browser", () => {
 </style>
 <div data-demo-stage><label data-slot="field-label" class="label">Email</label></div>`);
     const options: ProbeOptions = {
-      scope: "stage",
+      scope: "stages",
       sentinels: { "--label-text": "24px" },
       properties: PROBED_PROPERTIES,
       overrides: [],
@@ -108,7 +108,7 @@ describe("density attribution in the browser", () => {
         document.querySelector("[data-demo-stage]")?.setAttribute("data-density", stamp);
         globalThis.densitySeen = new WeakSet<Element>();
       }, density);
-      const [reading] = await page.locator("[data-demo-stage]").evaluate(probeParts, options);
+      const [reading] = await page.evaluate(probeParts, options);
       if (reading === undefined) {
         throw new Error("expected the label's reading");
       }
@@ -133,14 +133,13 @@ describe("density attribution in the browser", () => {
   <div data-slot="panel" class="panel" hidden>Panel</div>
 </div>`);
     const options: ProbeOptions = {
-      scope: "stage",
+      scope: "stages",
       sentinels: { "--surface-pad-md": "21px" },
       properties: PROBED_PROPERTIES,
       overrides: [],
     };
     await page.evaluate(startDensityPass, "dense");
-    const stage = page.locator("[data-demo-stage]");
-    const before = await stage.evaluate(probeParts, options);
+    const before = await page.evaluate(probeParts, options);
     expect(
       before.map(({ slot }) => slot),
       "the hidden panel is not measured"
@@ -150,7 +149,7 @@ describe("density attribution in the browser", () => {
     await page.evaluate(() => document.querySelector("[data-slot=panel]")?.removeAttribute("hidden"));
     expect(await page.evaluate(showsUnmeasuredPart, "[data-slot]"), "the opened panel shows").toBe(true);
     const unseen: ProbeOptions = { ...options, scope: "unseen" };
-    const opened = await stage.evaluate(probeParts, unseen);
+    const opened = await page.evaluate(probeParts, unseen);
     await page.close();
     expect(opened.map(({ slot, probe }) => [slot, roleViolation("surface", probe)])).toEqual([
       ["panel", undefined],

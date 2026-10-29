@@ -272,59 +272,6 @@ async function paintedLogo(site: Locator, name: string): Promise<PaintedLogo> {
 }
 
 describe("landing hero window, External side", () => {
-  it.each(ALL_SITES)(
-    "states $site's language, logo, hero, checklist and section headings, and gives every image an alt text and its intrinsic size",
-    async (facts) => {
-      const { page, site } = await openSite(facts, DESKTOP_VIEWPORT);
-      expect(await site.getAttribute("lang")).toBe(facts.lang);
-      expect(await windowCaption(page)).toContain(facts.domain);
-      await site.getByRole("img", { name: facts.logo, exact: true }).first().waitFor();
-      expect(await site.getByRole("heading", { level: 1 }).textContent()).toBe(facts.heading);
-      // The site sits inside the landing's main, so it draws no main of its own.
-      expect(await page.getByRole("main").count()).toBe(1);
-      expect(await site.getByRole("heading", { level: 2 }).allTextContents()).toEqual(facts.sections);
-      for (const name of facts.labelled) {
-        expect(await site.getByRole("region", { name, exact: true }).count(), name).toBe(1);
-      }
-      if ("checklist" in facts) {
-        const checklist = site.getByRole("list", { name: "Fordeler" });
-        expect(await checklist.getByRole("listitem").allTextContents()).toEqual(facts.checklist);
-      }
-
-      // Last, since it makes every image load eagerly.
-      if (facts.photos > 0) {
-        const images = await site.locator("img").evaluateAll(async (elements) =>
-          Promise.all(
-            elements.map(async (element) => {
-              if (!(element instanceof HTMLImageElement)) {
-                return { src: "not an img" };
-              }
-              element.loading = "eager";
-              await element.decode().catch(() => undefined);
-              return {
-                src: element.getAttribute("src"),
-                alt: element.alt,
-                width: Number(element.getAttribute("width")),
-                height: Number(element.getAttribute("height")),
-                naturalWidth: element.naturalWidth,
-                naturalHeight: element.naturalHeight,
-              };
-            })
-          )
-        );
-        expect(images).toHaveLength(facts.photos);
-        for (const image of images) {
-          expect(image.alt, String(image.src)).not.toBe("");
-          expect([image.width, image.height], String(image.src)).toEqual([
-            image.naturalWidth,
-            image.naturalHeight,
-          ]);
-        }
-      }
-      await page.context().close();
-    }
-  );
-
   it("re-themes the landing from a brand card on Elmera Group's site and moves focus into the new site", async () => {
     const { page, site } = await openSite(ELMERA, DESKTOP_VIEWPORT);
     const brands = site.getByRole("list", { name: "Our brands" });
@@ -407,8 +354,9 @@ describe("landing hero window, External side", () => {
   );
 
   // The window's frame stops growing at 1248px, so 1280 is the widest viewport a header meets.
+  // The site's statements read the same in any font, so they share the header's load.
   it.each(ALL_SITES)(
-    "fits every header control of $site inside the window at 1280px, and after a resize to 1024px, in a wide fallback font",
+    "states $site's language, logo, hero, checklist and section headings, fits every header control inside the window at 1280px and after a resize to 1024px in a wide fallback font, and gives every image an alt text and its intrinsic size",
     async (facts) => {
       const { page, site } = await openSite(
         facts,
@@ -424,42 +372,58 @@ describe("landing hero window, External side", () => {
       await page.setViewportSize({ width: 1024, height: 900 });
       await settleFrames(page);
       expect(await outsideScroller(scroller, "header :is(a, button)"), "1024px").toEqual([]);
-      await page.context().close();
-    }
-  );
 
-  it.each(ALL_SITES)(
-    "keeps $site's hero, bands and header logo readable on dark surfaces in dark mode",
-    async (facts) => {
-      const { page, site } = await openSite(facts, WIDE_VIEWPORT, { colorScheme: "dark" });
-      expect(await page.locator("html").getAttribute("data-theme")).toBe("dark");
-      // The hero's block, every band below it and the footer, each with the text a visitor reads first on it.
-      const bands = await paintedBands(site);
-      expect(bands.length).toBeGreaterThan(1);
-      for (const band of bands) {
-        // Unit under test: the band's computed paint. Oracle: WCAG relative luminance and
-        // contrast from @elmeragroup/color, with a dark surface as one darker than mid grey.
-        expect(relativeLuminance(band.surface), `${band.name} surface`).toBeLessThan(DARK_SURFACE_LUMINANCE);
-        const ratio = contrastRatio(band.text, band.surface);
-        expect(ratio._tag === "ok" ? ratio.value : 0, `${band.name} text`).toBeGreaterThanOrEqual(4.5);
+      expect(await site.getAttribute("lang")).toBe(facts.lang);
+      expect(await windowCaption(page)).toContain(facts.domain);
+      await site.getByRole("img", { name: facts.logo, exact: true }).first().waitFor();
+      expect(await site.getByRole("heading", { level: 1 }).textContent()).toBe(facts.heading);
+      // The site sits inside the landing's main, so it draws no main of its own.
+      expect(await page.getByRole("main").count()).toBe(1);
+      expect(await site.getByRole("heading", { level: 2 }).allTextContents()).toEqual(facts.sections);
+      for (const name of facts.labelled) {
+        expect(await site.getByRole("region", { name, exact: true }).count(), name).toBe(1);
+      }
+      if ("checklist" in facts) {
+        const checklist = site.getByRole("list", { name: "Fordeler" });
+        expect(await checklist.getByRole("listitem").allTextContents()).toEqual(facts.checklist);
       }
 
-      const logo = await paintedLogo(site, facts.logo);
-      expect(logo.inks.length).toBeGreaterThan(0);
-      for (const ink of logo.inks) {
-        // Unit under test: the logo's computed paint. Oracle: WCAG contrast from @elmeragroup/color
-        // against the 3:1 floor WCAG 1.4.11 sets for graphics.
-        const ratio = contrastRatio(ink, logo.surface);
-        expect(ratio._tag === "ok" ? ratio.value : 0, Hex.formatOpaque(ink)).toBeGreaterThanOrEqual(
-          GRAPHIC_CONTRAST
+      // Last, since it makes every image load eagerly.
+      if (facts.photos > 0) {
+        const images = await site.locator("img").evaluateAll(async (elements) =>
+          Promise.all(
+            elements.map(async (element) => {
+              if (!(element instanceof HTMLImageElement)) {
+                return { src: "not an img" };
+              }
+              element.loading = "eager";
+              await element.decode().catch(() => undefined);
+              return {
+                src: element.getAttribute("src"),
+                alt: element.alt,
+                width: Number(element.getAttribute("width")),
+                height: Number(element.getAttribute("height")),
+                naturalWidth: element.naturalWidth,
+                naturalHeight: element.naturalHeight,
+              };
+            })
+          )
         );
+        expect(images).toHaveLength(facts.photos);
+        for (const image of images) {
+          expect(image.alt, String(image.src)).not.toBe("");
+          expect([image.width, image.height], String(image.src)).toEqual([
+            image.naturalWidth,
+            image.naturalHeight,
+          ]);
+        }
       }
       await page.context().close();
     }
   );
 
   it.each(ALL_SITES)(
-    "keeps $site's header expanded at 1280px in a font it fits, and its dimmed footer and utility text readable on its bands in light mode",
+    "keeps $site's header expanded at 1280px in a font it fits, its dimmed footer and utility text readable on its bands in light mode, and its hero, bands and header logo readable on dark surfaces in dark mode",
     async (facts) => {
       // A font the header fits keeps it expanded, so the utility row shows.
       const { page, site } = await openSite(
@@ -486,6 +450,31 @@ describe("landing hero window, External side", () => {
         // contrast from @elmeragroup/color against the 4.5:1 text floor.
         const ratio = contrastRatio(Srgb.compositeOver(line.ink, line.surface), line.surface);
         expect.soft(ratio._tag === "ok" ? ratio.value : 0, line.name).toBeGreaterThanOrEqual(4.5);
+      }
+
+      // The landing follows the device scheme as it changes, so dark mode needs no second load.
+      await page.emulateMedia({ colorScheme: "dark" });
+      await expect.poll(async () => page.locator("html").getAttribute("data-theme")).toBe("dark");
+      // The hero's block, every band below it and the footer, each with the text a visitor reads first on it.
+      const bands = await paintedBands(site);
+      expect(bands.length).toBeGreaterThan(1);
+      for (const band of bands) {
+        // Unit under test: the band's computed paint. Oracle: WCAG relative luminance and
+        // contrast from @elmeragroup/color, with a dark surface as one darker than mid grey.
+        expect(relativeLuminance(band.surface), `${band.name} surface`).toBeLessThan(DARK_SURFACE_LUMINANCE);
+        const ratio = contrastRatio(band.text, band.surface);
+        expect(ratio._tag === "ok" ? ratio.value : 0, `${band.name} text`).toBeGreaterThanOrEqual(4.5);
+      }
+
+      const logo = await paintedLogo(site, facts.logo);
+      expect(logo.inks.length).toBeGreaterThan(0);
+      for (const ink of logo.inks) {
+        // Unit under test: the logo's computed paint. Oracle: WCAG contrast from @elmeragroup/color
+        // against the 3:1 floor WCAG 1.4.11 sets for graphics.
+        const ratio = contrastRatio(ink, logo.surface);
+        expect(ratio._tag === "ok" ? ratio.value : 0, Hex.formatOpaque(ink)).toBeGreaterThanOrEqual(
+          GRAPHIC_CONTRAST
+        );
       }
       await page.context().close();
     }

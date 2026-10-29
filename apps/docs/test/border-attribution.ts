@@ -106,10 +106,10 @@ export function currentColorReport(
 }
 
 /**
- * Probes the borders of one demo stage in the page. It runs in the browser through
- * `locator.evaluate`, so it references nothing outside its own body.
+ * Probes the borders of the page's demo stages, or of what an opener revealed. It runs in the
+ * browser through `page.evaluate`, so it references nothing outside its own body.
  *
- * The stage scope reads every element inside the stage. The other scopes read the subtrees of the
+ * The stages scope reads every element inside every demo stage. The other scopes read the subtrees of the
  * parts the density probe just read (`densityOpened`), so they throw when no density pass has
  * started, and a popup's elements are read once per density, while it is open. An element counts with a non-empty
  * box; a generated `::before` or `::after` counts on its own, so a `display: contents` host's
@@ -122,18 +122,23 @@ export function currentColorReport(
  * rule or an inline `style="color: … !important"` beats the sheet, so each box's own `color` is
  * read under it too.
  *
- * @param stage - The demo stage.
- * @param scope - The stage's elements, or the ones an opener just revealed.
+ * @param scope - The stages' elements, or the ones an opener just revealed.
  * @returns One reading per element or pseudo-element with a border width, in document order.
  */
-export function probeBorders(stage: Element, scope: "stage" | "unseen" | "late" | "opened"): BorderReading[] {
+export function probeBorders(scope: "stages" | "unseen" | "late" | "opened"): BorderReading[] {
   const sides = ["top", "right", "bottom", "left"] as const;
   const opened = globalThis.densityOpened;
-  if (scope !== "stage" && opened === undefined) {
+  if (scope !== "stages" && opened === undefined) {
     throw new Error("The unseen border scope reads densityOpened, which no density pass has set.");
   }
-  const roots = scope === "stage" ? [...stage.children] : [...(opened ?? [])];
-  const elements = [...new Set(roots.flatMap((root) => [root, ...root.querySelectorAll("*")]))];
+  const roots =
+    scope === "stages"
+      ? [...document.querySelectorAll("[data-demo-stage]")].flatMap((stage) => [...stage.children])
+      : [...(opened ?? [])];
+  // A reveal re-read at the next density can find a part its list has since swapped out.
+  const elements = [...new Set(roots.flatMap((root) => [root, ...root.querySelectorAll("*")]))].filter(
+    (element) => element.isConnected
+  );
   const hidden = new Map<Element, boolean>();
   const isHidden = (element: Element | null): boolean => {
     if (element === null) {

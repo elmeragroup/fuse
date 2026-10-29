@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { expectInside, launchSuiteBrowser, openDemo } from "./demo-page";
+import { expectInside, launchSuiteBrowser, openDemo, shareDemoPage, sharedDemo } from "./demo-page";
 
 const browser = launchSuiteBrowser();
 
@@ -8,10 +8,13 @@ describe("DateRangePicker demos", () => {
   // The library suite owns the field-box containment contract at a 240px container
   // (date-range-picker.browser.test.tsx); the docs check is that each real demo stage
   // still holds its field boxes at the narrowest preview width.
-  for (const name of ["Basic", "Controlled", "Validation", "States"]) {
-    it(`keeps the ${name} demo's field box inside its stage at 320px`, async () => {
-      const page = await browser().newPage({ viewport: { width: 320, height: 844 } });
-      const demo = await openDemo(page, "date-range-picker", name);
+  // Read-only checks, so the page loads once for every demo.
+  describe("at 320px", () => {
+    const DEMOS = ["Basic", "Controlled", "Validation", "States"];
+    const sharedPage = shareDemoPage(browser, "date-range-picker", { width: 320, height: 844 });
+
+    it.each(DEMOS)("keeps the %s demo's field box inside its stage", async (name) => {
+      const demo = await sharedDemo(sharedPage(), name);
       // DOM audit: the stage and field boxes have no landmark role of their own.
       const stage = demo.locator("[data-demo-stage]");
       for (const group of await demo.locator('[data-slot="field-group"]').all()) {
@@ -19,9 +22,8 @@ describe("DateRangePicker demos", () => {
         for (const control of await group.getByRole("spinbutton").all()) await expectInside(control, group);
         await expectInside(group.getByRole("button"), group);
       }
-      await page.close();
     });
-  }
+  });
 
   it("opens the dialog demo's range picker, dismisses the calendar and then the dialog", async () => {
     const page = await browser().newPage({ viewport: { width: 320, height: 844 } });

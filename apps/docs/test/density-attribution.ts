@@ -92,11 +92,12 @@ export function sentinelLengths(
 /** What a probe of one stage reads. */
 export type ProbeOptions = {
   /**
-   * Every part in the stage; every part that appeared on the page since the last probe; every
-   * part that appeared inside a stage since its stage read, such as a delayed fallback; or the
-   * parts the last `unseen` or `late` probe read, again, as they are read at the next density.
+   * Every part in the page's demo stages; every part that appeared on the page since the last
+   * probe; every part that appeared inside a stage since the stages read, such as a delayed
+   * fallback; or the parts the last `unseen` or `late` probe read, again, as they are read at the
+   * next density.
    */
-  readonly scope: "stage" | "unseen" | "late" | "opened";
+  readonly scope: "stages" | "unseen" | "late" | "opened";
   /** Each density custom property and its sentinel length. */
   readonly sentinels: Readonly<Record<string, string>>;
   /** The properties to read, `PROBED_PROPERTIES`. */
@@ -122,9 +123,9 @@ declare global {
 
 /**
  * Starts one density pass in the page: stamps `data-density` on the document root and on every
- * demo stage, and counts every part visible now as seen: a stage probe still measures its own
- * parts, and a popup read takes only what an opener reveals, never the docs chrome or a stage
- * not yet probed. A part mounted hidden stays unseen until it shows. It runs in the browser
+ * demo stage, and counts every part visible now as seen: a stages probe still measures the
+ * stages' parts, and a popup read takes only what an opener reveals, never the docs chrome. A
+ * part mounted hidden stays unseen until it shows. It runs in the browser
  * through `page.evaluate`, so it references nothing outside its own body.
  *
  * @param density - The density to stamp.
@@ -180,8 +181,10 @@ export function showsUnmeasuredPart(selector: string): boolean {
 }
 
 /**
- * Probes the parts of one demo stage in the page. It runs in the browser through
- * `locator.evaluate`, so it references nothing outside its own body.
+ * Probes the parts of the page's demo stages, or of what an opener revealed. It runs in the
+ * browser through `page.evaluate`, so it references nothing outside its own body. One read takes
+ * every stage at once: each read restyles the whole document, so a read per stage would pay that
+ * once per stage.
  *
  * An `unseen` read first waits two frames, so a popup that has just started to mount has
  * finished; every other read follows a density stamp or a settled page, which style recalculation
@@ -190,11 +193,10 @@ export function showsUnmeasuredPart(selector: string): boolean {
  * The sentinels go inline on the document root and on every demo stage, because a stage rescopes
  * the density metrics and a popup portals out of the stage to the root.
  *
- * @param stage - The demo stage.
  * @param options - What to read and the sentinel lengths.
  * @returns One reading per rendered part, in document order.
  */
-export async function probeParts(stage: Element, options: ProbeOptions): Promise<PartReading[]> {
+export async function probeParts(options: ProbeOptions): Promise<PartReading[]> {
   if (options.scope === "unseen") {
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => {
@@ -206,7 +208,7 @@ export async function probeParts(stage: Element, options: ProbeOptions): Promise
   }
   const seen = (globalThis.densitySeen ??= new WeakSet<Element>());
   const readers = {
-    stage: () => [...stage.querySelectorAll("[data-slot]")],
+    stages: () => [...document.querySelectorAll("[data-demo-stage] [data-slot]")],
     unseen: () => [...document.querySelectorAll("[data-slot]")].filter((element) => !seen.has(element)),
     late: () =>
       [...document.querySelectorAll("[data-demo-stage] [data-slot]")].filter((element) => !seen.has(element)),
@@ -224,7 +226,7 @@ export async function probeParts(stage: Element, options: ProbeOptions): Promise
   }
   // Only a reveal's parts are waited on to leave and re-read; a stage's stay. A re-read keeps them.
   if (options.scope !== "opened") {
-    globalThis.densityOpened = options.scope === "stage" ? [] : parts;
+    globalThis.densityOpened = options.scope === "stages" ? [] : parts;
   }
 
   const freeze = document.createElement("style");

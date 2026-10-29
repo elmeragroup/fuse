@@ -41,8 +41,8 @@ describe("border attribution in the browser", () => {
   it("reports exactly the visible borders drawn in currentColor", async () => {
     const page = await browser().newPage();
     await page.setContent(FIXTURES);
-    const scope: ProbeScope = "stage";
-    const readings = await page.locator("[data-demo-stage]").evaluate(probeBorders, scope);
+    const scope: ProbeScope = "stages";
+    const readings = await page.evaluate(probeBorders, scope);
     await page.close();
     const all = ["top", "right", "bottom", "left"];
     expect(
@@ -71,8 +71,8 @@ describe("border attribution in the browser", () => {
   it("reports every box whose own colour beats the sentinel", async () => {
     const page = await browser().newPage();
     await page.setContent(FIXTURES);
-    const scope: ProbeScope = "stage";
-    const readings = await page.locator("[data-demo-stage]").evaluate(probeBorders, scope);
+    const scope: ProbeScope = "stages";
+    const readings = await page.evaluate(probeBorders, scope);
     await page.close();
     const report = currentColorReport(
       readings.map((reading) => ({ ...reading, page: "/fixture", density: "dense" }))
@@ -87,7 +87,7 @@ describe("border attribution in the browser", () => {
     const page = await browser().newPage();
     await page.setContent(FIXTURES);
     const scope: ProbeScope = "unseen";
-    const read = page.locator("[data-demo-stage]").evaluate(probeBorders, scope);
+    const read = page.evaluate(probeBorders, scope);
     await expect(read).rejects.toThrow("no density pass has set");
     await page.close();
   });

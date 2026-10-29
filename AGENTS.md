@@ -65,7 +65,7 @@ When a change touches docs-app behavior (landing, studio, search, theme picker),
 and writes the e2e build to `.cache/next-e2e`, then run the affected e2e files with
 `pnpm --filter docs test:e2e test/<file>`.
 When it changes a Fuse part's density role, a data-slot, or the density-metric or border
-classes a part reads, run `test/demo-coverage.browser.test.ts` the same way.
+classes a part reads, run the `test/demo-coverage-*.browser.test.ts` files the same way.
 When it touches package exports, build or packaging scripts, or dependencies, run
 `package:check` and `test:packed-consumer`, or `pnpm ci:checks`, before review.
 Read versions, commands, budgets and task dependencies from their owning configuration

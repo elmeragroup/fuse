@@ -484,6 +484,9 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   commit the item on `mouseup` (`combobox/item/ComboboxItem.js`), so the input fills but
   `Autocomplete.Item`'s `onClick` does not run. A reliable picked-item callback needs Base UI to
   pass the item with `onValueChange`'s `item-press` reason.
+- On `/components/autocomplete-field`, the "Groups" demo shares the heading id `groups` with
+  another heading on the page, so `DemoHydrationMarker` finds the wrong heading and never marks
+  that demo hydrated. A test that waits on its hydration hangs.
 
 ## Data table
 

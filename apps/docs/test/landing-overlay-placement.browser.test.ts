@@ -37,7 +37,7 @@ async function expectMenuBeside(page: Page, app: Locator, trigger: Locator): Pro
 }
 
 describe.each(VIEWPORTS)("landing Dashboard overlays at $width×$height, scrolled", (viewport) => {
-  it("opens the Campaign list right under its trigger, aligned with it, while the New order Sheet fills the window's right edge and its backdrop covers the window", async () => {
+  it("opens the Campaign list right under its trigger, aligned with it, while the New order Sheet fills the window's right edge and its backdrop covers the window, and the Start date calendar inside the window when the field sits low in the viewport", async () => {
     const { page, app } = await openScrolled(viewport);
     const sheet = await openNewOrder(app);
     const trigger = sheet.getByRole("combobox", { name: "Campaign" });
@@ -74,6 +74,20 @@ describe.each(VIEWPORTS)("landing Dashboard overlays at $width×$height, scrolle
             };
       })
       .toEqual({ sheetRight: 0, backdrop: [0, 0, 0, 0] });
+
+    await page.keyboard.press("Escape");
+    await expect.poll(async () => list.count()).toBe(0);
+    const field = sheet.getByRole("group", { name: "Start date" });
+    // Centred, the field leaves less room under it in the window than the calendar needs.
+    await field.evaluate((element) => {
+      element.scrollIntoView({ block: "center" });
+    });
+    await field.getByRole("button", { name: "Kalender" }).click();
+    const calendar = page.getByRole("dialog").filter({ has: page.getByRole("grid") });
+    await calendar.waitFor();
+
+    // Oracle: the window's clipping box. Any part of the calendar past it is cut off.
+    await expectBeside(calendar, field, windowScope(app));
     await page.context().close();
   });
 
@@ -92,7 +106,7 @@ describe.each(VIEWPORTS)("landing Dashboard overlays at $width×$height, scrolle
     await page.context().close();
   });
 
-  it("opens Order search's facet menus beside their triggers", async () => {
+  it("opens Order search's facet menus and its Rows per page list beside their triggers", async () => {
     const page = await openLanding(viewport);
     const app = await openOrderSearch(page);
     await scrollWindowPartWay(page);
@@ -101,34 +115,9 @@ describe.each(VIEWPORTS)("landing Dashboard overlays at $width×$height, scrolle
     for (const facet of ["Status", "Sales channel"]) {
       await expectMenuBeside(page, app, search.getByRole("button", { name: new RegExp(`^${facet}`, "u") }));
     }
-    await page.context().close();
-  });
-
-  it("opens Order search's Rows per page list beside its trigger", async () => {
-    const page = await openLanding(viewport);
-    const app = await openOrderSearch(page);
-    await scrollWindowPartWay(page);
     const trigger = app.getByRole("combobox", { name: "Rows per page" });
     await trigger.click();
-
     await expectBeside(page.getByRole("listbox"), trigger, windowScope(app));
-    await page.context().close();
-  });
-
-  it("opens the Start date calendar inside the window when the field sits low in the viewport", async () => {
-    const { page, app } = await openScrolled(viewport);
-    const sheet = await openNewOrder(app);
-    const field = sheet.getByRole("group", { name: "Start date" });
-    // Centred, the field leaves less room under it in the window than the calendar needs.
-    await field.evaluate((element) => {
-      element.scrollIntoView({ block: "center" });
-    });
-    await field.getByRole("button", { name: "Kalender" }).click();
-    const calendar = page.getByRole("dialog").filter({ has: page.getByRole("grid") });
-    await calendar.waitFor();
-
-    // Oracle: the window's clipping box. Any part of the calendar past it is cut off.
-    await expectBeside(calendar, field, windowScope(app));
     await page.context().close();
   });
 
