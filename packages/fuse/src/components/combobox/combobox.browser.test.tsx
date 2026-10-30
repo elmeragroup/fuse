@@ -649,6 +649,30 @@ describe("Combobox", () => {
     ).not.toBe(getComputedStyle(valid).boxShadow);
   });
 
+  it("paints the ChipsInput placeholder in the muted-foreground role, like Combobox.Input", () => {
+    renderCombobox(
+      <>
+        <Combobox.Root items={[...FRUITS]}>
+          <Combobox.Input aria-label="Single fruit" placeholder="Pick a fruit" />
+        </Combobox.Root>
+        <Combobox.Root items={[...FRUITS]} multiple>
+          <Combobox.Chips aria-label="Selected fruit">
+            <Combobox.ChipsInput aria-label="Many fruit" placeholder="Pick fruit" />
+          </Combobox.Chips>
+        </Combobox.Root>
+      </>
+    );
+    const chipsInput = comboboxNamed("Many fruit");
+    // An input cannot host the probe, so read the token on its chips box.
+    const chipsBox = chipsInput.parentElement;
+    if (chipsBox === null) {
+      throw new Error("expected the chips input inside its chips box");
+    }
+    const muted = cssVarColor(chipsBox, "--muted-foreground");
+    expect(getComputedStyle(chipsInput, "::placeholder").color).toBe(muted);
+    expect(getComputedStyle(comboboxNamed("Single fruit"), "::placeholder").color).toBe(muted);
+  });
+
   it("sets data-external-anchor=true against a useComboboxAnchor ref, and insets a popup that owns a search group without letting the group overflow it", async () => {
     function AnchoredSearch() {
       const anchor = useComboboxAnchor();
