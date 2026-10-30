@@ -5,7 +5,13 @@ import type { ReactElement, ReactNode } from "react";
 
 import { attachJoin, placeAttached } from "./chart-attached";
 import type { AttachedShown, FollowerJoin } from "./chart-attached";
-import { assertKnownKey, useChartLayout, useChartRoot } from "./chart-context";
+import {
+  assertKnownKey,
+  assertLayoutKey,
+  useChartLayout,
+  useChartRoot,
+  usePlotLayout,
+} from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import { useChartFollower } from "./chart-followers";
 import { ChartHeadlineContext } from "./chart-headline";
@@ -200,7 +206,9 @@ function PlotValue({
   readonly style: ChartActiveValueProps["style"];
 }): ReactElement {
   const window = context.model.window;
-  const drawn = useChartFrame("Chart.ActiveValue");
+  const layout = usePlotLayout("Chart.ActiveValue");
+  assertLayoutKey("Chart.ActiveValue", layout, dataKey);
+  const drawn = useChartFrame("Chart.ActiveValue", layout);
   // Before the plot is measured, as on the server, the value sits at its datum's shares of the plot.
   const resting = cellAt(context, dataKey, slot);
   const at = window === null || slot === null ? 0 : slotCentre(window, slot, context.xScale);
@@ -281,7 +289,9 @@ export function ChartActiveValueLine({
 }: ChartActiveValueLineProps): ReactElement {
   const context = useChartRoot("Chart.ActiveValueLine");
   assertKnownKey("Chart.ActiveValueLine", context.config, dataKey);
-  const drawn = useChartFrame("Chart.ActiveValueLine");
+  const layout = usePlotLayout("Chart.ActiveValueLine");
+  assertLayoutKey("Chart.ActiveValueLine", layout, dataKey);
+  const drawn = useChartFrame("Chart.ActiveValueLine", layout);
   const frame = drawn?.frame ?? null;
   const look = useMemo((): FollowerLook => ({ frame }), [frame]);
   // Its tip across the value axis.

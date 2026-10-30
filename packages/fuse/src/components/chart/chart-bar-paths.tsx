@@ -96,7 +96,7 @@ export function SeriesPaths({
 }): ReactElement {
   const { motion, update, paths } = context;
   const { box } = frame;
-  const pastEnd = useMemo(() => pastSpanEnd(context, frame), [context, frame]);
+  const pastEnd = useMemo(() => pastSpanEnd(context, series, frame), [context, series, frame]);
   // The snapped zero line, where the entrance grows from and the list gradient ends.
   const zero = snapY(box, valueAt(frame, 0));
   const columns = useMemo(

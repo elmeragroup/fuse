@@ -11,6 +11,8 @@ import { describe, expect, it } from "vitest";
 import { cdp, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { barBox } from "../../../test/chart/bar-box";
+import { installFrameClock } from "../../../test/chart/frame-clock";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -389,6 +391,179 @@ describe("marks across a data update", () => {
       expect(numbers(band() ?? host, ["x", "y", "width", "height"])).toEqual([200, 0, 200, 200]);
     } finally {
       unmount();
+    }
+  });
+});
+
+describe("a bar that mounts while its layout's value domain glides", () => {
+  /** Each bar of a series, from the top or left of its own plot, which its bar series covers. */
+  function boxesOf(host: HTMLElement, series: number) {
+    // DOM audit: bars and their series layer are aria-hidden plot output, located by slot.
+    const layer = host.querySelector(`[data-slot="chart-bar-series"][data-series="${String(series)}"]`);
+    const plot = layer?.getBoundingClientRect() ?? new DOMRect();
+    return [...(layer?.querySelectorAll('[data-slot="chart-bar"]') ?? [])].map((bar) => barBox(bar, plot));
+  }
+
+  it("shares the surviving bars' base in every frame after the domain returns mid-tween (F1)", () => {
+    // 200 px tall under yInclude [0, 4]. x = 2 and y = -4 span [-4, 4], zero at 100 px. y = 2
+    // moves the domain to [0, 4], zero at 200 px, and y = -4 again 120 ms in sends it back, so the
+    // bars still glide. Appending z = 1 keeps [-4, 4], and z's bar must grow from the base the
+    // other bars draw, in every frame, and all rest on 100 px.
+    const clock = installFrameClock();
+    try {
+      const chart = (data: readonly { name: string; a: number }[]) => (
+        <LocaleProvider locale="nb-NO">
+          <div style={{ width: 300 }}>
+            <Chart.Root
+              data-intro="none"
+              data={data}
+              config={{ a: { label: "A", color: "chart-1" } }}
+              xKey="name"
+              yInclude={[0, 4]}
+              style={{ "--chart-plot-height": "200px" }}
+              aria-label="Tilbake">
+              <Chart.Bar dataKey="a" />
+            </Chart.Root>
+          </div>
+        </LocaleProvider>
+      );
+      const start = [
+        { name: "x", a: 2 },
+        { name: "y", a: -4 },
+      ];
+      const { host, rerender } = renderThemed(chart(start));
+      let at = clock.now();
+      rerender(chart([start[0] ?? { name: "x", a: 2 }, { name: "y", a: 2 }]));
+      clock.frameAt((at += 120));
+      rerender(chart(start));
+      clock.frameAt((at += 60));
+      rerender(chart([...start, { name: "z", a: 1 }]));
+      for (const ms of [0, 60, 120, 240, 600]) {
+        clock.frameAt(at + ms);
+        const [x, y, z] = boxesOf(host, 0);
+        expect(Math.abs((z?.bottom ?? 0) - (x?.bottom ?? 0)), `z at ${String(ms)} ms`).toBeLessThanOrEqual(
+          0.5
+        );
+        expect(Math.abs((y?.top ?? 0) - (x?.bottom ?? 0)), `y at ${String(ms)} ms`).toBeLessThanOrEqual(0.5);
+      }
+      expect(Math.abs((boxesOf(host, 0)[0]?.bottom ?? 0) - 100)).toBeLessThanOrEqual(0.5);
+    } finally {
+      clock.restore();
+    }
+  });
+
+  it("keeps a Panel's glide through another Panel's registration (X7, B2-5)", async () => {
+    // Panel A is 200 px tall under yInclude [0, 4]. x = 2 and y = -4 span [-4, 4], zero at 100 px,
+    // and y = 2 moves A's domain to [0, 4], zero at 200 px. 120 ms into that tween Panel B's
+    // yInclude changes over the same rows, so B registers again and A's bars still glide. 60 ms
+    // later z = 1 joins A on the same [0, 4], and z's bar must grow from the base x draws, in
+    // every frame, until all rest on 200 px.
+    const clock = installFrameClock();
+    try {
+      const config = {
+        a: { label: "A", color: "chart-1" },
+        b: { label: "B", color: "chart-2" },
+      } as const satisfies ChartConfig;
+      const start = [
+        { name: "x", a: 2, b: 1 },
+        { name: "y", a: -4, b: 1 },
+      ];
+      const moved = [
+        { name: "x", a: 2, b: 1 },
+        { name: "y", a: 2, b: 1 },
+      ];
+      const appended = [...moved, { name: "z", a: 1, b: 1 }];
+      const chart = (data: readonly { name: string; a: number; b: number }[], ceiling: number) => (
+        <LocaleProvider locale="nb-NO">
+          <div style={{ width: 300 }}>
+            <Chart.Root
+              data-intro="none"
+              data={data}
+              config={config}
+              xKey="name"
+              style={{ "--chart-plot-height": "200px" }}
+              aria-label="To paneler">
+              <Chart.Panel series={["a"]} yInclude={[0, 4]}>
+                <Chart.Bar dataKey="a" />
+              </Chart.Panel>
+              <Chart.Panel series={["b"]} yInclude={[0, ceiling]}>
+                <Chart.Bar dataKey="b" />
+              </Chart.Panel>
+            </Chart.Root>
+          </div>
+        </LocaleProvider>
+      );
+      const { host, rerender } = renderThemed(chart(start, 2));
+      await expect.poll(() => boxesOf(host, 0).length).toBe(2);
+      let at = clock.now();
+      rerender(chart(moved, 2));
+      clock.frameAt((at += 120));
+      rerender(chart(moved, 3));
+      // B's registration renders Root again before the next frame.
+      await expect
+        .poll(() =>
+          // DOM audit: B's bar is aria-hidden plot output; on [0, 3] its 1 is a third of 200 px.
+          Math.round(boxesOf(host, 1)[0]?.top ?? 0)
+        )
+        .toBe(133);
+      clock.frameAt((at += 60));
+      rerender(chart(appended, 3));
+      for (const ms of [0, 60, 120, 240, 600]) {
+        clock.frameAt(at + ms);
+        const [x, , z] = boxesOf(host, 0);
+        expect(Math.abs((z?.bottom ?? 0) - (x?.bottom ?? 0)), `z at ${String(ms)} ms`).toBeLessThanOrEqual(
+          0.5
+        );
+      }
+      expect(Math.abs((boxesOf(host, 0)[0]?.bottom ?? 0) - 200)).toBeLessThanOrEqual(0.5);
+    } finally {
+      clock.restore();
+    }
+  });
+
+  it("relays an update that mounts a bar and moves its Panel's domain through yInclude (Y2, Q3-1)", async () => {
+    // A 200 px Panel under yInclude [0, 4] holds x = 2, its zero at 200 px. One update appends
+    // y = 1 and widens yInclude to [-4, 4], so the domain becomes [-4, 4] and the zero 100 px. Only
+    // the Panel sees its new yInclude while it renders, and it relays the plot, so x and y stand
+    // on 100 px in every frame.
+    const clock = installFrameClock();
+    try {
+      const chart = (data: readonly { name: string; a: number }[], floor: number) => (
+        <LocaleProvider locale="nb-NO">
+          <div style={{ width: 300 }}>
+            <Chart.Root
+              data-intro="none"
+              data={data}
+              config={{ a: { label: "A", color: "chart-1" } }}
+              xKey="name"
+              style={{ "--chart-plot-height": "200px" }}
+              aria-label="Ett panel">
+              <Chart.Panel series={["a"]} yInclude={[floor, 4]}>
+                <Chart.Bar dataKey="a" />
+              </Chart.Panel>
+            </Chart.Root>
+          </div>
+        </LocaleProvider>
+      );
+      const { host, rerender } = renderThemed(chart([{ name: "x", a: 2 }], 0));
+      await expect.poll(() => boxesOf(host, 0)[0]?.bottom).toBe(200);
+      const at = clock.now();
+      rerender(
+        chart(
+          [
+            { name: "x", a: 2 },
+            { name: "y", a: 1 },
+          ],
+          -4
+        )
+      );
+      for (const ms of [0, 60, 120, 240, 600]) {
+        clock.frameAt(at + ms);
+        const [x, y] = boxesOf(host, 0);
+        expect([x?.bottom, y?.bottom], `at ${String(ms)} ms`).toEqual([100, 100]);
+      }
+    } finally {
+      clock.restore();
     }
   });
 });

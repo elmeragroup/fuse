@@ -957,6 +957,16 @@ export const DATED_SLOT_CASES: readonly DatedSlotCase[] = [
     spoken: "onsdag 1. oktober, kl. 00 til 01",
   },
   {
+    name: "the second day's first hour on a two-day domain in nb-NO",
+    locale: "nb-NO",
+    interval: "hour",
+    first: "2025-09-30T22:00:00Z",
+    last: "2025-10-02T21:00:00Z",
+    slot: 24,
+    text: "torsdag\u00a02.\u00a0oktober, 00\u201301",
+    spoken: "torsdag\u00a02.\u00a0oktober, kl.\u00a000\u00a0til\u00a001",
+  },
+  {
     name: "an hour on a two-day domain in sv-SE",
     locale: "sv-SE",
     interval: "hour",
@@ -1005,5 +1015,15 @@ export const DATED_SLOT_CASES: readonly DatedSlotCase[] = [
     slot: 0,
     text: "onsdag 31. desember 2025",
     spoken: "onsdag 31. desember 2025",
+  },
+  {
+    name: "the first day of 2026 on a domain into 2026, in nb-NO",
+    locale: "nb-NO",
+    interval: "day",
+    first: "2025-12-30T23:00:00Z",
+    last: "2025-12-31T23:00:00Z",
+    slot: 1,
+    text: "torsdag\u00a01.\u00a0januar\u00a02026",
+    spoken: "torsdag\u00a01.\u00a0januar\u00a02026",
   },
 ];

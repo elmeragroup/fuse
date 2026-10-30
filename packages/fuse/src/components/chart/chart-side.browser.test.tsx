@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cdp, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { installFrameClock } from "../../../test/chart/frame-clock";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -150,6 +151,8 @@ async function sides(look: Look, before: readonly number[], after: readonly numb
     mobile: false,
   });
   await frame();
+  // The tweens run on a hand-driven clock, so every frame lands at a known instant at any refresh rate.
+  const clock = installFrameClock();
   const { host, rerender, unmount } = renderThemed(chart(before, look));
   try {
     const vertical = look.orientation === "vertical";
@@ -178,8 +181,10 @@ async function sides(look: Look, before: readonly number[], after: readonly numb
       expect(failures).toEqual([]);
     };
     atRest(before, "before");
+    const updated = clock.now();
     rerender(chart(after, look));
-    for (let count = 0; count < 45; count += 1) {
+    // The commit, then a frame every 16 ms through the update token's 480 ms tween.
+    for (let count = 0; count <= 30; count += 1) {
       const failures = after.flatMap((reading, index) => {
         const was = before[index] ?? 0;
         const body = bodies()[index + 1];
@@ -192,13 +197,14 @@ async function sides(look: Look, before: readonly number[], after: readonly numb
         );
       });
       expect(failures).toEqual([]);
-      await frame();
+      clock.frameAt(updated + (count + 1) * 16);
     }
-    // The tween ends within about half a second, 45 frames or fewer.
-    for (let count = 0; count < 20; count += 1) await frame();
+    // 600 ms is past the 480 ms tween, so every mark rests.
+    clock.frameAt(updated + 600);
     atRest(after, "after");
   } finally {
     unmount();
+    clock.restore();
   }
 }
 

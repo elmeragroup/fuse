@@ -5,7 +5,17 @@
 import { describe, expect, it } from "vitest";
 
 import { buildCartesianModel } from "./cartesian-model";
+import type { CartesianModel } from "./cartesian-model";
 import { relaysPlot } from "./relay";
+import type { KeyedModel } from "./relay";
+
+/** A model with no Panels, whose every key draws in the default layout's domain. */
+function withDomains(model: CartesianModel, keys: readonly string[]): KeyedModel {
+  return { model, keys, domains: new Map(model.series.map(({ key }) => [key, model.y.domain])) };
+}
+
+/** No layout's tween glides from an earlier domain. */
+const RESTING = new Set<string>();
 
 type Row = { readonly name: string; readonly p?: number | null; readonly q?: number | null };
 
@@ -22,7 +32,10 @@ function keyed(rows: readonly Row[], stacked = false) {
     baseline: "zero",
     include: [0, 4],
   });
-  return { model, keys: rows.map((row) => row.name) };
+  return withDomains(
+    model,
+    rows.map((row) => row.name)
+  );
 }
 
 /** Both series draw as bars. */
@@ -45,7 +58,10 @@ describe("relaying the plot", () => {
         baseline: "zero",
         include: [],
       });
-      return { model, keys: rows.map((row) => row.name) };
+      return withDomains(
+        model,
+        rows.map((row) => row.name)
+      );
     };
     const before = line([2.4, 3.1, 3.8]);
     const after = line([2.4, 3.1, 3.8, 4.1]);
@@ -53,8 +69,8 @@ describe("relaying the plot", () => {
       [0, 4],
       [0, 5],
     ]);
-    expect(relaysPlot(before, after, "vertical", false, new Set())).toBe(false);
-    expect(relaysPlot(before, after, "vertical", false, new Set(["p"]))).toBe(true);
+    expect(relaysPlot(before, after, "vertical", RESTING, new Set())).toBe(false);
+    expect(relaysPlot(before, after, "vertical", RESTING, new Set(["p"]))).toBe(true);
   });
 
   it("moves a category's arrival while the domain stays (B12-1)", () => {
@@ -64,7 +80,7 @@ describe("relaying the plot", () => {
       { name: "a", p: 3, q: 1 },
       { name: "b", p: 1, q: 1 },
     ]);
-    expect(relaysPlot(before, after, "vertical", false, BARS)).toBe(false);
+    expect(relaysPlot(before, after, "vertical", RESTING, BARS)).toBe(false);
   });
 
   it("routes path-form columns that mount while the domain moves (B2-6, Q2-4)", () => {
@@ -79,7 +95,10 @@ describe("relaying the plot", () => {
         baseline: "zero",
         include: [],
       });
-      return { model, keys: named.map((row) => row.name) };
+      return withDomains(
+        model,
+        named.map((row) => row.name)
+      );
     };
     const ones = Array.from({ length: 365 }, () => 1);
     // Q2-4: 364 readings of 1 and a last null, then the last turns 20, so [0, 1] widens to [0, 20].
@@ -89,22 +108,22 @@ describe("relaying the plot", () => {
       [0, 1],
       [0, 20],
     ]);
-    expect(relaysPlot(lastNull, lastTwenty, "vertical", false, new Set(["p"]))).toBe(false);
+    expect(relaysPlot(lastNull, lastTwenty, "vertical", RESTING, new Set(["p"]))).toBe(false);
     // B2-6: 365 readings of 1, then a 2 appended and the first dropped, so [0, 1] widens to [0, 2].
     const appended = loose([...ones.slice(1), 2], 1);
     expect(appended.model.y.domain).toEqual([0, 2]);
-    expect(relaysPlot(loose(ones), appended, "vertical", false, new Set(["p"]))).toBe(false);
+    expect(relaysPlot(loose(ones), appended, "vertical", RESTING, new Set(["p"]))).toBe(false);
     // Horizontal bars draw as elements at any count, so the same mount still relays there.
-    expect(relaysPlot(lastNull, lastTwenty, "horizontal", false, new Set(["p"]))).toBe(true);
+    expect(relaysPlot(lastNull, lastTwenty, "horizontal", RESTING, new Set(["p"]))).toBe(true);
   });
 
   it("relays a switch from paths to elements (B12-3)", () => {
     // 101 categories draw as paths and 100 as elements, on a vertical chart.
     const before = keyed(rows(101, (index) => (index === 100 ? -4 : 2)));
     const after = keyed(rows(100, () => 2));
-    expect(relaysPlot(before, after, "vertical", false, BARS)).toBe(true);
+    expect(relaysPlot(before, after, "vertical", RESTING, BARS)).toBe(true);
     // A horizontal chart draws elements at any count, so the same update moves.
-    expect(relaysPlot(before, after, "horizontal", false, BARS)).toBe(false);
+    expect(relaysPlot(before, after, "horizontal", RESTING, BARS)).toBe(false);
   });
 
   it("relays a mark that mounts while the domain moves, and moves one that only leaves", () => {
@@ -114,9 +133,54 @@ describe("relaying the plot", () => {
       { name: "a", p: 2, q: 1 },
       { name: "b", p: -3, q: 1 },
     ]);
-    expect(relaysPlot(before, widened, "vertical", false, BARS)).toBe(true);
+    expect(relaysPlot(before, widened, "vertical", RESTING, BARS)).toBe(true);
     // b leaves again: nothing mounts, so the bars that stay move with the domain.
-    expect(relaysPlot(widened, before, "vertical", false, BARS)).toBe(false);
+    expect(relaysPlot(widened, before, "vertical", RESTING, BARS)).toBe(false);
+  });
+
+  it("relays a mark that mounts only while its own Panel's domain moves or glides", () => {
+    // p and q draw in two Panels. b's q arrives at 1 in q's Panel, whose domain [0, 1] holds, while
+    // p's Panel widens from [0, 2] to [0, 5]. q's bar moves. Had p's bar been the one to mount, the
+    // baseline under it would move, so it relays, and so does a q bar while q's Panel glides.
+    const panels = (model: CartesianModel, p: readonly [number, number]): KeyedModel => ({
+      model,
+      keys: ["a", "b"],
+      domains: new Map([
+        ["p", p],
+        ["q", [0, 1] as const],
+      ]),
+    });
+    const before = panels(
+      keyed([
+        { name: "a", p: 2, q: 1 },
+        { name: "b", p: 2 },
+      ]).model,
+      [0, 2]
+    );
+    const after = panels(
+      keyed([
+        { name: "a", p: 5, q: 1 },
+        { name: "b", p: 2, q: 1 },
+      ]).model,
+      [0, 5]
+    );
+    expect(relaysPlot(before, after, "vertical", RESTING, BARS)).toBe(false);
+    expect(relaysPlot(before, after, "vertical", new Set(["q"]), BARS)).toBe(true);
+    const pArrives = panels(
+      keyed([
+        { name: "a", p: 2, q: 1 },
+        { name: "b", q: 1 },
+      ]).model,
+      [0, 2]
+    );
+    const pWidens = panels(
+      keyed([
+        { name: "a", p: 5, q: 1 },
+        { name: "b", p: 2, q: 1 },
+      ]).model,
+      [0, 5]
+    );
+    expect(relaysPlot(pArrives, pWidens, "vertical", RESTING, BARS)).toBe(true);
   });
 
   it("relays a mark that mounts while the baseline still glides from another domain", () => {
@@ -128,8 +192,8 @@ describe("relaying the plot", () => {
       { name: "b", p: 1, q: 1 },
     ]);
     expect([
-      relaysPlot(before, after, "vertical", false, BARS),
-      relaysPlot(before, after, "vertical", true, BARS),
+      relaysPlot(before, after, "vertical", RESTING, BARS),
+      relaysPlot(before, after, "vertical", BARS, BARS),
     ]).toEqual([false, true]);
   });
 
@@ -137,7 +201,7 @@ describe("relaying the plot", () => {
     // q appears at a, where p stays, so q's base is p's drawn tip.
     const lone = keyed([{ name: "a", p: 2, q: null }], true);
     const both = keyed([{ name: "a", p: 2, q: 1 }], true);
-    expect(relaysPlot(lone, both, "vertical", false, BARS)).toBe(true);
+    expect(relaysPlot(lone, both, "vertical", RESTING, BARS)).toBe(true);
     // A new slot whose segments both mount shares no edge with anything that stays.
     const grown = keyed(
       [
@@ -146,6 +210,6 @@ describe("relaying the plot", () => {
       ],
       true
     );
-    expect(relaysPlot(both, grown, "vertical", false, BARS)).toBe(false);
+    expect(relaysPlot(both, grown, "vertical", RESTING, BARS)).toBe(false);
   });
 });

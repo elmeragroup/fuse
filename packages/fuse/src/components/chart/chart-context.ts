@@ -4,19 +4,20 @@
  * The contexts a cartesian Root provides. The root context changes with data, config and the
  * effective window, never with the pointer, so marks that read it render only on a data change.
  * The layout context is the seam Panels plug into. Root provides the default layout, and a Panel
- * provides its own, so a mark reads the nearest layout without knowing which.
+ * provides its own, so a mark reads the nearest layout without knowing which: its value domain,
+ * the frame its motion maps under on a resize, and the registry its reference labels stack in.
  */
-import { createContext, use } from "react";
+import { createContext, use, useLayoutEffect } from "react";
 
 import type { SupportedLocale } from "../../intl/locale-context";
 import type { ChartFollowers } from "./chart-followers";
 import type { ChartLabels } from "./chart-labels";
-import type { ChartMotion } from "./chart-motion";
+import type { ChartMotion, FrameOwner } from "./chart-motion";
 import type { ChartPaths } from "./chart-paths";
 import type { ChartStore, EmphasisEntry } from "./chart-store";
 import type { TextContext } from "./chart-text";
 import type { ChartConfig, ChartIntro, ChartRow, ChartSelectionChangeReason, XFormat } from "./chart-types";
-import type { CartesianModel } from "./layout/cartesian-model";
+import type { CartesianModel, LayoutInput } from "./layout/cartesian-model";
 import { ChartCompositionError } from "./layout/errors";
 
 export { ChartPendingRootContext } from "./chart-pending-root";
@@ -37,11 +38,55 @@ export type ChartUpdate = {
   /** The key each domain slot's marks render under, by slot index. */
   readonly keys: readonly string[];
   /**
-   * Whether a data update relays the plot, as `relaysPlot` decides: it mounts marks at their
-   * targets in coordinates the marks that stay share, so every mark snaps with it.
+   * Whether a data update relays the plot, as `relaysPlot` decides for what Root sees: it mounts
+   * marks at their targets in coordinates the marks that stay share, so every mark snaps with it.
    */
   readonly relays: boolean;
+  /** The value domain each config key drew in before the update. */
+  readonly from: ReadonlyMap<string, readonly [number, number]>;
+  /** The series whose element-form bars or missing ticks the update mounts. */
+  readonly mounted: ReadonlySet<string>;
+  /** The config keys whose marks still glide from an earlier domain as the update starts. */
+  readonly gliding: ReadonlySet<string>;
+  /** What the Panels decide about their own domains, before any mark places. */
+  readonly layouts: LayoutReports;
 };
+
+/**
+ * The decisions the Panels add to a data update while they render. Root sees a Panel's inputs only
+ * once it registers, after the marks place, so each Panel, which computes its domain during render,
+ * decides whether the update moves that domain, before any mark asks how to place.
+ */
+export type LayoutReports = {
+  /** Whether a Panel relays the plot, which snaps every mark of the Root with Root's own decision. */
+  relays: boolean;
+  /** The config keys whose Panel's domain the update moves, so their marks glide between two. */
+  readonly moved: Set<string>;
+};
+
+/**
+ * Decide, for a Panel while it renders, whether a data update moves its value domain. A moved
+ * domain marks its keys as gliding, and a moved or still gliding domain under which the update
+ * mounts a bar relays the plot, as `relaysPlot` rules for Root's default layout.
+ *
+ * @param update - The update the Panel renders first.
+ * @param keys - The Panel's series.
+ * @param domain - The Panel's value domain under the update.
+ */
+export function reportLayoutDomain(
+  update: ChartUpdate,
+  keys: readonly string[],
+  domain: readonly [number, number]
+): void {
+  if (update.kind !== "data") return;
+  const moved = keys.some((key) => {
+    const from = update.from.get(key);
+    return from !== undefined && (from[0] !== domain[0] || from[1] !== domain[1]);
+  });
+  if (moved) for (const key of keys) update.layouts.moved.add(key);
+  const glides = moved || keys.some((key) => update.gliding.has(key));
+  if (glides && keys.some((key) => update.mounted.has(key))) update.layouts.relays = true;
+}
 
 /** What every cartesian part reads from Root. */
 export type ChartRootContextValue = TextContext & {
@@ -86,23 +131,66 @@ export type ChartRootContextValue = TextContext & {
   readonly motion: ChartMotion;
   /** The marks that follow the active slot. */
   readonly followers: ChartFollowers;
-  /** The value reference labels, placed from the guides they label. */
-  readonly labels: ChartLabels;
   /** The routes the series paths tween, which their dots, markers and active dots join. */
   readonly paths: ChartPaths;
-  /** A Bar registers after it mounts, so Root can warn `bars-overlap`. The result unregisters it. */
-  readonly registerBar: (key: string, grouped: boolean) => () => void;
+  /**
+   * A Bar registers after it mounts, with its layout's frame, so Root can warn `bars-overlap` for
+   * two loose Bars in one layout. The result unregisters it.
+   */
+  readonly registerBar: (key: string, grouped: boolean, layout: FrameOwner) => () => void;
   /** Whether a mounted Bar draws a config key, which a value follower marks before a line. */
   readonly drawsBar: (key: string) => boolean;
   /** A Bar registers its emphasised slots after it mounts, so the option speaks the word. */
   readonly registerEmphasis: (key: string, entry: EmphasisEntry) => () => void;
+  /** A Panel registers after it mounts, in Panel order. The result unregisters it. */
+  readonly registerPanel: (panel: PanelEntry) => () => void;
+  /**
+   * A plot part that draws in the default layout registers after it mounts, so Root's check of the
+   * current tree finds one beside Panels. The result unregisters it.
+   */
+  readonly registerRootPart: (part: string) => () => void;
+  /**
+   * Place the span of the Panels' plots that Root's surface covers, from their current positions.
+   * A Panel calls it after each of its commits, which can move the plots without rendering Root.
+   */
+  readonly placeSpan: () => void;
+  /**
+   * The mounted Panels in Panel order, empty until they register. The server and a hydrating render
+   * see none, and the render their registration triggers checks the Panel rules.
+   */
+  readonly panels: readonly PanelEntry[];
+  /** The value domain each config key draws in, its Panel's or the default layout's. */
+  readonly domains: ReadonlyMap<string, readonly [number, number]>;
+  /**
+   * The default layout's colour rule over every config key, or null when it holds. A plot part
+   * that draws in the default layout throws it, so a config whose Panels each keep one colour
+   * family renders.
+   */
+  readonly colourRule: ChartCompositionError | null;
 };
 
-/** One layout: the y domain and the config keys it covers. */
+/** What a mounted Panel tells Root: the layout it draws, and its plot for the pointer's pick. */
+export type PanelEntry = {
+  /** The Panel's series, baseline and `yInclude`, from which Root computes its domain as the Panel does. */
+  readonly layout: LayoutInput;
+  /** The Panel's plot element, whose box the pointer's y picks the Panel by. */
+  readonly plot: () => HTMLElement | null;
+};
+
+/** One layout: the y domain, the config keys it covers, its frame and its reference labels. */
 export type ChartLayoutContextValue = {
+  /** "root" for Root's default layout, "panel" for a Panel's. */
+  readonly kind: "root" | "panel";
   readonly keys: readonly string[];
   readonly y: ValueDomain;
   readonly baseline: "zero" | "none";
+  /**
+   * A token that names the layout's measured frame for its life. Every motion registration takes
+   * it, so a resize of one Panel maps the running tweens of that Panel alone.
+   */
+  readonly owner: FrameOwner;
+  /** The layout's reference labels, which stack against its own plot and no other. */
+  readonly labels: ChartLabels;
 };
 
 export const ChartRootContext = createContext<ChartRootContextValue | null>(null);
@@ -132,12 +220,63 @@ export function useChartRoot(part: string): ChartRootContextValue {
  *
  * @param part - The calling part's display name.
  * @returns The layout.
+ * @throws {ChartCompositionError} `part-outside-root` when no `Chart.Root` encloses the part.
  */
 export function useChartLayout(part: string): ChartLayoutContextValue {
-  const root = useChartRoot(part);
-  // Root provides the default layout, so a part inside Root always finds one.
-  return (
-    use(ChartLayoutContext) ?? { keys: Object.keys(root.config), y: root.model.y, baseline: root.baseline }
+  useChartRoot(part);
+  const layout = use(ChartLayoutContext);
+  // Root provides the default layout around every part, so a part that found Root finds one.
+  if (layout === null) throw new Error(`${part} found Chart.Root but no layout, which Root always provides.`);
+  return layout;
+}
+
+/**
+ * The error of a plot part directly under a Root with Panels.
+ *
+ * @param part - The part's display name.
+ * @returns The `part-outside-panel` error.
+ */
+export function partOutsidePanel(part: string): ChartCompositionError {
+  return new ChartCompositionError(
+    part,
+    "part-outside-panel",
+    "sits directly under a Chart.Root that has Panels, so it has no y domain. Move it into the Chart.Panel whose series it draws."
+  );
+}
+
+/**
+ * Read the layout a plot part draws in. A part in the default layout registers with Root, whose
+ * check of the current tree throws `part-outside-panel` when Panels have registered beside it.
+ *
+ * @param part - The calling part's display name.
+ * @returns The layout.
+ * @throws {ChartCompositionError} `mixed-sentiment-categorical` when the default layout mixes
+ *   colour families.
+ */
+export function usePlotLayout(part: string): ChartLayoutContextValue {
+  const { registerRootPart, colourRule } = useChartRoot(part);
+  const layout = useChartLayout(part);
+  const inRoot = layout.kind === "root";
+  useLayoutEffect(() => (inRoot ? registerRootPart(part) : undefined), [inRoot, part, registerRootPart]);
+  if (inRoot && colourRule !== null) throw colourRule;
+  return layout;
+}
+
+/**
+ * Check that a mark inside a Panel draws one of the Panel's series.
+ *
+ * @param part - The calling part's display name.
+ * @param layout - The mark's layout.
+ * @param key - The config key the mark draws.
+ * @throws {ChartCompositionError} `series-not-in-panel`, listing the Panel's series.
+ */
+export function assertLayoutKey(part: string, layout: ChartLayoutContextValue, key: string): void {
+  if (layout.kind === "root" || layout.keys.includes(key)) return;
+  const keys = layout.keys.map((name) => JSON.stringify(name)).join(", ");
+  throw new ChartCompositionError(
+    part,
+    "series-not-in-panel",
+    `draws ${JSON.stringify(key)}, which its Chart.Panel's series does not list. Add it to the Panel's series, or move the part to the Panel that lists it: ${keys}.`
   );
 }
 

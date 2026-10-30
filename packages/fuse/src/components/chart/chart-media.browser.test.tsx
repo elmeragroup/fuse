@@ -7,7 +7,7 @@
 import type { ReactNode } from "react";
 
 import { afterEach, describe, expect, it } from "vitest";
-import { server, userEvent } from "vitest/browser";
+import { page, server, userEvent } from "vitest/browser";
 
 import * as Oklab from "@elmeragroup/color/oklab";
 import { getOrThrow } from "@elmeragroup/color/result";
@@ -305,6 +305,95 @@ describe("the glow halo", () => {
     // The median skips a bar whose top lands on a pixel boundary and reads no edge.
     const median = [...widths].sort((a, b) => a - b)[Math.floor(widths.length / 2)] ?? Number.NaN;
     expect(Math.abs(median - REFERENCE_HALF_WIDTH), JSON.stringify(widths)).toBeLessThanOrEqual(GUARD);
+  });
+
+  // Oracle: the line halo's half-intensity width in evilcharts' shot
+  // ex-glowing-desktop-line-chart__728-light.png, read by E10's method on the normals at 35, 50 and
+  // 65 % of its September to October and October to November segments: 9.75, 9.25, 10, 9.5 and
+  // 9.5 CSS px, mean 9.6. A sixth read lands on a band of the PNG's 8-bit halo and reads 0.5, so it
+  // is left out. Fuse draws the same rows at twice their size, so each device pixel of the shot has
+  // one here. A 9.5 px drop-shadow reads 9.71 there and a 10 px one 10.08, so the 0.25 px guard
+  // holds the nearer length.
+  const LINE_REFERENCE_HALF_WIDTH = 9.6;
+  const LINE_GUARD = 0.25;
+
+  it.runIf(server.browser === "chromium")("matches evilcharts' line halo (F5)", async () => {
+    const rows = [342, 876, 512, 629, 458, 781, 394, 925, 647, 532, 803, 271].map((desktop, index) => ({
+      month: `m${String(index)}`,
+      desktop,
+    }));
+    await page.viewport(1400, 900);
+    try {
+      const { host } = renderThemed(
+        <LocaleProvider locale="en-US">
+          <div style={{ width: 640, padding: 20, transform: "scale(2)", transformOrigin: "0 0" }}>
+            <Chart.Root
+              data-intro="none"
+              data={rows}
+              config={{ desktop: { label: "Desktop", color: "chart-1" } }}
+              xKey="month"
+              xScale="point"
+              style={{ "--chart-plot-height": "300px" }}
+              aria-label="Glow">
+              <Chart.Glow>
+                <Chart.Line dataKey="desktop" curve="linear" />
+              </Chart.Glow>
+            </Chart.Root>
+          </div>
+        </LocaleProvider>
+      );
+      await frame();
+      // DOM audit: the line's path is aria-hidden plot output, read for its vertices.
+      const path = host.querySelector('[data-slot="chart-line"][data-part="solid"]');
+      const box =
+        host.querySelector('[data-slot="chart-line-series"]')?.getBoundingClientRect() ?? new DOMRect();
+      const pixels = await pagePixels();
+      // Each CSS px of the path is 2 px on the page, and the page's pixels are the shot's.
+      const scale = 2 * pixels.scale;
+      const vertices = [...(path?.getAttribute("d") ?? "").matchAll(/[ML]\s*([\d.-]+)[ ,]([\d.-]+)/gu)].map(
+        ([, x = "0", y = "0"]) => [
+          (box.left + 2 * Number(x)) * pixels.scale,
+          (box.top + 2 * Number(y)) * pixels.scale,
+        ]
+      );
+      const widths = [
+        [8, 9],
+        [9, 10],
+      ].flatMap(([from = 0, to = 0]) => {
+        const [ax = 0, ay = 0] = vertices[from] ?? [];
+        const [bx = 0, by = 0] = vertices[to] ?? [];
+        const length = Math.hypot(bx - ax, by - ay);
+        // The normal that points up, away from the plot below the line.
+        const flip = ax > bx ? -1 : 1;
+        const [nx, ny] = [(flip * (by - ay)) / length, (flip * (ax - bx)) / length];
+        return [0.35, 0.5, 0.65].map((share) => {
+          const [px, py] = [ax + (bx - ax) * share, ay + (by - ay) * share];
+          // The stroke's centre is its most chromatic point within 8 device px of the vertex line.
+          let peak = 0;
+          let shift = 0;
+          for (let step = -8; step <= 8; step += 0.25) {
+            const value = chromaAt(pixels, px + nx * step, py + ny * step);
+            if (value > peak) [peak, shift] = [value, step];
+          }
+          const profile = Array.from({ length: 80 }, (_, step) =>
+            chromaAt(pixels, px + nx * (shift + step), py + ny * (shift + step))
+          );
+          // E10: from one device pixel past the stroke's edge, the distance where chroma halves.
+          const start = profile.findIndex((value) => value <= peak / 2) + 1;
+          const edge = profile[start] ?? 0;
+          const half = profile.findIndex((value, step) => step > start && value <= edge / 2);
+          const previous = profile[half - 1] ?? 0;
+          const fraction = (previous - edge / 2) / Math.max(1, previous - (profile[half] ?? 0));
+          return (half - 1 + fraction - start) / scale;
+        });
+      });
+      const mean = widths.reduce((sum, width) => sum + width, 0) / widths.length;
+      expect(Math.abs(mean - LINE_REFERENCE_HALF_WIDTH), JSON.stringify(widths)).toBeLessThanOrEqual(
+        LINE_GUARD
+      );
+    } finally {
+      await page.viewport(414, 896);
+    }
   });
 });
 

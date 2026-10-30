@@ -4,8 +4,8 @@
 
 A new preview entry, `@elmeragroup/fuse/chart`, ships Fuse's chart family. Its names and props can
 change until Fuse's first stable release, so it stays out of the root barrel and every export is
-tagged `@beta`. The cartesian parts, every `Bar` form, lines, areas and `Sparkline` render. The
-brush, panel and polar parts render nothing yet, and later releases add them behind the same types.
+tagged `@beta`. The cartesian parts, every `Bar` form, lines, areas, Panels and `Sparkline` render.
+The brush and polar parts render nothing yet, and later releases add them behind the same types.
 
 - `Chart` with its aliases `AreaChart`, `BarChart` and `LineChart`, plus `PieChart`, `RadialChart`
   and `RadarChart`. Each starts at `Root`, which reads every series from `config` and never inspects
@@ -48,3 +48,13 @@ on it in every frame. Bars in the path form move the same way. Above 2,000 slots
 M4 vertices of each pixel column. `Sparkline` draws its line, area or bars on the server, and its
 name ends in a sentence that names its lowest and highest values. The `time-seconds` preset prints
 `13:42:04` in nb-NO and `13.42.04` in fi-FI.
+
+`Chart.Panel` stacks rows on one Root. Each Panel takes its own value axis, `yBaseline` and
+`yInclude`, and every Panel shares Root's x grid, surface, tooltip, table and motion, so one listbox
+walks every Panel and Up and Down move the series focus from one Panel into the next. The Panels
+align their plots through CSS subgrid, so every slot lands on the same device pixels in each. A
+config entry's `interval` may be coarser than Root's, such as hourly usage under quarter-hour
+prices: its bar spans its quarters, its line's vertex sits at its hour's middle, the band crosshair
+spans its hour, the option and the tooltip name its hour, and the table spans its cell over its
+rows. A series interval that does not nest in Root's throws `interval-not-nested`, and a value off
+the series' grid warns `off-grid-x` in production.

@@ -246,6 +246,49 @@ describe("Line and Area geometry", () => {
   });
 });
 
+describe("a hatched Area's marked spans (F6)", () => {
+  /** The period of the pattern a mask's rect paints with, by the pattern's own width. */
+  function maskPeriod(host: HTMLElement, mask: string): number {
+    // DOM audit: an area's masks and patterns are aria-hidden paint servers.
+    const fill = host.querySelector(`mask[id$="-${mask}"] > rect`)?.getAttribute("fill") ?? "";
+    const id = /^url\(#(.+)\)$/u.exec(fill)?.[1] ?? "";
+    return Number(host.querySelector(`pattern[id="${id}"]`)?.getAttribute("width"));
+  }
+
+  it("hatches an estimated span at half the period of the hatched fill", () => {
+    const config = {
+      v: { label: "Verdi", color: "chart-1", qualityKey: "q" },
+    } as const satisfies ChartConfig;
+    const data = named([20, 40, 60]).map((row, index) => ({
+      ...row,
+      q: index === 2 ? "estimated" : "measured",
+    }));
+    const { host } = renderThemed(
+      <LineChart data={data} config={config}>
+        <Chart.Area dataKey="v" curve="linear" variant="hatched" />
+      </LineChart>
+    );
+    // The fill's hatch repeats every 6 px across its stripes, the marked twin's every 3 px.
+    expect([maskPeriod(host, "look"), maskPeriod(host, "marks")]).toEqual([6, 3]);
+  });
+
+  it("keeps the 6 px hatch for the marked spans of any other look", () => {
+    const config = {
+      v: { label: "Verdi", color: "chart-1", qualityKey: "q" },
+    } as const satisfies ChartConfig;
+    const data = named([20, 40, 60]).map((row, index) => ({
+      ...row,
+      q: index === 2 ? "estimated" : "measured",
+    }));
+    const { host } = renderThemed(
+      <LineChart data={data} config={config}>
+        <Chart.Area dataKey="v" curve="linear" variant="lines" />
+      </LineChart>
+    );
+    expect([maskPeriod(host, "look"), maskPeriod(host, "marks")]).toEqual([5, 6]);
+  });
+});
+
 describe("Line strokes on device pixels (B1-10)", () => {
   it("draws a flat line's stroke over whole device pixels at 1, 2 and 3 px", () => {
     // 50 of [0, 100] on the 200 px plot lies at y = 100 at DPR 1. A 2 px stroke centres on that

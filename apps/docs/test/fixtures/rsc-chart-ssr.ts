@@ -1,8 +1,9 @@
 /**
  * The SSR layer of the chart Flight fixture. It reads a Flight payload on stdin, decodes it with
  * React's Flight client the way Next's SSR does, loads each referenced client module as real code,
- * and prerenders the result. It also prerenders `ChartPage` with no Flight at all, which is the
- * oracle the Flight path must reproduce, and prints both HTML strings as JSON.
+ * and prerenders the result. It also prerenders the scenario's page, `ChartPage` or the
+ * `ComposedPage` that its first argument names, with no Flight at all, which is the oracle the
+ * Flight path must reproduce, and prints both HTML strings as JSON.
  */
 import { createElement } from "react";
 import type { ReactNode } from "react";
@@ -12,7 +13,7 @@ import { createRequire } from "node:module";
 import { Readable } from "node:stream";
 import { prerenderToNodeStream } from "react-dom/static";
 
-import { ChartPage } from "./rsc-chart-page.tsx";
+import { ChartPage, ComposedPage } from "./rsc-chart-page.tsx";
 import { flightClientReferences } from "./rsc-flight-payload.ts";
 
 type FlightClient = {
@@ -57,6 +58,6 @@ process.stdout.write(
   JSON.stringify({
     clientModules: [...modules.keys()],
     flight: await html(tree),
-    clientOnly: await html(createElement(ChartPage)),
+    clientOnly: await html(createElement(process.argv[2] === "composed" ? ComposedPage : ChartPage)),
   })
 );

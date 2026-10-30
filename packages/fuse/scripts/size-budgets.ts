@@ -123,6 +123,9 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // 2026-10-30, SVG phase 2: lines, areas, dots, markers, the path routes and their crossfade, the
   // path form's moving columns and the drawing Sparkline re-measure the entry at 124818 after the
   // three review rounds, within its ceiling. The recorded measurement stands.
+  // 2026-10-31, SVG phase 3: Chart.Panel, the per-layout frames and label registries, the per-series
+  // resolution and its table row spans re-measure the entry at 128778 after the three review
+  // rounds, within its ceiling. The recorded measurement stands.
   { name: "chart", entryFile: "chart.js", measuredGzip: 97044 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
@@ -287,6 +290,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
   // within their ceilings, after the three review rounds, to 122518 for Chart, 122520 for BarChart,
   // 82134, 82108 and 82071 for the polar namespaces, 47652 for Chart.Root, 65073 for the bar route,
   // whose Bar now moves its path form, and 3942 for useChartPoint. The recorded measurements stand.
+  // 2026-10-31, SVG phase 3: Panel, coarse series and the per-layout label registries grow the rows
+  // within their ceilings, after the three review rounds, to 126468 for Chart, 126470 for BarChart,
+  // 82653, 82626 and 82588 for the polar namespaces, 50192 for Chart.Root and 68130 for the bar
+  // route. useChartPoint measures 3933. The recorded measurements stand.
   { name: "chart/Chart", entryFile: "chart.js", exportName: "Chart", measuredGzip: 95987 },
   { name: "chart/BarChart", entryFile: "chart.js", exportName: "BarChart", measuredGzip: 95989 },
   { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
@@ -381,6 +388,9 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // 2026-10-30, SVG phase 2: re-measured at 12333 after the three review rounds, with the line,
   // area, dot, marker, Reveal, Glow and Sparkline rules, the entrance wipes, the dash and ping
   // keyframes and the crossfade's outgoing copies. The recorded measurement stands.
+  // 2026-10-31, SVG phase 3: re-measured at 13404 after the three review rounds, with the Panel
+  // rows, their subgrid, gap and print rules, the per-Panel slot label row and the surface that
+  // spans the Panels. The recorded measurement stands.
   { name: "chart.css", file: "chart.css", measuredGzip: 10089 },
 ] satisfies readonly Measured<CssBudget>[]);
 

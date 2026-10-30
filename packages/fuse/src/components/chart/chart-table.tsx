@@ -22,6 +22,7 @@ import type { FormattedText } from "./format/formatted-text";
 import { formatSlot, slotStart } from "./format/time-format";
 import type { Interval, TimePreset } from "./format/time-format";
 import { formatUnitLabel, formatUnitless, formatValue } from "./format/value-format";
+import { rowSpans } from "./layout/coarse-slots";
 import { ChartDataError, DATA_MESSAGES, isChartDevelopment } from "./layout/errors";
 import { numberOf, stringOf } from "./layout/scalar";
 
@@ -207,24 +208,28 @@ function SeriesCell({
   context,
   seriesIndex,
   slot,
+  rows,
 }: {
   readonly context: ChartRootContextValue;
   readonly seriesIndex: number;
   readonly slot: number;
+  /** How many rows the cell spans, more than 1 for a coarse series' slot. */
+  readonly rows: number;
 }): ReactNode {
   const strings = CHART_STRINGS[context.locale];
   const series = context.model.series[seriesIndex];
   const reading = series?.readings[slot];
+  const span = rows > 1 ? { rowSpan: rows } : {};
   if (series === undefined || reading === undefined || reading.kind === "pending") {
     return (
-      <Table.Cell>
+      <Table.Cell {...span}>
         <span className="sr-only">{strings.pending}</span>
       </Table.Cell>
     );
   }
   if (reading.kind === "missing") {
     return (
-      <Table.Cell>
+      <Table.Cell {...span}>
         <Twin text={{ text: "–", spoken: strings.missing }} />
       </Table.Cell>
     );
@@ -235,7 +240,7 @@ function SeriesCell({
   if (reading.quality === "corrected") words.push(strings.corrected);
   if (slot >= series.projectedFrom) words.push(strings.projected);
   return (
-    <Table.Cell>
+    <Table.Cell {...span}>
       <Twin text={value} />
       {words.map((word) => (
         <Fragment key={word}>
@@ -335,6 +340,11 @@ function ChartTableBody({
     });
   }
   const page = pages[index] ?? { key: 0, slots: [], label: "", spoken: "" };
+  const spans = new Map(
+    context.model.series.flatMap(({ key, coarse }) =>
+      coarse === undefined ? [] : [[key, rowSpans(page.slots, coarse)] as const]
+    )
+  );
   if (context.model.empty) return <></>;
   const id = `${context.id}-rows`;
   const stacks = context.model.stacks;
@@ -387,14 +397,18 @@ function ChartTableBody({
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {page.slots.map((slot) => (
+          {page.slots.map((slot, row) => (
             <Table.Row key={context.update.keys[slot] ?? slot}>
               <Table.Head scope="row">
                 <Twin text={slotLabel(context, slot)} />
               </Table.Head>
-              {context.model.series.map(({ key, seriesIndex }) => (
-                <SeriesCell key={key} context={context} seriesIndex={seriesIndex} slot={slot} />
-              ))}
+              {context.model.series.map(({ key, seriesIndex }) => {
+                // A coarse cell spans the rows of its slot, so each coarse value appears once.
+                const rows = spans.get(key)?.[row] ?? 1;
+                return rows === 0 ? null : (
+                  <SeriesCell key={key} context={context} seriesIndex={seriesIndex} slot={slot} rows={rows} />
+                );
+              })}
               {stacks.map(({ id: stack, keys }) => (
                 <TotalCell key={`total-${stack}`} context={context} keys={keys} slot={slot} />
               ))}

@@ -42,6 +42,11 @@ export type PathTopology = {
    * section 8.9 says, and never a band across the series below it.
    */
   readonly sides: readonly ("positive" | "negative" | null)[];
+  /**
+   * How many of the window's Root cells each vertex's own slot covers: 1, or a coarse series' Root
+   * slots, so a step run spans its whole hour on a quarter-hour grid.
+   */
+  readonly cells: readonly number[];
 };
 
 /** How a path's numbers land on screen. */
@@ -50,8 +55,11 @@ export type PathPlacement = {
   readonly curve: ChartCurve;
   /** Places a vertex along the slot axis, snapped onto the column the slot's crosshair draws in. */
   readonly along: (at: number) => number;
-  /** The span a step run takes around a cell's centre, from cell edge to cell edge, snapped. */
-  readonly run: (centre: number) => readonly [number, number];
+  /**
+   * The span a step run takes around its own slot's centre, from cell edge to cell edge over the
+   * slot's Root cells, snapped.
+   */
+  readonly run: (centre: number, cells: number) => readonly [number, number];
   /**
    * Places a plain step curve's riser, from the unsnapped place halfway between two vertices,
    * snapped as a cell edge is, so a stroked riser covers whole device pixels.
@@ -121,6 +129,7 @@ export function topologyOf(vertices: readonly PathVertex[], missing: "gap" | "co
     projectedFrom: projected === -1 ? vertices.length : projected,
     missing,
     sides: vertices.map((vertex) => vertex.side),
+    cells: vertices.map((vertex) => vertex.cells),
   };
 }
 
@@ -223,14 +232,20 @@ type Reader = {
   readonly riser: (from: number, to: number) => number;
 };
 
-function readerOf(values: readonly number[], stride: number, place: PathPlacement): Reader {
+function readerOf(
+  values: readonly number[],
+  stride: number,
+  place: PathPlacement,
+  topology: PathTopology
+): Reader {
   const raw = (index: number) => values[index * stride] ?? 0;
+  const run = (index: number) => place.run(raw(index), topology.cells[index] ?? 1);
   return {
     along: (index) => place.along(raw(index)),
     top: (index) => place.across(values[index * stride + 1] ?? 0),
     base: (index) => place.across(values[index * stride + 2] ?? 0),
-    start: (index) => place.run(raw(index))[0],
-    end: (index) => place.run(raw(index))[1],
+    start: (index) => run(index)[0],
+    end: (index) => run(index)[1],
     riser: (from, to) => place.edge((raw(from) + raw(to)) / 2),
   };
 }
@@ -358,7 +373,7 @@ export function linePaths(
   topology: PathTopology,
   place: PathPlacement
 ): LinePaths {
-  const read = readerOf(values, LINE_STRIDE, place);
+  const read = readerOf(values, LINE_STRIDE, place, topology);
   const runs = runsOf(topology);
   const step = isCellStep(place.curve);
   const vertical = place.orientation === "vertical";
@@ -397,7 +412,7 @@ export function areaPaths(
   topology: PathTopology,
   place: PathPlacement
 ): AreaPaths {
-  const read = readerOf(values, AREA_STRIDE, place);
+  const read = readerOf(values, AREA_STRIDE, place, topology);
   const runs = runsOf(topology);
   const step = isCellStep(place.curve);
   const vertical = place.orientation === "vertical";

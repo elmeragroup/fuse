@@ -615,6 +615,24 @@ describe("chart motion classification", () => {
     ]);
   });
 
+  it("refuses a component-local writer that shadows a module-level name (F4)", () => {
+    // Each probe binds `write` at module scope and again inside the component, so the call reads
+    // the component's: by a const, a parameter, a block's let, a var hoisted past the call, and a
+    // catch clause. The last probe binds it only at module scope, under a block that binds another.
+    const scoped = (body: string) =>
+      motionWriters("probe.tsx", `function write() {}\n${body}`)[0]?.moduleScope;
+    expect(
+      [
+        "function Mark() { const write = () => {}; useMotionMark(motion, write, look, []); }",
+        "function Mark({ write }) { useMotionMark(motion, write, look, []); }",
+        "function Mark() { if (on) { let write = () => {}; useMotionMark(motion, write, look, []); } }",
+        "function Mark() { useMotionMark(motion, write, look, []); if (on) { var write = () => {}; } }",
+        "function Mark() { try {} catch (write) { useMotionMark(motion, write, look, []); } }",
+        "function Mark() { { const other = 1; } useMotionMark(motion, write, look, []); }",
+      ].map(scoped)
+    ).toEqual([false, false, false, false, false, true]);
+  });
+
   it("names the move and settle placements only in the loop and its classifier", () => {
     expect(
       chart

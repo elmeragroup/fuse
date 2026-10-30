@@ -611,29 +611,10 @@ One layer 05 follow-up remains.
   the 4.5:1 text floor. axe reports it after an area pick, so the landing test audits the chart
   alone until the brand's muted foreground or the card fill changes.
 
-Four SVG phase 1 follow-ups remain. One needs a rare update sequence, and three touch tests only.
+One SVG phase 2 follow-up remains.
 
-- `chart-root.tsx` clears `gliding` when the value domain returns to where it started mid-tween.
-  With `yInclude={[0,4]}`, change `[a=2, b=-4]` to `[a=2, b=2]` and back mid-tween, then append
-  `c=1`, and the new bar's baseline parts from the surviving bars until the tween ends. Track the
-  domain's movement until the motion loop rests.
-- Split `chart-world.browser.test.tsx`, 1,245 lines, into its independent model, its DOM reader and
-  its scenario runner before it covers more mark families.
-- `chart-side.browser.test.tsx` waits 65 frames before its last sign check, and a 144 Hz display
-  runs them before the 480 ms tween ends. Wait on elapsed time or a controlled clock.
-- The module-scope writer guard in `packages/fuse/test/motion-writers.ts` matches names, not
-  bindings, so a component-local writer that shadows a module-level name passes. Resolve lexical
-  bindings.
-
-Three SVG phase 2 follow-ups remain.
-
-- Measure the line Glow's halo once in Chromium against `ex-glowing-desktop-line-chart`, as ticket
-  05's E10 measured the bar glow. `chart.css` uses a 10 px drop-shadow, the bar glow's measured
-  equivalence for evilcharts' `stdDeviation="10"`.
 - A slide's duration is the update token's 480 ms. Ticket 06's F10 asks for the time since the
   previous update when that is shorter, which the live line needs, so add it with the live feed.
-- An Area under `variant="hatched"` hatches its estimated spans with the same texture as its fill.
-  Give the marked twin a denser texture.
 
 Every later chart change follows the growth rule. A new capability becomes a new part, a variant
 or datum-selector value, a `config` field, a Root prop that describes the data's shape or a Panel

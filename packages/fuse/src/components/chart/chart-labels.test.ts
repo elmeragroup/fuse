@@ -134,13 +134,13 @@ describe("labels placed from drawn guides", () => {
         // One commit, as each reference runs it: registration, size, plot, then placement, the
         // bar first as Root's children run.
         const commit = (placement: Placement): void => {
-          motion.place("bar", [40, edge(chart.first), 20], drawBar, placement, ["x", "y", "x"]);
+          motion.place("bar", [40, edge(chart.first), 20], drawBar, placement, { axes: ["x", "y", "x"] });
           slots.forEach((slot, index) => {
             const key = `slot-${String(index)}`;
             if (slot.labelled && !slot.registered) slot.remove = labels.addSlot(key);
             if (!slot.labelled && slot.registered) slot.remove();
             slot.registered = slot.labelled;
-            motion.place(key, [slot.target], drawSlot(index), placement, ["x"]);
+            motion.place(key, [slot.target], drawSlot(index), placement, { axes: ["x"] });
           });
           lines.forEach((line, index) => {
             const key = keys[index] ?? "";
@@ -156,7 +156,7 @@ describe("labels placed from drawn guides", () => {
             labels.resize(key, line.size);
             labels.measure(bounds);
             const target = edge(index === 0 ? chart.first : chart.second);
-            motion.place(key, [target], writer(index), placement, ["y"]);
+            motion.place(key, [target], writer(index), placement, { axes: ["y"] });
           });
         };
         commit({ kind: "snap" });

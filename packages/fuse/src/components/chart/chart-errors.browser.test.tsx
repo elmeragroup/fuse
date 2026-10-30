@@ -217,6 +217,174 @@ describe("composition errors", () => {
   });
 });
 
+describe("Panel and resolution errors on the first render", () => {
+  const TWO = {
+    kwh: { label: "Forbruk", color: "chart-1" },
+    kost: { label: "Kostnad", color: "chart-2" },
+  } as const satisfies ChartConfig;
+  const twoRows = DAYS.map((row) => ({ ...row, kost: 1 }));
+  it.each([
+    [
+      "a Panel inside a Panel",
+      daily(
+        <Chart.Panel series={["kwh"]}>
+          <Chart.Panel series={["kwh"]} />
+        </Chart.Panel>
+      ),
+      composition("nested-panel"),
+    ],
+    [
+      "a Panel under horizontal bars",
+      <Chart.Root
+        key="root"
+        data={[{ name: "a", v: 1 }]}
+        config={{ v: { label: "V", color: "chart-1" } }}
+        xKey="name"
+        orientation="horizontal"
+        aria-label="Liggende">
+        <Chart.Panel series={["v"]} />
+      </Chart.Root>,
+      composition("horizontal-panels"),
+    ],
+    [
+      "a Panel series that names no config key",
+      daily(<Chart.Panel series={["pris"]} />),
+      composition("unknown-key"),
+    ],
+    [
+      "a Bar its Panel does not list",
+      daily(
+        <>
+          <Chart.Panel series={["kwh"]}>
+            <Chart.Bar dataKey="kost" />
+          </Chart.Panel>
+          <Chart.Panel series={["kost"]} />
+        </>,
+        twoRows,
+        TWO
+      ),
+      composition("series-not-in-panel"),
+    ],
+    [
+      "a Line its Panel does not list",
+      daily(
+        <Chart.Panel series={["kwh"]}>
+          <Chart.Line dataKey="kost" />
+        </Chart.Panel>,
+        twoRows,
+        TWO
+      ),
+      composition("series-not-in-panel"),
+    ],
+    [
+      "a Bar in a Panel whose baseline is none",
+      daily(
+        <Chart.Panel series={["kwh"]} yBaseline="none">
+          <Chart.Bar dataKey="kwh" />
+        </Chart.Panel>
+      ),
+      composition("baseline-required"),
+    ],
+    [
+      // Section 8.8: an hour does not hold whole days.
+      "a series interval finer than Root's",
+      daily(<Chart.Bar dataKey="kwh" />, DAYS, {
+        kwh: { label: "Forbruk", color: "chart-1", interval: "hour" },
+      }),
+      composition("interval-not-nested"),
+    ],
+    [
+      // Section 8.8: an ISO week crosses month boundaries, so it nests in no month.
+      "a week series on Root's month",
+      <Chart.Root
+        key="root"
+        data={DAYS}
+        config={{ kwh: { label: "Forbruk", color: "chart-1", interval: "month" } }}
+        xKey="day"
+        interval="week"
+        timeZone={OSLO}
+        aria-label="Forbruk">
+        <Chart.Bar dataKey="kwh" />
+      </Chart.Root>,
+      composition("interval-not-nested"),
+    ],
+    [
+      "a series interval on a category axis",
+      <Chart.Root
+        key="root"
+        data={[{ name: "a", v: 1 }]}
+        config={{ v: { label: "V", color: "chart-1", interval: "day" } }}
+        xKey="name"
+        aria-label="Kategori">
+        <Chart.Bar dataKey="v" />
+      </Chart.Root>,
+      composition("interval-not-nested"),
+    ],
+  ])("throws for %s", (_, element, expected) => {
+    expect(thrown(element)).toEqual(expected);
+  });
+
+  it("renders a sentiment Panel beside a categorical Panel, each one colour family (Q1-2, B1-2)", () => {
+    const rows = DAYS.map((row) => ({ ...row, balance: -1 }));
+    expect(
+      thrown(
+        daily(
+          <>
+            <Chart.Panel series={["kwh"]}>
+              <Chart.Bar dataKey="kwh" />
+            </Chart.Panel>
+            <Chart.Panel series={["balance"]}>
+              <Chart.Bar dataKey="balance" />
+            </Chart.Panel>
+          </>,
+          rows,
+          {
+            kwh: { label: "Forbruk", color: "chart-1" },
+            balance: { label: "Balanse", color: "chart-sentiment-positive" },
+          }
+        )
+      )
+    ).toBeNull();
+  });
+
+  it("throws for one Panel that mixes a sentiment role with a categorical role", () => {
+    const rows = DAYS.map((row) => ({ ...row, balance: -1 }));
+    expect(
+      thrown(
+        daily(
+          <Chart.Panel series={["kwh", "balance"]}>
+            <Chart.Bar dataKey="kwh" />
+          </Chart.Panel>,
+          rows,
+          {
+            kwh: { label: "Forbruk", color: "chart-1" },
+            balance: { label: "Balanse", color: "chart-sentiment-positive" },
+          }
+        )
+      )
+    ).toEqual(composition("mixed-sentiment-categorical"));
+  });
+
+  it("renders a day series on Root's hour with its value on the day's first hour", () => {
+    // Oslo's 1 October 2025 starts at 22:00 UTC the day before.
+    const hour = (index: number) => new Date(Date.UTC(2025, 8, 30, 22 + index));
+    const hours = [{ start: hour(0), kwh: 1 }, { start: hour(1) }, { start: hour(2) }];
+    expect(
+      thrown(
+        <Chart.Root
+          data={hours}
+          config={{ kwh: { label: "Forbruk", color: "chart-1", interval: "day" } }}
+          xKey="start"
+          interval="hour"
+          timeZone={OSLO}
+          aria-label="Forbruk">
+          <Chart.Bar dataKey="kwh" />
+        </Chart.Root>
+      )
+    ).toBeNull();
+  });
+});
+
 describe("data errors in development", () => {
   const at = (date: number, hour = -2) => new Date(Date.UTC(2025, 9, date, hour));
   it.each([
@@ -237,6 +405,29 @@ describe("data errors in development", () => {
   ] as const)("throws for %s", (_, rows, rule) => {
     const config = { kwh: { label: "Forbruk", color: "chart-1", qualityKey: "q" } } as const;
     expect(thrown(daily(<Chart.Bar dataKey="kwh" />, rows, config))).toEqual(data(rule));
+  });
+
+  it("throws off-grid-x for an hourly value on a :15 row", () => {
+    // Section 8.8: an hourly series reads only the :00 rows, so 0,4 on 00:15 is off its grid.
+    const quarters = [
+      { start: new Date(Date.UTC(2025, 8, 30, 22, 0)), price: 1 },
+      { start: new Date(Date.UTC(2025, 8, 30, 22, 15)), price: 1, kwh: 0.4 },
+    ];
+    const element = (
+      <Chart.Root
+        data={quarters}
+        config={{
+          price: { label: "Pris", color: "chart-1" },
+          kwh: { label: "Forbruk", color: "chart-2", interval: "hour" },
+        }}
+        xKey="start"
+        interval="quarter-hour"
+        timeZone={OSLO}
+        aria-label="Pris og forbruk">
+        <Chart.Bar dataKey="kwh" />
+      </Chart.Root>
+    );
+    expect(thrown(element)).toEqual(data("off-grid-x"));
   });
 
   it("throws for a row outside the period", () => {

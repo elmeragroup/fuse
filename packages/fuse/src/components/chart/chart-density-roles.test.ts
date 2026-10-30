@@ -12,6 +12,7 @@ const CONTRACT_ROLES = {
   "radial-chart": "layout",
   "radar-chart": "layout",
   "chart-frame": "layout",
+  "chart-panel": "layout",
   "chart-plot": "fixed",
   "chart-surface": "fixed",
   "chart-point": "fixed",

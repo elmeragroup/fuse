@@ -59,7 +59,15 @@ function rectsOf(d: string): PlotRect[] {
  */
 function pathForm(chart: CartesianModel, series: SeriesModel, frame: PlotFrame, sub: SubBand = WHOLE_BAND) {
   const paint = { key: series.key, color: "chart-1", bins: undefined, base: "", stops: undefined } as const;
-  const update = { kind: "initial", keys: [], relays: false } as const;
+  const update = {
+    kind: "initial",
+    keys: [],
+    relays: false,
+    from: new Map<string, readonly [number, number]>(),
+    mounted: new Set<string>(),
+    gliding: new Set<string>(),
+    layouts: { relays: false, moved: new Set<string>() },
+  } as const;
   const layout = layoutColumns({ model: chart, update }, series, frame, METRICS, sub, paint, new Set());
   const drawing = columnsDrawing(frame, layout.topology, layout.values);
   return { layout, fill: drawing.fills[0] ?? "", rects: rectsOf(drawing.fills[0] ?? "") };
@@ -108,12 +116,12 @@ describe("stacked cells", () => {
     const [p, q] = model.series;
     if (p === undefined || q === undefined) throw new Error("no series");
     expect(barCells(model, p)).toEqual([
-      { slot: 0, position: 0, extent: [0, 3], negative: false, stackTop: false },
-      { slot: 1, position: 1, extent: [0, 2], negative: false, stackTop: false },
+      { slot: 0, position: 0, span: 1, extent: [0, 3], negative: false, stackTop: false },
+      { slot: 1, position: 1, span: 1, extent: [0, 2], negative: false, stackTop: false },
     ]);
     expect(barCells(model, q)).toEqual([
-      { slot: 0, position: 0, extent: [3, 8], negative: false, stackTop: true },
-      { slot: 1, position: 1, extent: [2, 4], negative: false, stackTop: true },
+      { slot: 0, position: 0, span: 1, extent: [3, 8], negative: false, stackTop: true },
+      { slot: 1, position: 1, span: 1, extent: [2, 4], negative: false, stackTop: true },
     ]);
   });
 
@@ -417,8 +425,8 @@ describe("barCells of a window", () => {
     const series = windowed.series[0];
     if (series === undefined) throw new Error("no series");
     expect(barCells(windowed, series)).toEqual([
-      { slot: 1, position: 0, extent: [0, 4], negative: false, stackTop: true },
-      { slot: 2, position: 1, extent: [-4, 0], negative: true, stackTop: true },
+      { slot: 1, position: 0, span: 1, extent: [0, 4], negative: false, stackTop: true },
+      { slot: 2, position: 1, span: 1, extent: [-4, 0], negative: true, stackTop: true },
     ]);
   });
 });

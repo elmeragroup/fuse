@@ -18,6 +18,7 @@ import { stepRole } from "./chart-paint";
 import type { PathKind } from "./chart-path-draw";
 import { bucketColumns, rectsPath } from "./layout/bar-geometry";
 import type { SeriesModel } from "./layout/cartesian-model";
+import { ownSpan, ownWindowFirsts } from "./layout/coarse-slots";
 import { seriesPaint } from "./layout/color-key";
 import { DECIMATE_ABOVE } from "./layout/decimate";
 import type { PathSlots } from "./layout/path-motion";
@@ -151,11 +152,11 @@ export function layoutColumns(
     return bins === undefined ? 0 : bins(reading.value) - 1;
   };
   const keyOf = (slot: number) => update.keys[slot] ?? slotId(context, slot);
-  /** The entry of one slot's own column, its tick and its box. */
+  /** The entry of one own slot's column, its tick and its box, across every Root slot it covers. */
   const slotEntry = (slot: number): Entry => {
-    const position = slot - window.first;
-    const width = (1 - PATH_GAP) / sub.count;
-    const x0 = (position + PATH_GAP / 2 + sub.index * width) * step;
+    const { position, span } = ownSpan(series, window, slot);
+    const width = ((1 - PATH_GAP) / sub.count) * span;
+    const x0 = (position + (PATH_GAP / 2) * span + sub.index * width) * step;
     const x1 = x0 + width * step;
     const reading = series.readings[slot];
     const extent = series.extents[slot];
@@ -166,11 +167,21 @@ export function layoutColumns(
       reading?.kind === "reading" && extent !== null && extent !== undefined
         ? [valueAt(frame, negative ? extent[0] : extent[1]), valueAt(frame, negative ? extent[1] : extent[0])]
         : [zero, zero];
-    const [e0, e1] = barSpan(frame, position, metrics, sub);
+    const [e0, e1] = barSpan(frame, position, metrics, sub, span);
     return {
       key: keyOf(slot),
       at: position,
-      numbers: [(x0 + x1) / 2, tip, x0, x1, base, (position + 0.25) * step, (position + 0.75) * step, e0, e1],
+      numbers: [
+        (x0 + x1) / 2,
+        tip,
+        x0,
+        x1,
+        base,
+        (position + 0.25 * span) * step,
+        (position + 0.75 * span) * step,
+        e0,
+        e1,
+      ],
       entry: {
         fill: fillOf(slot),
         estimated: long && reading?.kind === "reading" && reading.quality === "estimated",
@@ -189,7 +200,7 @@ export function layoutColumns(
   const slots = Array.from({ length: count }, (_, index) => window.first + index);
   const whole = { keys: slots.map(keyOf), ids: slots.map((slot) => slotId(context, slot)) };
   let entries: Entry[];
-  if (count <= DECIMATE_ABOVE) entries = slots.map(slotEntry);
+  if (count <= DECIMATE_ABOVE) entries = ownWindowFirsts(series, window).map(slotEntry);
   else {
     // A decimated window draws one column per M4 bucket and side of zero, keyed by the key of the
     // bucket's first slot, so a column keeps its data through a slide.

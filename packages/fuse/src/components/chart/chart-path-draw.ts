@@ -59,8 +59,8 @@ export function placeOf(look: PathLook): PathPlacement {
     orientation: frame.orientation,
     curve: look.curve,
     along: (at) => pointAlong(frame, at, look.xScale),
-    run: (centre) => {
-      const [start, end] = cellRun(frame, centre);
+    run: (centre, cells) => {
+      const [start, end] = cellRun(frame, centre, cells);
       return [strokeCentre(frame, start, width), strokeCentre(frame, end, width)];
     },
     across: (at) => strokeCentre(frame, snapAcross(frame, at), width),
@@ -258,6 +258,7 @@ type VertexTopology = {
   readonly estimated: boolean;
   readonly projected: boolean;
   readonly side: PathTopology["sides"][number];
+  readonly cells: number;
 };
 
 /**
@@ -276,6 +277,7 @@ export function seriesPathKind(stride: number, slot: number): PathKind<PathTopol
       estimated: topology.estimated[index] ?? false,
       projected: index >= topology.projectedFrom,
       side: topology.sides[index] ?? null,
+      cells: topology.cells[index] ?? 1,
     }),
     of: (vertices, like) => {
       const projected = vertices.findIndex((vertex) => vertex.projected);
@@ -286,6 +288,7 @@ export function seriesPathKind(stride: number, slot: number): PathKind<PathTopol
         projectedFrom: projected === -1 ? vertices.length : projected,
         missing: like.missing,
         sides: vertices.map((vertex) => vertex.side),
+        cells: vertices.map((vertex) => vertex.cells),
       };
     },
     shift: ([along = 0, ...rest], by) => [along + by * slot, ...rest],

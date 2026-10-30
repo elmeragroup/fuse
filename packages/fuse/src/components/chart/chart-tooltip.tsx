@@ -17,7 +17,7 @@ import {
 } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import { ChartPendingRootContext, useChartRoot } from "./chart-context";
-import { useChartFrame } from "./chart-plot";
+import { useRootFrame } from "./chart-plot";
 import {
   ChartLiveContext,
   ChartRowContext,
@@ -145,7 +145,7 @@ function ChartTooltipBody({
   const window = model.window;
   const open = point.slot !== null;
   const slot = point.slot;
-  const drawn = useChartFrame("Chart.Tooltip");
+  const drawn = useRootFrame("Chart.Tooltip");
   const virtual = useMemo((): Anchor | null => {
     if (slot === null || window === null || drawn === null) return null;
     const { frame, metrics } = drawn;
@@ -154,9 +154,12 @@ function ChartTooltipBody({
       const extent = list[slot];
       return extent ? [extent[1]] : [];
     });
-    // The anchor starts at the column's highest value, or at the plot's top for anchor="top".
+    // The anchor starts at the column's highest value, or at the plot's top for anchor="top". With
+    // Panels each Panel has a value axis of its own, so the anchor spans Root's whole plot.
     const top =
-      anchor === "top" || extents.length === 0 ? 0 : snapY(frame.box, valueAt(frame, Math.max(...extents)));
+      anchor === "top" || extents.length === 0 || context.panels.length > 0
+        ? 0
+        : snapY(frame.box, valueAt(frame, Math.max(...extents)));
     return {
       getBoundingClientRect: () => {
         const surface = document.getElementById(`${id}-surface`)?.getBoundingClientRect();
@@ -188,7 +191,7 @@ function ChartTooltipBody({
           : client(start, top, end - start, box.height - top);
       },
     };
-  }, [slot, window, xScale, model, anchor, id, orientation, drawn]);
+  }, [slot, window, xScale, model, anchor, id, orientation, drawn, context.panels]);
   // Whether the pointer entered the popup by moving straight toward it from the active slot. Only
   // that entry freezes the slot, as CONTRACT section 9.5's safe triangle does for polar charts, so
   // a scrub that crosses the popup keeps following x. The surface records the last plot position.

@@ -9,6 +9,7 @@
  * stack's peaks draw as the full window does.
  */
 import type { CartesianModel, SeriesModel } from "./cartesian-model";
+import { ownCentre, ownSpan, ownWindowFirsts } from "./coarse-slots";
 import { DECIMATE_ABOVE, m4Indexes } from "./decimate";
 import type { PathSlots } from "./path-motion";
 import type { ReadingQuality } from "./readings";
@@ -39,6 +40,11 @@ export type PathVertex = {
    * a loose series and a slot without a reading.
    */
   readonly side: "positive" | "negative" | null;
+  /**
+   * How many of the window's Root cells the vertex's own slot covers, 1 but for a coarse series,
+   * whose step run spans them all.
+   */
+  readonly cells: number;
 };
 
 /** A series path: its vertices, the key and slot identity each renders under, and the window's slots. */
@@ -49,8 +55,9 @@ export type SeriesPath = {
   /** Each vertex's place in the window. */
   readonly positions: readonly number[];
   /**
-   * Every slot of the effective window, which a decimated path draws only some of, so an update's
-   * motion reads off the slots and not the vertices M4 happened to keep.
+   * Every Root slot of the effective window, which a decimated path and a coarse series draw only
+   * some of, so an update's motion reads off the window's slots, in the Root slots its positions
+   * count, and not off the vertices the path happens to keep.
    */
   readonly window: PathSlots;
 };
@@ -128,30 +135,31 @@ function classOf(series: SeriesModel, slot: number): string {
 function drawnSlots(
   model: CartesianModel,
   series: SeriesModel,
-  first: number,
-  last: number,
+  all: readonly number[],
   columns: number | undefined
 ): number[] {
-  const count = last - first + 1;
-  const all = Array.from({ length: count }, (_, index) => first + index);
-  if (count <= DECIMATE_ABOVE) return all;
+  const count = all.length;
+  const first = all[0] ?? 0;
+  const last = all.at(-1) ?? 0;
+  if (count <= DECIMATE_ABOVE) return [...all];
   const stack = model.stacks.find(({ id }) => id === series.stack);
   const members = stack === undefined ? [series] : model.series.filter(({ key }) => stack.keys.includes(key));
   const kept = new Set([first, last]);
   for (const member of members) {
     for (const end of ["top", "base"] as const) {
       const values = all.map((slot) => endsOf(member, slot)?.[end] ?? null);
-      for (const index of m4Indexes(values, columns)) kept.add(first + index);
+      for (const index of m4Indexes(values, columns)) kept.add(all[index] ?? first);
     }
     let previous = classOf(member, first);
-    for (let slot = first + 1; slot <= last; slot += 1) {
+    all.forEach((slot, index) => {
+      if (index === 0) return;
       const next = classOf(member, slot);
       if (next !== previous) {
-        kept.add(slot - 1);
+        kept.add(all[index - 1] ?? slot);
         kept.add(slot);
       }
       previous = next;
-    }
+    });
   }
   return [...kept].toSorted((a, b) => a - b);
 }
@@ -176,7 +184,10 @@ export function seriesPath(
   if (window === null) {
     return { vertices: [], keys: [], ids: [], positions: [], window: { keys: [], ids: [] } };
   }
-  const slots = drawnSlots(model, series, window.first, window.last, columns);
+  // A coarse series draws one vertex per own slot, at the slot's middle, keyed by its first Root slot.
+  // A vertex per own slot: every slot, or each coarse slot's first.
+  const own = ownWindowFirsts(series, window);
+  const slots = drawnSlots(model, series, own, columns);
   const ends = slots.map((slot) => endsOf(series, slot));
   const tops = interpolated(ends.map((end) => end?.top ?? null));
   const bases = interpolated(ends.map((end) => end?.base ?? null));
@@ -184,7 +195,7 @@ export function seriesPath(
     const reading = series.readings[slot];
     return {
       slot,
-      position: slot - window.first,
+      position: ownCentre(series, window, slot),
       top: tops[index] ?? 0,
       // A series with no reading at all fills nothing.
       base: bases[index] ?? 0,
@@ -192,6 +203,7 @@ export function seriesPath(
       quality: reading?.kind === "reading" ? reading.quality : "measured",
       projected: slot >= series.projectedFrom,
       side: sideOf(series, slot),
+      cells: ownSpan(series, window, slot).span,
     };
   });
   const keyOf = (slot: number) => keys[slot] ?? slotId(model, slot);

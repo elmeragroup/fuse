@@ -96,6 +96,60 @@ export function ChartPage(): ReactElement {
   );
 }
 
+/** One day of the committed September 2025 Elhub fixture. */
+type HouseholdDay = { date: string; kwh: number };
+
+/**
+ * S12's month view as a directive-free server page: September 2025's daily household usage per
+ * metering point over a price per day, in two Panels. The prices are illustrative, every one below
+ * 96 øre.
+ */
+export function ComposedPage(): ReactElement {
+  const file = new URL(
+    "../../../../packages/fuse/src/components/chart/format/fixtures/elhub/no1-household-daily-2025-09.json",
+    import.meta.url
+  );
+  // SAFETY: the trim script writes this one shape, and the Flight test compares the tick counts with
+  // hand-written ones, so a fixture with another shape fails an assertion.
+  const { days } = JSON.parse(readFileSync(file, "utf8")) as { days: HouseholdDay[] };
+  const rows = days.map(({ date, kwh }, index) => ({
+    // Oslo keeps summer time all September, so each day starts at 22:00 UTC the day before.
+    start: new Date(`${date}T00:00:00+02:00`),
+    kwh,
+    price: 60 + ((index * 7) % 36),
+  }));
+  return (
+    <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+      <main>
+        <Chart.Root
+          data={rows}
+          config={{
+            kwh: { label: "Forbruk", color: "chart-1", format: { preset: "energy", unit: "kWh" } },
+            price: {
+              label: "Spotpris",
+              color: "chart-2",
+              format: { preset: "unit-price", currency: "NOK", minor: true, vat: "included" },
+            },
+          }}
+          xKey="start"
+          interval="day"
+          aria-label="Forbruk og pris i september 2025">
+          <Chart.Panel series={["kwh"]}>
+            <Chart.YAxis />
+            <Chart.Bar dataKey="kwh" />
+          </Chart.Panel>
+          <Chart.Panel series={["price"]}>
+            <Chart.YAxis />
+            <Chart.Line dataKey="price" />
+            <Chart.XAxis />
+          </Chart.Panel>
+          <Chart.Table />
+        </Chart.Root>
+      </main>
+    </LocaleProvider>
+  );
+}
+
 /** The negative control: a function crosses into a client part, which Flight must reject. */
 export function FunctionFormatPage(): ReactElement {
   const format = (value: number): string => value.toFixed(1);

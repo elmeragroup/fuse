@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 
-import { useChartLayout, useChartRoot } from "./chart-context";
+import { usePlotLayout, useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import type { ChartLayerProps, ValueFormat, XFormat } from "./chart-types";
 import type { Interval, TimePreset } from "./format/time-format";
@@ -164,6 +164,7 @@ export function ChartXAxis({
   style,
 }: ChartXAxisProps): ReactElement {
   const context = useChartRoot("Chart.XAxis");
+  usePlotLayout("Chart.XAxis");
   const ticks = xTicks(context, format);
   return (
     <div data-slot="chart-x-axis" data-tick={tick} aria-hidden="true" className={className} style={style}>
@@ -204,7 +205,7 @@ export function ChartYAxis({
   style,
 }: ChartYAxisProps): ReactElement {
   const context = useChartRoot("Chart.YAxis");
-  const { y, keys } = useChartLayout("Chart.YAxis");
+  const { y, keys } = usePlotLayout("Chart.YAxis");
   const first = keys[0];
   const fallback: ValueFormat =
     context.stackOffset === "expand"

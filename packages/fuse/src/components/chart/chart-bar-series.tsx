@@ -400,7 +400,7 @@ export function ActiveBar({
     const target = cell === null ? null : barGeometry(frame, cell, metrics, sub, "whole");
     const placement = placeFor(
       cause,
-      active === null || target === null ? undefined : overlayJoin(context, series, active.slot, target, form)
+      cell === null || target === null ? undefined : overlayJoin(context, series, cell.slot, target, form)
     );
     const rect = node();
     if (rect === null) return;

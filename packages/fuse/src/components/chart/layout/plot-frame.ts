@@ -328,21 +328,31 @@ export function strokeCentre(frame: PlotFrame, snapped: number, width: number): 
 }
 
 /**
- * The span a step run takes along the slot axis around a cell's centre: the slot's band, with the
- * pixel floor, for the slot the centre lies in, so neighbouring runs share their edges, and the
- * centre's cell snapped where it lies past the plot, as a sliding vertex's does.
+ * The span a step run takes along the slot axis around its own slot's centre: the bands of the
+ * slot's cells, with the pixel floor, so neighbouring runs share their edges, and the run snapped
+ * where its centre lies past the plot, as a sliding vertex's does. A coarse series' slot covers
+ * several of Root's cells, such as an hour's 4 quarters.
  *
  * @param frame - The layout's frame.
- * @param centre - The cell's unsnapped centre.
+ * @param centre - The own slot's unsnapped centre.
+ * @param cells - How many of Root's cells the own slot covers, 1 by default.
  * @returns The run's start and end in CSS pixels.
  */
-export function cellRun(frame: PlotFrame, centre: number): readonly [number, number] {
+export function cellRun(frame: PlotFrame, centre: number, cells = 1): readonly [number, number] {
   const length = alongLength(frame);
-  const half = length / frame.count / 2;
+  const step = length / frame.count;
+  const half = (step * cells) / 2;
   if (centre < 0 || centre > length)
     return [snapAlong(frame, centre - half), snapAlong(frame, centre + half)];
-  const position = Math.min(Math.max(Math.floor(centre / (2 * half)), 0), frame.count - 1);
-  return snapSpan(frame, centre - half, centre + half, slotBand(frame, position));
+  // The first cell: the one the centre lies in for one cell, and for several, the one the run's
+  // start lies in, which the centre's half a run before rounds to.
+  const first = cells === 1 ? Math.floor(centre / (2 * half)) : Math.round((centre - half) / step);
+  const position = Math.min(Math.max(first, 0), frame.count - cells);
+  const band: readonly [number, number] = [
+    slotBand(frame, position)[0],
+    slotBand(frame, Math.min(position + cells - 1, frame.count - 1))[1],
+  ];
+  return snapSpan(frame, centre - half, centre + half, band);
 }
 
 /**
@@ -404,20 +414,24 @@ export function slotLineAt(
  * @param position - The slot's place in the window, from 0.
  * @param metrics - The bar spacing.
  * @param sub - The Bar's sub-band.
+ * @param span - How many slots the band covers, more than 1 for a coarse series' slot, whose band
+ *   loses `bandGap` once around its bar, so an hourly bar on a quarter-hour grid fills its hour.
  * @returns The bar's start and end along the slot axis in CSS pixels.
  */
 export function barSpan(
   frame: PlotFrame,
   position: number,
   metrics: BarMetrics,
-  sub: SubBand
+  sub: SubBand,
+  span = 1
 ): readonly [number, number] {
   const step = alongLength(frame) / frame.count;
-  const inside = Math.max(0, step * (1 - metrics.bandGap));
+  const band = step * span;
+  const inside = Math.max(0, band * (1 - metrics.bandGap));
   const gaps = sub.count - 1;
   const gap = gaps === 0 ? 0 : inside - gaps * metrics.barGap > 0 ? metrics.barGap : inside / (2 * gaps);
   const size = (inside - (sub.count - 1) * gap) / sub.count;
-  const start = position * step + (step * metrics.bandGap) / 2 + sub.index * (size + gap);
+  const start = position * step + (band * metrics.bandGap) / 2 + sub.index * (size + gap);
   return [start, start + size];
 }
 

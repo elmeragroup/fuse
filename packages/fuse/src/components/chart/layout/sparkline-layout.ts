@@ -124,6 +124,7 @@ export function sparklineLayout(input: SparklineInput): SparklineLayout {
     estimated: data.map(() => false),
     projectedFrom: data.length,
     sides: data.map(() => null),
+    cells: data.map(() => 1),
     missing: "gap",
   };
   const place: PathPlacement = {

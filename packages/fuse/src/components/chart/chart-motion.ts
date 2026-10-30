@@ -83,6 +83,42 @@ export type JoinLead =
       readonly clock: number;
     };
 
+/**
+ * A token that names one measured frame, Root's default layout or one Panel, for the frame's life.
+ * Two frames are two tokens, compared by identity, so make each with `createFrameOwner`.
+ */
+export type FrameOwner = { readonly frame: "root" | "panel" | "loop" };
+
+/**
+ * Make the token of one measured frame.
+ *
+ * @param frame - What draws in the frame.
+ * @returns A token no other frame holds.
+ */
+export function createFrameOwner(frame: FrameOwner["frame"]): FrameOwner {
+  return { frame };
+}
+
+/**
+ * What a mark tells the loop about itself when it places: what each of its numbers measures, the
+ * anchor a follower joins it under, and the frame it draws in.
+ */
+export type MarkInfo = {
+  /** What each number measures, so a resize maps it into the new box. */
+  readonly axes?: readonly ValueAxis[];
+  /** The anchor a follower joins the mark under, such as a bar's series and slot. */
+  readonly anchor?: string;
+  /**
+   * The measured frame the mark draws in: Root's default layout or one Panel, a token that stays
+   * the same for the frame's life. A resize maps the running tweens of its own frame only, so two
+   * Panels whose heights change apart each map their own marks.
+   */
+  readonly owner?: FrameOwner | undefined;
+};
+
+/** The frame of a mark that names none, as the loop's own tests place them. */
+const ANY_FRAME = createFrameOwner("loop");
+
 /** What the loop needs from its host, so a test can drive it frame by frame. */
 export type MotionHost = {
   readonly now: () => number;
@@ -101,8 +137,7 @@ export type ChartMotion = {
     target: MarkValues,
     write: MarkWriter,
     placement: Placement,
-    axes?: readonly ValueAxis[],
-    anchor?: string
+    mark?: MarkInfo
   ) => void;
   /** Forget a mark that left the plot. */
   readonly forget: (id: string) => void;
@@ -142,6 +177,8 @@ type Mark = {
   write: MarkWriter;
   tween: Tween | null;
   axes: readonly ValueAxis[];
+  /** The frame the mark draws in, whose resizes alone map its tween. */
+  readonly owner: FrameOwner;
   /** The marks a joined follower draws from while any of them moves, and where it then rests. */
   joined?: Joined | null;
 };
@@ -222,8 +259,8 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
   let commitTime: number | null = null;
   // The commit whose data update last restarted the group.
   let restartedAt: number | null = null;
-  // The measurement the group was last mapped into, or the commit that mapped it.
-  let rescaledFor: object | number | null = null;
+  // The measurement each frame's marks were last mapped into, or the commit that mapped them.
+  const rescaledFor = new WeakMap<FrameOwner, object | number>();
   const startTime = (): number => {
     if (commitTime === null) {
       commitTime = host.now();
@@ -293,22 +330,35 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
   };
 
   /** Draw a mark at its target at once. */
-  const snap = (id: string, target: MarkValues, write: MarkWriter, axes: readonly ValueAxis[]): void => {
-    marks.set(id, { drawn: target, eased: 1, write, tween: null, axes });
+  const snap = (
+    id: string,
+    target: MarkValues,
+    write: MarkWriter,
+    axes: readonly ValueAxis[],
+    owner: FrameOwner
+  ): void => {
+    marks.set(id, { drawn: target, eased: 1, write, tween: null, axes, owner });
     // A follower's geometry never comes from React, and a tween may have left a bar between two
     // values, so a snap always writes.
     write(target);
   };
 
   /** Start a tween and draw its first numbers before the browser paints. */
-  const run = (id: string, write: MarkWriter, tween: Tween, axes: readonly ValueAxis[]): void => {
-    marks.set(id, { drawn: tween.from, eased: 0, write, tween, axes });
+  const run = (
+    id: string,
+    write: MarkWriter,
+    tween: Tween,
+    axes: readonly ValueAxis[],
+    owner: FrameOwner
+  ): void => {
+    marks.set(id, { drawn: tween.from, eased: 0, write, tween, axes, owner });
     write(tween.from);
     handle ??= host.requestFrame(step);
   };
 
   return {
-    place(id, target, write, placement, axes = [], anchor) {
+    place(id, target, write, placement, info: MarkInfo = {}) {
+      const { axes = [], anchor, owner = ANY_FRAME } = info;
       if (anchor !== undefined) anchors.set(anchor, id);
       if (placement.kind === "join") {
         // A follower draws from the marks at its anchors in every frame, each on its own clock, so
@@ -320,7 +370,7 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
         });
         const found = leads.flatMap(({ lead, id, mark }) => (mark === undefined ? [] : [{ lead, id, mark }]));
         if (found.length < leads.length) {
-          snap(id, target, write, axes);
+          snap(id, target, write, axes, owner);
           return;
         }
         // Each lead stands for a run of the follower's numbers, in order: what its pick reads, or
@@ -338,7 +388,7 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
         });
         const resting = parts.flatMap(({ rest }) => rest);
         if (reduced || found.every(({ mark }) => mark.tween === null)) {
-          snap(id, resting, write, axes);
+          snap(id, resting, write, axes, owner);
           return;
         }
         const follower: Mark = {
@@ -347,6 +397,7 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
           write,
           tween: null,
           axes,
+          owner,
           joined: { leads: parts.map(({ lead, id: leadId, own }) => ({ lead, id: leadId, own })), resting },
         };
         marks.set(id, follower);
@@ -354,19 +405,20 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
         return;
       }
       if (reduced || placement.kind === "snap") {
-        snap(id, target, write, axes);
+        snap(id, target, write, axes, owner);
         return;
       }
       if (placement.kind === "settle" && (placement.scale.x !== 1 || placement.scale.y !== 1)) {
-        // A resize maps every running tween into the new box once, when the first mark of its
-        // measurement settles, and redraws it there before the browser paints, so every mark stays
-        // on the axes, marks this commit leaves alone among them. The tweens keep their clock. Two
-        // resizes in one task are two measurements, so each maps the group.
+        // A resize maps every running tween of its frame into the new box once, when the first
+        // mark of its measurement settles, and redraws it there before the browser paints, so every
+        // mark stays on the axes, marks this commit leaves alone among them. The tweens keep their
+        // clock. Two resizes in one task are two measurements, so each maps the group, and another
+        // frame's tweens keep their own box, as a Panel whose height holds does.
         const resize = placement.scale.to ?? startTime();
-        if (rescaledFor !== resize) {
-          rescaledFor = resize;
+        if (rescaledFor.get(owner) !== resize) {
+          rescaledFor.set(owner, resize);
           for (const running of marks.values()) {
-            if (running.tween === null) continue;
+            if (running.tween === null || running.owner !== owner) continue;
             const { axes: kinds, tween } = running;
             const { scale } = placement;
             const from = rescaled(tween.from, kinds, scale);
@@ -400,10 +452,10 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
         // A path's route starts from what it drew, entry by entry, which its caller aligned.
         const { from, to } = placement.via;
         if (from.length !== to.length || same(from, to)) {
-          snap(id, target, write, axes);
+          snap(id, target, write, axes, owner);
           return;
         }
-        run(id, write, { from, to, rest: target, start: startTime(), delay: 0 }, axes);
+        run(id, write, { from, to, rest: target, start: startTime(), delay: 0 }, axes, owner);
         return;
       }
       if (placement.kind === "settle" && mark !== undefined && tween?.rest !== undefined) {
@@ -417,7 +469,7 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
           write(mark.drawn);
           return;
         }
-        snap(id, target, write, axes);
+        snap(id, target, write, axes, owner);
         return;
       }
       if (mark !== undefined && tween !== null && same(tween.to, target)) {
@@ -429,21 +481,21 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
       }
       if (placement.kind === "enter") {
         const tween = { from: placement.from, to: target, start: startTime(), delay: placement.delay };
-        run(id, write, tween, axes);
+        run(id, write, tween, axes, owner);
         return;
       }
       if (mark === undefined || mark.drawn.length !== target.length || same(mark.drawn, target)) {
-        snap(id, target, write, axes);
+        snap(id, target, write, axes, owner);
         return;
       }
       if (placement.kind === "move") {
-        run(id, write, { from: mark.drawn, to: target, start: startTime(), delay: 0 }, axes);
+        run(id, write, { from: mark.drawn, to: target, start: startTime(), delay: 0 }, axes, owner);
         return;
       }
       // A resize retargets a running tween on its own clock, so the mark keeps the progress it
       // shares with every other mark. Without a running tween, or at its very end, it snaps.
       if (tween === null || 1 - mark.eased < 1e-6) {
-        snap(id, target, write, axes);
+        snap(id, target, write, axes, owner);
         return;
       }
       // The tween, already mapped into the commit's box with its group, retargets.

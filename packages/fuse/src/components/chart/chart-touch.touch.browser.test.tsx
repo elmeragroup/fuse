@@ -95,6 +95,49 @@ describe("touch", () => {
     expect(tooltipLabel()).toBe("fredag");
   });
 
+  it("keeps one pin and one popup through a scrub across two Panels", async () => {
+    const rows = ROWS.map((row, index) => ({ ...row, price: 50 - index * 5 }));
+    const { host } = renderThemed(
+      <div style={{ width: 400 }}>
+        <LocaleProvider locale="nb-NO">
+          <Chart.Root
+            data={rows}
+            config={{
+              kwh: { label: "Forbruk", color: "chart-1" },
+              price: { label: "Pris", color: "chart-2" },
+            }}
+            xKey="day"
+            aria-label="Forbruk og pris per dag">
+            <Chart.Panel series={["kwh"]}>
+              <Chart.Bar dataKey="kwh" />
+            </Chart.Panel>
+            <Chart.Panel series={["price"]}>
+              <Chart.Bar dataKey="price" />
+            </Chart.Panel>
+            <Chart.Tooltip />
+          </Chart.Root>
+        </LocaleProvider>
+      </div>
+    );
+    // The scrub starts on Monday's bar in the upper Panel and ends on Thursday's in the lower one.
+    // It starts sideways, as a scrub does, since a drag that starts downward scrolls the page.
+    const start = barCentre(host, 0);
+    await touch("touchStart", start);
+    await expect.poll(tooltipLabel).toBe("mandag");
+    await touch("touchMove", { x: barCentre(host, 1).x, y: start.y });
+    await expect.poll(tooltipLabel).toBe("tirsdag");
+    // The lower Panel's bars follow the upper Panel's five, so bar 7 is Wednesday's.
+    await touch("touchMove", barCentre(host, 7));
+    await expect.poll(tooltipLabel).toBe("onsdag");
+    await touch("touchMove", barCentre(host, 8));
+    await touch("touchEnd");
+    await expect.poll(() => pinned(host)).toBe(true);
+    expect(tooltipLabel()).toBe("torsdag");
+    // DOM audit: the popup portals out of the host and carries its own slot.
+    expect(document.querySelectorAll('[data-slot="chart-tooltip"]')).toHaveLength(1);
+    expect(host.querySelectorAll('[role="listbox"]')).toHaveLength(1);
+  });
+
   it("pins the tooltip with a tap and dismisses it with a second tap", async () => {
     const { host } = renderThemed(<TouchChart />);
     const point = barCentre(host, 1);

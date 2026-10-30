@@ -21,7 +21,7 @@ import type { FloorMark } from "../../../test/chart/floor-marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
-import type { ChartConfig } from "./chart-types";
+import type { ChartConfig, ChartSeriesConfig } from "./chart-types";
 import "./chart.css";
 import type { BarVariant } from "./layout/bar-shapes";
 
@@ -82,6 +82,11 @@ type Dense = {
   readonly line: number;
   readonly from: number;
   readonly span: number;
+  /**
+   * Whether every mark draws in a second Panel, under a first Panel of other bars, so the walk
+   * reads the lower Panel's own plot origin. Only a vertical chart takes Panels.
+   */
+  readonly panels: boolean;
 };
 
 /** A reading of 1 to 4 for a series at a slot, the same in the chart and in the oracle. */
@@ -93,12 +98,20 @@ function reading(slot: number, series: number): number {
 function render(chart: Dense) {
   const { count, length, group, variant, orientation, missing, offset } = chart;
   const keys = Array.from({ length: group }, (_, index) => `s${String(index)}`);
-  const config: ChartConfig = Object.fromEntries(
-    keys.map((key, index) => [key, { label: key, color: COLORS[index] ?? "chart-1", qualityKey: "q" }])
-  );
+  const panelled = chart.panels && orientation === "vertical";
+  // With Panels the upper Panel draws a series of its own.
+  const series = (key: string, color: ChartSeriesConfig["color"]): [string, ChartSeriesConfig] => [
+    key,
+    { label: key, color, qualityKey: "q" },
+  ];
+  const entries = keys.map((key, index) => series(key, COLORS[index] ?? "chart-1"));
+  if (panelled) entries.push(series("upper", "chart-4"));
+  const config: ChartConfig = Object.fromEntries(entries);
+  // Every row holds the upper Panel's reading, which only a chart with Panels reads.
   const rows = Array.from({ length: count }, (_, slot) => ({
     name: `c${String(slot)}`,
     q: missing[slot] === true ? "missing" : "measured",
+    upper: reading(slot, 3),
     ...Object.fromEntries(
       keys.map((key, index) => [key, missing[slot] === true ? null : reading(slot, index)])
     ),
@@ -108,6 +121,27 @@ function render(chart: Dense) {
   const line = chart.line % count;
   const from = chart.from % count;
   const to = Math.min(count - 1, from + chart.span);
+  const marks = (
+    <>
+      <Chart.Grid orientation="both" />
+      {group > 1 ? <Chart.BarGroup series={keys}>{bars}</Chart.BarGroup> : bars}
+      <Chart.Crosshair variant={chart.crosshair} />
+      <Chart.ReferenceLine x={`c${String(line)}`} label="Linje" />
+      {/* Every reading is 1 or more, so every domain with a reading holds these values. */}
+      <Chart.ReferenceLine y={0.5} label="Mål" />
+      <Chart.ReferenceArea x1={`c${String(from)}`} x2={`c${String(to)}`} label="Spenn" />
+      <Chart.ReferenceArea y1={0.25} y2={0.75} />
+      <Chart.ActiveValueLine dataKey="s0">
+        <Chart.ValueLabel />
+      </Chart.ActiveValueLine>
+      {/* Step runs fill their cells, so a line and an area of the first series walk like bars. */}
+      <Chart.Area dataKey="s0" curve="step-after" variant="solid" />
+      <Chart.Line dataKey="s0" curve={chart.curve} variant={chart.stroke} />
+      <Chart.Dots dataKey="s0" />
+      <Chart.Marker dataKey="s0" at="max" />
+      <Chart.ActiveDot dataKey="s0" />
+    </>
+  );
   return renderThemed(
     <LocaleProvider locale="nb-NO">
       <div style={{ marginLeft: offset, marginTop: offset, width: vertical ? length : 300 }}>
@@ -119,23 +153,17 @@ function render(chart: Dense) {
           orientation={orientation}
           style={{ "--chart-plot-height": `${String(vertical ? 160 : length)}px` }}
           aria-label="Tett">
-          <Chart.Grid orientation="both" />
-          {group > 1 ? <Chart.BarGroup series={keys}>{bars}</Chart.BarGroup> : bars}
-          <Chart.Crosshair variant={chart.crosshair} />
-          <Chart.ReferenceLine x={`c${String(line)}`} label="Linje" />
-          {/* Every reading is 1 or more, so every domain with a reading holds these values. */}
-          <Chart.ReferenceLine y={0.5} label="Mål" />
-          <Chart.ReferenceArea x1={`c${String(from)}`} x2={`c${String(to)}`} label="Spenn" />
-          <Chart.ReferenceArea y1={0.25} y2={0.75} />
-          <Chart.ActiveValueLine dataKey="s0">
-            <Chart.ValueLabel />
-          </Chart.ActiveValueLine>
-          {/* Step runs fill their cells, so a line and an area of the first series walk like bars. */}
-          <Chart.Area dataKey="s0" curve="step-after" variant="solid" />
-          <Chart.Line dataKey="s0" curve={chart.curve} variant={chart.stroke} />
-          <Chart.Dots dataKey="s0" />
-          <Chart.Marker dataKey="s0" at="max" />
-          <Chart.ActiveDot dataKey="s0" />
+          {panelled ? (
+            <>
+              <Chart.Panel series={["upper"]}>
+                <Chart.Grid />
+                <Chart.Bar dataKey="upper" />
+              </Chart.Panel>
+              <Chart.Panel series={keys}>{marks}</Chart.Panel>
+            </>
+          ) : (
+            marks
+          )}
         </Chart.Root>
       </div>
     </LocaleProvider>
@@ -514,7 +542,9 @@ const WALKERS: Walkers = {
     // The crosshair draws while a slot is active, which an empty chart never has.
     if (
       mark === null ||
-      walk.host.querySelector('[data-slot="chart"]')?.hasAttribute("data-active") !== true
+      (
+        walk.host.closest('[data-slot="chart"]') ?? walk.host.querySelector('[data-slot="chart"]')
+      )?.hasAttribute("data-active") !== true
     ) {
       return 0;
     }
@@ -614,6 +644,7 @@ describe("every drawn mark under the pixel floor", () => {
       line: fc.nat(),
       from: fc.nat(),
       span: fc.integer({ min: 0, max: 3 }),
+      panels: fc.boolean(),
     });
     const DENSE: Dense = {
       count: 400,
@@ -630,6 +661,7 @@ describe("every drawn mark under the pixel floor", () => {
       line: 399,
       from: 0,
       span: 0,
+      panels: false,
     };
     await fc.assert(
       fc.asyncProperty(dense, fc.constantFrom(1, 1.25, 1.5, 2, 3), async (chart, dpr) => {
@@ -640,10 +672,15 @@ describe("every drawn mark under the pixel floor", () => {
           mobile: false,
         });
         await frame();
-        const { host, unmount } = render(chart);
+        const { host: root, unmount } = render(chart);
         try {
+          // With Panels the walk reads the lower Panel, whose plot origin lies below the upper's.
+          const host =
+            chart.panels && chart.orientation === "vertical"
+              ? (root.querySelectorAll<HTMLElement>('[data-slot="chart-panel"]')[1] ?? root)
+              : root;
           // DOM audit: the plot's single tab stop is the listbox's option.
-          host.querySelector<HTMLElement>('[role="option"]')?.focus();
+          root.querySelector<HTMLElement>('[role="option"]')?.focus();
           await userEvent.keyboard(chart.last ? "{End}" : "{Home}");
           await frame();
           await frame();
@@ -823,6 +860,9 @@ describe("every drawn mark under the pixel floor", () => {
           [{ ...DENSE, count: 20, length: 200, curve: "step" }, 1],
           [{ ...DENSE, count: 20, length: 200, curve: "step", stroke: "quiet" }, 1],
           [{ ...DENSE, count: 37, length: 211, curve: "step", stroke: "quiet", offset: 0.4 }, 1.5],
+          // Every mark inside a lower Panel, a fraction of a pixel in, at 1.5x and 2x.
+          [{ ...DENSE, count: 40, length: 301, offset: 0.4, last: false, line: 20, panels: true }, 1.5],
+          [{ ...DENSE, count: 29, length: 101, group: 2, offset: 3, crosshair: "band", panels: true }, 2],
         ],
       }
     );

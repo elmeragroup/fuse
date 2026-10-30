@@ -104,6 +104,106 @@
       "table table table table table";
   }
 
+  /*
+    With Panels, the frame names no rows. Every part takes its columns and an order, and the grid
+    places each on a row of its own, so any number of Panels stack in page order between the parts
+    above and below them. Dense placement puts a side legend beside the first Panel wherever it
+    sits among the parts. Each Panel spans the axis and plot columns and takes them as a subgrid, so
+    the widest value axis sizes every Panel's axis column and every Panel's plot shares one left
+    edge and width.
+  */
+  [data-slot="chart-frame"]:has(> [data-slot="chart-panel"]) {
+    grid-template-rows: none;
+    grid-template-areas: none;
+    grid-auto-flow: row dense;
+  }
+
+  /* A part's named area doesn't exist here, and a missing name would pin it to the first row. */
+  [data-slot="chart-frame"]:has(> [data-slot="chart-panel"]) > * {
+    grid-row: auto;
+    grid-column: legend-start / -1;
+  }
+
+  [data-slot="chart-frame"]:has(> [data-slot="chart-panel"]) > [data-slot="chart-headline"] {
+    order: -4;
+  }
+
+  [data-slot="chart-frame"]:has(> [data-slot="chart-panel"]) > [data-slot="chart-takeaway"] {
+    order: -3;
+  }
+
+  [data-slot="chart-frame"]:has(> [data-slot="chart-panel"])
+    > :is([data-slot="chart-legend"], [data-slot="chart-legend-toggle-group"])[data-side="top"] {
+    order: -2;
+  }
+
+  [data-slot="chart-frame"]:has(> [data-slot="chart-panel"])
+    > :is([data-slot="chart-legend"], [data-slot="chart-legend-toggle-group"]):not([data-side]),
+  [data-slot="chart-frame"]:has(> [data-slot="chart-panel"])
+    > :is([data-slot="chart-legend"], [data-slot="chart-legend-toggle-group"])[data-side="bottom"] {
+    order: 1;
+  }
+
+  [data-slot="chart-frame"]:has(> [data-slot="chart-panel"])
+    > :is([data-slot="chart-legend"], [data-slot="chart-legend-toggle-group"])[data-side="start"] {
+    grid-column: legend-start;
+  }
+
+  [data-slot="chart-frame"]:has(> [data-slot="chart-panel"])
+    > :is([data-slot="chart-legend"], [data-slot="chart-legend-toggle-group"])[data-side="end"] {
+    grid-column: legend-end;
+  }
+
+  [data-slot="chart-frame"]:has(> [data-slot="chart-panel"]) > [data-slot="chart-table"] {
+    order: 2;
+  }
+
+  /*
+    Root's plot, its surface and the empty state span the Panels' plots, from the first's top to
+    the last's bottom, which Root measures and writes on the frame. Out of the grid's flow they take
+    no row, and the surface stays the one pointer target and tab stop over every Panel. Root's plot
+    only measures the shared x frame, so each Panel holds a skeleton of its own.
+  */
+  [data-slot="chart-frame"]:has(> [data-slot="chart-panel"])
+    > :is([data-slot="chart-plot"], [data-slot="chart-surface"], [data-slot="chart-empty"]) {
+    position: absolute;
+    grid-column: plot;
+    grid-row: auto;
+    inset-inline: 0;
+    top: var(--chart-panels-top, 0px);
+    height: var(--chart-panels-height, 0px);
+  }
+
+  [data-slot="chart-frame"]:has(> [data-slot="chart-panel"])
+    > [data-slot="chart-plot"]
+    > [data-slot="chart-skeleton-mark"] {
+    display: none;
+  }
+
+  /*
+    A Panel is a row of its own over the frame's columns, with the value axis rows above and below
+    its plot. Its x axis row holds the tick labels of the Panel that draws them.
+  */
+  [data-slot="chart-frame"] > [data-slot="chart-panel"] {
+    display: grid;
+    grid-column: start / legend-end;
+    grid-template-columns: subgrid;
+    grid-template-rows: auto var(--chart-plot-height) auto;
+    grid-template-areas:
+      "over-start over over-end"
+      "start plot end"
+      "under-start under under-end";
+    min-width: 0;
+  }
+
+  /*
+    Each value label centres on its tick, so the lowest label of one Panel and the highest of the
+    next each reach half a 1rem line past their plots. A gap of one line keeps them apart.
+  */
+  [data-slot="chart-panel"]:nth-child(n + 2 of [data-slot="chart-panel"]) {
+    margin-block-start: 1rem;
+  }
+
   [data-slot="chart-plot"],
   [data-slot="chart-surface"],
   [data-slot="chart-reference-line"],
@@ -1137,9 +1237,14 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Placed directly in Root, the active value sits above its bar's far end, as a direct label. */
-  [data-slot="chart-frame"] > [data-slot="chart-active-value"],
-  [data-slot="chart-frame"] > [data-part="outgoing"] > [data-slot="chart-active-value"] {
+  /*
+    Placed directly in a layout, Root's frame or a Panel, the active value sits above its bar's far
+    end, as a direct label.
+  */
+  :is([data-slot="chart-frame"], [data-slot="chart-panel"]) > [data-slot="chart-active-value"],
+  :is([data-slot="chart-frame"], [data-slot="chart-panel"])
+    > [data-part="outgoing"]
+    > [data-slot="chart-active-value"] {
     grid-area: plot;
     align-self: start;
     justify-self: start;
@@ -1188,11 +1293,17 @@
   }
 
   /*
-    The pill sits over a start value axis, beside the plot. With no start axis there is no gutter
-    beside the plot, so the pill sits just inside the plot's start edge and never leaves the root.
+    The pill sits over a start value axis, beside the plot. With no start axis in its own layout,
+    Root's frame without Panels or its Panel, there is no gutter beside the plot, so the pill sits
+    just inside the plot's start edge and never leaves the root.
   */
   [data-slot="chart"]:not([data-orientation="horizontal"])
-    [data-slot="chart-frame"]:not(:has(> [data-slot="chart-y-axis"]:not([data-side="end"])))
+    [data-slot="chart-frame"]:not(:has(> [data-slot="chart-panel"])):not(
+      :has(> [data-slot="chart-y-axis"]:not([data-side="end"]))
+    )
+    [data-slot="chart-active-value-line"]
+    [data-slot="chart-value-label"],
+  [data-slot="chart-panel"]:not(:has(> [data-slot="chart-y-axis"]:not([data-side="end"])))
     [data-slot="chart-active-value-line"]
     [data-slot="chart-value-label"] {
     z-index: 1;
@@ -1274,12 +1385,17 @@
 
   /*
     On a vertical chart a slot reference labels its line or band from a row above the plot, where
-    no bar reaches. A line's label centres on the line and a band's starts at the band, and either
-    shifts inward at the plot's edges. A 1 px rule starts at its coordinate, so its middle lies half
-    a pixel past it, here and for the active value line's pill.
+    no bar reaches, and with Panels from the row above its own Panel's plot alone. A line's label
+    centres on the line and a band's starts at the band, and either shifts inward at the plot's
+    edges. A 1 px rule starts at its coordinate, so its middle lies half a pixel past it, here and
+    for the active value line's pill.
   */
   [data-slot="chart"]:not([data-orientation="horizontal"])
     [data-slot="chart-frame"]:has(
+      [data-slot^="chart-reference"][data-axis="slot"]:not([data-outside], [data-slot="chart-panel"] *)
+        > [data-slot="chart-reference-label"]:not(:empty)
+    )::before,
+  [data-slot="chart-panel"]:has(
       [data-slot^="chart-reference"][data-axis="slot"]:not([data-outside])
         > [data-slot="chart-reference-label"]:not(:empty)
     )::before {
@@ -1601,10 +1717,11 @@
 
   /*
     Glow casts a line's or an area's own colour at full alpha, after evilcharts' line glow of
-    stdDeviation 10, at the length E10's measurement matched to a standard deviation for bars.
+    stdDeviation 10 at doubled alpha. E10's method read that halo's half-intensity width as 9.6 px
+    in Chromium, and a 9.5 px drop-shadow reads 9.71 px.
   */
   [data-slot="chart-glow"] :is([data-slot="chart-line-series"], [data-slot="chart-area-series"]) {
-    filter: drop-shadow(0 0 10px var(--chart-series-paint));
+    filter: drop-shadow(0 0 9.5px var(--chart-series-paint));
   }
 
   [data-slot="chart"][data-selected]
@@ -1807,6 +1924,16 @@
   @keyframes chart-fade-in {
     from {
       opacity: 0;
+    }
+  }
+
+  /*
+    A printed Panel keeps its axes beside its plot on one page. A Panel paints nothing of its own,
+    so forced colours reach its parts through their own rules.
+  */
+  @media print {
+    [data-slot="chart-panel"] {
+      break-inside: avoid;
     }
   }
 

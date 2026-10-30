@@ -6,7 +6,7 @@ import type { FocusEvent, KeyboardEvent, MouseEvent, PointerEvent, ReactElement 
 import { withinFocusRingClass } from "../../styles/utils";
 import { useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
-import { useChartFrame } from "./chart-plot";
+import { useRootFrame } from "./chart-plot";
 import { useChartStore } from "./chart-store";
 import { optionName } from "./chart-text";
 import type { OptionOrder } from "./chart-text";
@@ -79,9 +79,51 @@ function seriesStepOf(orientation: "vertical" | "horizontal", key: string): 1 | 
   return key === "ArrowRight" ? 1 : key === "ArrowLeft" ? -1 : undefined;
 }
 
+/** The layout under the pointer: its config keys, its value domain and its plot's client span. */
+type PickedLayout = {
+  readonly keys: readonly string[];
+  readonly domain: readonly [number, number];
+  /** The plot's client span across the value axis, its top or left edge and its length. */
+  readonly start: number;
+  readonly length: number;
+};
+
+/**
+ * The layout a pointer's value-axis position falls in: the Panel whose plot holds it, or the
+ * nearest Panel when it lies in a gap or an axis row, and the default layout without Panels.
+ */
+function layoutUnder(context: ChartRootContextValue, box: DOMRect, clientY: number): PickedLayout {
+  const { model, orientation, panels, domains } = context;
+  const whole: PickedLayout = {
+    keys: model.series.map(({ key }) => key),
+    domain: model.y.domain,
+    start: orientation === "vertical" ? box.top : box.left,
+    length: orientation === "vertical" ? box.height : box.width,
+  };
+  let best: PickedLayout | null = null;
+  let distance = Number.POSITIVE_INFINITY;
+  for (const { layout, plot } of panels) {
+    const rect = plot()?.getBoundingClientRect();
+    if (rect === undefined) continue;
+    const gap = clientY < rect.top ? rect.top - clientY : clientY > rect.bottom ? clientY - rect.bottom : 0;
+    if (gap >= distance) continue;
+    distance = gap;
+    const first = layout.keys[0];
+    best = {
+      keys: layout.keys,
+      domain: (first === undefined ? undefined : domains.get(first)) ?? [0, 1],
+      start: rect.top,
+      length: rect.height,
+    };
+  }
+  return best ?? whole;
+}
+
 /**
  * The slot and the nearest series under a client point, picked by arithmetic over the plot box.
- * The surface and the tooltip popup both read it, so a pointer over the popup picks as the plot does.
+ * The surface and the tooltip popup both read it, so a pointer over the popup picks as the plot
+ * does. With Panels the pointer's y picks the Panel under it, and the nearest series comes from
+ * that Panel's series alone, as CONTRACT section 9.5 says.
  *
  * @param context - The Root.
  * @param box - The plot surface's client box.
@@ -102,21 +144,23 @@ export function pointerSlot(
     orientation === "vertical"
       ? (clientX - box.left) / Math.max(1, box.width)
       : (clientY - box.top) / Math.max(1, box.height);
-  const across =
-    orientation === "vertical"
-      ? 1 - (clientY - box.top) / Math.max(1, box.height)
-      : (clientX - box.left) / Math.max(1, box.width);
   const scale =
     context.xScale === "point" ? pointScale({ count, range: [0, 1] }) : bandScale({ count, range: [0, 1] });
   const slot = window.first + nearestIndex(scale, Math.min(Math.max(along, 0), 1));
-  const value = invertValue(linearScale(model.y.domain, [0, 1]), across);
-  const drawn = model.series.map(({ extents, readings }) => {
+  const layout = layoutUnder(context, box, clientY);
+  const across =
+    orientation === "vertical"
+      ? 1 - (clientY - layout.start) / Math.max(1, layout.length)
+      : (clientX - layout.start) / Math.max(1, layout.length);
+  const value = invertValue(linearScale(layout.domain, [0, 1]), across);
+  const members = model.series.filter(({ key }) => layout.keys.includes(key));
+  const drawn = members.map(({ extents, readings }) => {
     const extent = extents[slot];
     if (!extent || readings[slot]?.kind !== "reading") return null;
     return extent[0] < 0 && extent[1] <= 0 ? extent[0] : extent[1];
   });
-  const near = nearestSeries(drawn, value);
-  return { slot, near: near === -1 ? null : near };
+  const near = members[nearestSeries(drawn, value)]?.seriesIndex;
+  return { slot, near: near ?? null };
 }
 
 /** Whether two slot x values name the same slot. */
@@ -165,7 +209,7 @@ export function ChartSurface({
    */
   const lifted = useRef(false);
   const listbox = useRef<HTMLDivElement>(null);
-  const drawn = useChartFrame("Chart.Root");
+  const drawn = useRootFrame("Chart.Root");
   const pinned = useChartStore(store, (snapshot) => snapshot.pinned);
   const emphasis = useChartStore(store, (snapshot) => snapshot.emphasis);
   // One canonical active identity. When new data or a new window drops the option's slot, the
@@ -336,6 +380,9 @@ export function ChartSurface({
       onFocus={onFocus}
       onBlur={onBlur}
       onPointerMove={pick}
+      // The span the surface covers can trail a move no commit or resize reported, so a pointer
+      // that arrives places it again first.
+      onPointerEnter={() => context.placeSpan()}
       onPointerDown={(event) => {
         lifted.current = false;
         if (event.pointerType === "mouse") return;

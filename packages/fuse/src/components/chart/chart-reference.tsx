@@ -3,8 +3,9 @@
 import { useId, useLayoutEffect, useMemo, useRef } from "react";
 import type { ReactElement, RefCallback, RefObject } from "react";
 
-import { useChartLayout, useChartRoot } from "./chart-context";
+import { usePlotLayout, useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
+import type { ChartLabels } from "./chart-labels";
 import type { MarkValues } from "./chart-motion";
 import { placementOf, useCommitMotion, useMotionMark } from "./chart-motion-mark";
 import { useChartFrame } from "./chart-plot";
@@ -171,9 +172,9 @@ function warnOutside(part: string, values: readonly number[], domain: readonly [
 type StackedLabel = {
   /** The label's node. */
   readonly ref: RefObject<HTMLSpanElement | null>;
-  /** Hand Root's label registry the guide a value reference draws now, or null while it hides. */
+  /** Hand the layout's label registry the guide a value reference draws now, or null while it hides. */
   readonly move: (span: readonly [number, number] | null) => void;
-  /** Tell Root's label registry whether a slot reference's guide shows in the plot now. */
+  /** Tell the layout's label registry whether a slot reference's guide shows in the plot now. */
   readonly show: (shown: boolean) => void;
 };
 
@@ -186,7 +187,9 @@ function labelSize(node: HTMLElement): LabelSize {
 }
 
 /**
- * Place a reference's label on a vertical chart through Root's label registry, from what the
+ * Place a reference's label on a vertical chart through its layout's label registry, one per
+ * Panel, so labels stack against their own Panel's plot and a slot label reserves a row there
+ * alone. It places them from what the
  * reference draws. A value reference's label registers with its own size, and every frame its
  * writer hands over the guide it draws, so the registry places every value label from the drawn
  * guides alone. A slot reference's label registers in the row of slot labels above the plot, and
@@ -197,12 +200,12 @@ function labelSize(node: HTMLElement): LabelSize {
  */
 function useStackedLabel(
   context: ChartRootContextValue,
+  labels: ChartLabels,
   drawn: ChartFrame | null,
   labelled: boolean,
   kind: "line" | "area",
   axis: "value" | "slot"
 ): StackedLabel {
-  const { labels } = context;
   const key = useId();
   const ref = useRef<HTMLSpanElement>(null);
   const placed = labelled && context.orientation === "vertical";
@@ -482,7 +485,7 @@ function writeAttributes(node: Element | null, attributes: { readonly [name: str
 export function ChartReferenceLine({ style, ...props }: ChartReferenceLineProps): ReactElement {
   const { label, variant = "solid", tone = "default", className } = props;
   const context = useChartRoot("Chart.ReferenceLine");
-  const layout = useChartLayout("Chart.ReferenceLine");
+  const layout = usePlotLayout("Chart.ReferenceLine");
   const strings = CHART_STRINGS[context.locale];
   let at: number;
   let value: FormattedText;
@@ -505,8 +508,15 @@ export function ChartReferenceLine({ style, ...props }: ChartReferenceLineProps)
   const text = sentence(label, value, strings.referenceLine);
   // A line outside the plot draws nothing and keeps its sentence.
   const outside = at < 0 || at > 100;
-  const drawn = useChartFrame("Chart.ReferenceLine");
-  const stacked = useStackedLabel(context, drawn, label !== undefined && label !== "", "line", axis);
+  const drawn = useChartFrame("Chart.ReferenceLine", layout);
+  const stacked = useStackedLabel(
+    context,
+    layout.labels,
+    drawn,
+    label !== undefined && label !== "",
+    "line",
+    axis
+  );
   const { ref: labelRef } = stacked;
   const frame = drawn?.frame ?? null;
   const look = useMemo(
@@ -563,7 +573,7 @@ export function ChartReferenceLine({ style, ...props }: ChartReferenceLineProps)
 export function ChartReferenceArea({ style, ...props }: ChartReferenceAreaProps): ReactElement {
   const { label, tone = "default", className } = props;
   const context = useChartRoot("Chart.ReferenceArea");
-  const layout = useChartLayout("Chart.ReferenceArea");
+  const layout = usePlotLayout("Chart.ReferenceArea");
   const strings = CHART_STRINGS[context.locale];
   let from: number;
   let to: number;
@@ -607,8 +617,15 @@ export function ChartReferenceArea({ style, ...props }: ChartReferenceAreaProps)
   const outside = shownFrom >= shownTo;
   // A value band cut at the plot top keeps its label inside the band, below the cut.
   const clipped = axis === "value" && from < 0;
-  const drawn = useChartFrame("Chart.ReferenceArea");
-  const stacked = useStackedLabel(context, drawn, label !== undefined && label !== "", "area", axis);
+  const drawn = useChartFrame("Chart.ReferenceArea", layout);
+  const stacked = useStackedLabel(
+    context,
+    layout.labels,
+    drawn,
+    label !== undefined && label !== "",
+    "area",
+    axis
+  );
   const { ref: labelRef } = stacked;
   const frame = drawn?.frame ?? null;
   const look = useMemo(

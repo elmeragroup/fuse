@@ -7,7 +7,7 @@
  */
 import { useId, useMemo, useRef, useState } from "react";
 
-import type { ChartRootContextValue } from "./chart-context";
+import type { ChartLayoutContextValue, ChartRootContextValue } from "./chart-context";
 import type { ValueAxis } from "./chart-motion";
 import { stepRole } from "./chart-paint";
 import { centreAlong, pathAxes } from "./chart-path-draw";
@@ -67,13 +67,14 @@ export function useSeriesPath(
   dataKey: string,
   curve: ChartCurve,
   stride: number,
-  stroke: number
+  stroke: number,
+  layout: ChartLayoutContextValue
 ): SeriesPathState {
   const { model, update, xScale } = context;
   const series = model.series.find(({ key }) => key === dataKey);
   const config = context.config[dataKey];
   const color = config?.color ?? "chart-1";
-  const drawn = useChartFrame(part);
+  const drawn = useChartFrame(part, layout);
   const frame = drawn?.frame ?? null;
   const prefix = `${part === "Chart.Area" ? "chart-area" : "chart-line"}-${useId().replace(/[^\w-]/gu, "")}`;
   const phase = useFirstPhase(context.store);

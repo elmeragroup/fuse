@@ -3,7 +3,7 @@
 import { useLayoutEffect, useMemo } from "react";
 import type { ReactElement } from "react";
 
-import { assertKnownKey, useChartLayout, useChartRoot } from "./chart-context";
+import { assertKnownKey, assertLayoutKey, usePlotLayout, useChartRoot } from "./chart-context";
 import type { MarkValues } from "./chart-motion";
 import { useCommitMotion, useMotionMark } from "./chart-motion-mark";
 import { placeOf, placePath, seriesPathKind, topologyAt, slotStep, writePath } from "./chart-path-draw";
@@ -100,6 +100,17 @@ function AreaMasks({
         patternTransform="rotate(45)">
         <rect width="3" height="6" />
       </pattern>
+      {look === "hatched" ? (
+        // A hatched fill already wears the hatch, so its marked spans hatch at half the period.
+        <pattern
+          id={`${prefix}-hatch-dense`}
+          width="3"
+          height="3"
+          patternUnits="userSpaceOnUse"
+          patternTransform="rotate(45)">
+          <rect width="1.5" height="3" />
+        </pattern>
+      ) : null}
       {look === "solid"
         ? null
         : mask(
@@ -108,7 +119,7 @@ function AreaMasks({
               ? `url(#${prefix}-ramp)`
               : `url(#${prefix}-${look === "hatched" ? "hatch" : "texture"})`
           )}
-      {mask(`${prefix}-marks`, `url(#${prefix}-hatch)`)}
+      {mask(`${prefix}-marks`, `url(#${prefix}-${look === "hatched" ? "hatch-dense" : "hatch"})`)}
     </>
   );
 }
@@ -130,8 +141,9 @@ export function ChartArea({
   style,
 }: ChartAreaProps): ReactElement {
   const context = useChartRoot("Chart.Area");
-  const layout = useChartLayout("Chart.Area");
+  const layout = usePlotLayout("Chart.Area");
   assertKnownKey("Chart.Area", context.config, dataKey);
+  assertLayoutKey("Chart.Area", layout, dataKey);
   if (layout.baseline === "none") {
     throw new ChartCompositionError(
       "Chart.Area",
@@ -147,7 +159,7 @@ export function ChartArea({
     );
   }
   const { motion, update, paths, xScale } = context;
-  const state = useSeriesPath("Chart.Area", context, dataKey, curve, AREA_STRIDE, 0);
+  const state = useSeriesPath("Chart.Area", context, dataKey, curve, AREA_STRIDE, 0, layout);
   const { series, seriesIndex, look, path, topology, rest, prefix } = state;
   const { ref: markRef, node, drawn, place } = useMotionMark(motion, drawArea, look, state.axes);
   const { memoryRef, lastLookRef, outgoingRef } = state;

@@ -18,6 +18,7 @@ import { barCells, barGeometry, barRect, geometryRect, introStep } from "./layou
 import type { BarCell, BarGeometry } from "./layout/bar-geometry";
 import type { BarVariant } from "./layout/bar-shapes";
 import type { SeriesModel } from "./layout/cartesian-model";
+import { ownBounds, ownSlot, ownSpan } from "./layout/coarse-slots";
 import type { ColorBins } from "./layout/color-bins";
 import { CHART_STAGGER_MS } from "./layout/motion";
 import { snapAcross, snapSpan, snapX, tickWidth, valueAt } from "./layout/plot-frame";
@@ -302,7 +303,7 @@ export function layoutBars(input: BarsInput): BarsLayout {
       quality: value === undefined || value.quality === "measured" ? undefined : value.quality,
       time:
         domain.kind === "time" && context.now !== undefined
-          ? slotTime(domain.starts[cell.slot] ?? 0, domain.ends[cell.slot] ?? 0, context.now)
+          ? slotTime(...ownBounds(series, domain, cell.slot), context.now)
           : undefined,
       paint: barPaint,
       fills:
@@ -322,18 +323,18 @@ export function layoutBars(input: BarsInput): BarsLayout {
   });
   // An empty chart draws no missing marker, as section 8.13 says.
   const missing: MissingTick[] = [];
-  for (let slot = window.first; slot <= window.last && !model.empty; slot += 1) {
+  for (let slot = window.first; slot <= window.last && !model.empty; slot = ownSlot(series, slot)[1] + 1) {
     if (series.readings[slot]?.kind !== "missing") continue;
     const cell: BarCell = {
-      slot,
-      position: slot - window.first,
+      slot: ownSlot(series, slot)[0],
+      ...ownSpan(series, window, slot),
       extent: [0, 0],
       negative: false,
       stackTop: true,
     };
     const rect = barRect(frame, cell, metrics, sub, "whole");
     missing.push({
-      key: update.keys[slot] ?? String(slot),
+      key: update.keys[cell.slot] ?? String(cell.slot),
       span: frame.orientation === "vertical" ? [rect.x, rect.x + rect.width] : [rect.y, rect.y + rect.height],
     });
   }
@@ -341,21 +342,27 @@ export function layoutBars(input: BarsInput): BarsLayout {
 }
 
 /**
- * Where the past span of a path-form series ends: the end of the window's last slot that ended
- * before Root's `now`, snapped, which `data-fade="past"` dims up to.
+ * Where the past span of a path-form series ends: the end of the window's last own slot of the
+ * series that ended before Root's `now`, snapped, which `data-fade="past"` dims up to. A coarse
+ * series' slot is past only once its own interval ends, as the element form dates its bars.
  *
  * @param context - Root's context.
+ * @param series - The series.
  * @param frame - The frame the series draws in.
  * @returns The end along the slot axis, or null when the chart does not dim the past.
  */
-export function pastSpanEnd(context: ChartRootContextValue, frame: PlotFrame): number | null {
+export function pastSpanEnd(
+  context: ChartRootContextValue,
+  series: SeriesModel,
+  frame: PlotFrame
+): number | null {
   const { model } = context;
   const { domain } = model;
   const window = model.window ?? { first: 0, last: -1 };
   if (context.fade !== "past" || context.now === undefined || domain.kind !== "time") return null;
   let past = 0;
   for (let slot = window.first; slot <= window.last; slot += 1) {
-    if (slotTime(domain.starts[slot] ?? 0, domain.ends[slot] ?? 0, context.now) === "past") past += 1;
+    if (slotTime(...ownBounds(series, domain, slot), context.now) === "past") past += 1;
   }
   const step = frame.box.width / Math.max(window.last - window.first + 1, 1);
   return snapX(frame.box, past * step);

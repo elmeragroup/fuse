@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { useChartRoot } from "./chart-context";
+import { useChartRoot, usePlotLayout } from "./chart-context";
 import { useChartFollower } from "./chart-followers";
 import { useChartFrame } from "./chart-plot";
 import type { ChartLayerProps } from "./chart-types";
@@ -55,7 +55,7 @@ export function ChartGlow({ className, style, children }: ChartGlowProps): React
  */
 export function ChartReveal({ className, style, children }: ChartRevealProps): ReactElement {
   const context = useChartRoot("Chart.Reveal");
-  const drawn = useChartFrame("Chart.Reveal");
+  const drawn = useChartFrame("Chart.Reveal", usePlotLayout("Chart.Reveal"));
   const node = useRef<HTMLDivElement>(null);
   useChartFollower("Chart.Reveal", (active) => {
     const element = node.current;

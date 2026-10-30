@@ -48,6 +48,7 @@ function topologyOf(
     projectedFrom: options.projectedFrom ?? states.length,
     missing: options.missing ?? "gap",
     sides: options.sides ?? states.map(() => null),
+    cells: states.map(() => 1),
   };
 }
 

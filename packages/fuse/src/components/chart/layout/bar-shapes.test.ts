@@ -92,6 +92,7 @@ function cellAt(position: number, value: number): BarCell {
   return {
     slot: position,
     position,
+    span: 1,
     extent: [Math.min(0, value), Math.max(0, value)],
     negative: value < 0,
     stackTop: true,
@@ -120,7 +121,7 @@ describe("drawnBar", () => {
     const segment = (low: number, high: number, stackTop: boolean) =>
       barRect(
         frame,
-        { slot: 0, position: 0, extent: [low, high], negative: false, stackTop },
+        { slot: 0, position: 0, span: 1, extent: [low, high], negative: false, stackTop },
         METRICS,
         WHOLE_BAND,
         "cut"

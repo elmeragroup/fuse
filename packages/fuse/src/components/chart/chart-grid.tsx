@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 
-import { useChartLayout, useChartRoot } from "./chart-context";
+import { usePlotLayout, useChartRoot } from "./chart-context";
 import { useChartFrame } from "./chart-plot";
 import type { ChartLayerProps } from "./chart-types";
 import { hairline, ruleAcross, slotBand, valueAt } from "./layout/plot-frame";
@@ -36,8 +36,9 @@ export function ChartGrid({
   style,
 }: ChartGridProps): ReactElement {
   const { orientation: chartOrientation } = useChartRoot("Chart.Grid");
-  const { y } = useChartLayout("Chart.Grid");
-  const drawn = useChartFrame("Chart.Grid");
+  const layout = usePlotLayout("Chart.Grid");
+  const { y } = layout;
+  const drawn = useChartFrame("Chart.Grid", layout);
   const valueLines = chartOrientation === "vertical" ? "horizontal" : "vertical";
   const lines = orientation ?? valueLines;
   const showValues = lines === "both" || lines === valueLines;

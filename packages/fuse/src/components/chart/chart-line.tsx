@@ -3,7 +3,7 @@
 import { useLayoutEffect, useMemo } from "react";
 import type { ReactElement } from "react";
 
-import { assertKnownKey, useChartRoot } from "./chart-context";
+import { assertKnownKey, assertLayoutKey, useChartRoot, usePlotLayout } from "./chart-context";
 import type { MarkValues } from "./chart-motion";
 import { useCommitMotion, useMotionMark } from "./chart-motion-mark";
 import { placeOf, placePath, seriesPathKind, topologyAt, slotStep, writePath } from "./chart-path-draw";
@@ -63,6 +63,8 @@ export function ChartLine({
 }: ChartLineProps): ReactElement {
   const context = useChartRoot("Chart.Line");
   assertKnownKey("Chart.Line", context.config, dataKey);
+  const layout = usePlotLayout("Chart.Line");
+  assertLayoutKey("Chart.Line", layout, dataKey);
   if ((curve === "step-after" || curve === "step-before") && context.xScale === "point") {
     throw new ChartCompositionError(
       "Chart.Line",
@@ -78,7 +80,8 @@ export function ChartLine({
     dataKey,
     curve,
     LINE_STRIDE,
-    variant === "quiet" ? 1 : 2
+    variant === "quiet" ? 1 : 2,
+    layout
   );
   const { series, seriesIndex, look, path, topology, rest, prefix } = state;
   const { ref: markRef, node, drawn, place } = useMotionMark(motion, drawLine, look, state.axes);

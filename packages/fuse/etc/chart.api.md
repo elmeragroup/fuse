@@ -453,7 +453,7 @@ export type ChartMarkerProps = ChartLayerProps & {
 };
 
 // @beta
-function ChartPanel(_props: ChartPanelProps): ReactElement;
+function ChartPanel(input: ChartPanelProps): ReactElement;
 
 // @beta
 export type ChartPanelProps = ChartLayerProps & {

@@ -3,10 +3,11 @@
 import { useRef } from "react";
 import type { ReactElement } from "react";
 
-import { useChartRoot } from "./chart-context";
+import { useChartRoot, usePlotLayout } from "./chart-context";
 import { useChartFollower } from "./chart-followers";
 import { useChartFrame } from "./chart-plot";
 import type { ChartLayerProps } from "./chart-types";
+import { coarsestOf, ownSlot } from "./layout/coarse-slots";
 import { optionBand, slotLine } from "./layout/plot-frame";
 
 /**
@@ -33,7 +34,11 @@ export type ChartCrosshairProps = ChartLayerProps & {
  */
 export function ChartCrosshair({ variant, className, style }: ChartCrosshairProps): ReactElement {
   const { xScale, model } = useChartRoot("Chart.Crosshair");
-  const drawn = useChartFrame("Chart.Crosshair");
+  const layout = usePlotLayout("Chart.Crosshair");
+  const { keys } = layout;
+  const drawn = useChartFrame("Chart.Crosshair", layout);
+  // A band spans the active slot of the layout's coarsest series, so an hourly bar's band covers its hour.
+  const coarsest = coarsestOf(model.series.filter(({ key }) => keys.includes(key)));
   const look = variant ?? (xScale === "band" ? "band" : "line");
   const mark = useRef<SVGRectElement>(null);
   useChartFollower("Chart.Crosshair", (active) => {
@@ -44,9 +49,16 @@ export function ChartCrosshair({ variant, className, style }: ChartCrosshairProp
     const { box } = frame;
     const vertical = frame.orientation === "vertical";
     const position = active.slot - window.first;
-    // A band covers the focused option's columns, and a line marks the slot inside them.
+    const [first, last] =
+      coarsest === undefined ? [active.slot, active.slot] : ownSlot(coarsest, active.slot);
+    // A band covers the focused option's columns, or its coarse slot's, and a line marks the slot.
     const [start, end] =
-      look === "band" ? optionBand(frame, position, xScale) : slotLine(frame, position, xScale);
+      look === "band"
+        ? [
+            optionBand(frame, Math.max(first, window.first) - window.first, xScale)[0],
+            optionBand(frame, Math.min(last, window.last) - window.first, xScale)[1],
+          ]
+        : slotLine(frame, position, xScale);
     node.setAttribute(vertical ? "x" : "y", String(start));
     node.setAttribute(vertical ? "width" : "height", String(end - start));
     node.setAttribute(vertical ? "y" : "x", "0");

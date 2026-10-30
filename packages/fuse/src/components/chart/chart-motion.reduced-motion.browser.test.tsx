@@ -84,6 +84,36 @@ describe("charts under reduced motion", () => {
     expect(host.querySelector('[data-slot="chart"]')?.getAnimations({ subtree: true })).toEqual([]);
   });
 
+  it("lands a data update in both Panels in its first paint", async () => {
+    // Two 200 px Panels on a domain of [0, 4]: 1 and 3 swap, so 50 px and 150 px bars swap too.
+    const panels = (up: number, down: number) => (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 200 }}>
+          <Chart.Root
+            data={[{ name: "a", up, down }]}
+            config={{ up: { label: "Opp", color: "chart-1" }, down: { label: "Ned", color: "chart-2" } }}
+            xKey="name"
+            style={{ "--chart-plot-height": "200px" }}
+            aria-label="Nivåer">
+            <Chart.Panel series={["up"]} yInclude={[4]}>
+              <Chart.Bar dataKey="up" />
+            </Chart.Panel>
+            <Chart.Panel series={["down"]} yInclude={[4]}>
+              <Chart.Bar dataKey="down" />
+            </Chart.Panel>
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    const { host, rerender } = renderThemed(panels(1, 3));
+    // DOM audit: bars are aria-hidden plot output.
+    const heights = () =>
+      [...host.querySelectorAll('[data-slot="chart-bar"]')].map((bar) => bar.getBoundingClientRect().height);
+    await expect.poll(heights).toEqual([50, 150]);
+    rerender(panels(3, 1));
+    expect(heights()).toEqual([150, 50]);
+  });
+
   it("rests a Marker on its grouped bar, as with motion (B2-5, Q2-2)", () => {
     // 300 px, one category, two grouped bars: the first spans 37.5 to 149 px, so its Marker and
     // pill centre over that bar's middle near 93.25 px, never over the group at 150 px.

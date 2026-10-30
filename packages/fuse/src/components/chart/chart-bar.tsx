@@ -6,23 +6,21 @@ import type { ReactElement, ReactNode } from "react";
 import type { SeriesPaint } from "./chart-bar-draw";
 import { SeriesPaths } from "./chart-bar-paths";
 import { ActiveBar, SeriesBars } from "./chart-bar-series";
-import { assertKnownKey, useChartLayout, useChartRoot } from "./chart-context";
+import { assertKnownKey, assertLayoutKey, usePlotLayout, useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
+import { datumSlots } from "./chart-datum";
 import { binsOf, listStops, stepRole } from "./chart-paint";
 import { useBarMetrics, useChartFrame } from "./chart-plot";
 import type { ChartPlot } from "./chart-plot";
-import { childSlot } from "./chart-reference";
 import { useFirstPhase } from "./chart-store";
-import type { ChartDatum, ChartLayerProps, ChartX } from "./chart-types";
+import type { ChartDatum, ChartLayerProps } from "./chart-types";
 import { barForm } from "./layout/bar-geometry";
 import type { BarVariant } from "./layout/bar-shapes";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { seriesPaint } from "./layout/color-key";
-import { keywordSlots, listedSlots } from "./layout/datum";
 import { ChartCompositionError, isChartDevelopment } from "./layout/errors";
 import { WHOLE_BAND } from "./layout/plot-frame";
 import type { BarMetrics, SubBand } from "./layout/plot-frame";
-import { slotOf } from "./layout/x-domain";
 
 /**
  * Props for `Chart.Bar`, a closed part.
@@ -111,35 +109,14 @@ function drawnValues(context: ChartRootContextValue, series: SeriesModel): (numb
   });
 }
 
-/** Whether a datum's x is a list. */
-function isXList(x: ChartX | readonly ChartX[]): x is readonly ChartX[] {
-  return Array.isArray(x);
-}
-
-/** The slots a Bar's `emphasis` selects. */
+/** The slots a Bar's `emphasis` selects, compared on the values it draws. */
 function emphasisSlots(
   context: ChartRootContextValue,
   series: SeriesModel | undefined,
   emphasis: ChartDatum | undefined
 ): number[] {
-  const { model } = context;
-  if (emphasis === undefined || series === undefined || model.window === null) return [];
-  if (
-    emphasis !== "first" &&
-    emphasis !== "last" &&
-    emphasis !== "min" &&
-    emphasis !== "max" &&
-    emphasis !== "now"
-  ) {
-    const xs = isXList(emphasis.x) ? emphasis.x : [emphasis.x];
-    return listedSlots(
-      xs.map((x) => childSlot(context, "Chart.Bar", x)),
-      model.window
-    );
-  }
-  const nowSlot =
-    context.now === undefined || model.domain.kind !== "time" ? -1 : slotOf(model.domain, context.now);
-  return keywordSlots(emphasis, { values: drawnValues(context, series), window: model.window, nowSlot });
+  if (emphasis === undefined || series === undefined) return [];
+  return datumSlots(context, "Chart.Bar", series, emphasis, drawnValues(context, series));
 }
 
 /**
@@ -159,9 +136,10 @@ export function ChartBar({
   style,
 }: ChartBarProps): ReactElement {
   const context = useChartRoot("Chart.Bar");
-  const layout = useChartLayout("Chart.Bar");
+  const layout = usePlotLayout("Chart.Bar");
   const group = use(ChartBarGroupContext);
   assertKnownKey("Chart.Bar", context.config, dataKey);
+  assertLayoutKey("Chart.Bar", layout, dataKey);
   if (layout.baseline === "none") {
     throw new ChartCompositionError(
       "Chart.Bar",
@@ -190,10 +168,13 @@ export function ChartBar({
   const grouped = group !== null;
   const phase = useFirstPhase(context.store);
   const [firstUpdate] = useState(context.update);
-  const drawn = useChartFrame("Chart.Bar");
+  const drawn = useChartFrame("Chart.Bar", layout);
   // SVG references read the id inside url(), so it keeps only characters an IRI fragment takes as is.
   const prefix = `chart-bar-${useId().replace(/[^\w-]/gu, "")}`;
-  useLayoutEffect(() => registerBar(dataKey, grouped), [registerBar, dataKey, grouped]);
+  useLayoutEffect(
+    () => registerBar(dataKey, grouped, layout.owner),
+    [registerBar, dataKey, grouped, layout.owner]
+  );
   const picked = emphasisSlots(context, series, emphasis);
   const pickedKey = picked.join(",");
   const emphasised = useMemo(() => new Set(picked), [pickedKey]); // oxlint-disable-line react-hooks/exhaustive-deps -- the joined slots are the identity
@@ -319,7 +300,11 @@ export function ChartBarGroup({ series, className, style, children }: ChartBarGr
       "sits inside another Chart.BarGroup. List every key in one group's series."
     );
   }
-  for (const key of series) assertKnownKey("Chart.BarGroup", context.config, key);
+  const layout = usePlotLayout("Chart.BarGroup");
+  for (const key of series) {
+    assertKnownKey("Chart.BarGroup", context.config, key);
+    assertLayoutKey("Chart.BarGroup", layout, key);
+  }
   const { stacks } = context.model;
   // The keys compare as a tuple, so an inline array that lists the same keys is no change.
   const [steadySeries, setSteadySeries] = useState(series);

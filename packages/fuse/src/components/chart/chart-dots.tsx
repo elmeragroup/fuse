@@ -6,24 +6,22 @@ import type { ReactElement, ReactNode } from "react";
 import { ChartDatumContext } from "./chart-active-value";
 import { attachJoin, placeAttached, pointAxes, pointCentre, restingPoint } from "./chart-attached";
 import type { AttachedShown, FollowerJoin } from "./chart-attached";
-import { assertKnownKey, useChartRoot } from "./chart-context";
+import { assertKnownKey, assertLayoutKey, useChartRoot, usePlotLayout } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
+import { datumSlots } from "./chart-datum";
 import { useChartFollower } from "./chart-followers";
 import type { MarkValues, Placement } from "./chart-motion";
 import { useFollowerPlacement, useMotionMark } from "./chart-motion-mark";
 import { stepRole } from "./chart-paint";
 import { useChartFrame } from "./chart-plot";
 import { readingAt, useActivePoint } from "./chart-readout";
-import { childSlot } from "./chart-reference";
 import { useFirstPhase } from "./chart-store";
-import type { ChartDatum, ChartLayerProps, ChartX, ValueFormat } from "./chart-types";
+import type { ChartDatum, ChartLayerProps, ValueFormat } from "./chart-types";
 import { formatValue } from "./format/value-format";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { seriesPaint } from "./layout/color-key";
-import { keywordSlots, listedSlots } from "./layout/datum";
 import type { PlotFrame } from "./layout/plot-frame";
 import { seriesPath } from "./layout/series-path";
-import { slotOf } from "./layout/x-domain";
 
 /**
  * Props for `Chart.Dots`, a closed part.
@@ -157,8 +155,10 @@ function useIntro(context: ChartRootContextValue): "fade" | "none" | undefined {
 export function ChartDots({ dataKey, variant = "default", className, style }: ChartDotsProps): ReactElement {
   const context = useChartRoot("Chart.Dots");
   assertKnownKey("Chart.Dots", context.config, dataKey);
+  const layout = usePlotLayout("Chart.Dots");
+  assertLayoutKey("Chart.Dots", layout, dataKey);
   const series = seriesOf(context, dataKey);
-  const drawn = useChartFrame("Chart.Dots");
+  const drawn = useChartFrame("Chart.Dots", layout);
   const frame = drawn?.frame ?? null;
   const columns =
     frame === null ? undefined : frame.orientation === "vertical" ? frame.box.width : frame.box.height;
@@ -275,8 +275,10 @@ export function ChartActiveDot({
 }: ChartActiveDotProps): ReactElement {
   const context = useChartRoot("Chart.ActiveDot");
   assertKnownKey("Chart.ActiveDot", context.config, dataKey);
+  const layout = usePlotLayout("Chart.ActiveDot");
+  assertLayoutKey("Chart.ActiveDot", layout, dataKey);
   const series = seriesOf(context, dataKey);
-  const drawn = useChartFrame("Chart.ActiveDot");
+  const drawn = useChartFrame("Chart.ActiveDot", layout);
   const frame = drawn?.frame ?? null;
   const look = useMemo((): PointLook => ({ frame, xScale: context.xScale }), [frame, context.xScale]);
   const {
@@ -353,31 +355,16 @@ export function ChartActiveDot({
   );
 }
 
-/** Whether a datum names x values rather than a keyword. */
-function isListed(at: ChartDatum): at is { readonly x: ChartX | readonly ChartX[] } {
-  return at !== "first" && at !== "last" && at !== "min" && at !== "max" && at !== "now";
-}
-
-/** The slots a Marker's `at` selects, comparing the series' readings. */
+/** The slots a Marker's `at` selects, comparing the series' readings, where the series has one. */
 function markerSlots(
   context: ChartRootContextValue,
   series: SeriesModel | undefined,
   at: ChartDatum
 ): number[] {
-  const { model } = context;
-  if (series === undefined || model.window === null) return [];
-  if (isListed(at)) {
-    const xs: readonly ChartX[] = Array.isArray(at.x) ? at.x : [at.x];
-    return listedSlots(
-      xs.map((x) => childSlot(context, "Chart.Marker", x)),
-      model.window
-    );
-  }
-  const nowSlot =
-    context.now === undefined || model.domain.kind !== "time" ? -1 : slotOf(model.domain, context.now);
+  if (series === undefined) return [];
   const values = series.readings.map((reading) => (reading.kind === "reading" ? reading.value : null));
-  // A marker sits on a reading, so "now" picks the now slot only where the series has one.
-  return keywordSlots(at, { values, window: model.window, nowSlot }).filter(
+  // A marker sits on a reading, so "now" or an x picks a slot only where the series has one.
+  return datumSlots(context, "Chart.Marker", series, at, values).filter(
     (slot) => series.readings[slot]?.kind === "reading"
   );
 }
@@ -420,8 +407,10 @@ export function ChartMarker({
 }: ChartMarkerProps): ReactElement {
   const context = useChartRoot("Chart.Marker");
   assertKnownKey("Chart.Marker", context.config, dataKey);
+  const layout = usePlotLayout("Chart.Marker");
+  assertLayoutKey("Chart.Marker", layout, dataKey);
   const series = seriesOf(context, dataKey);
-  const drawn = useChartFrame("Chart.Marker");
+  const drawn = useChartFrame("Chart.Marker", layout);
   const frame = drawn?.frame ?? null;
   const slots = markerSlots(context, series, at);
   const slotsKey = slots.join(",");

@@ -4,6 +4,7 @@
  * `--chart-bar-seam` short of the next one at its far end, so the surface shows between segments.
  */
 import type { CartesianModel, SeriesModel } from "./cartesian-model";
+import { ownSlot, ownSpan } from "./coarse-slots";
 import { BUCKETS, bucketEdges } from "./decimate";
 import { linearScale, scaleValue } from "./linear-scale";
 import { barSpan, frameRect, slotBand, snapSpan, valueAt } from "./plot-frame";
@@ -29,9 +30,15 @@ export function barForm(model: CartesianModel, orientation: "vertical" | "horizo
 
 /** One drawn bar in value space. */
 export type BarCell = {
+  /** The bar's domain slot: the first Root slot of a coarse series' slot. */
   readonly slot: number;
   /** The slot's place in the window, from 0. */
   readonly position: number;
+  /**
+   * How many of the window's Root slots the bar's band covers: 1, or a coarse series' Root slots
+   * inside the window, so an hourly bar on a quarter-hour grid spans its 4 cells.
+   */
+  readonly span: number;
   /** The low and high value the bar covers. */
   readonly extent: readonly [number, number];
   readonly negative: boolean;
@@ -74,7 +81,8 @@ export function isStackTop(model: CartesianModel, series: SeriesModel, slot: num
 
 /**
  * One series' bar at a slot of the window, or null where it draws nothing, such as a missing or
- * pending reading or a slot outside the window.
+ * pending reading or a slot outside the window. A coarse series' bar is the bar of its own slot
+ * that holds the Root slot.
  *
  * @param model - The Root's model.
  * @param series - The series.
@@ -83,19 +91,21 @@ export function isStackTop(model: CartesianModel, series: SeriesModel, slot: num
  */
 export function barCellAt(model: CartesianModel, series: SeriesModel, slot: number): BarCell | null {
   const window = model.window;
-  const extent = series.extents[slot];
-  if (window === null || !extent || slot < window.first || slot > window.last) return null;
+  if (window === null || slot < window.first || slot > window.last) return null;
+  const [first] = ownSlot(series, slot);
+  const extent = series.extents[first];
+  if (!extent) return null;
   return {
-    slot,
-    position: slot - window.first,
+    slot: first,
+    ...ownSpan(series, window, slot),
     extent,
     negative: isNegative(extent),
-    stackTop: isStackTop(model, series, slot),
+    stackTop: isStackTop(model, series, first),
   };
 }
 
 /**
- * The bars of one series inside the window, in x order.
+ * The bars of one series inside the window, in x order, one per own slot.
  *
  * @param model - The Root's model.
  * @param series - The series.
@@ -105,7 +115,7 @@ export function barCells(model: CartesianModel, series: SeriesModel): BarCell[] 
   const window = model.window;
   if (window === null) return [];
   const cells: BarCell[] = [];
-  for (let slot = window.first; slot <= window.last; slot += 1) {
+  for (let slot = window.first; slot <= window.last; slot = ownSlot(series, slot)[1] + 1) {
     const cell = barCellAt(model, series, slot);
     if (cell !== null) cells.push(cell);
   }
@@ -156,8 +166,12 @@ export function barGeometry(
 ): BarGeometry {
   const [low, high] = cell.extent;
   // A bar keeps its pixel among its band's, so the crosshair band and the focused option cover it.
-  const [start, stop] = barSpan(frame, cell.position, metrics, sub);
-  const [alongStart, alongEnd] = snapSpan(frame, start, stop, slotBand(frame, cell.position));
+  const [start, stop] = barSpan(frame, cell.position, metrics, sub, cell.span);
+  const band: readonly [number, number] = [
+    slotBand(frame, cell.position)[0],
+    slotBand(frame, cell.position + cell.span - 1)[1],
+  ];
+  const [alongStart, alongEnd] = snapSpan(frame, start, stop, band);
   return [
     alongStart,
     alongEnd,

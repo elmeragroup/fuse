@@ -7,7 +7,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import frames from "../../../test/chart/motion-frames.json" with { type: "json" };
-import { SAME_PLOT, createChartMotion } from "./chart-motion";
+import { SAME_PLOT, createChartMotion, createFrameOwner } from "./chart-motion";
 import type { MarkValues, Placement } from "./chart-motion";
 
 /** A clock and a frame queue that the test advances by hand. */
@@ -183,17 +183,64 @@ describe("the motion loop", () => {
     const drawBar = (values: MarkValues) => bar.push([...values]);
     const drawGuide = (values: MarkValues) => guide.push([...values]);
     // The bar's x and width run along x, and its y and the guide's along y.
-    motion.place("bar", [10, 100, 20], drawBar, { kind: "snap" }, ["x", "y", "x"]);
-    motion.place("guide", [100], drawGuide, { kind: "snap" }, ["y"]);
-    motion.place("bar", [10, 140, 20], drawBar, { kind: "move" }, ["x", "y", "x"]);
-    motion.place("guide", [140], drawGuide, { kind: "move" }, ["y"]);
+    motion.place("bar", [10, 100, 20], drawBar, { kind: "snap" }, { axes: ["x", "y", "x"] });
+    motion.place("guide", [100], drawGuide, { kind: "snap" }, { axes: ["y"] });
+    motion.place("bar", [10, 140, 20], drawBar, { kind: "move" }, { axes: ["x", "y", "x"] });
+    motion.place("guide", [140], drawGuide, { kind: "move" }, { axes: ["y"] });
     clock.frameAt(120);
     // The plot doubles its width, which leaves y alone.
-    motion.place("bar", [20, 140, 40], drawBar, { kind: "settle", scale: { x: 2, y: 1 } }, ["x", "y", "x"]);
+    motion.place(
+      "bar",
+      [20, 140, 40],
+      drawBar,
+      { kind: "settle", scale: { x: 2, y: 1 } },
+      { axes: ["x", "y", "x"] }
+    );
     clock.frameAt(240);
     const expected = 100 + 40 * eased(240);
     expect(bar.at(-1)?.[1]).toBeCloseTo(expected, 6);
     expect(guide.at(-1)?.[0]).toBe(bar.at(-1)?.[1]);
+  });
+
+  it("maps each frame's running tweens by that frame's own resize (E6)", () => {
+    // Two Panels each tween a bar's tip from 0 toward 100 px. At 120 ms the first Panel doubles its
+    // height and the second halves it, so the first bar heads for 200 and the second for 50, and
+    // each mark's drawn tip scales by its own Panel's factor only. At 480 ms each rests on its own
+    // new target.
+    const clock = host();
+    const motion = createChartMotion(clock.host);
+    const top = recorder();
+    const bottom = recorder();
+    const [upper, lower] = [createFrameOwner("panel"), createFrameOwner("panel")];
+    motion.place("top", [0], top.write, { kind: "snap" }, { axes: ["y"], owner: upper });
+    motion.place("bottom", [0], bottom.write, { kind: "snap" }, { axes: ["y"], owner: lower });
+    motion.place("top", [100], top.write, { kind: "move" }, { axes: ["y"], owner: upper });
+    motion.place("bottom", [100], bottom.write, { kind: "move" }, { axes: ["y"], owner: lower });
+    clock.frameAt(120);
+    const drawn = 100 * eased(120);
+    motion.place(
+      "top",
+      [200],
+      top.write,
+      { kind: "settle", scale: { x: 1, y: 2, to: { at: 2 } } },
+      { axes: ["y"], owner: upper }
+    );
+    expect(top.writes.at(-1)).toBeCloseTo(drawn * 2, 6);
+    expect(bottom.writes.at(-1)).toBeCloseTo(drawn, 6);
+    motion.place(
+      "bottom",
+      [50],
+      bottom.write,
+      { kind: "settle", scale: { x: 1, y: 0.5, to: { at: 0.5 } } },
+      { axes: ["y"], owner: lower }
+    );
+    expect(bottom.writes.at(-1)).toBeCloseTo(drawn / 2, 6);
+    expect(top.writes.at(-1)).toBeCloseTo(drawn * 2, 6);
+    clock.frameAt(240);
+    expect(top.writes.at(-1)).toBeCloseTo(200 * eased(240), 6);
+    expect(bottom.writes.at(-1)).toBeCloseTo(50 * eased(240), 6);
+    clock.frameAt(480);
+    expect([top.writes.at(-1), bottom.writes.at(-1)]).toEqual([200, 50]);
   });
 
   it("restarts a running mark that a data update leaves alone, with the marks it moves", () => {
@@ -275,9 +322,9 @@ describe("the motion loop", () => {
                 ? { kind: "move" }
                 : // Each resize is a measurement of its own, which names it, as Root's are.
                   { kind: "settle", scale: { x: step.scaleX, y: step.scaleY, to: {} } };
-            motion.place("bar", [next.x, next.y, next.width], drawBar, placement, ["x", "y", "x"]);
+            motion.place("bar", [next.x, next.y, next.width], drawBar, placement, { axes: ["x", "y", "x"] });
             if (next.y !== target.y || (step.kind === "resize" && step.placeGuide)) {
-              motion.place("guide", [next.y], drawGuide, placement, ["y"]);
+              motion.place("guide", [next.y], drawGuide, placement, { axes: ["y"] });
             }
             target = next;
             // The commit's task ends before the next frame.
@@ -296,8 +343,8 @@ describe("the motion loop", () => {
 describe("joining marks", () => {
   /** Two bars, each placed at a rest of [middle, tip] under its anchor. */
   function twoBars(motion: ReturnType<typeof createChartMotion>, placement: Placement) {
-    motion.place("bar 0", [10, 50], () => undefined, placement, [], "a 0");
-    motion.place("bar 1", [30, 70], () => undefined, placement, [], "a 1");
+    motion.place("bar 0", [10, 50], () => undefined, placement, { anchor: "a 0" });
+    motion.place("bar 1", [30, 70], () => undefined, placement, { anchor: "a 1" });
   }
   const leads = [
     { anchor: "a 0", pick: (values: MarkValues) => [...values], rest: (values: MarkValues) => [...values] },
@@ -326,7 +373,7 @@ describe("joining marks", () => {
     const clock = host();
     const motion = createChartMotion(clock.host);
     twoBars(motion, { kind: "snap" });
-    motion.place("bar 0", [20, 50], () => undefined, { kind: "move" }, [], "a 0");
+    motion.place("bar 0", [20, 50], () => undefined, { kind: "move" }, { anchor: "a 0" });
     const drawn: MarkValues[] = [];
     motion.place("marker", [0, 0, 0, 0], (values) => drawn.push(values), { kind: "join", leads });
     // Bar 0 moves from 10 to 20 and bar 1 rests, so the follower starts on both drawn numbers.
@@ -343,8 +390,20 @@ describe("joining staggered marks (Q3-1)", () => {
     // has its eased progress and the second still sits at 0, so the follower draws the same.
     const clock = host();
     const motion = createChartMotion(clock.host);
-    motion.place("bar 0", [10, 50], () => undefined, { kind: "enter", from: [10, 0], delay: 0 }, [], "a 0");
-    motion.place("bar 1", [30, 70], () => undefined, { kind: "enter", from: [30, 0], delay: 200 }, [], "a 1");
+    motion.place(
+      "bar 0",
+      [10, 50],
+      () => undefined,
+      { kind: "enter", from: [10, 0], delay: 0 },
+      { anchor: "a 0" }
+    );
+    motion.place(
+      "bar 1",
+      [30, 70],
+      () => undefined,
+      { kind: "enter", from: [30, 0], delay: 200 },
+      { anchor: "a 1" }
+    );
     const drawn: MarkValues[] = [];
     const lead = (anchor: string) => ({
       anchor,

@@ -111,3 +111,49 @@ describe("the active column", () => {
     expect(Math.abs((popup.left + popup.right) / 2 - centre)).toBeLessThanOrEqual(1);
   });
 });
+
+describe("the measured plot under a small transform scale (W11, B1-11)", () => {
+  it("measures the layout width, so the crosshair keeps its slot's column under scale(1.00002)", async () => {
+    // 16 bands on 400 px at 1x from a page origin of 0: band 0's centre is 12.5, so the 1 px line
+    // crosshair takes the column from 12 to 13, the option covers 0 to 25, and the band from
+    // 12.5 to 3.125 + 18.75 holds the bar from 3 to 22. A width read from the scaled client box,
+    // 400.008, puts the centre at 12.50025 and the crosshair at 13.
+    const rows = Array.from({ length: 16 }, (_, index) => ({ name: `c${String(index)}`, v: 1 }));
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div
+          style={{
+            position: "fixed",
+            left: 0,
+            top: 0,
+            width: 400,
+            transform: "scale(1.00002)",
+            transformOrigin: "0 0",
+          }}>
+          <button type="button">før</button>
+          <Chart.Root
+            data-intro="none"
+            data={rows}
+            config={{ v: { label: "V", color: "chart-1" } }}
+            xKey="name"
+            aria-label="Skalert">
+            <Chart.Crosshair variant="line" />
+            <Chart.Bar dataKey="v" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    host.querySelector("button")?.focus();
+    await userEvent.keyboard("{Tab}");
+    await frame();
+    await frame();
+    // DOM audit: the crosshair, the bar and the option's custom properties are the geometry under test.
+    const crosshair = host.querySelector('[data-slot="chart-crosshair"] rect');
+    expect([Number(crosshair?.getAttribute("x")), Number(crosshair?.getAttribute("width"))]).toEqual([12, 1]);
+    const option = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    expect([
+      option?.style.getPropertyValue("--chart-option-start"),
+      option?.style.getPropertyValue("--chart-option-size"),
+    ]).toEqual(["0px", "25px"]);
+  });
+});

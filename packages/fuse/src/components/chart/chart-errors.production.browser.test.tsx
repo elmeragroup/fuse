@@ -132,6 +132,57 @@ describe("data rules in production", () => {
     expect(warn).toHaveBeenCalledTimes(1);
   });
 
+  it("moves an hourly value on a :15 row to its hour, warns once, and never sums quarters into hours", async () => {
+    spy();
+    // Hour 00 of Oslo's 1 October 2025 holds its value on the :15 row, and hour 01 on its :00 row.
+    // Each hour's bar spans its 4 quarter cells: 50 px of a 200 px plot.
+    type Quarter = { readonly start: Date; readonly price: number; readonly kwh?: number };
+    const quarter = (index: number): Quarter => ({
+      start: new Date(Date.UTC(2025, 8, 30, 22, index * 15)),
+      price: 1,
+    });
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 200 }}>
+          <Chart.Root
+            data={[0, 1, 2, 3, 4, 5, 6, 7].map((index) =>
+              index === 1
+                ? { ...quarter(index), kwh: 2 }
+                : index === 4
+                  ? { ...quarter(index), kwh: 4 }
+                  : quarter(index)
+            )}
+            config={{
+              price: { label: "Pris", color: "chart-1" },
+              kwh: { label: "Forbruk", color: "chart-2", interval: "hour" },
+            }}
+            xKey="start"
+            interval="quarter-hour"
+            timeZone={OSLO}
+            data-intro="none"
+            aria-label="Pris og forbruk">
+            <Chart.Panel series={["price"]} />
+            <Chart.Panel series={["kwh"]}>
+              <Chart.Bar dataKey="kwh" />
+            </Chart.Panel>
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    await expect.poll(() => bars(host)).toHaveLength(2);
+    // DOM audit: the bar series layer covers the Panel's plot box, and bars are aria-hidden output.
+    const plot =
+      host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect() ?? new DOMRect();
+    expect(bars(host).map((bar) => Math.round(barBox(bar, plot).right - barBox(bar, plot).left))).toEqual([
+      75, 75,
+    ]);
+    // The domain reaches 4 alone, so 2 draws half as tall as 4.
+    expect(bars(host).map((bar) => Math.round(barBox(bar, plot).bottom - barBox(bar, plot).top))).toEqual([
+      100, 200,
+    ]);
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps the first of two rows for one slot and warns once", () => {
     spy();
     const { host } = renderThemed(

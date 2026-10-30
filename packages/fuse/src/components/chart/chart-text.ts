@@ -12,9 +12,11 @@ import type { ChartSeriesConfig, XFormat } from "./chart-types";
 import { CHART_STRINGS, countSlots } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
 import { formatSlot, LABEL_PRESETS, wallClock } from "./format/time-format";
+import type { Interval } from "./format/time-format";
 import { formatUnitLabel, formatUnitless, formatValue } from "./format/value-format";
 import { CHART_WORDS } from "./format/words";
 import type { CartesianModel } from "./layout/cartesian-model";
+import { ownWindowSlots } from "./layout/coarse-slots";
 import type { Reading } from "./layout/readings";
 
 /** What the text builders read beside the model. */
@@ -52,15 +54,48 @@ function domainSpan(model: CartesianModel): DomainSpan {
 }
 
 /**
- * A slot's date, in the `date` preset's form, with its year when the domain spans more than one
- * calendar year.
+ * The date of an instant in the domain's zone, in the `date` preset's form, with its year when the
+ * domain spans more than one calendar year.
  */
+function dateAt(context: TextContext, timeZone: string, start: number): FormattedText {
+  const format = domainSpan(context.model).years ? DATE_WITH_YEAR : "date";
+  return formatSlot(context.locale, timeZone, start, "day", format, "full");
+}
+
+/** A slot's date, as `dateAt` gives it for the slot's start. */
 function slotDate(context: TextContext, slot: number): FormattedText {
   const { domain } = context.model;
   if (domain.kind === "category") return { text: "", spoken: "" };
-  const start = domain.starts[slot] ?? 0;
-  const format = domainSpan(context.model).years ? DATE_WITH_YEAR : "date";
-  return formatSlot(context.locale, domain.timeZone, start, "day", format, "full");
+  return dateAt(context, domain.timeZone, domain.starts[slot] ?? 0);
+}
+
+/**
+ * The label of an interval that starts at an instant, in the interval's label preset or a given
+ * format. On a domain that spans more than one local date, an interval finer than a day leads with
+ * its date, and a date carries its year when the domain spans more than one calendar year, as
+ * CONTRACT section 9.4 says. An explicit format replaces both.
+ */
+function datedLabel(
+  context: TextContext,
+  timeZone: string,
+  start: number,
+  interval: Interval,
+  format: XFormat | undefined
+): FormattedText {
+  const span = domainSpan(context.model);
+  if (format === undefined && interval === "day" && span.years) return dateAt(context, timeZone, start);
+  const label = formatSlot(
+    context.locale,
+    timeZone,
+    start,
+    interval,
+    format ?? LABEL_PRESETS[interval],
+    "full"
+  );
+  if (format !== undefined || !SUB_DAY.has(interval) || !span.dates) return label;
+  const date = dateAt(context, timeZone, start);
+  const join = CHART_WORDS[context.locale].slotOnDate;
+  return { text: join(date.text, label.text), spoken: join(date.spoken, label.spoken) };
 }
 
 /**
@@ -80,23 +115,56 @@ export function slotLabel(context: TextContext, slot: number, format?: XFormat):
     const name = domain.names[slot] ?? "";
     return { text: name, spoken: name };
   }
-  const start = domain.starts[slot] ?? 0;
-  const own = format ?? context.xFormat;
-  if (own === undefined && domain.interval === "day" && domainSpan(context.model).years) {
-    return slotDate(context, slot);
-  }
-  const label = formatSlot(
+  return datedLabel(
+    context,
+    domain.timeZone,
+    domain.starts[slot] ?? 0,
+    domain.interval,
+    format ?? context.xFormat
+  );
+}
+
+/**
+ * The label of a coarse series' own slot that holds a Root slot, in its interval's label preset,
+ * such as the hour `02–03` that holds the quarter 02:15. A series on Root's interval has none,
+ * because the option and the tooltip already name the slot.
+ *
+ * @param context - The model and the locale.
+ * @param key - A config key.
+ * @param slot - A Root slot.
+ * @returns The visual and spoken label, or null for a series on Root's grid.
+ */
+export function ownSlotLabel(context: TextContext, key: string, slot: number): FormattedText | null {
+  const { domain } = context.model;
+  const coarse = context.model.series.find((entry) => entry.key === key)?.coarse;
+  if (coarse === undefined || domain.kind !== "time") return null;
+  const start = domain.starts[coarse.first[slot] ?? slot] ?? 0;
+  return formatSlot(
     context.locale,
     domain.timeZone,
     start,
-    domain.interval,
-    own ?? LABEL_PRESETS[domain.interval],
+    coarse.interval,
+    LABEL_PRESETS[coarse.interval],
     "full"
   );
-  if (own !== undefined || !SUB_DAY.has(domain.interval) || !domainSpan(context.model).dates) return label;
-  const date = slotDate(context, slot);
-  const join = CHART_WORDS[context.locale].slotOnDate;
-  return { text: join(date.text, label.text), spoken: join(date.spoken, label.spoken) };
+}
+
+/**
+ * The dated label of a coarse series' own slot that holds a Root slot, for the description: its
+ * interval's label from the slot's own start, with the date and year that `slotLabel` adds on a
+ * domain of more than one date or year, such as `onsdag 1. oktober, kl. 00 til 01`. Tooltip rows
+ * keep `ownSlotLabel`'s compact form beside their dated slot.
+ *
+ * @param context - The model and the locale.
+ * @param key - A config key.
+ * @param slot - A Root slot.
+ * @returns The visual and spoken label, or null for a series on Root's grid.
+ */
+export function ownSlotDated(context: TextContext, key: string, slot: number): FormattedText | null {
+  const { domain } = context.model;
+  const coarse = context.model.series.find((entry) => entry.key === key)?.coarse;
+  if (coarse === undefined || domain.kind !== "time") return null;
+  return datedLabel(context, domain.timeZone, coarse.start[slot] ?? 0, coarse.interval, undefined);
 }
 
 /**
@@ -224,13 +292,17 @@ export function optionName(
   const x = holdsNow(context, slot) ? `${label}, ${strings.now}` : label;
   const { series } = context.model;
   const focused = focus === -1 ? series : series.filter(({ seriesIndex }) => seriesIndex === focus);
-  const part = ({ key, readings, projectedFrom }: (typeof series)[number]): string => {
+  const part = ({ key, readings, projectedFrom, coarse }: (typeof series)[number]): string => {
     const reading = readings[slot];
     const words = readingWords(context, key, reading, slot >= projectedFrom);
     const entry = emphasis[key];
-    const emphasised = reading?.kind === "reading" && entry?.slots.includes(slot) === true;
+    const first = coarse === undefined ? slot : (coarse.first[slot] ?? slot);
+    const emphasised = reading?.kind === "reading" && entry?.slots.includes(first) === true;
     const tail = emphasised ? `, ${entry.label ?? strings.emphasised}` : "";
-    return `${seriesLabel(context, key).spoken} ${words}${tail}`;
+    // A coarse series names its own slot after its name, as `Forbruk kl. 02 til 03 0,35 kilowattimer`.
+    const own = ownSlotLabel(context, key, slot);
+    const name = seriesLabel(context, key).spoken;
+    return `${own === null ? name : `${name} ${own.spoken}`} ${words}${tail}`;
   };
   const allPending = focused.every(({ readings }) => readings[slot]?.kind === "pending");
   const parts = allPending && focus === -1 ? [strings.pending] : focused.map(part);
@@ -302,27 +374,34 @@ export function chartDescription(context: TextContext): string {
   const unit = domain.kind === "time" ? domain.interval : "category";
   const count = countSlots(locale, window.last - window.first + 1, unit);
   sentences.push(sentence(strings.descriptionSpan(from, to === from ? undefined : to, count), locale));
-  const states = { missing: 0, estimated: 0, corrected: 0 };
-  for (const { key, readings } of model.series) {
+  // The quality counts by the interval they count in: Root's, or a coarse series' own.
+  const states = new Map<Interval | "category", { missing: number; estimated: number; corrected: number }>();
+  for (const entry of model.series) {
+    const { key, readings, coarse } = entry;
+    const own = coarse?.interval ?? unit;
+    const counts = states.get(own) ?? { missing: 0, estimated: 0, corrected: 0 };
+    states.set(own, counts);
     let low: { slot: number; value: number } | undefined;
     let high: { slot: number; value: number } | undefined;
-    for (let slot = window.first; slot <= window.last; slot += 1) {
+    // A coarse reading counts once, though every Root slot of its slot holds it.
+    for (const slot of ownWindowSlots(entry, window)) {
       const reading = readings[slot];
-      if (reading?.kind === "missing") states.missing += 1;
+      if (reading?.kind === "missing") counts.missing += 1;
       if (reading?.kind !== "reading") continue;
-      if (reading.quality !== "measured") states[reading.quality] += 1;
+      if (reading.quality !== "measured") counts[reading.quality] += 1;
       if (low === undefined || reading.value < low.value) low = { slot, value: reading.value };
       if (high === undefined || reading.value > high.value) high = { slot, value: reading.value };
     }
     if (low === undefined || high === undefined) continue;
     const extremes = withUnit(context, key, seriesLabel(context, key).spoken);
+    const at = (slot: number) => (ownSlotDated(context, key, slot) ?? slotLabel(context, slot)).spoken;
     sentences.push(
       strings.descriptionSeries(
         extremes.label,
         extremes.value(low.value),
-        slotLabel(context, low.slot).spoken,
+        at(low.slot),
         extremes.value(high.value),
-        slotLabel(context, high.slot).spoken
+        at(high.slot)
       )
     );
   }
@@ -349,8 +428,10 @@ export function chartDescription(context: TextContext): string {
     );
   }
   for (const state of ["missing", "estimated", "corrected"] as const) {
-    if (states[state] > 0)
-      sentences.push(strings.descriptionQuality(countSlots(locale, states[state], unit), state));
+    for (const [interval, counts] of states) {
+      if (counts[state] > 0)
+        sentences.push(strings.descriptionQuality(countSlots(locale, counts[state], interval), state));
+    }
   }
   // Where a projection starts inside the window.
   for (const { key, projectedFrom } of model.series) {

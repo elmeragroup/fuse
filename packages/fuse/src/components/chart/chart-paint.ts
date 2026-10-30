@@ -3,15 +3,47 @@
  * overlay all read, after CONTRACT sections 4 and 11. Every paint reads the consumer's
  * `--chart-color-<key>` first, so an override wins for a role, a role list and a scale alike.
  */
-import type { ChartColor } from "./chart-types";
+import type { ChartColor, ChartConfig } from "./chart-types";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { colorBins } from "./layout/color-bins";
 import type { ColorBins } from "./layout/color-bins";
 import { seriesPaint } from "./layout/color-key";
+import { ChartCompositionError } from "./layout/errors";
 
 /** Whether a colour is a decorative role list. */
 export function isRoleList(color: ChartColor): color is Extract<ChartColor, readonly unknown[]> {
   return Array.isArray(color);
+}
+
+/**
+ * The error of one layout that mixes a sentiment role with a categorical role, which D4 forbids,
+ * because a reader would take the categorical hue for a judgement. Each layout checks its own
+ * keys: a Panel its `series`, and Root's default layout every config key when it draws.
+ *
+ * @param part - The layout's owner, `Chart.Root` or `Chart.Panel`.
+ * @param config - The Root's config.
+ * @param keys - The config keys the layout covers.
+ * @returns The error, or null for a layout of one colour family.
+ */
+export function colourFamilyError(
+  part: string,
+  config: ChartConfig,
+  keys: readonly string[]
+): ChartCompositionError | null {
+  const roles = keys.flatMap((key) => {
+    const color = config[key]?.color;
+    if (color === undefined) return [];
+    return isRoleList(color) ? [...color] : [color];
+  });
+  const sentiment = roles.some((role) => role.startsWith("chart-sentiment-"));
+  const categorical = roles.some((role) => /^chart-\d$/u.test(role));
+  return sentiment && categorical
+    ? new ChartCompositionError(
+        part,
+        "mixed-sentiment-categorical",
+        "mixes a sentiment role with a categorical role in one layout. Colour every series of the layout by sentiment, or every series by category."
+      )
+    : null;
 }
 
 /**

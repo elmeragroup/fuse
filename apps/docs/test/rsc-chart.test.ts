@@ -15,7 +15,7 @@ import { flightClientReferences, inlinedFlightPayload } from "./fixtures/rsc-fli
 
 const fixtures = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
-function serverRender(scenario: "page" | "function-format") {
+function serverRender(scenario: "page" | "composed" | "function-format") {
   return spawnSync(
     process.execPath,
     [
@@ -111,6 +111,47 @@ describe("the chart entry under React Server Components", () => {
     expect(rejected.status).toBe(1);
     expect(rejected.stderr).toContain("Functions cannot be passed directly to Client Components");
     expect(rejected.stdout).toBe("");
+  });
+});
+
+describe("composed Panels under React Server Components", () => {
+  const server = serverRender("composed");
+
+  it("renders S12's month in two Panels through Flight as a client-only render does, with no mark", () => {
+    expect(server.stderr).not.toMatch(/Error/u);
+    expect(server.status).toBe(0);
+    // SAFETY: rsc-chart-ssr.ts writes this one JSON object, and every field the test reads is
+    // compared against an expected value, so a shape that disagrees fails an assertion.
+    const ssr = JSON.parse(
+      execFileSync(
+        process.execPath,
+        [
+          "--import",
+          join(fixtures, "rsc-chart-register-ssr.mjs"),
+          join(fixtures, "rsc-chart-ssr.ts"),
+          "composed",
+        ],
+        { cwd: fixtures, encoding: "utf8", input: server.stdout }
+      )
+    ) as SsrResult;
+    expect(ssr.flight).toBe(ssr.clientOnly);
+    for (const html of [ssr.flight, ssr.clientOnly]) {
+      expect(slotCount(html, "chart-panel")).toBe(2);
+      // Root's plot and each Panel's hold a skeleton until the browser measures them.
+      expect(slotCount(html, "chart-skeleton-mark")).toBe(3);
+      expect(slotCount(html, "chart-bar-series")).toBe(1);
+      expect(slotCount(html, "chart-line-series")).toBe(1);
+      expect(slotCount(html, "chart-bar")).toBe(0);
+      expect(slotCount(html, "chart-line")).toBe(0);
+      // The last Panel's x axis names September's 30 days.
+      expect(slotCount(html, "chart-x-tick")).toBe(30);
+      // Usage peaks at 30.7 kWh, which the 1-2-5 rule nices to 0 to 35 by 5, eight ticks, and every
+      // price lies from 60 to 95 øre, niced to 0 to 100 by 20, six more.
+      expect(slotCount(html, "chart-y-tick")).toBe(8 + 6);
+      // The table lists both series in one row per day.
+      expect(slotCount(html, "chart-table-content")).toBe(1);
+      expect(html.split("<tr").length - 1).toBe(31);
+    }
   });
 });
 

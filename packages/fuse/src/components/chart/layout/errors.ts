@@ -16,7 +16,14 @@ export type ChartCompositionRule =
   | "step-curve-needs-cells"
   | "nested-bar-group"
   | "bar-not-in-group"
-  | "mixed-sentiment-categorical";
+  | "mixed-sentiment-categorical"
+  | "interval-not-nested"
+  | "nested-panel"
+  | "horizontal-panels"
+  | "series-in-two-panels"
+  | "series-not-in-panel"
+  | "key-outside-panels"
+  | "part-outside-panel";
 
 /** The data rules, each with a production fallback. */
 export type ChartDataRule =

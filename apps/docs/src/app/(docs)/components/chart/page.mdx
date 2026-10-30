@@ -5,10 +5,26 @@ lede: >
 
 import { ChartAxisLabels } from "./demos/chart-axis-titles";
 import { ChartBackgroundPatterns } from "./demos/chart-background";
+import { ChartComposedBarGroupLine } from "./demos/chart-composed-bar-group-line";
+import { ChartComposedBasic } from "./demos/chart-composed-basic";
+import { ChartComposedBump } from "./demos/chart-composed-bump";
+import { ChartComposedDashed } from "./demos/chart-composed-dashed";
+import { ChartComposedDots } from "./demos/chart-composed-dots";
+import { ChartComposedDuotone } from "./demos/chart-composed-duotone";
+import { ChartComposedFlowing } from "./demos/chart-composed-flowing";
+import { ChartComposedGlowing } from "./demos/chart-composed-glowing";
+import { ChartComposedGradient } from "./demos/chart-composed-gradient";
+import { ChartComposedGradientColors } from "./demos/chart-composed-gradient-colors";
+import { ChartComposedHatched } from "./demos/chart-composed-hatched";
+import { ChartComposedHoverHighlight } from "./demos/chart-composed-hover-highlight";
+import { ChartComposedLoading } from "./demos/chart-composed-loading";
+import { ChartComposedStriped } from "./demos/chart-composed-striped";
 import { ChartCrosshairBand } from "./demos/chart-crosshair";
 import { ChartEmptyState } from "./demos/chart-empty";
 import { ChartHeadlineFigure } from "./demos/chart-headline";
 import { ChartHourlyUsage } from "./demos/chart-hourly-usage";
+import { ChartMonthUsageAndPrice } from "./demos/chart-month-usage-and-price";
+import { ChartProsumerDay } from "./demos/chart-prosumer-day";
 import { ChartReferenceAreas } from "./demos/chart-reference-area";
 import { ChartReferenceLines } from "./demos/chart-reference-line";
 import { ChartSeriesToggles } from "./demos/chart-legend-toggles";
@@ -17,6 +33,8 @@ import { ChartTickDots } from "./demos/chart-tick-dot";
 import { ChartTooltipDefault } from "./demos/chart-tooltip-default";
 import { ChartTooltipFrosted } from "./demos/chart-tooltip-frosted";
 import { ChartTooltipTop } from "./demos/chart-tooltip-anchor";
+import { ChartTotalPrice } from "./demos/chart-total-price";
+import { ChartUsageAndPrice } from "./demos/chart-usage-and-price";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -30,8 +48,104 @@ The chart entry is a preview. Its names and props can change until Fuse's first 
 
 </Prose>
 
+<Demo slug="chart" id="usage-and-price" title="Usage and price" file="chart-usage-and-price.tsx">
+  <ChartUsageAndPrice />
+</Demo>
+
 <Demo slug="chart" id="hourly-usage" title="Hourly usage" file="chart-hourly-usage.tsx">
   <ChartHourlyUsage />
+</Demo>
+
+## Composed charts
+
+<Prose>
+
+Bars and lines share one Root and one x axis. Write the parts in paint order, and every series reads one value axis.
+
+To give two series of different units their own value axis, put each in a `Chart.Panel`. The Panels stack as rows on Root's x grid and share its surface, tooltip and table. Each Panel takes its own `yBaseline` and `yInclude`, and Root's own `yBaseline` and `yInclude` then govern nothing. Every config key sits in one Panel, and every plot part sits in the Panel whose series it draws. The x axis goes in the last Panel. Write config in Panel order, because Up and Down walk the series in config order across the Panels.
+
+A series may take a coarser `interval` than Root's, such as hourly usage under quarter-hour prices. Its bar spans the quarters of its hour, and the option, the tooltip and the table name its hour. Fuse never sums or averages.
+
+</Prose>
+
+<Demo
+  slug="chart"
+  id="month-usage-and-price"
+  title="A month of usage and price"
+  file="chart-month-usage-and-price.tsx">
+  <ChartMonthUsageAndPrice />
+</Demo>
+
+<Demo slug="chart" id="prosumer-day" title="Bought and sold energy" file="chart-prosumer-day.tsx">
+  <ChartProsumerDay />
+</Demo>
+
+<Demo slug="chart" id="total-price" title="Total price" file="chart-total-price.tsx">
+  <ChartTotalPrice />
+</Demo>
+
+<Demo slug="chart" id="composed-basic" title="Bars and a line" file="chart-composed-basic.tsx">
+  <ChartComposedBasic />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="composed-bar-group-line"
+  title="A line beside a bar group"
+  file="chart-composed-bar-group-line.tsx">
+  <ChartComposedBarGroupLine />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="composed-gradient-colors"
+  title="Colour lists"
+  file="chart-composed-gradient-colors.tsx">
+  <ChartComposedGradientColors />
+</Demo>
+
+<Demo slug="chart" id="composed-hatched" title="Hatched bars" file="chart-composed-hatched.tsx">
+  <ChartComposedHatched />
+</Demo>
+
+<Demo slug="chart" id="composed-duotone" title="Duotone bars" file="chart-composed-duotone.tsx">
+  <ChartComposedDuotone />
+</Demo>
+
+<Demo slug="chart" id="composed-gradient" title="Gradient bars" file="chart-composed-gradient.tsx">
+  <ChartComposedGradient />
+</Demo>
+
+<Demo slug="chart" id="composed-striped" title="Striped bars" file="chart-composed-striped.tsx">
+  <ChartComposedStriped />
+</Demo>
+
+<Demo slug="chart" id="composed-dashed" title="A dashed line" file="chart-composed-dashed.tsx">
+  <ChartComposedDashed />
+</Demo>
+
+<Demo slug="chart" id="composed-flowing" title="A flowing line" file="chart-composed-flowing.tsx">
+  <ChartComposedFlowing />
+</Demo>
+
+<Demo slug="chart" id="composed-bump" title="A bump curve" file="chart-composed-bump.tsx">
+  <ChartComposedBump />
+</Demo>
+
+<Demo slug="chart" id="composed-dots" title="Dots" file="chart-composed-dots.tsx">
+  <ChartComposedDots />
+</Demo>
+
+<Demo slug="chart" id="composed-hover-highlight" title="Hover dim" file="chart-composed-hover-highlight.tsx">
+  <ChartComposedHoverHighlight />
+</Demo>
+
+<Demo slug="chart" id="composed-glowing" title="Glow" file="chart-composed-glowing.tsx">
+  <ChartComposedGlowing />
+</Demo>
+
+<Demo slug="chart" id="composed-loading" title="Loading" file="chart-composed-loading.tsx">
+  <ChartComposedLoading />
 </Demo>
 
 ## Headline

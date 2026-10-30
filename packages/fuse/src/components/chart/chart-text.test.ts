@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { chartDescription } from "./chart-text";
 import type { ValueFormat } from "./chart-types";
+import { DATED_SLOT_CASES } from "./format/fixtures/time-literals";
 import { buildCartesianModel } from "./layout/cartesian-model";
 import type { ModelSeriesConfig } from "./layout/cartesian-model";
 
@@ -147,6 +148,102 @@ describe("the description of a domain into a new year", () => {
       "From Wednesday, December 31, 2025 to Thursday, January 1, 2026, 2 hours. " +
         "V: lowest 1 Wednesday, December 31, 2025, 11 PM to 12 AM, " +
         "highest 2 Thursday, January 1, 2026, 12 AM to 1 AM."
+    );
+  });
+});
+
+describe("chartDescription over a coarse series (X2)", () => {
+  it("counts a missing hour once, in hours, and names each extreme by its hour", () => {
+    // Eight quarters of 1 October 2025 in Oslo, 00:00 to 02:00, with now at 02:00. Price reads 1 on
+    // every quarter. Usage is hourly: 2 on hour 0's first quarter, nothing for hour 1, which has
+    // ended, so hour 1 is one missing hour, not four missing quarters.
+    const midnight = Date.UTC(2025, 8, 30, 22);
+    const rows = Array.from({ length: 8 }, (_, index) => {
+      const row = { start: new Date(midnight + index * 15 * 60_000), price: 1 };
+      return index === 0 ? { ...row, kwh: 2 } : row;
+    });
+    const model = buildCartesianModel({
+      rows,
+      series: [
+        ["price", {}],
+        ["kwh", { interval: "hour" }],
+      ],
+      xKey: "start",
+      time: { interval: "quarter-hour", timeZone: "Europe/Oslo", now: midnight + 2 * 3_600_000 },
+      stackOffset: "diverging",
+      baseline: "zero",
+      include: [],
+    });
+    const text = chartDescription({
+      locale: "nb-NO",
+      model,
+      config: { price: { label: "Pris", color: "chart-1" }, kwh: { label: "Forbruk", color: "chart-2" } },
+      xFormat: undefined,
+      now: midnight + 2 * 3_600_000,
+    });
+    // The hour range joins its words with no-break spaces, as format/fixtures/time-literals.ts writes it.
+    const hour = "kl.\u00a000\u00a0til\u00a001";
+    expect(text).toContain(`Forbruk: lavest 2 ${hour}, høyest 2 ${hour}.`);
+    expect(text).toContain("1\u00a0time mangler.");
+    expect(text).not.toContain("kvarter mangler");
+  });
+});
+
+describe("chartDescription dates a coarse series' extremes (Y1, B3-1)", () => {
+  /** A committed dated label, by its case name. */
+  const dated = (name: string): string => {
+    const found = DATED_SLOT_CASES.find((entry) => entry.name === name);
+    if (found === undefined) throw new Error(`no dated case ${name}`);
+    return found.spoken;
+  };
+
+  function describeCoarse(
+    rows: readonly { readonly start: Date; readonly kwh?: number }[],
+    root: "quarter-hour" | "hour",
+    own: "hour" | "day"
+  ): string {
+    const model = buildCartesianModel({
+      rows,
+      series: [["kwh", { interval: own }]],
+      xKey: "start",
+      time: { interval: root, timeZone: "Europe/Oslo" },
+      stackOffset: "diverging",
+      baseline: "zero",
+      include: [],
+    });
+    return chartDescription({
+      locale: "nb-NO",
+      model,
+      config: { kwh: { label: "Forbruk", color: "chart-1" } },
+      xFormat: undefined,
+      now: undefined,
+    });
+  }
+
+  it("dates each hour on a quarter-hour domain of two days", () => {
+    // 192 quarters of 1 and 2 October 2025 in Oslo. Hourly usage reads 1 at midnight on the 1st, 2
+    // at midnight on the 2nd and 1.5 in every other hour, so the extremes lie a day apart.
+    const midnight = Date.UTC(2025, 8, 30, 22);
+    const rows = Array.from({ length: 192 }, (_, index) => {
+      const start = new Date(midnight + index * 15 * 60_000);
+      if (index % 4 !== 0) return { start };
+      return { start, kwh: index === 0 ? 1 : index === 96 ? 2 : 1.5 };
+    });
+    expect(describeCoarse(rows, "quarter-hour", "hour")).toContain(
+      `Forbruk: lavest 1 ${dated("an hour on a two-day domain in nb-NO")}, høyest 2 ${dated("the second day's first hour on a two-day domain in nb-NO")}.`
+    );
+  });
+
+  it("dates each day with its year on an hourly domain into a new year", () => {
+    // 48 hours of 31 December 2025 and 1 January 2026 in Oslo. Daily usage reads 1 on the 31st and
+    // 2 on the 1st, each on its day's first hour.
+    const first = Date.UTC(2025, 11, 30, 23);
+    const rows = Array.from({ length: 48 }, (_, index) => {
+      const start = new Date(first + index * 3_600_000);
+      return index === 0 ? { start, kwh: 1 } : index === 24 ? { start, kwh: 2 } : { start };
+    });
+    expect(describeCoarse(rows, "hour", "day")).toContain(
+      `Forbruk: lavest 1 ${dated("a day on a domain into 2026, in nb-NO")}, høyest 2 ${dated("the first day of 2026 on a domain into 2026, in nb-NO")}.`
     );
   });
 });

@@ -6,9 +6,10 @@
  * replaces keeps its motion, and it forgets the mark when the mark unmounts. `useCommitMotion`
  * tells a mark how to reach the geometry of each commit it draws.
  */
-import { useCallback, useId, useLayoutEffect, useMemo, useRef } from "react";
+import { use, useCallback, useId, useLayoutEffect, useMemo, useRef } from "react";
 import type { RefCallback } from "react";
 
+import { ChartLayoutContext } from "./chart-context";
 import type { ChartUpdate } from "./chart-context";
 import type { FollowerCause } from "./chart-followers";
 import { SAME_PLOT } from "./chart-motion";
@@ -46,7 +47,8 @@ export type MotionMark<T extends Element, A extends readonly ValueAxis[]> = {
 };
 
 /**
- * Register a mark with Root's loop for as long as it is mounted.
+ * Register a mark with Root's loop for as long as it is mounted. The mark draws in the frame of the
+ * nearest layout, Root's default one or its Panel's, so a resize of that frame alone maps its tween.
  *
  * @param motion - Root's loop.
  * @param write - Writes the loop's numbers onto the mark's node: a function bound at module scope,
@@ -64,6 +66,7 @@ export function useMotionMark<
   const A extends readonly ValueAxis[],
 >(motion: ChartMotion, write: MotionWriter<T, L>, look: L, axes: A): MotionMark<T, A> {
   const id = useId();
+  const owner = use(ChartLayoutContext)?.owner;
   const node = useRef<T | null>(null);
   const latest = useRef({ write, look });
   const declared = useRef<readonly ValueAxis[]>(axes);
@@ -93,11 +96,10 @@ export function useMotionMark<
           if (node.current !== null) latest.current.write(node.current, latest.current.look, values);
         },
         placement,
-        declared.current,
-        anchor
+        { axes: declared.current, anchor, owner }
       );
     },
-    [motion, id]
+    [motion, id, owner]
   );
   return useMemo(() => ({ ref, node: current, drawn, place }), [ref, current, drawn, place]);
 }
@@ -155,7 +157,7 @@ export function useCommitMotion(update: ChartUpdate, plot: ChartPlot | null, spa
     if (previous.space !== space) return commit("snap");
     if (previous.update === update || previous.plot !== plot) return commit("settle");
     // A data update moves the marks that stay, unless it relays the plot, which snaps them all.
-    return commit(update.kind === "data" && !update.relays ? "move" : "snap");
+    return commit(update.kind === "data" && !update.relays && !update.layouts.relays ? "move" : "snap");
   };
 }
 

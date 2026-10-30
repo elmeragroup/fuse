@@ -313,7 +313,7 @@
           "origin": "declared",
           "type": "\"none\" | \"zero\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"zero\"",
           "description": "As Root's `yBaseline`, for this Panel's layout. \"zero\" by default.",
           "required": false
         },

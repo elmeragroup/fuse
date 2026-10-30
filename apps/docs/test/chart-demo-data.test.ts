@@ -21,9 +21,26 @@ import { PRICE_DAY_2026_05_24 as LEVEL_DAY } from "../src/app/(docs)/components/
 import { PRICE_DAY_2026_05_24 as SPIKE_DAY } from "../src/app/(docs)/components/bar-chart/demos/bar-chart-price-spike";
 import { NO1_HOUSEHOLD_MONTHLY } from "../src/app/(docs)/components/bar-chart/demos/bar-chart-year-vs-last-year";
 import {
+  NO1_HOUSEHOLD_DAILY_2025_09 as SWITCH_SEPTEMBER,
+  NO1_HOUSEHOLD_DAILY_2025_10 as SWITCH_OCTOBER,
+} from "../src/app/(docs)/components/chart/demos/chart-month-usage-and-price";
+import {
+  PROSUMER_NET_2026_03_29,
+  PROSUMER_SOLAR_2026_03_29,
+} from "../src/app/(docs)/components/chart/demos/chart-prosumer-day";
+import { PRICE_DAY_2026_05_24 as TOTAL_DAY } from "../src/app/(docs)/components/chart/demos/chart-total-price";
+import {
+  NO1_HOUSEHOLD_2025_10_26,
+  PRICE_DAY_2025_10_26,
+} from "../src/app/(docs)/components/chart/demos/chart-usage-and-price";
+import {
   HOURLY_YEAR_KWH,
   HOURLY_YEAR_START,
 } from "../src/app/(docs)/components/chart/demos/data/hourly-year";
+import {
+  HOURLY_AUTUMN_KWH,
+  HOURLY_AUTUMN_START,
+} from "../src/app/(docs)/components/chart/demos/data/no1-household-hourly-2025-09-2025-10";
 
 const FIXTURES = path.join(docsRoot, "../../packages/fuse/src/components/chart/format/fixtures");
 
@@ -54,6 +71,7 @@ describe("the chart demos' inline data", () => {
     ["the month to date", MONTH_DAYS],
     ["the capacity step", CAPACITY_DAYS],
     ["the month against last year", COMPARED_DAYS],
+    ["the month switch", SWITCH_OCTOBER],
   ] as const)("holds October 2025's days for %s", (_, constant) => {
     expect(JSON.parse(fixtureText("elhub/no1-household-daily-2025-10.json"))).toMatchObject({
       days: constant,
@@ -75,6 +93,7 @@ describe("the chart demos' inline data", () => {
   it.each([
     ["the price levels", LEVEL_DAY],
     ["the price spike", SPIKE_DAY],
+    ["the total price", TOTAL_DAY],
   ] as const)("holds the hand-written price day for %s", (_, constant) => {
     expect(JSON.parse(fixtureText("prices/negative-spike-2026-05-24-quarter.json"))).toMatchObject(constant);
   });
@@ -83,6 +102,37 @@ describe("the chart demos' inline data", () => {
     expect(JSON.parse(fixtureText("elhub/no1-household-hourly-2025-10_2026-09.json"))).toMatchObject({
       start: HOURLY_YEAR_START,
       values: HOURLY_YEAR_KWH,
+    });
+  });
+
+  it("holds September 2025's days for the month switch", () => {
+    expect(JSON.parse(fixtureText("elhub/no1-household-daily-2025-09.json"))).toMatchObject({
+      days: SWITCH_SEPTEMBER,
+    });
+  });
+
+  it("holds September and October 2025's hours for the Sparklines", () => {
+    expect(JSON.parse(fixtureText("elhub/no1-household-hourly-2025-09_2025-10.json"))).toMatchObject({
+      start: HOURLY_AUTUMN_START,
+      values: HOURLY_AUTUMN_KWH,
+    });
+  });
+
+  it("holds the fall-back day's household hours and hand-written price quarters for usage and price", () => {
+    // The constant keeps the household rows alone, in the fixture's order.
+    const household = NO1_HOUSEHOLD_2025_10_26.flatMap((row) => [row, { consumptionGroup: "cabin" }]);
+    expect(JSON.parse(fixtureText("elhub/no1-consumption-2025-10-26.json"))).toMatchObject({
+      rows: household,
+    });
+    expect(JSON.parse(fixtureText("prices/fall-back-2025-10-26-quarter.json"))).toMatchObject(
+      PRICE_DAY_2025_10_26
+    );
+  });
+
+  it("holds the derived prosumer day", () => {
+    expect(JSON.parse(fixtureText("elhub/no1-prosumer-2026-03-29.json"))).toMatchObject({
+      quarters: PROSUMER_SOLAR_2026_03_29,
+      hours: PROSUMER_NET_2026_03_29,
     });
   });
 });

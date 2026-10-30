@@ -6,15 +6,21 @@ import type { ReactElement, ReactNode } from "react";
 import { useMediaQuery } from "../../hooks/use-media-query";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
-import { ChartLayoutContext, ChartRootContext } from "./chart-context";
-import type { ChartLayoutContextValue, ChartRootContextValue, ChartUpdate } from "./chart-context";
+import { ChartLayoutContext, ChartRootContext, partOutsidePanel } from "./chart-context";
+import type {
+  ChartLayoutContextValue,
+  ChartRootContextValue,
+  ChartUpdate,
+  PanelEntry,
+} from "./chart-context";
 import { createChartFollowers } from "./chart-followers";
 import type { ActiveSlot } from "./chart-followers";
 import { createChartLabels } from "./chart-labels";
-import { createChartMotion } from "./chart-motion";
-import type { ChartMotion } from "./chart-motion";
+import { createChartMotion, createFrameOwner } from "./chart-motion";
+import type { ChartMotion, FrameOwner } from "./chart-motion";
+import { colourFamilyError } from "./chart-paint";
 import { createChartPaths } from "./chart-paths";
-import { ChartPlotContext, useMeasuredPlot } from "./chart-plot";
+import { ChartPlotContext, ChartRootPlotContext, useMeasuredPlot, usePanelSpan } from "./chart-plot";
 import { PlotSkeleton } from "./chart-skeleton";
 import { createChartStore, useClientMount } from "./chart-store";
 import type { ChartSnapshot, EmphasisEntry } from "./chart-store";
@@ -42,10 +48,11 @@ import type {
   ChartXValue,
 } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
-import { buildCartesianModel } from "./layout/cartesian-model";
+import { buildCartesianModel, layoutDomain } from "./layout/cartesian-model";
 import type { CartesianModel, ModelIssue } from "./layout/cartesian-model";
+import { intervalNests } from "./layout/coarse-slots";
 import { ChartCompositionError, ChartDataError, DATA_MESSAGES, isChartDevelopment } from "./layout/errors";
-import { relaysPlot } from "./layout/relay";
+import { mountedSeries, relaysPlot } from "./layout/relay";
 import { numberOf, stringOf } from "./layout/scalar";
 import { pairSlotKeys } from "./layout/slot-keys";
 import type { SlotKeys } from "./layout/slot-keys";
@@ -136,6 +143,9 @@ export type ChartRootProps<
     children?: ReactNode;
   };
 
+/** Each config key's layout value domain, by key. */
+type KeyDomains = ReadonlyMap<string, readonly [number, number]>;
+
 /** One commit's motion facts, kept across renders so the next commit can compare. */
 type ChartCommit = {
   readonly model: CartesianModel;
@@ -145,9 +155,80 @@ type ChartCommit = {
   readonly range: unknown;
   readonly update: ChartUpdate;
   readonly keys: SlotKeys;
-  /** The value domain the marks' running tweens set out from, the model's own once they rest. */
-  readonly glidesFrom: readonly [number, number];
+  /** The value domain of the layout each key draws in. */
+  readonly domains: KeyDomains;
+  /**
+   * The keys whose layout's value domain moved since the motion loop last rested, so a tween that
+   * glides one Panel between two domains leaves the other Panels alone. A domain that returns to
+   * where it started mid-tween stays moved, because its marks still glide back.
+   */
+  readonly moved: ReadonlySet<string>;
 };
+
+/**
+ * The value domain each config key draws in: its Panel's, or the default layout's without Panels.
+ * Root computes a Panel's domain from what the Panel registered, as the Panel computes it during
+ * render, so both read the same model.
+ */
+function keyDomains(
+  model: CartesianModel,
+  stackOffset: "diverging" | "expand",
+  panels: readonly PanelEntry[]
+): KeyDomains {
+  if (panels.length === 0) return new Map(model.series.map(({ key }) => [key, model.y.domain]));
+  const stacked = { ...model, stackOffset };
+  return new Map(
+    panels.flatMap(({ layout }) => {
+      const { domain } = layoutDomain(stacked, layout);
+      return layout.keys.map((key) => [key, domain] as const);
+    })
+  );
+}
+
+/** Order two Panels as their plots sit on the page. */
+function inPageOrder(a: PanelEntry, b: PanelEntry): number {
+  const [first, second] = [a.plot(), b.plot()];
+  if (first === null || second === null || first === second) return 0;
+  return first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+}
+
+/** Whether two key domain maps hold the same domain for a key. */
+function sameDomain(a: KeyDomains, b: KeyDomains, key: string): boolean {
+  const [lowA, highA] = a.get(key) ?? [0, 1];
+  const [lowB, highB] = b.get(key) ?? [0, 1];
+  return lowA === lowB && highA === highB;
+}
+
+/**
+ * The error of Panels that break section 8.3's layouts: a key listed by two Panels and a config key
+ * that no Panel lists. It reads every Panel of the current tree, so it runs once their effects
+ * have registered them all.
+ *
+ * @returns The error, or null when the Panels cover every key once.
+ */
+function panelsError(config: ChartConfig, panels: readonly PanelEntry[]): ChartCompositionError | null {
+  const owners = new Set<string>();
+  for (const { layout } of panels) {
+    for (const key of layout.keys) {
+      if (owners.has(key)) {
+        return new ChartCompositionError(
+          "Chart.Panel",
+          "series-in-two-panels",
+          `lists ${JSON.stringify(key)}, which another Chart.Panel lists too, so it would have two y domains. List each config key in one Panel.`
+        );
+      }
+      owners.add(key);
+    }
+  }
+  const outside = Object.keys(config).find((key) => !owners.has(key));
+  return outside === undefined
+    ? null
+    : new ChartCompositionError(
+        "Chart.Root",
+        "key-outside-panels",
+        `has config key ${JSON.stringify(outside)}, which no Chart.Panel lists, so it has no y domain. Add it to one Panel's series.`
+      );
+}
 
 /** One end of an x range as a comparable string. */
 function rangePart(value: ChartScalar): string {
@@ -218,22 +299,7 @@ function sameConfig(a: ChartConfig, b: ChartConfig): boolean {
   );
 }
 
-/** The roles of a colour, a list's every role. */
-function rolesOf(color: ChartSeriesConfig["color"]): readonly string[] {
-  return isRoleList(color) ? color : [color];
-}
-
-/** Whether a colour is a role list. */
-function isRoleList(
-  color: ChartSeriesConfig["color"]
-): color is Extract<ChartSeriesConfig["color"], readonly unknown[]> {
-  return Array.isArray(color);
-}
-
-/**
- * Throw for config that cannot draw: a key that names no column of any row, and one layout that
- * mixes a sentiment role with a categorical role, which D4 forbids.
- */
+/** Throw for config that cannot draw: a key that names no column of any row. */
 function assertConfigFits(config: ChartConfig, data: readonly ChartRow[]): void {
   const keys = Object.keys(config);
   if (data.length > 0) {
@@ -245,16 +311,6 @@ function assertConfigFits(config: ChartConfig, data: readonly ChartRow[]): void 
         `has config key ${JSON.stringify(absent)}, which names no column of any row. Name a number column of the rows.`
       );
     }
-  }
-  const roles = Object.values(config).flatMap((entry) => rolesOf(entry.color));
-  const sentiment = roles.some((role) => role.startsWith("chart-sentiment-"));
-  const categorical = roles.some((role) => /^chart-\d$/u.test(role));
-  if (sentiment && categorical) {
-    throw new ChartCompositionError(
-      "Chart.Root",
-      "mixed-sentiment-categorical",
-      "mixes a sentiment role with a categorical role in one layout. Colour every series of the layout by sentiment, or every series by category."
-    );
   }
 }
 
@@ -363,6 +419,18 @@ export function ChartRoot<
   assertConfigFits(config, data);
   for (const [key, entry] of Object.entries(config)) {
     if (
+      entry.interval !== undefined &&
+      (interval === undefined || !intervalNests(interval, entry.interval))
+    ) {
+      throw new ChartCompositionError(
+        "Chart.Root",
+        "interval-not-nested",
+        interval === undefined
+          ? `has config ${JSON.stringify(key)} interval ${JSON.stringify(entry.interval)} on a category axis. A series interval needs Root's time axis, so pass interval on Chart.Root.`
+          : `has config ${JSON.stringify(key)} interval ${JSON.stringify(entry.interval)}, which does not nest Root's ${JSON.stringify(interval)}. Root's interval is the finest in the chart, so give Root the finest one, and give a series an interval that holds whole Root slots.`
+      );
+    }
+    if (
       entry.projectedFrom === undefined ||
       (interval !== undefined) !== (stringOf(entry.projectedFrom) !== undefined)
     ) {
@@ -414,7 +482,12 @@ export function ChartRoot<
           ([key, entry]) =>
             [
               key,
-              { stack: entry.stack, qualityKey: entry.qualityKey, projectedFrom: entry.projectedFrom },
+              {
+                stack: entry.stack,
+                qualityKey: entry.qualityKey,
+                projectedFrom: entry.projectedFrom,
+                interval: entry.interval,
+              },
             ] as const
         ),
         xKey,
@@ -451,8 +524,16 @@ export function ChartRoot<
   );
   const reduced = useMediaQuery(REDUCED_MOTION);
   const [motion] = useState(() => browserMotion(reduced));
+  // The mounted Panels: the registry their effects write, and its snapshot in Panel order, which
+  // renders. A Panel rule breaks only once the whole current tree has registered.
+  const [registry] = useState(() => new Set<PanelEntry>());
+  const [panels, setPanels] = useState<readonly PanelEntry[]>([]);
+  const domains = useMemo(() => keyDomains(model, stackOffset, panels), [model, stackOffset, panels]);
+  const colourRule = useMemo(() => colourFamilyError("Chart.Root", config, Object.keys(config)), [config]);
   // The mounted Bars, which register after they mount, so a data update knows which series draw bars.
-  const [bars] = useState(() => new Map<object, { readonly key: string; readonly grouped: boolean }>());
+  const [bars] = useState(
+    () => new Map<object, { readonly key: string; readonly grouped: boolean; readonly layout: FrameOwner }>()
+  );
   // Which kind of commit produced this model, and the keys its marks render under.
   const [seen, setSeen] = useState((): ChartCommit => {
     const keys = pairSlotKeys(null, model.domain);
@@ -461,38 +542,84 @@ export function ChartRoot<
       data,
       config: modelConfig,
       range: windowRange,
-      update: { kind: "initial", keys: keys.keys, relays: false },
+      update: {
+        kind: "initial",
+        keys: keys.keys,
+        relays: false,
+        from: domains,
+        mounted: new Set(),
+        gliding: new Set(),
+        layouts: { relays: false, moved: new Set() },
+      },
       keys,
-      glidesFrom: model.y.domain,
+      domains,
+      moved: new Set(),
     };
   });
   let commit = seen;
-  if (seen.model !== model) {
+  if (seen.model !== model || seen.domains !== domains) {
     const rangeOnly = seen.data === data && seen.config === modelConfig && seen.range !== windowRange;
     const keys = pairSlotKeys(seen.keys, model.domain);
-    // The marks draw between two value domains while a tween that set out from another runs.
-    const running = motion.running();
-    const [low, high] = seen.model.y.domain;
-    const gliding = running && (seen.glidesFrom[0] !== low || seen.glidesFrom[1] !== high);
+    // A layout's marks draw between two value domains while a tween that set out from another runs,
+    // unless a Panel relayed the update that started it, which snapped every mark.
+    const running = motion.running() && !seen.update.layouts.relays;
+    const gliding = running ? new Set([...seen.moved, ...seen.update.layouts.moved]) : new Set<string>();
+    // A Panel computes its domain from inputs Root sees only once it registers, so each Panel
+    // decides whether an update moves its own domain while it renders, through
+    // `reportLayoutDomain`. Root decides for its default layout, and leaves the Panels' keys where
+    // they drew.
+    const panelKeys = new Set(panels.flatMap(({ layout }) => layout.keys));
+    const own = new Map(domains);
+    for (const key of panelKeys) own.set(key, seen.domains.get(key) ?? domains.get(key) ?? [0, 1]);
+    const drawn = new Set([...bars.values()].map(({ key }) => key));
     const relays =
       !rangeOnly &&
       relaysPlot(
-        { model: seen.model, keys: seen.update.keys },
-        { model, keys: keys.keys },
+        { model: seen.model, keys: seen.update.keys, domains: seen.domains },
+        { model, keys: keys.keys, domains: own },
         orientation,
         gliding,
-        new Set([...bars.values()].map(({ key }) => key))
+        drawn
       );
+    // Panels that register leave the model alone, and their first domains are no update.
+    const registered = seen.model === model;
     commit = {
       model,
       data,
       config: modelConfig,
       range: windowRange,
-      update: { kind: rangeOnly ? "range" : "data", keys: keys.keys, relays },
+      update: registered
+        ? seen.update
+        : {
+            kind: rangeOnly ? "range" : "data",
+            keys: keys.keys,
+            relays,
+            from: seen.domains,
+            mounted: mountedSeries(
+              { model: seen.model, keys: seen.update.keys },
+              { model, keys: keys.keys },
+              orientation,
+              drawn
+            ),
+            gliding,
+            layouts: { relays: false, moved: new Set() },
+          },
       keys,
-      // A commit that snaps the marks lands them on its domain, and one that moves them sets out
-      // from where they rest, or from where the tweens they interrupt set out.
-      glidesFrom: relays || rangeOnly ? model.y.domain : running ? seen.glidesFrom : seen.model.y.domain,
+      domains,
+      // A commit that snaps the marks lands them on its domains. One that only registers leaves the
+      // running tweens alone, so their keys still glide. One that moves the marks adds the keys
+      // whose domain it changes to those the tweens it interrupts still glide.
+      moved:
+        relays || rangeOnly
+          ? new Set()
+          : registered
+            ? gliding
+            : new Set([
+                ...gliding,
+                ...[...domains.keys()].filter(
+                  (key) => !panelKeys.has(key) && !sameDomain(seen.domains, domains, key)
+                ),
+              ]),
     };
     setSeen(commit);
   }
@@ -513,7 +640,10 @@ export function ChartRoot<
     return createChartStore(slot === -1 ? null : slot);
   });
   const rootRef = useRef<HTMLElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const plotRef = useRef<HTMLDivElement>(null);
+  // Root's plot spans its Panels' plots, so their span is written before Root measures it.
+  const placeSpan = usePanelSpan(frameRef, panels);
   const plot = useMeasuredPlot(plotRef);
   const modelRef = useRef(model);
   useLayoutEffect(() => {
@@ -522,6 +652,8 @@ export function ChartRoot<
   const [followers] = useState(createChartFollowers);
   const [labels] = useState(createChartLabels);
   const [paths] = useState(createChartPaths);
+  // The default layout's frame, which names its marks' tweens to the loop for the Root's life.
+  const [owner] = useState(() => createFrameOwner("root"));
   // The active slot and series last painted, so a store change that moves neither paints nothing.
   const paintedRef = useRef<readonly [number | null, number | null]>([null, null]);
   useLayoutEffect(() => {
@@ -628,11 +760,14 @@ export function ChartRoot<
   );
   const overlapWarned = useRef(false);
   const registerBar = useCallback(
-    (key: string, grouped: boolean): (() => void) => {
+    (key: string, grouped: boolean, layout: FrameOwner): (() => void) => {
       const token = {};
-      bars.set(token, { key, grouped });
+      bars.set(token, { key, grouped, layout });
       if (isChartDevelopment() && !overlapWarned.current) {
-        const loose = [...bars.values()].filter((bar) => !bar.grouped).map((bar) => bar.key);
+        // Bars in two Panels draw in two plots, so only loose Bars of one layout overlap.
+        const loose = [...bars.values()]
+          .filter((bar) => !bar.grouped && bar.layout === layout)
+          .map((bar) => bar.key);
         const stackOf = new Map(Object.entries(config).map(([name, entry]) => [name, entry.stack]));
         const pair = loose.flatMap((first, index) =>
           loose
@@ -671,6 +806,48 @@ export function ChartRoot<
     },
     [store]
   );
+  // The plot parts that draw in the default layout. One beside a Panel breaks the Panel rules, and
+  // a registration while Panels exist renders Root again, so its check below runs.
+  const [rootParts] = useState(() => new Map<object, string>());
+  const [rootPartsSeen, setRootPartsSeen] = useState(0);
+  const registerRootPart = useCallback(
+    (part: string): (() => void) => {
+      const token = {};
+      rootParts.set(token, part);
+      if (registry.size > 0) setRootPartsSeen((count) => count + 1);
+      return () => {
+        rootParts.delete(token);
+      };
+    },
+    [registry, rootParts]
+  );
+  const registerPanel = useCallback(
+    (panel: PanelEntry): (() => void) => {
+      // A Panel whose layout changes registers anew, so the list keeps the Panels' order on the page.
+      registry.add(panel);
+      setPanels([...registry].sort(inPageOrder));
+      return () => {
+        registry.delete(panel);
+        setPanels([...registry].sort(inPageOrder));
+      };
+    },
+    [registry, setPanels]
+  );
+  // Root's layout effects run after its Panels' in every commit, so the registry holds the current
+  // tree's Panels, and an error thrown here reaches the error boundary as one thrown in render
+  // does. A Panel whose server HTML hydrates later is on the page but not yet registered, and its
+  // keys are unknown, so the rules wait for it.
+  useLayoutEffect(() => {
+    if (registry.size === 0) return;
+    const [stray] = rootParts.values();
+    if (stray !== undefined) throw partOutsidePanel(stray);
+    const onPage =
+      rootRef.current?.querySelectorAll(':scope > [data-slot="chart-frame"] > [data-slot="chart-panel"]')
+        .length ?? 0;
+    if (onPage > registry.size) return;
+    const error = panelsError(config, [...registry]);
+    if (error !== null) throw error;
+  }, [config, panels, registry, rootParts, rootPartsSeen]);
   const warnOnce = useCallback((rule: string, message: string): void => {
     if (warned.current.has(rule)) return;
     warned.current.add(rule);
@@ -708,13 +885,24 @@ export function ChartRoot<
       update: commit.update,
       motion,
       followers,
-      labels,
       paths,
       registerBar,
       drawsBar,
       registerEmphasis,
+      registerPanel,
+      registerRootPart,
+      placeSpan,
+      panels,
+      domains,
+      colourRule,
     }),
     [
+      colourRule,
+      placeSpan,
+      registerPanel,
+      registerRootPart,
+      panels,
+      domains,
       data,
       warnOnce,
       intro,
@@ -723,7 +911,6 @@ export function ChartRoot<
       commit,
       motion,
       followers,
-      labels,
       paths,
       registerBar,
       drawsBar,
@@ -749,8 +936,15 @@ export function ChartRoot<
     ]
   );
   const layout = useMemo(
-    (): ChartLayoutContextValue => ({ keys: Object.keys(config), y: model.y, baseline: yBaseline }),
-    [config, model.y, yBaseline]
+    (): ChartLayoutContextValue => ({
+      kind: "root",
+      keys: Object.keys(config),
+      y: model.y,
+      baseline: yBaseline,
+      owner,
+      labels,
+    }),
+    [config, model.y, yBaseline, owner, labels]
   );
   const slots = model.window === null ? 0 : model.window.last - model.window.first + 1;
   return (
@@ -773,14 +967,16 @@ export function ChartRoot<
           <p id={`${id}-instructions`} data-slot="chart-instructions">
             {strings.instructionsCartesian}
           </p>
-          <div data-slot="chart-frame" style={{ "--chart-slots": slots }}>
+          <div ref={frameRef} data-slot="chart-frame" style={{ "--chart-slots": slots }}>
             <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
               {plot === null && !model.empty ? <PlotSkeleton /> : null}
             </div>
-            <ChartPlotContext value={plot}>
-              <ChartSurface name={name} labelledBy={labelledBy} />
-              {children}
-            </ChartPlotContext>
+            <ChartRootPlotContext value={plot}>
+              <ChartPlotContext value={plot}>
+                <ChartSurface name={name} labelledBy={labelledBy} />
+                {children}
+              </ChartPlotContext>
+            </ChartRootPlotContext>
           </div>
           <ChartStatus />
         </figure>

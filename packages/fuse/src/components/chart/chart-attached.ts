@@ -15,6 +15,7 @@ import { joinPath } from "./chart-paths";
 import type { PathRoute } from "./chart-paths";
 import { geometryOf } from "./layout/bar-geometry";
 import type { SeriesModel } from "./layout/cartesian-model";
+import { ownCentre, ownSlot } from "./layout/coarse-slots";
 import { pointAlong, slotCentreAt, snapAcross, valueAt } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
 
@@ -50,7 +51,7 @@ export function restingPoint(
   const window = context.model.window;
   const value = pointValue(series, slot);
   if (window === null || value === null) return null;
-  return [slotCentreAt(frame, slot - window.first, context.xScale), valueAt(frame, value)];
+  return [slotCentreAt(frame, ownCentre(series, window, slot), context.xScale), valueAt(frame, value)];
 }
 
 /**
@@ -103,10 +104,12 @@ export function attachJoin(
   rest: MarkValues,
   prefer: "line" | "bar"
 ): FollowerJoin | undefined {
-  const first = context.model.window?.first ?? 0;
-  const marks = slots.map((slot) => ({
+  const window = context.model.window ?? { first: 0, last: 0 };
+  // A coarse series draws one vertex and one bar per own slot, which every Root slot it holds joins.
+  const owned = slots.map((slot) => ownSlot(series, slot)[0]);
+  const marks = owned.map((slot) => ({
     key: context.update.keys[slot] ?? String(slot),
-    position: slot - first,
+    position: ownCentre(series, window, slot),
   }));
   const line = context.paths.get(series.seriesIndex, "line");
   const columns = context.paths.get(series.seriesIndex, "columns");
@@ -119,7 +122,7 @@ export function attachJoin(
     slots.length === 0 || !context.drawsBar(series.key)
       ? undefined
       : {
-          leads: slots.map((slot) => ({ anchor: barAnchor(series.seriesIndex, slot), pick: tip, rest: tip })),
+          leads: owned.map((slot) => ({ anchor: barAnchor(series.seriesIndex, slot), pick: tip, rest: tip })),
           crossfade: null,
         };
   const onPath = (route: PathRoute | undefined, kind: "line" | "columns"): FollowerJoin | undefined =>

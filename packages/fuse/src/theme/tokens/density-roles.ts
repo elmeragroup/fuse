@@ -93,6 +93,7 @@ export const PART_DENSITY = {
   // them. Chart text reads 12 px on a 16 px line at both densities, so text slots are fixed.
   chart: "layout",
   "chart-frame": "layout",
+  "chart-panel": "layout",
   "chart-plot": "fixed",
   "chart-surface": "fixed",
   "chart-point": "fixed",
