@@ -17,6 +17,7 @@ import {
 } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import { ChartPendingRootContext, useChartRoot } from "./chart-context";
+import { useChartFrame } from "./chart-plot";
 import {
   ChartLiveContext,
   ChartRowContext,
@@ -32,7 +33,7 @@ import { pointerSlot } from "./chart-surface";
 import { slotLabel } from "./chart-text";
 import { ChartTooltipTotal } from "./chart-tooltip-total";
 import type { ChartDomProps, ChartLayerProps, ChartShareFormat, ValueFormat, XFormat } from "./chart-types";
-import { slotCentre, valueTop } from "./layout/plot-geometry";
+import { WHOLE_BAND, barSpan, centreOf, frameRect, optionBand, snapY, valueAt } from "./layout/plot-frame";
 import { tooltipSideOffset } from "./layout/tooltip-place";
 
 /**
@@ -144,44 +145,50 @@ function ChartTooltipBody({
   const window = model.window;
   const open = point.slot !== null;
   const slot = point.slot;
+  const drawn = useChartFrame("Chart.Tooltip");
   const virtual = useMemo((): Anchor | null => {
-    if (slot === null || window === null) return null;
-    const at = slotCentre(window, slot, xScale);
+    if (slot === null || window === null || drawn === null) return null;
+    const { frame, metrics } = drawn;
+    const position = slot - window.first;
     const extents = model.series.flatMap(({ extents: list }) => {
       const extent = list[slot];
       return extent ? [extent[1]] : [];
     });
+    // The anchor starts at the column's highest value, or at the plot's top for anchor="top".
     const top =
-      anchor === "top" || extents.length === 0 ? 0 : valueTop(model.y.domain, Math.max(...extents)) / 100;
-    const span = 1 / (window.last - window.first + 1);
+      anchor === "top" || extents.length === 0 ? 0 : snapY(frame.box, valueAt(frame, Math.max(...extents)));
     return {
       getBoundingClientRect: () => {
         const surface = document.getElementById(`${id}-surface`)?.getBoundingClientRect();
         if (surface === undefined) return new DOMRect();
-        if (orientation === "horizontal") {
-          // The anchor is the drawn bar row, the band less the gap the bars leave around it, so
-          // the popup's edge meets the bars as it meets a vertical column.
-          const band = surface.height * span;
-          const gap = bandGap(document.getElementById(`${id}-surface`)) * band;
-          return new DOMRect(
-            surface.left,
-            surface.top + surface.height * (at - span / 2) + gap / 2,
-            surface.width,
-            band - gap
-          );
-        }
-        // The anchor is the active column from its value top down to the plot's bottom. The popup
-        // sits above it or flips below the plot, so it never covers the column it reads.
-        const width = xScale === "band" ? surface.width * span : 0;
-        return new DOMRect(
-          surface.left + surface.width * at - width / 2,
-          surface.top + surface.height * top,
-          width,
-          surface.height * (1 - top)
-        );
+        const { box } = frame;
+        // Plot coordinates are layout pixels, and the surface's client box carries every transform
+        // above the plot, so a coordinate scales by the client box's share of the layout box.
+        const scaleX = box.width === 0 ? 1 : surface.width / box.width;
+        const scaleY = box.height === 0 ? 1 : surface.height / box.height;
+        const client = (x: number, y: number, width: number, height: number) =>
+          new DOMRect(surface.left + x * scaleX, surface.top + y * scaleY, width * scaleX, height * scaleY);
+        // The anchor's span along the slot axis, resolved before the orientation: the point itself
+        // under a point scale, the drawn bar row on a horizontal band chart, so the popup's edge
+        // meets the bars, and the focused option's and the crosshair's columns on a vertical one.
+        const along = (): readonly [number, number] => {
+          if (xScale === "point") {
+            const centre = centreOf(frame, position, "point");
+            return [centre, centre];
+          }
+          if (orientation === "vertical") return optionBand(frame, position, "band");
+          const row = frameRect(frame, barSpan(frame, position, metrics, WHOLE_BAND), [0, box.width]);
+          return [row.y, row.y + row.height];
+        };
+        const [start, end] = along();
+        // A horizontal anchor spans the plot's width, and a vertical one runs from the column's
+        // value top down to the plot's bottom. The popup sits beside it, so it never covers it.
+        return orientation === "horizontal"
+          ? client(0, start, box.width, end - start)
+          : client(start, top, end - start, box.height - top);
       },
     };
-  }, [slot, window, xScale, model, anchor, id, orientation]);
+  }, [slot, window, xScale, model, anchor, id, orientation, drawn]);
   // Whether the pointer entered the popup by moving straight toward it from the active slot. Only
   // that entry freezes the slot, as CONTRACT section 9.5's safe triangle does for polar charts, so
   // a scrub that crosses the popup keeps following x. The surface records the last plot position.
@@ -282,16 +289,6 @@ function ChartTooltipBody({
       </OverlayPortal>
     </TooltipPrimitive.Root>
   );
-}
-
-/**
- * The share of a slot band that bars leave empty, from the `--chart-band-gap` the theme or the
- * consumer sets, a percentage. A value that is no percentage counts as no gap.
- */
-function bandGap(element: Element | null): number {
-  const value = element === null ? "" : getComputedStyle(element).getPropertyValue("--chart-band-gap").trim();
-  const share = value.endsWith("%") ? Number.parseFloat(value) / 100 : 0;
-  return Number.isFinite(share) ? Math.min(Math.max(share, 0), 1) : 0;
 }
 
 /** The default popup content: the slot label, one row per config key and one total per stack. */

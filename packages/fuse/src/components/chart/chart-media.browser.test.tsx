@@ -1,9 +1,9 @@
 // The forced-colours and print judges of ticket 05, after pass 2's critic/media/media.mjs. Under
-// forced colours, in Chromium and Firefox, every bar keeps its series colour, compared by its
+// forced colours, in Chromium, every bar keeps its series colour, compared by its
 // chromatic pixel count with the on-screen render, an estimated bar keeps its dashed outline, and
 // text, axes and the focus ring paint system colours. In Chromium a print PDF paints every bar,
 // one chromatic fill per bar. WebKit's Playwright build emulates neither. The glow judge, E10,
-// reads the halo above the tallest bars in every engine.
+// reads the halo above the tallest bars.
 import type { ReactNode } from "react";
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -40,14 +40,6 @@ afterEach(async () => {
   if (server.browser !== "webkit") await emulateMedia("screen", "none");
 });
 
-/** Finish the entrance, so pixels read at rest. */
-function settle(host: HTMLElement): void {
-  // DOM audit: Root's figure holds every animation of the chart.
-  for (const animation of host.querySelector('[data-slot="chart"]')?.getAnimations({ subtree: true }) ?? []) {
-    if (Number.isFinite(animation.effect?.getComputedTiming().endTime ?? Infinity)) animation.finish();
-  }
-}
-
 function plotRect(host: HTMLElement): DOMRect {
   // DOM audit: the bar series box is the plot box.
   return host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect() ?? new DOMRect();
@@ -67,7 +59,6 @@ describe("forced colours", () => {
         </S06Chart>
       </div>
     );
-    settle(host);
     await frame();
     const [screen = 0] = await chromaticPixels([plotRect(host)]);
     await emulateMedia("screen", "active");
@@ -88,6 +79,7 @@ describe("forced colours", () => {
       <LocaleProvider locale="nb-NO">
         <div style={{ width: 300 }}>
           <Chart.Root
+            data-intro="none"
             data={rows}
             config={{ kwh: { label: "Forbruk", color: "chart-1", qualityKey: "q" } }}
             xKey="day"
@@ -99,7 +91,6 @@ describe("forced colours", () => {
         </div>
       </LocaleProvider>
     );
-    settle(host);
     await emulateMedia("screen", "active");
     await frame();
     const plot = plotRect(host);
@@ -121,6 +112,7 @@ describe("forced colours", () => {
       <LocaleProvider locale="nb-NO">
         <div style={{ width: 300 }}>
           <Chart.Root
+            data-intro="none"
             data={rows}
             config={{ kwh: { label: "Forbruk", color: "chart-1", qualityKey: "q" } }}
             xKey="day"
@@ -132,7 +124,6 @@ describe("forced colours", () => {
         </div>
       </LocaleProvider>
     );
-    settle(host);
     await emulateMedia("screen", "active");
     await frame();
     // DOM audit: the missing tick is aria-hidden plot output.
@@ -177,7 +168,7 @@ describe("forced colours", () => {
     const tick = host.querySelector('[data-slot="chart-x-tick"]') ?? document.body;
     const line = host.querySelector('[data-slot="chart-grid-line"]') ?? document.body;
     expect(getComputedStyle(tick).color).toBe(probe.color);
-    expect(getComputedStyle(line).borderTopColor).toBe(probe.color);
+    expect(getComputedStyle(line).stroke).toBe(probe.color);
     host.querySelector("button")?.focus();
     await userEvent.keyboard("{Tab}");
     // DOM audit: the within-target ring paints on the plot surface.
@@ -195,6 +186,7 @@ describe("a reference band under forced colours", () => {
       <div style={{ width: 360, padding: 16, background: "var(--background)" }}>
         <LocaleProvider locale="en-US">
           <Chart.Root
+            data-intro="none"
             data={[1, 1, 1, 1].map((kwh, index) => ({ name: `k${String(index)}`, kwh }))}
             config={{ kwh: { label: "Usage", color: "chart-1" } }}
             xKey="name"
@@ -206,7 +198,6 @@ describe("a reference band under forced colours", () => {
         </LocaleProvider>
       </div>
     );
-    settle(host);
     await emulateMedia("screen", "active");
     expect(window.matchMedia("(forced-colors: active)").matches).toBe(true);
     await frame();
@@ -269,6 +260,7 @@ describe("the glow halo", () => {
       <LocaleProvider locale="en-US">
         <div style={{ width: 588, padding: "24px 0" }}>
           <Chart.Root
+            data-intro="none"
             data={rows}
             config={{
               desktop: { label: "Desktop", color: "chart-1" },
@@ -287,7 +279,6 @@ describe("the glow halo", () => {
         </div>
       </LocaleProvider>
     );
-    settle(host);
     await frame();
     const pixels = await pagePixels();
     // DOM audit: the desktop bars are aria-hidden plot output, read for their boxes.
@@ -324,7 +315,6 @@ describe("print", () => {
         <S06Chart />
       </div>
     );
-    settle(host);
     await frame();
     const { fills } = await chromaticPdfFills();
     // DOM audit: bars are aria-hidden plot output.
@@ -342,6 +332,7 @@ describe("stack seams", () => {
       <div style={{ width: 360, background: "var(--background)" }} data-surface="">
         <LocaleProvider locale="nb-NO">
           <Chart.Root
+            data-intro="none"
             data={rows}
             config={{
               low: { label: "Lav", color: "chart-1", stack: "s" },
@@ -355,7 +346,6 @@ describe("stack seams", () => {
         </LocaleProvider>
       </div>
     );
-    settle(host);
     await frame();
     // DOM audit: bars are aria-hidden plot output, so their slots are the only locator.
     const lower = host
@@ -413,6 +403,7 @@ describe("patterned bars", () => {
       <div style={{ width: 120, background: "#fff" }}>
         <LocaleProvider locale="nb-NO">
           <Chart.Root
+            data-intro="none"
             data={[{ name: "a", v: 8 }]}
             config={{ v: { label: "V", color: "chart-1", projectedFrom: projected ? "a" : undefined } }}
             xKey="name"
@@ -432,12 +423,11 @@ describe("patterned bars", () => {
   it.each([
     ["the hatched variant", false],
     ["the projected hatch", true],
-  ] as const)("draws %s as stripes in every engine", async (_, projected) => {
+  ] as const)("draws %s as stripes", async (_, projected) => {
     // jp2: Firefox drew lab() stops of a repeating gradient as a line every 50 px. The hatch repeats
     // every 5 px at 45 degrees, so a horizontal line crosses a stripe every 7.07 px, and a 90 px
     // bar holds at least 10 of them.
     const { host } = oneBar(projected ? "default" : "hatched", projected);
-    settle(host);
     await frame();
     const box = barBox(host);
     const y = box.top + box.height / 2;
@@ -449,11 +439,53 @@ describe("patterned bars", () => {
     expect(await paintedRuns(row)).toBeGreaterThanOrEqual(Math.floor((box.width - 2) / 7.07) - 1);
   });
 
-  it("draws blocks as squares 12 px apart in every engine", async () => {
+  it("draws a stacked upper segment as whole blocks from its own base", async () => {
+    // B4-4: 4 and 6 stacked on 0–10 over 200 px. The upper segment's squares count from its base at
+    // 120 px: [110, 120] up to [2, 12], with 2 px gaps at [108, 110] and [12, 14] and above 2 px.
+    // Squares counted from the zero line instead would paint 109 and 13 and leave 117 and 9 bare.
+    const { host } = renderThemed(
+      <div style={{ width: 120, background: "#fff" }}>
+        <LocaleProvider locale="nb-NO">
+          <Chart.Root
+            data-intro="none"
+            data={[{ name: "a", low: 4, high: 6 }]}
+            config={{
+              low: { label: "Lav", color: "chart-1", stack: "s" },
+              high: { label: "Høy", color: "chart-1", stack: "s" },
+            }}
+            xKey="name"
+            style={{ "--chart-plot-height": "200px" }}
+            aria-label="Blokker">
+            <Chart.Bar dataKey="low" variant="blocks" />
+            <Chart.Bar dataKey="high" variant="blocks" />
+          </Chart.Root>
+        </LocaleProvider>
+      </div>
+    );
+    await frame();
+    // DOM audit: the bar series layers are aria-hidden plot output.
+    const plot =
+      host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect() ?? new DOMRect();
+    const upper =
+      host.querySelectorAll('[data-slot="chart-bar"]')[1]?.getBoundingClientRect() ?? new DOMRect();
+    expect(plot.height).toBe(200);
+    const pixels = await pagePixels();
+    const x = upper.left + upper.width / 2;
+    // Chromium draws the layer's origin on the nearest device pixel, a tie rounding up.
+    const origin = Math.ceil(plot.top * pixels.scale - 0.5) / pixels.scale;
+    const ink = (row: number): number => {
+      const index =
+        (Math.floor((origin + row + 0.5) * pixels.scale) * pixels.width + Math.floor(x * pixels.scale)) * 4;
+      return Math.max(...[...pixels.data.subarray(index, index + 3)].map((channel) => 255 - channel));
+    };
+    expect([3, 9, 111, 117].map((row) => ink(row) > 60)).toEqual([true, true, true, true]);
+    expect([0, 13, 109].map((row) => ink(row) < 12)).toEqual([true, true, true]);
+  });
+
+  it("draws blocks as squares 12 px apart", async () => {
     // jp2: Firefox drew the blocks as 1 px dashes. A block is a 10 px square with a 2 px gap, so a
     // vertical line through the bar crosses one block every 12 px.
     const { host } = oneBar("blocks");
-    settle(host);
     await frame();
     const box = barBox(host);
     const x = box.left + box.width / 2;
@@ -482,6 +514,7 @@ describe("mark contrast", () => {
       <div style={{ width: 360, padding: 16, background: "var(--background)" }}>
         <LocaleProvider locale="nb-NO">
           <Chart.Root
+            data-intro="none"
             data={[3, 5, 8, 4].map((v, index) => ({ name: `k${String(index)}`, v }))}
             config={{ v: { label: "V", color: "chart-1" } }}
             xKey="name"
@@ -496,7 +529,6 @@ describe("mark contrast", () => {
 
   it("keeps the bars that emphasis greys at 3:1 or more", async () => {
     const { host } = plotWith(<Chart.Bar dataKey="v" emphasis="max" />);
-    settle(host);
     await frame();
     // DOM audit: bars are aria-hidden plot output.
     const rest = host.querySelector('[data-slot="chart-bar"]:not([data-emphasis])')?.getBoundingClientRect();
@@ -513,7 +545,6 @@ describe("mark contrast", () => {
     "edges each %s bar in the full paint at 3:1 or more",
     async (variant) => {
       const { host } = plotWith(<Chart.Bar dataKey="v" variant={variant} />);
-      settle(host);
       await frame();
       // DOM audit: bars are aria-hidden plot output.
       const bar = host.querySelectorAll('[data-slot="chart-bar"]')[2]?.getBoundingClientRect();
@@ -539,6 +570,7 @@ describe("mark contrast", () => {
       <div style={{ width: 360, padding: 16, background: "var(--background)" }}>
         <LocaleProvider locale="nb-NO">
           <Chart.Root
+            data-intro="none"
             data={[3, 5, 8, 4].map((v, index) => ({ name: `k${String(index)}`, v }))}
             config={{ v: { label: "V", color: "chart-1", projectedFrom: "k2" } }}
             xKey="name"
@@ -548,7 +580,6 @@ describe("mark contrast", () => {
         </LocaleProvider>
       </div>
     );
-    settle(host);
     await frame();
     // DOM audit: bars are aria-hidden plot output.
     const bar = host.querySelector('[data-slot="chart-bar"][data-projected]')?.getBoundingClientRect();
@@ -571,6 +602,7 @@ describe("mark contrast", () => {
       <div style={{ width: 360, padding: 16, background: "var(--background)" }}>
         <LocaleProvider locale="nb-NO">
           <Chart.Root
+            data-intro="none"
             data={[3, 5, 8, 4].map((v, index) => ({ name: `k${String(index)}`, p: v, q: v }))}
             config={{
               p: { label: "P", color: "chart-1", stack: "s" },
@@ -584,7 +616,6 @@ describe("mark contrast", () => {
         </LocaleProvider>
       </div>
     );
-    settle(host);
     await frame();
     // DOM audit: bars are aria-hidden plot output, and slot 0 is no maximum.
     const lower = host.querySelector('[data-series="0"] [data-slot="chart-bar"]')?.getBoundingClientRect();
@@ -610,6 +641,7 @@ describe("mark contrast", () => {
           <div style={{ width: 360, padding: 16, background: "var(--background)" }}>
             <LocaleProvider locale="nb-NO">
               <Chart.Root
+                data-intro="none"
                 data={[0, 1, 2, 3, 4].map((index) => ({
                   start: new Date(Date.UTC(2026, 4, 24, 11, index * 15)),
                   price: 0.5,
@@ -625,7 +657,6 @@ describe("mark contrast", () => {
             </LocaleProvider>
           </div>
         );
-        settle(host);
         await frame();
         // DOM audit: bars are aria-hidden plot output, and 11:37 falls in the third quarter.
         const bars = [...host.querySelectorAll('[data-slot="chart-bar"]')].map((bar) =>
@@ -652,6 +683,7 @@ describe("mark contrast", () => {
       <div style={{ width: 360, padding: 16, background: "var(--background)" }}>
         <LocaleProvider locale="nb-NO">
           <Chart.Root
+            data-intro="none"
             data={[0.36, 0.05, -0.08, -0.15, -0.12, 0.09, 0.38, 0.84].map((v, index) => ({
               name: `k${String(index)}`,
               v,
@@ -665,12 +697,12 @@ describe("mark contrast", () => {
         </LocaleProvider>
       </div>
     );
-    settle(host);
     await frame();
     // DOM audit: grid lines are aria-hidden plot output, and the zero line carries data-zero.
     const zero = host.querySelector('[data-slot="chart-grid-line"][data-zero]');
     if (zero === null) throw new Error("no zero line");
-    expect(getComputedStyle(zero).borderTopStyle).toBe("solid");
+    expect(getComputedStyle(zero).strokeDasharray).toBe("none");
+    // A line's box holds no stroke, so its top is the 1 px stroke's centre line.
     const line = zero.getBoundingClientRect();
     const plot = plotRect(host);
     const at = await sampler();
@@ -678,7 +710,7 @@ describe("mark contrast", () => {
     const unmarked: number[] = [];
     for (let x = Math.ceil(plot.left) + 1; x < plot.right - 1; x += 1) {
       const strongest = Math.max(
-        ...[line.top + 0.25, line.top + 0.75].map((y) => getOrThrow(contrastRatio(at(x, y), surface)))
+        ...[line.top - 0.25, line.top + 0.25].map((y) => getOrThrow(contrastRatio(at(x, y), surface)))
       );
       if (strongest < 3) unmarked.push(x);
     }

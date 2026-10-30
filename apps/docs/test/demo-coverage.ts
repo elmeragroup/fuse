@@ -101,6 +101,10 @@ export function describeDemoCoverage(fileUrl: string): void {
 const PARTLESS_PAGES = new Set([
   // The interim React Aria Link renders its anchor without a `data-slot`.
   "link",
+  // The polar Roots render nothing until the release that draws them.
+  "pie-chart",
+  "radial-chart",
+  "radar-chart",
 ]);
 
 function describeDensityCoverage(slugs: readonly string[], measured: readonly Instance[]): void {

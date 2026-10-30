@@ -70,7 +70,7 @@ export const MOTION_CONFIG = {
 
 /**
  * The fixture as a daily stacked bar chart in Oslo, 400 px wide with no axes, so the plot is the
- * whole frame width.
+ * whole frame width. Its entrance is off, so the first draw sits at rest and only updates move.
  *
  * @param props - The rows, an optional controlled window and extra parts.
  * @returns The chart.
@@ -94,6 +94,7 @@ export function MotionChart({
           interval="day"
           timeZone="Europe/Oslo"
           xRange={xRange}
+          data-intro="none"
           aria-label="Forbruk per dag">
           <Chart.Bar dataKey="p" />
           <Chart.Bar dataKey="q" />

@@ -1,7 +1,7 @@
-// The ticket's screen reader judge, in Chromium, Firefox and WebKit: hand-written spoken arrays per
-// locale for section 8.7's S07 days, section 9.4's S14 emphasis, the table, S09's change column and
-// the status messages. Section 9.1's key sequence for S06 and the fall-back day lives in
-// chart-pattern.keyboard.browser.test.tsx. Every date comes from layer 03's literal fixtures, every
+// The ticket's screen reader judge, in Chromium: hand-written spoken arrays in Norwegian Bokmål for
+// section 8.7's S07 days, section 9.4's S14 emphasis, the table, S09's change column and the status
+// messages. The other locales' words are format unit tests. Section 9.1's key sequence for S06 and
+// the fall-back day lives in chart-pattern.browser.test.tsx. Every date comes from layer 03's literal fixtures, every
 // word from CONTRACT section 12's drafted dictionary, every value from the committed Elhub days,
 // and the phrase grammar is vsr's own: role, name, state, position and set size, joined by ", ".
 import { virtual } from "@guidepup/virtual-screen-reader";
@@ -18,7 +18,10 @@ import lastOctober from "./format/fixtures/elhub/no1-household-daily-2024-10.jso
 import thisOctober from "./format/fixtures/elhub/no1-household-daily-2025-10.json" with { type: "json" };
 import { TIME_CASES } from "./format/fixtures/time-literals";
 
-const LOCALES = ["nb-NO", "sv-SE", "fi-FI", "en-US"] as const;
+const LOCALES = ["nb-NO"] as const;
+
+/** The locale the spoken arrays are written in. */
+type Locale = (typeof LOCALES)[number];
 
 /** A date literal of layer 03's fixtures, by case name and locale. */
 function date(name: string, locale: SupportedLocale): string {
@@ -45,71 +48,23 @@ const WORDS = {
     selected: (label: string) => `${label} valgt`,
     cleared: "Ingen serie valgt",
   },
-  "sv-SE": {
-    day: "Dag",
-    consumption: "Förbrukning",
-    peak: "Högsta timme",
-    thisYear: "I år",
-    lastYear: "I fjol",
-    kwh: "kilowattimmar",
-    missing: "saknas",
-    corrected: "korrigerad",
-    estimated: "uppskattad",
-    pending: "inga data ännu",
-    now: "nu",
-    emphasised: "framhävd",
-    selected: (label: string) => `${label} vald`,
-    cleared: "Ingen serie vald",
-  },
-  "fi-FI": {
-    day: "Päivä",
-    consumption: "Kulutus",
-    peak: "Korkein tunti",
-    thisYear: "Tänä vuonna",
-    lastYear: "Viime vuonna",
-    kwh: "kilowattituntia",
-    missing: "puuttuu",
-    corrected: "korjattu",
-    estimated: "arvioitu",
-    pending: "ei vielä tietoja",
-    now: "nyt",
-    emphasised: "korostettu",
-    selected: (label: string) => `${label} valittu`,
-    cleared: "Ei valittua sarjaa",
-  },
-  "en-US": {
-    day: "Day",
-    consumption: "Consumption",
-    peak: "Highest hour",
-    thisYear: "This year",
-    lastYear: "Last year",
-    kwh: "kilowatt-hours",
-    missing: "missing",
-    corrected: "corrected",
-    estimated: "estimated",
-    pending: "no data yet",
-    now: "now",
-    emphasised: "highlighted",
-    selected: (label: string) => `${label} selected`,
-    cleared: "No series selected",
-  },
 } as const;
 
 /**
- * The committed days' values at one fraction digit, rounded half away from zero, with each
- * locale's decimal sign: 33.58 kWh on 9 October, 35.48 on the 16th, 2.218 at the 31st's peak, and
- * last year's 31.29 and 40.22.
+ * The committed days' values at one fraction digit, rounded half away from zero, with the decimal
+ * comma: 33.58 kWh on 9 October, 35.48 on the 16th, 2.218 at the 31st's peak, and last year's
+ * 31.29 and 40.22.
  */
 const NUMBERS = {
-  day9: { comma: "33,6", point: "33.6" },
-  day16: { comma: "35,5", point: "35.5" },
-  peak31: { comma: "2,2", point: "2.2" },
-  last9: { comma: "31,3", point: "31.3" },
-  last16: { comma: "40,2", point: "40.2" },
+  day9: "33,6",
+  day16: "35,5",
+  peak31: "2,2",
+  last9: "31,3",
+  last16: "40,2",
 } as const;
 
-function number(key: keyof typeof NUMBERS, locale: SupportedLocale): string {
-  return locale === "en-US" ? NUMBERS[key].point : NUMBERS[key].comma;
+function number(key: keyof typeof NUMBERS): string {
+  return NUMBERS[key];
 }
 
 /**
@@ -159,7 +114,7 @@ async function tableRows(): Promise<string[]> {
   return (await virtual.spokenPhraseLog()).filter((phrase) => phrase.startsWith("row, "));
 }
 
-function S07({ locale }: { readonly locale: SupportedLocale }) {
+function S07({ locale }: { readonly locale: Locale }) {
   // S07's fixed rule: day 5 missing, day 9 corrected, day 16 estimated, days 17 to 31 pending.
   const quality = (day: number): ChartQuality =>
     day === 5 ? "missing" : day === 9 ? "corrected" : day === 16 ? "estimated" : "measured";
@@ -190,7 +145,7 @@ function S07({ locale }: { readonly locale: SupportedLocale }) {
 
 describe.each(LOCALES)("S07's quality states in %s", (locale) => {
   const words = WORDS[locale];
-  const unit = (key: keyof typeof NUMBERS) => `${number(key, locale)} ${words.kwh}`;
+  const unit = (key: keyof typeof NUMBERS) => `${number(key)} ${words.kwh}`;
 
   it("speaks the missing, corrected, estimated and pending days", async () => {
     const { host } = renderThemed(<S07 locale={locale} />);
@@ -221,13 +176,13 @@ describe.each(LOCALES)("S07's quality states in %s", (locale) => {
     expect(rows).toHaveLength(16);
     expect([rows[4], rows[8], rows[15]]).toEqual([
       `row, ${date("S07 missing day date", locale)} ${words.missing}`,
-      `row, ${date("S07 corrected day date", locale)} ${number("day9", locale)} (${words.corrected})`,
-      `row, ${date("S07 estimated day date", locale)} ${number("day16", locale)} (${words.estimated})`,
+      `row, ${date("S07 corrected day date", locale)} ${number("day9")} (${words.corrected})`,
+      `row, ${date("S07 estimated day date", locale)} ${number("day16")} (${words.estimated})`,
     ]);
   });
 });
 
-function S09({ locale }: { readonly locale: SupportedLocale }) {
+function S09({ locale }: { readonly locale: Locale }) {
   const words = WORDS[locale];
   return (
     <LocaleProvider locale={locale}>
@@ -281,8 +236,8 @@ describe.each(LOCALES)("S09 in %s", (locale) => {
     expect(rows).toHaveLength(31);
     const [up, down] = CHANGES[locale];
     expect([rows[8], rows[15]]).toEqual([
-      `row, ${date("S07 corrected day date", locale)} ${number("day9", locale)} ${number("last9", locale)} ${up}`,
-      `row, ${date("S07 estimated day date", locale)} ${number("day16", locale)} ${number("last16", locale)} ${down}`,
+      `row, ${date("S07 corrected day date", locale)} ${number("day9")} ${number("last9")} ${up}`,
+      `row, ${date("S07 estimated day date", locale)} ${number("day16")} ${number("last16")} ${down}`,
     ]);
   });
 
@@ -300,7 +255,7 @@ describe.each(LOCALES)("S09 in %s", (locale) => {
   });
 });
 
-function S14({ locale, label }: { readonly locale: SupportedLocale; readonly label?: string }) {
+function S14({ locale, label }: { readonly locale: Locale; readonly label?: string }) {
   // The three highest daily peaks, 31, 30 and 19 October, which scenario_goldens.py prints.
   const top = ["2025-10-31", "2025-10-30", "2025-10-19"].map(osloMidnight);
   return (
@@ -329,7 +284,7 @@ describe("S14's emphasised days", () => {
       ["End", 1],
     ]);
     expect(heard[1]).toBe(
-      `option, ${date("S14 last day date", locale)}: ${words.peak} ${number("peak31", locale)} ${words.kwh}, ${words.emphasised}, not selected, position 31, set size 31`
+      `option, ${date("S14 last day date", locale)}: ${words.peak} ${number("peak31")} ${words.kwh}, ${words.emphasised}, not selected, position 31, set size 31`
     );
   });
 

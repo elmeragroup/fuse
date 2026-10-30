@@ -158,12 +158,15 @@ describe("bar-chart scenario demos in Chromium", () => {
     expect(await slotCount(step, "chart-bar", "[data-emphasis]")).toBe(3);
     // The line prints the average to the config's 2 fraction digits.
     await expect.poll(async () => step.getByText("Average of the top three 2.17 kWh").count()).toBe(1);
-    // Each bar's x is its slot's start in percent of the plot, so 31 days put day d at (d - 1) * 100 / 31.
-    const emphasised = await step
-      .locator('[data-slot="chart-bar"][data-emphasis]')
-      .evaluateAll((bars) =>
-        bars.map((bar) => Math.round((Number(bar.style.getPropertyValue("--chart-bar-x")) * 31) / 100) + 1)
-      );
+    // 31 days split the plot into 31 equal bands, so a bar's centre names its day.
+    const emphasised = await step.locator('[data-slot="chart-bar"][data-emphasis]').evaluateAll((bars) =>
+      bars.map((bar) => {
+        // The bar's series layer covers the plot, and each day owns one band of 31.
+        const plot = bar.closest('[data-slot="chart-bar-series"]')?.getBoundingClientRect() ?? new DOMRect();
+        const box = bar.getBoundingClientRect();
+        return Math.floor(((box.left + box.width / 2 - plot.left) / plot.width) * 31) + 1;
+      })
+    );
     expect(emphasised.toSorted((a, b) => a - b)).toEqual([19, 30, 31]);
 
     // The headline prints the oracle's 2.1723 average to the config's 2 fraction digits, in the
@@ -206,12 +209,16 @@ describe("bar-chart scenario demos in Chromium", () => {
       .allTextContents();
     expect(listed).toEqual(peakDays.map((day, index) => `${day}, ${peakHours[index] ?? ""}`));
 
-    // The tooltip over October 31 names that day's peak hour. Day d sits at (d - 1) * 100 / 31.
+    // The tooltip over October 31 names that day's peak hour.
     const lastDay = step.locator('[data-slot="chart-bar"]').nth(30);
-    const x = await lastDay.evaluate((bar: HTMLElement) =>
-      Number(bar.style.getPropertyValue("--chart-bar-x"))
-    );
-    expect(Math.round((x * 31) / 100) + 1).toBe(31);
+    expect(
+      await lastDay.evaluate((bar) => {
+        // The bar's series layer covers the plot, and each day owns one band of 31.
+        const plot = bar.closest('[data-slot="chart-bar-series"]')?.getBoundingClientRect() ?? new DOMRect();
+        const box = bar.getBoundingClientRect();
+        return Math.floor(((box.left + box.width / 2 - plot.left) / plot.width) * 31) + 1;
+      })
+    ).toBe(31);
     // The plot's surface sits above the bars and takes the pointer, so the mouse moves to the
     // bar's box once the bar is in view, and the pointer cannot land on a chart above it.
     await lastDay.scrollIntoViewIfNeeded();
@@ -274,9 +281,7 @@ describe("bar-chart scenario demos in Chromium", () => {
     expect(await slotCount(levels, "chart-bar")).toBe(96);
     const negative = await levels
       .locator('[data-slot="chart-bar"]')
-      .evaluateAll(
-        (bars) => bars.filter((bar) => bar.style.getPropertyValue("--chart-bar-neg") === "1").length
-      );
+      .evaluateAll((bars) => bars.filter((bar) => bar.hasAttribute("data-negative")).length);
     expect(negative).toBe(16);
     await page.close();
   });
@@ -328,26 +333,34 @@ describe("every scenario bar's top and base in Chromium", () => {
     // rule, so its golden top moves down by that seam.
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, timezoneId: "Europe/Oslo" });
     const demo = await openDemo(page, "bar-chart", name);
+    // The chart measures its plot again once the page's fonts load, which moves the text above it.
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+      });
+    });
     const drawn = await demo
       .locator('[data-slot="chart"]')
       .first()
-      .evaluate((chart) => {
-        for (const animation of chart.getAnimations({ subtree: true })) {
-          if (Number.isFinite(animation.effect?.getComputedTiming().endTime ?? Infinity)) animation.finish();
-        }
-        return [...chart.querySelectorAll('[data-slot="chart-bar-series"]')].map((series) => {
+      .evaluate((chart) =>
+        [...chart.querySelectorAll('[data-slot="chart-bar-series"]')].map((series) => {
           const plot = series.getBoundingClientRect();
+          // The browser draws an SVG layer's origin on the device pixel nearest the plot's top,
+          // the upper one when the top lies half way, so a bar's drawn edge lies that much off its
+          // layout box.
+          const origin = Math.ceil(plot.top * devicePixelRatio - 0.5) / devicePixelRatio - plot.top;
           return [...series.querySelectorAll('[data-slot="chart-bar"]')].map((bar) => {
             const box = bar.getBoundingClientRect();
             return {
-              top: box.top - plot.top,
-              base: box.bottom - plot.top,
+              top: box.top - plot.top + origin,
+              base: box.bottom - plot.top + origin,
               inner: !bar.hasAttribute("data-stack-top"),
               height: plot.height,
             };
           });
-        });
-      });
+        })
+      );
     const golden = BAR_GOLDENS.demos[name]?.series ?? [];
     expect(drawn.map((series) => series.length)).toEqual(
       golden.map((series) => series.filter((pair) => pair !== null).length)

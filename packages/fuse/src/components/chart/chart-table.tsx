@@ -388,7 +388,7 @@ function ChartTableBody({
         </Table.Header>
         <Table.Body>
           {page.slots.map((slot) => (
-            <Table.Row key={context.slotKeys[slot] ?? slot}>
+            <Table.Row key={context.update.keys[slot] ?? slot}>
               <Table.Head scope="row">
                 <Twin text={slotLabel(context, slot)} />
               </Table.Head>

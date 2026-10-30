@@ -11,8 +11,7 @@
     "start": "next start --port 3000",
     "test": "vitest run --project unit",
     "test:e2e": "vitest run --project browser",
-    "type-check": "next typegen && tsrs --noEmit",
-    "visual:server": "node scripts/visual-server.ts"
+    "type-check": "next typegen && tsrs --noEmit"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",

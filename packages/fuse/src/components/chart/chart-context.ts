@@ -9,6 +9,9 @@
 import { createContext, use } from "react";
 
 import type { SupportedLocale } from "../../intl/locale-context";
+import type { ChartFollowers } from "./chart-followers";
+import type { ChartLabels } from "./chart-labels";
+import type { ChartMotion } from "./chart-motion";
 import type { ChartStore, EmphasisEntry } from "./chart-store";
 import type { TextContext } from "./chart-text";
 import type { ChartConfig, ChartIntro, ChartRow, ChartSelectionChangeReason, XFormat } from "./chart-types";
@@ -23,6 +26,21 @@ import type { ValueDomain } from "./layout/value-domain";
  * `xRange` alone, and "data" any other change, which moves the marks that stay.
  */
 export type CommitKind = "initial" | "data" | "range";
+
+/**
+ * One change of Root's model. A new object stands for each change, so a mark compares identities
+ * to tell a data update it has not drawn yet from a re-render.
+ */
+export type ChartUpdate = {
+  readonly kind: CommitKind;
+  /** The key each domain slot's marks render under, by slot index. */
+  readonly keys: readonly string[];
+  /**
+   * Whether a data update relays the plot, as `relaysPlot` decides: it mounts marks at their
+   * targets in coordinates the marks that stay share, so every mark snaps with it.
+   */
+  readonly relays: boolean;
+};
 
 /** What every cartesian part reads from Root. */
 export type ChartRootContextValue = TextContext & {
@@ -57,14 +75,18 @@ export type ChartRootContextValue = TextContext & {
   readonly rows: readonly ChartRow[];
   /** Root's `data-intro`, the entrance wipe origin. */
   readonly intro: ChartIntro | undefined;
-  /** Whether Root mounted in the browser with its entrance on, so marks of its first render enter. */
+  /** Whether Root mounted in the browser with its entrance on, so marks of its first draw enter. */
   readonly entrance: boolean;
   /** Root's `data-fade`, which dims the marks of past slots. */
   readonly fade: "past" | undefined;
-  /** What produced the current model. */
-  readonly commit: CommitKind;
-  /** The key each domain slot's marks render under, by slot index. */
-  readonly slotKeys: readonly string[];
+  /** The change that produced the current model. */
+  readonly update: ChartUpdate;
+  /** Root's animation loop, which every moving mark draws through. */
+  readonly motion: ChartMotion;
+  /** The marks that follow the active slot. */
+  readonly followers: ChartFollowers;
+  /** The value reference labels, placed from the guides they label. */
+  readonly labels: ChartLabels;
   /** A Bar registers after it mounts, so Root can warn `bars-overlap`. The result unregisters it. */
   readonly registerBar: (key: string, grouped: boolean) => () => void;
   /** A Bar registers its emphasised slots after it mounts, so the option speaks the word. */

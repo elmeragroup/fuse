@@ -1,4 +1,4 @@
-// The legend toggles' target size, name and pressed cue, in Chromium, Firefox and WebKit. The
+// The legend toggles' target size, name and pressed cue, in Chromium. The
 // expectations come from CONTRACT section 9.9 and AGENTS.md's 24 px floor.
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";

@@ -1,4 +1,4 @@
-// The paint model and the path form of ticket 05, in Chromium, Firefox and WebKit, after layer 05's
+// The paint model and the path form of ticket 05, in Chromium, after layer 05's
 // review findings q4 to q8, q23, s6 to s10, s17, s18 and s20 and the "layer 05 review decisions" of
 // DECISIONS-LOG.md. Oracles: the theme's own role colours, read through a probe element styled with
 // `var(--chart-1)` and friends, so no expectation comes from chart code; CONTRACT section 8.12's
@@ -8,7 +8,7 @@ import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { pagePixels } from "../../../test/chart/media";
+import { chromaAt, pagePixels } from "../../../test/chart/media";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -61,6 +61,7 @@ function chart(
           data={rows}
           config={{ v: { label: "V", color } }}
           xKey="name"
+          data-intro="none"
           aria-label="Maling"
           style={options.style}>
           <Chart.Bar dataKey="v" variant={options.variant} />
@@ -78,9 +79,6 @@ describe("role lists", () => {
     // q6 and s8: one tall bar, so the gradient's ends are far apart on screen.
     const { host } = chart([{ name: "a", v: 4 }], ["chart-1", "chart-3"]);
     await new Promise((resolve) => requestAnimationFrame(resolve));
-    // DOM audit: Root's figure holds every animation of the chart.
-    for (const animation of host.querySelector('[data-slot="chart"]')?.getAnimations({ subtree: true }) ?? [])
-      animation.finish();
     const [bar] = bars(host);
     if (bar === undefined) throw new Error("no bar");
     const box = bar.getBoundingClientRect();
@@ -100,9 +98,12 @@ describe("role lists", () => {
 
   it("fill the path form through one gradient whose stops are the list's roles", () => {
     const { host } = chart(many(101), ["chart-1", "chart-3"]);
-    // DOM audit: the path form's gradient stops are SVG internals with no role.
+    // DOM audit: the path form's gradient stops are SVG internals with no role, and the path's own
+    // gradient is the one whose id ends in "-list".
     const stops = [
-      ...host.querySelectorAll<SVGStopElement>('[data-slot="chart-bar-series"] linearGradient stop'),
+      ...host.querySelectorAll<SVGStopElement>(
+        '[data-slot="chart-bar-series"] linearGradient[id$="-list"] stop'
+      ),
     ];
     expect(stops.map((stop) => getComputedStyle(stop).stopColor)).toEqual([
       resolved(host, "var(--chart-1)"),
@@ -123,13 +124,13 @@ describe("the consumer colour override", () => {
       "chart-seq",
       { style: { "--chart-color-v": red } }
     );
-    expect(bars(scale.host).map((bar) => getComputedStyle(bar).backgroundColor)).toEqual([red, red]);
+    expect(bars(scale.host).map((bar) => getComputedStyle(bar).fill)).toEqual([red, red]);
     scale.unmount();
     const list = chart([{ name: "a", v: 4 }], ["chart-1", "chart-3"], { style: { "--chart-color-v": red } });
-    const [bar] = bars(list.host);
-    expect(bar === undefined ? "" : getComputedStyle(bar).backgroundImage).toBe(
-      `linear-gradient(${red}, ${red})`
-    );
+    // DOM audit: a list bar fills from its series' gradient, whose stops are SVG internals.
+    const stops = [...list.host.querySelectorAll('[data-slot="chart-bar-series"] linearGradient stop')];
+    expect(stops.length).toBeGreaterThan(0);
+    for (const stop of stops) expect(getComputedStyle(stop).stopColor).toBe(red);
   });
 });
 
@@ -148,6 +149,7 @@ describe("the active overlay", () => {
             data={rows}
             config={{ v: { label: "V", color: "chart-seq", qualityKey: "q" } }}
             xKey="name"
+            data-intro="none"
             aria-label="Aktiv">
             <Chart.Bar dataKey="v" />
           </Chart.Root>
@@ -161,19 +163,18 @@ describe("the active overlay", () => {
     if (overlay === null) throw new Error("no overlay");
     const [first, second] = bars(host);
     expect(overlay.getAttribute("data-quality")).toBe("estimated");
-    expect(getComputedStyle(overlay).outlineStyle).toBe("dashed");
-    expect(getComputedStyle(overlay).outlineColor).toBe(getComputedStyle(first ?? overlay).outlineColor);
-    // js14: L14 rounds every bar's far end, so the estimated bar and its overlay take the measured
-    // bar's radius.
-    const radius = getComputedStyle(second ?? overlay).borderTopLeftRadius;
-    expect(Number.parseFloat(radius)).toBeGreaterThan(0);
-    expect(getComputedStyle(first ?? overlay).borderTopLeftRadius).toBe(radius);
-    expect(getComputedStyle(overlay).borderTopLeftRadius).toBe(radius);
+    expect(getComputedStyle(first ?? overlay).strokeDasharray.replaceAll("px", "")).toBe("3, 2");
+    expect(getComputedStyle(overlay).strokeDasharray.replaceAll("px", "")).toBe("6, 4");
+    expect(getComputedStyle(overlay).stroke).toBe(getComputedStyle(first ?? overlay).stroke);
+    // js14: L14 rounds every bar's far end, so the estimated bar and its overlay round as the
+    // measured bar does.
+    const clip = getComputedStyle(second ?? overlay).clipPath;
+    expect(clip).toMatch(/round [1-9]/u);
+    expect(getComputedStyle(first ?? overlay).clipPath).toBe(clip);
+    expect(getComputedStyle(overlay).clipPath).toBe(clip);
     await userEvent.keyboard("{ArrowRight}");
     expect(overlay.hasAttribute("data-quality")).toBe(false);
-    expect(getComputedStyle(overlay).backgroundColor).toBe(
-      getComputedStyle(second ?? overlay).backgroundColor
-    );
+    expect(getComputedStyle(overlay).fill).toBe(getComputedStyle(second ?? overlay).fill);
   });
 });
 
@@ -191,6 +192,7 @@ describe("followers of a negative bar", () => {
             ]}
             config={{ v: { label: "V", color: "chart-1" } }}
             xKey="name"
+            data-intro="none"
             aria-label="Under null">
             <Chart.Bar dataKey="v" />
             <Chart.ActiveValue dataKey="v" />
@@ -200,10 +202,7 @@ describe("followers of a negative bar", () => {
     );
     host.querySelector("button")?.focus();
     await userEvent.keyboard("{Tab}");
-    // DOM audit: Root's figure holds every animation, and the value and the series box are
-    // aria-hidden plot output.
-    for (const animation of host.querySelector('[data-slot="chart"]')?.getAnimations({ subtree: true }) ?? [])
-      animation.finish();
+    // DOM audit: the value and the series box are aria-hidden plot output.
     const value = host.querySelector('[data-slot="chart-active-value"]')?.getBoundingClientRect();
     const plot = host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect();
     if (value === undefined || plot === undefined) throw new Error("no value");
@@ -246,6 +245,52 @@ describe("the path form", () => {
       "gradient"
     );
     expect(host.querySelectorAll('[data-slot="chart-bar-series"] mask')).toHaveLength(1);
+  });
+
+  it("defines the role-list gradient the active overlay fills from", async () => {
+    // T3: above 100 slots a role list paints the overlay over the active column from its tip in
+    // the first role, through a gradient the series has to define.
+    const { host } = chart(many(101), ["chart-1", "chart-3"]);
+    // DOM audit: the plot's single tab stop is the listbox's option.
+    host.querySelector<HTMLElement>('[role="option"]')?.focus();
+    await userEvent.keyboard("{ArrowRight}");
+    // DOM audit: the overlay is aria-hidden plot output.
+    const overlay = host.querySelector<HTMLElement>('[data-slot="chart-bar-active"]');
+    expect(overlay?.getAttribute("visibility")).toBe("visible");
+    const id = /^url\(#(.+)\)$/u.exec(overlay?.style.getPropertyValue("--_fill") ?? "")?.[1] ?? "";
+    expect(id).toMatch(/-list-positive$/u);
+    // DOM audit: a paint server is an SVG internal, found by the id the overlay references.
+    expect(host.querySelector(`[id="${id}"]`)?.tagName).toBe("linearGradient");
+  });
+
+  it("fills the overlay from the role list's gradient when a look without a path form falls back", async () => {
+    // Q2-3: hatched has no path look, so the series draws the default look above 100 slots, and
+    // its overlay, which reads the same look, fills from the list's gradient as the paths do.
+    const { host } = chart(many(101), ["chart-1", "chart-3"], { variant: "hatched" });
+    // DOM audit: the plot's single tab stop is the listbox's option.
+    host.querySelector<HTMLElement>('[role="option"]')?.focus();
+    await userEvent.keyboard("{ArrowRight}");
+    // DOM audit: the overlay is aria-hidden plot output.
+    const overlay = host.querySelector<HTMLElement>('[data-slot="chart-bar-active"]');
+    const id = /^url\(#(.+)\)$/u.exec(overlay?.style.getPropertyValue("--_fill") ?? "")?.[1] ?? "";
+    expect(id).toMatch(/-list-positive$/u);
+    // DOM audit: a paint server is an SVG internal, found by the id the overlay references.
+    expect(host.querySelector(`[id="${id}"]`)?.tagName).toBe("linearGradient");
+  });
+
+  it("fades the gradient look from full colour near the top to the background near the base", async () => {
+    // T4: the fade ramp is opaque down to a fifth of the plot and clear from nine tenths, so a
+    // column paints its colour a quarter of the way down and the page's background near its base.
+    const { host } = chart(many(101), "chart-1", { variant: "gradient" });
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    // DOM audit: the series layer covers the plot box.
+    const plot = host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect();
+    if (plot === undefined) throw new Error("no plot");
+    const pixels = await pagePixels();
+    // The middle of slot 50 of 101.
+    const x = (plot.left + (plot.width * 50.5) / 101) * pixels.scale;
+    expect(chromaAt(pixels, x, (plot.top + plot.height * 0.25) * pixels.scale)).toBeGreaterThan(40);
+    expect(chromaAt(pixels, x, (plot.top + plot.height * 0.95) * pixels.scale)).toBeLessThan(15);
   });
 
   it("draws projected readings in a path of their own and missing ones as dashed ticks", () => {
@@ -332,12 +377,39 @@ describe('data-fade="past"', () => {
         </Chart.Root>
       </LocaleProvider>
     );
-    expect(bars(host).map((bar) => getComputedStyle(bar).filter)).toEqual([
-      "opacity(0.4)",
-      "opacity(0.4)",
-      "none",
-      "none",
-    ]);
+    expect(bars(host).map((bar) => getComputedStyle(bar).opacity)).toEqual(["0.4", "0.4", "1", "1"]);
+  });
+
+  it("keeps a past blocks track at its own tenth of the dim, 0.04", () => {
+    // B5-2: readings 2 and 10 on 1 and 2 October, with now in 2 October, put the first bar in the
+    // past. Its body dims to 0.4, and its empty track, 0.1 on its own, to 0.4 × 0.1.
+    const rows = [
+      { day: day(1), v: 2 },
+      { day: day(2), v: 10 },
+    ];
+    const { host } = renderThemed(
+      <div style={{ width: 200 }}>
+        <LocaleProvider locale="nb-NO">
+          <Chart.Root
+            data-intro="none"
+            data={rows}
+            config={{ v: { label: "V", color: "chart-1" } }}
+            xKey="day"
+            interval="day"
+            timeZone="Europe/Oslo"
+            now={new Date(Date.UTC(2025, 9, 2, 10))}
+            data-fade="past"
+            aria-label="Fortid i blokker">
+            <Chart.Bar dataKey="v" variant="blocks" />
+          </Chart.Root>
+        </LocaleProvider>
+      </div>
+    );
+    // DOM audit: the bars' parts are aria-hidden plot output, so their slots are the only locator.
+    const tracks = [...host.querySelectorAll('[data-slot="chart-bar-detail"][data-part="track"]')];
+    const blocks = [...host.querySelectorAll('[data-slot="chart-bar-detail"][data-part="blocks"]')];
+    expect(tracks.map((track) => Number(getComputedStyle(track).opacity))).toEqual([0.04, 0.1]);
+    expect(blocks.map((block) => Number(getComputedStyle(block).opacity))).toEqual([0.4, 1]);
   });
 
   it("masks the past span of the path form", () => {
@@ -361,17 +433,19 @@ describe('data-fade="past"', () => {
         </Chart.Root>
       </LocaleProvider>
     );
-    // Now lies a minute into the eleventh hour, so ten hours have ended.
+    // Now lies a minute into the eleventh hour, so ten of 101 hours have ended, and the dim ends
+    // on the pixel nearest the eleventh hour's left edge.
     // DOM audit: the mask is an SVG internal with no role.
     const past = host.querySelector('[data-slot="chart-bar-series"] mask rect');
-    expect(past?.getAttribute("width")).toBe("10");
+    const width = host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect().width ?? 0;
+    expect(Math.abs(Number(past?.getAttribute("width")) - (10 * width) / 101)).toBeLessThanOrEqual(0.5);
   });
 });
 
 describe("data-series on marks", () => {
   // js15: CONTRACT section 11 lists data-series on marks, and only the series wrapper wrote it.
   it.each([
-    ["the HTML form", 12],
+    ["the bars form", 12],
     ["the path form", 120],
   ])("names each mark's series in %s", (_, count) => {
     const rows = Array.from({ length: count }, (_, index) => ({

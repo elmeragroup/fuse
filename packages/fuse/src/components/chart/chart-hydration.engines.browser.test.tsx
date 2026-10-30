@@ -1,19 +1,25 @@
-// Motion rule 1 of .scratch/charts-v1/reviews/motion-decision.md, in Chromium, Firefox and WebKit:
-// a hydrated chart matches the server output and starts no motion, for an ordinary hydration and for
-// a Bar whose Suspense boundary hydrates late. The first data update after either hydration then
-// follows rules 2 and 3, so surviving bars move and an added bar fades in. The oracle is the rule
-// itself, read through `getAnimations()`, and E11's motion fixture, whose data A and B are written
-// by hand.
+// Motion rule 1 of .scratch/charts-v1/reviews/motion-decision.md under the SVG brief, in
+// Chromium, Firefox and WebKit: the server sends the plot's skeleton and no marks, and a hydrated
+// chart draws its marks at rest once the browser measures the plot, with no recoverable error, for
+// an ordinary hydration and for a Bar whose Suspense boundary hydrates late. The first data update
+// then follows rules 2 and 3: surviving bars start where they were, pass through a frame between
+// their two places, settle on the new data, and an added bar fades in. The geometry comes
+// from motion-frames.json, which E11's oracle script writes by hand from the fixture.
 import { Suspense, use } from "react";
 import type { ReactNode } from "react";
 
+import { flushSync } from "react-dom";
 import { hydrateRoot } from "react-dom/client";
+import type { Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import "../../../dist/styles.css";
+import { barBox } from "../../../test/chart/bar-box";
+import { finishedFade, runningFade } from "../../../test/chart/fade";
 import { MOTION_A, MOTION_B, MOTION_CONFIG } from "../../../test/chart/motion-fixture";
 import type { MotionRow } from "../../../test/chart/motion-fixture";
+import motion from "../../../test/chart/motion-frames.json" with { type: "json" };
 import { fkasPrivate } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { ThemeScope } from "../../theme/theme-scope";
@@ -70,15 +76,59 @@ function bars(host: HTMLElement): HTMLElement[] {
   return [...host.querySelectorAll<HTMLElement>('[data-slot="chart-bar"]')];
 }
 
-/** Every animation the bars run, as the animated properties of each. */
-function barAnimations(host: HTMLElement): string[] {
-  return bars(host).flatMap((bar) =>
-    bar
-      .getAnimations()
-      .map((animation) =>
-        animation instanceof CSSTransition ? animation.transitionProperty : animation.constructor.name
-      )
-  );
+type Oracle = (typeof motion.bars.A)[number];
+
+/** Whether every oracle bar sits on its box, each edge within half a pixel. */
+function on(host: HTMLElement, oracle: readonly Oracle[]): boolean {
+  // DOM audit: the bar series layer covers the plot box.
+  const plot = host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect() ?? new DOMRect();
+  return oracle.every((entry) => {
+    const bar = host.querySelectorAll(
+      `[data-slot="chart-bar-series"][data-series="${entry.series === "p" ? "0" : "1"}"] [data-slot="chart-bar"]`
+    )[entry.position];
+    if (bar === undefined) return false;
+    const box = barBox(bar, plot);
+    return (
+      Math.abs(box.left - entry.left * plot.width) <= 0.5 &&
+      Math.abs(box.right - entry.right * plot.width) <= 0.5 &&
+      Math.abs(box.top - (entry.top * plot.height + entry.topPx)) <= 0.5 &&
+      Math.abs(box.bottom - entry.bottom * plot.height) <= 0.5
+    );
+  });
+}
+
+/** Whether every bar of data A sits on its oracle box, as at rest. */
+function atRestOnA(host: HTMLElement): boolean {
+  return on(host, motion.bars.A);
+}
+
+/** Data A's boxes of the days update B keeps, at their places in B's window. */
+const SURVIVING = motion.bars.A.flatMap((entry) => {
+  const kept = motion.bars.B.find((other) => other.series === entry.series && other.day === entry.day);
+  return kept === undefined ? [] : [{ ...entry, position: kept.position }];
+});
+
+/**
+ * Apply update B and follow the surviving bars: the commit draws them where data A left them,
+ * a later frame finds them between A and B, and they settle on B.
+ */
+async function followUpdate(host: HTMLElement, root: Root, next: ReactNode): Promise<void> {
+  flushSync(() => {
+    root.render(next);
+  });
+  expect(on(host, SURVIVING)).toBe(true);
+  // Update B adds 11 October to both series, and each added bar fades in from opacity 0.
+  const added = bars(host).filter((bar) => bar.getAttribute("data-intro") === "fade");
+  expect(added).toHaveLength(2);
+  const fades = added.map((bar) => [bar, runningFade(bar)] as const);
+  let between = false;
+  for (let frame = 0; frame < 120 && !on(host, motion.bars.B); frame += 1) {
+    await frames(1);
+    between ||= !on(host, SURVIVING) && !on(host, motion.bars.B);
+  }
+  expect(between).toBe(true);
+  expect(on(host, motion.bars.B)).toBe(true);
+  for (const [bar, fade] of fades) await finishedFade(bar, fade);
 }
 
 async function hydrate(server: ReactNode, client: ReactNode) {
@@ -92,27 +142,29 @@ async function hydrate(server: ReactNode, client: ReactNode) {
 }
 
 describe("hydration", () => {
-  it("starts no motion when a server chart hydrates, and moves its bars on the first update", async () => {
+  it("draws the measured marks at rest after a server render with none, and moves them on the first update", async () => {
+    const html = renderToString(<Fixture data={MOTION_A} />);
+    // The server sends the skeleton in the plot and no mark.
+    expect(html).toContain('data-slot="chart-skeleton-mark"');
+    expect(html).not.toContain('data-slot="chart-bar"');
     const { host, root, recover } = await hydrate(<Fixture data={MOTION_A} />, <Fixture data={MOTION_A} />);
     try {
-      // Data A holds 10 days in 2 series.
+      // Data A holds 10 days in 2 series, drawn at rest with no entrance.
       expect(bars(host)).toHaveLength(20);
-      expect(barAnimations(host)).toEqual([]);
-      expect(bars(host).some((bar) => bar.style.getPropertyValue("--chart-bar-step") !== "")).toBe(false);
+      expect(atRestOnA(host)).toBe(true);
+      // DOM audit: the plot's skeleton is aria-hidden, and only its slot names it.
+      expect(host.querySelector('[data-slot="chart-skeleton-mark"]')).toBeNull();
       expect(recover).not.toHaveBeenCalled();
-      root.render(<Fixture data={MOTION_B} />);
-      await frames(2);
-      // Update B keeps 2 to 10 October, adds 11 October and drops 1 October.
-      const added = bars(host).filter((bar) => bar.getAttribute("data-intro") === "fade");
-      expect(added).toHaveLength(2);
-      expect(barAnimations(host).filter((property) => property === "top").length).toBeGreaterThan(0);
+      // Update B keeps 2 to 10 October, adds 11 October and drops 1 October. The surviving bars
+      // start where data A left them, move, and settle on B.
+      await followUpdate(host, root, <Fixture data={MOTION_B} />);
     } finally {
       root.unmount();
       host.remove();
     }
   });
 
-  it("starts no motion when a Bar's Suspense boundary hydrates after the chart, and moves it on the first update", async () => {
+  it("draws a Bar whose Suspense boundary hydrates after the chart at rest, and moves it on the first update", async () => {
     let resolve: () => void = () => undefined;
     const ready = new Promise<void>((done) => {
       resolve = done;
@@ -128,13 +180,10 @@ describe("hydration", () => {
         Object.keys(bar).some((key) => key.startsWith("__reactFiber$"))
       );
       expect(hydrated).toBe(true);
-      expect(barAnimations(host)).toEqual([]);
+      expect(atRestOnA(host)).toBe(true);
       expect(bars(host).some((bar) => bar.hasAttribute("data-intro"))).toBe(false);
       expect(recover).not.toHaveBeenCalled();
-      root.render(<Fixture data={MOTION_B} ready={ready} />);
-      await frames(2);
-      expect(bars(host).filter((bar) => bar.getAttribute("data-intro") === "fade")).toHaveLength(2);
-      expect(barAnimations(host).filter((property) => property === "top").length).toBeGreaterThan(0);
+      await followUpdate(host, root, <Fixture data={MOTION_B} ready={ready} />);
     } finally {
       root.unmount();
       host.remove();

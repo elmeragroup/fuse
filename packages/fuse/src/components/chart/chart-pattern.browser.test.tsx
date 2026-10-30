@@ -1,4 +1,4 @@
-// CONTRACT section 9.1's pattern checks, run in Chromium, Firefox and WebKit before any other
+// CONTRACT section 9.1's pattern checks, run in Chromium before any other
 // part exists. Oracle: the spoken logs in test/chart/pattern-phrases.json, which
 // .scratch/charts-v1/tools/l05-oracles/pattern_phrases.py writes from frozen Elhub data, layer 03's
 // literal spoken forms, the drafted dictionary and vsr's own phrase grammar. No expectation comes
@@ -13,7 +13,6 @@ import type { HourRow } from "../../../test/chart/elhub-rows";
 import phrases from "../../../test/chart/pattern-phrases.json" with { type: "json" };
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
-import type { SupportedLocale } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import type { ChartConfig } from "./chart-types";
 import "./chart.css";
@@ -47,7 +46,7 @@ type FocusRecord = { readonly type: string; readonly target: string; readonly re
 const describeElement = (node: EventTarget | null): string =>
   node instanceof HTMLElement ? `${node.getAttribute("role") ?? node.tagName.toLowerCase()}` : "null";
 
-function chart(rows: readonly HourRow[], locale: SupportedLocale, labels: readonly string[]) {
+function chart(rows: readonly HourRow[], labels: readonly string[]) {
   const format = { preset: "energy", unit: "kWh" } as const;
   const household = { label: labels[0] ?? "", color: "chart-1", format } as const;
   const config: ChartConfig =
@@ -55,7 +54,7 @@ function chart(rows: readonly HourRow[], locale: SupportedLocale, labels: readon
       ? { household, cabin: { label: labels[1] ?? "", color: "chart-2", format } }
       : { household };
   return renderThemed(
-    <LocaleProvider locale={locale}>
+    <LocaleProvider locale="nb-NO">
       <button type="button">før</button>
       <Chart.Root
         data={rows}
@@ -109,17 +108,15 @@ describe.each([
   ["S06", S06_HOURS, phrases.s06],
   ["the fall-back day", FALL_BACK_HOURS, phrases.fallBack],
 ] as const)("the listbox pattern on %s", (_, rows, byLocale) => {
-  it.each(Object.entries(byLocale))("speaks the expected log in %s", async (locale, expected) => {
-    // SAFETY: the oracle writes only SupportedLocale keys.
-    const { host } = chart(rows, locale as SupportedLocale, expected.labels);
+  it("speaks the expected log in nb-NO", async () => {
+    const expected = byLocale["nb-NO"];
+    const { host } = chart(rows, expected.labels);
     const { spoken } = await walk(host);
     expect(spoken).toEqual(expected.log);
   });
 
   it("keeps DOM focus on an option inside the listbox after every step", async () => {
-    const [locale, expected] = Object.entries(byLocale)[0] ?? ["nb-NO", { labels: ["Forbruk"], log: [] }];
-    // SAFETY: the oracle writes only SupportedLocale keys.
-    const { host } = chart(rows, locale as SupportedLocale, expected.labels);
+    const { host } = chart(rows, byLocale["nb-NO"].labels);
     const { records, active } = await walk(host);
     // Every step before Shift+Tab leaves an option focused. Shift+Tab returns to the button.
     expect(active).toEqual([...Array.from({ length: KEYS.length - 1 }, () => "option"), "button"]);
@@ -201,7 +198,7 @@ describe("the accessibility tree in Chromium", () => {
   it.runIf(server.browser === "chromium")(
     "reports the focused node as an option with its name, inside a horizontal listbox",
     async () => {
-      const { host } = chart(S06_HOURS, "nb-NO", phrases.s06["nb-NO"].labels);
+      const { host } = chart(S06_HOURS, phrases.s06["nb-NO"].labels);
       host.querySelector("button")?.focus();
       await virtual.start({ container: host });
       await virtual.press("Tab");

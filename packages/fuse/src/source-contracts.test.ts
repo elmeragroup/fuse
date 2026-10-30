@@ -6,9 +6,12 @@ import type { Expression, JSXElementName, JSXOpeningElement } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
 import { OPTIONAL_PEER_ENTRIES, walkImportedSourceFiles } from "../scripts/entries";
+import { FLOOR_MARKS } from "../test/chart/floor-marks";
 import { classTokens, colorRolePaints, splitVariants, tokenAssignments } from "../test/class-tokens";
+import { motionWriters } from "../test/motion-writers";
+import { svgMarks } from "../test/svg-marks";
 import { writtenSlots } from "../test/written-slots";
-import { CHART_STAGGER_MS, CHART_UPDATE_EASE, CHART_UPDATE_MS } from "./components/chart/layout/motion";
+import { CHART_UPDATE_EASE, CHART_UPDATE_MS } from "./components/chart/layout/motion";
 import { overlayLayer, toastLayer } from "./components/overlay/overlay-classes";
 import { TOKEN_PAINTS } from "./theme/tokens/contract";
 import type { ColorTokenName, TokenPaint } from "./theme/tokens/contract";
@@ -443,6 +446,9 @@ describe("chart module directives", () => {
     "components/chart/chart-format.ts",
     // The paint model is pure, so a directive-free module may read it on the server too.
     "components/chart/chart-paint.ts",
+    // The animation loop takes its clock and its frame scheduler from its host and touches no
+    // browser API itself, so it needs no directive.
+    "components/chart/chart-motion.ts",
   ];
   const chartModules = [...SOURCE_TREE.values()]
     .map((record) => record.relative)
@@ -506,6 +512,116 @@ describe("chart display names", () => {
   });
 });
 
+describe("chart plot marks", () => {
+  // Why not a lint rule: the floor oracle is a browser test, which cannot read the source, and lint
+  // cannot compare the SVG a module renders with the marks a test walks. This reads every chart
+  // part's JSX and holds the oracle's list to it. Chart.Background is left out: it paints a pattern
+  // behind the plot and draws no reading.
+  const parts = [...SOURCE_TREE.values()].filter(
+    (record) =>
+      record.relative.startsWith("components/chart/") &&
+      record.relative.endsWith(".tsx") &&
+      !record.relative.includes(".test.") &&
+      record.relative !== "components/chart/chart-background.tsx"
+  );
+  const marks = parts.flatMap((record) =>
+    svgMarks(record.relative, record.source)
+      .filter(({ internal }) => !internal)
+      .map(({ slot, at }) => ({ file: record.relative, slot, at }))
+  );
+
+  it("names every SVG mark a chart part draws with a data-slot", () => {
+    expect(marks.length).toBeGreaterThan(0);
+    expect(
+      marks.filter(({ slot }) => slot === undefined).map(({ file, at }) => `${file}@${String(at)}`)
+    ).toEqual([]);
+  });
+
+  it("walks every one of those marks in the floor oracle, and no other", () => {
+    const drawn = [...new Set(marks.flatMap(({ slot }) => (slot === undefined ? [] : [slot])))].toSorted();
+    expect(drawn).toEqual([...FLOOR_MARKS].toSorted());
+  });
+});
+
+describe("chart motion classification", () => {
+  // Why not a lint rule: the rule is about which module may decide a placement, which no lint rule
+  // expresses. Every mark that moves registers through useMotionMark, and asks the one commit
+  // classifier, useCommitMotion, or its follower form, how to reach a commit's geometry.
+  const chart = [...SOURCE_TREE.values()].filter(
+    (record) => record.relative.startsWith("components/chart/") && !record.relative.includes(".test.")
+  );
+  const owners = new Set(["components/chart/chart-motion.ts", "components/chart/chart-motion-mark.ts"]);
+
+  it("places marks on Root's loop only through useMotionMark", () => {
+    expect(
+      chart
+        .filter((record) => /\bmotion\.place\(/u.test(record.code) && !owners.has(record.relative))
+        .map((record) => record.relative)
+    ).toEqual([]);
+  });
+
+  it("asks the shared classifier once for every mark that moves", () => {
+    // Each mark registers once and asks its commits' kind once, so a module's registrations and
+    // classifier calls match, and a mark that places without asking leaves its module one short.
+    const count = (code: string, pattern: RegExp): number => code.match(pattern)?.length ?? 0;
+    expect(
+      chart
+        .filter((record) => !owners.has(record.relative))
+        .map((record) => ({
+          module: record.relative,
+          marks: count(record.code, /\buseMotionMark\b(?:<[^>]*>)?\(/gu),
+          asks: count(record.code, /\b(?:useCommitMotion|useFollowerPlacement)\(/gu),
+        }))
+        .filter(({ marks, asks }) => marks !== asks)
+    ).toEqual([]);
+  });
+
+  it("hands the loop only writers bound at module scope", () => {
+    // Why not a lint rule: whether an argument names a module-scope binding is a scope question
+    // that no oxlint rule asks. A writer at module scope reads only its node, its look and the
+    // numbers the loop draws, so none of its inputs can be a target the tween does not carry.
+    const misplaced = chart.flatMap((record) =>
+      motionWriters(record.relative, record.code)
+        .filter(({ moduleScope }) => !moduleScope)
+        .map(({ writer, at }) => `${record.relative}@${String(at)} ${writer ?? "inline writer"}`)
+    );
+    expect(misplaced).toEqual([]);
+    // The check reads every registration: a bar, a missing tick, the overlay, the path form's
+    // growth, ActiveValue, the active value line and a reference.
+    expect(
+      chart.flatMap((record) => motionWriters(record.relative, record.code)).length
+    ).toBeGreaterThanOrEqual(7);
+  });
+
+  it("finds an inline writer and one bound inside a component", () => {
+    const inline = motionWriters(
+      "probe.tsx",
+      "function Mark() { useMotionMark(motion, (node) => node, look, []); }"
+    );
+    const nested = motionWriters(
+      "probe.tsx",
+      "function Mark() { const write = () => {}; useMotionMark(motion, write, look, []); }"
+    );
+    const top = motionWriters(
+      "probe.tsx",
+      "function write() {}\nfunction Mark() { useMotionMark(motion, write, look, []); }"
+    );
+    expect([inline[0]?.moduleScope, nested[0]?.moduleScope, top[0]?.moduleScope]).toEqual([
+      false,
+      false,
+      true,
+    ]);
+  });
+
+  it("names the move and settle placements only in the loop and its classifier", () => {
+    expect(
+      chart
+        .filter((record) => /kind:\s*"(?:move|settle)"/u.test(record.code) && !owners.has(record.relative))
+        .map((record) => record.relative)
+    ).toEqual([]);
+  });
+});
+
 describe("chart colour namespace", () => {
   // Why not a lint rule: lint cannot read custom-property names inside style objects or CSS files.
   // `--color-*` is Tailwind 4's theme namespace, so a chart that wrote `--color-<key>` for a config
@@ -543,10 +659,9 @@ describe("chart motion tokens", () => {
   const declared = (name: string): string | undefined =>
     new RegExp(`${name}:\\s*([^;]+);`, "u").exec(css)?.[1]?.trim();
 
-  it("declares the update duration, the easing and the stagger that layout/motion.ts exports", () => {
+  it("declares the update duration and the easing that layout/motion.ts exports", () => {
     expect(declared("--chart-update")).toBe(`${String(CHART_UPDATE_MS)}ms`);
     expect(declared("--chart-ease")).toBe(CHART_UPDATE_EASE);
-    expect(declared("--chart-stagger")).toBe(`${String(CHART_STAGGER_MS)}ms`);
   });
 });
 

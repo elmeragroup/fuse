@@ -117,6 +117,9 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // namespaces became ES module namespaces, which takes the whole entry from 97233 as const
   // objects to 97044 and lets a route keep only the parts it names, as the chart/Chart.Root rows
   // measure.
+  // 2026-10-30, SVG phase 1: the measured plot, the SVG marks and their paint servers, the motion
+  // loop, the follower registry and the relay rule re-measure the entry at 109080, within its
+  // ceiling. The recorded measurement stands.
   { name: "chart", entryFile: "chart.js", measuredGzip: 97044 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
@@ -273,6 +276,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
   // tooltip fixes grow the chart rows within their ceilings, to 97502 for the entry, 41341 for
   // Chart.Root, 48630 for the bar route and 3891 for useChartPoint, which now reads the date
   // rule. The recorded measurements stand.
+  // 2026-10-30, SVG phase 1: the SVG marks and the relay rule grow the rows within their ceilings,
+  // to 108017 for Chart, 108020 for BarChart, 82113, 82086 and 82050 for the polar namespaces,
+  // 47003 for Chart.Root, 61415 for the bar route and 3926 for useChartPoint. The recorded
+  // measurements stand.
   { name: "chart/Chart", entryFile: "chart.js", exportName: "Chart", measuredGzip: 95987 },
   { name: "chart/BarChart", entryFile: "chart.js", exportName: "BarChart", measuredGzip: 95989 },
   { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
@@ -358,6 +365,8 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // 2026-10-18, layer 05 fix pass: re-measured at 10089 with the review fixes' rules, which are
   // the path-form paint, the guides of horizontal charts, the reference label row, the variant
   // edges, the forced-colours missing tick and the tooltip metrics.
+  // 2026-10-30, SVG phase 1: re-measured at 9663, with the SVG paint rules in place of the HTML
+  // bar layout. The recorded measurement stands.
   { name: "chart.css", file: "chart.css", measuredGzip: 10089 },
 ] satisfies readonly Measured<CssBudget>[]);
 

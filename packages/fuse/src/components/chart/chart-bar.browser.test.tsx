@@ -1,8 +1,9 @@
-// Bar layout judges in Chromium, Firefox and WebKit. Oracles: section 8.15's hand-derived band of
+// Bar layout judges in Chromium. Oracles: section 8.15's hand-derived band of
 // 40 px with 14 px grouped bars at 5 and 21 px, section 8.12's structural counts per form, section
 // 8.14's plot heights, section 8.10's tie fixture, and metamorphic relations: a locale change
 // leaves geometry unchanged, scaling the data scales the ticks, and an all-zero series added to a
 // stack moves no other mark.
+import { useLayoutEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { describe, expect, it } from "vitest";
@@ -37,16 +38,7 @@ function plotOf(host: HTMLElement): DOMRect {
   return host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect() ?? new DOMRect();
 }
 
-/** Finish the entrance, so geometry reads at rest. */
-function settle(host: HTMLElement): void {
-  // DOM audit: Root's figure holds every animation of the chart.
-  for (const animation of host.querySelector('[data-slot="chart"]')?.getAnimations({ subtree: true }) ?? []) {
-    if (Number.isFinite(animation.effect?.getComputedTiming().endTime ?? Infinity)) animation.finish();
-  }
-}
-
 function boxes(host: HTMLElement, series?: number): BarBox[] {
-  settle(host);
   const plot = plotOf(host);
   return bars(host, series).map((bar) => barBox(bar, plot));
 }
@@ -61,6 +53,7 @@ describe("bars in a band", () => {
       <LocaleProvider locale="nb-NO">
         <div style={{ width: 80 }}>
           <Chart.Root
+            data-intro="none"
             data={[
               { name: "x", a: 4, b: 2 },
               { name: "y", a: 3, b: 1 },
@@ -94,6 +87,107 @@ describe("bars in a band", () => {
     near(boxes(host, 0)[1]?.left ?? 0, 45);
   });
 
+  it("takes a BarGroup's own 10 px bar gap: 10 px bars at 5 and 25 px of each 40 px band", () => {
+    // Each 40 px band keeps 30 px inside its 25 % gap, from 5 px. Two bars and one 10 px gap split
+    // it into 10 px bars at 5 and 25 px, and at 45 and 65 px in the second band.
+    const { host } = renderThemed(
+      two(
+        <Chart.BarGroup series={["a", "b"]} style={{ "--chart-bar-gap": "10px" }}>
+          <Chart.Bar dataKey="a" />
+          <Chart.Bar dataKey="b" />
+        </Chart.BarGroup>
+      )
+    );
+    const edges = [...boxes(host, 0), ...boxes(host, 1)].flatMap(({ left, right }) => [left, right]);
+    expect(edges).toHaveLength(8);
+    [5, 15, 45, 55, 25, 35, 65, 75].forEach((edge, index) => near(edges[index] ?? 0, edge));
+  });
+
+  it("keeps a 20 px bar gap that leaves the bars width: 5 px bars at 5 and 30 px of each 40 px band", () => {
+    // Q7-3: 30 px inside each band's 25 % gap, less one 20 px gap, leaves two 5 px bars. The gap
+    // stays as asked, so the bars sit at 5 and 30 px, and at 45 and 70 px in the second band.
+    const { host } = renderThemed(
+      two(
+        <Chart.BarGroup series={["a", "b"]} style={{ "--chart-bar-gap": "20px" }}>
+          <Chart.Bar dataKey="a" />
+          <Chart.Bar dataKey="b" />
+        </Chart.BarGroup>
+      )
+    );
+    const edges = [...boxes(host, 0), ...boxes(host, 1)].flatMap(({ left, right }) => [left, right]);
+    expect(edges).toHaveLength(8);
+    [5, 10, 45, 50, 30, 35, 70, 75].forEach((edge, index) => near(edges[index] ?? 0, edge));
+  });
+
+  it("redraws memoized bars when only the group's own spacing changes", async () => {
+    // B2-2: the group's gap grows from 2 to 10 px while its Bars skip rendering. 14 px bars at 5
+    // and 21 px become 10 px bars at 5 and 25 px, as the 30 px inside each band splits anew.
+    const control = { widen: (): void => undefined };
+    function Group({ children }: { readonly children: ReactNode }) {
+      const [gap, setGap] = useState("2px");
+      useLayoutEffect(() => {
+        control.widen = () => {
+          setGap("10px");
+        };
+      });
+      return (
+        <Chart.BarGroup series={["a", "b"]} style={{ "--chart-bar-gap": gap }}>
+          {children}
+        </Chart.BarGroup>
+      );
+    }
+    // One element for the Bars, so the group's renders hand React the same children to skip.
+    const members = (
+      <>
+        <Chart.Bar dataKey="a" />
+        <Chart.Bar dataKey="b" />
+      </>
+    );
+    const { host } = renderThemed(two(<Group>{members}</Group>));
+    const edges = () => [...boxes(host, 0), ...boxes(host, 1)].flatMap(({ left, right }) => [left, right]);
+    [5, 19, 45, 59, 21, 35, 61, 75].forEach((edge, index) => near(edges()[index] ?? 0, edge));
+    control.widen();
+    await expect.poll(() => Math.round(edges()[1] ?? 0)).toBe(15);
+    [5, 15, 45, 55, 25, 35, 65, 75].forEach((edge, index) => near(edges()[index] ?? 0, edge));
+  });
+
+  it("redraws a group that never renders again when Root's own spacing changes", async () => {
+    // B3-3: Root's gap grows from 2 to 10 px while the group's element stays the same. The bars
+    // become 10 px wide at 5 and 25 px of each 40 px band.
+    const group = (
+      <Chart.BarGroup series={["a", "b"]}>
+        <Chart.Bar dataKey="a" />
+        <Chart.Bar dataKey="b" />
+      </Chart.BarGroup>
+    );
+    // The same rows on every render, so only Root's style changes.
+    const rows = [
+      { name: "x", a: 4, b: 2 },
+      { name: "y", a: 3, b: 1 },
+    ];
+    const chart = (gap: string) => (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 80 }}>
+          <Chart.Root
+            data-intro="none"
+            data={rows}
+            config={TWO}
+            xKey="name"
+            style={{ "--chart-bar-gap": gap }}
+            aria-label="To">
+            {group}
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    const { host, rerender } = renderThemed(chart("2px"));
+    const edges = () => [...boxes(host, 0), ...boxes(host, 1)].flatMap(({ left, right }) => [left, right]);
+    [5, 19, 45, 59, 21, 35, 61, 75].forEach((edge, index) => near(edges()[index] ?? 0, edge));
+    rerender(chart("10px"));
+    await expect.poll(() => Math.round(edges()[1] ?? 0)).toBe(15);
+    [5, 15, 45, 55, 25, 35, 65, 75].forEach((edge, index) => near(edges()[index] ?? 0, edge));
+  });
+
   it("fills the band less the 25 % gap outside a group", () => {
     const { host } = renderThemed(two(<Chart.Bar dataKey="a" />));
     const [first] = boxes(host);
@@ -108,11 +202,55 @@ function qualityAt(index: number): ChartQuality | undefined {
   return index === 10 ? "missing" : undefined;
 }
 
+describe("bars denser than the device pixels", () => {
+  it("keeps one device pixel for every bar of 100 categories in two series on a 400 px plot", async () => {
+    // B2-1 at DPR 1: each 4 px band keeps 3 px inside its 25 % gap, and two bars 2 px apart get
+    // 0.5 px each, from 4i + 0.5 and 4i + 3. The first snaps to [4i, 4i + 1], and the second,
+    // whose edges both snap to 4i + 3, keeps one pixel to 4i + 4.
+    expect(devicePixelRatio).toBe(1);
+    const rows = Array.from({ length: 100 }, (_, index) => ({ name: `c${String(index)}`, a: 2, b: 3 }));
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 400 }}>
+          <Chart.Root data-intro="none" data={rows} config={TWO} xKey="name" aria-label="Tett">
+            <Chart.BarGroup series={["a", "b"]}>
+              <Chart.Bar dataKey="a" />
+              <Chart.Bar dataKey="b" />
+            </Chart.BarGroup>
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    expect(plotOf(host).width).toBe(400);
+    for (const series of [0, 1]) {
+      const drawn = boxes(host, series);
+      expect(drawn).toHaveLength(100);
+      drawn.forEach(({ left, right }, index) => {
+        near(left, 4 * index + (series === 0 ? 0 : 3));
+        near(right - left, 1);
+      });
+    }
+    // The active overlay draws the same rectangle over the second slot.
+    // DOM audit: the plot's single tab stop is the listbox's option.
+    host.querySelector<HTMLElement>('[role="option"]')?.focus();
+    await userEvent.keyboard("{ArrowRight}");
+    // DOM audit: the overlays are aria-hidden plot output.
+    const overlays = [...host.querySelectorAll('[data-slot="chart-bar-active"]')];
+    expect(
+      overlays.map((overlay) => [overlay.getAttribute("visibility"), overlay.getAttribute("width")])
+    ).toEqual([
+      ["visible", "1"],
+      ["visible", "1"],
+    ]);
+  });
+});
+
 describe("structural counts per form", () => {
   function quarters(rows: readonly { readonly time_start: string; readonly SEK_per_kWh: number }[]) {
     return (
       <LocaleProvider locale="sv-SE">
         <Chart.Root
+          data-intro="none"
           data={rows.map((row) => ({ start: new Date(row.time_start), price: row.SEK_per_kWh }))}
           config={{ price: { label: "Spotpris", color: "chart-diverging" } }}
           xKey="start"
@@ -144,6 +282,7 @@ describe("structural counts per form", () => {
     const { host } = renderThemed(
       <LocaleProvider locale="nb-NO">
         <Chart.Root
+          data-intro="none"
           data={rows}
           config={{ kwh: { label: "Forbruk", color: "chart-1", qualityKey: "q" } }}
           xKey="day"
@@ -168,7 +307,12 @@ describe("default plot heights", () => {
     const { host } = renderThemed(
       <LocaleProvider locale="nb-NO">
         <div style={{ width: 358 }}>
-          <Chart.Root data={[{ name: "x", a: 1, b: 1 }]} config={TWO} xKey="name" aria-label="Høyde">
+          <Chart.Root
+            data-intro="none"
+            data={[{ name: "x", a: 1, b: 1 }]}
+            config={TWO}
+            xKey="name"
+            aria-label="Høyde">
             <Chart.Bar dataKey="a" />
           </Chart.Root>
         </div>
@@ -183,7 +327,13 @@ describe("default plot heights", () => {
     const rows = ["a", "b", "c", "d", "e"].map((name, index) => ({ name, a: index + 1, b: 1 }));
     const { host } = renderThemed(
       <LocaleProvider locale="nb-NO">
-        <Chart.Root data={rows} config={TWO} xKey="name" orientation="horizontal" aria-label="Rader">
+        <Chart.Root
+          data-intro="none"
+          data={rows}
+          config={TWO}
+          xKey="name"
+          orientation="horizontal"
+          aria-label="Rader">
           <Chart.Bar dataKey="a" />
         </Chart.Root>
       </LocaleProvider>
@@ -195,7 +345,13 @@ describe("default plot heights", () => {
     const rows = ["January", "February", "March"].map((name, index) => ({ name, a: index + 1, b: 1 }));
     const { host } = renderThemed(
       <LocaleProvider locale="nb-NO">
-        <Chart.Root data={rows} config={TWO} xKey="name" orientation="horizontal" aria-label="Rader">
+        <Chart.Root
+          data-intro="none"
+          data={rows}
+          config={TWO}
+          xKey="name"
+          orientation="horizontal"
+          aria-label="Rader">
           <Chart.XAxis />
           <Chart.Bar dataKey="a" />
         </Chart.Root>
@@ -221,7 +377,7 @@ describe("emphasis", () => {
     const { host } = renderThemed(
       <LocaleProvider locale="nb-NO">
         <button type="button">før</button>
-        <Chart.Root data={rows} config={TWO} xKey="name" aria-label="Uthevet">
+        <Chart.Root data-intro="none" data={rows} config={TWO} xKey="name" aria-label="Uthevet">
           <Chart.Bar dataKey="a" emphasis="max" />
         </Chart.Root>
       </LocaleProvider>
@@ -241,6 +397,7 @@ describe("emphasis", () => {
     const { host } = renderThemed(
       <LocaleProvider locale="nb-NO">
         <Chart.Root
+          data-intro="none"
           data={rows}
           config={{
             a: { label: "A", color: "chart-1", stack: "s" },
@@ -279,7 +436,7 @@ describe("metamorphic relations", () => {
     return (
       <LocaleProvider locale={locale}>
         <div style={{ width: 300 }}>
-          <Chart.Root data={rows} config={config} xKey="name" aria-label="Relasjoner">
+          <Chart.Root data-intro="none" data={rows} config={config} xKey="name" aria-label="Relasjoner">
             <Chart.YAxis />
             <Chart.Bar dataKey="a" />
             {zero ? <Chart.Bar dataKey="z" /> : null}
@@ -312,5 +469,91 @@ describe("metamorphic relations", () => {
     const withZero = renderThemed(chart("nb-NO", 1, true)).host;
     expect(boxes(withZero, 0)).toEqual(boxes(without, 0));
     expect(boxes(withZero, 2)).toEqual(boxes(without, 1));
+  });
+});
+
+describe("bars in measured pixels", () => {
+  /** Each box rounded to the half pixel, the most a snap to the device pixel grid moves an edge. */
+  function expectBoxes(actual: readonly BarBox[], wanted: readonly BarBox[]): void {
+    expect(actual).toHaveLength(wanted.length);
+    actual.forEach((box, index) => {
+      for (const edge of ["left", "right", "top", "bottom"] as const)
+        near(box[edge], wanted[index]?.[edge] ?? Number.NaN);
+    });
+  }
+
+  function stacked(width: number) {
+    return (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width }}>
+          <Chart.Root
+            data-intro="none"
+            data={[
+              { name: "x", a: 3, b: 5 },
+              { name: "y", a: 2, b: 2 },
+            ]}
+            config={STACKED}
+            xKey="name"
+            aria-label="Stablet">
+            <Chart.Bar dataKey="a" />
+            <Chart.Bar dataKey="b" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+  }
+
+  it("draws a stacked chart on a 400 × 200 plot where the hand-worked pixels say", () => {
+    // Totals 8 and 4 on [0, 8] give 25 px per unit down a 200 px plot. Each 200 px band keeps its
+    // middle 150 px. a's inner segment ends a 2 px seam below b, which tops its stack.
+    const { host } = renderThemed(stacked(400));
+    expectBoxes(boxes(host, 0), [
+      { left: 25, right: 175, top: 127, bottom: 200 },
+      { left: 225, right: 375, top: 152, bottom: 200 },
+    ]);
+    expectBoxes(boxes(host, 1), [
+      { left: 25, right: 175, top: 0, bottom: 125 },
+      { left: 225, right: 375, top: 100, bottom: 150 },
+    ]);
+  });
+
+  it("redraws the bars at a new width once the plot resizes", async () => {
+    // At 300 px each band is 150 px, so its bar keeps 18.75 to 131.25 px of it.
+    const { host } = renderThemed(stacked(400));
+    const frame = host.querySelector<HTMLElement>('[data-slot="chart"]')?.parentElement;
+    frame?.style.setProperty("width", "300px");
+    await expect
+      .poll(() => Math.round(boxes(host, 1)[1]?.right ?? 0), { timeout: 2000 })
+      .toBe(Math.round(281.25));
+    expectBoxes(boxes(host, 1), [
+      { left: 18.75, right: 131.25, top: 0, bottom: 125 },
+      { left: 168.75, right: 281.25, top: 100, bottom: 150 },
+    ]);
+  });
+
+  it("draws horizontal bars on 32 px rows from the zero line to the right", () => {
+    // Values 6 and 3 on [0, 6] across a 400 px plot, and each 32 px row keeps its middle 24 px.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 400 }}>
+          <Chart.Root
+            data-intro="none"
+            data={[
+              { name: "a", a: 6, b: 1 },
+              { name: "b", a: 3, b: 1 },
+            ]}
+            config={TWO}
+            xKey="name"
+            orientation="horizontal"
+            aria-label="Rader">
+            <Chart.Bar dataKey="a" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    expectBoxes(boxes(host), [
+      { left: 0, right: 400, top: 4, bottom: 28 },
+      { left: 0, right: 200, top: 36, bottom: 60 },
+    ]);
   });
 });

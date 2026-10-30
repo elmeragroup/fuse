@@ -1,6 +1,7 @@
-// The catalogue-option judges of ticket 05 in Chromium, Firefox and WebKit. Oracles: T138's delay
-// list per data-intro value for a 5-bar fixture, from the catalogue's 16 ms step and evilcharts'
-// left, right, centre-out and edges-in formulas; section 8.9's diverging bins for a hand-written
+// The catalogue-option judges of ticket 05 in Chromium. Oracles: the entrance of
+// motion-decision.md rule 1, where every bar starts on its own base when Root first mounts in the
+// browser and data-intro="none" starts none (layout/bar-geometry.test.ts pins each origin's
+// 16 ms steps); section 8.9's diverging bins for a hand-written
 // series whose largest magnitude is 6; T137's 3 px dot on each drawn tick's band centre; and
 // section 8.7's quality and projection words in the option, all written by hand.
 import { describe, expect, it } from "vitest";
@@ -21,51 +22,49 @@ function bars(host: HTMLElement): HTMLElement[] {
   return [...host.querySelectorAll<HTMLElement>('[data-slot="chart-bar"]')];
 }
 
-/** The delay of a bar's geometry transition, in milliseconds. */
-function geometryDelay(bar: HTMLElement): number {
-  const style = getComputedStyle(bar);
-  const properties = style.transitionProperty.split(",").map((entry) => entry.trim());
-  const delays = style.transitionDelay.split(",").map((entry) => Number.parseFloat(entry) * 1000);
-  return delays[properties.indexOf("top") % delays.length] ?? Number.NaN;
+function chart(intro: ChartIntro) {
+  return (
+    <LocaleProvider locale="nb-NO">
+      <div style={{ width: 400 }}>
+        <Chart.Root
+          data={FIVE}
+          config={{ v: { label: "V", color: "chart-1" } }}
+          xKey="name"
+          data-intro={intro}
+          aria-label="Fem">
+          <Chart.Bar dataKey="v" />
+        </Chart.Root>
+      </div>
+    </LocaleProvider>
+  );
 }
 
-describe("the entrance wipe origins", () => {
-  it.each([
-    ["left", [0, 16, 32, 48, 64]],
-    ["right", [64, 48, 32, 16, 0]],
-    ["center", [32, 16, 0, 16, 32]],
-    ["edges", [0, 16, 32, 16, 0]],
-  ] as const)("delays a %s wipe by these milliseconds", (intro, delays) => {
-    const { host } = renderThemed(
-      <LocaleProvider locale="nb-NO">
-        <Chart.Root
-          data={FIVE}
-          config={{ v: { label: "V", color: "chart-1" } }}
-          xKey="name"
-          data-intro={intro}
-          aria-label="Fem">
-          <Chart.Bar dataKey="v" />
-        </Chart.Root>
-      </LocaleProvider>
-    );
-    expect(bars(host).map((bar) => Math.round(geometryDelay(bar)))).toEqual(delays);
-  });
+/** Each bar's drawn height in CSS pixels. */
+function heights(host: HTMLElement): number[] {
+  return bars(host).map((bar) => bar.getBoundingClientRect().height);
+}
 
-  it("runs no entrance under none", () => {
-    const intro: ChartIntro = "none";
-    const { host } = renderThemed(
-      <LocaleProvider locale="nb-NO">
-        <Chart.Root
-          data={FIVE}
-          config={{ v: { label: "V", color: "chart-1" } }}
-          xKey="name"
-          data-intro={intro}
-          aria-label="Fem">
-          <Chart.Bar dataKey="v" />
-        </Chart.Root>
-      </LocaleProvider>
-    );
-    for (const bar of bars(host)) expect(bar.getAnimations()).toEqual([]);
+describe("the entrance", () => {
+  it.each(["left", "right", "center", "edges"] as const)(
+    "starts a %s wipe with every bar on its base and grows each to its value",
+    async (intro) => {
+      const { host } = renderThemed(chart(intro));
+      // The first paint shows every bar collapsed onto the zero line.
+      expect(heights(host)).toEqual([0, 0, 0, 0, 0]);
+      // Values 1 to 5 on a [0, 5] domain fill a fifth of the plot per unit once the wipe ends.
+      // DOM audit: the bar series layer covers the plot box.
+      const plot = host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect().height ?? 0;
+      await expect
+        .poll(() => heights(host).map((height) => Math.round((height / plot) * 5)), { timeout: 5000 })
+        .toEqual([1, 2, 3, 4, 5]);
+    }
+  );
+
+  it("draws every bar at its value at once under none", () => {
+    const { host } = renderThemed(chart("none"));
+    // DOM audit: the bar series layer covers the plot box.
+    const plot = host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect().height ?? 0;
+    expect(heights(host).map((height) => Math.round((height / plot) * 5))).toEqual([1, 2, 3, 4, 5]);
   });
 });
 

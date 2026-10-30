@@ -5,7 +5,7 @@
 import type { ReactNode } from "react";
 
 import { Chart } from "../../src/components/chart/chart-namespace";
-import type { ChartConfig } from "../../src/components/chart/chart-types";
+import type { ChartConfig, ChartIntro } from "../../src/components/chart/chart-types";
 import { LocaleProvider } from "../../src/intl/locale-context";
 import type { SupportedLocale } from "../../src/intl/locale-context";
 import { S06_HOURS } from "./elhub-rows";
@@ -17,18 +17,21 @@ export const S06_CONFIG = {
 } as const satisfies ChartConfig;
 
 /**
- * S06 as an hourly bar chart in Oslo, with a button before and after it.
+ * S06 as an hourly bar chart in Oslo, with a button before and after it. Its entrance is off
+ * unless a test names an origin, so marks read at rest from the first paint.
  *
- * @param props - The locale, the Root's orientation and the parts inside the Root.
+ * @param props - The locale, the Root's orientation and entrance, and the parts inside the Root.
  * @returns The page.
  */
 export function S06Chart({
   locale = "nb-NO",
   orientation,
+  intro = "none",
   children,
 }: {
   readonly locale?: SupportedLocale;
   readonly orientation?: "vertical" | "horizontal";
+  readonly intro?: ChartIntro;
   readonly children?: ReactNode;
 }): ReactNode {
   return (
@@ -41,6 +44,7 @@ export function S06Chart({
         interval="hour"
         timeZone="Europe/Oslo"
         orientation={orientation}
+        data-intro={intro}
         aria-label="Forbruk per time">
         {children ?? <Chart.Bar dataKey="household" />}
       </Chart.Root>

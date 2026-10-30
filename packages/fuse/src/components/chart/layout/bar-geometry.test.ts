@@ -1,20 +1,45 @@
 // Unit under test: the bar geometry of layout/bar-geometry.ts. Oracles: section 8.12's form
 // threshold and M4 buckets, brute-forced over E13's committed hourly year; evilcharts'
-// getBarGrowAnimation step formulas for a 5-bar fixture, written by hand; and stacked tops and
-// heights written by hand under a niced domain.
+// getBarGrowAnimation step formulas for a 5-bar fixture, written by hand; stacked extents read off
+// the rows by hand; and pixel rectangles worked by hand from section 8.15's band layout on plots
+// of whole pixels, so snapping changes nothing.
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import year from "../format/fixtures/elhub/no1-household-hourly-2025-10_2026-09.json" with { type: "json" };
 import {
   barCells,
   barForm,
-  columnsPath,
+  barRect,
+  barTip,
+  columnRect,
+  geometryRect,
+  hangs,
   introStep,
   isNegative,
   isStackTop,
   pathColumns,
+  rectsPath,
 } from "./bar-geometry";
 import { buildCartesianModel } from "./cartesian-model";
+import { WHOLE_BAND, optionBand, plotFrame } from "./plot-frame";
+import type { BarMetrics, PlotBox } from "./plot-frame";
+
+/** A plot of whole pixels, at 1x unless a ratio is given. */
+function box(width: number, height: number, dpr = 1): PlotBox {
+  return { width, height, dpr, left: 0, top: 0 };
+}
+
+/** The first cell of a model's first series. */
+function firstCell(model: ReturnType<typeof buildCartesianModel>) {
+  const series = model.series[0];
+  const cell = series === undefined ? undefined : barCells(model, series)[0];
+  if (cell === undefined) throw new Error("no cell");
+  return cell;
+}
+
+/** The contract's default spacing: a 25 % band gap and 2 px bar gap and seam. */
+const METRICS: BarMetrics = { bandGap: 0.25, barGap: 2, seam: 2 };
 
 function categories(count: number) {
   return buildCartesianModel({
@@ -28,14 +53,14 @@ function categories(count: number) {
 }
 
 describe("the bar form", () => {
-  it("draws HTML boxes up to 100 slots and paths above", () => {
-    expect(barForm(categories(100), "vertical")).toBe("html");
+  it("draws one element per bar up to 100 slots and paths above", () => {
+    expect(barForm(categories(100), "vertical")).toBe("bars");
     expect(barForm(categories(101), "vertical")).toBe("path");
   });
 
-  it("keeps horizontal bars in the HTML form at any count", () => {
+  it("keeps horizontal bars one element each at any count", () => {
     // Section 8.12: each horizontal category takes a row of its own, so the rows never grow dense.
-    expect(barForm(categories(101), "horizontal")).toBe("html");
+    expect(barForm(categories(101), "horizontal")).toBe("bars");
   });
 });
 
@@ -58,14 +83,141 @@ describe("stacked cells", () => {
     });
     const [p, q] = model.series;
     if (p === undefined || q === undefined) throw new Error("no series");
-    expect(barCells(model, p, model.y.domain)).toEqual([
-      { slot: 0, position: 0, top: 62.5, height: 37.5, negative: false, stackTop: false },
-      { slot: 1, position: 1, top: 75, height: 25, negative: false, stackTop: false },
+    expect(barCells(model, p)).toEqual([
+      { slot: 0, position: 0, extent: [0, 3], negative: false, stackTop: false },
+      { slot: 1, position: 1, extent: [0, 2], negative: false, stackTop: false },
     ]);
-    expect(barCells(model, q, model.y.domain)).toEqual([
-      { slot: 0, position: 0, top: 0, height: 62.5, negative: false, stackTop: true },
-      { slot: 1, position: 1, top: 50, height: 25, negative: false, stackTop: true },
+    expect(barCells(model, q)).toEqual([
+      { slot: 0, position: 0, extent: [3, 8], negative: false, stackTop: true },
+      { slot: 1, position: 1, extent: [2, 4], negative: false, stackTop: true },
     ]);
+  });
+
+  it("ends an inner segment a seam short of the next one, and keeps the outer one whole", () => {
+    // Two 80 px bands on a 160 x 80 plot over [0, 8], so 10 px per unit. Slot a's bar spans
+    // 10 to 70 px after the 25 % gap. p fills 0 to 3, 50 to 80 px down, less the 2 px seam at its
+    // top, and q fills 3 to 8, 0 to 50 px down.
+    const model = buildCartesianModel({
+      rows: [{ name: "a", p: 3, q: 5 }],
+      series: [
+        ["p", { stack: "s" }],
+        ["q", { stack: "s" }],
+      ],
+      xKey: "name",
+      stackOffset: "diverging",
+      baseline: "zero",
+      include: [],
+    });
+    const [p, q] = model.series;
+    if (p === undefined || q === undefined) throw new Error("no series");
+    const frame = plotFrame(box(80, 80), "vertical", 1, [0, 8]);
+    const [inner] = barCells(model, p);
+    const [outer] = barCells(model, q);
+    if (inner === undefined || outer === undefined) throw new Error("no cells");
+    expect(barRect(frame, inner, METRICS, WHOLE_BAND, "cut")).toEqual({
+      x: 10,
+      y: 52,
+      width: 60,
+      height: 28,
+    });
+    expect(barRect(frame, inner, METRICS, WHOLE_BAND, "whole")).toEqual({
+      x: 10,
+      y: 50,
+      width: 60,
+      height: 30,
+    });
+    expect(barRect(frame, outer, METRICS, WHOLE_BAND, "cut")).toEqual({ x: 10, y: 0, width: 60, height: 50 });
+  });
+});
+
+describe("bar rectangles in pixels", () => {
+  /** Two keys, one row, so the band is the whole plot width. */
+  function pair(a: number, b: number) {
+    return buildCartesianModel({
+      rows: [{ name: "x", a, b }],
+      series: [
+        ["a", {}],
+        ["b", {}],
+      ],
+      xKey: "name",
+      stackOffset: "diverging",
+      baseline: "zero",
+      include: [],
+    });
+  }
+
+  it("draws a two-key group's bars 14 px wide at 5 and 21 px of a 40 px band", () => {
+    // Section 8.15: a 40 px band less 25 % leaves 30 px, and a 2 px gap halves the rest to 14 px.
+    const model = pair(4, 2);
+    const frame = plotFrame(box(40, 100), "vertical", 1, [0, 4]);
+    const [a, b] = model.series.map((series) => barCells(model, series)[0]);
+    if (a === undefined || b === undefined) throw new Error("no cells");
+    expect(barRect(frame, a, METRICS, { index: 0, count: 2 }, "cut")).toEqual({
+      x: 5,
+      y: 0,
+      width: 14,
+      height: 100,
+    });
+    expect(barRect(frame, b, METRICS, { index: 1, count: 2 }, "cut")).toEqual({
+      x: 21,
+      y: 50,
+      width: 14,
+      height: 50,
+    });
+  });
+
+  it("runs a horizontal bar from the zero line to the right, its row narrowed by the band gap", () => {
+    // A 40 px tall row and a 200 px wide plot over [-2, 8], so zero sits at 40 px and 6 at 160 px.
+    const model = pair(6, 0);
+    const frame = plotFrame(box(200, 40), "horizontal", 1, [-2, 8]);
+    expect(barRect(frame, firstCell(model), METRICS, WHOLE_BAND, "cut")).toEqual({
+      x: 40,
+      y: 5,
+      width: 120,
+      height: 30,
+    });
+  });
+
+  it("hangs a negative bar below zero and puts its tip at its low end", () => {
+    // A [-4, 4] domain on 80 px puts zero at 40 px and -3 at 70 px.
+    const model = pair(-3, 1);
+    const frame = plotFrame(box(40, 80), "vertical", 1, [-4, 4]);
+    const cell = firstCell(model);
+    expect(barRect(frame, cell, METRICS, WHOLE_BAND, "cut")).toEqual({ x: 5, y: 40, width: 30, height: 30 });
+    expect(barTip(frame, cell)).toBe(70);
+  });
+
+  it("tweens a bar's tip unsnapped, and draws its far edge on the device pixel the browser gives it", () => {
+    // 2 of [0, 3] on 80 px lies 26.67 px down, the tip a follower tweens, which the browser draws
+    // on pixel 27.
+    const frame = plotFrame(box(40, 80), "vertical", 1, [0, 3]);
+    const cell = firstCell(pair(2, 1));
+    expect(barTip(frame, cell)).toBeCloseTo(80 - (2 / 3) * 80, 12);
+    expect(barRect(frame, cell, METRICS, WHOLE_BAND, "whole").y).toBe(27);
+  });
+
+  it("snaps every edge to whole device pixels of the plot", () => {
+    // Three bands on a 50 px plot are 16.67 px wide, so the second bar spans 18.75 to 31.25 px,
+    // which round to 18.5 and 31 at 2x, the edge at 18.75 lying half way and rounding left.
+    const rows = ["a", "b", "c"].map((name) => ({ name, v: 2 }));
+    const three = buildCartesianModel({
+      rows,
+      series: [["v", {}]],
+      xKey: "name",
+      stackOffset: "diverging",
+      baseline: "zero",
+      include: [],
+    });
+    const [, second] = three.series[0] === undefined ? [] : barCells(three, three.series[0]);
+    if (second === undefined) throw new Error("no cell");
+    const rect = barRect(
+      plotFrame(box(50, 100, 2), "vertical", 3, [0, 2]),
+      second,
+      METRICS,
+      WHOLE_BAND,
+      "cut"
+    );
+    expect([rect.x, rect.x + rect.width]).toEqual([18.5, 31]);
   });
 });
 
@@ -100,10 +252,13 @@ describe("M4 decimation of path-form bars", () => {
     });
   });
 
-  it("writes one closed rectangle per column", () => {
-    expect(columnsPath([{ x0: 0.125, x1: 0.875, top: 25, bottom: 100, slot: 0 }])).toBe(
-      "M0.125 25H0.875V100H0.125Z"
-    );
+  it("projects a column into the plot and writes it as one closed rectangle", () => {
+    // Two slots on a 200 x 80 plot, so 100 px per slot and 0.8 px per percent. The edges at
+    // 112.5 and 187.5 px lie half way between two pixels and round toward the left.
+    const frame = plotFrame(box(200, 80), "vertical", 2, [0, 1]);
+    const rect = columnRect(frame, { x0: 1.125, x1: 1.875, top: 25, bottom: 100, slot: 1, position: 1 });
+    expect(rect).toEqual({ x: 112, y: 20, width: 75, height: 60 });
+    expect(rectsPath([rect])).toBe("M112 20H187V80H112Z");
   });
 });
 
@@ -135,6 +290,56 @@ function model(
     xRange,
   });
 }
+
+describe("a bar drawn from its geometry", () => {
+  // A 200 px tall plot. A bar from 10 to 30 px along, with its base on the baseline at 100 px.
+  const vertical = plotFrame(box(40, 200), "vertical", 1, [-4, 4]);
+  const horizontal = plotFrame(box(200, 40), "horizontal", 1, [-4, 4]);
+
+  it("spans its base to its tip on either side, and nothing where its tip meets its base", () => {
+    // A tip at 50 px draws up from the base, one at 150 px down from it, one at 100 px nothing.
+    expect(geometryRect(vertical, [10, 30, 100, 50, 0, 1])).toEqual({ x: 10, width: 20, y: 50, height: 50 });
+    expect(geometryRect(vertical, [10, 30, 100, 150, 0, 1])).toEqual({
+      x: 10,
+      width: 20,
+      y: 100,
+      height: 50,
+    });
+    expect(geometryRect(vertical, [10, 30, 100, 100, 0, 1]).height).toBe(0);
+  });
+
+  it("stops its drawn seam short of its tip, toward its base, and keeps no more than its length", () => {
+    // A 2 px seam ends the 50 px bar at 52 px above the base, or at 148 px below it, a bar 1 px
+    // long keeps nothing, and a seam halfway open in a tween frame, 1 px, ends it at 51 px.
+    expect(geometryRect(vertical, [10, 30, 100, 50, 2, 1])).toEqual({ x: 10, width: 20, y: 52, height: 48 });
+    expect(geometryRect(vertical, [10, 30, 100, 150, 2, 1])).toEqual({
+      x: 10,
+      width: 20,
+      y: 100,
+      height: 48,
+    });
+    expect(geometryRect(vertical, [10, 30, 100, 99, 2, 1]).height).toBe(0);
+    expect(geometryRect(vertical, [10, 30, 100, 50, 1, 0.5])).toEqual({
+      x: 10,
+      width: 20,
+      y: 51,
+      height: 49,
+    });
+  });
+
+  it("hangs below its base once its tip passes it: down a vertical plot and left along a horizontal one", () => {
+    expect([50, 100, 150].map((tip) => hangs(vertical, [10, 30, 100, tip, 0, 1]))).toEqual([
+      false,
+      false,
+      true,
+    ]);
+    expect([50, 100, 150].map((tip) => hangs(horizontal, [10, 30, 100, tip, 0, 1]))).toEqual([
+      true,
+      false,
+      false,
+    ]);
+  });
+});
 
 describe("isNegative", () => {
   it.each([
@@ -168,8 +373,7 @@ describe("isStackTop", () => {
 });
 
 describe("barCells of a window", () => {
-  it("places a negative bar below zero and counts positions from the window's first slot", () => {
-    // The window holds y and z. Values 4 and -4 nice to [-4, 4], so zero sits at 50 %.
+  it("counts positions from the window's first slot and marks a negative bar", () => {
     const rows = [
       { name: "x", v: 1 },
       { name: "y", v: 4 },
@@ -178,9 +382,9 @@ describe("barCells of a window", () => {
     const windowed = model(rows, ["v"], false, ["y", "z"]);
     const series = windowed.series[0];
     if (series === undefined) throw new Error("no series");
-    expect(barCells(windowed, series, [-4, 4])).toEqual([
-      { slot: 1, position: 0, top: 0, height: 50, negative: false, stackTop: true },
-      { slot: 2, position: 1, top: 50, height: 50, negative: true, stackTop: true },
+    expect(barCells(windowed, series)).toEqual([
+      { slot: 1, position: 0, extent: [0, 4], negative: false, stackTop: true },
+      { slot: 2, position: 1, extent: [-4, 0], negative: true, stackTop: true },
     ]);
   });
 });
@@ -196,15 +400,15 @@ describe("path columns up to 2,000 slots", () => {
     const series = windowed.series[0];
     if (series === undefined) throw new Error("no series");
     expect(pathColumns(windowed, series, [0, 4])).toEqual([
-      { x0: 1.125, x1: 1.875, top: 0, bottom: 100, slot: 2 },
+      { x0: 1.125, x1: 1.875, top: 0, bottom: 100, slot: 2, position: 1 },
     ]);
   });
 
-  it("joins columns into one path", () => {
+  it("joins rectangles into one path", () => {
     expect(
-      columnsPath([
-        { x0: 0, x1: 1, top: 10, bottom: 20, slot: 0 },
-        { x0: 2, x1: 3, top: 30, bottom: 40, slot: 1 },
+      rectsPath([
+        { x: 0, y: 10, width: 1, height: 10 },
+        { x: 2, y: 30, width: 1, height: 10 },
       ])
     ).toBe("M0 10H1V20H0ZM2 30H3V40H2Z");
   });
@@ -260,7 +464,7 @@ describe("decimated stacked path columns", () => {
 });
 
 describe("grouped path columns", () => {
-  it("splits each band into the group's sub-bands as the HTML form does", () => {
+  it("splits each band into the group's sub-bands as the bars form does", () => {
     // 101 categories take the path form. The band of slot 0 runs from 0.125 to 0.875 after the
     // 25 % gap, and two sub-bands halve its 0.75 width.
     const rows = Array.from({ length: 101 }, (_, index) => ({ name: `c${String(index)}`, a: 2, b: 4 }));
@@ -273,6 +477,7 @@ describe("grouped path columns", () => {
       top: 50,
       bottom: 100,
       slot: 0,
+      position: 0,
     });
     expect(pathColumns(grouped, b, [0, 4], { index: 1, count: 2 })[0]).toEqual({
       x0: 0.5,
@@ -280,7 +485,72 @@ describe("grouped path columns", () => {
       top: 0,
       bottom: 100,
       slot: 0,
+      position: 0,
     });
+  });
+
+  /** The second series' column at a category, drawn on a plot of a width at 1x. */
+  function secondColumn(categories: number, width: number, category: number) {
+    const rows = Array.from({ length: categories }, (_, index) => ({
+      name: `c${String(index)}`,
+      a: 2,
+      b: 4,
+    }));
+    const grouped = model(rows, ["a", "b"], false);
+    const second = grouped.series[1];
+    if (second === undefined) throw new Error("no series");
+    const column = pathColumns(grouped, second, [0, 4], { index: 1, count: 2 })[category];
+    if (column === undefined) throw new Error("no column");
+    const rect = columnRect(plotFrame(box(width, 100), "vertical", categories, [0, 4]), column);
+    return [rect.x, rect.x + rect.width];
+  }
+
+  it("keeps category 1's second column of 400 on 240 px in its band's pixel [0, 1]", () => {
+    // Q5-1: category 1's band [0.6, 1.2] snaps both edges to 1 and keeps the pixel before, [0, 1].
+    // Its second column [0.9, 1.125] snaps both edges to 1 too, and keeps that pixel, not [1, 2].
+    expect(secondColumn(400, 240, 1)).toEqual([0, 1]);
+  });
+
+  it("keeps the fourth category's second column of 365 on 200 px in its band's pixel [1, 2]", () => {
+    // B5-1: the fourth band [1.64, 2.19] keeps [1, 2], and its second column [1.92, 2.12], whose
+    // middle lies past 2, keeps the band's pixel, not [2, 3].
+    expect(secondColumn(365, 200, 3)).toEqual([1, 2]);
+  });
+
+  it("keeps every grouped column of one slot inside the band its interaction marks use", () => {
+    // Expectation: each column's drawn pixels lie within its slot's option band, the band the
+    // overlay, the focused option, the crosshair and the tooltip anchor draw, and keep at least
+    // one device pixel.
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 101, max: 400 }),
+        fc.double({ min: 40, max: 2000, noNaN: true }),
+        fc.double({ min: 1, max: 3, noNaN: true }),
+        fc.double({ min: -300, max: 300, noNaN: true }),
+        fc.integer({ min: 1, max: 4 }),
+        fc.nat(),
+        (categories, width, dpr, left, group, index) => {
+          const keys = Array.from({ length: group }, (_, key) => `s${String(key)}`);
+          const rows = Array.from({ length: categories }, (_, slot) => ({
+            name: `c${String(slot)}`,
+            ...Object.fromEntries(keys.map((key) => [key, 2])),
+          }));
+          const grouped = model(rows, keys, false);
+          const series = grouped.series[index % group];
+          if (series === undefined) throw new Error("no series");
+          const frame = plotFrame({ width, height: 100, dpr, left, top: 0 }, "vertical", categories, [0, 4]);
+          for (const column of pathColumns(grouped, series, [0, 4], { index: index % group, count: group })) {
+            expect(column.position).not.toBeNull();
+            const rect = columnRect(frame, column);
+            const [start, end] = optionBand(frame, column.position ?? 0, "band");
+            expect(rect.x).toBeGreaterThanOrEqual(start - 1e-9);
+            expect(rect.x + rect.width).toBeLessThanOrEqual(end + 1e-9);
+            expect(rect.width).toBeGreaterThanOrEqual(1 / dpr - 1e-9);
+          }
+        }
+      ),
+      { numRuns: 60 }
+    );
   });
 });
 
@@ -400,7 +670,7 @@ describe("edge cases of the forms", () => {
     const empty = model([], ["v"], false);
     const series = empty.series[0];
     if (series === undefined) throw new Error("no series");
-    expect(barCells(empty, series, [0, 1])).toEqual([]);
+    expect(barCells(empty, series)).toEqual([]);
     expect(pathColumns(empty, series, [0, 1])).toEqual([]);
   });
 
@@ -485,14 +755,14 @@ describe("two stacks and a missing reading", () => {
     expect(model.series.map((series) => isStackTop(model, series, 0))).toEqual([false, true, false, true]);
   });
 
-  it("draws no HTML bar for a missing reading", () => {
+  it("draws no bar for a missing reading", () => {
     const model = twoStacks([
       { name: "a", p: 1, q: 1, r: 1, t: 1 },
       { name: "b", p: null, q: 1, r: 1, t: 1 },
     ]);
     const p = model.series[0];
     if (p === undefined) throw new Error("no series");
-    expect(barCells(model, p, [0, 2]).map(({ slot }) => slot)).toEqual([0]);
+    expect(barCells(model, p).map(({ slot }) => slot)).toEqual([0]);
   });
 
   it("picks each decimated column by its own stack's totals, first of ties, and skips an empty side", () => {

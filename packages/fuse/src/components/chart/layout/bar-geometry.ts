@@ -1,47 +1,43 @@
 /**
- * Bar geometry in plot percentages, after CONTRACT sections 8.12 and 8.15. Along the category axis
- * a bar takes its slot's band, which `chart.css` narrows by `--chart-band-gap` and splits into
- * BarGroup sub-bands. Along the value axis `top` runs from the domain maximum and `height` from
- * there toward the minimum, so one pair serves both orientations.
+ * Bar geometry after CONTRACT sections 8.12 and 8.15. The model's extents become cells in value
+ * space, and `plot-frame.ts` projects a cell into the measured plot. A stack's inner segment ends
+ * `--chart-bar-seam` short of the next one at its far end, so the surface shows between segments.
  */
 import type { CartesianModel, SeriesModel } from "./cartesian-model";
 import { BUCKETS, DECIMATE_ABOVE, bucketEdges } from "./decimate";
 import { linearScale, scaleValue } from "./linear-scale";
+import { barSpan, frameRect, slotBand, snapSpan, valueAt } from "./plot-frame";
+import type { BarMetrics, PlotFrame, PlotRect, SubBand } from "./plot-frame";
 import type { Extent } from "./stack";
 import { slotCount } from "./x-domain";
 
 /** Above this many domain slots, with `period` included, a Bar draws one path per series. */
-export const HTML_BAR_LIMIT = 100;
+export const BAR_LIMIT = 100;
 
-/** One drawn bar. */
+/**
+ * Which form a Bar draws in. The count covers the whole domain, so a brush never switches it.
+ * Horizontal bars always draw one element per bar, because each category gets a row of its own.
+ *
+ * @param model - The Root's model.
+ * @param orientation - Root's orientation.
+ * @returns "bars" for 100 slots or fewer or for horizontal bars, else "path".
+ */
+export function barForm(model: CartesianModel, orientation: "vertical" | "horizontal"): "bars" | "path" {
+  if (orientation === "horizontal") return "bars";
+  return slotCount(model.domain) > BAR_LIMIT ? "path" : "bars";
+}
+
+/** One drawn bar in value space. */
 export type BarCell = {
   readonly slot: number;
   /** The slot's place in the window, from 0. */
   readonly position: number;
-  /** From the value maximum to the bar's far edge, in percent of the plot. */
-  readonly top: number;
-  /** The bar's length along the value axis, in percent of the plot. */
-  readonly height: number;
+  /** The low and high value the bar covers. */
+  readonly extent: readonly [number, number];
   readonly negative: boolean;
   /** Whether the bar is its stack's outer segment on its side of zero, which takes the rounded end. */
   readonly stackTop: boolean;
 };
-
-/**
- * Which form a Bar draws in. The count covers the whole domain, so a brush never switches it.
- * Horizontal bars always take the HTML form, because each category gets a row of its own.
- *
- * @param model - The Root's model.
- * @param orientation - Root's orientation.
- * @returns "html" for 100 slots or fewer or for horizontal bars, else "path".
- */
-export function barForm(model: CartesianModel, orientation: "vertical" | "horizontal"): "html" | "path" {
-  if (orientation === "horizontal") return "html";
-  return slotCount(model.domain) > HTML_BAR_LIMIT ? "path" : "html";
-}
-
-/** A Bar's sub-band inside a BarGroup: its place and the group's count of sub-bands. */
-export type SubBand = { readonly index: number; readonly count: number };
 
 /**
  * Whether an extent hangs below zero.
@@ -77,37 +73,182 @@ export function isStackTop(model: CartesianModel, series: SeriesModel, slot: num
 }
 
 /**
- * The HTML form's bars of one series inside the window. A slot without a drawn extent, such as a
- * missing or pending reading, gets no bar.
+ * One series' bar at a slot of the window, or null where it draws nothing, such as a missing or
+ * pending reading or a slot outside the window.
  *
  * @param model - The Root's model.
  * @param series - The series.
- * @param y - The layout's value domain.
- * @returns One cell per drawn bar, in x order.
+ * @param slot - A slot index.
+ * @returns The cell, or null.
  */
-export function barCells(
-  model: CartesianModel,
-  series: SeriesModel,
-  y: readonly [number, number]
-): BarCell[] {
+export function barCellAt(model: CartesianModel, series: SeriesModel, slot: number): BarCell | null {
+  const window = model.window;
+  const extent = series.extents[slot];
+  if (window === null || !extent || slot < window.first || slot > window.last) return null;
+  return {
+    slot,
+    position: slot - window.first,
+    extent,
+    negative: isNegative(extent),
+    stackTop: isStackTop(model, series, slot),
+  };
+}
+
+/**
+ * The bars of one series inside the window, in x order.
+ *
+ * @param model - The Root's model.
+ * @param series - The series.
+ * @returns One cell per drawn bar.
+ */
+export function barCells(model: CartesianModel, series: SeriesModel): BarCell[] {
   const window = model.window;
   if (window === null) return [];
-  const scale = linearScale(y, [100, 0]);
   const cells: BarCell[] = [];
   for (let slot = window.first; slot <= window.last; slot += 1) {
-    const extent = series.extents[slot];
-    if (!extent) continue;
-    const top = scaleValue(scale, extent[1]);
-    cells.push({
-      slot,
-      position: slot - window.first,
-      top,
-      height: scaleValue(scale, extent[0]) - top,
-      negative: isNegative(extent),
-      stackTop: isStackTop(model, series, slot),
-    });
+    const cell = barCellAt(model, series, slot);
+    if (cell !== null) cells.push(cell);
   }
   return cells;
+}
+
+/**
+ * A bar's motion numbers, the one geometry the bar and every follower at its end draw from. The
+ * loop tweens all six, and a tween frame's writer reads nothing else about the bar's shape:
+ *
+ * - its span along the slot axis;
+ * - its signed base and tip across the value axis, where their values land, unsnapped, so a bar
+ *   whose reading changes sign shrinks to its base and grows out on the other side, a stack's
+ *   segment keeps its base on the tip of the one below, and a follower tweening `barTip` draws on
+ *   the bar's drawn tip in every frame. Only the shapes a writer emits snap, so a reading shorter
+ *   than a device pixel, whose base and tip snap to one pixel, keeps the side it lies on;
+ * - its seam, how far short of its tip it stops, so a segment the update makes inner, or outer,
+ *   opens or closes its seam with the motion rather than at the commit;
+ * - its top weight, 1 for a stack's outer segment and a loose bar and 0 for an inner segment, which
+ *   scales its rounded far end and its blocks track, so they grow and fade with the motion too.
+ */
+export type BarGeometry = readonly [
+  alongStart: number,
+  alongEnd: number,
+  base: number,
+  tip: number,
+  seam: number,
+  top: number,
+];
+
+/**
+ * A cell's geometry in the plot at rest.
+ *
+ * @param frame - The layout's frame.
+ * @param cell - The cell.
+ * @param metrics - The bar spacing.
+ * @param sub - The Bar's sub-band.
+ * @param seam - "cut" ends a stack's inner segment a seam short at its far end, as drawn bars do,
+ *   and "whole" keeps the full extent, as the active overlay does.
+ * @returns The geometry, its span on the device pixel grid and its base and tip unsnapped.
+ */
+export function barGeometry(
+  frame: PlotFrame,
+  cell: BarCell,
+  metrics: BarMetrics,
+  sub: SubBand,
+  seam: "cut" | "whole"
+): BarGeometry {
+  const [low, high] = cell.extent;
+  // A bar keeps its pixel among its band's, so the crosshair band and the focused option cover it.
+  const [start, stop] = barSpan(frame, cell.position, metrics, sub);
+  const [alongStart, alongEnd] = snapSpan(frame, start, stop, slotBand(frame, cell.position));
+  return [
+    alongStart,
+    alongEnd,
+    valueAt(frame, cell.negative ? high : low),
+    barTip(frame, cell),
+    seam === "cut" && !cell.stackTop ? metrics.seam : 0,
+    cell.stackTop ? 1 : 0,
+  ];
+}
+
+/**
+ * The geometry a tween frame's numbers stand for.
+ *
+ * @param values - The loop's numbers for a bar.
+ * @returns The geometry, with no seam and a full top weight where a number is missing.
+ */
+export function geometryOf(values: readonly number[]): BarGeometry {
+  const [alongStart = 0, alongEnd = 0, base = 0, tip = 0, seam = 0, top = 1] = values;
+  return [alongStart, alongEnd, base, tip, seam, top];
+}
+
+/**
+ * Whether a bar's drawn tip lies on the negative side of its drawn base: below it on a vertical
+ * frame and left of it on a horizontal one. It reads the unsnapped numbers, so a reading shorter
+ * than a device pixel keeps its side, and a bar crossing zero turns its far end over the moment its
+ * tip passes its base. A tip exactly on its base, a reading of 0, takes the positive side, as the
+ * model never calls a reading of 0 negative and the resting bar carries no `data-negative`.
+ *
+ * @param frame - The layout's frame.
+ * @param geometry - The drawn geometry.
+ * @returns Whether the bar hangs below its base.
+ */
+export function hangs(frame: PlotFrame, [, , base, tip]: BarGeometry): boolean {
+  return frame.orientation === "vertical" ? tip > base : tip < base;
+}
+
+/**
+ * The rectangle a bar's drawn geometry stands for, every edge on the device pixel grid. A stack's
+ * inner segment ends its seam short of its tip, so the surface shows between segments.
+ *
+ * @param frame - The layout's frame.
+ * @param geometry - The drawn geometry, a tween frame's or the target's.
+ * @returns The rectangle.
+ */
+export function geometryRect(frame: PlotFrame, geometry: BarGeometry): PlotRect {
+  const [alongStart, alongEnd, base, tip, seam] = geometry;
+  const end = tip + Math.sign(base - tip) * Math.min(Math.max(0, seam), Math.abs(tip - base));
+  return frameRect(frame, [alongStart, alongEnd], [base, end]);
+}
+
+/**
+ * A cell's rectangle in the plot at rest, every edge on the device pixel grid.
+ *
+ * @param frame - The layout's frame.
+ * @param cell - The cell.
+ * @param metrics - The bar spacing.
+ * @param sub - The Bar's sub-band.
+ * @param seam - "cut" or "whole", as `barGeometry` reads it.
+ * @returns The rectangle.
+ */
+export function barRect(
+  frame: PlotFrame,
+  cell: BarCell,
+  metrics: BarMetrics,
+  sub: SubBand,
+  seam: "cut" | "whole"
+): PlotRect {
+  return geometryRect(frame, barGeometry(frame, cell, metrics, sub, seam));
+}
+
+/**
+ * The value a cell's own end stands for: the tip of a positive bar and the low end of a negative
+ * one, where a value label and the active value line belong.
+ *
+ * @param cell - The cell.
+ * @returns The value.
+ */
+export function barEndValue(cell: BarCell): number {
+  return cell.negative ? cell.extent[0] : cell.extent[1];
+}
+
+/**
+ * Where a cell's own value lands, unsnapped: the number a bar's tip and every follower at it tween,
+ * each writer snapping what it draws, so they meet on the same device pixel in every frame.
+ *
+ * @param frame - The layout's frame.
+ * @param cell - The cell.
+ * @returns CSS pixels from the plot's top or left edge.
+ */
+export function barTip(frame: PlotFrame, cell: BarCell): number {
+  return valueAt(frame, barEndValue(cell));
 }
 
 /** One column of the path form, in viewBox units: x in slots of the window, y in plot percent. */
@@ -118,6 +259,11 @@ export type PathColumn = {
   readonly bottom: number;
   /** The slot whose reading the column draws, which picks its colour step and quality. */
   readonly slot: number;
+  /**
+   * The slot's place in the window, whose band holds the column, or null for a decimated column
+   * that spans a bucket of slots.
+   */
+  readonly position: number | null;
 };
 
 /** The band gap's share of a slot in the path form, which draws in slot units. */
@@ -137,7 +283,7 @@ function sideTotal(model: CartesianModel, series: SeriesModel, slot: number, neg
 
 /**
  * The path form's columns of one series. Up to 2,000 slots in the window each slot draws its own
- * column, narrowed by the band gap and split into the BarGroup's sub-bands as the HTML form is.
+ * column, narrowed by the band gap and split into the BarGroup's sub-bands as the bars form is.
  * Above that the window splits into M4 buckets by slot index. A loose series draws each bucket's
  * column from its lowest negative extent to its highest positive extent, and the column takes the
  * slot of its larger extreme, so its colour step and quality are that reading's. A stacked series
@@ -160,7 +306,13 @@ export function pathColumns(
   const scale = linearScale(y, [100, 0]);
   const count = window.last - window.first + 1;
   const columns: PathColumn[] = [];
-  const push = (from: number, to: number, extent: Extent | undefined, slot: number): void => {
+  const push = (
+    from: number,
+    to: number,
+    extent: Extent | undefined,
+    slot: number,
+    position: number | null
+  ): void => {
     if (!extent || extent[0] === extent[1]) return;
     const width = (to - from) / band.count;
     const x0 = from + band.index * width;
@@ -170,12 +322,13 @@ export function pathColumns(
       top: scaleValue(scale, extent[1]),
       bottom: scaleValue(scale, extent[0]),
       slot,
+      position,
     });
   };
   if (count <= DECIMATE_ABOVE) {
     for (let slot = window.first; slot <= window.last; slot += 1) {
       const position = slot - window.first;
-      push(position + PATH_GAP / 2, position + 1 - PATH_GAP / 2, series.extents[slot], slot);
+      push(position + PATH_GAP / 2, position + 1 - PATH_GAP / 2, series.extents[slot], slot, position);
     }
     return columns;
   }
@@ -203,7 +356,7 @@ export function pathColumns(
       const low = Math.min(0, lowest[0]);
       const high = Math.max(0, highest[1]);
       // The larger extreme decides what the column stands for, and a tie keeps the positive one.
-      push(from, to, [low, high], -low > high ? lowSlot : highSlot);
+      push(from, to, [low, high], -low > high ? lowSlot : highSlot, null);
       continue;
     }
     for (const negative of [false, true]) {
@@ -218,23 +371,41 @@ export function pathColumns(
         }
       }
       const extent = best === -1 ? undefined : series.extents[best];
-      if (extent && isNegative(extent) === negative) push(from, to, extent, best);
+      if (extent && isNegative(extent) === negative) push(from, to, extent, best, null);
     }
   }
   return columns;
 }
 
 /**
- * One path's `d` from columns, as closed rectangles.
+ * A path-form column's rectangle in the plot. Path-form bars always draw vertically, so a column's
+ * slot units run along the width and its plot percent down the height. A column of one slot keeps
+ * its pixel among its band's, as a bar does, so the overlay, the focused option, the crosshair and
+ * the tooltip anchor cover it.
  *
- * @param columns - The columns.
- * @returns The path data, empty for no columns.
+ * @param frame - The layout's frame, vertical.
+ * @param column - The column.
+ * @returns The rectangle, every edge on the device pixel grid.
  */
-export function columnsPath(columns: readonly PathColumn[]): string {
-  return columns
+export function columnRect(frame: PlotFrame, column: PathColumn): PlotRect {
+  const step = frame.box.width / frame.count;
+  const toY = (percent: number): number => (percent / 100) * frame.box.height;
+  const band = column.position === null ? undefined : slotBand(frame, column.position);
+  const along = snapSpan(frame, column.x0 * step, column.x1 * step, band);
+  return frameRect(frame, along, [toY(column.top), toY(column.bottom)]);
+}
+
+/**
+ * One path's `d` from rectangles, each a closed subpath.
+ *
+ * @param rects - The rectangles.
+ * @returns The path data, empty for none.
+ */
+export function rectsPath(rects: readonly PlotRect[]): string {
+  return rects
     .map(
-      ({ x0, x1, top, bottom }) =>
-        `M${String(x0)} ${String(top)}H${String(x1)}V${String(bottom)}H${String(x0)}Z`
+      ({ x, y, width, height }) =>
+        `M${String(x)} ${String(y)}H${String(x + width)}V${String(y + height)}H${String(x)}Z`
     )
     .join("");
 }

@@ -3,8 +3,9 @@
 import type { ReactElement } from "react";
 
 import { useChartLayout, useChartRoot } from "./chart-context";
+import { useChartFrame } from "./chart-plot";
 import type { ChartLayerProps } from "./chart-types";
-import { valueTop } from "./layout/plot-geometry";
+import { hairline, ruleAcross, slotBand, valueAt } from "./layout/plot-frame";
 
 /**
  * Props for `Chart.Grid`, a closed part.
@@ -23,7 +24,8 @@ export type ChartGridProps = ChartLayerProps & {
 
 /**
  * Lines at the value ticks, behind the marks. The line at 0 always draws solid, so negative values
- * hang below a visible zero line. Lines across the value axis sit between the slots.
+ * hang below a visible zero line. Lines across the value axis sit between the slots. Every line
+ * is a hairline, 1 px rounded down to whole device pixels, on the device pixel grid.
  *
  * @beta
  */
@@ -33,44 +35,51 @@ export function ChartGrid({
   className,
   style,
 }: ChartGridProps): ReactElement {
-  const { model, orientation: chartOrientation } = useChartRoot("Chart.Grid");
+  const { orientation: chartOrientation } = useChartRoot("Chart.Grid");
   const { y } = useChartLayout("Chart.Grid");
-  const window = model.window;
+  const drawn = useChartFrame("Chart.Grid");
   const valueLines = chartOrientation === "vertical" ? "horizontal" : "vertical";
-  const drawn = orientation ?? valueLines;
-  const showValues = drawn === "both" || drawn === valueLines;
-  const showSlots = drawn === "both" || drawn !== valueLines;
-  const count = window === null ? 0 : window.last - window.first + 1;
+  const lines = orientation ?? valueLines;
+  const showValues = lines === "both" || lines === valueLines;
+  const showSlots = lines === "both" || lines !== valueLines;
+  const frame = drawn?.frame;
+  const across = (at: number, direction: "horizontal" | "vertical") =>
+    frame === undefined ? {} : ruleAcross(frame.box, direction, at);
+  const slotDirection = valueLines === "horizontal" ? "vertical" : "horizontal";
   return (
-    <div
+    <svg
       data-slot="chart-grid"
       data-variant={variant}
-      data-direction={drawn}
+      data-direction={lines}
       aria-hidden="true"
       className={className}
-      style={style}>
-      {showValues
-        ? y.ticks.map((tick) => (
-            <div
-              key={`value-${String(tick)}`}
-              data-slot="chart-grid-line"
-              data-axis="value"
-              data-zero={tick === 0 ? "" : undefined}
-              style={{ "--chart-at": `${String(valueTop(y.domain, tick))}%` }}
-            />
-          ))
-        : null}
-      {showSlots
-        ? Array.from({ length: Math.max(0, count - 1) }, (_, index) => (
-            <div
-              key={`slot-${String(index)}`}
-              data-slot="chart-grid-line"
-              data-axis="slot"
-              style={{ "--chart-at": `${String(((index + 1) / count) * 100)}%` }}
-            />
-          ))
-        : null}
-    </div>
+      style={frame === undefined ? style : { "--_rule-width": `${String(hairline(frame.box))}px`, ...style }}>
+      {frame === undefined ? null : (
+        <>
+          {showValues
+            ? y.ticks.map((tick) => (
+                <line
+                  key={`value-${String(tick)}`}
+                  data-slot="chart-grid-line"
+                  data-axis="value"
+                  data-zero={tick === 0 ? "" : undefined}
+                  {...across(valueAt(frame, tick), valueLines)}
+                />
+              ))
+            : null}
+          {showSlots
+            ? Array.from({ length: Math.max(0, frame.count - 1) }, (_, index) => (
+                <line
+                  key={`slot-${String(index)}`}
+                  data-slot="chart-grid-line"
+                  data-axis="slot"
+                  {...across(slotBand(frame, index + 1)[0], slotDirection)}
+                />
+              ))
+            : null}
+        </>
+      )}
+    </svg>
   );
 }
 

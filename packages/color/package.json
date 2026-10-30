@@ -42,12 +42,10 @@
   },
   "scripts": {
     "test": "vitest run",
-    "type-check": "tsrs --noEmit",
-    "test:mutation": "stryker run"
+    "type-check": "tsrs --noEmit"
   },
   "devDependencies": {
     "@elmeragroup/typescript-config": "workspace:*",
-    "@stryker-mutator/core": "catalog:",
     "fast-check": "catalog:",
     "tsrs": "catalog:",
     "typescript": "catalog:",

@@ -1,0 +1,444 @@
+"use client";
+
+/**
+ * Where one Bar's marks land and what they paint, as plain data: the bars of the element form, the
+ * paths of the path form, each bar's parts for its look, its paint server and the way it enters.
+ * The series modules render this data, and the animation loop redraws a bar's parts from each
+ * frame's rectangle.
+ */
+import { fillId, fillKind } from "./chart-bar-fills";
+import type { FillKind, FillPlot } from "./chart-bar-fills";
+import type { ChartRootContextValue } from "./chart-context";
+import type { Placement, ValueAxis } from "./chart-motion";
+import { placementOf } from "./chart-motion-mark";
+import type { Commit } from "./chart-motion-mark";
+import { valuePaint } from "./chart-paint";
+import type { ChartColor } from "./chart-types";
+import {
+  barCells,
+  barGeometry,
+  barRect,
+  columnRect,
+  geometryRect,
+  introStep,
+  pathColumns,
+} from "./layout/bar-geometry";
+import type { BarCell, BarGeometry, PathColumn } from "./layout/bar-geometry";
+import type { BarVariant } from "./layout/bar-shapes";
+import type { SeriesModel } from "./layout/cartesian-model";
+import type { ColorBins } from "./layout/color-bins";
+import { CHART_STAGGER_MS } from "./layout/motion";
+import { slotBand, snapAcross, snapSpan, snapX, snapY, tickWidth, valueAt } from "./layout/plot-frame";
+import type { BarMetrics, PlotFrame, PlotRect, SubBand } from "./layout/plot-frame";
+import { slotTime } from "./layout/readings";
+
+/** What a series paints with, shared by its bars, its path form and its active overlay. */
+export type SeriesPaint = {
+  readonly key: string;
+  readonly color: ChartColor;
+  readonly bins: ColorBins | undefined;
+  /** The series paint, which a bar without a paint of its own takes. */
+  readonly base: string;
+  /** The role list's colour stops, or undefined for a single role or a scale. */
+  readonly stops: readonly string[] | undefined;
+};
+
+/** How one series lays out its bars, shared by every bar of it. */
+export type BarLook = {
+  readonly variant: BarVariant;
+  readonly frame: PlotFrame;
+};
+
+/** One bar ready to draw. */
+export type BarDraw = {
+  readonly key: string;
+  readonly cell: BarCell;
+  /** The bar's geometry at rest, the numbers the loop tweens. */
+  readonly geometry: BarGeometry;
+  /** The rectangle its geometry stands for at rest. */
+  readonly rect: PlotRect;
+  readonly quality: string | undefined;
+  readonly time: string | undefined;
+  /** The bar's own paint, a scale step or the greyed paint of emphasis. The series paint otherwise. */
+  readonly paint: string | undefined;
+  /**
+   * The paint server the bar fills from on either side of its base, as `url(#…)`, or undefined for
+   * a plain fill. A role list runs from the tip, so its gradient turns over with the drawn bar.
+   */
+  readonly fills: SideFills;
+  readonly emphasis: boolean;
+  readonly projected: boolean;
+  /** The entrance delay step, while the series draws its first bars in Root's entrance. */
+  readonly step: number | undefined;
+};
+
+/** A missing reading's tick on the zero line, spanning the middle of the bar's place. */
+export type MissingTick = { readonly key: string; readonly span: readonly [number, number] };
+
+/** What one series draws in the element form. */
+export type BarsLayout = {
+  readonly bars: readonly BarDraw[];
+  /** The paint servers the bars and the active overlay reference, by kind. */
+  readonly needs: ReadonlyMap<FillKind, ReadonlySet<string>>;
+  readonly missing: readonly MissingTick[];
+};
+
+/** What the element form lays out from. */
+export type BarsInput = {
+  readonly context: ChartRootContextValue;
+  readonly series: SeriesModel;
+  readonly frame: PlotFrame;
+  readonly metrics: BarMetrics;
+  readonly sub: SubBand;
+  readonly variant: BarVariant;
+  readonly paint: SeriesPaint;
+  readonly emphasised: ReadonlySet<number>;
+  readonly prefix: string;
+  /** Whether the bars run Root's entrance wipe, which only a browser mount's first draw does. */
+  readonly entering: boolean;
+};
+
+/** A fill for a bar on each side of its base, which the drawn bar picks from in every frame. */
+export type SideFills = { readonly positive: string | undefined; readonly negative: string | undefined };
+
+/**
+ * How a bar reaches its rectangle in a commit. A bar's first draw grows it from its base when it
+ * runs the entrance and draws it at once otherwise, and every later commit moves, snaps or settles
+ * as the commit asks.
+ *
+ * @param bar - The bar.
+ * @param commit - What the commit asks of the bar.
+ * @returns The loop's placement.
+ */
+export function barPlacement(bar: BarDraw, commit: Commit): Placement {
+  return placementOf(commit, {
+    entrance:
+      bar.step === undefined
+        ? undefined
+        : {
+            kind: "enter",
+            // The bar grows its tip out of its base.
+            from: bar.geometry.map((value, index) => (index === 3 ? bar.geometry[2] : value)),
+            delay: bar.step * CHART_STAGGER_MS,
+          },
+  });
+}
+
+/**
+ * The anchor a bar places itself under, which a follower at the same series and slot joins.
+ *
+ * @param seriesIndex - The series' ordinal.
+ * @param slot - The bar's slot.
+ * @returns The anchor.
+ */
+export function barAnchor(seriesIndex: number, slot: number): string {
+  return `${String(seriesIndex)} ${String(slot)}`;
+}
+
+/**
+ * What each of a bar's geometry numbers measures, for the loop: its span along the slot axis, its
+ * base and tip across the value axis, and its seam and top weight, sizes the box leaves alone.
+ *
+ * @param orientation - The frame's orientation.
+ * @returns The axes, in `BarGeometry`'s order.
+ */
+export function barAxes(orientation: "vertical" | "horizontal"): BarAxes {
+  const [along, across] = orientation === "vertical" ? (["x", "y"] as const) : (["y", "x"] as const);
+  return [along, along, across, across, "size", "size"];
+}
+
+/** What a bar's six geometry numbers measure, one axis each, in `BarGeometry`'s order. */
+export type BarAxes = readonly [
+  alongStart: ValueAxis,
+  alongEnd: ValueAxis,
+  base: ValueAxis,
+  tip: ValueAxis,
+  seam: "size",
+  top: "size",
+];
+
+/** A bar's geometry and the rectangle it stands for at rest. */
+function restingBar(frame: PlotFrame, cell: BarCell, metrics: BarMetrics, sub: SubBand) {
+  const geometry = barGeometry(frame, cell, metrics, sub, "cut");
+  return { geometry, rect: geometryRect(frame, geometry) };
+}
+
+/** One fill on both sides of the base. */
+function sameFill(fill: string | undefined): SideFills {
+  return { positive: fill, negative: fill };
+}
+
+/** A greyed paint, a quarter of the way to the muted text role, for the bars emphasis leaves out. */
+function greyed(paint: string): string {
+  return `color-mix(in oklab, ${paint} 75%, var(--muted-foreground))`;
+}
+
+/** The paint servers a series' bars reference, collected while the bars are laid out. */
+class FillNeeds {
+  readonly needs = new Map<FillKind, Set<string>>();
+
+  constructor(private readonly prefix: string) {}
+
+  /** The `url(#…)` of a kind's server for a paint, adding the server on first use. */
+  use(kind: FillKind, paint: string): string {
+    const paints = this.needs.get(kind) ?? new Set<string>();
+    paints.add(paint);
+    this.needs.set(kind, paints);
+    return `url(#${fillId(this.prefix, kind, paint)})`;
+  }
+}
+
+/**
+ * A role list's gradient for a bar of the default look, from its tip to its base. Both the element
+ * form and the path form define the two gradients, so the active overlay finds them in either.
+ *
+ * @param prefix - The series' id prefix.
+ * @param variant - The series' look.
+ * @param paint - The series' paint.
+ * @param negative - Whether the bar hangs below zero.
+ * @returns The `url(#…)`, or undefined when the series paints no role list.
+ */
+export function listFill(
+  prefix: string,
+  variant: BarVariant,
+  paint: SeriesPaint,
+  negative: boolean
+): string | undefined {
+  if (paint.stops === undefined || variant !== "default") return undefined;
+  return `url(#${prefix}-list-${negative ? "negative" : "positive"})`;
+}
+
+/**
+ * The fills of the active overlay on either side of its base: hatched when the reading is
+ * projected, as the element form's servers draw it, and through the role list's gradient on the
+ * default look, whose direction the drawn overlay picks.
+ *
+ * @param prefix - The series' id prefix.
+ * @param form - The series' form, since only the element form defines the projected servers.
+ * @param variant - The series' look.
+ * @param paint - The series' paint.
+ * @param bar - The active reading's own paint, and whether it is projected.
+ * @returns The fills, each a `url(#…)`, or undefined for a plain fill.
+ */
+export function overlayFills(
+  prefix: string,
+  form: "bars" | "path",
+  variant: BarVariant,
+  paint: SeriesPaint,
+  bar: { readonly own: string | undefined; readonly projected: boolean }
+): SideFills {
+  if (bar.projected && form === "bars")
+    return sameFill(`url(#${fillId(prefix, "projected", bar.own ?? paint.base)})`);
+  return {
+    positive: listFill(prefix, variant, paint, false),
+    negative: listFill(prefix, variant, paint, true),
+  };
+}
+
+/**
+ * The plot geometry the plot-anchored paint servers read.
+ *
+ * @param frame - The frame the series draws in.
+ * @returns The plot's size and orientation.
+ */
+export function fillPlot(frame: PlotFrame): FillPlot {
+  return { orientation: frame.orientation, width: frame.box.width, height: frame.box.height };
+}
+
+/**
+ * The centre of the missing tick on the zero line. The tick is `tickWidth` wide, whole device
+ * pixels, and the zero line's snapped pixel edge, where the bars' bases draw, lies inside it, half
+ * its pixels from its near edge, rounded down: on its centre wherever its pixels are even.
+ *
+ * @param frame - The frame the series draws in.
+ * @param zero - Where the zero line lies along the value axis, unsnapped, the frame's own by
+ *   default. A tween hands its frame's number, which snaps here, as a bar's base snaps.
+ * @returns The tick's centre along the value axis.
+ */
+export function missingTickAt(frame: PlotFrame, zero: number = valueAt(frame, 0)): number {
+  const { dpr } = frame.box;
+  const width = tickWidth(frame.box);
+  const near = snapAcross(frame, zero) - Math.floor(Math.round(width * dpr) / 2) / dpr;
+  return near + width / 2;
+}
+
+/**
+ * The endpoints of a missing tick: its span along the slot axis, snapped with the pixel floor, on
+ * the zero line drawn at a coordinate. A tween frame's numbers draw through here too.
+ *
+ * @param frame - The frame the series draws in.
+ * @param span - The tick's span along the slot axis.
+ * @param zero - Where the zero line draws along the value axis.
+ * @returns The line's endpoints.
+ */
+export function tickEnds(frame: PlotFrame, span: readonly [number, number], zero: number) {
+  const [start, end] = snapSpan(frame, span[0], span[1]);
+  const at = missingTickAt(frame, zero);
+  return frame.orientation === "vertical"
+    ? { x1: start, x2: end, y1: at, y2: at }
+    : { x1: at, x2: at, y1: start, y2: end };
+}
+
+/**
+ * Lay out one series in the element form: a bar per reading and a tick per missing reading.
+ *
+ * @param input - The series, its frame and spacing, its look and paint.
+ * @returns The bars, the paint servers they need and the missing ticks.
+ */
+export function layoutBars(input: BarsInput): BarsLayout {
+  const { context, series, frame, metrics, sub, variant, paint, emphasised, prefix, entering } = input;
+  const { model, update } = context;
+  const { domain } = model;
+  const window = model.window ?? { first: 0, last: -1 };
+  const count = window.last - window.first + 1;
+  const fills = new FillNeeds(prefix);
+  const bars = barCells(model, series).map((cell): BarDraw => {
+    const reading = series.readings[cell.slot];
+    const value = reading?.kind === "reading" ? reading : undefined;
+    const own = value === undefined ? undefined : valuePaint(paint.key, paint.color, paint.bins, value.value);
+    const emphasis = emphasised.has(cell.slot);
+    const dimmed = emphasised.size > 0 && !emphasis;
+    const barPaint = dimmed ? greyed(own ?? paint.base) : own;
+    const projected = cell.slot >= series.projectedFrom;
+    // The active overlay draws a projected reading in its own paint, never the greyed one.
+    if (projected) fills.use("projected", own ?? paint.base);
+    const kind = fillKind(variant, projected);
+    return {
+      key: update.keys[cell.slot] ?? String(cell.slot),
+      cell,
+      ...restingBar(frame, cell, metrics, sub),
+      quality: value === undefined || value.quality === "measured" ? undefined : value.quality,
+      time:
+        domain.kind === "time" && context.now !== undefined
+          ? slotTime(domain.starts[cell.slot] ?? 0, domain.ends[cell.slot] ?? 0, context.now)
+          : undefined,
+      paint: barPaint,
+      fills:
+        kind === null
+          ? {
+              positive: listFill(prefix, variant, paint, false),
+              negative: listFill(prefix, variant, paint, true),
+            }
+          : sameFill(fills.use(kind, barPaint ?? paint.base)),
+      emphasis,
+      projected,
+      step:
+        entering && context.intro !== "none"
+          ? introStep(context.intro ?? "left", cell.position, count)
+          : undefined,
+    };
+  });
+  // An empty chart draws no missing marker, as section 8.13 says.
+  const missing: MissingTick[] = [];
+  for (let slot = window.first; slot <= window.last && !model.empty; slot += 1) {
+    if (series.readings[slot]?.kind !== "missing") continue;
+    const cell: BarCell = {
+      slot,
+      position: slot - window.first,
+      extent: [0, 0],
+      negative: false,
+      stackTop: true,
+    };
+    const rect = barRect(frame, cell, metrics, sub, "whole");
+    missing.push({
+      key: update.keys[slot] ?? String(slot),
+      span: frame.orientation === "vertical" ? [rect.x, rect.x + rect.width] : [rect.y, rect.y + rect.height],
+    });
+  }
+  return { bars, needs: fills.needs, missing };
+}
+
+/** What one series draws in the path form. */
+export type PathsLayout = {
+  /** The measured and estimated-free columns, one list of rectangles per colour step, by paint. */
+  readonly steps: ReadonlyMap<string, readonly PlotRect[]>;
+  readonly estimated: readonly PlotRect[];
+  readonly projected: readonly PlotRect[];
+  /** The missing ticks as one path's data. */
+  readonly missing: string;
+  /** Where the past span ends, or null when the series does not dim the past. */
+  readonly pastEnd: number | null;
+  /** The snapped zero line, where the entrance grows from and the list gradient ends. */
+  readonly zero: number;
+};
+
+/** How many of the window's slots ended before Root's `now`, which `data-fade="past"` dims. */
+function pastSlots(
+  context: ChartRootContextValue,
+  window: { readonly first: number; readonly last: number }
+): number {
+  const { domain } = context.model;
+  if (domain.kind !== "time" || context.now === undefined) return 0;
+  let past = 0;
+  for (let slot = window.first; slot <= window.last; slot += 1) {
+    if (slotTime(domain.starts[slot] ?? 0, domain.ends[slot] ?? 0, context.now) === "past") past += 1;
+  }
+  return past;
+}
+
+/**
+ * Lay out one series in the path form, which draws vertical charts only: one path per colour step,
+ * then the projected span, the estimated outlines and the missing ticks.
+ *
+ * @param context - Root's context.
+ * @param series - The series.
+ * @param frame - The frame it draws in.
+ * @param sub - The Bar's sub-band.
+ * @param paint - The series' paint.
+ * @returns The shapes to draw.
+ */
+export function layoutPaths(
+  context: ChartRootContextValue,
+  series: SeriesModel,
+  frame: PlotFrame,
+  sub: SubBand,
+  paint: SeriesPaint
+): PathsLayout {
+  const { model } = context;
+  const { box } = frame;
+  const window = model.window ?? { first: 0, last: -1 };
+  const count = window.last - window.first + 1;
+  const reading = (column: PathColumn) => series.readings[column.slot];
+  const isEstimated = (column: PathColumn): boolean => {
+    const value = reading(column);
+    return value?.kind === "reading" && value.quality === "estimated";
+  };
+  const isProjected = (column: PathColumn): boolean => column.slot >= series.projectedFrom;
+  const columns = pathColumns(model, series, frame.value.domain, sub);
+  // Estimated and projected columns draw in their own paths, so the fills leave them out.
+  const steps = new Map<string, PlotRect[]>();
+  for (const column of columns) {
+    if (isEstimated(column) || isProjected(column)) continue;
+    const value = reading(column);
+    const fill =
+      value?.kind === "reading" ? (valuePaint(paint.key, paint.color, paint.bins, value.value) ?? "") : "";
+    steps.set(fill, [...(steps.get(fill) ?? []), columnRect(frame, column)]);
+  }
+  const step = box.width / Math.max(count, 1);
+  // The model reads no missing marker for an empty chart, as section 8.13 says.
+  const tick = missingTickAt(frame);
+  let missing = "";
+  for (let slot = window.first; slot <= window.last && !model.empty; slot += 1) {
+    if (series.readings[slot]?.kind !== "missing") continue;
+    const position = slot - window.first;
+    // A tick keeps a pixel among its band's, as a bar does.
+    const [from, to] = snapSpan(
+      frame,
+      (position + 0.25) * step,
+      (position + 0.75) * step,
+      slotBand(frame, position)
+    );
+    missing += `M${String(from)} ${String(tick)}H${String(to)}`;
+  }
+  const fadePast = context.fade === "past" && context.now !== undefined && model.domain.kind === "time";
+  return {
+    steps,
+    estimated: columns.filter(isEstimated).map((column) => columnRect(frame, column)),
+    projected: columns
+      .filter((column) => isProjected(column) && !isEstimated(column))
+      .map((column) => columnRect(frame, column)),
+    missing,
+    pastEnd: fadePast ? snapX(box, pastSlots(context, window) * step) : null,
+    zero: snapY(box, valueAt(frame, 0)),
+  };
+}

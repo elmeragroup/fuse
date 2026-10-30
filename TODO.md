@@ -604,19 +604,26 @@ Four sign-off, time and locale tasks remain.
   `formatDateTime` in `packages/fuse/src/intl/date-time-join.ts` now joins the halves with CLDR 48's
   pattern in en, nb, sv and fi, and the chart formatter uses it. Move the date cells onto it. Map
   the number and currency cells through `canonicalSpaces` at the same time.
-- The `test:mutation` scripts run StrykerJS through its command runner, which starts Vitest once
-  per mutant, because `@stryker-mutator/vitest-runner` 10.0.0 activates no mutant under Vitest 5. Move back to
-  the plugin once it supports Vitest 5, so each mutant runs only the tests that cover it.
 
-Two layer 05 follow-ups remain.
+One layer 05 follow-up remains.
 
-- The chart demo baselines under `apps/docs/test/visual/chart/` run only by hand. Start the browser
-  server with `pnpm --filter docs visual:server`, then run `test/chart-visual.browser.test.ts`
-  with `CHART_VISUAL_ENDPOINT` set to the address it prints. CI has no job that starts the server,
-  so the suite skips there. Add the job, or run the suite in the Playwright image on CI.
 - The Fjordkraft Företag price card's muted figure labels measure 4.48:1 on its white card, under
   the 4.5:1 text floor. axe reports it after an area pick, so the landing test audits the chart
   alone until the brand's muted foreground or the card fill changes.
+
+Four SVG phase 1 follow-ups remain. One needs a rare update sequence, and three touch tests only.
+
+- `chart-root.tsx` clears `gliding` when the value domain returns to where it started mid-tween.
+  With `yInclude={[0,4]}`, change `[a=2, b=-4]` to `[a=2, b=2]` and back mid-tween, then append
+  `c=1`, and the new bar's baseline parts from the surviving bars until the tween ends. Track the
+  domain's movement until the motion loop rests.
+- Split `chart-world.browser.test.tsx`, 1,245 lines, into its independent model, its DOM reader and
+  its scenario runner before it covers more mark families.
+- `chart-side.browser.test.tsx` waits 65 frames before its last sign check, and a 144 Hz display
+  runs them before the 480 ms tween ends. Wait on elapsed time or a controlled clock.
+- The module-scope writer guard in `packages/fuse/test/motion-writers.ts` matches names, not
+  bindings, so a component-local writer that shadows a module-level name passes. Resolve lexical
+  bindings.
 
 Every later chart change follows the growth rule. A new capability becomes a new part, a variant
 or datum-selector value, a `config` field, a Root prop that describes the data's shape or a Panel

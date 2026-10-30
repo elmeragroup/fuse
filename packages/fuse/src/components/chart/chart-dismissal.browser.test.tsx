@@ -1,4 +1,4 @@
-// The tooltip's one dismissal and the one active identity, in Chromium, Firefox and WebKit, after
+// The tooltip's one dismissal and the one active identity, in Chromium, after
 // layer 05's review findings q9, q10, s3, s4 and s12. Oracle: CONTRACT section 9.4's pointer and
 // key rules and the rows' own names and values, written by hand.
 import type { ReactNode } from "react";
@@ -30,7 +30,13 @@ function Plot({
     <div style={{ width: 400 }}>
       <LocaleProvider locale="nb-NO">
         <button type="button">før</button>
-        <Chart.Root data={data} config={config} xKey="name" xRange={xRange} aria-label="Plott">
+        <Chart.Root
+          data-intro="none"
+          data={data}
+          config={config}
+          xKey="name"
+          xRange={xRange}
+          aria-label="Plott">
           {Object.keys(config).map((key) => (
             <Chart.Bar key={key} dataKey={key} />
           ))}
@@ -41,14 +47,6 @@ function Plot({
       </LocaleProvider>
     </div>
   );
-}
-
-/** Finish the entrance, so bars sit at rest under the pointer. */
-function settle(host: HTMLElement): void {
-  // DOM audit: Root's figure holds every animation of the chart.
-  for (const animation of host.querySelector('[data-slot="chart"]')?.getAnimations({ subtree: true }) ?? []) {
-    if (Number.isFinite(animation.effect?.getComputedTiming().endTime ?? Infinity)) animation.finish();
-  }
 }
 
 function bars(host: HTMLElement): HTMLElement[] {
@@ -87,7 +85,6 @@ function over(_host: HTMLElement, bar: HTMLElement): [Element, { position: { x: 
 describe("the one dismissal", () => {
   it("closes the popup and the crosshair on a click on the pinned slot, and keeps them closed there", async () => {
     const { host } = renderThemed(<Plot data={ROWS} />);
-    settle(host);
     const [, second, third] = bars(host);
     if (second === undefined || third === undefined) throw new Error("no bars");
     await userEvent.hover(...over(host, second));
@@ -105,7 +102,6 @@ describe("the one dismissal", () => {
 
   it("closes a pinned popup and the crosshair on a press outside the chart", async () => {
     const { host } = renderThemed(<Plot data={ROWS} />);
-    settle(host);
     const [first] = bars(host);
     if (first === undefined) throw new Error("no bars");
     await userEvent.hover(...over(host, first));

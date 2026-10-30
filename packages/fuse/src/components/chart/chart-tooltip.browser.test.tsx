@@ -1,4 +1,4 @@
-// WCAG 1.4.13 for the chart tooltip, rows T043 and T044, in Chromium, Firefox and WebKit. The
+// WCAG 1.4.13 for the chart tooltip, rows T043 and T044, in Chromium. The
 // sequence and its outcomes come from CONTRACT section 9.12, and every expected label is written
 // by hand from the committed Elhub rows.
 import { afterEach, describe, expect, it } from "vitest";
@@ -449,9 +449,11 @@ describe("the tooltip when neither side above nor below the column holds it", ()
     await page.viewport(320, 225);
     const { host } = tall(["k0", "k1", "k2", "k3", "k4"]);
     const box = surfaceBox(host);
-    // Slot 1 of five spans 0.2 to 0.4 of the plot, and the popup anchors on the whole slot.
-    const left = box.left + box.width * 0.2;
-    const right = box.left + box.width * 0.4;
+    // Slot 1 of five spans 0.2 to 0.4 of the plot, and the popup anchors on the whole slot, whose
+    // edges sit on the device pixel grid like the bar's and the focus ring's.
+    const pixel = (at: number): number => Math.round(at * devicePixelRatio) / devicePixelRatio;
+    const left = pixel(box.left + box.width * 0.2);
+    const right = pixel(box.left + box.width * 0.4);
     const x = (left + right) / 2;
     const y = box.top + box.height * 0.9;
     await pointerTo(x, y);
@@ -541,5 +543,105 @@ describe.each([
     const side = popup()?.getAttribute("data-side");
     if (side === "top") expect(Math.abs(shown.bottom - rowTop)).toBeLessThanOrEqual(0.5);
     else expect(Math.abs(shown.top - rowBottom), String(side)).toBeLessThanOrEqual(0.5);
+  });
+});
+
+describe("the tooltip anchor", () => {
+  const ROWS = [2, 3, 1, 2].map((v, index) => ({ name: `k${String(index)}`, v }));
+
+  it.each(["vertical", "horizontal"] as const)(
+    "stays on the active %s bar inside an ancestor scaled to one half",
+    async (orientation) => {
+      // T1: the anchor converts plot pixels to the viewport through the plot's scaled client box.
+      const { host } = renderThemed(
+        <div style={{ padding: "320px 48px 48px" }}>
+          <div style={{ width: 600, transform: "scale(0.5)", transformOrigin: "0 0" }}>
+            <LocaleProvider locale="en-US">
+              <Chart.Root
+                data={ROWS}
+                config={{ v: { label: "V", color: "chart-1" } }}
+                xKey="name"
+                orientation={orientation}
+                data-intro="none"
+                aria-label="Scaled">
+                <Chart.Bar dataKey="v" />
+                <Chart.Tooltip />
+              </Chart.Root>
+            </LocaleProvider>
+          </div>
+        </div>
+      );
+      // DOM audit: bars are aria-hidden plot output, in slot order.
+      const bar = host.querySelectorAll('[data-slot="chart-bar"]')[1]?.getBoundingClientRect();
+      if (bar === undefined) throw new Error("no bar");
+      await pointerTo((bar.left + bar.right) / 2, (bar.top + bar.bottom) / 2);
+      expect(label()).toBe("k1");
+      const shown = popup()?.getBoundingClientRect() ?? new DOMRect();
+      const side = popup()?.getAttribute("data-side");
+      if (orientation === "vertical") {
+        // The popup centres on the column above or below it.
+        expect(["top", "bottom"]).toContain(side);
+        expect(Math.abs((shown.left + shown.right) / 2 - (bar.left + bar.right) / 2)).toBeLessThanOrEqual(1);
+      } else if (side === "top") expect(Math.abs(shown.bottom - bar.top)).toBeLessThanOrEqual(1);
+      else expect(Math.abs(shown.top - bar.bottom), String(side)).toBeLessThanOrEqual(1);
+    }
+  );
+
+  it("centres on the point itself under a point scale, at the plot's left edge for the first slot", async () => {
+    // T6: four points on the plot's width lie at 0, a third, two thirds and the full width, so
+    // the first point sits on the plot's left edge, not in the middle of its clipped cell.
+    const { host } = renderThemed(
+      <div style={{ padding: "160px 240px 24px", width: 840, boxSizing: "border-box" }}>
+        <LocaleProvider locale="en-US">
+          <Chart.Root
+            data={ROWS}
+            config={{ v: { label: "V", color: "chart-1" } }}
+            xKey="name"
+            xScale="point"
+            data-intro="none"
+            aria-label="Points">
+            <Chart.Grid />
+            <Chart.Tooltip />
+          </Chart.Root>
+        </LocaleProvider>
+      </div>
+    );
+    const box = surfaceBox(host);
+    await pointerTo(box.left + 2, box.top + box.height / 2);
+    expect(label()).toBe("k0");
+    const shown = popup()?.getBoundingClientRect() ?? new DOMRect();
+    expect(Math.abs((shown.left + shown.right) / 2 - box.left)).toBeLessThanOrEqual(1);
+  });
+
+  it("anchors on the point itself on a horizontal point scale, at the plot's top for the first slot", async () => {
+    // B2-4: four 32 px rows make a 128 px plot. Under a point scale the first point lies on the
+    // plot's top edge, not on a bar row 4 to 28 px down.
+    const { host } = renderThemed(
+      <div style={{ padding: "200px 24px 200px", width: 600, boxSizing: "border-box" }}>
+        <LocaleProvider locale="en-US">
+          <Chart.Root
+            data={ROWS}
+            config={{ v: { label: "V", color: "chart-1" } }}
+            xKey="name"
+            xScale="point"
+            orientation="horizontal"
+            data-intro="none"
+            aria-label="Rows of points">
+            <Chart.Grid />
+            <Chart.Tooltip />
+          </Chart.Root>
+        </LocaleProvider>
+      </div>
+    );
+    const box = surfaceBox(host);
+    expect(box.height).toBe(128);
+    await pointerTo(box.left + box.width / 2, box.top + 2);
+    expect(label()).toBe("k0");
+    const shown = popup()?.getBoundingClientRect() ?? new DOMRect();
+    const side = popup()?.getAttribute("data-side");
+    expect(["top", "bottom"]).toContain(side);
+    expect(Math.abs((side === "top" ? shown.bottom : shown.top) - box.top), String(side)).toBeLessThanOrEqual(
+      1
+    );
   });
 });

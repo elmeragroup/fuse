@@ -3,11 +3,18 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
+import { useMediaQuery } from "../../hooks/use-media-query";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { ChartLayoutContext, ChartRootContext } from "./chart-context";
-import type { ChartLayoutContextValue, ChartRootContextValue, CommitKind } from "./chart-context";
-import { binsOf, valuePaint } from "./chart-paint";
+import type { ChartLayoutContextValue, ChartRootContextValue, ChartUpdate } from "./chart-context";
+import { createChartFollowers } from "./chart-followers";
+import type { ActiveSlot } from "./chart-followers";
+import { createChartLabels } from "./chart-labels";
+import { createChartMotion } from "./chart-motion";
+import type { ChartMotion } from "./chart-motion";
+import { ChartPlotContext, useMeasuredPlot } from "./chart-plot";
+import { PlotSkeleton } from "./chart-skeleton";
 import { createChartStore, useClientMount } from "./chart-store";
 import type { ChartSnapshot, EmphasisEntry } from "./chart-store";
 import { ChartStatus, ChartSurface } from "./chart-surface";
@@ -37,8 +44,7 @@ import { CHART_STRINGS } from "./format/chart-strings";
 import { buildCartesianModel } from "./layout/cartesian-model";
 import type { CartesianModel, ModelIssue } from "./layout/cartesian-model";
 import { ChartCompositionError, ChartDataError, DATA_MESSAGES, isChartDevelopment } from "./layout/errors";
-import { followerGeometry } from "./layout/followers";
-import { slotCentre } from "./layout/plot-geometry";
+import { relaysPlot } from "./layout/relay";
 import { numberOf, stringOf } from "./layout/scalar";
 import { pairSlotKeys } from "./layout/slot-keys";
 import type { SlotKeys } from "./layout/slot-keys";
@@ -136,8 +142,10 @@ type ChartCommit = {
   readonly config: unknown;
   /** The steady range object, which changes only when the range names other values. */
   readonly range: unknown;
-  readonly kind: CommitKind;
+  readonly update: ChartUpdate;
   readonly keys: SlotKeys;
+  /** The value domain the marks' running tweens set out from, the model's own once they rest. */
+  readonly glidesFrom: readonly [number, number];
 };
 
 /** One end of an x range as a comparable string. */
@@ -153,6 +161,12 @@ function sameRange(
 ): boolean {
   if (a === undefined || b === undefined) return a === b;
   return rangePart(a[0]) === rangePart(b[0]) && rangePart(a[1]) === rangePart(b[1]);
+}
+
+/** Whether two `yInclude` lists name the same values in the same order. */
+function sameValues(a: readonly number[] | undefined, b: readonly number[] | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return a.length === b.length && a.every((value, index) => Object.is(value, b[index]));
 }
 
 /** One field value of a series config. */
@@ -255,98 +269,44 @@ function dataError(issue: ModelIssue): ChartDataError {
   return new ChartDataError("Chart.Root", issue.rule, `${DATA_MESSAGES[issue.rule]} ${where}${key}.`);
 }
 
-/**
- * Paint the active state onto Root and its `data-follow` elements, with no React render. State
- * attributes go on Root, where the dim rules read them, and the numbers that change per move go on
- * the few elements that follow the pointer, so a move restyles no mark.
- */
-function paint(
-  root: HTMLElement,
-  snapshot: ChartSnapshot,
-  model: CartesianModel,
-  config: ChartConfig,
-  xScale: "band" | "point",
-  motion: "snap" | "move"
-): void {
+/** The active slot inside the effective window, which the followers draw. */
+function activeSlot(snapshot: ChartSnapshot, model: CartesianModel): ActiveSlot {
   const window = model.window;
-  const active =
-    window !== null &&
-    snapshot.active !== null &&
-    snapshot.active >= window.first &&
-    snapshot.active <= window.last
-      ? snapshot.active
-      : null;
-  const toggle = (element: Element, name: string, value: string | null): void => {
-    if (value === null) element.removeAttribute(name);
-    else element.setAttribute(name, value);
-  };
-  toggle(root, "data-active", active === null ? null : (snapshot.source ?? ""));
-  toggle(root, "data-pinned", snapshot.pinned && active !== null ? "" : null);
-  toggle(root, "data-near", active !== null && snapshot.near !== null ? String(snapshot.near) : null);
-  const followers = root.querySelectorAll<HTMLElement>("[data-follow]");
-  /** The active bar overlay of a series, which takes the active reading's quality. */
-  const overlay = (seriesIndex: number): Element | null =>
-    root.querySelector(
-      `[data-slot="chart-bar-series"][data-series="${String(seriesIndex)}"] > [data-slot="chart-bar-active"]`
-    );
-  if (active === null || window === null) {
-    // Nothing is active, so each follower falls back to the position its own part writes.
-    const names = ["--chart-active-col", "--chart-active-at"];
-    for (const { seriesIndex } of model.series) {
-      for (const prefix of FOLLOWER_PREFIXES) names.push(`--chart-${prefix}-${String(seriesIndex)}`);
-      const box = overlay(seriesIndex);
-      if (box !== null) {
-        toggle(box, "data-quality", null);
-        toggle(box, "data-projected", null);
-      }
-    }
-    for (const target of followers) {
-      for (const name of names) target.style.removeProperty(name);
-    }
-    return;
-  }
-  const vars = new Map([
-    ["--chart-active-col", String(active - window.first + 1)],
-    ["--chart-active-at", String(slotCentre(window, active, xScale))],
-  ]);
-  const removed: string[] = [];
-  for (const series of model.series) {
-    const n = String(series.seriesIndex);
-    // Root's own layout. A Panel passes its layout's domain once Panels land.
-    const geometry = followerGeometry(model, series, active, model.y.domain);
-    vars.set(`--chart-v-${n}`, geometry ? "1" : "0");
-    const reading = series.readings[active];
-    const box = overlay(series.seriesIndex);
-    if (box !== null) {
-      const quality = reading?.kind === "reading" && reading.quality !== "measured" ? reading.quality : null;
-      toggle(box, "data-quality", quality);
-      toggle(box, "data-projected", active >= series.projectedFrom ? "" : null);
-    }
-    if (!geometry) continue;
-    vars.set(`--chart-n-${n}`, geometry.negative ? "1" : "0");
-    vars.set(`--chart-r-${n}`, geometry.stackTop ? "1" : "0");
-    vars.set(`--chart-y-${n}`, String(geometry.top));
-    vars.set(`--chart-h-${n}`, String(geometry.height));
-    vars.set(`--chart-e-${n}`, String(geometry.endpoint));
-    const color = config[series.key]?.color;
-    const step =
-      color === undefined || reading?.kind !== "reading"
-        ? undefined
-        : valuePaint(series.key, color, binsOf(color, series), reading.value);
-    if (step === undefined) removed.push(`--chart-p-${n}`);
-    else vars.set(`--chart-p-${n}`, step);
-  }
-  for (const target of followers) {
-    for (const [name, value] of vars) target.style.setProperty(name, value);
-    for (const name of removed) target.style.removeProperty(name);
-    // A pointer or key step applies at once, so a follower never glides after the pointer.
-    if (motion === "snap")
-      for (const animation of target.getAnimations()) if (isFinite(animation)) animation.finish();
-  }
+  const { active, near } = snapshot;
+  if (window === null || active === null || active < window.first || active > window.last) return null;
+  return { slot: active, near };
 }
 
-/** The per-series custom properties Root paints on the followers. */
-const FOLLOWER_PREFIXES = ["y", "h", "v", "n", "r", "e", "p"] as const;
+/**
+ * Write the active state onto Root, where the dim rules read it. Only these attributes change on
+ * enter and leave, so a pointer move restyles no mark.
+ */
+function markActive(root: HTMLElement, snapshot: ChartSnapshot, active: ActiveSlot): void {
+  const toggle = (name: string, value: string | null): void => {
+    if (value === null) root.removeAttribute(name);
+    else root.setAttribute(name, value);
+  };
+  toggle("data-active", active === null ? null : (snapshot.source ?? ""));
+  toggle("data-pinned", snapshot.pinned && active !== null ? "" : null);
+  toggle("data-near", active !== null && snapshot.near !== null ? String(snapshot.near) : null);
+}
+
+/** The reader's motion preference, which snaps every chart update. */
+const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
+
+/** Root's animation loop on the browser's frame clock. */
+function browserMotion(reduced: boolean): ChartMotion {
+  return createChartMotion(
+    {
+      now: () => performance.now(),
+      requestFrame: (callback) => requestAnimationFrame(callback),
+      cancelFrame: (handle) => {
+        cancelAnimationFrame(handle);
+      },
+    },
+    reduced
+  );
+}
 
 /**
  * The root of every cartesian chart, also exported as `AreaChart.Root`, `BarChart.Root` and
@@ -425,6 +385,20 @@ export function ChartRoot<
     windowRange = range;
     setSteadyRange(range);
   }
+  // yInclude and period compare by value too, so an inline array that names the same values is no
+  // change, and a parent's re-render never reads as a data update that restarts every tween.
+  const [steadyInclude, setSteadyInclude] = useState(yInclude);
+  let include = steadyInclude;
+  if (steadyInclude !== yInclude && !sameValues(steadyInclude, yInclude)) {
+    include = yInclude;
+    setSteadyInclude(yInclude);
+  }
+  const [steadyPeriod, setSteadyPeriod] = useState(period);
+  let modelPeriod = steadyPeriod;
+  if (steadyPeriod !== period && !sameRange(steadyPeriod, period)) {
+    modelPeriod = period;
+    setSteadyPeriod(period);
+  }
   const [steadyConfig, setSteadyConfig] = useState<ChartConfig>(config);
   let modelConfig = steadyConfig;
   if (steadyConfig !== config && !sameConfig(steadyConfig, config)) {
@@ -449,12 +423,15 @@ export function ChartRoot<
             : {
                 interval,
                 timeZone,
-                period: period === undefined ? undefined : [instantOf(period[0]), instantOf(period[1])],
+                period:
+                  modelPeriod === undefined
+                    ? undefined
+                    : [instantOf(modelPeriod[0]), instantOf(modelPeriod[1])],
                 now: nowInstant,
               },
         stackOffset,
         baseline: yBaseline,
-        include: yInclude ?? [],
+        include: include ?? [],
         xRange: windowRange,
       }),
     [
@@ -463,33 +440,55 @@ export function ChartRoot<
       xKey,
       interval,
       timeZone,
-      period,
+      modelPeriod,
       nowInstant,
       stackOffset,
       yBaseline,
-      yInclude,
+      include,
       windowRange,
     ]
   );
+  const reduced = useMediaQuery(REDUCED_MOTION);
+  const [motion] = useState(() => browserMotion(reduced));
   // Which kind of commit produced this model, and the keys its marks render under.
-  const [seen, setSeen] = useState((): ChartCommit => ({
-    model,
-    data,
-    config: modelConfig,
-    range: windowRange,
-    kind: "initial",
-    keys: pairSlotKeys(null, model.domain),
-  }));
+  const [seen, setSeen] = useState((): ChartCommit => {
+    const keys = pairSlotKeys(null, model.domain);
+    return {
+      model,
+      data,
+      config: modelConfig,
+      range: windowRange,
+      update: { kind: "initial", keys: keys.keys, relays: false },
+      keys,
+      glidesFrom: model.y.domain,
+    };
+  });
   let commit = seen;
   if (seen.model !== model) {
     const rangeOnly = seen.data === data && seen.config === modelConfig && seen.range !== windowRange;
+    const keys = pairSlotKeys(seen.keys, model.domain);
+    // The marks draw between two value domains while a tween that set out from another runs.
+    const running = motion.running();
+    const [low, high] = seen.model.y.domain;
+    const gliding = running && (seen.glidesFrom[0] !== low || seen.glidesFrom[1] !== high);
+    const relays =
+      !rangeOnly &&
+      relaysPlot(
+        { model: seen.model, keys: seen.update.keys },
+        { model, keys: keys.keys },
+        orientation,
+        gliding
+      );
     commit = {
       model,
       data,
       config: modelConfig,
       range: windowRange,
-      kind: rangeOnly ? "range" : "data",
-      keys: pairSlotKeys(seen.keys, model.domain),
+      update: { kind: rangeOnly ? "range" : "data", keys: keys.keys, relays },
+      keys,
+      // A commit that snaps the marks lands them on its domain, and one that moves them sets out
+      // from where they rest, or from where the tweens they interrupt set out.
+      glidesFrom: relays || rangeOnly ? model.y.domain : running ? seen.glidesFrom : seen.model.y.domain,
     };
     setSeen(commit);
   }
@@ -510,16 +509,19 @@ export function ChartRoot<
     return createChartStore(slot === -1 ? null : slot);
   });
   const rootRef = useRef<HTMLElement>(null);
+  const plotRef = useRef<HTMLDivElement>(null);
+  const plot = useMeasuredPlot(plotRef);
   const modelRef = useRef(model);
-  const configRef = useRef(config);
-  const xScaleRef = useRef(xScale);
-  // The active slot and series last painted, so only a pointer or key step snaps the followers.
+  useLayoutEffect(() => {
+    motion.setReduced(reduced);
+  }, [motion, reduced]);
+  const [followers] = useState(createChartFollowers);
+  const [labels] = useState(createChartLabels);
+  // The active slot and series last painted, so a store change that moves neither paints nothing.
   const paintedRef = useRef<readonly [number | null, number | null]>([null, null]);
   useLayoutEffect(() => {
     const previous = modelRef.current;
     modelRef.current = model;
-    configRef.current = config;
-    xScaleRef.current = xScale;
     const { active } = store.get();
     if (previous !== model && active !== null) {
       // The active slot keeps its x across new data, or gives way to the window's first slot.
@@ -528,38 +530,42 @@ export function ChartRoot<
       paintedRef.current = [kept, store.get().near];
       store.set({ active: kept });
     }
-    if (rootRef.current) paint(rootRef.current, store.get(), model, configRef.current, xScale, "move");
-  }, [model, config, store, xScale]);
-  // A range step applies every mark's geometry at once and cancels a running data transition.
+    const slot = activeSlot(store.get(), model);
+    if (rootRef.current) markActive(rootRef.current, store.get(), slot);
+    // Each follower asks its own commit classifier how to reach the carried-over slot.
+    followers.paint(slot, "commit");
+  }, [model, store, followers, commit.update, plot, orientation]);
+  // A range step applies every mark's geometry at once and cancels a running data update, the
+  // tweens of the loop and the opacity fade of a bar that the update added alike. An update that
+  // relays the plot ends every tween too, so no mark it leaves alone glides through the new ones.
   useLayoutEffect(() => {
     const root = rootRef.current;
-    if (commit.kind !== "range" || root === null) return;
+    if (commit.update.relays) motion.finish();
+    if (commit.update.kind !== "range" || root === null) return;
+    motion.finish();
     for (const animation of root.getAnimations({ subtree: true }))
       if (isFinite(animation)) animation.finish();
-  }, [commit]);
+  }, [commit.update, motion]);
   useLayoutEffect(
     () =>
       store.subscribe(() => {
         const snapshot = store.get();
+        const slot = activeSlot(snapshot, modelRef.current);
+        if (rootRef.current) markActive(rootRef.current, snapshot, slot);
         const [active, near] = paintedRef.current;
-        const stepped = snapshot.active !== active || snapshot.near !== near;
+        if (snapshot.active === active && snapshot.near === near) return;
         paintedRef.current = [snapshot.active, snapshot.near];
-        if (rootRef.current) {
-          paint(
-            rootRef.current,
-            snapshot,
-            modelRef.current,
-            configRef.current,
-            xScaleRef.current,
-            stepped ? "snap" : "move"
-          );
-        }
+        // A pointer or key step applies at once, so a follower never glides after the pointer.
+        followers.paint(slot, "step");
       }),
-    [store]
+    [store, followers]
   );
+  // The plot first draws once the browser measures it, so marks of that commit run the entrance
+  // and marks that mount later snap or fade in.
+  const measured = plot !== null;
   useEffect(() => {
-    store.set({ phase: "mounted" });
-  }, [store]);
+    if (measured) store.set({ phase: "mounted" });
+  }, [store, measured]);
 
   const figureProps = definedProps(figure);
   const name = "aria-label" in figureProps ? figureProps["aria-label"] : undefined;
@@ -691,8 +697,10 @@ export function ChartRoot<
       intro,
       entrance,
       fade,
-      commit: commit.kind,
-      slotKeys: commit.keys.keys,
+      update: commit.update,
+      motion,
+      followers,
+      labels,
       registerBar,
       registerEmphasis,
     }),
@@ -703,6 +711,9 @@ export function ChartRoot<
       entrance,
       fade,
       commit,
+      motion,
+      followers,
+      labels,
       registerBar,
       registerEmphasis,
       config,
@@ -738,11 +749,9 @@ export function ChartRoot<
           data-slot="chart"
           data-orientation={orientation}
           data-x-scale={xScale}
-          data-entrance={entrance ? "" : undefined}
           data-selected={selected === null ? undefined : ""}
           style={{
             "--chart-selected": selected === null ? undefined : Object.keys(config).indexOf(selected),
-            "--chart-update": commit.kind === "range" ? "0s" : undefined,
             ...style,
           }}
           {...figureProps}>
@@ -753,9 +762,13 @@ export function ChartRoot<
             {strings.instructionsCartesian}
           </p>
           <div data-slot="chart-frame" style={{ "--chart-slots": slots }}>
-            <div data-slot="chart-plot" aria-hidden="true" />
-            <ChartSurface name={name} labelledBy={labelledBy} />
-            {children}
+            <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
+              {plot === null && !model.empty ? <PlotSkeleton /> : null}
+            </div>
+            <ChartPlotContext value={plot}>
+              <ChartSurface name={name} labelledBy={labelledBy} />
+              {children}
+            </ChartPlotContext>
           </div>
           <ChartStatus />
         </figure>

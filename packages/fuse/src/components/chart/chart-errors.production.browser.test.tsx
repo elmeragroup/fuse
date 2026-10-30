@@ -206,6 +206,7 @@ describe("data rules in production", () => {
             interval="day"
             timeZone={OSLO}
             stackOffset="expand"
+            data-intro="none"
             aria-label="Andel">
             <Chart.Bar dataKey="a" />
             <Chart.Bar dataKey="b" />
@@ -217,8 +218,6 @@ describe("data rules in production", () => {
     // DOM audit: the bar series box is the plot box the clip-paths resolve against.
     const plot =
       host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect() ?? new DOMRect();
-    // The entrance grows each bar, so the geometry is read at its end.
-    for (const bar of bars(host)) for (const animation of bar.getAnimations()) animation.finish();
     const [a, b] = bars(host).map((bar) => barBox(bar, plot));
     expect(Math.abs((a?.top ?? 0) - (0.05 / 1.2) * plot.height)).toBeLessThanOrEqual(0.5);
     // a is not its stack's outer segment below zero, so its far end stays where 0.75 lands.

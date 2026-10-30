@@ -53,9 +53,15 @@ async function readBars(page: Page): Promise<BarState[]> {
  * titled `demoName`. Next loads its chunks as async scripts, so the test holds them back until the
  * parsed page has an observer on the demo's stage, and the observer sees every mutation hydration
  * makes. React reports a recoverable hydration error through `reportError`, which fires the
- * window's `error` event, and logs some through `console.error`.
+ * window's `error` event, and logs some through `console.error`. A chart draws its bars once the
+ * browser measures the plot, so `barCount` names how many the demo draws in the end.
  */
-async function hydrateDemo(browser: Browser, pathname: string, demoName: string): Promise<Hydration> {
+async function hydrateDemo(
+  browser: Browser,
+  pathname: string,
+  demoName: string,
+  barCount = 0
+): Promise<Hydration> {
   const context = await browser.newContext({ timezoneId: BROWSER_TIME_ZONE });
   await context.addInitScript(() => {
     const errors: string[] = [];
@@ -100,8 +106,25 @@ async function hydrateDemo(browser: Browser, pathname: string, demoName: string)
     .toBe(true);
   await stage.evaluate((element) => {
     globalThis.demoMutations = 0;
+    // The server sends a chart's plot as a skeleton, and the browser draws the marks and places
+    // the plot's followers and focus target once it measures the plot. Those writes land inside
+    // plot output and are drawing, not hydration, so only records outside it count.
+    const plotOutput = [
+      '[data-slot="chart-frame"] svg',
+      '[data-slot="chart-plot"]',
+      '[data-slot="chart-point"]',
+      '[data-slot="chart-reference-line"]',
+      '[data-slot="chart-reference-area"]',
+      '[data-slot="chart-active-value-line"]',
+      '[data-slot="chart-frame"] > [data-slot="chart-active-value"]',
+    ].join(", ");
+    const drawn = (record: MutationRecord): boolean => {
+      const target = record.target instanceof Element ? record.target : record.target.parentElement;
+      return target?.closest(plotOutput) !== null && target?.closest(plotOutput) !== undefined;
+    };
     new MutationObserver((batch) => {
-      globalThis.demoMutations = (globalThis.demoMutations ?? 0) + batch.length;
+      globalThis.demoMutations =
+        (globalThis.demoMutations ?? 0) + batch.filter((record) => !drawn(record)).length;
     }).observe(element, { subtree: true, childList: true, characterData: true, attributes: true });
     // React marks each DOM node it has hydrated with a `__reactFiber$` key, and a node still
     // inside a dehydrated Suspense boundary has none.
@@ -124,9 +147,14 @@ async function hydrateDemo(browser: Browser, pathname: string, demoName: string)
   });
   scriptsHeld.resolve(undefined);
   await waitForDemoHydration(demo);
-  // A Suspense boundary that resolves late hydrates after the rest of the demo, so the count waits
-  // until React owns every bar.
-  await expect.poll(async () => (await readBars(page)).every((bar) => bar.hydrated)).toBe(true);
+  // A Suspense boundary that resolves late hydrates after the rest of the demo, and only then draws
+  // its bars, so the count waits until every bar is drawn and React owns each one.
+  await expect
+    .poll(async () => {
+      const drawn = await readBars(page);
+      return drawn.length === barCount && drawn.every((bar) => bar.hydrated);
+    })
+    .toBe(true);
   // Two frames let a client re-render of the demo's Suspense boundary commit, and the observer
   // deliver its last records.
   await page.evaluate(
@@ -178,21 +206,23 @@ describe.each([
   });
 
   it("hydrate a Bar whose Suspense boundary resolves after the chart's first effect, with no mutation and no entrance", async () => {
-    const hydration = await hydrateDemo(browser(), "/components/bar-chart", "Streamed series");
+    const hydration = await hydrateDemo(browser(), "/components/bar-chart", "Streamed series", 12);
     expect(hydration.mutations).toBe(0);
     expect(hydration.errors).toEqual([]);
     // The demo holds 6 months in 2 stacked series. The grid series hydrates with the chart, so the
-    // chart's effects have run, while the solar series waits 400 ms more for its readings.
+    // chart's effects have run and its bars are drawn, while the solar series waits 400 ms more for
+    // its readings and draws nothing until its boundary hydrates.
     const series = (bars: readonly BarState[], hydrated: boolean): (string | null)[] =>
       bars.filter((bar) => bar.hydrated === hydrated).map((bar) => bar.series);
     expect(series(hydration.barsAtHydration, true)).toEqual(Array.from({ length: 6 }, () => "0"));
-    expect(series(hydration.barsAtHydration, false)).toEqual(Array.from({ length: 6 }, () => "1"));
-    // Every bar the server wrote keeps its markup, so none writes an entrance or a fade.
+    expect(series(hydration.barsAtHydration, false)).toEqual([]);
+    // The server wrote no bar. Each one the browser draws once it measures the plot, the late
+    // series' after its boundary hydrates, at rest, so none writes an entrance or a fade.
     expect(hydration.bars).toHaveLength(12);
     expect(hydration.bars.every((bar) => bar.hydrated && bar.intro === null)).toBe(true);
     // Motion rule 1: hydration starts no motion, before or after the late boundary resolves.
     expect(hydration.barsAtHydration.map((bar) => bar.animations)).toEqual(
-      Array.from({ length: 12 }, () => 0)
+      Array.from({ length: 6 }, () => 0)
     );
     expect(hydration.bars.map((bar) => bar.animations)).toEqual(Array.from({ length: 12 }, () => 0));
   });

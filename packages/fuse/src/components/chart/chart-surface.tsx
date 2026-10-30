@@ -6,6 +6,7 @@ import type { FocusEvent, KeyboardEvent, MouseEvent, PointerEvent, ReactElement 
 import { withinFocusRingClass } from "../../styles/utils";
 import { useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
+import { useChartFrame } from "./chart-plot";
 import { useChartStore } from "./chart-store";
 import { optionName } from "./chart-text";
 import type { OptionOrder } from "./chart-text";
@@ -13,6 +14,7 @@ import { CHART_STRINGS } from "./format/chart-strings";
 import { bandScale, nearestIndex, pointScale } from "./layout/band-scale";
 import { invertValue, linearScale } from "./layout/linear-scale";
 import { nearestSeries } from "./layout/nearest-series";
+import { optionBand } from "./layout/plot-frame";
 import { keepSlot, stepSlot } from "./layout/slot-window";
 import type { SlotStep, SlotWindow } from "./layout/slot-window";
 import { slotX } from "./layout/x-domain";
@@ -163,6 +165,7 @@ export function ChartSurface({
    */
   const lifted = useRef(false);
   const listbox = useRef<HTMLDivElement>(null);
+  const drawn = useChartFrame("Chart.Root");
   const pinned = useChartStore(store, (snapshot) => snapshot.pinned);
   const emphasis = useChartStore(store, (snapshot) => snapshot.emphasis);
   // One canonical active identity. When new data or a new window drops the option's slot, the
@@ -403,6 +406,10 @@ export function ChartSurface({
       {options.map((option) => {
         const slot = slotOfOption(context, window, option);
         const isCurrent = option === current;
+        // Once the plot is measured, the option covers its slot's pixel columns, the same ones as
+        // the crosshair band and the tooltip anchor.
+        const band =
+          drawn === null ? undefined : optionBand(drawn.frame, slot - window.first, context.xScale);
         return (
           <div
             key={option.id}
@@ -416,7 +423,11 @@ export function ChartSurface({
             aria-posinset={slot - window.first + 1}
             aria-setsize={count}
             aria-describedby={option.entry ? `${id}-description ${id}-instructions` : undefined}
-            style={{ "--chart-col": slot - window.first + 1 }}
+            style={{
+              "--chart-col": slot - window.first + 1,
+              "--chart-option-start": band === undefined ? undefined : `${String(band[0])}px`,
+              "--chart-option-size": band === undefined ? undefined : `${String(band[1] - band[0])}px`,
+            }}
           />
         );
       })}

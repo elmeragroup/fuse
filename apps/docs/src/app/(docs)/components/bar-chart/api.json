@@ -539,7 +539,7 @@
           "type": "\"blocks\" | \"default\" | \"duotone\" | \"duotone-reverse\" | \"expandable\" | \"gradient\" | \"hatched\" | \"isometric\" | \"striped\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The bar's look. \"default\" by default. \"blocks\", \"isometric\" and \"expandable\" draw in the HTML form only, so above 100 slots they draw the default look and warn `bar-variant-needs-html` in development, and so do \"hatched\", \"striped\", \"duotone\" and \"duotone-reverse\". The tinted looks, which are \"hatched\", \"striped\", \"gradient\", \"duotone\" and \"duotone-reverse\", fill most of a bar with a pale tint of the series colour, so a series relies on the bar's 1 px edge in the full colour and on the legend for its identity. Pair them with a Legend or a Table.",
+          "description": "The bar's look. \"default\" by default. Above 100 slots a series draws as one path, which knows the \"default\" and \"gradient\" looks only, so every other look draws the default one there and warns `bar-variant-needs-html` in development. The tinted looks, which are \"hatched\", \"striped\", \"gradient\", \"duotone\" and \"duotone-reverse\", fill most of a bar with a pale tint of the series colour, so a series relies on the bar's 1 px edge in the full colour and on the legend for its identity. Pair them with a Legend or a Table.",
           "required": false
         }
       ]

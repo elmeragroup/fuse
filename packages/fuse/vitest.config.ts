@@ -10,17 +10,11 @@ const BROWSER_TESTS = ["src/**/*.browser.test.tsx"];
 /** Browser files that copy and paste through Chromium's shared clipboard, named by convention. */
 const CLIPBOARD_TESTS = "**/*.clipboard.browser.test.tsx";
 
-/** Browser files that emulate a touch pointer across Chromium's shared page, named by convention. */
-const TOUCH_TESTS = "**/*.touch.browser.test.tsx";
-
-/** Browser files that tap through Playwright's touchscreen in Chromium and WebKit, named by convention. */
-const TAP_TESTS = "**/*.tap.browser.test.tsx";
-
 /**
- * Browser files that drive the keyboard or move focus in every engine, named by convention. They
- * run one at a time, because parallel files share one page and its single keyboard focus.
+ * Browser files that emulate touch through CDP or tap through Playwright's touchscreen, named by
+ * convention.
  */
-const KEYBOARD_TESTS = "**/*.keyboard.browser.test.tsx";
+const TOUCH_TESTS = "**/*.touch.browser.test.tsx";
 
 /** Browser files that exercise production-only behavior, named by convention. */
 const PRODUCTION_TESTS = "**/*.production.browser.test.tsx";
@@ -109,15 +103,7 @@ export default defineConfig({
         },
       },
       browserProject("browser", {
-        exclude: [
-          CLIPBOARD_TESTS,
-          ENGINES_TESTS,
-          KEYBOARD_TESTS,
-          PRODUCTION_TESTS,
-          TAP_TESTS,
-          TOUCH_TESTS,
-          REDUCED_MOTION_TESTS,
-        ],
+        exclude: [CLIPBOARD_TESTS, ENGINES_TESTS, PRODUCTION_TESTS, TOUCH_TESTS, REDUCED_MOTION_TESTS],
       }),
       // Node and each engine carry their own Intl data, and one differing space fails hydration.
       browserProject("browser-engines", { include: [`src/${ENGINES_TESTS}`] }, [
@@ -151,33 +137,17 @@ export default defineConfig({
         include: [`src/${CLIPBOARD_TESTS}`],
         fileParallelism: false,
       }),
-      // Parallel files share one page, and the page holds one keyboard focus. A file that focuses
-      // its own frame takes the keys another file's Tab or arrow press sends, which Firefox showed
-      // as a chart option test reading focus on its starting button. The files that drive the
-      // keyboard or move focus in every engine end in `.keyboard.browser.test.tsx` and run one at
-      // a time here.
-      browserProject("browser-keyboard", { include: [`src/${KEYBOARD_TESTS}`], fileParallelism: false }, [
-        "chromium",
-        "firefox",
-        "webkit",
-      ]),
       // Touch emulation goes through CDP and covers the whole page the browser project's
       // parallel files share, so it would switch off `(hover: hover)`, and every Tailwind
-      // `hover:` paint, in a neighbouring file. Each project opens its own page; the files that
-      // emulate touch end in `.touch.browser.test.tsx` and run one at a time here.
-      // A real tap needs a context with touch, which changes the page's pointer media for every
-      // file in it. The files that tap through Playwright's touchscreen end in
-      // `.tap.browser.test.tsx` and run one at a time in Chromium and WebKit here.
+      // `hover:` paint, in a neighbouring file. A real tap through Playwright's touchscreen also
+      // needs a context with touch. The files that emulate touch or tap end in
+      // `.touch.browser.test.tsx` and run one at a time here.
       browserProject(
-        "browser-tap",
-        { include: [`src/${TAP_TESTS}`], fileParallelism: false },
-        ["chromium", "webkit"],
+        "browser-touch",
+        { include: [`src/${TOUCH_TESTS}`], fileParallelism: false },
+        ["chromium"],
         { contextOptions: { hasTouch: true } }
       ),
-      browserProject("browser-touch", {
-        include: [`src/${TOUCH_TESTS}`],
-        fileParallelism: false,
-      }),
     ],
   },
 });

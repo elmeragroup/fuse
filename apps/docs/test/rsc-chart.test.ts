@@ -1,9 +1,9 @@
 /**
  * Unit under test: the chart entry rendered from a directive-free server page that draws S06.
  * Oracle: React's Flight serialiser and a client-only render. The Flight path's HTML must equal a
- * prerender of the same page with no Flight, both must hold the mark and tick counts written by
- * hand from the Elhub fixture, and a function prop passed to a client part must fail the server
- * render, as the negative control.
+ * prerender of the same page with no Flight, both must hold the layer and tick counts written by
+ * hand from the Elhub fixture and no mark, since marks draw once the browser measures the plot, and
+ * a function prop passed to a client part must fail the server render, as the negative control.
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
@@ -83,8 +83,11 @@ describe("the chart entry under React Server Components", () => {
     expect(ssr.clientModules.length).toBeGreaterThan(0);
     expect(ssr.flight).toBe(ssr.clientOnly);
     for (const html of [ssr.flight, ssr.clientOnly]) {
-      // 24 hours times 5 groups. The fixture's hours are all present, so every cell draws a box.
-      expect(slotCount(html, "chart-bar")).toBe(120);
+      // The server sends one SVG layer per group, five, and its plot's skeleton, but no bar: the
+      // browser draws the 24 hours times 5 groups once it measures the plot.
+      expect(slotCount(html, "chart-bar-series")).toBe(5);
+      expect(slotCount(html, "chart-skeleton-mark")).toBe(1);
+      expect(slotCount(html, "chart-bar")).toBe(0);
       // Every hour writes a tick, and the widths in its `data-min` hide the ones a narrow plot lacks room for.
       expect(slotCount(html, "chart-x-tick")).toBe(24);
       // The highest hour's stack is 3897.232 MWh, which the 1-2-5 rule nices to 0 to 4000 by 1000.

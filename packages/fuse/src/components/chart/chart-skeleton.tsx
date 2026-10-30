@@ -59,4 +59,13 @@ export function ChartSkeleton({
   );
 }
 
+/**
+ * The plot's placeholder inside a Root, from the server render until the browser measures the
+ * plot and draws the marks. Root never reads its children, so it sketches no mark of its own, and
+ * the axes, the legend and the table around it are already final.
+ */
+export function PlotSkeleton(): ReactElement {
+  return <Skeleton data-slot="chart-skeleton-mark" />;
+}
+
 Object.assign(ChartSkeleton, { displayName: "Chart.Skeleton" });

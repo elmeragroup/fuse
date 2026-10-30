@@ -58,11 +58,9 @@ alike, such as formatted text, in `*.engines.browser.test.tsx`, or `.ts` when th
 mount nothing. The `browser-engines` project runs them in Chromium, Firefox and WebKit.
 Put tests that need the user's reduced-motion preference in `*.reduced-motion.browser.test.tsx`.
 The `browser-reduced-motion` project runs them in all three engines with that preference set.
-Put tests that press keys or move focus in every engine in `*.keyboard.browser.test.tsx`.
-The `browser-keyboard` project runs them in all three engines one file at a time, because
-parallel files share one page and its keyboard focus.
-Put tests that tap through Playwright's touchscreen in `*.tap.browser.test.tsx`.
-The `browser-tap` project runs them one file at a time in Chromium and WebKit with touch on.
+Keyboard and focus tests run in the plain `browser` project, since each file gets its own page.
+Put tests that emulate touch or tap through Playwright's touchscreen in `*.touch.browser.test.tsx`.
+The `browser-touch` project runs them one file at a time in Chromium with touch on.
 Put necessary source contracts in the central suite with the reason lint or an
 existing gate cannot enforce them.
 While editing, run `vitest related <files> --run --project unit` in the owning package

@@ -1,4 +1,4 @@
-// The Table, Empty and Skeleton judges in Chromium, Firefox and WebKit. Oracles: CONTRACT section
+// The Table, Empty and Skeleton judges in Chromium. Oracles: CONTRACT section
 // 9.6's disclosure and pagination rules and section 9.12's table row, E13's hourly year, whose ISO
 // weeks run from the week of 29 September 2025 to the week of 28 September 2026 and whose fall-back
 // week from 20 to 26 October holds 7 × 24 + 1 = 169 hours, and section 8.13's empty state, all

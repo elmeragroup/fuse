@@ -1,5 +1,5 @@
 /**
- * The paint model of a cartesian series, which the HTML bars, the path form and Root's active
+ * The paint model of a cartesian series, which the bars, the path form and the active
  * overlay all read, after CONTRACT sections 4 and 11. Every paint reads the consumer's
  * `--chart-color-<key>` first, so an override wins for a role, a role list and a scale alike.
  */

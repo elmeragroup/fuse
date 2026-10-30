@@ -2,12 +2,12 @@
 
 /**
  * Root's external store for state that changes at pointer or key rate. Marks never subscribe to
- * it. Root paints the active slot onto its own element and onto the `data-follow` elements, and
- * only the parts that show the active point read it through a selector, so a pointer move inside
- * one slot commits nothing.
+ * it. Root writes the active slot onto its own element and hands it to the followers of
+ * `chart-followers.ts`, and only the parts that print the active point read it through a selector,
+ * so a pointer move inside one slot commits nothing.
  *
  * The store also holds the mount phase of ticket 05's E11. It is `"initial"` until Root's first
- * effect sets it to `"mounted"`. A mark reads it through `useSyncExternalStore`, whose server and
+ * effect after the browser measures the plot sets it to `"mounted"`. A mark reads it through `useSyncExternalStore`, whose server and
  * hydration snapshot is `"initial"`, so a hydrating mark matches the server HTML wherever its
  * Suspense boundary resolves, and a mark that mounts later sees `"mounted"` and snaps.
  */
@@ -46,19 +46,6 @@ export type ChartSnapshot = {
    * hydrating option hold none, and the word arrives in the update that registration triggers.
    */
   readonly emphasis: { readonly [key: string]: EmphasisEntry };
-  /**
-   * The value reference labels of a vertical chart, by each reference's id, in mount order. Each
-   * label stacks below the ones above it, so none overlap.
-   */
-  readonly labels: { readonly [id: string]: ReferenceLabelPlace };
-};
-
-/** Where a value reference label sits before the labels above it push it down. */
-export type ReferenceLabelPlace = {
-  /** The label's own bottom edge as a share of the plot's height from its top, 0 to 100. */
-  readonly at: number;
-  /** Whether a band cut at the plot top labels below the cut. */
-  readonly clipped: boolean;
 };
 
 /** The pointer's last position over the plot, in client pixels, and its pointer type. */
@@ -96,7 +83,6 @@ const INITIAL: ChartSnapshot = {
   frozen: false,
   announcement: { text: "", count: 0 },
   emphasis: {},
-  labels: {},
 };
 
 /**

@@ -1,4 +1,4 @@
-// Real taps through Playwright's touchscreen in Chromium and WebKit, after the layer 05 recheck's
+// Real taps through Playwright's touchscreen in Chromium, after the layer 05 recheck's
 // touch findings and CONTRACT section 9.5's Touch rule: a tap pins the tooltip, a second tap on the
 // same slot dismisses it, with or without a LegendToggleGroup, a third tap opens it again, and a
 // pinned popup over a short bar's empty column swallows no tap. The labels are the rows' own names.

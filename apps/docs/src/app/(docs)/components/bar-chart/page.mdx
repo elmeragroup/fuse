@@ -48,7 +48,7 @@ export const metadata = componentMetadata("bar-chart");
 
 <Prose>
 
-The chart entry is a preview. Its names and props can change until Fuse's first stable release. `BarChart` is the same component as `Chart`. A bar fills its band less a 25 % gap, series that share a `stack` id stack in one column, and `BarChart.BarGroup` sets series side by side. Every bar is an HTML box up to 100 slots, and above that each series draws one path.
+The chart entry is a preview. Its names and props can change until Fuse's first stable release. `BarChart` is the same component as `Chart`. A bar fills its band less a 25 % gap, series that share a `stack` id stack in one column, and `BarChart.BarGroup` sets series side by side. Every bar is its own SVG element up to 100 slots, and above that each series draws one path. Bars draw in pixels once the browser measures the plot, so they land on whole device pixels at any width and zoom.
 
 </Prose>
 
@@ -66,7 +66,7 @@ The chart entry is a preview. Its names and props can change until Fuse's first 
 
 <Prose>
 
-A chart whose props are all plain data needs no `"use client"` line. This demo is a server component, so the server writes the figure and its table into the page's HTML, and the browser loads only the chart's own parts. A demo that reads a hook or passes a function, such as the capacity step's tooltip, stays a client module.
+A chart whose props are all plain data needs no `"use client"` line. This demo is a server component, so the server writes the figure, the axis labels and the table into the page's HTML, and the browser loads only the chart's own parts. The plot shows a skeleton until the browser measures it and draws the bars, and the plot keeps its height, so nothing around it shifts. A demo that reads a hook or passes a function, such as the capacity step's tooltip, stays a client module.
 
 </Prose>
 
@@ -134,7 +134,7 @@ The diverging scale bins each value into 7 steps around 0, so a negative quarter
 
 <Prose>
 
-A data update moves each bar that stays to its new geometry over 480 ms, fades in the bars it adds and drops the bars that leave. A change of `xRange` alone snaps, and reduced motion snaps every update.
+A data update moves each bar that stays to its new geometry over 480 ms, fades in the bars it adds and drops the bars that leave. A second update during the move starts from where each bar is drawn. A change of `xRange` alone snaps, and reduced motion snaps every update.
 
 </Prose>
 
@@ -148,7 +148,7 @@ A data update moves each bar that stays to its new geometry over 480 ms, fades i
 
 <Prose>
 
-A Bar can wait behind its own Suspense boundary. When the server streams it in, it hydrates in place. When it mounts in the browser after the chart, it snaps to its geometry and skips the entrance.
+A Bar can wait behind its own Suspense boundary. When the server streams it in, it hydrates and draws its bars at rest. When it mounts in the browser after the chart, it snaps to its geometry and skips the entrance.
 
 </Prose>
 

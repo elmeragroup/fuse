@@ -24,9 +24,13 @@ once instead of waiting on a stagger meant for movement, and it turns the chart 
 `--animate-chart-ping`, `--animate-chart-dash` and `--animate-chart-shimmer` off.
 
 The cartesian chart renders under a `LocaleProvider`, which it reads for the locale and the time
-zone. It draws bars as HTML boxes up to 100 slots and as one path per series above that, with M4
-decimation past 2,000 slots. Stacks, groups, expand, horizontal bars, emphasis, projection and
-quality states all render, and so do `Tooltip`, `Legend`, `LegendToggleGroup`, `Crosshair`,
-`ReferenceLine`, `ReferenceArea`, `ActiveValue`, `Headline`, `Table`, `Empty`, `Skeleton`, `Glow`
-and `Background`. A data update moves the bars over 480 ms, a change of `xRange` alone snaps, and
-reduced motion snaps every update. The entry now depends on `d3-array` and `d3-shape`.
+zone. Every mark is SVG drawn in pixels once the browser measures the plot, so bars, rules and the
+crosshair land on whole device pixels at any width and zoom. The server sends the figure, its axis
+labels, legend and table, and a skeleton in the plot, which keeps its height. Bars draw one SVG
+element each up to 100 slots and one path per series above that, with M4 decimation past 2,000
+slots. Stacks, groups, expand, horizontal bars, emphasis, projection and quality states all
+render, and so do `Tooltip`, `Legend`, `LegendToggleGroup`, `Crosshair`, `ReferenceLine`,
+`ReferenceArea`, `ActiveValue`, `Headline`, `Table`, `Empty`, `Skeleton`, `Glow` and `Background`.
+A data update moves the bars over 480 ms, and a second update during the move continues from where
+each bar is drawn. A change of `xRange` alone snaps, and reduced motion snaps every update. The
+entry now depends on `d3-array` and `d3-shape`.
