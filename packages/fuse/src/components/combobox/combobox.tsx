@@ -560,6 +560,9 @@ export function ComboboxChipsInput({
         // preflight-free host, where they would make the input taller than an sm chips box.
         // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared within adapter
         "min-w-16 flex-1 border-0 bg-transparent p-0 outline-none",
+        // The placeholder role colour `fieldBox` gives Combobox.Input. It sits on the input: the
+        // chips box paints only the shell, so a `placeholder:` class there would not reach it.
+        "placeholder:text-muted-foreground",
         // The text-entry 16px floor under `entry-floor` (see `entryType` in `field-size.ts`), over the
         // chips box's 14px. In `font-size`, `1em` is the inherited size.
         // The leading follows the font size so tailwind-merge keeps it after the font-size class.
