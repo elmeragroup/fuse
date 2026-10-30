@@ -84,8 +84,7 @@ export function DemoFrame({
           </DemoStage>
         }
         sourceText={demo.source}
-        source={<DocsCodeBlock variant="embedded" data-demo-source source={demo.source} />}
-        sheetSource={<DocsCodeBlock variant="embedded" source={demo.source} />}
+        source={<DocsCodeBlock variant="embedded" source={demo.source} />}
       />
     </section>
   );

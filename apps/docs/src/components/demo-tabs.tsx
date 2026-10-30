@@ -13,6 +13,8 @@ import { Sheet } from "@elmeragroup/fuse/sheet";
 import { Tabs } from "@elmeragroup/fuse/tabs";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 
+import { copyText } from "../lib/copy-with-toast";
+
 type DemoTabsProps = {
   /** The demo's title as plain text, for the Sheet title and the view switch's name. */
   title: string;
@@ -24,10 +26,8 @@ type DemoTabsProps = {
   stage: ReactNode;
   /** The demo file's raw source, which the copy action writes to the clipboard. */
   sourceText: string;
-  /** The highlighted source for the Code view. */
+  /** The highlighted source, which the Code view and the Sheet both show. */
   source: ReactNode;
-  /** The same source for the Sheet, without the Code view's hooks. */
-  sheetSource: ReactNode;
 };
 
 /** How long the copy action shows that it copied, in ms. */
@@ -58,12 +58,28 @@ const demoTabs = tv({
     // The actions float in the code's top end corner and stay put while the code scrolls.
     actions: "absolute end-3 top-3 z-10",
     code: "h-full",
+    // The scroll area's content grows to the width of what it holds, so code as wide as its
+    // longest line would never overflow the code block, and the scroll area draws only a vertical
+    // bar. Containing the block's inline size keeps it to the scroll area's width, so the block
+    // scrolls its long lines itself, under its own horizontal scrollbar.
+    codeSource: "[contain:inline-size]",
     sheetHeader: "flex-row items-center justify-between gap-2",
     status: "sr-only",
   },
 });
 
-const { root, panel, footer, bleed, codeView, actions, code, sheetHeader, status: statusClass } = demoTabs();
+const {
+  root,
+  panel,
+  footer,
+  bleed,
+  codeView,
+  actions,
+  code,
+  codeSource,
+  sheetHeader,
+  status: statusClass,
+} = demoTabs();
 
 /** What the last copy did: nothing yet, copied, or failed because the page has no clipboard. */
 type CopyState = "idle" | "copied" | "failed";
@@ -87,14 +103,7 @@ function CopySourceButton({ sourceText }: { sourceText: string }): ReactElement 
   useEffect(() => () => window.clearTimeout(resetTimer.current), []);
 
   async function copy(): Promise<void> {
-    let next: CopyState = "copied";
-    try {
-      // Throws where there is no clipboard at all, as on insecure origins.
-      await navigator.clipboard.writeText(sourceText);
-    } catch {
-      next = "failed";
-    }
-    setState(next);
+    setState((await copyText(sourceText)) ? "copied" : "failed");
     window.clearTimeout(resetTimer.current);
     resetTimer.current = window.setTimeout(() => setState("idle"), COPIED_MS);
   }
@@ -102,13 +111,9 @@ function CopySourceButton({ sourceText }: { sourceText: string }): ReactElement 
   return (
     <>
       <Toolbar.Button
+        onClick={() => void copy()}
         render={
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            aria-label={state === "copied" ? "Copied" : "Copy code"}
-            onClick={() => void copy()}
-          />
+          <Button variant="ghost" size="icon-xs" aria-label={state === "copied" ? "Copied" : "Copy code"} />
         }>
         {state === "copied" ? <Check aria-hidden /> : <Copy aria-hidden />}
       </Toolbar.Button>
@@ -123,19 +128,12 @@ function CopySourceButton({ sourceText }: { sourceText: string }): ReactElement 
  * A demo's frame chrome: a flush Frame whose header names the demo, whose panel shows the Demo or
  * the Code view, and whose footer switches between them. The Tabs root renders the Frame root, so
  * the header, panel and footer stay the Frame's own items. Both views stay mounted: the demo keeps
- * its state while the code shows, and the source is in the server HTML for the tools that read
- * `[data-demo-source]`. The Code view carries a toolbar that copies the source and opens it in a
- * Sheet, where it shows in a flush Frame headed with the file name.
+ * its state while the code shows, and the Code view, marked `[data-demo-source]`, puts the source
+ * in the server HTML for the tools that read it. The Code view carries a toolbar that copies the
+ * source and opens it in a Sheet, where the same source shows in a flush Frame headed with the file
+ * name.
  */
-export function DemoTabs({
-  title,
-  heading,
-  file,
-  stage,
-  sourceText,
-  source,
-  sheetSource,
-}: DemoTabsProps): ReactElement {
+export function DemoTabs({ title, heading, file, stage, sourceText, source }: DemoTabsProps): ReactElement {
   const demoView = useRef<HTMLDivElement>(null);
   const [demoHeight, setDemoHeight] = useState<number>();
 
@@ -167,6 +165,7 @@ export function DemoTabs({
             value="code"
             keepMounted
             tabIndex={-1}
+            data-demo-source
             className={codeView()}
             style={{ "--demo-height": demoHeight === undefined ? undefined : `${demoHeight}px` }}>
             <Toolbar.Root aria-label={`${title} code`} className={actions()}>
@@ -193,14 +192,16 @@ export function DemoTabs({
                         </Toolbar.Root>
                       </Frame.Header>
                       <Frame.Panel>
-                        <div className={bleed()}>{sheetSource}</div>
+                        <div className={bleed()}>{source}</div>
                       </Frame.Panel>
                     </Frame.Root>
                   </Sheet.Body>
                 </Sheet.Content>
               </Sheet.Root>
             </Toolbar.Root>
-            <ScrollArea.Root className={code()}>{source}</ScrollArea.Root>
+            <ScrollArea.Root className={code()}>
+              <div className={codeSource()}>{source}</div>
+            </ScrollArea.Root>
           </Tabs.Content>
         </div>
       </Frame.Panel>

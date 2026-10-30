@@ -98,8 +98,7 @@ it("switches both matrix variants and the docs chrome together", async () => {
   await page.close();
 });
 
-// The API rows' label band and a demo's code view paint on --card; the demo's meta row sits in its
-// Frame's muted footer band.
+// The API rows' label band and a demo's code view paint on --card.
 it.each([
   ["/components/tabs", "[data-api-rows-header]"],
   ["/components/button", "[data-demo-source]"],

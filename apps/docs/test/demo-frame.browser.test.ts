@@ -62,6 +62,30 @@ describe("demo frame", () => {
     await page.close();
   });
 
+  it("scrolls long code lines sideways inside the Code view on a phone", async () => {
+    const page = await browser().newPage({ viewport: { width: 390, height: 844 } });
+    const demo = await openDemo(page, "button", "Variants");
+    await demo.getByRole("tab", { name: "Code" }).click();
+    const code = demo.locator("[data-demo-source] pre");
+    await code.waitFor();
+    // The variants line is wider than a phone, so the code block overflows its own box and scrolls
+    // it sideways, while the page itself stays as wide as the viewport.
+    const box = await code.evaluate((node) => {
+      const before = node.scrollLeft;
+      node.scrollLeft = 40;
+      return {
+        overflowX: getComputedStyle(node).overflowX,
+        overflow: node.scrollWidth - node.clientWidth,
+        scrolled: node.scrollLeft - before,
+      };
+    });
+    expect(box.overflowX).toBe("auto");
+    expect(box.overflow).toBeGreaterThan(0);
+    expect(box.scrolled).toBe(40);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+    await page.close();
+  });
+
   it("copies the demo's source and says so", async () => {
     const context = await browser().newContext({
       viewport: DESKTOP_VIEWPORT,

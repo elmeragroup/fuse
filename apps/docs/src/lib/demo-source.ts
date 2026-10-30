@@ -18,8 +18,6 @@ import { docsRouteFile } from "./docs-route-files";
 import type { DocsRouteSection } from "./docs-route-files";
 
 export type DemoSource = {
-  /** Repo-relative path of the authored demo file, as printed in the frame's meta row. */
-  sourcePath: string;
   /** Verbatim demo source, trailing whitespace trimmed; `DocsCodeBlock` highlights it. */
   source: string;
 };
@@ -51,5 +49,5 @@ export function readDemoSource({ section, slug, file }: DemoLocation): DemoSourc
     );
   }
   const source = normalizeDemoSource(raw);
-  return { sourcePath: location.repoPath, source };
+  return { source };
 }

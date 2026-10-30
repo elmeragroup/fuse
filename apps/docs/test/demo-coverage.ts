@@ -11,12 +11,14 @@ import { GROUP_FILE } from "./demo-coverage-file";
 import { launchSuiteBrowser } from "./demo-page";
 import { SWEEP_GROUPS, sweepDemos, sweepGroup } from "./demo-sweep";
 import type { DemoProbe, Located } from "./demo-sweep";
+import { readDemoWidths } from "./demo-width";
+import type { WidthViolation } from "./demo-width";
 import { PROBED_PROPERTIES, probeParts, roleViolation, sentinelLengths } from "./density-attribution";
 import type { PartReading, ProbeOptions } from "./density-attribution";
 
 /**
  * The demo coverage gates. One sweep walks component pages' demos at both densities, opening
- * every popup, disclosure and tooltip, and runs both suites' probes on each reveal. The pages split
+ * every popup, disclosure and tooltip, and runs the suites' probes on each reveal. The pages split
  * into `SWEEP_GROUPS` groups, one suite file each, `demo-coverage-<group>.browser.test.ts`, so the
  * files together sweep every component page; `demo-coverage.test.ts` holds them to that.
  *
@@ -27,6 +29,10 @@ import type { PartReading, ProbeOptions } from "./density-attribution";
  * `density-attribution.ts`'s; the oracle is the declared table, the unit under test the rendered
  * parts. Where one slot renders with two roles, an override key (the slot plus a CSS selector
  * suffix) splits them, such as a menu row in the collapsed icon rail, which is `fixed` there.
+ *
+ * The width gate. Each stage's demo roots must sit as the stage's width rule says
+ * (`demo-width.ts`), read on the stages at both densities, since a control's size, and so whether a
+ * root fits, follows density.
  */
 
 /** One probed part on one page. */
@@ -64,6 +70,20 @@ const densityProbe: DemoProbe<PartReading> = (page, scope) => {
   return page.evaluate(probeParts, options);
 };
 
+/** What the further probe reads: every box's borders, and on the stages, the roots that break the width rule. */
+type StageReading =
+  | (BorderReading & { readonly kind: "border" })
+  | (WidthViolation & { readonly kind: "width" });
+
+const stageProbe: DemoProbe<StageReading> = async (page, scope) => {
+  const borders = await page.evaluate(probeBorders, scope);
+  const widths = scope === "stages" ? await page.evaluate(readDemoWidths) : [];
+  return [
+    ...borders.map((reading) => ({ ...reading, kind: "border" as const })),
+    ...widths.map((violation) => ({ ...violation, kind: "width" as const })),
+  ];
+};
+
 function pagesOf(instances: readonly Instance[]): string {
   return [...new Set(instances.map(({ page }) => page))].join(", ");
 }
@@ -79,18 +99,24 @@ export function describeDemoCoverage(fileUrl: string): void {
   const browser = launchSuiteBrowser();
   const measured: Instance[] = [];
   const bordered: Located<BorderReading>[] = [];
+  const widths: Located<WidthViolation>[] = [];
 
   beforeAll(async () => {
-    const readings = await sweepDemos(browser(), slugs, densityProbe, (page, scope) =>
-      page.evaluate(probeBorders, scope)
-    );
+    const readings = await sweepDemos(browser(), slugs, densityProbe, stageProbe);
     measured.push(...readings.discovered);
-    bordered.push(...readings.probed);
+    for (const reading of readings.probed) {
+      if (reading.kind === "border") {
+        bordered.push(reading);
+      } else {
+        widths.push(reading);
+      }
+    }
   }, 900_000);
 
   describe(`demo coverage, group ${String(group)} of ${String(SWEEP_GROUPS)}`, () => {
     describeDensityCoverage(slugs, measured);
     describeBorderCoverage(bordered);
+    describeWidthCoverage(widths);
   });
 }
 
@@ -166,6 +192,20 @@ function describeBorderCoverage(bordered: readonly Located<BorderReading>[]): vo
      */
     it("draws no border in currentColor", () => {
       expect(currentColorReport(bordered)).toEqual([]);
+    });
+  });
+}
+
+function describeWidthCoverage(widths: readonly Located<WidthViolation>[]): void {
+  describe("demo width coverage", () => {
+    // The rule, read from layout: a block-level demo root with no width of its own fills the stage
+    // up to its own max-width, an inline-level root sits centred at its own width, and no root,
+    // however it is sized, runs out of the stage.
+    it("fills the stage with every block-level demo and centres every inline-level one", () => {
+      const report = new Set(
+        widths.map(({ page, demo, root, reason }) => `${page}#${demo} ${root}: ${reason}`)
+      );
+      expect([...report]).toEqual([]);
     });
   });
 }

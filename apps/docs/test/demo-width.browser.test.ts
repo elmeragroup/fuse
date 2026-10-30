@@ -1,7 +1,6 @@
 import type { Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
-import { COMPONENT_INVENTORY } from "./component-inventory";
 import { DESKTOP_VIEWPORT, launchSuiteBrowser, openDemo } from "./demo-page";
 import { readDemoWidths } from "./demo-width";
 import type { WidthViolation } from "./demo-width";
@@ -34,7 +33,11 @@ async function openPage(page: Page, slug: string): Promise<void> {
   );
 }
 
-/** Every demo root on the given pages that breaks the stage's width rule, named by its page. */
+/**
+ * Every demo root on the given pages that breaks the stage's width rule, named by its page. The
+ * desktop read joins the demo coverage sweep (`demo-coverage.ts`), which fixes its viewport; this
+ * walk reads the pages that run down to a phone's width.
+ */
 async function sweep(
   slugs: readonly string[],
   viewport: { readonly width: number; readonly height: number }
@@ -57,10 +60,6 @@ describe("demo width", () => {
   // The rule, read from layout: a block-level demo root with no width of its own fills the stage up
   // to its own max-width, an inline-level root sits centred at its own width, and no root, however
   // it is sized, runs out of the stage.
-  it("fills the stage with every block-level demo and centres every inline-level one", async () => {
-    expect(await sweep([...COMPONENT_INVENTORY.keys()], DESKTOP_VIEWPORT)).toEqual([]);
-  }, 600_000);
-
   it("holds the rule in a 390px window", async () => {
     expect(await sweep(PHONE_PAGES, PHONE_VIEWPORT)).toEqual([]);
   }, 120_000);
