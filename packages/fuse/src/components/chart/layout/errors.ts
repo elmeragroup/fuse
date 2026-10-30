@@ -13,6 +13,7 @@ export type ChartCompositionRule =
   | "time-axis-without-zone"
   | "baseline-required"
   | "bar-needs-band"
+  | "step-curve-needs-cells"
   | "nested-bar-group"
   | "bar-not-in-group"
   | "mixed-sentiment-categorical";

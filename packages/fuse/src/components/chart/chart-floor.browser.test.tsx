@@ -1,8 +1,9 @@
 // Every mark Chromium draws in the plot, against the device pixels, in random dense charts.
 // Unit under test: the whole geometry path from the model to the SVG attributes, for every SVG
-// mark phase 1 draws: bars and their looks' parts, path columns and emphasis, missing ticks in
+// mark the parts draw: bars and their looks' parts, path columns and emphasis, missing ticks in
 // both forms, the active overlay, the grid, both crosshairs, reference lines and areas on both
-// axes, and the active value line. FLOOR_MARKS lists them, a source contract holds the list to the
+// axes, the active value line, a step line's and a step area's runs, dots, a marker and the
+// active dot. FLOOR_MARKS lists them, a source contract holds the list to the
 // chart source, and WALKERS walks each one. Oracle: the device pixel grid itself. Chromium draws
 // an SVG layer's origin on the device pixel nearest its page position, so a mark's drawn span is
 // that origin plus its attributes, and clips it to the plot's box, whose edges it rounds the same
@@ -71,6 +72,10 @@ type Dense = {
   readonly missing: readonly boolean[];
   readonly offset: number;
   readonly crosshair: "band" | "line";
+  /** The step line's look: the default 2 px stroke or the quiet 1 px one. */
+  readonly stroke: "default" | "quiet";
+  /** The line's step: from cell edge to cell edge, or d3's, rising halfway between two vertices. */
+  readonly curve: "step-after" | "step";
   /** The active slot: the first or the last. */
   readonly last: boolean;
   /** The slot a slot reference line marks, and the first and last slot of a slot area. */
@@ -125,6 +130,12 @@ function render(chart: Dense) {
           <Chart.ActiveValueLine dataKey="s0">
             <Chart.ValueLabel />
           </Chart.ActiveValueLine>
+          {/* Step runs fill their cells, so a line and an area of the first series walk like bars. */}
+          <Chart.Area dataKey="s0" curve="step-after" variant="solid" />
+          <Chart.Line dataKey="s0" curve={chart.curve} variant={chart.stroke} />
+          <Chart.Dots dataKey="s0" />
+          <Chart.Marker dataKey="s0" at="max" />
+          <Chart.ActiveDot dataKey="s0" />
         </Chart.Root>
       </div>
     </LocaleProvider>
@@ -147,6 +158,16 @@ function pathTicks(d: string): [number, number][] {
   return [...d.matchAll(/M([-\d.e]+) [-\d.e]+H([-\d.e]+)/gu)].map(([, x, x2]) => [Number(x), Number(x2)]);
 }
 
+/** The points of a path written with M and L commands, as x and y, in order, by subpath. */
+function pathPoints(d: string): (readonly [number, number])[][] {
+  return d
+    .split("M")
+    .filter((part) => part !== "")
+    .map((part) =>
+      [...part.matchAll(/(-?[\d.e]+),(-?[\d.e]+)/gu)].map(([, x, y]) => [Number(x), Number(y)] as const)
+    );
+}
+
 /** A span in device pixels. */
 type Span = readonly [number, number];
 
@@ -166,6 +187,19 @@ type Walk = {
   readonly across: (rect: Box) => Span;
   /** Check a mark of slots inside the device pixels the slots cover, a device pixel wide at least. */
   readonly inSlots: (what: string, first: number, last: number, span: Span) => void;
+  /**
+   * Check a stroked step run of one slot, its two riser places in CSS pixels from the plot: each
+   * riser's stroke, `width` CSS pixels wide around its place, covers whole device pixels, and the
+   * run, less the half device pixel an odd stroke moves past its cell edges, covers its slot's
+   * device pixels, so an odd riser at a cell edge lies inside the band of the run it starts.
+   */
+  readonly stroked: (what: string, slot: number, run: Span, width: number) => void;
+  /**
+   * Check a plain step's riser between two neighbouring slots, its place in CSS pixels from the
+   * plot: its stroke covers whole device pixels, and its place, less the half device pixel an odd
+   * stroke moves, lies among the two slots' device pixels.
+   */
+  readonly riser: (left: number, right: number, at: number, width: number) => void;
   /** Check a mark of the value axis inside the plot along it. */
   readonly inPlot: (what: string, span: Span) => void;
   /**
@@ -242,7 +276,110 @@ function barsOf(layer: Element): Element[] {
 /** One walker for every mark, so a mark added to the list without a walker fails to compile. */
 type Walkers = { readonly [Mark in FloorMark]: Walker };
 
+/**
+ * Walk a step path's runs, one per present reading of the first series in slot order: a Line's
+ * runs, each stroked over whole device pixels from its cell's start to its end, or the top edge of
+ * an Area's subpaths, each from cell edge to cell edge of its slot.
+ */
+function stepRuns(walk: Walk, what: string, d: string, edge: "line" | "area", width = 0): number {
+  const along = ([x, y]: readonly [number, number]) => (walk.vertical ? x : y);
+  const runs = pathPoints(d).flatMap((points) => {
+    // An area's subpath runs along its top, then back along its base.
+    const top = edge === "area" ? points.slice(0, points.length / 2) : points;
+    return Array.from({ length: top.length / 2 }, (_, index) => {
+      const start = top[index * 2];
+      const end = top[index * 2 + 1];
+      return start === undefined || end === undefined ? null : ([along(start), along(end)] as const);
+    });
+  });
+  expect(runs).toHaveLength(walk.present.length);
+  runs.forEach((run, index) => {
+    const slot = walk.present[index] ?? -1;
+    if (run === null) return;
+    const span: Span = [Math.min(...run), Math.max(...run)];
+    if (edge === "line") walk.stroked(what, slot, span, width);
+    else walk.inSlots(what, slot, slot, span);
+  });
+  return runs.length;
+}
+
+/**
+ * Walk a plain step line's risers, one between each two neighbouring readings of a run. A run of
+ * n readings draws 2n points, its risers at the odd ones, and a lone reading draws a dot.
+ */
+function stepRisers(walk: Walk, d: string, width: number): number {
+  let next = 0;
+  let risers = 0;
+  for (const part of d.split("M").filter((piece) => piece !== "")) {
+    if (part.includes("a")) {
+      next += 1;
+      continue;
+    }
+    const points = [...part.matchAll(/(-?[\d.e]+),(-?[\d.e]+)/gu)].map(
+      ([, x, y]) => [Number(x), Number(y)] as const
+    );
+    const count = points.length / 2;
+    for (let index = 1; index < count; index += 1) {
+      const point = points[2 * index - 1];
+      if (point === undefined) continue;
+      walk.riser(
+        walk.present[next + index - 1] ?? -1,
+        walk.present[next + index] ?? -1,
+        walk.vertical ? point[0] : point[1],
+        width
+      );
+      risers += 1;
+    }
+    next += count;
+  }
+  expect(next).toBe(walk.present.length);
+  return risers;
+}
+
 const WALKERS: Walkers = {
+  "chart-line": (walk) => {
+    // DOM audit: the line is aria-hidden plot output, and its dashed twin draws nothing here.
+    const line = walk.host.querySelector('[data-slot="chart-line"][data-part="solid"]');
+    if (line === null) return 0;
+    const width = Number.parseFloat(getComputedStyle(line).strokeWidth);
+    const d = line.getAttribute("d") ?? "";
+    return walk.chart.curve === "step"
+      ? stepRisers(walk, d, width)
+      : stepRuns(walk, "line run", d, "line", width);
+  },
+  "chart-area": (walk) => {
+    // DOM audit: the area is aria-hidden plot output.
+    const area = walk.host.querySelector('[data-slot="chart-area"][data-part="solid"]');
+    return area === null ? 0 : stepRuns(walk, "area run", area.getAttribute("d") ?? "", "area");
+  },
+  "chart-dot": (walk) => {
+    // Every dot centres on the column of its slot the line crosshair draws in, a device pixel wide
+    // at least, so the device pixel around its centre lies among its slot's.
+    const column = (dot: Element): Span => {
+      const centre = Number(dot.getAttribute(walk.vertical ? "cx" : "cy"));
+      const half = 0.5 / devicePixelRatio;
+      return [centre - half, centre + half];
+    };
+    // DOM audit: dots, the marker's dots and the active dot are aria-hidden plot output.
+    const dots = [...walk.host.querySelectorAll('[data-slot="chart-dots"] [data-slot="chart-dot"]')];
+    expect(dots).toHaveLength(walk.present.length);
+    dots.forEach((dot, index) => {
+      const slot = walk.present[index] ?? -1;
+      walk.inSlots("dot", slot, slot, column(dot));
+    });
+    const marked = [...walk.host.querySelectorAll('[data-slot="chart-marker"] [data-slot="chart-dot"]')];
+    const tops = maxima(walk, 0);
+    expect(marked).toHaveLength(tops.length);
+    marked.forEach((dot, index) => {
+      const slot = tops[index] ?? -1;
+      walk.inSlots("marker", slot, slot, column(dot));
+    });
+    const active = walk.host.querySelector(
+      '[data-slot="chart-active-dot"][data-value] [data-slot="chart-dot"]'
+    );
+    if (active !== null) walk.inSlots("active dot", walk.active, walk.active, column(active));
+    return dots.length + marked.length + (active === null ? 0 : 1);
+  },
   "chart-bar": (walk) => {
     let checked = 0;
     for (const layer of walk.layers) {
@@ -471,6 +608,8 @@ describe("every drawn mark under the pixel floor", () => {
       ),
       offset: fc.double({ min: 0, max: 3, noNaN: true }),
       crosshair: fc.constantFrom("band" as const, "line" as const),
+      stroke: fc.constantFrom("default" as const, "quiet" as const),
+      curve: fc.constantFrom("step-after" as const, "step" as const),
       last: fc.boolean(),
       line: fc.nat(),
       from: fc.nat(),
@@ -485,6 +624,8 @@ describe("every drawn mark under the pixel floor", () => {
       missing: Array.from({ length: 400 }, (_, slot) => slot === 0),
       offset: 0,
       crosshair: "line",
+      stroke: "default",
+      curve: "step-after",
       last: true,
       line: 399,
       from: 0,
@@ -560,6 +701,38 @@ describe("every drawn mark under the pixel floor", () => {
               if (drawn[1] - drawn[0] < 1 - SERIAL || drawn[0] < low - SERIAL || drawn[1] > high + SERIAL) {
                 failures.push(
                   `${what} of ${String(first)}–${String(last)}: ${drawn.join("–")} in ${String(low)}–${String(high)}`
+                );
+              }
+            },
+            riser: (left, right, at, width) => {
+              const pixels = Math.round(width * dpr);
+              const centre = (origin + at) * dpr;
+              const soft = [centre - pixels / 2, centre + pixels / 2].some(
+                (edge) => Math.abs(edge - Math.round(edge)) > SERIAL
+              );
+              const place = centre - (pixels % 2 === 1 ? 0.5 : 0);
+              const low = cover(left)[0];
+              const high = cover(right)[1];
+              if (soft || place < low - SERIAL || place > high + SERIAL) {
+                failures.push(
+                  `riser of ${String(left)}–${String(right)}: ${String(centre)} for ${String(pixels)} device px in ${String(low)}–${String(high)}`
+                );
+              }
+            },
+            stroked: (what, slot, [start, end], width) => {
+              const pixels = Math.round(width * dpr);
+              const centres = [(origin + start) * dpr, (origin + end) * dpr];
+              const soft = centres.some((centre) =>
+                [centre - pixels / 2, centre + pixels / 2].some(
+                  (edge) => Math.abs(edge - Math.round(edge)) > SERIAL
+                )
+              );
+              const shift = pixels % 2 === 1 ? 0.5 : 0;
+              const [low, high] = cover(slot);
+              const [from = 0, to = 0] = centres.map((centre) => centre - shift);
+              if (soft || to - from < 1 - SERIAL || from < low - SERIAL || to > high + SERIAL) {
+                failures.push(
+                  `${what} of ${String(slot)}: risers at ${centres.join(", ")} for ${String(pixels)} device px in ${String(low)}–${String(high)}`
                 );
               }
             },
@@ -642,6 +815,14 @@ describe("every drawn mark under the pixel floor", () => {
           [{ ...DENSE, count: 40, length: 301, offset: 0.4, last: false, line: 20 }, 1.25],
           [{ ...DENSE, count: 40, length: 301, offset: 0.4, last: false, line: 20 }, 1.5],
           [{ ...DENSE, count: 40, length: 301, offset: 0.4, orientation: "horizontal", line: 20 }, 1.25],
+          // Quiet 1 px risers at 1x, odd, and at 2x, even, and the default 2 px one at 1.5x, odd.
+          [{ ...DENSE, count: 20, length: 200, stroke: "quiet" }, 1],
+          [{ ...DENSE, count: 20, length: 200, stroke: "quiet", offset: 0.5 }, 2],
+          [{ ...DENSE, count: 20, length: 200, offset: 1 / 3 }, 1.5],
+          // Plain step risers, a 2 px one at 1x, even, and a quiet one at 1x, odd, and 1.5x.
+          [{ ...DENSE, count: 20, length: 200, curve: "step" }, 1],
+          [{ ...DENSE, count: 20, length: 200, curve: "step", stroke: "quiet" }, 1],
+          [{ ...DENSE, count: 37, length: 211, curve: "step", stroke: "quiet", offset: 0.4 }, 1.5],
         ],
       }
     );

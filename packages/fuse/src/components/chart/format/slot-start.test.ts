@@ -71,10 +71,16 @@ describe("slotStart in Europe/Oslo", () => {
 });
 
 describe("formatSlot with the time-seconds preset", () => {
-  it("throws a RangeError until the preset has its recipe", () => {
-    const format = (): FormattedText => formatSlot("nb-NO", OSLO, 0, "second", "time-seconds", "full");
-    expect(format).toThrowError(RangeError);
-    expect(format).toThrowError("The time-seconds preset has no recipe yet");
+  it("prints the slot's start to the second in fi-FI's dotted Hms (F1)", () => {
+    const label: FormattedText = formatSlot(
+      "fi-FI",
+      OSLO,
+      Date.UTC(2026, 9, 17, 11, 42, 4, 317),
+      "second",
+      "time-seconds",
+      "full"
+    );
+    expect(label).toEqual({ text: "13.42.04", spoken: "klo\u00a013.42.04" });
   });
 });
 

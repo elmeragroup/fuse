@@ -18,7 +18,8 @@ describe("formatChartSlot", () => {
     );
   });
 
-  it("throws until the time-seconds preset has its recipe", () => {
-    expect(() => formatChartSlot(new Date(0), "second", OSLO)).toThrow(RangeError);
+  it("prints a second's default label after CLDR's Hms with a two-digit hour (F1)", () => {
+    // 13:42:04 in Oslo on 17 October 2026, which is UTC+2, written by hand.
+    expect(formatChartSlot(new Date(Date.UTC(2026, 9, 17, 11, 42, 4)), "second", OSLO).text).toBe("13:42:04");
   });
 });

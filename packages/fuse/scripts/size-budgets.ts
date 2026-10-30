@@ -120,6 +120,9 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // 2026-10-30, SVG phase 1: the measured plot, the SVG marks and their paint servers, the motion
   // loop, the follower registry and the relay rule re-measure the entry at 109080, within its
   // ceiling. The recorded measurement stands.
+  // 2026-10-30, SVG phase 2: lines, areas, dots, markers, the path routes and their crossfade, the
+  // path form's moving columns and the drawing Sparkline re-measure the entry at 124818 after the
+  // three review rounds, within its ceiling. The recorded measurement stands.
   { name: "chart", entryFile: "chart.js", measuredGzip: 97044 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
@@ -280,6 +283,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
   // to 108017 for Chart, 108020 for BarChart, 82113, 82086 and 82050 for the polar namespaces,
   // 47003 for Chart.Root, 61415 for the bar route and 3926 for useChartPoint. The recorded
   // measurements stand.
+  // 2026-10-30, SVG phase 2: Line, Area, Dots, Marker, Reveal and the path routes grow the rows
+  // within their ceilings, after the three review rounds, to 122518 for Chart, 122520 for BarChart,
+  // 82134, 82108 and 82071 for the polar namespaces, 47652 for Chart.Root, 65073 for the bar route,
+  // whose Bar now moves its path form, and 3942 for useChartPoint. The recorded measurements stand.
   { name: "chart/Chart", entryFile: "chart.js", exportName: "Chart", measuredGzip: 95987 },
   { name: "chart/BarChart", entryFile: "chart.js", exportName: "BarChart", measuredGzip: 95989 },
   { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
@@ -306,7 +313,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     members: ["Root"],
     measuredGzip: 404,
   },
-  { name: "chart/Sparkline", entryFile: "chart.js", exportName: "Sparkline", measuredGzip: 246 },
+  // 2026-10-30, SVG phase 2: Sparkline draws, so it re-measures at 11118 with d3-shape's curves, the
+  // path builder it shares with Line and Area, and the value and slot formats of its range
+  // sentence. It still pulls in no Root or part module. After the three review rounds, with the
+  // area's lone dots, it measures 11384, within its ceiling, and the recorded measurement stands.
+  { name: "chart/Sparkline", entryFile: "chart.js", exportName: "Sparkline", measuredGzip: 11118 },
   // 2026-10-18, layer 05 fix pass: useChartPoint, Sparkline and formatChartSlot re-measured
   // unchanged. formatChartValue re-measured at 1681, 4 bytes under.
   { name: "chart/useChartPoint", entryFile: "chart.js", exportName: "useChartPoint", measuredGzip: 3635 },
@@ -367,6 +378,9 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // edges, the forced-colours missing tick and the tooltip metrics.
   // 2026-10-30, SVG phase 1: re-measured at 9663, with the SVG paint rules in place of the HTML
   // bar layout. The recorded measurement stands.
+  // 2026-10-30, SVG phase 2: re-measured at 12333 after the three review rounds, with the line,
+  // area, dot, marker, Reveal, Glow and Sparkline rules, the entrance wipes, the dash and ping
+  // keyframes and the crossfade's outgoing copies. The recorded measurement stands.
   { name: "chart.css", file: "chart.css", measuredGzip: 10089 },
 ] satisfies readonly Measured<CssBudget>[]);
 

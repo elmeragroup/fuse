@@ -1,21 +1,22 @@
 "use client";
 
-import { createContext, use, useMemo } from "react";
+import { createContext, use, useMemo, useRef } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { barAnchor } from "./chart-bar-draw";
+import { attachJoin, placeAttached } from "./chart-attached";
+import type { AttachedShown, FollowerJoin } from "./chart-attached";
 import { assertKnownKey, useChartLayout, useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import { useChartFollower } from "./chart-followers";
 import { ChartHeadlineContext } from "./chart-headline";
-import type { MarkValues } from "./chart-motion";
+import type { JoinLead, MarkValues } from "./chart-motion";
 import { useFollowerPlacement, useMotionMark } from "./chart-motion-mark";
 import { useChartFrame } from "./chart-plot";
 import { fallbackSlot, readingAt, useActivePoint } from "./chart-readout";
 import type { ChartFallback, ChartLayerProps, ValueFormat } from "./chart-types";
 import { formatValue } from "./format/value-format";
-import { barCellAt, barEndValue, barForm, barTip, geometryOf } from "./layout/bar-geometry";
-import type { BarCell, BarGeometry } from "./layout/bar-geometry";
+import { barCellAt, barEndValue, barTip } from "./layout/bar-geometry";
+import type { BarCell } from "./layout/bar-geometry";
 import { centreOf, hairline, ruleAcross, slotShare, snapAcross, valueShare } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
 import { slotCentre, valueTop } from "./layout/plot-geometry";
@@ -112,28 +113,36 @@ export function ChartActiveValue({
 }
 
 /**
- * How a value follower joins the bar it marks: the bar's anchor at the series and slot, and the
- * follower's numbers from the bar's drawn geometry, so every coordinate it draws is the bar's.
+ * How a value follower joins what it marks: the bar at its series and slot, or a Bar's columns in
+ * the path form, and the series' line where no Bar draws it, so every coordinate it draws is the
+ * bar's or the vertex's, at rest and in a tween. Inside a BarGroup it centres over its own bar, as
+ * a Marker does.
  */
-function joinBar(
+function joinValue(
   context: ChartRootContextValue,
   dataKey: string,
   slot: number | null,
-  pick: (geometry: BarGeometry) => MarkValues
-): { readonly anchor: string; readonly pick: (values: MarkValues) => MarkValues } | undefined {
+  fromPoint: (point: MarkValues) => MarkValues,
+  rest: MarkValues
+): FollowerJoin | undefined {
   const series = context.model.series.find((candidate) => candidate.key === dataKey);
   if (series === undefined || slot === null) return undefined;
-  return { anchor: barAnchor(series.seriesIndex, slot), pick: (values) => pick(geometryOf(values)) };
-}
-
-/** A bar's drawn tip, the fourth of its geometry numbers. */
-function tipOf(geometry: BarGeometry): MarkValues {
-  return [geometry[3]];
-}
-
-/** A bar's drawn middle along the slot axis, then its tip, where ActiveValue draws over it. */
-function overBar(geometry: BarGeometry): MarkValues {
-  return [(geometry[0] + geometry[1]) / 2, geometry[3]];
+  const join = attachJoin(context, series, [slot], rest, "bar");
+  return join === undefined
+    ? undefined
+    : {
+        leads: join.leads.map((lead): JoinLead => {
+          // A lead that lends its clock moves the follower's own numbers, as many as it reads.
+          if ("clock" in lead) return { anchor: lead.anchor, clock: fromPoint([0, 0]).length };
+          const { anchor, pick, rest: resting } = lead;
+          return {
+            anchor,
+            pick: (values: MarkValues) => fromPoint(pick(values)),
+            rest: resting === undefined ? undefined : (values: MarkValues) => fromPoint(resting(values)),
+          };
+        }),
+        crossfade: join.crossfade,
+      };
 }
 
 /** What a value follower's writer reads: the frame it draws in, or null before Root measures it. */
@@ -159,7 +168,7 @@ function drawValueLine(box: HTMLDivElement, look: FollowerLook, values: MarkValu
   box.style.setProperty("--chart-line-top", `${String(valueShare(frame, snapAcross(frame, end)))}%`);
   // The rule's width, which its stroke and the pill's centring read.
   box.style.setProperty("--_rule-width", `${String(hairline(frame.box))}px`);
-  const line = box.querySelector<SVGLineElement>('[data-slot="chart-active-value-rule"]');
+  const line = box.querySelector<SVGLineElement>(':scope > svg > [data-slot="chart-active-value-rule"]');
   if (line === null) return;
   const direction = frame.orientation === "vertical" ? "horizontal" : "vertical";
   for (const [name, value] of Object.entries(ruleAcross(frame.box, direction, end))) {
@@ -200,39 +209,61 @@ function PlotValue({
   const frame = drawn?.frame ?? null;
   const look = useMemo((): FollowerLook => ({ frame }), [frame]);
   // Its centre along the slot axis, then its tip across the value axis.
-  const { ref: valueRef, place: placeValue } = useMotionMark(
+  const {
+    ref: valueRef,
+    node: valueNode,
+    drawn: valueDrawn,
+    place: placeValue,
+  } = useMotionMark(
     context.motion,
     drawValue,
     look,
     context.orientation === "vertical" ? (["x", "y"] as const) : (["y", "x"] as const)
   );
   const placeFor = useFollowerPlacement(context.update, drawn?.plot ?? null, context.orientation);
+  const outgoing = useRef<HTMLDivElement>(null);
+  const last = useRef<AttachedShown<FollowerLook> | null>(null);
   useChartFollower("Chart.ActiveValue", (active, cause) => {
     const shown = active?.slot ?? slot;
     const centre =
       drawn === null || window === null || shown === null
         ? 0
         : centreOf(drawn.frame, shown - window.first, context.xScale);
-    // The value takes its series' placement: a path-form series draws new data at once, and a step
-    // onto a bar mid-update joins that bar's tween at the bar's tip.
-    const placement = placeFor(
-      cause,
-      barForm(context.model, context.orientation),
-      joinBar(context, dataKey, shown, overBar)
-    );
+    // The value joins what draws its slot, so a step onto a bar mid-update draws at that bar's tip.
     const cell = cellAt(context, dataKey, shown);
+    const tip = drawn === null || cell === null ? 0 : barTip(drawn.frame, cell);
+    const join = joinValue(context, dataKey, shown, (point) => point, [centre, tip]);
+    const placement = placeFor(cause, join);
     if (drawn === null || window === null || shown === null || cell === null) return;
-    placeValue([centre, barTip(drawn.frame, cell)], placement);
+    // The value crossfades with the path it sits on, its old text included.
+    placeAttached({
+      motion: context.motion,
+      cause,
+      join,
+      placement,
+      place: (next) => placeValue([centre, tip], next),
+      node: valueNode(),
+      outgoing: outgoing.current,
+      before: valueDrawn(),
+      look,
+      shown: last,
+      draw: (copy, old, values) => {
+        if (copy instanceof HTMLSpanElement) drawValue(copy, old, values);
+      },
+    });
   });
   return (
-    <span
-      ref={valueRef}
-      data-slot="chart-active-value"
-      aria-hidden="true"
-      className={className}
-      style={{ "--chart-value-at": at, "--chart-value-top": `${String(top)}%`, ...style }}>
-      {label}
-    </span>
+    <>
+      <span
+        ref={valueRef}
+        data-slot="chart-active-value"
+        aria-hidden="true"
+        className={className}
+        style={{ "--chart-value-at": at, "--chart-value-top": `${String(top)}%`, ...style }}>
+        {label}
+      </span>
+      <div ref={outgoing} data-part="outgoing" />
+    </>
   );
 }
 
@@ -257,20 +288,20 @@ export function ChartActiveValueLine({
   const {
     ref: lineRef,
     node,
+    drawn: lineDrawn,
     place,
   } = useMotionMark(context.motion, drawValueLine, look, [
     context.orientation === "vertical" ? "y" : "x",
   ] as const);
   const placeFor = useFollowerPlacement(context.update, drawn?.plot ?? null, context.orientation);
+  const outgoing = useRef<HTMLDivElement>(null);
+  const shown = useRef<AttachedShown<FollowerLook> | null>(null);
   useChartFollower("Chart.ActiveValueLine", (active, cause) => {
-    // The line takes its series' placement: a path-form series draws new data at once, and a step
-    // onto a bar mid-update joins that bar's tween at the bar's tip.
-    const placement = placeFor(
-      cause,
-      barForm(context.model, context.orientation),
-      joinBar(context, dataKey, active?.slot ?? null, tipOf)
-    );
+    // The line joins what draws its slot, so a step onto a bar mid-update draws at that bar's tip.
     const cell = active === null ? null : cellAt(context, dataKey, active.slot);
+    const tip = drawn === null || cell === null ? 0 : barTip(drawn.frame, cell);
+    const join = joinValue(context, dataKey, active?.slot ?? null, (point) => [point[1] ?? 0], [0, tip]);
+    const placement = placeFor(cause, join);
     const box = node();
     if (box === null) return;
     // The line shows only while the series draws a value at the active slot.
@@ -279,20 +310,39 @@ export function ChartActiveValueLine({
       return;
     }
     box.setAttribute("data-value", "");
-    place([barTip(drawn.frame, cell)], placement);
+    // The line and its pill crossfade with the path they sit on, the pill's old text included.
+    placeAttached({
+      motion: context.motion,
+      cause,
+      join,
+      placement,
+      place: (next) => place([tip], next),
+      node: box,
+      outgoing: outgoing.current,
+      before: lineDrawn(),
+      look,
+      shown,
+      draw: (copy, old, values) => {
+        if (copy instanceof HTMLDivElement) drawValueLine(copy, old, values);
+      },
+    });
   });
+  // The old line and pill fade out beside the live ones, so the live fade-in never reaches them.
   return (
-    <div
-      ref={lineRef}
-      data-slot="chart-active-value-line"
-      aria-hidden="true"
-      className={className}
-      style={style}>
-      <svg aria-hidden="true">
-        {drawn === null ? null : <line data-slot="chart-active-value-rule" x1="0" y1="0" x2="0" y2="0" />}
-      </svg>
-      <ChartDatumContext value={{ key: dataKey, slot: null }}>{children}</ChartDatumContext>
-    </div>
+    <>
+      <div
+        ref={lineRef}
+        data-slot="chart-active-value-line"
+        aria-hidden="true"
+        className={className}
+        style={style}>
+        <svg aria-hidden="true">
+          {drawn === null ? null : <line data-slot="chart-active-value-rule" x1="0" y1="0" x2="0" y2="0" />}
+        </svg>
+        <ChartDatumContext value={{ key: dataKey, slot: null }}>{children}</ChartDatumContext>
+      </div>
+      <div ref={outgoing} data-part="outgoing" />
+    </>
   );
 }
 

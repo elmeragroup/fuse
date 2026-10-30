@@ -168,7 +168,7 @@ export type ChartAccessibleName = {
 };
 
 // @beta
-function ChartActiveDot(_props: ChartActiveDotProps): ReactElement;
+function ChartActiveDot(input: ChartActiveDotProps): ReactElement;
 
 // @beta
 export type ChartActiveDotProps = ChartLayerProps & {
@@ -196,7 +196,7 @@ export type ChartActiveValueProps = ChartLayerProps & {
 };
 
 // @beta
-function ChartArea(_props: ChartAreaProps): ReactElement;
+function ChartArea(input: ChartAreaProps): ReactElement;
 
 // @beta
 export type ChartAreaProps = ChartLayerProps & {
@@ -308,7 +308,7 @@ export type ChartDomProps<E extends keyof JSX.IntrinsicElements> = Omit<useRende
 };
 
 // @beta
-function ChartDots(_props: ChartDotsProps): ReactElement;
+function ChartDots(input: ChartDotsProps): ReactElement;
 
 // @beta
 export type ChartDotsProps = ChartLayerProps & {
@@ -432,7 +432,7 @@ export type ChartLegendValueProps = ChartDomProps<"span"> & {
 };
 
 // @beta
-function ChartLine(_props: ChartLineProps): ReactElement;
+function ChartLine(input: ChartLineProps): ReactElement;
 
 // @beta
 export type ChartLineProps = ChartLayerProps & {
@@ -442,7 +442,7 @@ export type ChartLineProps = ChartLayerProps & {
 };
 
 // @beta
-function ChartMarker(_props: ChartMarkerProps): ReactElement;
+function ChartMarker(input: ChartMarkerProps): ReactElement;
 
 // @beta
 export type ChartMarkerProps = ChartLayerProps & {
@@ -567,7 +567,7 @@ export type ChartReferenceLineProps = ChartLayerProps & ({
 };
 
 // @beta
-function ChartReveal(_props: ChartRevealProps): ReactElement;
+function ChartReveal(input: ChartRevealProps): ReactElement;
 
 // @beta
 export type ChartRevealProps = ChartLayerProps & {

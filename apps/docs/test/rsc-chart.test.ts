@@ -61,8 +61,9 @@ describe("the chart entry under React Server Components", () => {
       "components/chart/chart-series.tsx#ChartSeriesIcon",
       "components/chart/chart-series.tsx#ChartSeriesLabel",
     ]);
+    // The name joins the consumer's label and the range sentence, which the server writes.
     expect(payload).toContain(
-      '["$","svg",null,{"data-slot":"sparkline","role":"img","aria-label":"Spotpris i dag"}'
+      '["$","svg",null,{"data-slot":"sparkline","data-variant":"line","role":"img","aria-label":"Spotpris i dag. Lavest 0,8, høyest 1,2."'
     );
   });
 
@@ -98,7 +99,11 @@ describe("the chart entry under React Server Components", () => {
     expect(ssr.flight).toMatch(
       /data-slot="chart-series-icon" aria-hidden="true"><svg [^>]*viewBox="0 0 256 256"/u
     );
-    expect(ssr.flight).toContain('<svg data-slot="sparkline" role="img" aria-label="Spotpris i dag"></svg>');
+    // The Sparkline's two readings sit between a gap, so each draws as a dot in its 10-unit cell.
+    expect(ssr.flight).toContain(
+      '<svg data-slot="sparkline" data-variant="line" role="img" aria-label="Spotpris i dag. Lavest 0,8, høyest 1,2." viewBox="0 0 30 100"'
+    );
+    expect(ssr.flight).toContain('<path data-slot="sparkline-path" d="M5,0ZM25,100Z"></path>');
   });
 
   it("rejects a function prop passed from the server to a client part", () => {

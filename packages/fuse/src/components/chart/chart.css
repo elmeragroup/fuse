@@ -35,6 +35,10 @@
 @layer components {
   /* A chart has no width of its own, so it fills its container even as a flex or grid item. */
   [data-slot="chart"] {
+    --animate-chart-dash: chart-dash 1s linear infinite;
+    --animate-chart-ping: chart-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+    --chart-stroke: 2px;
+    --chart-area-opacity: 0.1;
     display: grid;
     width: 100%;
     margin: 0;
@@ -118,6 +122,10 @@
     add no box, so the layers inside them lie in the plot cell as well.
   */
   [data-slot="chart-bar-series"],
+  [data-slot="chart-line-series"],
+  [data-slot="chart-area-series"],
+  [data-slot="chart-dots"],
+  [data-slot="chart-active-dot"],
   [data-slot="chart-grid"],
   [data-slot="chart-crosshair"] {
     grid-area: plot;
@@ -130,7 +138,8 @@
   }
 
   [data-slot="chart-bar-group"],
-  [data-slot="chart-glow"] {
+  [data-slot="chart-glow"],
+  [data-slot="chart-reveal"] {
     display: contents;
   }
 
@@ -1067,17 +1076,18 @@
 
   /*
     A selected or highlighted series keeps full opacity, and the rest dim. The ordinals compare
-    through min and max, so |a - b| clamped to 1 is 0 for the match and 1 for the rest.
+    through min and max, so |a - b| clamped to 1 is 0 for the match and 1 for the rest. The result
+    lives in a private property, so a series painted with the public chart-other role keeps it.
   */
   [data-slot="chart"][data-selected] [data-slot="chart-bar-series"] {
-    --chart-other: min(
+    --_other: min(
       1,
       max(var(--chart-series, 0) - var(--chart-selected), var(--chart-selected) - var(--chart-series, 0))
     );
   }
 
   [data-slot="chart"][data-highlight] [data-slot="chart-bar-series"] {
-    --chart-other: min(
+    --_other: min(
       1,
       max(var(--chart-series, 0) - var(--chart-highlight), var(--chart-highlight) - var(--chart-series, 0))
     );
@@ -1085,7 +1095,7 @@
 
   [data-slot="chart"][data-selected] [data-slot="chart-bar-series"],
   [data-slot="chart"][data-highlight] [data-slot="chart-bar-series"] {
-    opacity: calc(1 - (1 - var(--chart-hover-dim)) * var(--chart-other, 0));
+    opacity: calc(1 - (1 - var(--chart-hover-dim)) * var(--_other, 0));
     transition: opacity 150ms ease;
   }
 
@@ -1128,7 +1138,8 @@
   }
 
   /* Placed directly in Root, the active value sits above its bar's far end, as a direct label. */
-  [data-slot="chart-frame"] > [data-slot="chart-active-value"] {
+  [data-slot="chart-frame"] > [data-slot="chart-active-value"],
+  [data-slot="chart-frame"] > [data-part="outgoing"] > [data-slot="chart-active-value"] {
     grid-area: plot;
     align-self: start;
     justify-self: start;
@@ -1141,7 +1152,11 @@
     pointer-events: none;
   }
 
-  [data-orientation="horizontal"] [data-slot="chart-frame"] > [data-slot="chart-active-value"] {
+  [data-orientation="horizontal"] [data-slot="chart-frame"] > [data-slot="chart-active-value"],
+  [data-orientation="horizontal"]
+    [data-slot="chart-frame"]
+    > [data-part="outgoing"]
+    > [data-slot="chart-active-value"] {
     left: calc(100% - var(--chart-value-top));
     top: calc(var(--chart-value-at) * 100%);
     translate: 0.25rem -50%;
@@ -1336,14 +1351,456 @@
   }
 
   /*
+    Lines and areas. Each draws its path once and, over the spans that are no measurement, a twin:
+    a Line's twin dashes the segments that touch an estimated reading, a bridge under
+    missing: "connect" and the projected tail, in place of the solid path there, and an Area's twin
+    hatches them over its fill. A layer clips at the plot's ends, so a sliding path never draws past
+    them, and keeps a margin across the value axis for the stroke at the plot's edge.
+  */
+  :is([data-slot="chart-line-series"], [data-slot="chart-area-series"]) {
+    --_paint: var(--_paint-server, var(--chart-series-paint));
+    clip-path: inset(-0.5rem 0);
+    print-color-adjust: exact;
+  }
+
+  [data-orientation="horizontal"] :is([data-slot="chart-line-series"], [data-slot="chart-area-series"]) {
+    clip-path: inset(0 -0.5rem);
+  }
+
+  [data-slot="chart-line"] {
+    fill: none;
+    stroke: var(--_paint);
+    stroke-width: var(--chart-stroke);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  [data-slot="chart-line"][data-part="marked"],
+  [data-slot="chart-line-series"][data-variant="dashed"] [data-slot="chart-line"],
+  [data-slot="chart-line-series"][data-variant="flowing"] [data-slot="chart-line"] {
+    stroke-dasharray: 3 3;
+    stroke-linecap: butt;
+  }
+
+  /* A flowing line runs its dashes along itself, one period a second, after evilcharts. */
+  [data-slot="chart-line-series"][data-variant="flowing"] [data-slot="chart-line"][data-part="solid"] {
+    animation: var(--animate-chart-dash);
+  }
+
+  @keyframes chart-dash {
+    to {
+      stroke-dashoffset: -6;
+    }
+  }
+
+  /* A quiet line is a thin, faint reference, such as last year's series. */
+  [data-slot="chart-line-series"][data-variant="quiet"] [data-slot="chart-line"] {
+    stroke-width: 1px;
+    stroke-opacity: 0.6;
+  }
+
+  [data-slot="chart-area"] {
+    fill: var(--_paint);
+    stroke: none;
+  }
+
+  [data-slot="chart-area-series"][data-variant="solid"] [data-slot="chart-area"][data-part="solid"] {
+    fill-opacity: var(--chart-area-opacity);
+  }
+
+  /*
+    An area's looks mask the series paint. The gradients run from four times the area opacity at
+    the value end to nothing at the baseline, or the other way round, and the textures draw the
+    paint at full strength through their marks.
+  */
+  [data-slot="chart-area-series"] :is(mask, pattern) :is(rect, circle):not([fill]) {
+    fill: #fff;
+  }
+
+  [data-slot="chart-area-series"] mask {
+    mask-type: alpha;
+  }
+
+  [data-slot="chart-area-series"] stop {
+    stop-color: var(--chart-stop, #fff);
+    stop-opacity: var(--chart-stop-opacity, 1);
+  }
+
+  [data-slot="chart-area-series"][data-variant="gradient"] stop[data-part="near"],
+  [data-slot="chart-area-series"][data-variant="gradient-reverse"] stop[data-part="far"] {
+    --chart-stop-opacity: min(1, calc(4 * var(--chart-area-opacity)));
+  }
+
+  [data-slot="chart-area-series"][data-variant="gradient"] stop[data-part="far"],
+  [data-slot="chart-area-series"][data-variant="gradient-reverse"] stop[data-part="near"] {
+    --chart-stop-opacity: 0;
+  }
+
+  [data-slot="chart-area-series"]:is(
+      [data-variant="dotted"],
+      [data-variant="lines"],
+      [data-variant="hatched"]
+    )
+    [data-slot="chart-area"][data-part="solid"] {
+    fill-opacity: 0.5;
+  }
+
+  [data-slot="chart-area"][data-part="marked"] {
+    fill-opacity: 0.6;
+  }
+
+  /* A lone reading, which no fill can paint, draws a Line's dot, dashed over the marked spans. */
+  [data-slot="chart-area"]:is([data-part="dot"], [data-part="dot-marked"]) {
+    fill: none;
+    stroke: var(--_paint);
+    stroke-width: var(--chart-stroke);
+    stroke-linecap: round;
+  }
+
+  [data-slot="chart-area"][data-part="dot-marked"] {
+    stroke-dasharray: 3 3;
+    stroke-linecap: butt;
+  }
+
+  [data-slot="chart-line-series"] stop {
+    stop-color: var(--chart-stop, currentColor);
+  }
+
+  /*
+    Dots, the active dot and markers paint the series colour inside a ring of the surface, so a dot
+    over a line or another dot stays apart from it. "ring" is hollow, and "halo" sits in a faint
+    halo of its colour, as the Figma Now indicator draws.
+  */
+  [data-slot="chart-dot"] {
+    fill: var(--chart-series-paint);
+    stroke: var(--background);
+    stroke-width: 2px;
+    paint-order: stroke;
+    print-color-adjust: exact;
+  }
+
+  /* The looks reach every dot of the part, its outgoing copies in a crossfade included. */
+  :is(
+      [data-slot="chart-dots"],
+      [data-slot="chart-marker"],
+      [data-slot="chart-active-dot"]
+    )[data-variant="ring"]
+    [data-slot="chart-dot"] {
+    fill: var(--background);
+    stroke: var(--chart-series-paint);
+  }
+
+  :is(
+      [data-slot="chart-dots"],
+      [data-slot="chart-marker"],
+      [data-slot="chart-active-dot"]
+    )[data-variant="halo"]
+    [data-slot="chart-dot"] {
+    stroke: color-mix(in oklab, var(--chart-series-paint) 50%, transparent);
+    stroke-width: 6px;
+  }
+
+  /* A ping ring leaves its dot once a cycle, slower than once a second, and reduced motion stops it. */
+  [data-slot="chart-dot"][data-part="ping"] {
+    fill: var(--chart-series-paint);
+    stroke: none;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: var(--animate-chart-ping);
+  }
+
+  @keyframes chart-ping {
+    75%,
+    100% {
+      transform: scale(2.5);
+      opacity: 0;
+    }
+  }
+
+  [data-slot="chart-active-dot"] {
+    opacity: 0;
+  }
+
+  /* A shown active dot dims with its series, as the series' line does, by the private dimming share. */
+  [data-slot="chart"][data-active] [data-slot="chart-active-dot"][data-value] {
+    opacity: calc(1 - (1 - var(--chart-hover-dim)) * var(--_other, 0));
+  }
+
+  /* A marker's pills sit above their dots, on the anchor its writer places. */
+  [data-slot="chart-marker"] {
+    grid-area: plot;
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    pointer-events: none;
+  }
+
+  [data-slot="chart-marker"] > svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  [data-slot="chart-marker"] > [data-part="anchor"] {
+    position: absolute;
+    left: var(--chart-marker-x);
+    top: var(--chart-marker-y);
+    width: 0;
+    height: 0;
+  }
+
+  [data-slot="chart-marker"] > [data-part="anchor"] > [data-slot="chart-value-label"] {
+    position: absolute;
+    left: 0;
+    bottom: 0.5rem;
+    translate: -50% 0;
+  }
+
+  /*
+    A minimum's pill sits beside its dot, because the line rises on both sides of a low and the
+    axis labels lie below it.
+  */
+  [data-slot="chart-marker"] > [data-part="anchor"][data-side="beside"] > [data-slot="chart-value-label"] {
+    bottom: auto;
+    top: 0;
+    left: 0.5rem;
+    translate: 0 -50%;
+  }
+
+  /*
+    An attached mark's old drawing fades out over its new one while its path crossfades, in an
+    outgoing element beside the live mark. The element adds no box, so the copy lies in the plot
+    cell as the live mark does, and the live mark's fade never reaches it.
+  */
+  [data-slot="chart"] div[data-part="outgoing"] {
+    display: contents;
+  }
+
+  /* Reveal paints its marks at full strength up to the active slot and dims them past it. */
+  [data-slot="chart"][data-active]
+    [data-slot="chart-reveal"]
+    > :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]) {
+    mask-image: linear-gradient(
+      to right,
+      #000 var(--chart-active-x, 100%),
+      rgb(0 0 0 / var(--chart-hover-dim)) var(--chart-active-x, 100%)
+    );
+  }
+
+  [data-slot="chart"][data-orientation="horizontal"][data-active]
+    [data-slot="chart-reveal"]
+    > :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]) {
+    mask-image: linear-gradient(
+      to bottom,
+      #000 var(--chart-active-x, 100%),
+      rgb(0 0 0 / var(--chart-hover-dim)) var(--chart-active-x, 100%)
+    );
+  }
+
+  /*
+    Glow casts a line's or an area's own colour at full alpha, after evilcharts' line glow of
+    stdDeviation 10, at the length E10's measurement matched to a standard deviation for bars.
+  */
+  [data-slot="chart-glow"] :is([data-slot="chart-line-series"], [data-slot="chart-area-series"]) {
+    filter: drop-shadow(0 0 10px var(--chart-series-paint));
+  }
+
+  [data-slot="chart"][data-selected]
+    :is(
+      [data-slot="chart-line-series"],
+      [data-slot="chart-area-series"],
+      [data-slot="chart-dots"],
+      [data-slot="chart-marker"],
+      [data-slot="chart-active-dot"]
+    ) {
+    --_other: min(
+      1,
+      max(var(--chart-series, 0) - var(--chart-selected), var(--chart-selected) - var(--chart-series, 0))
+    );
+  }
+
+  [data-slot="chart"][data-highlight]
+    :is(
+      [data-slot="chart-line-series"],
+      [data-slot="chart-area-series"],
+      [data-slot="chart-dots"],
+      [data-slot="chart-marker"],
+      [data-slot="chart-active-dot"]
+    ) {
+    --_other: min(
+      1,
+      max(var(--chart-series, 0) - var(--chart-highlight), var(--chart-highlight) - var(--chart-series, 0))
+    );
+  }
+
+  [data-slot="chart"]:is([data-selected], [data-highlight])
+    :is(
+      [data-slot="chart-line-series"],
+      [data-slot="chart-area-series"],
+      [data-slot="chart-dots"],
+      [data-slot="chart-marker"]
+    ) {
+    opacity: calc(1 - (1 - var(--chart-hover-dim)) * var(--_other, 0));
+    transition: opacity 150ms ease;
+  }
+
+  /*
+    A Sparkline fills its container's width at 2rem high. Its marks stretch to the box, so every
+    stroke keeps its width on screen, and a dot is the round cap of a stroke of no length.
+  */
+  [data-slot="sparkline"] {
+    display: block;
+    width: 100%;
+    height: 2rem;
+    overflow: visible;
+    print-color-adjust: exact;
+  }
+
+  [data-slot="sparkline-path"] {
+    fill: none;
+    stroke: var(--chart-series-paint);
+    stroke-width: 2px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  [data-slot="sparkline"]:is([data-variant="area"], [data-variant="bar"]) [data-slot="sparkline-path"] {
+    fill: var(--chart-series-paint);
+    stroke: none;
+  }
+
+  [data-slot="sparkline"][data-variant="area"] [data-slot="sparkline-path"] {
+    fill-opacity: 0.3;
+  }
+
+  /* An area's lone reading draws the line's dot, a round cap no fill can paint. */
+  [data-slot="sparkline"][data-variant="area"] [data-slot="sparkline-path"][data-part="lone"] {
+    fill: none;
+    stroke: var(--chart-series-paint);
+  }
+
+  [data-slot="sparkline-reference"] {
+    fill: none;
+    stroke: var(--muted-foreground);
+    stroke-width: 1px;
+    stroke-dasharray: 3 2;
+    vector-effect: non-scaling-stroke;
+  }
+
+  [data-slot="sparkline-reference"][data-part="zero"] {
+    stroke: var(--border);
+    stroke-dasharray: none;
+  }
+
+  [data-slot="sparkline-dot"] {
+    fill: none;
+    stroke: var(--chart-series-paint);
+    stroke-width: 6px;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /*
     Motion, after .scratch/charts-v1/reviews/motion-decision.md. The loop of chart-motion.ts moves
     every mark, so no geometry transitions here. A bar that a data update adds fades in through
     opacity only, on the tokens of layout/motion.ts, and the fade ends on whatever opacity the
     cascade gives the bar, such as a past slot's dim.
   */
   @media (prefers-reduced-motion: no-preference) {
-    [data-slot="chart-bar-marks"] > [data-intro="fade"] {
+    [data-slot="chart-bar-marks"] > [data-intro="fade"],
+    :is([data-slot="chart-line-series"], [data-slot="chart-area-series"])[data-intro="fade"],
+    [data-slot="chart-dot"][data-intro="fade"] {
       animation: chart-fade-in var(--chart-update) var(--chart-ease);
+    }
+
+    /*
+      Root's entrance wipes lines, areas and their dots in from data-intro's origin over 1 s, after
+      evilcharts' REVEAL_DURATION and REVEAL_EASE. A layer that mounts later carries data-intro.
+    */
+    [data-slot="chart"]:not([data-intro="none"])
+      :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(
+        [data-intro]
+      ) {
+      animation: chart-wipe-left 1s var(--chart-ease) backwards;
+    }
+
+    [data-slot="chart"][data-intro="right"]
+      :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(
+        [data-intro]
+      ) {
+      animation-name: chart-wipe-right;
+    }
+
+    [data-slot="chart"][data-intro="center"]
+      :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(
+        [data-intro]
+      ) {
+      animation-name: chart-wipe-center;
+    }
+
+    [data-slot="chart"][data-intro="edges"]
+      :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(
+        [data-intro]
+      ) {
+      animation-name: chart-wipe-edges;
+    }
+  }
+
+  @keyframes chart-wipe-left {
+    from {
+      clip-path: inset(-0.5rem 100% -0.5rem 0);
+    }
+    to {
+      clip-path: inset(-0.5rem 0);
+    }
+  }
+
+  @keyframes chart-wipe-right {
+    from {
+      clip-path: inset(-0.5rem 0 -0.5rem 100%);
+    }
+    to {
+      clip-path: inset(-0.5rem 0);
+    }
+  }
+
+  @keyframes chart-wipe-center {
+    from {
+      clip-path: inset(-0.5rem 50%);
+    }
+    to {
+      clip-path: inset(-0.5rem 0);
+    }
+  }
+
+  /* Two halves wipe in from the edges toward the middle, as one polygon joined along the bottom. */
+  @keyframes chart-wipe-edges {
+    from {
+      clip-path: polygon(
+        0 -0.5rem,
+        0 -0.5rem,
+        0 calc(100% + 0.5rem),
+        100% calc(100% + 0.5rem),
+        100% -0.5rem,
+        100% -0.5rem,
+        100% calc(100% + 0.5rem),
+        0 calc(100% + 0.5rem)
+      );
+    }
+    to {
+      clip-path: polygon(
+        0 -0.5rem,
+        50% -0.5rem,
+        50% calc(100% + 0.5rem),
+        50% calc(100% + 0.5rem),
+        50% -0.5rem,
+        100% -0.5rem,
+        100% calc(100% + 0.5rem),
+        0 calc(100% + 0.5rem)
+      );
     }
   }
 
@@ -1359,8 +1816,18 @@
   */
   @media (forced-colors: active) {
     [data-slot="chart-bar-series"],
+    [data-slot="chart-line-series"],
+    [data-slot="chart-area-series"],
+    [data-slot="chart-dots"],
+    [data-slot="chart-active-dot"],
+    [data-slot="chart-marker"] > svg,
+    [data-slot="sparkline"],
     [data-slot="chart-swatch"] {
       forced-color-adjust: none;
+    }
+
+    [data-slot="sparkline-reference"] {
+      stroke: CanvasText;
     }
 
     [data-slot="chart-grid-line"],

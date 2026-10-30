@@ -21,6 +21,7 @@ import {
   snapBody,
   snapX,
   snapY,
+  strokeCentre,
   valueAt,
 } from "./plot-frame";
 import type { PlotBox } from "./plot-frame";
@@ -258,5 +259,46 @@ describe("rules", () => {
     const plot = box(300, 200, 1, 0.4, 0.4);
     expect(ruleAcross(plot, "horizontal", 40.3)).toEqual({ x1: 0, y1: 41.5, x2: 300, y2: 41.5 });
     expect(ruleAcross(plot, "vertical", 40.3)).toEqual({ x1: 41.5, y1: 0, x2: 41.5, y2: 200 });
+  });
+});
+
+describe("strokeCentre (review round 1, B1-10)", () => {
+  it("centres a stroke an odd number of device pixels wide on a pixel's middle, and an even one on an edge", () => {
+    // [dpr, width in CSS px, offset from the snapped edge]: 1 px at DPR 1 is 1 device pixel, so it
+    // moves half a pixel, and 2 px is 2, so it stays. At DPR 1.5, 2 px is 3 device pixels and
+    // moves a third of a CSS pixel, and 1 px rounds to 2. At DPR 2, 1.5 px is 3 device pixels.
+    const cases: readonly (readonly [number, number, number])[] = [
+      [1, 1, 0.5],
+      [1, 2, 0],
+      [1, 3, 0.5],
+      [1.5, 1, 0],
+      [1.5, 2, 1 / 3],
+      [2, 1, 0],
+      [2, 1.5, 0.25],
+      [1, 0, 0],
+    ];
+    for (const [dpr, width, offset] of cases) {
+      const frame = plotFrame(box(100, 100, dpr), "vertical", 1, [0, 1]);
+      expect(strokeCentre(frame, 40, width) - 40, `${String(width)} px at DPR ${String(dpr)}`).toBeCloseTo(
+        offset,
+        9
+      );
+    }
+  });
+
+  it("puts both edges of the stroke on device pixels", () => {
+    fc.assert(
+      fc.property(
+        fc.constantFrom(1, 1.25, 1.5, 2, 3),
+        fc.integer({ min: 1, max: 6 }),
+        fc.integer({ min: 0, max: 400 }),
+        (dpr, pixels, at) => {
+          const frame = plotFrame(box(100, 100, dpr), "vertical", 1, [0, 1]);
+          const width = pixels / dpr;
+          const centre = strokeCentre(frame, at / dpr, width);
+          expect(onGrid(centre - width / 2, dpr) && onGrid(centre + width / 2, dpr)).toBe(true);
+        }
+      )
+    );
   });
 });

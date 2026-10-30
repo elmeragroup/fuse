@@ -35,7 +35,13 @@
   "area-chart": {
     "title": "Area Chart",
     "rsc": "client",
-    "demos": ["area-chart-daily-usage.tsx"]
+    "demos": [
+      "area-chart-daily-usage.tsx",
+      "area-chart-entrance.tsx",
+      "area-chart-price.tsx",
+      "area-chart-stacked.tsx",
+      "area-chart-variants.tsx"
+    ]
   },
   "aspect-ratio": {
     "title": "Aspect Ratio",
@@ -487,7 +493,18 @@
   "line-chart": {
     "title": "Line Chart",
     "rsc": "client",
-    "demos": ["line-chart-spot-price.tsx"]
+    "demos": [
+      "line-chart-basic.tsx",
+      "line-chart-curves.tsx",
+      "line-chart-glow.tsx",
+      "line-chart-large.tsx",
+      "line-chart-markers.tsx",
+      "line-chart-quality.tsx",
+      "line-chart-reveal.tsx",
+      "line-chart-spot-price.tsx",
+      "line-chart-update.tsx",
+      "line-chart-variants.tsx"
+    ]
   },
   "link": {
     "title": "Link",
@@ -728,7 +745,7 @@
   "sparkline": {
     "title": "Sparkline",
     "rsc": "server",
-    "demos": ["sparkline-hourly-price.tsx"]
+    "demos": ["sparkline-hourly-price.tsx", "sparkline-table.tsx", "sparkline-variants.tsx"]
   },
   "switch": {
     "title": "Switch",

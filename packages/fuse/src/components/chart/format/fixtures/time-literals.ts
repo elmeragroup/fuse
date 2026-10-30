@@ -371,6 +371,37 @@ export const TIME_CASES: readonly TimeCase[] = [
     },
   },
   {
+    // F1: CLDR 48's Hms with the two-digit hour of TIME-CONVENTIONS rule 2, written by hand.
+    name: "second sample",
+    zone: "Europe/Oslo",
+    start: "2026-10-17T11:42:04Z",
+    interval: "second",
+    preset: "time-seconds",
+    role: "tick",
+    text: { "nb-NO": "13:42:04", "sv-SE": "13:42:04", "fi-FI": "13.42.04", "en-US": "1:42:04\u00a0PM" },
+    spoken: {
+      "nb-NO": "kl.\u00a013:42:04",
+      "sv-SE": "kl.\u00a013:42:04",
+      "fi-FI": "klo\u00a013.42.04",
+      "en-US": "1:42:04\u00a0PM",
+    },
+  },
+  {
+    name: "morning second sample",
+    zone: "Europe/Oslo",
+    start: "2026-10-17T07:05:07Z",
+    interval: "second",
+    preset: "time-seconds",
+    role: "tick",
+    text: { "nb-NO": "09:05:07", "sv-SE": "09:05:07", "fi-FI": "09.05.07", "en-US": "9:05:07\u00a0AM" },
+    spoken: {
+      "nb-NO": "kl.\u00a009:05:07",
+      "sv-SE": "kl.\u00a009:05:07",
+      "fi-FI": "klo\u00a009.05.07",
+      "en-US": "9:05:07\u00a0AM",
+    },
+  },
+  {
     name: "minute range",
     zone: "Europe/Oslo",
     start: "2026-10-17T11:06:00Z",

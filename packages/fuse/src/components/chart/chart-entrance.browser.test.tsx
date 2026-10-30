@@ -173,7 +173,9 @@ describe("the entrance", () => {
       )
     );
     expect(heights.slice(0, 2)).toEqual([200, 100]);
-    expect(paths.map((path) => Math.round(path.getBoundingClientRect().height))).toEqual([200]);
+    // The quality and missing paths stay mounted and draw nothing.
+    const drawing = paths.filter((path) => path.getAttribute("d") !== "");
+    expect(drawing.map((path) => Math.round(path.getBoundingClientRect().height))).toEqual([200]);
   });
 
   it("draws a settled 101-category chart at once when its orientation turns, with no second entrance", async () => {

@@ -625,6 +625,16 @@ Four SVG phase 1 follow-ups remain. One needs a rare update sequence, and three 
   bindings, so a component-local writer that shadows a module-level name passes. Resolve lexical
   bindings.
 
+Three SVG phase 2 follow-ups remain.
+
+- Measure the line Glow's halo once in Chromium against `ex-glowing-desktop-line-chart`, as ticket
+  05's E10 measured the bar glow. `chart.css` uses a 10 px drop-shadow, the bar glow's measured
+  equivalence for evilcharts' `stdDeviation="10"`.
+- A slide's duration is the update token's 480 ms. Ticket 06's F10 asks for the time since the
+  previous update when that is shorter, which the live line needs, so add it with the live feed.
+- An Area under `variant="hatched"` hatches its estimated spans with the same texture as its fill.
+  Give the marked twin a denser texture.
+
 Every later chart change follows the growth rule. A new capability becomes a new part, a variant
 or datum-selector value, a `config` field, a Root prop that describes the data's shape or a Panel
 prop that mirrors one, Root state or a data attribute. It never becomes a boolean or mode prop on

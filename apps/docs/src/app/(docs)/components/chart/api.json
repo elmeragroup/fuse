@@ -610,8 +610,8 @@
           "origin": "declared",
           "type": "ChartCurve | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "The curve through the readings. \"monotone\" by default.",
+          "defaultValue": "\"monotone\"",
+          "description": "The curve through the readings. \"monotone\" by default. \"step-after\" and \"step-before\" run each reading across its whole cell, so they need `xScale=\"band\"` and throw `step-curve-needs-cells` under \"point\".",
           "required": false
         },
         {
@@ -637,8 +637,8 @@
           "origin": "declared",
           "type": "\"dashed\" | \"default\" | \"flowing\" | \"quiet\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "The line's look. \"default\" by default.",
+          "defaultValue": "\"default\"",
+          "description": "The line's look. \"default\" by default. \"dashed\" dashes the whole line, \"flowing\" runs its dashes along it, which reduced motion stops, and \"quiet\" draws a thin, faint line for a reference series such as last year.",
           "required": false
         }
       ]
@@ -664,7 +664,7 @@
           "origin": "declared",
           "type": "ChartCurve | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "\"monotone\"",
           "description": "The curve along the area's edge. \"monotone\" by default.",
           "required": false
         },
@@ -691,8 +691,8 @@
           "origin": "declared",
           "type": "\"dotted\" | \"gradient\" | \"gradient-reverse\" | \"hatched\" | \"lines\" | \"solid\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "The fill's look. \"gradient\" by default.",
+          "defaultValue": "\"gradient\"",
+          "description": "The fill's look. \"gradient\" by default, which fades from the value toward the baseline, and \"gradient-reverse\" fades the other way. \"solid\" fills at `--chart-area-opacity`, and \"dotted\", \"lines\" and \"hatched\" fill with a texture of the series colour, after evilcharts' area fills.",
           "required": false
         }
       ]
@@ -736,8 +736,8 @@
           "origin": "declared",
           "type": "\"default\" | \"halo\" | \"ring\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "The dot's look. \"default\" by default.",
+          "defaultValue": "\"default\"",
+          "description": "The dot's look. \"default\" by default, a filled dot inside a ring of the surface. \"ring\" is a hollow ring and \"halo\" a dot inside a faint halo of its colour.",
           "required": false
         }
       ]
@@ -781,8 +781,8 @@
           "origin": "declared",
           "type": "\"default\" | \"halo\" | \"ping\" | \"ring\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "The dot's look. \"default\" by default.",
+          "defaultValue": "\"default\"",
+          "description": "The dot's look. \"default\" by default. \"ping\" sends a ring out from the dot once a second.",
           "required": false
         }
       ]
@@ -844,7 +844,7 @@
           "origin": "declared",
           "type": "\"default\" | \"halo\" | \"ping\" | \"ring\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"default\"",
           "description": "The dot's look. \"default\" by default.",
           "required": false
         }

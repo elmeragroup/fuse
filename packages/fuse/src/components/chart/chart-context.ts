@@ -12,6 +12,7 @@ import type { SupportedLocale } from "../../intl/locale-context";
 import type { ChartFollowers } from "./chart-followers";
 import type { ChartLabels } from "./chart-labels";
 import type { ChartMotion } from "./chart-motion";
+import type { ChartPaths } from "./chart-paths";
 import type { ChartStore, EmphasisEntry } from "./chart-store";
 import type { TextContext } from "./chart-text";
 import type { ChartConfig, ChartIntro, ChartRow, ChartSelectionChangeReason, XFormat } from "./chart-types";
@@ -87,8 +88,12 @@ export type ChartRootContextValue = TextContext & {
   readonly followers: ChartFollowers;
   /** The value reference labels, placed from the guides they label. */
   readonly labels: ChartLabels;
+  /** The routes the series paths tween, which their dots, markers and active dots join. */
+  readonly paths: ChartPaths;
   /** A Bar registers after it mounts, so Root can warn `bars-overlap`. The result unregisters it. */
   readonly registerBar: (key: string, grouped: boolean) => () => void;
+  /** Whether a mounted Bar draws a config key, which a value follower marks before a line. */
+  readonly drawsBar: (key: string) => boolean;
   /** A Bar registers its emphasised slots after it mounts, so the option speaks the word. */
   readonly registerEmphasis: (key: string, entry: EmphasisEntry) => () => void;
 };

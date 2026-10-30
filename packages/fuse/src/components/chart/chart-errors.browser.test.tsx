@@ -132,6 +132,53 @@ describe("composition errors", () => {
       composition("bar-needs-band"),
     ],
     [
+      "an Area in a layout without the zero baseline",
+      <Chart.Root
+        key="root"
+        data={DAYS}
+        config={CONFIG}
+        xKey="day"
+        interval="day"
+        timeZone={OSLO}
+        yBaseline="none"
+        aria-label="Forbruk">
+        <Chart.Area dataKey="kwh" />
+      </Chart.Root>,
+      composition("baseline-required"),
+    ],
+    [
+      "a step-after Line on a point scale",
+      <Chart.Root
+        key="root"
+        data={DAYS}
+        config={CONFIG}
+        xKey="day"
+        interval="day"
+        timeZone={OSLO}
+        xScale="point"
+        aria-label="Forbruk">
+        <Chart.Line dataKey="kwh" curve="step-after" />
+      </Chart.Root>,
+      composition("step-curve-needs-cells"),
+    ],
+    [
+      "a step-before Area on a point scale",
+      <Chart.Root
+        key="root"
+        data={DAYS}
+        config={CONFIG}
+        xKey="day"
+        interval="day"
+        timeZone={OSLO}
+        xScale="point"
+        aria-label="Forbruk">
+        <Chart.Area dataKey="kwh" curve="step-before" />
+      </Chart.Root>,
+      composition("step-curve-needs-cells"),
+    ],
+    ["an unknown Line key", daily(<Chart.Line dataKey="typo" />), composition("unknown-key")],
+    ["an unknown Marker key", daily(<Chart.Marker dataKey="typo" at="last" />), composition("unknown-key")],
+    [
       "a BarGroup inside a BarGroup",
       daily(
         <Chart.BarGroup series={["kwh"]}>

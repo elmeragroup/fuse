@@ -14,7 +14,6 @@ import type { ChartLayerProps, ChartTone, ChartX, ValueFormat, XFormat } from ".
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
 import { formatValue } from "./format/value-format";
-import { barForm } from "./layout/bar-geometry";
 import { ChartCompositionError, isChartDevelopment } from "./layout/errors";
 import {
   hairline,
@@ -326,7 +325,7 @@ function useReferenceMark(
     if (drawn === null) return;
     // A reference takes the bars' placement, so in the path form, whose paths draw new data at once,
     // a guide at a value snaps with them and stays on the paths' pixels.
-    place(target(drawn.frame), placementOf(commit(), { form: barForm(context.model, context.orientation) }));
+    place(target(drawn.frame), placementOf(commit()));
   });
   return ref;
 }

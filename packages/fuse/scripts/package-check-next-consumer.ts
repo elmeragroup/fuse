@@ -78,6 +78,7 @@ async function checkServerHtml(url: string): Promise<void> {
     ['data-density="comfortable"', "the server HTML lacks the density attribute"],
     ['aria-label="Orders"', "the server HTML lacks the data-table client island"],
     ['data-slot="sparkline"', "a server page rendered no Sparkline"],
+    ['data-slot="sparkline-path"', "a server Sparkline drew no line"],
     ["1,78\u00a0kr/kWh\u00a0inkl.\u00a0mva", "formatChartValue printed different text on the server"],
   ] as const) {
     assert.ok(html.includes(marker), `Next consumer: ${meaning}`);

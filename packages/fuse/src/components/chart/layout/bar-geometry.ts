@@ -4,7 +4,7 @@
  * `--chart-bar-seam` short of the next one at its far end, so the surface shows between segments.
  */
 import type { CartesianModel, SeriesModel } from "./cartesian-model";
-import { BUCKETS, DECIMATE_ABOVE, bucketEdges } from "./decimate";
+import { BUCKETS, bucketEdges } from "./decimate";
 import { linearScale, scaleValue } from "./linear-scale";
 import { barSpan, frameRect, slotBand, snapSpan, valueAt } from "./plot-frame";
 import type { BarMetrics, PlotFrame, PlotRect, SubBand } from "./plot-frame";
@@ -251,8 +251,11 @@ export function barTip(frame: PlotFrame, cell: BarCell): number {
   return valueAt(frame, barEndValue(cell));
 }
 
-/** One column of the path form, in viewBox units: x in slots of the window, y in plot percent. */
-export type PathColumn = {
+/**
+ * One decimated column of the path form, in viewBox units: x in slots of the window, y in plot
+ * percent.
+ */
+export type BucketColumn = {
   readonly x0: number;
   readonly x1: number;
   readonly top: number;
@@ -260,14 +263,16 @@ export type PathColumn = {
   /** The slot whose reading the column draws, which picks its colour step and quality. */
   readonly slot: number;
   /**
-   * The slot's place in the window, whose band holds the column, or null for a decimated column
-   * that spans a bucket of slots.
+   * The domain slot the column's bucket starts at, whose key names the column across updates, so a
+   * slide that moves whole buckets keeps each column with the data it draws.
    */
-  readonly position: number | null;
+  readonly first: number;
+  /**
+   * Which of the bucket's columns it is: a loose series' one column across zero, or a stacked
+   * series' segment above or below it, so a bucket keeps each column's identity across updates.
+   */
+  readonly side: "across" | "above" | "below";
 };
-
-/** The band gap's share of a slot in the path form, which draws in slot units. */
-const PATH_GAP = 0.25;
 
 /** The extent a stack column covers at a slot on one side of zero, from every segment of the stack. */
 function sideTotal(model: CartesianModel, series: SeriesModel, slot: number, negative: boolean): number {
@@ -282,9 +287,9 @@ function sideTotal(model: CartesianModel, series: SeriesModel, slot: number, neg
 }
 
 /**
- * The path form's columns of one series. Up to 2,000 slots in the window each slot draws its own
- * column, narrowed by the band gap and split into the BarGroup's sub-bands as the bars form is.
- * Above that the window splits into M4 buckets by slot index. A loose series draws each bucket's
+ * The path form's decimated columns of one series, which `layoutColumns` draws above
+ * `DECIMATE_ABOVE` slots, where every slot up to it draws its own entry. The window splits into M4
+ * buckets by slot index, each split into the BarGroup's sub-bands. A loose series draws each bucket's
  * column from its lowest negative extent to its highest positive extent, and the column takes the
  * slot of its larger extreme, so its colour step and quality are that reading's. A stacked series
  * draws the segment of the bucket's slot with the largest total magnitude on each side of zero.
@@ -295,23 +300,23 @@ function sideTotal(model: CartesianModel, series: SeriesModel, slot: number, neg
  * @param band - The Bar's sub-band, the whole band outside a BarGroup.
  * @returns The columns in x order.
  */
-export function pathColumns(
+export function bucketColumns(
   model: CartesianModel,
   series: SeriesModel,
   y: readonly [number, number],
   band: SubBand = { index: 0, count: 1 }
-): PathColumn[] {
+): BucketColumn[] {
   const window = model.window;
   if (window === null) return [];
   const scale = linearScale(y, [100, 0]);
   const count = window.last - window.first + 1;
-  const columns: PathColumn[] = [];
+  const columns: BucketColumn[] = [];
   const push = (
     from: number,
     to: number,
     extent: Extent | undefined,
     slot: number,
-    position: number | null
+    at: { readonly first: number; readonly side: BucketColumn["side"] }
   ): void => {
     if (!extent || extent[0] === extent[1]) return;
     const width = (to - from) / band.count;
@@ -322,16 +327,9 @@ export function pathColumns(
       top: scaleValue(scale, extent[1]),
       bottom: scaleValue(scale, extent[0]),
       slot,
-      position,
+      ...at,
     });
   };
-  if (count <= DECIMATE_ABOVE) {
-    for (let slot = window.first; slot <= window.last; slot += 1) {
-      const position = slot - window.first;
-      push(position + PATH_GAP / 2, position + 1 - PATH_GAP / 2, series.extents[slot], slot, position);
-    }
-    return columns;
-  }
   const edges = bucketEdges(count);
   for (let bucket = 0; bucket < BUCKETS; bucket += 1) {
     const from = edges[bucket] ?? count;
@@ -356,7 +354,10 @@ export function pathColumns(
       const low = Math.min(0, lowest[0]);
       const high = Math.max(0, highest[1]);
       // The larger extreme decides what the column stands for, and a tie keeps the positive one.
-      push(from, to, [low, high], -low > high ? lowSlot : highSlot, null);
+      push(from, to, [low, high], -low > high ? lowSlot : highSlot, {
+        first: window.first + from,
+        side: "across",
+      });
       continue;
     }
     for (const negative of [false, true]) {
@@ -371,28 +372,11 @@ export function pathColumns(
         }
       }
       const extent = best === -1 ? undefined : series.extents[best];
-      if (extent && isNegative(extent) === negative) push(from, to, extent, best, null);
+      if (extent && isNegative(extent) === negative)
+        push(from, to, extent, best, { first: window.first + from, side: negative ? "below" : "above" });
     }
   }
   return columns;
-}
-
-/**
- * A path-form column's rectangle in the plot. Path-form bars always draw vertically, so a column's
- * slot units run along the width and its plot percent down the height. A column of one slot keeps
- * its pixel among its band's, as a bar does, so the overlay, the focused option, the crosshair and
- * the tooltip anchor cover it.
- *
- * @param frame - The layout's frame, vertical.
- * @param column - The column.
- * @returns The rectangle, every edge on the device pixel grid.
- */
-export function columnRect(frame: PlotFrame, column: PathColumn): PlotRect {
-  const step = frame.box.width / frame.count;
-  const toY = (percent: number): number => (percent / 100) * frame.box.height;
-  const band = column.position === null ? undefined : slotBand(frame, column.position);
-  const along = snapSpan(frame, column.x0 * step, column.x1 * step, band);
-  return frameRect(frame, along, [toY(column.top), toY(column.bottom)]);
 }
 
 /**

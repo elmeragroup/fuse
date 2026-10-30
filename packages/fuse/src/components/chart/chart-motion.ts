@@ -37,22 +37,51 @@ export const SAME_PLOT: PlotScale = { x: 1, y: 1 };
  * and otherwise snaps, as a resize or a re-render does, so a box that resizes during an update never
  * cuts the update short. It carries the resize's scale, which maps every running tween into the new
  * box, so each mark keeps its place on the axes. "enter" tweens from a start of its own after a
- * delay, as the entrance wipe does. "join" takes the running tween of the mark at an anchor, as a
- * follower stepping onto a bar mid-update does, so it draws that bar's numbers in every frame, and
- * snaps when that bar rests.
+ * delay, as the entrance wipe does. "join" draws the follower from the marks at its leads' anchors,
+ * as a follower stepping onto a bar mid-update does: in every frame the loop moves those marks
+ * first, each on its own clock and delay, then writes the follower from what they drew, one lead's
+ * numbers after another's, and when they all rest it rests. A join whose leads say how to
+ * read their marks' rest rests where those marks rest, under reduced motion too, so a follower
+ * lands on its bars inside a BarGroup's sub-band and never on a target it worked out apart from
+ * them.
  */
 export type Placement =
   | { readonly kind: "snap" }
-  | { readonly kind: "move" }
-  | { readonly kind: "settle"; readonly scale: PlotScale }
   | {
-      readonly kind: "join";
+      readonly kind: "move";
+      /**
+       * A path's own route to its resting target, when the two lists differ in length, as a line
+       * that slides in a reading and slides the first one out does. The tween walks `from` to `to`,
+       * one number per entry, and its last frame draws the resting target the mark placed.
+       */
+      readonly via?: { readonly from: MarkValues; readonly to: MarkValues };
+    }
+  | { readonly kind: "settle"; readonly scale: PlotScale }
+  | { readonly kind: "join"; readonly leads: readonly JoinLead[] }
+  | { readonly kind: "enter"; readonly from: MarkValues; readonly delay: number };
+
+/**
+ * One mark a follower joins. A lead either reads the follower's numbers from that mark's, or lends
+ * only its clock: the follower's own numbers for it then move from what the follower drew to its
+ * target on that mark's progress, as a mark on a slot that a decimated column stands for does.
+ */
+export type JoinLead =
+  | {
       /** The anchor the joined mark placed itself under. */
       readonly anchor: string;
       /** The follower's numbers from the joined mark's. */
       readonly pick: (values: MarkValues) => MarkValues;
+      /**
+       * The follower's resting numbers from the joined mark's resting ones, which it rests on in
+       * place of its own target. Without it the follower rests on its own target for this lead.
+       */
+      readonly rest?: (values: MarkValues) => MarkValues;
     }
-  | { readonly kind: "enter"; readonly from: MarkValues; readonly delay: number };
+  | {
+      readonly anchor: string;
+      /** How many of the follower's own numbers move on the mark's clock. */
+      readonly clock: number;
+    };
 
 /** What the loop needs from its host, so a test can drive it frame by frame. */
 export type MotionHost = {
@@ -77,10 +106,17 @@ export type ChartMotion = {
   ) => void;
   /** Forget a mark that left the plot. */
   readonly forget: (id: string) => void;
+  /**
+   * The numbers a mark drew last, or null for a mark the loop does not hold, so a path can align
+   * its old vertices with its new ones by slot.
+   */
+  readonly drawn: (id: string) => MarkValues | null;
   /** Draw every moving mark at its target at once, as a range step does. */
   readonly finish: () => void;
   /** Follow the reader's motion preference. Reduced motion snaps every placement. */
   readonly setReduced: (reduced: boolean) => void;
+  /** Whether the reader asked for reduced motion, which also skips a path's crossfade. */
+  readonly reduced: () => boolean;
   /** How many marks the loop holds, which falls back as marks unmount. */
   readonly size: () => number;
   /** Whether any mark still tweens, so the baseline and every other coordinate may be moving. */
@@ -90,6 +126,8 @@ export type ChartMotion = {
 type Tween = {
   readonly from: MarkValues;
   readonly to: MarkValues;
+  /** Where the mark rests once the tween ends, when its route draws more numbers than that. */
+  readonly rest?: MarkValues;
   readonly start: number;
   readonly delay: number;
 };
@@ -104,6 +142,21 @@ type Mark = {
   write: MarkWriter;
   tween: Tween | null;
   axes: readonly ValueAxis[];
+  /** The marks a joined follower draws from while any of them moves, and where it then rests. */
+  joined?: Joined | null;
+};
+
+/**
+ * A joined follower's leads, each with the id of the mark at its anchor, and for a lead that lends
+ * its clock the follower's own numbers from and to, then the follower's rest.
+ */
+type Joined = {
+  readonly leads: readonly {
+    readonly lead: JoinLead;
+    readonly id: string;
+    readonly own: { readonly from: MarkValues; readonly to: MarkValues };
+  }[];
+  readonly resting: MarkValues;
 };
 
 const ease = cubicBezier(CHART_UPDATE_CURVE);
@@ -116,11 +169,12 @@ function same(a: MarkValues, b: MarkValues): boolean {
 /**
  * Map a mark's numbers into a resized box. Every number is a pixel from the plot's left or top edge
  * or a size, and the scales map pixels from an edge affinely, so a tween mapped this way draws in
- * every frame what the old tween drew, mapped: interpolation commutes with an affine map.
+ * every frame what the old tween drew, mapped: interpolation commutes with an affine map. A mark
+ * with more numbers than axes repeats its declaration, as a path declares one vertex's axes for all.
  */
 function rescaled(values: MarkValues, axes: readonly ValueAxis[], scale: PlotScale): MarkValues {
   return values.map((value, index) => {
-    const axis = axes[index] ?? "size";
+    const axis = axes.length === 0 ? "size" : (axes[index % axes.length] ?? "size");
     return axis === "size" ? value : value * scale[axis];
   });
 }
@@ -180,6 +234,39 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
     return commitTime;
   };
 
+  /**
+   * Write a joined follower from what its leads drew, a resting lead's rest where it reads one, and
+   * its own rest once no lead moves or a lead left.
+   */
+  const project = (mark: Mark): void => {
+    const { joined } = mark;
+    if (joined === null || joined === undefined) return;
+    const sources = joined.leads.map(({ lead, id, own }) => ({ lead, own, source: marks.get(id) }));
+    const moving = sources.some(({ source }) => source?.tween !== null && source?.tween !== undefined);
+    if (!moving || sources.some(({ source }) => source === undefined)) {
+      mark.joined = null;
+      mark.drawn = joined.resting;
+    } else {
+      mark.drawn = sources.flatMap(({ lead, own, source }) => {
+        const drawn = source?.drawn ?? [];
+        if ("clock" in lead) {
+          const eased = source?.tween === null ? 1 : (source?.eased ?? 1);
+          return own.to.map((to, index) => {
+            const from = own.from[index] ?? to;
+            return from + (to - from) * eased;
+          });
+        }
+        return source?.tween === null && lead.rest !== undefined ? lead.rest(drawn) : lead.pick(drawn);
+      });
+    }
+    mark.write(mark.drawn);
+  };
+
+  /** Write every joined follower after the marks it follows moved. */
+  const projectAll = (): void => {
+    for (const mark of marks.values()) if (mark.joined) project(mark);
+  };
+
   const step = (time: number): void => {
     handle = null;
     commitTime = null;
@@ -192,7 +279,7 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
       // The last frame writes the target itself, so the DOM ends on the numbers React rendered.
       mark.drawn =
         progress >= 1
-          ? tween.to
+          ? (tween.rest ?? tween.to)
           : tween.to.map((to, index) => {
               const from = tween.from[index] ?? to;
               return from + (to - from) * mark.eased;
@@ -201,6 +288,7 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
       if (progress < 1) running = true;
       else mark.tween = null;
     }
+    projectAll();
     if (running) handle = host.requestFrame(step);
   };
 
@@ -222,26 +310,51 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
   return {
     place(id, target, write, placement, axes = [], anchor) {
       if (anchor !== undefined) anchors.set(anchor, id);
-      if (reduced || placement.kind === "snap") {
-        snap(id, target, write, axes);
-        return;
-      }
       if (placement.kind === "join") {
-        // A follower joins the running tween of the mark at its anchor, on that mark's clock, from
-        // and to that mark's numbers, so the two draw alike in every frame. A resting mark, or none,
-        // leaves the follower to snap.
-        const leadId = anchors.get(placement.anchor);
-        const lead = leadId === undefined ? undefined : marks.get(leadId);
-        const tween = lead?.tween ?? null;
-        if (lead === undefined || tween === null) {
+        // A follower draws from the marks at its anchors in every frame, each on its own clock, so
+        // they draw alike. Its rest is theirs where its leads read it, which reduced motion keeps,
+        // as it changes only the timing. A lead that never placed leaves it on its own target.
+        const leads = placement.leads.map((lead) => {
+          const leadId = anchors.get(lead.anchor) ?? "";
+          return { lead, id: leadId, mark: marks.get(leadId) };
+        });
+        const found = leads.flatMap(({ lead, id, mark }) => (mark === undefined ? [] : [{ lead, id, mark }]));
+        if (found.length < leads.length) {
           snap(id, target, write, axes);
           return;
         }
-        const drawn = placement.pick(lead.drawn);
-        const joined = { ...tween, from: placement.pick(tween.from), to: target };
-        marks.set(id, { drawn, eased: lead.eased, write, tween: joined, axes });
-        write(drawn);
-        handle ??= host.requestFrame(step);
+        // Each lead stands for a run of the follower's numbers, in order: what its pick reads, or
+        // the count of the follower's own numbers it moves.
+        const previous = marks.get(id)?.drawn ?? null;
+        let offset = 0;
+        const parts = found.map(({ lead, id: leadId, mark }) => {
+          const size = "clock" in lead ? lead.clock : lead.pick(mark.drawn).length;
+          const to = target.slice(offset, offset + size);
+          const from = previous?.length === target.length ? previous.slice(offset, offset + size) : to;
+          offset += size;
+          const source = mark.tween === null ? mark.drawn : (mark.tween.rest ?? mark.tween.to);
+          const rest = "clock" in lead ? to : (lead.rest?.(source) ?? to);
+          return { lead, id: leadId, own: { from, to }, rest };
+        });
+        const resting = parts.flatMap(({ rest }) => rest);
+        if (reduced || found.every(({ mark }) => mark.tween === null)) {
+          snap(id, resting, write, axes);
+          return;
+        }
+        const follower: Mark = {
+          drawn: resting,
+          eased: 0,
+          write,
+          tween: null,
+          axes,
+          joined: { leads: parts.map(({ lead, id: leadId, own }) => ({ lead, id: leadId, own })), resting },
+        };
+        marks.set(id, follower);
+        project(follower);
+        return;
+      }
+      if (reduced || placement.kind === "snap") {
+        snap(id, target, write, axes);
         return;
       }
       if (placement.kind === "settle" && (placement.scale.x !== 1 || placement.scale.y !== 1)) {
@@ -256,14 +369,16 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
             if (running.tween === null) continue;
             const { axes: kinds, tween } = running;
             const { scale } = placement;
-            running.tween = {
-              ...tween,
-              from: rescaled(tween.from, kinds, scale),
-              to: rescaled(tween.to, kinds, scale),
-            };
+            const from = rescaled(tween.from, kinds, scale);
+            const to = rescaled(tween.to, kinds, scale);
+            running.tween =
+              tween.rest === undefined
+                ? { ...tween, from, to }
+                : { ...tween, from, to, rest: rescaled(tween.rest, kinds, scale) };
             running.drawn = rescaled(running.drawn, kinds, scale);
             running.write(running.drawn);
           }
+          projectAll();
         }
       }
       if (placement.kind === "move") {
@@ -274,13 +389,37 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
           restartedAt = start;
           for (const mark of marks.values()) {
             if (mark.tween === null) continue;
-            mark.tween = { from: mark.drawn, to: mark.tween.to, start, delay: 0 };
+            mark.tween = { ...mark.tween, from: mark.drawn, start, delay: 0 };
             mark.eased = 0;
           }
         }
       }
       const mark = marks.get(id);
       const tween = mark?.tween ?? null;
+      if (placement.kind === "move" && placement.via !== undefined) {
+        // A path's route starts from what it drew, entry by entry, which its caller aligned.
+        const { from, to } = placement.via;
+        if (from.length !== to.length || same(from, to)) {
+          snap(id, target, write, axes);
+          return;
+        }
+        run(id, write, { from, to, rest: target, start: startTime(), delay: 0 }, axes);
+        return;
+      }
+      if (placement.kind === "settle" && mark !== undefined && tween?.rest !== undefined) {
+        // A route that draws more numbers than its rest runs on while a commit asks for the same
+        // rest, mapped into a resized box with the group, and any other target snaps it there.
+        const { rest } = tween;
+        const kept =
+          rest.length === target.length && target.every((to, index) => close(to, rest[index] ?? 0));
+        if (kept) {
+          mark.write = write;
+          write(mark.drawn);
+          return;
+        }
+        snap(id, target, write, axes);
+        return;
+      }
       if (mark !== undefined && tween !== null && same(tween.to, target)) {
         // The mark already heads for this target, so the tween runs on. A re-render or a new node
         // may have drawn the target meanwhile, so the mark redraws where the tween has it.
@@ -325,14 +464,16 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
         handle = null;
       }
     },
+    drawn: (id) => marks.get(id)?.drawn ?? null,
     finish() {
       for (const mark of marks.values()) {
         if (mark.tween === null) continue;
-        mark.drawn = mark.tween.to;
+        mark.drawn = mark.tween.rest ?? mark.tween.to;
         mark.eased = 1;
         mark.tween = null;
         mark.write(mark.drawn);
       }
+      projectAll();
       if (handle !== null) host.cancelFrame(handle);
       handle = null;
     },
@@ -340,6 +481,7 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
       reduced = value;
       if (value) this.finish();
     },
+    reduced: () => reduced,
     size: () => marks.size,
     running: () => [...marks.values()].some((mark) => mark.tween !== null),
   };

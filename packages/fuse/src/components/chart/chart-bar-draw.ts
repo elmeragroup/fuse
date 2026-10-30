@@ -14,21 +14,13 @@ import { placementOf } from "./chart-motion-mark";
 import type { Commit } from "./chart-motion-mark";
 import { valuePaint } from "./chart-paint";
 import type { ChartColor } from "./chart-types";
-import {
-  barCells,
-  barGeometry,
-  barRect,
-  columnRect,
-  geometryRect,
-  introStep,
-  pathColumns,
-} from "./layout/bar-geometry";
-import type { BarCell, BarGeometry, PathColumn } from "./layout/bar-geometry";
+import { barCells, barGeometry, barRect, geometryRect, introStep } from "./layout/bar-geometry";
+import type { BarCell, BarGeometry } from "./layout/bar-geometry";
 import type { BarVariant } from "./layout/bar-shapes";
 import type { SeriesModel } from "./layout/cartesian-model";
 import type { ColorBins } from "./layout/color-bins";
 import { CHART_STAGGER_MS } from "./layout/motion";
-import { slotBand, snapAcross, snapSpan, snapX, snapY, tickWidth, valueAt } from "./layout/plot-frame";
+import { snapAcross, snapSpan, snapX, tickWidth, valueAt } from "./layout/plot-frame";
 import type { BarMetrics, PlotFrame, PlotRect, SubBand } from "./layout/plot-frame";
 import { slotTime } from "./layout/readings";
 
@@ -348,97 +340,23 @@ export function layoutBars(input: BarsInput): BarsLayout {
   return { bars, needs: fills.needs, missing };
 }
 
-/** What one series draws in the path form. */
-export type PathsLayout = {
-  /** The measured and estimated-free columns, one list of rectangles per colour step, by paint. */
-  readonly steps: ReadonlyMap<string, readonly PlotRect[]>;
-  readonly estimated: readonly PlotRect[];
-  readonly projected: readonly PlotRect[];
-  /** The missing ticks as one path's data. */
-  readonly missing: string;
-  /** Where the past span ends, or null when the series does not dim the past. */
-  readonly pastEnd: number | null;
-  /** The snapped zero line, where the entrance grows from and the list gradient ends. */
-  readonly zero: number;
-};
-
-/** How many of the window's slots ended before Root's `now`, which `data-fade="past"` dims. */
-function pastSlots(
-  context: ChartRootContextValue,
-  window: { readonly first: number; readonly last: number }
-): number {
-  const { domain } = context.model;
-  if (domain.kind !== "time" || context.now === undefined) return 0;
+/**
+ * Where the past span of a path-form series ends: the end of the window's last slot that ended
+ * before Root's `now`, snapped, which `data-fade="past"` dims up to.
+ *
+ * @param context - Root's context.
+ * @param frame - The frame the series draws in.
+ * @returns The end along the slot axis, or null when the chart does not dim the past.
+ */
+export function pastSpanEnd(context: ChartRootContextValue, frame: PlotFrame): number | null {
+  const { model } = context;
+  const { domain } = model;
+  const window = model.window ?? { first: 0, last: -1 };
+  if (context.fade !== "past" || context.now === undefined || domain.kind !== "time") return null;
   let past = 0;
   for (let slot = window.first; slot <= window.last; slot += 1) {
     if (slotTime(domain.starts[slot] ?? 0, domain.ends[slot] ?? 0, context.now) === "past") past += 1;
   }
-  return past;
-}
-
-/**
- * Lay out one series in the path form, which draws vertical charts only: one path per colour step,
- * then the projected span, the estimated outlines and the missing ticks.
- *
- * @param context - Root's context.
- * @param series - The series.
- * @param frame - The frame it draws in.
- * @param sub - The Bar's sub-band.
- * @param paint - The series' paint.
- * @returns The shapes to draw.
- */
-export function layoutPaths(
-  context: ChartRootContextValue,
-  series: SeriesModel,
-  frame: PlotFrame,
-  sub: SubBand,
-  paint: SeriesPaint
-): PathsLayout {
-  const { model } = context;
-  const { box } = frame;
-  const window = model.window ?? { first: 0, last: -1 };
-  const count = window.last - window.first + 1;
-  const reading = (column: PathColumn) => series.readings[column.slot];
-  const isEstimated = (column: PathColumn): boolean => {
-    const value = reading(column);
-    return value?.kind === "reading" && value.quality === "estimated";
-  };
-  const isProjected = (column: PathColumn): boolean => column.slot >= series.projectedFrom;
-  const columns = pathColumns(model, series, frame.value.domain, sub);
-  // Estimated and projected columns draw in their own paths, so the fills leave them out.
-  const steps = new Map<string, PlotRect[]>();
-  for (const column of columns) {
-    if (isEstimated(column) || isProjected(column)) continue;
-    const value = reading(column);
-    const fill =
-      value?.kind === "reading" ? (valuePaint(paint.key, paint.color, paint.bins, value.value) ?? "") : "";
-    steps.set(fill, [...(steps.get(fill) ?? []), columnRect(frame, column)]);
-  }
-  const step = box.width / Math.max(count, 1);
-  // The model reads no missing marker for an empty chart, as section 8.13 says.
-  const tick = missingTickAt(frame);
-  let missing = "";
-  for (let slot = window.first; slot <= window.last && !model.empty; slot += 1) {
-    if (series.readings[slot]?.kind !== "missing") continue;
-    const position = slot - window.first;
-    // A tick keeps a pixel among its band's, as a bar does.
-    const [from, to] = snapSpan(
-      frame,
-      (position + 0.25) * step,
-      (position + 0.75) * step,
-      slotBand(frame, position)
-    );
-    missing += `M${String(from)} ${String(tick)}H${String(to)}`;
-  }
-  const fadePast = context.fade === "past" && context.now !== undefined && model.domain.kind === "time";
-  return {
-    steps,
-    estimated: columns.filter(isEstimated).map((column) => columnRect(frame, column)),
-    projected: columns
-      .filter((column) => isProjected(column) && !isEstimated(column))
-      .map((column) => columnRect(frame, column)),
-    missing,
-    pastEnd: fadePast ? snapX(box, pastSlots(context, window) * step) : null,
-    zero: snapY(box, valueAt(frame, 0)),
-  };
+  const step = frame.box.width / Math.max(window.last - window.first + 1, 1);
+  return snapX(frame.box, past * step);
 }

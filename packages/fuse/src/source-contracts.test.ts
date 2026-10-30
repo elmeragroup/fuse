@@ -516,13 +516,15 @@ describe("chart plot marks", () => {
   // Why not a lint rule: the floor oracle is a browser test, which cannot read the source, and lint
   // cannot compare the SVG a module renders with the marks a test walks. This reads every chart
   // part's JSX and holds the oracle's list to it. Chart.Background is left out: it paints a pattern
-  // behind the plot and draws no reading.
+  // behind the plot and draws no reading. Sparkline is left out too: it draws in a stretched
+  // viewBox outside any plot, with no pixel grid to hold its marks to.
   const parts = [...SOURCE_TREE.values()].filter(
     (record) =>
       record.relative.startsWith("components/chart/") &&
       record.relative.endsWith(".tsx") &&
       !record.relative.includes(".test.") &&
-      record.relative !== "components/chart/chart-background.tsx"
+      record.relative !== "components/chart/chart-background.tsx" &&
+      record.relative !== "components/chart/sparkline.tsx"
   );
   const marks = parts.flatMap((record) =>
     svgMarks(record.relative, record.source)

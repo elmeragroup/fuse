@@ -67,6 +67,15 @@ const CONTRACT_ROLES = {
   "chart-bar-emphasis": "fixed",
   "chart-bar-group": "fixed",
   "chart-glow": "fixed",
+  "chart-line-series": "fixed",
+  "chart-line": "fixed",
+  "chart-area-series": "fixed",
+  "chart-area": "fixed",
+  "chart-dots": "fixed",
+  "chart-dot": "fixed",
+  "chart-active-dot": "fixed",
+  "chart-marker": "fixed",
+  "chart-reveal": "fixed",
   "chart-background": "fixed",
   "chart-skeleton": "fixed",
   "chart-skeleton-mark": "fixed",
@@ -77,13 +86,16 @@ const CONTRACT_ROLES = {
   "chart-table-toggle": "control",
   "chart-empty": "layout",
   sparkline: "fixed",
+  "sparkline-path": "fixed",
+  "sparkline-dot": "fixed",
+  "sparkline-reference": "fixed",
 } as const;
 
 describe("chart density roles", () => {
   it("declares every written chart slot with its section 10 role", () => {
     const declared = Object.fromEntries(
-      Object.entries(PART_DENSITY).filter(
-        ([slot]) => slot === "sparkline" || /^(chart|pie-chart|radial-chart|radar-chart)(-|$)/u.test(slot)
+      Object.entries(PART_DENSITY).filter(([slot]) =>
+        /^(sparkline|chart|pie-chart|radial-chart|radar-chart)(-|$)/u.test(slot)
       )
     );
     expect(declared).toEqual(CONTRACT_ROLES);

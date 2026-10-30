@@ -8,6 +8,7 @@
 import { memo, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement } from "react";
 
+import { columnOverlay } from "./chart-bar-columns";
 import {
   barAnchor,
   barAxes,
@@ -21,9 +22,10 @@ import type { BarDraw, BarLook, SeriesPaint, SideFills } from "./chart-bar-draw"
 import { BarFills, ListFills } from "./chart-bar-fills";
 import type { ChartRootContextValue, ChartUpdate, CommitKind } from "./chart-context";
 import { useChartFollower } from "./chart-followers";
-import type { ChartMotion, MarkValues } from "./chart-motion";
+import type { ChartMotion, JoinLead, MarkValues } from "./chart-motion";
 import { placementOf, useCommitMotion, useFollowerPlacement, useMotionMark } from "./chart-motion-mark";
 import { valuePaint } from "./chart-paint";
+import { pathAnchor } from "./chart-paths";
 import type { ChartPlot } from "./chart-plot";
 import type { MountPhase } from "./chart-store";
 import { barCellAt, barGeometry, geometryOf, geometryRect, hangs, rectsPath } from "./layout/bar-geometry";
@@ -334,6 +336,35 @@ export function SeriesBars({
 }
 
 /**
+ * How the active overlay joins the mark that draws its slot: the bar at the series and slot in the
+ * element form, and the series' columns in the path form, whose route the paths record keeps.
+ */
+function overlayJoin(
+  context: ChartRootContextValue,
+  series: SeriesModel,
+  slot: number,
+  target: readonly number[],
+  form: "bars" | "path"
+): { readonly leads: readonly JoinLead[] } | undefined {
+  if (form === "bars") {
+    const pick = (values: MarkValues) => values.map((value, index) => (index === 4 ? 0 : value));
+    return { leads: [{ anchor: barAnchor(series.seriesIndex, slot), pick }] };
+  }
+  const route = context.paths.get(series.seriesIndex, "columns");
+  const index = route?.keys.indexOf(context.update.keys[slot] ?? "") ?? -1;
+  if (route === undefined || index === -1) return undefined;
+  // The column's owner projects the overlay from the route's numbers, so it slides with the column.
+  return {
+    leads: [
+      {
+        anchor: pathAnchor(series.seriesIndex, "columns"),
+        pick: (values: MarkValues) => columnOverlay(values, index, target[5] ?? 1),
+      },
+    ],
+  };
+}
+
+/**
  * The series' bar over the active slot, drawn over the dimmed bars at full strength. Root paints
  * it at pointer rate, so a pointer move renders nothing in React.
  */
@@ -363,19 +394,16 @@ export function ActiveBar({
   } = useMotionMark(motion, drawOverlay, overlayLook, barAxes(frame.orientation));
   const placeFor = useFollowerPlacement(context.update, plot, frame.orientation);
   useChartFollower("Chart.Bar", (active, cause) => {
-    // The overlay takes its series' placement: a path-form series draws new data at once, and a
-    // step onto a bar mid-update joins that bar's tween, its whole geometry with no seam.
-    const anchor = active === null ? undefined : barAnchor(series.seriesIndex, active.slot);
+    // The overlay joins what draws its slot in every paint: in the element form the bar, its whole
+    // geometry with no seam, and in the path form the column, whose base and tip it takes.
+    const cell = active === null ? null : barCellAt(model, series, active.slot);
+    const target = cell === null ? null : barGeometry(frame, cell, metrics, sub, "whole");
     const placement = placeFor(
       cause,
-      form,
-      anchor === undefined
-        ? undefined
-        : { anchor, pick: (values) => values.map((value, index) => (index === 4 ? 0 : value)) }
+      active === null || target === null ? undefined : overlayJoin(context, series, active.slot, target, form)
     );
     const rect = node();
     if (rect === null) return;
-    const cell = active === null ? null : barCellAt(model, series, active.slot);
     if (cell === null) {
       rect.setAttribute("visibility", "hidden");
       return;
@@ -395,7 +423,7 @@ export function ActiveBar({
     toggle("data-quality", quality !== null, quality ?? "");
     fills.current = overlayFills(prefix, form, variant, paint, { own, projected });
     rect.style.setProperty("--chart-bar-paint", own ?? null);
-    place(barGeometry(frame, cell, metrics, sub, "whole"), placement);
+    if (target !== null) place(target, placement);
   });
   return (
     <rect ref={activeRef} data-slot="chart-bar-active" data-series={series.seriesIndex} visibility="hidden" />

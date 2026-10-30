@@ -38,15 +38,15 @@ export function formatChartValue(
  * Monday. `format` picks a preset or Intl date options. The default is the interval's label
  * preset, such as `hour-range` for an hour and `date` for a day. When Intl options hold both date
  * and time fields, Fuse joins the two halves itself with the CLDR 48 pattern for English,
- * Norwegian Bokmål, Swedish or Finnish, so every engine prints the same label. The `time-seconds`
- * preset of a `second` interval has no recipe yet and throws a `RangeError`.
+ * Norwegian Bokmål, Swedish or Finnish, so every engine prints the same label. A `second` slot's
+ * `time-seconds` label prints `13:42:04` in nb-NO and `13.42.04` in fi-FI.
  *
  * @param at - Any instant inside the slot.
  * @param interval - The slot length.
  * @param options - The locale, the IANA zone of the data's market and an optional format.
  * @returns The visual and spoken label, with canonical spaces.
  * @throws A `RangeError` when `timeZone` is not an IANA zone, a range preset meets a day or longer
- * interval, or the format is `time-seconds`. Each is a configuration defect.
+ * interval. Each is a configuration defect.
  * @beta
  */
 export function formatChartSlot(

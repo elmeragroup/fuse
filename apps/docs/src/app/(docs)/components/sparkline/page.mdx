@@ -4,6 +4,8 @@ lede: >
 ---
 
 import { SparklineHourlyPrice } from "./demos/sparkline-hourly-price";
+import { SparklineTable } from "./demos/sparkline-table";
+import { SparklineVariants } from "./demos/sparkline-variants";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -13,12 +15,20 @@ export const metadata = componentMetadata("sparkline");
 
 <Prose>
 
-The chart entry is a preview. Its parts render no marks yet, and names and props can change until Fuse's first stable release. `Sparkline` calls no hook, so a server component renders it, and it takes no tab stop.
+The chart entry is a preview. Its names and props can change until Fuse's first stable release. `Sparkline` calls no hook, so a server component renders it with no client JavaScript. A Sparkline is an image with no keyboard stop: its name is the `aria-label` followed by a sentence that names the lowest and highest values, and with `start`, `interval` and `timeZone` their slots.
 
 </Prose>
 
 <Demo slug="sparkline" id="hourly-price" title="Hourly price" file="sparkline-hourly-price.tsx">
   <SparklineHourlyPrice />
+</Demo>
+
+<Demo slug="sparkline" id="variants" title="Variants" file="sparkline-variants.tsx">
+  <SparklineVariants />
+</Demo>
+
+<Demo slug="sparkline" id="table" title="In a table" file="sparkline-table.tsx">
+  <SparklineTable />
 </Demo>
 
 <ApiReference slug="sparkline" />

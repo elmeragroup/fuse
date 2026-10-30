@@ -5,15 +5,18 @@
  * estimated outlines, the missing ticks and the emphasised overlays. The series grows from the zero
  * line in Root's entrance as one transform, which holds one registration with Root's loop.
  */
-import { useLayoutEffect, useMemo } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import type { ReactElement } from "react";
 
-import { layoutPaths } from "./chart-bar-draw";
+import { COLUMN_AXES, COLUMN_STRIDE, columnKind, columnsDrawing, layoutColumns } from "./chart-bar-columns";
+import type { ColumnTopology } from "./chart-bar-columns";
+import { pastSpanEnd } from "./chart-bar-draw";
 import { ListFills } from "./chart-bar-fills";
 import type { SeriesDraw } from "./chart-bar-series";
 import type { MarkValues } from "./chart-motion";
 import { placementOf, useCommitMotion, useMotionMark } from "./chart-motion-mark";
-import { barCellAt, barRect, rectsPath } from "./layout/bar-geometry";
+import { placePath, topologyAt } from "./chart-path-draw";
+import type { PathMemory } from "./chart-path-draw";
 import type { BarVariant } from "./layout/bar-shapes";
 import { snapY, tickWidth, valueAt } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
@@ -34,9 +37,45 @@ function drawGrow(node: SVGGElement, look: { readonly frame: PlotFrame }, values
     );
 }
 
+/** What the columns' writer reads besides the numbers: the frame and the topology. */
+type ColumnsLook = {
+  readonly frame: PlotFrame;
+  readonly topology: ColumnTopology;
+  /** The topology of the route a data update tweens, while it runs. */
+  readonly moving: { current: ColumnTopology | null };
+};
+
+/** Draw the columns, their quality paths, the missing ticks and the emphasis boxes from the loop's numbers. */
+function drawColumns(group: SVGGElement, look: ColumnsLook, values: MarkValues): void {
+  const topology = topologyAt(look.moving.current, look.topology, values.length / COLUMN_STRIDE);
+  const drawing = columnsDrawing(look.frame, topology, values);
+  for (const path of group.querySelectorAll('[data-slot="chart-bar-path"]')) {
+    const part = path.getAttribute("data-part");
+    const fill = Number(path.getAttribute("data-fill") ?? "-1");
+    const d =
+      part === "fill"
+        ? (drawing.fills[fill] ?? "")
+        : part === "estimated"
+          ? drawing.estimated
+          : part === "projected"
+            ? drawing.projected
+            : drawing.missing;
+    if (path.getAttribute("d") !== d) path.setAttribute("d", d);
+  }
+  let index = 0;
+  for (const rect of group.querySelectorAll('[data-slot="chart-bar-emphasis"]')) {
+    const box = drawing.emphasis[index];
+    if (box !== undefined) {
+      for (const [name, value] of Object.entries(box)) rect.setAttribute(name, String(value));
+    }
+    index += 1;
+  }
+}
+
 /**
  * One series as paths. The gradient look fades through one mask, and `data-fade="past"` dims the
- * past span through one more. The series snaps to new data until the path tween lands.
+ * past span through one more. On a data update the columns move through the modes of
+ * `layout/path-motion.ts`, as a line's vertices do.
  */
 export function SeriesPaths({
   context,
@@ -55,25 +94,70 @@ export function SeriesPaths({
   readonly variant: BarVariant;
   readonly emphasised: ReadonlySet<number>;
 }): ReactElement {
-  const { model, motion, update } = context;
+  const { motion, update, paths } = context;
   const { box } = frame;
-  const { steps, estimated, projected, missing, pastEnd, zero } = useMemo(
-    () => layoutPaths(context, series, frame, sub, paint),
-    [context, series, frame, sub, paint]
+  const pastEnd = useMemo(() => pastSpanEnd(context, frame), [context, frame]);
+  // The snapped zero line, where the entrance grows from and the list gradient ends.
+  const zero = snapY(box, valueAt(frame, 0));
+  const columns = useMemo(
+    () => layoutColumns(context, series, frame, metrics, sub, paint, emphasised),
+    [context, series, frame, metrics, sub, paint, emphasised]
   );
+  const { topology, fills } = columns;
   const listFill = paint.stops === undefined ? undefined : `url(#${prefix}-list)`;
   // The grow's scale is a size, which a resize leaves alone.
   const growLook = useMemo(() => ({ frame }), [frame]);
   const { ref: growRef, place: placeGrow } = useMotionMark(motion, drawGrow, growLook, ["size"]);
-  const commit = useCommitMotion(update, plot, frame.orientation);
+  const growCommit = useCommitMotion(update, plot, frame.orientation);
   const grows = entering && context.intro !== "none";
   useLayoutEffect(() => {
     // The whole series grows from the zero line, once. Every commit places the grow through the
-    // shared owner: a data update or a new layout ends it at full scale, as the paths draw new data
-    // at once, and a resize keeps its scale and redraws it about the paths' new zero line at once.
+    // shared owner: a data update or a new layout ends it at full scale, so the columns' own tween
+    // takes over, and a resize keeps its scale and redraws it about the columns' new zero line.
     const entrance = grows ? ({ kind: "enter", from: [0], delay: 0 } as const) : undefined;
-    placeGrow([1], placementOf(commit(), { entrance, form: "path" }));
+    const asked = growCommit();
+    placeGrow([1], asked.kind === "move" ? { kind: "snap" } : placementOf(asked, { entrance }));
   });
+  const moving = useRef<ColumnTopology | null>(null);
+  const look = useMemo((): ColumnsLook => ({ frame, topology, moving }), [frame, topology]);
+  const { ref: columnsRef, node, drawn, place } = useMotionMark(motion, drawColumns, look, COLUMN_AXES);
+  const commit = useCommitMotion(update, plot, frame.orientation);
+  const memoryRef = useRef<PathMemory<ColumnTopology> | null>(null);
+  const lastLookRef = useRef<ColumnsLook | null>(null);
+  const outgoingRef = useRef<SVGGElement>(null);
+  useLayoutEffect(() => {
+    placePath(commit(), {
+      mark: { ref: columnsRef, node, drawn, place },
+      motion,
+      paths,
+      seriesIndex: series.seriesIndex,
+      drawn: "columns",
+      kind: columnKind(box.width / frame.count, valueAt(frame, 0)),
+      look,
+      path: columns,
+      topology,
+      rest: columns.values,
+      memory: memoryRef,
+      lastLook: lastLookRef,
+      outgoing: outgoingRef.current,
+      draw: drawColumns,
+    });
+  });
+  useLayoutEffect(() => () => paths.delete(series.seriesIndex, "columns"), [paths, series.seriesIndex]);
+  const resting = useMemo(
+    () => columnsDrawing(frame, topology, columns.values),
+    [frame, topology, columns.values]
+  );
+  const setRefs = useCallback(
+    (element: SVGGElement | null) => {
+      growRef(element);
+      columnsRef(element);
+    },
+    [growRef, columnsRef]
+  );
+  const emphasisSlots = topology.entries.flatMap((entry, index) =>
+    entry.emphasis ? [columns.keys[index] ?? String(index)] : []
+  );
   return (
     <>
       <defs>
@@ -136,60 +220,59 @@ export function SeriesPaths({
         )}
       </defs>
       <g
-        ref={growRef}
+        ref={setRefs}
         data-slot="chart-bar-marks"
         mask={pastEnd === null ? undefined : `url(#${prefix}-past)`}>
+        {/* Every paint and quality path stays mounted, its data empty at rest when nothing draws in
+            it, so a route that still draws a leaving column in it finds it. */}
         <g mask={variant === "gradient" ? `url(#${prefix}-fade)` : undefined}>
-          {[...steps].map(([fill, rects]) => (
+          {fills.map((fill, index) => (
             <path
-              key={fill}
+              key={fill === "" ? "series" : fill}
               data-slot="chart-bar-path"
+              data-part="fill"
+              data-fill={index}
               data-series={series.seriesIndex}
-              d={rectsPath(rects)}
+              d={resting.fills[index] ?? ""}
               style={{
                 "--chart-bar-paint": fill === "" ? undefined : fill,
                 "--_fill": fill === "" ? listFill : undefined,
               }}
             />
           ))}
-          {projected.length > 0 ? (
-            <path
-              data-slot="chart-bar-path"
-              data-series={series.seriesIndex}
-              data-projected=""
-              d={rectsPath(projected)}
-            />
-          ) : null}
+          <path
+            data-slot="chart-bar-path"
+            data-part="projected"
+            data-series={series.seriesIndex}
+            data-projected=""
+            d={resting.projected}
+          />
         </g>
-        {estimated.length > 0 ? (
-          <path
-            data-slot="chart-bar-path"
+        <path
+          data-slot="chart-bar-path"
+          data-part="estimated"
+          data-series={series.seriesIndex}
+          data-quality="estimated"
+          d={resting.estimated}
+        />
+        <path
+          data-slot="chart-bar-path"
+          data-part="missing"
+          data-series={series.seriesIndex}
+          data-quality="missing"
+          style={{ "--_tick-width": `${String(tickWidth(box))}px` }}
+          d={resting.missing}
+        />
+        {emphasisSlots.map((key, index) => (
+          <rect
+            key={key}
+            data-slot="chart-bar-emphasis"
             data-series={series.seriesIndex}
-            data-quality="estimated"
-            d={rectsPath(estimated)}
+            {...resting.emphasis[index]}
           />
-        ) : null}
-        {missing === "" ? null : (
-          <path
-            data-slot="chart-bar-path"
-            data-series={series.seriesIndex}
-            data-quality="missing"
-            style={{ "--_tick-width": `${String(tickWidth(box))}px` }}
-            d={missing}
-          />
-        )}
-        {[...emphasised].map((slot) => {
-          const cell = barCellAt(model, series, slot);
-          return cell === null ? null : (
-            <rect
-              key={slot}
-              data-slot="chart-bar-emphasis"
-              data-series={series.seriesIndex}
-              {...barRect(frame, cell, metrics, sub, "whole")}
-            />
-          );
-        })}
+        ))}
       </g>
+      <g ref={outgoingRef} data-part="outgoing" />
     </>
   );
 }

@@ -12,7 +12,7 @@ import type { RefCallback } from "react";
 import type { ChartUpdate } from "./chart-context";
 import type { FollowerCause } from "./chart-followers";
 import { SAME_PLOT } from "./chart-motion";
-import type { ChartMotion, MarkValues, Placement, PlotScale, ValueAxis } from "./chart-motion";
+import type { ChartMotion, JoinLead, MarkValues, Placement, PlotScale, ValueAxis } from "./chart-motion";
 import type { ChartPlot } from "./chart-plot";
 
 /** A mark's numbers, one per declared axis, so the values a mark places match what it declares. */
@@ -39,6 +39,8 @@ export type MotionMark<T extends Element, A extends readonly ValueAxis[]> = {
   readonly ref: RefCallback<T>;
   /** The element on screen, for writes beyond the loop's geometry. */
   readonly node: () => T | null;
+  /** The numbers the loop drew last for this mark, or null before its first placement. */
+  readonly drawn: () => MarkValues | null;
   /** Draw the mark at a target through the loop, one number per declared axis. */
   readonly place: (target: MarkTuple<A>, placement: Placement, anchor?: string) => void;
 };
@@ -81,6 +83,7 @@ export function useMotionMark<
     node.current = element;
   }, []);
   const current = useCallback(() => node.current, []);
+  const drawn = useCallback(() => motion.drawn(id), [motion, id]);
   const place = useCallback(
     (target: MarkTuple<A>, placement: Placement, anchor?: string) => {
       motion.place(
@@ -96,7 +99,7 @@ export function useMotionMark<
     },
     [motion, id]
   );
-  return useMemo(() => ({ ref, node: current, place }), [ref, current, place]);
+  return useMemo(() => ({ ref, node: current, drawn, place }), [ref, current, drawn, place]);
 }
 
 /**
@@ -156,27 +159,27 @@ export function useCommitMotion(update: ChartUpdate, plot: ChartPlot | null, spa
   };
 }
 
-/** How a Bar draws its series: one element per bar, or one path per series, which snaps to new data. */
-export type SeriesForm = "bars" | "path";
-
 /**
  * The loop's placement for a commit, the one owner every mark asks. A first draw snaps unless the
- * mark brings an entrance of its own. A data update moves, except for a mark of, or attached to, a
- * series in the path form, whose paths draw new data at once, so its overlay and followers snap with
- * it. A settle carries the commit's scale, and a snap snaps.
+ * mark brings an entrance of its own. A data update moves, along a path's own route when it brings
+ * one. A settle carries the commit's scale, and a snap snaps.
  *
  * @param commit - What the commit asks of the mark, from `useCommitMotion`.
- * @param options - The entrance a mark's first draw runs instead of snapping, if any, and the form
- *   of the series the mark draws or follows, "bars" by default.
+ * @param options - The entrance a mark's first draw runs instead of snapping, if any, and a path's
+ *   route to its rest when a data update aligns its old and new vertices itself.
  * @returns The placement.
  */
 export function placementOf(
   commit: Commit,
-  options: { readonly entrance?: Placement; readonly form?: SeriesForm } = {}
+  options: {
+    readonly entrance?: Placement;
+    readonly via?: { readonly from: MarkValues; readonly to: MarkValues };
+  } = {}
 ): Placement {
   const { kind, scale } = commit;
   if (kind === "first") return options.entrance ?? { kind: "snap" };
-  if (kind === "move") return options.form === "path" ? { kind: "snap" } : { kind: "move" };
+  if (kind === "move")
+    return options.via === undefined ? { kind: "move" } : { kind: "move", via: options.via };
   if (kind === "settle") return { kind: "settle", scale };
   return { kind: "snap" };
 }
@@ -189,25 +192,20 @@ export function placementOf(
  * @param update - Root's current update.
  * @param plot - Root's current measurement.
  * @param space - The coordinate space the follower's numbers live in, as `useCommitMotion` reads it.
- * @returns The placement for a paint's cause and the form of the series the follower attaches to.
- *   A follower with a bar to join, its anchor and the follower's numbers from the bar's, joins that
- *   bar's tween in every paint, a step's or a commit's, or snaps where the bar rests, so it draws on
- *   its bar whatever it drew before, as when it steps onto a bar mid-update or shows again. The
- *   path form draws no bar to join, and its followers take the series' placement.
+ * @returns The placement for a paint's cause. A follower with a mark to join, its anchor and the
+ *   follower's numbers from that mark's, joins the mark's tween in every paint, a step's or a
+ *   commit's, or snaps where the mark rests, so it draws on its bar or its vertex whatever it drew
+ *   before, as when it steps onto a bar mid-update or shows again.
  */
 export function useFollowerPlacement(
   update: ChartUpdate,
   plot: ChartPlot | null,
   space: string
-): (
-  cause: FollowerCause,
-  form: SeriesForm,
-  join?: { readonly anchor: string; readonly pick: (values: MarkValues) => MarkValues }
-) => Placement {
+): (cause: FollowerCause, join?: { readonly leads: readonly JoinLead[] }) => Placement {
   const commit = useCommitMotion(update, plot, space);
-  return (cause, form, join) => {
+  return (cause, join) => {
     // The classifier sees every commit, whichever placement the follower takes.
-    const placement: Placement = cause === "step" ? { kind: "snap" } : placementOf(commit(), { form });
-    return join === undefined || form === "path" ? placement : { kind: "join", ...join };
+    const placement: Placement = cause === "step" ? { kind: "snap" } : placementOf(commit());
+    return join === undefined ? placement : { kind: "join", leads: join.leads };
   };
 }

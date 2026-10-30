@@ -4,7 +4,7 @@
  * pixel floor, so no look narrows a body to nothing. A tween recomputes them from each frame's
  * rectangle, so a cap, a face or a block track moves with its bar.
  */
-import { snapBody } from "./plot-frame";
+import { snapBody, snapSpan } from "./plot-frame";
 import type { PlotFrame, PlotRect } from "./plot-frame";
 
 /** The bar looks of CONTRACT section 6. */
@@ -166,7 +166,12 @@ function isometricFaces({ x, y, width, height }: PlotRect, depth: number) {
  * outward and each snapped through `snapBody`. Every segment counts from its own base, so a stacked
  * segment shows whole squares wherever it starts, at rest and in every tween frame.
  */
-function squares(frame: PlotFrame, column: PlotRect, atStart: boolean): PlotRect[] {
+function squares(
+  frame: PlotFrame,
+  column: PlotRect,
+  atStart: boolean,
+  within: readonly [number, number]
+): PlotRect[] {
   const { along, across } = axes(column, frame.orientation);
   const [from, length] = across;
   const count = Math.floor((length + BLOCK_GAP) / (BLOCK + BLOCK_GAP) + 1e-9);
@@ -174,7 +179,7 @@ function squares(frame: PlotFrame, column: PlotRect, atStart: boolean): PlotRect
   return Array.from({ length: count }, (_, index) => {
     const near = index * (BLOCK + BLOCK_GAP);
     const span: readonly [number, number] = atStart ? [base - near - BLOCK, BLOCK] : [base + near, BLOCK];
-    return snapBody(frame, join(along, span, frame.orientation));
+    return snapBody(frame, join(along, span, frame.orientation), within);
   });
 }
 
@@ -202,17 +207,25 @@ export function drawnBar(
   const { orientation, box } = frame;
   const length = orientation === "vertical" ? box.height : box.width;
   const rects = barParts(variant, rect, { orientation, negative }, length);
-  const body = snapBody(frame, rects.body);
+  // Every part keeps its pixels inside its bar's, so a look that narrows the bar, as the expandable
+  // strip does, never takes a device pixel past it, at any origin and pixel ratio.
+  const [start, size] = axes(rect, orientation).along;
+  const within = snapSpan(frame, start, start + size);
+  const body = snapBody(frame, rects.body, within);
   const parts: BarParts = {
     body,
-    cap: rects.cap === undefined ? undefined : snapBody(frame, rects.cap),
+    cap: rects.cap === undefined ? undefined : snapBody(frame, rects.cap, within),
   };
   if (variant === "isometric")
     return { ...parts, ...isometricFaces(body, Math.round(DEPTH * box.dpr) / box.dpr) };
   if (variant !== "blocks" || rects.track === undefined) return parts;
   const atStart = farAtStart({ orientation, negative });
-  const blocks = squares(frame, rects.body, atStart);
-  return { ...parts, blocks, track: bar.top > 0 ? squares(frame, rects.track, atStart) : undefined };
+  const blocks = squares(frame, rects.body, atStart, within);
+  return {
+    ...parts,
+    blocks,
+    track: bar.top > 0 ? squares(frame, rects.track, atStart, within) : undefined,
+  };
 }
 
 /** Every shape name beyond the body, in the order a bar draws them. */

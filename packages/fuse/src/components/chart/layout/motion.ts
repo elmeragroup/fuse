@@ -17,3 +17,6 @@ export const CHART_UPDATE_EASE = `cubic-bezier(${CHART_UPDATE_CURVE.join(", ")})
 
 /** The delay between two bars of the entrance wipe, in milliseconds. */
 export const CHART_STAGGER_MS = 16;
+
+/** How long a path crossfades into new data that shares no route with the old, in milliseconds. */
+export const CHART_CROSSFADE_MS = 150;

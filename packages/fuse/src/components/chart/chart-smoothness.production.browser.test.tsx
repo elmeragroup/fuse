@@ -1,6 +1,7 @@
 // The update smoothness judge, in Chromium with React's production build, the build a reader's
-// browser runs: a data update of 500 bars, 100 daily slots in 5 stacked series, logs no long task
-// over 50 ms through its commit and its 480 ms tween. The limit comes from motion-decision.md
+// browser runs: a data update of 500 bars, 100 daily slots in 5 stacked series, and one of a line
+// of 2,000 vertices, the most a window draws before it decimates, each log no long task over 50 ms
+// through its commit and its 480 ms tween. The limit comes from motion-decision.md
 // "Judges" and the SVG brief's excellence bar. Dropped frames depend on the machine's load, so the
 // long task is the judge.
 import { describe, expect, it } from "vitest";
@@ -82,6 +83,46 @@ describe("update smoothness", () => {
     observer.disconnect();
     expect(rewound).toBe(before);
     expect(height()).not.toBe(before);
+    expect(long.filter((duration) => duration > 50)).toEqual([]);
+  });
+
+  it("updates a line of 2,000 vertices with no long task over 50 ms", async () => {
+    const line = (phase: number) => (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 800 }}>
+          <Chart.Root
+            data={Array.from({ length: 2000 }, (_, index) => ({
+              name: `s${String(index)}`,
+              a: tooth(index, phase),
+            }))}
+            config={{ a: CONFIG.a }}
+            xKey="name"
+            xScale="point"
+            data-intro="none"
+            aria-label="2,000 readings">
+            <Chart.Line dataKey="a" curve="linear" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    const { host, rerender } = renderThemed(line(0));
+    for (let count = 0; count < 3; count += 1) await new Promise((resolve) => requestAnimationFrame(resolve));
+    const long: number[] = [];
+    const observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) long.push(entry.duration);
+    });
+    observer.observe({ entryTypes: ["longtask"] });
+    // DOM audit: the line is aria-hidden plot output.
+    const path = host.querySelector('[data-slot="chart-line"][data-part="solid"]');
+    const before = path?.getAttribute("d");
+    const start = performance.now();
+    rerender(line(3));
+    // The update tweens its vertices: the path paints its old data first, then reaches the new.
+    const rewound = path?.getAttribute("d");
+    while (performance.now() - start < 560) await new Promise((resolve) => requestAnimationFrame(resolve));
+    observer.disconnect();
+    expect(rewound).toBe(before);
+    expect(path?.getAttribute("d")).not.toBe(before);
     expect(long.filter((duration) => duration > 50)).toEqual([]);
   });
 });

@@ -8,7 +8,8 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { barRect, columnRect } from "./bar-geometry";
+import { columnsDrawing } from "../chart-bar-columns";
+import { barRect } from "./bar-geometry";
 import type { BarCell } from "./bar-geometry";
 import { barParts, drawnBar } from "./bar-shapes";
 import type { BarVariant } from "./bar-shapes";
@@ -347,16 +348,24 @@ describe("the pixel floor", () => {
         (config, start, width) => {
           const { length, across, dpr, left, top, count } = config;
           const frame = frameOf(length, across, { dpr, left, top, count });
-          // A column in slot units, somewhere in the window, a sliver of a slot or more wide.
-          const x0 = start * (count - width);
-          const rect = columnRect(frame, {
-            x0,
-            x1: x0 + width,
-            top: 10,
-            bottom: 100,
-            slot: 0,
-            position: null,
-          });
+          // A column somewhere in the window, a sliver of a slot or more wide, drawn as the path
+          // form's one owner draws an entry: its middle, tip, span and base, in CSS pixels.
+          const step = length / count;
+          const x0 = start * (count - width) * step;
+          const x1 = x0 + width * step;
+          const entry = {
+            fill: 0,
+            estimated: false,
+            projected: false,
+            missing: false,
+            emphasis: false,
+            leaving: false,
+          };
+          const numbers = [(x0 + x1) / 2, 0.1 * across, x0, x1, across, x0, x0, x0, x0];
+          const [d = ""] = columnsDrawing(frame, { count: 1, entries: [entry] }, numbers).fills;
+          const [, x = 0, y = 0, right = 0, bottom = 0] =
+            /M(-?[\d.]+) (-?[\d.]+)H(-?[\d.]+)V(-?[\d.]+)/u.exec(d)?.map(Number) ?? [];
+          const rect = { x, y, width: right - x, height: bottom - y };
           expect(rectOnGrid(rect, dpr)).toBe(true);
           expect(rect.width).toBeGreaterThanOrEqual(1 / dpr - 1e-9);
         }
@@ -389,5 +398,53 @@ describe("the pixel floor", () => {
         if (part !== undefined) expect(part.width, variant).toBe(0);
       }
     }
+  });
+});
+
+describe("the expandable strip's pixel (review round 1, B1-12 and Q1-7)", () => {
+  /** A vertical frame of `count` slots on a 100 px plot whose left edge lies at `left` page px. */
+  const frameAt = (dpr: number, left: number, count: number) =>
+    plotFrame({ width: 100, height: 100, dpr, left, top: 0 }, "vertical", count, [0, 1]);
+  /** The strip's span along the slot axis. */
+  const strip = (frame: PlotFrame, bar: PlotRect) => {
+    const { body } = drawnBar(frame, "expandable", bar, { negative: false, top: 1 });
+    return [body.x, body.x + body.width];
+  };
+
+  it("keeps the first of 88 bars' strip on that bar's one device pixel (Q1-7)", () => {
+    // DPR 1.5 and a plot 3 px from the page's left: the origin lands on device pixel 5, and the
+    // first bar spans 2/3 to 4/3 px, one device pixel. Its 12 % strip, 0.96 to 1.04 px, rounds to
+    // no width, so it keeps one device pixel, the bar's own.
+    const [start = 0, end = 0] = strip(frameAt(1.5, 3, 88), { x: 2 / 3, y: 10, width: 2 / 3, height: 50 });
+    expect(start).toBeCloseTo(2 / 3, 9);
+    expect(end).toBeCloseTo(4 / 3, 9);
+  });
+
+  it("keeps slot 3's second grouped bar's strip inside that bar of 31 slots (B1-12)", () => {
+    // 31 slots on 100 px at DPR 1.5 from a 3 px origin: the second bar in slot 3 spans 12 2/3 to
+    // 13 1/3 px, one device pixel, and its strip keeps that pixel, never 13 1/3 to 14 past it.
+    const [start = 0, end = 0] = strip(frameAt(1.5, 3, 31), { x: 38 / 3, y: 10, width: 2 / 3, height: 50 });
+    expect(start).toBeCloseTo(38 / 3, 9);
+    expect(end).toBeCloseTo(40 / 3, 9);
+  });
+
+  it("draws every strip inside its bar at any origin and pixel ratio", () => {
+    fc.assert(
+      fc.property(
+        fc.constantFrom(1, 1.25, 1.5, 2, 3),
+        fc.double({ min: 0, max: 10, noNaN: true }),
+        fc.integer({ min: 0, max: 100 }),
+        fc.integer({ min: 1, max: 6 }),
+        (dpr, left, offset, pixels) => {
+          const frame = frameAt(dpr, left, 31);
+          // A snapped bar: a whole number of device pixels from the origin, one to six wide.
+          const x = offset / dpr;
+          const [start = 0, end = 0] = strip(frame, { x, y: 10, width: pixels / dpr, height: 50 });
+          expect(start).toBeGreaterThanOrEqual(x - 1e-9);
+          expect(end).toBeLessThanOrEqual(x + pixels / dpr + 1e-9);
+          expect(end - start).toBeGreaterThan(0);
+        }
+      )
+    );
   });
 });

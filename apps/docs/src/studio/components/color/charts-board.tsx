@@ -2,10 +2,11 @@ import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
+import { Chart } from "@elmeragroup/fuse/chart";
+import type { ChartConfig } from "@elmeragroup/fuse/chart";
 import { Heading } from "@elmeragroup/fuse/heading";
 import { Text } from "@elmeragroup/fuse/text";
 
-import { chartTicks, niceCeiling, shareOf } from "../../lib/chart-layout";
 import { ROLE_TILES } from "../../lib/color-roles";
 import { PairTile } from "./pair-tile";
 
@@ -13,15 +14,6 @@ const chartsBoard = tv({
   slots: {
     root: "flex flex-col gap-6 p-8",
     figure: "m-0 flex flex-col gap-3",
-    plot: "relative flex h-44 items-end gap-3 border-b border-border pl-10",
-    // Layout only: carries its tick's height to the line and the label, outside the bar row.
-    tickRow: "contents",
-    gridline: "absolute inset-x-0 bottom-(--tick) ml-10 border-t border-dashed border-border",
-    tick: "text-xs absolute bottom-(--tick) left-0 w-8 translate-y-1/2 text-end font-mono text-muted-foreground tabular-nums",
-    column: "relative flex h-full min-w-0 flex-1 flex-col justify-end",
-    bar: "h-(--share) rounded-t-sm",
-    labels: "flex gap-3 pl-10",
-    label: "text-xs min-w-0 flex-1 text-center font-mono whitespace-nowrap text-muted-foreground",
     tiles: "grid grid-cols-5 gap-x-3 gap-y-5",
     scale: "flex flex-col gap-1.5",
     ramp: "flex h-8 overflow-hidden rounded-md",
@@ -33,16 +25,6 @@ const chartsBoard = tv({
     chip: "h-8 rounded-md",
   },
   variants: {
-    series: {
-      1: { bar: "bg-chart-1" },
-      2: { bar: "bg-chart-2" },
-      3: { bar: "bg-chart-3" },
-      4: { bar: "bg-chart-4" },
-      5: { bar: "bg-chart-5" },
-      6: { bar: "bg-chart-6" },
-      7: { bar: "bg-chart-7" },
-      8: { bar: "bg-chart-8" },
-    },
     // Each step of the ordinal scales, keyed by its token.
     fill: {
       "chart-seq-1": { step: "bg-chart-seq-1" },
@@ -70,21 +52,71 @@ const chartsBoard = tv({
 
 const styles = chartsBoard();
 
-type Series = keyof typeof chartsBoard.variants.series;
 type Fill = keyof typeof chartsBoard.variants.fill;
 type Role = keyof typeof chartsBoard.variants.role;
 
 /** One value per categorical slot, in kWh: a month's use per household, made up for the picture. */
-const SERIES: readonly { series: Series; value: number }[] = [
-  { series: 1, value: 84 },
-  { series: 2, value: 62 },
-  { series: 3, value: 71 },
-  { series: 4, value: 45 },
-  { series: 5, value: 93 },
-  { series: 6, value: 38 },
-  { series: 7, value: 56 },
-  { series: 8, value: 27 },
+const SLOTS = [84, 62, 71, 45, 93, 38, 56, 27] as const;
+
+/** The categorical roles in slot order. */
+const ROLES_IN_ORDER = [
+  "chart-1",
+  "chart-2",
+  "chart-3",
+  "chart-4",
+  "chart-5",
+  "chart-6",
+  "chart-7",
+  "chart-8",
+] as const;
+
+const KEYS = ROLES_IN_ORDER.map((role) => role.replace("-", ""));
+
+const kwh = { preset: "energy", unit: "kWh" } as const;
+
+const SLOT_CONFIG: ChartConfig = Object.fromEntries(
+  ROLES_IN_ORDER.map((role, index) => [KEYS[index] ?? role, { label: role, color: role, format: kwh }])
+);
+
+const SLOT_ROW = [
+  { month: "October", ...Object.fromEntries(KEYS.map((key, index) => [key, SLOTS[index] ?? 0])) },
 ];
+
+/** Four series over twelve months, made up for the picture, so the first four slots draw as lines. */
+const TRENDS = [
+  [42, 46, 51, 49, 55, 60, 58, 63, 61, 66, 70, 68],
+  [30, 33, 31, 36, 38, 35, 40, 43, 41, 45, 44, 48],
+  [55, 52, 50, 47, 49, 45, 43, 40, 42, 38, 36, 35],
+  [18, 22, 20, 25, 27, 26, 30, 29, 33, 31, 35, 37],
+] as const;
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+
+const LINE_KEYS = KEYS.slice(0, TRENDS.length);
+
+const LINE_CONFIG: ChartConfig = Object.fromEntries(
+  LINE_KEYS.map((key) => [key, SLOT_CONFIG[key] ?? { label: key, color: "chart-1" }])
+);
+
+const LINE_ROWS = MONTHS.map((month, index) => ({
+  month,
+  ...Object.fromEntries(LINE_KEYS.map((key, series) => [key, TRENDS[series]?.[index] ?? 0])),
+}));
+
+/** A price day that crosses zero, so the diverging scale shows both arms, and its own rise for the ramp. */
+const PRICE = [12, 8, 3, -2, -6, -9, -5, 1, 7, 14, 19, 16, 10, 4];
+
+const SCALE_ROWS = PRICE.map((price, index) => ({
+  hour: `${String(index).padStart(2, "0")}`,
+  price,
+  level: index * 7,
+}));
+
+const SEQ_CONFIG = { level: { label: "chart-seq", color: "chart-seq" } } as const satisfies ChartConfig;
+
+const DIVERGING_CONFIG = {
+  price: { label: "chart-diverging", color: "chart-diverging" },
+} as const satisfies ChartConfig;
 
 const STEPS = [1, 2, 3, 4, 5, 6, 7] as const;
 
@@ -114,14 +146,11 @@ const SCALES: readonly {
 
 const ROLES: readonly Role[] = ["chart-sentiment-positive", "chart-sentiment-negative", "chart-other"];
 
-const CEILING = niceCeiling(Math.max(...SERIES.map(({ value }) => value)));
-const TICKS = chartTicks(CEILING, 4);
-
 /**
- * The chart roles. `--chart-1` to `--chart-8` as a plain bar chart in slot order, the slots and
- * Other with the text a direct label on them takes, then the sequential ramp, the diverging
- * scale, and the sentiment pair beside Other. Plain elements colored by the chart utilities, no
- * chart library.
+ * The chart roles. `--chart-1` to `--chart-8` as Fuse bars side by side and the first four as
+ * lines, the slots and Other with the text a direct label on them takes, the sequential ramp and
+ * the diverging scale as swatches and as the areas that paint them, and the sentiment pair beside
+ * Other.
  */
 export function ChartsBoard(): ReactElement {
   return (
@@ -130,34 +159,36 @@ export function ChartsBoard(): ReactElement {
         <Heading level={2} size="lg">
           Categorical slots
         </Heading>
-        <div className={styles.plot()}>
-          {TICKS.map((tick) => (
-            <div
-              key={tick}
-              aria-hidden
-              className={styles.tickRow()}
-              style={{ "--tick": `${String(shareOf(tick, CEILING))}%` }}>
-              <span className={styles.gridline()} />
-              <span className={styles.tick()}>{tick}</span>
-            </div>
+        <Chart.Root
+          data={SLOT_ROW}
+          config={SLOT_CONFIG}
+          xKey="month"
+          data-intro="none"
+          aria-label="The eight categorical slots">
+          <Chart.Grid />
+          <Chart.YAxis />
+          <Chart.XAxis />
+          <Chart.BarGroup series={KEYS}>
+            {KEYS.map((key) => (
+              <Chart.Bar key={key} dataKey={key} />
+            ))}
+          </Chart.BarGroup>
+          <Chart.Legend />
+        </Chart.Root>
+        <Chart.Root
+          data={LINE_ROWS}
+          config={LINE_CONFIG}
+          xKey="month"
+          xScale="point"
+          data-intro="none"
+          aria-label="The first four slots as lines">
+          <Chart.Grid />
+          <Chart.YAxis />
+          <Chart.XAxis />
+          {LINE_KEYS.map((key) => (
+            <Chart.Line key={key} dataKey={key} />
           ))}
-          {SERIES.map(({ series, value }) => (
-            <div key={series} className={styles.column()}>
-              <div
-                role="img"
-                aria-label={`--chart-${String(series)}: ${String(value)} kWh`}
-                className={styles.bar({ series })}
-                style={{ "--share": `${String(shareOf(value, CEILING))}%` }}
-                data-series={series}
-              />
-            </div>
-          ))}
-        </div>
-        <div aria-hidden className={styles.labels()}>
-          {SERIES.map(({ series }) => (
-            <span key={series} className={styles.label()}>{`chart-${String(series)}`}</span>
-          ))}
-        </div>
+        </Chart.Root>
       </figure>
       <section className={styles.figure()} aria-label="Direct labels">
         <Heading level={2} size="lg">
@@ -188,6 +219,39 @@ export function ChartsBoard(): ReactElement {
           </div>
         </section>
       ))}
+      <figure className={styles.figure()}>
+        <Text variant="muted" size="sm">
+          The scales on a value: chart-seq rising, chart-diverging across zero
+        </Text>
+        <Chart.Root
+          data={SCALE_ROWS}
+          config={SEQ_CONFIG}
+          xKey="hour"
+          data-intro="none"
+          aria-label="chart-seq on a rising value">
+          <Chart.Area
+            dataKey="level"
+            variant="solid"
+            curve="step-after"
+            style={{ "--chart-area-opacity": 0.6 }}
+          />
+          <Chart.Line dataKey="level" curve="step-after" />
+        </Chart.Root>
+        <Chart.Root
+          data={SCALE_ROWS}
+          config={DIVERGING_CONFIG}
+          xKey="hour"
+          data-intro="none"
+          aria-label="chart-diverging across zero">
+          <Chart.Area
+            dataKey="price"
+            variant="solid"
+            curve="step-after"
+            style={{ "--chart-area-opacity": 0.6 }}
+          />
+          <Chart.Line dataKey="price" curve="step-after" />
+        </Chart.Root>
+      </figure>
       <section className={styles.scale()} aria-label="Sentiment and Other">
         <Text variant="muted" size="sm">
           Sentiment and Other

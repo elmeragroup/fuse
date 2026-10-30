@@ -11,6 +11,7 @@ import { S06Chart } from "../../../test/chart/bar-charts";
 import { MOTION_A, MOTION_B, MotionChart } from "../../../test/chart/motion-fixture";
 import frames from "../../../test/chart/motion-frames.json" with { type: "json" };
 import { renderThemed } from "../../../test/themed-browser-render";
+import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import "./chart.css";
 
@@ -81,5 +82,83 @@ describe("charts under reduced motion", () => {
     }
     // DOM audit: Root's figure holds every animation of the chart.
     expect(host.querySelector('[data-slot="chart"]')?.getAnimations({ subtree: true })).toEqual([]);
+  });
+
+  it("rests a Marker on its grouped bar, as with motion (B2-5, Q2-2)", () => {
+    // 300 px, one category, two grouped bars: the first spans 37.5 to 149 px, so its Marker and
+    // pill centre over that bar's middle near 93.25 px, never over the group at 150 px.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 300 }}>
+          <Chart.Root
+            data={[{ name: "x", a: 3, b: 4 }]}
+            config={{ a: { label: "A", color: "chart-1" }, b: { label: "B", color: "chart-2" } }}
+            xKey="name"
+            aria-label="To">
+            <Chart.BarGroup series={["a", "b"]}>
+              <Chart.Bar dataKey="a" />
+              <Chart.Bar dataKey="b" />
+            </Chart.BarGroup>
+            <Chart.Marker dataKey="a" at="first">
+              <Chart.ValueLabel />
+            </Chart.Marker>
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: the bar series layer covers the plot box, and the marker parts are aria-hidden output.
+    const plot =
+      host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect() ?? new DOMRect();
+    const bar = host.querySelector('[data-slot="chart-bar-series"][data-series="0"] [data-slot="chart-bar"]');
+    const box = bar === null ? null : barBox(bar, plot);
+    const dot = host.querySelector('[data-slot="chart-marker"] > svg > [data-slot="chart-dot"]');
+    const anchor = host.querySelector<HTMLElement>('[data-slot="chart-marker"] > [data-part="anchor"]');
+    const middle = ((box?.left ?? 0) + (box?.right ?? 0)) / 2;
+    expect(Math.abs(middle - 93.25)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(Number(dot?.getAttribute("cx")) - middle)).toBeLessThanOrEqual(0.5);
+    expect(
+      Math.abs(Number.parseFloat(anchor?.style.getPropertyValue("--chart-marker-x") ?? "") - middle)
+    ).toBeLessThanOrEqual(0.5);
+  });
+
+  it("writes each line path once for a tween, a slide and a crossfade", () => {
+    const rows = (names: readonly string[], shift: number) =>
+      names.map((name, index) => ({ name, v: 10 + ((index + shift) % 5) * 10 }));
+    const chart = (data: readonly { name: string; v: number }[]) => (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 300 }}>
+          <Chart.Root
+            data={data}
+            config={{ v: { label: "V", color: "chart-1" } }}
+            xKey="name"
+            xScale="point"
+            aria-label="Line">
+            <Chart.Line dataKey="v" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    const names = ["a", "b", "c", "d", "e"];
+    const { host, rerender } = renderThemed(chart(rows(names, 0)));
+    // DOM audit: the line's path is aria-hidden plot output.
+    const path = host.querySelector('[data-slot="chart-line"][data-part="solid"]');
+    // A tween over the same slots, an append that drops the first, and a window that grows.
+    for (const next of [
+      rows(names, 1),
+      rows([...names.slice(1), "f"], 2),
+      rows(["x", "y", ...names.slice(1), "f"], 3),
+    ]) {
+      const writes: string[] = [];
+      const observer = new MutationObserver((records) => {
+        for (const record of records) if (record.attributeName === "d") writes.push("d");
+      });
+      if (path !== null) observer.observe(path, { attributes: true, attributeFilter: ["d"] });
+      rerender(chart(next));
+      observer.takeRecords().forEach(() => writes.push("d"));
+      observer.disconnect();
+      expect(writes).toHaveLength(1);
+      // No crossfade copy fades under reduced motion.
+      expect(host.querySelector("[data-outgoing]")).toBeNull();
+    }
   });
 });

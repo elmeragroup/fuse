@@ -13,6 +13,7 @@ import type { ActiveSlot } from "./chart-followers";
 import { createChartLabels } from "./chart-labels";
 import { createChartMotion } from "./chart-motion";
 import type { ChartMotion } from "./chart-motion";
+import { createChartPaths } from "./chart-paths";
 import { ChartPlotContext, useMeasuredPlot } from "./chart-plot";
 import { PlotSkeleton } from "./chart-skeleton";
 import { createChartStore, useClientMount } from "./chart-store";
@@ -450,6 +451,8 @@ export function ChartRoot<
   );
   const reduced = useMediaQuery(REDUCED_MOTION);
   const [motion] = useState(() => browserMotion(reduced));
+  // The mounted Bars, which register after they mount, so a data update knows which series draw bars.
+  const [bars] = useState(() => new Map<object, { readonly key: string; readonly grouped: boolean }>());
   // Which kind of commit produced this model, and the keys its marks render under.
   const [seen, setSeen] = useState((): ChartCommit => {
     const keys = pairSlotKeys(null, model.domain);
@@ -477,7 +480,8 @@ export function ChartRoot<
         { model: seen.model, keys: seen.update.keys },
         { model, keys: keys.keys },
         orientation,
-        gliding
+        gliding,
+        new Set([...bars.values()].map(({ key }) => key))
       );
     commit = {
       model,
@@ -517,6 +521,7 @@ export function ChartRoot<
   }, [motion, reduced]);
   const [followers] = useState(createChartFollowers);
   const [labels] = useState(createChartLabels);
+  const [paths] = useState(createChartPaths);
   // The active slot and series last painted, so a store change that moves neither paints nothing.
   const paintedRef = useRef<readonly [number | null, number | null]>([null, null]);
   useLayoutEffect(() => {
@@ -621,14 +626,13 @@ export function ChartRoot<
     },
     [config]
   );
-  const bars = useRef(new Map<object, { readonly key: string; readonly grouped: boolean }>());
   const overlapWarned = useRef(false);
   const registerBar = useCallback(
     (key: string, grouped: boolean): (() => void) => {
       const token = {};
-      bars.current.set(token, { key, grouped });
+      bars.set(token, { key, grouped });
       if (isChartDevelopment() && !overlapWarned.current) {
-        const loose = [...bars.current.values()].filter((bar) => !bar.grouped).map((bar) => bar.key);
+        const loose = [...bars.values()].filter((bar) => !bar.grouped).map((bar) => bar.key);
         const stackOf = new Map(Object.entries(config).map(([name, entry]) => [name, entry.stack]));
         const pair = loose.flatMap((first, index) =>
           loose
@@ -647,10 +651,14 @@ export function ChartRoot<
         }
       }
       return () => {
-        bars.current.delete(token);
+        bars.delete(token);
       };
     },
-    [config]
+    [bars, config]
+  );
+  const drawsBar = useCallback(
+    (key: string): boolean => [...bars.values()].some((bar) => bar.key === key),
+    [bars]
   );
   const registerEmphasis = useCallback(
     (key: string, entry: EmphasisEntry): (() => void) => {
@@ -701,7 +709,9 @@ export function ChartRoot<
       motion,
       followers,
       labels,
+      paths,
       registerBar,
+      drawsBar,
       registerEmphasis,
     }),
     [
@@ -714,7 +724,9 @@ export function ChartRoot<
       motion,
       followers,
       labels,
+      paths,
       registerBar,
+      drawsBar,
       registerEmphasis,
       config,
       locale,

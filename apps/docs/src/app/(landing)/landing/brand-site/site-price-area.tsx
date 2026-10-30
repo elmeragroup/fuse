@@ -5,7 +5,7 @@ import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
-import { BarChart } from "@elmeragroup/fuse/chart";
+import { BarChart, Sparkline } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 import { Field } from "@elmeragroup/fuse/field";
 import { ShieldCheck } from "@elmeragroup/fuse/icons";
@@ -37,7 +37,7 @@ const sitePriceArea = tv({
     chart: "flex flex-col gap-1.5",
     // The chart keeps the 6rem box the hand-drawn bars had.
     plot: "[--chart-plot-height:6rem]",
-    bars: "h-24 w-full text-primary",
+    bars: "h-24 w-full",
     note: "@3xl:col-span-2 @3xl:pt-6 flex flex-col items-start gap-3",
     noteIcon: "size-10 opacity-90",
     noteTitle: "text-lg font-semibold",
@@ -61,8 +61,6 @@ const HOURLY_PROFILE = [
   0.88, 0.7, 0.56, 0.46, 0.38,
 ] as const;
 
-const BAR_PITCH = 10;
-
 /** One area's price at each hour of the section's day, from the area's low to its high. */
 function hourlyPrices(area: SitePriceAreaConfig, dayStart: string) {
   const start = Date.parse(dayStart);
@@ -70,37 +68,6 @@ function hourlyPrices(area: SitePriceAreaConfig, dayStart: string) {
     start: new Date(start + hour * 3_600_000),
     price: area.low + share * (area.high - area.low),
   }));
-}
-
-/**
- * The day's shape in a 240 × 100 box, drawn while no area is picked. It is decoration, so it stays
- * a private SVG until the chart entry's sparkline bars land.
- */
-function HourlySilhouette({ area, ceiling }: { area: SitePriceAreaConfig; ceiling: number }): ReactElement {
-  return (
-    <svg
-      aria-hidden
-      viewBox={`0 0 ${String(HOURLY_PROFILE.length * BAR_PITCH)} 100`}
-      preserveAspectRatio="none"
-      className={styles.bars()}>
-      {HOURLY_PROFILE.map((share, hour) => {
-        const value = area.low + share * (area.high - area.low);
-        const height = 4 + (value / ceiling) * 96;
-        return (
-          <rect
-            key={hour}
-            x={hour * BAR_PITCH + 1}
-            y={100 - height}
-            width={BAR_PITCH - 2}
-            height={height}
-            rx={1.5}
-            fill="currentColor"
-            fillOpacity={0.35 + share * 0.65}
-          />
-        );
-      })}
-    </svg>
-  );
 }
 
 /**
@@ -190,7 +157,15 @@ export function SitePriceArea({
               <div className={styles.waiting()}>
                 <p className={styles.empty()}>{section.labels.empty}</p>
                 <span aria-hidden className={styles.silhouette()}>
-                  <HourlySilhouette area={section.areas[0]} ceiling={ceiling} />
+                  {/* The day's shape is decoration, a server-safe Sparkline in the neutral role. */}
+                  <Sparkline
+                    aria-label={section.labels.chart}
+                    data={hourlyPrices(section.areas[0], section.dayStart).map(({ price }) => price)}
+                    locale={locale}
+                    variant="bar"
+                    color="chart-other"
+                    className={styles.bars()}
+                  />
                 </span>
               </div>
             ) : (

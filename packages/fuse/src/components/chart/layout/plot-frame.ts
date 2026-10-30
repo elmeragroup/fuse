@@ -289,6 +289,63 @@ export function wholeWidth(box: PlotBox, width: number): number {
 }
 
 /**
+ * Where a point mark lands along the slot axis: a line's vertex, a dot, a marker or the active dot.
+ * Inside the plot it is the centre of the hairline `slotLineAt` draws for the slot the coordinate
+ * lies in, the column the line crosshair takes, so the active dot sits on the crosshair and every
+ * dot on its line's vertex, at any pixel ratio and however dense the slots. A coordinate past the
+ * plot, as a sliding vertex takes, snaps where it is.
+ *
+ * @param frame - The layout's frame.
+ * @param at - The unsnapped coordinate along the slot axis.
+ * @param xScale - Root's x scale.
+ * @returns The point's coordinate in CSS pixels.
+ */
+export function pointAlong(frame: PlotFrame, at: number, xScale: "band" | "point"): number {
+  const length = alongLength(frame);
+  const width = hairline(frame.box);
+  if (at < 0 || at > length) return snapAlong(frame, at) + width / 2;
+  const share = length === 0 ? 0 : at / length;
+  const nearest =
+    xScale === "band" ? Math.floor(share * frame.count) : Math.round(share * Math.max(0, frame.count - 1));
+  const [bandStart, bandEnd] = optionBand(frame, Math.min(Math.max(nearest, 0), frame.count - 1), xScale);
+  const [start, end] = slotLineAt(frame, at, xScale, Math.min(width, bandEnd - bandStart));
+  return (start + end) / 2;
+}
+
+/**
+ * Move a snapped coordinate of a straight stroke's centre line so the stroke covers whole device
+ * pixels: a stroke an odd number of device pixels wide centres on the middle of a device pixel,
+ * half a device pixel past the snapped edge, and an even one, or a fill, on the edge itself.
+ *
+ * @param frame - The layout's frame.
+ * @param snapped - The coordinate, on a device pixel edge.
+ * @param width - The stroke's width in CSS pixels, 0 for a fill.
+ * @returns The coordinate the stroke's centre line takes.
+ */
+export function strokeCentre(frame: PlotFrame, snapped: number, width: number): number {
+  const { dpr } = frame.box;
+  return Math.round(width * dpr) % 2 === 1 ? snapped + 0.5 / dpr : snapped;
+}
+
+/**
+ * The span a step run takes along the slot axis around a cell's centre: the slot's band, with the
+ * pixel floor, for the slot the centre lies in, so neighbouring runs share their edges, and the
+ * centre's cell snapped where it lies past the plot, as a sliding vertex's does.
+ *
+ * @param frame - The layout's frame.
+ * @param centre - The cell's unsnapped centre.
+ * @returns The run's start and end in CSS pixels.
+ */
+export function cellRun(frame: PlotFrame, centre: number): readonly [number, number] {
+  const length = alongLength(frame);
+  const half = length / frame.count / 2;
+  if (centre < 0 || centre > length)
+    return [snapAlong(frame, centre - half), snapAlong(frame, centre + half)];
+  const position = Math.min(Math.max(Math.floor(centre / (2 * half)), 0), frame.count - 1);
+  return snapSpan(frame, centre - half, centre + half, slotBand(frame, position));
+}
+
+/**
  * The hairline that marks a slot, as a line crosshair and a slot reference line draw it: the rules'
  * `hairline`, no wider than the slot's option band. It starts at the slot's snapped centre, moved
  * inside the band's device pixels, so the line marks the band it stands for at either end of the
@@ -435,13 +492,15 @@ function floorSpan(
  *
  * @param frame - The layout's frame.
  * @param rect - The unsnapped body.
+ * @param within - The snapped span of the bar a shaped part lies in, which its floor keeps its
+ *   pixel inside, as a strip narrower than a device pixel inside a one-pixel bar takes that pixel.
  * @returns The snapped body.
  */
-export function snapBody(frame: PlotFrame, rect: PlotRect): PlotRect {
+export function snapBody(frame: PlotFrame, rect: PlotRect, within?: readonly [number, number]): PlotRect {
   const vertical = frame.orientation === "vertical";
   const [alongStart, alongSize] = vertical ? [rect.x, rect.width] : [rect.y, rect.height];
   const [acrossStart, acrossSize] = vertical ? [rect.y, rect.height] : [rect.x, rect.width];
-  const [a0, a1] = snapSpan(frame, alongStart, alongStart + Math.max(0, alongSize));
+  const [a0, a1] = snapSpan(frame, alongStart, alongStart + Math.max(0, alongSize), within);
   const c0 = snapAcross(frame, Math.min(acrossStart, acrossStart + acrossSize));
   const c1 = snapAcross(frame, Math.max(acrossStart, acrossStart + acrossSize));
   return vertical

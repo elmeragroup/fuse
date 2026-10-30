@@ -54,3 +54,29 @@ export function colorBins(scale: ColorScale, values: readonly number[]): ColorBi
   if (!(hi > lo)) return () => 4;
   return (value) => step(Math.floor(((value - lo) / (hi - lo)) * 7));
 }
+
+/**
+ * The six values where a scale's steps change, ascending, so a line's or an area's gradient puts a
+ * hard stop on each. Step k covers the values from edge k − 1 to edge k, the first and the last
+ * reaching without end. A flat series, which is all step 4, has no edges.
+ *
+ * @param scale - The scale the series names.
+ * @param values - Every finite reading of the series across the whole data.
+ * @returns The edges, or none.
+ */
+export function binEdges(scale: ColorScale, values: readonly number[]): readonly number[] {
+  if (scale === "chart-diverging") {
+    let largest = 0;
+    for (const value of values) largest = Math.max(largest, Math.abs(value));
+    if (largest === 0) return [];
+    return [-5, -3, -1, 1, 3, 5].map((share) => (share * largest) / 7);
+  }
+  let lo = Number.POSITIVE_INFINITY;
+  let hi = Number.NEGATIVE_INFINITY;
+  for (const value of values) {
+    lo = Math.min(lo, value);
+    hi = Math.max(hi, value);
+  }
+  if (!(hi > lo)) return [];
+  return [1, 2, 3, 4, 5, 6].map((share) => lo + ((hi - lo) * share) / 7);
+}

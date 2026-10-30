@@ -292,3 +292,77 @@ describe("the motion loop", () => {
     );
   });
 });
+
+describe("joining marks", () => {
+  /** Two bars, each placed at a rest of [middle, tip] under its anchor. */
+  function twoBars(motion: ReturnType<typeof createChartMotion>, placement: Placement) {
+    motion.place("bar 0", [10, 50], () => undefined, placement, [], "a 0");
+    motion.place("bar 1", [30, 70], () => undefined, placement, [], "a 1");
+  }
+  const leads = [
+    { anchor: "a 0", pick: (values: MarkValues) => [...values], rest: (values: MarkValues) => [...values] },
+    { anchor: "a 1", pick: (values: MarkValues) => [...values], rest: (values: MarkValues) => [...values] },
+  ];
+
+  it("rests a follower of two bars on both bars' rests, in their order (B2-4)", () => {
+    const motion = createChartMotion(host().host);
+    twoBars(motion, { kind: "snap" });
+    const drawn: MarkValues[] = [];
+    // The follower's own target, the slot centres, is not where the bars rest.
+    motion.place("marker", [20, 50, 60, 70], (values) => drawn.push(values), { kind: "join", leads });
+    expect(drawn.at(-1)).toEqual([10, 50, 30, 70]);
+  });
+
+  it("rests a joined follower on its bars' rests under reduced motion too (B2-5)", () => {
+    const motion = createChartMotion(host().host);
+    motion.setReduced(true);
+    twoBars(motion, { kind: "move" });
+    const drawn: MarkValues[] = [];
+    motion.place("marker", [20, 50, 60, 70], (values) => drawn.push(values), { kind: "join", leads });
+    expect(drawn).toEqual([[10, 50, 30, 70]]);
+  });
+
+  it("tweens a joined follower on its bars' clock from their drawn numbers to their rests", () => {
+    const clock = host();
+    const motion = createChartMotion(clock.host);
+    twoBars(motion, { kind: "snap" });
+    motion.place("bar 0", [20, 50], () => undefined, { kind: "move" }, [], "a 0");
+    const drawn: MarkValues[] = [];
+    motion.place("marker", [0, 0, 0, 0], (values) => drawn.push(values), { kind: "join", leads });
+    // Bar 0 moves from 10 to 20 and bar 1 rests, so the follower starts on both drawn numbers.
+    expect(drawn.at(-1)).toEqual([10, 50, 30, 70]);
+    clock.frameAt(120);
+    expect(drawn.at(-1)?.[0]).toBeCloseTo(10 + 10 * eased(120), 9);
+    expect(drawn.at(-1)?.slice(1)).toEqual([50, 30, 70]);
+  });
+});
+
+describe("joining staggered marks (Q3-1)", () => {
+  it("draws each lead's numbers on that lead's own clock and delay", () => {
+    // Two bars grow from 0 in an entrance, the second 200 ms after the first. At 120 ms the first
+    // has its eased progress and the second still sits at 0, so the follower draws the same.
+    const clock = host();
+    const motion = createChartMotion(clock.host);
+    motion.place("bar 0", [10, 50], () => undefined, { kind: "enter", from: [10, 0], delay: 0 }, [], "a 0");
+    motion.place("bar 1", [30, 70], () => undefined, { kind: "enter", from: [30, 0], delay: 200 }, [], "a 1");
+    const drawn: MarkValues[] = [];
+    const lead = (anchor: string) => ({
+      anchor,
+      pick: (values: MarkValues) => [...values],
+      rest: (values: MarkValues) => [...values],
+    });
+    motion.place("marker", [0, 0, 0, 0], (values) => drawn.push(values), {
+      kind: "join",
+      leads: [lead("a 0"), lead("a 1")],
+    });
+    expect(drawn.at(-1)).toEqual([10, 0, 30, 0]);
+    clock.frameAt(120);
+    expect(drawn.at(-1)?.[1]).toBeCloseTo(50 * eased(120), 6);
+    expect(drawn.at(-1)?.slice(2)).toEqual([30, 0]);
+    // 120 ms into the second bar's own tween it reaches the same eased share of 70.
+    clock.frameAt(320);
+    expect(drawn.at(-1)?.[3]).toBeCloseTo(70 * eased(120), 6);
+    clock.frameAt(1000);
+    expect(drawn.at(-1)).toEqual([10, 50, 30, 70]);
+  });
+});

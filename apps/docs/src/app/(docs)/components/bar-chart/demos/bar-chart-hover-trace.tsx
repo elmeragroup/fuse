@@ -38,6 +38,9 @@ export function BarChartHoverTrace() {
       </BarChart.Headline>
       <BarChart.XAxis />
       <BarChart.Bar dataKey="desktop" />
+      <BarChart.Marker dataKey="desktop" at="max">
+        <BarChart.ValueLabel />
+      </BarChart.Marker>
       <BarChart.ActiveValueLine dataKey="desktop">
         <BarChart.ValueLabel />
       </BarChart.ActiveValueLine>

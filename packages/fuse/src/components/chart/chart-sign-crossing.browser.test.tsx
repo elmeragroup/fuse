@@ -230,8 +230,10 @@ describe("a reading that changes sign", () => {
           const [below0, below1] = below ?? [0, 0];
           fc.pre(Math.abs(ends(below0, crossing.from)[1] - ends(below1, crossing.to)[1]) >= 1);
           const progress = await cross(crossing);
-          // The line's last edge snaps within a pixel of the tip, 10 px a unit or more from it.
-          expect(Math.abs((progress.at(-1) ?? 0) - 1)).toBeLessThanOrEqual(0.1);
+          // The line's last edge snaps within a pixel of the tip, 10 px a unit or more from it, so
+          // the last frame lies at 0.9 of the way or later. A frame at exactly 0.9 reads it back
+          // through float arithmetic, which a millionth of slack absorbs.
+          expect(Math.abs((progress.at(-1) ?? 0) - 1)).toBeLessThanOrEqual(0.1 + 1e-6);
         }
       ),
       {

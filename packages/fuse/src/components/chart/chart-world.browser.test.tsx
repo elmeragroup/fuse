@@ -1,5 +1,6 @@
 // One world of a bar chart's marks, in Chromium, after review rounds 11 and 12. Unit under test:
-// every placed mark of phase 1 through random data updates, sign flips, categories added, removed
+// every placed mark of phase 1, and a Line with its Dots on the bars' series, through random data
+// updates, sign flips, categories added, removed
 // and reordered, value domains that move, x range windows, resizes to fractional sizes,
 // orientation turns, form switches across the path limit, activation, and references that change
 // value or axis, at 1x, 1.25x, 1.5x and 2x.
@@ -9,10 +10,17 @@
 // it computes each mark's visibility, `data-outside`, label membership and resting device pixels:
 // the zero rule and d3's nice rule for the value domain (sections 8.3 and 8.11), the window
 // (8.12), bands with a 25 % gap (8.15), the path form's columns past 100 categories, the pixel
-// floor, the browser's snap, hairlines and the missing tick. Every mark must match it exactly.
+// floor, the browser's snap, hairlines, the missing tick, and each line vertex and dot on its slot's
+// crosshair column at its bar's tip, the vertex half a device pixel further along the value axis
+// where the line's 2 px stroke covers an odd number of device pixels, so the stroke covers whole
+// ones. Above 2,000 categories the line keeps, by a brute-force scan, each pixel column's first,
+// last, lowest and highest reading and both slots of every change between a reading and a missing
+// one (section 8.12), and the columns are the 500 buckets' own, so a world of 2,400 categories
+// checks its columns, line, dots, ticks, followers and references. Every mark must match it exactly.
 //
 // Oracles in every sampled frame: marks on one data coordinate emit one device pixel, a bar draws
-// on the side its tip lies, a hidden reference holds no label place, and a commit that does not
+// on the side its tip lies, every dot sits on a line vertex, a hidden reference holds no label
+// place, and a commit that does not
 // snap leaves every mark within a device pixel of its last frame, a resize's mapped into the new
 // box.
 import fc from "fast-check";
@@ -62,7 +70,8 @@ const SERIAL = 1e-5;
 type Reading = number | null;
 
 /** One category: its name, which keys its marks, and its reading. */
-type Datum = { readonly name: string; readonly v: Reading };
+/** One category: its reading of v, and in a stacked world the reading of w stacked over it. */
+type Datum = { readonly name: string; readonly v: Reading; readonly w?: number };
 
 type Line =
   | { readonly axis: "value"; readonly at: number }
@@ -84,6 +93,8 @@ type World = {
   readonly variant: "default" | "striped";
   /** The values `yInclude` keeps in the domain, written inline as a consumer writes it. */
   readonly include: readonly [number, number];
+  /** Whether a Line of w stacks over v, in one stack with it, as the dense world's does. */
+  readonly stacked?: boolean;
 };
 
 /** A role list paints a gradient from each bar's tip, and missing readings take the quality column. */
@@ -91,14 +102,29 @@ const CONFIG = {
   v: { label: "V", color: ["chart-1", "chart-3"], qualityKey: "q" },
 } as const satisfies ChartConfig;
 
-type Row = { readonly name: string; readonly v: Reading; readonly q: "missing" | "measured" };
+/** The stacked world's config: w, always positive, stacks over v. */
+const STACKED = {
+  v: { label: "V", color: ["chart-1", "chart-3"], qualityKey: "q", stack: "s" },
+  w: { label: "W", color: "chart-2", stack: "s" },
+} as const satisfies ChartConfig;
+
+type Row = {
+  readonly name: string;
+  readonly v: Reading;
+  readonly w?: number;
+  readonly q: "missing" | "measured";
+};
 
 /** One row array per data array, so a render that changes something else keeps the data. */
 const rows = new WeakMap<readonly Datum[], readonly Row[]>();
 
 function rowsOf(data: readonly Datum[]): readonly Row[] {
   const known =
-    rows.get(data) ?? data.map(({ name, v }): Row => ({ name, v, q: v === null ? "missing" : "measured" }));
+    rows.get(data) ??
+    data.map(({ name, v, w }): Row => {
+      const q = v === null ? "missing" : "measured";
+      return w === undefined ? { name, v, q } : { name, v, w, q };
+    });
   rows.set(data, known);
   return known;
 }
@@ -111,7 +137,7 @@ function view(world: World) {
         <Chart.Root
           data-intro="none"
           data={rowsOf(world.data)}
-          config={CONFIG}
+          config={world.stacked === true ? STACKED : CONFIG}
           xKey="name"
           orientation={world.orientation}
           yInclude={[world.include[0], world.include[1]]}
@@ -132,6 +158,9 @@ function view(world: World) {
           )}
           <Chart.ActiveValue dataKey="v" />
           <Chart.ActiveValueLine dataKey="v" />
+          <Chart.Line dataKey="v" curve="linear" />
+          <Chart.Dots dataKey="v" />
+          {world.stacked === true ? <Chart.Line dataKey="w" curve="linear" /> : null}
         </Chart.Root>
       </div>
     </LocaleProvider>
@@ -176,10 +205,18 @@ function windowOf(world: World): readonly [number, number] {
   return [names.indexOf(world.window[0]), names.indexOf(world.window[1])];
 }
 
-/** The value domain: the readings in the window with 0 and `yInclude`, niced to 5 ticks. */
+/**
+ * The value domain: the readings in the window, in a stacked world each slot's stack, with 0 and
+ * `yInclude`, niced to 5 ticks. w is always positive, so it stacks on v's positive part.
+ */
 function domainOf(world: World): readonly [number, number] {
   const [first, last] = windowOf(world);
-  const values = world.data.slice(first, last + 1).flatMap(({ v }) => (v === null ? [] : [v]));
+  const values = world.data
+    .slice(first, last + 1)
+    .flatMap(({ v, w }) => [
+      ...(v === null ? [] : [v]),
+      ...(w === undefined ? [] : [Math.max(v ?? 0, 0) + w]),
+    ]);
   const low = Math.min(0, ...world.include, ...values);
   const high = Math.max(0, ...world.include, ...values);
   if (low === 0 && high === 0) return [0, 1];
@@ -230,13 +267,131 @@ type Expected = {
   readonly line: number | null;
   readonly value: { readonly centre: number; readonly tip: number } | null;
   readonly baseline: number;
+  /** The dots on the Line's vertices, one per drawn reading in window order. */
+  readonly points: readonly (readonly [along: number, across: number])[];
+  /** The Line's vertices, each its dot's point moved by the stroke's parity. */
+  readonly vertices: readonly (readonly [along: number, across: number])[];
+  /** A stacked world's w Line vertices, or null. */
+  readonly upper: readonly (readonly [along: number, across: number])[] | null;
   readonly references: readonly {
     readonly what: string;
     readonly visible: boolean;
     readonly stacked: boolean;
     readonly span: Span;
   }[];
+  /** Whether the window decimates, so its columns stand for buckets and match no reading. */
+  readonly decimated: boolean;
+  /** A decimated window's columns, sorted along the plot then across it, or null for none. */
+  readonly columns: readonly { readonly along: Span; readonly across: Span }[] | null;
 };
+
+/** The buckets a decimated window splits into, as section 8.12 sets them. */
+const BUCKETS = 500;
+
+/**
+ * A decimated window's columns in slot units and values, per section 8.12: the window splits into
+ * 500 buckets by slot index, bucket b from ceil(b × n / 500). A loose v draws each bucket from its
+ * lowest extent below zero to its highest above. In a stack, each side draws the bucket's slot with
+ * the largest stack total on that side, where v's part lies on that side. w draws no Bar.
+ */
+function decimatedColumns(
+  windowed: readonly Datum[],
+  stacked: boolean
+): { readonly from: number; readonly to: number; readonly low: number; readonly high: number }[] {
+  const count = windowed.length;
+  const columns: { from: number; to: number; low: number; high: number }[] = [];
+  for (let bucket = 0; bucket < BUCKETS; bucket += 1) {
+    const from = Math.ceil((bucket * count) / BUCKETS);
+    const to = Math.ceil(((bucket + 1) * count) / BUCKETS);
+    const slots = Array.from({ length: to - from }, (_, offset) => from + offset);
+    const v = (k: number) => windowed[k]?.v ?? null;
+    if (!stacked) {
+      const values = slots.flatMap((k) => {
+        const value = v(k);
+        return value === null ? [] : [value];
+      });
+      if (values.length === 0) continue;
+      const low = Math.min(0, ...values);
+      const high = Math.max(0, ...values);
+      if (low !== high) columns.push({ from, to, low, high });
+      continue;
+    }
+    for (const negative of [false, true]) {
+      // The positive total is v's positive part and w on it, the negative v's negative part.
+      const total = (k: number) =>
+        negative ? Math.abs(Math.min(0, v(k) ?? 0)) : Math.max(0, v(k) ?? 0) + (windowed[k]?.w ?? 0);
+      const best = slots.reduce((pick, k) => (total(k) > (pick === -1 ? 0 : total(pick)) ? k : pick), -1);
+      const value = best === -1 ? null : v(best);
+      if (value === null || value === 0 || value < 0 !== negative) continue;
+      columns.push({ from, to, low: Math.min(0, value), high: Math.max(0, value) });
+    }
+  }
+  return columns;
+}
+
+/**
+ * How far a 2 px line's centre lies past the device pixel edge its point snaps to: half a device
+ * pixel where the stroke covers an odd number of them, so both its edges land on device pixels.
+ */
+function lineOffset(dpr: number): number {
+  return Math.round(2 * dpr) % 2 === 1 ? 0.5 / dpr : 0;
+}
+
+/** Above this many categories in the window, the line and the columns decimate. */
+const DECIMATE_ABOVE = 2000;
+
+/**
+ * The two ends each series' vertex draws at a window position: v's value over 0, and in a stacked
+ * world w's top over its base, v's positive part. Null where the series has no reading.
+ */
+function endsAt(datum: Datum | undefined, series: "v" | "w"): readonly [top: number, base: number] | null {
+  if (datum === undefined) return null;
+  if (series === "v") return datum.v === null ? null : [datum.v, 0];
+  if (datum.w === undefined) return null;
+  const base = Math.max(datum.v ?? 0, 0);
+  return [base + datum.w, base];
+}
+
+/**
+ * The window positions a decimated line keeps, shared by every series of a stack: in each of
+ * `buckets` runs of positions, split as floor(k × buckets / count), the first, last, lowest and
+ * highest of each series' top and of its base, a tie keeping the first, both positions of every
+ * change between a reading and a missing one or between v's sides of zero in a stack, and the
+ * window's two ends.
+ */
+function decimatedPositions(windowed: readonly Datum[], buckets: number, stacked: boolean): Set<number> {
+  const count = windowed.length;
+  const kept = new Set([0, count - 1]);
+  for (const series of stacked ? (["v", "w"] as const) : (["v"] as const)) {
+    for (const end of [0, 1] as const) {
+      const runs = new Map<number, number[]>();
+      windowed.forEach((datum, k) => {
+        if (endsAt(datum, series) === null) return;
+        const bucket = Math.floor((k * buckets) / count);
+        runs.set(bucket, [...(runs.get(bucket) ?? []), k]);
+      });
+      const read = (k: number) => endsAt(windowed[k], series)?.[end] ?? 0;
+      for (const positions of runs.values()) {
+        const [head = 0] = positions;
+        const low = positions.reduce((best, k) => (read(k) < read(best) ? k : best), head);
+        const high = positions.reduce((best, k) => (read(k) > read(best) ? k : best), head);
+        for (const k of [head, positions.at(-1) ?? head, low, high]) kept.add(k);
+      }
+    }
+  }
+  const kind = (k: number) => {
+    const v = windowed[k]?.v ?? null;
+    if (v === null) return "missing";
+    return stacked && v < 0 ? "negative" : "reading";
+  };
+  for (let k = 1; k < count; k += 1) {
+    if (kind(k) !== kind(k - 1)) {
+      kept.add(k - 1);
+      kept.add(k);
+    }
+  }
+  return kept;
+}
 
 /**
  * The model. The browser draws a coordinate on the device pixel nearest its page position, a tie
@@ -312,7 +467,17 @@ function expected(world: World, plot: Plot, active: string | null): Expected {
   const lastIndex = windowed.findLastIndex(({ v }) => v !== null);
   const shownIndex = active === null ? lastIndex : activeIndex;
   const shown = windowed[shownIndex]?.v ?? null;
-  const value = shown === null ? null : { centre: snapAlong((shownIndex + 0.5) * step), tip: tipOf(shown) };
+  // ActiveValue centres over its bar's middle: an element bar's drawn span, or a column's own span
+  // in the path form, whose middle is the slot's unsnapped centre. A decimated column stands for a
+  // bucket, so there the value takes its slot's snapped centre.
+  const valueCentre = (k: number) => {
+    if (!path) {
+      const [start, end] = barAlong(k);
+      return (start + end) / 2;
+    }
+    return count > DECIMATE_ABOVE ? snapAlong((k + 0.5) * step) : (k + 0.5) * step;
+  };
+  const value = shown === null ? null : { centre: valueCentre(shownIndex), tip: tipOf(shown) };
   const names = world.data.map(({ name }) => name);
   const references: { what: string; visible: boolean; stacked: boolean; span: Span }[] = [];
   const { line, area } = world;
@@ -355,16 +520,64 @@ function expected(world: World, plot: Plot, active: string | null): Expected {
     });
   }
   const activeLine = activeReading === null ? null : tipOf(activeReading);
-  return { bars, ticks, overlay, line: activeLine, value, baseline, references };
+  const decimated = count > DECIMATE_ABOVE;
+  const stacked = world.stacked === true;
+  const drawn = decimated ? decimatedPositions(windowed, Math.round(plot.along), stacked) : null;
+  // A point mark sits on the centre of its slot's line crosshair column, at its bar's tip.
+  const points = windowed.flatMap(({ v }, k) => {
+    if (v === null || (drawn !== null && !drawn.has(k))) return [];
+    const [start, end] = band(k);
+    const width = Math.min(hairline, end - start);
+    const at = Math.min(Math.max(snapAlong((k + 0.5) * step), start), end - width);
+    return [[at + width / 2, tipOf(v)] as const];
+  });
+  const offset = lineOffset(dpr);
+  const vertices = points.map(([along, across]) => [along, across + offset] as const);
+  // A stacked world's w line passes through each drawn slot at its stack's top.
+  const upper = !stacked
+    ? null
+    : windowed.flatMap((datum, k) => {
+        const ends = endsAt(datum, "w");
+        if (ends === null || (drawn !== null && !drawn.has(k))) return [];
+        const [start, end] = band(k);
+        const width = Math.min(hairline, end - start);
+        const at = Math.min(Math.max(snapAlong((k + 0.5) * step), start), end - width);
+        return [[at + width / 2, tipOf(ends[0]) + offset] as const];
+      });
+  return {
+    bars,
+    ticks,
+    overlay,
+    line: activeLine,
+    value,
+    baseline,
+    references,
+    points,
+    vertices,
+    upper,
+    decimated,
+    // A column keeps a pixel among the pixels of the slot its middle lies in, as a bar does.
+    columns: !decimated
+      ? null
+      : decimatedColumns(windowed, stacked)
+          .map(({ from, to, low, high }) => {
+            const middle = Math.min(Math.max(Math.floor((from + to) / 2), 0), count - 1);
+            const across: Span = [snapAcross(valueAt(high)), snapAcross(valueAt(low))];
+            return { along: floor("along", from * step, to * step, band(middle)), across };
+          })
+          .toSorted((a, b) => a.along[0] - b.along[0] || a.across[0] - b.across[0]),
+  };
 }
 
 /**
  * Whether a data update certainly relays the plot, from the rule review round 12 states: it switches
- * the bars' form, or it mounts a bar or a missing tick while the value domain moves. A mount while a
- * tween still runs relays it too, which the run accepts from what it draws.
+ * the bars' form, or it mounts an element-form bar or missing tick while the value domain moves. A
+ * mount while a tween still runs relays it too, which the run accepts from what it draws.
  */
 function relays(before: World, after: World): boolean {
   if (pathForm(before) !== pathForm(after)) return true;
+  // Path-form columns route a reading that arrives, as the line's vertices do.
+  if (pathForm(after)) return false;
   const [lowBefore, highBefore] = domainOf(before);
   const [low, high] = domainOf(after);
   if (lowBefore === low && highBefore === high) return false;
@@ -410,11 +623,15 @@ type Mark = {
   readonly axes: readonly ("along" | "across")[];
   /** How far containment may hold the mark from its mapped position, past the snapping slack. */
   readonly hold?: number;
+  /** A path-form column's span along the slot axis, which names it, and which a resize maps. */
+  readonly along?: Span;
 };
 
 /** What the chart draws in one frame, in CSS pixels from the plot's top left, by category name. */
 type Shot = {
   readonly plot: Plot;
+  /** The path form's drawn columns, sorted along the plot then across it. */
+  readonly columns: readonly { readonly along: Span; readonly across: Span }[];
   readonly baseline: number | null;
   readonly bars: ReadonlyMap<
     string,
@@ -436,7 +653,29 @@ type Shot = {
     readonly span: Span;
   }[];
   readonly marks: ReadonlyMap<string, Mark>;
+  /** The Line's vertices, a lone reading's dot by its centre, and the dots' centres, in order. */
+  readonly vertices: readonly (readonly [along: number, across: number])[];
+  /** A stacked world's w Line vertices, or null without one. */
+  readonly upper: readonly (readonly [along: number, across: number])[] | null;
+  readonly dots: readonly (readonly [along: number, across: number])[];
 };
+
+/** A line's vertices from its path data: each command's end, and a lone reading's dot by its centre. */
+function lineVertices(d: string, vertical: boolean): (readonly [number, number])[] {
+  return d
+    .split("M")
+    .filter((part) => part !== "")
+    .flatMap((part) => {
+      const pairs = [...part.matchAll(/(-?[\d.e]+),(-?[\d.e]+)/gu)].map(
+        ([, a, b]) => [Number(a), Number(b)] as const
+      );
+      const [first] = pairs;
+      if (first === undefined) return [];
+      // A lone reading's dot starts 2.5 px before its centre and draws two arcs.
+      const points = part.includes("a") ? [[first[0] + 2.5, first[1]] as const] : pairs;
+      return points.map(([x, y]) => (vertical ? ([x, y] as const) : ([y, x] as const)));
+    });
+}
 
 function shoot(host: HTMLElement, world: World): Shot {
   const vertical = world.orientation === "vertical";
@@ -469,17 +708,27 @@ function shoot(host: HTMLElement, world: World): Shot {
       axes: ["along", "along", "across", "across"],
     });
   });
-  // A column draws only for a reading other than 0, in slot order, so the columns sorted along the
-  // plot pair with those readings in window order, however densely they share pixels.
+  // A column draws only for a reading other than 0, in slot order, so at rest the columns sorted
+  // along the plot pair with those readings in window order, however densely they share pixels.
+  // A tween's frame may draw a column on its way to or from 0, so each column's continuity mark is
+  // keyed by its span along the slot axis, which a commit's first frame keeps, and a column that
+  // starts to grow there has no mark before it. The copy a crossfade fades out is no column.
   // DOM audit: the path form's columns are aria-hidden plot output.
-  const columns = [...(layer?.querySelectorAll('[data-slot="chart-bar-path"]:not([data-quality])') ?? [])]
+  const columns = [
+    ...(layer?.querySelectorAll('[data-slot="chart-bar-path"]:not([data-quality]):not([data-outgoing] *)') ??
+      []),
+  ]
     .flatMap((path) => pathRects(path.getAttribute("d") ?? ""))
     .toSorted((a, b) => along(a)[0] - along(b)[0]);
   const drawnReadings = windowed.flatMap(({ name, v }) => (v === null || v === 0 ? [] : [name]));
   columns.forEach((rect, index) => {
     const name = drawnReadings[index] ?? "?";
     bars.set(name, { along: along(rect), across: across(rect), negative: null });
-    marks.set(`column ${name}`, { values: across(rect), axes: ["across", "across"] });
+    marks.set(`column at ${show(along(rect))}`, {
+      values: across(rect),
+      axes: ["across", "across"],
+      along: along(rect),
+    });
   });
   // A tick's baseline edge lies half its device pixels, rounded down, past its near edge, and the
   // browser draws the plot's origin on the device pixel nearest its page position.
@@ -501,7 +750,9 @@ function shoot(host: HTMLElement, world: World): Shot {
     marks.set(`tick ${name}`, { values: [base], axes: ["across"] });
   });
   // DOM audit: the path form's missing ticks are aria-hidden plot output.
-  const missingPath = layer?.querySelector('[data-slot="chart-bar-path"][data-quality="missing"]');
+  const missingPath = layer?.querySelector(
+    '[data-slot="chart-bar-path"][data-quality="missing"]:not([data-outgoing] *)'
+  );
   if (missingPath) {
     [...(missingPath.getAttribute("d") ?? "").matchAll(/M([-\d.e]+) ([-\d.e]+)H([-\d.e]+)/gu)].forEach(
       ([, a, y, b], index) => {
@@ -592,7 +843,39 @@ function shoot(host: HTMLElement, world: World): Shot {
       span,
     };
   });
-  return { plot, baseline, bars, ticks, active, overlay, line, value, references: shots, marks };
+  // DOM audit: the line and its dots are aria-hidden plot output, and a crossfade's copy is no mark.
+  const linePath = host.querySelector(
+    '[data-slot="chart-line"][data-series="0"][data-part="solid"]:not([data-outgoing] *)'
+  );
+  const vertices = lineVertices(linePath?.getAttribute("d") ?? "", vertical);
+  const upperPath = host.querySelector(
+    '[data-slot="chart-line"][data-series="1"][data-part="solid"]:not([data-outgoing] *)'
+  );
+  const upper = upperPath === null ? null : lineVertices(upperPath.getAttribute("d") ?? "", vertical);
+  const dots = [
+    ...host.querySelectorAll('[data-slot="chart-dots"] [data-slot="chart-dot"]:not([data-outgoing] *)'),
+  ].map((dot) => {
+    const [x, y] = [Number(dot.getAttribute("cx")), Number(dot.getAttribute("cy"))];
+    return vertical ? ([x, y] as const) : ([y, x] as const);
+  });
+  return {
+    plot,
+    columns: columns
+      .map((rect) => ({ along: along(rect), across: across(rect) }))
+      .toSorted((a, b) => a.along[0] - b.along[0] || a.across[0] - b.across[0]),
+    baseline,
+    bars,
+    ticks,
+    active,
+    overlay,
+    line,
+    value,
+    references: shots,
+    marks,
+    vertices,
+    upper,
+    dots,
+  };
 }
 
 // The checks.
@@ -614,7 +897,15 @@ function faults(shot: Shot, world: World): string[] {
   const { baseline } = shot;
   if (baseline === null) return ["no reference at 0"];
   const vertical = world.orientation === "vertical";
+  // A decimated column spans its bucket's lowest extent to its highest, so it covers the baseline.
+  const [first, last] = windowOf(world);
+  const decimated = last - first + 1 > DECIMATE_ABOVE;
   for (const [name, bar] of shot.bars) {
+    if (decimated) {
+      if (bar.across[0] > baseline + SERIAL || bar.across[1] < baseline - SERIAL)
+        failures.push(`column ${name} ${show(bar.across)} off baseline ${String(baseline)}`);
+      continue;
+    }
     if (!bar.across.some((edge) => near(edge, baseline))) {
       failures.push(`bar ${name} ${show(bar.across)} off baseline ${String(baseline)}`);
     }
@@ -630,7 +921,8 @@ function faults(shot: Shot, world: World): string[] {
       failures.push(`tick ${name} at ${String(tick.base)} off baseline ${String(baseline)}`);
     if (tick.soft) failures.push(`tick ${name} between device pixels`);
   }
-  const activeBar = shot.active === null ? undefined : shot.bars.get(shot.active);
+  // A decimated window's columns stand for buckets, so no column is the active reading's own.
+  const activeBar = shot.active === null || decimated ? undefined : shot.bars.get(shot.active);
   if (activeBar !== undefined && shot.line !== null) {
     const tip = tipEdge(activeBar.across, baseline);
     const tips = {
@@ -646,6 +938,13 @@ function faults(shot: Shot, world: World): string[] {
     if (shot.value !== null && Math.abs(shot.value.centre - middle) > device + SERIAL) {
       failures.push(`active value at ${String(shot.value.centre)} off its bar's middle ${String(middle)}`);
     }
+  }
+  // Every dot sits on a vertex of the line in every frame, as both draw one tween's numbers, the
+  // vertex moved by the stroke's parity.
+  const offset = lineOffset(shot.plot.dpr);
+  for (const [along, across] of shot.dots) {
+    if (!shot.vertices.some(([a, b]) => near(a, along) && near(b, across + offset)))
+      failures.push(`dot at ${String(along)}, ${String(across)} off the line`);
   }
   for (const reference of shot.references) {
     if (reference.outside && reference.stacked) failures.push(`hidden ${reference.what} holds a label place`);
@@ -667,7 +966,23 @@ function mismatches(shot: Shot, model: Expected): string[] {
   if (shot.baseline === null || !near(shot.baseline, model.baseline)) {
     failures.push(`baseline ${String(shot.baseline)}, model ${String(model.baseline)}`);
   }
-  for (const [name, bar] of model.bars) {
+  if (model.columns !== null) {
+    if (shot.columns.length !== model.columns.length)
+      failures.push(`${String(shot.columns.length)} columns, model ${String(model.columns.length)}`);
+    model.columns.forEach((column, index) => {
+      const drawn = shot.columns[index];
+      if (
+        drawn === undefined ||
+        !sameSpan(drawn.along, column.along) ||
+        !sameSpan(drawn.across, column.across)
+      ) {
+        failures.push(
+          `column ${String(index)} ${drawn ? `${show(drawn.along)} × ${show(drawn.across)}` : "missing"}, model ${show(column.along)} × ${show(column.across)}`
+        );
+      }
+    });
+  }
+  for (const [name, bar] of model.decimated ? [] : model.bars) {
     const drawn = shot.bars.get(name);
     if (drawn === undefined) failures.push(`bar ${name} missing`);
     else {
@@ -680,7 +995,7 @@ function mismatches(shot: Shot, model: Expected): string[] {
         failures.push(`bar ${name} side ${String(drawn.negative)}`);
     }
   }
-  for (const name of shot.bars.keys())
+  for (const name of model.decimated ? [] : shot.bars.keys())
     if (!model.bars.has(name)) failures.push(`bar ${name} drawn, model none`);
   for (const [name, tick] of model.ticks) {
     const drawn = shot.ticks.get(name);
@@ -690,6 +1005,23 @@ function mismatches(shot: Shot, model: Expected): string[] {
   }
   if (shot.ticks.size !== model.ticks.size)
     failures.push(`${String(shot.ticks.size)} ticks, model ${String(model.ticks.size)}`);
+  if ((shot.upper === null) !== (model.upper === null))
+    failures.push(`w line ${String(shot.upper !== null)}`);
+  for (const [what, drawn, points] of [
+    ["vertex", shot.vertices, model.vertices],
+    ["dot", shot.dots, model.points],
+    ["w vertex", shot.upper ?? [], model.upper ?? []],
+  ] as const) {
+    if (drawn.length !== points.length)
+      failures.push(`${String(drawn.length)} ${what}s, model ${String(points.length)}`);
+    drawn.forEach(([along, across], index) => {
+      const [a = Number.NaN, b = Number.NaN] = points[index] ?? [];
+      if (!near(along, a) || !near(across, b))
+        failures.push(
+          `${what} ${String(index)} at ${String(along)}, ${String(across)}, model ${String(a)}, ${String(b)}`
+        );
+    });
+  }
   if ((shot.overlay === null) !== (model.overlay === null))
     failures.push(`overlay ${shot.overlay ? "shown" : "hidden"}`);
   else if (
@@ -743,9 +1075,23 @@ function jumps(before: Shot, after: Shot, keys: (key: string) => boolean): strin
     across: after.plot.across / before.plot.across,
   };
   const failures: string[] = [];
+  // A resize moves every column's span, which names it, so a column matches the one at its span
+  // mapped into the new box, within the snapping slack of both its edges.
+  const columns = [...after.marks.values()].filter((mark) => mark.along !== undefined);
+  const resized = ratio.along !== 1;
+  const columnAt = (span: Span): Mark | undefined => {
+    const slack = (1 + 0.5 * Math.max(1, ratio.along)) / after.plot.dpr + SERIAL;
+    const near = columns.filter(
+      ({ along: drawn }) =>
+        drawn !== undefined &&
+        Math.abs(drawn[0] - span[0] * ratio.along) <= slack &&
+        Math.abs(drawn[1] - span[1] * ratio.along) <= slack
+    );
+    return near.length === 1 ? near[0] : undefined;
+  };
   for (const [key, mark] of before.marks) {
     if (!keys(key)) continue;
-    const now = after.marks.get(key);
+    const now = resized && mark.along !== undefined ? columnAt(mark.along) : after.marks.get(key);
     if (now === undefined || now.values.length !== mark.values.length) continue;
     mark.values.forEach((value, index) => {
       const scale = ratio[mark.axes[index] ?? "across"];
@@ -763,6 +1109,11 @@ function jumps(before: Shot, after: Shot, keys: (key: string) => boolean): strin
 
 type Step =
   | { readonly kind: "update"; readonly readings: readonly Reading[] }
+  /**
+   * A vertical world grows to 2,400 categories, c0 on, which decimates its line and columns, with
+   * a w of 1 to 5 stacked over v when `stacked` says so.
+   */
+  | { readonly kind: "dense"; readonly readings: readonly Reading[]; readonly stacked?: boolean }
   | { readonly kind: "add"; readonly v: Reading }
   | { readonly kind: "remove"; readonly at: number }
   | { readonly kind: "reorder" }
@@ -798,10 +1149,25 @@ function stepped(world: World, step: Step): World | null {
     case "update":
       return withData(
         world.data.map((datum, index) => ({
-          name: datum.name,
+          ...datum,
           v: step.readings[index % step.readings.length] ?? null,
         }))
       );
+    case "dense":
+      return world.orientation !== "vertical" || world.data.length > DECIMATE_ABOVE
+        ? null
+        : {
+            ...withData(
+              Array.from({ length: 2400 }, (_, index): Datum => {
+                const datum = {
+                  name: `c${String(index)}`,
+                  v: step.readings[index % step.readings.length] ?? null,
+                };
+                return step.stacked === true ? { ...datum, w: 1 + (index % 5) } : datum;
+              })
+            ),
+            stacked: step.stacked === true,
+          };
     case "add":
       return world.data.length >= 100 ? null : withData([...world.data, { name: fresh(), v: step.v }]);
     case "remove":
@@ -811,9 +1177,10 @@ function stepped(world: World, step: Step): World | null {
     case "reorder":
       return withData([...world.data.slice(1), ...world.data.slice(0, 1)]);
     case "swap":
+      // A stacked world leaves its stack when it shrinks, so its bars stay loose.
       return withData(
         world.data.length > 100
-          ? world.data.slice(0, 5)
+          ? world.data.slice(0, 5).map(({ name, v }) => ({ name, v }))
           : [
               ...world.data,
               ...Array.from({ length: 101 - world.data.length }, (_, index) => ({
@@ -834,7 +1201,10 @@ function stepped(world: World, step: Step): World | null {
     case "resize":
       return { ...world, width: step.width, height: step.height };
     case "turn":
-      return { ...world, orientation: world.orientation === "vertical" ? "horizontal" : "vertical" };
+      // A horizontal world draws every bar as an element, which 2,400 categories keep too slow.
+      return world.data.length > DECIMATE_ABOVE
+        ? null
+        : { ...world, orientation: world.orientation === "vertical" ? "horizontal" : "vertical" };
     case "reference":
       return { ...world, line: step.line, area: step.area };
     case "edge": {
@@ -919,10 +1289,12 @@ async function run(dpr: number, first: World, steps: readonly Step[]): Promise<S
       // A follower that re-rendered without Root paints in a microtask after the commit, which the
       // browser runs before it paints, so the frame the commit shows waits for it, and no frame more.
       await Promise.resolve();
-      // Which marks the commit snaps: every mark on a turn, a window, an update the path form draws
-      // and an update that relays the plot, and the references a reference step changes.
+      // Which marks the commit snaps: every mark on a turn, a window, an update that relays the plot
+      // or one that changes the path form's categories, which crossfades it, and the references a
+      // reference step changes. An update of the same categories moves the path form's columns.
       const data =
         step.kind === "update" ||
+        step.kind === "dense" ||
         step.kind === "add" ||
         step.kind === "remove" ||
         step.kind === "reorder" ||
@@ -930,7 +1302,7 @@ async function run(dpr: number, first: World, steps: readonly Step[]): Promise<S
       const snapsAll =
         step.kind === "turn" ||
         step.kind === "window" ||
-        (data && (pathForm(world) || relays(previous, world)));
+        (data && ((pathForm(world) && step.kind !== "update") || relays(previous, world)));
       const snapsReferences = step.kind === "reference" || step.kind === "edge" || step.kind === "axis";
       if (snapsAll) {
         atRest(`${when} commit`);
@@ -1147,6 +1519,71 @@ describe("one world of marks", () => {
               { kind: "resize", width: 409.75, height: 318.75 },
               { kind: "add", v: -6 },
               { kind: "resize", width: 487.75, height: 174.75 },
+            ],
+          ],
+          // A resize of path-form columns, which moves the span that names each column.
+          [
+            1,
+            {
+              orientation: "vertical",
+              readings: [0.01, 0, 0, 0, 0],
+              include: [-10, 10],
+              line: { axis: "value", at: 10.015 },
+              area: { axis: "value", from: 0.001, to: 0.005 },
+            },
+            [
+              { kind: "swap" },
+              { kind: "resize", width: 280, height: 150 },
+              {
+                kind: "update",
+                readings: Array.from({ length: 101 }, (_, index) =>
+                  [
+                    3, 9, 10, 31, 36, 37, 40, 41, 42, 44, 45, 53, 59, 60, 64, 68, 70, 72, 78, 89, 91, 99,
+                  ].includes(index)
+                    ? 0.01
+                    : 0
+                ),
+              },
+              { kind: "reorder" },
+            ],
+          ],
+          // A decimated world: 2,400 categories whose value-only updates tween the M4 vertices, one
+          // with a run of missing readings that breaks the line and draws its ticks.
+          [
+            1.5,
+            {
+              orientation: "vertical",
+              readings: [3, -2, null, 0.1, 7],
+              include: [-10, 10],
+              line: { axis: "value", at: 2.5 },
+              area: { axis: "slot", first: "c1", last: "c2" },
+            },
+            [
+              { kind: "dense", readings: rest([4, 1, -3, 2, 8, 0.1, 6]) },
+              { kind: "wait", ms: 700 },
+              { kind: "update", readings: rest([4, 1, -3, 9, 8, 0.1, 6]) },
+              { kind: "wait", ms: 150 },
+              { kind: "activate", key: "{Home}" },
+              { kind: "update", readings: rest([4, null, -3, 9, 8, null, 6]) },
+              { kind: "wait", ms: 700 },
+            ],
+          ],
+          // The same decimated world with w stacked over v: both lines keep the vertices of every
+          // boundary of the stack, and v's sides of zero, through value-only updates.
+          [
+            2,
+            {
+              orientation: "vertical",
+              readings: [3, -2, null, 0.1, 7],
+              include: [-10, 10],
+              line: { axis: "value", at: 2.5 },
+              area: { axis: "slot", first: "c1", last: "c2" },
+            },
+            [
+              { kind: "dense", readings: rest([4, 1, -3, 2, 8, 0.1, 6]), stacked: true },
+              { kind: "wait", ms: 700 },
+              { kind: "update", readings: rest([4, 1, -3, 9, 8, 0.1, -6]) },
+              { kind: "wait", ms: 700 },
             ],
           ],
         ],

@@ -12,6 +12,8 @@ import { userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { barBox } from "../../../test/chart/bar-box";
 import type { BarBox } from "../../../test/chart/bar-box";
+import { installFrameClock } from "../../../test/chart/frame-clock";
+import frames from "../../../test/chart/motion-frames.json" with { type: "json" };
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { SupportedLocale } from "../../intl/locale-context";
@@ -48,19 +50,17 @@ function near(actual: number, expected: number): void {
 }
 
 describe("bars in a band", () => {
-  function two(children: ReactNode) {
+  function two(
+    children: ReactNode,
+    data: readonly { name: string; a: number; b: number }[] = [
+      { name: "x", a: 4, b: 2 },
+      { name: "y", a: 3, b: 1 },
+    ]
+  ) {
     return (
       <LocaleProvider locale="nb-NO">
         <div style={{ width: 80 }}>
-          <Chart.Root
-            data-intro="none"
-            data={[
-              { name: "x", a: 4, b: 2 },
-              { name: "y", a: 3, b: 1 },
-            ]}
-            config={TWO}
-            xKey="name"
-            aria-label="To">
+          <Chart.Root data-intro="none" data={data} config={TWO} xKey="name" aria-label="To">
             {children}
           </Chart.Root>
         </div>
@@ -85,6 +85,125 @@ describe("bars in a band", () => {
     near(b?.right ?? 0, 35);
     // The second band starts at 40 px.
     near(boxes(host, 0)[1]?.left ?? 0, 45);
+  });
+
+  it("rests a Marker and its pill on the first grouped bar's middle and tip (B1-5, Q1-4)", () => {
+    // One category on 300 px: the band keeps 225 px inside its 25 % gap, from 37.5 px, and two bars
+    // with the default 2 px gap take 111.5 px each, so the first spans 37.5 to 149 px and its
+    // middle lies at 93.25 px, never at the slot's centre at 150 px.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 300 }}>
+          <Chart.Root
+            data-intro="none"
+            data={[{ name: "x", a: 3, b: 4 }]}
+            config={TWO}
+            xKey="name"
+            aria-label="To">
+            <Chart.BarGroup series={["a", "b"]}>
+              <Chart.Bar dataKey="a" />
+              <Chart.Bar dataKey="b" />
+            </Chart.BarGroup>
+            <Chart.Marker dataKey="a" at="first">
+              <Chart.ValueLabel />
+            </Chart.Marker>
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    const [bar] = boxes(host, 0);
+    // DOM audit: the marker's dot and its pill's anchor are aria-hidden plot output.
+    const dot = host.querySelector('[data-slot="chart-marker"] > svg > [data-slot="chart-dot"]');
+    const anchor = host.querySelector<HTMLElement>('[data-slot="chart-marker"] > [data-part="anchor"]');
+    const cx = Number(dot?.getAttribute("cx"));
+    expect(Math.abs(cx - 93.25)).toBeLessThanOrEqual(0.75);
+    near(cx, ((bar?.left ?? 0) + (bar?.right ?? 0)) / 2);
+    near(Number(dot?.getAttribute("cy")), bar?.top ?? 0);
+    expect(Number.parseFloat(anchor?.style.getPropertyValue("--chart-marker-x") ?? "")).toBe(cx);
+  });
+
+  it("rests every Marker a tied maximum or a listed selection picks on its own bar (B2-4, Q2-3)", () => {
+    // 80 px and two categories in a BarGroup of a = [3, 3] and b = [4, 4]: a's bars span 5 to 19
+    // and 45 to 59 px, so a's markers centre at 12 and 52 px, never at the groups' 20 and 60.
+    for (const at of ["max", { x: ["x", "y"] }] as const) {
+      const { host, unmount } = renderThemed(
+        two(
+          <>
+            <Chart.BarGroup series={["a", "b"]}>
+              <Chart.Bar dataKey="a" />
+              <Chart.Bar dataKey="b" />
+            </Chart.BarGroup>
+            <Chart.Marker dataKey="a" at={at}>
+              <Chart.ValueLabel />
+            </Chart.Marker>
+          </>,
+          [
+            { name: "x", a: 3, b: 4 },
+            { name: "y", a: 3, b: 4 },
+          ]
+        )
+      );
+      // DOM audit: the marker's dots and pill anchors are aria-hidden plot output.
+      const dots = [...host.querySelectorAll('[data-slot="chart-marker"] > svg > [data-slot="chart-dot"]')];
+      const anchors = [
+        ...host.querySelectorAll<HTMLElement>('[data-slot="chart-marker"] > [data-part="anchor"]'),
+      ];
+      const middles = boxes(host, 0).map(({ left, right }) => (left + right) / 2);
+      expect(middles, JSON.stringify(at)).toEqual([12, 52]);
+      expect(dots.map((dot) => Number(dot.getAttribute("cx")) - 0.5)).toEqual(middles);
+      expect(
+        anchors.map((anchor) => Number.parseFloat(anchor.style.getPropertyValue("--chart-marker-x")) - 0.5)
+      ).toEqual(middles);
+      unmount();
+    }
+  });
+
+  it("centres ActiveValue over its own grouped bar at rest and through an update (B2-7)", () => {
+    // 300 px and one category: a's bar spans 37.5 to 149 px, so its value centres over the bar's
+    // drawn middle, near 93.25 px, at rest and in every frame of an update that changes only a's
+    // value, never over the group's centre at 150 px.
+    const clock = installFrameClock();
+    try {
+      const chart = (a: number) => (
+        <LocaleProvider locale="nb-NO">
+          <div style={{ width: 300 }}>
+            <Chart.Root
+              data-intro="none"
+              data={[{ name: "x", a, b: 4 }]}
+              config={TWO}
+              xKey="name"
+              yInclude={[0, 4]}
+              aria-label="To">
+              <Chart.BarGroup series={["a", "b"]}>
+                <Chart.Bar dataKey="a" />
+                <Chart.Bar dataKey="b" />
+              </Chart.BarGroup>
+              <Chart.ActiveValue dataKey="a" />
+            </Chart.Root>
+          </div>
+        </LocaleProvider>
+      );
+      const { host, rerender } = renderThemed(chart(3));
+      // DOM audit: ActiveValue is aria-hidden plot output, placed by its share of the plot.
+      const centre = () =>
+        Number.parseFloat(
+          host
+            .querySelector<HTMLElement>('[data-slot="chart-active-value"]:not([data-outgoing])')
+            ?.style.getPropertyValue("--chart-value-at") ?? ""
+        ) * plotOf(host).width;
+      const [bar] = boxes(host, 0);
+      const middle = ((bar?.left ?? 0) + (bar?.right ?? 0)) / 2;
+      expect(Math.abs(middle - 93.25)).toBeLessThanOrEqual(0.5);
+      expect(centre()).toBeCloseTo(middle, 4);
+      const start = clock.now();
+      rerender(chart(2));
+      for (const ms of [0, 120, 240, 600]) {
+        clock.frameAt(start + ms);
+        expect(centre(), String(ms)).toBeCloseTo(middle, 4);
+      }
+    } finally {
+      clock.restore();
+    }
   });
 
   it("takes a BarGroup's own 10 px bar gap: 10 px bars at 5 and 25 px of each 40 px band", () => {
@@ -296,9 +415,306 @@ describe("structural counts per form", () => {
     expect(bars(host)).toHaveLength(0);
     // DOM audit: path-form bars are aria-hidden plot output.
     const paths = [...host.querySelectorAll('[data-slot="chart-bar-path"]')];
-    expect(paths.map((path) => path.getAttribute("data-quality"))).toEqual([null, "estimated", "missing"]);
+    // The fill, projected, estimated and missing paths stay mounted, whether or not they draw.
+    expect(paths.map((path) => path.getAttribute("data-quality"))).toEqual([
+      null,
+      null,
+      "estimated",
+      "missing",
+    ]);
     // 39 is the highest value, on day indices 29, 59 and on to 359, so 12 days tie.
     expect(host.querySelectorAll('[data-slot="chart-bar-emphasis"]')).toHaveLength(12);
+  });
+});
+
+/** The heights of a path's columns, one `M x y H x V y` rectangle each, in order. */
+function columnHeights(path: Element | null | undefined): number[] {
+  return [...(path?.getAttribute("d") ?? "").matchAll(/M[\d.]+ ([\d.]+)H[\d.]+V([\d.]+)/gu)].map(
+    ([, top = "0", bottom = "0"]) => Number(bottom) - Number(top)
+  );
+}
+
+/** The rectangles of a path-form fill, one `M x y H x V y` subpath each. */
+function rectsOfFill(path: Element | null | undefined) {
+  return [...(path?.getAttribute("d") ?? "").matchAll(/M([\d.]+) ([\d.]+)H([\d.]+)V([\d.]+)/gu)].map(
+    ([, x = "0", top = "0", right = "0", bottom = "0"]) => ({
+      x: Number(x),
+      width: Number(right) - Number(x),
+      height: Number(bottom) - Number(top),
+    })
+  );
+}
+
+/** The oracle's eased progress 120 ms into a 480 ms tween. */
+function easedAt120(): number {
+  const { from, to, at } = frames.references.line;
+  return (at[120] - from) / (to - from);
+}
+
+describe("path form motion", () => {
+  /** A 365-category chart with no axes, the plot its whole 1,095 px width. */
+  function year(
+    data: readonly { name: string; a: number | null }[],
+    color: "chart-1" | "chart-seq" = "chart-1",
+    yInclude?: readonly number[]
+  ) {
+    return (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 1095 }}>
+          <Chart.Root
+            data-intro="none"
+            data={data}
+            config={{ a: { label: "A", color } }}
+            xKey="name"
+            yInclude={yInclude}
+            aria-label="År">
+            <Chart.Bar dataKey="a" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+  }
+
+  it("shrinks columns whose readings all fall to 0, keeping their fill path mounted (Q1-3)", () => {
+    // 365 readings of 10 under yInclude [10] all go to 0. The domain stays [0, 10], so each column
+    // shrinks from the plot's full height h toward the zero line and is h × (1 − eased) tall at
+    // 120 ms, while at rest the fill path draws nothing.
+    const clock = installFrameClock();
+    try {
+      const rows = (value: number) =>
+        Array.from({ length: 365 }, (_, index) => ({ name: `d${String(index)}`, a: value }));
+      const { host, rerender } = renderThemed(year(rows(10), "chart-1", [10]));
+      // DOM audit: the path form's fill is aria-hidden plot output.
+      const fill = () => host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]');
+      const full = columnHeights(fill())[0] ?? 0;
+      expect(full).toBeGreaterThan(100);
+      const start = clock.now();
+      rerender(year(rows(0), "chart-1", [10]));
+      clock.frameAt(start + 120);
+      const heights = columnHeights(fill());
+      expect(heights).toHaveLength(365);
+      for (const height of heights)
+        expect(Math.abs(height - full * (1 - easedAt120()))).toBeLessThanOrEqual(1);
+      clock.frameAt(start + 600);
+      expect(fill()?.getAttribute("d")).toBe("");
+    } finally {
+      clock.restore();
+    }
+  });
+
+  it("shrinks a scale's columns in their own step's path when their readings leave (B1-8)", () => {
+    // 365 scale-coloured readings of 0, 50 and 100 in turn. Every 50 becomes null with the domain
+    // still [0, 100], so the 50s' step path, which draws nothing at rest after the update, still
+    // draws its 122 columns at half the full height × (1 − eased) 120 ms in.
+    const clock = installFrameClock();
+    try {
+      const rows = (half: number | null) =>
+        Array.from({ length: 365 }, (_, index) => ({
+          name: `d${String(index)}`,
+          a: [0, half, 100][index % 3] ?? null,
+        }));
+      const { host, rerender } = renderThemed(year(rows(50), "chart-seq"));
+      // DOM audit: the path form's step paths are aria-hidden plot output.
+      const steps = () => [...host.querySelectorAll('[data-slot="chart-bar-path"][data-part="fill"]')];
+      const halves = steps().find(
+        (path) => columnHeights(path).length === 122 && path.getAttribute("d")?.includes("V")
+      );
+      const tall = Math.max(...steps().flatMap((path) => columnHeights(path)));
+      const step = halves?.getAttribute("data-fill");
+      const full = columnHeights(halves)[0] ?? 0;
+      expect(Math.abs(full - tall / 2)).toBeLessThanOrEqual(1);
+      const start = clock.now();
+      rerender(year(rows(null), "chart-seq"));
+      clock.frameAt(start + 120);
+      const path = host.querySelector(`[data-slot="chart-bar-path"][data-fill="${step ?? ""}"]`);
+      const heights = columnHeights(path);
+      expect(heights).toHaveLength(122);
+      for (const height of heights)
+        expect(Math.abs(height - full * (1 - easedAt120()))).toBeLessThanOrEqual(1);
+    } finally {
+      clock.restore();
+    }
+  });
+
+  it("slides the active overlay with its column when a category is appended (Q1-5)", () => {
+    // 365 categories on 1,095 px, 3 px a slot, with no axes. A slot's bar span keeps 2.25 px of its
+    // 3 px inside the 25 % band gap, from 0.375 px. One category is appended and the first dropped,
+    // so the active column slides one slot left, from 3 (q + 1) + 0.375 px to its rest at 3q px,
+    // and the overlay over it moves the same way at the oracle's eased progress.
+    const clock = installFrameClock();
+    try {
+      const rows = (from: number) =>
+        Array.from({ length: 365 }, (_, index) => ({ name: `d${String(from + index)}`, a: 10 }));
+      const chart = (data: readonly { name: string; a: number }[]) => (
+        <LocaleProvider locale="nb-NO">
+          <div style={{ width: 1095 }}>
+            <Chart.Root data-intro="none" data={data} config={{ a: TWO.a }} xKey="name" aria-label="År">
+              <Chart.Bar dataKey="a" />
+            </Chart.Root>
+          </div>
+        </LocaleProvider>
+      );
+      const { host, rerender } = renderThemed(chart(rows(0)));
+      // DOM audit: the listbox is the plot's pointer surface, and the overlay is aria-hidden output.
+      const surface = host.querySelector<HTMLElement>('[role="listbox"]');
+      const box = surface?.getBoundingClientRect() ?? new DOMRect();
+      surface?.dispatchEvent(
+        new PointerEvent("pointermove", {
+          bubbles: true,
+          clientX: box.left + 3 * 182 + 1.5,
+          clientY: box.top + box.height / 2,
+          pointerType: "mouse",
+        })
+      );
+      const overlay = () => host.querySelector('[data-slot="chart-bar-active"]');
+      const start = clock.now();
+      rerender(chart(rows(1)));
+      clock.frameAt(start + 120);
+      const moving = Number(overlay()?.getAttribute("x"));
+      clock.frameAt(start + 600);
+      const rest = Number(overlay()?.getAttribute("x"));
+      expect(rest % 3).toBe(0);
+      expect(moving).toBeGreaterThan(rest);
+      expect(Math.abs(moving - (rest + 3.375 * (1 - easedAt120())))).toBeLessThanOrEqual(1);
+    } finally {
+      clock.restore();
+    }
+  });
+});
+
+describe("markers in a staggered entrance (Q3-1)", () => {
+  it("raises each tied maximum's marker and pill with its own bar, on that bar's delay", () => {
+    // 30 equal bars on 300 px grow from the baseline in the left entrance, bar k 16k ms after the
+    // first, so the last waits 464 ms. Every slot is a maximum, so each marker and pill must sit
+    // on its own bar's top in every frame: at 120 ms the first has risen and the last has not.
+    const clock = installFrameClock();
+    try {
+      const { host } = renderThemed(
+        <LocaleProvider locale="nb-NO">
+          <div style={{ width: 300 }}>
+            <Chart.Root
+              data={Array.from({ length: 30 }, (_, index) => ({ name: `c${String(index)}`, a: 3 }))}
+              config={{ a: TWO.a }}
+              xKey="name"
+              yInclude={[0, 4]}
+              aria-label="Tretti">
+              <Chart.Bar dataKey="a" />
+              <Chart.Marker dataKey="a" at="max">
+                <Chart.ValueLabel />
+              </Chart.Marker>
+            </Chart.Root>
+          </div>
+        </LocaleProvider>
+      );
+      const start = clock.now();
+      for (const ms of [120, 300, 600]) {
+        clock.frameAt(start + ms);
+        // DOM audit: the marker's dots and pill anchors are aria-hidden plot output.
+        const dots = [...host.querySelectorAll('[data-slot="chart-marker"] > svg > [data-slot="chart-dot"]')];
+        const anchors = [
+          ...host.querySelectorAll<HTMLElement>('[data-slot="chart-marker"] > [data-part="anchor"]'),
+        ];
+        const tops = boxes(host, 0).map(({ top }) => top);
+        expect(dots).toHaveLength(30);
+        dots.forEach((dot, index) => {
+          near(Number(dot.getAttribute("cy")), tops[index] ?? Number.NaN);
+          near(
+            Number.parseFloat(anchors[index]?.style.getPropertyValue("--chart-marker-y") ?? ""),
+            tops[index] ?? 0
+          );
+        });
+        if (ms === 120) expect((tops.at(-1) ?? 0) - (tops[0] ?? 0)).toBeGreaterThan(20);
+      }
+    } finally {
+      clock.restore();
+    }
+  });
+});
+
+describe("decimated path form", () => {
+  it("slides a decimated column with its data when the window moves by a bucket (Q3-2)", () => {
+    // 2,500 categories on 1,000 by 200 px, 0.4 px a slot, all 1 but c1005 = 100 over [0, 100].
+    // M4's 500 buckets hold 5 slots each, so c1005 heads bucket 201, a 2 px column from 402 px.
+    // c0 to c2499 becomes c5 to c2504, a five-slot slide, and the spike's bucket becomes bucket
+    // 200, from 400 px: one 200 px column slides 2 px left, at 402 - 2 × eased on the way.
+    const clock = installFrameClock();
+    try {
+      const rows = (from: number) =>
+        Array.from({ length: 2500 }, (_, index) => ({
+          name: `c${String(from + index)}`,
+          a: from + index === 1005 ? 100 : 1,
+        }));
+      const chart = (data: readonly { name: string; a: number }[]) => (
+        <LocaleProvider locale="nb-NO">
+          <div style={{ width: 1000 }}>
+            <Chart.Root
+              data-intro="none"
+              data={data}
+              config={{ a: TWO.a }}
+              xKey="name"
+              yInclude={[0, 100]}
+              style={{ "--chart-plot-height": "200px" }}
+              aria-label="Mange">
+              <Chart.Bar dataKey="a" />
+            </Chart.Root>
+          </div>
+        </LocaleProvider>
+      );
+      const { host, rerender } = renderThemed(chart(rows(0)));
+      // DOM audit: the path form's fill is aria-hidden plot output.
+      const tall = () =>
+        rectsOfFill(host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]')).filter(
+          ({ height }) => height > 150
+        );
+      expect(tall().map(({ x, width, height }) => [x, width, height])).toEqual([[402, 2, 200]]);
+      const start = clock.now();
+      rerender(chart(rows(5)));
+      clock.frameAt(start + 120);
+      const moving = tall();
+      expect(moving).toHaveLength(1);
+      expect(Math.abs((moving[0]?.x ?? 0) - (402 - 2 * easedAt120()))).toBeLessThanOrEqual(0.5);
+      // No column grows or shrinks in place on the way: each stays 2 or 200 px tall.
+      const heights = rectsOfFill(host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]')).map(
+        ({ height }) => height
+      );
+      expect(heights.filter((height) => height > 3 && height < 199)).toEqual([]);
+      clock.frameAt(start + 600);
+      expect(tall().map(({ x, width, height }) => [x, width, height])).toEqual([[400, 2, 200]]);
+    } finally {
+      clock.restore();
+    }
+  });
+
+  it("keeps a missing reading's tick and the emphasised maximum's box above 2,000 slots (Q1-2)", () => {
+    // 2,400 categories on 600 px, a quarter pixel a slot, with no axes. Slot 1,200 is missing and
+    // slot 1,800 holds the one maximum. Each draws one device pixel where its slot starts: the tick
+    // from 300 to 301 px and the emphasis box from 450 to 451 px.
+    const rows = Array.from({ length: 2400 }, (_, index) => ({
+      name: `c${String(index)}`,
+      a: index === 1200 ? null : index === 1800 ? 50 : 10 + (index % 7),
+    }));
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 600 }}>
+          <Chart.Root data-intro="none" data={rows} config={{ a: TWO.a }} xKey="name" aria-label="Mange">
+            <Chart.Bar dataKey="a" emphasis="max" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: the missing ticks and the emphasis boxes are aria-hidden plot output.
+    const missing = host
+      .querySelector('[data-slot="chart-bar-path"][data-quality="missing"]')
+      ?.getAttribute("d");
+    const ticks = [...(missing ?? "").matchAll(/M([\d.]+) [\d.]+H([\d.]+)/gu)].map(
+      ([, from = "", to = ""]) => [Number(from), Number(to)]
+    );
+    expect(ticks).toEqual([[300, 301]]);
+    const boxes = [...host.querySelectorAll('[data-slot="chart-bar-emphasis"]')].map((rect) => [
+      Number(rect.getAttribute("x")),
+      Number(rect.getAttribute("width")),
+    ]);
+    expect(boxes).toEqual([[450, 1]]);
   });
 });
 

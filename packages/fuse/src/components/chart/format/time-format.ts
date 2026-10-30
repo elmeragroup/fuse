@@ -22,9 +22,8 @@ export type Interval = "second" | "minute" | "quarter-hour" | "hour" | "day" | "
 /**
  * A named time format. Each is a fixed recipe. The two range presets end at the wall-clock start
  * plus the interval, so the repeated fall-back hour reads `02–03` twice and the day ends at `24`.
- * `"time-seconds"` prints hours, minutes and seconds after CLDR's `Hms` pattern, such as `13:42:04`
- * in nb-NO and `13.42.04` in fi-FI. Its recipe is not built yet, so formatting with it throws a
- * `RangeError`.
+ * `"time-seconds"` prints hours, minutes and seconds after CLDR's `Hms` pattern with a two-digit
+ * hour, such as `13:42:04` in nb-NO and sv-SE, `13.42.04` in fi-FI and `1:42:04 PM` in en-US.
  *
  * @beta
  */
@@ -94,6 +93,13 @@ const RANGE_MINUTES = {
 /** The clocks' Intl recipes, read as UTC so no zone transition shifts the fields. */
 const H12_HOUR = { hour: "numeric", hourCycle: "h12", timeZone: "UTC" } as const;
 const H12_TIME = { hour: "numeric", minute: "2-digit", hourCycle: "h12", timeZone: "UTC" } as const;
+const H12_SECONDS = {
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+  hourCycle: "h12",
+  timeZone: "UTC",
+} as const;
 const H23_TIME = { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "UTC" } as const;
 
 /** The hour-minute separator of a 24-hour locale, such as `:` or `.`, as CLDR's `Hm` pattern writes it. */
@@ -101,11 +107,11 @@ function timeSeparator(locale: SupportedLocale): string {
   return part(dateTimeFormat(locale, H23_TIME).formatToParts(0), "literal");
 }
 
-/** Whether a clock time shows the hour alone or the hour and minute. */
-type Precision = "hour" | "minute";
+/** Whether a clock time shows the hour alone, the hour and minute, or the seconds too. */
+type Precision = "hour" | "minute" | "second";
 
 /** The 12-hour clock's recipe for each precision. */
-const H12_OPTIONS = { hour: H12_HOUR, minute: H12_TIME } as const satisfies Record<
+const H12_OPTIONS = { hour: H12_HOUR, minute: H12_TIME, second: H12_SECONDS } as const satisfies Record<
   Precision,
   Intl.DateTimeFormatOptions
 >;
@@ -208,10 +214,14 @@ type Clock = { readonly text: string; readonly full: string; readonly dayPeriod?
 function clock(locale: SupportedLocale, words: ChartWords, wall: WallClock, precision: Precision): Clock {
   switch (words.clock) {
     case "h23": {
+      // CLDR's Hms joins the seconds with the Hm separator, and every field takes two digits.
+      const separator = timeSeparator(locale);
       const text =
-        precision === "minute"
-          ? `${pad(wall.hour)}${timeSeparator(locale)}${pad(wall.minute)}`
-          : pad(wall.hour);
+        precision === "hour"
+          ? pad(wall.hour)
+          : precision === "minute"
+            ? `${pad(wall.hour)}${separator}${pad(wall.minute)}`
+            : `${pad(wall.hour)}${separator}${pad(wall.minute)}${separator}${pad(wall.second)}`;
       return { text, full: text };
     }
     case "h12": {
@@ -252,7 +262,7 @@ function range(
   );
 }
 
-type ClockPreset = "hour" | "hour-range" | "time" | "time-range";
+type ClockPreset = "hour" | "hour-range" | "time" | "time-seconds" | "time-range";
 
 function clockText(
   locale: SupportedLocale,
@@ -261,8 +271,9 @@ function clockText(
   wall: WallClock,
   preset: ClockPreset
 ): FormattedText {
-  const precision: Precision = preset === "time" || preset === "time-range" ? "minute" : "hour";
-  if (preset === "hour" || preset === "time") {
+  const precision: Precision =
+    preset === "time-seconds" ? "second" : preset === "time" || preset === "time-range" ? "minute" : "hour";
+  if (preset === "hour" || preset === "time" || preset === "time-seconds") {
     const { full } = clock(locale, words, wall, precision);
     return makeFormattedText(full, words.spokenTime(full));
   }
@@ -323,7 +334,7 @@ function clockLabel(
  * @param role - `tick` for the short axis form, `full` for tooltips, aria text and tables.
  * @returns The visual and spoken labels, with canonical spaces.
  * @throws {RangeError} When `timeZone` is not an IANA zone, a range preset gets a day or longer
- * interval, or the preset is `time-seconds`, which has no recipe yet. Each is a configuration defect.
+ * interval. Each is a configuration defect.
  */
 export function formatTime(
   locale: SupportedLocale,
@@ -337,9 +348,8 @@ export function formatTime(
     case "hour-range":
     case "time":
     case "time-range":
-      return clockLabel(locale, timeZone, slot, preset, role);
     case "time-seconds":
-      throw new RangeError("The time-seconds preset has no recipe yet");
+      return clockLabel(locale, timeZone, slot, preset, role);
     case "week": {
       const words = CHART_WORDS[locale];
       const week = isoWeek(wallClock(slot.start, timeZone));
@@ -444,7 +454,7 @@ export function slotStart(at: number, interval: Interval, timeZone: string): num
  * @param role - `tick` for the short axis form, `full` for tooltips, aria text and tables.
  * @returns The visual and spoken labels of the slot start, with canonical spaces.
  * @throws A `RangeError` when `timeZone` is not an IANA zone, a range preset gets a day or longer
- * interval, or the preset is `time-seconds`, which has no recipe yet.
+ * interval.
  */
 export function formatSlot(
   locale: SupportedLocale,

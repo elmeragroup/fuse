@@ -1,29 +1,31 @@
-// Unit under test: the bar geometry of layout/bar-geometry.ts. Oracles: section 8.12's form
-// threshold and M4 buckets, brute-forced over E13's committed hourly year; evilcharts'
+// Unit under test: the bar geometry of layout/bar-geometry.ts, and the path form's columns up to
+// 2,000 slots through their production owner, layoutColumns and columnsDrawing. Oracles: section
+// 8.12's form threshold and M4 buckets, brute-forced over E13's committed hourly year; evilcharts'
 // getBarGrowAnimation step formulas for a 5-bar fixture, written by hand; stacked extents read off
 // the rows by hand; and pixel rectangles worked by hand from section 8.15's band layout on plots
 // of whole pixels, so snapping changes nothing.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
+import { columnsDrawing, layoutColumns } from "../chart-bar-columns";
 import year from "../format/fixtures/elhub/no1-household-hourly-2025-10_2026-09.json" with { type: "json" };
 import {
   barCells,
   barForm,
   barRect,
   barTip,
-  columnRect,
+  bucketColumns,
   geometryRect,
   hangs,
   introStep,
   isNegative,
   isStackTop,
-  pathColumns,
   rectsPath,
 } from "./bar-geometry";
 import { buildCartesianModel } from "./cartesian-model";
+import type { CartesianModel, SeriesModel } from "./cartesian-model";
 import { WHOLE_BAND, optionBand, plotFrame } from "./plot-frame";
-import type { BarMetrics, PlotBox } from "./plot-frame";
+import type { BarMetrics, PlotBox, PlotFrame, PlotRect, SubBand } from "./plot-frame";
 
 /** A plot of whole pixels, at 1x unless a ratio is given. */
 function box(width: number, height: number, dpr = 1): PlotBox {
@@ -40,6 +42,28 @@ function firstCell(model: ReturnType<typeof buildCartesianModel>) {
 
 /** The contract's default spacing: a 25 % band gap and 2 px bar gap and seam. */
 const METRICS: BarMetrics = { bandGap: 0.25, barGap: 2, seam: 2 };
+
+/** The rectangles of one path's `d`, each an `M x y H x V y H x Z` subpath. */
+function rectsOf(d: string): PlotRect[] {
+  return [...d.matchAll(/M(-?[\d.]+) (-?[\d.]+)H(-?[\d.]+)V(-?[\d.]+)/gu)].map(([, x, y, right, bottom]) => ({
+    x: Number(x),
+    y: Number(y),
+    width: Number(right) - Number(x),
+    height: Number(bottom) - Number(y),
+  }));
+}
+
+/**
+ * A series' path-form columns as the production owner lays them out and draws them: the entries
+ * and the drawn fill, one rectangle per reading with length, in slot order.
+ */
+function pathForm(chart: CartesianModel, series: SeriesModel, frame: PlotFrame, sub: SubBand = WHOLE_BAND) {
+  const paint = { key: series.key, color: "chart-1", bins: undefined, base: "", stops: undefined } as const;
+  const update = { kind: "initial", keys: [], relays: false } as const;
+  const layout = layoutColumns({ model: chart, update }, series, frame, METRICS, sub, paint, new Set());
+  const drawing = columnsDrawing(frame, layout.topology, layout.values);
+  return { layout, fill: drawing.fills[0] ?? "", rects: rectsOf(drawing.fills[0] ?? "") };
+}
 
 function categories(count: number) {
   return buildCartesianModel({
@@ -237,7 +261,7 @@ describe("M4 decimation of path-form bars", () => {
     });
     const series = model.series[0];
     if (series === undefined) throw new Error("no series");
-    const columns = pathColumns(model, series, [0, 4]);
+    const columns = bucketColumns(model, series, [0, 4]);
     // Brute force: bucket i of 500 holds the slots whose floor(slot × 500 / n) is i.
     const n = year.values.length;
     const maxima = new Map<number, number>();
@@ -253,12 +277,22 @@ describe("M4 decimation of path-form bars", () => {
   });
 
   it("projects a column into the plot and writes it as one closed rectangle", () => {
-    // Two slots on a 200 x 80 plot, so 100 px per slot and 0.8 px per percent. The edges at
-    // 112.5 and 187.5 px lie half way between two pixels and round toward the left.
-    const frame = plotFrame(box(200, 80), "vertical", 2, [0, 1]);
-    const rect = columnRect(frame, { x0: 1.125, x1: 1.875, top: 25, bottom: 100, slot: 1, position: 1 });
-    expect(rect).toEqual({ x: 112, y: 20, width: 75, height: 60 });
-    expect(rectsPath([rect])).toBe("M112 20H187V80H112Z");
+    // Two slots on a 200 x 80 plot over [0, 4], so 100 px per slot. The second slot's 3 reaches
+    // 20 px down, and its column keeps 1.125 to 1.875 slots, 112.5 to 187.5 px, whose edges lie
+    // half way between two pixels and round toward the left. The first slot's 0 draws nothing.
+    const two = model(
+      [
+        { name: "a", v: 0 },
+        { name: "b", v: 3 },
+      ],
+      ["v"],
+      false
+    );
+    const series = two.series[0];
+    if (series === undefined) throw new Error("no series");
+    expect(pathForm(two, series, plotFrame(box(200, 80), "vertical", 2, [0, 4])).fill).toBe(
+      "M112 20H187V80H112Z"
+    );
   });
 });
 
@@ -396,12 +430,14 @@ describe("path columns up to 2,000 slots", () => {
       { name: "y", v: 0 },
       { name: "z", v: 4 },
     ];
+    // The window y to z on 200 x 100 px over [0, 4]: y's 0 draws nothing, and z's 4 at the
+    // window's second slot spans 112.5 to 187.5 px, snapped left, from the top to the baseline.
     const windowed = model(rows, ["v"], false, ["y", "z"]);
     const series = windowed.series[0];
     if (series === undefined) throw new Error("no series");
-    expect(pathColumns(windowed, series, [0, 4])).toEqual([
-      { x0: 1.125, x1: 1.875, top: 0, bottom: 100, slot: 2, position: 1 },
-    ]);
+    expect(pathForm(windowed, series, plotFrame(box(200, 100), "vertical", 2, [0, 4])).fill).toBe(
+      "M112 0H187V100H112Z"
+    );
   });
 
   it("joins rectangles into one path", () => {
@@ -454,7 +490,7 @@ describe("decimated stacked path columns", () => {
       return columns;
     };
     for (const series of [p, q]) {
-      const drawn = pathColumns(stack, series, domain).map((column) => ({
+      const drawn = bucketColumns(stack, series, domain).map((column) => ({
         slot: column.slot,
         negative: column.bottom > 100 * (24 / 30) + 1e-9,
       }));
@@ -465,28 +501,24 @@ describe("decimated stacked path columns", () => {
 
 describe("grouped path columns", () => {
   it("splits each band into the group's sub-bands as the bars form does", () => {
-    // 101 categories take the path form. The band of slot 0 runs from 0.125 to 0.875 after the
-    // 25 % gap, and two sub-bands halve its 0.75 width.
+    // 101 categories on 1,010 x 100 px, 10 px a slot. The band of slot 0 runs from 1.25 to
+    // 8.75 px after the 25 % gap, and two sub-bands halve its 7.5 px: a from 1.25 to 5 px at 2 of
+    // [0, 4], halfway down, and b from 5 to 8.75 px at 4, from the top. The fill snaps them to
+    // whole pixels inside the band's.
     const rows = Array.from({ length: 101 }, (_, index) => ({ name: `c${String(index)}`, a: 2, b: 4 }));
     const grouped = model(rows, ["a", "b"], false);
     const [a, b] = grouped.series;
     if (a === undefined || b === undefined) throw new Error("no series");
-    expect(pathColumns(grouped, a, [0, 4], { index: 0, count: 2 })[0]).toEqual({
-      x0: 0.125,
-      x1: 0.5,
-      top: 50,
-      bottom: 100,
-      slot: 0,
-      position: 0,
-    });
-    expect(pathColumns(grouped, b, [0, 4], { index: 1, count: 2 })[0]).toEqual({
-      x0: 0.5,
-      x1: 0.875,
-      top: 0,
-      bottom: 100,
-      slot: 0,
-      position: 0,
-    });
+    const frame = plotFrame(box(1010, 100), "vertical", 101, [0, 4]);
+    const first = pathForm(grouped, a, frame, { index: 0, count: 2 });
+    const second = pathForm(grouped, b, frame, { index: 1, count: 2 });
+    // An entry's numbers: its middle, tip, span, base, tick span and emphasis span.
+    expect(first.layout.values.slice(1, 5)).toEqual([50, 1.25, 5, 100]);
+    expect(second.layout.values.slice(1, 5)).toEqual([0, 5, 8.75, 100]);
+    expect([first.rects[0], second.rects[0]]).toEqual([
+      { x: 1, y: 50, width: 4, height: 50 },
+      { x: 5, y: 0, width: 4, height: 100 },
+    ]);
   });
 
   /** The second series' column at a category, drawn on a plot of a width at 1x. */
@@ -499,9 +531,9 @@ describe("grouped path columns", () => {
     const grouped = model(rows, ["a", "b"], false);
     const second = grouped.series[1];
     if (second === undefined) throw new Error("no series");
-    const column = pathColumns(grouped, second, [0, 4], { index: 1, count: 2 })[category];
-    if (column === undefined) throw new Error("no column");
-    const rect = columnRect(plotFrame(box(width, 100), "vertical", categories, [0, 4]), column);
+    const frame = plotFrame(box(width, 100), "vertical", categories, [0, 4]);
+    const rect = pathForm(grouped, second, frame, { index: 1, count: 2 }).rects[category];
+    if (rect === undefined) throw new Error("no column");
     return [rect.x, rect.x + rect.width];
   }
 
@@ -539,10 +571,11 @@ describe("grouped path columns", () => {
           const series = grouped.series[index % group];
           if (series === undefined) throw new Error("no series");
           const frame = plotFrame({ width, height: 100, dpr, left, top: 0 }, "vertical", categories, [0, 4]);
-          for (const column of pathColumns(grouped, series, [0, 4], { index: index % group, count: group })) {
-            expect(column.position).not.toBeNull();
-            const rect = columnRect(frame, column);
-            const [start, end] = optionBand(frame, column.position ?? 0, "band");
+          // Every reading is 2, so the fill draws one rectangle per slot, in slot order.
+          const { rects } = pathForm(grouped, series, frame, { index: index % group, count: group });
+          expect(rects).toHaveLength(categories);
+          for (const [position, rect] of rects.entries()) {
+            const [start, end] = optionBand(frame, position, "band");
             expect(rect.x).toBeGreaterThanOrEqual(start - 1e-9);
             expect(rect.x + rect.width).toBeLessThanOrEqual(end + 1e-9);
             expect(rect.width).toBeGreaterThanOrEqual(1 / dpr - 1e-9);
@@ -564,7 +597,7 @@ describe("decimated column identity", () => {
     const many = model(rows, ["v"], false);
     const series = many.series[0];
     if (series === undefined) throw new Error("no series");
-    const columns = pathColumns(many, series, [0, 8]);
+    const columns = bucketColumns(many, series, [0, 8]);
     expect(columns).toHaveLength(500);
     for (const [bucket, column] of columns.entries()) {
       expect(column.slot).toBe(bucket * 5 + 1);
@@ -582,7 +615,7 @@ describe("decimated column identity", () => {
     const many = model(rows, ["v"], false);
     const series = many.series[0];
     if (series === undefined) throw new Error("no series");
-    expect(pathColumns(many, series, [0, 8]).map(({ slot }) => slot % 5)).toEqual(
+    expect(bucketColumns(many, series, [0, 8]).map(({ slot }) => slot % 5)).toEqual(
       Array.from({ length: 500 }, () => 1)
     );
   });
@@ -596,7 +629,7 @@ describe("decimated column identity", () => {
     const many = model(rows, ["v"], false);
     const series = many.series[0];
     if (series === undefined) throw new Error("no series");
-    expect(pathColumns(many, series, [-2, 2]).map(({ slot }) => slot % 5)).toEqual(
+    expect(bucketColumns(many, series, [-2, 2]).map(({ slot }) => slot % 5)).toEqual(
       Array.from({ length: 500 }, () => 2)
     );
   });
@@ -611,7 +644,7 @@ describe("decimated column identity", () => {
     const many = model(rows, ["v"], false);
     const series = many.series[0];
     if (series === undefined) throw new Error("no series");
-    const columns = pathColumns(many, series, [-10, 10]);
+    const columns = bucketColumns(many, series, [-10, 10]);
     // 499 buckets draw, bucket 1 none. Under [-10, 10], 0 lands at 50 % and 1 at 45 %.
     expect(columns).toHaveLength(499);
     expect(columns[0]?.slot).toBe(1);
@@ -632,7 +665,7 @@ describe("decimated column identity", () => {
     const many = model(rows, ["v"], false);
     const series = many.series[0];
     if (series === undefined) throw new Error("no series");
-    const columns = pathColumns(many, series, [-4, 4]);
+    const columns = bucketColumns(many, series, [-4, 4]);
     expect(columns).toHaveLength(500);
     expect(columns.map(({ slot }) => slot % 5)).toEqual(Array.from({ length: 500 }, () => 0));
   });
@@ -644,7 +677,7 @@ describe("decimated column identity", () => {
     const windowed = model(rows, ["v"], false, ["c100", "c2599"]);
     const series = windowed.series[0];
     if (series === undefined) throw new Error("no series");
-    const columns = pathColumns(windowed, series, [0, 2]);
+    const columns = bucketColumns(windowed, series, [0, 2]);
     expect(columns).toHaveLength(500);
     expect(columns[0]?.slot).toBe(100);
     expect(columns.at(-1)?.x1).toBe(2500);
@@ -659,7 +692,7 @@ describe("decimated column identity", () => {
     const many = model(rows, ["v"], false);
     const series = many.series[0];
     if (series === undefined) throw new Error("no series");
-    expect(pathColumns(many, series, [-4, 4]).map(({ slot }) => slot % 5)).toEqual(
+    expect(bucketColumns(many, series, [-4, 4]).map(({ slot }) => slot % 5)).toEqual(
       Array.from({ length: 500 }, () => 0)
     );
   });
@@ -671,18 +704,22 @@ describe("edge cases of the forms", () => {
     const series = empty.series[0];
     if (series === undefined) throw new Error("no series");
     expect(barCells(empty, series)).toEqual([]);
-    expect(pathColumns(empty, series, [0, 1])).toEqual([]);
+    expect(bucketColumns(empty, series, [0, 1])).toEqual([]);
   });
 
   it("draws exactly 2,000 slots one column each, the last count before M4", () => {
-    const rows = Array.from({ length: 2000 }, (_, index) => ({
-      name: `c${String(index)}`,
-      v: 1 + (index % 3),
-    }));
-    const many = model(rows, ["v"], false);
-    const series = many.series[0];
-    if (series === undefined) throw new Error("no series");
-    expect(pathColumns(many, series, [0, 3])).toHaveLength(2000);
+    // 2,000 slots lay out one entry per slot, and 2,001 one per M4 bucket, 500 on any plot.
+    const entries = (count: number) => {
+      const rows = Array.from({ length: count }, (_, index) => ({
+        name: `c${String(index)}`,
+        v: 1 + (index % 3),
+      }));
+      const many = model(rows, ["v"], false);
+      const series = many.series[0];
+      if (series === undefined) throw new Error("no series");
+      return pathForm(many, series, plotFrame(box(1000, 100), "vertical", count, [0, 3])).layout.keys.length;
+    };
+    expect([entries(2000), entries(2001)]).toEqual([2000, 500]);
   });
 
   it("reaches each decimated bucket's lowest negative extent for a loose series", () => {
@@ -694,7 +731,7 @@ describe("edge cases of the forms", () => {
     const many = model(rows, ["v"], false);
     const series = many.series[0];
     if (series === undefined) throw new Error("no series");
-    const columns = pathColumns(many, series, [-4, 4]);
+    const columns = bucketColumns(many, series, [-4, 4]);
     expect(columns).toHaveLength(500);
     // -3 lands 87.5 % down a [-4, 4] plot and 2 lands 25 % down.
     for (const column of columns) expect([column.top, column.bottom]).toEqual([25, 87.5]);
@@ -790,7 +827,7 @@ describe("two stacks and a missing reading", () => {
     const [p, q, r] = model.series;
     if (p === undefined || q === undefined || r === undefined) throw new Error("no series");
     const firsts = Array.from({ length: 498 }, (_, bucket) => (bucket + 2) * 5);
-    const slots = (series: typeof p) => pathColumns(model, series, [-4, 8]).map(({ slot }) => slot);
+    const slots = (series: typeof p) => bucketColumns(model, series, [-4, 8]).map(({ slot }) => slot);
     // p draws slot 0 above zero and slot 1 below in bucket 0, the first tie at slot 5, and every
     // later bucket's first slot, with no negative column where no slot holds a negative.
     expect(slots(p)).toEqual([0, 1, 5, ...firsts]);

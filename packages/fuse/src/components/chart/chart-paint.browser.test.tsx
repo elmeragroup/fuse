@@ -14,6 +14,7 @@ import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import type { ChartColor, ChartQuality } from "./chart-types";
 import "./chart.css";
+import { Sparkline } from "./sparkline";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -344,11 +345,12 @@ describe("empty charts", () => {
           </Chart.Root>
         </LocaleProvider>
       );
-      // DOM audit: the markers are aria-hidden plot output.
-      expect(
-        host.querySelectorAll('[data-slot="chart-bar-missing"], [data-quality="missing"]'),
-        String(count)
-      ).toHaveLength(0);
+      // DOM audit: the markers are aria-hidden plot output. The path form keeps its missing path
+      // mounted, and it draws nothing.
+      const drawn = [
+        ...host.querySelectorAll('[data-slot="chart-bar-missing"], [data-quality="missing"]'),
+      ].filter((marker) => marker.getAttribute("d") !== "");
+      expect(drawn, String(count)).toHaveLength(0);
       unmount();
     }
   });
@@ -485,5 +487,238 @@ describe("data-series on marks", () => {
       for (const mark of marks)
         expect(mark.getAttribute("data-series")).toBe(wrapper.getAttribute("data-series"));
     }
+  });
+});
+
+describe("dimming a line series", () => {
+  it("keeps a chart-other line's stroke while a series is selected (B1-6)", () => {
+    // Selecting a series changes only the other series' opacity, so each line strokes in the same
+    // colour with and without a selection, chart-other's included.
+    const config = {
+      v: { label: "Annet", color: "chart-other" },
+      w: { label: "Verdi", color: "chart-1" },
+    } as const;
+    const chart = (selectedKey: "v" | "w" | null) => (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 300 }}>
+          <Chart.Root
+            data={[10, 40, 25, 100].map((v, index) => ({ name: `c${String(index)}`, v, w: 50 - index * 10 }))}
+            config={config}
+            xKey="name"
+            xScale="point"
+            selectedKey={selectedKey}
+            data-intro="none"
+            aria-label="Verdier">
+            <Chart.Line dataKey="v" curve="linear" />
+            <Chart.Line dataKey="w" curve="linear" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: the lines are aria-hidden plot output.
+    const strokes = (host: HTMLElement) =>
+      [...host.querySelectorAll('[data-slot="chart-line"][data-part="solid"]')].map(
+        (path) => getComputedStyle(path).stroke
+      );
+    const { host, rerender } = renderThemed(chart(null));
+    const unselected = strokes(host);
+    expect(unselected[0]).not.toBe(unselected[1]);
+    for (const selected of ["v", "w"] as const) {
+      rerender(chart(selected));
+      expect(strokes(host)).toEqual(unselected);
+      const other = host.querySelector(
+        `[data-slot="chart-line-series"][data-series="${selected === "v" ? "1" : "0"}"]`
+      );
+      // The dim's 150 ms opacity transition ends at its target.
+      for (const animation of other?.getAnimations() ?? []) animation.finish();
+      expect(Number(getComputedStyle(other ?? document.body).opacity)).toBeLessThan(1);
+    }
+  });
+});
+
+describe("isolated readings in an area (B2-1)", () => {
+  it("paints a dot for each lone reading of an Area drawn alone", async () => {
+    // [10, null, 20] on 300 px of band slots over [0, 20]: no run holds two readings, so the fill
+    // paints nothing and each reading draws L18's dot, a 2 px ring of radius 2.5 around its
+    // vertex, at the slot centres 50 and 250 px and at 100 and 0 px down a 200 px plot.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 300 }}>
+          <Chart.Root
+            data={[
+              { name: "a", v: 10 },
+              { name: "b", v: null },
+              { name: "c", v: 20 },
+            ]}
+            config={{ v: { label: "V", color: "chart-1" } }}
+            xKey="name"
+            yInclude={[0, 20]}
+            data-intro="none"
+            style={{ "--chart-plot-height": "200px" }}
+            aria-label="Flate">
+            <Chart.Area dataKey="v" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: the plot box, and the area's dot path is aria-hidden plot output.
+    const plot = host.querySelector('[data-slot="chart-area-series"]')?.getBoundingClientRect();
+    if (plot === undefined) throw new Error("no plot");
+    const dots = host.querySelector('[data-slot="chart-area"][data-part="dot"]');
+    expect(dots?.getAttribute("d")?.match(/M/gu)).toHaveLength(2);
+    const pixels = await pagePixels();
+    const at = (x: number, y: number) =>
+      chromaAt(pixels, (plot.left + x) * pixels.scale, (plot.top + y) * pixels.scale);
+    // The ring's stroke lies 2.5 px from each centre, and the slot between them stays empty.
+    expect(at(52.5, 100)).toBeGreaterThan(40);
+    expect(at(252.5, 0.5)).toBeGreaterThan(40);
+    expect(at(150, 50)).toBeLessThan(15);
+  });
+
+  it("paints a round cap for each lone reading of a Sparkline area", async () => {
+    // [10, null, 20] in a 60 by 32 px Sparkline: cells of 20 px, so the caps centre at 10 px,
+    // halfway down at 16 px, and at 50 px, at the top.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 60 }}>
+          <Sparkline data={[10, null, 20]} variant="area" locale="nb-NO" aria-label="Pris" />
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: the Sparkline is one image, and its lone path is its plot output.
+    const box = host.querySelector('[data-slot="sparkline"]')?.getBoundingClientRect();
+    if (box === undefined) throw new Error("no sparkline");
+    expect(host.querySelector('[data-slot="sparkline-path"][data-part="lone"]')?.getAttribute("d")).toBe(
+      "M5,50ZM25,0Z"
+    );
+    const pixels = await pagePixels();
+    expect(chromaAt(pixels, (box.left + 10) * pixels.scale, (box.top + 16) * pixels.scale)).toBeGreaterThan(
+      40
+    );
+    expect(chromaAt(pixels, (box.left + 30) * pixels.scale, (box.top + 16) * pixels.scale)).toBeLessThan(15);
+  });
+});
+
+describe("dimming a Marker with its series (B2-8, Q2-5)", () => {
+  it("keeps the selected series' Marker at full opacity and dims the other's", () => {
+    const chart = (selectedKey: "a" | "b") => (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 300 }}>
+          <Chart.Root
+            data={[10, 40, 25].map((a, index) => ({ name: `c${String(index)}`, a, b: 50 - index * 10 }))}
+            config={{ a: { label: "A", color: "chart-1" }, b: { label: "B", color: "chart-2" } }}
+            xKey="name"
+            selectedKey={selectedKey}
+            data-intro="none"
+            aria-label="Markører">
+            <Chart.Line dataKey="a" />
+            <Chart.Marker dataKey="a" at="last">
+              <Chart.ValueLabel />
+            </Chart.Marker>
+            <Chart.Line dataKey="b" />
+            <Chart.Marker dataKey="b" at="last">
+              <Chart.ValueLabel />
+            </Chart.Marker>
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: the markers are aria-hidden plot output, one per series.
+    const opacities = (host: HTMLElement) =>
+      [...host.querySelectorAll('[data-slot="chart-marker"]:not([data-outgoing])')].map((marker) => {
+        // The dim's 150 ms opacity transition ends at its target.
+        for (const animation of marker.getAnimations()) animation.finish();
+        return Number(getComputedStyle(marker).opacity);
+      });
+    const { host, rerender } = renderThemed(chart("b"));
+    const [a = 1, b = 0] = opacities(host);
+    expect(a).toBeLessThan(1);
+    expect(b).toBe(1);
+    rerender(chart("a"));
+    const [first = 0, second = 1] = opacities(host);
+    expect(first).toBe(1);
+    expect(second).toBeLessThan(1);
+  });
+});
+
+describe("outgoing dots keep their look (B3-2)", () => {
+  it("draws a crossfading ring dot hollow and a halo dot in its 6 px halo, as the live dots draw", () => {
+    // [20, 40, 100] gains [10, 30] before it, so the line crossfades and its old dots fade out
+    // in copies. A ring dot fills with the surface and strokes the series paint; a halo strokes
+    // 6 px. Each copy draws as the live dots of its look draw.
+    const chart = (variant: "ring" | "halo", names: readonly string[]) => (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 300 }}>
+          <Chart.Root
+            data={names.map((name, index) => ({
+              name,
+              v: [10, 30, 20, 40, 100].slice(-names.length)[index] ?? 0,
+            }))}
+            config={{ v: { label: "V", color: "chart-1" } }}
+            xKey="name"
+            xScale="point"
+            data-intro="none"
+            aria-label="Prikker">
+            <Chart.Line dataKey="v" curve="linear" />
+            <Chart.Dots dataKey="v" variant={variant} />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    for (const variant of ["ring", "halo"] as const) {
+      const { host, rerender, unmount } = renderThemed(chart(variant, ["h0", "h1", "h2"]));
+      rerender(chart(variant, ["g0", "g1", "h0", "h1", "h2"]));
+      // DOM audit: the dots and their outgoing copies are aria-hidden plot output.
+      const look = (dot: Element | null) => {
+        const style = getComputedStyle(dot ?? document.body);
+        return [style.fill, style.stroke, style.strokeWidth];
+      };
+      const live = host.querySelector(
+        '[data-slot="chart-dots"] [data-slot="chart-dot"]:not([data-outgoing] *)'
+      );
+      const copy = host.querySelector('[data-slot="chart-dots"] [data-outgoing] [data-slot="chart-dot"]');
+      expect(copy, variant).not.toBeNull();
+      expect(look(copy), variant).toEqual(look(live));
+      if (variant === "ring") expect(look(live)[0]).not.toBe(look(live)[1]);
+      else expect(look(live)[2]).toBe("6px");
+      unmount();
+    }
+  });
+});
+
+describe("dimming the active dots with their series (Q3-4)", () => {
+  it("dims the other series' ActiveDot to the hover dim while active, and hides both while not", async () => {
+    // selectedKey="b": b's ActiveDot shows at full opacity, and a's at 1 - (1 - 0.45) × 1 = 0.45.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 300 }}>
+          <Chart.Root
+            data={[10, 40, 25].map((a, index) => ({ name: `c${String(index)}`, a, b: 50 - index * 10 }))}
+            config={{ a: { label: "A", color: "chart-1" }, b: { label: "B", color: "chart-2" } }}
+            xKey="name"
+            selectedKey="b"
+            data-intro="none"
+            aria-label="Aktive">
+            <Chart.Line dataKey="a" />
+            <Chart.ActiveDot dataKey="a" />
+            <Chart.Line dataKey="b" />
+            <Chart.ActiveDot dataKey="b" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: the active dots are aria-hidden plot output, one per series.
+    const opacities = () =>
+      [...host.querySelectorAll('[data-slot="chart-active-dot"]:not([data-outgoing])')].map((dot) => {
+        for (const animation of dot.getAnimations()) animation.finish();
+        return Number(getComputedStyle(dot).opacity);
+      });
+    expect(opacities()).toEqual([0, 0]);
+    // DOM audit: the plot's single tab stop is the listbox's option.
+    host.querySelector<HTMLElement>('[role="option"]')?.focus();
+    await userEvent.keyboard("{Home}");
+    const [a = 0, b = 0] = opacities();
+    expect(a).toBeCloseTo(0.45, 6);
+    expect(b).toBe(1);
   });
 });

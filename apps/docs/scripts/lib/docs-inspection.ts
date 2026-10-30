@@ -51,6 +51,9 @@ export const SERVER_DEMOS: ReadonlySet<string> = new Set([
   // The chart contract promises that a server component renders a chart from plain data, and this
   // demo shows that path on the bar-chart page.
   "apps/docs/src/app/(docs)/components/bar-chart/demos/bar-chart-server.tsx",
+  // Sparkline calls no hook, and these demos show it drawn on the server with no client JavaScript.
+  "apps/docs/src/app/(docs)/components/sparkline/demos/sparkline-table.tsx",
+  "apps/docs/src/app/(docs)/components/sparkline/demos/sparkline-variants.tsx",
 ]);
 
 /** One component the API generator extracts: its slug plus the entry surface to walk. */

@@ -280,3 +280,32 @@ describe("hints and composition errors in production", () => {
     expect(rule).toBe("bar-needs-band");
   });
 });
+
+describe("line and area composition errors in production", () => {
+  it.each([
+    ["step-curve-needs-cells", <Chart.Line key="line" dataKey="kwh" curve="step-after" />, "point"],
+    ["baseline-required", <Chart.Area key="area" dataKey="kwh" />, "band"],
+  ] as const)("still throws %s", (expected, part, xScale) => {
+    let rule: unknown;
+    try {
+      renderToString(
+        <LocaleProvider locale="nb-NO">
+          <Chart.Root
+            data={asRows([{ day: at(1), kwh: 1 }])}
+            config={CONFIG}
+            xKey="day"
+            interval="day"
+            timeZone={OSLO}
+            xScale={xScale}
+            yBaseline={expected === "baseline-required" ? "none" : "zero"}
+            aria-label="Forbruk">
+            {part}
+          </Chart.Root>
+        </LocaleProvider>
+      );
+    } catch (error) {
+      rule = error instanceof Error && "rule" in error ? error.rule : error;
+    }
+    expect(rule).toBe(expected);
+  });
+});
