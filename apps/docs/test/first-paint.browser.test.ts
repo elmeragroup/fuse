@@ -255,7 +255,6 @@ describe("docs picker vs document theme", () => {
         stageDensity: stage?.getAttribute("data-density") ?? null,
         documentToken: getComputedStyle(root).getPropertyValue("--brand").trim(),
         stageToken: stage === null ? "" : getComputedStyle(stage).getPropertyValue("--brand").trim(),
-        slug: document.querySelector("[data-demo-slug]")?.textContent ?? "",
       };
     });
 
@@ -267,7 +266,6 @@ describe("docs picker vs document theme", () => {
     expect(initial.stageVariant).toBe(DEFAULT_THEME.variant);
     expect(initial.stageBrand).toBe(DEFAULT_THEME.brand);
     expect(initial.stageSegment).toBe(DEFAULT_THEME.segment);
-    expect(initial.slug).toContain("fkas");
     expect(initial.documentToken).not.toBe(initial.stageToken);
 
     await page.getByRole("button", { name: "Theme settings", exact: true }).click();
@@ -285,7 +283,6 @@ describe("docs picker vs document theme", () => {
         stageDensity: stage?.getAttribute("data-density") ?? null,
         stageToken: stage === null ? "" : getComputedStyle(stage).getPropertyValue("--brand").trim(),
         documentToken: getComputedStyle(root).getPropertyValue("--brand").trim(),
-        slug: document.querySelector("[data-demo-slug]")?.textContent ?? "",
       };
     });
 
@@ -295,7 +292,6 @@ describe("docs picker vs document theme", () => {
     expect(next.documentDensity).toBe("dense");
     expect(next.stageDensity).toBe("dense");
     expect(next.stageBrand).toBe("tkas");
-    expect(next.slug).toContain("tkas");
     expect(next.stageToken).not.toBe(next.documentToken);
     expect(next.stageToken).not.toBe(initial.stageToken);
 
@@ -320,7 +316,6 @@ describe("docs picker vs document theme", () => {
         stageControlH:
           stage === null ? "" : getComputedStyle(stage).getPropertyValue("--control-h-md").trim(),
         buttonHeight: button ? getComputedStyle(button).height : "",
-        densityLabel: document.querySelector("[data-demo-density]")?.textContent ?? "",
       };
     });
 
@@ -330,7 +325,6 @@ describe("docs picker vs document theme", () => {
     expect(initial.documentControlH).toBe("2.25rem");
     expect(initial.stageControlH).toBe("2.25rem");
     expect(initial.buttonHeight).toBe("36px");
-    expect(initial.densityLabel).toBe("dense");
 
     await page.getByRole("button", { name: "Theme settings", exact: true }).click();
     await page.getByRole("menuitemradio", { name: "External", exact: true }).click();
@@ -348,7 +342,6 @@ describe("docs picker vs document theme", () => {
         stageControlH:
           stage === null ? "" : getComputedStyle(stage).getPropertyValue("--control-h-md").trim(),
         buttonHeight: button ? getComputedStyle(button).height : "",
-        densityLabel: document.querySelector("[data-demo-density]")?.textContent ?? "",
       };
     });
 
@@ -359,7 +352,6 @@ describe("docs picker vs document theme", () => {
     expect(next.documentControlH).toBe("2.25rem");
     expect(next.stageControlH).toBe("2.75rem");
     expect(next.buttonHeight).toBe("44px");
-    expect(next.densityLabel).toBe("comfortable");
 
     await page.close();
   });

@@ -4,6 +4,22 @@ import type { CreateToastManagerReturnValue } from "@elmeragroup/fuse/toast";
 export type CopyToasts = Pick<CreateToastManagerReturnValue, "add">;
 
 /**
+ * Puts `text` on the clipboard.
+ *
+ * @param text - What to copy.
+ * @returns Whether the browser took it: `false` where it refuses the clipboard or has none.
+ */
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    // Rejects too where there is no clipboard at all, as on insecure origins.
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Puts `text` on the clipboard and reports the outcome in `toasts`: a success titled `title`, or
  * an error when the browser refuses the clipboard.
  *
@@ -18,12 +34,9 @@ export async function copyWithToast(
   title: string,
   description?: string
 ): Promise<void> {
-  try {
-    // Rejects too where there is no clipboard at all, as on insecure origins.
-    await navigator.clipboard.writeText(text);
-  } catch {
+  if (await copyText(text)) {
+    toasts.add({ type: "success", title, description });
+  } else {
     toasts.add({ type: "error", title: "Could not copy", description: "The browser refused the clipboard." });
-    return;
   }
-  toasts.add({ type: "success", title, description });
 }

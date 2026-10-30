@@ -111,6 +111,22 @@ describe("Tabs", () => {
     expect(htmlTab("Account").getAttribute("aria-selected")).toBe("true");
   });
 
+  it("hides the closing panel on the frame that opens the next one", async () => {
+    renderThemed(<AccountPassword />);
+    await expect.element(page.getByRole("tabpanel", { name: "Account", exact: true })).toBeVisible();
+    const account = htmlPanel("Account");
+    // Base UI keeps a closing panel mounted until the panel's own animations finish.
+    account.animate([{ opacity: 1 }, { opacity: 0.99 }], { duration: 1000 });
+
+    htmlTab("Password").click();
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(account.isConnected).toBe(true);
+    expect(account.hasAttribute("data-ending-style")).toBe(true);
+    // A panel that still showed would have a layout box, stacked on the open one.
+    expect(account.getClientRects().length).toBe(0);
+    expect(htmlPanel("Password").getClientRects().length).toBe(1);
+  });
+
   it("lets activateOnFocus={false} opt out: arrows move focus, Enter or Space activates", async () => {
     renderThemed(
       <Tabs.Root defaultValue="account">

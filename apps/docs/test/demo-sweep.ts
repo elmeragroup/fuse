@@ -240,6 +240,13 @@ async function readComponentPage<Reading extends object>(
   await page.goto(`${docsBaseUrl()}/components/${slug}`, { waitUntil: "load" });
   const stages = page.locator("[data-demo-stage]");
   await stages.first().waitFor();
+  // Every demo is live before the read: a demo that cannot prerender, such as a date picker's,
+  // renders only as it hydrates, and its stage holds nothing to read until then.
+  await page.waitForFunction(
+    () =>
+      document.querySelectorAll("[data-demo-frame]").length ===
+      document.querySelectorAll("[data-demo-frame][data-demo-hydrated]").length
+  );
   // The stages are read once no demo table is loading: a table a stand-in server answers mounts
   // its rows a moment after it hydrates, and rows only one density's read finds would read as a
   // lost reveal. A loading table carries `aria-busy` from the server's markup on.

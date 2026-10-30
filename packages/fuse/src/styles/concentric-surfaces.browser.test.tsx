@@ -116,7 +116,7 @@ const SURFACE_PAD = {
 /**
  * Inner corners in px, worked out by hand from each shell's rung and the inset its markup
  * declares at a density, floored at 0. A chip sits 7px inside the field corner, a Frame panel
- * 4px (the small tier) inside the Frame's `rounded-xl`, a block its border and the large tier
+ * the Frame's 1px border and 4px (the small tier) inside its `rounded-xl`, a block its border and the large tier
  * inside a panel, a floating Sidebar row 4px inside its `rounded-lg` surface with the menu action
  * 4px inside the row, a preset its 1px border and 4px inside the popover's `rounded-md`, a block
  * the border and the medium tier inside a Card and a Card section and the border and the large
@@ -127,8 +127,8 @@ const SURFACE_PAD = {
  */
 const EXPECTED = {
   chip: (v) => floor(FIELD_CORNER[v] - 7),
-  "frame panel": (v) => floor(RADIUS_XL[v] - 4),
-  "panel block": (v, d) => floor(floor(RADIUS_XL[v] - 4) - 1 - SURFACE_PAD.lg[d]),
+  "frame panel": (v) => floor(RADIUS_XL[v] - 1 - 4),
+  "panel block": (v, d) => floor(floor(RADIUS_XL[v] - 1 - 4) - 1 - SURFACE_PAD.lg[d]),
   "sidebar row": (v) => floor(RADIUS_LG[v] - 4),
   "sidebar label": (v) => floor(RADIUS_LG[v] - 4),
   "sidebar action": (v) => floor(floor(RADIUS_LG[v] - 4) - 4),
@@ -572,7 +572,7 @@ describe("concentric inner corners on fields and surfaces", () => {
   });
 
   it.each(CASES)(
-    "keeps a Table body's rounded-xl corners away from the Frame's padding edge (%s)",
+    "frames only a Table that is the Frame's own item, and clips a panel's Table to its corner (%s)",
     (variant, theme, documentTheme) => {
       stampDocumentTheme(documentTheme, "light");
       const table = (label: string) => (
@@ -596,20 +596,31 @@ describe("concentric inner corners on fields and surfaces", () => {
         </ThemeScope>
       );
       const corner = (label: string) => {
-        const body = roleNamed("table", label).querySelector("tbody");
-        const cell = roleNamed("table", label).querySelector("td");
-        if (!(body instanceof HTMLElement) || !(cell instanceof HTMLElement)) {
-          throw new Error(`expected a body and a cell in ${label}`);
+        const table = roleNamed("table", label);
+        const body = table.querySelector("tbody");
+        const cell = table.querySelector("td");
+        const container = table.parentElement;
+        if (!(body instanceof HTMLElement) || !(cell instanceof HTMLElement) || container === null) {
+          throw new Error(`expected a container, a body and a cell in ${label}`);
         }
-        return { body: cornerRadius(body), cell: cornerRadius(cell) };
+        return { container: cornerRadius(container), body: cornerRadius(body), cell: cornerRadius(cell) };
       };
-      // A table in a panel sits 25px inside the Frame, so it keeps `rounded-xl`. Only a table
-      // directly in the Frame takes the Frame's corner less its 4px padding.
-      for (const label of ["In a panel", "In a nested panel"]) {
-        expect(corner(label), label).toEqual({ body: RADIUS_XL[variant], cell: RADIUS_XL[variant] });
-      }
-      const relayed = floor(RADIUS_XL[variant] - 4);
-      expect(corner("In the frame"), "In the frame").toEqual({ body: relayed, cell: relayed });
+      // Only a table directly in the Frame is framed: its body and corner cells take the Frame's
+      // corner less its 1px border and 4px padding. A table in a panel is plain, with square body
+      // and cells, and its container clips to its panel's corner less the panel's 1px border:
+      // the relayed corner for the Frame's own panel, and `rounded-xl` for a panel in a wrapper.
+      const relayed = floor(RADIUS_XL[variant] - 1 - 4);
+      expect(corner("In a panel"), "In a panel").toEqual({
+        container: floor(relayed - 1),
+        body: 0,
+        cell: 0,
+      });
+      expect(corner("In a nested panel"), "In a nested panel").toEqual({
+        container: floor(RADIUS_XL[variant] - 1),
+        body: 0,
+        cell: 0,
+      });
+      expect(corner("In the frame"), "In the frame").toEqual({ container: 0, body: relayed, cell: relayed });
     }
   );
 
@@ -624,9 +635,10 @@ describe("concentric inner corners on fields and surfaces", () => {
           </Frame.Root>
         </ThemeScope>
       );
-      // The panel takes the Frame's `rounded-xl` less its 4px padding, and the highlight 1px less.
+      // The panel takes the Frame's `rounded-xl` less its 1px border and 4px padding, and the
+      // highlight 1px less.
       const highlight = getComputedStyle(roleNamed("group", "Lit panel"), "::before").borderTopLeftRadius;
-      expect(px(highlight)).toBe(floor(RADIUS_XL[variant] - 4 - 1));
+      expect(px(highlight)).toBe(floor(RADIUS_XL[variant] - 1 - 4 - 1));
     }
   );
 
@@ -634,14 +646,15 @@ describe("concentric inner corners on fields and surfaces", () => {
     stampDocumentTheme(documentTheme, "light");
     render(
       <ThemeScope theme={theme}>
-        <Frame.Root stackedPanels>
+        <Frame.Root layout="stacked">
           <Frame.Panel role="group" aria-label="Upper panel" />
           <Frame.Panel role="group" aria-label="Lower panel" />
         </Frame.Root>
       </ThemeScope>
     );
-    // The stack keeps the panel corner, `rounded-xl` less the Frame's 4px, on its outer ends.
-    const corner = floor(RADIUS_XL[variant] - 4);
+    // The stack keeps the panel corner, `rounded-xl` less the Frame's 1px border and 4px
+    // padding, on its outer ends.
+    const corner = floor(RADIUS_XL[variant] - 1 - 4);
     const upper = getComputedStyle(roleNamed("group", "Upper panel"));
     const lower = getComputedStyle(roleNamed("group", "Lower panel"));
     expect(px(upper.borderTopLeftRadius), "upper top").toBe(corner);

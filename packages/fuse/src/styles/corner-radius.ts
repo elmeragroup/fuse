@@ -46,9 +46,10 @@ import { cn } from "./cn";
 //   Content around it, a value a ThemeScope reset leaves alone.
 //
 // Frame hands its corner on through its own private input instead (`inner-corner/frame.ts`):
-// the root writes `--frame-corner` onto its direct panels and table containers, and every panel
-// and container resets it at lower specificity, so only a Frame's direct child holds a value. A
-// Frame panel is an ordinary boundary.
+// the root writes `--frame-corner` onto its items, the panels and table containers that are its
+// direct children or sit in a collapsible section that is one, and every panel and container
+// resets it at lower specificity, so only a Frame's item holds a value. A Frame panel is an
+// ordinary boundary.
 //
 // No custom property depends on itself, directly or indirectly, on one element, so any depth
 // subtracts each padding once. Where no shell is above a padded part, `--shell-corner` is

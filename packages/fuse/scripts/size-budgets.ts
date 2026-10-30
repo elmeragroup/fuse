@@ -271,8 +271,12 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // 2026-10-06: main measured 24451, 15 bytes under that ceiling. The field corner classes,
   // which read `--radius-field` (+142), take styles.css to 24593, over it, so the shared entry
   // recalibrates to measured × 1.5, as a code owner approved.
+  // 2026-10-30: the cross-section Frame seam selectors (+119) take styles.css from 36851 to
+  // 36970, and the Table edge-inset property, the Frame's derived section clip and the cell
+  // padding defaults that edge cells override (+404) to 37374, over its ceiling of 36890, so the
+  // shared entry recalibrates to measured × 1.5, as a code owner approved.
   { name: "themes.css", file: "themes.css", measuredGzip: 4472, ceilingGzip: 6416 },
-  { name: "styles.css", file: "styles.css", measuredGzip: 24593 },
+  { name: "styles.css", file: "styles.css", measuredGzip: 37374 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

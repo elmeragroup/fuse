@@ -4,65 +4,44 @@ import type { ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
 
-import { defaultDensityForVariant, densityAttributes, ThemeScope, themeSlug } from "@elmeragroup/fuse/theme";
+import { defaultDensityForVariant, densityAttributes, ThemeScope } from "@elmeragroup/fuse/theme";
 
 import { usePreviewTheme } from "./preview-theme";
 
 type DemoStageProps = {
-  /** Repo-relative path of the demo file, printed at the end of the meta row. */
-  sourcePath: string;
   children: ReactNode;
 };
 
 const demoStage = tv({
-  slots: {
-    stage:
-      "sm:px-8 flex flex-wrap items-center justify-center gap-3 bg-background px-0 py-11 text-foreground min-[360px]:px-3",
-    meta: "text-xs flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border bg-card px-3.5 py-2 font-mono text-muted-foreground",
-    slug: "text-foreground",
-    density: "text-foreground",
-    sourcePath: "ml-auto max-w-full truncate text-muted-foreground lg:max-w-[290px]",
-  },
+  // The stage lays its demo out in block flow, so the browser's own block/inline split decides
+  // the demo's width: a block-level root (a Frame, Card, form, table or a stack) fills the stage
+  // up to its own `max-w-*`, whatever state its content is in, and an inline-level root (a
+  // Button, Badge or Switch) keeps its width on a centred line. The child rules weigh nothing,
+  // so a demo's own margin, alignment or justification wins: a capped root centres, its text
+  // starts at the start, and a block-level row keeps its controls centred. A root with a width of
+  // its own, such as `w-96`, shrinks to the stage on a phone instead of running out of it, and a
+  // smaller cap the demo sets still wins. Every stage is at least 256px tall, with a short demo
+  // centred in it, so the frames on a page share a floor and the Code view has room to show code.
+  base: "sm:px-8 text-base flow-root min-h-64 content-center bg-background px-0 py-11 text-center text-foreground min-[360px]:px-3 [:where(&>*)]:mx-auto [:where(&>*)]:max-w-full [:where(&>*)]:justify-center [:where(&>*)]:text-start",
 });
 
-const { stage, meta, slug: slugClass, density: densityClass, sourcePath: sourcePathClass } = demoStage();
-
 /**
- * The two theme-dependent regions of a frame: the theme-tinted stage and the
- * meta row naming the coordinate it renders under.
+ * The theme-tinted stage of a frame, the one region that renders under the preview theme.
  *
- * This is the client half of the frame — the only part that consumes the docs-local
- * preview context, so driving the header picker re-renders the stage and its label
- * while the frame shell and the source region stay server-rendered. Density is the
- * *deployment default* for the previewed variant, stamped on the stage so the
- * demo-stage density re-scope in `globals.css` can take effect inside the sandbox.
+ * A client component, because it consumes the docs-local preview context: driving the header
+ * picker re-renders the stage while the frame chrome and the source stay server-rendered. The
+ * stage's own theme attributes and `data-density` name the coordinate it renders under, for the
+ * tests and tools that need it. Density is the *deployment default* for the previewed variant,
+ * stamped on the stage so the demo-stage density re-scope in `globals.css` can take effect inside
+ * the sandbox.
  */
-export function DemoStage({ sourcePath, children }: DemoStageProps): ReactElement {
+export function DemoStage({ children }: DemoStageProps): ReactElement {
   const { theme } = usePreviewTheme();
-  const slug = themeSlug(theme).replaceAll("-", "·");
   const density = defaultDensityForVariant(theme.variant);
 
   return (
-    <>
-      <ThemeScope theme={theme} className={stage()} data-demo-stage {...densityAttributes(density)}>
-        {children}
-      </ThemeScope>
-      <div className={meta()} data-demo-meta>
-        <span>
-          theme ={" "}
-          <span className={slugClass()} data-demo-slug>
-            {slug}
-          </span>
-        </span>
-        <span aria-hidden="true"> · </span>
-        <span>
-          density ={" "}
-          <span className={densityClass()} data-demo-density>
-            {density}
-          </span>
-        </span>
-        <span className={sourcePathClass()}>{sourcePath}</span>
-      </div>
-    </>
+    <ThemeScope theme={theme} className={demoStage()} data-demo-stage {...densityAttributes(density)}>
+      {children}
+    </ThemeScope>
   );
 }

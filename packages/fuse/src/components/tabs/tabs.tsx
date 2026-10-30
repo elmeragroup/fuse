@@ -86,10 +86,13 @@ export function TabsContent({
   className,
   ...props
 }: ComponentProps<typeof TabsPrimitive.Panel>): ReactElement {
+  // Base UI keeps a closing panel shown until its exit transition ends, a painted frame even
+  // with none, so both panels would stack and the content below would jump. Tabs have no exit
+  // transition: the closing panel hides on the render that closes it.
   return (
     <TabsPrimitive.Panel
       data-slot="tabs-content"
-      className={mergeClassName(className, "text-sm flex-1", selfFocusRingClass)}
+      className={mergeClassName(className, "text-sm flex-1 data-ending-style:hidden", selfFocusRingClass)}
       {...props}
     />
   );

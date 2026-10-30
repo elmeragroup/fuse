@@ -1,9 +1,14 @@
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { cn } from "../../styles/cn";
-import { frameTableBodyShellClass, frameTableContainerShellClass } from "../../styles/inner-corner/frame";
+import {
+  frameTableBodyShellClass,
+  frameTableContainerShellClass,
+  frameVerticalTableShellClass,
+} from "../../styles/inner-corner/frame";
 import { Skeleton } from "../skeleton/skeleton";
 import { TableCell } from "./table-cell";
+import { TABLE_EDGE_PADDING_CLASSES } from "./table-cell-classes";
 import { verticalTableCellText } from "./vertical-table-cell-text";
 import { VerticalTableHeader } from "./vertical-table-header";
 import { VerticalTableKey } from "./vertical-table-key";
@@ -94,7 +99,7 @@ function TableRoot({ className, ...props }: TableRootProps): ReactElement {
       <table
         data-slot="table"
         className={cn(
-          "text-sm w-full caption-bottom in-data-[slot=frame]:border-separate in-data-[slot=frame]:border-spacing-0",
+          "text-sm w-full caption-bottom framed-table:border-separate framed-table:border-spacing-0",
           className
         )}
         {...props}
@@ -108,7 +113,7 @@ function TableHeader({ className, ...props }: TableHeaderProps): ReactElement {
     <thead
       data-slot="table-header"
       className={cn(
-        "[&_tr]:border-b in-data-[slot=frame]:*:[tr]:border-none in-data-[slot=frame]:*:[tr]:hover:bg-transparent",
+        "[&_tr]:border-b framed-table:*:[tr]:border-none framed-table:*:[tr]:hover:bg-transparent",
         className
       )}
       {...props}
@@ -122,7 +127,7 @@ function TableBody({ className, ...props }: TableBodyProps): ReactElement {
       data-slot="table-body"
       className={cn(
         frameTableBodyShellClass,
-        "before:shadow-[0_1px_--theme(--color-black/6%)] in-data-[slot=frame]:shadow-xs/5 relative before:pointer-events-none before:absolute before:inset-px not-in-data-[slot=frame]:before:hidden [&_tr:last-child]:border-0 in-data-[slot=frame]:*:[tr]:border-0 in-data-[slot=frame]:*:[tr]:*:[td]:border-b in-data-[slot=frame]:*:[tr]:*:[td]:bg-background in-data-[slot=frame]:*:[tr]:*:[td]:bg-clip-padding in-data-[slot=frame]:*:[tr]:*:[td]:first:border-s in-data-[slot=frame]:*:[tr]:first:*:[td]:border-t in-data-[slot=frame]:*:[tr]:*:[td]:last:border-e in-data-[slot=frame]:*:[tr]:hover:*:[td]:bg-transparent in-data-[slot=frame]:*:[tr]:data-[state=selected]:*:[td]:bg-muted/72",
+        "before:shadow-[0_1px_--theme(--color-black/6%)] relative before:pointer-events-none before:absolute before:inset-px not-framed-table:before:hidden framed-table:shadow-[shadow:0_var(--frame-shadow-y,1px)_var(--frame-shadow-blur,2px)_0_black]/5 [&_tr:last-child]:border-0 framed-table:*:[tr]:border-0 framed-table:*:[tr]:*:[td]:border-b framed-table:*:[tr]:*:[td]:bg-background framed-table:*:[tr]:*:[td]:bg-clip-padding framed-table:*:[tr]:*:[td]:first:border-s framed-table:*:[tr]:first:*:[td]:border-t framed-table:*:[tr]:*:[td]:last:border-e framed-table:*:[tr]:hover:*:[td]:bg-transparent framed-table:*:[tr]:data-[state=selected]:*:[td]:bg-muted/72",
         className
       )}
       {...props}
@@ -135,7 +140,7 @@ function TableFooter({ className, ...props }: TableFooterProps): ReactElement {
     <tfoot
       data-slot="table-footer"
       className={cn(
-        "font-medium border-t bg-muted/72 in-data-[slot=frame]:border-none in-data-[slot=frame]:bg-transparent in-data-[slot=frame]:*:[tr]:hover:bg-transparent [&>tr]:last:border-b-0",
+        "font-medium border-t bg-muted/72 framed-table:border-none framed-table:bg-transparent framed-table:*:[tr]:hover:bg-transparent [&>tr]:last:border-b-0",
         className
       )}
       {...props}
@@ -148,7 +153,7 @@ function TableRow({ className, ...props }: TableRowProps): ReactElement {
     <tr
       data-slot="table-row"
       className={cn(
-        "border-b transition-colors hover:bg-muted/72 in-data-[slot=frame]:hover:bg-transparent data-[state=selected]:bg-muted/72 in-data-[slot=frame]:data-[state=selected]:bg-transparent",
+        "border-b transition-colors hover:bg-muted/72 data-[state=selected]:bg-muted/72 framed-table:hover:bg-transparent framed-table:data-[state=selected]:bg-transparent",
         className
       )}
       {...props}
@@ -161,7 +166,8 @@ function TableHead({ className, ...props }: TableHeadProps): ReactElement {
     <th
       data-slot="table-head"
       className={cn(
-        "font-medium box-border h-(--row-h-header) px-(--row-px) text-left align-middle leading-none whitespace-nowrap text-muted-foreground has-[[role=checkbox]]:w-px has-[[role=checkbox]]:pe-0",
+        TABLE_EDGE_PADDING_CLASSES,
+        "font-medium box-border h-(--row-h-header) text-start align-middle leading-none whitespace-nowrap text-muted-foreground has-[[role=checkbox]]:w-px",
         className
       )}
       scope="col"
@@ -174,7 +180,10 @@ function TableCaption({ className, ...props }: TableCaptionProps): ReactElement 
   return (
     <caption
       data-slot="table-caption"
-      className={cn("text-sm mt-4 text-muted-foreground in-data-[slot=frame]:my-4", className)}
+      className={cn(
+        "text-sm mt-4 px-[var(--table-edge-px,0px)] [text-align:var(--table-caption-align,revert)] text-muted-foreground framed-table:my-4",
+        className
+      )}
       {...props}
     />
   );
@@ -209,12 +218,14 @@ function VerticalTableBody({
     <div
       data-slot="vertical-table"
       className={cn(
+        frameVerticalTableShellClass,
         "overflow-hidden rounded-md border bg-background in-data-[variant=non-bordered-compact]:border-none in-data-[variant=non-bordered-compact]:bg-inherit",
         className
       )}
       {...props}>
       <Table.Root className={cn("table-fixed", tableClassName)} {...innerTableProps}>
-        <tbody data-slot="vertical-table-body">
+        {/* The box's own border closes the last row, so the row drops its bottom border. */}
+        <tbody data-slot="vertical-table-body" className="*:last:border-b-0">
           {data && data.length > 0
             ? data.map(
                 (
@@ -252,7 +263,7 @@ function VerticalTableRow({
     <TableRow
       data-font-weight={fontWeight}
       className={cn(
-        "group/vertical-table-row-item *:border-border hover:bg-transparent [&>:not(:last-child)]:border-r",
+        "group/vertical-table-row-item *:border-border hover:bg-transparent [&>:not(:last-child)]:border-e",
         "in-data-[variant=non-bordered-compact]:border-none",
         { hidden: isHidden },
         className
@@ -274,7 +285,7 @@ function VerticalTableValue({
     <TableCell
       className={cn(
         "text-sm *:text-sm **:text-sm group-data-[font-weight=bold]/vertical-table-row-item:font-medium group-data-[font-weight=normal]/vertical-table-row-item:font-normal",
-        "in-data-[variant=non-bordered-compact]:border-none in-data-[variant=non-bordered-compact]:bg-inherit in-data-[variant=non-bordered-compact]:p-1",
+        "in-data-[variant=non-bordered-compact]:border-none in-data-[variant=non-bordered-compact]:bg-inherit in-data-[variant=non-bordered-compact]:py-1 in-data-[variant=non-bordered-compact]:[--table-cell-pe:--spacing(1)] in-data-[variant=non-bordered-compact]:[--table-cell-ps:--spacing(1)]",
         verticalTableCellText(text),
         className
       )}
