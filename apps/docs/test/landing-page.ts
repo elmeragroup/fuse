@@ -150,13 +150,26 @@ export function collectPageErrors(page: Page): string[] {
   return errors;
 }
 
-/** Waits two animation frames, so work a layout effect or a late focus return queued has landed. */
-export async function settleFrames(page: Page): Promise<void> {
+/**
+ * Waits `frames` animation frames, two by default, so work a layout effect or a late focus return
+ * queued has landed.
+ */
+export async function settleFrames(page: Page, frames = 2): Promise<void> {
   await page.evaluate(
-    async () =>
+    async (count) =>
       new Promise((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(resolve));
-      })
+        let left = count;
+        const tick = (): void => {
+          left -= 1;
+          if (left === 0) {
+            resolve(undefined);
+          } else {
+            requestAnimationFrame(tick);
+          }
+        };
+        requestAnimationFrame(tick);
+      }),
+    frames
   );
 }
 

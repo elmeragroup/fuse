@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { comboboxChipsVariants } from "../../components/combobox/combobox-variants";
 import {
   fieldBox,
   fieldBoxChromeClass,
@@ -81,11 +82,17 @@ describe("field-box chrome parity", () => {
     const baseUiBox = fieldBox({ box: "control" }).split(" ");
     const numberFieldBox = numberFieldGroupClass.split(" ");
     const inputGroupBox = inputGroupRootClass.split(" ");
+    const chipsBox = comboboxChipsVariants().chips().split(" ");
     for (const token of tokens) {
       expect(racBox, `interim tier lost ${token}`).toContain(token);
       expect(baseUiBox, `base-ui tier lost ${token}`).toContain(token);
       expect(numberFieldBox, `NumberField group lost ${token}`).toContain(token);
       expect(inputGroupBox, `InputGroup root lost ${token}`).toContain(token);
+      // The chips box pads its chips inside the border, so it publishes its own inner corner
+      // (`chipsShellClass`) over the shell's.
+      if (!token.startsWith("[--shell-inner:")) {
+        expect(chipsBox, `Combobox chips box lost ${token}`).toContain(token);
+      }
     }
   });
 
@@ -95,6 +102,7 @@ describe("field-box chrome parity", () => {
       fieldBox({ box: "control" }),
       numberFieldGroupClass,
       inputGroupRootClass,
+      comboboxChipsVariants().chips(),
     ]) {
       expect(rendered.match(/(?:^|\s)rounded-\S+/gu)).toHaveLength(1);
       expect(rendered.match(/(?:^|\s)shadow-\S+/gu)).toHaveLength(1);

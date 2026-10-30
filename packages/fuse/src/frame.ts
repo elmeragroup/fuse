@@ -7,6 +7,7 @@ export type {
   FrameDescriptionProps,
   FrameFooterProps,
   FrameHeaderProps,
+  FrameLayout,
   FramePanelProps,
   FrameRootProps,
   FrameTitleProps,

@@ -1271,11 +1271,11 @@ describe("state faces", () => {
       ],
       // Rows, which are not controls.
       "components/table/table.tsx": [
+        "framed-table:*:[tr]:hover:*:[td]:bg-transparent",
+        "framed-table:*:[tr]:hover:bg-transparent",
+        "framed-table:hover:bg-transparent",
         "hover:bg-muted/72",
         "hover:bg-transparent",
-        "in-data-[slot=frame]:*:[tr]:hover:*:[td]:bg-transparent",
-        "in-data-[slot=frame]:*:[tr]:hover:bg-transparent",
-        "in-data-[slot=frame]:hover:bg-transparent",
       ],
       // Day cells and list rows, parts whose disabled face is muted text.
       "styles/calendar.ts": ["hover:bg-muted", "hover:bg-transparent"],

@@ -21,7 +21,7 @@ const docsCodeBlock = tv({
         code: "min-w-max",
       },
       embedded: {
-        pre: "text-xs leading-relaxed m-0 border-t border-border bg-card px-4.5 py-4",
+        pre: "text-xs leading-relaxed m-0 bg-card px-4.5 py-4",
         code: "min-w-max",
       },
       signature: {

@@ -98,10 +98,11 @@ it("switches both matrix variants and the docs chrome together", async () => {
   await page.close();
 });
 
+// The API rows' label band and a demo's code view paint on --card.
 it.each([
   ["/components/tabs", "[data-api-rows-header]"],
-  ["/components/button", "[data-demo-meta]"],
-] as const)("keeps the %s label band on --card in both schemes", async (path, selector) => {
+  ["/components/button", "[data-demo-source]"],
+] as const)("keeps the %s %s on --card in both schemes", async (path, selector) => {
   const page = await browser().newPage({ colorScheme: "light" });
   await page.goto(`${docsBaseUrl()}${path}`, { waitUntil: "networkidle" });
   for (const scheme of ["light", "dark"] as const) {

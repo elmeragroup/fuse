@@ -1,5 +1,5 @@
+import { fieldBoxChromeClass } from "../../styles/field-box";
 import { fieldReads, fieldSize } from "../../styles/field-size";
-import { fieldBoxShellClass } from "../../styles/inner-corner/field";
 import {
   chipShellClass,
   chipsShellClass,
@@ -74,7 +74,7 @@ export const comboboxVariants = tv({
 /**
  * The module-private recipe for the chips field, `Combobox.Chips`, and the chips in it.
  *
- * - `chips` is the field box. It reads its min height, inset, type and gap from the field size it
+ * - `chips` is the field box, on the shared field chrome (`field-box.ts`). It reads its min height, inset, type and gap from the field size it
  *   writes (`field-size.ts`), and counts its border in its height (`box-border`, as every field box
  *   chrome has) in a preflight-free host too. Its row gap keeps the remove buttons' 24px targets
  *   on wrapped rows apart. It writes `--chip-h`, the one chip height, which
@@ -99,8 +99,12 @@ export const comboboxChipsVariants = tv({
       // A single row's height is unchanged.
       "gap-y-[max(var(--field-gap,var(--control-gap-md)),calc(24px-var(--chip-h)))]",
       "[--chip-h:calc(var(--spacing)*5.5)]",
-      "shadow-xs box-border flex flex-wrap items-center border border-input bg-transparent bg-clip-padding transition-[color,box-shadow]",
-      fieldBoxShellClass,
+      // The shared field chrome, fill included, so the box matches Combobox.Input's InputGroup
+      // root, with that root's disabled and read-only fills from its direct-child input.
+      fieldBoxChromeClass,
+      "flex flex-wrap items-center",
+      "has-[>[data-focus-ring-control]:disabled]:bg-input/50",
+      "has-[>[data-focus-ring-control][readonly]:not(:disabled)]:bg-muted",
       chipsShellClass,
       withinFocusRingClass,
       withinStateFaceClass,

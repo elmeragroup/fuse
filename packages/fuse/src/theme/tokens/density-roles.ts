@@ -333,8 +333,16 @@ export const PART_DENSITY = {
   form: "layout",
 
   frame: "surface",
+  // A flush Frame drops its padding, so its own box reads no metric.
+  "frame[data-layout=flush]": "layout",
   "frame-panel": "surface",
+  // A panel whose only child is a Table element holds no padding.
+  "frame-panel[data-sole-table=true]": "layout",
   "frame-panel-header": "surface",
+  // A header that holds a Collapsible trigger hands the trigger its padding, so the trigger pads
+  // the band with the large tier.
+  "frame-panel-header:has(> [data-slot=collapsible-trigger])": "layout",
+  "collapsible-trigger:where([data-slot=frame-panel-header] > *)": "surface",
   "frame-panel-title": "fixed",
   "frame-panel-description": "fixed",
   "frame-panel-footer": "surface",
@@ -524,6 +532,10 @@ export const PART_DENSITY = {
   "table-head": "row",
   "table-cell": "row",
   "table-caption": "fixed",
+  // A caption in a framed Table or a padless panel's Table pads with the `--table-edge-px` its
+  // Frame or panel sets, a surface tier.
+  "table-caption:where([data-slot=frame] > [data-slot=table-container] > table > *, [data-slot=frame] > * > [data-slot=collapsible-content] > [data-slot=table-container] > table > *, [data-slot=frame-panel][data-sole-table=true] > [data-slot=table-container] > table > *)":
+    "surface",
   "vertical-table-root": "layout",
   "vertical-table": "layout",
   "vertical-table-body": "layout",

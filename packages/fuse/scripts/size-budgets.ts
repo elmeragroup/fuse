@@ -376,7 +376,11 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // 26 chart roles each fit under the standing 6416 alone and not together, so the entry
   // recalibrates to measured × 1.5, as a code owner approved.
   { name: "themes.css", file: "themes.css", measuredGzip: 6734 },
-  { name: "styles.css", file: "styles.css", measuredGzip: 24593 },
+  // 2026-10-30: the cross-section Frame seam selectors (+119) take styles.css from 36851 to
+  // 36970, and the Table edge-inset property, the Frame's derived section clip and the cell
+  // padding defaults that edge cells override (+404) to 37374, over its ceiling of 36890, so the
+  // shared entry recalibrates to measured × 1.5, as a code owner approved.
+  { name: "styles.css", file: "styles.css", measuredGzip: 37374 },
   // 2026-10-18: new entry, measured at 115. It holds the layer statement and one rule.
   // 2026-10-18, layer 05: re-measured at 8155 with the rules for every cartesian part and Bar form,
   // their forced-colours and print rules and the update motion. styles.css stays at 29356.

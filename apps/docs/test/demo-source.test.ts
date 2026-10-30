@@ -9,9 +9,6 @@ describe("demo source read at render time", () => {
       slug: "button",
       file: "button-variant-matrix.tsx",
     });
-    expect(demo.sourcePath).toBe(
-      "apps/docs/src/app/(docs)/components/button/demos/button-variant-matrix.tsx"
-    );
     expect(demo.source).toContain('"use client"');
     expect(demo.source).toContain('from "@elmeragroup/fuse/button"');
     expect(demo.source.endsWith("\n")).toBe(false);

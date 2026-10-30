@@ -4,6 +4,7 @@
    layer before this file declares the order itself, first. */
 @layer theme, base, components, utilities;
 @import "tw-animate-css";
+@import "./frame-variants.css";
 @plugin "tailwindcss-react-aria-components";
 
 /* Locked library-fixed --font-mono, plus the library-owned density metrics: control metrics

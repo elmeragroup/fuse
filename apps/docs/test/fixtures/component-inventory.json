@@ -449,7 +449,14 @@
   "frame": {
     "title": "Frame",
     "rsc": "server",
-    "demos": ["frame-basic.tsx", "frame-stacked-panels.tsx", "frame-with-table.tsx"]
+    "demos": [
+      "frame-basic.tsx",
+      "frame-layouts.tsx",
+      "frame-collapsible-panels.tsx",
+      "frame-flush.tsx",
+      "frame-with-table.tsx",
+      "frame-key-value-table.tsx"
+    ]
   },
   "grid-list": {
     "title": "Grid List",

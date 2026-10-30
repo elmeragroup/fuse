@@ -12,12 +12,12 @@
       "forwardedCount": 280,
       "props": [
         {
-          "name": "stackedPanels",
+          "name": "layout",
           "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Fuse adjacent `Frame.Panel`s into one card (shared radii and hairline). Default `false` keeps a 4px muted gutter between panels.",
+          "type": "\"flush\" | \"gutter\" | \"stacked\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"gutter\"",
+          "description": "How the Frame lays out its panels. - `\"gutter\"`: the Frame pads its panels with the small surface tier and keeps a 4px muted gutter between adjacent panels, each a card of its own. - `\"stacked\"`: adjacent panels fuse into one card that shares their radii and hairline. - `\"flush\"`: the Frame drops its padding, its header and footer sit in its muted band, and its panels and Tables run to its edges and round with its own corner. Adjacent panels fuse as in `\"stacked\"`.",
           "required": false
         }
       ]

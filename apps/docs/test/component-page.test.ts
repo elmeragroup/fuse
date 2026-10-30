@@ -23,17 +23,21 @@ describe("component page anatomy", () => {
     expect(intro).not.toMatch(/>(?:client|server)</u);
   });
 
-  it("renders one demo frame per scenario, with stage, meta row and extracted source", async () => {
+  it("renders one demo frame per scenario, with a themed stage and extracted source", async () => {
     const html = await fetchText("/components/button");
     expect(BUTTON_DEMOS.length).toBeGreaterThan(0);
     expect([...html.matchAll(/<section[^>]*data-demo-frame/g)]).toHaveLength(BUTTON_DEMOS.length);
-    expect(html).toContain("data-demo-stage");
-    expect(html).toContain("data-demo-slug");
-    expect(html).toContain("data-demo-density");
+    // The stage names its own theme coordinate and density.
+    const stages = [...html.matchAll(/<div[^>]*data-demo-stage[^>]*>/g)].map(([tag]) => tag);
+    expect(stages).toHaveLength(BUTTON_DEMOS.length);
+    for (const stage of stages) {
+      expect(stage).toMatch(/data-theme-variant="[a-z]+"/u);
+      expect(stage).toMatch(/data-theme-brand="[a-z]+"/u);
+      expect(stage).toMatch(/data-density="(?:dense|comfortable)"/u);
+    }
     expect(html).toContain("data-demo-source");
     // Extracted, highlighted source of the authored demo file.
     expect(html).toContain("sh__token--keyword");
-    expect(html).toContain("apps/docs/src/app/(docs)/components/button/demos/button-variant-matrix.tsx");
   });
 
   it("renders the API reference as expandable rows with a per-part RSC indicator", async () => {
