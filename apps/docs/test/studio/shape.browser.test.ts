@@ -221,24 +221,25 @@ describe("the studio's Shape page", () => {
 
       // Every part still follows the formula once the corners leave the clamp, inside a 40px
       // corner: the three Card rows and the card Accordion item's panel sit 1px of border and
-      // the medium tier's 16px of padding in it, and the two Frame rows 1px of border and the
-      // large tier's 24px.
+      // the medium tier's 16px of padding in it. The two Frame rows sit 1px of border and the
+      // large tier's 24px inside their panel, whose corner is the Frame's 44px `rounded-xl`
+      // less the Frame's 1px border and 4px of padding: 39px.
       await setRadius(page, 40);
       await expect.poll(() => xrayLabels(page).filter({ hasText: "= 23px" }).count()).toBe(4);
-      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 15px" }).count()).toBe(2);
+      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 14px" }).count()).toBe(2);
       expect(await xrayLabels(page).and(page.locator('[data-mismatch="true"]')).count()).toBe(0);
 
       // A denser artboard relabels: dense, the md surface tier pads 12px and the lg tier 16px
       // (fuse's tokens/density-metrics.ts), so the Card rows and the Accordion panel round at
-      // 40 − 1 − 12 = 27px and the Frame rows at 40 − 1 − 16 = 23px, with no stale 15px left.
+      // 40 − 1 − 12 = 27px and the Frame rows at 39 − 1 − 16 = 22px, with no stale 14px left.
       await canvas(page).getByRole("button", { name: SHELLS, exact: true }).click();
       await inspector(page)
         .getByRole("group", { name: "Density", exact: true })
         .getByRole("button", { name: "Dense", exact: true })
         .click();
       await expect.poll(() => xrayLabels(page).filter({ hasText: "= 27px" }).count()).toBe(4);
-      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 23px" }).count()).toBe(2);
-      expect(await xrayLabels(page).filter({ hasText: "= 15px" }).count()).toBe(0);
+      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 22px" }).count()).toBe(2);
+      expect(await xrayLabels(page).filter({ hasText: "= 14px" }).count()).toBe(0);
       expect(await xrayLabels(page).and(page.locator('[data-mismatch="true"]')).count()).toBe(0);
 
       // An opened menu's rows are inner parts of its popup.

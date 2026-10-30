@@ -180,9 +180,11 @@ describe("Table rows follow density", () => {
       row.py,
       row.px,
     ]);
-    // A framed edge cell sits 2px further in than the row inset, less its 1px edge border.
+    // A framed edge cell starts its text on the Frame's text inset, a panel's 1px border and the
+    // large surface tier, 16px dense and 24px comfortable, so it lines up with the panels.
+    const largeTier = { dense: 16, comfortable: 24 }[density];
     const edge = getComputedStyle(page.getByRole("cell", { name: "Framed #1042", exact: true }).element());
-    expect(px(edge.paddingLeft) + px(edge.borderLeftWidth)).toBe(row.px + 2);
+    expect(px(edge.paddingLeft) + px(edge.borderLeftWidth)).toBe(1 + largeTier);
   });
 });
 
@@ -216,6 +218,30 @@ describe("VerticalTable", () => {
       expect(block("Compact value")).toEqual([4, 4]);
     }
   );
+
+  it("starts a row-header key at the inline start and closes the last row with the box's own border", () => {
+    renderThemed(
+      <VerticalTable.Body tableProps={{ "aria-label": "Meter facts" }}>
+        <VerticalTable.Row>
+          <VerticalTable.Key render={<th scope="row" />}>Meter type</VerticalTable.Key>
+          <VerticalTable.Value>Smart meter</VerticalTable.Value>
+        </VerticalTable.Row>
+        <VerticalTable.Row>
+          <VerticalTable.Key render={<th scope="row" />}>Grid area</VerticalTable.Key>
+          <VerticalTable.Value>NO1</VerticalTable.Value>
+        </VerticalTable.Row>
+      </VerticalTable.Body>
+    );
+    const key = page.getByRole("rowheader", { name: "Meter type" }).element();
+    expect(key.tagName).toBe("TH");
+    expect(getComputedStyle(key).textAlign).toBe("start");
+    const [first, last] = page.getByRole("row").elements();
+    if (first === undefined || last === undefined) {
+      throw new Error("expected two rows");
+    }
+    expect(getComputedStyle(first).borderBottomWidth).toBe("1px");
+    expect(getComputedStyle(last).borderBottomWidth).toBe("0px");
+  });
 
   it("renders a level-2 heading and N data rows of two cells, with data before children", () => {
     renderThemed(

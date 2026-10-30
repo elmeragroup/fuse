@@ -7,6 +7,9 @@ import { TOOLING_ONLY_CSS_ENTRIES } from "./entries";
 import { packageRootFromScript } from "./paths";
 import { runCommand } from "./run-command";
 
+/** The stylesheets `fuse.css` imports from `src/styles`, which are not entries of their own. */
+const FUSE_CSS_PRIVATE_SHEETS = ["frame-variants.css"] as const;
+
 type ToolingOnlyCssFile = (typeof TOOLING_ONLY_CSS_ENTRIES)[number]["distFile"];
 
 // Keyed by the entry list, so a generator without an entry (which the publish `.npmignore` would
@@ -27,6 +30,10 @@ export function buildCss(packageRoot: string): void {
     writeFileSync(join(distDir, entry.distFile), TOOLING_ONLY_CSS_GENERATORS[entry.distFile]());
   }
   copyFileSync(fuseCssPath, join(distDir, "styles/fuse.css"));
+  // `fuse.css` imports its private sheets by relative path, so each ships beside it.
+  for (const privateSheet of FUSE_CSS_PRIVATE_SHEETS) {
+    copyFileSync(join(srcStylesDir, privateSheet), join(distDir, "styles", privateSheet));
+  }
 
   runCommand(
     "pnpm",

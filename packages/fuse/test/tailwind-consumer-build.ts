@@ -10,6 +10,7 @@ import themeCss from "tailwindcss/theme.css?raw";
 import utilitiesCss from "tailwindcss/utilities.css?raw";
 
 import twAnimateCss from "../node_modules/tw-animate-css/dist/tw-animate.css?raw";
+import frameVariantsCss from "../src/styles/frame-variants.css?raw";
 import fuseCss from "../src/styles/fuse.css?raw";
 
 /** The stylesheets a Tailwind-source consumer's `@import`s reach, keyed by the specifier. */
@@ -17,6 +18,7 @@ const STYLESHEETS = new Map([
   ["tailwindcss/theme.css", themeCss],
   ["tailwindcss/utilities.css", utilitiesCss],
   ["./fuse.css", fuseCss],
+  ["./frame-variants.css", frameVariantsCss],
   ["tw-animate-css", twAnimateCss],
 ]);
 

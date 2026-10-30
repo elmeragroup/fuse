@@ -47,12 +47,14 @@ function renderInShadowRoot(node: React.ReactNode): ShadowRoot {
 
 /**
  * The tkas corners and the Frame panel padding in px, written out by hand: the panel takes
- * `rounded-xl` (20px) less the Frame's 4px small-tier padding, a Table inside the panel keeps
- * `rounded-xl`, and the panel pads with the large surface tier, 16px dense and 24px comfortable.
+ * `rounded-xl` (20px) less the Frame's 1px border and 4px small-tier padding, a Table inside the
+ * panel is a plain table whose container clips to the panel's corner less the panel's 1px border,
+ * a panel of text pads with the large surface tier, 16px dense and 24px comfortable, and a panel
+ * that holds only the table drops its padding.
  */
 const EXPECTED = {
-  dense: { panelCorner: "16px", tableCorner: "20px", panelPadding: "16px" },
-  comfortable: { panelCorner: "16px", tableCorner: "20px", panelPadding: "24px" },
+  dense: { panelCorner: "15px", containerCorner: "14px", panelPadding: "16px" },
+  comfortable: { panelCorner: "15px", containerCorner: "14px", panelPadding: "24px" },
 } as const;
 
 describe("Frame in a shadow root", () => {
@@ -62,6 +64,7 @@ describe("Frame in a shadow root", () => {
       const shadow = renderInShadowRoot(
         <ThemeScope theme={tkasCompany}>
           <Frame.Root>
+            <Frame.Panel>Usage</Frame.Panel>
             <Frame.Panel>
               <Table.Root>
                 <Table.Body>
@@ -75,15 +78,16 @@ describe("Frame in a shadow root", () => {
         </ThemeScope>
       );
       // DOM audit: the shadow tree is outside the page's role queries, so the parts are found by slot.
-      const panel = shadow.querySelector('[data-slot="frame-panel"]');
+      const [panel, tablePanel] = shadow.querySelectorAll('[data-slot="frame-panel"]');
+      const container = shadow.querySelector('[data-slot="table-container"]');
       const body = shadow.querySelector('[data-slot="table-body"]');
-      const cell = shadow.querySelector("td");
       if (
         !(panel instanceof HTMLElement) ||
-        !(body instanceof HTMLElement) ||
-        !(cell instanceof HTMLElement)
+        !(tablePanel instanceof HTMLElement) ||
+        !(container instanceof HTMLElement) ||
+        !(body instanceof HTMLElement)
       ) {
-        throw new Error("expected a panel, a table body and a cell in the shadow root");
+        throw new Error("expected a panel, a table container and a table body in the shadow root");
       }
       const switched = initial === "dense" ? "comfortable" : "dense";
       for (const density of [initial, switched] as const) {
@@ -93,12 +97,12 @@ describe("Frame in a shadow root", () => {
           expected.panelCorner
         );
         expect(getComputedStyle(panel).paddingLeft, `${density} panel padding`).toBe(expected.panelPadding);
-        expect(getComputedStyle(body).borderTopLeftRadius, `${density} body corner`).toBe(
-          expected.tableCorner
+        expect(getComputedStyle(tablePanel).paddingLeft, `${density} table panel padding`).toBe("0px");
+        expect(getComputedStyle(container).borderTopLeftRadius, `${density} container corner`).toBe(
+          expected.containerCorner
         );
-        expect(getComputedStyle(cell).borderTopLeftRadius, `${density} cell corner`).toBe(
-          expected.tableCorner
-        );
+        // A plain table draws no body corner of its own.
+        expect(getComputedStyle(body).borderTopLeftRadius, `${density} body corner`).toBe("0px");
       }
     });
   }

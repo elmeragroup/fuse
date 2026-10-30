@@ -1,0 +1,123 @@
+/* Frame's custom variants, private to `fuse.css`, which imports this file. They spell the parts a
+   Frame lays out once, so the composition the Frame supports changes in one place.
+
+   A Frame's items (`inner-corner/frame.ts`) are its panels and Table containers that are the
+   root's direct children, or the direct children of a Collapsible.Content in a Collapsible.Root
+   that is one, a collapsible section. The selectors take the Content's parent for its Root, as a
+   Collapsible.Content is always its Root's child in a section. `frame-level` names both paths,
+   any element on them, and `frame-item` and the narrower item variants compose from it. The first
+   and last items spell their own paths from the root, so nothing outside the Frame decides them.
+   They all apply on the root and style its items. `frame-section` repeats the section path for
+   the Collapsible.Content itself: a variant that mixes its own selector with an `@variant` of
+   another, as `frame-level` would to compose from it, sends Tailwind's variant compiler out of
+   memory. */
+@custom-variant frame-level {
+  & > *,
+  & > * > [data-slot="collapsible-content"] > * {
+    @slot;
+  }
+}
+@custom-variant frame-item {
+  @variant frame-level {
+    &:is([data-slot="frame-panel"], [data-slot="table-container"]) {
+      @slot;
+    }
+  }
+}
+/* A section's Collapsible.Content, which the items in a section sit in. */
+@custom-variant frame-section {
+  & > * > [data-slot="collapsible-content"] {
+    @slot;
+  }
+}
+@custom-variant frame-panel-item {
+  @variant frame-level {
+    &:where([data-slot="frame-panel"]) {
+      @slot;
+    }
+  }
+}
+@custom-variant frame-table-item {
+  @variant frame-level {
+    &:where([data-slot="table-container"]) {
+      @slot;
+    }
+  }
+}
+/* The item that starts the Frame and the one that ends it, each by a path from the root: the
+   root's first or last child, or the first or last child of the content of a section that is the
+   root's first or last child, when the content is its section's first or last child too. */
+@custom-variant frame-first-item {
+  & > :is([data-slot="frame-panel"], [data-slot="table-container"]):first-child,
+  &
+    > :first-child
+    > [data-slot="collapsible-content"]:first-child
+    > :is([data-slot="frame-panel"], [data-slot="table-container"]):first-child {
+    @slot;
+  }
+}
+@custom-variant frame-last-item {
+  & > :is([data-slot="frame-panel"], [data-slot="table-container"]):last-child,
+  &
+    > :last-child
+    > [data-slot="collapsible-content"]:last-child
+    > :is([data-slot="frame-panel"], [data-slot="table-container"]):last-child {
+    @slot;
+  }
+}
+/* The two panels that meet at a seam: the upper one, which another panel follows, and the lower
+   one, which follows another panel. */
+@custom-variant frame-seam-upper {
+  @variant frame-level {
+    &:where([data-slot="frame-panel"]):has(+ [data-slot="frame-panel"]) {
+      @slot;
+    }
+  }
+}
+@custom-variant frame-seam-lower {
+  @variant frame-level {
+    &:where([data-slot="frame-panel"] + [data-slot="frame-panel"]) {
+      @slot;
+    }
+  }
+}
+/* A Frame.Header's direct Collapsible.Trigger, which takes the whole header band. */
+@custom-variant frame-header-trigger {
+  & > [data-slot="collapsible-trigger"] {
+    @slot;
+  }
+}
+/* The rows and caption of a Frame.Panel's only Table, directly or in a VerticalTable.Body, which
+   take over the panel's padding when the panel drops it. These apply on the panel. */
+@custom-variant frame-panel-table-row {
+  & > [data-slot="table-container"] > table > * > tr,
+  & > [data-slot="vertical-table"] > [data-slot="table-container"] > table > * > tr {
+    @slot;
+  }
+}
+@custom-variant frame-panel-table-caption {
+  & > [data-slot="table-container"] > table > caption {
+    @slot;
+  }
+}
+/* A part of a framed Table: a Table whose container is one of a Frame's items. This one applies on
+   the Table's own parts. It stops at a nested Table container, so a Table in a framed cell, or in
+   a Frame.Panel, is a plain table. The selector sits in `:where()`, so a rule weighs the part's
+   own class. */
+@custom-variant framed-table {
+  &:where(
+      :is([data-slot="frame"], [data-slot="frame"] > * > [data-slot="collapsible-content"])
+        > [data-slot="table-container"]
+        *
+    ):not(
+      :where(
+        :is([data-slot="frame"], [data-slot="frame"] > * > [data-slot="collapsible-content"])
+          > [data-slot="table-container"]
+          *
+          [data-slot="table-container"]
+          *
+      )
+    ) {
+    @slot;
+  }
+}
