@@ -14,11 +14,13 @@ import {
 } from "../../../test/assert-invalid-ring";
 import { cornerRadius, RADIUS_XL } from "../../../test/inner-corner-specimens";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
+import { consumerCss } from "../../../test/tailwind-consumer-build";
 import { tkasCompany } from "../../../test/theme-fixtures";
 import {
   cssVarColor,
   px,
   renderThemed,
+  ROW,
   roleNamed,
   stampDensity,
   textNamed,
@@ -26,6 +28,7 @@ import {
 import { CaretDown } from "../../icons/generated/caret-down";
 import { DENSITIES } from "../../theme/density";
 import { ThemeScope } from "../../theme/theme-scope";
+import { Checkbox } from "../checkbox/checkbox";
 import { Collapsible } from "../collapsible";
 import { Table, VerticalTable } from "../table/table";
 import { Frame } from "./frame";
@@ -989,6 +992,396 @@ describe("Frame", () => {
       for (const text of ends) {
         expect(Math.abs(end(text) - referenceEnd), `${density} end of ${text}`).toBeLessThanOrEqual(0.5);
       }
+    }
+  });
+
+  it("lets a consumer's padding on an edge cell or head win in a framed Table and in a padless panel", () => {
+    const overridden = (label: string) => (
+      <Table.Root aria-label={label}>
+        <Table.Header>
+          <Table.Row>
+            <Table.Head className="px-3">{`${label} first head`}</Table.Head>
+            <Table.Head className="px-3">{`${label} last head`}</Table.Head>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          <Table.Row>
+            <Table.Cell className="px-3">{`${label} first cell`}</Table.Cell>
+            <Table.Cell className="px-3">{`${label} last cell`}</Table.Cell>
+          </Table.Row>
+        </Table.Body>
+      </Table.Root>
+    );
+    renderThemed(
+      <ThemeScope theme={tkasCompany}>
+        <Frame.Root>
+          {overridden("Framed")}
+          <Frame.Panel>{overridden("Padless")}</Frame.Panel>
+        </Frame.Root>
+      </ThemeScope>
+    );
+    for (const label of ["Framed", "Padless"]) {
+      for (const part of ["first head", "last head", "first cell", "last cell"]) {
+        const style = getComputedStyle(textNamed(`${label} ${part}`));
+        // Tailwind's `px-3` is 0.75rem, 12px at the 16px root.
+        expect([style.paddingLeft, style.paddingRight], `${label} ${part}`).toEqual(["12px", "12px"]);
+      }
+    }
+  });
+
+  it.each(DENSITIES)(
+    "pads a padless panel's Table and VerticalTable edges and caption with the panel's padding at %s",
+    (density) => {
+      stampDensity(density);
+      renderThemed(
+        <ThemeScope theme={tkasCompany}>
+          <Frame.Root>
+            <Frame.Panel>
+              <Table.Root aria-label="Panel readings">
+                <Table.Caption>Panel caption</Table.Caption>
+                <Table.Body>
+                  <Table.Row>
+                    <Table.Cell>Panel first</Table.Cell>
+                    <Table.Cell>Panel last</Table.Cell>
+                  </Table.Row>
+                </Table.Body>
+              </Table.Root>
+            </Frame.Panel>
+            <Frame.Panel>
+              <VerticalTable.Body tableProps={{ "aria-label": "Panel facts" }}>
+                <VerticalTable.Row>
+                  <VerticalTable.Key>Facts key</VerticalTable.Key>
+                  <VerticalTable.Value>Facts value</VerticalTable.Value>
+                </VerticalTable.Row>
+              </VerticalTable.Body>
+            </Frame.Panel>
+            <Table.Root aria-label="Outer readings">
+              <Table.Body>
+                <Table.Row>
+                  <Table.Cell>
+                    <Table.Root aria-label="Nested readings">
+                      <Table.Caption>Nested caption</Table.Caption>
+                      <Table.Body>
+                        <Table.Row>
+                          <Table.Cell>Nested first</Table.Cell>
+                          <Table.Cell>Nested last</Table.Cell>
+                        </Table.Row>
+                      </Table.Body>
+                    </Table.Root>
+                  </Table.Cell>
+                </Table.Row>
+              </Table.Body>
+            </Table.Root>
+          </Frame.Root>
+        </ThemeScope>
+      );
+      // The panel's padding is the large surface tier: 16px dense and 24px comfortable.
+      const largeTier = `${{ dense: 16, comfortable: 24 }[density]}px`;
+      const rowPx = `${ROW[density].px}px`;
+      const padding = (text: string) => {
+        const style = getComputedStyle(textNamed(text));
+        return [style.paddingLeft, style.paddingRight];
+      };
+      expect(padding("Panel first")).toEqual([largeTier, rowPx]);
+      expect(padding("Panel last")).toEqual([rowPx, largeTier]);
+      expect(padding("Facts key")).toEqual([largeTier, rowPx]);
+      expect(padding("Facts value")).toEqual([rowPx, largeTier]);
+      expect(padding("Panel caption")).toEqual([largeTier, largeTier]);
+      expect(getComputedStyle(textNamed("Panel caption")).textAlign).toBe("start");
+      // A Table in a framed cell starts plain: row padding at its edges, and a caption with none,
+      // centred as the browser centres one.
+      expect(padding("Nested first")).toEqual([rowPx, rowPx]);
+      expect(padding("Nested last")).toEqual([rowPx, rowPx]);
+      expect(padding("Nested caption")).toEqual(["0px", "0px"]);
+      expect(getComputedStyle(textNamed("Nested caption")).textAlign).toBe("-webkit-center");
+    }
+  );
+
+  it("draws a panel's and a framed Table body's shadow as shadow-xs at 5% black", () => {
+    renderThemed(
+      <ThemeScope theme={tkasCompany}>
+        <Frame.Panel>Loose panel</Frame.Panel>
+        {(["gutter", "flush"] as const).map((layout) => (
+          <Frame.Root key={layout} layout={layout}>
+            <Frame.Panel>{`Framed ${layout} panel`}</Frame.Panel>
+            <Table.Root aria-label={`Framed ${layout} table`}>
+              <Table.Body>
+                <Table.Row>
+                  <Table.Cell>March</Table.Cell>
+                </Table.Row>
+              </Table.Body>
+            </Table.Root>
+          </Frame.Root>
+        ))}
+      </ThemeScope>
+    );
+    // Read from Tailwind's `shadow-xs/5` before the shadow took its geometry from the Frame: four
+    // empty ring and inset layers, then 1px down with a 2px blur in black at 5%.
+    const shadowXs =
+      "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0 0 0 / 0.05) 0px 1px 2px 0px";
+    expect(getComputedStyle(textNamed("Loose panel")).boxShadow).toBe(shadowXs);
+    for (const layout of ["gutter", "flush"] as const) {
+      expect(getComputedStyle(textNamed(`Framed ${layout} panel`)).boxShadow, layout).toBe(shadowXs);
+      const body = roleNamed("table", `Framed ${layout} table`).querySelector("tbody");
+      if (body === null) {
+        throw new Error("expected the framed body");
+      }
+      expect(getComputedStyle(body).boxShadow, `${layout} body`).toBe(shadowXs);
+    }
+  });
+
+  it.each(["ltr", "rtl"] as const)(
+    "pads a last or single checkbox cell's and head's outer end with the edge inset in a framed Table and a padless panel (%s)",
+    (dir) => {
+      const selectable = (label: string) => (
+        <>
+          <Table.Root aria-label={`${label} rows`}>
+            <Table.Header>
+              <Table.Row>
+                <Table.Head>{`${label} name`}</Table.Head>
+                <Table.Head>
+                  <Checkbox aria-label={`${label} last head`} />
+                </Table.Head>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              <Table.Row>
+                <Table.Cell>{`${label} reading`}</Table.Cell>
+                <Table.Cell>
+                  <Checkbox aria-label={`${label} last cell`} />
+                </Table.Cell>
+              </Table.Row>
+            </Table.Body>
+          </Table.Root>
+          <Table.Root aria-label={`${label} single`}>
+            <Table.Header>
+              <Table.Row>
+                <Table.Head>
+                  <Checkbox aria-label={`${label} single head`} />
+                </Table.Head>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              <Table.Row>
+                <Table.Cell>
+                  <Checkbox aria-label={`${label} single cell`} />
+                </Table.Cell>
+              </Table.Row>
+            </Table.Body>
+          </Table.Root>
+        </>
+      );
+      renderThemed(
+        <ThemeScope theme={tkasCompany}>
+          <div dir={dir}>
+            <Frame.Root>
+              {selectable("Framed")}
+              <Frame.Panel>
+                <Table.Root aria-label="Panel rows">
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.Head>Panel name</Table.Head>
+                      <Table.Head>
+                        <Checkbox aria-label="Panel last head" />
+                      </Table.Head>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    <Table.Row>
+                      <Table.Cell>Panel reading</Table.Cell>
+                      <Table.Cell>
+                        <Checkbox aria-label="Panel last cell" />
+                      </Table.Cell>
+                    </Table.Row>
+                  </Table.Body>
+                </Table.Root>
+              </Frame.Panel>
+              <Frame.Panel>
+                <Table.Root aria-label="Panel single">
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.Head>
+                        <Checkbox aria-label="Panel single head" />
+                      </Table.Head>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    <Table.Row>
+                      <Table.Cell>
+                        <Checkbox aria-label="Panel single cell" />
+                      </Table.Cell>
+                    </Table.Row>
+                  </Table.Body>
+                </Table.Root>
+              </Frame.Panel>
+            </Frame.Root>
+            {selectable("Plain")}
+          </div>
+        </ThemeScope>
+      );
+      // The cell's inline padding as [start, end], whichever side the direction puts them on.
+      const inlinePadding = (label: string) => {
+        const cell = roleNamed("checkbox", label).closest("td, th");
+        if (!(cell instanceof HTMLElement)) {
+          throw new Error(`expected the cell of ${label}`);
+        }
+        const style = getComputedStyle(cell);
+        const sides = [px(style.paddingLeft), px(style.paddingRight)];
+        return dir === "ltr" ? sides : sides.reverse();
+      };
+      for (const density of DENSITIES) {
+        stampDensity(density);
+        // The panel's large surface tier: 16px dense and 24px comfortable.
+        const tier = { dense: 16, comfortable: 24 }[density];
+        // A framed head pads the Frame's text inset, the tier and a panel's 1px border; a framed
+        // body cell pads 1px less, for its own 1px edge border; a padless panel's cells pad its tier.
+        const edges = [
+          ["Framed last head", tier + 1],
+          ["Framed last cell", tier],
+          ["Panel last head", tier],
+          ["Panel last cell", tier],
+        ] as const;
+        for (const [label, end] of edges) {
+          expect(inlinePadding(label)[1], `${density} ${label}`).toBe(end);
+        }
+        const singles = [
+          ["Framed single head", tier + 1],
+          ["Framed single cell", tier],
+          ["Panel single head", tier],
+          ["Panel single cell", tier],
+        ] as const;
+        for (const [label, inset] of singles) {
+          expect(inlinePadding(label), `${density} ${label}`).toEqual([inset, inset]);
+        }
+        // A plain Table's checkbox cell drops its end padding, its start keeps the row padding.
+        for (const label of ["Plain last head", "Plain last cell"]) {
+          expect(inlinePadding(label)[1], `${density} ${label}`).toBe(0);
+        }
+        for (const label of ["Plain single head", "Plain single cell"]) {
+          expect(inlinePadding(label), `${density} ${label}`).toEqual([ROW[density].px, 0]);
+        }
+      }
+    }
+  );
+
+  it.each(["ltr", "rtl"] as const)(
+    "pads a compact VerticalTable's outer edges with a padless panel's tier and keeps its own spacing elsewhere (%s)",
+    (dir) => {
+      renderThemed(
+        <ThemeScope theme={tkasCompany}>
+          <VerticalTable.Root dir={dir} variant="non-bordered-compact">
+            <Frame.Root>
+              <Frame.Panel>
+                <VerticalTable.Body tableProps={{ "aria-label": "Panel facts" }}>
+                  <VerticalTable.Row>
+                    <VerticalTable.Key>Panel key</VerticalTable.Key>
+                    <VerticalTable.Value>Panel value</VerticalTable.Value>
+                  </VerticalTable.Row>
+                </VerticalTable.Body>
+              </Frame.Panel>
+            </Frame.Root>
+            <VerticalTable.Body tableProps={{ "aria-label": "Plain facts" }}>
+              <VerticalTable.Row>
+                <VerticalTable.Key>Plain key</VerticalTable.Key>
+                <VerticalTable.Value>Plain value</VerticalTable.Value>
+              </VerticalTable.Row>
+            </VerticalTable.Body>
+          </VerticalTable.Root>
+        </ThemeScope>
+      );
+      // The cell's padding as [inline start, inline end, top, bottom].
+      const padding = (text: string) => {
+        const style = getComputedStyle(textNamed(text));
+        const inline = [px(style.paddingLeft), px(style.paddingRight)];
+        return [
+          ...(dir === "ltr" ? inline : inline.reverse()),
+          px(style.paddingTop),
+          px(style.paddingBottom),
+        ];
+      };
+      for (const density of DENSITIES) {
+        stampDensity(density);
+        const tier = { dense: 16, comfortable: 24 }[density];
+        // The compact key pads 0 inline and the value 4px all round, Tailwind's `p-1`; both keep
+        // 4px above and below. In a padless panel the outer edges take the panel's tier.
+        expect(padding("Panel key"), `${density} panel key`).toEqual([tier, 0, 4, 4]);
+        expect(padding("Panel value"), `${density} panel value`).toEqual([4, tier, 4, 4]);
+        expect(padding("Plain key"), `${density} plain key`).toEqual([0, 0, 4, 4]);
+        expect(padding("Plain value"), `${density} plain value`).toEqual([4, 4, 4, 4]);
+      }
+    }
+  );
+
+  it("recolours a panel's and a framed Table body's shadow with a consumer's shadow colour", async () => {
+    // A Tailwind-source consumer's own colour utility, compiled against Fuse's theme.
+    const style = document.createElement("style");
+    style.textContent = await consumerCss(
+      '@import "tailwindcss/theme.css" theme(reference);\n@import "tailwindcss/utilities.css" source(none);\n@import "./fuse.css" reference;',
+      ["shadow-primary"]
+    );
+    document.head.prepend(style);
+    try {
+      renderThemed(
+        <ThemeScope theme={tkasCompany}>
+          <Frame.Root>
+            <Frame.Panel>Black panel</Frame.Panel>
+            <Frame.Panel className="shadow-primary">Primary panel</Frame.Panel>
+            <Table.Root aria-label="Primary table">
+              <Table.Body className="shadow-primary">
+                <Table.Row>
+                  <Table.Cell>March</Table.Cell>
+                </Table.Row>
+              </Table.Body>
+            </Table.Root>
+          </Frame.Root>
+        </ThemeScope>
+      );
+      const body = roleNamed("table", "Primary table").querySelector("tbody");
+      if (body === null) {
+        throw new Error("expected the framed body");
+      }
+      const black = shadowLayers(getComputedStyle(textNamed("Black panel")).boxShadow).at(-1);
+      expect(black).toBe("oklab(0 0 0 / 0.05) 0px 1px 2px 0px");
+      for (const [name, element] of [
+        ["panel", textNamed("Primary panel")],
+        ["body", body],
+      ] as const) {
+        const shadow = shadowLayers(getComputedStyle(element).boxShadow).at(-1) ?? "";
+        // The geometry stays shadow-xs's 1px offset and 2px blur; only the colour changes.
+        expect(shadow.endsWith(" 0px 1px 2px 0px"), `${name} geometry`).toBe(true);
+        expect(shadow, `${name} colour`).not.toBe(black);
+        expect(shadow.startsWith("oklab(0 0 0"), `${name} colour`).toBe(false);
+      }
+    } finally {
+      style.remove();
+    }
+  });
+
+  it("replaces a panel's shadow with a consumer's shadow-none or arbitrary shadow", async () => {
+    const style = document.createElement("style");
+    style.textContent = await consumerCss(
+      '@import "tailwindcss/theme.css" theme(reference);\n@import "tailwindcss/utilities.css" source(none);\n@import "./fuse.css" reference;',
+      ["shadow-none", "shadow-[0_2px_4px_red]"]
+    );
+    document.head.prepend(style);
+    try {
+      renderThemed(
+        <ThemeScope theme={tkasCompany}>
+          <Frame.Root>
+            <Frame.Panel className="shadow-none">Shadowless panel</Frame.Panel>
+            <Frame.Panel className="shadow-[0_2px_4px_red]">Red panel</Frame.Panel>
+          </Frame.Root>
+        </ThemeScope>
+      );
+      const layers = (text: string) => shadowLayers(getComputedStyle(textNamed(text)).boxShadow);
+      // Tailwind's unset ring and inset layers draw transparent; `shadow-none` leaves no other.
+      for (const layer of layers("Shadowless panel")) {
+        expect(layer === "none" || layer.startsWith("rgba(0, 0, 0, 0) "), layer).toBe(true);
+      }
+      const red = layers("Red panel").filter((layer) => !layer.startsWith("rgba(0, 0, 0, 0) "));
+      expect(red).toEqual(["rgb(255, 0, 0) 0px 2px 4px 0px"]);
+    } finally {
+      style.remove();
     }
   });
 

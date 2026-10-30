@@ -55,16 +55,17 @@ function FrameRoot({ className, layout = "gutter", ...props }: FrameRootProps): 
         "not-data-[layout=gutter]:frame-seam-upper:before:hidden not-data-[layout=gutter]:frame-seam-lower:border-t-0",
         // A Collapsible.Content clips its overflow for its height transition, which would cut off
         // a panel's shadow. In a Frame it clips with a clip-path instead, which follows the
-        // animating height and reaches past the box by the panel's shadow-xs, 2px to the sides and
-        // 3px below, plus the 1px a flush item overhangs, above too when the section starts the
-        // Frame. `flow-root` keeps the block formatting
-        // context the clip gave it, so a child's margin stays inside.
-        "frame-section:flow-root frame-section:overflow-visible frame-section:[clip-path:inset(-1px_-3px_-4px_-3px)]",
-        // Flush items pull 1px over the root's border at its sides, and at its top and bottom
-        // when they start or end it, so their own border draws the Frame's edge there. Their
-        // highlight would darken that edge, so it hides. A Table container's full width would stop
-        // its end short of the border, so it sizes to its margins instead.
-        "data-[layout=flush]:frame-item:-mx-px data-[layout=flush]:frame-panel-item:before:hidden data-[layout=flush]:frame-table-item:w-auto data-[layout=flush]:frame-first-item:-mt-px data-[layout=flush]:frame-last-item:-mb-px",
+        // animating height and reaches past the box as far as the shadow the root publishes, plus
+        // the overhang of a flush item: the blur to the sides, the offset and the blur below, and
+        // the blur less the offset above, or the overhang where a section starts a flush Frame.
+        // `flow-root` keeps the block formatting context the clip gave it, so a child's margin
+        // stays inside.
+        "frame-section:flow-root frame-section:overflow-visible frame-section:[clip-path:inset(calc(-1*max(var(--frame-overhang),var(--frame-shadow-blur)-var(--frame-shadow-y)))_calc(-1*(var(--frame-shadow-blur)+var(--frame-overhang)))_calc(-1*(var(--frame-shadow-y)+var(--frame-shadow-blur)+var(--frame-overhang))))]",
+        // Flush items pull over the root's border by the overhang at its sides, and at its top and
+        // bottom when they start or end it, so their own border draws the Frame's edge there.
+        // Their highlight would darken that edge, so it hides. A Table container's full width
+        // would stop its end short of the border, so it sizes to its margins instead.
+        "data-[layout=flush]:frame-item:-mx-(--frame-overhang) data-[layout=flush]:frame-panel-item:before:hidden data-[layout=flush]:frame-table-item:w-auto data-[layout=flush]:frame-first-item:-mt-(--frame-overhang) data-[layout=flush]:frame-last-item:-mb-(--frame-overhang)",
         className
       )}
       {...props}
@@ -119,7 +120,7 @@ function FramePanel({ className, ...props }: FramePanelProps): ReactElement {
       data-sole-table={holdsOnlyTable(props.children)}
       className={cn(
         framePanelShellClass,
-        "shadow-xs/5 before:shadow-[0_1px_--theme(--color-black/6%)] relative bg-background bg-clip-padding before:pointer-events-none before:absolute before:inset-0",
+        "before:shadow-[0_1px_--theme(--color-black/6%)] relative bg-background bg-clip-padding shadow-[shadow:0_var(--frame-shadow-y,1px)_var(--frame-shadow-blur,2px)_0_black]/5 before:pointer-events-none before:absolute before:inset-0",
         className
       )}
       {...props}

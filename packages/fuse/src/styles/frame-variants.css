@@ -8,10 +8,11 @@
    Collapsible.Content is always its Root's child in a section. `frame-level` names both paths,
    any element on them, and `frame-item` and the narrower item variants compose from it. The first
    and last items spell their own paths from the root, so nothing outside the Frame decides them.
-   They all apply on the root and style its items. `frame-section` repeats the section path for
-   the Collapsible.Content itself: a variant that mixes its own selector with an `@variant` of
-   another, as `frame-level` would to compose from it, sends Tailwind's variant compiler out of
-   memory. */
+   They all apply on the root and style its items. A Table reads its edge inset from a property the
+   root, a framed body or a padless panel sets, so no variant spells Table's own DOM below its
+   container. `frame-section` repeats the section path for the Collapsible.Content itself: a
+   variant that mixes its own selector with an `@variant` of another, as `frame-level` would to
+   compose from it, sends Tailwind's variant compiler out of memory. */
 @custom-variant frame-level {
   & > *,
   & > * > [data-slot="collapsible-content"] > * {
@@ -38,9 +39,10 @@
     }
   }
 }
+/* A Table item's rules weigh its slot, so they outweigh the one-class resets on the container. */
 @custom-variant frame-table-item {
   @variant frame-level {
-    &:where([data-slot="table-container"]) {
+    &:is([data-slot="table-container"]) {
       @slot;
     }
   }
@@ -121,19 +123,6 @@
 /* A Frame.Header's direct Collapsible.Trigger, which takes the whole header band. */
 @custom-variant frame-header-trigger {
   & > [data-slot="collapsible-trigger"] {
-    @slot;
-  }
-}
-/* The rows and caption of a Frame.Panel's only Table, directly or in a VerticalTable.Body, which
-   take over the panel's padding when the panel drops it. These apply on the panel. */
-@custom-variant frame-panel-table-row {
-  & > [data-slot="table-container"] > table > * > tr,
-  & > [data-slot="vertical-table"] > [data-slot="table-container"] > table > * > tr {
-    @slot;
-  }
-}
-@custom-variant frame-panel-table-caption {
-  & > [data-slot="table-container"] > table > caption {
     @slot;
   }
 }

@@ -1,9 +1,14 @@
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { cn } from "../../styles/cn";
-import { frameTableBodyShellClass, frameTableContainerShellClass } from "../../styles/inner-corner/frame";
+import {
+  frameTableBodyShellClass,
+  frameTableContainerShellClass,
+  frameVerticalTableShellClass,
+} from "../../styles/inner-corner/frame";
 import { Skeleton } from "../skeleton/skeleton";
 import { TableCell } from "./table-cell";
+import { TABLE_EDGE_PADDING_CLASSES } from "./table-cell-classes";
 import { verticalTableCellText } from "./vertical-table-cell-text";
 import { VerticalTableHeader } from "./vertical-table-header";
 import { VerticalTableKey } from "./vertical-table-key";
@@ -122,7 +127,7 @@ function TableBody({ className, ...props }: TableBodyProps): ReactElement {
       data-slot="table-body"
       className={cn(
         frameTableBodyShellClass,
-        "before:shadow-[0_1px_--theme(--color-black/6%)] framed-table:shadow-xs/5 relative before:pointer-events-none before:absolute before:inset-px not-framed-table:before:hidden [&_tr:last-child]:border-0 framed-table:*:[tr]:border-0 framed-table:*:[tr]:*:[td]:border-b framed-table:*:[tr]:*:[td]:bg-background framed-table:*:[tr]:*:[td]:bg-clip-padding framed-table:*:[tr]:*:[td]:first:border-s framed-table:*:[tr]:first:*:[td]:border-t framed-table:*:[tr]:*:[td]:last:border-e framed-table:*:[tr]:hover:*:[td]:bg-transparent framed-table:*:[tr]:data-[state=selected]:*:[td]:bg-muted/72",
+        "before:shadow-[0_1px_--theme(--color-black/6%)] relative before:pointer-events-none before:absolute before:inset-px not-framed-table:before:hidden framed-table:shadow-[shadow:0_var(--frame-shadow-y,1px)_var(--frame-shadow-blur,2px)_0_black]/5 [&_tr:last-child]:border-0 framed-table:*:[tr]:border-0 framed-table:*:[tr]:*:[td]:border-b framed-table:*:[tr]:*:[td]:bg-background framed-table:*:[tr]:*:[td]:bg-clip-padding framed-table:*:[tr]:*:[td]:first:border-s framed-table:*:[tr]:first:*:[td]:border-t framed-table:*:[tr]:*:[td]:last:border-e framed-table:*:[tr]:hover:*:[td]:bg-transparent framed-table:*:[tr]:data-[state=selected]:*:[td]:bg-muted/72",
         className
       )}
       {...props}
@@ -161,7 +166,8 @@ function TableHead({ className, ...props }: TableHeadProps): ReactElement {
     <th
       data-slot="table-head"
       className={cn(
-        "font-medium box-border h-(--row-h-header) px-(--row-px) text-start align-middle leading-none whitespace-nowrap text-muted-foreground has-[[role=checkbox]]:w-px has-[[role=checkbox]]:pe-0 framed-table:first:ps-(--frame-text-inset) framed-table:last:pe-(--frame-text-inset)",
+        TABLE_EDGE_PADDING_CLASSES,
+        "font-medium box-border h-(--row-h-header) text-start align-middle leading-none whitespace-nowrap text-muted-foreground has-[[role=checkbox]]:w-px",
         className
       )}
       scope="col"
@@ -175,7 +181,7 @@ function TableCaption({ className, ...props }: TableCaptionProps): ReactElement 
     <caption
       data-slot="table-caption"
       className={cn(
-        "text-sm mt-4 text-muted-foreground framed-table:my-4 framed-table:px-(--frame-text-inset) framed-table:text-start",
+        "text-sm mt-4 px-[var(--table-edge-px,0px)] [text-align:var(--table-caption-align,revert)] text-muted-foreground framed-table:my-4",
         className
       )}
       {...props}
@@ -212,6 +218,7 @@ function VerticalTableBody({
     <div
       data-slot="vertical-table"
       className={cn(
+        frameVerticalTableShellClass,
         "overflow-hidden rounded-md border bg-background in-data-[variant=non-bordered-compact]:border-none in-data-[variant=non-bordered-compact]:bg-inherit",
         className
       )}
@@ -278,7 +285,7 @@ function VerticalTableValue({
     <TableCell
       className={cn(
         "text-sm *:text-sm **:text-sm group-data-[font-weight=bold]/vertical-table-row-item:font-medium group-data-[font-weight=normal]/vertical-table-row-item:font-normal",
-        "in-data-[variant=non-bordered-compact]:border-none in-data-[variant=non-bordered-compact]:bg-inherit in-data-[variant=non-bordered-compact]:p-1",
+        "in-data-[variant=non-bordered-compact]:border-none in-data-[variant=non-bordered-compact]:bg-inherit in-data-[variant=non-bordered-compact]:py-1 in-data-[variant=non-bordered-compact]:[--table-cell-pe:--spacing(1)] in-data-[variant=non-bordered-compact]:[--table-cell-ps:--spacing(1)]",
         verticalTableCellText(text),
         className
       )}
