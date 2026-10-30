@@ -22,6 +22,7 @@ import {
 } from "../../../test/themed-browser-render";
 import type { SupportedLocale } from "../../intl/locale-context";
 import { DENSITIES } from "../../theme/density";
+import { ThemeScope } from "../../theme/theme-scope";
 import { Field } from "../field";
 import { InputGroup } from "../input-group";
 import { useComboboxAnchor } from "./combobox";
@@ -671,6 +672,33 @@ describe("Combobox", () => {
     const muted = cssVarColor(chipsBox, "--muted-foreground");
     expect(getComputedStyle(chipsInput, "::placeholder").color).toBe(muted);
     expect(getComputedStyle(comboboxNamed("Single fruit"), "::placeholder").color).toBe(muted);
+  });
+
+  it.each([
+    ["internal fkas private", { variant: "internal", brand: "fkas", segment: "private" }],
+    ["external tkas company", { variant: "external", brand: "tkas", segment: "company" }],
+  ] as const)("fills the Chips box with the card role, like Combobox.Input, in %s", (_name, theme) => {
+    renderCombobox(
+      <ThemeScope theme={theme}>
+        <Combobox.Root items={[...FRUITS]}>
+          <Combobox.Input aria-label="Single fruit" />
+        </Combobox.Root>
+        <Combobox.Root items={[...FRUITS]} multiple defaultValue={["Apple"]}>
+          <Combobox.Chips aria-label="Selected fruit">
+            <Combobox.Chip>Apple</Combobox.Chip>
+            <Combobox.ChipsInput aria-label="Many fruit" />
+          </Combobox.Chips>
+        </Combobox.Root>
+      </ThemeScope>
+    );
+    const chipsBox = roleNamed("toolbar", "Selected fruit");
+    const inputBox = comboboxNamed("Single fruit").closest<HTMLElement>("[data-slot=input-group]");
+    if (inputBox === null) {
+      throw new Error("expected Combobox.Input inside its InputGroup root");
+    }
+    const card = cssVarColor(chipsBox, "--card");
+    expect(getComputedStyle(chipsBox).backgroundColor).toBe(card);
+    expect(getComputedStyle(inputBox).backgroundColor).toBe(card);
   });
 
   it("sets data-external-anchor=true against a useComboboxAnchor ref, and insets a popup that owns a search group without letting the group overflow it", async () => {
