@@ -447,7 +447,7 @@ export const PART_DENSITY = {
   "table-cell": "row",
   "table-caption": "fixed",
   // A caption in a framed Table or a padless panel's Table pads to the Frame's text inset.
-  "table-caption:where([data-slot=frame] > [data-slot=table-container] > table > *, [data-slot=frame] > [data-slot=collapsible] > [data-slot=collapsible-content] > [data-slot=table-container] > table > *, [data-slot=frame-panel][data-sole-table=true] > [data-slot=table-container] > table > *)":
+  "table-caption:where([data-slot=frame] > [data-slot=table-container] > table > *, [data-slot=frame] > * > [data-slot=collapsible-content] > [data-slot=table-container] > table > *, [data-slot=frame-panel][data-sole-table=true] > [data-slot=table-container] > table > *)":
     "surface",
   "vertical-table-root": "layout",
   "vertical-table": "layout",

@@ -541,6 +541,19 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   `presets` (`date-presets.ts`).
 - A per-field `firstDayOfWeek`, shared with the calendar a function child renders.
 
+## Frame
+
+- A framed Table's edge inset comes from five rules in three owners: the edge cells
+  (`table/table-cell-classes.ts`), the head and caption (`table/table.tsx`), and the framed body and
+  the sole-table panel (`styles/inner-corner/frame.ts`), whose `frame-panel-table-row` and
+  `frame-panel-table-caption` variants spell Table's DOM. Replace them with one inherited
+  `--table-edge-inset` that the edge cells, heads and caption read with a `--row-px` fallback. The
+  sole-table panel's selector also outweighs a consumer's className on `Table.Cell` and
+  `Table.Head`.
+- A collapsible section's clip-path, `inset(-1px_-3px_-4px_-3px)` in `frame/frame.tsx`, restates the
+  panel shadow's outsets in px. Publish them once beside the panel shadow, or let
+  `panelHeightTransition` clip with `clip-path: inset(var(--panel-clip-outset, 0))`.
+
 ## Command
 
 - `CommandVirtual.List` renders flat item lists only, so `virtualized` beside `grouped` throws. Add

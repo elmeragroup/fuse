@@ -1,5 +1,6 @@
 /* Frame's custom variants, private to `fuse.css`, which imports this file. They spell the parts a
-   Frame lays out once, so the composition the Frame supports changes in one place.
+   Frame lays out, so the composition the Frame supports changes here and in the table caption's
+   density-role key in `theme/tokens/density-roles.ts`, which spells the same paths.
 
    A Frame's items (`inner-corner/frame.ts`) are its panels and Table containers that are the
    root's direct children, or the direct children of a Collapsible.Content in a Collapsible.Root
@@ -66,19 +67,55 @@
   }
 }
 /* The two panels that meet at a seam: the upper one, which another panel follows, and the lower
-   one, which follows another panel. */
+   one, which follows another panel. Panels meet as siblings at either level, and across the edge
+   of a headerless section: its content is its first child where a panel before it meets its first
+   panel, and its last child where its last panel meets a panel after it. A closed section that
+   stays mounted hides its content, so no panel meets it. */
 @custom-variant frame-seam-upper {
-  @variant frame-level {
-    &:where([data-slot="frame-panel"]):has(+ [data-slot="frame-panel"]) {
-      @slot;
-    }
+  &
+    > :where([data-slot="frame-panel"]):has(
+      + [data-slot="frame-panel"],
+      + *
+        > [data-slot="collapsible-content"]:first-child:not([hidden])
+        > [data-slot="frame-panel"]:first-child
+    ),
+  &
+    > *
+    > [data-slot="collapsible-content"]
+    > :where([data-slot="frame-panel"]):has(+ [data-slot="frame-panel"]),
+  &
+    > :has(
+      + [data-slot="frame-panel"],
+      + *
+        > [data-slot="collapsible-content"]:first-child:not([hidden])
+        > [data-slot="frame-panel"]:first-child
+    )
+    > [data-slot="collapsible-content"]:last-child
+    > [data-slot="frame-panel"]:last-child {
+    @slot;
   }
 }
 @custom-variant frame-seam-lower {
-  @variant frame-level {
-    &:where([data-slot="frame-panel"] + [data-slot="frame-panel"]) {
-      @slot;
-    }
+  &
+    > :where(
+      [data-slot="frame-panel"],
+      :has(
+        > [data-slot="collapsible-content"]:last-child:not([hidden]) > [data-slot="frame-panel"]:last-child
+      )
+    )
+    + :where([data-slot="frame-panel"]),
+  & > * > [data-slot="collapsible-content"] > *:where([data-slot="frame-panel"] + [data-slot="frame-panel"]),
+  &
+    > :is(
+      [data-slot="frame-panel"],
+      :has(
+        > [data-slot="collapsible-content"]:last-child:not([hidden]) > [data-slot="frame-panel"]:last-child
+      )
+    )
+    + *
+    > [data-slot="collapsible-content"]:first-child
+    > [data-slot="frame-panel"]:first-child {
+    @slot;
   }
 }
 /* A Frame.Header's direct Collapsible.Trigger, which takes the whole header band. */

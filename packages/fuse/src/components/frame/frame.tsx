@@ -46,7 +46,8 @@ function FrameRoot({ className, layout = "gutter", ...props }: FrameRootProps): 
         frameShellClass,
         "relative flex flex-col bg-muted/72 bg-clip-padding",
         // Each layout keys on `data-layout` and reaches the Frame's items through the `frame-*`
-        // variants in `fuse.css`, as `inner-corner/frame.ts` defines them. The gutter layout sets adjacent panels 4px apart.
+        // variants in `frame-variants.css`, as `inner-corner/frame.ts` defines them. The gutter
+        // layout sets adjacent panels 4px apart.
         "data-[layout=gutter]:frame-seam-lower:mt-1",
         // The stacked and flush layouts fuse adjacent panels: the shell squares the corners that
         // meet, the lower panel drops the border they would share, and the upper one hides the
@@ -127,6 +128,14 @@ function FramePanel({ className, ...props }: FramePanelProps): ReactElement {
 }
 
 /**
+ * The header and footer bars' padding: inline the Frame's bar inset, or the large surface tier
+ * outside a Frame, and on the block axis half that tier.
+ */
+const barPaddingClass = cn(
+  "px-[var(--frame-bar-inset,var(--surface-pad-lg))] py-[calc(var(--surface-pad-lg)/2)]"
+);
+
+/**
  * A header band in the Frame's muted surface. In a Frame its inline padding starts its text on
  * the Frame's text inset, where a panel's text starts, and outside one it is the large surface
  * tier. Its block padding is half that tier, so it reads as chrome above the panels. A `Collapsible.Trigger`
@@ -139,8 +148,12 @@ function FrameHeader({ className, ...props }: FrameHeaderProps): ReactElement {
     <header
       data-slot="frame-panel-header"
       className={cn(
-        "flex flex-col px-[var(--frame-bar-inset,var(--surface-pad-lg))] py-[calc(var(--surface-pad-lg)/2)] has-[>[data-slot=collapsible-trigger]]:p-0",
-        "frame-header-trigger:font-semibold frame-header-trigger:text-sm *:data-[slot=collapsible-trigger]:focus-visible:ring-inset frame-header-trigger:flex frame-header-trigger:w-full frame-header-trigger:cursor-pointer frame-header-trigger:items-center frame-header-trigger:justify-between frame-header-trigger:gap-2 frame-header-trigger:rounded-inner frame-header-trigger:px-[var(--frame-bar-inset,var(--surface-pad-lg))] frame-header-trigger:py-[calc(var(--surface-pad-lg)/2)] frame-header-trigger:text-start",
+        "flex flex-col has-[>[data-slot=collapsible-trigger]]:p-0",
+        barPaddingClass,
+        // The trigger pads as `barPaddingClass` does, and takes the title's type.
+        "frame-header-trigger:font-semibold frame-header-trigger:text-sm frame-header-trigger:flex frame-header-trigger:w-full frame-header-trigger:cursor-pointer frame-header-trigger:items-center frame-header-trigger:justify-between frame-header-trigger:gap-2 frame-header-trigger:rounded-inner frame-header-trigger:px-[var(--frame-bar-inset,var(--surface-pad-lg))] frame-header-trigger:py-[calc(var(--surface-pad-lg)/2)] frame-header-trigger:text-start",
+        // oxlint-disable-next-line elmera/no-local-focus-ring -- the shared self ring, drawn inset
+        "frame-header-trigger:focus-visible:ring-inset",
         "frame-header-trigger:*:[svg]:size-4 frame-header-trigger:*:[svg]:shrink-0 frame-header-trigger:*:[svg]:text-muted-foreground frame-header-trigger:*:[svg]:transition-transform frame-header-trigger:*:[svg]:duration-200 frame-header-trigger:data-panel-open:*:[svg]:rotate-180",
         className
       )}
@@ -170,10 +183,7 @@ function FrameFooter({ className, ...props }: FrameFooterProps): ReactElement {
   return (
     <footer
       data-slot="frame-panel-footer"
-      className={cn(
-        "flex flex-col gap-1 px-[var(--frame-bar-inset,var(--surface-pad-lg))] py-[calc(var(--surface-pad-lg)/2)]",
-        className
-      )}
+      className={cn("flex flex-col gap-1", barPaddingClass, className)}
       {...props}
     />
   );

@@ -6,10 +6,11 @@ import { publishShellBoundary } from "../corner-radius";
 // children, and the direct children of a `Collapsible.Content` in a `Collapsible.Root` that is a
 // direct child, so a collapsible panel is one of the Frame's items too. The root writes the corner
 // its items take as the private `--frame-corner` onto its items only, through a selector that
-// spells both paths, the `frame-item` variant in `fuse.css`. Every panel and Table container resets the property to `initial` at
-// one-class specificity, and the root's item rule outweighs that reset, so only an item keeps a
-// value. A panel or Table anywhere else, in a panel or a plain wrapper, resets it, so it never
-// reaches them. Parts without a value fall back to `rounded-xl`.
+// spells both paths, the `frame-item` variant in `frame-variants.css`. Every panel and Table
+// container resets the property to `initial` at one-class specificity, and the root's item rule
+// outweighs that reset, so only an item keeps a value. A panel or Table anywhere else, in a panel
+// or a plain wrapper, resets it, so it never reaches them. Parts without a value fall back to
+// `rounded-xl`.
 //
 // The root draws a 1px border, so an item sits its border and its padding inside the root's
 // corner. A flush root has no padding, and its items pull 1px over its border, so their outer

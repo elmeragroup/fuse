@@ -1,3 +1,5 @@
+import type { ReactElement } from "react";
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -10,7 +12,7 @@ import {
   shadowLayerLengths,
   shadowLayers,
 } from "../../../test/assert-invalid-ring";
-import { RADIUS_XL } from "../../../test/inner-corner-specimens";
+import { cornerRadius, RADIUS_XL } from "../../../test/inner-corner-specimens";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { tkasCompany } from "../../../test/theme-fixtures";
 import {
@@ -27,6 +29,7 @@ import { ThemeScope } from "../../theme/theme-scope";
 import { Collapsible } from "../collapsible";
 import { Table, VerticalTable } from "../table/table";
 import { Frame } from "./frame";
+import type { FrameLayout } from "./frame";
 
 /**
  * The tkas corners in px, written out by hand from its `rounded-xl` of 20px: a padded Frame hands
@@ -42,10 +45,6 @@ function frameRoot(label: string): HTMLElement {
     throw new Error(`expected frame root in ${label}`);
   }
   return root;
-}
-
-function corner(element: Element): number {
-  return px(getComputedStyle(element).borderTopLeftRadius);
 }
 
 afterEach(async () => {
@@ -204,7 +203,7 @@ describe("Frame", () => {
     const bare = frameRoot("Bare frame");
     const edges = bare.getBoundingClientRect();
     expect(getComputedStyle(bare).paddingTop).toBe("0px");
-    expect(corner(bare)).toBe(RADIUS_XL.tkas);
+    expect(cornerRadius(bare)).toBe(RADIUS_XL.tkas);
 
     // The two panels fill the root's border box: the first starts on its top edge, the last ends
     // on its bottom edge, and both lie on its sides, so their own borders draw its edge.
@@ -219,9 +218,9 @@ describe("Frame", () => {
     expect(march.getBoundingClientRect().top).toBe(edges.top);
     expect(april.getBoundingClientRect().bottom).toBe(edges.bottom);
     // Adjacent flush panels fuse as stacked ones do, keeping the root's corner on the outer ends.
-    expect(corner(march)).toBe(FLUSH_ITEM_CORNER);
+    expect(cornerRadius(march)).toBe(FLUSH_ITEM_CORNER);
     expect(px(getComputedStyle(march).borderBottomLeftRadius)).toBe(0);
-    expect(corner(april)).toBe(0);
+    expect(cornerRadius(april)).toBe(0);
     expect(px(getComputedStyle(april).borderBottomLeftRadius)).toBe(FLUSH_ITEM_CORNER);
     expect(getComputedStyle(april).borderTopWidth).toBe("0px");
 
@@ -234,7 +233,7 @@ describe("Frame", () => {
     expect(may.top).toBe(header?.bottom);
     expect(may.bottom).toBe(footer.top);
     expect(may.left).toBe(headed.left);
-    expect(corner(textNamed("May"))).toBe(FLUSH_ITEM_CORNER);
+    expect(cornerRadius(textNamed("May"))).toBe(FLUSH_ITEM_CORNER);
 
     // A collapsible section without a header that starts the Frame starts it as a direct panel
     // would: the panel's top edge lies on the root's, and the section's clip lets its top border
@@ -268,6 +267,89 @@ describe("Frame", () => {
     expect(textNamed("Nested last").getBoundingClientRect().bottom).toBe(root.bottom);
   });
 
+  it("joins panels across a headerless collapsible section as it joins sibling panels, in every layout", () => {
+    // Each Frame pairs panels across a section boundary: a panel then a section, a section then a
+    // panel, and two sections. The gutter layout keeps 4px between the pair; the stacked and flush
+    // layouts fuse it, squaring the corners that meet and drawing one border between them.
+    const section = (name: string): ReactElement => (
+      <Collapsible.Root defaultOpen>
+        <Collapsible.Content>
+          <Frame.Panel>{name}</Frame.Panel>
+        </Collapsible.Content>
+      </Collapsible.Root>
+    );
+    const pairs = (layout: FrameLayout): ReactElement => (
+      <>
+        <Frame.Root layout={layout}>
+          <Frame.Panel>{`${layout} panel then section, upper`}</Frame.Panel>
+          {section(`${layout} panel then section, lower`)}
+        </Frame.Root>
+        <Frame.Root layout={layout}>
+          {section(`${layout} section then panel, upper`)}
+          <Frame.Panel>{`${layout} section then panel, lower`}</Frame.Panel>
+        </Frame.Root>
+        <Frame.Root layout={layout}>
+          {section(`${layout} section then section, upper`)}
+          {section(`${layout} section then section, lower`)}
+        </Frame.Root>
+      </>
+    );
+    renderThemed(
+      <ThemeScope theme={tkasCompany}>
+        {pairs("gutter")}
+        {pairs("stacked")}
+        {pairs("flush")}
+      </ThemeScope>
+    );
+    const ITEM_CORNER = { gutter: PADDED_ITEM_CORNER, stacked: PADDED_ITEM_CORNER, flush: FLUSH_ITEM_CORNER };
+    for (const layout of ["gutter", "stacked", "flush"] as const) {
+      for (const pair of ["panel then section", "section then panel", "section then section"]) {
+        const label = `${layout} ${pair}`;
+        const upper = textNamed(`${label}, upper`);
+        const lower = textNamed(`${label}, lower`);
+        const upperStyle = getComputedStyle(upper);
+        const lowerStyle = getComputedStyle(lower);
+        const gap = lower.getBoundingClientRect().top - upper.getBoundingClientRect().bottom;
+        if (layout === "gutter") {
+          expect(gap, label).toBe(4);
+          expect(px(upperStyle.borderBottomLeftRadius), label).toBe(ITEM_CORNER[layout]);
+          expect(cornerRadius(lower), label).toBe(ITEM_CORNER[layout]);
+          expect(lowerStyle.borderTopWidth, label).toBe("1px");
+        } else {
+          expect(gap, label).toBe(0);
+          expect(px(upperStyle.borderBottomLeftRadius), label).toBe(0);
+          expect(px(upperStyle.borderBottomRightRadius), label).toBe(0);
+          expect(cornerRadius(lower), label).toBe(0);
+          expect(px(lowerStyle.borderTopRightRadius), label).toBe(0);
+          expect(lowerStyle.borderTopWidth, label).toBe("0px");
+          // The upper panel's outer ends keep the item corner.
+          expect(cornerRadius(upper), label).toBe(ITEM_CORNER[layout]);
+          expect(px(lowerStyle.borderBottomLeftRadius), label).toBe(ITEM_CORNER[layout]);
+        }
+      }
+    }
+  });
+
+  it("leaves a panel unjoined before a closed section that stays mounted", () => {
+    renderThemed(
+      <ThemeScope theme={tkasCompany}>
+        <Frame.Root layout="stacked">
+          <Frame.Panel>Before the closed section</Frame.Panel>
+          <Collapsible.Root>
+            <Collapsible.Content keepMounted>
+              <Frame.Panel>Closed panel</Frame.Panel>
+            </Collapsible.Content>
+          </Collapsible.Root>
+        </Frame.Root>
+      </ThemeScope>
+    );
+    // The closed section shows nothing, so the panel before it ends the Frame's visible run of
+    // panels and keeps its rounded bottom corners.
+    const before = getComputedStyle(textNamed("Before the closed section"));
+    expect(px(before.borderBottomLeftRadius)).toBe(PADDED_ITEM_CORNER);
+    expect(px(before.borderBottomRightRadius)).toBe(PADDED_ITEM_CORNER);
+  });
+
   it("frames a Table that is the root's child, flush to its edges", () => {
     renderThemed(
       <ThemeScope theme={tkasCompany}>
@@ -294,7 +376,7 @@ describe("Frame", () => {
     }
     expect(container.getBoundingClientRect().left).toBe(root.left);
     expect(container.getBoundingClientRect().right).toBe(root.right);
-    expect(corner(body)).toBe(FLUSH_ITEM_CORNER);
+    expect(cornerRadius(body)).toBe(FLUSH_ITEM_CORNER);
     expect(getComputedStyle(textNamed("March")).borderLeftWidth).toBe("1px");
   });
 
@@ -344,13 +426,13 @@ describe("Frame", () => {
     const cell = getComputedStyle(textNamed("Reading"));
     expect(cell.borderTopWidth).toBe("0px");
     expect(cell.borderRightWidth).toBe("0px");
-    expect(corner(body)).toBe(0);
+    expect(cornerRadius(body)).toBe(0);
     expect(roleNamed("rowheader", "Status").tagName).toBe("TH");
     // The panel drops its padding, and the container fills its padding box and clips to its
     // corner, the panel's corner less the panel's 1px border.
     expect(getComputedStyle(panel).paddingTop).toBe("0px");
-    expect(corner(panel)).toBe(PADDED_ITEM_CORNER);
-    expect(corner(container)).toBe(PADDED_ITEM_CORNER - 1);
+    expect(cornerRadius(panel)).toBe(PADDED_ITEM_CORNER);
+    expect(cornerRadius(container)).toBe(PADDED_ITEM_CORNER - 1);
     expect(getComputedStyle(container).overflowY).not.toBe("visible");
     expect(container.getBoundingClientRect().left).toBe(panel.getBoundingClientRect().left + 1);
     expect(container.getBoundingClientRect().top).toBe(panel.getBoundingClientRect().top + 1);
@@ -361,7 +443,7 @@ describe("Frame", () => {
       throw new Error("expected the vertical table's box");
     }
     expect(getComputedStyle(facts).borderTopWidth).toBe("0px");
-    expect(corner(facts)).toBe(PADDED_ITEM_CORNER - 1);
+    expect(cornerRadius(facts)).toBe(PADDED_ITEM_CORNER - 1);
     expect(roleNamed("rowheader", "Meter type").tagName).toBe("TH");
 
     // A panel that holds more than the table keeps its padding: 16px, the dense large tier.
@@ -437,7 +519,7 @@ describe("Frame", () => {
     if (container === null) {
       throw new Error("expected the table's container");
     }
-    expect(corner(container)).toBe(0);
+    expect(cornerRadius(container)).toBe(0);
     const facts = roleNamed("table", "Captioned by a number").parentElement?.parentElement;
     if (facts == null) {
       throw new Error("expected the vertical table's box");
@@ -536,12 +618,12 @@ describe("Frame", () => {
     }
     // The outer table is the Frame's item: framed cell borders and the relayed corner.
     expect(getComputedStyle(outerCell).borderTopWidth).toBe("1px");
-    expect(corner(outerBody)).toBe(PADDED_ITEM_CORNER);
+    expect(cornerRadius(outerBody)).toBe(PADDED_ITEM_CORNER);
     // The inner table sits in a panel in a framed cell: no framed borders, fill or corners.
     expect(getComputedStyle(innerCell).borderTopWidth).toBe("0px");
     expect(getComputedStyle(innerCell).borderLeftWidth).toBe("0px");
     expect(getComputedStyle(innerCell).backgroundColor).toBe("rgba(0, 0, 0, 0)");
-    expect(corner(innerBody)).toBe(0);
+    expect(cornerRadius(innerBody)).toBe(0);
     expect(getComputedStyle(innerBody, "::before").display).toBe("none");
   });
 
@@ -572,20 +654,13 @@ describe("Frame", () => {
             </Collapsible.Root>
           </Frame.Root>
         </section>
-        <Frame.Root>
-          <div>
-            <Frame.Panel>Wrapped panel</Frame.Panel>
-          </div>
-        </Frame.Root>
       </ThemeScope>
     );
-    expect(corner(textNamed("Padded panel"))).toBe(PADDED_ITEM_CORNER);
-    // A plain wrapper is no Collapsible, so the panel in it is not the Frame's item.
-    expect(corner(textNamed("Wrapped panel"))).toBe(RADIUS_XL.tkas);
+    expect(cornerRadius(textNamed("Padded panel"))).toBe(PADDED_ITEM_CORNER);
 
     const flush = frameRoot("Flush frame").getBoundingClientRect();
     const panel = textNamed("Flush panel");
-    expect(corner(panel)).toBe(FLUSH_ITEM_CORNER);
+    expect(cornerRadius(panel)).toBe(FLUSH_ITEM_CORNER);
     expect(panel.getBoundingClientRect().left).toBe(flush.left);
     expect(panel.getBoundingClientRect().right).toBe(flush.right);
     expect(panel.getBoundingClientRect().bottom).toBe(flush.bottom);
@@ -687,6 +762,12 @@ describe("Frame", () => {
             <Frame.Panel>Stacked wrapped lower</Frame.Panel>
           </div>
         </Frame.Root>
+        <Frame.Root>
+          <div>
+            <Frame.Panel>Gutter wrapped upper</Frame.Panel>
+            <Frame.Panel>Gutter wrapped lower</Frame.Panel>
+          </div>
+        </Frame.Root>
       </ThemeScope>
     );
     // A wrapper that is no Collapsible hides its panels from the Frame: each keeps `rounded-xl` on
@@ -695,7 +776,14 @@ describe("Frame", () => {
     const root = frameRoot("Wrapped flush frame").getBoundingClientRect();
     expect(textNamed("Wrapped upper").getBoundingClientRect().left).toBe(root.left + 1);
     expect(textNamed("Wrapped upper").getBoundingClientRect().top).toBe(root.top + 1);
-    for (const name of ["Wrapped upper", "Wrapped lower", "Stacked wrapped upper", "Stacked wrapped lower"]) {
+    for (const name of [
+      "Wrapped upper",
+      "Wrapped lower",
+      "Stacked wrapped upper",
+      "Stacked wrapped lower",
+      "Gutter wrapped upper",
+      "Gutter wrapped lower",
+    ]) {
       const style = getComputedStyle(textNamed(name));
       expect(px(style.borderTopLeftRadius), name).toBe(RADIUS_XL.tkas);
       expect(px(style.borderBottomLeftRadius), name).toBe(RADIUS_XL.tkas);
