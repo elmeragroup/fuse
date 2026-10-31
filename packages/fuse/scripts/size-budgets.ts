@@ -126,6 +126,8 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // 2026-10-31, SVG phase 3: Chart.Panel, the per-layout frames and label registries, the per-series
   // resolution and its table row spans re-measure the entry at 128778 after the three review
   // rounds, within its ceiling. The recorded measurement stands.
+  // 2026-10-31, main merged in with #439 and #440: the shared Fuse parts the chart renders through
+  // take the entry to 129203, within its ceiling. The recorded measurement stands.
   { name: "chart", entryFile: "chart.js", measuredGzip: 97044 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
@@ -294,6 +296,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
   // within their ceilings, after the three review rounds, to 126468 for Chart, 126470 for BarChart,
   // 82653, 82626 and 82588 for the polar namespaces, 50192 for Chart.Root and 68130 for the bar
   // route. useChartPoint measures 3933. The recorded measurements stand.
+  // 2026-10-31, main merged in with #439 and #440: the shared Fuse parts grow Chart to 126903,
+  // BarChart to 126905 and the polar namespaces to 83087, 83062 and 83025, within their ceilings.
+  // Chart.Root, the bar route and useChartPoint stay at 50192, 68130 and 3933. The recorded
+  // measurements stand.
   { name: "chart/Chart", entryFile: "chart.js", exportName: "Chart", measuredGzip: 95987 },
   { name: "chart/BarChart", entryFile: "chart.js", exportName: "BarChart", measuredGzip: 95989 },
   { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
@@ -380,6 +386,9 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // 36970, and the Table edge-inset property, the Frame's derived section clip and the cell
   // padding defaults that edge cells override (+404) to 37374, over its ceiling of 36890, so the
   // shared entry recalibrates to measured × 1.5, as a code owner approved.
+  // 2026-10-31: measured 37489 once main merged into the charts branch, whose fuse.css adds the
+  // chart roles as Tailwind colours and the reduced-motion delay reset (+115), within the
+  // recalibrated ceiling. The recorded measurement stands.
   { name: "styles.css", file: "styles.css", measuredGzip: 37374 },
   // 2026-10-18: new entry, measured at 115. It holds the layer statement and one rule.
   // 2026-10-18, layer 05: re-measured at 8155 with the rules for every cartesian part and Bar form,
@@ -395,6 +404,9 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // 2026-10-31, SVG phase 3: re-measured at 13404 after the three review rounds, with the Panel
   // rows, their subgrid, gap and print rules, the per-Panel slot label row and the surface that
   // spans the Panels. The recorded measurement stands.
+  // 2026-10-31, main merged in with #440: re-measured at 13523 once the horizontal-orientation
+  // rules match the chart Root alone, not an ancestor such as a docs demo's Tabs, and the Root's
+  // one column fills its width under any outside justify-content. The recorded measurement stands.
   { name: "chart.css", file: "chart.css", measuredGzip: 10089 },
 ] satisfies readonly Measured<CssBudget>[]);
 

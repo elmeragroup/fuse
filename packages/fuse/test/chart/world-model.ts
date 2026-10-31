@@ -302,7 +302,9 @@ export function expected(world: World, plot: Plot, active: string | null): Expec
   const hairline = Math.max(1, Math.floor(dpr)) / dpr;
   const path = pathForm(world);
   const windowed = world.data.slice(first, last + 1);
-  const empty = windowed.every(({ v }) => v === null);
+  // CONTRACT section 8.13: the empty state holds when no slot in the domain holds a reading, so a
+  // window that keeps only missing slots of a domain with readings still draws their ticks.
+  const empty = world.data.every(({ v, w }) => v === null && w === undefined);
   const tipOf = (v: number) => snapAcross(valueAt(v));
   const bars = new Map<string, { along: Span; across: Span; negative: boolean }>();
   const ticks = new Map<string, { along: Span; base: number }>();

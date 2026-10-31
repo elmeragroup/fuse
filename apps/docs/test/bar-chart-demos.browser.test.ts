@@ -279,10 +279,15 @@ describe("bar-chart scenario demos in Chromium", () => {
   it("draws S03's 96 quarters with 16 below zero", async () => {
     const { page, demo: levels } = await demo("Price levels");
     expect(await slotCount(levels, "chart-bar")).toBe(96);
-    const negative = await levels
-      .locator('[data-slot="chart-bar"]')
-      .evaluateAll((bars) => bars.filter((bar) => bar.hasAttribute("data-negative")).length);
-    expect(negative).toBe(16);
+    // A bar takes the side its drawn tip lies on, and the entrance grows every bar from the
+    // baseline, so the 16 negative quarters show once the entrance lands.
+    await expect
+      .poll(async () =>
+        levels
+          .locator('[data-slot="chart-bar"]')
+          .evaluateAll((bars) => bars.filter((bar) => bar.hasAttribute("data-negative")).length)
+      )
+      .toBe(16);
     await page.close();
   });
 
@@ -330,8 +335,15 @@ describe("every scenario bar's top and base in Chromium", () => {
   ])("draws %s's bars at their golden tops and bases", async (name) => {
     // The ticket's golden scenario values judge: each bar's top and base, not only counts and
     // totals. An inner stack segment ends the 2 px seam short of the one above it, the stack seam
-    // rule, so its golden top moves down by that seam.
-    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, timezoneId: "Europe/Oslo" });
+    // rule, so its golden top moves down by that seam. The goldens are the bars at rest, so the
+    // page asks for reduced motion and the entrance lands in its first paint. With motion, the
+    // demo's hydration marker can land in the entrance's last 150 ms, whose tail still moves a bar
+    // up to 2 px.
+    const page = await browser().newPage({
+      viewport: DESKTOP_VIEWPORT,
+      timezoneId: "Europe/Oslo",
+      reducedMotion: "reduce",
+    });
     const demo = await openDemo(page, "bar-chart", name);
     // The chart measures its plot again once the page's fonts load, which moves the text above it.
     await page.evaluate(async () => {
@@ -498,6 +510,21 @@ describe.each([
 ] as const)("the tooltip at 400 % zoom, a 320 × 225 viewport, in %s", (_, engine) => {
   const browser = launchSuiteBrowser(engine);
 
+  /**
+   * The demo titled `name` on the bar-chart page, once it has hydrated. Every docs demo's Frame
+   * keeps its highlighted source mounted, which is 85 % of this page's 46,700 nodes, and WebKit
+   * hydrates the page about 9 s after navigation on the gate machine, past `openDemo`'s 5 s. The
+   * wait for hydration gets 20 s, and every later step keeps the 5 s default.
+   */
+  async function zoomedDemo(page: Page, name: string): Promise<Locator> {
+    await page.goto(`${docsBaseUrl()}/components/bar-chart`, { waitUntil: "load" });
+    page.setDefaultTimeout(20_000);
+    const demo = page.getByRole("region", { name, exact: true });
+    await waitForDemoHydration(demo);
+    page.setDefaultTimeout(5000);
+    return demo;
+  }
+
   it.each([
     ["Entrance origins", -20],
     ["Entrance origins", 10],
@@ -515,7 +542,7 @@ describe.each([
         viewport: { width: 320, height: 225 },
         timezoneId: "Europe/Oslo",
       });
-      const demo = await openDemo(page, "bar-chart", name);
+      const demo = await zoomedDemo(page, name);
       const chart = demo.locator('[data-slot="chart"]').first();
       const surface = chart.locator('[data-slot="chart-surface"]');
       await surface.evaluate((element, top) => {
@@ -591,7 +618,7 @@ describe.each([
         viewport: { width: 320, height: 225 },
         timezoneId: "Europe/Oslo",
       });
-      const demo = await openDemo(page, "bar-chart", name);
+      const demo = await zoomedDemo(page, name);
       const chart = demo.locator('[data-slot="chart"]').first();
       // The tallest column's top goes 20 px under the viewport's top edge, where the recheck saw
       // 22 px left above it, and the column runs on past the viewport's bottom.

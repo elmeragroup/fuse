@@ -33,8 +33,13 @@
 }
 
 @layer components {
-  /* A chart has no width of its own, so it fills its container even as a flex or grid item. */
+  /*
+    A chart has no width of its own, so it fills its container even as a flex or grid item. Its
+    one column is a fraction of the width, not an auto track, so a `justify-content` from outside,
+    such as the docs stage's centring, cannot shrink the frame to its content.
+  */
   [data-slot="chart"] {
+    grid-template-columns: minmax(0, 1fr);
     --animate-chart-dash: chart-dash 1s linear infinite;
     --animate-chart-ping: chart-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
     --chart-stroke: 2px;
@@ -305,7 +310,7 @@
     outline: none;
   }
 
-  [data-orientation="horizontal"] [data-slot="chart-point"] {
+  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-point"] {
     inset-inline: 0;
     left: 0;
     width: auto;
@@ -356,14 +361,15 @@
   }
 
   /* Horizontal bars run the value axis to the right, so their far end is the right one. */
-  [data-orientation="horizontal"] :is([data-slot="chart-bar"], [data-slot="chart-bar-active"]) {
+  :where([data-slot="chart"])[data-orientation="horizontal"]
+    :is([data-slot="chart-bar"], [data-slot="chart-bar-active"]) {
     --_tl: 0px;
     --_tr: var(--_far);
     --_br: var(--_far);
     --_bl: 0px;
   }
 
-  [data-orientation="horizontal"]
+  :where([data-slot="chart"])[data-orientation="horizontal"]
     :is([data-slot="chart-bar"], [data-slot="chart-bar-active"])[data-negative] {
     --_tl: var(--_far);
     --_tr: 0px;
@@ -829,7 +835,7 @@
     }
   }
 
-  [data-orientation="horizontal"] [data-slot="chart-x-axis"] {
+  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-x-axis"] {
     grid-area: start;
     container: none;
     height: auto;
@@ -837,7 +843,7 @@
     padding-inline-end: 0.5rem;
   }
 
-  [data-orientation="horizontal"] [data-slot="chart-x-tick"] {
+  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-x-tick"] {
     position: absolute;
     inset-inline-end: 0.5rem;
     left: auto;
@@ -884,18 +890,18 @@
     Under horizontal bars the value axis runs along the inline edge, so it takes the x axis's
     container name, and its labels thin by the same width buckets.
   */
-  [data-orientation="horizontal"] [data-slot="chart-y-axis"] {
+  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-y-axis"] {
     container: chart-x-axis / inline-size;
     grid-area: under;
     height: calc(1rem + 0.5rem);
     padding: 0;
   }
 
-  [data-orientation="horizontal"] [data-slot="chart-y-axis"][data-side="end"] {
+  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-y-axis"][data-side="end"] {
     grid-area: over;
   }
 
-  [data-orientation="horizontal"] [data-slot="chart-y-tick"] {
+  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-y-tick"] {
     top: 0.5rem;
     inset-inline: auto;
     left: calc(100% - var(--chart-at));
@@ -903,11 +909,11 @@
   }
 
   /* The domain's ends align their labels inward, so the last value label stays inside the root. */
-  [data-orientation="horizontal"] [data-slot="chart-y-tick"][data-edge="end"] {
+  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-y-tick"][data-edge="end"] {
     translate: -100% 0;
   }
 
-  [data-orientation="horizontal"] [data-slot="chart-y-tick"][data-edge="start"] {
+  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-y-tick"][data-edge="start"] {
     translate: 0 0;
   }
 
@@ -921,7 +927,8 @@
   /* Below or above the plot, the title takes a line of its own past the tick line. */
   [data-slot="chart"]:not([data-orientation="horizontal"])
     [data-slot="chart-x-axis"]:has(> [data-slot="chart-axis-label"]),
-  [data-orientation="horizontal"] [data-slot="chart-y-axis"]:has(> [data-slot="chart-axis-label"]) {
+  :where([data-slot="chart"])[data-orientation="horizontal"]
+    [data-slot="chart-y-axis"]:has(> [data-slot="chart-axis-label"]) {
     height: auto;
     padding-top: 1.5rem;
   }
@@ -929,7 +936,9 @@
   [data-slot="chart"]:not([data-orientation="horizontal"])
     [data-slot="chart-x-axis"]
     > [data-slot="chart-axis-label"],
-  [data-orientation="horizontal"] [data-slot="chart-y-axis"] > [data-slot="chart-axis-label"] {
+  :where([data-slot="chart"])[data-orientation="horizontal"]
+    [data-slot="chart-y-axis"]
+    > [data-slot="chart-axis-label"] {
     text-align: center;
   }
 
@@ -939,7 +948,8 @@
   */
   [data-slot="chart"]:not([data-orientation="horizontal"])
     [data-slot="chart-y-axis"]:has(> [data-slot="chart-axis-label"]),
-  [data-orientation="horizontal"] [data-slot="chart-x-axis"]:has(> [data-slot="chart-axis-label"]) {
+  :where([data-slot="chart"])[data-orientation="horizontal"]
+    [data-slot="chart-x-axis"]:has(> [data-slot="chart-axis-label"]) {
     display: flex;
     column-gap: 0.25rem;
   }
@@ -947,7 +957,9 @@
   [data-slot="chart"]:not([data-orientation="horizontal"])
     [data-slot="chart-y-axis"]
     > [data-slot="chart-axis-label"],
-  [data-orientation="horizontal"] [data-slot="chart-x-axis"] > [data-slot="chart-axis-label"] {
+  :where([data-slot="chart"])[data-orientation="horizontal"]
+    [data-slot="chart-x-axis"]
+    > [data-slot="chart-axis-label"] {
     order: -1;
     text-align: center;
     writing-mode: vertical-rl;
@@ -1257,8 +1269,10 @@
     pointer-events: none;
   }
 
-  [data-orientation="horizontal"] [data-slot="chart-frame"] > [data-slot="chart-active-value"],
-  [data-orientation="horizontal"]
+  :where([data-slot="chart"])[data-orientation="horizontal"]
+    [data-slot="chart-frame"]
+    > [data-slot="chart-active-value"],
+  :where([data-slot="chart"])[data-orientation="horizontal"]
     [data-slot="chart-frame"]
     > [data-part="outgoing"]
     > [data-slot="chart-active-value"] {
@@ -1438,7 +1452,7 @@
     guides turn in the geometry Root writes, and the HTML labels turn here. A value at a top offset
     of p sits p from the right.
   */
-  [data-orientation="horizontal"]
+  :where([data-slot="chart"])[data-orientation="horizontal"]
     [data-slot^="chart-reference"]:not([data-axis="slot"])
     > [data-slot="chart-reference-label"] {
     inset-inline-end: auto;
@@ -1447,7 +1461,9 @@
     translate: 0.25rem 0;
   }
 
-  [data-orientation="horizontal"] [data-slot="chart-active-value-line"] [data-slot="chart-value-label"] {
+  :where([data-slot="chart"])[data-orientation="horizontal"]
+    [data-slot="chart-active-value-line"]
+    [data-slot="chart-value-label"] {
     top: 100%;
     left: calc(100% - var(--chart-line-top) + var(--_rule-width, 1px) / 2);
     translate: -50% 0.25rem;
@@ -1479,7 +1495,8 @@
     print-color-adjust: exact;
   }
 
-  [data-orientation="horizontal"] :is([data-slot="chart-line-series"], [data-slot="chart-area-series"]) {
+  :where([data-slot="chart"])[data-orientation="horizontal"]
+    :is([data-slot="chart-line-series"], [data-slot="chart-area-series"]) {
     clip-path: inset(0 -0.5rem);
   }
 

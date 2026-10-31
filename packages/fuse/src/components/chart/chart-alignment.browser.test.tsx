@@ -10,6 +10,7 @@ import { cdp, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
+import { Tabs } from "../tabs";
 import { Chart } from "./chart-namespace";
 import "./chart.css";
 
@@ -155,5 +156,92 @@ describe("the measured plot under a small transform scale (W11, B1-11)", () => {
       option?.style.getPropertyValue("--chart-option-start"),
       option?.style.getPropertyValue("--chart-option-size"),
     ]).toEqual(["0px", "25px"]);
+  });
+});
+
+describe("a vertical chart inside a horizontal ancestor (#440's demo Tabs)", () => {
+  it("keeps the slot axis below the plot and the value axis beside it", async () => {
+    // Fuse's Tabs.Root states data-orientation="horizontal", as every docs demo's Frame now does.
+    // A vertical chart inside it lays out as vertical: the x axis under the plot, its tick labels
+    // naming the categories, and the y axis to the plot's left, its labels naming values.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <Tabs.Root defaultValue="demo">
+          <Tabs.List>
+            <Tabs.Trigger value="demo">Demo</Tabs.Trigger>
+          </Tabs.List>
+          <Tabs.Content value="demo">
+            <div style={{ width: 400 }}>
+              <Chart.Root
+                data={[
+                  { name: "a", v: 1 },
+                  { name: "b", v: 3 },
+                ]}
+                config={{ v: { label: "V", color: "chart-1" } }}
+                xKey="name"
+                yInclude={[0, 4]}
+                data-intro="none"
+                aria-label="Inne i faner">
+                <Chart.XAxis />
+                <Chart.YAxis />
+                <Chart.Bar dataKey="v" />
+              </Chart.Root>
+            </div>
+          </Tabs.Content>
+        </Tabs.Root>
+      </LocaleProvider>
+    );
+    // DOM audit: the axes, the plot and the tabs root are layout under test, located by slot.
+    expect(host.querySelector('[data-orientation="horizontal"]:not([data-slot="chart"])')).not.toBeNull();
+    const rect = (selector: string) => host.querySelector(selector)?.getBoundingClientRect() ?? new DOMRect();
+    await expect.poll(() => rect('[data-slot="chart-bar"]').height).toBeGreaterThan(0);
+    const plot = rect('[data-slot="chart"] > [data-slot="chart-frame"] > [data-slot="chart-plot"]');
+    const xAxis = rect('[data-slot="chart-x-axis"]');
+    const yAxis = rect('[data-slot="chart-y-axis"]');
+    expect(xAxis.top).toBeGreaterThanOrEqual(plot.bottom);
+    expect(yAxis.right).toBeLessThanOrEqual(plot.left);
+    // The x ticks name the categories, side by side.
+    const ticks = [...host.querySelectorAll('[data-slot="chart-x-tick"]')];
+    expect(ticks.map((tick) => tick.textContent)).toEqual(["a", "b"]);
+    const [first, second] = ticks.map((tick) => tick.getBoundingClientRect());
+    expect((second?.left ?? 0) > (first?.right ?? 0)).toBe(true);
+  });
+});
+
+describe("a chart Root under an outside justify-content (#440's demo stage)", () => {
+  it("keeps its plot at the Root's full width when its grid is told to centre", async () => {
+    // The docs stage centres every demo root's content with a weightless justify-content. A 400 px
+    // Root with no axes holds a 400 px plot, centred or not, so its two bands are 200 px each.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 400 }}>
+          <Chart.Root
+            data={[
+              { name: "a", v: 1 },
+              { name: "b", v: 3 },
+            ]}
+            config={{ v: { label: "V", color: "chart-1" } }}
+            xKey="name"
+            yInclude={[0, 4]}
+            data-intro="none"
+            style={{ justifyContent: "center" }}
+            aria-label="Sentrert">
+            <Chart.Bar dataKey="v" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: the plot and the bars are layout under test, located by slot.
+    const rect = (selector: string) => host.querySelector(selector)?.getBoundingClientRect() ?? new DOMRect();
+    await expect.poll(() => rect('[data-slot="chart-bar"]').height).toBeGreaterThan(0);
+    expect(rect('[data-slot="chart"] > [data-slot="chart-frame"] > [data-slot="chart-plot"]').width).toBe(
+      400
+    );
+    // The second band starts half way, at 200 px, and the 25 % band gap leaves 25 px each side.
+    const bars = [...host.querySelectorAll('[data-slot="chart-bar"]')].map((bar) =>
+      bar.getBoundingClientRect()
+    );
+    const root = rect('[data-slot="chart"]');
+    expect(Math.round((bars[1]?.left ?? 0) - root.left)).toBe(225);
   });
 });

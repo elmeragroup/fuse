@@ -172,6 +172,24 @@ describe("one world of marks", () => {
         // Every run checks a resize, a key step and a path-form update while a data update runs, a
         // window that leaves a slot reference outside, and a resize while a slot line glides.
         examples: [
+          // A window that keeps only an added missing slot, in a domain with readings, is not the
+          // empty state, so its missing tick draws: fast-check's seed 876103951, shrunk.
+          [
+            1,
+            {
+              orientation: "vertical",
+              readings: [0, 0, 0, 0.01, 0],
+              include: [-10, 10],
+              panelled: false,
+              line: { axis: "slot", name: "c0" },
+              area: { axis: "value", from: 0.001, to: 0.005 },
+            },
+            [
+              { kind: "add", v: null },
+              { kind: "window", from: 516722465, span: 1 },
+              { kind: "add", v: null },
+            ],
+          ],
           // Every mark in a lower Panel, whose plot origin, domain, frame and labels are its own,
           // through an update, a resize while it tweens, a key step and a window.
           [

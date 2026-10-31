@@ -33,7 +33,7 @@ const connected = { kwh: { ...config.kwh, missing: "connect" } } as const satisf
 
 export function LineChartQuality() {
   return (
-    <div className="grid w-full gap-8">
+    <div className="grid w-full grid-cols-1 gap-8">
       <LineChart.Root
         data={days}
         config={config}

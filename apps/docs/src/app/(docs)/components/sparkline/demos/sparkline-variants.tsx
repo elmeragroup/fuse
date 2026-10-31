@@ -10,7 +10,7 @@ const PRICE = { preset: "unit-price", currency: "NOK", minor: true, vat: "includ
  */
 export function SparklineVariants() {
   return (
-    <div className="max-w-sm grid w-full gap-4">
+    <div className="max-w-sm grid w-full grid-cols-1 gap-4">
       <Sparkline
         aria-label="Spot price against Norgespris"
         data={ORE}
