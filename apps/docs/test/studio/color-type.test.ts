@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { chartTicks, niceCeiling, shareOf } from "../../src/studio/lib/chart-layout";
 import { ROLE_TILES, pairMark } from "../../src/studio/lib/color-roles";
 import { formatTypePair } from "../../src/studio/lib/type-metrics";
 
@@ -45,6 +44,20 @@ describe("ROLE_TILES", () => {
     ]);
   });
 
+  it("pairs each categorical slot and Other with the text a direct label on it takes", () => {
+    expect(ROLE_TILES.charts).toEqual([
+      { role: "chart-1", foreground: "chart-1-foreground", grade: "text" },
+      { role: "chart-2", foreground: "chart-2-foreground", grade: "text" },
+      { role: "chart-3", foreground: "chart-3-foreground", grade: "text" },
+      { role: "chart-4", foreground: "chart-4-foreground", grade: "text" },
+      { role: "chart-5", foreground: "chart-5-foreground", grade: "text" },
+      { role: "chart-6", foreground: "chart-6-foreground", grade: "text" },
+      { role: "chart-7", foreground: "chart-7-foreground", grade: "text" },
+      { role: "chart-8", foreground: "chart-8-foreground", grade: "text" },
+      { role: "chart-other", foreground: "chart-other-foreground", grade: "text" },
+    ]);
+  });
+
   it("pairs the four status roles with their soft forms", () => {
     expect(ROLE_TILES.status.map(({ role, soft }) => [role, soft?.role])).toEqual([
       ["error", "error-soft"],
@@ -73,37 +86,6 @@ describe("pairMark", () => {
     ],
   ] as const)("%s", (_case, grade, contrast, mark) => {
     expect(pairMark(grade, contrast)).toEqual(mark);
-  });
-});
-
-describe("niceCeiling", () => {
-  // Up to 1, 2 or 5 times a power of ten; a value on the scale stays; zero gets a unit axis.
-  it.each([
-    [87, 100],
-    [42, 50],
-    [120, 200],
-    [3.2, 5],
-    [0.07, 0.1],
-    [50, 50],
-    [1, 1],
-    [0, 1],
-  ])("rounds %s up to %s", (value, ceiling) => {
-    expect(niceCeiling(value)).toBe(ceiling);
-  });
-});
-
-describe("chartTicks", () => {
-  it("spaces the ticks evenly from 0 to the ceiling", () => {
-    expect(chartTicks(100, 4)).toEqual([0, 25, 50, 75, 100]);
-    expect(chartTicks(5, 5)).toEqual([0, 1, 2, 3, 4, 5]);
-  });
-});
-
-describe("shareOf", () => {
-  it("is the value's percentage of the ceiling", () => {
-    expect(shareOf(30, 50)).toBe(60);
-    expect(shareOf(0, 50)).toBe(0);
-    expect(shareOf(50, 50)).toBe(100);
   });
 });
 

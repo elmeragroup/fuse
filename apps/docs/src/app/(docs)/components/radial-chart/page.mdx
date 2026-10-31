@@ -1,0 +1,24 @@
+---
+lede: >
+  Preview. Radial bar charts, one ring per row filled against its maximum.
+---
+
+import { RadialChartBudgets } from "./demos/radial-chart-budgets";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("radial-chart");
+
+<ComponentIntro slug="radial-chart" />
+
+<Prose>
+
+The chart entry is a preview. This chart renders in a later release of the preview entry, so the demo below stays empty until then. Names and props can change until Fuse's first stable release. The first row is the outermost ring, and each ring reads its own maximum through `maxKey`.
+
+</Prose>
+
+<Demo slug="radial-chart" id="budgets" title="Budgets" file="radial-chart-budgets.tsx">
+  <RadialChartBudgets />
+</Demo>
+
+<ApiReference slug="radial-chart" />

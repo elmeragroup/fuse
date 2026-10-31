@@ -7,6 +7,7 @@ import type { AddressInfo } from "node:net";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
+import { readChartDisplays } from "./package-check-chart";
 import { releaseAgeCutoff, withPackedConsumer } from "./packed-consumer";
 import { packageRootFromScript } from "./paths";
 import { catalogVersion, readWorkspaceCatalog } from "./published-dependencies";
@@ -76,9 +77,19 @@ async function checkServerHtml(url: string): Promise<void> {
     ['data-theme-brand="fkas"', "the server HTML lacks the theme brand attribute"],
     ['data-density="comfortable"', "the server HTML lacks the density attribute"],
     ['aria-label="Orders"', "the server HTML lacks the data-table client island"],
+    ['data-slot="sparkline"', "a server page rendered no Sparkline"],
+    ['data-slot="sparkline-path"', "a server Sparkline drew no line"],
+    ["1,78\u00a0kr/kWh\u00a0inkl.\u00a0mva", "formatChartValue printed different text on the server"],
   ] as const) {
     assert.ok(html.includes(marker), `Next consumer: ${meaning}`);
   }
+  // Root writes its orientation and scale beside the consumer's attributes, so the figure is
+  // matched by its slot, id and name in any attribute order.
+  assert.match(
+    html,
+    /<figure data-slot="chart"(?=[^>]*\sid="chart-default")(?=[^>]*\saria-label="Empty chart")[^>]*>/u,
+    "Next consumer: a server page rendered no Chart.Root figure"
+  );
 }
 
 /**
@@ -125,6 +136,11 @@ async function checkInBrowser(url: string): Promise<string[]> {
       colors.expected,
       "Next consumer: the Button is unstyled, so Tailwind did not scan the installed package"
     );
+
+    // chart.css loads before the Tailwind entry here, so the grid rule must still lose to the
+    // `block` utility under CSS Cascade 5's layer order.
+    const chartDisplay = await readChartDisplays(page);
+    assert.deepEqual(chartDisplay, ["grid", "block"], "Next consumer: Chart.Root display");
 
     await page.locator("#counter").click();
     await waitOrFail(

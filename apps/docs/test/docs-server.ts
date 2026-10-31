@@ -69,18 +69,25 @@ export async function startDocsProductionServer({ testingApi = false } = {}): Pr
   // restores a build over the directory and keeps the entries the last server wrote, which would
   // then serve the previous build's pages.
   await rm(path.join(docsBuildDir(testingApi), "server/route-cache"), { recursive: true, force: true });
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    NODE_ENV: "production",
+    PORT: String(port),
+    DOCS_ORIGIN: TEST_RUNTIME_ORIGIN,
+    DOCS_TESTING_API: testingApi ? "1" : "0",
+  };
+  if (testingApi) {
+    // The testing build prerenders in New York, as its `build:e2e` script sets, far from the
+    // Nordic markets the docs show. A date formatted without an explicit zone then differs from a
+    // browser in Europe/Oslo, which `time-zone-hydration.browser.test.ts` catches.
+    env.TZ = "America/New_York";
+  }
   const child = spawn(
     process.execPath,
     [nextBin, "start", "--hostname", "localhost", "--port", String(port)],
     {
       cwd: docsRoot,
-      env: {
-        ...process.env,
-        NODE_ENV: "production",
-        PORT: String(port),
-        DOCS_ORIGIN: TEST_RUNTIME_ORIGIN,
-        DOCS_TESTING_API: testingApi ? "1" : "0",
-      },
+      env,
       stdio: ["ignore", "pipe", "pipe"],
     }
   );

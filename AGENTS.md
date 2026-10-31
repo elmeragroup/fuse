@@ -53,7 +53,16 @@ composed theme map, a recipe's slots against the upstream recipe it forwards).
 Use unit tests for recipes and pure logic, browser tests for interaction, and
 public type tests for API constraints. Use the shared role/label browser helpers.
 Put production-only behavior in `*.production.browser.test.tsx`, which runs in
-the `browser-production` project.
+the `browser-production` project. Put tests whose output every engine must write
+alike, such as formatted text, in `*.engines.browser.test.tsx`, or `.ts` when they
+mount nothing. The `browser-engines` project runs them in Chromium, Firefox and WebKit.
+Put tests that need the user's reduced-motion preference in `*.reduced-motion.browser.test.tsx`.
+The `browser-reduced-motion` project runs them in all three engines with that preference set.
+Keyboard and focus tests run in the plain `browser` project, since each file gets its own page.
+Put tests that emulate touch or tap through Playwright's touchscreen in `*.touch.browser.test.tsx`.
+The `browser-touch` project runs them one file at a time in Chromium with touch on.
+Put unit tests whose result can depend on the process time zone in `*.zones.test.ts`. `unit`
+runs them in Europe/Oslo, and `unit-new-york` and `unit-tokyo` run them again in their zones.
 Put necessary source contracts in the central suite with the reason lint or an
 existing gate cannot enforce them.
 While editing, run `vitest related <files> --run --project unit` in the owning package

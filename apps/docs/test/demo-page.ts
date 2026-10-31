@@ -19,22 +19,38 @@ export async function openDemo(page: Page, slug: string, name: string): Promise<
 }
 
 /**
+ * Navigates `page` to a component page and resolves once every demo on it has hydrated, for a
+ * check that reads the whole page.
+ */
+export async function openDemoPage(page: Page, slug: string): Promise<void> {
+  page.setDefaultTimeout(5000);
+  await page.goto(`${docsBaseUrl()}/components/${slug}`, { waitUntil: "load" });
+  await page.waitForFunction(
+    () =>
+      document.querySelectorAll("[data-demo-frame]").length ===
+      document.querySelectorAll("[data-demo-frame][data-demo-hydrated]").length
+  );
+}
+
+/**
  * Opens one component page for a describe's read-only checks before its first test, and closes it
  * after its last, so the checks share one load. Each check takes its demo with {@link sharedDemo}.
  *
  * @param browser - The suite's browser.
  * @param slug - The component page.
  * @param viewport - The page's viewport.
+ * @param timezoneId - The page's IANA zone, the browser's own by default.
  * @returns The open page, between the describe's first and last test.
  */
 export function shareDemoPage(
   browser: () => Browser,
   slug: string,
-  viewport: { readonly width: number; readonly height: number }
+  viewport: { readonly width: number; readonly height: number },
+  timezoneId?: string
 ): () => Page {
   let shared: Page | undefined;
   beforeAll(async () => {
-    shared = await browser().newPage({ viewport });
+    shared = await browser().newPage(timezoneId === undefined ? { viewport } : { viewport, timezoneId });
     shared.setDefaultTimeout(5000);
     await shared.goto(`${docsBaseUrl()}/components/${slug}`, { waitUntil: "load" });
   });

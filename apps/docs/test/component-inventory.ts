@@ -31,3 +31,9 @@ export const COMPONENT_INVENTORY: ReadonlyMap<string, InventoryEntry> = new Map(
     { title: entry.title, rsc: parseRscStatus(slug, entry.rsc), demos: entry.demos },
   ])
 );
+
+/**
+ * The chart pages that repeat `chart` whole, as aliases of `Chart`, from CONTRACT.md section 3.
+ * They render one sentence in place of an API reference and have no `api.json`.
+ */
+export const ALIAS_PAGES: ReadonlySet<string> = new Set(["area-chart", "bar-chart", "line-chart"]);

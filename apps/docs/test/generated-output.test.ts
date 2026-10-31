@@ -7,19 +7,19 @@
  */
 
 import { readdirSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
-import { readRscStatus } from "../scripts/lib/docs-inspection.ts";
+import { readRscStatus, SERVER_DEMOS } from "../scripts/lib/docs-inspection.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
 import type { ComponentPageSource } from "../scripts/lib/page-source.ts";
 import { repoRelative, repoRoot } from "../scripts/lib/paths.ts";
 import { COMPONENT_OUTLINES } from "../src/generated/component-outlines";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import type { ComponentApiArtifact } from "../src/lib/docs-model";
-import { COMPONENT_INVENTORY } from "./component-inventory";
+import { ALIAS_PAGES, COMPONENT_INVENTORY } from "./component-inventory";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
@@ -91,13 +91,24 @@ describe("component page manifest", () => {
       for (const demo of authored.parsed.demos) {
         const file = join(resolveComponentPaths(entry.slug).demosDir, demo.file);
         const source = readFileSync(file, "utf8");
-        // Authored in the file, not grafted on in transit.
-        expect(source.startsWith('"use client";'), demo.file).toBe(true);
+        // Authored in the file, not grafted on in transit. Only a reviewed server demo omits it.
+        expect(source.startsWith('"use client";'), demo.file).toBe(!SERVER_DEMOS.has(repoRelative(file)));
         expect(authored.text, demo.file).toContain(`from "./demos/${demo.file.replace(/\.tsx$/, "")}"`);
         // And the endpoint embeds the very bytes of that file, under its own path.
         expect(markdown, demo.file).toContain(source.trimEnd());
         expect(markdown, demo.file).toContain(`Source: \`${repoRelative(file)}\``);
       }
+    }
+  });
+
+  it("renders every reviewed server demo on its page, so the carve-out cannot go stale", () => {
+    expect(SERVER_DEMOS.size).toBeGreaterThan(0);
+    for (const demo of SERVER_DEMOS) {
+      const slug = /\/components\/([^/]+)\/demos\//u.exec(demo)?.[1] ?? "";
+      expect(
+        authoredPage(slug).parsed.demos.map(({ file }) => file),
+        demo
+      ).toContain(basename(demo));
     }
   });
 
@@ -117,7 +128,7 @@ describe("component page manifest", () => {
   it("reports per-part directives and the reviewed page RSC status", () => {
     for (const [slug, reviewed] of COMPONENT_INVENTORY) {
       // Each part's badge is the leading directive of the module that declares it.
-      for (const part of api(slug).parts) {
+      for (const part of ALIAS_PAGES.has(slug) ? [] : api(slug).parts) {
         expect(part.rsc, `${slug} ${part.name}`).toBe(declaredRsc(part.sourcePath));
       }
       // The page's own status appears on the markdown endpoint, not in the manifest.
@@ -125,6 +136,18 @@ describe("component page manifest", () => {
     }
   });
 });
+
+/** The pages that read `@elmeragroup/fuse/chart`, from CONTRACT.md section 13. */
+const CHART_PAGES = new Set([
+  "chart",
+  "area-chart",
+  "bar-chart",
+  "line-chart",
+  "pie-chart",
+  "radial-chart",
+  "radar-chart",
+  "sparkline",
+]);
 
 /** The keys a component outline carries. Anything else would ship to every surface unreviewed. */
 const OUTLINE_KEYS = ["demos", "hasTokens", "headings", "markdownUrl", "partNames", "slug", "title"];
@@ -202,9 +225,12 @@ describe("component outlines", () => {
   });
 
   it("names one TOC anchor per API part, exactly as the committed api.json names them", () => {
-    // Unit under test: the outline's part names. Oracle: the committed API artifact.
+    // Unit under test: the outline's part names. Oracle: the committed API artifact, and the
+    // alias pages CONTRACT.md section 13 names, whose reference is one sentence with no part anchor.
     for (const outline of COMPONENT_OUTLINES) {
-      expect(outline.partNames, outline.slug).toEqual(api(outline.slug).parts.map((part) => part.name));
+      expect(outline.partNames, outline.slug).toEqual(
+        ALIAS_PAGES.has(outline.slug) ? [] : api(outline.slug).parts.map((part) => part.name)
+      );
     }
   });
 });
@@ -284,7 +310,7 @@ describe("committed api.json", () => {
   });
 
   it("never leaves a documented prop without a description or an unresolved type, and publishes only documented dependency props", () => {
-    for (const entry of COMPONENT_PAGES) {
+    for (const entry of COMPONENT_PAGES.filter(({ slug }) => !ALIAS_PAGES.has(slug))) {
       for (const part of api(entry.slug).parts) {
         for (const prop of part.props) {
           expect(prop.type).not.toBe("");
@@ -303,7 +329,7 @@ describe("committed api.json", () => {
   });
 
   it("publishes only parts rooted at a facade export, each named once", () => {
-    for (const entry of COMPONENT_PAGES) {
+    for (const entry of COMPONENT_PAGES.filter(({ slug }) => !ALIAS_PAGES.has(slug))) {
       const committed = api(entry.slug).parts;
       // Every facade export yields at least one part — a facade that only re-exports a
       // dependency publishes it as a part with no props and the dependency in `forwardedFrom`.
@@ -428,7 +454,17 @@ describe("generated markdown endpoints", () => {
     for (const entry of COMPONENT_PAGES) {
       const markdown = endpoint(entry.slug);
       expect(markdown, entry.slug).toContain("## API reference");
+      if (ALIAS_PAGES.has(entry.slug)) {
+        // An alias page repeats `chart` whole, so its reference is one sentence.
+        expect(markdown, entry.slug).toContain("[`Chart`](/components/chart.md) under another name.");
+        continue;
+      }
       for (const part of api(entry.slug).parts) {
+        // A chart page part may repeat a part of an earlier chart page, and then it is one line
+        // that names the owner, which `shared-entry-pages.test.ts` pins.
+        if (CHART_PAGES.has(entry.slug) && markdown.includes(`### ${part.name}\n\n\`${part.name}\` is [`)) {
+          continue;
+        }
         // Per-part RSC rides on the heading, matching the HTML page's indicator.
         expect(markdown, part.name).toContain(`### ${part.name} · RSC: ${part.rsc}`);
         // Either the part's own props as a table, or the line that says it has none —

@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { DESKTOP_VIEWPORT, launchSuiteBrowser, openDemo } from "./demo-page";
+import { docsBaseUrl } from "./docs-server";
 
 const browser = launchSuiteBrowser();
 
@@ -11,6 +12,9 @@ const WITH_TABLE_SOURCE = readFileSync(
   fileURLToPath(new URL("../src/app/(docs)/components/frame/demos/frame-with-table.tsx", import.meta.url)),
   "utf8"
 );
+
+/** The route that serves the "With a table" demo's highlighted source. */
+const SOURCE_ROUTE = "/demo-source/components/frame/frame-with-table.tsx";
 
 describe("demo frame", () => {
   it("names the demo in its header and opens on the Demo view, switched from the footer", async () => {
@@ -33,6 +37,50 @@ describe("demo frame", () => {
     await tabs.getByRole("tab", { name: "Code" }).click();
     await expect.poll(() => demo.getByRole("button", { name: "Open code" }).isVisible()).toBe(true);
     expect(await demo.getByRole("button", { name: "Copy code" }).isVisible()).toBe(true);
+    await page.close();
+  });
+
+  it("serves the source as plain text and highlights it once the Code view shows", async () => {
+    // Unit under test: the Code view's source block. Oracle: the demo file on disk. The page's HTML
+    // holds one text node per demo source until a reader opens its Code view, which fetches the
+    // highlighted markup from the source route.
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
+    const demo = await openDemo(page, "frame", "With a table");
+    const code = demo.locator("[data-demo-source] pre > code");
+    expect(await code.locator("span").count()).toBe(0);
+    expect(await code.textContent()).toBe(WITH_TABLE_SOURCE.trimEnd());
+    const fetched = page.waitForResponse((response) => response.url().endsWith(SOURCE_ROUTE));
+    await demo.getByRole("tab", { name: "Code" }).click();
+    expect((await fetched).status()).toBe(200);
+    await expect.poll(() => code.locator(".sh__token--keyword").count()).toBeGreaterThan(0);
+    expect(await code.textContent()).toBe(WITH_TABLE_SOURCE.trimEnd());
+    await page.close();
+  });
+
+  it("ships no highlighted markup in the page, which the source route serves instead", async () => {
+    // Unit under test: the page's HTML, RSC payload included. Oracle: the source route's markup
+    // for the same demo, which must not appear in the page.
+    const markup = await (await fetch(`${docsBaseUrl()}${SOURCE_ROUTE}`)).text();
+    expect(markup).toContain("sh__token--keyword");
+    const html = await (await fetch(`${docsBaseUrl()}/components/frame`)).text();
+    expect(html).toContain("frame-with-table.tsx");
+    // The first highlighted line, escaped as the payload would carry it or not.
+    const firstLine = markup.slice(0, markup.indexOf("</span></span>"));
+    expect(html).not.toContain(firstLine);
+    expect(html).not.toContain(JSON.stringify(firstLine).slice(1, -1));
+  });
+
+  it("keeps the plain source when the highlighted markup cannot load", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
+    await page.route(`**${SOURCE_ROUTE}`, (route) => route.abort());
+    const demo = await openDemo(page, "frame", "With a table");
+    const code = demo.locator("[data-demo-source] pre > code");
+    const failed = page.waitForEvent("requestfailed", (request) => request.url().endsWith(SOURCE_ROUTE));
+    await demo.getByRole("tab", { name: "Code" }).click();
+    await failed;
+    await demo.getByRole("button", { name: "Open code" }).waitFor();
+    expect(await code.locator("span").count()).toBe(0);
+    expect(await code.textContent()).toBe(WITH_TABLE_SOURCE.trimEnd());
     await page.close();
   });
 

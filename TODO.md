@@ -2,8 +2,7 @@
 
 ## Design and accessibility review
 
-- Review GE dark semantics, Telinet's live collection, shared support roles,
-  chart ordering and syntax colors.
+- Review GE dark semantics, Telinet's live collection, shared support roles and syntax colors.
 - Check dark states, fixed-color artwork and chart distinction in product screens.
 - Ask design for per-brand focus ring colors. Every theme draws the neutral `oklch(0.6 0 0)` ring;
   a brand tunes it with a `ring` entry in its light palette (`external-palettes.ts`) and in its
@@ -504,10 +503,6 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   expands mapped `Intl` types.
 - Faceted filters, toolbars, search, URL state, editable cells, virtualization, column resizing,
   pinning, grouping and expanding are out of the first entry.
-- `packages/fuse/scripts/generate-exports.ts` repeats the peer list by hand in `WorkspacePeers`,
-  the `peerDependenciesMeta` type and `publishedPeerDependencies()`, and
-  `packages/fuse/scripts/size-limit.ts` repeats it in `PEER_EXTERNALS`. Derive all four from
-  `PUBLISHED_PEER_RANGES`.
 - Give `DataTable.ColumnToggle` and `DataTable.Pagination`'s Rows per page Select a controlled
   open state. Neither takes `open` or `onOpenChange`, so a host that must close their popups
   remounts them, as the landing's Order search does
@@ -543,6 +538,11 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 
 ## Command
 
+- A typed namespace factory, `createCommand<Grouped<ActionGroup>>()`, stays parked, not rejected. It
+  would return the same parts with the item type bound, so rows and the Root's `items` would be
+  checked end to end. React context cannot carry the type. If it returns, it likely applies to
+  Combobox and the other parts that annotate rows too, and to the parked chart factory under
+  "Charts".
 - `CommandVirtual.List` renders flat item lists only, so `virtualized` beside `grouped` throws. Add
   grouped virtual lists. They need a row per group label in the virtualizer's index space, and
   Base UI's item indexes kept separate from the row indexes.
@@ -566,6 +566,66 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 - Move FileTrigger onto the FileUpload internals, so it shares `accept` checking and the
   `File[]` payload. Changing what its `onSelect` receives is a
   breaking change for FileTrigger consumers.
+
+## Charts
+
+Charts v1 ships the `chart` entry with a "preview" label. Remove the label at Fuse's first stable
+release.
+
+- v1 ships four compounds, `Chart`, `PieChart`, `RadialChart` and `RadarChart`, and each starts at
+  Root. The `AreaChart`, `BarChart` and `LineChart` aliases expose the cartesian parts of `Chart`
+  under their own names.
+- v1 matches every option of the evilcharts area, line, bar, composed, radar, pie and radial charts.
+  Decorative options such as background patterns, isometric bars and wipe origins ship as parts and
+  variants.
+- v1 includes the energy-domain features. Each reading carries a quality state, and each series or
+  `Chart.Panel` has its own resolution. Negative values work in every family with a diverging role,
+  and the time domain lists every slot. The total-price, effekttrinn and same-period-last-year
+  scenarios ship as demos.
+- `Sparkline` draws a static chart with `role="img"` and a label. It renders on the server with no
+  client JavaScript and takes no tab stop.
+
+Two sign-off tasks remain.
+
+- The owner or the content owner signs off the drafted chart words in
+  `packages/fuse/src/components/chart/format/words.ts`. They are the ISO week labels `uke 43`,
+  `v. 43`, `vko 43` and `W43`, their spoken forms `uke 43`, `vecka 43`, `viikko 43` and `week 43`,
+  whether week 1 reads `W1` or `W01`, the subunits `øre`, `öre`, `äyri`, `snt`, `cent` and `c`, the
+  VAT bases, the spoken unit, sign and clock words, and the `, ` that joins a date to an hour. When
+  a week word changes, regenerate the slot oracle and `fixtures/slots.json`.
+- The owner or the content owner signs off the drafted chart dictionary, beside the week words
+  above. It holds about 40 strings in all four locales, such as `Vis som tabell`, `Skjul tabell`,
+  `Laster diagram`, `Ingen data for perioden`, `ingen data ennå`, `mangler`, `estimert`, `Annet` and
+  the brush, legend, table and live-region words. Each part adds the strings it reads when it lands.
+  Every string stays a draft until the sign-off, and explicit props replace each one verbatim.
+
+One layer 05 follow-up remains.
+
+- The Fjordkraft Företag price card's muted figure labels measure 4.48:1 on its white card, under
+  the 4.5:1 text floor. axe reports it after an area pick, so the landing test audits the chart
+  alone until the brand's muted foreground or the card fill changes.
+
+One SVG phase 2 follow-up remains.
+
+- A slide's duration is the update token's 480 ms. Ticket 06's F10 asks for the time since the
+  previous update when that is shorter, which the live line needs, so add it with the live feed.
+
+Every later chart change follows the growth rule. A new capability becomes a new part, a variant
+or datum-selector value, a `config` field, a Root prop that describes the data's shape or a Panel
+prop that mirrors one, Root state or a data attribute. It never becomes a boolean or mode prop on
+a part below Root.
+
+A typed parts factory, such as `Chart.typed<typeof config>()`, stays parked beside the Command
+factory under "Command". It would narrow `dataKey`, Panel and BarGroup `series` and TooltipTotal
+`stack` to config keys, where JSX children see only `string` today and `unknown-key` catches a typo
+at render. It can arrive later without breaking anyone.
+
+Some work stays outside v1.
+
+- Sankey, price forecast heatmaps, geographic charts and canvas rendering stay out of v1.
+- v1 has no automated VoiceOver sessions or real-iPhone checks. VoiceOver automation and the iOS
+  Simulator aren't set up, so a person runs both, and tests use the virtual screen reader and the
+  WebKit profile in their place.
 
 ## Landing stand-ins
 
@@ -620,7 +680,6 @@ that opens every overlay on a side before flipping the window.
   change and drops the pending navigation. An edit followed by a page link within the delay can
   leave the visitor on the old page. The opening restore no longer races. Coordinate address
   writes with the router's navigation. Found by source inspection; not reproduced.
-- When a product commits to charts, ship the deferred chart entry and decide its optional peer.
 - When a product needs density preferences, define persistence and pre-paint stamping in the host.
 - When a theme should choose its own density, rather than the host stamping it on the document
   root, design theme-driven density as its own change. Subtree theming never rescopes the density

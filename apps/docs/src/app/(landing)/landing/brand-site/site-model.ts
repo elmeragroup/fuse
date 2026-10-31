@@ -246,6 +246,14 @@ export type SiteSection = SiteSectionBase &
         readonly label: string;
         readonly placeholder: string;
         readonly unit: string;
+        /** The market's IANA zone, which the hourly chart's slots follow. */
+        readonly timeZone: string;
+        /** The prices' currency, read in its subunit, øre or öre. */
+        readonly currency: "NOK" | "SEK";
+        /** Whether the prices include VAT. */
+        readonly vat: "included" | "excluded";
+        /** The day the prices cover, as the ISO instant of its first hour with its offset. */
+        readonly dayStart: string;
         readonly labels: {
           readonly average: string;
           readonly low: string;

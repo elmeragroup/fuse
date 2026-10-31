@@ -86,6 +86,11 @@
       "types": "./src/card.ts",
       "import": "./src/card.ts"
     },
+    "./chart": {
+      "types": "./src/chart.ts",
+      "import": "./src/chart.ts"
+    },
+    "./chart.css": "./src/components/chart/chart.css",
     "./checkbox": {
       "types": "./src/checkbox.ts",
       "import": "./src/checkbox.ts"
@@ -398,6 +403,7 @@
     "linkDirectory": false
   },
   "scripts": {
+    "api:report": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/api-report.ts",
     "build": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/build.ts",
     "check": "echo '@elmeragroup/fuse check is a no-op anchor; its gates run as turbo dependsOn (see turbo.json)'",
     "ci:checks": "echo '@elmeragroup/fuse ci:checks is a no-op anchor; its gates run as turbo dependsOn (see turbo.json)'",
@@ -405,9 +411,9 @@
     "pack": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/pack.ts",
     "package:check": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check.ts",
     "size-limit": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/size-limit.ts",
-    "test": "vitest run --project unit",
-    "test:browser": "vitest run --project browser --project browser-production --project browser-clipboard --project browser-touch",
-    "test:packed-consumer": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check-standalone.ts && node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check-flags-consumer.ts && node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check-next-consumer.ts",
+    "test": "vitest run --project unit --project unit-new-york --project unit-tokyo",
+    "test:browser": "vitest run --project browser --project browser-engines --project browser-reduced-motion --project browser-production --project browser-clipboard --project browser-touch",
+    "test:packed-consumer": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check-standalone.ts && node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check-flags-consumer.ts && node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check-next-consumer.ts && node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check-chart-types.ts",
     "test:types": "vitest --config vitest.types.config.ts --typecheck.only --run",
     "type-check": "tsrs --noEmit"
   },
@@ -435,6 +441,8 @@
     "@internationalized/string": "catalog:",
     "@phosphor-icons/react": "catalog:",
     "clsx": "catalog:",
+    "d3-array": "catalog:",
+    "d3-shape": "catalog:",
     "libphonenumber-js": "catalog:",
     "react-aria": "catalog:",
     "react-aria-components": "catalog:",
@@ -450,20 +458,25 @@
     "@elmeragroup/color": "workspace:*",
     "@elmeragroup/internal": "catalog:",
     "@elmeragroup/typescript-config": "workspace:*",
+    "@guidepup/virtual-screen-reader": "catalog:",
+    "@microsoft/api-extractor": "catalog:",
     "@tailwindcss/cli": "catalog:",
     "@tanstack/react-table": "catalog:",
     "@tanstack/react-virtual": "catalog:",
+    "@types/d3-array": "catalog:",
+    "@types/d3-shape": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitest/browser-playwright": "catalog:",
     "axe-core": "catalog:",
+    "fast-check": "catalog:",
     "oxc-parser": "catalog:",
     "playwright": "catalog:",
     "publint": "catalog:",
-    "rolldown": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "rolldown": "catalog:",
     "tailwindcss": "catalog:",
     "tsdown": "catalog:",
     "tsrs": "catalog:",

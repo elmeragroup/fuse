@@ -37,7 +37,15 @@ function scratchPackageRoot(): string {
   const root = mkdtempSync(join(tmpdir(), "fuse-publish-manifest-"));
   scratchDirs.push(root);
   mkdirSync(join(root, "dist"));
-  for (const entry of ["src", "licenses", "package.json", "LICENSE", "README.md", "THIRD_PARTY_NOTICES.md"]) {
+  for (const entry of [
+    "src",
+    "licenses",
+    "package.json",
+    "LICENSE",
+    "LICENSE-evilcharts",
+    "README.md",
+    "THIRD_PARTY_NOTICES.md",
+  ]) {
     symlinkSync(join(packageRoot, entry), join(root, entry));
   }
   return root;

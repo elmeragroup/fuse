@@ -14,7 +14,7 @@ import { pageStatus } from "./data-table-pagination-status";
 import { dataTableVariants } from "./data-table-variants";
 import { dataTableStrings } from "./intl";
 
-const NBSP = " ";
+const NBSP = "\u00a0";
 
 describe("pageStatus", () => {
   it("allows next and last inside a known total and neither on its last page", () => {
@@ -108,8 +108,16 @@ describe("cell formatting", () => {
     expect(formatDateCell("nb-NO", placed, { dateStyle: "short", timeZone: "UTC" })).toBe("30.09.2026");
     expect(formatDateCell("en-US", placed, { dateStyle: "short", timeZone: "UTC" })).toBe("9/30/26");
     expect(formatDateCell("sv-SE", placed, { dateStyle: "short", timeStyle: "short", timeZone: "UTC" })).toBe(
-      "2026-09-30 14:05"
+      "2026-09-30\u00a014:05"
     );
+  });
+
+  it("writes every space in a date as U+00A0", () => {
+    // CLDR en: the medium date `MMM d, y`, the short time `h:mm a` and the `{1}, {0}` join. Node
+    // writes U+202F before the day period, and canonical spacing maps it with the other spaces.
+    expect(
+      formatDateCell("en-US", placed, { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" })
+    ).toBe("Sep\u00a030,\u00a02026,\u00a02:05\u00a0PM");
   });
 
   it("renders an invalid date as its raw text instead of throwing", () => {

@@ -1,0 +1,1346 @@
+{
+  "dark external-elma-company": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.07,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.84,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.07,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark external-elma-private": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.07,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.84,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.07,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark external-fkab-company": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.08,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.86,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.08,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark external-fkas-company": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.08,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.86,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.08,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark external-fkas-private": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.08,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.86,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.08,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark external-fkse-private": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.45,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 4.33,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.34,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark external-guen-company": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.04,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.81,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.05,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark external-guen-private": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.04,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.81,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.05,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark external-ngfi-company": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.33,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 4.17,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.25,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark external-ngfi-private": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.33,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 4.17,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.25,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark external-tkas-company": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.08,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.86,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.08,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark external-tkas-private": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.08,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.86,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.08,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark internal-elma-company": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.05,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.83,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.07,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark internal-elma-private": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.05,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.83,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.07,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark internal-fkab-company": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.05,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.83,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.07,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark internal-fkas-company": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.05,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.83,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.07,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark internal-fkas-private": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.05,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.83,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.07,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark internal-fkse-private": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.05,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.83,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.07,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark internal-guen-company": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.05,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.83,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.07,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark internal-guen-private": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.05,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.83,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.07,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark internal-ngfi-company": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.05,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.83,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.07,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark internal-ngfi-private": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.05,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.83,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.07,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark internal-tkas-company": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.05,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.83,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.07,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "dark internal-tkas-private": {
+    "categorical": {
+      "cyclicCvd": 10,
+      "cyclicNormal": 20.1,
+      "lowestContrast": 3.05,
+      "windowCvd": 9.4,
+      "windowNormal": 15.5,
+    },
+    "diverging": {
+      "equalStepCvd": 12.9,
+      "equalStepNormal": 15.1,
+      "midpointNormal": 15.3,
+      "smallestStep": 0.152,
+    },
+    "other": {
+      "lowestContrast": 3.83,
+      "normal": 10.9,
+    },
+    "sentiment": {
+      "cvd": 10.5,
+      "normal": 25.6,
+    },
+    "sequential": {
+      "firstStepContrast": 2.07,
+      "hueSpread": 0.7,
+      "smallestStep": 0.077,
+    },
+  },
+  "light external-elma-company": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.34,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.76,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.23,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light external-elma-private": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.34,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.76,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.23,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light external-fkab-company": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.35,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.77,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.24,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light external-fkas-company": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.35,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.77,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.24,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light external-fkas-private": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.11,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.5,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.08,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light external-fkse-private": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.33,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.75,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.23,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light external-guen-company": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.07,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.45,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.05,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light external-guen-private": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.07,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.45,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.05,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light external-ngfi-company": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.17,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.56,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.12,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light external-ngfi-private": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.17,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.56,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.12,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light external-tkas-company": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.34,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.75,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.23,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light external-tkas-private": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.34,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.75,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.23,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light internal-elma-company": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.22,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.62,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.15,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light internal-elma-private": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.22,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.62,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.15,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light internal-fkab-company": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.22,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.62,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.15,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light internal-fkas-company": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.22,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.62,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.15,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light internal-fkas-private": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.22,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.62,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.15,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light internal-fkse-private": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.22,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.62,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.15,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light internal-guen-company": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.22,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.62,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.15,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light internal-guen-private": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.22,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.62,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.15,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light internal-ngfi-company": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.22,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.62,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.15,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light internal-ngfi-private": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.22,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.62,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.15,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light internal-tkas-company": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.22,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.62,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.15,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+  "light internal-tkas-private": {
+    "categorical": {
+      "cyclicCvd": 12.7,
+      "cyclicNormal": 21.6,
+      "lowestContrast": 3.22,
+      "windowCvd": 8.5,
+      "windowNormal": 15.7,
+    },
+    "diverging": {
+      "equalStepCvd": 18.3,
+      "equalStepNormal": 20.7,
+      "midpointNormal": 15.6,
+      "smallestStep": 0.139,
+    },
+    "other": {
+      "lowestContrast": 3.62,
+      "normal": 10.6,
+    },
+    "sentiment": {
+      "cvd": 14.7,
+      "normal": 27.9,
+    },
+    "sequential": {
+      "firstStepContrast": 2.15,
+      "hueSpread": 0.3,
+      "smallestStep": 0.069,
+    },
+  },
+}

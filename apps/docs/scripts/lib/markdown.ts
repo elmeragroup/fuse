@@ -4,8 +4,9 @@
  * page's **View as Markdown** link and any AI consumer read one pipeline, not two.
  */
 
-import type { ApiPart, DocsComponent } from "../../src/lib/docs-model.ts";
-import { groupApiProps, propDescription } from "../../src/lib/docs-model.ts";
+import type { ApiSameAs } from "../../src/lib/api-same-as.ts";
+import type { ApiFunction, ApiPart, DocsApiPart, DocsComponent } from "../../src/lib/docs-model.ts";
+import { CLIENT_PART_NOTE, groupApiProps, propDescription } from "../../src/lib/docs-model.ts";
 
 /**
  * Turns accumulated lines into a finished markdown document: collapsed blank runs, no
@@ -57,15 +58,83 @@ function renderPart(part: ApiPart): string {
   return lines.join("\n");
 }
 
+/** The owner page's markdown endpoint, which a repeated part links to. */
+function ownerMarkdownUrl(owner: { readonly slug: string }): string {
+  return `/components/${owner.slug}.md`;
+}
+
+/** A repeated part's one line in place of its prop table. */
+function renderSameAsPart(part: DocsApiPart, owner: ApiSameAs): string {
+  return [
+    `### ${part.name}`,
+    "",
+    `\`${part.name}\` is [\`${owner.name}\`](${ownerMarkdownUrl(owner)}).`,
+    "",
+  ].join("\n");
+}
+
+/** A function part's signature, parameters and return value. */
+function renderFunction(part: DocsApiPart, reference: ApiFunction): string {
+  const lines = [
+    `### ${part.name} · RSC: ${part.rsc}`,
+    "",
+    `Source: \`${part.sourcePath}\``,
+    "",
+    "```ts",
+    reference.signature,
+    "```",
+    "",
+    reference.description,
+    "",
+  ];
+  if (reference.parameters.length > 0) {
+    lines.push("| Parameter | Type | Description |", "| --- | --- | --- |");
+    for (const parameter of reference.parameters) {
+      lines.push(
+        `| \`${parameter.name}${parameter.optional ? "?" : ""}\` | \`${escapeCell(parameter.type)}\` | ${escapeCell(parameter.description)} |`
+      );
+    }
+    lines.push("");
+  }
+  const returns = reference.returns.description === "" ? "" : ` ${reference.returns.description}`;
+  lines.push(`Returns \`${reference.returns.type}\`.${returns}`, "");
+  return lines.join("\n");
+}
+
+/** The API reference section, or one sentence when the page repeats another page whole. */
+function renderApiReference(component: DocsComponent): string[] {
+  const { alias } = component;
+  if (alias !== undefined) {
+    return [`\`${alias.name}\` is [\`${alias.owner}\`](${ownerMarkdownUrl(alias)}) under another name.`, ""];
+  }
+  return component.parts.map((part) => {
+    if (part.sameAs !== undefined) return renderSameAsPart(part, part.sameAs);
+    return part.function === undefined ? renderPart(part) : renderFunction(part, part.function);
+  });
+}
+
+/**
+ * The stylesheet an entry needs beside Fuse's own, which a consumer reading only the markdown
+ * would otherwise miss. A `Map`, so `get` gives the `undefined` arm without an assertion.
+ */
+const ENTRY_STYLESHEETS = new Map<string, string>([
+  ["@elmeragroup/fuse/chart", "@elmeragroup/fuse/chart.css"],
+]);
+
 /** Renders one component's markdown endpoint. */
 export function renderComponentMarkdown(component: DocsComponent): string {
+  const stylesheet = ENTRY_STYLESHEETS.get(component.entry);
   const lines: string[] = [
     `# ${component.title}`,
     "",
     component.lede,
     "",
+    ...(component.intro === "" ? [] : [component.intro, ""]),
     `- Import: \`import { ... } from "${component.entry}";\``,
-    `- RSC: ${component.rsc}`,
+    ...(stylesheet === undefined
+      ? []
+      : [`- Stylesheet: \`import "${stylesheet}";\`, once, beside Fuse's own`]),
+    `- RSC: ${component.rsc}${component.rsc === "client" ? `. ${CLIENT_PART_NOTE}` : ""}`,
     `- Source: \`${component.sourcePath}\``,
     "",
     "## Demos",
@@ -83,10 +152,7 @@ export function renderComponentMarkdown(component: DocsComponent): string {
       ""
     );
   }
-  lines.push("## API reference", "");
-  for (const part of component.parts) {
-    lines.push(renderPart(part));
-  }
+  lines.push("## API reference", "", ...renderApiReference(component));
   if (component.tokens.length > 0) {
     lines.push("## Tokens consumed", "");
     for (const token of component.tokens) {

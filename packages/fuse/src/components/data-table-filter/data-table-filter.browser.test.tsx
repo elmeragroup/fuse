@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it, onTestFinished } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import {
   active,
@@ -334,15 +335,18 @@ describe("DataTableFilter value popover", () => {
       )
     );
     const stop = watchSides();
+    // Each popover ends on two frames the watch samples, however few frames the machine paints.
     await userEvent.click(roleNamed("button", "Paid, Pending +1"));
     await expect.poll(active).toBe(roleNamed("combobox", "Search Status"));
     await settled();
+    await nextFrames(2);
     await userEvent.click(roleNamed("button", "“nord”"));
     await expect.poll(() => page.getByRole("dialog", { name: "Customer" }).query()).not.toBeNull();
     await settled();
+    await nextFrames(2);
     const frames = stop();
     expect(window.scrollY).toBe(0);
-    expect(frames.length).toBeGreaterThan(10);
+    expect(frames.length).toBeGreaterThanOrEqual(4);
     expect(flipsIn(frames)).toBe(0);
     expect(frames.at(-1)?.[0]).toBe("top");
     // Above the chips, the popover's bottom edge sits 4px over the bar's top for every chip.

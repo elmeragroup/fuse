@@ -50,11 +50,15 @@ function tilesOf(section: SectionId): readonly RoleTile[] {
   });
 }
 
-/** The Color page's role tiles: surfaces and actions on the pairs artboard, status on its own. */
+/**
+ * The Color page's role tiles: surfaces and actions on the pairs artboard, status on its own, and
+ * the chart marks that carry a direct label on the charts artboard.
+ */
 export const ROLE_TILES = {
   surfaces: tilesOf("surfaces"),
   actions: tilesOf("actions"),
   status: tilesOf("status"),
+  charts: tilesOf("charts"),
 } as const;
 
 /** WCAG AA for body text. */

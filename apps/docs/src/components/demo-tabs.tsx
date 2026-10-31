@@ -14,6 +14,7 @@ import { Tabs } from "@elmeragroup/fuse/tabs";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 
 import { copyText } from "../lib/copy-with-toast";
+import { DocsCodePre } from "./docs-code-pre";
 
 type DemoTabsProps = {
   /** The demo's title as plain text, for the Sheet title and the view switch's name. */
@@ -24,10 +25,13 @@ type DemoTabsProps = {
   file: string;
   /** The theme-tinted stage with the demo in it. */
   stage: ReactNode;
-  /** The demo file's raw source, which the copy action writes to the clipboard. */
+  /**
+   * The demo file's raw source, which the copy action writes to the clipboard and the Code view
+   * shows until its highlighted markup arrives.
+   */
   sourceText: string;
-  /** The highlighted source, which the Code view and the Sheet both show. */
-  source: ReactNode;
+  /** The route that serves the source's highlighted markup, fetched when the Code view first shows. */
+  sourceHref: string;
 };
 
 /** How long the copy action shows that it copied, in ms. */
@@ -81,6 +85,29 @@ const {
   status: statusClass,
 } = demoTabs();
 
+/**
+ * The highlighted markup of a demo's source, fetched once `wanted` turns true, or null while it
+ * loads and when it fails, where the plain text stays. The page's HTML holds the plain text, which
+ * the tools that read the source find, so a page of demos parses one text node per demo, and its
+ * payload carries no markup: the 36 highlighted sources of the bar-chart page held 40,000 of its
+ * 46,700 nodes and 3 MB of its payload.
+ */
+function useHighlightedSource(href: string, wanted: boolean): string | null {
+  const [html, setHtml] = useState<string | null>(null);
+  useEffect(() => {
+    if (!wanted) return;
+    const controller = new AbortController();
+    fetch(href, { signal: controller.signal })
+      .then((response) => (response.ok ? response.text() : null))
+      .then((markup) => {
+        if (markup !== null) setHtml(markup);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [href, wanted]);
+  return html;
+}
+
 /** What the last copy did: nothing yet, copied, or failed because the page has no clipboard. */
 type CopyState = "idle" | "copied" | "failed";
 
@@ -129,13 +156,26 @@ function CopySourceButton({ sourceText }: { sourceText: string }): ReactElement 
  * the Code view, and whose footer switches between them. The Tabs root renders the Frame root, so
  * the header, panel and footer stay the Frame's own items. Both views stay mounted: the demo keeps
  * its state while the code shows, and the Code view, marked `[data-demo-source]`, puts the source
- * in the server HTML for the tools that read it. The Code view carries a toolbar that copies the
- * source and opens it in a Sheet, where the same source shows in a flush Frame headed with the file
- * name.
+ * in the server HTML for the tools that read it, as plain text until the view first shows and its
+ * highlighted markup arrives. Once it shows, the Code view carries a toolbar that copies the source
+ * and opens it in a Sheet, where the same source shows in a flush Frame headed with the file name,
+ * and scrolls the source in a scroll area. Mounting those on first show keeps a page of demos from
+ * hydrating and measuring a toolbar, a Sheet and a scroll area per demo that nobody has opened.
  */
-export function DemoTabs({ title, heading, file, stage, sourceText, source }: DemoTabsProps): ReactElement {
+export function DemoTabs({
+  title,
+  heading,
+  file,
+  stage,
+  sourceText,
+  sourceHref,
+}: DemoTabsProps): ReactElement {
   const demoView = useRef<HTMLDivElement>(null);
   const [demoHeight, setDemoHeight] = useState<number>();
+  // The highlighted source loads when the Code view first shows, and the Sheet opens from there.
+  const [shown, setShown] = useState(false);
+  const html = useHighlightedSource(sourceHref, shown);
+  const source = <DocsCodePre variant="embedded" code={html === null ? { text: sourceText } : { html }} />;
 
   // Read while the Demo view still shows: the Code view then opens at the height it leaves.
   function rememberDemoHeight(): void {
@@ -147,7 +187,9 @@ export function DemoTabs({ title, heading, file, stage, sourceText, source }: De
     <Tabs.Root
       defaultValue="demo"
       onValueChange={(value) => {
-        if (value === "code") rememberDemoHeight();
+        if (value !== "code") return;
+        rememberDemoHeight();
+        setShown(true);
       }}
       className={root()}
       render={<Frame.Root layout="flush" />}>
@@ -168,40 +210,50 @@ export function DemoTabs({ title, heading, file, stage, sourceText, source }: De
             data-demo-source
             className={codeView()}
             style={{ "--demo-height": demoHeight === undefined ? undefined : `${demoHeight}px` }}>
-            <Toolbar.Root aria-label={`${title} code`} className={actions()}>
-              <CopySourceButton sourceText={sourceText} />
-              <Sheet.Root>
-                <Toolbar.Button
-                  render={
-                    <Sheet.Trigger
-                      render={<Button variant="ghost" size="icon-xs" aria-label="Open code" />}
-                    />
-                  }>
-                  <ArrowsOut aria-hidden />
-                </Toolbar.Button>
-                <Sheet.Content size="4xl">
-                  <Sheet.Header>
-                    <Sheet.Title>{title}</Sheet.Title>
-                  </Sheet.Header>
-                  <Sheet.Body>
-                    <Frame.Root layout="flush">
-                      <Frame.Header className={sheetHeader()}>
-                        <Frame.Title>{file}</Frame.Title>
-                        <Toolbar.Root aria-label={`${file} actions`}>
-                          <CopySourceButton sourceText={sourceText} />
-                        </Toolbar.Root>
-                      </Frame.Header>
-                      <Frame.Panel>
-                        <div className={bleed()}>{source}</div>
-                      </Frame.Panel>
-                    </Frame.Root>
-                  </Sheet.Body>
-                </Sheet.Content>
-              </Sheet.Root>
-            </Toolbar.Root>
-            <ScrollArea.Root className={code()}>
-              <div className={codeSource()}>{source}</div>
-            </ScrollArea.Root>
+            {shown ? (
+              <>
+                <Toolbar.Root aria-label={`${title} code`} className={actions()}>
+                  <CopySourceButton sourceText={sourceText} />
+                  <Sheet.Root>
+                    <Toolbar.Button
+                      render={
+                        <Sheet.Trigger
+                          render={<Button variant="ghost" size="icon-xs" aria-label="Open code" />}
+                        />
+                      }>
+                      <ArrowsOut aria-hidden />
+                    </Toolbar.Button>
+                    <Sheet.Content size="4xl">
+                      <Sheet.Header>
+                        <Sheet.Title>{title}</Sheet.Title>
+                      </Sheet.Header>
+                      <Sheet.Body>
+                        <Frame.Root layout="flush">
+                          <Frame.Header className={sheetHeader()}>
+                            <Frame.Title>{file}</Frame.Title>
+                            <Toolbar.Root aria-label={`${file} actions`}>
+                              <CopySourceButton sourceText={sourceText} />
+                            </Toolbar.Root>
+                          </Frame.Header>
+                          <Frame.Panel>
+                            <div className={bleed()}>{source}</div>
+                          </Frame.Panel>
+                        </Frame.Root>
+                      </Sheet.Body>
+                    </Sheet.Content>
+                  </Sheet.Root>
+                </Toolbar.Root>
+                <ScrollArea.Root className={code()}>
+                  <div className={codeSource()}>{source}</div>
+                </ScrollArea.Root>
+              </>
+            ) : (
+              // Until the view first shows, it holds the plain source alone. The toolbar, the Sheet
+              // and the scroll area, which measures itself as it mounts, wait for the reader.
+              <div className={code()}>
+                <div className={codeSource()}>{source}</div>
+              </div>
+            )}
           </Tabs.Content>
         </div>
       </Frame.Panel>

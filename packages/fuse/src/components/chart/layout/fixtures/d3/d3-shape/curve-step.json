@@ -1,0 +1,54 @@
+{
+  "source": {
+    "repo": "https://github.com/d3/d3-shape",
+    "tag": "v3.2.0",
+    "file": "test/curve/step-test.js",
+    "rawUrl": "https://raw.githubusercontent.com/d3/d3-shape/v3.2.0/test/curve/step-test.js",
+    "frozenCopy": "d3/d3-shape@3.2.0/test/curve/step-test.js"
+  },
+  "licence": "ISC, Copyright Mike Bostock; see the LICENSE file frozen beside the tests",
+  "cases": [
+    {
+      "line": 8,
+      "points": [
+        [
+          0,
+          1
+        ]
+      ],
+      "expected": "M0,1Z"
+    },
+    {
+      "line": 9,
+      "points": [
+        [
+          0,
+          1
+        ],
+        [
+          2,
+          3
+        ]
+      ],
+      "expected": "M0,1L1,1L1,3L2,3"
+    },
+    {
+      "line": 10,
+      "points": [
+        [
+          0,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          4,
+          5
+        ]
+      ],
+      "expected": "M0,1L1,1L1,3L3,3L3,5L4,5"
+    }
+  ]
+}

@@ -1,6 +1,12 @@
 import type { TokenLayer } from "./contract";
 import { NEUTRAL_RING } from "./primitives";
 
+const CHART_ORANGE = "oklch(0.6303 0.1701 47.53)"; // #D86109
+const CHART_AQUA = "oklch(0.5698 0.1048 175.23)"; // #0D8B74
+const SEQ_2 = "oklch(0.5328 0.1506 255.06)"; // #236CC1
+const SEQ_4 = "oklch(0.6902 0.1501 255.12)"; // #569DF6
+const SEQ_6 = "oklch(0.8476 0.0705 254.48)"; // #AED0FB
+
 // Shared dark values for roles the supplied palettes lack. Several remain provisional
 // until design reviews them.
 export const DARK_DEFAULTS = {
@@ -28,14 +34,32 @@ export const DARK_DEFAULTS = {
   // layer's page alias.
   dialog: "var(--popover)",
   "dialog-foreground": "var(--popover-foreground)",
-  "chart-1": "oklch(0.8235043 0.0474959 220.6613)", // #A4CDDB
-  "chart-2": "oklch(0.8201874 0.0815522 220.2343)", // #86D1E9
-  "chart-3": "oklch(0.8156596 0.1022421 190.6206)", // #69D8D2
-  "chart-4": "oklch(0.8179521 0.0911921 152.4562)", // #96D5A7
-  "chart-5": "oklch(0.902421 0.0919972 151.986)", // #B1F1C1
-  "chart-6": "oklch(0.8654171 0.1848336 106.3002)", // #E3D900
-  "chart-7": "oklch(0.8856245 0.0881258 73.4809)", // #FDD198
-  "chart-8": "oklch(0.8009687 0.1043361 49.42)", // #F5AA81
+  // The dark steps of the shared chart roles. `defaults.ts` describes each group.
+  "chart-1": "oklch(0.6202 0.1856 257.5)", // #3183F3
+  "chart-2": CHART_ORANGE, // #D86109
+  "chart-3": CHART_AQUA, // #0D8B74
+  "chart-4": "oklch(0.6596 0.1809 342.32)", // #D95DB0
+  "chart-5": "oklch(0.6611 0.1803 132.54)", // #65A811
+  "chart-6": "oklch(0.6194 0.1803 292.62)", // #8C6BE7
+  "chart-7": "oklch(0.5553 0.115 79.93)", // #966A00
+  "chart-8": "oklch(0.5695 0.185 359.86)", // #C73873
+  "chart-other": "oklch(0.6 0 0)", // #808080
+  "chart-seq-1": "oklch(0.4562 0.1377 254.82)", // #1156A1
+  "chart-seq-2": SEQ_2, // #236CC1
+  "chart-seq-3": "oklch(0.6107 0.1503 255.1)", // #3D84DB
+  "chart-seq-4": SEQ_4, // #569DF6
+  "chart-seq-5": "oklch(0.7689 0.1101 254.81)", // #83B7F9
+  "chart-seq-6": SEQ_6, // #AED0FB
+  "chart-seq-7": "oklch(0.9255 0.0334 255.21)", // #D8E8FD
+  "chart-diverging-1": SEQ_6, // #AED0FB
+  "chart-diverging-2": SEQ_4, // #569DF6
+  "chart-diverging-3": SEQ_2, // #236CC1
+  "chart-diverging-4": "oklch(0.62 0 0)", // #868686
+  "chart-diverging-5": "oklch(0.5426 0.1317 50.03)", // #AA5418
+  "chart-diverging-6": "oklch(0.6947 0.1503 49.87)", // #E57D3C
+  "chart-diverging-7": "oklch(0.8488 0.0841 50.35)", // #FBBE9C
+  "chart-sentiment-positive": CHART_AQUA, // #0D8B74
+  "chart-sentiment-negative": CHART_ORANGE, // #D86109
   "sh-identifier": "oklch(0.9128668 0.0067833 233.6479)", // #DEE3E6
   "sh-keyword": "oklch(0.8009687 0.1043361 49.42)", // #F5AA81
   "sh-string": "oklch(0.902421 0.0919972 151.986)", // #B1F1C1

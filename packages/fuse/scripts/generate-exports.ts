@@ -25,14 +25,8 @@ export type ExportBinding = {
   target: ExportCondition | string;
 };
 
-type WorkspacePeers = {
-  "@tanstack/react-table": string;
-  "@tanstack/react-virtual": string;
-  react: string;
-  "react-dom": string;
-  tailwindcss: string;
-  recharts?: string;
-};
+/** The published peer ranges, one per peer that `PUBLISHED_PEER_RANGES` names. */
+type WorkspacePeers = { readonly [Peer in keyof typeof PUBLISHED_PEER_RANGES]: string };
 
 /** npm registry metadata. Carried verbatim from the workspace manifest into the published one. */
 type PackageMetadata = {
@@ -49,12 +43,7 @@ type WorkspaceManifest = PackageMetadata & {
   version: string;
   license: string;
   sideEffects: string[];
-  peerDependenciesMeta: {
-    "@tanstack/react-table": { optional: boolean };
-    "@tanstack/react-virtual": { optional: boolean };
-    tailwindcss: { optional: boolean };
-    recharts?: { optional: boolean };
-  };
+  peerDependenciesMeta: Partial<Record<keyof WorkspacePeers, { optional: boolean }>>;
   dependencies: Dependencies;
 };
 
@@ -243,21 +232,11 @@ type PublishManifest = PackageMetadata & {
   elmeraRelease?: ReleaseSource;
 };
 
-function publishedPeerDependencies(): WorkspacePeers {
-  return {
-    "@tanstack/react-table": PUBLISHED_PEER_RANGES["@tanstack/react-table"],
-    "@tanstack/react-virtual": PUBLISHED_PEER_RANGES["@tanstack/react-virtual"],
-    react: PUBLISHED_PEER_RANGES.react,
-    "react-dom": PUBLISHED_PEER_RANGES["react-dom"],
-    tailwindcss: PUBLISHED_PEER_RANGES.tailwindcss,
-  };
-}
-
 const ROOT_BARREL_BANNER = `/**
  * AUTO-GENERATED FILE — DO NOT EDIT DIRECTLY.
  *
  * Root barrel of bare component entries plus /theme.
- * Icons, illustrations, flags, react-aria/* and optional-peer entries stay subpath-only.
+ * Icons, illustrations, flags, react-aria/*, optional-peer and preview entries stay subpath-only.
  */
 
 `;
@@ -300,9 +279,13 @@ export function writePublishManifest(packageRoot: string, release?: ReleaseStamp
   const discovered = discoverEntries(packageRoot);
   const workspace = readWorkspaceManifest(join(packageRoot, "package.json"));
   const licensePath = join(packageRoot, "LICENSE");
+  // Chart.Background ports evilcharts' pattern paths, so its MIT notice ships beside our own.
+  const evilchartsLicensePath = join(packageRoot, "LICENSE-evilcharts");
   const readmePath = join(packageRoot, "README.md");
-  if (!existsSync(licensePath)) {
-    throw new Error("packages/fuse/LICENSE is required in the published package");
+  for (const path of [licensePath, evilchartsLicensePath]) {
+    if (!existsSync(path)) {
+      throw new Error(`${path} is required in the published package`);
+    }
   }
 
   const published: PublishManifest = {
@@ -313,7 +296,7 @@ export function writePublishManifest(packageRoot: string, release?: ReleaseStamp
     type: "module",
     sideEffects: workspace.sideEffects,
     exports: exportBindingsObject(buildPublishExportMap(discovered)),
-    peerDependencies: publishedPeerDependencies(),
+    peerDependencies: { ...PUBLISHED_PEER_RANGES },
     peerDependenciesMeta: workspace.peerDependenciesMeta,
     dependencies: publishedDependencies(workspace.dependencies, readWorkspaceCatalog()),
     publishConfig: { access: "public" },
@@ -324,6 +307,7 @@ export function writePublishManifest(packageRoot: string, release?: ReleaseStamp
 
   writePublishPackageJson(join(packageRoot, "dist/package.json"), published);
   copyFileSync(licensePath, join(packageRoot, "dist/LICENSE"));
+  copyFileSync(evilchartsLicensePath, join(packageRoot, "dist/LICENSE-evilcharts"));
   copyTwemojiNotices(packageRoot, join(packageRoot, "dist"));
   if (existsSync(readmePath)) {
     copyFileSync(readmePath, join(packageRoot, "dist/README.md"));

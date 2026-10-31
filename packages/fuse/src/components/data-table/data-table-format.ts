@@ -4,7 +4,9 @@
  * cell therefore parses `getValue()` into a {@link CellValue} first, and a cell handed a value of
  * another kind renders its raw text instead of throwing.
  */
-import { dateTimeFormat, numberFormat } from "../../internal/intl-cache";
+import { numberFormat } from "../../internal/intl-cache";
+import { canonicalSpaces } from "../../intl/canonical-spaces";
+import { formatDateTime } from "../../intl/date-time-join";
 import type { SupportedLocale } from "../../intl/locale-context";
 
 /** Number format options a number cell accepts. `style` belongs to the cell kind. */
@@ -13,9 +15,9 @@ export type NumberFormatOptions = Omit<Intl.NumberFormatOptions, "style" | "curr
 /** The time zone a date cell formats in. */
 type TimeZoneOption = {
   /**
-   * The IANA time zone, such as `"Europe/Oslo"`. Defaults to the runtime's local time zone. A
-   * table that renders on the server and hydrates in the browser must pass it, or the server and
-   * browser text can differ.
+   * The IANA time zone, such as `"Europe/Oslo"`. Defaults to the `LocaleProvider` zone, and to
+   * the runtime's local time zone when the provider has none. A table that renders on the server
+   * and hydrates in the browser needs one of the two, or the server and browser text can differ.
    */
   timeZone?: Intl.DateTimeFormatOptions["timeZone"];
 };
@@ -49,14 +51,14 @@ export function cellValueText(cell: CellValue): string {
  * @param locale - The active supported locale.
  * @param value - The number.
  * @param options - Digits, grouping and notation.
- * @returns The formatted number.
+ * @returns The formatted number, with every space written as U+00A0.
  */
 export function formatNumberCell(
   locale: SupportedLocale,
   value: number,
   options: NumberFormatOptions
 ): string {
-  return numberFormat(locale, options).format(value);
+  return canonicalSpaces(numberFormat(locale, options).format(value));
 }
 
 /**
@@ -66,7 +68,7 @@ export function formatNumberCell(
  * @param value - The amount.
  * @param currency - The ISO 4217 code, such as `"NOK"`.
  * @param options - Digits, grouping and currency display.
- * @returns The formatted amount.
+ * @returns The formatted amount, with every space written as U+00A0.
  */
 export function formatCurrencyCell(
   locale: SupportedLocale,
@@ -75,7 +77,7 @@ export function formatCurrencyCell(
   options: NumberFormatOptions
 ): string {
   const currencyOptions: Intl.NumberFormatOptions = { ...options, style: "currency", currency };
-  return numberFormat(locale, currencyOptions).format(value);
+  return canonicalSpaces(numberFormat(locale, currencyOptions).format(value));
 }
 
 /**
@@ -84,8 +86,12 @@ export function formatCurrencyCell(
  * @param locale - The active supported locale.
  * @param value - The date. An invalid date renders as `"Invalid Date"`, which `Intl` would throw on.
  * @param options - Date and time styles and the time zone.
- * @returns The formatted date.
+ * @returns The formatted date, with every space written as U+00A0. A date and a time join through
+ * `formatDateTime`, which writes CLDR 48's join, so Node and every browser engine write the same
+ * text.
  */
 export function formatDateCell(locale: SupportedLocale, value: Date, options: DateTimeFormatOptions): string {
-  return Number.isNaN(value.getTime()) ? String(value) : dateTimeFormat(locale, options).format(value);
+  return Number.isNaN(value.getTime())
+    ? String(value)
+    : canonicalSpaces(formatDateTime(locale, options, value.getTime()));
 }

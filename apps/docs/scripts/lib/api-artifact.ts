@@ -20,7 +20,32 @@ import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/
 import { API_REGEN_COMMAND } from "../../src/lib/docs-model.ts";
 import type { DocsApiComponent } from "./docs-inspection.ts";
 import { DocsGenerationError } from "./errors.ts";
-import { repoRoot, fuseTsconfig } from "./paths.ts";
+import { repoRelative, repoRoot, fuseTsconfig } from "./paths.ts";
+
+/**
+ * The warning codes the docs accept. `unsupported-type-fallback` is the package default. The
+ * extractor cannot print a template-literal index signature, so it omits the chart's per-key colour
+ * property `--chart-color-${string}` from every `ChartStyle` row, and the type's JSDoc documents it
+ * instead. `acceptedDiagnostic` keeps that exception to the one file that declares it.
+ */
+const ALLOWED_WARNING_CODES = ["unsupported-type-fallback", "omitted-index-signature"] as const;
+
+/** The one module whose omitted index signature the docs accept: `ChartStyleVars`'s colour index. */
+const ACCEPTED_INDEX_SIGNATURE_FILE = path.join(
+  repoRoot,
+  "packages/fuse/src/components/chart/chart-types.ts"
+);
+
+/**
+ * Whether the docs accept a warning the package passed through. An omitted index signature is
+ * accepted only where `ACCEPTED_INDEX_SIGNATURE_FILE` declares it, so a new one elsewhere still fails.
+ */
+function acceptedDiagnostic({ warning }: ApiArtifactDiagnostic): boolean {
+  return (
+    warning.code !== "omitted-index-signature" ||
+    path.resolve(warning.filePath) === ACCEPTED_INDEX_SIGNATURE_FILE
+  );
+}
 
 /** What every failure that blames a stale or missing `api.json` tells the reader to do. */
 export const STALE_HINT = `Run \`${API_REGEN_COMMAND}\` and commit the updated api.json files.`;
@@ -54,6 +79,7 @@ export async function generateDocsApiArtifacts(
       tsconfigPath: path.relative(repoRoot, fuseTsconfig),
       generatedBy: GENERATED_BANNER,
       mode: "write",
+      allowedWarningCodes: ALLOWED_WARNING_CODES,
       components: inventory.map((component) => ({
         slug: component.slug,
         entryFile: component.entryFile,
@@ -63,6 +89,14 @@ export async function generateDocsApiArtifacts(
     });
     for (const component of result.components) {
       artifacts.set(component.slug, component);
+    }
+    const rejected = result.diagnostics.filter((diagnostic) => !acceptedDiagnostic(diagnostic));
+    if (rejected.length > 0) {
+      throw new DocsGenerationError(
+        rejected.map(
+          ({ component, warning }) => `${component}: ${warning.code} at ${repoRelative(warning.filePath)}`
+        )
+      );
     }
     diagnostics = result.diagnostics;
   } catch (error) {

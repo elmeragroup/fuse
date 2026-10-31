@@ -166,8 +166,19 @@ export default function AccessibilityPage(): ReactElement {
         including <code>--muted-foreground</code> on the page, <code>--muted</code>, card, card-soft and modal
         surfaces, so muted descriptions can carry required information. Additional tests cover dark panel
         text, dark input boundaries, the selection-control edge and focus colors. Decorative dark borders
-        cannot be the sole control boundary. These checks do not establish chart-series distinction or
-        whole-page conformance; review states, artwork and charts in their product context.
+        cannot be the sole control boundary. These checks do not establish whole-page conformance; review
+        states, artwork and charts in their product context.
+      </p>
+      <p>
+        A chart palette test measures the chart roles on the page, card, card-soft and modal surfaces of all
+        twenty-four themes in both color schemes. Every categorical slot, <code>--chart-other</code> and the
+        two sentiment roles hold 3:1 on each surface. Neighbouring slots, including slot 8 beside slot 1, and
+        slots two apart stay distinguishable in normal vision and under simulated protanopia and deuteranopia,
+        so any start offset and any three consecutive slots keep their series apart. The sequential ramp and
+        each diverging arm step in lightness, and their least step holds 2:1. Each{" "}
+        <code>--chart-N-foreground</code> holds 4.5:1 on its slot. <code>--chart-other</code> is a grey that
+        stays apart from every slot in normal vision only, so draw the folded series last and label it. Pair
+        color with a legend or a direct label, and keep a status series' icon and label.
       </p>
     </DocsPage>
   );

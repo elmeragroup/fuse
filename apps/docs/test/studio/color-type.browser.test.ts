@@ -24,7 +24,7 @@ const TYPE_PAGE: StudioRoute = { path: "/studio/type", artboard: "Specimen" };
 
 const RED = "rgb(255, 0, 0)";
 
-async function computed(locator: Locator, property: "backgroundColor" | "fontFamily" | "fontSize") {
+async function computed(locator: Locator, property: "backgroundColor" | "fill" | "fontFamily" | "fontSize") {
   return locator.evaluate((element, name) => getComputedStyle(element)[name], property);
 }
 
@@ -38,19 +38,24 @@ describe("the studio's Color page", () => {
     const { context, page, errors } = await openStudio(browser(), { route: COLOR_PAGE });
     try {
       const board = artboard(page, "Charts · Light");
-      const third = board.locator('[data-series="3"]');
-      const second = board.locator('[data-series="2"]');
-      const before = await computed(second, "backgroundColor");
-      expect(await computed(third, "backgroundColor")).not.toBe(RED);
+      // A bar's data-series is its config ordinal from 0, so the third series is 2.
+      // DOM audit: the bars are aria-hidden plot output, so their slots are the only locators.
+      const third = board.locator('[data-slot="chart-bar"][data-series="2"]');
+      const second = board.locator('[data-slot="chart-bar"][data-series="1"]');
+      const before = await computed(second, "fill");
+      expect(await computed(third, "fill")).not.toBe(RED);
 
       await openTokenSection(page, "Charts");
       await setTokenColor(page, "chart-3", "#FF0000");
 
-      await expect.poll(() => computed(third, "backgroundColor")).toBe(RED);
-      expect(await computed(second, "backgroundColor")).toBe(before);
+      await expect.poll(() => computed(third, "fill")).toBe(RED);
+      expect(await computed(second, "fill")).toBe(before);
       // The edit is the light scheme's: the dark twin's third series keeps its color.
       expect(
-        await computed(artboard(page, "Charts · Dark").locator('[data-series="3"]'), "backgroundColor")
+        await computed(
+          artboard(page, "Charts · Dark").locator('[data-slot="chart-bar"][data-series="2"]'),
+          "fill"
+        )
       ).not.toBe(RED);
       expect(errors).toEqual([]);
     } finally {

@@ -1,0 +1,107 @@
+---
+lede: >
+  Preview. Lines over a category or time axis.
+---
+
+import { LineChartBasic } from "./demos/line-chart-basic";
+import { LineChartCurves } from "./demos/line-chart-curves";
+import { LineChartGlow } from "./demos/line-chart-glow";
+import { LineChartLarge } from "./demos/line-chart-large";
+import { LineChartMarkers } from "./demos/line-chart-markers";
+import { LineChartQuality } from "./demos/line-chart-quality";
+import { LineChartReveal } from "./demos/line-chart-reveal";
+import { LineChartSpotPrice } from "./demos/line-chart-spot-price";
+import { LineChartUpdate } from "./demos/line-chart-update";
+import { LineChartVariants } from "./demos/line-chart-variants";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("line-chart");
+
+<ComponentIntro slug="line-chart" />
+
+<Prose>
+
+The chart entry is a preview. Its names and props can change until Fuse's first stable release. `LineChart` is the same component as `Chart`. A line draws in SVG once the browser measures the plot, and every vertex lands on the pixel column the crosshair takes at its slot, so a dot, a marker and the active dot sit on the line at any width and zoom.
+
+</Prose>
+
+<Demo slug="line-chart" id="basic" title="Basic" file="line-chart-basic.tsx">
+  <LineChartBasic />
+</Demo>
+
+<Demo slug="line-chart" id="spot-price" title="Spot price" file="line-chart-spot-price.tsx">
+  <LineChartSpotPrice />
+</Demo>
+
+## Curves and looks
+
+<Prose>
+
+`curve` picks a d3 curve. `"step-after"` and `"step-before"` run each reading across its whole slot, so the last hour of a day keeps its run, and they need the default band scale. `variant="dashed"` dashes a target, `"quiet"` draws a faint reference such as last year, and `"flowing"` runs its dashes along the line, which reduced motion stops.
+
+</Prose>
+
+<Demo slug="line-chart" id="curves" title="Curves" file="line-chart-curves.tsx">
+  <LineChartCurves />
+</Demo>
+
+<Demo slug="line-chart" id="variants" title="Variants" file="line-chart-variants.tsx">
+  <LineChartVariants />
+</Demo>
+
+<Demo slug="line-chart" id="glow" title="Glow" file="line-chart-glow.tsx">
+  <LineChartGlow />
+</Demo>
+
+## Readings and quality
+
+<Prose>
+
+A missing reading leaves a gap, and a reading between two gaps draws a dot. Config `missing: "connect"` bridges a gap with a dashed segment instead, because a bridge is no measurement. The segments that touch an estimated reading and the tail from config `projectedFrom` draw dashed too.
+
+</Prose>
+
+<Demo slug="line-chart" id="quality" title="Gaps, estimates and a projection" file="line-chart-quality.tsx">
+  <LineChartQuality />
+</Demo>
+
+<Demo slug="line-chart" id="markers" title="Markers below zero" file="line-chart-markers.tsx">
+  <LineChartMarkers />
+</Demo>
+
+<Demo slug="line-chart" id="reveal" title="Hover reveal" file="line-chart-reveal.tsx">
+  <LineChartReveal />
+</Demo>
+
+## Updates and large data
+
+<Prose>
+
+A data update moves the line to its new readings, with its dots and markers on it. An update that appends a reading and drops the first slides the line along the axis, one that shares no slot pairs the old and new readings by position, and any other change of slots crossfades. Above 2,000 slots in the window, the line draws the lowest, highest, first and last reading of each pixel column, so every spike stays.
+
+</Prose>
+
+<Demo slug="line-chart" id="update" title="Live readings" file="line-chart-update.tsx">
+  <LineChartUpdate />
+</Demo>
+
+<Demo slug="line-chart" id="large" title="A year of hours" file="line-chart-large.tsx">
+  <LineChartLarge />
+</Demo>
+
+## Keyboard
+
+<Prose>
+
+The plot is one tab stop. The legend toggle group and the table's button add one each.
+
+| Where               | Keys                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Chart               | ArrowRight and ArrowLeft move one slot. PageDown and PageUp move a tenth of the window's slots, at least one. Home and End go to the window's first and last slot. ArrowDown and ArrowUp move the series focus. Enter and Space select the focused series while a legend toggle group is mounted, and pin the tooltip otherwise. Escape hides the tooltip and keeps focus, and a second Escape passes on. |
+| Legend toggle group | Tab enters at the pressed toggle or the first. The arrows move, and Enter or Space presses a toggle. Pressing the pressed toggle clears the selection.                                                                                                                                                                                                                                                    |
+| Table               | The table's button and the page buttons are native buttons. The button moves focus to the table, which never joins the Tab order.                                                                                                                                                                                                                                                                         |
+
+</Prose>
+
+<ApiReference slug="line-chart" />

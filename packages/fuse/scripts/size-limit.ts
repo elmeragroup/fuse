@@ -5,6 +5,7 @@ import { gzipSync } from "node:zlib";
 import { rolldown } from "rolldown";
 import type { RolldownBuild } from "rolldown";
 
+import { PUBLISHED_PEER_RANGES } from "./entries.ts";
 import { flagPayload, listFlagFiles } from "./flag-assets.ts";
 import { packageRootFromScript } from "./paths.ts";
 import {
@@ -17,15 +18,8 @@ import {
 import { fail, withExtractedTarballAsync } from "./tarball.ts";
 
 const packageRoot = packageRootFromScript(import.meta.url);
-const PEER_EXTERNALS = [
-  "react",
-  "react-dom",
-  "react/jsx-runtime",
-  "react/jsx-dev-runtime",
-  "tailwindcss",
-  "@tanstack/react-table",
-  "@tanstack/react-virtual",
-];
+/** Every published peer, plus the JSX runtime subpaths of the `react` peer, which bundles exclude. */
+const PEER_EXTERNALS = [...Object.keys(PUBLISHED_PEER_RANGES), "react/jsx-runtime", "react/jsx-dev-runtime"];
 
 function gzipSize(bytes: Uint8Array): number {
   return gzipSync(bytes).byteLength;
@@ -53,11 +47,15 @@ function reportBudget(name: string, bytes: number, ceiling: number, unit: string
   }
 }
 
-/** One bundle measurement: a packed entry, or one named export of it when `exportName` is set. */
+/**
+ * One bundle measurement: a packed entry, one named export of it when `exportName` is set, or the
+ * namespace members a route reads when `members` is set too.
+ */
 type BundleBudget = {
   readonly name: string;
   readonly entryFile: string;
   readonly exportName?: string;
+  readonly members?: readonly string[];
   readonly ceilingGzip: number;
 };
 
@@ -78,7 +76,13 @@ async function measure(extracted: string, work: string, budget: BundleBudget): P
   let input = entry;
   if (budget.exportName !== undefined) {
     input = join(work, `${workStem(budget.name)}.fixture.js`);
-    writeFileSync(input, `export { ${budget.exportName} } from ${JSON.stringify(entry)};\n`);
+    const { exportName, members } = budget;
+    writeFileSync(
+      input,
+      members === undefined
+        ? `export { ${exportName} } from ${JSON.stringify(entry)};\n`
+        : `import { ${exportName} } from ${JSON.stringify(entry)};\nexport const parts = [${members.map((member) => `${exportName}.${member}`).join(", ")}];\n`
+    );
   }
   let bundle: RolldownBuild | undefined;
   try {

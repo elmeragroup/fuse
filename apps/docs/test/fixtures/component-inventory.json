@@ -32,6 +32,17 @@
       "alert-dialog-custom-icon.tsx"
     ]
   },
+  "area-chart": {
+    "title": "Area Chart",
+    "rsc": "client",
+    "demos": [
+      "area-chart-daily-usage.tsx",
+      "area-chart-entrance.tsx",
+      "area-chart-price.tsx",
+      "area-chart-stacked.tsx",
+      "area-chart-variants.tsx"
+    ]
+  },
   "aspect-ratio": {
     "title": "Aspect Ratio",
     "rsc": "server",
@@ -74,6 +85,43 @@
     "title": "Badge",
     "rsc": "server",
     "demos": ["badge-basic.tsx", "badge-variants.tsx", "badge-status.tsx", "badge-sizes.tsx"]
+  },
+  "bar-chart": {
+    "title": "Bar Chart",
+    "rsc": "client",
+    "demos": [
+      "bar-chart-basic.tsx",
+      "bar-chart-blocks.tsx",
+      "bar-chart-buffer.tsx",
+      "bar-chart-capacity-step.tsx",
+      "bar-chart-config.tsx",
+      "bar-chart-dst-days.tsx",
+      "bar-chart-emphasis.tsx",
+      "bar-chart-entrance.tsx",
+      "bar-chart-expandable.tsx",
+      "bar-chart-glowing.tsx",
+      "bar-chart-gradient-colors.tsx",
+      "bar-chart-horizontal.tsx",
+      "bar-chart-hourly-groups.tsx",
+      "bar-chart-hover-highlight.tsx",
+      "bar-chart-hover-trace.tsx",
+      "bar-chart-icons.tsx",
+      "bar-chart-isometric.tsx",
+      "bar-chart-loading.tsx",
+      "bar-chart-monospace.tsx",
+      "bar-chart-month-to-date.tsx",
+      "bar-chart-month-vs-last-year.tsx",
+      "bar-chart-percent.tsx",
+      "bar-chart-price-levels.tsx",
+      "bar-chart-price-spike.tsx",
+      "bar-chart-server.tsx",
+      "bar-chart-stacked.tsx",
+      "bar-chart-streamed.tsx",
+      "bar-chart-update.tsx",
+      "bar-chart-variants.tsx",
+      "bar-chart-year-over-year.tsx",
+      "bar-chart-year-vs-last-year.tsx"
+    ]
   },
   "breadcrumb": {
     "title": "Breadcrumb",
@@ -133,6 +181,41 @@
       "card-sizes.tsx",
       "card-sections.tsx",
       "card-section-button.tsx"
+    ]
+  },
+  "chart": {
+    "title": "Chart",
+    "rsc": "client",
+    "demos": [
+      "chart-axis-titles.tsx",
+      "chart-background.tsx",
+      "chart-composed-bar-group-line.tsx",
+      "chart-composed-basic.tsx",
+      "chart-composed-bump.tsx",
+      "chart-composed-dashed.tsx",
+      "chart-composed-dots.tsx",
+      "chart-composed-flowing.tsx",
+      "chart-composed-glowing.tsx",
+      "chart-composed-gradient-colors.tsx",
+      "chart-composed-hover-highlight.tsx",
+      "chart-composed-loading.tsx",
+      "chart-composed-variants.tsx",
+      "chart-crosshair.tsx",
+      "chart-empty.tsx",
+      "chart-headline.tsx",
+      "chart-hourly-usage.tsx",
+      "chart-legend-toggles.tsx",
+      "chart-month-usage-and-price.tsx",
+      "chart-prosumer-day.tsx",
+      "chart-reference-area.tsx",
+      "chart-reference-line.tsx",
+      "chart-table.tsx",
+      "chart-tick-dot.tsx",
+      "chart-tooltip-anchor.tsx",
+      "chart-tooltip-default.tsx",
+      "chart-tooltip-frosted.tsx",
+      "chart-total-price.tsx",
+      "chart-usage-and-price.tsx"
     ]
   },
   "checkbox": {
@@ -424,6 +507,22 @@
     "rsc": "server",
     "demos": ["kbd-keys.tsx", "kbd-combination.tsx", "kbd-input-group.tsx"]
   },
+  "line-chart": {
+    "title": "Line Chart",
+    "rsc": "client",
+    "demos": [
+      "line-chart-basic.tsx",
+      "line-chart-curves.tsx",
+      "line-chart-glow.tsx",
+      "line-chart-large.tsx",
+      "line-chart-markers.tsx",
+      "line-chart-quality.tsx",
+      "line-chart-reveal.tsx",
+      "line-chart-spot-price.tsx",
+      "line-chart-update.tsx",
+      "line-chart-variants.tsx"
+    ]
+  },
   "link": {
     "title": "Link",
     "rsc": "client",
@@ -490,6 +589,11 @@
       "phone-number-field-states.tsx"
     ]
   },
+  "pie-chart": {
+    "title": "Pie Chart",
+    "rsc": "client",
+    "demos": ["pie-chart-bill.tsx"]
+  },
   "popover": {
     "title": "Popover",
     "rsc": "client",
@@ -510,6 +614,16 @@
       "popover-info-button-rich-text.tsx",
       "popover-info-button-i18n.tsx"
     ]
+  },
+  "radar-chart": {
+    "title": "Radar Chart",
+    "rsc": "client",
+    "demos": ["radar-chart-weekdays.tsx"]
+  },
+  "radial-chart": {
+    "title": "Radial Chart",
+    "rsc": "client",
+    "demos": ["radial-chart-budgets.tsx"]
   },
   "radio-group": {
     "title": "Radio Group",
@@ -644,6 +758,11 @@
     "title": "Span",
     "rsc": "client",
     "demos": ["span-basic.tsx", "span-sizes.tsx", "span-variants.tsx", "span-truncate.tsx"]
+  },
+  "sparkline": {
+    "title": "Sparkline",
+    "rsc": "server",
+    "demos": ["sparkline-hourly-price.tsx", "sparkline-table.tsx", "sparkline-variants.tsx"]
   },
   "switch": {
     "title": "Switch",

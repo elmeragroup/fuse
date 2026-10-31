@@ -25,3 +25,18 @@ text ships at `licenses/twemoji-CC-BY-4.0.txt`.
 The graphics are inlined as React components. An accessibility/data-slot wrapper
 was added (`aria-hidden` / `focusable` decorative default, optional `label` →
 `role="img"` + `aria-label`, and `data-slot="emoji"`). SVG path data unchanged.
+
+## evilcharts, Copyright 2026 Gurbinder
+
+The SVG pattern paths that `Chart.Background` draws in `@elmeragroup/fuse/chart` are ported
+from evilcharts at commit `ecbd6a5db7b25f9a7e070c02b2ef728c378eeb5c`.
+
+Maintained source: https://github.com/legions-developer/evilcharts
+
+Licensed under the MIT License. The complete licence text ships unchanged at
+`LICENSE-evilcharts` in the package root.
+
+### Modifications
+
+Each pattern draws inside a Fuse SVG `pattern` element with sanitised ids, an alpha mask and
+a softening filter, and paints through the chart's colour roles.
