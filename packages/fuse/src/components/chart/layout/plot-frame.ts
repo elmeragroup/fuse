@@ -247,7 +247,9 @@ export function optionBand(
 ): readonly [number, number] {
   if (xScale === "band") return slotBand(frame, position);
   const length = alongLength(frame);
-  const centre = centreOf(frame, position, xScale);
+  // The unsnapped centre, which lies inside the plot. The last point's snapped centre can lie past
+  // the plot's end, which would leave the clipped band empty.
+  const centre = slotCentreAt(frame, position, xScale);
   const half = length / frame.count / 2;
   return snapSpan(frame, Math.max(0, centre - half), Math.min(length, centre + half));
 }
@@ -556,7 +558,7 @@ export function frameRect(
  * @param width - The stroke width in CSS pixels, 1 by default.
  * @returns The stroke's centre coordinate.
  */
-export function ruleAt(snapped: (at: number) => number, at: number, width = 1): number {
+function ruleAt(snapped: (at: number) => number, at: number, width = 1): number {
   return snapped(at) + width / 2;
 }
 

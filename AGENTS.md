@@ -61,6 +61,9 @@ The `browser-reduced-motion` project runs them in all three engines with that pr
 Keyboard and focus tests run in the plain `browser` project, since each file gets its own page.
 Put tests that emulate touch or tap through Playwright's touchscreen in `*.touch.browser.test.tsx`.
 The `browser-touch` project runs them one file at a time in Chromium with touch on.
+The time zone is a project dimension too: `unit` runs in Europe/Oslo, and `unit-new-york` and
+`unit-tokyo` rerun the `ZONE_TESTS` globs in Fuse's `vitest.config.ts`. Extend those globs when a
+unit test's result can depend on the process zone.
 Put necessary source contracts in the central suite with the reason lint or an
 existing gate cannot enforce them.
 While editing, run `vitest related <files> --run --project unit` in the owning package

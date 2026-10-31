@@ -6,24 +6,17 @@
  */
 
 import * as fc from "fast-check";
-import { describe, expect, it } from "vitest";
+import { describe, expect, inject, it } from "vitest";
 
 import { canonicalSpaces } from "../../../intl/canonical-spaces";
 import { LOCALES } from "./fixtures/judgement";
 import { JUDGES } from "./fixtures/judges";
-import { spawnZoneProbe } from "./fixtures/spawn-zone-probe";
 import { oracleDays } from "./fixtures/time-judges";
 import { formatTime } from "./time-format";
 import { formatValue } from "./value-format";
 import type { ValueFormat } from "./value-format";
 
 const SEED = 20_261_018;
-
-// Each child runs fixtures/zone-probe.ts under another process zone. Both start now, so they run
-// beside each other and beside this file's tests.
-const ZONE_PROBES = ["America/New_York", "Asia/Tokyo"].map(
-  (zone) => [zone, spawnZoneProbe(new URL("./fixtures/zone-probe.ts", import.meta.url), zone)] as const
-);
 
 describe("chart formats in Node", () => {
   it.each(JUDGES)("match the judges of %s", (_, judge) => {
@@ -32,10 +25,10 @@ describe("chart formats in Node", () => {
     }
   });
 
-  it.each(ZONE_PROBES)("match every judge when the process runs in %s", async (zone, output) => {
-    // Unit under test: every judged label. Oracle: the judges themselves, so the process zone
-    // changes no string.
-    expect(JSON.parse(await output)).toEqual({ zone, mismatches: [] });
+  it("run in the zone the Vitest project sets", () => {
+    // The unit project runs in Oslo, and the zone projects run this file again in New York and
+    // Tokyo, so the judges above prove that the process zone changes no string.
+    expect(Intl.DateTimeFormat().resolvedOptions().timeZone).toBe(inject("timeZone"));
   });
 
   it("keeps each day's slot count, order and repeated-hour positions when the locale changes", () => {

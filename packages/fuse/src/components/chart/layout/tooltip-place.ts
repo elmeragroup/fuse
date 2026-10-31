@@ -22,7 +22,7 @@ export const TOOLTIP_EDGE = 8;
  * crossed to the popup through it would change the slot it reads. Vertical placements need no
  * overlap, since a pointer that crosses to them stays on the column's own slot.
  */
-export const BESIDE_OVERLAP = 0.5;
+const BESIDE_OVERLAP = 0.5;
 
 /**
  * Whether some side of the column holds the popup inside the viewport: above, below, or beside it.

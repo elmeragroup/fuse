@@ -17,6 +17,7 @@ import { describe, expect, it, vi } from "vitest";
 import "../../../dist/styles.css";
 import { barBox } from "../../../test/chart/bar-box";
 import { finishedFade, runningFade } from "../../../test/chart/fade";
+import { bars } from "../../../test/chart/marks";
 import { MOTION_A, MOTION_B, MOTION_CONFIG } from "../../../test/chart/motion-fixture";
 import type { MotionRow } from "../../../test/chart/motion-fixture";
 import motion from "../../../test/chart/motion-frames.json" with { type: "json" };
@@ -69,11 +70,6 @@ async function frames(count: number): Promise<void> {
   for (let index = 0; index < count; index += 1) {
     await new Promise((resolve) => requestAnimationFrame(resolve));
   }
-}
-
-function bars(host: HTMLElement): HTMLElement[] {
-  // DOM audit: bars are aria-hidden plot output, so their slot is the only locator.
-  return [...host.querySelectorAll<HTMLElement>('[data-slot="chart-bar"]')];
 }
 
 type Oracle = (typeof motion.bars.A)[number];

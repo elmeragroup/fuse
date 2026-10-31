@@ -11,12 +11,13 @@ import { assertKnownKey } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import { useChartStore } from "./chart-store";
 import { ownSlotLabel, stackTotalAt } from "./chart-text";
-import type { ChartFallback, ChartShareFormat, ValueFormat } from "./chart-types";
+import type { ChartFallback, ChartFractionDigits, ValueFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import { formatValue } from "./format/value-format";
 import { ownWindowSlots } from "./layout/coarse-slots";
 import type { Reading } from "./layout/readings";
 import { roundShares } from "./layout/shares";
+import { slotOf } from "./layout/x-domain";
 
 /** The config key a template row renders for, such as one TooltipItems row. */
 export const ChartRowContext = createContext<string | null>(null);
@@ -130,7 +131,7 @@ export function readingText(
 export function shareText(
   context: ChartRootContextValue,
   share: number | null,
-  format: ChartShareFormat | undefined
+  format: ChartFractionDigits | undefined
 ): string {
   if (share === null) return "–";
   const digits = format?.maximumFractionDigits ?? format?.minimumFractionDigits ?? 0;
@@ -152,7 +153,7 @@ export function shareText(
  * @param format - The share's digits.
  * @returns The fraction digits of the printed percentage.
  */
-export function shareDigits(format: ChartShareFormat | undefined): number {
+export function shareDigits(format: ChartFractionDigits | undefined): number {
   return format?.maximumFractionDigits ?? format?.minimumFractionDigits ?? 0;
 }
 
@@ -219,7 +220,7 @@ export function stackTotal(
 
 /**
  * The slot a fallback keyword selects for one key over the effective window: its first or last
- * reading, its lowest or highest, or the slot that holds `now`.
+ * reading, its lowest or highest, or the slot that holds `now` while the window shows it.
  *
  * @param context - The Root.
  * @param key - A config key.
@@ -237,10 +238,8 @@ export function fallbackSlot(
   if (window === null) return null;
   if (fallback === "now") {
     if (domain.kind !== "time" || now === undefined) return null;
-    const slot = domain.starts.findIndex(
-      (start, index) => start <= now && now < (domain.ends[index] ?? start)
-    );
-    return slot === -1 ? null : slot;
+    const slot = slotOf(domain, now);
+    return slot >= window.first && slot <= window.last ? slot : null;
   }
   let chosen: { slot: number; value: number } | null = null;
   for (let slot = window.first; slot <= window.last; slot += 1) {

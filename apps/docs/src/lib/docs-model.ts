@@ -21,7 +21,7 @@ import type {
   RscStatus,
 } from "@elmeragroup/internal/api-artifacts/model";
 
-import type { ApiSameAs } from "./api-same-as";
+import type { ApiAlias, ApiSameAs } from "./api-same-as";
 
 /**
  * The API artifact model is the generator's (`@elmeragroup/internal`), re-exported so the
@@ -214,8 +214,11 @@ export type DocsComponent = ComponentPageEntry & {
   entry: string;
   /** The page's authored intro, the prose before its first demo, or `""` when it has none. */
   intro: string;
-  /** The page this page repeats whole, such as `chart` for `bar-chart`, when it is an alias. */
-  alias?: string;
+  /**
+   * The page this page repeats whole, such as `chart` for `bar-chart`, when it is an alias. An
+   * alias page has no API artifact and no parts of its own.
+   */
+  alias?: ApiAlias;
   /**
    * The page's RSC status, read from its implementation module's own directive
    * and published by the markdown endpoint.

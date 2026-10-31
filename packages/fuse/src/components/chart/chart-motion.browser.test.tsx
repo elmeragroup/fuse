@@ -12,6 +12,7 @@ import { userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { barBox } from "../../../test/chart/bar-box";
 import { finishedFade, runningFade } from "../../../test/chart/fade";
+import { barLayerBox } from "../../../test/chart/marks";
 import { OCTOBER_RELOAD, october } from "../../../test/chart/month-switch";
 import { MOTION_A, MOTION_B, MOTION_C, MotionChart, oslo } from "../../../test/chart/motion-fixture";
 import type { MotionRow } from "../../../test/chart/motion-fixture";
@@ -64,14 +65,9 @@ function seriesBars(host: HTMLElement, seriesIndex: 0 | 1): Element[] {
   ];
 }
 
-function plotOf(host: HTMLElement): DOMRect {
-  // DOM audit: the bar series layer covers the plot box.
-  return host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect() ?? new DOMRect();
-}
-
 /** Each oracle bar's box, found by its series and its place in the window. */
 function boxesOf(host: HTMLElement, oracle: readonly Fractions[]): Box[] {
-  const plot = plotOf(host);
+  const plot = barLayerBox(host);
   return oracle.map((entry) => {
     const bar = seriesBars(host, entry.series === "p" ? 0 : 1)[entry.position];
     if (bar === undefined) throw new Error(`no bar for ${entry.series} ${String(entry.day)}`);
@@ -81,7 +77,7 @@ function boxesOf(host: HTMLElement, oracle: readonly Fractions[]): Box[] {
 
 /** Whether every oracle bar sits on its oracle box. */
 function settledOn(host: HTMLElement, oracle: readonly Fractions[]): boolean {
-  const plot = plotOf(host);
+  const plot = barLayerBox(host);
   return boxesOf(host, oracle).every((box, index) => {
     const entry = oracle[index];
     return entry !== undefined && near(box, expected(entry, plot));
@@ -201,7 +197,7 @@ describe("marks that move with the bars", () => {
     // DOM audit: reference marks are aria-hidden plot output, so their slots are the only locator.
     const line = host.querySelector('[data-slot="chart-reference-line"] line');
     const area = host.querySelector('[data-slot="chart-reference-area"] rect');
-    const height = plotOf(host).height;
+    const height = barLayerBox(host).height;
     const y = Number(line?.getAttribute("y1"));
     const top = Number(area?.getAttribute("y"));
     return {
@@ -258,7 +254,7 @@ describe("followers on a data update", () => {
     const share = (): number =>
       Number.parseFloat(line?.style.getPropertyValue("--chart-line-top") ?? "") / 100;
     // The line sits on the bar's drawn end, the oracle's share snapped to a whole pixel.
-    const height = plotOf(host).height;
+    const height = barLayerBox(host).height;
     const off = (wanted: number): number => Math.abs(share() - wanted) * height;
     const { from, to } = frames.activeP7.top;
     expect(off(from)).toBeLessThanOrEqual(TOLERANCE);
@@ -298,7 +294,7 @@ describe("a range step", () => {
 
   /** Every bar's box. */
   function all(host: HTMLElement): Box[] {
-    const plot = plotOf(host);
+    const plot = barLayerBox(host);
     // DOM audit: bars are aria-hidden plot output.
     return [...host.querySelectorAll('[data-slot="chart-bar"]')].map((bar) => barBox(bar, plot));
   }
@@ -428,7 +424,7 @@ describe("a labelled reference on a data update", () => {
 
   /** The guide's top edge and the label's bottom edge, in pixels from the plot's top. */
   function edges(host: HTMLElement) {
-    const plot = plotOf(host);
+    const plot = barLayerBox(host);
     // DOM audit: reference marks are aria-hidden plot output, so their slots are the only locator.
     const line = host.querySelector('[data-slot="chart-reference-line"] line');
     const label = host.querySelector('[data-slot="chart-reference-label"]')?.getBoundingClientRect();
@@ -438,7 +434,7 @@ describe("a labelled reference on a data update", () => {
 
   it("moves its label with its guide on every frame as the domain grows from 0–12 to 0–20", async () => {
     const { host, rerender } = renderThemed(referenced(12));
-    expect(plotOf(host).height).toBe(200);
+    expect(barLayerBox(host).height).toBe(200);
     // 6 on 0–12 lies half way down the 200 px plot, and on 0–20 seven tenths of the way down.
     expect(Math.abs(edges(host).guide - 100)).toBeLessThanOrEqual(0.5);
     rerender(referenced(20));
@@ -527,7 +523,7 @@ describe("guides that move with the bars", () => {
       Number(host.querySelector('[data-slot="chart-reference-area"] rect')?.getAttribute("y"));
     const label = host.querySelector<HTMLElement>('[data-slot="chart-reference-label"]');
     if (label === null) throw new Error("no label");
-    const bottom = () => label.getBoundingClientRect().bottom - plotOf(host).top;
+    const bottom = () => label.getBoundingClientRect().bottom - barLayerBox(host).top;
     const rest = 4 + Number.parseFloat(getComputedStyle(label).lineHeight);
     expect(Math.abs(bottom() - 100)).toBeLessThanOrEqual(1);
     rerender(chart(8, "200px", area));
@@ -548,7 +544,7 @@ describe("guides that move with the bars", () => {
 
   /** Each labelled line's drawn top edge and its label's bottom, in the plot's pixels, in mount order. */
   function labelled(host: HTMLElement) {
-    const plot = plotOf(host);
+    const plot = barLayerBox(host);
     // DOM audit: reference marks are aria-hidden plot output, so their slots are the only locator.
     return [...host.querySelectorAll('[data-slot="chart-reference-line"]')].map((reference) => ({
       guide: Number(reference.querySelector("line")?.getAttribute("y1")) - 0.5,
@@ -597,7 +593,7 @@ describe("guides that move with the bars", () => {
     rerender(wide(20, 400));
     for (let count = 0; count < 7; count += 1) await frame();
     rerender(wide(20, 800));
-    expect(plotOf(host).width).toBe(800);
+    expect(barLayerBox(host).width).toBe(800);
     const seen = [tops(host)];
     for (let count = 0; count < 120 && seen.at(-1)?.bar !== 140; count += 1) {
       await frame();
@@ -723,7 +719,7 @@ describe("the row of slot labels while a slot guide departs", () => {
     const line = Number.parseFloat(getComputedStyle(label).lineHeight);
     const sample = () => ({
       inside: !slot.hasAttribute("data-outside"),
-      bottom: label.getBoundingClientRect().bottom - plotOf(host).top,
+      bottom: label.getBoundingClientRect().bottom - barLayerBox(host).top,
     });
     expect(Math.abs(sample().bottom - line)).toBeLessThanOrEqual(0.5);
     rerender(categories(["A", "B"]));

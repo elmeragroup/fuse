@@ -5,8 +5,7 @@
 import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
-import { DESKTOP_VIEWPORT, launchSuiteBrowser, openDemo } from "./demo-page";
-import { docsBaseUrl } from "./docs-server";
+import { DESKTOP_VIEWPORT, launchSuiteBrowser, openDemo, openDemoPage } from "./demo-page";
 
 describe("chart scenario demos in Chromium", () => {
   const browser = launchSuiteBrowser();
@@ -58,13 +57,7 @@ describe("chart scenario demos in Chromium", () => {
       // content. Every chart Root, and every Sparkline at its default 100 % width, must still fill
       // its parent's content box, whatever the demo wraps it in.
       const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, timezoneId: "Europe/Oslo" });
-      page.setDefaultTimeout(20_000);
-      await page.goto(`${docsBaseUrl()}/components/${slug}`, { waitUntil: "load" });
-      await page.waitForFunction(
-        () =>
-          document.querySelectorAll("[data-demo-frame]").length ===
-          document.querySelectorAll("[data-demo-frame][data-demo-hydrated]").length
-      );
+      await openDemoPage(page, slug);
       // DOM audit: chart Roots and Sparklines are the boxes under test, located by their slots.
       const narrow = await page.evaluate(() =>
         [
@@ -107,8 +100,7 @@ describe("chart scenario demos in Chromium", () => {
       );
       expect(narrow).toEqual([]);
       await page.close();
-    },
-    60_000
+    }
   );
 
   it.each(["bar-chart", "line-chart", "area-chart", "chart"])(
@@ -118,13 +110,7 @@ describe("chart scenario demos in Chromium", () => {
       // past the nearest clipping ancestor. With Panels, the surface the pointer and focus use
       // spans from the first plot's top to the last plot's bottom, as on a bare page.
       const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, timezoneId: "Europe/Oslo" });
-      page.setDefaultTimeout(20_000);
-      await page.goto(`${docsBaseUrl()}/components/${slug}`, { waitUntil: "load" });
-      await page.waitForFunction(
-        () =>
-          document.querySelectorAll("[data-demo-frame]").length ===
-          document.querySelectorAll("[data-demo-frame][data-demo-hydrated]").length
-      );
+      await openDemoPage(page, slug);
       // DOM audit: chart Roots, their Panel plots and surfaces are the boxes under test.
       const faults = await page.evaluate(() =>
         [...document.querySelectorAll<HTMLElement>('[data-demo-stage] [data-slot="chart"]')].flatMap(
@@ -165,7 +151,6 @@ describe("chart scenario demos in Chromium", () => {
       );
       expect(faults).toEqual([]);
       await page.close();
-    },
-    60_000
+    }
   );
 });

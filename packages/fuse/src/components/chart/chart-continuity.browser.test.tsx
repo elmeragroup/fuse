@@ -6,6 +6,8 @@
 // a segment's sign, which segment tops its stack, which series stack at all, a custom seam, or a
 // tween still running. Rounded ends, the blocks track and the direction of a role list's gradient
 // count as drawn too, and so does a slot reference line's width when its band grows.
+import { Suspense, use } from "react";
+
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { cdp, userEvent } from "vitest/browser";
@@ -13,6 +15,7 @@ import { cdp, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { barBox } from "../../../test/chart/bar-box";
 import { installFrameClock } from "../../../test/chart/frame-clock";
+import { easedAt } from "../../../test/chart/panel-readers";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -562,6 +565,72 @@ describe("a bar that mounts while its layout's value domain glides", () => {
         const [x, y] = boxesOf(host, 0);
         expect([x?.bottom, y?.bottom], `at ${String(ms)} ms`).toEqual([100, 100]);
       }
+    } finally {
+      clock.restore();
+    }
+  });
+
+  it("leaves the decision to a Panel whose Suspense boundary resolves later (X8, Q1-1)", async () => {
+    // Panel A holds x = 2 under yInclude [0, 4]. Panel B sits in a Suspense boundary. One update
+    // appends y and widens B's yInclude to [-4, 4], which would relay the plot, but B suspends after
+    // it renders, so only A commits. A's x bar then slides from the whole 300 px slot to the first
+    // half on the eased clock, as a data update moves a mark. Once B resolves, B draws its update.
+    const clock = installFrameClock();
+    let release: () => void = () => undefined;
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    function Gate({ promise }: { readonly promise: Promise<void> | null }): null {
+      if (promise !== null) use(promise);
+      return null;
+    }
+    try {
+      const chart = (
+        data: readonly { name: string; a: number; b: number }[],
+        floor: number,
+        promise: Promise<void> | null
+      ) => (
+        <LocaleProvider locale="nb-NO">
+          <div style={{ width: 300 }}>
+            <Chart.Root
+              data-intro="none"
+              data={data}
+              config={{ a: { label: "A", color: "chart-1" }, b: { label: "B", color: "chart-2" } }}
+              xKey="name"
+              style={{ "--chart-plot-height": "200px" }}
+              aria-label="To paneler">
+              <Chart.Panel series={["a"]} yInclude={[0, 4]}>
+                <Chart.Bar dataKey="a" />
+              </Chart.Panel>
+              <Suspense fallback={null}>
+                <Chart.Panel series={["b"]} yInclude={[floor, 4]}>
+                  <Chart.Bar dataKey="b" />
+                  <Gate promise={promise} />
+                </Chart.Panel>
+              </Suspense>
+            </Chart.Root>
+          </div>
+        </LocaleProvider>
+      );
+      const one = [{ name: "x", a: 2, b: 2 }];
+      const two = [...one, { name: "y", a: 1, b: 1 }];
+      const { host, rerender } = renderThemed(chart(one, 0, null));
+      await expect.poll(() => boxesOf(host, 1).length).toBe(1);
+      const width = (series: number) => {
+        const box = boxesOf(host, series)[0];
+        return (box?.right ?? 0) - (box?.left ?? 0);
+      };
+      const from = width(0);
+      const at = clock.now();
+      rerender(chart(two, -4, pending));
+      clock.frameAt(at + 120);
+      const mid = width(0);
+      clock.frameAt(at + 600);
+      const to = width(0);
+      expect(to).toBeLessThan(from);
+      expect(mid).toBeCloseTo(from + (to - from) * easedAt(120), 0);
+      release();
+      await expect.poll(() => boxesOf(host, 1).length).toBe(2);
     } finally {
       clock.restore();
     }

@@ -37,8 +37,8 @@ export type PackedConsumer = {
   readonly dependencies: Readonly<Record<string, string>>;
   /** npm's `--before` instant; one per run, so every consumer resolves the same registry state. */
   readonly cutoff: string;
-  /** Aborts the install and the check when a sibling check fails. */
-  readonly signal: AbortSignal;
+  /** Aborts the install and the check when a sibling check fails. A check with no sibling omits it. */
+  readonly signal?: AbortSignal;
 };
 
 /**

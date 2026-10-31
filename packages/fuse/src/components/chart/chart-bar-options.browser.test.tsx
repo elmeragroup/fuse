@@ -9,6 +9,7 @@ import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { bars } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -16,11 +17,6 @@ import type { ChartIntro, ChartQuality } from "./chart-types";
 import "./chart.css";
 
 const FIVE = ["a", "b", "c", "d", "e"].map((name, index) => ({ name, v: index + 1 }));
-
-function bars(host: HTMLElement): HTMLElement[] {
-  // DOM audit: bars are aria-hidden plot output, so their slots are the only locator.
-  return [...host.querySelectorAll<HTMLElement>('[data-slot="chart-bar"]')];
-}
 
 function chart(intro: ChartIntro) {
   return (

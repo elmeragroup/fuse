@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { commands } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { popupOpen } from "../../../test/chart/marks";
 import "../../../test/pointer-press";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -53,12 +54,6 @@ async function tap(point: readonly [number, number]): Promise<void> {
 function label(): string | null {
   // DOM audit: the tooltip portals out of the host, and its label slot names the active slot.
   return document.querySelector('[data-slot="chart-tooltip-label"]')?.textContent ?? null;
-}
-
-function popupOpen(): boolean {
-  // DOM audit: the popup portals out of the host and carries its own slot, until its fade ends.
-  const popup = document.querySelector('[data-slot="chart-tooltip"]');
-  return popup !== null && !popup.hasAttribute("data-ending-style");
 }
 
 describe("taps", () => {

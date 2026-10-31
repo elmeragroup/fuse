@@ -4,7 +4,7 @@
  * d3-array's rule for 5 ticks. Flat and near-flat extents widen first, because d3 cannot nice a
  * range of zero width. No bound or tick is ever −0.
  */
-import { nice, ticks } from "d3-array";
+import { linearScale, niceScale, scaleTicks } from "./linear-scale";
 
 /** Whether a layout's domain keeps 0. */
 export type Baseline = "zero" | "none";
@@ -28,7 +28,7 @@ export type ValueDomain = {
 };
 
 /** Every value axis aims for 5 ticks, after Recharts' default and the Figma price chart. */
-export const TICK_COUNT = 5;
+const TICK_COUNT = 5;
 
 /**
  * A range narrower than this fraction of its magnitude follows the flat rule. A double carries
@@ -46,15 +46,17 @@ const TINY = 1e-15;
 export const EMPTY_DOMAIN: ValueDomain = { domain: [0, 1], ticks: [0, 0.2, 0.4, 0.6, 0.8, 1] };
 
 /** Turn −0 into 0 and leave every other number alone. */
-export function withoutNegativeZero(value: number): number {
+function withoutNegativeZero(value: number): number {
   return value === 0 ? 0 : value;
 }
 
+/** The nice domain and ticks of an extent, through the scale functions the d3 oracle checks. */
 function niced(lo: number, hi: number): ValueDomain {
-  const [start, stop] = nice(lo, hi, TICK_COUNT);
+  const scale = niceScale(linearScale([lo, hi], [0, 1]), TICK_COUNT);
+  const [start, stop] = scale.domain;
   return {
     domain: [withoutNegativeZero(start), withoutNegativeZero(stop)],
-    ticks: ticks(start, stop, TICK_COUNT).map(withoutNegativeZero),
+    ticks: scaleTicks(scale, TICK_COUNT).map(withoutNegativeZero),
   };
 }
 

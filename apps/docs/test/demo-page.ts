@@ -19,6 +19,20 @@ export async function openDemo(page: Page, slug: string, name: string): Promise<
 }
 
 /**
+ * Navigates `page` to a component page and resolves once every demo on it has hydrated, for a
+ * check that reads the whole page.
+ */
+export async function openDemoPage(page: Page, slug: string): Promise<void> {
+  page.setDefaultTimeout(5000);
+  await page.goto(`${docsBaseUrl()}/components/${slug}`, { waitUntil: "load" });
+  await page.waitForFunction(
+    () =>
+      document.querySelectorAll("[data-demo-frame]").length ===
+      document.querySelectorAll("[data-demo-frame][data-demo-hydrated]").length
+  );
+}
+
+/**
  * Opens one component page for a describe's read-only checks before its first test, and closes it
  * after its last, so the checks share one load. Each check takes its demo with {@link sharedDemo}.
  *

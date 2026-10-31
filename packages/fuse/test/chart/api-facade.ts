@@ -2,7 +2,11 @@
  * The chart entry as the docs API extractor reads it. The extractor in `@elmeragroup/internal`
  * cannot model the type of an ES module namespace, which is how `src/chart.ts` exports `Chart` and
  * its siblings, so the chart pages extract from these plain objects instead. Each holds the same
- * part components under the same keys as its namespace, in the order the pages list them, which `chart-api-facade.test.ts` checks.
+ * part components under the same keys as its namespace, in the order the pages list them, which
+ * `chart-api-facade.test.ts` checks. The extractor can't recover a part's implementation through a
+ * spread of the parts module, so the objects list each part. The cartesian aliases have no
+ * reference of their own, but the extractor fails on any ES module namespace the entry exports, so
+ * each alias still shadows its namespace with `Chart`.
  */
 import { ChartActiveValue, ChartActiveValueLine } from "../../src/components/chart/chart-active-value";
 import { ChartArea } from "../../src/components/chart/chart-area";

@@ -22,7 +22,7 @@ export type CellIssue = {
 };
 
 /** Values above this magnitude count as missing. 1e15 Wh is 1 PWh, and the d3 tick port stays exact there. */
-export const VALUE_LIMIT = 1e15;
+const VALUE_LIMIT = 1e15;
 
 /** What one cell holds before the span and `now` decide a slot with no reading. */
 type Cell =

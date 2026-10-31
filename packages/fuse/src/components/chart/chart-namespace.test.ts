@@ -1,4 +1,3 @@
-/// <reference types="vite/client" />
 import type { ReactElement } from "react";
 
 import { describe, expect, it } from "vitest";
@@ -47,32 +46,6 @@ const SHARED_KEYS = [
   "Empty",
   "Background",
 ] as const;
-
-/**
- * Every chart module that declares a part, keyed by its path. The glob reads the folder, so a new
- * part module joins the cross-checks the moment it exists.
- */
-const MODULES = Object.entries(
-  import.meta.glob<Readonly<Record<string, Part>>>(["./*.tsx", "!./*.test.tsx", "!./*.test-d.tsx"], {
-    eager: true,
-  })
-);
-
-/** The file that declares each part, read from the modules' own exports. */
-const declaringFile = new Map<Part, string>();
-for (const [file, exports] of MODULES) {
-  for (const value of Object.values(exports)) {
-    declaringFile.set(value, file);
-  }
-}
-
-function fileOf(part: Part): string {
-  const file = declaringFile.get(part);
-  if (file === undefined) {
-    throw new Error(`no chart module exports ${displayNameOf(part) ?? "an unnamed part"}`);
-  }
-  return file;
-}
 
 describe("chart namespaces", () => {
   it("hold the part counts of CONTRACT.md section 3", () => {
@@ -125,45 +98,5 @@ describe("chart namespaces", () => {
       }
     }
     expect(misnamed).toEqual([]);
-  });
-
-  // Unit under test: the file layout that the docs `sameAs` rule depends on.
-  // Oracle: the namespace objects. Two members under one key are one component exactly when their
-  // declaring files match.
-  it("makes two members under one key the same component exactly when one file declares both", () => {
-    const disagreements: string[] = [];
-    for (const [leftName, left] of NAMESPACES) {
-      for (const [rightName, right] of NAMESPACES) {
-        if (leftName >= rightName) continue;
-        for (const key of Object.keys(left).filter((candidate) => Object.hasOwn(right, candidate))) {
-          const leftPart = left[key];
-          const rightPart = right[key];
-          if (leftPart === undefined || rightPart === undefined) continue;
-          if ((leftPart === rightPart) !== (fileOf(leftPart) === fileOf(rightPart))) {
-            disagreements.push(`${leftName}.${key} and ${rightName}.${key}`);
-          }
-        }
-      }
-    }
-    expect(disagreements).toEqual([]);
-  });
-
-  it("keeps every part of one file in the same set of namespaces, so a shared file holds no family part", () => {
-    const mixed: string[] = [];
-    for (const [file, exports] of MODULES) {
-      const memberships = new Set(
-        Object.values(exports)
-          .filter((value) => declaringFile.get(value) === file)
-          .map((value) =>
-            NAMESPACES.filter(([, namespace]) => Object.values(namespace).some((member) => member === value))
-              .map(([name]) => name)
-              .join(",")
-          )
-          .filter((membership) => membership !== "")
-      );
-      if (memberships.size > 1) mixed.push(`${file}: ${[...memberships].join(" | ")}`);
-    }
-    expect(MODULES.map(([file]) => file)).toContain("./pie-chart-center.tsx");
-    expect(mixed).toEqual([]);
   });
 });

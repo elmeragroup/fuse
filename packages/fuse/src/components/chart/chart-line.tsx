@@ -112,7 +112,7 @@ export function ChartLine({
       draw: drawLine,
     });
   });
-  useLayoutEffect(() => () => paths.delete(seriesIndex, "line"), [paths, seriesIndex]);
+  useLayoutEffect(() => () => paths.delete(seriesIndex, "line", memoryRef), [paths, seriesIndex, memoryRef]);
   const resting = useMemo(
     () => (look === null ? null : linePaths(rest, topology, placeOf(look))),
     [look, rest, topology]
@@ -127,15 +127,15 @@ export function ChartLine({
       aria-hidden="true"
       className={className}
       style={{
-        "--chart-series-paint": state.paint,
+        "--chart-series-paint": state.paint.base,
         "--chart-series": seriesIndex,
-        "--_paint-server": hasPathPaint(state.color) ? `url(#${prefix}-paint)` : undefined,
+        "--_paint-server": hasPathPaint(state.paint) ? `url(#${prefix}-paint)` : undefined,
         ...style,
       }}>
       {frame === null || series === undefined || resting === null ? null : (
         <>
           <defs>
-            <PathPaint id={`${prefix}-paint`} series={series} color={state.color} frame={frame} />
+            <PathPaint id={`${prefix}-paint`} paint={state.paint} frame={frame} />
           </defs>
           <g ref={markRef}>
             <clipPath id={`${prefix}-solid`} data-part="solid-clip" />

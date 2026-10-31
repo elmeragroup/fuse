@@ -143,7 +143,10 @@ export function SeriesPaths({
       draw: drawColumns,
     });
   });
-  useLayoutEffect(() => () => paths.delete(series.seriesIndex, "columns"), [paths, series.seriesIndex]);
+  useLayoutEffect(
+    () => () => paths.delete(series.seriesIndex, "columns", memoryRef),
+    [paths, series.seriesIndex]
+  );
   const resting = useMemo(
     () => columnsDrawing(frame, topology, columns.values),
     [frame, topology, columns.values]

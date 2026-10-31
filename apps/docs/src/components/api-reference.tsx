@@ -4,7 +4,6 @@ import type { ReactElement, ReactNode } from "react";
 import { tv } from "tailwind-variants";
 
 import { API_FUNCTIONS, API_SAME_AS } from "../generated/api-reference-extras";
-import { namespaceOf } from "../lib/api-same-as";
 import { readComponentApi } from "../lib/api-source";
 import { toPartView } from "../lib/api-view";
 import type { ApiPartView } from "../lib/api-view";
@@ -106,26 +105,24 @@ function PartHeader({ partView, badge }: { partView: ApiPartView; badge?: ReactN
  * down a column.
  */
 export function ApiReference({ slug }: ApiReferenceProps): ReactElement {
-  const api = readComponentApi(slug);
   const shared = API_SAME_AS[slug];
-  const functions = API_FUNCTIONS[slug];
-  const [first] = api.parts;
-  const firstOwner = first === undefined ? undefined : shared?.parts[first.name];
-
   const alias = shared?.alias ?? null;
-  if (alias !== null && first !== undefined && firstOwner !== undefined) {
+  // An alias page has no artifact of its own, so it reads none.
+  if (alias !== null) {
     return (
       <section aria-labelledby={API_SECTION_ID}>
         <DocsSectionHeading id={API_SECTION_ID}>API reference</DocsSectionHeading>
         <SameAsLine
-          name={namespaceOf(first.name)}
-          href={`${componentHref(alias)}#${API_SECTION_ID}`}
-          owner={namespaceOf(firstOwner.name)}
+          name={alias.name}
+          href={`${componentHref(alias.slug)}#${API_SECTION_ID}`}
+          owner={alias.owner}
           suffix=" under another name."
         />
       </section>
     );
   }
+  const api = readComponentApi(slug);
+  const functions = API_FUNCTIONS[slug];
 
   return (
     <section aria-labelledby={API_SECTION_ID}>

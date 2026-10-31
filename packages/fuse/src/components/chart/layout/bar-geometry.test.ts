@@ -58,7 +58,15 @@ function rectsOf(d: string): PlotRect[] {
  * and the drawn fill, one rectangle per reading with length, in slot order.
  */
 function pathForm(chart: CartesianModel, series: SeriesModel, frame: PlotFrame, sub: SubBand = WHOLE_BAND) {
-  const paint = { key: series.key, color: "chart-1", bins: undefined, base: "", stops: undefined } as const;
+  const paint = {
+    key: series.key,
+    color: "chart-1",
+    bins: undefined,
+    edges: [],
+    base: "",
+    stops: undefined,
+    ramp: undefined,
+  } as const;
   const update = {
     kind: "initial",
     keys: [],

@@ -32,7 +32,13 @@ import { ChartSeriesLabel, ChartSwatch } from "./chart-series";
 import { pointerSlot } from "./chart-surface";
 import { slotLabel } from "./chart-text";
 import { ChartTooltipTotal } from "./chart-tooltip-total";
-import type { ChartDomProps, ChartLayerProps, ChartShareFormat, ValueFormat, XFormat } from "./chart-types";
+import type {
+  ChartDomProps,
+  ChartLayerProps,
+  ChartFractionDigits,
+  ValueFormat,
+  XFormat,
+} from "./chart-types";
 import { WHOLE_BAND, barSpan, centreOf, frameRect, optionBand, snapY, valueAt } from "./layout/plot-frame";
 import { tooltipSideOffset } from "./layout/tooltip-place";
 
@@ -92,7 +98,7 @@ export type ChartTooltipShareProps = ChartDomProps<"span"> & {
   /** The series to print. Inside a TooltipItems row the row supplies it. */
   dataKey?: string;
   /** The percentage digits. */
-  format?: ChartShareFormat;
+  format?: ChartFractionDigits;
 };
 
 /**
@@ -103,7 +109,7 @@ export type ChartTooltipShareProps = ChartDomProps<"span"> & {
 const tooltipPopup = tv({
   // DESIGN-NOTES "Tooltips" gives the chart popup an 8 px radius and 8 px of block padding. The
   // popup is never taller than the room Base UI measures on its side, and scrolls past it.
-  base: "max-h-[calc(100dvh-16px)] overflow-y-auto rounded-lg py-2 [--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-md))] data-[input=touch]:pointer-events-none",
+  base: "max-h-[calc(100dvh-16px)] overflow-y-auto overscroll-contain rounded-lg py-2 [--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-md))] data-[input=touch]:not-data-scrolls:pointer-events-none",
   variants: {
     variant: {
       default: "",
@@ -111,6 +117,19 @@ const tooltipPopup = tv({
     },
   },
 });
+
+/**
+ * Mark the popup with `data-scrolls` while its content overflows it. Under touch the popup lets
+ * taps and scrubs through to the plot, except while it scrolls, when it takes the finger so a drag
+ * scrolls it. Content past the cap leaves the popup's size alone, so its own resizes are enough.
+ */
+function watchOverflow(popup: HTMLDivElement | null): (() => void) | undefined {
+  if (popup === null) return undefined;
+  const mark = () => popup.toggleAttribute("data-scrolls", popup.scrollHeight > popup.clientHeight);
+  const observer = new ResizeObserver(mark);
+  observer.observe(popup);
+  return () => observer.disconnect();
+}
 
 /** A virtual anchor over the active slot, measured from the plot surface at position time. */
 type Anchor = { getBoundingClientRect: () => DOMRect };
@@ -120,9 +139,10 @@ type Anchor = { getBoundingClientRect: () => DOMRect };
  * slot's own column, above the slot and centred, and flips below the plot when the viewport has no
  * room above. On a horizontal chart it sits above or below the active row. When neither side has
  * room, it sits beside the column, and when no side has room, it overlays the plot. It touches its
- * anchor and stays inside the viewport, scrolling when its content is taller. It may leave the chart. A pointer
- * that moves straight up or down stays on the slot, so it reaches the popup with the content
- * unchanged. The popup stays while the pointer is on the plot or inside the popup and while the
+ * anchor and stays inside the viewport, scrolling when its content is taller. Touch passes through
+ * the popup to the plot, except on a popup that scrolls, where a drag scrolls it and a tap dismisses
+ * it. It may leave the chart. A pointer that moves straight up or down stays on the slot, so it
+ * reaches the popup with the content unchanged. The popup stays while the pointer is on the plot or inside the popup and while the
  * option has focus. Escape closes it and keeps the reader's place. It is hidden from screen
  * readers, which read the same values from the plot's option.
  *
@@ -249,6 +269,7 @@ function ChartTooltipBody({
             data-variant={variant}
             data-input={touchInput ? "touch" : undefined}
             aria-hidden="true"
+            ref={watchOverflow}
             className={cn(
               overlayPopupSurfaceClass,
               tooltipShellClass,
@@ -257,6 +278,11 @@ function ChartTooltipBody({
               className
             )}
             style={style}
+            onClick={(event) => {
+              // A popup that scrolls takes touch, so a tap on it, which never scrolled, takes the
+              // one dismissal a tap beside the chart would.
+              if (event.currentTarget.dataset.input === "touch") store.dismiss();
+            }}
             onPointerEnter={(event) => {
               const from = store.pointer();
               // The pointer must come from the active slot and move along the axis that leads to

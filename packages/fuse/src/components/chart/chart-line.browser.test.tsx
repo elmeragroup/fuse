@@ -3,9 +3,10 @@
 // out by hand from the fixture values on a 300 by 200 px plot, the device pixel grid, and the eased
 // progress of motion-frames.json, which .scratch/charts-v1/tools/l05-oracles/motion_fixture.py
 // writes by hand from cubic-bezier(0, 0.7, 0.5, 1). Every frame here runs on a hand-driven clock.
-import { Profiler } from "react";
+import { Profiler, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
+import { flushSync } from "react-dom";
 import { afterEach, describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
@@ -666,6 +667,63 @@ describe("Line and Area motion", () => {
     expect([centreOf(marker)[1], centreOf(active)[1]]).toEqual([y, y]);
     clock.frameAt(start + 600);
     expect([centreOf(marker)[1], centreOf(active)[1]]).toEqual([120, 120]);
+  });
+
+  it("keeps an ActiveDot on the Area's path after the Line beside it unmounts (X9, Q1-2)", () => {
+    // 2,400 point slots on the 300 by 200 px plot over [0, 100]: column 150 holds slots 1,200 to
+    // 1,207, read 10, 50, 0, 30, 20, 20, 20, 20. M4 keeps the first, the highest, the lowest and the
+    // last, so c1203 draws no vertex, and the path passes it a fifth of the way from 0 at c1202 to
+    // 20 at c1207: 4, at y = 200 - 4 × 2 = 192. The reading itself, 30, sits at y = 140.
+    const COLUMN = [10, 50, 0, 30, 20, 20, 20, 20];
+    const rows = named(Array.from({ length: 2400 }, (_, slot) => COLUMN[slot - 1200] ?? 20));
+    let hideLine = (): void => undefined;
+    function ToggledLine(): ReactNode {
+      const [shown, setShown] = useState(true);
+      useEffect(() => {
+        hideLine = () => setShown(false);
+      }, []);
+      return shown ? <Chart.Line dataKey="v" curve="linear" /> : null;
+    }
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: WIDTH }}>
+          <Chart.Root
+            data={rows}
+            config={CONFIG}
+            xKey="name"
+            xScale="point"
+            yInclude={[0, 100]}
+            data-intro="none"
+            aria-label="Tett">
+            <Chart.Area dataKey="v" curve="linear" />
+            <ToggledLine />
+            <Chart.ActiveDot dataKey="v" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: the listbox is the plot's pointer surface; the active dot is aria-hidden output.
+    const surface = host.querySelector<HTMLElement>('[role="listbox"]');
+    const point = (slot: number) => {
+      const box = surface?.getBoundingClientRect() ?? new DOMRect();
+      surface?.dispatchEvent(
+        new PointerEvent("pointermove", {
+          bubbles: true,
+          clientX: box.left + (slot * WIDTH) / 2399,
+          clientY: box.top + HEIGHT / 2,
+          pointerType: "mouse",
+        })
+      );
+    };
+    const activeY = () =>
+      centreOf(host.querySelector('[data-slot="chart-active-dot"] > [data-slot="chart-dot"]'))[1];
+    point(1203);
+    expect(activeY()).toBe(192);
+    // Only the Line's own component renders, so the Area places nothing new.
+    flushSync(hideLine);
+    point(1100);
+    point(1203);
+    expect(activeY()).toBe(192);
   });
 
   it("keeps dots, the marker and its pill on their vertices in every frame, with no React commit", () => {

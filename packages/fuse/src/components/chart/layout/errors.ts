@@ -21,6 +21,8 @@ export type ChartCompositionRule =
   | "nested-panel"
   | "horizontal-panels"
   | "series-in-two-panels"
+  | "stack-across-panels"
+  | "scale-colour-on-stack"
   | "series-not-in-panel"
   | "key-outside-panels"
   | "part-outside-panel";

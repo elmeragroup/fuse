@@ -9,16 +9,16 @@
  */
 import { createContext, use, useLayoutEffect } from "react";
 
-import type { SupportedLocale } from "../../intl/locale-context";
 import type { ChartFollowers } from "./chart-followers";
 import type { ChartLabels } from "./chart-labels";
 import type { ChartMotion, FrameOwner } from "./chart-motion";
 import type { ChartPaths } from "./chart-paths";
 import type { ChartStore, EmphasisEntry } from "./chart-store";
 import type { TextContext } from "./chart-text";
-import type { ChartConfig, ChartIntro, ChartRow, ChartSelectionChangeReason, XFormat } from "./chart-types";
-import type { CartesianModel, LayoutInput } from "./layout/cartesian-model";
+import type { ChartConfig, ChartIntro, ChartRow, ChartSelectionChangeReason } from "./chart-types";
+import type { LayoutInput } from "./layout/cartesian-model";
 import { ChartCompositionError } from "./layout/errors";
+import type { ChartDataRule, ChartHintRule } from "./layout/errors";
 
 export { ChartPendingRootContext } from "./chart-pending-root";
 import type { ValueDomain } from "./layout/value-domain";
@@ -53,9 +53,9 @@ export type ChartUpdate = {
 };
 
 /**
- * The decisions the Panels add to a data update while they render. Root sees a Panel's inputs only
- * once it registers, after the marks place, so each Panel, which computes its domain during render,
- * decides whether the update moves that domain, before any mark asks how to place.
+ * The decisions the Panels add to a data update as they commit. Root sees a Panel's inputs only
+ * once it registers, after the marks place, so each Panel decides whether the update moves its
+ * domain in an insertion effect, which runs before any mark's layout effect asks how to place.
  */
 export type LayoutReports = {
   /** Whether a Panel relays the plot, which snaps every mark of the Root with Root's own decision. */
@@ -65,7 +65,7 @@ export type LayoutReports = {
 };
 
 /**
- * Decide, for a Panel while it renders, whether a data update moves its value domain. A moved
+ * Decide, for a Panel as it commits, whether a data update moves its value domain. A moved
  * domain marks its keys as gliding, and a moved or still gliding domain under which the update
  * mounts a bar relays the plot, as `relaysPlot` rules for Root's default layout.
  *
@@ -90,10 +90,6 @@ export function reportLayoutDomain(
 
 /** What every cartesian part reads from Root. */
 export type ChartRootContextValue = TextContext & {
-  readonly config: ChartConfig;
-  readonly locale: SupportedLocale;
-  readonly model: CartesianModel;
-  readonly xFormat: XFormat | undefined;
   readonly xScale: "band" | "point";
   readonly orientation: "vertical" | "horizontal";
   readonly stackOffset: "diverging" | "expand";
@@ -115,8 +111,8 @@ export type ChartRootContextValue = TextContext & {
   readonly root: () => HTMLElement | null;
   /** Highlight a series through Root's attributes with no React render, or clear it with null. */
   readonly highlight: (key: string | null) => void;
-  /** Warn once per Root and rule in production, as a data rule's fallback does. */
-  readonly warnOnce: (rule: string, message: string) => void;
+  /** Warn once per Root and rule: a data rule's production fallback, or a development hint. */
+  readonly warnOnce: (rule: ChartDataRule | ChartHintRule, message: string) => void;
   /** Root's `data`, which the Table's extra columns read. */
   readonly rows: readonly ChartRow[];
   /** Root's `data-intro`, the entrance wipe origin. */

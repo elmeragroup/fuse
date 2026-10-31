@@ -3,12 +3,11 @@ import type { ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
 
-import { readDemoSource } from "../lib/demo-source";
+import { demoSourceHref, readDemoSource } from "../lib/demo-source";
 import type { DocsRouteSection } from "../lib/docs-route-files";
 import { DemoHydrationMarker } from "./demo-hydration-marker";
 import { DemoStage } from "./demo-stage";
 import { DemoTabs } from "./demo-tabs";
-import { highlightSource } from "./docs-code-block";
 import { RetryBoundary } from "./retry-boundary";
 
 type DemoFrameProps = {
@@ -42,11 +41,11 @@ const { root, heading } = demoFrame();
  * it and open it in a Sheet. The footer switches between the views.
  *
  * A server component, so the source comes from a read of the demo file during prerendering rather
- * than from generated data threaded through the page, highlighted here by the docs' one
- * highlighter. The chrome that holds state, the view switch and the Sheet, is the client
- * `DemoTabs`, which shows the highlighted markup once the Code view opens, and only the stage
- * follows the preview theme (`DemoStage`). The heading keeps its level and id inside `Frame.Title`, so the TOC and screen
- * readers find the demo as before.
+ * than from generated data threaded through the page. The page carries it as plain text. The
+ * docs' one highlighter marks it up in the prerendered `/demo-source` route, which the client
+ * `DemoTabs` fetches the first time its Code view shows. `DemoTabs` holds the view switch and the
+ * Sheet, and only the stage follows the preview theme (`DemoStage`). The heading keeps its level
+ * and id inside `Frame.Title`, so the TOC and screen readers find the demo as before.
  *
  * A demo that reads the clock while it renders cannot prerender: React Aria's date components
  * build their dates on `new Date()`. The boundary keeps such a demo out of the static HTML, and
@@ -85,7 +84,7 @@ export function DemoFrame({
           </DemoStage>
         }
         sourceText={demo.source}
-        sourceHtml={highlightSource(demo.source)}
+        sourceHref={demoSourceHref({ section, slug, file })}
       />
     </section>
   );

@@ -11,9 +11,9 @@
  * more, which draws its tick or its box and no column, so decimation never drops an annotation.
  */
 import { missingTickAt } from "./chart-bar-draw";
-import type { SeriesPaint } from "./chart-bar-draw";
 import type { ChartRootContextValue } from "./chart-context";
 import type { MarkValues, ValueAxis } from "./chart-motion";
+import type { SeriesPaint } from "./chart-paint";
 import { stepRole } from "./chart-paint";
 import type { PathKind } from "./chart-path-draw";
 import { bucketColumns, rectsPath } from "./layout/bar-geometry";

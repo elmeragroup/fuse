@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { cdp } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { popupOpen } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -62,12 +63,6 @@ function barCentre(host: HTMLElement, index: number): TouchPoint {
 function tooltipLabel(): string | null {
   // DOM audit: the tooltip portals out of the host, and its label slot names the active slot.
   return document.querySelector('[data-slot="chart-tooltip-label"]')?.textContent ?? null;
-}
-
-/** Whether the tooltip popup shows, which Base UI unmounts once it closes. */
-function popupOpen(): boolean {
-  // DOM audit: the popup portals out of the host and carries its own slot.
-  return document.querySelector('[data-slot="chart-tooltip"]') !== null;
 }
 
 function active(host: HTMLElement): boolean {
@@ -150,5 +145,58 @@ describe("touch", () => {
     await expect.poll(() => pinned(host)).toBe(false);
     await expect.poll(popupOpen).toBe(false);
     expect(active(host)).toBe(false);
+  });
+});
+
+describe("a pinned popup taller than the viewport (X4)", () => {
+  function TallChart() {
+    return (
+      <div style={{ width: 400 }}>
+        <LocaleProvider locale="nb-NO">
+          <Chart.Root
+            data={ROWS}
+            config={{ kwh: { label: "Forbruk", color: "chart-1" } }}
+            xKey="day"
+            aria-label="Forbruk per dag">
+            <Chart.Bar dataKey="kwh" />
+            <Chart.Tooltip>
+              <Chart.TooltipLabel />
+              {/* Content twice the 896 px viewport's height, so the popup scrolls. */}
+              <div style={{ height: 1800 }} />
+            </Chart.Tooltip>
+          </Chart.Root>
+        </LocaleProvider>
+      </div>
+    );
+  }
+
+  function popup(): HTMLElement {
+    // DOM audit: the popup portals out of the host and carries its own slot.
+    const found = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
+    if (found === null) throw new Error("no popup");
+    return found;
+  }
+
+  it("scrolls under a drag, then takes the dismissal on a tap", async () => {
+    const { host } = renderThemed(<TallChart />);
+    const point = barCentre(host, 2);
+    await touch("touchStart", point);
+    await touch("touchEnd");
+    await expect.poll(() => pinned(host)).toBe(true);
+    // The popup stops at the viewport's height, less 8 px each side.
+    expect(popup().clientHeight).toBeLessThanOrEqual(896 - 16);
+    const box = popup().getBoundingClientRect();
+    const x = box.left + box.width / 2;
+    const from = box.top + box.height * 0.75;
+    await touch("touchStart", { x, y: from });
+    for (const step of [1, 2, 3, 4, 5, 6]) await touch("touchMove", { x, y: from - step * 50 });
+    await touch("touchEnd");
+    await expect.poll(() => popup().scrollTop).toBeGreaterThan(100);
+    expect(pinned(host)).toBe(true);
+    expect(tooltipLabel()).toBe("onsdag");
+    await touch("touchStart", { x, y: box.top + box.height / 2 });
+    await touch("touchEnd");
+    await expect.poll(popupOpen).toBe(false);
+    expect(pinned(host)).toBe(false);
   });
 });

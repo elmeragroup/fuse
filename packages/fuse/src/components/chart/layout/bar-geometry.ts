@@ -13,7 +13,7 @@ import type { Extent } from "./stack";
 import { slotCount } from "./x-domain";
 
 /** Above this many domain slots, with `period` included, a Bar draws one path per series. */
-export const BAR_LIMIT = 100;
+const BAR_LIMIT = 100;
 
 /**
  * Which form a Bar draws in. The count covers the whole domain, so a brush never switches it.

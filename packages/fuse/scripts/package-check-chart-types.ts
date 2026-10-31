@@ -79,7 +79,6 @@ const files = caseFiles();
 if (files.length === 0) {
   fail("No chart type tests to run against the tarball");
 }
-const controller = new AbortController();
 try {
   const runs = await withPackedConsumer(
     {
@@ -95,7 +94,6 @@ try {
         vitest: catalogVersion(catalog, "vitest"),
       },
       cutoff: releaseAgeCutoff(new Date()),
-      signal: controller.signal,
     },
     async (consumer) => {
       mkdirSync(join(consumer, "cases"));
@@ -113,7 +111,7 @@ try {
           await runCommandAsync(
             process.execPath,
             [join(consumer, "node_modules", compiler, "bin/tsc"), "--noEmit", "-p", project],
-            { cwd: consumer, timeoutMs: 180_000, signal: controller.signal }
+            { cwd: consumer, timeoutMs: 180_000 }
           );
           results.push(`TypeScript ${version} ${project}`);
         }

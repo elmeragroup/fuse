@@ -22,4 +22,13 @@ describe("DataTable date cells in this engine", () => {
   ] as const)("writes %s %s dates with short times as the server does", (locale, dateStyle, expected) => {
     expect(formatDateCell(locale, PLACED, { dateStyle, timeStyle: "short", timeZone: "UTC" })).toBe(expected);
   });
+
+  // CLDR 48: en `MMM d, y` joined to `h:mm a` by the medium `{1}, {0}`, where WebKit's older data
+  // writes `at`; sv `d MMMM y` joined to `HH:mm` by the long `{1} 'kl'. {0}`, which WebKit leaves out.
+  it.each([
+    ["en-US", "medium", "Sep\u00a030,\u00a02026,\u00a02:05\u00a0PM"],
+    ["sv-SE", "long", "30\u00a0september\u00a02026\u00a0kl.\u00a014:05"],
+  ] as const)("joins %s %s dates to short times with CLDR 48's join", (locale, dateStyle, expected) => {
+    expect(formatDateCell(locale, PLACED, { dateStyle, timeStyle: "short", timeZone: "UTC" })).toBe(expected);
+  });
 });

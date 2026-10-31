@@ -250,8 +250,26 @@ function retargeted(tween: Tween, drawn: MarkValues, target: MarkValues, eased: 
  */
 export function createChartMotion(host: MotionHost, reducedAtStart = false): ChartMotion {
   const marks = new Map<string, Mark>();
-  // The mark each anchor names, such as a bar at its series and slot, which a follower can join.
-  const anchors = new Map<string, string>();
+  // The marks each anchor names, such as a bar at its series and slot, which a follower can join.
+  // A Line and an Area on one series share an anchor, so each anchor lists its marks, the latest
+  // to place last, and a follower joins the latest mark still mounted.
+  const anchors = new Map<string, string[]>();
+  // The anchor each mark last placed under.
+  const anchorOf = new Map<string, string>();
+  const leave = (id: string): void => {
+    const anchor = anchorOf.get(id);
+    if (anchor === undefined) return;
+    anchorOf.delete(id);
+    const named = anchors.get(anchor)?.filter((other) => other !== id) ?? [];
+    if (named.length === 0) anchors.delete(anchor);
+    else anchors.set(anchor, named);
+  };
+  const name = (anchor: string, id: string): void => {
+    if (anchors.get(anchor)?.at(-1) === id) return;
+    leave(id);
+    anchors.set(anchor, [...(anchors.get(anchor) ?? []), id]);
+    anchorOf.set(id, anchor);
+  };
   let handle: number | null = null;
   let reduced = reducedAtStart;
   // The commit's instant holds until the next frame or the end of the task, so every placement of
@@ -359,13 +377,13 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
   return {
     place(id, target, write, placement, info: MarkInfo = {}) {
       const { axes = [], anchor, owner = ANY_FRAME } = info;
-      if (anchor !== undefined) anchors.set(anchor, id);
+      if (anchor !== undefined) name(anchor, id);
       if (placement.kind === "join") {
         // A follower draws from the marks at its anchors in every frame, each on its own clock, so
         // they draw alike. Its rest is theirs where its leads read it, which reduced motion keeps,
         // as it changes only the timing. A lead that never placed leaves it on its own target.
         const leads = placement.leads.map((lead) => {
-          const leadId = anchors.get(lead.anchor) ?? "";
+          const leadId = anchors.get(lead.anchor)?.at(-1) ?? "";
           return { lead, id: leadId, mark: marks.get(leadId) };
         });
         const found = leads.flatMap(({ lead, id, mark }) => (mark === undefined ? [] : [{ lead, id, mark }]));
@@ -510,7 +528,7 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
     },
     forget(id) {
       marks.delete(id);
-      for (const [anchor, named] of anchors) if (named === id) anchors.delete(anchor);
+      leave(id);
       if (handle !== null && ![...marks.values()].some((mark) => mark.tween !== null)) {
         host.cancelFrame(handle);
         handle = null;

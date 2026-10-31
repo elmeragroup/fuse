@@ -24,9 +24,6 @@ function markForeground(fill: string): string {
   const mark = Oklch.toSrgb(tokenOklch(fill));
   const white = getOrThrow(Wcag.contrastRatio(WHITE_SRGB, mark));
   const dark = getOrThrow(Wcag.contrastRatio(NEUTRAL_950_SRGB, mark));
-  // No `oklch()` fill measures white and neutral 950 exactly equal, so this boundary mutant is
-  // equivalent.
-  // Stryker disable next-line EqualityOperator
   const [text, ratio] = dark > white ? [NEUTRAL_950, dark] : [WHITE, white];
   if (ratio < TEXT_FLOOR) {
     throw new Error(`Neither white nor neutral 950 reaches ${TEXT_FLOOR}:1 on the chart mark ${fill}`);

@@ -13,6 +13,7 @@ import "../../../dist/styles.css";
 import { barBox } from "../../../test/chart/bar-box";
 import type { BarBox } from "../../../test/chart/bar-box";
 import { installFrameClock } from "../../../test/chart/frame-clock";
+import { barLayerBox, bars } from "../../../test/chart/marks";
 import frames from "../../../test/chart/motion-frames.json" with { type: "json" };
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -28,20 +29,8 @@ const TWO = {
   b: { label: "B", color: "chart-2" },
 } as const satisfies ChartConfig;
 
-function bars(host: HTMLElement, series?: number): Element[] {
-  const scope =
-    series === undefined ? "" : `[data-slot="chart-bar-series"][data-series="${String(series)}"] `;
-  // DOM audit: bars are aria-hidden plot output, so their slots are the only locator.
-  return [...host.querySelectorAll(`${scope}[data-slot="chart-bar"]`)];
-}
-
-function plotOf(host: HTMLElement): DOMRect {
-  // DOM audit: the bar series box is the plot box the clip-paths resolve against.
-  return host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect() ?? new DOMRect();
-}
-
 function boxes(host: HTMLElement, series?: number): BarBox[] {
-  const plot = plotOf(host);
+  const plot = barLayerBox(host);
   return bars(host, series).map((bar) => barBox(bar, plot));
 }
 
@@ -190,7 +179,7 @@ describe("bars in a band", () => {
           host
             .querySelector<HTMLElement>('[data-slot="chart-active-value"]:not([data-outgoing])')
             ?.style.getPropertyValue("--chart-value-at") ?? ""
-        ) * plotOf(host).width;
+        ) * barLayerBox(host).width;
       const [bar] = boxes(host, 0);
       const middle = ((bar?.left ?? 0) + (bar?.right ?? 0)) / 2;
       expect(Math.abs(middle - 93.25)).toBeLessThanOrEqual(0.5);
@@ -340,7 +329,7 @@ describe("bars denser than the device pixels", () => {
         </div>
       </LocaleProvider>
     );
-    expect(plotOf(host).width).toBe(400);
+    expect(barLayerBox(host).width).toBe(400);
     for (const series of [0, 1]) {
       const drawn = boxes(host, series);
       expect(drawn).toHaveLength(100);
@@ -734,7 +723,7 @@ describe("default plot heights", () => {
         </div>
       </LocaleProvider>
     );
-    const height = plotOf(host).height;
+    const height = barLayerBox(host).height;
     expect(height).toBeGreaterThanOrEqual(183);
     expect(height).toBeLessThanOrEqual(220);
   });
@@ -754,7 +743,7 @@ describe("default plot heights", () => {
         </Chart.Root>
       </LocaleProvider>
     );
-    expect(plotOf(host).height).toBe(160);
+    expect(barLayerBox(host).height).toBe(160);
   });
 
   it("gives the horizontal category axis the width of its longest label", () => {
@@ -782,7 +771,7 @@ describe("default plot heights", () => {
     // Every label sits whole inside the root and ends left of the plot.
     for (const tick of ticks) {
       expect(tick.left).toBeGreaterThanOrEqual(root.left - 0.5);
-      expect(tick.right).toBeLessThanOrEqual(plotOf(host).left + 0.5);
+      expect(tick.right).toBeLessThanOrEqual(barLayerBox(host).left + 0.5);
     }
   });
 });

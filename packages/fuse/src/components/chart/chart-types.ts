@@ -8,7 +8,7 @@ import type { useRender } from "@base-ui/react/use-render";
 
 import type { FormattedText } from "./format/formatted-text";
 import type { Interval, TimePreset } from "./format/time-format";
-import type { ChartFractionDigits, ValueFormat } from "./format/value-format";
+import type { ValueFormat } from "./format/value-format";
 
 export type { FormattedText } from "./format/formatted-text";
 export type { Interval, TimePreset } from "./format/time-format";
@@ -186,7 +186,9 @@ export type ChartRole =
 
 /**
  * A scale, whose colour follows the value. Root bins each value into the scale's 7 steps. A bar
- * paints its step, and a line or area paints a vertical gradient by value.
+ * paints its step, and a line or area paints a gradient along the value axis, so a line or area
+ * takes a scale only where it draws its own values. On a stacked series, or under
+ * `stackOffset="expand"`, `Chart.Line` and `Chart.Area` throw `scale-colour-on-stack`.
  *
  * @beta
  */
@@ -224,13 +226,6 @@ export type ChartPolarColor = ChartPolarRole | readonly [ChartPolarRole, ChartPo
  * @beta
  */
 export type XFormat = TimePreset | Omit<Intl.DateTimeFormatOptions, "timeZone" | "timeZoneName">;
-
-/**
- * A share always prints as a percentage, and only its digits change.
- *
- * @beta
- */
-export type ChartShareFormat = ChartFractionDigits;
 
 /**
  * What a chart knows about one series, or about one category in pie and radial charts.
@@ -636,7 +631,7 @@ export type ChartCategoryConfigCheck<TConfig, TCategory> = (string extends TCate
  * and which one never changes a count.
  *
  * @template U - The union to shrink.
- * @beta
+ * @internal
  */
 export type ChartWithoutOne<U> = Exclude<
   U,
@@ -653,7 +648,7 @@ export type ChartWithoutOne<U> = Exclude<
  * rather than by recursion, because the docs extractor walks a recursive alias without end.
  *
  * @template U - The union to count.
- * @beta
+ * @internal
  */
 export type ChartHasFiveKeys<U> = [U] extends [never]
   ? false

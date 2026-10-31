@@ -5,16 +5,16 @@
  * start to the next day, month or year must list them too. The coarse judges group one list's slots
  * by the slots of a coarser list, which CONTRACT section 8.8 counts by instants in the zone.
  */
+import { ZONES } from "../../format/fixtures/judgement";
+import type { Judgement } from "../../format/fixtures/judgement";
 import slots from "../../format/fixtures/slots.json" with { type: "json" };
 import type { Interval } from "../../format/time-format";
 import { nextSlotStart } from "../../format/time-format";
 import { coarseSlots } from "../coarse-slots";
 import { placeTimeRows } from "../x-domain";
 
-/** One comparison. */
-export type SlotJudgement = { readonly name: string; readonly actual: unknown; readonly expected: unknown };
-
-const ZONES = ["Europe/Oslo", "Europe/Stockholm", "Europe/Helsinki"] as const;
+/** One comparison of slot starts or slot indexes. */
+type SlotJudgement = Judgement<number>;
 
 type Lists = {
   readonly [zone: string]: { readonly [key: string]: { readonly utc_start: readonly string[] } };

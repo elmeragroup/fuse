@@ -9,15 +9,15 @@ import { useId, useMemo, useRef, useState } from "react";
 
 import type { ChartLayoutContextValue, ChartRootContextValue } from "./chart-context";
 import type { ValueAxis } from "./chart-motion";
-import { stepRole } from "./chart-paint";
+import { seriesPaintOf, stackedScaleError } from "./chart-paint";
+import type { SeriesPaint } from "./chart-paint";
 import { centreAlong, pathAxes } from "./chart-path-draw";
 import type { PathLook, PathMemory } from "./chart-path-draw";
 import { useChartFrame } from "./chart-plot";
 import type { ChartFrame } from "./chart-plot";
 import { useFirstPhase } from "./chart-store";
-import type { ChartColor, ChartCurve } from "./chart-types";
+import type { ChartCurve } from "./chart-types";
 import type { SeriesModel } from "./layout/cartesian-model";
-import { seriesPaint } from "./layout/color-key";
 import { pathValues, topologyOf } from "./layout/line-path";
 import type { PathTopology } from "./layout/line-path";
 import { valueAt } from "./layout/plot-frame";
@@ -28,9 +28,8 @@ import type { SeriesPath } from "./layout/series-path";
 export type SeriesPathState = {
   readonly series: SeriesModel | undefined;
   readonly seriesIndex: number;
-  readonly color: ChartColor;
-  /** The series paint as CSS, the consumer's override first. */
-  readonly paint: string;
+  /** The series paint, every stop with the consumer's override first. */
+  readonly paint: SeriesPaint;
   readonly drawn: ChartFrame | null;
   /** The id prefix of the part's clip paths and paint servers. */
   readonly prefix: string;
@@ -74,6 +73,9 @@ export function useSeriesPath(
   const series = model.series.find(({ key }) => key === dataKey);
   const config = context.config[dataKey];
   const color = config?.color ?? "chart-1";
+  const stacked = model.stacks.some(({ keys }) => keys.includes(dataKey));
+  const scaleRule = stackedScaleError(part, color, stacked, context.stackOffset);
+  if (scaleRule !== null) throw scaleRule;
   const drawn = useChartFrame(part, layout);
   const frame = drawn?.frame ?? null;
   const prefix = `${part === "Chart.Area" ? "chart-area" : "chart-line"}-${useId().replace(/[^\w-]/gu, "")}`;
@@ -89,6 +91,7 @@ export function useSeriesPath(
     () => (series === undefined ? null : seriesPath(model, series, update.keys, columns)),
     [model, series, update.keys, columns]
   );
+  const paint = useMemo(() => seriesPaintOf(dataKey, color, series), [dataKey, color, series]);
   const missing = config?.missing ?? "gap";
   const topology = useMemo(() => topologyOf(path?.vertices ?? [], missing), [path, missing]);
   const moving = useRef<PathTopology | null>(null);
@@ -122,8 +125,7 @@ export function useSeriesPath(
   return {
     series,
     seriesIndex: series?.seriesIndex ?? 0,
-    color,
-    paint: seriesPaint(dataKey, stepRole(color, undefined)),
+    paint,
     drawn,
     prefix,
     intro,

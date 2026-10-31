@@ -223,6 +223,10 @@ describe("Panel and resolution errors on the first render", () => {
     kost: { label: "Kostnad", color: "chart-2" },
   } as const satisfies ChartConfig;
   const twoRows = DAYS.map((row) => ({ ...row, kost: 1 }));
+  const STACKED = {
+    kwh: { label: "Forbruk", color: "chart-1", stack: "sum" },
+    kost: { label: "Kostnad", color: "chart-2", stack: "sum" },
+  } as const satisfies ChartConfig;
   it.each([
     [
       "a Panel inside a Panel",
@@ -320,8 +324,81 @@ describe("Panel and resolution errors on the first render", () => {
       </Chart.Root>,
       composition("interval-not-nested"),
     ],
+    [
+      "a stack split over two Panels",
+      daily(
+        <>
+          <Chart.Panel series={["kwh"]} />
+          <Chart.Panel series={["kost"]} />
+        </>,
+        twoRows,
+        STACKED
+      ),
+      composition("stack-across-panels"),
+    ],
+    [
+      "a scale-coloured Line in a stack",
+      daily(<Chart.Line dataKey="kwh" />, twoRows, {
+        ...STACKED,
+        kwh: { ...STACKED.kwh, color: "chart-seq" },
+      }),
+      composition("scale-colour-on-stack"),
+    ],
+    [
+      "a scale-coloured Area in a stack",
+      daily(<Chart.Area dataKey="kost" />, twoRows, {
+        ...STACKED,
+        kost: { ...STACKED.kost, color: "chart-diverging" },
+      }),
+      composition("scale-colour-on-stack"),
+    ],
+    [
+      "a scale-coloured Area under the expand offset",
+      <Chart.Root
+        key="root"
+        data={DAYS}
+        config={{ kwh: { label: "Forbruk", color: "chart-seq" } }}
+        xKey="day"
+        interval="day"
+        timeZone={OSLO}
+        stackOffset="expand"
+        aria-label="Forbruk">
+        <Chart.Area dataKey="kwh" />
+      </Chart.Root>,
+      composition("scale-colour-on-stack"),
+    ],
   ])("throws for %s", (_, element, expected) => {
     expect(thrown(element)).toEqual(expected);
+  });
+
+  it("renders a whole stack in one Panel, and scale-coloured stacked Bars", () => {
+    expect(
+      thrown(
+        daily(
+          <Chart.Panel series={["kwh", "kost"]}>
+            <Chart.Line dataKey="kwh" />
+            <Chart.Line dataKey="kost" />
+          </Chart.Panel>,
+          twoRows,
+          STACKED
+        )
+      )
+    ).toBeNull();
+    expect(
+      thrown(
+        daily(
+          <Chart.BarGroup series={["kwh", "kost"]}>
+            <Chart.Bar dataKey="kwh" />
+            <Chart.Bar dataKey="kost" />
+          </Chart.BarGroup>,
+          twoRows,
+          { ...STACKED, kwh: { ...STACKED.kwh, color: "chart-seq" } }
+        )
+      )
+    ).toBeNull();
+    expect(
+      thrown(daily(<Chart.Line dataKey="kwh" />, DAYS, { kwh: { label: "Forbruk", color: "chart-seq" } }))
+    ).toBeNull();
   });
 
   it("renders a sentiment Panel beside a categorical Panel, each one colour family (Q1-2, B1-2)", () => {
@@ -516,6 +593,31 @@ describe("development hints", () => {
     expect(warn.mock.calls.map(([message]) => String(message))).toEqual([
       expect.stringContaining('variant="blocks"'),
     ]);
+  });
+
+  it.each([
+    ["reference-outside-domain", <Chart.ReferenceLine key="line" y={40} />, "yInclude"],
+    [
+      "absent-column",
+      <Chart.Table key="table">
+        <Chart.TableColumn dataKey="peak" header="Topptime" />
+      </Chart.Table>,
+      '"peak"',
+    ],
+  ] as const)("warns %s once over three renders of one Root (X25)", (_, child, named) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const chart = (title: string) => (
+      <LocaleProvider locale="nb-NO">
+        <Chart.Root data={DAYS} config={CONFIG} xKey="day" interval="day" timeZone={OSLO} aria-label={title}>
+          <Chart.Bar dataKey="kwh" />
+          {child}
+        </Chart.Root>
+      </LocaleProvider>
+    );
+    const { rerender } = renderThemed(chart("Forbruk"));
+    rerender(chart("Forbruk per dag"));
+    rerender(chart("Forbruk i oktober"));
+    expect(warn.mock.calls.map(([message]) => String(message))).toEqual([expect.stringContaining(named)]);
   });
 
   it("warns bars-overlap once, naming BarGroup, after two loose Bars register", () => {

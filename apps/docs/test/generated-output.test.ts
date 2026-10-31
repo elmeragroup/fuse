@@ -19,7 +19,7 @@ import { repoRelative, repoRoot } from "../scripts/lib/paths.ts";
 import { COMPONENT_OUTLINES } from "../src/generated/component-outlines";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import type { ComponentApiArtifact } from "../src/lib/docs-model";
-import { COMPONENT_INVENTORY } from "./component-inventory";
+import { ALIAS_PAGES, COMPONENT_INVENTORY } from "./component-inventory";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
@@ -128,7 +128,7 @@ describe("component page manifest", () => {
   it("reports per-part directives and the reviewed page RSC status", () => {
     for (const [slug, reviewed] of COMPONENT_INVENTORY) {
       // Each part's badge is the leading directive of the module that declares it.
-      for (const part of api(slug).parts) {
+      for (const part of ALIAS_PAGES.has(slug) ? [] : api(slug).parts) {
         expect(part.rsc, `${slug} ${part.name}`).toBe(declaredRsc(part.sourcePath));
       }
       // The page's own status appears on the markdown endpoint, not in the manifest.
@@ -148,9 +148,6 @@ const CHART_PAGES = new Set([
   "radar-chart",
   "sparkline",
 ]);
-
-/** The chart pages that repeat `chart` whole, as aliases of `Chart`. */
-const ALIAS_PAGES = new Set(["area-chart", "bar-chart", "line-chart"]);
 
 /** The keys a component outline carries. Anything else would ship to every surface unreviewed. */
 const OUTLINE_KEYS = ["demos", "hasTokens", "headings", "markdownUrl", "partNames", "slug", "title"];
@@ -313,7 +310,7 @@ describe("committed api.json", () => {
   });
 
   it("never leaves a documented prop without a description or an unresolved type, and publishes only documented dependency props", () => {
-    for (const entry of COMPONENT_PAGES) {
+    for (const entry of COMPONENT_PAGES.filter(({ slug }) => !ALIAS_PAGES.has(slug))) {
       for (const part of api(entry.slug).parts) {
         for (const prop of part.props) {
           expect(prop.type).not.toBe("");
@@ -332,7 +329,7 @@ describe("committed api.json", () => {
   });
 
   it("publishes only parts rooted at a facade export, each named once", () => {
-    for (const entry of COMPONENT_PAGES) {
+    for (const entry of COMPONENT_PAGES.filter(({ slug }) => !ALIAS_PAGES.has(slug))) {
       const committed = api(entry.slug).parts;
       // Every facade export yields at least one part — a facade that only re-exports a
       // dependency publishes it as a part with no props and the dependency in `forwardedFrom`.

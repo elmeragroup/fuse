@@ -19,7 +19,12 @@ import type { TickVisibility } from "./layout/x-ticks";
  * @beta
  */
 export type ChartXAxisProps = ChartLayerProps & {
-  /** The tick label format. The interval's tick preset is the default. */
+  /**
+   * The tick label format. The interval's tick preset is the default. A tick that starts a coarser
+   * calendar unit, such as a month start on a long axis of hours, names that unit. A clock preset
+   * can't name a day, so those ticks keep their unit's default preset, such as `okt` under
+   * `format="hour-range"`. A calendar preset or Intl options format them as given.
+   */
   format?: XFormat;
   /** The axis title. */
   label?: string;
@@ -48,12 +53,9 @@ export type ChartYAxisProps = ChartLayerProps & {
   side?: "start" | "end";
 };
 
-/**
- * Each interval's default tick preset. A second axis ticks in minutes until the seconds preset lands
- * in layer 06.
- */
+/** Each interval's default tick preset. */
 const TICK_PRESETS = {
-  second: "time",
+  second: "time-seconds",
   minute: "time",
   "quarter-hour": "hour",
   hour: "hour",
@@ -62,6 +64,24 @@ const TICK_PRESETS = {
   month: "month",
   year: "year",
 } as const satisfies { readonly [I in Interval]: TimePreset };
+
+/** The presets that print a time of day, which every coarser tick unit starts at midnight. */
+const CLOCK_PRESETS: ReadonlySet<XFormat> = new Set<TimePreset>([
+  "hour",
+  "hour-range",
+  "time",
+  "time-seconds",
+  "time-range",
+]);
+
+/**
+ * The preset of one tick. A tick of a coarser unit than the domain's is a day or longer, so a clock
+ * preset gives way to the unit's own default there.
+ */
+function tickFormat(format: XFormat | undefined, unit: Interval, coarser: boolean): XFormat {
+  if (format === undefined || (coarser && CLOCK_PRESETS.has(format))) return TICK_PRESETS[unit];
+  return format;
+}
 
 /** One x tick ready to draw. */
 type XTick = {
@@ -90,7 +110,7 @@ function xTicks(context: ChartRootContextValue, format: XFormat | undefined): XT
   const text = (slot: number, coarse: boolean): string => {
     if (domain.kind === "category") return domain.names[slot] ?? "";
     const unit = coarse ? (unitOf.get(slot) ?? domain.interval) : domain.interval;
-    const preset = format ?? TICK_PRESETS[unit];
+    const preset = tickFormat(format, unit, unit !== domain.interval);
     return formatSlot(locale, domain.timeZone, domain.starts[slot] ?? 0, unit, preset, "tick").text;
   };
   const position = (slot: number): number => slotCentre(window, slot, xScale);

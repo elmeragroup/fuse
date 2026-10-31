@@ -12,8 +12,7 @@
  *
  * Preview: names and props can change until Fuse's first stable release.
  *
- * The errors the parts' JSDoc names, such as `unknown-key`, start to throw once the parts render in
- * a later preview release.
+ * The errors the parts' JSDoc names, such as `unknown-key`, throw as the parts render.
  *
  * Every later chart change follows the growth rule. A new capability becomes a new part, a variant
  * or datum-selector value, a `config` field, a Root prop that describes the data's shape or a Panel
@@ -29,8 +28,7 @@ export * as Chart from "./chart-parts";
  *
  * Preview: names and props can change until Fuse's first stable release.
  *
- * The errors the parts' JSDoc names, such as `unknown-key`, start to throw once the parts render in
- * a later preview release.
+ * The errors the parts' JSDoc names, such as `unknown-key`, throw as the parts render.
  *
  * Every later chart change follows the growth rule. A new capability becomes a new part, a variant
  * or datum-selector value, a `config` field, a Root prop that describes the data's shape or a Panel
@@ -46,8 +44,7 @@ export * as AreaChart from "./area-chart-parts";
  *
  * Preview: names and props can change until Fuse's first stable release.
  *
- * The errors the parts' JSDoc names, such as `unknown-key`, start to throw once the parts render in
- * a later preview release.
+ * The errors the parts' JSDoc names, such as `unknown-key`, throw as the parts render.
  *
  * Every later chart change follows the growth rule. A new capability becomes a new part, a variant
  * or datum-selector value, a `config` field, a Root prop that describes the data's shape or a Panel
@@ -63,8 +60,7 @@ export * as BarChart from "./bar-chart-parts";
  *
  * Preview: names and props can change until Fuse's first stable release.
  *
- * The errors the parts' JSDoc names, such as `unknown-key`, start to throw once the parts render in
- * a later preview release.
+ * The errors the parts' JSDoc names, such as `unknown-key`, throw as the parts render.
  *
  * Every later chart change follows the growth rule. A new capability becomes a new part, a variant
  * or datum-selector value, a `config` field, a Root prop that describes the data's shape or a Panel

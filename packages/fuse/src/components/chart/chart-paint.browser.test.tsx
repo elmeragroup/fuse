@@ -8,6 +8,7 @@ import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { bars } from "../../../test/chart/marks";
 import { chromaAt, pagePixels } from "../../../test/chart/media";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -40,11 +41,6 @@ function channels(color: string): number[] {
   context.fillStyle = color;
   context.fillRect(0, 0, 1, 1);
   return [...context.getImageData(0, 0, 1, 1).data.subarray(0, 3)];
-}
-
-function bars(host: HTMLElement): HTMLElement[] {
-  // DOM audit: bars are aria-hidden plot output, so their slots are the only locator.
-  return [...host.querySelectorAll<HTMLElement>('[data-slot="chart-bar"]')];
 }
 
 function chart(
@@ -720,5 +716,66 @@ describe("dimming the active dots with their series (Q3-4)", () => {
     const [a = 0, b = 0] = opacities();
     expect(a).toBeCloseTo(0.45, 6);
     expect(b).toBe(1);
+  });
+});
+
+describe("the consumer colour override on swatches (X5)", () => {
+  const red = "rgb(255, 0, 0)";
+
+  /** Every colour the legend swatch paints its background with. */
+  function swatchColours(
+    color: ChartColor,
+    options: { readonly active?: string; readonly red?: boolean }
+  ): string[] {
+    const { host } = renderThemed(
+      <div style={{ width: 400 }}>
+        <LocaleProvider locale="nb-NO">
+          <Chart.Root
+            data={[
+              { name: "a", v: 1 },
+              { name: "b", v: 10 },
+            ]}
+            config={{ v: { label: "V", color } }}
+            xKey="name"
+            data-intro="none"
+            defaultActiveX={options.active}
+            aria-label="Maling"
+            style={options.red === true ? { "--chart-color-v": red } : undefined}>
+            <Chart.Bar dataKey="v" />
+            <Chart.Legend>
+              <Chart.LegendItem>
+                <Chart.Swatch />
+              </Chart.LegendItem>
+            </Chart.Legend>
+          </Chart.Root>
+        </LocaleProvider>
+      </div>
+    );
+    // DOM audit: the swatch is aria-hidden decoration, so its slot is the only locator.
+    const swatch = host.querySelector('[data-slot="chart-swatch"]');
+    if (swatch === null) throw new Error("no swatch");
+    const style = getComputedStyle(swatch);
+    return (
+      `${style.backgroundColor} ${style.backgroundImage}`.match(
+        /(?:rgba?|oklch|oklab|lab|lch|color)\([^)]*\)/gu
+      ) ?? []
+    );
+  }
+
+  it("paints a scale's ramp in more than one colour without an override", () => {
+    expect(new Set(swatchColours("chart-seq", {})).size).toBeGreaterThan(1);
+  });
+
+  it.each([
+    ["a scale's ramp", "chart-seq", undefined],
+    ["a scale's active step", "chart-seq", "b"],
+    ["a diverging scale's ramp", "chart-diverging", undefined],
+    ["a role list's gradient", ["chart-1", "chart-3"], undefined],
+  ] as const)("wins over %s", (_, color, active) => {
+    const colours = swatchColours(color, { active, red: true }).filter(
+      (colour) => colour !== "rgba(0, 0, 0, 0)"
+    );
+    expect(colours.length).toBeGreaterThan(0);
+    expect(new Set(colours)).toEqual(new Set([red]));
   });
 });

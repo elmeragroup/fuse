@@ -15,7 +15,7 @@ import { dataTableStrings } from "../data-table/intl";
 import { Table } from "../table/table";
 import { ChartPendingRootContext, useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
-import { seriesLabel, slotLabel } from "./chart-text";
+import { seriesLabel, slotLabel, stackTotalAt } from "./chart-text";
 import type { ChartLayerProps, ChartScalar, ValueFormat, XFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
@@ -263,26 +263,19 @@ function TotalCell({
   readonly slot: number;
 }): ReactNode {
   const strings = CHART_STRINGS[context.locale];
-  let total = 0;
-  let present = 0;
-  for (const key of keys) {
-    const reading = context.model.series.find((series) => series.key === key)?.readings[slot];
-    if (reading?.kind !== "reading") continue;
-    total += reading.value;
-    present += 1;
-  }
-  if (present === 0) {
+  const sum = stackTotalAt(context.model, keys, slot);
+  if (sum === null) {
     return (
       <Table.Cell>
         <Twin text={{ text: "–", spoken: strings.missing }} />
       </Table.Cell>
     );
   }
-  const value = formatUnitless(context.locale, total, context.config[keys[0] ?? ""]?.format ?? {});
+  const value = formatUnitless(context.locale, sum.total, context.config[keys[0] ?? ""]?.format ?? {});
   return (
     <Table.Cell>
       <Twin text={value} />
-      {present < keys.length ? (
+      {sum.incomplete ? (
         <>
           {" "}
           <span data-quality="">{`(${strings.incomplete})`}</span>
@@ -575,7 +568,8 @@ function ChartTableColumnBody({
   const row = use(ChartTableRowContext);
   if (row?.kind === "header") {
     if (isChartDevelopment() && !context.rows.some((entry) => Object.hasOwn(entry, dataKey))) {
-      console.warn(
+      context.warnOnce(
+        "absent-column",
         `Chart.TableColumn lists ${JSON.stringify(dataKey)}, a column no row holds, so every cell prints –. Check the dataKey against the rows.`
       );
     }

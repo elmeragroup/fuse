@@ -2,7 +2,7 @@
 
 import type { ReactElement, ReactNode } from "react";
 
-import type { ChartLayerProps, ChartShareFormat, ValueFormat } from "./chart-types";
+import type { ChartLayerProps, ChartFractionDigits, ValueFormat } from "./chart-types";
 
 /**
  * Props for `PieChart.Track`, a closed part.
@@ -38,7 +38,7 @@ export type PieChartCenterValueProps = ChartLayerProps & {
  */
 export type PieChartCenterShareProps = ChartLayerProps & {
   /** The percentage digits. */
-  format?: ChartShareFormat;
+  format?: ChartFractionDigits;
 };
 
 /**

@@ -7,11 +7,11 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import { ChartPendingRootContext, useChartRoot } from "./chart-context";
+import { seriesPaintOf, valuePaint } from "./chart-paint";
+import type { SeriesPaint } from "./chart-paint";
 import { readingAt, useActivePoint, useReadoutKey } from "./chart-readout";
 import { seriesLabel } from "./chart-text";
-import type { ChartColor, ChartDomProps } from "./chart-types";
-import { colorBins } from "./layout/color-bins";
-import { escapeColorKey } from "./layout/color-key";
+import type { ChartDomProps } from "./chart-types";
 
 /**
  * Props for `Chart.Swatch`, a `span` with Base UI's `render`.
@@ -45,27 +45,14 @@ export type ChartSeriesIconProps = ChartDomProps<"span"> & {
   dataKey?: string;
 };
 
-const SCALE_STEPS = [1, 2, 3, 4, 5, 6, 7] as const;
-
-/** Whether a colour is a decorative role list. */
-function isRoleList(color: ChartColor): color is Extract<ChartColor, readonly unknown[]> {
-  return Array.isArray(color);
-}
-
 /**
- * The CSS paint of a swatch. A role paints itself, a role list paints its roles as a gradient, and
- * a scale paints its 7-step ramp, or one step when the active value picks it. A consumer's
- * `--chart-color-<key>` wins over a role.
+ * The CSS paint of a swatch, the marks' own stops: a role paints itself, a role list its roles as a
+ * gradient, and a scale its 7-step ramp, or one step when the active value picks it.
  */
-function swatchPaint(key: string, color: ChartColor, step: number | undefined): string {
-  const own = `--chart-color-${escapeColorKey(key)}`;
-  if (isRoleList(color))
-    return `linear-gradient(to right, ${color.map((role) => `var(--${role})`).join(", ")})`;
-  if (color === "chart-seq" || color === "chart-diverging") {
-    if (step !== undefined) return `var(--${color}-${String(step)})`;
-    return `linear-gradient(to right, ${SCALE_STEPS.map((index) => `var(--${color}-${String(index)})`).join(", ")})`;
-  }
-  return `var(${own}, var(--${color}))`;
+function swatchPaint(paint: SeriesPaint, step: string | undefined): string {
+  if (step !== undefined) return step;
+  const stops = paint.stops ?? paint.ramp;
+  return stops === undefined ? paint.base : `linear-gradient(to right, ${stops.join(", ")})`;
 }
 
 /**
@@ -91,27 +78,23 @@ function ChartSwatchBody({
   const point = useActivePoint(context);
   const key =
     useReadoutKey("Chart.Swatch", context, dataKey, point.key) ?? Object.keys(context.config)[0] ?? "";
-  const color = context.config[key]?.color ?? "chart-1";
-  let step: number | undefined;
-  if (point.slot !== null && (color === "chart-seq" || color === "chart-diverging")) {
-    const reading = readingAt(context, key, point.slot);
-    const values = (context.model.series.find((series) => series.key === key)?.readings ?? []).flatMap(
-      (entry) => (entry.kind === "reading" ? [entry.value] : [])
-    );
-    if (reading?.kind === "reading") step = colorBins(color, values)(reading.value);
-  }
+  const series = context.model.series.find((entry) => entry.key === key);
+  const paint = seriesPaintOf(key, context.config[key]?.color ?? "chart-1", series);
+  const reading =
+    point.slot === null || paint.bins === undefined ? null : readingAt(context, key, point.slot);
+  const step = reading?.kind === "reading" ? valuePaint(paint, reading.value) : undefined;
   return useRender({
     defaultTagName: "span",
     render,
     props: {
       "data-slot": "chart-swatch",
       "data-variant": variant,
-      "data-series": context.model.series.find((series) => series.key === key)?.seriesIndex,
+      "data-series": series?.seriesIndex,
       ...mergeProps<"span">(
         {
           "aria-hidden": true,
           className,
-          style: { "--chart-swatch-paint": swatchPaint(key, color, step), ...style },
+          style: { "--chart-swatch-paint": swatchPaint(paint, step), ...style },
         },
         props
       ),

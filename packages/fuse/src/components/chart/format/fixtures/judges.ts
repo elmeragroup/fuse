@@ -1,7 +1,6 @@
 /**
  * Every judge the format tests run, as `[name, judge]` pairs. `format.test.ts` runs them in Node,
- * `format.engines.browser.test.ts` in Chromium, Firefox and WebKit, and `zone-probe.ts` under
- * other process zones.
+ * once per zone project, and `format.engines.browser.test.ts` in Chromium, Firefox and WebKit.
  */
 import {
   calendarJudgements,

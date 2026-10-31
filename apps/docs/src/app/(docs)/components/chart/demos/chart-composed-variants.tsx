@@ -3,7 +3,9 @@
 import { Chart } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 
-// The rows and labels below come from the evilcharts example `ex-gradient-variant-composed-chart`, commit ecbd6a5.
+// The rows and labels below come from the evilcharts examples `ex-hatched-variant-composed-chart`,
+// `ex-duotone-variant-composed-chart`, `ex-gradient-variant-composed-chart` and
+// `ex-stripped-variant-composed-chart`, commit ecbd6a5, which share them.
 // Copyright (c) 2026 Gurbinder. Released under the MIT License, whose full text is in
 // apps/docs/src/app/(docs)/components/chart/demos/LICENSE-evilcharts.
 const data = [
@@ -26,19 +28,28 @@ const config = {
   profit: { label: "Profit", color: "chart-2" },
 } as const satisfies ChartConfig;
 
-export function ChartComposedGradient() {
+const VARIANTS = ["hatched", "duotone", "gradient", "striped"] as const;
+
+/** Each tinted look of `Chart.Bar` under a Line, one chart per look. */
+export function ChartComposedVariants() {
   return (
-    <Chart.Root
-      data={data}
-      config={config}
-      xKey="month"
-      aria-label="Revenue and profit by month, gradient bars">
-      <Chart.Grid />
-      <Chart.XAxis />
-      <Chart.Bar dataKey="revenue" variant="gradient" />
-      <Chart.Line dataKey="profit" />
-      <Chart.Legend />
-      <Chart.Tooltip />
-    </Chart.Root>
+    <div className="sm:grid-cols-2 grid w-full gap-6">
+      {VARIANTS.map((variant) => (
+        <Chart.Root
+          key={variant}
+          data={data}
+          config={config}
+          xKey="month"
+          style={{ "--chart-plot-height": "8rem" }}
+          aria-label={`Revenue and profit by month, ${variant} bars`}>
+          <Chart.Grid />
+          <Chart.XAxis />
+          <Chart.Bar dataKey="revenue" variant={variant} />
+          <Chart.Line dataKey="profit" />
+          <Chart.Legend />
+          <Chart.Tooltip />
+        </Chart.Root>
+      ))}
+    </div>
   );
 }

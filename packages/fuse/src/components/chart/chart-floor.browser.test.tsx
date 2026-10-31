@@ -18,6 +18,7 @@ import { cdp, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { FLOOR_MARKS } from "../../../test/chart/floor-marks";
 import type { FloorMark } from "../../../test/chart/floor-marks";
+import { pathRects } from "../../../test/chart/world-reader";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -170,18 +171,7 @@ function render(chart: Dense) {
   );
 }
 
-/** The rectangles of a path written as closed rectangles, and the horizontal ticks of another. */
-function pathRects(d: string): { x: number; y: number; width: number; height: number }[] {
-  return [...d.matchAll(/M([-\d.e]+) ([-\d.e]+)H([-\d.e]+)V([-\d.e]+)H[-\d.e]+Z/gu)].map(
-    ([, x, y, x2, y2]) => ({
-      x: Number(x),
-      y: Number(y),
-      width: Number(x2) - Number(x),
-      height: Number(y2) - Number(y),
-    })
-  );
-}
-
+/** The horizontal ticks of a path, each as its start and end x. */
 function pathTicks(d: string): [number, number][] {
   return [...d.matchAll(/M([-\d.e]+) [-\d.e]+H([-\d.e]+)/gu)].map(([, x, x2]) => [Number(x), Number(x2)]);
 }

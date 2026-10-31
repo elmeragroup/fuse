@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cdp, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { onGrid } from "../../../test/chart/panel-readers";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Tabs } from "../tabs";
@@ -43,11 +44,6 @@ async function frame(): Promise<void> {
 function rectOf(element: Element | null | undefined): DOMRect {
   if (element === null || element === undefined) throw new Error("no element");
   return element.getBoundingClientRect();
-}
-
-/** Whether a distance from the plot's origin is a whole number of device pixels. */
-function onGrid(at: number): boolean {
-  return Math.abs(at * devicePixelRatio - Math.round(at * devicePixelRatio)) < 0.01;
 }
 
 async function column(width: number) {

@@ -105,7 +105,7 @@ export type AreaPaths = {
 };
 
 /** The radius of a lone reading's dot, which the line's stroke draws round, so the dot reads at 7 px. */
-export const LONE_DOT_RADIUS = 2.5;
+const LONE_DOT_RADIUS = 2.5;
 
 /** The numbers each vertex of a Line holds: its place along the slot axis and its value. */
 export const LINE_STRIDE = 2;

@@ -74,6 +74,11 @@ const radar = { data: spokes, nameKey: "cat", "aria-label": "r" } as const;
 /** A radial chart's props without its maximum. */
 const budget = { data: rings, config: {}, nameKey: "name", valueKey: "used", "aria-label": "B" } as const;
 
+/** Thirty literal keys, `k00` to `k29`, which only their type needs. */
+type Thirty = `k${0 | 1 | 2}${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`;
+declare const thirtyKeys: { readonly [K in Thirty]: { readonly label: string; readonly color: "chart-1" } };
+declare const thirty: readonly ({ readonly cat: string } & { readonly [K in Thirty]: number })[];
+
 test("functions never pass where Flight needs data", () => {
   const formatFunction = { kwh: { label: "k", color: "chart-1", format: fn } } as const;
   const colorFunction = { kwh: { label: "k", color: fn } } as const;
@@ -189,6 +194,14 @@ test("keys and values follow the data", () => {
     d: { label: "D", color: "chart-4" },
     e: { label: "E", color: "chart-5" },
   } as const satisfies ChartConfig;
+  // The cap counts keys, so the same five in reverse order and thirty template keys fail too.
+  const fiveReversed = {
+    e: { label: "E", color: "chart-5" },
+    d: { label: "D", color: "chart-4" },
+    c: { label: "C", color: "chart-3" },
+    b: { label: "B", color: "chart-2" },
+    a: { label: "A", color: "chart-1" },
+  } as const satisfies ChartConfig;
   // @ts-expect-error an unknown xKey
   void (<Chart.Root data={days} config={kwh} xKey="nope" interval="day" aria-label="x" />);
   // @ts-expect-error xKey on a nullable column
@@ -229,6 +242,10 @@ test("keys and values follow the data", () => {
   void (<RadialChart.Root {...budget} maxKey="budget" max={3} />);
   // @ts-expect-error a fifth literal radar series fails
   void (<RadarChart.Root data={five} config={fiveKeys} nameKey="cat" aria-label="r" />);
+  // @ts-expect-error a fifth literal radar series fails in any key order
+  void (<RadarChart.Root data={five} config={fiveReversed} nameKey="cat" aria-label="r" />);
+  // @ts-expect-error thirty literal radar series fail
+  void (<RadarChart.Root data={thirty} config={thirtyKeys} nameKey="cat" aria-label="r" />);
   // @ts-expect-error ActiveDot names its series
   void (<Chart.ActiveDot />);
   // @ts-expect-error RadarChart.ActiveDot names its series too

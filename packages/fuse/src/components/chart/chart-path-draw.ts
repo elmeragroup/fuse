@@ -577,7 +577,7 @@ export function placePath<L extends { readonly moving: { current: S | null } }, 
     step?.kind === "route" ? step.grown : keptRoute ? paths.get(seriesIndex, drawn)?.grown : undefined;
   memory.current = { keys: path.keys, positions: path.positions, window: path.window, topology, route };
   input.lastLook.current = look;
-  paths.set(seriesIndex, drawn, {
+  paths.set(seriesIndex, drawn, memory, {
     keys: route?.keys ?? path.keys,
     positions: route?.positions ?? path.positions,
     rest: path.keys,

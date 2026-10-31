@@ -2,16 +2,17 @@
  * Unit under test: the slug-to-entry resolver for pages that share one entry, and the `sameAs`
  * dedupe over their parts. Oracle: CONTRACT.md section 13, which fixes each chart page's entry and
  * implementation file, and the docs rule that a part on a later page is an earlier page's part
- * exactly when its member name and declaring module match. The expected values are written by
- * hand from that rule.
+ * exactly when both resolve to one declaration. The expected values are written by hand from that
+ * rule.
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
+import { partIdentities } from "../scripts/lib/part-identity.ts";
 import { markdownOutDir, repoRoot } from "../scripts/lib/paths.ts";
-import { aliasOf, sameAsLinks } from "../src/lib/api-same-as";
+import { pageAliases, sameAsLinks } from "../src/lib/api-same-as";
 import { fetchText } from "./docs-server";
 
 const CHART_SOURCE = "packages/fuse/src/components/chart";
@@ -45,66 +46,70 @@ describe("pages that share the chart entry", () => {
 });
 
 describe("sameAs links", () => {
+  // Hand-written declarations: the numbers stand for the declarations the entry resolves to.
+  const page = (slug: string, parts: Record<string, number>) => ({
+    slug,
+    parts: new Map(Object.entries(parts)),
+  });
   const pages = [
-    {
-      slug: "chart",
-      parts: [
-        { name: "Chart.Root", sourcePath: `${CHART_SOURCE}/chart-root.tsx` },
-        { name: "Chart.Tooltip", sourcePath: `${CHART_SOURCE}/chart-tooltip.tsx` },
-        { name: "Chart.Glow", sourcePath: `${CHART_SOURCE}/chart-effects.tsx` },
-      ],
-    },
-    {
-      slug: "bar-chart",
-      parts: [
-        { name: "BarChart.Root", sourcePath: `${CHART_SOURCE}/chart-root.tsx` },
-        { name: "BarChart.Tooltip", sourcePath: `${CHART_SOURCE}/chart-tooltip.tsx` },
-        { name: "BarChart.Glow", sourcePath: `${CHART_SOURCE}/chart-effects.tsx` },
-      ],
-    },
-    {
-      slug: "pie-chart",
-      parts: [
-        { name: "PieChart.Root", sourcePath: `${CHART_SOURCE}/pie-chart-root.tsx` },
-        { name: "PieChart.Tooltip", sourcePath: `${CHART_SOURCE}/chart-tooltip.tsx` },
-        { name: "PieChart.Center", sourcePath: `${CHART_SOURCE}/pie-chart-center.tsx` },
-      ],
-    },
-    {
-      slug: "radial-chart",
-      parts: [
-        { name: "RadialChart.Root", sourcePath: `${CHART_SOURCE}/radial-chart-root.tsx` },
-        { name: "RadialChart.Center", sourcePath: `${CHART_SOURCE}/pie-chart-center.tsx` },
-      ],
-    },
-    {
-      slug: "radar-chart",
-      parts: [{ name: "RadarChart.Glow", sourcePath: `${CHART_SOURCE}/radar-chart-marks.tsx` }],
-    },
+    page("chart", { "Chart.Root": 1, "Chart.Tooltip": 2, "Chart.Glow": 3, useChartPoint: 7 }),
+    page("bar-chart", { "BarChart.Root": 1, "BarChart.Tooltip": 2, "BarChart.Glow": 3 }),
+    page("pie-chart", { "PieChart.Root": 4, "PieChart.Tooltip": 2, "PieChart.Center": 5 }),
+    page("radial-chart", { "RadialChart.Root": 6, "RadialChart.Center": 5 }),
+    // Same declarations under other keys, so a part repeats but the page is no alias.
+    page("radar-chart", { "RadarChart.Root": 1, "RadarChart.Halo": 3, "RadarChart.Tooltip": 2 }),
   ];
-  const links = sameAsLinks(pages);
 
-  it("links each repeated part to the first page that declares it", () => {
-    expect(Object.fromEntries([...links].map(([slug, parts]) => [slug, Object.fromEntries(parts)]))).toEqual({
-      "bar-chart": {
-        "BarChart.Root": { slug: "chart", name: "Chart.Root" },
-        "BarChart.Tooltip": { slug: "chart", name: "Chart.Tooltip" },
-        "BarChart.Glow": { slug: "chart", name: "Chart.Glow" },
-      },
-      "pie-chart": { "PieChart.Tooltip": { slug: "chart", name: "Chart.Tooltip" } },
-      "radial-chart": { "RadialChart.Center": { slug: "pie-chart", name: "PieChart.Center" } },
+  it("reads a page as an alias only when it holds an earlier page's declarations under the same keys", () => {
+    expect(Object.fromEntries(pageAliases(pages))).toEqual({
+      "bar-chart": { slug: "chart", name: "BarChart", owner: "Chart" },
     });
   });
 
-  it("reads a page as an alias only when every part repeats one other page", () => {
-    expect(aliasOf(["BarChart.Root", "BarChart.Tooltip", "BarChart.Glow"], links.get("bar-chart"))).toBe(
-      "chart"
+  it("links each repeated part to the first page that declares it, by declaration alone", () => {
+    const links = sameAsLinks(pages.filter(({ slug }) => slug !== "bar-chart"));
+    expect(Object.fromEntries([...links].map(([slug, parts]) => [slug, Object.fromEntries(parts)]))).toEqual({
+      "pie-chart": { "PieChart.Tooltip": { slug: "chart", name: "Chart.Tooltip" } },
+      "radial-chart": { "RadialChart.Center": { slug: "pie-chart", name: "PieChart.Center" } },
+      "radar-chart": {
+        "RadarChart.Root": { slug: "chart", name: "Chart.Root" },
+        "RadarChart.Halo": { slug: "chart", name: "Chart.Glow" },
+        "RadarChart.Tooltip": { slug: "chart", name: "Chart.Tooltip" },
+      },
+    });
+  });
+
+  it("finds the cartesian aliases and the shared parts in the chart entry's own namespaces", () => {
+    // Unit under test: the declaration pass over packages/fuse/src/chart.ts. Oracle: CONTRACT.md
+    // section 3, which makes AreaChart, BarChart and LineChart Chart under other names, gives
+    // every namespace Chart's Tooltip and gives RadialChart PieChart's Center.
+    const slugs = [
+      "chart",
+      "area-chart",
+      "bar-chart",
+      "line-chart",
+      "pie-chart",
+      "radial-chart",
+      "radar-chart",
+    ];
+    const identities = partIdentities(
+      slugs.map((slug) => {
+        const paths = resolveComponentPaths(slug);
+        return { slug, entryFile: paths.entryFile, exportNames: paths.apiExportNames };
+      })
     );
-    expect(aliasOf(["PieChart.Root", "PieChart.Tooltip", "PieChart.Center"], links.get("pie-chart"))).toBe(
-      undefined
-    );
-    expect(aliasOf(["RadarChart.Glow"], links.get("radar-chart"))).toBe(undefined);
-    expect(aliasOf([], links.get("bar-chart"))).toBe(undefined);
+    const real = [...identities].map(([slug, parts]) => ({ slug, parts }));
+    const aliases = pageAliases(real);
+    expect([...aliases.keys()]).toEqual(["area-chart", "bar-chart", "line-chart"]);
+    expect(aliases.get("bar-chart")).toEqual({ slug: "chart", name: "BarChart", owner: "Chart" });
+    const links = sameAsLinks(real.filter(({ slug }) => !aliases.has(slug)));
+    expect(links.get("pie-chart")?.get("PieChart.Tooltip")).toEqual({ slug: "chart", name: "Chart.Tooltip" });
+    expect(links.get("radial-chart")?.get("RadialChart.Center")).toEqual({
+      slug: "pie-chart",
+      name: "PieChart.Center",
+    });
+    expect(links.get("radial-chart")?.get("RadialChart.Root")).toBeUndefined();
+    expect(links.get("chart")).toBeUndefined();
   });
 });
 

@@ -35,7 +35,8 @@ import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ResolvedThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/internal";
 
-import { aliasOf, sameAsLinks } from "../src/lib/api-same-as.ts";
+import { pageAliases, sameAsLinks } from "../src/lib/api-same-as.ts";
+import type { ApiAlias, ApiSameAs } from "../src/lib/api-same-as.ts";
 import type {
   ApiFunction,
   ComponentOutline,
@@ -47,7 +48,7 @@ import type {
 import { API_REGEN_COMMAND } from "../src/lib/docs-model.ts";
 import { studioGeneratedFiles } from "../src/studio/registration.ts";
 import { generateDocsApiArtifacts } from "./lib/api-artifact.ts";
-import { SHARED_ENTRY_PAGES } from "./lib/components.ts";
+import { resolveComponentPaths, SHARED_ENTRY_PAGES } from "./lib/components.ts";
 import { buildDensityCatalog, renderDensityCatalog } from "./lib/density-catalog.ts";
 import {
   componentInspections,
@@ -63,6 +64,7 @@ import { renderLandingFacts } from "./lib/landing-facts.ts";
 import { renderLlmsTxt } from "./lib/llms.ts";
 import { renderComponentMarkdown } from "./lib/markdown.ts";
 import { renderOgCardColors } from "./lib/og-card-colors.ts";
+import { partIdentities } from "./lib/part-identity.ts";
 import {
   generatedDir,
   llmsTxtFile,
@@ -124,7 +126,7 @@ function pruneStale(directory: string): void {
 function buildComponent(
   inspection: ComponentInspection,
   demos: readonly DocsDemo[],
-  api: GeneratedApiComponent,
+  apiParts: GeneratedApiComponent["parts"],
   functions: ReadonlyMap<string, ApiFunction> | undefined,
   colors: ColorTokenMap
 ): DocsComponent {
@@ -147,7 +149,7 @@ function buildComponent(
     rsc: readRscStatus(readFileSync(paths.sourceFile, "utf8")),
     headings: page.headings,
     demos,
-    parts: api.parts.map((part) => {
+    parts: apiParts.map((part) => {
       const reference = functions?.get(part.name);
       return reference === undefined ? part : { ...part, function: reference };
     }),
@@ -168,33 +170,46 @@ function toPageEntry(component: DocsComponent): ComponentPageEntry {
   };
 }
 
+/** What the shared-entry pages share: the pages each repeats whole, and the owner of each repeated part. */
+type SharedParts = {
+  readonly aliases: ReadonlyMap<string, ApiAlias>;
+  readonly links: ReadonlyMap<string, ReadonlyMap<string, ApiSameAs>>;
+};
+
 /**
- * Links every part that repeats a part of an earlier shared-entry page to its owner, walking the
- * pages in `SHARED_ENTRY_PAGES` order, so `PieChart.Tooltip` names `Chart.Tooltip`, and marks a
- * page whose every part repeats one other page as that page's alias. This is the one place either
- * fact is computed.
+ * Resolves every part of the shared-entry pages to its declaration, in `SHARED_ENTRY_PAGES` order,
+ * so `PieChart.Tooltip` names `Chart.Tooltip`, and a page whose namespace holds an earlier page's
+ * declarations under the same keys, as `BarChart` holds `Chart`'s, is that page's alias. It reads
+ * the entry, not the extractor's facade, and runs before extraction, so an alias page gets no
+ * `api.json`. This is the one place either fact is computed.
  */
-function linkSharedParts(components: readonly DocsComponent[]): readonly DocsComponent[] {
-  const bySlug = new Map(components.map((component) => [component.slug, component]));
-  const links = sameAsLinks(
-    [...SHARED_ENTRY_PAGES.keys()].flatMap((slug) => {
-      const component = bySlug.get(slug);
-      return component === undefined ? [] : [{ slug, parts: component.parts }];
-    })
+function sharedParts(slugs: ReadonlySet<string>): SharedParts {
+  const identities = partIdentities(
+    [...SHARED_ENTRY_PAGES.keys()]
+      .filter((slug) => slugs.has(slug))
+      .map((slug) => {
+        const paths = resolveComponentPaths(slug);
+        return { slug, entryFile: paths.entryFile, exportNames: paths.apiExportNames };
+      })
   );
-  return components.map((component) => {
-    const owners = links.get(component.slug);
-    if (owners === undefined) return component;
-    const alias = aliasOf(
-      component.parts.map((part) => part.name),
-      owners
-    );
-    const parts = component.parts.map((part) => {
+  const pages = [...identities].map(([slug, parts]) => ({ slug, parts }));
+  const aliases = pageAliases(pages);
+  return { aliases, links: sameAsLinks(pages.filter(({ slug }) => !aliases.has(slug))) };
+}
+
+/** Marks each repeated part with its owner, and an alias page with the page it repeats. */
+function linkSharedParts(component: DocsComponent, shared: SharedParts): DocsComponent {
+  const alias = shared.aliases.get(component.slug);
+  if (alias !== undefined) return { ...component, alias };
+  const owners = shared.links.get(component.slug);
+  if (owners === undefined) return component;
+  return {
+    ...component,
+    parts: component.parts.map((part) => {
       const sameAs = owners.get(part.name);
       return sameAs === undefined ? part : { ...part, sameAs };
-    });
-    return alias === undefined ? { ...component, parts } : { ...component, parts, alias };
-  });
+    }),
+  };
 }
 
 /** The client's outline of a component: its identity and its TOC skeleton. */
@@ -284,7 +299,7 @@ function emitApiReferenceExtras(components: readonly DocsComponent[]): void {
       const parts = Object.fromEntries(
         component.parts.flatMap((part) => (part.sameAs === undefined ? [] : [[part.name, part.sameAs]]))
       );
-      return Object.keys(parts).length === 0
+      return Object.keys(parts).length === 0 && component.alias === undefined
         ? []
         : [[component.slug, { alias: component.alias ?? null, parts }]];
     })
@@ -436,23 +451,31 @@ async function main(): Promise<void> {
   }));
   problems.throwIfFailed();
 
+  const shared = sharedParts(new Set(inspections.map(({ slug }) => slug)));
+  // An alias page repeats its owner's reference, so it has no API artifact of its own.
+  const inventory = docsApiInventory(inspections).filter(({ slug }) => !shared.aliases.has(slug));
   // Extraction writes the committed api.json files itself, only where the bytes change,
   // and throws a DocsGenerationError on any extraction problem.
-  const generated = await generateDocsApiArtifacts(docsApiInventory(inspections));
+  const generated = await generateDocsApiArtifacts(inventory);
   reportDiagnostics(generated.diagnostics);
-  const functions = functionReferences(docsApiInventory(inspections));
+  const functions = functionReferences(inventory);
   for (const warning of functions.warnings) {
     process.stderr.write(`docs: ${warning}\n`);
   }
-  const components = linkSharedParts(
-    inspected.map(({ inspection, demos }) => {
-      const api = generated.artifacts.get(inspection.slug);
-      if (api === undefined) {
-        throw new Error(`no generated API artifact for component "${inspection.slug}"`);
-      }
-      return buildComponent(inspection, demos, api, functions.pages.get(inspection.slug), colors);
-    })
-  );
+  const components = inspected.map(({ inspection, demos }) => {
+    const api = generated.artifacts.get(inspection.slug);
+    if (api === undefined && !shared.aliases.has(inspection.slug)) {
+      throw new Error(`no generated API artifact for component "${inspection.slug}"`);
+    }
+    const component = buildComponent(
+      inspection,
+      demos,
+      api?.parts ?? [],
+      functions.pages.get(inspection.slug),
+      colors
+    );
+    return linkSharedParts(component, shared);
+  });
 
   emitComponentPages(components);
   emitComponentOutlines(components);

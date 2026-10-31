@@ -69,4 +69,10 @@ describe("the chart API report's forgotten-export filter", () => {
     ]);
     expect(leakedSymbols(["ChartBar", "PieChartRoot"], ["ChartBar", "PieChartRoot"])).toEqual([]);
   });
+
+  it("lets the radar cap's two counting helpers stay out of the entry, and nothing else", () => {
+    expect(leakedSymbols(["ChartHasFiveKeys", "ChartWithoutOne", "ChartStoreState"], [])).toEqual([
+      "ChartStoreState",
+    ]);
+  });
 });

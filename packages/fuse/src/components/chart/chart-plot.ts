@@ -20,6 +20,7 @@ import type { RefObject } from "react";
 
 import { useChartRoot } from "./chart-context";
 import type { ChartLayoutContextValue, PanelEntry } from "./chart-context";
+import { subscribeNever } from "./chart-store";
 import { plotFrame } from "./layout/plot-frame";
 import type { BarMetrics, PlotBox, PlotFrame } from "./layout/plot-frame";
 import type { ValueDomain } from "./layout/value-domain";
@@ -292,11 +293,6 @@ export type ChartFrame = {
   readonly metrics: BarMetrics;
   readonly plot: ChartPlot;
 };
-
-/** A store subscription for a value that never changes after hydration. */
-function subscribeNever(): () => void {
-  return () => undefined;
-}
 
 /**
  * The frame a plot part draws in: the nearest measured plot, Root's or its Panel's, under the

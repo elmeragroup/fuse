@@ -6,7 +6,7 @@ The chart format tests compare Fuse's labels with these files. No file here come
 - `time-judges.ts` compares Fuse's time labels with `slots.json`, the fall-back day files and the time literals. The slot label and date-time cases run through the public `formatChartSlot`. The one de-DE date-time is judged against the engine's own Intl output, because Fuse keeps Intl's join outside en, nb, sv and fi.
 - `slot-starts.json` holds the expected slot starts that `../slot-starts.test.ts` checks.
 - `value-judges.ts` compares Fuse's value labels with the value literals. The public value cases run through `formatChartValue`.
-- `judges.ts` lists every judge. `format.test.ts` runs them in Node, `format.engines.browser.test.ts` in Chromium, Firefox and WebKit, and `zone-probe.ts` under other process zones.
+- `judges.ts` lists every judge. `format.test.ts` runs them in Node, once per zone project, and `format.engines.browser.test.ts` in Chromium, Firefox and WebKit.
 
 oxfmt skips the JSON files, so their bytes stay as fetched or generated.
 

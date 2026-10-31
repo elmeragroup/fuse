@@ -18,12 +18,13 @@ import {
   tickEnds,
   overlayFills,
 } from "./chart-bar-draw";
-import type { BarDraw, BarLook, SeriesPaint, SideFills } from "./chart-bar-draw";
+import type { BarDraw, BarLook, SideFills } from "./chart-bar-draw";
 import { BarFills, ListFills } from "./chart-bar-fills";
 import type { ChartRootContextValue, ChartUpdate, CommitKind } from "./chart-context";
 import { useChartFollower } from "./chart-followers";
 import type { ChartMotion, JoinLead, MarkValues } from "./chart-motion";
 import { placementOf, useCommitMotion, useFollowerPlacement, useMotionMark } from "./chart-motion-mark";
+import type { SeriesPaint } from "./chart-paint";
 import { valuePaint } from "./chart-paint";
 import { pathAnchor } from "./chart-paths";
 import type { ChartPlot } from "./chart-plot";
@@ -425,8 +426,7 @@ export function ActiveBar({
       return;
     }
     const reading = series.readings[cell.slot];
-    const own =
-      reading?.kind === "reading" ? valuePaint(paint.key, paint.color, paint.bins, reading.value) : undefined;
+    const own = reading?.kind === "reading" ? valuePaint(paint, reading.value) : undefined;
     const projected = cell.slot >= series.projectedFrom;
     const quality = reading?.kind === "reading" && reading.quality !== "measured" ? reading.quality : null;
     const toggle = (name: string, on: boolean, value = ""): void => {

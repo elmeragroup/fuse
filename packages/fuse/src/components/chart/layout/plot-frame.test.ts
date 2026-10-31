@@ -14,7 +14,6 @@ import {
   optionBand,
   plotFrame,
   ruleAcross,
-  ruleAt,
   slotBand,
   slotLine,
   snapAcrossSpan,
@@ -246,8 +245,7 @@ describe("rules", () => {
 
   it("starts a 1 px rule at its coordinate, as a CSS border does, so both edges are whole pixels", () => {
     // At 2x, 40.3 px rounds to 40.5, so the rule covers 40.5 to 41.5.
-    const plot = box(100, 100, 2);
-    const centre = ruleAt((at) => snapY(plot, at), 40.3);
+    const centre = ruleAcross(box(100, 100, 2), "horizontal", 40.3).y1;
     expect(centre).toBe(41);
     expect(onGrid(centre - 0.5, 2)).toBe(true);
     expect(onGrid(centre + 0.5, 2)).toBe(true);

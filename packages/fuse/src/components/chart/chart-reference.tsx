@@ -159,11 +159,17 @@ function valueText(
   );
 }
 
-/** Warn once in development when a reference sits outside the value domain. */
-function warnOutside(part: string, values: readonly number[], domain: readonly [number, number]): void {
+/** Warn once per Root in development when a reference sits outside the value domain. */
+function warnOutside(
+  context: ChartRootContextValue,
+  part: string,
+  values: readonly number[],
+  domain: readonly [number, number]
+): void {
   if (!isChartDevelopment()) return;
   if (values.every((value) => value >= domain[0] && value <= domain[1])) return;
-  console.warn(
+  context.warnOnce(
+    "reference-outside-domain",
     `${part} sits outside the value domain, so it renders clipped. Pass its value to yInclude on Chart.Root or the Panel, because Root never reads its children.`
   );
 }
@@ -500,7 +506,7 @@ export function ChartReferenceLine({ style, ...props }: ChartReferenceLineProps)
     value = slot === -1 ? { text: "", spoken: "" } : slotLabel(context, slot, props.format);
     axis = "slot";
   } else {
-    warnOutside("Chart.ReferenceLine", [props.y], layout.y.domain);
+    warnOutside(context, "Chart.ReferenceLine", [props.y], layout.y.domain);
     at = valueTop(layout.y.domain, props.y);
     value = valueText(context, layout.keys, props.y, props.format);
     axis = "value";
@@ -600,7 +606,7 @@ export function ChartReferenceArea({ style, ...props }: ChartReferenceAreaProps)
   } else {
     const low = Math.min(props.y1, props.y2);
     const high = Math.max(props.y1, props.y2);
-    warnOutside("Chart.ReferenceArea", [low, high], layout.y.domain);
+    warnOutside(context, "Chart.ReferenceArea", [low, high], layout.y.domain);
     from = valueTop(layout.y.domain, high);
     to = valueTop(layout.y.domain, low);
     value = rangeText(

@@ -8,6 +8,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { intersects } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -452,10 +453,6 @@ describe("references outside the plot", () => {
 });
 
 /** Whether two boxes share any area. */
-function intersects(a: DOMRect, b: DOMRect): boolean {
-  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
-}
-
 describe("reference labels", () => {
   // jc5, jc6, js4 and js9. Eight categories of value 10, so every bar reaches the plot top, which
   // is the case where a label inside the plot must cross a bar.

@@ -4,7 +4,6 @@
  * page's **View as Markdown** link and any AI consumer read one pipeline, not two.
  */
 
-import { namespaceOf } from "../../src/lib/api-same-as.ts";
 import type { ApiSameAs } from "../../src/lib/api-same-as.ts";
 import type { ApiFunction, ApiPart, DocsApiPart, DocsComponent } from "../../src/lib/docs-model.ts";
 import { CLIENT_PART_NOTE, groupApiProps, propDescription } from "../../src/lib/docs-model.ts";
@@ -60,7 +59,7 @@ function renderPart(part: ApiPart): string {
 }
 
 /** The owner page's markdown endpoint, which a repeated part links to. */
-function ownerMarkdownUrl(owner: ApiSameAs): string {
+function ownerMarkdownUrl(owner: { readonly slug: string }): string {
   return `/components/${owner.slug}.md`;
 }
 
@@ -104,12 +103,9 @@ function renderFunction(part: DocsApiPart, reference: ApiFunction): string {
 
 /** The API reference section, or one sentence when the page repeats another page whole. */
 function renderApiReference(component: DocsComponent): string[] {
-  const [first] = component.parts;
-  if (component.alias !== undefined && first?.sameAs !== undefined) {
-    return [
-      `\`${namespaceOf(first.name)}\` is [\`${namespaceOf(first.sameAs.name)}\`](${ownerMarkdownUrl(first.sameAs)}) under another name.`,
-      "",
-    ];
+  const { alias } = component;
+  if (alias !== undefined) {
+    return [`\`${alias.name}\` is [\`${alias.owner}\`](${ownerMarkdownUrl(alias)}) under another name.`, ""];
   }
   return component.parts.map((part) => {
     if (part.sameAs !== undefined) return renderSameAsPart(part, part.sameAs);

@@ -24,8 +24,11 @@ const DOCS_PACKAGE = "apps/docs";
 /** Where the docs routes — and therefore their co-located files — live. */
 const DOCS_ROUTES = "src/app/(docs)";
 
-/** A docs section whose pages keep co-located files: component pages and handbook pages. */
-export type DocsRouteSection = "components" | "handbook";
+/** The docs sections whose pages keep co-located files: component pages and handbook pages. */
+export const DOCS_ROUTE_SECTIONS = ["components", "handbook"] as const;
+
+/** A docs section whose pages keep co-located files. */
+export type DocsRouteSection = (typeof DOCS_ROUTE_SECTIONS)[number];
 
 export type DocsRouteFile = {
   /** Absolute path, for the read. */

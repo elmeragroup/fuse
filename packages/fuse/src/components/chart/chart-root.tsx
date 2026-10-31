@@ -52,6 +52,7 @@ import { buildCartesianModel, layoutDomain } from "./layout/cartesian-model";
 import type { CartesianModel, ModelIssue } from "./layout/cartesian-model";
 import { intervalNests } from "./layout/coarse-slots";
 import { ChartCompositionError, ChartDataError, DATA_MESSAGES, isChartDevelopment } from "./layout/errors";
+import type { ChartDataRule, ChartHintRule } from "./layout/errors";
 import { mountedSeries, relaysPlot } from "./layout/relay";
 import { numberOf, stringOf } from "./layout/scalar";
 import { pairSlotKeys } from "./layout/slot-keys";
@@ -565,7 +566,7 @@ export function ChartRoot<
     const running = motion.running() && !seen.update.layouts.relays;
     const gliding = running ? new Set([...seen.moved, ...seen.update.layouts.moved]) : new Set<string>();
     // A Panel computes its domain from inputs Root sees only once it registers, so each Panel
-    // decides whether an update moves its own domain while it renders, through
+    // decides whether an update moves its own domain as it commits, through
     // `reportLayoutDomain`. Root decides for its default layout, and leaves the Panels' keys where
     // they drew.
     const panelKeys = new Set(panels.flatMap(({ layout }) => layout.keys));
@@ -626,13 +627,14 @@ export function ChartRoot<
   const firstIssue = model.issues[0];
   if (firstIssue !== undefined && isChartDevelopment()) throw dataError(firstIssue);
   const warned = useRef(new Set<string>());
+  const warnOnce = useCallback((rule: ChartDataRule | ChartHintRule, message: string): void => {
+    if (warned.current.has(rule)) return;
+    warned.current.add(rule);
+    console.warn(message);
+  }, []);
   useEffect(() => {
-    for (const issue of model.issues) {
-      if (warned.current.has(issue.rule)) continue;
-      warned.current.add(issue.rule);
-      console.warn(dataError(issue).message);
-    }
-  }, [model.issues]);
+    for (const issue of model.issues) warnOnce(issue.rule, dataError(issue).message);
+  }, [model.issues, warnOnce]);
 
   const id = useId();
   const [store] = useState(() => {
@@ -758,12 +760,11 @@ export function ChartRoot<
     },
     [config]
   );
-  const overlapWarned = useRef(false);
   const registerBar = useCallback(
     (key: string, grouped: boolean, layout: FrameOwner): (() => void) => {
       const token = {};
       bars.set(token, { key, grouped, layout });
-      if (isChartDevelopment() && !overlapWarned.current) {
+      if (isChartDevelopment()) {
         // Bars in two Panels draw in two plots, so only loose Bars of one layout overlap.
         const loose = [...bars.values()]
           .filter((bar) => !bar.grouped && bar.layout === layout)
@@ -779,8 +780,8 @@ export function ChartRoot<
             .map((second) => [first, second] as const)
         )[0];
         if (pair !== undefined) {
-          overlapWarned.current = true;
-          console.warn(
+          warnOnce(
+            "bars-overlap",
             `Chart.Bar draws ${JSON.stringify(pair[0])} and ${JSON.stringify(pair[1])} over each other, because they sit outside a Chart.BarGroup and share no stack id. Wrap them in <Chart.BarGroup series={[…]}> to draw them side by side.`
           );
         }
@@ -789,7 +790,7 @@ export function ChartRoot<
         bars.delete(token);
       };
     },
-    [bars, config]
+    [bars, config, warnOnce]
   );
   const drawsBar = useCallback(
     (key: string): boolean => [...bars.values()].some((bar) => bar.key === key),
@@ -848,11 +849,6 @@ export function ChartRoot<
     const error = panelsError(config, [...registry]);
     if (error !== null) throw error;
   }, [config, panels, registry, rootParts, rootPartsSeen]);
-  const warnOnce = useCallback((rule: string, message: string): void => {
-    if (warned.current.has(rule)) return;
-    warned.current.add(rule);
-    console.warn(message);
-  }, []);
   const intro = figureProps["data-intro"];
   const fade = figureProps["data-fade"];
   // Only a browser mount runs the entrance. The server and a hydrating Root read `false`.

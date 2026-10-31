@@ -91,14 +91,20 @@ export function forgottenSymbol(text: string): string | undefined {
 }
 
 /**
- * The forgotten symbols that are not part components.
+ * Type helpers a public type's definition expands, which stay out of the entry. `ChartRadarCap`
+ * counts a config's keys through them, and only that count is API, so their names are not.
+ */
+export const PRIVATE_TYPE_HELPERS = ["ChartHasFiveKeys", "ChartWithoutOne"] as const;
+
+/**
+ * The forgotten symbols that are neither part components nor private type helpers.
  *
  * @param forgotten - The symbols api-extractor flagged.
  * @param parts - The part component names, which may be forgotten.
  * @returns The other flagged symbols, sorted and distinct.
  */
 export function leakedSymbols(forgotten: readonly string[], parts: readonly string[]): string[] {
-  const allowed = new Set(parts);
+  const allowed = new Set<string>([...parts, ...PRIVATE_TYPE_HELPERS]);
   return [...new Set(forgotten.filter((name) => !allowed.has(name)))].sort();
 }
 

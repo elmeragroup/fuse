@@ -106,28 +106,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // Popover, Select, Combobox, ToggleGroup, NumberField and Slider, so the ceiling follows what
   // those cost.
   { name: "data-table-filter", entryFile: "data-table-filter.js", measuredGzip: 154062, ceilingGzip: 231093 },
-  // 2026-10-18: new preview entry, measured at 4787 as stubs with real types and no rendering.
-  // Each chart layer re-measures this row and its named-import rows and gives the reason here.
-  // 2026-10-18, layer 05: re-measured at 94290 with the cartesian Root, every Bar form and the
-  // shared parts. Most of the weight is the Fuse parts the chart renders through, which are Base
-  // UI's ToggleGroup, Tooltip and Button, Fuse Table, Skeleton, Loader and Empty, plus d3-array and
-  // d3-shape. The parts are on one namespace object, so a bundler keeps them all.
-  // 2026-10-18, layer 05 fix pass: re-measured at 97044 after the review fixes, which added the
-  // path-form paint, the reference and tooltip rules and the calendar tick fallback. The
-  // namespaces became ES module namespaces, which takes the whole entry from 97233 as const
-  // objects to 97044 and lets a route keep only the parts it names, as the chart/Chart.Root rows
-  // measure.
-  // 2026-10-30, SVG phase 1: the measured plot, the SVG marks and their paint servers, the motion
-  // loop, the follower registry and the relay rule re-measure the entry at 109080, within its
-  // ceiling. The recorded measurement stands.
-  // 2026-10-30, SVG phase 2: lines, areas, dots, markers, the path routes and their crossfade, the
-  // path form's moving columns and the drawing Sparkline re-measure the entry at 124818 after the
-  // three review rounds, within its ceiling. The recorded measurement stands.
-  // 2026-10-31, SVG phase 3: Chart.Panel, the per-layout frames and label registries, the per-series
-  // resolution and its table row spans re-measure the entry at 128778 after the three review
-  // rounds, within its ceiling. The recorded measurement stands.
-  // 2026-10-31, main merged in with #439 and #440: the shared Fuse parts the chart renders through
-  // take the entry to 129203, within its ceiling. The recorded measurement stands.
+  // Chart preview entry. Measured 129203 on 2026-10-31, within the ceiling from layer 05.
   { name: "chart", entryFile: "chart.js", measuredGzip: 97044 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
@@ -264,42 +243,10 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
 ] satisfies readonly Measured<JsEntryBudget>[]);
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
-  // 2026-10-18: the chart stubs. BarChart judges every alias, because AreaChart, BarChart and
-  // LineChart hold the same parts.
-  // The two format rows judge that a server headline pulls in no Root or part module.
-  // 2026-10-18, layer 05: Chart and BarChart re-measured at 93290 and 93292 with the rendering
-  // cartesian Root and every Bar form. PieChart, RadialChart and RadarChart re-measured at 76434,
-  // 76408 and 76370, because their namespaces hold the shared Tooltip, Legend, Table and Empty,
-  // which now render through Fuse and Base UI parts. useChartPoint re-measured at 3635, because it
-  // now reads Root's store. Sparkline is unchanged.
-  // 2026-10-18, layer 05 fix pass: each namespace is an ES module namespace over its parts module,
-  // and each alias has a parts module of its own. A row that imports a whole namespace keeps every
-  // part, so Chart and BarChart re-measure at 95987 and 95989, 2 bytes apart for the alias's own
-  // module, and PieChart, RadialChart and RadarChart at 79885, 79858 and 79820, all for the review
-  // fixes. The three route rows are new and read namespace members, as an app does. Chart.Root
-  // measures 41019 against 96221 as a const object, the bar route of Root, Grid, both axes and Bar
-  // 48267 against 96236, and PieChart.Root 404 against 80188, because no route reaches a part it
-  // does not name. checkPackedChartBundles proves which modules each route leaves out.
-  // 2026-10-19, layer 05 recheck: the dated slot labels, the narrow tick buckets and the touch and
-  // tooltip fixes grow the chart rows within their ceilings, to 97502 for the entry, 41341 for
-  // Chart.Root, 48630 for the bar route and 3891 for useChartPoint, which now reads the date
-  // rule. The recorded measurements stand.
-  // 2026-10-30, SVG phase 1: the SVG marks and the relay rule grow the rows within their ceilings,
-  // to 108017 for Chart, 108020 for BarChart, 82113, 82086 and 82050 for the polar namespaces,
-  // 47003 for Chart.Root, 61415 for the bar route and 3926 for useChartPoint. The recorded
-  // measurements stand.
-  // 2026-10-30, SVG phase 2: Line, Area, Dots, Marker, Reveal and the path routes grow the rows
-  // within their ceilings, after the three review rounds, to 122518 for Chart, 122520 for BarChart,
-  // 82134, 82108 and 82071 for the polar namespaces, 47652 for Chart.Root, 65073 for the bar route,
-  // whose Bar now moves its path form, and 3942 for useChartPoint. The recorded measurements stand.
-  // 2026-10-31, SVG phase 3: Panel, coarse series and the per-layout label registries grow the rows
-  // within their ceilings, after the three review rounds, to 126468 for Chart, 126470 for BarChart,
-  // 82653, 82626 and 82588 for the polar namespaces, 50192 for Chart.Root and 68130 for the bar
-  // route. useChartPoint measures 3933. The recorded measurements stand.
-  // 2026-10-31, main merged in with #439 and #440: the shared Fuse parts grow Chart to 126903,
-  // BarChart to 126905 and the polar namespaces to 83087, 83062 and 83025, within their ceilings.
-  // Chart.Root, the bar route and useChartPoint stay at 50192, 68130 and 3933. The recorded
-  // measurements stand.
+  // The chart rows: whole namespaces (BarChart stands for every cartesian alias), routes that keep
+  // only the members they name, and the server-safe helpers. Last measured 2026-10-31, each within
+  // its ceiling: Chart 126903, BarChart 126905, the polar namespaces 83087, 83062 and 83025,
+  // Chart.Root 50192, the bar route 68130, useChartPoint 3933, Sparkline 11384.
   { name: "chart/Chart", entryFile: "chart.js", exportName: "Chart", measuredGzip: 95987 },
   { name: "chart/BarChart", entryFile: "chart.js", exportName: "BarChart", measuredGzip: 95989 },
   { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
@@ -326,13 +273,7 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     members: ["Root"],
     measuredGzip: 404,
   },
-  // 2026-10-30, SVG phase 2: Sparkline draws, so it re-measures at 11118 with d3-shape's curves, the
-  // path builder it shares with Line and Area, and the value and slot formats of its range
-  // sentence. It still pulls in no Root or part module. After the three review rounds, with the
-  // area's lone dots, it measures 11384, within its ceiling, and the recorded measurement stands.
   { name: "chart/Sparkline", entryFile: "chart.js", exportName: "Sparkline", measuredGzip: 11118 },
-  // 2026-10-18, layer 05 fix pass: useChartPoint, Sparkline and formatChartSlot re-measured
-  // unchanged. formatChartValue re-measured at 1681, 4 bytes under.
   { name: "chart/useChartPoint", entryFile: "chart.js", exportName: "useChartPoint", measuredGzip: 3635 },
   {
     name: "chart/formatChartValue",
@@ -340,8 +281,6 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     exportName: "formatChartValue",
     measuredGzip: 1681,
   },
-  // 2026-10-18, layer 05: formatChartSlot re-measured at 3048 after time-format.ts, which it
-  // bundles, grew for the cartesian model's slot ends.
   { name: "chart/formatChartSlot", entryFile: "chart.js", exportName: "formatChartSlot", measuredGzip: 3048 },
   {
     name: "icons/Check",
@@ -378,35 +317,15 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // 2026-10-06: main measured 24451, 15 bytes under that ceiling. The field corner classes,
   // which read `--radius-field` (+142), take styles.css to 24593, over it, so the shared entry
   // recalibrates to measured × 1.5, as a code owner approved.
-  // 2026-10-29: measured 6734 after the charts branch rebased onto main. Main's new roles and the
-  // 26 chart roles each fit under the standing 6416 alone and not together, so the entry
-  // recalibrates to measured × 1.5, as a code owner approved.
+  // 2026-10-29: main's roles and the 26 chart roles recalibrate the entry to measured × 1.5.
   { name: "themes.css", file: "themes.css", measuredGzip: 6734 },
   // 2026-10-30: the cross-section Frame seam selectors (+119) take styles.css from 36851 to
   // 36970, and the Table edge-inset property, the Frame's derived section clip and the cell
   // padding defaults that edge cells override (+404) to 37374, over its ceiling of 36890, so the
   // shared entry recalibrates to measured × 1.5, as a code owner approved.
-  // 2026-10-31: measured 37489 once main merged into the charts branch, whose fuse.css adds the
-  // chart roles as Tailwind colours and the reduced-motion delay reset (+115), within the
-  // recalibrated ceiling. The recorded measurement stands.
+  // 2026-10-31: 37489 with the chart roles as Tailwind colours, within the ceiling.
   { name: "styles.css", file: "styles.css", measuredGzip: 37374 },
-  // 2026-10-18: new entry, measured at 115. It holds the layer statement and one rule.
-  // 2026-10-18, layer 05: re-measured at 8155 with the rules for every cartesian part and Bar form,
-  // their forced-colours and print rules and the update motion. styles.css stays at 29356.
-  // 2026-10-18, layer 05 fix pass: re-measured at 10089 with the review fixes' rules, which are
-  // the path-form paint, the guides of horizontal charts, the reference label row, the variant
-  // edges, the forced-colours missing tick and the tooltip metrics.
-  // 2026-10-30, SVG phase 1: re-measured at 9663, with the SVG paint rules in place of the HTML
-  // bar layout. The recorded measurement stands.
-  // 2026-10-30, SVG phase 2: re-measured at 12333 after the three review rounds, with the line,
-  // area, dot, marker, Reveal, Glow and Sparkline rules, the entrance wipes, the dash and ping
-  // keyframes and the crossfade's outgoing copies. The recorded measurement stands.
-  // 2026-10-31, SVG phase 3: re-measured at 13404 after the three review rounds, with the Panel
-  // rows, their subgrid, gap and print rules, the per-Panel slot label row and the surface that
-  // spans the Panels. The recorded measurement stands.
-  // 2026-10-31, main merged in with #440: re-measured at 13523 once the horizontal-orientation
-  // rules match the chart Root alone, not an ancestor such as a docs demo's Tabs, and the Root's
-  // one column fills its width under any outside justify-content. The recorded measurement stands.
+  // Chart stylesheet. Measured 13523 on 2026-10-31, within the ceiling from layer 05.
   { name: "chart.css", file: "chart.css", measuredGzip: 10089 },
 ] satisfies readonly Measured<CssBudget>[]);
 

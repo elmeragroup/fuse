@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { bars, popupOpen } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -47,16 +48,6 @@ function Plot({
       </LocaleProvider>
     </div>
   );
-}
-
-function bars(host: HTMLElement): HTMLElement[] {
-  // DOM audit: bars are aria-hidden plot output, so their slots are the only locator.
-  return [...host.querySelectorAll<HTMLElement>('[data-slot="chart-bar"]')];
-}
-
-function popupOpen(): boolean {
-  // DOM audit: the popup portals out of the host and carries its own slot.
-  return document.querySelector('[data-slot="chart-tooltip"]') !== null;
 }
 
 function active(host: HTMLElement): boolean {

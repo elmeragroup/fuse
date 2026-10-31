@@ -4,8 +4,9 @@
 
    A Frame's items (`inner-corner/frame.ts`) are its panels and Table containers that are the
    root's direct children, or the direct children of a Collapsible.Content in a Collapsible.Root
-   that is one, a collapsible section. The selectors take the Content's parent for its Root, as a
-   Collapsible.Content is always its Root's child in a section. `frame-level` names both paths,
+   that is one, a collapsible section. Every section path names the section by its Collapsible.Root
+   slot, `[data-slot="collapsible"]`, and its content by `[data-slot="collapsible-content"]`, as
+   the density-role key does. `frame-level` names both paths,
    any element on them, and `frame-item` and the narrower item variants compose from it. The first
    and last items spell their own paths from the root, so nothing outside the Frame decides them.
    They all apply on the root and style its items. A Table reads its edge inset from a property the
@@ -15,7 +16,7 @@
    compose from it, sends Tailwind's variant compiler out of memory. */
 @custom-variant frame-level {
   & > *,
-  & > * > [data-slot="collapsible-content"] > * {
+  & > [data-slot="collapsible"] > [data-slot="collapsible-content"] > * {
     @slot;
   }
 }
@@ -28,7 +29,7 @@
 }
 /* A section's Collapsible.Content, which the items in a section sit in. */
 @custom-variant frame-section {
-  & > * > [data-slot="collapsible-content"] {
+  & > [data-slot="collapsible"] > [data-slot="collapsible-content"] {
     @slot;
   }
 }
@@ -53,7 +54,7 @@
 @custom-variant frame-first-item {
   & > :is([data-slot="frame-panel"], [data-slot="table-container"]):first-child,
   &
-    > :first-child
+    > [data-slot="collapsible"]:first-child
     > [data-slot="collapsible-content"]:first-child
     > :is([data-slot="frame-panel"], [data-slot="table-container"]):first-child {
     @slot;
@@ -62,7 +63,7 @@
 @custom-variant frame-last-item {
   & > :is([data-slot="frame-panel"], [data-slot="table-container"]):last-child,
   &
-    > :last-child
+    > [data-slot="collapsible"]:last-child
     > [data-slot="collapsible-content"]:last-child
     > :is([data-slot="frame-panel"], [data-slot="table-container"]):last-child {
     @slot;
@@ -86,7 +87,7 @@
         > [data-slot="frame-panel"]:first-child
     ),
   &
-    > *
+    > [data-slot="collapsible"]
     > [data-slot="collapsible-content"]
     > :where([data-slot="frame-panel"]):has(+ [data-slot="frame-panel"]),
   &
@@ -110,7 +111,10 @@
       )
     )
     + :where([data-slot="frame-panel"]),
-  & > * > [data-slot="collapsible-content"] > *:where([data-slot="frame-panel"] + [data-slot="frame-panel"]),
+  &
+    > [data-slot="collapsible"]
+    > [data-slot="collapsible-content"]
+    > *:where([data-slot="frame-panel"] + [data-slot="frame-panel"]),
   &
     > :is(
       [data-slot="frame-panel"],
@@ -136,12 +140,18 @@
    own class. */
 @custom-variant framed-table {
   &:where(
-      :is([data-slot="frame"], [data-slot="frame"] > * > [data-slot="collapsible-content"])
+      :is(
+          [data-slot="frame"],
+          [data-slot="frame"] > [data-slot="collapsible"] > [data-slot="collapsible-content"]
+        )
         > [data-slot="table-container"]
         *
     ):not(
       :where(
-        :is([data-slot="frame"], [data-slot="frame"] > * > [data-slot="collapsible-content"])
+        :is(
+            [data-slot="frame"],
+            [data-slot="frame"] > [data-slot="collapsible"] > [data-slot="collapsible-content"]
+          )
           > [data-slot="table-container"]
           *
           [data-slot="table-container"]

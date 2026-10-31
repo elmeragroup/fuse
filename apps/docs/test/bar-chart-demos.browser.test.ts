@@ -49,6 +49,17 @@ function printedNumber(text: string): number {
   );
 }
 
+/**
+ * Wait until a popup's entry animations and transitions finish, then for one more frame, so its
+ * placement reads at rest.
+ */
+async function settled(popup: Locator): Promise<void> {
+  await popup.evaluate(async (element) => {
+    await Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+  });
+}
+
 describe("bar-chart scenario demos in Chromium", () => {
   const browser = launchSuiteBrowser();
 
@@ -559,7 +570,7 @@ describe.each([
       await page.mouse.move(column.x, y, { steps: 4 });
       const popup = page.locator('[data-slot="chart-tooltip"]:not([data-earlier])');
       await popup.waitFor({ state: "visible" });
-      await page.waitForTimeout(250);
+      await settled(popup);
       const shown = await popup.evaluate((element) => {
         const box = element.getBoundingClientRect();
         return {
@@ -628,7 +639,7 @@ describe.each([
       await page.mouse.move(target.x, target.y, { steps: 4 });
       const popup = page.locator('[data-slot="chart-tooltip"]:not([data-earlier])');
       await popup.waitFor({ state: "visible" });
-      await page.waitForTimeout(250);
+      await settled(popup);
       const shown = await popup.evaluate((element) => {
         const box = element.getBoundingClientRect();
         return {

@@ -16,10 +16,10 @@ import type { PathPlacement, PathTopology } from "./line-path";
 import { PATH_DIGITS, pathNumber } from "./rounding";
 
 /** The viewBox width of one value's cell. */
-export const SPARKLINE_CELL = 10;
+const SPARKLINE_CELL = 10;
 
 /** The viewBox height. */
-export const SPARKLINE_HEIGHT = 100;
+const SPARKLINE_HEIGHT = 100;
 
 /** The share of a bar cell left empty around its bar, as a chart's default band gap. */
 const BAR_GAP = 0.25;

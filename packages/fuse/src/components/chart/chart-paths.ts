@@ -6,7 +6,8 @@
  * each number pair the loop tweens, in order, which is the route of a data update while it runs. A
  * dot, a marker or the active dot then picks its own pair from the path's numbers in every frame,
  * so it sits on its vertex as the path slides, pairs or tweens. Both parts of one series lay out the
- * same route, so either one's record serves. A Bar in the path form records its columns' route
+ * same route, so either one's record serves. Each records under its own owner, so when one
+ * unmounts, the other's record still serves. A Bar in the path form records its columns' route
  * apart, under the kind "columns", because a series may draw both a line and bars.
  */
 import type { JoinLead, MarkValues } from "./chart-motion";
@@ -35,13 +36,22 @@ export type PathRoute = {
 /** What draws a series path: a Line or an Area, or a Bar's columns in the path form. */
 export type PathKind = "line" | "columns";
 
+/**
+ * What owns a route record: the placing mark's own path memory ref, which lives as long as the
+ * mark does.
+ */
+export type PathOwner = { readonly current: unknown };
+
 /** Root's record of series path routes. */
 export type ChartPaths = {
-  /** Record a series path's route after it places its vertices. */
-  readonly set: (series: number, kind: PathKind, route: PathRoute) => void;
-  /** Forget a series path that unmounted. */
-  readonly delete: (series: number, kind: PathKind) => void;
-  /** The route of a series path, or undefined when nothing of that kind draws the series. */
+  /** Record the route a mark placed for a series path, under the mark's own owner token. */
+  readonly set: (series: number, kind: PathKind, owner: PathOwner, route: PathRoute) => void;
+  /** Forget the route of a mark that unmounted, and keep any other mark's. */
+  readonly delete: (series: number, kind: PathKind, owner: PathOwner) => void;
+  /**
+   * The route of a series path, the latest of its mounted marks', or undefined when nothing of that
+   * kind draws the series.
+   */
   readonly get: (series: number, kind: PathKind) => PathRoute | undefined;
 };
 
@@ -51,15 +61,26 @@ export type ChartPaths = {
  * @returns The record.
  */
 export function createChartPaths(): ChartPaths {
-  const routes = new Map<string, PathRoute>();
+  // Each anchor's routes by owner, in the order they were last set, so the latest is last.
+  const routes = new Map<string, Map<PathOwner, PathRoute>>();
   return {
-    set: (series, kind, route) => {
-      routes.set(pathAnchor(series, kind), route);
+    set: (series, kind, owner, route) => {
+      const anchor = pathAnchor(series, kind);
+      const owned = routes.get(anchor) ?? new Map<PathOwner, PathRoute>();
+      owned.delete(owner);
+      owned.set(owner, route);
+      routes.set(anchor, owned);
     },
-    delete: (series, kind) => {
-      routes.delete(pathAnchor(series, kind));
+    delete: (series, kind, owner) => {
+      const anchor = pathAnchor(series, kind);
+      const owned = routes.get(anchor);
+      owned?.delete(owner);
+      if (owned?.size === 0) routes.delete(anchor);
     },
-    get: (series, kind) => routes.get(pathAnchor(series, kind)),
+    get: (series, kind) => {
+      const owned = routes.get(pathAnchor(series, kind));
+      return owned === undefined ? undefined : [...owned.values()].at(-1);
+    },
   };
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { use, useInsertionEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { ChartLayoutContext, assertKnownKey, reportLayoutDomain, useChartRoot } from "./chart-context";
@@ -10,7 +10,7 @@ import { createFrameOwner } from "./chart-motion";
 import { colourFamilyError } from "./chart-paint";
 import { ChartPlotContext, usePanelPlot } from "./chart-plot";
 import { PlotSkeleton } from "./chart-skeleton";
-import type { ChartLayerProps } from "./chart-types";
+import type { ChartConfig, ChartLayerProps } from "./chart-types";
 import { layoutDomain } from "./layout/cartesian-model";
 import type { LayoutInput } from "./layout/cartesian-model";
 import { ChartCompositionError } from "./layout/errors";
@@ -24,7 +24,7 @@ export type ChartPanelProps = ChartLayerProps & {
   /**
    * The config keys this Panel draws. Its y domain comes from them, `yBaseline` and `yInclude`, over
    * the rows inside the effective `xRange`. The series cycle and the "all series" option list keys
-   * in config order, so write config in Panel order.
+   * in config order, so write config in Panel order. Every key of a `stack` sits in the same Panel.
    */
   series: readonly string[];
   /** As Root's `yBaseline`, for this Panel's layout. "zero" by default. */
@@ -37,6 +37,31 @@ export type ChartPanelProps = ChartLayerProps & {
    */
   children?: ReactNode;
 };
+
+/**
+ * The error of a stack whose keys this Panel lists only some of. A stack sums its parts slot by
+ * slot, so one split over two Panels would float each Panel's part on parts its plot doesn't draw.
+ *
+ * @param config - The Root's config.
+ * @param keys - The Panel's series.
+ * @returns The error, or null when the Panel holds each of its stacks whole.
+ */
+function splitStackError(config: ChartConfig, keys: readonly string[]): ChartCompositionError | null {
+  const listed = new Set(keys);
+  for (const key of keys) {
+    const stack = config[key]?.stack;
+    if (stack === undefined) continue;
+    const missing = Object.keys(config).find((other) => config[other]?.stack === stack && !listed.has(other));
+    if (missing !== undefined) {
+      return new ChartCompositionError(
+        "Chart.Panel",
+        "stack-across-panels",
+        `lists ${JSON.stringify(key)} without ${JSON.stringify(missing)}, which share stack ${JSON.stringify(stack)}. List every key of a stack in one Panel.`
+      );
+    }
+  }
+  return null;
+}
 
 /** Whether two lists hold the same items in the same order. */
 function sameList<T>(a: readonly T[] | undefined, b: readonly T[] | undefined): boolean {
@@ -93,6 +118,8 @@ export function ChartPanel({
   for (const key of series) assertKnownKey("Chart.Panel", context.config, key);
   const colourRule = colourFamilyError("Chart.Panel", context.config, series);
   if (colourRule !== null) throw colourRule;
+  const stackRule = splitStackError(context.config, series);
+  if (stackRule !== null) throw stackRule;
   const keys = useSteadyList(series) ?? series;
   const include = useSteadyList(yInclude);
   const { model, stackOffset, registerPanel } = context;
@@ -102,13 +129,17 @@ export function ChartPanel({
   );
   // The domain comes from the model during render, so the server and the hydration render agree.
   const y = useMemo(() => layoutDomain({ ...model, stackOffset }, input), [model, stackOffset, input]);
-  // The first render under each update decides whether the update moves this Panel's domain, before
-  // the Panel's or any other layout's marks place.
-  const [decided, setDecided] = useState(context.update);
-  if (decided !== context.update) {
-    setDecided(context.update);
-    reportLayoutDomain(context.update, keys, y.domain);
-  }
+  // The first commit under each update decides whether the update moves this Panel's domain. An
+  // insertion effect runs in the commit, before any layout effect, so every mark of the commit
+  // reads every committed Panel's decision before it places, and a render that never commits, as a
+  // suspended one, decides nothing. The update the Panel mounts under moves nothing.
+  const { update } = context;
+  const decided = useRef(update);
+  useInsertionEffect(() => {
+    if (decided.current === update) return;
+    decided.current = update;
+    reportLayoutDomain(update, keys, y.domain);
+  }, [update, keys, y.domain]);
   const [labels] = useState(createChartLabels);
   // The Panel's frame, which names its marks' tweens to Root's loop for the Panel's life.
   const [owner] = useState(() => createFrameOwner("panel"));

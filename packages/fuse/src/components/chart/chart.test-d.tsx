@@ -22,8 +22,6 @@ import {
 } from "@elmeragroup/fuse/chart";
 import type {
   ChartConfig,
-  ChartHasFiveKeys,
-  ChartWithoutOne,
   ChartPeriod,
   ChartPoint,
   ChartQuality,
@@ -558,21 +556,4 @@ test("the aliases hold Chart's parts, and every shared part is one type across t
   expectTypeOf(RadialChart.Center).toEqualTypeOf(PieChart.Center);
   expectTypeOf(RadialChart.Glow).toEqualTypeOf(PieChart.Glow);
   expectTypeOf(useChartPoint).returns.toEqualTypeOf<ChartPoint | null>();
-});
-
-test("the radar cap counts five keys in any order, and a widened key set counts as none", () => {
-  type Thirty = `k${0 | 1 | 2}${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`;
-  expectTypeOf<ChartHasFiveKeys<never>>().toEqualTypeOf<false>();
-  expectTypeOf<ChartHasFiveKeys<"a">>().toEqualTypeOf<false>();
-  expectTypeOf<ChartHasFiveKeys<"a" | "b" | "c" | "d">>().toEqualTypeOf<false>();
-  expectTypeOf<ChartHasFiveKeys<"d" | "c" | "b" | "a">>().toEqualTypeOf<false>();
-  expectTypeOf<ChartHasFiveKeys<"a" | "b" | "c" | "d" | "e">>().toEqualTypeOf<true>();
-  expectTypeOf<ChartHasFiveKeys<"e" | "d" | "c" | "b" | "a">>().toEqualTypeOf<true>();
-  expectTypeOf<ChartHasFiveKeys<Thirty>>().toEqualTypeOf<true>();
-  expectTypeOf<ChartHasFiveKeys<string>>().toEqualTypeOf<false>();
-  expectTypeOf<ChartWithoutOne<never>>().toEqualTypeOf<never>();
-  expectTypeOf<ChartWithoutOne<"a">>().toEqualTypeOf<never>();
-  expectTypeOf<ChartWithoutOne<ChartWithoutOne<"a" | "b">>>().toEqualTypeOf<never>();
-  expectTypeOf<ChartWithoutOne<"a" | "b">>().toExtend<"a" | "b">();
-  expectTypeOf<"a" | "b">().not.toExtend<ChartWithoutOne<"a" | "b">>();
 });

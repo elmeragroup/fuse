@@ -184,7 +184,7 @@ export function ChartArea({
       draw: drawArea,
     });
   });
-  useLayoutEffect(() => () => paths.delete(seriesIndex, "line"), [paths, seriesIndex]);
+  useLayoutEffect(() => () => paths.delete(seriesIndex, "line", memoryRef), [paths, seriesIndex, memoryRef]);
   const resting = useMemo(
     () => (look === null ? null : areaPaths(rest, topology, placeOf(look))),
     [look, rest, topology]
@@ -199,15 +199,15 @@ export function ChartArea({
       aria-hidden="true"
       className={className}
       style={{
-        "--chart-series-paint": state.paint,
+        "--chart-series-paint": state.paint.base,
         "--chart-series": seriesIndex,
-        "--_paint-server": hasPathPaint(state.color) ? `url(#${prefix}-paint)` : undefined,
+        "--_paint-server": hasPathPaint(state.paint) ? `url(#${prefix}-paint)` : undefined,
         ...style,
       }}>
       {frame === null || series === undefined || resting === null ? null : (
         <>
           <defs>
-            <PathPaint id={`${prefix}-paint`} series={series} color={state.color} frame={frame} />
+            <PathPaint id={`${prefix}-paint`} paint={state.paint} frame={frame} />
             <AreaMasks prefix={prefix} frame={frame} variant={variant} />
           </defs>
           <g ref={markRef}>

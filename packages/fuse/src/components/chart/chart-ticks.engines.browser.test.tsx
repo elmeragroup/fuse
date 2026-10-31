@@ -7,6 +7,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { FALL_BACK_HOURS, S06_HOURS } from "../../../test/chart/elhub-rows";
 import type { HourRow } from "../../../test/chart/elhub-rows";
+import { intersects } from "../../../test/chart/marks";
 import { renderThemed, stampDensity } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { SupportedLocale } from "../../intl/locale-context";
@@ -190,6 +191,65 @@ describe("a year of hours", () => {
     // A quarter of the months, at the 3-month stride, is the coarsest set the rule picks.
     expect(shown.length).toBeGreaterThanOrEqual(4);
   });
+
+  it.each(["hour-range", "time-range"] as const)(
+    "names the month starts under an explicit %s format",
+    (format) => {
+      const { host } = renderThemed(
+        <div style={{ width: 640, fontFamily: "var(--font-sans)" }}>
+          <LocaleProvider locale="nb-NO">
+            <Chart.Root
+              data={rows}
+              config={{ household: { label: "Forbruk", color: "chart-1" } }}
+              xKey="start"
+              interval="hour"
+              timeZone="Europe/Oslo"
+              aria-label="Forbruk per time">
+              <Chart.XAxis format={format} />
+              <Chart.Bar dataKey="household" />
+            </Chart.Root>
+          </LocaleProvider>
+        </div>
+      );
+      // DOM audit: x ticks are aria-hidden text.
+      const ticks = [...host.querySelectorAll<HTMLElement>('[data-slot="chart-x-tick"]')];
+      expect(ticks.map((tick) => tick.textContent)).toEqual(MONTH_LABELS);
+    }
+  );
+});
+
+describe("an axis of seconds", () => {
+  /** Ten seconds from 13:42:00 in Oslo on 15 January 2026, which is 12:42:00 UTC. */
+  const rows = Array.from({ length: 10 }, (_, second) => ({
+    at: new Date(Date.UTC(2026, 0, 15, 12, 42, second)),
+    kw: 2 + (second % 3),
+  }));
+
+  it("labels each tick within one minute with its own second", () => {
+    const { host } = renderThemed(
+      <div style={{ width: 640, fontFamily: "var(--font-sans)" }}>
+        <LocaleProvider locale="nb-NO">
+          <Chart.Root
+            data={rows}
+            config={{ kw: { label: "Effekt", color: "chart-1" } }}
+            xKey="at"
+            interval="second"
+            timeZone="Europe/Oslo"
+            aria-label="Effekt per sekund">
+            <Chart.XAxis />
+            <Chart.Line dataKey="kw" />
+          </Chart.Root>
+        </LocaleProvider>
+      </div>
+    );
+    // DOM audit: x ticks are aria-hidden text.
+    const texts = [...host.querySelectorAll<HTMLElement>('[data-slot="chart-x-tick"]')]
+      .filter((tick) => getComputedStyle(tick).display !== "none")
+      .map((tick) => tick.textContent);
+    expect(texts.length).toBeGreaterThanOrEqual(3);
+    expect(new Set(texts).size).toBe(texts.length);
+    for (const text of texts) expect(text).toMatch(/^13:42:0\d$/u);
+  });
 });
 
 describe("the DST days", () => {
@@ -363,10 +423,6 @@ describe("the width sweep", () => {
 });
 
 /** Whether two boxes share any area. */
-function intersects(a: DOMRect, b: DOMRect): boolean {
-  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
-}
-
 describe("axis titles", () => {
   it("keeps a 4 px gutter between the y title and the widest tick label", () => {
     // jc12: the rotated title touched the tick labels. The gap is the 2xs spacing role, 4 px.

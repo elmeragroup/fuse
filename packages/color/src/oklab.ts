@@ -28,8 +28,6 @@ class Oklab {
   /** Alpha, in `0..1`. */
   readonly alpha: number;
 
-  // The brand's value is never read, so flipping it is an equivalent mutant.
-  // Stryker disable next-line BooleanLiteral
   // oxlint-disable-next-line no-unused-private-class-members -- The field is the brand. No code reads it, but a spread cannot copy it, so only this class's instances have it.
   readonly #brand = true;
 

@@ -4,8 +4,9 @@
  * cell therefore parses `getValue()` into a {@link CellValue} first, and a cell handed a value of
  * another kind renders its raw text instead of throwing.
  */
-import { dateTimeFormat, numberFormat } from "../../internal/intl-cache";
+import { numberFormat } from "../../internal/intl-cache";
 import { canonicalSpaces } from "../../intl/canonical-spaces";
+import { formatDateTime } from "../../intl/date-time-join";
 import type { SupportedLocale } from "../../intl/locale-context";
 
 /** Number format options a number cell accepts. `style` belongs to the cell kind. */
@@ -50,14 +51,14 @@ export function cellValueText(cell: CellValue): string {
  * @param locale - The active supported locale.
  * @param value - The number.
  * @param options - Digits, grouping and notation.
- * @returns The formatted number.
+ * @returns The formatted number, with every space written as U+00A0.
  */
 export function formatNumberCell(
   locale: SupportedLocale,
   value: number,
   options: NumberFormatOptions
 ): string {
-  return numberFormat(locale, options).format(value);
+  return canonicalSpaces(numberFormat(locale, options).format(value));
 }
 
 /**
@@ -67,7 +68,7 @@ export function formatNumberCell(
  * @param value - The amount.
  * @param currency - The ISO 4217 code, such as `"NOK"`.
  * @param options - Digits, grouping and currency display.
- * @returns The formatted amount.
+ * @returns The formatted amount, with every space written as U+00A0.
  */
 export function formatCurrencyCell(
   locale: SupportedLocale,
@@ -76,7 +77,7 @@ export function formatCurrencyCell(
   options: NumberFormatOptions
 ): string {
   const currencyOptions: Intl.NumberFormatOptions = { ...options, style: "currency", currency };
-  return numberFormat(locale, currencyOptions).format(value);
+  return canonicalSpaces(numberFormat(locale, currencyOptions).format(value));
 }
 
 /**
@@ -85,14 +86,12 @@ export function formatCurrencyCell(
  * @param locale - The active supported locale.
  * @param value - The date. An invalid date renders as `"Invalid Date"`, which `Intl` would throw on.
  * @param options - Date and time styles and the time zone.
- * @returns The formatted date, with every space written as U+00A0. Node and the browser engines
- * write different spaces for the same date, such as U+202F or U+0020 before the en-US day period,
- * and one differing space fails hydration. Spaces are the only difference this removes. WebKit's
- * older CLDR still joins some date-times with other words, such as `Sep 30, 2026 at 2:05 PM` for an
- * en-US medium date and `30 september 2026 14:05` without `kl.` for an sv-SE long date.
+ * @returns The formatted date, with every space written as U+00A0. A date and a time join through
+ * `formatDateTime`, which writes CLDR 48's join, so Node and every browser engine write the same
+ * text.
  */
 export function formatDateCell(locale: SupportedLocale, value: Date, options: DateTimeFormatOptions): string {
   return Number.isNaN(value.getTime())
     ? String(value)
-    : canonicalSpaces(dateTimeFormat(locale, options).format(value));
+    : canonicalSpaces(formatDateTime(locale, options, value.getTime()));
 }

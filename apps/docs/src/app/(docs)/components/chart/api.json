@@ -296,7 +296,7 @@
           "type": "readonly string[]",
           "shortType": null,
           "defaultValue": null,
-          "description": "The config keys this Panel draws. Its y domain comes from them, `yBaseline` and `yInclude`, over the rows inside the effective `xRange`. The series cycle and the \"all series\" option list keys in config order, so write config in Panel order.",
+          "description": "The config keys this Panel draws. Its y domain comes from them, `yBaseline` and `yInclude`, over the rows inside the effective `xRange`. The series cycle and the \"all series\" option list keys in config order, so write config in Panel order. Every key of a `stack` sits in the same Panel.",
           "required": true
         },
         {
@@ -395,7 +395,7 @@
           "type": "XFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The tick label format. The interval's tick preset is the default.",
+          "description": "The tick label format. The interval's tick preset is the default. A tick that starts a coarser calendar unit, such as a month start on a long axis of hours, names that unit. A clock preset can't name a day, so those ticks keep their unit's default preset, such as `okt` under `format=\"hour-range\"`. A calendar preset or Intl options format them as given.",
           "required": false
         },
         {

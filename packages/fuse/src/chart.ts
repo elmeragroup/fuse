@@ -6,8 +6,9 @@
  * prop that mirrors one, Root state or a data attribute. It never becomes a boolean or mode prop on
  * a part below Root.
  *
- * The errors the parts' JSDoc names, such as `unknown-key`, start to throw once the parts render in
- * a later preview release.
+ * The errors the parts' JSDoc names, such as `unknown-key`, throw as the cartesian parts render.
+ * `PieChart`, `RadialChart` and `RadarChart` render nothing yet, so theirs start to throw once those
+ * parts render in a later preview release.
  *
  * Import `@elmeragroup/fuse/chart.css` once, beside Fuse's own stylesheet.
  *
@@ -40,7 +41,6 @@ export type {
   ChartFallback,
   ChartFigureProps,
   ChartFractionDigits,
-  ChartHasFiveKeys,
   ChartInstant,
   ChartIntro,
   ChartKeyOf,
@@ -66,7 +66,6 @@ export type {
   ChartSeriesConfig,
   ChartSeriesConfigCheck,
   ChartSeriesKey,
-  ChartShareFormat,
   ChartStyle,
   ChartStyleVars,
   ChartTimeAxisProps,
@@ -78,7 +77,6 @@ export type {
   ChartXRange,
   ChartXRangeChangeReason,
   ChartXValue,
-  ChartWithoutOne,
   FormattedText,
   Interval,
   TimePreset,

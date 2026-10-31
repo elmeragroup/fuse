@@ -13,28 +13,16 @@ import type { Placement, ValueAxis } from "./chart-motion";
 import { placementOf } from "./chart-motion-mark";
 import type { Commit } from "./chart-motion-mark";
 import { valuePaint } from "./chart-paint";
-import type { ChartColor } from "./chart-types";
+import type { SeriesPaint } from "./chart-paint";
 import { barCells, barGeometry, barRect, geometryRect, introStep } from "./layout/bar-geometry";
 import type { BarCell, BarGeometry } from "./layout/bar-geometry";
 import type { BarVariant } from "./layout/bar-shapes";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { ownBounds, ownSlot, ownSpan } from "./layout/coarse-slots";
-import type { ColorBins } from "./layout/color-bins";
 import { CHART_STAGGER_MS } from "./layout/motion";
 import { snapAcross, snapSpan, snapX, tickWidth, valueAt } from "./layout/plot-frame";
 import type { BarMetrics, PlotFrame, PlotRect, SubBand } from "./layout/plot-frame";
 import { slotTime } from "./layout/readings";
-
-/** What a series paints with, shared by its bars, its path form and its active overlay. */
-export type SeriesPaint = {
-  readonly key: string;
-  readonly color: ChartColor;
-  readonly bins: ColorBins | undefined;
-  /** The series paint, which a bar without a paint of its own takes. */
-  readonly base: string;
-  /** The role list's colour stops, or undefined for a single role or a scale. */
-  readonly stops: readonly string[] | undefined;
-};
 
 /** How one series lays out its bars, shared by every bar of it. */
 export type BarLook = {
@@ -288,7 +276,7 @@ export function layoutBars(input: BarsInput): BarsLayout {
   const bars = barCells(model, series).map((cell): BarDraw => {
     const reading = series.readings[cell.slot];
     const value = reading?.kind === "reading" ? reading : undefined;
-    const own = value === undefined ? undefined : valuePaint(paint.key, paint.color, paint.bins, value.value);
+    const own = value === undefined ? undefined : valuePaint(paint, value.value);
     const emphasis = emphasised.has(cell.slot);
     const dimmed = emphasised.size > 0 && !emphasis;
     const barPaint = dimmed ? greyed(own ?? paint.base) : own;

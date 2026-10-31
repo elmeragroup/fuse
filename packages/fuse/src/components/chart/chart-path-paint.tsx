@@ -8,11 +8,7 @@
  */
 import type { ReactElement } from "react";
 
-import { isRoleList, stepRole } from "./chart-paint";
-import type { ChartColor } from "./chart-types";
-import type { SeriesModel } from "./layout/cartesian-model";
-import { binEdges } from "./layout/color-bins";
-import { seriesPaint } from "./layout/color-key";
+import type { SeriesPaint } from "./chart-paint";
 import { valueAt } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
 
@@ -20,35 +16,28 @@ import type { PlotFrame } from "./layout/plot-frame";
 type Stop = { readonly offset: number; readonly paint: string };
 
 /** The stops of a scale along the value axis, from the gradient's start at the plot's top or left. */
-function scaleStops(
-  key: string,
-  color: "chart-seq" | "chart-diverging",
-  series: SeriesModel,
-  frame: PlotFrame
-): Stop[] {
-  const values = series.readings.flatMap((reading) => (reading.kind === "reading" ? [reading.value] : []));
-  const edges = binEdges(color, values);
-  if (edges.length === 0) return [{ offset: 0, paint: seriesPaint(key, stepRole(color, 4)) }];
+function scaleStops(paint: SeriesPaint, ramp: readonly string[], frame: PlotFrame): Stop[] {
+  const { edges } = paint;
+  if (edges.length === 0) return [{ offset: 0, paint: paint.base }];
   const length = frame.orientation === "vertical" ? frame.box.height : frame.box.width;
   const share = (value: number) =>
     length === 0 ? 0 : Math.min(1, Math.max(0, valueAt(frame, value) / length));
   // Step k lies between edge k − 1 and edge k, which a vertical frame draws from the bottom up.
-  const regions = Array.from({ length: 7 }, (_, index) => ({
-    step: index + 1,
+  const regions = ramp.map((step, index) => ({
+    step,
     low: index === 0 ? Number.NEGATIVE_INFINITY : (edges[index - 1] ?? 0),
-    high: index === 6 ? Number.POSITIVE_INFINITY : (edges[index] ?? 0),
+    high: index === ramp.length - 1 ? Number.POSITIVE_INFINITY : (edges[index] ?? 0),
   }));
   const ordered = frame.orientation === "vertical" ? regions.toReversed() : regions;
   return ordered.flatMap(({ step, low, high }) => {
-    const paint = seriesPaint(key, stepRole(color, step));
     const ends = [
       share(Number.isFinite(low) ? low : -Number.MAX_VALUE),
       share(Number.isFinite(high) ? high : Number.MAX_VALUE),
     ];
     const [start = 0, end = 0] = ends.toSorted((a, b) => a - b);
     return [
-      { offset: start, paint },
-      { offset: end, paint },
+      { offset: start, paint: step },
+      { offset: end, paint: step },
     ];
   });
 }
@@ -57,33 +46,29 @@ function scaleStops(
  * The gradient a series path paints from, or nothing for a single role, which paints through the
  * series' own colour.
  *
- * @param props - The gradient's id, the series, its colour and the frame it draws in.
+ * @param props - The gradient's id, the series paint and the frame it draws in.
  * @returns The gradient, or null.
  */
 export function PathPaint({
   id,
-  series,
-  color,
+  paint,
   frame,
 }: {
   readonly id: string;
-  readonly series: SeriesModel;
-  readonly color: ChartColor;
+  readonly paint: SeriesPaint;
   readonly frame: PlotFrame;
 }): ReactElement | null {
   const vertical = frame.orientation === "vertical";
   const { width, height } = frame.box;
   let stops: Stop[];
   let ends: { readonly x2: number; readonly y2: number };
-  if (isRoleList(color)) {
+  if (paint.stops !== undefined) {
     // A role list runs along the slot axis, decoration that follows no value.
-    stops = color.map((role, index) => ({
-      offset: index / Math.max(1, color.length - 1),
-      paint: seriesPaint(series.key, role),
-    }));
+    const list = paint.stops;
+    stops = list.map((stop, index) => ({ offset: index / Math.max(1, list.length - 1), paint: stop }));
     ends = vertical ? { x2: width, y2: 0 } : { x2: 0, y2: height };
-  } else if (color === "chart-seq" || color === "chart-diverging") {
-    stops = scaleStops(series.key, color, series, frame);
+  } else if (paint.ramp !== undefined) {
+    stops = scaleStops(paint, paint.ramp, frame);
     ends = vertical ? { x2: 0, y2: height } : { x2: width, y2: 0 };
   } else {
     return null;
@@ -99,13 +84,13 @@ export function PathPaint({
 }
 
 /**
- * Whether a series colour paints through a gradient.
+ * Whether a series paints through a gradient.
  *
- * @param color - The series colour.
+ * @param paint - The series paint.
  * @returns Whether `PathPaint` draws one.
  */
-export function hasPathPaint(color: ChartColor): boolean {
-  return isRoleList(color) || color === "chart-seq" || color === "chart-diverging";
+export function hasPathPaint(paint: SeriesPaint): boolean {
+  return paint.stops !== undefined || paint.ramp !== undefined;
 }
 
 Object.assign(PathPaint, { displayName: "Chart.PathPaint" });

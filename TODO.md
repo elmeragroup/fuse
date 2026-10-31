@@ -585,7 +585,7 @@ release.
 - `Sparkline` draws a static chart with `role="img"` and a label. It renders on the server with no
   client JavaScript and takes no tab stop.
 
-Four sign-off, time and locale tasks remain.
+Two sign-off tasks remain.
 
 - The owner or the content owner signs off the drafted chart words in
   `packages/fuse/src/components/chart/format/words.ts`. They are the ISO week labels `uke 43`,
@@ -598,12 +598,6 @@ Four sign-off, time and locale tasks remain.
   `Laster diagram`, `Ingen data for perioden`, `ingen data ennå`, `mangler`, `estimert`, `Annet` and
   the brush, legend, table and live-region words. Each part adds the strings it reads when it lands.
   Every string stays a draft until the sign-off, and explicit props replace each one verbatim.
-- Make `DataTable.DateTime` agree with WebKit. Date cells map every space to U+00A0, but WebKit's
-  older CLDR joins an en-US medium date-time with `at` and an sv-SE long one without `kl.`, where
-  Node writes `,` and `kl.`, so those cells still fail hydration in Safari. The shared helper
-  `formatDateTime` in `packages/fuse/src/intl/date-time-join.ts` now joins the halves with CLDR 48's
-  pattern in en, nb, sv and fi, and the chart formatter uses it. Move the date cells onto it. Map
-  the number and currency cells through `canonicalSpaces` at the same time.
 
 One layer 05 follow-up remains.
 

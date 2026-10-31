@@ -194,7 +194,7 @@ export function useClientMount(): boolean {
   return first;
 }
 
-/** A store subscription for a value a part reads once. */
-function subscribeNever(): () => void {
+/** A store subscription for a value that never changes after hydration. */
+export function subscribeNever(): () => void {
   return () => undefined;
 }

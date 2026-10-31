@@ -7,6 +7,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { S06Chart } from "../../../test/chart/bar-charts";
 import { renderThemed, stampDensity } from "../../../test/themed-browser-render";
+import { LocaleProvider } from "../../intl/locale-context";
 import { DENSITIES } from "../../theme";
 import { Chart } from "./chart-namespace";
 import "./chart.css";
@@ -63,5 +64,48 @@ describe("legend toggles", () => {
     const style = getComputedStyle(toggle);
     expect(style.outlineStyle).toBe("solid");
     expect(style.outlineWidth).toBe("1px");
+  });
+});
+
+describe("a LegendValue that falls back to now", () => {
+  /** 1 to 10 October 2026 in Oslo, whose days start at 22:00 UTC the day before under summer time. */
+  const DAYS = Array.from({ length: 10 }, (_, index) => ({
+    day: new Date(Date.UTC(2026, 8, 30 + index, 22)),
+    kwh: 101 + index,
+  }));
+
+  function valueAt(now: Date): string {
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <Chart.Root
+          data={DAYS}
+          config={{ kwh: { label: "Forbruk", color: "chart-1" } }}
+          xKey="day"
+          interval="day"
+          timeZone="Europe/Oslo"
+          xRange={[DAYS[0]?.day ?? new Date(0), DAYS[4]?.day ?? new Date(0)]}
+          now={now}
+          aria-label="Forbruk per dag">
+          <Chart.Bar dataKey="kwh" />
+          <Chart.Legend>
+            <Chart.LegendItem>
+              <Chart.LegendValue fallback="now" />
+            </Chart.LegendItem>
+          </Chart.Legend>
+        </Chart.Root>
+      </LocaleProvider>
+    );
+    // DOM audit: the value is plain text inside the legend item, with no role of its own.
+    return host.querySelector('[data-slot="chart-legend-value"]')?.textContent ?? "";
+  }
+
+  it("prints the reading of the day that holds now inside the window", () => {
+    // 3 October at noon in Oslo is the third day, whose reading is 103.
+    expect(valueAt(new Date(Date.UTC(2026, 9, 3, 10)))).toContain("103");
+  });
+
+  it("prints nothing when now falls after the window", () => {
+    // 8 October is in the data but outside the 1–5 October window.
+    expect(valueAt(new Date(Date.UTC(2026, 9, 8, 10)))).toBe("");
   });
 });

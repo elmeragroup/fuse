@@ -33,9 +33,50 @@ const REDUCED_MOTION_TESTS = "**/*.reduced-motion.browser.test.tsx";
  */
 const VIEWPORT = { width: 414, height: 896 } as const;
 
+declare module "vitest" {
+  // oxlint-disable-next-line typescript/consistent-type-definitions -- Vitest types `provide`/`inject` by interface declaration merging; a type alias cannot augment.
+  interface ProvidedContext {
+    /** The IANA zone a unit project's process runs in, which a zone-sensitive test confirms. */
+    timeZone: string;
+  }
+}
+
+/** The unit files whose results could depend on the process's time zone. */
+const ZONE_TESTS = [
+  "src/components/chart/*.test.ts",
+  "src/components/chart/format/*.test.ts",
+  "src/components/chart/layout/*.test.ts",
+  "src/components/data-table/*.test.ts",
+  "src/intl/*.test.ts",
+];
+
+/**
+ * A Node project whose process runs in one IANA zone. The time zone is a project dimension, as the
+ * engine and the motion preference are, so no result depends on the machine's zone.
+ */
+function unitProject(name: string, timeZone: string, include: string[]): TestProjectInlineConfiguration {
+  return {
+    test: {
+      name,
+      environment: "node",
+      include,
+      exclude: ["**/*.browser.test.*", "**/*.test-d.*"],
+      // TZ is one value per process, so each project's files run in forks, never in threads that
+      // share a process with another project's zone. format.test.ts and x-domain.test.ts assert
+      // the zone each file runs in.
+      pool: "forks",
+      env: { TZ: timeZone },
+      provide: { timeZone },
+      // Outside the browser, Vitest blanks CSS ids that `test.css` leaves out. The
+      // consumer-build helper reads stylesheet text through `?raw`.
+      css: { include: [/\.css\?raw$/] },
+    },
+  };
+}
+
 function browserProject(
   name: string,
-  files: { include?: string[]; exclude?: string[]; fileParallelism?: boolean; groupOrder?: number },
+  options: { include?: string[]; exclude?: string[]; fileParallelism?: boolean; groupOrder?: number },
   browsers: readonly ("chromium" | "firefox" | "webkit")[] = ["chromium"],
   provider: Parameters<typeof playwright>[0] = {}
 ): TestProjectInlineConfiguration {
@@ -76,11 +117,11 @@ function browserProject(
     },
     test: {
       name,
-      include: files.include ?? BROWSER_TESTS,
-      exclude: files.exclude,
-      fileParallelism: files.fileParallelism,
+      include: options.include ?? BROWSER_TESTS,
+      exclude: options.exclude,
+      fileParallelism: options.fileParallelism,
       // A project with a later group runs once every earlier group has finished.
-      sequence: { groupOrder: files.groupOrder ?? 0 },
+      sequence: { groupOrder: options.groupOrder ?? 0 },
       browser: {
         enabled: true,
         headless: true,
@@ -105,17 +146,13 @@ export default defineConfig({
       tsconfig: "./tsconfig.json",
     },
     projects: [
-      {
-        test: {
-          name: "unit",
-          environment: "node",
-          include: ["src/**/*.test.ts", "test/**/*.test.ts"],
-          exclude: ["**/*.browser.test.*", "**/*.test-d.*"],
-          // Outside the browser, Vitest blanks CSS ids that `test.css` leaves out. The
-          // consumer-build helper reads stylesheet text through `?raw`.
-          css: { include: [/\.css\?raw$/] },
-        },
-      },
+      // Oslo has an offset and summer time, and matches local runs. The d3 fixtures replay their
+      // dates in Los Angeles themselves.
+      unitProject("unit", "Europe/Oslo", ["src/**/*.test.ts", "test/**/*.test.ts"]),
+      // The zone-sensitive files again, behind and ahead of UTC, one zone with summer time and
+      // one without.
+      unitProject("unit-new-york", "America/New_York", ZONE_TESTS),
+      unitProject("unit-tokyo", "Asia/Tokyo", ZONE_TESTS),
       browserProject("browser", {
         exclude: [CLIPBOARD_TESTS, ENGINES_TESTS, PRODUCTION_TESTS, TOUCH_TESTS, REDUCED_MOTION_TESTS],
       }),

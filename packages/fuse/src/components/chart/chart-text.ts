@@ -160,7 +160,7 @@ export function ownSlotLabel(context: TextContext, key: string, slot: number): F
  * @param slot - A Root slot.
  * @returns The visual and spoken label, or null for a series on Root's grid.
  */
-export function ownSlotDated(context: TextContext, key: string, slot: number): FormattedText | null {
+function ownSlotDated(context: TextContext, key: string, slot: number): FormattedText | null {
   const { domain } = context.model;
   const coarse = context.model.series.find((entry) => entry.key === key)?.coarse;
   if (coarse === undefined || domain.kind !== "time") return null;

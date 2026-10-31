@@ -24,7 +24,7 @@ import type {
   ChartDomProps,
   ChartFallback,
   ChartLayerProps,
-  ChartShareFormat,
+  ChartFractionDigits,
   ValueFormat,
 } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
@@ -72,7 +72,7 @@ export type ChartLegendShareProps = ChartDomProps<"span"> & {
   /** The series to print. Inside a LegendItem template the item supplies it. */
   dataKey?: string;
   /** The percentage digits. */
-  format?: ChartShareFormat;
+  format?: ChartFractionDigits;
 };
 
 /**

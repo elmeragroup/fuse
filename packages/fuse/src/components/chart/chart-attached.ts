@@ -26,7 +26,7 @@ import type { PlotFrame } from "./layout/plot-frame";
  * @param slot - The domain slot.
  * @returns The value, or null where the series has no reading.
  */
-export function pointValue(series: SeriesModel, slot: number): number | null {
+function pointValue(series: SeriesModel, slot: number): number | null {
   const extent = series.extents[slot];
   if (series.readings[slot]?.kind !== "reading" || extent === null || extent === undefined) return null;
   const [low, high] = extent;

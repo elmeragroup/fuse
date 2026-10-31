@@ -292,6 +292,25 @@ describe("the pixel floor", () => {
     );
   });
 
+  it("keeps a device pixel for the last point of a plot whose end snaps past it", () => {
+    // fast-check's counterexample: 274 points on a 20 px plot at 1.175x. The plot's end, 23.5
+    // device pixels, rounds to 24, so the last point snaps to 20.43 px. Its band must still be one
+    // device pixel, 1 / 1.175 px, inside the plot's 24 device pixels.
+    const dpr = 1.1750000500000002;
+    const frame = frameOf(20, 40, {
+      dpr,
+      left: 0,
+      top: 0,
+      orientation: "vertical",
+      count: 274,
+      domain: [0, 1],
+    });
+    const [start, end] = optionBand(frame, 273, "point");
+    expect(end - start).toBeCloseTo(1 / dpr, 9);
+    expect([onGrid(start, dpr), onGrid(end, dpr)]).toEqual([true, true]);
+    expect(end).toBeLessThanOrEqual(24 / dpr + 1e-9);
+  });
+
   it("keeps one device pixel for every interaction band, covering the bar it marks", () => {
     // The crosshair band, the focused option and the tooltip anchor read optionBand, and the
     // grid's slot lines read slotBand. Each keeps a device pixel on the grid, however dense the

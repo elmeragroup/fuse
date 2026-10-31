@@ -353,8 +353,8 @@ export type ChartGridProps = ChartLayerProps & {
     variant?: "solid" | "dashed";
 };
 
-// @beta
-export type ChartHasFiveKeys<U> = [U] extends [never] ? false : string extends U ? false : [ChartWithoutOne<ChartWithoutOne<ChartWithoutOne<ChartWithoutOne<U>>>>] extends [never] ? false : true;
+// @internal
+type ChartHasFiveKeys<U> = [U] extends [never] ? false : string extends U ? false : [ChartWithoutOne<ChartWithoutOne<ChartWithoutOne<ChartWithoutOne<U>>>>] extends [never] ? false : true;
 
 // @beta
 function ChartHeadline(input: ChartHeadlineProps): ReactElement;
@@ -399,7 +399,7 @@ function ChartLegendShare(props: ChartLegendShareProps): ReactElement;
 // @beta
 export type ChartLegendShareProps = ChartDomProps<"span"> & {
     dataKey?: string;
-    format?: ChartShareFormat;
+    format?: ChartFractionDigits;
 };
 
 // @beta
@@ -673,9 +673,6 @@ export type ChartSeriesLabelProps = ChartDomProps<"span"> & {
 };
 
 // @beta
-export type ChartShareFormat = ChartFractionDigits;
-
-// @beta
 function ChartSkeleton(input: ChartSkeletonProps): ReactElement;
 
 // @beta
@@ -801,7 +798,7 @@ function ChartTooltipShare(props: ChartTooltipShareProps): ReactElement;
 // @beta
 export type ChartTooltipShareProps = ChartDomProps<"span"> & {
     dataKey?: string;
-    format?: ChartShareFormat;
+    format?: ChartFractionDigits;
 };
 
 // @beta
@@ -831,8 +828,8 @@ export type ChartValueLabelProps = ChartLayerProps & {
     format?: ValueFormat;
 };
 
-// @beta
-export type ChartWithoutOne<U> = Exclude<U, ((U extends unknown ? (pick: () => U) => void : never) extends ((pick: infer I) => void) ? I : never) extends (() => infer R) ? R : never>;
+// @internal
+type ChartWithoutOne<U> = Exclude<U, ((U extends unknown ? (pick: () => U) => void : never) extends ((pick: infer I) => void) ? I : never) extends (() => infer R) ? R : never>;
 
 // @beta
 export type ChartX = string | number | Date;
@@ -1007,7 +1004,7 @@ function PieChartCenterShare(_props: PieChartCenterShareProps): ReactElement;
 
 // @beta
 export type PieChartCenterShareProps = ChartLayerProps & {
-    format?: ChartShareFormat;
+    format?: ChartFractionDigits;
 };
 
 // @beta

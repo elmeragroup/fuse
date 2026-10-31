@@ -3,13 +3,12 @@
 import { createContext, use, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import type { SeriesPaint } from "./chart-bar-draw";
 import { SeriesPaths } from "./chart-bar-paths";
 import { ActiveBar, SeriesBars } from "./chart-bar-series";
 import { assertKnownKey, assertLayoutKey, usePlotLayout, useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import { datumSlots } from "./chart-datum";
-import { binsOf, listStops, stepRole } from "./chart-paint";
+import { seriesPaintOf } from "./chart-paint";
 import { useBarMetrics, useChartFrame } from "./chart-plot";
 import type { ChartPlot } from "./chart-plot";
 import { useFirstPhase } from "./chart-store";
@@ -17,7 +16,6 @@ import type { ChartDatum, ChartLayerProps } from "./chart-types";
 import { barForm } from "./layout/bar-geometry";
 import type { BarVariant } from "./layout/bar-shapes";
 import type { SeriesModel } from "./layout/cartesian-model";
-import { seriesPaint } from "./layout/color-key";
 import { ChartCompositionError, isChartDevelopment } from "./layout/errors";
 import { WHOLE_BAND } from "./layout/plot-frame";
 import type { BarMetrics, SubBand } from "./layout/plot-frame";
@@ -187,22 +185,14 @@ export function ChartBar({
   const drawnVariant: BarVariant =
     form === "bars" ? variant : variant === "gradient" ? "gradient" : "default";
   if (drawnVariant !== variant && isChartDevelopment()) {
-    console.warn(
+    context.warnOnce(
+      "bar-variant-needs-html",
       `Chart.Bar draws ${JSON.stringify(dataKey)} as one path above 100 slots, where variant="${variant}" has no path look, so it draws the default variant. Narrow the period to 100 slots or fewer, or pick another variant.`
     );
   }
   const color = config?.color ?? "chart-1";
   // The paint follows the series' readings and its colour, which the model and config carry.
-  const paint = useMemo(
-    (): SeriesPaint => ({
-      key: dataKey,
-      color,
-      bins: binsOf(color, series),
-      base: seriesPaint(dataKey, stepRole(color, undefined)),
-      stops: listStops(dataKey, color),
-    }),
-    [dataKey, color, series]
-  );
+  const paint = useMemo(() => seriesPaintOf(dataKey, color, series), [dataKey, color, series]);
   const { base, stops } = paint;
   const subIndex = group?.index.get(dataKey) ?? 0;
   const subCount = group?.count ?? 1;

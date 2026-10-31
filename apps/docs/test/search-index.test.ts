@@ -8,6 +8,7 @@ import type { ComponentApiArtifact, SearchEntry } from "../src/lib/docs-model";
 import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
 import { matchesEveryToken, queryTokens, rankEntries } from "../src/lib/search";
 import { STUDIO_PAGES } from "../src/studio/registration";
+import { ALIAS_PAGES } from "./component-inventory";
 import { docsBaseUrl } from "./docs-server";
 
 describe("search index", () => {
@@ -35,6 +36,8 @@ describe("search index", () => {
       expect(entry, component.slug).toBeDefined();
       const paths = resolveComponentPaths(component.slug);
       expect(entry?.keywords).toContain(paths.entry);
+      // An alias page has no parts of its own.
+      if (ALIAS_PAGES.has(component.slug)) continue;
       // Oracle: the committed api.json, which owns the part names.
       // SAFETY: generation rewrites any committed api.json that disagrees with its serialiser, and
       // the drift check (`api-artifact.test.ts`) fails on that rewrite.

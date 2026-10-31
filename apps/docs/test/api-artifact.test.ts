@@ -14,13 +14,14 @@
  * generate` refreshes it.
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { STALE_HINT } from "../scripts/lib/api-artifact.ts";
 import { componentSlugs, resolveComponentPaths } from "../scripts/lib/components.ts";
 import { API_ARTIFACTS_REWRITTEN } from "../src/generated/api-drift";
 import { API_REGEN_COMMAND } from "../src/lib/docs-model.ts";
+import { ALIAS_PAGES } from "./component-inventory";
 
 describe("committed api.json", () => {
   it("was already up to date when the last generation pass ran", () => {
@@ -31,11 +32,15 @@ describe("committed api.json", () => {
   });
 
   it("tells a reader in the file that it is generated, and how to regenerate it", () => {
-    for (const slug of componentSlugs()) {
+    for (const slug of componentSlugs().filter((candidate) => !ALIAS_PAGES.has(candidate))) {
       const text = readFileSync(resolveComponentPaths(slug).apiFile, "utf8");
       expect(text, slug).toContain('"$generated"');
       expect(text, slug).toContain(API_REGEN_COMMAND);
       expect(text, slug).toContain("never hand-edit");
     }
+  });
+
+  it("writes none for a page that repeats another page whole", () => {
+    for (const slug of ALIAS_PAGES) expect(existsSync(resolveComponentPaths(slug).apiFile), slug).toBe(false);
   });
 });

@@ -10,12 +10,27 @@ export const ZONES = ["Europe/Oslo", "Europe/Stockholm", "Europe/Helsinki"] as c
 /** A zone the slot oracle covers. */
 export type Zone = (typeof ZONES)[number];
 
-/** One comparison: Fuse's labels against the expected labels, in order. */
-export type Judgement = {
+/**
+ * One comparison: Fuse's output against the expected output, in order. Labels compare strings, and
+ * the x-domain judges compare slot starts and indexes.
+ */
+export type Judgement<T = string | null> = {
   readonly name: string;
-  readonly actual: readonly (string | null)[];
-  readonly expected: readonly (string | null)[];
+  readonly actual: readonly T[];
+  readonly expected: readonly T[];
 };
+
+/**
+ * The names of the judgements whose output differs from the expected output.
+ *
+ * @param judgements - The judgements.
+ * @returns Their names, in order.
+ */
+export function mismatches(judgements: readonly Judgement<unknown>[]): string[] {
+  return judgements
+    .filter((judgement) => JSON.stringify(judgement.actual) !== JSON.stringify(judgement.expected))
+    .map((judgement) => judgement.name);
+}
 
 /** One value per supported locale. */
 export type PerLocale<T> = { readonly [L in SupportedLocale]: T };

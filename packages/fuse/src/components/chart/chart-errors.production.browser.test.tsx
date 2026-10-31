@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import "../../../dist/styles.css";
 import { barBox } from "../../../test/chart/bar-box";
+import { bars } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -56,11 +57,6 @@ function tableRows(host: HTMLElement): string[][] {
       (cell) => cell.querySelector('[aria-hidden="true"]')?.textContent ?? cell.textContent
     )
   );
-}
-
-function bars(host: HTMLElement): Element[] {
-  // DOM audit: bars are aria-hidden plot output.
-  return [...host.querySelectorAll('[data-slot="chart-bar"]')];
 }
 
 function missingTicks(host: HTMLElement): number {

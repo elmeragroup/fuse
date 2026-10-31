@@ -31,14 +31,9 @@ import { BarChartServer } from "./demos/bar-chart-server";
 import { BarChartStacked } from "./demos/bar-chart-stacked";
 import { BarChartStreamed } from "./demos/bar-chart-streamed";
 import { BarChartUpdate } from "./demos/bar-chart-update";
-import { BarChartVariantDefault } from "./demos/bar-chart-variant-default";
-import { BarChartVariantDuotone } from "./demos/bar-chart-variant-duotone";
-import { BarChartVariantDuotoneReverse } from "./demos/bar-chart-variant-duotone-reverse";
-import { BarChartVariantGradient } from "./demos/bar-chart-variant-gradient";
-import { BarChartVariantHatched } from "./demos/bar-chart-variant-hatched";
-import { BarChartVariantStriped } from "./demos/bar-chart-variant-striped";
 import { BarChartYearOverYear } from "./demos/bar-chart-year-over-year";
 import { BarChartYearVsLastYear } from "./demos/bar-chart-year-vs-last-year";
+import { BarChartVariants } from "./demos/bar-chart-variants";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -182,32 +177,8 @@ A Bar can wait behind its own Suspense boundary. When the server streams it in, 
 
 ## Variants
 
-<Demo slug="bar-chart" id="variant-default" title="Default" file="bar-chart-variant-default.tsx">
-  <BarChartVariantDefault />
-</Demo>
-
-<Demo slug="bar-chart" id="variant-hatched" title="Hatched" file="bar-chart-variant-hatched.tsx">
-  <BarChartVariantHatched />
-</Demo>
-
-<Demo slug="bar-chart" id="variant-duotone" title="Duotone" file="bar-chart-variant-duotone.tsx">
-  <BarChartVariantDuotone />
-</Demo>
-
-<Demo
-  slug="bar-chart"
-  id="variant-duotone-reverse"
-  title="Duotone reverse"
-  file="bar-chart-variant-duotone-reverse.tsx">
-  <BarChartVariantDuotoneReverse />
-</Demo>
-
-<Demo slug="bar-chart" id="variant-gradient" title="Gradient" file="bar-chart-variant-gradient.tsx">
-  <BarChartVariantGradient />
-</Demo>
-
-<Demo slug="bar-chart" id="variant-striped" title="Striped" file="bar-chart-variant-striped.tsx">
-  <BarChartVariantStriped />
+<Demo slug="bar-chart" id="bar-looks" title="Every look" file="bar-chart-variants.tsx">
+  <BarChartVariants />
 </Demo>
 
 <Demo slug="bar-chart" id="blocks" title="Blocks" file="bar-chart-blocks.tsx">
