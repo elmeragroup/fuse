@@ -122,14 +122,27 @@ const tooltipPopup = tv({
 /**
  * Mark the popup with `data-scrolls` while its content overflows it. Under touch the popup lets
  * taps and scrubs through to the plot, except while it scrolls, when it takes the finger so a drag
- * scrolls it. Content past the cap leaves the popup's size alone, so its own resizes are enough.
+ * scrolls it. Content that grows inside a popup at its height cap, or at a height a consumer set,
+ * leaves the popup's size alone, so the observer follows each of the popup's children as well.
  */
 function watchOverflow(popup: HTMLDivElement | null): (() => void) | undefined {
   if (popup === null) return undefined;
   const mark = () => popup.toggleAttribute("data-scrolls", popup.scrollHeight > popup.clientHeight);
-  const observer = new ResizeObserver(mark);
-  observer.observe(popup);
-  return () => observer.disconnect();
+  const sizes = new ResizeObserver(mark);
+  sizes.observe(popup);
+  for (const child of popup.children) sizes.observe(child);
+  const children = new MutationObserver((records) => {
+    for (const { addedNodes, removedNodes } of records) {
+      for (const node of removedNodes) if (node instanceof Element) sizes.unobserve(node);
+      for (const node of addedNodes) if (node instanceof Element) sizes.observe(node);
+    }
+    mark();
+  });
+  children.observe(popup, { childList: true });
+  return () => {
+    sizes.disconnect();
+    children.disconnect();
+  };
 }
 
 /** A virtual anchor over the active slot, measured from the plot surface at position time. */

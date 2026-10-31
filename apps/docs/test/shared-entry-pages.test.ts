@@ -10,6 +10,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
+import { openFuseProgram } from "../scripts/lib/fuse-program.ts";
 import { partIdentities } from "../scripts/lib/part-identity.ts";
 import { markdownOutDir, repoRoot } from "../scripts/lib/paths.ts";
 import { pageAliases, sameAsLinks } from "../src/lib/api-same-as";
@@ -92,12 +93,20 @@ describe("sameAs links", () => {
       "radial-chart",
       "radar-chart",
     ];
-    const identities = partIdentities(
-      slugs.map((slug) => {
-        const paths = resolveComponentPaths(slug);
-        return { slug, entryFile: paths.entryFile, exportNames: paths.apiExportNames };
-      })
-    );
+    const { fuse, close } = openFuseProgram();
+    const identities = (() => {
+      try {
+        return partIdentities(
+          fuse,
+          slugs.map((slug) => {
+            const paths = resolveComponentPaths(slug);
+            return { slug, entryFile: paths.entryFile, exportNames: paths.apiExportNames };
+          })
+        );
+      } finally {
+        close();
+      }
+    })();
     const real = [...identities].map(([slug, parts]) => ({ slug, parts }));
     const aliases = pageAliases(real);
     expect([...aliases.keys()]).toEqual(["area-chart", "bar-chart", "line-chart"]);

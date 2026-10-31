@@ -17,13 +17,14 @@ import { useFollowerPlacement, useMotionMark } from "./chart-motion-mark";
 import type { MarkTuple, MotionWriter, WriterLook } from "./chart-motion-mark";
 import { crossfade } from "./chart-path-draw";
 import { joinPath } from "./chart-paths";
-import type { PathRoute } from "./chart-paths";
+import type { PathKind } from "./chart-paths";
 import type { ChartFrame } from "./chart-plot";
 import { geometryOf } from "./layout/bar-geometry";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { ownCentre, ownSlot } from "./layout/coarse-slots";
 import { pointAlong, slotCentreAt, snapAcross, valueAt } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
+import type { SlotWindow } from "./layout/slot-window";
 
 /**
  * The value a series draws its point at: the reading, or a stacked series' outer end.
@@ -39,25 +40,31 @@ function pointValue(series: SeriesModel, slot: number): number | null {
   return low < 0 && high <= 0 ? low : high;
 }
 
+/** What a resting point reads besides the frame and the series: the model's window and Root's x scale. */
+export type PointPlace = {
+  readonly window: SlotWindow | null;
+  readonly xScale: "band" | "point";
+};
+
 /**
  * A series' resting point at a slot, unsnapped, the numbers its attached marks place and tween.
  *
- * @param context - Root's context.
+ * @param place - The model's window and Root's x scale.
  * @param frame - The layout's frame.
  * @param series - The series.
  * @param slot - The domain slot.
  * @returns The point along the slot axis and across the value axis, or null without a reading.
  */
 export function restingPoint(
-  context: ChartRootContextValue,
+  place: PointPlace,
   frame: PlotFrame,
   series: SeriesModel,
   slot: number
 ): readonly [number, number] | null {
-  const window = context.model.window;
+  const { window, xScale } = place;
   const value = pointValue(series, slot);
   if (window === null || value === null) return null;
-  return [slotCentreAt(frame, ownCentre(series, window, slot), context.xScale), valueAt(frame, value)];
+  return [slotCentreAt(frame, ownCentre(series, window, slot), xScale), valueAt(frame, value)];
 }
 
 /**
@@ -90,11 +97,23 @@ export type FollowerJoin = {
   readonly crossfade: object | null;
 };
 
+/** What an attached mark can join: a series path of one kind, or the series' bars. */
+type FollowedKind = PathKind | "bars";
+
 /**
- * How marks at some of a series' slots join the motion of what they sit on. A dot, a marker or the
- * active dot prefers the series' line, and a value follower prefers its bars, a Bar's columns in
- * the path form or the bar at each slot. Each falls back to the other. Every selected slot joins
- * its own bar, so tied extrema and a listed selection each rest on their bar's middle.
+ * Which drawing of a series an attached mark follows, first to last, when the series draws several.
+ * A point mark sits on the line, then the area, then the columns, then the bars. A value on bars
+ * sits on the columns or the bars first.
+ */
+const FOLLOWS = {
+  line: ["line", "area", "columns", "bars"],
+  bar: ["columns", "bars", "line", "area"],
+} as const satisfies Record<string, readonly FollowedKind[]>;
+
+/**
+ * How marks at some of a series' slots join the motion of what they sit on, in the order `FOLLOWS`
+ * states. Every selected slot joins its own bar, so tied extrema and a listed selection each rest
+ * on their bar's middle.
  *
  * @param context - Root's context.
  * @param series - The series.
@@ -117,27 +136,34 @@ export function attachJoin(
     key: context.update.keys[slot] ?? String(slot),
     position: ownCentre(series, window, slot),
   }));
-  const line = context.paths.get(series.seriesIndex, "line");
-  const columns = context.paths.get(series.seriesIndex, "columns");
   // A bar's drawn middle along the slot axis, then its tip, in its sub-band at rest as in motion.
   const tip = (values: MarkValues) => {
     const geometry = geometryOf(values);
     return [(geometry[0] + geometry[1]) / 2, geometry[3]];
   };
-  const bars: FollowerJoin | undefined =
-    slots.length === 0 || !context.drawsBar(series.key)
-      ? undefined
-      : {
-          leads: owned.map((slot) => ({ anchor: barAnchor(series.seriesIndex, slot), pick: tip, rest: tip })),
-          crossfade: null,
-        };
-  const onPath = (route: PathRoute | undefined, kind: "line" | "columns"): FollowerJoin | undefined =>
-    route === undefined
+  const joinOf = (kind: FollowedKind): FollowerJoin | undefined => {
+    if (kind === "bars") {
+      return slots.length === 0 || !context.drawsBar(series.key)
+        ? undefined
+        : {
+            leads: owned.map((slot) => ({
+              anchor: barAnchor(series.seriesIndex, slot),
+              pick: tip,
+              rest: tip,
+            })),
+            crossfade: null,
+          };
+    }
+    const route = context.paths.get(series.seriesIndex, kind);
+    return route === undefined
       ? undefined
       : { leads: joinPath(route, series.seriesIndex, kind, marks, rest), crossfade: route.crossfade };
-  const onLine = onPath(line, "line");
-  const onColumns = onPath(columns, "columns");
-  return prefer === "line" ? (onLine ?? onColumns ?? bars) : (onColumns ?? bars ?? onLine);
+  };
+  for (const kind of FOLLOWS[prefer]) {
+    const join = joinOf(kind);
+    if (join !== undefined) return join;
+  }
+  return undefined;
 }
 
 /**

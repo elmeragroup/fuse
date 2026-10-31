@@ -20,7 +20,7 @@ import { qualityWords, seriesLabel, slotLabel, stackTotalAt } from "./chart-text
 import type { ChartLayerProps, ChartScalar, ValueFormat, XFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
-import { formatSlot, slotStart } from "./format/time-format";
+import { formatSlot, PRESET_INTERVAL, slotStart } from "./format/time-format";
 import type { Interval, TimePreset } from "./format/time-format";
 import { formatUnitLabel, formatUnitless, formatValue } from "./format/value-format";
 import { rowSpans } from "./layout/coarse-slots";
@@ -458,22 +458,6 @@ function ChartTableBody({
   );
 }
 
-/** The interval a time preset names, so a `Date` cell reads the slot that contains it. */
-const PRESET_INTERVAL = {
-  hour: "hour",
-  "hour-range": "hour",
-  time: "minute",
-  "time-seconds": "second",
-  "time-range": "quarter-hour",
-  day: "day",
-  weekday: "day",
-  date: "day",
-  week: "week",
-  month: "month",
-  "month-year": "month",
-  year: "year",
-} as const satisfies { readonly [P in TimePreset]: Interval };
-
 /** The Intl date-time option names, which tell an `XFormat` object from Intl number options. */
 const DATE_FIELDS = new Set([
   "dateStyle",
@@ -503,26 +487,27 @@ function isTimeFormat(format: ValueFormat | XFormat): format is XFormat {
   return isPreset(format) || Object.keys(format).some((field) => DATE_FIELDS.has(field));
 }
 
-/** The development throw or production warning of `table-column-format`, once per Root. */
-function formatMismatch(context: ChartRootContextValue): void {
+/** The development throw or production warning of `table-column-format`, once per Root and column. */
+function formatMismatch(context: ChartRootContextValue, dataKey: string): void {
   const error = new ChartDataError(
     "Chart.TableColumn",
     "table-column-format",
     DATA_MESSAGES["table-column-format"]
   );
   if (isChartDevelopment()) throw error;
-  context.warnOnce("table-column-format", error.message);
+  context.warnOnce("table-column-format", dataKey, error.message);
 }
 
 /** A TableColumn cell's text. */
 function columnCell(
   context: ChartRootContextValue,
+  dataKey: string,
   cell: ChartScalar,
   format: ValueFormat | XFormat | undefined
 ): FormattedText {
   const time = format !== undefined && isTimeFormat(format);
   if (cell instanceof Date) {
-    if (format !== undefined && !time) formatMismatch(context);
+    if (format !== undefined && !time) formatMismatch(context, dataKey);
     const zone = context.model.domain.kind === "time" ? context.model.domain.timeZone : "UTC";
     const preset: XFormat = format !== undefined && time ? format : "date";
     const interval = isPreset(preset) ? PRESET_INTERVAL[preset] : "second";
@@ -530,7 +515,7 @@ function columnCell(
   }
   const number = numberOf(cell);
   if (number !== undefined && Number.isFinite(number)) {
-    if (time) formatMismatch(context);
+    if (time) formatMismatch(context, dataKey);
     const value = format !== undefined && !time ? format : {};
     return formatValue(context.locale, number, value, "full");
   }
@@ -565,6 +550,7 @@ function ChartTableColumnBody({
     if (isChartDevelopment() && !context.rows.some((entry) => Object.hasOwn(entry, dataKey))) {
       context.warnOnce(
         "absent-column",
+        dataKey,
         `Chart.TableColumn lists ${JSON.stringify(dataKey)}, a column no row holds, so every cell prints –. Check the dataKey against the rows.`
       );
     }
@@ -580,7 +566,7 @@ function ChartTableColumnBody({
   return (
     <Table.Cell className={className} style={style}>
       <span data-slot="chart-table-column">
-        <Twin text={columnCell(context, cell, format)} />
+        <Twin text={columnCell(context, dataKey, cell, format)} />
       </span>
     </Table.Cell>
   );

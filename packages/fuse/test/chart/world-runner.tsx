@@ -99,11 +99,13 @@ export function panelledConfig<C extends ChartConfig>(config: C) {
 
 export function view(world: World) {
   const { line, area } = world;
-  const config = world.stacked === true ? STACKED : CONFIG;
+  const base = world.stacked === true ? STACKED : CONFIG;
+  // The world's bar look is its series' own, which the config names.
+  const config = { ...base, v: { ...base.v, variant: world.variant } };
   const include = [world.include[0], world.include[1]];
   const marks = (
     <>
-      <Chart.Bar dataKey="v" variant={world.variant} />
+      <Chart.Bar dataKey="v" />
       <Chart.ReferenceLine y={0} />
       {line.axis === "value" ? (
         <Chart.ReferenceLine y={line.at} label="Linje" />

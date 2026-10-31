@@ -4,20 +4,12 @@
  * pixel floor, so no look narrows a body to nothing. A tween recomputes them from each frame's
  * rectangle, so a cap, a face or a block track moves with its bar.
  */
+import type { ChartBarVariant } from "../chart-types";
 import { snapBody, snapSpan } from "./plot-frame";
 import type { PlotFrame, PlotRect } from "./plot-frame";
 
-/** The bar looks of CONTRACT section 6. */
-export type BarVariant =
-  | "default"
-  | "hatched"
-  | "duotone"
-  | "duotone-reverse"
-  | "gradient"
-  | "striped"
-  | "blocks"
-  | "expandable"
-  | "isometric";
+/** The bar looks of CONTRACT section 6, which a series' config names. */
+export type BarVariant = ChartBarVariant;
 
 /** Where a bar sits, which every shape beyond the body reads. */
 export type BarPlacement = {

@@ -11,8 +11,7 @@ import { childSlot } from "./chart-reference";
 import type { ChartDatum, ChartX } from "./chart-types";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { ownFirsts } from "./layout/coarse-slots";
-import { keywordSlots, listedSlots } from "./layout/datum";
-import { slotOf } from "./layout/x-domain";
+import { keywordSlots, listedSlots, nowSlotOf } from "./layout/datum";
 
 /** Whether a datum names x values rather than a keyword. */
 function isListed(datum: ChartDatum): datum is { readonly x: ChartX | readonly ChartX[] } {
@@ -49,7 +48,6 @@ export function datumSlots(
       )
     );
   }
-  const nowSlot =
-    context.now === undefined || model.domain.kind !== "time" ? -1 : slotOf(model.domain, context.now);
+  const nowSlot = nowSlotOf(model.domain, context.now);
   return ownFirsts(series, keywordSlots(datum, { values, window: model.window, nowSlot }));
 }

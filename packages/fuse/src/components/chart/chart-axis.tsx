@@ -8,7 +8,7 @@ import type { ChartRootContextValue } from "./chart-context";
 import { sameShallow, useSteady } from "./chart-steady";
 import type { ChartLayerProps, ValueFormat, XFormat } from "./chart-types";
 import type { Interval, TimePreset } from "./format/time-format";
-import { formatSlot } from "./format/time-format";
+import { formatSlot, isClockPreset } from "./format/time-format";
 import { formatValue } from "./format/value-format";
 import { labelWidth } from "./layout/label-width";
 import { slotCentre, valueTop } from "./layout/plot-geometry";
@@ -67,21 +67,13 @@ const TICK_PRESETS = {
   year: "year",
 } as const satisfies { readonly [I in Interval]: TimePreset };
 
-/** The presets that print a time of day, which every coarser tick unit starts at midnight. */
-const CLOCK_PRESETS: ReadonlySet<XFormat> = new Set<TimePreset>([
-  "hour",
-  "hour-range",
-  "time",
-  "time-seconds",
-  "time-range",
-]);
-
 /**
  * The preset of one tick. A tick of a coarser unit than the domain's is a day or longer, so a clock
  * preset gives way to the unit's own default there.
  */
 function tickFormat(format: XFormat | undefined, unit: Interval, coarser: boolean): XFormat {
-  if (format === undefined || (coarser && CLOCK_PRESETS.has(format))) return TICK_PRESETS[unit];
+  // A clock preset prints a time of day, which every coarser tick unit starts at midnight.
+  if (format === undefined || (coarser && isClockPreset(format))) return TICK_PRESETS[unit];
   return format;
 }
 

@@ -3,6 +3,7 @@
  * space, and `plot-frame.ts` projects a cell into the measured plot. A stack's inner segment ends
  * `--chart-bar-seam` short of the next one at its far end, so the surface shows between segments.
  */
+import type { BarVariant } from "./bar-shapes";
 import type { CartesianModel, SeriesModel } from "./cartesian-model";
 import { ownSlot, ownSpan } from "./coarse-slots";
 import { BUCKETS, bucketEdges } from "./decimate";
@@ -26,6 +27,19 @@ const BAR_LIMIT = 100;
 export function barForm(model: CartesianModel, orientation: "vertical" | "horizontal"): "bars" | "path" {
   if (orientation === "horizontal") return "bars";
   return slotCount(model.domain) > BAR_LIMIT ? "path" : "bars";
+}
+
+/**
+ * The look a series' bars draw in a form. The path form knows the "default" and "gradient" looks
+ * only, so every other look draws the default one there.
+ *
+ * @param variant - The look the series' config names.
+ * @param form - The form its bars draw in, from `barForm`.
+ * @returns The drawn look.
+ */
+export function drawnBarVariant(variant: BarVariant, form: "bars" | "path"): BarVariant {
+  if (form === "bars") return variant;
+  return variant === "gradient" ? "gradient" : "default";
 }
 
 /** One drawn bar in value space. */

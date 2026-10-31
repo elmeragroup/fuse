@@ -13,6 +13,7 @@ import type { RefCallback } from "react";
 
 import { ChartLayoutContext } from "./chart-context";
 import type { ChartUpdate } from "./chart-context";
+import { refreshParts } from "./chart-dom";
 import type { FollowerCause } from "./chart-followers";
 import { SAME_PLOT } from "./chart-motion";
 import type { ChartMotion, JoinLead, MarkValues, Placement, PlotScale, ValueAxis } from "./chart-motion";
@@ -99,6 +100,8 @@ export function useMotionMark<
   useLayoutEffect(() => {
     latest.current = { write, look };
     declared.current = axes;
+    // This commit may have mounted or dropped a child the writer draws, so its parts are found again.
+    refreshParts(node.current);
   });
   useLayoutEffect(
     () => () => {

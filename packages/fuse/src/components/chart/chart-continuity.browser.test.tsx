@@ -64,14 +64,14 @@ const configs = new Map<string, ChartConfig>();
 const COLORS = { p: "chart-1", q: "chart-2", r: "chart-3" } as const;
 const LIST = ["chart-2", "chart-4"] as const;
 
-function configOf(present: readonly Series[], list: boolean): ChartConfig {
-  const key = `${present.join()}:${String(list)}`;
+function configOf(present: readonly Series[], list: boolean, variant: Look["variant"]): ChartConfig {
+  const key = `${present.join()}:${String(list)}:${variant}`;
   const known: ChartConfig =
     configs.get(key) ??
     Object.fromEntries(
       present.map((series) => [
         series,
-        { label: series, color: list && series === "q" ? LIST : COLORS[series], stack: "s" },
+        { label: series, color: list && series === "q" ? LIST : COLORS[series], stack: "s", variant },
       ])
     );
   configs.set(key, known);
@@ -89,14 +89,14 @@ function chart(state: State, look: Look) {
         <Chart.Root
           data-intro="none"
           data={rows}
-          config={configOf(state.present, look.list)}
+          config={configOf(state.present, look.list, look.variant)}
           xKey="name"
           orientation={look.orientation}
           yInclude={[-look.reach, look.reach]}
           style={{ "--chart-plot-height": "200px", "--chart-bar-seam": `${String(look.seam)}px` }}
           aria-label="Stabel">
           {state.present.map((series) => (
-            <Chart.Bar key={series} dataKey={series} variant={look.variant} />
+            <Chart.Bar key={series} dataKey={series} />
           ))}
           <Chart.ActiveValueLine dataKey="q" />
         </Chart.Root>

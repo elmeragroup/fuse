@@ -16,7 +16,7 @@ declare global {
   var demoMutations: number | undefined;
   /** Reads every chart bar in the observed demo's stage. */
   var readDemoBars: (() => BarState[]) | undefined;
-  /** The stage's chart bars once the frame after the demo turned hydrated has run. */
+  /** The stage's chart bars at the moment the demo frame turned hydrated. */
   var barsAtHydration: BarState[] | undefined;
 }
 
@@ -28,7 +28,7 @@ type Hydration = {
   readonly errors: readonly string[];
   /** The demo's table text after hydration. */
   readonly cells: readonly string[];
-  /** Each chart bar in the stage the frame after the demo's own effects ran, in document order. */
+  /** Each chart bar in the stage once the demo's own effects ran, in document order. */
   readonly barsAtHydration: readonly BarState[];
   /** Each chart bar once every bar has hydrated. */
   readonly bars: readonly BarState[];
@@ -135,20 +135,14 @@ async function hydrateDemo(
         intro: bar.getAttribute("data-intro"),
         animations: bar.getAnimations().length,
       }));
-    // The marker stamps the frame from the demo's own passive effects. A hydrating chart takes its
-    // first measurement from the ResizeObserver delivery of the next frame, before that frame
-    // paints, so the bars are read once that frame has run, long before the late boundary's
-    // 400 ms timer lets it hydrate.
+    // The marker stamps the frame from the demo's own passive effects, and this callback runs in
+    // the microtask after, before any timer can let a late boundary hydrate.
     const frame = element.closest("[data-demo-frame]");
     if (frame === null) return;
     new MutationObserver(() => {
-      if (!frame.hasAttribute("data-demo-hydrated") || globalThis.barsAtHydration !== undefined) return;
-      globalThis.barsAtHydration = [];
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          globalThis.barsAtHydration = globalThis.readDemoBars?.();
-        }, 0);
-      });
+      if (frame.hasAttribute("data-demo-hydrated") && globalThis.barsAtHydration === undefined) {
+        globalThis.barsAtHydration = globalThis.readDemoBars?.();
+      }
     }).observe(frame, { attributes: true, attributeFilter: ["data-demo-hydrated"] });
   });
   scriptsHeld.resolve(undefined);
@@ -215,9 +209,9 @@ describe.each([
     const hydration = await hydrateDemo(browser(), "/components/bar-chart", "Streamed series", 12);
     expect(hydration.mutations).toBe(0);
     expect(hydration.errors).toEqual([]);
-    // The demo holds 6 months in 2 stacked series. The grid series hydrates with the chart, so by
-    // the next frame the chart has measured its plot and drawn those bars, while the solar series
-    // waits 400 ms more for its readings and draws nothing until its boundary hydrates.
+    // The demo holds 6 months in 2 stacked series. The grid series hydrates with the chart, so the
+    // chart's effects have run and its bars are drawn, while the solar series waits 400 ms more for
+    // its readings and draws nothing until its boundary hydrates.
     const series = (bars: readonly BarState[], hydrated: boolean): (string | null)[] =>
       bars.filter((bar) => bar.hydrated === hydrated).map((bar) => bar.series);
     expect(series(hydration.barsAtHydration, true)).toEqual(Array.from({ length: 6 }, () => "0"));

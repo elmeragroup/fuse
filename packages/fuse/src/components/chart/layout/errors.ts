@@ -1,9 +1,10 @@
 /**
  * The chart error tiers of CONTRACT section 8.1. Composition errors depend only on props, config
  * and the tree, so they throw in every build. Data errors throw in development and, in production,
- * warn once per Root for each distinct problem and render the fallback the rule names. Both classes stay private, as
- * `CommandCompositionError` does, and each carries its rule.
+ * warn once per Root for each rule and subject, such as a column, and render the fallback the rule
+ * names. Both classes stay private, as `CommandCompositionError` does, and each carries its rule.
  */
+import type { ModelIssue } from "./cartesian-model";
 
 /** The composition rules this layer reaches. */
 export type ChartCompositionRule =
@@ -108,6 +109,36 @@ export const DATA_MESSAGES = {
   "table-column-format":
     "received a format that does not fit its cells, a time preset on numbers or a value format on Date cells. Production prints each cell through its type's default format.",
 } as const satisfies { readonly [R in ChartDataRule]: string };
+
+/**
+ * What a data issue is about, so production warns once per rule and subject however many rows break
+ * it: the column for a cell, the x axis for a row, and the stack for a mixed-sign slot.
+ *
+ * @param issue - The issue.
+ * @returns The subject.
+ */
+export function dataSubject(issue: ModelIssue): string {
+  if ("key" in issue) return issue.key;
+  return issue.rule === "mixed-sign-expand" ? issue.stack : "x";
+}
+
+/**
+ * What a data issue says after the part: the rule's message, then where it first broke, and how
+ * many times when more than once.
+ *
+ * @param issue - The first issue of its rule and subject.
+ * @param rowAt - The row each slot reads, which names a cell issue's row.
+ * @param count - How many issues share the rule and subject.
+ * @returns The text.
+ */
+export function dataMessage(issue: ModelIssue, rowAt: readonly (number | undefined)[], count = 1): string {
+  const row = "row" in issue ? issue.row : "key" in issue ? rowAt[issue.slot] : undefined;
+  const where =
+    row !== undefined ? `Row ${String(row)}` : "slot" in issue ? `Slot ${String(issue.slot)}` : "";
+  const key = "key" in issue ? ` of ${JSON.stringify(issue.key)}` : "";
+  const more = count > 1 ? `, the first of ${String(count)}` : "";
+  return `${DATA_MESSAGES[issue.rule]} ${where}${key}${more}.`;
+}
 
 /**
  * Whether the build is a development build, where data errors throw and hints warn. It shares the

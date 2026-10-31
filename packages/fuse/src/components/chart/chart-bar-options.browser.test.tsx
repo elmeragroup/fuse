@@ -1,6 +1,6 @@
 // The catalogue-option judges of ticket 05 in Chromium. Oracles: the entrance of
 // motion-decision.md rule 1, where every bar starts on its own base when Root first mounts in the
-// browser and data-intro="none" starts none (layout/bar-geometry.test.ts pins each origin's
+// browser and data-intro="none" starts none (layout/bar-geometry.zones.test.ts pins each origin's
 // 16 ms steps); section 8.9's diverging bins for a hand-written
 // series whose largest magnitude is 6; T137's 3 px dot on each drawn tick's band centre; and
 // section 8.7's quality and projection words in the option, all written by hand.

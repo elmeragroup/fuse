@@ -41,6 +41,51 @@ export type TimePreset =
   | "month-year"
   | "year";
 
+/**
+ * The one preset table: the interval each preset names, which is the slot a `Date` cell under it
+ * reads. A preset whose interval is shorter than a day prints a time of day.
+ */
+export const PRESET_INTERVAL = {
+  hour: "hour",
+  "hour-range": "hour",
+  time: "minute",
+  "time-seconds": "second",
+  "time-range": "quarter-hour",
+  day: "day",
+  weekday: "day",
+  date: "day",
+  week: "week",
+  month: "month",
+  "month-year": "month",
+  year: "year",
+} as const satisfies { readonly [P in TimePreset]: Interval };
+
+/** The intervals shorter than a day. */
+type ClockInterval = "second" | "minute" | "quarter-hour" | "hour";
+
+/** The presets that print a time of day, whose interval is shorter than a day. */
+export type ClockPreset = {
+  readonly [P in TimePreset]: (typeof PRESET_INTERVAL)[P] extends ClockInterval ? P : never;
+}[TimePreset];
+
+const CLOCK_INTERVALS: ReadonlySet<Interval> = new Set<ClockInterval>([
+  "second",
+  "minute",
+  "quarter-hour",
+  "hour",
+]);
+
+/**
+ * Whether a format is a preset that prints a time of day.
+ *
+ * @param format - A preset, or Intl date-time options.
+ * @returns Whether it is a clock preset.
+ */
+export function isClockPreset(format: TimePreset | Intl.DateTimeFormatOptions): format is ClockPreset {
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- an XFormat is a preset string or an options object
+  return typeof format === "string" && CLOCK_INTERVALS.has(PRESET_INTERVAL[format]);
+}
+
 /** One period of a time axis. */
 export type TimeSlot = {
   /** The period's start instant in epoch milliseconds. */
@@ -373,8 +418,6 @@ function range(
     words.spokenRange(first.full, last.full)
   );
 }
-
-type ClockPreset = "hour" | "hour-range" | "time" | "time-seconds" | "time-range";
 
 function clockText(
   locale: SupportedLocale,

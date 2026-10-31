@@ -155,6 +155,7 @@ export function ChartArea({
       layout,
       dataKey,
       curve,
+      route: "area",
       stride: AREA_STRIDE,
     }
   );

@@ -18,4 +18,4 @@ The three packages are released under the ISC licence. Each folder holds its pac
 
 ## Slot judges
 
-`slot-judges.ts` compares the time axis's slots with the zoneinfo slot lists in `../../format/fixtures/slots.json`. `../x-domain.test.ts` runs them in the unit project's zone and again in each zone project's.
+`slot-judges.ts` compares the time axis's slots with the zoneinfo slot lists in `../../format/fixtures/slots.json`. `../x-domain.zones.test.ts` runs them in the unit project's zone and again in each zone project's.

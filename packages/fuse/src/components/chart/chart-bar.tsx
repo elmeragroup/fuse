@@ -12,11 +12,10 @@ import { useSvgIdPrefix } from "./chart-dom";
 import { seriesPaintOf } from "./chart-paint";
 import { useBarMetrics, useChartFrame } from "./chart-plot";
 import type { ChartPlot } from "./chart-plot";
-import { useSteady } from "./chart-steady";
+import { sameShallow, useSteady } from "./chart-steady";
 import { useFirstPhase } from "./chart-store";
 import type { ChartDatum, ChartLayerProps } from "./chart-types";
-import { barForm } from "./layout/bar-geometry";
-import type { BarVariant } from "./layout/bar-shapes";
+import { barForm, drawnBarVariant } from "./layout/bar-geometry";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { ChartCompositionError, isChartDevelopment } from "./layout/errors";
 import { WHOLE_BAND } from "./layout/plot-frame";
@@ -30,26 +29,11 @@ import { seriesOf } from "./layout/series-of";
  * @beta
  */
 export type ChartBarProps = ChartLayerProps & {
-  /** The series the bars draw. An unknown key throws `unknown-key`. */
-  dataKey: string;
   /**
-   * The bar's look. "default" by default. Above 100 slots a series draws as one path, which knows
-   * the "default" and "gradient" looks only, so every other look draws the default one there and
-   * warns `bar-variant-needs-html` in development. The tinted looks, which are "hatched",
-   * "striped", "gradient", "duotone" and "duotone-reverse", fill most of a bar with a pale tint of
-   * the series colour, so a series relies on the bar's 1 px edge in the full colour and on the
-   * legend for its identity. Pair them with a Legend or a Table.
+   * The series the bars draw, in the look its config's `variant` names. An unknown key throws
+   * `unknown-key`.
    */
-  variant?:
-    | "default"
-    | "hatched"
-    | "duotone"
-    | "duotone-reverse"
-    | "gradient"
-    | "striped"
-    | "blocks"
-    | "expandable"
-    | "isometric";
+  dataKey: string;
   /**
    * The slots to emphasise. `"now"` selects the slot of this series that contains Root's `now`, so
    * an hourly bar on a quarter-hour chart emphasises its whole hour. `"max"` and `"min"` compare the
@@ -126,7 +110,6 @@ function emphasisSlots(
  */
 export function ChartBar({
   dataKey,
-  variant = "default",
   emphasis,
   emphasisLabel,
   className,
@@ -172,18 +155,18 @@ export function ChartBar({
     () => registerEmphasis(dataKey, { slots: [...emphasised], label: emphasisLabel }),
     [registerEmphasis, dataKey, emphasised, emphasisLabel]
   );
-  // The look the series draws, which its marks, its attributes and its overlay all read. The path
-  // form has two looks of its own, and every other variant draws the default look there.
-  const drawnVariant: BarVariant =
-    form === "bars" ? variant : variant === "gradient" ? "gradient" : "default";
+  const variant = config?.variant ?? "default";
+  // The look the series draws, which its marks, its attributes, its overlay and its swatches read.
+  const drawnVariant = drawnBarVariant(variant, form);
   useLayoutEffect(
-    () => registerBar(dataKey, grouped, layout.owner, drawnVariant),
-    [registerBar, dataKey, grouped, layout.owner, drawnVariant]
+    () => registerBar(dataKey, grouped, layout.owner),
+    [registerBar, dataKey, grouped, layout.owner]
   );
   if (drawnVariant !== variant && isChartDevelopment()) {
     context.warnOnce(
       "bar-variant-needs-html",
-      `Chart.Bar draws ${JSON.stringify(dataKey)} as one path above 100 slots, where variant="${variant}" has no path look, so it draws the default variant. Narrow the period to 100 slots or fewer, or pick another variant.`
+      dataKey,
+      `Chart.Bar draws ${JSON.stringify(dataKey)} as one path above 100 slots, where its config's variant: "${variant}" has no path look, so it draws the default variant. Narrow the period to 100 slots or fewer, or pick another variant.`
     );
   }
   const color = config?.color ?? "chart-1";
@@ -200,7 +183,9 @@ export function ChartBar({
   const svg = useRef<SVGSVGElement>(null);
   // A BarGroup owns the spacing of its bars, so they split each band alike. Outside a group the
   // Bar's own element holds it. Either way the marks wait for the first read.
-  const own = useBarMetrics(grouped ? null : svg);
+  // An inline style that sets the same values is no change, so the spacing is not read again.
+  const steadyStyle = useSteady(style, sameShallow);
+  const own = useBarMetrics(grouped ? null : svg, [className, steadyStyle]);
   const metrics = group === null ? own : group.metrics;
   const ready =
     drawn === null || metrics === null || series === undefined ? null : { drawn, metrics, series };
@@ -295,7 +280,8 @@ export function ChartBarGroup({ series, className, style, children }: ChartBarGr
   // The keys compare as a tuple, so an inline array that lists the same keys is no change.
   const groupSeries = useSteady(series, sameItems);
   const element = useRef<HTMLDivElement>(null);
-  const metrics = useBarMetrics(element);
+  const steadyStyle = useSteady(style, sameShallow);
+  const metrics = useBarMetrics(element, [className, steadyStyle]);
   const value = useMemo((): BarGroupValue => {
     const index = new Map<string, number>();
     const stackPlace = new Map<string, number>();

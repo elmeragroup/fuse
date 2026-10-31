@@ -5,9 +5,16 @@ import { AxeBuilder } from "@axe-core/playwright";
 import { readFileSync } from "node:fs";
 import { chromium, firefox, webkit } from "playwright";
 import type { Locator, Page } from "playwright";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
-import { DESKTOP_VIEWPORT, launchSuiteBrowser, openDemo, waitForDemoHydration } from "./demo-page";
+import {
+  DESKTOP_VIEWPORT,
+  launchSuiteBrowser,
+  openDemo,
+  shareDemoPage,
+  sharedDemo,
+  waitForDemoHydration,
+} from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 
 /** How many elements inside `demo` carry the data-slot, optionally narrowed by an attribute. */
@@ -520,6 +527,24 @@ describe.each([
   ["WebKit", webkit],
 ] as const)("the tooltip at 400 % zoom, a 320 × 225 viewport, in %s", (_, engine) => {
   const browser = launchSuiteBrowser(engine);
+  // The 8 checks share one load of the page. Each starts from the top of the page with the pointer
+  // off every chart, once the popup the last check opened has closed, so its own hover opens a new
+  // popup. It marks the popups other demos keep open before that hover.
+  const sharedPage = shareDemoPage(browser, "bar-chart", { width: 320, height: 225 }, "Europe/Oslo");
+  beforeEach(async () => {
+    const page = sharedPage();
+    await page.setViewportSize({ width: 320, height: 225 });
+    await page.mouse.move(1, 1);
+    await page.evaluate(async () => {
+      window.scrollTo(0, 0);
+      for (const open of document.querySelectorAll("[data-earlier]")) open.removeAttribute("data-earlier");
+      // A popup starts its exit in the frame after the pointer leaves its chart.
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    });
+    await page.waitForFunction(
+      () => document.querySelector('[data-slot="chart-tooltip"][data-ending-style]') === null
+    );
+  });
 
   it.each([
     ["Entrance origins", -20],
@@ -534,11 +559,8 @@ describe.each([
       // The last recheck: the popup sat on its column while the side beside it held it. CONTRACT
       // section 9.5 tests every side with the 8 px viewport inset before it overlays the plot. The
       // oracle is that inset rule, computed here from the boxes alone.
-      const page = await browser().newPage({
-        viewport: { width: 320, height: 225 },
-        timezoneId: "Europe/Oslo",
-      });
-      const demo = await openDemo(page, "bar-chart", name);
+      const page = sharedPage();
+      const demo = await sharedDemo(page, name);
       const chart = demo.locator('[data-slot="chart"]').first();
       const surface = chart.locator('[data-slot="chart-surface"]');
       await surface.evaluate((element, top) => {
@@ -599,7 +621,6 @@ describe.each([
         shown.top < column.bottom - 1 &&
         column.top + 1 < shown.bottom;
       if (covers) expect(holds, JSON.stringify({ shown, column })).toBe(false);
-      await page.close();
     }
   );
 
@@ -610,11 +631,8 @@ describe.each([
       // above or below it and clipped its rows. CONTRACT section 9.5 seats it beside the column, or
       // over the plot when no side holds it. The oracle is the viewport's box and the popup's own
       // scroll size, under WCAG 1.4.10 and 1.4.13.
-      const page = await browser().newPage({
-        viewport: { width: 320, height: 225 },
-        timezoneId: "Europe/Oslo",
-      });
-      const demo = await openDemo(page, "bar-chart", name);
+      const page = sharedPage();
+      const demo = await sharedDemo(page, name);
       const chart = demo.locator('[data-slot="chart"]').first();
       // The tallest column's top goes 20 px under the viewport's top edge, where the recheck saw
       // 22 px left above it, and the column runs on past the viewport's bottom.
@@ -666,7 +684,6 @@ describe.each([
       await page.waitForTimeout(400);
       expect(await popup.getAttribute("data-ending-style")).toBeNull();
       expect(await popup.locator('[data-slot="chart-tooltip-label"]').textContent()).toBe(shown.label);
-      await page.close();
     }
   );
 });

@@ -71,6 +71,9 @@ describe("search matching", () => {
     ],
     ["finds the theme studio by its title", "studio", "/studio"],
     ["finds the theme studio by what it is", "playground", "/studio"],
+    ["finds an alias page by its own part name", "BarChart.Root", "/components/bar-chart"],
+    ["finds an alias page by its own part name", "LineChart.Line", "/components/line-chart"],
+    ["finds an alias page by its own part name", "AreaChart.Area", "/components/area-chart"],
   ] as const)("%s: %s → %s", (_case, query, href) => {
     expect(search(query)[0]?.href).toBe(href);
   });

@@ -66,8 +66,6 @@ export type ChartSnapshot = {
    * hydrating option hold none, and the word arrives in the update that registration triggers.
    */
   readonly emphasis: { readonly [key: string]: EmphasisEntry };
-  /** The config keys a mounted Bar draws hatched, whose legend swatches draw hatched too. */
-  readonly hatched: readonly string[];
 };
 
 /** The pointer's last position over the plot, in client pixels, and its pointer type. */
@@ -105,7 +103,6 @@ const INITIAL: ChartSnapshot = {
   frozen: false,
   announcement: { text: "", count: 0 },
   emphasis: {},
-  hatched: [],
 };
 
 /**

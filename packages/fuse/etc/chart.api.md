@@ -231,10 +231,12 @@ export type ChartBarGroupProps = ChartLayerProps & {
 // @beta
 export type ChartBarProps = ChartLayerProps & {
     dataKey: string;
-    variant?: "default" | "hatched" | "duotone" | "duotone-reverse" | "gradient" | "striped" | "blocks" | "expandable" | "isometric";
     emphasis?: ChartDatum;
     emphasisLabel?: string;
 };
+
+// @beta
+export type ChartBarVariant = "default" | "hatched" | "duotone" | "duotone-reverse" | "gradient" | "striped" | "blocks" | "expandable" | "isometric";
 
 // @beta
 function ChartBrush(_props: ChartBrushProps): ReactElement;
@@ -635,6 +637,7 @@ export type ChartSequentialRole = `chart-seq-${1 | 2 | 3 | 4 | 5 | 6 | 7}`;
 export type ChartSeriesConfig = {
     label: string | FormattedText;
     color: ChartColor;
+    variant?: ChartBarVariant;
     format?: ValueFormat;
     icon?: ReactElement;
     stack?: string;

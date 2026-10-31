@@ -228,6 +228,22 @@ export type ChartPolarColor = ChartPolarRole | readonly [ChartPolarRole, ChartPo
 export type XFormat = TimePreset | Omit<Intl.DateTimeFormatOptions, "timeZone" | "timeZoneName">;
 
 /**
+ * The looks of a series' bars, which its config's `variant` names.
+ *
+ * @beta
+ */
+export type ChartBarVariant =
+  | "default"
+  | "hatched"
+  | "duotone"
+  | "duotone-reverse"
+  | "gradient"
+  | "striped"
+  | "blocks"
+  | "expandable"
+  | "isometric";
+
+/**
  * What a chart knows about one series, or about one category in pie and radial charts.
  *
  * @beta
@@ -242,6 +258,17 @@ export type ChartSeriesConfig = {
   label: string | FormattedText;
   /** A role, a decorative role list or a scale. Pie and radial config takes `ChartPolarColor`. */
   color: ChartColor;
+  /**
+   * The look of the series' bars, and of its legend swatches inside the chart, so the server draws
+   * both alike. "default" by default. Above 100 slots a series draws its bars as one path, which
+   * knows the "default" and "gradient" looks only, so every other look draws the default one there,
+   * its swatches too, and warns `bar-variant-needs-html` in development. The tinted looks, which are
+   * "hatched", "striped", "gradient", "duotone" and "duotone-reverse", fill most of a bar with a
+   * pale tint of the series colour, so a series relies on the bar's 1 px edge in the full colour
+   * and on the legend for its identity. Pair them with a Legend or a Table. Lines and areas take
+   * their own look as a prop. Cartesian config only.
+   */
+  variant?: ChartBarVariant;
   /** How the series' values print. In pie and radial charts it overrides Root's `valueFormat`. */
   format?: ValueFormat;
   /** An element such as `<Lightning />`. A component type would not cross Flight. */

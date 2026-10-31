@@ -10,9 +10,9 @@ import { seriesPaintOf, valuePaint } from "./chart-paint";
 import type { SeriesPaint } from "./chart-paint";
 import { usePendingOr } from "./chart-pending-root";
 import { readingAt, useActivePoint, useReadoutKey } from "./chart-readout";
-import { useChartStore } from "./chart-store";
 import { seriesLabel } from "./chart-text";
 import type { ChartDomProps } from "./chart-types";
+import { barForm, drawnBarVariant } from "./layout/bar-geometry";
 import { seriesOf } from "./layout/series-of";
 
 /**
@@ -85,8 +85,12 @@ function ChartSwatchBody({
   const reading =
     point.slot === null || paint.bins === undefined ? null : readingAt(context, key, point.slot);
   const step = reading?.kind === "reading" ? valuePaint(paint, reading.value) : undefined;
-  // A hatched series draws its legend swatch hatched too, so the legend tells the series apart.
-  const hatched = useChartStore(context.store, (snapshot) => snapshot.hatched.includes(key));
+  // The swatch wears the look the series' bars draw in, from config at render time, so the server
+  // HTML and the legend tell a hatched series apart before the chart hydrates.
+  const look = drawnBarVariant(
+    context.config[key]?.variant ?? "default",
+    barForm(context.model, context.orientation)
+  );
   return useRender({
     defaultTagName: "span",
     render,
@@ -94,7 +98,7 @@ function ChartSwatchBody({
       "data-slot": "chart-swatch",
       "data-variant": variant,
       "data-series": series?.seriesIndex,
-      "data-hatched": hatched ? "" : undefined,
+      "data-series-variant": look === "default" ? undefined : look,
       ...mergeProps<"span">(
         {
           "aria-hidden": true,

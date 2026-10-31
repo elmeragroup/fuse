@@ -1,5 +1,5 @@
 /**
- * This file runs the judges of format.test.ts in Chromium, Firefox and WebKit. Each engine carries
+ * This file runs the judges of format.zones.test.ts in Chromium, Firefox and WebKit. Each engine carries
  * its own Intl data, and a server in Node and a browser in any engine must write the same text.
  */
 import { describe, expect, it } from "vitest";

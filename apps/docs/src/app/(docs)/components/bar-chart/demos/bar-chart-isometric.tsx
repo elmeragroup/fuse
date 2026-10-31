@@ -21,6 +21,7 @@ const config = {
     label: "Revenue",
     color: "chart-1",
     format: { style: "currency", currency: "USD", notation: "compact" },
+    variant: "isometric",
   },
 } as const satisfies ChartConfig;
 
@@ -36,7 +37,7 @@ export function BarChartIsometric() {
       className="sm:[--chart-plot-height:175px] [--chart-plot-height:55px]"
       aria-label="Revenue by month">
       <BarChart.XAxis />
-      <BarChart.Bar dataKey="revenue" variant="isometric" emphasis="max" emphasisLabel="peak" />
+      <BarChart.Bar dataKey="revenue" emphasis="max" emphasisLabel="peak" />
       <BarChart.Tooltip />
     </BarChart.Root>
   );

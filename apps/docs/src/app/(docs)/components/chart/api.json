@@ -503,7 +503,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The series the bars draw. An unknown key throws `unknown-key`.",
+          "description": "The series the bars draw, in the look its config's `variant` names. An unknown key throws `unknown-key`.",
           "required": true
         },
         {
@@ -531,15 +531,6 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Inline styles, with every public chart custom property typed.",
-          "required": false
-        },
-        {
-          "name": "variant",
-          "origin": "declared",
-          "type": "\"blocks\" | \"default\" | \"duotone\" | \"duotone-reverse\" | \"expandable\" | \"gradient\" | \"hatched\" | \"isometric\" | \"striped\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"default\"",
-          "description": "The bar's look. \"default\" by default. Above 100 slots a series draws as one path, which knows the \"default\" and \"gradient\" looks only, so every other look draws the default one there and warns `bar-variant-needs-html` in development. The tinted looks, which are \"hatched\", \"striped\", \"gradient\", \"duotone\" and \"duotone-reverse\", fill most of a bar with a pale tint of the series colour, so a series relies on the bar's 1 px edge in the full colour and on the legend for its identity. Pair them with a Legend or a Table.",
           "required": false
         }
       ]

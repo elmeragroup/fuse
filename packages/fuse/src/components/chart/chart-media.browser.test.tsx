@@ -32,6 +32,7 @@ import {
 } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
+import type { ChartBarVariant } from "./chart-types";
 import "./chart.css";
 
 const FORCED = server.browser === "chromium" || server.browser === "firefox";
@@ -494,10 +495,12 @@ describe("patterned bars", () => {
           <Chart.Root
             data-intro="none"
             data={[{ name: "a", v: 8 }]}
-            config={{ v: { label: "V", color: "chart-1", projectedFrom: projected ? "a" : undefined } }}
+            config={{
+              v: { label: "V", color: "chart-1", projectedFrom: projected ? "a" : undefined, variant },
+            }}
             xKey="name"
             aria-label="Mønster">
-            <Chart.Bar dataKey="v" variant={variant} />
+            <Chart.Bar dataKey="v" />
           </Chart.Root>
         </LocaleProvider>
       </div>
@@ -539,14 +542,14 @@ describe("patterned bars", () => {
             data-intro="none"
             data={[{ name: "a", low: 4, high: 6 }]}
             config={{
-              low: { label: "Lav", color: "chart-1", stack: "s" },
-              high: { label: "Høy", color: "chart-1", stack: "s" },
+              low: { label: "Lav", color: "chart-1", stack: "s", variant: "blocks" },
+              high: { label: "Høy", color: "chart-1", stack: "s", variant: "blocks" },
             }}
             xKey="name"
             style={{ "--chart-plot-height": "200px" }}
             aria-label="Blokker">
-            <Chart.Bar dataKey="low" variant="blocks" />
-            <Chart.Bar dataKey="high" variant="blocks" />
+            <Chart.Bar dataKey="low" />
+            <Chart.Bar dataKey="high" />
           </Chart.Root>
         </LocaleProvider>
       </div>
@@ -598,14 +601,14 @@ describe("mark contrast", () => {
     };
   }
 
-  function plotWith(bar: ReactNode, legend = false) {
+  function plotWith(bar: ReactNode, legend = false, variant: ChartBarVariant = "default") {
     return renderThemed(
       <div style={{ width: 360, padding: 16, background: "var(--background)" }}>
         <LocaleProvider locale="nb-NO">
           <Chart.Root
             data-intro="none"
             data={[3, 5, 8, 4].map((v, index) => ({ name: `k${String(index)}`, v }))}
-            config={{ v: { label: "V", color: "chart-1" } }}
+            config={{ v: { label: "V", color: "chart-1", variant } }}
             xKey="name"
             aria-label="Kontrast">
             {bar}
@@ -633,7 +636,7 @@ describe("mark contrast", () => {
   it.each(["hatched", "striped", "gradient", "duotone", "duotone-reverse"] as const)(
     "edges each %s bar in the full paint at 3:1 or more",
     async (variant) => {
-      const { host } = plotWith(<Chart.Bar dataKey="v" variant={variant} />);
+      const { host } = plotWith(<Chart.Bar dataKey="v" />, false, variant);
       await frame();
       // DOM audit: bars are aria-hidden plot output.
       const bar = host.querySelectorAll('[data-slot="chart-bar"]')[2]?.getBoundingClientRect();
@@ -807,7 +810,7 @@ describe("mark contrast", () => {
   });
 
   it("hatches a hatched series' legend swatch", () => {
-    const { host } = plotWith(<Chart.Bar dataKey="v" variant="hatched" />, true);
+    const { host } = plotWith(<Chart.Bar dataKey="v" />, true, "hatched");
     // DOM audit: the swatch is aria-hidden presentation inside the legend item.
     const swatch = host.querySelector('[data-slot="chart-legend-item"] [data-slot="chart-swatch"]');
     expect(getComputedStyle(swatch ?? document.body).backgroundImage).toMatch(/repeating-linear-gradient/);

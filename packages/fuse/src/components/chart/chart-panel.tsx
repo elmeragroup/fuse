@@ -8,7 +8,7 @@ import type { ChartLayoutContextValue } from "./chart-context";
 import { createChartLabels } from "./chart-labels";
 import { createFrameOwner } from "./chart-motion";
 import { colourFamilyError } from "./chart-paint";
-import { ChartPlotContext, usePanelPlot } from "./chart-plot";
+import { ChartPlotContext, PlotReadsContext, usePanelPlot } from "./chart-plot";
 import { PlotSkeleton } from "./chart-skeleton";
 import { useSteady } from "./chart-steady";
 import type { ChartConfig, ChartLayerProps } from "./chart-types";
@@ -135,7 +135,7 @@ export function ChartPanel({
     [keys, y, yBaseline, owner, labels]
   );
   const plotRef = useRef<HTMLDivElement>(null);
-  const { plot, probe } = usePanelPlot(plotRef);
+  const { plot, probe, reads } = usePanelPlot(plotRef);
   useLayoutEffect(
     () => registerPanel({ layout: input, plot: () => plotRef.current }),
     [registerPanel, input]
@@ -152,7 +152,9 @@ export function ChartPanel({
           {probe}
           {plot === null && !model.empty ? <PlotSkeleton /> : null}
         </div>
-        <ChartPlotContext value={plot}>{children}</ChartPlotContext>
+        <ChartPlotContext value={plot}>
+          <PlotReadsContext value={reads}>{children}</PlotReadsContext>
+        </ChartPlotContext>
       </div>
     </ChartLayoutContext>
   );

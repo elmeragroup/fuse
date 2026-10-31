@@ -21,7 +21,9 @@ const data = [
   { month: "Dec", desktop: 162 },
 ];
 
-const config = { desktop: { label: "Desktop", color: "chart-1" } } as const satisfies ChartConfig;
+const config = {
+  desktop: { label: "Desktop", color: "chart-1", variant: "blocks" },
+} as const satisfies ChartConfig;
 
 export function BarChartBlocks() {
   return (
@@ -35,7 +37,7 @@ export function BarChartBlocks() {
       className="sm:[--chart-plot-height:195px] [--chart-plot-height:91px]"
       aria-label="Visitors by month">
       <BarChart.XAxis />
-      <BarChart.Bar dataKey="desktop" variant="blocks" />
+      <BarChart.Bar dataKey="desktop" />
       <BarChart.Tooltip />
     </BarChart.Root>
   );

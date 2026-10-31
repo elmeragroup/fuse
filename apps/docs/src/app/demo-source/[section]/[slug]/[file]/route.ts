@@ -11,16 +11,24 @@ export function generateStaticParams(): DemoLocation[] {
   return demoLocations();
 }
 
+/** Every demo's location as one key, scanned once per server, which guards the params. */
+let known: ReadonlyMap<string, DemoLocation> | null = null;
+
+function locationKey(section: string, slug: string, file: string): string {
+  return `${section}/${slug}/${file}`;
+}
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ section: string; slug: string; file: string }> }
 ): Promise<Response> {
   const { section, slug, file } = await context.params;
-  const known = demoLocations().find(
-    (location) => location.section === section && location.slug === slug && location.file === file
+  known ??= new Map(
+    demoLocations().map((location) => [locationKey(location.section, location.slug, location.file), location])
   );
-  if (known === undefined) return new Response(null, { status: 404 });
-  return new Response(highlightSource(readDemoSource(known).source), {
+  const location = known.get(locationKey(section, slug, file));
+  if (location === undefined) return new Response(null, { status: 404 });
+  return new Response(highlightSource(readDemoSource(location).source), {
     headers: { "content-type": "text/html; charset=utf-8" },
   });
 }

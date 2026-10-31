@@ -31,6 +31,7 @@ const config = {
     label: "Usage",
     color: "chart-1",
     format: { preset: "energy", unit: "kWh", maximumFractionDigits: 2 },
+    variant: "gradient",
   },
 } as const satisfies ChartConfig;
 
@@ -62,7 +63,7 @@ export function ChartBackgroundPatterns() {
         <Chart.Background variant={pattern} />
         <Chart.YAxis />
         <Chart.XAxis />
-        <Chart.Bar dataKey="kwh" variant="gradient" />
+        <Chart.Bar dataKey="kwh" />
         <Chart.Tooltip />
         <Chart.Table />
       </Chart.Root>

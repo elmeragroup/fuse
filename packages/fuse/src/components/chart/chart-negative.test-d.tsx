@@ -267,7 +267,9 @@ test("string props take only their vocabulary", () => {
   // @ts-expect-error an unknown curve
   void (<Chart.Line dataKey="kwh" curve="smooth" />);
   // @ts-expect-error the catalogue's misspelt bar variant
-  void (<Chart.Bar dataKey="kwh" variant="stripped" />);
+  void (<Chart.Root {...daily} config={{ kwh: { label: "k", color: "chart-1", variant: "stripped" } }} />);
+  // @ts-expect-error the bar's look lives in its series' config, not on the Bar
+  void (<Chart.Bar dataKey="kwh" variant="striped" />);
   // @ts-expect-error unit-price without vat
   const _noVat: ValueFormat = { preset: "unit-price", currency: "NOK" };
   // @ts-expect-error wipe origins are physical
@@ -345,7 +347,7 @@ test("each negative case passes once its violation is removed", () => {
       <RadialChart.Root {...budget} maxKey="budget" />
       <Chart.Root data={months} config={{}} xKey="month" data-intro="left" aria-label="x" />
       <Chart.Line dataKey="kwh" curve="monotone" />
-      <Chart.Bar dataKey="kwh" variant="striped" emphasis={{ x: new Date(0) }} />
+      <Chart.Bar dataKey="kwh" emphasis={{ x: new Date(0) }} />
       <BarChart.YAxis format={{ maximumFractionDigits: 0 }} />
       <BarChart.ReferenceLine y={2} format={{ maximumFractionDigits: 1 }} />
       <BarChart.ReferenceLine x={new Date(0)} format="hour" />

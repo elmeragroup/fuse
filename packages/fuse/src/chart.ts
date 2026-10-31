@@ -28,6 +28,7 @@ export type { SupportedLocale } from "./intl/locale-context";
 export type {
   ChartAccessibleName,
   ChartBackgroundPattern,
+  ChartBarVariant,
   ChartCategoricalRole,
   ChartCategoryConfigCheck,
   ChartCategoryKey,

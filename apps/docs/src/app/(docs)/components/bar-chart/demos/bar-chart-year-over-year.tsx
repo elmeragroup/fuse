@@ -16,7 +16,7 @@ const energy = { preset: "energy", unit: "kWh", maximumFractionDigits: 0 } as co
 
 const config = {
   thisYear: { label: "This year", color: "chart-1", format: energy },
-  lastYear: { label: "Last year", color: "chart-2", format: energy },
+  lastYear: { label: "Last year", color: "chart-2", format: energy, variant: "hatched" },
 } as const satisfies ChartConfig;
 
 export function BarChartYearOverYear() {
@@ -27,7 +27,7 @@ export function BarChartYearOverYear() {
       <BarChart.XAxis />
       <BarChart.BarGroup series={["thisYear", "lastYear"]}>
         <BarChart.Bar dataKey="thisYear" />
-        <BarChart.Bar dataKey="lastYear" variant="hatched" />
+        <BarChart.Bar dataKey="lastYear" />
       </BarChart.BarGroup>
       <BarChart.Crosshair variant="band" />
       <BarChart.Legend />

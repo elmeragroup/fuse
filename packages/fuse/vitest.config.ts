@@ -41,14 +41,8 @@ declare module "vitest" {
   }
 }
 
-/** The unit files whose results could depend on the process's time zone. */
-const ZONE_TESTS = [
-  "src/components/chart/*.test.ts",
-  "src/components/chart/format/*.test.ts",
-  "src/components/chart/layout/*.test.ts",
-  "src/components/data-table/*.test.ts",
-  "src/intl/*.test.ts",
-];
+/** Unit files whose results could depend on the process's time zone, named by convention. */
+const ZONE_TESTS = "**/*.zones.test.ts";
 
 /**
  * A Node project whose process runs in one IANA zone. The time zone is a project dimension, as the
@@ -62,8 +56,8 @@ function unitProject(name: string, timeZone: string, include: string[]): TestPro
       include,
       exclude: ["**/*.browser.test.*", "**/*.test-d.*"],
       // TZ is one value per process, so each project's files run in forks, never in threads that
-      // share a process with another project's zone. format.test.ts and x-domain.test.ts assert
-      // the zone each file runs in.
+      // share a process with another project's zone. format.zones.test.ts asserts the zone it
+      // runs in.
       pool: "forks",
       env: { TZ: timeZone },
       provide: { timeZone },
@@ -151,8 +145,8 @@ export default defineConfig({
       unitProject("unit", "Europe/Oslo", ["src/**/*.test.ts", "test/**/*.test.ts"]),
       // The zone-sensitive files again, behind and ahead of UTC, one zone with summer time and
       // one without.
-      unitProject("unit-new-york", "America/New_York", ZONE_TESTS),
-      unitProject("unit-tokyo", "Asia/Tokyo", ZONE_TESTS),
+      unitProject("unit-new-york", "America/New_York", [ZONE_TESTS]),
+      unitProject("unit-tokyo", "Asia/Tokyo", [ZONE_TESTS]),
       browserProject("browser", {
         exclude: [CLIPBOARD_TESTS, ENGINES_TESTS, PRODUCTION_TESTS, TOUCH_TESTS, REDUCED_MOTION_TESTS],
       }),

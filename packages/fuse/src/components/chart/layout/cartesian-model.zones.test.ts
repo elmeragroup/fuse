@@ -185,7 +185,7 @@ describe("buildCartesianModel", () => {
     expect(model.issues).toEqual([
       { rule: "duplicate-x", row: 1 },
       { rule: "non-finite-value", slot: 1, key: "a" },
-      { rule: "mixed-sign-expand", slot: 0 },
+      { rule: "mixed-sign-expand", slot: 0, stack: "s" },
     ]);
     expect(model.series[0]?.extents[0]).toEqual([0, 0.75]);
   });

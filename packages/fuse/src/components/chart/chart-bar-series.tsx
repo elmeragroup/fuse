@@ -81,7 +81,7 @@ function writeParts(node: Element, parts: BarParts): void {
 /** What a bar's writer reads besides the numbers: the frame, the look and the fills by side. */
 type BarWriterLook = { readonly frame: PlotFrame; readonly variant: BarVariant; readonly fills: SideFills };
 
-/** A bar's body and its blocks track, found once per node and look. */
+/** A bar's body and its blocks track, found once per commit of its mark. */
 const barParts = partsCache((node) => ({
   body: node.tagName === "rect" ? node : node.querySelector(':scope > [data-slot="chart-bar"]'),
   track: node.querySelector(':scope > [data-part="track"]'),
@@ -97,7 +97,7 @@ function drawBar(node: SVGElement, look: BarWriterLook, values: MarkValues): voi
   const negative = hangs(frame, geometry);
   const top = Math.min(1, Math.max(0, geometry[5]));
   writeParts(node, drawnBar(frame, variant, geometryRect(frame, geometry), { negative, top }));
-  const { body, track } = barParts(node, look);
+  const { body, track } = barParts(node);
   if (body instanceof SVGElement) writeSide(body, negative, top);
   if (track instanceof SVGElement) writeStyle(track, "--_top", String(top));
   writeStyle(node, "--_fill", (negative ? fills.negative : fills.positive) ?? null);

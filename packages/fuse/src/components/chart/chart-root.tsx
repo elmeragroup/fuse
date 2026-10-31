@@ -26,7 +26,13 @@ import { createChartMotion, createFrameOwner } from "./chart-motion";
 import type { ChartMotion, FrameOwner } from "./chart-motion";
 import { colourFamilyError } from "./chart-paint";
 import { createChartPaths } from "./chart-paths";
-import { ChartPlotContext, ChartRootPlotContext, useMeasuredPlot, usePanelSpan } from "./chart-plot";
+import {
+  ChartPlotContext,
+  ChartRootPlotContext,
+  PlotReadsContext,
+  useMeasuredPlot,
+  usePanelSpan,
+} from "./chart-plot";
 import { PlotSkeleton } from "./chart-skeleton";
 import { sameShallow, useSteady } from "./chart-steady";
 import { createChartStore, useClientMount } from "./chart-store";
@@ -55,11 +61,16 @@ import type {
   ChartXValue,
 } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
-import type { BarVariant } from "./layout/bar-shapes";
 import { buildCartesianModel, layoutDomain } from "./layout/cartesian-model";
 import type { CartesianModel, ModelIssue } from "./layout/cartesian-model";
 import { intervalNests } from "./layout/coarse-slots";
-import { ChartCompositionError, ChartDataError, DATA_MESSAGES, isChartDevelopment } from "./layout/errors";
+import {
+  ChartCompositionError,
+  ChartDataError,
+  dataMessage,
+  dataSubject,
+  isChartDevelopment,
+} from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
 import { mountedSeries, relaysPlot } from "./layout/relay";
 import { sameItems } from "./layout/same-items";
@@ -306,11 +317,24 @@ function isFinite(animation: Animation): boolean {
   return Number.isFinite(animation.effect?.getComputedTiming().endTime ?? Number.POSITIVE_INFINITY);
 }
 
-/** The first data issue a development build throws for. */
-function dataError(issue: ModelIssue): ChartDataError {
-  const where = "row" in issue ? `Row ${String(issue.row)}` : `Slot ${String(issue.slot)}`;
-  const key = "key" in issue ? ` of ${JSON.stringify(issue.key)}` : "";
-  return new ChartDataError("Chart.Root", issue.rule, `${DATA_MESSAGES[issue.rule]} ${where}${key}.`);
+/**
+ * The model's data issues grouped by rule and subject, each group's first issue with its count, in
+ * the order the groups first appear.
+ */
+function issueGroups(issues: readonly ModelIssue[]) {
+  const groups = new Map<ChartDataRule, Map<string, { readonly first: ModelIssue; count: number }>>();
+  for (const issue of issues) {
+    const subjects =
+      groups.get(issue.rule) ?? new Map<string, { readonly first: ModelIssue; count: number }>();
+    groups.set(issue.rule, subjects);
+    const subject = dataSubject(issue);
+    const group = subjects.get(subject);
+    if (group === undefined) subjects.set(subject, { first: issue, count: 1 });
+    else group.count += 1;
+  }
+  return [...groups].flatMap(([rule, subjects]) =>
+    [...subjects].map(([subject, { first, count }]) => ({ rule, subject, first, count }))
+  );
 }
 
 /** The active slot inside the effective window, which the followers draw. */
@@ -505,7 +529,6 @@ export function ChartRoot<
           readonly key: string;
           readonly grouped: boolean;
           readonly layout: FrameOwner;
-          readonly variant: BarVariant;
         }
       >()
   );
@@ -599,19 +622,27 @@ export function ChartRoot<
     setSeen(commit);
   }
   const firstIssue = model.issues[0];
-  if (firstIssue !== undefined && isChartDevelopment()) throw dataError(firstIssue);
-  const warned = useRef(new Set<string>());
-  // Each distinct problem warns once: a second absent column under the same rule warns too, and a
-  // render that repeats a problem stays quiet.
-  const warnOnce = useCallback((rule: ChartDataRule | ChartHintRule, message: string): void => {
-    const key = `${rule}\n${message}`;
-    if (warned.current.has(key)) return;
-    warned.current.add(key);
-    console.warn(message);
-  }, []);
+  if (firstIssue !== undefined && isChartDevelopment()) {
+    throw new ChartDataError("Chart.Root", firstIssue.rule, dataMessage(firstIssue, model.rowAt));
+  }
+  const warned = useRef(new Map<ChartDataRule | ChartHintRule, Set<string>>());
+  // Each rule warns once per subject: a second absent column under the same rule warns too, a
+  // thousand broken cells of one column warn once, and a render that repeats a problem stays quiet.
+  const warnOnce = useCallback(
+    (rule: ChartDataRule | ChartHintRule, subject: string, message: string): void => {
+      const subjects = warned.current.get(rule) ?? new Set<string>();
+      if (subjects.has(subject)) return;
+      subjects.add(subject);
+      warned.current.set(rule, subjects);
+      console.warn(message);
+    },
+    []
+  );
   useEffect(() => {
-    for (const issue of model.issues) warnOnce(issue.rule, dataError(issue).message);
-  }, [model.issues, warnOnce]);
+    for (const { rule, subject, first, count } of issueGroups(model.issues)) {
+      warnOnce(rule, subject, `Chart.Root ${dataMessage(first, model.rowAt, count)}`);
+    }
+  }, [model.issues, model.rowAt, warnOnce]);
 
   const id = useId();
   const [store] = useState(() => {
@@ -623,7 +654,7 @@ export function ChartRoot<
   const plotRef = useRef<HTMLDivElement>(null);
   // Root's plot spans its Panels' plots, so their span is written before Root measures it.
   const placeSpan = usePanelSpan(frameRef, panels);
-  const { plot, probe, measure: measurePlot } = useMeasuredPlot(plotRef);
+  const { plot, probe, reads, measure: measurePlot } = useMeasuredPlot(plotRef);
   // Under Panels the plot spans their plots, which the span's own layout effect just placed, so
   // the plot measures again once the span stands.
   const spans = panels.length > 0;
@@ -750,14 +781,9 @@ export function ChartRoot<
     [modelConfig]
   );
   const registerBar = useCallback(
-    (key: string, grouped: boolean, layout: FrameOwner, variant: BarVariant): (() => void) => {
+    (key: string, grouped: boolean, layout: FrameOwner): (() => void) => {
       const token = {};
-      bars.set(token, { key, grouped, layout, variant });
-      // The keys a Bar draws hatched, whose swatches hatch too.
-      const hatchedKeys = (): string[] => [
-        ...new Set([...bars.values()].filter((bar) => bar.variant === "hatched").map((bar) => bar.key)),
-      ];
-      if (variant === "hatched") store.set({ hatched: hatchedKeys() });
+      bars.set(token, { key, grouped, layout });
       if (isChartDevelopment()) {
         // Bars in two Panels draw in two plots, so only loose Bars of one layout overlap.
         const loose = [...bars.values()]
@@ -776,16 +802,16 @@ export function ChartRoot<
         if (pair !== undefined) {
           warnOnce(
             "bars-overlap",
+            pair.join(" "),
             `Chart.Bar draws ${JSON.stringify(pair[0])} and ${JSON.stringify(pair[1])} over each other, because they sit outside a Chart.BarGroup and share no stack id. Wrap them in <Chart.BarGroup series={[…]}> to draw them side by side.`
           );
         }
       }
       return () => {
         bars.delete(token);
-        if (variant === "hatched") store.set({ hatched: hatchedKeys() });
       };
     },
-    [bars, modelConfig, store, warnOnce]
+    [bars, modelConfig, warnOnce]
   );
   const drawsBar = useCallback(
     (key: string): boolean => [...bars.values()].some((bar) => bar.key === key),
@@ -966,8 +992,10 @@ export function ChartRoot<
               </div>
               <ChartRootPlotContext value={plot}>
                 <ChartPlotContext value={plot}>
-                  <ChartSurface name={name} labelledBy={labelledBy} />
-                  {children}
+                  <PlotReadsContext value={reads}>
+                    <ChartSurface name={name} labelledBy={labelledBy} />
+                    {children}
+                  </PlotReadsContext>
                 </ChartPlotContext>
               </ChartRootPlotContext>
             </div>

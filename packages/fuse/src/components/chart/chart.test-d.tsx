@@ -404,24 +404,27 @@ test("grouped bars, horizontal bars, markers, totals and table columns compose",
     <>
       <Chart.Root
         data={months}
-        config={{ desktop: { label: "D", color: "chart-1" }, mobile: { label: "M", color: "chart-2" } }}
+        config={{
+          desktop: { label: "D", color: "chart-1", variant: "isometric" },
+          mobile: { label: "M", color: "chart-2" },
+        }}
         xKey="month"
         aria-label="x">
         <Chart.BarGroup series={["desktop"]}>
-          <Chart.Bar dataKey="desktop" variant="isometric" />
+          <Chart.Bar dataKey="desktop" />
         </Chart.BarGroup>
         <Chart.Line dataKey="mobile" />
         <Chart.ActiveDot dataKey="mobile" variant="ping" />
       </Chart.Root>
       <BarChart.Root
         data={months}
-        config={{ desktop: { label: "D", color: "chart-1" } }}
+        config={{ desktop: { label: "D", color: "chart-1", variant: "striped" } }}
         xKey="month"
         orientation="horizontal"
         aria-label="x">
         <BarChart.XAxis />
         <BarChart.YAxis format={{ maximumFractionDigits: 0 }} side="end" />
-        <BarChart.Bar dataKey="desktop" variant="striped" />
+        <BarChart.Bar dataKey="desktop" />
       </BarChart.Root>
       <LineChart.Root
         data={noQuarters}

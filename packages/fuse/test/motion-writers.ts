@@ -73,9 +73,11 @@ function declaredBy(statement: Statement): string[] {
 }
 
 /**
- * Every `useMotionMark` call a module makes, with its writer: the call's second argument, which
- * must resolve to a binding at module scope, so the writer's only inputs are the ones its signature
- * lists. A name a component or block binds again shadows the module's, as JavaScript resolves it.
+ * Every call a module makes to a hook in `WRITER_HOOKS`, with its writer: the argument at the
+ * hook's writer index, which must resolve to a binding at module scope, so the writer's only inputs
+ * are the ones its signature lists. A shared hook that forwards its own writer parameter is checked
+ * at its callers instead. A name a component or block binds again shadows the module's, as
+ * JavaScript resolves it.
  *
  * @param relativePath - The module's path, which names it in a parse failure.
  * @param source - The module's source.

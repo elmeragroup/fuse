@@ -4,6 +4,8 @@
  * domain selects nothing.
  */
 import type { SlotWindow } from "./slot-window";
+import { slotOf } from "./x-domain";
+import type { XDomain } from "./x-domain";
 
 /** The keyword half of a datum selector. */
 export type DatumKeyword = "first" | "last" | "min" | "max" | "now";
@@ -16,6 +18,17 @@ export type DatumInput = {
   /** The slot that contains Root's `now`, or -1. */
   readonly nowSlot: number;
 };
+
+/**
+ * The slot that holds Root's `now`, which the "now" keyword picks.
+ *
+ * @param domain - The model's domain.
+ * @param now - Root's `now`, or undefined.
+ * @returns The slot, or -1 off a time axis, without a `now` or past the domain.
+ */
+export function nowSlotOf(domain: XDomain, now: Date | number | undefined): number {
+  return now === undefined || domain.kind !== "time" ? -1 : slotOf(domain, now);
+}
 
 /**
  * The slots a keyword picks.

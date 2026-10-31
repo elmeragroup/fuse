@@ -317,6 +317,41 @@ describe("Line strokes on device pixels (B1-10)", () => {
   });
 });
 
+describe("Line strokes follow an inherited width (review 2, Y7)", () => {
+  it("moves a flat line onto the half pixel when Root's --chart-stroke goes from 2 to 3 px with no resize", () => {
+    // 50 of [0, 100] on the 200 px plot lies at y = 100 at DPR 1. A 2 px stroke centres on that
+    // edge, and a 3 px one half a pixel lower, on 100.5, so it covers rows 99 to 101. Nothing
+    // resizes and the Line's own props stay, so only Root's inherited width changes.
+    const chart = (stroke: string): ReactNode => (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: WIDTH }}>
+          <Chart.Root
+            data={named([50, 50, 100])}
+            config={CONFIG}
+            xKey="name"
+            xScale="point"
+            data-intro="none"
+            style={{ "--chart-stroke": stroke }}
+            aria-label="Verdier">
+            <Chart.Line dataKey="v" curve="linear" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    const across = (host: HTMLElement): number[] =>
+      vertices(linePath(host))
+        .slice(0, 2)
+        .map(([, y]) => y);
+    const { host, rerender } = renderThemed(chart("2px"));
+    expect(across(host)).toEqual([100, 100]);
+    rerender(chart("3px"));
+    expectWholeOrigin(host);
+    expect(across(host)).toEqual([100.5, 100.5]);
+    rerender(chart("2px"));
+    expect(across(host)).toEqual([100, 100]);
+  });
+});
+
 describe("Line step risers on device pixels (B2-9, Q2-6)", () => {
   it("centres a 1 px riser inside the band its run starts, and a 2 px one on the band edge", () => {
     // Two band slots on the 200 px plot, 100 px each, reading 50 and 100 of [0, 100]. At DPR 1 a
@@ -726,6 +761,57 @@ describe("Line and Area motion", () => {
     expect(activeY()).toBe(192);
   });
 
+  it("keeps an ActiveDot on the Area's tween when the Line beside it unmounts mid-tween (review 2, Y3)", async () => {
+    // Data A to B moves the second of 7 point slots from 40 to 20, at x = 50 on the 300 px plot.
+    // The ActiveDot joins the Line's tween. The Line unmounts at 120 ms with no pointer move, and
+    // the dot rides the Area's vertex, which tweens on the same clock, until it rests at 20.
+    clock = installFrameClock();
+    let hideLine = (): void => undefined;
+    function ToggledLine(): ReactNode {
+      const [shown, setShown] = useState(true);
+      useEffect(() => {
+        hideLine = () => setShown(false);
+      }, []);
+      return shown ? <Chart.Line dataKey="v" curve="linear" /> : null;
+    }
+    const chart = (data: readonly Row[]) => (
+      <LineChart data={data}>
+        <Chart.Area dataKey="v" curve="linear" />
+        <ToggledLine />
+        <Chart.ActiveDot dataKey="v" />
+      </LineChart>
+    );
+    const { host, rerender } = renderThemed(chart(named(A)));
+    // DOM audit: the listbox is the plot's pointer surface; the active dot is aria-hidden output.
+    const surface = host.querySelector<HTMLElement>('[role="listbox"]');
+    const box = surface?.getBoundingClientRect() ?? new DOMRect();
+    surface?.dispatchEvent(
+      new PointerEvent("pointermove", {
+        bubbles: true,
+        clientX: box.left + place(1, 7),
+        clientY: box.top + HEIGHT / 2,
+        pointerType: "mouse",
+      })
+    );
+    const active = () =>
+      centreOf(host.querySelector('[data-slot="chart-active-dot"] > [data-slot="chart-dot"]'));
+    expect(active()).toEqual(pixel(1, 7, 40));
+    const start = clock.now();
+    rerender(chart(named(B)));
+    const at = (ms: 120 | 240 | 360) => moving([place(1, 7), 40], [place(1, 7), 20], EASED[ms]);
+    clock.frameAt(start + 120);
+    expect(active()).toEqual(at(120));
+    flushSync(hideLine);
+    // The followers rebuild their joins in the microtask after the Line's commit.
+    await Promise.resolve();
+    for (const ms of [240, 360] as const) {
+      clock.frameAt(start + ms);
+      expect(active()).toEqual(at(ms));
+    }
+    clock.frameAt(start + 600);
+    expect(active()).toEqual(pixel(1, 7, 20));
+  });
+
   it("keeps dots, the marker and its pill on their vertices in every frame, with no React commit", () => {
     clock = installFrameClock();
     let commits = 0;
@@ -761,5 +847,69 @@ describe("Line and Area motion", () => {
       );
     }
     expect(commits).toBe(0);
+  });
+});
+
+describe("point marks after a commit that changes what they draw (review 2, Y1 and Y2)", () => {
+  it("moves the ring an ActiveDot mounts when its variant turns to ping without a resize", async () => {
+    // A[0] = 10 and A[1] = 40 of [0, 100], on the first and second of 7 point slots. Both of the
+    // ping variant's circles, the ring the commit mounts and the dot, centre on the active vertex.
+    const chart = (variant: "default" | "ping") => (
+      <LineChart data={named(A)}>
+        <Chart.Line dataKey="v" curve="linear" />
+        <Chart.ActiveDot dataKey="v" variant={variant} />
+      </LineChart>
+    );
+    const { host, rerender } = renderThemed(chart("default"));
+    // DOM audit: the plot's single tab stop is the listbox's option.
+    host.querySelector<HTMLElement>('[role="option"]')?.focus();
+    await userEvent.keyboard("{Home}");
+    rerender(chart("ping"));
+    await userEvent.keyboard("{ArrowRight}");
+    // DOM audit: the active dot's circles are aria-hidden plot output.
+    const circles = [...host.querySelectorAll('[data-slot="chart-active-dot"] > [data-slot="chart-dot"]')];
+    expect(circles.map((circle) => circle.getAttribute("data-part"))).toEqual(["ping", null]);
+    expect(circles.map((circle) => centreOf(circle))).toEqual([pixel(1, 7, 40), pixel(1, 7, 40)]);
+  });
+
+  it("moves standalone Dots to the plot's edges when the x scale turns from band to point", async () => {
+    // Three slots on the 300 px plot, reading 20, 40 and 100 of [0, 100]. Band centres lie at 50,
+    // 150 and 250 px, and point places at 0, 150 and 300 px, each on its 1 px column. The data
+    // and the size stay, the same rows included, so only the scale moves the dots.
+    const data = named([20, 40, 100]);
+    const chart = (xScale: "band" | "point") => (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: WIDTH }}>
+          <Chart.Root
+            data={data}
+            config={CONFIG}
+            xKey="name"
+            xScale={xScale}
+            data-intro="none"
+            aria-label="Verdier">
+            <Chart.Dots dataKey="v" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: dots are aria-hidden plot output.
+    const centres = (host: HTMLElement) =>
+      [
+        ...host.querySelectorAll('[data-slot="chart-dots"] [data-slot="chart-dot"]:not([data-outgoing] *)'),
+      ].map((dot) => centreOf(dot));
+    const { host, rerender } = renderThemed(chart("band"));
+    expect(centres(host)).toEqual([
+      [50.5, 160],
+      [150.5, 120],
+      [250.5, 0],
+    ]);
+    rerender(chart("point"));
+    // The dots follow Root's commit in the microtask after it, before the next frame.
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(centres(host)).toEqual([
+      [0.5, 160],
+      [150.5, 120],
+      [299.5, 0],
+    ]);
   });
 });

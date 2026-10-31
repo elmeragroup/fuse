@@ -24,14 +24,17 @@ const data = [
   { month: "Dec", desktop: 271, mobile: 149 },
 ];
 
-const config = {
-  desktop: { label: "Desktop", color: "chart-1" },
-  mobile: { label: "Mobile", color: "chart-2" },
-} as const satisfies ChartConfig;
-
 const VARIANTS = ["default", "hatched", "duotone", "duotone-reverse", "gradient", "striped"] as const;
 
-/** Each look of `Chart.Bar` on a grouped pair of series. */
+/** The pair of series, both drawn in one look. */
+function configIn(variant: (typeof VARIANTS)[number]) {
+  return {
+    desktop: { label: "Desktop", color: "chart-1", variant },
+    mobile: { label: "Mobile", color: "chart-2", variant },
+  } as const satisfies ChartConfig;
+}
+
+/** Each look a series' config gives its bars, on a grouped pair of series. */
 export function BarChartVariants() {
   return (
     <div className="sm:grid-cols-2 grid w-full gap-6">
@@ -39,15 +42,15 @@ export function BarChartVariants() {
         <BarChart.Root
           key={variant}
           data={data}
-          config={config}
+          config={configIn(variant)}
           xKey="month"
           style={{ "--chart-plot-height": "8rem" }}
           aria-label={`Visitors by month, ${variant} bars`}>
           <BarChart.Grid variant="dashed" />
           <BarChart.XAxis />
           <BarChart.BarGroup series={["desktop", "mobile"]}>
-            <BarChart.Bar dataKey="desktop" variant={variant} />
-            <BarChart.Bar dataKey="mobile" variant={variant} />
+            <BarChart.Bar dataKey="desktop" />
+            <BarChart.Bar dataKey="mobile" />
           </BarChart.BarGroup>
           <BarChart.Legend />
           <BarChart.Tooltip />

@@ -14,6 +14,7 @@ import {
   optionBand,
   plotFrame,
   ruleAcross,
+  sameSnapping,
   slotBand,
   slotLine,
   snapAcrossSpan,
@@ -81,6 +82,34 @@ describe("snapping", () => {
         }
       ),
       { examples: [[1.5, 3, 0.8]] }
+    );
+  });
+
+  it("counts a box moved by whole device pixels as the same snapping, and a box moved by part of one as new", () => {
+    // Oracle: snapX and snapY are differences from the origin's own device pixel, so a move by k
+    // device pixels draws every edge alike, while a move by half a device pixel rounds some edge
+    // the other way. A scroll by 37 px at 1.5 dpr moves 55.5 device pixels, so it is a new snap.
+    const at = box(200, 100, 2, 10.25, 30.5);
+    expect(sameSnapping(at, box(200, 100, 2, 10.25 + 37, 30.5 - 120.5))).toBe(true);
+    expect(sameSnapping(at, box(200, 100, 2, 10.5, 30.5))).toBe(false);
+    expect(sameSnapping(at, box(200, 100, 2, 10.25, 30.75))).toBe(false);
+    expect(sameSnapping(box(200, 100, 1.5, 0, 0), box(200, 100, 1.5, 37, 0))).toBe(false);
+    expect(sameSnapping(box(200, 100, 1.5, 0, 0), box(200, 100, 1.5, 0, 38))).toBe(true);
+    expect(sameSnapping(at, box(201, 100, 2, 10.25, 30.5))).toBe(false);
+    expect(sameSnapping(at, box(200, 100, 1, 10.25, 30.5))).toBe(false);
+    fc.assert(
+      fc.property(
+        fc.constantFrom(1, 1.25, 1.5, 2, 3),
+        fc.integer({ min: -6400, max: 6400 }).map((units) => units / 64),
+        fc.integer({ min: -400, max: 400 }),
+        fc.double({ min: -500, max: 500, noNaN: true }),
+        (dpr, left, devices, x) => {
+          const before = box(100, 100, dpr, left);
+          const after = box(100, 100, dpr, left + devices / dpr);
+          expect(sameSnapping(before, after)).toBe(true);
+          expect(snapX(after, x)).toBeCloseTo(snapX(before, x), 9);
+        }
+      )
     );
   });
 

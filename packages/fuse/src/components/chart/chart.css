@@ -1088,7 +1088,7 @@
     A hatched series draws its swatches inside the chart hatched too, so the legend tells the series
     apart. The rule comes after every swatch shape, so it hatches each one.
   */
-  [data-slot="chart"] [data-slot="chart-swatch"][data-hatched] {
+  [data-slot="chart"] [data-slot="chart-swatch"][data-series-variant="hatched"] {
     background: repeating-linear-gradient(
       45deg in srgb,
       var(--chart-swatch-paint) 0 1px,

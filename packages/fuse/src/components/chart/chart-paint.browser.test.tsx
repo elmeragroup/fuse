@@ -56,12 +56,12 @@ function chart(
       <LocaleProvider locale="nb-NO">
         <Chart.Root
           data={rows}
-          config={{ v: { label: "V", color } }}
+          config={{ v: { label: "V", color, variant: options.variant } }}
           xKey="name"
           data-intro="none"
           aria-label="Maling"
           style={options.style}>
-          <Chart.Bar dataKey="v" variant={options.variant} />
+          <Chart.Bar dataKey="v" />
         </Chart.Root>
       </LocaleProvider>
     </div>
@@ -217,10 +217,10 @@ describe("the path form", () => {
           <LocaleProvider locale="nb-NO">
             <Chart.Root
               data={many(101)}
-              config={{ v: { label: "V", color: "chart-1" } }}
+              config={{ v: { label: "V", color: "chart-1", variant } }}
               xKey="name"
               aria-label="Mange">
-              <Chart.Bar dataKey="v" variant={variant} />
+              <Chart.Bar dataKey="v" />
             </Chart.Root>
           </LocaleProvider>
         </div>
@@ -229,7 +229,7 @@ describe("the path form", () => {
       expect(host.querySelector('[data-slot="chart-bar-series"]')?.getAttribute("data-variant")).toBe(
         "default"
       );
-      expect(warn.mock.calls.some(([message]) => String(message).includes(`variant="${variant}"`))).toBe(
+      expect(warn.mock.calls.some(([message]) => String(message).includes(`variant: "${variant}"`))).toBe(
         true
       );
     }
@@ -391,14 +391,14 @@ describe('data-fade="past"', () => {
           <Chart.Root
             data-intro="none"
             data={rows}
-            config={{ v: { label: "V", color: "chart-1" } }}
+            config={{ v: { label: "V", color: "chart-1", variant: "blocks" } }}
             xKey="day"
             interval="day"
             timeZone="Europe/Oslo"
             now={new Date(Date.UTC(2025, 9, 2, 10))}
             data-fade="past"
             aria-label="Fortid i blokker">
-            <Chart.Bar dataKey="v" variant="blocks" />
+            <Chart.Bar dataKey="v" />
           </Chart.Root>
         </LocaleProvider>
       </div>

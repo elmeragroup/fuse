@@ -1,5 +1,5 @@
 /**
- * Every judge the format tests run, as `[name, judge]` pairs. `format.test.ts` runs them in Node,
+ * Every judge the format tests run, as `[name, judge]` pairs. `format.zones.test.ts` runs them in Node,
  * once per zone project, and `format.engines.browser.test.ts` in Chromium, Firefox and WebKit.
  */
 import {

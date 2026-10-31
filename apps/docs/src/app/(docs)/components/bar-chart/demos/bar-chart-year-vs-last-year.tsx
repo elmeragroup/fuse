@@ -63,7 +63,7 @@ const energy = { preset: "energy", unit: "kWh", maximumFractionDigits: 0 } as co
 
 const config = {
   thisYear: { label: "This year", color: "chart-1", qualityKey: "quality", format: energy },
-  lastYear: { label: "Last year", color: "chart-2", format: energy },
+  lastYear: { label: "Last year", color: "chart-2", format: energy, variant: "hatched" },
 } as const satisfies ChartConfig;
 
 /** The locales the demo's switch offers. The chart's own text follows the picked one. */
@@ -107,7 +107,7 @@ export function BarChartYearVsLastYear() {
           <BarChart.XAxis />
           <BarChart.BarGroup series={["thisYear", "lastYear"]}>
             <BarChart.Bar dataKey="thisYear" />
-            <BarChart.Bar dataKey="lastYear" variant="hatched" />
+            <BarChart.Bar dataKey="lastYear" />
           </BarChart.BarGroup>
           <BarChart.Tooltip />
           <BarChart.Legend />

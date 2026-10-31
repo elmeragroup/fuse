@@ -585,13 +585,17 @@ describe("development hints", () => {
     const rows = Array.from({ length: 120 }, (_, index) => ({ category: `c${String(index)}`, kwh: index }));
     renderToString(
       <LocaleProvider locale="nb-NO">
-        <Chart.Root data={rows} config={CONFIG} xKey="category" aria-label="Mange">
-          <Chart.Bar dataKey="kwh" variant="blocks" />
+        <Chart.Root
+          data={rows}
+          config={{ kwh: { ...CONFIG.kwh, variant: "blocks" } }}
+          xKey="category"
+          aria-label="Mange">
+          <Chart.Bar dataKey="kwh" />
         </Chart.Root>
       </LocaleProvider>
     );
     expect(warn.mock.calls.map(([message]) => String(message))).toEqual([
-      expect.stringContaining('variant="blocks"'),
+      expect.stringContaining('variant: "blocks"'),
     ]);
   });
 

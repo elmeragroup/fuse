@@ -101,11 +101,12 @@ function render(chart: Dense) {
   const keys = Array.from({ length: group }, (_, index) => `s${String(index)}`);
   const panelled = chart.panels && orientation === "vertical";
   // With Panels the upper Panel draws a series of its own.
-  const series = (key: string, color: ChartSeriesConfig["color"]): [string, ChartSeriesConfig] => [
-    key,
-    { label: key, color, qualityKey: "q" },
-  ];
-  const entries = keys.map((key, index) => series(key, COLORS[index] ?? "chart-1"));
+  const series = (
+    key: string,
+    color: ChartSeriesConfig["color"],
+    look: ChartSeriesConfig["variant"] = "default"
+  ): [string, ChartSeriesConfig] => [key, { label: key, color, qualityKey: "q", variant: look }];
+  const entries = keys.map((key, index) => series(key, COLORS[index] ?? "chart-1", variant));
   if (panelled) entries.push(series("upper", "chart-4"));
   const config: ChartConfig = Object.fromEntries(entries);
   // Every row holds the upper Panel's reading, which only a chart with Panels reads.
@@ -117,7 +118,7 @@ function render(chart: Dense) {
       keys.map((key, index) => [key, missing[slot] === true ? null : reading(slot, index)])
     ),
   }));
-  const bars = keys.map((key) => <Chart.Bar key={key} dataKey={key} variant={variant} emphasis="max" />);
+  const bars = keys.map((key) => <Chart.Bar key={key} dataKey={key} emphasis="max" />);
   const vertical = orientation === "vertical";
   const line = chart.line % count;
   const from = chart.from % count;

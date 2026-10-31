@@ -15,10 +15,10 @@ import type { ChartFallback, ChartFractionDigits, ValueFormat } from "./chart-ty
 import { CHART_STRINGS } from "./format/chart-strings";
 import { formatValue } from "./format/value-format";
 import { ownWindowSlots } from "./layout/coarse-slots";
+import { keywordSlots, nowSlotOf } from "./layout/datum";
 import type { Reading } from "./layout/readings";
 import { seriesOf } from "./layout/series-of";
 import { roundShares } from "./layout/shares";
-import { slotOf } from "./layout/x-domain";
 
 /** The config key a template row renders for, such as one TooltipItems row. */
 export const ChartRowContext = createContext<string | null>(null);
@@ -233,25 +233,12 @@ export function fallbackSlot(
   key: string,
   fallback: ChartFallback
 ): number | null {
-  const { model, now } = context;
-  const { window, domain } = model;
-  const readings = seriesOf(model, key)?.readings ?? [];
+  const { model } = context;
+  const { window } = model;
   if (window === null) return null;
-  if (fallback === "now") {
-    if (domain.kind !== "time" || now === undefined) return null;
-    const slot = slotOf(domain, now);
-    return slot >= window.first && slot <= window.last ? slot : null;
-  }
-  let chosen: { slot: number; value: number } | null = null;
-  for (let slot = window.first; slot <= window.last; slot += 1) {
-    const reading = readings[slot];
-    if (reading?.kind !== "reading") continue;
-    const better =
-      chosen === null ||
-      fallback === "last" ||
-      (fallback === "min" && reading.value < chosen.value) ||
-      (fallback === "max" && reading.value > chosen.value);
-    if (better && !(fallback === "first" && chosen !== null)) chosen = { slot, value: reading.value };
-  }
-  return chosen?.slot ?? null;
+  const readings = seriesOf(model, key)?.readings ?? [];
+  const values = readings.map((reading) => (reading.kind === "reading" ? reading.value : null));
+  // A tie picks its first slot, as `keywordSlots` lists the tied slots in x order.
+  const [slot] = keywordSlots(fallback, { values, window, nowSlot: nowSlotOf(model.domain, context.now) });
+  return slot ?? null;
 }

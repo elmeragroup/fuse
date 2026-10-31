@@ -297,6 +297,44 @@ describe("data rules in production", () => {
   });
 });
 
+describe("warning volume in production (review 2, Y8)", () => {
+  it("warns once per rule and column over three renders of a hundred broken rows, naming the first row and the count", () => {
+    spy();
+    // Rows 0 to 59 hold NaN in "kwh" and rows 60 to 99 NaN in "kost": one rule, two columns. Each
+    // render builds new rows of the same content, so the model and its issues are new each time.
+    const config = {
+      kwh: { label: "Forbruk", color: "chart-1" },
+      kost: { label: "Kostnad", color: "chart-2" },
+    } as const satisfies ChartConfig;
+    const rows = (): Row[] =>
+      Array.from({ length: 100 }, (_, index) => ({
+        name: `r${String(index)}`,
+        kwh: index < 60 ? Number.NaN : 1,
+        kost: index < 60 ? 2 : Number.NaN,
+      }));
+    const chart = (title: string) => (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 300 }}>
+          <Chart.Root data={rows()} config={config} xKey="name" aria-label={title}>
+            <Chart.Bar dataKey="kwh" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    const { rerender } = renderThemed(chart("Forbruk"));
+    rerender(chart("Forbruk per rad"));
+    rerender(chart("Forbruk og kostnad"));
+    expect(warn.mock.calls.map(([message]) => String(message))).toEqual([
+      expect.stringMatching(
+        /^Chart\.Root received a value cell that is not a finite number\..* Row 0 of "kwh", the first of 60\.$/u
+      ),
+      expect.stringMatching(
+        /^Chart\.Root received a value cell that is not a finite number\..* Row 60 of "kost", the first of 40\.$/u
+      ),
+    ]);
+  });
+});
+
 describe("hints and composition errors in production", () => {
   it("raises no hint", () => {
     spy();

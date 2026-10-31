@@ -67,23 +67,38 @@ export function writeAttributes(
   for (const name in attributes) writeAttribute(node, name, attributes[name] ?? null);
 }
 
+/** Each mark node's latest commit, which every commit of its mark replaces. */
+const commits = new WeakMap<Element, object>();
+
+/** The commit of a node no mark has committed, such as a test's bare element. */
+const UNCOMMITTED = {};
+
 /**
- * Find a writer's parts under a node once per node and look. React changes a mark's children only
- * in a commit that hands its writer a new look, so every frame of a tween reads the parts found
- * when the look arrived, with no query.
+ * Mark a commit of the mark that draws into `node`, so its writers find their parts again. React
+ * changes a mark's children only in a commit of the mark, as a variant that mounts a ring does.
+ * `useMotionMark` calls it in every commit, before the mark places.
+ *
+ * @param node - The mark's node, or null before it mounts.
+ */
+export function refreshParts(node: Element | null): void {
+  if (node !== null) commits.set(node, {});
+}
+
+/**
+ * Find a writer's parts under a node once per commit of its mark. Every frame of a tween and every
+ * pointer step between two commits reads the parts found in the latest commit, with no query.
  *
  * @param find - Finds the parts under a node.
- * @returns A function of the node and the writer's look that returns its parts.
+ * @returns A function of the node that returns its parts.
  */
-export function partsCache<P, L extends WeakKey = WeakKey>(
-  find: (node: Element) => P
-): (node: Element, look: L) => P {
-  const found = new WeakMap<Element, { readonly look: L; readonly parts: P }>();
-  return (node, look) => {
+export function partsCache<P>(find: (node: Element) => P): (node: Element) => P {
+  const found = new WeakMap<Element, { readonly commit: object; readonly parts: P }>();
+  return (node) => {
+    const commit = commits.get(node) ?? UNCOMMITTED;
     const cached = found.get(node);
-    if (cached?.look === look) return cached.parts;
+    if (cached?.commit === commit) return cached.parts;
     const parts = find(node);
-    found.set(node, { look, parts });
+    found.set(node, { commit, parts });
     return parts;
   };
 }

@@ -1,4 +1,4 @@
-import { describe, expect, inject, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import fallBack from "../format/fixtures/elhub/no1-consumption-2025-10-26.json" with { type: "json" };
 import spring from "../format/fixtures/elhub/no1-consumption-2026-03-29.json" with { type: "json" };
@@ -235,10 +235,6 @@ describe("category axes and lookups", () => {
 describe("every zoneinfo slot list", () => {
   it.each(slotJudgements().map((judgement) => [judgement.name, judgement] as const))("%s", (_, judgement) => {
     expect(judgement.actual).toEqual(judgement.expected);
-  });
-
-  it("runs in the zone the Vitest project sets, which the zone projects vary", () => {
-    expect(Intl.DateTimeFormat().resolvedOptions().timeZone).toBe(inject("timeZone"));
   });
 });
 

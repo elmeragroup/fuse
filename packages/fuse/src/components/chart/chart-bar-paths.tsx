@@ -62,7 +62,7 @@ function drawColumns(group: SVGGElement, look: ColumnsLook | null, values: MarkV
   if (look === null) return;
   const topology = topologyAt(look.moving.current, look.topology, values.length / COLUMN_STRIDE);
   const drawing = columnsDrawing(look.frame, topology, values);
-  const { paths, boxes } = columnParts(group, look);
+  const { paths, boxes } = columnParts(group);
   for (const { path, part, fill } of paths) {
     const d =
       part === "fill"
@@ -144,7 +144,6 @@ export function SeriesPaths({
     route: "columns",
     placed,
   });
-  // React draws the first rest, and the loop draws every frame after it.
   // React draws the first rest, and the loop draws every frame after it.
   const resting = useFirstDraw(() => columnsDrawing(frame, topology, columns.values));
   const setRefs = useCallback(

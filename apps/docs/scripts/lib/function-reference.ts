@@ -9,12 +9,13 @@
  */
 
 import { SyntaxKind } from "typescript/ast";
-import { API, NodeBuilderFlags, SignatureKind, SymbolFlags, TypeFormatFlags } from "typescript/sync";
-import type { Checker, Printer, Signature, Symbol as TsSymbol, Type } from "typescript/sync";
+import { NodeBuilderFlags, SignatureKind, SymbolFlags, TypeFormatFlags } from "typescript/sync";
+import type { Checker, Printer, Signature, Type } from "typescript/sync";
 
 import type { ApiFunction } from "../../src/lib/docs-model.ts";
 import type { DocsApiComponent } from "./docs-inspection.ts";
-import { fuseTsconfig, repoRoot } from "./paths.ts";
+import { entryExports, partSymbols } from "./fuse-program.ts";
+import type { FuseProgram, PartSymbol } from "./fuse-program.ts";
 
 /**
  * A return type that makes a call signature a component rather than a function. The printed
@@ -66,25 +67,6 @@ function paragraphs(text: string): string {
     .map((paragraph) => paragraph.replace(/\s+/gu, " ").trim())
     .filter((paragraph) => paragraph !== "")
     .join("\n\n");
-}
-
-function resolved(checker: Checker, symbol: TsSymbol): TsSymbol {
-  return (symbol.flags & SymbolFlags.Alias) === 0 ? symbol : checker.getAliasedSymbol(symbol);
-}
-
-/** The part's name and the symbol that declares it, top-level or a namespace member. */
-type PartSymbol = { readonly name: string; readonly symbol: TsSymbol };
-
-function partSymbols(checker: Checker, exported: TsSymbol): PartSymbol[] {
-  const symbol = resolved(checker, exported);
-  const type = checker.getTypeOfSymbol(symbol);
-  if (checker.getSignaturesOfType(type, SignatureKind.Call).length > 0) {
-    return [{ name: exported.name, symbol }];
-  }
-  return checker.getPropertiesOfType(type).map((member) => ({
-    name: `${exported.name}.${member.name}`,
-    symbol: resolved(checker, member),
-  }));
 }
 
 /** The function reference of one part, or `undefined` when the part is a component. */
@@ -158,37 +140,29 @@ export type FunctionReferences = {
 /**
  * Describes every function part of the given pages.
  *
+ * @param fuse - The library program of the generation run.
  * @param inventory - The pages, with the entry file and the export names each one walks.
  * @returns The function references per page, and the JSDoc they lack.
  */
-export function functionReferences(inventory: readonly DocsApiComponent[]): FunctionReferences {
-  const api = new API({ cwd: repoRoot });
-  try {
-    const project = api.createSnapshot({ openProjects: [fuseTsconfig] }).getConfiguredProject(fuseTsconfig);
-    if (project === undefined) {
-      throw new Error(`Could not open the project at ${fuseTsconfig}`);
-    }
-    const { checker, program } = project;
-    const { printer } = api;
-    const warnings: string[] = [];
-    const pages = new Map<string, ReadonlyMap<string, ApiFunction>>();
-    for (const page of inventory) {
-      const sourceFile = program.getSourceFile(page.entryFile);
-      const moduleSymbol = sourceFile === undefined ? undefined : checker.getSymbolAtLocation(sourceFile);
-      if (moduleSymbol === undefined) continue;
-      const exports = checker.getExportsOfModule(moduleSymbol);
-      const functions = new Map<string, ApiFunction>();
-      for (const exportName of page.exportNames) {
-        const exported = exports.find((candidate) => candidate.name === exportName);
-        for (const part of exported === undefined ? [] : partSymbols(checker, exported)) {
-          const described = describeFunction(checker, printer, part, warnings);
-          if (described !== undefined) functions.set(part.name, described);
-        }
+export function functionReferences(
+  fuse: FuseProgram,
+  inventory: readonly DocsApiComponent[]
+): FunctionReferences {
+  const { checker, printer } = fuse;
+  const warnings: string[] = [];
+  const pages = new Map<string, ReadonlyMap<string, ApiFunction>>();
+  for (const page of inventory) {
+    const exports = entryExports(fuse, page.entryFile);
+    if (exports === undefined) continue;
+    const functions = new Map<string, ApiFunction>();
+    for (const exportName of page.exportNames) {
+      const exported = exports.find((candidate) => candidate.name === exportName);
+      for (const part of exported === undefined ? [] : partSymbols(checker, exported)) {
+        const described = describeFunction(checker, printer, part, warnings);
+        if (described !== undefined) functions.set(part.name, described);
       }
-      if (functions.size > 0) pages.set(page.slug, functions);
     }
-    return { pages, warnings };
-  } finally {
-    api.close();
+    if (functions.size > 0) pages.set(page.slug, functions);
   }
+  return { pages, warnings };
 }

@@ -3,6 +3,8 @@
 // tooltip, and a second tap dismisses it, closing the popup and the crosshair, after CONTRACT
 // section 9.4's pointer rules and layer 05's review findings q9 and s12. The expected labels are
 // the rows' own category names, written by hand.
+import { useEffect, useState } from "react";
+
 import { describe, expect, it } from "vitest";
 import { cdp } from "vitest/browser";
 
@@ -198,5 +200,55 @@ describe("a pinned popup taller than the viewport (X4)", () => {
     await touch("touchEnd");
     await expect.poll(popupOpen).toBe(false);
     expect(pinned(host)).toBe(false);
+  });
+});
+
+describe("a popup whose content grows after it opens (review 2, Y4)", () => {
+  let grow = (): void => undefined;
+
+  /** Rows 40 px tall until the test grows them to 400 px, past the popup's 120 px. */
+  function GrowingRows() {
+    const [height, setHeight] = useState(40);
+    useEffect(() => {
+      grow = () => setHeight(400);
+    }, []);
+    return <div style={{ height }} />;
+  }
+
+  function GrowingChart() {
+    return (
+      <div style={{ width: 400 }}>
+        <LocaleProvider locale="nb-NO">
+          <Chart.Root
+            data={ROWS}
+            config={{ kwh: { label: "Forbruk", color: "chart-1" } }}
+            xKey="day"
+            aria-label="Forbruk per dag">
+            <Chart.Bar dataKey="kwh" />
+            <Chart.Tooltip style={{ height: 120 }}>
+              <Chart.TooltipLabel />
+              <GrowingRows />
+            </Chart.Tooltip>
+          </Chart.Root>
+        </LocaleProvider>
+      </div>
+    );
+  }
+
+  it("marks the popup as scrolling and takes the finger once its content outgrows its fixed height", async () => {
+    const { host } = renderThemed(<GrowingChart />);
+    await touch("touchStart", barCentre(host, 2));
+    await touch("touchEnd");
+    await expect.poll(() => pinned(host)).toBe(true);
+    // DOM audit: the popup portals out of the host and carries its own slot.
+    const popup = () => document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
+    // The label and 40 px of rows fit the 120 px popup, so touch passes through it to the plot.
+    expect(popup()?.hasAttribute("data-scrolls")).toBe(false);
+    expect(getComputedStyle(popup() ?? document.body).pointerEvents).toBe("none");
+    grow();
+    // The popup keeps its 120 px, and the rows now overflow it, so a drag must scroll it.
+    await expect.poll(() => popup()?.hasAttribute("data-scrolls")).toBe(true);
+    expect(popup()?.offsetHeight).toBe(120);
+    expect(getComputedStyle(popup() ?? document.body).pointerEvents).toBe("auto");
   });
 });

@@ -78,6 +78,7 @@ export function ChartLine({
       layout,
       dataKey,
       curve,
+      route: "line",
       stride: LINE_STRIDE,
       // A quiet line strokes 1 px and every other look the default 2 px, until the Line reads its style.
       stroke: {

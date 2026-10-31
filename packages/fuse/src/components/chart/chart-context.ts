@@ -16,7 +16,6 @@ import type { ChartPaths } from "./chart-paths";
 import type { ChartStore, EmphasisEntry } from "./chart-store";
 import type { TextContext } from "./chart-text";
 import type { ChartConfig, ChartIntro, ChartRow, ChartSelectionChangeReason } from "./chart-types";
-import type { BarVariant } from "./layout/bar-shapes";
 import type { LayoutInput } from "./layout/cartesian-model";
 import { ChartCompositionError } from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
@@ -111,10 +110,10 @@ export type ChartRootContextValue = TextContext & {
   /** Highlight a series through Root's attributes with no React render, or clear it with null. */
   readonly highlight: (key: string | null) => void;
   /**
-   * Warn once per Root for each distinct problem, a rule and its message: a data rule's production
-   * fallback, or a development hint.
+   * Warn once per Root for each rule and subject, such as a column, a stack or a pair of Bars: a
+   * data rule's production fallback, or a development hint.
    */
-  readonly warnOnce: (rule: ChartDataRule | ChartHintRule, message: string) => void;
+  readonly warnOnce: (rule: ChartDataRule | ChartHintRule, subject: string, message: string) => void;
   /** Root's `data`, which the Table's extra columns read. */
   readonly rows: readonly ChartRow[];
   /** Root's `data-intro`, the entrance wipe origin. */
@@ -135,12 +134,7 @@ export type ChartRootContextValue = TextContext & {
    * A Bar registers after it mounts, with its layout's frame, so Root can warn `bars-overlap` for
    * two loose Bars in one layout. The result unregisters it.
    */
-  readonly registerBar: (
-    key: string,
-    grouped: boolean,
-    layout: FrameOwner,
-    variant: BarVariant
-  ) => () => void;
+  readonly registerBar: (key: string, grouped: boolean, layout: FrameOwner) => () => void;
   /** Whether a mounted Bar draws a config key, which a value follower marks before a line. */
   readonly drawsBar: (key: string) => boolean;
   /** A Bar registers its emphasised slots after it mounts, so the option speaks the word. */

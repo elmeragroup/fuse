@@ -182,6 +182,8 @@ type Mark = {
   readonly owner: FrameOwner;
   /** The marks a joined follower draws from while any of them moves, and where it then rests. */
   joined?: Joined | null;
+  /** The anchor the mark last placed under, which a follower joins it by. */
+  anchor?: string | undefined;
   /**
    * The two lists a tween's frames draw into, in turn, so a frame allocates nothing and a writer
    * that compares lists by identity still sees each frame as new.
@@ -260,25 +262,11 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
     marks.set(id, mark);
     if (mark.tween !== null) moving.add(mark);
   };
-  // The marks each anchor names, such as a bar at its series and slot, which a follower can join.
-  // A Line and an Area on one series share an anchor, so each anchor lists its marks, the latest
-  // to place last, and a follower joins the latest mark still mounted.
-  const anchors = new Map<string, string[]>();
-  // The anchor each mark last placed under.
-  const anchorOf = new Map<string, string>();
-  const leave = (id: string): void => {
-    const anchor = anchorOf.get(id);
-    if (anchor === undefined) return;
-    anchorOf.delete(id);
-    const named = anchors.get(anchor)?.filter((other) => other !== id) ?? [];
-    if (named.length === 0) anchors.delete(anchor);
-    else anchors.set(anchor, named);
-  };
-  const name = (anchor: string, id: string): void => {
-    if (anchors.get(anchor)?.at(-1) === id) return;
-    leave(id);
-    anchors.set(anchor, [...(anchors.get(anchor) ?? []), id]);
-    anchorOf.set(id, anchor);
+  // The mark each anchor names, such as a bar at its series and slot, which a follower can join.
+  const anchors = new Map<string, string>();
+  /** Forget the anchor a mark names, unless another mark has named it since. */
+  const leave = (id: string, anchor: string | undefined): void => {
+    if (anchor !== undefined && anchors.get(anchor) === id) anchors.delete(anchor);
   };
   let handle: number | null = null;
   let reduced = reducedAtStart;
@@ -395,164 +383,179 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
     handle ??= host.requestFrame(step);
   };
 
-  return {
-    place(id, target, write, placement, info: MarkInfo = {}) {
-      const { axes = [], anchor, owner = ANY_FRAME } = info;
-      if (anchor !== undefined) name(anchor, id);
-      if (placement.kind === "join") {
-        // A follower draws from the marks at its anchors in every frame, each on its own clock, so
-        // they draw alike. Its rest is theirs where its leads read it, which reduced motion keeps,
-        // as it changes only the timing. A lead that never placed leaves it on its own target.
-        const leads = placement.leads.map((lead) => {
-          const leadId = anchors.get(lead.anchor)?.at(-1) ?? "";
-          return { lead, id: leadId, mark: marks.get(leadId) };
-        });
-        const found = leads.flatMap(({ lead, id, mark }) => (mark === undefined ? [] : [{ lead, id, mark }]));
-        if (found.length < leads.length) {
-          snap(id, target, write, axes, owner);
-          return;
-        }
-        // Each lead stands for a run of the follower's numbers, in order: what its pick reads, or
-        // the count of the follower's own numbers it moves.
-        const previous = marks.get(id)?.drawn ?? null;
-        let offset = 0;
-        const parts = found.map(({ lead, id: leadId, mark }) => {
-          const size = "clock" in lead ? lead.clock : lead.pick(mark.drawn).length;
-          const to = target.slice(offset, offset + size);
-          const from = previous?.length === target.length ? previous.slice(offset, offset + size) : to;
-          offset += size;
-          const source = mark.tween === null ? mark.drawn : (mark.tween.rest ?? mark.tween.to);
-          const rest = "clock" in lead ? to : (lead.rest?.(source) ?? to);
-          return { lead, id: leadId, own: { from, to }, rest };
-        });
-        const resting = parts.flatMap(({ rest }) => rest);
-        if (reduced || found.every(({ mark }) => mark.tween === null)) {
-          snap(id, resting, write, axes, owner);
-          return;
-        }
-        const follower: Mark = {
-          drawn: resting,
-          eased: 0,
-          write,
-          tween: null,
-          axes,
-          owner,
-          joined: { leads: parts.map(({ lead, id: leadId, own }) => ({ lead, id: leadId, own })), resting },
-        };
-        hold(id, follower);
-        project(follower);
-        return;
-      }
-      if (reduced || placement.kind === "snap") {
+  /** Place a mark: the body of `place`, once the mark's anchor names it. */
+  const placeMark = (
+    id: string,
+    target: MarkValues,
+    write: MarkWriter,
+    placement: Placement,
+    info: MarkInfo
+  ): void => {
+    const { axes = [], owner = ANY_FRAME } = info;
+    if (placement.kind === "join") {
+      // A follower draws from the marks at its anchors in every frame, each on its own clock, so
+      // they draw alike. Its rest is theirs where its leads read it, which reduced motion keeps,
+      // as it changes only the timing. A lead that never placed leaves it on its own target.
+      const leads = placement.leads.map((lead) => {
+        const leadId = anchors.get(lead.anchor) ?? "";
+        return { lead, id: leadId, mark: marks.get(leadId) };
+      });
+      const found = leads.flatMap(({ lead, id, mark }) => (mark === undefined ? [] : [{ lead, id, mark }]));
+      if (found.length < leads.length) {
         snap(id, target, write, axes, owner);
         return;
       }
-      if (placement.kind === "settle" && (placement.scale.x !== 1 || placement.scale.y !== 1)) {
-        // A resize maps every running tween of its frame into the new box once, when the first
-        // mark of its measurement settles, and redraws it there before the browser paints, so every
-        // mark stays on the axes, marks this commit leaves alone among them. The tweens keep their
-        // clock. Two resizes in one task are two measurements, so each maps the group, and another
-        // frame's tweens keep their own box, as a Panel whose height holds does.
-        const resize = placement.scale.to ?? startTime();
-        if (rescaledFor.get(owner) !== resize) {
-          rescaledFor.set(owner, resize);
-          for (const running of moving) {
-            if (running.tween === null || running.owner !== owner) continue;
-            const { axes: kinds, tween } = running;
-            const { scale } = placement;
-            const from = rescaled(tween.from, kinds, scale);
-            const to = rescaled(tween.to, kinds, scale);
-            running.tween =
-              tween.rest === undefined
-                ? { ...tween, from, to }
-                : { ...tween, from, to, rest: rescaled(tween.rest, kinds, scale) };
-            running.drawn = rescaled(running.drawn, kinds, scale);
-            running.write(running.drawn);
-          }
-          projectAll();
-        }
-      }
-      if (placement.kind === "move") {
-        // A data update restarts every running tween with it, from what each drew, so the group
-        // keeps one progress, marks this commit leaves alone among them.
-        const start = startTime();
-        if (restartedAt !== start) {
-          restartedAt = start;
-          for (const mark of moving) {
-            if (mark.tween === null) continue;
-            // A frame's list is drawn into again, so the restart keeps a copy.
-            mark.tween = { ...mark.tween, from: [...mark.drawn], start, delay: 0 };
-            mark.eased = 0;
-          }
-        }
-      }
-      const mark = marks.get(id);
-      const tween = mark?.tween ?? null;
-      if (placement.kind === "move" && placement.via !== undefined) {
-        // A path's route starts from what it drew, entry by entry, which its caller aligned.
-        const { from, to } = placement.via;
-        if (from.length !== to.length || sameItems(from, to)) {
-          snap(id, target, write, axes, owner);
-          return;
-        }
-        run(id, write, { from, to, rest: target, start: startTime(), delay: 0 }, axes, owner);
+      // Each lead stands for a run of the follower's numbers, in order: what its pick reads, or
+      // the count of the follower's own numbers it moves.
+      const previous = marks.get(id)?.drawn ?? null;
+      let offset = 0;
+      const parts = found.map(({ lead, id: leadId, mark }) => {
+        const size = "clock" in lead ? lead.clock : lead.pick(mark.drawn).length;
+        const to = target.slice(offset, offset + size);
+        const from = previous?.length === target.length ? previous.slice(offset, offset + size) : to;
+        offset += size;
+        const source = mark.tween === null ? mark.drawn : (mark.tween.rest ?? mark.tween.to);
+        const rest = "clock" in lead ? to : (lead.rest?.(source) ?? to);
+        return { lead, id: leadId, own: { from, to }, rest };
+      });
+      const resting = parts.flatMap(({ rest }) => rest);
+      if (reduced || found.every(({ mark }) => mark.tween === null)) {
+        snap(id, resting, write, axes, owner);
         return;
       }
-      if (placement.kind === "settle" && mark !== undefined && tween?.rest !== undefined) {
-        // A route that draws more numbers than its rest runs on while a commit asks for the same
-        // rest, mapped into a resized box with the group, and any other target snaps it there.
-        const { rest } = tween;
-        const kept =
-          rest.length === target.length && target.every((to, index) => close(to, rest[index] ?? 0));
-        if (kept) {
-          mark.write = write;
-          write(mark.drawn);
-          return;
+      const follower: Mark = {
+        drawn: resting,
+        eased: 0,
+        write,
+        tween: null,
+        axes,
+        owner,
+        joined: { leads: parts.map(({ lead, id: leadId, own }) => ({ lead, id: leadId, own })), resting },
+      };
+      hold(id, follower);
+      project(follower);
+      return;
+    }
+    if (reduced || placement.kind === "snap") {
+      snap(id, target, write, axes, owner);
+      return;
+    }
+    if (placement.kind === "settle" && (placement.scale.x !== 1 || placement.scale.y !== 1)) {
+      // A resize maps every running tween of its frame into the new box once, when the first
+      // mark of its measurement settles, and redraws it there before the browser paints, so every
+      // mark stays on the axes, marks this commit leaves alone among them. The tweens keep their
+      // clock. Two resizes in one task are two measurements, so each maps the group, and another
+      // frame's tweens keep their own box, as a Panel whose height holds does.
+      const resize = placement.scale.to ?? startTime();
+      if (rescaledFor.get(owner) !== resize) {
+        rescaledFor.set(owner, resize);
+        for (const running of moving) {
+          if (running.tween === null || running.owner !== owner) continue;
+          const { axes: kinds, tween } = running;
+          const { scale } = placement;
+          const from = rescaled(tween.from, kinds, scale);
+          const to = rescaled(tween.to, kinds, scale);
+          running.tween =
+            tween.rest === undefined
+              ? { ...tween, from, to }
+              : { ...tween, from, to, rest: rescaled(tween.rest, kinds, scale) };
+          running.drawn = rescaled(running.drawn, kinds, scale);
+          running.write(running.drawn);
         }
+        projectAll();
+      }
+    }
+    if (placement.kind === "move") {
+      // A data update restarts every running tween with it, from what each drew, so the group
+      // keeps one progress, marks this commit leaves alone among them.
+      const start = startTime();
+      if (restartedAt !== start) {
+        restartedAt = start;
+        for (const mark of moving) {
+          if (mark.tween === null) continue;
+          // A frame's list is drawn into again, so the restart keeps a copy.
+          mark.tween = { ...mark.tween, from: [...mark.drawn], start, delay: 0 };
+          mark.eased = 0;
+        }
+      }
+    }
+    const mark = marks.get(id);
+    const tween = mark?.tween ?? null;
+    if (placement.kind === "move" && placement.via !== undefined) {
+      // A path's route starts from what it drew, entry by entry, which its caller aligned.
+      const { from, to } = placement.via;
+      if (from.length !== to.length || sameItems(from, to)) {
         snap(id, target, write, axes, owner);
         return;
       }
-      if (mark !== undefined && tween !== null && sameItems(tween.to, target)) {
-        // The mark already heads for this target, so the tween runs on. A re-render or a new node
-        // may have drawn the target meanwhile, so the mark redraws where the tween has it.
+      run(id, write, { from, to, rest: target, start: startTime(), delay: 0 }, axes, owner);
+      return;
+    }
+    if (placement.kind === "settle" && mark !== undefined && tween?.rest !== undefined) {
+      // A route that draws more numbers than its rest runs on while a commit asks for the same
+      // rest, mapped into a resized box with the group, and any other target snaps it there.
+      const { rest } = tween;
+      const kept = rest.length === target.length && target.every((to, index) => close(to, rest[index] ?? 0));
+      if (kept) {
         mark.write = write;
         write(mark.drawn);
         return;
       }
-      if (placement.kind === "enter") {
-        const tween = { from: placement.from, to: target, start: startTime(), delay: placement.delay };
-        run(id, write, tween, axes, owner);
-        return;
-      }
-      if (mark === undefined || mark.drawn.length !== target.length || sameItems(mark.drawn, target)) {
-        snap(id, target, write, axes, owner);
-        return;
-      }
-      if (placement.kind === "move") {
-        run(id, write, { from: mark.drawn, to: target, start: startTime(), delay: 0 }, axes, owner);
-        return;
-      }
-      // A resize retargets a running tween on its own clock, so the mark keeps the progress it
-      // shares with every other mark. Without a running tween, or at its very end, it snaps.
-      if (tween === null || 1 - mark.eased < 1e-6) {
-        snap(id, target, write, axes, owner);
-        return;
-      }
-      // The tween, already mapped into the commit's box with its group, retargets.
-      const from = retargeted(tween, mark.drawn, target, mark.eased);
-      mark.axes = axes;
-      mark.tween = { ...tween, from, to: target };
-      // The numbers redraw where the mapped tween has them, and the numbers the tween wasn't moving
-      // at targets of their own, before the browser paints.
-      mark.drawn = target.map((to, index) => (from[index] ?? to) + (to - (from[index] ?? to)) * mark.eased);
+      snap(id, target, write, axes, owner);
+      return;
+    }
+    if (mark !== undefined && tween !== null && sameItems(tween.to, target)) {
+      // The mark already heads for this target, so the tween runs on. A re-render or a new node
+      // may have drawn the target meanwhile, so the mark redraws where the tween has it.
       mark.write = write;
       write(mark.drawn);
+      return;
+    }
+    if (placement.kind === "enter") {
+      const tween = { from: placement.from, to: target, start: startTime(), delay: placement.delay };
+      run(id, write, tween, axes, owner);
+      return;
+    }
+    if (mark === undefined || mark.drawn.length !== target.length || sameItems(mark.drawn, target)) {
+      snap(id, target, write, axes, owner);
+      return;
+    }
+    if (placement.kind === "move") {
+      run(id, write, { from: mark.drawn, to: target, start: startTime(), delay: 0 }, axes, owner);
+      return;
+    }
+    // A resize retargets a running tween on its own clock, so the mark keeps the progress it
+    // shares with every other mark. Without a running tween, or at its very end, it snaps.
+    if (tween === null || 1 - mark.eased < 1e-6) {
+      snap(id, target, write, axes, owner);
+      return;
+    }
+    // The tween, already mapped into the commit's box with its group, retargets.
+    const from = retargeted(tween, mark.drawn, target, mark.eased);
+    mark.axes = axes;
+    mark.tween = { ...tween, from, to: target };
+    // The numbers redraw where the mapped tween has them, and the numbers the tween wasn't moving
+    // at targets of their own, before the browser paints.
+    mark.drawn = target.map((to, index) => (from[index] ?? to) + (to - (from[index] ?? to)) * mark.eased);
+    mark.write = write;
+    write(mark.drawn);
+  };
+
+  return {
+    place(id, target, write, placement, info: MarkInfo = {}) {
+      const { anchor } = info;
+      const named = marks.get(id)?.anchor;
+      if (named !== anchor) leave(id, named);
+      if (anchor !== undefined) anchors.set(anchor, id);
+      placeMark(id, target, write, placement, info);
+      const mark = marks.get(id);
+      if (mark !== undefined) mark.anchor = anchor;
     },
     forget(id) {
       const mark = marks.get(id);
       if (mark !== undefined) moving.delete(mark);
       marks.delete(id);
-      leave(id);
+      leave(id, mark?.anchor);
       if (handle !== null && moving.size === 0) {
         host.cancelFrame(handle);
         handle = null;

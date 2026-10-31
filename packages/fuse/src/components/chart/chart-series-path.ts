@@ -20,7 +20,7 @@ import type { SeriesPaint } from "./chart-paint";
 import { centreAlong, pathAxes, placePath, seriesPathKind, slotStep } from "./chart-path-draw";
 import type { Counted, DrawnPath, PathKind, PathLook, PathMemory } from "./chart-path-draw";
 import type { PathKind as RouteKind } from "./chart-paths";
-import { useChartFrame } from "./chart-plot";
+import { useChartFrame, usePlotRead } from "./chart-plot";
 import type { ChartPlot } from "./chart-plot";
 import { introFor, useFirstPhase } from "./chart-store";
 import type { ChartCurve } from "./chart-types";
@@ -30,7 +30,6 @@ import { pathValues, topologyOf } from "./layout/line-path";
 import type { PathTopology } from "./layout/line-path";
 import { valueAt } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
-import { sameItems } from "./layout/same-items";
 import { seriesOf } from "./layout/series-of";
 import { seriesPathOf } from "./layout/series-path";
 
@@ -75,12 +74,10 @@ export function usePathMark<
     readonly seriesIndex: number;
     readonly route: RouteKind;
     readonly placed: PathDraw<L, S, T> | null;
-    /** Reads what the placement needs off the node first, before this commit's own writes. */
-    readonly prepare?: (node: SVGGElement) => void;
   }
 ): PathMark {
-  const { context, plot, axes, seriesIndex, route, placed, prepare } = input;
-  const { motion, update, paths } = context;
+  const { context, plot, axes, seriesIndex, route, placed } = input;
+  const { motion, update, paths, followers } = context;
   const mark = useMotionMark(motion, draw, placed?.look ?? null, axes);
   const commit = useCommitMotion(update, plot, context.orientation);
   const memoryRef = useRef<PathMemory<S> | null>(null);
@@ -89,8 +86,6 @@ export function usePathMark<
   useLayoutEffect(() => {
     const asked = commit();
     if (placed === null) return;
-    const node = mark.node();
-    if (prepare !== undefined && node !== null) prepare(node);
     placePath(asked, {
       mark,
       motion,
@@ -108,22 +103,32 @@ export function usePathMark<
       draw,
     });
   });
-  useLayoutEffect(() => () => paths.delete(seriesIndex, route, memoryRef), [paths, seriesIndex, route]);
+  // A follower joined to this path's route rebuilds its join against what still draws the series.
+  useLayoutEffect(
+    () => () => {
+      paths.delete(seriesIndex, route, memoryRef);
+      followers.refresh();
+    },
+    [paths, followers, seriesIndex, route]
+  );
   return { markRef: mark.ref, outgoingRef, node: mark.node };
 }
 
 /**
- * How a Line reads the width it strokes its path in: a guess for its first draw, the inputs that
+ * How a Line reads the width it strokes its path in: a guess for its first draw, its own props that
  * can change it, and the reader of its node's computed style.
  */
 export type PathStroke = {
   /** The width before the first read, CSS pixels. */
   readonly guess: number;
-  /** What sets the width, such as the variant, the class and the style, compared by identity. */
+  /** The Line's own props that set the width, such as the variant, the class and the style, compared by identity. */
   readonly inputs: readonly unknown[];
   /** Reads the width off the mark's node. */
   readonly read: (node: SVGGElement) => number;
 };
+
+/** A part with no props of its own that set its stroke. */
+const NO_INPUTS: readonly unknown[] = [];
 
 /** What a series path part draws from. */
 export type SeriesPathState = PathMark & {
@@ -150,8 +155,8 @@ export type SeriesPathState = PathMark & {
  *
  * @param part - The calling part's display name.
  * @param draw - The part's writer, bound at module scope in the part's module.
- * @param options - Root's context and the part's layout, the series key, the curve, the numbers per
- *   vertex, `LINE_STRIDE` or `AREA_STRIDE`, and how a stroked path reads its width.
+ * @param options - Root's context and the part's layout, the series key, the curve, the route kind,
+ *   the numbers per vertex, `LINE_STRIDE` or `AREA_STRIDE`, and how a stroked path reads its width.
  * @returns The state the part draws from.
  * @throws {ChartCompositionError} `step-curve-needs-cells` for a step curve under a point scale, and
  *   `scale-colour-on-stack` for a scale colour on a stacked series.
@@ -164,11 +169,13 @@ export function useSeriesPath(
     readonly layout: ChartLayoutContextValue;
     readonly dataKey: string;
     readonly curve: ChartCurve;
+    /** What draws the path, which names its anchor and its route record. */
+    readonly route: "line" | "area";
     readonly stride: number;
     readonly stroke?: PathStroke;
   }
 ): SeriesPathState {
-  const { context, layout, dataKey, curve, stride, stroke } = options;
+  const { context, layout, dataKey, curve, route, stride, stroke } = options;
   const { model, update, xScale } = context;
   if ((curve === "step-after" || curve === "step-before") && xScale === "point") {
     throw new ChartCompositionError(
@@ -185,7 +192,7 @@ export function useSeriesPath(
   if (scaleRule !== null) throw scaleRule;
   const drawn = useChartFrame(part, layout);
   const frame = drawn?.frame ?? null;
-  const prefix = useSvgIdPrefix(part === "Chart.Area" ? "chart-area" : "chart-line");
+  const prefix = useSvgIdPrefix(`chart-${route}`);
   const phase = useFirstPhase(context.store);
   const [intro] = useState(() => introFor(phase, update.kind, context.entrance));
   // A decimated window keeps M4's vertices for each pixel column along the slot axis.
@@ -200,8 +207,12 @@ export function useSeriesPath(
   const topology = useMemo(() => topologyOf(path?.vertices ?? [], missing), [path, missing]);
   const moving = useRef<PathTopology | null>(null);
   // The width the part strokes its path in, which the placement reads, so a straight stroke covers
-  // whole device pixels at any width. It reads the computed style only when what sets it changes.
+  // whole device pixels at any width. A consumer's --chart-stroke on Root or the Line, or the look,
+  // sets it, so the part reads the computed style in the plot's probe phase, before any mark of the
+  // commit writes, and again when its own props change.
   const [width, setWidth] = useState(stroke?.guess ?? 0);
+  // The width last read, so an unchanged width schedules no render at all.
+  const readWidth = useRef(width);
   const look = useMemo(
     (): PathLook | null =>
       frame === null
@@ -233,26 +244,24 @@ export function useSeriesPath(
     () => (look === null || path === null || kind === null ? null : { look, kind, path, topology, rest }),
     [look, path, kind, topology, rest]
   );
-  // The stroke's computed width, which a consumer's --chart-stroke or the look sets. The path reads
-  // it before it places, so the read lays out no geometry this commit wrote, and only when what
-  // sets it changes: the part's inputs or the plot's box.
-  const strokeInputs = [frame?.box, ...(stroke?.inputs ?? [])];
-  const readFor = useRef<readonly unknown[] | null>(null);
-  const prepare = (group: SVGGElement): void => {
-    if (stroke === undefined || sameItems(readFor.current ?? undefined, strokeInputs)) return;
-    readFor.current = strokeInputs;
-    const next = stroke.read(group);
-    setWidth((current) => (current === next ? current : next));
-  };
   const mark = usePathMark(draw, {
     context,
     plot: drawn?.plot ?? null,
     axes,
     seriesIndex: series?.seriesIndex ?? 0,
-    route: "line",
+    route,
     placed,
-    prepare,
   });
+  usePlotRead(() => {
+    const group = mark.node();
+    if (stroke === undefined || group === null) return false;
+    const next = stroke.read(group);
+    if (next !== readWidth.current) {
+      readWidth.current = next;
+      setWidth(next);
+    }
+    return true;
+  }, stroke?.inputs ?? NO_INPUTS);
   return {
     ...mark,
     series,

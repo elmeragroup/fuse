@@ -167,7 +167,7 @@ function drawValue(span: HTMLSpanElement, look: FollowerLook, values: MarkValues
   writeStyle(span, "--chart-value-top", `${String(valueShare(frame, snapAcross(frame, end)))}%`);
 }
 
-/** The active value line's rule, found once per node and look. */
+/** The active value line's rule, found once per commit of its mark. */
 const valueRule = partsCache((box) =>
   box.querySelector<SVGLineElement>(':scope > svg > [data-slot="chart-active-value-rule"]')
 );
@@ -183,7 +183,7 @@ function drawValueLine(box: HTMLDivElement, look: FollowerLook, values: MarkValu
   // The rule's width, which its stroke and the pill's centring read.
   writeStyle(box, "--_rule-width", `${String(hairline(frame.box))}px`);
   const direction = frame.orientation === "vertical" ? "horizontal" : "vertical";
-  writeAttributes(valueRule(box, look), ruleAcross(frame.box, direction, end));
+  writeAttributes(valueRule(box), ruleAcross(frame.box, direction, end));
 }
 
 /**

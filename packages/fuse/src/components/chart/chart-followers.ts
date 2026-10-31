@@ -32,6 +32,11 @@ export type ChartFollowers = {
   readonly add: (follower: Follower) => () => void;
   /** Repaint a follower whose own inputs changed, after the commit settles. */
   readonly invalidate: (follower: Follower) => void;
+  /**
+   * Repaint every follower after the commit settles, as when a path that followers join leaves, so
+   * each joins what still draws its series.
+   */
+  readonly refresh: () => void;
   /** Paint every follower at the active slot now, which later repaints reuse. */
   readonly paint: (active: ActiveSlot, cause: FollowerCause) => void;
 };
@@ -68,6 +73,9 @@ export function createChartFollowers(): ChartFollowers {
       if (queued) return;
       queued = true;
       queueMicrotask(flush);
+    },
+    refresh() {
+      for (const follower of followers) this.invalidate(follower);
     },
     paint(active, cause) {
       current = active;

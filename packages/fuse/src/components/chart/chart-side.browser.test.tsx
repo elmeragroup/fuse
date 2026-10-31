@@ -59,13 +59,13 @@ function chart(readings: readonly number[], look: Look) {
         <Chart.Root
           data-intro="none"
           data={rows}
-          config={CONFIG}
+          config={{ v: { ...CONFIG.v, variant: look.variant } }}
           xKey="name"
           orientation={look.orientation}
           yInclude={[-100, 100]}
           style={{ "--chart-plot-height": "200px" }}
           aria-label="Side">
-          <Chart.Bar dataKey="v" variant={look.variant} />
+          <Chart.Bar dataKey="v" />
         </Chart.Root>
       </div>
     </LocaleProvider>

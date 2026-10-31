@@ -1,7 +1,7 @@
 // The mode choice of ticket svg-2's D2. Unit under test: pathMotion. Oracle: F10's four cases as
 // ticket 06 states them, written out by hand as key lists. Keys stand in for pairSlotKeys' output,
 // which keeps a shared slot's key and pairs slots by position when no slot is shared. The route
-// each vertex takes for a mode is pathStep's, and chart-path-draw.test.ts checks it.
+// each vertex takes for a mode is pathStep's, and chart-path-draw.zones.test.ts checks it.
 import { describe, expect, it } from "vitest";
 
 import { pathMotion } from "./path-motion";

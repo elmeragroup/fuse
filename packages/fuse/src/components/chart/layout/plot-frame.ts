@@ -94,6 +94,37 @@ function pixel(dpr: number, at: number): number {
   return (Math.ceil(at * dpr - 0.5 - TIE) + 0) / dpr;
 }
 
+/** Where a page coordinate falls inside its device pixel, from 0 up to 1. */
+function pixelPhase(dpr: number, at: number): number {
+  const device = at * dpr;
+  return device - Math.floor(device);
+}
+
+/** Whether two page coordinates fall at the same place inside their device pixels, within `TIE`. */
+function samePhase(dpr: number, a: number, b: number): boolean {
+  const apart = Math.abs(pixelPhase(dpr, a) - pixelPhase(dpr, b));
+  return Math.min(apart, 1 - apart) <= TIE;
+}
+
+/**
+ * Whether two plot boxes snap every coordinate alike. Each snapped coordinate is a difference from
+ * the origin's own device pixel, so only the size, the pixel ratio and where the origin falls inside
+ * its device pixel count. A move by whole device pixels, as most scrolls are, changes nothing drawn.
+ *
+ * @param a - One box.
+ * @param b - The other.
+ * @returns Whether every mark draws the same in both.
+ */
+export function sameSnapping(a: PlotBox, b: PlotBox): boolean {
+  return (
+    a.width === b.width &&
+    a.height === b.height &&
+    a.dpr === b.dpr &&
+    samePhase(a.dpr, a.left, b.left) &&
+    samePhase(a.dpr, a.top, b.top)
+  );
+}
+
 /** Snap a coordinate measured from an origin at a page position. */
 function snapFrom(origin: number, dpr: number, at: number): number {
   return pixel(dpr, origin + at) - pixel(dpr, origin);

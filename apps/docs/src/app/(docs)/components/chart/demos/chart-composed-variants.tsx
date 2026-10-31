@@ -23,12 +23,15 @@ const data = [
   { month: "December", revenue: 9100, profit: 4200 },
 ];
 
-const config = {
-  revenue: { label: "Revenue", color: "chart-1" },
-  profit: { label: "Profit", color: "chart-2" },
-} as const satisfies ChartConfig;
-
 const VARIANTS = ["hatched", "duotone", "gradient", "striped"] as const;
+
+/** The revenue bars in one look, and the profit line. */
+function configIn(variant: (typeof VARIANTS)[number]) {
+  return {
+    revenue: { label: "Revenue", color: "chart-1", variant },
+    profit: { label: "Profit", color: "chart-2" },
+  } as const satisfies ChartConfig;
+}
 
 /** Each tinted look of `Chart.Bar` under a Line, one chart per look. */
 export function ChartComposedVariants() {
@@ -38,13 +41,13 @@ export function ChartComposedVariants() {
         <Chart.Root
           key={variant}
           data={data}
-          config={config}
+          config={configIn(variant)}
           xKey="month"
           style={{ "--chart-plot-height": "8rem" }}
           aria-label={`Revenue and profit by month, ${variant} bars`}>
           <Chart.Grid />
           <Chart.XAxis />
-          <Chart.Bar dataKey="revenue" variant={variant} />
+          <Chart.Bar dataKey="revenue" />
           <Chart.Line dataKey="profit" />
           <Chart.Legend />
           <Chart.Tooltip />

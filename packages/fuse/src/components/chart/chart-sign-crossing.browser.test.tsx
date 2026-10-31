@@ -61,14 +61,18 @@ function chart(crossing: Crossing, phase: 0 | 1) {
         <Chart.Root
           data-intro="none"
           data={rows}
-          config={below === null ? LOOSE : STACKED}
+          config={
+            below === null
+              ? { q: { ...LOOSE.q, variant: crossing.variant } }
+              : { ...STACKED, q: { ...STACKED.q, variant: crossing.variant } }
+          }
           xKey="name"
           orientation={orientation}
           yInclude={[-reach, reach]}
           style={{ "--chart-plot-height": "200px" }}
           aria-label="Fortegn">
           {below === null ? null : <Chart.Bar dataKey="p" />}
-          <Chart.Bar dataKey="q" variant={crossing.variant} />
+          <Chart.Bar dataKey="q" />
           <Chart.ActiveValueLine dataKey="q" />
         </Chart.Root>
       </div>

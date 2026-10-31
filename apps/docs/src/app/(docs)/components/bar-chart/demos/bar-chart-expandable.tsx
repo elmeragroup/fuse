@@ -14,14 +14,19 @@ const days = [
 ];
 
 const config = {
-  kwh: { label: "Consumption", color: "chart-1", format: { preset: "energy", unit: "kWh" } },
+  kwh: {
+    label: "Consumption",
+    color: "chart-1",
+    format: { preset: "energy", unit: "kWh" },
+    variant: "expandable",
+  },
 } as const satisfies ChartConfig;
 
 export function BarChartExpandable() {
   return (
     <BarChart.Root data={days} config={config} xKey="day" aria-label="Consumption per weekday">
       <BarChart.XAxis />
-      <BarChart.Bar dataKey="kwh" variant="expandable" />
+      <BarChart.Bar dataKey="kwh" />
       <BarChart.Tooltip />
       <BarChart.Table />
     </BarChart.Root>

@@ -219,6 +219,8 @@ export type DocsComponent = ComponentPageEntry & {
    * alias page has no API artifact and no parts of its own.
    */
   alias?: ApiAlias;
+  /** An alias page's own part names, such as `BarChart.Root`, which its search entry matches. */
+  aliasParts?: readonly string[];
   /**
    * The page's RSC status, read from its implementation module's own directive
    * and published by the markdown endpoint.

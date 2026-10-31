@@ -9,7 +9,7 @@ import { writeAttribute, writeAttributes, writeStyle } from "./chart-dom";
 import type { ChartLabels } from "./chart-labels";
 import type { MarkValues } from "./chart-motion";
 import { placementOf, useCommitMotion, useFirstDraw, useMotionMark } from "./chart-motion-mark";
-import { useChartFrame } from "./chart-plot";
+import { useChartFrame, usePlotRead } from "./chart-plot";
 import type { ChartFrame } from "./chart-plot";
 import { slotLabel } from "./chart-text";
 import type { ChartLayerProps, ChartTone, ChartX, ValueFormat, XFormat } from "./chart-types";
@@ -171,6 +171,7 @@ function warnOutside(
   if (values.every((value) => value >= domain[0] && value <= domain[1])) return;
   context.warnOnce(
     "reference-outside-domain",
+    `${part} ${values.join(" ")}`,
     `${part} sits outside the value domain, so it renders clipped. Pass its value to yInclude on Chart.Root or the Panel, because Root never reads its children.`
   );
 }
@@ -211,7 +212,8 @@ function useStackedLabel(
   drawn: ChartFrame | null,
   labelled: boolean,
   kind: "line" | "area",
-  axis: "value" | "slot"
+  axis: "value" | "slot",
+  inputs: readonly unknown[]
 ): StackedLabel {
   const key = useId();
   const ref = useRef<HTMLSpanElement>(null);
@@ -226,13 +228,20 @@ function useStackedLabel(
   useLayoutEffect(() => {
     if (row) return labels.addSlot(key);
   }, [labels, key, row]);
-  // The text and the plot can change with any commit, so the registry reads them before the
-  // reference's writer places the guide again.
-  useLayoutEffect(() => {
+  // The label's line height follows Root's and the reference's own styles, so its size is read in
+  // the plot's probe phase, before any mark of the commit writes, and when the reference's class or
+  // style changes.
+  usePlotRead(() => {
     const node = ref.current;
-    if (!stacks || node === null || drawn === null) return;
+    if (node === null) return false;
+    if (stacks) labels.resize(key, labelSize(node));
+    return true;
+  }, inputs);
+  // The plot can change with any commit, so the registry takes its bounds before the reference's
+  // writer places the guide again.
+  useLayoutEffect(() => {
+    if (!stacks || drawn === null) return;
     const { box } = drawn.frame;
-    labels.resize(key, labelSize(node));
     labels.measure({ end: snapY(box, box.height), pixel: 1 / box.dpr });
   });
   // The label keeps one identity while it stacks the same way, so the writer's look memo holds.
@@ -521,7 +530,8 @@ export function ChartReferenceLine({ style, ...props }: ChartReferenceLineProps)
     drawn,
     label !== undefined && label !== "",
     "line",
-    axis
+    axis,
+    [className, style]
   );
   const { ref: labelRef } = stacked;
   const frame = drawn?.frame ?? null;
@@ -631,7 +641,8 @@ export function ChartReferenceArea({ style, ...props }: ChartReferenceAreaProps)
     drawn,
     label !== undefined && label !== "",
     "area",
-    axis
+    axis,
+    [className, style]
   );
   const { ref: labelRef } = stacked;
   const frame = drawn?.frame ?? null;

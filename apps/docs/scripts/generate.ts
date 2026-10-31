@@ -60,6 +60,8 @@ import {
 import type { ComponentInspection } from "./lib/docs-inspection.ts";
 import { ProblemLog } from "./lib/errors.ts";
 import { functionReferences } from "./lib/function-reference.ts";
+import { openFuseProgram } from "./lib/fuse-program.ts";
+import type { FuseProgram } from "./lib/fuse-program.ts";
 import { renderLandingFacts } from "./lib/landing-facts.ts";
 import { renderLlmsTxt } from "./lib/llms.ts";
 import { renderComponentMarkdown } from "./lib/markdown.ts";
@@ -170,10 +172,14 @@ function toPageEntry(component: DocsComponent): ComponentPageEntry {
   };
 }
 
-/** What the shared-entry pages share: the pages each repeats whole, and the owner of each repeated part. */
+/**
+ * What the shared-entry pages share: the pages each repeats whole, the owner of each repeated
+ * part, and every shared-entry page's own part names, which an alias page's search reads.
+ */
 type SharedParts = {
   readonly aliases: ReadonlyMap<string, ApiAlias>;
   readonly links: ReadonlyMap<string, ReadonlyMap<string, ApiSameAs>>;
+  readonly names: ReadonlyMap<string, readonly string[]>;
 };
 
 /**
@@ -183,8 +189,9 @@ type SharedParts = {
  * the entry, not the extractor's facade, and runs before extraction, so an alias page gets no
  * `api.json`. This is the one place either fact is computed.
  */
-function sharedParts(slugs: ReadonlySet<string>): SharedParts {
+function sharedParts(fuse: FuseProgram, slugs: ReadonlySet<string>): SharedParts {
   const identities = partIdentities(
+    fuse,
     [...SHARED_ENTRY_PAGES.keys()]
       .filter((slug) => slugs.has(slug))
       .map((slug) => {
@@ -194,13 +201,33 @@ function sharedParts(slugs: ReadonlySet<string>): SharedParts {
   );
   const pages = [...identities].map(([slug, parts]) => ({ slug, parts }));
   const aliases = pageAliases(pages);
-  return { aliases, links: sameAsLinks(pages.filter(({ slug }) => !aliases.has(slug))) };
+  return {
+    aliases,
+    links: sameAsLinks(pages.filter(({ slug }) => !aliases.has(slug))),
+    names: new Map(pages.map(({ slug, parts }) => [slug, [...parts.keys()]])),
+  };
+}
+
+/**
+ * Reads what the library program says about the pages: the shared parts, the pages that get an
+ * API artifact, and the function references. Both passes read one program, opened once per run.
+ */
+function readLibrary(inspections: readonly ComponentInspection[]) {
+  const { fuse, close } = openFuseProgram();
+  try {
+    const shared = sharedParts(fuse, new Set(inspections.map(({ slug }) => slug)));
+    // An alias page repeats its owner's reference, so it has no API artifact of its own.
+    const inventory = docsApiInventory(inspections).filter(({ slug }) => !shared.aliases.has(slug));
+    return { shared, inventory, functions: functionReferences(fuse, inventory) };
+  } finally {
+    close();
+  }
 }
 
 /** Marks each repeated part with its owner, and an alias page with the page it repeats. */
 function linkSharedParts(component: DocsComponent, shared: SharedParts): DocsComponent {
   const alias = shared.aliases.get(component.slug);
-  if (alias !== undefined) return { ...component, alias };
+  if (alias !== undefined) return { ...component, alias, aliasParts: shared.names.get(component.slug) ?? [] };
   const owners = shared.links.get(component.slug);
   if (owners === undefined) return component;
   return {
@@ -451,14 +478,11 @@ async function main(): Promise<void> {
   }));
   problems.throwIfFailed();
 
-  const shared = sharedParts(new Set(inspections.map(({ slug }) => slug)));
-  // An alias page repeats its owner's reference, so it has no API artifact of its own.
-  const inventory = docsApiInventory(inspections).filter(({ slug }) => !shared.aliases.has(slug));
+  const { shared, inventory, functions } = readLibrary(inspections);
   // Extraction writes the committed api.json files itself, only where the bytes change,
   // and throws a DocsGenerationError on any extraction problem.
   const generated = await generateDocsApiArtifacts(inventory);
   reportDiagnostics(generated.diagnostics);
-  const functions = functionReferences(inventory);
   for (const warning of functions.warnings) {
     process.stderr.write(`docs: ${warning}\n`);
   }

@@ -74,7 +74,7 @@ export type SeriesModel = {
 export type ModelIssue =
   | RowIssue
   | (CellIssue & { readonly key: string })
-  | { readonly rule: "mixed-sign-expand"; readonly slot: number };
+  | { readonly rule: "mixed-sign-expand"; readonly slot: number; readonly stack: string };
 
 /** The model of a cartesian chart. */
 export type CartesianModel = {
@@ -136,11 +136,11 @@ export function buildCartesianModel(input: ModelInput): CartesianModel {
   const stacks = [...stackOf].filter(([, keys]) => keys.length > 1).map(([id, keys]) => ({ id, keys }));
   const stackedKey = new Map(stacks.flatMap(({ id, keys }) => keys.map((key) => [key, id] as const)));
   const groups = [
-    ...stacks.map(({ keys }) => keys),
-    ...entries.flatMap(([key]) => (stackedKey.has(key) ? [] : [[key]])),
+    ...stacks.map(({ id, keys }) => ({ stack: id, keys })),
+    ...entries.flatMap(([key]) => (stackedKey.has(key) ? [] : [{ stack: key, keys: [key] }])),
   ];
   const extents = new Map<string, readonly Extent[]>();
-  for (const keys of groups) {
+  for (const { stack, keys } of groups) {
     const members = read.filter(({ key }) => keys.includes(key));
     const result = stackSeries(
       members.map(({ readings }) =>
@@ -149,7 +149,7 @@ export function buildCartesianModel(input: ModelInput): CartesianModel {
       input.stackOffset
     );
     // A one-key group holds one value per slot, so only a real stack can mix signs.
-    for (const slot of result.mixedSignSlots) issues.push({ rule: "mixed-sign-expand", slot });
+    for (const slot of result.mixedSignSlots) issues.push({ rule: "mixed-sign-expand", slot, stack });
     members.forEach(({ key }, position) => {
       const list = result.extents[position];
       if (list) extents.set(key, list);

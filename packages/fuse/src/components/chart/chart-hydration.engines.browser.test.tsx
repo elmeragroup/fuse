@@ -15,6 +15,7 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { barBox } from "../../../test/chart/bar-box";
 import { finishedFade, runningFade } from "../../../test/chart/fade";
 import { bars } from "../../../test/chart/marks";
@@ -182,6 +183,48 @@ describe("hydration", () => {
       await followUpdate(host, root, <Fixture data={MOTION_B} ready={ready} />);
     } finally {
       root.unmount();
+      host.remove();
+    }
+  });
+});
+
+describe("server HTML before hydration (review 2, Y11)", () => {
+  it("hatches a hatched series' legend swatch in the server HTML, before the chart hydrates", () => {
+    // The series' config names its bars' look, so the server renders the swatch's look too, and
+    // the legend tells the series apart before any script runs. The default series stays solid.
+    const html = renderToString(
+      <ThemeScope theme={fkasPrivate}>
+        <LocaleProvider locale="nb-NO">
+          <div style={{ width: 400 }}>
+            <Chart.Root
+              data={MOTION_A}
+              config={{ p: MOTION_CONFIG.p, q: { ...MOTION_CONFIG.q, variant: "hatched" } }}
+              xKey="day"
+              interval="day"
+              timeZone="Europe/Oslo"
+              aria-label="Forbruk per dag">
+              <Chart.Bar dataKey="p" />
+              <Chart.Bar dataKey="q" />
+              <Chart.Legend />
+            </Chart.Root>
+          </div>
+        </LocaleProvider>
+      </ThemeScope>
+    );
+    const host = document.createElement("div");
+    host.innerHTML = html;
+    document.body.append(host);
+    try {
+      // DOM audit: the swatches are aria-hidden presentation inside the legend items.
+      const swatches = [
+        ...host.querySelectorAll('[data-slot="chart-legend-item"] [data-slot="chart-swatch"]'),
+      ];
+      expect(
+        swatches.map((swatch) =>
+          getComputedStyle(swatch).backgroundImage.startsWith("repeating-linear-gradient")
+        )
+      ).toEqual([false, true]);
+    } finally {
       host.remove();
     }
   });

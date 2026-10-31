@@ -182,7 +182,8 @@ const DOTS_COPY: AttachedCopy = {
  */
 export function ChartDots({ dataKey, variant = "default", className, style }: ChartDotsProps): ReactElement {
   const { context, layout } = useSeriesPart("Chart.Dots", dataKey);
-  const { model, update } = context;
+  const { model, update, xScale } = context;
+  const { window } = model;
   const series = seriesOf(model, dataKey);
   const drawn = useChartFrame("Chart.Dots", layout);
   const frame = drawn?.frame ?? null;
@@ -193,12 +194,13 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
     if (series === undefined || frame === null) return [];
     const path = seriesPathOf(model, series, update.keys, columns);
     return path.vertices.flatMap((vertex, index) => {
-      const point = vertex.state === "reading" ? restingPoint(context, frame, series, vertex.slot) : null;
+      const point =
+        vertex.state === "reading" ? restingPoint({ window, xScale }, frame, series, vertex.slot) : null;
       return point === null
         ? []
         : [{ key: path.keys[index] ?? String(vertex.slot), slot: vertex.slot, point }];
     });
-  }, [model, update.keys, series, frame, columns]); // oxlint-disable-line react-hooks/exhaustive-deps -- restingPoint reads the model and the x scale alone
+  }, [model, update.keys, series, frame, columns, window, xScale]);
   const rest = useMemo(() => dots.flatMap(({ point }) => [...point]), [dots]);
   const slots = useMemo(() => dots.map(({ slot }) => slot), [dots]);
   const look = useMemo((): PointLook => ({ frame, xScale: context.xScale }), [frame, context.xScale]);
@@ -266,14 +268,14 @@ function seriesPaintOf(context: ChartRootContextValue, dataKey: string): string 
   return seriesPaint(dataKey, stepRole(context.config[dataKey]?.color ?? "chart-1", undefined));
 }
 
-/** The active dot's circles, its ping ring first if any, found once per node and look. */
+/** The active dot's circles, its ping ring first if any, found once per commit of its mark. */
 const activeDots = partsCache((svg) => [...svg.querySelectorAll(":scope > [data-slot=chart-dot]")]);
 
 /** Draw the active dot at the loop's numbers, its place and its value, with its ping ring if any. */
 function drawActiveDot(svg: SVGSVGElement, look: PointLook, values: MarkValues): void {
   const { frame, xScale } = look;
   if (frame === null) return;
-  const dots = activeDots(svg, look);
+  const dots = activeDots(svg);
   writeCentres(dots, { frame, xScale }, values, dots.length);
 }
 
@@ -306,7 +308,7 @@ export function ChartActiveDot({
     const point =
       active === null || series === undefined || frame === null
         ? null
-        : restingPoint(context, frame, series, active.slot);
+        : restingPoint({ window: context.model.window, xScale: context.xScale }, frame, series, active.slot);
     const svg = markNode();
     // The dot shows only while the series draws a reading at the active slot.
     if (svg !== null) writeAttribute(svg, "data-value", point === null ? null : "");
@@ -364,7 +366,7 @@ function markerSlots(
   );
 }
 
-/** A Marker's dots and its pills' anchors, found once per node and look. */
+/** A Marker's dots and its pills' anchors, found once per commit of its mark. */
 const markerParts = partsCache((box) => ({
   dots: [...(box.querySelector(":scope > svg")?.children ?? [])].filter(
     (child) => child.getAttribute("data-slot") === "chart-dot"
@@ -376,7 +378,7 @@ const markerParts = partsCache((box) => ({
 function drawMarker(box: HTMLDivElement, look: PointLook, values: MarkValues): void {
   const { frame, xScale } = look;
   if (frame === null) return;
-  const { dots, anchors } = markerParts(box, look);
+  const { dots, anchors } = markerParts(box);
   writeCentres(dots, { frame, xScale }, values, dots.length / Math.max(1, values.length / 2));
   anchors.forEach((anchor, index) => {
     const { cx, cy } = pointCentre(frame, xScale, values[index * 2] ?? 0, values[index * 2 + 1] ?? 0);
@@ -414,10 +416,15 @@ export function ChartMarker({
       series === undefined || frame === null
         ? []
         : slots.flatMap((slot) => {
-            const point = restingPoint(context, frame, series, slot);
+            const point = restingPoint(
+              { window: context.model.window, xScale: context.xScale },
+              frame,
+              series,
+              slot
+            );
             return point === null ? [] : [{ slot, point }];
           }),
-    [context.model, context.xScale, series, frame, slotsKey] // oxlint-disable-line react-hooks/exhaustive-deps -- the joined slots are the identity, and restingPoint reads the model and the x scale alone
+    [context.model, context.xScale, series, frame, slotsKey] // oxlint-disable-line react-hooks/exhaustive-deps -- the joined slots are the identity
   );
   const look = useMemo((): PointLook => ({ frame, xScale: context.xScale }), [frame, context.xScale]);
   const {
