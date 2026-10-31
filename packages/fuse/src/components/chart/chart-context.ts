@@ -16,6 +16,7 @@ import type { ChartPaths } from "./chart-paths";
 import type { ChartStore, EmphasisEntry } from "./chart-store";
 import type { TextContext } from "./chart-text";
 import type { ChartConfig, ChartIntro, ChartRow, ChartSelectionChangeReason } from "./chart-types";
+import type { BarVariant } from "./layout/bar-shapes";
 import type { LayoutInput } from "./layout/cartesian-model";
 import { ChartCompositionError } from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
@@ -99,8 +100,6 @@ export type ChartRootContextValue = TextContext & {
   readonly id: string;
   /** Root's `aria-label`, or undefined when `aria-labelledby` names the chart. */
   readonly name: string | undefined;
-  /** The selected config key, or null. */
-  readonly selectedKey: string | null;
   /** Select a key, or clear the selection with null, and announce it. */
   readonly select: (key: string | null, reason: ChartSelectionChangeReason, event: Event | undefined) => void;
   /** A LegendToggleGroup registers while it is mounted, and the returned function unregisters it. */
@@ -111,7 +110,10 @@ export type ChartRootContextValue = TextContext & {
   readonly root: () => HTMLElement | null;
   /** Highlight a series through Root's attributes with no React render, or clear it with null. */
   readonly highlight: (key: string | null) => void;
-  /** Warn once per Root and rule: a data rule's production fallback, or a development hint. */
+  /**
+   * Warn once per Root for each distinct problem, a rule and its message: a data rule's production
+   * fallback, or a development hint.
+   */
   readonly warnOnce: (rule: ChartDataRule | ChartHintRule, message: string) => void;
   /** Root's `data`, which the Table's extra columns read. */
   readonly rows: readonly ChartRow[];
@@ -133,7 +135,12 @@ export type ChartRootContextValue = TextContext & {
    * A Bar registers after it mounts, with its layout's frame, so Root can warn `bars-overlap` for
    * two loose Bars in one layout. The result unregisters it.
    */
-  readonly registerBar: (key: string, grouped: boolean, layout: FrameOwner) => () => void;
+  readonly registerBar: (
+    key: string,
+    grouped: boolean,
+    layout: FrameOwner,
+    variant: BarVariant
+  ) => () => void;
   /** Whether a mounted Bar draws a config key, which a value follower marks before a line. */
   readonly drawsBar: (key: string) => boolean;
   /** A Bar registers its emphasised slots after it mounts, so the option speaks the word. */
@@ -190,6 +197,12 @@ export type ChartLayoutContextValue = {
 };
 
 export const ChartRootContext = createContext<ChartRootContextValue | null>(null);
+
+/**
+ * Root's selected config key, or null. It lives apart from the root context, so a selection
+ * renders the legend, the tooltip and the surface that show it, and no mark.
+ */
+export const ChartSelectionContext = createContext<string | null>(null);
 export const ChartLayoutContext = createContext<ChartLayoutContextValue | null>(null);
 
 /**
@@ -256,6 +269,30 @@ export function usePlotLayout(part: string): ChartLayoutContextValue {
   useLayoutEffect(() => (inRoot ? registerRootPart(part) : undefined), [inRoot, part, registerRootPart]);
   if (inRoot && colourRule !== null) throw colourRule;
   return layout;
+}
+
+/** What a part that draws one series reads: Root's context and its layout. */
+export type SeriesPart = {
+  readonly context: ChartRootContextValue;
+  readonly layout: ChartLayoutContextValue;
+};
+
+/**
+ * Open a part that draws one series in the nearest layout: read Root, check the key against its
+ * config, read the layout and check the key against it.
+ *
+ * @param part - The calling part's display name.
+ * @param dataKey - The config key the part draws.
+ * @returns Root's context and the part's layout.
+ * @throws {ChartCompositionError} `part-outside-root`, `unknown-key`, `series-not-in-panel`, or the
+ *   default layout's colour rule.
+ */
+export function useSeriesPart(part: string, dataKey: string): SeriesPart {
+  const context = useChartRoot(part);
+  assertKnownKey(part, context.config, dataKey);
+  const layout = usePlotLayout(part);
+  assertLayoutKey(part, layout, dataKey);
+  return { context, layout };
 }
 
 /**

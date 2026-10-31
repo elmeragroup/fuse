@@ -7,15 +7,9 @@ import * as Wcag from "@elmeragroup/color/wcag";
 
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
-import {
-  buildContrastMatrix,
-  contrastRatio,
-  CONTROL_SURFACES,
-  TEXT_GRADE_PAIRS,
-  tokenLiteral,
-} from "./contrast";
+import { buildContrastMatrix, CONTROL_SURFACES, TEXT_GRADE_PAIRS, tokenLiteral } from "./contrast";
 import { resolveThemeCatalog } from "./resolve-theme-catalog";
-import { tokenOklch } from "./token-color";
+import { literalContrast, tokenOklch } from "./token-color";
 import type { TokenName } from "./tokens/contract";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 import type { ThemeInput } from "./tokens/themes";
@@ -310,7 +304,7 @@ describe("contrast matrix", () => {
           if (!policy.schemes.includes(scheme) || !policy.matches(theme)) continue;
           for (const [foreground, background] of policy.pairs) {
             expect(
-              contrastRatio(tokenLiteral(tokens, foreground), tokenLiteral(tokens, background)),
+              literalContrast(tokenLiteral(tokens, foreground), tokenLiteral(tokens, background)),
               `${scheme} ${slug} ${foreground}/${background}`
             ).toBeGreaterThanOrEqual(policy.floor);
           }

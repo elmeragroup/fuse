@@ -16,6 +16,7 @@
  *    vertices grow out of the end or shrink into it.
  * 4. Any other change of slots crossfades the old path into the new one.
  */
+import { sameItems } from "./same-items";
 
 /** The slots of a window, in window order. */
 export type PathSlots = {
@@ -32,11 +33,6 @@ export type PathSlots = {
 export type PathMotion =
   | { readonly mode: "tween" | "slide" | "pair"; readonly by: number }
   | { readonly mode: "crossfade" };
-
-/** Whether two lists hold the same strings in the same order. */
-function sameList(a: readonly string[], b: readonly string[]): boolean {
-  return a.length === b.length && a.every((value, index) => value === b[index]);
-}
 
 /**
  * How far a window of the same length moved along the axis, in slots: positive when the new window
@@ -71,7 +67,7 @@ function shiftOf(previous: readonly string[], next: readonly string[]): number |
  */
 export function pathMotion(previous: PathSlots, next: PathSlots): PathMotion {
   const { keys } = next;
-  if (sameList(previous.keys, keys)) return { mode: "tween", by: 0 };
+  if (sameItems(previous.keys, keys)) return { mode: "tween", by: 0 };
   const oldIds = new Set(previous.ids);
   if (next.ids.some((id) => oldIds.has(id))) {
     const by = shiftOf(previous.keys, keys);
@@ -79,7 +75,7 @@ export function pathMotion(previous: PathSlots, next: PathSlots): PathMotion {
   }
   // With no slot shared, the keys pair by position on the same grid, or start fresh on another.
   const paired = Math.min(previous.keys.length, keys.length);
-  if (paired === 0 || !sameList(previous.keys.slice(0, paired), keys.slice(0, paired)))
+  if (paired === 0 || !sameItems(previous.keys.slice(0, paired), keys.slice(0, paired)))
     return { mode: "crossfade" };
   return { mode: "pair", by: 0 };
 }

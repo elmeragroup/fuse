@@ -1,17 +1,16 @@
 "use client";
 
-import { useLayoutEffect, useMemo } from "react";
 import type { ReactElement } from "react";
 
-import { assertKnownKey, assertLayoutKey, useChartRoot, usePlotLayout } from "./chart-context";
+import { useSeriesPart } from "./chart-context";
 import type { MarkValues } from "./chart-motion";
-import { useCommitMotion, useMotionMark } from "./chart-motion-mark";
-import { placeOf, placePath, seriesPathKind, topologyAt, slotStep, writePath } from "./chart-path-draw";
+import { useFirstDraw } from "./chart-motion-mark";
+import { placeOf, topologyAt, writePath } from "./chart-path-draw";
 import type { PathLook } from "./chart-path-draw";
 import { PathPaint, hasPathPaint } from "./chart-path-paint";
 import { useSeriesPath } from "./chart-series-path";
+import { sameShallow, useSteady } from "./chart-steady";
 import type { ChartCurve, ChartLayerProps } from "./chart-types";
-import { ChartCompositionError } from "./layout/errors";
 import { LINE_STRIDE, linePaths } from "./layout/line-path";
 
 /**
@@ -44,6 +43,12 @@ function drawLine(group: SVGGElement, look: PathLook | null, values: MarkValues)
   writePath(group, look, line, dashed, "replace");
 }
 
+/** The width a line strokes its solid path in, which a consumer's --chart-stroke or the look sets. */
+function readStroke(group: SVGGElement): number {
+  const solid = group.querySelector('[data-part="solid"]');
+  return solid === null ? 0 : Number.parseFloat(getComputedStyle(solid).strokeWidth) || 0;
+}
+
 /**
  * One series as a line. A missing reading leaves a gap unless the series' config sets
  * `missing: "connect"`, which bridges it with a dashed segment, and a reading between two gaps
@@ -61,86 +66,54 @@ export function ChartLine({
   className,
   style,
 }: ChartLineProps): ReactElement {
-  const context = useChartRoot("Chart.Line");
-  assertKnownKey("Chart.Line", context.config, dataKey);
-  const layout = usePlotLayout("Chart.Line");
-  assertLayoutKey("Chart.Line", layout, dataKey);
-  if ((curve === "step-after" || curve === "step-before") && context.xScale === "point") {
-    throw new ChartCompositionError(
-      "Chart.Line",
-      "step-curve-needs-cells",
-      `draws curve="${curve}" under xScale="point", where slots have no cells to run across. Use xScale="band", or curve="step".`
-    );
-  }
-  const { motion, update, paths, xScale } = context;
-  // A quiet line strokes 1 px and every other look the default 2 px, until the Line reads its style.
-  const state = useSeriesPath(
+  const { context, layout } = useSeriesPart("Chart.Line", dataKey);
+  // An inline style that sets the same values is no change, so the line reads its stroke again
+  // only when the variant, the class or the style changes, or the plot resizes.
+  const steadyStyle = useSteady(style, sameShallow);
+  const { series, seriesIndex, resting, prefix, frame, outgoingRef, markRef, intro, paint } = useSeriesPath(
     "Chart.Line",
-    context,
-    dataKey,
-    curve,
-    LINE_STRIDE,
-    variant === "quiet" ? 1 : 2,
-    layout
-  );
-  const { series, seriesIndex, look, path, topology, rest, prefix } = state;
-  const { ref: markRef, node, drawn, place } = useMotionMark(motion, drawLine, look, state.axes);
-  const { memoryRef, lastLookRef, outgoingRef, strokeRef } = state;
-  const commit = useCommitMotion(update, state.drawn?.plot ?? null, context.orientation);
-  useLayoutEffect(() => {
-    const asked = commit();
-    if (look === null || path === null) return;
-    // The stroke's computed width, which a consumer's --chart-stroke or the look sets.
-    const solid = node()?.querySelector('[data-part="solid"]');
-    if (solid !== null && solid !== undefined) {
-      strokeRef.current = Number.parseFloat(getComputedStyle(solid).strokeWidth) || 0;
+    drawLine,
+    {
+      context,
+      layout,
+      dataKey,
+      curve,
+      stride: LINE_STRIDE,
+      // A quiet line strokes 1 px and every other look the default 2 px, until the Line reads its style.
+      stroke: {
+        guess: variant === "quiet" ? 1 : 2,
+        inputs: [variant, className, steadyStyle],
+        read: readStroke,
+      },
     }
-    placePath(asked, {
-      mark: { ref: markRef, node, drawn, place },
-      motion,
-      paths,
-      seriesIndex,
-      drawn: "line",
-      kind: seriesPathKind(LINE_STRIDE, slotStep(look.frame, xScale)),
-      look,
-      path,
-      topology,
-      rest,
-      memory: memoryRef,
-      lastLook: lastLookRef,
-      outgoing: outgoingRef.current,
-      draw: drawLine,
-    });
-  });
-  useLayoutEffect(() => () => paths.delete(seriesIndex, "line", memoryRef), [paths, seriesIndex, memoryRef]);
-  const resting = useMemo(
-    () => (look === null ? null : linePaths(rest, topology, placeOf(look))),
-    [look, rest, topology]
   );
-  const frame = look?.frame ?? null;
+  // React draws the first rest, and the loop draws every frame after it.
+  const drawn = useFirstDraw(() =>
+    resting === null ? null : linePaths(resting.rest, resting.topology, placeOf(resting.look)).line
+  );
   return (
     <svg
       data-slot="chart-line-series"
       data-variant={variant}
       data-series={seriesIndex}
-      data-intro={state.intro}
+      data-intro={intro}
       aria-hidden="true"
       className={className}
       style={{
-        "--chart-series-paint": state.paint.base,
+        "--chart-series-paint": paint.base,
         "--chart-series": seriesIndex,
-        "--_paint-server": hasPathPaint(state.paint) ? `url(#${prefix}-paint)` : undefined,
+        "--_paint-server": hasPathPaint(paint) ? `url(#${prefix}-paint)` : undefined,
         ...style,
       }}>
-      {frame === null || series === undefined || resting === null ? null : (
+      {frame === null || series === undefined || drawn === null ? null : (
         <>
           <defs>
-            <PathPaint id={`${prefix}-paint`} paint={state.paint} frame={frame} />
+            <PathPaint id={`${prefix}-paint`} paint={paint} frame={frame} />
           </defs>
           <g ref={markRef}>
             <clipPath id={`${prefix}-solid`} data-part="solid-clip" />
             <clipPath id={`${prefix}-marked`} data-part="marked-clip" />
-            <path data-slot="chart-line" data-part="solid" data-series={seriesIndex} d={resting.line} />
+            <path data-slot="chart-line" data-part="solid" data-series={seriesIndex} d={drawn} />
             <path data-slot="chart-line" data-part="marked" data-series={seriesIndex} d="" />
           </g>
           <g ref={outgoingRef} data-part="outgoing" />

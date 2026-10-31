@@ -24,6 +24,8 @@ import { DECIMATE_ABOVE } from "./layout/decimate";
 import type { PathSlots } from "./layout/path-motion";
 import { barSpan, frameRect, slotBand, snapSpan, valueAt } from "./layout/plot-frame";
 import type { BarMetrics, PlotFrame, PlotRect, SubBand } from "./layout/plot-frame";
+import { windowSlots } from "./layout/series-path";
+import { slotId } from "./layout/slot-keys";
 
 /** The numbers of one column entry. */
 export const COLUMN_STRIDE = 9;
@@ -94,12 +96,6 @@ export type ColumnsDrawing = {
 /** What `layoutColumns` reads from Root: its model and the key each slot renders under. */
 type ColumnsContext = Pick<ChartRootContextValue, "model" | "update">;
 
-/** A slot's identity: its start instant or its name. */
-function slotId(context: ColumnsContext, slot: number): string {
-  const { domain } = context.model;
-  return domain.kind === "time" ? String(domain.starts[slot] ?? slot) : (domain.names[slot] ?? String(slot));
-}
-
 /**
  * Lay out a path-form series' entries.
  *
@@ -151,7 +147,7 @@ export function layoutColumns(
       return -1;
     return bins === undefined ? 0 : bins(reading.value) - 1;
   };
-  const keyOf = (slot: number) => update.keys[slot] ?? slotId(context, slot);
+  const keyOf = (slot: number) => update.keys[slot] ?? slotId(model.domain, slot);
   /** The entry of one own slot's column, its tick and its box, across every Root slot it covers. */
   const slotEntry = (slot: number): Entry => {
     const { position, span } = ownSpan(series, window, slot);
@@ -198,7 +194,7 @@ export function layoutColumns(
     };
   };
   const slots = Array.from({ length: count }, (_, index) => window.first + index);
-  const whole = { keys: slots.map(keyOf), ids: slots.map((slot) => slotId(context, slot)) };
+  const whole = windowSlots(model, update.keys);
   let entries: Entry[];
   if (count <= DECIMATE_ABOVE) entries = ownWindowFirsts(series, window).map(slotEntry);
   else {

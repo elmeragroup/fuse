@@ -4,6 +4,7 @@ import { useRef } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { useChartRoot, usePlotLayout } from "./chart-context";
+import { writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import { useChartFrame } from "./chart-plot";
 import type { ChartLayerProps } from "./chart-types";
@@ -44,6 +45,9 @@ export function ChartGlow({ className, style, children }: ChartGlowProps): React
   );
 }
 
+/** The series a Reveal masks, which each take the active slot's place. */
+const MASKED: ReadonlySet<string> = new Set(["chart-line-series", "chart-area-series", "chart-dots"]);
+
 /**
  * Wraps lines, areas and dots and shows them at full strength up to the active slot, as a hover
  * trace. Past the active slot they draw at `--chart-hover-dim`, in their own colour, so forced
@@ -61,17 +65,22 @@ export function ChartReveal({ className, style, children }: ChartRevealProps): R
     const element = node.current;
     const window = context.model.window;
     if (element === null) return;
-    if (active === null || drawn === null || window === null) {
-      element.style.removeProperty("--chart-active-x");
-      return;
+    const at =
+      active === null || drawn === null || window === null
+        ? null
+        : `${String(
+            pointAlong(
+              drawn.frame,
+              slotCentreAt(drawn.frame, active.slot - window.first, context.xScale),
+              context.xScale
+            )
+          )}px`;
+    // The property does not inherit, so it goes on each series the mask dims and no deeper.
+    for (const series of element.children) {
+      if (series instanceof SVGElement && MASKED.has(series.getAttribute("data-slot") ?? "")) {
+        writeStyle(series, "--chart-active-x", at);
+      }
     }
-    const { frame } = drawn;
-    const at = pointAlong(
-      frame,
-      slotCentreAt(frame, active.slot - window.first, context.xScale),
-      context.xScale
-    );
-    element.style.setProperty("--chart-active-x", `${String(at)}px`);
   });
   return (
     <div

@@ -125,6 +125,24 @@ function projectAt(
   return [from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share];
 }
 
+/** Each route's vertex index by key, held and resting, built once per route. */
+const indexes = new WeakMap<
+  PathRoute,
+  { readonly held: ReadonlyMap<string, number>; readonly resting: ReadonlyMap<string, number> }
+>();
+
+/** A route's vertex index by key, held and resting, so a pointer step looks a mark up in O(1). */
+function indexesOf(route: PathRoute) {
+  const cached = indexes.get(route);
+  if (cached !== undefined) return cached;
+  const built = {
+    held: new Map(route.keys.map((key, index) => [key, index])),
+    resting: new Map(route.rest.map((key, index) => [key, index])),
+  };
+  indexes.set(route, built);
+  return built;
+}
+
 /**
  * How attached marks join their series path, one lead per mark: each mark's place and value from
  * the path's numbers. On a line, a mark whose slot the path draws no vertex for, as decimation
@@ -149,8 +167,7 @@ export function joinPath(
   rest: MarkValues
 ): JoinLead[] {
   const anchor = pathAnchor(seriesIndex, kind);
-  const held = new Map(route.keys.map((key, index) => [key, index]));
-  const resting = new Map(route.rest.map((key, index) => [key, index]));
+  const { held, resting } = indexesOf(route);
   const vertex = (values: MarkValues, index: number) => [
     values[index * route.stride] ?? 0,
     values[index * route.stride + 1] ?? 0,

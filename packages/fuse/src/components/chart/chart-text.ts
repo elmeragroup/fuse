@@ -17,7 +17,8 @@ import { formatUnitLabel, formatUnitless, formatValue } from "./format/value-for
 import { CHART_WORDS } from "./format/words";
 import type { CartesianModel } from "./layout/cartesian-model";
 import { ownWindowSlots } from "./layout/coarse-slots";
-import type { Reading } from "./layout/readings";
+import type { Reading, ReadingQuality } from "./layout/readings";
+import { seriesOf } from "./layout/series-of";
 
 /** What the text builders read beside the model. */
 export type TextContext = {
@@ -136,7 +137,7 @@ export function slotLabel(context: TextContext, slot: number, format?: XFormat):
  */
 export function ownSlotLabel(context: TextContext, key: string, slot: number): FormattedText | null {
   const { domain } = context.model;
-  const coarse = context.model.series.find((entry) => entry.key === key)?.coarse;
+  const coarse = seriesOf(context.model, key)?.coarse;
   if (coarse === undefined || domain.kind !== "time") return null;
   const start = domain.starts[coarse.first[slot] ?? slot] ?? 0;
   return formatSlot(
@@ -162,7 +163,7 @@ export function ownSlotLabel(context: TextContext, key: string, slot: number): F
  */
 function ownSlotDated(context: TextContext, key: string, slot: number): FormattedText | null {
   const { domain } = context.model;
-  const coarse = context.model.series.find((entry) => entry.key === key)?.coarse;
+  const coarse = seriesOf(context.model, key)?.coarse;
   if (coarse === undefined || domain.kind !== "time") return null;
   return datedLabel(context, domain.timeZone, coarse.start[slot] ?? 0, coarse.interval, undefined);
 }
@@ -193,6 +194,24 @@ export function valueLabel(context: TextContext, key: string, value: number): Fo
   return formatValue(context.locale, value, context.config[key]?.format ?? {}, "full");
 }
 
+/**
+ * The words a reading appends for its quality and its projection, in that order, which the
+ * options, the description, the tooltip and the table all print.
+ *
+ * @param locale - The locale.
+ * @param quality - The reading's quality.
+ * @param projected - Whether the slot lies at or after config `projectedFrom`.
+ * @returns The words, none for a measured reading before the projection.
+ */
+export function qualityWords(locale: SupportedLocale, quality: ReadingQuality, projected: boolean): string[] {
+  const strings = CHART_STRINGS[locale];
+  const words: string[] = [];
+  if (quality === "estimated") words.push(strings.estimated);
+  if (quality === "corrected") words.push(strings.corrected);
+  if (projected) words.push(strings.projected);
+  return words;
+}
+
 /** The words a reading speaks after its series name, with its quality and projection words. */
 function readingWords(
   context: TextContext,
@@ -203,11 +222,10 @@ function readingWords(
   const strings = CHART_STRINGS[context.locale];
   if (reading === undefined || reading.kind === "pending") return strings.pending;
   if (reading.kind === "missing") return strings.missing;
-  const words = [valueLabel(context, key, reading.value).spoken];
-  if (reading.quality === "estimated") words.push(strings.estimated);
-  if (reading.quality === "corrected") words.push(strings.corrected);
-  if (projected) words.push(strings.projected);
-  return words.join(", ");
+  return [
+    valueLabel(context, key, reading.value).spoken,
+    ...qualityWords(context.locale, reading.quality, projected),
+  ].join(", ");
 }
 
 /**
@@ -227,7 +245,7 @@ export function stackTotalAt(
   let total = 0;
   let present = 0;
   for (const key of keys) {
-    const reading = model.series.find((entry) => entry.key === key)?.readings[slot];
+    const reading = seriesOf(model, key)?.readings[slot];
     if (reading?.kind !== "reading") continue;
     total += reading.value;
     present += 1;

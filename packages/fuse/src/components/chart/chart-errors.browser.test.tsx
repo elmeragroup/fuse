@@ -620,6 +620,30 @@ describe("development hints", () => {
     expect(warn.mock.calls.map(([message]) => String(message))).toEqual([expect.stringContaining(named)]);
   });
 
+  it("warns each of two absent columns once over three renders of one Root (X43)", () => {
+    // The oracle: one warning per distinct problem, so the second column under the same rule warns
+    // too, and the repeat renders add nothing.
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const chart = (title: string) => (
+      <LocaleProvider locale="nb-NO">
+        <Chart.Root data={DAYS} config={CONFIG} xKey="day" interval="day" timeZone={OSLO} aria-label={title}>
+          <Chart.Bar dataKey="kwh" />
+          <Chart.Table>
+            <Chart.TableColumn dataKey="peak" header="Topptime" />
+            <Chart.TableColumn dataKey="trough" header="Bunntime" />
+          </Chart.Table>
+        </Chart.Root>
+      </LocaleProvider>
+    );
+    const { rerender } = renderThemed(chart("Forbruk"));
+    rerender(chart("Forbruk per dag"));
+    rerender(chart("Forbruk i oktober"));
+    expect(warn.mock.calls.map(([message]) => String(message))).toEqual([
+      expect.stringContaining('"peak"'),
+      expect.stringContaining('"trough"'),
+    ]);
+  });
+
   it("warns bars-overlap once, naming BarGroup, after two loose Bars register", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const rows = DAYS.map((row) => ({ ...row, kost: 1 }));

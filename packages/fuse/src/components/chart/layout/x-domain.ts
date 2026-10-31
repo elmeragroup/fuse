@@ -5,8 +5,8 @@
  * lists the categories in data order.
  */
 import type { ChartScalar } from "../chart-types";
-import { nextSlotStart, slotStart } from "../format/time-format";
-import type { Interval } from "../format/time-format";
+import { nextSlotStart, slotStart, slotStartsFrom, wallClock } from "../format/time-format";
+import type { Interval, WallClock } from "../format/time-format";
 import { numberOf, stringOf } from "./scalar";
 
 /** The slots of an axis. */
@@ -19,6 +19,8 @@ export type XDomain =
       readonly starts: readonly number[];
       /** Each slot's end, which is the next slot's start. */
       readonly ends: readonly number[];
+      /** Each slot start's wall clock in the zone, read once with the domain. */
+      readonly walls: readonly WallClock[];
     }
   | {
       readonly kind: "category";
@@ -66,11 +68,7 @@ export function instantOf(value: ChartScalar): number {
 
 /** Every slot start from `first` up to and including `last`. */
 function slotsBetween(first: number, last: number, interval: Interval, timeZone: string): number[] {
-  const starts: number[] = [];
-  for (let start = first; start <= last; start = nextSlotStart(start, interval, timeZone)) {
-    starts.push(start);
-  }
-  return starts;
+  return slotStartsFrom(first, (start) => start > last, interval, timeZone);
 }
 
 /** Every slot start inside a half-open period. */
@@ -78,11 +76,7 @@ function periodSlots(period: readonly [number, number], interval: Interval, time
   const [from, to] = period;
   let first = slotStart(from, interval, timeZone);
   if (first < from) first = nextSlotStart(first, interval, timeZone);
-  const starts: number[] = [];
-  for (let start = first; start < to; start = nextSlotStart(start, interval, timeZone)) {
-    starts.push(start);
-  }
-  return starts;
+  return slotStartsFrom(first, (start) => start >= to, interval, timeZone);
 }
 
 /**
@@ -135,7 +129,8 @@ export function placeTimeRows(xs: readonly ChartScalar[], options: TimeAxisOptio
   const rowAt = starts.map((start) => firstRow.get(start));
   issues.sort((a, b) => a.row - b.row);
   const ends = starts.map((start, slot) => starts[slot + 1] ?? nextSlotStart(start, interval, timeZone));
-  return { domain: { kind: "time", interval, timeZone, starts, ends }, rowAt, issues };
+  const walls = starts.map((start) => wallClock(start, timeZone));
+  return { domain: { kind: "time", interval, timeZone, starts, ends, walls }, rowAt, issues };
 }
 
 /**

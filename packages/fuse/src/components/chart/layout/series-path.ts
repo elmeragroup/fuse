@@ -13,6 +13,7 @@ import { ownCentre, ownSpan, ownWindowFirsts } from "./coarse-slots";
 import { DECIMATE_ABOVE, m4Indexes } from "./decimate";
 import type { PathSlots } from "./path-motion";
 import type { ReadingQuality } from "./readings";
+import { slotId } from "./slot-keys";
 
 /** What a vertex's slot holds for the series: a reading, a missing reading or one still to come. */
 export type VertexState = "reading" | "missing" | "pending";
@@ -62,11 +63,38 @@ export type SeriesPath = {
   readonly window: PathSlots;
 };
 
-/** A slot's identity: its start instant on a time axis or its name on a category axis. */
-function slotId(model: CartesianModel, slot: number): string {
-  const { domain } = model;
-  return domain.kind === "time" ? String(domain.starts[slot] ?? slot) : (domain.names[slot] ?? String(slot));
+/** The window's slots by model and update keys, which every path of one commit shares. */
+const windows = new WeakMap<CartesianModel, WeakMap<readonly string[], PathSlots>>();
+
+/**
+ * Every Root slot of a model's effective window: the key each renders under and its identity,
+ * built once per model and update keys.
+ *
+ * @param model - Root's model.
+ * @param keys - The key each domain slot renders under, from Root's update.
+ * @returns The window's slots, empty for an empty window.
+ */
+export function windowSlots(model: CartesianModel, keys: readonly string[]): PathSlots {
+  const byKeys = windows.get(model) ?? new WeakMap<readonly string[], PathSlots>();
+  windows.set(model, byKeys);
+  const cached = byKeys.get(keys);
+  if (cached !== undefined) return cached;
+  const window = model.window;
+  const count = window === null ? 0 : window.last - window.first + 1;
+  const first = window?.first ?? 0;
+  const slots: PathSlots = {
+    keys: Array.from(
+      { length: count },
+      (_, index) => keys[first + index] ?? slotId(model.domain, first + index)
+    ),
+    ids: Array.from({ length: count }, (_, index) => slotId(model.domain, first + index)),
+  };
+  byKeys.set(keys, slots);
+  return slots;
 }
+
+/** The decimated slots each stack plans by model, which every member of the stack draws. */
+const plans = new WeakMap<CartesianModel, Map<string, readonly number[]>>();
 
 /**
  * Fill the values of slots without a reading: linearly between the readings around them, and with
@@ -142,7 +170,16 @@ function drawnSlots(
   const first = all[0] ?? 0;
   const last = all.at(-1) ?? 0;
   if (count <= DECIMATE_ABOVE) return [...all];
-  const stack = model.stacks.find(({ id }) => id === series.stack);
+  // Every member of a stack keeps the same slots, so the stack plans them once per resolution. A
+  // coarse member walks its own slots, so it plans alone.
+  const planned = plans.get(model) ?? new Map<string, readonly number[]>();
+  plans.set(model, planned);
+  const owner =
+    series.coarse === undefined && series.stack !== undefined ? `stack ${series.stack}` : `key ${series.key}`;
+  const id = `${owner} ${String(columns)}`;
+  const cached = planned.get(id);
+  if (cached !== undefined) return [...cached];
+  const stack = model.stacks.find(({ id: stackId }) => stackId === series.stack);
   const members = stack === undefined ? [series] : model.series.filter(({ key }) => stack.keys.includes(key));
   const kept = new Set([first, last]);
   for (const member of members) {
@@ -161,7 +198,9 @@ function drawnSlots(
       previous = next;
     });
   }
-  return [...kept].toSorted((a, b) => a - b);
+  const sorted = [...kept].toSorted((a, b) => a - b);
+  planned.set(id, sorted);
+  return [...sorted];
 }
 
 /**
@@ -206,15 +245,44 @@ export function seriesPath(
       cells: ownSpan(series, window, slot).span,
     };
   });
-  const keyOf = (slot: number) => keys[slot] ?? slotId(model, slot);
-  const drawn = { keys: slots.map(keyOf), ids: slots.map((slot) => slotId(model, slot)) };
-  const count = window.last - window.first + 1;
-  const whole =
-    slots.length === count
-      ? drawn
+  const whole = windowSlots(model, keys);
+  const drawn =
+    slots.length === whole.keys.length
+      ? whole
       : {
-          keys: Array.from({ length: count }, (_, index) => keyOf(window.first + index)),
-          ids: Array.from({ length: count }, (_, index) => slotId(model, window.first + index)),
+          keys: slots.map((slot) => keys[slot] ?? slotId(model.domain, slot)),
+          ids: slots.map((slot) => slotId(model.domain, slot)),
         };
   return { vertices, ...drawn, positions: vertices.map(({ position }) => position), window: whole };
+}
+
+/** The series paths by model, update keys, series and resolution. */
+const shared = new WeakMap<CartesianModel, WeakMap<readonly string[], Map<string, SeriesPath>>>();
+
+/**
+ * One series' path, laid out once per model, update keys and resolution, so a Line, an Area and
+ * the Dots on one series share it, M4 pass and all.
+ *
+ * @param model - Root's model.
+ * @param series - The series, one of the model's.
+ * @param keys - The key each domain slot renders under, from Root's update.
+ * @param columns - The plot's length along the slot axis in pixel columns.
+ * @returns The path `seriesPath` lays out.
+ */
+export function seriesPathOf(
+  model: CartesianModel,
+  series: SeriesModel,
+  keys: readonly string[],
+  columns?: number
+): SeriesPath {
+  const byKeys = shared.get(model) ?? new WeakMap<readonly string[], Map<string, SeriesPath>>();
+  shared.set(model, byKeys);
+  const bySeries = byKeys.get(keys) ?? new Map<string, SeriesPath>();
+  byKeys.set(keys, bySeries);
+  const id = `${series.key} ${String(columns)}`;
+  const cached = bySeries.get(id);
+  if (cached !== undefined) return cached;
+  const path = seriesPath(model, series, keys, columns);
+  bySeries.set(id, path);
+  return path;
 }

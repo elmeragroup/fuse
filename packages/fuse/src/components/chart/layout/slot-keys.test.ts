@@ -12,8 +12,18 @@ function day(month: 10 | 11, date: number): number {
 }
 
 function days(month: 10 | 11, first: number, last: number, interval: "day" | "hour" = "day"): XDomain {
-  const starts = Array.from({ length: last - first + 1 }, (_, index) => day(month, first + index));
-  return { kind: "time", interval, timeZone: "Europe/Oslo", starts, ends: starts.map((start) => start + 1) };
+  const dates = Array.from({ length: last - first + 1 }, (_, index) => first + index);
+  const starts = dates.map((date) => day(month, date));
+  // Each start is the Oslo midnight of its date.
+  const walls = dates.map((date) => ({ year: 2025, month, day: date, hour: 0, minute: 0, second: 0 }));
+  return {
+    kind: "time",
+    interval,
+    timeZone: "Europe/Oslo",
+    starts,
+    ends: starts.map((start) => start + 1),
+    walls,
+  };
 }
 
 function categories(...names: string[]): XDomain {

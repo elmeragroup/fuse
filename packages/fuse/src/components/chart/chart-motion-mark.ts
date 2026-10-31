@@ -3,10 +3,12 @@
 /**
  * How one mark binds to Root's animation loop. `useMotionMark` owns a mark's registration for the
  * mark's whole life: it draws into whichever node the mark renders now, so a node that React
- * replaces keeps its motion, and it forgets the mark when the mark unmounts. `useCommitMotion`
- * tells a mark how to reach the geometry of each commit it draws.
+ * replaces keeps its motion, and it forgets the mark when the mark unmounts. React writes a mark's
+ * geometry on its first draw only, through `useFirstDraw`, and the loop writes it from then on, so
+ * a commit writes no geometry React would then rewind. `useCommitMotion` tells a mark how to reach
+ * the geometry of each commit it draws.
  */
-import { use, useCallback, useId, useLayoutEffect, useMemo, useRef } from "react";
+import { use, useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RefCallback } from "react";
 
 import { ChartLayoutContext } from "./chart-context";
@@ -47,6 +49,27 @@ export type MotionMark<T extends Element, A extends readonly ValueAxis[]> = {
 };
 
 /**
+ * The geometry React renders for a mark: the first value `make` returns that is not null, kept for
+ * the mark's life, so React writes it once and the loop, which writes before every paint, owns it
+ * after. A `keep` that refuses the kept value takes a new one, as a look that adds a part must
+ * render that part.
+ *
+ * @param make - Builds the geometry, or null before the mark can draw.
+ * @param keep - Whether the kept geometry still serves.
+ * @returns The geometry to render, null while `make` gives none.
+ */
+export function useFirstDraw<V>(make: () => V, keep?: (kept: NonNullable<V>) => boolean): V {
+  const [kept, setKept] = useState<V>(make);
+  if (kept !== null && kept !== undefined && (keep === undefined || keep(kept))) return kept;
+  const value = make();
+  // A value the latch would refuse again stays unkept, so the render never loops.
+  if (value !== null && value !== undefined && value !== kept && (keep === undefined || keep(value))) {
+    setKept(() => value);
+  }
+  return value;
+}
+
+/**
  * Register a mark with Root's loop for as long as it is mounted. The mark draws in the frame of the
  * nearest layout, Root's default one or its Panel's, so a resize of that frame alone maps its tween.
  *
@@ -70,6 +93,9 @@ export function useMotionMark<
   const node = useRef<T | null>(null);
   const latest = useRef({ write, look });
   const declared = useRef<readonly ValueAxis[]>(axes);
+  // What the writer drew last. React writes no geometry after the first draw, so a write of the
+  // same numbers in the same look onto the same node would change nothing, and is skipped.
+  const written = useRef<{ readonly node: T; readonly look: L; readonly values: MarkValues } | null>(null);
   useLayoutEffect(() => {
     latest.current = { write, look };
     declared.current = axes;
@@ -77,6 +103,7 @@ export function useMotionMark<
   useLayoutEffect(
     () => () => {
       motion.forget(id);
+      written.current = null;
     },
     [motion, id]
   );
@@ -93,7 +120,13 @@ export function useMotionMark<
         id,
         target,
         (values) => {
-          if (node.current !== null) latest.current.write(node.current, latest.current.look, values);
+          const shown = node.current;
+          if (shown === null) return;
+          const { write: draw, look: drawnLook } = latest.current;
+          const last = written.current;
+          if (last?.node === shown && last.look === drawnLook && last.values === values) return;
+          written.current = { node: shown, look: drawnLook, values };
+          draw(shown, drawnLook, values);
         },
         placement,
         { axes: declared.current, anchor, owner }

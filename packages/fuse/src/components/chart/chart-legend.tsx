@@ -7,7 +7,8 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import { ToggleGroupItem, ToggleGroupRoot } from "../toggle-group/toggle-group";
-import { assertKnownKey, ChartPendingRootContext, useChartRoot } from "./chart-context";
+import { assertKnownKey, ChartSelectionContext, useChartRoot } from "./chart-context";
+import { usePendingOr } from "./chart-pending-root";
 import {
   ChartRowContext,
   fallbackSlot,
@@ -28,6 +29,7 @@ import type {
   ValueFormat,
 } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
+import { seriesOf } from "./layout/series-of";
 
 /**
  * Props for `Chart.Legend`, a `ul` with Base UI's `render`.
@@ -109,7 +111,7 @@ export type ChartLegendToggleProps = ChartLayerProps & {
  * @beta
  */
 export function ChartLegend(props: ChartLegendProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartLegendBody {...props} />;
+  return usePendingOr(props, ChartLegendBody);
 }
 
 function ChartLegendBody({
@@ -148,14 +150,15 @@ function LegendEntry({
   readonly props: Omit<ChartLegendItemProps, "dataKey" | "render" | "className" | "children">;
 }): ReactElement {
   const context = useChartRoot("Chart.LegendItem");
-  const seriesIndex = context.model.series.find((series) => series.key === itemKey)?.seriesIndex;
+  const selectedKey = use(ChartSelectionContext);
+  const seriesIndex = seriesOf(context.model, itemKey)?.seriesIndex;
   const element = useRender({
     defaultTagName: "li",
     render,
     props: {
       "data-slot": "chart-legend-item",
       "data-series": seriesIndex,
-      "data-dimmed": context.selectedKey !== null && context.selectedKey !== itemKey ? "" : undefined,
+      "data-dimmed": selectedKey !== null && selectedKey !== itemKey ? "" : undefined,
       ...mergeProps<"li">(
         {
           className,
@@ -180,7 +183,7 @@ function LegendEntry({
  * @beta
  */
 export function ChartLegendItem(props: ChartLegendItemProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartLegendItemBody {...props} />;
+  return usePendingOr(props, ChartLegendItemBody);
 }
 
 function ChartLegendItemBody({
@@ -218,7 +221,7 @@ function ChartLegendItemBody({
  * @beta
  */
 export function ChartLegendValue(props: ChartLegendValueProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartLegendValueBody {...props} />;
+  return usePendingOr(props, ChartLegendValueBody);
 }
 
 function ChartLegendValueBody({
@@ -248,7 +251,7 @@ function ChartLegendValueBody({
  * @beta
  */
 export function ChartLegendShare(props: ChartLegendShareProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartLegendShareBody {...props} />;
+  return usePendingOr(props, ChartLegendShareBody);
 }
 
 function ChartLegendShareBody({
@@ -281,7 +284,7 @@ function ChartLegendShareBody({
  * @beta
  */
 export function ChartLegendToggleGroup(props: ChartLegendToggleGroupProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartLegendToggleGroupBody {...props} />;
+  return usePendingOr(props, ChartLegendToggleGroupBody);
 }
 
 function ChartLegendToggleGroupBody({
@@ -292,7 +295,8 @@ function ChartLegendToggleGroupBody({
   children,
 }: ChartLegendToggleGroupProps): ReactElement {
   const context = useChartRoot("Chart.LegendToggleGroup");
-  const { registerToggleGroup, select, selectedKey, locale } = context;
+  const { registerToggleGroup, select, locale } = context;
+  const selectedKey = use(ChartSelectionContext);
   useEffect(() => registerToggleGroup(), [registerToggleGroup]);
   return (
     <ToggleGroupRoot
@@ -319,7 +323,7 @@ function ChartLegendToggleGroupBody({
  * @beta
  */
 export function ChartLegendToggle(props: ChartLegendToggleProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartLegendToggleBody {...props} />;
+  return usePendingOr(props, ChartLegendToggleBody);
 }
 
 function ChartLegendToggleBody({
@@ -330,7 +334,7 @@ function ChartLegendToggleBody({
 }: ChartLegendToggleProps): ReactElement {
   const context = useChartRoot("Chart.LegendToggle");
   assertKnownKey("Chart.LegendToggle", context.config, dataKey);
-  const seriesIndex = context.model.series.find((series) => series.key === dataKey)?.seriesIndex;
+  const seriesIndex = seriesOf(context.model, dataKey)?.seriesIndex;
   return (
     <ToggleGroupItem
       value={dataKey}

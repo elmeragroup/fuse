@@ -250,6 +250,8 @@ describe("projectedSlot", () => {
     timeZone: "UTC",
     starts: [0, 10, 20],
     ends: [10, 20, 30],
+    // Each start lies in the first second of 1970 in UTC.
+    walls: [0, 10, 20].map(() => ({ year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0 })),
   };
   const categories: XDomain = { kind: "category", names: ["a", "b"] };
 

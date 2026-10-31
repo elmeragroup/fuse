@@ -1,10 +1,10 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { use, useLayoutEffect, useRef, useState } from "react";
 import type { FocusEvent, KeyboardEvent, MouseEvent, PointerEvent, ReactElement } from "react";
 
 import { withinFocusRingClass } from "../../styles/utils";
-import { useChartRoot } from "./chart-context";
+import { ChartSelectionContext, useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import { useRootFrame } from "./chart-plot";
 import { useChartStore } from "./chart-store";
@@ -188,6 +188,7 @@ export function ChartSurface({
   readonly labelledBy: string | undefined;
 }): ReactElement | null {
   const context = useChartRoot("Chart.Root");
+  const selectedKey = use(ChartSelectionContext);
   const { model, store, id, orientation, locale } = context;
   const window = model.window;
   const counter = useRef(0);
@@ -279,7 +280,7 @@ export function ChartSurface({
       if (context.hasToggles()) {
         // With a LegendToggleGroup mounted, Enter selects the focused series and clears it under "all series".
         const key = current.focus === -1 ? null : (model.series[current.focus]?.key ?? null);
-        context.select(key === context.selectedKey ? null : key, "keyboard", event.nativeEvent);
+        context.select(key === selectedKey ? null : key, "keyboard", event.nativeEvent);
       } else {
         store.set({ pinned: !store.get().pinned, active: slot, source: "keyboard" });
       }
@@ -354,7 +355,7 @@ export function ChartSurface({
     }
     if (context.hasToggles()) {
       const key = snapshot.near === null ? null : (model.series[snapshot.near]?.key ?? null);
-      context.select(key === context.selectedKey ? null : key, "plot", event.nativeEvent);
+      context.select(key === selectedKey ? null : key, "plot", event.nativeEvent);
       return;
     }
     if (snapshot.pinned && snapshot.active === slot) store.dismiss();

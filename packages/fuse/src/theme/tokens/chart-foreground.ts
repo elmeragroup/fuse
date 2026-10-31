@@ -1,8 +1,4 @@
-import * as Oklch from "@elmeragroup/color/oklch";
-import { getOrThrow } from "@elmeragroup/color/result";
-import * as Wcag from "@elmeragroup/color/wcag";
-
-import { tokenOklch } from "../token-color";
+import { literalContrast } from "../token-color";
 import { DERIVED_ROLES } from "./contract";
 import type { DerivedTokenName, LayerTokens, TokenContract } from "./contract";
 import { PRIMITIVES, WHITE } from "./primitives";
@@ -11,8 +7,6 @@ import { PRIMITIVES, WHITE } from "./primitives";
 const TEXT_FLOOR = 4.5;
 
 const NEUTRAL_950 = PRIMITIVES["neutral-950"];
-const WHITE_SRGB = Oklch.toSrgb(tokenOklch(WHITE));
-const NEUTRAL_950_SRGB = Oklch.toSrgb(tokenOklch(NEUTRAL_950));
 
 /**
  * The text color for a direct label on a chart mark: white or neutral 950, whichever contrasts
@@ -21,9 +15,8 @@ const NEUTRAL_950_SRGB = Oklch.toSrgb(tokenOklch(NEUTRAL_950));
  * @throws When neither reaches 4.5:1 on the fill, a defect in the chart palette.
  */
 function markForeground(fill: string): string {
-  const mark = Oklch.toSrgb(tokenOklch(fill));
-  const white = getOrThrow(Wcag.contrastRatio(WHITE_SRGB, mark));
-  const dark = getOrThrow(Wcag.contrastRatio(NEUTRAL_950_SRGB, mark));
+  const white = literalContrast(WHITE, fill);
+  const dark = literalContrast(NEUTRAL_950, fill);
   const [text, ratio] = dark > white ? [NEUTRAL_950, dark] : [WHITE, white];
   if (ratio < TEXT_FLOOR) {
     throw new Error(`Neither white nor neutral 950 reaches ${TEXT_FLOOR}:1 on the chart mark ${fill}`);

@@ -10,12 +10,13 @@ import { createContext, use } from "react";
 import { assertKnownKey } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import { useChartStore } from "./chart-store";
-import { ownSlotLabel, stackTotalAt } from "./chart-text";
+import { ownSlotLabel, qualityWords, stackTotalAt } from "./chart-text";
 import type { ChartFallback, ChartFractionDigits, ValueFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import { formatValue } from "./format/value-format";
 import { ownWindowSlots } from "./layout/coarse-slots";
 import type { Reading } from "./layout/readings";
+import { seriesOf } from "./layout/series-of";
 import { roundShares } from "./layout/shares";
 import { slotOf } from "./layout/x-domain";
 
@@ -81,7 +82,7 @@ export function useActivePoint(context: ChartRootContextValue, live?: boolean): 
  * @returns The reading, or undefined for an unknown key.
  */
 export function readingAt(context: ChartRootContextValue, key: string, slot: number): Reading | undefined {
-  return context.model.series.find((series) => series.key === key)?.readings[slot];
+  return seriesOf(context.model, key)?.readings[slot];
 }
 
 /**
@@ -112,11 +113,11 @@ export function readingText(
   ).text;
   // A coarse series' own slot leads, then the quality word and the projection word, each on its own.
   const own = ownSlotLabel(context, key, slot);
-  const words: string[] = own === null ? [] : [own.text];
-  if (reading.quality === "estimated") words.push(strings.estimated);
-  if (reading.quality === "corrected") words.push(strings.corrected);
-  const series = context.model.series.find((entry) => entry.key === key);
-  if (series !== undefined && slot >= series.projectedFrom) words.push(strings.projected);
+  const series = seriesOf(context.model, key);
+  const words = [
+    ...(own === null ? [] : [own.text]),
+    ...qualityWords(context.locale, reading.quality, series !== undefined && slot >= series.projectedFrom),
+  ];
   return words.length === 0 ? value : `${value} (${words.join(", ")})`;
 }
 
@@ -234,7 +235,7 @@ export function fallbackSlot(
 ): number | null {
   const { model, now } = context;
   const { window, domain } = model;
-  const readings = model.series.find((series) => series.key === key)?.readings ?? [];
+  const readings = seriesOf(model, key)?.readings ?? [];
   if (window === null) return null;
   if (fallback === "now") {
     if (domain.kind !== "time" || now === undefined) return null;

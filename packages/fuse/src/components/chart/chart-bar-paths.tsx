@@ -13,10 +13,11 @@ import type { ColumnTopology } from "./chart-bar-columns";
 import { pastSpanEnd } from "./chart-bar-draw";
 import { ListFills } from "./chart-bar-fills";
 import type { SeriesDraw } from "./chart-bar-series";
+import { partsCache, writeAttribute, writeAttributes } from "./chart-dom";
 import type { MarkValues } from "./chart-motion";
-import { placementOf, useCommitMotion, useMotionMark } from "./chart-motion-mark";
-import { placePath, topologyAt } from "./chart-path-draw";
-import type { PathMemory } from "./chart-path-draw";
+import { placementOf, useCommitMotion, useFirstDraw, useMotionMark } from "./chart-motion-mark";
+import { topologyAt } from "./chart-path-draw";
+import { usePathMark } from "./chart-series-path";
 import type { BarVariant } from "./layout/bar-shapes";
 import { snapY, tickWidth, valueAt } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
@@ -29,12 +30,13 @@ function drawGrow(node: SVGGElement, look: { readonly frame: PlotFrame }, values
   const [scale = 1] = values;
   const { frame } = look;
   const zero = snapY(frame.box, valueAt(frame, 0));
-  if (scale === 1) node.removeAttribute("transform");
-  else
-    node.setAttribute(
-      "transform",
-      `translate(0 ${String(zero)}) scale(1 ${String(scale)}) translate(0 ${String(-zero)})`
-    );
+  writeAttribute(
+    node,
+    "transform",
+    scale === 1
+      ? null
+      : `translate(0 ${String(zero)}) scale(1 ${String(scale)}) translate(0 ${String(-zero)})`
+  );
 }
 
 /** What the columns' writer reads besides the numbers: the frame and the topology. */
@@ -45,13 +47,23 @@ type ColumnsLook = {
   readonly moving: { current: ColumnTopology | null };
 };
 
+/** The columns' paths, each with what it draws, and the emphasis boxes, in order. */
+const columnParts = partsCache((group) => ({
+  paths: [...group.querySelectorAll('[data-slot="chart-bar-path"]')].map((path) => ({
+    path,
+    part: path.getAttribute("data-part"),
+    fill: Number(path.getAttribute("data-fill") ?? "-1"),
+  })),
+  boxes: [...group.querySelectorAll('[data-slot="chart-bar-emphasis"]')],
+}));
+
 /** Draw the columns, their quality paths, the missing ticks and the emphasis boxes from the loop's numbers. */
-function drawColumns(group: SVGGElement, look: ColumnsLook, values: MarkValues): void {
+function drawColumns(group: SVGGElement, look: ColumnsLook | null, values: MarkValues): void {
+  if (look === null) return;
   const topology = topologyAt(look.moving.current, look.topology, values.length / COLUMN_STRIDE);
   const drawing = columnsDrawing(look.frame, topology, values);
-  for (const path of group.querySelectorAll('[data-slot="chart-bar-path"]')) {
-    const part = path.getAttribute("data-part");
-    const fill = Number(path.getAttribute("data-fill") ?? "-1");
+  const { paths, boxes } = columnParts(group, look);
+  for (const { path, part, fill } of paths) {
     const d =
       part === "fill"
         ? (drawing.fills[fill] ?? "")
@@ -60,16 +72,12 @@ function drawColumns(group: SVGGElement, look: ColumnsLook, values: MarkValues):
           : part === "projected"
             ? drawing.projected
             : drawing.missing;
-    if (path.getAttribute("d") !== d) path.setAttribute("d", d);
+    writeAttribute(path, "d", d);
   }
-  let index = 0;
-  for (const rect of group.querySelectorAll('[data-slot="chart-bar-emphasis"]')) {
+  boxes.forEach((rect, index) => {
     const box = drawing.emphasis[index];
-    if (box !== undefined) {
-      for (const [name, value] of Object.entries(box)) rect.setAttribute(name, String(value));
-    }
-    index += 1;
-  }
+    if (box !== undefined) writeAttributes(rect, box);
+  });
 }
 
 /**
@@ -94,14 +102,17 @@ export function SeriesPaths({
   readonly variant: BarVariant;
   readonly emphasised: ReadonlySet<number>;
 }): ReactElement {
-  const { motion, update, paths } = context;
+  const { motion, update, model, now, fade } = context;
   const { box } = frame;
-  const pastEnd = useMemo(() => pastSpanEnd(context, series, frame), [context, series, frame]);
+  const pastEnd = useMemo(
+    () => pastSpanEnd({ model, fade, now }, series, frame),
+    [model, fade, now, series, frame]
+  );
   // The snapped zero line, where the entrance grows from and the list gradient ends.
   const zero = snapY(box, valueAt(frame, 0));
   const columns = useMemo(
-    () => layoutColumns(context, series, frame, metrics, sub, paint, emphasised),
-    [context, series, frame, metrics, sub, paint, emphasised]
+    () => layoutColumns({ model, update }, series, frame, metrics, sub, paint, emphasised),
+    [model, update, series, frame, metrics, sub, paint, emphasised]
   );
   const { topology, fills } = columns;
   const listFill = paint.stops === undefined ? undefined : `url(#${prefix}-list)`;
@@ -120,37 +131,22 @@ export function SeriesPaths({
   });
   const moving = useRef<ColumnTopology | null>(null);
   const look = useMemo((): ColumnsLook => ({ frame, topology, moving }), [frame, topology]);
-  const { ref: columnsRef, node, drawn, place } = useMotionMark(motion, drawColumns, look, COLUMN_AXES);
-  const commit = useCommitMotion(update, plot, frame.orientation);
-  const memoryRef = useRef<PathMemory<ColumnTopology> | null>(null);
-  const lastLookRef = useRef<ColumnsLook | null>(null);
-  const outgoingRef = useRef<SVGGElement>(null);
-  useLayoutEffect(() => {
-    placePath(commit(), {
-      mark: { ref: columnsRef, node, drawn, place },
-      motion,
-      paths,
-      seriesIndex: series.seriesIndex,
-      drawn: "columns",
-      kind: columnKind(box.width / frame.count, valueAt(frame, 0)),
-      look,
-      path: columns,
-      topology,
-      rest: columns.values,
-      memory: memoryRef,
-      lastLook: lastLookRef,
-      outgoing: outgoingRef.current,
-      draw: drawColumns,
-    });
+  const kind = useMemo(() => columnKind(box.width / frame.count, valueAt(frame, 0)), [box.width, frame]);
+  const placed = useMemo(
+    () => ({ look, kind, path: columns, topology, rest: columns.values }),
+    [look, kind, columns, topology]
+  );
+  const { markRef: columnsRef, outgoingRef } = usePathMark(drawColumns, {
+    context,
+    plot,
+    axes: COLUMN_AXES,
+    seriesIndex: series.seriesIndex,
+    route: "columns",
+    placed,
   });
-  useLayoutEffect(
-    () => () => paths.delete(series.seriesIndex, "columns", memoryRef),
-    [paths, series.seriesIndex]
-  );
-  const resting = useMemo(
-    () => columnsDrawing(frame, topology, columns.values),
-    [frame, topology, columns.values]
-  );
+  // React draws the first rest, and the loop draws every frame after it.
+  // React draws the first rest, and the loop draws every frame after it.
+  const resting = useFirstDraw(() => columnsDrawing(frame, topology, columns.values));
   const setRefs = useCallback(
     (element: SVGGElement | null) => {
       growRef(element);

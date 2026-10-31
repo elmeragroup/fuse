@@ -1,11 +1,7 @@
-import * as Oklch from "@elmeragroup/color/oklch";
-import { getOrThrow } from "@elmeragroup/color/result";
-import * as Wcag from "@elmeragroup/color/wcag";
-
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
 import { cssVarReference } from "./css-values";
-import { tokenOklch } from "./token-color";
+import { literalContrast } from "./token-color";
 import { TOKEN_KINDS } from "./tokens/contract";
 import type { TokenContract, TokenName } from "./tokens/contract";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
@@ -57,18 +53,6 @@ export type ContrastMatrix = {
   };
 };
 
-/**
- * The WCAG contrast ratio between two `oklch()` token values. A translucent foreground
- * composites over the background; the background must be opaque, which every surface the
- * theme contract measures is. A translucent surface would need an explicit backdrop to
- * composite against, so measuring one throws.
- */
-export function contrastRatio(foregroundValue: string, backgroundValue: string): number {
-  const foreground = Oklch.toSrgb(tokenOklch(foregroundValue));
-  const background = Oklch.toSrgb(tokenOklch(backgroundValue));
-  return getOrThrow(Wcag.contrastRatio(foreground, background));
-}
-
 function isTokenName(name: string): name is TokenName {
   return Object.hasOwn(TOKEN_KINDS, name);
 }
@@ -114,7 +98,7 @@ export function buildContrastMatrix(colorScheme: ResolvedColorScheme = "light"):
     const row = {} as ContrastMatrix[ThemeSlug];
     for (const [foreground, background] of TEXT_GRADE_PAIRS) {
       row[pairId(foreground, background)] = Number(
-        contrastRatio(tokenLiteral(tokens, foreground), tokenLiteral(tokens, background)).toFixed(2)
+        literalContrast(tokenLiteral(tokens, foreground), tokenLiteral(tokens, background)).toFixed(2)
       );
     }
     matrix[themeSlug(theme)] = row;

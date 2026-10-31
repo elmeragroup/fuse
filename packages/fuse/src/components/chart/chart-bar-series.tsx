@@ -20,14 +20,22 @@ import {
 } from "./chart-bar-draw";
 import type { BarDraw, BarLook, SideFills } from "./chart-bar-draw";
 import { BarFills, ListFills } from "./chart-bar-fills";
-import type { ChartRootContextValue, ChartUpdate, CommitKind } from "./chart-context";
+import type { ChartRootContextValue, ChartUpdate } from "./chart-context";
+import { partsCache, writeAttribute, writeAttributes, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import type { ChartMotion, JoinLead, MarkValues } from "./chart-motion";
-import { placementOf, useCommitMotion, useFollowerPlacement, useMotionMark } from "./chart-motion-mark";
+import {
+  placementOf,
+  useCommitMotion,
+  useFirstDraw,
+  useFollowerPlacement,
+  useMotionMark,
+} from "./chart-motion-mark";
 import type { SeriesPaint } from "./chart-paint";
 import { valuePaint } from "./chart-paint";
 import { pathAnchor } from "./chart-paths";
 import type { ChartPlot } from "./chart-plot";
+import { introFor } from "./chart-store";
 import type { MountPhase } from "./chart-store";
 import { barCellAt, barGeometry, geometryOf, geometryRect, hangs, rectsPath } from "./layout/bar-geometry";
 import { DETAIL_PARTS, drawnBar } from "./layout/bar-shapes";
@@ -36,27 +44,12 @@ import type { SeriesModel } from "./layout/cartesian-model";
 import { tickWidth, valueAt } from "./layout/plot-frame";
 import type { BarMetrics, PlotFrame, PlotRect, SubBand } from "./layout/plot-frame";
 
-/** What a bar writes on `data-intro`: nothing in the entrance, `fade` after a data update, else `none`. */
-function introOf(phase: MountPhase, commit: CommitKind): "fade" | "none" | undefined {
-  if (phase === "initial") return undefined;
-  return commit === "data" ? "fade" : "none";
-}
-
 /**
- * Write an attribute that changed. An SVG geometry attribute restyles its element even when the
- * value stays, so a frame that moves only a bar's height leaves its x and width alone, and a commit
- * that rewinds a bar to what it drew restyles nothing.
+ * Write a rectangle's geometry attributes, as a bar's JSX writes them. A frame that moves only a
+ * bar's height leaves its x and width alone.
  */
-function writeAttribute(node: Element, name: string, value: string): void {
-  if (node.getAttribute(name) !== value) node.setAttribute(name, value);
-}
-
-/** Write a rectangle's geometry attributes, as a bar's JSX writes them. */
 function writeRect(node: Element, { x, y, width, height }: PlotRect): void {
-  writeAttribute(node, "x", String(x));
-  writeAttribute(node, "y", String(y));
-  writeAttribute(node, "width", String(Math.max(0, width)));
-  writeAttribute(node, "height", String(Math.max(0, height)));
+  writeAttributes(node, { x, y, width: Math.max(0, width), height: Math.max(0, height) });
 }
 
 /**
@@ -65,8 +58,8 @@ function writeRect(node: Element, { x, y, width, height }: PlotRect): void {
  */
 function writeSide(body: SVGElement | null, negative: boolean, top: number): void {
   if (body === null) return;
-  body.toggleAttribute("data-negative", negative);
-  body.style.setProperty("--_top", String(top));
+  writeAttribute(body, "data-negative", negative ? "" : null);
+  writeStyle(body, "--_top", String(top));
 }
 
 /** Write a bar's shapes onto its body, or onto the body and details of its group. */
@@ -88,6 +81,12 @@ function writeParts(node: Element, parts: BarParts): void {
 /** What a bar's writer reads besides the numbers: the frame, the look and the fills by side. */
 type BarWriterLook = { readonly frame: PlotFrame; readonly variant: BarVariant; readonly fills: SideFills };
 
+/** A bar's body and its blocks track, found once per node and look. */
+const barParts = partsCache((node) => ({
+  body: node.tagName === "rect" ? node : node.querySelector(':scope > [data-slot="chart-bar"]'),
+  track: node.querySelector(':scope > [data-part="track"]'),
+}));
+
 /**
  * Draw one bar from the loop's numbers. Every shape it draws comes from the numbers: its rectangle,
  * seam, side, rounded end, cap and blocks track, and which side's fill it takes.
@@ -98,11 +97,10 @@ function drawBar(node: SVGElement, look: BarWriterLook, values: MarkValues): voi
   const negative = hangs(frame, geometry);
   const top = Math.min(1, Math.max(0, geometry[5]));
   writeParts(node, drawnBar(frame, variant, geometryRect(frame, geometry), { negative, top }));
-  const body =
-    node.tagName === "rect" ? node : node.querySelector<SVGElement>(':scope > [data-slot="chart-bar"]');
-  writeSide(body, negative, top);
-  node.querySelector<SVGElement>(':scope > [data-part="track"]')?.style.setProperty("--_top", String(top));
-  node.style.setProperty("--_fill", (negative ? fills.negative : fills.positive) ?? null);
+  const { body, track } = barParts(node, look);
+  if (body instanceof SVGElement) writeSide(body, negative, top);
+  if (track instanceof SVGElement) writeStyle(track, "--_top", String(top));
+  writeStyle(node, "--_fill", (negative ? fills.negative : fills.positive) ?? null);
 }
 
 /** What the overlay's writer reads: the frame, and the active reading's fills, which each paint sets. */
@@ -116,7 +114,7 @@ function drawOverlay(rect: SVGRectElement, look: OverlayLook, values: MarkValues
   const negative = hangs(frame, geometry);
   writeRect(rect, geometryRect(frame, geometry));
   writeSide(rect, negative, Math.min(1, Math.max(0, geometry[5])));
-  rect.style.setProperty("--_fill", (negative ? fills.negative : fills.positive) ?? null);
+  writeStyle(rect, "--_fill", (negative ? fills.negative : fills.positive) ?? null);
 }
 
 /**
@@ -161,12 +159,11 @@ const BarMark = memo(function BarMark({
   });
   // React writes the geometry of the bar's first render, and the loop writes it from then on, in
   // the layout effect of every commit and in every frame. A data update's commit then changes no
-  // bar's geometry, so the plot measures it without restyling every bar. A look that adds or drops
-  // a part renders its own geometry.
-  const [first] = useState(target);
-  const parts = DETAIL_PARTS.every((part) => (first[part] === undefined) === (target[part] === undefined))
-    ? first
-    : target;
+  // bar's geometry. A look that adds or drops a part renders its own geometry.
+  const parts = useFirstDraw(
+    () => target,
+    (kept) => DETAIL_PARTS.every((part) => (kept[part] === undefined) === (target[part] === undefined))
+  );
   const fill = negative ? bar.fills.negative : bar.fills.positive;
   const paint = { "--chart-bar-paint": bar.paint, "--_fill": fill };
   const shared = { "data-emphasis": bar.emphasis ? "" : undefined, "data-time": bar.time };
@@ -213,9 +210,7 @@ const BarMark = memo(function BarMark({
 /** Draw a missing tick from the loop's numbers: its span along the slot axis and its zero line. */
 function drawTick(line: SVGLineElement, look: { readonly frame: PlotFrame }, values: MarkValues): void {
   const [start = 0, end = 0, base = 0] = values;
-  for (const [name, value] of Object.entries(tickEnds(look.frame, [start, end], base))) {
-    writeAttribute(line, name, String(value));
-  }
+  writeAttributes(line, tickEnds(look.frame, [start, end], base));
 }
 
 /**
@@ -252,13 +247,15 @@ const MissingTick = memo(function MissingTick({
   useLayoutEffect(() => {
     place([span[0], span[1], zero], placementOf(commit()));
   });
+  // React draws the first rest, and the loop draws every frame after it.
+  const ends = useFirstDraw(() => tickEnds(frame, span, zero));
   return (
     <line
       ref={ref}
       data-slot="chart-bar-missing"
       data-series={series}
       style={{ "--_tick-width": `${String(tickWidth(frame.box))}px` }}
-      {...tickEnds(frame, span, zero)}
+      {...ends}
     />
   );
 });
@@ -304,15 +301,28 @@ export function SeriesBars({
   /** Root's update when the series first rendered, which its first draw keeps under hydration. */
   readonly firstUpdate: ChartUpdate;
 }): ReactElement {
-  const { update, motion } = context;
+  const { model, update, now, intro: origin, motion } = context;
   const { bars, needs, missing } = useMemo(
-    () => layoutBars({ context, series, frame, metrics, sub, variant, paint, emphasised, prefix, entering }),
-    [context, series, frame, metrics, sub, variant, paint, emphasised, prefix, entering]
+    () =>
+      layoutBars({
+        context: { model, update, now, intro: origin },
+        series,
+        frame,
+        metrics,
+        sub,
+        variant,
+        paint,
+        emphasised,
+        prefix,
+        entering,
+      }),
+    [model, update, now, origin, series, frame, metrics, sub, variant, paint, emphasised, prefix, entering]
   );
   const look = useMemo((): BarLook => ({ variant, frame }), [variant, frame]);
   // Bars of the series' first draw take its mount phase's intro, and bars that a later update
   // mounts take that update's intro.
-  const intro = update === firstUpdate ? introOf(phase, update.kind) : introOf("mounted", update.kind);
+  // A bar's entrance runs in the loop, so a bar of the first draw writes nothing either way.
+  const intro = introFor(update === firstUpdate ? phase : "mounted", update.kind, true);
   const zero = valueAt(frame, 0);
   return (
     <>
@@ -422,23 +432,21 @@ export function ActiveBar({
     const rect = node();
     if (rect === null) return;
     if (cell === null) {
-      rect.setAttribute("visibility", "hidden");
+      writeAttribute(rect, "visibility", "hidden");
       return;
     }
     const reading = series.readings[cell.slot];
     const own = reading?.kind === "reading" ? valuePaint(paint, reading.value) : undefined;
     const projected = cell.slot >= series.projectedFrom;
     const quality = reading?.kind === "reading" && reading.quality !== "measured" ? reading.quality : null;
-    const toggle = (name: string, on: boolean, value = ""): void => {
-      if (on) rect.setAttribute(name, value);
-      else rect.removeAttribute(name);
-    };
-    rect.setAttribute("visibility", "visible");
-    toggle("data-stack-top", cell.stackTop);
-    toggle("data-projected", projected);
-    toggle("data-quality", quality !== null, quality ?? "");
+    writeAttributes(rect, {
+      visibility: "visible",
+      "data-stack-top": cell.stackTop ? "" : null,
+      "data-projected": projected ? "" : null,
+      "data-quality": quality,
+    });
     fills.current = overlayFills(prefix, form, variant, paint, { own, projected });
-    rect.style.setProperty("--chart-bar-paint", own ?? null);
+    writeStyle(rect, "--chart-bar-paint", own ?? null);
     if (target !== null) place(target, placement);
   });
   return (

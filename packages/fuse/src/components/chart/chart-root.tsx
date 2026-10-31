@@ -6,13 +6,19 @@ import type { ReactElement, ReactNode } from "react";
 import { useMediaQuery } from "../../hooks/use-media-query";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
-import { ChartLayoutContext, ChartRootContext, partOutsidePanel } from "./chart-context";
+import {
+  ChartLayoutContext,
+  ChartRootContext,
+  ChartSelectionContext,
+  partOutsidePanel,
+} from "./chart-context";
 import type {
   ChartLayoutContextValue,
   ChartRootContextValue,
   ChartUpdate,
   PanelEntry,
 } from "./chart-context";
+import { writeAttribute } from "./chart-dom";
 import { createChartFollowers } from "./chart-followers";
 import type { ActiveSlot } from "./chart-followers";
 import { createChartLabels } from "./chart-labels";
@@ -22,6 +28,7 @@ import { colourFamilyError } from "./chart-paint";
 import { createChartPaths } from "./chart-paths";
 import { ChartPlotContext, ChartRootPlotContext, useMeasuredPlot, usePanelSpan } from "./chart-plot";
 import { PlotSkeleton } from "./chart-skeleton";
+import { sameShallow, useSteady } from "./chart-steady";
 import { createChartStore, useClientMount } from "./chart-store";
 import type { ChartSnapshot, EmphasisEntry } from "./chart-store";
 import { ChartStatus, ChartSurface } from "./chart-surface";
@@ -48,12 +55,14 @@ import type {
   ChartXValue,
 } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
+import type { BarVariant } from "./layout/bar-shapes";
 import { buildCartesianModel, layoutDomain } from "./layout/cartesian-model";
 import type { CartesianModel, ModelIssue } from "./layout/cartesian-model";
 import { intervalNests } from "./layout/coarse-slots";
 import { ChartCompositionError, ChartDataError, DATA_MESSAGES, isChartDevelopment } from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
 import { mountedSeries, relaysPlot } from "./layout/relay";
+import { sameItems } from "./layout/same-items";
 import { numberOf, stringOf } from "./layout/scalar";
 import { pairSlotKeys } from "./layout/slot-keys";
 import type { SlotKeys } from "./layout/slot-keys";
@@ -246,12 +255,6 @@ function sameRange(
   return rangePart(a[0]) === rangePart(b[0]) && rangePart(a[1]) === rangePart(b[1]);
 }
 
-/** Whether two `yInclude` lists name the same values in the same order. */
-function sameValues(a: readonly number[] | undefined, b: readonly number[] | undefined): boolean {
-  if (a === undefined || b === undefined) return a === b;
-  return a.length === b.length && a.every((value, index) => Object.is(value, b[index]));
-}
-
 /** One field value of a series config. */
 type ConfigField = ChartSeriesConfig[keyof ChartSeriesConfig];
 
@@ -259,23 +262,6 @@ type ConfigField = ChartSeriesConfig[keyof ChartSeriesConfig];
 function fieldsOf(entry: ChartSeriesConfig): (readonly [string, ConfigField])[] {
   // SAFETY: Object.entries of a ChartSeriesConfig yields its own fields, each a ConfigField.
   return Object.entries(entry) as (readonly [string, ConfigField])[];
-}
-
-/** Whether two config field values match, one level deep, as an inline literal rebuilds them. */
-function sameField(a: ConfigField, b: ConfigField): boolean {
-  if (Object.is(a, b)) return true;
-  if (Array.isArray(a) && Array.isArray(b)) {
-    return a.length === b.length && a.every((item, index) => Object.is(item, b[index]));
-  }
-  if (a === undefined || b === undefined) return false;
-  if (Object.getPrototypeOf(a) !== Object.prototype || Object.getPrototypeOf(b) !== Object.prototype)
-    return false;
-  const left = Object.entries(a);
-  const right = Object.entries(b);
-  return (
-    left.length === right.length &&
-    left.every(([key, value], index) => right[index]?.[0] === key && Object.is(value, right[index][1]))
-  );
 }
 
 /**
@@ -294,7 +280,7 @@ function sameConfig(a: ChartConfig, b: ChartConfig): boolean {
       const otherFields = new Map(fieldsOf(other[1]));
       return (
         fields.length === otherFields.size &&
-        fields.every(([name, value]) => otherFields.has(name) && sameField(value, otherFields.get(name)))
+        fields.every(([name, value]) => otherFields.has(name) && sameShallow(value, otherFields.get(name)))
       );
     })
   );
@@ -340,13 +326,9 @@ function activeSlot(snapshot: ChartSnapshot, model: CartesianModel): ActiveSlot 
  * enter and leave, so a pointer move restyles no mark.
  */
 function markActive(root: HTMLElement, snapshot: ChartSnapshot, active: ActiveSlot): void {
-  const toggle = (name: string, value: string | null): void => {
-    if (value === null) root.removeAttribute(name);
-    else root.setAttribute(name, value);
-  };
-  toggle("data-active", active === null ? null : (snapshot.source ?? ""));
-  toggle("data-pinned", snapshot.pinned && active !== null ? "" : null);
-  toggle("data-near", active !== null && snapshot.near !== null ? String(snapshot.near) : null);
+  writeAttribute(root, "data-active", active === null ? null : (snapshot.source ?? ""));
+  writeAttribute(root, "data-pinned", snapshot.pinned && active !== null ? "" : null);
+  writeAttribute(root, "data-near", active !== null && snapshot.near !== null ? snapshot.near : null);
 }
 
 /** The reader's motion preference, which snaps every chart update. */
@@ -448,33 +430,13 @@ export function ChartRoot<
   const nowInstant = now === undefined ? undefined : instantOf(now);
   const range = xRange ?? defaultXRange;
   // A range compares by value, part by part, so an inline xRange array that names the same slots
-  // is no change, and no delimiter can make two different ranges look alike.
-  const [steadyRange, setSteadyRange] = useState(range);
-  let windowRange = steadyRange;
-  if (steadyRange !== range && !sameRange(steadyRange, range)) {
-    windowRange = range;
-    setSteadyRange(range);
-  }
-  // yInclude and period compare by value too, so an inline array that names the same values is no
-  // change, and a parent's re-render never reads as a data update that restarts every tween.
-  const [steadyInclude, setSteadyInclude] = useState(yInclude);
-  let include = steadyInclude;
-  if (steadyInclude !== yInclude && !sameValues(steadyInclude, yInclude)) {
-    include = yInclude;
-    setSteadyInclude(yInclude);
-  }
-  const [steadyPeriod, setSteadyPeriod] = useState(period);
-  let modelPeriod = steadyPeriod;
-  if (steadyPeriod !== period && !sameRange(steadyPeriod, period)) {
-    modelPeriod = period;
-    setSteadyPeriod(period);
-  }
-  const [steadyConfig, setSteadyConfig] = useState<ChartConfig>(config);
-  let modelConfig = steadyConfig;
-  if (steadyConfig !== config && !sameConfig(steadyConfig, config)) {
-    modelConfig = config;
-    setSteadyConfig(config);
-  }
+  // is no change, and no delimiter can make two different ranges look alike. yInclude, period and
+  // config compare by value too, so a parent's re-render never reads as a data update that
+  // restarts every tween, and never hands the parts a new context.
+  const windowRange = useSteady(range, sameRange);
+  const include = useSteady(yInclude, sameItems);
+  const modelPeriod = useSteady(period, sameRange);
+  const modelConfig = useSteady<ChartConfig>(config, sameConfig);
   const model = useMemo(
     () =>
       buildCartesianModel({
@@ -530,10 +492,22 @@ export function ChartRoot<
   const [registry] = useState(() => new Set<PanelEntry>());
   const [panels, setPanels] = useState<readonly PanelEntry[]>([]);
   const domains = useMemo(() => keyDomains(model, stackOffset, panels), [model, stackOffset, panels]);
-  const colourRule = useMemo(() => colourFamilyError("Chart.Root", config, Object.keys(config)), [config]);
+  const colourRule = useMemo(
+    () => colourFamilyError("Chart.Root", modelConfig, Object.keys(modelConfig)),
+    [modelConfig]
+  );
   // The mounted Bars, which register after they mount, so a data update knows which series draw bars.
   const [bars] = useState(
-    () => new Map<object, { readonly key: string; readonly grouped: boolean; readonly layout: FrameOwner }>()
+    () =>
+      new Map<
+        object,
+        {
+          readonly key: string;
+          readonly grouped: boolean;
+          readonly layout: FrameOwner;
+          readonly variant: BarVariant;
+        }
+      >()
   );
   // Which kind of commit produced this model, and the keys its marks render under.
   const [seen, setSeen] = useState((): ChartCommit => {
@@ -627,9 +601,12 @@ export function ChartRoot<
   const firstIssue = model.issues[0];
   if (firstIssue !== undefined && isChartDevelopment()) throw dataError(firstIssue);
   const warned = useRef(new Set<string>());
+  // Each distinct problem warns once: a second absent column under the same rule warns too, and a
+  // render that repeats a problem stays quiet.
   const warnOnce = useCallback((rule: ChartDataRule | ChartHintRule, message: string): void => {
-    if (warned.current.has(rule)) return;
-    warned.current.add(rule);
+    const key = `${rule}\n${message}`;
+    if (warned.current.has(key)) return;
+    warned.current.add(key);
     console.warn(message);
   }, []);
   useEffect(() => {
@@ -646,7 +623,13 @@ export function ChartRoot<
   const plotRef = useRef<HTMLDivElement>(null);
   // Root's plot spans its Panels' plots, so their span is written before Root measures it.
   const placeSpan = usePanelSpan(frameRef, panels);
-  const plot = useMeasuredPlot(plotRef);
+  const { plot, probe, measure: measurePlot } = useMeasuredPlot(plotRef);
+  // Under Panels the plot spans their plots, which the span's own layout effect just placed, so
+  // the plot measures again once the span stands.
+  const spans = panels.length > 0;
+  useLayoutEffect(() => {
+    if (spans) measurePlot();
+  });
   const modelRef = useRef(model);
   useLayoutEffect(() => {
     motion.setReduced(reduced);
@@ -712,29 +695,35 @@ export function ChartRoot<
   const [ownSelected, setOwnSelected] = useState<string | null>(defaultSelectedKey ?? null);
   const requested = selectedKey === undefined ? ownSelected : selectedKey;
   // A key that names no config key acts as null, and Root calls no callback for it.
-  const selected = requested !== null && Object.hasOwn(config, requested) ? requested : null;
+  const selected = requested !== null && Object.hasOwn(modelConfig, requested) ? requested : null;
   const strings = CHART_STRINGS[locale];
+  // An inline xFormat object that names the same options is no change either.
+  const steadyFormat = useSteady(xFormat, sameShallow);
   const text = useMemo(
-    (): TextContext => ({ config, locale, model, xFormat, now: nowInstant }),
-    [config, locale, model, xFormat, nowInstant]
+    (): TextContext => ({ config: modelConfig, locale, model, xFormat: steadyFormat, now: nowInstant }),
+    [modelConfig, locale, model, steadyFormat, nowInstant]
   );
-  const selectedRef = useRef(selected);
+  // What a selection reads when it happens, so `select` keeps one identity for the Root's life and
+  // an inline `onSelectedKeyChange` never hands the parts a new context.
+  const selection = useRef({ selected, onSelectedKeyChange, text });
   useLayoutEffect(() => {
-    selectedRef.current = selected;
-  }, [selected]);
+    selection.current = { selected, onSelectedKeyChange, text };
+  });
   const select = useCallback(
     (key: string | null, reason: ChartSelectionChangeReason, event: Event | undefined): void => {
-      if (key === selectedRef.current) return;
+      const latest = selection.current;
+      if (key === latest.selected) return;
       setOwnSelected(key);
       // SAFETY: key is a config key or null, which is what TConfig's key union holds at runtime.
-      onSelectedKeyChange?.(key as (keyof TConfig & string) | null, { reason, event });
+      latest.onSelectedKeyChange?.(key as (keyof TConfig & string) | null, { reason, event });
+      const words = CHART_STRINGS[latest.text.locale];
       store.announce(
-        key === null || !Object.hasOwn(config, key)
-          ? strings.selectionCleared
-          : strings.selected(seriesLabel(text, key).text)
+        key === null || !Object.hasOwn(latest.text.config, key)
+          ? words.selectionCleared
+          : words.selected(seriesLabel(latest.text, key).text)
       );
     },
-    [config, onSelectedKeyChange, store, strings, text]
+    [store]
   );
   const toggleGroups = useRef(0);
   const registerToggleGroup = useCallback((): (() => void) => {
@@ -749,7 +738,7 @@ export function ChartRoot<
     (key: string | null): void => {
       const root = rootRef.current;
       if (root === null) return;
-      const seriesIndex = key === null ? -1 : Object.keys(config).indexOf(key);
+      const seriesIndex = key === null ? -1 : Object.keys(modelConfig).indexOf(key);
       if (seriesIndex === -1) {
         root.removeAttribute("data-highlight");
         root.style.removeProperty("--chart-highlight");
@@ -758,18 +747,23 @@ export function ChartRoot<
         root.style.setProperty("--chart-highlight", String(seriesIndex));
       }
     },
-    [config]
+    [modelConfig]
   );
   const registerBar = useCallback(
-    (key: string, grouped: boolean, layout: FrameOwner): (() => void) => {
+    (key: string, grouped: boolean, layout: FrameOwner, variant: BarVariant): (() => void) => {
       const token = {};
-      bars.set(token, { key, grouped, layout });
+      bars.set(token, { key, grouped, layout, variant });
+      // The keys a Bar draws hatched, whose swatches hatch too.
+      const hatchedKeys = (): string[] => [
+        ...new Set([...bars.values()].filter((bar) => bar.variant === "hatched").map((bar) => bar.key)),
+      ];
+      if (variant === "hatched") store.set({ hatched: hatchedKeys() });
       if (isChartDevelopment()) {
         // Bars in two Panels draw in two plots, so only loose Bars of one layout overlap.
         const loose = [...bars.values()]
           .filter((bar) => !bar.grouped && bar.layout === layout)
           .map((bar) => bar.key);
-        const stackOf = new Map(Object.entries(config).map(([name, entry]) => [name, entry.stack]));
+        const stackOf = new Map(Object.entries(modelConfig).map(([name, entry]) => [name, entry.stack]));
         const pair = loose.flatMap((first, index) =>
           loose
             .slice(index + 1)
@@ -788,9 +782,10 @@ export function ChartRoot<
       }
       return () => {
         bars.delete(token);
+        if (variant === "hatched") store.set({ hatched: hatchedKeys() });
       };
     },
-    [bars, config, warnOnce]
+    [bars, modelConfig, store, warnOnce]
   );
   const drawsBar = useCallback(
     (key: string): boolean => [...bars.values()].some((bar) => bar.key === key),
@@ -846,16 +841,16 @@ export function ChartRoot<
       rootRef.current?.querySelectorAll(':scope > [data-slot="chart-frame"] > [data-slot="chart-panel"]')
         .length ?? 0;
     if (onPage > registry.size) return;
-    const error = panelsError(config, [...registry]);
+    const error = panelsError(modelConfig, [...registry]);
     if (error !== null) throw error;
-  }, [config, panels, registry, rootParts, rootPartsSeen]);
+  }, [modelConfig, panels, registry, rootParts, rootPartsSeen]);
   const intro = figureProps["data-intro"];
   const fade = figureProps["data-fade"];
   // Only a browser mount runs the entrance. The server and a hydrating Root read `false`.
   const entrance = useClientMount() && intro !== "none";
   const context = useMemo(
     (): ChartRootContextValue => ({
-      config,
+      config: modelConfig,
       locale,
       model,
       xFormat,
@@ -867,7 +862,6 @@ export function ChartRoot<
       store,
       id,
       name,
-      selectedKey: selected,
       select,
       registerToggleGroup,
       hasToggles,
@@ -904,14 +898,14 @@ export function ChartRoot<
       intro,
       entrance,
       fade,
-      commit,
+      commit.update,
       motion,
       followers,
       paths,
       registerBar,
       drawsBar,
       registerEmphasis,
-      config,
+      modelConfig,
       locale,
       model,
       xFormat,
@@ -923,7 +917,6 @@ export function ChartRoot<
       store,
       id,
       name,
-      selected,
       select,
       registerToggleGroup,
       hasToggles,
@@ -934,49 +927,54 @@ export function ChartRoot<
   const layout = useMemo(
     (): ChartLayoutContextValue => ({
       kind: "root",
-      keys: Object.keys(config),
+      keys: Object.keys(modelConfig),
       y: model.y,
       baseline: yBaseline,
       owner,
       labels,
     }),
-    [config, model.y, yBaseline, owner, labels]
+    [modelConfig, model.y, yBaseline, owner, labels]
   );
   const slots = model.window === null ? 0 : model.window.last - model.window.first + 1;
+  // The description reads every series over the window, so it waits for a change of what it says.
+  const spokenDescription = useMemo(() => description ?? chartDescription(text), [description, text]);
   return (
     <ChartRootContext value={context}>
-      <ChartLayoutContext value={layout}>
-        <figure
-          ref={rootRef}
-          data-slot="chart"
-          data-orientation={orientation}
-          data-x-scale={xScale}
-          data-selected={selected === null ? undefined : ""}
-          style={{
-            "--chart-selected": selected === null ? undefined : Object.keys(config).indexOf(selected),
-            ...style,
-          }}
-          {...figureProps}>
-          <p id={`${id}-description`} data-slot="chart-description">
-            {description ?? chartDescription(text)}
-          </p>
-          <p id={`${id}-instructions`} data-slot="chart-instructions">
-            {strings.instructionsCartesian}
-          </p>
-          <div ref={frameRef} data-slot="chart-frame" style={{ "--chart-slots": slots }}>
-            <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
-              {plot === null && !model.empty ? <PlotSkeleton /> : null}
+      <ChartSelectionContext value={selected}>
+        <ChartLayoutContext value={layout}>
+          <figure
+            ref={rootRef}
+            data-slot="chart"
+            data-orientation={orientation}
+            data-x-scale={xScale}
+            data-selected={selected === null ? undefined : ""}
+            style={{
+              "--chart-selected": selected === null ? undefined : Object.keys(modelConfig).indexOf(selected),
+              ...style,
+            }}
+            {...figureProps}>
+            <p id={`${id}-description`} data-slot="chart-description">
+              {spokenDescription}
+            </p>
+            <p id={`${id}-instructions`} data-slot="chart-instructions">
+              {strings.instructionsCartesian}
+            </p>
+            <div ref={frameRef} data-slot="chart-frame" style={{ "--chart-slots": slots }}>
+              <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
+                {probe}
+                {plot === null && !model.empty ? <PlotSkeleton /> : null}
+              </div>
+              <ChartRootPlotContext value={plot}>
+                <ChartPlotContext value={plot}>
+                  <ChartSurface name={name} labelledBy={labelledBy} />
+                  {children}
+                </ChartPlotContext>
+              </ChartRootPlotContext>
             </div>
-            <ChartRootPlotContext value={plot}>
-              <ChartPlotContext value={plot}>
-                <ChartSurface name={name} labelledBy={labelledBy} />
-                {children}
-              </ChartPlotContext>
-            </ChartRootPlotContext>
-          </div>
-          <ChartStatus />
-        </figure>
-      </ChartLayoutContext>
+            <ChartStatus />
+          </figure>
+        </ChartLayoutContext>
+      </ChartSelectionContext>
     </ChartRootContext>
   );
 }

@@ -5,7 +5,7 @@ import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
-import { BarChart, Sparkline } from "@elmeragroup/fuse/chart";
+import { BarChart, formatChartValue, Sparkline } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 import { Field } from "@elmeragroup/fuse/field";
 import { ShieldCheck } from "@elmeragroup/fuse/icons";
@@ -110,6 +110,9 @@ function HourlyPrices({
 
 type PriceAreaSection = Extract<SiteSection, { _tag: "PriceArea" }>;
 
+/** The day's figures: a price with two decimals, its unit written beside it. */
+const FIGURE_FORMAT = { minimumFractionDigits: 2, maximumFractionDigits: 2 } as const;
+
 /**
  * Today's price in the area the visitor picks, on a Fuse Select: the day's average, its low
  * and high, and the hourly shape. Until an area is picked the result keeps its height, so the
@@ -125,7 +128,8 @@ export function SitePriceArea({
   const [code, setCode] = useState<string | null>(null);
   const [open, setOpen] = useSideOverlay(false);
   const area = section.areas.find((candidate) => candidate.code === code);
-  const price = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // The figures print two decimals through the chart's own formatter, beside the section's unit.
+  const price = (value: number): string => formatChartValue(value, FIGURE_FORMAT, { locale }).text;
   const ceiling = Math.max(...section.areas.map((entry) => entry.high));
   const items = Object.fromEntries(section.areas.map((entry) => [entry.code, `${entry.code} ${entry.name}`]));
 
@@ -173,18 +177,18 @@ export function SitePriceArea({
                 <p className={styles.average()}>
                   <span className={styles.figureLabel()}>{section.labels.average}</span>
                   <span className={styles.averageValue()}>
-                    {price.format(area.average)}
+                    {price(area.average)}
                     <span className={styles.unit()}>{section.unit}</span>
                   </span>
                 </p>
                 <dl className={styles.range()}>
                   <div>
                     <dt className={styles.figureLabel()}>{section.labels.low}</dt>
-                    <dd className={styles.rangeValue()}>{`${price.format(area.low)} ${section.unit}`}</dd>
+                    <dd className={styles.rangeValue()}>{`${price(area.low)} ${section.unit}`}</dd>
                   </div>
                   <div>
                     <dt className={styles.figureLabel()}>{section.labels.high}</dt>
-                    <dd className={styles.rangeValue()}>{`${price.format(area.high)} ${section.unit}`}</dd>
+                    <dd className={styles.rangeValue()}>{`${price(area.high)} ${section.unit}`}</dd>
                   </div>
                 </dl>
               </div>

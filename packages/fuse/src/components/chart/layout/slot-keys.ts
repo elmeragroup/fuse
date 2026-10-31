@@ -14,7 +14,18 @@ export type SlotKeys = {
   readonly keys: readonly string[];
 };
 
-/** A slot's identity, its start instant on a time axis or its name on a category axis. */
+/**
+ * One slot's identity, its start instant on a time axis or its name on a category axis.
+ *
+ * @param domain - The domain.
+ * @param slot - The slot.
+ * @returns The identity, the slot's index for a slot the domain lacks.
+ */
+export function slotId(domain: XDomain, slot: number): string {
+  return domain.kind === "time" ? String(domain.starts[slot] ?? slot) : (domain.names[slot] ?? String(slot));
+}
+
+/** Every slot's identity, its start instant on a time axis or its name on a category axis. */
 function slotIds(domain: XDomain): readonly string[] {
   return domain.kind === "time" ? domain.starts.map(String) : domain.names;
 }

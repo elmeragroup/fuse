@@ -1,17 +1,19 @@
 "use client";
 
-import { use } from "react";
 import type { ReactElement } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
-import { ChartPendingRootContext, useChartRoot } from "./chart-context";
+import { useChartRoot } from "./chart-context";
 import { seriesPaintOf, valuePaint } from "./chart-paint";
 import type { SeriesPaint } from "./chart-paint";
+import { usePendingOr } from "./chart-pending-root";
 import { readingAt, useActivePoint, useReadoutKey } from "./chart-readout";
+import { useChartStore } from "./chart-store";
 import { seriesLabel } from "./chart-text";
 import type { ChartDomProps } from "./chart-types";
+import { seriesOf } from "./layout/series-of";
 
 /**
  * Props for `Chart.Swatch`, a `span` with Base UI's `render`.
@@ -63,7 +65,7 @@ function swatchPaint(paint: SeriesPaint, step: string | undefined): string {
  * @beta
  */
 export function ChartSwatch(props: ChartSwatchProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartSwatchBody {...props} />;
+  return usePendingOr(props, ChartSwatchBody);
 }
 
 function ChartSwatchBody({
@@ -78,11 +80,13 @@ function ChartSwatchBody({
   const point = useActivePoint(context);
   const key =
     useReadoutKey("Chart.Swatch", context, dataKey, point.key) ?? Object.keys(context.config)[0] ?? "";
-  const series = context.model.series.find((entry) => entry.key === key);
+  const series = seriesOf(context.model, key);
   const paint = seriesPaintOf(key, context.config[key]?.color ?? "chart-1", series);
   const reading =
     point.slot === null || paint.bins === undefined ? null : readingAt(context, key, point.slot);
   const step = reading?.kind === "reading" ? valuePaint(paint, reading.value) : undefined;
+  // A hatched series draws its legend swatch hatched too, so the legend tells the series apart.
+  const hatched = useChartStore(context.store, (snapshot) => snapshot.hatched.includes(key));
   return useRender({
     defaultTagName: "span",
     render,
@@ -90,6 +94,7 @@ function ChartSwatchBody({
       "data-slot": "chart-swatch",
       "data-variant": variant,
       "data-series": series?.seriesIndex,
+      "data-hatched": hatched ? "" : undefined,
       ...mergeProps<"span">(
         {
           "aria-hidden": true,
@@ -108,7 +113,7 @@ function ChartSwatchBody({
  * @beta
  */
 export function ChartSeriesLabel(props: ChartSeriesLabelProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartSeriesLabelBody {...props} />;
+  return usePendingOr(props, ChartSeriesLabelBody);
 }
 
 function ChartSeriesLabelBody({ dataKey, render, className, ...props }: ChartSeriesLabelProps): ReactElement {
@@ -135,7 +140,7 @@ function ChartSeriesLabelBody({ dataKey, render, className, ...props }: ChartSer
  * @beta
  */
 export function ChartSeriesIcon(props: ChartSeriesIconProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartSeriesIconBody {...props} />;
+  return usePendingOr(props, ChartSeriesIconBody);
 }
 
 function ChartSeriesIconBody({ dataKey, render, className, ...props }: ChartSeriesIconProps): ReactElement {

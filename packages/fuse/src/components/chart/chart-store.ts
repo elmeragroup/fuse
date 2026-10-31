@@ -16,6 +16,26 @@ import { useState, useSyncExternalStore } from "react";
 /** Whether Root has committed once. */
 export type MountPhase = "initial" | "mounted";
 
+/**
+ * What a mark writes on `data-intro`, from the phase it first draws in. In Root's first draw it
+ * writes nothing while the entrance runs, so the entrance animates it, and "none" without one. A
+ * mark a later commit mounts writes "fade" after a data update and "none" after any other commit.
+ * A bar's entrance runs in the loop, not in CSS, so a bar passes `entrance` as true.
+ *
+ * @param phase - The phase the mark first drew in.
+ * @param kind - The commit that mounted it.
+ * @param entrance - Whether Root runs its entrance.
+ * @returns The attribute's value, or undefined to write none.
+ */
+export function introFor(
+  phase: MountPhase,
+  kind: "initial" | "data" | "range",
+  entrance: boolean
+): "fade" | "none" | undefined {
+  if (phase === "initial") return entrance ? undefined : "none";
+  return kind === "data" ? "fade" : "none";
+}
+
 /** Who moved the active slot. */
 export type ActiveSource = "pointer" | "keyboard" | "default";
 
@@ -46,6 +66,8 @@ export type ChartSnapshot = {
    * hydrating option hold none, and the word arrives in the update that registration triggers.
    */
   readonly emphasis: { readonly [key: string]: EmphasisEntry };
+  /** The config keys a mounted Bar draws hatched, whose legend swatches draw hatched too. */
+  readonly hatched: readonly string[];
 };
 
 /** The pointer's last position over the plot, in client pixels, and its pointer type. */
@@ -83,6 +105,7 @@ const INITIAL: ChartSnapshot = {
   frozen: false,
   announcement: { text: "", count: 0 },
   emphasis: {},
+  hatched: [],
 };
 
 /**

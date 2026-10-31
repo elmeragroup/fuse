@@ -1,12 +1,30 @@
 import { parseSync, Visitor } from "oxc-parser";
 import type { BindingPattern, ParamPattern, Statement, VisitorObject } from "oxc-parser";
 
-/** One `useMotionMark` call a module makes, and the writer it hands the loop. */
+/**
+ * The hooks that hand a writer to Root's loop, by the index of their writer argument:
+ * `useMotionMark` itself, and the shared owners that forward the writer their caller passes.
+ */
+export const WRITER_HOOKS: ReadonlyMap<string, number> = new Map([
+  ["useMotionMark", 1],
+  ["usePathMark", 0],
+  ["useSeriesPath", 1],
+  ["useAttachedMark", 2],
+]);
+
+/** One call a module makes to a hook that hands the loop a writer, and the writer it passes. */
 export type MotionWriterUse = {
+  /** The hook the call names. */
+  readonly hook: string;
   /** The writer argument's name, or undefined when it is anything but an identifier. */
   readonly writer: string | undefined;
   /** Whether that name resolves to a binding at the module's top level, past every inner scope. */
   readonly moduleScope: boolean;
+  /**
+   * Whether the name is the writer parameter of the writer hook that encloses the call, so the
+   * hook forwards what its own callers pass, which this check reads at their call sites.
+   */
+  readonly forwarded: boolean;
   /** The call's source offset, which names it in a failure. */
   readonly at: number;
 };
@@ -73,11 +91,18 @@ export function motionWriters(relativePath: string, source: string): MotionWrite
   }
   // The scopes open at the walk's position, the module's first. A function's scope also gathers
   // the vars below it, which hoist, so each call resolves its writer once the walk ends.
-  const open: { readonly names: Set<string>; readonly hoists: boolean }[] = [];
-  const calls: { readonly writer: string | undefined; readonly at: number; readonly chain: Set<string>[] }[] =
-    [];
-  const enter = (names: readonly string[], hoists = false): void => {
-    open.push({ names: new Set(names), hoists });
+  type Scope = { readonly names: Set<string>; readonly hoists: boolean; readonly forwards?: string };
+  const open: Scope[] = [];
+  const calls: {
+    readonly hook: string;
+    readonly writer: string | undefined;
+    readonly at: number;
+    readonly chain: Scope[];
+  }[] = [];
+  const enter = (names: readonly string[], hoists = false, forwards?: string): void => {
+    open.push(
+      forwards === undefined ? { names: new Set(names), hoists } : { names: new Set(names), hoists, forwards }
+    );
   };
   const leave = (): void => {
     open.pop();
@@ -89,7 +114,11 @@ export function motionWriters(relativePath: string, source: string): MotionWrite
   }): void => {
     // A function expression's own name binds inside it; a declaration's binds in its block.
     const own = node.type === "FunctionExpression" && node.id !== null ? [node.id.name] : [];
-    enter([...own, ...node.params.flatMap((param) => patternNames(param))], true);
+    // A writer hook's own writer parameter, which it forwards.
+    const index = node.id === null ? undefined : WRITER_HOOKS.get(node.id.name);
+    const param = index === undefined ? undefined : node.params[index];
+    const forwards = param?.type === "Identifier" ? param.name : undefined;
+    enter([...own, ...node.params.flatMap((param) => patternNames(param))], true, forwards);
   };
   const visitor: VisitorObject = {
     Program: (program) => {
@@ -144,16 +173,20 @@ export function motionWriters(relativePath: string, source: string): MotionWrite
       }
     },
     CallExpression: (call) => {
-      if (call.callee.type !== "Identifier" || call.callee.name !== "useMotionMark") return;
-      const argument = call.arguments[1];
+      if (call.callee.type !== "Identifier") return;
+      const hook = call.callee.name;
+      const index = WRITER_HOOKS.get(hook);
+      if (index === undefined) return;
+      const argument = call.arguments[index];
       const writer = argument?.type === "Identifier" ? argument.name : undefined;
-      calls.push({ writer, at: call.start, chain: open.map((scope) => scope.names) });
+      calls.push({ hook, writer, at: call.start, chain: [...open] });
     },
   };
   new Visitor(visitor).visit(parsed.program);
-  const uses: MotionWriterUse[] = calls.map(({ writer, at, chain }) => {
-    const binder = writer === undefined ? -1 : chain.findLastIndex((names) => names.has(writer));
-    return { writer, moduleScope: binder === 0, at };
+  const uses: MotionWriterUse[] = calls.map(({ hook, writer, at, chain }) => {
+    const binder = writer === undefined ? -1 : chain.findLastIndex(({ names }) => names.has(writer));
+    const forwarded = binder > 0 && writer !== undefined && chain[binder]?.forwards === writer;
+    return { hook, writer, moduleScope: binder === 0, forwarded, at };
   });
   return uses;
 }

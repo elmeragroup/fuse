@@ -582,9 +582,11 @@ describe("chart motion classification", () => {
     // Why not a lint rule: whether an argument names a module-scope binding is a scope question
     // that no oxlint rule asks. A writer at module scope reads only its node, its look and the
     // numbers the loop draws, so none of its inputs can be a target the tween does not carry.
+    // A shared owner such as usePathMark forwards its own writer parameter, which this check reads
+    // at the owner's call sites instead.
     const misplaced = chart.flatMap((record) =>
       motionWriters(record.relative, record.code)
-        .filter(({ moduleScope }) => !moduleScope)
+        .filter(({ moduleScope, forwarded }) => !moduleScope && !forwarded)
         .map(({ writer, at }) => `${record.relative}@${String(at)} ${writer ?? "inline writer"}`)
     );
     expect(misplaced).toEqual([]);
@@ -613,6 +615,19 @@ describe("chart motion classification", () => {
       false,
       true,
     ]);
+  });
+
+  it("lets a writer hook forward only its own writer parameter", () => {
+    // The oracle is each probe's binding of `draw`: usePathMark's own writer parameter forwards, a
+    // parameter of a component does not, and neither does another parameter of the hook.
+    const forwarded = (source: string) => motionWriters("probe.tsx", source)[0]?.forwarded;
+    expect(
+      [
+        "function usePathMark(draw, input) { useMotionMark(motion, draw, look, []); }",
+        "function Mark(draw) { useMotionMark(motion, draw, look, []); }",
+        "function usePathMark(write, draw) { useMotionMark(motion, draw, look, []); }",
+      ].map(forwarded)
+    ).toEqual([true, false, false]);
   });
 
   it("refuses a component-local writer that shadows a module-level name (F4)", () => {

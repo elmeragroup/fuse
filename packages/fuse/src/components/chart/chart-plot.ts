@@ -8,6 +8,7 @@
  */
 import {
   createContext,
+  createElement,
   use,
   useCallback,
   useLayoutEffect,
@@ -16,7 +17,9 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import type { RefObject } from "react";
+import type { ReactElement, RefObject } from "react";
+
+import { flushSync } from "react-dom";
 
 import { useChartRoot } from "./chart-context";
 import type { ChartLayoutContextValue, PanelEntry } from "./chart-context";
@@ -83,7 +86,7 @@ const SERIALIZED = 0.001;
  * such as one beside a value axis, keeps the size its HTML shares resolve against. Before the
  * observer reports, and while the layout has moved on since it last did, the computed size stands.
  */
-function measure(element: HTMLElement, observed: LayoutSize | null): ChartPlot {
+function measureElement(element: HTMLElement, observed: LayoutSize | null): ChartPlot {
   const style = getComputedStyle(element);
   const rect = element.getBoundingClientRect();
   const computed = {
@@ -114,58 +117,150 @@ function samePlot(a: ChartPlot | null, b: ChartPlot): boolean {
   return keys.every((key) => a.box[key] === b.box[key]) && sameMetrics(a.metrics, b.metrics);
 }
 
+/** One measured plot element: the layout size the observer last reported, its last measurement and its setter. */
+type PlotWatch = {
+  readonly element: HTMLElement;
+  observed: LayoutSize | null;
+  last: ChartPlot | null;
+  readonly apply: (plot: ChartPlot) => void;
+};
+
+/** Every mounted plot element, by element. */
+const watches = new Map<Element, PlotWatch>();
+
+/** The one observer every plot shares, created on the first plot's mount. */
+let shared: ResizeObserver | null = null;
+
 /**
- * Measure Root's plot element. It measures after every Root commit, because new axis labels can
- * move the box without resizing it, again when the box or the page resizes, as browser zoom does
- * when it changes the device pixel ratio, and once the page's fonts have loaded. A move it misses only shifts how a tie rounds,
- * since every edge stays a whole number of device pixels from the layer's origin.
+ * Measure every plot an observer delivery names, then draw them all in one commit. The observer
+ * delivers after layout and before paint, so every read is free and the charts draw in the frame
+ * that resized or moved them. A page resize names every plot.
+ */
+function deliver(entries: readonly ResizeObserverEntry[]): void {
+  const due = new Set<PlotWatch>();
+  for (const entry of entries) {
+    if (entry.target === document.documentElement) {
+      for (const watch of watches.values()) due.add(watch);
+      continue;
+    }
+    const watch = watches.get(entry.target);
+    if (watch === undefined) continue;
+    const [box] = entry.contentBoxSize;
+    if (box !== undefined) watch.observed = { width: box.inlineSize, height: box.blockSize };
+    due.add(watch);
+  }
+  // Every read comes before any write, so no chart's commit makes the next chart's read lay out.
+  const changed = [...due].flatMap((watch) => {
+    const next = measureElement(watch.element, watch.observed);
+    return samePlot(watch.last, next) ? [] : [{ watch, next }];
+  });
+  if (changed.length === 0) return;
+  flushSync(() => {
+    for (const { watch, next } of changed) {
+      watch.last = next;
+      watch.apply(next);
+    }
+  });
+}
+
+/** The shared observer, which also follows the page's size, as browser zoom changes it. */
+function plotObserver(): ResizeObserver {
+  if (shared === null) {
+    shared = new ResizeObserver(deliver);
+    shared.observe(document.documentElement);
+  }
+  return shared;
+}
+
+/** A measured plot and the probe its owner renders first inside the plot element. */
+export type MeasuredPlot = {
+  /** The measurement, or null before the first one. */
+  readonly plot: ChartPlot | null;
+  /**
+   * Render it as the plot element's first child. Its layout effect measures the plot in every
+   * commit of its owner, before any mark of the commit runs its own, so the read lays out only what
+   * React changed and no geometry the marks wrote.
+   */
+  readonly probe: ReactElement;
+  /**
+   * Measure the plot now, for an owner whose own layout effect sizes the plot after the probe ran,
+   * as Root's span over its Panels does.
+   */
+  readonly measure: () => void;
+};
+
+/** Measures its owner's plot in every commit that renders it. */
+function PlotProbe({ measure }: { readonly measure: () => void }): null {
+  useLayoutEffect(() => measure());
+  return null;
+}
+
+/**
+ * Measure Root's plot element. It measures in every commit of its owner, because new axis labels
+ * can move the box without resizing it, through the probe the owner renders first in the plot. A
+ * resize of the box or the page, as browser zoom does when it changes the device pixel ratio, and
+ * the page's fonts loading go through the shared observer, which reads every plot of the page
+ * after layout and draws the ones that changed in one commit, before paint. A Root that hydrates
+ * server HTML takes its first measurement from the observer too, so a page of charts that hydrate
+ * one by one lays out once for all of them. A move it misses only shifts how a tie rounds, since
+ * every edge stays a whole number of device pixels from the layer's origin.
  *
  * @param ref - The plot element.
- * @returns The measurement, or null before the first one.
+ * @returns The measurement and the probe to render.
  */
-export function useMeasuredPlot(ref: RefObject<HTMLElement | null>): ChartPlot | null {
+export function useMeasuredPlot(ref: RefObject<HTMLElement | null>): MeasuredPlot {
   const [plot, setPlot] = useState<ChartPlot | null>(null);
-  // The last measurement, so an unchanged box schedules no render at all.
-  const last = useRef<ChartPlot | null>(null);
-  // The layout size the observer last reported for the plot.
-  const observed = useRef<LayoutSize | null>(null);
-  const update = useRef(() => {
-    const element = ref.current;
-    if (element === null) return;
-    const next = measure(element, observed.current);
-    if (samePlot(last.current, next)) return;
-    last.current = next;
-    setPlot(next);
-  });
-  useLayoutEffect(() => update.current());
-  useLayoutEffect(() => {
-    const element = ref.current;
-    if (element === null) return;
-    // The plot's own size, and the page's, which browser zoom and a theme that changes above the
-    // chart resize while they rescale or move the plot.
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const [box] = entry.contentBoxSize;
-        if (entry.target === element && box !== undefined) {
-          observed.current = { width: box.inlineSize, height: box.blockSize };
-        }
-      }
-      update.current();
-    });
+  // Whether the first render hydrated server HTML, whose plot the observer measures first.
+  const hydrated = useSyncExternalStore(
+    subscribeNever,
+    () => true,
+    () => false
+  );
+  const [owner] = useState(() => plotOwner(setPlot, !hydrated));
+  useLayoutEffect(() => owner.mount(ref.current), [owner, ref]);
+  return { plot, probe: createElement(PlotProbe, { measure: owner.measure }), measure: owner.measure };
+}
+
+/**
+ * The measurement one plot owner keeps between commits: the watch the shared observer reads, and
+ * the measure its probe runs.
+ */
+function plotOwner(apply: (plot: ChartPlot) => void, hydrates: boolean) {
+  let watch: PlotWatch | null = null;
+  const measure = (): void => {
+    const own = watch;
+    if (own === null || (own.last === null && hydrates)) return;
+    const next = measureElement(own.element, own.observed);
+    if (samePlot(own.last, next)) return;
+    own.last = next;
+    apply(next);
+  };
+  const mount = (element: HTMLElement | null): (() => void) | undefined => {
+    if (element === null) return undefined;
+    const own: PlotWatch = { element, observed: null, last: null, apply };
+    watch = own;
+    watches.set(element, own);
+    const observer = plotObserver();
     observer.observe(element);
-    observer.observe(document.documentElement);
+    // A client mount measures before its first paint. The probe ran before this effect, when no
+    // watch existed yet.
+    measure();
     // A web font that loads after the first paint moves the text above the plot, and the plot with
     // it, without resizing anything.
     let live = true;
     void document.fonts.ready.then(() => {
-      if (live) update.current();
+      if (!live) return;
+      observer.unobserve(element);
+      observer.observe(element);
     });
     return () => {
       live = false;
-      observer.disconnect();
+      watches.delete(element);
+      observer.unobserve(element);
+      watch = null;
     };
-  }, [ref]);
-  return plot;
+  };
+  return { measure, mount };
 }
 
 /**
@@ -243,12 +338,12 @@ export function usePanelSpan(
  * top and height give its value axis.
  *
  * @param ref - The Panel's plot element.
- * @returns The Panel's plot, or null until both Root and the Panel are measured.
+ * @returns The Panel's plot, or null until both Root and the Panel are measured, and the probe to render.
  */
-export function usePanelPlot(ref: RefObject<HTMLElement | null>): ChartPlot | null {
+export function usePanelPlot(ref: RefObject<HTMLElement | null>): MeasuredPlot {
   const root = use(ChartRootPlotContext);
-  const own = useMeasuredPlot(ref);
-  return useMemo(
+  const { plot: own, probe, measure } = useMeasuredPlot(ref);
+  const plot = useMemo(
     () =>
       root === null || own === null
         ? null
@@ -258,6 +353,7 @@ export function usePanelPlot(ref: RefObject<HTMLElement | null>): ChartPlot | nu
           },
     [root, own]
   );
+  return { plot, probe, measure };
 }
 
 /**

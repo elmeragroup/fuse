@@ -1,12 +1,11 @@
 "use client";
 
-import { useLayoutEffect, useMemo } from "react";
 import type { ReactElement } from "react";
 
-import { assertKnownKey, assertLayoutKey, usePlotLayout, useChartRoot } from "./chart-context";
+import { useSeriesPart } from "./chart-context";
 import type { MarkValues } from "./chart-motion";
-import { useCommitMotion, useMotionMark } from "./chart-motion-mark";
-import { placeOf, placePath, seriesPathKind, topologyAt, slotStep, writePath } from "./chart-path-draw";
+import { useFirstDraw } from "./chart-motion-mark";
+import { placeOf, topologyAt, writePath } from "./chart-path-draw";
 import type { PathLook } from "./chart-path-draw";
 import { PathPaint, hasPathPaint } from "./chart-path-paint";
 import { useSeriesPath } from "./chart-series-path";
@@ -140,10 +139,7 @@ export function ChartArea({
   className,
   style,
 }: ChartAreaProps): ReactElement {
-  const context = useChartRoot("Chart.Area");
-  const layout = usePlotLayout("Chart.Area");
-  assertKnownKey("Chart.Area", context.config, dataKey);
-  assertLayoutKey("Chart.Area", layout, dataKey);
+  const { context, layout } = useSeriesPart("Chart.Area", dataKey);
   if (layout.baseline === "none") {
     throw new ChartCompositionError(
       "Chart.Area",
@@ -151,63 +147,39 @@ export function ChartArea({
       'draws in a layout with yBaseline="none", but an area encodes its value as the filled height from 0. Keep the zero baseline, or draw a Chart.Line alone.'
     );
   }
-  if ((curve === "step-after" || curve === "step-before") && context.xScale === "point") {
-    throw new ChartCompositionError(
-      "Chart.Area",
-      "step-curve-needs-cells",
-      `draws curve="${curve}" under xScale="point", where slots have no cells to run across. Use xScale="band", or curve="step".`
-    );
-  }
-  const { motion, update, paths, xScale } = context;
-  const state = useSeriesPath("Chart.Area", context, dataKey, curve, AREA_STRIDE, 0, layout);
-  const { series, seriesIndex, look, path, topology, rest, prefix } = state;
-  const { ref: markRef, node, drawn, place } = useMotionMark(motion, drawArea, look, state.axes);
-  const { memoryRef, lastLookRef, outgoingRef } = state;
-  const commit = useCommitMotion(update, state.drawn?.plot ?? null, context.orientation);
-  useLayoutEffect(() => {
-    const asked = commit();
-    if (look === null || path === null) return;
-    placePath(asked, {
-      mark: { ref: markRef, node, drawn, place },
-      motion,
-      paths,
-      seriesIndex,
-      drawn: "line",
-      kind: seriesPathKind(AREA_STRIDE, slotStep(look.frame, xScale)),
-      look,
-      path,
-      topology,
-      rest,
-      memory: memoryRef,
-      lastLook: lastLookRef,
-      outgoing: outgoingRef.current,
-      draw: drawArea,
-    });
-  });
-  useLayoutEffect(() => () => paths.delete(seriesIndex, "line", memoryRef), [paths, seriesIndex, memoryRef]);
-  const resting = useMemo(
-    () => (look === null ? null : areaPaths(rest, topology, placeOf(look))),
-    [look, rest, topology]
+  const { series, seriesIndex, resting, prefix, frame, outgoingRef, markRef, intro, paint } = useSeriesPath(
+    "Chart.Area",
+    drawArea,
+    {
+      context,
+      layout,
+      dataKey,
+      curve,
+      stride: AREA_STRIDE,
+    }
   );
-  const frame = look?.frame ?? null;
+  // React draws the first rest, and the loop draws every frame after it.
+  const drawn = useFirstDraw(() =>
+    resting === null ? null : areaPaths(resting.rest, resting.topology, placeOf(resting.look))
+  );
   return (
     <svg
       data-slot="chart-area-series"
       data-variant={variant}
       data-series={seriesIndex}
-      data-intro={state.intro}
+      data-intro={intro}
       aria-hidden="true"
       className={className}
       style={{
-        "--chart-series-paint": state.paint.base,
+        "--chart-series-paint": paint.base,
         "--chart-series": seriesIndex,
-        "--_paint-server": hasPathPaint(state.paint) ? `url(#${prefix}-paint)` : undefined,
+        "--_paint-server": hasPathPaint(paint) ? `url(#${prefix}-paint)` : undefined,
         ...style,
       }}>
-      {frame === null || series === undefined || resting === null ? null : (
+      {frame === null || series === undefined || drawn === null ? null : (
         <>
           <defs>
-            <PathPaint id={`${prefix}-paint`} paint={state.paint} frame={frame} />
+            <PathPaint id={`${prefix}-paint`} paint={paint} frame={frame} />
             <AreaMasks prefix={prefix} frame={frame} variant={variant} />
           </defs>
           <g ref={markRef}>
@@ -218,7 +190,7 @@ export function ChartArea({
               data-part="solid"
               data-series={seriesIndex}
               mask={variant === "solid" ? undefined : `url(#${prefix}-look)`}
-              d={resting.area}
+              d={drawn.area}
             />
             <path
               data-slot="chart-area"
@@ -228,7 +200,7 @@ export function ChartArea({
               d=""
             />
             {/* A lone reading draws a dot, dashed where its reading is estimated, as L18 asks. */}
-            <path data-slot="chart-area" data-part="dot" data-series={seriesIndex} d={resting.dots} />
+            <path data-slot="chart-area" data-part="dot" data-series={seriesIndex} d={drawn.dots} />
             <path data-slot="chart-area" data-part="dot-marked" data-series={seriesIndex} d="" />
           </g>
           <g ref={outgoingRef} data-part="outgoing" />

@@ -4,6 +4,7 @@ import { useRef } from "react";
 import type { ReactElement } from "react";
 
 import { useChartRoot, usePlotLayout } from "./chart-context";
+import { writeAttribute } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import { useChartFrame } from "./chart-plot";
 import type { ChartLayerProps } from "./chart-types";
@@ -59,10 +60,11 @@ export function ChartCrosshair({ variant, className, style }: ChartCrosshairProp
             optionBand(frame, Math.min(last, window.last) - window.first, xScale)[1],
           ]
         : slotLine(frame, position, xScale);
-    node.setAttribute(vertical ? "x" : "y", String(start));
-    node.setAttribute(vertical ? "width" : "height", String(end - start));
-    node.setAttribute(vertical ? "y" : "x", "0");
-    node.setAttribute(vertical ? "height" : "width", String(vertical ? box.height : box.width));
+    writeAttribute(node, vertical ? "x" : "y", start);
+    writeAttribute(node, vertical ? "width" : "height", end - start);
+    // The cross axis spans the plot, which a step leaves alone, so only a resize writes it.
+    writeAttribute(node, vertical ? "y" : "x", 0);
+    writeAttribute(node, vertical ? "height" : "width", vertical ? box.height : box.width);
   });
   return (
     <svg

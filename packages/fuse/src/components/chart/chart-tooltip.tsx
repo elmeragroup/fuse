@@ -16,7 +16,8 @@ import {
   overlayPositionerClass,
 } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
-import { ChartPendingRootContext, useChartRoot } from "./chart-context";
+import { ChartSelectionContext, useChartRoot } from "./chart-context";
+import { usePendingOr } from "./chart-pending-root";
 import { useRootFrame } from "./chart-plot";
 import {
   ChartLiveContext,
@@ -149,7 +150,7 @@ type Anchor = { getBoundingClientRect: () => DOMRect };
  * @beta
  */
 export function ChartTooltip(props: ChartTooltipProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartTooltipBody {...props} />;
+  return usePendingOr(props, ChartTooltipBody);
 }
 
 function ChartTooltipBody({
@@ -344,7 +345,7 @@ function DefaultTooltip(): ReactElement {
  * @beta
  */
 export function ChartTooltipLabel(props: ChartTooltipLabelProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartTooltipLabelBody {...props} />;
+  return usePendingOr(props, ChartTooltipLabelBody);
 }
 
 function ChartTooltipLabelBody({
@@ -375,7 +376,7 @@ function ChartTooltipLabelBody({
  * @beta
  */
 export function ChartTooltipItems(props: ChartTooltipItemsProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartTooltipItemsBody {...props} />;
+  return usePendingOr(props, ChartTooltipItemsBody);
 }
 
 function ChartTooltipItemsBody({
@@ -385,12 +386,13 @@ function ChartTooltipItemsBody({
   ...props
 }: ChartTooltipItemsProps): ReactElement {
   const context = useChartRoot("Chart.TooltipItems");
+  const selectedKey = use(ChartSelectionContext);
   const rows = context.model.series.map(({ key, seriesIndex }) => (
     <ChartRowContext key={key} value={key}>
       <div
         data-slot="chart-tooltip-item"
         data-series={seriesIndex}
-        data-dimmed={context.selectedKey !== null && context.selectedKey !== key ? "" : undefined}>
+        data-dimmed={selectedKey !== null && selectedKey !== key ? "" : undefined}>
         {children}
       </div>
     </ChartRowContext>
@@ -409,7 +411,7 @@ function ChartTooltipItemsBody({
  * @beta
  */
 export function ChartTooltipValue(props: ChartTooltipValueProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartTooltipValueBody {...props} />;
+  return usePendingOr(props, ChartTooltipValueBody);
 }
 
 function ChartTooltipValueBody({
@@ -445,7 +447,7 @@ function ChartTooltipValueBody({
  * @beta
  */
 export function ChartTooltipShare(props: ChartTooltipShareProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartTooltipShareBody {...props} />;
+  return usePendingOr(props, ChartTooltipShareBody);
 }
 
 function ChartTooltipShareBody({

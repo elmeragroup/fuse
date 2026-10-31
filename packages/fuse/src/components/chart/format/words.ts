@@ -1,10 +1,11 @@
+import type { SupportedLocale } from "../../../intl/locale-context";
 /**
  * Fuse's four-locale chart words. Intl has no currency subunits, no VAT basis, no week-number field
  * and no spoken forms, so Fuse owns these strings like its other built-in strings. Every entry is a
  * draft until the content owner signs it off. A space in an entry may be any space
  * character, because every formatter maps its output through `canonicalSpaces`.
  */
-import type { SupportedLocale } from "../../../intl/locale-context";
+import type { Inflected } from "./inflection";
 import type { ValueFormat } from "./value-format";
 
 /** The currencies a unit price can carry. */
@@ -18,9 +19,6 @@ export type PowerUnit = Extract<ValueFormat, { readonly preset: "power" }>["unit
 
 /** Whether a unit price includes VAT. */
 export type VatBasis = Extract<ValueFormat, { readonly preset: "unit-price" }>["vat"];
-
-/** A word in the singular and plural forms `Intl.PluralRules` selects between. */
-type Inflected = { readonly one: string; readonly other: string };
 
 /** The words one locale needs. */
 export type ChartWords = {

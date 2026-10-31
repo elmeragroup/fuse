@@ -66,7 +66,8 @@ export type BarsLayout = {
 
 /** What the element form lays out from. */
 export type BarsInput = {
-  readonly context: ChartRootContextValue;
+  /** What the bars read from Root: the model, the update's keys, `now` and the entrance origin. */
+  readonly context: Pick<ChartRootContextValue, "model" | "update" | "now" | "intro">;
   readonly series: SeriesModel;
   readonly frame: PlotFrame;
   readonly metrics: BarMetrics;
@@ -334,13 +335,13 @@ export function layoutBars(input: BarsInput): BarsLayout {
  * series that ended before Root's `now`, snapped, which `data-fade="past"` dims up to. A coarse
  * series' slot is past only once its own interval ends, as the element form dates its bars.
  *
- * @param context - Root's context.
+ * @param context - Root's model, `data-fade` and `now`.
  * @param series - The series.
  * @param frame - The frame the series draws in.
  * @returns The end along the slot axis, or null when the chart does not dim the past.
  */
 export function pastSpanEnd(
-  context: ChartRootContextValue,
+  context: Pick<ChartRootContextValue, "model" | "fade" | "now">,
   series: SeriesModel,
   frame: PlotFrame
 ): number | null {

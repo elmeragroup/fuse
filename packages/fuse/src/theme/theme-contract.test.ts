@@ -10,9 +10,9 @@ import { getOrThrow } from "@elmeragroup/color/result";
 import { parseStyleRules } from "../../test/css-rules";
 import { declaredThemeValue, SECONDARY_HOVER_CSS } from "../../test/theme-css-contract";
 import { assertMustOverrideCoverage, composeTheme } from "./compose-theme";
-import { contrastRatio } from "./contrast";
 import { cssVarReference } from "./css-values";
 import { generateThemesCss } from "./generate-css";
+import { literalContrast } from "./token-color";
 import { brandPointer } from "./tokens/brand-pointers";
 import { assignedTokenNames, EXTERNAL_RESET_KEYS, MUST_OVERRIDE_DARK, TOKEN_NAMES } from "./tokens/contract";
 import type { ExternalResetKey, TokenLayer, TokenName } from "./tokens/contract";
@@ -648,15 +648,15 @@ describe("external soft tones", () => {
 
 describe("contrast math", () => {
   it("composites percentage and decimal alpha in sRGB before measuring luminance", () => {
-    expect(contrastRatio("oklch(1 0 0 / 50%)", "oklch(0 0 0)")).toBeCloseTo(5.2808, 4);
-    expect(contrastRatio("oklch(1 0 0 / 0.5)", "oklch(0 0 0)")).toBeCloseTo(5.2808, 4);
+    expect(literalContrast("oklch(1 0 0 / 50%)", "oklch(0 0 0)")).toBeCloseTo(5.2808, 4);
+    expect(literalContrast("oklch(1 0 0 / 0.5)", "oklch(0 0 0)")).toBeCloseTo(5.2808, 4);
   });
 
   it("proves the specified Elmera brand pair meets the text-grade floor", () => {
     expect(
-      contrastRatio(PRIMITIVES["brand-elma-foreground"], PRIMITIVES["brand-elma"])
+      literalContrast(PRIMITIVES["brand-elma-foreground"], PRIMITIVES["brand-elma"])
     ).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(PRIMITIVES["brand-elma-foreground"], PRIMITIVES["brand-elma"])).toBeCloseTo(
+    expect(literalContrast(PRIMITIVES["brand-elma-foreground"], PRIMITIVES["brand-elma"])).toBeCloseTo(
       13.93,
       1
     );

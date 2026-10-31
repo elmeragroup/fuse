@@ -7,6 +7,7 @@
  * slots changed in another way. Each part's writer stays in its own module, as the central suite
  * asks, and calls these.
  */
+import { writeAttribute } from "./chart-dom";
 import type { ChartMotion, MarkValues, ValueAxis } from "./chart-motion";
 import { placementOf } from "./chart-motion-mark";
 import type { Commit, MotionMark } from "./chart-motion-mark";
@@ -20,6 +21,7 @@ import { pathMotion } from "./layout/path-motion";
 import type { PathSlots } from "./layout/path-motion";
 import { cellRun, pointAlong, slotCentreAt, snapAcross, snapAlong, strokeCentre } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
+import { sameItems } from "./layout/same-items";
 
 /** What a path's writer reads besides the numbers: the frame, the curve and the topology. */
 export type PathLook = {
@@ -37,9 +39,10 @@ export type PathLook = {
   readonly clips: { readonly solid: string; readonly marked: string };
   /**
    * The width the part strokes its path in, CSS pixels, 0 for a fill, which a Line reads off its
-   * computed style each commit, so a straight stroke covers whole device pixels at any width.
+   * computed style when what sets it changes, so a straight stroke covers whole device pixels at
+   * any width.
    */
-  readonly stroke: { current: number };
+  readonly stroke: { readonly width: number };
 };
 
 /**
@@ -54,7 +57,7 @@ export type PathLook = {
  */
 export function placeOf(look: PathLook): PathPlacement {
   const { frame } = look;
-  const width = look.stroke.current;
+  const width = look.stroke.width;
   return {
     orientation: frame.orientation,
     curve: look.curve,
@@ -98,11 +101,10 @@ function fillClip(clip: Element, frame: PlotFrame, spans: readonly Span[]): void
   spans.forEach(([start, end], index) => {
     const rect = clip.children[index];
     if (rect === undefined) return;
-    const position = { start: String(start), size: String(Math.max(0, end - start)) };
-    rect.setAttribute(vertical ? "x" : "y", position.start);
-    rect.setAttribute(vertical ? "width" : "height", position.size);
-    rect.setAttribute(vertical ? "y" : "x", String(-CLIP_MARGIN));
-    rect.setAttribute(vertical ? "height" : "width", String(across));
+    writeAttribute(rect, vertical ? "x" : "y", start);
+    writeAttribute(rect, vertical ? "width" : "height", Math.max(0, end - start));
+    writeAttribute(rect, vertical ? "y" : "x", -CLIP_MARGIN);
+    writeAttribute(rect, vertical ? "height" : "width", across);
   });
 }
 
@@ -144,22 +146,21 @@ export function writePath(
     if (part === "solid-clip") fillClip(child, frame, solid);
     else if (part === "marked-clip") fillClip(child, frame, marked);
     else if (part === "solid") {
-      // React has already written a resting path, so a frame that draws it again writes nothing.
-      if (child.getAttribute("d") !== d) child.setAttribute("d", d);
-      if (spans.length === 0 || mode === "overlay") child.removeAttribute("clip-path");
-      else child.setAttribute("clip-path", `url(#${clips.solid})`);
+      writeAttribute(child, "d", d);
+      writeAttribute(
+        child,
+        "clip-path",
+        spans.length === 0 || mode === "overlay" ? null : `url(#${clips.solid})`
+      );
     } else if (part === "marked") {
-      const twin = spans.length === 0 ? "" : d;
-      if (child.getAttribute("d") !== twin) child.setAttribute("d", twin);
-      child.setAttribute("clip-path", `url(#${clips.marked})`);
+      writeAttribute(child, "d", spans.length === 0 ? "" : d);
+      writeAttribute(child, "clip-path", `url(#${clips.marked})`);
     } else if (part === "dot") {
-      if (child.getAttribute("d") !== dots) child.setAttribute("d", dots);
-      if (spans.length === 0) child.removeAttribute("clip-path");
-      else child.setAttribute("clip-path", `url(#${clips.solid})`);
+      writeAttribute(child, "d", dots);
+      writeAttribute(child, "clip-path", spans.length === 0 ? null : `url(#${clips.solid})`);
     } else if (part === "dot-marked") {
-      const twin = spans.length === 0 ? "" : dots;
-      if (child.getAttribute("d") !== twin) child.setAttribute("d", twin);
-      child.setAttribute("clip-path", `url(#${clips.marked})`);
+      writeAttribute(child, "d", spans.length === 0 ? "" : dots);
+      writeAttribute(child, "clip-path", `url(#${clips.marked})`);
     }
   }
 }
@@ -531,11 +532,6 @@ export type PathCommit<L extends { readonly moving: { current: S | null } }, S e
   readonly draw: (group: SVGGElement, look: L, values: MarkValues) => void;
 };
 
-/** Whether two key lists hold the same keys in the same order. */
-function sameKeys(a: readonly string[], b: readonly string[]): boolean {
-  return a.length === b.length && a.every((key, index) => key === b[index]);
-}
-
 /**
  * Place a series path for a commit, the one placement Lines, Areas and path-form Bars share. A
  * data update tweens the path's route from what it drew, or crossfades it, and records the route
@@ -554,7 +550,7 @@ export function placePath<L extends { readonly moving: { current: S | null } }, 
   const previous = memory.current;
   const before = mark.drawn();
   const step = asked.kind === "move" ? pathStep(previous, path, topology, rest, before, kind) : null;
-  const keptRoute = asked.kind === "settle" && previous !== null && sameKeys(previous.keys, path.keys);
+  const keptRoute = asked.kind === "settle" && previous !== null && sameItems(previous.keys, path.keys);
   if (step?.kind === "route") {
     look.moving.current = step.route.topology;
     mark.place(rest, placementOf(asked, { via: step.via }), anchor);

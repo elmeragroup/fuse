@@ -1,16 +1,18 @@
 "use client";
 
-import { createContext, use, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createContext, use, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { SeriesPaths } from "./chart-bar-paths";
 import { ActiveBar, SeriesBars } from "./chart-bar-series";
-import { assertKnownKey, assertLayoutKey, usePlotLayout, useChartRoot } from "./chart-context";
+import { assertKnownKey, assertLayoutKey, usePlotLayout, useChartRoot, useSeriesPart } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import { datumSlots } from "./chart-datum";
+import { useSvgIdPrefix } from "./chart-dom";
 import { seriesPaintOf } from "./chart-paint";
 import { useBarMetrics, useChartFrame } from "./chart-plot";
 import type { ChartPlot } from "./chart-plot";
+import { useSteady } from "./chart-steady";
 import { useFirstPhase } from "./chart-store";
 import type { ChartDatum, ChartLayerProps } from "./chart-types";
 import { barForm } from "./layout/bar-geometry";
@@ -19,6 +21,8 @@ import type { SeriesModel } from "./layout/cartesian-model";
 import { ChartCompositionError, isChartDevelopment } from "./layout/errors";
 import { WHOLE_BAND } from "./layout/plot-frame";
 import type { BarMetrics, SubBand } from "./layout/plot-frame";
+import { sameItems } from "./layout/same-items";
+import { seriesOf } from "./layout/series-of";
 
 /**
  * Props for `Chart.Bar`, a closed part.
@@ -76,11 +80,6 @@ type FirstDraw = {
   readonly orientation: "vertical" | "horizontal";
 };
 
-/** Whether two key lists hold the same keys in the same order. */
-function sameKeys(a: readonly string[], b: readonly string[]): boolean {
-  return a.length === b.length && a.every((key, index) => key === b[index]);
-}
-
 /** The sub-bands a BarGroup splits its band into, and the spacing its bars share. */
 type BarGroupValue = {
   /** The sub-band of each listed key. Keys that share a stack id share the first one's sub-band. */
@@ -133,11 +132,8 @@ export function ChartBar({
   className,
   style,
 }: ChartBarProps): ReactElement {
-  const context = useChartRoot("Chart.Bar");
-  const layout = usePlotLayout("Chart.Bar");
+  const { context, layout } = useSeriesPart("Chart.Bar", dataKey);
   const group = use(ChartBarGroupContext);
-  assertKnownKey("Chart.Bar", context.config, dataKey);
-  assertLayoutKey("Chart.Bar", layout, dataKey);
   if (layout.baseline === "none") {
     throw new ChartCompositionError(
       "Chart.Bar",
@@ -160,19 +156,15 @@ export function ChartBar({
     );
   }
   const { model, registerBar, registerEmphasis } = context;
-  const series = model.series.find(({ key }) => key === dataKey);
+  const series = seriesOf(model, dataKey);
   const config = context.config[dataKey];
   const form = barForm(model, context.orientation);
   const grouped = group !== null;
   const phase = useFirstPhase(context.store);
   const [firstUpdate] = useState(context.update);
   const drawn = useChartFrame("Chart.Bar", layout);
-  // SVG references read the id inside url(), so it keeps only characters an IRI fragment takes as is.
-  const prefix = `chart-bar-${useId().replace(/[^\w-]/gu, "")}`;
-  useLayoutEffect(
-    () => registerBar(dataKey, grouped, layout.owner),
-    [registerBar, dataKey, grouped, layout.owner]
-  );
+  const prefix = useSvgIdPrefix("chart-bar");
+
   const picked = emphasisSlots(context, series, emphasis);
   const pickedKey = picked.join(",");
   const emphasised = useMemo(() => new Set(picked), [pickedKey]); // oxlint-disable-line react-hooks/exhaustive-deps -- the joined slots are the identity
@@ -184,6 +176,10 @@ export function ChartBar({
   // form has two looks of its own, and every other variant draws the default look there.
   const drawnVariant: BarVariant =
     form === "bars" ? variant : variant === "gradient" ? "gradient" : "default";
+  useLayoutEffect(
+    () => registerBar(dataKey, grouped, layout.owner, drawnVariant),
+    [registerBar, dataKey, grouped, layout.owner, drawnVariant]
+  );
   if (drawnVariant !== variant && isChartDevelopment()) {
     context.warnOnce(
       "bar-variant-needs-html",
@@ -297,12 +293,7 @@ export function ChartBarGroup({ series, className, style, children }: ChartBarGr
   }
   const { stacks } = context.model;
   // The keys compare as a tuple, so an inline array that lists the same keys is no change.
-  const [steadySeries, setSteadySeries] = useState(series);
-  let groupSeries = steadySeries;
-  if (steadySeries !== series && !sameKeys(steadySeries, series)) {
-    groupSeries = series;
-    setSteadySeries(series);
-  }
+  const groupSeries = useSteady(series, sameItems);
   const element = useRef<HTMLDivElement>(null);
   const metrics = useBarMetrics(element);
   const value = useMemo((): BarGroupValue => {

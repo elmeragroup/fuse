@@ -1,7 +1,7 @@
 /**
  * The chart error tiers of CONTRACT section 8.1. Composition errors depend only on props, config
  * and the tree, so they throw in every build. Data errors throw in development and, in production,
- * warn once per Root and rule and render the fallback the rule names. Both classes stay private, as
+ * warn once per Root for each distinct problem and render the fallback the rule names. Both classes stay private, as
  * `CommandCompositionError` does, and each carries its rule.
  */
 

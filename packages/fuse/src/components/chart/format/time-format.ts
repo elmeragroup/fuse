@@ -146,51 +146,25 @@ function part(parts: readonly Intl.DateTimeFormatPart[], type: Intl.DateTimeForm
 }
 
 /**
- * Each zone's wall-clock formatter and the wall clocks it has read. Slot math, labels and the
- * repeated-hour check read the same instants several times per slot, and one Intl read costs far
- * more than a map lookup, so each instant is read once. A zone's map starts over at the limit, so a
- * long stream cannot grow it without bound.
+ * A run of instants, `[from, to)`, over which a zone keeps one UTC offset, in milliseconds. Its
+ * seconds stay, because some historic offsets have them, such as Monrovia's −00:44:30 until 1972.
  */
-const wallClocks = new Map<
-  string,
-  { readonly format: Intl.DateTimeFormat; readonly walls: Map<number, WallClock> }
->();
-const WALL_CLOCK_LIMIT = 16_384;
+type OffsetSpan = { readonly from: number; readonly to: number; readonly offset: number };
 
-function readWallClock(format: Intl.DateTimeFormat, instant: number): WallClock {
-  let [year, month, day, hour, minute, second] = [0, 0, 0, 0, 0, 0];
-  for (const { type, value } of format.formatToParts(instant)) {
-    switch (type) {
-      case "year":
-        year = Number(value);
-        break;
-      case "month":
-        month = Number(value);
-        break;
-      case "day":
-        day = Number(value);
-        break;
-      case "hour":
-        hour = Number(value);
-        break;
-      case "minute":
-        minute = Number(value);
-        break;
-      case "second":
-        second = Number(value);
-        break;
-      default:
-        break;
-    }
-  }
-  return { year, month, day, hour, minute, second };
-}
+/**
+ * What Fuse has read of one zone: the Intl formatter that reads its wall clock, and the spans of
+ * one offset it has read, sorted and disjoint. A zone changes its offset a few times a year, so
+ * neighbouring days merge into a few spans per year, and a wall clock is the UTC fields of the
+ * instant moved by its span's offset, with no Intl read.
+ */
+type ZoneOffsets = { readonly format: Intl.DateTimeFormat; readonly spans: OffsetSpan[] };
 
-/** Read the wall clock of an instant in a zone through Intl. */
-export function wallClock(instant: number, timeZone: string): WallClock {
-  let zone = wallClocks.get(timeZone);
+const zones = new Map<string, ZoneOffsets>();
+
+function zoneOf(timeZone: string): ZoneOffsets {
+  let zone = zones.get(timeZone);
   if (zone === undefined) {
-    const format = new Intl.DateTimeFormat("en-US", {
+    const format = dateTimeFormat("en-US", {
       timeZone,
       year: "numeric",
       month: "numeric",
@@ -200,14 +174,18 @@ export function wallClock(instant: number, timeZone: string): WallClock {
       second: "numeric",
       hourCycle: "h23",
     });
-    zone = { format, walls: new Map() };
-    wallClocks.set(timeZone, zone);
+    zone = { format, spans: [] };
+    zones.set(timeZone, zone);
   }
-  let wall = zone.walls.get(instant);
-  if (wall === undefined) {
-    if (zone.walls.size >= WALL_CLOCK_LIMIT) zone.walls.clear();
-    wall = readWallClock(zone.format, instant);
-    zone.walls.set(instant, wall);
+  return zone;
+}
+
+/** The wall-clock fields Intl writes for an instant. */
+function readWallClock(format: Intl.DateTimeFormat, instant: number): WallClock {
+  const wall = { year: 0, month: 0, day: 0, hour: 0, minute: 0, second: 0 };
+  for (const { type, value } of format.formatToParts(instant)) {
+    if (type === "year" || type === "month" || type === "day") wall[type] = Number(value);
+    else if (type === "hour" || type === "minute" || type === "second") wall[type] = Number(value);
   }
   return wall;
 }
@@ -217,12 +195,93 @@ function wallTime(wall: WallClock): number {
   return Date.UTC(wall.year, wall.month - 1, wall.day, wall.hour, wall.minute, wall.second);
 }
 
+/** The offset Intl reads at one instant. */
+function readOffset(zone: ZoneOffsets, instant: number): number {
+  return wallTime(readWallClock(zone.format, instant)) - Math.floor(instant / SECOND) * SECOND;
+}
+
+/** Add a span to a zone's sorted spans, merged with each neighbour it touches at the same offset. */
+function learn(zone: ZoneOffsets, span: OffsetSpan): void {
+  if (span.from >= span.to) return;
+  const { spans } = zone;
+  let index = 0;
+  while (index < spans.length && (spans[index]?.from ?? 0) < span.from) index += 1;
+  const before = spans[index - 1];
+  const after = spans[index];
+  const joinsBefore = before !== undefined && before.to === span.from && before.offset === span.offset;
+  const joinsAfter = after !== undefined && after.from === span.to && after.offset === span.offset;
+  const merged: OffsetSpan = {
+    from: joinsBefore ? before.from : span.from,
+    to: joinsAfter ? after.to : span.to,
+    offset: span.offset,
+  };
+  spans.splice(joinsBefore ? index - 1 : index, Number(joinsBefore) + Number(joinsAfter), merged);
+}
+
 /**
- * The zone's UTC offset at an instant, in milliseconds. It keeps the seconds, because some historic
- * offsets have them, such as Monrovia's −00:44:30 until 1972.
+ * Read the offsets of the UTC day that holds an instant: one Intl read at each end, and where the
+ * two differ, a bisection to the second for the change between them.
+ */
+function learnDay(zone: ZoneOffsets, instant: number): number {
+  const from = Math.floor(instant / DAY) * DAY;
+  const to = from + DAY;
+  const start = readOffset(zone, from);
+  const end = readOffset(zone, to);
+  if (start === end) {
+    learn(zone, { from, to, offset: start });
+    return start;
+  }
+  let before = from;
+  let after = to;
+  while (after - before > SECOND) {
+    const middle = before + Math.floor((after - before) / (2 * SECOND)) * SECOND;
+    if (readOffset(zone, middle) === start) before = middle;
+    else after = middle;
+  }
+  learn(zone, { from, to: after, offset: start });
+  learn(zone, { from: after, to, offset: end });
+  return instant < after ? start : end;
+}
+
+/**
+ * The zone's UTC offset at an instant, in milliseconds, from the span that holds it, or from the
+ * day Fuse reads first. Each span holds what Intl reads for the zone, so no cache here depends on
+ * the process's zone.
  */
 function offsetAt(instant: number, timeZone: string): number {
-  return wallTime(wallClock(instant, timeZone)) - Math.floor(instant / SECOND) * SECOND;
+  const zone = zoneOf(timeZone);
+  const { spans } = zone;
+  let low = 0;
+  let high = spans.length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if ((spans[middle]?.from ?? 0) <= instant) low = middle + 1;
+    else high = middle;
+  }
+  const span = spans[low - 1];
+  if (span !== undefined && instant < span.to) return span.offset;
+  return learnDay(zone, instant);
+}
+
+/**
+ * Read the wall clock of an instant in a zone: the UTC fields of the instant moved by the zone's
+ * offset there.
+ *
+ * @param instant - The instant, epoch milliseconds.
+ * @param timeZone - The IANA zone.
+ * @returns The wall clock.
+ * @throws A `RangeError` when `timeZone` is not an IANA zone.
+ */
+export function wallClock(instant: number, timeZone: string): WallClock {
+  const local = new Date(instant + offsetAt(instant, timeZone));
+  return {
+    year: local.getUTCFullYear(),
+    month: local.getUTCMonth() + 1,
+    day: local.getUTCDate(),
+    hour: local.getUTCHours(),
+    minute: local.getUTCMinutes(),
+    second: local.getUTCSeconds(),
+  };
 }
 
 /**
@@ -427,13 +486,6 @@ const SUB_DAY_MS = {
   hour: RANGE_MINUTES.hour * MINUTE,
 } as const;
 
-/**
- * Each zone's day starts by local date. Ten years of days fit, and a longer run starts the zone's
- * map over, so a stream that runs for years cannot grow it without bound.
- */
-const dayStarts = new Map<string, Map<number, number>>();
-const DAY_START_LIMIT = 4096;
-
 /** The local calendar date of an instant in the zone, as the UTC milliseconds of that date's midnight. */
 function localDate(instant: number, timeZone: string): number {
   const wall = wallClock(instant, timeZone);
@@ -445,25 +497,8 @@ function localDate(instant: number, timeZone: string): number {
  * `ZonedDateTime#startOfDay` defines it. The offsets a day before and a day after give the two
  * candidate instants for local midnight. A repeated midnight keeps the earlier one. A midnight that
  * a gap skips has neither, so the start is the first instant after the gap, found to the second.
- * Each day's start is read once per zone: an hour axis would otherwise find it again for every
- * slot, at four wall-clock reads each.
  */
 function dayStart(date: number, timeZone: string): number {
-  let starts = dayStarts.get(timeZone);
-  if (starts === undefined) {
-    starts = new Map();
-    dayStarts.set(timeZone, starts);
-  }
-  let start = starts.get(date);
-  if (start === undefined) {
-    if (starts.size >= DAY_START_LIMIT) starts.clear();
-    start = findDayStart(date, timeZone);
-    starts.set(date, start);
-  }
-  return start;
-}
-
-function findDayStart(date: number, timeZone: string): number {
   const candidates = [date - DAY, date + DAY].map((probe) => date - offsetAt(probe, timeZone));
   const exact = candidates.filter((candidate) => candidate + offsetAt(candidate, timeZone) === date);
   if (exact.length > 0) {
@@ -549,6 +584,40 @@ export function formatSlot(
   }
   const text = formatDateTime(locale, { ...format, timeZone }, start);
   return makeFormattedText(text, text);
+}
+
+/**
+ * Every slot start from `first` until `done` stops it, in one pass: a sub-day interval reads one
+ * day start per local day and steps its fixed length inside it, so a 25-hour day lists 25 hours
+ * and a 23.5-hour day ends its last hour early, as `nextSlotStart` steps them.
+ *
+ * @param first - A slot start, as `slotStart` returns it.
+ * @param done - Whether a start lies past the run, which ends there.
+ * @param interval - The slot length.
+ * @param timeZone - The IANA zone of the data's market.
+ * @returns The starts in order.
+ */
+export function slotStartsFrom(
+  first: number,
+  done: (start: number) => boolean,
+  interval: Interval,
+  timeZone: string
+): number[] {
+  const starts: number[] = [];
+  let start = first;
+  if (interval === "second" || interval === "minute" || interval === "quarter-hour" || interval === "hour") {
+    const length = SUB_DAY_MS[interval];
+    while (!done(start)) {
+      const dayEnd = dayStart(localDate(start, timeZone) + DAY, timeZone);
+      while (start < dayEnd && !done(start)) {
+        starts.push(start);
+        start = Math.min(start + length, dayEnd);
+      }
+    }
+    return starts;
+  }
+  for (; !done(start); start = nextSlotStart(start, interval, timeZone)) starts.push(start);
+  return starts;
 }
 
 /**

@@ -1,9 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
 import type { ReactElement } from "react";
 
 import { usePlotLayout, useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
+import { sameShallow, useSteady } from "./chart-steady";
 import type { ChartLayerProps, ValueFormat, XFormat } from "./chart-types";
 import type { Interval, TimePreset } from "./format/time-format";
 import { formatSlot } from "./format/time-format";
@@ -91,7 +93,11 @@ type XTick = {
   readonly visibility: TickVisibility;
 };
 
-function xTicks(context: ChartRootContextValue, format: XFormat | undefined): XTick[] {
+/** The x axis's ticks over the window, each with its text, place and visibility. */
+function xTicks(
+  context: Pick<ChartRootContextValue, "model" | "locale" | "xScale" | "orientation">,
+  format: XFormat | undefined
+): XTick[] {
   const { model, locale, xScale, orientation } = context;
   const { domain, window } = model;
   if (window === null) return [];
@@ -185,7 +191,14 @@ export function ChartXAxis({
 }: ChartXAxisProps): ReactElement {
   const context = useChartRoot("Chart.XAxis");
   usePlotLayout("Chart.XAxis");
-  const ticks = xTicks(context, format);
+  // The ticks read the whole domain, so they wait for a change of what they read. An inline format
+  // object that names the same options is no change.
+  const steadyFormat = useSteady(format, sameShallow);
+  const { model, locale, xScale, orientation } = context;
+  const ticks = useMemo(
+    () => xTicks({ model, locale, xScale, orientation }, steadyFormat),
+    [model, locale, xScale, orientation, steadyFormat]
+  );
   return (
     <div data-slot="chart-x-axis" data-tick={tick} aria-hidden="true" className={className} style={style}>
       {/* Every horizontal label shows, so a hidden sizer gives the axis column the widest one. */}

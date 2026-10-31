@@ -1,13 +1,13 @@
 "use client";
 
-import { use } from "react";
 import type { ReactElement } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import { Empty } from "../empty/empty";
-import { ChartPendingRootContext, useChartRoot } from "./chart-context";
+import { useChartRoot } from "./chart-context";
+import { usePendingOr } from "./chart-pending-root";
 import type { ChartDomProps } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 
@@ -27,7 +27,7 @@ export type ChartEmptyProps = ChartDomProps<"div">;
  * @beta
  */
 export function ChartEmpty(props: ChartEmptyProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartEmptyBody {...props} />;
+  return usePendingOr(props, ChartEmptyBody);
 }
 
 function ChartEmptyBody({ render, className, children, ...props }: ChartEmptyProps): ReactElement {

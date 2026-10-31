@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, Fragment, use, useEffect, useRef, useState } from "react";
+import { createContext, Fragment, use, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
@@ -13,9 +13,10 @@ import { Button } from "../button/button";
 import { pageStatus } from "../data-table/data-table-pagination-status";
 import { dataTableStrings } from "../data-table/intl";
 import { Table } from "../table/table";
-import { ChartPendingRootContext, useChartRoot } from "./chart-context";
+import { useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
-import { seriesLabel, slotLabel, stackTotalAt } from "./chart-text";
+import { usePendingOr } from "./chart-pending-root";
+import { qualityWords, seriesLabel, slotLabel, stackTotalAt } from "./chart-text";
 import type { ChartLayerProps, ChartScalar, ValueFormat, XFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
@@ -108,7 +109,7 @@ function Twin({ text }: { readonly text: FormattedText }): ReactNode {
 }
 
 /** The slots the table lists: every slot that holds a reading or a missing reading in some series. */
-function tableSlots(context: ChartRootContextValue): number[] {
+function tableSlots(context: Pick<ChartRootContextValue, "model">): number[] {
   const { series, domain } = context.model;
   const count = domain.kind === "time" ? domain.starts.length : domain.names.length;
   const slots: number[] = [];
@@ -119,7 +120,10 @@ function tableSlots(context: ChartRootContextValue): number[] {
 }
 
 /** The table's pages: one for 500 rows or fewer, else one per calendar period or per 500 categories. */
-function tablePages(context: ChartRootContextValue, slots: readonly number[]): Page[] {
+function tablePages(
+  context: Pick<ChartRootContextValue, "model" | "locale">,
+  slots: readonly number[]
+): Page[] {
   const { domain } = context.model;
   const strings = CHART_STRINGS[context.locale];
   if (slots.length <= PAGE_ROWS) return [{ key: 0, slots, label: "", spoken: "" }];
@@ -136,7 +140,9 @@ function tablePages(context: ChartRootContextValue, slots: readonly number[]): P
   const pages = new Map<number, number[]>();
   for (const slot of slots) {
     const start = slotStart(domain.starts[slot] ?? 0, period, domain.timeZone);
-    pages.set(start, [...(pages.get(start) ?? []), slot]);
+    const page = pages.get(start);
+    if (page === undefined) pages.set(start, [slot]);
+    else page.push(slot);
   }
   return [...pages].map(([key, list]) => {
     const label = formatSlot(context.locale, domain.timeZone, key, period, PAGE_LABEL[period], "full");
@@ -235,10 +241,7 @@ function SeriesCell({
     );
   }
   const value = formatUnitless(context.locale, reading.value, context.config[series.key]?.format ?? {});
-  const words: string[] = [];
-  if (reading.quality === "estimated") words.push(strings.estimated);
-  if (reading.quality === "corrected") words.push(strings.corrected);
-  if (slot >= series.projectedFrom) words.push(strings.projected);
+  const words = qualityWords(context.locale, reading.quality, slot >= series.projectedFrom);
   return (
     <Table.Cell {...span}>
       <Twin text={value} />
@@ -294,7 +297,7 @@ function TotalCell({
  * @beta
  */
 export function ChartTable(props: ChartTableProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartTableBody {...props} />;
+  return usePendingOr(props, ChartTableBody);
 }
 
 function ChartTableBody({
@@ -318,8 +321,10 @@ function ChartTableBody({
     focusTable.current = false;
     table.current?.focus();
   }, [shown]);
-  const slots = tableSlots(context);
-  const pages = tablePages(context, slots);
+  // The slots and pages read the whole domain, so they wait for a new model or locale.
+  const { model, locale } = context;
+  const slots = useMemo(() => tableSlots({ model }), [model]);
+  const pages = useMemo(() => tablePages({ model, locale }, slots), [model, locale, slots]);
   // A vanished page period clamps to the nearest remaining one.
   let index = 0;
   if (pageKey !== null) {
@@ -352,6 +357,25 @@ function ChartTableBody({
   };
   const hiddenClass = shown ? undefined : cn("sr-only");
   const controlTab = shown ? undefined : -1;
+  // Each move's target page, after the data table's pagination moves.
+  const moves = [
+    { key: "first", label: "goToFirstPage", Icon: CaretDoubleLeft, target: 0, enabled: status.canPrevious },
+    {
+      key: "previous",
+      label: "goToPreviousPage",
+      Icon: CaretLeft,
+      target: index - 1,
+      enabled: status.canPrevious,
+    },
+    { key: "next", label: "goToNextPage", Icon: CaretRight, target: index + 1, enabled: status.canNext },
+    {
+      key: "last",
+      label: "goToLastPage",
+      Icon: CaretDoubleRight,
+      target: pages.length - 1,
+      enabled: status.canNext,
+    },
+  ] as const;
   return (
     <div data-slot="chart-table" className={className} style={style}>
       <Button
@@ -412,51 +436,22 @@ function ChartTableBody({
       </Table.Root>
       {pages.length > 1 ? (
         <div data-slot="chart-table-pagination" className={hiddenClass}>
-          <Button
-            variant="outline"
-            size="icon-xs"
-            aria-label={tableStrings.format("goToFirstPage")}
-            tabIndex={controlTab}
-            disabled={!status.canPrevious}
-            onClick={() => {
-              go(0);
-            }}>
-            <CaretDoubleLeft aria-hidden="true" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon-xs"
-            aria-label={tableStrings.format("goToPreviousPage")}
-            tabIndex={controlTab}
-            disabled={!status.canPrevious}
-            onClick={() => {
-              go(index - 1);
-            }}>
-            <CaretLeft aria-hidden="true" />
-          </Button>
-          <span>{statusText}</span>
-          <Button
-            variant="outline"
-            size="icon-xs"
-            aria-label={tableStrings.format("goToNextPage")}
-            tabIndex={controlTab}
-            disabled={!status.canNext}
-            onClick={() => {
-              go(index + 1);
-            }}>
-            <CaretRight aria-hidden="true" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon-xs"
-            aria-label={tableStrings.format("goToLastPage")}
-            tabIndex={controlTab}
-            disabled={!status.canNext}
-            onClick={() => {
-              go(pages.length - 1);
-            }}>
-            <CaretDoubleRight aria-hidden="true" />
-          </Button>
+          {moves.map(({ key, label, Icon, target, enabled }) => (
+            <Fragment key={key}>
+              {key === "next" ? <span>{statusText}</span> : null}
+              <Button
+                variant="outline"
+                size="icon-xs"
+                aria-label={tableStrings.format(label)}
+                tabIndex={controlTab}
+                disabled={!enabled}
+                onClick={() => {
+                  go(target);
+                }}>
+                <Icon aria-hidden="true" />
+              </Button>
+            </Fragment>
+          ))}
         </div>
       ) : null}
     </div>
@@ -554,7 +549,7 @@ function columnCell(
  * @beta
  */
 export function ChartTableColumn(props: ChartTableColumnProps): ReactElement {
-  return use(ChartPendingRootContext) ? <></> : <ChartTableColumnBody {...props} />;
+  return usePendingOr(props, ChartTableColumnBody);
 }
 
 function ChartTableColumnBody({

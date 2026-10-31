@@ -6,13 +6,19 @@
  * vertex, or a Bar's tip. During a data update each one joins the tween of what it sits on, so it
  * draws on its vertex or its bar in every frame.
  */
+import { useRef } from "react";
+import type { RefCallback, RefObject } from "react";
+
 import { barAnchor } from "./chart-bar-draw";
 import type { ChartRootContextValue } from "./chart-context";
 import type { FollowerCause } from "./chart-followers";
 import type { ChartMotion, JoinLead, MarkValues, Placement, ValueAxis } from "./chart-motion";
+import { useFollowerPlacement, useMotionMark } from "./chart-motion-mark";
+import type { MarkTuple, MotionWriter, WriterLook } from "./chart-motion-mark";
 import { crossfade } from "./chart-path-draw";
 import { joinPath } from "./chart-paths";
 import type { PathRoute } from "./chart-paths";
+import type { ChartFrame } from "./chart-plot";
 import { geometryOf } from "./layout/bar-geometry";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { ownCentre, ownSlot } from "./layout/coarse-slots";
@@ -135,8 +141,8 @@ export function attachJoin(
 }
 
 /**
- * How an attached mark last showed: a copy of its live node, text included, the look it drew with,
- * and the last crossfade it saw.
+ * How an attached mark last showed at a commit: the copy it kept of its live node, text included,
+ * the look it drew with, and the last crossfade it saw.
  */
 export type AttachedShown<L> = {
   readonly node: Element;
@@ -144,12 +150,26 @@ export type AttachedShown<L> = {
   readonly crossfade: object | null;
 };
 
+/** How an attached mark keeps its last drawing for a crossfade, and when. */
+export type AttachedCopy = {
+  /**
+   * When the mark keeps a copy: on commit paints, as every mark whose text changes only in a
+   * commit, or on every paint, for a pill whose text follows the active slot. Either keeps one on
+   * the first paint that shows the mark.
+   */
+  readonly cadence: "commit" | "every";
+  /** The copy to keep of the live node, a deep clone unless the mark keeps less. */
+  readonly keep?: (live: Element) => Element;
+  /** The drawing that fades out, from the kept copy and the numbers the loop drew last. */
+  readonly outgoing?: (kept: Element, before: MarkValues) => Element | null;
+};
+
 /**
  * Place an attached mark. When the path commit it follows crossfades the path, the mark crossfades
  * with it, once: the copy it kept of how it last showed, its pills' old text included, fades out
  * where the loop last drew it, in an element beside the live one, and the mark lands on its new
  * place and fades in. A pointer or key step never starts one. Otherwise it takes its placement.
- * Either way it keeps a copy of its live node for the next commit.
+ * It keeps a copy of its live node as its `copy` says, for the next crossfade.
  *
  * @param input - The mark's join, node, outgoing element and writer, and what it showed last.
  */
@@ -171,10 +191,12 @@ export function placeAttached<L>(input: {
   readonly shown: { current: AttachedShown<L> | null };
   /** The mark's writer, which draws the old numbers on the copy. */
   readonly draw: (copy: Element, look: L, values: MarkValues) => void;
+  readonly copy: AttachedCopy;
 }): void {
-  const { node, outgoing, before, shown } = input;
+  const { node, outgoing, before, shown, copy } = input;
   const old = shown.current;
   const fade = input.join?.crossfade ?? null;
+  const source = old === null || before === null ? null : (copy.outgoing?.(old.node, before) ?? old.node);
   if (
     input.cause === "commit" &&
     fade !== null &&
@@ -183,15 +205,126 @@ export function placeAttached<L>(input: {
     outgoing !== null &&
     before !== null &&
     old !== null &&
+    source !== null &&
     !input.motion.reduced()
   ) {
-    crossfade(node, outgoing, (copy) => input.draw(copy, old.look, before), old.node);
+    crossfade(node, outgoing, (drawing) => input.draw(drawing, old.look, before), source);
     // The path snapped, so a join lands on its rest, and anything else snaps.
     input.place(input.placement.kind === "join" ? input.placement : { kind: "snap" });
   } else input.place(input.placement);
-  const copy = node?.cloneNode(true);
-  shown.current = copy instanceof Element ? { node: copy, look: input.look, crossfade: fade } : null;
+  if (node === null) {
+    shown.current = null;
+    return;
+  }
+  // A step keeps a copy only while the mark holds none, as an active dot that first shows on a step.
+  if (input.cause === "commit" || copy.cadence === "every" || old === null) {
+    shown.current = { node: copy.keep?.(node) ?? deepCopy(node), look: input.look, crossfade: fade };
+  } else shown.current = { ...old, crossfade: fade };
 }
+
+/** A deep copy of a node, text included. */
+function deepCopy(node: Element): Element {
+  const copy = node.cloneNode(true);
+  return copy instanceof Element ? copy : node;
+}
+
+/** Whether a copy is the same kind of element as the live node it copies. */
+function sameKind<T extends Element>(copy: Element, live: T | null): copy is T {
+  return live !== null && copy.constructor === live.constructor;
+}
+
+/**
+ * How attached point marks reach a commit's geometry: they join what they sit on, and snap when
+ * nothing they sit on moves, so a dot never tweens on a route of its own.
+ */
+function attachedPlacement(placement: Placement, join: FollowerJoin | undefined): Placement {
+  return join === undefined && placement.kind === "move" ? { kind: "snap" } : placement;
+}
+
+/** An attached mark's registration, its outgoing element, and how it places. */
+export type AttachedMark<T extends Element, A extends readonly ValueAxis[], O extends Element> = {
+  /** Pass it as the live node's `ref`. */
+  readonly ref: RefCallback<T>;
+  /** The live node. */
+  readonly node: () => T | null;
+  /** Pass it as the `ref` of the empty element beside the live one, which the old drawing fades out in. */
+  readonly outgoingRef: RefObject<O | null>;
+  /**
+   * Place the mark for a paint. It asks the commit classifier first, so the classifier sees every
+   * commit, then places the target through what the mark joins, or stops for a null target, as a
+   * mark that hides does.
+   */
+  readonly attach: (
+    cause: FollowerCause,
+    join: () => FollowerJoin | undefined,
+    target: MarkTuple<A> | null
+  ) => void;
+};
+
+/**
+ * Register a mark that sits on a series' drawn point, as Dots, a Marker, the active dot and the
+ * value followers do: its motion mark, its follower placement, the element its crossfade fades out
+ * in and the copy it keeps for it.
+ *
+ * @param context - Root's context.
+ * @param drawn - The frame the mark draws in, or null before the plot is measured.
+ * @param draw - The mark's writer, bound at module scope in the mark's module.
+ * @param look - The writer's look.
+ * @param axes - What each of the mark's numbers measures.
+ * @param options - Whether it is a point mark, which never tweens on a route of its own, and how
+ *   it keeps its copy, on commit paints with a deep clone by default.
+ * @returns The mark.
+ */
+export function useAttachedMark<
+  T extends Element,
+  L extends WriterLook<L>,
+  const A extends readonly ValueAxis[],
+  O extends Element = HTMLDivElement,
+>(
+  context: ChartRootContextValue,
+  drawn: ChartFrame | null,
+  draw: MotionWriter<T, L>,
+  look: L,
+  axes: A,
+  options: { readonly point?: boolean; readonly copy?: AttachedCopy } = {}
+): AttachedMark<T, A, O> {
+  const { motion } = context;
+  const mark = useMotionMark(motion, draw, look, axes);
+  const placeFor = useFollowerPlacement(context.update, drawn?.plot ?? null, context.orientation);
+  const outgoingRef = useRef<O>(null);
+  const shown = useRef<AttachedShown<L> | null>(null);
+  const { point = false, copy = COMMIT_COPY } = options;
+  const attach = (
+    cause: FollowerCause,
+    join: () => FollowerJoin | undefined,
+    target: MarkTuple<A> | null
+  ): void => {
+    const joined = join();
+    const asked = placeFor(cause, joined);
+    if (target === null) return;
+    const live = mark.node();
+    placeAttached({
+      motion,
+      cause,
+      join: joined,
+      placement: point ? attachedPlacement(asked, joined) : asked,
+      place: (placement) => mark.place(target, placement),
+      node: live,
+      outgoing: outgoingRef.current,
+      before: mark.drawn(),
+      look,
+      shown,
+      draw: (drawing, old, values) => {
+        if (sameKind(drawing, live)) draw(drawing, old, values);
+      },
+      copy,
+    });
+  };
+  return { ref: mark.ref, node: mark.node, outgoingRef, attach };
+}
+
+/** The default copy: a deep clone, kept on commit paints. */
+const COMMIT_COPY: AttachedCopy = { cadence: "commit" };
 
 /**
  * What each number of a point mark measures, a place along the slot axis then a value, which the

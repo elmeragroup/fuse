@@ -5,7 +5,6 @@
  * stride, so the label count never falls as the axis grows. After the interval's own strides come
  * the strides of coarser calendar units, so a year of hours can fall back to month starts.
  */
-import { wallClock } from "../format/time-format";
 import type { Interval, WallClock } from "../format/time-format";
 import type { XDomain } from "./x-domain";
 
@@ -107,13 +106,14 @@ export function tickStrides(domain: XDomain): TickStride[] {
       slots: domain.names.flatMap((_, slot) => (slot % stride === 0 ? [slot] : [])),
     }));
   }
-  const walls = domain.starts.map((start) => wallClock(start, domain.timeZone));
-  const seen = new Set<string>();
-  // Two slots with one wall-clock start are the repeated fall-back hour, and only the first ticks.
+  const { walls } = domain;
+  // The starts ascend, so a slot whose wall clock lies at or before the latest one so far repeats
+  // it, as the fall-back hour's second pass does, and only the first pass ticks.
+  let latest = Number.NEGATIVE_INFINITY;
   const first = walls.map((wall) => {
-    const key = `${wall.year}-${wall.month}-${wall.day}T${wall.hour}:${wall.minute}:${wall.second}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
+    const time = Date.UTC(wall.year, wall.month - 1, wall.day, wall.hour, wall.minute, wall.second);
+    if (time <= latest) return false;
+    latest = time;
     return true;
   });
   const tier = (unit: Interval, starts: (wall: WallClock) => boolean): TickStride[] => {

@@ -79,6 +79,32 @@ function joinLength(date: Intl.DateTimeFormatOptions): JoinLength {
  * @throws {TypeError} When Intl rejects the options together, such as `dateStyle` beside `hour`.
  */
 export function formatDateTime(locale: string, options: Intl.DateTimeFormatOptions, instant: number): string {
+  const { whole, join } = planOf(locale, options);
+  if (join === undefined) return whole.format(instant);
+  return `${join.date.format(instant)}${join.separator}${join.time.format(instant)}`;
+}
+
+/**
+ * How one locale and set of options format: Intl's whole output, or a date half and a time half
+ * with the separator between them.
+ */
+type JoinPlan = {
+  readonly whole: Intl.DateTimeFormat;
+  readonly join?: {
+    readonly date: Intl.DateTimeFormat;
+    readonly time: Intl.DateTimeFormat;
+    readonly separator: string;
+  };
+};
+
+/** The plans by locale and options, which app code bounds as it bounds Intl's own formatters. */
+const plans = new Map<string, JoinPlan>();
+
+/** The plan of a locale and options, split and resolved once. */
+function planOf(locale: string, options: Intl.DateTimeFormatOptions): JoinPlan {
+  const key = `${locale}\u0000${JSON.stringify(options)}`;
+  const known = plans.get(key);
+  if (known !== undefined) return known;
   const whole = dateTimeFormat(locale, options);
   // A zone name belongs to the time, and Intl rejects it beside `dateStyle`. The hour cycle only
   // shapes a time, so the date half ignores it.
@@ -89,10 +115,17 @@ export function formatDateTime(locale: string, options: Intl.DateTimeFormatOptio
   // another field takes a join.
   const hasDate = Object.keys(date).some((key) => DATE_FIELDS.has(key) && key !== "weekday");
   const hasTime = Object.keys(time).some((key) => TIME_FIELDS.has(key));
-  if (separators === undefined || !hasDate || !hasTime) {
-    return whole.format(instant);
-  }
-  const dateText = dateTimeFormat(locale, date).format(instant);
-  const timeText = dateTimeFormat(locale, time).format(instant);
-  return `${dateText}${separators[joinLength(date)]}${timeText}`;
+  const plan: JoinPlan =
+    separators === undefined || !hasDate || !hasTime
+      ? { whole }
+      : {
+          whole,
+          join: {
+            date: dateTimeFormat(locale, date),
+            time: dateTimeFormat(locale, time),
+            separator: separators[joinLength(date)],
+          },
+        };
+  plans.set(key, plan);
+  return plan;
 }

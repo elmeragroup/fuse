@@ -2,10 +2,11 @@
  * Value labels for chart axes, tooltips, aria text and tables. A format is plain data, either Intl
  * number options or a named preset, so a server component can pass it to a client chart.
  */
-import { numberFormat, pluralRules } from "../../../internal/intl-cache";
+import { numberFormat } from "../../../internal/intl-cache";
 import type { SupportedLocale } from "../../../intl/locale-context";
 import { makeFormattedText } from "./formatted-text";
 import type { FormattedText, LabelRole } from "./formatted-text";
+import { inflect } from "./inflection";
 import { CHART_WORDS } from "./words";
 import type { ChartWords } from "./words";
 
@@ -129,15 +130,6 @@ function digits(format: ChartFractionDigits, defaultMaximum: number | undefined)
   };
 }
 
-function inflect(
-  locale: SupportedLocale,
-  value: number,
-  fraction: ChartFractionDigits,
-  word: { readonly one: string; readonly other: string }
-): string {
-  return pluralRules(locale, fraction).select(value) === "one" ? word.one : word.other;
-}
-
 function formatPreset(
   locale: SupportedLocale,
   words: ChartWords,
@@ -150,7 +142,7 @@ function formatPreset(
     const options: Intl.NumberFormatOptions = { ...fraction, signDisplay: "negative" };
     return makeFormattedText(
       `${visualNumber(locale, value, options)} ${format.unit}`,
-      `${spokenNumber(locale, words, value, options)} ${inflect(locale, value, fraction, words.unitNames[format.unit])}`
+      `${spokenNumber(locale, words, value, options)} ${inflect(locale, value, words.unitNames[format.unit], fraction)}`
     );
   }
   const vat = role === "full" ? ` ${words.vat[format.vat]}` : "";
@@ -158,7 +150,7 @@ function formatPreset(
   if (format.minor === true) {
     const fraction = digits(format, 1);
     const options: Intl.NumberFormatOptions = { ...fraction, signDisplay: "negative" };
-    const minorName = inflect(locale, value, fraction, words.minorName[format.currency]);
+    const minorName = inflect(locale, value, words.minorName[format.currency], fraction);
     return makeFormattedText(
       `${visualNumber(locale, value, options)} ${words.minorSymbol[format.currency]}/kWh${vat}`,
       `${spokenNumber(locale, words, value, options)} ${minorName} ${words.spokenPerKilowattHour}${spokenVat}`

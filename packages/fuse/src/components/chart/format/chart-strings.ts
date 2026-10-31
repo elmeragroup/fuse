@@ -1,4 +1,4 @@
-import { numberFormat, pluralRules } from "../../../internal/intl-cache";
+import { numberFormat } from "../../../internal/intl-cache";
 /**
  * The chart dictionary of CONTRACT section 12, in four locales. Every string is a draft that the
  * owner or the content owner signs off, as `TODO.md` lists. An explicit prop replaces its string
@@ -6,10 +6,9 @@ import { numberFormat, pluralRules } from "../../../internal/intl-cache";
  */
 import { canonicalSpaces } from "../../../intl/canonical-spaces";
 import type { SupportedLocale } from "../../../intl/locale-context";
+import { inflect } from "./inflection";
+import type { Inflected } from "./inflection";
 import type { Interval } from "./time-format";
-
-/** A word in the singular and plural forms `Intl.PluralRules` selects between. */
-type Counted = { readonly one: string; readonly other: string };
 
 /** One locale's chart strings. */
 export type ChartStrings = {
@@ -84,7 +83,7 @@ export type ChartStrings = {
   /** Where a projection starts, such as `Forbruk er prognose fra 17. oktober.` */
   readonly descriptionProjection: (label: string, from: string) => string;
   /** The interval's slot words, counted. */
-  readonly slots: { readonly [I in Interval | "category"]: Counted };
+  readonly slots: { readonly [I in Interval | "category"]: Inflected };
 };
 
 const NB_NO: ChartStrings = {
@@ -378,5 +377,5 @@ export const CHART_STRINGS = {
 export function countSlots(locale: SupportedLocale, count: number, unit: Interval | "category"): string {
   const word = CHART_STRINGS[locale].slots[unit];
   const number = canonicalSpaces(numberFormat(locale, {}).format(count));
-  return `${number}\u00a0${pluralRules(locale, {}).select(count) === "one" ? word.one : word.other}`;
+  return `${number}\u00a0${inflect(locale, count, word)}`;
 }

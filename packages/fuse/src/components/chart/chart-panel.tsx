@@ -10,10 +10,12 @@ import { createFrameOwner } from "./chart-motion";
 import { colourFamilyError } from "./chart-paint";
 import { ChartPlotContext, usePanelPlot } from "./chart-plot";
 import { PlotSkeleton } from "./chart-skeleton";
+import { useSteady } from "./chart-steady";
 import type { ChartConfig, ChartLayerProps } from "./chart-types";
 import { layoutDomain } from "./layout/cartesian-model";
 import type { LayoutInput } from "./layout/cartesian-model";
 import { ChartCompositionError } from "./layout/errors";
+import { sameItems } from "./layout/same-items";
 
 /**
  * Props for `Chart.Panel`, a closed part.
@@ -63,23 +65,6 @@ function splitStackError(config: ChartConfig, keys: readonly string[]): ChartCom
   return null;
 }
 
-/** Whether two lists hold the same items in the same order. */
-function sameList<T>(a: readonly T[] | undefined, b: readonly T[] | undefined): boolean {
-  if (a === undefined || b === undefined) return a === b;
-  return a.length === b.length && a.every((item, index) => Object.is(item, b[index]));
-}
-
-/**
- * A list prop that keeps its identity while it names the same items, so an inline array is no
- * change and a parent's re-render never moves the Panel's domain.
- */
-function useSteadyList<T>(list: readonly T[] | undefined): readonly T[] | undefined {
-  const [steady, setSteady] = useState(list);
-  if (steady === list || sameList(steady, list)) return steady;
-  setSteady(list);
-  return list;
-}
-
 /**
  * A row with its own y axis and y domain. All Panels share Root's x grid, surface and tooltip. With
  * Panels, every config key sits in exactly one Panel, every plot part sits in a Panel, and the
@@ -120,8 +105,10 @@ export function ChartPanel({
   if (colourRule !== null) throw colourRule;
   const stackRule = splitStackError(context.config, series);
   if (stackRule !== null) throw stackRule;
-  const keys = useSteadyList(series) ?? series;
-  const include = useSteadyList(yInclude);
+  // An inline array that names the same items is no change, so a parent's re-render never moves the
+  // Panel's domain.
+  const keys = useSteady(series, sameItems);
+  const include = useSteady(yInclude, sameItems);
   const { model, stackOffset, registerPanel } = context;
   const input = useMemo(
     (): LayoutInput => ({ keys, baseline: yBaseline, include: include ?? [] }),
@@ -148,7 +135,7 @@ export function ChartPanel({
     [keys, y, yBaseline, owner, labels]
   );
   const plotRef = useRef<HTMLDivElement>(null);
-  const plot = usePanelPlot(plotRef);
+  const { plot, probe } = usePanelPlot(plotRef);
   useLayoutEffect(
     () => registerPanel({ layout: input, plot: () => plotRef.current }),
     [registerPanel, input]
@@ -162,6 +149,7 @@ export function ChartPanel({
     <ChartLayoutContext value={layout}>
       <div data-slot="chart-panel" className={className} style={style}>
         <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
+          {probe}
           {plot === null && !model.empty ? <PlotSkeleton /> : null}
         </div>
         <ChartPlotContext value={plot}>{children}</ChartPlotContext>

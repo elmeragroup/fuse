@@ -5,9 +5,10 @@ import type { ReactElement, RefCallback, RefObject } from "react";
 
 import { usePlotLayout, useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
+import { writeAttribute, writeAttributes, writeStyle } from "./chart-dom";
 import type { ChartLabels } from "./chart-labels";
 import type { MarkValues } from "./chart-motion";
-import { placementOf, useCommitMotion, useMotionMark } from "./chart-motion-mark";
+import { placementOf, useCommitMotion, useFirstDraw, useMotionMark } from "./chart-motion-mark";
 import { useChartFrame } from "./chart-plot";
 import type { ChartFrame } from "./chart-plot";
 import { slotLabel } from "./chart-text";
@@ -234,13 +235,19 @@ function useStackedLabel(
     labels.resize(key, labelSize(node));
     labels.measure({ end: snapY(box, box.height), pixel: 1 / box.dpr });
   });
-  const move = (span: readonly [number, number] | null): void => {
-    if (stacks) labels.move(key, span);
-  };
-  const show = (shown: boolean): void => {
-    if (row) labels.showSlot(key, shown);
-  };
-  return { ref, move, show };
+  // The label keeps one identity while it stacks the same way, so the writer's look memo holds.
+  return useMemo(
+    () => ({
+      ref,
+      move: (span: readonly [number, number] | null): void => {
+        if (stacks) labels.move(key, span);
+      },
+      show: (shown: boolean): void => {
+        if (row) labels.showSlot(key, shown);
+      },
+    }),
+    [labels, key, stacks, row]
+  );
 }
 
 /** A range in visual form with a bare en dash, writing a shared unit once, such as `5–10 kWh`. */
@@ -269,7 +276,7 @@ function atX(frame: PlotFrame, axis: "value" | "slot"): boolean {
  * top or the right edge, and a slot share from the first slot, the left or the top edge.
  */
 function plotCoordinate(frame: PlotFrame, axis: "value" | "slot", at: number): number {
-  const length = atX(frame, axis) ? frame.box.width : frame.box.height;
+  const length = plotLength(frame, axis);
   const share = (at / 100) * length;
   return axis === "value" && frame.orientation === "horizontal" ? length - share : share;
 }
@@ -398,13 +405,13 @@ function drawLine(node: HTMLDivElement, look: ReferenceLook, values: MarkValues)
   const width = wholeWidth(frame.box, tweened);
   const state = lineDrawn(frame, axis, pixel, width, xScale);
   const share = referenceShare(frame, axis, state.span[0]);
-  node.style.setProperty("--chart-at", `${String(share)}%`);
-  node.style.setProperty("--chart-x", String(share / 100));
+  writeStyle(node, "--chart-at", `${String(share)}%`);
+  writeStyle(node, "--chart-x", String(share / 100));
   // The line hides, label and all, while it lies outside the plot, and its label leaves the stack.
   toggle(node, "data-outside", state.outside);
   label.move(state.guide);
   label.show(!state.outside);
-  node.style.setProperty("--_rule-width", `${String(width)}px`);
+  writeStyle(node, "--_rule-width", `${String(width)}px`);
   writeAttributes(
     node.querySelector('[data-slot="chart-reference-rule"]'),
     lineAttributes(frame, axis, state.span[0], width)
@@ -430,9 +437,9 @@ function drawArea(node: HTMLDivElement, look: ReferenceLook, values: MarkValues)
   const [fromEdge, toEdge] = start <= end ? [low, high] : [high, low];
   const shownStart = axis === "slot" ? slotShare(frame, low) : clamp(referenceShare(frame, axis, fromEdge));
   const shownEnd = axis === "slot" ? slotShare(frame, high) : clamp(referenceShare(frame, axis, toEdge));
-  node.style.setProperty("--chart-from", `${String(shownStart)}%`);
-  node.style.setProperty("--chart-to", `${String(shownEnd)}%`);
-  node.style.setProperty("--chart-x", String(shownStart / 100));
+  writeStyle(node, "--chart-from", `${String(shownStart)}%`);
+  writeStyle(node, "--chart-to", `${String(shownEnd)}%`);
+  writeStyle(node, "--chart-x", String(shownStart / 100));
   toggle(node, "data-outside", state.outside);
   toggle(node, "data-clipped", state.clipped);
   label.move(state.guide);
@@ -470,14 +477,7 @@ function bandAttributes(frame: PlotFrame, axis: "value" | "slot", [start, stop]:
 
 /** Set or remove a boolean data attribute. */
 function toggle(node: Element, name: string, on: boolean): void {
-  if (on) node.setAttribute(name, "");
-  else node.removeAttribute(name);
-}
-
-/** Write a set of numeric attributes. */
-function writeAttributes(node: Element | null, attributes: { readonly [name: string]: number }): void {
-  if (node === null) return;
-  for (const [name, value] of Object.entries(attributes)) node.setAttribute(name, String(value));
+  writeAttribute(node, name, on ? "" : null);
 }
 
 /**
@@ -538,7 +538,7 @@ export function ChartReferenceLine({ style, ...props }: ChartReferenceLineProps)
   };
   const target = (measured: PlotFrame) => [plotCoordinate(measured, axis, at), ruleWidth(measured)] as const;
   const wrapper = useReferenceMark(context, drawn, axis, target, look);
-  // The first render draws the line at rest, as its writer draws it.
+  // The first render draws the line at rest, as its writer draws it, and the loop draws it after.
   const rule = (measured: PlotFrame) => {
     const [coordinate, wide] = target(measured);
     const width = wholeWidth(measured.box, wide);
@@ -549,6 +549,7 @@ export function ChartReferenceLine({ style, ...props }: ChartReferenceLineProps)
       width
     );
   };
+  const ruleAttributes = useFirstDraw(() => (frame === null ? null : rule(frame)));
   return (
     <div
       ref={wrapper}
@@ -560,7 +561,7 @@ export function ChartReferenceLine({ style, ...props }: ChartReferenceLineProps)
       className={className}
       style={{ "--chart-at": `${String(at)}%`, "--chart-x": at / 100, ...style }}>
       <svg aria-hidden="true">
-        {frame === null ? null : <line data-slot="chart-reference-rule" {...rule(frame)} />}
+        {ruleAttributes === null ? null : <line data-slot="chart-reference-rule" {...ruleAttributes} />}
       </svg>
       <span ref={labelRef} data-slot="chart-reference-label" aria-hidden="true">
         {label === undefined ? null : text.text}
@@ -643,6 +644,10 @@ export function ChartReferenceArea({ style, ...props }: ChartReferenceAreaProps)
   const target = (measured: PlotFrame) =>
     [plotCoordinate(measured, axis, from), plotCoordinate(measured, axis, to)] as const;
   const wrapper = useReferenceMark(context, drawn, axis, target, look);
+  // The first render draws the band at rest, as its writer draws it, and the loop draws it after.
+  const band = useFirstDraw(() =>
+    frame === null ? null : bandAttributes(frame, axis, bandDrawn(frame, axis, ...target(frame)).span)
+  );
   return (
     <div
       ref={wrapper}
@@ -659,12 +664,7 @@ export function ChartReferenceArea({ style, ...props }: ChartReferenceAreaProps)
         ...style,
       }}>
       <svg aria-hidden="true">
-        {frame === null ? null : (
-          <rect
-            data-slot="chart-reference-band"
-            {...bandAttributes(frame, axis, bandDrawn(frame, axis, ...target(frame)).span)}
-          />
-        )}
+        {band === null ? null : <rect data-slot="chart-reference-band" {...band} />}
       </svg>
       <span ref={labelRef} data-slot="chart-reference-label" aria-hidden="true">
         {label === undefined ? null : text.text}

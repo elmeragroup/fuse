@@ -288,16 +288,37 @@ export type BucketColumn = {
   readonly side: "across" | "above" | "below";
 };
 
-/** The extent a stack column covers at a slot on one side of zero, from every segment of the stack. */
-function sideTotal(model: CartesianModel, series: SeriesModel, slot: number, negative: boolean): number {
-  const keys = new Set(model.stacks.find(({ id }) => id === series.stack)?.keys ?? [series.key]);
-  let total = 0;
-  for (const other of model.series) {
-    const span = other.extents[slot];
-    if (!keys.has(other.key) || !span) continue;
-    total = negative ? Math.min(total, span[0]) : Math.max(total, span[1]);
+/** Each stack's reach on either side of zero at every slot. */
+type StackSides = { readonly positive: Float64Array; readonly negative: Float64Array };
+
+/** The stack sides by model and stack, which every member's columns read. */
+const stackSides = new WeakMap<CartesianModel, Map<string, StackSides>>();
+
+/**
+ * The extent a stack column covers at every slot on each side of zero, from every segment of the
+ * stack, computed once per model and stack.
+ */
+function sidesOf(model: CartesianModel, series: SeriesModel): StackSides {
+  const byStack = stackSides.get(model) ?? new Map<string, StackSides>();
+  stackSides.set(model, byStack);
+  const id = series.stack ?? `key ${series.key}`;
+  const cached = byStack.get(id);
+  if (cached !== undefined) return cached;
+  const keys = new Set(model.stacks.find((stack) => stack.id === series.stack)?.keys ?? [series.key]);
+  const members = model.series.filter(({ key }) => keys.has(key));
+  const count = Math.max(0, ...members.map(({ extents }) => extents.length));
+  const positive = new Float64Array(count);
+  const negative = new Float64Array(count);
+  for (const member of members) {
+    member.extents.forEach((span, slot) => {
+      if (!span) return;
+      negative[slot] = Math.min(negative[slot] ?? 0, span[0]);
+      positive[slot] = Math.max(positive[slot] ?? 0, span[1]);
+    });
   }
-  return total;
+  const sides = { positive, negative };
+  byStack.set(id, sides);
+  return sides;
 }
 
 /**
@@ -345,6 +366,7 @@ export function bucketColumns(
     });
   };
   const edges = bucketEdges(count);
+  const sides = series.stack === undefined ? null : sidesOf(model, series);
   for (let bucket = 0; bucket < BUCKETS; bucket += 1) {
     const from = edges[bucket] ?? count;
     const to = edges[bucket + 1] ?? count;
@@ -375,11 +397,12 @@ export function bucketColumns(
       continue;
     }
     for (const negative of [false, true]) {
+      const reach = (negative ? sides?.negative : sides?.positive) ?? [];
       let best = -1;
       let magnitude = 0;
       for (let index = from; index < to; index += 1) {
         const slot = window.first + index;
-        const total = Math.abs(sideTotal(model, series, slot, negative));
+        const total = Math.abs(reach[slot] ?? 0);
         if (total > magnitude) {
           magnitude = total;
           best = slot;

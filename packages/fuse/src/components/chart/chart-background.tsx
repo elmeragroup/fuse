@@ -3,9 +3,9 @@
 // The pattern tiles in this file port SVG paths from evilcharts by Gurbinder, which ships under the
 // MIT license. The published package carries that notice in LICENSE-evilcharts at its root.
 
-import { useId } from "react";
 import type { ReactElement } from "react";
 
+import { useSvgIdPrefix } from "./chart-dom";
 import type { ChartBackgroundPattern, ChartLayerProps } from "./chart-types";
 
 /**
@@ -164,8 +164,7 @@ function PatternTile({
  * @beta
  */
 export function ChartBackground({ variant = "dots", className, style }: ChartBackgroundProps): ReactElement {
-  // SVG references read the id inside url(), so it keeps only characters an IRI fragment takes as is.
-  const id = `chart-bg-${useId().replace(/[^\w-]/gu, "")}`;
+  const id = useSvgIdPrefix("chart-bg");
   const pattern = `${id}-pattern`;
   const mask = `${id}-fade`;
   const soften = `${id}-soften`;

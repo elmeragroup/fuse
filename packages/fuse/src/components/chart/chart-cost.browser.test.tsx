@@ -4,11 +4,13 @@
 // text, so it renders per slot, as the tooltip does. A LegendValue renders at most once per change
 // of active slot. A data update costs one Root commit and its tween costs none. The counts come
 // from React's Profiler, and the expected numbers come from CONTRACT section 4, pass-2's
-// interaction README section 6 and the SVG brief's motion rule, not from Fuse.
+// interaction README section 6 and the SVG brief's motion rule, not from Fuse. A parent's
+// re-render with an equal inline config, and a legend toggle, render no mark at all.
 import { Profiler } from "react";
 import type { ReactNode } from "react";
 
 import { describe, expect, it } from "vitest";
+import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { S06Chart } from "../../../test/chart/bar-charts";
@@ -180,5 +182,74 @@ describe("pointer cost", () => {
       await frame();
     }
     expect(commits.get("bar") ?? 0).toBe(afterUpdate);
+  });
+});
+
+describe("Root's input cost (X15)", () => {
+  // The marks read Root's context, which changes with what the config says and never with its
+  // identity or the selection. The oracle is the context contract in chart-context.ts: a parent's
+  // re-render with an equal inline config renders no mark, and a legend toggle renders the legend
+  // and no mark.
+  const marks = (
+    <>
+      <Counted id="bar">
+        <Chart.Bar dataKey="p" />
+      </Counted>
+      <Counted id="line">
+        <Chart.Line dataKey="q" />
+      </Counted>
+      <Counted id="axis">
+        <Chart.XAxis />
+      </Counted>
+      <Counted id="toggles">
+        <Chart.LegendToggleGroup />
+      </Counted>
+    </>
+  );
+
+  /** A host that rebuilds Root's config and its own props on every render, as an app often does. */
+  function Host({ tick, children }: { readonly tick: number; readonly children: ReactNode }): ReactNode {
+    return (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 400 }} data-tick={tick}>
+          <Chart.Root
+            data={MOTION_A}
+            config={{
+              p: { label: "P", color: "chart-1" },
+              q: { label: "Q", color: "chart-2" },
+            }}
+            xKey="day"
+            interval="day"
+            timeZone="Europe/Oslo"
+            yInclude={[0, 10]}
+            onSelectedKeyChange={() => undefined}
+            data-intro="none"
+            aria-label="Forbruk per dag">
+            {children}
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+  }
+
+  it("renders no mark when a parent re-renders with an equal inline config", async () => {
+    const { rerender } = renderThemed(<Host tick={0}>{marks}</Host>);
+    await frame();
+    commits.clear();
+    rerender(<Host tick={1}>{marks}</Host>);
+    rerender(<Host tick={2}>{marks}</Host>);
+    await frame();
+    expect(["bar", "line", "axis", "toggles"].map((id) => commits.get(id) ?? 0)).toEqual([0, 0, 0, 0]);
+  });
+
+  it("renders the legend toggles and no mark when a toggle selects a series", async () => {
+    renderThemed(<Host tick={0}>{marks}</Host>);
+    await frame();
+    commits.clear();
+    await userEvent.click(page.getByRole("button", { name: "Q" }));
+    await frame();
+    expect(page.getByRole("button", { name: "Q" }).element().getAttribute("aria-pressed")).toBe("true");
+    expect(["bar", "line", "axis"].map((id) => commits.get(id) ?? 0)).toEqual([0, 0, 0]);
+    expect(commits.get("toggles") ?? 0).toBeGreaterThan(0);
   });
 });

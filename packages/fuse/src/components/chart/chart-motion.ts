@@ -8,6 +8,7 @@
  */
 import { cubicBezier } from "./layout/ease";
 import { CHART_UPDATE_CURVE, CHART_UPDATE_MS } from "./layout/motion";
+import { sameItems } from "./layout/same-items";
 
 /** A mark's drawn numbers in a fixed order, such as a bar's x, y, width and height. */
 export type MarkValues = readonly number[];
@@ -181,6 +182,11 @@ type Mark = {
   readonly owner: FrameOwner;
   /** The marks a joined follower draws from while any of them moves, and where it then rests. */
   joined?: Joined | null;
+  /**
+   * The two lists a tween's frames draw into, in turn, so a frame allocates nothing and a writer
+   * that compares lists by identity still sees each frame as new.
+   */
+  frames?: [number[], number[]];
 };
 
 /**
@@ -197,11 +203,6 @@ type Joined = {
 };
 
 const ease = cubicBezier(CHART_UPDATE_CURVE);
-
-/** Whether two lists hold the same numbers. */
-function same(a: MarkValues, b: MarkValues): boolean {
-  return a.length === b.length && a.every((value, index) => value === b[index]);
-}
 
 /**
  * Map a mark's numbers into a resized box. Every number is a pixel from the plot's left or top edge
@@ -250,6 +251,15 @@ function retargeted(tween: Tween, drawn: MarkValues, target: MarkValues, eased: 
  */
 export function createChartMotion(host: MotionHost, reducedAtStart = false): ChartMotion {
   const marks = new Map<string, Mark>();
+  // The marks whose tween runs, so a frame, an unmount and `running` visit none of the rest.
+  const moving = new Set<Mark>();
+  /** Hold a mark under its id, in place of the one it replaces. */
+  const hold = (id: string, mark: Mark): void => {
+    const old = marks.get(id);
+    if (old !== undefined) moving.delete(old);
+    marks.set(id, mark);
+    if (mark.tween !== null) moving.add(mark);
+  };
   // The marks each anchor names, such as a bar at its series and slot, which a follower can join.
   // A Line and an Area on one series share an anchor, so each anchor lists its marks, the latest
   // to place last, and a follower joins the latest mark still mounted.
@@ -326,22 +336,33 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
     handle = null;
     commitTime = null;
     let running = false;
-    for (const mark of marks.values()) {
+    for (const mark of moving) {
       const tween = mark.tween;
-      if (tween === null) continue;
+      if (tween === null) {
+        moving.delete(mark);
+        continue;
+      }
       const progress = Math.min(1, Math.max(0, (time - tween.start - tween.delay) / CHART_UPDATE_MS));
       mark.eased = progress >= 1 ? 1 : ease(progress);
       // The last frame writes the target itself, so the DOM ends on the numbers React rendered.
-      mark.drawn =
-        progress >= 1
-          ? (tween.rest ?? tween.to)
-          : tween.to.map((to, index) => {
-              const from = tween.from[index] ?? to;
-              return from + (to - from) * mark.eased;
-            });
+      if (progress >= 1) mark.drawn = tween.rest ?? tween.to;
+      else {
+        mark.frames ??= [[], []];
+        const [frame, other] = mark.frames;
+        mark.frames = [other, frame];
+        frame.length = tween.to.length;
+        tween.to.forEach((to, index) => {
+          const from = tween.from[index] ?? to;
+          frame[index] = from + (to - from) * mark.eased;
+        });
+        mark.drawn = frame;
+      }
       mark.write(mark.drawn);
       if (progress < 1) running = true;
-      else mark.tween = null;
+      else {
+        mark.tween = null;
+        moving.delete(mark);
+      }
     }
     projectAll();
     if (running) handle = host.requestFrame(step);
@@ -355,9 +376,9 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
     axes: readonly ValueAxis[],
     owner: FrameOwner
   ): void => {
-    marks.set(id, { drawn: target, eased: 1, write, tween: null, axes, owner });
+    hold(id, { drawn: target, eased: 1, write, tween: null, axes, owner });
     // A follower's geometry never comes from React, and a tween may have left a bar between two
-    // values, so a snap always writes.
+    // values, so a snap always hands its target to the writer, which skips what changes nothing.
     write(target);
   };
 
@@ -369,7 +390,7 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
     axes: readonly ValueAxis[],
     owner: FrameOwner
   ): void => {
-    marks.set(id, { drawn: tween.from, eased: 0, write, tween, axes, owner });
+    hold(id, { drawn: tween.from, eased: 0, write, tween, axes, owner });
     write(tween.from);
     handle ??= host.requestFrame(step);
   };
@@ -418,7 +439,7 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
           owner,
           joined: { leads: parts.map(({ lead, id: leadId, own }) => ({ lead, id: leadId, own })), resting },
         };
-        marks.set(id, follower);
+        hold(id, follower);
         project(follower);
         return;
       }
@@ -435,7 +456,7 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
         const resize = placement.scale.to ?? startTime();
         if (rescaledFor.get(owner) !== resize) {
           rescaledFor.set(owner, resize);
-          for (const running of marks.values()) {
+          for (const running of moving) {
             if (running.tween === null || running.owner !== owner) continue;
             const { axes: kinds, tween } = running;
             const { scale } = placement;
@@ -457,9 +478,10 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
         const start = startTime();
         if (restartedAt !== start) {
           restartedAt = start;
-          for (const mark of marks.values()) {
+          for (const mark of moving) {
             if (mark.tween === null) continue;
-            mark.tween = { ...mark.tween, from: mark.drawn, start, delay: 0 };
+            // A frame's list is drawn into again, so the restart keeps a copy.
+            mark.tween = { ...mark.tween, from: [...mark.drawn], start, delay: 0 };
             mark.eased = 0;
           }
         }
@@ -469,7 +491,7 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
       if (placement.kind === "move" && placement.via !== undefined) {
         // A path's route starts from what it drew, entry by entry, which its caller aligned.
         const { from, to } = placement.via;
-        if (from.length !== to.length || same(from, to)) {
+        if (from.length !== to.length || sameItems(from, to)) {
           snap(id, target, write, axes, owner);
           return;
         }
@@ -490,7 +512,7 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
         snap(id, target, write, axes, owner);
         return;
       }
-      if (mark !== undefined && tween !== null && same(tween.to, target)) {
+      if (mark !== undefined && tween !== null && sameItems(tween.to, target)) {
         // The mark already heads for this target, so the tween runs on. A re-render or a new node
         // may have drawn the target meanwhile, so the mark redraws where the tween has it.
         mark.write = write;
@@ -502,7 +524,7 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
         run(id, write, tween, axes, owner);
         return;
       }
-      if (mark === undefined || mark.drawn.length !== target.length || same(mark.drawn, target)) {
+      if (mark === undefined || mark.drawn.length !== target.length || sameItems(mark.drawn, target)) {
         snap(id, target, write, axes, owner);
         return;
       }
@@ -527,22 +549,25 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
       write(mark.drawn);
     },
     forget(id) {
+      const mark = marks.get(id);
+      if (mark !== undefined) moving.delete(mark);
       marks.delete(id);
       leave(id);
-      if (handle !== null && ![...marks.values()].some((mark) => mark.tween !== null)) {
+      if (handle !== null && moving.size === 0) {
         host.cancelFrame(handle);
         handle = null;
       }
     },
     drawn: (id) => marks.get(id)?.drawn ?? null,
     finish() {
-      for (const mark of marks.values()) {
+      for (const mark of moving) {
         if (mark.tween === null) continue;
         mark.drawn = mark.tween.rest ?? mark.tween.to;
         mark.eased = 1;
         mark.tween = null;
         mark.write(mark.drawn);
       }
+      moving.clear();
       projectAll();
       if (handle !== null) host.cancelFrame(handle);
       handle = null;
@@ -553,6 +578,6 @@ export function createChartMotion(host: MotionHost, reducedAtStart = false): Cha
     },
     reduced: () => reduced,
     size: () => marks.size,
-    running: () => [...marks.values()].some((mark) => mark.tween !== null),
+    running: () => moving.size > 0,
   };
 }

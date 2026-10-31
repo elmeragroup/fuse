@@ -1,27 +1,28 @@
 "use client";
 
-import { memo, use, useMemo, useRef, useState } from "react";
+import { memo, use, useMemo, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { ChartDatumContext } from "./chart-active-value";
-import { attachJoin, placeAttached, pointAxes, pointCentre, restingPoint } from "./chart-attached";
-import type { AttachedShown, FollowerJoin } from "./chart-attached";
-import { assertKnownKey, assertLayoutKey, useChartRoot, usePlotLayout } from "./chart-context";
+import { attachJoin, pointAxes, pointCentre, restingPoint, useAttachedMark } from "./chart-attached";
+import type { AttachedCopy } from "./chart-attached";
+import { useChartRoot, useSeriesPart } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import { datumSlots } from "./chart-datum";
+import { partsCache, writeAttribute, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
-import type { MarkValues, Placement } from "./chart-motion";
-import { useFollowerPlacement, useMotionMark } from "./chart-motion-mark";
+import type { MarkValues, ValueAxis } from "./chart-motion";
 import { stepRole } from "./chart-paint";
 import { useChartFrame } from "./chart-plot";
 import { readingAt, useActivePoint } from "./chart-readout";
-import { useFirstPhase } from "./chart-store";
+import { introFor, useFirstPhase } from "./chart-store";
 import type { ChartDatum, ChartLayerProps, ValueFormat } from "./chart-types";
 import { formatValue } from "./format/value-format";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { seriesPaint } from "./layout/color-key";
 import type { PlotFrame } from "./layout/plot-frame";
-import { seriesPath } from "./layout/series-path";
+import { seriesOf } from "./layout/series-of";
+import { seriesPathOf } from "./layout/series-path";
 
 /**
  * Props for `Chart.Dots`, a closed part.
@@ -97,8 +98,8 @@ function writeCentres(
   for (const dot of dots) {
     const point = Math.floor(index / perPoint);
     const { cx, cy } = pointCentre(frame, xScale, values[point * 2] ?? 0, values[point * 2 + 1] ?? 0);
-    dot.setAttribute("cx", String(cx));
-    dot.setAttribute("cy", String(cy));
+    writeAttribute(dot, "cx", cx);
+    writeAttribute(dot, "cy", cy);
     index += 1;
   }
 }
@@ -109,42 +110,69 @@ function drawDots(group: SVGGElement, look: PointLook, values: MarkValues): void
   if (frame !== null) writeCentres(group.children, { frame, xScale }, values);
 }
 
-/** The series a part names, or undefined for a key the model lacks. */
-function seriesOf(context: ChartRootContextValue, dataKey: string): SeriesModel | undefined {
-  return context.model.series.find(({ key }) => key === dataKey);
-}
-
 /**
- * How attached point marks reach a commit's geometry: they join what they sit on, and snap when
- * nothing they sit on moves, so a dot never tweens on a route of its own.
+ * One dot, which keeps the `data-intro` value and the centre its first render chose, so an added
+ * dot fades in and React writes its centre once. The loop draws the centre after that.
  */
-function attachedPlacement(placement: Placement, join: FollowerJoin | undefined): Placement {
-  return join === undefined && placement.kind === "move" ? { kind: "snap" } : placement;
-}
-
-/** One dot, which keeps the `data-intro` value its first render chose, so an added dot fades in. */
 const Dot = memo(function Dot({
   intro,
   series,
   radius,
-  centre,
+  cx,
+  cy,
 }: {
   readonly intro: "fade" | "none" | undefined;
   readonly series: number;
   readonly radius: number;
-  readonly centre: { readonly cx: number; readonly cy: number };
+  readonly cx: number;
+  readonly cy: number;
 }) {
-  const [firstIntro] = useState(intro);
-  return <circle data-slot="chart-dot" data-series={series} data-intro={firstIntro} r={radius} {...centre} />;
+  const [first] = useState({ intro, cx, cy });
+  return (
+    <circle
+      data-slot="chart-dot"
+      data-series={series}
+      data-intro={first.intro}
+      r={radius}
+      cx={first.cx}
+      cy={first.cy}
+    />
+  );
 });
 
 /** What an attached part writes on `data-intro` for marks that mount now. */
 function useIntro(context: ChartRootContextValue): "fade" | "none" | undefined {
   const phase = useFirstPhase(context.store);
   const [first] = useState(context.update);
-  if (phase === "initial" && context.update === first) return context.entrance ? undefined : "none";
-  return context.update.kind === "data" ? "fade" : "none";
+  return introFor(context.update === first ? phase : "mounted", context.update.kind, context.entrance);
 }
+
+/**
+ * How Dots keep their last drawing: the group and one dot of it as a template, so a commit copies
+ * two elements and not every dot. A crossfade then builds the old dots from the template, one per
+ * point the loop drew last.
+ */
+const DOTS_COPY: AttachedCopy = {
+  cadence: "commit",
+  keep: (live) => {
+    const kept = live.cloneNode(false);
+    const template = live.firstElementChild?.cloneNode(false);
+    if (!(kept instanceof Element)) return live;
+    if (template instanceof Element) {
+      // An old dot fades out, so it never runs a fade-in of its own.
+      template.removeAttribute("data-intro");
+      kept.append(template);
+    }
+    return kept;
+  },
+  outgoing: (kept, before) => {
+    const template = kept.firstElementChild;
+    const copy = kept.cloneNode(false);
+    if (template === null || !(copy instanceof Element)) return null;
+    for (let point = 0; point < before.length / 2; point += 1) copy.append(template.cloneNode(false));
+    return copy;
+  },
+};
 
 /**
  * A dot on every reading of one series, on its Line's or Area's vertices. The dots move with the
@@ -153,63 +181,44 @@ function useIntro(context: ChartRootContextValue): "fade" | "none" | undefined {
  * @beta
  */
 export function ChartDots({ dataKey, variant = "default", className, style }: ChartDotsProps): ReactElement {
-  const context = useChartRoot("Chart.Dots");
-  assertKnownKey("Chart.Dots", context.config, dataKey);
-  const layout = usePlotLayout("Chart.Dots");
-  assertLayoutKey("Chart.Dots", layout, dataKey);
-  const series = seriesOf(context, dataKey);
+  const { context, layout } = useSeriesPart("Chart.Dots", dataKey);
+  const { model, update } = context;
+  const series = seriesOf(model, dataKey);
   const drawn = useChartFrame("Chart.Dots", layout);
   const frame = drawn?.frame ?? null;
   const columns =
     frame === null ? undefined : frame.orientation === "vertical" ? frame.box.width : frame.box.height;
-  // The dots sit on the vertices the series' path draws, decimated alike above the limit.
+  // The dots sit on the vertices the series' path draws, the Line's own path, decimated alike.
   const dots = useMemo(() => {
     if (series === undefined || frame === null) return [];
-    const path = seriesPath(context.model, series, context.update.keys, columns);
+    const path = seriesPathOf(model, series, update.keys, columns);
     return path.vertices.flatMap((vertex, index) => {
       const point = vertex.state === "reading" ? restingPoint(context, frame, series, vertex.slot) : null;
       return point === null
         ? []
         : [{ key: path.keys[index] ?? String(vertex.slot), slot: vertex.slot, point }];
     });
-  }, [context, series, frame, columns]);
+  }, [model, update.keys, series, frame, columns]); // oxlint-disable-line react-hooks/exhaustive-deps -- restingPoint reads the model and the x scale alone
+  const rest = useMemo(() => dots.flatMap(({ point }) => [...point]), [dots]);
+  const slots = useMemo(() => dots.map(({ slot }) => slot), [dots]);
   const look = useMemo((): PointLook => ({ frame, xScale: context.xScale }), [frame, context.xScale]);
   const {
-    ref: dotsRef,
-    node: dotsNode,
-    drawn: dotsDrawn,
-    place: placeDots,
-  } = useMotionMark(context.motion, drawDots, look, pointAxes(context.orientation));
-  const placeFor = useFollowerPlacement(context.update, drawn?.plot ?? null, context.orientation);
-  const outgoing = useRef<SVGGElement>(null);
-  const shown = useRef<AttachedShown<PointLook> | null>(null);
+    ref: markRef,
+    outgoingRef,
+    attach,
+  } = useAttachedMark<SVGGElement, PointLook, ValueAxis[], SVGGElement>(
+    context,
+    drawn,
+    drawDots,
+    look,
+    pointAxes(context.orientation),
+    { point: true, copy: DOTS_COPY }
+  );
   useChartFollower("Chart.Dots", (_active, cause) => {
     // The dots rest on their readings, so a pointer or key step moves none of them.
     if (cause === "step" || series === undefined || frame === null) return;
-    const rest = dots.flatMap(({ point }) => [...point]);
-    const join = attachJoin(
-      context,
-      series,
-      dots.map(({ slot }) => slot),
-      rest,
-      "line"
-    );
     // The dots crossfade with their path: the old dots fade out where they were drawn.
-    placeAttached({
-      motion: context.motion,
-      cause,
-      join,
-      placement: attachedPlacement(placeFor(cause, join), join),
-      place: (placement) => placeDots(rest, placement),
-      node: dotsNode(),
-      outgoing: outgoing.current,
-      before: dotsDrawn(),
-      look,
-      shown,
-      draw: (copy, old, values) => {
-        if (copy instanceof SVGGElement) drawDots(copy, old, values);
-      },
-    });
+    attach(cause, () => attachJoin(context, series, slots, rest, "line"), rest);
   });
   const intro = useIntro(context);
   // The layer keeps the intro of its first render, which Root's entrance wipe reads.
@@ -230,18 +239,22 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
       }}>
       {frame === null ? null : (
         <>
-          <g ref={dotsRef}>
-            {dots.map(({ key, point }) => (
-              <Dot
-                key={key}
-                intro={intro}
-                series={series?.seriesIndex ?? 0}
-                radius={radius}
-                centre={pointCentre(frame, context.xScale, point[0], point[1])}
-              />
-            ))}
+          <g ref={markRef}>
+            {dots.map(({ key, point }) => {
+              const { cx, cy } = pointCentre(frame, context.xScale, point[0], point[1]);
+              return (
+                <Dot
+                  key={key}
+                  intro={intro}
+                  series={series?.seriesIndex ?? 0}
+                  radius={radius}
+                  cx={cx}
+                  cy={cy}
+                />
+              );
+            })}
           </g>
-          <g ref={outgoing} data-part="outgoing" />
+          <g ref={outgoingRef} data-part="outgoing" />
         </>
       )}
     </svg>
@@ -253,11 +266,14 @@ function seriesPaintOf(context: ChartRootContextValue, dataKey: string): string 
   return seriesPaint(dataKey, stepRole(context.config[dataKey]?.color ?? "chart-1", undefined));
 }
 
+/** The active dot's circles, its ping ring first if any, found once per node and look. */
+const activeDots = partsCache((svg) => [...svg.querySelectorAll(":scope > [data-slot=chart-dot]")]);
+
 /** Draw the active dot at the loop's numbers, its place and its value, with its ping ring if any. */
 function drawActiveDot(svg: SVGSVGElement, look: PointLook, values: MarkValues): void {
   const { frame, xScale } = look;
   if (frame === null) return;
-  const dots = svg.querySelectorAll(":scope > [data-slot=chart-dot]");
+  const dots = activeDots(svg, look);
   writeCentres(dots, { frame, xScale }, values, dots.length);
 }
 
@@ -273,64 +289,43 @@ export function ChartActiveDot({
   className,
   style,
 }: ChartActiveDotProps): ReactElement {
-  const context = useChartRoot("Chart.ActiveDot");
-  assertKnownKey("Chart.ActiveDot", context.config, dataKey);
-  const layout = usePlotLayout("Chart.ActiveDot");
-  assertLayoutKey("Chart.ActiveDot", layout, dataKey);
-  const series = seriesOf(context, dataKey);
+  const { context, layout } = useSeriesPart("Chart.ActiveDot", dataKey);
+  const series = seriesOf(context.model, dataKey);
   const drawn = useChartFrame("Chart.ActiveDot", layout);
   const frame = drawn?.frame ?? null;
   const look = useMemo((): PointLook => ({ frame, xScale: context.xScale }), [frame, context.xScale]);
   const {
-    ref: dotRef,
-    node: dotNode,
-    drawn: dotDrawn,
-    place: placeDot,
-  } = useMotionMark(context.motion, drawActiveDot, look, pointAxes(context.orientation));
-  const placeFor = useFollowerPlacement(context.update, drawn?.plot ?? null, context.orientation);
-  const outgoing = useRef<HTMLDivElement>(null);
-  const shown = useRef<AttachedShown<PointLook> | null>(null);
+    ref: markRef,
+    node: markNode,
+    outgoingRef,
+    attach,
+  } = useAttachedMark(context, drawn, drawActiveDot, look, pointAxes(context.orientation), {
+    point: true,
+  });
   useChartFollower("Chart.ActiveDot", (active, cause) => {
     const point =
       active === null || series === undefined || frame === null
         ? null
         : restingPoint(context, frame, series, active.slot);
-    const join =
-      active === null || series === undefined || point === null
-        ? undefined
-        : attachJoin(context, series, [active.slot], [...point], "line");
-    const placement = attachedPlacement(placeFor(cause, join), join);
-    const svg = dotNode();
-    if (svg === null) return;
+    const svg = markNode();
     // The dot shows only while the series draws a reading at the active slot.
-    if (point === null) {
-      svg.removeAttribute("data-value");
-      return;
-    }
-    svg.setAttribute("data-value", "");
+    if (svg !== null) writeAttribute(svg, "data-value", point === null ? null : "");
     // The dot crossfades with its path while it shows at the active slot.
-    placeAttached({
-      motion: context.motion,
+    attach(
       cause,
-      join,
-      placement,
-      place: (next) => placeDot([point[0], point[1]], next),
-      node: svg,
-      outgoing: outgoing.current,
-      before: dotDrawn(),
-      look,
-      shown,
-      draw: (copy, old, values) => {
-        if (copy instanceof SVGSVGElement) drawActiveDot(copy, old, values);
-      },
-    });
+      () =>
+        active === null || series === undefined || point === null
+          ? undefined
+          : attachJoin(context, series, [active.slot], [...point], "line"),
+      svg === null ? null : point
+    );
   });
   const radius = DOT_RADIUS[variant];
   // The old dot fades out beside the live one, so the live dot's fade-in never reaches it.
   return (
     <>
       <svg
-        ref={dotRef}
+        ref={markRef}
         data-slot="chart-active-dot"
         data-variant={variant}
         data-series={series?.seriesIndex}
@@ -350,7 +345,7 @@ export function ChartActiveDot({
           </>
         )}
       </svg>
-      <div ref={outgoing} data-part="outgoing" />
+      <div ref={outgoingRef} data-part="outgoing" />
     </>
   );
 }
@@ -369,22 +364,25 @@ function markerSlots(
   );
 }
 
+/** A Marker's dots and its pills' anchors, found once per node and look. */
+const markerParts = partsCache((box) => ({
+  dots: [...(box.querySelector(":scope > svg")?.children ?? [])].filter(
+    (child) => child.getAttribute("data-slot") === "chart-dot"
+  ),
+  anchors: [...box.querySelectorAll<HTMLElement>(":scope > [data-part=anchor]")],
+}));
+
 /** Draw a Marker's dots and its pills' anchors from the loop's numbers, a place and a value per slot. */
 function drawMarker(box: HTMLDivElement, look: PointLook, values: MarkValues): void {
   const { frame, xScale } = look;
   if (frame === null) return;
-  const svg = box.querySelector(":scope > svg");
-  if (svg !== null) {
-    const dots = [...svg.children].filter((child) => child.getAttribute("data-slot") === "chart-dot");
-    writeCentres(dots, { frame, xScale }, values, dots.length / Math.max(1, values.length / 2));
-  }
-  let index = 0;
-  for (const anchor of box.querySelectorAll<HTMLElement>(":scope > [data-part=anchor]")) {
+  const { dots, anchors } = markerParts(box, look);
+  writeCentres(dots, { frame, xScale }, values, dots.length / Math.max(1, values.length / 2));
+  anchors.forEach((anchor, index) => {
     const { cx, cy } = pointCentre(frame, xScale, values[index * 2] ?? 0, values[index * 2 + 1] ?? 0);
-    anchor.style.setProperty("--chart-marker-x", `${String(cx)}px`);
-    anchor.style.setProperty("--chart-marker-y", `${String(cy)}px`);
-    index += 1;
-  }
+    writeStyle(anchor, "--chart-marker-x", `${String(cx)}px`);
+    writeStyle(anchor, "--chart-marker-y", `${String(cy)}px`);
+  });
 }
 
 /**
@@ -405,11 +403,8 @@ export function ChartMarker({
   style,
   children,
 }: ChartMarkerProps): ReactElement {
-  const context = useChartRoot("Chart.Marker");
-  assertKnownKey("Chart.Marker", context.config, dataKey);
-  const layout = usePlotLayout("Chart.Marker");
-  assertLayoutKey("Chart.Marker", layout, dataKey);
-  const series = seriesOf(context, dataKey);
+  const { context, layout } = useSeriesPart("Chart.Marker", dataKey);
+  const series = seriesOf(context.model, dataKey);
   const drawn = useChartFrame("Chart.Marker", layout);
   const frame = drawn?.frame ?? null;
   const slots = markerSlots(context, series, at);
@@ -422,44 +417,32 @@ export function ChartMarker({
             const point = restingPoint(context, frame, series, slot);
             return point === null ? [] : [{ slot, point }];
           }),
-    [context, series, frame, slotsKey] // oxlint-disable-line react-hooks/exhaustive-deps -- the joined slots are the identity
+    [context.model, context.xScale, series, frame, slotsKey] // oxlint-disable-line react-hooks/exhaustive-deps -- the joined slots are the identity, and restingPoint reads the model and the x scale alone
   );
   const look = useMemo((): PointLook => ({ frame, xScale: context.xScale }), [frame, context.xScale]);
   const {
-    ref: markerRef,
-    node: markerNode,
-    drawn: markerDrawn,
-    place: placeMarker,
-  } = useMotionMark(context.motion, drawMarker, look, pointAxes(context.orientation));
-  const placeFor = useFollowerPlacement(context.update, drawn?.plot ?? null, context.orientation);
-  const outgoing = useRef<HTMLDivElement>(null);
-  const shown = useRef<AttachedShown<PointLook> | null>(null);
+    ref: markRef,
+    outgoingRef,
+    attach,
+  } = useAttachedMark(context, drawn, drawMarker, look, pointAxes(context.orientation), {
+    point: true,
+  });
   useChartFollower("Chart.Marker", (_active, cause) => {
     if (cause === "step" || series === undefined || frame === null) return;
     const rest = marked.flatMap(({ point }) => [...point]);
-    const join = attachJoin(
-      context,
-      series,
-      marked.map(({ slot }) => slot),
-      rest,
-      "line"
-    );
     // The marker and its pills crossfade with their path, the pills' old text included.
-    placeAttached({
-      motion: context.motion,
+    attach(
       cause,
-      join,
-      placement: attachedPlacement(placeFor(cause, join), join),
-      place: (placement) => placeMarker(rest, placement),
-      node: markerNode(),
-      outgoing: outgoing.current,
-      before: markerDrawn(),
-      look,
-      shown,
-      draw: (copy, old, values) => {
-        if (copy instanceof HTMLDivElement) drawMarker(copy, old, values);
-      },
-    });
+      () =>
+        attachJoin(
+          context,
+          series,
+          marked.map(({ slot }) => slot),
+          rest,
+          "line"
+        ),
+      rest
+    );
   });
   const intro = useIntro(context);
   const radius = DOT_RADIUS[variant];
@@ -468,7 +451,7 @@ export function ChartMarker({
   return (
     <>
       <div
-        ref={markerRef}
+        ref={markRef}
         data-slot="chart-marker"
         data-variant={variant}
         data-series={series?.seriesIndex}
@@ -484,14 +467,15 @@ export function ChartMarker({
           <>
             <svg aria-hidden="true">
               {marked.flatMap(({ slot, point }) => {
-                const centre = pointCentre(frame, context.xScale, point[0], point[1]);
+                const { cx, cy } = pointCentre(frame, context.xScale, point[0], point[1]);
                 const dot = (
                   <Dot
                     key={`${String(slot)}-dot`}
                     intro={intro}
                     series={seriesIndex}
                     radius={radius}
-                    centre={centre}
+                    cx={cx}
+                    cy={cy}
                   />
                 );
                 return variant === "ping"
@@ -501,7 +485,8 @@ export function ChartMarker({
                         data-slot="chart-dot"
                         data-part="ping"
                         r={radius}
-                        {...centre}
+                        cx={cx}
+                        cy={cy}
                       />,
                       dot,
                     ]
@@ -523,7 +508,7 @@ export function ChartMarker({
           </>
         )}
       </div>
-      <div ref={outgoing} data-part="outgoing" />
+      <div ref={outgoingRef} data-part="outgoing" />
     </>
   );
 }
