@@ -14,6 +14,7 @@ import { Tabs } from "@elmeragroup/fuse/tabs";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 
 import { copyText } from "../lib/copy-with-toast";
+import { DocsCodePre } from "./docs-code-pre";
 
 type DemoTabsProps = {
   /** The demo's title as plain text, for the Sheet title and the view switch's name. */
@@ -26,8 +27,8 @@ type DemoTabsProps = {
   stage: ReactNode;
   /** The demo file's raw source, which the copy action writes to the clipboard. */
   sourceText: string;
-  /** The highlighted source, which the Code view and the Sheet both show. */
-  source: ReactNode;
+  /** The server's highlighted markup of the source, which the Code view and the Sheet both show. */
+  sourceHtml: string;
 };
 
 /** How long the copy action shows that it copied, in ms. */
@@ -81,6 +82,17 @@ const {
   status: statusClass,
 } = demoTabs();
 
+/**
+ * The demo's source as `DocsCodeBlock` draws it. The page's HTML holds the plain text, which the
+ * tools that read the source find, and the highlighted markup replaces it once a reader shows the
+ * code. A page of demos then parses one text node per demo instead of a span per token: the 36
+ * highlighted sources of the bar-chart page held 40,000 of its 46,700 nodes, and WebKit took 4 s
+ * to parse them beside the RSC payload.
+ */
+function DemoSource({ text, html }: { text: string; html: string | null }): ReactElement {
+  return <DocsCodePre variant="embedded" code={html === null ? { text } : { html }} />;
+}
+
 /** What the last copy did: nothing yet, copied, or failed because the page has no clipboard. */
 type CopyState = "idle" | "copied" | "failed";
 
@@ -129,13 +141,23 @@ function CopySourceButton({ sourceText }: { sourceText: string }): ReactElement 
  * the Code view, and whose footer switches between them. The Tabs root renders the Frame root, so
  * the header, panel and footer stay the Frame's own items. Both views stay mounted: the demo keeps
  * its state while the code shows, and the Code view, marked `[data-demo-source]`, puts the source
- * in the server HTML for the tools that read it. The Code view carries a toolbar that copies the
+ * in the server HTML for the tools that read it, as plain text until the view first shows. The Code view carries a toolbar that copies the
  * source and opens it in a Sheet, where the same source shows in a flush Frame headed with the file
  * name.
  */
-export function DemoTabs({ title, heading, file, stage, sourceText, source }: DemoTabsProps): ReactElement {
+export function DemoTabs({
+  title,
+  heading,
+  file,
+  stage,
+  sourceText,
+  sourceHtml,
+}: DemoTabsProps): ReactElement {
   const demoView = useRef<HTMLDivElement>(null);
   const [demoHeight, setDemoHeight] = useState<number>();
+  // The highlighted source mounts when the Code view first shows, and the Sheet opens from there.
+  const [shown, setShown] = useState(false);
+  const source = <DemoSource text={sourceText} html={shown ? sourceHtml : null} />;
 
   // Read while the Demo view still shows: the Code view then opens at the height it leaves.
   function rememberDemoHeight(): void {
@@ -147,7 +169,9 @@ export function DemoTabs({ title, heading, file, stage, sourceText, source }: De
     <Tabs.Root
       defaultValue="demo"
       onValueChange={(value) => {
-        if (value === "code") rememberDemoHeight();
+        if (value !== "code") return;
+        rememberDemoHeight();
+        setShown(true);
       }}
       className={root()}
       render={<Frame.Root layout="flush" />}>

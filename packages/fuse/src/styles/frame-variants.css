@@ -72,12 +72,16 @@
    one, which follows another panel. Panels meet as siblings at either level, and across the edge
    of a headerless section: its content is its first child where a panel before it meets its first
    panel, and its last child where its last panel meets a panel after it. A closed section that
-   stays mounted hides its content, so no panel meets it. */
+   stays mounted hides its content, so no panel meets it.
+
+   Each `:has()` names the section by its Collapsible.Root slot, never `*`. With `*` there, WebKit
+   spent about 11 ms per inline script on a docs page of 32 framed demos, which streams 262 of them,
+   and took 3.1 s to parse it. With the slot it parses that page in 0.9 s. */
 @custom-variant frame-seam-upper {
   &
     > :where([data-slot="frame-panel"]):has(
       + [data-slot="frame-panel"],
-      + *
+      + [data-slot="collapsible"]
         > [data-slot="collapsible-content"]:first-child:not([hidden])
         > [data-slot="frame-panel"]:first-child
     ),
@@ -86,9 +90,9 @@
     > [data-slot="collapsible-content"]
     > :where([data-slot="frame-panel"]):has(+ [data-slot="frame-panel"]),
   &
-    > :has(
+    > [data-slot="collapsible"]:has(
       + [data-slot="frame-panel"],
-      + *
+      + [data-slot="collapsible"]
         > [data-slot="collapsible-content"]:first-child:not([hidden])
         > [data-slot="frame-panel"]:first-child
     )
@@ -101,7 +105,7 @@
   &
     > :where(
       [data-slot="frame-panel"],
-      :has(
+      [data-slot="collapsible"]:has(
         > [data-slot="collapsible-content"]:last-child:not([hidden]) > [data-slot="frame-panel"]:last-child
       )
     )
@@ -110,11 +114,11 @@
   &
     > :is(
       [data-slot="frame-panel"],
-      :has(
+      [data-slot="collapsible"]:has(
         > [data-slot="collapsible-content"]:last-child:not([hidden]) > [data-slot="frame-panel"]:last-child
       )
     )
-    + *
+    + [data-slot="collapsible"]
     > [data-slot="collapsible-content"]:first-child
     > [data-slot="frame-panel"]:first-child {
     @slot;

@@ -102,9 +102,16 @@ const H12_SECONDS = {
 } as const;
 const H23_TIME = { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "UTC" } as const;
 
+const timeSeparators = new Map<SupportedLocale, string>();
+
 /** The hour-minute separator of a 24-hour locale, such as `:` or `.`, as CLDR's `Hm` pattern writes it. */
 function timeSeparator(locale: SupportedLocale): string {
-  return part(dateTimeFormat(locale, H23_TIME).formatToParts(0), "literal");
+  let separator = timeSeparators.get(locale);
+  if (separator === undefined) {
+    separator = part(dateTimeFormat(locale, H23_TIME).formatToParts(0), "literal");
+    timeSeparators.set(locale, separator);
+  }
+  return separator;
 }
 
 /** Whether a clock time shows the hour alone, the hour and minute, or the seconds too. */
@@ -138,26 +145,71 @@ function part(parts: readonly Intl.DateTimeFormatPart[], type: Intl.DateTimeForm
   return parts.find((candidate) => candidate.type === type)?.value ?? "";
 }
 
+/**
+ * Each zone's wall-clock formatter and the wall clocks it has read. Slot math, labels and the
+ * repeated-hour check read the same instants several times per slot, and one Intl read costs far
+ * more than a map lookup, so each instant is read once. A zone's map starts over at the limit, so a
+ * long stream cannot grow it without bound.
+ */
+const wallClocks = new Map<
+  string,
+  { readonly format: Intl.DateTimeFormat; readonly walls: Map<number, WallClock> }
+>();
+const WALL_CLOCK_LIMIT = 16_384;
+
+function readWallClock(format: Intl.DateTimeFormat, instant: number): WallClock {
+  let [year, month, day, hour, minute, second] = [0, 0, 0, 0, 0, 0];
+  for (const { type, value } of format.formatToParts(instant)) {
+    switch (type) {
+      case "year":
+        year = Number(value);
+        break;
+      case "month":
+        month = Number(value);
+        break;
+      case "day":
+        day = Number(value);
+        break;
+      case "hour":
+        hour = Number(value);
+        break;
+      case "minute":
+        minute = Number(value);
+        break;
+      case "second":
+        second = Number(value);
+        break;
+      default:
+        break;
+    }
+  }
+  return { year, month, day, hour, minute, second };
+}
+
 /** Read the wall clock of an instant in a zone through Intl. */
 export function wallClock(instant: number, timeZone: string): WallClock {
-  const parts = dateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    second: "numeric",
-    hourCycle: "h23",
-  }).formatToParts(instant);
-  return {
-    year: Number(part(parts, "year")),
-    month: Number(part(parts, "month")),
-    day: Number(part(parts, "day")),
-    hour: Number(part(parts, "hour")),
-    minute: Number(part(parts, "minute")),
-    second: Number(part(parts, "second")),
-  };
+  let zone = wallClocks.get(timeZone);
+  if (zone === undefined) {
+    const format = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hourCycle: "h23",
+    });
+    zone = { format, walls: new Map() };
+    wallClocks.set(timeZone, zone);
+  }
+  let wall = zone.walls.get(instant);
+  if (wall === undefined) {
+    if (zone.walls.size >= WALL_CLOCK_LIMIT) zone.walls.clear();
+    wall = readWallClock(zone.format, instant);
+    zone.walls.set(instant, wall);
+  }
+  return wall;
 }
 
 /** The wall clock as if it were a UTC instant, which turns clock arithmetic into plain addition. */
@@ -176,13 +228,14 @@ function offsetAt(instant: number, timeZone: string): number {
 /**
  * Whether another instant shows the same wall clock, as both 02:00 hours of an Oslo fall-back day
  * do. The twin lies one offset change away, so each neighbouring day's offset names a candidate.
+ * `wall` is the instant's own wall clock, which the label has read already.
  */
-function isRepeatedWallTime(instant: number, timeZone: string): boolean {
-  const own = offsetAt(instant, timeZone);
-  const wall = Math.floor(instant / SECOND) * SECOND + own;
+function isRepeatedWallTime(instant: number, timeZone: string, wall: WallClock): boolean {
+  const own = wallTime(wall) - Math.floor(instant / SECOND) * SECOND;
+  const local = Math.floor(instant / SECOND) * SECOND + own;
   return [instant - DAY, instant + DAY].some((probe) => {
     const other = offsetAt(probe, timeZone);
-    return other !== own && offsetAt(wall - other, timeZone) === other;
+    return other !== own && offsetAt(local - other, timeZone) === other;
   });
 }
 
@@ -309,8 +362,9 @@ function clockLabel(
   preset: ClockPreset,
   role: LabelRole
 ): FormattedText {
-  const base = clockText(locale, CHART_WORDS[locale], slot.interval, wallClock(slot.start, timeZone), preset);
-  if (role === "tick" || !isRepeatedWallTime(slot.start, timeZone)) {
+  const wall = wallClock(slot.start, timeZone);
+  const base = clockText(locale, CHART_WORDS[locale], slot.interval, wall, preset);
+  if (role === "tick" || !isRepeatedWallTime(slot.start, timeZone, wall)) {
     return base;
   }
   return makeFormattedText(
@@ -373,6 +427,13 @@ const SUB_DAY_MS = {
   hour: RANGE_MINUTES.hour * MINUTE,
 } as const;
 
+/**
+ * Each zone's day starts by local date. Ten years of days fit, and a longer run starts the zone's
+ * map over, so a stream that runs for years cannot grow it without bound.
+ */
+const dayStarts = new Map<string, Map<number, number>>();
+const DAY_START_LIMIT = 4096;
+
 /** The local calendar date of an instant in the zone, as the UTC milliseconds of that date's midnight. */
 function localDate(instant: number, timeZone: string): number {
   const wall = wallClock(instant, timeZone);
@@ -384,8 +445,25 @@ function localDate(instant: number, timeZone: string): number {
  * `ZonedDateTime#startOfDay` defines it. The offsets a day before and a day after give the two
  * candidate instants for local midnight. A repeated midnight keeps the earlier one. A midnight that
  * a gap skips has neither, so the start is the first instant after the gap, found to the second.
+ * Each day's start is read once per zone: an hour axis would otherwise find it again for every
+ * slot, at four wall-clock reads each.
  */
 function dayStart(date: number, timeZone: string): number {
+  let starts = dayStarts.get(timeZone);
+  if (starts === undefined) {
+    starts = new Map();
+    dayStarts.set(timeZone, starts);
+  }
+  let start = starts.get(date);
+  if (start === undefined) {
+    if (starts.size >= DAY_START_LIMIT) starts.clear();
+    start = findDayStart(date, timeZone);
+    starts.set(date, start);
+  }
+  return start;
+}
+
+function findDayStart(date: number, timeZone: string): number {
   const candidates = [date - DAY, date + DAY].map((probe) => date - offsetAt(probe, timeZone));
   const exact = candidates.filter((candidate) => candidate + offsetAt(candidate, timeZone) === date);
   if (exact.length > 0) {

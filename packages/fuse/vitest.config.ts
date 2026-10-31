@@ -25,9 +25,17 @@ const ENGINES_TESTS = "**/*.engines.browser.test.{ts,tsx}";
 /** Browser files that run under `prefers-reduced-motion: reduce` in every engine, named by convention. */
 const REDUCED_MOTION_TESTS = "**/*.reduced-motion.browser.test.tsx";
 
+/**
+ * The test iframe's size, Vitest's default, which every browser context also opens at. Vitest 5
+ * opens each page at Playwright's 1280 × 720 and resizes it before a file runs, and under load a
+ * file has run in the unresized page. A page shorter than its iframe leaves the iframe's bottom
+ * 176 px outside the viewport, where Playwright cannot click a toast.
+ */
+const VIEWPORT = { width: 414, height: 896 } as const;
+
 function browserProject(
   name: string,
-  files: { include?: string[]; exclude?: string[]; fileParallelism?: boolean },
+  files: { include?: string[]; exclude?: string[]; fileParallelism?: boolean; groupOrder?: number },
   browsers: readonly ("chromium" | "firefox" | "webkit")[] = ["chromium"],
   provider: Parameters<typeof playwright>[0] = {}
 ): TestProjectInlineConfiguration {
@@ -71,10 +79,16 @@ function browserProject(
       include: files.include ?? BROWSER_TESTS,
       exclude: files.exclude,
       fileParallelism: files.fileParallelism,
+      // A project with a later group runs once every earlier group has finished.
+      sequence: { groupOrder: files.groupOrder ?? 0 },
       browser: {
         enabled: true,
         headless: true,
-        provider: playwright(provider),
+        viewport: VIEWPORT,
+        provider: playwright({
+          ...provider,
+          contextOptions: { viewport: VIEWPORT, ...provider.contextOptions },
+        }),
         instances: browsers.map((browser) => ({ browser })),
         commands: { ...pointerCommands, ...mediaCommands },
       },
@@ -121,10 +135,14 @@ export default defineConfig({
       ),
       // Vite replaces `process.env.NODE_ENV` at transform time, so `vi.stubEnv` cannot reach
       // production-only branches in the browser. This project compiles its files, their source
-      // and React as a production build, with the matching non-development JSX runtime.
+      // and React as a production build, with the matching non-development JSX runtime. Its
+      // smoothness judge times long tasks, which other pages running on the same cores lengthen,
+      // so the project runs after every other project, one file at a time.
       {
         ...browserProject("browser-production", {
           include: [`src/${PRODUCTION_TESTS}`],
+          fileParallelism: false,
+          groupOrder: 1,
         }),
         define: { "process.env.NODE_ENV": JSON.stringify("production") },
         oxc: { jsx: { runtime: "automatic", development: false } },

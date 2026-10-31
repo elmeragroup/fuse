@@ -510,21 +510,6 @@ describe.each([
 ] as const)("the tooltip at 400 % zoom, a 320 × 225 viewport, in %s", (_, engine) => {
   const browser = launchSuiteBrowser(engine);
 
-  /**
-   * The demo titled `name` on the bar-chart page, once it has hydrated. Every docs demo's Frame
-   * keeps its highlighted source mounted, which is 85 % of this page's 46,700 nodes, and WebKit
-   * hydrates the page about 9 s after navigation on the gate machine, past `openDemo`'s 5 s. The
-   * wait for hydration gets 20 s, and every later step keeps the 5 s default.
-   */
-  async function zoomedDemo(page: Page, name: string): Promise<Locator> {
-    await page.goto(`${docsBaseUrl()}/components/bar-chart`, { waitUntil: "load" });
-    page.setDefaultTimeout(20_000);
-    const demo = page.getByRole("region", { name, exact: true });
-    await waitForDemoHydration(demo);
-    page.setDefaultTimeout(5000);
-    return demo;
-  }
-
   it.each([
     ["Entrance origins", -20],
     ["Entrance origins", 10],
@@ -542,7 +527,7 @@ describe.each([
         viewport: { width: 320, height: 225 },
         timezoneId: "Europe/Oslo",
       });
-      const demo = await zoomedDemo(page, name);
+      const demo = await openDemo(page, "bar-chart", name);
       const chart = demo.locator('[data-slot="chart"]').first();
       const surface = chart.locator('[data-slot="chart-surface"]');
       await surface.evaluate((element, top) => {
@@ -618,7 +603,7 @@ describe.each([
         viewport: { width: 320, height: 225 },
         timezoneId: "Europe/Oslo",
       });
-      const demo = await zoomedDemo(page, name);
+      const demo = await openDemo(page, "bar-chart", name);
       const chart = demo.locator('[data-slot="chart"]').first();
       // The tallest column's top goes 20 px under the viewport's top edge, where the recheck saw
       // 22 px left above it, and the column runs on past the viewport's bottom.

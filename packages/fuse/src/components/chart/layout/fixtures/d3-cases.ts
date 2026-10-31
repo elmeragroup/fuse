@@ -114,6 +114,13 @@ function chainSource(call: readonly CallStep[], own: string): string {
   return `(() => { const __root = ${root}; ${aliases.map((name) => `const ${name} = __root;`).join(" ")} return __root${tail}; })()`;
 }
 
+/** Whether a call chain passes a date, which the extraction stored as its absolute instant. */
+function holdsDate(value: unknown): boolean {
+  if (Array.isArray(value)) return value.some(holdsDate);
+  if (value === null || typeof value !== "object") return false;
+  return "$date" in value || Object.values(value).some(holdsDate);
+}
+
 function isEqual(actual: unknown, expected: unknown): boolean {
   if (typeof actual === "number" && typeof expected === "number") return Object.is(actual, expected);
   if (actual instanceof Date && expected instanceof Date) return actual.getTime() === expected.getTime();
@@ -147,15 +154,23 @@ export function runD3Case(testCase: D3Case, bindings: Readonly<Record<string, un
     const run = new Function(...names, `${setup.join("\n")}\nreturn (${expression});`);
     return run(...names.map((name) => bindings[name]));
   };
+  const own = /^[A-Za-z_$][\w$]*/u.exec(testCase.actual)?.[0] ?? "";
   try {
     const expected = decode(testCase.expected, bindings);
     let actual: unknown;
-    try {
-      actual = evaluate(testCase.actual);
-    } catch (error) {
-      // A case without setup names its scale only in the extracted call chain.
-      if (!(error instanceof ReferenceError) || !testCase.call) throw error;
-      actual = evaluate(chainSource(testCase.call, /^[A-Za-z_$][\w$]*/u.exec(testCase.actual)?.[0] ?? ""));
+    if (testCase.call && holdsDate(testCase.call)) {
+      // `new Date(1990, 0, 1)` in the source reads the process's zone, but upstream evaluated it
+      // under TZ=America/Los_Angeles. The call chain keeps the instants upstream built, so it
+      // replays the case alike in every zone.
+      actual = evaluate(chainSource(testCase.call, own));
+    } else {
+      try {
+        actual = evaluate(testCase.actual);
+      } catch (error) {
+        // A case without setup names its scale only in the extracted call chain.
+        if (!(error instanceof ReferenceError) || !testCase.call) throw error;
+        actual = evaluate(chainSource(testCase.call, own));
+      }
     }
     return isEqual(actual, expected) ? { kind: "pass" } : { kind: "fail", actual, expected };
   } catch (error) {

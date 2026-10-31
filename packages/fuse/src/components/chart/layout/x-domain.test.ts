@@ -1,5 +1,3 @@
-import { execFileSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import fallBack from "../format/fixtures/elhub/no1-consumption-2025-10-26.json" with { type: "json" };
@@ -7,6 +5,7 @@ import spring from "../format/fixtures/elhub/no1-consumption-2026-03-29.json" wi
 import production from "../format/fixtures/elhub/no1-production-15min-2025-10-26.json" with { type: "json" };
 import quarters from "../format/fixtures/prices/fall-back-2025-10-26-quarter.json" with { type: "json" };
 import slots from "../format/fixtures/slots.json" with { type: "json" };
+import { spawnZoneProbe } from "../format/fixtures/spawn-zone-probe";
 import { slotJudgements } from "./fixtures/slot-judges";
 import { instantOf, placeCategoryRows, placeTimeRows, projectedSlot, slotOf, slotX } from "./x-domain";
 import type { XDomain } from "./x-domain";
@@ -234,21 +233,18 @@ describe("category axes and lookups", () => {
   });
 });
 
+// Each child starts now, so both run beside each other and beside this file's tests.
+const ZONE_PROBES = ["America/New_York", "Asia/Tokyo"].map(
+  (zone) => [zone, spawnZoneProbe(new URL("./fixtures/zone-probe.ts", import.meta.url), zone)] as const
+);
+
 describe("every zoneinfo slot list", () => {
   it.each(slotJudgements().map((judgement) => [judgement.name, judgement] as const))("%s", (_, judgement) => {
     expect(judgement.actual).toEqual(judgement.expected);
   });
 
-  it.each(["America/New_York", "Asia/Tokyo"])("matches every list when the process runs in %s", (zone) => {
-    const probe = fileURLToPath(new URL("./fixtures/zone-probe.ts", import.meta.url));
-    const resolver = fileURLToPath(new URL("../../../../scripts/ts-resolve.mjs", import.meta.url));
-    const output = execFileSync(
-      process.execPath,
-      ["--experimental-strip-types", "--experimental-transform-types", "--import", resolver, probe],
-      // The child gets only TZ from this process.
-      { env: { TZ: zone }, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }
-    );
-    expect(JSON.parse(output)).toEqual({ zone, mismatches: [] });
+  it.each(ZONE_PROBES)("matches every list when the process runs in %s", async (zone, output) => {
+    expect(JSON.parse(await output)).toEqual({ zone, mismatches: [] });
   });
 });
 

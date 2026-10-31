@@ -6,13 +6,12 @@
  */
 
 import * as fc from "fast-check";
-import { execFileSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { canonicalSpaces } from "../../../intl/canonical-spaces";
 import { LOCALES } from "./fixtures/judgement";
 import { JUDGES } from "./fixtures/judges";
+import { spawnZoneProbe } from "./fixtures/spawn-zone-probe";
 import { oracleDays } from "./fixtures/time-judges";
 import { formatTime } from "./time-format";
 import { formatValue } from "./value-format";
@@ -20,17 +19,11 @@ import type { ValueFormat } from "./value-format";
 
 const SEED = 20_261_018;
 
-/** Run `fixtures/zone-probe.ts` in a fresh Node process whose runtime zone is `zone`. */
-function runZoneProbe(zone: string): string {
-  const probe = fileURLToPath(new URL("./fixtures/zone-probe.ts", import.meta.url));
-  const resolver = fileURLToPath(new URL("../../../../scripts/ts-resolve.mjs", import.meta.url));
-  return execFileSync(
-    process.execPath,
-    ["--experimental-strip-types", "--experimental-transform-types", "--import", resolver, probe],
-    // The child gets only TZ from this process.
-    { env: { TZ: zone }, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }
-  );
-}
+// Each child runs fixtures/zone-probe.ts under another process zone. Both start now, so they run
+// beside each other and beside this file's tests.
+const ZONE_PROBES = ["America/New_York", "Asia/Tokyo"].map(
+  (zone) => [zone, spawnZoneProbe(new URL("./fixtures/zone-probe.ts", import.meta.url), zone)] as const
+);
 
 describe("chart formats in Node", () => {
   it.each(JUDGES)("match the judges of %s", (_, judge) => {
@@ -39,10 +32,10 @@ describe("chart formats in Node", () => {
     }
   });
 
-  it.each(["America/New_York", "Asia/Tokyo"])("match every judge when the process runs in %s", (zone) => {
+  it.each(ZONE_PROBES)("match every judge when the process runs in %s", async (zone, output) => {
     // Unit under test: every judged label. Oracle: the judges themselves, so the process zone
     // changes no string.
-    expect(JSON.parse(runZoneProbe(zone))).toEqual({ zone, mismatches: [] });
+    expect(JSON.parse(await output)).toEqual({ zone, mismatches: [] });
   });
 
   it("keeps each day's slot count, order and repeated-hour positions when the locale changes", () => {

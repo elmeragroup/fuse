@@ -33,12 +33,10 @@ const SKIP_REASONS = [
   /^Fuse has no (domain|range) of (object|colour strings)$/u,
 ];
 
-function judge(name: string, file: D3CaseFile, passing: number, zoneCases: readonly number[] = []): void {
+function judge(name: string, file: D3CaseFile, passing: number): void {
   const outcomes = runD3Cases(file, BINDINGS);
   it(`passes every applicable ${name} case`, () => {
-    expect(
-      outcomes.filter(({ line, outcome }) => outcome.kind === "fail" && !zoneCases.includes(line))
-    ).toEqual([]);
+    expect(outcomes.filter(({ outcome }) => outcome.kind === "fail")).toEqual([]);
   });
   it(`skips ${name} cases only for a feature Fuse leaves out`, () => {
     const reasons = outcomes.flatMap(({ outcome }) =>
@@ -54,8 +52,7 @@ function judge(name: string, file: D3CaseFile, passing: number, zoneCases: reado
 
 describe("d3-scale band.json", () => judge("band", band, 97));
 describe("d3-scale point.json", () => judge("point", point, 16));
-// Line 106 builds local dates, which upstream evaluated under TZ=America/Los_Angeles.
-describe("d3-scale linear.json", () => judge("linear", linear, 141, [106]));
+describe("d3-scale linear.json", () => judge("linear", linear, 142));
 
 describe("section 8.15 bands", () => {
   it("leaves a 25 % gap around each 40 px band, so each bar is 30 px wide and starts 5 px in", () => {

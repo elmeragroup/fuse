@@ -36,6 +36,20 @@ describe("demo frame", () => {
     await page.close();
   });
 
+  it("serves the source as plain text and highlights it once the Code view shows", async () => {
+    // Unit under test: the Code view's source block. Oracle: the demo file on disk. The page's HTML
+    // holds one text node per demo source until a reader opens its Code view.
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
+    const demo = await openDemo(page, "frame", "With a table");
+    const code = demo.locator("[data-demo-source] pre > code");
+    expect(await code.locator("span").count()).toBe(0);
+    expect(await code.textContent()).toBe(WITH_TABLE_SOURCE.trimEnd());
+    await demo.getByRole("tab", { name: "Code" }).click();
+    await expect.poll(() => code.locator(".sh__token--keyword").count()).toBeGreaterThan(0);
+    expect(await code.textContent()).toBe(WITH_TABLE_SOURCE.trimEnd());
+    await page.close();
+  });
+
   it("keeps the panel's height when switching to Code, from a 256px floor", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
     // A short demo, which the floor lifts, and a tall one, whose source is longer than the demo.

@@ -8,7 +8,7 @@ import type { DocsRouteSection } from "../lib/docs-route-files";
 import { DemoHydrationMarker } from "./demo-hydration-marker";
 import { DemoStage } from "./demo-stage";
 import { DemoTabs } from "./demo-tabs";
-import { DocsCodeBlock } from "./docs-code-block";
+import { highlightSource } from "./docs-code-block";
 import { RetryBoundary } from "./retry-boundary";
 
 type DemoFrameProps = {
@@ -42,9 +42,10 @@ const { root, heading } = demoFrame();
  * it and open it in a Sheet. The footer switches between the views.
  *
  * A server component, so the source comes from a read of the demo file during prerendering rather
- * than from generated data threaded through the page, highlighted here by the shared
- * `DocsCodeBlock`. The chrome that holds state, the view switch and the Sheet, is the client
- * `DemoTabs`, and only the stage follows the preview theme (`DemoStage`). The heading keeps its level and id inside `Frame.Title`, so the TOC and screen
+ * than from generated data threaded through the page, highlighted here by the docs' one
+ * highlighter. The chrome that holds state, the view switch and the Sheet, is the client
+ * `DemoTabs`, which shows the highlighted markup once the Code view opens, and only the stage
+ * follows the preview theme (`DemoStage`). The heading keeps its level and id inside `Frame.Title`, so the TOC and screen
  * readers find the demo as before.
  *
  * A demo that reads the clock while it renders cannot prerender: React Aria's date components
@@ -84,7 +85,7 @@ export function DemoFrame({
           </DemoStage>
         }
         sourceText={demo.source}
-        source={<DocsCodeBlock variant="embedded" source={demo.source} />}
+        sourceHtml={highlightSource(demo.source)}
       />
     </section>
   );

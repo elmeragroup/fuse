@@ -3,7 +3,8 @@
 // of 2,000 vertices, the most a window draws before it decimates, each log no long task over 50 ms
 // through its commit and its 480 ms tween. The limit comes from motion-decision.md
 // "Judges" and the SVG brief's excellence bar. Dropped frames depend on the machine's load, so the
-// long task is the judge.
+// long task is the judge. Pages on the same cores lengthen it too, so vitest.config.ts runs this
+// project alone, after every other project.
 import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
@@ -75,11 +76,13 @@ describe("update smoothness", () => {
     const first = host.querySelector('[data-slot="chart-bar"]');
     const height = (): string | null | undefined => first?.getAttribute("height");
     const before = height();
-    const start = performance.now();
     rerender(<Chart500 phase={3} />);
-    // The update moves its bars: the first one paints its old height, then reaches a new one.
+    // The update moves its bars: the first one paints its old height, then reaches a new one. The
+    // tween starts in the commit, so the wait counts from the commit's end.
     const rewound = height();
-    while (performance.now() - start < 560) await new Promise((resolve) => requestAnimationFrame(resolve));
+    const committed = performance.now();
+    while (performance.now() - committed < 560)
+      await new Promise((resolve) => requestAnimationFrame(resolve));
     observer.disconnect();
     expect(rewound).toBe(before);
     expect(height()).not.toBe(before);
@@ -115,11 +118,12 @@ describe("update smoothness", () => {
     // DOM audit: the line is aria-hidden plot output.
     const path = host.querySelector('[data-slot="chart-line"][data-part="solid"]');
     const before = path?.getAttribute("d");
-    const start = performance.now();
     rerender(line(3));
     // The update tweens its vertices: the path paints its old data first, then reaches the new.
     const rewound = path?.getAttribute("d");
-    while (performance.now() - start < 560) await new Promise((resolve) => requestAnimationFrame(resolve));
+    const committed = performance.now();
+    while (performance.now() - committed < 560)
+      await new Promise((resolve) => requestAnimationFrame(resolve));
     observer.disconnect();
     expect(rewound).toBe(before);
     expect(path?.getAttribute("d")).not.toBe(before);

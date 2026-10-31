@@ -41,12 +41,21 @@ function introOf(phase: MountPhase, commit: CommitKind): "fade" | "none" | undef
   return commit === "data" ? "fade" : "none";
 }
 
+/**
+ * Write an attribute that changed. An SVG geometry attribute restyles its element even when the
+ * value stays, so a frame that moves only a bar's height leaves its x and width alone, and a commit
+ * that rewinds a bar to what it drew restyles nothing.
+ */
+function writeAttribute(node: Element, name: string, value: string): void {
+  if (node.getAttribute(name) !== value) node.setAttribute(name, value);
+}
+
 /** Write a rectangle's geometry attributes, as a bar's JSX writes them. */
 function writeRect(node: Element, { x, y, width, height }: PlotRect): void {
-  node.setAttribute("x", String(x));
-  node.setAttribute("y", String(y));
-  node.setAttribute("width", String(Math.max(0, width)));
-  node.setAttribute("height", String(Math.max(0, height)));
+  writeAttribute(node, "x", String(x));
+  writeAttribute(node, "y", String(y));
+  writeAttribute(node, "width", String(Math.max(0, width)));
+  writeAttribute(node, "height", String(Math.max(0, height)));
 }
 
 /**
@@ -55,8 +64,7 @@ function writeRect(node: Element, { x, y, width, height }: PlotRect): void {
  */
 function writeSide(body: SVGElement | null, negative: boolean, top: number): void {
   if (body === null) return;
-  if (negative) body.setAttribute("data-negative", "");
-  else body.removeAttribute("data-negative");
+  body.toggleAttribute("data-negative", negative);
   body.style.setProperty("--_top", String(top));
 }
 
@@ -68,8 +76,8 @@ function writeParts(node: Element, parts: BarParts): void {
   }
   for (const child of node.children) {
     const part = child.getAttribute("data-part");
-    if (part === "top" || part === "side") child.setAttribute("points", parts[part] ?? "");
-    else if (part === "track" || part === "blocks") child.setAttribute("d", rectsPath(parts[part] ?? []));
+    if (part === "top" || part === "side") writeAttribute(child, "points", parts[part] ?? "");
+    else if (part === "track" || part === "blocks") writeAttribute(child, "d", rectsPath(parts[part] ?? []));
     else if (part === "cap") {
       if (parts.cap !== undefined) writeRect(child, parts.cap);
     } else writeRect(child, parts.body);
@@ -146,10 +154,18 @@ const BarMark = memo(function BarMark({
   useLayoutEffect(() => {
     place(bar.geometry, barPlacement(bar, commit()), barAnchor(series, bar.cell.slot));
   });
-  const parts = drawnBar(look.frame, look.variant, bar.rect, {
+  const target = drawnBar(look.frame, look.variant, bar.rect, {
     negative: hangs(look.frame, bar.geometry),
     top: bar.geometry[5],
   });
+  // React writes the geometry of the bar's first render, and the loop writes it from then on, in
+  // the layout effect of every commit and in every frame. A data update's commit then changes no
+  // bar's geometry, so the plot measures it without restyling every bar. A look that adds or drops
+  // a part renders its own geometry.
+  const [first] = useState(target);
+  const parts = DETAIL_PARTS.every((part) => (first[part] === undefined) === (target[part] === undefined))
+    ? first
+    : target;
   const fill = negative ? bar.fills.negative : bar.fills.positive;
   const paint = { "--chart-bar-paint": bar.paint, "--_fill": fill };
   const shared = { "data-emphasis": bar.emphasis ? "" : undefined, "data-time": bar.time };
@@ -197,7 +213,7 @@ const BarMark = memo(function BarMark({
 function drawTick(line: SVGLineElement, look: { readonly frame: PlotFrame }, values: MarkValues): void {
   const [start = 0, end = 0, base = 0] = values;
   for (const [name, value] of Object.entries(tickEnds(look.frame, [start, end], base))) {
-    line.setAttribute(name, String(value));
+    writeAttribute(line, name, String(value));
   }
 }
 

@@ -86,13 +86,17 @@ describe("coarse slots", () => {
           const from = Date.UTC(2025, 0, 1) + offset * 3_600_000;
           const hours = Array.from({ length: count }, (_, index) => from + index * 3_600_000);
           const { first, last } = coarseSlots(hours, interval, "Europe/Oslo");
-          hours.forEach((_, slot) => {
+          // One assertion per run names every slot that breaks the partition.
+          const broken = hours.flatMap((_, slot) => {
             const [own, end] = [first[slot] ?? -1, last[slot] ?? -1];
-            expect(own <= slot && slot <= end).toBe(true);
+            const holdsItself = own <= slot && slot <= end;
             // Every slot of a group names the same group, and the next slot starts the next one.
-            expect([first[own], last[own], first[end], last[end]]).toEqual([own, end, own, end]);
-            if (end + 1 < count) expect(first[end + 1]).toBe(end + 1);
+            const sameGroup =
+              first[own] === own && last[own] === end && first[end] === own && last[end] === end;
+            const nextStarts = end + 1 >= count || first[end + 1] === end + 1;
+            return holdsItself && sameGroup && nextStarts ? [] : [slot];
           });
+          expect(broken).toEqual([]);
         }
       ),
       { numRuns: 60 }
