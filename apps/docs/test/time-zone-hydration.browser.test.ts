@@ -106,7 +106,7 @@ async function hydrateDemo(
     .toBe(true);
   await stage.evaluate((element) => {
     globalThis.demoMutations = 0;
-    // The server sends a chart's plot as a skeleton, and the browser draws the marks and places
+    // The server sends a chart's plot with a loader, and the browser draws the marks and places
     // the plot's followers and focus target once it measures the plot. Those writes land inside
     // plot output and are drawing, not hydration, so only records outside it count.
     const plotOutput = [

@@ -455,11 +455,12 @@ function lineStart(frame: PlotFrame, centre: number, band: readonly [number, num
 }
 
 /**
- * The span a bar takes inside its slot's band, unsnapped. The band loses `bandGap` around its
+ * The span a bar draws inside its slot's band, snapped through `snapBarSpan`, so every bar of a
+ * layout with the same sub-band and span draws the same width. The band loses `bandGap` around its
  * bars, and a BarGroup splits the rest into sub-bands `barGap` apart. The gaps stay as requested
  * while they leave every bar a width. Gaps that would use up the band take half of it instead, so
  * a group in a band too narrow for its gaps still draws every bar, and the pixel floor gives each
- * one a device pixel.
+ * one a device pixel among its band's.
  *
  * @param frame - The layout's frame.
  * @param position - The slot's place in the window, from 0.
@@ -467,7 +468,7 @@ function lineStart(frame: PlotFrame, centre: number, band: readonly [number, num
  * @param sub - The Bar's sub-band.
  * @param span - How many slots the band covers, more than 1 for a coarse series' slot, whose band
  *   loses `bandGap` once around its bar, so an hourly bar on a quarter-hour grid fills its hour.
- * @returns The bar's start and end along the slot axis in CSS pixels.
+ * @returns The bar's start and end along the slot axis in CSS pixels, on the device pixel grid.
  */
 export function barSpan(
   frame: PlotFrame,
@@ -483,11 +484,52 @@ export function barSpan(
   const gap = gaps === 0 ? 0 : inside - gaps * metrics.barGap > 0 ? metrics.barGap : inside / (2 * gaps);
   const size = (inside - (sub.count - 1) * gap) / sub.count;
   const start = position * step + (band * metrics.bandGap) / 2 + sub.index * (size + gap);
-  return [start, start + size];
+  // A bar keeps its pixel among its band's, so the crosshair band and the focused option cover it.
+  const slots: readonly [number, number] = [
+    slotBand(frame, position)[0],
+    slotBand(frame, position + span - 1)[1],
+  ];
+  return snapBarSpan(frame, start, start + size, slots);
 }
 
 /**
- * Snap a span along the slot axis. This is the one owner of the pixel floor, which every mark and
+ * Snap a bar's span along the slot axis, so bars of one ideal width draw one width. The width
+ * snaps once, rounded down to whole device pixels. Only the start snaps after that. It starts the
+ * rounded width centred on the span's middle and moves to its device pixel, so the bar keeps its
+ * band's middle within half a device pixel. The end lies the width past the start. Bars a
+ * fractional step apart then keep one width, and the gaps take the remainder, so two gaps differ
+ * by at most one device pixel. The centred width lies inside the span, and snapping moves two
+ * coordinates a whole number of device pixels apart alike, so the bar stays inside its snapped
+ * band, and a gap of a device pixel or more stays open. A tween frame between two bars of one
+ * width carries that width and draws it. A span narrower than a device pixel, or an empty one,
+ * takes `snapSpan`'s pixel floor.
+ *
+ * @param frame - The layout's frame.
+ * @param start - The span's start along the slot axis.
+ * @param end - The span's end, at or after its start.
+ * @param within - A snapped container the span lies in, such as the bar's band, whose pixels a
+ *   span narrower than a device pixel keeps its pixel among.
+ * @returns The snapped start and end.
+ */
+export function snapBarSpan(
+  frame: PlotFrame,
+  start: number,
+  end: number,
+  within?: readonly [number, number]
+): readonly [number, number] {
+  const { dpr } = frame.box;
+  // A width already on the grid, as a tween between two snapped bars carries, stays whole.
+  const pixels = Math.floor((end - start) * dpr + TIE);
+  if (pixels < 1) return floorSpan(frame, "along", start, end, within);
+  const width = pixels / dpr;
+  const from = snapAlong(frame, (start + end - width) / 2);
+  return [from, from + width];
+}
+
+/**
+ * Snap a span along the slot axis, each edge to its own device pixel, so neighbouring spans share
+ * their edges, as slot bands, step runs and slot references do. A bar's body takes `snapBarSpan`,
+ * which keeps one width instead. This is the one owner of the pixel floor, which every mark and
  * every interaction band takes: a span wider than zero keeps at least one device pixel, and an empty
  * span stays empty. A span narrower than a device pixel snaps both edges to one, and keeps the
  * device pixel on the side of that edge where its middle lies, so a bar and the band around it
@@ -550,10 +592,11 @@ function floorSpan(
 }
 
 /**
- * Snap a mark's drawn body: its slot-axis edges through `snapSpan`, so it keeps the pixel floor,
- * and its value-axis edges onto the device pixels, so a zero value stays flat. Every rectangle a
- * bar, its look's parts, the active overlay, a path column or the tooltip row draws comes through
- * here, after any shaping, so nothing narrows a body after the floor.
+ * Snap a mark's drawn body: its slot-axis edges through `snapBarSpan`, so bodies of one ideal width
+ * draw one width and keep the pixel floor, and its value-axis edges onto the device pixels, so a
+ * zero value stays flat. Every rectangle a bar, its look's parts, the active overlay, a path column
+ * or the tooltip row draws comes through here, after any shaping, so nothing narrows a body after
+ * the floor. A body already on the grid draws as it is.
  *
  * @param frame - The layout's frame.
  * @param rect - The unsnapped body.
@@ -565,7 +608,7 @@ export function snapBody(frame: PlotFrame, rect: PlotRect, within?: readonly [nu
   const vertical = frame.orientation === "vertical";
   const [alongStart, alongSize] = vertical ? [rect.x, rect.width] : [rect.y, rect.height];
   const [acrossStart, acrossSize] = vertical ? [rect.y, rect.height] : [rect.x, rect.width];
-  const [a0, a1] = snapSpan(frame, alongStart, alongStart + Math.max(0, alongSize), within);
+  const [a0, a1] = snapBarSpan(frame, alongStart, alongStart + Math.max(0, alongSize), within);
   const c0 = snapAcross(frame, Math.min(acrossStart, acrossStart + acrossSize));
   const c1 = snapAcross(frame, Math.max(acrossStart, acrossStart + acrossSize));
   return vertical

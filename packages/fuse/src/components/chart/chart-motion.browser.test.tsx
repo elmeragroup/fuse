@@ -36,8 +36,14 @@ type Fractions = {
   readonly bottom: number;
 };
 
-/** Every edge lands on the nearest whole pixel, so a box sits within half a pixel of the oracle. */
+/** A value-axis edge lands on the nearest whole pixel, so it sits within half a pixel of the oracle. */
 const TOLERANCE = 0.5;
+
+/**
+ * A bar's width rounds down to whole pixels around its middle, and its start snaps, so a slot-axis
+ * edge sits within half a pixel plus half the rounding, under a pixel, of the oracle.
+ */
+const ALONG_TOLERANCE = 1;
 
 /** The expected box of oracle fractions on a plot. */
 function expected(fractions: Fractions, plot: DOMRect): Box {
@@ -51,7 +57,9 @@ function expected(fractions: Fractions, plot: DOMRect): Box {
 
 function near(actual: Box, wanted: Box): boolean {
   return (["left", "right", "top", "bottom"] as const).every(
-    (edge) => Math.abs(actual[edge] - wanted[edge]) <= TOLERANCE
+    (edge) =>
+      Math.abs(actual[edge] - wanted[edge]) <=
+      (edge === "left" || edge === "right" ? ALONG_TOLERANCE : TOLERANCE)
   );
 }
 

@@ -8,7 +8,7 @@ import type { CartesianModel, SeriesModel } from "./cartesian-model";
 import { ownSlot, ownSpan } from "./coarse-slots";
 import { BUCKETS, bucketEdges } from "./decimate";
 import { linearScale, scaleValue } from "./linear-scale";
-import { barSpan, frameRect, slotBand, snapSpan, valueAt } from "./plot-frame";
+import { barSpan, frameRect, valueAt } from "./plot-frame";
 import type { BarMetrics, PlotFrame, PlotRect, SubBand } from "./plot-frame";
 import type { Extent } from "./stack";
 import { slotCount } from "./x-domain";
@@ -179,13 +179,7 @@ export function barGeometry(
   seam: "cut" | "whole"
 ): BarGeometry {
   const [low, high] = cell.extent;
-  // A bar keeps its pixel among its band's, so the crosshair band and the focused option cover it.
-  const [start, stop] = barSpan(frame, cell.position, metrics, sub, cell.span);
-  const band: readonly [number, number] = [
-    slotBand(frame, cell.position)[0],
-    slotBand(frame, cell.position + cell.span - 1)[1],
-  ];
-  const [alongStart, alongEnd] = snapSpan(frame, start, stop, band);
+  const [alongStart, alongEnd] = barSpan(frame, cell.position, metrics, sub, cell.span);
   return [
     alongStart,
     alongEnd,
@@ -224,7 +218,9 @@ export function hangs(frame: PlotFrame, [, , base, tip]: BarGeometry): boolean {
 
 /**
  * The rectangle a bar's drawn geometry stands for, every edge on the device pixel grid. A stack's
- * inner segment ends its seam short of its tip, so the surface shows between segments.
+ * inner segment ends its seam short of its tip, so the surface shows between segments. Its span
+ * snaps by `snapBarSpan`'s width rule, as the resting bar's does, so every bar of a series keeps
+ * one width in each tween frame between two rests of one width.
  *
  * @param frame - The layout's frame.
  * @param geometry - The drawn geometry, a tween frame's or the target's.
@@ -234,26 +230,6 @@ export function geometryRect(frame: PlotFrame, geometry: BarGeometry): PlotRect 
   const [alongStart, alongEnd, base, tip, seam] = geometry;
   const end = tip + Math.sign(base - tip) * Math.min(Math.max(0, seam), Math.abs(tip - base));
   return frameRect(frame, [alongStart, alongEnd], [base, end]);
-}
-
-/**
- * A cell's rectangle in the plot at rest, every edge on the device pixel grid.
- *
- * @param frame - The layout's frame.
- * @param cell - The cell.
- * @param metrics - The bar spacing.
- * @param sub - The Bar's sub-band.
- * @param seam - "cut" or "whole", as `barGeometry` reads it.
- * @returns The rectangle.
- */
-export function barRect(
-  frame: PlotFrame,
-  cell: BarCell,
-  metrics: BarMetrics,
-  sub: SubBand,
-  seam: "cut" | "whole"
-): PlotRect {
-  return geometryRect(frame, barGeometry(frame, cell, metrics, sub, seam));
 }
 
 /**

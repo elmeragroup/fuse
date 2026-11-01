@@ -41,7 +41,7 @@ import type {
   ValueFormat,
   XFormat,
 } from "./chart-types";
-import { WHOLE_BAND, barSpan, centreOf, frameRect, optionBand, snapY, valueAt } from "./layout/plot-frame";
+import { WHOLE_BAND, barSpan, centreOf, optionBand, snapY, valueAt } from "./layout/plot-frame";
 import { tooltipSideOffset } from "./layout/tooltip-place";
 
 /**
@@ -219,8 +219,7 @@ function ChartTooltipBody({
             return [centre, centre];
           }
           if (orientation === "vertical") return optionBand(frame, position, "band");
-          const row = frameRect(frame, barSpan(frame, position, metrics, WHOLE_BAND), [0, box.width]);
-          return [row.y, row.y + row.height];
+          return barSpan(frame, position, metrics, WHOLE_BAND);
         };
         const [start, end] = along();
         // A horizontal anchor spans the plot's width, and a vertical one runs from the column's

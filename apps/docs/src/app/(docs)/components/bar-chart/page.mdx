@@ -61,7 +61,7 @@ The chart entry is a preview. Its names and props can change until Fuse's first 
 
 <Prose>
 
-A chart whose props are all plain data needs no `"use client"` line. This demo is a server component, so the server writes the figure, the axis labels and the table into the page's HTML, and the browser loads only the chart's own parts. The plot shows a skeleton until the browser measures it and draws the bars, and the plot keeps its height, so nothing around it shifts. A demo that reads a hook or passes a function, such as the capacity step's tooltip, stays a client module.
+A chart whose props are all plain data needs no `"use client"` line. This demo is a server component, so the server writes the figure, the axis labels and the table into the page's HTML, and the browser loads only the chart's own parts. The plot keeps its height until the browser measures it and draws the bars, so nothing around it shifts. If that takes more than a moment, a loading icon fades in at its middle. A demo that reads a hook or passes a function, such as the capacity step's tooltip, stays a client module.
 
 </Prose>
 

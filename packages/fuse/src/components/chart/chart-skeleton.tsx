@@ -60,12 +60,14 @@ export function ChartSkeleton({
 }
 
 /**
- * The plot's placeholder inside a Root, from the server render until the browser measures the
- * plot and draws the marks. Root never reads its children, so it sketches no mark of its own, and
- * the axes, the legend and the table around it are already final.
+ * The plot's placeholder inside a Root or a Panel, from the server render until the browser
+ * measures the plot and draws the marks. It is a Fuse Loader in the plot's middle, which CSS keeps
+ * hidden for a moment, so a fast hydration shows nothing. Root never reads its children, so it
+ * sketches no mark of its own, and the axes, the legend and the table around it are already
+ * final. Each chart already has its name and its table, so the wait is not announced.
  */
-export function PlotSkeleton(): ReactElement {
-  return <Skeleton data-slot="chart-skeleton-mark" />;
+export function PlotLoader(): ReactElement {
+  return <Loader aria-hidden="true" label="" />;
 }
 
 Object.assign(ChartSkeleton, { displayName: "Chart.Skeleton" });

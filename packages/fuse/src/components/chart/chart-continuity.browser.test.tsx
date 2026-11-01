@@ -635,7 +635,11 @@ describe("a bar that mounts while its layout's value domain glides", () => {
       clock.frameAt(at + 600);
       const to = width(0);
       expect(to).toBeLessThan(from);
-      expect(mid).toBeCloseTo(from + (to - from) * easedAt(120), 0);
+      // A frame rounds its tweened width down to whole pixels, as a resting bar does, so the drawn
+      // width lies less than a pixel below the eased one.
+      const eased = from + (to - from) * easedAt(120);
+      expect(mid).toBeLessThanOrEqual(eased);
+      expect(mid).toBeGreaterThan(eased - 1);
       release();
       await expect.poll(() => boxesOf(host, 1).length).toBe(2);
     } finally {

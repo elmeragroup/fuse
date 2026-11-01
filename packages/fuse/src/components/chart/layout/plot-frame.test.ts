@@ -8,6 +8,8 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import {
+  WHOLE_BAND,
+  barSpan,
   centreOf,
   frameRect,
   hairline,
@@ -117,12 +119,15 @@ describe("snapping", () => {
     );
   });
 
-  it("snaps a body's four edges, so its size may change by a device pixel", () => {
+  it("rounds a body's width down and centres it along the slot axis, and snaps both value-axis edges", () => {
+    // Along the slot axis the 3.4 px width rounds down to 3, centred on the span's middle 3.1, so
+    // the start 1.6 snaps to 2 and the end lies 3 px on at 5. Across the value axis each edge snaps
+    // alone, 2.6 to 3 and 3.8 to 4, so the height is 1.
     const frame = plotFrame(box(100, 100), "vertical", 1, [0, 1]);
     expect(snapBody(frame, { x: 1.4, y: 2.6, width: 3.4, height: 1.2 })).toEqual({
-      x: 1,
+      x: 2,
       y: 3,
-      width: 4,
+      width: 3,
       height: 1,
     });
   });
@@ -199,6 +204,85 @@ describe("slot bands and centres", () => {
   it("runs slots down the plot under a horizontal frame", () => {
     const frame = plotFrame(box(300, 64), "horizontal", 2, [0, 1]);
     expect(slotBand(frame, 1)).toEqual([32, 64]);
+  });
+});
+
+describe("one width for the bars of a layout", () => {
+  // Unit under test: barSpan, which every bar, its overlay, its tooltip row and a path column's
+  // emphasis box draw. Oracles: the device pixel grid, the snapped band slotBand gives the slot,
+  // whose pixels the crosshair band and the focused option draw, and the band's middle.
+  it("draws one whole width per sub-band, in its band and on its middle, its gaps a device pixel apart at most", () => {
+    fc.assert(
+      fc.property(
+        fc.constantFrom(1, 1.25, 1.5, 2, 3),
+        fc.integer({ min: 0, max: 63 }).map((units) => units / 64),
+        fc.constantFrom("vertical" as const, "horizontal" as const),
+        fc.integer({ min: 160, max: 4800 }).map((quarters) => quarters / 4),
+        fc.integer({ min: 1, max: 160 }),
+        fc.constantFrom(1, 2, 4),
+        fc.integer({ min: 1, max: 3 }),
+        fc.integer({ min: 0, max: 60 }).map((percent) => percent / 100),
+        fc.constantFrom(0, 1, 2, 4),
+        (dpr, offset, orientation, length, count, span, groups, bandGap, barGap) => {
+          const plot =
+            orientation === "vertical" ? box(length, 100, dpr, offset) : box(100, length, dpr, 0, offset);
+          const frame = plotFrame(plot, orientation, count, [0, 1]);
+          const metrics = { bandGap, barGap, seam: 2 };
+          // A coarse series' bars, `span` slots each, from the window's first slot.
+          const positions = Array.from({ length: Math.floor(count / span) }, (_, k) => k * span);
+          if (positions.length === 0) return;
+          const step = length / count;
+          // The layer's drawn origin, on the device pixel nearest the plot's page position.
+          const origin = Math.ceil(offset * dpr - 0.5 - 1e-6) / dpr;
+          // Section 8.15's bar is the band less its gap, split into the group's bars `barGap` apart,
+          // or half the band apart where the gaps would use it up.
+          const inside = step * span * (1 - bandGap);
+          const between =
+            groups === 1 ? 0 : inside - (groups - 1) * barGap > 0 ? barGap : inside / (2 * (groups - 1));
+          // A bar a device pixel or wider keeps its width, its middle and its gaps. A narrower one
+          // takes the pixel floor, which keeps it among its band's pixels.
+          const whole = ((inside - (groups - 1) * between) / groups) * dpr >= 1;
+          for (let index = 0; index < groups; index += 1) {
+            const spans = positions.map((at) => barSpan(frame, at, metrics, { index, count: groups }, span));
+            const widths = spans.map(([start, end]) => (end - start) * dpr);
+            const [first = 0] = widths;
+            expect(Math.abs(first - Math.round(first))).toBeLessThan(1e-6);
+            expect(first).toBeGreaterThan(1 - 1e-6);
+            for (const width of widths) expect(Math.abs(width - first)).toBeLessThan(1e-6);
+            spans.forEach(([start, end], k) => {
+              const at = positions[k] ?? 0;
+              expect(start).toBeGreaterThanOrEqual(slotBand(frame, at)[0] - 1e-9);
+              expect(end).toBeLessThanOrEqual(slotBand(frame, at + span - 1)[1] + 1e-9);
+              // The drawn middle lies within half a device pixel of the band's, both on the page.
+              if (groups === 1 && whole)
+                expect(
+                  Math.abs(origin + (start + end) / 2 - (offset + (at + span / 2) * step))
+                ).toBeLessThanOrEqual(0.5 / dpr + 1e-9);
+            });
+            const gaps = spans.slice(1).map(([start], k) => (start - (spans[k]?.[1] ?? 0)) * dpr);
+            if (whole && gaps.length > 0)
+              expect(Math.max(...gaps) - Math.min(...gaps)).toBeLessThanOrEqual(1 + 1e-6);
+          }
+        }
+      )
+    );
+  });
+
+  it("draws 96 bars on 460 px 3 px wide at 1x and 3.5 px at 2x, 1 or 2 px apart and 1 or 1.5 px", () => {
+    // A slot is 460 / 96 = 4.79 px and its bar keeps 75 % of it, 3.59 px, which rounds down to 3
+    // device pixels at 1x and to 7 of 7.19 at 2x. The starts lie 4.79 px apart, 4 or 5 device
+    // pixels at 1x and 9 or 10 at 2x, so a gap is 1 or 2 device pixels at 1x and 2 or 3 at 2x.
+    for (const [dpr, width, gaps] of [
+      [1, 3, [1, 2]],
+      [2, 3.5, [1, 1.5]],
+    ] as const) {
+      const frame = plotFrame(box(460, 200, dpr), "vertical", 96, [0, 1]);
+      const metrics = { bandGap: 0.25, barGap: 2, seam: 2 };
+      const spans = Array.from({ length: 96 }, (_, at) => barSpan(frame, at, metrics, WHOLE_BAND));
+      expect(new Set(spans.map(([start, end]) => end - start))).toEqual(new Set([width]));
+      const apart = new Set(spans.slice(1).map(([start], k) => start - (spans[k]?.[1] ?? 0)));
+      expect([...apart].toSorted((a, b) => a - b)).toEqual(gaps);
+    }
   });
 });
 

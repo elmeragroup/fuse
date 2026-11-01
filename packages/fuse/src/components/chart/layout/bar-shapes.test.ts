@@ -11,13 +11,24 @@ import { describe, expect, it } from "vitest";
 
 import { columnsDrawing } from "../chart-bar-columns";
 import type { ChartBarVariant } from "../chart-types";
-import { barRect } from "./bar-geometry";
+import { barGeometry, geometryRect } from "./bar-geometry";
 import type { BarCell } from "./bar-geometry";
 import { DETAIL_PARTS, barParts, boxPoints, detailParts, drawnBar } from "./bar-shapes";
 import { WHOLE_BAND, barSpan, frameRect, optionBand, plotFrame, slotBand } from "./plot-frame";
-import type { PlotFrame, PlotRect } from "./plot-frame";
+import type { BarMetrics, PlotFrame, PlotRect, SubBand } from "./plot-frame";
 
 const UP = { orientation: "vertical", negative: false } as const;
+
+/** A cell's resting rectangle, the rectangle of its geometry, as a drawn bar takes it. */
+function barRect(
+  frame: PlotFrame,
+  cell: BarCell,
+  metrics: BarMetrics,
+  sub: SubBand,
+  seam: "cut" | "whole"
+): PlotRect {
+  return geometryRect(frame, barGeometry(frame, cell, metrics, sub, seam));
+}
 
 /** Every look, written here, which the record's type checks against the public union. */
 // SAFETY: the record satisfies Record<ChartBarVariant, true>, so its keys are exactly the looks.
@@ -181,8 +192,10 @@ describe("drawnBar", () => {
   });
 
   it("keeps a 1 px expandable strip for each of 100 categories on 200 px", () => {
-    // B3-1 at DPR 1: each 2 px band's bar snaps to [2i, 2i + 2], whose 12 % strip [2i + 0.88,
-    // 2i + 1.12] snaps both edges to 2i + 1. The floor keeps it at [2i + 1, 2i + 2].
+    // B3-1 at DPR 1: each 2 px band keeps the 1.5 px bar [2i + 0.25, 2i + 1.75]. Its width rounds
+    // down to 1 px, centred on 2i + 1, so its start 2i + 0.5 ties and snaps up to 2i, and it draws
+    // [2i, 2i + 1]. The 12 % strip of that pixel, [2i + 0.44, 2i + 0.56], snaps its edges to 2i
+    // and 2i + 1, the bar's own pixel.
     const frame = frameOf(200, 100, { count: 100 });
     for (const position of [0, 1, 49, 99]) {
       const { body } = drawnBar(
@@ -191,7 +204,7 @@ describe("drawnBar", () => {
         barRect(frame, cellAt(position, 1), METRICS, WHOLE_BAND, "cut"),
         { negative: false, top: 1 }
       );
-      expect([body.x, body.width], String(position)).toEqual([2 * position + 1, 1]);
+      expect([body.x, body.width], String(position)).toEqual([2 * position, 1]);
     }
   });
 

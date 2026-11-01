@@ -1,5 +1,5 @@
 // Motion rule 1 of .scratch/charts-v1/reviews/motion-decision.md under the SVG brief, in
-// Chromium, Firefox and WebKit: the server sends the plot's skeleton and no marks, and a hydrated
+// Chromium, Firefox and WebKit: the server sends the plot's loader and no marks, and a hydrated
 // chart draws its marks at rest once the browser measures the plot, with no recoverable error, for
 // an ordinary hydration and for a Bar whose Suspense boundary hydrates late. The first data update
 // then follows rules 2 and 3: surviving bars start where they were, pass through a frame between
@@ -164,8 +164,11 @@ async function hydrate(server: ReactNode, client: (onHydrated: () => void) => Re
 describe("hydration", () => {
   it("draws the measured marks at rest after a server render with none, and moves them on the first update", async () => {
     const html = renderToString(<Fixture data={MOTION_A} />);
-    // The server sends the skeleton in the plot and no mark.
-    expect(html).toContain('data-slot="chart-skeleton-mark"');
+    // The server sends a hidden loader in the plot, no skeleton and no mark.
+    expect(html).toMatch(
+      /data-slot="chart-plot" aria-hidden="true"><div data-slot="loader" role="status"[^>]* aria-hidden="true">/u
+    );
+    expect(html).not.toContain('data-slot="chart-skeleton-mark"');
     expect(html).not.toContain('data-slot="chart-bar"');
     const { host, root, recover } = await hydrate(<Fixture data={MOTION_A} />, (onHydrated) => (
       <Fixture data={MOTION_A} onHydrated={onHydrated} />
@@ -175,8 +178,9 @@ describe("hydration", () => {
       // holds 10 days in 2 series, drawn at rest with no entrance.
       expect(bars(host)).toHaveLength(20);
       expect(atRestOnA(host)).toBe(true);
-      // DOM audit: the plot's skeleton is aria-hidden, and only its slot names it.
-      expect(host.querySelector('[data-slot="chart-skeleton-mark"]')).toBeNull();
+      // DOM audit: the plot's loader is aria-hidden, and only its slot names it. The measured
+      // plot drops it in the same commit that draws the bars.
+      expect(host.querySelector('[data-slot="loader"]')).toBeNull();
       expect(recover).not.toHaveBeenCalled();
       // Update B keeps 2 to 10 October, adds 11 October and drops 1 October. The surviving bars
       // start where data A left them, move, and settle on B.

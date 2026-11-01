@@ -33,7 +33,7 @@ import {
   useMeasuredPlot,
   usePanelSpan,
 } from "./chart-plot";
-import { PlotSkeleton } from "./chart-skeleton";
+import { PlotLoader } from "./chart-skeleton";
 import { sameShallow, useSteady } from "./chart-steady";
 import { createChartStore, openDrawingSoon, useClientMount } from "./chart-store";
 import type { ChartSnapshot, EmphasisEntry } from "./chart-store";
@@ -976,7 +976,7 @@ export function ChartRoot<
             <div ref={frameRef} data-slot="chart-frame" style={{ "--chart-slots": slots }}>
               <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
                 {probe}
-                {plot === null && !model.empty ? <PlotSkeleton /> : null}
+                {plot === null && !model.empty ? <PlotLoader /> : null}
               </div>
               <ChartRootPlotContext value={plot}>
                 <ChartPlotContext value={plot}>

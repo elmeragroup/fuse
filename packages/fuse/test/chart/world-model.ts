@@ -3,9 +3,9 @@
  * production layout. From a world's inputs and the measured plot it computes every mark's
  * visibility, its `data-outside`, its label membership and its resting device pixels: the zero
  * rule and d3's nice rule for the value domain (sections 8.3 and 8.11), the window (8.12), bands
- * with a 25 % gap (8.15), the path form's columns past 100 categories, the pixel floor, the
- * browser's snap, hairlines, the missing tick, each line vertex and dot on its slot's crosshair
- * column, and above 2,000 categories a brute-force M4 scan (8.12).
+ * with a 25 % gap (8.15), one bar width per series, the path form's columns past 100 categories,
+ * the pixel floor, the browser's snap, hairlines, the missing tick, each line vertex and dot on its
+ * slot's crosshair column, and above 2,000 categories a brute-force M4 scan (8.12).
  */
 
 /** How far a computed number may stray from what it stands for: styles serialize six decimals. */
@@ -297,7 +297,15 @@ export function expected(world: World, plot: Plot, active: string | null): Expec
   const count = last - first + 1;
   const step = plot.along / count;
   const band = (k: number) => floor("along", k * step, (k + 1) * step);
-  const barAlong = (k: number) => floor("along", (k + 0.125) * step, (k + 0.875) * step, band(k));
+  // Every bar of a series draws one width, its width rounded down to whole device pixels and centred
+  // on its span's middle, where its start snaps. A span narrower than a device pixel keeps the floor.
+  const barFloor = (start: number, end: number, within: Span): Span => {
+    const pixels = Math.floor((end - start) * dpr + 1e-6);
+    if (pixels < 1) return floor("along", start, end, within);
+    const from = snapAlong((start + end) / 2 - (pixels * device) / 2);
+    return [from, from + pixels * device];
+  };
+  const barAlong = (k: number) => barFloor((k + 0.125) * step, (k + 0.875) * step, band(k));
   const baseline = snapAcross(valueAt(0));
   const hairline = Math.max(1, Math.floor(dpr)) / dpr;
   const path = pathForm(world);
@@ -311,7 +319,7 @@ export function expected(world: World, plot: Plot, active: string | null): Expec
   windowed.forEach(({ name, v }, k) => {
     if (v === null) {
       if (empty) return;
-      const along = path ? floor("along", (k + 0.25) * step, (k + 0.75) * step, band(k)) : barAlong(k);
+      const along = path ? barFloor((k + 0.25) * step, (k + 0.75) * step, band(k)) : barAlong(k);
       ticks.set(name, { along, base: baseline });
       return;
     }
@@ -340,15 +348,13 @@ export function expected(world: World, plot: Plot, active: string | null): Expec
   const lastIndex = windowed.findLastIndex(({ v }) => v !== null);
   const shownIndex = active === null ? lastIndex : activeIndex;
   const shown = windowed[shownIndex]?.v ?? null;
-  // ActiveValue centres over its bar's middle: an element bar's drawn span, or a column's own span
-  // in the path form, whose middle is the slot's unsnapped centre. A decimated column stands for a
-  // bucket, so there the value takes its slot's snapped centre.
+  // ActiveValue centres over the middle of the drawn span an element bar and a path-form column
+  // share. A decimated column stands for a bucket, so there the value takes its slot's snapped
+  // centre.
   const valueCentre = (k: number) => {
-    if (!path) {
-      const [start, end] = barAlong(k);
-      return (start + end) / 2;
-    }
-    return count > DECIMATE_ABOVE ? snapAlong((k + 0.5) * step) : (k + 0.5) * step;
+    if (count > DECIMATE_ABOVE) return snapAlong((k + 0.5) * step);
+    const [start, end] = barAlong(k);
+    return (start + end) / 2;
   };
   const value = shown === null ? null : { centre: valueCentre(shownIndex), tip: tipOf(shown) };
   const names = world.data.map(({ name }) => name);

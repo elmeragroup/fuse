@@ -147,7 +147,7 @@
     Root's plot, its surface and the empty state span the Panels' plots, from the first's top to
     the last's bottom, as Root measures them. Out of the grid's flow they take
     no row, and the surface stays the one pointer target and tab stop over every Panel. Root's plot
-    only measures the shared x frame, so each Panel holds a skeleton of its own.
+    only measures the shared x frame, so each Panel holds a loader of its own.
   */
   [data-slot="chart-frame"]
     > :is([data-slot="chart-plot"], [data-slot="chart-surface"], [data-slot="chart-empty"]):is(
@@ -162,10 +162,11 @@
     height: var(--chart-panels-height, 0px);
   }
 
+  /* The Loader's own display is a utility, which outranks this layer, so it hides by visibility. */
   [data-slot="chart-frame"]
     > [data-slot="chart-plot"]:has(~ [data-slot="chart-panel"])
-    > [data-slot="chart-skeleton-mark"] {
-    display: none;
+    > [data-slot="loader"] {
+    visibility: hidden;
   }
 
   /*
@@ -269,10 +270,22 @@
     shape-rendering: crispEdges;
   }
 
-  /* Until the browser measures the plot, a skeleton holds its place, as on the server. */
-  [data-slot="chart-plot"] > [data-slot="chart-skeleton-mark"] {
+  /*
+    Until the browser measures the plot, a loader waits in its middle, as on the server, and the
+    plot keeps its height. It stays hidden for 400 ms, so a fast hydration shows nothing, then
+    fades in on the update tokens. Under reduced motion it appears after the same wait, unfaded.
+  */
+  [data-slot="chart-plot"] > [data-slot="loader"] {
     position: absolute;
     inset: 0;
+    animation: chart-fade-in 0s 400ms both;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    [data-slot="chart-plot"] > [data-slot="loader"] {
+      animation-duration: var(--chart-update);
+      animation-timing-function: var(--chart-ease);
+    }
   }
 
   /* The plot's one pointer target and tab stop sits above every mark. */

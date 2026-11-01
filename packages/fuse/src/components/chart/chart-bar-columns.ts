@@ -22,7 +22,7 @@ import { ownSpan, ownWindowFirsts } from "./layout/coarse-slots";
 import { seriesPaint } from "./layout/color-key";
 import { DECIMATE_ABOVE } from "./layout/decimate";
 import type { PathSlots } from "./layout/path-motion";
-import { barSpan, frameRect, slotBand, snapSpan, valueAt } from "./layout/plot-frame";
+import { barSpan, frameRect, slotBand, snapBarSpan, snapSpan, valueAt } from "./layout/plot-frame";
 import type { BarMetrics, PlotFrame, PlotRect, SubBand } from "./layout/plot-frame";
 import { windowSlots } from "./layout/series-path";
 import { slotId } from "./layout/slot-keys";
@@ -35,9 +35,6 @@ export const COLUMN_AXES: ValueAxis[] = ["x", "y", "x", "x", "y", "x", "x", "x",
 
 /** A scale's seven steps. */
 const STEPS = [1, 2, 3, 4, 5, 6, 7] as const;
-
-/** The share of a cell the path form leaves empty around its column, as the bars' band gap does. */
-const PATH_GAP = 0.25;
 
 /** One entry's topology. */
 export type ColumnEntry = {
@@ -67,7 +64,10 @@ export type ColumnsLayout = {
   readonly positions: readonly number[];
   /** Every slot of the window. */
   readonly window: PathSlots;
-  /** `COLUMN_STRIDE` numbers per entry, unsnapped CSS pixels. */
+  /**
+   * `COLUMN_STRIDE` numbers per entry in CSS pixels, unsnapped but for a slot's column span, which
+   * its emphasis box shares.
+   */
   readonly values: readonly number[];
   readonly topology: ColumnTopology;
   /** The paint of each fill step, "" for the series paint, in the order the topology names them. */
@@ -102,7 +102,7 @@ type ColumnsContext = Pick<ChartRootContextValue, "model" | "update">;
  * @param context - Root's model, and the key each slot renders under.
  * @param series - The series.
  * @param frame - The vertical frame it draws in.
- * @param metrics - The bar spacing, which an emphasis box reads.
+ * @param metrics - The bar spacing, which every column and its emphasis box read.
  * @param sub - The Bar's sub-band.
  * @param paint - The series' paint.
  * @param emphasised - The emphasised slots.
@@ -151,9 +151,8 @@ export function layoutColumns(
   /** The entry of one own slot's column, its tick and its box, across every Root slot it covers. */
   const slotEntry = (slot: number): Entry => {
     const { position, span } = ownSpan(series, window, slot);
-    const width = ((1 - PATH_GAP) / sub.count) * span;
-    const x0 = (position + (PATH_GAP / 2) * span + sub.index * width) * step;
-    const x1 = x0 + width * step;
+    // The column, its emphasis box and the active overlay over it draw the element form's bar span.
+    const [x0, x1] = barSpan(frame, position, metrics, sub, span);
     const reading = series.readings[slot];
     const extent = series.extents[slot];
     const negative = extent !== null && extent !== undefined && extent[0] < 0 && extent[1] <= 0;
@@ -163,7 +162,6 @@ export function layoutColumns(
       reading?.kind === "reading" && extent !== null && extent !== undefined
         ? [valueAt(frame, negative ? extent[0] : extent[1]), valueAt(frame, negative ? extent[1] : extent[0])]
         : [zero, zero];
-    const [e0, e1] = barSpan(frame, position, metrics, sub, span);
     return {
       key: keyOf(slot),
       at: position,
@@ -175,8 +173,8 @@ export function layoutColumns(
         base,
         (position + 0.25 * span) * step,
         (position + 0.75 * span) * step,
-        e0,
-        e1,
+        x0,
+        x1,
       ],
       entry: {
         fill: fillOf(slot),
@@ -243,6 +241,9 @@ export function layoutColumns(
 /**
  * The topologies a path form draws from its entries' numbers, every edge on the device pixel grid. A
  * column of one slot keeps its pixel among the pixels of the slot its middle lies in, as a bar does.
+ * Every slot's column, tick and emphasis box snaps by the bars' width rule, so the columns of a
+ * series draw one width at rest and in each tween frame. A decimated window's buckets hold
+ * different counts of slots and tile the plot with no gap, so their columns share their edges.
  *
  * @param frame - The vertical frame.
  * @param topology - The entries' topology.
@@ -255,6 +256,7 @@ export function columnsDrawing(
   values: MarkValues
 ): ColumnsDrawing {
   const step = frame.box.width / frame.count;
+  const columnSpan = frame.count > DECIMATE_ABOVE ? snapSpan : snapBarSpan;
   const fillCount = Math.max(0, ...topology.entries.map((entry) => entry.fill + 1));
   const fills: PlotRect[][] = Array.from({ length: fillCount }, () => []);
   const estimated: PlotRect[] = [];
@@ -265,16 +267,17 @@ export function columnsDrawing(
     const at = (offset: number) => values[index * COLUMN_STRIDE + offset] ?? 0;
     const position = Math.min(Math.max(Math.floor(at(0) / step), 0), frame.count - 1);
     const band = slotBand(frame, position);
-    const rect = frameRect(frame, snapSpan(frame, at(2), at(3), band), [at(1), at(4)]);
+    const rect = frameRect(frame, columnSpan(frame, at(2), at(3), band), [at(1), at(4)]);
     const drawn = !entry.leaving || rect.height > 0;
     if (entry.fill >= 0 && drawn) fills[entry.fill]?.push(rect);
     if (entry.estimated && drawn) estimated.push(rect);
     if (entry.projected && drawn) projected.push(rect);
     if (entry.missing) {
-      const [from, to] = snapSpan(frame, at(5), at(6), band);
+      const [from, to] = snapBarSpan(frame, at(5), at(6), band);
       missing += `M${String(from)} ${String(missingTickAt(frame, at(4)))}H${String(to)}`;
     }
-    if (entry.emphasis) emphasis.push(frameRect(frame, snapSpan(frame, at(7), at(8), band), [at(1), at(4)]));
+    if (entry.emphasis)
+      emphasis.push(frameRect(frame, snapBarSpan(frame, at(7), at(8), band), [at(1), at(4)]));
   });
   return {
     fills: fills.map((rects) => rectsPath(rects)),

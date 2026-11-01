@@ -9,7 +9,7 @@ import { createChartLabels } from "./chart-labels";
 import { createFrameOwner } from "./chart-motion";
 import { colourFamilyError } from "./chart-paint";
 import { ChartPlotContext, PlotReadsContext, usePanelPlot } from "./chart-plot";
-import { PlotSkeleton } from "./chart-skeleton";
+import { PlotLoader } from "./chart-skeleton";
 import { useSteady } from "./chart-steady";
 import type { ChartConfig, ChartLayerProps } from "./chart-types";
 import { layoutDomain } from "./layout/cartesian-model";
@@ -150,7 +150,7 @@ export function ChartPanel({
       <div data-slot="chart-panel" className={className} style={style}>
         <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
           {probe}
-          {plot === null && !model.empty ? <PlotSkeleton /> : null}
+          {plot === null && !model.empty ? <PlotLoader /> : null}
         </div>
         <ChartPlotContext value={plot}>
           <PlotReadsContext value={reads}>{children}</PlotReadsContext>

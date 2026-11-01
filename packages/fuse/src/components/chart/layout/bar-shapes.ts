@@ -5,7 +5,7 @@
  * or a block track moves with its bar.
  */
 import type { ChartBarVariant } from "../chart-types";
-import { snapBody, snapSpan } from "./plot-frame";
+import { snapBarSpan, snapBody } from "./plot-frame";
 import type { PlotFrame, PlotRect } from "./plot-frame";
 
 /** Where a bar sits, which every shape beyond the body reads. */
@@ -221,7 +221,7 @@ export function drawnBar(
   // Every part keeps its pixels inside its bar's, so a look that narrows the bar, as the expandable
   // strip does, never takes a device pixel past it, at any origin and pixel ratio.
   const [start, size] = axes(rect, orientation).along;
-  const within = snapSpan(frame, start, start + size);
+  const within = snapBarSpan(frame, start, start + size);
   const body = snapBody(frame, rects.body, within);
   const parts: BarParts = {
     body,

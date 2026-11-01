@@ -4,7 +4,7 @@
  * The measured plot. Root measures its plot box in a layout effect, before the first paint, and a
  * ResizeObserver follows the box from then on. Every mark reads the measurement through
  * `useChartFrame` and draws in CSS pixels. The server and a hydrating render measure nothing, so
- * they draw no marks, and the plot shows its skeleton until the browser measures it.
+ * they draw no marks, and the plot holds a quiet loader until the browser measures it.
  */
 import {
   createContext,

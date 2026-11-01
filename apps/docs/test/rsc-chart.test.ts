@@ -84,10 +84,11 @@ describe("the chart entry under React Server Components", () => {
     expect(ssr.clientModules.length).toBeGreaterThan(0);
     expect(ssr.flight).toBe(ssr.clientOnly);
     for (const html of [ssr.flight, ssr.clientOnly]) {
-      // The server sends one SVG layer per group, five, and its plot's skeleton, but no bar: the
+      // The server sends one SVG layer per group, five, and its plot's loader, but no bar: the
       // browser draws the 24 hours times 5 groups once it measures the plot.
       expect(slotCount(html, "chart-bar-series")).toBe(5);
-      expect(slotCount(html, "chart-skeleton-mark")).toBe(1);
+      expect(slotCount(html, "loader")).toBe(1);
+      expect(slotCount(html, "chart-skeleton-mark")).toBe(0);
       expect(slotCount(html, "chart-bar")).toBe(0);
       // Every hour writes a tick, and the widths in its `data-min` hide the ones a narrow plot lacks room for.
       expect(slotCount(html, "chart-x-tick")).toBe(24);
@@ -137,8 +138,9 @@ describe("composed Panels under React Server Components", () => {
     expect(ssr.flight).toBe(ssr.clientOnly);
     for (const html of [ssr.flight, ssr.clientOnly]) {
       expect(slotCount(html, "chart-panel")).toBe(2);
-      // Root's plot and each Panel's hold a skeleton until the browser measures them.
-      expect(slotCount(html, "chart-skeleton-mark")).toBe(3);
+      // Root's plot and each Panel's hold a loader until the browser measures them.
+      expect(slotCount(html, "loader")).toBe(3);
+      expect(slotCount(html, "chart-skeleton-mark")).toBe(0);
       expect(slotCount(html, "chart-bar-series")).toBe(1);
       expect(slotCount(html, "chart-line-series")).toBe(1);
       expect(slotCount(html, "chart-bar")).toBe(0);

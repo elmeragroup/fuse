@@ -12,9 +12,10 @@ import year from "../format/fixtures/elhub/no1-household-hourly-2025-10_2026-09.
 import {
   barCells,
   barForm,
-  barRect,
+  barGeometry,
   barTip,
   bucketColumns,
+  geometryOf,
   geometryRect,
   hangs,
   introStep,
@@ -22,9 +23,10 @@ import {
   isStackTop,
   rectsPath,
 } from "./bar-geometry";
+import type { BarCell } from "./bar-geometry";
 import { buildCartesianModel } from "./cartesian-model";
 import type { CartesianModel, SeriesModel } from "./cartesian-model";
-import { WHOLE_BAND, optionBand, plotFrame } from "./plot-frame";
+import { WHOLE_BAND, barSpan, optionBand, plotFrame } from "./plot-frame";
 import type { BarMetrics, PlotBox, PlotFrame, PlotRect, SubBand } from "./plot-frame";
 
 /** A plot of whole pixels, at 1x unless a ratio is given. */
@@ -42,6 +44,17 @@ function firstCell(model: ReturnType<typeof buildCartesianModel>) {
 
 /** The contract's default spacing: a 25 % band gap and 2 px bar gap and seam. */
 const METRICS: BarMetrics = { bandGap: 0.25, barGap: 2, seam: 2 };
+
+/** A cell's resting rectangle, the rectangle of its geometry, as a drawn bar takes it. */
+function barRect(
+  frame: PlotFrame,
+  cell: BarCell,
+  metrics: BarMetrics,
+  sub: SubBand,
+  seam: "cut" | "whole"
+): PlotRect {
+  return geometryRect(frame, barGeometry(frame, cell, metrics, sub, seam));
+}
 
 /** The rectangles of one path's `d`, each an `M x y H x V y H x Z` subpath. */
 function rectsOf(d: string): PlotRect[] {
@@ -259,6 +272,79 @@ describe("bar rectangles in pixels", () => {
       "cut"
     );
     expect([rect.x, rect.x + rect.width]).toEqual([18.5, 31]);
+  });
+});
+
+describe("one bar width per series", () => {
+  it("draws both segments of every stacked column of 96 on 460 px 3 px wide at 1x and 3.5 px at 2x", () => {
+    // A slot is 460 / 96 = 4.79 px and its column keeps 75 % of it, 3.59 px, which rounds down to
+    // 3 device pixels at 1x and to 7 of 7.19 at 2x. Both segments of a column share its span.
+    const rows = Array.from({ length: 96 }, (_, index) => ({ name: `q${String(index)}`, a: 1, b: 2 }));
+    const stack = model(rows, ["a", "b"], true);
+    for (const [dpr, width] of [
+      [1, 3],
+      [2, 3.5],
+    ] as const) {
+      const frame = plotFrame(box(460, 200, dpr), "vertical", 96, [0, 3]);
+      const [lower, upper] = stack.series.map((series) =>
+        barCells(stack, series).map((cell) => barRect(frame, cell, METRICS, WHOLE_BAND, "cut"))
+      );
+      expect(lower).toHaveLength(96);
+      expect(new Set([...(lower ?? []), ...(upper ?? [])].map((rect) => rect.width))).toEqual(
+        new Set([width])
+      );
+      expect(upper?.map((rect) => rect.x)).toEqual(lower?.map((rect) => rect.x));
+    }
+  });
+
+  it("draws every path column of 120 slots on 1,000 px 6 px wide, 2 or 3 px apart", () => {
+    // A slot is 1,000 / 120 = 8.33 px and its column keeps 75 % of it, 6.25 px, so 6 px at 1x.
+    // The columns' starts lie 8.33 px apart, 8 or 9 px, so the gaps are 2 or 3 px.
+    const chart = categories(120);
+    const series = chart.series[0];
+    if (series === undefined) throw new Error("no series");
+    const { rects } = pathForm(chart, series, plotFrame(box(1000, 100), "vertical", 120, [0, 120]));
+    expect(rects).toHaveLength(120);
+    expect(new Set(rects.map((rect) => rect.width))).toEqual(new Set([6]));
+    const gaps = new Set(rects.slice(1).map((rect, k) => rect.x - ((rects[k]?.x ?? 0) + 6)));
+    expect([...gaps].toSorted((a, b) => a - b)).toEqual([2, 3]);
+  });
+
+  it("keeps one whole width for every bar in each tween frame, between the two rests' widths", () => {
+    // Unit under test: geometryRect, which draws a bar from a tween frame's numbers. Oracle: the
+    // device pixel grid and the two rests. Every bar of a series moves on one clock, so a frame
+    // lerps each bar's span by the same share. A window that gains or loses slots changes every
+    // band, so each bar moves from one width to another, and no frame may draw two widths.
+    fc.assert(
+      fc.property(
+        fc.constantFrom(1, 1.25, 1.5, 2, 3),
+        fc.constantFrom("vertical" as const, "horizontal" as const),
+        fc.integer({ min: 20, max: 100 }),
+        fc.integer({ min: -3, max: 3 }),
+        fc.integer({ min: 400, max: 1200 }).map((halves) => halves / 2),
+        fc.double({ min: 0.05, max: 0.95, noNaN: true }),
+        (dpr, orientation, count, change, length, share) => {
+          const plot = orientation === "vertical" ? box(length, 100, dpr) : box(100, length, dpr);
+          const from = plotFrame(plot, orientation, count, [0, 1]);
+          const to = plotFrame(plot, orientation, count + change, [0, 1]);
+          const along = (rect: PlotRect) => (orientation === "vertical" ? rect.width : rect.height);
+          const rest = (frame: PlotFrame, at: number) => barSpan(frame, at, METRICS, WHOLE_BAND);
+          const ends = [rest(from, 0), rest(to, 0)].map(([start, end]) => end - start);
+          const widths = Array.from({ length: Math.min(count, count + change) }, (_, at) => {
+            const [a0, a1] = rest(from, at);
+            const [b0, b1] = rest(to, at);
+            const start = a0 + (b0 - a0) * share;
+            const end = a1 + (b1 - a1) * share;
+            return along(geometryRect(to, geometryOf([start, end, 100, 0, 0, 1])));
+          });
+          const [first = 0] = widths;
+          expect(Math.abs(first * dpr - Math.round(first * dpr))).toBeLessThan(1e-6);
+          expect(first).toBeGreaterThanOrEqual(Math.min(...ends) - 1e-9);
+          expect(first).toBeLessThanOrEqual(Math.max(...ends) + 1e-9);
+          for (const width of widths) expect(Math.abs(width - first)).toBeLessThan(1e-9);
+        }
+      )
+    );
   });
 });
 
@@ -518,10 +604,11 @@ describe("decimated stacked path columns", () => {
 
 describe("grouped path columns", () => {
   it("splits each band into the group's sub-bands as the bars form does", () => {
-    // 101 categories on 1,010 x 100 px, 10 px a slot. The band of slot 0 runs from 1.25 to
-    // 8.75 px after the 25 % gap, and two sub-bands halve its 7.5 px: a from 1.25 to 5 px at 2 of
-    // [0, 4], halfway down, and b from 5 to 8.75 px at 4, from the top. The fill snaps them to
-    // whole pixels inside the band's.
+    // 101 categories on 1,010 x 100 px, 10 px a slot. The band of slot 0 keeps 7.5 px from 1.25 px
+    // after the 25 % gap, and the 2 px bar gap halves the rest into 2.75 px sub-bands: a from 1.25
+    // to 4 px at 2 of [0, 4], halfway down, and b from 6 to 8.75 px at 4, from the top. Each width
+    // rounds down to 2 px, centred on 2.625 and 7.375, so the starts 1.625 and 6.375 snap to 2
+    // and 6, inside the band's [0, 10].
     const rows = Array.from({ length: 101 }, (_, index) => ({ name: `c${String(index)}`, a: 2, b: 4 }));
     const grouped = model(rows, ["a", "b"], false);
     const [a, b] = grouped.series;
@@ -530,11 +617,11 @@ describe("grouped path columns", () => {
     const first = pathForm(grouped, a, frame, { index: 0, count: 2 });
     const second = pathForm(grouped, b, frame, { index: 1, count: 2 });
     // An entry's numbers: its middle, tip, span, base, tick span and emphasis span.
-    expect(first.layout.values.slice(1, 5)).toEqual([50, 1.25, 5, 100]);
-    expect(second.layout.values.slice(1, 5)).toEqual([0, 5, 8.75, 100]);
+    expect(first.layout.values.slice(1, 5)).toEqual([50, 2, 4, 100]);
+    expect(second.layout.values.slice(1, 5)).toEqual([0, 6, 8, 100]);
     expect([first.rects[0], second.rects[0]]).toEqual([
-      { x: 1, y: 50, width: 4, height: 50 },
-      { x: 5, y: 0, width: 4, height: 100 },
+      { x: 2, y: 50, width: 2, height: 50 },
+      { x: 6, y: 0, width: 2, height: 100 },
     ]);
   });
 

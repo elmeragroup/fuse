@@ -15,12 +15,12 @@ import type { Commit } from "./chart-motion-mark";
 import { valuePaint } from "./chart-paint";
 import type { SeriesPaint } from "./chart-paint";
 import type { ChartBarVariant } from "./chart-types";
-import { barCells, barGeometry, barRect, geometryRect, introStep } from "./layout/bar-geometry";
+import { barCells, barGeometry, geometryRect, introStep } from "./layout/bar-geometry";
 import type { BarCell, BarGeometry } from "./layout/bar-geometry";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { ownBounds, ownSlot, ownSpan } from "./layout/coarse-slots";
 import { CHART_STAGGER_MS } from "./layout/motion";
-import { snapAcross, snapSpan, snapX, tickWidth, valueAt } from "./layout/plot-frame";
+import { barSpan, snapAcross, snapBarSpan, snapX, tickWidth, valueAt } from "./layout/plot-frame";
 import type { BarMetrics, PlotFrame, PlotRect, SubBand } from "./layout/plot-frame";
 import { slotTime } from "./layout/readings";
 
@@ -245,8 +245,9 @@ export function missingTickAt(frame: PlotFrame, zero: number = valueAt(frame, 0)
 }
 
 /**
- * The endpoints of a missing tick: its span along the slot axis, snapped with the pixel floor, on
- * the zero line drawn at a coordinate. A tween frame's numbers draw through here too.
+ * The endpoints of a missing tick: its span along the slot axis, snapped by the bars' width rule,
+ * so every tick of a series draws one width, on the zero line drawn at a coordinate. A tween
+ * frame's numbers draw through here too.
  *
  * @param frame - The frame the series draws in.
  * @param span - The tick's span along the slot axis.
@@ -254,7 +255,7 @@ export function missingTickAt(frame: PlotFrame, zero: number = valueAt(frame, 0)
  * @returns The line's endpoints.
  */
 export function tickEnds(frame: PlotFrame, span: readonly [number, number], zero: number) {
-  const [start, end] = snapSpan(frame, span[0], span[1]);
+  const [start, end] = snapBarSpan(frame, span[0], span[1]);
   const at = missingTickAt(frame, zero);
   return frame.orientation === "vertical"
     ? { x1: start, x2: end, y1: at, y2: at }
@@ -313,17 +314,12 @@ export function layoutBars(input: BarsInput): BarsLayout {
   const missing: MissingTick[] = [];
   for (let slot = window.first; slot <= window.last && !model.empty; slot = ownSlot(series, slot)[1] + 1) {
     if (series.readings[slot]?.kind !== "missing") continue;
-    const cell: BarCell = {
-      slot: ownSlot(series, slot)[0],
-      ...ownSpan(series, window, slot),
-      extent: [0, 0],
-      negative: false,
-      stackTop: true,
-    };
-    const rect = barRect(frame, cell, metrics, sub, "whole");
+    // The tick spans the pixels a bar would draw in its place.
+    const [own] = ownSlot(series, slot);
+    const { position, span } = ownSpan(series, window, slot);
     missing.push({
-      key: update.keys[cell.slot] ?? String(cell.slot),
-      span: frame.orientation === "vertical" ? [rect.x, rect.x + rect.width] : [rect.y, rect.y + rect.height],
+      key: update.keys[own] ?? String(own),
+      span: barSpan(frame, position, metrics, sub, span),
     });
   }
   return { bars, needs: fills.needs, missing };
