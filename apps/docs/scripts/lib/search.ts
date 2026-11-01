@@ -49,6 +49,7 @@ function componentEntry(component: DocsComponent): SearchEntry {
     component.slug,
     component.entry,
     ...component.parts.map((part) => part.name),
+    ...(component.aliasParts ?? []),
     ...component.demos.map((demo) => demo.title),
   ];
   return {

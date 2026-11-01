@@ -1,9 +1,8 @@
 import * as Oklch from "@elmeragroup/color/oklch";
 import { getOrThrow } from "@elmeragroup/color/result";
-import * as Wcag from "@elmeragroup/color/wcag";
 
 import { cssVarReference } from "../css-values";
-import { tokenOklch } from "../token-color";
+import { literalContrast, tokenOklch } from "../token-color";
 import { isDerivedTokenName, TOKEN_NAMES } from "./contract";
 import type { LayerTokens, TokenContract } from "./contract";
 import { PRIMITIVE_NAMES, PRIMITIVES, WHITE } from "./primitives";
@@ -31,8 +30,9 @@ function literalOf(tokens: LayerTokens, value: string): string {
   return literalOf(tokens, PRIMITIVES[primitive]);
 }
 
+/** The WCAG contrast of two colors, each measured as its `oklch()` literal reads. */
 function contrast(foreground: Oklch.Oklch, background: Oklch.Oklch): number {
-  return getOrThrow(Wcag.contrastRatio(Oklch.toSrgb(foreground), Oklch.toSrgb(background)));
+  return literalContrast(Oklch.format(foreground), Oklch.format(background));
 }
 
 /**

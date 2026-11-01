@@ -89,6 +89,29 @@ describe("barrel generation", () => {
     });
   });
 
+  it("keeps a preview entry out of the root barrel while publishing its subpath", () => {
+    const packageRoot = scratchPackage({
+      "src/badge.ts": `export { Badge } from "./components/badge/badge";\n`,
+      "src/chart.ts": `export { Chart } from "./components/chart/chart-namespace";\n`,
+      "src/theme/theme-provider.ts": `export const ThemeProvider = 1;\n`,
+      "src/components/badge/badge.ts": `export const Badge = 1;\n`,
+      "src/components/chart/chart-namespace.ts": `export const Chart = 1;\n`,
+    });
+
+    const jsEntries = discoverJsEntriesFromAllowlist(packageRoot, [".", "theme", "badge", "chart"], []);
+    const discovered = { jsEntries, cssEntries: [], assetPatterns: [], sourceFiles: [] };
+    expect(jsEntries.find((entry) => entry.subpath === "chart")?.inRootBarrel).toBe(false);
+    expect(renderRootBarrel(discovered)).not.toContain(`"./chart"`);
+    expect(jsEntries.find((entry) => entry.subpath === ".")?.runtimeExports).toEqual([
+      "Badge",
+      "ThemeProvider",
+    ]);
+    expect(exportBindingTarget(buildSourceExportMap(discovered), "./chart")).toEqual({
+      types: "./src/chart.ts",
+      import: "./src/chart.ts",
+    });
+  });
+
   it.each<RefusedPackage>([
     {
       name: "two barrel facades export the same value name",
@@ -117,7 +140,7 @@ describe("barrel generation", () => {
       name: "a non-deferred allowlisted entry has no source, naming the entry",
       files: { "src/theme/theme-provider.ts": `export const ThemeProvider = 1;\n` },
       allow: [".", "theme", "button"],
-      deferred: ["chart"],
+      deferred: ["future-entry"],
       message: /Missing source entry for button/,
     },
   ])("fails generation when $name", ({ files, allow, deferred, message }) => {
@@ -132,11 +155,11 @@ describe("barrel generation", () => {
       "src/theme/theme-provider.ts": `export const ThemeProvider = 1;\n`,
       "src/components/badge/badge.ts": `export const Badge = 1;\n`,
     });
-    const allow = [".", "theme", "badge", "chart"] as const;
-    const deferred = ["chart"] as const;
+    const allow = [".", "theme", "badge", "future-entry"] as const;
+    const deferred = ["future-entry"] as const;
     const jsEntries = discoverJsEntriesFromAllowlist(packageRoot, allow, deferred);
 
-    expect(jsEntries.map((entry) => entry.subpath)).not.toContain("chart");
+    expect(jsEntries.map((entry) => entry.subpath)).not.toContain("future-entry");
     expect(jsEntries).toHaveLength(allow.length - deferred.length);
   });
 });

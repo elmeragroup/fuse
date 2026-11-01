@@ -52,6 +52,8 @@ export type ComponentPaths = {
   /** The committed, generated API artifact next to the page. */
   apiFile: string;
   entryFile: string;
+  /** The module the API extractor reads, when it differs from `entryFile`. */
+  apiEntryFile: string | undefined;
   entry: string;
   /**
    * Facade value exports the API generator walks. Explicit names —
@@ -88,7 +90,30 @@ const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
   ["kbd", ["Kbd", "KbdGroup"]],
   ["sidebar", ["Sidebar", "useSidebar"]],
   ["file-upload", ["FileUpload", "useFileUpload"]],
+  ["chart", ["Chart", "useChartPoint", "formatChartValue", "formatChartSlot"]],
 ]);
+
+/**
+ * Pages that document one export of another page's entry. Every chart page reads
+ * `@elmeragroup/fuse/chart`, and its implementation file is the family's Root.
+ */
+export const SHARED_ENTRY_PAGES = new Map<string, { readonly entry: string; readonly source: string }>([
+  ["chart", { entry: "chart", source: "chart-root" }],
+  ["area-chart", { entry: "chart", source: "chart-root" }],
+  ["bar-chart", { entry: "chart", source: "chart-root" }],
+  ["line-chart", { entry: "chart", source: "chart-root" }],
+  ["pie-chart", { entry: "chart", source: "pie-chart-root" }],
+  ["radial-chart", { entry: "chart", source: "radial-chart-root" }],
+  ["radar-chart", { entry: "chart", source: "radar-chart-root" }],
+  ["sparkline", { entry: "chart", source: "sparkline" }],
+]);
+
+/**
+ * The module the API extractor reads for the chart entry's pages. `@elmeragroup/internal` cannot
+ * model an ES module namespace's type, so it reads the plain objects of
+ * `packages/fuse/test/chart/api-facade.ts`, which hold the same parts under the same keys.
+ */
+const CHART_API_FACADE = path.join(fuseSrc, "..", "test", "chart", "api-facade.ts");
 
 function apiExportNamesFor(slug: string): readonly string[] {
   return EXTRA_API_EXPORT_NAMES.get(slug) ?? [pascalCase(slug)];
@@ -99,17 +124,20 @@ export function resolveComponentPaths(slug: string): ComponentPaths {
   const routeDir = path.join(componentRoutesDir, slug);
   const racFacade = path.join(fuseSrc, "react-aria", `${slug}.ts`);
   const isRac = existsSync(racFacade);
+  const shared = SHARED_ENTRY_PAGES.get(slug);
+  const entrySlug = shared?.entry ?? slug;
   const componentDir = isRac
     ? path.join(fuseSrc, "react-aria", slug)
-    : path.join(fuseSrc, "components", slug);
+    : path.join(fuseSrc, "components", entrySlug);
   return {
     pageFile: path.join(routeDir, "page.mdx"),
     title: displayName(slug),
     apiFile: path.join(routeDir, "api.json"),
-    entryFile: isRac ? racFacade : path.join(fuseSrc, `${slug}.ts`),
-    entry: isRac ? `@elmeragroup/fuse/react-aria/${slug}` : `@elmeragroup/fuse/${slug}`,
+    entryFile: isRac ? racFacade : path.join(fuseSrc, `${entrySlug}.ts`),
+    apiEntryFile: shared?.entry === "chart" ? CHART_API_FACADE : undefined,
+    entry: isRac ? `@elmeragroup/fuse/react-aria/${slug}` : `@elmeragroup/fuse/${entrySlug}`,
     apiExportNames: apiExportNamesFor(slug),
-    sourceFile: path.join(componentDir, `${slug}.tsx`),
+    sourceFile: path.join(componentDir, `${shared?.source ?? slug}.tsx`),
     componentDir,
     demosDir: path.join(routeDir, "demos"),
   };

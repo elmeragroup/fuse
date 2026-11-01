@@ -22,6 +22,11 @@ export type NamedImportBudget = {
   name: string;
   entryFile: string;
   exportName: string;
+  /**
+   * The namespace members a route reads, such as `["Root", "Bar"]`. Without it the row keeps the
+   * whole export.
+   */
+  members?: readonly string[];
   measuredGzip: number;
   ceilingGzip: number;
 };
@@ -101,6 +106,8 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // Popover, Select, Combobox, ToggleGroup, NumberField and Slider, so the ceiling follows what
   // those cost.
   { name: "data-table-filter", entryFile: "data-table-filter.js", measuredGzip: 154062, ceilingGzip: 231093 },
+  // Chart preview entry. Measured 129203 on 2026-10-31, within the ceiling from layer 05.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -236,6 +243,45 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
 ] satisfies readonly Measured<JsEntryBudget>[]);
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
+  // The chart rows: whole namespaces (BarChart stands for every cartesian alias), routes that keep
+  // only the members they name, and the server-safe helpers. Last measured 2026-10-31, each within
+  // its ceiling: Chart 126903, BarChart 126905, the polar namespaces 83087, 83062 and 83025,
+  // Chart.Root 50192, the bar route 68130, useChartPoint 3933, Sparkline 11384.
+  { name: "chart/Chart", entryFile: "chart.js", exportName: "Chart", measuredGzip: 95987 },
+  { name: "chart/BarChart", entryFile: "chart.js", exportName: "BarChart", measuredGzip: 95989 },
+  { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
+  { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 79858 },
+  { name: "chart/RadarChart", entryFile: "chart.js", exportName: "RadarChart", measuredGzip: 79820 },
+  {
+    name: "chart/Chart.Root",
+    entryFile: "chart.js",
+    exportName: "Chart",
+    members: ["Root"],
+    measuredGzip: 41019,
+  },
+  {
+    name: "chart/Chart bar route",
+    entryFile: "chart.js",
+    exportName: "Chart",
+    members: ["Root", "Grid", "XAxis", "YAxis", "Bar"],
+    measuredGzip: 48267,
+  },
+  {
+    name: "chart/PieChart.Root",
+    entryFile: "chart.js",
+    exportName: "PieChart",
+    members: ["Root"],
+    measuredGzip: 404,
+  },
+  { name: "chart/Sparkline", entryFile: "chart.js", exportName: "Sparkline", measuredGzip: 11118 },
+  { name: "chart/useChartPoint", entryFile: "chart.js", exportName: "useChartPoint", measuredGzip: 3635 },
+  {
+    name: "chart/formatChartValue",
+    entryFile: "chart.js",
+    exportName: "formatChartValue",
+    measuredGzip: 1681,
+  },
+  { name: "chart/formatChartSlot", entryFile: "chart.js", exportName: "formatChartSlot", measuredGzip: 3048 },
   {
     name: "icons/Check",
     entryFile: "icons.js",
@@ -271,12 +317,16 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // 2026-10-06: main measured 24451, 15 bytes under that ceiling. The field corner classes,
   // which read `--radius-field` (+142), take styles.css to 24593, over it, so the shared entry
   // recalibrates to measured × 1.5, as a code owner approved.
+  // 2026-10-29: main's roles and the 26 chart roles recalibrate the entry to measured × 1.5.
+  { name: "themes.css", file: "themes.css", measuredGzip: 6734 },
   // 2026-10-30: the cross-section Frame seam selectors (+119) take styles.css from 36851 to
   // 36970, and the Table edge-inset property, the Frame's derived section clip and the cell
   // padding defaults that edge cells override (+404) to 37374, over its ceiling of 36890, so the
   // shared entry recalibrates to measured × 1.5, as a code owner approved.
-  { name: "themes.css", file: "themes.css", measuredGzip: 4472, ceilingGzip: 6416 },
+  // 2026-10-31: 37489 with the chart roles as Tailwind colours, within the ceiling.
   { name: "styles.css", file: "styles.css", measuredGzip: 37374 },
+  // Chart stylesheet. Measured 13523 on 2026-10-31, within the ceiling from layer 05.
+  { name: "chart.css", file: "chart.css", measuredGzip: 10089 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

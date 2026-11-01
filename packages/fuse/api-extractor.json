@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
+  "projectFolder": ".",
+  "mainEntryPointFilePath": "<projectFolder>/dist/chart.d.ts",
+  "compiler": {
+    "tsconfigFilePath": "<projectFolder>/tsconfig.api-extractor.json"
+  },
+  "apiReport": {
+    "enabled": true,
+    "reportFileName": "chart",
+    "reportFolder": "<projectFolder>/etc/",
+    "reportTempFolder": "<projectFolder>/.artifacts/api-extractor/",
+    "includeForgottenExports": true
+  },
+  "docModel": {
+    "enabled": false
+  },
+  "dtsRollup": {
+    "enabled": false
+  },
+  "tsdocMetadata": {
+    "enabled": false
+  },
+  "messages": {
+    "compilerMessageReporting": {
+      "default": { "logLevel": "error" }
+    },
+    "extractorMessageReporting": {
+      "default": { "logLevel": "error" },
+      // The namespaces type their parts as `typeof ChartBar` and the entry exports only the
+      // namespaces, so every part is a forgotten export. scripts/api-report.ts reads each flag in
+      // its message callback and fails on any flagged symbol that is not a namespace part.
+      "ae-forgotten-export": { "logLevel": "error", "addToApiReportFile": false },
+      "ae-missing-release-tag": { "logLevel": "error", "addToApiReportFile": false }
+    },
+    "tsdocMessageReporting": {
+      "default": { "logLevel": "error" }
+    }
+  }
+}

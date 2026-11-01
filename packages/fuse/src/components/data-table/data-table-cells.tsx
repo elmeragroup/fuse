@@ -85,24 +85,27 @@ export function DataTableCurrency({
   );
 }
 
-/** A date, formatted for the active locale. `dateStyle` defaults to `"medium"`. */
+/**
+ * A date, formatted for the active locale. `dateStyle` defaults to `"medium"`, and `timeZone` to
+ * the `LocaleProvider` zone.
+ */
 export function DataTableDate({
   value,
   className,
   dateStyle = "medium",
   ...options
 }: DataTableDateProps): ReactElement {
-  const { locale } = useLocale();
+  const { locale, timeZone } = useLocale();
   return (
     <span data-slot="data-table-date" className={className}>
-      {formatDateCell(locale, value, { dateStyle, ...options })}
+      {formatDateCell(locale, value, { dateStyle, ...options, timeZone: options.timeZone ?? timeZone })}
     </span>
   );
 }
 
 /**
- * A date and time, formatted for the active locale. `dateStyle` defaults to `"medium"` and
- * `timeStyle` to `"short"`.
+ * A date and time, formatted for the active locale. `dateStyle` defaults to `"medium"`,
+ * `timeStyle` to `"short"` and `timeZone` to the `LocaleProvider` zone.
  */
 export function DataTableDateTime({
   value,
@@ -111,10 +114,15 @@ export function DataTableDateTime({
   timeStyle = "short",
   ...options
 }: DataTableDateTimeProps): ReactElement {
-  const { locale } = useLocale();
+  const { locale, timeZone } = useLocale();
   return (
     <span data-slot="data-table-date-time" className={className}>
-      {formatDateCell(locale, value, { dateStyle, timeStyle, ...options })}
+      {formatDateCell(locale, value, {
+        dateStyle,
+        timeStyle,
+        ...options,
+        timeZone: options.timeZone ?? timeZone,
+      })}
     </span>
   );
 }

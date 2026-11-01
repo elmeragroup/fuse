@@ -1107,7 +1107,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The IANA time zone, such as `\"Europe/Oslo\"`. Defaults to the runtime's local time zone. A table that renders on the server and hydrates in the browser must pass it, or the server and browser text can differ.",
+          "description": "The IANA time zone, such as `\"Europe/Oslo\"`. Defaults to the `LocaleProvider` zone, and to the runtime's local time zone when the provider has none. A table that renders on the server and hydrates in the browser needs one of the two, or the server and browser text can differ.",
           "required": false
         },
         {
@@ -1145,7 +1145,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The IANA time zone, such as `\"Europe/Oslo\"`. Defaults to the runtime's local time zone. A table that renders on the server and hydrates in the browser must pass it, or the server and browser text can differ.",
+          "description": "The IANA time zone, such as `\"Europe/Oslo\"`. Defaults to the `LocaleProvider` zone, and to the runtime's local time zone when the provider has none. A table that renders on the server and hydrates in the browser needs one of the two, or the server and browser text can differ.",
           "required": false
         },
         {

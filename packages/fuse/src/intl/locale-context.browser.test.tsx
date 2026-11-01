@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { render } from "../../test/browser-render";
+import { CaughtError, caughtError } from "../../test/caught-error";
 import { LocaleProvider, useLocale } from "./locale-context";
 
 function LocaleProbe() {
@@ -45,5 +46,34 @@ describe("LocaleProvider", () => {
     );
     expect(seen).toHaveLength(2);
     expect(seen[0]).toBe(seen[1]);
+  });
+
+  it("shares the host's time zone, and throws a RangeError for a name that isn't an IANA zone", () => {
+    function ZoneProbe() {
+      return <span>{useLocale().timeZone ?? "no zone"}</span>;
+    }
+
+    const { host, rerender } = render(
+      <LocaleProvider locale="nb-NO">
+        <ZoneProbe />
+      </LocaleProvider>
+    );
+    expect(host.textContent).toBe("no zone");
+
+    rerender(
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <ZoneProbe />
+      </LocaleProvider>
+    );
+    expect(host.textContent).toBe("Europe/Oslo");
+
+    rerender(
+      <CaughtError>
+        <LocaleProvider locale="nb-NO" timeZone="Europe/Olso">
+          <ZoneProbe />
+        </LocaleProvider>
+      </CaughtError>
+    );
+    expect(caughtError().name).toBe("RangeError");
   });
 });

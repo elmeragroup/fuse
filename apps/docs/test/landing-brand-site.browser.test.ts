@@ -1,3 +1,4 @@
+import { AxeBuilder } from "@axe-core/playwright";
 import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
@@ -326,7 +327,11 @@ describe("landing hero window, External side", () => {
         expect(await priceArea.getAttribute("aria-labelledby")).not.toBeNull();
         await priceArea.scrollIntoViewIfNeeded();
         await priceArea.click();
-        await page.getByRole("option", { name: facts.priceArea.option }).click();
+        // The chart's points are options too once an area is picked, so the query stays in the popup.
+        await page
+          .locator("[data-slot='select-content']")
+          .getByRole("option", { name: facts.priceArea.option })
+          .click();
         await site.getByText(facts.priceArea.unit).first().waitFor();
         expect(errors, "price area").toEqual([]);
       }
@@ -476,6 +481,113 @@ describe("landing hero window, External side", () => {
           GRAPHIC_CONTRAST
         );
       }
+      await page.context().close();
+    }
+  );
+});
+
+/**
+ * Each priced site's picked area and the tooltip numbers its lowest and highest hour print,
+ * copied from the area's `low` and `high` in the site file. The prices are in øre or öre, which
+ * the unit-price preset prints to 1 decimal with the locale's decimal comma.
+ */
+const PRICE_DAYS = [
+  {
+    // NO5 Vest-Norge: low 55.4, high 119.91.
+    site: FJORDKRAFT.site,
+    low: "55,4",
+    high: "119,9",
+    // The waiting text and NO3 Midt-Norge's figures, average 34.82, low 21.05 and high 47.33,
+    // copied from sites/fjordkraft.ts and written with two nb-NO decimals.
+    empty: "Velg et prisområde for å se timeprisene i dag.",
+    next: { option: /^NO3/u, figures: ["34,82", "21,05 øre/kWh", "47,33 øre/kWh"] },
+  },
+  {
+    // SE3 Stockholm: low 52.14, high 139.4.
+    site: "Fjordkraft Företag",
+    low: "52,1",
+    high: "139,4",
+    // The waiting text and SE1 Luleå's figures, average 28.41, low 12.3 and high 41.92, copied
+    // from sites/fjordkraft-foretag.ts and written with two sv-SE decimals.
+    empty: "Välj ett prisområde för att se dagens timpriser.",
+    next: { option: /^SE1/u, figures: ["28,41", "12,30 öre/kWh", "41,92 öre/kWh"] },
+  },
+] as const;
+
+describe("the price area chart", () => {
+  it.each(PRICE_DAYS)(
+    "draws $site's picked day with its low and high in the extreme bars' tooltips, passes axe and announces each pick's figures in one live region",
+    async ({ site: name, low, high, empty, next }) => {
+      const facts = ALL_SITES.find((candidate) => candidate.site === name);
+      if (facts?.priceArea == null) throw new Error(`${name} has no price area`);
+      const { page, site } = await openSite(facts, WIDE_VIEWPORT);
+      const errors = collectPageErrors(page);
+      const priceArea = site.getByRole("combobox", { name: /prisområde|Price area/u });
+      const pick = async (option: RegExp): Promise<void> => {
+        await priceArea.click();
+        await page.locator("[data-slot='select-content']").getByRole("option", { name: option }).click();
+      };
+      // A polite region announces a change to its text, and a region that mounts with its text
+      // already in place announces nothing. The one region on the site holds the waiting text.
+      const region = site.locator("[aria-live='polite']");
+      expect(await region.count()).toBe(1);
+      expect((await region.textContent())?.trim()).toBe(empty);
+      const waitingRegion = await region.elementHandle();
+      await priceArea.scrollIntoViewIfNeeded();
+      await pick(facts.priceArea.option);
+      const chart = site.locator("[data-slot='chart']");
+      const bars = chart.locator("[data-slot='chart-bar']");
+      await expect.poll(async () => bars.count()).toBe(24);
+
+      // The profile puts the day's low at 04:00 and its high at 08:00.
+      const hoverHour = async (hour: number): Promise<void> => {
+        const box = await bars.nth(hour).boundingBox();
+        if (box === null) throw new Error(`bar ${String(hour)} has no box`);
+        // Leaving the plot first closes the last tooltip, which stays open under the pointer and
+        // could cover the next bar.
+        await page.mouse.move(0, 0);
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height - 2);
+      };
+      const tooltipValue = async (): Promise<string> =>
+        (await page.locator("[data-slot='chart-tooltip-value']").first().textContent()) ?? "";
+      await hoverHour(4);
+      await expect.poll(tooltipValue).toContain(low);
+      await hoverHour(8);
+      await expect.poll(tooltipValue).toContain(high);
+      await page.mouse.move(0, 0);
+
+      // The chart is what the pick adds. The site around it keeps its own audits, and its muted
+      // figure labels on Fjordkraft Företag measure 4.48:1, an open item in the repository's task list.
+      const results = await new AxeBuilder({ page })
+        .include("[data-site-scroller] [data-slot='chart']")
+        .analyze();
+      expect(results.violations.map(({ id, nodes }) => `${id} ${String(nodes.length)}`)).toEqual([]);
+
+      // The figures are the one live region with text. The chart sits outside it, and its own
+      // status region stays empty, because a pick is no chart interaction.
+      const live = await site
+        .locator("[aria-live]:not([aria-live='off']), [role='status']")
+        .evaluateAll((regions) =>
+          regions.map((region) => ({
+            text: region.textContent.trim(),
+            chart: region.querySelector("[data-slot='chart']") !== null,
+          }))
+        );
+      const announcing = live.filter((region) => region.text !== "");
+      expect(announcing).toHaveLength(1);
+      expect(announcing[0]?.chart).toBe(false);
+      expect(announcing[0]?.text).toMatch(facts.priceArea.unit);
+
+      // A second pick of another area rewrites the same region, so the new figures are announced.
+      await pick(next.option);
+      await expect.poll(async () => region.textContent()).toContain(next.figures[0]);
+      const pickedRegion = await region.elementHandle();
+      expect(await page.evaluate(([before, after]) => before === after, [waitingRegion, pickedRegion])).toBe(
+        true
+      );
+      const text = (await region.textContent()) ?? "";
+      for (const figure of next.figures) expect(text).toContain(figure);
+      expect(errors).toEqual([]);
       await page.context().close();
     }
   );

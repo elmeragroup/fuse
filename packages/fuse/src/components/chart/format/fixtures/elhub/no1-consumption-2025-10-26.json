@@ -1,0 +1,406 @@
+{
+ "source": "Elhub Energy Data API, dataset CONSUMPTION_PER_GROUP_MBA_HOUR, price area NO1, https://api.elhub.no/energy-data/v0/price-areas?dataset=CONSUMPTION_PER_GROUP_MBA_HOUR&startDate=2025-10-26T00:00:00%2B02:00&endDate=2025-10-27T00:00:00%2B01:00",
+ "licence": "CC BY 4.0",
+ "rows": [
+  {
+   "startTime": "2025-10-26T00:00:00+02:00",
+   "endTime": "2025-10-26T01:00:00+02:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1571242.2,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T00:00:00+02:00",
+   "endTime": "2025-10-26T01:00:00+02:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 75032.87,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T01:00:00+02:00",
+   "endTime": "2025-10-26T02:00:00+02:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1492842.2,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T01:00:00+02:00",
+   "endTime": "2025-10-26T02:00:00+02:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 73333.44,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T02:00:00+02:00",
+   "endTime": "2025-10-26T02:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1434677.0,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T02:00:00+02:00",
+   "endTime": "2025-10-26T02:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 72537.99,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T02:00:00+01:00",
+   "endTime": "2025-10-26T03:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1394542.1,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T02:00:00+01:00",
+   "endTime": "2025-10-26T03:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 72161.19,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T03:00:00+01:00",
+   "endTime": "2025-10-26T04:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1375271.0,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T03:00:00+01:00",
+   "endTime": "2025-10-26T04:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 71937.85,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T04:00:00+01:00",
+   "endTime": "2025-10-26T05:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1372822.2,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T04:00:00+01:00",
+   "endTime": "2025-10-26T05:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 72100.06,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T05:00:00+01:00",
+   "endTime": "2025-10-26T06:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1384732.6,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T05:00:00+01:00",
+   "endTime": "2025-10-26T06:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 72824.516,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T06:00:00+01:00",
+   "endTime": "2025-10-26T07:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1424383.4,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T06:00:00+01:00",
+   "endTime": "2025-10-26T07:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 74122.11,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T07:00:00+01:00",
+   "endTime": "2025-10-26T08:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1513880.1,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T07:00:00+01:00",
+   "endTime": "2025-10-26T08:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 76857.75,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T08:00:00+01:00",
+   "endTime": "2025-10-26T09:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1658430.0,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T08:00:00+01:00",
+   "endTime": "2025-10-26T09:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 80452.875,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T09:00:00+01:00",
+   "endTime": "2025-10-26T10:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1789900.8,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T09:00:00+01:00",
+   "endTime": "2025-10-26T10:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 82339.52,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T10:00:00+01:00",
+   "endTime": "2025-10-26T11:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1843404.6,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T10:00:00+01:00",
+   "endTime": "2025-10-26T11:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 81747.22,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T11:00:00+01:00",
+   "endTime": "2025-10-26T12:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1844321.1,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T11:00:00+01:00",
+   "endTime": "2025-10-26T12:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 78534.47,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T12:00:00+01:00",
+   "endTime": "2025-10-26T13:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1838413.9,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T12:00:00+01:00",
+   "endTime": "2025-10-26T13:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 75068.4,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T13:00:00+01:00",
+   "endTime": "2025-10-26T14:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1829916.1,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T13:00:00+01:00",
+   "endTime": "2025-10-26T14:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 72105.305,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T14:00:00+01:00",
+   "endTime": "2025-10-26T15:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1854605.4,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T14:00:00+01:00",
+   "endTime": "2025-10-26T15:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 69913.49,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T15:00:00+01:00",
+   "endTime": "2025-10-26T16:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1912368.2,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T15:00:00+01:00",
+   "endTime": "2025-10-26T16:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 68465.85,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T16:00:00+01:00",
+   "endTime": "2025-10-26T17:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 2005894.6,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T16:00:00+01:00",
+   "endTime": "2025-10-26T17:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 67592.49,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T17:00:00+01:00",
+   "endTime": "2025-10-26T18:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 2102769.0,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T17:00:00+01:00",
+   "endTime": "2025-10-26T18:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 68358.9,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T18:00:00+01:00",
+   "endTime": "2025-10-26T19:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 2123271.8,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T18:00:00+01:00",
+   "endTime": "2025-10-26T19:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 67678.27,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T19:00:00+01:00",
+   "endTime": "2025-10-26T20:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 2108637.8,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T19:00:00+01:00",
+   "endTime": "2025-10-26T20:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 67089.26,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T20:00:00+01:00",
+   "endTime": "2025-10-26T21:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 2082325.1,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T20:00:00+01:00",
+   "endTime": "2025-10-26T21:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 66566.16,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T21:00:00+01:00",
+   "endTime": "2025-10-26T22:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 2014850.1,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T21:00:00+01:00",
+   "endTime": "2025-10-26T22:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 66278.93,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T22:00:00+01:00",
+   "endTime": "2025-10-26T23:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1910449.0,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T22:00:00+01:00",
+   "endTime": "2025-10-26T23:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 66289.18,
+   "meteringPointCount": 110794
+  },
+  {
+   "startTime": "2025-10-26T23:00:00+01:00",
+   "endTime": "2025-10-27T00:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "household",
+   "quantityKwh": 1777729.5,
+   "meteringPointCount": 1118310
+  },
+  {
+   "startTime": "2025-10-26T23:00:00+01:00",
+   "endTime": "2025-10-27T00:00:00+01:00",
+   "priceArea": "NO1",
+   "consumptionGroup": "cabin",
+   "quantityKwh": 66160.125,
+   "meteringPointCount": 110794
+  }
+ ]
+}

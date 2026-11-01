@@ -100,6 +100,7 @@ it("the merge checks schedule all required gates without browser work", () => {
     "@elmeragroup/fuse#test:types",
     "@elmeragroup/fuse#package:check",
     "@elmeragroup/fuse#size-limit",
+    "@elmeragroup/fuse#api:report",
     "@elmeragroup/color#test",
     "@elmeragroup/color#type-check",
     "docs#build",

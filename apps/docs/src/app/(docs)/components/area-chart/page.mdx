@@ -1,0 +1,58 @@
+---
+lede: >
+  Preview. Areas over a category or time axis, alone or stacked.
+---
+
+import { AreaChartDailyUsage } from "./demos/area-chart-daily-usage";
+import { AreaChartEntrance } from "./demos/area-chart-entrance";
+import { AreaChartPrice } from "./demos/area-chart-price";
+import { AreaChartStacked } from "./demos/area-chart-stacked";
+import { AreaChartVariants } from "./demos/area-chart-variants";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("area-chart");
+
+<ComponentIntro slug="area-chart" />
+
+<Prose>
+
+The chart entry is a preview. Its names and props can change until Fuse's first stable release. `AreaChart` is the same component as `Chart`. An area fills from 0, so it needs the zero baseline and throws `baseline-required` under `yBaseline="none"`. It draws its fill only, and a `Line` on the same key draws its edge.
+
+</Prose>
+
+<Demo slug="area-chart" id="daily-usage" title="Daily usage" file="area-chart-daily-usage.tsx">
+  <AreaChartDailyUsage />
+</Demo>
+
+<Demo slug="area-chart" id="stacked" title="Stacked" file="area-chart-stacked.tsx">
+  <AreaChartStacked />
+</Demo>
+
+<Demo slug="area-chart" id="variants" title="Fill looks" file="area-chart-variants.tsx">
+  <AreaChartVariants />
+</Demo>
+
+<Demo slug="area-chart" id="price" title="Value colour" file="area-chart-price.tsx">
+  <AreaChartPrice />
+</Demo>
+
+<Demo slug="area-chart" id="entrance" title="Entrance" file="area-chart-entrance.tsx">
+  <AreaChartEntrance />
+</Demo>
+
+## Keyboard
+
+<Prose>
+
+The plot is one tab stop. The legend toggle group and the table's button add one each.
+
+| Where               | Keys                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Chart               | ArrowRight and ArrowLeft move one slot. PageDown and PageUp move a tenth of the window's slots, at least one. Home and End go to the window's first and last slot. ArrowDown and ArrowUp move the series focus. Enter and Space select the focused series while a legend toggle group is mounted, and pin the tooltip otherwise. Escape hides the tooltip and keeps focus, and a second Escape passes on. |
+| Legend toggle group | Tab enters at the pressed toggle or the first. The arrows move, and Enter or Space presses a toggle. Pressing the pressed toggle clears the selection.                                                                                                                                                                                                                                                    |
+| Table               | The table's button and the page buttons are native buttons. The button moves focus to the table, which never joins the Tab order.                                                                                                                                                                                                                                                                         |
+
+</Prose>
+
+<ApiReference slug="area-chart" />

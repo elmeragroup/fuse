@@ -11,10 +11,10 @@
  * Components prerenders synchronous I/O and counts an awaited file read as uncached data.
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 
 import { normalizeDemoSource } from "./docs-model";
-import { docsRouteFile } from "./docs-route-files";
+import { DOCS_ROUTE_SECTIONS, docsRouteFile } from "./docs-route-files";
 import type { DocsRouteSection } from "./docs-route-files";
 
 export type DemoSource = {
@@ -50,4 +50,37 @@ export function readDemoSource({ section, slug, file }: DemoLocation): DemoSourc
   }
   const source = normalizeDemoSource(raw);
   return { source };
+}
+
+/**
+ * Where the highlighted source of one demo is served: a prerendered route the Code view fetches
+ * the first time it shows, so the page itself ships the source as plain text only.
+ *
+ * @param location - The demo's section, page slug and file.
+ * @returns The route's path.
+ */
+export function demoSourceHref({ section, slug, file }: DemoLocation): string {
+  return `/demo-source/${section}/${slug}/${file}`;
+}
+
+/**
+ * Every demo file of every docs page, read from the route directories, which the source route
+ * prerenders one by one.
+ *
+ * @returns Each demo's location.
+ */
+export function demoLocations(): DemoLocation[] {
+  return DOCS_ROUTE_SECTIONS.flatMap((section) => {
+    const sectionDir = docsRouteFile(section, "").absolute;
+    return readdirSync(sectionDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .flatMap(({ name: slug }) => {
+        const demosDir = docsRouteFile(section, slug, "demos").absolute;
+        return existsSync(demosDir)
+          ? readdirSync(demosDir)
+              .filter((file) => file.endsWith(".tsx"))
+              .map((file) => ({ section, slug, file }))
+          : [];
+      });
+  });
 }

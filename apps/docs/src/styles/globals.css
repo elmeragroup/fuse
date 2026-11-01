@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 @import "@elmeragroup/fuse/css";
+@import "@elmeragroup/fuse/chart.css";
 @import "@elmeragroup/fuse/themes.css";
 @import "@elmeragroup/fuse/demo-stage-density.css";
 /* Tailwind's automatic source detection is rooted at this file's own directory, so both

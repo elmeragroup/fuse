@@ -1,0 +1,36 @@
+{
+  "generator": ".scratch/charts-v1/tools/l05-oracles/pattern_phrases.py",
+  "s06": {
+    "nb-NO": {
+      "labels": ["Husholdning", "Hytte"],
+      "log": [
+        "button, før",
+        "option, kl. 00 til 01: Husholdning 1,34 kilowattimer, Hytte 0,66 kilowattimer, Fredag 16. oktober, 24 timer. Husholdning i kilowattimer: lavest 1,14 kl. 04 til 05, høyest 1,8 kl. 19 til 20. Hytte i kilowattimer: lavest 0,65 kl. 03 til 04, høyest 0,94 kl. 20 til 21. Bruk venstre og høyre pil for å gå mellom punktene, og opp og ned for å velge serie., not selected, position 1, set size 24",
+        "option, kl. 01 til 02: Husholdning 1,24 kilowattimer, Hytte 0,65 kilowattimer, not selected, position 2, set size 24",
+        "option, kl. 02 til 03: Husholdning 1,18 kilowattimer, Hytte 0,65 kilowattimer, not selected, position 3, set size 24",
+        "option, kl. 04 til 05: Husholdning 1,14 kilowattimer, Hytte 0,65 kilowattimer, not selected, position 5, set size 24",
+        "option, kl. 23 til 24: Husholdning 1,63 kilowattimer, Hytte 0,91 kilowattimer, not selected, position 24, set size 24",
+        "option, kl. 00 til 01: Husholdning 1,34 kilowattimer, Hytte 0,66 kilowattimer, not selected, position 1, set size 24",
+        "option, Husholdning 1,34 kilowattimer, kl. 00 til 01, not selected, position 1, set size 24",
+        "option, Hytte 0,66 kilowattimer, kl. 00 til 01, not selected, position 1, set size 24",
+        "option, Husholdning 1,34 kilowattimer, kl. 00 til 01, not selected, position 1, set size 24",
+        "button, før"
+      ]
+    }
+  },
+  "fallBack": {
+    "nb-NO": {
+      "labels": ["Forbruk"],
+      "log": [
+        "button, før",
+        "option, kl. 00 til 01: Forbruk 1,41 kilowattimer, Søndag 26. oktober, 25 timer. Forbruk i kilowattimer: lavest 1,23 kl. 04 til 05, høyest 1,9 kl. 18 til 19. Bruk venstre og høyre pil for å gå mellom punktene, og opp og ned for å velge serie., not selected, position 1, set size 25",
+        "option, kl. 01 til 02: Forbruk 1,33 kilowattimer, not selected, position 2, set size 25",
+        "option, kl. 02 til 03, sentraleuropeisk sommertid: Forbruk 1,28 kilowattimer, not selected, position 3, set size 25",
+        "option, kl. 04 til 05: Forbruk 1,23 kilowattimer, not selected, position 6, set size 25",
+        "option, kl. 23 til 24: Forbruk 1,59 kilowattimer, not selected, position 25, set size 25",
+        "option, kl. 00 til 01: Forbruk 1,41 kilowattimer, not selected, position 1, set size 25",
+        "button, før"
+      ]
+    }
+  }
+}

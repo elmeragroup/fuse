@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
+import { readChartDisplays } from "./package-check-chart";
 import { packedTailwindSource } from "./packed-consumer";
 import { packageRootFromScript } from "./paths";
 import { linkConsumerModules, withExtractedTarballAsync } from "./tarball";
@@ -50,6 +51,22 @@ try {
         source: readFileSync(join(scratch, "compiled.css"), "utf8"),
       };
       const page = await browser.newPage();
+      const chartCss = readFileSync(join(extracted, "chart.css"), "utf8");
+      // The oracle is CSS Cascade 5. chart.css declares Tailwind's layer order, so its
+      // `@layer components` grid loses to the `block` utility and beats a base-layer rule that the
+      // probe sheet adds last, whether chart.css loads before or after Fuse's CSS.
+      const baseProbe = '@layer base { [data-slot="chart"] { display: flex; } }';
+      for (const [mode, css] of Object.entries(styles)) {
+        for (const order of ["chart.css first", "chart.css last"]) {
+          await page.setContent(`<!doctype html><html><body>${rendered.stdout}</body></html>`);
+          const sheets = [...(order === "chart.css first" ? [chartCss, css] : [css, chartCss]), baseProbe];
+          for (const content of sheets) {
+            await page.addStyleTag({ content });
+          }
+          const display = await readChartDisplays(page);
+          assert.deepEqual(display, ["grid", "block"], `${mode}/${order}: Chart.Root display`);
+        }
+      }
       for (const [mode, css] of Object.entries(styles)) {
         for (const density of ["dense", "comfortable"]) {
           await page.setContent(

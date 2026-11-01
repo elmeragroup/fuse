@@ -4,7 +4,7 @@ import { DENSITIES } from "@elmeragroup/fuse/theme";
 import type { Density } from "@elmeragroup/fuse/theme";
 
 import { COMPONENT_INVENTORY } from "./component-inventory";
-import { DESKTOP_VIEWPORT } from "./demo-page";
+import { DESKTOP_VIEWPORT, waitForAllDemos } from "./demo-page";
 import { showsUnmeasuredPart, stampDensity, startDensityPass } from "./density-attribution";
 import type { PartReading, ProbeScope } from "./density-attribution";
 import { docsBaseUrl } from "./docs-server";
@@ -242,11 +242,7 @@ async function readComponentPage<Reading extends object>(
   await stages.first().waitFor();
   // Every demo is live before the read: a demo that cannot prerender, such as a date picker's,
   // renders only as it hydrates, and its stage holds nothing to read until then.
-  await page.waitForFunction(
-    () =>
-      document.querySelectorAll("[data-demo-frame]").length ===
-      document.querySelectorAll("[data-demo-frame][data-demo-hydrated]").length
-  );
+  await waitForAllDemos(page);
   // The stages are read once no demo table is loading: a table a stand-in server answers mounts
   // its rows a moment after it hydrates, and rows only one density's read finds would read as a
   // lost reveal. A loading table carries `aria-busy` from the server's markup on.

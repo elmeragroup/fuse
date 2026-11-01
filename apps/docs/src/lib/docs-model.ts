@@ -21,6 +21,8 @@ import type {
   RscStatus,
 } from "@elmeragroup/internal/api-artifacts/model";
 
+import type { ApiAlias, ApiSameAs } from "./api-same-as";
+
 /**
  * The API artifact model is the generator's (`@elmeragroup/internal`), re-exported so the
  * writer (`scripts/lib/api-artifact.ts`), the drift check and the render-time reader
@@ -41,6 +43,46 @@ import type {
  *   readers, not data), the `slug`, and the `parts`.
  */
 export type { ApiPart, ApiProp, ApiPropOrigin, ComponentApiArtifact, RscStatus };
+
+/** What a client part's RSC status means for a page that composes it on the server. */
+export const CLIENT_PART_NOTE = "A Server Component can still render it and pass it serialisable props.";
+
+/** One parameter of a public function, as its reference lists it. */
+export type ApiFunctionParameter = {
+  readonly name: string;
+  /** The printed parameter type. */
+  readonly type: string;
+  readonly optional: boolean;
+  /** The parameter's `@param` text. */
+  readonly description: string;
+};
+
+/**
+ * A public function's reference, such as a hook's or a formatter's, which the props table cannot
+ * describe. `scripts/lib/function-reference.ts` reads it from the library's types and JSDoc.
+ */
+export type ApiFunction = {
+  /** The call signature as one line, such as `useChartPoint(): ChartPoint | null`. */
+  readonly signature: string;
+  /** The function's JSDoc description. */
+  readonly description: string;
+  readonly parameters: readonly ApiFunctionParameter[];
+  /** The printed return type and the `@returns` text. */
+  readonly returns: { readonly type: string; readonly description: string };
+};
+
+/**
+ * One part as the generation pass holds it, which is the artifact's part with two additions. A part
+ * that repeats a part of an earlier page reading the same entry links to that owner part, and a
+ * function part carries its signature reference. The committed `api.json` carries neither, so the
+ * artifacts stay complete.
+ */
+export type DocsApiPart = ApiPart & {
+  /** The part on an earlier page that this part is. */
+  readonly sameAs?: ApiSameAs;
+  /** The function reference, when the part is a function rather than a component. */
+  readonly function?: ApiFunction;
+};
 
 /** Dependency deliberately selected for production API-reference enrichment. */
 const BASE_UI_PACKAGE_NAME = "@base-ui/react";
@@ -170,6 +212,15 @@ export type ComponentOutline = Pick<ComponentPageEntry, "slug" | "title" | "mark
 export type DocsComponent = ComponentPageEntry & {
   /** Public import specifier, e.g. `@elmeragroup/fuse/button`. */
   entry: string;
+  /** The page's authored intro, the prose before its first demo, or `""` when it has none. */
+  intro: string;
+  /**
+   * The page this page repeats whole, such as `chart` for `bar-chart`, when it is an alias. An
+   * alias page has no API artifact and no parts of its own.
+   */
+  alias?: ApiAlias;
+  /** An alias page's own part names, such as `BarChart.Root`, which its search entry matches. */
+  aliasParts?: readonly string[];
   /**
    * The page's RSC status, read from its implementation module's own directive
    * and published by the markdown endpoint.
@@ -178,7 +229,7 @@ export type DocsComponent = ComponentPageEntry & {
   /** Every heading of the page's authored prose, in page order. */
   headings: readonly ContentHeading[];
   demos: readonly DocsDemo[];
-  parts: readonly ApiPart[];
+  parts: readonly DocsApiPart[];
 };
 
 /**

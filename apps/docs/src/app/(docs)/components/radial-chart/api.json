@@ -1,0 +1,1439 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "radial-chart",
+  "parts": [
+    {
+      "name": "RadialChart.Root",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/radial-chart-root.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 273,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The chart's name. Pass this or `aria-labelledby`, never both.",
+          "required": false
+        },
+        {
+          "name": "aria-labelledby",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The id of the element that names the chart. Pass this or `aria-label`, never both.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The chart's parts. Root never inspects them.",
+          "required": false
+        },
+        {
+          "name": "config",
+          "origin": "declared",
+          "type": "TConfig & (string extends keyof TConfig | TRow[TNameKey] ? unknown : { readonly [K in TRow[TNameKey] & string]: ChartSeriesConfig; } & { readonly [K in Exclude<keyof TConfig, TRow[TNameKey]>]: { readonly \"PieChart config keys must name categories of data\": never; }; }) & ChartPolarFieldCheck<TConfig>",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "One entry per category, keyed by category value. Each entry is a `ChartSeriesConfig` with `label`, `color` and optionally `format` and `icon`. It takes no `stack`, `projectedFrom`, `qualityKey`, `interval` or `missing`, and its colours are `ChartPolarColor` roles. Root's `qualityKey` names the quality column instead.",
+          "required": true
+        },
+        {
+          "name": "data",
+          "origin": "declared",
+          "type": "readonly TRow[]",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The rows, one per ring, the first outermost. A negative value throws `negative-polar-value`.",
+          "required": true
+        },
+        {
+          "name": "data-intro",
+          "origin": "declared",
+          "type": "\"none\" | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "\"none\" turns the entrance sweep off.",
+          "required": false
+        },
+        {
+          "name": "defaultActiveKey",
+          "origin": "declared",
+          "type": "(keyof TConfig & string) | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The ring that is active before any pointer or key moves.",
+          "required": false
+        },
+        {
+          "name": "defaultSelectedKey",
+          "origin": "declared",
+          "type": "(keyof TConfig & string) | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The series selected on first render, or null for none. Uncontrolled.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the generated description verbatim.",
+          "required": false
+        },
+        {
+          "name": "endAngle",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Degrees from 12 o'clock, clockwise, where a full ring's sweep ends. 360 by default.",
+          "required": false
+        },
+        {
+          "name": "innerRadius",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A fraction of the outer radius where the innermost ring starts, `0.3` by default.",
+          "required": false
+        },
+        {
+          "name": "max",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "One maximum for every ring. Without it or `maxKey`, the largest value fills its ring. Not with `maxKey`.",
+          "required": false
+        },
+        {
+          "name": "maxKey",
+          "origin": "declared",
+          "type": "ChartKeyOf<TRow, number | null | undefined> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Not with `max`. The column that holds each row's own maximum, such as a budget per ring.",
+          "required": false
+        },
+        {
+          "name": "nameKey",
+          "origin": "declared",
+          "type": "TNameKey",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The column that names each ring.",
+          "required": true
+        },
+        {
+          "name": "onSelectedKeyChange",
+          "origin": "declared",
+          "type": "((key: (keyof TConfig & string) | null, details: ChartChangeEventDetails<ChartSelectionChangeReason>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called when a legend toggle, a plot press or a key changes the selection.",
+          "required": false
+        },
+        {
+          "name": "qualityKey",
+          "origin": "declared",
+          "type": "ChartKeyOf<TRow, ChartQuality | null | undefined> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The column that holds each ring's `ChartQuality`.",
+          "required": false
+        },
+        {
+          "name": "selectedKey",
+          "origin": "declared",
+          "type": "(keyof TConfig & string) | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The selected series, or null for none. Controlled.",
+          "required": false
+        },
+        {
+          "name": "startAngle",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Degrees from 12 o'clock, clockwise, where each ring's sweep starts. 0 by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "valueFormat",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value format. A category's config `format` overrides it.",
+          "required": false
+        },
+        {
+          "name": "valueKey",
+          "origin": "declared",
+          "type": "TValueKey",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The column that fills each ring.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.Bar",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/radial-chart-bar.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"default\" | \"dotted\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The ring's look. \"default\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.Track",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.Center",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The centre's content, such as `CenterValue` over a `CenterLabel`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.CenterValue",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value format. The category's config `format`, then Root's `valueFormat`, is the default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.CenterShare",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ChartFractionDigits | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The percentage digits.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.CenterMax",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The maximum's format. The value's format is the default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.CenterLabel",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The label text, such as \"av\" between the value and the maximum.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.Glow",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-glow.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The category whose slice or ring glows.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.Skeleton",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/radial-chart-skeleton.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 276,
+      "props": [
+        {
+          "name": "innerRadius",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A fraction of the outer radius, as on Root.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The loader's name. The dictionary's \"Laster diagram\" is the default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.Headline",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-headline.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.Takeaway",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-headline.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 276,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "string | number | readonly (string | number)[]",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The takeaway sentence. Interpolated strings and numbers pass, and elements fail the type.",
+          "required": true
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.Tooltip",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "anchor",
+          "origin": "declared",
+          "type": "\"point\" | \"top\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "\"point\" follows the active mark. \"top\" pins the popup to the plot top and tracks x only.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Without children, TooltipLabel over a TooltipItems template with Swatch, SeriesLabel and TooltipValue, then one TooltipTotal per stack id that holds two or more series. In pie and radial charts the template renders once, for the active slice or ring.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"default\" | \"frosted\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The popup's surface. \"default\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.TooltipLabel",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "XFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The slot label format. Root's `xFormat` is the default. It does nothing in polar charts.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.TooltipItems",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.TooltipValue",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series to print. Inside a TooltipItems row the row supplies it.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value format. The series' config `format` is the default.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.TooltipShare",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series to print. Inside a TooltipItems row the row supplies it.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ChartFractionDigits | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The percentage digits.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.Swatch",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-series.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series to paint. Inside a template row the row supplies it.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"bar\" | \"circle\" | \"circle-outline\" | \"line\" | \"square\" | \"square-outline\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The swatch's shape. \"square\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.SeriesLabel",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-series.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series to name. Inside a template row the row supplies it.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.SeriesIcon",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-series.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series whose config `icon` to show. Inside a template row the row supplies it.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.Legend",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-legend.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Where the legend sits around the plot. \"bottom\" by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.LegendItem",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-legend.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series of this item. Without one, the item is a template rendered once per legend entry.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.LegendValue",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-legend.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series to print. Inside a LegendItem template the item supplies it.",
+          "required": false
+        },
+        {
+          "name": "fallback",
+          "origin": "declared",
+          "type": "ChartFallback | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The datum to print when nothing is active. \"last\" by default.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value format. The series' config `format` is the default.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.LegendShare",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-legend.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series to print. Inside a LegendItem template the item supplies it.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ChartFractionDigits | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The percentage digits.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.LegendToggleGroup",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-legend.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The group's name. The dictionary's \"Serier\" is the default.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "LegendToggle parts. Without children, one per config key, or per kept category in a folded pie.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Where the group sits around the plot. \"bottom\" by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.LegendToggle",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-legend.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The toggle's content. The series' swatch and label by default.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series the toggle selects. An unknown key throws `unknown-key`.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.Table",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-table.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "caption",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the generated caption, the chart name and the period.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra columns as `TableColumn` parts, after the series and total columns.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "hideLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the dictionary's \"Skjul tabell\".",
+          "required": false
+        },
+        {
+          "name": "showLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the dictionary's \"Vis som tabell\".",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "xHeader",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the first column's header, which the interval picks.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.TableColumn",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-table.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The row column to list. It names a row column, not a config key.",
+          "required": true
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | XFormat | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "How number and `Date` cells print.",
+          "required": false
+        },
+        {
+          "name": "header",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The column header.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.Empty",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-empty.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RadialChart.Background",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-background.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "ChartBackgroundPattern | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"dots\"",
+          "description": "The pattern drawn behind the marks. \"dots\" by default.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}
