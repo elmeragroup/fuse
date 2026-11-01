@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { page } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { drawnRect } from "../../../test/chart/bar-box";
@@ -20,6 +20,7 @@ import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { fkasPrivate, renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { ThemeScope } from "../../theme/theme-scope";
+import { Tabs } from "../tabs";
 import { Chart } from "./chart-namespace";
 import type { ChartConfig, ChartIntro } from "./chart-types";
 import "./chart.css";
@@ -217,7 +218,9 @@ describe("the entrance in view", () => {
     // The first bar grew through the frames between its base and its rest.
     expect(first.some((height) => height > 0 && height < 50)).toBe(true);
     expect(root(host).getAttribute("data-entrance")).toBe("played");
-    await expect.poll(() => wipes(host)).toEqual([]);
+    await expect.poll(() => wipes(host), { timeout: 3000 }).toEqual([]);
+    // The wipe has run, so Root drops the attribute every wipe rule reads.
+    expect(root(host).hasAttribute("data-entrance")).toBe(false);
   });
 
   it("never plays again after the plot scrolls away and back", async () => {
@@ -796,5 +799,141 @@ describe("the reveal's listeners", () => {
       added.mockRestore();
       removed.mockRestore();
     }
+  });
+});
+
+/** Every CSS layer a chart can wipe in, an Area, a Line and its Dots on w, over the Bar on v. */
+const LAYERS = (
+  <>
+    <Chart.Bar dataKey="v" />
+    <Chart.Area dataKey="w" />
+    <Chart.Line dataKey="w" />
+    <Chart.Dots dataKey="w" />
+  </>
+);
+
+/** The chart's Area, Line and Dots layers, which the entrance wipes in. */
+function cssLayers(host: HTMLElement): Element[] {
+  // DOM audit: the series layers are aria-hidden plot output, found by their slots.
+  const found = [
+    ...host.querySelectorAll(
+      '[data-slot="chart-area-series"], [data-slot="chart-line-series"], [data-slot="chart-dots"]'
+    ),
+  ];
+  expect(found).toHaveLength(3);
+  return found;
+}
+
+/** The CSS animations any of the chart's Area, Line and Dots layers runs or holds. */
+function layerAnimations(host: HTMLElement): string[] {
+  return cssLayers(host).flatMap((layer) =>
+    layer
+      .getAnimations()
+      .flatMap((animation) => (animation instanceof CSSAnimation ? [animation.animationName] : []))
+  );
+}
+
+/**
+ * Wait until a chart with every CSS layer has played its entrance to rest: the bars stand, each
+ * layer's wipe has run, and Root has dropped the attribute the wipe rules read, which it does on
+ * the wipe's end event, dispatched in the frame after the wipe leaves the layer.
+ */
+async function layersAtRest(host: HTMLElement): Promise<void> {
+  await playToRest(host, REST);
+  await expect.poll(() => layerAnimations(host), { timeout: 3000 }).toEqual([]);
+  await expect.poll(() => root(host).hasAttribute("data-entrance")).toBe(false);
+}
+
+/**
+ * Over 20 frames, no Area, Line or Dots layer animates, and the bars stand at rest. Each layer
+ * then clips as chart.css rests it: an Area and a Line keep a 0.5rem margin across the value
+ * axis, 8 px at the 16 px root, and Dots clip nothing.
+ */
+async function staysAtRest(host: HTMLElement): Promise<void> {
+  for (let count = 0; count < 20; count += 1) {
+    await frame();
+    expect(layerAnimations(host)).toEqual([]);
+    expect(standing(host, REST)).toBe(true);
+  }
+  expect(cssLayers(host).map((layer) => getComputedStyle(layer).clipPath)).toEqual([
+    "inset(-8px 0px)",
+    "inset(-8px 0px)",
+    "none",
+  ]);
+}
+
+describe("the entrance once it has run", () => {
+  it("wipes no layer in again when its keepMounted tab panel is hidden and shown", async () => {
+    // A hidden panel takes display none, which cancels CSS animations, so showing it would start
+    // any wipe that still matched from its first frame.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <Tabs.Root defaultValue="chart">
+          <Tabs.List aria-label="Views">
+            <Tabs.Trigger value="chart">Chart</Tabs.Trigger>
+            <Tabs.Trigger value="other">Other</Tabs.Trigger>
+          </Tabs.List>
+          <Tabs.Content value="chart" keepMounted>
+            <div style={{ width: 400 }}>{rootOf([1, 2, 3, 4], { children: LAYERS })}</div>
+          </Tabs.Content>
+          <Tabs.Content value="other" keepMounted>
+            Other panel
+          </Tabs.Content>
+        </Tabs.Root>
+      </LocaleProvider>
+    );
+    await layersAtRest(host);
+    await userEvent.click(page.getByRole("tab", { name: "Other" }));
+    await frames(5);
+    expect(root(host).getClientRects()).toHaveLength(0);
+    await userEvent.click(page.getByRole("tab", { name: "Chart" }));
+    await frames(2);
+    expect(root(host).getClientRects()).toHaveLength(1);
+    await staysAtRest(host);
+  });
+
+  it.each(["right", "center", "edges"] as const)(
+    "wipes no layer in when the origin turns %s after the entrance",
+    async (origin) => {
+      // A new origin names another wipe animation, which would start from its first frame.
+      const layered = (intro?: ChartIntro) => (
+        <LocaleProvider locale="nb-NO">
+          <div style={{ width: 400 }}>{rootOf([1, 2, 3, 4], { intro, children: LAYERS })}</div>
+        </LocaleProvider>
+      );
+      const { host, rerender } = renderThemed(layered());
+      await layersAtRest(host);
+      rerender(layered(origin));
+      expect(root(host).getAttribute("data-intro")).toBe(origin);
+      await staysAtRest(host);
+    }
+  );
+});
+
+describe("the entrance in a collapsed container", () => {
+  it("waits while the plot only touches the clip edge of a container 0 px tall, then plays once it opens", async () => {
+    // The observer counts a plot on the clip edge as meeting the container, with no height shown.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div data-testid="collapsed" style={{ height: 0, overflow: "hidden" }}>
+          <div data-testid="lift" style={{ width: 400 }}>
+            {rootOf([1, 2, 3, 4])}
+          </div>
+        </div>
+      </LocaleProvider>
+    );
+    const collapsed = byTestId(host, "collapsed");
+    const plot = plotOf(host);
+    // Lift the chart so its plot's top lies on the container's top edge, before the observer
+    // reads it.
+    byTestId(host, "lift").style.marginTop =
+      `${String(collapsed.getBoundingClientRect().top - plot.getBoundingClientRect().top)}px`;
+    expect(collapsed.getBoundingClientRect().height).toBe(0);
+    expect(plot.getBoundingClientRect().top).toBe(collapsed.getBoundingClientRect().top);
+    await frames(10);
+    expect(root(host).getAttribute("data-entrance")).toBe("waiting");
+    expect(heights(host)).toEqual([0, 0, 0, 0]);
+    collapsed.style.height = "auto";
+    await playToRest(host, REST);
   });
 });

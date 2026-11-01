@@ -849,6 +849,11 @@ describe("runtime listeners and layout motion", () => {
   // say the list is complete. Each owner's browser test covers its own cleanup.
   it("installs event listeners only from the reviewed owners", () => {
     expect(filesContainingCode(".addEventListener(").toSorted()).toEqual([
+      // Root's figure `animationend`: the first entrance wipe to end drops `data-entrance`, so no
+      // layer wipes again once hidden and shown. A React `onAnimationEnd` on Root would sit beside
+      // a consumer's own handler, which Root's spread props replace. The same owner listens on
+      // the window for `beforeprint`, and for `scroll` and `resize` only while a plot waits.
+      "components/chart/chart-entrance.ts",
       // Native non-passive `wheel` on the chip strip: React's `onWheel` is passive, so it cannot
       // keep the page from scrolling while a vertical wheel scrolls the strip sideways.
       "components/data-table-filter/strip-wheel.ts",

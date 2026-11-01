@@ -1842,7 +1842,7 @@
       the update curve, from the frame Root writes data-entrance. While its value is "waiting" the
       wipe holds at its first frame, until the plot comes into view. A layer that mounts after the
       entrance started carries data-intro. Root writes no data-entrance on the server, so no wipe
-      starts before the chart hydrates.
+      starts before the chart hydrates, and drops it once the wipe has run, so no wipe starts again.
     */
     [data-slot="chart"][data-entrance]
       :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(

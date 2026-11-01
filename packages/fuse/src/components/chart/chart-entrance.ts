@@ -45,17 +45,21 @@ function room(plot: Element): number {
 }
 
 /**
- * The reveal decision for every waiting plot. A plot plays its entrance once any of its width and
- * a third of its height show, or half the height it can show at most, which a tall plot, or one
- * in a short scroll container, reaches first. Both read the visible height, never the visible
- * area, so a wide plot in a narrow scroller reveals too, and a plot at the end of the page that
- * cannot scroll further shows all it can. A plot that meets the viewport and shows too little
- * stays near, for the next change of geometry to report on.
+ * The reveal decision for every waiting plot. A plot plays its entrance once any of its width and a
+ * third of its height show, or half the height it can show at most, which a tall plot, or one in a
+ * short scroll container, reaches first. Some of its height must show, so a plot that only touches
+ * the edge of a collapsed container, which the observer counts as meeting it, waits. Both read the
+ * visible height, never the visible area, so a wide plot in a narrow scroller reveals too, and a
+ * plot at the end of the page that cannot scroll further shows all it can. A plot that meets the
+ * viewport and shows too little stays near, for the next change of geometry to report on.
  */
 function decide(entries: readonly IntersectionObserverEntry[]): void {
   for (const { target, isIntersecting, intersectionRect: shown, boundingClientRect } of entries) {
     if (!isIntersecting) near.delete(target);
-    else if (shown.width > 0 && shown.height >= Math.min(boundingClientRect.height / 3, room(target) / 2))
+    else if (
+      Math.min(shown.width, shown.height) > 0 &&
+      shown.height >= Math.min(boundingClientRect.height / 3, room(target) / 2)
+    )
       reveals.get(target)?.();
     else near.add(target);
   }
@@ -106,10 +110,13 @@ function watch(plot: Element, reveal: () => void): () => void {
  * on, the loop holds, Root writes `data-entrance="waiting"`, and the plot is watched until it
  * shows. The reveal waits for the next frame, which a hidden tab never paints, then writes
  * `"played"`, so the CSS wipe and the loop both start in a painted frame, and the plot is no
- * longer watched. With the entrance off, the marks draw at rest. Turning it off later, as
- * `data-intro="none"` or reduced motion does, draws them at rest and drops the attribute, which
- * ends the CSS wipe whether it waits, runs or has played, and the entrance stays spent, so turning
- * it on again replays nothing. A print draws every mark at rest the same way.
+ * longer watched. The first wipe to end drops the attribute, as every layer's wipe ends in the
+ * same frame, so no layer wipes again when the chart is hidden and shown, or takes a new origin,
+ * which would start its CSS animation anew. With the entrance off, the marks draw at rest.
+ * Turning it off later, as `data-intro="none"` or reduced motion does, draws them at rest and drops
+ * the attribute, which ends the CSS wipe whether it waits, runs or has played, and the entrance
+ * stays spent, so turning it on again replays nothing. A print draws every mark at rest the same
+ * way.
  *
  * @param store - The Root's store, whose phase marks read as they draw.
  * @param motion - The Root's loop.
@@ -145,7 +152,11 @@ export function useEntrance(
     const print = (): void => {
       start(null);
     };
+    const ended = (event: AnimationEvent): void => {
+      if (event.animationName.startsWith("chart-wipe")) writeAttribute(figure, "data-entrance", null);
+    };
     addEventListener("beforeprint", print);
+    figure.addEventListener("animationend", ended);
     if (!entrance) start(null);
     else if (store.get().phase === "waiting") {
       motion.wait();
@@ -160,6 +171,7 @@ export function useEntrance(
     return () => {
       stop();
       removeEventListener("beforeprint", print);
+      figure.removeEventListener("animationend", ended);
     };
   }, [store, motion, root, plot, entrance]);
 }

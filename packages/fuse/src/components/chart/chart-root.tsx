@@ -147,13 +147,14 @@ export type ChartRootProps<
      * The entrance wipe origin, physical under `dir="rtl"` too. "none" turns the entrance off. The
      * entrance plays once, the first time a third of the plot's height is in view, or half the
      * height of the viewport or of the scroll container that clips a taller plot, whether the chart
-     * hydrated server HTML or mounted in the browser.
-     * Until then Root writes `data-entrance="waiting"` and the marks wait at the entrance's first
-     * frame: bars at their base, and lines, areas and dots clipped from the origin. The axes, the
-     * legend, the table and the chart's name render at once. Root writes `data-entrance="played"`
-     * as the entrance starts, and scrolling away and back never replays it. A data update while
-     * the entrance waits plays it with the latest data. Reduced motion, "none" and printing draw
-     * the marks at rest at once. A bar that a data update adds after the entrance writes
+     * hydrated server HTML or mounted in the browser. Until then Root writes
+     * `data-entrance="waiting"` and the marks wait at the entrance's first frame: bars at their
+     * base, and lines, areas and dots clipped from the origin. The axes, the legend, the table and
+     * the chart's name render at once. Root writes `data-entrance="played"` as the entrance starts,
+     * and drops it once the wipe of lines, areas and dots has run. Scrolling away and back, hiding
+     * the chart and showing it again, or a new origin never replays it. A data update while the
+     * entrance waits plays it with the latest data. Reduced motion, "none" and printing draw the
+     * marks at rest at once. A bar that a data update adds after the entrance writes
      * `data-intro="fade"` on itself and fades in. A bar that an `xRange` change, a brush step or a
      * pan adds writes `data-intro="none"` and takes its place at once.
      */
