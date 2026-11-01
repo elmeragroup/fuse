@@ -810,7 +810,9 @@ describe("every drawn mark under the pixel floor", () => {
         // plot whose origin lies on a half device pixel, a slot reference line on a band two
         // device pixels wide, and a last slot in the half pixel past the plot's drawn end. Then
         // every rule at 1.25x and 1.5x, in both orientations, on a plot a fraction of a pixel in,
-        // with a slot line and the line crosshair in the middle, where their labels centre.
+        // with a slot line and the line crosshair in the middle, where their labels centre. Then
+        // seed -1298470839's path form at 1x: 101 slots on 100 px, a 64th of a pixel in, every
+        // reading missing but the last, where slot 50's snapped column middle lay in slot 51.
         examples: [
           [DENSE, 1],
           [
@@ -855,6 +857,19 @@ describe("every drawn mark under the pixel floor", () => {
           // Every mark inside a lower Panel, a fraction of a pixel in, at 1.5x and 2x.
           [{ ...DENSE, count: 40, length: 301, offset: 0.4, last: false, line: 20, panels: true }, 1.5],
           [{ ...DENSE, count: 29, length: 101, group: 2, offset: 3, crosshair: "band", panels: true }, 2],
+          [
+            {
+              ...DENSE,
+              count: 101,
+              length: 100,
+              missing: Array.from({ length: 400 }, (_, slot) => slot !== 100),
+              offset: 1 / 64,
+              crosshair: "band",
+              last: false,
+              line: 0,
+            },
+            1,
+          ],
         ],
       }
     );

@@ -23,7 +23,7 @@ import { seriesPaintOf } from "./chart-paint";
 import { useChartFrame } from "./chart-plot";
 import { readingAt, useActiveSlot } from "./chart-readout";
 import { useSteady } from "./chart-steady";
-import { introFor, usePhase } from "./chart-store";
+import { introFor, useIntro, usePhase } from "./chart-store";
 import type { ChartDatum, ChartLayerProps, ValueFormat } from "./chart-types";
 import { formatValue } from "./format/value-format";
 import type { SeriesModel } from "./layout/cartesian-model";
@@ -159,10 +159,11 @@ function sameDot(
 }
 
 /**
- * What an attached part writes on `data-intro` for marks that mount now: nothing while Root's
- * entrance waits, so they join it, and their update's intro after it started.
+ * What an attached part writes on `data-intro` for the dots that mount now, which draw as they
+ * mount: nothing while Root's entrance waits, so they join it, and their update's intro after it
+ * started.
  */
-function useIntro(context: ChartRootContextValue): "fade" | "none" | undefined {
+function useMountIntro(context: ChartRootContextValue): "fade" | "none" | undefined {
   return introFor(usePhase(context.store), context.update.kind, context.entrance ? "css" : "none");
 }
 
@@ -238,9 +239,14 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
     // The dots crossfade with their path: the old dots fade out where they were drawn.
     attach(cause, attachJoin(context, series, slots, rest, "line"), rest);
   });
-  const intro = useIntro(context);
-  // The layer keeps the intro of its first render, which Root's entrance wipe reads.
-  const [layerIntro] = useState(intro);
+  const intro = useMountIntro(context);
+  // The layer renders on the server, before it draws, and Root's entrance wipe reads its intro.
+  const layerIntro = useIntro(
+    context.store,
+    context.update.kind,
+    context.entrance ? "css" : "none",
+    frame !== null
+  );
   const radius = DOT_RADIUS[variant];
   return (
     <svg
@@ -468,7 +474,7 @@ export function ChartMarker({
       rest
     );
   });
-  const intro = useIntro(context);
+  const intro = useMountIntro(context);
   const radius = DOT_RADIUS[variant];
   const seriesIndex = series?.seriesIndex ?? 0;
   // The old marker fades out beside the live one, so the live marker's fade-in never reaches it.

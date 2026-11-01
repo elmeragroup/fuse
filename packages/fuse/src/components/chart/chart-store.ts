@@ -260,6 +260,34 @@ export function usePhase(store: ChartStore): EntrancePhase {
 }
 
 /**
+ * What a mark writes on `data-intro` for its life, by the one rule every mark follows. While it
+ * hydrates it matches the server, which read the entrance waiting. In the first render it draws in
+ * it keeps what `introFor` says from Root's live phase, so a mark that draws while the entrance
+ * waits joins it, and one that first draws after the entrance started, as a series whose Suspense
+ * boundary hydrates late, takes its place at once. A bar or a dot mounts only once it draws, so
+ * it keeps the value of its first render, which is the same rule.
+ *
+ * @param store - The Root's store.
+ * @param kind - The commit the mark renders in.
+ * @param entrance - Who runs the mark's entrance: Root's CSS, the loop, or no one.
+ * @param drawn - Whether the mark draws in this render, which a measured plot and an open draw gate
+ *   allow.
+ * @returns The attribute's value, or undefined to write none.
+ */
+export function useIntro(
+  store: ChartStore,
+  kind: "initial" | "data" | "range",
+  entrance: "css" | "loop" | "none",
+  drawn: boolean
+): "fade" | "none" | undefined {
+  const live = introFor(usePhase(store), kind, entrance);
+  const [kept, setKept] = useState<{ readonly intro: "fade" | "none" | undefined } | null>(null);
+  if (kept !== null) return kept.intro;
+  if (drawn) setKept({ intro: live });
+  return live;
+}
+
+/**
  * Whether this part first rendered in a browser mount, as opposed to on the server or while it
  * hydrated server HTML. The server and hydration snapshot is `false`, and the first value stays,
  * so Root opens its draw gate in its first commit after a browser mount, and in a microtask after

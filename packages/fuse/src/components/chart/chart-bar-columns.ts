@@ -263,17 +263,22 @@ export function columnsDrawing(
   const projected: PlotRect[] = [];
   const emphasis: PlotRect[] = [];
   let missing = "";
+  /** The band of the slot a coordinate along the slot axis lies in. */
+  const bandAt = (along: number) =>
+    slotBand(frame, Math.min(Math.max(Math.floor(along / step), 0), frame.count - 1));
   topology.entries.forEach((entry, index) => {
     const at = (offset: number) => values[index * COLUMN_STRIDE + offset] ?? 0;
-    const position = Math.min(Math.max(Math.floor(at(0) / step), 0), frame.count - 1);
-    const band = slotBand(frame, position);
+    const band = bandAt(at(0));
     const rect = frameRect(frame, columnSpan(frame, at(2), at(3), band), [at(1), at(4)]);
     const drawn = !entry.leaving || rect.height > 0;
     if (entry.fill >= 0 && drawn) fills[entry.fill]?.push(rect);
     if (entry.estimated && drawn) estimated.push(rect);
     if (entry.projected && drawn) projected.push(rect);
     if (entry.missing) {
-      const [from, to] = snapBarSpan(frame, at(5), at(6), band);
+      // The tick keeps its pixel in the band of the slot its own middle lies in. That middle is
+      // unsnapped, where the column's middle is snapped, and a slot narrower than a device pixel
+      // can snap a column's middle into the next slot's band.
+      const [from, to] = snapBarSpan(frame, at(5), at(6), bandAt((at(5) + at(6)) / 2));
       missing += `M${String(from)} ${String(missingTickAt(frame, at(4)))}H${String(to)}`;
     }
     if (entry.emphasis)

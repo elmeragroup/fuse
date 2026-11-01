@@ -6,18 +6,14 @@ import type { ReactElement, ReactNode } from "react";
 import { useMediaQuery } from "../../hooks/use-media-query";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
+import { keyDomains, useChartCommit } from "./chart-commit";
 import {
   ChartLayoutContext,
   ChartRootContext,
   ChartSelectionContext,
   partOutsidePanel,
 } from "./chart-context";
-import type {
-  ChartLayoutContextValue,
-  ChartRootContextValue,
-  ChartUpdate,
-  PanelEntry,
-} from "./chart-context";
+import type { ChartLayoutContextValue, ChartRootContextValue, PanelEntry } from "./chart-context";
 import { writeAttribute, writeStyle } from "./chart-dom";
 import { useEntrance } from "./chart-entrance";
 import { createChartFollowers } from "./chart-followers";
@@ -62,7 +58,7 @@ import type {
   ChartXValue,
 } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
-import { buildCartesianModel, layoutDomain } from "./layout/cartesian-model";
+import { buildCartesianModel } from "./layout/cartesian-model";
 import type { CartesianModel } from "./layout/cartesian-model";
 import { intervalNests } from "./layout/coarse-slots";
 import {
@@ -74,13 +70,8 @@ import {
   issueKey,
 } from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
-import { pathMotion } from "./layout/path-motion";
-import { mountedSeries, relaysPlot } from "./layout/relay";
 import { sameItems } from "./layout/same-items";
 import { numberOf, stringOf } from "./layout/scalar";
-import { windowSlots } from "./layout/series-path";
-import { pairSlotKeys } from "./layout/slot-keys";
-import type { SlotKeys } from "./layout/slot-keys";
 import { keepSlot } from "./layout/slot-window";
 import { createRowPlacer, instantOf, slotOf, slotX } from "./layout/x-domain";
 
@@ -154,8 +145,9 @@ export type ChartRootProps<
     defaultActiveX?: ChartXValue<TRow[TXKey]>;
     /**
      * The entrance wipe origin, physical under `dir="rtl"` too. "none" turns the entrance off. The
-     * entrance plays once, the first time a third of the plot is in view, or half the viewport's
-     * height of a taller plot, whether the chart hydrated server HTML or mounted in the browser.
+     * entrance plays once, the first time a third of the plot's height is in view, or half the
+     * height of the viewport or of the scroll container that clips a taller plot, whether the chart
+     * hydrated server HTML or mounted in the browser.
      * Until then Root writes `data-entrance="waiting"` and the marks wait at the entrance's first
      * frame: bars at their base, and lines, areas and dots clipped from the origin. The axes, the
      * legend, the table and the chart's name render at once. Root writes `data-entrance="played"`
@@ -174,60 +166,11 @@ export type ChartRootProps<
     children?: ReactNode;
   };
 
-/** Each config key's layout value domain, by key. */
-type KeyDomains = ReadonlyMap<string, readonly [number, number]>;
-
-/** One commit's motion facts, kept across renders so the next commit can compare. */
-type ChartCommit = {
-  readonly model: CartesianModel;
-  readonly data: unknown;
-  readonly config: unknown;
-  /** The steady range object, which changes only when the range names other values. */
-  readonly range: unknown;
-  readonly update: ChartUpdate;
-  readonly keys: SlotKeys;
-  /** The value domain of the layout each key draws in. */
-  readonly domains: KeyDomains;
-  /**
-   * The keys whose layout's value domain moved since the motion loop last rested, so a tween that
-   * glides one Panel between two domains leaves the other Panels alone. A domain that returns to
-   * where it started mid-tween stays moved, because its marks still glide back.
-   */
-  readonly moved: ReadonlySet<string>;
-};
-
-/**
- * The value domain each config key draws in: its Panel's, or the default layout's without Panels.
- * Root computes a Panel's domain from what the Panel registered, as the Panel computes it during
- * render, so both read the same model.
- */
-function keyDomains(
-  model: CartesianModel,
-  stackOffset: "diverging" | "expand",
-  panels: readonly PanelEntry[]
-): KeyDomains {
-  if (panels.length === 0) return new Map(model.series.map(({ key }) => [key, model.y.domain]));
-  const stacked = { ...model, stackOffset };
-  return new Map(
-    panels.flatMap(({ layout }) => {
-      const { domain } = layoutDomain(stacked, layout);
-      return layout.keys.map((key) => [key, domain] as const);
-    })
-  );
-}
-
 /** Order two Panels as their plots sit on the page. */
 function inPageOrder(a: PanelEntry, b: PanelEntry): number {
   const [first, second] = [a.plot(), b.plot()];
   if (first === null || second === null || first === second) return 0;
   return first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
-}
-
-/** Whether two key domain maps hold the same domain for a key. */
-function sameDomain(a: KeyDomains, b: KeyDomains, key: string): boolean {
-  const [lowA, highA] = a.get(key) ?? [0, 1];
-  const [lowB, highB] = b.get(key) ?? [0, 1];
-  return lowA === lowB && highA === highB;
 }
 
 /**
@@ -537,96 +480,11 @@ export function ChartRoot<
       >()
   );
   // Which kind of commit produced this model, and the keys its marks render under.
-  const [seen, setSeen] = useState((): ChartCommit => {
-    const keys = pairSlotKeys(null, model.domain);
-    return {
-      model,
-      data,
-      config: modelConfig,
-      range: windowRange,
-      update: {
-        kind: "initial",
-        keys: keys.keys,
-        relays: false,
-        from: domains,
-        mounted: new Set(),
-        gliding: new Set(),
-        layouts: { relays: false, moved: new Set() },
-        window: { mode: "tween", by: 0 },
-      },
-      keys,
-      domains,
-      moved: new Set(),
-    };
-  });
-  let commit = seen;
-  if (seen.model !== model || seen.domains !== domains) {
-    const rangeOnly = seen.data === data && seen.config === modelConfig && seen.range !== windowRange;
-    const keys = pairSlotKeys(seen.keys, model.domain);
-    // A layout's marks draw between two value domains while a tween that set out from another runs,
-    // unless a Panel relayed the update that started it, which snapped every mark.
-    const running = motion.running() && !seen.update.layouts.relays;
-    const gliding = running ? new Set([...seen.moved, ...seen.update.layouts.moved]) : new Set<string>();
-    // A Panel computes its domain from inputs Root sees only once it registers, so each Panel
-    // decides whether an update moves its own domain as it commits, through
-    // `reportLayoutDomain`. Root decides for its default layout, and leaves the Panels' keys where
-    // they drew.
-    const panelKeys = new Set(panels.flatMap(({ layout }) => layout.keys));
-    const own = new Map(domains);
-    for (const key of panelKeys) own.set(key, seen.domains.get(key) ?? domains.get(key) ?? [0, 1]);
-    const drawn = new Set([...bars.values()].map(({ key }) => key));
-    const relays =
-      !rangeOnly &&
-      relaysPlot(
-        { model: seen.model, keys: seen.update.keys, domains: seen.domains },
-        { model, keys: keys.keys, domains: own },
-        orientation,
-        gliding,
-        drawn
-      );
-    // Panels that register leave the model alone, and their first domains are no update.
-    const registered = seen.model === model;
-    commit = {
-      model,
-      data,
-      config: modelConfig,
-      range: windowRange,
-      update: registered
-        ? seen.update
-        : {
-            kind: rangeOnly ? "range" : "data",
-            keys: keys.keys,
-            relays,
-            from: seen.domains,
-            mounted: mountedSeries(
-              { model: seen.model, keys: seen.update.keys },
-              { model, keys: keys.keys },
-              orientation,
-              drawn
-            ),
-            gliding,
-            layouts: { relays: false, moved: new Set() },
-            window: pathMotion(windowSlots(seen.model, seen.update.keys), windowSlots(model, keys.keys)),
-          },
-      keys,
-      domains,
-      // A commit that snaps the marks lands them on its domains. One that only registers leaves the
-      // running tweens alone, so their keys still glide. One that moves the marks adds the keys
-      // whose domain it changes to those the tweens it interrupts still glide.
-      moved:
-        relays || rangeOnly
-          ? new Set()
-          : registered
-            ? gliding
-            : new Set([
-                ...gliding,
-                ...[...domains.keys()].filter(
-                  (key) => !panelKeys.has(key) && !sameDomain(seen.domains, domains, key)
-                ),
-              ]),
-    };
-    setSeen(commit);
-  }
+  const commit = useChartCommit(
+    { model, data, config: modelConfig, range: windowRange, domains, panels, orientation },
+    motion,
+    bars
+  );
   const firstIssue = model.issues[0];
   if (firstIssue !== undefined && isChartDevelopment()) {
     throw new ChartDataError("Chart.Root", firstIssue.rule, dataMessage(firstIssue, model.rowAt));
