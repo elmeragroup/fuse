@@ -18,62 +18,86 @@ import type { ChartStore } from "./chart-store";
 /** Each waiting plot's reveal, by plot element. */
 const reveals = new Map<Element, () => void>();
 
-/** The waiting plots that meet the viewport, which every scroll reports on again. */
+/** The waiting plots that meet the viewport, which a change of geometry reports on again. */
 const near = new Set<Element>();
 
-/** The one observer every waiting plot shares, created for the first. */
+/** The observer the waiting plots share, which exists while any plot waits. */
 let shared: IntersectionObserver | null = null;
 
 /**
- * The most of its height a plot can show at once: the viewport's height, or less inside an
- * ancestor that clips it, as a scroll container does.
+ * The most of its height a plot can show at once: the height where every ancestor that clips it,
+ * as a scroll container does, overlaps the others, and no more than the viewport's. Each box is
+ * read in viewport coordinates, so where one clipper sits inside another and how either is
+ * transformed count, as they do for the observer. The viewport bounds the height without cutting
+ * it by position, since the page scrolls a clipper that enters at the viewport's edge into view,
+ * and a chart in a card that clips would otherwise reveal as its first sliver shows.
  */
 function room(plot: Element): number {
-  let height = innerHeight;
+  let top = Number.NEGATIVE_INFINITY;
+  let bottom = Number.POSITIVE_INFINITY;
   for (let node = plot.parentElement; node !== null; node = node.parentElement) {
-    if (getComputedStyle(node).overflowY !== "visible") height = Math.min(height, node.clientHeight);
+    if (getComputedStyle(node).overflowY === "visible") continue;
+    const box = node.getBoundingClientRect();
+    top = Math.max(top, box.top);
+    bottom = Math.min(bottom, box.bottom);
   }
-  return height;
+  return Math.max(0, Math.min(bottom - top, innerHeight));
 }
 
 /**
- * Watch a plot until it shows enough of itself to play the entrance, then call its reveal. A plot
- * shows enough once any of its width and a third of its height show, or half the height it can
- * show at most, which a tall plot, or one in a short scroll container, reaches first. Both read
- * the visible height, never the visible area, so a wide plot in a narrow scroller reveals too, and
- * a plot at the end of the page that cannot scroll further shows all it can. Visibility can grow
- * without crossing an observer threshold, so every scroll, the page's or a container's, observes
- * the near plots again, which reports where each stands. The result stops watching the plot.
+ * The reveal decision for every waiting plot. A plot plays its entrance once any of its width and
+ * a third of its height show, or half the height it can show at most, which a tall plot, or one
+ * in a short scroll container, reaches first. Both read the visible height, never the visible
+ * area, so a wide plot in a narrow scroller reveals too, and a plot at the end of the page that
+ * cannot scroll further shows all it can. A plot that meets the viewport and shows too little
+ * stays near, for the next change of geometry to report on.
+ */
+function decide(entries: readonly IntersectionObserverEntry[]): void {
+  for (const { target, isIntersecting, intersectionRect: shown, boundingClientRect } of entries) {
+    if (!isIntersecting) near.delete(target);
+    else if (shown.width > 0 && shown.height >= Math.min(boundingClientRect.height / 3, room(target) / 2))
+      reveals.get(target)?.();
+    else near.add(target);
+  }
+}
+
+/**
+ * Report on every near plot again, as a scroll, a resize of the window or of a plot, or a layout
+ * change can show more of one without crossing an observer threshold. Observing a plot anew
+ * reports where it stands.
+ */
+export function reassess(): void {
+  for (const plot of near) {
+    shared?.unobserve(plot);
+    shared?.observe(plot);
+  }
+}
+
+/**
+ * Watch a plot until it shows enough of itself, then call its reveal. The observer reports each
+ * quarter of a plot it crosses, and while any plot waits a capturing scroll listener, which
+ * delays no scroll, as a scroll cannot be cancelled, and a resize listener report again. The
+ * last watch to end disconnects the observer and removes both, so a page with no waiting plot
+ * spends nothing on the reveal. The result stops watching the plot.
  */
 function watch(plot: Element, reveal: () => void): () => void {
   if (shared === null) {
-    const observer = new IntersectionObserver((entries) => {
-      for (const { target, isIntersecting, intersectionRect: shown, boundingClientRect } of entries) {
-        if (!isIntersecting) near.delete(target);
-        else if (shown.width > 0 && shown.height >= Math.min(boundingClientRect.height / 3, room(target) / 2))
-          reveals.get(target)?.();
-        else near.add(target);
-      }
-    });
-    // A scroll cannot be cancelled, so the capturing listener never delays one.
-    addEventListener(
-      "scroll",
-      () => {
-        for (const each of near) {
-          observer.unobserve(each);
-          observer.observe(each);
-        }
-      },
-      true
-    );
-    shared = observer;
+    shared = new IntersectionObserver(decide, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    addEventListener("scroll", reassess, true);
+    addEventListener("resize", reassess);
   }
   reveals.set(plot, reveal);
   shared.observe(plot);
   return () => {
-    reveals.delete(plot);
+    // A watch ends once, however often its Root stops it.
+    if (!reveals.delete(plot)) return;
     near.delete(plot);
     shared?.unobserve(plot);
+    if (reveals.size > 0) return;
+    shared?.disconnect();
+    shared = null;
+    removeEventListener("scroll", reassess, true);
+    removeEventListener("resize", reassess);
   };
 }
 

@@ -24,6 +24,7 @@ import { flushSync } from "react-dom";
 import { useChartRoot } from "./chart-context";
 import type { ChartLayoutContextValue, PanelEntry } from "./chart-context";
 import { writeStyle } from "./chart-dom";
+import { reassess } from "./chart-entrance";
 import { plotFrame, sameSnapping } from "./layout/plot-frame";
 import type { BarMetrics, PlotBox, PlotFrame } from "./layout/plot-frame";
 import { sameItems } from "./layout/same-items";
@@ -156,7 +157,8 @@ function drawAll(due: Iterable<PlotWatch>): void {
 /**
  * Measure every plot an observer delivery names, then draw them all in one commit. The observer
  * delivers after layout and before paint, so every read is free and the charts draw in the frame
- * that resized or moved them. A page resize names every plot.
+ * that resized or moved them. A page resize names every plot. Each delivery reports on the plots
+ * whose entrance waits again.
  */
 function deliver(entries: readonly ResizeObserverEntry[]): void {
   const due = new Set<PlotWatch>();
@@ -172,6 +174,8 @@ function deliver(entries: readonly ResizeObserverEntry[]): void {
     due.add(watch);
   }
   drawAll(due);
+  // A plot or the page that changes size can show more of a plot whose entrance waits.
+  reassess();
 }
 
 /** The shared observer, which also follows the page's size, as browser zoom changes it. */

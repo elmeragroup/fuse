@@ -10,7 +10,8 @@ import type { ReactNode } from "react";
 
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { drawnRect } from "../../../test/chart/bar-box";
@@ -73,7 +74,7 @@ function chart(
   const { above = 2000, plot, intro } = options;
   return (
     <LocaleProvider locale="nb-NO">
-      <div style={{ height: above }} />
+      <div data-testid="above" style={{ height: above }} />
       <div style={{ width: 400 }}>{rootOf(values, { plot, intro })}</div>
     </LocaleProvider>
   );
@@ -615,6 +616,185 @@ describe("series that hydrate after the chart", () => {
       await expect.poll(() => wipeOf(layer(late.host, "chart-line-series", 0))?.playState).toBe("running");
     } finally {
       late.unmount();
+    }
+  });
+});
+
+/** A fixture's own box, which only its test id names. */
+function byTestId(host: HTMLElement, id: string): HTMLElement {
+  // DOM audit: the fixture's wrappers carry no role, so their test ids name them.
+  const found = host.querySelector<HTMLElement>(`[data-testid="${id}"]`);
+  if (found === null) throw new Error(`no ${id}`);
+  return found;
+}
+
+/** Where two boxes overlap, in viewport coordinates. */
+function overlap(a: DOMRect, b: DOMRect): DOMRect {
+  const top = Math.max(a.top, b.top);
+  const left = Math.max(a.left, b.left);
+  return new DOMRect(left, top, Math.min(a.right, b.right) - left, Math.min(a.bottom, b.bottom) - top);
+}
+
+/** Scroll a container down by a step of its own pixels, and say whether it moved. */
+function containerStep(scroller: HTMLElement, by: number): () => boolean {
+  return () => {
+    const before = scroller.scrollTop;
+    scroller.scrollTop += by;
+    return scroller.scrollTop !== before;
+  };
+}
+
+describe("the height a plot can show", () => {
+  it.each([
+    { outer: 200, offset: 150, shared: 50 },
+    { outer: 300, offset: 200, shared: 100 },
+  ])(
+    "plays a 2000 px plot in a 300 px scroller $offset px down a $outer px clipper once half the $shared px they share shows",
+    async ({ outer, offset, shared }) => {
+      // The two clippers share only `shared` px of the screen, so the plot shows that much at
+      // most, and half of it reveals the plot. The page shows all of both.
+      const { host } = renderThemed(
+        <LocaleProvider locale="nb-NO">
+          <div data-testid="outer" style={{ height: outer, overflow: "hidden" }}>
+            <div style={{ height: offset }} />
+            <div data-testid="scroller" style={{ height: 300, overflowY: "auto" }}>
+              <div style={{ height: 1000 }} />
+              <div style={{ width: 300 }}>{rootOf([1, 2, 3, 4], { plot: 2000 })}</div>
+            </div>
+          </div>
+        </LocaleProvider>
+      );
+      const scroller = byTestId(host, "scroller");
+      const clip = () =>
+        overlap(byTestId(host, "outer").getBoundingClientRect(), scroller.getBoundingClientRect());
+      expect(clip().height).toBe(shared);
+      const plot = plotOf(host);
+      scroller.scrollTop += plot.getBoundingClientRect().top - clip().bottom;
+      await frames(4);
+      expect(visibleHeight(plot, clip())).toBe(0);
+      const { played, waited } = playedAt(
+        await scrollUntilPlayed(host, containerStep(scroller, 5), () => visibleHeight(plot, clip()))
+      );
+      expect(Math.max(...waited)).toBeLessThan(shared / 2);
+      expect(played).toBeGreaterThanOrEqual(shared / 2);
+      expect(played).toBeLessThan(shared / 2 + 5);
+    }
+  );
+
+  it("plays a plot in a scroller scaled to 0.4 once half the 240 px it draws on screen shows", async () => {
+    // The scroller lays out 600 px tall and draws 240 px on screen, so the plot shows 240 px of
+    // itself at most, and 120 px reveal it. Its 2000 px plot draws 800 px tall, a third of which
+    // is more. Each 25 px step of the scroller moves 10 px on screen.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div
+          data-testid="scroller"
+          style={{ height: 600, overflowY: "auto", transform: "scale(0.4)", transformOrigin: "0 0" }}>
+          <div style={{ height: 1500 }} />
+          <div style={{ width: 300 }}>{rootOf([1, 2, 3, 4], { plot: 2000 })}</div>
+        </div>
+      </LocaleProvider>
+    );
+    const scroller = byTestId(host, "scroller");
+    const clip = () => scroller.getBoundingClientRect();
+    expect(clip().height).toBeCloseTo(240, 6);
+    const plot = plotOf(host);
+    expect(plot.getBoundingClientRect().height).toBeCloseTo(800, 6);
+    scroller.scrollTop += (plot.getBoundingClientRect().top - clip().bottom) / 0.4;
+    await frames(4);
+    const { played, waited } = playedAt(
+      await scrollUntilPlayed(host, containerStep(scroller, 25), () => visibleHeight(plot, clip()))
+    );
+    expect(Math.max(...waited)).toBeLessThan(120);
+    expect(played).toBeGreaterThanOrEqual(120 - 1e-6);
+    expect(played).toBeLessThan(130);
+  });
+});
+
+/** Count the page's scroll events from now on, in the capture phase, as every scroll reaches it. */
+function countScrolls(): () => number {
+  let count = 0;
+  const listener = () => {
+    count += 1;
+  };
+  addEventListener("scroll", listener, true);
+  return () => {
+    removeEventListener("scroll", listener, true);
+    return count;
+  };
+}
+
+describe("the reveal with no scroll", () => {
+  it("plays a 200 px plot that shows 30 px once the viewport grows to show 100 px of it", async () => {
+    const { host } = renderThemed(chart([1, 2, 3, 4]));
+    const plot = plotOf(host);
+    window.scrollBy(0, plot.getBoundingClientRect().top - (innerHeight - 30));
+    await frames(6);
+    expect(visibleHeight(plot)).toBe(30);
+    expect(root(host).getAttribute("data-entrance")).toBe("waiting");
+    const scrolls = countScrolls();
+    try {
+      await page.viewport(414, 966);
+      await expect.poll(() => root(host).getAttribute("data-entrance")).toBe("played");
+      expect(visibleHeight(plot)).toBe(100);
+      expect(scrolls()).toBe(0);
+    } finally {
+      await page.viewport(414, 896);
+    }
+  });
+
+  it("plays a 200 px plot that shows 30 px once the content above it collapses by 70 px", async () => {
+    const { host } = renderThemed(chart([1, 2, 3, 4]));
+    const plot = plotOf(host);
+    const above = byTestId(host, "above");
+    above.style.height = `${String(2000 - (plot.getBoundingClientRect().top - (innerHeight - 30)))}px`;
+    await frames(6);
+    expect(window.scrollY).toBe(0);
+    expect(visibleHeight(plot)).toBe(30);
+    expect(root(host).getAttribute("data-entrance")).toBe("waiting");
+    const scrolls = countScrolls();
+    above.style.height = `${String(above.getBoundingClientRect().height - 70)}px`;
+    await expect.poll(() => root(host).getAttribute("data-entrance")).toBe("played");
+    expect(visibleHeight(plot)).toBe(100);
+    expect(scrolls()).toBe(0);
+  });
+});
+
+describe("the reveal's listeners", () => {
+  it("leave after the last reveal and the last unmount, and come back for the next waiting chart", async () => {
+    const added = vi.spyOn(window, "addEventListener");
+    const removed = vi.spyOn(window, "removeEventListener");
+    try {
+      /** The reveal's own listener: the one function it adds for scroll in the capture phase. */
+      const own = () =>
+        added.mock.calls.find(([type, , options]) => type === "scroll" && options === true)?.[1];
+      /** How often a spy saw the reveal's listener for a type. */
+      const count = (spy: typeof added, type: string) =>
+        spy.mock.calls.filter(([seen, listener]) => seen === type && listener === own()).length;
+      // A chart in view reveals, and its reveal, the last, removes what its watch added.
+      const shown = renderThemed(chart([1, 2, 3, 4], { above: 0 }));
+      expect(own()).toBeDefined();
+      expect([count(added, "scroll"), count(added, "resize")]).toEqual([1, 1]);
+      expect([count(removed, "scroll"), count(removed, "resize")]).toEqual([0, 0]);
+      await expect.poll(() => root(shown.host).getAttribute("data-entrance")).toBe("played");
+      expect([count(removed, "scroll"), count(removed, "resize")]).toEqual([1, 1]);
+      shown.unmount();
+      // A chart below the fold waits, and unmounting it, the last waiting one, removes them again.
+      const hidden = renderThemed(chart([1, 2, 3, 4]));
+      await frames(4);
+      expect([count(added, "scroll"), count(added, "resize")]).toEqual([2, 2]);
+      hidden.unmount();
+      expect([count(removed, "scroll"), count(removed, "resize")]).toEqual([2, 2]);
+      // The next waiting chart watches anew and plays once it shows.
+      const next = renderThemed(chart([1, 2, 3, 4]));
+      await frames(4);
+      expect([count(added, "scroll"), count(added, "resize")]).toEqual([3, 3]);
+      root(next.host).scrollIntoView({ block: "center" });
+      await playToRest(next.host, REST);
+      expect([count(removed, "scroll"), count(removed, "resize")]).toEqual([3, 3]);
+    } finally {
+      added.mockRestore();
+      removed.mockRestore();
     }
   });
 });
