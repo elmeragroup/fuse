@@ -94,16 +94,20 @@ async function hydrateDemo(
   // inline script, which WebKit can run after DOMContentLoaded. The move isn't hydration, so the
   // observer starts once the stage holds its table and no pending boundary marker (`$?` or `$~`).
   await expect
-    .poll(async () =>
-      stage.evaluate((element) => {
-        const walker = document.createTreeWalker(element, NodeFilter.SHOW_COMMENT);
-        for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
-          if (node.nodeValue === "$?" || node.nodeValue === "$~") {
-            return false;
+    .poll(
+      async () =>
+        stage.evaluate((element) => {
+          const walker = document.createTreeWalker(element, NodeFilter.SHOW_COMMENT);
+          for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+            if (node.nodeValue === "$?" || node.nodeValue === "$~") {
+              return false;
+            }
           }
-        }
-        return element.querySelector("table") !== null;
-      })
+          return element.querySelector("table") !== null;
+        }),
+      // The wait is on the server's stream, whose late boundary the demo delays by 400 ms, so it
+      // takes the page's own timeout rather than the default second, which slow WebKit can miss.
+      { timeout: 10_000 }
     )
     .toBe(true);
   await stage.evaluate((element) => {

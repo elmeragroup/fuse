@@ -150,7 +150,7 @@ const CHART_PAGES = new Set([
 ]);
 
 /** The keys a component outline carries. Anything else would ship to every surface unreviewed. */
-const OUTLINE_KEYS = ["demos", "hasTokens", "headings", "markdownUrl", "partNames", "slug", "title"];
+const OUTLINE_KEYS = ["chart", "demos", "hasTokens", "headings", "markdownUrl", "partNames", "slug", "title"];
 
 describe("component outlines", () => {
   it("carries only the fields client code reads", () => {
@@ -159,6 +159,22 @@ describe("component outlines", () => {
     }
     // Both kinds of page are present, so the flag is checked in both directions below.
     expect(new Set(COMPONENT_OUTLINES.map((outline) => outline.hasTokens))).toEqual(new Set([true, false]));
+    // Unit under test: the chart flag the SideNav groups by. Oracle: the chart entry's pages,
+    // listed by hand.
+    expect(
+      COMPONENT_OUTLINES.filter((outline) => outline.chart)
+        .map((outline) => outline.slug)
+        .toSorted()
+    ).toEqual([
+      "area-chart",
+      "bar-chart",
+      "chart",
+      "line-chart",
+      "pie-chart",
+      "radar-chart",
+      "radial-chart",
+      "sparkline",
+    ]);
   });
 
   it("agrees with the full manifest on every page's identity and on whether it lists tokens", () => {
