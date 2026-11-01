@@ -196,6 +196,8 @@ export type ComponentOutline = Pick<ComponentPageEntry, "slug" | "title" | "mark
   partNames: readonly string[];
   /** Whether the page renders a Tokens-consumed section, which its TOC then lists. */
   hasTokens: boolean;
+  /** Whether the page documents the chart entry, which the SideNav lists under Charts. */
+  chart: boolean;
 };
 
 /**

@@ -239,6 +239,9 @@ function linkSharedParts(component: DocsComponent, shared: SharedParts): DocsCom
   };
 }
 
+/** The import specifier of the chart family, whose pages the SideNav groups under Charts. */
+const CHART_ENTRY = "@elmeragroup/fuse/chart";
+
 /** The client's outline of a component: its identity and its TOC skeleton. */
 function toOutline(component: DocsComponent): ComponentOutline {
   return {
@@ -252,6 +255,7 @@ function toOutline(component: DocsComponent): ComponentOutline {
     // A page that repeats another page whole renders one sentence and no part anchors.
     partNames: component.alias === undefined ? component.parts.map((part) => part.name) : [],
     hasTokens: component.tokens.length > 0,
+    chart: component.entry === CHART_ENTRY,
   };
 }
 
