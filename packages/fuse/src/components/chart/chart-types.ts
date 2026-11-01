@@ -434,7 +434,8 @@ export type ChartDomProps<E extends keyof JSX.IntrinsicElements> = Omit<
 
 /**
  * The entrance wipe origins a consumer writes as `data-intro` on `Chart.Root`. They are physical,
- * because time runs left to right under `dir="rtl"` too. "none" turns the entrance off.
+ * because time runs left to right under `dir="rtl"` too. The entrance plays once, when the plot
+ * first comes into view. "none" turns it off.
  *
  * @beta
  */

@@ -11,6 +11,11 @@ export type FrameClock = {
   readonly now: () => number;
   /** Move the clock to an instant and run every frame queued before it, once. */
   readonly frameAt: (time: number) => void;
+  /**
+   * Whether a frame is queued, such as the one a chart's entrance asks for once the browser's
+   * intersection observer reports its plot in view, which no frame of this clock drives.
+   */
+  readonly pending: () => boolean;
   /** Hand the frames back to the browser. */
   readonly restore: () => void;
 };
@@ -41,6 +46,7 @@ export function installFrameClock(start = 1000): FrameClock {
   };
   return {
     now: () => time,
+    pending: () => queued.size > 0,
     frameAt: (at) => {
       time = at;
       const due = [...queued.values()];

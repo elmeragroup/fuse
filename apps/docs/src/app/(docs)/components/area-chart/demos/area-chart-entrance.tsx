@@ -21,7 +21,10 @@ const config = {
   },
 } as const satisfies ChartConfig;
 
-/** The entrance runs once per Root, so the picker remounts the chart for each origin. */
+/**
+ * The entrance plays once per Root, when its plot first comes into view, so the picker remounts
+ * the chart for each origin.
+ */
 export function AreaChartEntrance() {
   const [origin, setOrigin] = useState<ChartIntro>("left");
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, use, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createContext, use, useLayoutEffect, useMemo, useRef } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { SeriesPaths } from "./chart-bar-paths";
@@ -11,10 +11,9 @@ import { datumSlots } from "./chart-datum";
 import { useSvgIdPrefix } from "./chart-dom";
 import { seriesPaintOf } from "./chart-paint";
 import { useBarMetrics, useChartFrame } from "./chart-plot";
-import type { ChartPlot } from "./chart-plot";
 import { useSeriesOwner } from "./chart-series-path";
 import { sameShallow, useSteady } from "./chart-steady";
-import { useFirstPhase } from "./chart-store";
+import { usePhase } from "./chart-store";
 import type { ChartDatum, ChartLayerProps } from "./chart-types";
 import { barForm, drawnBarVariant } from "./layout/bar-geometry";
 import type { SeriesModel } from "./layout/cartesian-model";
@@ -56,13 +55,6 @@ export type ChartBarGroupProps = ChartLayerProps & {
   series: readonly string[];
   /** The group's Bar parts. */
   children?: ReactNode;
-};
-
-/** What the Bar's first drawing render drew under, which its entrance belongs to. */
-type FirstDraw = {
-  readonly plot: ChartPlot;
-  readonly form: "bars" | "path";
-  readonly orientation: "vertical" | "horizontal";
 };
 
 /** The sub-bands a BarGroup splits its band into, and the spacing its bars share. */
@@ -148,8 +140,7 @@ export function ChartBar({
   const config = context.config[dataKey];
   const form = barForm(model, context.orientation);
   const grouped = group !== null;
-  const phase = useFirstPhase(context.store);
-  const [firstUpdate] = useState(context.update);
+  const phase = usePhase(context.store);
   const drawn = useChartFrame("Chart.Bar", layout);
   const prefix = useSvgIdPrefix("chart-bar");
 
@@ -207,25 +198,11 @@ export function ChartBar({
           prefix,
           phase,
         };
-  // The entrance is one event in the Bar's life: it runs in the first render that draws the series,
-  // in a browser mount, under the update the Bar first rendered. The Bar records what that render
-  // drew under, and the first render that draws under any other measurement, form or orientation
-  // spends the entrance for good, so a form swap, an orientation change or a remount of either
-  // form draws at once, even back under the first one. Both forms read this one decision.
-  const [firstDraw, setFirstDraw] = useState<FirstDraw | null>(null);
-  const [spent, setSpent] = useState(false);
-  const here: FirstDraw | null =
-    shared === null || drawn === null ? null : { plot: drawn.plot, form, orientation: context.orientation };
-  if (here !== null && firstDraw === null) setFirstDraw(here);
-  const sameDraw =
-    firstDraw === null ||
-    here === null ||
-    (firstDraw.plot === here.plot &&
-      firstDraw.form === here.form &&
-      firstDraw.orientation === here.orientation);
-  if (!sameDraw && !spent) setSpent(true);
-  const entering =
-    !spent && sameDraw && context.entrance && phase === "initial" && context.update === firstUpdate;
+  // The series joins Root's entrance in every render that draws while the entrance waits, so a
+  // data update, a resize, a form swap or a turn keeps the bars at their base until it plays.
+  // Once it has started, every draw takes its place as its commit asks. Both forms read this one
+  // decision.
+  const entering = context.entrance && phase === "waiting";
   // The marks and the active overlay draw in two layers, so the marks dim on their own and the
   // compositor runs both fades. The Bar's element holds both, so the selection dim, a glow and
   // a consumer's filter apply to the two as one, as they did to one SVG.
@@ -246,13 +223,7 @@ export function ChartBar({
       }}>
       <svg>
         {shared === null ? null : form === "bars" ? (
-          <SeriesBars
-            {...shared}
-            entering={entering}
-            variant={drawnVariant}
-            emphasised={emphasised}
-            firstUpdate={firstUpdate}
-          />
+          <SeriesBars {...shared} entering={entering} variant={drawnVariant} emphasised={emphasised} />
         ) : (
           <SeriesPaths {...shared} entering={entering} variant={drawnVariant} emphasised={emphasised} />
         )}

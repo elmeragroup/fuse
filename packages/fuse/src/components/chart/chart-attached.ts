@@ -277,7 +277,7 @@ export function placeAttached<L>(input: {
     outgoing !== null &&
     before !== null &&
     old !== null &&
-    !input.motion.reduced();
+    !input.motion.snaps();
   const source = fades ? (copy.outgoing?.(old.node, before, input.update) ?? old.node) : null;
   if (fades && source !== null) {
     crossfade(node, outgoing, (drawing) => input.draw(drawing, old.look, before), source);

@@ -2,9 +2,10 @@
 // mid-tween, in Chromium, after motion-decision.md rule 1 and review rounds 5 to 7. Oracles: what
 // the plot draws after each commit, worked by hand. The bars of 100 categories over 0–4 on a 200 px
 // plot draw 50 px per unit, and above 100 categories the series draws as paths that grow from the
-// zero line through one transform. After the first drawing commit, no commit leaves a grow
-// transform or a bar still waiting at its base, and in every frame each bar, the active overlay,
-// the active value line and each missing tick draws inside the plot in the chart's orientation.
+// zero line through one transform. Every chart here sits in view, so its entrance starts within a
+// few frames of the mount. After it has started, no commit leaves a grow transform or a bar still
+// waiting at its base, and in every frame each bar, the active overlay, the active value line and
+// each missing tick draws inside the plot in the chart's orientation.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
@@ -66,6 +67,13 @@ function chart(values: readonly Value[], orientation: "vertical" | "horizontal")
       </div>
     </LocaleProvider>
   );
+}
+
+/** Wait until Root's entrance has started, as Root writes on its figure once the plot shows. */
+async function entranceStarted(host: HTMLElement): Promise<void> {
+  // DOM audit: Root's figure carries the entrance state on its slot.
+  const root = host.querySelector('[data-slot="chart"]');
+  await expect.poll(() => root?.getAttribute("data-entrance")).toBe("played");
 }
 
 /** Make the first category active, as a keyboard user does. */
@@ -162,6 +170,7 @@ describe("the entrance", () => {
     // their new data at 200 and 100 px, not at the 0.70 scale the growth had reached.
     const { host, rerender } = renderThemed(chart(MANY, "vertical"));
     expect(growth(host)).not.toBeNull();
+    await entranceStarted(host);
     await waitFor(120);
     rerender(chart([...MANY], "vertical"));
     expect(growth(host)).toBeNull();
@@ -197,9 +206,9 @@ describe("the entrance", () => {
   });
 
   it("runs at most once, and draws every placed mark inside the plot in its orientation, through any sequence of waits, data updates, turns and form swaps", async () => {
-    // Expectation: after every commit but the first drawing one, the paths carry no grow transform,
-    // at once and two frames on, and two frames on no bar still waits at its base. At every
-    // sampled frame, `misplaced` finds nothing.
+    // Expectation: after every commit once the entrance has started, the paths carry no grow
+    // transform, at once and two frames on, and two frames on no bar still waits at its base. At
+    // every sampled frame, `misplaced` finds nothing.
     const step = fc.oneof(
       // Most waits end inside the entrance or a data update's tween, which last about half a
       // second, and some outlast them.
@@ -236,6 +245,7 @@ describe("the entrance", () => {
           };
           const { host, rerender, unmount } = renderThemed(chart(values(), orientation));
           try {
+            await entranceStarted(host);
             await activateFirst(host);
             expect(misplaced(host, orientation)).toEqual([]);
             for (const action of steps) {

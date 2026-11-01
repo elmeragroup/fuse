@@ -47,6 +47,35 @@ async function tableRows(demo: Locator): Promise<string[][]> {
 }
 
 /** An en-US printed number, such as "1,234 kWh", read back as a number. */
+/**
+ * Wait until a chart in view has played its entrance to rest. The entrance plays once the plot
+ * first shows, from the frame Root writes `data-entrance="played"`, and its first frame after that
+ * still draws the bars at their base. It has landed once every bar draws the same box in two
+ * frames running. A chart with no entrance writes no `data-entrance` and has landed already.
+ */
+async function entranceLanded(chart: Locator): Promise<void> {
+  await chart.evaluate(async (root) => {
+    const frame = async () =>
+      new Promise((resolve) => {
+        requestAnimationFrame(resolve);
+      });
+    const boxes = () =>
+      [...root.querySelectorAll('[data-slot="chart-bar"]')]
+        .map((bar) => {
+          const box = bar.getBoundingClientRect();
+          return `${String(box.top)} ${String(box.height)}`;
+        })
+        .join();
+    while (root.getAttribute("data-entrance") === "waiting") await frame();
+    await frame();
+    await frame();
+    for (let last = "", now = boxes(); now !== last; now = boxes()) {
+      last = now;
+      await frame();
+    }
+  });
+}
+
 function printedNumber(text: string): number {
   return Number(
     text
@@ -298,14 +327,15 @@ describe("bar-chart scenario demos in Chromium", () => {
     const { page, demo: levels } = await demo("Price levels");
     expect(await slotCount(levels, "chart-bar")).toBe(96);
     // A bar takes the side its drawn tip lies on, and the entrance grows every bar from the
-    // baseline, so the 16 negative quarters show once the entrance lands.
-    await expect
-      .poll(async () =>
-        levels
-          .locator('[data-slot="chart-bar"]')
-          .evaluateAll((bars) => bars.filter((bar) => bar.hasAttribute("data-negative")).length)
-      )
-      .toBe(16);
+    // baseline once the chart comes into view, so the 16 negative quarters show once it lands.
+    const chart = levels.locator('[data-slot="chart"]').first();
+    await chart.scrollIntoViewIfNeeded();
+    await entranceLanded(chart);
+    expect(
+      await levels
+        .locator('[data-slot="chart-bar"]')
+        .evaluateAll((bars) => bars.filter((bar) => bar.hasAttribute("data-negative")).length)
+    ).toBe(16);
     await page.close();
   });
 
@@ -567,6 +597,8 @@ describe.each([
       await surface.evaluate((element, top) => {
         window.scrollBy(0, element.getBoundingClientRect().top - top);
       }, plotTop);
+      // The chart plays its entrance as it first comes into view, and the column reads its rest.
+      await entranceLanded(chart);
       const column = await chart.evaluate((root) => {
         const plot =
           root.querySelector('[data-slot="chart-surface"]')?.getBoundingClientRect() ?? new DOMRect();
@@ -643,6 +675,9 @@ describe.each([
           const top = boxes.reduce((best, box) => (box.top < best.top ? box : best));
           return { x: top.left + top.width / 2, top: top.top, bottom: top.bottom };
         });
+      // The chart plays its entrance as it first comes into view, and the column reads its rest.
+      await chart.scrollIntoViewIfNeeded();
+      await entranceLanded(chart);
       const before = await tallest();
       await page.evaluate((by) => {
         window.scrollBy(0, by);

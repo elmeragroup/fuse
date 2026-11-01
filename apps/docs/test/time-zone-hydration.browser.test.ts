@@ -32,6 +32,8 @@ type Hydration = {
   readonly barsAtHydration: readonly BarState[];
   /** Each chart bar once every bar has hydrated. */
   readonly bars: readonly BarState[];
+  /** The demo chart's `data-entrance` once every bar has hydrated, or null with no chart. */
+  readonly entrance: string | null;
 };
 
 /** One `chart-bar` element: its series wrapper's ordinal, whether React owns it yet, and its `data-intro`. */
@@ -108,7 +110,8 @@ async function hydrateDemo(
     globalThis.demoMutations = 0;
     // The server sends a chart's plot with a loader, and the browser draws the marks and places
     // the plot's followers and focus target once it measures the plot. Those writes land inside
-    // plot output and are drawing, not hydration, so only records outside it count.
+    // plot output and are drawing, not hydration, so only records outside it count. Root writes
+    // its entrance state on its figure as it draws, which is drawing too.
     const plotOutput = [
       '[data-slot="chart-frame"] svg',
       '[data-slot="chart-plot"]',
@@ -119,6 +122,7 @@ async function hydrateDemo(
       '[data-slot="chart-frame"] > [data-slot="chart-active-value"]',
     ].join(", ");
     const drawn = (record: MutationRecord): boolean => {
+      if (record.attributeName === "data-entrance") return true;
       const target = record.target instanceof Element ? record.target : record.target.parentElement;
       return target?.closest(plotOutput) !== null && target?.closest(plotOutput) !== undefined;
     };
@@ -170,8 +174,11 @@ async function hydrateDemo(
   const cells = await demo.getByRole("cell").allTextContents();
   const bars = await readBars(page);
   const barsAtHydration = await page.evaluate(() => globalThis.barsAtHydration ?? []);
+  const entrance = await stage.evaluate(
+    (element) => element.querySelector('[data-slot="chart"]')?.getAttribute("data-entrance") ?? null
+  );
   await closeContext(context);
-  return { ...result, cells, barsAtHydration, bars };
+  return { ...result, cells, barsAtHydration, bars, entrance };
 }
 
 describe.each([
@@ -202,10 +209,11 @@ describe.each([
       ],
       barsAtHydration: [],
       bars: [],
+      entrance: null,
     });
   });
 
-  it("hydrate a Bar whose Suspense boundary resolves after the chart's first effect, with no mutation and no entrance", async () => {
+  it("hydrate a Bar whose Suspense boundary resolves after the chart's first effect, with no mutation, into the waiting entrance", async () => {
     const hydration = await hydrateDemo(browser(), "/components/bar-chart", "Streamed series", 12);
     expect(hydration.mutations).toBe(0);
     expect(hydration.errors).toEqual([]);
@@ -216,8 +224,10 @@ describe.each([
       bars.filter((bar) => bar.hydrated === hydrated).map((bar) => bar.series);
     expect(series(hydration.barsAtHydration, true)).toEqual(Array.from({ length: 6 }, () => "0"));
     expect(series(hydration.barsAtHydration, false)).toEqual([]);
-    // The server wrote no bar. Each one the browser draws once it measures the plot, the late
-    // series' after its boundary hydrates, at rest, so none writes an entrance or a fade.
+    // The demo sits below the fold of the 1280 × 720 page, so its entrance waits. The server wrote
+    // no bar. Each one the browser draws once it measures the plot, the late series' after its
+    // boundary hydrates, at its base in the waiting entrance, so none writes a fade.
+    expect(hydration.entrance).toBe("waiting");
     expect(hydration.bars).toHaveLength(12);
     expect(hydration.bars.every((bar) => bar.hydrated && bar.intro === null)).toBe(true);
     // Motion rule 1: hydration starts no motion, before or after the late boundary resolves.

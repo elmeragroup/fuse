@@ -23,7 +23,7 @@ import { seriesPaintOf } from "./chart-paint";
 import { useChartFrame } from "./chart-plot";
 import { readingAt, useActiveSlot } from "./chart-readout";
 import { useSteady } from "./chart-steady";
-import { introFor, useFirstPhase } from "./chart-store";
+import { introFor, usePhase } from "./chart-store";
 import type { ChartDatum, ChartLayerProps, ValueFormat } from "./chart-types";
 import { formatValue } from "./format/value-format";
 import type { SeriesModel } from "./layout/cartesian-model";
@@ -158,15 +158,12 @@ function sameDot(
   return a.series === b.series && a.radius === b.radius;
 }
 
-/** What an attached part writes on `data-intro` for marks that mount now. */
+/**
+ * What an attached part writes on `data-intro` for marks that mount now: nothing while Root's
+ * entrance waits, so they join it, and their update's intro after it started.
+ */
 function useIntro(context: ChartRootContextValue): "fade" | "none" | undefined {
-  const phase = useFirstPhase(context.store);
-  const [first] = useState(context.update);
-  return introFor(
-    context.update === first ? phase : "mounted",
-    context.update.kind,
-    context.entrance ? "css" : "none"
-  );
+  return introFor(usePhase(context.store), context.update.kind, context.entrance ? "css" : "none");
 }
 
 /**

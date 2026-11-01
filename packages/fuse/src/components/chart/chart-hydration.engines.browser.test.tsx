@@ -1,9 +1,10 @@
 // Motion rule 1 of .scratch/charts-v1/reviews/motion-decision.md under the SVG brief, in
 // Chromium, Firefox and WebKit: the server sends the plot's loader and no marks, and a hydrated
-// chart draws its marks at rest once the browser measures the plot, with no recoverable error, for
-// an ordinary hydration and for a Bar whose Suspense boundary hydrates late. The first data update
-// then follows rules 2 and 3: surviving bars start where they were, pass through a frame between
-// their two places, settle on the new data, and an added bar fades in. The geometry comes
+// chart in view draws its marks at the entrance's first frame once the browser measures the plot,
+// every bar at its base, then plays the entrance to rest, with no recoverable error. A Bar whose
+// Suspense boundary hydrates after the entrance played draws at rest at once. The first data
+// update then follows rules 2 and 3: surviving bars start where they were, pass through a frame
+// between their two places, settle on the new data, and an added bar fades in. The geometry comes
 // from motion-frames.json, which E11's oracle script writes by hand from the fixture.
 import { Suspense, use, useEffect } from "react";
 import type { ReactNode } from "react";
@@ -117,6 +118,25 @@ function atRestOnA(host: HTMLElement): boolean {
   return on(host, motion.bars.A);
 }
 
+/** Whether every bar stands at its base with no length, as the entrance's first frame draws it. */
+function atBase(host: HTMLElement): boolean {
+  return bars(host).every((bar) => bar.getBoundingClientRect().height === 0);
+}
+
+/**
+ * Follow the entrance frame by frame until the oracle bars stand at rest, and check that a frame
+ * on the way drew them between their base and their rest.
+ */
+async function playsTo(host: HTMLElement, oracle: readonly Oracle[]): Promise<void> {
+  let between = false;
+  for (let frame = 0; frame < 240 && !on(host, oracle); frame += 1) {
+    await frames(1);
+    between ||= !atBase(host) && !on(host, oracle);
+  }
+  expect(between).toBe(true);
+  expect(on(host, oracle)).toBe(true);
+}
+
 /** Data A's boxes of the days update B keeps, at their places in B's window. */
 const SURVIVING = motion.bars.A.flatMap((entry) => {
   const kept = motion.bars.B.find((other) => other.series === entry.series && other.day === entry.day);
@@ -162,7 +182,7 @@ async function hydrate(server: ReactNode, client: (onHydrated: () => void) => Re
 }
 
 describe("hydration", () => {
-  it("draws the measured marks at rest after a server render with none, and moves them on the first update", async () => {
+  it("draws the measured marks at the entrance's first frame after a server render with none, plays it in view, and moves them on the first update", async () => {
     const html = renderToString(<Fixture data={MOTION_A} />);
     // The server sends a hidden loader in the plot, no skeleton and no mark.
     expect(html).toMatch(
@@ -175,13 +195,15 @@ describe("hydration", () => {
     ));
     try {
       // The marks draw in the task of the hydration commit, before the browser paints it. Data A
-      // holds 10 days in 2 series, drawn at rest with no entrance.
+      // holds 10 days in 2 series, each bar at its base, and the chart sits in view, so the
+      // entrance grows them to rest.
       expect(bars(host)).toHaveLength(20);
-      expect(atRestOnA(host)).toBe(true);
+      expect(atBase(host)).toBe(true);
       // DOM audit: the plot's loader is aria-hidden, and only its slot names it. The measured
       // plot drops it in the same commit that draws the bars.
       expect(host.querySelector('[data-slot="loader"]')).toBeNull();
       expect(recover).not.toHaveBeenCalled();
+      await playsTo(host, motion.bars.A);
       // Update B keeps 2 to 10 October, adds 11 October and drops 1 October. The surviving bars
       // start where data A left them, move, and settle on B.
       await followUpdate(host, root, <Fixture data={MOTION_B} />);
@@ -191,21 +213,27 @@ describe("hydration", () => {
     }
   });
 
-  it("draws a Bar whose Suspense boundary hydrates after the chart at rest, and moves it on the first update", async () => {
+  it("draws a Bar whose Suspense boundary hydrates after the entrance played at rest, and moves it on the first update", async () => {
     const ready = Promise.withResolvers<void>();
     const late = Promise.withResolvers<void>();
     const { host, root, recover } = await hydrate(<Fixture data={MOTION_A} ready={null} />, (onHydrated) => (
       <Fixture data={MOTION_A} ready={ready.promise} onHydrated={onHydrated} onLateHydrated={late.resolve} />
     ));
     try {
+      // The p series plays the entrance to rest before the q series' readings arrive.
+      await playsTo(
+        host,
+        motion.bars.A.filter((entry) => entry.series === "p")
+      );
       ready.resolve();
       await late.promise;
       const hydrated = bars(host).every((bar) =>
         Object.keys(bar).some((key) => key.startsWith("__reactFiber$"))
       );
       expect(hydrated).toBe(true);
+      // The q series draws at rest in the commit after its boundary hydrates, and fades in no way.
       expect(atRestOnA(host)).toBe(true);
-      expect(bars(host).some((bar) => bar.hasAttribute("data-intro"))).toBe(false);
+      expect(bars(host).some((bar) => bar.getAttribute("data-intro") === "fade")).toBe(false);
       expect(recover).not.toHaveBeenCalled();
       await followUpdate(host, root, <Fixture data={MOTION_B} ready={ready.promise} />);
     } finally {

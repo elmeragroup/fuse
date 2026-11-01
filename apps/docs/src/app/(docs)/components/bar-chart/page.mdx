@@ -137,13 +137,19 @@ A data update moves each bar that stays to its new geometry over 480 ms, fades i
   <BarChartEntrance />
 </Demo>
 
+<Prose>
+
+A chart plays its entrance once, the first time about a third of its plot is in view, so a chart below the fold grows as the page reaches it. Until then its bars wait at their base, and scrolling away and back never plays the entrance again. Reduced motion, `data-intro="none"` and printing draw the bars at rest at once. The picker remounts the chart, so each origin plays anew.
+
+</Prose>
+
 <Demo slug="bar-chart" id="streamed" title="Streamed series" file="bar-chart-streamed.tsx">
   <BarChartStreamed />
 </Demo>
 
 <Prose>
 
-A Bar can wait behind its own Suspense boundary. When the server streams it in, it hydrates and draws its bars at rest. When it mounts in the browser after the chart, it snaps to its geometry and skips the entrance.
+A Bar can wait behind its own Suspense boundary. When it arrives while the chart's entrance still waits, its bars wait at their base and grow with the rest. When it arrives after the entrance has started, it draws its bars at rest.
 
 </Prose>
 

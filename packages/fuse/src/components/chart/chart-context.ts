@@ -124,7 +124,10 @@ export type ChartRootContextValue = TextContext & {
   readonly rows: readonly ChartRow[];
   /** Root's `data-intro`, the entrance wipe origin. */
   readonly intro: ChartIntro | undefined;
-  /** Whether Root mounted in the browser with its entrance on, so marks of its first draw enter. */
+  /**
+   * Whether Root has an entrance: `data-intro` is not "none" and the reader allows motion. A mark
+   * that draws while the entrance waits joins it, as `usePhase` tells.
+   */
   readonly entrance: boolean;
   /** Root's `data-fade`, which dims the marks of past slots. */
   readonly fade: "past" | undefined;

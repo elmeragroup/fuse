@@ -49,7 +49,7 @@ export type BarDraw = {
   readonly fills: SideFills;
   readonly emphasis: boolean;
   readonly projected: boolean;
-  /** The entrance delay step, while the series draws its first bars in Root's entrance. */
+  /** The entrance delay step, while the series draws in Root's waiting entrance. */
   readonly step: number | undefined;
 };
 
@@ -76,7 +76,7 @@ export type BarsInput = {
   readonly paint: SeriesPaint;
   readonly emphasised: ReadonlySet<number>;
   readonly prefix: string;
-  /** Whether the bars run Root's entrance wipe, which only a browser mount's first draw does. */
+  /** Whether the bars draw in Root's waiting entrance, which grows them from their base. */
   readonly entering: boolean;
 };
 
@@ -84,26 +84,23 @@ export type BarsInput = {
 export type SideFills = { readonly positive: string | undefined; readonly negative: string | undefined };
 
 /**
- * How a bar reaches its rectangle in a commit. A bar's first draw grows it from its base when it
- * runs the entrance and draws it at once otherwise, and every later commit moves, snaps or settles
- * as the commit asks.
+ * How a bar reaches its rectangle in a commit. Every commit that draws the bar in Root's waiting
+ * entrance places it at its base again, under the latest data, to grow from there once the
+ * entrance plays. Any other commit moves, snaps or settles the bar as the commit asks.
  *
  * @param bar - The bar.
  * @param commit - What the commit asks of the bar.
  * @returns The loop's placement.
  */
 export function barPlacement(bar: BarDraw, commit: Commit): Placement {
-  return placementOf(commit, {
-    entrance:
-      bar.step === undefined
-        ? undefined
-        : {
-            kind: "enter",
-            // The bar grows its tip out of its base.
-            from: bar.geometry.map((value, index) => (index === 3 ? bar.geometry[2] : value)),
-            delay: bar.step * CHART_STAGGER_MS,
-          },
-  });
+  return bar.step === undefined
+    ? placementOf(commit)
+    : {
+        kind: "enter",
+        // The bar grows its tip out of its base.
+        from: bar.geometry.map((value, index) => (index === 3 ? bar.geometry[2] : value)),
+        delay: bar.step * CHART_STAGGER_MS,
+      };
 }
 
 /**

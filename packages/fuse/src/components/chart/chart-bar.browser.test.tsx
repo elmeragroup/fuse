@@ -572,10 +572,12 @@ describe("path form motion", () => {
 });
 
 describe("markers in a staggered entrance (Q3-1)", () => {
-  it("raises each tied maximum's marker and pill with its own bar, on that bar's delay", () => {
+  it("raises each tied maximum's marker and pill with its own bar, on that bar's delay", async () => {
     // 30 equal bars on 300 px grow from the baseline in the left entrance, bar k 16k ms after the
     // first, so the last waits 464 ms. Every slot is a maximum, so each marker and pill must sit
     // on its own bar's top in every frame: at 120 ms the first has risen and the last has not.
+    // The chart is in view, so the entrance starts in the clock's first frame after the browser's
+    // intersection observer reports the plot.
     const clock = installFrameClock();
     try {
       const { host } = renderThemed(
@@ -595,7 +597,11 @@ describe("markers in a staggered entrance (Q3-1)", () => {
           </div>
         </LocaleProvider>
       );
-      const start = clock.now();
+      await expect.poll(() => clock.pending()).toBe(true);
+      // The reveal's frame plays the entrance, and the entrance's first frame starts its clock.
+      clock.frameAt(clock.now());
+      const start = clock.now() + 16;
+      clock.frameAt(start);
       for (const ms of [120, 300, 600]) {
         clock.frameAt(start + ms);
         // DOM audit: the marker's dots and pill anchors are aria-hidden plot output.

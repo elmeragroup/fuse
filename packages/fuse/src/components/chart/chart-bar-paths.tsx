@@ -120,14 +120,20 @@ export function SeriesPaths({
   const growLook = useMemo(() => ({ frame }), [frame]);
   const { ref: growRef, place: placeGrow } = useMotionMark(motion, drawGrow, growLook, ["size"]);
   const growCommit = useCommitMotion(update, plot, frame.orientation);
-  const grows = entering && context.intro !== "none";
   useLayoutEffect(() => {
-    // The whole series grows from the zero line, once. Every commit places the grow through the
-    // shared owner: a data update or a new layout ends it at full scale, so the columns' own tween
-    // takes over, and a resize keeps its scale and redraws it about the columns' new zero line.
-    const entrance = grows ? ({ kind: "enter", from: [0], delay: 0 } as const) : undefined;
+    // The whole series grows from the zero line, once. Every commit in Root's waiting entrance
+    // keeps it flat, to grow once the entrance plays. After that a data update or a new layout
+    // ends it at full scale, so the columns' own tween takes over, and a resize keeps its scale
+    // and redraws it about the columns' new zero line.
     const asked = growCommit();
-    placeGrow([1], asked.kind === "move" ? { kind: "snap" } : placementOf(asked, { entrance }));
+    placeGrow(
+      [1],
+      entering
+        ? { kind: "enter", from: [0], delay: 0 }
+        : asked.kind === "move"
+          ? { kind: "snap" }
+          : placementOf(asked)
+    );
   });
   const moving = useRef<ColumnTopology | null>(null);
   const look = useMemo((): ColumnsLook => ({ frame, topology, moving }), [frame, topology]);

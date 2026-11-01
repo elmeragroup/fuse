@@ -1839,30 +1839,40 @@
 
     /*
       Root's entrance wipes lines, areas and their dots in from data-intro's origin over 1 s on
-      the update curve. A layer that mounts later carries data-intro.
+      the update curve, from the frame Root writes data-entrance. While its value is "waiting" the
+      wipe holds at its first frame, until the plot comes into view. A layer that mounts after the
+      entrance started carries data-intro. Root writes no data-entrance on the server, so no wipe
+      starts before the chart hydrates.
     */
-    [data-slot="chart"]:not([data-intro="none"])
+    [data-slot="chart"][data-entrance]
       :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(
         [data-intro]
       ) {
       animation: chart-wipe-left 1s var(--chart-ease) backwards;
     }
 
-    [data-slot="chart"][data-intro="right"]
+    [data-slot="chart"][data-entrance="waiting"]
+      :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(
+        [data-intro]
+      ) {
+      animation-play-state: paused;
+    }
+
+    [data-slot="chart"][data-entrance][data-intro="right"]
       :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(
         [data-intro]
       ) {
       animation-name: chart-wipe-right;
     }
 
-    [data-slot="chart"][data-intro="center"]
+    [data-slot="chart"][data-entrance][data-intro="center"]
       :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(
         [data-intro]
       ) {
       animation-name: chart-wipe-center;
     }
 
-    [data-slot="chart"][data-intro="edges"]
+    [data-slot="chart"][data-entrance][data-intro="edges"]
       :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(
         [data-intro]
       ) {

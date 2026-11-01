@@ -265,6 +265,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     exportName: "Chart",
     members: ["Root", "Grid", "XAxis", "YAxis", "Bar"],
     measuredGzip: 48267,
+    // Raised from the derived 72401 on 2026-11-01. Every chart now plays its entrance the first
+    // time it comes into view, hydrated or not, and the shared observer with the loop's wait and
+    // play measured 207 bytes on this route. The ceiling keeps about 90 bytes for its review.
+    ceilingGzip: 72700,
   },
   {
     name: "chart/PieChart.Root",

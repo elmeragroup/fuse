@@ -156,10 +156,10 @@ export function useMotionMark<
 }
 
 /**
- * How a mark reaches the geometry of a commit: "first" for its first draw, which runs the entrance
- * or snaps, "move" for a data update, "snap" for a range step or a change of the mark's coordinate
- * space, either of which lays the mark out anew, and "settle" for a resize or any other commit,
- * which lets a running update finish.
+ * How a mark reaches the geometry of a commit: "first" for its first draw, which snaps, "move" for
+ * a data update, "snap" for a range step or a change of the mark's coordinate space, either of
+ * which lays the mark out anew, and "settle" for a resize or any other commit, which lets a running
+ * update finish.
  */
 export type CommitMotion = "first" | "move" | "snap" | "settle";
 
@@ -213,24 +213,20 @@ export function useCommitMotion(update: ChartUpdate, plot: ChartPlot | null, spa
 }
 
 /**
- * The loop's placement for a commit, the one owner every mark asks. A first draw snaps unless the
- * mark brings an entrance of its own. A data update moves, along a path's own route when it brings
- * one. A settle carries the commit's scale, and a snap snaps.
+ * The loop's placement for a commit, the one owner every mark asks. A first draw snaps, and a mark
+ * in Root's waiting entrance places its entrance instead. A data update moves, along a path's own
+ * route when it brings one. A settle carries the commit's scale, and a snap snaps.
  *
  * @param commit - What the commit asks of the mark, from `useCommitMotion`.
- * @param options - The entrance a mark's first draw runs instead of snapping, if any, and a path's
- *   route to its rest when a data update aligns its old and new vertices itself.
+ * @param options - A path's route to its rest when a data update aligns its old and new vertices
+ *   itself.
  * @returns The placement.
  */
 export function placementOf(
   commit: Commit,
-  options: {
-    readonly entrance?: Placement;
-    readonly via?: { readonly from: MarkValues; readonly to: MarkValues };
-  } = {}
+  options: { readonly via?: { readonly from: MarkValues; readonly to: MarkValues } } = {}
 ): Placement {
   const { kind, scale } = commit;
-  if (kind === "first") return options.entrance ?? { kind: "snap" };
   if (kind === "move")
     return options.via === undefined ? { kind: "move" } : { kind: "move", via: options.via };
   if (kind === "settle") return { kind: "settle", scale };

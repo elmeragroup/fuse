@@ -19,6 +19,7 @@ import type {
   PanelEntry,
 } from "./chart-context";
 import { writeAttribute, writeStyle } from "./chart-dom";
+import { useEntrance } from "./chart-entrance";
 import { createChartFollowers } from "./chart-followers";
 import type { ActiveSlot, ChartFollowers } from "./chart-followers";
 import { createChartLabels } from "./chart-labels";
@@ -153,10 +154,16 @@ export type ChartRootProps<
     defaultActiveX?: ChartXValue<TRow[TXKey]>;
     /**
      * The entrance wipe origin, physical under `dir="rtl"` too. "none" turns the entrance off. The
-     * entrance runs once, when Root first mounts in the browser, and a server-rendered chart that
-     * hydrates starts none. A bar that a data update adds writes `data-intro="fade"` on itself and
-     * fades in. A bar that an `xRange` change, a brush step or a pan adds writes `data-intro="none"`
-     * and takes its place at once.
+     * entrance plays once, the first time a third of the plot is in view, or half the viewport's
+     * height of a taller plot, whether the chart hydrated server HTML or mounted in the browser.
+     * Until then Root writes `data-entrance="waiting"` and the marks wait at the entrance's first
+     * frame: bars at their base, and lines, areas and dots clipped from the origin. The axes, the
+     * legend, the table and the chart's name render at once. Root writes `data-entrance="played"`
+     * as the entrance starts, and scrolling away and back never replays it. A data update while
+     * the entrance waits plays it with the latest data. Reduced motion, "none" and printing draw
+     * the marks at rest at once. A bar that a data update adds after the entrance writes
+     * `data-intro="fade"` on itself and fades in. A bar that an `xRange` change, a brush step or a
+     * pan adds writes `data-intro="none"` and takes its place at once.
      */
     "data-intro"?: ChartIntro;
     /** "past" fades marks whose slot ended before `now`. */
@@ -657,7 +664,8 @@ export function ChartRoot<
   const { plot, probe, reads } = useMeasuredPlot(plotRef, span.place);
   // A browser mount draws in the render right after its first commit, which measured the plot. A
   // hydrating Root draws in a microtask after its hydration commit, once React has hydrated what
-  // else the task holds, so its marks render once, before the browser paints.
+  // else the task holds, so its marks render once, before the browser paints. Either way they draw
+  // at the entrance's first frame while it waits.
   const clientMount = useClientMount();
   useLayoutEffect(() => {
     if (clientMount) store.drawing.openNow();
@@ -694,12 +702,14 @@ export function ChartRoot<
   // relays the plot ends every tween too, so no mark it leaves alone glides through the new ones.
   useLayoutEffect(() => {
     const root = rootRef.current;
+    // While the entrance waits, every mark already snapped or waits at its first frame.
+    if (store.get().phase === "waiting") return;
     if (commit.update.relays) motion.finish();
     if (commit.update.kind !== "range" || root === null) return;
     motion.finish();
     for (const animation of root.getAnimations({ subtree: true }))
       if (isFinite(animation)) animation.finish();
-  }, [commit.update, motion]);
+  }, [commit.update, motion, store]);
   useLayoutEffect(
     () =>
       store.subscribe(() => {
@@ -714,13 +724,6 @@ export function ChartRoot<
       }),
     [store, followers]
   );
-  // The plot first draws once the browser measures it, so marks of that commit run the entrance
-  // and marks that mount later snap or fade in.
-  const measured = plot !== null;
-  useEffect(() => {
-    if (measured) store.set({ phase: "mounted" });
-  }, [store, measured]);
-
   const figureProps = definedProps(figure);
   const name = "aria-label" in figureProps ? figureProps["aria-label"] : undefined;
   const labelledBy = "aria-labelledby" in figureProps ? figureProps["aria-labelledby"] : undefined;
@@ -868,8 +871,10 @@ export function ChartRoot<
   }, [modelConfig, panels, registry, rootParts, rootPartsSeen]);
   const intro = figureProps["data-intro"];
   const fade = figureProps["data-fade"];
-  // Only a browser mount runs the entrance. The server and a hydrating Root read `false`.
-  const entrance = clientMount && intro !== "none";
+  // The server and a hydrating Root read no reduced motion, as the media query's server snapshot
+  // says, and a hydrated Root that finds it draws at rest in the commit after.
+  const entrance = intro !== "none" && !reduced;
+  useEntrance(store, motion, rootRef, plotRef, entrance);
   const context = useMemo(
     (): ChartRootContextValue => ({
       ...text,

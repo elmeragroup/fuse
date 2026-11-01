@@ -36,7 +36,7 @@ import { valuePaint } from "./chart-paint";
 import { pathAnchor, routeIndex } from "./chart-paths";
 import type { ChartPlot } from "./chart-plot";
 import { introFor } from "./chart-store";
-import type { MountPhase } from "./chart-store";
+import type { EntrancePhase } from "./chart-store";
 import type { ChartBarVariant } from "./chart-types";
 import { barCellAt, barGeometry, geometryOf, geometryRect, hangs, rectsPath } from "./layout/bar-geometry";
 import { DETAIL_PARTS, boxPoints, detailParts, drawnBar } from "./layout/bar-shapes";
@@ -304,15 +304,16 @@ export type SeriesDraw = {
   readonly sub: SubBand;
   readonly paint: SeriesPaint;
   readonly prefix: string;
-  /** The mount phase the series saw on its first render. */
-  readonly phase: MountPhase;
-  /** Whether the series still runs Root's entrance, which Chart.Bar decides for both forms. */
+  /** Root's entrance phase as the series draws, which the bars that mount now take their intro from. */
+  readonly phase: EntrancePhase;
+  /** Whether the series draws in Root's waiting entrance, which Chart.Bar decides for both forms. */
   readonly entering: boolean;
 };
 
 /**
- * The bars of one series, one SVG element per bar. Each bar grows from its base in Root's
- * entrance, moves to its new geometry on a data update and snaps on a range step or a resize.
+ * The bars of one series, one SVG element per bar. Each bar waits at its base while Root's
+ * entrance waits and grows from it as the entrance plays, moves to its new geometry on a data
+ * update and snaps on a range step or a resize.
  */
 export function SeriesBars({
   context,
@@ -327,12 +328,9 @@ export function SeriesBars({
   prefix,
   phase,
   entering,
-  firstUpdate,
 }: SeriesDraw & {
   readonly variant: ChartBarVariant;
   readonly emphasised: ReadonlySet<number>;
-  /** Root's update when the series first rendered, which its first draw keeps under hydration. */
-  readonly firstUpdate: ChartUpdate;
 }): ReactElement {
   const { model, update, now, intro: origin, motion } = context;
   const { bars, needs, missing } = useMemo(
@@ -352,10 +350,9 @@ export function SeriesBars({
     [model, update, now, origin, series, frame, metrics, sub, variant, paint, emphasised, prefix, entering]
   );
   const look = useMemo((): BarLook => ({ variant, frame }), [variant, frame]);
-  // Bars of the series' first draw take its mount phase's intro, and bars that a later update
-  // mounts take that update's intro.
-  // A bar's entrance runs in the loop, so a bar of the first draw writes nothing either way.
-  const intro = introFor(update === firstUpdate ? phase : "mounted", update.kind, "loop");
+  // A bar that mounts while the entrance waits writes nothing, as its entrance runs in the loop,
+  // and one that mounts after it started takes its update's intro.
+  const intro = introFor(phase, update.kind, "loop");
   const zero = valueAt(frame, 0);
   return (
     <>

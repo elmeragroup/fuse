@@ -38,13 +38,13 @@ export const SAME_PLOT: PlotScale = { x: 1, y: 1 };
  * and otherwise snaps, as a resize or a re-render does, so a box that resizes during an update never
  * cuts the update short. It carries the resize's scale, which maps every running tween into the new
  * box, so each mark keeps its place on the axes. "enter" tweens from a start of its own after a
- * delay, as the entrance wipe does. "join" draws the follower from the marks at its leads' anchors,
- * as a follower stepping onto a bar mid-update does: in every frame the loop moves those marks
- * first, each on its own clock and delay, then writes the follower from what they drew, one lead's
- * numbers after another's, and when they all rest it rests. A join whose leads say how to
- * read their marks' rest rests where those marks rest, under reduced motion too, so a follower
- * lands on its bars inside a BarGroup's sub-band and never on a target it worked out apart from
- * them.
+ * delay, as the entrance does, and waits at that start while the loop holds. "join" draws the
+ * follower from the marks at its leads' anchors, as a follower stepping onto a bar mid-update
+ * does: in every frame the loop moves those marks first, each on its own clock and delay, then
+ * writes the follower from what they drew, one lead's numbers after another's, and when they all
+ * rest it rests. A join whose leads say how to read their marks' rest rests where those marks
+ * rest, under reduced motion too, so a follower lands on its bars inside a BarGroup's sub-band and
+ * never on a target it worked out apart from them.
  */
 export type Placement =
   | { readonly kind: "snap" }
@@ -153,8 +153,18 @@ export type ChartMotion = {
   readonly finish: () => void;
   /** Follow the reader's motion preference. Reduced motion snaps every placement. */
   readonly setReduced: (reduced: boolean) => void;
-  /** Whether the reader asked for reduced motion, which also skips a path's crossfade. */
-  readonly reduced: () => boolean;
+  /**
+   * Whether the loop draws every update at once: under reduced motion, and while Root's entrance
+   * waits. Either way a path skips its crossfade.
+   */
+  readonly snaps: () => boolean;
+  /**
+   * Hold the loop while Root's entrance waits for its plot to come into view. An entrance placed
+   * meanwhile waits at its first frame and asks for no frame, and every other placement snaps.
+   */
+  readonly wait: () => void;
+  /** End the hold. The entrances that waited start on the clock of the first frame after it. */
+  readonly play: () => void;
   /** How many marks the loop holds, which falls back as marks unmount. */
   readonly size: () => number;
   /** Whether any mark still tweens, so the baseline and every other coordinate may be moving. */
@@ -166,6 +176,7 @@ type Tween = {
   readonly to: MarkValues;
   /** Where the mark rests once the tween ends, when its route draws more numbers than that. */
   readonly rest?: MarkValues;
+  /** When the clock started, or infinity for an entrance the hold keeps waiting. */
   readonly start: number;
   readonly delay: number;
 };
@@ -286,6 +297,8 @@ export function createChartMotion(
   };
   let handle: number | null = null;
   let reduced = reducedAtStart;
+  // Whether Root's entrance waits, which holds every tween until `play`.
+  let held = false;
   // The commit's instant holds until the next frame or the end of the task, so every placement of
   // one commit reads it.
   let commitTime: number | null = null;
@@ -365,11 +378,14 @@ export function createChartMotion(
     commitTime = null;
     let running = false;
     for (const mark of moving) {
-      const tween = mark.tween;
+      let tween = mark.tween;
       if (tween === null) {
         moving.delete(mark);
         continue;
       }
+      // An entrance that waited starts in the first frame after `play`, so its first painted frame
+      // draws its start, however long the plot waited or the tab stayed hidden.
+      if (tween.start === Number.POSITIVE_INFINITY) mark.tween = tween = { ...tween, start: time };
       const progress = Math.min(1, Math.max(0, (time - tween.start - tween.delay) / CHART_UPDATE_MS));
       mark.eased = progress >= 1 ? 1 : ease(progress);
       // The last frame writes the target itself, so the DOM ends on the numbers React rendered.
@@ -421,7 +437,7 @@ export function createChartMotion(
   ): void => {
     hold(id, { drawn: tween.from, eased: 0, write, tween, axes, owner });
     write(tween.from);
-    handle ??= host.requestFrame(step);
+    if (!held) handle ??= host.requestFrame(step);
   };
 
   /** Place a mark: the body of `place`, once the mark's anchor names it. */
@@ -485,7 +501,7 @@ export function createChartMotion(
       project(follower);
       return;
     }
-    if (reduced || placement.kind === "snap") {
+    if (reduced || placement.kind === "snap" || (held && placement.kind !== "enter")) {
       snap(id, target, write, axes, owner);
       return;
     }
@@ -561,7 +577,12 @@ export function createChartMotion(
       return;
     }
     if (placement.kind === "enter") {
-      const tween = { from: placement.from, to: target, start: startTime(), delay: placement.delay };
+      const tween = {
+        from: placement.from,
+        to: target,
+        start: held ? Number.POSITIVE_INFINITY : startTime(),
+        delay: placement.delay,
+      };
       run(id, write, tween, axes, owner);
       return;
     }
@@ -635,8 +656,16 @@ export function createChartMotion(
       reduced = value;
       if (value) this.finish();
     },
-    reduced: () => reduced,
+    snaps: () => reduced || held,
+    wait() {
+      held = true;
+    },
+    play() {
+      held = false;
+      if (moving.size > 0) handle ??= host.requestFrame(step);
+    },
     size: () => marks.size,
-    running: () => moving.size > 0,
+    // A tween the entrance holds has not started.
+    running: () => !held && moving.size > 0,
   };
 }

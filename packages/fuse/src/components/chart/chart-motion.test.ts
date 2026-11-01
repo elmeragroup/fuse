@@ -160,6 +160,59 @@ describe("the motion loop", () => {
     expect(mark.writes.at(-1)).toBe(10);
   });
 
+  it("holds a waiting entrance at its start with no frame, and starts its clock in the first frame after play", () => {
+    // The plot comes into view 2 s after the entrance was placed, as a chart below the fold does.
+    // Its first frame after play draws the start, and 120 ms on the line stands at the oracle's
+    // 120 ms value, as if the entrance had started in that frame.
+    const clock = host();
+    const motion = createChartMotion(clock.host);
+    const mark = recorder();
+    motion.wait();
+    motion.place("line", [to], mark.write, { kind: "enter", from: [from], delay: 0 });
+    expect(mark.writes).toEqual([from]);
+    expect(clock.pending()).toBe(false);
+    expect(motion.running()).toBe(false);
+    motion.play();
+    expect(clock.pending()).toBe(true);
+    clock.frameAt(2000);
+    expect(mark.writes.at(-1)).toBe(from);
+    clock.frameAt(2120);
+    expect(mark.writes.at(-1)).toBeCloseTo(at[120], 6);
+    clock.frameAt(2480);
+    expect(mark.writes.at(-1)).toBe(to);
+    expect(clock.pending()).toBe(false);
+  });
+
+  it("snaps a data update while the entrance waits, and moves the next one after play", () => {
+    const clock = host();
+    const motion = createChartMotion(clock.host);
+    const mark = recorder();
+    motion.wait();
+    expect(motion.snaps()).toBe(true);
+    motion.place("guide", [from], mark.write, { kind: "snap" });
+    motion.place("guide", [to], mark.write, { kind: "move" });
+    expect(mark.writes).toEqual([from, to]);
+    expect(clock.pending()).toBe(false);
+    motion.play();
+    expect(motion.snaps()).toBe(false);
+    expect(clock.pending()).toBe(false);
+    motion.place("guide", [from], mark.write, { kind: "move" });
+    clock.frameAt(120);
+    expect(mark.writes.at(-1)).toBeCloseTo(to + (from - to) * eased(120), 6);
+  });
+
+  it("draws a waiting entrance at its target when finished, as a print does, and runs no frame after", () => {
+    const clock = host();
+    const motion = createChartMotion(clock.host);
+    const mark = recorder();
+    motion.wait();
+    motion.place("bar", [10], mark.write, { kind: "enter", from: [0], delay: 32 });
+    motion.finish();
+    expect(mark.writes).toEqual([0, 10]);
+    motion.play();
+    expect(clock.pending()).toBe(false);
+  });
+
   it("draws every moving mark at its target when a range step finishes them", () => {
     const clock = host();
     const motion = createChartMotion(clock.host);

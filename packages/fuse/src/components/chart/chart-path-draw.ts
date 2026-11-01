@@ -566,11 +566,10 @@ export function placePath<L extends { readonly moving: { current: S | null } }, 
   const anchor = pathAnchor(seriesIndex, drawn);
   const previous = memory.current;
   const before = mark.drawn();
-  // Reduced motion snaps every placement, so an update lays out no route the path would never tween.
+  // Reduced motion and a waiting entrance snap every placement, so an update lays out no route the
+  // path would never tween.
   const step =
-    asked.kind === "move" && !motion.reduced()
-      ? pathStep(previous, path, topology, rest, before, kind)
-      : null;
+    asked.kind === "move" && !motion.snaps() ? pathStep(previous, path, topology, rest, before, kind) : null;
   const keptRoute = asked.kind === "settle" && previous !== null && sameItems(previous.keys, path.keys);
   if (step?.kind === "route") {
     look.moving.current = step.route.topology;
@@ -578,7 +577,7 @@ export function placePath<L extends { readonly moving: { current: S | null } }, 
   } else if (step?.kind === "crossfade") {
     const node = mark.node();
     const old = input.lastLook.current;
-    if (node !== null && input.outgoing !== null && old !== null && before !== null && !motion.reduced()) {
+    if (node !== null && input.outgoing !== null && old !== null && before !== null && !motion.snaps()) {
       crossfade(node, input.outgoing, (copy) => {
         if (copy instanceof SVGGElement) input.draw(copy, old, before);
       });

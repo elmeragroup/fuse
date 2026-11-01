@@ -71,7 +71,7 @@
           "type": "ChartIntro | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The entrance wipe origin, physical under `dir=\"rtl\"` too. \"none\" turns the entrance off. The entrance runs once, when Root first mounts in the browser, and a server-rendered chart that hydrates starts none. A bar that a data update adds writes `data-intro=\"fade\"` on itself and fades in. A bar that an `xRange` change, a brush step or a pan adds writes `data-intro=\"none\"` and takes its place at once.",
+          "description": "The entrance wipe origin, physical under `dir=\"rtl\"` too. \"none\" turns the entrance off. The entrance plays once, the first time a third of the plot is in view, or half the viewport's height of a taller plot, whether the chart hydrated server HTML or mounted in the browser. Until then Root writes `data-entrance=\"waiting\"` and the marks wait at the entrance's first frame: bars at their base, and lines, areas and dots clipped from the origin. The axes, the legend, the table and the chart's name render at once. Root writes `data-entrance=\"played\"` as the entrance starts, and scrolling away and back never replays it. A data update while the entrance waits plays it with the latest data. Reduced motion, \"none\" and printing draw the marks at rest at once. A bar that a data update adds after the entrance writes `data-intro=\"fade\"` on itself and fades in. A bar that an `xRange` change, a brush step or a pan adds writes `data-intro=\"none\"` and takes its place at once.",
           "required": false
         },
         {

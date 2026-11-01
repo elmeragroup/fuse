@@ -6,22 +6,25 @@
  * `chart-followers.ts`, and only the parts that print the active point read it through a selector,
  * so a pointer move inside one slot commits nothing.
  *
- * The store also holds the mount phase of ticket 05's E11. It is `"initial"` until Root's first
- * effect after the browser measures the plot sets it to `"mounted"`. A mark reads it through `useSyncExternalStore`, whose server and
- * hydration snapshot is `"initial"`, so a hydrating mark matches the server HTML wherever its
- * Suspense boundary resolves, and a mark that mounts later sees `"mounted"` and snaps.
+ * The store also holds the phase of Root's entrance, which `chart-entrance.ts` moves on. A mark
+ * reads it through `usePhase` as it draws, so a mark that draws while the entrance waits joins it,
+ * and one that draws after it started snaps or fades in. The server and hydration snapshot is
+ * `"waiting"`, so a hydrating mark matches the server HTML wherever its Suspense boundary resolves.
  */
 import { useState, useSyncExternalStore } from "react";
 
 import { flushSync } from "react-dom";
 
-/** Whether Root has committed once. */
-export type MountPhase = "initial" | "mounted";
+/**
+ * Where Root's entrance is. It is `"waiting"` until the entrance starts, or until Root first
+ * commits when it has none, and `"started"` from then on.
+ */
+export type EntrancePhase = "waiting" | "started";
 
 /**
- * What a mark writes on `data-intro`, from the phase it first draws in. In Root's first draw it
- * writes nothing while an entrance runs, so the entrance animates it, and "none" without one. A
- * mark a later commit mounts writes "fade" after a data update and "none" after any other commit.
+ * What a mark writes on `data-intro`, from the phase it first draws in. While the entrance waits it
+ * writes nothing, so the entrance animates it, and "none" when Root has no entrance. A mark that
+ * draws after the entrance started writes "fade" in a data update and "none" in any other commit.
  *
  * @param phase - The phase the mark first drew in.
  * @param kind - The commit that mounted it.
@@ -29,11 +32,11 @@ export type MountPhase = "initial" | "mounted";
  * @returns The attribute's value, or undefined to write none.
  */
 export function introFor(
-  phase: MountPhase,
+  phase: EntrancePhase,
   kind: "initial" | "data" | "range",
   entrance: "css" | "loop" | "none"
 ): "fade" | "none" | undefined {
-  if (phase === "initial") return entrance === "none" ? "none" : undefined;
+  if (phase === "waiting") return entrance === "none" ? "none" : undefined;
   return kind === "data" ? "fade" : "none";
 }
 
@@ -45,7 +48,7 @@ export type EmphasisEntry = { readonly slots: readonly number[]; readonly label:
 
 /** The pointer and key rate state. */
 export type ChartSnapshot = {
-  readonly phase: MountPhase;
+  readonly phase: EntrancePhase;
   /** The active slot, or null when nothing shows. */
   readonly active: number | null;
   readonly source: ActiveSource | null;
@@ -155,7 +158,7 @@ export function openDrawingSoon(gate: DrawGate): void {
 }
 
 const INITIAL: ChartSnapshot = {
-  phase: "initial",
+  phase: "waiting",
   active: null,
   source: null,
   near: null,
@@ -241,28 +244,26 @@ export function useChartStore<T>(store: ChartStore, select: (snapshot: ChartSnap
 }
 
 /**
- * The mount phase a mark saw on its first render. A mark that first rendered after Root's first
- * commit writes `data-intro="none"` and snaps into place.
+ * Root's entrance phase as a mark draws now. Root moves it outside any render, and no mark renders
+ * again for it, so a mark reads where the entrance is in each render it draws in. Hydration reads
+ * `"waiting"`, as the server did.
  *
  * @param store - The Root's store.
- * @returns `"mounted"` for a mark that mounted late, else `"initial"`.
+ * @returns The phase.
  */
-export function useFirstPhase(store: ChartStore): MountPhase {
-  // The subscription never fires, so a mark renders no second time when Root mounts. Hydration
-  // still reads the server snapshot, and a later mount reads the store as it is then.
-  const phase = useSyncExternalStore(
+export function usePhase(store: ChartStore): EntrancePhase {
+  return useSyncExternalStore(
     subscribeNever,
     () => store.get().phase,
     () => store.initial.phase
   );
-  const [first] = useState(phase);
-  return first;
 }
 
 /**
  * Whether this part first rendered in a browser mount, as opposed to on the server or while it
  * hydrated server HTML. The server and hydration snapshot is `false`, and the first value stays,
- * so a hydrated chart never starts the entrance that only a client mount runs.
+ * so Root opens its draw gate in its first commit after a browser mount, and in a microtask after
+ * a hydration commit.
  *
  * @returns `true` for a part that mounted in the browser without server HTML.
  */

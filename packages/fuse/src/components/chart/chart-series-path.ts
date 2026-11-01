@@ -22,7 +22,7 @@ import type { Counted, PathDraw, PathLook, PathMemory } from "./chart-path-draw"
 import type { ChartPaths, PathKind as RouteKind } from "./chart-paths";
 import { useChartFrame, usePlotRead } from "./chart-plot";
 import type { ChartPlot } from "./chart-plot";
-import { introFor, useFirstPhase } from "./chart-store";
+import { introFor, usePhase } from "./chart-store";
 import type { ChartCurve } from "./chart-types";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { ChartCompositionError } from "./layout/errors";
@@ -143,7 +143,10 @@ export type SeriesPathState = PathMark & {
   readonly frame: PlotFrame | null;
   /** The id prefix of the part's clip paths and paint servers. */
   readonly prefix: string;
-  /** What the part writes on `data-intro`: nothing in Root's entrance, `fade` after a data update, else `none`. */
+  /**
+   * What the part writes on `data-intro`, from the phase it first drew in: nothing when it mounts
+   * while Root's entrance waits, `fade` after a data update, else `none`.
+   */
   readonly intro: "fade" | "none" | undefined;
   /** What the part's first draw renders from: the look, the resting numbers and their topology. */
   readonly resting: {
@@ -197,7 +200,7 @@ export function useSeriesPath(
   const drawn = useChartFrame(part, layout);
   const frame = drawn?.frame ?? null;
   const prefix = useSvgIdPrefix(`chart-${route}`);
-  const phase = useFirstPhase(context.store);
+  const phase = usePhase(context.store);
   const [intro] = useState(() => introFor(phase, update.kind, context.entrance ? "css" : "none"));
   // A decimated window keeps M4's vertices for each pixel column along the slot axis. The cache
   // hands every width of one resolution the same path.
