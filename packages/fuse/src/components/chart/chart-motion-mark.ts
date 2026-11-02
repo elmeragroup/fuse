@@ -16,8 +16,17 @@ import type { ChartUpdate } from "./chart-context";
 import { refreshParts } from "./chart-dom";
 import type { FollowerCause } from "./chart-followers";
 import { SAME_PLOT } from "./chart-motion";
-import type { ChartMotion, JoinLead, MarkValues, Placement, PlotScale, ValueAxis } from "./chart-motion";
+import type {
+  ChartMotion,
+  JoinLead,
+  MarkValues,
+  Placement,
+  PlotScale,
+  SlotMap,
+  ValueAxis,
+} from "./chart-motion";
 import type { ChartPlot } from "./chart-plot";
+import type { PlotFrame } from "./layout/plot-frame";
 import { sameItems } from "./layout/same-items";
 
 /** A mark's numbers, one per declared axis, so the values a mark places match what it declares. */
@@ -165,15 +174,31 @@ export type CommitMotion = "move" | "snap" | "settle";
 /** What a commit asks of a mark, and how it scaled the plot's box since the mark last drew. */
 export type Commit = { readonly kind: CommitMotion; readonly scale: PlotScale };
 
-/** How the plot's box scaled from one measurement to the next, 1 where either has no size. */
-function scaleOf(previous: ChartPlot | null, plot: ChartPlot | null): PlotScale {
+/**
+ * How the plot's box scaled from one measurement to the next, 1 where either has no size, and how
+ * the slot axis maps from the old frame's slot grid into the new one's.
+ */
+function scaleOf(
+  previous: ChartPlot | null,
+  plot: ChartPlot | null,
+  before: PlotFrame | null,
+  frame: PlotFrame | null
+): PlotScale {
   if (previous === null || plot === null || previous === plot) return SAME_PLOT;
-  const ratio = (now: number, before: number) => (before > 0 && now > 0 ? now / before : 1);
-  return {
+  const ratio = (now: number, then: number) => (then > 0 && now > 0 ? now / then : 1);
+  const scale = {
     x: ratio(plot.box.width, previous.box.width),
     y: ratio(plot.box.height, previous.box.height),
     to: plot,
   };
+  if (before === null || frame === null || before.orientation !== frame.orientation) return scale;
+  const slot: SlotMap = {
+    axis: frame.orientation === "vertical" ? "x" : "y",
+    from: before.grid.start,
+    to: frame.grid.start,
+    ratio: ratio(frame.grid.step, before.grid.step),
+  };
+  return { ...scale, slot };
 }
 
 /**
@@ -183,12 +208,20 @@ function scaleOf(previous: ChartPlot | null, plot: ChartPlot | null): PlotScale 
  * @param plot - Root's current measurement.
  * @param space - The coordinate space the mark's numbers live in: Root's orientation, and for a
  *   reference its axis too. A change of space reinterprets every number the mark drew, so it snaps.
+ * @param frame - The frame the mark draws in, whose slot grid a resize maps slot-axis numbers
+ *   through, or null before the plot is measured.
  * @returns A function the mark's layout effect calls once per draw.
  */
-export function useCommitMotion(update: ChartUpdate, plot: ChartPlot | null, space: string): () => Commit {
+export function useCommitMotion(
+  update: ChartUpdate,
+  plot: ChartPlot | null,
+  space: string,
+  frame: PlotFrame | null
+): () => Commit {
   const last = useRef<{
     readonly update: ChartUpdate;
     readonly plot: ChartPlot | null;
+    readonly frame: PlotFrame | null;
     readonly space: string;
   } | null>(null);
   // A mark that unmounts forgets what it drew, so a remount, as Strict Mode rehearses one, draws
@@ -201,8 +234,11 @@ export function useCommitMotion(update: ChartUpdate, plot: ChartPlot | null, spa
   );
   return () => {
     const previous = last.current;
-    last.current = { update, plot, space };
-    const commit = (kind: CommitMotion): Commit => ({ kind, scale: scaleOf(previous?.plot ?? null, plot) });
+    last.current = { update, plot, frame, space };
+    const commit = (kind: CommitMotion): Commit => ({
+      kind,
+      scale: scaleOf(previous?.plot ?? null, plot, previous?.frame ?? null, frame),
+    });
     if (previous === null) return commit("snap");
     if (previous.space !== space) return commit("snap");
     if (previous.update === update || previous.plot !== plot) return commit("settle");
@@ -240,6 +276,7 @@ export function placementOf(
  * @param update - Root's current update.
  * @param plot - Root's current measurement.
  * @param space - The coordinate space the follower's numbers live in, as `useCommitMotion` reads it.
+ * @param frame - The frame the follower draws in, as `useCommitMotion` reads it.
  * @returns The placement for a paint's cause. A follower with a mark to join, its anchor and the
  *   follower's numbers from that mark's, joins the mark's tween in every paint, a step's or a
  *   commit's, or snaps where the mark rests, so it draws on its bar or its vertex whatever it drew
@@ -248,9 +285,10 @@ export function placementOf(
 export function useFollowerPlacement(
   update: ChartUpdate,
   plot: ChartPlot | null,
-  space: string
+  space: string,
+  frame: PlotFrame | null
 ): (cause: FollowerCause, join?: { readonly leads: readonly JoinLead[] }) => Placement {
-  const commit = useCommitMotion(update, plot, space);
+  const commit = useCommitMotion(update, plot, space, frame);
   return (cause, join) => {
     // The classifier sees every commit, whichever placement the follower takes.
     const placement: Placement = cause === "step" ? { kind: "snap" } : placementOf(commit());

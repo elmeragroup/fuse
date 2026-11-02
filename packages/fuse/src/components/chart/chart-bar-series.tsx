@@ -173,7 +173,7 @@ const BarMark = memo(function BarMark({
     barAxes(look.frame.orientation),
     detail
   );
-  const commit = useCommitMotion(update, plot, look.frame.orientation);
+  const commit = useCommitMotion(update, plot, look.frame.orientation, look.frame);
   useLayoutEffect(() => {
     place(bar.geometry, barPlacement(bar, commit()), barAnchor(series, bar.cell.slot));
   });
@@ -276,7 +276,7 @@ const MissingTick = memo(function MissingTick({
     tickLook,
     vertical ? (["x", "x", "y"] as const) : (["y", "y", "x"] as const)
   );
-  const commit = useCommitMotion(update, plot, frame.orientation);
+  const commit = useCommitMotion(update, plot, frame.orientation, frame);
   useLayoutEffect(() => {
     place([span[0], span[1], zero], placementOf(commit()));
   });
@@ -450,7 +450,7 @@ export function ActiveBar({
     node,
     place,
   } = useMotionMark(motion, drawOverlay, overlayLook, barAxes(frame.orientation));
-  const placeFor = useFollowerPlacement(context.update, plot, frame.orientation);
+  const placeFor = useFollowerPlacement(context.update, plot, frame.orientation, frame);
   useChartFollower("Chart.Bar", (active, cause) => {
     // The overlay joins what draws its slot in every paint: in the element form the bar, its whole
     // geometry with no seam, and in the path form the column, whose base and tip it takes.

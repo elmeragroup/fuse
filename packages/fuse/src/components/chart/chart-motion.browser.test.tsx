@@ -12,11 +12,14 @@ import { userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { barBox, drawnRect } from "../../../test/chart/bar-box";
 import { finishedFade, runningFade } from "../../../test/chart/fade";
+import { installFrameClock } from "../../../test/chart/frame-clock";
 import { barLayerBox, bars as seriesBars } from "../../../test/chart/marks";
 import { OCTOBER_RELOAD, october } from "../../../test/chart/month-switch";
 import { MOTION_A, MOTION_B, MOTION_C, MotionChart, oslo } from "../../../test/chart/motion-fixture";
 import type { MotionRow } from "../../../test/chart/motion-fixture";
 import frames from "../../../test/chart/motion-frames.json" with { type: "json" };
+import { lineVertices } from "../../../test/chart/panel-readers";
+import { pathRects } from "../../../test/chart/world-reader";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { useChartRoot } from "./chart-context";
@@ -40,16 +43,30 @@ type Fractions = {
 const TOLERANCE = 0.5;
 
 /**
- * A bar's width rounds down to whole pixels around its middle, and its start snaps, so a slot-axis
- * edge sits within half a pixel plus half the rounding, under a pixel, of the oracle.
+ * A bar is its band less a gap rounded to whole pixels, so a slot-axis edge sits within half a
+ * pixel of snapping plus half the gap's rounding, under a pixel, of the oracle mapped into the
+ * slot grid.
  */
 const ALONG_TOLERANCE = 1;
 
-/** The expected box of oracle fractions on a plot. */
-function expected(fractions: Fractions, plot: DOMRect): Box {
+/**
+ * The run the slot bands take on a plot of whole pixels: under the owner's grid, the bands take
+ * the same whole pixels from a start that splits the leftover between both ends.
+ */
+function slotRunOf(width: number, slots: number): readonly [number, number] {
+  const pixels = Math.round(width);
+  const whole = Math.floor(pixels / slots);
+  const leftover = pixels - slots * whole;
+  if (whole < 1) return [0, width];
+  return [Math.floor(leftover / 2), Math.floor(leftover / 2) + slots * whole];
+}
+
+/** The expected box of oracle fractions on a plot whose window holds a count of slots. */
+function expected(fractions: Fractions, plot: DOMRect, slots: number): Box {
+  const [start, end] = slotRunOf(plot.width, slots);
   return {
-    left: fractions.left * plot.width,
-    right: fractions.right * plot.width,
+    left: start + fractions.left * (end - start),
+    right: start + fractions.right * (end - start),
     top: fractions.top * plot.height + fractions.topPx,
     bottom: fractions.bottom * plot.height,
   };
@@ -76,9 +93,11 @@ function boxesOf(host: HTMLElement, oracle: readonly Fractions[]): Box[] {
 /** Whether every oracle bar sits on its oracle box. */
 function settledOn(host: HTMLElement, oracle: readonly Fractions[]): boolean {
   const plot = barLayerBox(host);
+  // Every check runs while the first series draws one bar per slot of the window.
+  const slots = seriesBars(host, 0).length;
   return boxesOf(host, oracle).every((box, index) => {
     const entry = oracle[index];
-    return entry !== undefined && near(box, expected(entry, plot));
+    return entry !== undefined && near(box, expected(entry, plot, slots));
   });
 }
 
@@ -729,4 +748,128 @@ describe("the row of slot labels while a slot guide departs", () => {
     }
     await expect.poll(() => Math.abs(sample().bottom)).toBeLessThanOrEqual(0.5);
   });
+});
+
+describe("a path that resizes during its update", () => {
+  // R1-1: a resize maps every running tween into the new box. The slot grid gives each band whole
+  // device pixels, so slot centres don't scale by the plot's ratio, and a route mapped by it missed
+  // its fresh rest and snapped there. Oracle: the update heads every vertex from 1 to 3 on a fixed
+  // [0, 4] domain over 200 px, 150 px to 50 px, so mid-update every vertex lies strictly between.
+  const rows = new Map<string, readonly { readonly name: string; readonly v: number }[]>();
+  function dataOf(count: number, v: number) {
+    const key = `${String(count)} ${String(v)}`;
+    const data =
+      rows.get(key) ?? Array.from({ length: count }, (_, index) => ({ name: `s${String(index)}`, v }));
+    rows.set(key, data);
+    return data;
+  }
+  function line(count: number, v: number, width: number) {
+    return (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width }}>
+          <Chart.Root
+            data={dataOf(count, v)}
+            config={{ v: { label: "V", color: "chart-1" } }}
+            xKey="name"
+            yInclude={[0, 4]}
+            data-intro="none"
+            style={{ "--chart-plot-height": "200px" }}
+            aria-label="Linje">
+            <Chart.Line dataKey="v" curve="linear" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+  }
+
+  for (const [count, from, to] of [
+    [2, 300, 301],
+    [7, 400, 401],
+    [2, 300, 340],
+  ] as const) {
+    it(`keeps tweening ${String(count)} slots when the plot widens from ${String(from)} to ${String(to)} px`, async () => {
+      // The loop runs on a hand-driven clock, so the resize lands at 240 ms of the 480 ms tween
+      // however loaded the browser is.
+      const clock = installFrameClock();
+      try {
+        const { host, rerender } = renderThemed(line(count, 1, from));
+        await expect
+          .poll(() => lineVertices(host).map(([, y]) => y))
+          .toEqual(Array.from({ length: count }, () => 150));
+        rerender(line(count, 3, from));
+        const start = clock.now();
+        clock.frameAt(start + 240);
+        const before = lineVertices(host).map(([, y]) => y);
+        for (const y of before) {
+          expect(y).toBeGreaterThan(50);
+          expect(y).toBeLessThan(150);
+        }
+        // The resize reaches Root through its ResizeObserver, and the clock stays at 240 ms.
+        rerender(line(count, 3, to));
+        await expect.poll(() => plotWidth(host)).toBe(to);
+        // The width-only resize leaves the value axis alone, so each vertex keeps the height it
+        // drew, mid-tween, rather than snapping to its rest.
+        expect(lineVertices(host).map(([, y]) => y)).toEqual(before);
+        clock.frameAt(start + 2000);
+        expect(lineVertices(host).map(([, y]) => y)).toEqual(Array.from({ length: count }, () => 50));
+      } finally {
+        clock.restore();
+      }
+    });
+  }
+
+  it("keeps tweening 101 path-form columns when the plot widens from 707 to 2,121 px", async () => {
+    // R3-2: past 100 slots each series draws its columns as one path, whose route holds every
+    // column's quantized edges. On 707 px the 101 slots take 7 px each and on 2,121 px 21 px, so
+    // the first column's rest goes from [1, 6] to [2, 18] while an affine map of [1, 6] gives
+    // [3, 18]. Oracle: every column heads from a height of 50 to 150 px on [0, 4] over 200 px, so
+    // mid-update every column's height lies strictly between and stays across the resize.
+    const columns = (count: number, v: number, width: number) => (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width }}>
+          <Chart.Root
+            data={dataOf(count, v)}
+            config={{ v: { label: "V", color: "chart-1" } }}
+            xKey="name"
+            yInclude={[0, 4]}
+            data-intro="none"
+            style={{ "--chart-plot-height": "200px" }}
+            aria-label="Søyler">
+            <Chart.Bar dataKey="v" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: the path form's fill is aria-hidden plot output, so its slot is the only locator.
+    const heights = (host: HTMLElement) =>
+      pathRects(
+        host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]')?.getAttribute("d") ?? ""
+      ).map((rect) => rect.height);
+    const clock = installFrameClock();
+    try {
+      const { host, rerender } = renderThemed(columns(101, 1, 707));
+      await expect.poll(() => heights(host)).toEqual(Array.from({ length: 101 }, () => 50));
+      rerender(columns(101, 3, 707));
+      const start = clock.now();
+      clock.frameAt(start + 240);
+      const before = heights(host);
+      for (const height of before) {
+        expect(height).toBeGreaterThan(50);
+        expect(height).toBeLessThan(150);
+      }
+      rerender(columns(101, 3, 2121));
+      await expect.poll(() => plotWidth(host)).toBe(2121);
+      expect(heights(host)).toEqual(before);
+      clock.frameAt(start + 2000);
+      expect(heights(host)).toEqual(Array.from({ length: 101 }, () => 150));
+    } finally {
+      clock.restore();
+    }
+  });
+
+  /** The measured plot's width. */
+  function plotWidth(host: HTMLElement): number {
+    // DOM audit: the measured plot is the part under test.
+    return host.querySelector('[data-slot="chart-plot"]')?.getBoundingClientRect().width ?? 0;
+  }
 });

@@ -5,12 +5,14 @@ import type { ReactElement } from "react";
 
 import { usePlotLayout, useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
+import { useRootFrame } from "./chart-plot";
 import { sameShallow, useSteady } from "./chart-steady";
 import type { ChartLayerProps, ValueFormat, XFormat } from "./chart-types";
 import type { Interval, TimePreset } from "./format/time-format";
 import { formatSlot, isClockPreset } from "./format/time-format";
 import { formatValue } from "./format/value-format";
 import { labelWidth } from "./layout/label-width";
+import { runMargins } from "./layout/plot-frame";
 import { slotCentre, valueTop } from "./layout/plot-geometry";
 import type { SlotWindow } from "./layout/slot-window";
 import { slotCount } from "./layout/x-domain";
@@ -231,8 +233,13 @@ export function ChartXAxis({
   // take a prefix, so no category name can match the first tick's key.
   const keyOf = (slot: number, index: number): string =>
     index === 0 ? "first" : `slot:${context.update.keys[slot] ?? String(slot)}`;
+  // Once Root measures, the axis spans the run the slot bands take, the plot less its leftover
+  // device pixels at both ends, which its CSS turns into margins.
+  const drawn = useRootFrame("Chart.XAxis");
+  const [before, after] = runMargins(drawn?.frame ?? null);
+  const placed = { ...style, "--_run-before": `${String(before)}px`, "--_run-after": `${String(after)}px` };
   return (
-    <div data-slot="chart-x-axis" data-tick={tick} aria-hidden="true" className={className} style={style}>
+    <div data-slot="chart-x-axis" data-tick={tick} aria-hidden="true" className={className} style={placed}>
       {/* Every horizontal label shows, so a hidden sizer gives the axis column the widest one. */}
       {context.orientation === "horizontal" ? (
         <span data-slot="chart-axis-sizer">

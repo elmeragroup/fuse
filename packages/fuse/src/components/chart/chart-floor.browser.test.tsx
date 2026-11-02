@@ -7,8 +7,10 @@
 // chart source, and WALKERS walks each one. Oracle: the device pixel grid itself. Chromium draws
 // an SVG layer's origin on the device pixel nearest its page position, so a mark's drawn span is
 // that origin plus its attributes, and clips it to the plot's box, whose edges it rounds the same
-// way. A slot's band covers the device pixels from the one its start lies in to the one its end
-// lies in, among the plot's, and a slot wholly outside them covers the plot's nearest pixel. Each
+// way. Under the owner's slot grid, a plot with a whole device pixel or more per slot gives each
+// slot the same whole pixels from a start that splits the leftover between both ends.
+// Otherwise a slot's band covers the device pixels from the one its start lies in to the one its
+// end lies in, among the plot's, and a slot wholly outside them covers the plot's nearest pixel. Each
 // mark of a slot must draw at least one device pixel inside the pixels its slot covers, and every
 // rule and band of the value axis inside the plot.
 import fc from "fast-check";
@@ -696,7 +698,14 @@ describe("every drawn mark under the pixel floor", () => {
           // The plot's first and last drawn device pixel edges.
           const first = Math.ceil(page * dpr - 0.5);
           const last = Math.ceil((page + length) * dpr - 0.5);
+          // The owner's slot grid: every band takes the same whole pixels, at least one, from a start
+          // that splits the leftover between both ends.
+          const pixels = last - first;
+          const whole = Math.floor(pixels / chart.count);
+          const leftover = pixels - chart.count * whole;
+          const lead = whole >= 1 ? first + Math.floor(leftover / 2) : null;
           const cover = (slot: number): Span => {
+            if (lead !== null) return [lead + slot * whole, lead + (slot + 1) * whole];
             const low = Math.max(first, Math.floor((page + (slot * length) / chart.count) * dpr + 1e-6));
             const high = Math.min(last, Math.ceil((page + ((slot + 1) * length) / chart.count) * dpr - 1e-6));
             if (low < high) return [low, high];

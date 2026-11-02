@@ -362,7 +362,12 @@ export function useAttachedMark<
 ): AttachedMark<T, A, O> {
   const { motion } = context;
   const mark = useMotionMark(motion, draw, look, axes);
-  const placeFor = useFollowerPlacement(context.update, drawn?.plot ?? null, context.orientation);
+  const placeFor = useFollowerPlacement(
+    context.update,
+    drawn?.plot ?? null,
+    context.orientation,
+    drawn?.frame ?? null
+  );
   const outgoingRef = useRef<O>(null);
   const shown = useRef<AttachedShown<L> | null>(null);
   const { point = false, copy = COMMIT_COPY } = options;

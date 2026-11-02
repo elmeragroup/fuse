@@ -456,9 +456,18 @@ export type ChartStyleVars = {
   "--chart-polar-size"?: string;
   /** The line stroke width. `2px` by default. */
   "--chart-stroke"?: string;
-  /** The gap between categories. 25 % of the band by default. */
+  /**
+   * The gap between categories, as a share of one slot. 25 % by default. Every slot takes the same
+   * whole device pixels, the plot's leftover pixels split between both ends, and the gap rounds to
+   * whole device pixels, at least one, so every bar of a chart is the same width and every gap the
+   * same. A slot of one device pixel has no gap, and `0` leaves none.
+   */
   "--chart-band-gap"?: string;
-  /** The gap between grouped bars. `2px` by default. */
+  /**
+   * The gap between grouped bars. `2px` by default. It rounds to whole device pixels, at least
+   * one, and every bar of the group takes the same whole device pixels, so every gap inside a
+   * group is the same width and every grouped bar too.
+   */
   "--chart-bar-gap"?: string;
   /** The surface-coloured gap between stacked segments. `2px` by default. */
   "--chart-bar-seam"?: string;

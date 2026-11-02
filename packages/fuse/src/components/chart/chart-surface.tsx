@@ -14,7 +14,8 @@ import { CHART_STRINGS } from "./format/chart-strings";
 import { bandScale, nearestIndex, pointScale } from "./layout/band-scale";
 import { invertValue, linearScale } from "./layout/linear-scale";
 import { nearestSeries } from "./layout/nearest-series";
-import { optionBand } from "./layout/plot-frame";
+import { optionBand, slotRun } from "./layout/plot-frame";
+import type { PlotFrame } from "./layout/plot-frame";
 import { keepSlot, stepSlot } from "./layout/slot-window";
 import type { SlotStep, SlotWindow } from "./layout/slot-window";
 import { slotX } from "./layout/x-domain";
@@ -126,6 +127,8 @@ function layoutUnder(context: ChartRootContextValue, box: DOMRect, clientY: numb
  * that Panel's series alone, as CONTRACT section 9.5 says.
  *
  * @param context - The Root.
+ * @param frame - Root's measured frame, whose slot bands a band slot is picked from, or null before
+ *   Root measures, when the bands divide the whole plot.
  * @param box - The plot surface's client box.
  * @param clientX - The pointer's client x.
  * @param clientY - The pointer's client y.
@@ -133,6 +136,7 @@ function layoutUnder(context: ChartRootContextValue, box: DOMRect, clientY: numb
  */
 export function pointerSlot(
   context: ChartRootContextValue,
+  frame: PlotFrame | null,
   box: DOMRect,
   clientX: number,
   clientY: number
@@ -144,8 +148,11 @@ export function pointerSlot(
     orientation === "vertical"
       ? (clientX - box.left) / Math.max(1, box.width)
       : (clientY - box.top) / Math.max(1, box.height);
+  // Band slots lie in the run the frame's slot bands take, which leaves its leftover at both ends.
   const scale =
-    context.xScale === "point" ? pointScale({ count, range: [0, 1] }) : bandScale({ count, range: [0, 1] });
+    context.xScale === "point"
+      ? pointScale({ count, range: [0, 1] })
+      : bandScale({ count, range: frame === null ? [0, 1] : slotRun(frame) });
   const slot = window.first + nearestIndex(scale, Math.min(Math.max(along, 0), 1));
   const layout = layoutUnder(context, box, clientY);
   const across =
@@ -325,7 +332,13 @@ export function ChartSurface({
 
   /** The slot and the nearest series under a pointer, picked by arithmetic. */
   const slotAt = (event: MouseEvent<HTMLDivElement>): PointerSlot =>
-    pointerSlot(context, event.currentTarget.getBoundingClientRect(), event.clientX, event.clientY);
+    pointerSlot(
+      context,
+      drawn?.frame ?? null,
+      event.currentTarget.getBoundingClientRect(),
+      event.clientX,
+      event.clientY
+    );
 
   const pick = (event: PointerEvent<HTMLDivElement>): void => {
     store.track(event.clientX, event.clientY, event.pointerType);

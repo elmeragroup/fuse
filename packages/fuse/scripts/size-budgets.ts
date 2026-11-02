@@ -277,7 +277,18 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // plot, cancels a reveal frame its effect outlives, and retires `data-entrance` on a cancelled
     // wipe or at once with no wipe, which measured 139 bytes on this route (72908 to 73047). The
     // ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 73150,
+    // Raised from 73150 on 2026-11-02. The slot grid, which makes every bar and every gap of a
+    // chart the same whole device pixels, measured 563 bytes on this route (73047 to 73610). The
+    // ceiling keeps about 100 bytes of headroom.
+    // Raised from 73710 on 2026-11-02. A resize maps running tweens through the slot grid, so a
+    // path keeps tweening, a plot of no length keeps its slot lookups finite, and a group's gaps
+    // leave each bar a device pixel, which measured 144 bytes on this route (73610 to 73754). The
+    // ceiling keeps about 100 bytes of headroom.
+    // Raised from 73850 on 2026-11-02. A sliding vertex outside the slot run keeps its own place,
+    // the Line and Area layers clip at the run's ends, and a path-form Bar's route retargets its
+    // rounded column edges on a resize, which measured 129 bytes on this route (73754 to 73883).
+    // The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 73990,
   },
   {
     name: "chart/PieChart.Root",

@@ -13,6 +13,7 @@ import { LocaleProvider } from "../../src/intl/locale-context";
 import { renderThemed } from "../themed-browser-render";
 import {
   DECIMATE_ABOVE,
+  gridOf,
   SERIAL,
   domainOf,
   expected,
@@ -357,36 +358,52 @@ export function mismatches(shot: Shot, model: Expected): string[] {
   return failures;
 }
 
-/** Marks one frame drew that moved more than they may since another, mapped by a resize's ratios. */
-export function jumps(before: Shot, after: Shot, keys: (key: string) => boolean): string[] {
-  const ratio = {
-    along: after.plot.along / before.plot.along,
-    across: after.plot.across / before.plot.across,
-  };
+/**
+ * Marks one frame drew that moved more than they may since another. A resize maps every value
+ * along the value axis by the plot's ratio, and every value along the slot axis from the old slot
+ * grid into the new one, band for band, so only snapping may move a mark. A path-form column has
+ * no identity but its span, so it matches the one column at its span mapped into the new grid,
+ * and a column that matches none or several fails.
+ */
+export function jumps(
+  before: Shot,
+  after: Shot,
+  keys: (key: string) => boolean,
+  slots: readonly [number, number]
+): string[] {
+  // Only a resize moves what a frame drew. A data update's first frame draws where the last
+  // frame did, and tweens from there.
+  const resized = before.plot.along !== after.plot.along || before.plot.across !== after.plot.across;
+  const to = gridOf(after.plot, slots[1]);
+  const from = resized ? gridOf(before.plot, slots[0]) : to;
+  const scale = { along: to.pitch / from.pitch, across: after.plot.across / before.plot.across };
+  const map = (axis: "along" | "across", value: number) =>
+    axis === "along" ? to.start + (value - from.start) * scale.along : value * scale.across;
+  // A snapped pixel mapped and the mapped value snapped differ by half a device pixel each.
+  const slackOf = (axis: "along" | "across") =>
+    (1 + 0.5 * Math.max(1, scale[axis])) / after.plot.dpr + SERIAL;
   const failures: string[] = [];
-  // A resize moves every column's span, which names it, so a column matches the one at its span
-  // mapped into the new box, within the snapping slack of both its edges.
   const columns = [...after.marks.values()].filter((mark) => mark.along !== undefined);
-  const resized = ratio.along !== 1;
-  const columnAt = (span: Span): Mark | undefined => {
-    const slack = (1 + 0.5 * Math.max(1, ratio.along)) / after.plot.dpr + SERIAL;
+  const columnAt = (key: string, span: Span): Mark | undefined => {
+    const [start, end] = [map("along", span[0]), map("along", span[1])];
     const near = columns.filter(
       ({ along: drawn }) =>
         drawn !== undefined &&
-        Math.abs(drawn[0] - span[0] * ratio.along) <= slack &&
-        Math.abs(drawn[1] - span[1] * ratio.along) <= slack
+        Math.abs(drawn[0] - start) <= slackOf("along") &&
+        Math.abs(drawn[1] - end) <= slackOf("along")
     );
+    if (near.length !== 1)
+      failures.push(`${key}: ${String(near.length)} columns at ${show([start, end])} after the resize`);
     return near.length === 1 ? near[0] : undefined;
   };
   for (const [key, mark] of before.marks) {
     if (!keys(key)) continue;
-    const now = resized && mark.along !== undefined ? columnAt(mark.along) : after.marks.get(key);
+    const now = resized && mark.along !== undefined ? columnAt(key, mark.along) : after.marks.get(key);
     if (now === undefined || now.values.length !== mark.values.length) continue;
     mark.values.forEach((value, index) => {
-      const scale = ratio[mark.axes[index] ?? "across"];
-      // A snapped pixel mapped and the mapped value snapped differ by half a device pixel each.
-      const slack = (1 + 0.5 * Math.max(1, scale)) / after.plot.dpr + (mark.hold ?? 0) + SERIAL;
-      if (Math.abs((now.values[index] ?? 0) - value * scale) > slack) {
+      const axis = mark.axes[index] ?? "across";
+      const slack = slackOf(axis) + (mark.hold ?? 0);
+      if (Math.abs((now.values[index] ?? 0) - map(axis, value)) > slack) {
         failures.push(`${key}: ${mark.values.join(",")} → ${now.values.join(",")}`);
       }
     });
@@ -602,7 +619,11 @@ export async function run(dpr: number, first: World, steps: readonly Step[]): Pr
       const kept = (key: string) =>
         !(snapsReferences && key.startsWith("reference ")) &&
         !(pathForm(previous) !== pathForm(world) && (key.startsWith("bar ") || key.startsWith("column ")));
-      const moved = jumps(before, after, kept);
+      const slotsOf = (shown: World) => {
+        const [from, to] = windowOf(shown);
+        return to - from + 1;
+      };
+      const moved = jumps(before, after, kept, [slotsOf(previous), slotsOf(world)]);
       // A data update that mounts a mark while a tween still runs relays the plot, which the
       // browser's clock decides, so such a commit may instead snap every mark onto the model.
       const relayed =

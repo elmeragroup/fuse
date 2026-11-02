@@ -684,11 +684,19 @@
     The widths are rem, a 16 px root's TICK_BUCKETS, so a larger text size widens each bucket
     with the labels it holds.
   */
+  /*
+    Once Root measures, the axis spans the run the slot bands take: the plot less the leftover
+    device pixels the slot grid splits between both ends. Its labels keep to their bands, and the
+    width buckets below measure the run. Slots run left to right in either text direction, so the
+    margins are physical, and a horizontal chart's run down the plot takes block margins.
+  */
   [data-slot="chart-x-axis"] {
     grid-area: under;
     position: relative;
     container: chart-x-axis / inline-size;
     height: calc(1rem + 0.5rem);
+    margin-left: var(--_run-before, 0px);
+    margin-right: var(--_run-after, 0px);
     font-variant-numeric: tabular-nums;
   }
 
@@ -838,6 +846,9 @@
     container: none;
     height: auto;
     min-width: 0;
+    margin-left: 0;
+    margin-right: 0;
+    margin-block: var(--_run-before, 0px) var(--_run-after, 0px);
     padding-inline-end: 0.5rem;
   }
 
@@ -1477,18 +1488,19 @@
     Lines and areas. Each draws its path once and, over the spans that are no measurement, a twin:
     a Line's twin dashes the segments that touch an estimated reading, a bridge under
     missing: "connect" and the projected tail, in place of the solid path there, and an Area's twin
-    hatches them over its fill. A layer clips at the plot's ends, so a sliding path never draws past
-    them, and keeps a margin across the value axis for the stroke at the plot's edge.
+    hatches them over its fill. A layer clips at the ends of the run the slot bands take, inside the
+    plot's leftover pixels, so a sliding path never draws past them, and keeps a margin across the
+    value axis for the stroke at the plot's edge.
   */
   :is([data-slot="chart-line-series"], [data-slot="chart-area-series"]) {
     --_paint: var(--_paint-server, var(--chart-series-paint));
-    clip-path: inset(-0.5rem 0);
+    clip-path: inset(-0.5rem var(--_run-after, 0px) -0.5rem var(--_run-before, 0px));
     print-color-adjust: exact;
   }
 
   :where([data-slot="chart"])[data-orientation="horizontal"]
     :is([data-slot="chart-line-series"], [data-slot="chart-area-series"]) {
-    clip-path: inset(0 -0.5rem);
+    clip-path: inset(var(--_run-before, 0px) -0.5rem var(--_run-after, 0px));
   }
 
   [data-slot="chart-line"] {

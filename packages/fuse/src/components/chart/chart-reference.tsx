@@ -23,6 +23,7 @@ import {
   hairline,
   ruleAcross,
   wholeWidth,
+  slotAxisAt,
   slotLine,
   slotLineAt,
   slotShare,
@@ -284,12 +285,14 @@ function atX(frame: PlotFrame, axis: "value" | "slot"): boolean {
 
 /**
  * The pixel coordinate of a share of the plot. A value share runs from the domain maximum, the
- * top or the right edge, and a slot share from the first slot, the left or the top edge.
+ * top or the right edge, and a slot share from the first slot, the left or the top edge, across
+ * the run the slot bands take, so a slot reference keeps to its slot's band.
  */
 function plotCoordinate(frame: PlotFrame, axis: "value" | "slot", at: number): number {
+  if (axis === "slot") return slotAxisAt(frame, at / 100);
   const length = plotLength(frame, axis);
   const share = (at / 100) * length;
-  return axis === "value" && frame.orientation === "horizontal" ? length - share : share;
+  return frame.orientation === "horizontal" ? length - share : share;
 }
 
 /**
@@ -304,6 +307,15 @@ function drawnPixel(frame: PlotFrame, axis: "value" | "slot", at: number): numbe
 /** The plot's length along the axis a reference's coordinate runs on, unsnapped. */
 function plotLength(frame: PlotFrame, axis: "value" | "slot"): number {
   return atX(frame, axis) ? frame.box.width : frame.box.height;
+}
+
+/**
+ * Where a reference's coordinate may lie and still show: the plot along the value axis, and along
+ * the slot axis the run the slot bands take, so a slot outside the window stays out of the plot's
+ * leftover pixels at either end.
+ */
+function axisBounds(frame: PlotFrame, axis: "value" | "slot"): readonly [number, number] {
+  return axis === "slot" ? [slotAxisAt(frame, 0), slotAxisAt(frame, 1)] : [0, plotLength(frame, axis)];
 }
 
 /** The share of the plot a drawn coordinate stands for. */
@@ -345,7 +357,12 @@ function useReferenceMark(
   const direction = (context.orientation === "vertical") === (axis === "slot") ? "x" : "y";
   const axes = [direction, look.kind === "line" ? "size" : direction] as const;
   const { ref, place } = useMotionMark(context.motion, drawReference, look, axes);
-  const commit = useCommitMotion(context.update, drawn?.plot ?? null, `${context.orientation} ${axis}`);
+  const commit = useCommitMotion(
+    context.update,
+    drawn?.plot ?? null,
+    `${context.orientation} ${axis}`,
+    drawn?.frame ?? null
+  );
   // Every commit places the guide, as a bar places itself. A target the guide already heads for
   // lets a running tween run on and redraws what it draws, which hands its label the guide again.
   useLayoutEffect(() => {
@@ -407,7 +424,8 @@ function lineDrawn(
   width: number,
   xScale: "band" | "point"
 ): ReferenceDrawn {
-  const outside = at < 0 || at > plotLength(frame, axis);
+  const [low, high] = axisBounds(frame, axis);
+  const outside = at < low || at > high;
   const start =
     axis === "slot" && !outside ? slotLineAt(frame, at, xScale, width)[0] : drawnPixel(frame, axis, at);
   const span = [start, start] as const;
@@ -469,9 +487,12 @@ function drawArea(node: HTMLDivElement, look: ReferenceLook, values: MarkValues)
 
 /** A band's drawn state between two tweened coordinates. */
 function bandDrawn(frame: PlotFrame, axis: "value" | "slot", start: number, end: number): ReferenceDrawn {
+  // A band shows while it overlaps the run its axis takes, and draws clipped to the plot, so a band
+  // tweening between two slot grids moves smoothly at either end.
+  const [first, last] = axisBounds(frame, axis);
   const low = Math.max(Math.min(start, end), 0);
   const high = Math.min(Math.max(start, end), plotLength(frame, axis));
-  const outside = low >= high;
+  const outside = Math.max(low, first) >= Math.min(high, last);
   const clipped = axis === "value" && referenceShare(frame, axis, start) < 0;
   if (outside) {
     const at = drawnPixel(frame, axis, low);

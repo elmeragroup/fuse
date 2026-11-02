@@ -113,8 +113,8 @@ describe("charts under reduced motion", () => {
   });
 
   it("rests a Marker on its grouped bar, as with motion (B2-5, Q2-2)", () => {
-    // 300 px, one category, two grouped bars: the first spans 37.5 to 149 px, so its Marker and
-    // pill centre over that bar's middle near 93.25 px, never over the group at 150 px.
+    // 300 px, one category, two grouped bars: the first spans 37 to 148 px, so its Marker and
+    // pill centre over that bar's middle near 92.5 px, never over the group at 150 px.
     const { host } = renderThemed(
       <LocaleProvider locale="nb-NO">
         <div style={{ width: 300 }}>
@@ -142,7 +142,7 @@ describe("charts under reduced motion", () => {
     const dot = host.querySelector('[data-slot="chart-marker"] > svg > [data-slot="chart-dot"]');
     const anchor = host.querySelector<HTMLElement>('[data-slot="chart-marker"] > [data-part="anchor"]');
     const middle = ((box?.left ?? 0) + (box?.right ?? 0)) / 2;
-    expect(Math.abs(middle - 93.25)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(middle - 92.5)).toBeLessThanOrEqual(0.5);
     expect(Math.abs(Number(dot?.getAttribute("cx")) - middle)).toBeLessThanOrEqual(0.5);
     expect(
       Math.abs(Number.parseFloat(anchor?.style.getPropertyValue("--chart-marker-x") ?? "") - middle)

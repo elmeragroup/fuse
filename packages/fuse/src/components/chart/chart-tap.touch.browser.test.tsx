@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { commands } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { popupOpen } from "../../../test/chart/marks";
+import { bars, popupOpen } from "../../../test/chart/marks";
 import "../../../test/pointer-press";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -122,10 +122,12 @@ describe("taps on a dense plot", () => {
       </div>
     );
     const box = host.querySelector('[role="listbox"]')?.getBoundingClientRect() ?? new DOMRect();
-    const slot = (index: number): readonly [number, number] => [
-      box.left + (box.width * (index + 0.5)) / QUARTERS.length,
-      box.top + box.height * 0.9,
-    ];
+    await expect.poll(() => bars(host)).toHaveLength(QUARTERS.length);
+    // The finger lands on the middle of the slot's drawn bar, which the slot grid places.
+    const slot = (index: number): readonly [number, number] => {
+      const bar = bars(host)[index]?.getBoundingClientRect() ?? new DOMRect();
+      return [(bar.left + bar.right) / 2, box.top + box.height * 0.9];
+    };
     const read = (): string | null => label()?.replace(/\s+/gu, " ") ?? null;
     await tap(slot(3));
     await expect.poll(read).toBe("12:45 – 1:00 AM");

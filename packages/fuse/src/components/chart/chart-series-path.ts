@@ -59,16 +59,18 @@ export function usePathMark<
   input: {
     readonly context: ChartRootContextValue;
     readonly plot: ChartPlot | null;
+    /** The frame the path draws in, whose slot grid a resize maps the route through. */
+    readonly frame: PlotFrame | null;
     readonly axes: ValueAxis[];
     readonly seriesIndex: number;
     readonly route: RouteKind;
     readonly placed: PathDraw<L, S, T> | null;
   }
 ): PathMark {
-  const { context, plot, axes, seriesIndex, route, placed } = input;
+  const { context, plot, frame, axes, seriesIndex, route, placed } = input;
   const { motion, update, paths } = context;
   const mark = useMotionMark(motion, draw, placed?.look ?? null, axes);
-  const commit = useCommitMotion(update, plot, context.orientation);
+  const commit = useCommitMotion(update, plot, context.orientation, frame);
   const memoryRef = useRef<PathMemory<S> | null>(null);
   const lastLookRef = useRef<L | null>(null);
   const outgoingRef = useRef<SVGGElement | null>(null);
@@ -254,6 +256,7 @@ export function useSeriesPath(
   const mark = usePathMark(draw, {
     context,
     plot: drawn?.plot ?? null,
+    frame: drawn?.frame ?? null,
     axes,
     seriesIndex: series?.seriesIndex ?? 0,
     route,

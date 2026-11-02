@@ -284,8 +284,9 @@ describe("the path form", () => {
     const plot = host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect();
     if (plot === undefined) throw new Error("no plot");
     const pixels = await pagePixels();
-    // The middle of slot 50 of 101.
-    const x = (plot.left + (plot.width * 50.5) / 101) * pixels.scale;
+    // 101 slots on 400 px take 3 px each, the 97 px left over split 48 before and 49 after, and
+    // the 1 px gap follows each column, so slot 50's column spans 198 to 200 px. Probe its middle.
+    const x = (plot.left + 199) * pixels.scale;
     expect(chromaAt(pixels, x, (plot.top + plot.height * 0.25) * pixels.scale)).toBeGreaterThan(40);
     expect(chromaAt(pixels, x, (plot.top + plot.height * 0.95) * pixels.scale)).toBeLessThan(15);
   });

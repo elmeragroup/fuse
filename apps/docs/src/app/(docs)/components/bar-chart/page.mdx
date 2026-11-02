@@ -43,7 +43,7 @@ export const metadata = componentMetadata("bar-chart");
 
 <Prose>
 
-The chart entry is a preview. Its names and props can change until Fuse's first stable release. `BarChart` is the same component as `Chart`. A bar fills its band less a 25 % gap, series that share a `stack` id stack in one column, and `BarChart.BarGroup` sets series side by side. Every bar is its own SVG element up to 100 slots, and above that each series draws one path. Bars draw in pixels once the browser measures the plot, so they land on whole device pixels at any width and zoom.
+The chart entry is a preview. Its names and props can change until Fuse's first stable release. `BarChart` is the same component as `Chart`. A bar fills its band less a 25 % gap, series that share a `stack` id stack in one column, and `BarChart.BarGroup` sets series side by side. Every bar is its own SVG element up to 100 slots, and above that each series draws one path. Bars draw in pixels once the browser measures the plot, so they land on whole device pixels at any width and zoom. Every slot takes the same whole device pixels and the gap rounds to whole device pixels, so every bar of a chart is the same width and every gap the same. The plot's leftover pixels split between both ends.
 
 </Prose>
 

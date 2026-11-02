@@ -12,6 +12,7 @@ import { useSeriesPath } from "./chart-series-path";
 import type { ChartCurve, ChartLayerProps } from "./chart-types";
 import { ChartCompositionError } from "./layout/errors";
 import { AREA_STRIDE, areaPaths } from "./layout/line-path";
+import { runMargins } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
 
 /**
@@ -176,6 +177,9 @@ export function ChartArea({
         "--chart-series-paint": paint.base,
         "--chart-series": seriesIndex,
         "--_paint-server": hasPathPaint(paint) ? `url(#${prefix}-paint)` : undefined,
+        // The layer clips at the slot run's ends, so a sliding path never draws in the leftover.
+        "--_run-before": `${String(runMargins(frame)[0])}px`,
+        "--_run-after": `${String(runMargins(frame)[1])}px`,
         ...style,
       }}>
       {frame === null || series === undefined || drawn === null ? null : (

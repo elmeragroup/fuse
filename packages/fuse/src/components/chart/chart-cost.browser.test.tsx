@@ -181,10 +181,13 @@ describe("pointer cost", () => {
       );
       await frame();
     }
-    // The sweep reached the chart: the crosshair band sits on the last of the 24 hours.
+    // The sweep reached the chart: the crosshair band sits on the last of the 24 hours, which the
+    // slot grid may end a few pixels short of the plot's edge, its leftover pixels split between
+    // both ends.
     // DOM audit: the crosshair is aria-hidden plot output.
     const band = host.querySelector('[data-slot="chart-crosshair"] rect')?.getBoundingClientRect();
-    expect(Math.round(band?.right ?? 0)).toBe(Math.round(box.right));
+    expect(band?.left ?? 0).toBeGreaterThan(box.left + (box.width * 22.5) / 24);
+    expect(band?.right ?? 0).toBeLessThanOrEqual(box.right + 0.5);
     expect(commits.get("chart") ?? 0).toBe(0);
   });
 

@@ -119,7 +119,7 @@ export function SeriesPaths({
   // The grow's scale is a size, which a resize leaves alone.
   const growLook = useMemo(() => ({ frame }), [frame]);
   const { ref: growRef, place: placeGrow } = useMotionMark(motion, drawGrow, growLook, ["size"]);
-  const growCommit = useCommitMotion(update, plot, frame.orientation);
+  const growCommit = useCommitMotion(update, plot, frame.orientation, frame);
   useLayoutEffect(() => {
     // The whole series grows from the zero line, once. Every commit in Root's waiting entrance
     // keeps it flat, to grow once the entrance plays. After that a data update or a new layout
@@ -137,7 +137,7 @@ export function SeriesPaths({
   });
   const moving = useRef<ColumnTopology | null>(null);
   const look = useMemo((): ColumnsLook => ({ frame, topology, moving }), [frame, topology]);
-  const kind = useMemo(() => columnKind(box.width / frame.count, valueAt(frame, 0)), [box.width, frame]);
+  const kind = useMemo(() => columnKind(frame.grid.step, valueAt(frame, 0)), [frame]);
   const placed = useMemo(
     () => ({ look, kind, path: columns, topology, rest: columns.values }),
     [look, kind, columns, topology]
@@ -145,6 +145,7 @@ export function SeriesPaths({
   const { markRef: columnsRef, outgoingRef } = usePathMark(drawColumns, {
     context,
     plot,
+    frame,
     axes: COLUMN_AXES,
     seriesIndex: series.seriesIndex,
     route: "columns",

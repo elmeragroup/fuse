@@ -77,9 +77,9 @@ describe("bars in a band", () => {
   });
 
   it("rests a Marker and its pill on the first grouped bar's middle and tip (B1-5, Q1-4)", () => {
-    // One category on 300 px: the band keeps 225 px inside its 25 % gap, from 37.5 px, and two bars
-    // with the default 2 px gap take 111.5 px each, so the first spans 37.5 to 149 px and its
-    // middle lies at 93.25 px, never at the slot's centre at 150 px.
+    // One category on 300 px: the 25 % gap is 75 px, 37 before the bars, which leaves 37 to 262 px,
+    // and two bars with the default 2 px gap take 111 px each, the spare pixel after them, so the
+    // first spans 37 to 148 px and its middle lies at 92.5 px, never at the slot's centre at 150 px.
     const { host } = renderThemed(
       <LocaleProvider locale="nb-NO">
         <div style={{ width: 300 }}>
@@ -105,7 +105,7 @@ describe("bars in a band", () => {
     const dot = host.querySelector('[data-slot="chart-marker"] > svg > [data-slot="chart-dot"]');
     const anchor = host.querySelector<HTMLElement>('[data-slot="chart-marker"] > [data-part="anchor"]');
     const cx = Number(dot?.getAttribute("cx"));
-    expect(Math.abs(cx - 93.25)).toBeLessThanOrEqual(0.75);
+    expect(Math.abs(cx - 92.5)).toBeLessThanOrEqual(0.75);
     near(cx, ((bar?.left ?? 0) + (bar?.right ?? 0)) / 2);
     near(Number(dot?.getAttribute("cy")), bar?.top ?? 0);
     expect(Number.parseFloat(anchor?.style.getPropertyValue("--chart-marker-x") ?? "")).toBe(cx);
@@ -148,8 +148,8 @@ describe("bars in a band", () => {
   });
 
   it("centres ActiveValue over its own grouped bar at rest and through an update (B2-7)", () => {
-    // 300 px and one category: a's bar spans 37.5 to 149 px, so its value centres over the bar's
-    // drawn middle, near 93.25 px, at rest and in every frame of an update that changes only a's
+    // 300 px and one category: a's bar spans 37 to 148 px, so its value centres over the bar's
+    // drawn middle, near 92.5 px, at rest and in every frame of an update that changes only a's
     // value, never over the group's centre at 150 px.
     const clock = installFrameClock();
     try {
@@ -182,7 +182,7 @@ describe("bars in a band", () => {
         ) * barLayerBox(host).width;
       const [bar] = boxes(host, 0);
       const middle = ((bar?.left ?? 0) + (bar?.right ?? 0)) / 2;
-      expect(Math.abs(middle - 93.25)).toBeLessThanOrEqual(0.5);
+      expect(Math.abs(middle - 92.5)).toBeLessThanOrEqual(0.5);
       expect(centre()).toBeCloseTo(middle, 4);
       const start = clock.now();
       rerender(chart(2));

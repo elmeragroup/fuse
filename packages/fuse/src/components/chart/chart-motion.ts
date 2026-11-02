@@ -23,10 +23,30 @@ export type MarkWriter = (values: MarkValues) => void;
 export type ValueAxis = "x" | "y" | "size";
 
 /**
- * How a resize scales the plot's box: its new width over its old, and its new height over its old,
- * and the new measurement, which names the resize, so the loop maps its marks once for each.
+ * How a resize maps the slot axis: a number there moves from the old slot grid's first band
+ * start, `from`, to the new one's, `to`, and its distance from that start scales by `ratio`, the
+ * new band pitch over the old. The grid gives bands whole device pixels, so slot centres move by
+ * this map and not by the plot's ratio.
  */
-export type PlotScale = { readonly x: number; readonly y: number; readonly to?: object };
+export type SlotMap = {
+  /** The axis the slots run along. */
+  readonly axis: "x" | "y";
+  readonly from: number;
+  readonly to: number;
+  readonly ratio: number;
+};
+
+/**
+ * How a resize scales the plot's box: its new width over its old, and its new height over its old,
+ * the slot axis's map through the slot grid, and the new measurement, which names the resize, so
+ * the loop maps its marks once for each.
+ */
+export type PlotScale = {
+  readonly x: number;
+  readonly y: number;
+  readonly slot?: SlotMap;
+  readonly to?: object;
+};
 
 /** The scale of a commit that leaves the plot's box alone. */
 export const SAME_PLOT: PlotScale = { x: 1, y: 1 };
@@ -246,15 +266,39 @@ const ease = cubicBezier(CHART_UPDATE_CURVE);
  * with more numbers than axes repeats its declaration, as a path declares one vertex's axes for all.
  */
 function rescaled(values: MarkValues, axes: readonly ValueAxis[], scale: PlotScale): MarkValues {
+  const { slot } = scale;
   return values.map((value, index) => {
     const axis = axes.length === 0 ? "size" : (axes[index % axes.length] ?? "size");
-    return axis === "size" ? value : value * scale[axis];
+    if (axis === "size") return value;
+    return slot?.axis === axis ? slot.to + (value - slot.from) * slot.ratio : value * scale[axis];
   });
 }
 
 /** Whether two numbers agree to within float error, as a mapped target and a fresh one do. */
 function close(a: number, b: number): boolean {
   return Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
+}
+
+/**
+ * A route retargeted onto a resized rest whose numbers along the slot axis moved off the route's
+ * mapped rest while every other number kept it, as a path form's column edges do when they round
+ * to a new slot grid. Each moved number's start shifts by its own correction, so the tween keeps
+ * its progress. Null when the route and the rest differ in length or in a number off the slot axis.
+ */
+function quantizedRoute(
+  tween: Tween,
+  axes: readonly ValueAxis[],
+  target: MarkValues,
+  slot: "x" | "y" | undefined
+): Tween | null {
+  const { rest } = tween;
+  if (slot === undefined || rest?.length !== target.length || tween.to.length !== target.length) return null;
+  const axisAt = (index: number) => (axes.length === 0 ? "size" : (axes[index % axes.length] ?? "size"));
+  if (!target.every((to, index) => axisAt(index) === slot || close(to, rest[index] ?? 0))) return null;
+  const from = tween.from.map((value, index) =>
+    axisAt(index) === slot ? value + (target[index] ?? 0) - (tween.to[index] ?? 0) : value
+  );
+  return { ...tween, from, to: target, rest: target };
 }
 
 /**
@@ -523,7 +567,10 @@ export function createChartMotion(
       snap(id, target, write, axes, owner);
       return;
     }
-    if (placement.kind === "settle" && (placement.scale.x !== 1 || placement.scale.y !== 1)) {
+    if (
+      placement.kind === "settle" &&
+      (placement.scale.x !== 1 || placement.scale.y !== 1 || placement.scale.slot !== undefined)
+    ) {
       // A resize maps every running tween of its frame into the new box once, when the first
       // mark of its measurement settles, and redraws it there before the browser paints, so every
       // mark stays on the axes, marks this commit leaves alone among them. The tweens keep their
@@ -580,6 +627,19 @@ export function createChartMotion(
       const { rest } = tween;
       const kept = rest.length === target.length && target.every((to, index) => close(to, rest[index] ?? 0));
       if (kept) {
+        mark.write = write;
+        write(mark.drawn);
+        return;
+      }
+      const moved = quantizedRoute(tween, mark.axes, target, placement.scale.slot?.axis);
+      if (moved !== null) {
+        // A resize moved only the route's numbers along the slot axis off their mapped rest, as a
+        // path form's column edges round to the new grid, so the route retargets them on its own
+        // clock and every other number keeps its progress.
+        mark.tween = moved;
+        mark.drawn = moved.to.map(
+          (to, index) => (moved.from[index] ?? to) + (to - (moved.from[index] ?? to)) * mark.eased
+        );
         mark.write = write;
         write(mark.drawn);
         return;

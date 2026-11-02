@@ -12,6 +12,7 @@ import { useSeriesPath } from "./chart-series-path";
 import { sameShallow, useSteady } from "./chart-steady";
 import type { ChartCurve, ChartLayerProps } from "./chart-types";
 import { LINE_STRIDE, linePaths } from "./layout/line-path";
+import { runMargins } from "./layout/plot-frame";
 
 /**
  * Props for `Chart.Line`, a closed part.
@@ -105,6 +106,9 @@ export function ChartLine({
         "--chart-series-paint": paint.base,
         "--chart-series": seriesIndex,
         "--_paint-server": hasPathPaint(paint) ? `url(#${prefix}-paint)` : undefined,
+        // The layer clips at the slot run's ends, so a sliding path never draws in the leftover.
+        "--_run-before": `${String(runMargins(frame)[0])}px`,
+        "--_run-after": `${String(runMargins(frame)[1])}px`,
         ...style,
       }}>
       {frame === null || series === undefined || drawn === null ? null : (

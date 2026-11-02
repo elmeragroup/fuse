@@ -60,15 +60,16 @@ afterEach(async () => {
 });
 
 describe("two Panels on one x grid", () => {
-  it("draws hour k's bar from 16k + 2 to 16k + 14 px and each quarter's vertex on its column, then again after a resize", async () => {
+  it("draws hour k's bar from 16k to 16k + 15 px and each quarter's vertex on its column, then again after a resize", async () => {
     const { host, rerender } = renderThemed(<Composed />);
     // DOM audit: bars are aria-hidden plot output, so their slot is the only locator.
     await expect.poll(() => bars(host).length).toBe(25);
-    const expected = (step: number) => ({
-      // Hour k spans 4 quarters of `step` px, less a 25 % band gap split around it.
+    // Hour k spans 4 quarters of `step` px less one gap, 25 % of a quarter rounded: 1 px on 4 px
+    // quarters, all after the bar, and 2 px on 8 px quarters, 1 at each end.
+    const expected = (step: 4 | 8) => ({
       bars: Array.from({ length: 25 }, (_, k) => ({
-        left: 4 * step * k + step / 2,
-        right: 4 * step * k + 3.5 * step,
+        left: 4 * step * k + (step === 4 ? 0 : 1),
+        right: 4 * step * (k + 1) - 1,
         top: 200 - 40 * ((k % 5) + 1),
         bottom: 200,
       })),
@@ -163,8 +164,10 @@ describe("one active column across Panels", () => {
       expect(overlays).toHaveLength(2);
       const centre = (option.left + option.right) / 2;
       bands.forEach((band, panel) => {
-        expect(band.left).toBeCloseTo(option.left, 2);
-        expect(band.right).toBeCloseTo(option.right, 2);
+        // The option is an HTML box, laid out in 1/64 px units, and the band an SVG rectangle at
+        // the exact edge, so their edges differ by a layout unit or two and draw on one device pixel.
+        expect(Math.round(band.left * ratio)).toBe(Math.round(option.left * ratio));
+        expect(Math.round(band.right * ratio)).toBe(Math.round(option.right * ratio));
         expect(onGrid(band.left - (plots[panel]?.left ?? 0))).toBe(true);
       });
       for (const bar of overlays) {

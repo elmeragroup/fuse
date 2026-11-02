@@ -131,7 +131,8 @@ describe("data rules in production", () => {
   it("moves an hourly value on a :15 row to its hour, warns once, and never sums quarters into hours", async () => {
     spy();
     // Hour 00 of Oslo's 1 October 2025 holds its value on the :15 row, and hour 01 on its :00 row.
-    // Each hour's bar spans its 4 quarter cells: 50 px of a 200 px plot.
+    // Each hour's bar spans its 4 quarter cells of 25 px on a 200 px plot, 100 px, less one gap of
+    // 25 % of a quarter rounded, 6 px: 94 px.
     type Quarter = { readonly start: Date; readonly price: number; readonly kwh?: number };
     const quarter = (index: number): Quarter => ({
       start: new Date(Date.UTC(2025, 8, 30, 22, index * 15)),
@@ -170,7 +171,7 @@ describe("data rules in production", () => {
     const plot =
       host.querySelector('[data-slot="chart-bar-series"]')?.getBoundingClientRect() ?? new DOMRect();
     expect(bars(host).map((bar) => Math.round(barBox(bar, plot).right - barBox(bar, plot).left))).toEqual([
-      75, 75,
+      94, 94,
     ]);
     // The domain reaches 4 alone, so 2 draws half as tall as 4.
     expect(bars(host).map((bar) => Math.round(barBox(bar, plot).bottom - barBox(bar, plot).top))).toEqual([

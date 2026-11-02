@@ -552,7 +552,7 @@ function closedOnServer(): boolean {
  * matches its server HTML, and draws in the render React runs right after.
  */
 function useFrameOf(part: string, measured: ChartPlot | null, y: ValueDomain): ChartFrame | null {
-  const { model, orientation, store } = useChartRoot(part);
+  const { model, orientation, store, xScale } = useChartRoot(part);
   const { drawing } = store;
   const open = useSyncExternalStore(drawing.subscribe, drawing.open, closedOnServer);
   const plot = open ? measured : null;
@@ -562,7 +562,7 @@ function useFrameOf(part: string, measured: ChartPlot | null, y: ValueDomain): C
     () =>
       plot === null
         ? null
-        : { frame: plotFrame(plot.box, orientation, count, y.domain), metrics: plot.metrics, plot },
-    [plot, orientation, count, y.domain]
+        : { frame: plotFrame(plot.box, orientation, count, y.domain, xScale), metrics: plot.metrics, plot },
+    [plot, orientation, count, y.domain, xScale]
   );
 }

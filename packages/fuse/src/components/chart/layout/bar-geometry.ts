@@ -219,8 +219,8 @@ export function hangs(frame: PlotFrame, [, , base, tip]: BarGeometry): boolean {
 /**
  * The rectangle a bar's drawn geometry stands for, every edge on the device pixel grid. A stack's
  * inner segment ends its seam short of its tip, so the surface shows between segments. Its span
- * snaps by `snapBarSpan`'s width rule, as the resting bar's does, so every bar of a series keeps
- * one width in each tween frame between two rests of one width.
+ * snaps through `snapBarSpan`, so a resting bar draws its grid span as it is and a tween frame
+ * draws whole device pixels between its two rests' widths.
  *
  * @param frame - The layout's frame.
  * @param geometry - The drawn geometry, a tween frame's or the target's.

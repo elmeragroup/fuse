@@ -2,8 +2,11 @@
  * The world model of the chart world browser test, written from the contract and importing no
  * production layout. From a world's inputs and the measured plot it computes every mark's
  * visibility, its `data-outside`, its label membership and its resting device pixels: the zero
- * rule and d3's nice rule for the value domain (sections 8.3 and 8.11), the window (8.12), bands
- * with a 25 % gap (8.15), one bar width per series, the path form's columns past 100 categories,
+ * rule and d3's nice rule for the value domain (sections 8.3 and 8.11), the window (8.12), the
+ * owner's slot grid (bands of the same whole device pixels, the leftover split between both ends,
+ * and bands that snap each edge only past 2,000 slots or below a device pixel a slot), each bar
+ * its band less one gap of 25 % of a band in whole
+ * device pixels, the path form's columns past 100 categories,
  * the pixel floor, the browser's snap, hairlines, the missing tick, each line vertex and dot on its
  * slot's crosshair column, and above 2,000 categories a brute-force M4 scan (8.12).
  */
@@ -264,6 +267,28 @@ export function decimatedPositions(
   return kept;
 }
 
+/** Where the slot grid's first band starts and how far apart its bands lie, in CSS pixels. */
+export type SlotGrid = { readonly start: number; readonly pitch: number };
+
+/**
+ * The slot grid along the slot axis: where its first band starts and how far apart its bands lie,
+ * from the box alone. Every band takes the same whole device pixels, at least one, from a start
+ * that splits the leftover between both ends, and below a device pixel a slot, or past 2,000
+ * slots, the bands divide the whole plot.
+ *
+ * @param plot - The measured plot.
+ * @param count - The window's slots.
+ * @returns The first band's start and the band pitch, in CSS pixels.
+ */
+export function gridOf(plot: Plot, count: number): SlotGrid {
+  // The drawn plot's device pixels, each end on the pixel nearest it, a tie toward the top left.
+  const device = (at: number) => Math.ceil(at * plot.dpr - 0.5 - 1e-6);
+  const pixels = device(plot.alongAt + plot.along) - device(plot.alongAt);
+  const whole = Math.floor(pixels / count);
+  if (count > DECIMATE_ABOVE || whole < 1) return { start: 0, pitch: plot.along / count };
+  return { start: Math.floor((pixels - count * whole) / 2) / plot.dpr, pitch: whole / plot.dpr };
+}
+
 /**
  * The model. The browser draws a coordinate on the device pixel nearest its page position, a tie
  * toward the top left, and a mark's origin on the pixel nearest the plot's.
@@ -296,16 +321,38 @@ export function expected(world: World, plot: Plot, active: string | null): Expec
   const [first, last] = windowOf(world);
   const count = last - first + 1;
   const step = plot.along / count;
-  const band = (k: number) => floor("along", k * step, (k + 1) * step);
-  // Every bar of a series draws one width, its width rounded down to whole device pixels and centred
-  // on its span's middle, where its start snaps. A span narrower than a device pixel keeps the floor.
-  const barFloor = (start: number, end: number, within: Span): Span => {
-    const pixels = Math.floor((end - start) * dpr + 1e-6);
-    if (pixels < 1) return floor("along", start, end, within);
-    const from = snapAlong((start + end) / 2 - (pixels * device) / 2);
-    return [from, from + pixels * device];
+  // The grid: a band x scale gives every band the same whole device pixels, at least one, from a
+  // start that splits the leftover between both ends.
+  const pixels = Math.round(snapAlong(plot.along) * dpr);
+  const whole = Math.floor(pixels / count);
+  const exact = count <= DECIMATE_ABOVE && whole >= 1;
+  const lead = exact ? Math.floor((pixels - count * whole) / 2) : 0;
+  const runStart = lead * device;
+  const pitch = exact ? whole * device : step;
+  const edge = (k: number) => (exact ? (lead + k * whole) * device : snapAlong(k * step));
+  const band = (k: number): Span =>
+    exact ? [edge(k), edge(k + 1)] : floor("along", k * step, (k + 1) * step);
+  // A tween frame's span keeps its width rounded down to whole device pixels, centred on its
+  // middle, where its start snaps. A span narrower than a device pixel keeps the floor.
+  const barFloor = (from: number, to: number, within: Span): Span => {
+    const wide = Math.floor((to - from) * dpr + 1e-6);
+    if (wide < 1) return floor("along", from, to, within);
+    const at = snapAlong((from + to) / 2 - (wide * device) / 2);
+    return [at, at + wide * device];
   };
-  const barAlong = (k: number) => barFloor((k + 0.125) * step, (k + 0.875) * step, band(k));
+  // Every bar is its band less one gap, 25 % of a slot's whole device pixels, rounded and at least
+  // one, the smaller half before the bar, and none in a band of one device pixel. A band too narrow
+  // for a device pixel keeps the ideal 75 % share and the pixel floor.
+  const slotPixels = exact ? whole : Math.floor(step * dpr);
+  const gap = slotPixels > 1 ? Math.max(1, Math.round(slotPixels * 0.25)) : 0;
+  const barAlong = (k: number): Span => {
+    const from = Math.round(edge(k) * dpr) + Math.floor(gap / 2);
+    const to = Math.round(edge(k + 1) * dpr) - Math.ceil(gap / 2);
+    if (to - from >= 1) return [from * device, to * device];
+    return barFloor(runStart + (k + 0.125) * pitch, runStart + (k + 0.875) * pitch, band(k));
+  };
+  /** The middle of slot k's bands, as a share of the slot axis lands in the grid's run. */
+  const centreOf = (k: number) => runStart + (k + 0.5) * pitch;
   const baseline = snapAcross(valueAt(0));
   const hairline = Math.max(1, Math.floor(dpr)) / dpr;
   const path = pathForm(world);
@@ -319,7 +366,8 @@ export function expected(world: World, plot: Plot, active: string | null): Expec
   windowed.forEach(({ name, v }, k) => {
     if (v === null) {
       if (empty) return;
-      const along = path ? barFloor((k + 0.25) * step, (k + 0.75) * step, band(k)) : barAlong(k);
+      const [b0, b1] = band(k);
+      const along = path ? barFloor(b0 + 0.25 * (b1 - b0), b0 + 0.75 * (b1 - b0), band(k)) : barAlong(k);
       ticks.set(name, { along, base: baseline });
       return;
     }
@@ -367,8 +415,9 @@ export function expected(world: World, plot: Plot, active: string | null): Expec
     references.push({ what: "line", visible, stacked: visible && vertical, span: [edge, edge + hairline] });
   } else {
     const k = names.indexOf(line.name) - first;
-    const centre = (k + 0.5) * step;
-    const visible = centre >= 0 && centre <= plot.along;
+    const centre = centreOf(k);
+    // A slot line shows inside the run the slot bands take, never in the leftover pixels.
+    const visible = centre >= runStart && centre <= runStart + count * pitch;
     const [start, end] = visible ? band(k) : [0, 0];
     const width = Math.min(hairline, end - start);
     const at = Math.min(Math.max(snapAlong(centre), start), end - width);
@@ -388,9 +437,12 @@ export function expected(world: World, plot: Plot, active: string | null): Expec
   } else {
     const ka = names.indexOf(area.first) - first;
     const kb = names.indexOf(area.last) - first;
-    const low = Math.max(Math.min(ka, kb) * step, 0);
-    const high = Math.min((Math.max(ka, kb) + 1) * step, plot.along);
-    const visible = low < high;
+    // A slot band shows while it overlaps the slot run, and draws clipped to the plot.
+    const from = runStart + Math.min(ka, kb) * pitch;
+    const to = runStart + (Math.max(ka, kb) + 1) * pitch;
+    const low = Math.max(from, 0);
+    const high = Math.min(to, plot.along);
+    const visible = Math.max(from, runStart) < Math.min(to, runStart + count * pitch);
     references.push({
       what: "area",
       visible,
@@ -407,7 +459,7 @@ export function expected(world: World, plot: Plot, active: string | null): Expec
     if (v === null || (drawn !== null && !drawn.has(k))) return [];
     const [start, end] = band(k);
     const width = Math.min(hairline, end - start);
-    const at = Math.min(Math.max(snapAlong((k + 0.5) * step), start), end - width);
+    const at = Math.min(Math.max(snapAlong(centreOf(k)), start), end - width);
     return [[at + width / 2, tipOf(v)] as const];
   });
   const offset = lineOffset(dpr);
@@ -420,7 +472,7 @@ export function expected(world: World, plot: Plot, active: string | null): Expec
         if (ends === null || (drawn !== null && !drawn.has(k))) return [];
         const [start, end] = band(k);
         const width = Math.min(hairline, end - start);
-        const at = Math.min(Math.max(snapAlong((k + 0.5) * step), start), end - width);
+        const at = Math.min(Math.max(snapAlong(centreOf(k)), start), end - width);
         return [[at + width / 2, tipOf(ends[0]) + offset] as const];
       });
   return {

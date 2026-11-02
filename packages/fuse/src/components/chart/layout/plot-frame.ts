@@ -6,8 +6,11 @@
  * position. Every edge here snaps the same way, as the page position's pixel less the origin's
  * pixel, so it is always a whole number of device pixels from the layer's origin and draws sharp,
  * and it lands on the pixel the browser gives the focused option's box. Sharing one snap is what
- * keeps a bar, its crosshair band and the focused option on one column.
+ * keeps a bar, its crosshair band and the focused option on one column. Each frame also holds one
+ * slot grid, which places every slot band, slot centre and bar, so every gap between bars draws
+ * the same whole device pixels.
  */
+import { DECIMATE_ABOVE } from "./decimate";
 import { linearScale, scaleValue } from "./linear-scale";
 import type { LinearScale } from "./linear-scale";
 
@@ -41,6 +44,26 @@ export type SubBand = { readonly index: number; readonly count: number };
 /** The whole band, for a Bar outside a BarGroup. */
 export const WHOLE_BAND: SubBand = { index: 0, count: 1 };
 
+/**
+ * Where a layout's slot bands lie along the slot axis, worked out once per frame so every lookup
+ * is arithmetic. Under `"exact"` every band is the same whole number of device pixels, and the
+ * bands start where the leftover pixels centre. Under `"spread"` each band edge snaps on its own,
+ * so neighbouring bands share their edge and differ by at most a device pixel.
+ */
+export type SlotGrid = {
+  /** How the bands divide the plot. */
+  readonly rule: "exact" | "spread";
+  /** The first band's start in CSS pixels from the plot's drawn origin, 0 under `"spread"`. */
+  readonly start: number;
+  /**
+   * One band's length in CSS pixels: whole device pixels under `"exact"`, and the plot's length over
+   * the count under `"spread"`.
+   */
+  readonly step: number;
+  /** One slot's whole device pixels, its pitch rounded down, which a bar gap rounds from. */
+  readonly whole: number;
+};
+
 /** One layout drawn into the measured plot. */
 export type PlotFrame = {
   readonly box: PlotBox;
@@ -49,6 +72,8 @@ export type PlotFrame = {
   readonly count: number;
   /** The value domain mapped onto the screen coordinate along the value axis. */
   readonly value: LinearScale;
+  /** The slot bands every slot-axis lookup reads. */
+  readonly grid: SlotGrid;
 };
 
 /** A rectangle in CSS pixels from the plot's top left. */
@@ -64,20 +89,38 @@ export type PlotRect = {
  * domain's maximum sits at the top. Under `"horizontal"` slots run top to bottom and the maximum
  * sits at the right.
  *
+ * Under a band x scale every slot takes the same whole device pixels, at least one, from a start
+ * that splits the leftover between both ends: the `"exact"` grid. A point scale, a window too
+ * dense for a device pixel per slot and a decimated window spread instead.
+ *
  * @param box - The measured plot box.
  * @param orientation - Root's orientation.
  * @param count - The effective window's slot count.
  * @param domain - The layout's value domain, lower bound first.
+ * @param xScale - Root's x scale, "band" by default.
  * @returns The frame.
  */
 export function plotFrame(
   box: PlotBox,
   orientation: "vertical" | "horizontal",
   count: number,
-  domain: readonly [number, number]
+  domain: readonly [number, number],
+  xScale: "band" | "point" = "band"
 ): PlotFrame {
   const range: readonly [number, number] = orientation === "vertical" ? [box.height, 0] : [0, box.width];
-  return { box, orientation, count: Math.max(1, count), value: linearScale(domain, range) };
+  const slots = Math.max(1, count);
+  const length = orientation === "vertical" ? box.width : box.height;
+  const origin = orientation === "vertical" ? box.left : box.top;
+  const { dpr } = box;
+  // The drawn plot's whole device pixels, so the last band ends on the plot's drawn edge.
+  const pixels = Math.round(snapFrom(origin, dpr, length) * dpr);
+  const whole = Math.floor(pixels / slots);
+  const leftover = pixels - slots * whole;
+  const exact = xScale === "band" && slots <= DECIMATE_ABOVE && whole >= 1;
+  const grid: SlotGrid = exact
+    ? { rule: "exact", start: Math.floor(leftover / 2) / dpr, step: whole / dpr, whole }
+    : { rule: "spread", start: 0, step: length / slots, whole: Math.floor((length * dpr) / slots) };
+  return { box, orientation, count: slots, value: linearScale(domain, range), grid };
 }
 
 /** How far from a tie, in device pixels, a coordinate still counts as the tie. */
@@ -231,14 +274,73 @@ export function valueAt(frame: PlotFrame, value: number): number {
 
 /**
  * The band a slot takes along the slot axis, snapped, so neighbouring bands share their edge.
+ * Under the `"exact"` grid every band takes the same whole device pixels.
  *
  * @param frame - The layout's frame.
  * @param position - The slot's place in the window, from 0.
  * @returns The band's start and end in CSS pixels.
  */
 export function slotBand(frame: PlotFrame, position: number): readonly [number, number] {
-  const step = alongLength(frame) / frame.count;
-  return snapSpan(frame, position * step, (position + 1) * step);
+  const { grid } = frame;
+  if (grid.rule === "exact") return [slotEdge(frame, position), slotEdge(frame, position + 1)];
+  return snapSpan(frame, position * grid.step, (position + 1) * grid.step);
+}
+
+/** A band edge of the `"exact"` grid: whole device pixels from the drawn origin. */
+function slotEdge(frame: PlotFrame, position: number): number {
+  const { grid, box } = frame;
+  return Math.round((grid.start + position * grid.step) * box.dpr) / box.dpr;
+}
+
+/**
+ * The run the slot bands take along the slot axis, as a share of the plot's length: the first
+ * band's start and the last band's end. HTML placed by slot shares, such as the x axis labels and
+ * the pointer's slot, maps a share inside this run, so it keeps to the bands under the `"exact"`
+ * grid, whose leftover pixels lie at both ends.
+ *
+ * @param frame - The layout's frame.
+ * @returns The run's start and end, each from 0 to 1.
+ */
+export function slotRun(frame: PlotFrame): readonly [number, number] {
+  // A spread grid's run is the whole plot.
+  const length = alongLength(frame) || 1;
+  return [slotAxisAt(frame, 0) / length, slotAxisAt(frame, 1) / length];
+}
+
+/**
+ * The plot's leftover pixels before and after the run the slot bands take, which the x axis's
+ * margins and the Line and Area layers' clips read as `--_run-before` and `--_run-after`.
+ *
+ * @param frame - The layout's frame, or null before the plot is measured.
+ * @returns The two lengths in CSS pixels, both 0 where the run spans the whole plot or before
+ *   the plot is measured.
+ */
+export function runMargins(frame: PlotFrame | null): readonly [number, number] {
+  if (frame === null) return [0, 0];
+  const [from, to] = slotRun(frame);
+  const length = alongLength(frame);
+  return [from * length, (1 - to) * length];
+}
+
+/**
+ * Whether a coordinate along the slot axis lies outside the run the slot bands take, as a sliding
+ * vertex's does, in the plot's leftover pixels or past its ends.
+ */
+function outsideRun(frame: PlotFrame, at: number): boolean {
+  return at < slotAxisAt(frame, 0) || at > slotAxisAt(frame, 1);
+}
+
+/**
+ * Where a share of the slot axis lands, in the run the slot bands take, as a slot reference's
+ * coordinate does.
+ *
+ * @param frame - The layout's frame.
+ * @param share - The share of the slot axis from its first slot, 0 to 1.
+ * @returns CSS pixels from the plot's left or top edge, unsnapped.
+ */
+export function slotAxisAt(frame: PlotFrame, share: number): number {
+  const { start, step } = frame.grid;
+  return start + share * frame.count * step;
 }
 
 /**
@@ -252,8 +354,8 @@ export function slotBand(frame: PlotFrame, position: number): readonly [number, 
  * @returns The centre in CSS pixels.
  */
 export function slotCentreAt(frame: PlotFrame, position: number, xScale: "band" | "point"): number {
+  if (xScale === "band") return frame.grid.start + (position + 0.5) * frame.grid.step;
   const length = alongLength(frame);
-  if (xScale === "band") return ((position + 0.5) * length) / frame.count;
   return frame.count === 1 ? length / 2 : (position * length) / (frame.count - 1);
 }
 
@@ -330,10 +432,11 @@ export function wholeWidth(box: PlotBox, width: number): number {
 
 /**
  * Where a point mark lands along the slot axis: a line's vertex, a dot, a marker or the active dot.
- * Inside the plot it is the centre of the hairline `slotLineAt` draws for the slot the coordinate
- * lies in, the column the line crosshair takes, so the active dot sits on the crosshair and every
- * dot on its line's vertex, at any pixel ratio and however dense the slots. A coordinate past the
- * plot, as a sliding vertex takes, snaps where it is.
+ * Inside the slot run it is the centre of the hairline `slotLineAt` draws for the slot the
+ * coordinate lies in, the column the line crosshair takes, so the active dot sits on the crosshair
+ * and every dot on its line's vertex, at any pixel ratio and however dense the slots. A coordinate
+ * outside the run, as a sliding vertex takes, snaps where it is, so vertices that slide in or out
+ * keep their own places.
  *
  * @param frame - The layout's frame.
  * @param at - The unsnapped coordinate along the slot axis.
@@ -341,11 +444,10 @@ export function wholeWidth(box: PlotBox, width: number): number {
  * @returns The point's coordinate in CSS pixels.
  */
 export function pointAlong(frame: PlotFrame, at: number, xScale: "band" | "point"): number {
-  const length = alongLength(frame);
   const width = hairline(frame.box);
-  if (at < 0 || at > length) return snapAlong(frame, at) + width / 2;
+  if (outsideRun(frame, at)) return snapAlong(frame, at) + width / 2;
   // The hairline `slotLineAt` draws here, no wider than the band it sits in.
-  const band = bandAt(frame, at, xScale);
+  const band = slotBandAt(frame, at, xScale);
   const line = Math.min(width, band[1] - band[0]);
   const start = lineStart(frame, at, band, line);
   return (start + (start + line)) / 2;
@@ -369,7 +471,7 @@ export function strokeCentre(frame: PlotFrame, snapped: number, width: number): 
 /**
  * The span a step run takes along the slot axis around its own slot's centre: the bands of the
  * slot's cells, with the pixel floor, so neighbouring runs share their edges, and the run snapped
- * where its centre lies past the plot, as a sliding vertex's does. A coarse series' slot covers
+ * where its centre lies outside the slot run, as a sliding vertex's does. A coarse series' slot covers
  * several of Root's cells, such as an hour's 4 quarters.
  *
  * @param frame - The layout's frame.
@@ -378,14 +480,18 @@ export function strokeCentre(frame: PlotFrame, snapped: number, width: number): 
  * @returns The run's start and end in CSS pixels.
  */
 export function cellRun(frame: PlotFrame, centre: number, cells = 1): readonly [number, number] {
-  const length = alongLength(frame);
-  const step = length / frame.count;
+  const { step, start } = frame.grid;
   const half = (step * cells) / 2;
-  if (centre < 0 || centre > length)
-    return [snapAlong(frame, centre - half), snapAlong(frame, centre + half)];
+  if (outsideRun(frame, centre)) return [snapAlong(frame, centre - half), snapAlong(frame, centre + half)];
   // The first cell: the one the centre lies in for one cell, and for several, the one the run's
   // start lies in, which the centre's half a run before rounds to.
-  const first = cells === 1 ? Math.floor(centre / (2 * half)) : Math.round((centre - half) / step);
+  // A plot of no length spreads its cells over nothing, so a run starts at the first.
+  const first =
+    step === 0
+      ? 0
+      : cells === 1
+        ? Math.floor((centre - start) / step)
+        : Math.round((centre - half - start) / step);
   const position = Math.min(Math.max(first, 0), frame.count - cells);
   const band: readonly [number, number] = [
     slotBand(frame, position)[0],
@@ -433,20 +539,34 @@ export function slotLineAt(
   xScale: "band" | "point",
   width: number
 ): readonly [number, number] {
-  const at = lineStart(frame, centre, bandAt(frame, centre, xScale), width);
+  const at = lineStart(frame, centre, slotBandAt(frame, centre, xScale), width);
   return [at, at + width];
 }
 
 /**
  * The band of the slot a coordinate along the slot axis lies in, as `optionBand` gives it: the
- * nearest point, or the band that holds it.
+ * nearest point, or the band that holds it, the first or last band past either end of the grid.
+ *
+ * @param frame - The layout's frame.
+ * @param at - CSS pixels from the plot's left or top edge, unsnapped.
+ * @param xScale - Root's x scale.
+ * @returns The band's start and end along the slot axis, snapped.
  */
-function bandAt(frame: PlotFrame, at: number, xScale: "band" | "point"): readonly [number, number] {
+export function slotBandAt(
+  frame: PlotFrame,
+  at: number,
+  xScale: "band" | "point"
+): readonly [number, number] {
+  const { grid, count } = frame;
   const length = alongLength(frame);
-  const share = length === 0 ? 0 : at / length;
+  // A plot of no length spreads its bands over nothing, so every coordinate takes the first band.
   const nearest =
-    xScale === "band" ? Math.floor(share * frame.count) : Math.round(share * Math.max(0, frame.count - 1));
-  return optionBand(frame, Math.min(Math.max(nearest, 0), frame.count - 1), xScale);
+    xScale === "band"
+      ? grid.step > 0
+        ? Math.floor((at - grid.start) / grid.step)
+        : 0
+      : Math.round((length === 0 ? 0 : at / length) * Math.max(0, count - 1));
+  return optionBand(frame, Math.min(Math.max(nearest, 0), count - 1), xScale);
 }
 
 /** Where a line `width` wide starts: at its snapped centre, moved inside the band's device pixels. */
@@ -455,19 +575,23 @@ function lineStart(frame: PlotFrame, centre: number, band: readonly [number, num
 }
 
 /**
- * The span a bar draws inside its slot's band, snapped through `snapBarSpan`, so every bar of a
- * layout with the same sub-band and span draws the same width. The band loses `bandGap` around its
- * bars, and a BarGroup splits the rest into sub-bands `barGap` apart. The gaps stay as requested
- * while they leave every bar a width. Gaps that would use up the band take half of it instead, so
- * a group in a band too narrow for its gaps still draws every bar, and the pixel floor gives each
- * one a device pixel among its band's.
+ * The span a bar draws inside its slot's band: the band less one bar gap, every edge a whole
+ * number of device pixels from the plot's drawn origin. On the `"exact"` grid every band is the
+ * same, so every bar of a layout is the same width and every gap the same. The gap is `bandGap` of
+ * a band's device pixels, rounded and at least one, split with the smaller half before the bar. A
+ * band of one device pixel, or a `bandGap` of 0, has none. A BarGroup splits the rest into
+ * sub-bands of the same whole device pixels, `barGap` apart, rounded to whole device pixels and at
+ * least one, and its remainder splits between both ends. A band too narrow for a device pixel per
+ * bar, as a window denser than the device pixels draws, keeps the ideal shares and the pixel floor
+ * instead, and gaps that would use up the band take half of it, so every bar still draws a device
+ * pixel among its band's.
  *
  * @param frame - The layout's frame.
  * @param position - The slot's place in the window, from 0.
  * @param metrics - The bar spacing.
  * @param sub - The Bar's sub-band.
- * @param span - How many slots the band covers, more than 1 for a coarse series' slot, whose band
- *   loses `bandGap` once around its bar, so an hourly bar on a quarter-hour grid fills its hour.
+ * @param span - How many slots the band covers, more than 1 for a coarse series' slot, whose bands
+ *   lose the gap once around its bar, so an hourly bar on a quarter-hour grid fills its hour.
  * @returns The bar's start and end along the slot axis in CSS pixels, on the device pixel grid.
  */
 export function barSpan(
@@ -477,32 +601,50 @@ export function barSpan(
   sub: SubBand,
   span = 1
 ): readonly [number, number] {
-  const step = alongLength(frame) / frame.count;
-  const band = step * span;
-  const inside = Math.max(0, band * (1 - metrics.bandGap));
+  const { dpr } = frame.box;
+  const { grid } = frame;
+  // The run's own edges in device pixels, which the next run shares even where slots are narrower
+  // than a device pixel and their floored bands overlap.
+  const edge = (at: number) =>
+    grid.rule === "exact"
+      ? Math.round(grid.start * dpr) + at * grid.whole
+      : Math.round(snapAlong(frame, at * grid.step) * dpr);
+  // A band of one device pixel has no room for a gap.
+  const gap =
+    metrics.bandGap > 0 && grid.whole > 1 ? Math.max(1, Math.round(grid.whole * metrics.bandGap)) : 0;
+  const from = edge(position) + Math.floor(gap / 2);
+  const to = edge(position + span) - Math.ceil(gap / 2);
+  const between = sub.count > 1 && metrics.barGap > 0 ? Math.max(1, Math.round(metrics.barGap * dpr)) : 0;
+  const free = to - from - (sub.count - 1) * between;
+  // Every sub-band takes the same whole device pixels, and the remainder splits between both ends.
+  const each = Math.floor(free / sub.count);
+  if (each >= 1) {
+    const start = from + Math.floor((free - sub.count * each) / 2) + sub.index * (each + between);
+    return [start / dpr, (start + each) / dpr];
+  }
+  const band = grid.step * span;
+  const inside = band * (1 - metrics.bandGap);
   const gaps = sub.count - 1;
-  const gap = gaps === 0 ? 0 : inside - gaps * metrics.barGap > 0 ? metrics.barGap : inside / (2 * gaps);
-  const size = (inside - (sub.count - 1) * gap) / sub.count;
-  const start = position * step + (band * metrics.bandGap) / 2 + sub.index * (size + gap);
-  // A bar keeps its pixel among its band's, so the crosshair band and the focused option cover it.
-  const slots: readonly [number, number] = [
+  // Gaps that would leave the bars less than a device pixel each take half the band.
+  const subGap =
+    gaps && (inside - gaps * metrics.barGap >= sub.count / dpr ? metrics.barGap : inside / (2 * gaps));
+  const size = (inside - gaps * subGap) / sub.count;
+  const start = slotAxisAt(frame, position / frame.count) + (band - inside) / 2 + sub.index * (size + subGap);
+  // A bar keeps its pixels among its bands', so the crosshair band and the focused option cover it.
+  return snapBarSpan(frame, start, start + size, [
     slotBand(frame, position)[0],
     slotBand(frame, position + span - 1)[1],
-  ];
-  return snapBarSpan(frame, start, start + size, slots);
+  ]);
 }
 
 /**
- * Snap a bar's span along the slot axis, so bars of one ideal width draw one width. The width
- * snaps once, rounded down to whole device pixels. Only the start snaps after that. It starts the
- * rounded width centred on the span's middle and moves to its device pixel, so the bar keeps its
- * band's middle within half a device pixel. The end lies the width past the start. Bars a
- * fractional step apart then keep one width, and the gaps take the remainder, so two gaps differ
- * by at most one device pixel. The centred width lies inside the span, and snapping moves two
- * coordinates a whole number of device pixels apart alike, so the bar stays inside its snapped
- * band, and a gap of a device pixel or more stays open. A tween frame between two bars of one
- * width carries that width and draws it. A span narrower than a device pixel, or an empty one,
- * takes `snapSpan`'s pixel floor.
+ * Snap a bar body's span along the slot axis, as a tween frame between two resting bars draws it.
+ * The width snaps once, rounded down to whole device pixels. Only the start snaps after that. It
+ * starts the rounded width centred on the span's middle and moves to its device pixel, so the body
+ * keeps its middle within half a device pixel and a frame never widens a bar past its unsnapped
+ * width. A span already on the device pixel grid, as `barSpan` gives every resting bar, snaps to
+ * itself, so a tween's first and last frames draw the resting edges. A span narrower than a device
+ * pixel, or an empty one, takes `snapSpan`'s pixel floor.
  *
  * @param frame - The layout's frame.
  * @param start - The span's start along the slot axis.
@@ -529,9 +671,9 @@ export function snapBarSpan(
 /**
  * Snap a span along the slot axis, each edge to its own device pixel, so neighbouring spans share
  * their edges, as slot bands, step runs and slot references do. A bar's body takes `snapBarSpan`,
- * which keeps one width instead. This is the one owner of the pixel floor, which every mark and
- * every interaction band takes: a span wider than zero keeps at least one device pixel, and an empty
- * span stays empty. A span narrower than a device pixel snaps both edges to one, and keeps the
+ * which snaps its width once instead. This is the one owner of the pixel floor, which every mark
+ * and every interaction band takes: a span wider than zero keeps at least one device pixel, and an
+ * empty span stays empty. A span narrower than a device pixel snaps both edges to one, and keeps the
  * device pixel on the side of that edge where its middle lies, so a bar and the band around it
  * take the same pixel. At the plot's ends the pixel stays inside the plot, and inside `within`
  * when the span lies in a snapped container, such as a bar in its band.
@@ -592,11 +734,11 @@ function floorSpan(
 }
 
 /**
- * Snap a mark's drawn body: its slot-axis edges through `snapBarSpan`, so bodies of one ideal width
- * draw one width and keep the pixel floor, and its value-axis edges onto the device pixels, so a
- * zero value stays flat. Every rectangle a bar, its look's parts, the active overlay, a path column
- * or the tooltip row draws comes through here, after any shaping, so nothing narrows a body after
- * the floor. A body already on the grid draws as it is.
+ * Snap a mark's drawn body: its slot-axis edges through `snapBarSpan`, so a body on the grid draws
+ * as it is and a narrower one keeps the pixel floor, and its value-axis edges onto the device
+ * pixels, so a zero value stays flat. Every rectangle a bar, its look's parts, the active overlay,
+ * a path column or the tooltip row draws comes through here, after any shaping, so nothing narrows
+ * a body after the floor.
  *
  * @param frame - The layout's frame.
  * @param rect - The unsnapped body.

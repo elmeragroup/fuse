@@ -242,9 +242,9 @@ export function missingTickAt(frame: PlotFrame, zero: number = valueAt(frame, 0)
 }
 
 /**
- * The endpoints of a missing tick: its span along the slot axis, snapped by the bars' width rule,
- * so every tick of a series draws one width, on the zero line drawn at a coordinate. A tween
- * frame's numbers draw through here too.
+ * The endpoints of a missing tick: its span along the slot axis, the span a bar would take there,
+ * snapped through `snapBarSpan`, on the zero line drawn at a coordinate. A tween frame's numbers
+ * draw through here too.
  *
  * @param frame - The frame the series draws in.
  * @param span - The tick's span along the slot axis.

@@ -205,15 +205,13 @@ describe("bar-chart scenario demos in Chromium", () => {
     expect(await slotCount(step, "chart-bar", "[data-emphasis]")).toBe(3);
     // The line prints the average to the config's 2 fraction digits.
     await expect.poll(async () => step.getByText("Average of the top three 2.17 kWh").count()).toBe(1);
-    // 31 days split the plot into 31 equal bands, so a bar's centre names its day.
-    const emphasised = await step.locator('[data-slot="chart-bar"][data-emphasis]').evaluateAll((bars) =>
-      bars.map((bar) => {
-        // The bar's series layer covers the plot, and each day owns one band of 31.
-        const plot = bar.closest('[data-slot="chart-bar-series"]')?.getBoundingClientRect() ?? new DOMRect();
-        const box = bar.getBoundingClientRect();
-        return Math.floor(((box.left + box.width / 2 - plot.left) / plot.width) * 31) + 1;
-      })
-    );
+    // The 31 bars draw in day order, so a bar's place among them names its day. The plot's
+    // leftover pixels sit at both ends, so its share of the plot would not.
+    const emphasised = await step
+      .locator('[data-slot="chart-bar"]')
+      .evaluateAll((bars) =>
+        bars.flatMap((bar, index) => (bar.hasAttribute("data-emphasis") ? [index + 1] : []))
+      );
     expect(emphasised.toSorted((a, b) => a - b)).toEqual([19, 30, 31]);
 
     // The headline prints the oracle's 2.1723 average to the config's 2 fraction digits, in the
@@ -258,14 +256,16 @@ describe("bar-chart scenario demos in Chromium", () => {
 
     // The tooltip over October 31 names that day's peak hour.
     const lastDay = step.locator('[data-slot="chart-bar"]').nth(30);
+    // The 31st bar is the rightmost, October 31's.
     expect(
-      await lastDay.evaluate((bar) => {
-        // The bar's series layer covers the plot, and each day owns one band of 31.
-        const plot = bar.closest('[data-slot="chart-bar-series"]')?.getBoundingClientRect() ?? new DOMRect();
-        const box = bar.getBoundingClientRect();
-        return Math.floor(((box.left + box.width / 2 - plot.left) / plot.width) * 31) + 1;
-      })
-    ).toBe(31);
+      await step
+        .locator('[data-slot="chart-bar"]')
+        .evaluateAll((bars) =>
+          bars
+            .map((bar) => bar.getBoundingClientRect().left)
+            .findLastIndex((left, _, all) => left === Math.max(...all))
+        )
+    ).toBe(30);
     // The plot's surface sits above the bars and takes the pointer, so the mouse moves to the
     // bar's box once the bar is in view, and the pointer cannot land on a chart above it.
     await lastDay.scrollIntoViewIfNeeded();
@@ -607,9 +607,17 @@ describe.each([
           .map((bar) => bar.getBoundingClientRect())
           .filter((box) => box.height > 0);
         const tallest = bars.reduce((best, box) => (box.top < best.top ? box : best));
-        const slot = Math.floor(((tallest.left + tallest.width / 2 - plot.left) / plot.width) * count);
-        const left = plot.left + (plot.width * slot) / count;
-        const right = plot.left + (plot.width * (slot + 1)) / count;
+        // The slot grid: every band takes the same whole device pixels from a start that splits
+        // the plot's leftover between both ends, each end on the device pixel nearest it.
+        const dpr = window.devicePixelRatio;
+        const device = (at: number) => Math.ceil(at * dpr - 0.5 - 1e-6);
+        const origin = device(plot.left);
+        const pixels = device(plot.right) - origin;
+        const whole = Math.floor(pixels / count);
+        const lead = Math.floor((pixels - count * whole) / 2);
+        const slot = Math.floor(((tallest.left + tallest.width / 2) * dpr - origin - lead) / whole);
+        const left = (origin + lead + slot * whole) / dpr;
+        const right = (origin + lead + (slot + 1) * whole) / dpr;
         const top = Math.min(
           ...bars.filter((box) => box.right > left && box.left < right).map((box) => box.top)
         );

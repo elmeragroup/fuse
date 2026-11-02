@@ -173,16 +173,17 @@ describe("a coarse path's motion on a time axis under Panels (W5)", () => {
   it("slides three hours by one hour, every vertex 160 px on one clock, and rests on the new hours", async () => {
     // 12 quarters of 40 px: hour k's centre lies at 160k + 80, so the line's vertices rest at 80,
     // 240 and 400 (each on the 1 px column from its centre, at 80.5, 240.5 and 400.5), and hour
-    // k's bar runs 160k + 20 to 160k + 140. The window moves one hour: hour 0 leaves to -80, hours
+    // k's bar runs 160k + 5 to 160k + 155: its 4 quarters less one gap, 25 % of a 40 px quarter.
+    // The window moves one hour: hour 0 leaves to -80, hours
     // 1 and 2 move left by 160, and hour 3 arrives from 560 to 400, each 160 px times the progress.
     clock = installFrameClock();
     const { host, rerender } = renderThemed(<Hours data={hours(MIDNIGHT, [1, 2, 3])} />);
     await expect
       .poll(() => barSpans(host))
       .toEqual([
-        [20, 140],
-        [180, 300],
-        [340, 460],
+        [5, 155],
+        [165, 315],
+        [325, 475],
       ]);
     rerender(<Hours data={hours(MIDNIGHT + 4 * QUARTER, [2, 3, 4])} />);
     const start = clock.now();
@@ -202,14 +203,15 @@ describe("a coarse path's motion on a time axis under Panels (W5)", () => {
       [400.5, 100],
     ]);
     expect(barSpans(host)).toEqual([
-      [20, 140],
-      [180, 300],
-      [340, 460],
+      [5, 155],
+      [165, 315],
+      [325, 475],
     ]);
   });
 
   it("grows a fourth hour out of the last hour when the next day shares no slot", async () => {
-    // The next day has 16 quarters of 30 px, so its hours centre at 60, 180, 300 and 420. The
+    // The next day has 16 quarters of 30 px, so its hours centre at 60, 180, 300 and 420, and each
+    // hour's bar loses one gap of round(7.5) = 8 px, 4 at each end. The
     // fourth hour grows from the old last vertex, at 400 and 3, y = 125, toward 420 and 7, y = 25.
     clock = installFrameClock();
     const { host, rerender } = renderThemed(<Hours data={hours(MIDNIGHT, [1, 2, 3])} />);
@@ -223,10 +225,10 @@ describe("a coarse path's motion on a time axis under Panels (W5)", () => {
     expect(Math.abs(y - (125 - 100 * eased))).toBeLessThanOrEqual(1);
     clock.frameAt(start + 600);
     expect(barSpans(host)).toEqual([
-      [15, 105],
-      [135, 225],
-      [255, 345],
-      [375, 465],
+      [4, 116],
+      [124, 236],
+      [244, 356],
+      [364, 476],
     ]);
   });
 });

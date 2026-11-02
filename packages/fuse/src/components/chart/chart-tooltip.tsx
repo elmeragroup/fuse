@@ -441,7 +441,9 @@ function ChartTooltipBody({
   const frozen = useRef(false);
   const pick = (clientX: number, clientY: number) => {
     const surface = document.getElementById(`${id}-surface`);
-    return surface === null ? null : pointerSlot(context, surface.getBoundingClientRect(), clientX, clientY);
+    return surface === null
+      ? null
+      : pointerSlot(context, drawn?.frame ?? null, surface.getBoundingClientRect(), clientX, clientY);
   };
   // The input that last moved the active slot, read on each render the slot change causes.
   const touchInput = ["touch", "pen"].includes(store.pointer()?.type ?? "");
