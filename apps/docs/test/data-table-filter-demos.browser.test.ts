@@ -67,7 +67,9 @@ describe("DataTableFilter demos", () => {
     const demo = await openDemo(page, "data-table-filter", "3,000 options");
     await demo.getByRole("button", { name: "Filter", exact: true }).click();
     await page.getByRole("menuitem", { name: "Product", exact: true }).click();
-    await expect.poll(() => page.getByRole("menuitemcheckbox").count()).toBe(50);
+    // The submenu builds its list from 3,000 products, which a loaded CI runner can take past the
+    // default second to open, so this wait takes the page's own timeout.
+    await expect.poll(() => page.getByRole("menuitemcheckbox").count(), { timeout: 10_000 }).toBe(50);
     await expect
       .poll(() => page.getByRole("status").filter({ hasText: "Type to narrow the list" }).count())
       .toBe(1);
