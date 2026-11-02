@@ -8,6 +8,7 @@ import { tv } from "tailwind-variants";
 import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 
 import { tocForPath } from "../lib/nav";
+import { isWidePage } from "../lib/pages";
 
 const quickNav = tv({
   slots: {
@@ -21,9 +22,11 @@ const quickNav = tv({
 
 const { root, scroll, title, list, link } = quickNav();
 
-export function QuickNav(): ReactElement {
+export function QuickNav(): ReactElement | null {
   const pathname = usePathname();
   const items = tocForPath(pathname);
+  // A wide route, a block's page, gives this column's room to its preview.
+  if (isWidePage(pathname)) return null;
 
   return (
     <nav aria-label="On this page" className={root()}>

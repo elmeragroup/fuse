@@ -238,7 +238,7 @@ export type DocsComponent = ComponentPageEntry & {
  * Which group a search hit belongs to, a SideNav group or the studio; the palette shows it next
  * to the title.
  */
-export type SearchGroup = "Overview" | "Handbook" | "Studio" | "Components";
+export type SearchGroup = "Overview" | "Handbook" | "Studio" | "Components" | "Blocks";
 
 /**
  * One destination in the ⌘K palette index.

@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { docsRoot } from "../scripts/lib/paths.ts";
 
 const componentsDir = path.join(docsRoot, "src/app/(docs)/components");
+const blocksDir = path.join(docsRoot, "src/app/(docs)/blocks");
 
 /**
  * Specifiers any consumer writes: React, the public entries, the date-cluster value type, and the
@@ -94,5 +95,42 @@ describe("demos import only what a consumer could", () => {
         expect(imported, demo).toContain(specifier);
       }
     }
+  });
+});
+
+/**
+ * What a block may import beyond a demo's specifiers, reviewed: a block is a whole Next app, so it
+ * routes with Next's own `Link` and router hooks, and it is several files, so it imports its own
+ * siblings. Nothing reaches outside the block's folder, so a newcomer copies the folder as it is.
+ */
+const BLOCK_SPECIFIERS = [/^next\/link$/u, /^next\/navigation$/u];
+
+/** Every file of every block, by its block's directory. */
+function blockFiles(): { dir: string; file: string }[] {
+  return readdirSync(blocksDir).flatMap((slug) => {
+    const dir = path.join(blocksDir, slug, "demos");
+    return readdirSync(dir)
+      .filter((file) => /\.tsx?$/u.test(file))
+      .map((file) => ({ dir, file }));
+  });
+}
+
+describe("blocks import only what a consumer could", () => {
+  it("imports React, Fuse's public entries, TanStack Table, Next's routing and its own files", () => {
+    const files = blockFiles();
+    // The app shell's files, so the check is not vacuous.
+    expect(files.length).toBeGreaterThanOrEqual(13);
+    const offenders: string[] = [];
+    for (const { dir, file } of files) {
+      const siblings = new Set(readdirSync(dir).map((name) => `./${name.replace(/\.tsx?$/u, "")}`));
+      for (const specifier of specifiersOf(path.join(dir, file))) {
+        const allowed =
+          CONSUMER_SPECIFIERS.some((pattern) => pattern.test(specifier)) ||
+          BLOCK_SPECIFIERS.some((pattern) => pattern.test(specifier)) ||
+          siblings.has(specifier);
+        if (!allowed) offenders.push(`${path.relative(blocksDir, dir)}/${file}: ${specifier}`);
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 });

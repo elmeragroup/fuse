@@ -15,15 +15,16 @@ describe("search index", () => {
   it("is generated from the page manifests, with nothing else in it", () => {
     expect(SEARCH_ENTRIES.map((entry) => entry.href)).toEqual([
       HOME_PAGE.href,
-      ...STATIC_PAGES.map((page) => page.href),
+      ...STATIC_PAGES.filter((page) => page.group !== "blocks").map((page) => page.href),
       ...STUDIO_PAGES.map((page) => page.href),
       ...COMPONENT_PAGES.map((component) => `/components/${component.slug}`),
+      "/blocks/app-shell",
     ]);
   });
 
   it("carries a group, a description and match keywords on every entry", () => {
     for (const entry of SEARCH_ENTRIES) {
-      expect(["Overview", "Handbook", "Studio", "Components"], entry.href).toContain(entry.group);
+      expect(["Overview", "Handbook", "Studio", "Components", "Blocks"], entry.href).toContain(entry.group);
       expect(entry.title, entry.href).not.toBe("");
       expect(entry.description, entry.href).not.toBe("");
       expect(entry.keywords.length, entry.href).toBeGreaterThan(0);
@@ -71,6 +72,8 @@ describe("search matching", () => {
     ],
     ["finds the theme studio by its title", "studio", "/studio"],
     ["finds the theme studio by what it is", "playground", "/studio"],
+    ["finds a block by its title", "app shell", "/blocks/app-shell"],
+    ["finds a block by what it is", "template", "/blocks/app-shell"],
     ["finds an alias page by its own part name", "BarChart.Root", "/components/bar-chart"],
     ["finds an alias page by its own part name", "LineChart.Line", "/components/line-chart"],
     ["finds an alias page by its own part name", "AreaChart.Area", "/components/area-chart"],

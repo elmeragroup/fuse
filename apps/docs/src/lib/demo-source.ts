@@ -65,7 +65,7 @@ export function demoSourceHref({ section, slug, file }: DemoLocation): string {
 
 /**
  * Every demo file of every docs page, read from the route directories, which the source route
- * prerenders one by one.
+ * prerenders one by one: the `.tsx` demos, and the `.ts` modules a block's demos import.
  *
  * @returns Each demo's location.
  */
@@ -78,7 +78,8 @@ export function demoLocations(): DemoLocation[] {
         const demosDir = docsRouteFile(section, slug, "demos").absolute;
         return existsSync(demosDir)
           ? readdirSync(demosDir)
-              .filter((file) => file.endsWith(".tsx"))
+              // A block's demos include its plain modules, such as its data, which its Code view shows.
+              .filter((file) => file.endsWith(".tsx") || file.endsWith(".ts"))
               .map((file) => ({ section, slug, file }))
           : [];
       });

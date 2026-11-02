@@ -28,14 +28,19 @@ function docsSourceFiles(dir: string): string[] {
 const SIDEBAR_ROUTE = "src/app/(docs)/components/sidebar/";
 /** The landing hero's Dashboard window, a product demo built on the library Sidebar. */
 const LANDING_APP_SHELL = "src/app/(landing)/landing/app-shell/";
+/** The blocks' own files: whole apps built on the library Sidebar, which their previews frame. */
+const BLOCK_DEMOS = /^src\/app\/\(docs\)\/blocks\/[^/]+\/demos\//u;
 
 /**
- * The Sidebar component page and its demos, and the landing's Dashboard demo, are the places the
- * library Sidebar may be imported: they demonstrate the component, they are not docs chrome.
+ * The Sidebar component page and its demos, the landing's Dashboard demo and the blocks are the
+ * places the library Sidebar may be imported: they demonstrate the component, they are not docs
+ * chrome.
  */
 function isSidebarPage(file: string): boolean {
   const relative = path.relative(docsRoot, file).split(path.sep).join("/");
-  return relative.startsWith(SIDEBAR_ROUTE) || relative.startsWith(LANDING_APP_SHELL);
+  return (
+    relative.startsWith(SIDEBAR_ROUTE) || relative.startsWith(LANDING_APP_SHELL) || BLOCK_DEMOS.test(relative)
+  );
 }
 
 function isSidebarDemo(file: string): boolean {

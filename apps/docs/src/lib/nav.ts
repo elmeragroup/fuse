@@ -52,18 +52,20 @@ function toNavItems(pages: readonly { href: string; label: string }[]): readonly
 }
 
 /**
- * The complete four-group SideNav inventory.
+ * The complete five-group SideNav inventory.
  *
- * Overview and Handbook come from the authored page manifest; Components and Charts are derived
- * from the generated component outlines, which the generation pass globs off the route
+ * Overview, Handbook and Blocks come from the authored page manifest; Components and Charts are
+ * derived from the generated component outlines, which the generation pass globs off the route
  * directories — so the nav cannot list a page the site does not serve, or miss one it does.
- * Charts holds the chart entry's pages and sits under Components.
+ * Charts holds the chart entry's pages and sits under Components, and Blocks, the whole apps built
+ * from them, comes last.
  */
 export const NAV_GROUPS: readonly NavGroup[] = [
   { label: "Overview", items: toNavItems(staticPagesIn("overview")) },
   { label: "Handbook", items: toNavItems(staticPagesIn("handbook")) },
   { label: "Components", items: COMPONENTS_GROUP },
   { label: "Charts", items: CHARTS_GROUP },
+  { label: "Blocks", items: toNavItems(staticPagesIn("blocks")) },
 ];
 
 /** The outline of the component page a pathname serves, or `undefined` off the component pages. */
