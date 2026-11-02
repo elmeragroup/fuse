@@ -78,10 +78,13 @@ export function KpiCard({
             <span className="sr-only">{spoken}</span>
           </p>
           {change === undefined || changed === undefined ? null : (
-            <p className="text-xs flex items-center gap-1 text-muted-foreground tabular-nums">
-              <Trend aria-hidden className="size-3.5" />
-              <span aria-hidden>{changed.text}</span>
-              <span className="sr-only">{changed.spoken}</span> {change.against}
+            <p className="text-xs flex items-start gap-1 text-muted-foreground tabular-nums">
+              <Trend aria-hidden className="mt-px size-3.5 shrink-0" />
+              {/* One text run beside the icon, so a narrow card wraps the sentence, not its parts. */}
+              <span>
+                <span aria-hidden>{changed.text}</span>
+                <span className="sr-only">{changed.spoken}</span> {change.against}
+              </span>
             </p>
           )}
           {note === undefined ? null : <p className="text-xs text-muted-foreground">{note}</p>}
