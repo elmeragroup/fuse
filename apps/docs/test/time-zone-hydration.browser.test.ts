@@ -115,7 +115,8 @@ async function hydrateDemo(
     // The server sends a chart's plot with a loader, and the browser draws the marks and places
     // the plot's followers and focus target once it measures the plot. Those writes land inside
     // plot output and are drawing, not hydration, so only records outside it count. Root writes
-    // its entrance state on its figure as it draws, which is drawing too.
+    // its entrance state on its figure as it draws, which is drawing too, and the x axis takes the
+    // slot run's margins in its style when it measures.
     const plotOutput = [
       '[data-slot="chart-frame"] svg',
       '[data-slot="chart-plot"]',
@@ -128,6 +129,8 @@ async function hydrateDemo(
     const drawn = (record: MutationRecord): boolean => {
       if (record.attributeName === "data-entrance") return true;
       const target = record.target instanceof Element ? record.target : record.target.parentElement;
+      const axis = target?.matches('[data-slot="chart-x-axis"]') === true;
+      if (axis && record.attributeName === "style") return true;
       return target?.closest(plotOutput) !== null && target?.closest(plotOutput) !== undefined;
     };
     new MutationObserver((batch) => {
