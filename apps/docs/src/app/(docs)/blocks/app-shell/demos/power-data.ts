@@ -400,7 +400,7 @@ const CONTRACT_CYCLE = ["spot", "spot", "fixed", "variable"] as const;
 export const METERING_POINT_COUNT = 480;
 
 /** The GS1 check digit of a GSRN's first 17 digits: weights 3 and 1 from the right, mod 10. */
-export function gs1CheckDigit(digits: string): number {
+function gs1CheckDigit(digits: string): number {
   let sum = 0;
   for (let index = 0; index < digits.length; index++) {
     const fromRight = digits.length - 1 - index;

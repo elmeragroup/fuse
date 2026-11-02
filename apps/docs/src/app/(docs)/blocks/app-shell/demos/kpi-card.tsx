@@ -57,10 +57,11 @@ export function KpiCard({
   trendLabel,
   trendVariant = "line",
 }: KpiCardProps): ReactElement {
-  const spoken = formatChartValue(value, format, { locale: APP_LOCALE }).spoken;
+  const formatted = formatChartValue(value, format, { locale: APP_LOCALE });
+  const { spoken } = formatted;
   const text =
     figure === undefined
-      ? formatChartValue(value, format, { locale: APP_LOCALE }).text
+      ? formatted.text
       : `${formatChartValue(value, figure.format, { locale: APP_LOCALE }).text}\u00a0${figure.unit}`;
   const changed =
     change === undefined ? undefined : formatChartValue(change.value, CHANGE_FORMAT, { locale: APP_LOCALE });

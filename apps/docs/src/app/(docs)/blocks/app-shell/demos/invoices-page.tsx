@@ -6,7 +6,7 @@
  * is a button, so a keyboard reaches what the press does.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 
 import {
@@ -248,33 +248,28 @@ function InvoiceDetail({ invoice }: { invoice: Invoice }): ReactElement {
   );
 }
 
+/** How many invoices each choice shows. */
+const COUNTS = new Map(
+  SHOWS.map((choice) => [
+    choice,
+    INVOICES.filter((invoice) => choice === "all" || invoice.state._tag === choice).length,
+  ])
+);
+
 /** The invoices page. */
 export function InvoicesPage(): ReactElement {
   const [show, setShow] = useState<Show>("all");
   // The open invoice, kept while the Sheet animates out so its content does not empty first.
   const [opened, setOpened] = useState<Invoice | undefined>(undefined);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const counts = useMemo(
-    () =>
-      new Map(
-        SHOWS.map((choice) => [
-          choice,
-          INVOICES.filter((invoice) => choice === "all" || invoice.state._tag === choice).length,
-        ])
-      ),
-    []
-  );
   const data = useMemo(
     () => INVOICES.filter((invoice) => show === "all" || invoice.state._tag === show),
     [show]
   );
-  const open = useMemo(
-    () => (invoice: Invoice) => {
-      setOpened(invoice);
-      setSheetOpen(true);
-    },
-    []
-  );
+  const open = useCallback((invoice: Invoice) => {
+    setOpened(invoice);
+    setSheetOpen(true);
+  }, []);
   const tableColumns = useMemo(() => invoiceColumns(open), [open]);
   const table = useAppTable({
     columns: tableColumns,
@@ -297,7 +292,7 @@ export function InvoicesPage(): ReactElement {
             {SHOWS.map((choice) => (
               <ToggleGroup.Item key={choice} value={choice}>
                 {choice === "all" ? "All" : STATE_BADGES[choice].label}
-                <span className="text-xs text-muted-foreground tabular-nums">{counts.get(choice)}</span>
+                <span className="text-xs text-muted-foreground tabular-nums">{COUNTS.get(choice)}</span>
               </ToggleGroup.Item>
             ))}
           </ToggleGroup.Root>

@@ -2,6 +2,7 @@ import { defaultDensityForVariant, parseThemeSlug } from "@elmeragroup/fuse/them
 import type { Density, ThemeInput } from "@elmeragroup/fuse/theme";
 
 import { OPENING_THEME } from "../../../lib/theme";
+import { THEME_QUERY } from "../../../lib/theme-address";
 
 /**
  * The density the landing deploys, the library's default for its opening variant. It stays put
@@ -9,9 +10,6 @@ import { OPENING_THEME } from "../../../lib/theme";
  * would reflow the page under the visitor's cursor.
  */
 export const LANDING_DENSITY: Density = defaultDensityForVariant(OPENING_THEME.variant);
-
-/** The search parameter that carries a shared theme, as Fuse's slug: `internal-fkas-company`. */
-export const THEME_QUERY = "theme";
 
 /** True when both themes name the same variant, brand and segment. */
 export function sameTheme(left: ThemeInput, right: ThemeInput): boolean {

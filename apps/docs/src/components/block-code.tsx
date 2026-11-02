@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
 import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
-import { Check, Copy } from "@elmeragroup/fuse/icons";
 import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 
-import { copyText } from "../lib/copy-with-toast";
 import { DocsCodePre } from "./docs-code-pre";
+import { CopySourceButton, useHighlightedSource } from "./source-code";
 
 /** One file of a block, as its Code view lists it. */
 export type BlockFile = {
@@ -23,9 +22,6 @@ export type BlockFile = {
   /** The prerendered route that serves its highlighted markup. */
   readonly sourceHref: string;
 };
-
-/** How long the copy button shows that it copied, in ms. */
-const COPIED_MS = 2000;
 
 const blockCode = tv({
   slots: {
@@ -44,70 +40,17 @@ const blockCode = tv({
     code: "min-h-0 flex-1",
     // The block scrolls its long lines itself, under its own horizontal scrollbar.
     source: "[contain:inline-size]",
-    status: "sr-only",
   },
 });
 
 const styles = blockCode();
 
-/**
- * The highlighted markup of a file, fetched the first time it shows, or `undefined` while it loads
- * and when the fetch fails.
- */
-function useHighlighted(file: BlockFile, active: boolean): string | undefined {
-  const [markup, setMarkup] = useState<ReadonlyMap<string, string>>(new Map());
-  const known = markup.has(file.file);
-  useEffect(() => {
-    if (known || !active) return;
-    const controller = new AbortController();
-    fetch(file.sourceHref, { signal: controller.signal })
-      .then((response) => (response.ok ? response.text() : null))
-      .then((html) => {
-        if (html !== null) setMarkup((current) => new Map(current).set(file.file, html));
-      })
-      // A failed fetch keeps the plain text, which is still the whole source.
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [file, known, active]);
-  return markup.get(file.file);
-}
-
-function CopyButton({ file }: { file: BlockFile }): ReactElement {
-  const [copied, setCopied] = useState<boolean | undefined>(undefined);
-  const timer = useRef<number | undefined>(undefined);
-  useEffect(() => () => window.clearTimeout(timer.current), []);
-  return (
-    <>
-      <Button
-        variant="ghost"
-        size="icon-xs"
-        aria-label={copied === true ? "Copied" : `Copy ${file.file}`}
-        onClick={() => {
-          void copyText(file.sourceText).then((ok) => {
-            setCopied(ok);
-            window.clearTimeout(timer.current);
-            timer.current = window.setTimeout(() => setCopied(undefined), COPIED_MS);
-          });
-        }}>
-        {copied === true ? <Check aria-hidden /> : <Copy aria-hidden />}
-      </Button>
-      <span role="status" className={styles.status()}>
-        {copied === undefined
-          ? ""
-          : copied
-            ? `${file.file} copied to the clipboard`
-            : "Could not copy the code"}
-      </span>
-    </>
-  );
-}
-
 function FileSource({ file, active }: { file: BlockFile; active: boolean }): ReactElement {
-  const html = useHighlighted(file, active);
+  const html = useHighlightedSource(file.sourceHref, active);
   return (
     <ScrollArea.Root className={styles.code()}>
       <div className={styles.source()}>
-        <DocsCodePre variant="embedded" code={html === undefined ? { text: file.sourceText } : { html }} />
+        <DocsCodePre variant="embedded" code={html === null ? { text: file.sourceText } : { html }} />
       </div>
     </ScrollArea.Root>
   );
@@ -172,7 +115,12 @@ export function BlockCode({ folder, files, active, className }: BlockCodeProps):
             <p className={styles.path()}>
               {folder}/{file.file}
             </p>
-            <CopyButton key={file.file} file={file} />
+            <CopySourceButton
+              key={file.file}
+              sourceText={file.sourceText}
+              label={`Copy ${file.file}`}
+              copiedStatus={`${file.file} copied to the clipboard`}
+            />
           </div>
           <FileSource file={file} active={active} />
         </section>

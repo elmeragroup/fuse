@@ -1,20 +1,20 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
 import { Frame } from "@elmeragroup/fuse/frame";
-import { ArrowsOut, Check, Copy } from "@elmeragroup/fuse/icons";
+import { ArrowsOut } from "@elmeragroup/fuse/icons";
 import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 import { Sheet } from "@elmeragroup/fuse/sheet";
 import { Tabs } from "@elmeragroup/fuse/tabs";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 
-import { copyText } from "../lib/copy-with-toast";
 import { DocsCodePre } from "./docs-code-pre";
+import { CopySourceButton, useHighlightedSource } from "./source-code";
 
 type DemoTabsProps = {
   /** The demo's title as plain text, for the Sheet title and the view switch's name. */
@@ -33,9 +33,6 @@ type DemoTabsProps = {
   /** The route that serves the source's highlighted markup, fetched when the Code view first shows. */
   sourceHref: string;
 };
-
-/** How long the copy action shows that it copied, in ms. */
-const COPIED_MS = 2000;
 
 const demoTabs = tv({
   slots: {
@@ -67,88 +64,10 @@ const demoTabs = tv({
     // scrolls its long lines itself, under its own horizontal scrollbar.
     codeSource: "[contain:inline-size]",
     sheetHeader: "flex-row items-center justify-between gap-2",
-    status: "sr-only",
   },
 });
 
-const {
-  root,
-  panel,
-  footer,
-  bleed,
-  codeView,
-  actions,
-  code,
-  codeSource,
-  sheetHeader,
-  status: statusClass,
-} = demoTabs();
-
-/**
- * The highlighted markup of a demo's source, fetched once `wanted` turns true, or null while it
- * loads and when it fails, where the plain text stays. The page's HTML holds the plain text, which
- * the tools that read the source find, so a page of demos parses one text node per demo, and its
- * payload carries no markup: the 36 highlighted sources of the bar-chart page held 40,000 of its
- * 46,700 nodes and 3 MB of its payload.
- */
-function useHighlightedSource(href: string, wanted: boolean): string | null {
-  const [html, setHtml] = useState<string | null>(null);
-  useEffect(() => {
-    if (!wanted) return;
-    const controller = new AbortController();
-    fetch(href, { signal: controller.signal })
-      .then((response) => (response.ok ? response.text() : null))
-      .then((markup) => {
-        if (markup !== null) setHtml(markup);
-      })
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [href, wanted]);
-  return html;
-}
-
-/** What the last copy did: nothing yet, copied, or failed because the page has no clipboard. */
-type CopyState = "idle" | "copied" | "failed";
-
-/** What the live region says after each copy. */
-const COPY_STATUS = {
-  idle: "",
-  copied: "Code copied to the clipboard",
-  failed: "Could not copy the code",
-} as const satisfies Record<CopyState, string>;
-
-/**
- * Copies a demo's source to the clipboard. The button turns into a check and says "Copied" while
- * the copy shows, and a polite live region tells a screen reader that the copy happened, or that
- * it could not, as where the page has no clipboard.
- */
-function CopySourceButton({ sourceText }: { sourceText: string }): ReactElement {
-  const [state, setState] = useState<CopyState>("idle");
-  const resetTimer = useRef<number | undefined>(undefined);
-
-  useEffect(() => () => window.clearTimeout(resetTimer.current), []);
-
-  async function copy(): Promise<void> {
-    setState((await copyText(sourceText)) ? "copied" : "failed");
-    window.clearTimeout(resetTimer.current);
-    resetTimer.current = window.setTimeout(() => setState("idle"), COPIED_MS);
-  }
-
-  return (
-    <>
-      <Toolbar.Button
-        onClick={() => void copy()}
-        render={
-          <Button variant="ghost" size="icon-xs" aria-label={state === "copied" ? "Copied" : "Copy code"} />
-        }>
-        {state === "copied" ? <Check aria-hidden /> : <Copy aria-hidden />}
-      </Toolbar.Button>
-      <span role="status" className={statusClass()}>
-        {COPY_STATUS[state]}
-      </span>
-    </>
-  );
-}
+const { root, panel, footer, bleed, codeView, actions, code, codeSource, sheetHeader } = demoTabs();
 
 /** The two views a demo frame switches between. */
 type DemoView = "demo" | "code";
@@ -225,7 +144,12 @@ export function DemoTabs({
             {shown ? (
               <>
                 <Toolbar.Root aria-label={`${title} code`} className={actions()}>
-                  <CopySourceButton sourceText={sourceText} />
+                  <CopySourceButton
+                    toolbar
+                    sourceText={sourceText}
+                    label="Copy code"
+                    copiedStatus="Code copied to the clipboard"
+                  />
                   <Sheet.Root>
                     <Toolbar.Button
                       render={
@@ -244,7 +168,12 @@ export function DemoTabs({
                           <Frame.Header className={sheetHeader()}>
                             <Frame.Title>{file}</Frame.Title>
                             <Toolbar.Root aria-label={`${file} actions`}>
-                              <CopySourceButton sourceText={sourceText} />
+                              <CopySourceButton
+                                toolbar
+                                sourceText={sourceText}
+                                label="Copy code"
+                                copiedStatus="Code copied to the clipboard"
+                              />
                             </Toolbar.Root>
                           </Frame.Header>
                           <Frame.Panel>

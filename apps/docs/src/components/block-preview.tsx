@@ -11,9 +11,10 @@ import { Tabs } from "@elmeragroup/fuse/tabs";
 import { themeSlug } from "@elmeragroup/fuse/theme";
 import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 
-import { BLOCK_THEME_PARAM, encodeBlockPreviewMessage, parseBlockPreviewMessage } from "../lib/block-preview";
+import { encodeBlockPreviewMessage, parseBlockPreviewMessage } from "../lib/block-preview";
 import { BLOCK_VIEWPORTS, fitViewport, VIEWPORT_LABELS } from "../lib/block-viewport";
 import type { BlockViewport } from "../lib/block-viewport";
+import { THEME_QUERY } from "../lib/theme-address";
 import { BlockCode } from "./block-code";
 import type { BlockFile } from "./block-code";
 import { usePreviewTheme } from "./preview-theme";
@@ -167,7 +168,7 @@ export function BlockPreview({ title, src, folder, files }: BlockPreviewProps): 
               size="sm"
               nativeButton={false}
               render={
-                <a href={`${path}?${BLOCK_THEME_PARAM}=${themeSlug(theme)}`} target="_blank" rel="noopener" />
+                <a href={`${path}?${THEME_QUERY}=${themeSlug(theme)}`} target="_blank" rel="noopener" />
               }>
               {/* On a phone the button keeps its name and shows only its icon, so the row fits. */}
               <span className="max-sm:sr-only">Open in new tab</span>

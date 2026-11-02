@@ -8,6 +8,8 @@ import { describe, expect, it } from "vitest";
 import { METERING_POINTS, PRICE_AREA_NAMES } from "../src/app/(docs)/blocks/app-shell/demos/power-data";
 import { DESKTOP_VIEWPORT, launchSuiteBrowser, waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
+import { openFilterSubmenu } from "./filter-menu";
+import { collectPageErrors } from "./landing-page";
 
 const browser = launchSuiteBrowser();
 
@@ -21,16 +23,6 @@ const PAGES = [
   { path: `${BASE}/invoices`, heading: "Invoices" },
   { path: `${BASE}/settings`, heading: "Settings" },
 ] as const;
-
-/** Uncaught errors and `console.error` calls, React's hydration reports among them. */
-function collectErrors(page: Page): string[] {
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
-  page.on("console", (message) => {
-    if (message.type() === "error") errors.push(message.text());
-  });
-  return errors;
-}
 
 /** Opens a block route and waits until React has hydrated its header. */
 async function openApp(page: Page, path: string): Promise<void> {
@@ -46,21 +38,9 @@ async function heading(page: Page): Promise<string | null> {
   return page.getByRole("heading", { level: 1 }).textContent();
 }
 
-/** Opens a filter field's value list from the Filter button, by the keyboard. */
-async function openFilterField(page: Page, field: string): Promise<void> {
-  await page.getByRole("button", { name: "Filter", exact: true }).focus();
-  await page.keyboard.press("Enter");
-  await page.getByRole("searchbox", { name: "Search fields", exact: true }).fill(field);
-  const row = page.getByRole("menuitem", { name: field, exact: true });
-  await expect.poll(() => row.getAttribute("data-highlighted")).not.toBeNull();
-  await page.keyboard.press("ArrowRight");
-  const search = page.getByRole("searchbox", { name: `Search ${field}`, exact: true });
-  await expect.poll(() => search.evaluate((element) => element === document.activeElement)).toBe(true);
-}
-
 /** Ticks one value of a filter field, then closes the menus. */
 async function filterBy(page: Page, field: string, value: string): Promise<void> {
-  await openFilterField(page, field);
+  await openFilterSubmenu(page, page, field);
   await page.getByRole("menuitemcheckbox", { name: value, exact: true }).click();
   await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
@@ -88,7 +68,7 @@ describe("the app shell block, standalone", () => {
     "serves $path with its heading and hydrates without an error",
     async ({ path, heading: title }) => {
       const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, timezoneId: "Europe/Oslo" });
-      const errors = collectErrors(page);
+      const errors = collectPageErrors(page, { console: true });
       await openApp(page, path);
       expect(await heading(page)).toBe(title);
       expect(errors).toEqual([]);

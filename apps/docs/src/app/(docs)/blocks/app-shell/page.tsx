@@ -12,11 +12,9 @@ import { DocsProse } from "../../../../components/docs-prose";
 import { demoSourceHref, readDemoSource } from "../../../../lib/demo-source";
 import { componentHref, requireStaticPage } from "../../../../lib/pages";
 import { BLOCK_FILES, TABLE_INSTALL_COMMAND } from "./block-files";
+import { APP_BASE } from "./demos/app-config";
 
 const HREF = "/blocks/app-shell";
-
-/** The block's standalone route, which the preview frames and each page extends. */
-const PREVIEW = "/blocks/app-shell/preview";
 
 export const metadata = pageMetadata(HREF);
 
@@ -100,7 +98,7 @@ export default function AppShellBlockPage(): ReactElement {
         </DocsProse>
       </div>
 
-      <BlockPreview title="App shell" src={PREVIEW} folder="app-shell" files={files} />
+      <BlockPreview title="App shell" src={APP_BASE} folder="app-shell" files={files} />
 
       <div className="max-w-[720px]">
         <DocsProse>

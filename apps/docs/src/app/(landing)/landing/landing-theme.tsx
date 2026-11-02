@@ -29,7 +29,8 @@ import {
 import type { BrandCode, ColorScheme, ThemeInput, ThemeSegment, ThemeVariant } from "@elmeragroup/fuse/theme";
 
 import { DOCUMENT_COLOR_SCHEME, OPENING_THEME } from "../../../lib/theme";
-import { parseThemeParam, parseThemeSearch, sameTheme, THEME_QUERY } from "./landing-theme-defaults";
+import { THEME_QUERY } from "../../../lib/theme-address";
+import { parseThemeParam, parseThemeSearch, sameTheme } from "./landing-theme-defaults";
 import { themeAnnouncement } from "./theme-picker/theme-options";
 
 /** Where a re-theme was triggered, so the reveal can grow out of the finger or cursor. */

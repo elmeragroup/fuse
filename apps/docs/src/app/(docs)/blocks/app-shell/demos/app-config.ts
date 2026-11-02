@@ -38,7 +38,10 @@ export const APP_HOME = appHome(APP_BASE);
 export const APP_LOCALE = "en-US" satisfies SupportedLocale;
 
 /** The sidebar's groups, in order. */
-export type AppPageGroup = "Portfolio" | "Billing" | "Account";
+const GROUPS = ["Portfolio", "Billing", "Account"] as const;
+
+/** One of the sidebar's groups. */
+export type AppPageGroup = (typeof GROUPS)[number];
 
 /** One page of the app. */
 export type AppPage = {
@@ -114,7 +117,7 @@ export const APP_PAGES: readonly AppPage[] = appPages(APP_BASE);
 export const APP_PAGE_GROUPS: readonly {
   readonly label: AppPageGroup;
   readonly pages: readonly AppPage[];
-}[] = (["Portfolio", "Billing", "Account"] as const).map((label) => ({
+}[] = GROUPS.map((label) => ({
   label,
   pages: APP_PAGES.filter((page) => page.group === label),
 }));

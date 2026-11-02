@@ -6,15 +6,14 @@ import {
   ColorSchemeScript,
   defaultDensityForVariant,
   densityAttributes,
-  LEGAL_THEMES,
   themeAttributes,
-  themeSlug,
 } from "@elmeragroup/fuse/theme";
 
 import { DocumentRoot } from "../../components/document-root";
-import { BLOCK_SESSION_THEME_KEY, BLOCK_THEME_PARAM } from "../../lib/block-preview";
+import { BLOCK_SESSION_THEME_KEY } from "../../lib/block-preview";
 import { siteOrigin } from "../../lib/site-origin";
 import { DEFAULT_THEME, DOCUMENT_COLOR_SCHEME } from "../../lib/theme";
+import { slugAttributesJson, THEME_QUERY } from "../../lib/theme-address";
 import "../../styles/globals.css";
 import { BlockPreviewTheme } from "./block-preview-theme";
 
@@ -32,24 +31,20 @@ export const metadata: Metadata = {
 };
 
 /** Every slug Fuse's slug parser accepts, mapped to the theme and density attributes it stamps. */
-const SLUG_ATTRIBUTES = JSON.stringify(
-  Object.fromEntries(
-    LEGAL_THEMES.map((theme) => [
-      themeSlug(theme),
-      { ...themeAttributes(theme), ...densityAttributes(defaultDensityForVariant(theme.variant)) },
-    ])
-  )
-);
+const SLUG_ATTRIBUTES = slugAttributesJson((theme) => ({
+  ...themeAttributes(theme),
+  ...densityAttributes(defaultDensityForVariant(theme.variant)),
+}));
 
 /**
  * Stamps a preview opened in its own tab with its linked theme before the browser can paint. The
  * layout stamps the default theme on the server, which receives no search params. "Open in new tab"
  * names the docs page's theme in `?theme=`: exactly one legal slug is kept for the tab's session,
  * so the pages its links lead to, which drop the query, keep it too. The framed preview takes its
- * theme from the docs page instead. The map's keys are `themeSlug` over `LEGAL_THEMES`, the set
- * `parseThemeSlug` accepts, so the script carries no slug grammar of its own.
+ * theme from the docs page instead. The map's keys are the slugs `parseThemeSlug` accepts, so the
+ * script carries no slug grammar of its own.
  */
-const SESSION_THEME_SCRIPT = `(function(m,q,k){try{if(window.parent!==window)return;var h=Object.prototype.hasOwnProperty,v=new URLSearchParams(location.search).getAll(q);if(v.length===1&&h.call(m,v[0]))sessionStorage.setItem(k,v[0]);var s=sessionStorage.getItem(k);if(s===null||!h.call(m,s))return;var a=m[s],r=document.documentElement;for(var x in a)r.setAttribute(x,a[x])}catch(e){}})(${SLUG_ATTRIBUTES},${JSON.stringify(BLOCK_THEME_PARAM)},${JSON.stringify(BLOCK_SESSION_THEME_KEY)})`;
+const SESSION_THEME_SCRIPT = `(function(m,q,k){try{if(window.parent!==window)return;var h=Object.prototype.hasOwnProperty,v=new URLSearchParams(location.search).getAll(q);if(v.length===1&&h.call(m,v[0]))sessionStorage.setItem(k,v[0]);var s=sessionStorage.getItem(k);if(s===null||!h.call(m,s))return;var a=m[s],r=document.documentElement;for(var x in a)r.setAttribute(x,a[x])}catch(e){}})(${SLUG_ATTRIBUTES},${JSON.stringify(THEME_QUERY)},${JSON.stringify(BLOCK_SESSION_THEME_KEY)})`;
 
 export type BlocksLayoutProps = {
   children: ReactNode;

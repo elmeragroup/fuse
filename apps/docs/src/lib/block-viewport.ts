@@ -22,13 +22,13 @@ export const VIEWPORT_LABELS = {
 } as const satisfies Record<BlockViewport, string>;
 
 /** The narrowest desktop layout, a small laptop's width in CSS pixels. */
-export const DESKTOP_MIN_WIDTH = 1024;
+const DESKTOP_MIN_WIDTH = 1024;
 
 /** An iPad's portrait width, the block's `md` breakpoint, where the sidebar docks. */
-export const TABLET_WIDTH = 768;
+const TABLET_WIDTH = 768;
 
 /** A current iPhone's width. */
-export const PHONE_WIDTH = 390;
+const PHONE_WIDTH = 390;
 
 /** The layout width and the scale of the preview in a window `available` CSS pixels wide. */
 export type ViewportFit = {

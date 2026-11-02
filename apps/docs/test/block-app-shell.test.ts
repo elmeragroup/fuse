@@ -15,7 +15,6 @@ import {
   AS_OF,
   DAILY_CONSUMPTION,
   DAILY_INVOICING,
-  gs1CheckDigit,
   INVOICES,
   METERING_POINTS,
   MONTHLY_ENERGY,
@@ -207,7 +206,6 @@ describe("the app shell's power data", () => {
     // check digit does not.
     expect(holds("6291041500213")).toBe(true);
     expect(holds("6291041500210")).toBe(false);
-    expect(gs1CheckDigit("629104150021")).toBe(3);
     for (const point of METERING_POINTS) {
       expect(point.id, point.id).toMatch(/^7070575\d{11}$/u);
       expect(holds(point.id), point.id).toBe(true);

@@ -95,8 +95,5 @@ export function parseBlockPreviewMessage(data: unknown): BlockPreviewMessage | u
   }
 }
 
-/** The query parameter a preview opened in its own tab reads its theme from. */
-export const BLOCK_THEME_PARAM = "theme";
-
 /** Where a preview in its own tab keeps the linked theme for the tab's session. */
 export const BLOCK_SESSION_THEME_KEY = "fuse-block-preview-theme";
