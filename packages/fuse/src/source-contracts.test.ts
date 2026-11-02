@@ -854,6 +854,10 @@ describe("runtime listeners and layout motion", () => {
       // a consumer's own handler, which Root's spread props replace. The same owner listens on
       // the window for `beforeprint`, and for `scroll` and `resize` only while a plot waits.
       "components/chart/chart-entrance.ts",
+      // Window `scroll`, in the capture phase, and `resize`: a scroll anywhere in the page or a
+      // resize of the window moves the tooltip's positioner, which stops its glide at once. A
+      // scroll in a container does not bubble, and React has no window listener.
+      "components/chart/chart-tooltip-glide.ts",
       // Native non-passive `wheel` on the chip strip: React's `onWheel` is passive, so it cannot
       // keep the page from scrolling while a vertical wheel scrolls the strip sideways.
       "components/data-table-filter/strip-wheel.ts",

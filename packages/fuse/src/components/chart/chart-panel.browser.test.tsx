@@ -16,7 +16,7 @@ import { cdp, page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import type { FrameClock } from "../../../test/chart/frame-clock";
-import { bars } from "../../../test/chart/marks";
+import { bars, glideLanded } from "../../../test/chart/marks";
 import { Composed, Levels, PAIR, PAIR_CONFIG } from "../../../test/chart/panel-fixtures";
 import type { Level } from "../../../test/chart/panel-fixtures";
 import {
@@ -151,6 +151,7 @@ describe("one active column across Panels", () => {
       await userEvent.keyboard("{Tab}{ArrowRight}{ArrowRight}");
       await frame();
       await frame();
+      await glideLanded();
       // DOM audit: the option, the crosshairs, the overlays and the popup are the parts under test.
       const option = rectOf(document.activeElement);
       // DOM audit: the crosshairs are aria-hidden plot output.

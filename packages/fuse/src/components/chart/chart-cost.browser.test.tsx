@@ -104,6 +104,13 @@ describe("pointer cost", () => {
         </S06Chart>
       </div>
     );
+    // The real cursor rests where an earlier suite left it. A popup that moves onto or off it makes
+    // the browser send hover events of its own, so it rests in the viewport's far corner, right of
+    // the 820 px chart that holds the popup.
+    await userEvent.hover(document.documentElement, {
+      position: { x: window.innerWidth - 2, y: window.innerHeight - 2 },
+      force: true,
+    });
     // The mount ends with the commit that draws the measured plot.
     await frame();
     commits.clear();

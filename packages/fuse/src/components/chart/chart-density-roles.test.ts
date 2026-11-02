@@ -46,6 +46,9 @@ const CONTRACT_ROLES = {
   "chart-active-value-rule": "fixed",
   "chart-tooltip": "surface",
   "chart-tooltip-positioner": "fixed",
+  // The tooltip's pointer bridge, which the tooltip glide run added after section 10: a hit area
+  // with no type or padding of its own.
+  "chart-tooltip-bridge": "fixed",
   "chart-tooltip-label": "fixed",
   "chart-tooltip-items": "fixed",
   "chart-tooltip-item": "fixed",

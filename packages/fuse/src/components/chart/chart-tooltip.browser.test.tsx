@@ -615,31 +615,38 @@ describe("the tooltip anchor", () => {
     }
   );
 
-  it("centres on the point itself under a point scale, at the plot's left edge for the first slot", async () => {
-    // T6: four points on the plot's width lie at 0, a third, two thirds and the full width, so
-    // the first point sits on the plot's left edge, not in the middle of its clipped cell.
-    const { host } = renderThemed(
-      <div style={{ padding: "160px 240px 24px", width: 840, boxSizing: "border-box" }}>
-        <LocaleProvider locale="en-US">
-          <Chart.Root
-            data={ROWS}
-            config={{ v: { label: "V", color: "chart-1" } }}
-            xKey="name"
-            xScale="point"
-            data-intro="none"
-            aria-label="Points">
-            <Chart.Grid />
-            <Chart.Tooltip />
-          </Chart.Root>
-        </LocaleProvider>
-      </div>
-    );
-    const box = surfaceBox(host);
-    await pointerTo(box.left + 2, box.top + box.height / 2);
-    expect(label()).toBe("k0");
-    const shown = popup()?.getBoundingClientRect() ?? new DOMRect();
-    expect(Math.abs((shown.left + shown.right) / 2 - box.left)).toBeLessThanOrEqual(1);
-  });
+  it.each(["top", "point"] as const)(
+    "anchors on the point itself under a point scale, at the plot's left edge for the first slot, with anchor %s",
+    async (anchor) => {
+      // T6: four points on the plot's width lie at 0, a third, two thirds and the full width, so
+      // the first point sits on the plot's left edge, not in the middle of its clipped cell. Under
+      // anchor="top" the popup centres on that point. Under "point" it is held inside the Root's
+      // box, which starts at the plot's left edge here, so its left edge meets that point.
+      const { host } = renderThemed(
+        <div style={{ padding: "160px 240px 24px", width: 840, boxSizing: "border-box" }}>
+          <LocaleProvider locale="en-US">
+            <Chart.Root
+              data={ROWS}
+              config={{ v: { label: "V", color: "chart-1" } }}
+              xKey="name"
+              xScale="point"
+              data-intro="none"
+              aria-label="Points">
+              <Chart.Grid />
+              <Chart.Tooltip anchor={anchor} />
+            </Chart.Root>
+          </LocaleProvider>
+        </div>
+      );
+      const box = surfaceBox(host);
+      await pointerTo(box.left + 2, box.top + box.height / 2);
+      expect(label()).toBe("k0");
+      const shown = popup()?.getBoundingClientRect() ?? new DOMRect();
+      if (anchor === "top")
+        expect(Math.abs((shown.left + shown.right) / 2 - box.left)).toBeLessThanOrEqual(1);
+      else expect(Math.abs(shown.left - box.left)).toBeLessThanOrEqual(1);
+    }
+  );
 
   it("anchors on the point itself on a horizontal point scale, at the plot's top for the first slot", async () => {
     // B2-4: four 32 px rows make a 128 px plot. Under a point scale the first point lies on the

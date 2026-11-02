@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cdp, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { bars as barsIn } from "../../../test/chart/marks";
+import { bars as barsIn, glideLanded } from "../../../test/chart/marks";
 import { onGrid } from "../../../test/chart/panel-readers";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -70,6 +70,7 @@ async function column(width: number) {
   await userEvent.keyboard("{Tab}{ArrowRight}{ArrowRight}");
   await frame();
   await frame();
+  await glideLanded();
   // DOM audit: the focused option, the crosshair, the overlay and the popup are the parts under test.
   return {
     plot: rectOf(host.querySelector('[data-slot="chart-plot"]')),

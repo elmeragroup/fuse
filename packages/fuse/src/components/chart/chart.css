@@ -67,6 +67,8 @@
     --chart-hover-dim: 0.45;
     --chart-ease: cubic-bezier(0, 0.7, 0.5, 1);
     --chart-update: 480ms;
+    /* The tooltip's glide from one slot to the next. */
+    --chart-glide: 200ms;
   }
 
   [data-slot="chart"]:not([data-orientation="horizontal"]) {
@@ -992,6 +994,23 @@
     pointer-events: none;
   }
 
+  /*
+    The bridge under a popup that rests above the plot belongs to the popup, so a pointer moving
+    straight up from the active slot crosses the gap over the roof without leaving both the plot
+    and the popup. The popup does not position it, so its scroll box does not clip it, and it
+    reaches from the popup's bottom edge down to the plot's top, as Chart.Tooltip measures.
+  */
+  [data-slot="chart-tooltip-bridge"] {
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    height: var(--_bridge, 0px);
+  }
+
+  [data-slot="chart-tooltip"]:not([data-side="top"]) > [data-slot="chart-tooltip-bridge"] {
+    display: none;
+  }
+
   [data-slot="chart-tooltip"] {
     pointer-events: auto;
     display: grid;
@@ -1831,6 +1850,15 @@
     cascade gives the bar, such as a past slot's dim.
   */
   @media (prefers-reduced-motion: no-preference) {
+    /*
+      Chart.Tooltip glides its positioner from one slot to the next over this duration, which
+      it copies from the chart when the popup mounts. Under reduced motion it stays unset, and
+      the popup moves at once.
+    */
+    [data-slot="chart-tooltip-positioner"] {
+      --_glide: var(--chart-glide);
+    }
+
     [data-slot="chart-bar-marks"] > [data-intro="fade"],
     :is([data-slot="chart-line-series"], [data-slot="chart-area-series"])[data-intro="fade"],
     [data-slot="chart-dot"][data-intro="fade"] {

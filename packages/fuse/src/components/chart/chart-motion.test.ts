@@ -393,6 +393,45 @@ describe("the motion loop", () => {
   });
 });
 
+describe("visiting where marks land", () => {
+  it("visits a moving mark with where it lands, where it shows and what its numbers measure", () => {
+    const clock = host();
+    const motion = createChartMotion(clock.host);
+    const write = (): void => undefined;
+    // A two-vertex path whose x moves from 10 and 60 to 40 and 90, and whose y moves 100 px.
+    const axes = { axes: ["x", "y"] as const };
+    motion.place("path", [10, 0, 60, 0], write, { kind: "snap" }, axes);
+    motion.place("path", [40, 100, 90, 100], write, { kind: "move" }, axes);
+    const visits: unknown[] = [];
+    motion.eachLanding((writer, target, drawn, measures, end) => {
+      visits.push({ same: writer === write, target, drawn, measures, end });
+    });
+    // The move rewinds the path to what it drew, so it shows its old numbers until a frame runs.
+    expect(visits).toEqual([
+      {
+        same: true,
+        target: [40, 100, 90, 100],
+        drawn: [10, 0, 60, 0],
+        measures: ["x", "y"],
+        end: [40, 100, 90, 100],
+      },
+    ]);
+  });
+
+  it("visits nothing while every mark rests", () => {
+    const clock = host();
+    const motion = createChartMotion(clock.host);
+    motion.place("line", [from], () => undefined, { kind: "snap" });
+    motion.place("line", [to], () => undefined, { kind: "move" });
+    clock.frameAt(480);
+    let visits = 0;
+    motion.eachLanding(() => {
+      visits += 1;
+    });
+    expect(visits).toBe(0);
+  });
+});
+
 describe("joining marks", () => {
   /** Two bars, each placed at a rest of [middle, tip] under its anchor. */
   function twoBars(motion: ReturnType<typeof createChartMotion>, placement: Placement) {

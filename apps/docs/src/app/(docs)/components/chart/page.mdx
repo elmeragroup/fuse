@@ -155,6 +155,10 @@ A series may take a coarser `interval` than Root's, such as hourly usage under q
 
 <Prose>
 
+On a vertical chart the tooltip centres on the active slot, stays inside the chart's box and then the viewport, and rests 8 px above the highest mark under its own width. Those marks are bars, stack tops, line and area strokes between readings, and dots, so the tooltip never covers the data it reads. A step to a taller neighbour lifts it over every mark on the way, and a step that would lower it by 16 px or less keeps its height. `anchor="top"` keeps it on the plot top instead, and Panels always do.
+
+A step to another slot by pointer, key or touch glides the tooltip there over `--chart-glide`, 200 ms on `--chart-ease`. It moves at once when it opens, when it flips to another side, when the page scrolls or resizes, on a data update, when its path over the marks would leave the viewport, and under reduced motion.
+
 The tooltip stays open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap dismisses it.
 
 </Prose>

@@ -50,3 +50,13 @@ export function popupOpen(): boolean {
 export function intersects(a: DOMRect, b: DOMRect): boolean {
   return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 }
+
+/**
+ * Wait for the tooltip's glide from one slot to the next to land, so the popup shows its resting
+ * place. A glide runs on the positioner, which portals out of the host.
+ */
+export async function glideLanded(): Promise<void> {
+  // DOM audit: the popup portals out of the host, and its positioner carries the glide.
+  const positioner = document.querySelector('[data-slot="chart-tooltip-positioner"]');
+  await Promise.allSettled(positioner?.getAnimations().map((animation) => animation.finished) ?? []);
+}

@@ -551,7 +551,7 @@
           "type": "\"point\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "\"point\" follows the active mark. \"top\" pins the popup to the plot top and tracks x only.",
+          "description": "Where the popup rests on a vertical chart. \"point\", the default, centres it on the active slot inside the chart's box and rests it 8 px above the highest mark under its own width. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way.",
           "required": false
         },
         {

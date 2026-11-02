@@ -129,6 +129,18 @@ export type MotionHost = {
   readonly cancelFrame: (handle: number) => void;
 };
 
+/**
+ * One mark a tween moves: its writer, where it lands, where it shows, what its numbers measure, and
+ * where its route ends, which a path that slides holds more numbers for than its resting target.
+ */
+export type LandingVisit = (
+  write: MarkWriter,
+  target: MarkValues,
+  drawn: MarkValues,
+  axes: readonly ValueAxis[],
+  end: MarkValues
+) => void;
+
 /** Root's animation loop. */
 export type ChartMotion = {
   /**
@@ -169,6 +181,12 @@ export type ChartMotion = {
   readonly size: () => number;
   /** Whether any mark still tweens, so the baseline and every other coordinate may be moving. */
   readonly running: () => boolean;
+  /**
+   * Visit each mark that tweens, or waits for the entrance, and each joined follower, with its
+   * writer, the numbers it lands on, the numbers it shows now, what each number measures, and the
+   * numbers its tween's route ends on. A reader can draw each where it lands and back in one task.
+   */
+  readonly eachLanding: (visit: LandingVisit) => void;
 };
 
 type Tween = {
@@ -667,5 +685,13 @@ export function createChartMotion(
     size: () => marks.size,
     // A tween the entrance holds has not started.
     running: () => !held && moving.size > 0,
+    eachLanding(visit) {
+      for (const { tween, write, drawn, axes } of moving) {
+        if (tween !== null) visit(write, tween.rest ?? tween.to, drawn, axes, tween.to);
+      }
+      for (const { joined, write, drawn } of following) {
+        if (joined) visit(write, joined.resting, drawn, [], joined.resting);
+      }
+    },
   };
 }

@@ -127,6 +127,7 @@ export const PART_DENSITY = {
   "chart-active-value-rule": "fixed",
   "chart-tooltip": "surface",
   "chart-tooltip-positioner": "fixed",
+  "chart-tooltip-bridge": "fixed",
   "chart-tooltip-label": "fixed",
   "chart-tooltip-items": "fixed",
   "chart-tooltip-item": "fixed",
