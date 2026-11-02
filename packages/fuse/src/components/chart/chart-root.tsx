@@ -151,8 +151,10 @@ export type ChartRootProps<
      * `data-entrance="waiting"` and the marks wait at the entrance's first frame: bars at their
      * base, and lines, areas and dots clipped from the origin. The axes, the legend, the table and
      * the chart's name render at once. Root writes `data-entrance="played"` as the entrance starts,
-     * and drops it once the wipe of lines, areas and dots has run. Scrolling away and back, hiding
-     * the chart and showing it again, or a new origin never replays it. A data update while the
+     * and drops it once the wipe of lines, areas and dots has run or is cut short, or at once when
+     * no line, area or dots wipe in. Scrolling away and back, hiding the chart and showing it
+     * again, even mid-wipe, or a new origin never replays it, and a line or an area added later
+     * never wipes in. A data update while the
      * entrance waits plays it with the latest data. Reduced motion, "none" and printing draw the
      * marks at rest at once. A bar that a data update adds after the entrance writes
      * `data-intro="fade"` on itself and fades in. A bar that an `xRange` change, a brush step or a

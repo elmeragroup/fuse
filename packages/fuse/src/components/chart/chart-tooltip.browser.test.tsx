@@ -6,8 +6,16 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { S06Chart } from "../../../test/chart/bar-charts";
-import { bars as drawnBars, intersects } from "../../../test/chart/marks";
+import {
+  bars as drawnBars,
+  intersects,
+  label,
+  pointerAt,
+  popup,
+  surfaceBox,
+} from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -19,18 +27,10 @@ afterEach(async () => {
 
 /** Wait for two animation frames and the popup's open fade, so Base UI has placed it. */
 async function settle(): Promise<void> {
-  for (let frame = 0; frame < 2; frame += 1) {
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-  }
+  await nextFrames(2);
   // DOM audit: the popup portals to the theme scope container, outside the render host.
   const open = document.querySelector('[data-slot="chart-tooltip"]');
   await Promise.all(open?.getAnimations({ subtree: true }).map((animation) => animation.finished) ?? []);
-}
-
-/** The open tooltip popup, which portals out of the chart. A closed popup stays mounted, hidden. */
-function popup(): HTMLElement | null {
-  // DOM audit: the popup portals to the theme scope container, outside the render host.
-  return document.querySelector<HTMLElement>('[data-slot="chart-tooltip"][data-open]');
 }
 
 /**
@@ -48,27 +48,9 @@ function openPopup(): HTMLElement {
   return open;
 }
 
-/** The popup's slot label. */
-function label(): string | null {
-  // DOM audit: the popup is aria-hidden, so its label's slot is the only locator.
-  return popup()?.querySelector('[data-slot="chart-tooltip-label"]')?.textContent ?? null;
-}
-
-/** The plot surface's client box. */
-function surfaceBox(host: HTMLElement): DOMRect {
-  return host.querySelector('[role="listbox"]')?.getBoundingClientRect() ?? new DOMRect();
-}
-
-/**
- * Move the pointer to a point in client coordinates, over the element at that point, as a hand
- * does. The move does not wait for that element to be Playwright's hit target, because a popup
- * that follows the slot may move between the hit check and the move.
- */
+/** Move the pointer to a point in client coordinates, as `pointerAt` does, and let the popup settle. */
 async function pointerTo(x: number, y: number): Promise<void> {
-  const target = document.elementFromPoint(x, y);
-  if (!(target instanceof Element)) throw new Error(`nothing at ${String(x)}, ${String(y)}`);
-  const box = target.getBoundingClientRect();
-  await userEvent.hover(target, { position: { x: x - box.left, y: y - box.top }, force: true });
+  await pointerAt(x, y);
   await settle();
 }
 

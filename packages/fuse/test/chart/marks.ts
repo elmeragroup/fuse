@@ -2,6 +2,9 @@
  * The DOM readers the chart browser suites share for marks and the tooltip popup. Bars and the
  * popup are aria-hidden plot output, so their slots are the only locators.
  */
+import { userEvent } from "vitest/browser";
+
+import { drawnRect } from "./bar-box";
 
 /**
  * The bars a chart draws, in page order, of one series or of all.
@@ -15,6 +18,16 @@ export function bars(host: HTMLElement, series?: number): HTMLElement[] {
     series === undefined ? "" : `[data-slot="chart-bar-series"][data-series="${String(series)}"] `;
   // DOM audit: bars are aria-hidden plot output, so their slots are the only locator.
   return [...host.querySelectorAll<HTMLElement>(`${scope}[data-slot="chart-bar"]`)];
+}
+
+/**
+ * Each bar's drawn height, in page order.
+ *
+ * @param host - The rendered chart's host.
+ * @returns The heights in pixels.
+ */
+export function barHeights(host: HTMLElement): number[] {
+  return bars(host).map((bar) => drawnRect(bar).height);
 }
 
 /**
@@ -59,4 +72,49 @@ export async function glideLanded(): Promise<void> {
   // DOM audit: the popup portals out of the host, and its positioner carries the glide.
   const positioner = document.querySelector('[data-slot="chart-tooltip-positioner"]');
   await Promise.allSettled(positioner?.getAnimations().map((animation) => animation.finished) ?? []);
+}
+
+/**
+ * The plot surface's client box.
+ *
+ * @param host - The rendered chart's host.
+ * @returns The box, or an empty box with no plot.
+ */
+export function surfaceBox(host: HTMLElement): DOMRect {
+  return host.querySelector('[role="listbox"]')?.getBoundingClientRect() ?? new DOMRect();
+}
+
+/**
+ * The open tooltip popup. It portals out of the host, and a closed popup stays mounted, hidden.
+ *
+ * @returns The popup, or null while none is open.
+ */
+export function popup(): HTMLElement | null {
+  // DOM audit: the popup is aria-hidden and portals out of the host, so its slot is the locator.
+  return document.querySelector<HTMLElement>('[data-slot="chart-tooltip"][data-open]');
+}
+
+/**
+ * The open popup's slot label.
+ *
+ * @returns The label's text, or null while no popup is open.
+ */
+export function label(): string | null {
+  // DOM audit: the popup is aria-hidden, so its label's slot is the only locator.
+  return popup()?.querySelector('[data-slot="chart-tooltip-label"]')?.textContent ?? null;
+}
+
+/**
+ * Move the pointer to a point in client pixels, over the element at that point, as a hand does.
+ * The move does not wait for that element to be Playwright's hit target, because a popup that
+ * follows the slot may move between the hit check and the move.
+ *
+ * @param x - The client x.
+ * @param y - The client y.
+ */
+export async function pointerAt(x: number, y: number): Promise<void> {
+  const target = document.elementFromPoint(x, y);
+  if (!(target instanceof Element)) throw new Error(`nothing at ${String(x)}, ${String(y)}`);
+  const box = target.getBoundingClientRect();
+  await userEvent.hover(target, { position: { x: x - box.left, y: y - box.top }, force: true });
 }

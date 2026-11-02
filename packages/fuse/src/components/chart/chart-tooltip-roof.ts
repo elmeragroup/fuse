@@ -92,10 +92,11 @@ export type ChartRoof = {
    * - a layer that mounts or unmounts.
    *
    * While `tweening` holds, the loop writes each frame's geometry, which the tween's read already
-   * covers, so those attributes alone do not count. On Root, its ancestors and its wrappers only
-   * style and class count, since Root's data attributes follow the pointer. A style change counts unless it only
-   * moves a private `--_` property or `--chart-active-x`, which parts write as they draw and as the
-   * pointer moves. The active bar's overlay, the active dots and Root's data attributes lie outside
+   * covers, so those attributes alone do not count, nor does a Marker anchor's
+   * `--chart-marker-x` or `--chart-marker-y`, which the loop writes each frame too. On Root, its
+   * ancestors and its wrappers only style and class count, since Root's data attributes follow the
+   * pointer. A style change counts unless it only moves a private `--_` property or
+   * `--chart-active-x`, which parts write as they draw and as the pointer moves. The active bar's overlay, the active dots and Root's data attributes lie outside
    * the watch, so a slot step changes nothing it sees. The roof's own read draws the moving marks
    * where they land and back, which the watch skips, since that read measured every change made
    * before it.
@@ -173,13 +174,14 @@ function changesMarks(record: MutationRecord, root: Element, tweening: boolean):
   if (target === null) return false;
   if (record.type === "attributes") {
     const name = record.attributeName ?? "";
-    if (name === "style" && sameDrawingStyle(record.oldValue, target.getAttribute("style"))) return false;
+    if (tweening && FRAME_ATTRIBUTES.has(name)) return false;
+    if (name === "style" && sameDrawingStyle(record.oldValue, target.getAttribute("style"), tweening))
+      return false;
     const styling = name === "style" || name === "class";
     // Root, its ancestors and the wrappers inside Root that hold a layer, such as Glow and Reveal,
     // set what the marks inherit through their style and classes alone.
     if (target.contains(root) || target.querySelector(LAYERS) !== null) return styling;
-    if (target.closest(UNDRAWN) !== null || target.closest(LAYERS) === null) return false;
-    return !tweening || !FRAME_ATTRIBUTES.has(name);
+    return target.closest(UNDRAWN) === null && target.closest(LAYERS) !== null;
   }
   const layers = [...record.addedNodes, ...record.removedNodes].some(
     (node) => node instanceof Element && (node.matches(LAYERS) || node.querySelector(LAYERS) !== null)
@@ -191,14 +193,19 @@ function changesMarks(record: MutationRecord, root: Element, tweening: boolean):
 
 /**
  * Whether two inline styles draw alike: the same declarations once the private `--_` properties
- * and `--chart-active-x`, which parts write as they draw and as the pointer moves, are left out.
+ * and `--chart-active-x`, which parts write as they draw and as the pointer moves, are left out,
+ * and while a tween runs a Marker anchor's `--chart-marker-x` and `--chart-marker-y`, which the
+ * loop writes each frame.
  */
-function sameDrawingStyle(before: string | null, after: string | null): boolean {
+function sameDrawingStyle(before: string | null, after: string | null, tweening: boolean): boolean {
+  const skipped = tweening
+    ? /^(--_|--chart-active-x\s*:|--chart-marker-[xy]\s*:)/u
+    : /^(--_|--chart-active-x\s*:)/u;
   const drawing = (style: string | null) =>
     (style ?? "")
       .split(";")
       .map((declaration) => declaration.trim())
-      .filter((declaration) => declaration !== "" && !/^(--_|--chart-active-x\s*:)/u.test(declaration))
+      .filter((declaration) => declaration !== "" && !skipped.test(declaration))
       .join(";");
   return drawing(before) === drawing(after);
 }

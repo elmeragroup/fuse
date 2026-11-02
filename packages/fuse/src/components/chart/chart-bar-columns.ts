@@ -220,12 +220,13 @@ export function layoutColumns(
       };
     });
     // Each missing or emphasised slot keeps its own tick or box, drawing no column of its own.
-    const notes = slots.flatMap((slot): Entry[] => {
-      const own = slotEntry(slot);
-      if (!own.entry.missing && !own.entry.emphasis) return [];
-      const entry = { ...own.entry, fill: -1, estimated: false, projected: false };
-      return [{ ...own, key: `note ${own.key}`, entry }];
-    });
+    const notes = slots
+      .filter((slot) => (series.readings[slot]?.kind === "missing" && !model.empty) || emphasised.has(slot))
+      .map((slot): Entry => {
+        const own = slotEntry(slot);
+        const entry = { ...own.entry, fill: -1, estimated: false, projected: false };
+        return { ...own, key: `note ${own.key}`, entry };
+      });
     entries = [...buckets, ...notes].toSorted((a, b) => a.at - b.at);
   }
   return {

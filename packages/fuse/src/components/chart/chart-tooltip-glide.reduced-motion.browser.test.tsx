@@ -5,14 +5,9 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import {
-  barChart,
-  frames,
-  hoverSlot,
-  label,
-  positioner,
-  watchFrames,
-} from "../../../test/chart/tooltip-glide";
+import { nextFrames } from "../../../test/animation-frames";
+import { label } from "../../../test/chart/marks";
+import { barChart, hoverSlot, positioner, watchFrames } from "../../../test/chart/tooltip-glide";
 import { renderThemed } from "../../../test/themed-browser-render";
 import "./chart.css";
 
@@ -22,11 +17,11 @@ describe("the tooltip under reduced motion", () => {
     expect(matchMedia("(prefers-reduced-motion: reduce)").matches).toBe(true);
     const { host } = renderThemed(barChart());
     await hoverSlot(host, 1, 6, "band");
-    await frames(20);
+    await nextFrames(20);
     const from = positioner()?.getBoundingClientRect().left ?? Number.NaN;
     const watch = watchFrames(host);
     await hoverSlot(host, 2, 6, "band");
-    await frames(20);
+    await nextFrames(20);
     watch.stop();
     expect(label()).toBe("Mar");
     const to = positioner()?.getBoundingClientRect().left ?? Number.NaN;

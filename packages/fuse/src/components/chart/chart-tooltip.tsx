@@ -299,10 +299,9 @@ function ChartTooltipBody({
         return { box: client(0, start, box.width, end - start), shift: 0, route: STRAIGHT };
       }
       // Under anchor="top" and with Panels, a vertical anchor runs the plot's whole height.
-      if (!roofed) return { box: client(start, 0, end - start, box.height), shift: 0, route: STRAIGHT };
       // Otherwise it runs from the popup's resting edge down to the plot's bottom, so the popup
       // touches it there.
-      const root = rootOf();
+      const root = roofed ? rootOf() : null;
       if (root === null) return { box: client(start, 0, end - start, box.height), shift: 0, route: STRAIGHT };
       const outer = root.getBoundingClientRect();
       const popup = positioner.current?.getBoundingClientRect() ?? new DOMRect();

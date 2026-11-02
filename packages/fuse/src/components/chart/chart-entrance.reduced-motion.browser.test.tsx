@@ -9,8 +9,7 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
-import { drawnRect } from "../../../test/chart/bar-box";
-import { bars } from "../../../test/chart/marks";
+import { barHeights } from "../../../test/chart/marks";
 import { fkasPrivate, renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { ThemeScope } from "../../theme/theme-scope";
@@ -51,10 +50,6 @@ function Fixture({ onHydrated }: { readonly onHydrated?: () => void }) {
   );
 }
 
-function heights(host: HTMLElement): number[] {
-  return bars(host).map((bar) => drawnRect(bar).height);
-}
-
 function waits(host: HTMLElement): boolean {
   // DOM audit: Root's figure carries the entrance state on its slot.
   return host.querySelector('[data-slot="chart"]')?.hasAttribute("data-entrance") ?? true;
@@ -67,7 +62,7 @@ describe("the entrance under reduced motion", () => {
 
   it("draws a chart below the fold at rest in the commit that mounts it", () => {
     const { host } = renderThemed(<Fixture />);
-    expect(heights(host)).toEqual([50, 100, 150, 200]);
+    expect(barHeights(host)).toEqual([50, 100, 150, 200]);
     expect(waits(host)).toBe(false);
   });
 
@@ -82,7 +77,7 @@ describe("the entrance under reduced motion", () => {
     try {
       await hydrated.promise;
       // The marks draw in the task of the hydration commit, before the browser paints it.
-      expect(heights(host)).toEqual([50, 100, 150, 200]);
+      expect(barHeights(host)).toEqual([50, 100, 150, 200]);
       expect(waits(host)).toBe(false);
     } finally {
       root.unmount();

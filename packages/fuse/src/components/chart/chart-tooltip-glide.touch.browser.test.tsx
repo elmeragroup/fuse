@@ -5,14 +5,9 @@ import { commands, page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import {
-  barChart,
-  frames,
-  label,
-  positioner,
-  surfaceBox,
-  watchFrames,
-} from "../../../test/chart/tooltip-glide";
+import { nextFrames } from "../../../test/animation-frames";
+import { label, surfaceBox } from "../../../test/chart/marks";
+import { barChart, positioner, watchFrames } from "../../../test/chart/tooltip-glide";
 import "../../../test/pointer-press";
 import { renderThemed } from "../../../test/themed-browser-render";
 import "./chart.css";
@@ -29,12 +24,12 @@ describe("a tap on another slot", () => {
     const { host } = renderThemed(barChart());
     await tapSlot(host, 1);
     await expect.poll(label).toBe("Feb");
-    await frames(20);
+    await nextFrames(20);
     const from = positioner()?.getBoundingClientRect().left ?? Number.NaN;
     const watch = watchFrames(host);
     await tapSlot(host, 2);
     await expect.poll(label).toBe("Mar");
-    await frames(20);
+    await nextFrames(20);
     watch.stop();
     const to = positioner()?.getBoundingClientRect().left ?? Number.NaN;
     expect(to - from).toBeGreaterThan(40);

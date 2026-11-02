@@ -23,7 +23,7 @@ import { seriesPaintOf } from "./chart-paint";
 import { useChartFrame } from "./chart-plot";
 import { readingAt, useActiveSlot } from "./chart-readout";
 import { useSteady } from "./chart-steady";
-import { introFor, useIntro, usePhase } from "./chart-store";
+import { introFor, useKeptIntro, usePhase } from "./chart-store";
 import type { ChartDatum, ChartLayerProps, ValueFormat } from "./chart-types";
 import { formatValue } from "./format/value-format";
 import type { SeriesModel } from "./layout/cartesian-model";
@@ -164,7 +164,7 @@ function sameDot(
  * started.
  */
 function useMountIntro(context: ChartRootContextValue): "fade" | "none" | undefined {
-  return introFor(usePhase(context.store), context.update.kind, context.entrance ? "css" : "none");
+  return introFor(usePhase(context.store), context.update.kind, context.entrance);
 }
 
 /**
@@ -241,12 +241,7 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
   });
   const intro = useMountIntro(context);
   // The layer renders on the server, before it draws, and Root's entrance wipe reads its intro.
-  const layerIntro = useIntro(
-    context.store,
-    context.update.kind,
-    context.entrance ? "css" : "none",
-    frame !== null
-  );
+  const layerIntro = useKeptIntro(intro, frame !== null);
   const radius = DOT_RADIUS[variant];
   return (
     <svg

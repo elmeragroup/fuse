@@ -200,7 +200,7 @@ export function useSeriesPath(
   const drawn = useChartFrame(part, layout);
   const frame = drawn?.frame ?? null;
   const prefix = useSvgIdPrefix(`chart-${route}`);
-  const intro = useIntro(context.store, update.kind, context.entrance ? "css" : "none", frame !== null);
+  const intro = useIntro(context.store, update.kind, context.entrance, frame !== null);
   // A decimated window keeps M4's vertices for each pixel column along the slot axis. The cache
   // hands every width of one resolution the same path.
   const columns = frame === null ? undefined : alongLength(frame);

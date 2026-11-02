@@ -5,7 +5,7 @@
 // 896 px tall, and a 2000 px spacer puts the chart below the fold until the test scrolls to it. A
 // plot reveals once any of its width and a third of its height show, or half the height it can
 // show at most: 448 px of the page, or half a scroll container's own height.
-import { Suspense, use, useEffect } from "react";
+import { Activity, Suspense, use, useEffect } from "react";
 import type { ReactNode } from "react";
 
 import { hydrateRoot } from "react-dom/client";
@@ -14,8 +14,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { drawnRect } from "../../../test/chart/bar-box";
-import { bars } from "../../../test/chart/marks";
+import { nextFrames } from "../../../test/animation-frames";
+import { barHeights, bars } from "../../../test/chart/marks";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { fkasPrivate, renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -81,21 +81,9 @@ function chart(
   );
 }
 
-async function frame(): Promise<void> {
-  await new Promise((resolve) => requestAnimationFrame(resolve));
-}
-
-async function frames(count: number): Promise<void> {
-  for (let index = 0; index < count; index += 1) await frame();
-}
-
-function heights(host: HTMLElement): number[] {
-  return bars(host).map((bar) => drawnRect(bar).height);
-}
-
 /** Whether every bar stands at its height in `expected`, within half a pixel. */
 function standing(host: HTMLElement, expected: readonly number[]): boolean {
-  const drawn = heights(host);
+  const drawn = barHeights(host);
   return (
     drawn.length === expected.length &&
     drawn.every((height, index) => Math.abs(height - (expected[index] ?? 0)) <= 0.5)
@@ -145,8 +133,8 @@ function countWrites(host: HTMLElement): () => number {
 async function playToRest(host: HTMLElement, rest: readonly number[]): Promise<number[]> {
   const seen: number[] = [];
   for (let count = 0; count < 300 && !standing(host, rest); count += 1) {
-    await frame();
-    seen.push(heights(host)[0] ?? Number.NaN);
+    await nextFrames();
+    seen.push(barHeights(host)[0] ?? Number.NaN);
   }
   expect(standing(host, rest)).toBe(true);
   return seen;
@@ -178,7 +166,7 @@ async function scrollUntilPlayed(
   const steps: (readonly [number, string | null])[] = [];
   for (let count = 0; count < 400; count += 1) {
     const moved = scroll();
-    await frames(4);
+    await nextFrames(4);
     steps.push([visible(), root(host).getAttribute("data-entrance")]);
     if (!moved || root(host).getAttribute("data-entrance") === "played") break;
   }
@@ -203,15 +191,15 @@ describe("the entrance in view", () => {
   it("waits at its first frame below the fold with no frame of motion, then plays to rest once it shows", async () => {
     const { host } = renderThemed(chart([1, 2, 3, 4]));
     // The observer reports the plot out of view within a few frames.
-    await frames(10);
+    await nextFrames(10);
     expect(root(host).getAttribute("data-entrance")).toBe("waiting");
-    expect(heights(host)).toEqual([0, 0, 0, 0]);
+    expect(barHeights(host)).toEqual([0, 0, 0, 0]);
     const [wipe] = wipes(host);
     expect(wipe?.animationName).toBe("chart-wipe-left");
     expect(wipe?.playState).toBe("paused");
     expect(wipe?.currentTime).toBe(0);
     const writes = countWrites(host);
-    await frames(20);
+    await nextFrames(20);
     expect(writes()).toBe(0);
     root(host).scrollIntoView({ block: "center" });
     const first = await playToRest(host, REST);
@@ -225,16 +213,16 @@ describe("the entrance in view", () => {
 
   it("never plays again after the plot scrolls away and back", async () => {
     const { host } = renderThemed(chart([1, 2, 3, 4]));
-    await frames(10);
+    await nextFrames(10);
     root(host).scrollIntoView({ block: "center" });
     await playToRest(host, REST);
     await expect.poll(() => wipes(host)).toEqual([]);
     window.scrollTo(0, 0);
-    await frames(10);
+    await nextFrames(10);
     const writes = countWrites(host);
     root(host).scrollIntoView({ block: "center" });
     for (let count = 0; count < 30; count += 1) {
-      await frame();
+      await nextFrames();
       expect(standing(host, REST)).toBe(true);
       expect(wipes(host)).toEqual([]);
     }
@@ -243,15 +231,15 @@ describe("the entrance in view", () => {
 
   it("plays an update that arrives while it waits with the new data, the bar it adds included", async () => {
     const { host, rerender } = renderThemed(chart([1, 2, 3, 4]));
-    await frames(10);
+    await nextFrames(10);
     rerender(chart([4, 3, 2, 1, 2]));
     // Five bands of 80 px. The added fifth bar waits at its base with the rest and fades in no way.
-    expect(heights(host)).toEqual([0, 0, 0, 0, 0]);
+    expect(barHeights(host)).toEqual([0, 0, 0, 0, 0]);
     expect(bars(host)[4]?.hasAttribute("data-intro")).toBe(false);
     const writes = countWrites(host);
-    await frames(10);
+    await nextFrames(10);
     expect(writes()).toBe(0);
-    expect(heights(host)).toEqual([0, 0, 0, 0, 0]);
+    expect(barHeights(host)).toEqual([0, 0, 0, 0, 0]);
     root(host).scrollIntoView({ block: "center" });
     const first = await playToRest(host, [200, 150, 100, 50, 100]);
     expect(first.some((height) => height > 0 && height < 200)).toBe(true);
@@ -268,8 +256,8 @@ describe("the entrance in view", () => {
       window.scrollBy(0, (plot?.getBoundingClientRect().top ?? 0) - (window.innerHeight - visible));
     };
     reveal(300);
-    await frames(10);
-    expect(heights(host)).toEqual([0, 0, 0, 0]);
+    await nextFrames(10);
+    expect(barHeights(host)).toEqual([0, 0, 0, 0]);
     reveal(520);
     await playToRest(host, tall);
   });
@@ -282,7 +270,7 @@ describe("the entrance in view", () => {
     // Coming into view plays nothing.
     const writes = countWrites(host);
     root(host).scrollIntoView({ block: "center" });
-    await frames(10);
+    await nextFrames(10);
     expect(writes()).toBe(0);
     expect(standing(host, REST)).toBe(true);
   });
@@ -291,14 +279,14 @@ describe("the entrance in view", () => {
 describe("the entrance at print", () => {
   it("draws a waiting chart at rest when a print begins, and plays nothing after", async () => {
     const { host } = renderThemed(chart([1, 2, 3, 4]));
-    await frames(10);
+    await nextFrames(10);
     window.dispatchEvent(new Event("beforeprint"));
     expect(standing(host, REST)).toBe(true);
     expect(root(host).hasAttribute("data-entrance")).toBe(false);
     expect(wipes(host)).toEqual([]);
     const writes = countWrites(host);
     root(host).scrollIntoView({ block: "center" });
-    await frames(20);
+    await nextFrames(20);
     expect(writes()).toBe(0);
     expect(standing(host, REST)).toBe(true);
   });
@@ -306,8 +294,8 @@ describe("the entrance at print", () => {
   it("ends a running entrance at rest when a print begins", async () => {
     const { host } = renderThemed(chart([1, 2, 3, 4], { above: 0 }));
     // Wait until the first bar has started to grow, so the entrance runs.
-    for (let count = 0; count < 120 && !((heights(host)[0] ?? 0) > 0); count += 1) await frame();
-    expect(heights(host)[3]).toBeLessThan(200);
+    for (let count = 0; count < 120 && !((barHeights(host)[0] ?? 0) > 0); count += 1) await nextFrames();
+    expect(barHeights(host)[3]).toBeLessThan(200);
     window.dispatchEvent(new Event("beforeprint"));
     expect(standing(host, REST)).toBe(true);
     expect(wipes(host)).toEqual([]);
@@ -329,7 +317,7 @@ describe("the reveal as more of the plot shows", () => {
     const { host } = renderThemed(chart([1, 2, 3, 4], { above: 1000, plot: 32_000 }));
     const plot = plotOf(host);
     window.scrollBy(0, plot.getBoundingClientRect().top - innerHeight);
-    await frames(4);
+    await nextFrames(4);
     const { played, waited } = playedAt(
       await scrollUntilPlayed(host, pageStep(100), () => visibleHeight(plot))
     );
@@ -351,7 +339,7 @@ describe("the reveal as more of the plot shows", () => {
     );
     const plot = plotOf(host);
     window.scrollBy(0, plot.getBoundingClientRect().top - innerHeight);
-    await frames(4);
+    await nextFrames(4);
     const { played, waited } = playedAt(
       await scrollUntilPlayed(host, pageStep(25), () => visibleHeight(plot))
     );
@@ -385,7 +373,7 @@ describe("the reveal as more of the plot shows", () => {
     if (scroller === null) throw new Error("no scroller");
     const plot = plotOf(host);
     scroller.scrollTop += plot.getBoundingClientRect().top - scroller.getBoundingClientRect().bottom;
-    await frames(4);
+    await nextFrames(4);
     expect(visibleHeight(plot, scroller.getBoundingClientRect())).toBe(0);
     const step = () => {
       const before = scroller.scrollTop;
@@ -403,8 +391,8 @@ describe("the reveal as more of the plot shows", () => {
 
 /** Wait until the first bar has started to grow, so the entrance runs. */
 async function entranceRunning(host: HTMLElement): Promise<void> {
-  for (let count = 0; count < 120 && !((heights(host)[0] ?? 0) > 0); count += 1) await frame();
-  expect(heights(host)[3]).toBeLessThan(200);
+  for (let count = 0; count < 120 && !((barHeights(host)[0] ?? 0) > 0); count += 1) await nextFrames();
+  expect(barHeights(host)[3]).toBeLessThan(200);
   expect(wipes(host)[0]?.playState).toBe("running");
 }
 
@@ -424,7 +412,7 @@ describe("turning the entrance off once it started", () => {
     expect(wipes(host)).toEqual([]);
     rerender(chart([1, 2, 3, 4], { above: 0 }));
     const writes = countWrites(host);
-    await frames(20);
+    await nextFrames(20);
     expect(writes()).toBe(0);
     expect(wipes(host)).toEqual([]);
     expect(root(host).hasAttribute("data-entrance")).toBe(false);
@@ -436,7 +424,7 @@ describe("turning the entrance off once it started", () => {
     rerender(chart([1, 2, 3, 4], { above: 0, intro: "none" }));
     expect(root(host).hasAttribute("data-entrance")).toBe(false);
     rerender(chart([1, 2, 3, 4], { above: 0 }));
-    await frames(20);
+    await nextFrames(20);
     expect(wipes(host)).toEqual([]);
     expect(standing(host, REST)).toBe(true);
   });
@@ -448,7 +436,7 @@ describe("turning the entrance off once it started", () => {
     await expect.poll(() => root(host).hasAttribute("data-entrance")).toBe(false);
     expect(standing(host, REST)).toBe(true);
     await emulateReducedMotion("no-preference");
-    await frames(20);
+    await nextFrames(20);
     expect(wipes(host)).toEqual([]);
     expect(standing(host, REST)).toBe(true);
   });
@@ -459,7 +447,7 @@ describe("turning the entrance off once it started", () => {
     await emulateReducedMotion("reduce");
     await expect.poll(() => root(host).hasAttribute("data-entrance")).toBe(false);
     await emulateReducedMotion("no-preference");
-    await frames(20);
+    await nextFrames(20);
     expect(wipes(host)).toEqual([]);
   });
 });
@@ -673,7 +661,7 @@ describe("the height a plot can show", () => {
       expect(clip().height).toBe(shared);
       const plot = plotOf(host);
       scroller.scrollTop += plot.getBoundingClientRect().top - clip().bottom;
-      await frames(4);
+      await nextFrames(4);
       expect(visibleHeight(plot, clip())).toBe(0);
       const { played, waited } = playedAt(
         await scrollUntilPlayed(host, containerStep(scroller, 5), () => visibleHeight(plot, clip()))
@@ -704,7 +692,7 @@ describe("the height a plot can show", () => {
     const plot = plotOf(host);
     expect(plot.getBoundingClientRect().height).toBeCloseTo(800, 6);
     scroller.scrollTop += (plot.getBoundingClientRect().top - clip().bottom) / 0.4;
-    await frames(4);
+    await nextFrames(4);
     const { played, waited } = playedAt(
       await scrollUntilPlayed(host, containerStep(scroller, 25), () => visibleHeight(plot, clip()))
     );
@@ -732,7 +720,7 @@ describe("the reveal with no scroll", () => {
     const { host } = renderThemed(chart([1, 2, 3, 4]));
     const plot = plotOf(host);
     window.scrollBy(0, plot.getBoundingClientRect().top - (innerHeight - 30));
-    await frames(6);
+    await nextFrames(6);
     expect(visibleHeight(plot)).toBe(30);
     expect(root(host).getAttribute("data-entrance")).toBe("waiting");
     const scrolls = countScrolls();
@@ -751,7 +739,7 @@ describe("the reveal with no scroll", () => {
     const plot = plotOf(host);
     const above = byTestId(host, "above");
     above.style.height = `${String(2000 - (plot.getBoundingClientRect().top - (innerHeight - 30)))}px`;
-    await frames(6);
+    await nextFrames(6);
     expect(window.scrollY).toBe(0);
     expect(visibleHeight(plot)).toBe(30);
     expect(root(host).getAttribute("data-entrance")).toBe("waiting");
@@ -759,6 +747,76 @@ describe("the reveal with no scroll", () => {
     above.style.height = `${String(above.getBoundingClientRect().height - 70)}px`;
     await expect.poll(() => root(host).getAttribute("data-entrance")).toBe("played");
     expect(visibleHeight(plot)).toBe(100);
+    expect(scrolls()).toBe(0);
+  });
+});
+
+describe("the reveal as a clipping container grows", () => {
+  it("plays a 200 px plot that shows 60 px of a 300 px clipper once the clipper grows to 320 px", async () => {
+    // The clipper can show 300 px, so 60 px is less than half of that and less than a third of the
+    // plot's 200 px. At 320 px the plot shows 80 px, more than a third. The plot's visible share
+    // goes from 0.30 to 0.40, which crosses no observer threshold, and a 600 px box around the
+    // clipper keeps the page, the window and the plot the same size.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ height: 600 }}>
+          <div data-testid="clipper" style={{ height: 300, overflow: "hidden" }}>
+            <div data-testid="lift" style={{ width: 400 }}>
+              {rootOf([1, 2, 3, 4])}
+            </div>
+          </div>
+        </div>
+      </LocaleProvider>
+    );
+    const clipper = byTestId(host, "clipper");
+    const plot = plotOf(host);
+    // Lower the chart so its plot's top lies 240 px down the clipper, before the observer reads it.
+    byTestId(host, "lift").style.marginTop =
+      `${String(clipper.getBoundingClientRect().top + 240 - plot.getBoundingClientRect().top)}px`;
+    await nextFrames(10);
+    expect(visibleHeight(plot, clipper.getBoundingClientRect())).toBe(60);
+    expect(root(host).getAttribute("data-entrance")).toBe("waiting");
+    const pageHeight = document.documentElement.getBoundingClientRect().height;
+    const scrolls = countScrolls();
+    clipper.style.height = "320px";
+    await expect.poll(() => root(host).getAttribute("data-entrance")).toBe("played");
+    expect(visibleHeight(plot, clipper.getBoundingClientRect())).toBe(80);
+    expect(plot.getBoundingClientRect().height).toBe(200);
+    expect(document.documentElement.getBoundingClientRect().height).toBe(pageHeight);
+    expect(scrolls()).toBe(0);
+  });
+  it("plays a 200 px plot that shows 60 px of a 300 px content-box clipper once 20 px of bottom padding grow it", async () => {
+    // The clipper clips at its padding box, so the padding shows 20 px more of the plot while its
+    // content box stays 300 px tall. The plot's visible share goes from 0.30 to 0.40, crossing no
+    // observer threshold, and a 600 px box around the clipper keeps the page the same size.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ height: 600 }}>
+          <div
+            data-testid="clipper"
+            style={{ boxSizing: "content-box", height: 300, padding: 0, overflow: "hidden" }}>
+            <div data-testid="lift" style={{ width: 400 }}>
+              {rootOf([1, 2, 3, 4])}
+            </div>
+          </div>
+        </div>
+      </LocaleProvider>
+    );
+    const clipper = byTestId(host, "clipper");
+    const plot = plotOf(host);
+    // Lower the chart so its plot's top lies 240 px down the clipper, before the observer reads it.
+    byTestId(host, "lift").style.marginTop =
+      `${String(clipper.getBoundingClientRect().top + 240 - plot.getBoundingClientRect().top)}px`;
+    await nextFrames(10);
+    expect(visibleHeight(plot, clipper.getBoundingClientRect())).toBe(60);
+    expect(root(host).getAttribute("data-entrance")).toBe("waiting");
+    const pageHeight = document.documentElement.getBoundingClientRect().height;
+    const scrolls = countScrolls();
+    clipper.style.paddingBottom = "20px";
+    await expect.poll(() => root(host).getAttribute("data-entrance")).toBe("played");
+    expect(getComputedStyle(clipper).height).toBe("300px");
+    expect(visibleHeight(plot, clipper.getBoundingClientRect())).toBe(80);
+    expect(document.documentElement.getBoundingClientRect().height).toBe(pageHeight);
     expect(scrolls()).toBe(0);
   });
 });
@@ -784,13 +842,13 @@ describe("the reveal's listeners", () => {
       shown.unmount();
       // A chart below the fold waits, and unmounting it, the last waiting one, removes them again.
       const hidden = renderThemed(chart([1, 2, 3, 4]));
-      await frames(4);
+      await nextFrames(4);
       expect([count(added, "scroll"), count(added, "resize")]).toEqual([2, 2]);
       hidden.unmount();
       expect([count(removed, "scroll"), count(removed, "resize")]).toEqual([2, 2]);
       // The next waiting chart watches anew and plays once it shows.
       const next = renderThemed(chart([1, 2, 3, 4]));
-      await frames(4);
+      await nextFrames(4);
       expect([count(added, "scroll"), count(added, "resize")]).toEqual([3, 3]);
       root(next.host).scrollIntoView({ block: "center" });
       await playToRest(next.host, REST);
@@ -851,7 +909,7 @@ async function layersAtRest(host: HTMLElement): Promise<void> {
  */
 async function staysAtRest(host: HTMLElement): Promise<void> {
   for (let count = 0; count < 20; count += 1) {
-    await frame();
+    await nextFrames();
     expect(layerAnimations(host)).toEqual([]);
     expect(standing(host, REST)).toBe(true);
   }
@@ -884,12 +942,100 @@ describe("the entrance once it has run", () => {
     );
     await layersAtRest(host);
     await userEvent.click(page.getByRole("tab", { name: "Other" }));
-    await frames(5);
+    await nextFrames(5);
     expect(root(host).getClientRects()).toHaveLength(0);
     await userEvent.click(page.getByRole("tab", { name: "Chart" }));
-    await frames(2);
+    await nextFrames(2);
     expect(root(host).getClientRects()).toHaveLength(1);
     await staysAtRest(host);
+  });
+
+  it("wipes no layer in again when its keepMounted tab panel is hidden mid-wipe and shown", async () => {
+    // Hiding the panel cancels the running wipe, which ends the entrance as its end would.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <Tabs.Root defaultValue="chart">
+          <Tabs.List aria-label="Views">
+            <Tabs.Trigger value="chart">Chart</Tabs.Trigger>
+            <Tabs.Trigger value="other">Other</Tabs.Trigger>
+          </Tabs.List>
+          <Tabs.Content value="chart" keepMounted>
+            <div style={{ width: 400 }}>{rootOf([1, 2, 3, 4], { children: LAYERS })}</div>
+          </Tabs.Content>
+          <Tabs.Content value="other" keepMounted>
+            Other panel
+          </Tabs.Content>
+        </Tabs.Root>
+      </LocaleProvider>
+    );
+    await expect.poll(() => root(host).getAttribute("data-entrance")).toBe("played");
+    await nextFrames(3);
+    expect(layerAnimations(host)).toHaveLength(3);
+    await userEvent.click(page.getByRole("tab", { name: "Other" }));
+    await nextFrames(2);
+    expect(root(host).getClientRects()).toHaveLength(0);
+    expect(root(host).hasAttribute("data-entrance")).toBe(false);
+    await userEvent.click(page.getByRole("tab", { name: "Chart" }));
+    await nextFrames(2);
+    expect(root(host).getClientRects()).toHaveLength(1);
+    for (let count = 0; count < 20; count += 1) {
+      await nextFrames();
+      expect(layerAnimations(host)).toEqual([]);
+    }
+    await playToRest(host, REST);
+  });
+
+  it("wipes no layer in again when React Activity hides it mid-wipe and shows it", async () => {
+    // Activity runs Root's effect cleanup before it applies display none, so the cancel of the
+    // running wipe reaches no listener, and the effect that runs on show finds the entrance started.
+    const shown = (mode: "visible" | "hidden") => (
+      <LocaleProvider locale="nb-NO">
+        <Activity mode={mode}>
+          <div style={{ width: 400 }}>{rootOf([1, 2, 3, 4], { children: LAYERS })}</div>
+        </Activity>
+      </LocaleProvider>
+    );
+    const { host, rerender } = renderThemed(shown("visible"));
+    await expect.poll(() => root(host).getAttribute("data-entrance")).toBe("played");
+    await nextFrames(3);
+    expect(layerAnimations(host)).toHaveLength(3);
+    rerender(shown("hidden"));
+    await nextFrames(2);
+    expect(root(host).getClientRects()).toHaveLength(0);
+    rerender(shown("visible"));
+    await nextFrames(2);
+    expect(root(host).getClientRects()).toHaveLength(1);
+    for (let count = 0; count < 20; count += 1) {
+      await nextFrames();
+      expect(layerAnimations(host)).toEqual([]);
+    }
+    expect(root(host).hasAttribute("data-entrance")).toBe(false);
+    await playToRest(host, REST);
+  });
+
+  it("drops the attribute of a chart of bars alone as its entrance starts, and wipes in no Line added later", async () => {
+    const bar = (children: ReactNode) => (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 400 }}>{rootOf([1, 2, 3, 4], { children })}</div>
+      </LocaleProvider>
+    );
+    const { host, rerender } = renderThemed(bar(<Chart.Bar dataKey="v" />));
+    expect(root(host).getAttribute("data-entrance")).toBe("waiting");
+    await expect.poll(() => root(host).hasAttribute("data-entrance")).toBe(false);
+    await playToRest(host, REST);
+    rerender(
+      bar(
+        <>
+          <Chart.Bar dataKey="v" />
+          <Chart.Line dataKey="w" />
+        </>
+      )
+    );
+    for (let count = 0; count < 10; count += 1) {
+      await nextFrames();
+      expect(wipeOf(layer(host, "chart-line-series", 1))).toBeUndefined();
+    }
+    expect(root(host).hasAttribute("data-entrance")).toBe(false);
   });
 
   it.each(["right", "center", "edges"] as const)(
@@ -930,9 +1076,9 @@ describe("the entrance in a collapsed container", () => {
       `${String(collapsed.getBoundingClientRect().top - plot.getBoundingClientRect().top)}px`;
     expect(collapsed.getBoundingClientRect().height).toBe(0);
     expect(plot.getBoundingClientRect().top).toBe(collapsed.getBoundingClientRect().top);
-    await frames(10);
+    await nextFrames(10);
     expect(root(host).getAttribute("data-entrance")).toBe("waiting");
-    expect(heights(host)).toEqual([0, 0, 0, 0]);
+    expect(barHeights(host)).toEqual([0, 0, 0, 0]);
     collapsed.style.height = "auto";
     await playToRest(host, REST);
   });

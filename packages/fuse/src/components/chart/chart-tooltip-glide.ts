@@ -12,6 +12,7 @@
  * copies the chart's tokens onto it. The stylesheet sets `--_glide` from them only while the reader
  * has no preference for reduced motion, so under reduced motion every place shows at once.
  */
+import { writeStyle } from "./chart-dom";
 import { TOOLTIP_EDGE, glidePath } from "./layout/tooltip-place";
 import type { PlaceSize, PopupPlace } from "./layout/tooltip-place";
 
@@ -75,8 +76,8 @@ export function createTooltipGlider(positioner: HTMLElement, chart: HTMLElement 
   };
   const written = new MutationObserver(() => {
     const target = writtenShift(positioner);
-    const size = { width: positioner.offsetWidth, height: positioner.offsetHeight };
     if (target === null || (placed !== null && target.x === placed.x && target.y === placed.y)) return;
+    const size = { width: positioner.offsetWidth, height: positioner.offsetHeight };
     // Where the popup shows, at its new size with the edge that faces the plot kept where it was,
     // so new content that makes it larger grows it away from the marks.
     const shown = running === null ? placed : shownShift(positioner);
@@ -146,8 +147,7 @@ function takeTokens(positioner: HTMLElement, chart: HTMLElement | null): void {
   const tokens = getComputedStyle(chart);
   for (const name of ["--chart-glide", "--chart-ease"]) {
     const value = tokens.getPropertyValue(name);
-    if (value === "") positioner.style.removeProperty(name);
-    else positioner.style.setProperty(name, value);
+    writeStyle(positioner, name, value === "" ? null : value);
   }
 }
 

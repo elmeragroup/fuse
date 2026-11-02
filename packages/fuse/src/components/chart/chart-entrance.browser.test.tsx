@@ -69,11 +69,15 @@ function chart(values: readonly Value[], orientation: "vertical" | "horizontal")
   );
 }
 
-/** Wait until Root's entrance has started, as Root writes on its figure once the plot shows. */
+/**
+ * Wait until Root's entrance has started. Root writes "waiting" on its figure until the plot
+ * shows, and drops the attribute as the entrance starts, since bars alone run no CSS wipe.
+ */
 async function entranceStarted(host: HTMLElement): Promise<void> {
   // DOM audit: Root's figure carries the entrance state on its slot.
   const root = host.querySelector('[data-slot="chart"]');
-  await expect.poll(() => root?.getAttribute("data-entrance")).toBe("played");
+  expect(root?.getAttribute("data-entrance")).toBe("waiting");
+  await expect.poll(() => root?.hasAttribute("data-entrance")).toBe(false);
 }
 
 /** Make the first category active, as a keyboard user does. */

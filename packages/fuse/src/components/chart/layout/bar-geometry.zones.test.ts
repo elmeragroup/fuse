@@ -7,12 +7,12 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
+import { barRect } from "../../../../test/chart/bar-rect";
 import { columnsDrawing, layoutColumns } from "../chart-bar-columns";
 import year from "../format/fixtures/elhub/no1-household-hourly-2025-10_2026-09.json" with { type: "json" };
 import {
   barCells,
   barForm,
-  barGeometry,
   barTip,
   bucketColumns,
   geometryOf,
@@ -23,7 +23,6 @@ import {
   isStackTop,
   rectsPath,
 } from "./bar-geometry";
-import type { BarCell } from "./bar-geometry";
 import { buildCartesianModel } from "./cartesian-model";
 import type { CartesianModel, SeriesModel } from "./cartesian-model";
 import { WHOLE_BAND, barSpan, optionBand, plotFrame } from "./plot-frame";
@@ -44,17 +43,6 @@ function firstCell(model: ReturnType<typeof buildCartesianModel>) {
 
 /** The contract's default spacing: a 25 % band gap and 2 px bar gap and seam. */
 const METRICS: BarMetrics = { bandGap: 0.25, barGap: 2, seam: 2 };
-
-/** A cell's resting rectangle, the rectangle of its geometry, as a drawn bar takes it. */
-function barRect(
-  frame: PlotFrame,
-  cell: BarCell,
-  metrics: BarMetrics,
-  sub: SubBand,
-  seam: "cut" | "whole"
-): PlotRect {
-  return geometryRect(frame, barGeometry(frame, cell, metrics, sub, seam));
-}
 
 /** The rectangles of one path's `d`, each an `M x y H x V y H x Z` subpath. */
 function rectsOf(d: string): PlotRect[] {

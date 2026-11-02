@@ -9,26 +9,15 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
+import { barRect } from "../../../../test/chart/bar-rect";
 import { columnsDrawing } from "../chart-bar-columns";
 import type { ChartBarVariant } from "../chart-types";
-import { barGeometry, geometryRect } from "./bar-geometry";
 import type { BarCell } from "./bar-geometry";
 import { DETAIL_PARTS, barParts, boxPoints, detailParts, drawnBar } from "./bar-shapes";
 import { WHOLE_BAND, barSpan, frameRect, optionBand, plotFrame, slotBand } from "./plot-frame";
-import type { BarMetrics, PlotFrame, PlotRect, SubBand } from "./plot-frame";
+import type { PlotFrame, PlotRect } from "./plot-frame";
 
 const UP = { orientation: "vertical", negative: false } as const;
-
-/** A cell's resting rectangle, the rectangle of its geometry, as a drawn bar takes it. */
-function barRect(
-  frame: PlotFrame,
-  cell: BarCell,
-  metrics: BarMetrics,
-  sub: SubBand,
-  seam: "cut" | "whole"
-): PlotRect {
-  return geometryRect(frame, barGeometry(frame, cell, metrics, sub, seam));
-}
 
 /** Every look, written here, which the record's type checks against the public union. */
 // SAFETY: the record satisfies Record<ChartBarVariant, true>, so its keys are exactly the looks.

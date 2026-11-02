@@ -28,15 +28,16 @@ export type EntrancePhase = "waiting" | "started";
  *
  * @param phase - The phase the mark first drew in.
  * @param kind - The commit that mounted it.
- * @param entrance - Who runs the mark's entrance: Root's CSS, the loop, as a bar's grows, or no one.
+ * @param entrance - Whether Root has an entrance, which Root's CSS or the loop, as a bar's grows,
+ *   runs.
  * @returns The attribute's value, or undefined to write none.
  */
 export function introFor(
   phase: EntrancePhase,
   kind: "initial" | "data" | "range",
-  entrance: "css" | "loop" | "none"
+  entrance: boolean
 ): "fade" | "none" | undefined {
-  if (phase === "waiting") return entrance === "none" ? "none" : undefined;
+  if (phase === "waiting") return entrance ? undefined : "none";
   return kind === "data" ? "fade" : "none";
 }
 
@@ -269,7 +270,7 @@ export function usePhase(store: ChartStore): EntrancePhase {
  *
  * @param store - The Root's store.
  * @param kind - The commit the mark renders in.
- * @param entrance - Who runs the mark's entrance: Root's CSS, the loop, or no one.
+ * @param entrance - Whether Root has an entrance.
  * @param drawn - Whether the mark draws in this render, which a measured plot and an open draw gate
  *   allow.
  * @returns The attribute's value, or undefined to write none.
@@ -277,13 +278,25 @@ export function usePhase(store: ChartStore): EntrancePhase {
 export function useIntro(
   store: ChartStore,
   kind: "initial" | "data" | "range",
-  entrance: "css" | "loop" | "none",
+  entrance: boolean,
   drawn: boolean
 ): "fade" | "none" | undefined {
-  const live = introFor(usePhase(store), kind, entrance);
-  const [kept, setKept] = useState<{ readonly intro: "fade" | "none" | undefined } | null>(null);
-  if (kept !== null) return kept.intro;
-  if (drawn) setKept({ intro: live });
+  return useKeptIntro(introFor(usePhase(store), kind, entrance), drawn);
+}
+
+/**
+ * The `data-intro` value of a mark's first drawn render, as `useIntro` keeps it, from the value
+ * `introFor` gives the current render.
+ *
+ * @param live - What `introFor` says for this render.
+ * @param drawn - Whether the mark draws in this render.
+ * @returns The attribute's value, or undefined to write none.
+ */
+export function useKeptIntro(live: "fade" | "none" | undefined, drawn: boolean): "fade" | "none" | undefined {
+  // Null until the mark first draws. Undefined is a value it can keep.
+  const [kept, setKept] = useState<"fade" | "none" | undefined | null>(null);
+  if (kept !== null) return kept;
+  if (drawn) setKept(live);
   return live;
 }
 

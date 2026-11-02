@@ -273,7 +273,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // the loop's `eachLanding`, which measured 67 bytes on this route (72841 to 72908) after the
     // reading itself moved into the tooltip's own module. The ceiling keeps about 90 bytes of
     // headroom.
-    ceilingGzip: 73000,
+    // Raised from 73000 on 2026-11-02. The entrance now watches the clipping ancestors of a waiting
+    // plot, cancels a reveal frame its effect outlives, and retires `data-entrance` on a cancelled
+    // wipe or at once with no wipe, which measured 139 bytes on this route (72908 to 73047). The
+    // ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 73150,
   },
   {
     name: "chart/PieChart.Root",

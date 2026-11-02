@@ -156,12 +156,11 @@ export function useMotionMark<
 }
 
 /**
- * How a mark reaches the geometry of a commit: "first" for its first draw, which snaps, "move" for
- * a data update, "snap" for a range step or a change of the mark's coordinate space, either of
- * which lays the mark out anew, and "settle" for a resize or any other commit, which lets a running
- * update finish.
+ * How a mark reaches the geometry of a commit: "move" for a data update, "snap" for its first draw,
+ * a range step or a change of the mark's coordinate space, each of which lays the mark out anew,
+ * and "settle" for a resize or any other commit, which lets a running update finish.
  */
-export type CommitMotion = "first" | "move" | "snap" | "settle";
+export type CommitMotion = "move" | "snap" | "settle";
 
 /** What a commit asks of a mark, and how it scaled the plot's box since the mark last drew. */
 export type Commit = { readonly kind: CommitMotion; readonly scale: PlotScale };
@@ -204,7 +203,7 @@ export function useCommitMotion(update: ChartUpdate, plot: ChartPlot | null, spa
     const previous = last.current;
     last.current = { update, plot, space };
     const commit = (kind: CommitMotion): Commit => ({ kind, scale: scaleOf(previous?.plot ?? null, plot) });
-    if (previous === null) return commit("first");
+    if (previous === null) return commit("snap");
     if (previous.space !== space) return commit("snap");
     if (previous.update === update || previous.plot !== plot) return commit("settle");
     // A data update moves the marks that stay, unless it relays the plot, which snaps them all.
@@ -213,9 +212,9 @@ export function useCommitMotion(update: ChartUpdate, plot: ChartPlot | null, spa
 }
 
 /**
- * The loop's placement for a commit, the one owner every mark asks. A first draw snaps, and a mark
- * in Root's waiting entrance places its entrance instead. A data update moves, along a path's own
- * route when it brings one. A settle carries the commit's scale, and a snap snaps.
+ * The loop's placement for a commit, the one owner every mark asks. A data update moves, along a
+ * path's own route when it brings one. A settle carries the commit's scale, and a snap, a first
+ * draw's included, snaps, while a mark in Root's waiting entrance places its entrance instead.
  *
  * @param commit - What the commit asks of the mark, from `useCommitMotion`.
  * @param options - A path's route to its rest when a data update aligns its old and new vertices

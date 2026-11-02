@@ -5,19 +5,17 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { nextFrames } from "../../../test/animation-frames";
+import { label, pointerAt, popup, surfaceBox } from "../../../test/chart/marks";
 import {
   MONTHS,
   REVENUE,
   DAYS,
   WIDE,
   barChart,
-  frames,
   hoverSlot,
-  label,
   lineChart,
-  popup,
   positioner,
-  surfaceBox,
   watchFrames,
   wideChart,
 } from "../../../test/chart/tooltip-glide";
@@ -45,13 +43,13 @@ describe("a pointer sweep with motion on", () => {
     { timeout: 90_000 },
     async (_, chart, slots, scale) => {
       const { host } = renderThemed(chart());
-      await frames(2);
+      await nextFrames(2);
       const watch = watchFrames(host);
       const order = [...slots.keys(), ...[...slots.keys()].toReversed()];
       for (const slot of order) {
         await hoverSlot(host, slot, slots.length, scale);
         // The glide runs 200 ms, about 12 frames at 60 Hz.
-        await frames(16);
+        await nextFrames(16);
         expect(label()).toBe(slots[slot]);
       }
       watch.stop();
@@ -68,13 +66,13 @@ describe("the popup's place along x", () => {
     const root = host.querySelector('[data-slot="chart"]')?.getBoundingClientRect() ?? new DOMRect();
     const box = surfaceBox(host);
     await hoverSlot(host, 2, 6, "band");
-    await frames(20);
+    await nextFrames(20);
     const middle = positioner()?.getBoundingClientRect() ?? new DOMRect();
     expect(
       Math.abs((middle.left + middle.right) / 2 - (box.left + (box.width * 2.5) / 6))
     ).toBeLessThanOrEqual(1);
     await hoverSlot(host, 5, 6, "band");
-    await frames(20);
+    await nextFrames(20);
     // Centred on Jun, the popup would pass the Root's right edge, so it ends on that edge.
     const last = positioner()?.getBoundingClientRect() ?? new DOMRect();
     expect(box.left + (box.width * 5.5) / 6 + last.width / 2).toBeGreaterThan(root.right + 1);
@@ -85,7 +83,7 @@ describe("the popup's place along x", () => {
 describe("the glide", () => {
   /** The popup's resting left edge once it has landed. */
   async function landedLeft(): Promise<number> {
-    await frames(20);
+    await nextFrames(20);
     return positioner()?.getBoundingClientRect().left ?? Number.NaN;
   }
 
@@ -124,7 +122,7 @@ describe("the glide", () => {
     await landedLeft();
     await userEvent.hover(document.body, { position: { x: 2, y: 2 }, force: true });
     await expect.poll(() => popup()).toBeNull();
-    await frames(20);
+    await nextFrames(20);
     const watch = watchFrames(host);
     await hoverSlot(host, 5, 6, "band");
     const to = await landedLeft();
@@ -161,7 +159,7 @@ describe("the glide", () => {
     );
     const { host, rerender } = renderThemed(view(false));
     await hoverSlot(host, 2, 6, "band");
-    await frames(20);
+    await nextFrames(20);
     const before = popup()?.getBoundingClientRect().top ?? Number.NaN;
     const tops: number[] = [];
     let running = true;
@@ -174,7 +172,7 @@ describe("the glide", () => {
     requestAnimationFrame(record);
     rerender(view(true));
     // The bars tween for --chart-update, 480 ms, and the popup measures them again once they land.
-    await frames(60);
+    await nextFrames(60);
     running = false;
     const after = popup()?.getBoundingClientRect().top ?? Number.NaN;
     expect(before - after).toBeGreaterThan(30);
@@ -210,7 +208,7 @@ describe("scrolling while the popup shows", () => {
       );
       // The pointer stays inside the plot when the scroll carries the plot 60 px up under it.
       await hoverSlot(host, 1, 6, "band", 0.4);
-      await frames(20);
+      await nextFrames(20);
       // DOM audit: the scroll container has no role, so its test id finds it.
       const element = inner ? host.querySelector<HTMLElement>('[data-testid="scroller"]') : null;
       const plotBefore = surfaceBox(host);
@@ -220,7 +218,7 @@ describe("scrolling while the popup shows", () => {
       else element.scrollTop += 60;
       const offsets: number[] = [];
       for (let frame = 0; frame < 24; frame += 1) {
-        await frames(1);
+        await nextFrames(1);
         const shown = popup()?.getBoundingClientRect() ?? new DOMRect();
         offsets.push(shown.top - surfaceBox(host).top);
       }
@@ -235,13 +233,6 @@ describe("scrolling while the popup shows", () => {
   );
 });
 
-/** Move the pointer to a point in client pixels, over whatever lies there. */
-async function pointerAt(x: number, y: number): Promise<void> {
-  const target = document.elementFromPoint(x, y) ?? document.body;
-  const rect = target.getBoundingClientRect();
-  await userEvent.hover(target, { position: { x: x - rect.left, y: y - rect.top }, force: true });
-}
-
 describe("a pointer moving straight up from the active slot", () => {
   it("reaches the popup over a bar that fills the plot, with the slot unchanged", async () => {
     // k1's bar reaches the plot's top, so the popup rests 8 px above the plot, outside the surface.
@@ -249,12 +240,12 @@ describe("a pointer moving straight up from the active slot", () => {
     const box = surfaceBox(host);
     const x = box.left + (box.width * 1.5) / WIDE.length;
     await hoverSlot(host, 1, WIDE.length, "band");
-    await frames(20);
+    await nextFrames(20);
     const shown = popup()?.getBoundingClientRect() ?? new DOMRect();
     expect(shown.bottom).toBeLessThan(box.top - 4);
     for (let y = box.top + 10; y > shown.bottom - 6; y -= 2) {
       await pointerAt(x, y);
-      await frames(2);
+      await nextFrames(2);
       expect(label(), `at y ${String(y)}`).toBe("k1");
     }
   });
@@ -281,7 +272,7 @@ describe("the popup's roof under its final place", () => {
       </div>
     );
     await hoverSlot(host, 0, 4, "band");
-    await frames(20);
+    await nextFrames(20);
     expect(label()).toBe("k0");
     const shown = popup()?.getBoundingClientRect() ?? new DOMRect();
     // DOM audit: bars are aria-hidden plot output, in slot order.
@@ -315,7 +306,7 @@ describe("the popup's roof under its final place", () => {
     const box = surfaceBox(host);
     expect(box.height).toBe(200);
     await hoverSlot(host, 1, 4, "point");
-    await frames(20);
+    await nextFrames(20);
     const shown = popup()?.getBoundingClientRect() ?? new DOMRect();
     expect(Math.abs(shown.bottom - (box.top + 67 - 8))).toBeLessThanOrEqual(1);
   });
@@ -353,12 +344,12 @@ describe("a data update while the popup shows", () => {
       // tween lands on, overshoot and stroke included, bounds where it reaches.
       const { host, rerender } = renderThemed(<NaturalLine values={from} width={width} />);
       await hoverSlot(host, 0, 4, "point");
-      await frames(20);
+      await nextFrames(20);
       expect(label()).toBe("k0");
       const watch = watchFrames(host, "moving");
       rerender(<NaturalLine values={to} width={width} />);
       // The tween runs --chart-update, 480 ms.
-      await frames(45);
+      await nextFrames(45);
       watch.stop();
       expect(watch.tops.length).toBeGreaterThan(20);
       expect(watch.covered).toEqual([]);
@@ -389,12 +380,12 @@ describe("a step whose raised path would leave the viewport", () => {
       </div>
     );
     await hoverSlot(host, 0, 4, "band");
-    await frames(20);
+    await nextFrames(20);
     const from = positioner()?.getBoundingClientRect().left ?? Number.NaN;
     const watch = watchFrames(host);
     // The Root's box holds the 280 px popup at its left edge over k0 and at its right edge over k3.
     await hoverSlot(host, 3, 4, "band");
-    await frames(20);
+    await nextFrames(20);
     watch.stop();
     expect(label()).toBe("k3");
     const to = positioner()?.getBoundingClientRect().left ?? Number.NaN;
@@ -429,12 +420,12 @@ describe("a step whose raised path would leave the viewport", () => {
       </div>
     );
     await hoverSlot(host, 0, 3, "point");
-    await frames(20);
+    await nextFrames(20);
     const watch = watchFrames(host);
     await hoverSlot(host, 2, 3, "point");
-    await frames(20);
+    await nextFrames(20);
     await hoverSlot(host, 0, 3, "point");
-    await frames(20);
+    await nextFrames(20);
     watch.stop();
     expect(label()).toBe("k0");
     expect(Math.min(...watch.tops), JSON.stringify(watch.tops)).toBeGreaterThanOrEqual(7);
@@ -463,11 +454,11 @@ describe("a step onto a label that wraps", () => {
       </div>
     );
     await hoverSlot(host, 0, 3, "band");
-    await frames(20);
+    await nextFrames(20);
     const short = popup()?.getBoundingClientRect().height ?? 0;
     const watch = watchFrames(host);
     await hoverSlot(host, 1, 3, "band");
-    await frames(20);
+    await nextFrames(20);
     watch.stop();
     expect(label()).toBe(names[1]);
     expect(popup()?.getBoundingClientRect().height ?? 0).toBeGreaterThan(short + 30);
@@ -574,7 +565,7 @@ describe("the path form's columns", () => {
     expect(host.querySelector('[data-slot="chart-bar-path"]')).not.toBeNull();
     const box = surfaceBox(host);
     await hoverSlot(host, 50, 101, "band");
-    await frames(20);
+    await nextFrames(20);
     const shown = popup()?.getBoundingClientRect() ?? new DOMRect();
     expect(Math.abs(shown.bottom - (box.top + 68 - 8))).toBeLessThanOrEqual(1);
   });
@@ -585,10 +576,10 @@ describe("marks that draw something new while the popup shows", () => {
     const rows = named([0, 75, 75, 0]);
     const { host, rerender } = renderThemed(<Scene rows={rows} kind="line" popupWidth={280} />);
     await hoverSlot(host, 0, 4, "point");
-    await frames(20);
+    await nextFrames(20);
     const watch = watchFrames(host, "moving");
     rerender(<Scene rows={rows} kind="line" curve="natural" popupWidth={280} />);
-    await frames(20);
+    await nextFrames(20);
     watch.stop();
     expect(label()).toBe("k0");
     expect(watch.covered).toEqual([]);
@@ -600,10 +591,10 @@ describe("marks that draw something new while the popup shows", () => {
     const { host, rerender } = renderThemed(<Scene rows={rows} kind="line" />);
     const box = surfaceBox(host);
     await hoverSlot(host, 1, 4, "point");
-    await frames(20);
+    await nextFrames(20);
     const watch = watchFrames(host, "moving");
     rerender(<Scene rows={rows} kind="line" markStyle={{ transform: "translateY(-32px)" }} />);
-    await frames(20);
+    await nextFrames(20);
     watch.stop();
     const shown = popup()?.getBoundingClientRect() ?? new DOMRect();
     expect(Math.abs(shown.bottom - (box.top + 67 - 8))).toBeLessThanOrEqual(1);
@@ -619,9 +610,9 @@ describe("styling that changes the marks while the popup shows", () => {
     const { host, rerender } = renderThemed(<Scene rows={rows} kind="line" stroke="2px" />);
     const box = surfaceBox(host);
     await hoverSlot(host, 1, 4, "point");
-    await frames(20);
+    await nextFrames(20);
     rerender(<Scene rows={rows} kind="line" stroke="40px" />);
-    await frames(20);
+    await nextFrames(20);
     const shown = popup()?.getBoundingClientRect() ?? new DOMRect();
     expect(Math.abs(shown.bottom - (box.top + 80 - 8))).toBeLessThanOrEqual(1);
   });
@@ -632,12 +623,12 @@ describe("styling that changes the marks while the popup shows", () => {
     const rising = named([50, 50, 50, 50]);
     const { host, rerender } = renderThemed(<Scene rows={named([20, 20, 20, 20])} kind="line" />);
     await hoverSlot(host, 1, 4, "point");
-    await frames(20);
+    await nextFrames(20);
     const watch = watchFrames(host, "moving");
     rerender(<Scene rows={rising} kind="line" />);
-    await frames(5);
+    await nextFrames(5);
     rerender(<Scene rows={rising} kind="line" markStyle={{ transform: "translateY(-48px)" }} />);
-    await frames(40);
+    await nextFrames(40);
     watch.stop();
     expect(watch.covered).toEqual([]);
   });
@@ -659,11 +650,11 @@ describe("a monotone curve in the middle of a data update", () => {
     } as const;
     const { host, rerender } = renderThemed(<Scene rows={before} {...props} />);
     await hoverSlot(host, 3, 4, "point");
-    await frames(20);
+    await nextFrames(20);
     expect(label()).toBe("k3");
     const watch = watchFrames(host, "moving");
     rerender(<Scene rows={after} {...props} />);
-    await frames(45);
+    await nextFrames(45);
     watch.stop();
     expect(watch.tops.length).toBeGreaterThan(20);
     expect(watch.covered).toEqual([]);
@@ -690,11 +681,11 @@ describe("a data update whose route the loop paints apart from both its ends", (
     // frames rise past both the old curve and the new one.
     const { host, rerender } = renderThemed(<Scene rows={before} curve="natural" {...tall} />);
     await hoverSlot(host, 1, before.length, "point");
-    await frames(20);
+    await nextFrames(20);
     expect(label()).toBe("k1");
     const watch = watchFrames(host, "moving");
     rerender(<Scene rows={after} curve="natural" {...tall} />);
-    await frames(45);
+    await nextFrames(45);
     watch.stop();
     expect(watch.tops.length).toBeGreaterThan(20);
     expect(watch.covered).toEqual([]);
@@ -711,11 +702,11 @@ describe("a data update whose route the loop paints apart from both its ends", (
     const props = { ...tall, curve: "monotone", missing: "connect" } as const;
     const { host, rerender } = renderThemed(<Scene rows={rows([53, 84, 73, 10])} {...props} />);
     await hoverSlot(host, 6, 12, "point");
-    await frames(20);
+    await nextFrames(20);
     expect(label()).toBe("k6");
     const watch = watchFrames(host, "moving");
     rerender(<Scene rows={rows([87, 4, 65, 6])} {...props} />);
-    await frames(45);
+    await nextFrames(45);
     watch.stop();
     expect(watch.covered).toEqual([]);
   });
@@ -728,15 +719,15 @@ describe("a reader step that moves the popup nowhere", () => {
     const rows = named([30, 40, 30, 40]);
     const { host, rerender } = renderThemed(<Scene rows={rows} kind="bars" popupWidth={640} />);
     await hoverSlot(host, 0, 4, "band");
-    await frames(20);
+    await nextFrames(20);
     const wide = positioner()?.getBoundingClientRect().left ?? Number.NaN;
     await hoverSlot(host, 1, 4, "band");
-    await frames(20);
+    await nextFrames(20);
     expect(label()).toBe("k1");
     expect(positioner()?.getBoundingClientRect().left).toBeCloseTo(wide, 0);
     const watch = watchFrames(host);
     rerender(<Scene rows={rows} kind="bars" popupWidth={128} />);
-    await frames(30);
+    await nextFrames(30);
     watch.stop();
     const narrow = positioner()?.getBoundingClientRect().left ?? Number.NaN;
     expect(narrow - wide).toBeGreaterThan(50);
@@ -755,9 +746,9 @@ describe("a wrapper inside Root that styles the marks", () => {
     const { host, rerender } = renderThemed(<Scene rows={rows} kind="line" glowStroke="2px" />);
     const box = surfaceBox(host);
     await hoverSlot(host, 1, 4, "point");
-    await frames(20);
+    await nextFrames(20);
     rerender(<Scene rows={rows} kind="line" glowStroke="40px" />);
-    await frames(20);
+    await nextFrames(20);
     const shown = popup()?.getBoundingClientRect() ?? new DOMRect();
     expect(Math.abs(shown.bottom - (box.top + 80 - 8))).toBeLessThanOrEqual(1);
   });
@@ -776,9 +767,9 @@ describe("a mark attribute that a stylesheet strokes apart", () => {
       const { host, rerender } = renderThemed(<Scene rows={rows} kind="line" variant="default" />);
       const box = surfaceBox(host);
       await hoverSlot(host, 1, 4, "point");
-      await frames(20);
+      await nextFrames(20);
       rerender(<Scene rows={rows} kind="line" variant="dashed" />);
-      await frames(20);
+      await nextFrames(20);
       const shown = popup()?.getBoundingClientRect() ?? new DOMRect();
       expect(Math.abs(shown.bottom - (box.top + 80 - 8))).toBeLessThanOrEqual(1);
     } finally {
@@ -798,11 +789,11 @@ describe("a data update that slides the marks along x", () => {
     const after = named([0, 100, 0, 0, 0, 0, 0], 3);
     const { host, rerender } = renderThemed(<Scene rows={before} kind="line" glide={glide} />);
     await hoverSlot(host, 5, 7, "point");
-    await frames(20);
+    await nextFrames(20);
     expect(label()).toBe("k5");
     const watch = watchFrames(host, "moving");
     rerender(<Scene rows={after} kind="line" glide={glide} />);
-    await frames(45);
+    await nextFrames(45);
     watch.stop();
     expect(label()).toBe("k5");
     expect(watch.tops.length).toBeGreaterThan(20);
@@ -819,11 +810,11 @@ describe("a data update that slides the marks along x", () => {
       <Scene rows={before} kind="line" popupWidth={128} glide={glide} />
     );
     await hoverSlot(host, 4, 6, "point");
-    await frames(20);
+    await nextFrames(20);
     expect(label()).toBe("k4");
     const watch = watchFrames(host, "moving");
     rerender(<Scene rows={after} kind="line" popupWidth={128} glide={glide} />);
-    await frames(45);
+    await nextFrames(45);
     watch.stop();
     expect(watch.covered).toEqual([]);
   });
@@ -849,11 +840,11 @@ describe("a data update that slides the marks along x", () => {
     const props = { kind: "bars", popupWidth: 128, plotWidth } as const;
     const { host, rerender } = renderThemed(<Scene rows={before} {...props} />);
     await hoverSlot(host, slot, before.length, "band");
-    await frames(20);
+    await nextFrames(20);
     expect(label()).toBe(`k${String(slot)}`);
     const watch = watchFrames(host);
     rerender(<Scene rows={after} {...props} />);
-    await frames(45);
+    await nextFrames(45);
     watch.stop();
     expect(watch.tops.length).toBeGreaterThan(20);
     expect(watch.covered).toEqual([]);
@@ -863,11 +854,11 @@ describe("a data update that slides the marks along x", () => {
     // A flat line of seven points. The update shows k3 to k9, and k5 stays active, now third.
     const { host, rerender } = renderThemed(<Scene rows={named([50, 50, 50, 50, 50, 50, 50])} kind="line" />);
     await hoverSlot(host, 5, 7, "point");
-    await frames(20);
+    await nextFrames(20);
     const from = positioner()?.getBoundingClientRect().left ?? Number.NaN;
     const watch = watchFrames(host);
     rerender(<Scene rows={named([50, 50, 50, 50, 50, 50, 50], 3)} kind="line" />);
-    await frames(30);
+    await nextFrames(30);
     watch.stop();
     expect(label()).toBe("k5");
     const to = positioner()?.getBoundingClientRect().left ?? Number.NaN;
@@ -891,11 +882,11 @@ describe("a step onto a label that changes the popup's size", () => {
       <Scene rows={rows} kind="bars" popupWidth={128} padding="8px 24px 400px" />
     );
     await hoverSlot(host, 0, 3, "band");
-    await frames(20);
+    await nextFrames(20);
     expect(positioner()?.getAttribute("data-side")).toBe("bottom");
     const watch = watchFrames(host);
     await hoverSlot(host, 1, 3, "band");
-    await frames(20);
+    await nextFrames(20);
     watch.stop();
     expect(positioner()?.getAttribute("data-side")).toBe("bottom");
     expect(label()).toBe(rows[1]?.name);
@@ -910,11 +901,11 @@ describe("a step onto a label that changes the popup's size", () => {
     ];
     const { host } = renderThemed(<Scene rows={rows} kind="bars" />);
     await hoverSlot(host, 0, 3, "band");
-    await frames(20);
+    await nextFrames(20);
     const narrow = popup()?.getBoundingClientRect().width ?? 0;
     const watch = watchFrames(host);
     await hoverSlot(host, 1, 3, "band");
-    await frames(20);
+    await nextFrames(20);
     watch.stop();
     expect(popup()?.getBoundingClientRect().width ?? 0).toBeGreaterThan(narrow + 100);
     expect(watch.covered).toEqual([]);
@@ -996,7 +987,7 @@ describe("any sequence of reader steps and data updates", () => {
         />
       );
       const { host, rerender } = renderThemed(scene());
-      await frames(2);
+      await nextFrames(2);
       const watch = watchFrames(host, "moving");
       const scale = kind === "line" ? "point" : "band";
       for (let action = 0; action < (sparse ? 16 : 12); action += 1) {
@@ -1027,10 +1018,10 @@ describe("any sequence of reader steps and data updates", () => {
           rerender(scene());
         }
         // Between 2 and 32 frames, so the next action can land in the middle of a 480 ms tween.
-        await frames(2 + pick(31));
+        await nextFrames(2 + pick(31));
       }
       // The last tween ends before the watch does.
-      await frames(32);
+      await nextFrames(32);
       watch.stop();
       expect(watch.tops.length).toBeGreaterThan(50);
       expect(Math.min(...watch.tops)).toBeGreaterThanOrEqual(0);

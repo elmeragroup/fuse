@@ -66,13 +66,13 @@ export function tooltipSideOffset(
 }
 
 /** How far above the roof under it a popup rests, in CSS pixels. */
-export const ROOF_GAP = 8;
+const ROOF_GAP = 8;
 
 /**
  * The drop a resting popup ignores, in CSS pixels. A step that would lower the popup by this much
  * or less keeps its height, so a scrub over small changes leaves it still.
  */
-export const SINK_SLACK = 16;
+const SINK_SLACK = 16;
 
 /** Where a popup sits over a plot: its left edge and its bottom edge, y down. */
 export type PopupPlace = { readonly left: number; readonly bottom: number };

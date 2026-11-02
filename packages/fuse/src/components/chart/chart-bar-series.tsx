@@ -352,7 +352,7 @@ export function SeriesBars({
   const look = useMemo((): BarLook => ({ variant, frame }), [variant, frame]);
   // A bar that mounts while the entrance waits writes nothing, as its entrance runs in the loop,
   // and one that mounts after it started takes its update's intro.
-  const intro = introFor(phase, update.kind, "loop");
+  const intro = introFor(phase, update.kind, true);
   const zero = valueAt(frame, 0);
   return (
     <>

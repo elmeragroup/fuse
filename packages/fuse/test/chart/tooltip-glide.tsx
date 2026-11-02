@@ -5,10 +5,9 @@
  */
 import type { ReactNode } from "react";
 
-import { userEvent } from "vitest/browser";
-
 import { Chart } from "../../src/components/chart/chart-namespace";
 import { LocaleProvider } from "../../src/intl/locale-context";
+import { label, pointerAt, popup, surfaceBox } from "./marks";
 
 /** bklit's months. */
 export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
@@ -97,33 +96,10 @@ export function lineChart(): ReactNode {
   );
 }
 
-/** Wait for a number of animation frames. */
-export async function frames(count: number): Promise<void> {
-  for (let frame = 0; frame < count; frame += 1) {
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-  }
-}
-
-/** The plot surface's client box. */
-export function surfaceBox(host: HTMLElement): DOMRect {
-  return host.querySelector('[role="listbox"]')?.getBoundingClientRect() ?? new DOMRect();
-}
-
-/** The open popup. It portals out of the host, and a closed popup stays mounted, hidden. */
-export function popup(): HTMLElement | null {
-  // DOM audit: the popup is aria-hidden and portals out of the host, so its slot is the locator.
-  return document.querySelector<HTMLElement>('[data-slot="chart-tooltip"][data-open]');
-}
-
 /** The popup's positioner, which carries Base UI's place. */
 export function positioner(): HTMLElement | null {
   // DOM audit: the positioner wraps the popup and carries Base UI's transform.
   return document.querySelector<HTMLElement>('[data-slot="chart-tooltip-positioner"]');
-}
-
-/** The open popup's slot label. */
-export function label(): string | null {
-  return popup()?.querySelector('[data-slot="chart-tooltip-label"]')?.textContent ?? null;
 }
 
 /** Whether Base UI has placed the popup for its current open. Until then it hides it. */
@@ -149,10 +125,7 @@ export async function hoverSlot(
       ? box.left + (box.width * (slot + 0.5)) / count
       : box.left + Math.min(box.width - 1, Math.max(1, (box.width * slot) / (count - 1)));
   const y = depth === undefined ? box.bottom - 3 : box.top + box.height * depth;
-  const target = document.elementFromPoint(x, y);
-  if (!(target instanceof Element)) throw new Error(`nothing at ${String(x)}, ${String(y)}`);
-  const rect = target.getBoundingClientRect();
-  await userEvent.hover(target, { position: { x: x - rect.left, y: y - rect.top }, force: true });
+  await pointerAt(x, y);
 }
 
 /** A box in client pixels. */
@@ -197,9 +170,7 @@ function lineBoxes(host: HTMLElement): Box[] {
     if ((path.getAttribute("d") ?? "") === "") continue;
     const length = path.getTotalLength();
     for (let at = 0; at <= length; at += 1) {
-      const { x, y } = new DOMPoint(path.getPointAtLength(at).x, path.getPointAtLength(at).y).matrixTransform(
-        matrix
-      );
+      const { x, y } = path.getPointAtLength(at).matrixTransform(matrix);
       boxes.push({ left: x - half, top: y - half, right: x + half, bottom: y + half });
     }
   }
