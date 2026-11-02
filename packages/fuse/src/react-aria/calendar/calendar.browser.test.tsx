@@ -112,7 +112,9 @@ describe("Calendar", () => {
 
     // July 2026 opens on a Wednesday, so its first week carries June 28–30.
     const outside = outsideMonthBands();
-    expect(outside.map((band) => band.textContent.trim())).toEqual(expect.arrayContaining(["28", "29", "30"]));
+    expect(outside.map((band) => band.textContent.trim())).toEqual(
+      expect.arrayContaining(["28", "29", "30"])
+    );
     for (const band of outside) {
       expect(getComputedStyle(band).visibility, band.textContent).toBe("hidden");
     }
@@ -120,7 +122,9 @@ describe("Calendar", () => {
 
     await userEvent.click(navButtonNamed(/previous/i));
     await userEvent.click(dayNamed(/June 30, 2026/));
-    expect(onChange).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ year: 2026, month: 6, day: 30 }));
+    expect(onChange).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ year: 2026, month: 6, day: 30 })
+    );
   });
 
   it("keeps the month title at 18px, snug and 500 in an external theme", async () => {
