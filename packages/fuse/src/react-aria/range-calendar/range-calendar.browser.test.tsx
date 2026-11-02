@@ -15,6 +15,7 @@ import {
   calendarRoot,
   cellNumbered,
   dayNumbered,
+  outsideMonthBands,
   parkPointerOffGrid,
 } from "../../../test/rac-calendar-testing";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
@@ -143,6 +144,19 @@ describe("RangeCalendar", () => {
     }
     expect(cellNumbered(13).getAttribute("aria-selected")).not.toBe("true");
     expect(cellNumbered(18).getAttribute("aria-selected")).not.toBe("true");
+  });
+
+  it("hides the neighbouring months' days rather than muting them like unavailable ones", async () => {
+    renderRangeCalendar(<RangeCalendar defaultFocusedValue={july14} />);
+    await expect.element(page.getByRole("grid")).toBeVisible();
+
+    // July 2026 opens on a Wednesday, so its first week carries June 28–30.
+    const outside = outsideMonthBands();
+    expect(outside.map((band) => band.textContent.trim())).toEqual(expect.arrayContaining(["28", "29", "30"]));
+    for (const band of outside) {
+      expect(getComputedStyle(band).visibility, band.textContent).toBe("hidden");
+    }
+    expect(page.getByRole("button", { name: /June 30, 2026/ }).query()).toBeNull();
   });
 
   it("mutes an unavailable day's pill with the muted-foreground token and gives it no hover fill", async () => {

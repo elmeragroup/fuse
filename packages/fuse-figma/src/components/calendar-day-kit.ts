@@ -6,11 +6,11 @@
  * with no `data-slot`, and passes `cellVariants` as its `className` function, which React Aria calls
  * with the cell's render props. So a cell's classes are `cellVariants` of the render props React
  * Aria hands it in that state: `isFocusVisible` while a keyboard user focuses the date, `isSelected`
- * while it is the value, and `isDisabled` while it cannot be picked. A date that is unavailable or
- * outside the month draws the same classes, so `disabled` stands for all three. React Aria never
- * selects a date it disables, so a disabled cell draws unselected at `selected=on`, and it selects
- * an invalid date, so an invalid cell draws selected at `selected=off`. Fuse draws no face for
- * today, so the set has none.
+ * while it is the value, and `isDisabled` while it cannot be picked. An unavailable date draws the
+ * same classes, so `disabled` stands for both. A date outside the month is invisible, so the set
+ * has no face for it and omits `outside-month:`. React Aria never selects a date it disables, so a
+ * disabled cell draws unselected at `selected=on`, and it selects an invalid date, so an invalid
+ * cell draws selected at `selected=off`. Fuse draws no face for today, so the set has none.
  *
  * Every face depends on the cell's own state alone. The range calendar's band, whose corners
  * follow the cell's place in its week, waits for the segment sets.
@@ -65,7 +65,7 @@ export const CALENDAR_DAY: ComponentDefinition = {
   classesFor: (cell) => cellVariants(renderPropsFor(cell)),
   states: {},
   facts: new Map(),
-  omittedStates: new Set(["aria-pressed"]),
+  omittedStates: new Set(["aria-pressed", "outside-month"]),
   omittedMedia: new Map([
     ["forced-colors", "the kit draws the normal colors, not the system colors a forced-colors mode paints"],
   ]),

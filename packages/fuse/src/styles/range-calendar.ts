@@ -30,7 +30,9 @@ export const rangeCalendarVariants = tv({
      */
     outerCell: [
       "group text-sm size-9 cursor-default outline outline-0",
-      "outside-month:text-muted-foreground",
+      // Hidden rather than muted: RAC disables days outside the visible month, and a muted day
+      // reads as unavailable although it is pickable from its own month. See styles/calendar.ts.
+      "outside-month:invisible",
       "selected:bg-primary/20 invalid:selected:bg-error/10",
       "forced-colors:selected:bg-[Highlight] forced-colors:invalid:selected:bg-[Mark]",
       "selection-start:rounded-s-full selection-end:rounded-e-full",

@@ -18,6 +18,10 @@ export const cellVariants = tv({
   // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- decorative day-cell circle, not a control-box rung
   base: cn(
     "text-sm flex size-9 cursor-default items-center justify-center rounded-full forced-color-adjust-none",
+    // RAC disables every day outside the visible month, and a muted day reads as unavailable
+    // although it is pickable from its own month. Invisible keeps its grid slot so the weeks stay
+    // aligned and drops it from the accessibility tree.
+    "outside-month:invisible",
     stateFocusRingClass
   ),
   variants: {
