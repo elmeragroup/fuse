@@ -158,6 +158,11 @@ export function dayNumbered(day: number): HTMLElement {
   return match;
 }
 
+/** Every day band RAC marks as falling outside the visible month, read from the DOM, not the accessibility tree. */
+export function outsideMonthBands(): HTMLElement[] {
+  return [...calendarGrid().querySelectorAll<HTMLElement>("[data-outside-month]")];
+}
+
 /** The `td` RAC gives `role="gridcell"` and `aria-selected`, for a day of the visible month. */
 export function cellNumbered(day: number): HTMLElement {
   const cell = dayNumbered(day).closest("td");

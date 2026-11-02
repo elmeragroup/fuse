@@ -37,7 +37,7 @@ describe("rangeCalendarVariants", () => {
     expect(outerCell).toContain("selection-end:rounded-e-full");
     expect(outerCell).toContain("[td:first-child_&]:rounded-s-full");
     expect(outerCell).toContain("[td:last-child_&]:rounded-e-full");
-    expect(outerCell).toContain("outside-month:text-muted-foreground");
+    expect(outerCell).toContain("outside-month:invisible");
     // The forced-colors fallbacks the reference had.
     expect(outerCell).toContain("forced-colors:selected:bg-[Highlight]");
     expect(outerCell).toContain("forced-colors:invalid:selected:bg-[Mark]");

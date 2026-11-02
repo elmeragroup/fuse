@@ -105,13 +105,14 @@ describe("the Calendar day component set", () => {
     expect(day("on", "disabled")).toEqual(circle("muted-foreground"));
   });
 
-  it("drops the pressed fill, a disabled day's hover fill, the forced-colors arms and the cursor, and leaves nothing unmapped", () => {
+  it("drops the pressed fill, the hidden outside-month day, a disabled day's hover fill, the forced-colors arms and the cursor, and leaves nothing unmapped", () => {
     const rows = coverage.filter((row) => row.component === "Calendar day");
     const outcomes = (className: string) =>
       new Set(
         rows.filter((row) => row.className === className).map((row) => `${row.property}: ${row.outcome}`)
       );
     expect(outcomes("aria-pressed:bg-accent")).toEqual(new Set(["background-color: dropped"]));
+    expect(outcomes("outside-month:invisible")).toEqual(new Set(["visibility: dropped"]));
     // `cellVariants` gives `hover:bg-transparent` only to a disabled day, which no cell hovers.
     expect(outcomes("hover:bg-transparent")).toEqual(new Set(["background-color: dropped"]));
     expect(outcomes("forced-colors:bg-[Highlight]")).toEqual(new Set(["background-color: dropped"]));

@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 
 import { CalendarDate } from "@internationalized/date";
 import { I18nProvider } from "react-aria-components";
-import { describe, expect, it } from "vitest";
-import { page } from "vitest/browser";
+import { describe, expect, it, vi } from "vitest";
+import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
@@ -16,6 +16,7 @@ import {
   dayNamed,
   navButtonNamed,
   navButtons,
+  outsideMonthBands,
   visibleMonthTitle,
 } from "../../../test/rac-calendar-testing";
 import { cssVarColor, fkasExternal, px, renderThemed } from "../../../test/themed-browser-render";
@@ -102,6 +103,28 @@ describe("Calendar", () => {
     expect(visibleRangeLabel).not.toBe("");
     expect(visibleRangeLabel).toMatch(/July\s+2026/i);
     expect(calendarGrid().getAttribute("aria-labelledby")).toBeNull();
+  });
+
+  it("hides the neighbouring months' days, which stay pickable from their own month", async () => {
+    const onChange = vi.fn();
+    renderCalendar(<Calendar defaultValue={july14} onChange={onChange} />);
+    await expect.element(page.getByRole("grid")).toBeVisible();
+
+    // July 2026 opens on a Wednesday, so its first week carries June 28–30.
+    const outside = outsideMonthBands();
+    expect(outside.map((band) => band.textContent.trim())).toEqual(
+      expect.arrayContaining(["28", "29", "30"])
+    );
+    for (const band of outside) {
+      expect(getComputedStyle(band).visibility, band.textContent).toBe("hidden");
+    }
+    expect(page.getByRole("button", { name: /June 30, 2026/ }).query()).toBeNull();
+
+    await userEvent.click(navButtonNamed(/previous/i));
+    await userEvent.click(dayNamed(/June 30, 2026/));
+    expect(onChange).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ year: 2026, month: 6, day: 30 })
+    );
   });
 
   it("keeps the month title at 18px, snug and 500 in an external theme", async () => {
