@@ -987,49 +987,118 @@ const DENSE_NATURAL = Array.from({ length: 2400 }, (_, index) => ({
 }));
 
 describe("an active dot on a dense natural line", () => {
-  it("glides on the line late in the series, past where the spline first bends back", async () => {
-    const { host } = renderThemed(
-      <div style={{ padding: "120px 24px 24px", width: 348, boxSizing: "border-box" }}>
-        <LocaleProvider locale="en-US">
-          <Chart.Root
-            data={DENSE_NATURAL}
-            config={DENSE_CONFIG}
-            xKey="name"
-            xScale="point"
-            yInclude={DENSE_DOMAIN}
-            data-intro="none"
-            aria-label="Dense natural">
-            <Chart.Crosshair />
-            <Chart.Line dataKey="v" curve="natural" />
-            <Chart.ActiveDot dataKey="v" />
-          </Chart.Root>
-        </LocaleProvider>
-      </div>
-    );
-    await nextFrames(2);
-    moveTo(host, 1600, 0, DENSE_NATURAL.length);
-    await nextFrames(40);
-    // DOM audit: the line is aria-hidden plot output. Its 2 px stroke holds every point within 1 px
-    // of the drawn curve, which the browser answers from the path's own geometry.
-    const path = host.querySelector<SVGPathElement>('[data-slot="chart-line"][data-part="solid"]');
-    const matrix = path?.getScreenCTM()?.inverse();
-    if (path === null || matrix === undefined) throw new Error("no line");
-    expect(getComputedStyle(path).strokeWidth).toBe("2px");
-    const onLine = (x: number, y: number) => path.isPointInStroke(new DOMPoint(x, y).matrixTransform(matrix));
-    const frames: ReturnType<typeof shown>[] = [];
-    let watching = true;
-    const watch = () => {
-      if (!watching) return;
-      frames.push(shown(host));
-      requestAnimationFrame(watch);
-    };
-    moveTo(host, 1600, 0.5, DENSE_NATURAL.length);
-    await nextFrames(1);
-    moveTo(host, 2000, 0, DENSE_NATURAL.length);
-    requestAnimationFrame(watch);
-    await nextFrames(60);
-    watching = false;
-    expect(frames.filter(({ gliding }) => gliding).length, JSON.stringify(frames)).toBeGreaterThan(3);
-    for (const frame of frames) expect(onLine(frame.x, frame.y), JSON.stringify(frame)).toBe(true);
-  });
+  /** The line's cubic segments and straight lines, from its own path data, in client pixels. */
+  function drawnSegments(path: SVGPathElement): DOMPoint[][] {
+    const matrix = path.getScreenCTM();
+    if (matrix === null) throw new Error("no line matrix");
+    const tokens =
+      (path.getAttribute("d") ?? "").match(/[A-Za-z]|-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/gu) ?? [];
+    const segments: DOMPoint[][] = [];
+    let at = new DOMPoint();
+    let command = "";
+    let numbers: number[] = [];
+    const point = (x = 0, y = 0) => new DOMPoint(x, y).matrixTransform(matrix);
+    for (const token of tokens) {
+      if (/^[A-Za-z]$/u.test(token)) {
+        command = token;
+        numbers = [];
+        continue;
+      }
+      numbers.push(Number(token));
+      if (command === "M" && numbers.length === 2) {
+        at = point(numbers[0], numbers[1]);
+        command = "L";
+        numbers = [];
+      } else if (command === "L" && numbers.length === 2) {
+        const next = point(numbers[0], numbers[1]);
+        segments.push([at, next]);
+        at = next;
+        numbers = [];
+      } else if (command === "C" && numbers.length === 6) {
+        const [x1, y1, x2, y2, x, y] = numbers;
+        const end = point(x, y);
+        segments.push([at, point(x1, y1), point(x2, y2), end]);
+        at = end;
+        numbers = [];
+      }
+    }
+    return segments;
+  }
+
+  /** How far a point lies from the drawn segments, sampling each one near it every 1/200 of the way. */
+  function offCurve(segments: readonly DOMPoint[][], x: number, y: number): number {
+    let least = Number.POSITIVE_INFINITY;
+    for (const segment of segments) {
+      const xs = segment.map((point) => point.x);
+      if (Math.min(...xs) > x + 2 || Math.max(...xs) < x - 2) continue;
+      for (let step = 0; step <= 200; step += 1) {
+        const t = step / 200;
+        const u = 1 - t;
+        const weights = segment.length === 4 ? [u * u * u, 3 * u * u * t, 3 * u * t * t, t * t * t] : [u, t];
+        const [px, py] = [0, 0].map((_, axis) =>
+          segment.reduce(
+            (sum, point, index) => sum + (weights[index] ?? 0) * (axis === 0 ? point.x : point.y),
+            0
+          )
+        );
+        least = Math.min(least, Math.hypot((px ?? 0) - x, (py ?? 0) - y));
+      }
+    }
+    return least;
+  }
+
+  it.each([
+    // c1507 and c1941 are drawn inside the bends the spline makes in their columns, 39 px across
+    // from where the run, which leaves each bend out, passes them.
+    { name: "forward", from: 1507, to: 1941 },
+    { name: "backward", from: 1941, to: 1507 },
+  ])(
+    "keeps every place of a ride within 1 px of the line, $name between readings inside its bends",
+    async ({ from, to }) => {
+      const { host } = renderThemed(
+        <div style={{ padding: "120px 24px 24px", width: 348, boxSizing: "border-box" }}>
+          <LocaleProvider locale="en-US">
+            <Chart.Root
+              data={DENSE_NATURAL}
+              config={DENSE_CONFIG}
+              xKey="name"
+              xScale="point"
+              yInclude={DENSE_DOMAIN}
+              data-intro="none"
+              aria-label="Dense natural">
+              <Chart.Crosshair />
+              <Chart.Line dataKey="v" curve="natural" />
+              <Chart.ActiveDot dataKey="v" />
+            </Chart.Root>
+          </LocaleProvider>
+        </div>
+      );
+      await nextFrames(2);
+      // The dot shows on the first reading, then settles there.
+      moveTo(host, from, 0, DENSE_NATURAL.length);
+      await nextFrames(60);
+      // DOM audit: the line is aria-hidden plot output.
+      const path = host.querySelector<SVGPathElement>('[data-slot="chart-line"][data-part="solid"]');
+      if (path === null) throw new Error("no line");
+      const segments = drawnSegments(path);
+      moveTo(host, to, 0, DENSE_NATURAL.length);
+      await nextFrames(1);
+      // The ride, paused and swept through its whole duration a millisecond at a time.
+      const [ride] = dotLayer(host)?.getAnimations() ?? [];
+      if (ride === undefined) throw new Error("no ride");
+      ride.pause();
+      const duration = Number(ride.effect?.getTiming().duration);
+      const ridden = ride.effect instanceof KeyframeEffect ? ride.effect.getKeyframes().length : 0;
+      expect(ridden).toBeGreaterThan(2);
+      const off: string[] = [];
+      for (let time = 0; time <= duration; time += 1) {
+        ride.currentTime = time;
+        const { x, y } = shown(host);
+        const away = offCurve(segments, x, y);
+        if (away > 1)
+          off.push(`${String(time)} ms: ${x.toFixed(2)}, ${y.toFixed(2)} is ${away.toFixed(2)} px off`);
+      }
+      expect(off).toEqual([]);
+    }
+  );
 });

@@ -271,3 +271,99 @@ describe("round 3 tracks", () => {
     expect(runBetween(track, { along: 10, across: 0 }, { along: 20, across: 0 })).not.toBeNull();
   });
 });
+
+/**
+ * A decimated column at x = 100, its readings at 40, 10, 90 and 60, between readings at 0 and 200.
+ * The natural spline through them bends back about 7 px past the column, so the run drops the
+ * readings at 10, 90 and 60 with the bend and climbs a riser at the bend's farthest reach.
+ */
+const COLUMN: readonly [number, number][] = [
+  [0, 50],
+  [100, 40],
+  [100, 10],
+  [100, 90],
+  [100, 60],
+  [200, 50],
+];
+
+/** The column as the line's last, so the spline ends inside its bend. */
+const LAST_COLUMN: readonly [number, number][] = [
+  [0, 50],
+  [100, 40],
+  [100, 10],
+  [100, 90],
+];
+
+/**
+ * Points every thousandth of each cubic d3 draws through the readings, read from the M and C
+ * commands of d3's own path data.
+ */
+function columnCurve(readings: readonly (readonly [number, number])[]): [number, number][] {
+  const numbers = (line().curve(curveNatural)(readings.map(([x, y]) => [x, y])) ?? "")
+    .split(/[MC,]/u)
+    .filter((part) => part !== "")
+    .map(Number);
+  let at: [number, number] = [numbers[0] ?? 0, numbers[1] ?? 0];
+  const points: [number, number][] = [at];
+  for (let index = 2; index + 5 < numbers.length; index += 6) {
+    const [x1 = 0, y1 = 0, x2 = 0, y2 = 0, x = 0, y = 0] = numbers.slice(index, index + 6);
+    for (let step = 1; step <= 1000; step += 1) {
+      const t = step / 1000;
+      const u = 1 - t;
+      const [a, b, c, d] = [u * u * u, 3 * u * u * t, 3 * u * t * t, t * t * t];
+      points.push([a * at[0] + b * x1 + c * x2 + d * x, a * at[1] + b * y1 + c * y2 + d * y]);
+    }
+    at = [x, y];
+  }
+  return points;
+}
+
+describe("a reading inside a backward bend", () => {
+  // Unit under test: the course and keyframes of a ride from or onto a reading the run drops.
+  // Oracle: the cubic segments d3 draws through the column, sampled from its own path data.
+  it.each([
+    {
+      name: "from the reading at (100, 10) to rest at (200, 50)",
+      readings: COLUMN,
+      start: [100, 10],
+      rest: [200, 50],
+    },
+    {
+      name: "from (200, 50) to rest on the reading at (100, 90)",
+      readings: COLUMN,
+      start: [200, 50],
+      rest: [100, 90],
+    },
+    {
+      name: "from (0, 50) to rest on the reading at (100, 60)",
+      readings: COLUMN,
+      start: [0, 50],
+      rest: [100, 60],
+    },
+    {
+      name: "from (0, 50) to rest on the line's last reading, inside its last bend",
+      readings: LAST_COLUMN,
+      start: [0, 50],
+      rest: [100, 90],
+    },
+  ] as const)(
+    "keeps the keyframes within half a pixel of the drawn curve, $name",
+    ({ readings, start, rest }) => {
+      const curve = columnCurve(readings);
+      const data = line().curve(curveNatural)(readings.map(([x, y]) => [x, y])) ?? "";
+      const [run] = parseTrack(data, "vertical");
+      if (run === undefined) throw new Error("no run");
+      const from = { along: start[0], across: start[1] };
+      const to = { along: rest[0], across: rest[1] };
+      const frames = rideKeyframes(start[0] - rest[0], rideCourse(run, from, to));
+      const [low, high] = start[0] < rest[0] ? [start[0], rest[0]] : [rest[0], start[0]];
+      let worst = { away: 0, along: low, across: Number.NaN };
+      for (let along = low; along <= high; along += 0.1) {
+        const across = polylineAt(frames, along - rest[0]) + rest[1];
+        const away = Math.min(...curve.map(([x, y]) => Math.hypot(x - along, y - across)));
+        if (!(away <= worst.away)) worst = { away, along, across };
+      }
+      expect(worst.away, JSON.stringify(worst)).toBeLessThanOrEqual(0.5);
+    }
+  );
+});
