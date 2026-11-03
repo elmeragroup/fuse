@@ -11,12 +11,18 @@ type DocumentRootProps = {
   /** The coordinate stamped on `<html>`; its variant also picks the document density. */
   theme?: ThemeInput;
   suppressHydrationWarning?: boolean;
+  /**
+   * Marks a block preview's document. Its root is the theme scope, so `styles/globals.css` draws
+   * Roboto there for an external theme. The docs' own roots draw Inter whatever theme they carry.
+   */
+  blockPreview?: boolean;
 };
 
 export function DocumentRoot({
   children,
   theme = DOCUMENT_THEME,
   suppressHydrationWarning = false,
+  blockPreview = false,
 }: DocumentRootProps): ReactElement {
   return (
     <html
@@ -24,6 +30,7 @@ export function DocumentRoot({
       className={`${inter.variable} ${roboto.variable} bg-background text-foreground`}
       {...themeAttributes(theme)}
       {...densityAttributes(defaultDensityForVariant(theme.variant))}
+      {...(blockPreview && { "data-block-preview": "" })}
       suppressHydrationWarning={suppressHydrationWarning}>
       {children}
     </html>

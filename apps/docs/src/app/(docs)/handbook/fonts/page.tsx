@@ -135,6 +135,10 @@ export default function FontsPage(): ReactElement {
       <pre>
         <code>{NEXT_CSS}</code>
       </pre>
+      <p>
+        Keep <code>preload</code> on for the faces the first paint draws, and pass <code>preload: false</code>{" "}
+        for a face that only some theme scopes draw.
+      </p>
 
       <h2 id="fontsource">Any bundler</h2>
       <p>

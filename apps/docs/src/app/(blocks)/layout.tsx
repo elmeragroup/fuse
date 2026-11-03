@@ -58,7 +58,7 @@ export type BlocksLayoutProps = {
  */
 export default function BlocksLayout({ children }: BlocksLayoutProps): ReactElement {
   return (
-    <DocumentRoot theme={DEFAULT_THEME} suppressHydrationWarning>
+    <DocumentRoot theme={DEFAULT_THEME} blockPreview suppressHydrationWarning>
       <head>
         <ColorSchemeScript
           storageKey={DOCUMENT_COLOR_SCHEME.storageKey}

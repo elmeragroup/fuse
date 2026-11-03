@@ -70,22 +70,12 @@ const FAMILY = String.raw`(?:"[^"'\\]+"|'[^"'\\]+'|${IDENTIFIER}(?:\s+${IDENTIFI
 
 const FONT_STACK = new RegExp(`^${FAMILY}(?:\\s*,\\s*${FAMILY})*$`, "u");
 
-/**
- * Whether a value is a font stack: families between commas, each a quoted name or plain
- * identifiers. The font knob's reading and the preview share this one grammar.
- *
- * @param css - A trimmed token value.
- * @returns True when the value is a font stack.
- */
-export function isFontStackText(css: string): boolean {
-  return FONT_STACK.test(css);
-}
-
 const STACK_FAMILY = new RegExp(FAMILY, "gu");
 
 /**
- * The families of a font stack, in order and as written. A quoted name stays whole even when it
- * holds a comma.
+ * The families of a font stack, in order and as written: families between commas, each a quoted
+ * name or plain identifiers. A quoted name stays whole even when it holds a comma. The font knob's
+ * reading and the preview share this one grammar.
  *
  * @param css - A token value.
  * @returns The families, or `undefined` when the value is no font stack, such as `var(--font-sans)`.

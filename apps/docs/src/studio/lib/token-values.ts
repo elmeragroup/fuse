@@ -6,7 +6,7 @@ import { STUDIO_BASE_REFERENCES, STUDIO_PRIMITIVES } from "../../generated/studi
 import type { ArtboardScheme } from "./documents";
 import { overrideOf, resetNames } from "./edits";
 import type { StudioDocument, StudioOverrides } from "./edits";
-import { isFontStackText } from "./font-stacks";
+import { fontStackFamilies } from "./font-stacks";
 import { referencedNames, referencesOf } from "./references";
 import type { BaseReferences } from "./references";
 import type { StudioSeed } from "./seed";
@@ -136,14 +136,12 @@ const RESERVED_FAMILY_WORDS: ReadonlySet<string> = new Set([
   "default",
 ]);
 
-const QUOTED_FAMILY = /"[^"'\\]+"|'[^"'\\]+'/gu;
-
-/** Whether a stack `isFontStackText` accepts has an unquoted word CSS reserves. */
-function hasReservedFamilyWord(css: string): boolean {
-  return css
-    .replace(QUOTED_FAMILY, ",")
-    .split(/[\s,]+/u)
-    .some((word) => RESERVED_FAMILY_WORDS.has(word.toLowerCase()));
+/** Whether an unquoted family of a font stack holds a word CSS reserves. */
+function isReservedFamily(family: string): boolean {
+  return (
+    !/^["']/u.test(family) &&
+    family.split(/\s+/u).some((word) => RESERVED_FAMILY_WORDS.has(word.toLowerCase()))
+  );
 }
 
 const NUMBER = /^(?:\d+(?:\.\d+)?|\.\d+)$/u;
@@ -316,11 +314,15 @@ function parseLiteral(name: TokenName, css: string): ParsedValue {
       const px = lengthPx(css);
       return px !== undefined && px >= 0 ? accept(css) : refuse("Not a px or rem length");
     }
-    case "fontFamily":
-      if (!isFontStackText(css)) {
+    case "fontFamily": {
+      const families = fontStackFamilies(css);
+      if (families === undefined) {
         return refuse("Not a font stack: names, quoted or plain, between commas");
       }
-      return hasReservedFamilyWord(css) ? refuse("Quote a family named like a CSS keyword") : accept(css);
+      return families.some(isReservedFamily)
+        ? refuse("Quote a family named like a CSS keyword")
+        : accept(css);
+    }
     case "fontWeight": {
       const weight = Number(css);
       return NUMBER.test(css) && weight >= 1 && weight <= 1000

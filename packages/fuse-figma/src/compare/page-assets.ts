@@ -15,6 +15,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { compileHostUtilities } from "../components/utility-css.ts";
+import { KIT_HEADING_FAMILY } from "../kit-fonts.ts";
 import { isClientRenderer, RENDERER_ENTRIES } from "./cell-renderers.ts";
 import type { AnyCellRenderer } from "./cell-renderers.ts";
 import { buildClientBundle } from "./client-bundle.ts";
@@ -39,7 +40,7 @@ const FONT_WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900] as const;
  */
 export const LICENSED_FAMILIES: ReadonlyMap<string, string> = new Map([
   [
-    "Neo Sans",
+    KIT_HEADING_FAMILY,
     "the external Fjordkraft themes' --font-heading. On 2026-10-27 the real file's external Dialog title bound font-heading to Neo Sans Medium with hasMissingFont true, listAvailableFontsAsync held no Neo Sans, and its export drew the title in Roboto Medium, as the page's CSS stack falls back to Roboto",
   ],
 ]);

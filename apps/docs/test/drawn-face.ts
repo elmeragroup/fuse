@@ -1,9 +1,9 @@
 import type { Locator, Page } from "playwright";
 
 /** The variables the docs hold their loaded faces in (`components/site-fonts.ts`). */
-export type FaceVariable = "--font-inter" | "--font-roboto";
+const FACE_VARIABLES = ["--font-inter", "--font-roboto"] as const;
 
-const FACE_VARIABLES: readonly FaceVariable[] = ["--font-inter", "--font-roboto"];
+export type FaceVariable = (typeof FACE_VARIABLES)[number];
 
 /**
  * The `font-family` a face variable computes to: a probe set to `font-family: var(<variable>)`,
@@ -23,6 +23,17 @@ export async function faceFamilies(page: Page, variable: FaceVariable): Promise<
     probe.remove();
     return families;
   }, variable);
+}
+
+/**
+ * The first family of a computed `font-family`, without quotes, such as the family `next/font`
+ * generated for a face.
+ *
+ * @param families - A computed family list.
+ * @returns Its first family, or `""` for an empty list.
+ */
+export function firstFamily(families: string): string {
+  return (families.split(",")[0] ?? "").trim().replaceAll(/^["']|["']$/gu, "");
 }
 
 /**

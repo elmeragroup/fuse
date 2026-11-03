@@ -18,7 +18,11 @@ export const inter = localFont({
   variable: "--font-inter",
 });
 
-/** Roboto, the external themes' body font, which the docs draw in external theme previews. */
+/**
+ * Roboto, the external themes' body font, which the docs draw in external theme previews. The
+ * site chrome never draws Roboto, so it loads when a theme scope draws it, not as a preload on
+ * every route.
+ */
 export const roboto = localFont({
   src: [
     { path: "../../node_modules/@fontsource/roboto/files/roboto-latin-400-normal.woff2", weight: "400" },
@@ -28,4 +32,5 @@ export const roboto = localFont({
   ],
   style: "normal",
   variable: "--font-roboto",
+  preload: false,
 });

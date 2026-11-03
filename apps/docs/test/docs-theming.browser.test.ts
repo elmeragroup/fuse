@@ -3,7 +3,7 @@ import { expect, it } from "vitest";
 
 import { launchSuiteBrowser, readThemeAttributes, waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
-import { drawnFace, faceFamilies } from "./drawn-face";
+import { drawnFace, faceFamilies, firstFamily } from "./drawn-face";
 
 const browser = launchSuiteBrowser();
 
@@ -144,10 +144,9 @@ it("keeps search overlays in the document's dark palette", async () => {
 it("serves Inter and Roboto in every weight Fuse parts set", async () => {
   const page = await browser().newPage({ colorScheme: "light" });
   await page.goto(`${docsBaseUrl()}/handbook/fonts`, { waitUntil: "load" });
-  const unquote = (family: string) => family.trim().replaceAll(/^["']|["']$/gu, "");
   const families = [
-    unquote((await faceFamilies(page, "--font-inter")).split(",")[0] ?? ""),
-    unquote((await faceFamilies(page, "--font-roboto")).split(",")[0] ?? ""),
+    firstFamily(await faceFamilies(page, "--font-inter")),
+    firstFamily(await faceFamilies(page, "--font-roboto")),
   ];
   expect(families.every((family) => family !== "")).toBe(true);
   expect(new Set(families).size).toBe(2);

@@ -15,23 +15,19 @@
 }
 
 /* The docs set their fonts as the fonts handbook page tells an app to. `components/site-fonts.ts`
-   loads the faces into --font-inter and --font-roboto. The site draws Inter whatever theme the
-   document carries. A theme scope below the root, such as a demo stage, a theme matrix cell or a
-   landing app window, draws Inter for an internal theme and Roboto for an external one. Each scope
-   sets --font-heading again, because the root's `var(--font-sans)` resolves at the root. */
-:root {
+   loads the faces into --font-inter and --font-roboto. The site root draws Inter whatever theme it
+   carries. A theme scope below it, such as a demo stage or a landing app window, draws Roboto for an
+   external theme. So does a block preview's root, which `data-block-preview` marks. Every scope
+   sets --font-heading again, because a `var(--font-sans)` resolves where it is declared. */
+:root,
+[data-theme-variant] {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
 }
 
-[data-theme-variant="internal"]:not(:root) {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-sans);
-}
-
-[data-theme-variant="external"]:not(:root) {
+[data-theme-variant="external"]:not(:root),
+:root[data-block-preview][data-theme-variant="external"] {
   --font-sans: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-sans);
 }
 
 /* Each scope sets its own font-family, because an ancestor's `font-family: var(--font-sans)`

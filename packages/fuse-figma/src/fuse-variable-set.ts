@@ -559,10 +559,7 @@ const DIMENSION_SCOPES = {
 const FONT_SCOPES = {
   fontFamily: ["FONT_FAMILY"],
   fontWeight: ["FONT_STYLE"],
-} as const satisfies Record<
-  "fontFamily" | Exclude<TokenKind, "color" | "dimension">,
-  readonly VariableScope[]
->;
+} as const satisfies Record<"fontFamily" | "fontWeight", readonly VariableScope[]>;
 
 /**
  * The pickers that offer a color for each place Fuse paints it. A surface fills frames and

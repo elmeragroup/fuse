@@ -1,27 +1,32 @@
 /**
  * Unit under test: the studio's font stacks and `previewFontStack`, which reads a stack's loaded
- * families through the docs' `next/font` variables for an artboard. Oracles: the `--font-sans` the
- * docs CSS declares on the root and on each variant's theme scope (`styles/globals.css`), which a
- * previewed `inter` or `roboto` stack must reproduce, and the portable stack, which names families.
+ * families through the docs' `next/font` variables for an artboard. Oracles: the `--font-sans`
+ * values the docs CSS declares (`styles/globals.css`), whatever selectors carry them, which the
+ * previewed `inter` and `roboto` stacks must reproduce, and the portable stack, which names
+ * families. Which scope draws which face is checked by the drawn-face browser tests.
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { parseStyleRules } from "../../../../packages/fuse/test/css-rules.ts";
 import { FONT_STACKS, previewFontStack } from "../../src/studio/lib/font-stacks";
 import { parseTokenValue } from "../../src/studio/lib/token-values";
 
-const GLOBALS = readFileSync(
-  path.join(path.dirname(fileURLToPath(import.meta.url)), "../../src/styles/globals.css"),
-  "utf8"
+const GLOBAL_RULES = parseStyleRules(
+  readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), "../../src/styles/globals.css"),
+    "utf8"
+  )
 );
 
-/** The `--font-sans` the rule whose selector is `selector` declares in the docs CSS. */
-function declaredFontSans(selector: string): string | undefined {
-  const start = GLOBALS.indexOf(`${selector} {`);
-  const body = start === -1 ? "" : GLOBALS.slice(start, GLOBALS.indexOf("}", start));
-  return /--font-sans:\s*([^;]+);/u.exec(body)?.[1]?.trim();
+/** Every distinct `--font-sans` value the docs CSS declares, sorted. */
+function declaredFontSans(): string[] {
+  const values = GLOBAL_RULES.flatMap(({ declarations }) =>
+    declarations.filter(({ name }) => name === "font-sans").map(({ value }) => value)
+  );
+  return [...new Set(values)].toSorted();
 }
 
 describe("FONT_STACKS", () => {
@@ -32,16 +37,10 @@ describe("FONT_STACKS", () => {
     ]);
   });
 
-  it("previews as the stacks the docs CSS sets on the root and on each variant's scopes", () => {
-    expect([
-      declaredFontSans(":root"),
-      declaredFontSans('[data-theme-variant="internal"]:not(:root)'),
-      declaredFontSans('[data-theme-variant="external"]:not(:root)'),
-    ]).toEqual([
-      previewFontStack(FONT_STACKS.inter),
-      previewFontStack(FONT_STACKS.inter),
-      previewFontStack(FONT_STACKS.roboto),
-    ]);
+  it("previews as the stacks the docs CSS declares", () => {
+    expect(declaredFontSans()).toEqual(
+      [previewFontStack(FONT_STACKS.inter), previewFontStack(FONT_STACKS.roboto)].toSorted()
+    );
   });
 });
 

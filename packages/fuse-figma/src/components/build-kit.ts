@@ -293,11 +293,10 @@ export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitE
   );
 
   const fontStyles = [...new Set(built.flatMap((set) => set.fontStyles))];
-  // A kit label binds `font-sans`, which holds the kit's body family in every theme.
-  const family = fontStyles.length === 0 ? "" : KIT_BODY_FAMILY;
   const spec: KitSpec = {
     pages: [...componentPages.map(pageSpec), ICONS_PAGE],
-    fonts: fontStyles.map((style) => ({ family, style })),
+    // A kit label binds `font-sans`, which holds the kit's body family in every theme.
+    fonts: fontStyles.map((style) => ({ family: KIT_BODY_FAMILY, style })),
     glyphFont: GLYPH_FONT,
     icons,
     componentSets: built.map((set) => set.componentSet),

@@ -229,9 +229,10 @@ export function sectionTokens(section: SectionId): readonly TokenName[] {
  * The keys a dark palette keeps from light: geometry, the card edge, section divider and shadow
  * colors, the outline and selection border and divider colors, the disabled selection row's fill,
  * stripe and text colors, the pressed Toggle's fill and text colors, the selection title weight, the paragraph line heights, the heading
- * scale and the heading font. Fuse keeps this set private as `LIGHT_ONLY_KEYS` in
- * `packages/fuse/src/theme/tokens/contract.ts`; the studio tests check every one declares the
- * same value in both schemes of every theme. An edit to one applies to both schemes.
+ * scale and the heading font. The set is Fuse's private `LIGHT_ONLY_KEYS`
+ * (`packages/fuse/src/theme/tokens/contract.ts`) plus `font-heading`, which the studio seeds the
+ * same in both schemes. The studio tests check every one declares the same value in both schemes
+ * of every theme. An edit to one applies to both schemes.
  */
 export const LIGHT_ONLY_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>([
   "card-border",

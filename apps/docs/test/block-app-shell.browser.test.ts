@@ -1,13 +1,15 @@
 // Unit under test: the app shell block as the docs build serves it, standalone at its preview route
 // and framed on its docs page. Oracles: the counts the data module's cycles give, worked by hand in
 // its comments (480 points, 48 in NO4, 24 of them on a fixed price, none disconnected; 72 invoices,
-// 6 of them overdue), March's 31 days, and the docs header's theme picker.
+// 6 of them overdue), March's 31 days, the docs header's theme picker, and the fonts page's rule:
+// an internal theme draws Inter and an external one Roboto.
 import type { Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import { METERING_POINTS, PRICE_AREA_NAMES } from "../src/app/(docs)/blocks/app-shell/demos/power-data";
 import { DESKTOP_VIEWPORT, launchSuiteBrowser, waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
+import { drawnFace } from "./drawn-face";
 import { openFilterSubmenu } from "./filter-menu";
 import { collectPageErrors } from "./landing-page";
 
@@ -399,6 +401,16 @@ describe("the app shell block, standalone", () => {
     await page.close();
   });
 
+  it.each([
+    { theme: "internal-fkas-private", face: "--font-inter" },
+    { theme: "external-tkas-company", face: "--font-roboto" },
+  ])("draws the $theme theme's face, $face", async ({ theme, face }) => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
+    await openApp(page, `${BASE}?theme=${theme}`);
+    expect(await drawnFace(page.getByRole("heading", { level: 1 }))).toBe(face);
+    await page.close();
+  });
+
   it("keeps the theme a new tab was opened with, through hydration and across its pages", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
     const warnings: string[] = [];
@@ -469,8 +481,10 @@ describe("the app shell block on its docs page", () => {
     await waitForDocsShellHydration(page);
     const frame = page.frameLocator('iframe[title="App shell preview"]');
     const root = frame.locator("html");
+    const title = frame.getByRole("heading", { level: 1 });
     // The docs' default preview theme, Fjordkraft · Private · Internal.
     await expect.poll(() => root.getAttribute("data-theme-brand")).toBe("fkas");
+    expect(await drawnFace(title)).toBe("--font-inter");
     await page.getByRole("button", { name: "Theme settings", exact: true }).click();
     await page.getByRole("menuitemradio", { name: "TrøndelagKraft", exact: true }).click();
     await expect.poll(() => root.getAttribute("data-theme-brand")).toBe("tkas");
@@ -478,6 +492,7 @@ describe("the app shell block on its docs page", () => {
     await expect.poll(() => root.getAttribute("data-theme-variant")).toBe("external");
     // The variant picks the density, as on the docs' demo stages.
     await expect.poll(() => root.getAttribute("data-density")).toBe("comfortable");
+    await expect.poll(() => drawnFace(title)).toBe("--font-roboto");
     await page.getByRole("menuitemradio", { name: "Dark", exact: true }).click();
     await expect.poll(() => root.getAttribute("data-theme")).toBe("dark");
     await page.close();
