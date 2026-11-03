@@ -134,7 +134,10 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // Raised again from 147518 on 2026-11-03. A ride starting or resting on a reading inside a bend
   // the run leaves out counts that bend as a stack, which measured 180 bytes on this entry (147418
   // to 147598). The ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 147698 },
+  // Raised again from 147698 on 2026-11-03. Reveal's edge glides with the crosshair on the step's
+  // spring, as a registered length, which measured 179 bytes on this entry (147598 to 147777). The
+  // ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 147877 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -303,14 +306,17 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Raised again from 145221 on 2026-11-03, with BarChart's from 145223. A ride starting or
     // resting on a reading inside a bend the run leaves out counts that bend as a stack, which
     // measured 179 bytes on Chart (145121 to 145300) and 180 on BarChart (145123 to 145303).
-    ceilingGzip: 145400,
+    // Raised again from 145400 on 2026-11-03, with BarChart's from 145403. Reveal's edge glides
+    // with the crosshair on the step's spring, which measured 182 bytes on Chart (145300 to 145482)
+    // and 181 on BarChart (145303 to 145484).
+    ceilingGzip: 145582,
   },
   {
     name: "chart/BarChart",
     entryFile: "chart.js",
     exportName: "BarChart",
     measuredGzip: 95989,
-    ceilingGzip: 145403,
+    ceilingGzip: 145584,
   },
   { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
   { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 79858 },

@@ -135,6 +135,35 @@ export function rideFrom(element: Element, by: number, spring: Spring, ride: Rid
 }
 
 /**
+ * Glide a length property onto the value it rests at, from `by` CSS pixels away plus whatever
+ * offset a running glide of it shows, on the spring and the clock `glideFrom` moves a mark on. The
+ * element's own value is its rest, written first, and the glide plays over it.
+ *
+ * @param element - The element whose resting value was just written.
+ * @param property - The registered length property, such as `--chart-active-x`.
+ * @param rest - The resting value, in CSS pixels.
+ * @param by - The old resting value less the new one.
+ * @param spring - The spring.
+ */
+export function glideLength(
+  element: Element,
+  property: string,
+  rest: number,
+  by: number,
+  spring: Spring
+): void {
+  const from = by + (glideShown(element)?.[0] ?? 0);
+  snapGlide(element);
+  const timing = springTiming(spring);
+  if (!timing.spring || from === 0) return;
+  const animation = element.animate(
+    [{ [property]: `${String(rest + from)}px` }, { [property]: `${String(rest)}px` }],
+    timing
+  );
+  keep(element, { animation, from: [from, 0], spring, ride: null });
+}
+
+/**
  * The offset an element's glide shows now, along x and y in CSS pixels, from the easing and the
  * keyframes its animation plays, on the glide's own clock, or null when none runs.
  *
@@ -179,9 +208,14 @@ function start(element: Element, from: readonly [number, number], spring: Spring
           { duration: timing.duration, easing: timing.held }
         );
   const played = ride === null || frames === null ? null : { axis: ride.axis, frames };
-  glides.set(element, { animation, from: [x, y], spring, ride: played });
-  animation.onfinish = () => {
-    if (glides.get(element)?.animation === animation) glides.delete(element);
+  keep(element, { animation, from: [x, y], spring, ride: played });
+}
+
+/** Hold an element's running glide until it finishes or another replaces it. */
+function keep(element: Element, glide: Glide): void {
+  glides.set(element, glide);
+  glide.animation.onfinish = () => {
+    if (glides.get(element)?.animation === glide.animation) glides.delete(element);
   };
 }
 

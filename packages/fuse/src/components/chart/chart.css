@@ -41,13 +41,15 @@
 }
 
 /*
-  Reveal writes the active slot's place on each series it masks, at pointer rate. The property
-  stays on the series, so a step restyles three elements and none of the marks inside them, and
-  with no value the mask falls back to drawing the series whole.
+  Reveal writes the active slot's place on each series it masks, and a step glides it there as a
+  length, with the crosshair. The property stays on the series, so a step restyles three elements
+  and none of the marks inside them, and with no value the mask's edge sits at its far end, which
+  draws the series whole.
 */
 @property --chart-active-x {
-  syntax: "*";
+  syntax: "<length-percentage>";
   inherits: false;
+  initial-value: 100%;
 }
 
 @layer components {
