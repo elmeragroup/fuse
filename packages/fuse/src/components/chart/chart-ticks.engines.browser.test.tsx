@@ -384,6 +384,30 @@ describe("the width sweep", () => {
     }
   );
 
+  it("keeps one stride across the quarters' hour labels from 160 to 1,200 px, the first label included", async () => {
+    // A stride that shows some of its labels shows them all, at one even rhythm: the slots between
+    // each pair of shown labels count the same, so a clamped first label never hides its neighbour
+    // alone. The labels read the en-US clock, such as "12 AM" and "3 PM".
+    const { host } = sweepChart("quarters");
+    const box = host.querySelector<HTMLElement>("[data-probe]");
+    const hourOf = (text: string): number => {
+      const match = /^(\d+)\s*(AM|PM)$/u.exec(text.replace(/\s/gu, " ").trim());
+      if (match === null) throw new Error(`not an hour label: ${text}`);
+      return (Number(match[1]) % 12) + (match[2] === "PM" ? 12 : 0);
+    };
+    for (let width = 160; width <= 1200; width += 4) {
+      box?.style.setProperty("width", `${String(width)}px`);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      // DOM audit: x ticks are aria-hidden text, and the shown ones are the oracle.
+      const hours = [...host.querySelectorAll<HTMLElement>('[data-slot="chart-x-tick"]')]
+        .filter((tick) => getComputedStyle(tick).display !== "none")
+        .sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left)
+        .map((tick) => hourOf(tick.textContent));
+      const gaps = hours.slice(1).map((hour, index) => hour - (hours[index] ?? 0));
+      expect(new Set(gaps).size, `${String(width)} px: ${hours.join(", ")}`).toBeLessThanOrEqual(1);
+    }
+  });
+
   it("keeps every value label of a horizontal chart inside the root and apart from 160 to 1,200 px", async () => {
     // The recheck saw "35" for the last tick, 350, cut at a 320 px stage's edge, and then the
     // clamped 350 over 300 by 3.7 px. The rendered boxes are the oracle.

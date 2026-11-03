@@ -230,9 +230,12 @@ function crowded(
 
 /**
  * A stride's labels on an axis of `axisWidth` pixels, led by the always-shown first candidate, or
- * undefined when two of them crowd each other. A slot whose label would crowd the first label, as
- * a calendar-aligned January does beside a November start, gives way to it, so the rest of the
- * stride still shows. The check reads labels in slot order and stops at the first crowding.
+ * undefined when two of them crowd each other. A first label off the stride, as a November start
+ * is on a calendar-aligned quarterly stride, shows besides the stride, and a slot whose label would
+ * crowd it, as January's does, gives way to it, so the rest of the stride still shows. A first
+ * label on the stride is one of the stride's own, so a neighbour that crowds it fails the stride as
+ * any crowding pair does, and every stride that shows keeps one rhythm. The check reads labels in
+ * slot order and stops at the first crowding.
  */
 function fittedLabels(
   slots: readonly number[],
@@ -244,14 +247,17 @@ function fittedLabels(
     first === undefined
       ? Number.NEGATIVE_INFINITY
       : labelStart(first, geometry, axisWidth) + geometry.width(first);
-  // The first label's own start lies before its end, so it gives way to itself.
-  const clear = firstEnd + LABEL_GAP;
+  const aligned = first !== undefined && hasSlot(slots, first);
+  // Slots that start before `clear` give way to the first label. The first label's own start lies
+  // before its end, so off the stride it gives way to itself, and on the stride nothing gives way.
+  const clear = aligned ? Number.NEGATIVE_INFINITY : firstEnd + LABEL_GAP;
   const labels = first === undefined ? [] : [first];
   // No label starts past the axis's width, so past a first label that ends there every slot gives way.
   if (clear > axisWidth) return labels;
   if (crowded(slots, clear, geometry, axisWidth)) return undefined;
   let previousEnd = firstEnd;
   for (const slot of slots) {
+    if (slot === first) continue;
     const start = labelStart(slot, geometry, axisWidth);
     if (start < clear) continue;
     if (start < previousEnd + LABEL_GAP) return undefined;
