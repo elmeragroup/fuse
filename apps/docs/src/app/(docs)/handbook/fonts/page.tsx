@@ -8,9 +8,9 @@ const HREF = "/handbook/fonts";
 export const metadata = pageMetadata(HREF);
 
 /**
- * The app CSS each recipe ends with: the internal fonts on the root and on every internal scope, so
- * an internal scope inside an external one resets them, the external variant, then Fjordkraft's
- * heading, which the external variant qualifies so it outweighs the variant rule.
+ * The app CSS each recipe ends with. The internal fonts go on the root and on every internal scope,
+ * so an internal scope inside an external one resets them. The Fjordkraft heading rule names the
+ * external variant, so it outweighs the variant rule.
  */
 function appFontCss(inter: string, roboto: string, neoSans: string): string {
   return `:root,
@@ -154,23 +154,26 @@ export default function FontsPage(): ReactElement {
       </pre>
 
       <h2 id="per-brand">Per brand</h2>
-      <p>The Fjordkraft heading rule names the external variant too, so it outweighs the variant rule.</p>
+      <p>
+        Each recipe ends with the Fjordkraft heading rule. It names the external variant as well as the brand,
+        so it outweighs the variant rule.
+      </p>
 
       <h2 id="nested-themes">Nested themes</h2>
       <p>
-        A <code>font-family</code> on <code>&lt;body&gt;</code> computes once there. If a page nests a{" "}
-        <code>ThemeScope</code> of another variant, set the font on each scope:
+        The <code>font-family</code> on <code>&lt;body&gt;</code> resolves the variables once, at the body. If
+        a page nests a <code>ThemeScope</code> of another variant, set the font on each scope:
       </p>
       <pre>
         <code>{NESTED}</code>
       </pre>
       <p>
-        If the page&apos;s own chrome keeps one font while its scopes switch, add <code>:not(:root)</code> to
-        the variant and scope rules.
+        To keep the page chrome in one font while its scopes switch, add <code>:not(:root)</code> to the
+        variant and scope rules.
       </p>
 
       <h2 id="brand-sites">Fonts on the brand sites</h2>
-      <p>These are the fonts the brand sites drew on 2026-11-03, for reference. Fuse names none of them.</p>
+      <p>The brand sites drew these fonts on 2026-11-03. Fuse names none of them.</p>
       <DocsTable.Wrap>
         <DocsTable.Root>
           <thead>
@@ -196,8 +199,8 @@ export default function FontsPage(): ReactElement {
               <DocsTable.BodyCell>Museo Sans (body text, h4, h6, inputs)</DocsTable.BodyCell>
               <DocsTable.BodyCell>Mohr (h1 to h3, forms)</DocsTable.BodyCell>
               <DocsTable.BodyCell>
-                Both commercial: Museo Sans by exljbris, Mohr by Latinotype. Served from
-                styleguide.fjordkraft.no.
+                Commercial. Museo Sans is by exljbris and Mohr by Latinotype. styleguide.fjordkraft.no serves
+                both.
               </DocsTable.BodyCell>
             </tr>
             <tr>
@@ -206,7 +209,7 @@ export default function FontsPage(): ReactElement {
               <DocsTable.BodyCell>Hanken Grotesk</DocsTable.BodyCell>
               <DocsTable.BodyCell>Hanken Grotesk</DocsTable.BodyCell>
               <DocsTable.BodyCell>
-                OFL, served by Next.js <code>next/font</code> with an Arial size-adjusted fallback.
+                OFL. The site loads it with <code>next/font</code> and an Arial fallback sized to match.
               </DocsTable.BodyCell>
             </tr>
           </tbody>

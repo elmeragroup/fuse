@@ -1,9 +1,8 @@
 /**
- * The fonts the Figma file and its comparison draw. Fuse's themes name no fonts, since each app
- * sets `--font-sans` and `--font-heading` itself, so the kit owns its own: the values the theme
- * catalog held before that change, which keep the variable set and the kit as they were. Body
- * text is Roboto in every theme, and headings are Neo Sans in Fjordkraft's external themes, fkas
- * and fkab, which borrows fkas's palette.
+ * The fonts the Figma file and its comparison draw. Fuse's themes name no fonts, because each app
+ * sets `--font-sans` and `--font-heading`, so the kit keeps its own. They are the values the theme
+ * catalog held before, so the variable set and the kit stay as they were. Body text is Roboto in
+ * every theme. Headings are Neo Sans in Fjordkraft's external themes, fkas and fkab.
  */
 
 import type { BrandCode, ThemeVariant } from "@elmeragroup/fuse/theme-catalog";
@@ -42,8 +41,8 @@ export function hasOwnHeadingFamily(variant: ThemeVariant, brand: BrandCode): bo
 }
 
 /**
- * The CSS a page that renders the components sets, as an app sets its fonts: the body stack on
- * the themed element, and the heading stack where a theme has its own heading family.
+ * The font CSS for a page that renders the components, written as an app writes it. It sets the
+ * body stack on the themed element, and the heading stack where a theme has its own heading family.
  *
  * @param themed - The selector of the element that carries the theme attributes.
  * @returns The rules, unlayered, so they win over Fuse's layered defaults.

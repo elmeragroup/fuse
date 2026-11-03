@@ -121,10 +121,10 @@ export default function ReleasesPage(): ReactElement {
 
       <h2 id="licensing">Licensing</h2>
       <p>
-        The code is MIT, matching the whole dependency stack. Two constraints follow from that and bound what
-        the tarball may contain: <strong>the library never ships font files</strong> — fonts are app-supplied
-        through <code>--font-sans</code> and <code>--font-heading</code>, and themes name no families, as{" "}
-        <Link href="/handbook/fonts">the fonts page</Link> describes — and brand logos do ship publicly in{" "}
+        The code is MIT, matching the whole dependency stack. Two constraints follow and bound what the
+        tarball may contain. <strong>The library never ships font files.</strong> The app loads its fonts and
+        sets <code>--font-sans</code> and <code>--font-heading</code>, as{" "}
+        <Link href="/handbook/fonts">the fonts page</Link> shows. Brand logos do ship publicly, in{" "}
         <code>@elmeragroup/fuse/icons</code>.
       </p>
     </DocsPage>

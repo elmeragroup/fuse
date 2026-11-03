@@ -1,9 +1,8 @@
 /**
- * The faces the docs load, as the fonts handbook page tells an app to load them: Inter and Roboto
- * through `next/font`, from the Latin files `@fontsource` ships, so a build downloads nothing. Each
- * exposes its generated family as a variable, `--font-inter` and `--font-roboto`, which
- * `styles/globals.css` turns into `--font-sans`. The four weights are the ones Fuse parts and the
- * docs set.
+ * The faces the docs load, following the fonts handbook page. `next/font/local` loads Inter and
+ * Roboto from the Latin files `@fontsource` ships, so a build downloads nothing. Each face's
+ * generated family is in a variable, `--font-inter` or `--font-roboto`, and `styles/globals.css`
+ * sets `--font-sans` from it. Fuse parts and the docs set these four weights.
  */
 import localFont from "next/font/local";
 

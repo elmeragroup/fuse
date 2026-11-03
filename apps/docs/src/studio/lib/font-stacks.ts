@@ -84,8 +84,8 @@ export function isFontStackText(css: string): boolean {
 const STACK_FAMILY = new RegExp(FAMILY, "gu");
 
 /**
- * The families of a font stack the font family reading accepts, in order and as written, a quoted
- * name whole even when it holds a comma.
+ * The families of a font stack, in order and as written. A quoted name stays whole even when it
+ * holds a comma.
  *
  * @param css - A token value.
  * @returns The families, or `undefined` when the value is no font stack, such as `var(--font-sans)`.

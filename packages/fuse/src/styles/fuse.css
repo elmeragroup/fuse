@@ -96,10 +96,10 @@
   --surface-gap-xl: 2rem;
 }
 
-/* The body and heading fonts Fuse applies, at their defaults: the system font stack. Themes name
-   no fonts, so an app loads its files and sets both variables in its own CSS. The defaults sit in
-   the theme layer, so an unlayered app rule, or one in a later layer, wins without `!important`.
-   `static` emits them whatever the app's sources use. */
+/* The body and heading fonts Fuse applies default to the system font stack. Themes name no fonts.
+   An app loads its fonts and sets both variables in its own CSS. These defaults sit in the theme
+   layer, so an unlayered app rule, or one in a later layer, wins without `!important`. `static`
+   emits them even when the app's sources never use them. */
 @theme static {
   --font-sans: ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
