@@ -14,6 +14,7 @@ import { cssVarReference } from "./css-values";
 import { generateThemesCss } from "./generate-css";
 import { literalContrast } from "./token-color";
 import { brandPointer } from "./tokens/brand-pointers";
+import { BRAND_RAMP_TOKEN_NAMES } from "./tokens/brand-ramps";
 import { assignedTokenNames, EXTERNAL_RESET_KEYS, MUST_OVERRIDE_DARK, TOKEN_NAMES } from "./tokens/contract";
 import type { ExternalResetKey, TokenLayer, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
@@ -69,6 +70,8 @@ const EXPECTED_SELECTORS = [
   '[data-theme-brand="fkse"]',
   '[data-theme-brand="elma"]',
   '[data-theme-brand="ngfi"]',
+  // Fjordkraft company takes the Bedrift ramps over the Fjordkraft ones its brand rule declares.
+  '[data-theme-brand="fkas"][data-theme-segment="company"]',
   '[data-theme-variant="internal"]',
   '[data-theme-variant="external"][data-theme-brand="fkas"]',
   '[data-theme-variant="external"][data-theme-brand="fkas"][data-theme-segment="company"]',
@@ -291,6 +294,19 @@ describe("theme contract", () => {
     );
   });
 
+  it("declares the ramps only in the root and brand rules, so each has one owner", () => {
+    const owners = rules
+      .filter((rule) => rule.declarations.some((declaration) => declaration.name === "brand-shade-500"))
+      .map((rule) => rule.selector);
+    expect(owners).toEqual([
+      ":root",
+      ...["fkas", "tkas", "guen", "fkab", "fkse", "elma", "ngfi"].map(
+        (brand) => `[data-theme-brand="${brand}"]`
+      ),
+      '[data-theme-brand="fkas"][data-theme-segment="company"]',
+    ]);
+  });
+
   it("resets every dark override and rebinds aliases whose source role changes", () => {
     for (const name of assignedTokenNames(INTERNAL_DARK_PALETTE)) {
       expect(THEME_RESET_KEYS, `internal ${name}`).toContain(name);
@@ -309,10 +325,10 @@ describe("theme contract", () => {
         expect(reset.has(name), `${name} rebinds to ${target}`).toBe(true);
       }
     }
-    // The brand pair is the brand-pointer layer's; every other role is a key some palette can
-    // change, or reads one. The sidebar brand pair reads the sidebar, which every dark palette
-    // sets.
-    const brandPointerRoles = new Set<string>(["brand", "brand-foreground"]);
+    // The brand pair and the brand ramps are the brand-pointer layer's; every other role is a key
+    // some palette can change, or reads one. The sidebar brand pair reads the sidebar, which every
+    // dark palette sets.
+    const brandPointerRoles = new Set<string>(["brand", "brand-foreground", ...BRAND_RAMP_TOKEN_NAMES]);
     expect(THEME_RESET_KEYS).toEqual(TOKEN_NAMES.filter((name) => !brandPointerRoles.has(name)));
   });
 

@@ -1,5 +1,6 @@
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { brandPointer } from "./tokens/brand-pointers";
+import { brandRampTokens } from "./tokens/brand-ramps";
 import {
   assignedTokenNames,
   MUST_OVERRIDE_DARK,
@@ -52,8 +53,15 @@ export function composeTheme(theme: ThemeInput, colorScheme: ResolvedColorScheme
   for (const gate of gates) {
     assertMustOverrideCoverage(suppliedTokenNames(theme, gate), theme.variant, gate, slug);
   }
+  // The ramps follow the brand and segment alone: no palette layer names them, so they hold the
+  // same values in both variants and, through the overlay below, in dark.
   const light = withDerivedTokens(
-    overlayTokenLayers(LAYER_DEFAULTS, brandPointer(theme.brand), ...paletteLayers(theme, "light"))
+    overlayTokenLayers(
+      LAYER_DEFAULTS,
+      brandPointer(theme.brand),
+      brandRampTokens(theme.brand, theme.segment),
+      ...paletteLayers(theme, "light")
+    )
   );
   if (colorScheme === "dark") {
     // Dark layers overlay the light composition, so roles no dark palette names, such as

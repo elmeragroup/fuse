@@ -498,6 +498,8 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // which read `--radius-field` (+142), take styles.css to 24593, over it, so the shared entry
   // recalibrates to measured × 1.5, as a code owner approved.
   // 2026-10-29: main's roles and the 26 chart roles recalibrate the entry to measured × 1.5.
+  // 2026-11-03: 7886 with the brand ramps, 22 tokens in each brand rule, the Fjordkraft company
+  // rule and `:root`, within the ceiling.
   { name: "themes.css", file: "themes.css", measuredGzip: 6734 },
   // 2026-10-30: the cross-section Frame seam selectors (+119) take styles.css from 36851 to
   // 36970, and the Table edge-inset property, the Frame's derived section clip and the cell

@@ -46,10 +46,11 @@ const SLUGS = [
 // `radius-field` field corner, the card edge, section divider and shadow, the two outline Button roles, the resting and
 // checked selection row borders and dividers, the disabled selection row fill, stripe and text,
 // the pressed Toggle fill and label, the selection row title weight, the three paragraph line
-// heights, the size, line height and weight of h1 to h3, the modal fill and text, and the 26
-// chart roles: 8 slot foregrounds, Other and its foreground, 7 ramp steps, 7 diverging steps and
-// 2 sentiments. Themes name no fonts, so `font-sans` and `font-heading` are not tokens.
-const TOKEN_COUNT = 133;
+// heights, the size, line height and weight of h1 to h3, the modal fill and text, the 26
+// chart roles, 8 slot foregrounds, Other and its foreground, 7 ramp steps, 7 diverging steps and
+// 2 sentiments, and the 22 brand ramp steps, neutral and shade from 50 to 950. Themes name no
+// fonts, so `font-sans` and `font-heading` are not tokens.
+const TOKEN_COUNT = 155;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;

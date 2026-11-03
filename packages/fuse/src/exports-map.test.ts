@@ -431,6 +431,7 @@ describe("exports map", () => {
     );
     expect(catalog).toEqual([
       "TEXT_GRADE_PAIRS",
+      "BRAND_RAMP_ORIGINS",
       "defaultDensityForVariant",
       "resolveThemeCatalog",
       "DENSITY_ROLES",
