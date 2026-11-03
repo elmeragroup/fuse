@@ -17,6 +17,7 @@ export {
   ChartValueLabel as ValueLabel,
 } from "./chart-dots";
 export { ChartCrosshair as Crosshair } from "./chart-crosshair";
+export { ChartSlotLabel as SlotLabel } from "./chart-slot-label";
 export { ChartReferenceLine as ReferenceLine, ChartReferenceArea as ReferenceArea } from "./chart-reference";
 export {
   ChartActiveValue as ActiveValue,

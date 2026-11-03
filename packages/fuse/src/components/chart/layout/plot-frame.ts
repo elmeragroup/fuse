@@ -509,15 +509,17 @@ export function cellRun(frame: PlotFrame, centre: number, cells = 1): readonly [
  * @param frame - The layout's frame.
  * @param position - The slot's place in the window, from 0.
  * @param xScale - Root's x scale.
+ * @param line - The line's width in CSS pixels, whole device pixels, the hairline by default.
  * @returns The line's start and end along the slot axis, snapped.
  */
 export function slotLine(
   frame: PlotFrame,
   position: number,
-  xScale: "band" | "point"
+  xScale: "band" | "point",
+  line = hairline(frame.box)
 ): readonly [number, number] {
   const [start, end] = optionBand(frame, position, xScale);
-  const width = Math.min(hairline(frame.box), end - start);
+  const width = Math.min(line, end - start);
   return slotLineAt(frame, slotCentreAt(frame, position, xScale), xScale, width);
 }
 

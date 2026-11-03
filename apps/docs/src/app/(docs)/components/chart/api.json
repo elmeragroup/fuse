@@ -885,12 +885,30 @@
       "forwardedCount": 0,
       "props": [
         {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A `SlotLabel` adds the active slot's label as a pill on the x axis.",
+          "required": false
+        },
+        {
           "name": "className",
           "origin": "declared",
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
           "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "fade",
+          "origin": "declared",
+          "type": "\"both\" | \"bottom\" | \"none\" | \"top\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"both\"",
+          "description": "The ends of the line that fade out, over 10% of the plot each. \"both\" by default. \"top\" is the end at the value axis's maximum, the right end under `orientation=\"horizontal\"`. A band never fades.",
           "required": false
         },
         {
@@ -909,6 +927,42 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "A band over the active slot or a line through it. The default follows `xScale`. A band spans the active slot of the coarsest series in its layout, so an hourly bar's band covers its hour.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Chart.SlotLabel",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-slot-label.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "XFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The label format. The `format` of the chart's `Chart.XAxis` is the default, so the pill prints what the ticks print, and without one the interval's tick preset or the category itself.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
           "required": false
         }
       ]

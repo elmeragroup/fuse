@@ -116,6 +116,7 @@ export const PART_DENSITY = {
   "chart-value-label": "fixed",
   "chart-crosshair": "fixed",
   "chart-crosshair-mark": "fixed",
+  "chart-slot-label": "fixed",
   "chart-reference-line": "fixed",
   "chart-reference-rule": "fixed",
   "chart-reference-area": "fixed",

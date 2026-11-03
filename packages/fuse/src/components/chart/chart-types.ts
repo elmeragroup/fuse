@@ -473,6 +473,11 @@ export type ChartStyleVars = {
   "--chart-bar-seam"?: string;
   /** The rounded end of a bar. The radius role by default. */
   "--chart-bar-radius"?: string;
+  /**
+   * The line crosshair's width. `1px` by default, the hairline every rule draws. It rounds down to
+   * whole device pixels, at least one, and never grows wider than the slot's band.
+   */
+  "--chart-crosshair-width"?: string;
   /** The area fill opacity. `0.1` by default. */
   "--chart-area-opacity"?: number | string;
   /** The opacity of marks outside the active column. `0.45` by default, and `1` turns dimming off. */

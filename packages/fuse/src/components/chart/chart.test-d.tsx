@@ -22,16 +22,19 @@ import {
 } from "@elmeragroup/fuse/chart";
 import type {
   ChartConfig,
+  ChartCrosshairProps,
   ChartPeriod,
   ChartPoint,
   ChartQuality,
   ChartRootProps,
   ChartRow,
   ChartSeriesConfig,
+  ChartSlotLabelProps,
   ChartXKey,
   FormattedText,
   PieChartRootProps,
   SupportedLocale,
+  XFormat,
 } from "@elmeragroup/fuse/chart";
 
 const months = [
@@ -385,6 +388,25 @@ test("style takes the public custom properties with no cast", () => {
     </BarChart.Root>
   );
   expectTypeOf(styled).toExtend<ReactElement>();
+});
+
+test("a crosshair takes a fade, its width token and a SlotLabel with the axis's format", () => {
+  const pill = (
+    <LineChart.Root
+      data={months}
+      config={{ desktop: { label: "D", color: "chart-1" } }}
+      xKey="month"
+      aria-label="x">
+      <LineChart.XAxis format="month" />
+      <LineChart.Line dataKey="desktop" />
+      <LineChart.Crosshair variant="line" fade="top" style={{ "--chart-crosshair-width": "2px" }}>
+        <LineChart.SlotLabel format="month" className="font-medium" />
+      </LineChart.Crosshair>
+    </LineChart.Root>
+  );
+  expectTypeOf(pill).toExtend<ReactElement>();
+  expectTypeOf<ChartSlotLabelProps["format"]>().toEqualTypeOf<XFormat | undefined>();
+  expectTypeOf<ChartCrosshairProps["fade"]>().toEqualTypeOf<"both" | "top" | "bottom" | "none" | undefined>();
 });
 
 test("grouped bars, horizontal bars, markers, totals and table columns compose", () => {

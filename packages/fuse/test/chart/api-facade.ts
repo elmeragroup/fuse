@@ -39,6 +39,7 @@ import { ChartReferenceArea, ChartReferenceLine } from "../../src/components/cha
 import { ChartRoot } from "../../src/components/chart/chart-root";
 import { ChartSeriesIcon, ChartSeriesLabel, ChartSwatch } from "../../src/components/chart/chart-series";
 import { ChartSkeleton } from "../../src/components/chart/chart-skeleton";
+import { ChartSlotLabel } from "../../src/components/chart/chart-slot-label";
 import { ChartTable, ChartTableColumn } from "../../src/components/chart/chart-table";
 import {
   ChartTooltip,
@@ -97,6 +98,7 @@ export const Chart = {
   Marker: ChartMarker,
   ValueLabel: ChartValueLabel,
   Crosshair: ChartCrosshair,
+  SlotLabel: ChartSlotLabel,
   ReferenceLine: ChartReferenceLine,
   ReferenceArea: ChartReferenceArea,
   ActiveValue: ChartActiveValue,

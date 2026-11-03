@@ -92,8 +92,10 @@ export function createChartFollowers(): ChartFollowers {
  *
  * @param part - The calling part's display name.
  * @param paint - Draws the follower.
+ * @returns A repaint of this follower as a commit, for a change that renders nothing, such as a
+ *   font that loads.
  */
-export function useChartFollower(part: string, paint: FollowerPaint): void {
+export function useChartFollower(part: string, paint: FollowerPaint): () => void {
   const { followers } = useChartRoot(part);
   const follower = useRef<Follower>({ paint, stale: true });
   useLayoutEffect(() => {
@@ -101,4 +103,7 @@ export function useChartFollower(part: string, paint: FollowerPaint): void {
     followers.invalidate(follower.current);
   });
   useLayoutEffect(() => followers.add(follower.current), [followers]);
+  return () => {
+    followers.invalidate(follower.current);
+  };
 }

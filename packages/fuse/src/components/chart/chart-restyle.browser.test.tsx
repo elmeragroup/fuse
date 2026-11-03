@@ -220,7 +220,9 @@ function FourStacks({ top, width }: { readonly top: number; readonly width: numb
           {Object.keys(CONFIG).map((key) => (
             <Chart.Bar key={key} dataKey={key} />
           ))}
-          <Chart.Crosshair />
+          <Chart.Crosshair>
+            <Chart.SlotLabel />
+          </Chart.Crosshair>
           <Chart.Tooltip />
           <Chart.Legend />
         </Chart.Root>

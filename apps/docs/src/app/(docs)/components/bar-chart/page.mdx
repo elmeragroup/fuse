@@ -8,6 +8,7 @@ import { BarChartBlocks } from "./demos/bar-chart-blocks";
 import { BarChartBuffer } from "./demos/bar-chart-buffer";
 import { BarChartCapacityStep } from "./demos/bar-chart-capacity-step";
 import { BarChartConfig } from "./demos/bar-chart-config";
+import { BarChartDatePill } from "./demos/bar-chart-date-pill";
 import { BarChartDstDays } from "./demos/bar-chart-dst-days";
 import { BarChartEmphasis } from "./demos/bar-chart-emphasis";
 import { BarChartEntrance } from "./demos/bar-chart-entrance";
@@ -55,6 +56,16 @@ The chart entry is a preview. Its names and props can change until Fuse's first 
 
 <Demo slug="bar-chart" id="dst-days" title="Daylight saving days" file="bar-chart-dst-days.tsx">
   <BarChartDstDays />
+</Demo>
+
+<Prose>
+
+A line crosshair with a `BarChart.SlotLabel` marks the active hour on the axis. The line fades out at both ends.
+
+</Prose>
+
+<Demo slug="bar-chart" id="hour-pill" title="Hour pill" file="bar-chart-date-pill.tsx">
+  <BarChartDatePill />
 </Demo>
 
 ## Server components

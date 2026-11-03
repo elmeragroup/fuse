@@ -95,6 +95,7 @@ export type { ChartBackgroundProps } from "./components/chart/chart-background";
 export type { ChartBarGroupProps, ChartBarProps } from "./components/chart/chart-bar";
 export type { ChartBrushPreviewProps, ChartBrushProps } from "./components/chart/chart-brush";
 export type { ChartCrosshairProps } from "./components/chart/chart-crosshair";
+export type { ChartSlotLabelProps } from "./components/chart/chart-slot-label";
 export type {
   ChartActiveDotProps,
   ChartDotsProps,

@@ -288,7 +288,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // the Line and Area layers clip at the run's ends, and a path-form Bar's route retargets its
     // rounded column edges on a resize, which measured 129 bytes on this route (73754 to 73883).
     // The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 73990,
+    // Raised from 73990 on 2026-11-03. Root records the x axis's format for Chart.SlotLabel,
+    // repaints its followers when the reader's motion preference changes, and a follower can ask
+    // for its own repaint, which measured 82 bytes on this route (73933 to 74015). The ceiling
+    // keeps about 100 bytes of headroom.
+    ceilingGzip: 74115,
   },
   {
     name: "chart/PieChart.Root",
@@ -350,6 +354,8 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // 2026-10-31: 37489 with the chart roles as Tailwind colours, within the ceiling.
   { name: "styles.css", file: "styles.css", measuredGzip: 37374 },
   // Chart stylesheet. Measured 13523 on 2026-10-31, within the ceiling from layer 05.
+  // 2026-11-03: 14920 with Chart.SlotLabel, the line crosshair's fade and the tick fade, about 630
+  // bytes over the stylesheet before them, within the ceiling.
   { name: "chart.css", file: "chart.css", measuredGzip: 10089 },
 ] satisfies readonly Measured<CssBudget>[]);
 

@@ -219,7 +219,8 @@ function restAt(
  * a horizontal chart it sits above or below the active row. When neither side has room, it sits
  * beside the column, and when no side has room, it overlays the plot. It touches its anchor and
  * stays inside the viewport, scrolling when its content is taller. A pointer, key or touch step to
- * another slot glides it there over `--chart-glide`, unless the reader prefers reduced motion, and
+ * another slot glides it there over `--chart-glide` on a spring that never overshoots, unless the
+ * reader prefers reduced motion, and
  * opening, scrolling, resizing, a data update, a change of side and a path over the marks that would
  * leave the viewport move it at once. Touch passes
  * through the popup to the plot, except on a popup that scrolls, where a drag scrolls it and a tap

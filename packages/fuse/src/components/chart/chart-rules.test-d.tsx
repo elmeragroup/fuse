@@ -103,6 +103,7 @@ type ClosedNames = {
     | "Marker"
     | "ValueLabel"
     | "Crosshair"
+    | "SlotLabel"
     | "ReferenceLine"
     | "ReferenceArea"
     | "ActiveValue"

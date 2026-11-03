@@ -44,6 +44,7 @@ declare namespace AreaChart {
         ChartSeriesIcon as SeriesIcon,
         ChartSeriesLabel as SeriesLabel,
         ChartSkeleton as Skeleton,
+        ChartSlotLabel as SlotLabel,
         ChartSwatch as Swatch,
         ChartTable as Table,
         ChartTableColumn as TableColumn,
@@ -93,6 +94,7 @@ declare namespace BarChart {
         ChartSeriesIcon as SeriesIcon,
         ChartSeriesLabel as SeriesLabel,
         ChartSkeleton as Skeleton,
+        ChartSlotLabel as SlotLabel,
         ChartSwatch as Swatch,
         ChartTable as Table,
         ChartTableColumn as TableColumn,
@@ -142,6 +144,7 @@ declare namespace Chart {
         ChartSeriesIcon as SeriesIcon,
         ChartSeriesLabel as SeriesLabel,
         ChartSkeleton as Skeleton,
+        ChartSlotLabel as SlotLabel,
         ChartSwatch as Swatch,
         ChartTable as Table,
         ChartTableColumn as TableColumn,
@@ -291,6 +294,8 @@ function ChartCrosshair(input: ChartCrosshairProps): ReactElement;
 // @beta
 export type ChartCrosshairProps = ChartLayerProps & {
     variant?: "line" | "band";
+    fade?: "both" | "top" | "bottom" | "none";
+    children?: ReactNode;
 };
 
 // @beta
@@ -685,6 +690,14 @@ export type ChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "render
 };
 
 // @beta
+function ChartSlotLabel(input: ChartSlotLabelProps): ReactElement;
+
+// @beta
+export type ChartSlotLabelProps = ChartLayerProps & {
+    format?: XFormat;
+};
+
+// @beta
 export type ChartStyle = CSSProperties & ChartStyleVars;
 
 // @beta
@@ -697,6 +710,7 @@ export type ChartStyleVars = {
     "--chart-bar-gap"?: string;
     "--chart-bar-seam"?: string;
     "--chart-bar-radius"?: string;
+    "--chart-crosshair-width"?: string;
     "--chart-area-opacity"?: number | string;
     "--chart-hover-dim"?: number | string;
     "--chart-ring-fill"?: number | string;
@@ -926,6 +940,7 @@ declare namespace LineChart {
         ChartSeriesIcon as SeriesIcon,
         ChartSeriesLabel as SeriesLabel,
         ChartSkeleton as Skeleton,
+        ChartSlotLabel as SlotLabel,
         ChartSwatch as Swatch,
         ChartTable as Table,
         ChartTableColumn as TableColumn,

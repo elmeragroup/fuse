@@ -11,7 +11,8 @@ import { classTokens, colorRolePaints, splitVariants, tokenAssignments } from ".
 import { motionWriters } from "../test/motion-writers";
 import { svgMarks } from "../test/svg-marks";
 import { writtenSlots } from "../test/written-slots";
-import { CHART_UPDATE_EASE, CHART_UPDATE_MS } from "./components/chart/layout/motion";
+import { CHART_SPRINGS, CHART_UPDATE_EASE, CHART_UPDATE_MS } from "./components/chart/layout/motion";
+import { springEasing } from "./components/chart/layout/spring";
 import { overlayLayer, toastLayer } from "./components/overlay/overlay-classes";
 import { TOKEN_PAINTS } from "./theme/tokens/contract";
 import type { ColorTokenName, TokenPaint } from "./theme/tokens/contract";
@@ -698,6 +699,13 @@ describe("chart motion tokens", () => {
     expect(declared("--chart-update")).toBe(`${String(CHART_UPDATE_MS)}ms`);
     expect(declared("--chart-ease")).toBe(CHART_UPDATE_EASE);
   });
+
+  // The tooltip's glide plays its spring's curve over --chart-glide, so the token is the time the
+  // spring takes to settle. Unit under test: chart.css's --chart-glide. Oracle: springEasing of
+  // layout/motion.ts's tooltip spring.
+  it("declares the tooltip glide as long as its spring takes to settle", () => {
+    expect(declared("--chart-glide")).toBe(`${String(springEasing(CHART_SPRINGS.glide).duration)}ms`);
+  });
 });
 
 describe("chart styles a user can override", () => {
@@ -854,6 +862,9 @@ describe("runtime listeners and layout motion", () => {
       // a consumer's own handler, which Root's spread props replace. The same owner listens on
       // the window for `beforeprint`, and for `scroll` and `resize` only while a plot waits.
       "components/chart/chart-entrance.ts",
+      // `document.fonts` `loadingdone`: a web font that loads after the pill measured its label
+      // widths changes them, and React has no FontFaceSet handler.
+      "components/chart/chart-slot-label.tsx",
       // Window `scroll`, in the capture phase, and `resize`: a scroll anywhere in the page or a
       // resize of the window moves the tooltip's positioner, which stops its glide at once. A
       // scroll in a container does not bubble, and React has no window listener.

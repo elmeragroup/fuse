@@ -5,6 +5,7 @@ lede: >
 
 import { LineChartBasic } from "./demos/line-chart-basic";
 import { LineChartCurves } from "./demos/line-chart-curves";
+import { LineChartDatePill } from "./demos/line-chart-date-pill";
 import { LineChartGlow } from "./demos/line-chart-glow";
 import { LineChartLarge } from "./demos/line-chart-large";
 import { LineChartMarkers } from "./demos/line-chart-markers";
@@ -32,6 +33,16 @@ The chart entry is a preview. Its names and props can change until Fuse's first 
 
 <Demo slug="line-chart" id="spot-price" title="Spot price" file="line-chart-spot-price.tsx">
   <LineChartSpotPrice />
+</Demo>
+
+<Prose>
+
+`LineChart.SlotLabel` inside a `Crosshair` prints the active day as a pill on the x axis, in the axis's `format`, and the ticks under it fade out. Its own `format` overrides the axis's. The day rolls to its next value, and the month stays still until it changes.
+
+</Prose>
+
+<Demo slug="line-chart" id="date-pill" title="Date pill" file="line-chart-date-pill.tsx">
+  <LineChartDatePill />
 </Demo>
 
 ## Curves and looks

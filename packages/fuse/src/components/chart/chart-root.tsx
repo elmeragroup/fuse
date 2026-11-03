@@ -6,6 +6,7 @@ import type { ReactElement, ReactNode } from "react";
 import { useMediaQuery } from "../../hooks/use-media-query";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
+import { createAxisRecord } from "./chart-axis-format";
 import { keyDomains, useChartCommit } from "./chart-commit";
 import {
   ChartLayoutContext,
@@ -535,9 +536,13 @@ export function ChartRoot<
   const modelRef = useRef(model);
   useLayoutEffect(() => {
     motion.setReduced(reduced);
-  }, [motion, reduced]);
+    // Each follower repaints as a commit, which ends any glide it runs, so reduced motion that
+    // turns on mid-glide shows every follower at rest at once.
+    followers.refresh();
+  }, [motion, reduced, followers]);
   const [labels] = useState(createChartLabels);
   const [paths] = useState(createChartPaths);
+  const [axis] = useState(createAxisRecord);
   // The default layout's frame, which names its marks' tweens to the loop for the Root's life.
   const [owner] = useState(() => createFrameOwner("root"));
   // The active slot and series last painted, so a store change that moves neither paints nothing.
@@ -760,6 +765,7 @@ export function ChartRoot<
       motion,
       followers,
       paths,
+      axis,
       registerBar,
       drawsBar,
       registerEmphasis,
@@ -786,6 +792,7 @@ export function ChartRoot<
       motion,
       followers,
       paths,
+      axis,
       registerBar,
       drawsBar,
       registerEmphasis,

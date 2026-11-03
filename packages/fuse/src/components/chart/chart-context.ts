@@ -9,6 +9,7 @@
  */
 import { createContext, use, useLayoutEffect } from "react";
 
+import type { AxisRecord } from "./chart-axis-format";
 import type { ChartFollowers } from "./chart-followers";
 import type { ChartLabels } from "./chart-labels";
 import type { ChartMotion, FrameOwner } from "./chart-motion";
@@ -139,6 +140,11 @@ export type ChartRootContextValue = TextContext & {
   readonly followers: ChartFollowers;
   /** The routes the series paths tween, which their dots, markers and active dots join. */
   readonly paths: ChartPaths;
+  /**
+   * The x axis's `format` and tick generation, which Chart.XAxis records and Chart.SlotLabel reads:
+   * it prints in the format by default and measures the ticks again when they change.
+   */
+  readonly axis: AxisRecord;
   /**
    * A Bar registers after it mounts, with its layout's frame, so Root can warn `bars-overlap` for
    * two loose Bars in one layout. The result unregisters it.

@@ -1,6 +1,6 @@
 // The React cost of pointer and motion, in Chromium. In a 240-step pointer sweep only the tooltip
 // and the plot surface render, and marks, the crosshair and a static legend render 0 times, so a
-// chart of marks and followers alone commits nothing. A ValueLabel prints the active value as
+// chart of marks and followers alone, a SlotLabel's rolling pill among them, commits nothing. A ValueLabel prints the active value as
 // text, so it renders per slot, as the tooltip does. A LegendValue renders at most once per change
 // of active slot. A data update costs one Root commit and its tween costs none. The counts come
 // from React's Profiler, and the expected numbers come from CONTRACT section 4, pass-2's
@@ -158,7 +158,10 @@ describe("pointer cost", () => {
         <Counted id="chart">
           <S06Chart>
             <Chart.Grid />
-            <Chart.Crosshair />
+            <Chart.XAxis />
+            <Chart.Crosshair>
+              <Chart.SlotLabel />
+            </Chart.Crosshair>
             <Chart.Bar dataKey="household" />
             <Chart.ActiveValueLine dataKey="household" />
             <Chart.ReferenceLine y={1} />

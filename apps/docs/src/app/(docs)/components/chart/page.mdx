@@ -157,7 +157,7 @@ A series may take a coarser `interval` than Root's, such as hourly usage under q
 
 On a vertical chart the tooltip centres on the active slot, stays inside the chart's box and then the viewport, and rests 8 px above the highest mark under its own width. Those marks are bars, stack tops, line and area strokes between readings, and dots, so the tooltip never covers the data it reads. A step to a taller neighbour lifts it over every mark on the way, and a step that would lower it by 16 px or less keeps its height. `anchor="top"` keeps it on the plot top instead, and Panels always do.
 
-A step to another slot by pointer, key or touch glides the tooltip there over `--chart-glide`, 200 ms on `--chart-ease`. It moves at once when it opens, when it flips to another side, when the page scrolls or resizes, on a data update, when its path over the marks would leave the viewport, and under reduced motion.
+A step to another slot by pointer, key or touch glides the tooltip there over `--chart-glide`, 924 ms on a spring that never overshoots, which covers four fifths of the way in the first 300 ms. It moves at once when it opens, when it flips to another side, when the page scrolls or resizes, on a data update, when its path over the marks would leave the viewport, and under reduced motion.
 
 The tooltip stays open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap dismisses it.
 
@@ -174,6 +174,12 @@ The tooltip stays open while the pointer moves onto it, and Escape closes it. A 
 <Demo slug="chart" id="crosshair" title="Crosshair" file="chart-crosshair.tsx">
   <ChartCrosshairBand />
 </Demo>
+
+<Prose>
+
+The line crosshair fades out over 10% of the plot at both ends by default. `fade="top"` or `"bottom"` fades one end, read along the value axis, and `"none"` draws it whole. `--chart-crosshair-width` sets its width, 1 px by default. The line glides from slot to slot, and moves at once under reduced motion. A `Chart.SlotLabel` inside the crosshair prints the active slot on the x axis.
+
+</Prose>
 
 <Demo slug="chart" id="reference-lines" title="Reference lines" file="chart-reference-line.tsx">
   <ChartReferenceLines />

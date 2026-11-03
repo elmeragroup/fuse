@@ -27,11 +27,13 @@ import type {
   ChartAreaProps,
   ChartBarProps,
   ChartConfig,
+  ChartCrosshairProps,
   ChartGlowProps,
   ChartLegendProps,
   ChartLineProps,
   ChartQuality,
   ChartRootProps,
+  ChartSlotLabelProps,
   ChartSwatchProps,
   ChartTooltipProps,
   ChartTooltipValueProps,
@@ -363,4 +365,12 @@ test("each negative case passes once its violation is removed", () => {
     </>
   );
   expectTypeOf(twins).toExtend<ReactElement>();
+});
+
+test("a crosshair fades only at named ends, and a SlotLabel takes only an x format", () => {
+  // @ts-expect-error a fade names an end of the value axis or "both" or "none"
+  const sideways: ChartCrosshairProps = { fade: "left" };
+  // @ts-expect-error a SlotLabel prints the slot, so a value format is no x format
+  const valued: ChartSlotLabelProps = { format: { preset: "energy", unit: "kWh" } };
+  expectTypeOf([sideways, valued]).toBeArray();
 });

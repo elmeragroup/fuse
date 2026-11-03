@@ -65,5 +65,12 @@ tooltip name its hour, and the table spans its cell over its rows. A series inte
 nest in Root's throws `interval-not-nested`, and a value off the series' grid warns `off-grid-x` in
 production.
 
+`Chart.SlotLabel` inside a `Crosshair` prints the active slot as a pill on the x axis, in the axis's
+format, and fades the tick labels under it. Each part of the label, such as the day or the month,
+rolls to its next value, so a part that stays the same stays still. Above 60 labels it prints one
+label. The line crosshair fades out at both ends, `fade` picks the ends, and
+`--chart-crosshair-width` sets its width. The line crosshair, the pill and the tooltip glide on
+springs and move at once under reduced motion.
+
 Data that breaks a rule throws in development. In production each rule warns once per column, or
 once for the x axis or a stack, naming the first row and the count.

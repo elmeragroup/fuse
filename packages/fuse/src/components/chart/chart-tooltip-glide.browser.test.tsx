@@ -6,7 +6,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
-import { label, pointerAt, popup, surfaceBox } from "../../../test/chart/marks";
+import { glideLanded, label, pointerAt, popup, surfaceBox } from "../../../test/chart/marks";
 import {
   MONTHS,
   REVENUE,
@@ -67,12 +67,14 @@ describe("the popup's place along x", () => {
     const box = surfaceBox(host);
     await hoverSlot(host, 2, 6, "band");
     await nextFrames(20);
+    await glideLanded();
     const middle = positioner()?.getBoundingClientRect() ?? new DOMRect();
     expect(
       Math.abs((middle.left + middle.right) / 2 - (box.left + (box.width * 2.5) / 6))
     ).toBeLessThanOrEqual(1);
     await hoverSlot(host, 5, 6, "band");
     await nextFrames(20);
+    await glideLanded();
     // Centred on Jun, the popup would pass the Root's right edge, so it ends on that edge.
     const last = positioner()?.getBoundingClientRect() ?? new DOMRect();
     expect(box.left + (box.width * 5.5) / 6 + last.width / 2).toBeGreaterThan(root.right + 1);
@@ -84,6 +86,7 @@ describe("the glide", () => {
   /** The popup's resting left edge once it has landed. */
   async function landedLeft(): Promise<number> {
     await nextFrames(20);
+    await glideLanded();
     return positioner()?.getBoundingClientRect().left ?? Number.NaN;
   }
 

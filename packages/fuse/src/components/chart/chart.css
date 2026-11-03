@@ -33,6 +33,13 @@
   initial-value: 2px;
 }
 
+/* The crosshair reads its width once per layout, as a length. */
+@property --chart-crosshair-width {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 1px;
+}
+
 /*
   Reveal writes the active slot's place on each series it masks, at pointer rate. The property
   stays on the series, so a step restyles three elements and none of the marks inside them, and
@@ -64,11 +71,12 @@
     --chart-bar-gap: 2px;
     --chart-bar-seam: 2px;
     --chart-bar-radius: var(--radius-xs, 0.125rem);
+    --chart-crosshair-width: 1px;
     --chart-hover-dim: 0.45;
     --chart-ease: cubic-bezier(0, 0.7, 0.5, 1);
     --chart-update: 480ms;
-    /* The tooltip's glide from one slot to the next. */
-    --chart-glide: 200ms;
+    /* The tooltip's glide from one slot to the next, the time its spring takes to settle. */
+    --chart-glide: 924ms;
   }
 
   [data-slot="chart"]:not([data-orientation="horizontal"]) {
@@ -1000,6 +1008,98 @@
     fill: var(--muted-foreground);
   }
 
+  /* The line fades over 10% at the ends data-fade names, along the value axis. */
+  [data-slot="chart-crosshair"][data-variant="line"] {
+    --_fade-to: to bottom;
+  }
+
+  [data-slot="chart"][data-orientation="horizontal"] [data-slot="chart-crosshair"][data-variant="line"] {
+    --_fade-to: to left;
+  }
+
+  [data-slot="chart-crosshair"][data-fade="both"] {
+    mask-image: linear-gradient(var(--_fade-to), transparent, #000 10%, #000 90%, transparent);
+  }
+
+  [data-slot="chart-crosshair"][data-fade="top"] {
+    mask-image: linear-gradient(var(--_fade-to), transparent, #000 10%);
+  }
+
+  [data-slot="chart-crosshair"][data-fade="bottom"] {
+    mask-image: linear-gradient(var(--_fade-to), #000 90%, transparent);
+  }
+
+  /*
+    SlotLabel: each part is a one-line window onto its stack of values, and the pill spans the
+    widest label, clipped to the active one. data-shown and data-covered lead their compounds, so a
+    step restyles only the pill and the ticks.
+  */
+  /* The pill keeps the x axis's row, which it shares with the axis, so a legend below never meets it. */
+  [data-slot="chart-slot-label"] {
+    grid-area: under;
+    position: relative;
+    z-index: 1;
+    align-self: start;
+    height: calc(1rem + 0.5rem);
+    pointer-events: none;
+    opacity: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  [data-shown][data-slot="chart-slot-label"] {
+    opacity: 1;
+  }
+
+  [data-slot="chart-slot-label"] > [data-part="rider"] {
+    position: absolute;
+    top: 0.5rem;
+    left: 0;
+    color: var(--background);
+  }
+
+  [data-slot="chart-slot-label"] [data-part="pill"] {
+    position: absolute;
+    top: 0;
+    left: calc(var(--_full, 0px) / -2 - 0.375rem);
+    box-sizing: content-box;
+    width: var(--_full, 0px);
+    height: 1rem;
+    padding-inline: 0.375rem;
+    border-radius: 9999px;
+    background: var(--foreground);
+  }
+
+  [data-slot="chart-slot-label"] [data-part="part"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 1rem;
+    overflow: clip;
+    white-space: pre;
+  }
+
+  [data-slot="chart-slot-label"] [data-part="stack"],
+  [data-slot="chart-slot-label"] [data-part="stack"] > span {
+    display: block;
+    width: max-content;
+  }
+
+  /* Every value takes the part's line, an empty one too, so the stack's offsets stay exact. */
+  [data-slot="chart-slot-label"] [data-part="stack"] > span {
+    height: 1rem;
+  }
+
+  [data-slot="chart-slot-label"][data-compact] [data-part="part"] {
+    translate: -50% 0;
+    padding-inline: 0.375rem;
+    border-radius: 9999px;
+    background: var(--foreground);
+  }
+
+  [data-covered][data-slot="chart-x-tick"] {
+    opacity: 0;
+  }
+
   /* Tooltip. The positioner lets the pointer through, and the popup takes it, for WCAG 1.4.13. */
   [data-slot="chart-tooltip-positioner"] {
     pointer-events: none;
@@ -1869,6 +1969,18 @@
     */
     [data-slot="chart-tooltip-positioner"] {
       --_glide: var(--chart-glide);
+    }
+
+    /* SlotLabel glides on the spring its style names, except while data-snap places it. */
+    [data-slot="chart-slot-label"]:not([data-snap])
+      :is([data-part="rider"], [data-part="part"], [data-part="stack"], [data-part="pill"]) {
+      transition-property: translate, clip-path;
+      transition-duration: var(--_spring-duration);
+      transition-timing-function: var(--_spring-easing);
+    }
+
+    [data-slot="chart-x-tick"] {
+      transition: opacity 150ms var(--chart-ease);
     }
 
     [data-slot="chart-bar-marks"] > [data-intro="fade"],

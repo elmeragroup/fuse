@@ -95,6 +95,7 @@
       "bar-chart-buffer.tsx",
       "bar-chart-capacity-step.tsx",
       "bar-chart-config.tsx",
+      "bar-chart-date-pill.tsx",
       "bar-chart-dst-days.tsx",
       "bar-chart-emphasis.tsx",
       "bar-chart-entrance.tsx",
@@ -513,6 +514,7 @@
     "demos": [
       "line-chart-basic.tsx",
       "line-chart-curves.tsx",
+      "line-chart-date-pill.tsx",
       "line-chart-glow.tsx",
       "line-chart-large.tsx",
       "line-chart-markers.tsx",

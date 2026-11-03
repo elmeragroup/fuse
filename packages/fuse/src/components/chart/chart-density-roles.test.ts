@@ -35,6 +35,9 @@ const CONTRACT_ROLES = {
   "chart-value-label": "fixed",
   "chart-crosshair": "fixed",
   "chart-crosshair-mark": "fixed",
+  // Chart.SlotLabel, which the bklit polish run added after section 10: plot output in the axis's
+  // fixed 12 px type, so it follows no density, as the ValueLabel pill does.
+  "chart-slot-label": "fixed",
   "chart-reference-line": "fixed",
   "chart-reference-rule": "fixed",
   "chart-reference-area": "fixed",

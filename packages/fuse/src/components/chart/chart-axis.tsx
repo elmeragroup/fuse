@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo } from "react";
 import type { ReactElement } from "react";
 
 import { usePlotLayout, useChartRoot } from "./chart-context";
@@ -82,6 +82,26 @@ function tickFormat(format: XFormat | undefined, unit: Interval, coarser: boolea
   return format;
 }
 
+/**
+ * A slot's x axis label in the axis's format: the category itself, or the slot's start in the
+ * interval's tick preset or `format`.
+ *
+ * @param input - The domain and the locale.
+ * @param slot - A slot index.
+ * @param format - The axis's `format`, or undefined for the interval's tick preset.
+ * @returns The label's visual text.
+ */
+export function slotTickLabel(
+  input: { readonly domain: XDomain; readonly locale: ChartRootContextValue["locale"] },
+  slot: number,
+  format: XFormat | undefined
+): string {
+  const { domain, locale } = input;
+  if (domain.kind === "category") return domain.names[slot] ?? "";
+  const preset = tickFormat(format, domain.interval, false);
+  return formatSlot(locale, domain.timeZone, domain.starts[slot] ?? 0, domain.interval, preset, "tick").text;
+}
+
 /** One x tick ready to draw. */
 type XTick = {
   readonly slot: number;
@@ -116,8 +136,8 @@ function xTicks(input: XTickInput, format: XFormat | undefined): XTick[] {
     for (const slot of entry.slots) unitOf.set(slot, entry.unit);
   }
   const text = (slot: number, coarse: boolean): string => {
-    if (domain.kind === "category") return domain.names[slot] ?? "";
-    const unit = coarse ? (unitOf.get(slot) ?? domain.interval) : domain.interval;
+    if (domain.kind === "category" || !coarse) return slotTickLabel(input, slot, format);
+    const unit = unitOf.get(slot) ?? domain.interval;
     const preset = tickFormat(format, unit, unit !== domain.interval);
     return formatSlot(locale, domain.timeZone, domain.starts[slot] ?? 0, unit, preset, "tick").text;
   };
@@ -207,6 +227,12 @@ export function ChartXAxis({
   // The ticks read the whole domain, so they wait for a change of what they read. An inline format
   // object that names the same options is no change.
   const steadyFormat = useSteady(format, sameShallow);
+  // Root records the format, so a SlotLabel prints slots as these ticks do.
+  const { axis } = context;
+  useLayoutEffect(() => {
+    axis.setFormat(steadyFormat);
+    return () => axis.setFormat(undefined);
+  }, [axis, steadyFormat]);
   // A value update keeps the domain object, and the window by its two ends, so it keeps the ticks.
   const { locale, xScale, orientation } = context;
   const { domain, window } = context.model;
@@ -226,6 +252,11 @@ export function ChartXAxis({
       ),
     [domain, first, last, locale, xScale, orientation, steadyFormat]
   );
+  // A SlotLabel reads these tick nodes' boxes, so it hears when the nodes mount, change or leave.
+  useLayoutEffect(() => {
+    axis.touchTicks();
+    return () => axis.touchTicks();
+  }, [axis, ticks]);
   // A tick keeps its node while its slot stays, so a shifted window moves its labels rather than
   // replacing them: the slot's render key, which Root keeps for a slot across updates. The first
   // tick, which always shows, keeps one node across every window, since a stream's first slot

@@ -4,15 +4,17 @@
  * The tooltip's glide between slots. Base UI places the popup by writing `translate(x, y)` to the
  * positioner's inline style. A slot step arms the glider, and the next place Base UI writes plays
  * as one Web Animation of the positioner's transform from where the popup shows, over the chart's
- * `--chart-glide` on `--chart-ease`. A popup resting over a vertical plot glides along
- * `glidePath`, so it clears every mark on the way, and moves at once when that path would leave the
- * viewport, as it would from the fallback that overlays the plot. Anything else that moves the popup, such as a
- * scroll, a resize of the window, a data update or a change of side, stops the glide, and the
- * popup shows Base UI's place at once. The positioner portals out of the chart, so the glider
- * copies the chart's tokens onto it. The stylesheet sets `--_glide` from them only while the reader
- * has no preference for reduced motion, so under reduced motion every place shows at once.
+ * `--chart-glide` on bklit's tooltip spring, stiffness 100 and damping 20, which never overshoots.
+ * A popup resting over a vertical plot glides along `glidePath`, so it clears every mark on the
+ * way, and moves at once when that path would leave the viewport, as it would from the fallback
+ * that overlays the plot. Anything else that moves the popup, such as a scroll, a resize of the
+ * window, a data update or a change of side, stops the glide, and the popup shows Base UI's place
+ * at once. The positioner portals out of the chart, so the glider copies the chart's duration onto
+ * it. The stylesheet sets `--_glide` from it only while the reader has no preference for reduced
+ * motion, so under reduced motion every place shows at once.
  */
 import { writeStyle } from "./chart-dom";
+import { springTiming } from "./chart-spring";
 import { TOOLTIP_EDGE, glidePath } from "./layout/tooltip-place";
 import type { PlaceSize, PopupPlace } from "./layout/tooltip-place";
 
@@ -58,11 +60,11 @@ const TRANSLATE = /translate\(\s*(-?[\d.e+-]+)px\s*,\s*(-?[\d.e+-]+)px\s*\)/;
  * Glide a positioner after slot steps.
  *
  * @param positioner - The tooltip's positioner.
- * @param chart - The chart Root's element, whose glide tokens the positioner takes.
+ * @param chart - The chart Root's element, whose glide duration the positioner takes.
  * @returns The glider.
  */
 export function createTooltipGlider(positioner: HTMLElement, chart: HTMLElement | null): TooltipGlider {
-  takeTokens(positioner, chart);
+  takeDuration(positioner, chart);
   let armed: Armed | null = null;
   let running: Animation | null = null;
   // Where Base UI last placed the positioner, and its size there, which a glide starts from when
@@ -141,14 +143,12 @@ function facingKept(shift: Shift, before: PlaceSize, after: PlaceSize, side: str
   return shift;
 }
 
-/** Copy the chart's glide tokens onto the positioner. */
-function takeTokens(positioner: HTMLElement, chart: HTMLElement | null): void {
+/** Copy the chart's glide duration onto the positioner. */
+function takeDuration(positioner: HTMLElement, chart: HTMLElement | null): void {
   if (chart === null) return;
   const tokens = getComputedStyle(chart);
-  for (const name of ["--chart-glide", "--chart-ease"]) {
-    const value = tokens.getPropertyValue(name);
-    writeStyle(positioner, name, value === "" ? null : value);
-  }
+  const value = tokens.getPropertyValue("--chart-glide");
+  writeStyle(positioner, "--chart-glide", value === "" ? null : value);
 }
 
 /** The translation Base UI wrote to the positioner's inline style, or null before it placed it. */
@@ -166,16 +166,14 @@ function shownShift(positioner: HTMLElement): Shift | null {
 }
 
 /**
- * The glide's duration and curve, or null when it does not run: under reduced motion, where the
- * stylesheet leaves `--_glide` unset, or for a duration of zero.
+ * The glide's duration and the tooltip spring's curve, or null when it does not run: under reduced
+ * motion, where the stylesheet leaves `--_glide` unset, or for a duration of zero.
  */
 function glideTiming(positioner: HTMLElement): KeyframeAnimationOptions | null {
   const style = getComputedStyle(positioner);
   const duration = milliseconds(style.getPropertyValue("--_glide"));
   if (duration === null || duration <= 0) return null;
-  const curve = style.getPropertyValue("--chart-ease").trim();
-  const easing = curve !== "" && CSS.supports("transition-timing-function", curve) ? curve : "ease-out";
-  return { duration, easing };
+  return { duration, easing: springTiming("glide").easing };
 }
 
 /** A CSS time in milliseconds, or null for anything else. */
