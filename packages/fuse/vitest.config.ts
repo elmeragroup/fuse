@@ -3,6 +3,7 @@ import { defineConfig } from "vitest/config";
 import type { TestProjectInlineConfiguration } from "vitest/config";
 
 import { mediaCommands } from "./test/media-commands.ts";
+import { pageSizeCommands } from "./test/page-size-commands.ts";
 import { pointerCommands } from "./test/pointer-commands.ts";
 
 const BROWSER_TESTS = ["src/**/*.browser.test.tsx"];
@@ -26,10 +27,12 @@ const ENGINES_TESTS = "**/*.engines.browser.test.{ts,tsx}";
 const REDUCED_MOTION_TESTS = "**/*.reduced-motion.browser.test.tsx";
 
 /**
- * The test iframe's size, Vitest's default, which every browser context also opens at. Vitest 5
- * opens each page at Playwright's 1280 × 720 and resizes it before a file runs, and under load a
- * file has run in the unresized page. A page shorter than its iframe leaves the iframe's bottom
- * 176 px outside the viewport, where Playwright cannot click a toast.
+ * The test iframe's size, Vitest's default, which every browser context also opens at. Vitest
+ * sizes the page before each file runs, but skips a size it believes it already set, so a file can
+ * start in a page an earlier file left at another size, as a cleared CDP metrics override does, or
+ * scrolled a few pixels. A page shorter than its iframe leaves the iframe's bottom outside the
+ * viewport, where Playwright cannot click. The setup file `test/page-frame-setup.ts` sizes such a
+ * page to the frame before each file's first test.
  */
 const VIEWPORT = { width: 414, height: 896 } as const;
 
@@ -112,6 +115,7 @@ function browserProject(
     },
     test: {
       name,
+      setupFiles: ["./test/page-frame-setup.ts"],
       include: options.include ?? BROWSER_TESTS,
       exclude: options.exclude,
       fileParallelism: options.fileParallelism,
@@ -126,7 +130,7 @@ function browserProject(
           contextOptions: { viewport: VIEWPORT, ...provider.contextOptions },
         }),
         instances: browsers.map((browser) => ({ browser })),
-        commands: { ...pointerCommands, ...mediaCommands },
+        commands: { ...pointerCommands, ...mediaCommands, ...pageSizeCommands },
       },
     },
   };
