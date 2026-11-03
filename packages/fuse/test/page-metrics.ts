@@ -1,4 +1,4 @@
-import { cdp } from "vitest/browser";
+import { cdp, server } from "vitest/browser";
 
 /** The CDP call that sizes the page in Chromium. */
 type MetricsCdp = {
@@ -15,13 +15,14 @@ type MetricsCdp = {
  * window's size, where no later Playwright resize reaches it. The setup in `page-frame-setup.ts`
  * sizes a page the same way when Playwright cannot.
  *
- * @returns Whether the engine has a CDP session, which only Chromium does.
+ * @returns Whether it sized the page, which only Chromium's CDP session can.
  */
 export async function sizePageToFrame(): Promise<boolean> {
-  // SAFETY: Vitest types its CDP session as {}; Playwright's session implements send. Engines other than Chromium have none.
-  const session = cdp() as MetricsCdp | undefined;
   const frame = window.frameElement;
-  if (session === undefined || frame === null) return false;
+  // Vitest hands out a session in every engine, and outside Chromium its calls reject.
+  if (server.browser !== "chromium" || frame === null) return false;
+  // SAFETY: Vitest types its CDP session as {}; Playwright's session implements send.
+  const session = cdp() as MetricsCdp;
   await session.send("Emulation.setDeviceMetricsOverride", {
     width: frame.clientWidth,
     height: frame.clientHeight,
