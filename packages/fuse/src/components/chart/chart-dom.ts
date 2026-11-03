@@ -113,3 +113,21 @@ export function partsCache<P>(find: (node: Element) => P): (node: Element) => P 
     return parts;
   };
 }
+
+/** Client pixels per layout pixel of an element, along x and y. */
+export type ClientScale = { readonly x: number; readonly y: number };
+
+/**
+ * How many client pixels one layout pixel of an element spans, along x and y, so client boxes read
+ * under a transformed ancestor, such as a scaled portal, come back to the element's own pixels.
+ *
+ * @param element - The element.
+ * @returns The scale along each axis, 1 along an axis the element has no size on.
+ */
+export function clientScale(element: HTMLElement): ClientScale {
+  const box = element.getBoundingClientRect();
+  return {
+    x: element.offsetWidth === 0 ? 1 : box.width / element.offsetWidth,
+    y: element.offsetHeight === 0 ? 1 : box.height / element.offsetHeight,
+  };
+}

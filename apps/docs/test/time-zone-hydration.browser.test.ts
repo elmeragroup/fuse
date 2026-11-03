@@ -116,7 +116,7 @@ async function hydrateDemo(
     // the plot's followers and focus target once it measures the plot. Those writes land inside
     // plot output and are drawing, not hydration, so only records outside it count. Root writes
     // its entrance state on its figure as it draws, which is drawing too, and the x axis takes the
-    // slot run's margins in its style when it measures.
+    // slot run's margins in its style when it measures. Any other change to the axis's style counts.
     const plotOutput = [
       '[data-slot="chart-frame"] svg',
       '[data-slot="chart-plot"]',
@@ -126,17 +126,32 @@ async function hydrateDemo(
       '[data-slot="chart-active-value-line"]',
       '[data-slot="chart-frame"] > [data-slot="chart-active-value"]',
     ].join(", ");
+    // A style's declarations, less the slot run's margins.
+    const unmargined = (style: string | null): string =>
+      (style ?? "")
+        .split(";")
+        .map((declaration) => declaration.trim())
+        .filter((declaration) => declaration !== "" && !/^--_run-(?:before|after)\s*:/u.test(declaration))
+        .join("; ");
     const drawn = (record: MutationRecord): boolean => {
       if (record.attributeName === "data-entrance") return true;
       const target = record.target instanceof Element ? record.target : record.target.parentElement;
       const axis = target?.matches('[data-slot="chart-x-axis"]') === true;
-      if (axis && record.attributeName === "style") return true;
+      if (axis && record.attributeName === "style") {
+        return unmargined(record.oldValue) === unmargined(target.getAttribute("style"));
+      }
       return target?.closest(plotOutput) !== null && target?.closest(plotOutput) !== undefined;
     };
     new MutationObserver((batch) => {
       globalThis.demoMutations =
         (globalThis.demoMutations ?? 0) + batch.filter((record) => !drawn(record)).length;
-    }).observe(element, { subtree: true, childList: true, characterData: true, attributes: true });
+    }).observe(element, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeOldValue: true,
+    });
     // React marks each DOM node it has hydrated with a `__reactFiber$` key, and a node still
     // inside a dehydrated Suspense boundary has none.
     globalThis.readDemoBars = () =>

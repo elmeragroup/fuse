@@ -196,6 +196,8 @@ export type ChartMotion = {
   readonly finish: () => void;
   /** Follow the reader's motion preference. Reduced motion snaps every placement. */
   readonly setReduced: (reduced: boolean) => void;
+  /** Whether the loop follows the reader's reduced-motion preference, as `setReduced` last set it. */
+  readonly reduced: () => boolean;
   /**
    * Whether the loop draws every update at once: under reduced motion, and while Root's entrance
    * waits. Either way a path skips its crossfade.
@@ -273,12 +275,6 @@ const ease = cubicBezier(CHART_UPDATE_CURVE);
 /** The numbers a mark rests on once its tween ends. */
 function restOf(mark: Mark): MarkValues {
   return mark.tween?.rest ?? mark.tween?.to ?? mark.drawn;
-}
-
-/** Whether two lists of numbers hold the same numbers in the same order. */
-function sameNumbers(a: MarkValues | null, b: MarkValues | null): boolean {
-  if (a === null || b === null) return a === b;
-  return a.length === b.length && a.every((value, index) => value === b[index]);
 }
 
 /**
@@ -558,7 +554,7 @@ export function createChartMotion(
       let offset = 0;
       for (const { lead, id: leadId, mark } of found) {
         const end = offset + ("clock" in lead ? lead.clock : lead.size);
-        const source = mark.tween === null ? mark.drawn : (mark.tween.rest ?? mark.tween.to);
+        const source = restOf(mark);
         const rest = "clock" in lead ? undefined : lead.rest?.(source);
         if (rest === undefined) {
           for (let at = offset; at < Math.min(end, target.length); at += 1) resting.push(target[at] ?? 0);
@@ -718,15 +714,15 @@ export function createChartMotion(
       const { anchor } = info;
       const before = marks.get(id);
       const named = before?.anchor;
-      const rested = before === undefined ? null : restOf(before);
+      const rested = before === undefined ? undefined : restOf(before);
       if (named !== anchor) leave(id, named);
       if (anchor !== undefined) anchors.set(anchor, id);
       placeMark(id, target, write, placement, info);
       const mark = marks.get(id);
       if (mark !== undefined) mark.anchor = anchor;
       if ((named ?? anchor) === undefined) return;
-      const rests = mark === undefined ? null : restOf(mark);
-      if (named !== anchor || !sameNumbers(rested, rests)) revision += 1;
+      const rests = mark === undefined ? undefined : restOf(mark);
+      if (named !== anchor || !sameItems(rested, rests)) revision += 1;
     },
     forget(id) {
       const mark = marks.get(id);
@@ -769,6 +765,7 @@ export function createChartMotion(
       reduced = value;
       if (value) this.finish();
     },
+    reduced: () => reduced,
     snaps: () => reduced || held,
     wait() {
       held = true;

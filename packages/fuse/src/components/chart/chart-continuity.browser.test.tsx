@@ -10,28 +10,18 @@ import { Suspense, use } from "react";
 
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { cdp, userEvent } from "vitest/browser";
+import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { barBox, drawnRect } from "../../../test/chart/bar-box";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import { easedAt } from "../../../test/chart/panel-readers";
+import { emulatePixelRatio } from "../../../test/page-metrics";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import type { ChartConfig } from "./chart-types";
 import "./chart.css";
-
-type MetricsCdp = {
-  send: ((
-    method: "Emulation.setDeviceMetricsOverride",
-    params: { width: number; height: number; deviceScaleFactor: number; mobile: boolean }
-  ) => Promise<void>) &
-    ((method: "Emulation.clearDeviceMetricsOverride") => Promise<void>);
-};
-
-// SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
-const session = (): MetricsCdp => cdp() as MetricsCdp;
 
 async function frame(): Promise<void> {
   await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -318,12 +308,7 @@ describe("marks across a data update", () => {
     // draws one device pixel, 1/3 px, wide. 25 categories give the band 6 device pixels, and the
     // line a whole hairline, 1 px. Both draw one element per bar, so the update moves rather than
     // relaying the plot: its commit still draws 1/3 px, and the width grows with the motion.
-    await session().send("Emulation.setDeviceMetricsOverride", {
-      width: 1024,
-      height: 768,
-      deviceScaleFactor: 3,
-      mobile: false,
-    });
+    await emulatePixelRatio(3);
     await frame();
     const dense = Array.from({ length: 100 }, (_, index) => ({ name: `c${String(index)}`, v: 1 }));
     const view = (rows: readonly { name: string; v: number }[]) => (
@@ -354,7 +339,6 @@ describe("marks across a data update", () => {
       await expect.poll(width, { timeout: 5000 }).toBeCloseTo(1, 4);
     } finally {
       unmount();
-      await session().send("Emulation.clearDeviceMetricsOverride");
     }
   });
 

@@ -5,7 +5,6 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { nextFrames } from "../../../test/animation-frames";
 import {
   ringLayers,
   settleTransitions,
@@ -873,34 +872,38 @@ describe("Frame", () => {
     }
     const full = panel.getBoundingClientRect().height;
     const trigger = roleNamed("button", "Readings");
-    const clicked = new Promise<void>((resolve) => {
-      trigger.addEventListener("click", () => resolve(), { once: true });
+    // The content's closing height transition, paused in the page's own frame as it starts, so a
+    // busy runner that returns from `userEvent.click` after 150ms still finds it mid-glide.
+    const transition = new Promise<CSSTransition>((resolve) => {
+      const run = (event: TransitionEvent) => {
+        if (event.target !== content || event.propertyName !== "height") return;
+        const running = content
+          .getAnimations()
+          .find(
+            (animation): animation is CSSTransition =>
+              animation instanceof CSSTransition && animation.transitionProperty === "height"
+          );
+        if (running === undefined) return;
+        running.pause();
+        content.removeEventListener("transitionrun", run);
+        resolve(running);
+      };
+      content.addEventListener("transitionrun", run);
     });
-    // Sample frames from the click itself until the content is mid-glide: shorter than its panel by
-    // more than the clip's 4px bleed and a probe's margin, and still open. The glide lasts 150ms, and
-    // a busy runner can return from `userEvent.click` after it ends.
-    const glide = (async () => {
-      await clicked;
-      for (let frame = 0; frame < 30; frame += 1) {
-        await nextFrames(1);
-        const clip = content.getBoundingClientRect();
-        if (clip.height > 8 && clip.height < full - 16) {
-          const x = clip.left + clip.width / 2;
-          // Inside the animating box the panel still takes the pointer; well below it, past the
-          // clip's bleed, the clipped panel does not.
-          return {
-            inside: document.elementFromPoint(x, clip.bottom - 4),
-            below: document.elementFromPoint(x, clip.bottom + 10),
-          };
-        }
-      }
-      return null;
-    })();
     await userEvent.click(trigger);
-    const midGlide = await glide;
-    expect(midGlide !== null, "the content never reached the middle of its height transition").toBe(true);
-    const inside = midGlide?.inside ?? null;
-    const below = midGlide?.below ?? null;
+    const closing = await transition;
+    // Halfway through, the content is shorter than its panel by more than the clip's 4px bleed and
+    // a probe's margin, and still open.
+    closing.currentTime = Number(closing.effect?.getComputedTiming().duration ?? 0) / 2;
+    const clip = content.getBoundingClientRect();
+    expect(clip.height).toBeGreaterThan(8);
+    expect(clip.height).toBeLessThan(full - 16);
+    const x = clip.left + clip.width / 2;
+    // Inside the animating box the panel still takes the pointer; well below it, past the clip's
+    // bleed, the clipped panel does not.
+    const inside = document.elementFromPoint(x, clip.bottom - 4);
+    const below = document.elementFromPoint(x, clip.bottom + 10);
+    closing.finish();
     expect(inside !== null && panel.contains(inside)).toBe(true);
     expect(below !== null && panel.contains(below)).toBe(false);
   });

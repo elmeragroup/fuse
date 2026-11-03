@@ -6,6 +6,7 @@ import type { ReactElement, ReactNode } from "react";
 import { ChartDatumContext } from "./chart-active-value";
 import {
   attachJoin,
+  barTip,
   followedKind,
   noteShownText,
   pointAxes,
@@ -13,7 +14,7 @@ import {
   restingPoint,
   useAttachedMark,
 } from "./chart-attached";
-import type { AttachedCopy } from "./chart-attached";
+import type { AttachedCopy, FollowedKind } from "./chart-attached";
 import { barAnchor } from "./chart-bar-draw";
 import { useChartRoot, useSeriesPart } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
@@ -355,7 +356,7 @@ function barTipAt(
   slot: number
 ): readonly [number, number] | null {
   const rest = context.motion.restAt(barAnchor(series.seriesIndex, slot));
-  return rest === null ? null : [((rest[0] ?? 0) + (rest[1] ?? 0)) / 2, rest[3] ?? 0];
+  return rest === null ? null : barTip(rest);
 }
 
 /** The path form's columns' resting place and value at a slot, or null where they rest on none. */
@@ -417,21 +418,21 @@ function trackFor(
     kept.current = made;
     return made.track;
   }
-  return keptBarTrack(context, series, frame, kept);
+  return keptBarTrack(context, series, frame, kind, kept);
 }
 
 /**
  * The straight track through a Bar series' far ends that an active dot rides, built again whenever
  * the series, the frame or a bar's resting place changes, or null for a series a Line or an Area
- * draws, or no Bar.
+ * draws, or no Bar. `kind` is what the dot follows, as `followedKind` names it.
  */
 function keptBarTrack(
   context: ChartRootContextValue,
   series: SeriesModel,
   frame: PlotFrame,
+  kind: FollowedKind | undefined,
   kept: { current: KeptTrack | null }
 ): Track | null {
-  const kind = followedKind(context, series, "line");
   if (kind !== "columns" && kind !== "bars") return null;
   const known = kept.current;
   const revision = context.motion.restRevision();
@@ -455,10 +456,10 @@ function keptBarTrack(
 }
 
 /**
- * How an active dot rides its track from where it shows to where it rests: the step along the slot
- * axis, and the course across at each offset along it, which `rideCourse` reads off the track. It
- * is null, and the dot moves at once, where no run of the track spans the whole step: over a gap or
- * past a lone reading.
+ * How an active dot rides its track from where it shows, a running glide's offset included, to
+ * where it rests: the offset along the slot axis it starts from, and its keyframes over the course
+ * `rideCourse` reads off the track. It is null, and the dot moves at once, where no run of the
+ * track spans the whole step: over a gap or past a lone reading.
  */
 function rideOf(
   layer: Element,
@@ -466,7 +467,7 @@ function rideOf(
   from: Centre,
   to: Centre,
   orientation: "vertical" | "horizontal"
-): { readonly by: number; readonly ride: Ride } | null {
+): Ride | null {
   const vertical = orientation === "vertical";
   const along = (centre: Centre) => (vertical ? centre.cx : centre.cy);
   const across = (centre: Centre) => (vertical ? centre.cy : centre.cx);
@@ -480,9 +481,11 @@ function rideOf(
   const run = runBetween(track, start, rest);
   if (run === null) return null;
   const course = rideCourse(run, start, rest);
+  const offset = start.along - rest.along;
   return {
-    by: along(from) - along(to),
-    ride: { axis: vertical ? "x" : "y", keyframes: (offset, peak) => rideKeyframes(offset, course, peak) },
+    along: offset,
+    axis: vertical ? "x" : "y",
+    keyframes: (peak) => rideKeyframes(offset, course, peak),
   };
 }
 
@@ -562,21 +565,24 @@ export function ChartActiveDot({
     const ride =
       riding === null || from === null || to === null ? null : rideOf(svg, riding, from, to, orientation);
     if (ride === null) snapGlide(svg);
-    else rideFrom(svg, ride.by, stepSpring(store), ride.ride);
+    else rideFrom(svg, stepSpring(store), ride);
   });
   // The bar track the dot rides, as of the latest render, which the tooltip's roof holds.
   const barRide = useRef<() => Track | null>(() => null);
   useLayoutEffect(() => {
     barRide.current = () =>
-      series === undefined || frame === null ? null : keptBarTrack(context, series, frame, track);
+      series === undefined || frame === null
+        ? null
+        : keptBarTrack(context, series, frame, followedKind(context, series, "line"), track);
   });
   const { riders } = context;
-  // The dot registers again when it rides another series, so the roof reads the new track.
+  // The dot registers again when it rides another series, so the roof reads the new track, and when
+  // its look changes, so the roof reads how far it reaches.
   useLayoutEffect(() => {
     const svg = markNode();
     if (svg === null) return undefined;
     return riders.register(svg, () => barRide.current());
-  }, [markNode, dataKey, riders]);
+  }, [markNode, dataKey, variant, riders]);
   useLayoutEffect(() => {
     const svg = markNode();
     return () => {

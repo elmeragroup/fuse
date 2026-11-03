@@ -5,11 +5,12 @@
  */
 
 import { expect } from "vitest";
-import { cdp, userEvent } from "vitest/browser";
+import { userEvent } from "vitest/browser";
 
 import { Chart } from "../../src/components/chart/chart-namespace";
 import type { ChartConfig } from "../../src/components/chart/chart-types";
 import { LocaleProvider } from "../../src/intl/locale-context";
+import { emulatePixelRatio } from "../page-metrics";
 import { renderThemed } from "../themed-browser-render";
 import {
   DECIMATE_ABOVE,
@@ -27,36 +28,15 @@ import type { Area, Datum, Expected, Line, Reading, Span, World } from "./world-
 import { shoot } from "./world-reader";
 import type { Mark, Shot } from "./world-reader";
 
-type MetricsCdp = {
-  send: ((
-    method: "Emulation.setDeviceMetricsOverride",
-    params: { width: number; height: number; deviceScaleFactor: number; mobile: boolean }
-  ) => Promise<void>) &
-    ((method: "Emulation.clearDeviceMetricsOverride") => Promise<void>);
-};
-
-// SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
-const session = (): MetricsCdp => cdp() as MetricsCdp;
-
 /** Wait for one frame. */
 export async function frame(): Promise<void> {
   await new Promise((resolve) => requestAnimationFrame(resolve));
 }
 
-/** Emulate a device pixel ratio, which the test's afterEach clears. */
+/** Emulate a device pixel ratio for the rest of the test, then wait a frame. */
 export async function setRatio(dpr: number): Promise<void> {
-  await session().send("Emulation.setDeviceMetricsOverride", {
-    width: 1024,
-    height: 768,
-    deviceScaleFactor: dpr,
-    mobile: false,
-  });
+  await emulatePixelRatio(dpr);
   await frame();
-}
-
-/** Clear the emulated device metrics. */
-export async function clearRatio(): Promise<void> {
-  await session().send("Emulation.clearDeviceMetricsOverride");
 }
 
 /** A role list paints a gradient from each bar's tip, and missing readings take the quality column. */

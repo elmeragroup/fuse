@@ -122,6 +122,11 @@ export type ChartRoof = {
  */
 export function createChartRoof(): ChartRoof {
   let kept: RoofProfile | null = null;
+  // How far the active dots reach past the popup's gap, read with the kept profile, since a dot's
+  // look changes only with a commit or a registration, and read again when the reader's motion
+  // preference changes, which starts or stops a ping ring's animation.
+  let excess = 0;
+  let excessReduced: boolean | null = null;
   // The rider revision the kept profile holds the tracks of.
   let keptRiders = -1;
   let watching: MutationObserver | null = null;
@@ -129,11 +134,16 @@ export function createChartRoof(): ChartRoof {
     read: (view) => {
       if (kept === null || keptRiders !== view.riders.revision()) {
         kept = seriesRoof(view);
+        excessReduced = null;
         keptRiders = view.riders.revision();
         watching?.takeRecords();
       }
+      if (excessReduced !== view.motion.reduced()) {
+        excess = riderExcess(view.root);
+        excessReduced = view.motion.reduced();
+      }
       const roof = higherRoof(kept, roofProfile(drawnMarks(view, ACTIVE_DOTS), ...view.stretch));
-      return raisedRoof(roof, riderExcess(view.root));
+      return raisedRoof(roof, excess);
     },
     forget: () => {
       kept = null;
@@ -489,7 +499,9 @@ function markOf(drawing: SVGGraphicsElement, view: RoofView): RoofMark | null {
  * How far an active dot reaches from the centre it rides the line on, beyond the gap a popup keeps
  * above the roof, in CSS pixels: its radius at the widest a ring animation scales it, as a ping
  * ring's does, plus half its stroke. A default, ring or halo dot reaches 5 to 8 px and fits inside
- * the 8 px gap, so only a ping ring, at 10 px, raises the roof.
+ * the 8 px gap, so only a ping ring, at 10 px, raises the roof. The roof reads it once for each
+ * profile it keeps, and again when the reader's motion preference changes, since reduced motion
+ * stops the ring's animation and with it the scale this read finds.
  */
 function riderExcess(root: Element): number {
   let reach = 0;

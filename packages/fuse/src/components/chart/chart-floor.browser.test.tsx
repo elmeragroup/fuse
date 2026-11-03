@@ -14,34 +14,20 @@
 // mark of a slot must draw at least one device pixel inside the pixels its slot covers, and every
 // rule and band of the value axis inside the plot.
 import fc from "fast-check";
-import { afterEach, describe, expect, it } from "vitest";
-import { cdp, userEvent } from "vitest/browser";
+import { describe, expect, it } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { drawnRect } from "../../../test/chart/bar-box";
 import { FLOOR_MARKS } from "../../../test/chart/floor-marks";
 import type { FloorMark } from "../../../test/chart/floor-marks";
 import { pathRects } from "../../../test/chart/world-reader";
+import { emulatePixelRatio } from "../../../test/page-metrics";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import type { ChartBarVariant, ChartConfig, ChartSeriesConfig } from "./chart-types";
 import "./chart.css";
-
-type MetricsCdp = {
-  send: ((
-    method: "Emulation.setDeviceMetricsOverride",
-    params: { width: number; height: number; deviceScaleFactor: number; mobile: boolean }
-  ) => Promise<void>) &
-    ((method: "Emulation.clearDeviceMetricsOverride") => Promise<void>);
-};
-
-// SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
-const session = (): MetricsCdp => cdp() as MetricsCdp;
-
-afterEach(async () => {
-  await session().send("Emulation.clearDeviceMetricsOverride");
-});
 
 async function frame(): Promise<void> {
   await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -659,12 +645,7 @@ describe("every drawn mark under the pixel floor", () => {
     };
     await fc.assert(
       fc.asyncProperty(dense, fc.constantFrom(1, 1.25, 1.5, 2, 3), async (chart, dpr) => {
-        await session().send("Emulation.setDeviceMetricsOverride", {
-          width: 1024,
-          height: 768,
-          deviceScaleFactor: dpr,
-          mobile: false,
-        });
+        await emulatePixelRatio(dpr);
         await frame();
         const { host: root, unmount } = render(chart);
         try {

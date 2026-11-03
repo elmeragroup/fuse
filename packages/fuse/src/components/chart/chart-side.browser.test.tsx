@@ -7,34 +7,20 @@
 // zero, the oracle is the side the drawn tip lies on, wherever it lies a device pixel or more from
 // the baseline.
 import fc from "fast-check";
-import { afterEach, describe, expect, it } from "vitest";
-import { cdp, userEvent } from "vitest/browser";
+import { describe, expect, it } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { drawnRect } from "../../../test/chart/bar-box";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import { bars } from "../../../test/chart/marks";
 import { pathRects } from "../../../test/chart/world-reader";
+import { emulatePixelRatio } from "../../../test/page-metrics";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import type { ChartConfig } from "./chart-types";
 import "./chart.css";
-
-type MetricsCdp = {
-  send: ((
-    method: "Emulation.setDeviceMetricsOverride",
-    params: { width: number; height: number; deviceScaleFactor: number; mobile: boolean }
-  ) => Promise<void>) &
-    ((method: "Emulation.clearDeviceMetricsOverride") => Promise<void>);
-};
-
-// SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
-const session = (): MetricsCdp => cdp() as MetricsCdp;
-
-afterEach(async () => {
-  await session().send("Emulation.clearDeviceMetricsOverride");
-});
 
 async function frame(): Promise<void> {
   await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -137,12 +123,7 @@ function drawnSide(body: Element, baseline: number, look: Look): boolean | null 
 
 /** Mount, check at rest, update, check every tween frame, then check at rest again. */
 async function sides(look: Look, before: readonly number[], after: readonly number[]): Promise<void> {
-  await session().send("Emulation.setDeviceMetricsOverride", {
-    width: 1024,
-    height: 768,
-    deviceScaleFactor: look.dpr,
-    mobile: false,
-  });
+  await emulatePixelRatio(look.dpr);
   await frame();
   // The tweens run on a hand-driven clock, so every frame lands at a known instant at any refresh rate.
   const clock = installFrameClock();

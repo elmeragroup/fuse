@@ -15,6 +15,7 @@ import {
   DAYS,
   WIDE,
   barChart,
+  dispatchSlotMove,
   dotFrame,
   hoverSlot,
   lineChart,
@@ -991,17 +992,7 @@ function FarScene({ barDot }: { readonly barDot: boolean }) {
 
 /** A pointer move onto one of the eight bands, by `nudge` px to its right, as the chart's own events. */
 function moveFar(host: HTMLElement, slot: number, nudge = 0): void {
-  const surface = host.querySelector<HTMLElement>('[role="listbox"]');
-  if (surface === null) throw new Error("no plot");
-  const box = surface.getBoundingClientRect();
-  surface.dispatchEvent(
-    new PointerEvent("pointermove", {
-      bubbles: true,
-      clientX: box.left + (box.width * (slot + 0.5)) / 8 + nudge,
-      clientY: box.bottom - 3,
-      pointerType: "mouse",
-    })
-  );
+  dispatchSlotMove(host, (slot + 0.5) / 8, nudge);
 }
 
 /**

@@ -20,8 +20,8 @@
 //     8 + 1 = 9 dp from one band's second bar to the next band's first.
 //   - 32 quarters on 390 px at 1x: w = 12, G = 3. An hourly series covers 4 bands, 48 dp, and
 //     loses G once: 45 dp bars, 3 dp apart.
-import { afterEach, describe, expect, it } from "vitest";
-import { cdp, userEvent } from "vitest/browser";
+import { describe, expect, it } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { drawnRect } from "../../../test/chart/bar-box";
@@ -29,33 +29,15 @@ import { installFrameClock } from "../../../test/chart/frame-clock";
 import { bars } from "../../../test/chart/marks";
 import { lineVertices } from "../../../test/chart/panel-readers";
 import { pathRects } from "../../../test/chart/world-reader";
+import { emulatePixelRatio } from "../../../test/page-metrics";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import "./chart.css";
 
-type MetricsCdp = {
-  send: ((
-    method: "Emulation.setDeviceMetricsOverride",
-    params: { width: number; height: number; deviceScaleFactor: number; mobile: boolean }
-  ) => Promise<void>) &
-    ((method: "Emulation.clearDeviceMetricsOverride") => Promise<void>);
-};
-
-// SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
-const session = (): MetricsCdp => cdp() as MetricsCdp;
-
-afterEach(async () => {
-  await session().send("Emulation.clearDeviceMetricsOverride");
-});
-
+/** Emulate a pixel ratio on a square page, for the rest of the test. */
 async function atRatio(dpr: number): Promise<void> {
-  await session().send("Emulation.setDeviceMetricsOverride", {
-    width: 1024,
-    height: 1024,
-    deviceScaleFactor: dpr,
-    mobile: false,
-  });
+  await emulatePixelRatio(dpr, { width: 1024, height: 1024 });
 }
 
 type Row = { readonly name: string; readonly a: number; readonly b: number };

@@ -102,6 +102,8 @@ export function ChartLine({
     resting,
     (rest) => linePaths(rest.rest, rest.topology, placeOf(rest.look)).line
   );
+  // The layer clips at the slot run's ends, so a sliding path never draws in the leftover.
+  const margins = runMargins(frame);
   return (
     <svg
       data-slot="chart-line-series"
@@ -114,9 +116,8 @@ export function ChartLine({
         "--chart-series-paint": paint.base,
         "--chart-series": seriesIndex,
         "--_paint-server": hasPathPaint(paint) ? `url(#${prefix}-paint)` : undefined,
-        // The layer clips at the slot run's ends, so a sliding path never draws in the leftover.
-        "--_run-before": `${String(runMargins(frame)[0])}px`,
-        "--_run-after": `${String(runMargins(frame)[1])}px`,
+        "--_run-before": margins.before,
+        "--_run-after": margins.after,
         ...style,
       }}>
       {frame === null || series === undefined || drawn === null ? null : (

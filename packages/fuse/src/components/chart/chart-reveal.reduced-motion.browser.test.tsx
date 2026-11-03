@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
 import { nextFrames } from "../../../test/animation-frames";
+import { dispatchSlotMove } from "../../../test/chart/tooltip-glide";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -28,23 +29,13 @@ describe("Chart.Reveal under reduced motion", () => {
       </LocaleProvider>
     );
     await nextFrames(2);
-    // DOM audit: the plot surface takes the pointer, and the series is aria-hidden plot output.
-    const surface = host.querySelector<HTMLElement>('[role="listbox"]');
+    // DOM audit: the series is aria-hidden plot output.
     const line = host.querySelector<SVGElement>('[data-slot="chart-line-series"]');
-    if (surface === null || line === null) throw new Error("no plot or line");
-    const box = surface.getBoundingClientRect();
-    const move = (x: number) =>
-      surface.dispatchEvent(
-        new PointerEvent("pointermove", {
-          bubbles: true,
-          clientX: box.left + x,
-          clientY: box.top + 20,
-          pointerType: "mouse",
-        })
-      );
-    move(50);
+    if (line === null) throw new Error("no line");
+    // The first and the fourth of four 100 px bands.
+    dispatchSlotMove(host, 0.125);
     await nextFrames(2);
-    move(350);
+    dispatchSlotMove(host, 0.875);
     await nextFrames(1);
     // The fourth of four 100 px bands centres at 350 px, the middle of the device pixel 350 to 351.
     expect(line.getAnimations()).toEqual([]);

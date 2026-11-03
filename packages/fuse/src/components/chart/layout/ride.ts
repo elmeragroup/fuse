@@ -7,20 +7,24 @@
  * crosses, then drop each vertex the straight move past it stays within `TOLERANCE` of.
  */
 /**
- * A stretch of a line that bends back along the slot axis, which its run leaves out and climbs
- * past on a riser: the places along the stretch reaches, from the farthest back to the riser's, and
- * the offsets across it spans, the riser's ends included.
+ * A stretch of a run whose offsets across share places along the slot axis: a stretch of the line
+ * that bends back along the slot axis, which its run leaves out and climbs past on a riser, or a
+ * stack, several of the run's vertices at one place along, as a decimated column or a riser draws
+ * them, which is a bend of no width. It holds the places along the stretch reaches, from the
+ * farthest back to the farthest on, the offsets across it spans, and `back`, the farthest back this
+ * bend or any later one in its run reaches, which ends a search for the bends around a place.
  */
 export type Bend = {
   readonly from: number;
   readonly to: number;
   readonly low: number;
   readonly high: number;
+  readonly back: number;
 };
 
 /**
  * One run of a line: the points along it, `along` never falling, the offset across at each, and
- * the bends it leaves out.
+ * its bends and stacks, in the order of their `to`.
  */
 export type Run = {
   readonly along: Float64Array;
@@ -39,6 +43,9 @@ export type RideKeyframe = { readonly offset: number; readonly along: number; re
  * mark within a pixel of the line and of the crosshair.
  */
 const TOLERANCE = 0.5;
+
+/** How far apart along the slot axis two vertices may lie and still stand in one stack, in pixels. */
+const STACKED = 1e-3;
 
 /** How far apart the points of a flattened curve lie along it, at most, in CSS pixels. */
 const CURVE_STEP = 2;
@@ -164,26 +171,19 @@ function runOf(
   const ordered = last[0] > first[0] ? pairs : pairs.toReversed();
   const along: number[] = [];
   const across: number[] = [];
-  const bends: Bend[] = [];
-  let bend: { from: number; low: number; high: number } | null = null;
+  const bends: Omit<Bend, "back">[] = [];
+  let bend: OpenBend | null = null;
   let reach = Number.NEGATIVE_INFINITY;
   let before: readonly [number, number] | null = null;
   for (const pair of ordered) {
     if (pair[0] >= reach) {
       // Back where the curve turned: climb to where it crosses that place again.
-      if (before !== null && before[0] < reach) {
+      if (before !== null && before[0] < reach && bend !== null) {
         const share = (reach - before[0]) / (pair[0] - before[0]);
         const crossing = before[1] + (pair[1] - before[1]) * share;
         along.push(reach);
         across.push(crossing);
-        if (bend !== null) {
-          bends.push({
-            from: bend.from,
-            to: reach,
-            low: Math.min(bend.low, crossing),
-            high: Math.max(bend.high, crossing),
-          });
-        }
+        bends.push(closeBend(widen(bend, crossing), reach));
         bend = null;
       }
       along.push(pair[0]);
@@ -194,14 +194,69 @@ function runOf(
       const turned = across.at(-1) ?? pair[1];
       bend ??= { from: pair[0], low: turned, high: turned };
       bend.from = Math.min(bend.from, pair[0]);
-      bend.low = Math.min(bend.low, pair[1]);
-      bend.high = Math.max(bend.high, pair[1]);
+      widen(bend, pair[1]);
     }
     before = pair;
   }
   // A curve that ends bent back, as at a last column, ends inside its bend.
-  if (bend !== null) bends.push({ from: bend.from, to: reach, low: bend.low, high: bend.high });
-  return { along: Float64Array.from(along), across: Float64Array.from(across), bends };
+  if (bend !== null) bends.push(closeBend(bend, reach));
+  const sorted = [...bends, ...stacksOf(along, across)].toSorted((a, b) => a.to - b.to);
+  let back = Number.POSITIVE_INFINITY;
+  const reaching = sorted.toReversed().map((stretch) => {
+    back = Math.min(back, stretch.from);
+    return { ...stretch, back };
+  });
+  return { along: Float64Array.from(along), across: Float64Array.from(across), bends: reaching.toReversed() };
+}
+
+/** A bend the run is still leaving out: how far back it reaches and the offsets across it spans. */
+type OpenBend = { from: number; low: number; high: number };
+
+/** Widen an open bend across to take in an offset across. */
+function widen(bend: OpenBend, across: number): OpenBend {
+  bend.low = Math.min(bend.low, across);
+  bend.high = Math.max(bend.high, across);
+  return bend;
+}
+
+/** Close an open bend where the run climbs past it, at `to`. */
+function closeBend(bend: OpenBend, to: number): Omit<Bend, "back"> {
+  return { from: bend.from, to, low: bend.low, high: bend.high };
+}
+
+/** A run's stacks, each two or more of its vertices within `STACKED` of the first along it. */
+function stacksOf(along: readonly number[], across: readonly number[]): Omit<Bend, "back">[] {
+  const stacks: Omit<Bend, "back">[] = [];
+  let start = 0;
+  while (start < along.length) {
+    const from = along[start] ?? 0;
+    let low = across[start] ?? 0;
+    let high = low;
+    let end = start + 1;
+    while (end < along.length && (along[end] ?? 0) - from <= STACKED) {
+      low = Math.min(low, across[end] ?? low);
+      high = Math.max(high, across[end] ?? high);
+      end += 1;
+    }
+    if (end - start > 1) stacks.push({ from, to: along[end - 1] ?? from, low, high });
+    start = end;
+  }
+  return stacks;
+}
+
+/**
+ * The first index whose value is at or past a place, among `length` values that never fall, or
+ * `length` when none is.
+ */
+function firstAtOrPast(length: number, valueAt: (index: number) => number, at: number): number {
+  let low = 0;
+  let high = length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if (valueAt(middle) < at) low = middle + 1;
+    else high = middle;
+  }
+  return low;
 }
 
 /**
@@ -224,7 +279,8 @@ function runAt(track: Track, place: RidePlace): Run | null {
   let nearest: Run | null = null;
   let least = Number.POSITIVE_INFINITY;
   for (const run of track) {
-    if ((run.along[0] ?? 0) > place.along + 0.5 || (run.along.at(-1) ?? 0) < place.along - 0.5) continue;
+    const [first, last] = [run.along[0] ?? 0, run.along[run.along.length - 1] ?? 0];
+    if (first > place.along + 0.5 || last < place.along - 0.5) continue;
     const away = Math.abs(offRun(run, place));
     if (away < least) {
       least = away;
@@ -247,14 +303,7 @@ export function acrossAt(run: Run, along: number): number {
   const last = places.length - 1;
   if (along <= (places[0] ?? 0)) return across[0] ?? 0;
   if (along >= (places[last] ?? 0)) return across[last] ?? 0;
-  let low = 0;
-  let high = last;
-  // The first point at or past the place.
-  while (low < high) {
-    const middle = (low + high) >> 1;
-    if ((places[middle] ?? 0) < along) low = middle + 1;
-    else high = middle;
-  }
+  const low = firstAtOrPast(places.length, (index) => places[index] ?? 0, along);
   const after = places[low] ?? 0;
   const before = places[low - 1] ?? after;
   const share = after === before ? 1 : (along - before) / (after - before);
@@ -265,20 +314,24 @@ export function acrossAt(run: Run, along: number): number {
 export type RidePlace = { readonly along: number; readonly across: number };
 
 /**
- * What a ride follows: its offset across at each offset along, the run's vertices as offsets, in
- * the run's order, a riser's two ends both listed, and the offset across where the course reaches
- * rest's place along, which is 0 unless rest sits on a stack or inside a bend the run leaves out.
+ * What a ride follows, in offsets from where the mark rests: its offset across at each offset
+ * along; the run's vertices within a span of offsets along, in the run's order, a riser's two ends
+ * both listed; the offsets along of the run's first and last points; and the offset across where
+ * the course reaches rest's place along, which is 0 unless rest sits on a stack or inside a bend
+ * the run leaves out.
  */
 export type RideCourse = {
   readonly at: (along: number) => number;
-  readonly vertices: readonly RidePlace[];
+  readonly within: (low: number, high: number) => RidePlace[];
+  readonly ends: readonly [number, number];
   readonly arrival: number;
 };
 
 /**
  * The course of a mark that rides a run from where it shows to where it rests. It follows the run,
  * and a mark that sits off the run at either end, as on a curve that passes beside its readings,
- * eases from its offset at the start to its offset at rest in step with the way along.
+ * eases from its offset at the start to its offset at rest in step with the way along. Each of its
+ * readings bisects the run, so a step costs the vertices of its own span, however long the run.
  *
  * @param run - The run the mark rides.
  * @param start - Where the mark shows, in plot pixels along and across the slot axis.
@@ -290,18 +343,23 @@ export function rideCourse(run: Run, start: RidePlace, rest: RidePlace): RideCou
   const offStart = offRun(run, start);
   const offRest = offRun(run, rest);
   const off = (along: number) => offRest + (reach === 0 ? 0 : ((offStart - offRest) * along) / reach);
+  const count = run.along.length;
   return {
     at: (along) => (along === 0 ? 0 : acrossAt(run, rest.along + along) + off(along) - rest.across),
-    vertices: Array.from(run.along, (place, index) => {
-      const along = place - rest.along;
-      return { along, across: (run.across[index] ?? 0) + off(along) - rest.across };
-    }),
+    within: (low, high) => {
+      const places: RidePlace[] = [];
+      const first = firstAtOrPast(count, (index) => run.along[index] ?? 0, rest.along + low);
+      for (let index = first; index < count; index += 1) {
+        const along = (run.along[index] ?? 0) - rest.along;
+        if (along > high) break;
+        places.push({ along, across: (run.across[index] ?? 0) + off(along) - rest.across });
+      }
+      return places;
+    },
+    ends: [(run.along[0] ?? 0) - rest.along, (run.along[count - 1] ?? 0) - rest.along],
     arrival: acrossAt(run, rest.along) + offRest - rest.across,
   };
 }
-
-/** How far apart along the slot axis two vertices may lie and still stand in one stack, in pixels. */
-const STACKED = 1e-3;
 
 /**
  * How far a place lies across from a run where it sits along it: 0 anywhere on a stack, the
@@ -312,14 +370,13 @@ const STACKED = 1e-3;
 function offRun(run: Run, place: RidePlace): number {
   let low = acrossAt(run, place.along);
   let high = low;
-  run.along.forEach((along, index) => {
-    if (Math.abs(along - place.along) > STACKED) return;
-    const across = run.across[index] ?? low;
-    low = Math.min(low, across);
-    high = Math.max(high, across);
-  });
-  for (const bend of run.bends) {
-    if (place.along < bend.from - STACKED || place.along > bend.to + STACKED) continue;
+  const { bends } = run;
+  const first = firstAtOrPast(bends.length, (index) => bends[index]?.to ?? 0, place.along - STACKED);
+  for (let index = first; index < bends.length; index += 1) {
+    const bend = bends[index];
+    // No bend from here on reaches back to the place.
+    if (bend === undefined || bend.back > place.along + STACKED) break;
+    if (bend.from > place.along + STACKED) continue;
     low = Math.min(low, bend.low);
     high = Math.max(high, bend.high);
   }
@@ -337,9 +394,9 @@ function offRun(run: Run, place: RidePlace): number {
  * it keeps within `TOLERANCE`. A riser stays two keyframes at one offset, so the mark climbs it at
  * once. Where the start or rest sits on a stack, several vertices at one place along the slot axis
  * as a decimated column draws them, the mark climbs the stack straight to rest, or leaves it from
- * its last vertex, and holds its height through an overshoot past a stack at rest. Rest inside a
- * bend the run leaves out counts as a stack there: the mark reaches it where the run passes and
- * climbs straight to it.
+ * its last vertex, and holds at rest through an overshoot past a stack at rest. Rest inside a bend
+ * the run leaves out counts as a stack there: the mark reaches it where the run passes, climbs
+ * straight to it and holds there.
  *
  * @param from - The offset along the slot axis the glide starts at.
  * @param course - The course it rides.
@@ -351,8 +408,11 @@ export function rideKeyframes(from: number, course: RideCourse, peak = 1): RideK
   const forward = from < end;
   const [low, high] = forward ? [from, end] : [end, from];
   const stacked = (along: number, at: number) => Math.abs(along - at) <= STACKED;
-  // A glide from below rest crosses the vertices in the run's order, and one from above in reverse.
-  const ordered = forward ? course.vertices : course.vertices.toReversed();
+  // Only the vertices of the glide's own span, from its start through rest to the overshoot's far
+  // end, and the stacks at its ends. A glide from below rest crosses them in the run's order, and
+  // one from above in reverse.
+  const span = course.within(Math.min(low, 0) - 2 * STACKED, Math.max(high, 0) + 2 * STACKED);
+  const ordered = forward ? span : span.toReversed();
   const crossed = ordered.filter(
     ({ along }) => along > low && along < high && !stacked(along, from) && !stacked(along, 0)
   );
@@ -378,16 +438,20 @@ export function rideKeyframes(from: number, course: RideCourse, peak = 1): RideK
     places.push({ along: 0, across: 0 });
   };
   for (const place of crossed) {
-    if (rest === -1 && (forward ? place.along > 0 : place.along < 0)) reachRest();
+    const past = forward ? place.along > 0 : place.along < 0;
+    // An arrival on a stack or a bend holds at rest through the overshoot, so it crosses nothing
+    // past rest. The crossed vertices come in the glide's order, so none after this one is short.
+    if (past && arrives !== undefined) break;
+    if (rest === -1 && past) reachRest();
     places.push(place);
   }
   if (rest === -1) reachRest();
-  // Past a stack at rest the mark holds its height, as the run turns back down the stack there. At
-  // the track's last point it holds there outright, as nothing lies past it to ride.
-  const last = !course.vertices.some(({ along }) => (forward ? along > STACKED : along < -STACKED));
+  // Past a stack or a bend at rest the mark holds at rest, as the line turns away from rest's height
+  // there, and at the track's last point, as nothing lies past it to ride.
+  const last = forward ? course.ends[1] <= STACKED : course.ends[0] >= -STACKED;
   if (end !== 0) {
     places.push(
-      last ? { along: 0, across: 0 } : { along: end, across: arrives === undefined ? course.at(end) : 0 }
+      last || arrives !== undefined ? { along: 0, across: 0 } : { along: end, across: course.at(end) }
     );
   }
   const offset = (along: number) => (from === 0 ? 1 : (1 - along / from) / peak);

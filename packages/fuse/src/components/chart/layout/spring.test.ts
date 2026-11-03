@@ -1,30 +1,16 @@
 // Unit under test: springEasing, a spring sampled as a CSS linear() easing. Oracle: the closed-form
 // response of a damped oscillator of mass 1 released from rest at 0 towards 1, x'' = k(1 - x) - c x',
-// written out below for each damping regime. The test evaluates the linear() stops as CSS Easing 2
-// defines them, a piecewise-linear curve through each stop, and needs the curve within 0.5% of the
+// in test/chart/oscillator.ts. The test evaluates the linear() stops as CSS Easing 2 defines them,
+// a piecewise-linear curve through each stop, and needs the curve within 0.5% of the
 // travel of the oscillator at every sampled moment, and the duration to end once the oscillator stays
 // within 0.1% of its target. followSpring is checked against the same oscillator and the owner's
 // decision for pointer-paced steps: bklit's 300/30 for keyboard and slow steps, a stiffest spring
 // that settles in about 120 ms, and one damping ratio throughout.
 import { describe, expect, it } from "vitest";
 
+import { oscillator, settling } from "../../../../test/chart/oscillator";
 import { CHART_SPRINGS } from "./motion";
-import { followSpring, springEasing } from "./spring";
-
-/** The oscillator's position at `t` seconds. */
-function oscillator(stiffness: number, damping: number, t: number): number {
-  const natural = Math.sqrt(stiffness);
-  const ratio = damping / (2 * natural);
-  if (ratio < 1) {
-    const damped = natural * Math.sqrt(1 - ratio * ratio);
-    const decay = Math.exp(-ratio * natural * t);
-    return 1 - decay * (Math.cos(damped * t) + ((ratio * natural) / damped) * Math.sin(damped * t));
-  }
-  if (ratio === 1) return 1 - Math.exp(-natural * t) * (1 + natural * t);
-  const root = natural * Math.sqrt(ratio * ratio - 1);
-  const [fast, slow] = [-ratio * natural - root, -ratio * natural + root];
-  return 1 - (fast * Math.exp(slow * t) - slow * Math.exp(fast * t)) / (fast - slow);
-}
+import { easingCurve, followSpring, springEasing } from "./spring";
 
 /** A CSS linear() easing's output at input progress `p`, per CSS Easing 2. */
 function evaluateLinear(easing: string, p: number): number {
@@ -99,6 +85,16 @@ describe("springEasing", () => {
     }
   );
 
+  // Unit under test: easingCurve, which plays the stops springEasing keeps as numbers. Oracle: the
+  // easing string the browser plays, evaluated as CSS Easing 2 defines it.
+  it.each(CASES)("plays %s's stops exactly as the browser plays its easing", (_name, spring) => {
+    const { easing, stops } = springEasing(spring);
+    const played = easingCurve(stops);
+    for (let step = 0; step <= 1000; step += 1) {
+      expect(played(step / 1000), String(step / 1000)).toBeCloseTo(evaluateLinear(easing, step / 1000), 12);
+    }
+  });
+
   it("overshoots its target where the oscillator does and never where it does not", () => {
     const peak = (easing: string) =>
       Math.max(...Array.from({ length: 1001 }, (_, step) => evaluateLinear(easing, step / 1000)));
@@ -108,15 +104,6 @@ describe("springEasing", () => {
     expect(peak(springEasing(CHART_SPRINGS.glide).easing)).toBeLessThanOrEqual(1);
   });
 });
-
-/** The milliseconds until the oscillator stays within 0.1% of its target. */
-function settling(stiffness: number, damping: number): number {
-  let last = 0;
-  for (let ms = 1; ms <= 5000; ms += 1) {
-    if (Math.abs(1 - oscillator(stiffness, damping, ms / 1000)) >= 0.001) last = ms;
-  }
-  return last + 1;
-}
 
 describe("followSpring", () => {
   // Pointer speeds in CSS pixels per millisecond: a slow scrub, a steady sweep and a flick.

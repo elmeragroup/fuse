@@ -24,21 +24,17 @@
 // snap leaves every mark within a device pixel of its last frame, a resize's mapped into the new
 // box.
 import fc from "fast-check";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import type { Area, Datum, Line, Reading, World } from "../../../test/chart/world-model";
-import { clearRatio, frame, run, setRatio, view } from "../../../test/chart/world-runner";
+import { frame, run, setRatio, view } from "../../../test/chart/world-runner";
 import type { Step } from "../../../test/chart/world-runner";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import "./chart.css";
-
-afterEach(async () => {
-  await clearRatio();
-});
 
 // The worlds.
 

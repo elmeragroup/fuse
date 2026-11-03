@@ -128,6 +128,44 @@ export async function hoverSlot(
   await pointerAt(x, y);
 }
 
+/**
+ * Dispatch a pointer move onto the plot surface at once, as the chart's own events, without
+ * waiting on the browser's input: at a share of the plot's length along the slot axis, `nudge` px
+ * past it, and, as `hoverSlot` places it, 3 px inside the plot's far edge across, or at a share of
+ * the plot's breadth from its start.
+ *
+ * @param host - The rendered chart's host.
+ * @param share - Where along the slot axis, as a share of the plot from its start.
+ * @param nudge - Pixels past that place along the slot axis.
+ * @param across - The slot axis, `x` unless the chart lies on its side, and the place across it.
+ */
+export function dispatchSlotMove(
+  host: HTMLElement,
+  share: number,
+  nudge = 0,
+  across: { readonly axis?: "x" | "y"; readonly depth?: number } = {}
+): void {
+  // DOM audit: the plot's listbox is its one pointer target.
+  const surface = host.querySelector('[role="listbox"]');
+  if (surface === null) throw new Error("no plot");
+  const box = surface.getBoundingClientRect();
+  const { axis = "x", depth } = across;
+  const [along, breadth] =
+    axis === "x"
+      ? [[box.left, box.width] as const, [box.top, box.height] as const]
+      : [[box.top, box.height] as const, [box.left, box.width] as const];
+  const at = along[0] + along[1] * share + nudge;
+  const off = depth === undefined ? breadth[0] + breadth[1] - 3 : breadth[0] + breadth[1] * depth;
+  surface.dispatchEvent(
+    new PointerEvent("pointermove", {
+      bubbles: true,
+      clientX: axis === "x" ? at : off,
+      clientY: axis === "x" ? off : at,
+      pointerType: "mouse",
+    })
+  );
+}
+
 /** A box in client pixels. */
 type Box = { readonly left: number; readonly top: number; readonly right: number; readonly bottom: number };
 
@@ -176,18 +214,21 @@ export function dotFrame(host: HTMLElement): DotFrame[] {
   });
 }
 
+/** What a watch has read so far, one reading per frame, and a stop. */
+export type FrameWatch<T> = { readonly frames: T[]; readonly stop: () => void };
+
 /**
- * Read every shown active dot in every animation frame until stopped.
+ * Read something in every animation frame, from the next one on, until stopped.
  *
- * @param host - The rendered chart's host.
- * @returns The frames read so far, and a stop.
+ * @param read - The reader, called once per frame.
+ * @returns The readings so far, one per frame, and a stop.
  */
-export function watchDots(host: HTMLElement) {
-  const frames: DotFrame[][] = [];
+export function everyFrame<T>(read: () => T): FrameWatch<T> {
+  const frames: T[] = [];
   let running = true;
   const frame = () => {
     if (!running) return;
-    frames.push(dotFrame(host));
+    frames.push(read());
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
@@ -197,6 +238,16 @@ export function watchDots(host: HTMLElement) {
       running = false;
     },
   };
+}
+
+/**
+ * Read every shown active dot in every animation frame until stopped.
+ *
+ * @param host - The rendered chart's host.
+ * @returns The frames read so far, and a stop.
+ */
+export function watchDots(host: HTMLElement) {
+  return everyFrame(() => dotFrame(host));
 }
 
 /**

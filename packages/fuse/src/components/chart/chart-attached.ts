@@ -131,6 +131,17 @@ export function followedKind(
 }
 
 /**
+ * A bar's drawn middle along the slot axis, then its tip, in its sub-band, at rest as in motion.
+ *
+ * @param values - The bar's numbers.
+ * @returns The middle and the tip, in plot pixels.
+ */
+export function barTip(values: MarkValues): [number, number] {
+  const geometry = geometryOf(values);
+  return [(geometry[0] + geometry[1]) / 2, geometry[3]];
+}
+
+/**
  * How marks at some of a series' slots join the motion of what they sit on, the drawing
  * `followedKind` names. Every selected slot joins its own bar, so tied extrema and a listed
  * selection each rest on their bar's middle.
@@ -156,11 +167,6 @@ export function attachJoin(
     key: context.update.keys[slot] ?? String(slot),
     position: ownCentre(series, window, slot),
   }));
-  // A bar's drawn middle along the slot axis, then its tip, in its sub-band at rest as in motion.
-  const tip = (values: MarkValues) => {
-    const geometry = geometryOf(values);
-    return [(geometry[0] + geometry[1]) / 2, geometry[3]];
-  };
   const kind = followedKind(context, series, prefer);
   if (kind === undefined) return undefined;
   if (kind === "bars") {
@@ -169,8 +175,8 @@ export function attachJoin(
       : {
           leads: owned.map((slot) => ({
             anchor: barAnchor(series.seriesIndex, slot),
-            pick: tip,
-            rest: tip,
+            pick: barTip,
+            rest: barTip,
             size: 2,
           })),
           crossfade: null,

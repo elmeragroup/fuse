@@ -15,6 +15,7 @@ import { describe, expect, it } from "vitest";
 import { cdp, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { wait } from "../../../test/animation-frames";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -183,12 +184,6 @@ async function readTrace(cdpSession: TraceCdp, stream: string): Promise<string> 
   } finally {
     await cdpSession.send("IO.close", { handle: stream });
   }
-}
-
-/** Wait through `ms` of frames, so every frame in between runs its rendering steps. */
-async function wait(ms: number): Promise<void> {
-  const start = performance.now();
-  while (performance.now() - start < ms) await new Promise((resolve) => requestAnimationFrame(resolve));
 }
 
 const CONFIG = {

@@ -4,38 +4,18 @@
 // pixels from the plot's origin, which the browser draws on a device pixel, and the active bar and
 // the popup centre on the column, at 1x and at a 4x pixel ratio, which is what 400 % zoom gives a
 // page, with the chart starting part of the way into a pixel.
-import { afterEach, describe, expect, it } from "vitest";
-import { cdp, userEvent } from "vitest/browser";
+import { describe, expect, it } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { bars as barsIn, glideLanded } from "../../../test/chart/marks";
 import { onGrid } from "../../../test/chart/panel-readers";
-import { sizePageToFrame } from "../../../test/page-metrics";
+import { emulatePixelRatio } from "../../../test/page-metrics";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Tabs } from "../tabs";
 import { Chart } from "./chart-namespace";
 import "./chart.css";
-
-/** The device metrics Chromium emulates, a 4x pixel ratio for 400 % zoom. */
-type DeviceMetrics = {
-  readonly width: number;
-  readonly height: number;
-  readonly deviceScaleFactor: number;
-  readonly mobile: boolean;
-};
-
-type MetricsCdp = {
-  send: (method: "Emulation.setDeviceMetricsOverride", params: DeviceMetrics) => Promise<void>;
-};
-
-// SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
-const session = (): MetricsCdp => cdp() as MetricsCdp;
-
-afterEach(async () => {
-  // Back to the frame's size, so the next file finds the page at the size Vitest set.
-  await sizePageToFrame();
-});
 
 const ROWS = ["a", "b", "c", "d", "e", "f", "g"].map((name, index) => ({ name, v: 2 + (index % 3) }));
 
@@ -90,12 +70,7 @@ describe("the active column", () => {
     [4, 517.5],
   ])("shares one pixel column at a %sx pixel ratio and %s px wide", async (ratio, width) => {
     if (ratio !== 1) {
-      await session().send("Emulation.setDeviceMetricsOverride", {
-        width: 1024,
-        height: 768,
-        deviceScaleFactor: ratio,
-        mobile: false,
-      });
+      await emulatePixelRatio(ratio);
       await frame();
     }
     expect(devicePixelRatio).toBe(ratio);

@@ -7,11 +7,11 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { flushSync } from "react-dom";
-import { userEvent } from "vitest/browser";
 
 import { Chart } from "../../src/components/chart/chart-namespace";
 import type { ChartStyle, XFormat } from "../../src/components/chart/chart-types";
 import { LocaleProvider } from "../../src/intl/locale-context";
+import { hoverSlot as pointAtSlot } from "./tooltip-glide";
 
 /** The chart's market. */
 export const ZONE = "Europe/Oslo";
@@ -242,12 +242,6 @@ export function settle(): void {
  * @param count - The slots in the plot.
  */
 export async function hoverSlot(host: HTMLElement, index: number, count: number): Promise<void> {
-  const surface = host.querySelector<HTMLElement>('[role="listbox"]');
-  if (surface === null) throw new Error("no plot");
-  const box = surface.getBoundingClientRect();
-  await userEvent.hover(surface, {
-    position: { x: (box.width * (index + 0.5)) / count, y: box.height / 2 },
-    force: true,
-  });
+  await pointAtSlot(host, index, count, "band", 0.5);
   settle();
 }

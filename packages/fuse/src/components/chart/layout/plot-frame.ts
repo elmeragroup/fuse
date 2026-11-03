@@ -307,19 +307,22 @@ export function slotRun(frame: PlotFrame): readonly [number, number] {
   return [slotAxisAt(frame, 0) / length, slotAxisAt(frame, 1) / length];
 }
 
+/** The plot's leftover before and after the slot run, as CSS lengths. */
+export type RunMargins = { readonly before: string; readonly after: string };
+
 /**
  * The plot's leftover pixels before and after the run the slot bands take, which the x axis's
  * margins and the Line and Area layers' clips read as `--_run-before` and `--_run-after`.
  *
  * @param frame - The layout's frame, or null before the plot is measured.
- * @returns The two lengths in CSS pixels, both 0 where the run spans the whole plot or before
+ * @returns The two lengths in CSS pixels, both 0px where the run spans the whole plot or before
  *   the plot is measured.
  */
-export function runMargins(frame: PlotFrame | null): readonly [number, number] {
-  if (frame === null) return [0, 0];
+export function runMargins(frame: PlotFrame | null): RunMargins {
+  if (frame === null) return { before: "0px", after: "0px" };
   const [from, to] = slotRun(frame);
   const length = alongLength(frame);
-  return [from * length, (1 - to) * length];
+  return { before: `${String(from * length)}px`, after: `${String((1 - to) * length)}px` };
 }
 
 /**

@@ -13,7 +13,7 @@
  * it. The stylesheet sets `--_glide` from it only while the reader has no preference for reduced
  * motion, so under reduced motion every place shows at once.
  */
-import { writeStyle } from "./chart-dom";
+import { clientScale, writeStyle } from "./chart-dom";
 import { springTiming } from "./chart-spring";
 import { CHART_SPRINGS } from "./layout/motion";
 import { TOOLTIP_EDGE, glidePath } from "./layout/tooltip-place";
@@ -199,7 +199,9 @@ function glideKeyframes(positioner: HTMLElement, from: Shift, to: Shift, armed: 
   const shownBox = positioner.getBoundingClientRect();
   const shown = animated(positioner) ? shownShift(positioner) : to;
   if (shown === null) return straight;
-  const scale = positionerScale(positioner);
+  // Base UI writes the positioner's place and applies its offsets in its own pixels, which a scaled
+  // ancestor of the portal scales.
+  const scale = clientScale(positioner).x;
   const end: PopupPlace = {
     left: shownBox.left + (to.x - shown.x) * scale,
     bottom: shownBox.bottom + (to.y - shown.y) * scale,
@@ -228,18 +230,6 @@ function glideKeyframes(positioner: HTMLElement, from: Shift, to: Shift, armed: 
       offset: travelled / total,
     };
   });
-}
-
-/**
- * How many client pixels one of the positioner's own pixels spans. Base UI writes the positioner's
- * place and applies its offsets in its own pixels, which a scaled ancestor of the portal scales.
- *
- * @param positioner - The tooltip's positioner.
- * @returns The scale, 1 when nothing scales the positioner.
- */
-export function positionerScale(positioner: HTMLElement): number {
-  const width = positioner.offsetWidth;
-  return width === 0 ? 1 : positioner.getBoundingClientRect().width / width;
 }
 
 /** Whether an animation drives the positioner's transform now. */

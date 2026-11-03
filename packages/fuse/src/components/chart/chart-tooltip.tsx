@@ -18,7 +18,7 @@ import {
 } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import { ChartSelectionContext, useChartRoot } from "./chart-context";
-import { writeStyle } from "./chart-dom";
+import { clientScale, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import { usePendingOr } from "./chart-pending-root";
 import { useRootFrame } from "./chart-plot";
@@ -36,7 +36,7 @@ import {
 import { ChartSeriesLabel, ChartSwatch } from "./chart-series";
 import { pointerSlot } from "./chart-surface";
 import { slotLabel } from "./chart-text";
-import { createTooltipGlider, positionerScale } from "./chart-tooltip-glide";
+import { createTooltipGlider } from "./chart-tooltip-glide";
 import type { GlideRoute, TooltipGlider } from "./chart-tooltip-glide";
 import { createChartRoof } from "./chart-tooltip-roof";
 import { ChartTooltipTotal } from "./chart-tooltip-total";
@@ -339,7 +339,7 @@ function ChartTooltipBody({
       // popup. Over the plot the surface already holds the slot, and keeps its clicks.
       const node = positioner.current;
       if (node !== null) {
-        const bridge = (Math.max(0, -rest.bottom) * scaleY) / positionerScale(node);
+        const bridge = (Math.max(0, -rest.bottom) * scaleY) / clientScale(node).x;
         writeStyle(node, "--_bridge", `${String(bridge)}px`);
       }
       // When no side of the column holds the popup, it overlays the plot at the viewport's top gap,
@@ -491,7 +491,7 @@ function ChartTooltipBody({
             const node = positioner.current;
             if (virtual === null || node === null || (side !== "top" && side !== "bottom")) return 0;
             const mirror = getComputedStyle(node).direction === "rtl" ? -1 : 1;
-            return (virtual.placed().shift / positionerScale(node)) * mirror;
+            return (virtual.placed().shift / clientScale(node).x) * mirror;
           }}
           ref={watchPositioner}
           data-slot="chart-tooltip-positioner"

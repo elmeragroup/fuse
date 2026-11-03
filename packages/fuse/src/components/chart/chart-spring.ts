@@ -12,7 +12,7 @@
 import type { ChartStore } from "./chart-store";
 import { rideAt } from "./layout/ride";
 import type { RideKeyframe } from "./layout/ride";
-import { followSpring, linearCurve, springEasing } from "./layout/spring";
+import { easingCurve, followSpring, linearEasing, springEasing } from "./layout/spring";
 import type { Spring } from "./layout/spring";
 
 /**
@@ -45,13 +45,15 @@ type Glide = {
 };
 
 /**
- * A glide that rides a course: the slot axis, and the keyframes from an offset along back to rest
- * and through the spring's overshoot, as offsets along and across at shares of the way, for an
- * easing scaled down by the spring's peak.
+ * A glide that rides a course: the offset along the slot axis it starts from, where the mark shows
+ * less where it rests, the slot axis, and the keyframes from there back to rest and through the
+ * spring's overshoot, as offsets along and across at shares of the way, for an easing scaled down
+ * by the spring's peak.
  */
 export type Ride = {
+  readonly along: number;
   readonly axis: "x" | "y";
-  readonly keyframes: (from: number, peak: number) => readonly RideKeyframe[];
+  readonly keyframes: (peak: number) => readonly RideKeyframe[];
 };
 
 const timings = new Map<Spring, Timing>();
@@ -68,24 +70,19 @@ const glides = new WeakMap<Element, Glide>();
 export function springTiming(spring: Spring): Timing {
   const known = timings.get(spring);
   if (known !== undefined) return known;
-  const { duration, easing } = springEasing(spring);
+  const { duration, easing, stops } = springEasing(spring);
   const supported = CSS.supports("transition-timing-function", easing);
-  // Each stop of the linear() curve opens with its output.
-  const outputs = [...easing.matchAll(/(?:\(|,)\s*([\d.]+)/gu)].map((match) => Number(match[1]));
-  const peak = Math.max(1, ...outputs);
-  const held = easing.replace(
-    /(\(|,)(\s*)([\d.]+)/gu,
-    (_, lead: string, space: string, output: string) =>
-      `${lead}${space}${String(Number((Number(output) / peak).toFixed(5)))}`
-  );
+  const peak = Math.max(1, ...stops.map(({ output }) => output));
+  // The curve scaled down by its peak, rounded as the held easing writes it.
+  const held = stops.map(({ output, input }) => ({ output: Number((output / peak).toFixed(5)), input }));
   const made = {
     duration,
     easing: supported ? easing : "ease-out",
     spring: supported,
     peak,
-    held,
-    played: linearCurve(easing),
-    heldPlayed: linearCurve(held),
+    held: linearEasing(held),
+    played: easingCurve(stops),
+    heldPlayed: easingCurve(held),
   };
   timings.set(spring, made);
   return made;
@@ -117,21 +114,17 @@ export function glideFrom(element: Element, by: readonly [number, number], sprin
 }
 
 /**
- * Glide an element along the slot axis onto the place it rests, from `by` CSS pixels away plus
- * whatever a running glide shows along it, with its offset across following `ride.course`. Along
- * the slot axis it moves as `glideFrom` would move it on the same spring, so it keeps pace with the
- * crosshair.
+ * Glide an element along the slot axis onto the place it rests, from `ride.along` CSS pixels away,
+ * with its offset across following the ride's keyframes. Along the slot axis it moves as
+ * `glideFrom` would move it on the same spring, so it keeps pace with the crosshair.
  *
  * @param element - The element whose resting place was just written.
- * @param by - The old resting place less the new one, along the slot axis.
  * @param spring - The spring.
- * @param ride - The slot axis, and the course across, whose value at `by` plus the running
- *   offset should be where the element shows across now.
+ * @param ride - Where the element shows now, a running glide included, along the slot axis from
+ *   its rest, the slot axis, and the keyframes it plays.
  */
-export function rideFrom(element: Element, by: number, spring: Spring, ride: Ride): void {
-  const shown = glideShown(element);
-  const along = by + (shown === null ? 0 : ride.axis === "x" ? shown[0] : shown[1]);
-  start(element, ride.axis === "x" ? [along, 0] : [0, along], spring, ride);
+export function rideFrom(element: Element, spring: Spring, ride: Ride): void {
+  start(element, ride.axis === "x" ? [ride.along, 0] : [0, ride.along], spring, ride);
 }
 
 /**
@@ -196,19 +189,20 @@ function start(element: Element, from: readonly [number, number], spring: Spring
   if (!timing.spring) return;
   const [x, y] = from;
   if (x === 0 && y === 0) return;
-  const frames = ride === null ? null : ride.keyframes(ride.axis === "x" ? x : y, timing.peak);
-  const animation =
-    ride === null || frames === null
-      ? element.animate([{ translate: shift(x, y) }, { translate: "0px 0px" }], timing)
-      : element.animate(
-          frames.map(({ offset, along, across }) => ({
-            offset,
-            translate: ride.axis === "x" ? rounded(along, across) : rounded(across, along),
-          })),
-          { duration: timing.duration, easing: timing.held }
-        );
-  const played = ride === null || frames === null ? null : { axis: ride.axis, frames };
-  keep(element, { animation, from: [x, y], spring, ride: played });
+  if (ride === null) {
+    const animation = element.animate([{ translate: shift(x, y) }, { translate: "0px 0px" }], timing);
+    keep(element, { animation, from, spring, ride: null });
+    return;
+  }
+  const frames = ride.keyframes(timing.peak);
+  const animation = element.animate(
+    frames.map(({ offset, along, across }) => ({
+      offset,
+      translate: ride.axis === "x" ? rounded(along, across) : rounded(across, along),
+    })),
+    { duration: timing.duration, easing: timing.held }
+  );
+  keep(element, { animation, from, spring, ride: { axis: ride.axis, frames } });
 }
 
 /** Hold an element's running glide until it finishes or another replaces it. */

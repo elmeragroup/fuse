@@ -1,19 +1,21 @@
 // Reveal's active place, in Chromium. Unit under test: Reveal's follower and the registered
 // `--chart-active-x`. Oracles: chart.css's contract that the property does not inherit, so the place
 // sits on each series Reveal masks and on no mark inside one, and the crosshair and the active dot,
-// whose glides the edge must keep pace with. The place is the crosshair's column: the second of four
-// 100 px bands centres at 150 px, the middle of the device pixel 150 to 151.
+// whose glides the edge must keep pace with, and for a slow step's pace the settling time of the
+// closed-form 300/30 oscillator. The place is the crosshair's column: the second of four 100 px
+// bands centres at 150 px, the middle of the device pixel 150 to 151.
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { nextFrames } from "../../../test/animation-frames";
+import { settling } from "../../../test/chart/oscillator";
+import { dispatchSlotMove, everyFrame } from "../../../test/chart/tooltip-glide";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import type { ChartConfig } from "./chart-types";
 import "./chart.css";
-import { springEasing } from "./layout/spring";
 
 const CONFIG = { v: { label: "V", color: "chart-1" } } as const satisfies ChartConfig;
 const ROWS = ["a", "b", "c", "d"].map((name, index) => ({ name, v: index + 1 }));
@@ -87,19 +89,7 @@ function revealChart(orientation: "vertical" | "horizontal" = "vertical") {
 
 /** A pointer move over a slot's centre, `nudge` px past it, as the chart's own events. */
 function moveTo(host: HTMLElement, slot: number, nudge = 0, axis: "x" | "y" = "x"): void {
-  // DOM audit: the plot surface is the listbox that takes the chart's pointer events.
-  const surface = host.querySelector<HTMLElement>('[role="listbox"]');
-  if (surface === null) throw new Error("no plot");
-  const box = surface.getBoundingClientRect();
-  const along = (start: number, length: number) => start + (length * slot) / (SLOTS.length - 1) + nudge;
-  surface.dispatchEvent(
-    new PointerEvent("pointermove", {
-      bubbles: true,
-      clientX: axis === "x" ? along(box.left, box.width) : box.left + box.width / 2,
-      clientY: axis === "y" ? along(box.top, box.height) : box.top + box.height / 2,
-      pointerType: "mouse",
-    })
-  );
+  dispatchSlotMove(host, slot / (SLOTS.length - 1), nudge, { axis, depth: 0.5 });
 }
 
 /** Where the reveal's edge, the active dot and the crosshair line show along an axis, in client pixels. */
@@ -142,20 +132,13 @@ describe("Chart.Reveal's edge on a step", () => {
       await nextFrames(2);
       moveTo(host, 2, 0, axis);
       await nextFrames(40);
-      const frames: ReturnType<typeof shownAlong>[] = [];
-      let watching = true;
-      const watch = () => {
-        if (!watching) return;
-        frames.push(shownAlong(host, axis));
-        requestAnimationFrame(watch);
-      };
       // A nudge then a long move a frame later reads as a fast pointer.
       moveTo(host, 2, 2, axis);
       await nextFrames(1);
       moveTo(host, 18, 0, axis);
-      requestAnimationFrame(watch);
+      const { frames, stop } = everyFrame(() => shownAlong(host, axis));
       await nextFrames(60);
-      watching = false;
+      stop();
       expect(frames.filter(({ gliding }) => gliding).length, JSON.stringify(frames)).toBeGreaterThan(3);
       const apart = frames.filter(
         ({ edge, dot, crosshair }) => Math.abs(edge - dot) > 1 || Math.abs(edge - crosshair) > 1
@@ -174,10 +157,9 @@ describe("Chart.Reveal's edge on a step", () => {
     // DOM audit: the masked series and the crosshair layer are aria-hidden plot output.
     const line = host.querySelector('[data-slot="chart-line-series"]');
     const crosshair = host.querySelector('[data-slot="chart-crosshair"]');
-    const floor = springEasing({ stiffness: 300, damping: 30 });
     // The browser rewrites a linear() easing as it reads it back, so the easing is compared with
     // the crosshair's, read back the same way.
-    expect(timing(line)?.duration).toBe(floor.duration);
+    expect(Math.abs(Number(timing(line)?.duration) - settling(300, 30))).toBeLessThanOrEqual(1);
     expect(timing(line)).toEqual(timing(crosshair));
   });
 });

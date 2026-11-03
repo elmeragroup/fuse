@@ -307,6 +307,12 @@ export function useSeriesPath(
     }
     return true;
   }, stroke?.inputs ?? NO_INPUTS);
+  // One object for each resting state, which useRestingLine draws once.
+  const absent = series === undefined;
+  const resting = useMemo(
+    () => (look === null || absent ? null : { look, rest, topology }),
+    [look, absent, rest, topology]
+  );
   return {
     ...mark,
     series,
@@ -315,6 +321,6 @@ export function useSeriesPath(
     frame,
     prefix,
     intro,
-    resting: look === null || series === undefined ? null : { look, rest, topology },
+    resting,
   };
 }

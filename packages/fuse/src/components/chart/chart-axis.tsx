@@ -267,8 +267,8 @@ export function ChartXAxis({
   // Once Root measures, the axis spans the run the slot bands take, the plot less its leftover
   // device pixels at both ends, which its CSS turns into margins.
   const drawn = useRootFrame("Chart.XAxis");
-  const [before, after] = runMargins(drawn?.frame ?? null);
-  const placed = { ...style, "--_run-before": `${String(before)}px`, "--_run-after": `${String(after)}px` };
+  const margins = runMargins(drawn?.frame ?? null);
+  const placed = { ...style, "--_run-before": margins.before, "--_run-after": margins.after };
   return (
     <div data-slot="chart-x-axis" data-tick={tick} aria-hidden="true" className={className} style={placed}>
       {/* Every horizontal label shows, so a hidden sizer gives the axis column the widest one. */}

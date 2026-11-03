@@ -7,7 +7,7 @@ import { slotTickLabel } from "./chart-axis";
 import { useAxisFormat, useAxisTicks } from "./chart-axis-format";
 import { useChartRoot, usePlotLayout } from "./chart-context";
 import { ChartCrosshairContext } from "./chart-crosshair";
-import { writeAttribute, writeStyle } from "./chart-dom";
+import { clientScale, writeAttribute, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import { useChartFrame } from "./chart-plot";
 import { springTiming } from "./chart-spring";
@@ -305,21 +305,6 @@ function writeParts(node: HTMLElement, rolling: Rolling | null, known: Measured,
   return width;
 }
 
-/** Client pixels per layout pixel, along x and y. */
-type LayoutScale = { readonly x: number; readonly y: number };
-
-/**
- * How many client pixels one layout pixel of an element spans, along x and y, so client boxes read
- * under a transformed ancestor come back to the layout pixels the plot's frame and the paint use.
- */
-function layoutScale(element: HTMLElement): LayoutScale {
-  const box = element.getBoundingClientRect();
-  return {
-    x: element.offsetWidth === 0 ? 1 : box.width / element.offsetWidth,
-    y: element.offsetHeight === 0 ? 1 : box.height / element.offsetHeight,
-  };
-}
-
 /**
  * Read the widths, the pill's padding and box and the tick boxes once, for every paint until the
  * next layout, all in the layout pixels of the label's own box, whose left edge is the plot's.
@@ -331,7 +316,7 @@ function measureLabel(node: HTMLElement, rolling: Rolling | null): Measured | nu
   const pill =
     node.querySelector<HTMLElement>('[data-part="pill"]') ??
     node.querySelector<HTMLElement>('[data-part="part"]');
-  const scale = { x: layoutScale(node).x, y: pill === null ? 1 : layoutScale(pill).y };
+  const scale = { x: clientScale(node).x, y: pill === null ? 1 : clientScale(pill).y };
   // A box drawn at no size, as under scale(0), says nothing about layout pixels, so nothing is kept
   // and a later paint measures again.
   if (!(scale.x > 0 && Number.isFinite(scale.x) && scale.y > 0 && Number.isFinite(scale.y))) return null;

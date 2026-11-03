@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
 
 import { flushSync } from "react-dom";
 import { afterEach, describe, expect, it } from "vitest";
-import { cdp, page, userEvent } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { installFrameClock } from "../../../test/chart/frame-clock";
@@ -29,35 +29,18 @@ import {
   plotOf,
   rectOf,
 } from "../../../test/chart/panel-readers";
-import { sizePageToFrame } from "../../../test/page-metrics";
+import { emulatePixelRatio } from "../../../test/page-metrics";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import type { ChartConfig } from "./chart-types";
 import "./chart.css";
 
-/** The device metrics Chromium emulates. */
-type DeviceMetrics = {
-  readonly width: number;
-  readonly height: number;
-  readonly deviceScaleFactor: number;
-  readonly mobile: boolean;
-};
-
-type MetricsCdp = {
-  send: (method: "Emulation.setDeviceMetricsOverride", params: DeviceMetrics) => Promise<void>;
-};
-
-// SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
-const session = (): MetricsCdp => cdp() as MetricsCdp;
-
 let clock: FrameClock | null = null;
 
-afterEach(async () => {
+afterEach(() => {
   clock?.restore();
   clock = null;
-  // Back to the frame's size, so the next file finds the page at the size Vitest set.
-  await sizePageToFrame();
 });
 
 describe("two Panels on one x grid", () => {
@@ -119,12 +102,7 @@ describe("one active column across Panels", () => {
     "puts both crosshairs, both active bars, the option and the popup on one column at a %sx pixel ratio",
     async (ratio) => {
       if (ratio !== 1) {
-        await session().send("Emulation.setDeviceMetricsOverride", {
-          width: 1024,
-          height: 768,
-          deviceScaleFactor: ratio,
-          mobile: false,
-        });
+        await emulatePixelRatio(ratio);
         await frame();
       }
       expect(devicePixelRatio).toBe(ratio);

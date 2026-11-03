@@ -10,8 +10,21 @@ import { CHART_SPRINGS, FOLLOW_FASTEST, FOLLOW_LEVELS, FOLLOW_SPEEDS } from "./m
 /** A spring of mass 1, as bklit and Motion name them. */
 export type Spring = { readonly stiffness: number; readonly damping: number };
 
-/** A spring as CSS plays it: a duration in milliseconds and a `linear()` easing. */
-export type SpringEasing = { readonly duration: number; readonly easing: string };
+/**
+ * One stop of a `linear()` easing, rounded as the easing writes it: its output, and its input in
+ * percent of the way.
+ */
+export type EasingStop = { readonly output: number; readonly input: number };
+
+/**
+ * A spring as CSS plays it: a duration in milliseconds, a `linear()` easing, and the easing's stops
+ * as numbers, which `linearEasing` writes and `easingCurve` plays.
+ */
+export type SpringEasing = {
+  readonly duration: number;
+  readonly easing: string;
+  readonly stops: readonly EasingStop[];
+};
 
 /** How far from its target the spring may still be once its duration ends. */
 const SETTLED = 0.001;
@@ -47,7 +60,7 @@ export function springPosition({ stiffness, damping }: Spring, t: number): numbe
   return 1 - (fast * Math.exp(slow * t) - slow * Math.exp(fast * t)) / (fast - slow);
 }
 
-const round = (value: number, digits: number): string => String(Number(value.toFixed(digits)));
+const round = (value: number, digits: number): number => Number(value.toFixed(digits));
 
 /**
  * A spring as a CSS duration and `linear()` easing.
@@ -74,12 +87,26 @@ export function springEasing(spring: Spring): SpringEasing {
     kept.push(to);
     from = to;
   }
-  const stops = kept.map((index, order) => {
-    if (order === 0) return "0";
-    if (index === SAMPLES) return "1";
-    return `${round(values[index] ?? 1, 4)} ${round((index / SAMPLES) * 100, 2)}%`;
+  const stops = kept.map((index, order): EasingStop => {
+    if (order === 0) return { output: 0, input: 0 };
+    if (index === SAMPLES) return { output: 1, input: 100 };
+    return { output: round(values[index] ?? 1, 4), input: round((index / SAMPLES) * 100, 2) };
   });
-  return { duration, easing: `linear(${stops.join(", ")})` };
+  return { duration, easing: linearEasing(stops), stops };
+}
+
+/**
+ * A `linear()` easing through stops, the first and the last written without their inputs, which
+ * CSS places at 0% and 100%.
+ *
+ * @param stops - The stops, inputs never falling, from 0 to 100.
+ * @returns The easing.
+ */
+export function linearEasing(stops: readonly EasingStop[]): string {
+  const written = stops.map(({ output, input }, index) =>
+    index === 0 || index === stops.length - 1 ? String(output) : `${String(output)} ${String(input)}%`
+  );
+  return `linear(${written.join(", ")})`;
 }
 
 /** Whether the chord from sample `from` to sample `to` stays within the tolerance of each between. */
@@ -119,56 +146,26 @@ const FOLLOW_LADDER: readonly Spring[] = Array.from({ length: FOLLOW_LEVELS }, (
 });
 
 /**
- * A CSS `linear()` easing as a function of progress, as CSS Easing 2 plays it: a straight line
- * between each pair of stops, a stop without an input placed evenly between its neighbours, and
- * the first and last stops held past either end. A glide that reads where an interrupted
- * animation shows reads the curve the animation plays, its rounding included, not the spring
- * it samples.
+ * A `linear()` easing's stops as a function of progress, as CSS Easing 2 plays them: a straight
+ * line between each pair of stops, and the first and last stops held past either end. A glide that
+ * reads where an interrupted animation shows reads the curve the animation plays, its rounding
+ * included, not the spring it samples.
  *
- * @param easing - The `linear()` easing.
- * @returns The output at a progress, or the progress itself for anything else.
+ * @param stops - The stops, inputs never falling, from 0 to 100.
+ * @returns The output at a progress from 0 to 1.
  */
-export function linearCurve(easing: string): (progress: number) => number {
-  const body = /^linear\((.*)\)$/u.exec(easing.trim())?.[1];
-  if (body === undefined) return (progress) => progress;
-  const parts = body.split(",").map((stop) => stop.trim().split(/\s+/u));
-  const stops = parts.map(([output = "0", input], index) => ({
-    output: Number(output),
-    input:
-      input === undefined
-        ? index === 0
-          ? 0
-          : index === parts.length - 1
-            ? 1
-            : Number.NaN
-        : Number.parseFloat(input) / 100,
-  }));
-  // Inputs never fall, and a stop without one sits evenly between the stops around it.
-  for (let index = 1; index < stops.length; index += 1) {
-    const stop = stops[index];
-    if (stop === undefined || Number.isNaN(stop.input)) continue;
-    stop.input = Math.max(stop.input, stops[index - 1]?.input ?? 0);
-  }
-  for (let index = 1; index < stops.length; index += 1) {
-    if (!Number.isNaN(stops[index]?.input ?? 0)) continue;
-    let next = index;
-    while (Number.isNaN(stops[next]?.input ?? 0)) next += 1;
-    const [from, to] = [stops[index - 1]?.input ?? 0, stops[next]?.input ?? 1];
-    for (let gap = index; gap < next; gap += 1) {
-      const stop = stops[gap];
-      if (stop !== undefined) stop.input = from + ((to - from) * (gap - index + 1)) / (next - index + 1);
-    }
-  }
+export function easingCurve(stops: readonly EasingStop[]): (progress: number) => number {
+  const points = stops.map(({ output, input }) => ({ output, input: input / 100 }));
   return (progress) => {
-    const first = stops[0];
-    const last = stops.at(-1);
+    const first = points[0];
+    const last = points.at(-1);
     if (first === undefined || last === undefined) return progress;
     if (progress <= first.input) return first.output;
     if (progress >= last.input) return last.output;
     let after = 1;
-    while ((stops[after]?.input ?? 1) < progress) after += 1;
-    const end = stops[after] ?? last;
-    const start = stops[after - 1] ?? first;
+    while ((points[after]?.input ?? 1) < progress) after += 1;
+    const end = points[after] ?? last;
+    const start = points[after - 1] ?? first;
     const span = end.input - start.input;
     return span === 0
       ? end.output

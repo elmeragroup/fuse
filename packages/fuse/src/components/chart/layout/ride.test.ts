@@ -4,11 +4,11 @@
 import { curveNatural, line } from "d3-shape";
 import { describe, expect, it } from "vitest";
 
+import { offPolyline } from "../../../../test/chart/polyline";
 import { areaTopPath } from "./line-path";
 import type { PathPlacement, PathTopology } from "./line-path";
-import { acrossAt, parseTrack, rideAt, rideCourse, rideKeyframes, runBetween } from "./ride";
+import { acrossAt, parseTrack, rideAt, rideCourse, rideKeyframes, runBetween, trackOf } from "./ride";
 
-/** The one run of a track that spans a stretch, or a thrown error. */
 /** A placement that draws the numbers as they are, on a linear curve. */
 const LINEAR: PathPlacement = {
   orientation: "vertical",
@@ -33,6 +33,7 @@ function readings(count: number): PathTopology {
   };
 }
 
+/** The one run of a track that spans a stretch, or a thrown error. */
 function runOver(
   data: string,
   from: number,
@@ -147,36 +148,12 @@ describe("rideKeyframes", () => {
       rideCourse(run, { along: 0, across: readings[0] }, { along: last, across: end })
     );
     for (const [index, value] of readings.entries()) {
-      const vertex = { along: index * 10 - last, across: value - end };
-      expect(offFrames(vertex, frames), `slot ${String(index)}`).toBeLessThanOrEqual(0.5);
+      const vertex = { x: index * 10 - last, y: value - end };
+      const played = frames.map(({ along, across }) => ({ x: along, y: across }));
+      expect(offPolyline(vertex, played), `slot ${String(index)}`).toBeLessThanOrEqual(0.5);
     }
   });
 });
-
-/** How far a point lies from the polyline through keyframes, in their along and across offsets. */
-function offFrames(
-  point: { readonly along: number; readonly across: number },
-  frames: readonly { readonly along: number; readonly across: number }[]
-): number {
-  let least = Number.POSITIVE_INFINITY;
-  frames.forEach((end, index) => {
-    const start = frames[index - 1] ?? end;
-    const [dx, dy] = [end.along - start.along, end.across - start.across];
-    const length = dx * dx + dy * dy;
-    const share =
-      length === 0
-        ? 0
-        : Math.max(
-            0,
-            Math.min(1, ((point.along - start.along) * dx + (point.across - start.across) * dy) / length)
-          );
-    least = Math.min(
-      least,
-      Math.hypot(point.along - start.along - dx * share, point.across - start.across - dy * share)
-    );
-  });
-  return least;
-}
 
 describe("a glide's keyframes against a steep track", () => {
   it("keeps the course within half a pixel across the track at every place along it", () => {
@@ -210,11 +187,16 @@ describe("a ride onto a track's last point", () => {
   });
 });
 
-describe("a Line's terminal stack", () => {
-  it("keeps the stack where the Line ends, and a ride onto its last point climbs it", () => {
-    const track = parseTrack("M0,100L100,100L100,0", "vertical");
-    const run = runOver("M0,100L100,100L100,0", 0, 100);
+describe("a stack where the line ends", () => {
+  it.each([
+    ["a Line's path", "M0,100L100,100L100,0"],
+    // The area M0,100L100,100L100,0L100,200L0,200Z: tops 100, 100 and 0 over a base at 200.
+    ["an Area's top", areaTopPath([0, 100, 200, 100, 100, 200, 100, 0, 200], readings(3), LINEAR)],
+  ])("keeps the stack in %s, and a ride onto its top stays on the line", (_name, data) => {
+    const track = parseTrack(data, "vertical");
     expect(track).toHaveLength(1);
+    const [run] = track;
+    if (run === undefined) throw new Error("no run");
     expect([...run.along]).toEqual([0, 100, 100]);
     expect([...run.across]).toEqual([100, 100, 0]);
     // From x = 0 on the flat stretch to rest on the stack's top at x = 100.
@@ -224,6 +206,101 @@ describe("a Line's terminal stack", () => {
     }
   });
 });
+
+describe("a ride onto the top of a stack inside the line", () => {
+  // Unit under test: rideKeyframes through the spring's overshoot past a stack the line goes on
+  // from. Oracle: the hand-written track, a column at x = 500 from 100 up to 0 and back down to 100,
+  // with a vertex 3 px to each side of it, inside the 5 px the spring's overshoot reaches past rest.
+  const drawn = [
+    { x: 0, y: 100 },
+    { x: 497, y: 100 },
+    { x: 500, y: 100 },
+    { x: 500, y: 0 },
+    { x: 500, y: 100 },
+    { x: 503, y: 100 },
+    { x: 1000, y: 100 },
+  ];
+  it.each([
+    ["from below rest", 0],
+    ["from above rest", 1000],
+  ])("stays on the drawn line at every moment of the glide %s", (_name, start) => {
+    const data = `M${drawn.map(({ x, y }) => `${String(x)},${String(y)}`).join("L")}`;
+    const run = runOver(data, 0, 1000);
+    // A spring that passes its target by 1% of the way, from the start to the stack's top at x = 500.
+    const frames = rideKeyframes(
+      start - 500,
+      rideCourse(run, { along: start, across: 100 }, { along: 500, across: 0 }),
+      1.01
+    );
+    for (let step = 0; step <= 1000; step += 1) {
+      const { along, across } = rideAt(frames, step / 1000);
+      const shown = { x: 500 + along, y: across };
+      expect(offPolyline(shown, drawn), JSON.stringify(shown)).toBeLessThanOrEqual(0.5);
+    }
+  });
+});
+
+describe("a step on a long track", () => {
+  // Unit under test: one step's ride, from finding its run to its keyframes. Oracle: the step's own
+  // span, two columns of a track with a stack in every column, so the points it reads stay within a
+  // few bisections of the run whatever its length. A method that walks the run counts each point
+  // it visits, so a scan of the whole run costs its length.
+  it("reads about as many of the run's points on 100,000 columns as on 1,000", () => {
+    const reads = (columns: number): number => {
+      const points = Array.from({ length: columns }, (_, index) => index * 10).flatMap(
+        (x) =>
+          [
+            [x, 20],
+            [x, 80],
+          ] as const
+      );
+      const [run] = trackOf([points], "vertical");
+      if (run === undefined) throw new Error("no run");
+      const touched = { reads: 0 };
+      const counted = {
+        along: counting(run.along, touched),
+        across: counting(run.across, touched),
+        bends: counting(run.bends, touched),
+      };
+      const middle = Math.floor(columns / 2) * 10;
+      const start = { along: middle, across: 80 };
+      const rest = { along: middle + 10, across: 20 };
+      const ride = runBetween([counted], start, rest);
+      if (ride === null) throw new Error("no ride");
+      rideKeyframes(start.along - rest.along, rideCourse(ride, start, rest), 1.01);
+      return touched.reads;
+    };
+    expect(reads(100_000)).toBeLessThanOrEqual(2 * reads(1000));
+  });
+});
+
+/**
+ * A list that counts each element a reader takes, by index or through a method. A method runs on
+ * the counting list itself, so each element it visits counts once: `at` one, a search up to its
+ * find, a walk of the whole list its length. A typed array's own methods refuse to run on anything
+ * but a typed array, so a typed list takes Array's generic method of the same name, which reads any
+ * list by its length and indices. A typed-array method Array lacks, such as `subarray`, runs on the
+ * typed array itself, and a view it returns counts into the same tally, so it costs nothing until
+ * its elements are read.
+ */
+function counting<T extends object>(values: T, touched: { reads: number }): T {
+  const generic = ArrayBuffer.isView(values);
+  return new Proxy(values, {
+    get(target, key, list) {
+      if (/^\d+$/u.test(String(key))) touched.reads += 1;
+      const owner = generic && key !== "length" && key in Array.prototype ? Array.prototype : target;
+      // oxlint-disable-next-line anti-slop/no-reflect-get -- the trap forwards any property, symbols included, which typed access cannot name
+      const value: unknown = Reflect.get(owner, key, owner === target ? target : list);
+      if (!generic || owner !== target || !(value instanceof Function)) return value;
+      return new Proxy(value, {
+        apply(method, _, args) {
+          const view: unknown = method.apply(target, args);
+          return ArrayBuffer.isView(view) ? counting(view, touched) : view;
+        },
+      });
+    },
+  });
+}
 
 /** A course's offset across at an offset along, read straight off its keyframes' polyline. */
 function polylineAt(
@@ -240,19 +317,7 @@ function polylineAt(
   return Number.NaN;
 }
 
-describe("round 3 tracks", () => {
-  it("keeps an Area's top stack in its last column, and a glide onto its top stays on the edge", () => {
-    // The area M0,100L100,100L100,0L100,200L0,200Z: tops 100, 100 and 0 over a base at 200.
-    const top = areaTopPath([0, 100, 200, 100, 100, 200, 100, 0, 200], readings(3), LINEAR);
-    const run = runOver(top, 0, 100);
-    expect([...run.along]).toEqual([0, 100, 100]);
-    expect([...run.across]).toEqual([100, 100, 0]);
-    const frames = rideKeyframes(-100, rideCourse(run, { along: 0, across: 100 }, { along: 100, across: 0 }));
-    for (let step = 0; step < 100; step += 1) {
-      expect(Math.abs(polylineAt(frames, step - 100) - 100), `x = ${String(step)}`).toBeLessThanOrEqual(0.5);
-    }
-  });
-
+describe("where a run ends", () => {
   it("keeps a natural spline's span after it bends back", () => {
     const data = line().curve(curveNatural)([
       [0, 0],
