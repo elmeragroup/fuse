@@ -324,6 +324,9 @@ describe("the app shell block, standalone", () => {
     await openers.first().click();
     const sheet = page.getByRole("dialog", { name: number ?? "" });
     await expect.poll(() => sheet.isVisible()).toBe(true);
+    // The sheet slides in from the side, and two box reads apart in time would see it at two
+    // places, so the footer is measured once the slide has ended.
+    await expect.poll(() => sheet.evaluate((popup) => popup.getAnimations({ subtree: true }).length)).toBe(0);
     // On desktop the footer is one row, Close first and the primary action last.
     const close = await sheet
       .getByRole("button", { name: "Close", exact: true })
