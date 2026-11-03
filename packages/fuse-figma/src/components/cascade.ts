@@ -55,6 +55,12 @@ export type ChildSpacing = (
 export type Recorder = (row: Omit<CoverageRow, "component">) => void;
 
 /**
+ * Why `box-decoration-break` drops: `box-decoration-clone` gives each line of a wrapped inline box
+ * its own edges and ring, as on a wrapped Link (CSS Fragmentation 3 §5.4).
+ */
+const ONE_LINE = "a kit cell sets its text on one line, so the box has no line fragments";
+
+/**
  * Properties Figma has no form for, or that describe behaviour a static component does not
  * show. A declaration of one that no layer reads lands in the coverage table as dropped.
  */
@@ -90,6 +96,8 @@ const NO_FIGMA_FORM = new Map([
   ["fill", "`fill` paints only an SVG shape, and no layer that reads it here draws one"],
   // `isolate` starts a stacking context (CSS Compositing 1 §3.3), as the overlay scrim's does.
   ["isolation", "a stacking context orders the box's own layers, which Figma draws in layer order already"],
+  ["box-decoration-break", ONE_LINE],
+  ["-webkit-box-decoration-break", ONE_LINE],
   // The plugin typings expose a text layer's `openTypeFeatures` as read-only, with no setter.
   ["font-variant-numeric", "the plugin API can read a text layer's OpenType features but not set them"],
 ]);

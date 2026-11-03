@@ -203,7 +203,7 @@ describe("the Accordion item component set", () => {
   it("underlines the label on hover, rings the trigger in the item's ring on focus, and dims it when disabled", () => {
     const label = (root: ComponentRootSpec) => trigger(root).children.find((child) => child.kind === "text");
     expect(label(item("default", "none", "off", "hover"))).toMatchObject({
-      underline: { offset: undefined },
+      underline: { offset: undefined, thickness: undefined },
     });
     const ring = (color: string) => ({
       color: paint(color),

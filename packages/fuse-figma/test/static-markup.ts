@@ -132,11 +132,11 @@ export function attributesNamed(
 }
 
 /**
- * Whether an element is the one a definition's selector names: it has the selector's tag, or any
- * tag where the selector names `*`, each attribute the selector lists with that exact value or, for
- * `true`, any value, each attribute its `prefixes` list with a value that starts with a prefix that
- * is not empty, and each its `suffixes` list with a value that ends with a suffix that is not empty,
- * as the selector's CSS form matches it in the browser.
+ * Whether an element is the one a definition's selector names: it has the selector's tag, each
+ * attribute the selector lists with that exact value or, for `true`, any value, each attribute its
+ * `prefixes` list with a value that starts with a prefix that is not empty, and each its `suffixes`
+ * list with a value that ends with a suffix that is not empty, as the selector's CSS form matches it
+ * in the browser.
  *
  * @param selector - The element a root or a part names, where its markup carries no `data-slot`.
  * @param element - An element of the markup.
@@ -147,7 +147,7 @@ export function selects(
   element: Pick<MarkupElement, "name" | "attributes">
 ): boolean {
   return (
-    (selector.tag === "*" || element.name === selector.tag) &&
+    element.name === selector.tag &&
     Object.entries(selector.attributes).every(([name, value]) => {
       const held = element.attributes.get(name);
       return value === true ? held !== undefined : held === value;

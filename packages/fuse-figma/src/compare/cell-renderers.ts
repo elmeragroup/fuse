@@ -462,7 +462,7 @@ const SOURCES: readonly RendererSource[] = [
   },
   {
     set: "link",
-    entry: "dist/react-aria/link.js",
+    entry: "dist/link.js",
     load: async () => (await import("./link-cell.ts")).link,
   },
   {
@@ -621,15 +621,16 @@ const SOURCES: readonly RendererSource[] = [
 export const RENDERER_ENTRIES: readonly string[] = SOURCES.map((source) => source.entry);
 
 /**
- * Load every renderer. Each one imports the Fuse build, so call this only after
- * `locateFuseBuild` found it.
+ * Load every renderer, or only those of the sets `only` names. Each one imports the Fuse build, so
+ * call this only after `locateFuseBuild` found it.
  *
+ * @param only - The keys of the definitions to load renderers for, or undefined for every one.
  * @returns Each renderer, by the key of the definition it renders. The Effect fails with
  *   `RendererMissing` for a source whose module lacks the rendering it names.
  */
-export const loadRenderers = Effect.fnUntraced(function* () {
+export const loadRenderers = Effect.fnUntraced(function* (only?: ReadonlySet<string>) {
   const renderers = yield* Effect.forEach(
-    SOURCES,
+    only === undefined ? SOURCES : SOURCES.filter((source) => only.has(source.set)),
     (source): Effect.Effect<AnyCellRenderer, RendererMissing> => {
       if ("module" in source) {
         return loadClientRenderer(source);

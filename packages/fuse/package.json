@@ -201,6 +201,10 @@
       "types": "./src/kbd.ts",
       "import": "./src/kbd.ts"
     },
+    "./link": {
+      "types": "./src/link.ts",
+      "import": "./src/link.ts"
+    },
     "./loader": {
       "types": "./src/loader.ts",
       "import": "./src/loader.ts"
@@ -264,10 +268,6 @@
     "./react-aria/grid-list": {
       "types": "./src/react-aria/grid-list.ts",
       "import": "./src/react-aria/grid-list.ts"
-    },
-    "./react-aria/link": {
-      "types": "./src/react-aria/link.ts",
-      "import": "./src/react-aria/link.ts"
     },
     "./react-aria/range-calendar": {
       "types": "./src/react-aria/range-calendar.ts",

@@ -108,9 +108,11 @@ export function storePaint(file: FileState, paint: Paint): Paint {
       filters: { ...NO_IMAGE_FILTERS, ...paint.filters },
     };
   }
-  if (paint.type !== "SOLID") {
-    return paint;
-  }
+  return paint.type === "SOLID" ? storeSolidPaint(paint) : paint;
+}
+
+/** A solid paint as Figma stores it, its channels and opacity in 32-bit floats, as a fill's or an underline's. */
+export function storeSolidPaint(paint: SolidPaint): SolidPaint {
   return {
     ...paint,
     color: { r: f32(paint.color.r), g: f32(paint.color.g), b: f32(paint.color.b) },

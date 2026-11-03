@@ -298,6 +298,8 @@ export const PART_DENSITY = {
   kbd: "fixed",
   "kbd-group": "fixed",
 
+  link: "fixed",
+
   loader: "fixed",
 
   meter: "fixed",

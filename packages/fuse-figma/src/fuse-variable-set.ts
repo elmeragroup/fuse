@@ -193,6 +193,13 @@ const ROLE_TINTS = [
   ["sidebar-foreground", 70],
   ["foreground", 10],
   ["muted-foreground", 50],
+  // Link's resting `always` underline, the light arm of its `light-dark()` (see `readDecorationColor`
+  // in `components/label-layout.ts`).
+  ["foreground", 35],
+  ["primary", 35],
+  ["brand", 35],
+  ["muted-foreground", 35],
+  ["error", 35],
 ] as const satisfies readonly (readonly [ColorTokenName, number])[];
 
 /** The tokens of the dimension kind. */

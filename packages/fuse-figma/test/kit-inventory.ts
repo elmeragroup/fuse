@@ -267,8 +267,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Calendar",
     sets: [{ key: "calendar-day", name: "Calendar day", variants: 10, previewed: 10 }],
   },
-  // 6 variants at 2 weights, in 4 states.
-  { slug: "link", name: "Link", sets: [{ key: "link", name: "Link", variants: 48, previewed: 48 }] },
+  // 6 variants at 3 underlines (always, hover and none), in 3 states (rest, hover and focus).
+  { slug: "link", name: "Link", sets: [{ key: "link", name: "Link", variants: 54, previewed: 54 }] },
   {
     slug: "item",
     name: "Item",

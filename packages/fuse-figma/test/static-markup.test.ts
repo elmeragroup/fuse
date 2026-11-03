@@ -26,10 +26,9 @@ describe("elementsOf", () => {
   });
 });
 
-// Unit under test: `selects` with an attribute prefix and with the universal tag. Oracle: the CSS
-// attribute selector `[aria-label^="Tuesday, July 14"]` (Selectors Level 4 §6.2), which matches a
-// value that starts with the prefix, and nothing when the prefix is empty, and the universal
-// selector `*` (§5.2), which matches an element of any tag, as the browser applies them.
+// Unit under test: `selects` with an attribute prefix. Oracle: the CSS attribute selector
+// `[aria-label^="Tuesday, July 14"]` (Selectors Level 4 §6.2), which matches a value that starts
+// with the prefix, and nothing when the prefix is empty, as the browser applies it.
 describe("selects", () => {
   const labelled = (label: string) =>
     elementsOf(renderToStaticMarkup(createElement("div", { "aria-label": label, role: "button" })))[0] ?? {
@@ -63,17 +62,5 @@ describe("selects", () => {
     expect(selects(bySuffix("-label"), labelled("dropdown-menu-label"))).toBe(true);
     expect(selects(bySuffix("-label"), labelled("select-label-text"))).toBe(false);
     expect(selects(bySuffix(""), labelled("select-label"))).toBe(false);
-  });
-
-  it("matches an element of any tag by the universal tag, still by its attributes", () => {
-    const element = (tag: string, props: Readonly<Record<string, string>>) =>
-      elementsOf(renderToStaticMarkup(createElement(tag, props)))[0] ?? {
-        name: "",
-        attributes: new Map<string, string>(),
-      };
-    const anyRac = { tag: "*", attributes: { "data-rac": true } } as const;
-    expect(selects(anyRac, element("a", { "data-rac": "" }))).toBe(true);
-    expect(selects(anyRac, element("span", { "data-rac": "", role: "link" }))).toBe(true);
-    expect(selects(anyRac, element("a", { href: "#" }))).toBe(false);
   });
 });

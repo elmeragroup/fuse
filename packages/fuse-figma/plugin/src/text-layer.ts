@@ -5,6 +5,7 @@
  */
 
 import type {
+  ColorSpec,
   LineHeightSpec,
   NumberSpec,
   TextLayerSpec,
@@ -13,15 +14,18 @@ import type {
 import type { PropertyIds } from "./child-layers.ts";
 import {
   changeTogetherIn,
+  describeColor,
   describeNumber,
   heldSizing,
   LAYOUT_SIZING,
   near,
+  paintMatches,
   planLength,
   planLimit,
   planPaints,
   planScalar,
   SIZING_MEMBERS,
+  solidPaint,
 } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
 import { fontFor, requireFont } from "./fonts.ts";
@@ -168,12 +172,39 @@ export function planText(
   }
 }
 
-/** Whether a layer's underline offset is the one the spec asks for. */
-function offsetMatches(current: TextDecorationOffset | null, desired: TextDecorationOffset): boolean {
+/** An underline offset or thickness in pixels, or Figma's automatic one for an unset length. */
+function pixelsOrAuto(px: number | undefined): TextDecorationOffset {
+  return px === undefined ? { unit: "AUTO" } : { unit: "PIXELS", value: px };
+}
+
+/** A field a text holds across all its characters, or null where some characters differ. */
+function unmixed<Value>(run: Run, value: Value | PluginAPI["mixed"]): Value | null {
+  return value === run.figma.mixed ? null : value;
+}
+
+/** Whether a layer's underline offset or thickness is the one the spec asks for. */
+function decorationMatches(
+  current: TextDecorationOffset | TextDecorationThickness | null,
+  desired: TextDecorationOffset | TextDecorationThickness
+): boolean {
   if (current === null || current.unit !== desired.unit) {
     return false;
   }
   return current.unit !== "AUTO" && desired.unit !== "AUTO" ? near(current.value, desired.value) : true;
+}
+
+/** Whether a layer's underline color is the one the spec asks for, `AUTO` for an unset one. */
+function decorationColorMatches(
+  run: Run,
+  current: TextDecorationColor | null,
+  desired: ColorSpec | undefined
+): boolean {
+  if (current === null) {
+    return false;
+  }
+  return desired === undefined
+    ? current.value === "AUTO"
+    : current.value !== "AUTO" && paintMatches(run, current.value, desired);
 }
 
 /**
@@ -233,8 +264,8 @@ function planLetterSpacing(run: Run, text: TextNode, label: string, spec: TextLa
 }
 
 /**
- * Plan the underline as one operation, because Figma holds an underline offset only while the
- * layer is underlined.
+ * Plan the underline as one operation, because Figma holds an underline offset, thickness and color
+ * only while the layer is underlined. An unset color writes `AUTO`, the text's own fill.
  */
 function planUnderline(run: Run, text: TextNode, label: string, spec: TextLayerSpec): void {
   const underline = spec.underline;
@@ -246,16 +277,32 @@ function planUnderline(run: Run, text: TextNode, label: string, spec: TextLayerS
     }
     return;
   }
-  const offset: TextDecorationOffset =
-    underline.offset === undefined ? { unit: "AUTO" } : { unit: "PIXELS", value: underline.offset };
-  const held = text.textDecorationOffset === run.figma.mixed ? null : text.textDecorationOffset;
-  if (text.textDecoration === "UNDERLINE" && offsetMatches(held, offset)) {
+  const offset = pixelsOrAuto(underline.offset);
+  const thickness = pixelsOrAuto(underline.thickness);
+  const heldOffset = unmixed(run, text.textDecorationOffset);
+  const heldThickness = unmixed(run, text.textDecorationThickness);
+  const heldColor = unmixed(run, text.textDecorationColor);
+  if (
+    text.textDecoration === "UNDERLINE" &&
+    decorationMatches(heldOffset, offset) &&
+    decorationMatches(heldThickness, thickness) &&
+    decorationColorMatches(run, heldColor, underline.color)
+  ) {
     return;
   }
-  const description = underline.offset === undefined ? "UNDERLINE" : `UNDERLINE, offset ${underline.offset}`;
+  const details = [
+    ...(underline.offset === undefined ? [] : [`offset ${underline.offset}`]),
+    ...(underline.thickness === undefined ? [] : [`thickness ${underline.thickness}`]),
+    ...(underline.color === undefined ? [] : [`color ${describeColor(underline.color)}`]),
+  ];
+  const description = ["UNDERLINE", ...details].join(", ");
+  const color: TextDecorationColor =
+    underline.color === undefined ? { value: "AUTO" } : { value: solidPaint(run, underline.color) };
   change(run.plan, label, `textDecoration → ${description}`, () => {
     text.textDecoration = "UNDERLINE";
     text.textDecorationOffset = offset;
+    text.textDecorationThickness = thickness;
+    text.textDecorationColor = color;
   });
 }
 

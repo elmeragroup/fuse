@@ -355,8 +355,8 @@ export const PARENT_VARIANTS = new Map<
 
 /**
  * The variants that test the root's own tag: `[a]:` compiles to `:is(a)`. Each is checked on a set
- * whose definition gives it a meaning, since a link root of a set that never reads it, as React Aria's
- * Link, is an `<a>` too.
+ * whose definition gives it a meaning, since a link root of a set that never reads it, as Link's, is
+ * an `<a>` too.
  */
 export const TAG_VARIANTS = new Map<string, (element: MarkupElement) => boolean>([
   ["[a]", (element) => element.name === "a"],

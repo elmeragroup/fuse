@@ -180,10 +180,10 @@ describe("each kit definition against the markup of its component", () => {
 });
 
 // Unit under test: `checkMarkup` on a definition whose root and part name their elements, since the
-// markup carries no `data-slot` there, as React Aria's Link renders an `<a data-rac>`. Oracle: the
-// hand-written markup below, where exactly one `<a>` carries `data-rac` and `role="link"`, its one
-// `aria-hidden` span is the part, and the `<svg>` child and the text `Chip` are the root's own. A
-// second span sits beside the part, so the part cannot be found by its place.
+// markup carries no `data-slot` there, as React Aria's Calendar marks a day with `data-rac` alone.
+// Oracle: the hand-written markup below, where exactly one `<a>` carries `data-rac` and
+// `role="link"`, its one `aria-hidden` span is the part, and the `<svg>` child and the text `Chip`
+// are the root's own. A second span sits beside the part, so the part cannot be found by its place.
 describe("the markup check of a root without a data-slot", () => {
   const DOT: PartDefinition = {
     key: "dot",

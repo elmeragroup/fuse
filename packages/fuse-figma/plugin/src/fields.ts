@@ -109,7 +109,7 @@ export function describeNumber(spec: NumberSpec): string {
  * @param spec - The spec.
  * @returns The variable name, or the literal color.
  */
-function describeColor(spec: ColorSpec): string {
+export function describeColor(spec: ColorSpec): string {
   return spec.kind === "variable" ? spec.variable.name : describeRgba(spec.color, spec.color.a);
 }
 
@@ -335,7 +335,8 @@ function shows(paint: Paint): boolean {
   return paint.visible !== false && (paint.blendMode ?? "NORMAL") === "NORMAL";
 }
 
-function paintMatches(run: Run, paint: Paint, spec: ColorSpec): boolean {
+/** Whether a held paint shows the color a spec asks for: a bound one its variable, a literal its color. */
+export function paintMatches(run: Run, paint: Paint, spec: ColorSpec): boolean {
   if (paint.type !== "SOLID" || !shows(paint)) {
     return false;
   }

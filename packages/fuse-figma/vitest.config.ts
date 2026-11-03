@@ -1,8 +1,10 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
+
+/** Suites that launch Playwright's Chromium against the Fuse build, as `figma:compare` does. */
+const CHROMIUM_TESTS = "src/**/*.chromium.test.ts";
 
 export default defineConfig({
   test: {
-    include: ["src/**/*.test.ts", "test/**/*.test.ts", "plugin/src/**/*.test.ts"],
     environment: "node",
     // The suites a worker runs share one module registry, so a worker imports the kit's modules
     // once and builds the kit three times apart: the component sets alone (`test/built-kit.ts`), the
@@ -14,5 +16,20 @@ export default defineConfig({
     isolate: false,
     testTimeout: 30_000,
     hookTimeout: 30_000,
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "unit",
+          include: ["src/**/*.test.ts", "test/**/*.test.ts", "plugin/src/**/*.test.ts"],
+          exclude: [...configDefaults.exclude, CHROMIUM_TESTS],
+        },
+      },
+      {
+        // `test:browser` runs it, in the CI leg that installs Chromium, after the Fuse build.
+        extends: true,
+        test: { name: "chromium", include: [CHROMIUM_TESTS], testTimeout: 120_000 },
+      },
+    ],
   },
 });

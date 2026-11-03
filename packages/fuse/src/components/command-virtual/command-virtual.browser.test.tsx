@@ -7,6 +7,7 @@ import "../../../dist/demo-stage-density.css";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { CaughtError, caughtError } from "../../../test/caught-error";
+import { flightLazyElement } from "../../../test/flight-lazy-element";
 import { withLocale } from "../../../test/locale-matrix";
 import { metricPx, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { Command } from "../command";
@@ -85,26 +86,6 @@ async function highlightThirdRowAndWheelAway(): Promise<void> {
   await expect.poll(() => highlightedOption()?.textContent).toBe("Meter point 0003");
   await userEvent.wheel(listbox(), { delta: { y: 4000 } });
   await expect.poll(() => listbox().scrollTop).toBeGreaterThan(2000);
-}
-
-/** React Flight's lazy node for an element that a Server Component passes to a client one. */
-type FlightLazyNode = {
-  readonly $$typeof: symbol;
-  readonly _payload: ReactElement;
-  readonly _init: (payload: ReactElement) => ReactElement;
-};
-
-/** Wraps an element the way React Flight passes it to a client component's render prop. */
-function flightLazyElement(element: ReactElement): ReactElement {
-  const node: FlightLazyNode = {
-    $$typeof: Symbol.for("react.lazy"),
-    _payload: element,
-    _init: (payload) => payload,
-  };
-  // SAFETY: React's public types have no lazy node, though React renders one wherever it renders
-  // an element. Base UI's render prop unwraps it, and Flight produces this shape.
-  // oxlint-disable-next-line anti-slop/no-chained-type-assertions -- a lazy node shares no key with ReactElement's type, so TypeScript rejects a single assertion; this fixture imitates React Flight's output
-  return node as unknown as ReactElement;
 }
 
 describe("CommandVirtual", () => {

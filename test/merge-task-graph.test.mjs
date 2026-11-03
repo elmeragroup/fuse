@@ -242,6 +242,7 @@ it("the browser job schedules the browser, e2e and packed-consumer gates", () =>
   expect([...new Set(ids)].sort()).toEqual([
     "@elmeragroup/fuse#test:browser",
     "@elmeragroup/fuse#test:packed-consumer",
+    "@elmeragroup/fuse-figma#test:browser",
     "@elmeragroup/pr-shots#test:e2e",
     "docs#test:e2e",
     "static-theme#test:browser",

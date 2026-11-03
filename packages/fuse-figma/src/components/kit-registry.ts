@@ -194,7 +194,7 @@ const EMPTY_PAGE: KitPage = { slug: "empty", name: "Empty" };
 /** The page of the Calendar's day cell, alone until the month frame joins it. */
 const CALENDAR_PAGE: KitPage = { slug: "calendar", name: "Calendar" };
 
-/** The page React Aria's Link sits on alone. */
+/** The page Link sits on alone. */
 const LINK_PAGE: KitPage = { slug: "link", name: "Link" };
 
 /** The page of Item's rows, the row and the link row, until Item group joins them. */

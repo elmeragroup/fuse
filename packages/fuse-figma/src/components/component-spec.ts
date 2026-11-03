@@ -242,9 +242,7 @@ export type BoxDefinition = {
  */
 export type ElementSelector = {
   /**
-   * The element's tag name in lowercase, such as `div`, or `*` for any tag, as CSS's universal
-   * selector matches, for a root whose tag changes with the cell, as React Aria's Link renders an
-   * `<a>` while enabled and a `<span role="link">` while disabled.
+   * The element's tag name in lowercase, such as `div`.
    */
   readonly tag: string;
   /**
@@ -475,9 +473,9 @@ export type ComponentDefinition = BoxDefinition & {
   /** The root layer's name, and the root element's `data-slot` unless `element` names the element. */
   readonly slot: string;
   /**
-   * The root element, for a root whose markup carries no `data-slot`, as React Aria's Link renders
-   * an `<a>` or a `<span>` with none, or one whose `data-slot` changes with the cell, as Pagination's
-   * edge link carries `pagination-previous` or `pagination-next`. `figma:compare` measures the one
+   * The root element, for a root whose markup carries no `data-slot`, as React Aria's Calendar
+   * renders a day as a `<div data-rac role="button">`, or one whose `data-slot` changes with the
+   * cell, as Pagination's edge link carries `pagination-previous` or `pagination-next`. `figma:compare` measures the one
    * element of a cell this selector matches, and its markup check places the root there. Undefined
    * for a root its `data-slot` names.
    */
@@ -485,7 +483,7 @@ export type ComponentDefinition = BoxDefinition & {
   /**
    * The `data-slot` the element `element` names carries in a cell, as Pagination's edge link carries
    * `pagination-previous` or `pagination-next` by its direction. Undefined for an element that carries
-   * none in any cell, as React Aria's Link renders none, and for a root its `data-slot` names. The
+   * none in any cell, as React Aria's Calendar day renders none, and for a root its `data-slot` names. The
    * presence check reads it for an instance part's root, and the markup check holds it to what each
    * cell renders.
    */

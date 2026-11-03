@@ -97,6 +97,9 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // mergeProps. AspectRatio renders one div through `cn`.
   { name: "attachment", entryFile: "attachment.js", measuredGzip: 35347 },
   { name: "aspect-ratio", entryFile: "aspect-ratio.js", measuredGzip: 21363 },
+  // 2026-11-03: new entry, measured at 23701. Link moved off React Aria onto Base UI's useRender,
+  // replacing the react-aria/link entry, measured at 32413.
+  { name: "link", entryFile: "link.js", measuredGzip: 23701 },
   // 2026-10-20: new entry, measured at 154062 with the add menu. It renders Toolbar, Menu,
   // Popover, Select, Combobox, ToggleGroup, NumberField and Slider, so the ceiling follows what
   // those cost.
@@ -208,7 +211,6 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
     measuredGzip: 106711,
     ceilingGzip: 156552,
   },
-  { name: "react-aria/link", entryFile: "react-aria/link.js", measuredGzip: 32413, ceilingGzip: 46851 },
   {
     name: "react-aria/search-field",
     entryFile: "react-aria/search-field.js",

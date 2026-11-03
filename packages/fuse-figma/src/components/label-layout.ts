@@ -6,12 +6,22 @@
  * gap, and to settle the text declarations of a box that shows no label.
  */
 
+import { describeColor } from "./box-paint";
 import { hugsUncapped, listNames, UNREAD_SHARE, widthCapInside } from "./box-sizing";
 import type { Holder, WidthCap } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
 import type { CoverageNote, LayerStyle } from "./cascade";
 import type { Cell, LabelDefinition, TextPlacement } from "./component-spec";
-import { describeNumber, evaluateLength, evaluateNumber, normalizeCss, readNumber } from "./css-values";
+import {
+  describeNumber,
+  evaluateLength,
+  evaluateNumber,
+  inFont,
+  normalizeCss,
+  readColor,
+  readNumber,
+  splitTopLevel,
+} from "./css-values";
 import type { VariableIndex } from "./css-values";
 import { HUGGING_TEXT, NO_LIMITS, TOP_LEFT } from "./kit-spec";
 import type {
@@ -79,6 +89,8 @@ const TEXT_PROPERTIES = [
   "letter-spacing",
   "text-decoration-line",
   "text-underline-offset",
+  "text-decoration-thickness",
+  "text-decoration-color",
   "text-align",
   "white-space-collapse",
   "text-wrap-mode",
@@ -370,7 +382,7 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
     (fontStyle) => ({ outcome: "literal", detail: `font style ${fontStyle}` }),
     style.feed("fontStyle", path)
   );
-  const underline = readUnderline(style, path);
+  const underline = readUnderline(style, fontSize, variables, path);
   const letterSpacing = readLetterSpacing(style, path);
   if (fontFamily === undefined || fontSize === undefined || lineHeight === undefined || color === undefined) {
     throw new KitUnmappable({
@@ -589,7 +601,79 @@ function readNativeLines(
   return { sizing: FILLING, truncation: { maxLines: 1 } };
 }
 
-function readUnderline(style: LayerStyle, path: readonly string[]): TextLayerSpec["underline"] {
+/**
+ * A `text-decoration-color` as the kit draws it: in the text's own fill, or in a paint. `dark` is
+ * the dark arm of a `light-dark()` whose arms differ, which the paint leaves out.
+ */
+type DecorationColor =
+  | { readonly kind: "text" }
+  | { readonly kind: "paint"; readonly color: ColorSpec; readonly dark: string | undefined };
+
+/** The two arms of a `light-dark(<light>, <dark>)`, or undefined for any other value. */
+function lightDarkArms(value: string): { readonly light: string; readonly dark: string } | undefined {
+  if (!value.startsWith("light-dark(") || !value.endsWith(")")) {
+    return undefined;
+  }
+  const [light, dark, ...rest] = splitTopLevel(value.slice("light-dark(".length, -1), ",");
+  return light === undefined || dark === undefined || rest.length > 0
+    ? undefined
+    : { light: light.trim(), dark: dark.trim() };
+}
+
+/**
+ * Read an underline's color. `currentcolor` is the text's own color, which Figma's `AUTO` draws, and
+ * inside a mix it stands for the text color the box resolves, so Link's resting
+ * `color-mix(in oklab, currentcolor 35%, transparent)` binds the role tint of its text color, such
+ * as `foreground/35`.
+ *
+ * A `light-dark()` draws the light arm. A Figma paint bound to a variable takes its opacity from the
+ * variable's alpha, as the fake's rule 1 models, and a role tint holds one share of its role in every
+ * mode, so the kit cannot draw a share that changes with the scheme. Link's 65% in a dark
+ * scheme therefore draws at the light scheme's 35% in a Dark preview, and the coverage row says so.
+ *
+ * @param value - The compiled `text-decoration-color`.
+ * @param textColor - The box's resolved `color`, which `currentcolor` takes.
+ * @param variables - The synced variables.
+ * @returns The color, or undefined for one the reader cannot express.
+ */
+function readDecorationColor(
+  value: string,
+  textColor: string | undefined,
+  variables: VariableIndex
+): DecorationColor | undefined {
+  const normalized = normalizeCss(value);
+  const arms = lightDarkArms(normalized);
+  const light = arms?.light ?? normalized;
+  const dark = arms === undefined || arms.dark === arms.light ? undefined : arms.dark;
+  if (light === "currentcolor") {
+    return dark === undefined ? { kind: "text" } : undefined;
+  }
+  if (light.includes("currentcolor") && textColor === undefined) {
+    return undefined;
+  }
+  const color = readColor(light.replaceAll("currentcolor", textColor ?? ""), variables);
+  return color === undefined ? undefined : { kind: "paint", color, dark };
+}
+
+function describeDecorationColor(read: DecorationColor): CoverageNote {
+  if (read.kind === "text") {
+    return { outcome: "literal", detail: "an underline in the text's own color (AUTO)" };
+  }
+  const note = describeColor(read.color);
+  return read.dark === undefined
+    ? note
+    : {
+        outcome: note.outcome,
+        detail: `${note.detail}, the light scheme's arm. The dark arm ${read.dark} is not drawn: a role tint holds one share in every mode, so a Dark preview draws the light share`,
+      };
+}
+
+function readUnderline(
+  style: LayerStyle,
+  fontSize: NumberSpec | undefined,
+  variables: VariableIndex,
+  path: readonly string[]
+): TextLayerSpec["underline"] {
   const underlined = style.read(
     "text-decoration-line",
     (value) => {
@@ -600,16 +684,35 @@ function readUnderline(style: LayerStyle, path: readonly string[]): TextLayerSpe
     style.feed("underline", path)
   );
   if (underlined !== true) {
-    style.mark("text-underline-offset", "dropped", "the cell draws no underline", []);
+    for (const property of ["text-underline-offset", "text-decoration-thickness", "text-decoration-color"]) {
+      style.mark(property, "dropped", "the cell draws no underline", []);
+    }
     return undefined;
   }
+  // An `em` length takes the label's font size, which only a literal size gives in pixels.
+  const inPixels = (value: string) =>
+    fontSize?.kind === "literal" ? evaluateLength(inFont(value, fontSize.value)) : evaluateNumber(value);
+  const textColor = style.resolved("color");
+  const underlineColor = style.read(
+    "text-decoration-color",
+    (value) => readDecorationColor(value, textColor, variables),
+    describeDecorationColor,
+    style.feed("underline", path)
+  );
   return {
     offset: style.read(
       "text-underline-offset",
-      evaluateNumber,
+      inPixels,
       (offset) => ({ outcome: "literal", detail: `an underline offset of ${offset}px` }),
       style.feed("underline", path)
     ),
+    thickness: style.read(
+      "text-decoration-thickness",
+      inPixels,
+      (thickness) => ({ outcome: "literal", detail: `an underline ${thickness}px thick` }),
+      style.feed("underline", path)
+    ),
+    color: underlineColor?.kind === "paint" ? underlineColor.color : undefined,
   };
 }
 
