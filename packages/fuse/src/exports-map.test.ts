@@ -430,6 +430,7 @@ describe("exports map", () => {
       readFileSync(join(packageRoot, "src/theme/catalog.ts"), "utf8")
     );
     expect(catalog).toEqual([
+      "TEXT_GRADE_PAIRS",
       "defaultDensityForVariant",
       "resolveThemeCatalog",
       "DENSITY_ROLES",

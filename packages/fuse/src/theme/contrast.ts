@@ -18,6 +18,10 @@ export const CONTROL_SURFACES = [
   "dialog",
 ] as const satisfies readonly TokenName[];
 
+/**
+ * The text-grade role pairs, `[foreground, background]`: every pair whose foreground carries
+ * text and must reach 4.5:1 on its surface in every theme and both color schemes.
+ */
 export const TEXT_GRADE_PAIRS = [
   ["foreground", "background"],
   ["foreground", "muted"],

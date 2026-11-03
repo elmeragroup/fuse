@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import * as Hex from "@elmeragroup/color/hex";
 import * as Oklch from "@elmeragroup/color/oklch";
 import { getOrThrow } from "@elmeragroup/color/result";
 
@@ -128,6 +129,22 @@ describe("resolveThemeCatalog", () => {
       css: "calc(var(--radius) - 4 * var(--radius-step, 0px))",
       value: 4,
     });
+  });
+
+  it("keeps a color's literal as declared, carried along var() chains, beside its sRGB value", () => {
+    // `tokens/dark-defaults.ts` declares the dark --error, which --destructive aliases.
+    const darkError = getOrThrow(Oklch.parse("oklch(0.8383036 0.089085 26.7575)"));
+    const guenDark = theme("external-guen-private").schemes.dark;
+    expect(guenDark.tokens.error.source).toEqual(darkError);
+    expect(guenDark.tokens.destructive.source).toEqual(darkError);
+    // A token through a primitive: --brand is var(--brand-fkas), `oklch(0.68 0.21747 38.8)`.
+    const fkasAccent = getOrThrow(Oklch.parse("oklch(0.68 0.21747 38.8)"));
+    expect(catalog.primitives["brand-fkab"].source).toEqual(fkasAccent);
+    expect(light("external-fkas-private").tokens.brand.source).toEqual(fkasAccent);
+    // `tokens/defaults.ts` declares the light --sh-keyword in hex, so its source is sRGB.
+    expect(light("external-fkas-private").tokens["sh-keyword"].source).toEqual(
+      getOrThrow(Hex.parse("#ff7733"))
+    );
   });
 
   it("keeps a var() as one hop and resolves its value along the chain in the same scheme", () => {
