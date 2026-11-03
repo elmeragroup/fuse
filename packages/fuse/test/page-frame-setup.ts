@@ -1,7 +1,8 @@
 import { beforeAll } from "vitest";
-import { cdp, commands } from "vitest/browser";
+import { commands } from "vitest/browser";
 
 import { nextFrames } from "./animation-frames";
+import { sizePageToFrame } from "./page-metrics";
 
 declare module "vitest/browser" {
   // oxlint-disable-next-line typescript/consistent-type-definitions -- Vitest registers custom commands by interface declaration merging; a type alias cannot augment.
@@ -9,14 +10,6 @@ declare module "vitest/browser" {
     sizePage: (width: number, height: number) => Promise<void>;
   }
 }
-
-/** The CDP call that sizes the page in Chromium. */
-type MetricsCdp = {
-  readonly send: (
-    method: "Emulation.setDeviceMetricsOverride",
-    params: { width: number; height: number; deviceScaleFactor: number; mobile: boolean }
-  ) => Promise<void>;
-};
 
 /**
  * How many frames a Playwright resize gets to reach the page before the setup tries CDP. Measured
@@ -62,18 +55,7 @@ beforeAll(async () => {
   const [width, height] = [frame.clientWidth, frame.clientHeight];
   await commands.sizePage(width, height);
   if (await settles(PLAYWRIGHT_FRAMES)) return;
-  // SAFETY: Vitest types its CDP session as {}; Playwright's session implements send. Engines other than Chromium have none.
-  const session = cdp() as MetricsCdp | undefined;
-  if (session === undefined) {
-    if (await settles(LAST_FRAMES)) return;
-  } else {
-    await session.send("Emulation.setDeviceMetricsOverride", {
-      width,
-      height,
-      deviceScaleFactor: 1,
-      mobile: false,
-    });
-    if (await settles(LAST_FRAMES)) return;
-  }
+  await sizePageToFrame();
+  if (await settles(LAST_FRAMES)) return;
   throw new Error(`The test page does not show its whole frame: ${uncovered() ?? "it does now"}.`);
 });

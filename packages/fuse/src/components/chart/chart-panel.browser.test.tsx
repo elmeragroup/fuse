@@ -29,6 +29,7 @@ import {
   plotOf,
   rectOf,
 } from "../../../test/chart/panel-readers";
+import { sizePageToFrame } from "../../../test/page-metrics";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -44,8 +45,7 @@ type DeviceMetrics = {
 };
 
 type MetricsCdp = {
-  send: ((method: "Emulation.setDeviceMetricsOverride", params: DeviceMetrics) => Promise<void>) &
-    ((method: "Emulation.clearDeviceMetricsOverride") => Promise<void>);
+  send: (method: "Emulation.setDeviceMetricsOverride", params: DeviceMetrics) => Promise<void>;
 };
 
 // SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
@@ -56,7 +56,8 @@ let clock: FrameClock | null = null;
 afterEach(async () => {
   clock?.restore();
   clock = null;
-  await session().send("Emulation.clearDeviceMetricsOverride");
+  // Back to the frame's size, so the next file finds the page at the size Vitest set.
+  await sizePageToFrame();
 });
 
 describe("two Panels on one x grid", () => {

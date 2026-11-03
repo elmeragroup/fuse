@@ -10,6 +10,7 @@ import { cdp, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { bars as barsIn, glideLanded } from "../../../test/chart/marks";
 import { onGrid } from "../../../test/chart/panel-readers";
+import { sizePageToFrame } from "../../../test/page-metrics";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Tabs } from "../tabs";
@@ -25,15 +26,15 @@ type DeviceMetrics = {
 };
 
 type MetricsCdp = {
-  send: ((method: "Emulation.setDeviceMetricsOverride", params: DeviceMetrics) => Promise<void>) &
-    ((method: "Emulation.clearDeviceMetricsOverride") => Promise<void>);
+  send: (method: "Emulation.setDeviceMetricsOverride", params: DeviceMetrics) => Promise<void>;
 };
 
 // SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
 const session = (): MetricsCdp => cdp() as MetricsCdp;
 
 afterEach(async () => {
-  await session().send("Emulation.clearDeviceMetricsOverride");
+  // Back to the frame's size, so the next file finds the page at the size Vitest set.
+  await sizePageToFrame();
 });
 
 const ROWS = ["a", "b", "c", "d", "e", "f", "g"].map((name, index) => ({ name, v: 2 + (index % 3) }));
