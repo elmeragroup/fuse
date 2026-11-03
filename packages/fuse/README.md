@@ -15,6 +15,19 @@ Requires Tailwind CSS 4.1 or newer. Published code is not scanned by a consumer 
 
 Adjust the `@source` path only when the stylesheet is not one directory below the app root.
 
+### Fonts
+
+Fuse sets body text in `--font-sans` and headings in `--font-heading`, and loads no font files. Both default to the system font stack, in the `theme` layer. Load your fonts and set both variables in your own CSS, without `!important`:
+
+```css
+:root {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+}
+```
+
+The Fonts page in the docs handbook has the recipes for Next.js, `@fontsource` and `@font-face`.
+
 ### What `fuse/css` changes in your theme
 
 `@elmeragroup/fuse/css` is not only the components' variants and control metrics. Importing it into a Tailwind build also changes these parts of the host theme, whether or not `themes.css` is imported:

@@ -8,7 +8,6 @@
 
 const VAR_REFERENCE = /^var\(--([a-z0-9-]+)\)$/;
 const LENGTH = /^(-?[0-9]*\.?[0-9]+)(rem|px)$/;
-const QUOTED = /^(["'])(.*)\1$/;
 // Unsigned decimal digits with an optional fraction, as token modules write a number.
 const PLAIN_NUMBER = /^(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)$/;
 
@@ -58,19 +57,6 @@ export type RemLength = `${number}rem`;
  */
 export function remToPx(length: RemLength): number {
   return Number(length.slice(0, -"rem".length)) * ROOT_FONT_PX;
-}
-
-/**
- * The first family of a CSS font stack, without its quotes. Design tools bind one family, so
- * the first one is the designed choice and the rest are fallbacks.
- *
- * @param value - A token's CSS value, such as `"Neo Sans", Roboto, sans-serif`.
- * @returns The family name, or `undefined` when the stack does not start with a named family.
- */
-export function cssFirstFontFamily(value: string): string | undefined {
-  const [first = ""] = value.split(",");
-  const family = first.trim().replace(QUOTED, "$2");
-  return family === "" || family.startsWith("var(") ? undefined : family;
 }
 
 /**

@@ -5,9 +5,9 @@
  * the comparison also renders the components from.
  *
  * The font comes from `@fontsource/roboto`, Google's Roboto, the family Figma renders for the
- * kit's labels. `--font-sans` lists Roboto first in every theme, and the page checks that the
- * face it uses has loaded, so a missing font file fails the run instead of falling back to a
- * system font.
+ * kit's labels. The page sets `--font-sans` with Roboto first in every theme (`kit-fonts.ts`), and
+ * it checks that the face it uses has loaded, so a missing font file fails the run instead of
+ * falling back to a system font.
  */
 
 import { Effect, FileSystem, Option } from "effect";

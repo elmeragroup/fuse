@@ -123,8 +123,9 @@ export default function ReleasesPage(): ReactElement {
       <p>
         The code is MIT, matching the whole dependency stack. Two constraints follow from that and bound what
         the tarball may contain: <strong>the library never ships font files</strong> — fonts are app-supplied
-        through the <code>--font-sans</code> and <code>--font-heading</code> tokens, and themes reference
-        family names only — and brand logos do ship publicly in <code>@elmeragroup/fuse/icons</code>.
+        through <code>--font-sans</code> and <code>--font-heading</code>, and themes name no families, as{" "}
+        <Link href="/handbook/fonts">the fonts page</Link> describes — and brand logos do ship publicly in{" "}
+        <code>@elmeragroup/fuse/icons</code>.
       </p>
     </DocsPage>
   );

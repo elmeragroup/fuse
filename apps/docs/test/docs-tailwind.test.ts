@@ -235,6 +235,14 @@ describe("docs component CSS variables", () => {
       ...definedCustomProperties(themesCss),
     ]);
 
+    // A `next/font` loader's `variable` option defines that custom property on its class.
+    for (const relative of srcTsFiles()) {
+      const source = readFileSync(join(docsRoot, relative), "utf8");
+      for (const match of source.matchAll(/\bvariable:\s*"(--[A-Za-z0-9_-]+)"/g)) {
+        defined.add(match[1] ?? "");
+      }
+    }
+
     const failures = srcTsFiles()
       .filter(isCheckedSource)
       .flatMap((relative) => {

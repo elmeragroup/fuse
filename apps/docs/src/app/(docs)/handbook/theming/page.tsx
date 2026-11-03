@@ -340,6 +340,11 @@ export default function ThemingPage(): ReactElement {
         <code>className</code> size or weight replaces the role.
       </p>
       <p>
+        Themes set no fonts. Fuse sets body text in <code>--font-sans</code> and headings in{" "}
+        <code>--font-heading</code>, and your app sets both, as{" "}
+        <Link href="/handbook/fonts">the fonts page</Link> shows.
+      </p>
+      <p>
         The modals, <code>Dialog</code>, <code>AlertDialog</code> and <code>Sheet</code>, fill with{" "}
         <code>--dialog</code> and set their text in <code>--dialog-foreground</code>. Internal themes and
         every dark theme alias the popover pair, so a modal looks like the anchored popups. External light
@@ -603,7 +608,7 @@ export default function ThemingPage(): ReactElement {
         <code>data-theme="dark"</code> activates dark palettes on both the document and nested theme scopes.
         Internal themes use neutral colors; external themes use their brand palettes. The{" "}
         <Link href="/handbook/theme-matrix">theme matrix</Link> has light, dark, and system controls for
-        comparing them. Colour scheme does not change theme slugs, density, fonts, or brand primitives.
+        comparing them. Colour scheme does not change theme slugs, density or brand primitives.
       </p>
       <p>
         This site is a worked example of the split. Its own document theme is fixed at{" "}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cssFirstFontFamily, cssFontWeight, cssLengthToPx, cssVarReference, remToPx } from "./css-values";
+import { cssFontWeight, cssLengthToPx, cssVarReference, remToPx } from "./css-values";
 
 describe("cssVarReference", () => {
   it.each([
@@ -41,19 +41,6 @@ describe("remToPx", () => {
     expect(remToPx("2.25rem")).toBe(36);
     expect(remToPx("0.625rem")).toBe(10);
     expect(remToPx("3rem")).toBe(48);
-  });
-});
-
-describe("cssFirstFontFamily", () => {
-  it.each([
-    ['"Neo Sans", Roboto, sans-serif', "Neo Sans"],
-    ["'Inter'", "Inter"],
-    ["Roboto, sans-serif", "Roboto"],
-    // A stack that does not start with a named family is rejected.
-    ["", undefined],
-    ["var(--font-sans), serif", undefined],
-  ])("reads %j as %j", (value, expected) => {
-    expect(cssFirstFontFamily(value)).toBe(expected);
   });
 });
 

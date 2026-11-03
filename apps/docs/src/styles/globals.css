@@ -14,6 +14,35 @@
   --spacing-docs-header: 3.5rem;
 }
 
+/* The docs are an app, so they set the fonts Fuse applies, as the fonts handbook page shows.
+   `components/site-fonts.ts` loads the faces into --font-inter and --font-roboto. The site draws
+   Inter whatever theme the document carries. A theme scope below the root, such as a demo stage, a
+   theme matrix cell or a landing app window, draws its variant's face: Inter for internal themes
+   and Roboto for external ones. Each scope sets --font-heading again, because the root's
+   `var(--font-sans)` resolves at the root. */
+:root {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+}
+
+[data-theme-variant="internal"]:not(:root) {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+}
+
+[data-theme-variant="external"]:not(:root) {
+  --font-sans: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+}
+
+/* A scope sets its subtree's font, since an ancestor's `font-family: var(--font-sans)` computed
+   once there. The rule sits in the base layer, so a utility on the scope still wins. */
+@layer base {
+  [data-theme-variant]:not(:root) {
+    font-family: var(--font-sans);
+  }
+}
+
 @utility prose-docs {
   --tw-prose-body: var(--foreground);
   --tw-prose-headings: var(--foreground);

@@ -3,6 +3,7 @@ import { expect, it } from "vitest";
 
 import { launchSuiteBrowser, readThemeAttributes, waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
+import { drawnFace } from "./drawn-face";
 
 const browser = launchSuiteBrowser();
 
@@ -81,6 +82,12 @@ it("switches both matrix variants and the docs chrome together", async () => {
     await page.locator("body").evaluate((el) => getComputedStyle(el).backgroundColor),
   ];
   const light = await paint();
+  // Each cell's ThemeScope sets its own body font under the docs body's Inter: an external cell's
+  // button draws Roboto and an internal cell's draws Inter.
+  expect([
+    await drawnFace(external.locator("button").first()),
+    await drawnFace(internal.locator("button").first()),
+  ]).toEqual(["roboto", "inter"]);
   await page.getByRole("button", { name: "Dark", exact: true }).click();
   await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "dark");
   const dark = await paint();
@@ -126,5 +133,46 @@ it("keeps search overlays in the document's dark palette", async () => {
   await expectRole(page, '[role="dialog"]', "color", "popover-foreground");
   await page.keyboard.press("Escape");
   await expect.poll(() => page.getByRole("dialog").count()).toBe(0);
+  await page.close();
+});
+
+// Unit under test: the faces the docs load (`components/site-fonts.ts`). Oracle: the fonts page's
+// weights, 400, 500, 600 and 700, for Inter and Roboto. `next/font` declares each face under a
+// generated family, which `--font-inter` and `--font-roboto` name first. The CSS Font Loading API's
+// `load()` resolves with the face font matching picks, which is a nearby weight when the requested
+// one is missing, so the test reads each face's own family, weight and status. `Strøm` falls in the
+// Latin subset the docs load.
+it("serves Inter and Roboto in every weight Fuse parts set", async () => {
+  const page = await browser().newPage({ colorScheme: "light" });
+  await page.goto(`${docsBaseUrl()}/handbook/fonts`, { waitUntil: "load" });
+  const loaded = await page.evaluate(async () => {
+    const families = ["--font-inter", "--font-roboto"].map((variable) =>
+      (getComputedStyle(document.documentElement).getPropertyValue(variable).split(",")[0] ?? "")
+        .trim()
+        .replaceAll(/["']/g, "")
+    );
+    const faces = await Promise.all(
+      families.flatMap((family) =>
+        ["400", "500", "600", "700"].map(async (weight) => {
+          const matched = await document.fonts.load(`${weight} 16px "${family}"`, "Strøm");
+          return matched.map(
+            (face) => `${face.family.replaceAll(/["']/g, "")} ${face.weight} ${face.status}`
+          );
+        })
+      )
+    );
+    return { families, faces };
+  });
+  const [inter = "", roboto = ""] = loaded.families;
+  // A webpack build hashes the loader names, as `__inter_1a2b3c`.
+  expect(loaded.families.map((family) => family.replace(/^__/u, "").replace(/_[0-9a-f]{6}$/u, ""))).toEqual([
+    "inter",
+    "roboto",
+  ]);
+  expect(loaded.faces).toEqual(
+    [inter, roboto].flatMap((family) =>
+      ["400", "500", "600", "700"].map((weight) => [`${family} ${weight} loaded`])
+    )
+  );
   await page.close();
 });

@@ -14,7 +14,7 @@ import type { Srgb } from "@elmeragroup/color/srgb";
 
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
-import { cssFirstFontFamily, cssFontWeight, cssLengthToPx, cssVarReference, remToPx } from "./css-values";
+import { cssFontWeight, cssLengthToPx, cssVarReference, remToPx } from "./css-values";
 import { defaultDensityForVariant, densityAttributes } from "./density";
 import type { Density, DensityAttributes } from "./density";
 import { themeAttributes } from "./theme-attributes";
@@ -51,7 +51,6 @@ import type { ThemeInput, ThemeSlug } from "./tokens/themes";
 type LiteralByKind = {
   readonly color: Srgb;
   readonly dimension: number;
-  readonly fontFamily: string;
   readonly fontWeight: number;
 };
 
@@ -306,14 +305,6 @@ const LITERAL_READERS: LiteralReaders = {
       throw defect(site, expected("a rem or px length", css));
     }
     return length;
-  },
-  fontFamily: (css, site) => {
-    // Design tools bind one family, so the first family of a stack is the designed one.
-    const family = cssFirstFontFamily(css);
-    if (family === undefined) {
-      throw defect(site, expected("a font stack that starts with a named family", css));
-    }
-    return family;
   },
   fontWeight: (css, site) => {
     const weight = cssFontWeight(css);

@@ -47,8 +47,8 @@ const SLUGS = [
 // the pressed Toggle fill and label, the selection row title weight, the three paragraph line
 // heights, the size, line height and weight of h1 to h3, the modal fill and text, and the 26
 // chart roles: 8 slot foregrounds, Other and its foreground, 7 ramp steps, 7 diverging steps and
-// 2 sentiments.
-const TOKEN_COUNT = 135;
+// 2 sentiments. Themes name no fonts, so `font-sans` and `font-heading` are not tokens.
+const TOKEN_COUNT = 133;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;
@@ -180,7 +180,7 @@ describe("resolveThemeCatalog", () => {
 
   it("resolves external fkab-company to the tokens of external fkas-company in both schemes", () => {
     // Unit under test: external-fkab-company. Oracle: external-fkas-company, which fkab
-    // aliases by policy, so every token must resolve to the same colour, length or font.
+    // aliases by policy, so every token must resolve to the same colour, length or weight.
     // Only the brand pointer may name fkab, and it resolves to the fkas accent.
     const fkab = theme("external-fkab-company");
     const fkas = theme("external-fkas-company");
@@ -393,21 +393,11 @@ describe("resolveThemeCatalog", () => {
     }
   });
 
-  it("reads dimensions as px and fonts as the first family", () => {
+  it("reads dimensions as px", () => {
     // 1.8125rem at the 16px root.
     expect(light("external-fkas-private").tokens["radius-button"].value).toBe(29);
     expect(light("external-fkas-private").tokens["button-outline-width"].value).toBe(2);
     expect(light("internal-fkas-private").tokens["button-outline-width"].value).toBe(1);
-    expect(light("external-fkas-private").tokens["font-heading"]).toMatchObject({
-      kind: "fontFamily",
-      reference: undefined,
-      value: "Neo Sans",
-    });
-    expect(light("external-elma-company").tokens["font-heading"]).toMatchObject({
-      css: "var(--font-sans)",
-      reference: { space: "token", name: "font-sans" },
-      value: "Roboto",
-    });
   });
 
   it("reads the paragraph line heights as px, kept in both schemes", () => {

@@ -64,9 +64,10 @@ async function outsideScroller(scroller: Locator, selector: string): Promise<str
 
 /**
  * Sets the sites' text in one sans before the page parses, tracked by `letterSpacing`. The theme
- * names Roboto, which the docs app does not load, so each platform draws its own fallback: macOS's
- * system UI font, or DejaVu Sans on a Linux runner, which sets the same copy wider. Verdana shares
- * DejaVu's metrics (both descend from Bitstream Vera), so every platform measures the header alike.
+ * names Roboto, which the docs app loads. Until the file arrives, each platform draws its own
+ * fallback: macOS's system UI font, or DejaVu Sans on a Linux runner, which sets the same copy
+ * wider. Verdana shares DejaVu's metrics (both descend from Bitstream Vera), so every platform
+ * measures the header alike, whether or not Roboto has loaded.
  */
 function siteFont(letterSpacing: string): (page: Page) => Promise<void> {
   return async (page) => {

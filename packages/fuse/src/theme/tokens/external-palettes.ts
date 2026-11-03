@@ -130,7 +130,6 @@ export const EXTERNAL_PALETTES = {
     input: "oklch(0.9232 0.0026 48.72)",
     radius: "0.75rem",
     "radius-button": "1.8125rem",
-    "font-heading": '"Neo Sans", var(--font-sans)',
   },
   tkas: {
     background: "oklch(0.97902 0.02928 188.87)",
@@ -156,7 +155,6 @@ export const EXTERNAL_PALETTES = {
     input: "oklch(0.929 0.0126 255.53)",
     radius: "1rem",
     "radius-button": "1rem",
-    "font-heading": "var(--font-sans)",
   },
   guen: {
     background: "oklch(0.95469 0.01887 279.53)",
@@ -182,7 +180,6 @@ export const EXTERNAL_PALETTES = {
     input: "oklch(0.929 0.0126 255.53)",
     radius: "0.5rem",
     "radius-button": "0.5rem",
-    "font-heading": "var(--font-sans)",
   },
   fkse: {
     background: "oklch(0.98014 0.01729 210.19)",
@@ -208,7 +205,6 @@ export const EXTERNAL_PALETTES = {
     input: "oklch(0.9232 0.0026 48.72)",
     radius: "0.75rem",
     "radius-button": "1.8125rem",
-    "font-heading": "var(--font-sans)",
   },
   // Elmera Figma "Farger" sheet (file dWv89e4X0DXeCKMsJwD5zL, node 2106:18246). card-soft (P-99)
   // and feature-bright (P-75) are interpolated tones between neighbouring sheet stops. Design has
@@ -238,7 +234,6 @@ export const EXTERNAL_PALETTES = {
     input: "oklch(0.9219 0 0)",
     radius: "0.375rem",
     "radius-button": "0.375rem",
-    "font-heading": "var(--font-sans)",
   },
   // Nordic Green Energy Material 3 scheme, NGE/sys/light (Figma file q1sEYcZWmf1HUeuiaJFqm6,
   // section 129:12419), mapped to roles by meaning. The file's "Farger" sheets carry Gudbrandsdal
@@ -269,7 +264,6 @@ export const EXTERNAL_PALETTES = {
     input: "oklch(0.8256644 0.0145962 162.3965393)", // #BEC9C3 outline-variant
     radius: "0.375rem",
     "radius-button": "1.8125rem",
-    "font-heading": "var(--font-sans)",
   },
 } as const satisfies Record<ExternalBrandCode, TokenLayer>;
 

@@ -211,8 +211,6 @@ export const LAYER_DEFAULTS = {
   "heading-3-size": "1rem",
   "heading-3-leading": "1.375rem",
   "heading-3-weight": "500",
-  "font-sans": "Roboto, ui-sans-serif, system-ui, sans-serif",
-  "font-heading": "var(--font-sans)",
 } as const satisfies LayerTokens;
 
 /**

@@ -4,6 +4,7 @@ import { defaultDensityForVariant, densityAttributes, themeAttributes } from "@e
 import type { ThemeInput } from "@elmeragroup/fuse/theme";
 
 import { DOCUMENT_THEME } from "../lib/theme";
+import { inter, roboto } from "./site-fonts";
 
 type DocumentRootProps = {
   children: ReactNode;
@@ -20,7 +21,7 @@ export function DocumentRoot({
   return (
     <html
       lang="en"
-      className="bg-background text-foreground"
+      className={`${inter.variable} ${roboto.variable} bg-background text-foreground`}
       {...themeAttributes(theme)}
       {...densityAttributes(defaultDensityForVariant(theme.variant))}
       suppressHydrationWarning={suppressHydrationWarning}>

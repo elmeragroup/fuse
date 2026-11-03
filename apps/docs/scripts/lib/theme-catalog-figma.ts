@@ -23,32 +23,25 @@ import type {
 import type {
   FigmaColorToken,
   FigmaDimensionToken,
-  FigmaFontToken,
   FigmaFontWeightToken,
   FigmaSrgbColor,
   FigmaThemeDocument,
   FigmaThemeIndex,
 } from "../../src/lib/docs-model.ts";
 
-type DtcgGroup = "color" | "size" | "font" | "weight";
+type DtcgGroup = "color" | "size" | "weight";
 
 const DTCG_GROUPS = {
   color: "color",
   dimension: "size",
-  fontFamily: "font",
   fontWeight: "weight",
 } as const satisfies Record<TokenKind, DtcgGroup>;
 
 type DtcgAlias = `{${string}}`;
 
-/** A name's key in its kind's group. Font tokens drop their prefix, as `font.sans`. */
-function dtcgKey(kind: TokenKind, name: string): string {
-  return kind === "fontFamily" ? name.replace(/^font-/, "") : name;
-}
-
 /** The DTCG alias of a reference. A reference target has the same kind as the entry holding it. */
 function aliasOf(kind: TokenKind, reference: Reference): DtcgAlias {
-  return `{${DTCG_GROUPS[kind]}.${dtcgKey(kind, reference.name)}}`;
+  return `{${DTCG_GROUPS[kind]}.${reference.name}}`;
 }
 
 /**
@@ -71,13 +64,12 @@ function dtcgColor(color: Srgb.Srgb): FigmaSrgbColor {
 type DtcgGroups = {
   color: Record<string, FigmaColorToken>;
   size: Record<string, FigmaDimensionToken>;
-  font: Record<string, FigmaFontToken>;
   weight: Record<string, FigmaFontWeightToken>;
 };
 
 /** Write one entry into its kind's group: an alias for a reference, else its literal. */
 function emitEntry(groups: DtcgGroups, entry: PrimitiveEntry | TokenEntry): void {
-  const key = dtcgKey(entry.kind, entry.name);
+  const key = entry.name;
   const alias = entry.reference === undefined ? undefined : aliasOf(entry.kind, entry.reference);
   switch (entry.kind) {
     case "color":
@@ -85,9 +77,6 @@ function emitEntry(groups: DtcgGroups, entry: PrimitiveEntry | TokenEntry): void
       return;
     case "dimension":
       groups.size[key] = { $type: "dimension", $value: alias ?? { value: entry.value, unit: "px" } };
-      return;
-    case "fontFamily":
-      groups.font[key] = { $type: "fontFamily", $value: alias ?? entry.value };
       return;
     case "fontWeight":
       groups.weight[key] = { $type: "fontWeight", $value: alias ?? entry.value };
@@ -106,7 +95,7 @@ export function figmaDocumentFromScheme(
   scheme: ResolvedScheme,
   primitives: ResolvedThemeCatalog["primitives"]
 ): FigmaThemeDocument {
-  const groups: DtcgGroups = { color: {}, size: {}, font: {}, weight: {} };
+  const groups: DtcgGroups = { color: {}, size: {}, weight: {} };
   for (const entry of Object.values(primitives)) {
     emitEntry(groups, entry);
   }
@@ -116,7 +105,6 @@ export function figmaDocumentFromScheme(
   return {
     color: { $type: "color", ...groups.color },
     size: { $type: "dimension", ...groups.size },
-    font: { $type: "fontFamily", ...groups.font },
     weight: { $type: "fontWeight", ...groups.weight },
   };
 }

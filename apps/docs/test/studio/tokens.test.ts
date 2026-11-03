@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
+import { buildStudioSeeds } from "../../src/studio/generate/seeds";
 import {
+  FONT_VARIABLES,
   FOREGROUND_PAIRS,
   LIGHT_ONLY_TOKENS,
   STUDIO_SECTIONS,
@@ -15,20 +17,24 @@ const catalog = resolveThemeCatalog();
 // The contract's own list: every theme's tokens record holds `TOKEN_NAMES`, in order.
 const [firstTheme] = catalog.themes;
 const CONTRACT_NAMES = Object.keys(firstTheme.schemes.light.tokens);
+const CONTRACT_TOKENS = firstTheme.schemes.light.tokens;
 
 describe("TOKEN_TABLE", () => {
-  it("lists every contract token once, in contract order", () => {
-    expect(STUDIO_TOKEN_NAMES).toEqual(CONTRACT_NAMES);
+  it("lists every contract token once, in contract order, then the font variables", () => {
+    expect(STUDIO_TOKEN_NAMES).toEqual([...CONTRACT_NAMES, "font-sans", "font-heading"]);
   });
 
   it("files every token under a section the inspector shows", () => {
     const filed = STUDIO_SECTIONS.flatMap((section) => sectionTokens(section.id));
-    expect(filed.toSorted()).toEqual(CONTRACT_NAMES.toSorted());
+    expect(filed.toSorted()).toEqual([...CONTRACT_NAMES, ...FONT_VARIABLES].toSorted());
   });
 
-  it("gives each token the kind the contract gives it", () => {
-    for (const name of STUDIO_TOKEN_NAMES) {
-      expect(TOKEN_TABLE[name].kind, name).toBe(firstTheme.schemes.light.tokens[name].kind);
+  it("gives each token the kind the contract gives it, and the font variables a font stack", () => {
+    for (const [name, entry] of Object.entries(CONTRACT_TOKENS)) {
+      expect(TOKEN_TABLE[entry.name].kind, name).toBe(entry.kind);
+    }
+    for (const name of FONT_VARIABLES) {
+      expect(TOKEN_TABLE[name].kind, name).toBe("fontFamily");
     }
   });
 });
@@ -71,11 +77,10 @@ describe("LIGHT_ONLY_TOKENS", () => {
         "font-heading",
       ].toSorted()
     );
-    for (const theme of catalog.themes) {
+    // The seeds hold what each scheme declares: the theme rules' tokens, and the docs' fonts.
+    for (const seed of buildStudioSeeds(catalog)) {
       for (const name of LIGHT_ONLY_TOKENS) {
-        expect(theme.schemes.dark.tokens[name].css, `${theme.slug} ${name}`).toBe(
-          theme.schemes.light.tokens[name].css
-        );
+        expect(seed.dark[name].css, `${seed.slug} ${name}`).toBe(seed.light[name].css);
       }
     }
   });

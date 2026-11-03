@@ -217,6 +217,16 @@ describe("parseTokenValue", () => {
     expect(parseTokenValue("font-sans", '"Unclosed, serif').ok).toBe(false);
   });
 
+  it("takes the faces the docs load through their variables, and no other var()", () => {
+    expect(parseTokenValue("font-sans", "var(--font-inter), ui-sans-serif, sans-serif")).toEqual({
+      ok: true,
+      css: "var(--font-inter), ui-sans-serif, sans-serif",
+    });
+    expect(parseTokenValue("font-heading", "var(--font-roboto), serif").ok).toBe(true);
+    expect(parseTokenValue("font-sans", "var(--font-other), serif").ok).toBe(false);
+    expect(parseTokenValue("font-sans", "var(--font-inter, serif), sans-serif").ok).toBe(false);
+  });
+
   it("takes unquoted names that are CSS identifiers, and quoted names of free text", () => {
     expect(parseTokenValue("font-sans", "-apple-system, Segoe UI, _x").ok).toBe(true);
     expect(parseTokenValue("font-sans", '"123 Sans", serif').ok).toBe(true);

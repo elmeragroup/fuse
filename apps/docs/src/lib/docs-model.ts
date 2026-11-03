@@ -319,11 +319,6 @@ export type FigmaDimensionToken = {
   $value: { value: number; unit: "px" } | `{${string}}`;
 };
 
-export type FigmaFontToken = {
-  $type: "fontFamily";
-  $value: string;
-};
-
 /** A CSS font weight, a number from 1 to 1000. */
 export type FigmaFontWeightToken = {
   $type: "fontWeight";
@@ -339,10 +334,6 @@ export type FigmaThemeDocument = {
   size: {
     $type: "dimension";
     [name: string]: "dimension" | FigmaDimensionToken;
-  };
-  font: {
-    $type: "fontFamily";
-    [name: string]: "fontFamily" | FigmaFontToken;
   };
   weight: {
     $type: "fontWeight";

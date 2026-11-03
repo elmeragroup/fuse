@@ -46,8 +46,16 @@ describe("buildStudioSeeds", () => {
     expect(internal["button-outline"]).toEqual({ css: "var(--border)", value: "#E5E5E5" });
     // defaults.ts: radius-button var(--radius), and radius 0.5rem, 8px at the 16px root.
     expect(internal["radius-button"]).toEqual({ css: "var(--radius)", value: "8px" });
-    // defaults.ts: font-heading var(--font-sans), whose first family is Roboto.
-    expect(internal["font-heading"]).toEqual({ css: "var(--font-sans)", value: "Roboto" });
+    // Themes name no fonts, so the docs set them (styles/globals.css): an internal theme's body text
+    // is Inter, through next/font's --font-inter, and its headings follow the body font.
+    expect([internal["font-sans"], internal["font-heading"]]).toEqual([
+      { css: "var(--font-inter), ui-sans-serif, system-ui, sans-serif", value: "Inter" },
+      { css: "var(--font-sans)", value: "Inter" },
+    ]);
+    expect(seed("external-fkas-private").light["font-sans"]).toEqual({
+      css: "var(--font-roboto), ui-sans-serif, system-ui, sans-serif",
+      value: "Roboto",
+    });
     expect(internal["selection-title-weight"]).toEqual({ css: "400", value: "400" });
   });
 

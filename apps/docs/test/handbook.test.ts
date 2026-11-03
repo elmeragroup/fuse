@@ -147,6 +147,35 @@ describe("tokens page", () => {
   });
 });
 
+describe("fonts page", () => {
+  it("shows a recipe per setup, the brand and nested-theme rules, and the brand-site table", async () => {
+    const html = await fetchText("/handbook/fonts");
+    for (const id of [
+      "what-fuse-applies",
+      "next-js",
+      "fontsource",
+      "font-face",
+      "per-brand",
+      "nested-themes",
+      "brand-sites",
+    ]) {
+      expect(html, id).toContain(`id="${id}"`);
+    }
+    // React escapes the quotes in the code blocks' text.
+    for (const recipe of [
+      "next/font/google",
+      "next/font/local",
+      "@fontsource/inter/400.css",
+      "@font-face",
+      "[data-theme-brand=&quot;fkas&quot;]",
+      "font-family: var(--font-sans);",
+    ]) {
+      expect(html, recipe).toContain(recipe);
+    }
+    expect(html).not.toContain("!important;");
+  });
+});
+
 describe("localization page", () => {
   it("documents the mechanism, the locale union, precedence and a switcher", async () => {
     const html = await fetchText("/handbook/localization");
