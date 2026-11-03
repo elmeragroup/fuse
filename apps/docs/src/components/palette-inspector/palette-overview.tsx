@@ -11,6 +11,8 @@ import { PALETTE_GROUPS } from "../../lib/palettes";
 import type { PairView, PaletteView, RoleView, ToneView } from "../../lib/palettes";
 import { GradeBadge, isCopied, Swatch, ToneReadout } from "./color-readout";
 import type { CopyFeedback } from "./color-readout";
+import { triggerSide } from "./tooltip-placement";
+import type { CellSide } from "./tooltip-placement";
 
 const paletteOverview = tv({
   slots: {
@@ -19,16 +21,25 @@ const paletteOverview = tv({
     heading: "text-sm font-semibold flex items-baseline gap-2 text-foreground",
     count: "text-xs font-normal text-muted-foreground tabular-nums",
     lede: "text-xs text-pretty text-muted-foreground",
-    tones: "m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(1.75rem,1fr))] gap-1 p-0",
+    // The grid's gap is declared once, and each swatch's hit area derives from it.
+    tones:
+      "m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(1.75rem,1fr))] gap-(--tones-gap) p-0 [--tones-gap:--spacing(1)]",
     // A tone is its own swatch. The active ring marks the tone a role in focus resolves to.
-    // A translucent tone has a dashed edge, since it paints as whatever it lies on.
-    tone: "block h-7 w-full rounded-sm border border-foreground/15 bg-(--swatch) outline-offset-2 data-translucent:border-dashed data-translucent:border-foreground/40 data-active:ring-2 data-active:ring-ring data-active:ring-offset-2 data-active:ring-offset-background",
+    // A translucent tone has a dashed edge, since it paints as whatever it lies on. Its hit area,
+    // the `::before`, reaches half the gap past the swatch's border on every side: the pseudo
+    // element is placed from the padding box, so the border width adds to half the gap. The hit
+    // areas of neighbouring swatches meet at any root font size, so a pointer crossing the strip
+    // never rests outside a trigger. The swatch, its ring and its focus ring stay on the visible box.
+    tone: "relative block h-7 w-full rounded-sm border-(length:--tone-edge) border-foreground/15 bg-(--swatch) outline-offset-2 [--tone-edge:1px] before:absolute before:-inset-[calc(var(--tones-gap)/2_+_var(--tone-edge))] data-translucent:border-dashed data-translucent:border-foreground/40 data-active:ring-2 data-active:ring-ring data-active:ring-offset-2 data-active:ring-offset-background",
     groups: "flex flex-col gap-4",
     groupHeading: "text-xs font-medium text-muted-foreground",
-    roles: "m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-x-2 gap-y-0.5 p-0",
+    roles:
+      "m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-x-(--roles-gap-x) gap-y-(--roles-gap-y) p-0 [--roles-gap-x:--spacing(2)] [--roles-gap-y:--spacing(0.5)]",
     // While a tone or role is in focus, the roles on other tones fade, so the roles that share it
     // stand out. Opacity only, and none under reduced motion.
-    role: "text-xs ease-out flex h-7 w-full min-w-0 items-center gap-2 rounded-md px-1.5 text-start transition-opacity duration-150 hover:bg-accent hover:text-accent-foreground data-dimmed:opacity-35 motion-reduce:transition-none",
+    // Its hit area reaches half of each of the grid's gaps, so the hit areas of neighbouring
+    // roles meet. A role has no border, so the halves alone reach the middle of the gap.
+    role: "text-xs ease-out relative flex h-7 w-full min-w-0 items-center gap-2 rounded-md px-1.5 text-start transition-opacity duration-150 before:absolute before:-inset-x-[calc(var(--roles-gap-x)/2)] before:-inset-y-[calc(var(--roles-gap-y)/2)] hover:bg-accent hover:text-accent-foreground data-dimmed:opacity-35 motion-reduce:transition-none",
     roleName: "truncate font-mono",
     shared: "text-xs flex flex-col gap-0.5",
     sharedList: "flex flex-wrap gap-x-2 font-mono",
@@ -106,11 +117,35 @@ function ToneSwatch({ tone, activeStep, onFocusStep, copy }: FocusProps & { tone
   );
 }
 
+/**
+ * The tones strip. Each swatch has its own tooltip, which opens on top: the strip is a few rows of
+ * small swatches scanned along a row, which a tooltip above leaves in view. The strip's provider
+ * opens every tooltip at once, and its skip-delay hand-off opens a neighbour's as the last closes.
+ */
+function ToneGrid({ tones, ...focus }: FocusProps & { tones: readonly ToneView[] }): ReactElement {
+  return (
+    <Tooltip.Provider delay={0}>
+      <ul className={styles.tones()}>
+        {tones.map((tone) => (
+          <ToneSwatch key={tone.step} tone={tone} {...focus} />
+        ))}
+      </ul>
+    </Tooltip.Provider>
+  );
+}
+
+/**
+ * A role and its tooltip. The tooltip opens away from the neighbours a pointer moves to next: to
+ * the left in the first column, to the right in the last, and on top in between or in a single
+ * column. The side is read from the layout as the tooltip opens.
+ */
 function RoleSwatch({ role, activeStep, onFocusStep, copy }: FocusProps & { role: RoleView }): ReactElement {
   const key = `role-${role.name}`;
+  const [side, setSide] = useState<CellSide>("top");
   const dimmed = activeStep !== undefined && activeStep !== role.tone.step;
+  const focus = focusHandlers(role.tone.step, onFocusStep);
   return (
-    <li>
+    <li data-tooltip-cell>
       <Tooltip.Root>
         <Tooltip.Trigger
           render={<button type="button" />}
@@ -118,11 +153,19 @@ function RoleSwatch({ role, activeStep, onFocusStep, copy }: FocusProps & { role
           data-dimmed={dimmed ? "" : undefined}
           data-palette-role={role.name}
           onClick={() => copy.copy(key, role.tone.oklch)}
-          {...focusHandlers(role.tone.step, onFocusStep)}>
+          {...focus}
+          onPointerEnter={(event) => {
+            setSide(triggerSide(event.currentTarget));
+            focus.onPointerEnter();
+          }}
+          onFocus={(event) => {
+            setSide(triggerSide(event.currentTarget));
+            focus.onFocus();
+          }}>
           <Swatch tone={role.tone} />
           <span className={styles.roleName()}>--{role.name}</span>
         </Tooltip.Trigger>
-        <Tooltip.Content>
+        <Tooltip.Content side={side}>
           <ToneReadout title={`--${role.name}`} tone={role.tone} copied={isCopied(copy, key)}>
             {role.alias === undefined ? null : <span>Declared as var({role.alias})</span>}
             {role.sharesWith.length === 0 ? null : <SharedBy roles={[role.name, ...role.sharesWith]} />}
@@ -130,6 +173,28 @@ function RoleSwatch({ role, activeStep, onFocusStep, copy }: FocusProps & { role
         </Tooltip.Content>
       </Tooltip.Root>
     </li>
+  );
+}
+
+/** Every color role by group, under one provider, so moving between roles skips the delay. */
+function RoleGroups({ roles, ...focus }: FocusProps & { roles: readonly RoleView[] }): ReactElement {
+  return (
+    <Tooltip.Provider delay={0}>
+      <div className={styles.groups()}>
+        {PALETTE_GROUPS.map((group) => (
+          <section key={group.id} aria-label={group.label} className={styles.section()}>
+            <h4 className={styles.groupHeading()}>{group.label}</h4>
+            <ul className={styles.roles()} data-tooltip-grid>
+              {roles
+                .filter((role) => role.group === group.id)
+                .map((role) => (
+                  <RoleSwatch key={role.name} role={role} {...focus} />
+                ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </Tooltip.Provider>
   );
 }
 
@@ -182,31 +247,13 @@ export function PaletteOverview({ view, copy }: { view: PaletteView; copy: CopyF
           Every distinct color the roles resolve to, darkest first. Translucent tones follow, with a dashed
           edge. Point at a tone or a role to see the roles that share it.
         </p>
-        <ul className={styles.tones()}>
-          {view.tones.map((tone) => (
-            <ToneSwatch key={tone.step} tone={tone} {...focus} />
-          ))}
-        </ul>
+        <ToneGrid tones={view.tones} {...focus} />
       </section>
       <section className={styles.section()} aria-labelledby="palette-roles">
         <h3 id="palette-roles" className={styles.heading()}>
           Roles <span className={styles.count()}>{view.roles.length}</span>
         </h3>
-        <div className={styles.groups()}>
-          {PALETTE_GROUPS.map((group) => {
-            const roles = view.roles.filter((role) => role.group === group.id);
-            return (
-              <section key={group.id} aria-label={group.label} className={styles.section()}>
-                <h4 className={styles.groupHeading()}>{group.label}</h4>
-                <ul className={styles.roles()}>
-                  {roles.map((role) => (
-                    <RoleSwatch key={role.name} role={role} {...focus} />
-                  ))}
-                </ul>
-              </section>
-            );
-          })}
-        </div>
+        <RoleGroups roles={view.roles} {...focus} />
       </section>
       <section className={styles.section()} aria-labelledby="palette-contrast">
         <h3 id="palette-contrast" className={styles.heading()}>

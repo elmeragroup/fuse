@@ -46,6 +46,53 @@ async function hoverReadout(page: Page, inspector: Locator, role: string): Promi
   return (await tooltip.textContent()) ?? "";
 }
 
+type Box = { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
+
+async function boxOf(locator: Locator): Promise<Box> {
+  const box = await locator.boundingBox();
+  if (box === null) {
+    throw new Error("expected a rendered element with a bounding box");
+  }
+  return box;
+}
+
+/**
+ * The text the accessible description of `trigger` resolves to: the text of every element its
+ * `aria-describedby` names, as the accessibility tree reads it.
+ */
+async function describedText(trigger: Locator): Promise<string> {
+  return trigger.evaluate((element) =>
+    (element.getAttribute("aria-describedby") ?? "")
+      .split(/\s+/u)
+      .filter(Boolean)
+      .map((id) => document.getElementById(id)?.textContent ?? "")
+      .join(" ")
+  );
+}
+
+/** Hovers tone 1 until its tooltip is open, and returns the boxes of tones 1 and 2 beside it. */
+async function openFirstTone(page: Page, inspector: Locator) {
+  const first = inspector.getByRole("button", { name: /^Tone 1, /u });
+  const second = inspector.getByRole("button", { name: /^Tone 2, /u });
+  const open = page.locator('[role="tooltip"][data-open]');
+  await expect
+    .poll(async () => {
+      await page.mouse.move(0, 0);
+      await first.hover();
+      return (await open.count()) === 1 && (await open.textContent())?.includes("Tone 1");
+    })
+    .toBe(true);
+  return { second, open, left: await boxOf(first), right: await boxOf(second) };
+}
+
+/** Rests the pointer in the gap between two side-by-side boxes, on the first box's side. */
+async function restInGap(page: Page, left: Box, right: Box): Promise<void> {
+  const gapStart = left.x + left.width;
+  await page.mouse.move(gapStart + (right.x - gapStart) / 4, left.y + left.height / 2, { steps: 4 });
+  // Longer than the tooltip's exit animation, so a tooltip that closed has left the page.
+  await page.waitForTimeout(500);
+}
+
 function bodyRows(inspector: Locator): Locator {
   return inspector.getByRole("table").getByRole("rowgroup").nth(1).getByRole("row");
 }
@@ -67,6 +114,108 @@ describe("palettes handbook page", () => {
     expect(dark).toContain(DARK_ERROR.oklch);
     expect(dark).toContain(DARK_ERROR.hex);
     expect(dark).not.toContain(LIGHT_ERROR);
+    await page.close();
+  });
+
+  it("keeps a tooltip open over the gap between two tones and hands it to the next", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
+    const inspector = await openInspector(page);
+    const { second, open, left, right } = await openFirstTone(page, inspector);
+    const secondHex = /#[0-9A-F]{6}$/u.exec((await second.getAttribute("aria-label")) ?? "")?.[0] ?? "";
+    // The two tones sit side by side in the first row, 4px apart.
+    expect(right.x - (left.x + left.width)).toBeGreaterThanOrEqual(3);
+
+    await restInGap(page, left, right);
+    expect(await open.count()).toBe(1);
+    expect(await open.textContent()).toContain("Tone 1");
+
+    await page.mouse.move(right.x + right.width / 2, right.y + right.height / 2, { steps: 6 });
+    await expect.poll(async () => open.textContent()).toContain(secondHex);
+    expect(await open.textContent()).toContain("Tone 2");
+    await page.close();
+  });
+
+  it("keeps the gap covered at a 32px root font size, where the gap doubles", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
+    await page.goto(`${docsBaseUrl()}/handbook/palettes`, { waitUntil: "load" });
+    await waitForDocsShellHydration(page);
+    await page.evaluate(() => document.documentElement.style.setProperty("font-size", "32px"));
+    const inspector = page.locator("[data-palette-inspector]");
+    await inspector.scrollIntoViewIfNeeded();
+    const { open, left, right } = await openFirstTone(page, inspector);
+    // The gap is --spacing(1), 0.25rem: 8px at this root.
+    expect(right.x - (left.x + left.width)).toBeGreaterThanOrEqual(7);
+    await restInGap(page, left, right);
+    expect(await open.count()).toBe(1);
+    expect(await open.textContent()).toContain("Tone 1");
+
+    // The roles' row gap, --spacing(0.5), is 4px at this root, and a hit area of a fixed 1px
+    // would leave 2px of it uncovered.
+    await hoverReadout(page, inspector, "background");
+    const cells = inspector.locator("[data-tooltip-cell]");
+    const above = await boxOf(cells.first());
+    let under: Box | undefined;
+    for (let index = 1; under === undefined && index < (await cells.count()); index += 1) {
+      const cell = await boxOf(cells.nth(index));
+      if (cell.y > above.y + above.height && Math.abs(cell.x - above.x) < 2) under = cell;
+    }
+    if (under === undefined) throw new Error("expected a role below --background");
+    const rowGap = under.y - (above.y + above.height);
+    expect(rowGap).toBeGreaterThanOrEqual(3);
+    await page.mouse.move(above.x + above.width / 2, above.y + above.height + rowGap / 4, { steps: 4 });
+    await page.waitForTimeout(500);
+    expect(await open.count()).toBe(1);
+    expect(await open.textContent()).toContain("--background");
+    await page.close();
+  });
+
+  it("describes each role by its own tooltip only, even while another is hovered", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
+    const inspector = await openInspector(page);
+    const background = inspector.locator('[data-palette-role="background"]');
+    const foreground = inspector.locator('[data-palette-role="foreground"]');
+    const card = inspector.locator('[data-palette-role="card"]');
+    // The reviewer's case: focus stays on --background while the pointer rests on --foreground.
+    await hoverReadout(page, inspector, "background");
+    await background.focus();
+    await hoverReadout(page, inspector, "foreground");
+    await expect
+      .poll(() => page.locator('[role="tooltip"][data-open]').textContent())
+      .toContain(INTERNAL_FOREGROUND);
+    expect(await background.evaluate((element) => element === document.activeElement)).toBe(true);
+    // The hovered role is described by its own values, and no other role is.
+    expect(await describedText(foreground)).toContain(INTERNAL_FOREGROUND);
+    expect(await describedText(background)).not.toContain(INTERNAL_FOREGROUND);
+    expect(await describedText(card)).not.toContain(INTERNAL_FOREGROUND);
+    await page.close();
+  });
+
+  it("opens a role's tooltip away from the roles beside it: left, top or right by column", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
+    const inspector = await openInspector(page);
+    const tooltip = page.getByRole("tooltip");
+    // At 1280px the Surfaces grid has three columns: background, foreground and card fill the
+    // first row from left to right.
+    const cases = [
+      { role: "background", side: "left" },
+      { role: "foreground", side: "top" },
+      { role: "card", side: "right" },
+    ] as const;
+    for (const { role, side } of cases) {
+      await hoverReadout(page, inspector, role);
+      const trigger = await boxOf(inspector.locator(`[data-palette-role="${role}"]`));
+      // The side the popup lies on, read from the two bounding boxes.
+      await expect
+        .poll(async () => {
+          const popup = await boxOf(tooltip);
+          // A left-placed tooltip keeps clear of the viewport's edge.
+          if (popup.x + popup.width <= trigger.x + 1) return popup.x >= 8 ? "left" : "left, clipped";
+          if (popup.x >= trigger.x + trigger.width - 1) return "right";
+          if (popup.y + popup.height <= trigger.y + 1) return "top";
+          return "overlapping or below";
+        })
+        .toBe(side);
+    }
     await page.close();
   });
 
