@@ -5,6 +5,7 @@ import { Interactive, interpolate, useCurrentFrame, useVideoConfig } from "remot
 import type { BrandCode } from "@elmeragroup/fuse/theme";
 import type { ResolvedColorScheme } from "@elmeragroup/fuse/theme-catalog";
 
+import { FILM_BRAND_ORDER } from "../../brand/brand-order";
 import { useCopy } from "../../copy/copy";
 import { CLAMP, ENTER } from "../../motion/easing";
 import { bars, beats } from "../../music/beat-grid";
@@ -20,19 +21,15 @@ type Turn = {
 };
 
 /**
- * Every brand in the landing's order, Elmera first, one bar each, light and dark alternating.
- * Elmera also holds the opening bar, while the window rises in, so the second brand arrives with
- * the track's drums; Nordic Green Energy holds the scene's last three bars, while it lifts out.
+ * Every brand in the films' order, one bar each, light and dark alternating. Elmera, first, also
+ * holds the opening bar, while the window rises in, so the second brand arrives with the track's
+ * drums; the last brand holds the scene's last three bars, while it lifts out.
  */
-const TURNS: readonly Turn[] = [
-  { brand: "elma", scheme: "light", bar: 0 },
-  { brand: "fkas", scheme: "dark", bar: 2 },
-  { brand: "tkas", scheme: "light", bar: 3 },
-  { brand: "guen", scheme: "dark", bar: 4 },
-  { brand: "fkab", scheme: "light", bar: 5 },
-  { brand: "fkse", scheme: "dark", bar: 6 },
-  { brand: "ngfi", scheme: "light", bar: 7 },
-];
+const TURNS: readonly Turn[] = FILM_BRAND_ORDER.map((brand, index) => ({
+  brand,
+  scheme: index % 2 === 0 ? "light" : "dark",
+  bar: index === 0 ? 0 : index + 1,
+}));
 
 /** Frames the circular reveal takes to cover the stage. */
 const REVEAL_FRAMES = 12;

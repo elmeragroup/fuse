@@ -7,6 +7,7 @@ import { BRANDS } from "@elmeragroup/fuse/theme";
 import type { BrandCode } from "@elmeragroup/fuse/theme";
 
 import { BrandMark } from "../../brand/brand-mark";
+import { FILM_BRAND_ORDER } from "../../brand/brand-order";
 import { roleHex } from "../../brand/role-value";
 import { ValueSwap } from "../../components/remocn/value-swap";
 import { useCopy } from "../../copy/copy";
@@ -16,17 +17,6 @@ import { SceneFrame } from "../../primitives/scene-frame";
 import { SceneTheme } from "../../primitives/scene-theme";
 import { STAGE } from "../../primitives/stage";
 import { push } from "../motion";
-
-/** The brands in the order their panels land, Elmera first, as the landing's strip runs. */
-const BRANDS_IN_ORDER = [
-  "elma",
-  "fkas",
-  "tkas",
-  "guen",
-  "fkab",
-  "fkse",
-  "ngfi",
-] as const satisfies readonly BrandCode[];
 
 /**
  * The roles the panels resolve, each with the bar it takes over on. A role's panels fill with the
@@ -59,7 +49,7 @@ const panelFill = tv({
 const FIRST_PANEL_X = 340;
 
 /** How far apart the panels land, so the last one ends at the stage's edge. */
-const PANEL_STEP = (STAGE.width - FIRST_PANEL_X) / BRANDS_IN_ORDER.length;
+const PANEL_STEP = (STAGE.width - FIRST_PANEL_X) / FILM_BRAND_ORDER.length;
 
 /** Frames a panel takes to slide in, and a role's wipe to run down one panel. */
 const SLIDE_FRAMES = 9;
@@ -153,7 +143,7 @@ function PaletteSceneInner(): ReactElement {
               </Rise>
             </div>
           </SceneTheme>
-          {BRANDS_IN_ORDER.map((brand, index) => (
+          {FILM_BRAND_ORDER.map((brand, index) => (
             <Panel key={brand} brand={brand} index={index} frame={frame} />
           ))}
           {/* The anatomy's page, already in place to the right, so the push hands over without a cut. */}

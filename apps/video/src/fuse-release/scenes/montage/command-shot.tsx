@@ -5,7 +5,7 @@ import { Button } from "@elmeragroup/fuse/button";
 import { Command } from "@elmeragroup/fuse/command";
 import { Kbd } from "@elmeragroup/fuse/kbd";
 
-import { typedCount } from "../../../components/remocn/typewriter";
+import { typedText } from "../../../components/remocn/typewriter";
 import { useCopy } from "../../../copy/copy";
 import { useFrameClock } from "../../../motion/frame-clock";
 import { SeekedOverlay } from "../../../motion/seeked-overlay";
@@ -26,10 +26,7 @@ export function CommandShot(): ReactElement {
   const { montage } = useCopy();
   const clock = useFrameClock();
   const trigger = useRef<HTMLButtonElement>(null);
-  const query = Array.from(montage.command.query);
-  const typed = query
-    .slice(0, typedCount(clock.frame - TYPE_AT, clock.fps, query.length, CHARS_PER_SECOND))
-    .join("");
+  const typed = typedText(montage.command.query, clock.frame - TYPE_AT, clock.fps, CHARS_PER_SECOND);
   return (
     <MontageShot
       part="Command"

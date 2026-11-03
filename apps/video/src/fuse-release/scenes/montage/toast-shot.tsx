@@ -7,6 +7,7 @@ import { NumberField } from "@elmeragroup/fuse/number-field";
 import { TextField } from "@elmeragroup/fuse/text-field";
 
 import { useCopy, useVideoLocale } from "../../../copy/copy";
+import { numberFormat } from "../../../copy/intl";
 import { useFrameClock } from "../../../motion/frame-clock";
 import { FrameToast } from "../../../motion/frame-toast";
 import { METER_NUMBER, READING_KWH } from "../../../sample/customer-data";
@@ -48,12 +49,8 @@ export function ToastShot(): ReactElement {
         at={CLICK}
         clock={clock}
         title={montage.toast.title}
-        description={montage.toast.description(
-          new Intl.NumberFormat(locale).format(READING_KWH),
-          METER_NUMBER
-        )}
-        // Fuse places the viewport with `sm:` classes too; the stage's viewport is wider than `sm`.
-        className="sm:right-36 sm:bottom-40 sm:w-90 absolute right-36 bottom-40 w-90"
+        description={montage.toast.description(numberFormat(locale).format(READING_KWH), METER_NUMBER)}
+        placement={{ right: 36, bottom: 40, width: 90 }}
       />
     </MontageShot>
   );

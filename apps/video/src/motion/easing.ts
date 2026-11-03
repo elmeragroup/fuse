@@ -3,6 +3,15 @@ import { Easing } from "remotion";
 /** Holds an `interpolate()` output at its ends instead of extrapolating past them. */
 export const CLAMP = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 
+/** A cubic, which the remocn components' curves shape; a local function, so no curve borrows a bound method. */
+const cubic = (t: number): number => t ** 3;
+
+/** remocn's cubic ease-out: a fast start that slows into place. */
+export const CUBIC_OUT = Easing.out(cubic);
+
+/** remocn's cubic ease-in-out: slow at both ends. */
+export const CUBIC_IN_OUT = Easing.inOut(cubic);
+
 /** The curve everything that arrives settles on: a fast start that eases into place. */
 export const ENTER = Easing.bezier(0.22, 1, 0.36, 1);
 

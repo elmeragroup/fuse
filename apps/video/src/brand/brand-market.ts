@@ -1,5 +1,7 @@
 import type { BrandCode } from "@elmeragroup/fuse/theme";
 
+import { numberFormat } from "../copy/intl";
+
 /** The currency of each brand's market. */
 const CURRENCY = {
   fkas: "NOK",
@@ -40,9 +42,6 @@ export type Budget = {
   readonly share: number;
 };
 
-/** One whole-amount formatter per locale and currency, so a frame-by-frame caller builds each once. */
-const moneyFormats = new Map<string, Intl.NumberFormat>();
-
 /**
  * Whole amounts of a currency, formatted for the video's locale.
  *
@@ -51,13 +50,7 @@ const moneyFormats = new Map<string, Intl.NumberFormat>();
  * @returns The formatter.
  */
 export function moneyFormat(locale: string, currency: MarketCurrency): Intl.NumberFormat {
-  const key = `${locale}/${currency}`;
-  let format = moneyFormats.get(key);
-  if (format === undefined) {
-    format = new Intl.NumberFormat(locale, { style: "currency", currency, maximumFractionDigits: 0 });
-    moneyFormats.set(key, format);
-  }
-  return format;
+  return numberFormat(locale, { style: "currency", currency, maximumFractionDigits: 0 });
 }
 
 /**

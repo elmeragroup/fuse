@@ -1,5 +1,7 @@
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 
+import { tv } from "tailwind-variants";
+
 import { Check } from "@elmeragroup/fuse/icons";
 
 // Part of the Claude Code component (see `claude-code.tsx`): the terminal's character grid and
@@ -69,6 +71,17 @@ export function wrapRows(text: string, width: number): readonly string[] {
   return rows;
 }
 
+/** A gutter dot's fill: a reply's in the text colour, a running call's muted, a finished call's green. */
+const bullet = tv({
+  variants: {
+    tone: {
+      text: "bg-card-foreground",
+      done: "bg-success",
+      running: "bg-muted-foreground",
+    },
+  },
+});
+
 /** A filled dot in the gutter: a reply's bullet, or a tool call's, blinking until it is done. */
 export function Bullet({
   tone,
@@ -80,9 +93,7 @@ export function Bullet({
   return (
     <span
       aria-hidden
-      className={
-        tone === "done" ? "bg-success" : tone === "running" ? "bg-muted-foreground" : "bg-card-foreground"
-      }
+      className={bullet({ tone })}
       style={{
         position: "absolute",
         left: 1,

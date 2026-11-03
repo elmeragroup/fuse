@@ -28,8 +28,8 @@ import { currencyOf } from "../../../brand/brand-market";
 import { INSTALL_COMMAND } from "../../../brand/fuse-facts";
 import { useCopy, useVideoLocale } from "../../../copy/copy";
 import { formatDay } from "../../../copy/format-day";
-import { CURRENT_DAYS, WEEK_KWH } from "../../../sample/customer-data";
 import { OrderRows } from "../../../sample/order-rows";
+import { WeekBars, weekTotal } from "../../../sample/week-bars";
 import { CUSTOMER, PEOPLE, TABLE_ORDERS, TIMELINE_DAYS } from "../../sample-data";
 
 /** The pages a table's pagination offers; the second is current. */
@@ -279,8 +279,6 @@ export function TabsTile(): ReactElement {
   const { tabs, periods } = useCopy().brandBook.collage;
   const [day, week, month] = periods;
   const locale = useVideoLocale();
-  const max = Math.max(...WEEK_KWH);
-  const total = WEEK_KWH.reduce((sum, day) => sum + day, 0);
   const [overview, invoices, agreements] = tabs.items;
   return (
     <Tabs.Root value="overview" className="flex h-full flex-col gap-3">
@@ -299,22 +297,10 @@ export function TabsTile(): ReactElement {
           </ToggleGroup.Root>
         </div>
         <p className="text-3xl font-semibold m-0 font-heading leading-none tabular-nums">
-          {new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(total)}
+          {weekTotal(locale)}
           <span className="text-sm font-normal ml-1 text-muted-foreground">kWh</span>
         </p>
-        <div className="flex min-h-0 flex-1 items-end gap-1.5">
-          {WEEK_KWH.map((value, index) => (
-            <div
-              key={index}
-              className={
-                index >= WEEK_KWH.length - CURRENT_DAYS
-                  ? "flex-1 rounded-t-sm bg-primary"
-                  : "flex-1 rounded-t-sm bg-primary/30"
-              }
-              style={{ height: `${String((value / max) * 100)}%` }}
-            />
-          ))}
-        </div>
+        <WeekBars className="gap-1.5" />
       </Tabs.Content>
     </Tabs.Root>
   );

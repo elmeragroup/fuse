@@ -670,8 +670,9 @@ that opens every overlay on a side before flipping the window.
 
 - Buy the Remotion Company License. Local renders for review are fine under the evaluation terms;
   any public render is not.
-- Have native speakers review `apps/video/src/copy/nb-NO.ts` and `sv-SE.ts`, then re-check stills
-  of the longest-text frames in both locales.
+- Have native speakers review `apps/video/src/copy/nb-NO.ts`, `sv-SE.ts`,
+  `apps/video/src/copy/brand-book/nb-NO.ts` and `brand-book/sv-SE.ts`, then re-check stills of the
+  longest-text frames in both locales.
 - Bump `@elmeragroup/fuse` to 1.0 through a changeset, render each `FuseRelease-{locale}` with
   `version` set to the released version, upload the MP4s to the GitHub release, and link them from
   `/releases` with a poster frame.

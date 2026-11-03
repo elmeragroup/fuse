@@ -13,11 +13,8 @@ import type { BrandCode } from "@elmeragroup/fuse/theme";
 import { budgetFor } from "../../brand/brand-market";
 import { BrandWordmark } from "../../brand/brand-wordmark";
 import { useCopy, useVideoLocale } from "../../copy/copy";
-import { CURRENT_DAYS, WEEK_KWH } from "../../sample/customer-data";
-
-/** Monday 12 October 2026, the first day of the charted week, read in UTC so every render agrees. */
-const WEEK_START_UTC = Date.UTC(2026, 9, 12);
-const DAY_MS = 86_400_000;
+import { numberFormat } from "../../copy/intl";
+import { WeekBars, weekTotal } from "../../sample/week-bars";
 
 /**
  * The customer page the brand morph re-themes: a usage card, a budget meter, a notification
@@ -30,12 +27,9 @@ const DAY_MS = 86_400_000;
 export function ProductShot({ brand }: { readonly brand: BrandCode }): ReactElement {
   const { brandMorph: copy } = useCopy();
   const locale = useVideoLocale();
-  const total = WEEK_KWH.reduce((sum, day) => sum + day, 0);
-  const max = Math.max(...WEEK_KWH);
   const budget = budgetFor(brand, locale);
-  const change = new Intl.NumberFormat(locale, { style: "percent", signDisplay: "exceptZero" });
-  const share = new Intl.NumberFormat(locale, { style: "percent" });
-  const weekday = new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" });
+  const change = numberFormat(locale, { style: "percent", signDisplay: "exceptZero" });
+  const share = numberFormat(locale, { style: "percent" });
   const [overview, invoices, agreements] = copy.tabs;
 
   return (
@@ -70,28 +64,12 @@ export function ProductShot({ brand }: { readonly brand: BrandCode }): ReactElem
             </div>
             <div className="flex items-center gap-3">
               <p className="text-5xl font-semibold tracking-tight m-0 font-heading leading-none tabular-nums">
-                {new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(total)}
+                {weekTotal(locale)}
                 <span className="text-base font-normal tracking-normal ml-1 text-muted-foreground">kWh</span>
               </p>
               <Badge variant="success">{copy.delta(change.format(-0.04))}</Badge>
             </div>
-            <div className="flex min-h-0 flex-1 items-end gap-2.5">
-              {WEEK_KWH.map((value, index) => (
-                <div key={index} className="flex h-full min-w-0 flex-1 flex-col justify-end gap-2">
-                  <div
-                    className={
-                      index >= WEEK_KWH.length - CURRENT_DAYS
-                        ? "rounded-t-sm bg-primary"
-                        : "rounded-t-sm bg-primary/30"
-                    }
-                    style={{ height: `${String((value / max) * 100)}%` }}
-                  />
-                  <span className="text-xs text-center font-mono text-muted-foreground">
-                    {weekday.format(new Date(WEEK_START_UTC + index * DAY_MS))}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <WeekBars weekdays className="gap-2.5" />
           </Card.Content>
         </Card.Root>
         <div className="flex min-w-0 flex-col gap-5">
