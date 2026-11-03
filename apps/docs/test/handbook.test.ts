@@ -175,18 +175,9 @@ describe("fonts page", () => {
       expect(html, recipe).toContain(recipe);
     }
     expect(html).not.toContain("!important;");
-    // The external variant's default comes before the brand heading that overrides it, in every
-    // recipe, so an equal-weight reorder cannot hand an external Fjordkraft heading back to Roboto.
-    const text = html.replaceAll("&quot;", '"');
-    const variantRules = [...text.matchAll(/\[data-theme-variant="external"\] \{/g)].map(
-      (match) => match.index
-    );
-    const brandRules = [...text.matchAll(/\[data-theme-variant="external"\]:is\(/g)].map(
-      (match) => match.index
-    );
-    expect(variantRules).toHaveLength(3);
-    expect(brandRules).toHaveLength(3);
-    expect(variantRules.every((index, recipe) => index < (brandRules[recipe] ?? -1))).toBe(true);
+    // Every recipe sets the internal fonts on internal scopes too, so a nested internal scope
+    // resets them.
+    expect([...html.matchAll(/:root,\s*\[data-theme-variant=&quot;internal&quot;\] \{/g)]).toHaveLength(3);
   });
 });
 

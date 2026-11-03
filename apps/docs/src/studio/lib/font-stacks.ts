@@ -37,26 +37,60 @@ const PREVIEW_FACES: ReadonlyMap<string, string> = new Map([
   ["roboto", "--font-roboto"],
 ]);
 
-/** One family of a stack: a quoted name, or the text up to the next comma. */
-const STACK_FAMILY = /"[^"]*"|'[^']*'|[^,]+/gu;
-
 /**
  * A font stack as the docs preview draws it: each family the docs load, such as `Inter` or
- * `"Roboto"`, becomes the variable that holds its face, and every other family stays. The studio
- * stores and exports the stack itself, so only an artboard reads this.
+ * `"Roboto"`, becomes the variable that holds its face, and every other family stays. A value that
+ * is no font stack, such as `var(--font-sans)`, stays as it is. The studio stores and exports the
+ * stack itself, so only an artboard reads this.
  *
- * @param stack - A font stack that names families.
- * @returns The stack with the docs' loaded families read through their variables.
+ * @param stack - A font token's value.
+ * @returns The value with the docs' loaded families read through their variables.
  */
 export function previewFontStack(stack: string): string {
-  return Array.from(stack.matchAll(STACK_FAMILY), ([family]) => {
-    const name = family
-      .trim()
-      .replaceAll(/^["']|["']$/gu, "")
-      .toLowerCase();
-    const variable = PREVIEW_FACES.get(name);
-    return variable === undefined ? family.trim() : `var(${variable})`;
-  })
-    .filter((family) => family !== "")
+  const families = fontStackFamilies(stack);
+  if (families === undefined) {
+    return stack;
+  }
+  return families
+    .map((family) => {
+      const variable = PREVIEW_FACES.get(family.replaceAll(/^["']|["']$/gu, "").toLowerCase());
+      return variable === undefined ? family : `var(${variable})`;
+    })
     .join(", ");
+}
+
+/** A CSS identifier without escapes, such as `Segoe` or `-apple-system`; never `123`. */
+const IDENTIFIER = String.raw`(?:--|-?[\p{L}_])[\p{L}\p{N}_-]*`;
+
+/**
+ * One family: a quoted name of free text without quotes or backslashes, or identifiers between
+ * spaces, such as `Segoe UI` or `ui-sans-serif`.
+ */
+const FAMILY = String.raw`(?:"[^"'\\]+"|'[^"'\\]+'|${IDENTIFIER}(?:\s+${IDENTIFIER})*)`;
+
+const FONT_STACK = new RegExp(`^${FAMILY}(?:\\s*,\\s*${FAMILY})*$`, "u");
+
+/**
+ * Whether a value is a font stack: families between commas, each a quoted name or plain
+ * identifiers. The font knob's reading and the preview share this one grammar.
+ *
+ * @param css - A trimmed token value.
+ * @returns True when the value is a font stack.
+ */
+export function isFontStackText(css: string): boolean {
+  return FONT_STACK.test(css);
+}
+
+const STACK_FAMILY = new RegExp(FAMILY, "gu");
+
+/**
+ * The families of a font stack the font family reading accepts, in order and as written, a quoted
+ * name whole even when it holds a comma.
+ *
+ * @param css - A token value.
+ * @returns The families, or `undefined` when the value is no font stack, such as `var(--font-sans)`.
+ */
+export function fontStackFamilies(css: string): readonly string[] | undefined {
+  const stack = css.trim();
+  return FONT_STACK.test(stack) ? Array.from(stack.matchAll(STACK_FAMILY), ([family]) => family) : undefined;
 }

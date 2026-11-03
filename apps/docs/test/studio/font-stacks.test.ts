@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { FONT_STACKS, previewFontStack } from "../../src/studio/lib/font-stacks";
+import { parseTokenValue } from "../../src/studio/lib/token-values";
 
 const GLOBALS = readFileSync(
   path.join(path.dirname(fileURLToPath(import.meta.url)), "../../src/styles/globals.css"),
@@ -50,5 +51,12 @@ describe("previewFontStack", () => {
       "var(--font-roboto), Georgia, var(--font-inter), serif"
     );
     expect(previewFontStack("var(--font-sans)")).toBe("var(--font-sans)");
+  });
+
+  it("keeps a quoted family whole, a comma inside it included", () => {
+    // The font knob accepts the stack, so an artboard previews it.
+    expect(parseTokenValue("font-sans", 'Arial, "Inter,Roboto", serif').ok).toBe(true);
+    expect(previewFontStack('Arial, "Inter,Roboto", serif')).toBe('Arial, "Inter,Roboto", serif');
+    expect(previewFontStack(' Arial , "Inter" ,Roboto')).toBe("Arial, var(--font-inter), var(--font-roboto)");
   });
 });

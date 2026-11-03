@@ -8,11 +8,13 @@ const HREF = "/handbook/fonts";
 export const metadata = pageMetadata(HREF);
 
 /**
- * The app CSS each recipe ends with: the internal default on the root, the external variant, then
- * Fjordkraft's heading, which the external variant qualifies so it outweighs the variant rule.
+ * The app CSS each recipe ends with: the internal fonts on the root and on every internal scope, so
+ * an internal scope inside an external one resets them, the external variant, then Fjordkraft's
+ * heading, which the external variant qualifies so it outweighs the variant rule.
  */
 function appFontCss(inter: string, roboto: string, neoSans: string): string {
-  return `:root {
+  return `:root,
+[data-theme-variant="internal"] {
   --font-sans: ${inter}, ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
 }
@@ -152,11 +154,7 @@ export default function FontsPage(): ReactElement {
       </pre>
 
       <h2 id="per-brand">Per brand</h2>
-      <p>
-        Each recipe sets the variant default first and the brand heading after it, qualified by the variant,
-        so the heading rule wins. Set <code>--font-heading</code> wherever you set <code>--font-sans</code>,
-        since the default <code>var(--font-sans)</code> resolves on the root.
-      </p>
+      <p>The Fjordkraft heading rule names the external variant too, so it outweighs the variant rule.</p>
 
       <h2 id="nested-themes">Nested themes</h2>
       <p>

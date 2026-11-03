@@ -235,12 +235,11 @@ describe("docs component CSS variables", () => {
       ...definedCustomProperties(themesCss),
     ]);
 
-    // A `next/font` loader's `variable` option defines that custom property on its class.
-    for (const relative of srcTsFiles()) {
-      const source = readFileSync(join(docsRoot, relative), "utf8");
-      for (const match of source.matchAll(/\bvariable:\s*"(--[A-Za-z0-9_-]+)"/g)) {
-        defined.add(match[1] ?? "");
-      }
+    // The docs' `next/font` loaders define the custom property each one's `variable` option names
+    // on its class. Only the loader config counts, not code a page shows as an example.
+    const siteFonts = readFileSync(join(docsRoot, "src/components/site-fonts.ts"), "utf8");
+    for (const match of siteFonts.matchAll(/\bvariable:\s*"(--[A-Za-z0-9_-]+)"/g)) {
+      defined.add(match[1] ?? "");
     }
 
     const failures = srcTsFiles()
