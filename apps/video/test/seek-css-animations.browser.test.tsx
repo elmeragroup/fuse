@@ -13,7 +13,11 @@ import { NewOrderSheet } from "../src/fuse-release/scenes/montage/sheet-shot";
 import "../src/index.css";
 import type { RenderHold } from "../src/motion/frame-clock";
 import { FrameToast } from "../src/motion/frame-toast";
-import { MOTION_ELAPSED_ATTRIBUTE, settleAnimations } from "../src/motion/seek-css-animations";
+import {
+  MOTION_ELAPSED_ATTRIBUTE,
+  SeekCssAnimations,
+  settleAnimations,
+} from "../src/motion/seek-css-animations";
 import { FPS } from "../src/music/beat-grid";
 import { ReadyFrame } from "../src/primitives/scene-frame";
 import { play, render, Scope, unmountTree } from "./frame-harness";
@@ -171,6 +175,109 @@ describe("settleAnimations", () => {
     const half = new DOMMatrix(getComputedStyle(spinner).transform);
     expect(half.a).toBeCloseTo(-1, 5);
     expect(half.b).toBeCloseTo(0, 5);
+  });
+});
+
+// Units under test: `settleAnimations` and `SeekCssAnimations` on a machine too slow for the
+// motion. A long task stands in for one: a motion that starts inside it has outlasted its duration
+// by the next frame. Oracle: a motion host at 0 ms holds an `opacity` fade from 1 to 0 at its
+// start, so the faded element keeps opacity 1.
+describe("a long task", () => {
+  /** The fade's duration. */
+  const FADE_MS = 100;
+
+  /** A long task on a slow machine, well past the whole fade. */
+  const LONG_TASK_MS = 3 * FADE_MS;
+
+  function FadeHost(): ReactElement {
+    return (
+      <div {...{ [MOTION_ELAPSED_ATTRIBUTE]: 0 }}>
+        <div data-testid="fade" style={{ opacity: 1, transition: `opacity ${String(FADE_MS)}ms linear` }} />
+      </div>
+    );
+  }
+
+  function fade(): HTMLElement {
+    const element = page.getByTestId("fade").element();
+    if (!(element instanceof HTMLElement)) {
+      throw new Error("The fade is not mounted");
+    }
+    return element;
+  }
+
+  /**
+   * Starts the fade inside a long task. Reading the element's animations resolves its style, as
+   * Base UI's measuring does while a popup opens, so the fade starts at once. Run from an
+   * animation frame, as Base UI starts its transitions, the fade takes that frame's time as its
+   * start, and the next frame finds it past its end.
+   */
+  function fadeInLongTask(): void {
+    fade().style.opacity = "0";
+    expect(fade().getAnimations()).toHaveLength(1);
+    const until = performance.now() + LONG_TASK_MS;
+    while (performance.now() < until) {
+      // The rest of the long task.
+    }
+  }
+
+  const opacity = () => Number(getComputedStyle(fade()).opacity);
+
+  /** Runs `work` in the next animation frame's callbacks and resolves after it. */
+  function nextFrame(work: () => void = () => undefined): Promise<void> {
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        work();
+        resolve();
+      });
+    });
+  }
+
+  it("holds a motion that started before the settle at its start", async () => {
+    render(<FadeHost />);
+    await settleAnimations(0);
+
+    fadeInLongTask();
+    await settleAnimations(0);
+    expect(opacity()).toBe(1);
+  });
+
+  it("holds a motion that a long task starts between the settle's rounds at its start", async () => {
+    render(<FadeHost />);
+    await settleAnimations(0);
+
+    const settled = settleAnimations(0);
+    // Queued behind the settle's first round in the same frame, so the long task runs between rounds.
+    requestAnimationFrame(fadeInLongTask);
+    await settled;
+    expect(opacity()).toBe(1);
+  });
+
+  it("holds a motion that a long task starts after the frame settled at its start", async () => {
+    let release: () => void = () => undefined;
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const hold: RenderHold = {
+      delayRender: () => 1,
+      continueRender: () => {
+        release();
+      },
+      cancelRender: (error) => {
+        throw error;
+      },
+    };
+    render(
+      <>
+        <FadeHost />
+        <SeekCssAnimations clock={{ frame: 0, fps: FPS }} hold={hold} />
+      </>
+    );
+    await released;
+
+    // A primitive starts the fade on a later animation frame, once this frame has settled.
+    await nextFrame(fadeInLongTask);
+    await nextFrame();
+    expect(opacity()).toBe(1);
   });
 });
 
