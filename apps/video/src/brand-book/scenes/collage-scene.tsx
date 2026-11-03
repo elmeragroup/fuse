@@ -3,7 +3,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { Interactive, interpolate, useVideoConfig } from "remotion";
 
-import { DEFAULT_VERSION } from "../../brand/fuse-facts";
+import { VERSION_SCHEMA } from "../../brand/fuse-facts";
 import { CLAMP, ENTER } from "../../motion/easing";
 import { useFrameClock } from "../../motion/frame-clock";
 import type { FrameClock } from "../../motion/frame-clock";
@@ -308,9 +308,7 @@ function CollageSceneInner({ version }: CollageProps): ReactElement {
 export const CollageScene = Interactive.withSchema({
   Component: CollageSceneInner,
   componentName: "CollageScene",
-  schema: {
-    version: { type: "string", default: DEFAULT_VERSION, description: "Version" },
-  },
+  schema: VERSION_SCHEMA,
   wrapInSequence: true,
   layout: "absolute-fill",
 });

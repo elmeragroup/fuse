@@ -15,10 +15,10 @@ import { BRANDS } from "@elmeragroup/fuse/theme";
 import type { BrandCode } from "@elmeragroup/fuse/theme";
 
 /**
- * Each brand's mark, the symbol without its name, from Fuse's logos. Fjordkraft Företag carries
- * Fjordkraft's mark, as Fuse's `BrandLogo` maps it.
+ * Each brand's Fuse logo, whose `mark` variant is the symbol without its name. Fjordkraft Företag
+ * carries Fjordkraft's, as Fuse's `BrandLogo` maps it.
  */
-const MARKS = {
+export const BRAND_LOGOS = {
   elma: ElmeraGroupLogo,
   fkas: FjordkraftLogo,
   fkab: FjordkraftLogo,
@@ -28,6 +28,10 @@ const MARKS = {
   ngfi: NordicGreenEnergyLogo,
 } satisfies Record<BrandCode, (props: LogoProps) => ReactElement>;
 
+/** Paints every shape of an inline logo in the surrounding text colour. */
+export const CURRENT_INK =
+  "[&_circle]:fill-current [&_path]:fill-current [&_polygon]:fill-current [&_rect]:fill-current";
+
 /**
  * A mark's box: the caller sets its height and the artwork keeps its proportions. In one ink, every
  * shape takes the surrounding text colour; in colour, the artwork keeps the brand's own fills.
@@ -36,7 +40,7 @@ const brandMark = tv({
   base: "inline-flex shrink-0 *:h-full *:w-auto",
   variants: {
     ink: {
-      current: "[&_circle]:fill-current [&_path]:fill-current [&_polygon]:fill-current [&_rect]:fill-current",
+      current: CURRENT_INK,
       artwork: "",
     },
   },
@@ -58,7 +62,7 @@ export type BrandMarkProps = {
  * @returns The mark.
  */
 export function BrandMark({ brand, ink = "current", className }: BrandMarkProps): ReactElement {
-  const Mark = MARKS[brand];
+  const Mark = BRAND_LOGOS[brand];
   return (
     <span role="img" aria-label={BRANDS[brand].displayName} className={brandMark({ ink, className })}>
       <Mark variant="mark" />

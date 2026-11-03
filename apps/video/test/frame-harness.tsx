@@ -1,11 +1,15 @@
 import { act } from "react";
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 
+import { LocaleProvider } from "@elmeragroup/fuse/theme";
+import type { BrandCode } from "@elmeragroup/fuse/theme";
+
 import { settleAnimations } from "../src/motion/seek-css-animations";
 import { FPS } from "../src/music/beat-grid";
+import { SceneTheme } from "../src/primitives/scene-theme";
 
 // The browser suites' frame harness: one React root that renders a scene's frames in the order a
 // test names, settling Fuse's motion after each as a render does. A suite unmounts it after each
@@ -54,4 +58,28 @@ export async function play(frames: readonly number[], node: (frame: number) => R
     render(node(frame));
     await settleAnimations((frame / FPS) * 1000);
   }
+}
+
+/** Props for {@link Scope}. */
+export type ScopeProps = {
+  /** The brand; Elmera Group by default. */
+  readonly brand?: BrandCode;
+  /** Sizes and places the stage. */
+  readonly className?: string;
+  readonly children: ReactNode;
+};
+
+/**
+ * A light external stage in a brand, with Fuse's English locale, as a scene renders its content.
+ *
+ * @returns The themed stage.
+ */
+export function Scope({ brand = "elma", className, children }: ScopeProps): ReactElement {
+  return (
+    <LocaleProvider locale="en-US">
+      <SceneTheme brand={brand} scheme="light" className={className}>
+        {children}
+      </SceneTheme>
+    </LocaleProvider>
+  );
 }

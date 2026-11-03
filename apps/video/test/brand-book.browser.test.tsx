@@ -7,18 +7,16 @@ import { page } from "vitest/browser";
 import * as CssColor from "@elmeragroup/color/css-color";
 import * as Hex from "@elmeragroup/color/hex";
 import { getOrThrow } from "@elmeragroup/color/result";
-import { LocaleProvider } from "@elmeragroup/fuse/theme";
 
 import { SpecimenCard } from "../src/brand-book/scenes/anatomy/specimen";
 import { SelectTile } from "../src/brand-book/scenes/collage/overlay-tiles";
 import { PlateMotionContext } from "../src/brand-book/scenes/collage/plate";
 import { roleHex } from "../src/brand/role-value";
 import "../src/index.css";
-import { beats } from "../src/music/beat-grid";
-import { SceneTheme } from "../src/primitives/scene-theme";
+import { beats, FPS } from "../src/music/beat-grid";
 import { useStageBox } from "../src/primitives/stage";
 import type { StageBox } from "../src/primitives/stage";
-import { play, render, unmountTree } from "./frame-harness";
+import { play, render, Scope, unmountTree } from "./frame-harness";
 
 afterEach(unmountTree);
 
@@ -40,18 +38,16 @@ describe("the anatomy's specimen", () => {
 
   function Specimen({ frame }: { readonly frame: number }): ReactElement {
     return (
-      <LocaleProvider locale="en-US">
-        <SceneTheme brand={SCOPE.brand} scheme={SCOPE.scheme}>
-          <SpecimenCard
-            frame={frame}
-            cardRef={createRef()}
-            titleRef={createRef()}
-            statusRef={createRef()}
-            fieldRef={createRef()}
-            actionRef={createRef()}
-          />
-        </SceneTheme>
-      </LocaleProvider>
+      <Scope brand={SCOPE.brand}>
+        <SpecimenCard
+          frame={frame}
+          cardRef={createRef()}
+          titleRef={createRef()}
+          statusRef={createRef()}
+          fieldRef={createRef()}
+          actionRef={createRef()}
+        />
+      </Scope>
     );
   }
 
@@ -131,19 +127,16 @@ describe("useStageBox", () => {
 // moved focus. Playing the popup open and shut must leave focus where that fresh render finds it,
 // with no focus ring on the trigger, or every later frame of a render would depend on its history.
 describe("an overlay on a collage plate", () => {
-  const FPS = 30;
   const WINDOW = { openAt: 10, closeAt: 40 } as const;
   const AFTER_CLOSE = WINDOW.closeAt + 3;
 
   function Plate({ frame }: { readonly frame: number }): ReactElement {
     return (
-      <LocaleProvider locale="en-US">
-        <SceneTheme brand="fkab" scheme="light" className="relative h-80 w-90 p-5">
-          <PlateMotionContext value={{ clock: { frame, fps: FPS }, window: WINDOW }}>
-            <SelectTile />
-          </PlateMotionContext>
-        </SceneTheme>
-      </LocaleProvider>
+      <Scope brand="fkab" className="relative h-80 w-90 p-5">
+        <PlateMotionContext value={{ clock: { frame, fps: FPS }, window: WINDOW }}>
+          <SelectTile />
+        </PlateMotionContext>
+      </Scope>
     );
   }
 

@@ -20,8 +20,8 @@ export type RiseProps = {
 };
 
 /**
- * A block that rises in out of a soft blur and lifts out the same way: the remocn mask-reveal
- * motion applied to any content, so captions and panels move like the headlines.
+ * A block that rises in out of a soft blur and lifts out the same way, for captions and panels.
+ * Its timing and travel are its own, apart from the headlines' `MaskRevealUp`.
  *
  * @returns The animated block.
  */

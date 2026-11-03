@@ -2,6 +2,7 @@ import type { BrandCode } from "@elmeragroup/fuse/theme";
 
 import { currencyOf } from "../../brand/brand-market";
 import type { MarketCurrency } from "../../brand/brand-market";
+import { numberFormat } from "../../copy/intl";
 
 /** A day's spot price in one price area, per kWh in the market's currency. */
 export type SpotDay = {
@@ -51,9 +52,6 @@ export function marketOf(brand: BrandCode): SiteMarket {
   return MARKETS[currencyOf(brand)];
 }
 
-/** One to-the-cent formatter per locale and currency, so a frame-by-frame caller builds each once. */
-const centsFormats = new Map<string, Intl.NumberFormat>();
-
 /**
  * Amounts of a currency to the cent, for prices per kWh and monthly fees. A whole amount drops
  * its cents, as a fee of 39 kroner reads on a price list.
@@ -63,19 +61,13 @@ const centsFormats = new Map<string, Intl.NumberFormat>();
  * @returns The formatter.
  */
 export function centsFormat(locale: string, currency: MarketCurrency): Intl.NumberFormat {
-  const key = `${locale}/${currency}`;
-  let format = centsFormats.get(key);
-  if (format === undefined) {
-    format = new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-      trailingZeroDisplay: "stripIfInteger",
-    });
-    centsFormats.set(key, format);
-  }
-  return format;
+  return numberFormat(locale, {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    trailingZeroDisplay: "stripIfInteger",
+  });
 }
 
 /**

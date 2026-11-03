@@ -1,15 +1,12 @@
-import type { CSSProperties, ReactElement } from "react";
+import type { ReactElement } from "react";
 
-import { Easing, interpolate, useCurrentFrame } from "remotion";
+import { interpolate, useCurrentFrame } from "remotion";
 
-import { CLAMP } from "../../motion/easing";
+import { CLAMP, CUBIC_IN_OUT } from "../../motion/easing";
 
 // From the remocn registry (`@remocn/value-swap`), restyled for Fuse: the values inherit the
 // surrounding type and colour, and the sizer holds the widest value in that type, so a role's hex
 // or a theme's name changes in place without moving anything beside it.
-
-/** remocn's cubic ease-in-out, from a local cubic so the curve never borrows a bound method. */
-const SWAP_EASING = Easing.inOut((t: number) => t ** 3);
 
 /** Props for {@link ValueSwap}. */
 export type ValueSwapProps = {
@@ -22,7 +19,6 @@ export type ValueSwapProps = {
   /** How far a value travels as it swaps, in stage pixels. */
   readonly distance?: number;
   readonly className?: string;
-  readonly style?: CSSProperties;
 };
 
 /**
@@ -37,7 +33,6 @@ export function ValueSwap({
   duration = 10,
   distance = 12,
   className,
-  style,
 }: ValueSwapProps): ReactElement {
   const frame = useCurrentFrame();
   const count = Math.min(values.length, at.length + 1);
@@ -45,9 +40,9 @@ export function ValueSwap({
   const progress = (start: number | undefined) =>
     start === undefined
       ? 0
-      : interpolate(frame, [start, start + duration], [0, 1], { ...CLAMP, easing: SWAP_EASING });
+      : interpolate(frame, [start, start + duration], [0, 1], { ...CLAMP, easing: CUBIC_IN_OUT });
   return (
-    <span className={className} style={{ position: "relative", display: "inline-grid", ...style }}>
+    <span className={className} style={{ position: "relative", display: "inline-grid" }}>
       {/* Every value laid out in one cell, hidden, so the cell is as wide as the widest. */}
       {shown.map((value, index) => (
         <span

@@ -2,8 +2,9 @@
 @import "@elmeragroup/fuse/css";
 @import "@elmeragroup/fuse/themes.css";
 @import "@elmeragroup/fuse/demo-stage-density.css";
-/* The site sets Roboto first in --font-sans, and Neo Sans headings fall back to it. The video
-   ships the faces, so a render never depends on the machine's installed fonts. */
+/* The site sets Roboto first in --font-sans, and the video draws headings in it too (see the
+   --font-heading rule below). The video ships the faces, so a render never depends on the
+   machine's installed fonts. */
 @import "@fontsource/roboto/latin-400.css";
 @import "@fontsource/roboto/latin-500.css";
 @import "@fontsource/roboto/latin-600.css";
@@ -20,6 +21,15 @@
 
 :root {
   --font-mono: "JetBrains Mono", monospace;
+}
+
+/* Fuse's Fjordkraft themes set Neo Sans first in --font-heading. The video bundles no Neo Sans, so
+   a machine that has it installed would draw headings with other metrics than a clean render
+   machine. Every theme scope points headings at the bundled sans instead. Theme selectors grow
+   with the scope's attributes, up to five in the dark company themes, so `!important` is what
+   outranks each of them, now and after Fuse adds another. */
+[data-theme-variant] {
+  --font-heading: var(--font-sans) !important;
 }
 
 /* A native caret blinks on the wall clock, which no seek can pause, and no frame needs one. */

@@ -1,16 +1,16 @@
 import { useRef } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { Interactive, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { Interactive, interpolate, useCurrentFrame } from "remotion";
 
-import { Badge } from "@elmeragroup/fuse/badge";
 import { ElmeraGroupLogo } from "@elmeragroup/fuse/icons";
 import type { BrandCode } from "@elmeragroup/fuse/theme";
 
-import { DEFAULT_VERSION, SITE } from "../../brand/fuse-facts";
+import { SITE, VERSION_SCHEMA } from "../../brand/fuse-facts";
 import { useCopy } from "../../copy/copy";
 import { CLAMP, ENTER, EXIT } from "../../motion/easing";
 import { bars, beats } from "../../music/beat-grid";
+import { FuseLockup, useDriftCloser } from "../../primitives/fuse-lockup";
 import { Rise } from "../../primitives/rise";
 import { SceneFrame } from "../../primitives/scene-frame";
 import { SceneTheme } from "../../primitives/scene-theme";
@@ -83,7 +83,7 @@ function FlipTile({
 function ClosingPage({ version }: { readonly version: string }): ReactElement {
   const { closing } = useCopy().brandBook;
   const frame = useCurrentFrame();
-  const { durationInFrames } = useVideoConfig();
+  const scale = useDriftCloser(1.03);
   const spacer = useRef<HTMLSpanElement>(null);
   const slot = useStageBox(spacer);
   const [first, second] = closing.words;
@@ -97,9 +97,7 @@ function ClosingPage({ version }: { readonly version: string }): ReactElement {
       brand="elma"
       scheme="dark"
       className="relative size-full overflow-hidden bg-background font-sans text-foreground">
-      <div
-        className="absolute inset-0"
-        style={{ scale: String(interpolate(frame, [0, durationInFrames], [1, 1.03], CLAMP)) }}>
+      <div className="absolute inset-0" style={{ scale }}>
         {frame < LOCKUP_AT + 10 ? (
           <div className="absolute inset-0 flex items-center justify-center gap-12">
             <FlipTile index={0} brand={TILE_BRANDS[0]} frame={frame}>
@@ -117,21 +115,14 @@ function ClosingPage({ version }: { readonly version: string }): ReactElement {
             </FlipTile>
           </div>
         ) : null}
-        <div
-          className="absolute inset-0 flex items-center justify-center gap-7"
-          style={{ opacity: lockupIn, scale: String(0.94 + 0.06 * lockupIn) }}>
-          <span ref={spacer} className="h-24 w-22 shrink-0" />
-          <span
-            className="font-semibold font-heading text-[120px] leading-none tracking-[-0.03em]"
-            style={{ opacity: 1 - nameOut, translate: `0 ${String(-12 * nameOut)}px` }}>
-            Fuse
-          </span>
-          <span style={{ opacity: 1 - nameOut }}>
-            <Badge variant="secondary" className="px-4 py-1.5 font-mono text-[28px]">
-              {version}
-            </Badge>
-          </span>
-        </div>
+        <FuseLockup
+          version={version}
+          size="large"
+          away={nameOut}
+          mark={<span ref={spacer} className="h-24 w-22 shrink-0" />}
+          className="absolute inset-0 justify-center"
+          style={{ opacity: lockupIn, scale: String(0.94 + 0.06 * lockupIn) }}
+        />
         {slot === null ? null : (
           <ElmeraGroupLogo
             variant="mark"
@@ -176,9 +167,7 @@ function ClosingSceneInner({ version }: { readonly version: string }): ReactElem
 export const ClosingScene = Interactive.withSchema({
   Component: ClosingSceneInner,
   componentName: "ClosingScene",
-  schema: {
-    version: { type: "string", default: DEFAULT_VERSION, description: "Version" },
-  },
+  schema: VERSION_SCHEMA,
   wrapInSequence: true,
   layout: "absolute-fill",
 });

@@ -27,21 +27,24 @@ Without its cut, a film plays silent and logs one warning. Each film's metadata 
 
 The catalog pins Remotion to 4.0.535. The vendored skill in `.agents/skills/remotion-best-practices/` documents 4.0.536. Where it says `Interactive.create`, this version has `Interactive.withSchema({ wrapInSequence: true, layout })`. Upgrade every `@remotion/*` entry together.
 
+The root `pnpm-workspace.yaml` overrides `@remotion/tailwind-v4`'s Tailwind pins with the catalog's. Remove both overrides once `@remotion/tailwind-v4` pins the catalog's Tailwind.
+
 ## Motion
 
 - `SeekCssAnimations` drives Fuse's own CSS motion. On each frame it pauses every Web Animation and seeks it to the frame's time.
 - A frame must render the same whatever rendered before it: a fresh mount, forward playback, or a rewind as Studio scrubs back. Remotion renders frames out of order across tabs.
 - Render an overlay inside `SeekedOverlay`, which hands it `open` and the `container` its content portals into. The container carries the time since `openAt`. When a render lands inside the opening, the component replays the closed state first, because Base UI animates only a change it sees. On a rewind into the opening it remounts the overlay, because a finished transition cannot be seeked back. A popup leaves focus where a fresh render of the frame leaves it, so its content passes `finalFocus={false}`, and `initialFocus={false}` too when the popup would take focus and nothing in the frame needs it.
-- Render a toast with `FrameToast`. Its provider exists only from the toast's frame on, so a rewind removes it at once. Its timeout is `0`, so the video decides when it leaves.
+- Render a toast with `FrameToast`. Its provider exists only from the toast's frame on, so a rewind removes it at once. Its timeout is `0`, so the video decides when it leaves. Its `placement` sets the viewport's place in the frame as inline style, which outranks Fuse's window-width `sm:` placement.
 - Animate everything else with `useCurrentFrame` and `interpolate`, on the curves in `src/motion/easing.ts`, so every motion follows the frame and none follows the wall clock.
 - Measure layout with `useStagePoint`, `useStageBox` or `useAnchoredPoint` from `src/primitives/stage.tsx`. They read untransformed offsets once, on mount, so an animating scale or translate on an ancestor never moves the result. Call them from a component that `SceneFrame` renders, because the scene component around `SceneFrame` mounts before the font gate opens, when there is nothing to measure.
 - Remotion captures a frame only after every `delayRender` hold continues. `ReadyFrame` mounts the seek helper inside the font gate with the content, and the gate opens only after that commit, so no frame is captured between the fonts loading and the motion settling.
+- `src/components/remocn/` holds components adapted from the remocn registry (`https://www.remocn.dev/r/{name}.json`). They carry local edits, so change them in place and never pull a registry copy over them.
 - Lay out every line and panel from the scene's first frame and animate only what it shows. A `Sequence` that mounts a row on its beat makes a centred group reflow and moves text already on screen.
 
 ## Scenes and timing
 
 - Each film lives in its own folder under `src/` and registers its compositions in `src/root.tsx`: `fuse-release/` is the release video, `brand-book/` the marketing intro and `claude-builds/` the developer intro.
-- Every scene renders inside `SceneFrame`, so it plays the same opened alone in Studio and inside its film, with one seek helper per mounted scene. `index.css` bundles every face the films draw: Roboto, and JetBrains Mono, which it sets as Fuse's `--font-mono`. The font gate in `src/primitives/font-gate.tsx` waits for every face and weight, so a new face or weight goes in both files.
+- Every scene renders inside `SceneFrame`, so it plays the same opened alone in Studio and inside its film, with one seek helper per mounted scene. `index.css` bundles every face the films draw: Roboto, and JetBrains Mono, which it sets as Fuse's `--font-mono`. The font gate in `src/primitives/font-gate.tsx` waits for every face and weight, and cancels the render on one `index.css` does not load, so a new face or weight goes in both files.
 - Theme every scope with `SceneTheme`, which also stamps the variant's density on a demo stage, or the density it is given. Put a light scope beside a dark one, never inside it, because Fuse's dark rules match any `data-theme="dark"` ancestor and a nested light scope renders dark.
 - Times come from the track's beat grid in `src/music/beat-grid.ts`: `bars(n)` and `beats(n)`. Scenes last whole bars and cuts land on beats. A scene reads its own length from `useVideoConfig().durationInFrames`.
 - Each film's `grid.ts` lays its scenes end to end with `sceneGrid` and cuts the track on the grid's bar lines. It throws when its scenes move a splice off the track bar the edit needs. `scripts/cut-music.ts` loads these modules under Node's type stripping, so they import with explicit `.ts` extensions.
@@ -49,7 +52,7 @@ The catalog pins Remotion to 4.0.535. The vendored skill in `.agents/skills/remo
 
 ## Copy and data
 
-- Every visible string lives in the typed catalogs under `src/copy/`, one per locale. Format numbers, dates and money with `Intl` for the video's locale; currency follows the brand's market in `src/brand/brand-market.ts`.
+- Every visible string lives in the typed catalogs under `src/copy/`, one per locale. Format numbers, dates and money for the video's locale with the cached formatters in `src/copy/intl.ts`; currency follows the brand's market in `src/brand/brand-market.ts`.
 - Fit a headline to its slot with `FittedHeadline`, whose longest line sets one size for the block. It measures while it renders and Remotion caches each measurement, so render it inside `FontGate`, which every `SceneFrame` has, or a measurement taken with a fallback face sticks.
-- After a copy change, check stills of the longest-text frames in every locale. The nb-NO and sv-SE catalogs are drafts until a native speaker reviews them.
+- After a copy change, check stills of the longest-text frames in every locale. The nb-NO and sv-SE catalogs, in `src/copy/` and `src/copy/brand-book/`, are drafts until a native speaker reviews them.
 - Read theme values from `@elmeragroup/fuse/theme-catalog`. Parse, convert and measure colours through `@elmeragroup/color`.

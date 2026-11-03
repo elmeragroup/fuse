@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { tv } from "tailwind-variants";
 
 import { CLAMP } from "../../motion/easing";
 import { Caret } from "./caret";
@@ -24,7 +25,7 @@ import {
 } from "./claude-code-grid";
 import { TranscriptEntryView, transcriptRows } from "./claude-code-transcript";
 import type { TranscriptEntry, TranscriptRow } from "./claude-code-transcript";
-import { typedCount } from "./typewriter";
+import { typedText } from "./typewriter";
 
 // From the remocn registry (`@remocn/claude-code`), restyled for Fuse and extended into a whole
 // session. The surfaces, text and accent take the enclosing Fuse theme's roles, the accent its
@@ -103,7 +104,7 @@ export type ClaudeCodeProps = {
   readonly sendAt: number;
   readonly transcript: readonly TranscriptEntry[];
   readonly activities: readonly Activity[];
-  readonly todos?: TodoList;
+  readonly todos: TodoList;
   /** The spinner's hint after its label, given the seconds the work has run. */
   readonly interruptHint: (seconds: number) => string;
   /** The hint under the input box. */
@@ -165,6 +166,17 @@ function StatusRow({
   );
 }
 
+/** A task's row: struck through once done, bold while it is the current one. */
+const taskRow = tv({
+  variants: {
+    state: {
+      done: "text-muted-foreground line-through",
+      current: "font-bold",
+      pending: "",
+    },
+  },
+});
+
 /** The task list under the spinner: done tasks struck through, the current one in bold. */
 function TaskRows({ list, frame }: { readonly list: TodoList; readonly frame: number }): ReactElement {
   return (
@@ -176,7 +188,7 @@ function TaskRows({ list, frame }: { readonly list: TodoList; readonly frame: nu
           <Row
             key={item.label}
             indent={RESULT_INDENT + 2}
-            className={done ? "text-muted-foreground line-through" : current ? "font-bold" : undefined}>
+            className={taskRow({ state: done ? "done" : current ? "current" : "pending" })}>
             {index === 0 ? <Connector /> : null}
             <TodoBox done={done} />
             {item.label}
@@ -306,17 +318,14 @@ export function ClaudeCode({
   const blink = Math.floor(frame / BLINK_FRAMES) % 2 === 0 ? 1 : 0.35;
 
   const sent = frame >= sendAt;
-  const promptChars = Array.from(prompt);
-  const typed = sent
-    ? ""
-    : promptChars.slice(0, typedCount(frame - typeAt, fps, promptChars.length, charsPerSecond)).join("");
-  const typing = !sent && typed.length > 0 && typed.length < promptChars.length;
+  const typed = sent ? "" : typedText(prompt, frame - typeAt, fps, charsPerSecond);
+  const typing = !sent && typed !== "" && typed !== prompt;
   const inputRows = typed === "" ? [""] : wrapRows(typed, INPUT_COLUMNS);
   const userRows = sent ? wrapRows(prompt, COLUMNS - GUTTER) : [];
 
   const shown = transcript.filter((entry) => entry.at <= frame).map((entry) => transcriptRows(entry, frame));
   const activity = activities.find((entry) => entry.at <= frame && frame < entry.until);
-  const tasks = todos !== undefined && todos.at <= frame && frame < todos.until ? todos : undefined;
+  const tasks = todos.at <= frame && frame < todos.until ? todos : undefined;
 
   // A terminal scrolls by whole steps as output arrives; it never eases.
   const scroll = Math.max(

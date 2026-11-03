@@ -1,5 +1,7 @@
 import type { ReactElement } from "react";
 
+import { tv } from "tailwind-variants";
+
 import { BRANDS } from "@elmeragroup/fuse/theme";
 import type { BrandCode } from "@elmeragroup/fuse/theme";
 
@@ -60,7 +62,21 @@ export function MarkPoster({ brand }: { readonly brand: BrandCode }): ReactEleme
 }
 
 /** The roles a swatch poster shows, in the order the palette scene names them. */
-const SWATCH_ROLES = ["bg-primary", "bg-secondary", "bg-feature", "bg-primary-soft"] as const;
+const SWATCH_ROLES = ["primary", "secondary", "feature", "primary-soft"] as const;
+
+/** One swatch on a poster, filled with its role; the template rounds the second into a dot. */
+const swatch = tv({
+  base: "size-11",
+  variants: {
+    role: {
+      primary: "bg-primary",
+      secondary: "bg-secondary",
+      feature: "bg-feature",
+      "primary-soft": "bg-primary-soft",
+    } satisfies Record<(typeof SWATCH_ROLES)[number], string>,
+    round: { true: "rounded-full" },
+  },
+});
 
 /**
  * A swatch poster, the template's stone plate: the brand's name in the heading face over its first
@@ -81,7 +97,7 @@ export function SwatchPoster({ brand }: { readonly brand: BrandCode }): ReactEle
       </p>
       <div className="flex gap-2">
         {SWATCH_ROLES.map((role, index) => (
-          <span key={role} className={`size-11 ${role} ${index === 1 ? "rounded-full" : ""}`} />
+          <span key={role} className={swatch({ role, round: index === 1 })} />
         ))}
       </div>
       <span className="text-xs absolute bottom-5 left-6 text-muted-foreground">{collage.rolesTitle}</span>

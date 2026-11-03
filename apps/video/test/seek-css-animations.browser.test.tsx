@@ -6,18 +6,17 @@ import { page } from "vitest/browser";
 import { Button } from "@elmeragroup/fuse/button";
 import { Popover } from "@elmeragroup/fuse/popover";
 import { Sheet } from "@elmeragroup/fuse/sheet";
-import { LocaleProvider, ThemeScope } from "@elmeragroup/fuse/theme";
-import type { BrandCode } from "@elmeragroup/fuse/theme";
 
 import { CLICK } from "../src/fuse-release/scenes/montage/montage-shot";
-import { PriceAreaSelect } from "../src/fuse-release/scenes/montage/select-shot";
+import { SeekedPriceAreaSelect } from "../src/fuse-release/scenes/montage/select-shot";
 import { NewOrderSheet } from "../src/fuse-release/scenes/montage/sheet-shot";
 import "../src/index.css";
 import type { RenderHold } from "../src/motion/frame-clock";
 import { FrameToast } from "../src/motion/frame-toast";
 import { MOTION_ELAPSED_ATTRIBUTE, settleAnimations } from "../src/motion/seek-css-animations";
+import { FPS } from "../src/music/beat-grid";
 import { ReadyFrame } from "../src/primitives/scene-frame";
-import { play, render, unmountTree } from "./frame-harness";
+import { play, render, Scope, unmountTree } from "./frame-harness";
 
 // Oracle for every case: the motion Fuse declares for these parts, read off their classes rather
 // than computed by the helpers under test. Anchored popups fade and zoom in from transparent over
@@ -31,7 +30,6 @@ const SPIN_MS = 1000;
 /** The longest any Fuse open or close runs; past it every motion has ended. */
 const SETTLED_MS = 5000;
 
-const FPS = 30;
 /** The montage shots open their part on the cursor's click. */
 const OPEN_AT = CLICK;
 
@@ -43,24 +41,8 @@ const AT_REST = OPEN_AT + 12;
 
 afterEach(unmountTree);
 
-/** A themed stage in a brand, with Fuse's locale, as a scene renders. */
-function Scope({
-  brand,
-  children,
-}: {
-  readonly brand: Exclude<BrandCode, "fkab">;
-  readonly children: ReactNode;
-}): ReactElement {
-  return (
-    <LocaleProvider locale="en-US">
-      <ThemeScope
-        theme={{ variant: "external", brand, segment: "private" }}
-        className="relative h-150 w-250 bg-background p-10">
-        {children}
-      </ThemeScope>
-    </LocaleProvider>
-  );
-}
+/** The stage every case renders on. */
+const STAGE = "relative h-150 w-250 bg-background p-10";
 
 function sheetBox(): DOMRect {
   const popup = document.querySelector('[data-slot="sheet-content"]');
@@ -95,7 +77,7 @@ describe("settleAnimations", () => {
   }): ReactElement {
     const target = { current: document.getElementById("motion-host") };
     return (
-      <Scope brand="fkas">
+      <Scope brand="fkas" className={STAGE}>
         {part === "popover" ? (
           <Popover.Root open={open}>
             <Popover.Trigger render={<Button />}>Reading</Popover.Trigger>
@@ -263,8 +245,8 @@ describe("frame history", () => {
     // Settle on the scene's clock, as a render does: the frame's time since the scene began.
     const atFrame = async (frame: number) => {
       render(
-        <Scope brand="fkas">
-          <PriceAreaSelect clock={{ frame, fps: FPS }} />
+        <Scope brand="fkas" className={STAGE}>
+          <SeekedPriceAreaSelect clock={{ frame, fps: FPS }} />
         </Scope>
       );
       await settleAnimations((frame / FPS) * 1000);
@@ -288,9 +270,9 @@ describe("frame history", () => {
     // The render's viewport, so collision handling has the room a render gives it.
     await page.viewport(1920, 1080);
     render(
-      <Scope brand="fkas">
+      <Scope brand="fkas" className={STAGE}>
         <ScaledStage>
-          <PriceAreaSelect clock={{ frame: OPEN_AT + 20, fps: FPS }} />
+          <SeekedPriceAreaSelect clock={{ frame: OPEN_AT + 20, fps: FPS }} />
         </ScaledStage>
       </Scope>
     );
@@ -303,8 +285,8 @@ describe("frame history", () => {
 
   it("leaves focus where a fresh render leaves it when a rewind closes the Select", async () => {
     const tree = (frame: number) => (
-      <Scope brand="fkas">
-        <PriceAreaSelect clock={{ frame, fps: FPS }} />
+      <Scope brand="fkas" className={STAGE}>
+        <SeekedPriceAreaSelect clock={{ frame, fps: FPS }} />
       </Scope>
     );
     const BEFORE_CLICK = OPEN_AT - 1;
@@ -318,7 +300,7 @@ describe("frame history", () => {
 
   it("shows a sheet rewound into its slide where a fresh render of that frame shows it", async () => {
     const tree = (frame: number) => (
-      <Scope brand="fkas">
+      <Scope brand="fkas" className={STAGE}>
         <NewOrderSheet clock={{ frame, fps: FPS }} />
       </Scope>
     );
@@ -336,8 +318,14 @@ describe("frame history", () => {
 
   it("removes a toast at once on a rewind before it, and raises one toast going forward again", async () => {
     const tree = (frame: number) => (
-      <Scope brand="ngfi">
-        <FrameToast at={OPEN_AT} clock={{ frame, fps: FPS }} title="Reading saved" description="48,213 kWh" />
+      <Scope brand="ngfi" className={STAGE}>
+        <FrameToast
+          at={OPEN_AT}
+          clock={{ frame, fps: FPS }}
+          title="Reading saved"
+          description="48,213 kWh"
+          placement={{ right: 6, bottom: 6, width: 80 }}
+        />
       </Scope>
     );
     await play([0, OPEN_AT, AT_REST + 3], tree);
@@ -399,7 +387,7 @@ describe("readiness", () => {
   it("is not ready until the overlay sits at its seeked place, however slowly the fonts load", async () => {
     const { hold, ready } = watchReadiness();
     render(
-      <Scope brand="fkas">
+      <Scope brand="fkas" className={STAGE}>
         <ReadyFrame
           clock={{ frame: ENTERING, fps: FPS }}
           hold={hold}

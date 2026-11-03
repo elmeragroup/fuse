@@ -2,7 +2,8 @@ import type { CSSProperties, ReactElement, ReactNode } from "react";
 
 import { Easing, interpolate, useCurrentFrame } from "remotion";
 
-import { CLAMP } from "../../motion/easing";
+import { CLAMP, CUBIC_IN_OUT, CUBIC_OUT } from "../../motion/easing";
+import type { StageBox } from "../../primitives/stage";
 
 // From the remocn registry (`@remocn/selection-snap`), restyled for Fuse and turned on a box: a
 // loose viewfinder snaps tight around a part on the stage instead of around a word, its corner arms
@@ -22,10 +23,6 @@ const HANDLES = [
   [0, 0.5],
 ] as const;
 
-/** remocn's cubic curves, from a local cubic so they never borrow a bound method. */
-const cubic = (t: number): number => t ** 3;
-const EASE_OUT = Easing.out(cubic);
-const EASE_IN_OUT = Easing.inOut(cubic);
 const SNAP_EASE = Easing.bezier(0.34, 1.3, 0.64, 1);
 const POP_EASE = Easing.out(Easing.back(1.7));
 
@@ -45,24 +42,16 @@ function pop(t: number, start: number, duration: number): number {
   return Math.max(0, interpolate(t, [start, start + duration], [0, 1], { ...CLAMP, easing: POP_EASE }));
 }
 
-/** A box on the stage, in stage pixels. */
-export type SelectionBox = {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-};
-
 /** Props for {@link SelectionSnap}. */
 export type SelectionSnapProps = {
   /** The part to select. */
-  readonly box: SelectionBox;
+  readonly box: StageBox;
   /** The frame the viewfinder appears on. */
   readonly at: number;
-  /** The frame it lifts away on; it stays when it is omitted. */
-  readonly leaveAt?: number;
+  /** The frame it lifts away on. */
+  readonly leaveAt: number;
   /** How much faster than remocn's 38-frame timing it runs. */
-  readonly speed?: number;
+  readonly speed: number;
   /** What the badge under the box says. */
   readonly children: ReactNode;
 };
@@ -78,22 +67,22 @@ export function SelectionSnap({
   box,
   at,
   leaveAt,
-  speed = 1,
+  speed,
   children,
 }: SelectionSnapProps): ReactElement | null {
   const frame = useCurrentFrame();
   const t = (frame - at) * speed;
-  const left =
-    leaveAt === undefined
-      ? 0
-      : interpolate(frame, [leaveAt, leaveAt + LEAVE_FRAMES], [0, 1], { ...CLAMP, easing: EASE_IN_OUT });
+  const left = interpolate(frame, [leaveAt, leaveAt + LEAVE_FRAMES], [0, 1], {
+    ...CLAMP,
+    easing: CUBIC_IN_OUT,
+  });
   if (t < 0 || left >= 1) {
     return null;
   }
-  const intro = interpolate(t, [0, 8], [0, 1], { ...CLAMP, easing: EASE_OUT });
-  const settle = interpolate(t, [0, 8], [1.06, 1], { ...CLAMP, easing: EASE_OUT });
+  const intro = interpolate(t, [0, 8], [0, 1], { ...CLAMP, easing: CUBIC_OUT });
+  const settle = interpolate(t, [0, 8], [1.06, 1], { ...CLAMP, easing: CUBIC_OUT });
   const snap = interpolate(t, [14, 28], [0, 1], { ...CLAMP, easing: SNAP_EASE });
-  const edges = interpolate(t, [16, 26], [0, 1], { ...CLAMP, easing: EASE_IN_OUT });
+  const edges = interpolate(t, [16, 26], [0, 1], { ...CLAMP, easing: CUBIC_IN_OUT });
   const badge = pop(t, 24, 8);
   const padding = PADDING.loose + (PADDING.tight - PADDING.loose) * snap;
   // Percentages resolve against the box's width for `width` and its height for `height`, so one

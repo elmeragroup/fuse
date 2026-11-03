@@ -10,6 +10,7 @@
     "studio": "remotion studio src/index.ts",
     "music:cut": "node scripts/cut-music.ts",
     "render": "remotion render src/index.ts",
+    "test": "vitest run --project unit",
     "test:browser": "vitest run --project browser",
     "type-check": "tsrs --noEmit"
   },
