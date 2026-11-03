@@ -70,3 +70,15 @@ describe("formatOpaque", () => {
     );
   });
 });
+
+describe("format", () => {
+  it("writes an opaque color as #RRGGBB, the same as formatOpaque", () => {
+    expect(Hex.format(parsed("#ff5604"))).toBe("#FF5604");
+  });
+
+  it("writes a translucent color's alpha as the fourth byte", () => {
+    // 5% is 0.05 × 255 = 12.75, which rounds to 13, 0x0D; 50% is 127.5, which rounds to 128, 0x80.
+    expect(Hex.format(getOrThrow(Srgb.make({ r: 0, g: 0, b: 0, alpha: 0.05 })))).toBe("#0000000D");
+    expect(Hex.format(getOrThrow(Srgb.make({ r: 1, g: 1, b: 1, alpha: 0.5 })))).toBe("#FFFFFF80");
+  });
+});

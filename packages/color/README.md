@@ -12,7 +12,7 @@ The core modules have no dependencies. Import each one by its subpath, as a name
 | `@elmeragroup/color/oklab`     | The `Oklab` type, conversion from sRGB, and ΔE as Euclidean OKLab distance times 100                  |
 | `@elmeragroup/color/cvd`       | Machado 2009 color vision deficiency simulation at severity 1.0, and ΔE under protan and deutan       |
 | `@elmeragroup/color/srgb`      | The gamma-encoded `Srgb` and linear-light `LinearSrgb` types, `rgb()` parsing, transfer, compositing  |
-| `@elmeragroup/color/hex`       | Six-digit hex, `#rrggbb` in and uppercase `#RRGGBB` out                                               |
+| `@elmeragroup/color/hex`       | Six-digit hex, `#rrggbb` in; uppercase `#RRGGBB` out, or `#RRGGBBAA` for a translucent color          |
 | `@elmeragroup/color/css-color` | One parser for every notation the package reads, including `lab()`, and conversion to sRGB            |
 | `@elmeragroup/color/wcag`      | WCAG 2.2 relative luminance and contrast ratio                                                        |
 | `@elmeragroup/color/result`    | The `Result`, `Ok` and `Err` types every fallible function returns, and `getOrThrow` for defect paths |
