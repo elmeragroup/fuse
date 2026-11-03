@@ -12,6 +12,13 @@ export const FONT_VARIABLES = ["font-sans", "font-heading"] as const;
 /** A font variable the editor edits. */
 export type FontVariable = (typeof FONT_VARIABLES)[number];
 
+const FONT_VARIABLE_NAMES: ReadonlySet<string> = new Set(FONT_VARIABLES);
+
+/** Whether `name` is a font variable rather than a theme token. */
+export function isFontVariable(name: string): name is FontVariable {
+  return FONT_VARIABLE_NAMES.has(name);
+}
+
 /** A name the editor edits: a theme token, or a font variable. */
 export type TokenName = ThemeTokenName | FontVariable;
 

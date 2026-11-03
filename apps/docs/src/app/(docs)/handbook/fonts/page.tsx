@@ -7,14 +7,40 @@ const HREF = "/handbook/fonts";
 
 export const metadata = pageMetadata(HREF);
 
+/**
+ * The app CSS each recipe ends with: the internal default on the root, the external variant, then
+ * Fjordkraft's heading, which the external variant qualifies so it outweighs the variant rule.
+ */
+function appFontCss(inter: string, roboto: string, neoSans: string): string {
+  return `:root {
+  --font-sans: ${inter}, ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+}
+
+[data-theme-variant="external"] {
+  --font-sans: ${roboto}, ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+}
+
+[data-theme-variant="external"]:is([data-theme-brand="fkas"], [data-theme-brand="fkab"]) {
+  --font-heading: ${neoSans}, var(--font-sans);
+}`;
+}
+
 const NEXT_FONTS = `// app/fonts.ts
-import { Inter } from "next/font/google";
+import { Inter, Roboto } from "next/font/google";
 import localFont from "next/font/local";
 
+// next/font reads its options at build time, so each one is a literal.
 export const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-inter",
+});
+export const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-roboto",
 });
 
 // A licensed face, from files your app holds.
@@ -27,51 +53,50 @@ export const neoSans = localFont({
 });`;
 
 const NEXT_LAYOUT = `// app/layout.tsx
-import { inter, neoSans } from "./fonts";
+import { inter, neoSans, roboto } from "./fonts";
 
-<html lang="nb" className={\`\${inter.variable} \${neoSans.variable}\`} {...themeAttributes(theme)}>
+<html
+  lang="nb"
+  className={\`\${inter.variable} \${roboto.variable} \${neoSans.variable}\`}
+  {...themeAttributes(theme)}>
   <body className="font-sans">{children}</body>
 </html>;`;
 
-const NEXT_CSS = `:root {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-sans);
-}`;
+const NEXT_CSS = appFontCss("var(--font-inter)", "var(--font-roboto)", "var(--font-neo-sans)");
 
 const FONTSOURCE = `// The module that renders <html>.
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
-import "@fontsource/inter/700.css";`;
+import "@fontsource/inter/700.css";
+import "@fontsource/roboto/400.css";
+import "@fontsource/roboto/500.css";
+import "@fontsource/roboto/600.css";
+import "@fontsource/roboto/700.css";`;
 
-const FONTSOURCE_CSS = `:root {
-  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-sans);
-}`;
+const FONTSOURCE_CSS = appFontCss("Inter", "Roboto", '"Neo Sans"');
 
 const FONT_FACE = `@font-face {
   font-family: "Inter";
   src: url("/fonts/inter-latin-400.woff2") format("woff2");
   font-weight: 400;
-  font-style: normal;
   font-display: swap;
 }
-/* The same for 500, 600 and 700. */
-
-:root {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-sans);
-}`;
-
-const PER_BRAND = `[data-theme-brand="fkas"] {
-  --font-heading: var(--font-neo-sans), var(--font-sans);
+@font-face {
+  font-family: "Roboto";
+  src: url("/fonts/roboto-latin-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
 }
+@font-face {
+  font-family: "Neo Sans";
+  src: url("/fonts/NeoSans-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+/* One rule per family and weight: 400, 500, 600 and 700. */
 
-/* An app that serves internal and external themes. */
-[data-theme-variant="external"] {
-  --font-sans: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-sans);
-}`;
+${appFontCss('"Inter"', '"Roboto"', '"Neo Sans"')}`;
 
 const NESTED = `@layer base {
   [data-theme-variant] {
@@ -112,7 +137,7 @@ export default function FontsPage(): ReactElement {
       <h2 id="fontsource">Any bundler</h2>
       <p>
         <code>@fontsource</code> packages declare the faces under their real names. Import one stylesheet per
-        weight:
+        weight, and declare Neo Sans with <code>@font-face</code>, as in the next recipe:
       </p>
       <pre>
         <code>{FONTSOURCE}</code>
@@ -128,12 +153,10 @@ export default function FontsPage(): ReactElement {
 
       <h2 id="per-brand">Per brand</h2>
       <p>
-        Set the variables on the theme attributes. Set <code>--font-heading</code> wherever you set{" "}
-        <code>--font-sans</code>, since the default <code>var(--font-sans)</code> resolves on the root.
+        Each recipe sets the variant default first and the brand heading after it, qualified by the variant,
+        so the heading rule wins. Set <code>--font-heading</code> wherever you set <code>--font-sans</code>,
+        since the default <code>var(--font-sans)</code> resolves on the root.
       </p>
-      <pre>
-        <code>{PER_BRAND}</code>
-      </pre>
 
       <h2 id="nested-themes">Nested themes</h2>
       <p>

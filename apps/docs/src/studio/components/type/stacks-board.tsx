@@ -4,7 +4,7 @@ import { tv } from "tailwind-variants";
 
 import { Text } from "@elmeragroup/fuse/text";
 
-import { FONT_STACKS, FONT_STACK_LABELS, isFontStack } from "../../lib/font-stacks";
+import { FONT_STACKS, FONT_STACK_LABELS, isFontStack, previewFontStack } from "../../lib/font-stacks";
 
 const stacksBoard = tv({
   slots: {
@@ -45,7 +45,7 @@ export function StacksBoard(): ReactElement {
             size="2xl"
             variant="foreground"
             className={styles.line()}
-            style={{ "--stack": FONT_STACKS[stack] }}>
+            style={{ "--stack": previewFontStack(FONT_STACKS[stack]) }}>
             Sphinx of black quartz, judge my vow. 0123456789
           </Text>
         </li>

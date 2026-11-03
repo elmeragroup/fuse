@@ -106,7 +106,7 @@ describe("landing Dashboard window", () => {
       nav: await drawnFace(page.getByRole("navigation", { name: "Primary" }).getByRole("button").first()),
       site: await drawnFace(page.locator('[data-theme-variant="external"]:not(html) button').first()),
       dashboard: await drawnFace(page.locator('[data-customer="Ola Nordmann"]').first()),
-    }).toEqual({ nav: "inter", site: "roboto", dashboard: "inter" });
+    }).toEqual({ nav: "--font-inter", site: "--font-roboto", dashboard: "--font-inter" });
     await page.context().close();
   });
 

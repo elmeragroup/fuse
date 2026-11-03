@@ -1,5 +1,7 @@
 import type { TokenOverrides } from "./edits";
+import { previewFontStack } from "./font-stacks";
 import { referencedNames } from "./token-values";
+import { isFontVariable } from "./tokens";
 
 /** Inline custom property declarations, keyed `--name`. */
 export type CustomProperties = { [property: `--${string}`]: string };
@@ -59,7 +61,8 @@ export function artboardStyle(overrides: TokenOverrides, theme: Declarations | u
     }
   }
   for (const [name, value] of Object.entries(overrides)) {
-    style[`--${name}`] = value;
+    // A font edit names families, which the docs load under generated names (`previewFontStack`).
+    style[`--${name}`] = isFontVariable(name) ? previewFontStack(value) : value;
   }
   return style;
 }

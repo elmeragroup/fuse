@@ -6,7 +6,6 @@ import { STUDIO_BASE_REFERENCES, STUDIO_PRIMITIVES } from "../../generated/studi
 import type { ArtboardScheme } from "./documents";
 import { overrideOf, resetNames } from "./edits";
 import type { StudioDocument, StudioOverrides } from "./edits";
-import { LOADED_FONT_VARIABLES } from "./font-stacks";
 import { referencedNames, referencesOf } from "./references";
 import type { BaseReferences } from "./references";
 import type { StudioSeed } from "./seed";
@@ -129,14 +128,11 @@ export const RADIUS_STEPS = ["0px", "2px"] as const;
 /** A CSS identifier without escapes, such as `Segoe` or `-apple-system`; never `123`. */
 const IDENTIFIER = String.raw`(?:--|-?[\p{L}_])[\p{L}\p{N}_-]*`;
 
-/** A `var()` naming a face the docs load, such as `var(--font-inter)` (`LOADED_FONT_VARIABLES`). */
-const LOADED_FACE = String.raw`var\((?:${LOADED_FONT_VARIABLES.join("|")})\)`;
-
 /**
- * One family: a face the docs load through its variable, a quoted name of free text without quotes
- * or backslashes, or identifiers between spaces, such as `Segoe UI` or `ui-sans-serif`.
+ * One family: a quoted name of free text without quotes or backslashes, or identifiers between
+ * spaces, such as `Segoe UI` or `ui-sans-serif`.
  */
-const FAMILY = String.raw`(?:${LOADED_FACE}|"[^"'\\]+"|'[^"'\\]+'|${IDENTIFIER}(?:\s+${IDENTIFIER})*)`;
+const FAMILY = String.raw`(?:"[^"'\\]+"|'[^"'\\]+'|${IDENTIFIER}(?:\s+${IDENTIFIER})*)`;
 
 const FONT_STACK = new RegExp(`^${FAMILY}(?:\\s*,\\s*${FAMILY})*$`, "u");
 
@@ -353,7 +349,7 @@ function parseLiteral(name: TokenName, css: string): ParsedValue {
  *   `var()`;
  * - a dimension is a non-negative px or rem length, and `--radius-step` only `0px` or `2px`;
  * - a font family is a stack of plain or quoted names, where a plain name holds no CSS-wide
- *   keyword and no `default`, and of the faces the docs load, through their variables;
+ *   keyword and no `default`;
  * - a font weight is a number from 1 to 1000.
  *
  * An alias names a known token of the same kind, never the token itself. Whether it closes a

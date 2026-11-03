@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { StudioDocument, StudioOverrides } from "../../src/studio/lib/edits";
 import { exportCss } from "../../src/studio/lib/export-css";
+import { FONT_STACKS } from "../../src/studio/lib/font-stacks";
 
 const THEME = { variant: "external", brand: "elma", segment: "private" } as const;
 
@@ -55,6 +56,20 @@ describe("exportCss", () => {
   --font-heading: Georgia, serif;
 }
 `);
+  });
+
+  // Unit under test: an exported font edit picked from the font knob's stacks. Oracle: the portable
+  // CSS an app can paste, which names families. The docs reach their faces through next/font's
+  // `--font-inter` and `--font-roboto`, which an app does not define.
+  it("exports the font knob's stacks as family names, never the docs' loader variables", () => {
+    const css = exported({
+      light: { "font-sans": FONT_STACKS.inter },
+      dark: { "font-sans": FONT_STACKS.roboto },
+      shared: { "font-heading": FONT_STACKS.body },
+    });
+    expect(css).toContain("--font-sans: Inter, ui-sans-serif, system-ui, sans-serif;");
+    expect(css).toContain("--font-sans: Roboto, ui-sans-serif, system-ui, sans-serif;");
+    expect(css).not.toMatch(/var\(--font-(?!sans\))/u);
   });
 
   it("writes mixed edits in contract order, each in its rule", () => {

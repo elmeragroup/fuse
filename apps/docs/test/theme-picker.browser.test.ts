@@ -62,7 +62,7 @@ describe("docs theme settings", () => {
       expect(await menu.getByRole("group", { name, exact: true }).count()).toBe(1);
     }
     await expectPreview(page, "internal", "fkas", "private");
-    expect(await drawnFaces(page)).toEqual({ nav: "inter", stage: "inter" });
+    expect(await drawnFaces(page)).toEqual({ nav: "--font-inter", stage: "--font-inter" });
     const initialPaint = await menu.evaluate((element) => ({
       background: getComputedStyle(element).backgroundColor,
       font: getComputedStyle(element).fontFamily,
@@ -73,7 +73,7 @@ describe("docs theme settings", () => {
     await choice(menu, "TrøndelagKraft").click();
     await choice(menu, "Company").click();
     await expectPreview(page, "external", "tkas", "company");
-    await expect.poll(() => drawnFaces(page)).toEqual({ nav: "inter", stage: "roboto" });
+    await expect.poll(() => drawnFaces(page)).toEqual({ nav: "--font-inter", stage: "--font-roboto" });
     expect(await menu.isVisible()).toBe(true);
     await expectFocused(choice(menu, "Company"));
     expect(
