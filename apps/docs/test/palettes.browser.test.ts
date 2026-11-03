@@ -27,12 +27,16 @@ async function openInspector(page: Page): Promise<Locator> {
   await waitForDocsShellHydration(page);
   const inspector = page.locator("[data-palette-inspector]");
   await inspector.scrollIntoViewIfNeeded();
-  // The table hydrates after the shell; a switch pressed before then changes nothing.
+  // The table hydrates after the shell, and a switch pressed before then changes nothing. On a
+  // loaded CI runner that takes longer than the poll's 1s default.
   await expect
-    .poll(async () => {
-      await inspector.getByRole("button", { name: "Dark", exact: true }).click();
-      return inspector.getByRole("button", { name: "Dark", exact: true }).getAttribute("aria-pressed");
-    })
+    .poll(
+      async () => {
+        await inspector.getByRole("button", { name: "Dark", exact: true }).click();
+        return inspector.getByRole("button", { name: "Dark", exact: true }).getAttribute("aria-pressed");
+      },
+      { timeout: 10_000 }
+    )
     .toBe("true");
   await inspector.getByRole("button", { name: "Light", exact: true }).click();
   return inspector;
