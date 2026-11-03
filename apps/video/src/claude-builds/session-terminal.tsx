@@ -9,6 +9,7 @@ import { ClaudeCode } from "../components/remocn/claude-code";
 import type { Activity, Todo } from "../components/remocn/claude-code";
 import type { DiffLine, TranscriptEntry } from "../components/remocn/claude-code-transcript";
 import { useCopy, useVideoLocale } from "../copy/copy";
+import { numberFormat } from "../copy/intl";
 import { bars } from "../music/beat-grid";
 import { themeFor } from "../primitives/scene-theme";
 import { STOP_BAR } from "./grid";
@@ -83,7 +84,7 @@ function rootDiff(before: Look, after: Look): readonly DiffLine[] {
  */
 export function SessionTerminal({ size }: { readonly size: ColumnSize }): ReactElement {
   const { terminal, site } = useCopy().claudeBuilds;
-  const seconds = new Intl.NumberFormat(useVideoLocale(), { maximumFractionDigits: 1 });
+  const seconds = numberFormat(useVideoLocale(), { maximumFractionDigits: 1 });
 
   const writes = SITE_SECTIONS.map((section): TranscriptEntry => ({
     kind: "tool",

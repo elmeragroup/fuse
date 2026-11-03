@@ -213,8 +213,7 @@ export function SessionBrowser({ size }: { readonly size: ColumnSize }): ReactEl
                 clock={clock}
                 title={site.toast.title}
                 description={site.toast.description}
-                // Fuse places the viewport with `sm:` classes too; the stage's viewport is wider than `sm`.
-                className="sm:right-6 sm:bottom-6 sm:w-80 absolute right-6 bottom-6 w-80"
+                placement={{ right: 6, bottom: 6, width: 80 }}
               />
             </div>
           ) : null}

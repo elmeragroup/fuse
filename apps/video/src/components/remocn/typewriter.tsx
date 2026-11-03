@@ -24,6 +24,20 @@ export function typedCount(frames: number, fps: number, length: number, charsPer
   return Math.min(length, Math.floor((frames / fps) * charsPerSecond));
 }
 
+/**
+ * The part of a text typed a number of frames in, cut on whole characters.
+ *
+ * @param text - The whole text.
+ * @param frames - Frames since typing started.
+ * @param fps - The frame rate.
+ * @param charsPerSecond - The typing speed.
+ * @returns The typed prefix, empty before typing starts.
+ */
+export function typedText(text: string, frames: number, fps: number, charsPerSecond: number): string {
+  const characters = Array.from(text);
+  return characters.slice(0, typedCount(frames, fps, characters.length, charsPerSecond)).join("");
+}
+
 /** How fast a {@link Typewriter} types, in characters per second. */
 const CHARS_PER_SECOND = 22;
 
@@ -43,12 +57,11 @@ export type TypewriterProps = {
 export function Typewriter({ text, startAt = 0, className }: TypewriterProps): ReactElement {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const characters = Array.from(text);
-  const count = typedCount(frame - startAt, fps, characters.length, CHARS_PER_SECOND);
-  const typing = count > 0 && count < characters.length;
+  const typed = typedText(text, frame - startAt, fps, CHARS_PER_SECOND);
+  const typing = typed !== "" && typed !== text;
   return (
     <span className={className} style={{ whiteSpace: "pre" }}>
-      {characters.slice(0, count).join("")}
+      {typed}
       <Caret blink={!typing} />
     </span>
   );

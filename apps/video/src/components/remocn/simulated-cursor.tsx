@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 
-import { CLAMP } from "../../motion/easing";
+import { CLAMP, CUBIC_OUT } from "../../motion/easing";
 
 // From the remocn registry (`@remocn/simulated-cursor`), restyled for Fuse: the arrow fills with
 // the foreground over a background outline, the click ripple draws in the primary role, and the
@@ -26,7 +26,7 @@ function positionAt(stops: readonly CursorStop[], frame: number): { x: number; y
   for (const stop of stops) {
     const progress = interpolate(frame, [stop.at - TRAVEL_FRAMES, stop.at], [0, 1], {
       ...CLAMP,
-      easing: (t) => 1 - (1 - t) ** 3,
+      easing: CUBIC_OUT,
     });
     position = {
       x: position.x + (stop.x - position.x) * progress,

@@ -6,6 +6,14 @@ export default defineConfig({
   test: {
     projects: [
       {
+        // Pure logic: the music mixer, the scene grids and the terminal's wrapping. Nothing mounts.
+        test: {
+          name: "unit",
+          include: ["test/**/*.test.ts"],
+          exclude: ["**/*.browser.test.*"],
+        },
+      },
+      {
         // The suite imports the video's own stylesheet, so Fuse's motion classes compile as they
         // do in Remotion's webpack build.
         css: { postcss: { plugins: [tailwindcss()] } },

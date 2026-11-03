@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import type { ReactElement, ReactNode, RefObject } from "react";
 
 import { AbsoluteFill, useVideoConfig } from "remotion";
@@ -66,6 +66,35 @@ function anchoredBoxOf(element: HTMLElement, anchor: string): StageBox {
 }
 
 /**
+ * An element's box relative to its nearest ancestor that carries the attribute `anchor`, from its
+ * untransformed layout (see {@link anchoredBoxOf}), read once the element has laid out.
+ *
+ * @param ref - The element to measure.
+ * @param anchor - The attribute that marks the ancestor the box is measured from.
+ * @returns The element's box in the anchor's pixels, or `null` before the first layout.
+ */
+function useAnchoredBox(ref: RefObject<HTMLElement | null>, anchor: string): StageBox | null {
+  const [box, setBox] = useState<StageBox | null>(null);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (element === null) {
+      return;
+    }
+    const next = anchoredBoxOf(element, anchor);
+    setBox((previous) =>
+      previous !== null &&
+      previous.x === next.x &&
+      previous.y === next.y &&
+      previous.width === next.width &&
+      previous.height === next.height
+        ? previous
+        : next
+    );
+  }, [ref, anchor]);
+  return box;
+}
+
+/**
  * The centre of an element relative to its nearest ancestor that carries the attribute `anchor`,
  * from its untransformed layout (see {@link anchoredBoxOf}).
  *
@@ -79,18 +108,11 @@ export function useAnchoredPoint(
   anchor: string,
   initial: StagePoint
 ): StagePoint {
-  const [point, setPoint] = useState<StagePoint>(initial);
-  useLayoutEffect(() => {
-    const element = ref.current;
-    if (element === null) {
-      return;
-    }
-    const box = anchoredBoxOf(element, anchor);
-    const x = box.x + box.width / 2;
-    const y = box.y + box.height / 2;
-    setPoint((previous) => (previous.x === x && previous.y === y ? previous : { x, y }));
-  }, [ref, anchor]);
-  return point;
+  const box = useAnchoredBox(ref, anchor);
+  return useMemo(
+    () => (box === null ? initial : { x: box.x + box.width / 2, y: box.y + box.height / 2 }),
+    [box, initial]
+  );
 }
 
 /**
@@ -114,22 +136,5 @@ export function useStagePoint(ref: RefObject<HTMLElement | null>): StagePoint {
  * @returns The element's box on the stage, or `null` before the first layout.
  */
 export function useStageBox(ref: RefObject<HTMLElement | null>): StageBox | null {
-  const [box, setBox] = useState<StageBox | null>(null);
-  useLayoutEffect(() => {
-    const element = ref.current;
-    if (element === null) {
-      return;
-    }
-    const next = anchoredBoxOf(element, "data-stage");
-    setBox((previous) =>
-      previous !== null &&
-      previous.x === next.x &&
-      previous.y === next.y &&
-      previous.width === next.width &&
-      previous.height === next.height
-        ? previous
-        : next
-    );
-  }, [ref]);
-  return box;
+  return useAnchoredBox(ref, "data-stage");
 }

@@ -1,21 +1,28 @@
 import type { ReactElement, ReactNode } from "react";
 
-import { BRANDS, defaultDensityForVariant, densityAttributes, ThemeScope } from "@elmeragroup/fuse/theme";
+import {
+  coerceTheme,
+  defaultDensityForVariant,
+  densityAttributes,
+  ThemeScope,
+} from "@elmeragroup/fuse/theme";
 import type { BrandCode, Density, ThemeInput, ThemeVariant } from "@elmeragroup/fuse/theme";
 import type { ResolvedColorScheme } from "@elmeragroup/fuse/theme-catalog";
 
 /**
- * A brand's theme in a variant, in its first allowed segment: Fjordkraft Företag is company-only,
- * the rest private.
+ * A brand's theme in a variant, in the private segment, which Fuse pins to company for Fjordkraft
+ * Företag, the one company-only brand.
  *
  * @param brand - The brand.
  * @param variant - The variant.
  * @returns The theme a scene stamps for them.
  */
 export function themeFor(brand: BrandCode, variant: ThemeVariant): ThemeInput {
-  // SAFETY: the segment is the brand's own first allowed segment from Fuse's pin table, so the
-  // combination is legal; TypeScript cannot correlate the table's entry with the union member.
-  return { variant, brand, segment: BRANDS[brand].segments[0] } as ThemeInput;
+  const theme = coerceTheme({ variant, brand, segment: "private" });
+  if (theme === null) {
+    throw new Error(`Fuse rejected the ${brand} ${variant} theme, a defect in themeFor.`);
+  }
+  return theme;
 }
 
 /** Props for {@link SceneTheme}. */

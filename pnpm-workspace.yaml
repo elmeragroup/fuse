@@ -108,8 +108,10 @@ overrides:
   # @effect/platform-node declares a caret range here, which resolves to a release whose
   # effect peer is newer than the catalog's effect. Keep the whole Effect family on one version.
   "@effect/platform-node-shared": 4.0.6
-  # @remotion/tailwind-v4 pins Tailwind 4.2.0 for its webpack loader. Fuse's CSS compiles against
-  # the catalog Tailwind, so the video app's loader runs the same version.
+  # @remotion/tailwind-v4 pins Tailwind 4.2.0, and Fuse's CSS compiles against the catalog
+  # Tailwind. The first line runs the video's webpack loader, which brings its own tailwindcss, on
+  # the catalog version. The second keeps an unused 4.2.0 tailwindcss out of the install.
+  # apps/video/AGENTS.md says when to remove both.
   "@remotion/tailwind-v4>@tailwindcss/webpack": "catalog:"
   "@remotion/tailwind-v4>tailwindcss": "catalog:"
 

@@ -110,6 +110,7 @@ it("the merge checks schedule all required gates without browser work", () => {
     "static-theme#type-check",
     "static-theme#test",
     "video#type-check",
+    "video#test",
   ]) {
     expect(ids).toContain(required);
   }
@@ -203,7 +204,7 @@ it("builds @elmeragroup/fuse before the Fuse and app test tasks, including the a
   // The root `test.dependsOn` names @elmeragroup/fuse#build, but both apps replace the array
   // with their own `["build"]`; the density tripwires then rely on the transitive edge.
   // @elmeragroup/color opts out deliberately; the next test pins that.
-  for (const taskId of ["@elmeragroup/fuse#test", "docs#test", "static-theme#test"]) {
+  for (const taskId of ["@elmeragroup/fuse#test", "docs#test", "static-theme#test", "video#test"]) {
     expect(reachesFuseBuild(taskId), `${taskId} must transitively build @elmeragroup/fuse`).toBe(true);
   }
 }, 30_000);

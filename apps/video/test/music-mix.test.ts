@@ -16,6 +16,19 @@ function track(length: number, value: (index: number) => number): Stereo {
   return [left, left.map((sample) => -sample)];
 }
 
+/** An edit of one run from the track's start, over two seconds, with the given fields changed. */
+function makeEdit(overrides: Partial<MusicEdit>): MusicEdit {
+  return {
+    file: "edit.wav",
+    runs: [{ cutSeconds: 0, trackSeconds: 0 }],
+    crossfade: 0.1,
+    fadeIn: 0,
+    fadeOut: 0.5,
+    duration: 2,
+    ...overrides,
+  };
+}
+
 /** A sample the mixed cut must hold. */
 function sample(cut: Stereo, channel: 0 | 1, index: number): number {
   const value = cut[channel][index];
@@ -27,18 +40,15 @@ function sample(cut: Stereo, channel: 0 | 1, index: number): number {
 
 describe("mixEdit", () => {
   it("plays each run from its own place in the track", () => {
-    const edit: MusicEdit = {
+    const edit = makeEdit({
       file: "three-runs.wav",
       runs: [
         { cutSeconds: 0, trackSeconds: 0 },
         { cutSeconds: 1, trackSeconds: 5 },
         { cutSeconds: 2, trackSeconds: 8 },
       ],
-      crossfade: 0.1,
-      fadeIn: 0,
-      fadeOut: 0.5,
       duration: 3,
-    };
+    });
     // A ramp, so every sample of the track is told apart by its value.
     const cut = mixEdit(
       track(1100, (index) => index / 1000),
@@ -53,17 +63,14 @@ describe("mixEdit", () => {
   });
 
   describe("across a splice", () => {
-    const edit: MusicEdit = {
+    const edit = makeEdit({
       file: "two-runs.wav",
       runs: [
         { cutSeconds: 0, trackSeconds: 0 },
         { cutSeconds: 1, trackSeconds: 3 },
       ],
       crossfade: 0.2,
-      fadeIn: 0,
-      fadeOut: 0.5,
-      duration: 2,
-    };
+    });
     // The first run reads the track's samples 0–199 and the second its samples 200–399, so a
     // track that is 1 under one run and 0 under the other plays back that run's gain alone.
     const firstGain = mixEdit(
@@ -103,14 +110,9 @@ describe("mixEdit", () => {
   });
 
   it("plays a cut without a fade-in at full gain from its first sample", () => {
-    const edit: MusicEdit = {
+    const edit = makeEdit({
       file: "no-fade-in.wav",
-      runs: [{ cutSeconds: 0, trackSeconds: 0 }],
-      crossfade: 0.1,
-      fadeIn: 0,
-      fadeOut: 0.5,
-      duration: 2,
-    };
+    });
     const cut = mixEdit(
       track(200, () => 1),
       edit,
@@ -121,14 +123,11 @@ describe("mixEdit", () => {
   });
 
   it("fades a cut that opens inside the track in from silence", () => {
-    const edit: MusicEdit = {
+    const edit = makeEdit({
       file: "fade-in.wav",
       runs: [{ cutSeconds: 0, trackSeconds: 4 }],
-      crossfade: 0.1,
       fadeIn: 0.5,
-      fadeOut: 0.5,
-      duration: 2,
-    };
+    });
     const cut = mixEdit(
       track(600, () => 1),
       edit,
@@ -142,17 +141,13 @@ describe("mixEdit", () => {
   });
 
   it("refuses a track shorter than the edit reads", () => {
-    const edit: MusicEdit = {
+    const edit = makeEdit({
       file: "too-long.wav",
       runs: [
         { cutSeconds: 0, trackSeconds: 0 },
         { cutSeconds: 1, trackSeconds: 9 },
       ],
-      crossfade: 0.1,
-      fadeIn: 0,
-      fadeOut: 0.5,
-      duration: 2,
-    };
+    });
     expect(() =>
       mixEdit(
         track(500, () => 1),
@@ -168,17 +163,13 @@ describe("mixEdit", () => {
 // it and before the cut ends.
 describe("editSpan", () => {
   /** An edit that keeps the contract, for each case to break one way. */
-  const valid: MusicEdit = {
+  const valid = makeEdit({
     file: "valid.wav",
     runs: [
       { cutSeconds: 0, trackSeconds: 0 },
       { cutSeconds: 1, trackSeconds: 5 },
     ],
-    crossfade: 0.1,
-    fadeIn: 0,
-    fadeOut: 0.5,
-    duration: 2,
-  };
+  });
 
   it("reads an edit that keeps the contract", () => {
     expect(editSpan(valid, RATE)).toEqual({ starts: [0, 400], length: 200, needed: 600 });

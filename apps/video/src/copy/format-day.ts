@@ -1,5 +1,4 @@
-/** One medium-date formatter per locale, so a frame-by-frame caller builds each once. */
-const formats = new Map<string, Intl.DateTimeFormat>();
+import { dateTimeFormat } from "./intl";
 
 /**
  * A calendar day in the video's locale, in the medium date style ("Oct 2, 2026", "2. okt. 2026").
@@ -10,10 +9,5 @@ const formats = new Map<string, Intl.DateTimeFormat>();
  * @returns The formatted day.
  */
 export function formatDay(locale: string, utcMs: number): string {
-  let format = formats.get(locale);
-  if (format === undefined) {
-    format = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" });
-    formats.set(locale, format);
-  }
-  return format.format(utcMs);
+  return dateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(utcMs);
 }

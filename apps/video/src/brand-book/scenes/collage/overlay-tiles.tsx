@@ -6,16 +6,15 @@ import { Dialog } from "@elmeragroup/fuse/dialog";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import { Copy, Download } from "@elmeragroup/fuse/icons";
 import { Popover } from "@elmeragroup/fuse/popover";
-import { Select } from "@elmeragroup/fuse/select";
 import { Skeleton } from "@elmeragroup/fuse/skeleton";
-import { useTheme } from "@elmeragroup/fuse/theme";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
-import { priceAreasOf } from "../../../brand/brand-market";
 import { useCopy, useVideoLocale } from "../../../copy/copy";
+import { numberFormat } from "../../../copy/intl";
 import { FrameToast } from "../../../motion/frame-toast";
 import { METER_NUMBER, READING_KWH } from "../../../sample/customer-data";
+import { PriceAreaSelect } from "../../../sample/price-area-select";
 import { PlateOverlay, usePlateMotion } from "./plate";
 
 /** A confirmation over a page the scrim dims, centred on its plate. */
@@ -52,27 +51,11 @@ export function DialogTile(): ReactElement {
 /** A price-area picker in its plate's market, open under its trigger. */
 export function SelectTile(): ReactElement {
   const { select } = useCopy().brandBook.collage;
-  const { areas, picked } = priceAreasOf(useTheme().brand);
   return (
     <div className="flex h-full flex-col gap-2 pt-1">
       <span className="text-sm font-medium">{select.label}</span>
       <PlateOverlay>
-        {({ open, container }) => (
-          <Select.Root items={areas} value={picked} open={open}>
-            <Select.Trigger aria-label={select.label} className="w-full">
-              <Select.Value />
-            </Select.Trigger>
-            {/* The plate's transform is the popup's containing block, where Fuse documents item
-                alignment as unsupported; the popup opens under its trigger. */}
-            <Select.Content container={container} alignItemWithTrigger={false} finalFocus={false}>
-              {Object.entries(areas).map(([value, label]) => (
-                <Select.Item key={value} value={value}>
-                  {label}
-                </Select.Item>
-              ))}
-            </Select.Content>
-          </Select.Root>
-        )}
+        {(overlay) => <PriceAreaSelect {...overlay} label={select.label} className="w-full" />}
       </PlateOverlay>
     </div>
   );
@@ -206,9 +189,8 @@ export function ToastTile(): ReactElement {
         at={span?.openAt ?? Number.POSITIVE_INFINITY}
         clock={clock}
         title={toast.title}
-        description={toast.description(new Intl.NumberFormat(locale).format(READING_KWH), METER_NUMBER)}
-        // Fuse places the viewport with `sm:` classes too; the stage's viewport is wider than `sm`.
-        className="sm:inset-x-0 sm:bottom-0 sm:w-full absolute inset-x-0 bottom-0 w-full"
+        description={toast.description(numberFormat(locale).format(READING_KWH), METER_NUMBER)}
+        placement={{ left: 0, right: 0, bottom: 0, width: "full" }}
       />
     </div>
   );
