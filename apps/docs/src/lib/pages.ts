@@ -19,6 +19,11 @@ export type StaticPage = {
   /** One-line description, for `llms.txt` and the page's own metadata. */
   description: string;
   group: StaticNavGroup;
+  /**
+   * `wide` gives the page the whole width beside the side nav, without the on-this-page column,
+   * for a page built around one wide table. The shell reads it from the active route.
+   */
+  layout?: "wide";
 };
 
 /** The docs overview. Reachable from the wordmark, indexed by `llms.txt`, not in a nav group. */
@@ -80,8 +85,9 @@ export const STATIC_PAGES: readonly StaticPage[] = [
     href: "/handbook/palettes",
     label: "Palettes & contrast",
     description:
-      "Each theme's distinct tones, the roles that share them, and the WCAG contrast of every role pair, in a token inspector.",
+      "Every color role, brand ramp and contrast pair in one variables table, with the seven brands as columns.",
     group: "handbook",
+    layout: "wide",
   },
   {
     href: "/handbook/brands-and-segments",
@@ -131,14 +137,17 @@ export function staticPagesIn(group: StaticNavGroup): readonly StaticPage[] {
 }
 
 /**
- * Whether the page at a pathname lays out wide: a block's page, whose live preview needs the room
- * of a desktop window, so the shell drops the On this page column and the prose measure for it.
+ * Whether the page at a pathname lays out wide, so the shell drops the On this page column and
+ * the prose measure for it. A block's page is wide, because its live preview needs the room of a
+ * desktop window, and so is a page whose manifest entry sets `layout: "wide"`.
  *
- * @param pathname - The route on screen.
- * @returns Whether the route is a Blocks page.
+ * @param pathname - The route on screen, such as `/handbook/palettes`.
+ * @returns Whether the route is a Blocks page or a wide manifest entry.
  */
 export function isWidePage(pathname: string): boolean {
-  return staticPagesIn("blocks").some((page) => page.href === pathname);
+  return STATIC_PAGES.some(
+    (page) => page.href === pathname && (page.group === "blocks" || page.layout === "wide")
+  );
 }
 
 /** The static page at `href`; throws when the manifest has none, so a stale route fails the build. */

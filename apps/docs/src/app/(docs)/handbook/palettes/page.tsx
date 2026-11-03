@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 
 import Link from "next/link";
+import { tv } from "tailwind-variants";
 
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
 import { PaletteInspector } from "../../../../components/palette-inspector/palette-inspector";
@@ -9,57 +10,79 @@ const HREF = "/handbook/palettes";
 
 export const metadata = pageMetadata(HREF);
 
+const palettesPage = tv({
+  slots: {
+    // The page is wide for the table; its prose keeps the docs' reading measure.
+    measure: "max-w-[39rem]",
+  },
+});
+
+const { measure } = palettesPage();
+
 export default function PalettesPage(): ReactElement {
   return (
     <DocsPage href={HREF}>
-      <p>
-        A theme stores finished values, one per role, rather than tonal ramps. The inspector below reads those
-        values for one theme in one color scheme and shows three things: the distinct tones the roles resolve
-        to, which roles share each tone, and the contrast of each foreground on the surface it is drawn on.
-      </p>
-      <p>
-        It opens on the theme the header picker previews, and picking a theme here moves that picker too. The
-        values are generated from the same resolved theme catalog that the{" "}
-        <Link href="/handbook/tokens">token reference</Link> and the Figma export read, so they match the CSS
-        that <code>themes.css</code> ships.
-      </p>
-
-      <h2 id="inspector">Inspector</h2>
-      <p>
-        <strong>Default</strong> lists every tone from darkest to lightest, then every color role by group,
-        then every graded pair. Hover or focus a swatch to read its OKLCH and hex values, and press it to copy
-        the OKLCH value. While a tone or a role is in focus, the roles on other tones fade, so the roles that
-        share it stand out. <strong>Detailed</strong> lists every role in a table you can search by name or
-        value, filter by group, by shared tone and by contrast level, and sort by name or by its weakest pair.
-      </p>
+      <div className={measure()}>
+        <p>
+          The table lists Fuse&apos;s color tokens the way Figma&apos;s variables panel does: collections on
+          the left, tokens as rows and the seven brands as columns. The switches above it pick the variant,
+          segment and color scheme every column shows. A brand pinned to one segment, such as Telinet to
+          private, shows a hatched cell under the other.
+        </p>
+        <p>
+          A pill marks a role that names another token, such as <code>--dialog</code> naming{" "}
+          <code>popover</code>, or whose value equals a step of its brand&apos;s ramps, such as
+          Fjordkraft&apos;s light <code>--background</code> on <code>shade-100</code>. Any other value shows
+          as a swatch and its hex or OKLCH. Hover or focus a cell for both formats, and press it to copy the
+          value. While a cell is in focus, the cells of the same color in its column are outlined.
+        </p>
+        <p>
+          Tab moves into the table as one stop. The arrow keys move between cells, Home and End along a row,
+          and Ctrl with Home or End to the first and last cell.
+        </p>
+      </div>
 
       <PaletteInspector />
 
-      <h2 id="tones">Tones</h2>
-      <p>
-        A tone is a distinct color, and two roles share a tone when they resolve to the same color. Many do: a
-        card is often the page&apos;s own white, and one dark neutral can serve as the primary fill, the
-        accent text and the feature text. When a product needs a color the theme does not have, as the
-        Gudbrandsdal Energi sidebar did, the tones here show what the theme does hold. Use a role that
-        resolves to the tone you need, never its literal value, so the product follows the theme when the tone
-        moves.
-      </p>
+      <div className={measure()}>
+        <h2 id="brand-ramps">Brand ramps</h2>
+        <p>
+          Every brand has two ramps of eleven steps, <code>--brand-neutral-50</code> to{" "}
+          <code>--brand-neutral-950</code> and <code>--brand-shade-50</code> to <code>--brand-shade-950</code>
+          , and they are tokens like any role, so <code>bg-brand-shade-500</code> and{" "}
+          <code>text-brand-neutral-900</code> work. They hold one value per brand and segment in both color
+          schemes and both variants. Fjordkraft company and Fjordkraft Företag take the Bedrift ramps.
+        </p>
+        <p>
+          The ramps come from the <code>brand</code> collection in the Figma Core file. Elmera and Nordic
+          Green Energy have no ramps there, so theirs are generated from the brand color and marked as
+          generated: each step takes the median lightness of the five Figma ramps at that step and the
+          brand&apos;s hue, and the shade ramp passes through the brand color itself, at shade 900 for Elmera
+          and shade 800 for Nordic Green Energy. The repository is the source from here on, and Figma follows
+          it.
+        </p>
+        <p>
+          Reach for a role first, so the product follows the theme. When a product needs a tone no role holds,
+          as the Gudbrandsdal Energi sidebar did, pick a ramp step rather than a literal color.
+        </p>
 
-      <h2 id="contrast">Contrast</h2>
-      <p>
-        Ratios are WCAG 2.2 contrast ratios between the two resolved colors. A translucent foreground is
-        composited over its surface first, as the browser paints it. AA for normal text is 4.5:1 and AAA is
-        7:1.
-      </p>
-      <p>
-        The <strong>text-grade pairs</strong> are the pairs Fuse&apos;s contrast gate holds at 4.5:1 in every
-        theme and scheme, so a theme that fails one does not build. The <strong>other role pairs</strong> are
-        each remaining role with a <code>-foreground</code> drawn on it. The gate does not hold them, so some
-        sit below AA, and the inspector marks each one that does. <code>feature-foreground</code> is
-        decorative, and the <Link href="/accessibility#accepted-deviations">accessibility page</Link> lists
-        the other deviations Fuse accepts. Before you set text in a pair below AA, check it there. To see a
-        theme&apos;s pairs in context, open the <Link href="/handbook/theme-matrix">theme matrix</Link>.
-      </p>
+        <h2 id="contrast">Contrast</h2>
+        <p>
+          A contrast cell shows the pair in its own colors, its WCAG 2.2 ratio cut to two decimals and its
+          level for normal text: AA from 4.5:1 and AAA from 7:1. A translucent foreground is composited over
+          its surface first, as the browser paints it. A cell below AA is tinted, and the footer counts them.
+        </p>
+        <p>
+          The <strong>text-grade pairs</strong> are the pairs Fuse&apos;s contrast gate holds at 4.5:1 in
+          every theme and scheme, so a theme that fails one does not build. The{" "}
+          <strong>other role pairs</strong> are each remaining role with a <code>-foreground</code> drawn on
+          it and the pairs the token contract names beside them. The gate does not hold them, so some sit
+          below AA. <code>feature-foreground</code> is decorative, and the{" "}
+          <Link href="/accessibility#accepted-deviations">accessibility page</Link> lists the other deviations
+          Fuse accepts. To see a theme&apos;s pairs in context, open the{" "}
+          <Link href="/handbook/theme-matrix">theme matrix</Link>.
+        </p>
+      </div>
     </DocsPage>
   );
 }

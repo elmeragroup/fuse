@@ -5,78 +5,82 @@ import type { ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
 
-import { Badge } from "@elmeragroup/fuse/badge";
-
 import { copyText } from "../../lib/copy-with-toast";
-import { alphaPercent, formatRatio, GRADE_LABELS } from "../../lib/palettes";
+import { GRADE_LABELS } from "../../lib/palettes";
 import type { ContrastGrade, PaletteTone } from "../../lib/palettes";
 
 const colorReadout = tv({
   slots: {
-    swatch: "flex-none rounded-sm border border-foreground/15 bg-(--swatch)",
+    // The checker shows only through a translucent tone, so its alpha reads at a glance.
+    swatch:
+      "palette-checker relative size-4 flex-none overflow-hidden rounded-sm border border-foreground/15 after:absolute after:inset-0 after:bg-(--swatch)",
     readout: "flex min-w-0 flex-col gap-1.5 py-0.5",
     readoutTitle: "font-medium font-mono",
     values: "grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 font-mono tabular-nums",
-    term: "text-background/70",
+    term: "font-sans text-background/70",
     note: "text-background/70",
-    // Visible, since a tap on a phone opens no tooltip to say a value was copied.
     status: "min-w-0 truncate",
-    ratio: "tabular-nums",
+    grade: "text-xs font-medium tabular-nums",
   },
   variants: {
-    size: {
-      sm: { swatch: "size-4" },
-      md: { swatch: "size-6" },
+    grade: {
+      AAA: { grade: "text-success" },
+      AA: { grade: "text-success" },
+      "below-aa": { grade: "text-error-soft-foreground" },
     },
   },
 });
 
 const styles = colorReadout();
 
-/** A tone's swatch, painted with the tone itself. */
-export function Swatch({ tone, size = "sm" }: { tone: PaletteTone; size?: "sm" | "md" }): ReactElement {
+/** A tone's swatch, painted with the tone itself over a checker its alpha lets through. */
+export function Swatch({ tone }: { tone: PaletteTone }): ReactElement {
   return (
-    <span
-      aria-hidden
-      className={colorReadout({ size }).swatch()}
-      style={{ "--swatch": tone.oklch }}
-      data-palette-swatch
-    />
+    <span aria-hidden className={styles.swatch()} style={{ "--swatch": tone.oklch }} data-palette-swatch />
   );
 }
 
-type ToneReadoutProps = {
-  /** What the readout describes, such as `--primary` or `Tone 12`. */
+/** One line of a readout: a term and its value. */
+export type ReadoutLine = { readonly term: string; readonly value: string };
+
+type ReadoutProps = {
+  /** What the readout describes, such as `--primary · Fjordkraft`. */
   title: string;
-  tone: PaletteTone;
-  /** Lines below the values, such as the roles that share the tone. */
+  lines: readonly ReadoutLine[];
+  /** A note below the values, such as whether the contrast gate holds a pair. */
   children?: ReactNode;
-  /** Whether the last click copied this value. */
+  /** Whether the last click copied this cell's value. */
   copied: boolean;
 };
 
-/** A tooltip's body: the tone's OKLCH, hex and alpha, then any notes and the copy hint. */
-export function ToneReadout({ title, tone, children, copied }: ToneReadoutProps): ReactElement {
-  const alpha = alphaPercent(tone);
+/** A tooltip's body: its title, its values as terms, any note and the copy hint. */
+export function Readout({ title, lines, children, copied }: ReadoutProps): ReactElement {
   return (
     <div className={styles.readout()} data-palette-readout>
       <span className={styles.readoutTitle()}>{title}</span>
       <dl className={styles.values()}>
-        <dt className={styles.term()}>OKLCH</dt>
-        <dd data-value="oklch">{tone.oklch}</dd>
-        <dt className={styles.term()}>Hex</dt>
-        <dd data-value="hex">{tone.hex}</dd>
-        {alpha === undefined ? null : (
-          <>
-            <dt className={styles.term()}>Alpha</dt>
-            <dd data-value="alpha">{alpha}</dd>
-          </>
-        )}
+        {lines.map(({ term, value }) => (
+          <div key={term} className="contents">
+            <dt className={styles.term()}>{term}</dt>
+            <dd data-value={term.toLowerCase()}>{value}</dd>
+          </div>
+        ))}
       </dl>
-      {children}
-      <span className={styles.note()}>{copied ? "Copied OKLCH" : "Click to copy OKLCH"}</span>
+      {children === undefined ? null : <span className={styles.note()}>{children}</span>}
+      <span className={styles.note()}>{copied ? "Copied" : "Click to copy"}</span>
     </div>
   );
+}
+
+/** A tone's readout lines: hex, OKLCH and, for a translucent tone, its alpha. */
+export function toneLines(tone: PaletteTone, prefix = ""): ReadoutLine[] {
+  const lines = [
+    { term: `${prefix}Hex`, value: tone.hex },
+    { term: `${prefix}OKLCH`, value: tone.oklch },
+  ];
+  return tone.alpha < 1
+    ? [...lines, { term: `${prefix}Alpha`, value: `${String(Math.round(tone.alpha * 1000) / 10)}%` }]
+    : lines;
 }
 
 /** How long a copied value says so, in ms. */
@@ -88,14 +92,14 @@ type CopyState =
   | { readonly _tag: "copied"; readonly key: string; readonly text: string }
   | { readonly _tag: "failed"; readonly key: string };
 
-/** The inspector's copy action and its feedback, shared by every swatch. */
+/** The table's copy action and its feedback, shared by every cell. */
 export type CopyFeedback = {
   readonly state: CopyState;
   /** Copies `text` and marks the value under `key` as copied for a moment. */
   readonly copy: (key: string, text: string) => void;
 };
 
-/** One copy action for the whole inspector, so one value at a time reads as copied. */
+/** One copy action for the whole table, so one value at a time reads as copied. */
 export function useCopyFeedback(): CopyFeedback {
   const [state, setState] = useState<CopyState>({ _tag: "idle" });
   const resetTimer = useRef<number | undefined>(undefined);
@@ -128,23 +132,11 @@ export function CopyStatus({ copy }: { copy: CopyFeedback }): ReactElement {
   );
 }
 
-/** The Badge variant a grade wears. Below AA is a filled destructive badge, so it never blends in. */
-function gradeVariant(grade: ContrastGrade) {
-  switch (grade) {
-    case "AAA":
-    case "AA":
-      return "outline-success";
-    case "below-aa":
-      return "destructive";
-  }
-}
-
-/** A pair's WCAG level and ratio. */
-export function GradeBadge({ grade, ratio }: { grade: ContrastGrade; ratio: number }): ReactElement {
+/** A pair's WCAG level as a short label, colored by whether it holds AA. */
+export function GradeLabel({ grade }: { grade: ContrastGrade }): ReactElement {
   return (
-    <Badge size="sm" variant={gradeVariant(grade)} data-contrast-grade={grade}>
-      {/* One text run: the Badge is a flex row, which drops a bare space between two items. */}
-      <span className={styles.ratio()}>{`${GRADE_LABELS[grade]} ${formatRatio(ratio)}`}</span>
-    </Badge>
+    <span className={colorReadout({ grade }).grade()} data-contrast-grade={grade}>
+      {GRADE_LABELS[grade]}
+    </span>
   );
 }

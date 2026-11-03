@@ -1,293 +1,436 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { ReactElement } from "react";
+import { useMemo, useRef } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import {
   columnFacetingFeature,
-  columnVisibilityFeature,
   columnFilteringFeature,
+  columnVisibilityFeature,
   createFacetedRowModel,
   createFacetedUniqueValues,
   createFilteredRowModel,
-  createSortedRowModel,
-  rowSortingFeature,
-  sortFns,
   tableFeatures,
 } from "@tanstack/react-table";
+import type { ColumnFiltersState, Updater } from "@tanstack/react-table";
 import { tv } from "tailwind-variants";
 
+import { Badge } from "@elmeragroup/fuse/badge";
 import { Button } from "@elmeragroup/fuse/button";
 import { createFuseTableHook } from "@elmeragroup/fuse/data-table";
 import {
   createDataTableFilterFn,
   DataTableFilter,
   defineFilterFields,
+  parseColumnFilters,
 } from "@elmeragroup/fuse/data-table-filter";
 import { Empty } from "@elmeragroup/fuse/empty";
-import { Circle, MagnifyingGlass, Stack, SquaresFour } from "@elmeragroup/fuse/icons";
+import { Circle, MagnifyingGlass, SquaresFour } from "@elmeragroup/fuse/icons";
 import { InputGroup } from "@elmeragroup/fuse/input-group";
+import { Table } from "@elmeragroup/fuse/table";
 
-import { alphaPercent, GRADE_LABELS, PALETTE_GROUPS } from "../../lib/palettes";
+import { COLLECTION_GROUPS, GRADE_LABELS } from "../../lib/palettes";
 import type {
-  ColorRoleName,
+  BrandColumn,
   ContrastGrade,
-  PaletteGroup,
-  PaletteView,
-  PairView,
-  ToneView,
+  PaletteAxes,
+  PaletteCollection,
+  PairRow,
+  PrimitiveRow,
+  TokenRow,
+  ValueFormat,
 } from "../../lib/palettes";
-import { GradeBadge, Swatch } from "./color-readout";
+import { SEGMENT_LABELS, VARIANT_LABELS } from "../../lib/theme";
+import type { CopyFeedback } from "./color-readout";
+import { CopyStatus, Swatch } from "./color-readout";
+import { PairCellView, PinnedCellView, primitiveValue, tokenValue, ValueCellView } from "./palette-cells";
+import { useCellGrid } from "./use-cell-grid";
 
 const paletteTable = tv({
   slots: {
-    root: "flex min-w-0 flex-col gap-3",
-    controls: "sm:flex-row sm:items-center flex min-w-0 flex-col gap-2",
-    search: "sm:w-64 w-full flex-none",
+    pane: "flex min-w-0 flex-1 flex-col",
+    toolbar: "flex flex-wrap items-center gap-2 border-b border-border p-2",
+    search: "@2xl:ms-auto @2xl:w-64 w-full",
     bar: "min-w-0 flex-1",
-    role: "flex items-center gap-2",
-    roleText: "flex min-w-0 flex-col",
-    // Names wrap at their hyphens, against the cell's nowrap, only when the table runs out of room, so the long
-    // `--selection-*` roles do not widen the whole column.
-    roleName: "text-xs font-mono whitespace-normal",
-    alias: "text-xs font-mono whitespace-normal text-muted-foreground",
-    toneNote: "text-xs whitespace-nowrap text-muted-foreground",
-    nowrap: "font-mono whitespace-nowrap",
-    values: "flex flex-col",
-    // A chromatic literal wraps between its components rather than run past the panel.
-    value: "text-xs font-mono whitespace-normal tabular-nums",
-    secondaryValue: "text-xs font-mono whitespace-nowrap text-muted-foreground tabular-nums",
-    muted: "text-xs whitespace-nowrap text-muted-foreground tabular-nums",
-    contrast: "flex flex-col items-start gap-0.5",
-    counterpart: "text-xs whitespace-normal text-muted-foreground",
+    // The table scrolls inside the pane, as Figma's variables panel does, so its header and its
+    // name column stay in view. Fuse's table container is the scroll box: the selectors below
+    // reach it, its header cells and its first column from this element. The scroll padding keeps
+    // a cell that keyboard focus brings into view clear of the sticky header and column: the
+    // column's width is fixed, and the header's height is measured (`use-cell-grid.ts`), since a
+    // generated ramp's badge, stacked under the brand name, makes the header taller. The
+    // columns have fixed widths sized to their content, a ramp step's pill or a hex value, so
+    // five or more brands fit beside the side navigation at 1440px.
+    scroller:
+      "min-w-0 outline-none *:data-[slot=table-container]:max-h-[min(44rem,calc(100dvh-12rem))] *:data-[slot=table-container]:scroll-ps-44 *:data-[slot=table-container]:scroll-pt-[var(--grid-header-height,2.75rem)] *:data-[slot=table-container]:overflow-auto [&_table]:table-fixed [&_tbody_td]:p-0 [&_tbody_td]:align-middle [&_tbody_tr:not([data-group-row])>td:first-child]:sticky [&_tbody_tr:not([data-group-row])>td:first-child]:start-0 [&_tbody_tr:not([data-group-row])>td:first-child]:z-10 [&_tbody_tr:not([data-group-row])>td:first-child]:bg-background [&_thead_th]:sticky [&_thead_th]:top-0 [&_thead_th]:z-20 [&_thead_th]:bg-background [&_thead_th:first-child]:start-0 [&_thead_th:first-child]:z-30 [&_tr:not([data-group-row])>*:first-child]:w-44 [&_tr:not([data-group-row])>*:not(:first-child)]:w-36",
+    // A long pair name wraps at its hyphens rather than widening the sticky column.
+    name: "text-sm block px-3 py-1.5 font-mono break-words whitespace-normal",
+    nameOn: "font-sans text-muted-foreground",
+    groupCell: "text-sm font-semibold bg-background",
+    footer:
+      "text-xs flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-border px-3 py-2 text-muted-foreground tabular-nums",
+    failing: "font-medium text-error",
+    groupLabel: "sticky start-0 inline-block px-3 pt-4 pb-1.5",
+    // The name wraps beside the swatch, and a generated ramp's badge sits below the name, so the
+    // header keeps to the fixed column width.
+    header: "grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1 whitespace-normal",
+    generated: "font-normal col-start-2 justify-self-start",
   },
 });
 
 const styles = paletteTable();
 
-/** Whether a role's tone is shared with another role. */
-type Sharing = "shared" | "own";
-
-/** A role's weakest pair grade, or `none` for a role in no graded pair. */
-type RowGrade = ContrastGrade | "none";
-
-/** One row of the Detailed view: a role and its values in the inspected theme and scheme. */
-type RoleRow = {
-  readonly name: ColorRoleName;
-  readonly group: PaletteGroup;
-  readonly tone: ToneView;
-  readonly step: number;
-  readonly oklch: string;
-  readonly hex: string;
-  readonly alias: string | undefined;
-  readonly sharing: Sharing;
-  readonly sharesWith: readonly ColorRoleName[];
-  readonly grade: RowGrade;
-  readonly weakestPair: PairView | undefined;
+/** A row of any collection, flattened for the table: its name, its filter values and itself. */
+type TableRow = {
+  readonly id: string;
+  readonly group: string;
+  readonly grades: readonly ContrastGrade[];
+  readonly row: TokenRow | PairRow | PrimitiveRow;
 };
 
-const SHARING_OPTIONS = [
-  { value: "shared", label: "Shared tone" },
-  { value: "own", label: "Own tone" },
-] as const satisfies readonly { value: Sharing; label: string }[];
+/** A collection's rows as table rows. */
+export function tableRows(rows: readonly (TokenRow | PairRow | PrimitiveRow)[]): readonly TableRow[] {
+  return rows.map((row) => ({
+    id: row.id,
+    group: row.group,
+    grades: row._tag === "pair" ? row.grades : [],
+    row,
+  }));
+}
 
-const GRADE_OPTIONS = [
-  { value: "AAA", label: GRADE_LABELS.AAA },
-  { value: "AA", label: GRADE_LABELS.AA },
-  { value: "below-aa", label: GRADE_LABELS["below-aa"] },
-  { value: "none", label: "In no pair" },
-] as const satisfies readonly { value: RowGrade; label: string }[];
+const GRADE_OPTIONS = (["AAA", "AA", "below-aa"] as const).map((grade) => ({
+  value: grade,
+  label: GRADE_LABELS[grade],
+}));
 
-const GROUP_OPTIONS = PALETTE_GROUPS.map((group) => ({ value: group.id, label: group.label }));
+/** The filter fields: the section, and in the Contrast collection the grades a pair reaches. */
+function filterFields(collection: PaletteCollection) {
+  const group = {
+    kind: "option",
+    label: "Section",
+    icon: <SquaresFour />,
+    options: COLLECTION_GROUPS[collection].map((entry) => ({ value: entry.id, label: entry.label })),
+  } as const;
+  return collection === "contrast"
+    ? defineFilterFields<TableRow>()({
+        group,
+        grades: { kind: "multiOption", label: "Contrast", icon: <Circle />, options: GRADE_OPTIONS },
+      })
+    : defineFilterFields<TableRow>()({ group });
+}
 
-const ROLE_FILTERS = defineFilterFields<RoleRow>()({
-  group: { kind: "option", label: "Group", icon: <SquaresFour />, options: GROUP_OPTIONS },
-  sharing: { kind: "option", label: "Tone", icon: <Stack />, options: SHARING_OPTIONS },
-  grade: { kind: "option", label: "Contrast", icon: <Circle />, options: GRADE_OPTIONS },
-});
+/**
+ * The one section the filters narrow to, which the rail marks, read through the filter's own parse
+ * boundary from TanStack's untyped state.
+ *
+ * @param filters - The table's column filters.
+ * @param collection - The collection whose fields the filters belong to.
+ * @returns The section, or `undefined` when the filters hold none or several.
+ */
+export function filteredSection(
+  filters: ColumnFiltersState,
+  collection: PaletteCollection
+): string | undefined {
+  const group = parseColumnFilters(filters, filterFields(collection)).find((entry) => entry.id === "group");
+  if (group?.value.kind !== "option" || group.value.operator !== "is") {
+    return undefined;
+  }
+  return group.value.values[0];
+}
+
+const SCHEME_NAMES = { light: "light", dark: "dark" } as const;
+
+type TableFooterProps = {
+  readonly visible: readonly TableRow[];
+  readonly collection: PaletteCollection;
+  readonly axes: PaletteAxes;
+  readonly copy: CopyFeedback;
+};
+
+/** The band below the table: what it shows, the copy status, and the cells below AA. */
+function TableFooter({ visible, collection, axes, copy }: TableFooterProps): ReactElement {
+  const failing = visible.reduce(
+    (sum, entry) =>
+      sum +
+      (entry.row._tag === "pair"
+        ? entry.row.cells.filter((cell) => cell._tag === "value" && cell.grade === "below-aa").length
+        : 0),
+    0
+  );
+  return (
+    <div className={styles.footer()}>
+      <span>
+        {visible.length} rows · {VARIANT_LABELS[axes.variant].toLowerCase()} ·{" "}
+        {SEGMENT_LABELS[axes.segment].toLowerCase()} · {SCHEME_NAMES[axes.scheme]}
+      </span>
+      <CopyStatus copy={copy} />
+      {collection === "contrast" ? (
+        <span className={failing > 0 ? styles.failing() : undefined} data-failing-count>
+          {failing === 1 ? "1 cell below AA" : `${String(failing)} cells below AA`}
+        </span>
+      ) : null}
+    </div>
+  );
+}
 
 const dataTableFilter = createDataTableFilterFn({ timeZone: "UTC" });
 
-const { useAppTable: useRoleTable, createAppColumnHelper } = createFuseTableHook({
+const { useAppTable: usePaletteTable, createAppColumnHelper } = createFuseTableHook({
   features: tableFeatures({
     columnFilteringFeature,
     columnFacetingFeature,
     columnVisibilityFeature,
-    rowSortingFeature,
     filteredRowModel: createFilteredRowModel(),
     facetedRowModel: createFacetedRowModel(),
     facetedUniqueValues: createFacetedUniqueValues(),
-    sortedRowModel: createSortedRowModel(),
-    sortFns,
     filterFns: { dataTableFilter },
   }),
   defaultColumn: { filterFn: "dataTableFilter", enableColumnFilter: false },
-  enableSortingRemoval: true,
-  getRowId: (row: RoleRow) => row.name,
+  getRowId: (row: TableRow) => row.id,
 });
 
-/** A weakest pair's ratio for sorting; a role in no pair sorts after every graded one. */
-function sortRatio(row: RoleRow): number {
-  return row.weakestPair?.ratio ?? Number.POSITIVE_INFINITY;
+const columns = createAppColumnHelper<TableRow>();
+
+/** A brand column's header: the brand's color, its name, and a marker on a generated ramp. */
+function BrandHeader({
+  column,
+  collection,
+}: {
+  column: BrandColumn;
+  collection: PaletteCollection;
+}): ReactElement {
+  return (
+    <span className={styles.header()} data-brand-header>
+      <Swatch tone={column.brand.accent} />
+      <span>{column.brand.name}</span>
+      {collection === "ramps" && column.brand.rampOrigin === "generated" ? (
+        <Badge size="sm" variant="outline" className={styles.generated()}>
+          generated
+        </Badge>
+      ) : null}
+    </span>
+  );
 }
 
-/** Where a role's tone sits in the palette, and whether another role shares it. */
-function toneNote(row: RoleRow): string {
-  const step = `Tone ${String(row.step)}`;
-  return row.sharesWith.length === 0
-    ? `${step}, own`
-    : `${step}, shared by ${String(row.sharesWith.length + 1)}`;
+/** The columns: the name, the two filter values, then one per brand or the primitives' value. */
+function tableColumns(collection: PaletteCollection, brands: readonly BrandColumn[]) {
+  const values =
+    collection === "primitives"
+      ? [columns.display({ id: "value", header: "Value" })]
+      : brands.map((column) =>
+          columns.display({
+            id: `brand-${column.brand.code}`,
+            header: () => <BrandHeader column={column} collection={collection} />,
+          })
+        );
+  return columns.columns([
+    columns.display({ id: "name", header: "Name" }),
+    columns.accessor("group", { header: "Section", enableColumnFilter: true }),
+    columns.accessor("grades", {
+      header: "Contrast",
+      enableColumnFilter: true,
+      getUniqueValues: (row) => [...row.grades],
+    }),
+    ...values,
+  ]);
 }
 
-const columns = createAppColumnHelper<RoleRow>();
-const COLUMNS = columns.columns([
-  columns.accessor("name", {
-    header: ({ header }) => <header.SortButton>Role</header.SortButton>,
-    cell: ({ row }) => (
-      <span className={styles.role()}>
-        <Swatch tone={row.original.tone} />
-        <span className={styles.roleText()}>
-          <span className={styles.roleName()} data-palette-row-role>
-            --{row.original.name}
-          </span>
-          {row.original.alias === undefined ? null : (
-            <span className={styles.alias()}>var({row.original.alias})</span>
-          )}
-          <span className={styles.toneNote()}>{toneNote(row.original)}</span>
-        </span>
-      </span>
-    ),
-  }),
-  columns.accessor("grade", {
-    id: "grade",
-    header: ({ header }) => <header.SortButton>Weakest pair</header.SortButton>,
-    enableColumnFilter: true,
-    sortFn: (left, right) => sortRatio(left.original) - sortRatio(right.original),
-    cell: ({ row }) => {
-      const pair = row.original.weakestPair;
-      if (pair === undefined) {
-        return <span className={styles.muted()}>In no pair</span>;
-      }
-      const other = pair.foreground === row.original.name ? pair.background : pair.foreground;
-      const relation = pair.foreground === row.original.name ? "on" : "under";
+/** A row's name: the token, the pair, a ramp step's number or the primitive. */
+function RowName({ row }: { row: TokenRow | PairRow | PrimitiveRow }): ReactElement {
+  switch (row._tag) {
+    case "token":
       return (
-        <span className={styles.contrast()}>
-          <GradeBadge grade={pair.grade} ratio={pair.ratio} />
-          <span className={styles.counterpart()}>
-            {relation} <span className={styles.nowrap()}>--{other}</span>
-          </span>
+        <span className={styles.name()} data-palette-row={row.name}>
+          {row.group === "neutral" || row.group === "shade"
+            ? row.name.replace(/^brand-[a-z]+-/u, "")
+            : row.name}
         </span>
       );
-    },
-  }),
-  // One column for both notations, last, since a chromatic literal is the widest cell. The table
-  // fits the docs column on a desktop and scrolls sideways on a phone.
-  columns.accessor("oklch", {
-    header: "Value",
-    enableSorting: false,
-    cell: ({ row }) => {
-      const alpha = alphaPercent(row.original.tone);
+    case "pair":
       return (
-        <span className={styles.values()}>
-          <span className={styles.value()}>{row.original.oklch}</span>
-          <span className={styles.secondaryValue()}>
-            {row.original.hex}
-            {alpha === undefined ? null : ` · ${alpha}`}
-          </span>
+        <span className={styles.name()} data-palette-row={row.id}>
+          {row.pair.foreground} <span className={styles.nameOn()}>on</span> {row.pair.background}
         </span>
       );
-    },
-  }),
-  // Filter-only columns: the Role cell states the tone, and the Default view groups the roles.
-  columns.accessor("sharing", { header: "Tone", enableColumnFilter: true, enableSorting: false }),
-  columns.accessor("group", { header: "Group", enableColumnFilter: true, enableSorting: false }),
-]);
-
-function roleRows(view: PaletteView): RoleRow[] {
-  return view.roles.map((role) => ({
-    name: role.name,
-    group: role.group,
-    tone: role.tone,
-    step: role.tone.step,
-    oklch: role.tone.oklch,
-    hex: role.tone.hex,
-    alias: role.alias,
-    sharing: role.sharesWith.length === 0 ? "own" : "shared",
-    sharesWith: role.sharesWith,
-    grade: role.weakestPair?.grade ?? "none",
-    weakestPair: role.weakestPair,
-  }));
+    case "primitive":
+      return (
+        <span className={styles.name()} data-palette-row={row.primitive.name}>
+          {row.primitive.name}
+        </span>
+      );
+  }
 }
 
-/** Whether a row matches every word of a search, in its name, alias or values. */
-function matchesSearch(row: RoleRow, words: readonly string[]): boolean {
-  const haystack = [row.name, `--${row.name}`, row.alias ?? "", row.oklch, row.hex].join(" ").toLowerCase();
-  return words.every((word) => haystack.includes(word));
+type RowCellsProps = {
+  readonly row: TokenRow | PairRow | PrimitiveRow;
+  readonly brands: readonly BrandColumn[];
+  readonly format: ValueFormat;
+  readonly copy: CopyFeedback;
+};
+
+/** A row's value cells: one per brand, or the primitive's one value. */
+function RowCells({ row, brands, format, copy }: RowCellsProps): ReactNode {
+  if (row._tag === "primitive") {
+    return (
+      <Table.Cell role="gridcell">
+        <ValueCellView value={primitiveValue(row.primitive)} format={format} copy={copy} />
+      </Table.Cell>
+    );
+  }
+  return brands.map((column, index) => {
+    const cell = row.cells[index];
+    let content: ReactNode = null;
+    if (cell?._tag === "pinned") {
+      content = <PinnedCellView cell={cell} column={index} />;
+    } else if (cell !== undefined && row._tag === "token" && "tone" in cell) {
+      content = (
+        <ValueCellView
+          value={tokenValue(row.name, cell, index, column.brand.name)}
+          format={format}
+          copy={copy}
+        />
+      );
+    } else if (cell !== undefined && row._tag === "pair" && "ratio" in cell) {
+      content = (
+        <PairCellView pair={row.pair} cell={cell} column={index} brand={column.brand.name} copy={copy} />
+      );
+    }
+    return (
+      <Table.Cell key={column.brand.code} role="gridcell">
+        {content}
+      </Table.Cell>
+    );
+  });
 }
+
+type PaletteTableProps = {
+  readonly collection: PaletteCollection;
+  readonly rows: readonly TableRow[];
+  readonly brands: readonly BrandColumn[];
+  readonly format: ValueFormat;
+  readonly copy: CopyFeedback;
+  readonly search: string;
+  readonly onSearch: (search: string) => void;
+  readonly columnFilters: ColumnFiltersState;
+  readonly onColumnFiltersChange: (updater: Updater<ColumnFiltersState>) => void;
+  /** The theme switches, which the toolbar holds before the search. */
+  readonly switches: ReactNode;
+  /** The variant, segment and scheme the columns show, which the footer names. */
+  readonly axes: PaletteAxes;
+};
 
 /**
- * The inspector's Detailed view: one row per color role with its OKLCH and hex values, its tone
- * and whether another role shares it, and its weakest graded pair. The search matches a role's
- * name, the custom property it points at, and its values; the filter narrows by group, shared
- * tone and contrast level.
+ * The variables table: a Fuse DataTable whose rows are a collection's tokens, pairs or primitives
+ * under their group rows, and whose columns are the brands. The toolbar searches names and values
+ * and filters by section and contrast grade. The table is an ARIA grid: each row's name is its
+ * row header, one cell is the tab stop, and the arrow keys move between cells (`use-cell-grid.ts`).
  */
-export function PaletteTable({ view }: { view: PaletteView }): ReactElement {
-  const [search, setSearch] = useState("");
-  const words = useMemo(() => search.toLowerCase().split(/\s+/u).filter(Boolean), [search]);
-  const rows = useMemo(() => roleRows(view), [view]);
-  // The search narrows the rows the table holds, so the filter's counts count what it shows.
-  const data = useMemo(() => rows.filter((row) => matchesSearch(row, words)), [rows, words]);
-  // The filter-only columns stay hidden, so the table fits the docs column on a desktop.
-  const table = useRoleTable({
-    columns: COLUMNS,
-    data,
-    initialState: { columnVisibility: { group: false, sharing: false } },
+export function PaletteTable({
+  collection,
+  rows,
+  brands,
+  format,
+  copy,
+  search,
+  onSearch,
+  columnFilters,
+  onColumnFiltersChange,
+  switches,
+  axes,
+}: PaletteTableProps): ReactElement {
+  const fields = useMemo(() => filterFields(collection), [collection]);
+  const tableColumnDefs = useMemo(() => tableColumns(collection, brands), [collection, brands]);
+  const table = usePaletteTable({
+    columns: tableColumnDefs,
+    data: rows,
+    state: { columnFilters, columnVisibility: { group: false, grades: false } },
+    onColumnFiltersChange,
   });
+  const gridRef = useRef<HTMLDivElement>(null);
+  const visible = table.getRowModel().rows;
+  const grid = useCellGrid(gridRef, visible);
+  const groups: readonly { readonly id: string; readonly label: string }[] = COLLECTION_GROUPS[collection];
+  const groupLabel = (id: string) => groups.find((group) => group.id === id)?.label ?? id;
 
   return (
     <table.AppTable>
-      <DataTableFilter.Root table={table} fields={ROLE_FILTERS} timeZone="UTC">
-        <div className={styles.root()}>
-          <div className={styles.controls()}>
+      <DataTableFilter.Root table={table} fields={fields} timeZone="UTC">
+        <div className={styles.pane()}>
+          <div className={styles.toolbar()}>
+            {switches}
             <InputGroup.Root className={styles.search()}>
               <InputGroup.Addon>
                 <MagnifyingGlass aria-hidden />
               </InputGroup.Addon>
               <InputGroup.Input
                 type="search"
-                aria-label="Search roles"
-                placeholder="Role, hex or oklch…"
+                aria-label="Search tokens"
+                placeholder="Search tokens or values"
                 value={search}
                 onChange={(event) => {
-                  setSearch(event.target.value);
+                  onSearch(event.target.value);
                 }}
               />
             </InputGroup.Root>
-            <DataTableFilter.Bar aria-label="Role filters" className={styles.bar()} />
+            <DataTableFilter.Bar aria-label="Table filters" className={styles.bar()} />
           </div>
           <DataTableFilter.Content />
           <DataTableFilter.ValueContent />
-          <table.Content
-            aria-label={`Color roles of ${view.slug}, ${view.scheme}`}
-            empty={
-              <Empty.Root>
-                <Empty.Header>
-                  <Empty.Title>No roles match</Empty.Title>
-                  <Empty.Description>Try another name or value, or clear the filters.</Empty.Description>
-                </Empty.Header>
-                <Empty.Content>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSearch("");
-                      table.resetColumnFilters();
-                    }}>
-                    Clear search and filters
-                  </Button>
-                </Empty.Content>
-              </Empty.Root>
-            }
+          <div ref={gridRef} className={styles.scroller()} {...grid} data-palette-grid>
+            <table.Content
+              role="grid"
+              aria-label="Palette tokens"
+              empty={
+                <Empty.Root>
+                  <Empty.Header>
+                    <Empty.Title>No tokens match</Empty.Title>
+                    <Empty.Description>Try another name or value, or clear the filters.</Empty.Description>
+                  </Empty.Header>
+                  <Empty.Content>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        onSearch("");
+                        table.resetColumnFilters();
+                      }}>
+                      Clear search and filters
+                    </Button>
+                  </Empty.Content>
+                </Empty.Root>
+              }>
+              {(row) => {
+                // A group row heads the first row of each group that survives the search and filters.
+                const rendered = table.getRowModel().rows;
+                const previous = rendered[rendered.indexOf(row) - 1];
+                const opensGroup = previous === undefined || previous.original.group !== row.original.group;
+                return (
+                  <>
+                    {opensGroup ? (
+                      <Table.Row data-group-row>
+                        <Table.Cell
+                          role="rowheader"
+                          colSpan={1 + (collection === "primitives" ? 1 : brands.length)}
+                          className={styles.groupCell()}>
+                          <span className={styles.groupLabel()}>{groupLabel(row.original.group)}</span>
+                        </Table.Cell>
+                      </Table.Row>
+                    ) : null}
+                    <Table.Row data-table-row={row.original.id}>
+                      <Table.Cell role="rowheader">
+                        <RowName row={row.original.row} />
+                      </Table.Cell>
+                      <RowCells row={row.original.row} brands={brands} format={format} copy={copy} />
+                    </Table.Row>
+                  </>
+                );
+              }}
+            </table.Content>
+          </div>
+          <TableFooter
+            visible={visible.map((row) => row.original)}
+            collection={collection}
+            axes={axes}
+            copy={copy}
           />
         </div>
       </DataTableFilter.Root>

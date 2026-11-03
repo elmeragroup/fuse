@@ -7,312 +7,463 @@ import { docsBaseUrl } from "./docs-server";
 const browser = launchSuiteBrowser();
 
 /**
- * Oracles: literals from Fuse's token modules and its committed contrast snapshot. The page opens
- * on the preview theme's default, `internal-fkas-private` (`DEFAULT_THEME` in `src/lib/theme.ts`).
+ * Oracles: literals from Fuse's token modules, the Figma brand ramps and Fuse's committed contrast
+ * snapshot. The table opens on the preview theme's variant and segment, internal and private
+ * (`DEFAULT_THEME` in `src/lib/theme.ts`), and on the page's light scheme.
  */
 const LIGHT_ERROR = "oklch(0.4526 0.17845 30.42)"; // `tokens/defaults.ts`, ERROR
 const DARK_ERROR = { oklch: "oklch(0.8383036 0.089085 26.7575)", hex: "#FFB4AB" }; // `tokens/dark-defaults.ts`
 const INTERNAL_FOREGROUND = "oklch(0.15 0.0041 49.31)"; // `tokens/defaults.ts`
-const BRAND_FKAS = "oklch(0.68 0.21747 38.8)"; // `tokens/primitives.ts`, `brand-fkas`
-const WHITE = "oklch(1 0 0)"; // `tokens/primitives.ts`, `brand-fkas-foreground`
-/**
- * `contrast-matrix.json` gives internal-fkas-private's foreground/background as 19.68, rounded to
- * two decimals. The page cuts its ratios to two decimals instead, so it shows 19.67 or 19.68.
- */
-const FKAS_TEXT_RATIO = /^AAA 19\.6[78]:1$/u;
+const WHITE = { hex: "#FFFFFF", oklch: "oklch(1 0 0)" }; // `tokens/primitives.ts`, WHITE
+/** Figma's Fjordkraft shade 100, which the external Fjordkraft background paints. */
+const FKAS_SHADE_100 = "#FFEEE6";
 /** The sidebar color roles the contract names: the sidebar and its seven companions. */
 const SIDEBAR_ROLES = 8;
+/** The brand columns in `BRAND_CODES` order. */
+const BRANDS = ["fkas", "tkas", "guen", "fkab", "fkse", "elma", "ngfi"] as const;
 
 async function openInspector(page: Page): Promise<Locator> {
   await page.goto(`${docsBaseUrl()}/handbook/palettes`, { waitUntil: "load" });
   await waitForDocsShellHydration(page);
   const inspector = page.locator("[data-palette-inspector]");
   await inspector.scrollIntoViewIfNeeded();
+  // The table hydrates after the shell; a switch pressed before then changes nothing.
+  await expect
+    .poll(async () => {
+      await inspector.getByRole("button", { name: "Dark", exact: true }).click();
+      return inspector.getByRole("button", { name: "Dark", exact: true }).getAttribute("aria-pressed");
+    })
+    .toBe("true");
+  await inspector.getByRole("button", { name: "Light", exact: true }).click();
   return inspector;
 }
 
-/** The text of the tooltip a role's swatch opens once the pointer rests on it. */
-async function hoverReadout(page: Page, inspector: Locator, role: string): Promise<string> {
-  const trigger = inspector.locator(`[data-palette-role="${role}"]`);
-  const tooltip = page.getByRole("tooltip").filter({ hasText: `--${role}` });
-  // The inspector hydrates after the shell; a hover before then opens nothing, so retry it.
+/** The table cell of a row in a brand's column. */
+function cell(inspector: Locator, row: string, brand: (typeof BRANDS)[number]): Locator {
+  return inspector.locator(`[data-table-row="${row}"] > td`).nth(1 + BRANDS.indexOf(brand));
+}
+
+function trigger(inspector: Locator, row: string, brand: (typeof BRANDS)[number]): Locator {
+  return cell(inspector, row, brand).locator("[data-grid-cell]");
+}
+
+const openTooltip = (page: Page): Locator => page.locator('[role="tooltip"][data-open]');
+
+/** The open tooltip's text once the pointer rests on a cell. */
+async function hoverReadout(page: Page, target: Locator): Promise<string> {
   await expect
     .poll(async () => {
       await page.mouse.move(0, 0);
-      await trigger.hover();
-      return tooltip.isVisible();
+      await target.hover();
+      return openTooltip(page).count();
     })
-    .toBe(true);
-  return (await tooltip.textContent()) ?? "";
+    .toBe(1);
+  return (await openTooltip(page).textContent()) ?? "";
+}
+
+async function pick(inspector: Locator, name: string): Promise<void> {
+  await inspector.getByRole("button", { name, exact: true }).click();
+}
+
+function rows(inspector: Locator): Locator {
+  return inspector.locator("[data-table-row]");
 }
 
 type Box = { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
 
 async function boxOf(locator: Locator): Promise<Box> {
   const box = await locator.boundingBox();
-  if (box === null) {
-    throw new Error("expected a rendered element with a bounding box");
-  }
+  if (box === null) throw new Error("expected a rendered element with a bounding box");
   return box;
 }
 
-/**
- * The text the accessible description of `trigger` resolves to: the text of every element its
- * `aria-describedby` names, as the accessibility tree reads it.
- */
-async function describedText(trigger: Locator): Promise<string> {
-  return trigger.evaluate((element) =>
-    (element.getAttribute("aria-describedby") ?? "")
-      .split(/\s+/u)
-      .filter(Boolean)
-      .map((id) => document.getElementById(id)?.textContent ?? "")
-      .join(" ")
-  );
-}
-
-/** Hovers tone 1 until its tooltip is open, and returns the boxes of tones 1 and 2 beside it. */
-async function openFirstTone(page: Page, inspector: Locator) {
-  const first = inspector.getByRole("button", { name: /^Tone 1, /u });
-  const second = inspector.getByRole("button", { name: /^Tone 2, /u });
-  const open = page.locator('[role="tooltip"][data-open]');
-  await expect
-    .poll(async () => {
-      await page.mouse.move(0, 0);
-      await first.hover();
-      return (await open.count()) === 1 && (await open.textContent())?.includes("Tone 1");
-    })
-    .toBe(true);
-  return { second, open, left: await boxOf(first), right: await boxOf(second) };
-}
-
-/** Rests the pointer in the gap between two side-by-side boxes, on the first box's side. */
-async function restInGap(page: Page, left: Box, right: Box): Promise<void> {
-  const gapStart = left.x + left.width;
-  await page.mouse.move(gapStart + (right.x - gapStart) / 4, left.y + left.height / 2, { steps: 4 });
-  // Longer than the tooltip's exit animation, so a tooltip that closed has left the page.
-  await page.waitForTimeout(500);
-}
-
-function bodyRows(inspector: Locator): Locator {
-  return inspector.getByRole("table").getByRole("rowgroup").nth(1).getByRole("row");
-}
-
-describe("palettes handbook page", () => {
-  it("shows a role's OKLCH and hex in a tooltip on hover, and its new value after a theme switch", async () => {
+describe("palettes variables table", () => {
+  it("changes its cells with the variant, segment and scheme switches", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
     const inspector = await openInspector(page);
-    expect(await hoverReadout(page, inspector, "error")).toContain(LIGHT_ERROR);
+    expect(await hoverReadout(page, trigger(inspector, "error", "fkas"))).toContain(LIGHT_ERROR);
 
-    await inspector.getByRole("button", { name: "Dark", exact: true }).click();
-    await inspector.getByRole("combobox", { name: "Variant" }).click();
-    await page.getByRole("option", { name: "External", exact: true }).click();
-    await expect
-      .poll(() => inspector.locator("[data-palette-slug]").textContent())
-      .toBe("external-fkas-private · dark");
-
-    const dark = await hoverReadout(page, inspector, "error");
+    await pick(inspector, "Dark");
+    await pick(inspector, "External");
+    const dark = await hoverReadout(page, trigger(inspector, "error", "fkas"));
     expect(dark).toContain(DARK_ERROR.oklch);
     expect(dark).toContain(DARK_ERROR.hex);
-    expect(dark).not.toContain(LIGHT_ERROR);
+
+    // Telinet is pinned to private and Fjordkraft Företag to company: each shows the other hatched.
+    expect(await cell(inspector, "background", "fkab").textContent()).toBe("Company only");
+    await pick(inspector, "Company");
+    expect(await cell(inspector, "background", "fkse").textContent()).toBe("Private only");
+    expect(await cell(inspector, "background", "fkab").locator("[data-pinned-cell]").count()).toBe(0);
     await page.close();
   });
 
-  it("keeps a tooltip open over the gap between two tones and hands it to the next", async () => {
+  it("writes values in hex or OKLCH and pills a role on a ramp step or an alias", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
     const inspector = await openInspector(page);
-    const { second, open, left, right } = await openFirstTone(page, inspector);
-    const secondHex = /#[0-9A-F]{6}$/u.exec((await second.getAttribute("aria-label")) ?? "")?.[0] ?? "";
-    // The two tones sit side by side in the first row, 4px apart.
-    expect(right.x - (left.x + left.width)).toBeGreaterThanOrEqual(3);
+    expect(await trigger(inspector, "card", "fkas").textContent()).toBe(WHITE.hex);
+    await pick(inspector, "OKLCH");
+    expect(await trigger(inspector, "card", "fkas").textContent()).toBe(WHITE.oklch);
+    // `tokens/defaults.ts`: dialog is var(--popover).
+    expect(await trigger(inspector, "dialog", "fkas").locator("[data-palette-pill]").textContent()).toBe(
+      "popover"
+    );
 
-    await restInGap(page, left, right);
-    expect(await open.count()).toBe(1);
-    expect(await open.textContent()).toContain("Tone 1");
-
-    await page.mouse.move(right.x + right.width / 2, right.y + right.height / 2, { steps: 6 });
-    await expect.poll(async () => open.textContent()).toContain(secondHex);
-    expect(await open.textContent()).toContain("Tone 2");
+    await pick(inspector, "External");
+    const background = trigger(inspector, "background", "fkas");
+    expect(await background.locator("[data-palette-pill]").textContent()).toBe("shade-100");
+    const readout = await hoverReadout(page, background);
+    expect(readout).toContain(FKAS_SHADE_100);
+    expect(readout).toContain("brand-shade-100");
     await page.close();
   });
 
-  it("keeps the gap covered at a 32px root font size, where the gap doubles", async () => {
-    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
-    await page.goto(`${docsBaseUrl()}/handbook/palettes`, { waitUntil: "load" });
-    await waitForDocsShellHydration(page);
-    await page.evaluate(() => document.documentElement.style.setProperty("font-size", "32px"));
-    const inspector = page.locator("[data-palette-inspector]");
-    await inspector.scrollIntoViewIfNeeded();
-    const { open, left, right } = await openFirstTone(page, inspector);
-    // The gap is --spacing(1), 0.25rem: 8px at this root.
-    expect(right.x - (left.x + left.width)).toBeGreaterThanOrEqual(7);
-    await restInGap(page, left, right);
-    expect(await open.count()).toBe(1);
-    expect(await open.textContent()).toContain("Tone 1");
-
-    // The roles' row gap, --spacing(0.5), is 4px at this root, and a hit area of a fixed 1px
-    // would leave 2px of it uncovered.
-    await hoverReadout(page, inspector, "background");
-    const cells = inspector.locator("[data-tooltip-cell]");
-    const above = await boxOf(cells.first());
-    let under: Box | undefined;
-    for (let index = 1; under === undefined && index < (await cells.count()); index += 1) {
-      const cell = await boxOf(cells.nth(index));
-      if (cell.y > above.y + above.height && Math.abs(cell.x - above.x) < 2) under = cell;
-    }
-    if (under === undefined) throw new Error("expected a role below --background");
-    const rowGap = under.y - (above.y + above.height);
-    expect(rowGap).toBeGreaterThanOrEqual(3);
-    await page.mouse.move(above.x + above.width / 2, above.y + above.height + rowGap / 4, { steps: 4 });
-    await page.waitForTimeout(500);
-    expect(await open.count()).toBe(1);
-    expect(await open.textContent()).toContain("--background");
-    await page.close();
-  });
-
-  it("describes each role by its own tooltip only, even while another is hovered", async () => {
+  it("narrows its rows by search and by the section and contrast filters", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
     const inspector = await openInspector(page);
-    const background = inspector.locator('[data-palette-role="background"]');
-    const foreground = inspector.locator('[data-palette-role="foreground"]');
-    const card = inspector.locator('[data-palette-role="card"]');
-    // The reviewer's case: focus stays on --background while the pointer rests on --foreground.
-    await hoverReadout(page, inspector, "background");
-    await background.focus();
-    await hoverReadout(page, inspector, "foreground");
-    await expect
-      .poll(() => page.locator('[role="tooltip"][data-open]').textContent())
-      .toContain(INTERNAL_FOREGROUND);
-    expect(await background.evaluate((element) => element === document.activeElement)).toBe(true);
-    // The hovered role is described by its own values, and no other role is.
-    expect(await describedText(foreground)).toContain(INTERNAL_FOREGROUND);
-    expect(await describedText(background)).not.toContain(INTERNAL_FOREGROUND);
-    expect(await describedText(card)).not.toContain(INTERNAL_FOREGROUND);
+    // Every color role in the contract: 115, `packages/fuse/src/theme/tokens/contract.ts`.
+    await expect.poll(() => rows(inspector).count()).toBe(115);
+    const search = inspector.getByRole("searchbox", { name: "Search tokens" });
+    await search.fill("sidebar");
+    await expect.poll(() => rows(inspector).count()).toBe(SIDEBAR_ROLES);
+    await search.fill(FKAS_SHADE_100.toLowerCase());
+    await expect.poll(() => rows(inspector).count()).toBe(0);
+    await search.fill("");
+
+    // A rail section sets the section filter, which the filter bar shows as a chip.
+    await inspector
+      .getByRole("navigation", { name: "Collections" })
+      .getByRole("button", { name: /^Sidebar/u })
+      .click();
+    await expect.poll(() => rows(inspector).count()).toBe(SIDEBAR_ROLES);
+    expect(await inspector.getByRole("group", { name: "Section filter" }).count()).toBe(1);
+
+    await inspector
+      .getByRole("navigation", { name: "Collections" })
+      .getByRole("button", { name: /^Contrast/u })
+      .click();
+    await inspector.getByRole("button", { name: "Filter", exact: true }).focus();
+    await page.keyboard.press("Enter");
+    await page.getByRole("searchbox", { name: "Search fields", exact: true }).fill("Contrast");
+    const field = page.getByRole("menuitem", { name: "Contrast", exact: true });
+    await expect.poll(() => field.getAttribute("data-highlighted")).not.toBeNull();
+    await page.keyboard.press("ArrowRight");
+    await page.getByRole("menuitemcheckbox", { name: /^Below AA/u }).click();
+    await page.keyboard.press("Escape");
+    const ids = await rows(inspector).evaluateAll((elements) =>
+      elements.map((row) => row.getAttribute("data-table-row"))
+    );
+    // The fkas orange under white sits below AA in the internal theme, 3.18:1.
+    expect(ids).toContain("brand-foreground/brand");
+    expect(ids.length).toBeLessThan(40);
     await page.close();
   });
 
-  it("opens a role's tooltip away from the roles beside it: left, top or right by column", async () => {
+  it("tints a contrast cell below AA and counts it in the footer", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
     const inspector = await openInspector(page);
-    const tooltip = page.getByRole("tooltip");
-    // At 1280px the Surfaces grid has three columns: background, foreground and card fill the
-    // first row from left to right.
-    const cases = [
-      { role: "background", side: "left" },
-      { role: "foreground", side: "top" },
-      { role: "card", side: "right" },
-    ] as const;
-    for (const { role, side } of cases) {
-      await hoverReadout(page, inspector, role);
-      const trigger = await boxOf(inspector.locator(`[data-palette-role="${role}"]`));
-      // The side the popup lies on, read from the two bounding boxes.
-      await expect
-        .poll(async () => {
-          const popup = await boxOf(tooltip);
-          // A left-placed tooltip keeps clear of the viewport's edge.
-          if (popup.x + popup.width <= trigger.x + 1) return popup.x >= 8 ? "left" : "left, clipped";
-          if (popup.x >= trigger.x + trigger.width - 1) return "right";
-          if (popup.y + popup.height <= trigger.y + 1) return "top";
-          return "overlapping or below";
-        })
-        .toBe(side);
-    }
+    await inspector
+      .getByRole("navigation", { name: "Collections" })
+      .getByRole("button", { name: /^Contrast/u })
+      .click();
+    const brand = trigger(inspector, "brand-foreground/brand", "fkas");
+    expect(await brand.getAttribute("data-contrast-cell")).toBe("below-aa");
+    // WCAG luminance of #FF5604 is 0.279, so white on it is 1.05 / 0.329, 3.19 at 8-bit precision.
+    expect(await brand.textContent()).toMatch(/^Aa3\.1\d:1Below AA$/u);
+    expect(await brand.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(
+      "rgba(0, 0, 0, 0)"
+    );
+    const sample = brand.locator("[data-pair-sample]");
+    expect(
+      await sample.evaluate((element) => ({
+        text: getComputedStyle(element).color,
+        fill: getComputedStyle(element).backgroundColor,
+      }))
+    ).toEqual({ text: WHITE.oklch, fill: "oklch(0.68 0.21747 38.8)" });
+    expect(await inspector.locator("[data-failing-count]").textContent()).toMatch(/^\d+ cells? below AA$/u);
+    expect(await inspector.locator("[data-failing-count]").textContent()).not.toBe("0 cells below AA");
     await page.close();
   });
 
-  it("opens the same readout for a swatch reached from the keyboard", async () => {
+  it("opens a cell's readout from the keyboard and moves between cells with the arrow keys", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
     const inspector = await openInspector(page);
-    await hoverReadout(page, inspector, "background");
-    await page.mouse.move(0, 0);
-    await inspector.locator('[data-palette-role="background"]').focus();
+    await inspector.getByRole("button", { name: "Filter", exact: true }).focus();
     await page.keyboard.press("Tab");
-    await expect
-      .poll(() => page.evaluate(() => document.activeElement?.getAttribute("data-palette-role")))
-      .toBe("foreground");
-    const tooltip = page.getByRole("tooltip").filter({ hasText: "--foreground" });
-    await expect.poll(() => tooltip.isVisible()).toBe(true);
-    expect(await tooltip.textContent()).toContain(INTERNAL_FOREGROUND);
-    expect(await tooltip.textContent()).toMatch(/#[0-9A-F]{6}/u);
+    const focused = () =>
+      page.evaluate(() => {
+        const element = document.activeElement;
+        return {
+          row: element?.closest("tr")?.getAttribute("data-table-row") ?? null,
+          column: element?.getAttribute("data-column") ?? null,
+        };
+      });
+    // One tab stop into the table lands on its first cell, and focus opens the readout.
+    await expect.poll(focused).toEqual({ row: "background", column: "0" });
+    await expect.poll(() => openTooltip(page).textContent()).toContain(WHITE.oklch);
+    await page.keyboard.press("ArrowRight");
+    await expect.poll(focused).toEqual({ row: "background", column: "1" });
+    await page.keyboard.press("ArrowDown");
+    await expect.poll(focused).toEqual({ row: "foreground", column: "1" });
+    await expect.poll(() => openTooltip(page).textContent()).toContain(INTERNAL_FOREGROUND);
+    // In the private segment Fjordkraft Företag is pinned to company: the arrow keys stop on its
+    // hatched cell and go on past it.
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowRight");
+    await expect.poll(focused).toEqual({ row: "foreground", column: "3" });
+    expect(await page.evaluate(() => document.activeElement?.hasAttribute("data-pinned-cell") ?? false)).toBe(
+      true
+    );
+    await page.keyboard.press("ArrowRight");
+    await expect.poll(focused).toEqual({ row: "foreground", column: "4" });
+    await page.keyboard.press("End");
+    await expect.poll(focused).toEqual({ row: "foreground", column: "6" });
+    // The next Tab leaves the table rather than walking its cells, and Shift+Tab comes back to the
+    // cell focus left: the grid keeps one tab stop, and it moves with focus.
+    await page.keyboard.press("Tab");
+    await expect.poll(async () => (await focused()).row).toBeNull();
+    await page.keyboard.press("Shift+Tab");
+    await expect.poll(focused).toEqual({ row: "foreground", column: "6" });
+    expect(await inspector.locator('[data-grid-cell][tabindex="0"]').count()).toBe(1);
     await page.close();
   });
 
-  it("copies a role's OKLCH value on press and says so", async () => {
+  it("is an ARIA grid whose rows are headed by their names", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
+    const inspector = await openInspector(page);
+    const grid = inspector.getByRole("grid", { name: "Palette tokens" });
+    expect(await grid.count()).toBe(1);
+    const row = grid
+      .getByRole("row")
+      .filter({ has: page.getByRole("rowheader", { name: "background", exact: true }) });
+    expect(await row.count()).toBe(1);
+    // The row header and one cell per brand, each cell holding its copy button.
+    expect(await row.getByRole("rowheader").allTextContents()).toEqual(["background"]);
+    expect(await row.getByRole("gridcell").count()).toBe(BRANDS.length);
+    expect(await row.getByRole("gridcell").first().getByRole("button").textContent()).toBe(WHITE.hex);
+    // The header row names the brands as column headers.
+    expect(await grid.getByRole("columnheader").count()).toBe(1 + BRANDS.length);
+    // One cell in the whole grid is the tab stop before any focus has landed in it.
+    expect(await grid.locator('[data-grid-cell][tabindex="0"]').count()).toBe(1);
+    await page.close();
+  });
+
+  it("keeps the focus ring on a focused cell that shares its color with others", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
+    const inspector = await openInspector(page);
+    await inspector.getByRole("button", { name: "Filter", exact: true }).focus();
+    await page.keyboard.press("Tab");
+    const background = trigger(inspector, "background", "fkas");
+    await expect.poll(() => background.evaluate((element) => element === document.activeElement)).toBe(true);
+    // `tokens/defaults.ts`: card is WHITE too, so focus outlines both.
+    const card = trigger(inspector, "card", "fkas");
+    await expect.poll(() => card.getAttribute("data-same-tone")).toBe("");
+    expect(await background.getAttribute("data-same-tone")).toBe("");
+    const ring = (target: Locator) => target.evaluate((element) => getComputedStyle(element).boxShadow);
+    // The tooltip trigger's focus ring is Fuse's 2px ring, inset in a cell; the same-color mark is
+    // a 1px inset ring. The focused cell keeps its focus ring and its neighbour shows the mark.
+    const focusedRing = await ring(background);
+    expect(focusedRing).toContain("0px 0px 0px 2px inset");
+    expect(focusedRing).not.toContain("0px 0px 0px 1px");
+    expect(await ring(card)).toContain("0px 0px 0px 1px inset");
+    await page.close();
+  });
+
+  it("keeps the tooltip open across the line between two cells and outlines equal colors", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
+    const inspector = await openInspector(page);
+    const background = trigger(inspector, "background", "fkas");
+    await hoverReadout(page, background);
+    // `tokens/defaults.ts`: card and popover are WHITE too, so the column outlines them together.
+    await expect.poll(() => trigger(inspector, "card", "fkas").getAttribute("data-same-tone")).toBe("");
+    expect(await trigger(inspector, "foreground", "fkas").getAttribute("data-same-tone")).toBeNull();
+
+    const above = await boxOf(cell(inspector, "background", "fkas"));
+    // The row line's upper half belongs to this cell in a collapsed table, outside its button's box.
+    await page.mouse.move(above.x + above.width / 2, above.y + above.height - 0.5, { steps: 4 });
+    // Longer than the tooltip's exit animation, so a tooltip that closed has left the page.
+    await page.waitForTimeout(500);
+    expect(await openTooltip(page).count()).toBe(1);
+    await page.close();
+  });
+
+  it("describes each cell by its own readout only", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
+    const inspector = await openInspector(page);
+    await hoverReadout(page, trigger(inspector, "foreground", "fkas"));
+    const described = (target: Locator) =>
+      target.evaluate((element) =>
+        (element.getAttribute("aria-describedby") ?? "")
+          .split(/\s+/u)
+          .filter(Boolean)
+          .map((id) => document.getElementById(id)?.textContent ?? "")
+          .join(" ")
+      );
+    expect(await described(trigger(inspector, "foreground", "fkas"))).toContain(INTERNAL_FOREGROUND);
+    expect(await described(trigger(inspector, "background", "fkas"))).not.toContain(INTERNAL_FOREGROUND);
+    await page.close();
+  });
+
+  it("copies a cell's value on press and says so", async () => {
     const context = await browser().newContext({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     const page = await context.newPage();
     const inspector = await openInspector(page);
-    await hoverReadout(page, inspector, "foreground");
-    await inspector.locator('[data-palette-role="foreground"]').click();
+    await hoverReadout(page, trigger(inspector, "foreground", "fkas"));
+    await trigger(inspector, "foreground", "fkas").click();
     const status = inspector.getByRole("status").filter({ hasText: "Copied" });
-    await expect.poll(() => status.textContent()).toBe(`Copied ${INTERNAL_FOREGROUND}`);
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(INTERNAL_FOREGROUND);
+    await expect.poll(() => status.textContent()).toBe("Copied #0D0B0A");
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("#0D0B0A");
     await context.close();
   });
 
-  it("marks a pair below AA and grades a passing pair with its ratio", async () => {
-    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
+  it("copies a translucent value as a color CSS parses, in hex and in OKLCH", async () => {
+    const context = await browser().newContext({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    const page = await context.newPage();
     const inspector = await openInspector(page);
-    // The fkas orange behind white: #FF5604 has WCAG luminance 0.279, so 1.05 / 0.329 is 3.19.
-    // The sample paints the pair itself: the fkas orange fill lettered in white, not the page's
-    // own colors, so a pair below AA looks as hard to read as it is.
-    const sample = inspector.locator('[data-palette-pair="brand-foreground/brand"] [data-pair-sample]');
-    expect(
-      await sample.evaluate((element) => {
-        const style = getComputedStyle(element);
-        return { background: style.backgroundColor, text: style.color };
-      })
-    ).toEqual({ background: BRAND_FKAS, text: WHITE });
-    const brand = inspector.locator('[data-palette-pair="brand-foreground/brand"] [data-contrast-grade]');
-    expect(await brand.getAttribute("data-contrast-grade")).toBe("below-aa");
-    expect(await brand.textContent()).toMatch(/^Below AA 3\.1\d:1$/u);
-    const text = inspector.locator('[data-palette-pair="foreground/background"] [data-contrast-grade]');
-    expect(await text.textContent()).toMatch(FKAS_TEXT_RATIO);
+    const shadow = trigger(inspector, "card-shadow", "fkas");
+    const copied = async (): Promise<{ text: string; parses: boolean }> => {
+      await hoverReadout(page, shadow);
+      await page.evaluate(() => navigator.clipboard.writeText(""));
+      await shadow.click();
+      await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).not.toBe("");
+      return page.evaluate(async () => {
+        const text = await navigator.clipboard.readText();
+        return { text, parses: CSS.supports("color", text) };
+      });
+    };
+    // `tokens/defaults.ts`: card-shadow is oklch(0 0 0 / 0.05), black at 5%, 0x0D of 0xFF.
+    expect(await copied()).toEqual({ text: "#0000000D", parses: true });
+    await pick(inspector, "OKLCH");
+    expect(await copied()).toEqual({ text: "oklch(0 0 0 / 0.05)", parses: true });
+    await context.close();
+  });
+
+  it("scrolls the brands sideways on a phone and keeps the name column in place", async () => {
+    const page = await browser().newPage({ viewport: { width: 390, height: 844 }, colorScheme: "light" });
+    const inspector = await openInspector(page);
+    const scroller = inspector.locator('[data-slot="table-container"]');
+    const name = inspector.locator('[data-table-row="background"] > td').first();
+    const value = cell(inspector, "background", "tkas");
+    const [nameBefore, valueBefore] = [await boxOf(name), await boxOf(value)];
+    await scroller.evaluate((element) => element.scrollBy({ left: 200 }));
+    await expect.poll(async () => (await boxOf(value)).x).toBeLessThan(valueBefore.x - 100);
+    expect((await boxOf(name)).x).toBeCloseTo(nameBefore.x, 0);
+    // The rail is a Select on a phone.
+    expect(await inspector.getByRole("combobox", { name: "Collection" }).isVisible()).toBe(true);
     await page.close();
   });
 
-  it("switches to the Detailed table, which the search and the filter narrow", async () => {
+  it("keeps a focused cell clear of the sticky header, however tall the header grows", async () => {
+    const page = await browser().newPage({ viewport: { width: 1280, height: 720 }, colorScheme: "light" });
+    const inspector = await openInspector(page);
+    // In Brand ramps the generated badge stacks under Elmera's name, so the header is taller.
+    await inspector
+      .getByRole("navigation", { name: "Collections" })
+      .getByRole("button", { name: /^Brand ramps/u })
+      .click();
+    await inspector.getByRole("button", { name: "Filter", exact: true }).focus();
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Control+End");
+    for (let press = 0; press < 11; press += 1) {
+      await page.keyboard.press("ArrowUp");
+    }
+    const clearance = () =>
+      page.evaluate(() => {
+        const cell = document.activeElement;
+        // The header cells are sticky; the thead itself scrolls away with the table.
+        const head = cell?.closest("table")?.querySelector("thead th") ?? null;
+        if (cell === null || head === null) return null;
+        return cell.getBoundingClientRect().top - head.getBoundingClientRect().bottom;
+      });
+    await expect.poll(clearance).not.toBeNull();
+    expect(await clearance()).toBeGreaterThanOrEqual(-0.5);
+    await page.close();
+  });
+
+  it("keeps the page still when an arrow key meets the grid's edge", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
     const inspector = await openInspector(page);
-    await expect.poll(() => inspector.getByRole("heading", { name: /^Tones/u }).isVisible()).toBe(true);
-    await expect
-      .poll(async () => {
-        await inspector.getByRole("tab", { name: "Detailed" }).click();
-        return inspector.getByRole("table").count();
-      })
-      .toBe(1);
-    expect(await inspector.getByRole("heading", { name: /^Tones/u }).count()).toBe(0);
-    const rows = bodyRows(inspector);
-    // Every color role in the contract, 89 of them, `packages/fuse/src/theme/tokens/contract.ts`.
-    await expect.poll(() => rows.count()).toBe(89);
-
-    const search = inspector.getByRole("searchbox", { name: "Search roles" });
-    await search.fill("sidebar");
-    await expect.poll(() => rows.count()).toBe(SIDEBAR_ROLES);
-    await search.fill("");
-    await expect.poll(() => rows.count()).toBe(89);
-
     await inspector.getByRole("button", { name: "Filter", exact: true }).focus();
-    await page.keyboard.press("Enter");
-    await page.getByRole("searchbox", { name: "Search fields", exact: true }).fill("Contrast");
-    const contrast = page.getByRole("menuitem", { name: "Contrast", exact: true });
-    await expect.poll(() => contrast.getAttribute("data-highlighted")).not.toBeNull();
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Control+End");
+    const focusedRow = () =>
+      page.evaluate(() => document.activeElement?.closest("tr")?.getAttribute("data-table-row") ?? null);
+    // The last role in the contract, `packages/fuse/src/theme/tokens/contract.ts`.
+    await expect.poll(focusedRow).toBe("sh-comment");
+    const scrollBefore = await page.evaluate(() => window.scrollY);
+    for (let press = 0; press < 5; press += 1) {
+      await page.keyboard.press("ArrowDown");
+    }
     await page.keyboard.press("ArrowRight");
-    await page.getByRole("menuitemcheckbox", { name: /^Below AA/u }).click();
-    await page.keyboard.press("Escape");
-    // Every text-grade pair holds 4.5:1 by Fuse's gate. Two role pairs fall below AA here: the
-    // brand pair (#FF5604 under white, 3.19:1) and muted copy, `oklch(0.544 0 0)`, on accent and
-    // primary-soft, both `oklch(0.96 0 0)` in `tokens/defaults.ts`, which Fuse's contrast test
-    // records at 4.43:1 in light as an accepted deviation. Rows keep the contract's order.
-    await expect
-      .poll(() =>
-        rows.evaluateAll((elements) =>
-          elements.map((row) => row.querySelector("[data-palette-row-role]")?.textContent ?? "")
-        )
-      )
-      .toEqual(["--muted-foreground", "--accent", "--primary-soft", "--brand", "--brand-foreground"]);
+    // A key the grid lets through scrolls the page smoothly, so wait out that animation first.
+    await page.waitForTimeout(500);
+    expect(await focusedRow()).toBe("sh-comment");
+    expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
+    await page.close();
+  });
 
-    await inspector.getByRole("tab", { name: "Default" }).click();
-    await expect.poll(() => inspector.getByRole("heading", { name: /^Tones/u }).isVisible()).toBe(true);
+  it("keeps each brand header, a generated ramp's badge too, within its column", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
+    const inspector = await openInspector(page);
+    await inspector
+      .getByRole("navigation", { name: "Collections" })
+      .getByRole("button", { name: /^Brand ramps/u })
+      .click();
+    const headers = inspector.locator("thead th:has([data-brand-header])");
+    await expect.poll(() => headers.count()).toBe(BRANDS.length);
+    const overflow = await headers.evaluateAll((cells) =>
+      cells.map((cell) => {
+        const box = cell.getBoundingClientRect();
+        const parts = [...cell.querySelectorAll("[data-brand-header], [data-brand-header] *")];
+        const right = Math.max(...parts.map((part) => part.getBoundingClientRect().right));
+        return { text: cell.textContent, over: Math.max(0, right - box.right) };
+      })
+    );
+    // `GENERATED_BRAND_RAMPS`: Elmera and Nordic Green Energy carry the badge.
+    expect(overflow.filter((entry) => entry.text.includes("generated")).length).toBe(2);
+    expect(overflow.filter((entry) => entry.over > 0.5)).toEqual([]);
+    await page.close();
+  });
+});
+
+describe("palettes page layout", () => {
+  it("gives the table the full width and hands the prose layout back on the next page", async () => {
+    const page = await browser().newPage({ viewport: { width: 1440, height: 900 }, colorScheme: "light" });
+    await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "load" });
+    await waitForDocsShellHydration(page);
+    const main = page.locator("main");
+    const quickNav = page.getByRole("navigation", { name: "On this page" });
+    const sideNav = page.getByRole("navigation", { name: "Main navigation" });
+    // `docs-shell.tsx`: the prose column's measure.
+    const PROSE_WIDTH = 720;
+    expect((await boxOf(main)).width).toBeLessThanOrEqual(PROSE_WIDTH);
+    expect(await quickNav.isVisible()).toBe(true);
+
+    await sideNav.getByRole("link", { name: "Palettes & contrast", exact: true }).click();
+    await page.waitForURL(/\/handbook\/palettes$/u);
+    await expect.poll(async () => (await boxOf(page.locator("main"))).width).toBeGreaterThan(PROSE_WIDTH);
+    expect(await page.getByRole("navigation", { name: "On this page" }).isVisible()).toBe(false);
+    // Five or more brand columns fit beside the side navigation and the rail.
+    const scroller = page.locator('[data-palette-inspector] [data-slot="table-container"]');
+    const visibleBrands = await scroller.evaluate((element) => {
+      const right = element.getBoundingClientRect().right;
+      return (
+        [...element.querySelectorAll("thead th")].filter(
+          (th) => th.getBoundingClientRect().right <= right + 0.5
+        ).length - 1
+      );
+    });
+    expect(visibleBrands).toBeGreaterThanOrEqual(5);
+
+    // A client navigation keeps the palettes page mounted but hidden; the layout must not follow it.
+    await page
+      .getByRole("navigation", { name: "Main navigation" })
+      .getByRole("link", { name: "Button", exact: true })
+      .click();
+    await page.waitForURL(/\/components\/button$/u);
+    await expect.poll(async () => (await boxOf(page.locator("main"))).width).toBeLessThanOrEqual(PROSE_WIDTH);
+    await expect.poll(() => page.getByRole("navigation", { name: "On this page" }).isVisible()).toBe(true);
     await page.close();
   });
 });

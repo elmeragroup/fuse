@@ -1,29 +1,33 @@
 /**
  * The palettes handbook page's catalog builder.
  *
- * Reads every legal theme's resolved color roles in both schemes from the workspace-only
- * `@elmeragroup/fuse/theme-catalog` entry and writes, per theme and scheme, the distinct colors
- * the roles resolve to, which role lands on which, and the WCAG contrast of each graded pair.
- * The resolved catalog has already parsed every literal and followed every alias, so this builder
- * only formats each role's declared color and measures pairs through `@elmeragroup/color`.
+ * Reads every legal theme's resolved color tokens in both schemes from the workspace-only
+ * `@elmeragroup/fuse/theme-catalog` entry and writes them brand-major: per brand, each of its
+ * themes in both schemes, with each token's resolved color and alias and the WCAG contrast of
+ * each graded pair. The resolved catalog has already parsed every
+ * literal and followed every alias, so this builder only formats each declared color and measures
+ * pairs through `@elmeragroup/color`.
  */
 
 import * as Hex from "@elmeragroup/color/hex";
 import * as Oklch from "@elmeragroup/color/oklch";
 import * as Wcag from "@elmeragroup/color/wcag";
-import { TEXT_GRADE_PAIRS } from "@elmeragroup/fuse/theme-catalog";
+import { BRAND_CODES, BRAND_RAMP_ORIGINS, BRANDS, TEXT_GRADE_PAIRS } from "@elmeragroup/fuse/theme-catalog";
 import type {
+  PrimitiveEntry,
   ResolvedScheme,
   ResolvedThemeCatalog,
   SourceColor,
   TokenEntry,
 } from "@elmeragroup/fuse/theme-catalog";
 
-import { CONTRACT_PAIRS, isColorRoleName } from "../../src/lib/palettes.ts";
+import { CONTRACT_PAIRS, isColorTokenName } from "../../src/lib/palettes.ts";
 import type {
-  ColorRoleName,
+  ColorTokenName,
+  PaletteBrand,
   PaletteCatalog,
   PalettePair,
+  PalettePrimitive,
   PaletteScheme,
   PaletteTone,
 } from "../../src/lib/palettes.ts";
@@ -34,12 +38,12 @@ function isColorEntry(entry: TokenEntry): entry is ColorEntry {
   return entry.kind === "color";
 }
 
-/** The color roles in the contract's order, refusing one the docs' taxonomy does not file as a color. */
-function colorRoles(scheme: ResolvedScheme): readonly ColorRoleName[] {
+/** The color tokens in the contract's order, refusing one the docs' taxonomy does not file as a color. */
+function colorTokens(scheme: ResolvedScheme): readonly ColorTokenName[] {
   return Object.values(scheme.tokens)
     .filter(isColorEntry)
     .map(({ name }) => {
-      if (!isColorRoleName(name)) {
+      if (!isColorTokenName(name)) {
         throw new Error(
           `palette catalog: --${String(name)} is a color in Fuse but not in TOKEN_TABLE (src/lib/token-sections.ts)`
         );
@@ -49,19 +53,19 @@ function colorRoles(scheme: ResolvedScheme): readonly ColorRoleName[] {
 }
 
 /**
- * The graded pairs: Fuse's text-grade pairs, then every other role with a `-foreground` drawn
- * on it in the contract's order, then the other pairs the contract names.
+ * The graded pairs: Fuse's text-grade pairs, then every other role with a `-foreground` drawn on
+ * it in the contract's order, then the other pairs the contract names.
  */
-function gradedPairs(roles: readonly ColorRoleName[]): readonly PalettePair[] {
+function gradedPairs(tokens: readonly ColorTokenName[]): readonly PalettePair[] {
   const textGrade = TEXT_GRADE_PAIRS.map(([foreground, background]): PalettePair => ({
     foreground,
     background,
     kind: "text-grade",
   }));
   const graded = new Set(textGrade.map((pair) => `${pair.foreground}/${pair.background}`));
-  const rolePairs = roles.flatMap((background): PalettePair[] => {
+  const rolePairs = tokens.flatMap((background): PalettePair[] => {
     const foreground = `${background}-foreground`;
-    return isColorRoleName(foreground) && !graded.has(`${foreground}/${background}`)
+    return isColorTokenName(foreground) && !graded.has(`${foreground}/${background}`)
       ? [{ foreground, background, kind: "role" }]
       : [];
   });
@@ -78,57 +82,31 @@ function sourceOklch(source: SourceColor): Oklch.Oklch {
   return source._tag === "Oklch" ? source : Oklch.fromSrgb(source);
 }
 
+/** A resolved color as the page shows it: canonical `oklch()`, hex and alpha. */
+function toneOf(entry: ColorEntry | PrimitiveEntry): PaletteTone {
+  return {
+    oklch: Oklch.format(sourceOklch(entry.source)),
+    hex: Hex.formatOpaque(entry.value),
+    alpha: entry.value.alpha,
+  };
+}
+
 /** One theme's palette in one scheme. */
 function paletteScheme(
   scheme: ResolvedScheme,
-  roles: readonly ColorRoleName[],
+  tokens: readonly ColorTokenName[],
   pairs: readonly PalettePair[],
   where: string
 ): PaletteScheme {
-  const entries = roles.map((name) => {
+  const entries = tokens.map((name) => {
     const entry = scheme.tokens[name];
     if (!isColorEntry(entry)) {
       throw new Error(`palette catalog: --${name} in ${where} is not a color`);
     }
     return entry;
   });
-  const colors = entries.map((entry) => sourceOklch(entry.source));
-  // Equal colors share one tone: the canonical `oklch()` spelling is the identity, so a hex
-  // literal and an `oklch()` literal of the same color land together.
-  const distinct = new Map<string, { readonly color: Oklch.Oklch; readonly tone: PaletteTone }>();
-  entries.forEach((entry, index) => {
-    const color = colors[index];
-    if (color === undefined) {
-      return;
-    }
-    const oklch = Oklch.format(color);
-    if (!distinct.has(oklch)) {
-      distinct.set(oklch, {
-        color,
-        tone: { oklch, hex: Hex.formatOpaque(entry.value), alpha: entry.value.alpha },
-      });
-    }
-  });
-  // Opaque tones run darkest to lightest. A translucent tone paints as whatever it lies on, so
-  // its lightness says little: translucent tones follow, most opaque first.
-  const sorted = [...distinct.values()].toSorted(
-    (left, right) =>
-      Number(left.color.alpha < 1) - Number(right.color.alpha < 1) ||
-      right.color.alpha - left.color.alpha ||
-      left.color.l - right.color.l ||
-      left.color.c - right.color.c ||
-      left.color.h - right.color.h
-  );
-  const toneIndex = new Map(sorted.map(({ tone }, index) => [tone.oklch, index]));
   return {
-    tones: sorted.map(({ tone }) => tone),
-    roleTones: colors.map((color, index) => {
-      const tone = toneIndex.get(Oklch.format(color));
-      if (tone === undefined) {
-        throw new Error(`palette catalog: --${roles[index] ?? "?"} in ${where} has no tone`);
-      }
-      return tone;
-    }),
+    values: entries.map(toneOf),
     aliases: entries.map((entry) => (entry.reference === undefined ? null : `--${entry.reference.name}`)),
     ratios: pairs.map(({ foreground, background }) => {
       const ratio = Wcag.contrastRatio(scheme.tokens[foreground].value, scheme.tokens[background].value);
@@ -143,42 +121,65 @@ function paletteScheme(
   };
 }
 
+/** The primitives: the neutral ramp, then the brand accents and their foregrounds. */
+function primitives(catalog: ResolvedThemeCatalog): readonly PalettePrimitive[] {
+  return Object.values(catalog.primitives).map((entry) => ({
+    name: entry.name,
+    group: entry.name.startsWith("neutral-") ? "neutral" : "brand",
+    tone: toneOf(entry),
+    alias: entry.reference === undefined ? null : `--${entry.reference.name}`,
+  }));
+}
+
 /**
- * Every legal theme's palettes in both schemes, with the graded pairs.
+ * Every brand with every legal theme in both schemes, the graded pairs and the primitives.
  *
  * @param catalog - The resolved theme catalog.
  * @returns The palettes handbook page's catalog.
- * @throws {Error} On a color role the docs' taxonomy does not file as a color, or a graded pair
+ * @throws {Error} On a color token the docs' taxonomy does not file as a color, or a graded pair
  *   on a translucent surface: each a defect in Fuse's tokens or this page's tables.
  */
 export function buildPaletteCatalog(catalog: ResolvedThemeCatalog): PaletteCatalog {
-  const roles = colorRoles(catalog.themes[0].schemes.light);
-  const pairs = gradedPairs(roles);
-  return {
-    roles,
-    pairs,
-    themes: catalog.themes.map((theme) => ({
-      slug: theme.slug,
-      input: theme.input,
-      schemes: {
-        light: paletteScheme(theme.schemes.light, roles, pairs, `${theme.slug} (light)`),
-        dark: paletteScheme(theme.schemes.dark, roles, pairs, `${theme.slug} (dark)`),
-      },
-    })),
-  };
+  const tokens = colorTokens(catalog.themes[0].schemes.light);
+  const pairs = gradedPairs(tokens);
+  const brands = BRAND_CODES.map((code): PaletteBrand => ({
+    code,
+    name: BRANDS[code].displayName,
+    accent: toneOf(catalog.primitives[`brand-${code}`]),
+    rampOrigin: BRAND_RAMP_ORIGINS[code],
+    segments: BRANDS[code].segments,
+    themes: catalog.themes
+      .filter((theme) => theme.input.brand === code)
+      .map((theme) => ({
+        variant: theme.input.variant,
+        segment: theme.input.segment,
+        schemes: {
+          light: paletteScheme(theme.schemes.light, tokens, pairs, `${theme.slug} (light)`),
+          dark: paletteScheme(theme.schemes.dark, tokens, pairs, `${theme.slug} (dark)`),
+        },
+      })),
+  }));
+  return { tokens, pairs, primitives: primitives(catalog), brands };
 }
 
-/** The generated module the palettes page imports, one line per theme to keep it small. */
+/** The generated module the palettes page imports, one line per brand theme to keep it readable. */
 export function renderPaletteCatalog(catalog: PaletteCatalog): string {
-  const themes = catalog.themes.map((theme) => `    ${JSON.stringify(theme)},`).join("\n");
+  const brands = catalog.brands
+    .map(({ themes, ...brand }) => {
+      const head = JSON.stringify(brand).slice(1, -1);
+      const lines = themes.map((theme) => `      ${JSON.stringify(theme)},`).join("\n");
+      return `    {${head},"themes":[\n${lines}\n    ]},`;
+    })
+    .join("\n");
   return `import type { PaletteCatalog } from "../lib/palettes";
 
-/** Every legal theme's palettes in both color schemes, with the graded contrast pairs. */
+/** Every brand's palettes in each of its themes and both color schemes, with the graded pairs. */
 export const PALETTE_CATALOG: PaletteCatalog = {
-  roles: ${JSON.stringify(catalog.roles)},
+  tokens: ${JSON.stringify(catalog.tokens)},
   pairs: ${JSON.stringify(catalog.pairs)},
-  themes: [
-${themes}
+  primitives: ${JSON.stringify(catalog.primitives)},
+  brands: [
+${brands}
   ],
 };
 `;

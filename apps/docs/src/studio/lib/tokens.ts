@@ -30,7 +30,8 @@ export function sectionTokens(section: SectionId): readonly TokenName[] {
 }
 
 /**
- * The keys a dark palette keeps from light: geometry, the card edge, section divider and shadow
+ * The keys a dark palette keeps from light: the brand ramps, which hold one value per brand and
+ * segment in both schemes, geometry, the card edge, section divider and shadow
  * colors, the outline and selection border and divider colors, the disabled selection row's fill,
  * stripe and text colors, the pressed Toggle's fill and text colors, the selection title weight, the paragraph line heights, the heading
  * scale and the heading font. The set is Fuse's private `LIGHT_ONLY_KEYS`
@@ -52,6 +53,28 @@ export const LIGHT_ONLY_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>([
   "selection-disabled-foreground",
   "toggle-pressed",
   "toggle-pressed-foreground",
+  "brand-neutral-50",
+  "brand-neutral-100",
+  "brand-neutral-200",
+  "brand-neutral-300",
+  "brand-neutral-400",
+  "brand-neutral-500",
+  "brand-neutral-600",
+  "brand-neutral-700",
+  "brand-neutral-800",
+  "brand-neutral-900",
+  "brand-neutral-950",
+  "brand-shade-50",
+  "brand-shade-100",
+  "brand-shade-200",
+  "brand-shade-300",
+  "brand-shade-400",
+  "brand-shade-500",
+  "brand-shade-600",
+  "brand-shade-700",
+  "brand-shade-800",
+  "brand-shade-900",
+  "brand-shade-950",
   "radius",
   "radius-button",
   "radius-field",

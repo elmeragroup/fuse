@@ -3,233 +3,316 @@
 import { useMemo, useState } from "react";
 import type { ReactElement } from "react";
 
+import type { ColumnFiltersState } from "@tanstack/react-table";
 import { tv } from "tailwind-variants";
 
-import { Frame } from "@elmeragroup/fuse/frame";
+import { Button } from "@elmeragroup/fuse/button";
+import type { FilterValue } from "@elmeragroup/fuse/data-table-filter";
 import { Moon, Sun } from "@elmeragroup/fuse/icons";
 import { Select } from "@elmeragroup/fuse/select";
-import { Tabs } from "@elmeragroup/fuse/tabs";
-import {
-  BRAND_CODES,
-  BRANDS,
-  THEME_SEGMENTS,
-  THEME_VARIANTS,
-  themeSlug,
-  useColorScheme,
-} from "@elmeragroup/fuse/theme";
-import type { BrandCode, ThemeInput, ThemeSegment, ThemeVariant } from "@elmeragroup/fuse/theme";
+import { useColorScheme } from "@elmeragroup/fuse/theme";
+import type { ThemeSegment, ThemeVariant } from "@elmeragroup/fuse/theme";
 import type { ResolvedColorScheme } from "@elmeragroup/fuse/theme-catalog";
 import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { PALETTE_CATALOG } from "../../generated/palette-catalog";
-import { paletteTheme, paletteView } from "../../lib/palettes";
+import {
+  brandColumns,
+  COLLECTION_GROUPS,
+  matchesSearch,
+  pairRows,
+  primitiveRows,
+  tokenRows,
+} from "../../lib/palettes";
+import type { BrandColumn, PaletteAxes, PaletteCollection, ValueFormat } from "../../lib/palettes";
 import { SEGMENT_LABELS, VARIANT_LABELS } from "../../lib/theme";
 import { usePreviewTheme } from "../preview-theme";
-import { commitTheme } from "../theme-picker";
-import { CopyStatus, useCopyFeedback } from "./color-readout";
-import { PaletteOverview } from "./palette-overview";
-import { PaletteTable } from "./palette-table";
+import { useCopyFeedback } from "./color-readout";
+import { filteredSection, PaletteTable, tableRows } from "./palette-table";
 
 const paletteInspector = tv({
   slots: {
-    // The Tabs root renders the Frame root, as the demo frame does, so the header, panel and
-    // footer stay the Frame's own items. The Frame is the window: its header is the title bar.
-    window: "not-prose shadow-lg my-6 gap-0",
-    titleBar: "flex-row flex-wrap items-center justify-between gap-x-4 gap-y-2",
-    titleText: "flex min-w-0 flex-col gap-0.5",
-    slug: "truncate font-mono",
-    body: "flex min-w-0 flex-col gap-4",
-    toolbar: "flex-wrap",
-    trigger: "min-w-0",
-    schemeIcon: "size-4",
-    // On a phone the scheme switch wraps to its own line, where a separator would trail the
-    // coordinates.
-    separator: "max-sm:hidden",
-    footer: "text-xs flex-row flex-wrap justify-between gap-x-4 gap-y-1 text-muted-foreground tabular-nums",
-    failing: "font-medium text-error",
+    window:
+      "not-prose shadow-xs @container flex min-w-0 overflow-hidden rounded-xl border border-border bg-background",
+    rail: "@3xl:flex hidden w-44 flex-none flex-col gap-0.5 border-e border-border bg-card p-2",
+    railHeading: "text-xs font-medium tracking-wide px-2 pt-1 pb-2 text-muted-foreground uppercase",
+    railItem: "w-full justify-between",
+    railSub: "font-normal w-full justify-between ps-5",
+    railCount: "text-xs font-normal text-muted-foreground tabular-nums",
+    railNote: "text-xs px-2 pb-2 text-pretty text-muted-foreground",
+    phonePicker: "@3xl:hidden w-full",
+    switches: "flex-wrap",
   },
 });
 
 const styles = paletteInspector();
 
+const COLLECTIONS = [
+  { id: "roles", label: "Roles" },
+  { id: "contrast", label: "Contrast" },
+  { id: "ramps", label: "Brand ramps" },
+  { id: "primitives", label: "Primitives" },
+] as const satisfies readonly { readonly id: PaletteCollection; readonly label: string }[];
+
+const COLLECTION_LABELS = Object.fromEntries(COLLECTIONS.map((entry) => [entry.id, entry.label]));
+
 const SCHEME_LABELS = { light: "Light", dark: "Dark" } as const satisfies Record<ResolvedColorScheme, string>;
 
-function isScheme(value: string | undefined): value is ResolvedColorScheme {
-  return value === "light" || value === "dark";
+function isCollection(value: string | null): value is PaletteCollection {
+  return COLLECTIONS.some((entry) => entry.id === value);
 }
 
-type Mode = "default" | "detailed";
+/** The section filter a rail item sets, or none for a whole collection. */
+function sectionFilter(section: string | undefined): ColumnFiltersState {
+  if (section === undefined) {
+    return [];
+  }
+  const value: FilterValue = { kind: "option", operator: "is", values: [section] };
+  return [{ id: "group", value }];
+}
 
-type ThemeControlsProps = {
-  readonly theme: ThemeInput;
-  readonly onThemeChange: (theme: ThemeInput) => void;
-  readonly scheme: ResolvedColorScheme;
-  readonly onSchemeChange: (scheme: ResolvedColorScheme) => void;
+/** The rows of a collection for the brand columns the switches pick. */
+function collectionRows(collection: PaletteCollection, columns: readonly BrandColumn[]) {
+  switch (collection) {
+    case "roles":
+    case "ramps":
+      return tokenRows(PALETTE_CATALOG, columns, collection);
+    case "contrast":
+      return pairRows(PALETTE_CATALOG, columns);
+    case "primitives":
+      return primitiveRows(PALETTE_CATALOG);
+  }
+}
+
+type SwitchesProps = {
+  readonly axes: PaletteAxes;
+  readonly onAxes: (axes: PaletteAxes) => void;
+  readonly format: ValueFormat;
+  readonly onFormat: (format: ValueFormat) => void;
 };
 
-/**
- * The inspector's toolbar: the three theme coordinates and the color scheme. A brand pinned to
- * one segment disables the other, and picking it moves the segment along, as the header's picker
- * does.
- */
-function ThemeControls({ theme, onThemeChange, scheme, onSchemeChange }: ThemeControlsProps): ReactElement {
-  const allowedSegments: readonly ThemeSegment[] = BRANDS[theme.brand].segments;
+/** One switch of the toolbar: a two-item ToggleGroup that keeps one item pressed. */
+function Switch<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: readonly { readonly value: T; readonly label: string; readonly icon?: ReactElement }[];
+  onChange: (value: T) => void;
+}): ReactElement {
   return (
-    <Toolbar.Root aria-label="Theme" className={styles.toolbar()}>
-      <Select.Root<ThemeVariant>
-        items={VARIANT_LABELS}
-        value={theme.variant}
-        onValueChange={(variant) => {
-          if (variant !== null) commitTheme({ ...theme, variant }, onThemeChange);
-        }}>
-        <Toolbar.Button
-          render={<Select.Trigger size="sm" aria-label="Variant" className={styles.trigger()} />}>
-          <Select.Value />
-        </Toolbar.Button>
-        <Select.Content>
-          {THEME_VARIANTS.map((variant) => (
-            <Select.Item key={variant} value={variant}>
-              {VARIANT_LABELS[variant]}
-            </Select.Item>
-          ))}
-        </Select.Content>
-      </Select.Root>
-      <Select.Root<BrandCode>
-        items={Object.fromEntries(BRAND_CODES.map((brand) => [brand, BRANDS[brand].displayName]))}
-        value={theme.brand}
-        onValueChange={(brand) => {
-          if (brand !== null) commitTheme({ ...theme, brand }, onThemeChange);
-        }}>
-        <Toolbar.Button render={<Select.Trigger size="sm" aria-label="Brand" className={styles.trigger()} />}>
-          <Select.Value />
-        </Toolbar.Button>
-        <Select.Content>
-          {BRAND_CODES.map((brand) => (
-            <Select.Item key={brand} value={brand}>
-              {BRANDS[brand].displayName}
-            </Select.Item>
-          ))}
-        </Select.Content>
-      </Select.Root>
-      <Select.Root<ThemeSegment>
-        items={SEGMENT_LABELS}
-        value={theme.segment}
-        onValueChange={(segment) => {
-          if (segment !== null) commitTheme({ ...theme, segment }, onThemeChange);
-        }}>
-        <Toolbar.Button
-          render={<Select.Trigger size="sm" aria-label="Segment" className={styles.trigger()} />}>
-          <Select.Value />
-        </Toolbar.Button>
-        <Select.Content>
-          {THEME_SEGMENTS.map((segment) => (
-            <Select.Item key={segment} value={segment} disabled={!allowedSegments.includes(segment)}>
-              {SEGMENT_LABELS[segment]}
-            </Select.Item>
-          ))}
-        </Select.Content>
-      </Select.Root>
-      <Toolbar.Separator className={styles.separator()} />
-      <ToggleGroup.Root
-        aria-label="Color scheme"
-        size="sm"
-        value={[scheme]}
-        onValueChange={(value) => {
-          const [next] = value;
-          if (isScheme(next)) onSchemeChange(next);
-        }}>
-        <ToggleGroup.Item value="light">
-          <Sun aria-hidden className={styles.schemeIcon()} />
-          {SCHEME_LABELS.light}
+    <ToggleGroup.Root
+      aria-label={label}
+      size="sm"
+      variant="outline"
+      spacing={0}
+      value={[value]}
+      onValueChange={(next) => {
+        const picked = options.find((option) => option.value === next[0]);
+        if (picked !== undefined) onChange(picked.value);
+      }}>
+      {options.map((option) => (
+        <ToggleGroup.Item key={option.value} value={option.value}>
+          {option.icon}
+          {option.label}
         </ToggleGroup.Item>
-        <ToggleGroup.Item value="dark">
-          <Moon aria-hidden className={styles.schemeIcon()} />
-          {SCHEME_LABELS.dark}
-        </ToggleGroup.Item>
-      </ToggleGroup.Root>
+      ))}
+    </ToggleGroup.Root>
+  );
+}
+
+/** The toolbar's switches: variant, segment, scheme and the value format. */
+function Switches({ axes, onAxes, format, onFormat }: SwitchesProps): ReactElement {
+  const variants: readonly ThemeVariant[] = ["external", "internal"];
+  const segments: readonly ThemeSegment[] = ["private", "company"];
+  return (
+    <Toolbar.Root aria-label="Theme" className={styles.switches()}>
+      <Switch
+        label="Variant"
+        value={axes.variant}
+        options={variants.map((variant) => ({ value: variant, label: VARIANT_LABELS[variant] }))}
+        onChange={(variant) => onAxes({ ...axes, variant })}
+      />
+      <Switch
+        label="Segment"
+        value={axes.segment}
+        options={segments.map((segment) => ({ value: segment, label: SEGMENT_LABELS[segment] }))}
+        onChange={(segment) => onAxes({ ...axes, segment })}
+      />
+      <Switch
+        label="Color scheme"
+        value={axes.scheme}
+        options={[
+          { value: "light", label: SCHEME_LABELS.light, icon: <Sun aria-hidden /> },
+          { value: "dark", label: SCHEME_LABELS.dark, icon: <Moon aria-hidden /> },
+        ]}
+        onChange={(scheme) => onAxes({ ...axes, scheme })}
+      />
+      <Toolbar.Separator />
+      <Switch
+        label="Value format"
+        value={format}
+        options={[
+          { value: "hex", label: "Hex" },
+          { value: "oklch", label: "OKLCH" },
+        ]}
+        onChange={onFormat}
+      />
     </Toolbar.Root>
   );
 }
 
+type RailProps = {
+  readonly collection: PaletteCollection;
+  readonly section: string | undefined;
+  readonly counts: { readonly [C in PaletteCollection]: ReadonlyMap<string, number> };
+  readonly onPick: (collection: PaletteCollection, section: string | undefined) => void;
+};
+
+/** The collections rail: each collection with its row count, and its groups below it. */
+function Rail({ collection, section, counts, onPick }: RailProps): ReactElement {
+  return (
+    <nav aria-label="Collections" className={styles.rail()}>
+      <p className={styles.railHeading()}>Collections</p>
+      {COLLECTIONS.map((entry) => {
+        const groups = counts[entry.id];
+        const total = [...groups.values()].reduce((sum, count) => sum + count, 0);
+        const open = entry.id === collection;
+        return (
+          <div key={entry.id}>
+            <Button
+              variant={open && section === undefined ? "secondary" : "ghost"}
+              size="sm"
+              className={styles.railItem()}
+              aria-current={open && section === undefined ? "true" : undefined}
+              onClick={() => onPick(entry.id, undefined)}>
+              {entry.label}
+              <span className={styles.railCount()}>{total}</span>
+            </Button>
+            {open
+              ? COLLECTION_GROUPS[entry.id].map((group) => (
+                  <Button
+                    key={group.id}
+                    variant={section === group.id ? "secondary" : "ghost"}
+                    size="sm"
+                    className={styles.railSub()}
+                    aria-current={section === group.id ? "true" : undefined}
+                    onClick={() => onPick(entry.id, group.id)}>
+                    {group.label}
+                    <span className={styles.railCount()}>{groups.get(group.id) ?? 0}</span>
+                  </Button>
+                ))
+              : null}
+            {open && entry.id === "ramps" ? (
+              <p className={styles.railNote()}>
+                Elmera and Nordic Green Energy are generated from the brand color.
+              </p>
+            ) : null}
+          </div>
+        );
+      })}
+    </nav>
+  );
+}
+
+/** Each collection's row count per group, for the rail. */
+function groupCounts(columns: readonly BrandColumn[]): RailProps["counts"] {
+  const count = (rows: readonly { readonly group: string }[]) => {
+    const counts = new Map<string, number>();
+    for (const row of rows) counts.set(row.group, (counts.get(row.group) ?? 0) + 1);
+    return counts;
+  };
+  return {
+    roles: count(tokenRows(PALETTE_CATALOG, columns, "roles")),
+    contrast: count(pairRows(PALETTE_CATALOG, columns)),
+    ramps: count(tokenRows(PALETTE_CATALOG, columns, "ramps")),
+    primitives: count(primitiveRows(PALETTE_CATALOG)),
+  };
+}
+
 /**
- * The palettes page's token inspector: a window built from Fuse parts that shows one theme's
- * color roles in one scheme. Default lists the tones, the roles and the graded pairs densely,
- * with each value in a tooltip; Detailed puts every role's values in a searchable, filterable
- * table.
+ * The palettes page's variables table, laid out as Figma's variables panel: collections in a rail,
+ * tokens as rows and the seven brands as columns. Variant, segment and scheme pick which theme
+ * each column shows, and a brand pinned to the other segment shows the one it allows. A role sits
+ * in a pill when it aliases another token or its value equals a step of its brand's ramps.
  *
- * The theme is the header picker's preview theme, so picking a theme here moves the header's
- * picker too. The scheme follows the page's until a scheme is picked here. Swatches paint the
- * generated values directly, so the inspector shows any theme and scheme without re-theming the
- * page around it.
+ * The variant and segment start on the header picker's preview theme, and the scheme on the
+ * page's, until a switch moves them.
  */
 export function PaletteInspector(): ReactElement {
-  const { theme, setTheme } = usePreviewTheme();
+  const { theme } = usePreviewTheme();
   const { resolvedColorScheme } = useColorScheme();
-  const [pickedScheme, setPickedScheme] = useState<ResolvedColorScheme | undefined>(undefined);
-  const [mode, setMode] = useState<Mode>("default");
-  const scheme = pickedScheme ?? resolvedColorScheme ?? "light";
-  const slug = themeSlug(theme);
+  const [picked, setPicked] = useState<Partial<PaletteAxes>>({});
+  const variant = picked.variant ?? theme.variant;
+  const segment = picked.segment ?? theme.segment;
+  const scheme = picked.scheme ?? resolvedColorScheme ?? "light";
+  const axes: PaletteAxes = { variant, segment, scheme };
+  const [collection, setCollection] = useState<PaletteCollection>("roles");
+  const [format, setFormat] = useState<ValueFormat>("hex");
+  const [search, setSearch] = useState("");
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const copy = useCopyFeedback();
 
-  // Every legal theme is in the generated catalog, so a missing one is a stale catalog and throws.
-  const view = useMemo(
-    () => paletteView(PALETTE_CATALOG, paletteTheme(PALETTE_CATALOG, slug), scheme),
-    [slug, scheme]
+  const columns = useMemo(
+    () => brandColumns(PALETTE_CATALOG, { variant, segment, scheme }),
+    [variant, segment, scheme]
   );
+  const counts = useMemo(() => groupCounts(columns), [columns]);
+  const rows = useMemo(
+    () => tableRows(collectionRows(collection, columns).filter((row) => matchesSearch(row, search))),
+    [collection, columns, search]
+  );
+  const section = filteredSection(columnFilters, collection);
 
-  const belowAa = view.pairs.filter((pair) => pair.grade === "below-aa").length;
+  const pick = (next: PaletteCollection, nextSection: string | undefined): void => {
+    setCollection(next);
+    setColumnFilters(sectionFilter(nextSection));
+  };
 
   return (
-    <Tooltip.Provider>
-      <Tabs.Root
-        value={mode}
-        onValueChange={(value) => {
-          // Base UI types a tab's value as `any`; the two triggers are the only values.
-          setMode(value === "detailed" ? "detailed" : "default");
-        }}
-        className={styles.window()}
-        render={<Frame.Root layout="flush" />}
-        role="region"
-        aria-label="Token inspector"
-        data-palette-inspector>
-        <Frame.Header className={styles.titleBar()}>
-          <div className={styles.titleText()}>
-            <Frame.Title>Token inspector</Frame.Title>
-            <Frame.Description className={styles.slug()} data-palette-slug>
-              {slug} · {SCHEME_LABELS[scheme].toLowerCase()}
-            </Frame.Description>
-          </div>
-          <Tabs.List aria-label="Inspector view">
-            <Tabs.Trigger value="default">Default</Tabs.Trigger>
-            <Tabs.Trigger value="detailed">Detailed</Tabs.Trigger>
-          </Tabs.List>
-        </Frame.Header>
-        <Frame.Panel className={styles.body()}>
-          <ThemeControls
-            theme={theme}
-            onThemeChange={setTheme}
-            scheme={scheme}
-            onSchemeChange={setPickedScheme}
-          />
-          <Tabs.Content value="default">
-            <PaletteOverview view={view} copy={copy} />
-          </Tabs.Content>
-          <Tabs.Content value="detailed">
-            <PaletteTable view={view} />
-          </Tabs.Content>
-        </Frame.Panel>
-        <Frame.Footer className={styles.footer()}>
-          <span>
-            {view.tones.length} tones · {view.roles.length} roles · {view.pairs.length} pairs
-          </span>
-          <CopyStatus copy={copy} />
-          <span className={belowAa > 0 ? styles.failing() : undefined}>
-            {belowAa === 0 ? "Every pair reaches AA" : `${String(belowAa)} below AA`}
-          </span>
-        </Frame.Footer>
-      </Tabs.Root>
+    <Tooltip.Provider delay={0}>
+      <section aria-label="Token inspector" className={styles.window()} data-palette-inspector>
+        <Rail collection={collection} section={section} counts={counts} onPick={pick} />
+        <PaletteTable
+          collection={collection}
+          rows={rows}
+          brands={columns}
+          format={format}
+          copy={copy}
+          search={search}
+          onSearch={setSearch}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={setColumnFilters}
+          switches={
+            <>
+              <Select.Root<PaletteCollection>
+                items={COLLECTION_LABELS}
+                value={collection}
+                onValueChange={(next) => {
+                  if (isCollection(next)) pick(next, undefined);
+                }}>
+                <Select.Trigger size="sm" aria-label="Collection" className={styles.phonePicker()}>
+                  <Select.Value />
+                </Select.Trigger>
+                <Select.Content>
+                  {COLLECTIONS.map((entry) => (
+                    <Select.Item key={entry.id} value={entry.id}>
+                      {entry.label}
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Root>
+              <Switches axes={axes} onAxes={(next) => setPicked(next)} format={format} onFormat={setFormat} />
+            </>
+          }
+          axes={axes}
+        />
+      </section>
     </Tooltip.Provider>
   );
 }

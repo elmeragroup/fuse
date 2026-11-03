@@ -43,7 +43,8 @@ export type SectionId =
   | "variant"
   | "sidebar"
   | "charts"
-  | "syntax";
+  | "syntax"
+  | "ramps";
 
 /** The sections, in the order the studio inspector stacks them and the palettes page lists them. */
 export const TOKEN_SECTIONS = [
@@ -57,6 +58,7 @@ export const TOKEN_SECTIONS = [
   { id: "sidebar", title: "Sidebar" },
   { id: "charts", title: "Charts" },
   { id: "syntax", title: "Syntax" },
+  { id: "ramps", title: "Brand ramps" },
 ] as const satisfies readonly { id: SectionId; title: string }[];
 
 /** Where a token is filed, and the kind of value it holds. */
@@ -185,6 +187,28 @@ export const TOKEN_TABLE = {
   "sh-jsxliterals": color("syntax"),
   "sh-sign": color("syntax"),
   "sh-comment": color("syntax"),
+  "brand-neutral-50": color("ramps"),
+  "brand-neutral-100": color("ramps"),
+  "brand-neutral-200": color("ramps"),
+  "brand-neutral-300": color("ramps"),
+  "brand-neutral-400": color("ramps"),
+  "brand-neutral-500": color("ramps"),
+  "brand-neutral-600": color("ramps"),
+  "brand-neutral-700": color("ramps"),
+  "brand-neutral-800": color("ramps"),
+  "brand-neutral-900": color("ramps"),
+  "brand-neutral-950": color("ramps"),
+  "brand-shade-50": color("ramps"),
+  "brand-shade-100": color("ramps"),
+  "brand-shade-200": color("ramps"),
+  "brand-shade-300": color("ramps"),
+  "brand-shade-400": color("ramps"),
+  "brand-shade-500": color("ramps"),
+  "brand-shade-600": color("ramps"),
+  "brand-shade-700": color("ramps"),
+  "brand-shade-800": color("ramps"),
+  "brand-shade-900": color("ramps"),
+  "brand-shade-950": color("ramps"),
   radius: { section: "shape", kind: "dimension" },
   "radius-button": { section: "shape", kind: "dimension" },
   "radius-field": { section: "shape", kind: "dimension" },
