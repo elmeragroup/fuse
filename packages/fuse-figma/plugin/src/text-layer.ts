@@ -172,6 +172,16 @@ export function planText(
   }
 }
 
+/** An underline offset or thickness in pixels, or Figma's automatic one for an unset length. */
+function pixelsOrAuto(px: number | undefined): TextDecorationOffset {
+  return px === undefined ? { unit: "AUTO" } : { unit: "PIXELS", value: px };
+}
+
+/** A field a text holds across all its characters, or null where some characters differ. */
+function unmixed<Value>(run: Run, value: Value | PluginAPI["mixed"]): Value | null {
+  return value === run.figma.mixed ? null : value;
+}
+
 /** Whether a layer's underline offset or thickness is the one the spec asks for. */
 function decorationMatches(
   current: TextDecorationOffset | TextDecorationThickness | null,
@@ -267,14 +277,11 @@ function planUnderline(run: Run, text: TextNode, label: string, spec: TextLayerS
     }
     return;
   }
-  const offset: TextDecorationOffset =
-    underline.offset === undefined ? { unit: "AUTO" } : { unit: "PIXELS", value: underline.offset };
-  const thickness: TextDecorationThickness =
-    underline.thickness === undefined ? { unit: "AUTO" } : { unit: "PIXELS", value: underline.thickness };
-  const heldOffset = text.textDecorationOffset === run.figma.mixed ? null : text.textDecorationOffset;
-  const heldThickness =
-    text.textDecorationThickness === run.figma.mixed ? null : text.textDecorationThickness;
-  const heldColor = text.textDecorationColor === run.figma.mixed ? null : text.textDecorationColor;
+  const offset = pixelsOrAuto(underline.offset);
+  const thickness = pixelsOrAuto(underline.thickness);
+  const heldOffset = unmixed(run, text.textDecorationOffset);
+  const heldThickness = unmixed(run, text.textDecorationThickness);
+  const heldColor = unmixed(run, text.textDecorationColor);
   if (
     text.textDecoration === "UNDERLINE" &&
     decorationMatches(heldOffset, offset) &&

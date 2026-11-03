@@ -37,11 +37,10 @@ const alwaysHoverState = Effect.gen(function* () {
     return yield* Effect.die(THEME.failure);
   }
   const build = yield* locateFuseBuild();
-  const renderer = (yield* loadRenderers()).get(LINK.key);
-  if (renderer === undefined) {
+  const renderers = yield* loadRenderers(new Set([LINK.key]));
+  if (!renderers.has(LINK.key)) {
     return yield* Effect.die(new Error("no Link renderer"));
   }
-  const renderers = new Map([[LINK.key, renderer]]);
   const variant = variantKey(LINK, { variant: "default", underline: "always", state: "hover" });
   const { planned } = planCells(
     [{ key: `preview/${variant}`, variant, box: { x: 0, y: 0, width: 0, height: 0 }, image: null }],

@@ -1,5 +1,6 @@
 "use client";
 
+import { Card } from "@elmeragroup/fuse/card";
 import { Link } from "@elmeragroup/fuse/link";
 import { Text } from "@elmeragroup/fuse/text";
 
@@ -28,16 +29,16 @@ export function LinkUnderline() {
           </li>
         </ul>
       </nav>
-      <article className="flex flex-col gap-1 rounded-lg border p-4">
-        <h3 className="font-medium">
-          <Link href="#invoice-1042" underline="none">
-            Invoice 1042
-          </Link>
-        </h3>
-        <Text size="sm" variant="muted">
-          Due 14 March
-        </Text>
-      </article>
+      <Card.Root>
+        <Card.Header>
+          <Card.Title>
+            <Link href="#invoice-1042" underline="none">
+              Invoice 1042
+            </Link>
+          </Card.Title>
+          <Card.Description>Due 14 March</Card.Description>
+        </Card.Header>
+      </Card.Root>
     </div>
   );
 }

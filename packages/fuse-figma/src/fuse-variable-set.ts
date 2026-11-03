@@ -193,8 +193,8 @@ const ROLE_TINTS = [
   ["sidebar-foreground", 70],
   ["foreground", 10],
   ["muted-foreground", 50],
-  // Link's resting `always` underline: `light-dark()` of its text color at 35% and 65%. A tint holds
-  // one share in every mode, so it holds the light scheme's 35% in Dark too (see `label-layout.ts`).
+  // Link's resting `always` underline, the light arm of its `light-dark()` (see `readDecorationColor`
+  // in `components/label-layout.ts`).
   ["foreground", 35],
   ["primary", 35],
   ["brand", 35],

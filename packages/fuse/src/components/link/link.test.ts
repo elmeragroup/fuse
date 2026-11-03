@@ -9,9 +9,6 @@ function classes(rendered: string): string[] {
 describe("linkVariants", () => {
   it("exposes the colour, underline, weight and truncate axes, and no type or box axis", () => {
     expect(linkVariants.variantKeys).toEqual(["variant", "underline", "weight", "truncate"]);
-    for (const absent of ["size", "leading", "align"]) {
-      expect(linkVariants.variantKeys).not.toContain(absent);
-    }
   });
 
   it("sets no font family, size, line height or display at rest, so a link takes its sentence's type", () => {

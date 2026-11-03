@@ -6,8 +6,8 @@
  * the host page's: the browser's 16px `medium` and preflight's `line-height: 1.5` on `<html>`. The
  * `default` variant's `text-inherit` takes the page's `foreground`. At 16px the underline sits
  * `0.2em` = 3.2px below the text and is `max(1px, 0.0625em)` = 1px thick. An `always` underline
- * rests in `light-dark()` of the text color at 35% and 65%, which the kit draws as the light arm:
- * the role tint `<color>/35` of the link's text color. Its hover, `enabled-hover:decoration-current`,
+ * rests in the role tint `<color>/35` of the link's text color, the light arm of its `light-dark()`
+ * (see `readDecorationColor` in `label-layout.ts`). Its hover, `enabled-hover:decoration-current`,
  * draws it in the text's own color, Figma's `AUTO`, at the same 1px. `enabled-hover:underline` draws
  * a `hover` link's underline in the text's color, `enabled-hover:opacity-80` fades a `none` link to
  * 80%, and keyboard focus draws `ring-2 ring-ring`.

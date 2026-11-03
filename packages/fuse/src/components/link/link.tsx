@@ -1,8 +1,9 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Children, cloneElement, isValidElement } from "react";
+import { cloneElement, isValidElement } from "react";
 
+import { unwrapLazyRenderProp } from "@base-ui/react/internals/useRenderElement";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import type { VariantProps } from "tailwind-variants";
@@ -24,14 +25,14 @@ type RenderElement = ReactElement<{ className?: RenderElementClassName }>;
 /**
  * The element a `render` value holds, or `undefined` for a render function or no `render`. A
  * Server Component's element reaches a client component as React Flight's lazy node, which is no
- * valid element until `Children.toArray` unwraps it, as Base UI's own render prop does.
+ * valid element until Base UI's `unwrapLazyRenderProp` unwraps it, as `useRender` does.
  */
 function renderElementOf(render: LinkProps["render"]): RenderElement | undefined {
   // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Base UI's public render prop accepts an element or a render function.
   if (render === undefined || typeof render === "function") {
     return undefined;
   }
-  const element = isValidElement(render) ? render : Children.toArray(render)[0];
+  const element = unwrapLazyRenderProp(render);
   return isValidElement<RenderElement["props"]>(element) ? element : undefined;
 }
 

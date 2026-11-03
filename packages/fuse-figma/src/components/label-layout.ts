@@ -16,13 +16,13 @@ import {
   describeNumber,
   evaluateLength,
   evaluateNumber,
+  inFont,
   normalizeCss,
   readColor,
   readNumber,
   splitTopLevel,
 } from "./css-values";
 import type { VariableIndex } from "./css-values";
-import { evaluateLengthInFont } from "./font-lengths";
 import { HUGGING_TEXT, NO_LIMITS, TOP_LEFT } from "./kit-spec";
 import type {
   ColorSpec,
@@ -684,14 +684,14 @@ function readUnderline(
     style.feed("underline", path)
   );
   if (underlined !== true) {
-    style.mark("text-underline-offset", "dropped", "the cell draws no underline", []);
-    style.mark("text-decoration-thickness", "dropped", "the cell draws no underline", []);
-    style.mark("text-decoration-color", "dropped", "the cell draws no underline", []);
+    for (const property of ["text-underline-offset", "text-decoration-thickness", "text-decoration-color"]) {
+      style.mark(property, "dropped", "the cell draws no underline", []);
+    }
     return undefined;
   }
   // An `em` length takes the label's font size, which only a literal size gives in pixels.
   const inPixels = (value: string) =>
-    fontSize?.kind === "literal" ? evaluateLengthInFont(value, fontSize.value) : evaluateNumber(value);
+    fontSize?.kind === "literal" ? evaluateLength(inFont(value, fontSize.value)) : evaluateNumber(value);
   const textColor = style.resolved("color");
   const underlineColor = style.read(
     "text-decoration-color",

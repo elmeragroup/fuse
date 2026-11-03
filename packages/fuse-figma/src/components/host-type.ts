@@ -2,8 +2,7 @@
  * The type the host page gives a root whose classes set none, for a definition's `inheritedFor`.
  * The docs and the compare page both load a page whose `<html>` takes the browser's `medium` font
  * size, 16px, and Tailwind preflight's `line-height: 1.5`. A Pagination link inherits it, since
- * Button's `icon` square sets no type, and so does React Aria's Link, whose recipe sets no type
- * size.
+ * Button's `icon` square sets no type, and so does Link, whose recipe sets no type size.
  */
 import type { OuterDeclaration } from "./component-spec";
 

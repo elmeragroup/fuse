@@ -3,11 +3,11 @@
  * states, 54 cells.
  *
  * `Link` renders an `<a data-slot="link">` whose classes are `linkVariants` at its variant and
- * underline. An `always` underline rests in its text color's 35% role tint, the light arm of the
- * recipe's `light-dark()`, since a role tint holds one share in every mode. The page forces hover
- * and focus itself: a hover draws an `always` underline in the text's own color, draws a `hover`
- * one and fades a `none` link through `enabled-hover:`, and keyboard focus draws the shared self
- * focus ring. A link has no disabled state.
+ * underline. An `always` underline rests in its text color's `/35` role tint, which
+ * `readDecorationColor` in `label-layout.ts` explains. The page forces hover and focus itself: a
+ * hover draws an `always` underline in the text's own color, draws a `hover` one and fades a `none`
+ * link through `enabled-hover:`, and keyboard focus draws the shared self focus ring. A link has no
+ * disabled state.
  *
  * The set crosses the two axes the docs demos vary, `variant` and `underline`. No demo sets
  * `weight` on a link, which takes its sentence's weight, so the text keeps the host page's.

@@ -300,6 +300,38 @@ describe("the kit check", () => {
     expect(file.writes.slice(setup)).toEqual([]);
   });
 
+  // Unit under test: the kit check of a label's underline color, which Apply paints only after it
+  // has created the set. Oracle: the messages `figma:sync` asks a designer to act on, written here.
+  it.each([
+    [
+      "a tint the file lacks",
+      { collection: "Fuse tokens", name: "primary/35" },
+      "The Fuse tokens collection has no variable named primary/35.",
+    ],
+    [
+      "a string variable",
+      { collection: "Fuse tokens", name: "font-sans" },
+      "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a COLOR.",
+    ],
+  ])(
+    "stops Plan and Apply before any write for an underline color bound to %s",
+    async (_, variable, message) => {
+      const { file, setup } = fixture("Roboto");
+      const kit = kitWithRoot((root) => ({
+        ...root,
+        children: [
+          {
+            ...LABEL,
+            underline: { offset: undefined, thickness: undefined, color: { kind: "variable", variable } },
+          },
+        ],
+      }));
+      await expect(reconcileKit(file.figma, kit, false)).rejects.toThrow(message);
+      await expect(reconcileKit(file.figma, kit, true)).rejects.toThrow(message);
+      expect(file.writes.slice(setup)).toEqual([]);
+    }
+  );
+
   // Unit under test: the kit check of an image fill. Oracle: the PNG specification's signature and
   // IHDR chunk (§5.2, §11.2.2), the 4096px limit Figma's `createImage` reference states, P9b, where
   // a real file refused a PNG signature alone and stored the first 100 bytes of a PNG, and the

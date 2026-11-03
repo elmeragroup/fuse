@@ -11,6 +11,7 @@ import { flightLazyElement } from "../../../test/flight-lazy-element";
 import { fkasPrivate } from "../../../test/theme-fixtures";
 import {
   cssVarColor,
+  px,
   renderThemed,
   roleNamed,
   snapshotDocumentTheme,
@@ -30,9 +31,7 @@ function parentOf(element: HTMLElement): HTMLElement {
 /** The underline thickness in px, or 0 while the link draws no underline. */
 function underlinePx(element: HTMLElement): number {
   const style = getComputedStyle(element);
-  return style.textDecorationLine.includes("underline")
-    ? Number.parseFloat(style.textDecorationThickness)
-    : 0;
+  return style.textDecorationLine.includes("underline") ? px(style.textDecorationThickness) : 0;
 }
 
 /** A router link stand-in that marks its anchor, as React Router's and Next's links render one. */

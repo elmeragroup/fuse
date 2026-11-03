@@ -1054,6 +1054,34 @@ class FakeInstance extends FakeFrameLikeNode {
   }
 }
 
+/** The underline fields, which Figma holds only while the layer is underlined. */
+type UnderlineField = "textDecorationOffset" | "textDecorationThickness" | "textDecorationColor";
+
+/**
+ * Write one underline field. Figma refuses `figma.mixed`, needs the text's fonts, and keeps the
+ * value only while the layer is underlined.
+ *
+ * @param state - The text's state.
+ * @param field - The field.
+ * @param value - The value as Figma stores it, or `figma.mixed`.
+ * @param what - The field in the refusal's message, such as `an underline offset`.
+ */
+function writeUnderlineField<Field extends UnderlineField>(
+  state: NodeState,
+  field: Field,
+  value: NodeState[Field] | PluginAPI["mixed"],
+  what: string
+): void {
+  if (value === MIXED) {
+    throw new Error(`Cannot write figma.mixed as ${what}.`);
+  }
+  requireHeldFonts(state, field);
+  write(state, field);
+  if (state.textDecoration === "UNDERLINE") {
+    state[field] = value;
+  }
+}
+
 class FakeText extends FakeSceneNode {
   get type(): "TEXT" {
     return "TEXT";
@@ -1164,12 +1192,15 @@ class FakeText extends FakeSceneNode {
     requireHeldFonts(state, "textDecoration");
     write(state, "textDecoration");
     state.textDecoration = value;
-    state.textDecorationOffset =
-      value === "UNDERLINE" ? (state.textDecorationOffset ?? { unit: "AUTO" }) : null;
-    state.textDecorationThickness =
-      value === "UNDERLINE" ? (state.textDecorationThickness ?? { unit: "AUTO" }) : null;
-    state.textDecorationColor =
-      value === "UNDERLINE" ? (state.textDecorationColor ?? { value: "AUTO" }) : null;
+    if (value === "UNDERLINE") {
+      state.textDecorationOffset ??= { unit: "AUTO" };
+      state.textDecorationThickness ??= { unit: "AUTO" };
+      state.textDecorationColor ??= { value: "AUTO" };
+    } else {
+      state.textDecorationOffset = null;
+      state.textDecorationThickness = null;
+      state.textDecorationColor = null;
+    }
   }
 
   /** Figma holds an underline offset only while the layer is underlined. */
@@ -1178,15 +1209,7 @@ class FakeText extends FakeSceneNode {
   }
 
   set textDecorationOffset(value: TextDecorationOffset | PluginAPI["mixed"] | null) {
-    const state = live(this);
-    if (value === MIXED) {
-      throw new Error("Cannot write figma.mixed as an underline offset.");
-    }
-    requireHeldFonts(state, "textDecorationOffset");
-    write(state, "textDecorationOffset");
-    if (state.textDecoration === "UNDERLINE") {
-      state.textDecorationOffset = value;
-    }
+    writeUnderlineField(live(this), "textDecorationOffset", value, "an underline offset");
   }
 
   /** Figma holds an underline thickness only while the layer is underlined. */
@@ -1195,15 +1218,7 @@ class FakeText extends FakeSceneNode {
   }
 
   set textDecorationThickness(value: TextDecorationThickness | PluginAPI["mixed"] | null) {
-    const state = live(this);
-    if (value === MIXED) {
-      throw new Error("Cannot write figma.mixed as an underline thickness.");
-    }
-    requireHeldFonts(state, "textDecorationThickness");
-    write(state, "textDecorationThickness");
-    if (state.textDecoration === "UNDERLINE") {
-      state.textDecorationThickness = value;
-    }
+    writeUnderlineField(live(this), "textDecorationThickness", value, "an underline thickness");
   }
 
   /** Figma holds an underline color only while the layer is underlined. */
@@ -1212,16 +1227,11 @@ class FakeText extends FakeSceneNode {
   }
 
   set textDecorationColor(value: TextDecorationColor | PluginAPI["mixed"] | null) {
-    const state = live(this);
-    if (value === MIXED) {
-      throw new Error("Cannot write figma.mixed as an underline color.");
-    }
-    requireHeldFonts(state, "textDecorationColor");
-    write(state, "textDecorationColor");
-    if (state.textDecoration === "UNDERLINE") {
-      state.textDecorationColor =
-        value === null || value.value === "AUTO" ? value : { value: storeSolidPaint(value.value) };
-    }
+    const stored =
+      value === MIXED || value === null || value.value === "AUTO"
+        ? value
+        : { value: storeSolidPaint(value.value) };
+    writeUnderlineField(live(this), "textDecorationColor", stored, "an underline color");
   }
 
   get textAutoResize(): TextNode["textAutoResize"] {
