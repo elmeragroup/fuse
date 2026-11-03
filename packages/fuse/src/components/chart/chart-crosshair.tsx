@@ -7,7 +7,7 @@ import { useChartRoot, usePlotLayout } from "./chart-context";
 import { writeAttribute } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import { useChartFrame, usePlotRead } from "./chart-plot";
-import { glideFrom, snapGlide } from "./chart-spring";
+import { glideFrom, snapGlide, stepSpring } from "./chart-spring";
 import { sameShallow, useSteady } from "./chart-steady";
 import type { ChartLayerProps } from "./chart-types";
 import { coarsestOf, ownSlot } from "./layout/coarse-slots";
@@ -42,8 +42,9 @@ export const ChartCrosshairContext = createContext(false);
  * The marker of the active slot, a band for `xScale="band"` and a line for `"point"` by default.
  * Write one in each Panel that needs one. Root moves it with the pointer by writing its geometry,
  * so a pointer move renders nothing in React. The band covers the same pixel columns as the
- * focused option and the tooltip's anchor. The line glides from slot to slot, unless the reader
- * prefers reduced motion, and fades at both ends by default.
+ * focused option and the tooltip's anchor. The line glides from slot to slot on a spring that
+ * quickens with the pointer, so it keeps up with a fast sweep and eases after a slow one, unless the
+ * reader prefers reduced motion, and fades at both ends by default. Active dots glide with it.
  *
  * @beta
  */
@@ -54,7 +55,7 @@ export function ChartCrosshair({
   style,
   children,
 }: ChartCrosshairProps): ReactElement {
-  const { xScale, model, motion } = useChartRoot("Chart.Crosshair");
+  const { xScale, model, motion, store } = useChartRoot("Chart.Crosshair");
   const layout = usePlotLayout("Chart.Crosshair");
   const { keys } = layout;
   const drawn = useChartFrame("Chart.Crosshair", layout);
@@ -114,7 +115,7 @@ export function ChartCrosshair({
       return;
     }
     // The layer glides, not the line, so the compositor moves it without restyling the line.
-    glideFrom(svg, vertical ? [from - start, 0] : [0, from - start], "crosshair");
+    glideFrom(svg, vertical ? [from - start, 0] : [0, from - start], stepSpring(store));
   });
   useLayoutEffect(() => {
     const svg = layer.current;

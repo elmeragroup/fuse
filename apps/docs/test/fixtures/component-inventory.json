@@ -114,6 +114,7 @@
       "bar-chart-month-vs-last-year.tsx",
       "bar-chart-percent.tsx",
       "bar-chart-price-levels.tsx",
+      "bar-chart-price-line.tsx",
       "bar-chart-price-spike.tsx",
       "bar-chart-server.tsx",
       "bar-chart-stacked.tsx",

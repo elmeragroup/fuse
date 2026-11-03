@@ -13,6 +13,7 @@ import { useChartFrame } from "./chart-plot";
 import { springTiming } from "./chart-spring";
 import { sameShallow, useSteady } from "./chart-steady";
 import type { ChartLayerProps, XFormat } from "./chart-types";
+import { CHART_SPRINGS } from "./layout/motion";
 import { alongLength, centreOf } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
 
@@ -255,7 +256,7 @@ export function ChartSlotLabel({ format, className, style }: ChartSlotLabelProps
     return () => observer.disconnect();
   });
   if (!shows) return <></>;
-  const { duration, easing } = springTiming("ticker");
+  const { duration, easing } = springTiming(CHART_SPRINGS.ticker);
   const stacks = rolling?.stacks ?? [[""]];
   return (
     <div

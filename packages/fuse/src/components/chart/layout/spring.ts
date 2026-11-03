@@ -5,6 +5,8 @@
  * piecewise-linear curve needs to stay within 0.1% of the spring.
  */
 
+import { CHART_SPRINGS, FOLLOW_FASTEST, FOLLOW_LEVELS, FOLLOW_SPEEDS } from "./motion";
+
 /** A spring of mass 1, as bklit and Motion name them. */
 export type Spring = { readonly stiffness: number; readonly damping: number };
 
@@ -89,4 +91,87 @@ function fits(values: readonly number[], from: number, to: number): boolean {
     if (Math.abs(chord - (values[index] ?? 0)) > TOLERANCE) return false;
   }
   return true;
+}
+
+/**
+ * The spring the crosshair and the active dots follow a step on. A keyboard step, which has no
+ * speed, and a pointer at `FOLLOW_SPEEDS.slow` or slower take `CHART_SPRINGS.follow`; a pointer at
+ * `FOLLOW_SPEEDS.fast` or faster takes `FOLLOW_FASTEST`. Between them the natural frequency grows
+ * with the speed and lands on the nearest of `FOLLOW_LEVELS` even steps. The damping keeps
+ * `follow`'s damping ratio, so every level overshoots alike.
+ *
+ * @param speed - The pointer's speed in CSS pixels per millisecond, or null for a keyboard step.
+ * @returns The spring, one of `FOLLOW_LEVELS` fixed objects.
+ */
+export function followSpring(speed: number | null): Spring {
+  const { slow, fast } = FOLLOW_SPEEDS;
+  const share = speed === null ? 0 : Math.min(1, Math.max(0, (speed - slow) / (fast - slow)));
+  return FOLLOW_LADDER[Math.round(share * (FOLLOW_LEVELS - 1))] ?? CHART_SPRINGS.follow;
+}
+
+/** The follow springs from `follow` to `FOLLOW_FASTEST`, evenly spaced in natural frequency. */
+const FOLLOW_LADDER: readonly Spring[] = Array.from({ length: FOLLOW_LEVELS }, (_, level) => {
+  const { stiffness, damping } = CHART_SPRINGS.follow;
+  const ratio = damping / (2 * Math.sqrt(stiffness));
+  const natural =
+    Math.sqrt(stiffness) + ((Math.sqrt(FOLLOW_FASTEST) - Math.sqrt(stiffness)) * level) / (FOLLOW_LEVELS - 1);
+  return level === 0 ? CHART_SPRINGS.follow : { stiffness: natural * natural, damping: 2 * ratio * natural };
+});
+
+/**
+ * A CSS `linear()` easing as a function of progress, as CSS Easing 2 plays it: a straight line
+ * between each pair of stops, a stop without an input placed evenly between its neighbours, and
+ * the first and last stops held past either end. A glide that reads where an interrupted
+ * animation shows reads the curve the animation plays, its rounding included, not the spring
+ * it samples.
+ *
+ * @param easing - The `linear()` easing.
+ * @returns The output at a progress, or the progress itself for anything else.
+ */
+export function linearCurve(easing: string): (progress: number) => number {
+  const body = /^linear\((.*)\)$/u.exec(easing.trim())?.[1];
+  if (body === undefined) return (progress) => progress;
+  const parts = body.split(",").map((stop) => stop.trim().split(/\s+/u));
+  const stops = parts.map(([output = "0", input], index) => ({
+    output: Number(output),
+    input:
+      input === undefined
+        ? index === 0
+          ? 0
+          : index === parts.length - 1
+            ? 1
+            : Number.NaN
+        : Number.parseFloat(input) / 100,
+  }));
+  // Inputs never fall, and a stop without one sits evenly between the stops around it.
+  for (let index = 1; index < stops.length; index += 1) {
+    const stop = stops[index];
+    if (stop === undefined || Number.isNaN(stop.input)) continue;
+    stop.input = Math.max(stop.input, stops[index - 1]?.input ?? 0);
+  }
+  for (let index = 1; index < stops.length; index += 1) {
+    if (!Number.isNaN(stops[index]?.input ?? 0)) continue;
+    let next = index;
+    while (Number.isNaN(stops[next]?.input ?? 0)) next += 1;
+    const [from, to] = [stops[index - 1]?.input ?? 0, stops[next]?.input ?? 1];
+    for (let gap = index; gap < next; gap += 1) {
+      const stop = stops[gap];
+      if (stop !== undefined) stop.input = from + ((to - from) * (gap - index + 1)) / (next - index + 1);
+    }
+  }
+  return (progress) => {
+    const first = stops[0];
+    const last = stops.at(-1);
+    if (first === undefined || last === undefined) return progress;
+    if (progress <= first.input) return first.output;
+    if (progress >= last.input) return last.output;
+    let after = 1;
+    while ((stops[after]?.input ?? 1) < progress) after += 1;
+    const end = stops[after] ?? last;
+    const start = stops[after - 1] ?? first;
+    const span = end.input - start.input;
+    return span === 0
+      ? end.output
+      : start.output + ((end.output - start.output) * (progress - start.input)) / span;
+  };
 }

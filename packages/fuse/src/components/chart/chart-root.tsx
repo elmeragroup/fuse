@@ -31,6 +31,7 @@ import {
   useMeasuredPlot,
   usePanelSpan,
 } from "./chart-plot";
+import { createChartRiders } from "./chart-riders";
 import { PlotLoader } from "./chart-skeleton";
 import { sameShallow, useSteady } from "./chart-steady";
 import { createChartStore, openDrawingSoon, useClientMount } from "./chart-store";
@@ -542,6 +543,7 @@ export function ChartRoot<
   }, [motion, reduced, followers]);
   const [labels] = useState(createChartLabels);
   const [paths] = useState(createChartPaths);
+  const [riders] = useState(createChartRiders);
   const [axis] = useState(createAxisRecord);
   // The default layout's frame, which names its marks' tweens to the loop for the Root's life.
   const [owner] = useState(() => createFrameOwner("root"));
@@ -765,6 +767,7 @@ export function ChartRoot<
       motion,
       followers,
       paths,
+      riders,
       axis,
       registerBar,
       drawsBar,
@@ -792,6 +795,7 @@ export function ChartRoot<
       motion,
       followers,
       paths,
+      riders,
       axis,
       registerBar,
       drawsBar,

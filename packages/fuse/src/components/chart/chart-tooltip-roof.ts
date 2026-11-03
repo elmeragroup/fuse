@@ -13,7 +13,10 @@
  * read without a paint between, so the popup clears every frame without a read per frame.
  */
 import type { ChartMotion, MarkValues, MarkWriter, ValueAxis } from "./chart-motion";
+import type { ChartRiders } from "./chart-riders";
+import { glideShown } from "./chart-spring";
 import type { PlotFrame } from "./layout/plot-frame";
+import { ROOF_GAP } from "./layout/tooltip-place";
 import {
   boundsOf,
   box,
@@ -36,8 +39,11 @@ const LAYERS = [
 ].join(",");
 
 /**
- * The active dots that show. They follow the pointer, so every read takes them afresh. An active
- * dot without `data-value` draws nothing at the active slot.
+ * The active dots that show. They follow the pointer, so every read takes them afresh, where they
+ * rest: a dot that glides counts at the end of its glide. An active dot without `data-value` draws
+ * nothing at the active slot. On its way a dot rides its line, which the roof holds, so it stays
+ * under the popup as long as it reaches no farther from the line than the popup's gap above the
+ * roof, and `riderExcess` raises the roof by whatever it reaches beyond.
  */
 const ACTIVE_DOTS = '[data-slot="chart-active-dot"][data-value]';
 
@@ -70,13 +76,16 @@ export type RoofView = {
   readonly frame: PlotFrame;
   /** Root's animation loop. */
   readonly motion: ChartMotion;
+  /** Root's active dots and the bar tracks they ride. */
+  readonly riders: ChartRiders;
 };
 
 /** A Root's roof, measured at most once per change of its marks. */
 export type ChartRoof = {
   /**
-   * The roof profile now: the series marks as the last read found them, and the active dots as
-   * they show.
+   * The roof profile now: the series marks and the bar tracks active dots ride, as the last read
+   * found them, read again once a dot registers or forgets its track, and the active dots as they
+   * show.
    */
   readonly read: (view: RoofView) => RoofProfile;
   /** Read the series marks again on the next read, after a commit, an opening or a landing. */
@@ -113,14 +122,18 @@ export type ChartRoof = {
  */
 export function createChartRoof(): ChartRoof {
   let kept: RoofProfile | null = null;
+  // The rider revision the kept profile holds the tracks of.
+  let keptRiders = -1;
   let watching: MutationObserver | null = null;
   return {
     read: (view) => {
-      if (kept === null) {
+      if (kept === null || keptRiders !== view.riders.revision()) {
         kept = seriesRoof(view);
+        keptRiders = view.riders.revision();
         watching?.takeRecords();
       }
-      return higherRoof(kept, roofProfile(drawnMarks(view, ACTIVE_DOTS), ...view.stretch));
+      const roof = higherRoof(kept, roofProfile(drawnMarks(view, ACTIVE_DOTS), ...view.stretch));
+      return raisedRoof(roof, riderExcess(view.root));
     },
     forget: () => {
       kept = null;
@@ -225,7 +238,29 @@ function seriesRoof(view: RoofView): RoofProfile {
   if (tween !== null) return tween;
   const raster = pathRaster(view, LAYERS);
   raster.draw();
-  return higherRoof(roofProfile(drawnMarks(view, LAYERS), ...view.stretch), raster.read());
+  const marks = [...drawnMarks(view, LAYERS), ...riddenMarks(view)];
+  return higherRoof(roofProfile(marks, ...view.stretch), raster.read());
+}
+
+/**
+ * The bar tracks active dots ride, each an invisible line through its bars' far ends. A dot riding
+ * the straight stretch between two bars passes over the empty gap between them, where no bar holds
+ * the roof up, so the roof holds the track as it holds a drawn line. The dot reaches past the track
+ * no farther than it reaches past a line, which `riderExcess` covers. The tracks are in the plot
+ * pixels the dots' layers share with the plot.
+ */
+function riddenMarks(view: RoofView): RoofMark[] {
+  const vertical = view.frame.orientation === "vertical";
+  return [...view.root.querySelectorAll('[data-slot="chart-active-dot"]')].flatMap((layer) =>
+    (view.riders.track(layer) ?? []).map(({ along, across }) => ({
+      pieces: polyline(
+        Array.from(along, (place, index): [number, number] =>
+          vertical ? [place, across[index] ?? 0] : [across[index] ?? 0, place]
+        )
+      ),
+      reach: 0,
+    }))
+  );
 }
 
 /**
@@ -433,7 +468,7 @@ function canvasJoin(join: string): CanvasLineJoin {
 
 /** One drawing's mark in plot pixels, or null for one the browser does not place. */
 function markOf(drawing: SVGGraphicsElement, view: RoofView): RoofMark | null {
-  const matrix = drawing.getScreenCTM();
+  const matrix = restingMatrix(drawing);
   if (matrix === null) return null;
   const { surface, scale } = view;
   const toPlot = (x: number, y: number): [number, number] => {
@@ -448,6 +483,54 @@ function markOf(drawing: SVGGraphicsElement, view: RoofView): RoofMark | null {
   const reach = stroked ? ((Number.parseFloat(style.strokeWidth) || 0) / 2) * perUnit : 0;
   const pieces = piecesOf(drawing, matrix, toPlot);
   return pieces.length === 0 ? null : { pieces, reach };
+}
+
+/**
+ * How far an active dot reaches from the centre it rides the line on, beyond the gap a popup keeps
+ * above the roof, in CSS pixels: its radius at the widest a ring animation scales it, as a ping
+ * ring's does, plus half its stroke. A default, ring or halo dot reaches 5 to 8 px and fits inside
+ * the 8 px gap, so only a ping ring, at 10 px, raises the roof.
+ */
+function riderExcess(root: Element): number {
+  let reach = 0;
+  for (const dot of root.querySelectorAll<SVGCircleElement>('[data-slot="chart-active-dot"] circle')) {
+    const style = getComputedStyle(dot);
+    const stroke = style.stroke === "none" ? 0 : Number.parseFloat(style.strokeWidth) || 0;
+    reach = Math.max(reach, dot.r.baseVal.value * widestScale(dot) + stroke / 2);
+  }
+  return Math.max(0, reach - ROOF_GAP);
+}
+
+/** The largest `scale()` any running animation's keyframes give an element, 1 without one. */
+function widestScale(element: Element): number {
+  let widest = 1;
+  for (const animation of element.getAnimations()) {
+    const { effect } = animation;
+    if (!(effect instanceof KeyframeEffect)) continue;
+    for (const frame of effect.getKeyframes()) {
+      const scale = /scale\(\s*([\d.]+)/u.exec(String(frame.transform ?? ""));
+      if (scale !== null) widest = Math.max(widest, Number(scale[1]));
+    }
+  }
+  return widest;
+}
+
+/**
+ * A drawing's screen matrix where it rests. An active dot's layer glides by a translation in its own
+ * pixels, which the screen matrix carries, and which the spring's closed form gives. The layer's own
+ * screen matrix scales that translation to the screen, so a transform inside the layer, such as a
+ * ping ring's scale, leaves it alone, and the drawing's matrix moves back by it.
+ */
+function restingMatrix(drawing: SVGGraphicsElement): DOMMatrix | null {
+  const matrix = drawing.getScreenCTM();
+  const layer = drawing.closest<SVGSVGElement>('[data-slot="chart-active-dot"]');
+  const shown = layer === null ? null : glideShown(layer);
+  const scale = layer?.getScreenCTM();
+  if (matrix === null || shown === null || scale === null || scale === undefined) return matrix;
+  const [x, y] = shown;
+  return new DOMMatrix()
+    .translate(-(scale.a * x + scale.c * y), -(scale.b * x + scale.d * y))
+    .multiply(matrix);
 }
 
 /**

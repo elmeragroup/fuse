@@ -73,8 +73,24 @@ export type ChartSnapshot = {
   readonly emphasis: { readonly [key: string]: EmphasisEntry };
 };
 
-/** The pointer's last position over the plot, in client pixels, and its pointer type. */
-export type TrackedPointer = { readonly x: number; readonly y: number; readonly type: string };
+/**
+ * The pointer's last position over the plot, in client pixels, its pointer type, when it got there
+ * in milliseconds on the event clock, and how fast it has moved lately, in client pixels per
+ * millisecond.
+ */
+export type TrackedPointer = {
+  readonly x: number;
+  readonly y: number;
+  readonly type: string;
+  readonly time: number;
+  readonly speed: number;
+};
+
+/**
+ * How much of a pointer's speed each move takes from its own distance and time, the rest from the
+ * speed before it, so one quick event among slow ones counts for less than a flick.
+ */
+const SPEED_WEIGHT = 0.5;
 
 /** The store one Root owns. */
 export type ChartStore = {
@@ -94,8 +110,11 @@ export type ChartStore = {
    * one. The tooltip reads it to tell a move toward its popup from a scrub across it.
    */
   readonly pointer: () => TrackedPointer | null;
-  /** Record the pointer's position over the plot, which `pointer` returns. */
-  readonly track: (x: number, y: number, type: string) => void;
+  /**
+   * Record the pointer's position over the plot at an event's time stamp, which `pointer` returns
+   * with the speed of its recent moves.
+   */
+  readonly track: (x: number, y: number, type: string, time: number) => void;
   /** Whether the plot's parts may draw, which `openDrawing` sets once. */
   readonly drawing: DrawGate;
 };
@@ -188,8 +207,13 @@ export function createChartStore(defaultActive: number | null = null): ChartStor
     initial,
     drawing: createDrawGate(),
     pointer: () => last,
-    track(x, y, type) {
-      last = { x, y, type };
+    track(x, y, type, time) {
+      const gap = last === null || last.type !== type ? 0 : time - last.time;
+      const speed =
+        last === null || gap <= 0
+          ? 0
+          : SPEED_WEIGHT * (Math.hypot(x - last.x, y - last.y) / gap) + (1 - SPEED_WEIGHT) * last.speed;
+      last = { x, y, type, time, speed };
     },
     get: () => state,
     set(patch) {

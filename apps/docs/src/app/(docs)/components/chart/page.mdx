@@ -177,7 +177,7 @@ The tooltip stays open while the pointer moves onto it, and Escape closes it. A 
 
 <Prose>
 
-The line crosshair fades out over 10% of the plot at both ends by default. `fade="top"` or `"bottom"` fades one end, read along the value axis, and `"none"` draws it whole. `--chart-crosshair-width` sets its width, 1 px by default. The line glides from slot to slot, and moves at once under reduced motion. A `Chart.SlotLabel` inside the crosshair prints the active slot on the x axis.
+The line crosshair fades out over 10% of the plot at both ends by default. `fade="top"` or `"bottom"` fades one end, read along the value axis, and `"none"` draws it whole. `--chart-crosshair-width` sets its width, 1 px by default. The line glides from slot to slot on a spring that quickens with the pointer: a keyboard step or a slow scrub settles in about half a second, and a fast sweep in about 120 ms. A `Chart.ActiveDot` glides with it along its series' Line, Area or Bar: on bars it rides a straight track through their tops. It moves at once across a gap or a missing reading. Both move at once under reduced motion. A `Chart.SlotLabel` inside the crosshair prints the active slot on the x axis.
 
 </Prose>
 

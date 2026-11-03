@@ -341,7 +341,7 @@ export function ChartSurface({
     );
 
   const pick = (event: PointerEvent<HTMLDivElement>): void => {
-    store.track(event.clientX, event.clientY, event.pointerType);
+    store.track(event.clientX, event.clientY, event.pointerType, event.timeStamp);
     const { pinned: isPinned, dismissed } = store.get();
     if (isPinned) return;
     const { slot, near } = slotAt(event);

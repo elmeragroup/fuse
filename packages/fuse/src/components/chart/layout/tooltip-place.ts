@@ -66,7 +66,7 @@ export function tooltipSideOffset(
 }
 
 /** How far above the roof under it a popup rests, in CSS pixels. */
-const ROOF_GAP = 8;
+export const ROOF_GAP = 8;
 
 /**
  * The drop a resting popup ignores, in CSS pixels. A step that would lower the popup by this much

@@ -14,6 +14,7 @@ import type { ChartFollowers } from "./chart-followers";
 import type { ChartLabels } from "./chart-labels";
 import type { ChartMotion, FrameOwner } from "./chart-motion";
 import type { ChartPaths } from "./chart-paths";
+import type { ChartRiders } from "./chart-riders";
 import type { ChartStore, EmphasisEntry } from "./chart-store";
 import type { TextContext } from "./chart-text";
 import type { ChartConfig, ChartIntro, ChartRow, ChartSelectionChangeReason } from "./chart-types";
@@ -140,6 +141,8 @@ export type ChartRootContextValue = TextContext & {
   readonly followers: ChartFollowers;
   /** The routes the series paths tween, which their dots, markers and active dots join. */
   readonly paths: ChartPaths;
+  /** The bar tracks the active dots ride, which the tooltip's roof holds. */
+  readonly riders: ChartRiders;
   /**
    * The x axis's `format` and tick generation, which Chart.XAxis records and Chart.SlotLabel reads:
    * it prints in the format by default and measures the ticks again when they change.

@@ -27,6 +27,7 @@ import { BarChartMonthToDate } from "./demos/bar-chart-month-to-date";
 import { BarChartMonthVsLastYear } from "./demos/bar-chart-month-vs-last-year";
 import { BarChartPercent } from "./demos/bar-chart-percent";
 import { BarChartPriceLevels } from "./demos/bar-chart-price-levels";
+import { BarChartPriceLine } from "./demos/bar-chart-price-line";
 import { BarChartPriceSpike } from "./demos/bar-chart-price-spike";
 import { BarChartServer } from "./demos/bar-chart-server";
 import { BarChartStacked } from "./demos/bar-chart-stacked";
@@ -66,6 +67,16 @@ A line crosshair with a `BarChart.SlotLabel` marks the active hour on the axis. 
 
 <Demo slug="bar-chart" id="hour-pill" title="Hour pill" file="bar-chart-date-pill.tsx">
   <BarChartDatePill />
+</Demo>
+
+<Prose>
+
+One `BarChart.ActiveDot` rides the bar tops and the other the price line, and both follow the pointer's pace.
+
+</Prose>
+
+<Demo slug="bar-chart" id="price-line" title="Price line" file="bar-chart-price-line.tsx">
+  <BarChartPriceLine />
 </Demo>
 
 ## Server components

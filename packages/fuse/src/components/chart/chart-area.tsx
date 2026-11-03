@@ -8,10 +8,10 @@ import { useFirstDraw } from "./chart-motion-mark";
 import { placeOf, topologyAt, writePath } from "./chart-path-draw";
 import type { PathLook } from "./chart-path-draw";
 import { PathPaint, hasPathPaint } from "./chart-path-paint";
-import { useSeriesPath } from "./chart-series-path";
+import { useRestingLine, useSeriesPath } from "./chart-series-path";
 import type { ChartCurve, ChartLayerProps } from "./chart-types";
 import { ChartCompositionError } from "./layout/errors";
-import { AREA_STRIDE, areaPaths } from "./layout/line-path";
+import { AREA_STRIDE, areaPaths, areaTopPath } from "./layout/line-path";
 import { runMargins } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
 
@@ -164,6 +164,10 @@ export function ChartArea({
   // React draws the first rest, and the loop draws every frame after it.
   const drawn = useFirstDraw(() =>
     resting === null ? null : areaPaths(resting.rest, resting.topology, placeOf(resting.look))
+  );
+  // An active dot rides the area's top edge as it rests.
+  useRestingLine(context.paths, seriesIndex, "area", resting, (rest) =>
+    areaTopPath(rest.rest, rest.topology, placeOf(rest.look))
   );
   return (
     <svg

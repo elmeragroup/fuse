@@ -3,11 +3,13 @@
 // written out below for each damping regime. The test evaluates the linear() stops as CSS Easing 2
 // defines them, a piecewise-linear curve through each stop, and needs the curve within 0.5% of the
 // travel of the oscillator at every sampled moment, and the duration to end once the oscillator stays
-// within 0.1% of its target.
+// within 0.1% of its target. followSpring is checked against the same oscillator and the owner's
+// decision for pointer-paced steps: bklit's 300/30 for keyboard and slow steps, a stiffest spring
+// that settles in about 120 ms, and one damping ratio throughout.
 import { describe, expect, it } from "vitest";
 
 import { CHART_SPRINGS } from "./motion";
-import { springEasing } from "./spring";
+import { followSpring, springEasing } from "./spring";
 
 /** The oscillator's position at `t` seconds. */
 function oscillator(stiffness: number, damping: number, t: number): number {
@@ -57,7 +59,8 @@ function evaluateLinear(easing: string, p: number): number {
 }
 
 const CASES = [
-  ["the crosshair", CHART_SPRINGS.crosshair, 300, 30],
+  // bklit's tooltip-dot spring, which the crosshair and the active dots follow a slow step on.
+  ["the follow spring", CHART_SPRINGS.follow, 300, 30],
   ["the tooltip", CHART_SPRINGS.glide, 100, 20],
   ["the slot label", CHART_SPRINGS.ticker, 400, 35],
   ["a bouncy spring", { stiffness: 400, damping: 25 }, 400, 25],
@@ -103,5 +106,46 @@ describe("springEasing", () => {
     // is critically damped, so its glide never passes the place it rests on.
     expect(peak(springEasing({ stiffness: 400, damping: 25 }).easing)).toBeCloseTo(1.081, 2);
     expect(peak(springEasing(CHART_SPRINGS.glide).easing)).toBeLessThanOrEqual(1);
+  });
+});
+
+/** The milliseconds until the oscillator stays within 0.1% of its target. */
+function settling(stiffness: number, damping: number): number {
+  let last = 0;
+  for (let ms = 1; ms <= 5000; ms += 1) {
+    if (Math.abs(1 - oscillator(stiffness, damping, ms / 1000)) >= 0.001) last = ms;
+  }
+  return last + 1;
+}
+
+describe("followSpring", () => {
+  // Pointer speeds in CSS pixels per millisecond: a slow scrub, a steady sweep and a flick.
+  const speeds = [0, 0.1, 0.5, 1, 1.5, 2, 2.5, 5, 50];
+
+  it("follows a keyboard step and a slow pointer on bklit's 300/30", () => {
+    for (const speed of [null, 0, 0.1]) {
+      const { stiffness, damping } = followSpring(speed);
+      expect([stiffness, damping], String(speed)).toEqual([300, 30]);
+    }
+  });
+
+  it("settles a flick in about 120 ms, and never slower as the pointer speeds up", () => {
+    const times = speeds.map((speed) => {
+      const { stiffness, damping } = followSpring(speed);
+      return settling(stiffness, damping);
+    });
+    expect(times[0]).toBe(506);
+    expect(Math.abs((times.at(-1) ?? 0) - 120)).toBeLessThanOrEqual(5);
+    times.forEach((time, index) => {
+      expect(time, String(speeds[index])).toBeLessThanOrEqual(times[index - 1] ?? time);
+    });
+  });
+
+  it("keeps 300/30's damping ratio, so no speed overshoots more than a slow step does", () => {
+    const ratio = 30 / (2 * Math.sqrt(300));
+    for (const speed of speeds) {
+      const { stiffness, damping } = followSpring(speed);
+      expect(damping / (2 * Math.sqrt(stiffness)), String(speed)).toBeCloseTo(ratio, 6);
+    }
   });
 });

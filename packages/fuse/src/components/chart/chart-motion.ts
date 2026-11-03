@@ -181,6 +181,17 @@ export type ChartMotion = {
    * its old vertices with its new ones by slot.
    */
   readonly drawn: (id: string) => MarkValues | null;
+  /**
+   * The numbers the mark at an anchor rests on once its tween ends, or null when no mark holds the
+   * anchor, so an active dot can ride through the bars' far ends where they rest.
+   */
+  readonly restAt: (anchor: string) => MarkValues | null;
+  /**
+   * A count that grows whenever a mark under an anchor comes, goes or rests on new numbers, so a
+   * reader that keeps something built from `restAt`, such as an active dot's bar track, knows when
+   * to build it again.
+   */
+  readonly restRevision: () => number;
   /** Draw every moving mark at its target at once, as a range step does. */
   readonly finish: () => void;
   /** Follow the reader's motion preference. Reduced motion snaps every placement. */
@@ -258,6 +269,17 @@ type Joined = {
 };
 
 const ease = cubicBezier(CHART_UPDATE_CURVE);
+
+/** The numbers a mark rests on once its tween ends. */
+function restOf(mark: Mark): MarkValues {
+  return mark.tween?.rest ?? mark.tween?.to ?? mark.drawn;
+}
+
+/** Whether two lists of numbers hold the same numbers in the same order. */
+function sameNumbers(a: MarkValues | null, b: MarkValues | null): boolean {
+  if (a === null || b === null) return a === b;
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
 
 /**
  * Map a mark's numbers into a resized box. Every number is a pixel from the plot's left or top edge
@@ -353,6 +375,8 @@ export function createChartMotion(
   };
   // The mark each anchor names, such as a bar at its series and slot, which a follower can join.
   const anchors = new Map<string, string>();
+  // Grows whenever a mark under an anchor comes, goes or rests on new numbers.
+  let revision = 0;
   /** Forget the anchor a mark names, unless another mark has named it since. */
   const leave = (id: string, anchor: string | undefined): void => {
     if (anchor !== undefined && anchors.get(anchor) === id) anchors.delete(anchor);
@@ -692,12 +716,17 @@ export function createChartMotion(
   return {
     place(id, target, write, placement, info: MarkInfo = {}) {
       const { anchor } = info;
-      const named = marks.get(id)?.anchor;
+      const before = marks.get(id);
+      const named = before?.anchor;
+      const rested = before === undefined ? null : restOf(before);
       if (named !== anchor) leave(id, named);
       if (anchor !== undefined) anchors.set(anchor, id);
       placeMark(id, target, write, placement, info);
       const mark = marks.get(id);
       if (mark !== undefined) mark.anchor = anchor;
+      if ((named ?? anchor) === undefined) return;
+      const rests = mark === undefined ? null : restOf(mark);
+      if (named !== anchor || !sameNumbers(rested, rests)) revision += 1;
     },
     forget(id) {
       const mark = marks.get(id);
@@ -707,6 +736,7 @@ export function createChartMotion(
       }
       marks.delete(id);
       const anchor = mark?.anchor;
+      if (anchor !== undefined) revision += 1;
       // A lead leaves when the mark held the anchor a joined follower draws from.
       const led = anchor !== undefined && anchors.get(anchor) === id && followed(anchor);
       leave(id, anchor);
@@ -717,6 +747,11 @@ export function createChartMotion(
       if (led) rejoin();
     },
     drawn: (id) => marks.get(id)?.drawn ?? null,
+    restAt: (anchor) => {
+      const mark = marks.get(anchors.get(anchor) ?? "");
+      return mark === undefined ? null : restOf(mark);
+    },
+    restRevision: () => revision,
     finish() {
       for (const mark of moving) {
         if (mark.tween === null) continue;

@@ -1,5 +1,7 @@
 // The chart tooltip's roof and glide, with motion on, in Chromium. The oracle for "covers no mark"
 // is the drawn marks themselves, which test/chart/tooltip-glide reads from the DOM.
+import { useLayoutEffect, useState } from "react";
+
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -13,12 +15,15 @@ import {
   DAYS,
   WIDE,
   barChart,
+  dotFrame,
   hoverSlot,
   lineChart,
   positioner,
+  watchDots,
   watchFrames,
   wideChart,
 } from "../../../test/chart/tooltip-glide";
+import type { DotFrame } from "../../../test/chart/tooltip-glide";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -470,8 +475,11 @@ describe("a step onto a label that wraps", () => {
   });
 });
 
-/** One row of a scene: its category and its reading, null for a missing one. */
-type Row = { readonly name: string; readonly v: number | null };
+/**
+ * One row of a scene: its category and its reading, null for a missing one, and the reading of a
+ * second line when the scene draws one.
+ */
+type Row = { readonly name: string; readonly v: number | null; readonly w?: number };
 
 /** Rows named k{first} onward with their readings. */
 function named(values: readonly number[], first = 0): Row[] {
@@ -493,6 +501,9 @@ function Scene({
   variant,
   plotWidth = 600,
   padding = "200px 24px 24px",
+  second = false,
+  barDot = false,
+  bandGap,
 }: {
   readonly rows: readonly Row[];
   readonly kind: "bars" | "line";
@@ -513,6 +524,12 @@ function Scene({
   /** The plot's width, which the 24 px gutters frame. */
   readonly plotWidth?: number;
   readonly padding?: string;
+  /** Draws a second line, `w`, with its own active dot. */
+  readonly second?: boolean;
+  /** Draws an active dot on the bars, which rides their tops. */
+  readonly barDot?: boolean;
+  /** Root's `--chart-band-gap`, the percentage of each band left empty. */
+  readonly bandGap?: string;
 }) {
   const series: ChartSeriesConfig =
     missing === undefined ? { label: "V", color: "chart-1" } : { label: "V", color: "chart-1", missing };
@@ -520,12 +537,13 @@ function Scene({
   if (glide !== undefined) rootStyle["--chart-glide"] = glide;
   if (stroke !== undefined) rootStyle["--chart-stroke"] = stroke;
   if (plotHeight !== undefined) rootStyle["--chart-plot-height"] = plotHeight;
+  if (bandGap !== undefined) rootStyle["--chart-band-gap"] = bandGap;
   return (
     <div style={{ padding, width: plotWidth + 48, boxSizing: "border-box" }}>
       <LocaleProvider locale="en-US">
         <Chart.Root
           data={rows}
-          config={{ v: series }}
+          config={second ? { v: series, w: { label: "W", color: "chart-2" } } : { v: series }}
           xKey="name"
           xScale={kind === "line" ? "point" : "band"}
           yInclude={[0, 100]}
@@ -533,11 +551,16 @@ function Scene({
           style={rootStyle}
           aria-label="Scene">
           {kind === "bars" ? (
-            <Chart.Bar dataKey="v" style={markStyle} />
+            <>
+              <Chart.Bar dataKey="v" style={markStyle} />
+              {barDot ? <Chart.ActiveDot dataKey="v" /> : null}
+            </>
           ) : glowStroke === undefined ? (
             <>
               <Chart.Line dataKey="v" curve={curve} style={markStyle} variant={variant} />
+              {second ? <Chart.Line dataKey="w" curve={curve} style={markStyle} /> : null}
               <Chart.ActiveDot dataKey="v" />
+              {second ? <Chart.ActiveDot dataKey="w" /> : null}
             </>
           ) : (
             <Chart.Glow style={{ "--chart-stroke": glowStroke }}>
@@ -915,6 +938,162 @@ describe("a step onto a label that changes the popup's size", () => {
   });
 });
 
+describe("an active dot on a reader step", () => {
+  it("glides between its two readings while the popup glides clear of it", async () => {
+    // A rising step under a 240 px popup, with room above the plot, where the popup's glide can
+    // clear the dot, so the dot glides and shows between its two centres mid-step.
+    await page.viewport(1024, 1200);
+    const { host } = renderThemed(
+      <Scene rows={named([10, 90, 40, 60, 20, 70])} kind="line" popupWidth={240} padding="480px 24px 24px" />
+    );
+    await hoverSlot(host, 0, 6, "point");
+    await nextFrames(30);
+    await glideLanded();
+    const [start] = dotFrame(host);
+    const watch = watchFrames(host);
+    const dots = watchDots(host);
+    await hoverSlot(host, 1, 6, "point");
+    await nextFrames(40);
+    await glideLanded();
+    watch.stop();
+    dots.stop();
+    expect(label()).toBe("k1");
+    const [end] = dotFrame(host);
+    if (start === undefined || end === undefined) throw new Error("no active dot");
+    expect(start.y - end.y).toBeGreaterThan(100);
+    expect(end.gliding).toBe(false);
+    const between = dots.frames.flat().filter(({ y }) => y < start.y - 1 && y > end.y + 1);
+    expect(between.length, JSON.stringify(dots.frames)).toBeGreaterThan(0);
+    expect(between.every(({ gliding }) => gliding)).toBe(true);
+    expect(watch.covered).toEqual([]);
+  });
+});
+
+/**
+ * Eight 100 px bands whose bars fill a tenth of each, and a 180 px popup, which over k1 reaches
+ * neither k0's nor k2's bar. k2 stands nine times as tall as the rest.
+ */
+const FAR_ROWS = named([10, 10, 90, 10, 10, 10, 10, 10]);
+
+function FarScene({ barDot }: { readonly barDot: boolean }) {
+  return (
+    <Scene
+      rows={FAR_ROWS}
+      kind="bars"
+      barDot={barDot}
+      bandGap="90%"
+      popupWidth={180}
+      plotWidth={800}
+      padding="320px 24px 24px"
+    />
+  );
+}
+
+/** A pointer move onto one of the eight bands, by `nudge` px to its right, as the chart's own events. */
+function moveFar(host: HTMLElement, slot: number, nudge = 0): void {
+  const surface = host.querySelector<HTMLElement>('[role="listbox"]');
+  if (surface === null) throw new Error("no plot");
+  const box = surface.getBoundingClientRect();
+  surface.dispatchEvent(
+    new PointerEvent("pointermove", {
+      bubbles: true,
+      clientX: box.left + (box.width * (slot + 0.5)) / 8 + nudge,
+      clientY: box.bottom - 3,
+      pointerType: "mouse",
+    })
+  );
+}
+
+/**
+ * A fast step from k1 to k2 while the popup rests over k1: a quick nudge, then the step. The dot
+ * climbs the straight track over the empty gap and through the popup's columns while the popup
+ * still rests there.
+ *
+ * @returns What the frames showed.
+ */
+async function farStep(host: HTMLElement) {
+  const watch = watchFrames(host);
+  moveFar(host, 1, 2);
+  await nextFrames(1);
+  moveFar(host, 2);
+  await nextFrames(60);
+  await glideLanded();
+  watch.stop();
+  return watch;
+}
+
+describe("an active dot on bars far apart", () => {
+  it("never meets the popup while it climbs toward a tall bar beyond the popup's width", async () => {
+    const { host } = renderThemed(<FarScene barDot />);
+    moveFar(host, 1);
+    await nextFrames(40);
+    await glideLanded();
+    const watch = await farStep(host);
+    expect(label()).toBe("k2");
+    expect(watch.covered).toEqual([]);
+  });
+
+  it("never meets the popup when the dot mounts while the popup shows", async () => {
+    // The popup opens over the bars alone, and the dot mounts through local state while it shows.
+    let showDot: (shown: boolean) => void = () => undefined;
+    function LateDot() {
+      const [shown, setShown] = useState(false);
+      useLayoutEffect(() => {
+        showDot = setShown;
+      }, []);
+      return <FarScene barDot={shown} />;
+    }
+    const { host } = renderThemed(<LateDot />);
+    moveFar(host, 1);
+    await nextFrames(40);
+    await glideLanded();
+    showDot(true);
+    await nextFrames(10);
+    // DOM audit: the active dot is aria-hidden plot output, so its slot is the only locator.
+    expect(host.querySelector('[data-slot="chart-active-dot"][data-value]')).not.toBeNull();
+    const watch = await farStep(host);
+    expect(label()).toBe("k2");
+    expect(watch.covered).toEqual([]);
+  });
+});
+
+describe("an active dot over a gap in its line", () => {
+  it("moves at once across the gap, and nothing covers it", async () => {
+    // k1 is missing and the line leaves a gap there, so no line runs from k0 to k2 to ride.
+    const rows: Row[] = [
+      { name: "k0", v: 20 },
+      { name: "k1", v: null },
+      { name: "k2", v: 80 },
+      ...named([60, 40, 50], 3),
+    ];
+    const { host } = renderThemed(<Scene rows={rows} kind="line" />);
+    await hoverSlot(host, 0, 6, "point");
+    await nextFrames(30);
+    await glideLanded();
+    const [start] = dotFrame(host);
+    const watch = watchFrames(host);
+    const dots = watchDots(host);
+    await hoverSlot(host, 2, 6, "point");
+    await nextFrames(30);
+    await glideLanded();
+    watch.stop();
+    dots.stop();
+    expect(label()).toBe("k2");
+    const [end] = dotFrame(host);
+    if (start === undefined || end === undefined) throw new Error("no active dot");
+    expect(start.y - end.y).toBeGreaterThan(100);
+    const at = (shown: DotFrame, place: DotFrame) =>
+      Math.abs(shown.x - place.x) <= 0.5 && Math.abs(shown.y - place.y) <= 0.5;
+    const shown = dots.frames.flat();
+    expect(shown.length).toBeGreaterThan(5);
+    expect(
+      shown.every((dot) => !dot.gliding && (at(dot, start) || at(dot, end))),
+      JSON.stringify(shown)
+    ).toBe(true);
+    expect(watch.covered).toEqual([]);
+  });
+});
+
 /** A seeded source of numbers from 0 up to 1, so a scenario replays the same way every run. */
 function seeded(seed: number): () => number {
   let state = seed >>> 0;
@@ -931,7 +1110,8 @@ describe("any sequence of reader steps and data updates", () => {
   // by more than 1 px and keeps its top inside the viewport. Each scenario mixes pointer steps of
   // any width, value updates, slides of the window, a change of curve, transform and Root's stroke,
   // and labels long enough to resize the popup. Actions follow each other after 2 to 32 frames, so
-  // many land in the middle of a tween.
+  // many land in the middle of a tween or of a glide. Line scenarios draw one or two lines, each
+  // with an active dot that glides on a step, and the popup must clear each dot in every frame.
   it.each([
     [11, "any", 0.15],
     [23, "any", 0.15],
@@ -949,13 +1129,17 @@ describe("any sequence of reader steps and data updates", () => {
     [53, "bars", 0.21],
     [67, "bars", 0.21],
     [83, "bars", 0.21],
+    // Bars of any readings with an active dot that rides their tops on every step.
+    [17, "bar-dot", 0.15],
+    [31, "bar-dot", 0.15],
+    [43, "bar-dot", 0.15],
   ] as const)(
     "keeps the popup off every mark in scenario %i (%s marks)",
     { timeout: 120_000 },
     async (seed, marks, slides) => {
       const random = seeded(seed);
       const pick = (count: number) => Math.floor(random() * count);
-      const kind = marks === "bars" || random() < 0.5 ? "bars" : "line";
+      const kind = marks !== "any" || random() < 0.5 ? "bars" : "line";
       const sparse = marks === "bars";
       // Sparse scenarios draw 5 to 7 bars on an 800 px plot, so each band is wider than half the
       // popup and a bar can leave its span on both sides of a slide.
@@ -970,6 +1154,11 @@ describe("any sequence of reader steps and data updates", () => {
           ? `k${String(index)}, a long name that makes the popup wider`
           : `k${String(index)}`;
       const reading = () => (sparse ? 0 : Math.round(random() * 100));
+      // A stream of its own picks a second line and its readings, so each scenario keeps the steps
+      // and updates it drew before. Scenarios 11 and 71 draw two lines, 37 and 97 one.
+      const other = seeded(seed + 1);
+      const second = kind === "line" && other() < 0.5;
+      const secondReading = () => (second ? { w: Math.round(other() * 100) } : {});
       // One tall bar at a random slot among sparse readings, any readings otherwise.
       const values = () => {
         const tall = pick(count);
@@ -977,7 +1166,7 @@ describe("any sequence of reader steps and data updates", () => {
           sparse && index === tall ? 60 + pick(41) : reading()
         );
       };
-      let rows = values().map((v, index) => ({ name: name(index), v }));
+      let rows: Row[] = values().map((v, index) => ({ name: name(index), v, ...secondReading() }));
       const scene = () => (
         <Scene
           rows={rows}
@@ -987,6 +1176,8 @@ describe("any sequence of reader steps and data updates", () => {
           stroke={stroke}
           plotWidth={sparse ? 800 : 600}
           padding="220px 24px 24px"
+          second={second}
+          barDot={marks === "bar-dot"}
         />
       );
       const { host, rerender } = renderThemed(scene());
@@ -1000,7 +1191,7 @@ describe("any sequence of reader steps and data updates", () => {
           await hoverSlot(host, pick(count), count, scale);
         } else if (roll < 0.9 - slides) {
           const next = values();
-          rows = rows.map((row, index) => ({ ...row, v: next[index] ?? 0 }));
+          rows = rows.map((row, index) => ({ ...row, v: next[index] ?? 0, ...secondReading() }));
           rerender(scene());
         } else if (roll < 0.9) {
           // The window slides, and new slots enter at the end.
@@ -1011,6 +1202,7 @@ describe("any sequence of reader steps and data updates", () => {
             ...Array.from({ length: by }, (_, index) => ({
               name: name(first + count - by + index),
               v: reading(),
+              ...secondReading(),
             })),
           ];
           rerender(scene());

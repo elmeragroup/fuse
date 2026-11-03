@@ -4,22 +4,57 @@
  * The pointer-following glides on bklit's springs. A follower writes its mark's resting geometry at
  * once, so every attribute and every reader sees the active slot, and `glideFrom` plays a Web
  * Animation of `translate` from where the mark shows back to none. A step mid-glide replaces the
- * running glide with one from the offset it shows now, which the spring's closed form gives from
- * the glide's own clock, so nothing is read back from the page and each mark runs one animation.
+ * running glide with one from the offset it shows now, which the easing the animation plays gives
+ * on the glide's own clock, so nothing is read back from the page and each mark runs one animation.
+ * The crosshair and the active dots glide on the spring `stepSpring` picks for each step, so they
+ * move as one, and an active dot rides its line across the slot axis as it goes.
  */
-import { CHART_SPRINGS } from "./layout/motion";
-import { springEasing, springPosition } from "./layout/spring";
+import type { ChartStore } from "./chart-store";
+import { rideAt } from "./layout/ride";
+import type { RideKeyframe } from "./layout/ride";
+import { followSpring, linearCurve, springEasing } from "./layout/spring";
+import type { Spring } from "./layout/spring";
 
-/** One of the chart's springs. */
-export type ChartSpringName = keyof typeof CHART_SPRINGS;
+/**
+ * A spring as Web Animations time it, whether the easing is the spring's own curve, the most it
+ * passes its target by as a share of the way, and its curve scaled down by that peak, which never
+ * passes 1.
+ */
+type Timing = {
+  readonly duration: number;
+  readonly easing: string;
+  readonly spring: boolean;
+  readonly peak: number;
+  readonly held: string;
+  /** The output `easing` gives at a progress, as the animation plays it. */
+  readonly played: (progress: number) => number;
+  /** The output `held` gives at a progress, as a ride's animation plays it. */
+  readonly heldPlayed: (progress: number) => number;
+};
 
-/** A spring as Web Animations time it, and whether the easing is the spring's own curve. */
-type Timing = { readonly duration: number; readonly easing: string; readonly spring: boolean };
+/** A running glide: its animation, the offset it started from, its spring, and its ride, if any. */
+type Glide = {
+  readonly animation: Animation;
+  readonly from: readonly [number, number];
+  readonly spring: Spring;
+  /** A ride's slot axis and the keyframes it plays. */
+  readonly ride: {
+    readonly axis: "x" | "y";
+    readonly frames: readonly RideKeyframe[];
+  } | null;
+};
 
-/** A running glide: its animation and the offset it started from. */
-type Glide = { readonly animation: Animation; readonly from: readonly [number, number] };
+/**
+ * A glide that rides a course: the slot axis, and the keyframes from an offset along back to rest
+ * and through the spring's overshoot, as offsets along and across at shares of the way, for an
+ * easing scaled down by the spring's peak.
+ */
+export type Ride = {
+  readonly axis: "x" | "y";
+  readonly keyframes: (from: number, peak: number) => readonly RideKeyframe[];
+};
 
-const timings = new Map<ChartSpringName, Timing>();
+const timings = new Map<Spring, Timing>();
 
 const glides = new WeakMap<Element, Glide>();
 
@@ -27,17 +62,45 @@ const glides = new WeakMap<Element, Glide>();
  * A spring's duration in milliseconds and its easing: its `linear()` curve, or `ease-out` in an
  * engine without `linear()`, where an unknown easing would throw.
  *
- * @param name - The spring.
- * @returns The timing, sampled once per page.
+ * @param spring - The spring, one of the chart's fixed spring objects.
+ * @returns The timing, sampled once per page for each spring.
  */
-export function springTiming(name: ChartSpringName): Timing {
-  const known = timings.get(name);
+export function springTiming(spring: Spring): Timing {
+  const known = timings.get(spring);
   if (known !== undefined) return known;
-  const { duration, easing } = springEasing(CHART_SPRINGS[name]);
-  const spring = CSS.supports("transition-timing-function", easing);
-  const made = { duration, easing: spring ? easing : "ease-out", spring };
-  timings.set(name, made);
+  const { duration, easing } = springEasing(spring);
+  const supported = CSS.supports("transition-timing-function", easing);
+  // Each stop of the linear() curve opens with its output.
+  const outputs = [...easing.matchAll(/(?:\(|,)\s*([\d.]+)/gu)].map((match) => Number(match[1]));
+  const peak = Math.max(1, ...outputs);
+  const held = easing.replace(
+    /(\(|,)(\s*)([\d.]+)/gu,
+    (_, lead: string, space: string, output: string) =>
+      `${lead}${space}${String(Number((Number(output) / peak).toFixed(5)))}`
+  );
+  const made = {
+    duration,
+    easing: supported ? easing : "ease-out",
+    spring: supported,
+    peak,
+    held,
+    played: linearCurve(easing),
+    heldPlayed: linearCurve(held),
+  };
+  timings.set(spring, made);
   return made;
+}
+
+/**
+ * The spring a step moves the crosshair and the active dots on: `follow` for a keyboard step, and
+ * one that quickens with the pointer's speed for a pointer step. Every follower reads the same
+ * store in the same step, so all of them take the same spring.
+ *
+ * @param store - Root's store.
+ * @returns The spring.
+ */
+export function stepSpring(store: ChartStore): Spring {
+  return followSpring(store.get().source === "keyboard" ? null : (store.pointer()?.speed ?? null));
 }
 
 /**
@@ -46,32 +109,89 @@ export function springTiming(name: ChartSpringName): Timing {
  *
  * @param element - The element whose resting place was just written.
  * @param by - The old resting place less the new one.
- * @param name - The spring.
+ * @param spring - The spring.
  */
-export function glideFrom(element: Element, by: readonly [number, number], name: ChartSpringName): void {
-  const timing = springTiming(name);
-  // Without the spring's curve no closed form says where an interrupted glide shows, so the mark
-  // moves at once rather than jump when a step interrupts it.
-  if (!timing.spring) {
-    snapGlide(element);
-    return;
-  }
+export function glideFrom(element: Element, by: readonly [number, number], spring: Spring): void {
+  const shown = glideShown(element);
+  start(element, [by[0] + (shown?.[0] ?? 0), by[1] + (shown?.[1] ?? 0)], spring, null);
+}
+
+/**
+ * Glide an element along the slot axis onto the place it rests, from `by` CSS pixels away plus
+ * whatever a running glide shows along it, with its offset across following `ride.course`. Along
+ * the slot axis it moves as `glideFrom` would move it on the same spring, so it keeps pace with the
+ * crosshair.
+ *
+ * @param element - The element whose resting place was just written.
+ * @param by - The old resting place less the new one, along the slot axis.
+ * @param spring - The spring.
+ * @param ride - The slot axis, and the course across, whose value at `by` plus the running
+ *   offset should be where the element shows across now.
+ */
+export function rideFrom(element: Element, by: number, spring: Spring, ride: Ride): void {
+  const shown = glideShown(element);
+  const along = by + (shown === null ? 0 : ride.axis === "x" ? shown[0] : shown[1]);
+  start(element, ride.axis === "x" ? [along, 0] : [0, along], spring, ride);
+}
+
+/**
+ * The offset an element's glide shows now, along x and y in CSS pixels, from the easing and the
+ * keyframes its animation plays, on the glide's own clock, or null when none runs.
+ *
+ * @param element - The element that may be gliding.
+ * @returns The offset, or null.
+ */
+export function glideShown(element: Element): readonly [number, number] | null {
   const running = glides.get(element);
-  const left =
-    running === undefined ? 0 : 1 - springPosition(CHART_SPRINGS[name], elapsed(running.animation) / 1000);
-  const x = by[0] + (running?.from[0] ?? 0) * left;
-  const y = by[1] + (running?.from[1] ?? 0) * left;
-  running?.animation.cancel();
-  glides.delete(element);
+  if (running === undefined) return null;
+  // The easing the animation plays, its sampled and rounded curve, at the time it shows now.
+  const timing = springTiming(running.spring);
+  const progress = Math.min(1, elapsed(running.animation) / timing.duration);
+  const [x, y] = running.from;
+  const { ride } = running;
+  if (ride === null) {
+    const moved = timing.played(progress);
+    return [x * (1 - moved), y * (1 - moved)];
+  }
+  // The keyframes the animation plays, at the share of their way it shows now.
+  const { along, across } = rideAt(ride.frames, timing.heldPlayed(progress));
+  return ride.axis === "x" ? [along, across] : [across, along];
+}
+
+/** Replace an element's glide with one from an offset, on a spring, riding a course if given. */
+function start(element: Element, from: readonly [number, number], spring: Spring, ride: Ride | null): void {
+  snapGlide(element);
+  const timing = springTiming(spring);
+  // Without the spring's curve nothing says where an interrupted glide shows, so the mark
+  // moves at once rather than jump when a step interrupts it.
+  if (!timing.spring) return;
+  const [x, y] = from;
   if (x === 0 && y === 0) return;
-  const animation = element.animate(
-    [{ translate: `${String(x)}px ${String(y)}px` }, { translate: "0px 0px" }],
-    timing
-  );
-  glides.set(element, { animation, from: [x, y] });
+  const frames = ride === null ? null : ride.keyframes(ride.axis === "x" ? x : y, timing.peak);
+  const animation =
+    ride === null || frames === null
+      ? element.animate([{ translate: shift(x, y) }, { translate: "0px 0px" }], timing)
+      : element.animate(
+          frames.map(({ offset, along, across }) => ({
+            offset,
+            translate: ride.axis === "x" ? rounded(along, across) : rounded(across, along),
+          })),
+          { duration: timing.duration, easing: timing.held }
+        );
+  const played = ride === null || frames === null ? null : { axis: ride.axis, frames };
+  glides.set(element, { animation, from: [x, y], spring, ride: played });
   animation.onfinish = () => {
     if (glides.get(element)?.animation === animation) glides.delete(element);
   };
+}
+
+function shift(x: number, y: number): string {
+  return `${String(x)}px ${String(y)}px`;
+}
+
+/** A shift to a hundredth of a pixel, which keeps a long keyframe list short to parse. */
+function rounded(x: number, y: number): string {
+  return `${x.toFixed(2)}px ${y.toFixed(2)}px`;
 }
 
 /**

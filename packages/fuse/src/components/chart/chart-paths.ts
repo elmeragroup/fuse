@@ -57,6 +57,15 @@ export type ChartPaths = {
   readonly delete: (series: number, kind: PathKind, owner: PathOwner) => void;
   /** The route of a series path, or undefined when nothing of that kind draws the series. */
   readonly get: (series: number, kind: PathKind) => PathRoute | undefined;
+  /**
+   * Register the reader of the line a series path rests on, as path data, for as long as the part
+   * stays: a Line's own path, or an Area's top edge, which an active dot rides.
+   *
+   * @returns A function that forgets the reader.
+   */
+  readonly setLine: (series: number, kind: "line" | "area", read: () => string) => () => void;
+  /** The line a series path rests on, as path data, or null when nothing of that kind draws it. */
+  readonly line: (series: number, kind: "line" | "area") => string | null;
 };
 
 /**
@@ -66,6 +75,8 @@ export type ChartPaths = {
  */
 export function createChartPaths(): ChartPaths {
   const routes = new Map<string, { readonly owner: PathOwner; readonly route: PathRoute }>();
+  // The reader of the line each series path rests on, by its anchor.
+  const lines = new Map<string, () => string>();
   // The part holding each series and kind, by kind and config key.
   const claims = new Map<string, object>();
   return {
@@ -92,6 +103,14 @@ export function createChartPaths(): ChartPaths {
       if (routes.get(anchor)?.owner === owner) routes.delete(anchor);
     },
     get: (series, kind) => routes.get(pathAnchor(series, kind))?.route,
+    setLine: (series, kind, read) => {
+      const anchor = pathAnchor(series, kind);
+      lines.set(anchor, read);
+      return () => {
+        if (lines.get(anchor) === read) lines.delete(anchor);
+      };
+    },
+    line: (series, kind) => lines.get(pathAnchor(series, kind))?.() ?? null,
   };
 }
 
@@ -161,6 +180,17 @@ function indexOf(keys: readonly string[]): ReadonlyMap<string, number> {
  */
 export function routeIndex(route: PathRoute, key: string): number | undefined {
   return indexOf(route.keys).get(key);
+}
+
+/**
+ * The index of a key's vertex among the vertices a route rests on.
+ *
+ * @param route - The series path's route.
+ * @param key - The slot key.
+ * @returns The index, or undefined when the route rests on no vertex for the key.
+ */
+export function routeRestIndex(route: PathRoute, key: string): number | undefined {
+  return indexOf(route.rest).get(key);
 }
 
 /**

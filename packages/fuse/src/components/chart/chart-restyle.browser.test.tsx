@@ -196,6 +196,8 @@ const CONFIG = {
   b: { label: "B", color: "chart-2", stack: "all" },
   c: { label: "C", color: "chart-3", stack: "all" },
   d: { label: "D", color: "chart-4", stack: "all" },
+  // A line with an active dot that glides along it while the pointer moves.
+  e: { label: "E", color: "chart-5" },
 } as const satisfies ChartConfig;
 
 /** 50 slots of four stacked series, 200 bars, whose stack tops reach `top`. */
@@ -206,6 +208,7 @@ function rows(top: number) {
     b: 1,
     c: 1,
     d: 1,
+    e: 2 + (index % 5),
   }));
 }
 
@@ -217,9 +220,11 @@ function FourStacks({ top, width }: { readonly top: number; readonly width: numb
           <Chart.Grid />
           <Chart.YAxis />
           <Chart.XAxis />
-          {Object.keys(CONFIG).map((key) => (
+          {["a", "b", "c", "d"].map((key) => (
             <Chart.Bar key={key} dataKey={key} />
           ))}
+          <Chart.Line dataKey="e" />
+          <Chart.ActiveDot dataKey="e" />
           <Chart.Crosshair>
             <Chart.SlotLabel />
           </Chart.Crosshair>

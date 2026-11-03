@@ -243,7 +243,7 @@ function ChartTooltipBody({
   children,
 }: ChartTooltipProps): ReactElement {
   const context = useChartRoot("Chart.Tooltip");
-  const { store, model, id, xScale, orientation, root: rootOf, motion } = context;
+  const { store, model, id, xScale, orientation, root: rootOf, motion, riders } = context;
   const slot = useActiveSlot(context, true);
   const window = model.window;
   const open = slot !== null;
@@ -319,6 +319,7 @@ function ChartTooltipBody({
         stretch: [Math.min(0, within[0]), Math.max(box.width, within[1])],
         frame,
         motion,
+        riders,
       });
       const roof = (spanStart: number, spanEnd: number) => roofOver(profile, spanStart, spanEnd);
       const rest = restAt(memory.current, slot, (from) =>

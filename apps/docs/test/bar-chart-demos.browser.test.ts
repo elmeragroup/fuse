@@ -351,6 +351,40 @@ describe("bar-chart scenario demos in Chromium", () => {
   });
 });
 
+describe("the price line demo in Chromium", () => {
+  const browser = launchSuiteBrowser();
+
+  it("hydrates, and a pointer step glides the dot on the bars and the dot on the price line", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, timezoneId: "Europe/Oslo" });
+    const demo = await openDemo(page, "bar-chart", "Price line");
+    const chart = demo.locator('[data-slot="chart"]');
+    await chart.scrollIntoViewIfNeeded();
+    await entranceLanded(chart);
+    const box = await demo.locator('[data-slot="chart-surface"]').first().boundingBox();
+    if (box === null) throw new Error("no plot");
+    // The day has 25 hours. The pointer rests on 04:00, then steps to 18:00.
+    await page.mouse.move(box.x + (box.width * 4.5) / 25, box.y + box.height / 2);
+    await expect.poll(async () => demo.locator('[data-slot="chart-active-dot"][data-value]').count()).toBe(2);
+    await expect
+      .poll(async () =>
+        demo.evaluate((root) =>
+          [...root.querySelectorAll('[data-slot="chart-active-dot"]')].some(
+            (layer) => layer.getAnimations().length > 0
+          )
+        )
+      )
+      .toBe(false);
+    await page.mouse.move(box.x + (box.width * 18.5) / 25, box.y + box.height / 2);
+    const gliding = await demo.evaluate((root) =>
+      [...root.querySelectorAll('[data-slot="chart-active-dot"]')].map((layer) =>
+        layer.getAnimations().some(({ playState }) => playState === "running")
+      )
+    );
+    expect(gliding).toEqual([true, true]);
+    await page.close();
+  });
+});
+
 /** Each scenario demo's bars per series, as shares of the plot's height, or null for no bar. */
 type BarGoldens = {
   readonly demos: Record<

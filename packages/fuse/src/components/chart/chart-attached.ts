@@ -98,7 +98,7 @@ export type FollowerJoin = {
 };
 
 /** What an attached mark can join: a series path of one kind, or the series' bars. */
-type FollowedKind = PathKind | "bars";
+export type FollowedKind = PathKind | "bars";
 
 /**
  * Which drawing of a series an attached mark follows, first to last, when the series draws several.
@@ -111,9 +111,29 @@ const FOLLOWS = {
 } as const satisfies Record<string, readonly FollowedKind[]>;
 
 /**
- * How marks at some of a series' slots join the motion of what they sit on, in the order `FOLLOWS`
- * states. Every selected slot joins its own bar, so tied extrema and a listed selection each rest
- * on their bar's middle.
+ * Which drawing of a series its attached marks sit on: the first in `FOLLOWS` order that draws the
+ * series, or undefined when none does. Attaching and an active dot's ride both read it, so a dot
+ * rides the drawing it joins.
+ *
+ * @param context - Root's context.
+ * @param series - The series.
+ * @param prefer - What the marks sit on first, where the series draws both.
+ * @returns The drawing's kind, or undefined.
+ */
+export function followedKind(
+  context: ChartRootContextValue,
+  series: SeriesModel,
+  prefer: "line" | "bar"
+): FollowedKind | undefined {
+  return FOLLOWS[prefer].find((kind) =>
+    kind === "bars" ? context.drawsBar(series.key) : context.paths.get(series.seriesIndex, kind) !== undefined
+  );
+}
+
+/**
+ * How marks at some of a series' slots join the motion of what they sit on, the drawing
+ * `followedKind` names. Every selected slot joins its own bar, so tied extrema and a listed
+ * selection each rest on their bar's middle.
  *
  * @param context - Root's context.
  * @param series - The series.
@@ -141,30 +161,25 @@ export function attachJoin(
     const geometry = geometryOf(values);
     return [(geometry[0] + geometry[1]) / 2, geometry[3]];
   };
-  const joinOf = (kind: FollowedKind): FollowerJoin | undefined => {
-    if (kind === "bars") {
-      return slots.length === 0 || !context.drawsBar(series.key)
-        ? undefined
-        : {
-            leads: owned.map((slot) => ({
-              anchor: barAnchor(series.seriesIndex, slot),
-              pick: tip,
-              rest: tip,
-              size: 2,
-            })),
-            crossfade: null,
-          };
-    }
-    const route = context.paths.get(series.seriesIndex, kind);
-    return route === undefined
+  const kind = followedKind(context, series, prefer);
+  if (kind === undefined) return undefined;
+  if (kind === "bars") {
+    return slots.length === 0
       ? undefined
-      : { leads: joinPath(route, series.seriesIndex, kind, marks, rest), crossfade: route.crossfade };
-  };
-  for (const kind of FOLLOWS[prefer]) {
-    const join = joinOf(kind);
-    if (join !== undefined) return join;
+      : {
+          leads: owned.map((slot) => ({
+            anchor: barAnchor(series.seriesIndex, slot),
+            pick: tip,
+            rest: tip,
+            size: 2,
+          })),
+          crossfade: null,
+        };
   }
-  return undefined;
+  const route = context.paths.get(series.seriesIndex, kind);
+  return route === undefined
+    ? undefined
+    : { leads: joinPath(route, series.seriesIndex, kind, marks, rest), crossfade: route.crossfade };
 }
 
 /**
@@ -322,6 +337,11 @@ export type AttachedMark<T extends Element, A extends readonly ValueAxis[], O ex
   /** Pass it as the `ref` of the empty element beside the live one, which the old drawing fades out in. */
   readonly outgoingRef: RefObject<O | null>;
   /**
+   * The numbers the loop drew last for the mark: after `attach`, where what it joins placed it, such
+   * as the point a decimated line passes at its slot, or a bar's far end.
+   */
+  readonly drawn: () => MarkValues | null;
+  /**
    * Place the mark for a paint. It asks the commit classifier first, so the classifier sees every
    * commit, then places the target through what the mark joins, or stops for a null target, as a
    * mark that hides does.
@@ -397,7 +417,7 @@ export function useAttachedMark<
       update: context.update,
     });
   };
-  return { ref: mark.ref, node: mark.node, outgoingRef, attach };
+  return { ref: mark.ref, node: mark.node, outgoingRef, attach, drawn: mark.drawn };
 }
 
 /** The default copy: a deep clone, kept on commit paints. */

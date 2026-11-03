@@ -8,7 +8,7 @@ import { useFirstDraw } from "./chart-motion-mark";
 import { placeOf, topologyAt, writePath } from "./chart-path-draw";
 import type { PathLook } from "./chart-path-draw";
 import { PathPaint, hasPathPaint } from "./chart-path-paint";
-import { useSeriesPath } from "./chart-series-path";
+import { useRestingLine, useSeriesPath } from "./chart-series-path";
 import { sameShallow, useSteady } from "./chart-steady";
 import type { ChartCurve, ChartLayerProps } from "./chart-types";
 import { LINE_STRIDE, linePaths } from "./layout/line-path";
@@ -93,6 +93,14 @@ export function ChartLine({
   // React draws the first rest, and the loop draws every frame after it.
   const drawn = useFirstDraw(() =>
     resting === null ? null : linePaths(resting.rest, resting.topology, placeOf(resting.look)).line
+  );
+  // An active dot rides the line as it rests.
+  useRestingLine(
+    context.paths,
+    seriesIndex,
+    "line",
+    resting,
+    (rest) => linePaths(rest.rest, rest.topology, placeOf(rest.look)).line
   );
   return (
     <svg

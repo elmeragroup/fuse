@@ -105,6 +105,39 @@ export function usePathMark<
 }
 
 /**
+ * Register the line a series path rests on with Root's paths, so an active dot rides it without
+ * reading the page: the part's own resting numbers drawn by `draw`, a Line's path or an Area's top
+ * edge. The reader draws it when a dot first asks, once for each resting state.
+ *
+ * @param paths - Root's path routes.
+ * @param seriesIndex - The series ordinal.
+ * @param kind - What the part draws.
+ * @param resting - The part's resting look, numbers and topology, or null before it measures.
+ * @param draw - Draws the line from the resting state, as path data.
+ */
+export function useRestingLine<T>(
+  paths: ChartPaths,
+  seriesIndex: number,
+  kind: "line" | "area",
+  resting: T | null,
+  draw: (resting: T) => string
+): void {
+  const latest = useRef({ resting, draw });
+  useLayoutEffect(() => {
+    latest.current = { resting, draw };
+  });
+  useLayoutEffect(() => {
+    let kept: { readonly resting: T; readonly line: string } | null = null;
+    return paths.setLine(seriesIndex, kind, () => {
+      const now = latest.current;
+      if (now.resting === null) return "";
+      if (kept?.resting !== now.resting) kept = { resting: now.resting, line: now.draw(now.resting) };
+      return kept.line;
+    });
+  }, [paths, seriesIndex, kind]);
+}
+
+/**
  * Hold the series a part draws as the one path of its kind in the chart, for as long as the part
  * is mounted. Each layout effect claims after the commit's unmounted parts let go, so a part that
  * replaces another of its kind takes the series over.

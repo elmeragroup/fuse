@@ -400,6 +400,23 @@ export function linePaths(
 }
 
 /**
+ * An Area's top edge as a Line's path data: the same curve through the same tops, with each run's
+ * subpath and each lone reading's dot, and nothing of the base the area closes to.
+ *
+ * @param values - The Area's numbers, `AREA_STRIDE` per vertex.
+ * @param topology - The topology of those vertices.
+ * @param place - The curve, the orientation and the snap.
+ * @returns The top edge's path data.
+ */
+export function areaTopPath(values: readonly number[], topology: PathTopology, place: PathPlacement): string {
+  const tops: number[] = [];
+  for (let index = 0; index + AREA_STRIDE <= values.length; index += AREA_STRIDE) {
+    tops.push(values[index] ?? 0, values[index + 1] ?? 0);
+  }
+  return linePaths(tops, topology, place).line;
+}
+
+/**
  * An Area's path data.
  *
  * @param values - The drawn numbers, `AREA_STRIDE` per vertex.

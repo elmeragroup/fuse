@@ -163,6 +163,8 @@ describe("pointer cost", () => {
               <Chart.SlotLabel />
             </Chart.Crosshair>
             <Chart.Bar dataKey="household" />
+            <Chart.Line dataKey="household" />
+            <Chart.ActiveDot dataKey="household" />
             <Chart.ActiveValueLine dataKey="household" />
             <Chart.ReferenceLine y={1} />
           </S06Chart>

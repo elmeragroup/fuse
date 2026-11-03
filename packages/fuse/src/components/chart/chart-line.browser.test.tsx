@@ -709,7 +709,17 @@ describe("Line and Area motion", () => {
     await expect.poll(() => host.querySelectorAll("[data-outgoing]").length).toBe(0);
     await userEvent.keyboard("{ArrowRight}");
     expect(host.querySelectorAll("[data-outgoing]")).toHaveLength(0);
-    expect(document.getAnimations()).toHaveLength(0);
+    // A key step glides the active dot's layer to the next reading, which fades nothing.
+    const fades = document
+      .getAnimations()
+      .filter(
+        ({ effect }) =>
+          !(
+            effect instanceof KeyframeEffect &&
+            effect.target?.matches('[data-slot="chart-active-dot"]') === true
+          )
+      );
+    expect(fades).toHaveLength(0);
   });
 
   it("moves a Marker and an ActiveDot on a slot decimation leaves out with the line (Q3-3)", () => {

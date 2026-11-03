@@ -23,14 +23,37 @@ export const CHART_CROSSFADE_MS = 150;
 
 /**
  * bklit's springs, mass 1, which `springEasing` samples into CSS `linear()` easings for the glides
- * that follow the pointer: `crosshair` for the line crosshair, `glide` for the tooltip, whose
- * duration is `--chart-glide` in `chart.css`, and `ticker` for Chart.SlotLabel's pill and its
- * rolling parts. Each glide starts from what the mark shows, so a step mid-glide retargets it. The
- * active dots move at once: a dot gliding between two vertices crosses places the tooltip's route,
- * planned over the resting marks, may cover.
+ * that follow the pointer. `follow` is bklit's tooltip-dot spring, which the line crosshair and the
+ * active dots share on each step: a keyboard step and a slow pointer take it as it is, and a faster
+ * pointer stiffens it, `FOLLOW_FASTEST` at most. `glide` moves the tooltip, whose duration is
+ * `--chart-glide` in `chart.css`, and keeps its softer spring at every speed. `ticker` moves
+ * Chart.SlotLabel's pill and its rolling parts. Each glide starts from what the mark shows, so a
+ * step mid-glide retargets it.
  */
 export const CHART_SPRINGS = {
-  crosshair: { stiffness: 300, damping: 30 },
+  follow: { stiffness: 300, damping: 30 },
   glide: { stiffness: 100, damping: 20 },
   ticker: { stiffness: 400, damping: 35 },
 } as const satisfies Record<string, Spring>;
+
+/**
+ * The stiffest spring a fast pointer gives the crosshair and the active dots. At `follow`'s damping
+ * ratio, 30 / (2√300) ≈ 0.87, it settles within 0.1% in about 120 ms, against `follow`'s 506 ms,
+ * and overshoots no more than `follow` does.
+ */
+export const FOLLOW_FASTEST = 5300;
+
+/**
+ * The pointer speeds, in CSS pixels per millisecond, between which the follow spring stiffens: at
+ * the slower one or below it is `follow` itself, and at the faster one or above it is
+ * `FOLLOW_FASTEST`. Between them its natural frequency, the square root of its stiffness, grows in
+ * step with the speed, so its settling time shrinks smoothly. A slow scrub crosses a 600 px plot in
+ * about two seconds, and a flick in a fifth of one.
+ */
+export const FOLLOW_SPEEDS = { slow: 0.3, fast: 3 } as const;
+
+/**
+ * How many springs the speeds map onto, `follow` and `FOLLOW_FASTEST` included. Each one is sampled
+ * into its easing once per page, and a step takes the one nearest its speed.
+ */
+export const FOLLOW_LEVELS = 6;

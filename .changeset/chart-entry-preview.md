@@ -70,7 +70,8 @@ format, and fades the tick labels under it. Each part of the label, such as the 
 rolls to its next value, so a part that stays the same stays still. Above 60 labels it prints one
 label. The line crosshair fades out at both ends, `fade` picks the ends, and
 `--chart-crosshair-width` sets its width. The line crosshair, the pill and the tooltip glide on
-springs and move at once under reduced motion.
+springs and move at once under reduced motion. The line crosshair's spring quickens with the
+pointer, and `ActiveDot` glides with it along its series' line.
 
 Data that breaks a rule throws in development. In production each rule warns once per column, or
 once for the x axis or a stack, naming the first row and the count.

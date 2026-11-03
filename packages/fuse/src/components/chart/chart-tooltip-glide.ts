@@ -15,6 +15,7 @@
  */
 import { writeStyle } from "./chart-dom";
 import { springTiming } from "./chart-spring";
+import { CHART_SPRINGS } from "./layout/motion";
 import { TOOLTIP_EDGE, glidePath } from "./layout/tooltip-place";
 import type { PlaceSize, PopupPlace } from "./layout/tooltip-place";
 
@@ -173,7 +174,7 @@ function glideTiming(positioner: HTMLElement): KeyframeAnimationOptions | null {
   const style = getComputedStyle(positioner);
   const duration = milliseconds(style.getPropertyValue("--_glide"));
   if (duration === null || duration <= 0) return null;
-  return { duration, easing: springTiming("glide").easing };
+  return { duration, easing: springTiming(CHART_SPRINGS.glide).easing };
 }
 
 /** A CSS time in milliseconds, or null for anything else. */

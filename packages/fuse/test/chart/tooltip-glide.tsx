@@ -156,6 +156,49 @@ function markBoxes(host: HTMLElement, lines: readonly Box[]): Box[] {
   return [...bars, ...dots, ...lines];
 }
 
+/** One shown active dot in one frame: its centre in client pixels, and whether its layer glides. */
+export type DotFrame = { readonly x: number; readonly y: number; readonly gliding: boolean };
+
+/**
+ * The centre of each shown active dot, in page order, and whether a Web Animation moves its layer.
+ *
+ * @param host - The rendered chart's host.
+ * @returns One entry per shown dot.
+ */
+export function dotFrame(host: HTMLElement): DotFrame[] {
+  // DOM audit: active dots are aria-hidden plot output, so their slots are the only locators.
+  return [...host.querySelectorAll('[data-slot="chart-active-dot"][data-value]')].flatMap((layer) => {
+    const dot = layer.querySelector(':scope > [data-slot="chart-dot"]:not([data-part])');
+    if (dot === null) return [];
+    const box = dot.getBoundingClientRect();
+    const gliding = layer.getAnimations().some((animation) => animation.playState === "running");
+    return [{ x: (box.left + box.right) / 2, y: (box.top + box.bottom) / 2, gliding }];
+  });
+}
+
+/**
+ * Read every shown active dot in every animation frame until stopped.
+ *
+ * @param host - The rendered chart's host.
+ * @returns The frames read so far, and a stop.
+ */
+export function watchDots(host: HTMLElement) {
+  const frames: DotFrame[][] = [];
+  let running = true;
+  const frame = () => {
+    if (!running) return;
+    frames.push(dotFrame(host));
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+  return {
+    frames,
+    stop: () => {
+      running = false;
+    },
+  };
+}
+
 /**
  * Points along each drawn line and its dashed twin, as stroke-wide squares in client pixels. Lines
  * here stay still.
