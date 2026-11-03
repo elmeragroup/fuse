@@ -81,6 +81,7 @@ export const BARE_COMPONENT_ENTRIES = [
   "slider",
   "form",
   "navigation-menu",
+  "link",
 ] as const;
 
 /** Allowlisted entries with no source until they ship. None today. */
@@ -92,7 +93,7 @@ export const DEFERRED_ENTRIES: readonly string[] = [];
  */
 export const PREVIEW_ENTRIES = ["chart"] as const;
 
-/** Appendix A — 11 quarantined react-aria interim entries. */
+/** Appendix A — 10 quarantined react-aria interim entries. */
 export const RAC_ENTRIES = [
   "calendar",
   "date-field",
@@ -101,7 +102,6 @@ export const RAC_ENTRIES = [
   "file-trigger",
   "focusable",
   "grid-list",
-  "link",
   "range-calendar",
   "search-field",
   "ui-providers",

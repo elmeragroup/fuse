@@ -280,7 +280,7 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("alert").apiExportNames).toEqual(["Alert"]);
     expect(resolveComponentPaths("ui-providers").entry).toBe("@elmeragroup/fuse/react-aria/ui-providers");
     expect(resolveComponentPaths("ui-providers").apiExportNames).toEqual(["UiProviders"]);
-    expect(resolveComponentPaths("link").entry).toBe("@elmeragroup/fuse/react-aria/link");
+    expect(resolveComponentPaths("link").entry).toBe("@elmeragroup/fuse/link");
     expect(resolveComponentPaths("link").apiExportNames).toEqual(["Link"]);
     expect(resolveComponentPaths("search-field").entry).toBe("@elmeragroup/fuse/react-aria/search-field");
     expect(resolveComponentPaths("search-field").apiExportNames).toEqual(["SearchField"]);

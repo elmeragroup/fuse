@@ -30,9 +30,15 @@ const CARVE_OUTS = new Map<string, readonly string[]>([
   ["chart/demos/chart-month-usage-and-price.tsx", ["./data/no1-household-hourly-2025-09-2025-10"]],
   ["line-chart/demos/line-chart-large.tsx", ["../../chart/demos/data/hourly-year"]],
   ["date-field/demos/date-field-date-input.tsx", ["react-aria-components"]],
+  // Link's router demos show `render` composing a router's link: the docs app's own, and React
+  // Aria's, which routes through UiProviders.
+  ["link/demos/link-next.tsx", ["next/link"]],
+  ["link/demos/link-react-aria.tsx", ["react-aria-components"]],
   // The router-link demo shows `render` composing the docs app's own router link.
   ["navigation-menu/demos/navigation-menu-router-link.tsx", ["next/link"]],
   ["scroll-area/demos/scroll-area-composed.tsx", ["@base-ui/react/scroll-area"]],
+  // UiProviders routes React Aria's links, so its demo renders one.
+  ["ui-providers/demos/ui-providers-basic.tsx", ["react-aria-components"]],
 ]);
 
 /**

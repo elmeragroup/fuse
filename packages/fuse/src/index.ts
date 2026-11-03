@@ -40,6 +40,7 @@ export * from "./input";
 export * from "./input-group";
 export * from "./item";
 export * from "./kbd";
+export * from "./link";
 export * from "./loader";
 export * from "./meter";
 export * from "./navigation-menu";

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  evaluateLength,
   evaluateNumber,
   evaluatePercentage,
+  inFont,
   makeVariableIndex,
   readColor,
   readNumber,
@@ -81,6 +83,25 @@ describe("evaluateNumber", () => {
   it("refuses anything that still references a variable", () => {
     expect(evaluateNumber("calc(2px - var(--x))")).toBeUndefined();
     expect(evaluateNumber("auto")).toBeUndefined();
+  });
+});
+
+describe("inFont", () => {
+  it("takes an em as the font size, inside max() and beside px", () => {
+    expect(evaluateLength(inFont("0.2em", 16))).toBeCloseTo(3.2);
+    expect(evaluateLength(inFont("max(1px, 0.0625em)", 10))).toBe(1);
+    expect(evaluateLength(inFont("max(1px,0.0625em)", 32))).toBe(2);
+    expect(evaluateLength(inFont("calc(0.5em + 2px)", 20))).toBe(12);
+  });
+
+  it("leaves rem at the 16px root and px as they are", () => {
+    expect(evaluateLength(inFont("0.5rem", 40))).toBe(8);
+    expect(evaluateLength(inFont("3px", 40))).toBe(3);
+  });
+
+  it("evaluates no percentage or keyword", () => {
+    expect(evaluateLength(inFont("10%", 16))).toBeUndefined();
+    expect(evaluateLength(inFont("auto", 16))).toBeUndefined();
   });
 });
 

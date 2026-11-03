@@ -1,107 +1,93 @@
 /**
- * React Aria's Link, as one component set on the Link page: each color variant at both weights, in
- * four states, 48 cells.
+ * Link, as one component set on the Link page: each color variant at each underline, in three
+ * states, 54 cells.
  *
- * `Link` renders React Aria Components' `Link`, an `<a data-rac>` with no `data-slot`, or a
- * `<span role="link" data-rac>` while disabled, and passes a `className` function that React Aria
- * calls with the link's render props. That function adds the state focus ring at `isFocusVisible`
- * and the rac-target disabled face at `isDisabled` to `linkVariants`, so a cell's classes are those
- * of the render props React Aria hands it in that state. A hover fades the link through
- * `enabled-hover:opacity-80`, which reads React Aria's `data-hovered` on an element marked
- * `data-rac`.
+ * `Link` renders an `<a data-slot="link">` whose classes are `linkVariants` at its variant and
+ * underline. An `always` underline rests in its text color's `/35` role tint, which
+ * `readDecorationColor` in `label-layout.ts` explains. The page forces hover and focus itself: a
+ * hover draws an `always` underline in the text's own color, draws a `hover` one and fades a `none`
+ * link through `enabled-hover:`, and keyboard focus draws the shared self focus ring. A link has no
+ * disabled state.
  *
- * The set crosses the two axes the docs demos vary, `variant` and `weight`. The demos vary
- * `truncate` too, but a link cuts its text only where its container is narrower than the text, as
- * the demo's `max-w-40` row is, and a link in a hugging Figma frame keeps its text's own width past
- * a limit (P7), so the set leaves it off. No demo varies `leading` or `align`, so the text keeps the
- * host page's line height and sets its line from the start.
+ * The set crosses the two axes the docs demos vary, `variant` and `underline`. No demo sets
+ * `weight` on a link, which takes its sentence's weight, so the text keeps the host page's.
+ * `truncate` cuts a link's text only where its container is narrower than the text, as the
+ * Truncate demo's row is, and a link in a hugging Figma frame keeps its text's own width past a
+ * limit (P7), so the set leaves it off. The External link demo's icon is left off too, so the set
+ * omits the icon selectors.
  */
-import { cn, focusRing, linkVariants, racDisabledStateFaceClass } from "@elmeragroup/fuse/recipe-catalog";
+import { linkVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { Cell, ComponentDefinition, ElementSelector } from "./component-spec";
+import type { Cell, ComponentDefinition } from "./component-spec";
 import { HOST_TYPE } from "./host-type";
 import { ownKey } from "./own-key";
 
 type LinkVariant = keyof typeof linkVariants.variants.variant;
-type LinkWeight = keyof typeof linkVariants.variants.weight;
-
-const COLOR_CLASSES = linkVariants.variants.variant;
+type LinkUnderline = keyof typeof linkVariants.variants.underline;
 
 function isVariant(value: string | undefined): value is LinkVariant {
-  return ownKey(COLOR_CLASSES, value);
+  return ownKey(linkVariants.variants.variant, value);
 }
 
-function isWeight(value: string | undefined): value is LinkWeight {
-  return ownKey(linkVariants.variants.weight, value);
+function isUnderline(value: string | undefined): value is LinkUnderline {
+  return ownKey(linkVariants.variants.underline, value);
 }
 
+/** Every variant the recipe declares, in its order, so a new one reaches Figma too. */
+const VARIANTS = Object.keys(linkVariants.variants.variant).filter(isVariant);
+
+/** The underlines in the recipe's order, its default `always` first. */
+const UNDERLINES = Object.keys(linkVariants.variants.underline).filter(isUnderline);
+
 /**
- * Every variant the recipe declares, in its order, so a new one reaches Figma too, except one whose
- * class repeats an earlier one's and so draws the same in every cell: `secondary`, the deprecated
- * alias of `foreground`, and `inherit`, which gives `default`'s `text-inherit`.
+ * The text every cell shows, the default of the `Label` text property: the link of the docs React
+ * Aria demo. The compare renderer renders the same text.
  */
-const VARIANTS = Object.keys(COLOR_CLASSES)
-  .filter(isVariant)
-  .filter(
-    (variant, index, all) =>
-      all.findIndex((other) => COLOR_CLASSES[other] === COLOR_CLASSES[variant]) === index
-  );
+export const LINK_LABEL = "invoice 1042";
 
-/** The weights in the recipe's order, its default `normal` first. */
-const WEIGHTS = Object.keys(linkVariants.variants.weight).filter(isWeight);
+/** A cell's look, as `Link`'s `variant` and `underline` props take it. */
+export type LinkLooks = { readonly variant: LinkVariant; readonly underline: LinkUnderline };
 
 /**
- * The text every cell shows, the default of the `Label` text property: the first link of the docs
- * Router demo. The compare renderer renders the same text.
- */
-export const LINK_LABEL = "Invoice 1042";
-
-/**
- * The link's element, which React Aria marks `data-rac`: an `<a>` while it is enabled and a
- * `<span role="link">` while it is disabled, so the selector names any element.
- */
-const LINK_ELEMENT: ElementSelector = { tag: "*", attributes: { "data-rac": true } };
-
-/**
- * The classes `Link` gives a cell: the recipe at the cell's variant and weight, the state focus ring
- * at the `isFocusVisible` React Aria hands it while a keyboard user focuses the link, and the
- * disabled face at its `isDisabled`.
+ * A cell's variant and underline, which the kit draws and the compare renderer passes to `Link`.
  *
- * @throws When the cell names a variant or weight the recipe does not declare, a defect in the
+ * @throws When the cell names a variant or underline the recipe does not declare, a defect in the
  *   caller's cell.
  */
-function classesFor(cell: Cell): string {
-  const { variant, weight } = cell;
-  if (!isVariant(variant) || !isWeight(weight)) {
-    throw new Error(`Link has no variant ${variant ?? ""} or weight ${weight ?? ""}`);
+export function linkLooks(cell: Cell): LinkLooks {
+  const { variant, underline } = cell;
+  if (!isVariant(variant) || !isUnderline(underline)) {
+    throw new Error(`Link has no variant ${variant ?? ""} or underline ${underline ?? ""}`);
   }
-  const isFocusVisible = cell.state === "focus";
-  const isDisabled = cell.state === "disabled";
-  return cn(
-    linkVariants({ variant, weight }),
-    focusRing({ target: "state", isFocusVisible }).root(),
-    isDisabled && racDisabledStateFaceClass
-  );
+  return { variant, underline };
 }
 
-/** A link, as `<Link href="/invoices/1042">Invoice 1042</Link>` at a variant and weight. */
+/** The classes `Link` gives a cell: the recipe at the cell's variant and underline. */
+function classesFor(cell: Cell): string {
+  return linkVariants(linkLooks(cell));
+}
+
+/** A link, as `<Link href="/invoices/1042">invoice 1042</Link>` at a variant and underline. */
 export const LINK: ComponentDefinition = {
   key: "link",
   name: "Link",
   slot: "link",
-  element: LINK_ELEMENT,
-  rootKind: "react-aria-element",
   inheritedFor: () => HOST_TYPE,
   axes: [
     { name: "variant", values: VARIANTS },
-    { name: "weight", values: WEIGHTS },
-    { name: "state", values: ["rest", "hover", "focus", "disabled"] },
+    { name: "underline", values: UNDERLINES },
+    { name: "state", values: ["rest", "hover", "focus"] },
   ],
   columnAxis: "state",
   classesFor,
   states: {},
   facts: new Map(),
-  omittedStates: new Set(),
+  // A cell holds the label alone, so no icon child takes the icon gap or keeps the link on one line.
+  omittedStates: new Set([
+    "[&>[data-icon=inline-end]]",
+    "[&>[data-icon=inline-start]]",
+    "has-[>[data-icon]]",
+  ]),
   label: {
     key: "label",
     name: "label",

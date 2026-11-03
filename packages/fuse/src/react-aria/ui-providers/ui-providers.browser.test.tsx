@@ -5,7 +5,9 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import "../../../dist/themes.css";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
+import { Link as FuseLink } from "../../components/link/link";
 import { Pagination } from "../../components/pagination";
 import { UiProviders } from "./ui-providers";
 
@@ -87,6 +89,39 @@ describe("UiProviders", () => {
     } finally {
       host.removeEventListener("click", observeBubbledClick);
     }
+  });
+
+  it("routes a Fuse Link rendered through a RAC Link, which keeps the Fuse face", async () => {
+    const navigate = vi.fn();
+    renderThemed(
+      <UiProviders locale="en-US" navigate={navigate}>
+        <FuseLink render={<Link href="/invoices/1042" />}>Invoice 1042</FuseLink>
+      </UiProviders>
+    );
+
+    const link = linkNamed("Invoice 1042");
+    // DOM audit: the slot, which the base-layer link reset keys on, moves onto the RAC anchor.
+    expect(link.dataset.slot).toBe("link");
+    expect(getComputedStyle(link).textDecorationLine).toBe("underline");
+    await userEvent.click(page.getByRole("link", { name: "Invoice 1042" }));
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate.mock.calls[0]?.[0]).toBe("/invoices/1042");
+  });
+
+  it("runs a RAC Link's className callback and merges its class after the Fuse face", () => {
+    renderThemed(
+      <UiProviders locale="en-US" navigate={() => undefined}>
+        <FuseLink render={<Link href="/invoices/1043" className={() => "text-brand"} />} variant="error">
+          Invoice 1043
+        </FuseLink>
+      </UiProviders>
+    );
+
+    const link = linkNamed("Invoice 1043");
+    // A callback joined as a string would put its source in the class attribute.
+    expect(link.className).not.toMatch(/=>|function/);
+    expect(getComputedStyle(link).color).toBe(cssVarColor(link, "--brand"));
+    expect(getComputedStyle(link).textDecorationLine).toBe("underline");
   });
 
   it("renders no DOM of its own", () => {

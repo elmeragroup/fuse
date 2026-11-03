@@ -529,7 +529,16 @@
   "link": {
     "title": "Link",
     "rsc": "client",
-    "demos": ["link-variants.tsx", "link-router.tsx"]
+    "demos": [
+      "link-basic.tsx",
+      "link-running-text.tsx",
+      "link-underline.tsx",
+      "link-colors.tsx",
+      "link-external.tsx",
+      "link-next.tsx",
+      "link-react-aria.tsx",
+      "link-truncate.tsx"
+    ]
   },
   "loader": {
     "title": "Loader",

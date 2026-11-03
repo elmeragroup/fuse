@@ -97,6 +97,7 @@ function browserProject(
         "@base-ui/react/internals/form-context",
         "@base-ui/react/internals/labelable-provider",
         "@base-ui/react/internals/noop",
+        "@base-ui/react/internals/useRenderElement",
         "@tanstack/react-table",
         "@tanstack/react-virtual",
         // The browser suites' accessibility pass.

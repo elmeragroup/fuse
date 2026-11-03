@@ -118,7 +118,7 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["input", ["components/input/input.tsx"]],
   ["input-group", ["components/input-group/input-group.tsx"]],
   ["item", ["components/item/item.tsx"]],
-  ["link", ["react-aria/link/link.tsx"]],
+  ["link", ["components/link/link.tsx"]],
   ["meter", ["components/meter/meter.tsx"]],
   ["navigation-menu", ["components/navigation-menu/navigation-menu.tsx"]],
   ["number-field", ["components/number-field/number-field.tsx"]],

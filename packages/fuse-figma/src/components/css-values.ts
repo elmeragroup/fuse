@@ -507,6 +507,22 @@ export function inViewport(value: string, viewport: Viewport | undefined): strin
 }
 
 /**
+ * A value with its `em` lengths written as pixels of a known font size, which `1em` stands for
+ * (CSS Values 4 §6.1.1), as Link's underline offset and thickness scale with the text they sit
+ * under.
+ *
+ * @param value - A compiled value.
+ * @param fontSize - The element's font size in pixels.
+ * @returns The value.
+ */
+export function inFont(value: string, fontSize: number): string {
+  return value.replaceAll(
+    /([+-]?(?:\d+\.?\d*|\.\d+))em\b/g,
+    (_whole, amount: string) => `${Number(amount) * fontSize}px`
+  );
+}
+
+/**
  * Read a `width` or `height` as the sizing of its axis. A length is fixed. `fit-content` is the size
  * of what the box holds where its container has room to spare, which a kit frame's default content
  * has, so it hugs, unless `readLength` in `box-sizing.ts` fills a text box's room. `max-content` is

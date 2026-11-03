@@ -1,10 +1,16 @@
 ---
 lede: >
-  A text link that works with the app's router.
+  A text link that sits in a sentence and takes its type. It is underlined by default.
 ---
 
-import { LinkVariants } from "./demos/link-variants";
-import { LinkRouter } from "./demos/link-router";
+import { LinkBasic } from "./demos/link-basic";
+import { LinkRunningText } from "./demos/link-running-text";
+import { LinkUnderline } from "./demos/link-underline";
+import { LinkColors } from "./demos/link-colors";
+import { LinkExternal } from "./demos/link-external";
+import { LinkNext } from "./demos/link-next";
+import { LinkReactAria } from "./demos/link-react-aria";
+import { LinkTruncate } from "./demos/link-truncate";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -12,13 +18,149 @@ export const metadata = componentMetadata("link");
 
 <ComponentIntro slug="link" />
 
-<Demo slug="link" id="variants" title="Variants" file="link-variants.tsx">
-  <LinkVariants />
+<Prose>
+
+`Link` renders an `<a>`. It goes somewhere: another page, a section of this one, or a file. For an
+action, such as opening a dialog or saving a form, use a [Button](/components/button).
+
+Link routes nothing itself. To navigate through your app's router, pass the router's link as
+`render`. The router examples below cover Next.js, React Router and React Aria.
+
+</Prose>
+
+<Demo slug="link" id="basic" title="Basic" file="link-basic.tsx">
+  <LinkBasic />
 </Demo>
 
-<Demo slug="link" id="router" title="Router" file="link-router.tsx">
-  <LinkRouter />
+<Prose>
+
+## In running text
+
+Link sets no font, size or line height, so it takes the sentence's type: a large paragraph gets a
+large link, and a medium-weight sentence gets a medium-weight link. Set `weight` to give the link a
+weight of its own. The link stays inline, so a long one wraps with the sentence. The underline's
+offset and thickness are in `em`, so they scale with the text, and the line is never thinner than
+1px.
+
+</Prose>
+
+<Demo slug="link" id="running-text" title="In running text" file="link-running-text.tsx">
+  <LinkRunningText />
 </Demo>
+
+<Prose>
+
+## Underline
+
+`underline` sets how a reader tells the link from its text.
+
+- **`always`**, the default, underlines at rest in a dimmed line, the link's colour at 35% in a
+  light theme and 65% in a dark one, and draws the line in the full colour under the pointer. Use
+  it in sentences, where nothing else marks the link.
+- **`hover`** underlines only under the pointer. Use it where the layout already says these are
+  links, such as a row of footer links.
+- **`none`** never underlines and fades the text under the pointer. Use it where a container
+  marks the link, such as a card's title.
+
+</Prose>
+
+<Demo slug="link" id="underline-modes" title="Underline modes" file="link-underline.tsx">
+  <LinkUnderline />
+</Demo>
+
+<Prose>
+
+## Colour
+
+The `default` variant takes the colour of the text around it, so a link in an error message is the
+error colour. The other variants set a text role: `foreground`, `primary`, `brand`, `muted` and
+`error`. Some themes set `primary` to the text colour, so keep the underline wherever the colour is
+the only other difference.
+
+</Prose>
+
+<Demo slug="link" id="colors" title="Colour" file="link-colors.tsx">
+  <LinkColors />
+</Demo>
+
+<Prose>
+
+## External links
+
+For a link that opens another site in a new tab, set `target="_blank"` and `rel="noreferrer"`. Add
+an icon after the text and mark it `data-icon="inline-end"`, as on Button. Link draws the icon one
+`em` square in the link's colour and keeps it on the last word's line. Say that the link opens a
+new tab in text a screen reader reads, such as an `sr-only` span.
+
+</Prose>
+
+<Demo slug="link" id="external" title="External link" file="link-external.tsx">
+  <LinkExternal />
+</Demo>
+
+<Prose>
+
+## Router links
+
+Pass the router's link element as `render`, with its own destination prop. Link merges its classes,
+`data-slot` and props onto that element, and the router handles the click. Next.js's `Link` takes
+`href`:
+
+</Prose>
+
+<Demo slug="link" id="next" title="Next.js" file="link-next.tsx">
+  <LinkNext />
+</Demo>
+
+<Prose>
+
+React Router's `Link` takes `to`:
+
+```tsx
+import { Link as RouterLink } from "react-router";
+
+import { Link } from "@elmeragroup/fuse/link";
+
+<Link render={<RouterLink to="/invoices/1042" />}>Invoice 1042</Link>;
+```
+
+React Aria's `Link` routes through the `navigate` that `UiProviders` installs. Render through it to
+reach that router: an internal `href` calls `navigate`, and a `target="_blank"` link stays a full
+navigation.
+
+</Prose>
+
+<Demo slug="link" id="react-aria" title="React Aria" file="link-react-aria.tsx">
+  <LinkReactAria />
+</Demo>
+
+<Prose>
+
+## Truncate
+
+`truncate` cuts a long link to its container's width with an ellipsis. Give the link a box to fit,
+such as a flex row with a set width. Keep the full name in reach, for example in the page it opens.
+
+</Prose>
+
+<Demo slug="link" id="truncated-file-name" title="Truncated file name" file="link-truncate.tsx">
+  <LinkTruncate />
+</Demo>
+
+<Prose>
+
+## Accessibility
+
+- **Keep the underline in text.** In a sentence, the underline tells the link apart for readers who
+  do not see the colour difference. `hover` and `none` leave that to the layout.
+- **Write link text that names the destination.** "Read the invoice help articles" works out of
+  context; "click here" does not.
+- **Say when a link opens a new tab.** An icon is not read out, so add the words in text, as in
+  the external link example.
+- **Use a Button for actions.** A link navigates; a screen reader announces it as a link, and Space
+  does not activate it.
+
+</Prose>
 
 <ApiReference slug="link" />
 

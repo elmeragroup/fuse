@@ -125,8 +125,6 @@ export function describeDemoCoverage(fileUrl: string): void {
  * any other requested page that reads no part.
  */
 const PARTLESS_PAGES = new Set([
-  // The interim React Aria Link renders its anchor without a `data-slot`.
-  "link",
   // The polar Roots render nothing until the release that draws them.
   "pie-chart",
   "radial-chart",

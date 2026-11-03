@@ -2,8 +2,8 @@
 
 import { Field } from "@elmeragroup/fuse/field";
 import { Input } from "@elmeragroup/fuse/input";
+import { Link } from "@elmeragroup/fuse/link";
 import { PopoverInfoButton } from "@elmeragroup/fuse/popover-info-button";
-import { Link } from "@elmeragroup/fuse/react-aria/link";
 
 export function PopoverInfoButtonRichText() {
   return (
@@ -12,8 +12,8 @@ export function PopoverInfoButtonRichText() {
         <Field.Label>
           Meter number
           <PopoverInfoButton label="About the meter number">
-            <strong>The meter number</strong> is printed on the front of your electricity meter. Read more
-            about meters <Link href="#meters">here</Link>.
+            <strong>The meter number</strong> is printed on the front of your electricity meter.{" "}
+            <Link href="#meters">Read more about meters</Link>.
           </PopoverInfoButton>
         </Field.Label>
         <Input />
