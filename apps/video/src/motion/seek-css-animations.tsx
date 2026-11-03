@@ -30,8 +30,8 @@ const MAX_ROUNDS = 24;
 /** Consecutive unchanged rounds that count as settled. */
 const STABLE_ROUNDS = 3;
 
-/** The events a CSS animation or transition fires as it is created. */
-const MOTION_START_EVENTS = ["transitionrun", "animationstart"] as const;
+/** The DOM changes that can start a CSS animation or transition: a mount, a class or a state flag. */
+const MOTION_CHANGES: MutationObserverInit = { subtree: true, childList: true, attributes: true };
 
 function nextAnimationFrame(): Promise<void> {
   return new Promise((resolve) => {
@@ -76,11 +76,44 @@ function seek(animation: Animation, compositionMs: number): boolean {
 }
 
 /**
+ * Seeks every animation on the page once.
+ *
+ * @returns Whether the pass finished any animation.
+ */
+function seekAll(compositionMs: number): boolean {
+  return document
+    .getAnimations()
+    .map((animation) => seek(animation, compositionMs))
+    .includes(true);
+}
+
+/**
+ * Runs `onChange` after every DOM change, in the task that made it. A motion started during an
+ * animation frame's work takes that frame's time as its start, but Chromium reports it, and a
+ * `requestAnimationFrame` callback sees it, only on the next frame. On a slow machine the work in
+ * between can outlast a short motion, which has then run to its end: a transition leaves
+ * `getAnimations()` for good, and an exit lets Base UI unmount its popup. An observer runs before
+ * that frame, and `getAnimations()` creates the motion as it reads the style, so a pass from here
+ * holds it at the frame's time.
+ *
+ * @returns A function that stops watching.
+ */
+function watchChanges(onChange: () => void): () => void {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document, MOTION_CHANGES);
+  return () => {
+    observer.disconnect();
+  };
+}
+
+/**
  * Seeks every animation on the page, round after round. It stops after `STABLE_ROUNDS` rounds in a row
  * that finish nothing, see the same number of animations as the round before and find nothing
  * that `UNSETTLED` matches. Base UI mounts a popup over several renders and starts its
  * transitions an animation frame after mount, and an exit unmounts only after its animations
- * finish, so one pass is not enough.
+ * finish, so one pass is not enough. A first pass runs at once, for the motion the caller's
+ * change started, and every DOM change during the rounds runs another before the next frame, so
+ * a motion is held from its start however slowly the machine runs.
  *
  * @param compositionMs - The frame's time on the composition clock, for animations outside a host.
  * @param isActive - Whether the caller still wants the result; a newer frame stops the rounds.
@@ -90,6 +123,21 @@ export async function settleAnimations(
   compositionMs: number,
   isActive: () => boolean = () => true
 ): Promise<void> {
+  const stopWatching = watchChanges(() => {
+    if (isActive()) {
+      seekAll(compositionMs);
+    }
+  });
+  seekAll(compositionMs);
+  try {
+    await seekRounds(compositionMs, isActive);
+  } finally {
+    stopWatching();
+  }
+}
+
+/** The settle rounds of {@link settleAnimations}, one per animation frame. */
+async function seekRounds(compositionMs: number, isActive: () => boolean): Promise<void> {
   let stable = 0;
   let previousCount = -1;
   for (let round = 0; round < MAX_ROUNDS && stable < STABLE_ROUNDS; round++) {
@@ -128,23 +176,13 @@ export function SeekCssAnimations({
 
   // A motion that starts after the frame settled, such as one a primitive starts from a timer,
   // would otherwise run on the wall clock until the screenshot. It is seeked as it starts.
-  useEffect(() => {
-    const seekStarted = (event: Event) => {
-      if (event.target instanceof Element) {
-        for (const animation of event.target.getAnimations()) {
-          seek(animation, compositionMs.current);
-        }
-      }
-    };
-    for (const type of MOTION_START_EVENTS) {
-      document.addEventListener(type, seekStarted, true);
-    }
-    return () => {
-      for (const type of MOTION_START_EVENTS) {
-        document.removeEventListener(type, seekStarted, true);
-      }
-    };
-  }, []);
+  useEffect(
+    () =>
+      watchChanges(() => {
+        seekAll(compositionMs.current);
+      }),
+    []
+  );
 
   useLayoutEffect(() => {
     compositionMs.current = (frame / fps) * 1000;
