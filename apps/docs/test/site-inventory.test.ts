@@ -7,9 +7,27 @@ import { STUDIO_PAGES } from "../src/studio/registration";
 import { COMPONENT_INVENTORY } from "./component-inventory";
 import { fetchOk, fetchText } from "./docs-server";
 
+/** The chart entry's pages, reviewed by hand: the Charts group, in its alphabetical order. */
+const CHARTS = [
+  "Area Chart",
+  "Bar Chart",
+  "Chart",
+  "Line Chart",
+  "Pie Chart",
+  "Radar Chart",
+  "Radial Chart",
+  "Sparkline",
+];
+
 describe("SideNav inventory", () => {
-  it("carries exactly the three groups, in order, with the reviewed Overview and Handbook pages", () => {
-    expect(NAV_GROUPS.map((group) => group.label)).toEqual(["Overview", "Handbook", "Components"]);
+  it("carries exactly the five groups, in order, with the reviewed Overview and Handbook pages", () => {
+    expect(NAV_GROUPS.map((group) => group.label)).toEqual([
+      "Overview",
+      "Handbook",
+      "Components",
+      "Charts",
+      "Blocks",
+    ]);
     expect(NAV_GROUPS[0]?.items.map((item) => item.label)).toEqual([
       "Quick start",
       "Accessibility",
@@ -28,12 +46,29 @@ describe("SideNav inventory", () => {
   });
 
   it("generates the Components group from the reviewed titles, flat and alphabetical", () => {
-    expect(NAV_GROUPS[2]?.items).toBe(COMPONENT_NAV);
     // Unit under test: the nav labels and their order. Oracle: the reviewed inventory
     // titles in the order the fixture lists them, which is alphabetical.
     expect(COMPONENT_NAV.map((item) => item.label)).toEqual(
       [...COMPONENT_INVENTORY.values()].map((entry) => entry.title)
     );
+    const components = NAV_GROUPS[2]?.items.map((item) => item.label);
+    expect(components).toEqual(
+      COMPONENT_NAV.map((item) => item.label).filter((label) => !CHARTS.includes(label))
+    );
+  });
+
+  it("lists the chart entry's pages under Charts, alphabetical", () => {
+    expect(NAV_GROUPS[3]?.items.map((item) => item.label)).toEqual(CHARTS);
+  });
+
+  it("lists the app shell as the one block, after Charts", () => {
+    expect(NAV_GROUPS[4]?.items).toEqual([{ href: "/blocks/app-shell", label: "App shell" }]);
+  });
+
+  it("serves the block page, with the SideNav marking it as the current page", async () => {
+    const html = await fetchText("/blocks/app-shell");
+    const links = html.match(/<a [^>]*href="\/blocks\/app-shell"[^>]*>/gu) ?? [];
+    expect(links.filter((link) => link.includes('aria-current="page"'))).toHaveLength(1);
   });
 
   it("marks the current page with aria-current, so it renders as the soft pill", async () => {
@@ -52,6 +87,7 @@ describe("llms.txt", () => {
       expect(text, page.href).toContain(`[${page.label}](${page.href}): ${page.description}`);
     }
     expect(text).toContain("## Studio");
+    expect(text).toContain("## Blocks");
     for (const page of STUDIO_PAGES) {
       expect(text, page.href).toContain(`[${page.title}](${page.href}): ${page.description}`);
     }

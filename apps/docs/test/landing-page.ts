@@ -143,10 +143,18 @@ export async function holdChunks(page: Page, marker: string | RegExp): Promise<H
   };
 }
 
-/** Every unhandled error and rejection the page raises, collected from now on. */
-export function collectPageErrors(page: Page): string[] {
+/**
+ * Every unhandled error and rejection the page raises, collected from now on, and with `console`
+ * every `console.error` call too, React's hydration reports among them.
+ */
+export function collectPageErrors(page: Page, options: { readonly console?: boolean } = {}): string[] {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
+  if (options.console === true) {
+    page.on("console", (message) => {
+      if (message.type() === "error") errors.push(message.text());
+    });
+  }
   return errors;
 }
 

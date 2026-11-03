@@ -3,16 +3,16 @@ import type { ReactElement, ReactNode } from "react";
 
 import type { Metadata, Viewport } from "next";
 
-import { ColorSchemeScript, LEGAL_THEMES, themeAttributes, themeSlug } from "@elmeragroup/fuse/theme";
+import { ColorSchemeScript, themeAttributes } from "@elmeragroup/fuse/theme";
 
 import { DocumentRoot } from "../../components/document-root";
 import { ogLandingPath, ogMetadata } from "../../lib/og-metadata";
 import { siteOrigin } from "../../lib/site-origin";
 import { DOCUMENT_COLOR_SCHEME, OPENING_THEME } from "../../lib/theme";
+import { slugAttributesJson, THEME_QUERY } from "../../lib/theme-address";
 import "../../styles/globals.css";
 import { LANDING_SUMMARY } from "./landing/landing-facts";
 import { LandingPage } from "./landing/landing-page";
-import { THEME_QUERY } from "./landing/landing-theme-defaults";
 
 /** The card is the same whatever theme the address names, so every landing route shares it. */
 export const metadata: Metadata = {
@@ -44,9 +44,7 @@ export const viewport: Viewport = {
 };
 
 /** Every slug Fuse's slug parser accepts, mapped to the attributes its theme stamps. */
-const SLUG_ATTRIBUTES = JSON.stringify(
-  Object.fromEntries(LEGAL_THEMES.map((theme) => [themeSlug(theme), themeAttributes(theme)]))
-);
+const SLUG_ATTRIBUTES = slugAttributesJson(themeAttributes);
 
 /**
  * Restamps `<html>` with a shared address's theme before the browser can paint. The layout
@@ -54,8 +52,8 @@ const SLUG_ATTRIBUTES = JSON.stringify(
  * address's landing arrives after an empty shell. So the script reads `?theme=` from the address
  * itself, by `parseThemeSearch`'s rules: exactly one value that names a legal slug stamps, and a
  * missing, repeated or illegal value leaves the opening theme, as `proxy.ts` leaves the request on
- * `/`. The map's keys are `themeSlug` over `LEGAL_THEMES`, the set `parseThemeSlug` accepts, so the
- * script carries no slug grammar of its own and the same text serves every landing route.
+ * `/`. The map's keys are the slugs `parseThemeSlug` accepts, so the script carries no slug grammar
+ * of its own and the same text serves every landing route.
  */
 const THEME_QUERY_SCRIPT = `(function(m){var v=new URLSearchParams(location.search).getAll(${JSON.stringify(THEME_QUERY)});if(v.length!==1||!Object.prototype.hasOwnProperty.call(m,v[0]))return;var a=m[v[0]],r=document.documentElement;for(var k in a)r.setAttribute(k,a[k])})(${SLUG_ATTRIBUTES})`;
 

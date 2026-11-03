@@ -4,7 +4,7 @@ import type { BrowserCommand } from "vitest/node";
  * Browser commands that run in the Vitest server and drive the real mouse through Playwright.
  * `userEvent` has no press-and-hold, so a test cannot read `:active` styles without these, and
  * its hover jumps in one move, so a test cannot glide across a menu the way a hand does.
- * `test/pointer-press.ts` is the only caller.
+ * `test/pointer-press.ts` calls the mouse commands, and the chart's tap tests call `tap`.
  */
 export const pointerCommands = {
   pointerDown: (async (context) => {
@@ -28,5 +28,14 @@ export const pointerCommands = {
   // A wheel turn where the pointer is, which scrolls whatever a person's wheel would.
   pointerWheel: (async (context, deltaX: number, deltaY: number) => {
     await context.page.mouse.wheel(deltaX, deltaY);
+  }) satisfies BrowserCommand<[number, number]>,
+  /**
+   * A real tap at a point in the test frame's client coordinates, through Playwright's
+   * touchscreen, which needs a context with `hasTouch`. The frame's own offset turns the point
+   * into page coordinates.
+   */
+  tap: (async (context, x: number, y: number) => {
+    const frame = await context.iframe.owner().boundingBox();
+    await context.page.touchscreen.tap((frame?.x ?? 0) + x, (frame?.y ?? 0) + y);
   }) satisfies BrowserCommand<[number, number]>,
 };

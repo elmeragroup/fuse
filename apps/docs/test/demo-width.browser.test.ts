@@ -1,7 +1,7 @@
 import type { Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
-import { DESKTOP_VIEWPORT, launchSuiteBrowser, openDemo } from "./demo-page";
+import { DESKTOP_VIEWPORT, launchSuiteBrowser, openDemo, waitForAllDemos } from "./demo-page";
 import { readDemoWidths } from "./demo-width";
 import type { WidthViolation } from "./demo-width";
 import { docsBaseUrl } from "./docs-server";
@@ -26,11 +26,7 @@ const PHONE_PAGES = [
 /** Opens a component page and waits until every demo on it has hydrated. */
 async function openPage(page: Page, slug: string): Promise<void> {
   await page.goto(`${docsBaseUrl()}/components/${slug}`, { waitUntil: "load" });
-  await page.waitForFunction(
-    () =>
-      document.querySelectorAll("[data-demo-frame]").length ===
-      document.querySelectorAll("[data-demo-frame][data-demo-hydrated]").length
-  );
+  await waitForAllDemos(page);
 }
 
 /**

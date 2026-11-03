@@ -30,6 +30,11 @@ export type PageDemo = {
 export type ComponentPageSource = {
   /** The editorial half of the page: the one-paragraph description under the H1. */
   lede: string;
+  /**
+   * The page's intro, the markdown of the `<Prose>` blocks before its first demo, or `""` when the
+   * page opens with a demo. The markdown endpoint prints it under the lede.
+   */
+  intro: string;
   /** The headings the page's prose contributes to the on-page TOC. */
   headings: readonly ContentHeading[];
   /** The demos the page renders, in authored order. */
@@ -186,12 +191,25 @@ function readDemos(lines: readonly string[], slug: string, file: string): readon
   return demos;
 }
 
+const PROSE_BLOCK = /<Prose>\n([\s\S]*?)\n<\/Prose>/gu;
+
+/** The markdown of the `<Prose>` blocks that come before the first `<Demo>`. */
+function readIntro(body: string): string {
+  const firstDemo = body.search(/<Demo\s/u);
+  const head = firstDemo === -1 ? body : body.slice(0, firstDemo);
+  return [...head.matchAll(PROSE_BLOCK)]
+    .map((match) => (match[1] ?? "").trim())
+    .filter((block) => block !== "")
+    .join("\n\n");
+}
+
 /** Reads one authored `page.mdx`, given its text. `label` names the file in failures. */
 export function parseComponentPage(source: string, slug: string, label: string): ComponentPageSource {
   const split = splitFrontmatter(source, label);
   const lines = withoutCodeFences(split.body);
   return {
     lede: parseFrontmatter(split.frontmatter, label),
+    intro: readIntro(split.body),
     headings: readHeadings(lines),
     demos: readDemos(lines, slug, label),
   };

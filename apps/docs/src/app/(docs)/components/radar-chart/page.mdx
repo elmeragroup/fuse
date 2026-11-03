@@ -1,0 +1,24 @@
+---
+lede: >
+  Preview. Radar charts with at most 4 series over one spoke per row.
+---
+
+import { RadarChartWeekdays } from "./demos/radar-chart-weekdays";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("radar-chart");
+
+<ComponentIntro slug="radar-chart" />
+
+<Prose>
+
+The chart entry is a preview. This chart renders in a later release of the preview entry, so the demo below stays empty until then. Names and props can change until Fuse's first stable release.
+
+</Prose>
+
+<Demo slug="radar-chart" id="weekdays" title="Weekdays" file="radar-chart-weekdays.tsx">
+  <RadarChartWeekdays />
+</Demo>
+
+<ApiReference slug="radar-chart" />

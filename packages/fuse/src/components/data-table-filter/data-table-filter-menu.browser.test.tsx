@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, onTestFinished } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
 import {
   active,
   CalendarStandIn,
@@ -347,16 +348,20 @@ describe("DataTableFilter add menu", () => {
       )
     );
     const stop = watchSides();
+    // Each phase ends on two frames the watch samples, however few frames the machine paints.
     await openMenu();
     await settled();
+    await nextFrames(2);
     await userEvent.keyboard("am");
     await expect.poll(() => lit("menuitem", "Amount")).toBe(true);
+    await nextFrames(2);
     await userEvent.keyboard("{Enter}");
     await expect.poll(step).toBe("editor");
     await settled();
+    await nextFrames(2);
     const frames = stop();
     expect(window.scrollY).toBe(0);
-    expect(frames.length).toBeGreaterThan(10);
+    expect(frames.length).toBeGreaterThanOrEqual(6);
     expect(flipsIn(frames)).toBe(0);
     expect(frames.at(-1)?.[0]).toBe("top");
   });

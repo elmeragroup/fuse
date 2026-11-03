@@ -11,6 +11,7 @@ import { runCommandAsync } from "./run-command";
  * `tailwindcss-react-aria-components` all work at the floor: the 4.1 wrap utilities, the
  * animation plugin's keyframes, a variant only the React Aria plugin defines, and Fuse's own
  * scroll-linked fade, a utility with nested `@supports` blocks that reads a registered property.
+ * The chart markers prove the floor resolves `@elmeragroup/fuse/chart.css` and keeps its plain CSS.
  */
 const FLOOR_MARKERS = [
   { source: "the wrap-anywhere utility", rule: "overflow-wrap: anywhere" },
@@ -19,6 +20,7 @@ const FLOOR_MARKERS = [
   { source: "tailwindcss-react-aria-components", rule: "[data-outside-month]" },
   { source: "the scroll-fade-inline utility", rule: "animation-timeline: scroll(self inline)" },
   { source: "the scroll fade's registered property", rule: "@property --scroll-fade-start" },
+  { source: "chart.css's root rule", rule: '[data-slot="chart"]' },
 ] as const;
 
 /**
@@ -49,7 +51,10 @@ export async function checkPackedTailwindFloor(
       signal,
     },
     async (consumer) => {
-      writeFileSync(join(consumer, "source.css"), packedTailwindSource("./node_modules/@elmeragroup/fuse"));
+      writeFileSync(
+        join(consumer, "source.css"),
+        packedTailwindSource("./node_modules/@elmeragroup/fuse", ["@elmeragroup/fuse/chart.css"])
+      );
       await runCommandAsync(
         join(consumer, "node_modules/.bin/tailwindcss"),
         ["-i", "source.css", "-o", "compiled.css"],

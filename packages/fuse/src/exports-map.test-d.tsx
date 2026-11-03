@@ -5,8 +5,10 @@ import type {
   ScrollArea as RootScrollArea,
   ThemeInput as RootThemeInput,
 } from "@elmeragroup/fuse";
+import type * as Root from "@elmeragroup/fuse";
 import type { Button } from "@elmeragroup/fuse/button";
 import { buttonVariants } from "@elmeragroup/fuse/button";
+import type * as ChartEntry from "@elmeragroup/fuse/chart";
 import type * as Icons from "@elmeragroup/fuse/icons";
 import type { ElmeraIconProps } from "@elmeragroup/fuse/icons";
 import type { ScrollArea } from "@elmeragroup/fuse/scroll-area";
@@ -44,4 +46,10 @@ test("workspace consumers resolve the same public subpaths as the published pack
   expectTypeOf(useColorScheme).returns.toEqualTypeOf<UseColorSchemeResult>();
   expectTypeOf<ThemeProviderProps>().toHaveProperty("injectColorSchemeScript");
   expectTypeOf<ThemeProviderProps>().not.toHaveProperty("enableColorScheme");
+});
+
+test("the preview chart entry resolves as a subpath and stays out of the root barrel", () => {
+  expectTypeOf<typeof ChartEntry>().toHaveProperty("Chart");
+  expectTypeOf<typeof Root>().not.toHaveProperty("Chart");
+  expectTypeOf<typeof Root>().not.toHaveProperty("Sparkline");
 });

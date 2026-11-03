@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { docsRoot } from "../scripts/lib/paths.ts";
 
 const componentsDir = path.join(docsRoot, "src/app/(docs)/components");
+const blocksDir = path.join(docsRoot, "src/app/(docs)/blocks");
 
 /**
  * Specifiers any consumer writes: React, the public entries, the date-cluster value type, and the
@@ -23,6 +24,11 @@ const CONSUMER_SPECIFIERS = [
  */
 const CARVE_OUTS = new Map<string, readonly string[]>([
   ["calendar/demos/calendar-rtl.tsx", ["react-aria-components"]],
+  // A year of hours would fill the demo's printed source, so it reads one data module.
+  ["chart/demos/chart-table.tsx", ["./data/hourly-year"]],
+  // Two months of hours for the month switch's Sparklines, 1,465 values.
+  ["chart/demos/chart-month-usage-and-price.tsx", ["./data/no1-household-hourly-2025-09-2025-10"]],
+  ["line-chart/demos/line-chart-large.tsx", ["../../chart/demos/data/hourly-year"]],
   ["date-field/demos/date-field-date-input.tsx", ["react-aria-components"]],
   // Link's router demos show `render` composing a router's link: the docs app's own, and React
   // Aria's, which routes through UiProviders.
@@ -95,5 +101,42 @@ describe("demos import only what a consumer could", () => {
         expect(imported, demo).toContain(specifier);
       }
     }
+  });
+});
+
+/**
+ * What a block may import beyond a demo's specifiers, reviewed: a block is a whole Next app, so it
+ * routes with Next's own `Link` and router hooks, and it is several files, so it imports its own
+ * siblings. Nothing reaches outside the block's folder, so a newcomer copies the folder as it is.
+ */
+const BLOCK_SPECIFIERS = [/^next\/link$/u, /^next\/navigation$/u];
+
+/** Every file of every block, by its block's directory. */
+function blockFiles(): { dir: string; file: string }[] {
+  return readdirSync(blocksDir).flatMap((slug) => {
+    const dir = path.join(blocksDir, slug, "demos");
+    return readdirSync(dir)
+      .filter((file) => /\.tsx?$/u.test(file))
+      .map((file) => ({ dir, file }));
+  });
+}
+
+describe("blocks import only what a consumer could", () => {
+  it("imports React, Fuse's public entries, TanStack Table, Next's routing and its own files", () => {
+    const files = blockFiles();
+    // The app shell's files, so the check is not vacuous.
+    expect(files.length).toBeGreaterThanOrEqual(13);
+    const offenders: string[] = [];
+    for (const { dir, file } of files) {
+      const siblings = new Set(readdirSync(dir).map((name) => `./${name.replace(/\.tsx?$/u, "")}`));
+      for (const specifier of specifiersOf(path.join(dir, file))) {
+        const allowed =
+          CONSUMER_SPECIFIERS.some((pattern) => pattern.test(specifier)) ||
+          BLOCK_SPECIFIERS.some((pattern) => pattern.test(specifier)) ||
+          siblings.has(specifier);
+        if (!allowed) offenders.push(`${path.relative(blocksDir, dir)}/${file}: ${specifier}`);
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 });

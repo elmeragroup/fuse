@@ -159,6 +159,13 @@ describe("localization page", () => {
     expect(html).toContain('id="language-switcher"');
     expect(html).toContain("LocaleProvider");
   });
+
+  it("names the market's zone as the time zone owner and shows the market time zone demo", async () => {
+    const html = await fetchText("/handbook/localization");
+    expect(html).toContain('id="time-zone"');
+    expect(html).toContain("timeZone=&quot;Europe/Oslo&quot;");
+    expect(html).toContain('id="market-time-zone"');
+  });
 });
 
 describe("quick start page", () => {

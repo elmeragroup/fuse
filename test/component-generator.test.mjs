@@ -136,6 +136,17 @@ describe("component generator", () => {
     mkdirSync(join(directory, "apps/docs/src/app/(docs)/components/status-light"), { recursive: true });
     const budget = join(directory, "packages/fuse/scripts/size-budgets.ts");
     writeFileSync(budget, readFileSync(budget, "utf8").replace("// plop:js-entry-budget", ""));
+    // No entry is deferred today, so the fixture defers a scratch name to reach that refusal.
+    const entries = join(directory, "packages/fuse/scripts/entries.ts");
+    const declared = "export const DEFERRED_ENTRIES: readonly string[] = [];";
+    expect(readFileSync(entries, "utf8")).toContain(declared);
+    writeFileSync(
+      entries,
+      readFileSync(entries, "utf8").replace(
+        declared,
+        'export const DEFERRED_ENTRIES: readonly string[] = ["future-entry"];'
+      )
+    );
     const before = snapshot(directory);
     const result = generate(directory, [
       "button",
@@ -144,6 +155,7 @@ describe("component generator", () => {
       "react-aria",
       "calendar",
       "chart",
+      "future-entry",
       "../outside",
       "BadName",
       " spaced ",

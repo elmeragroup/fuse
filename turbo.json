@@ -67,6 +67,10 @@
     "size-limit": {
       "dependsOn": ["pack"]
     },
+    // The chart entry's API report reads the built declarations, and a stale committed report fails.
+    "api:report": {
+      "dependsOn": ["build"]
+    },
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,
@@ -91,7 +95,8 @@
         "test:browser",
         "test:types",
         "build",
-        "size-limit"
+        "size-limit",
+        "api:report"
       ]
     }
   }

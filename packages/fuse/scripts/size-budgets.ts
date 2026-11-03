@@ -22,6 +22,11 @@ export type NamedImportBudget = {
   name: string;
   entryFile: string;
   exportName: string;
+  /**
+   * The namespace members a route reads, such as `["Root", "Bar"]`. Without it the row keeps the
+   * whole export.
+   */
+  members?: readonly string[];
   measuredGzip: number;
   ceilingGzip: number;
 };
@@ -104,6 +109,35 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // Popover, Select, Combobox, ToggleGroup, NumberField and Slider, so the ceiling follows what
   // those cost.
   { name: "data-table-filter", entryFile: "data-table-filter.js", measuredGzip: 154062, ceilingGzip: 231093 },
+  // Chart preview entry. Measured 129203 on 2026-10-31, within the ceiling from layer 05.
+  // Raised from the derived 145566 on 2026-11-03. An active dot on a Bar series rides a straight
+  // track through the bars' far ends, read from the loop's resting bars, and its glide follows the
+  // spring through its overshoot, which measured 562 bytes on this entry (145148 to 145710). The
+  // ceiling keeps about 100 bytes of headroom.
+  // Raised from 145800 on 2026-11-03. The tooltip's roof holds each ridden bar track as an
+  // invisible line, so a dot riding over the gap between two bars stays under the popup, which
+  // measured 208 bytes on this entry (145710 to 145918). The ceiling keeps about 100 bytes of
+  // headroom.
+  // Raised from 146020 on 2026-11-03. The active dot's ride keyframes come from every vertex its
+  // track crosses, its bar track follows the loop's resting revision, the tooltip's roof reads
+  // again when a rider comes or goes, and the ride starts and ends where the joined dot shows,
+  // which measured 582 bytes on this entry (145918 to 146500). The ceiling keeps about 100 bytes
+  // of headroom.
+  // Raised from 146600 on 2026-11-03. The active dot's glide evaluates the keyframes it plays,
+  // starts from where the dot shows, holds at a track's end, keeps a Line's last stack and reads a
+  // path-form BarGroup's own columns, and each Root keeps its own rider registry, which measured
+  // 384 bytes on this entry (146500 to 146884). The ceiling keeps about 100 bytes of headroom.
+  // Raised from 146984 on 2026-11-03. The active dot's glide reads the easing it plays, its line
+  // comes through Root's paths from the drawing it joins, an Area hands over its top edge, a curve
+  // that bends back keeps its later spans, and a ride keeps to one run, which measured 534 bytes on
+  // this entry (146884 to 147418). The ceiling keeps about 100 bytes of headroom.
+  // Raised again from 147518 on 2026-11-03. A ride starting or resting on a reading inside a bend
+  // the run leaves out counts that bend as a stack, which measured 180 bytes on this entry (147418
+  // to 147598). The ceiling keeps about 100 bytes of headroom.
+  // Raised again from 147698 on 2026-11-03. Reveal's edge glides with the crosshair on the step's
+  // spring, as a registered length, which measured 179 bytes on this entry (147598 to 147777). The
+  // ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 147877 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -238,6 +272,124 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
 ] satisfies readonly Measured<JsEntryBudget>[]);
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
+  // The chart rows: whole namespaces (BarChart stands for every cartesian alias), routes that keep
+  // only the members they name, and the server-safe helpers. Last measured 2026-10-31, each within
+  // its ceiling: Chart 126903, BarChart 126905, the polar namespaces 83087, 83062 and 83025,
+  // Chart.Root 50192, the bar route 68130, useChartPoint 3933, Sparkline 11384.
+  // 2026-11-03: the active dot rides its series' drawn line on a pointer-paced spring shared with
+  // the crosshair, which measured 1956 bytes on Chart (140885 to 142841) and on BarChart (140887
+  // to 142843), both under their derived ceilings.
+  // 2026-11-03: the active dot rides a Bar series' far ends as well, which measured 570 bytes on
+  // Chart (142841 to 143411) and on BarChart (142843 to 143413), both under their derived ceilings.
+  // 2026-11-03: the tooltip's roof holds each ridden bar track, which measured 210 bytes on Chart
+  // (143411 to 143621) and on BarChart (143413 to 143623), both under their derived ceilings.
+  // Raised from the derived 143981 and 143984 on 2026-11-03. The active dot's ride keyframes come
+  // from every vertex its track crosses, its bar track follows the loop's resting revision, the
+  // tooltip's roof reads again when a rider comes or goes, and the ride starts and ends where the
+  // joined dot shows, which measured 583 bytes on Chart (143621 to 144204) and on BarChart (143623
+  // to 144206). Each ceiling keeps about 100 bytes of headroom.
+  {
+    name: "chart/Chart",
+    entryFile: "chart.js",
+    exportName: "Chart",
+    measuredGzip: 95987,
+    // Raised from 144304 on 2026-11-03, with BarChart's from 144306. The active dot's glide
+    // evaluates the keyframes it plays, starts from where the dot shows, holds at a track's end,
+    // keeps a Line's last stack and reads a path-form BarGroup's own columns, and each Root keeps
+    // its own rider registry, which measured 380 bytes on Chart (144204 to 144584) and on BarChart
+    // (144206 to 144586). Each ceiling keeps about 100 bytes of headroom.
+    // Raised again from 144684 on 2026-11-03, with BarChart's from 144686. The active dot's glide
+    // reads the easing it plays, its line comes through Root's paths from the drawing it joins, an
+    // Area hands over its top edge, a curve that bends back keeps its later spans, and a ride keeps
+    // to one run, which measured 537 bytes on Chart (144584 to 145121) and on BarChart (144586 to
+    // 145123). Each ceiling keeps about 100 bytes of headroom.
+    // Raised again from 145221 on 2026-11-03, with BarChart's from 145223. A ride starting or
+    // resting on a reading inside a bend the run leaves out counts that bend as a stack, which
+    // measured 179 bytes on Chart (145121 to 145300) and 180 on BarChart (145123 to 145303).
+    // Raised again from 145400 on 2026-11-03, with BarChart's from 145403. Reveal's edge glides
+    // with the crosshair on the step's spring, which measured 182 bytes on Chart (145300 to 145482)
+    // and 181 on BarChart (145303 to 145484).
+    ceilingGzip: 145582,
+  },
+  {
+    name: "chart/BarChart",
+    entryFile: "chart.js",
+    exportName: "BarChart",
+    measuredGzip: 95989,
+    ceilingGzip: 145584,
+  },
+  { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
+  { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 79858 },
+  { name: "chart/RadarChart", entryFile: "chart.js", exportName: "RadarChart", measuredGzip: 79820 },
+  {
+    name: "chart/Chart.Root",
+    entryFile: "chart.js",
+    exportName: "Chart",
+    members: ["Root"],
+    measuredGzip: 41019,
+  },
+  {
+    name: "chart/Chart bar route",
+    entryFile: "chart.js",
+    exportName: "Chart",
+    members: ["Root", "Grid", "XAxis", "YAxis", "Bar"],
+    measuredGzip: 48267,
+    // Raised from the derived 72401 on 2026-11-01. Every chart now plays its entrance the first
+    // time it comes into view, hydrated or not. The shared observer, the reveal checks and their
+    // teardown, and the loop's wait and play measured about 400 bytes on this route. The ceiling
+    // keeps about 100 bytes of headroom.
+    // Raised from 72900 on 2026-11-02. The tooltip reads where a data update's marks land through
+    // the loop's `eachLanding`, which measured 67 bytes on this route (72841 to 72908) after the
+    // reading itself moved into the tooltip's own module. The ceiling keeps about 90 bytes of
+    // headroom.
+    // Raised from 73000 on 2026-11-02. The entrance now watches the clipping ancestors of a waiting
+    // plot, cancels a reveal frame its effect outlives, and retires `data-entrance` on a cancelled
+    // wipe or at once with no wipe, which measured 139 bytes on this route (72908 to 73047). The
+    // ceiling keeps about 100 bytes of headroom.
+    // Raised from 73150 on 2026-11-02. The slot grid, which makes every bar and every gap of a
+    // chart the same whole device pixels, measured 563 bytes on this route (73047 to 73610). The
+    // ceiling keeps about 100 bytes of headroom.
+    // Raised from 73710 on 2026-11-02. A resize maps running tweens through the slot grid, so a
+    // path keeps tweening, a plot of no length keeps its slot lookups finite, and a group's gaps
+    // leave each bar a device pixel, which measured 144 bytes on this route (73610 to 73754). The
+    // ceiling keeps about 100 bytes of headroom.
+    // Raised from 73850 on 2026-11-02. A sliding vertex outside the slot run keeps its own place,
+    // the Line and Area layers clip at the run's ends, and a path-form Bar's route retargets its
+    // rounded column edges on a resize, which measured 129 bytes on this route (73754 to 73883).
+    // The ceiling keeps about 100 bytes of headroom.
+    // Raised from 73990 on 2026-11-03. Root records the x axis's format for Chart.SlotLabel,
+    // repaints its followers when the reader's motion preference changes, and a follower can ask
+    // for its own repaint, which measured 82 bytes on this route (73933 to 74015). The ceiling
+    // keeps about 100 bytes of headroom.
+    // Raised from 74115 on 2026-11-03. The active dot rides its series' drawn line on a
+    // pointer-paced spring shared with the crosshair, and the store tracks the pointer's speed for
+    // it, which measured 75 bytes on this route (74097 to 74172). The ceiling keeps about 100 bytes
+    // of headroom.
+    // Raised from 74272 on 2026-11-03. The loop counts each change to a resting anchored mark for
+    // the active dot's bar track, and attaching resolves what a mark sits on once for the dot's
+    // ride too, which measured 114 bytes on this route (74202 to 74316). The ceiling keeps about
+    // 100 bytes of headroom.
+    // Raised from 74416 on 2026-11-03. Root's paths hold each path's reader of the line it rests
+    // on, which measured 36 bytes on this route (74381 to 74417). The ceiling keeps about 100 bytes
+    // of headroom.
+    ceilingGzip: 74517,
+  },
+  {
+    name: "chart/PieChart.Root",
+    entryFile: "chart.js",
+    exportName: "PieChart",
+    members: ["Root"],
+    measuredGzip: 404,
+  },
+  { name: "chart/Sparkline", entryFile: "chart.js", exportName: "Sparkline", measuredGzip: 11118 },
+  { name: "chart/useChartPoint", entryFile: "chart.js", exportName: "useChartPoint", measuredGzip: 3635 },
+  {
+    name: "chart/formatChartValue",
+    entryFile: "chart.js",
+    exportName: "formatChartValue",
+    measuredGzip: 1681,
+  },
+  { name: "chart/formatChartSlot", entryFile: "chart.js", exportName: "formatChartSlot", measuredGzip: 3048 },
   {
     name: "icons/Check",
     entryFile: "icons.js",
@@ -273,12 +425,18 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // 2026-10-06: main measured 24451, 15 bytes under that ceiling. The field corner classes,
   // which read `--radius-field` (+142), take styles.css to 24593, over it, so the shared entry
   // recalibrates to measured × 1.5, as a code owner approved.
+  // 2026-10-29: main's roles and the 26 chart roles recalibrate the entry to measured × 1.5.
+  { name: "themes.css", file: "themes.css", measuredGzip: 6734 },
   // 2026-10-30: the cross-section Frame seam selectors (+119) take styles.css from 36851 to
   // 36970, and the Table edge-inset property, the Frame's derived section clip and the cell
   // padding defaults that edge cells override (+404) to 37374, over its ceiling of 36890, so the
   // shared entry recalibrates to measured × 1.5, as a code owner approved.
-  { name: "themes.css", file: "themes.css", measuredGzip: 4472, ceilingGzip: 6416 },
+  // 2026-10-31: 37489 with the chart roles as Tailwind colours, within the ceiling.
   { name: "styles.css", file: "styles.css", measuredGzip: 37374 },
+  // Chart stylesheet. Measured 13523 on 2026-10-31, within the ceiling from layer 05.
+  // 2026-11-03: 14920 with Chart.SlotLabel, the line crosshair's fade and the tick fade, about 630
+  // bytes over the stylesheet before them, within the ceiling.
+  { name: "chart.css", file: "chart.css", measuredGzip: 10089 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

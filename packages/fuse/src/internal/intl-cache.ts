@@ -1,16 +1,31 @@
 /**
  * Intl formatters by locale and options. Building an `Intl` formatter costs far more than
- * formatting with one, and table cells, filter chips and option counts format on every render.
- * The keys are bounded by the configurations in app code, so the maps need no eviction.
+ * formatting with one, and table cells, filter chips, option counts and chart labels format on
+ * every render. The keys are bounded by the configurations in app code, so the maps need no
+ * eviction.
  */
 
-type FormatOptions = Intl.NumberFormatOptions | Intl.DateTimeFormatOptions | Intl.ListFormatOptions;
+type FormatOptions =
+  | Intl.NumberFormatOptions
+  | Intl.DateTimeFormatOptions
+  | Intl.ListFormatOptions
+  | Intl.PluralRulesOptions;
 
 const numberFormats = new Map<string, Intl.NumberFormat>();
 const dateTimeFormats = new Map<string, Intl.DateTimeFormat>();
 const listFormats = new Map<string, Intl.ListFormat>();
+const pluralRuleSets = new Map<string, Intl.PluralRules>();
 
-function cached<TFormat>(
+/**
+ * A value built once per locale and options, under the key scheme every Intl cache here shares.
+ *
+ * @param cache - The cache to keep it in.
+ * @param locale - The locale.
+ * @param options - The options.
+ * @param create - Builds the value on a miss.
+ * @returns The cached value.
+ */
+export function cached<TFormat>(
   cache: Map<string, TFormat>,
   locale: string,
   options: FormatOptions,
@@ -59,4 +74,15 @@ export function dateTimeFormat(
  */
 export function listFormat(locale: string, options: Intl.ListFormatOptions = {}): Intl.ListFormat {
   return cached(listFormats, locale, options, () => new Intl.ListFormat(locale, options));
+}
+
+/**
+ * The shared `Intl.PluralRules` for a locale and options.
+ *
+ * @param locale - The locale.
+ * @param options - The plural rule options, such as the fraction digits the number shows.
+ * @returns The rules.
+ */
+export function pluralRules(locale: string, options: Intl.PluralRulesOptions = {}): Intl.PluralRules {
+  return cached(pluralRuleSets, locale, options, () => new Intl.PluralRules(locale, options));
 }

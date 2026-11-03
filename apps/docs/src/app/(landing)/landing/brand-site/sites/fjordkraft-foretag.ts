@@ -180,6 +180,10 @@ export const FJORDKRAFT_FORETAG_SITE = {
       label: "Välj prisområde",
       placeholder: "Välj prisområde",
       unit: "öre/kWh",
+      timeZone: "Europe/Stockholm",
+      currency: "SEK",
+      vat: "excluded",
+      dayStart: "2026-10-17T00:00:00+02:00",
       labels: {
         average: "Snitt i dag",
         low: "Lägst",

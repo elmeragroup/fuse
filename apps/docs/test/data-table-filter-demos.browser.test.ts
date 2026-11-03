@@ -1,4 +1,3 @@
-import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -9,25 +8,9 @@ import {
   shareDemoPage,
   sharedDemo,
 } from "./demo-page";
+import { openFilterSubmenu } from "./filter-menu";
 
 const browser = launchSuiteBrowser();
-
-/**
- * Opens a demo's add menu and its Status value submenu from the keyboard. A pointer opens the
- * submenu on hover, which ties it to the pointer: on a loaded CI runner it closed with the pointer
- * still on the Status row, and the next click found the closing, inert submenu.
- */
-async function openStatusSubmenu(page: Page, demo: Locator): Promise<void> {
-  await demo.getByRole("button", { name: "Filter", exact: true }).focus();
-  await page.keyboard.press("Enter");
-  await page.getByRole("searchbox", { name: "Search fields", exact: true }).fill("Status");
-  const status = page.getByRole("menuitem", { name: "Status", exact: true });
-  await expect.poll(() => status.getAttribute("data-highlighted")).not.toBeNull();
-  await page.keyboard.press("ArrowRight");
-  // The submenu is open once its search holds focus.
-  const search = page.getByRole("searchbox", { name: "Search Status", exact: true });
-  await expect.poll(() => search.evaluate((element) => element === document.activeElement)).toBe(true);
-}
 
 describe("DataTableFilter demos", () => {
   it("filters the client demo's orders from a value submenu, live under the open menu", async () => {
@@ -36,7 +19,7 @@ describe("DataTableFilter demos", () => {
     const rows = demo.getByRole("table", { name: "Orders" }).getByRole("row").filter({ hasText: /^ORD-/ });
     await expect.poll(() => rows.count()).toBe(8);
 
-    await openStatusSubmenu(page, demo);
+    await openFilterSubmenu(page, demo, "Status");
     const menu = page.getByRole("dialog", { name: "Add filter" });
     await page.getByRole("menuitemcheckbox", { name: "Overdue", exact: true }).click();
     await expect.poll(() => demo.getByRole("group", { name: "Status filter" }).count()).toBe(1);
@@ -53,7 +36,7 @@ describe("DataTableFilter demos", () => {
     const rows = demo.getByRole("table", { name: "Orders" }).getByRole("row").filter({ hasText: /^ORD-/ });
     await expect.poll(() => rows.count()).toBe(8);
 
-    await openStatusSubmenu(page, demo);
+    await openFilterSubmenu(page, demo, "Status");
     // 120 orders cycle through seven statuses, one of them draft: 17 drafts.
     const draft = page.getByRole("menuitemcheckbox", { name: "Draft", exact: true });
     await expect.poll(() => draft.textContent()).toBe("Draft17");
@@ -65,9 +48,12 @@ describe("DataTableFilter demos", () => {
   it("caps the 3,000 products at 50 rows and asks for more typing", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
     const demo = await openDemo(page, "data-table-filter", "3,000 options");
-    await demo.getByRole("button", { name: "Filter", exact: true }).click();
-    await page.getByRole("menuitem", { name: "Product", exact: true }).click();
-    await expect.poll(() => page.getByRole("menuitemcheckbox").count()).toBe(50);
+    // A pointer-opened submenu follows the hover and can close on a loaded runner, so the submenu
+    // opens from the keyboard and is open once its search holds focus.
+    await openFilterSubmenu(page, demo, "Product");
+    // The submenu builds its list from 3,000 products, which a loaded CI runner can take past the
+    // default second to open, so this wait takes the page's own timeout.
+    await expect.poll(() => page.getByRole("menuitemcheckbox").count(), { timeout: 10_000 }).toBe(50);
     await expect
       .poll(() => page.getByRole("status").filter({ hasText: "Type to narrow the list" }).count())
       .toBe(1);

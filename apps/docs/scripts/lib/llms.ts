@@ -44,6 +44,7 @@ export function renderLlmsTxt(components: readonly DocsComponent[]): string {
           `- [${component.title}](/components/${component.slug}): ${component.lede} Markdown: ${component.markdownUrl}`
       )
     ),
+    ...section("Blocks", staticPagesIn("blocks").map(pageRow)),
   ];
   return finishMarkdown(lines);
 }

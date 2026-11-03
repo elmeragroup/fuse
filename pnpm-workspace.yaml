@@ -10,6 +10,9 @@ catalog:
   "@effect/vitest": 4.0.6
   "@elmeragroup/internal": 0.2.0-canary.18
   "@arethetypeswrong/core": 0.18.5
+  # The docs e2e axe audit of the chart demos, in all three engines. 4.14.0 is past the minimum
+  # release age, so it needs no exclude entry.
+  "@axe-core/playwright": 4.14.0
   "@base-ui/react": 1.9.0
   "@figma/plugin-typings": 1.141.0
   "@fontsource/roboto": 5.3.0
@@ -17,6 +20,10 @@ catalog:
   "@internationalized/string": 3.2.10
   "@paper-design/shaders-react": 0.0.81
   "@phosphor-icons/react": 2.1.10
+  # The chart entry's API report. 7.59.4 is past the minimum release age, so it needs no exclude
+  # entry. It pins TypeScript 5.9.3, which the packed chart type check also runs as the older
+  # consumer compiler.
+  "@microsoft/api-extractor": 7.59.4
   "@mdx-js/loader": 3.1.1
   "@next/mdx": 16.4.2
   "@next/playwright": 16.4.2
@@ -29,14 +36,23 @@ catalog:
   "@tanstack/react-table": 9.2.4
   "@tanstack/react-virtual": 3.14.13
   "@types/node": 25.9.5
+  "@types/d3-array": 3.2.2
+  "@types/d3-shape": 3.2.0
   "@types/picomatch": 4.0.3
   "@types/pngjs": 6.0.5
   "@types/react": 19.3.0
   "@types/react-dom": 19.3.0
   "@vitest/browser-playwright": 5.0.0
   axe-core: 4.14.0
+  # The chart screen-reader judges speak the DOM through it. 0.33.0 is past the minimum release
+  # age, so it needs no exclude entry.
+  "@guidepup/virtual-screen-reader": 0.33.0
   clsx: 2.1.1
   csstype: 3.2.3
+  # The chart layouts. Exact pins, because the frozen d3 test vectors in the charts ground truth
+  # come from these releases. Both are past the minimum release age.
+  d3-array: 3.2.4
+  d3-shape: 3.2.0
   effect: 4.0.6
   eslint-plugin-turbo: 2.10.12
   fast-check: 4.10.2

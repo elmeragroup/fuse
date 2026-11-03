@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "next build",
-    "build:e2e": "DOCS_TESTING_API=1 next build",
+    "build:e2e": "TZ=America/New_York DOCS_TESTING_API=1 next build",
     "dev": "pnpm run generate && next dev --port 3000",
     "generate": "node --experimental-strip-types --experimental-transform-types --import ../../packages/fuse/scripts/ts-resolve.mjs scripts/generate.ts",
     "start": "next start --port 3000",
@@ -31,6 +31,7 @@
     "tailwind-variants": "catalog:"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:",
     "@elmeragroup/color": "workspace:*",
     "@elmeragroup/internal": "catalog:",
     "@elmeragroup/typescript-config": "workspace:*",

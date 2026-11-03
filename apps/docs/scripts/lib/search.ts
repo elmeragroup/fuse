@@ -19,6 +19,7 @@ import type { StudioPage } from "../../src/studio/registration.ts";
 const GROUP_LABELS = {
   overview: "Overview",
   handbook: "Handbook",
+  blocks: "Blocks",
 } satisfies Record<StaticNavGroup, SearchGroup>;
 
 function pageEntry(
@@ -49,6 +50,7 @@ function componentEntry(component: DocsComponent): SearchEntry {
     component.slug,
     component.entry,
     ...component.parts.map((part) => part.name),
+    ...(component.aliasParts ?? []),
     ...component.demos.map((demo) => demo.title),
   ];
   return {
@@ -60,6 +62,12 @@ function componentEntry(component: DocsComponent): SearchEntry {
   };
 }
 
+/** A block page, also found by what it is: an example app to copy. */
+function blockEntry(page: StaticPage): SearchEntry {
+  const entry = pageEntry(page, GROUP_LABELS.blocks);
+  return { ...entry, keywords: [...entry.keywords, "block", "example", "template"] };
+}
+
 /** Every searchable destination, in SideNav order. */
 function buildSearchIndex(components: readonly DocsComponent[]): readonly SearchEntry[] {
   return [
@@ -68,6 +76,7 @@ function buildSearchIndex(components: readonly DocsComponent[]): readonly Search
     ...staticPagesIn("handbook").map((page) => pageEntry(page, GROUP_LABELS.handbook)),
     ...STUDIO_PAGES.map(studioEntry),
     ...components.map(componentEntry),
+    ...staticPagesIn("blocks").map(blockEntry),
   ];
 }
 

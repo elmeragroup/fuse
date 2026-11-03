@@ -80,7 +80,7 @@ describe("merge workflow", () => {
     }
   );
 
-  it("runs formatting and installs Chromium in their required jobs", () => {
+  it("runs formatting and installs Chromium, Firefox and WebKit in their required jobs", () => {
     const checks = requiredJobSteps(workflow, "checks");
     const format = requiredRunStep(checks, "pnpm exec oxfmt");
     expect(format.if).toBeUndefined();
@@ -99,17 +99,21 @@ describe("merge workflow", () => {
     const cache = requiredUsesStep(browser, "actions/cache");
     expect(asRecord(cache.with, "playwright cache inputs")).toEqual({
       path: "~/.cache/ms-playwright",
-      key: `playwright-chromium-\${{ runner.os }}-\${{ steps.${asString(version.id, "version id")}.outputs.version }}`,
+      key: `playwright-chromium-firefox-webkit-\${{ runner.os }}-\${{ steps.${asString(version.id, "version id")}.outputs.version }}`,
     });
     const hit = `steps.${asString(cache.id, "cache id")}.outputs.cache-hit`;
     const install = requiredRunStep(
       browser,
       "pnpm --filter @elmeragroup/fuse exec playwright install --with-deps"
     );
-    expect(install.run).toBe("pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium");
+    expect(install.run).toBe(
+      "pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium firefox webkit"
+    );
     expect(install.if).toBe(`${hit} != 'true'`);
     const deps = requiredRunStep(browser, "pnpm --filter @elmeragroup/fuse exec playwright install-deps");
-    expect(deps.run).toBe("pnpm --filter @elmeragroup/fuse exec playwright install-deps chromium");
+    expect(deps.run).toBe(
+      "pnpm --filter @elmeragroup/fuse exec playwright install-deps chromium firefox webkit"
+    );
     expect(deps.if).toBe(`${hit} == 'true'`);
     const gate = requiredRunStep(browser, "pnpm exec turbo run ");
     const order = [version, cache, install, gate].map((step) => browser.indexOf(step));

@@ -1,0 +1,69 @@
+// The chart tooltip and the active dots under the reader's reduced-motion preference: a slot step
+// moves the popup and each dot at once, so no frame shows either between its two places.
+import { describe, expect, it } from "vitest";
+import { page } from "vitest/browser";
+
+import "../../../dist/styles.css";
+import "../../../dist/themes.css";
+import { nextFrames } from "../../../test/animation-frames";
+import { label } from "../../../test/chart/marks";
+import {
+  barChart,
+  dotFrame,
+  hoverSlot,
+  lineChart,
+  positioner,
+  watchDots,
+  watchFrames,
+} from "../../../test/chart/tooltip-glide";
+import { renderThemed } from "../../../test/themed-browser-render";
+import "./chart.css";
+
+describe("the tooltip under reduced motion", () => {
+  it("moves at once on a slot step", async () => {
+    await page.viewport(1024, 768);
+    expect(matchMedia("(prefers-reduced-motion: reduce)").matches).toBe(true);
+    const { host } = renderThemed(barChart());
+    await hoverSlot(host, 1, 6, "band");
+    await nextFrames(20);
+    const from = positioner()?.getBoundingClientRect().left ?? Number.NaN;
+    const watch = watchFrames(host);
+    await hoverSlot(host, 2, 6, "band");
+    await nextFrames(20);
+    watch.stop();
+    expect(label()).toBe("Mar");
+    const to = positioner()?.getBoundingClientRect().left ?? Number.NaN;
+    expect(to - from).toBeGreaterThan(40);
+    // Every frame shows the popup at one of its two places, never between them.
+    expect(
+      watch.lefts.every((left) => Math.abs(left - from) <= 0.5 || Math.abs(left - to) <= 0.5),
+      JSON.stringify(watch.lefts)
+    ).toBe(true);
+    expect(watch.covered).toEqual([]);
+  });
+
+  it("places each active dot at once on a slot step", async () => {
+    await page.viewport(1024, 768);
+    const { host } = renderThemed(lineChart());
+    await hoverSlot(host, 3, 30, "point");
+    await nextFrames(20);
+    const before = dotFrame(host);
+    const dots = watchDots(host);
+    await hoverSlot(host, 9, 30, "point");
+    await nextFrames(20);
+    dots.stop();
+    const after = dotFrame(host);
+    expect(before).toHaveLength(2);
+    expect(after).toHaveLength(2);
+    // Alpha's reading falls from 75 to 54, so its dot moves well over a few pixels.
+    expect(Math.abs((after[0]?.y ?? 0) - (before[0]?.y ?? 0))).toBeGreaterThan(10);
+    const at = (shown: { x: number; y: number }, place: { x: number; y: number } | undefined) =>
+      place !== undefined && Math.abs(shown.x - place.x) <= 0.5 && Math.abs(shown.y - place.y) <= 0.5;
+    for (const frame of dots.frames) {
+      frame.forEach((shown, index) => {
+        expect(shown.gliding).toBe(false);
+        expect(at(shown, before[index]) || at(shown, after[index]), JSON.stringify(shown)).toBe(true);
+      });
+    }
+  });
+});

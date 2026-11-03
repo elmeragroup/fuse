@@ -2,14 +2,14 @@
  * The non-component half of the site inventory.
  *
  * Component pages are generated from the library and never listed here. These are the
- * two hand-authored groups — Overview and Handbook — and each entry carries the
+ * hand-authored groups — Overview, Handbook and Blocks — and each entry carries the
  * one-line description that the generated `llms.txt` index publishes and the page
  * itself uses as its metadata description. The description lives next to the route so
  * the index has exactly one source and cannot drift from the nav.
  */
 
-/** The two authored SideNav groups. Components is generated, so it is not a member. */
-export type StaticNavGroup = "overview" | "handbook";
+/** The authored SideNav groups. Components and Charts are generated, so they are not members. */
+export type StaticNavGroup = "overview" | "handbook" | "blocks";
 
 export type StaticPage = {
   /** Site-relative route. The app directory layout is derived from this. */
@@ -28,7 +28,7 @@ export const HOME_PAGE = {
   description: "Overview of the Fuse docs site: what the library is and how the docs are generated.",
 } as const;
 
-/** Every authored Overview and Handbook page, in nav order. */
+/** Every authored Overview, Handbook and Blocks page, in nav order. */
 export const STATIC_PAGES: readonly StaticPage[] = [
   {
     href: "/quick-start",
@@ -103,10 +103,28 @@ export const STATIC_PAGES: readonly StaticPage[] = [
       "The AI-docs surface: the generated llms.txt index and the per-component markdown endpoints.",
     group: "handbook",
   },
+  {
+    href: "/blocks/app-shell",
+    label: "App shell",
+    description:
+      "A complete back office on Fuse: a sidebar, a command menu, a dashboard of charts, a filtered data table, invoices and settings.",
+    group: "blocks",
+  },
 ];
 
 export function staticPagesIn(group: StaticNavGroup): readonly StaticPage[] {
   return STATIC_PAGES.filter((page) => page.group === group);
+}
+
+/**
+ * Whether the page at a pathname lays out wide: a block's page, whose live preview needs the room
+ * of a desktop window, so the shell drops the On this page column and the prose measure for it.
+ *
+ * @param pathname - The route on screen.
+ * @returns Whether the route is a Blocks page.
+ */
+export function isWidePage(pathname: string): boolean {
+  return staticPagesIn("blocks").some((page) => page.href === pathname);
 }
 
 /** The static page at `href`; throws when the manifest has none, so a stale route fails the build. */

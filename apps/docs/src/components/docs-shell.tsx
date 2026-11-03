@@ -4,6 +4,7 @@ import { tv } from "tailwind-variants";
 
 import { LocaleProvider } from "@elmeragroup/fuse/theme";
 
+import { DocsColumns } from "./docs-columns";
 import { DocsPalette } from "./docs-palette";
 import { Header } from "./header";
 import { PreviewThemeProvider } from "./preview-theme";
@@ -14,13 +15,12 @@ import { MAIN_CONTENT_ID } from "./skip-nav";
 const docsShell = tv({
   slots: {
     root: "min-h-dvh bg-background text-foreground",
-    columns:
-      "mx-auto grid max-w-[1200px] grid-cols-1 min-[45rem]:grid-cols-[240px_minmax(0,1fr)] min-[60rem]:grid-cols-[240px_minmax(0,1fr)_180px]",
-    main: "w-full max-w-[720px] min-w-0 px-6 pt-10 pb-24 min-[45rem]:px-12",
+    // The prose measure, which a wide route's page gives up (DocsColumns).
+    main: "w-full max-w-[720px] min-w-0 px-6 pt-10 pb-24 group-data-[layout=wide]/columns:max-w-none min-[45rem]:px-12",
   },
 });
 
-const { root, columns, main } = docsShell();
+const { root, main } = docsShell();
 
 type DocsShellProps = {
   children: ReactNode;
@@ -33,13 +33,13 @@ export function DocsShell({ children }: DocsShellProps): ReactElement {
         <DocsPalette>
           <div className={root()} data-docs-root>
             <Header />
-            <div className={columns()}>
+            <DocsColumns>
               <SideNav />
               <main className={main()} id={MAIN_CONTENT_ID}>
                 {children}
               </main>
               <QuickNav />
-            </div>
+            </DocsColumns>
           </div>
         </DocsPalette>
       </LocaleProvider>

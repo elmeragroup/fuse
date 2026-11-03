@@ -9,6 +9,7 @@ import * as Oklch from "@elmeragroup/color/oklch";
 import { getOrThrow } from "@elmeragroup/color/result";
 import type { Result } from "@elmeragroup/color/result";
 import type { Srgb } from "@elmeragroup/color/srgb";
+import * as Wcag from "@elmeragroup/color/wcag";
 
 /**
  * Read a color token literal in either form token modules write, for exporters that report a
@@ -33,4 +34,22 @@ export function readTokenColor(literal: string): Result<Oklch.Oklch | Srgb, Inva
  */
 export function tokenOklch(literal: string): Oklch.Oklch {
   return getOrThrow(Oklch.parse(literal));
+}
+
+/**
+ * The WCAG contrast ratio between two `oklch()` token literals. A translucent foreground
+ * composites over the background; the background must be opaque, which every surface the theme
+ * contract measures is. A translucent surface would need an explicit backdrop to composite
+ * against, so measuring one throws.
+ *
+ * @param foreground - The foreground's `oklch()` literal.
+ * @param background - The background's `oklch()` literal, opaque.
+ * @returns The ratio, from 1 to 21.
+ * @throws The parser's `InvalidColor` for a literal that is not `oklch()`, or the WCAG error for a
+ *   translucent background.
+ */
+export function literalContrast(foreground: string, background: string): number {
+  return getOrThrow(
+    Wcag.contrastRatio(Oklch.toSrgb(tokenOklch(foreground)), Oklch.toSrgb(tokenOklch(background)))
+  );
 }
