@@ -236,7 +236,11 @@ describe("Sheet", () => {
     rerender(withLocale("en-US", <BasicSheet showCloseButton={false} />));
     await openSheet();
     expect(page.getByRole("button", { name: "Close", exact: true }).query()).toBeNull();
-    await userEvent.click(roleNamed("button", "Done"));
+    // Done sits in the footer at the frame's bottom. Under load the runner can run a file before it
+    // sizes the page to the frame, which leaves the frame's bottom outside the page (see VIEWPORT
+    // in vitest.config.ts), where no pointer reaches. A key press reaches the button wherever it is.
+    roleNamed("button", "Done").focus();
+    await userEvent.keyboard("{Enter}");
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
 

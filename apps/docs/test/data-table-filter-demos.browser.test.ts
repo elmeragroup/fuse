@@ -48,8 +48,9 @@ describe("DataTableFilter demos", () => {
   it("caps the 3,000 products at 50 rows and asks for more typing", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
     const demo = await openDemo(page, "data-table-filter", "3,000 options");
-    await demo.getByRole("button", { name: "Filter", exact: true }).click();
-    await page.getByRole("menuitem", { name: "Product", exact: true }).click();
+    // A pointer-opened submenu follows the hover and can close on a loaded runner, so the submenu
+    // opens from the keyboard and is open once its search holds focus.
+    await openFilterSubmenu(page, demo, "Product");
     // The submenu builds its list from 3,000 products, which a loaded CI runner can take past the
     // default second to open, so this wait takes the page's own timeout.
     await expect.poll(() => page.getByRole("menuitemcheckbox").count(), { timeout: 10_000 }).toBe(50);
