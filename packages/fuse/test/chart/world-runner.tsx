@@ -403,7 +403,13 @@ export function jumps(
     mark.values.forEach((value, index) => {
       const axis = mark.axes[index] ?? "across";
       const slack = slackOf(axis) + (mark.hold ?? 0);
-      if (Math.abs((now.values[index] ?? 0) - map(axis, value)) > slack) {
+      // A band clipped to the plot shows an edge mapped past the plot on the plot's edge. The grid
+      // relocates a resize by its leftover's start, which can carry an edge that mid-tween lay
+      // inside the old plot outside the new one.
+      const extent = axis === "along" ? after.plot.along : after.plot.across;
+      const mapped =
+        mark.clipped === true ? Math.min(Math.max(map(axis, value), 0), extent) : map(axis, value);
+      if (Math.abs((now.values[index] ?? 0) - mapped) > slack) {
         failures.push(`${key}: ${mark.values.join(",")} → ${now.values.join(",")}`);
       }
     });

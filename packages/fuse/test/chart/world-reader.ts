@@ -65,6 +65,11 @@ export type Mark = {
   readonly hold?: number;
   /** A path-form column's span along the slot axis, which names it, and which a resize maps. */
   readonly along?: Span;
+  /**
+   * Whether the mark draws clipped to the plot, as a reference band does, so an edge a resize
+   * maps past the plot shows at the plot's edge.
+   */
+  readonly clipped?: boolean;
 };
 
 /** What the chart draws in one frame, in CSS pixels from the plot's top left, by category name. */
@@ -288,7 +293,14 @@ export function shoot(host: HTMLElement, world: World): Shot {
     // Mid-tween a slot line's centre can snap onto its band's far edge, and containment holds the
     // rule back by up to its own width, so its continuity allows that width more.
     const hold = rule && slotAxis ? span[1] - span[0] : 0;
-    if (!outside) marks.set(`reference ${what}`, { values: span, axes: [own, own], hold });
+    if (!outside) {
+      marks.set(`reference ${what}`, {
+        values: span,
+        axes: [own, own],
+        hold,
+        clipped: band !== null && !rule,
+      });
+    }
     // DOM audit: a reference's drawing and its label are aria-hidden output inside it.
     const svg = reference.querySelector("svg");
     const label = reference.querySelector('[data-slot="chart-reference-label"]');

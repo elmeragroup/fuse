@@ -418,6 +418,24 @@ describe("one world of marks", () => {
     expect(end.references.find(({ what }) => what === "line")?.outside).toBe(true);
   });
 
+  it("keeps a horizontal slot reference area on the model through a resize after a swap (PR2-T4 seed)", async () => {
+    // fast-check's counterexample from PR2-T4's gate run, shrunk: a horizontal world whose area
+    // spans c0 to c1 grows to 101 categories, so the area tweens to two 1 px bands, and 16 ms in
+    // the plot resizes to 280 × 150. The grid relocates the area's tweening top edge past the new
+    // plot, where the band draws clipped at the plot's edge.
+    await run(
+      1,
+      {
+        ...FIVE,
+        orientation: "horizontal",
+        data: namedFrom([0.01, 0, 0, 0, 0]),
+        line: { axis: "value", at: 10.015 },
+        area: { axis: "slot", first: "c0", last: "c1" },
+      },
+      [{ kind: "swap" }, { kind: "wait", ms: 16 }, { kind: "resize", width: 280, height: 150 }]
+    );
+  });
+
   it("snaps a reference at 0 with the bars when the path form switches to elements (B12-3)", async () => {
     // 101 categories over [0, 4], the last at -4, draw as paths over [-4, 4]. Dropping the last
     // draws elements over [0, 4]: the bars mount at their targets, and the reference at 0 and the
