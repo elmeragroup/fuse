@@ -77,6 +77,13 @@ export const STATIC_PAGES: readonly StaticPage[] = [
     group: "handbook",
   },
   {
+    href: "/handbook/palettes",
+    label: "Palettes & contrast",
+    description:
+      "Each theme's distinct tones, the roles that share them, and the WCAG contrast of every role pair, in a token inspector.",
+    group: "handbook",
+  },
+  {
     href: "/handbook/brands-and-segments",
     label: "Brands & segments",
     description:
