@@ -213,6 +213,7 @@ export type NodeState = {
   /** The text's letter spacing, one for the whole layer (rule 28). */
   letterSpacing: LetterSpacing;
   textDecorationOffset: TextDecorationOffset | null;
+  textDecorationThickness: TextDecorationThickness | null;
   textAutoResize: TextNode["textAutoResize"];
   textAlignHorizontal: TextNode["textAlignHorizontal"];
   textAlignVertical: TextNode["textAlignVertical"];

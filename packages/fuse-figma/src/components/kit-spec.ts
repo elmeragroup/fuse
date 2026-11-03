@@ -259,9 +259,12 @@ export type TextLayerSpec = {
   readonly color: ColorSpec;
   /**
    * The underline `text-decoration-line: underline` draws, or undefined for none. `offset` is
-   * the `text-underline-offset` in pixels, and an unset offset keeps Figma's automatic one.
+   * the `text-underline-offset` and `thickness` the `text-decoration-thickness`, both in pixels,
+   * and an unset one keeps Figma's automatic one.
    */
-  readonly underline: { readonly offset: number | undefined } | undefined;
+  readonly underline:
+    | { readonly offset: number | undefined; readonly thickness: number | undefined }
+    | undefined;
   readonly sizing: TextSizingSpec;
   readonly align: TextAlignSpec;
   /** Where the text cuts its characters off, or undefined where it shows them all. */

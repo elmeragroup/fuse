@@ -120,15 +120,6 @@ export function describeDemoCoverage(fileUrl: string): void {
   });
 }
 
-/**
- * The swept pages that render no part at either density, each with why. The parity check names
- * any other requested page that reads no part.
- */
-const PARTLESS_PAGES = new Set([
-  // The interim React Aria Link renders its anchor without a `data-slot`.
-  "link",
-]);
-
 function describeDensityCoverage(slugs: readonly string[], measured: readonly Instance[]): void {
   describe("density coverage", () => {
     // The later densities re-read the parts the first one found, so a page whose parts one density
@@ -149,7 +140,7 @@ function describeDensityCoverage(slugs: readonly string[], measured: readonly In
           return missed.length === 0 ? [] : [`${page} at ${density} misses ${missed.sort().join(", ")}`];
         });
       });
-      const unswept = slugs.filter((slug) => !PARTLESS_PAGES.has(slug) && !slots.has(`/components/${slug}`));
+      const unswept = slugs.filter((slug) => !slots.has(`/components/${slug}`));
       expect(unswept.map((slug) => `/components/${slug} reads no part`)).toEqual([]);
       expect(uneven).toEqual([]);
     });

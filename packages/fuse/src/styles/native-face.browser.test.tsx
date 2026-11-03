@@ -19,13 +19,13 @@ import { Empty } from "../components/empty/empty";
 import { Field } from "../components/field";
 import { Input } from "../components/input/input";
 import { Item } from "../components/item";
+import { Link } from "../components/link/link";
 import { Pagination } from "../components/pagination";
 import { Sidebar } from "../components/sidebar";
 import { Table } from "../components/table/table";
 import { Textarea } from "../components/textarea/textarea";
 import { Toggle } from "../components/toggle/toggle";
 import { Plus } from "../icons/generated/plus";
-import { Link } from "../react-aria/link/link";
 import { ThemeScope } from "../theme";
 
 // Fuse ships no preflight, and this suite loads only its standalone sheets, as a host without
@@ -342,6 +342,7 @@ describe.each(["light", "dark"] as const)("native faces without preflight, %s", 
       ["Item link", part("item", "a")],
       ["Sidebar row button", part("sidebar-menu-button", "button")],
       ["Sidebar row link", part("sidebar-menu-button", "a")],
+      ["Link", roleNamed("link", "Terms of delivery")],
     ];
     for (const [name, element] of parts) {
       expect.soft(getComputedStyle(element).color, name).toBe(getComputedStyle(parentOf(element)).color);
@@ -359,7 +360,6 @@ describe.each(["light", "dark"] as const)("native faces without preflight, %s", 
       ["Attachment link trigger", part("attachment-trigger", "a")],
       ["Sidebar row link", part("sidebar-menu-button", "a")],
       ["Sidebar sub-row link", part("sidebar-menu-sub-button", "a")],
-      ["Link", roleNamed("link", "Terms of delivery")],
     ];
     for (const [name, element] of links) {
       expect.soft(getComputedStyle(element).textDecorationLine, name).toBe("none");

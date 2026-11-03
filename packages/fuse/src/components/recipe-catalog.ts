@@ -2,10 +2,9 @@
  * Workspace-only facade for the Figma component sync. It is not published and not in the
  * root barrel. It re-exports the component recipes from their runtime-free `*-variants.ts` and
  * `*-class.ts` modules, because Node scripts cannot load the component entries, which re-export
- * client TSX, and the React Aria Calendar's day cell recipe and Link recipe from `styles/`, where
- * the interim tier keeps its recipes. Link adds the state focus ring and the rac-target disabled
- * face to its recipe from React Aria's render props, so both come along, and the sync adds them in
- * the cells where Link does. The sync calls each recipe for every cell of a Figma variant matrix
+ * client TSX, and the React Aria Calendar's day cell recipe from `styles/`, where the interim tier
+ * keeps its recipes. The shared focus ring recipe comes along for the kits that draw a part's ring
+ * outside its own recipe. The sync calls each recipe for every cell of a Figma variant matrix
  * and compiles the class string it returns. It also re-exports `cn`, with which the sync adds a
  * docs demo's consumer classes to a recipe as a component merges its `className`, and the icon
  * roster, from which the sync builds one Figma component per icon `/icons` publishes. Meter's
@@ -58,6 +57,7 @@ export { itemMediaVariants } from "./item/item-media-variants";
 export { ITEM_TITLE_CLASSES } from "./item/item-title-classes";
 export { itemVariants } from "./item/item-variants";
 export { kbdVariants } from "./kbd/kbd-variants";
+export { linkVariants } from "./link/link-variants";
 export { loaderVariants } from "./loader/loader-variants";
 export { METER_CONSTANTS } from "./meter/meter-constants";
 export { meterToneCell } from "./meter/meter-tone";
@@ -111,7 +111,5 @@ export { tooltipVariants } from "./tooltip/tooltip-variants";
 export { cellVariants } from "../styles/calendar";
 export { cn } from "../styles/cn";
 export { commandContentShellClass, commandListShellClass } from "../styles/inner-corner/command";
-export { linkVariants } from "../styles/link";
-export { racDisabledStateFaceClass } from "../styles/state-face";
 export { focusRing } from "../styles/utils";
 export { BESPOKE_ICON_NAMES, PHOSPHOR_ICON_NAMES } from "../icons/roster";

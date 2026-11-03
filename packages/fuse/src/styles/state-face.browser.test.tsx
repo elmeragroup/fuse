@@ -30,6 +30,7 @@ import { CheckboxItem } from "../components/checkbox/checkbox-item";
 import { Combobox } from "../components/combobox";
 import { InputGroup } from "../components/input-group";
 import { Input } from "../components/input/input";
+import { Link } from "../components/link/link";
 import { NumberField } from "../components/number-field/number-field";
 import { Radio, RadioGroup, RadioIconButton } from "../components/radio-group/radio-group";
 import { Select } from "../components/select";
@@ -42,7 +43,6 @@ import { Toggle } from "../components/toggle/toggle";
 import { Tooltip } from "../components/tooltip";
 import { ChartBar } from "../icons/generated/chart-bar";
 import { DateField } from "../react-aria/date-field/date-field";
-import { Link } from "../react-aria/link/link";
 import { UiProviders } from "../react-aria/ui-providers/ui-providers";
 
 /**
@@ -62,6 +62,7 @@ function pointerPaint(element: Element) {
     borderColor: style.borderColor,
     color: style.color,
     textDecorationLine: style.textDecorationLine,
+    textDecorationThickness: style.textDecorationThickness,
     opacity: style.opacity,
     transform: style.transform,
     translate: style.translate,
@@ -213,9 +214,6 @@ function DisabledControls(): ReactNode {
           <Accordion.Content>Returns details</Accordion.Content>
         </Accordion.Item>
       </Accordion.Root>
-      <Link href="/orders" isDisabled className="transition-none">
-        Disabled link
-      </Link>
     </>
   );
 }
@@ -253,7 +251,6 @@ const DISABLED_CONTROLS = [
   ["date field", () => roleNamed("group", "Disabled date")],
   ["accordion trigger", () => roleNamed("button", "Disabled section")],
   ["aria-disabled accordion trigger", () => roleNamed("button", "Aria-disabled section")],
-  ["link", () => roleNamed("link", "Disabled link")],
 ] as const;
 
 // Density declares only --control-* metrics (density-css.test.ts), and nothing here reads one,

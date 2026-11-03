@@ -5,31 +5,22 @@
     {
       "name": "Link",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/react-aria/link/link.tsx",
+      "sourcePath": "packages/fuse/src/components/link/link.tsx",
       "forwardedFrom": [
-        "@react-types/shared",
-        "@types/react",
-        "react-aria",
-        "react-aria-components"
+        "@base-ui/react",
+        "@types/react"
       ],
-      "forwardedCount": 104,
+      "forwardedCount": 288,
       "props": [
         {
-          "name": "align",
-          "origin": "recipe-axis",
-          "type": "\"center\" | \"justify\" | \"left\" | \"right\" | undefined",
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
-          "required": false
-        },
-        {
-          "name": "leading",
-          "origin": "recipe-axis",
-          "type": "\"loose\" | \"none\" | \"relaxed\" | \"snug\" | \"tight\" | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
         },
         {
@@ -42,9 +33,18 @@
           "required": false
         },
         {
+          "name": "underline",
+          "origin": "recipe-axis",
+          "type": "\"always\" | \"hover\" | \"none\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
           "name": "variant",
           "origin": "recipe-axis",
-          "type": "\"brand\" | \"default\" | \"error\" | \"foreground\" | \"inherit\" | \"muted\" | \"primary\" | \"secondary\" | undefined",
+          "type": "\"brand\" | \"default\" | \"error\" | \"foreground\" | \"muted\" | \"primary\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "",

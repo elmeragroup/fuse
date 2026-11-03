@@ -462,7 +462,7 @@ const SOURCES: readonly RendererSource[] = [
   },
   {
     set: "link",
-    entry: "dist/react-aria/link.js",
+    entry: "dist/link.js",
     load: async () => (await import("./link-cell.ts")).link,
   },
   {

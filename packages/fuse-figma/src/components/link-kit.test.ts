@@ -1,14 +1,14 @@
 /**
- * Unit under test: the Link component set as the build produces them. Oracle: the Fuse variable or
- * literal each Figma field of a cell must carry, read by hand from `styles/link.ts`, from what
- * `react-aria/link/link.tsx` adds to the recipe from React Aria's render props (the state focus
- * ring in `styles/utils.ts` and the rac-target disabled face in `styles/state-face.ts`), from the
- * classes Tailwind compiles them to, and from the docs Router demo, whose first link reads
- * `Invoice 1042`. Link sets no type size, so its text takes the host page's: the browser's 16px
- * `medium` and preflight's `line-height: 1.5` on `<html>`. The `default` variant's `text-inherit`
- * takes the page's `foreground`. `enabled-hover:opacity-80` fades a hovered link to 80%, the focus
- * ring answers `isFocusVisible` with `ring-2 ring-ring`, and the disabled face answers `isDisabled`
- * with `opacity-50`.
+ * Unit under test: the Link component set as the build produces it. Oracle: the Fuse variable or
+ * literal each Figma field of a cell must carry, read by hand from `components/link/link-variants.ts`,
+ * the shared self focus ring in `styles/utils.ts`, the classes Tailwind compiles them to, and the
+ * docs React Aria demo, whose link reads `invoice 1042`. Link sets no type size, so its text takes
+ * the host page's: the browser's 16px `medium` and preflight's `line-height: 1.5` on `<html>`. The
+ * `default` variant's `text-inherit` takes the page's `foreground`. At 16px the underline sits
+ * `0.2em` = 3.2px below the text and is `max(1px, 0.0625em)` = 1px thick, and a hover thickens an
+ * `always` underline to `max(2px, 0.125em)` = 2px. `enabled-hover:underline` draws a `hover`
+ * link's underline, `enabled-hover:opacity-80` fades a `none` link to 80%, and keyboard focus
+ * draws `ring-2 ring-ring`.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -33,10 +33,7 @@ beforeAll(async () => {
   ({ spec, coverage } = await builtKit());
 });
 
-/**
- * Each variant the set draws and the color its text takes. The recipe also declares `secondary`,
- * the deprecated alias whose class is `foreground`'s, and `inherit`, whose class is `default`'s.
- */
+/** Each variant the set draws and the color its text takes. */
 const COLORS = {
   default: "foreground",
   foreground: "foreground",
@@ -46,13 +43,18 @@ const COLORS = {
   error: "error",
 } as const;
 
-/** Each weight and the font style `font-normal` and `font-medium` give Roboto. */
-const STYLES = { normal: "Regular", bold: "Medium" } as const;
+const UNDERLINES = ["always", "hover", "none"];
 
-const STATES = ["rest", "hover", "focus", "disabled"];
+const STATES = ["rest", "hover", "focus"];
 
-/** A link: its text in the host's 16/24px type, in a box that hugs it with no fill or corner. */
-function link(color: string, fontStyle: string) {
+/** The resting underline at 16px: 3.2px below the text, 1px thick. */
+const THIN = { offset: 3.2, thickness: 1 };
+
+/**
+ * A link: its text in the host's 16/24px type, in a box that hugs it with no fill or corner.
+ * `toEqual` reads an undefined `underline` as the field left out, as a cell with no underline has it.
+ */
+function link(color: string, underline: { offset: number; thickness: number } | undefined) {
   return {
     name: "link",
     ...CENTERED_BOX,
@@ -64,71 +66,89 @@ function link(color: string, fontStyle: string) {
         kind: "text",
         key: "label",
         name: "label",
-        characters: "Invoice 1042",
+        characters: "invoice 1042",
         textProperty: "Label",
         fontFamily: token("font-sans"),
-        fontStyle,
+        fontStyle: "Regular",
         fontSize: literal(16),
         lineHeight: literal(24),
         color: paint(color),
+        underline,
         ...HUGGING_LABEL,
       },
     ],
   };
 }
 
-/** Every variant and weight with the color and font style its text takes. */
-const LOOKS = Object.entries(COLORS).flatMap(([variant, color]) =>
-  Object.entries(STYLES).map(([weight, fontStyle]) => ({ variant, weight, color, fontStyle }))
-);
+function cell(variant: string, underline: string, state: string) {
+  return variantRoot(spec, `link/variant=${variant},underline=${underline},state=${state}`);
+}
 
 describe("the Link component set", () => {
-  it("holds 6 variants × 2 weights × 4 states on the Link page, with columns by state and the demo's text", () => {
+  it("holds 6 variants × 3 underlines × 3 states on the Link page, with columns by state and the demo's text", () => {
     const links = spec.componentSets.find((candidate) => candidate.key === "link");
     expect([links?.name, links?.page]).toEqual(["Link", "page/link"]);
     expect(links?.axes).toEqual([
       { name: "variant", values: Object.keys(COLORS) },
-      { name: "weight", values: Object.keys(STYLES) },
+      { name: "underline", values: UNDERLINES },
       { name: "state", values: STATES },
     ]);
     expect(links?.columnAxis).toBe("state");
-    expect(new Set(links?.variants.map((cell) => cell.key)).size).toBe(48);
-    expect(links?.textProperties).toEqual([{ name: "Label", defaultValue: "Invoice 1042" }]);
+    expect(new Set(links?.variants.map((variant) => variant.key)).size).toBe(54);
+    expect(links?.textProperties).toEqual([{ name: "Label", defaultValue: "invoice 1042" }]);
     expect(links?.swapProperties).toEqual([]);
   });
 
-  it("draws each variant's text color at each weight at rest, as a box that hugs its text", () => {
-    for (const { variant, weight, color, fontStyle } of LOOKS) {
-      expect(variantRoot(spec, `link/variant=${variant},weight=${weight},state=rest`), variant).toEqual(
-        link(color, fontStyle)
-      );
+  it("underlines an always link at rest and thickens the line on hover, in each variant's color", () => {
+    for (const [variant, color] of Object.entries(COLORS)) {
+      expect(cell(variant, "always", "rest"), variant).toEqual(link(color, THIN));
+      expect(cell(variant, "always", "hover"), variant).toEqual(link(color, { ...THIN, thickness: 2 }));
     }
   });
 
-  it("fades a hovered link to 80%, rings a focused one with the 2px ring and dims a disabled one to 50%", () => {
-    for (const { variant, weight, color, fontStyle } of LOOKS) {
-      const cell = (state: string) =>
-        variantRoot(spec, `link/variant=${variant},weight=${weight},state=${state}`);
-      const resting = link(color, fontStyle);
-      expect(cell("hover"), variant).toEqual({ ...resting, opacity: 0.8 });
-      expect(cell("focus"), variant).toEqual({ ...resting, shadows: [FOCUS_RING] });
-      expect(cell("disabled"), variant).toEqual({ ...resting, opacity: 0.5 });
+  it("underlines a hover link only on hover", () => {
+    for (const [variant, color] of Object.entries(COLORS)) {
+      expect(cell(variant, "hover", "rest"), variant).toEqual(link(color, undefined));
+      expect(cell(variant, "hover", "hover"), variant).toEqual(link(color, THIN));
     }
   });
 
-  it("drops the cursor and the transition, and leaves nothing unmapped", () => {
+  it("never underlines a none link and fades it to 80% on hover", () => {
+    for (const [variant, color] of Object.entries(COLORS)) {
+      expect(cell(variant, "none", "rest"), variant).toEqual(link(color, undefined));
+      expect(cell(variant, "none", "hover"), variant).toEqual({ ...link(color, undefined), opacity: 0.8 });
+    }
+  });
+
+  it("rings a focused link with the 2px ring and keeps its resting underline", () => {
+    for (const [variant, color] of Object.entries(COLORS)) {
+      expect(cell(variant, "always", "focus"), variant).toEqual({
+        ...link(color, THIN),
+        shadows: [FOCUS_RING],
+      });
+      expect(cell(variant, "none", "focus"), variant).toEqual({
+        ...link(color, undefined),
+        shadows: [FOCUS_RING],
+      });
+    }
+  });
+
+  it("drops the cursor, the transition and the line fragments, and leaves nothing unmapped", () => {
     const rows = coverage.filter((row) => row.component === "Link");
     const outcomes = (className: string) =>
       new Set(
         rows.filter((row) => row.className === className).map((row) => `${row.property}: ${row.outcome}`)
       );
-    expect(outcomes("cursor-not-allowed")).toEqual(new Set(["cursor: dropped"]));
-    expect(outcomes("transition-opacity")).toEqual(
+    expect(outcomes("cursor-pointer")).toEqual(new Set(["cursor: dropped"]));
+    expect(outcomes("transition-[opacity,text-decoration-thickness]")).toEqual(
       new Set([
         "transition-property: dropped",
         "transition-timing-function: dropped",
         "transition-duration: dropped",
       ])
+    );
+    expect(outcomes("box-decoration-clone")).toEqual(
+      new Set(["box-decoration-break: dropped", "-webkit-box-decoration-break: dropped"])
     );
     expect(rows.filter((row) => row.outcome === "unmapped")).toEqual([]);
   });

@@ -146,16 +146,36 @@ describe("planChildren on a label", () => {
 
   it.effect("underlines a link label, then sets the offset an underline holds, in one operation", () =>
     Effect.gen(function* () {
-      const link: TextLayerSpec = { ...LABEL, underline: { offset: 4 } };
+      const link: TextLayerSpec = { ...LABEL, underline: { offset: 4, thickness: undefined } };
       expect(yield* changesFor(button, link)).toEqual([
         "Button / Label: textDecoration → UNDERLINE, offset 4",
       ]);
 
       const { lines, writes } = yield* applyTo(button, link);
       expect(lines).toEqual(["Button / Label: textDecoration → UNDERLINE, offset 4"]);
-      expect(writes).toEqual([`${label.id} textDecoration`, `${label.id} textDecorationOffset`]);
+      expect(writes).toEqual([
+        `${label.id} textDecoration`,
+        `${label.id} textDecorationOffset`,
+        `${label.id} textDecorationThickness`,
+      ]);
       expect(label.textDecorationOffset).toEqual({ unit: "PIXELS", value: 4 });
+      expect(label.textDecorationThickness).toEqual({ unit: "AUTO" });
       expect(yield* changesFor(button, link)).toEqual([]);
+    })
+  );
+
+  it.effect("sets an underline's thickness with its offset, and plans a thickness change alone", () =>
+    Effect.gen(function* () {
+      const thin: TextLayerSpec = { ...LABEL, underline: { offset: 3.2, thickness: 1 } };
+      const { lines } = yield* applyTo(button, thin);
+      expect(lines).toEqual(["Button / Label: textDecoration → UNDERLINE, offset 3.2, thickness 1"]);
+      expect(label.textDecorationThickness).toEqual({ unit: "PIXELS", value: 1 });
+      expect(yield* changesFor(button, thin)).toEqual([]);
+
+      const thick: TextLayerSpec = { ...LABEL, underline: { offset: 3.2, thickness: 2 } };
+      expect(yield* changesFor(button, thick)).toEqual([
+        "Button / Label: textDecoration → UNDERLINE, offset 3.2, thickness 2",
+      ]);
     })
   );
 

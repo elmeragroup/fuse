@@ -143,6 +143,26 @@ export class BrowserUnavailable extends Error {
 /** The computed styles a hover or focus face changes. */
 type StyleSignature = readonly string[];
 
+/**
+ * The CSS properties a style signature reads on an element and on each of its descendants. A
+ * forced state counts as reached when one of them differs from the resting twin's, so a face that
+ * changes only a property outside the list, as an `always` Link's hover thickens its underline
+ * alone, reads as missing.
+ */
+const SIGNATURE_PROPERTIES: readonly string[] = [
+  "background-color",
+  "border-top-color",
+  "border-right-color",
+  "border-bottom-color",
+  "border-left-color",
+  "color",
+  "box-shadow",
+  "text-decoration-line",
+  "text-decoration-thickness",
+  "outline-style",
+  "opacity",
+];
+
 /** Whether the page forces anything on a cell: pseudo classes, attributes, or both. */
 function forcesState(request: CellRequest): boolean {
   return request.forced.length > 0 || Object.keys(request.forcedAttributes).length > 0;
@@ -431,22 +451,13 @@ async function stateChanged(page: Page, request: CellRequest): Promise<boolean> 
  * a switch's thumb, still counts as reached.
  */
 function signature(page: Page, selector: string): Promise<StyleSignature> {
-  return page.locator(selector).evaluate((element) =>
-    [element, ...element.querySelectorAll("*")].flatMap((part) => {
-      const style = getComputedStyle(part);
-      return [
-        style.backgroundColor,
-        style.borderTopColor,
-        style.borderRightColor,
-        style.borderBottomColor,
-        style.borderLeftColor,
-        style.color,
-        style.boxShadow,
-        style.textDecorationLine,
-        style.outlineStyle,
-        style.opacity,
-      ];
-    })
+  return page.locator(selector).evaluate(
+    (element, properties) =>
+      [element, ...element.querySelectorAll("*")].flatMap((part) => {
+        const style = getComputedStyle(part);
+        return properties.map((property) => style.getPropertyValue(property));
+      }),
+    SIGNATURE_PROPERTIES
   );
 }
 

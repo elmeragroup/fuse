@@ -86,9 +86,7 @@ export const withinFocusRingControlClass = focusRing({ target: "within" }).contr
  * The `state` target exists because the interim react-aria tier hangs the ring on a
  * non-focusable wrapper (a `Group`, a calendar cell, a grid row) and is told about focus
  * through a render prop rather than a `:focus-visible` selector. Its two *fixed* rungs
- * are still constants, so they are resolved here like the other two targets. The one
- * call that genuinely cannot be — `react-aria/link`, which passes a live
- * `isFocusVisible` per render — keeps calling {@link focusRing} directly.
+ * are constants, so they are resolved here like the other two targets.
  */
 export const stateFocusRingClass = focusRing({ target: "state" }).root();
 

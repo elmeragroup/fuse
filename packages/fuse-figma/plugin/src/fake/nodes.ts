@@ -1159,6 +1159,8 @@ class FakeText extends FakeSceneNode {
     state.textDecoration = value;
     state.textDecorationOffset =
       value === "UNDERLINE" ? (state.textDecorationOffset ?? { unit: "AUTO" }) : null;
+    state.textDecorationThickness =
+      value === "UNDERLINE" ? (state.textDecorationThickness ?? { unit: "AUTO" }) : null;
   }
 
   /** Figma holds an underline offset only while the layer is underlined. */
@@ -1175,6 +1177,23 @@ class FakeText extends FakeSceneNode {
     write(state, "textDecorationOffset");
     if (state.textDecoration === "UNDERLINE") {
       state.textDecorationOffset = value;
+    }
+  }
+
+  /** Figma holds an underline thickness only while the layer is underlined. */
+  get textDecorationThickness(): TextDecorationThickness | PluginAPI["mixed"] | null {
+    return live(this).textDecorationThickness;
+  }
+
+  set textDecorationThickness(value: TextDecorationThickness | PluginAPI["mixed"] | null) {
+    const state = live(this);
+    if (value === MIXED) {
+      throw new Error("Cannot write figma.mixed as an underline thickness.");
+    }
+    requireHeldFonts(state, "textDecorationThickness");
+    write(state, "textDecorationThickness");
+    if (state.textDecoration === "UNDERLINE") {
+      state.textDecorationThickness = value;
     }
   }
 

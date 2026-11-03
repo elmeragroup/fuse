@@ -168,8 +168,11 @@ export function planText(
   }
 }
 
-/** Whether a layer's underline offset is the one the spec asks for. */
-function offsetMatches(current: TextDecorationOffset | null, desired: TextDecorationOffset): boolean {
+/** Whether a layer's underline offset or thickness is the one the spec asks for. */
+function decorationMatches(
+  current: TextDecorationOffset | TextDecorationThickness | null,
+  desired: TextDecorationOffset | TextDecorationThickness
+): boolean {
   if (current === null || current.unit !== desired.unit) {
     return false;
   }
@@ -233,8 +236,8 @@ function planLetterSpacing(run: Run, text: TextNode, label: string, spec: TextLa
 }
 
 /**
- * Plan the underline as one operation, because Figma holds an underline offset only while the
- * layer is underlined.
+ * Plan the underline as one operation, because Figma holds an underline offset and thickness only
+ * while the layer is underlined.
  */
 function planUnderline(run: Run, text: TextNode, label: string, spec: TextLayerSpec): void {
   const underline = spec.underline;
@@ -248,14 +251,27 @@ function planUnderline(run: Run, text: TextNode, label: string, spec: TextLayerS
   }
   const offset: TextDecorationOffset =
     underline.offset === undefined ? { unit: "AUTO" } : { unit: "PIXELS", value: underline.offset };
-  const held = text.textDecorationOffset === run.figma.mixed ? null : text.textDecorationOffset;
-  if (text.textDecoration === "UNDERLINE" && offsetMatches(held, offset)) {
+  const thickness: TextDecorationThickness =
+    underline.thickness === undefined ? { unit: "AUTO" } : { unit: "PIXELS", value: underline.thickness };
+  const heldOffset = text.textDecorationOffset === run.figma.mixed ? null : text.textDecorationOffset;
+  const heldThickness =
+    text.textDecorationThickness === run.figma.mixed ? null : text.textDecorationThickness;
+  if (
+    text.textDecoration === "UNDERLINE" &&
+    decorationMatches(heldOffset, offset) &&
+    decorationMatches(heldThickness, thickness)
+  ) {
     return;
   }
-  const description = underline.offset === undefined ? "UNDERLINE" : `UNDERLINE, offset ${underline.offset}`;
+  const details = [
+    ...(underline.offset === undefined ? [] : [`offset ${underline.offset}`]),
+    ...(underline.thickness === undefined ? [] : [`thickness ${underline.thickness}`]),
+  ];
+  const description = ["UNDERLINE", ...details].join(", ");
   change(run.plan, label, `textDecoration → ${description}`, () => {
     text.textDecoration = "UNDERLINE";
     text.textDecorationOffset = offset;
+    text.textDecorationThickness = thickness;
   });
 }
 

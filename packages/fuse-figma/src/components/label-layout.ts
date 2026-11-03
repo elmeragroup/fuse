@@ -13,6 +13,7 @@ import type { CoverageNote, LayerStyle } from "./cascade";
 import type { Cell, LabelDefinition, TextPlacement } from "./component-spec";
 import { describeNumber, evaluateLength, evaluateNumber, normalizeCss, readNumber } from "./css-values";
 import type { VariableIndex } from "./css-values";
+import { evaluateLengthInFont } from "./font-lengths";
 import { HUGGING_TEXT, NO_LIMITS, TOP_LEFT } from "./kit-spec";
 import type {
   ColorSpec,
@@ -79,6 +80,7 @@ const TEXT_PROPERTIES = [
   "letter-spacing",
   "text-decoration-line",
   "text-underline-offset",
+  "text-decoration-thickness",
   "text-align",
   "white-space-collapse",
   "text-wrap-mode",
@@ -370,7 +372,7 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
     (fontStyle) => ({ outcome: "literal", detail: `font style ${fontStyle}` }),
     style.feed("fontStyle", path)
   );
-  const underline = readUnderline(style, path);
+  const underline = readUnderline(style, fontSize, path);
   const letterSpacing = readLetterSpacing(style, path);
   if (fontFamily === undefined || fontSize === undefined || lineHeight === undefined || color === undefined) {
     throw new KitUnmappable({
@@ -589,7 +591,11 @@ function readNativeLines(
   return { sizing: FILLING, truncation: { maxLines: 1 } };
 }
 
-function readUnderline(style: LayerStyle, path: readonly string[]): TextLayerSpec["underline"] {
+function readUnderline(
+  style: LayerStyle,
+  fontSize: NumberSpec | undefined,
+  path: readonly string[]
+): TextLayerSpec["underline"] {
   const underlined = style.read(
     "text-decoration-line",
     (value) => {
@@ -601,13 +607,23 @@ function readUnderline(style: LayerStyle, path: readonly string[]): TextLayerSpe
   );
   if (underlined !== true) {
     style.mark("text-underline-offset", "dropped", "the cell draws no underline", []);
+    style.mark("text-decoration-thickness", "dropped", "the cell draws no underline", []);
     return undefined;
   }
+  // An `em` length takes the label's font size, which only a literal size gives in pixels.
+  const inPixels = (value: string) =>
+    fontSize?.kind === "literal" ? evaluateLengthInFont(value, fontSize.value) : evaluateNumber(value);
   return {
     offset: style.read(
       "text-underline-offset",
-      evaluateNumber,
+      inPixels,
       (offset) => ({ outcome: "literal", detail: `an underline offset of ${offset}px` }),
+      style.feed("underline", path)
+    ),
+    thickness: style.read(
+      "text-decoration-thickness",
+      inPixels,
+      (thickness) => ({ outcome: "literal", detail: `an underline ${thickness}px thick` }),
       style.feed("underline", path)
     ),
   };

@@ -158,6 +158,8 @@ function copiedFields(source: NodeState): Omit<NodeState, UncopiedField> {
     textDecoration: source.textDecoration,
     letterSpacing: { ...source.letterSpacing },
     textDecorationOffset: source.textDecorationOffset === null ? null : { ...source.textDecorationOffset },
+    textDecorationThickness:
+      source.textDecorationThickness === null ? null : { ...source.textDecorationThickness },
     textAutoResize: source.textAutoResize,
     textAlignHorizontal: source.textAlignHorizontal,
     textAlignVertical: source.textAlignVertical,
@@ -274,6 +276,7 @@ export function createNode(file: FileState, type: NodeType, name: string, id?: s
     baseStyle: NEW_TEXT_STYLE,
     textDecoration: "NONE",
     textDecorationOffset: null,
+    textDecorationThickness: null,
     letterSpacing: { unit: "PERCENT", value: 0 },
     textAutoResize: "WIDTH_AND_HEIGHT",
     textAlignHorizontal: "LEFT",
