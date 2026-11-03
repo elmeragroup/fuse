@@ -146,8 +146,8 @@ type StyleSignature = readonly string[];
 /**
  * The CSS properties a style signature reads on an element and on each of its descendants. A
  * forced state counts as reached when one of them differs from the resting twin's, so a face that
- * changes only a property outside the list, as an `always` Link's hover thickens its underline
- * alone, reads as missing.
+ * changes only a property outside the list, as an `always` Link's hover changes only its
+ * underline's color, reads as missing.
  */
 const SIGNATURE_PROPERTIES: readonly string[] = [
   "background-color",
@@ -159,6 +159,7 @@ const SIGNATURE_PROPERTIES: readonly string[] = [
   "box-shadow",
   "text-decoration-line",
   "text-decoration-thickness",
+  "text-decoration-color",
   "outline-style",
   "opacity",
 ];

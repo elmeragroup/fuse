@@ -27,9 +27,13 @@ const {
  * and underline first, and weighs nothing, so these classes and a consumer's own win.
  *
  * `underline` sets the cue that tells a link from its sentence:
- * - `always`, the default, underlines at rest and thickens the line under the pointer. The
+ * - `always`, the default, underlines at rest in a dimmed line, the link's colour at 35% in a
+ *   light scheme and 65% in a dark one, and draws it in the full colour under the pointer. The
  *   default colour is the sentence's own, and `primary` is the text colour in several themes,
  *   so the underline is the cue a reader without the colour difference still sees.
+ *   `light-dark()` picks the share from the `color-scheme` each theme sets, so no theme carries
+ *   a link token. A browser without `light-dark()` drops the declaration and draws the line in
+ *   the full colour.
  * - `hover` underlines only under the pointer, for a link whose place already reads as a link,
  *   such as a row of footer links.
  * - `none` never underlines and fades the text under the pointer, for a link a container
@@ -45,7 +49,7 @@ const {
  */
 export const linkVariants = tv({
   base: cn(
-    "cursor-pointer box-decoration-clone decoration-[max(1px,0.0625em)] underline-offset-[0.2em] transition-[opacity,text-decoration-thickness] has-[>[data-icon]]:whitespace-nowrap [&_svg]:inline [&_svg]:align-[-0.125em] [&_svg:not([class*='size-'])]:size-[1em] [&>[data-icon=inline-end]]:ms-[0.25em] [&>[data-icon=inline-start]]:me-[0.25em]",
+    "cursor-pointer box-decoration-clone decoration-[max(1px,0.0625em)] underline-offset-[0.2em] transition-[opacity,text-decoration-color] has-[>[data-icon]]:whitespace-nowrap [&_svg]:inline [&_svg]:align-[-0.125em] [&_svg:not([class*='size-'])]:size-[1em] [&>[data-icon=inline-end]]:ms-[0.25em] [&>[data-icon=inline-start]]:me-[0.25em]",
     selfFocusRingClass
   ),
   variants: {
@@ -54,7 +58,8 @@ export const linkVariants = tv({
       error: errorColorClass,
     },
     underline: {
-      always: "underline enabled-hover:decoration-[max(2px,0.125em)]",
+      always:
+        "underline decoration-[color:light-dark(color-mix(in_oklab,currentcolor_35%,transparent),color-mix(in_oklab,currentcolor_65%,transparent))] enabled-hover:decoration-current",
       hover: "no-underline enabled-hover:underline",
       none: "no-underline enabled-hover:opacity-80",
     },

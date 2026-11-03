@@ -5,6 +5,7 @@
  */
 
 import type {
+  ColorSpec,
   LineHeightSpec,
   NumberSpec,
   TextLayerSpec,
@@ -13,15 +14,18 @@ import type {
 import type { PropertyIds } from "./child-layers.ts";
 import {
   changeTogetherIn,
+  describeColor,
   describeNumber,
   heldSizing,
   LAYOUT_SIZING,
   near,
+  paintMatches,
   planLength,
   planLimit,
   planPaints,
   planScalar,
   SIZING_MEMBERS,
+  solidPaint,
 } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
 import { fontFor, requireFont } from "./fonts.ts";
@@ -179,6 +183,20 @@ function decorationMatches(
   return current.unit !== "AUTO" && desired.unit !== "AUTO" ? near(current.value, desired.value) : true;
 }
 
+/** Whether a layer's underline color is the one the spec asks for, `AUTO` for an unset one. */
+function decorationColorMatches(
+  run: Run,
+  current: TextDecorationColor | null,
+  desired: ColorSpec | undefined
+): boolean {
+  if (current === null) {
+    return false;
+  }
+  return desired === undefined
+    ? current.value === "AUTO"
+    : current.value !== "AUTO" && paintMatches(run, current.value, desired);
+}
+
 /**
  * Plan a text's line height: in pixels or bound to a variable as a number field, or a percent of the
  * font size, which follows a font size a variable sets per mode, as a real file did on 2026-10-23
@@ -236,8 +254,8 @@ function planLetterSpacing(run: Run, text: TextNode, label: string, spec: TextLa
 }
 
 /**
- * Plan the underline as one operation, because Figma holds an underline offset and thickness only
- * while the layer is underlined.
+ * Plan the underline as one operation, because Figma holds an underline offset, thickness and color
+ * only while the layer is underlined. An unset color writes `AUTO`, the text's own fill.
  */
 function planUnderline(run: Run, text: TextNode, label: string, spec: TextLayerSpec): void {
   const underline = spec.underline;
@@ -256,22 +274,28 @@ function planUnderline(run: Run, text: TextNode, label: string, spec: TextLayerS
   const heldOffset = text.textDecorationOffset === run.figma.mixed ? null : text.textDecorationOffset;
   const heldThickness =
     text.textDecorationThickness === run.figma.mixed ? null : text.textDecorationThickness;
+  const heldColor = text.textDecorationColor === run.figma.mixed ? null : text.textDecorationColor;
   if (
     text.textDecoration === "UNDERLINE" &&
     decorationMatches(heldOffset, offset) &&
-    decorationMatches(heldThickness, thickness)
+    decorationMatches(heldThickness, thickness) &&
+    decorationColorMatches(run, heldColor, underline.color)
   ) {
     return;
   }
   const details = [
     ...(underline.offset === undefined ? [] : [`offset ${underline.offset}`]),
     ...(underline.thickness === undefined ? [] : [`thickness ${underline.thickness}`]),
+    ...(underline.color === undefined ? [] : [`color ${describeColor(underline.color)}`]),
   ];
   const description = ["UNDERLINE", ...details].join(", ");
+  const color: TextDecorationColor =
+    underline.color === undefined ? { value: "AUTO" } : { value: solidPaint(run, underline.color) };
   change(run.plan, label, `textDecoration → ${description}`, () => {
     text.textDecoration = "UNDERLINE";
     text.textDecorationOffset = offset;
     text.textDecorationThickness = thickness;
+    text.textDecorationColor = color;
   });
 }
 

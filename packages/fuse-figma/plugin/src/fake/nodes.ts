@@ -49,7 +49,14 @@ import {
   turnOf,
 } from "./layout.ts";
 import { hiddenByProperty, markOverride, noteOverride, shown } from "./overrides.ts";
-import { heldColorBindings, storeEffect, storePaint, writeFills, writeStrokeSide } from "./paints.ts";
+import {
+  heldColorBindings,
+  storeEffect,
+  storePaint,
+  storeSolidPaint,
+  writeFills,
+  writeStrokeSide,
+} from "./paints.ts";
 import {
   componentKey,
   componentOf,
@@ -1161,6 +1168,8 @@ class FakeText extends FakeSceneNode {
       value === "UNDERLINE" ? (state.textDecorationOffset ?? { unit: "AUTO" }) : null;
     state.textDecorationThickness =
       value === "UNDERLINE" ? (state.textDecorationThickness ?? { unit: "AUTO" }) : null;
+    state.textDecorationColor =
+      value === "UNDERLINE" ? (state.textDecorationColor ?? { value: "AUTO" }) : null;
   }
 
   /** Figma holds an underline offset only while the layer is underlined. */
@@ -1194,6 +1203,24 @@ class FakeText extends FakeSceneNode {
     write(state, "textDecorationThickness");
     if (state.textDecoration === "UNDERLINE") {
       state.textDecorationThickness = value;
+    }
+  }
+
+  /** Figma holds an underline color only while the layer is underlined. */
+  get textDecorationColor(): TextDecorationColor | PluginAPI["mixed"] | null {
+    return live(this).textDecorationColor;
+  }
+
+  set textDecorationColor(value: TextDecorationColor | PluginAPI["mixed"] | null) {
+    const state = live(this);
+    if (value === MIXED) {
+      throw new Error("Cannot write figma.mixed as an underline color.");
+    }
+    requireHeldFonts(state, "textDecorationColor");
+    write(state, "textDecorationColor");
+    if (state.textDecoration === "UNDERLINE") {
+      state.textDecorationColor =
+        value === null || value.value === "AUTO" ? value : { value: storeSolidPaint(value.value) };
     }
   }
 

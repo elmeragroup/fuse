@@ -34,7 +34,7 @@ describe("linkVariants", () => {
       ["variant", "muted", "text-muted-foreground"],
       ["variant", "error", "text-error"],
       ["underline", "always", "underline"],
-      ["underline", "always", "enabled-hover:decoration-[max(2px,0.125em)]"],
+      ["underline", "always", "enabled-hover:decoration-current"],
       ["underline", "hover", "no-underline"],
       ["underline", "hover", "enabled-hover:underline"],
       ["underline", "none", "no-underline"],
@@ -62,11 +62,11 @@ describe("linkVariants", () => {
     ]);
   });
 
-  it("drops the resting underline and the always-on thickening outside the always arm", () => {
+  it("keeps the resting underline and its full hover colour to the always arm", () => {
     for (const underline of ["hover", "none"] as const) {
       const rendered = classes(linkVariants({ underline }));
       expect(rendered, underline).not.toContain("underline");
-      expect(rendered, underline).not.toContain("enabled-hover:decoration-[max(2px,0.125em)]");
+      expect(rendered, underline).not.toContain("enabled-hover:decoration-current");
     }
   });
 });

@@ -5,10 +5,12 @@
  * docs React Aria demo, whose link reads `invoice 1042`. Link sets no type size, so its text takes
  * the host page's: the browser's 16px `medium` and preflight's `line-height: 1.5` on `<html>`. The
  * `default` variant's `text-inherit` takes the page's `foreground`. At 16px the underline sits
- * `0.2em` = 3.2px below the text and is `max(1px, 0.0625em)` = 1px thick, and a hover thickens an
- * `always` underline to `max(2px, 0.125em)` = 2px. `enabled-hover:underline` draws a `hover`
- * link's underline, `enabled-hover:opacity-80` fades a `none` link to 80%, and keyboard focus
- * draws `ring-2 ring-ring`.
+ * `0.2em` = 3.2px below the text and is `max(1px, 0.0625em)` = 1px thick. An `always` underline
+ * rests in `light-dark()` of the text color at 35% and 65%, which the kit draws as the light arm:
+ * the role tint `<color>/35` of the link's text color. Its hover, `enabled-hover:decoration-current`,
+ * draws it in the text's own color, Figma's `AUTO`, at the same 1px. `enabled-hover:underline` draws
+ * a `hover` link's underline in the text's color, `enabled-hover:opacity-80` fades a `none` link to
+ * 80%, and keyboard focus draws `ring-2 ring-ring`.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -47,14 +49,19 @@ const UNDERLINES = ["always", "hover", "none"];
 
 const STATES = ["rest", "hover", "focus"];
 
-/** The resting underline at 16px: 3.2px below the text, 1px thick. */
-const THIN = { offset: 3.2, thickness: 1 };
+/** An underline at 16px, 3.2px below the text and 1px thick, in the text's own color. */
+const LINE = { offset: 3.2, thickness: 1, color: undefined };
+
+/** An always link's resting underline: the tint of its text color at the light scheme's 35%. */
+function dimmed(color: string) {
+  return { ...LINE, color: paint(`${color}/35`) };
+}
 
 /**
  * A link: its text in the host's 16/24px type, in a box that hugs it with no fill or corner.
  * `toEqual` reads an undefined `underline` as the field left out, as a cell with no underline has it.
  */
-function link(color: string, underline: { offset: number; thickness: number } | undefined) {
+function link(color: string, underline: typeof LINE | ReturnType<typeof dimmed> | undefined) {
   return {
     name: "link",
     ...CENTERED_BOX,
@@ -99,17 +106,17 @@ describe("the Link component set", () => {
     expect(links?.swapProperties).toEqual([]);
   });
 
-  it("underlines an always link at rest and thickens the line on hover, in each variant's color", () => {
+  it("dims an always link's underline to its color's 35% tint at rest, and draws it full on hover", () => {
     for (const [variant, color] of Object.entries(COLORS)) {
-      expect(cell(variant, "always", "rest"), variant).toEqual(link(color, THIN));
-      expect(cell(variant, "always", "hover"), variant).toEqual(link(color, { ...THIN, thickness: 2 }));
+      expect(cell(variant, "always", "rest"), variant).toEqual(link(color, dimmed(color)));
+      expect(cell(variant, "always", "hover"), variant).toEqual(link(color, LINE));
     }
   });
 
   it("underlines a hover link only on hover", () => {
     for (const [variant, color] of Object.entries(COLORS)) {
       expect(cell(variant, "hover", "rest"), variant).toEqual(link(color, undefined));
-      expect(cell(variant, "hover", "hover"), variant).toEqual(link(color, THIN));
+      expect(cell(variant, "hover", "hover"), variant).toEqual(link(color, LINE));
     }
   });
 
@@ -123,7 +130,7 @@ describe("the Link component set", () => {
   it("rings a focused link with the 2px ring and keeps its resting underline", () => {
     for (const [variant, color] of Object.entries(COLORS)) {
       expect(cell(variant, "always", "focus"), variant).toEqual({
-        ...link(color, THIN),
+        ...link(color, dimmed(color)),
         shadows: [FOCUS_RING],
       });
       expect(cell(variant, "none", "focus"), variant).toEqual({
@@ -140,7 +147,7 @@ describe("the Link component set", () => {
         rows.filter((row) => row.className === className).map((row) => `${row.property}: ${row.outcome}`)
       );
     expect(outcomes("cursor-pointer")).toEqual(new Set(["cursor: dropped"]));
-    expect(outcomes("transition-[opacity,text-decoration-thickness]")).toEqual(
+    expect(outcomes("transition-[opacity,text-decoration-color]")).toEqual(
       new Set([
         "transition-property: dropped",
         "transition-timing-function: dropped",
@@ -151,5 +158,20 @@ describe("the Link component set", () => {
       new Set(["box-decoration-break: dropped", "-webkit-box-decoration-break: dropped"])
     );
     expect(rows.filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
+
+  it("binds the light arm of the resting underline color and records the dark arm it leaves out", () => {
+    const dimmedRows = coverage.filter(
+      (row) => row.component === "Link" && row.property === "text-decoration-color" && row.outcome === "bound"
+    );
+    const tints = new Set(
+      ["foreground", "primary", "brand", "muted-foreground", "error"].map((role) => `${role}/35`)
+    );
+    expect(new Set(dimmedRows.map((row) => /Fuse tokens \/ (\S+),/.exec(row.detail)?.[1]))).toEqual(tints);
+    for (const row of dimmedRows) {
+      expect(row.detail, row.detail).toContain(
+        "The dark arm color-mix(in oklab,currentcolor 65%,transparent) is not drawn"
+      );
+    }
   });
 });

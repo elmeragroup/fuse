@@ -2,8 +2,8 @@
  * Whether the comparison page reaches a forced Link hover. Unit under test: `CompareBrowser`'s
  * check that a forced state changed the cell, which reads a style signature off the forced cell
  * and its resting twin in Chromium. Oracle: `link-variants.ts`, whose `always` underline changes
- * only `text-decoration-thickness` under `enabled-hover:`, from `max(1px,0.0625em)` to
- * `max(2px,0.125em)`, so forcing `:hover` must read as `forced` and never as `missing`.
+ * only `text-decoration-color` under `enabled-hover:`, from its text color at 35% in the light
+ * preview to `currentcolor`, so forcing `:hover` must read as `forced` and never as `missing`.
  *
  * It launches Playwright's Chromium and reads the Fuse build, so it runs in the `chromium` project,
  * which `test:browser` runs after the Fuse build.
@@ -59,7 +59,7 @@ const alwaysHoverState = Effect.gen(function* () {
 });
 
 describe("the comparison page's forced states", () => {
-  it("reaches the hover of an always link, whose underline only thickens", async () => {
+  it("reaches the hover of an always link, whose underline only changes color", async () => {
     const state = await Effect.runPromise(
       alwaysHoverState.pipe(Effect.scoped, Effect.provide(NodeServices.layer))
     );

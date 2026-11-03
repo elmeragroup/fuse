@@ -8,7 +8,14 @@ import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import { settleTransitions } from "../../../test/assert-invalid-ring";
 import { flightLazyElement } from "../../../test/flight-lazy-element";
-import { cssVarColor, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { fkasPrivate } from "../../../test/theme-fixtures";
+import {
+  cssVarColor,
+  renderThemed,
+  roleNamed,
+  snapshotDocumentTheme,
+  stampDocumentTheme,
+} from "../../../test/themed-browser-render";
 import { Link } from "./link";
 
 /** The parent box a link sits in. */
@@ -128,20 +135,46 @@ describe("Link in a sentence", () => {
 });
 
 describe("Link underline", () => {
-  it("thickens the resting underline under the pointer", async () => {
-    renderThemed(
-      <p style={{ fontSize: 16 }}>
-        <Link href="#always" className="transition-none">
-          Always
-        </Link>
-      </p>
-    );
-    const link = roleNamed("link", "Always");
-    expect(underlinePx(link)).toBe(1);
-    await userEvent.hover(link);
-    settleTransitions(link);
-    expect(underlinePx(link)).toBe(2);
-  });
+  // Oracle: a reference span beside the link, underlined in the share of the text colour the
+  // recipe's JSDoc promises, 35% in a light scheme and 65% in a dark one. Chromium resolves both,
+  // so the two computed colours compare as written.
+  it.each([
+    ["light", "35%"],
+    ["dark", "65%"],
+  ] as const)(
+    "dims the resting underline in a %s scheme and draws it in the full colour on hover",
+    async (scheme, share) => {
+      const restore = snapshotDocumentTheme();
+      stampDocumentTheme(fkasPrivate, scheme);
+      try {
+        renderThemed(
+          <p>
+            <Link href="#always" className="transition-none">
+              Always
+            </Link>
+            <span
+              style={{ textDecorationColor: `color-mix(in oklab, currentcolor ${share}, transparent)` }}
+            />
+          </p>
+        );
+        const link = roleNamed("link", "Always");
+        const reference = link.nextElementSibling;
+        if (!(reference instanceof HTMLElement)) {
+          throw new Error("expected the reference span");
+        }
+        expect(getComputedStyle(link).colorScheme).toBe(scheme);
+        expect(getComputedStyle(link).textDecorationColor).toBe(
+          getComputedStyle(reference).textDecorationColor
+        );
+        expect(underlinePx(link)).toBe(1);
+        await userEvent.hover(link);
+        expect(getComputedStyle(link).textDecorationColor).toBe(getComputedStyle(link).color);
+        expect(underlinePx(link)).toBe(1);
+      } finally {
+        restore();
+      }
+    }
+  );
 
   it("underlines a hover link only under the pointer", async () => {
     renderThemed(

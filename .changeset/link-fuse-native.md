@@ -8,8 +8,9 @@ by default. It takes the sentence's font, size, weight and line height and stays
 link wraps with its text. The underline's offset and thickness scale with the text, and the line is
 never thinner than 1px.
 
-The new `underline` prop sets the cue: `"always"` (the default) underlines at rest and thickens the
-line on hover, `"hover"` underlines only on hover, and `"none"` never underlines and fades the text
+The new `underline` prop sets the cue: `"always"` (the default) underlines at rest in a dimmed line,
+the link's colour at 35% in a light scheme and 65% in a dark one, and draws it in the full colour
+on hover; `"hover"` underlines only on hover; and `"none"` never underlines and fades the text
 on hover. `variant` takes `default`, which inherits the text colour, `foreground`, `primary`, `brand`,
 `muted` or `error`. `weight` and `truncate` stay. An SVG child marked `data-icon="inline-end"` or
 `data-icon="inline-start"`, such as an external-link icon, is drawn one `em` square in the link's

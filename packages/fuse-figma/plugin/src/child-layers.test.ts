@@ -44,6 +44,7 @@ const LABEL: TextLayerSpec = {
 /** The variables the label binds, and the ones a designer could bind to its font. */
 const VARIABLES = [
   color("Fuse tokens", "foreground", { r: 0.1, g: 0.1, b: 0.1, a: 1 }),
+  color("Fuse tokens", "foreground/35", { r: 0.1, g: 0.1, b: 0.1, a: 0.35 }),
   string("Fuse tokens", "font-sans", "Roboto"),
   string("Fuse tokens", "label-style", "Medium"),
   float("Fuse density", "control-text", 14),
@@ -146,7 +147,10 @@ describe("planChildren on a label", () => {
 
   it.effect("underlines a link label, then sets the offset an underline holds, in one operation", () =>
     Effect.gen(function* () {
-      const link: TextLayerSpec = { ...LABEL, underline: { offset: 4, thickness: undefined } };
+      const link: TextLayerSpec = {
+        ...LABEL,
+        underline: { offset: 4, thickness: undefined, color: undefined },
+      };
       expect(yield* changesFor(button, link)).toEqual([
         "Button / Label: textDecoration → UNDERLINE, offset 4",
       ]);
@@ -157,24 +161,78 @@ describe("planChildren on a label", () => {
         `${label.id} textDecoration`,
         `${label.id} textDecorationOffset`,
         `${label.id} textDecorationThickness`,
+        `${label.id} textDecorationColor`,
       ]);
       expect(label.textDecorationOffset).toEqual({ unit: "PIXELS", value: 4 });
       expect(label.textDecorationThickness).toEqual({ unit: "AUTO" });
+      expect(label.textDecorationColor).toEqual({ value: "AUTO" });
       expect(yield* changesFor(button, link)).toEqual([]);
     })
   );
 
   it.effect("sets an underline's thickness with its offset, and plans a thickness change alone", () =>
     Effect.gen(function* () {
-      const thin: TextLayerSpec = { ...LABEL, underline: { offset: 3.2, thickness: 1 } };
+      const thin: TextLayerSpec = { ...LABEL, underline: { offset: 3.2, thickness: 1, color: undefined } };
       const { lines } = yield* applyTo(button, thin);
       expect(lines).toEqual(["Button / Label: textDecoration → UNDERLINE, offset 3.2, thickness 1"]);
       expect(label.textDecorationThickness).toEqual({ unit: "PIXELS", value: 1 });
       expect(yield* changesFor(button, thin)).toEqual([]);
 
-      const thick: TextLayerSpec = { ...LABEL, underline: { offset: 3.2, thickness: 2 } };
+      const thick: TextLayerSpec = { ...LABEL, underline: { offset: 3.2, thickness: 2, color: undefined } };
       expect(yield* changesFor(button, thick)).toEqual([
         "Button / Label: textDecoration → UNDERLINE, offset 3.2, thickness 2",
+      ]);
+    })
+  );
+
+  it.effect("binds an underline's color to its tint, then plans the text's own color alone", () =>
+    Effect.gen(function* () {
+      const tint = button.file.variable("Fuse tokens", "foreground/35");
+      const dimmed: TextLayerSpec = {
+        ...LABEL,
+        underline: {
+          offset: 3.2,
+          thickness: 1,
+          color: { kind: "variable", variable: { collection: "Fuse tokens", name: "foreground/35" } },
+        },
+      };
+      const { lines } = yield* applyTo(button, dimmed);
+      expect(lines).toEqual([
+        "Button / Label: textDecoration → UNDERLINE, offset 3.2, thickness 1, color foreground/35",
+      ]);
+      const held = label.textDecorationColor;
+      const paint = held === null || held === button.file.figma.mixed ? undefined : held.value;
+      if (paint === undefined || paint === "AUTO") {
+        throw new Error("expected the underline to hold a paint");
+      }
+      expect(paint.boundVariables?.color?.id).toBe(tint.id);
+      // Rule 1: the bound paint takes the tint's alpha as its opacity.
+      expect(paint.opacity).toBeCloseTo(0.35);
+      expect(yield* changesFor(button, dimmed)).toEqual([]);
+
+      const full: TextLayerSpec = { ...LABEL, underline: { offset: 3.2, thickness: 1, color: undefined } };
+      expect((yield* applyTo(button, full)).lines).toEqual([
+        "Button / Label: textDecoration → UNDERLINE, offset 3.2, thickness 1",
+      ]);
+      expect(label.textDecorationColor).toEqual({ value: "AUTO" });
+    })
+  );
+
+  it.effect("drops the underline's color with the underline, as Figma holds none on plain text", () =>
+    Effect.gen(function* () {
+      const tinted: TextLayerSpec = {
+        ...LABEL,
+        underline: {
+          offset: undefined,
+          thickness: undefined,
+          color: { kind: "variable", variable: { collection: "Fuse tokens", name: "foreground/35" } },
+        },
+      };
+      yield* applyTo(button, tinted);
+      expect((yield* applyTo(button, LABEL)).lines).toEqual(["Button / Label: textDecoration → NONE"]);
+      expect(label.textDecorationColor).toBeNull();
+      expect(yield* changesFor(button, tinted)).toEqual([
+        "Button / Label: textDecoration → UNDERLINE, color foreground/35",
       ]);
     })
   );

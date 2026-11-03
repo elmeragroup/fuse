@@ -214,6 +214,7 @@ export type NodeState = {
   letterSpacing: LetterSpacing;
   textDecorationOffset: TextDecorationOffset | null;
   textDecorationThickness: TextDecorationThickness | null;
+  textDecorationColor: TextDecorationColor | null;
   textAutoResize: TextNode["textAutoResize"];
   textAlignHorizontal: TextNode["textAlignHorizontal"];
   textAlignVertical: TextNode["textAlignVertical"];

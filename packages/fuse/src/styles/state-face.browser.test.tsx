@@ -63,6 +63,7 @@ function pointerPaint(element: Element) {
     color: style.color,
     textDecorationLine: style.textDecorationLine,
     textDecorationThickness: style.textDecorationThickness,
+    textDecorationColor: style.textDecorationColor,
     opacity: style.opacity,
     transform: style.transform,
     translate: style.translate,
