@@ -52,14 +52,12 @@ const paletteTable = tv({
     toolbar: "flex flex-wrap items-center gap-2 border-b border-border p-2",
     search: "@2xl:ms-auto @2xl:w-64 w-full",
     bar: "min-w-0 flex-1",
-    // The table scrolls inside the pane, as Figma's variables panel does, so its header and its
-    // name column stay in view. Fuse's table container is the scroll box: the selectors below
-    // reach it, its header cells and its first column from this element. The scroll padding keeps
-    // a cell that keyboard focus brings into view clear of the sticky header and column: the
-    // column's width is fixed, and the header's height is measured (`use-cell-grid.ts`), since a
-    // generated ramp's badge, stacked under the brand name, makes the header taller. The
-    // columns have fixed widths sized to their content, a ramp step's pill or a hex value, so
-    // five or more brands fit beside the side navigation at 1440px.
+    // The table scrolls inside the pane, as in Figma's variables panel, so the header and the name
+    // column stay in view. Fuse's table container is the scroll box, and the selectors below reach
+    // it, its header cells and its first column. The scroll padding keeps a focused cell clear of
+    // the sticky header and column. The column width is fixed. `use-cell-grid.ts` measures the
+    // header height, because a generated ramp's badge makes the header taller. Each brand column
+    // fits a ramp step's pill or a hex value, so five brands fit beside the side nav at 1440px.
     scroller:
       "min-w-0 outline-none *:data-[slot=table-container]:max-h-[min(44rem,calc(100dvh-12rem))] *:data-[slot=table-container]:scroll-ps-44 *:data-[slot=table-container]:scroll-pt-[var(--grid-header-height,2.75rem)] *:data-[slot=table-container]:overflow-auto [&_table]:table-fixed [&_tbody_td]:p-0 [&_tbody_td]:align-middle [&_tbody_tr:not([data-group-row])>td:first-child]:sticky [&_tbody_tr:not([data-group-row])>td:first-child]:start-0 [&_tbody_tr:not([data-group-row])>td:first-child]:z-10 [&_tbody_tr:not([data-group-row])>td:first-child]:bg-background [&_thead_th]:sticky [&_thead_th]:top-0 [&_thead_th]:z-20 [&_thead_th]:bg-background [&_thead_th:first-child]:start-0 [&_thead_th:first-child]:z-30 [&_tr:not([data-group-row])>*:first-child]:w-44 [&_tr:not([data-group-row])>*:not(:first-child)]:w-36",
     // A long pair name wraps at its hyphens rather than widening the sticky column.

@@ -2,8 +2,9 @@
  * The theme catalog resolved for design tools: every legal theme in both color schemes, the
  * primitives, the density metrics and the density role of every part, with each custom
  * property's CSS, its web code syntax, the one `var()` hop it takes, and the literal at the end
- * of its chain as a design-tool value, and for a color also as declared. Exporters, such as the Figma sync and the docs DTCG export, read this tree instead of
- * parsing CSS values, so every CSS reader stays private to this module.
+ * of its chain as a design-tool value. A color also keeps the literal as declared. Exporters, such
+ * as the Figma sync and the docs DTCG export, read this tree instead of parsing CSS values, so
+ * every CSS reader stays private to this module.
  *
  * Token values are fuse source, not caller input, so a value the resolver cannot read is a
  * defect in a token module and throws.
@@ -446,9 +447,9 @@ function recordOf<N extends string, E extends { readonly name: N }>(
  * @template E - The correlated entry union the entry belongs to.
  */
 function correlated<E extends AnyEntry>(entry: UncorrelatedEntry): E {
-  // SAFETY: the resolver takes `kind` from the contract for `name`, and `value`, with a color's
-  // `source`, either comes from the reader for that kind or is copied from a reference target
-  // whose kind it checked is the same. The notes come from the tables for `name`, which give a color its paints.
+  // SAFETY: the resolver takes `kind` from the contract for `name`. `value`, and a color's
+  // `source`, come from the reader for that kind or from a reference target it checked has the
+  // same kind. The notes come from the tables for `name`, which give a color its paints.
   // TypeScript cannot correlate those fields across a lookup.
   return entry as E;
 }

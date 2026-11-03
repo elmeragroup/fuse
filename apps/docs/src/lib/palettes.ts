@@ -69,9 +69,9 @@ export type PaletteTone = {
 };
 
 /**
- * Whether a pair is one of Fuse's text-grade pairs, which its contrast gate holds at 4.5:1 in
- * every theme, or another role pair: a role and the `-foreground` drawn on it, or a pair in
- * {@link CONTRACT_PAIRS}, which the gate does not hold at 4.5:1 in every theme and scheme.
+ * A pair's kind. `text-grade` pairs are the ones Fuse's contrast gate holds at 4.5:1 in every
+ * theme and scheme. `role` pairs are a role with its `-foreground`, or a pair in
+ * {@link CONTRACT_PAIRS}, and no gate holds them.
  */
 export type PalettePairKind = "text-grade" | "role";
 
@@ -168,8 +168,8 @@ export const GRADE_LABELS = {
 } as const satisfies Record<ContrastGrade, string>;
 
 /**
- * A ratio as WCAG writes it, such as `4.52:1`, cut to two decimals rather than rounded, so a
- * ratio of 4.4988 reads `4.49:1` beside its Below AA grade and never `4.50:1`.
+ * A ratio as WCAG writes it, such as `4.52:1`, truncated to two decimals, so a ratio of 4.4988
+ * reads `4.49:1` beside its Below AA grade and never `4.50:1`.
  */
 export function formatRatio(ratio: number): string {
   return `${(Math.floor(ratio * 100) / 100).toFixed(2)}:1`;

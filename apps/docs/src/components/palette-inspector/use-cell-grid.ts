@@ -99,7 +99,7 @@ function moveTabStop(grid: HTMLElement, cell: HTMLElement): void {
  * The ARIA grid pattern's keyboard model over a table of cell triggers, with a roving tabindex:
  * one trigger is the grid's tab stop, the one last focused or else the first. The arrow keys move
  * focus between cells, Home and End along the row, and Ctrl+Home and Ctrl+End to the grid's
- * ends; group rows and cells without a trigger are passed over.
+ * ends. The keys skip group rows and cells without a trigger.
  *
  * It also outlines, while a cell is under the pointer or focused, every cell in the same brand
  * column that holds the same color. The outline is an attribute the handlers set on the cells

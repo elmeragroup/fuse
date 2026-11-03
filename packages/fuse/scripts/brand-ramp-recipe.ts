@@ -1,7 +1,7 @@
 /**
  * The recipe that generates a brand's ramps where the Figma brand collection has none, as for
  * Elmera and Nordic Green Energy. It is deterministic and reads only the five Figma ramps and the
- * brand primitive, so the committed literals in `src/theme/tokens/brand-ramps.ts` can be checked
+ * brand primitive, so `brand-ramps.test.ts` checks the literals in `src/theme/tokens/brand-ramps.ts`
  * against it. Run `print-brand-ramps.ts` to print fresh literals after a Figma ramp changes.
  *
  * For each step of the shade ramp:
@@ -19,8 +19,8 @@
  * the five Figma neutral ramps at that step, at the brand primitive's hue, gamut-mapped the same
  * way.
  *
- * Medians of ramps that all darken step by step darken step by step too, so a generated ramp is
- * monotonic, and the anchor's lightness lies between its neighbours' because it is the nearest.
+ * The Figma ramps all darken at every step, so their medians do too, and a generated ramp is
+ * monotonic. The anchor is the nearest step, so its lightness lies between its neighbours'.
  */
 
 import * as Hex from "@elmeragroup/color/hex";

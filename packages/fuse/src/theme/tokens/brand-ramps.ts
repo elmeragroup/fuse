@@ -1,12 +1,12 @@
 /**
  * The brand ramps: two eleven-step scales per brand, `brand-neutral-{50…950}` and
  * `brand-shade-{50…950}`, from near-white at 50 to near-black at 950. A theme resolves them by
- * its brand and segment, the way a mode of the Figma brand collection does, and they hold the
- * same values in both color schemes and both variants, because that collection has neither axis.
+ * its brand and segment, as a mode of the Figma brand collection does. They hold the same values
+ * in both color schemes and both variants, because that collection has neither axis.
  *
- * Five ramps come from Figma, and Elmera and Nordic Green Energy, which have none there, carry
- * ramps generated from their brand primitive (see `scripts/brand-ramp-recipe.ts`). The repo is the
- * theming master from here on: these literals are the source, and Figma follows them.
+ * Five ramps come from Figma. Elmera and Nordic Green Energy have none there, so
+ * `scripts/brand-ramp-recipe.ts` generates theirs from the brand primitive. These literals are
+ * now the source, and Figma follows them.
  */
 
 import type { BrandCode, ThemeSegment } from "./themes";

@@ -38,7 +38,7 @@ export default function TokensPage(): ReactElement {
           real values for whichever of the twenty-four themes is selected. */}
       <TokenSwatchList tokens={COLOR_TOKENS} />
       <p>
-        To see which tones a theme holds, which roles share them and the contrast of each role pair, open{" "}
+        To compare the brands&apos; color roles, ramps and contrast pairs in one table, open{" "}
         <Link href="/handbook/palettes">Palettes &amp; contrast</Link>.
       </p>
 

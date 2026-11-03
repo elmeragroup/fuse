@@ -21,12 +21,11 @@ import type { CopyFeedback, ReadoutLine } from "./color-readout";
 
 const paletteCells = tv({
   slots: {
-    // A cell's trigger fills its grid cell edge to edge, so the pointer crossing from one cell to
-    // the next is always over a trigger and the tooltip never closes in between. The 1px row line
-    // belongs to the cells in a collapsed table, so the hit area reaches over it. The trigger's
-    // focus ring is inset, so the next cell cannot paint over it. The cells that share the focused
-    // color take a faint ring and fill, but never the focused cell itself, whose focus ring the
-    // faint one would replace.
+    // The trigger fills its cell edge to edge, and its hit area reaches over the 1px row line, so
+    // the pointer is always over a trigger and the tooltip stays open between cells. The focus
+    // ring is inset, so the next cell cannot paint over it. Cells that share the focused color get
+    // a faint ring and fill. The focused cell itself does not, or the faint ring would replace its
+    // focus ring.
     trigger:
       "text-sm relative flex h-full min-h-10 w-full min-w-0 items-center gap-2 px-2.5 py-1.5 text-start before:absolute before:inset-x-0 before:-inset-y-px hover:bg-accent/60 focus-visible:ring-inset data-same-tone:not-focus-visible:bg-accent/40 data-same-tone:not-focus-visible:ring-1 data-same-tone:not-focus-visible:ring-foreground/35 data-same-tone:not-focus-visible:ring-inset",
     // The value a role sits on, written once and boxed when it names another token or a step.
@@ -38,8 +37,8 @@ const paletteCells = tv({
     sample:
       "text-xs font-semibold flex h-6 w-7 flex-none items-center justify-center rounded-sm border border-foreground/15 bg-(--pair-bg) text-(--pair-fg)",
     ratio: "font-mono tabular-nums",
-    // A pinned cell holds no value, but it is a cell of the grid, so the arrow keys stop on it. It
-    // shows focus with the same inset ring as a value cell.
+    // A pinned cell holds no value, but the arrow keys still stop on it. It shows focus with the
+    // same inset ring as a value cell.
     pinned:
       "text-xs palette-hatch flex h-full min-h-10 w-full items-center px-2.5 text-muted-foreground outline-hidden select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
   },
@@ -49,7 +48,7 @@ const styles = paletteCells();
 
 /**
  * A pinned brand's cell: the segment it allows, over a hatch. It takes focus as the grid moves
- * through the row, but has no value to copy and no tooltip, since its text says it all.
+ * through the row. It has no value to copy and no tooltip, because its text names the segment.
  */
 export function PinnedCellView({ cell, column }: { cell: PinnedCell; column: number }): ReactElement {
   return (
@@ -161,8 +160,8 @@ type PairCellViewProps = {
 };
 
 /**
- * A pair's contrast in one brand column: an "Aa" chip in the pair's own colors, the ratio cut to
- * two decimals and the WCAG grade. A cell below AA is tinted with the error-soft role.
+ * A pair's contrast in one brand column: an "Aa" chip in the pair's own colors, the ratio truncated
+ * to two decimals and the WCAG grade. A cell below AA is tinted with the error-soft role.
  */
 export function PairCellView({ pair, cell, column, brand, copy }: PairCellViewProps): ReactElement {
   const key = `${pair.foreground}/${pair.background}:${String(column)}`;
@@ -200,7 +199,7 @@ export function PairCellView({ pair, cell, column, brand, copy }: PairCellViewPr
           copied={isCopied(copy, key)}>
           {pair.kind === "text-grade"
             ? "Fuse's contrast gate holds this pair at 4.5:1 in every theme."
-            : "The contrast gate does not hold this pair."}
+            : "No contrast gate checks this pair."}
         </Readout>
       </Tooltip.Content>
     </Tooltip.Root>

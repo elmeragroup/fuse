@@ -4,9 +4,9 @@
  * Reads every legal theme's resolved color tokens in both schemes from the workspace-only
  * `@elmeragroup/fuse/theme-catalog` entry and writes them brand-major: per brand, each of its
  * themes in both schemes, with each token's resolved color and alias and the WCAG contrast of
- * each graded pair. The resolved catalog has already parsed every
- * literal and followed every alias, so this builder only formats each declared color and measures
- * pairs through `@elmeragroup/color`.
+ * each graded pair. The resolved catalog has already parsed every literal and followed every
+ * alias, so this builder only formats each declared color and measures pairs through
+ * `@elmeragroup/color`.
  */
 
 import * as Hex from "@elmeragroup/color/hex";

@@ -127,7 +127,7 @@ export function CopyStatus({ copy }: { copy: CopyFeedback }): ReactElement {
   return (
     <span role="status" className={styles.status()}>
       {state._tag === "copied" ? `Copied ${state.text}` : null}
-      {state._tag === "failed" ? "Could not copy: the browser refused the clipboard" : null}
+      {state._tag === "failed" ? "Could not copy. The browser refused the clipboard." : null}
     </span>
   );
 }

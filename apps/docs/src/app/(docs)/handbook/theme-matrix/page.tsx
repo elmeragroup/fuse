@@ -34,8 +34,8 @@ export default function ThemeMatrixPage(): ReactElement {
       <p>
         Dark palettes apply to all twenty-four themes. Internal themes share a neutral palette and retain
         their brand accents. Fjordkraft company and Fjordkraft Företag use the Bedrift palette. Gudbrandsdal
-        Energi&apos;s dark palette is provisional, derived from the GE design references. To read one
-        theme&apos;s tones, the roles that share them and the contrast of each role pair, open{" "}
+        Energi&apos;s dark palette is provisional, derived from the GE design references. To compare the
+        brands&apos; color roles, ramps and contrast pairs in one table, open{" "}
         <Link href="/handbook/palettes">Palettes &amp; contrast</Link>.
       </p>
 
