@@ -116,6 +116,18 @@ async function placementOver(
   return { gap: below.y - (above.y + above.height), offset: above.x + half - centre };
 }
 
+/**
+ * Asserts that a bar sits centred over its anchor. Floating UI writes the popup's x rounded to a
+ * whole device pixel (`roundByDPR` in `@floating-ui/react-dom`, which Base UI positions through),
+ * so the bar's centre sits within half a device pixel of the anchor's, the half included:
+ * `Math.round` moves an ideal left edge on a half pixel up by exactly 0.5. The bar's width follows
+ * its text, so whether an ideal edge lands on a half pixel depends on the face that draws it.
+ */
+async function expectCentred(page: Page, offset: number): Promise<void> {
+  const dpr = await page.evaluate(() => window.devicePixelRatio);
+  expect(Math.abs(offset), "the bar's centre less the anchor's").toBeLessThanOrEqual(0.5 / dpr);
+}
+
 /** {@link placementOver} for the artboard bar over the artboard `name`. */
 async function placement(page: Page, name: string): Promise<{ gap: number; offset: number }> {
   return placementOver(page, artboardBar(page), artboard(page, name));
@@ -813,7 +825,7 @@ describe("the studio's theme toolbar", () => {
       expect(landed.width).toBeLessThan(start.width - 1);
       expect(landed.y).toBeGreaterThan(start.y);
       await expect.poll(async () => (await placement(page, LIGHT_BOARD)).gap).toBeCloseTo(ARTBOARD_GAP, 0);
-      expect((await placement(page, LIGHT_BOARD)).offset).toBeCloseTo(0, 0);
+      await expectCentred(page, (await placement(page, LIGHT_BOARD)).offset);
     } finally {
       await context.close();
     }
@@ -830,7 +842,7 @@ describe("the studio's theme toolbar", () => {
       const bar = partBar(page);
       await bar.waitFor({ state: "visible" });
       await expect.poll(async () => (await placementOver(page, bar, save)).gap).toBeCloseTo(PART_GAP, 0);
-      expect((await placementOver(page, bar, save)).offset).toBeCloseTo(0, 0);
+      await expectCentred(page, (await placementOver(page, bar, save)).offset);
       const before = await box(save);
 
       // The dense metrics move the button up its artboard and shrink it.
@@ -838,7 +850,7 @@ describe("the studio's theme toolbar", () => {
       await expect.poll(async () => (await box(save)).y).toBeLessThan(before.y - 1);
       expect((await box(save)).width).toBeLessThan(before.width - 1);
       await expect.poll(async () => (await placementOver(page, bar, save)).gap).toBeCloseTo(PART_GAP, 0);
-      expect((await placementOver(page, bar, save)).offset).toBeCloseTo(0, 0);
+      await expectCentred(page, (await placementOver(page, bar, save)).offset);
     } finally {
       await context.close();
     }
