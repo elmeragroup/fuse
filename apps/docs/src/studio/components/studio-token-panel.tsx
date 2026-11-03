@@ -26,6 +26,8 @@ import { ThemeScope } from "@elmeragroup/fuse/theme";
 import { Toggle } from "@elmeragroup/fuse/toggle";
 
 import { SingleToggle } from "../../components/single-toggle";
+import { TOKEN_SECTIONS, TOKEN_TABLE } from "../../lib/token-sections";
+import type { SectionId } from "../../lib/token-sections";
 import { markVariant, pairMark } from "../lib/color-roles";
 import type { PairMark } from "../lib/color-roles";
 import type { ArtboardScheme } from "../lib/documents";
@@ -42,15 +44,13 @@ import {
 } from "../lib/token-values";
 import type { ParsedValue } from "../lib/token-values";
 import {
-  STUDIO_SECTIONS,
   STUDIO_TOKEN_NAMES,
-  TOKEN_TABLE,
   isTokenName,
   matchesTokenQuery,
   pairOfForeground,
   sectionTokens,
 } from "../lib/tokens";
-import type { SectionId, TokenName } from "../lib/tokens";
+import type { TokenName } from "../lib/tokens";
 import type { ArtboardScope } from "./studio-artboard";
 import { useStudioEdits } from "./studio-edits";
 import { StudioPanelSection } from "./studio-panel-section";
@@ -324,8 +324,8 @@ const NO_LEAD: readonly SectionId[] = [];
 
 /** The editor's sections with `lead` moved to the front, in `lead`'s order. */
 function leadFirst(lead: readonly SectionId[]) {
-  const first = lead.flatMap((id) => STUDIO_SECTIONS.filter((section) => section.id === id));
-  return [...first, ...STUDIO_SECTIONS.filter((section) => !lead.includes(section.id))];
+  const first = lead.flatMap((id) => TOKEN_SECTIONS.filter((section) => section.id === id));
+  return [...first, ...TOKEN_SECTIONS.filter((section) => !lead.includes(section.id))];
 }
 
 const FOCUSABLE = "button, input, [tabindex]";
@@ -464,7 +464,7 @@ export function StudioTokenPanel({ lead = NO_LEAD, afterLead }: StudioTokenPanel
             value={filtering ? sections.map((section) => section.id) : expanded}
             onValueChange={(next) => {
               setExpanded(
-                next.filter((id): id is SectionId => STUDIO_SECTIONS.some((section) => section.id === id))
+                next.filter((id): id is SectionId => TOKEN_SECTIONS.some((section) => section.id === id))
               );
             }}>
             {sections.map((section) => (

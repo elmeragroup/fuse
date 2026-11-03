@@ -2,14 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
+import { TOKEN_SECTIONS, TOKEN_TABLE } from "../../src/lib/token-sections";
 import { buildStudioSeeds } from "../../src/studio/generate/seeds";
 import {
   FONT_VARIABLES,
   FOREGROUND_PAIRS,
   LIGHT_ONLY_TOKENS,
-  STUDIO_SECTIONS,
   STUDIO_TOKEN_NAMES,
-  TOKEN_TABLE,
   sectionTokens,
 } from "../../src/studio/lib/tokens";
 
@@ -25,7 +24,7 @@ describe("TOKEN_TABLE", () => {
   });
 
   it("files every token under a section the inspector shows", () => {
-    const filed = STUDIO_SECTIONS.flatMap((section) => sectionTokens(section.id));
+    const filed = TOKEN_SECTIONS.flatMap((section) => sectionTokens(section.id));
     expect(filed.toSorted()).toEqual([...CONTRACT_NAMES, ...FONT_VARIABLES].toSorted());
   });
 
