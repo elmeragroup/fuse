@@ -149,6 +149,18 @@ export type MotionHost = {
   readonly cancelFrame: (handle: number) => void;
 };
 
+/** The browser's clock and frames, which every Root's loop and a scatter Root's domain glide run on. */
+export const BROWSER_FRAMES: MotionHost = {
+  now: () => performance.now(),
+  requestFrame: (callback) => requestAnimationFrame(callback),
+  cancelFrame: (handle) => {
+    cancelAnimationFrame(handle);
+  },
+};
+
+/** The reader's motion preference, which snaps every chart update and turns the entrance off. */
+export const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
+
 /**
  * One mark a tween moves: its writer, where it lands, where it shows, what its numbers measure, and
  * where its route ends, which a path that slides holds more numbers for than its resting target.

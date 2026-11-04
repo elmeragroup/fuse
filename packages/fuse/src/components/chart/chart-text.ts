@@ -9,7 +9,7 @@
 import type { SupportedLocale } from "../../intl/locale-context";
 import type { EmphasisEntry } from "./chart-store";
 import type { ChartSeriesConfig, XFormat } from "./chart-types";
-import { CHART_STRINGS, countSlots } from "./format/chart-strings";
+import { CHART_STRINGS, countOf } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
 import { formatSlot, LABEL_PRESETS, wallClock } from "./format/time-format";
 import type { Interval } from "./format/time-format";
@@ -390,7 +390,7 @@ export function chartDescription(context: TextContext): string {
   const from = spanLabel(context, window.first);
   const to = spanLabel(context, window.last);
   const unit = domain.kind === "time" ? domain.interval : "category";
-  const count = countSlots(locale, window.last - window.first + 1, unit);
+  const count = countOf(locale, window.last - window.first + 1, strings.slots[unit]);
   sentences.push(sentence(strings.descriptionSpan(from, to === from ? undefined : to, count), locale));
   // The quality counts by the interval they count in: Root's, or a coarse series' own.
   const states = new Map<Interval | "category", { missing: number; estimated: number; corrected: number }>();
@@ -451,7 +451,9 @@ export function chartDescription(context: TextContext): string {
   for (const state of ["missing", "estimated", "corrected"] as const) {
     for (const [interval, counts] of states) {
       if (counts[state] > 0)
-        sentences.push(strings.descriptionQuality(countSlots(locale, counts[state], interval), state));
+        sentences.push(
+          strings.descriptionQuality(countOf(locale, counts[state], strings.slots[interval]), state)
+        );
     }
   }
   // Where a projection starts inside the window.

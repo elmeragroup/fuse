@@ -16,6 +16,7 @@ const CHARTS = [
   "Pie Chart",
   "Radar Chart",
   "Radial Chart",
+  "Scatter Chart",
   "Sparkline",
 ];
 

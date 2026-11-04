@@ -23,6 +23,7 @@ const PAIRS: ReadonlyArray<
   ["PieChart", entry.PieChart, facade.PieChart],
   ["RadialChart", entry.RadialChart, facade.RadialChart],
   ["RadarChart", entry.RadarChart, facade.RadarChart],
+  ["ScatterChart", entry.ScatterChart, facade.ScatterChart],
 ];
 
 describe("the docs API facade", () => {

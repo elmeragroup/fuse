@@ -5,9 +5,10 @@ import slots from "../format/fixtures/slots.json" with { type: "json" };
 import type { Interval } from "../format/time-format";
 import roboto from "./fixtures/roboto-advances-12px.json" with { type: "json" };
 import { advanceOf, labelWidth } from "./label-width";
+import { LABEL_GAP, TICK_BUCKETS, fitsEveryBucket, thinTicks } from "./tick-fit";
+import type { TickGeometry } from "./tick-fit";
 import { placeCategoryRows, placeTimeRows } from "./x-domain";
-import { LABEL_GAP, TICK_BUCKETS, fitsEveryBucket, thinTicks, tickStrides } from "./x-ticks";
-import type { TickGeometry } from "./x-ticks";
+import { tickStrides } from "./x-ticks";
 
 const domainOf = (interval: Interval, zone: string, starts: readonly string[]) =>
   placeTimeRows(

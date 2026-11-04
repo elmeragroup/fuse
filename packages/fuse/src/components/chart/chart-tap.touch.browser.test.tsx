@@ -3,7 +3,7 @@
 // same slot dismisses it, with or without a LegendToggleGroup, a third tap opens it again, and a
 // pinned popup over a short bar's empty column swallows no tap. The labels are the rows' own names.
 import { describe, expect, it } from "vitest";
-import { commands } from "vitest/browser";
+import { commands, page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { bars, popupOpen } from "../../../test/chart/marks";
@@ -136,5 +136,97 @@ describe("taps on a dense plot", () => {
     await tap(slot(2));
     await expect.poll(read).toBe("12:30 – 12:45 AM");
     expect(popupOpen()).toBe(true);
+  });
+});
+
+describe("focus after a tap", () => {
+  it("leaves with Tab and enters again with Shift+Tab as a keyboard does", async () => {
+    const { host } = renderThemed(
+      <>
+        <button type="button">før</button>
+        <TapChart />
+        <button type="button">etter</button>
+      </>
+    );
+    // The plot's option lies over the first slot, so the tap there focuses it and pins mandag.
+    await tap(at(host, 0, 0.9));
+    await expect.poll(label).toBe("mandag");
+    // The next Tab leaves the option, which unpins the slot.
+    expect(document.activeElement?.getAttribute("role")).toBe("option");
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement?.textContent).toBe("etter");
+    await expect.poll(popupOpen).toBe(false);
+    await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
+    expect(document.activeElement?.getAttribute("role")).toBe("option");
+    await expect.poll(popupOpen).toBe(true);
+  });
+});
+
+describe("focus after a gesture with no click", () => {
+  /** The chart between two buttons, which a test renders again with new rows. */
+  function Between({ data }: { readonly data: typeof ROWS }) {
+    return (
+      <>
+        <button type="button">før</button>
+        <div style={{ width: 400 }}>
+          <LocaleProvider locale="nb-NO">
+            <Chart.Root
+              data={data}
+              config={{ kwh: { label: "Forbruk", color: "chart-1" } }}
+              xKey="day"
+              aria-label="Forbruk per dag">
+              <Chart.Bar dataKey="kwh" />
+              <Chart.Tooltip />
+            </Chart.Root>
+          </LocaleProvider>
+        </div>
+        <button type="button">etter</button>
+      </>
+    );
+  }
+
+  async function frames(): Promise<void> {
+    for (let frame = 0; frame < 2; frame += 1) await new Promise((resolve) => requestAnimationFrame(resolve));
+  }
+
+  /** Tab in from the button before the chart, onto the plot's option. */
+  async function tabIn(): Promise<void> {
+    page.getByRole("button", { name: "før" }).element().focus();
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement?.getAttribute("role")).toBe("option");
+  }
+
+  it("leaves with Tab and enters with Shift+Tab as a keyboard does after a scrub", async () => {
+    // The finger lands on mandag, scrubs along the bottom to onsdag and lifts there, which pins
+    // it, and a scrub that far sends no click.
+    const { host } = renderThemed(<Between data={ROWS} />);
+    await tabIn();
+    const [x, y] = at(host, 0, 0.9);
+    await commands.touchStart(x, y);
+    for (const slot of [0.5, 1, 1.5, 2]) await commands.touchMove(...at(host, slot, 0.9));
+    await commands.touchEnd();
+    await frames();
+    await expect.poll(label).toBe("onsdag");
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement?.textContent).toBe("etter");
+    await expect.poll(popupOpen).toBe(false);
+    await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
+    expect(document.activeElement?.getAttribute("role")).toBe("option");
+    await expect.poll(popupOpen).toBe(true);
+  });
+
+  it("enters with Tab as a keyboard does after the data emptied under a held finger and came back", async () => {
+    const { host, rerender } = renderThemed(<Between data={ROWS} />);
+    const [x, y] = at(host, 2, 0.9);
+    await commands.touchStart(x, y);
+    await frames();
+    await expect.poll(label).toBe("onsdag");
+    rerender(<Between data={[]} />);
+    await commands.touchEnd();
+    await frames();
+    rerender(<Between data={ROWS} />);
+    await frames();
+    await tabIn();
+    await expect.poll(popupOpen).toBe(true);
   });
 });

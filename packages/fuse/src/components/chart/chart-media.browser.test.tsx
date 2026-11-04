@@ -35,6 +35,7 @@ import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import type { ChartBarVariant } from "./chart-types";
 import "./chart.css";
+import { ScatterChart } from "./scatter-chart-namespace";
 
 const FORCED = server.browser === "chromium" || server.browser === "firefox";
 
@@ -67,6 +68,58 @@ describe("forced colours", () => {
     expect(window.matchMedia("(forced-colors: active)").matches).toBe(true);
     await frame();
     const [forced = 0] = await chromaticPixels([plotRect(host)]);
+    expect(screen).toBeGreaterThan(1000);
+    expect(Math.abs(forced - screen) / screen).toBeLessThanOrEqual(0.02);
+  });
+
+  it.runIf(FORCED)("keeps each point series' colour, so two series stay apart", async () => {
+    // 20 large dots per series along two rows, so each series paints a few thousand pixels. The
+    // emulated forced colours of Chromium and Firefox leave SVG strokes alone, so the paint checks
+    // hold either way, and the layer's own forced-color-adjust, which a line layer shares, is what
+    // keeps the colours where forced colours repaint SVG.
+    const rows = Array.from({ length: 40 }, (_, index) => ({
+      t: index % 20,
+      v: index < 20 ? 1 : 3,
+      s: index < 20 ? "now" : "last",
+    }));
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 360 }}>
+          <ScatterChart.Root
+            data-intro="none"
+            data={rows}
+            config={{ now: { label: "I år", color: "chart-1" }, last: { label: "I fjor", color: "chart-4" } }}
+            xKey="t"
+            yKey="v"
+            seriesKey="s"
+            aria-label="Forbruk">
+            <ScatterChart.Points dataKey="now" size="lg" />
+            <ScatterChart.Points dataKey="last" size="lg" />
+            <ScatterChart.Line dataKey="last" />
+          </ScatterChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: the point paths are aria-hidden plot output, and their layers span the plot.
+    const paths = () => [...host.querySelectorAll('[data-slot="chart-points-path"]')];
+    await expect.poll(() => paths().length).toBe(2);
+    await frame();
+    const plot = host.querySelector('[data-slot="chart-points"]')?.getBoundingClientRect() ?? new DOMRect();
+    const strokes = () => paths().map((path) => getComputedStyle(path).stroke);
+    const screenStrokes = strokes();
+    const [screen = 0] = await chromaticPixels([plot]);
+    await emulateMedia("screen", "active");
+    expect(window.matchMedia("(forced-colors: active)").matches).toBe(true);
+    await frame();
+    const [forced = 0] = await chromaticPixels([plot]);
+    // DOM audit: each layer's computed forced-color-adjust.
+    const adjust = (slot: string) =>
+      getComputedStyle(host.querySelector(`[data-slot="${slot}"]`) ?? document.body).forcedColorAdjust;
+    expect(adjust("chart-line-series")).toBe("none");
+    expect(adjust("chart-points")).toBe("none");
+    // The two series paint two colours on screen, and each keeps its own under forced colours.
+    expect(new Set(screenStrokes).size).toBe(2);
+    expect(strokes()).toEqual(screenStrokes);
     expect(screen).toBeGreaterThan(1000);
     expect(Math.abs(forced - screen) / screen).toBeLessThanOrEqual(0.02);
   });

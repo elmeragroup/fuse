@@ -6,6 +6,7 @@ import { AreaChart, BarChart, Chart, LineChart } from "./chart-namespace";
 import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
+import { ScatterChart } from "./scatter-chart-namespace";
 
 /** A chart part, which every namespace member and every part-module export is. */
 type Part = (props: never) => ReactElement;
@@ -99,5 +100,44 @@ describe("chart namespaces", () => {
       }
     }
     expect(misnamed).toEqual([]);
+  });
+});
+
+describe("the ScatterChart namespace", () => {
+  // Unit under test: scatter-chart-parts.ts through its namespace. Oracle: the v1 part list the
+  // owner agreed, written out here, and the rule that a part reused from Chart keeps Chart's dotted name.
+  const OWN = [
+    "Root",
+    "Grid",
+    "XAxis",
+    "YAxis",
+    "ReferenceLine",
+    "Points",
+    "Line",
+    "ActiveDot",
+    "Tooltip",
+    "TooltipLabel",
+    "TooltipValue",
+    "Legend",
+    "LegendItem",
+    "Table",
+    "Empty",
+    "Skeleton",
+  ];
+  const REUSED = ["Headline", "Takeaway", "Background"];
+
+  it("holds the scatter parts and the three layout parts it reuses", () => {
+    expect(Object.keys(ScatterChart).sort()).toEqual([...OWN, ...REUSED].sort());
+  });
+
+  it("names its own parts ScatterChart and keeps Chart's name on the reused ones", () => {
+    const parts: Readonly<Record<string, Part>> = ScatterChart;
+    const chart: Readonly<Record<string, Part>> = Chart;
+    const names = OWN.map((key) => {
+      const part = parts[key];
+      return part === undefined ? undefined : displayNameOf(part);
+    });
+    expect(names).toEqual(OWN.map((key) => `ScatterChart.${key}`));
+    for (const key of REUSED) expect(parts[key], key).toBe(chart[key]);
   });
 });

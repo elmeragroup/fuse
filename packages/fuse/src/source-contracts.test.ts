@@ -6,7 +6,7 @@ import type { Expression, JSXElementName, JSXOpeningElement } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
 import { OPTIONAL_PEER_ENTRIES, walkImportedSourceFiles } from "../scripts/entries";
-import { FLOOR_MARKS } from "../test/chart/floor-marks";
+import { FLOOR_MARKS, SCATTER_FLOOR_MARKS } from "../test/chart/floor-marks";
 import { classTokens, colorRolePaints, splitVariants, tokenAssignments } from "../test/class-tokens";
 import { motionWriters } from "../test/motion-writers";
 import { svgMarks } from "../test/svg-marks";
@@ -433,6 +433,7 @@ describe("chart module directives", () => {
     "components/chart/pie-chart-namespace.ts",
     "components/chart/radial-chart-namespace.ts",
     "components/chart/radar-chart-namespace.ts",
+    "components/chart/scatter-chart-namespace.ts",
     // Each namespace is an ES module namespace over its parts module, so the parts modules stay
     // directive-free too, and a server component still dots into client references.
     "components/chart/chart-parts.ts",
@@ -442,6 +443,7 @@ describe("chart module directives", () => {
     "components/chart/pie-chart-parts.ts",
     "components/chart/radial-chart-parts.ts",
     "components/chart/radar-chart-parts.ts",
+    "components/chart/scatter-chart-parts.ts",
     "components/chart/sparkline.tsx",
     "components/chart/chart-types.ts",
     "components/chart/chart-format.ts",
@@ -482,6 +484,7 @@ describe("chart module directives", () => {
     ["pie-chart-namespace.ts", ["PieChart"]],
     ["radial-chart-namespace.ts", ["RadialChart"]],
     ["radar-chart-namespace.ts", ["RadarChart"]],
+    ["scatter-chart-namespace.ts", ["ScatterChart"]],
   ] as const)("%s exports only its namespace objects", (file, names) => {
     expect(exportedNames(`${CHART_DIR}${file}`)).toEqual(names);
   });
@@ -519,6 +522,9 @@ describe("chart plot marks", () => {
   // part's JSX and holds the oracle's list to it. Chart.Background is left out: it paints a pattern
   // behind the plot and draws no reading. Sparkline is left out too: it draws in a stretched
   // viewBox outside any plot, with no pixel grid to hold its marks to.
+  // ScatterChart's parts draw over two value axes with no slot grid, so their own floor oracle,
+  // scatter-chart-floor.browser.test.tsx, walks them against the device pixel grid alone.
+  const isScatter = (relative: string): boolean => relative.startsWith("components/chart/scatter-chart-");
   const parts = [...SOURCE_TREE.values()].filter(
     (record) =>
       record.relative.startsWith("components/chart/") &&
@@ -527,11 +533,14 @@ describe("chart plot marks", () => {
       record.relative !== "components/chart/chart-background.tsx" &&
       record.relative !== "components/chart/sparkline.tsx"
   );
-  const marks = parts.flatMap((record) =>
-    svgMarks(record.relative, record.source)
-      .filter(({ internal }) => !internal)
-      .map(({ slot, at }) => ({ file: record.relative, slot, at }))
-  );
+  const marksOf = (records: readonly (typeof parts)[number][]) =>
+    records.flatMap((record) =>
+      svgMarks(record.relative, record.source)
+        .filter(({ internal }) => !internal)
+        .map(({ slot, at }) => ({ file: record.relative, slot, at }))
+    );
+  const marks = marksOf(parts.filter((record) => !isScatter(record.relative)));
+  const scatterMarks = marksOf(parts.filter((record) => isScatter(record.relative)));
 
   it("names every SVG mark a chart part draws with a data-slot", () => {
     expect(marks.length).toBeGreaterThan(0);
@@ -543,6 +552,16 @@ describe("chart plot marks", () => {
   it("walks every one of those marks in the floor oracle, and no other", () => {
     const drawn = [...new Set(marks.flatMap(({ slot }) => (slot === undefined ? [] : [slot])))].toSorted();
     expect(drawn).toEqual([...FLOOR_MARKS].toSorted());
+  });
+
+  it("names every ScatterChart mark and walks each in the scatter floor oracle, and no other", () => {
+    expect(
+      scatterMarks.filter(({ slot }) => slot === undefined).map(({ file, at }) => `${file}@${String(at)}`)
+    ).toEqual([]);
+    const drawn = [
+      ...new Set(scatterMarks.flatMap(({ slot }) => (slot === undefined ? [] : [slot]))),
+    ].toSorted();
+    expect(drawn).toEqual([...SCATTER_FLOOR_MARKS].toSorted());
   });
 });
 

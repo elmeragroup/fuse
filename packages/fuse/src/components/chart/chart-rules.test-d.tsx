@@ -11,7 +11,7 @@ import type { ComponentProps, CSSProperties, HTMLAttributes, JSX, ReactElement }
 import type { useRender } from "@base-ui/react/use-render";
 import { expectTypeOf, test } from "vitest";
 
-import type { Chart, PieChart, RadarChart, RadialChart } from "@elmeragroup/fuse/chart";
+import type { Chart, PieChart, RadarChart, RadialChart, ScatterChart } from "@elmeragroup/fuse/chart";
 import type {
   ChartDomProps,
   ChartFigureProps,
@@ -21,6 +21,7 @@ import type {
   PieChartRootProps,
   RadarChartRootProps,
   RadialChartRootProps,
+  ScatterChartRootProps,
   SparklineProps,
 } from "@elmeragroup/fuse/chart";
 
@@ -72,12 +73,13 @@ type FunctionKeys<P, Own extends PropertyKey> = {
 /** The props of a part. */
 type PropsOf<C> = C extends (props: infer P) => ReactElement ? P : never;
 
-/** The four namespaces, keyed by their public names. */
+/** The five namespaces, keyed by their public names. */
 type Namespaces = {
   Chart: typeof Chart;
   PieChart: typeof PieChart;
   RadialChart: typeof RadialChart;
   RadarChart: typeof RadarChart;
+  ScatterChart: typeof ScatterChart;
 };
 
 /** The shared closed parts, written here and checked against every namespace's keys. */
@@ -124,6 +126,17 @@ type ClosedNames = {
     | "Dots"
     | "ActiveDot"
     | "Glow";
+  ScatterChart:
+    | "Grid"
+    | "XAxis"
+    | "YAxis"
+    | "ReferenceLine"
+    | "Points"
+    | "Line"
+    | "ActiveDot"
+    | "Tooltip"
+    | "Table"
+    | "Background";
 };
 
 /** The element whose props each DOM part takes, by member name, written here. */
@@ -155,6 +168,15 @@ type DomNames = {
   PieChart: SharedDom | "Skeleton";
   RadialChart: SharedDom | "Skeleton";
   RadarChart: SharedDom | "Skeleton";
+  ScatterChart:
+    | "Headline"
+    | "Takeaway"
+    | "Empty"
+    | "Legend"
+    | "LegendItem"
+    | "TooltipLabel"
+    | "TooltipValue"
+    | "Skeleton";
 };
 
 /** Every member name the lists place, Root included. */
@@ -207,7 +229,13 @@ type Clean<Names extends { [N in keyof Namespaces]: PropertyKey }> = {
   [N in keyof Namespaces]: { [K in Names[N]]: never };
 };
 
-type Roots = [ChartRootProps, PieChartRootProps, RadialChartRootProps, RadarChartRootProps];
+type Roots = [
+  ChartRootProps,
+  PieChartRootProps,
+  RadialChartRootProps,
+  RadarChartRootProps,
+  ScatterChartRootProps,
+];
 type RootOwn<P> = OwnKeys<P, ComponentProps<"figure">>;
 
 test("every namespace's member names are exactly the reviewed lists", () => {
@@ -215,6 +243,7 @@ test("every namespace's member names are exactly the reviewed lists", () => {
   expectTypeOf<keyof typeof PieChart>().toEqualTypeOf<Listed<"PieChart">>();
   expectTypeOf<keyof typeof RadialChart>().toEqualTypeOf<Listed<"RadialChart">>();
   expectTypeOf<keyof typeof RadarChart>().toEqualTypeOf<Listed<"RadarChart">>();
+  expectTypeOf<keyof typeof ScatterChart>().toEqualTypeOf<Listed<"ScatterChart">>();
 });
 
 test("Fuse's base types add no prop to the React and Base UI baselines", () => {
@@ -248,15 +277,18 @@ test("the only functions on Roots are the gesture callbacks", () => {
   expectTypeOf<FunctionKeys<Roots[1], RootOwn<Roots[1]>>>().toEqualTypeOf<"onSelectedKeyChange">();
   expectTypeOf<FunctionKeys<Roots[2], RootOwn<Roots[2]>>>().toEqualTypeOf<"onSelectedKeyChange">();
   expectTypeOf<FunctionKeys<Roots[3], RootOwn<Roots[3]>>>().toEqualTypeOf<"onSelectedKeyChange">();
+  expectTypeOf<FunctionKeys<Roots[4], RootOwn<Roots[4]>>>().toEqualTypeOf<never>();
 });
 
 test("no DOM part own prop shares a name with an HTML attribute, and content and color are gone", () => {
   expectTypeOf<DomReport<"collisions">>().toEqualTypeOf<Clean<DomNames>>();
-  type RootCollisions = { [K in 0 | 1 | 2 | 3]: Collisions<Roots[K], ComponentProps<"figure">> };
-  expectTypeOf<RootCollisions>().toEqualTypeOf<{ 0: never; 1: never; 2: never; 3: never }>();
+  type RootCollisions = { [K in 0 | 1 | 2 | 3 | 4]: Collisions<Roots[K], ComponentProps<"figure">> };
+  expectTypeOf<RootCollisions>().toEqualTypeOf<{ 0: never; 1: never; 2: never; 3: never; 4: never }>();
   expectTypeOf<DomReport<"contentOrColor">>().toEqualTypeOf<Clean<DomNames>>();
-  type RootHtmlLeaks = { [K in 0 | 1 | 2 | 3]: Extract<AllKeys<Roots[K]>, "hidden" | "content" | "color"> };
-  expectTypeOf<RootHtmlLeaks>().toEqualTypeOf<{ 0: never; 1: never; 2: never; 3: never }>();
+  type RootHtmlLeaks = {
+    [K in 0 | 1 | 2 | 3 | 4]: Extract<AllKeys<Roots[K]>, "hidden" | "content" | "color">;
+  };
+  expectTypeOf<RootHtmlLeaks>().toEqualTypeOf<{ 0: never; 1: never; 2: never; 3: never; 4: never }>();
 });
 
 test("each detector turns red on a planted violation", () => {

@@ -4,6 +4,7 @@
  */
 import type { ChartScalar } from "../chart-types";
 import { numberOf } from "./scalar";
+import { VALUE_LIMIT } from "./value-domain";
 
 /** A reading's quality once a value is present. A measured reading carries no attribute. */
 export type ReadingQuality = "measured" | "estimated" | "corrected";
@@ -20,9 +21,6 @@ export type CellIssue = {
   /** The slot index. */
   readonly slot: number;
 };
-
-/** Values above this magnitude count as missing. 1e15 Wh is 1 PWh, and the d3 tick port stays exact there. */
-const VALUE_LIMIT = 1e15;
 
 /** What one cell holds before the span and `now` decide a slot with no reading. */
 type Cell =

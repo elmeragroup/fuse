@@ -311,11 +311,14 @@ describe("Root's input cost (X15)", () => {
   function Host({
     tick,
     inlineFormat = false,
+    threshold = false,
     children,
   }: {
     readonly tick: number;
     /** Whether the host also writes Root's `xFormat` inline, a new object on every render. */
     readonly inlineFormat?: boolean;
+    /** Whether P's colour is a threshold, written inline as a new object on every render. */
+    readonly threshold?: boolean;
     readonly children: ReactNode;
   }): ReactNode {
     return (
@@ -324,7 +327,16 @@ describe("Root's input cost (X15)", () => {
           <Chart.Root
             data={MOTION_A}
             config={{
-              p: { label: "P", color: "chart-1" },
+              p: {
+                label: "P",
+                color: threshold
+                  ? {
+                      threshold: 5,
+                      below: { color: "chart-1", label: "Under" },
+                      above: { color: "chart-3", label: "Over" },
+                    }
+                  : "chart-1",
+              },
               q: { label: "Q", color: "chart-2" },
             }}
             xKey="day"
@@ -348,6 +360,30 @@ describe("Root's input cost (X15)", () => {
     commits.clear();
     rerender(<Host tick={1}>{marks}</Host>);
     rerender(<Host tick={2}>{marks}</Host>);
+    await frame();
+    expect(["bar", "line", "axis", "toggles"].map((id) => commits.get(id) ?? 0)).toEqual([0, 0, 0, 0]);
+  });
+
+  it("renders no mark when a parent re-renders with an equal inline threshold colour", async () => {
+    // A threshold colour is an object, so an inline one is new on every render while its value,
+    // its sides' roles and its sides' labels stay the same, which is no change to the config.
+    const { rerender } = renderThemed(
+      <Host tick={0} threshold>
+        {marks}
+      </Host>
+    );
+    await frame();
+    commits.clear();
+    rerender(
+      <Host tick={1} threshold>
+        {marks}
+      </Host>
+    );
+    rerender(
+      <Host tick={2} threshold>
+        {marks}
+      </Host>
+    );
     await frame();
     expect(["bar", "line", "axis", "toggles"].map((id) => commits.get(id) ?? 0)).toEqual([0, 0, 0, 0]);
   });

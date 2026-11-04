@@ -41,7 +41,7 @@ export const metadata = componentMetadata("chart");
 
 <Prose>
 
-The chart entry is a preview. Its names and props can change until Fuse's first stable release. Import `@elmeragroup/fuse/chart.css` once, beside Fuse's own stylesheet. `Chart.Root` reads every series from `config` and never inspects its children, so a server component can compose the parts.
+The chart entry is a preview. Its names and props can change until Fuse's first stable release. Import `@elmeragroup/fuse/chart.css` once, beside Fuse's own stylesheet. `Chart.Root` reads every series from `config` and never inspects its children, so a server component can compose the parts. Its x axis holds categories or time slots, evenly spaced. A numeric x axis is [`ScatterChart`](/components/scatter-chart), which places each point at its value and draws curves over unevenly spaced numbers too.
 
 </Prose>
 

@@ -25,7 +25,7 @@ import type {
   SlotMap,
   ValueAxis,
 } from "./chart-motion";
-import type { ChartPlot } from "./chart-plot";
+import type { ChartPlot } from "./chart-plot-measure";
 import type { PlotFrame } from "./layout/plot-frame";
 import { sameItems } from "./layout/same-items";
 

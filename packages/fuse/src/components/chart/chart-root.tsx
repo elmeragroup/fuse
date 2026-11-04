@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useSta
 import type { ReactElement, ReactNode } from "react";
 
 import { useMediaQuery } from "../../hooks/use-media-query";
+import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { createAxisRecord } from "./chart-axis-format";
@@ -16,26 +17,22 @@ import {
 } from "./chart-context";
 import type { ChartLayoutContextValue, ChartRootContextValue, PanelEntry } from "./chart-context";
 import { writeAttribute, writeStyle } from "./chart-dom";
+import { openDrawingSoon, useClientMount } from "./chart-draw-gate";
 import { useEntrance } from "./chart-entrance";
 import { createChartFollowers } from "./chart-followers";
 import type { ActiveSlot, ChartFollowers } from "./chart-followers";
 import { createChartLabels } from "./chart-labels";
-import { createChartMotion, createFrameOwner } from "./chart-motion";
+import { BROWSER_FRAMES, createChartMotion, createFrameOwner, REDUCED_MOTION } from "./chart-motion";
 import type { ChartMotion, FrameOwner } from "./chart-motion";
-import { colourFamilyError, isThresholdColor, nonFiniteThresholds } from "./chart-paint";
+import { colourFamilyError, nonFiniteThresholds } from "./chart-paint";
 import { createChartPaths } from "./chart-paths";
-import {
-  ChartPlotContext,
-  ChartRootPlotContext,
-  PlotReadsContext,
-  useMeasuredPlot,
-  usePanelSpan,
-} from "./chart-plot";
+import { ChartPlotContext, ChartRootPlotContext, usePanelSpan } from "./chart-plot";
+import { PlotReadsContext, useMeasuredPlot } from "./chart-plot-measure";
 import { ChartLegendSideContext, ChartRowContext } from "./chart-readout";
 import { createChartRiders } from "./chart-riders";
 import { PlotLoader } from "./chart-skeleton";
-import { sameShallow, useSteady } from "./chart-steady";
-import { createChartStore, openDrawingSoon, useClientMount } from "./chart-store";
+import { sameConfig, sameShallow, useSteady } from "./chart-steady";
+import { createChartStore } from "./chart-store";
 import type { ChartSnapshot, EmphasisEntry } from "./chart-store";
 import { ChartStatus, ChartSurface } from "./chart-surface";
 import { chartDescription, seriesLabel } from "./chart-text";
@@ -43,7 +40,6 @@ import type { TextContext } from "./chart-text";
 import type {
   ChartAccessibleName,
   ChartChangeEventDetails,
-  ChartColor,
   ChartConfig,
   ChartFigureProps,
   ChartIntro,
@@ -52,7 +48,6 @@ import type {
   ChartScalar,
   ChartSelectionChangeReason,
   ChartSelectionProps,
-  ChartSeriesConfig,
   ChartSeriesConfigCheck,
   ChartTimeAxisProps,
   ChartXKey,
@@ -227,59 +222,9 @@ function sameRange(
   return rangePart(a[0]) === rangePart(b[0]) && rangePart(a[1]) === rangePart(b[1]);
 }
 
-/** One field value of a series config. */
-type ConfigField = ChartSeriesConfig[keyof ChartSeriesConfig];
-
-/** A series config's fields in order. */
-function fieldsOf(entry: ChartSeriesConfig): (readonly [string, ConfigField])[] {
-  // SAFETY: Object.entries of a ChartSeriesConfig yields its own fields, each a ConfigField.
-  return Object.entries(entry) as (readonly [string, ConfigField])[];
-}
-
 /** What `non-finite-threshold` says after the part, naming the series. */
 function thresholdMessage(key: string): string {
   return `${DATA_MESSAGES["non-finite-threshold"]} Series ${JSON.stringify(key)}.`;
-}
-
-/**
- * Whether two colours say the same thing. A threshold nests its two sides, which a config written
- * inline in JSX writes anew on every render, so they compare field by field.
- */
-function sameColor(a: ChartColor, b: ChartColor): boolean {
-  if (isThresholdColor(a) && isThresholdColor(b)) {
-    return (
-      Object.is(a.threshold, b.threshold) && sameShallow(a.below, b.below) && sameShallow(a.above, b.above)
-    );
-  }
-  return sameShallow(a, b);
-}
-
-/**
- * Whether two configs say the same thing. A config written inline in JSX is a new object on every
- * render, and only a change of what it says counts as a data update.
- */
-function sameConfig(a: ChartConfig, b: ChartConfig): boolean {
-  const left = Object.entries(a);
-  const right = Object.entries(b);
-  return (
-    left.length === right.length &&
-    left.every(([key, entry], index) => {
-      const other = right[index];
-      if (other?.[0] !== key) return false;
-      const fields = fieldsOf(entry);
-      const otherFields = new Map(fieldsOf(other[1]));
-      return (
-        fields.length === otherFields.size &&
-        fields.every(
-          ([name, value]) =>
-            otherFields.has(name) &&
-            (name === "color"
-              ? sameColor(entry.color, other[1].color)
-              : sameShallow(value, otherFields.get(name)))
-        )
-      );
-    })
-  );
 }
 
 /** Throw for config that cannot draw: a key that names no column of any row. */
@@ -320,27 +265,14 @@ function markActive(root: HTMLElement, snapshot: ChartSnapshot, active: ActiveSl
   writeAttribute(root, "data-near", active !== null && snapshot.near !== null ? snapshot.near : null);
 }
 
-/** The reader's motion preference, which snaps every chart update. */
-const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
-
 /**
  * Root's animation loop on the browser's frame clock. A mark that leaves while followers draw from
  * it repaints them, so each joins what still draws its series.
  */
 function browserMotion(reduced: boolean, followers: ChartFollowers): ChartMotion {
-  return createChartMotion(
-    {
-      now: () => performance.now(),
-      requestFrame: (callback) => requestAnimationFrame(callback),
-      cancelFrame: (handle) => {
-        cancelAnimationFrame(handle);
-      },
-    },
-    reduced,
-    () => {
-      followers.refresh();
-    }
-  );
+  return createChartMotion(BROWSER_FRAMES, reduced, () => {
+    followers.refresh();
+  });
 }
 
 /**
@@ -383,6 +315,7 @@ export function ChartRoot<
   description,
   children,
   style,
+  ref,
   ...figure
 }: ChartRootProps<TRow, TConfig, TXKey>): ReactElement {
   const { locale, timeZone: providerZone } = useLocale();
@@ -557,6 +490,8 @@ export function ChartRoot<
     return createChartStore(slot === -1 ? null : slot);
   });
   const rootRef = useRef<HTMLElement>(null);
+  // Root reads its own figure for the active state and the entrance, and a consumer ref gets it too.
+  const figureRef = useMergedRefs(rootRef, ref);
   const frameRef = useRef<HTMLDivElement>(null);
   const plotRef = useRef<HTMLDivElement>(null);
   // Root's plot spans its Panels' plots, so its probe places their span once per commit, before
@@ -877,7 +812,7 @@ export function ChartRoot<
           <ChartSelectionContext value={selected}>
             <ChartLayoutContext value={layout}>
               <figure
-                ref={rootRef}
+                ref={figureRef}
                 data-slot="chart"
                 data-orientation={orientation}
                 data-x-scale={xScale}

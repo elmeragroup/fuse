@@ -13,7 +13,8 @@
  */
 import { useState, useSyncExternalStore } from "react";
 
-import { flushSync } from "react-dom";
+import { createDrawGate, subscribeNever } from "./chart-draw-gate";
+import type { DrawGate } from "./chart-draw-gate";
 
 /**
  * Where Root's entrance is. It is `"waiting"` until the entrance starts, or until Root first
@@ -119,64 +120,6 @@ export type ChartStore = {
   readonly drawing: DrawGate;
 };
 
-/**
- * Whether a Root's plot parts may draw: closed on the server and while Root hydrates, then open
- * for the Root's life. Parts subscribe to it one by one, so opening it renders them without a
- * context update, and so without reaching a Suspense boundary that has not hydrated yet.
- */
-export type DrawGate = {
-  readonly open: () => boolean;
-  readonly subscribe: (listener: () => void) => () => void;
-  /** Open the gate, which renders every subscribed part. */
-  readonly openNow: () => void;
-};
-
-/** A closed draw gate. */
-function createDrawGate(): DrawGate {
-  let open = false;
-  const listeners = new Set<() => void>();
-  return {
-    open: () => open,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-    openNow() {
-      if (open) return;
-      open = true;
-      for (const listener of listeners) listener();
-    },
-  };
-}
-
-/** The gates that open in the next microtask, all in one commit. */
-const opening = new Set<DrawGate>();
-
-/**
- * Open a hydrating Root's draw gate in a microtask after its hydration commit, before the task
- * ends. When the page is still hydrating other Suspense boundaries, as a page whose demos mount
- * Tabs above them does, React renders the sync work of the hydration commits again for every
- * boundary it hydrates on the way, and a gate opened in the commit would draw every mark in each
- * of those renders. The microtask runs once React has finished, before the browser paints, and
- * draws every hydrated Root's marks in one commit.
- *
- * @param gate - The Root's gate.
- */
-export function openDrawingSoon(gate: DrawGate): void {
-  if (opening.size === 0) {
-    queueMicrotask(() => {
-      const gates = [...opening];
-      opening.clear();
-      flushSync(() => {
-        for (const each of gates) each.openNow();
-      });
-    });
-  }
-  opening.add(gate);
-}
-
 const INITIAL: ChartSnapshot = {
   phase: "waiting",
   active: null,
@@ -269,6 +212,15 @@ export function useChartStore<T>(store: ChartStore, select: (snapshot: ChartSnap
 }
 
 /**
+ * What a mark's intro reads of its Root's store: the phase now and the phase the server and a
+ * hydrating mark read. Chart's and ScatterChart's stores both hold it.
+ */
+export type PhaseSource = {
+  readonly initial: { readonly phase: EntrancePhase };
+  readonly get: () => { readonly phase: EntrancePhase };
+};
+
+/**
  * Root's entrance phase as a mark draws now. Root moves it outside any render, and no mark renders
  * again for it, so a mark reads where the entrance is in each render it draws in. Hydration reads
  * `"waiting"`, as the server did.
@@ -276,7 +228,7 @@ export function useChartStore<T>(store: ChartStore, select: (snapshot: ChartSnap
  * @param store - The Root's store.
  * @returns The phase.
  */
-export function usePhase(store: ChartStore): EntrancePhase {
+export function usePhase(store: PhaseSource): EntrancePhase {
   return useSyncExternalStore(
     subscribeNever,
     () => store.get().phase,
@@ -300,7 +252,7 @@ export function usePhase(store: ChartStore): EntrancePhase {
  * @returns The attribute's value, or undefined to write none.
  */
 export function useIntro(
-  store: ChartStore,
+  store: PhaseSource,
   kind: "initial" | "data" | "range",
   entrance: boolean,
   drawn: boolean
@@ -322,27 +274,4 @@ export function useKeptIntro(live: "fade" | "none" | undefined, drawn: boolean):
   if (kept !== null) return kept;
   if (drawn) setKept(live);
   return live;
-}
-
-/**
- * Whether this part first rendered in a browser mount, as opposed to on the server or while it
- * hydrated server HTML. The server and hydration snapshot is `false`, and the first value stays,
- * so Root opens its draw gate in its first commit after a browser mount, and in a microtask after
- * a hydration commit.
- *
- * @returns `true` for a part that mounted in the browser without server HTML.
- */
-export function useClientMount(): boolean {
-  const client = useSyncExternalStore(
-    subscribeNever,
-    () => true,
-    () => false
-  );
-  const [first] = useState(client);
-  return first;
-}
-
-/** A store subscription for a value that never changes after hydration. */
-export function subscribeNever(): () => void {
-  return () => undefined;
 }

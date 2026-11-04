@@ -623,6 +623,27 @@ export type ChartScalar = string | number | boolean | Date | null | undefined;
 export type ChartScale = "chart-seq" | "chart-diverging";
 
 // @beta
+export type ChartScatterFieldCheck<TConfig> = string extends keyof TConfig ? unknown : { readonly [K in keyof TConfig]: TConfig[K] extends {
+        stack: unknown;
+    } | {
+        projectedFrom: unknown;
+    } | {
+        interval: unknown;
+    } | {
+        missing: unknown;
+    } | {
+        qualityKey: unknown;
+    } | {
+        barVariant: unknown;
+    } ? {
+        readonly "ScatterChart config takes no stack, projectedFrom, interval, missing, qualityKey or barVariant": never;
+    } : TConfig[K] extends {
+        color: ChartRole;
+    } ? unknown : {
+        readonly "ScatterChart colours are single roles, never a scale, a role list or a threshold": never;
+    }; };
+
+// @beta
 export type ChartSelectionChangeReason = "legend" | "plot" | "keyboard";
 
 // @beta
@@ -1309,6 +1330,202 @@ export type RadialChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "
     innerRadius?: number;
     label?: string;
 };
+
+declare namespace ScatterChart {
+    export {
+        ScatterChartActiveDot as ActiveDot,
+        ChartBackground as Background,
+        ScatterChartEmpty as Empty,
+        ScatterChartGrid as Grid,
+        ChartHeadline as Headline,
+        ScatterChartLegend as Legend,
+        ScatterChartLegendItem as LegendItem,
+        ScatterChartLine as Line,
+        ScatterChartPoints as Points,
+        ScatterChartReferenceLine as ReferenceLine,
+        ScatterChartRoot as Root,
+        ScatterChartSkeleton as Skeleton,
+        ScatterChartTable as Table,
+        ChartTakeaway as Takeaway,
+        ScatterChartTooltip as Tooltip,
+        ScatterChartTooltipLabel as TooltipLabel,
+        ScatterChartTooltipValue as TooltipValue,
+        ScatterChartXAxis as XAxis,
+        ScatterChartYAxis as YAxis
+    }
+}
+
+// @beta
+function ScatterChartActiveDot(input: ScatterChartActiveDotProps): ReactElement;
+
+// @beta
+export type ScatterChartActiveDotProps = ChartLayerProps & {
+    variant?: "ring" | "dot";
+};
+
+// @beta
+function ScatterChartEmpty(input: ScatterChartEmptyProps): ReactElement;
+
+// @beta
+export type ScatterChartEmptyProps = ChartDomProps<"div">;
+
+// @beta
+function ScatterChartGrid(input: ScatterChartGridProps): ReactElement;
+
+// @beta
+export type ScatterChartGridProps = ChartLayerProps & {
+    orientation?: "horizontal" | "vertical" | "both";
+    variant?: "solid" | "dashed";
+};
+
+// @beta
+function ScatterChartLegend(input: ScatterChartLegendProps): ReactElement;
+
+// @beta
+function ScatterChartLegendItem(input: ScatterChartLegendItemProps): ReactElement;
+
+// @beta
+export type ScatterChartLegendItemProps = ChartDomProps<"li"> & {
+    dataKey: string;
+};
+
+// @beta
+export type ScatterChartLegendProps = ChartDomProps<"ul"> & {
+    side?: "top" | "bottom" | "start" | "end";
+};
+
+// @beta
+function ScatterChartLine(input: ScatterChartLineProps): ReactElement;
+
+// @beta
+export type ScatterChartLineProps = ChartLayerProps & {
+    dataKey: string;
+    curve?: ScatterCurve;
+    variant?: "default" | "dashed" | "flowing" | "quiet";
+};
+
+// @beta
+function ScatterChartPoints(input: ScatterChartPointsProps): ReactElement;
+
+// @beta
+export type ScatterChartPointsProps = ChartLayerProps & {
+    dataKey: string;
+    size?: "sm" | "md" | "lg";
+    variant?: "default" | "quiet";
+};
+
+// @beta
+function ScatterChartReferenceLine(input: ScatterChartReferenceLineProps): ReactElement;
+
+// @beta
+export type ScatterChartReferenceLineProps = ChartLayerProps & ({
+    y: number;
+    x?: never;
+    from?: never;
+    to?: never;
+} | {
+    x: number;
+    y?: never;
+    from?: never;
+    to?: never;
+} | {
+    from: readonly [x: number, y: number];
+    to: readonly [x: number, y: number];
+    x?: never;
+    y?: never;
+}) & {
+    label?: string;
+    variant?: "solid" | "dashed";
+    tone?: ChartTone;
+};
+
+// @beta
+function ScatterChartRoot<TRow extends ChartRowOf<TRow>, const TConfig extends ChartConfig, TXKey extends ChartSeriesKey<TRow>, TYKey extends ChartSeriesKey<TRow>, TSeriesKey extends ChartCategoryKey<TRow>>(input: ScatterChartRootProps<TRow, TConfig, TXKey, TYKey, TSeriesKey>): ReactElement;
+
+// @beta
+export type ScatterChartRootProps<TRow extends ChartRowOf<TRow> = {
+    readonly [key: string]: string | number | null | undefined;
+}, TConfig extends ChartConfig = ChartConfig, TXKey extends ChartSeriesKey<TRow> = ChartSeriesKey<TRow>, TYKey extends ChartSeriesKey<TRow> = ChartSeriesKey<TRow>, TSeriesKey extends ChartCategoryKey<TRow> = ChartCategoryKey<TRow>> = ChartAccessibleName & ChartFigureProps & {
+    data: readonly TRow[];
+    config: TConfig & ChartScatterFieldCheck<TConfig>;
+    xKey: TXKey;
+    yKey: TYKey;
+    seriesKey: TSeriesKey;
+    xFormat?: ValueFormat;
+    valueFormat?: ValueFormat;
+    xLabel?: string;
+    yLabel?: string;
+    xInclude?: readonly number[];
+    yInclude?: readonly number[];
+    "data-intro"?: "none";
+    description?: string;
+    children?: ReactNode;
+};
+
+// @beta
+function ScatterChartSkeleton(input: ScatterChartSkeletonProps): ReactElement;
+
+// @beta
+export type ScatterChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "render"> & {
+    label?: string;
+};
+
+// @beta
+function ScatterChartTable(input: ScatterChartTableProps): ReactElement;
+
+// @beta
+export type ScatterChartTableProps = ChartLayerProps & {
+    caption?: string;
+    showLabel?: string;
+    hideLabel?: string;
+};
+
+// @beta
+function ScatterChartTooltip(input: ScatterChartTooltipProps): ReactElement;
+
+// @beta
+function ScatterChartTooltipLabel(input: ScatterChartTooltipLabelProps): ReactElement;
+
+// @beta
+export type ScatterChartTooltipLabelProps = ChartDomProps<"span">;
+
+// @beta
+export type ScatterChartTooltipProps = ChartLayerProps & {
+    variant?: "default" | "frosted";
+    children?: ReactNode;
+};
+
+// @beta
+function ScatterChartTooltipValue(input: ScatterChartTooltipValueProps): ReactElement;
+
+// @beta
+export type ScatterChartTooltipValueProps = ChartDomProps<"span"> & {
+    axis: "x" | "y";
+    format?: ValueFormat;
+};
+
+// @beta
+function ScatterChartXAxis(input: ScatterChartXAxisProps): ReactElement;
+
+// @beta
+export type ScatterChartXAxisProps = ChartLayerProps & {
+    format?: ValueFormat;
+    label?: string;
+    tick?: "none" | "dot";
+};
+
+// @beta
+function ScatterChartYAxis(input: ScatterChartYAxisProps): ReactElement;
+
+// @beta
+export type ScatterChartYAxisProps = ChartLayerProps & {
+    format?: ValueFormat;
+    label?: string;
+    side?: "start" | "end";
+};
+
+// @beta
+export type ScatterCurve = Exclude<ChartCurve, "monotone-y">;
 
 // @beta
 export function Sparkline(props: SparklineProps): ReactElement;

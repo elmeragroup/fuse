@@ -34,7 +34,7 @@ import {
 import type { SeriesPaint } from "./chart-paint";
 import { readingPaint } from "./chart-paint";
 import { pathAnchor, routeIndex } from "./chart-paths";
-import type { ChartPlot } from "./chart-plot";
+import type { ChartPlot } from "./chart-plot-measure";
 import { introFor } from "./chart-store";
 import type { EntrancePhase } from "./chart-store";
 import type { ChartBarVariant } from "./chart-types";

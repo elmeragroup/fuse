@@ -1,0 +1,990 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "scatter-chart",
+  "parts": [
+    {
+      "name": "ScatterChart.Root",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-root.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 273,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The chart's name. Pass this or `aria-labelledby`, never both.",
+          "required": false
+        },
+        {
+          "name": "aria-labelledby",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The id of the element that names the chart. Pass this or `aria-label`, never both.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The chart's parts. Root never inspects them.",
+          "required": false
+        },
+        {
+          "name": "config",
+          "origin": "declared",
+          "type": "TConfig & ChartScatterFieldCheck<TConfig>",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "One entry per series, keyed by the values of the `seriesKey` column. Each entry is a `ChartSeriesConfig` with `label`, `color` and optionally `format` and `icon`. It takes no `stack`, `projectedFrom`, `interval`, `missing`, `qualityKey` or `barVariant`, and its colour is a role, never a scale, a role list or a threshold. Write it `as const satisfies ChartConfig`. The legend lists the keys in config order, and JavaScript orders keys that read as integers, such as \"2026\", first and ascending, so name a year's series, such as `thisYear`.",
+          "required": true
+        },
+        {
+          "name": "data",
+          "origin": "declared",
+          "type": "readonly TRow[]",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Long rows, one per point: an x, a y and the series the point belongs to. Repeated x values and repeated points are valid, and every one draws. A row whose x or y is null or undefined has no point. Every cell is serialisable, so a server component passes it.",
+          "required": true
+        },
+        {
+          "name": "data-intro",
+          "origin": "declared",
+          "type": "\"none\" | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "\"none\" turns the entrance off. By default the marks sweep in from the left, by x, the first time a third of the plot is in view, and reduced motion draws them at rest.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the generated description verbatim.",
+          "required": false
+        },
+        {
+          "name": "seriesKey",
+          "origin": "declared",
+          "type": "TSeriesKey",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The string column that names each row's series, one of the config keys.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "valueFormat",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How y values print. A series' config `format` overrides it.",
+          "required": false
+        },
+        {
+          "name": "xFormat",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How x values print on the axis, in the tooltip, the options and the table.",
+          "required": false
+        },
+        {
+          "name": "xInclude",
+          "origin": "declared",
+          "type": "readonly number[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Values the x domain must reach, such as 0 °C.",
+          "required": false
+        },
+        {
+          "name": "xKey",
+          "origin": "declared",
+          "type": "TXKey",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The number column the x axis reads.",
+          "required": true
+        },
+        {
+          "name": "xLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The x measure's name, such as \"Ukemiddeltemperatur\", which the tooltip, the options, the description and the table's header print. The dictionary's \"x-verdi\" is the default. The axis title is `XAxis`'s own `label`.",
+          "required": false
+        },
+        {
+          "name": "yInclude",
+          "origin": "declared",
+          "type": "readonly number[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Values the y domain must reach. A scatter leaves 0 out unless it is listed here.",
+          "required": false
+        },
+        {
+          "name": "yKey",
+          "origin": "declared",
+          "type": "TYKey",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The number column the y axis reads.",
+          "required": true
+        },
+        {
+          "name": "yLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The y measure's name, such as \"Ukeforbruk\". The dictionary's \"y-verdi\" is the default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.Grid",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-guides.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": "declared",
+          "type": "\"both\" | \"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"both\"",
+          "description": "Which lines to draw, in screen directions: \"horizontal\" lines at the y ticks, \"vertical\" lines at the x ticks, or \"both\", the default, since both axes are numbers.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"dashed\" | \"solid\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"solid\"",
+          "description": "The line style. \"solid\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.XAxis",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-guides.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The tick label format. Root's `xFormat` is the default.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The axis title, such as \"Ukemiddeltemperatur (°C)\".",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "tick",
+          "origin": "declared",
+          "type": "\"dot\" | \"none\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"none\"",
+          "description": "The tick mark. \"none\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.YAxis",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-guides.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The tick label format. Root's `valueFormat` is the default.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The axis title, such as \"kWh per uke\".",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "\"end\" | \"start\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"start\"",
+          "description": "\"start\" draws the axis at the left edge and \"end\" at the right. \"start\" by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.ReferenceLine",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-guides.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "from",
+          "origin": "declared",
+          "type": "readonly [x: number, y: number] | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Not on a horizontal line. Not on a vertical line. A segment's first point, as `[x, y]`.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The visible label. `{value}` prints the line's value in Root's formats.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "to",
+          "origin": "declared",
+          "type": "readonly [x: number, y: number] | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Not on a horizontal line. Not on a vertical line. A segment's last point, as `[x, y]`.",
+          "required": false
+        },
+        {
+          "name": "tone",
+          "origin": "declared",
+          "type": "ChartTone | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The line's tone. \"default\" by default.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"dashed\" | \"solid\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"solid\"",
+          "description": "The line style. \"solid\" by default.",
+          "required": false
+        },
+        {
+          "name": "x",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Not on a horizontal line. The x value a vertical line marks. Not on a segment.",
+          "required": false
+        },
+        {
+          "name": "y",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The y value a horizontal line marks. Not on a vertical line. Not on a segment.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.Points",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-marks.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series the points draw. An unknown key throws `unknown-key`.",
+          "required": true
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"lg\" | \"md\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"md\"",
+          "description": "The dots' diameter: \"sm\" is 5 px, \"md\" 8 px and \"lg\" 11 px. \"md\" by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"default\" | \"quiet\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "The dots' look. \"quiet\" draws them pale, for a reference series such as last year.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.Line",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-marks.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "curve",
+          "origin": "declared",
+          "type": "ScatterCurve | undefined",
+          "shortType": null,
+          "defaultValue": "\"linear\"",
+          "description": "The curve through the points, in x order, ties by y. \"linear\" by default, which draws a fitted line through its points as straight segments. \"step-after\" holds each y until the next x, as a tariff step does.",
+          "required": false
+        },
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series the line joins. An unknown key throws `unknown-key`.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"dashed\" | \"default\" | \"flowing\" | \"quiet\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "The line's look. \"default\" by default. \"dashed\" dashes the whole line, \"flowing\" runs its dashes along it, which reduced motion stops, and \"quiet\" draws a thin, faint line.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.ActiveDot",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-marks.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"dot\" | \"ring\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"ring\"",
+          "description": "The mark on the active point. \"ring\" by default, a ring around the point in its series' colour. \"dot\" draws a filled dot inside a ring of the surface, for a series a Line draws alone.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.Tooltip",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-tooltip.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Without children, a TooltipLabel over one row for x and one for y, each with its name and a TooltipValue.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"default\" | \"frosted\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "The popup's surface. \"default\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.TooltipLabel",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-tooltip.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.TooltipValue",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-tooltip.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "axis",
+          "origin": "declared",
+          "type": "\"x\" | \"y\"",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Which coordinate of the active point to print.",
+          "required": true
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value format. Root's `xFormat`, or the series' config `format` over Root's `valueFormat`, by default.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.Legend",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-legend.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"bottom\"",
+          "description": "Where the legend sits around the plot. \"bottom\" by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.LegendItem",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-legend.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series of this item. An unknown key throws `unknown-key`.",
+          "required": true
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.Table",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-table.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "caption",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the generated caption, the chart's name and its point count.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "hideLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the dictionary's \"Skjul tabell\".",
+          "required": false
+        },
+        {
+          "name": "showLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the dictionary's \"Vis som tabell\".",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.Empty",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-empty.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.Skeleton",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/scatter-chart-empty.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 276,
+      "props": [
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The loader's name. The dictionary's \"Laster diagram\" is the default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.Headline",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-headline.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.Takeaway",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-headline.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 276,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "string | number | readonly (string | number)[]",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The takeaway sentence. Interpolated strings and numbers pass, and elements fail the type.",
+          "required": true
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart.Background",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-background.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "ChartBackgroundPattern | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"dots\"",
+          "description": "The pattern drawn behind the marks. \"dots\" by default.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

@@ -133,8 +133,20 @@ const TIE = 1e-6;
  * of a tie counts as the tie, and snapping a snapped coordinate returns it.
  */
 function pixel(dpr: number, at: number): number {
+  return devicePixel(dpr, at) / dpr;
+}
+
+/**
+ * The device pixel edge a page coordinate snaps to, counted in device pixels, by `pixel`'s rule: a
+ * coordinate exactly between two device pixels, within `TIE`, rounds toward the top left.
+ *
+ * @param dpr - Device pixels per CSS pixel.
+ * @param at - The page coordinate in CSS pixels.
+ * @returns The edge's index in device pixels.
+ */
+export function devicePixel(dpr: number, at: number): number {
   // Adding 0 turns the -0 that rounding -0.5 up gives into 0.
-  return (Math.ceil(at * dpr - 0.5 - TIE) + 0) / dpr;
+  return Math.ceil(at * dpr - 0.5 - TIE) + 0;
 }
 
 /** Where a page coordinate falls inside its device pixel, from 0 up to 1. */

@@ -5,7 +5,7 @@
  */
 
 import { drawnRect } from "./bar-box";
-import { SERIAL, show, windowOf } from "./world-model";
+import { DECIMATE_ABOVE, gridOf, SERIAL, show, windowOf } from "./world-model";
 import type { Plot, Span, World } from "./world-model";
 
 export function plotOf(host: HTMLElement, world: World): Plot {
@@ -162,11 +162,13 @@ export function shoot(host: HTMLElement, world: World): Shot {
       axes: ["along", "along", "across", "across"],
     });
   });
-  // A column draws only for a reading other than 0, in slot order, so at rest the columns sorted
-  // along the plot pair with those readings in window order, however densely they share pixels.
-  // A tween's frame may draw a column on its way to or from 0, so each column's continuity mark is
-  // keyed by its span along the slot axis, which a commit's first frame keeps, and a column that
-  // starts to grow there has no mark before it. The copy a crossfade fades out is no column.
+  // A column draws only for a reading other than 0. A tween's frame may also draw a column on its
+  // way to or from 0, so where the bands take whole device pixels, each holding its column, a
+  // column takes the name of the band its middle lies in. Narrower bands share pixels, and
+  // decimated columns stand for buckets, so there the columns, which pair with the readings other
+  // than 0 in window order at rest, take those names. Each column's continuity mark is keyed by its
+  // span along the slot axis, which a commit's first frame keeps, and a column that starts to grow
+  // there has no mark before it. The copy a crossfade fades out is no column.
   // DOM audit: the path form's columns are aria-hidden plot output.
   const columns = [
     ...(layer?.querySelectorAll('[data-slot="chart-bar-path"]:not([data-quality]):not([data-outgoing] *)') ??
@@ -175,8 +177,18 @@ export function shoot(host: HTMLElement, world: World): Shot {
     .flatMap((path) => pathRects(path.getAttribute("d") ?? ""))
     .toSorted((a, b) => along(a)[0] - along(b)[0]);
   const drawnReadings = windowed.flatMap(({ name, v }) => (v === null || v === 0 ? [] : [name]));
+  const grid = gridOf(plot, windowed.length);
+  const pitchPixels = grid.pitch * dpr;
+  const banded =
+    windowed.length <= DECIMATE_ABOVE &&
+    pitchPixels >= 1 - SERIAL &&
+    Math.abs(pitchPixels - Math.round(pitchPixels)) <= SERIAL;
   columns.forEach((rect, index) => {
-    const name = drawnReadings[index] ?? "?";
+    const [start, end] = along(rect);
+    const name =
+      (banded
+        ? windowed[Math.floor(((start + end) / 2 - grid.start) / grid.pitch)]?.name
+        : drawnReadings[index]) ?? "?";
     bars.set(name, { along: along(rect), across: across(rect), negative: null });
     marks.set(`column at ${show(along(rect))}`, {
       values: across(rect),

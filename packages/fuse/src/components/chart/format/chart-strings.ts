@@ -84,6 +84,16 @@ export type ChartStrings = {
   readonly descriptionProjection: (label: string, from: string) => string;
   /** The interval's slot words, counted. */
   readonly slots: { readonly [I in Interval | "category"]: Inflected };
+  /** A scatter chart's point word, counted. */
+  readonly points: Inflected;
+  /** A scatter series' sentence: its label, its point count and its x and y ranges. */
+  readonly scatterSeries: (label: string, count: string, x: string, y: string) => string;
+  /** The x values' name in a scatter readout when Root has no `xLabel`. */
+  readonly xValue: string;
+  /** The y values' name in a scatter readout when Root has no `yLabel`. */
+  readonly yValue: string;
+  /** The series column's header in a scatter table. */
+  readonly seriesHeader: string;
 };
 
 const NB_NO: ChartStrings = {
@@ -152,6 +162,11 @@ const NB_NO: ChartStrings = {
     year: { one: "år", other: "år" },
     category: { one: "kategori", other: "kategorier" },
   },
+  points: { one: "punkt", other: "punkter" },
+  scatterSeries: (label, count, x, y) => `${label}: ${count}, ${x}, ${y}.`,
+  xValue: "x-verdi",
+  yValue: "y-verdi",
+  seriesHeader: "Serie",
 };
 
 const SV_SE: ChartStrings = {
@@ -220,6 +235,11 @@ const SV_SE: ChartStrings = {
     year: { one: "år", other: "år" },
     category: { one: "kategori", other: "kategorier" },
   },
+  points: { one: "punkt", other: "punkter" },
+  scatterSeries: (label, count, x, y) => `${label}: ${count}, ${x}, ${y}.`,
+  xValue: "x-värde",
+  yValue: "y-värde",
+  seriesHeader: "Serie",
 };
 
 const FI_FI: ChartStrings = {
@@ -288,6 +308,11 @@ const FI_FI: ChartStrings = {
     year: { one: "vuosi", other: "vuotta" },
     category: { one: "luokka", other: "luokkaa" },
   },
+  points: { one: "piste", other: "pistettä" },
+  scatterSeries: (label, count, x, y) => `${label}: ${count}, ${x}, ${y}.`,
+  xValue: "x-arvo",
+  yValue: "y-arvo",
+  seriesHeader: "Sarja",
 };
 
 const EN_US: ChartStrings = {
@@ -356,6 +381,11 @@ const EN_US: ChartStrings = {
     year: { one: "year", other: "years" },
     category: { one: "category", other: "categories" },
   },
+  points: { one: "point", other: "points" },
+  scatterSeries: (label, count, x, y) => `${label}: ${count}, ${x}, ${y}.`,
+  xValue: "x value",
+  yValue: "y value",
+  seriesHeader: "Series",
 };
 
 /** The chart strings of every supported locale. */
@@ -367,15 +397,15 @@ export const CHART_STRINGS = {
 } as const satisfies { readonly [L in SupportedLocale]: ChartStrings };
 
 /**
- * A count of slots in words, such as `25 timer` or `1 day`.
+ * A count in words, such as `25 timer`, `1 day` or `52 punkter`, joined by a no-break space so the
+ * number never wraps away from its word.
  *
  * @param locale - The active supported locale.
- * @param count - The number of slots.
- * @param unit - The interval, or `category` on a category axis.
+ * @param count - The number of things.
+ * @param word - The word's forms, such as a slot interval's or the points' word.
  * @returns The count and its word in the locale's plural form.
  */
-export function countSlots(locale: SupportedLocale, count: number, unit: Interval | "category"): string {
-  const word = CHART_STRINGS[locale].slots[unit];
+export function countOf(locale: SupportedLocale, count: number, word: Inflected): string {
   const number = canonicalSpaces(numberFormat(locale, {}).format(count));
   return `${number}\u00a0${inflect(locale, count, word)}`;
 }

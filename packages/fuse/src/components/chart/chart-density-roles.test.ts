@@ -82,6 +82,11 @@ const CONTRACT_ROLES = {
   "chart-dot": "fixed",
   "chart-active-dot": "fixed",
   "chart-marker": "fixed",
+  // ScatterChart's points layer, its path and its single option: plot output and a fixed 24 px
+  // target, so none follows density, as the cartesian dots and option do.
+  "chart-points": "fixed",
+  "chart-points-path": "fixed",
+  "chart-scatter-option": "fixed",
   "chart-reveal": "fixed",
   "chart-background": "fixed",
   "chart-skeleton": "fixed",

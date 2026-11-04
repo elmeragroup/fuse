@@ -1,21 +1,13 @@
 "use client";
 
-import { createContext, Fragment, use, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, Fragment, use, useMemo, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { useLocalizedStrings } from "../../hooks/use-localized-strings";
-import { CaretDoubleLeft } from "../../icons/generated/caret-double-left";
-import { CaretDoubleRight } from "../../icons/generated/caret-double-right";
-import { CaretLeft } from "../../icons/generated/caret-left";
-import { CaretRight } from "../../icons/generated/caret-right";
-import { cn } from "../../styles/cn";
-import { Button } from "../button/button";
-import { pageStatus } from "../data-table/data-table-pagination-status";
-import { dataTableStrings } from "../data-table/intl";
 import { Table } from "../table/table";
 import { useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import { usePendingOr } from "./chart-pending-root";
+import { ChartTableShell, PAGE_ROWS, Twin, useTableDisclosure } from "./chart-table-shell";
 import { qualityWords, seriesLabel, slotLabel, stackTotalAt } from "./chart-text";
 import type { ChartLayerProps, ChartScalar, ValueFormat, XFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
@@ -64,9 +56,6 @@ type TableRowValue = { readonly kind: "header" } | { readonly kind: "row"; reado
 
 const ChartTableRowContext = createContext<TableRowValue | null>(null);
 
-/** Above this many rows the table pages by calendar period, after CONTRACT section 9.6. */
-const PAGE_ROWS = 500;
-
 /** The calendar period one page holds at each interval, the coarsest whose largest instance fits. */
 const PAGE_PERIOD = {
   second: "minute",
@@ -96,17 +85,6 @@ type Page = {
   readonly label: string;
   readonly spoken: string;
 };
-
-/** The words a twin cell shows and speaks. */
-function Twin({ text }: { readonly text: FormattedText }): ReactNode {
-  if (text.text === text.spoken) return text.text;
-  return (
-    <>
-      <span aria-hidden="true">{text.text}</span>
-      <span className="sr-only">{text.spoken}</span>
-    </>
-  );
-}
 
 /** The slots the table lists: every slot that holds a reading or a missing reading in some series. */
 function tableSlots(context: Pick<ChartRootContextValue, "model">): number[] {
@@ -311,16 +289,8 @@ function ChartTableBody({
 }: ChartTableProps): ReactElement {
   const context = useChartRoot("Chart.Table");
   const strings = CHART_STRINGS[context.locale];
-  const tableStrings = useLocalizedStrings(dataTableStrings);
-  const [shown, setShown] = useState(false);
+  const disclosure = useTableDisclosure();
   const [pageKey, setPageKey] = useState<number | null>(null);
-  const table = useRef<HTMLTableElement>(null);
-  const focusTable = useRef(false);
-  useEffect(() => {
-    if (!focusTable.current) return;
-    focusTable.current = false;
-    table.current?.focus();
-  }, [shown]);
   // The slots and pages read the whole domain, so they wait for a new model or locale.
   const { model, locale } = context;
   const slots = useMemo(() => tableSlots({ model }), [model]);
@@ -344,10 +314,7 @@ function ChartTableBody({
     )
   );
   if (context.model.empty) return <></>;
-  const id = `${context.id}-rows`;
   const stacks = context.model.stacks;
-  const status = pageStatus(index, { kind: "known", pageCount: pages.length });
-  const statusText = strings.pageStatus(String(index + 1), String(pages.length), page.label);
   const go = (next: number): void => {
     const target = pages[next];
     if (target === undefined || next === index) return;
@@ -355,106 +322,56 @@ function ChartTableBody({
     // The status region reads the spoken period, such as `week 41` for the visible `W41`.
     context.store.announce(strings.pageStatus(String(next + 1), String(pages.length), target.spoken));
   };
-  const hiddenClass = shown ? undefined : cn("sr-only");
-  const controlTab = shown ? undefined : -1;
-  // Each move's target page, after the data table's pagination moves.
-  const moves = [
-    { key: "first", label: "goToFirstPage", Icon: CaretDoubleLeft, target: 0, enabled: status.canPrevious },
-    {
-      key: "previous",
-      label: "goToPreviousPage",
-      Icon: CaretLeft,
-      target: index - 1,
-      enabled: status.canPrevious,
-    },
-    { key: "next", label: "goToNextPage", Icon: CaretRight, target: index + 1, enabled: status.canNext },
-    {
-      key: "last",
-      label: "goToLastPage",
-      Icon: CaretDoubleRight,
-      target: pages.length - 1,
-      enabled: status.canNext,
-    },
-  ] as const;
   return (
-    <div data-slot="chart-table" className={className} style={style}>
-      <Button
-        data-slot="chart-table-toggle"
-        variant="outline"
-        size="xs"
-        aria-controls={id}
-        onClick={() => {
-          focusTable.current = !shown;
-          setShown(!shown);
-        }}>
-        {shown ? (hideLabel ?? strings.hideTable) : (showLabel ?? strings.showTable)}
-      </Button>
-      {/* Shown, the table takes a Tab stop, so a keyboard can scroll a table wider than its box. */}
-      <Table.Root
-        id={id}
-        ref={table}
-        tabIndex={shown ? 0 : -1}
-        data-slot="chart-table-content"
-        className={hiddenClass}>
-        <Table.Caption>{caption ?? captionText(context, slots)}</Table.Caption>
-        <Table.Header>
-          <Table.Row>
-            <Table.Head scope="col">{xHeader ?? xHeaderText(context)}</Table.Head>
-            {context.model.series.map(({ key }) => (
-              <Table.Head key={key} scope="col">
-                <Twin text={seriesHeader(context, key)} />
-              </Table.Head>
-            ))}
-            {stacks.map(({ id: stack }) => (
-              <Table.Head key={`total-${stack}`} scope="col">
-                {stacks.length > 1 ? `${strings.total} ${stack}` : strings.total}
-              </Table.Head>
-            ))}
-            <ChartTableRowContext value={{ kind: "header" }}>{children}</ChartTableRowContext>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {page.slots.map((slot, row) => (
-            <Table.Row key={context.update.keys[slot] ?? slot}>
-              <Table.Head scope="row">
-                <Twin text={slotLabel(context, slot)} />
-              </Table.Head>
-              {context.model.series.map(({ key, seriesIndex }) => {
-                // A coarse cell spans the rows of its slot, so each coarse value appears once.
-                const rows = spans.get(key)?.[row] ?? 1;
-                return rows === 0 ? null : (
-                  <SeriesCell key={key} context={context} seriesIndex={seriesIndex} slot={slot} rows={rows} />
-                );
-              })}
-              {stacks.map(({ id: stack, keys }) => (
-                <TotalCell key={`total-${stack}`} context={context} keys={keys} slot={slot} />
-              ))}
-              <ChartTableRowContext value={{ kind: "row", slot }}>{children}</ChartTableRowContext>
-            </Table.Row>
+    <ChartTableShell
+      disclosure={disclosure}
+      tableId={`${context.id}-rows`}
+      showLabel={showLabel ?? strings.showTable}
+      hideLabel={hideLabel ?? strings.hideTable}
+      className={className}
+      style={style}
+      caption={caption ?? captionText(context, slots)}
+      head={
+        <>
+          <Table.Head scope="col">{xHeader ?? xHeaderText(context)}</Table.Head>
+          {context.model.series.map(({ key }) => (
+            <Table.Head key={key} scope="col">
+              <Twin text={seriesHeader(context, key)} />
+            </Table.Head>
           ))}
-        </Table.Body>
-      </Table.Root>
-      {pages.length > 1 ? (
-        <div data-slot="chart-table-pagination" className={hiddenClass}>
-          {moves.map(({ key, label, Icon, target, enabled }) => (
-            <Fragment key={key}>
-              {key === "next" ? <span>{statusText}</span> : null}
-              <Button
-                variant="outline"
-                size="icon-xs"
-                aria-label={tableStrings.format(label)}
-                tabIndex={controlTab}
-                disabled={!enabled}
-                onClick={() => {
-                  go(target);
-                }}>
-                <Icon aria-hidden="true" />
-              </Button>
-            </Fragment>
+          {stacks.map(({ id: stack }) => (
+            <Table.Head key={`total-${stack}`} scope="col">
+              {stacks.length > 1 ? `${strings.total} ${stack}` : strings.total}
+            </Table.Head>
           ))}
-        </div>
-      ) : null}
-    </div>
+          <ChartTableRowContext value={{ kind: "header" }}>{children}</ChartTableRowContext>
+        </>
+      }
+      pages={{
+        index,
+        count: pages.length,
+        status: strings.pageStatus(String(index + 1), String(pages.length), page.label),
+        go,
+      }}>
+      {page.slots.map((slot, row) => (
+        <Table.Row key={context.update.keys[slot] ?? slot}>
+          <Table.Head scope="row">
+            <Twin text={slotLabel(context, slot)} />
+          </Table.Head>
+          {context.model.series.map(({ key, seriesIndex }) => {
+            // A coarse cell spans the rows of its slot, so each coarse value appears once.
+            const rows = spans.get(key)?.[row] ?? 1;
+            return rows === 0 ? null : (
+              <SeriesCell key={key} context={context} seriesIndex={seriesIndex} slot={slot} rows={rows} />
+            );
+          })}
+          {stacks.map(({ id: stack, keys }) => (
+            <TotalCell key={`total-${stack}`} context={context} keys={keys} slot={slot} />
+          ))}
+          <ChartTableRowContext value={{ kind: "row", slot }}>{children}</ChartTableRowContext>
+        </Table.Row>
+      ))}
+    </ChartTableShell>
   );
 }
 
