@@ -69,6 +69,8 @@ export type {
   ChartSeriesKey,
   ChartStyle,
   ChartStyleVars,
+  ChartThresholdColor,
+  ChartThresholdSide,
   ChartTimeAxisProps,
   ChartTimeFields,
   ChartTone,

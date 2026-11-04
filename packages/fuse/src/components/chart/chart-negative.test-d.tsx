@@ -26,6 +26,7 @@ import type {
   ChartActiveDotProps,
   ChartAreaProps,
   ChartBarProps,
+  ChartColor,
   ChartConfig,
   ChartCrosshairProps,
   ChartGlowProps,
@@ -33,6 +34,7 @@ import type {
   ChartLineProps,
   ChartQuality,
   ChartRootProps,
+  ChartSeriesConfig,
   ChartSlotLabelProps,
   ChartSwatchProps,
   ChartTooltipProps,
@@ -373,4 +375,78 @@ test("a crosshair fades only at named ends, and a SlotLabel takes only an x form
   // @ts-expect-error a SlotLabel prints the slot, so a value format is no x format
   const valued: ChartSlotLabelProps = { format: { preset: "energy", unit: "kWh" } };
   expectTypeOf([sideways, valued]).toBeArray();
+});
+
+test("a threshold colour is cartesian config with a number and two roles", () => {
+  const above = { color: "chart-sentiment-negative", label: "Over" } as const;
+  const below = { color: "chart-sentiment-positive", label: "Under" } as const;
+  const split = { threshold: 0.65, below, above } as const;
+  const prices = { price: { label: "Spot price", color: split } } as const satisfies ChartConfig;
+  const pieSplit = {
+    chrome: { label: "C", color: split },
+    safari: { label: "S", color: "chart-2" },
+  } as const satisfies ChartConfig;
+  const ringSplit = { kwh: { label: "K", color: split } } as const satisfies ChartConfig;
+  const ringRole = { kwh: { label: "K", color: "chart-1" } } as const satisfies ChartConfig;
+  const radarSplit = { a: { label: "A", color: split } } as const satisfies ChartConfig;
+  // @ts-expect-error a pie category takes no threshold
+  void (<PieChart.Root {...pie} config={pieSplit} />);
+  // @ts-expect-error a radial ring takes no threshold
+  void (<RadialChart.Root {...budget} config={ringSplit} maxKey="budget" />);
+  // @ts-expect-error a radar series takes no threshold
+  void (<RadarChart.Root {...radar} config={radarSplit} />);
+  // @ts-expect-error a side's colour is a role, never a CSS colour
+  const css: ChartColor = { threshold: 1, below: { color: "red", label: "Under" }, above };
+  // @ts-expect-error a side's colour is one role, never a scale
+  const scaled: ChartColor = { threshold: 1, below: { color: "chart-seq", label: "Under" }, above };
+  // @ts-expect-error the threshold is a number the app passes, never a keyword
+  const keyword: ChartColor = { threshold: "mean", below, above };
+  // @ts-expect-error a threshold names both sides
+  const oneSided: ChartColor = { threshold: 1, above };
+  // A union holding a threshold, or an entry annotated as the wide config type, may hold a threshold.
+  const enabled = days.length > 0;
+  const radarUnion = { a: { label: "A", color: enabled ? split : "chart-1" } } as const;
+  const radarScaleUnion = { a: { label: "A", color: enabled ? "chart-seq" : "chart-1" } } as const;
+  const pieUnion = {
+    chrome: { label: "C", color: enabled ? split : "chart-1" },
+    safari: { label: "S", color: "chart-2" },
+  } as const;
+  const ringUnion = { kwh: { label: "K", color: enabled ? split : "chart-1" } } as const;
+  const annotated: ChartSeriesConfig = { label: "A", color: "chart-1" };
+  const pieAnnotated = { chrome: annotated, safari: { label: "S", color: "chart-2" } } as const;
+  // @ts-expect-error a radar colour union that may be a threshold
+  void (<RadarChart.Root {...radar} config={radarUnion} />);
+  // @ts-expect-error a radar colour union that may be a scale
+  void (<RadarChart.Root {...radar} config={radarScaleUnion} />);
+  // @ts-expect-error a radar entry annotated as ChartSeriesConfig may hold a threshold
+  void (<RadarChart.Root {...radar} config={{ a: annotated }} />);
+  // @ts-expect-error a pie colour union that may be a threshold
+  void (<PieChart.Root {...pie} config={pieUnion} />);
+  // @ts-expect-error a pie entry annotated as ChartSeriesConfig may hold a threshold
+  void (<PieChart.Root {...pie} config={pieAnnotated} />);
+  // @ts-expect-error a radial colour union that may be a threshold
+  void (<RadialChart.Root {...budget} config={ringUnion} maxKey="budget" />);
+  // @ts-expect-error a radial entry annotated as ChartSeriesConfig may hold a threshold
+  void (<RadialChart.Root {...budget} config={{ kwh: annotated }} maxKey="budget" />);
+  // Each case passes once its violation goes: a union of roles and role lists, and a plain role.
+  const pair = ["chart-2", "chart-3"] as const;
+  const radarRoles = { a: { label: "A", color: enabled ? "chart-1" : pair } } as const;
+  const pieRoles = {
+    chrome: { label: "C", color: enabled ? "chart-1" : "chart-3" },
+    safari: { label: "S", color: "chart-2" },
+  } as const;
+  const roles: ChartColor[] = [split, { threshold: 1, below: { color: "chart-other", label: "U" }, above }];
+  const twins = (
+    <>
+      <Chart.Root data={hours} config={prices} xKey="start" interval="hour" aria-label="x" />
+      <PieChart.Root {...pie} config={browserConfig} />
+      <RadialChart.Root {...budget} config={ringRole} maxKey="budget" />
+      <RadarChart.Root {...radar} config={{ a: { label: "A", color: "chart-1" } }} />
+      <RadarChart.Root {...radar} config={radarRoles} />
+      <PieChart.Root {...pie} config={pieRoles} />
+      <RadialChart.Root {...budget} config={{ kwh: { label: "K", color: "chart-1" } }} maxKey="budget" />
+    </>
+  );
+  expectTypeOf(twins).toExtend<ReactElement>();
+  expectTypeOf([css, scaled, keyword, oneSided, ...roles]).toBeArray();
 });

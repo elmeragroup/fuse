@@ -11,7 +11,6 @@ import { page, server, userEvent } from "vitest/browser";
 
 import * as Oklab from "@elmeragroup/color/oklab";
 import { getOrThrow } from "@elmeragroup/color/result";
-import * as Srgb from "@elmeragroup/color/srgb";
 import { contrastRatio } from "@elmeragroup/color/wcag";
 
 import "../../../dist/styles.css";
@@ -24,6 +23,7 @@ import {
   chromaticPixels,
   emulateMedia,
   pagePixels,
+  pixelAt,
 } from "../../../test/chart/media";
 import {
   fkasPrivate,
@@ -208,11 +208,7 @@ describe("a reference band under forced colours", () => {
     const label = host.querySelector('[data-slot="chart-reference-label"]')?.getBoundingClientRect();
     if (area === undefined || label === undefined) throw new Error("no band");
     const pixels = await pagePixels();
-    const at = (x: number, y: number): Srgb.Srgb => {
-      const index = (Math.round(y * pixels.scale) * pixels.width + Math.round(x * pixels.scale)) * 4;
-      const [r = 0, g = 0, b = 0] = pixels.data.subarray(index, index + 3);
-      return getOrThrow(Srgb.make({ r: r / 255, g: g / 255, b: b / 255, alpha: 1 }));
-    };
+    const at = (x: number, y: number) => pixelAt(pixels, x, y);
     const canvas = at(area.left + 4, area.top + 2);
     const marked = (x: number, y: number): boolean => getOrThrow(contrastRatio(at(x, y), canvas)) >= 3;
     // A domain of 0 to 6 puts the band from a sixth to half of the plot's height. Its top edge
@@ -440,11 +436,7 @@ describe("stack seams", () => {
     // The gap is the 2 px between the upper segment's bottom and the lower segment's top.
     expect(lower.top - upper.bottom).toBeCloseTo(2, 0);
     const pixels = await pagePixels();
-    const sample = (x: number, y: number): Srgb.Srgb => {
-      const index = (Math.round(y * pixels.scale) * pixels.width + Math.round(x * pixels.scale)) * 4;
-      const [r = 0, g = 0, b = 0] = pixels.data.subarray(index, index + 3);
-      return getOrThrow(Srgb.make({ r: r / 255, g: g / 255, b: b / 255, alpha: 1 }));
-    };
+    const sample = (x: number, y: number) => pixelAt(pixels, x, y);
     const x = lower.left + lower.width / 2;
     const seam = sample(x, (lower.top + upper.bottom) / 2);
     const surface = sample(lower.left - 4, upper.top + 1);
@@ -590,11 +582,7 @@ describe("mark contrast", () => {
   // The oracle is WCAG's contrast ratio through @elmeragroup/color, read from the page's pixels.
   async function sampler() {
     const pixels = await pagePixels();
-    return (x: number, y: number): Srgb.Srgb => {
-      const index = (Math.round(y * pixels.scale) * pixels.width + Math.round(x * pixels.scale)) * 4;
-      const [r = 0, g = 0, b = 0] = pixels.data.subarray(index, index + 3);
-      return getOrThrow(Srgb.make({ r: r / 255, g: g / 255, b: b / 255, alpha: 1 }));
-    };
+    return (x: number, y: number) => pixelAt(pixels, x, y);
   }
 
   function plotWith(bar: ReactNode, legend = false, variant: ChartBarVariant = "default") {

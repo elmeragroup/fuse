@@ -281,7 +281,7 @@ export type ChartChangeEventDetails<TReason extends string> = {
 };
 
 // @beta
-export type ChartColor = ChartRole | ChartScale | readonly [ChartRole, ChartRole, ...ChartRole[]];
+export type ChartColor = ChartRole | ChartScale | ChartThresholdColor | readonly [ChartRole, ChartRole, ...ChartRole[]];
 
 // @beta
 export type ChartConfig = {
@@ -529,10 +529,10 @@ export type ChartRadarFieldCheck<TConfig> = string extends keyof TConfig ? unkno
     } ? {
         readonly "RadarChart config takes no stack, projectedFrom or interval": never;
     } : TConfig[K] extends {
-        color: ChartScale;
-    } ? {
-        readonly "RadarChart colours are roles or role lists, never a scale": never;
-    } : unknown; };
+        color: ChartRole | readonly [ChartRole, ChartRole, ...ChartRole[]];
+    } ? unknown : {
+        readonly "RadarChart colours are roles or role lists, never a scale or a threshold": never;
+    }; };
 
 // @beta
 function ChartReferenceArea(input: ChartReferenceAreaProps): ReactElement;
@@ -759,6 +759,19 @@ function ChartTakeaway(input: ChartTakeawayProps): ReactElement;
 // @beta
 export type ChartTakeawayProps = Omit<ChartDomProps<"p">, "children"> & {
     children: string | number | readonly (string | number)[];
+};
+
+// @beta
+export type ChartThresholdColor = {
+    threshold: number;
+    below: ChartThresholdSide;
+    above: ChartThresholdSide;
+};
+
+// @beta
+export type ChartThresholdSide = {
+    color: ChartRole;
+    label: string;
 };
 
 // @beta

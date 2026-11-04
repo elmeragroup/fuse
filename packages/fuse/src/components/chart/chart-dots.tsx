@@ -22,7 +22,8 @@ import { datumSlots } from "./chart-datum";
 import { partsCache, writeAttribute, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import type { MarkValues, ValueAxis } from "./chart-motion";
-import { seriesPaintOf } from "./chart-paint";
+import { readingPaint, seriesPaintOf } from "./chart-paint";
+import type { SeriesPaint } from "./chart-paint";
 import { pathAnchor, routeRestIndex } from "./chart-paths";
 import { useChartFrame } from "./chart-plot";
 import { readingAt, useActiveSlot } from "./chart-readout";
@@ -138,12 +139,15 @@ const Dot = memo(function Dot({
   intro,
   series,
   radius,
+  paint,
   cx,
   cy,
 }: {
   readonly intro: "fade" | "none" | undefined;
   readonly series: number;
   readonly radius: number;
+  /** The reading's own paint, a scale step or a threshold side, or undefined for the layer's. */
+  readonly paint: string | undefined;
   readonly cx: number;
   readonly cy: number;
 }) {
@@ -156,16 +160,21 @@ const Dot = memo(function Dot({
       r={radius}
       cx={first.cx}
       cy={first.cy}
+      style={paint === undefined ? undefined : { "--chart-series-paint": paint }}
     />
   );
 }, sameDot);
 
-/** Whether a dot's later props change what it renders: its series and its radius. */
-function sameDot(
-  a: { readonly series: number; readonly radius: number },
-  b: { readonly series: number; readonly radius: number }
-): boolean {
-  return a.series === b.series && a.radius === b.radius;
+/** What a dot renders from after its first render. */
+type DotLook = {
+  readonly series: number;
+  readonly radius: number;
+  readonly paint: string | undefined;
+};
+
+/** Whether a dot's later props change what it renders: its series, its radius and its paint. */
+function sameDot(a: DotLook, b: DotLook): boolean {
+  return a.series === b.series && a.radius === b.radius && a.paint === b.paint;
 }
 
 /**
@@ -177,10 +186,20 @@ function useMountIntro(context: ChartRootContextValue): "fade" | "none" | undefi
   return introFor(usePhase(context.store), context.update.kind, context.entrance);
 }
 
+/** The inline paint each kept dot wore, in order, for a series painted by its values. */
+const keptPaints = new WeakMap<Element, readonly string[]>();
+
+/** The paint a dot names inline, or "" for one that takes its layer's. */
+function inlinePaint(dot: Element): string {
+  return dot instanceof SVGElement ? dot.style.getPropertyValue("--chart-series-paint") : "";
+}
+
 /**
  * How Dots keep their last drawing: the group and one dot of it as a template, so a commit copies
- * two elements and not every dot. A crossfade then builds the old dots from the template, one per
- * point the loop drew last.
+ * two elements and not every dot. Where a scale or a threshold paints the dots by value, it keeps
+ * each dot's own paint too, a string per dot, and only there does a commit read every dot. A
+ * crossfade then builds the old dots from the template, one per point the loop drew last, each in
+ * the paint its dot wore.
  */
 const DOTS_COPY: AttachedCopy = {
   keep: (live) => {
@@ -188,17 +207,28 @@ const DOTS_COPY: AttachedCopy = {
     const template = live.firstElementChild?.cloneNode(false);
     if (!(kept instanceof Element)) return live;
     if (template instanceof Element) {
-      // An old dot fades out, so it never runs a fade-in of its own.
+      // An old dot fades out, so it never runs a fade-in of its own, and wears its own paint.
       template.removeAttribute("data-intro");
+      template.removeAttribute("style");
       kept.append(template);
     }
+    // Dots draw only on readings, and a scale or a threshold paints every reading a step of its
+    // own, so either every dot wears an inline paint or none does, and the first dot tells which.
+    if (live.firstElementChild === null || inlinePaint(live.firstElementChild) === "") return kept;
+    keptPaints.set(kept, [...live.children].map(inlinePaint));
     return kept;
   },
   outgoing: (kept, before) => {
     const template = kept.firstElementChild;
     const copy = kept.cloneNode(false);
     if (template === null || !(copy instanceof Element)) return null;
-    for (let point = 0; point < before.length / 2; point += 1) copy.append(template.cloneNode(false));
+    const paints = keptPaints.get(kept);
+    for (let point = 0; point < before.length / 2; point += 1) {
+      const dot = template.cloneNode(false);
+      const paint = paints?.[point] ?? "";
+      if (paint !== "" && dot instanceof SVGElement) dot.style.setProperty("--chart-series-paint", paint);
+      copy.append(dot);
+    }
     return copy;
   },
 };
@@ -214,6 +244,7 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
   const { model, update, xScale } = context;
   const { window } = model;
   const series = seriesOf(model, dataKey);
+  const paint = pointPaint(context, dataKey, series);
   const drawn = useChartFrame("Chart.Dots", layout);
   const frame = drawn?.frame ?? null;
   // The dots sit on the vertices the series' path draws, the Line's own path, decimated alike.
@@ -225,9 +256,16 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
       const point = vertex.state === "reading" ? restingPoint(place, frame, series, vertex.slot) : null;
       return point === null
         ? []
-        : [{ key: path.keys[index] ?? String(vertex.slot), slot: vertex.slot, point }];
+        : [
+            {
+              key: path.keys[index] ?? String(vertex.slot),
+              slot: vertex.slot,
+              point,
+              paint: readingPaint(paint, series.readings[vertex.slot]),
+            },
+          ];
     });
-  }, [model, update.keys, series, frame, window, xScale]);
+  }, [model, update.keys, series, frame, window, xScale, paint]);
   const rest = useMemo(() => dots.flatMap(({ point }) => [...point]), [dots]);
   const slots = useMemo(() => dots.map(({ slot }) => slot), [dots]);
   const look = useMemo((): PointLook => ({ frame, xScale: context.xScale }), [frame, context.xScale]);
@@ -262,14 +300,14 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
       aria-hidden="true"
       className={className}
       style={{
-        "--chart-series-paint": pointPaint(context, dataKey, series),
+        "--chart-series-paint": paint.base,
         "--chart-series": series?.seriesIndex,
         ...style,
       }}>
       {frame === null ? null : (
         <>
           <g ref={markRef}>
-            {dots.map(({ key, point }) => {
+            {dots.map(({ key, point, paint: own }) => {
               const { cx, cy } = pointCentre(frame, context.xScale, point[0], point[1]);
               return (
                 <Dot
@@ -277,6 +315,7 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
                   intro={intro}
                   series={series?.seriesIndex ?? 0}
                   radius={radius}
+                  paint={own}
                   cx={cx}
                   cy={cy}
                 />
@@ -290,17 +329,39 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
   );
 }
 
-/** The paint of a series' point marks: its role, or a role list's first role. */
+/**
+ * The paint of a series' point marks. Its base paints the layer: a role, a role list's first role,
+ * a scale's middle step or a threshold's lower side. A mark on a reading of a scale or a threshold
+ * paints the step of its value over it.
+ */
 function pointPaint(
   context: ChartRootContextValue,
   dataKey: string,
   series: SeriesModel | undefined
-): string {
-  return seriesPaintOf(dataKey, context.config[dataKey]?.color ?? "chart-1", series).base;
+): SeriesPaint {
+  return seriesPaintOf(dataKey, context.config[dataKey]?.color ?? "chart-1", series);
 }
 
 /** The active dot's circles, its ping ring first if any, found once per commit of its mark. */
 const activeDots = partsCache((svg) => [...svg.querySelectorAll(":scope > [data-slot=chart-dot]")]);
+
+/**
+ * How an active dot keeps its last drawing: a deep copy at each commit, whose circles take the live
+ * circles' paint at each step, so a crossfade fades out the paint of the reading the dot last
+ * showed, not the one it showed at the last commit.
+ */
+const ACTIVE_DOT_COPY: AttachedCopy = {
+  sync: (kept, live) => {
+    // The kept copy is a fresh deep copy at each commit and is never committed itself, so its
+    // circles, which never change, are found once.
+    const copies = activeDots(kept);
+    activeDots(live).forEach((dot, index) => {
+      const copy = copies[index];
+      const paint = inlinePaint(dot);
+      if (copy instanceof SVGElement) writeStyle(copy, "--chart-series-paint", paint === "" ? null : paint);
+    });
+  },
+};
 
 /** Draw the active dot at the loop's numbers, its place and its value, with its ping ring if any. */
 function drawActiveDot(svg: SVGSVGElement, look: PointLook, values: MarkValues): void {
@@ -508,6 +569,7 @@ export function ChartActiveDot({
 }: ChartActiveDotProps): ReactElement {
   const { context, layout } = useSeriesPart("Chart.ActiveDot", dataKey);
   const series = seriesOf(context.model, dataKey);
+  const paint = pointPaint(context, dataKey, series);
   const drawn = useChartFrame("Chart.ActiveDot", layout);
   const frame = drawn?.frame ?? null;
   const look = useMemo((): PointLook => ({ frame, xScale: context.xScale }), [frame, context.xScale]);
@@ -519,6 +581,7 @@ export function ChartActiveDot({
     drawn: drawnPoint,
   } = useAttachedMark(context, drawn, drawActiveDot, look, pointAxes(context.orientation), {
     point: true,
+    copy: ACTIVE_DOT_COPY,
   });
   // Whether the dot showed at a reading after its last paint, so the next step glides from it.
   const shownBefore = useRef(false);
@@ -537,8 +600,18 @@ export function ChartActiveDot({
       shownBefore.current && before !== null && frame !== null
         ? pointCentre(frame, context.xScale, before[0] ?? 0, before[1] ?? 0)
         : null;
-    // The dot shows only while the series draws a reading at the active slot.
-    if (svg !== null) writeAttribute(svg, "data-value", point === null ? null : "");
+    // The dot shows only while the series draws a reading at the active slot, and its circles wear
+    // the step of that reading's value under a scale or a threshold.
+    if (svg !== null) {
+      writeAttribute(svg, "data-value", point === null ? null : "");
+      const own =
+        active === null || series === undefined
+          ? undefined
+          : readingPaint(paint, series.readings[active.slot]);
+      for (const dot of activeDots(svg)) {
+        if (dot instanceof SVGElement) writeStyle(dot, "--chart-series-paint", own ?? null);
+      }
+    }
     // The dot crossfades with its path while it shows at the active slot.
     attach(
       cause,
@@ -602,7 +675,7 @@ export function ChartActiveDot({
         aria-hidden="true"
         className={className}
         style={{
-          "--chart-series-paint": pointPaint(context, dataKey, series),
+          "--chart-series-paint": paint.base,
           // The ordinal the dimming rules compare with the selected or highlighted series.
           "--chart-series": series?.seriesIndex,
           ...style,
@@ -674,6 +747,7 @@ export function ChartMarker({
 }: ChartMarkerProps): ReactElement {
   const { context, layout } = useSeriesPart("Chart.Marker", dataKey);
   const series = seriesOf(context.model, dataKey);
+  const paint = pointPaint(context, dataKey, series);
   const drawn = useChartFrame("Chart.Marker", layout);
   const frame = drawn?.frame ?? null;
   const slots = useSteady(markerSlots(context, series, at), sameItems);
@@ -688,9 +762,9 @@ export function ChartMarker({
               series,
               slot
             );
-            return point === null ? [] : [{ slot, point }];
+            return point === null ? [] : [{ slot, point, paint: readingPaint(paint, series.readings[slot]) }];
           }),
-    [context.model, context.xScale, series, frame, slots]
+    [context.model, context.xScale, series, frame, slots, paint]
   );
   const look = useMemo((): PointLook => ({ frame, xScale: context.xScale }), [frame, context.xScale]);
   const {
@@ -730,7 +804,7 @@ export function ChartMarker({
         aria-hidden="true"
         className={className}
         style={{
-          "--chart-series-paint": pointPaint(context, dataKey, series),
+          "--chart-series-paint": paint.base,
           // The ordinal the dimming rules compare with the selected or highlighted series.
           "--chart-series": series?.seriesIndex,
           ...style,
@@ -738,7 +812,7 @@ export function ChartMarker({
         {frame === null ? null : (
           <>
             <svg aria-hidden="true">
-              {marked.flatMap(({ slot, point }) => {
+              {marked.flatMap(({ slot, point, paint: own }) => {
                 const { cx, cy } = pointCentre(frame, context.xScale, point[0], point[1]);
                 const dot = (
                   <Dot
@@ -746,6 +820,7 @@ export function ChartMarker({
                     intro={intro}
                     series={seriesIndex}
                     radius={radius}
+                    paint={own}
                     cx={cx}
                     cy={cy}
                   />
@@ -759,6 +834,7 @@ export function ChartMarker({
                         r={radius}
                         cx={cx}
                         cy={cy}
+                        style={own === undefined ? undefined : { "--chart-series-paint": own }}
                       />,
                       dot,
                     ]

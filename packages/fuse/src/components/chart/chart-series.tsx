@@ -6,13 +6,14 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import { useChartRoot } from "./chart-context";
-import { seriesPaintOf, valuePaint } from "./chart-paint";
+import { isThresholdColor, readingPaint, seriesPaintOf } from "./chart-paint";
 import type { SeriesPaint } from "./chart-paint";
 import { usePendingOr } from "./chart-pending-root";
-import { readingAt, useActivePoint, useReadoutKey } from "./chart-readout";
+import { readingAt, useActivePoint, useLegendSide, useReadoutKey } from "./chart-readout";
 import { seriesLabel } from "./chart-text";
 import type { ChartDomProps } from "./chart-types";
 import { barForm, drawnBarVariant } from "./layout/bar-geometry";
+import { seriesPaint } from "./layout/color-key";
 import { seriesOf } from "./layout/series-of";
 
 /**
@@ -49,18 +50,24 @@ export type ChartSeriesIconProps = ChartDomProps<"span"> & {
 
 /**
  * The CSS paint of a swatch, the marks' own stops: a role paints itself, a role list its roles as a
- * gradient, and a scale its 7-step ramp, or one step when the active value picks it.
+ * gradient, a scale its 7-step ramp and a threshold its two sides split in half, lower side first.
+ * A step the active value or a legend entry's side picks paints alone.
  */
 function swatchPaint(paint: SeriesPaint, step: string | undefined): string {
   if (step !== undefined) return step;
-  const stops = paint.stops ?? paint.ramp;
-  return stops === undefined ? paint.base : `linear-gradient(to right, ${stops.join(", ")})`;
+  const { stops, ramp } = paint;
+  if (stops !== undefined) return `linear-gradient(to right, ${stops.join(", ")})`;
+  if (ramp === undefined) return paint.base;
+  if (!isThresholdColor(paint.color)) return `linear-gradient(to right, ${ramp.join(", ")})`;
+  const [below = paint.base, above = paint.base] = ramp;
+  return `linear-gradient(to right, ${below} 50%, ${above} 50%)`;
 }
 
 /**
- * The series' paint. A role list shows the list as a gradient, and a scale shows its ramp. Inside a
- * tooltip row a scale series shows the step of the active value. The swatch is decoration, so it is
- * hidden from screen readers.
+ * The series' paint. A role list shows the list as a gradient, a scale shows its ramp, and a
+ * threshold shows its two sides split in half. Inside a tooltip row a scale or a threshold series
+ * shows the step of the active value, and inside a threshold series' legend entry it shows the
+ * entry's side. The swatch is decoration, so it is hidden from screen readers.
  *
  * @beta
  */
@@ -82,9 +89,14 @@ function ChartSwatchBody({
     useReadoutKey("Chart.Swatch", context, dataKey, point.key) ?? Object.keys(context.config)[0] ?? "";
   const series = seriesOf(context.model, key);
   const paint = seriesPaintOf(key, context.config[key]?.color ?? "chart-1", series);
-  const reading =
-    point.slot === null || paint.bins === undefined ? null : readingAt(context, key, point.slot);
-  const step = reading?.kind === "reading" ? valuePaint(paint, reading.value) : undefined;
+  const side = useLegendSide(key);
+  // A legend entry's side paints its role with the consumer override first, as the series' marks do.
+  const step =
+    side === null
+      ? point.slot === null
+        ? undefined
+        : readingPaint(paint, readingAt(context, key, point.slot))
+      : seriesPaint(key, side.color);
   // The swatch wears the look the series' bars draw in, from config at render time, so the server
   // HTML and the legend tell a hatched series apart before the chart hydrates.
   const look = drawnBarVariant(
@@ -112,7 +124,8 @@ function ChartSwatchBody({
 }
 
 /**
- * The series' visible label from config.
+ * The series' visible label from config. Inside a threshold series' legend entry it is the entry's
+ * side label, and everywhere else, the tooltip row included, the series' own `label`.
  *
  * @beta
  */
@@ -124,15 +137,14 @@ function ChartSeriesLabelBody({ dataKey, render, className, ...props }: ChartSer
   const context = useChartRoot("Chart.SeriesLabel");
   const point = useActivePoint(context);
   const key = useReadoutKey("Chart.SeriesLabel", context, dataKey, point.key);
+  const side = useLegendSide(key);
+  const text = key === null ? null : (side?.label ?? seriesLabel(context, key).text);
   return useRender({
     defaultTagName: "span",
     render,
     props: {
       "data-slot": "chart-series-label",
-      ...mergeProps<"span">(
-        { className, children: key === null ? null : seriesLabel(context, key).text },
-        props
-      ),
+      ...mergeProps<"span">({ className, children: text }, props),
     },
   });
 }

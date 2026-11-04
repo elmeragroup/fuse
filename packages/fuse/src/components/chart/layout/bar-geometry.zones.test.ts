@@ -80,7 +80,7 @@ function pathForm(chart: CartesianModel, series: SeriesModel, frame: PlotFrame, 
   } as const;
   const layout = layoutColumns({ model: chart, update }, series, frame, METRICS, sub, paint, new Set());
   const drawing = columnsDrawing(frame, layout.topology, layout.values);
-  return { layout, fill: drawing.fills[0] ?? "", rects: rectsOf(drawing.fills[0] ?? "") };
+  return { layout, fill: drawing.fill[0] ?? "", rects: rectsOf(drawing.fill[0] ?? "") };
 }
 
 function categories(count: number) {

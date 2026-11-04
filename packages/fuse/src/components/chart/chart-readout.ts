@@ -11,7 +11,7 @@ import { assertKnownKey } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import { useChartStore } from "./chart-store";
 import { ownSlotLabel, qualityWords, stackTotalAt } from "./chart-text";
-import type { ChartFallback, ChartFractionDigits, ValueFormat } from "./chart-types";
+import type { ChartFallback, ChartFractionDigits, ChartThresholdSide, ValueFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import { formatValue } from "./format/value-format";
 import { ownWindowSlots } from "./layout/coarse-slots";
@@ -22,6 +22,30 @@ import { roundShares } from "./layout/shares";
 
 /** The config key a template row renders for, such as one TooltipItems row. */
 export const ChartRowContext = createContext<string | null>(null);
+
+/** A threshold side's legend entry: the series it belongs to and the side it shows. */
+type LegendSide = { readonly key: string; readonly side: ChartThresholdSide };
+
+/**
+ * The legend entry of a threshold side around a part, null outside the legend entries of a
+ * threshold series. The series key travels with the side because a nested row, such as a
+ * LegendToggle or a TooltipItems row, replaces `ChartRowContext` and leaves this context alone.
+ */
+export const ChartLegendSideContext = createContext<LegendSide | null>(null);
+
+/**
+ * The threshold side a Swatch or a SeriesLabel of one series shows: its legend entry's side, or
+ * null outside a threshold series' legend entry and for a part that shows another series. It
+ * compares the part's key with the entry's own key, never the nearest row's, so a row of another
+ * series nested inside the entry keeps that series' paint and label.
+ *
+ * @param key - The series the part shows, or null.
+ * @returns The side, or null.
+ */
+export function useLegendSide(key: string | null): ChartThresholdSide | null {
+  const entry = use(ChartLegendSideContext);
+  return entry?.key === key ? entry.side : null;
+}
 
 /**
  * Whether the readout parts below follow the active point. The tooltip does, and a static legend

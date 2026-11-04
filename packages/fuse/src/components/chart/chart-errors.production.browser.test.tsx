@@ -7,12 +7,13 @@ import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import "../../../dist/styles.css";
+import { computedColor } from "../../../test/assert-invalid-ring";
 import { barBox } from "../../../test/chart/bar-box";
 import { bars } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
-import type { ChartConfig, ChartRow } from "./chart-types";
+import type { ChartConfig, ChartRow, ChartThresholdColor } from "./chart-types";
 import "./chart.css";
 
 const OSLO = "Europe/Oslo";
@@ -273,6 +274,55 @@ describe("data rules in production", () => {
     expect(Math.abs((b?.top ?? 0) - (0.8 / 1.2) * plot.height)).toBeLessThanOrEqual(0.5);
     expect(Math.abs((b?.bottom ?? 0) - (1.05 / 1.2) * plot.height)).toBeLessThanOrEqual(0.5);
     expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("paints every bar below a threshold that is not finite and warns once per series", () => {
+    spy();
+    const split = (threshold: number): ChartThresholdColor => ({
+      threshold,
+      below: { color: "chart-sentiment-positive", label: "Lav" },
+      above: { color: "chart-sentiment-negative", label: "Høy" },
+    });
+    const element = (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 300 }}>
+          <Chart.Root
+            data={[
+              { day: at(1), kwh: -5, cost: -2 },
+              { day: at(2), kwh: 5, cost: 2 },
+            ]}
+            config={{
+              kwh: { label: "Forbruk", color: split(Number.NaN) },
+              cost: { label: "Kostnad", color: split(Number.POSITIVE_INFINITY) },
+            }}
+            xKey="day"
+            interval="day"
+            timeZone={OSLO}
+            data-intro="none"
+            aria-label="Forbruk">
+            <Chart.BarGroup series={["kwh", "cost"]}>
+              <Chart.Bar dataKey="kwh" />
+              <Chart.Bar dataKey="cost" />
+            </Chart.BarGroup>
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    const { host, rerender } = renderThemed(element);
+    // The theme's own role, resolved through a probe outside every chart rule.
+    const positive = computedColor(host, "var(--chart-sentiment-positive)");
+    expect(bars(host).map((bar) => getComputedStyle(bar).fill)).toEqual([
+      positive,
+      positive,
+      positive,
+      positive,
+    ]);
+    rerender(element);
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn.mock.calls.map(([message]) => String(message).split("Series ")[1])).toEqual([
+      '"kwh".',
+      '"cost".',
+    ]);
   });
 
   it("prints a mismatched TableColumn through the default number format and warns once", () => {

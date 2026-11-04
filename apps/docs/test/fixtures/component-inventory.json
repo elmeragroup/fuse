@@ -40,6 +40,7 @@
       "area-chart-entrance.tsx",
       "area-chart-price.tsx",
       "area-chart-stacked.tsx",
+      "area-chart-threshold.tsx",
       "area-chart-variants.tsx"
     ]
   },

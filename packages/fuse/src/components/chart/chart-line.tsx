@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 
 import { useSeriesPart } from "./chart-context";
+import { PATH_GLOW, valueGlow } from "./chart-glow-filter";
 import type { MarkValues } from "./chart-motion";
 import { useFirstDraw } from "./chart-motion-mark";
 import { placeOf, topologyAt, writePath } from "./chart-path-draw";
@@ -104,11 +105,13 @@ export function ChartLine({
   );
   // The layer clips at the slot run's ends, so a sliding path never draws in the leftover.
   const margins = runMargins(frame);
+  const glow = valueGlow(paint, prefix, PATH_GLOW);
   return (
     <svg
       data-slot="chart-line-series"
       data-variant={variant}
       data-series={seriesIndex}
+      data-paint={glow?.paint}
       data-intro={intro}
       aria-hidden="true"
       className={className}
@@ -116,6 +119,7 @@ export function ChartLine({
         "--chart-series-paint": paint.base,
         "--chart-series": seriesIndex,
         "--_paint-server": hasPathPaint(paint) ? `url(#${prefix}-paint)` : undefined,
+        "--_glow": glow?.url,
         "--_run-before": margins.before,
         "--_run-after": margins.after,
         ...style,
@@ -124,6 +128,7 @@ export function ChartLine({
         <>
           <defs>
             <PathPaint id={`${prefix}-paint`} paint={paint} frame={frame} />
+            {glow?.filter(frame)}
           </defs>
           <g ref={markRef}>
             <clipPath id={`${prefix}-solid`} data-part="solid-clip" />

@@ -48,6 +48,15 @@ function daily(
 }
 
 const composition = (rule: string) => ({ name: "ChartCompositionError", rule });
+/**
+ * A threshold colour split at 2, which every threshold case paints with. Its roles are categorical,
+ * so it shares a layout with the categorical series and breaks no colour-family rule.
+ */
+const SPLIT = {
+  threshold: 2,
+  below: { color: "chart-3", label: "Lav" },
+  above: { color: "chart-4", label: "Høy" },
+} as const;
 const data = (rule: string) => ({ name: "ChartDataError", rule });
 
 afterEach(() => {
@@ -354,6 +363,29 @@ describe("Panel and resolution errors on the first render", () => {
       composition("scale-colour-on-stack"),
     ],
     [
+      "a threshold-coloured Line in a stack",
+      daily(<Chart.Line dataKey="kwh" />, twoRows, {
+        ...STACKED,
+        kwh: { ...STACKED.kwh, color: SPLIT },
+      }),
+      composition("scale-colour-on-stack"),
+    ],
+    [
+      "a threshold-coloured Area under the expand offset",
+      <Chart.Root
+        key="root"
+        data={DAYS}
+        config={{ kwh: { label: "Forbruk", color: SPLIT } }}
+        xKey="day"
+        interval="day"
+        timeZone={OSLO}
+        stackOffset="expand"
+        aria-label="Forbruk">
+        <Chart.Area dataKey="kwh" />
+      </Chart.Root>,
+      composition("scale-colour-on-stack"),
+    ],
+    [
       "a scale-coloured Area under the expand offset",
       <Chart.Root
         key="root"
@@ -399,6 +431,22 @@ describe("Panel and resolution errors on the first render", () => {
     ).toBeNull();
     expect(
       thrown(daily(<Chart.Line dataKey="kwh" />, DAYS, { kwh: { label: "Forbruk", color: "chart-seq" } }))
+    ).toBeNull();
+    // A threshold takes stacked Bars and a lone Line, as a scale does.
+    expect(
+      thrown(
+        daily(
+          <Chart.BarGroup series={["kwh", "kost"]}>
+            <Chart.Bar dataKey="kwh" />
+            <Chart.Bar dataKey="kost" />
+          </Chart.BarGroup>,
+          twoRows,
+          { ...STACKED, kwh: { ...STACKED.kwh, color: SPLIT } }
+        )
+      )
+    ).toBeNull();
+    expect(
+      thrown(daily(<Chart.Line dataKey="kwh" />, DAYS, { kwh: { label: "Forbruk", color: SPLIT } }))
     ).toBeNull();
   });
 
@@ -541,6 +589,14 @@ describe("data errors in development", () => {
       </Chart.Root>
     );
     expect(thrown(element)).toEqual(data("mixed-sign-expand"));
+  });
+
+  it.each([
+    ["NaN", Number.NaN],
+    ["Infinity", Number.POSITIVE_INFINITY],
+  ])("throws non-finite-threshold for a threshold of %s", (_, threshold) => {
+    const config = { kwh: { label: "Forbruk", color: { ...SPLIT, threshold } } };
+    expect(thrown(daily(<Chart.Line dataKey="kwh" />, DAYS, config))).toEqual(data("non-finite-threshold"));
   });
 
   it("throws for a time preset on number cells of a TableColumn", () => {

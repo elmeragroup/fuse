@@ -2,9 +2,11 @@
 
 /**
  * The paint of a Line or an Area, after CONTRACT section 8.9. A role paints the series' own colour.
- * A role list is decorative and runs along the slot axis. A scale follows the value: one
- * `userSpaceOnUse` gradient along the value axis with hard stops at the bin edges, so the stroke and
- * the fill take the step of the value they pass, and a riser crosses the steps between its ends.
+ * A role list is decorative and runs along the slot axis. A scale or a threshold follows the value:
+ * one `userSpaceOnUse` gradient along the value axis with hard stops at the bin edges or at the
+ * threshold, so the stroke and the fill take the step of the value they pass, and a riser crosses
+ * the steps between its ends. An edge outside the frame's domain clamps to the frame's end, so a
+ * threshold above every drawn value paints the whole path in its lower step.
  */
 import type { ReactElement } from "react";
 
@@ -15,7 +17,10 @@ import type { PlotFrame } from "./layout/plot-frame";
 /** One gradient stop: its offset, 0 to 1, and its paint. */
 type Stop = { readonly offset: number; readonly paint: string };
 
-/** The stops of a scale along the value axis, from the gradient's start at the plot's top or left. */
+/**
+ * The stops of a scale's or a threshold's steps along the value axis, from the gradient's start at
+ * the plot's top or left.
+ */
 function scaleStops(paint: SeriesPaint, ramp: readonly string[], frame: PlotFrame): Stop[] {
   const { edges } = paint;
   if (edges.length === 0) return [{ offset: 0, paint: paint.base }];
