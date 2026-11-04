@@ -32,6 +32,7 @@ export type ChartCompositionRule =
 /** The data rules, each with a production fallback. */
 export type ChartDataRule =
   | "non-finite-value"
+  | "non-finite-threshold"
   | "value-out-of-range"
   | "invalid-x"
   | "off-grid-x"
@@ -94,6 +95,8 @@ export class ChartDataError extends Error {
 export const DATA_MESSAGES = {
   "non-finite-value":
     "received a value cell that is not a finite number. Pass numbers, null or undefined. Production counts the reading as missing.",
+  "non-finite-threshold":
+    "received a threshold colour whose threshold is not a finite number. Pass a number, such as the period's average. Production paints every value in the threshold's below role.",
   "value-out-of-range": "received a value above 1e15 in magnitude. Production counts the reading as missing.",
   "invalid-x":
     "received a time-axis x that is not a valid Date or epoch milliseconds. Production drops the row.",

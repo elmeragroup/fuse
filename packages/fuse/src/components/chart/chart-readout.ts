@@ -23,6 +23,30 @@ import { roundShares } from "./layout/shares";
 /** The config key a template row renders for, such as one TooltipItems row. */
 export const ChartRowContext = createContext<string | null>(null);
 
+/** One side of a threshold colour, which names one of its series' two legend entries. */
+export type ThresholdSideName = "below" | "above";
+
+/** The threshold side a legend entry renders for, and the series it belongs to. */
+type LegendSide = { readonly key: string; readonly side: ThresholdSideName };
+
+/**
+ * The threshold side of the legend entry around a part, null outside the legend entries of a
+ * threshold series.
+ */
+export const ChartLegendSideContext = createContext<LegendSide | null>(null);
+
+/**
+ * The threshold side a Swatch or a SeriesLabel of one series shows: its legend entry's side, or
+ * null outside a threshold series' legend entry and for a part that names another series.
+ *
+ * @param key - The series the part shows, or null.
+ * @returns The side, or null.
+ */
+export function useLegendSide(key: string | null): ThresholdSideName | null {
+  const entry = use(ChartLegendSideContext);
+  return entry?.key === key ? entry.side : null;
+}
+
 /**
  * Whether the readout parts below follow the active point. The tooltip does, and a static legend
  * does not, so a pointer move renders no legend swatch or label.

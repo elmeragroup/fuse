@@ -7,6 +7,7 @@ import { AreaChartDailyUsage } from "./demos/area-chart-daily-usage";
 import { AreaChartEntrance } from "./demos/area-chart-entrance";
 import { AreaChartPrice } from "./demos/area-chart-price";
 import { AreaChartStacked } from "./demos/area-chart-stacked";
+import { AreaChartThreshold } from "./demos/area-chart-threshold";
 import { AreaChartVariants } from "./demos/area-chart-variants";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -39,6 +40,20 @@ The chart entry is a preview. Its names and props can change until Fuse's first 
 
 <Demo slug="area-chart" id="entrance" title="Entrance" file="area-chart-entrance.tsx">
   <AreaChartEntrance />
+</Demo>
+
+## Threshold colour
+
+<Prose>
+
+A threshold colour splits a series at one value, such as a spot price above and below the period's average. Give the series' config `color` a `threshold` and a role and a legend label for each side. A value above the threshold paints `above`, and a value at or below it paints `below`. The line and the fill change colour where they cross the threshold, a bar paints its own side, and so do the active dot, markers and the tooltip swatch.
+
+The threshold is a number, and Fuse computes none, so pass the same number to a `ReferenceLine` to show where the split lies. The legend lists both sides, while the tooltip, the table and the spoken text keep the series' own label. A threshold follows the series' own values, so it throws `scale-colour-on-stack` on a stacked Line or Area, as a scale does.
+
+</Prose>
+
+<Demo slug="area-chart" id="threshold" title="Threshold colour" file="area-chart-threshold.tsx">
+  <AreaChartThreshold />
 </Demo>
 
 ## Keyboard

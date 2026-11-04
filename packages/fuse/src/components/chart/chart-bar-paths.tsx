@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The path form of one Bar above 100 slots: one path per colour step, then the projected span, the
- * estimated outlines, the missing ticks and the emphasised overlays. The series grows from the zero
+ * The path form of one Bar above 100 slots: per colour step a solid path, a projected path and an
+ * estimated path, then the missing ticks and the emphasised overlays. The series grows from the zero
  * line in Root's entrance as one transform, which holds one registration with Root's loop.
  */
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
@@ -66,13 +66,13 @@ function drawColumns(group: SVGGElement, look: ColumnsLook | null, values: MarkV
   for (const { path, part, fill } of paths) {
     const d =
       part === "fill"
-        ? (drawing.fills[fill] ?? "")
+        ? drawing.fills[fill]
         : part === "estimated"
-          ? drawing.estimated
+          ? drawing.estimated[fill]
           : part === "projected"
-            ? drawing.projected
+            ? drawing.projected[fill]
             : drawing.missing;
-    writeAttribute(path, "d", d);
+    writeAttribute(path, "d", d ?? "");
   }
   boxes.forEach((rect, index) => {
     const box = drawing.emphasis[index];
@@ -231,9 +231,10 @@ export function SeriesPaths({
         {/* Every paint and quality path stays mounted, its data empty at rest when nothing draws in
             it, so a route that still draws a leaving column in it finds it. */}
         <g mask={variant === "gradient" ? `url(#${prefix}-fade)` : undefined}>
+          {/* A step's position is its identity, since a threshold's two sides may share a role. */}
           {fills.map((fill, index) => (
             <path
-              key={fill === "" ? "series" : fill}
+              key={index}
               data-slot="chart-bar-path"
               data-part="fill"
               data-fill={index}
@@ -245,21 +246,32 @@ export function SeriesPaths({
               }}
             />
           ))}
-          <path
-            data-slot="chart-bar-path"
-            data-part="projected"
-            data-series={series.seriesIndex}
-            data-projected=""
-            d={resting.projected}
-          />
+          {/* A projected or estimated reading keeps its step's paint, so each step has its own. */}
+          {fills.map((fill, index) => (
+            <path
+              key={index}
+              data-slot="chart-bar-path"
+              data-part="projected"
+              data-fill={index}
+              data-series={series.seriesIndex}
+              data-projected=""
+              d={resting.projected[index] ?? ""}
+              style={{ "--chart-bar-paint": fill === "" ? undefined : fill }}
+            />
+          ))}
         </g>
-        <path
-          data-slot="chart-bar-path"
-          data-part="estimated"
-          data-series={series.seriesIndex}
-          data-quality="estimated"
-          d={resting.estimated}
-        />
+        {fills.map((fill, index) => (
+          <path
+            key={index}
+            data-slot="chart-bar-path"
+            data-part="estimated"
+            data-fill={index}
+            data-series={series.seriesIndex}
+            data-quality="estimated"
+            d={resting.estimated[index] ?? ""}
+            style={{ "--chart-bar-paint": fill === "" ? undefined : fill }}
+          />
+        ))}
         <path
           data-slot="chart-bar-path"
           data-part="missing"
@@ -268,14 +280,18 @@ export function SeriesPaths({
           style={{ "--_tick-width": `${String(tickWidth(box))}px` }}
           d={resting.missing}
         />
-        {emphasisSlots.map((key, index) => (
-          <rect
-            key={key}
-            data-slot="chart-bar-emphasis"
-            data-series={series.seriesIndex}
-            {...resting.emphasis[index]}
-          />
-        ))}
+        {emphasisSlots.map((key, index) => {
+          const own = columns.emphasisPaints[index];
+          return (
+            <rect
+              key={key}
+              data-slot="chart-bar-emphasis"
+              data-series={series.seriesIndex}
+              {...resting.emphasis[index]}
+              style={own === undefined ? undefined : { "--chart-bar-paint": own }}
+            />
+          );
+        })}
       </g>
       <g ref={outgoingRef} data-part="outgoing" />
     </>

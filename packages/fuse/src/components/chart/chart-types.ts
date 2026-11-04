@@ -195,15 +195,75 @@ export type ChartRole =
 export type ChartScale = "chart-seq" | "chart-diverging";
 
 /**
- * One role, a list of two or more roles, or a scale. A role list is a decorative gradient that
- * never follows the value. It runs along the category axis on lines and areas, from the baseline
- * to the tip on bars, along the bisector on slices and along the sweep on rings. Use a scale when
- * the colour must follow the value. No CSS string passes, so set `--chart-color-<key>` on Root for
- * a colour outside the roles.
+ * One side of a `ChartThresholdColor`: the role its values paint, and the label of its legend
+ * entry.
  *
  * @beta
  */
-export type ChartColor = ChartRole | ChartScale | readonly [ChartRole, ChartRole, ...ChartRole[]];
+export type ChartThresholdSide = {
+  /** The role every value on this side paints. */
+  color: ChartRole;
+  /** The visible text of this side's legend entry, such as "Above average". */
+  label: string;
+};
+
+/**
+ * A colour that splits a series at one value, such as a spot price in one colour above the
+ * period's average and in another below it. A value above `threshold` paints `above.color`, and a
+ * value at or below it paints `below.color`. A bar paints its side, and a line or an area paints a
+ * gradient along the value axis with one hard stop at the threshold, so a riser changes colour
+ * where it crosses it. A threshold outside the drawn values paints the whole series in one side.
+ *
+ * The legend shows one entry per side, above first, each with the side's label and swatch, and a
+ * legend toggle stays one per series. The tooltip row, the table header and the spoken text keep
+ * the series' own `label`. Draw the same number as a `ReferenceLine` so the split reads.
+ *
+ * Like a scale, it follows the series' own values, so `Chart.Line` and `Chart.Area` throw
+ * `scale-colour-on-stack` on a stacked series or under `stackOffset="expand"`. A threshold that
+ * is not a finite number throws `non-finite-threshold` in development, and production paints every
+ * value in `below.color`. A `--chart-color-<key>` on Root paints both sides, as it paints every
+ * step of a scale. Cartesian config only.
+ *
+ * @example
+ * ```ts
+ * const config = {
+ *   price: {
+ *     label: "Spot price",
+ *     color: {
+ *       threshold: average,
+ *       below: { color: "chart-sentiment-positive", label: "Below average" },
+ *       above: { color: "chart-sentiment-negative", label: "Above average" },
+ *     },
+ *   },
+ * } as const satisfies ChartConfig;
+ * ```
+ *
+ * @beta
+ */
+export type ChartThresholdColor = {
+  /** The value that splits the series, a finite number such as the period's average. */
+  threshold: number;
+  /** The paint and legend entry of the values at or below `threshold`. */
+  below: ChartThresholdSide;
+  /** The paint and legend entry of the values above `threshold`. */
+  above: ChartThresholdSide;
+};
+
+/**
+ * One role, a list of two or more roles, a scale or a threshold. A role list is a decorative
+ * gradient that never follows the value. It runs along the category axis on lines and areas, from
+ * the baseline to the tip on bars, along the bisector on slices and along the sweep on rings. Use a
+ * scale when the colour must follow the value in steps, or a threshold when it must change at one
+ * value. No CSS string passes, so set `--chart-color-<key>` on Root for a colour outside the
+ * roles.
+ *
+ * @beta
+ */
+export type ChartColor =
+  | ChartRole
+  | ChartScale
+  | ChartThresholdColor
+  | readonly [ChartRole, ChartRole, ...ChartRole[]];
 
 /**
  * The roles a pie or radial category takes. A category is never favourable and has no sign.
@@ -256,7 +316,10 @@ export type ChartSeriesConfig = {
    * the description and the table read, while every visible control keeps `text`.
    */
   label: string | FormattedText;
-  /** A role, a decorative role list or a scale. Pie and radial config takes `ChartPolarColor`. */
+  /**
+   * A role, a decorative role list, a scale or a threshold. Pie and radial config takes
+   * `ChartPolarColor`, and radar config takes no scale or threshold.
+   */
   color: ChartColor;
   /**
    * The look of the series' bars, and of its legend swatches inside the chart, so the server draws
@@ -605,8 +668,8 @@ export type ChartSeriesConfigCheck<TConfig, TRow> = string extends keyof TConfig
     };
 
 /**
- * Pie and radial config takes no cartesian field and only `ChartPolarColor`. A widened config skips
- * the check.
+ * Pie and radial config takes no cartesian field and only `ChartPolarColor`, so a colour union or a
+ * `ChartColor` that may hold anything else fails too. A widened config skips the check.
  *
  * @template TConfig - The config the Root infers.
  * @beta
@@ -631,8 +694,9 @@ export type ChartPolarFieldCheck<TConfig> = string extends keyof TConfig
     };
 
 /**
- * Radar config takes no stack, projection or series interval, and no scale. A widened config skips
- * the check.
+ * Radar config takes no stack, projection or series interval, and only a role or a role list as its
+ * colour, never a scale or a threshold, nor a union or a `ChartColor` that may hold one. A widened
+ * config skips the check.
  *
  * @template TConfig - The config the Root infers.
  * @beta
@@ -645,9 +709,11 @@ export type ChartRadarFieldCheck<TConfig> = string extends keyof TConfig
         | { projectedFrom: unknown }
         | { interval: unknown }
         ? { readonly "RadarChart config takes no stack, projectedFrom or interval": never }
-        : TConfig[K] extends { color: ChartScale }
-          ? { readonly "RadarChart colours are roles or role lists, never a scale": never }
-          : unknown;
+        : // Every member of the colour must be a role or a role list, so a union that holds a scale
+          // or a threshold, or a colour widened to ChartColor, fails too.
+          TConfig[K] extends { color: ChartRole | readonly [ChartRole, ChartRole, ...ChartRole[]] }
+          ? unknown
+          : { readonly "RadarChart colours are roles or role lists, never a scale or a threshold": never };
     };
 
 /**

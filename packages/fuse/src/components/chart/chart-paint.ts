@@ -1,10 +1,10 @@
 /**
  * The paint model of a cartesian series, which the bars, the path form, lines, areas, the active
- * overlay and the swatches all read, after CONTRACT sections 4 and 11. Every paint reads the
- * consumer's `--chart-color-<key>` first, so an override wins for a role, a role list and a scale
- * alike.
+ * overlay, the point marks and the swatches all read, after CONTRACT sections 4 and 11. Every paint
+ * reads the consumer's `--chart-color-<key>` first, so an override wins for a role, a role list, a
+ * scale and both sides of a threshold alike.
  */
-import type { ChartColor, ChartConfig } from "./chart-types";
+import type { ChartColor, ChartConfig, ChartScale, ChartThresholdColor } from "./chart-types";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { binEdges, colorBins } from "./layout/color-bins";
 import type { ColorBins } from "./layout/color-bins";
@@ -15,6 +15,39 @@ import type { StackOffset } from "./layout/stack";
 /** Whether a colour is a decorative role list. */
 export function isRoleList(color: ChartColor): color is Extract<ChartColor, readonly unknown[]> {
   return Array.isArray(color);
+}
+
+/** Whether a colour is a threshold, which splits the series at one value. */
+export function isThresholdColor(color: ChartColor): color is ChartThresholdColor {
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned config: a colour arrives as a role string, a role list or a threshold object
+  return typeof color === "object" && !isRoleList(color);
+}
+
+/** The scale a colour names, or undefined for every other colour. */
+function scaleOf(color: ChartColor): ChartScale | undefined {
+  return color === "chart-seq" || color === "chart-diverging" ? color : undefined;
+}
+
+/** The roles a colour paints with: a role, a list's roles, a threshold's two sides, or none for a scale. */
+function rolesOf(color: ChartColor): readonly string[] {
+  if (isRoleList(color)) return color;
+  if (isThresholdColor(color)) return [color.below.color, color.above.color];
+  return [color];
+}
+
+/**
+ * The series whose threshold is not a finite number, in config order. Development throws
+ * `non-finite-threshold` for the first, and production warns once for each and paints it in its
+ * `below` role.
+ *
+ * @param config - The Root's config.
+ * @returns The series keys, empty when every threshold is finite.
+ */
+export function nonFiniteThresholds(config: ChartConfig): readonly string[] {
+  return Object.keys(config).filter((key) => {
+    const color = config[key]?.color;
+    return color !== undefined && isThresholdColor(color) && !Number.isFinite(color.threshold);
+  });
 }
 
 /**
@@ -34,8 +67,7 @@ export function colourFamilyError(
 ): ChartCompositionError | null {
   const roles = keys.flatMap((key) => {
     const color = config[key]?.color;
-    if (color === undefined) return [];
-    return isRoleList(color) ? [...color] : [color];
+    return color === undefined ? [] : rolesOf(color);
   });
   const sentiment = roles.some((role) => role.startsWith("chart-sentiment-"));
   const categorical = roles.some((role) => /^chart-\d$/u.test(role));
@@ -49,10 +81,10 @@ export function colourFamilyError(
 }
 
 /**
- * The error of a scale-coloured Line or Area whose values draw stacked. A scale's bins split the
- * series' own values along the value axis, and a stacked or expanded path draws at other values, so
- * no single gradient can paint it by value. Bars take a scale on a stack, because each bar paints
- * its own value.
+ * The error of a Line or Area coloured by a scale or a threshold whose values draw stacked. Both
+ * split the series' own values along the value axis, and a stacked or expanded path draws at other
+ * values, so no single gradient can paint it by value. Bars take either on a stack, because each
+ * bar paints its own value.
  *
  * @param part - `Chart.Line` or `Chart.Area`.
  * @param color - The series colour.
@@ -66,42 +98,52 @@ export function stackedScaleError(
   stacked: boolean,
   stackOffset: StackOffset
 ): ChartCompositionError | null {
-  if (color !== "chart-seq" && color !== "chart-diverging") return null;
+  const scale = scaleOf(color);
+  if (scale === undefined && !isThresholdColor(color)) return null;
   if (!stacked && stackOffset !== "expand") return null;
+  const named = scale === undefined ? "a threshold colour" : `color "${scale}"`;
+  const split = scale === undefined ? "the threshold doesn't follow" : "the scale's bins don't follow";
   return new ChartCompositionError(
     part,
     "scale-colour-on-stack",
-    `paints color "${color}" on ${stacked ? "a stacked series" : 'stackOffset="expand"'}, where the path draws at stacked values the scale's bins don't follow. Give the series a role, or draw it with Chart.Bar.`
+    `paints ${named} on ${stacked ? "a stacked series" : 'stackOffset="expand"'}, where the path draws at stacked values ${split}. Give the series a role, or draw it with Chart.Bar.`
   );
 }
 
 /**
- * The role a colour names at one scale step: a role itself, a role list's first role, or a scale's
- * step, 4 when the step is unknown.
- *
- * @param color - The series colour.
- * @param step - The scale step of the value, if the colour is a scale.
- * @returns The role name.
+ * The role a mark without a value of its own paints: a role itself, a role list's first role, a
+ * scale's middle step, or a threshold's `below` role.
  */
-export function stepRole(color: ChartColor, step: number | undefined): string {
+function baseRole(color: ChartColor): string {
   if (isRoleList(color)) return color[0];
-  if (color === "chart-seq" || color === "chart-diverging") return `${color}-${String(step ?? 4)}`;
-  return color;
+  if (isThresholdColor(color)) return color.below.color;
+  const scale = scaleOf(color);
+  return scale === undefined ? color : `${scale}-4`;
 }
 
 /** What a series paints with, which its marks, its active overlay and its swatches all read. */
 export type SeriesPaint = {
   readonly key: string;
   readonly color: ChartColor;
-  /** A scale's value-to-step map over every reading, or undefined for a role or a role list. */
+  /**
+   * The value-to-step map of a scale or a threshold, whose step k paints `ramp[k - 1]`, or
+   * undefined for a role or a role list. A scale's bins read every reading, and a threshold's need
+   * none.
+   */
   readonly bins: ColorBins | undefined;
-  /** A scale's six bin edges, ascending, where a path's gradient changes step. Empty otherwise. */
+  /**
+   * Where a path's gradient changes step, ascending: a scale's six bin edges, or a finite
+   * threshold. Empty otherwise.
+   */
   readonly edges: readonly number[];
   /** The series paint, which a mark without a paint of its own takes. */
   readonly base: string;
-  /** The role list's colour stops from the tip to the base, or undefined for a role or a scale. */
+  /** The role list's colour stops from the tip to the base, or undefined for every other colour. */
   readonly stops: readonly string[] | undefined;
-  /** A scale's 7 step paints, lowest first, or undefined for a role or a role list. */
+  /**
+   * The step paints, lowest first: a scale's 7, or a threshold's `below` and `above`. Undefined
+   * for a role or a role list.
+   */
   readonly ramp: readonly string[] | undefined;
 };
 
@@ -110,24 +152,55 @@ const SCALE_STEPS = [1, 2, 3, 4, 5, 6, 7] as const;
 // One paint per series model and colour, so every mark and swatch of a model shares its bins.
 const paints = new WeakMap<SeriesModel, Map<string, SeriesPaint>>();
 
+/**
+ * A threshold's two steps. A value above the threshold takes step 2, and a value at it or below
+ * takes step 1, so a reading that equals the average reads as not above it. A threshold that is
+ * not a finite number puts every value in step 1, production's `non-finite-threshold` fallback.
+ */
+function thresholdBins(threshold: number): ColorBins {
+  if (!Number.isFinite(threshold)) return () => 1;
+  return (value) => (value > threshold ? 2 : 1);
+}
+
 function buildPaint(key: string, color: ChartColor, series: SeriesModel | undefined): SeriesPaint {
-  const scale = color === "chart-seq" || color === "chart-diverging" ? color : undefined;
+  const shared = { key, color, base: seriesPaint(key, baseRole(color)) };
+  if (isRoleList(color)) {
+    const stops = color.map((role) => seriesPaint(key, role));
+    return { ...shared, bins: undefined, edges: [], stops, ramp: undefined };
+  }
+  if (isThresholdColor(color)) {
+    const { threshold, below, above } = color;
+    return {
+      ...shared,
+      bins: thresholdBins(threshold),
+      edges: Number.isFinite(threshold) ? [threshold] : [],
+      stops: undefined,
+      ramp: [seriesPaint(key, below.color), seriesPaint(key, above.color)],
+    };
+  }
+  const scale = scaleOf(color);
+  if (scale === undefined)
+    return { ...shared, bins: undefined, edges: [], stops: undefined, ramp: undefined };
   const values =
-    scale === undefined || series === undefined
+    series === undefined
       ? []
       : series.readings.flatMap((reading) => (reading.kind === "reading" ? [reading.value] : []));
   return {
-    key,
-    color,
-    bins: scale === undefined || series === undefined ? undefined : colorBins(scale, values),
-    edges: scale === undefined ? [] : binEdges(scale, values),
-    base: seriesPaint(key, stepRole(color, undefined)),
-    stops: isRoleList(color) ? color.map((role) => seriesPaint(key, role)) : undefined,
-    ramp:
-      scale === undefined
-        ? undefined
-        : SCALE_STEPS.map((step) => seriesPaint(key, `${scale}-${String(step)}`)),
+    ...shared,
+    bins: series === undefined ? undefined : colorBins(scale, values),
+    edges: binEdges(scale, values),
+    stops: undefined,
+    ramp: SCALE_STEPS.map((step) => seriesPaint(key, `${scale}-${String(step)}`)),
   };
+}
+
+/** What tells two colours' paints apart: a threshold's number and roles, never its labels. */
+function paintId(color: ChartColor): string {
+  if (isRoleList(color)) return color.join(",");
+  if (isThresholdColor(color)) {
+    return `threshold:${String(color.threshold)}:${color.below.color}:${color.above.color}`;
+  }
+  return color;
 }
 
 /**
@@ -141,7 +214,7 @@ function buildPaint(key: string, color: ChartColor, series: SeriesModel | undefi
  */
 export function seriesPaintOf(key: string, color: ChartColor, series: SeriesModel | undefined): SeriesPaint {
   if (series === undefined) return buildPaint(key, color, series);
-  const id = `${key}\u0000${isRoleList(color) ? color.join(",") : color}`;
+  const id = `${key}\u0000${paintId(color)}`;
   const known = paints.get(series) ?? new Map<string, SeriesPaint>();
   paints.set(series, known);
   const paint = known.get(id) ?? buildPaint(key, color, series);
@@ -150,8 +223,8 @@ export function seriesPaintOf(key: string, color: ChartColor, series: SeriesMode
 }
 
 /**
- * One value's paint, or undefined when the series paint covers it, which is every value of a role
- * or a role list.
+ * One value's paint: its scale step, or its threshold side. Undefined when the series paint covers
+ * it, which is every value of a role or a role list.
  *
  * @param paint - The series paint.
  * @param value - The value.

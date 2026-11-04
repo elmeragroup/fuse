@@ -8,8 +8,11 @@ import { useRender } from "@base-ui/react/use-render";
 
 import { ToggleGroupItem, ToggleGroupRoot } from "../toggle-group/toggle-group";
 import { assertKnownKey, ChartSelectionContext, useChartRoot } from "./chart-context";
+import type { ChartRootContextValue } from "./chart-context";
+import { isThresholdColor } from "./chart-paint";
 import { usePendingOr } from "./chart-pending-root";
 import {
+  ChartLegendSideContext,
   ChartRowContext,
   fallbackSlot,
   readingText,
@@ -19,6 +22,7 @@ import {
   useReadoutKey,
   windowShares,
 } from "./chart-readout";
+import type { ThresholdSideName } from "./chart-readout";
 import { ChartSeriesLabel, ChartSwatch } from "./chart-series";
 import { seriesLabel } from "./chart-text";
 import type {
@@ -47,7 +51,10 @@ export type ChartLegendProps = ChartDomProps<"ul"> & {
  * @beta
  */
 export type ChartLegendItemProps = ChartDomProps<"li"> & {
-  /** The series of this item. Without one, the item is a template rendered once per legend entry. */
+  /**
+   * The series of this item. A threshold series renders one item per side. Without one, the item
+   * is a template rendered once per legend entry.
+   */
   dataKey?: string;
 };
 
@@ -105,8 +112,10 @@ export type ChartLegendToggleProps = ChartLayerProps & {
 
 /**
  * A static list of the series, "bottom" by default, as Figma's `Chart` places it. Without children,
- * one LegendItem per config key, or per kept category and then one Other item in a folded pie. The
- * list is visible text, so screen readers read it, and its swatches are decoration.
+ * one LegendItem per config key, or per kept category and then one Other item in a folded pie. A
+ * series coloured by a threshold has two entries, its `above` side first, each with the side's
+ * label and swatch. The list is visible text, so screen readers read it, and its swatches are
+ * decoration.
  *
  * @beta
  */
@@ -135,15 +144,26 @@ function ChartLegendBody({
   });
 }
 
+/**
+ * The legend entries of one series: one per side of a threshold colour, the upper side first as
+ * the value axis reads, or one entry with no side for every other colour.
+ */
+function entrySides(context: ChartRootContextValue, key: string): readonly (ThresholdSideName | null)[] {
+  const color = context.config[key]?.color;
+  return color !== undefined && isThresholdColor(color) ? ["above", "below"] : [null];
+}
+
 /** One legend entry's own element. */
 function LegendEntry({
   itemKey,
+  side,
   render,
   className,
   children,
   props,
 }: {
   readonly itemKey: string;
+  readonly side: ThresholdSideName | null;
   readonly render: ChartLegendItemProps["render"];
   readonly className: string | undefined;
   readonly children: ReactNode;
@@ -158,6 +178,7 @@ function LegendEntry({
     props: {
       "data-slot": "chart-legend-item",
       "data-series": seriesIndex,
+      "data-threshold-side": side ?? undefined,
       "data-dimmed": selectedKey !== null && selectedKey !== itemKey ? "" : undefined,
       ...mergeProps<"li">(
         {
@@ -173,12 +194,52 @@ function LegendEntry({
       ),
     },
   });
-  return <ChartRowContext value={itemKey}>{element}</ChartRowContext>;
+  return (
+    <ChartRowContext value={itemKey}>
+      <ChartLegendSideContext value={side === null ? null : { key: itemKey, side }}>
+        {element}
+      </ChartLegendSideContext>
+    </ChartRowContext>
+  );
+}
+
+/** Every legend entry of one series, its LegendItem's own props on each. */
+function SeriesEntries({
+  itemKey,
+  render,
+  className,
+  children,
+  props,
+}: {
+  readonly itemKey: string;
+  readonly render: ChartLegendItemProps["render"];
+  readonly className: string | undefined;
+  readonly children: ReactNode;
+  readonly props: Omit<ChartLegendItemProps, "dataKey" | "render" | "className" | "children">;
+}): ReactElement {
+  const context = useChartRoot("Chart.LegendItem");
+  return (
+    <>
+      {entrySides(context, itemKey).map((side) => (
+        <LegendEntry
+          key={side ?? "series"}
+          itemKey={itemKey}
+          side={side}
+          render={render}
+          className={className}
+          props={props}>
+          {children}
+        </LegendEntry>
+      ))}
+    </>
+  );
 }
 
 /**
- * One legend entry. With a `dataKey`, one item. Without one, a template rendered once per legend
- * entry, as TooltipItems is.
+ * One legend entry. With a `dataKey`, that series' entries: one item, or one per side of a threshold
+ * colour, above first. Without one, a template rendered once per legend entry, as TooltipItems is.
+ * Inside a threshold side's item, a Swatch or a SeriesLabel of its series shows the side's paint
+ * and label, while a LegendValue and a LegendShare print the whole series' value and share.
  *
  * @beta
  */
@@ -197,17 +258,17 @@ function ChartLegendItemBody({
   if (dataKey !== undefined) {
     assertKnownKey("Chart.LegendItem", context.config, dataKey);
     return (
-      <LegendEntry itemKey={dataKey} render={render} className={className} props={props}>
+      <SeriesEntries itemKey={dataKey} render={render} className={className} props={props}>
         {children}
-      </LegendEntry>
+      </SeriesEntries>
     );
   }
   return (
     <>
       {Object.keys(context.config).map((key) => (
-        <LegendEntry key={key} itemKey={key} render={render} className={className} props={props}>
+        <SeriesEntries key={key} itemKey={key} render={render} className={className} props={props}>
           {children}
-        </LegendEntry>
+        </SeriesEntries>
       ))}
     </>
   );
@@ -276,10 +337,11 @@ function ChartLegendShareBody({
 
 /**
  * A Fuse ToggleGroup that edits Root's `selectedKey`. Root owns the value and the change callback,
- * so the group takes no `value`, `multiple` or `disabled` of its own. One toggle is pressed at a
- * time, and pressing the pressed toggle clears the selection. While the group is mounted, Enter on
- * the plot's option and a plot click select a series too. Each change announces the selection
- * through Root's status region.
+ * so the group takes no `value`, `multiple` or `disabled` of its own. Each toggle selects a series,
+ * so a series coloured by a threshold keeps one toggle, its swatch split between the two sides and
+ * its label the series' own. One toggle is pressed at a time, and pressing the pressed toggle clears
+ * the selection. While the group is mounted, Enter on the plot's option and a plot click select a
+ * series too. Each change announces the selection through Root's status region.
  *
  * @beta
  */

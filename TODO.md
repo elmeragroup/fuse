@@ -626,6 +626,12 @@ Some work stays outside v1.
 - v1 has no automated VoiceOver sessions or real-iPhone checks. VoiceOver automation and the iOS
   Simulator aren't set up, so a person runs both, and tests use the virtual screen reader and the
   WebKit profile in their place.
+- Scatter charts and a numeric x axis stay out of v1, and they are designed together. Today x is a
+  time or category slot axis (`XDomain` in `layout/x-domain.ts`), so consumption against
+  temperature, as the ET and temperature-corrected charts draw it, still needs another library.
+  The line and area cases that need a linear x are capacity-tariff steps over kW and EV charging
+  curves, whose x values are unevenly spaced numbers. Evenly spaced numbers already work as
+  categories on `xScale="point"`.
 
 ## Landing stand-ins
 

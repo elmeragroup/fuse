@@ -22,7 +22,7 @@ import type { ActiveSlot, ChartFollowers } from "./chart-followers";
 import { createChartLabels } from "./chart-labels";
 import { createChartMotion, createFrameOwner } from "./chart-motion";
 import type { ChartMotion, FrameOwner } from "./chart-motion";
-import { colourFamilyError } from "./chart-paint";
+import { colourFamilyError, isThresholdColor, nonFiniteThresholds } from "./chart-paint";
 import { createChartPaths } from "./chart-paths";
 import {
   ChartPlotContext,
@@ -42,6 +42,7 @@ import type { TextContext } from "./chart-text";
 import type {
   ChartAccessibleName,
   ChartChangeEventDetails,
+  ChartColor,
   ChartConfig,
   ChartFigureProps,
   ChartIntro,
@@ -66,6 +67,7 @@ import { intervalNests } from "./layout/coarse-slots";
 import {
   ChartCompositionError,
   ChartDataError,
+  DATA_MESSAGES,
   dataMessage,
   isChartDevelopment,
   issueGroups,
@@ -233,6 +235,24 @@ function fieldsOf(entry: ChartSeriesConfig): (readonly [string, ConfigField])[] 
   return Object.entries(entry) as (readonly [string, ConfigField])[];
 }
 
+/** What `non-finite-threshold` says after the part, naming the series. */
+function thresholdMessage(key: string): string {
+  return `${DATA_MESSAGES["non-finite-threshold"]} Series ${JSON.stringify(key)}.`;
+}
+
+/**
+ * Whether two colours say the same thing. A threshold nests its two sides, which a config written
+ * inline in JSX writes anew on every render, so they compare field by field.
+ */
+function sameColor(a: ChartColor, b: ChartColor): boolean {
+  if (isThresholdColor(a) && isThresholdColor(b)) {
+    return (
+      Object.is(a.threshold, b.threshold) && sameShallow(a.below, b.below) && sameShallow(a.above, b.above)
+    );
+  }
+  return sameShallow(a, b);
+}
+
 /**
  * Whether two configs say the same thing. A config written inline in JSX is a new object on every
  * render, and only a change of what it says counts as a data update.
@@ -249,7 +269,13 @@ function sameConfig(a: ChartConfig, b: ChartConfig): boolean {
       const otherFields = new Map(fieldsOf(other[1]));
       return (
         fields.length === otherFields.size &&
-        fields.every(([name, value]) => otherFields.has(name) && sameShallow(value, otherFields.get(name)))
+        fields.every(
+          ([name, value]) =>
+            otherFields.has(name) &&
+            (name === "color"
+              ? sameColor(entry.color, other[1].color)
+              : sameShallow(value, otherFields.get(name)))
+        )
       );
     })
   );
@@ -494,6 +520,13 @@ export function ChartRoot<
   if (firstIssue !== undefined && isChartDevelopment()) {
     throw new ChartDataError("Chart.Root", firstIssue.rule, dataMessage(firstIssue, model.rowAt));
   }
+  // An app often computes a threshold from its data, such as the average of an empty period, so a
+  // non-finite one is a data rule with a fallback, not a composition error.
+  const thresholdKeys = useMemo(() => nonFiniteThresholds(modelConfig), [modelConfig]);
+  const [firstThreshold] = thresholdKeys;
+  if (firstThreshold !== undefined && isChartDevelopment()) {
+    throw new ChartDataError("Chart.Root", "non-finite-threshold", thresholdMessage(firstThreshold));
+  }
   const warned = useRef(new Set<string>());
   // Each rule warns once per subject: a second absent column under the same rule warns too, a
   // thousand broken cells of one column warn once, and a render that repeats a problem stays quiet.
@@ -511,6 +544,11 @@ export function ChartRoot<
       warnOnce(rule, subject, `Chart.Root ${dataMessage(first, model.rowAt, count)}`);
     }
   }, [model.issues, model.rowAt, warnOnce]);
+  useEffect(() => {
+    for (const key of thresholdKeys) {
+      warnOnce("non-finite-threshold", key, `Chart.Root ${thresholdMessage(key)}`);
+    }
+  }, [thresholdKeys, warnOnce]);
 
   const id = useId();
   const [store] = useState(() => {

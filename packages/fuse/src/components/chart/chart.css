@@ -464,8 +464,9 @@
   }
 
   /*
-    The path form paints one fill per path: a scale step, a role list's gradient or the series
-    role. Projected readings draw lighter in their own path, estimated ones as dashed outlines.
+    The path form paints one fill per path: a scale or threshold step, a role list's gradient or
+    the series role. Projected readings draw lighter in their step's own path, estimated ones as
+    dashed outlines in theirs.
   */
   [data-slot="chart-bar-path"] {
     fill: var(--_fill, var(--_paint));
@@ -510,7 +511,7 @@
   }
 
   [data-slot="chart-bar-emphasis"] {
-    fill: var(--_fill, var(--chart-series-paint));
+    fill: var(--_fill, var(--chart-bar-paint, var(--chart-series-paint)));
   }
 
   /*
@@ -598,6 +599,16 @@
   */
   [data-slot="chart-glow"] [data-slot="chart-bar-series"] {
     filter: drop-shadow(0 0 8px color-mix(in oklab, var(--chart-series-paint) 50%, transparent));
+  }
+
+  /* A series painted by value glows through its own filter, so each halo takes its mark's colour. */
+  [data-slot="chart-glow"] [data-paint="value"][data-series] {
+    filter: none;
+  }
+
+  [data-slot="chart-glow"] [data-paint="value"] > g,
+  [data-slot="chart-glow"] [data-paint="value"] > svg > :is(g, polygon) {
+    filter: var(--_glow);
   }
 
   /* The skeleton sketches 12 bars over the default plot height, with the loader in its middle. */

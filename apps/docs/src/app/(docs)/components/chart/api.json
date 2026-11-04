@@ -2021,7 +2021,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The series of this item. Without one, the item is a template rendered once per legend entry.",
+          "description": "The series of this item. A threshold series renders one item per side. Without one, the item is a template rendered once per legend entry.",
           "required": false
         },
         {

@@ -137,7 +137,13 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // Raised again from 147698 on 2026-11-03. Reveal's edge glides with the crosshair on the step's
   // spring, as a registered length, which measured 179 bytes on this entry (147598 to 147777). The
   // ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 147877 },
+  // Raised again from 147877 on 2026-11-04. A series colour can be a threshold, whose paint, legend
+  // entries and non-finite rule join the scale's, dots, markers and the active dot paint their own
+  // value's step, crossfading dots and active dots keep it, a path-form bar's projected and
+  // estimated paths and its emphasis boxes paint by step, and Glow haloes a value-painted series
+  // through its own SVG filter, which measured 1428 bytes on this entry (147777 to 149205). The
+  // ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 149305 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -309,14 +315,21 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Raised again from 145400 on 2026-11-03, with BarChart's from 145403. Reveal's edge glides
     // with the crosshair on the step's spring, which measured 182 bytes on Chart (145300 to 145482)
     // and 181 on BarChart (145303 to 145484).
-    ceilingGzip: 145582,
+    // Raised again from 145582 on 2026-11-04, with BarChart's from 145584. A series colour can be a
+    // threshold, whose paint, legend entries and non-finite rule join the scale's, dots, markers
+    // and the active dot paint their own value's step, crossfading dots and active dots keep it, a
+    // path-form bar's projected and estimated paths and its emphasis boxes paint by step, and Glow
+    // haloes a value-painted series through its own SVG filter, which measured 1425 bytes on Chart
+    // (145482 to 146907) and 1426 on BarChart (145484 to 146910). Each ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 147007,
   },
   {
     name: "chart/BarChart",
     entryFile: "chart.js",
     exportName: "BarChart",
     measuredGzip: 95989,
-    ceilingGzip: 145584,
+    ceilingGzip: 147010,
   },
   { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
   { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 79858 },
@@ -372,7 +385,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Raised from 74416 on 2026-11-03. Root's paths hold each path's reader of the line it rests
     // on, which measured 36 bytes on this route (74381 to 74417). The ceiling keeps about 100 bytes
     // of headroom.
-    ceilingGzip: 74517,
+    // Raised from 74517 on 2026-11-04. A series colour can be a threshold: its two-step paint, the
+    // bars' fills from its ramp, projected and estimated paths and emphasis boxes painted by step,
+    // a value-painted Bar's glow filter, Root's comparison of its sides and its non-finite rule
+    // measured 740 bytes on this route (74417 to 75157). The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 75257,
   },
   {
     name: "chart/PieChart.Root",

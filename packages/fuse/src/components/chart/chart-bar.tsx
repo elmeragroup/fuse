@@ -9,6 +9,7 @@ import { assertKnownKey, assertLayoutKey, usePlotLayout, useChartRoot, useSeries
 import type { ChartRootContextValue } from "./chart-context";
 import { datumSlots } from "./chart-datum";
 import { useSvgIdPrefix } from "./chart-dom";
+import { ValueGlowFilter } from "./chart-glow-filter";
 import { seriesPaintOf } from "./chart-paint";
 import { useBarMetrics, useChartFrame } from "./chart-plot";
 import { useSeriesOwner } from "./chart-series-path";
@@ -212,6 +213,7 @@ export function ChartBar({
       data-slot="chart-bar-series"
       data-variant={drawnVariant}
       data-list={stops === undefined ? undefined : ""}
+      data-paint={paint.bins === undefined ? undefined : "value"}
       data-series={seriesIndex}
       data-emphasis={emphasised.size > 0 ? "" : undefined}
       aria-hidden="true"
@@ -219,9 +221,15 @@ export function ChartBar({
       style={{
         "--chart-series-paint": base,
         "--chart-series": seriesIndex,
+        "--_glow": paint.bins === undefined ? undefined : `url(#${prefix}-glow)`,
         ...style,
       }}>
       <svg>
+        {shared === null || paint.bins === undefined ? null : (
+          <defs>
+            <ValueGlowFilter id={`${prefix}-glow`} frame={shared.frame} deviation={8} alpha={0.5} />
+          </defs>
+        )}
         {shared === null ? null : form === "bars" ? (
           <SeriesBars {...shared} entering={entering} variant={drawnVariant} emphasised={emphasised} />
         ) : (

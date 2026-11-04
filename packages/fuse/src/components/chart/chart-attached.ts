@@ -210,6 +210,12 @@ export type AttachedCopy = {
    * that crossfades, built only when a crossfade starts.
    */
   readonly outgoing?: (kept: Element, before: MarkValues, update: ChartUpdate) => Element | null;
+  /**
+   * Bring the kept copy up to what the live node shows after a pointer or key step, which keeps no
+   * new copy, such as an active dot's paint at its new slot. A later crossfade then fades out what
+   * showed just before its update.
+   */
+  readonly sync?: (kept: Element, live: Element) => void;
 };
 
 /** Each value label's text, the update it rendered last and its text before that update. */
@@ -312,7 +318,10 @@ export function placeAttached<L>(input: {
   // A step keeps a copy only while the mark holds none, as an active dot that first shows on a step.
   if (input.cause === "commit" || old === null) {
     shown.current = { node: copy.keep?.(node) ?? deepCopy(node), look: input.look, crossfade: fade };
-  } else shown.current = { ...old, crossfade: fade };
+  } else {
+    copy.sync?.(old.node, node);
+    shown.current = { ...old, crossfade: fade };
+  }
 }
 
 /** A deep copy of a node, text included. */

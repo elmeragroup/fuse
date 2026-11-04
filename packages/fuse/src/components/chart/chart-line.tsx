@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 
 import { useSeriesPart } from "./chart-context";
+import { ValueGlowFilter } from "./chart-glow-filter";
 import type { MarkValues } from "./chart-motion";
 import { useFirstDraw } from "./chart-motion-mark";
 import { placeOf, topologyAt, writePath } from "./chart-path-draw";
@@ -109,6 +110,7 @@ export function ChartLine({
       data-slot="chart-line-series"
       data-variant={variant}
       data-series={seriesIndex}
+      data-paint={paint.bins === undefined ? undefined : "value"}
       data-intro={intro}
       aria-hidden="true"
       className={className}
@@ -116,6 +118,7 @@ export function ChartLine({
         "--chart-series-paint": paint.base,
         "--chart-series": seriesIndex,
         "--_paint-server": hasPathPaint(paint) ? `url(#${prefix}-paint)` : undefined,
+        "--_glow": paint.bins === undefined ? undefined : `url(#${prefix}-glow)`,
         "--_run-before": margins.before,
         "--_run-after": margins.after,
         ...style,
@@ -124,6 +127,9 @@ export function ChartLine({
         <>
           <defs>
             <PathPaint id={`${prefix}-paint`} paint={paint} frame={frame} />
+            {paint.bins === undefined ? null : (
+              <ValueGlowFilter id={`${prefix}-glow`} frame={frame} deviation={9.5} alpha={1} />
+            )}
           </defs>
           <g ref={markRef}>
             <clipPath id={`${prefix}-solid`} data-part="solid-clip" />

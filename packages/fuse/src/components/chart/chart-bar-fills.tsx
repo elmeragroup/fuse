@@ -3,8 +3,8 @@
 /**
  * The SVG paint servers a Bar's looks need. A pattern or gradient paints its content in the
  * colours it was defined with, never the colours of the bar that uses it, so each look gets one
- * server per distinct bar paint, and a scale-coloured series gets one per colour step it draws. A
- * plain fill needs no server, and `chart.css` paints it from `--_paint`.
+ * server per distinct bar paint, and a series coloured by a scale or a threshold gets one per colour
+ * step it draws. A plain fill needs no server, and `chart.css` paints it from `--_paint`.
  * Each server's content names its paint through `--chart-fill` or `--chart-stop`, which
  * `chart.css` reads, so no colour sits in an inline style.
  */
