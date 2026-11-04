@@ -830,7 +830,7 @@ const SAME_LENGTH = 1e-6;
  * width. A move of 0 leaves the part at the start, MIN. A move by the content width less the part's
  * width puts it flush with the end, MAX. Every other move, a vertical one, a part without a fixed
  * size and a row without a fixed width stay unmapped, and so does a row whose `justify-content`
- * disagrees.
+ * packs its children anywhere but the start.
  *
  * @param reader - The part's style.
  * @param size - The part's width and height.
@@ -866,8 +866,8 @@ function readTranslate(
             ? "MAX"
             : undefined;
       // The move counts from the start, so a row that packs its children elsewhere moves the part
-      // from another place, and one that packs them at the start says MIN.
-      return row.justify === "unset" || (row.justify === "MIN" && align === "MIN") ? align : undefined;
+      // from another place. An unset `justify-content` and `flex-start` both pack them there.
+      return row.justify === "unset" || row.justify === "MIN" ? align : undefined;
     },
     (align) => ({
       outcome: "literal",

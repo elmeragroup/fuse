@@ -24,9 +24,10 @@ import { ThemeScope } from "../../theme";
 import { Field } from "../field";
 import { Switch } from "./switch";
 
+/** The track and thumb geometry the Switch draws: its border box, its 1px edge and the thumb's size. */
 const TRACK = {
-  default: { height: 18.4, width: 32, thumb: 16 },
-  sm: { height: 14, width: 24, thumb: 12 },
+  default: { height: 18.4, width: 32, thumb: 16, border: 1 },
+  sm: { height: 14, width: 24, thumb: 12, border: 1 },
 } as const;
 
 function switchNamed(name: string, checked?: boolean): HTMLElement {
@@ -79,7 +80,7 @@ describe("Switch", () => {
     const style = document.createElement("style");
     style.textContent = await consumerCss(
       '@import "tailwindcss/theme.css" theme(reference);\n@import "tailwindcss/utilities.css" source(none);',
-      ["h-7", "w-6", "max-w-xs", "w-72"]
+      ["h-7", "w-6", "max-w-xs", "w-72", "[:where(&>*)]:justify-center"]
     );
     document.head.prepend(style);
   });
@@ -257,6 +258,37 @@ describe("Switch", () => {
     expect(fallback.height, "default height").toBeCloseTo(18.4, 1);
     const small = measureSwitch("Small");
     expect([small.width, small.height], "sm").toEqual([24, 14]);
+  });
+
+  it.each([
+    ["on its own", ""],
+    // A zero-weight child rule, as the docs stage and Fuse's own `:where()` defaults write one.
+    ["under a parent that centres its children's content", "[:where(&>*)]:justify-center"],
+  ])("rests the thumb inside the track at both ends, %s", (_, parent) => {
+    renderThemed(
+      <div className={parent}>
+        <Switch aria-label="Default off" />
+        <Switch aria-label="Default on" defaultChecked />
+        <Switch size="sm" aria-label="Small off" />
+        <Switch size="sm" aria-label="Small on" defaultChecked />
+      </div>
+    );
+    for (const [size, label] of [
+      ["default", "Default"],
+      ["sm", "Small"],
+    ] as const) {
+      const { width, thumb, border } = TRACK[size];
+      // Unchecked, the thumb's layout box starts at the track's padding edge; it is drawn at 75%,
+      // so its layout offset, not its painted box, says where it rests.
+      const off = switchNamed(`${label} off`);
+      expect(switchThumb(off, `${label} off`).offsetLeft, `${label} off thumb start`).toBe(0);
+      // Checked, the painted thumb ends at the padding edge of the track's far end.
+      const on = switchNamed(`${label} on`);
+      const track = on.getBoundingClientRect();
+      const painted = switchThumb(on, `${label} on`).getBoundingClientRect();
+      expect(painted.width, `${label} on thumb width`).toBe(thumb);
+      expect(painted.right - track.left, `${label} on thumb end`).toBeCloseTo(width - border, 1);
+    }
   });
 
   it("paints the shared ring on keyboard focus-visible and not on mouse focus, at both densities", async () => {

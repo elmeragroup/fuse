@@ -11,7 +11,9 @@ import { selfFocusRingClass } from "../../styles/utils";
  * - `root` is the track, 32px by 18.4px at `default` and 24px by 14px at `sm`. Its `max-w-*`
  *   caps a wider `className` width at the size's, as Checkbox's `max-w-4` does.
  * - `thumb` is the 16px or 12px dot. It sits at the track's start while unchecked, drawn at 75%,
- *   and at its end while checked.
+ *   and at its end while checked. The checked thumb's translate measures from the track's start,
+ *   so `root` sets `justify-start` itself: a parent's zero-weight child rule, such as the docs
+ *   stage's `[:where(&>*)]:justify-center`, cannot centre the thumb and push it past the end.
  * - `control` is what the Switch control adds to the track: the `peer` marker for a sibling's
  *   `peer-*` styles, the native outline reset, a 24px hit area around the track drawn by its
  *   `after:` pseudo-element, the focus ring and the state face.
@@ -27,7 +29,7 @@ export const switchVariants = tv({
     // on every surface by the matrix rule in `contrast-matrix.test.ts`, and the surface shows
     // through. The checked track is the `primary` fill with a `background` thumb, so on versus
     // off reads as outline versus fill in every palette, as on Checkbox and Radio.
-    root: "shadow-xs relative inline-flex shrink-0 items-center rounded-full border border-muted-foreground transition-colors data-checked:border-primary data-checked:bg-primary",
+    root: "shadow-xs relative inline-flex shrink-0 items-center justify-start rounded-full border border-muted-foreground transition-colors data-checked:border-primary data-checked:bg-primary",
     thumb:
       "pointer-events-none block rounded-full bg-muted-foreground ring-0 transition-transform data-checked:translate-x-[calc(100%-2px)] data-checked:bg-background data-unchecked:translate-x-0 data-unchecked:scale-75",
     control: cn(
